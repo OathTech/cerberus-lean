@@ -1,0 +1,83 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+
+## A. hermetic compare() matrix (auditor-written)
+PLANT OK   A1 one-sided pristine timeout, no row: got 'incomplete', want 'incomplete'
+PLANT OK   A2 one-sided FORK timeout WITH forged admitting row (compare level): got 'incomplete', want 'incomplete'
+PLANT OK   A3a 137 pristine: got 'incomplete', want 'incomplete'
+PLANT OK   A3b 137 fork: got 'incomplete', want 'incomplete'
+PLANT OK   A3c 137 fork with forged row: got 'incomplete', want 'incomplete'
+PLANT OK   A3d 137 both: got 'incomplete', want 'incomplete'
+PLANT OK   A4 both 124 no row: got 'matching_incomplete', want 'matching_incomplete'
+PLANT NOTE A5 registered node row, fork ALSO 124 (pin fork.status=0 NOT reproduced): 'matching_incomplete' — charter O1 stale-row rule says a row whose case no longer differs is RED; the code returns this (non-failing)
+PLANT OK   A6 139 (SIGSEGV) both sides, same shas: got True, want True — fail-closed: not in the matching_failure status set
+
+## B. REAL capture(): status mapping for kills and timeouts
+PLANT OK   B1 real SIGKILL of the child -> 137: got 137, want 137
+PLANT OK   B2 real timeout -> 124: got 124, want 124
+PLANT OK   B3 real 137 vs completed -> incomplete: got 'incomplete', want 'incomplete'
+PLANT OK   B4 real 124 vs completed (no row) -> incomplete: got 'incomplete', want 'incomplete'
+PLANT OK   B5 real 124 vs real 124 -> matching_incomplete: got 'matching_incomplete', want 'matching_incomplete'
+PLANT NOTE B6 real SIGSEGV of the child -> status: 139 — compare treats as completed; both-sides identical -> difference (fail-closed)
+
+## C. REAL both-crash captures from the two oracles (immaculate/nolibc/g4-bswap64-overflow)
+   pristine status 125 raw-stderr d121158576dc diag edd22a5c9f57; fork status 125 raw 3d998f384464 diag edd22a5c9f57
+PLANT OK   C1 real both-crash pair (frame positions differ) -> matching_failure: got 'matching_failure', want 'matching_failure'
+PLANT OK   C1b raw stderr differs while diagnostic sha agrees: got True, want True
+   exception payload line: b'          Z.Overflow'
+PLANT OK   C2 exception TEXT differs by ONE character -> difference: got 'difference', want 'difference'
+PLANT OK   C4 frame FILE name differs -> difference: got 'difference', want 'difference'
+PLANT OK   C5 one frame dropped -> difference: got 'difference', want 'difference'
+PLANT OK   C6 stdout beside an identical crash -> difference: got 'difference', want 'difference'
+PLANT OK   C7 position in a Cerberus-style diagnostic line (outside a frame) -> difference: got 'difference', want 'difference'
+PLANT OK   C8 `Called from` line WITHOUT ` in file "…"` -> not normalised -> difference: got 'difference', want 'difference'
+PLANT OK   C9 position inside a Failure(...) payload line -> difference: got 'difference', want 'difference'
+PLANT OK   C10 frame-like line with trailing text after the position -> not normalised -> difference: got 'difference', want 'difference'
+PLANT OK   C11 batch: stdout differing only by a frame-shaped position -> difference (stdout never projected): got 'difference', want 'difference'
+PLANT OK   C12 core kind: stdout differing only by a frame-shaped position -> difference: got 'difference', want 'difference'
+PLANT OK   C13 stdout projected anywhere in record_of?: got False, want False
+
+## D. silent success / malformed / missing captures
+PLANT OK   D1 batch both status 0, empty stdout+stderr (silent success) -> difference: got 'difference', want 'difference'
+PLANT OK   D2 core kind silent success -> difference: got 'difference', want 'difference'
+PLANT OK   D3 typecheck kind status 0 empty stdout -> interface_agreement (declared behaviour): got 'interface_agreement', want 'interface_agreement'
+PLANT NOTE D4 record says 125 but the .status FILE is garbage (tampered capture) ->: 'matching_failure' — record-vs-file inconsistency is not detected by compare()
+PLANT OK   D5 both capture files missing, identical records -> not a passing class: got False, want False — raised OSError (FileNotFoundError) -> main() catches -> INCOMPLETE rc 1
+PLANT FAIL D6 capture files missing, records differ -> difference: got 'raised OSError', want 'difference'
+
+## E. loader: citations and statuses (auditor extras beyond the 16 worker plants)
+PLANT OK   E1 nonexistent citation file -> rejected: got True, want True
+PLANT OK   E2 pristine 124 under diagnostic-text -> rejected: got True, want True
+PLANT OK   E3 fork 124 under shared-model-fix (forged admitting row) -> rejected at load: got True, want True
+PLANT OK   E4 citation to a DIRECTORY -> rejected: got True, want True
+PLANT OK   E5 absolute-path citation -> rejected: got True, want True
+PLANT NOTE E6 citation escaping the repo via `..` (../lem-lean/README.md exists in the container): "REJECTED: register row 'multi_tu_tray/node': citation '../lem-lean/README.md' is neither an existing repo file nor an IS"
+PLANT NOTE E7 citation to an UNTRACKED, gitignored file under .tmp/: 'ACCEPTED'
+PLANT NOTE E8 citation with a line range beyond the file length (:99999): 'ACCEPTED'
+PLANT OK   E9 status as bool True -> rejected: got True, want True
+PLANT OK   E10 uppercase sha -> rejected: got True, want True
+
+## F. FRAME_POSITION regex adversarial lines (normalised? = line changed by project_diagnostics)
+PLANT OK   F1 standard frame: got True, want True
+PLANT OK   F2 lines range frame: got True, want True
+PLANT OK   F3 inlined frame: got True, want True
+PLANT OK   F4 primitive-operation frame: got True, want True
+PLANT OK   F5 re-raised frame: got True, want True
+PLANT OK   F6 Cerberus diagnostic with source loc: got False, want False
+PLANT OK   F7 batch Error line on stderr: got False, want False
+PLANT OK   F8 Lean panic line: got False, want False
+PLANT OK   F9 Failure payload containing frame text: got False, want False
+PLANT OK   F10 old-style frame without function (`Raised at file "…"`): got False, want False
+PLANT OK   F11 frame with trailing text: got False, want False
+PLANT OK   F12 CRLF-terminated frame: got False, want False
+PLANT OK   F13 keyword not at line start: got False, want False
+PLANT OK   F14 Time spent trailer: got True, want True
+PLANT OK   F15 Time spent with extra text: got False, want False
+PLANT OK   F16 stdout untouched by project_diagnostics call sites: got 2, want 2 — definition + the single .stderr call in record_of
+
+## G. does a C program's own exit value leak into the oracle's status under --batch? (124/137 ambiguity)
+PLANT NOTE G124 main returns 124: pristine status 0, fork status 0, fork stdout b'Defined {value: "Specified(124)", stdout: "", stderr: "", blocked: "false"}'; compare ->: 'semantic_agreement'
+PLANT NOTE G137 main returns 137: pristine status 0, fork status 0, fork stdout b'Defined {value: "Specified(137)", stdout: "", stderr: "", blocked: "false"}'; compare ->: 'semantic_agreement'
+PLANT NOTE G1 main returns 1: pristine status 0, fork status 0, fork stdout b'Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}'; compare ->: 'semantic_agreement'
+
+## SUMMARY
+54 checks, 1 FAIL: ['D6 capture files missing, records differ -> difference']

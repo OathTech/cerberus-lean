@@ -1,0 +1,38 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+check_driver_fresh: oracle OK (bin 5108b37b54a4296eb93b8fef7378b3caeecccefc95ea6d4c2356d9904d5a2c45, src 98ad48b592a222a21e4619c5ce03652fc6a44c0a67c6b02cb222e1d40b1c701d)
+check_driver_fresh: lean OK (bin 5f6dfacf25852e7eedb386345ee641317eb03448688cd768974332962a2aa2ab, src c805823c3a54a24e82398a2ca27ea2018416ef873ceaca4d03091f9603a1086a)
+1/8 semantic_agreement: minimal/001-return-literal.c (pristine 0.1s, fork 0.1s) | lean: lean_agreement
+2/8 semantic_agreement: minimal/073-exit.libc.c (pristine 0.1s, fork 0.1s) | lean: lean_difference
+    LEAN≠FORK minimal/073-exit.libc.c: verdict tokens differ under projection full
+      pristine: ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(549, SD_Id(\"exit\"))'"}
+      fork:     ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(549, SD_Id(\"exit\"))'"}
+      lean:     ERR:{msg: "ill-formed program: `calling an unknown procedure: Symbol(66, SD_Id(\"exit\"))'"}
+3/8 matching_failure: minimal/097-null-ptr-arith.undef.c (pristine 0.1s, fork 0.1s) | lean: lean_both_undecodable
+    LEAN≠FORK minimal/097-null-ptr-arith.undef.c: fork: fatal engine diagnostic; no completed observation (status 125); lean: fatal engine diagnostic; no completed observation (status 134) — not agreement
+      pristine: UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      fork:     UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      lean:     UNDECODABLE(status 134: fatal engine diagnostic; no completed observation)
+4/8 matching_failure: debug/ub-static-reject.c (pristine 0.1s, fork 0.1s) | lean: lean_difference
+    LEAN≠FORK debug/ub-static-reject.c: one side undecodable: fork: empty or truncated observation (status 1)
+      pristine: UNDECODABLE(status 1: empty or truncated observation)
+      fork:     UNDECODABLE(status 1: empty or truncated observation)
+      lean:     ERR:{msg: "desugaring failed at tests/debug/ub-static-reject.c:4:12:"}
+5/8 matching_failure: bytes/byte_is_not_char.c (pristine 0.1s, fork 0.1s) | lean: lean_difference
+    LEAN≠FORK bytes/byte_is_not_char.c: one side undecodable: fork: empty or truncated observation (status 1)
+      pristine: UNDECODABLE(status 1: empty or truncated observation)
+      fork:     UNDECODABLE(status 1: empty or truncated observation)
+      lean:     ERR:{msg: "typechecking failed at tests/bytes/byte_is_not_char.c:4:14-17"}
+6/8 semantic_agreement: multi_tu_tray/arr-1-2-return (pristine 0.1s, fork 0.1s) | lean: lean_agreement
+7/8 matching_failure: immaculate/nolibc/g5-decode-question (pristine 0.1s, fork 0.1s) | lean: lean_difference
+    LEAN≠FORK immaculate/nolibc/g5-decode-question: one side undecodable: fork: fatal engine diagnostic; no completed observation (status 125)
+      pristine: UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      fork:     UNDECODABLE(status 125: fatal engine diagnostic; no completed observation)
+      lean:     VAL:{value: "Specified(63)", stdout: "", stderr: "", blocked: "false"}
+8/8 semantic_agreement: immaculate/libc/g5-escape-roundtrip (pristine 0.4s, fork 0.4s) | lean: lean_difference
+    LEAN≠FORK immaculate/libc/g5-escape-roundtrip: verdict tokens differ under projection full
+      pristine: VAL:{value: "Specified(87)", stdout: "", stderr: "", blocked: "false"}
+      fork:     VAL:{value: "Specified(87)", stdout: "", stderr: "", blocked: "false"}
+      lean:     VAL:{value: "Specified(127)", stdout: "", stderr: "", blocked: "false"}
+Independent oracle scope: subset (--only); 8 rows in 10.8s; source unchanged: True
+Three-engine report (Lean column, NOT gating): {'lean_agreement': 2, 'lean_difference': 5, 'lean_both_undecodable': 1}; Lean≠fork rows: 6: minimal/073-exit.libc.c, minimal/097-null-ptr-arith.undef.c, debug/ub-static-reject.c, bytes/byte_is_not_char.c, immaculate/nolibc/g5-decode-question, immaculate/libc/g5-escape-roundtrip
+Independent oracle: subset_passed; {'semantic_agreement': 4, 'matching_failure': 4}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/.tmp/audit/with-lean-subset/report.json

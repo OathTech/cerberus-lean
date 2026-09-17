@@ -1,0 +1,23 @@
+deleted rows: 21 ; cases in the two evidence files: 25
+MISSING from o1-raw-diffs evidence: minimal/097-null-ptr-arith.undef.c (re-run fresh instead — see check_deleted_rows_fresh.py)
+OK  immaculate/nolibc/f3-raw-high-byte-char-const: status=difference stderr-changed=8/8 stdout-diff=0 lines 
+OK  immaculate/nolibc/f3-raw-high-byte-int: status=difference stderr-changed=12/12 stdout-diff=0 lines 
+OK  immaculate/nolibc/f3-raw-high-byte-uchar: status=difference stderr-changed=12/12 stdout-diff=0 lines 
+OK  immaculate/nolibc/g4-bswap64-overflow: status=difference stderr-changed=10/10 stdout-diff=0 lines 
+OK  immaculate/nolibc/g5-decode-multichar: status=difference stderr-changed=8/8 stdout-diff=0 lines 
+OK  immaculate/nolibc/g5-decode-question: status=difference stderr-changed=8/8 stdout-diff=0 lines 
+OK  immaculate/nolibc/offsetof-union-member: status=difference stderr-changed=8/8 stdout-diff=0 lines 
+OK  immaculate/nolibc/zd-e2-ptr-string-literals: status=difference stderr-changed=16/16 stdout-diff=0 lines 
+OK  immaculate/nolibc/zd-z2fl03-nan-to-int: status=difference stderr-changed=14/14 stdout-diff=0 lines 
+OK  immaculate/nolibc/zd-z2m01-aligned-alloc-zero-nolibc: status=difference stderr-changed=13/13 stdout-diff=0 lines 
+OK  immaculate/nolibc/zd-z2m02-device-funptr-call: status=difference stderr-changed=13/13 stdout-diff=0 lines 
+OK  immaculate/libc/g2-memcmp-uninit: status=difference stderr-changed=12/12 stdout-diff=0 lines 
+OK  immaculate/libc/s4b-memcmp-hugesize: status=difference stderr-changed=9/9 stdout-diff=0 lines 
+OK  immaculate/libc/zd-z2f04-closedir: status=difference stderr-changed=8/8 stdout-diff=0 lines 
+OK  immaculate/libc/zd-z2m01-aligned-alloc-zero-zero: status=difference stderr-changed=13/13 stdout-diff=0 lines 
+OK  immaculate/libc/zd-z2m01-aligned-alloc-zero: status=difference stderr-changed=13/13 stdout-diff=0 lines 
+OK  ci/0120-addition_null_pointer.error.c: status=difference stderr-changed=15/15 stdout-diff=none 
+OK  ci/0121-addition_null_pointer_zero.error.c: status=difference stderr-changed=15/15 stdout-diff=none 
+OK  ci/0258-array-function-type.error.c: status=difference stderr-changed=6/6 stdout-diff=none 
+OK  ci/0270-invalid-compound-literal.error.c: status=difference stderr-changed=6/6 stdout-diff=none 
+BAD count: 0

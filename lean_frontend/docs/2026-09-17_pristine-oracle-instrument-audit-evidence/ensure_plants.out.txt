@@ -1,0 +1,70 @@
+## E0 static: delete/overwrite primitives in the script
+(none)
+## E1 existing-but-EMPTY directory
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+ensure_independent_oracle: REFUSED — /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/.tmp/audit/plants/ensure/empty exists but has no manifest.json (a partial or foreign directory). Nothing was deleted or overwritten. Remove it yourself and rerun.
+rc=1
+drwxrwxr-x 3 dev dev 4096 Sep 17 01:56 ..
+## E2 garbage manifest
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+ensure_independent_oracle: REFUSED — existing build at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/.tmp/audit/plants/ensure/garbage is INVALID: Expecting value: line 1 column 1 (char 0)
+  Nothing was deleted or overwritten. To rebuild, remove that directory yourself and rerun.
+rc=1
+file intact
+## E3 corrupted COPY of the real manifest (status flipped)
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+ensure_independent_oracle: REFUSED — existing build at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/.tmp/audit/plants/ensure/copy-status is INVALID: independent build is incomplete or has wrong source pins
+  Nothing was deleted or overwritten. To rebuild, remove that directory yourself and rerun.
+rc=1
+manifest.json
+## E4 corrupted COPY (pin doctored)
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+ensure_independent_oracle: REFUSED — existing build at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/.tmp/audit/plants/ensure/copy-pin is INVALID: independent build is incomplete or has wrong source pins
+  Nothing was deleted or overwritten. To rebuild, remove that directory yourself and rerun.
+rc=1
+## E5 verbatim COPY of the real manifest in another directory (archives absent there)
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+ensure_independent_oracle: REFUSED — existing build at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/.tmp/audit/plants/ensure/copy-verbatim is INVALID: [Errno 2] No such file or directory: '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/.tmp/audit/plants/ensure/copy-verbatim/cerberus.tar'
+  Nothing was deleted or overwritten. To rebuild, remove that directory yourself and rerun.
+rc=1
+## E6 --no-build on an ABSENT path
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+ensure_independent_oracle: ABSENT — no build at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/.tmp/audit/plants/ensure/absent-nobuild (--no-build: not building)
+rc=1
+no directory created
+## E7 bad --lem-repo
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+ensure_independent_oracle: --lem-repo /nonexistent does not contain 3802cb04b53d5f1096a464e51ecbfb2a750a7ccd: not a directory
+rc=1
+no directory created
+## E8 CERB_LEM_REPO pointing at a dir without the commit
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+ensure_independent_oracle: CERB_LEM_REPO=/tmp does not contain 3802cb04b53d5f1096a464e51ecbfb2a750a7ccd: fatal: not a git repository (or any of the parent directories): .git
+rc=1
+no directory created
+## E9 CERB_CERBERUS_REPO pointing at a dir without the commit
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+ensure_independent_oracle: CERB_CERBERUS_REPO=/tmp does not contain b9aeedcb4dd438763b0eef7f95ac19e93875d7de: fatal: not a git repository (or any of the parent directories): .git
+rc=1
+no directory created
+## E10 CERB_INDEPENDENT_MANIFEST -> garbage (no --out)
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+ensure_independent_oracle: REFUSED — existing build at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/.tmp/audit/plants/ensure/garbage is INVALID: Expecting value: line 1 column 1 (char 0)
+  Nothing was deleted or overwritten. To rebuild, remove that directory yourself and rerun.
+rc=1
+## E11 the real standing build: VALID, idempotent (manifest mtime unchanged)
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+ensure_independent_oracle: VALID standing build: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/.validation-foundations/independent-oracle-v2/manifest.json (cerberus b9aeedcb4, lem 3802cb0)
+rc=0
+manifest untouched
+## E12 manifest path is a DIRECTORY named manifest.json
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+ensure_independent_oracle: REFUSED — /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/.tmp/audit/plants/ensure/dirmanifest exists but has no manifest.json (a partial or foreign directory). Nothing was deleted or overwritten. Remove it yourself and rerun.
+rc=1
+## E13 hook syntax + set -e
+bash -n OK
+12:set -euo pipefail
+88:  # CERB_SKIP_INDEPENDENT_ORACLE=1. Fail-noisy: a refused/failed build (or a branch predating the
+90:  [[ -n "${CERB_SKIP_INDEPENDENT_ORACLE:-}" ]] || "$PROJ/scripts/ce" python3 "$DST/scripts/ensure_independent_oracle.py"
+## E14 recorded hook diff vs the live container script
+hook lines identical to the recorded diff

@@ -1,0 +1,30 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+check_driver_fresh: oracle OK (bin 7336b2e35e761cd553dcd196e944da00bcd981a0a2c512d10926c3bb91723478, src 98ad48b592a222a21e4619c5ce03652fc6a44c0a67c6b02cb222e1d40b1c701d)
+check_driver_fresh: oracle OK (bin 7336b2e35e761cd553dcd196e944da00bcd981a0a2c512d10926c3bb91723478, src 98ad48b592a222a21e4619c5ce03652fc6a44c0a67c6b02cb222e1d40b1c701d)
+check_driver_fresh: oracle OK (bin 7336b2e35e761cd553dcd196e944da00bcd981a0a2c512d10926c3bb91723478, src 98ad48b592a222a21e4619c5ce03652fc6a44c0a67c6b02cb222e1d40b1c701d)
+check_driver_fresh: oracle OK (bin 7336b2e35e761cd553dcd196e944da00bcd981a0a2c512d10926c3bb91723478, src 98ad48b592a222a21e4619c5ce03652fc6a44c0a67c6b02cb222e1d40b1c701d)
+check_driver_fresh: oracle OK (bin 7336b2e35e761cd553dcd196e944da00bcd981a0a2c512d10926c3bb91723478, src 98ad48b592a222a21e4619c5ce03652fc6a44c0a67c6b02cb222e1d40b1c701d)
+check_driver_fresh: oracle OK (bin 7336b2e35e761cd553dcd196e944da00bcd981a0a2c512d10926c3bb91723478, src 98ad48b592a222a21e4619c5ce03652fc6a44c0a67c6b02cb222e1d40b1c701d)
+--- node-row-withheld: rc=1 status=failed counts={'incomplete': 1}
+    Independent oracle scope: subset (--only); 1 rows in 31.3s; source unchanged: True
+    Independent oracle: failed; {'incomplete': 1}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/.tmp/audit/plants/e2e/node-row-withheld/report.json
+EXPECT rc 1, status failed, incomplete 1 -> OK
+--- forged-fork-124-row: rc=1 status=incomplete counts=None
+    INDEPENDENT ORACLE INCOMPLETE: register row 'multi_tu_tray/node': a fork-side incomplete process (status 124) is never admissible
+EXPECT rc 1, refused at load (INCOMPLETE), no rows -> OK
+--- row-names-absent-case: rc=1 status=incomplete counts=None
+    INDEPENDENT ORACLE INCOMPLETE: reviewed difference refers to a case absent from the corpus: multi_tu_tray/does-not-exist
+EXPECT rc 1 INCOMPLETE (absent case) -> OK
+--- empty-only: rc=1 status=incomplete counts=None
+    INDEPENDENT ORACLE INCOMPLETE: empty independent oracle selection
+EXPECT rc 1 INCOMPLETE (empty selection) -> OK
+--- empty-shard: rc=1 status=incomplete counts=None
+    INDEPENDENT ORACLE INCOMPLETE: empty independent oracle selection
+EXPECT rc 1 INCOMPLETE (empty shard) -> OK
+--- subset-with-row: rc=0 status=subset_passed counts={'reviewed_difference': 3}
+    Independent oracle scope: subset (--only); 3 rows in 31.4s; source unchanged: True
+    Independent oracle: subset_passed; {'reviewed_difference': 3}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/.tmp/audit/plants/e2e/subset-with-row/report.json
+EXPECT rc 0 subset_passed reviewed_difference 3 -> OK
+--- missing-manifest: rc=1 status=incomplete counts=None
+    INDEPENDENT ORACLE INCOMPLETE: [Errno 2] No such file or directory: '/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/pristine-oracle-instrument/.tmp/audit/plants/e2e/no-such-manifest.json'
+EXPECT rc 1 INCOMPLETE (missing manifest) -> OK
