@@ -1,0 +1,44 @@
+check_driver_fresh: oracle OK (bin 4d77eec85ce3e388a7a8d2edad00c6ba5ffd601cbcdb2e8d06d8bbe4cfee067b, src 98ad48b592a222a21e4619c5ce03652fc6a44c0a67c6b02cb222e1d40b1c701d)
+PLANT MODE: hermetic register/compare plants; a real passing pair, then the fork verdict mutated; a real registered fork≠pristine difference with its row withheld
+PLANT OK   register/schema-1: register: schema must be 2 (found 1); schema-1 rows carry no class/citation and are refused
+PLANT OK   register/missing-class: register row 'multi_tu_tray/node': keys must be exactly ['citation', 'class', 'fork', 'rationale', 'upstream'] (found ['citation', 'fork', 'rationale', 'upstream'])
+PLANT OK   register/unknown-class: register row 'multi_tu_tray/node': unknown class 'failure-text'; permitted: ['diagnostic-text', 'resource', 'missing-feature', 'shared-model-fix']
+PLANT OK   register/missing-citation: register row 'multi_tu_tray/node': keys must be exactly ['citation', 'class', 'fork', 'rationale', 'upstream'] (found ['class', 'fork', 'rationale', 'upstream'])
+PLANT OK   register/empty-citation: register row 'multi_tu_tray/node': citation must be a non-empty string or list of them
+PLANT OK   register/nonexistent-citation: register row 'multi_tu_tray/node': citation 'lean_frontend/docs/upstream-tray/00-does-not-exist.md' is neither an existing repo file nor an ISO-fix register id present in VALIDATION.md §2
+PLANT OK   register/unknown-iso-fix-id: register row 'multi_tu_tray/node': citation 'R99' is neither an existing repo file nor an ISO-fix register id present in VALIDATION.md §2
+PLANT OK   register/unknown-key: register row 'multi_tu_tray/node': keys must be exactly ['citation', 'class', 'fork', 'rationale', 'upstream'] (found ['citation', 'class', 'fork', 'note', 'rationale', 'upstream'])
+PLANT OK   register/empty-rationale: register row 'multi_tu_tray/node': rationale must be a non-empty string
+PLANT OK   register/identical-signatures: register row 'multi_tu_tray/node': upstream and fork signatures are identical — the row records no difference
+PLANT OK   register/fork-timeout: register row 'multi_tu_tray/node': a fork-side incomplete process (status 124) is never admissible
+PLANT OK   register/fork-kill: register row 'multi_tu_tray/node': a fork-side incomplete process (status 137) is never admissible
+PLANT OK   register/pristine-kill: register row 'multi_tu_tray/node': a pristine-side signal kill (137) is never admissible
+PLANT OK   register/pristine-timeout-under-diagnostic-text: register row 'multi_tu_tray/node': a pristine-side timeout (124) is admissible only through a row of class ['resource', 'shared-model-fix'] whose citation explains the non-termination, not 'diagnostic-text'
+PLANT OK   register/malformed-sha: register row 'multi_tu_tray/node': fork.stdout_sha256 must be a lowercase sha256 hex digest
+PLANT OK   register/committed-loads: 3 rows, every class/citation valid
+PLANT OK   compare/pristine-timeout+admitting-row: got 'reviewed_difference', want 'reviewed_difference'
+PLANT OK   compare/pristine-timeout+diagnostic-row: got 'incomplete', want 'incomplete'
+PLANT OK   compare/pristine-timeout+no-row: got 'incomplete', want 'incomplete'
+PLANT OK   compare/pristine-timeout+moved-fork-signature: got 'incomplete', want 'incomplete'
+PLANT OK   compare/fork-timeout+row: got 'incomplete', want 'incomplete'
+PLANT OK   compare/pristine-kill+row: got 'incomplete', want 'incomplete'
+PLANT OK   compare/fork-kill: got 'incomplete', want 'incomplete'
+PLANT OK   compare/stale-row-pair-now-agrees: got 'difference', want 'difference'
+PLANT OK   compare/row-pin-moved: got 'difference', want 'difference'
+PLANT OK   compare/one-sided-pristine-timeout-no-row: got 'incomplete', want 'incomplete'
+PLANT OK   compare/one-sided-fork-timeout: got 'incomplete', want 'incomplete'
+PLANT OK   compare/both-sides-timeout: got 'matching_incomplete', want 'matching_incomplete'
+PLANT OK   compare/both-sides-timeout+row-irrelevant: got 'matching_incomplete', want 'matching_incomplete'
+PLANT OK   compare/both-sides-kill: got 'incomplete', want 'incomplete'
+PLANT OK   compare/timeout-vs-kill: got 'incomplete', want 'incomplete'
+PLANT OK   projection/frame-positions-only: got 'matching_failure', want 'matching_failure'
+PLANT OK   projection/exception-text-differs: got 'difference', want 'difference'
+PLANT OK   projection/frame-function-differs: got 'difference', want 'difference'
+PLANT OK   projection/non-frame-line-position-differs: got 'difference', want 'difference'
+PLANT OK   projection/stdout-beside-crash-not-matching: got 'difference', want 'difference'
+PLANT OK   projection/raw-stderr-retained: got True, want True
+1/3 semantic_agreement: minimal/001-return-literal.c (pristine 0.0s, fork 0.0s)
+2/3 plant_rejected: plant/unexpected-verdict (pristine 0.0s, fork 0.0s)
+3/3 plant_ok: plant/withheld-row:multi_tu_tray/arr-2-2-return — multi_tu_tray/arr-2-2-return: with its register row -> reviewed_difference; row withheld -> difference (completed semantic observations differ)
+Independent oracle scope: plant; 40 rows in 1.4s; source unchanged: True
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 38}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pristine-oracle-instrument/.tmp/o5-gate/plant/report.json

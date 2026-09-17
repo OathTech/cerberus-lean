@@ -123,10 +123,16 @@ list of fork≠pristine behaviours, and LADDER Tier B row 10
 corpus the fork-vs-Lean lanes walk, every unexplained difference RED, a
 pristine-side non-termination admitted only through a cited
 `resource`/`shared-model-fix` row (never the fork side), stale rows RED.
-Today the inventory is 3 `shared-model-fix` rows (the cross-TU struct-value
-cases of upstream-tray drafts 37/38/39, where the fork answers `Specified(7)`
-and pristine loops or rejects) and 21 `diagnostic-text` rows (both engines
-die with the same exception; only backtrace frame positions differ). A
+Today the inventory is exactly 3 `shared-model-fix` rows (the cross-TU
+struct-value cases of upstream-tray drafts 37/38/39, where the fork answers
+`Specified(7)` and pristine loops or rejects); `diagnostic-text` is a
+permitted class with zero rows — [USER 2026-09-17] ("(2) agree"): the lane's
+diagnostic projection normalises source positions inside OCaml backtrace
+frames, so a both-crash pair whose frames differ only there is a
+`matching_failure`, not a row; and [USER 2026-09-17] ("(1) agree"): a
+BOTH-sides timeout at the lane's own bound is the counted, non-failing
+`matching_incomplete` class, never a row (one-sided timeouts and signal kills
+stay fatal). A
 SHARED-MODEL SLICE runs the three-way `pristine | fork | lean` report
 (`test_upstream_oracle.py --with-lean`, LADDER Tier C row C5) over the full
 pristine corpus and may add register rows only with a citation; a
@@ -406,28 +412,37 @@ by a cited re-record.
   `Specified(7)` — ISO C11 §6.2.7#1's value, gcc's exit. The rows retire
   (the cases move into `tests/multi_tu/`) when upstream fixes the drafts.
   Row 6b pins fork OCaml == Lean on the same inputs.
-- **`diagnostic-text` (21 rows; citation `docs/2026-09-06_independent-oracle-
-  and-fork-pins.md:85-93` + the owning lane's baseline row):** both engines
-  die with the SAME uncaught exception, exit 125, empty stdout; the only
-  differing bytes are backtrace frame positions (`line N`/`characters A-B`
-  in generated `.ml` files shifted by the fork's `.lem` edits, `lem_list.ml`
-  frames from the different Lem runtime, `pipeline.ml`/`main.ml` frames from
-  the fork's driver additions) — `minimal/097`, 16 `tests/immaculate`
-  both-crash pins, 4 `tests/ci` `.error.c` rows. Class (a) shape. These pins
-  move on every generated-line shift; whether such pins should instead
-  normalise backtrace positions is the deferred question of
-  `docs/2026-09-11_semantics-audit-repairs-record.md:1752` (an operator
-  decision — it changes what the lane admits).
-- **Standing, UNREGISTERED observations (reporting rows, not the gate):**
-  `tests/ci` `0023-jump1.c`/`0025-jump3.c` and 21 of the first csmith
-  shard's 50 programs time out on BOTH engines at the owning lane's bound
-  (30 s / 15 s) — a both-sides timeout is admissible under no register
-  class (the fork side never), so `--corpus ci` and `--corpus csmith` are
-  Tier C reporting rows whose exit is nonzero while these stand; whether a
-  both-sides timeout deserves an admitting class is an open operator
-  question (record §O1, S5). csmith's both-crash rows (the same
-  backtrace-position class) are not pinned row by row: volume makes the
-  normalisation question, not pins, the instrument.
+- **`diagnostic-text` (0 rows; a permitted class).** RESOLVED [USER
+  2026-09-17] ("(2) agree", on the orchestrator's question — record §7): the
+  lane's diagnostic projection — the one `matching_failure` and the
+  register's stderr signature already used (the `Time spent` trailer removed)
+  — additionally normalises `line N[-M], characters A-B` positions inside
+  OCaml backtrace frames (`Raised at` / `Raised by primitive operation at` /
+  `Called from` / `Re-raised at … in file "…"`) in BOTH engines' stderr; the
+  exception text, the frames' function and file names, non-frame lines and
+  every stdout byte are compared untouched, and the raw stderr is retained in
+  every capture. A both-crash pair whose frames differ only in positions
+  (generated `.ml` line numbers shifted by the fork's `.lem` edits,
+  `lem_list.ml` frames from the different Lem runtime, `pipeline.ml`/`main.ml`
+  frames from the fork's driver additions) is therefore a `matching_failure`
+  — `minimal/097`, the 16 `tests/immaculate` both-crash pins and the 4
+  `tests/ci` `.error.c` rows all read so (row 10 `matching_failure` 11 → 28,
+  C6 102 → 106) and the 21 rows that had pinned them were DELETED. A genuine
+  exception-TEXT difference still needs a cited row of this class
+  (plant-tested: an exception-text, frame-function or non-frame-position
+  difference stays `difference`).
+- **`matching_incomplete` — a REPORTED class, never a register row.** RESOLVED
+  [USER 2026-09-17] ("(1) agree"): when BOTH engines exceed the owning lane's
+  own bound (status 124 on both sides) the case is counted
+  `matching_incomplete` — never agreement, not a failure; any ONE-sided
+  timeout (either side) and any 137 stay `incomplete` and fatal exactly as
+  before, and no register row is written for a matching timeout (the loader
+  still refuses fork-side 124/137). Standing members: `tests/ci`
+  `0023-jump1.c`/`0025-jump3.c` (30 s) and 21 of the first csmith shard's 50
+  programs (15 s) — the fork lanes' own `CERB_SKIP` rows. `--corpus ci` and
+  `--corpus csmith --shard K/34` are Tier C reporting rows that now exit 0
+  (C6: 134 agree / 2 `matching_incomplete` / 106 `matching_failure`; shard
+  1/34: 26 / 21 / 3).
 
 ## 4. What is compared, against what
 
@@ -459,8 +474,12 @@ timeout of the lane that owns it (cited in `corpus()`); the fork-only
 interfaces (`--cabs-json`, `--call` and the wrapper TUs that mirror it,
 `--pp=core` pin derivations, `--batch-alloc-census`) are named as not
 applicable. The register (§3) is the exception list; everything else must
-agree — semantically through the shared codec, or as the same front-end
-rejection under the diagnostic projection. This separates "our fork's
+agree — semantically through the shared codec, or as the same failure under
+the diagnostic projection (the `Time spent` trailer removed; OCaml backtrace
+frame positions normalised, [USER 2026-09-17]); a both-sides timeout at the
+lane's own bound is counted `matching_incomplete` ([USER 2026-09-17]) — never
+agreement, not a failure — while one-sided timeouts and signal kills stay
+fatal. This separates "our fork's
 behaviour" from "upstream's behaviour": fork regressions and upstream bugs
 are attributed, not conflated, and a shared-model change cannot move the
 oracle and Lean together unnoticed. **Three engines on one input:**
@@ -503,10 +522,10 @@ lanes, with their recorded states:
 | `test_csmith_corpus.sh` | 1,669 in-tree csmith programs | classified pinned baseline (sharded; reporting tier full-pass): 0 MISMATCH/DIFF rows; the non-MATCH rows are 499 `CERB_SKIP` (oracle-side) + 9 `TIMEOUT` (derived from `scripts/exec_csmith_corpus_baseline.txt` at `928aa1e76`; the header's per-row narrative is the arc-13 record) |
 | `test_ci_sweep.sh` | 2,186-file upstream CI suite | [Repaired candidate measurement](docs/2026-09-06_ci-reporting-results.md): 1,359 matching observations, one UB-location difference, three filesystem refusals, three Lean timeouts and 820 oracle-side non-comparisons. All 15 fresh TSVs/raw records are archived. The default TSVs under `tests/ci_sweep/results/` remain historical (14 from August 22, TCC from September 2); no automatic baseline adoption. |
 | `fuzz_csmith.sh` | generated csmith programs | deterministic seeded fuzz kit (reporting tier) |
-| `test_upstream_oracle.py` (+ `--plant`) | pristine upstream `b9aeedcb4` vs fork OCaml over the Tier B row-10 corpus (855 cases: the six Tier A exec corpora, both multi-TU roots, 213 CN rows, uri ×2, immaculate, verify + corpus, 3 CLI rows) | **Tier B row 10 GATE**: `passed; {'semantic_agreement': 822, 'reviewed_difference': 20, 'matching_failure': 11, 'interface_agreement': 2}` at WP-O (2026-09-16); the 20 reviewed rows are the register's (§3); plants: 16 doctored registers rejected at load, the compare() incomplete/stale matrix, a fork-verdict mutation and a REAL registered difference with its row withheld → RED |
+| `test_upstream_oracle.py` (+ `--plant`) | pristine upstream `b9aeedcb4` vs fork OCaml over the Tier B row-10 corpus (855 cases: the six Tier A exec corpora, both multi-TU roots, 213 CN rows, uri ×2, immaculate, verify + corpus, 3 CLI rows) | **Tier B row 10 GATE**: `passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 3, 'interface_agreement': 2}` at WP-O O5 (2026-09-17; before the two rulings: 822 / 11 / 20 / 2); the 3 reviewed rows are the register's (§3); plants: 16 doctored registers rejected at load, the compare() timeout/kill/stale matrix (both-sides 124 → `matching_incomplete`, one-sided and 137 fatal), the projection plants (frame positions only → `matching_failure`; exception text / frame function / non-frame position → `difference`), a fork-verdict mutation and a REAL registered difference with its row withheld → RED |
 | `test_upstream_oracle.py --corpus libxml2_chvalid` | pristine vs fork on the 4 chvalid slices (the fork lane's flags and 300 s bound) | **Tier B GATE**: 4/4 `semantic_agreement` (~7 min) |
 | `test_upstream_oracle.py --with-lean` | the same corpus, three engines | Tier C row C5, report-only Lean column: 813 agree / 28 difference / 12 both-undecodable / 2 n/a at WP-O, all 40 Lean≠fork rows recorded pins (§4) |
-| `test_upstream_oracle.py --corpus ci` / `--corpus csmith --shard K/34` | `tests/ci` (242 cases) / the 1669 staged csmith programs | Tier C reporting rows; rc nonzero while both-sides timeouts stand (§3): ci 134 agree / 102 matching_failure / 4 reviewed / 2 both-sides 30 s timeouts; csmith shard 1/34: 26 / 3 backtrace-position crashes / 21 both-sides 15 s timeouts, ~11 min per shard (~6 h for the corpus — never one step) |
+| `test_upstream_oracle.py --corpus ci` / `--corpus csmith --shard K/34` | `tests/ci` (242 cases) / the 1669 staged csmith programs | Tier C reporting rows, rc 0 since [USER 2026-09-17]: ci `passed; {'semantic_agreement': 134, 'matching_incomplete': 2, 'matching_failure': 106}`; csmith shard 1/34 `subset_passed; {'semantic_agreement': 26, 'matching_failure': 3, 'matching_incomplete': 21}`, ~11 min per shard (~6 h for the corpus — never one step) |
 
 Lane semantics worth knowing:
 

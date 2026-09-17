@@ -178,6 +178,44 @@ def load_register(path):
     return data['cases']
 
 
+# THE diagnostic projection — the one both `matching_failure` and the register's
+# stderr signature use. (1) backend/driver/main.ml's elapsed-time trailer is
+# instrumentation: its exact whole-line grammar is removed. (2) [USER 2026-09-17]
+# ("(2) agree"): inside OCaml backtrace FRAMES only — `Raised at` / `Raised by
+# primitive operation at` / `Called from` / `Re-raised at` … `in file "…"[ (inlined)],
+# line N[-M], characters A-B` — the source positions are normalised to
+# `line N, characters A-B`: generated-code line numbers shift with every .lem
+# edit and the two Lem runtimes' lem_list.ml frames differ, so a both-crash pair
+# whose frames differ ONLY in positions is the same failure. The exception text,
+# the frame's function and file names, every non-frame line and every stdout byte
+# are compared untouched; the raw stderr is retained in every capture.
+TIME_SPENT = re.compile(rb'^Time spent: [0-9]+\.[0-9]+ seconds\n', re.M)
+FRAME_POSITION = re.compile(
+    rb'^( *(?:Raised at|Raised by primitive operation at|Called from|Re-raised at) [^\n]*? in file "[^"\n]*"'
+    rb'(?: \(inlined\))?), lines? [0-9]+(?:-[0-9]+)?, characters [0-9]+-[0-9]+$', re.M)
+
+
+def project_diagnostics(stderr: bytes) -> bytes:
+    return FRAME_POSITION.sub(rb'\1, line N, characters A-B', TIME_SPENT.sub(b'', stderr))
+
+
+def record_of(prefix, status, seconds=0.0, command=()):
+    """The comparison record of a completed capture at `prefix` (.stdout/.stderr/.status written)."""
+    return {'status': status, 'seconds': round(seconds, 3),
+            'stdout_sha256': sha(prefix.with_suffix('.stdout')),
+            'stderr_sha256': sha(prefix.with_suffix('.stderr')),
+            'diagnostic_sha256': hashlib.sha256(project_diagnostics(prefix.with_suffix('.stderr').read_bytes())).hexdigest(),
+            'capture': str(prefix), 'command': list(command)}
+
+
+def synthetic_record(prefix, status, stdout: bytes, stderr: bytes):
+    """A capture written from given bytes (plants only): the same files and record as capture()."""
+    prefix.with_suffix('.stdout').write_bytes(stdout)
+    prefix.with_suffix('.stderr').write_bytes(stderr)
+    prefix.with_suffix('.status').write_text(str(status) + '\n')
+    return record_of(prefix, status)
+
+
 def capture(prefix, command, env, limit):
     started = time.monotonic()
     command = ['timeout', str(limit), *map(str, command)]
@@ -186,16 +224,7 @@ def capture(prefix, command, env, limit):
         proc = subprocess.run(command, cwd=ROOT, env=env, stdout=stdout, stderr=stderr)
     status = proc.returncode if proc.returncode >= 0 else 128 - proc.returncode
     prefix.with_suffix('.status').write_text(str(status) + '\n')
-    diagnostics = prefix.with_suffix('.stderr').read_bytes()
-    # backend/driver/main.ml's elapsed-time trailer is instrumentation.
-    # Remove only its exact whole-line grammar from diagnostic comparison;
-    # preserve all original bytes in the capture and all semantic fields.
-    projected = re.sub(rb'^Time spent: [0-9]+\.[0-9]+ seconds\n', b'', diagnostics, flags=re.M)
-    return {'status': status, 'seconds': round(time.monotonic() - started, 3),
-            'stdout_sha256': sha(prefix.with_suffix('.stdout')),
-            'stderr_sha256': sha(prefix.with_suffix('.stderr')),
-            'diagnostic_sha256': hashlib.sha256(projected).hexdigest(),
-            'capture': str(prefix), 'command': command}
+    return record_of(prefix, status, time.monotonic() - started, command)
 
 
 def signature(record):
@@ -204,10 +233,17 @@ def signature(record):
 
 def compare(left, right, kind, exception=None):
     """left = pristine upstream, right = fork. Returns (status, reason)."""
-    # No exception may admit a fork-side incomplete process, a signal kill on
-    # either side, or a silent success.
-    if right['status'] in INCOMPLETE_STATUSES or left['status'] == 137:
-        return 'incomplete', 'timeout or signal termination'
+    # A signal kill (137) on either side is never admitted.
+    if left['status'] == 137 or right['status'] == 137:
+        return 'incomplete', 'signal termination (137) on either side is never admitted'
+    # [USER 2026-09-17] ("(1) agree"): BOTH engines exceeded the lane's own bound —
+    # the REPORTED class `matching_incomplete`: counted, never agreement, not a
+    # failure; no register row is ever written for it (a row is irrelevant here).
+    # Any ONE-sided timeout stays `incomplete` and fatal exactly as before.
+    if left['status'] == 124 and right['status'] == 124:
+        return 'matching_incomplete', 'both engines exceeded the lane bound; counted, not agreement'
+    if right['status'] == 124:
+        return 'incomplete', 'fork-side timeout is never admitted'
     if left['status'] == 124:
         # A pristine-side timeout is admitted ONLY by a reviewed row of an
         # incomplete-admitting class binding both signatures (charter O1: the
@@ -604,8 +640,50 @@ def hermetic_plants(register_path):
         ('compare/stale-row-pair-now-agrees', compare(done, done, 'batch', dict(admitting, upstream=other))[0], 'difference'),
         ('compare/row-pin-moved', compare(other, done, 'batch', dict(admitting, upstream=done, fork=other))[0], 'difference'),
     ]
-    for name, got, want in checks:
-        results.append((name, got == want, f'got {got!r}, want {want!r}'))
+    checks += [
+        # [USER 2026-09-17] (1): the timeout matrix — both-sides 124 is the counted, non-failing
+        # class; every one-sided timeout and every 137 stays fatal; a row cannot change that.
+        ('compare/one-sided-pristine-timeout-no-row', compare(timeout_, done, 'batch', None)[0], 'incomplete'),
+        ('compare/one-sided-fork-timeout', compare(done, timeout_, 'batch', None)[0], 'incomplete'),
+        ('compare/both-sides-timeout', compare(timeout_, timeout_, 'batch', None)[0], 'matching_incomplete'),
+        ('compare/both-sides-timeout+row-irrelevant', compare(timeout_, timeout_, 'batch', admitting)[0], 'matching_incomplete'),
+        ('compare/both-sides-kill', compare(killed, killed, 'batch', None)[0], 'incomplete'),
+        ('compare/timeout-vs-kill', compare(timeout_, killed, 'batch', None)[0], 'incomplete'),
+    ]
+    # [USER 2026-09-17] (2): the diagnostic projection — synthetic both-crash captures.
+    envelope = (b'cerberus: internal error, uncaught exception:\n'
+                b'          Failure("TODO(pure shift a null pointer should be undefined behaviour), offset:4")\n'
+                b'          Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33\n'
+                b'          Called from Cerb_frontend__Translation.translate_expression.(fun) in file '
+                b'"ocaml_frontend/generated/translation.ml", line 2987, characters 35-59\n'
+                b'          Called from Lem_list.map in file "lem_list.ml" (inlined), line 178, characters 22-39\n'
+                b'          Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 261-287, characters 8-15\n')
+    shifted = (envelope.replace(b'line 2987, characters 35-59', b'line 2990, characters 35-59')
+               .replace(b'line 178, characters 22-39', b'line 171, characters 22-39')
+               .replace(b'lines 261-287, characters 8-15', b'lines 309-335, characters 8-15'))
+    text_changed = envelope.replace(b'offset:4', b'offset:0')
+    frame_renamed = envelope.replace(b'Lem_list.map', b'Lem_list.count_map')
+    lead_a = b'internal error: failed at line 5\n' + envelope
+    lead_b = b'internal error: failed at line 6\n' + envelope
+    with tempfile.TemporaryDirectory(prefix='projection-plants-', dir=ROOT / '.tmp') as tmp:
+        tmp = Path(tmp)
+        a = synthetic_record(tmp / 'a', 125, b'', envelope)
+        b = synthetic_record(tmp / 'b', 125, b'', shifted)
+        c = synthetic_record(tmp / 'c', 125, b'', text_changed)
+        d = synthetic_record(tmp / 'd', 125, b'', frame_renamed)
+        e = synthetic_record(tmp / 'e', 125, b'', lead_a)
+        f = synthetic_record(tmp / 'f', 125, b'', lead_b)
+        g = synthetic_record(tmp / 'g', 125, b'Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}\n', envelope)
+        checks += [
+            ('projection/frame-positions-only', compare(a, b, 'batch', None)[0], 'matching_failure'),
+            ('projection/exception-text-differs', compare(a, c, 'batch', None)[0], 'difference'),
+            ('projection/frame-function-differs', compare(a, d, 'batch', None)[0], 'difference'),
+            ('projection/non-frame-line-position-differs', compare(e, f, 'batch', None)[0], 'difference'),
+            ('projection/stdout-beside-crash-not-matching', compare(a, g, 'batch', None)[0], 'difference'),
+            ('projection/raw-stderr-retained', a['stderr_sha256'] != b['stderr_sha256'] and a['diagnostic_sha256'] == b['diagnostic_sha256'], True),
+        ]
+        for name, got, want in checks:
+            results.append((name, got == want, f'got {got!r}, want {want!r}'))
     return results
 
 
@@ -639,7 +717,10 @@ def main():
               'scope': scope, 'corpus_selection': args.corpus, 'corpora': list(CORPORA[args.corpus]),
               'register_schema': REGISTER_SCHEMA, 'with_lean': args.with_lean,
               'lean_gating': 'none — the Lean column is a report; Lean-vs-fork is gated by its own lanes',
-              'diagnostic_projection': 'remove only ^Time spent: [0-9]+\\.[0-9]+ seconds newline; raw stderr retained',
+              'diagnostic_projection': 'remove the whole-line ^Time spent: <decimal> seconds trailer; normalise '
+                                       '`line N[-M], characters A-B` inside OCaml backtrace frames (Raised at / Raised by '
+                                       'primitive operation at / Called from / Re-raised at … in file "…") to `line N, '
+                                       'characters A-B` ([USER 2026-09-17]); raw stderr retained in every capture',
               'not_applicable': [
                   {'interface': '--cabs-json, --call, --batch-alloc-census',
                    'reason': 'fork extensions; absent from pristine upstream CLI'},
@@ -809,6 +890,7 @@ def main():
         report['seconds'] = round(time.monotonic() - started, 1)
         report['source_after'] = source_identity()
         report['source_unchanged'] = report['source_after'] == report['source']
+        # `matching_incomplete` (both-sides timeout, [USER 2026-09-17]) is counted, never fatal.
         failed = any(row['status'] in ('difference', 'incomplete', 'plant_failed') for row in report['rows']) \
             or report.get('library_status') == 'failed' or not report['source_unchanged']
         report['status'] = ('failed' if failed else 'plants_passed' if args.plant else

@@ -14,13 +14,18 @@ fork OCaml oracle against the Lean pipeline, exactly as `tests/multi_tu/`.
 
 ## Why a separate corpus root, and when the cases move
 
-`tests/multi_tu/` is enumerated by the pristine-upstream lane
-(`scripts/test_upstream_oracle.py`, LADDER Tier B row 10), which FAILS on a timeout on
-either side. Pristine upstream (`b9aeedcb4`) does not terminate on `node` (draft 37,
-fixed in the fork 2026-09-10) and rejects every compatible cross-TU struct value at its
-exact-tag `PEmemberof` guard (draft 38, fixed in the fork here). These cases therefore
-live in this tray and move INTO `tests/multi_tu/` when upstream fixes the cited drafts
-(37/38/39). `tests/multi_tu/` and `scripts/upstream_oracle_differences.json` are untouched.
+Pristine upstream (`b9aeedcb4`) does not terminate on `node` (draft 37, fixed in the fork
+2026-09-10) and rejects every compatible cross-TU struct value at its exact-tag `PEmemberof`
+guard (draft 38, fixed in the fork here). Since WP-O (2026-09-16,
+`lean_frontend/docs/2026-09-16_pristine-oracle-instrument-record.md`) the pristine-upstream
+lane (`scripts/test_upstream_oracle.py`, LADDER Tier B row 10) WALKS this tray too, with the
+same engine invocation as `tests/multi_tu/`: the fork's three deviations from pristine here
+are admitted ONLY through the three cited `shared-model-fix` rows of
+`scripts/upstream_oracle_differences.json` (`node` — the one pristine-side timeout the register
+admits; `arr-2-2-return` and `arr-incomplete-ptr-return` — pristine's exact-tag rejection vs
+the fork's `Specified(7)`), each binding both engines' signatures; the other four cases agree
+on all three engines. The cases move INTO `tests/multi_tu/` and the rows retire when upstream
+fixes the cited drafts (37/38/39).
 
 ## The projection — row 6b only
 
