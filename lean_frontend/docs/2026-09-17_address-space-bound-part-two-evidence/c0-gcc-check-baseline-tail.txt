@@ -1,0 +1,11 @@
+# scripts/ce ./scripts/test_gcc_oracle.sh --check-baseline (full default corpus incl. the csmith tier) at the C0 tree
+2031:SUMMARY: total=2001 compared=1916 agree=1904 agree_nd=0 triaged=12 disagree=0 o2_agree=196 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=12 skip_lean_fail=13 skip_lean_timeout=11 skip_ub=47 triaged_addr=11 triaged_ub=1
+2033:Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/scripts/gcc_oracle_baseline.txt
+2035:Baseline check: 0 regression(s), 0 improvement(s)
+2036:gcc second-oracle lane OK
+2038:GCC DONE rc=0
+124:[112/2001] SKIP_LEAN_FAIL  tests/minimal/112-allocator-exhausted-single-request.c: msg: "MerrOther "
+125:[113/2001] SKIP_LEAN_FAIL  tests/minimal/113-allocator-exhausted-single-request-overlap.c: msg: "MerrOther "
+333:[321/2001] SKIP_LEAN_FAIL  tests/immaculate/nolibc/tray44-allocator-exhausted-single-request.c: msg: "MerrOther "
+334:[322/2001] SKIP_LEAN_FAIL  tests/immaculate/nolibc/tray44-allocator-exhausted-single-request-overlap.c: msg: "MerrOther "
+21:36.59 total

@@ -1,0 +1,5 @@
+# diff tests/immaculate/baseline.txt: mainline e64819de7 (before C0) -> C0 (after the lane's --record-baseline + the hand-restored header notes, record E7)
+126a127,128
+> tray44-allocator-exhausted-single-request MATCH | L=ERR:{msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
+> tray44-allocator-exhausted-single-request-overlap MATCH | L=ERR:{msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
+[diff rc=1]

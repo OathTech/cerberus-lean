@@ -1,0 +1,7 @@
+# generated/ content delta from the primed worktree after make lean-prelude-src (E8)
+24d23
+< 28e6fd45c8790aad25a1f4b14fd29d04836ff1752ca88e7f1fa32e7cb5cf20ca  CerbMem.lean
+199a199
+> e5f793b4af96580ba814a9446cf8ba142631e25919b546e66ef483d7fa5f1999  CerbMem.lean
+212a213
+> f5a966ab3f529c60d5b3fcf7f571a697187bfa1671263f49c2a42d09f981f909  CerbMemAllocatorProofs.lean

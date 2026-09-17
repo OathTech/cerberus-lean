@@ -1,0 +1,12 @@
+Building cerberus-lean (Lean)...
+  String → String
+✔ [285/285] Built «cerberus-lean»:exe (541ms)
+Build completed successfully (285 jobs).
+check_driver_fresh: recorded lean stamp (bin 1ee9313172da187a7c5b640387fbb7e9e9cb7d2198086673c46fa1a49b49813c, src 349217504826cd72f36d3e2f5170887268537fc40d3da88a54fd40e63886c03e)
+
+real	0m35.552s
+user	1m25.592s
+sys	0m6.535s
+build_lean rc=0
+Thu Sep 17 09:17:34 PM UTC 2026
+BUILD DONE rc=0

@@ -1,0 +1,23 @@
+# scripts/test_upstream_oracle.py --out .tmp/c0-row10-pre — BEFORE the two register rows (the two new immaculate cases RED)
+788:786/859 difference: immaculate/nolibc/tray44-allocator-exhausted-single-request-overlap (pristine 0.0s, fork 0.0s)
+789:787/859 difference: immaculate/nolibc/tray44-allocator-exhausted-single-request (pristine 0.0s, fork 0.0s)
+862:Independent oracle scope: tier-b; 859 rows in 114.7s; source unchanged: True
+863:Independent oracle: failed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 5, 'interface_agreement': 2, 'difference': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c0-row10-pre/report.json
+
+# harvested signatures (report.json rows)
+immaculate/nolibc/tray44-allocator-exhausted-single-request-overlap
+  upstream: {'status': 0, 'stdout_sha256': 'e17cb1bc5caaced5c76d327c79a9f2fe28871277a1adf293b0ffc6a747678edb', 'diagnostic_sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}
+  fork:     {'status': 1, 'stdout_sha256': 'ce222125f809d9e97ee1a7685c64eadff5eb5ce469ee81642a4ea4e16571f966', 'diagnostic_sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}
+immaculate/nolibc/tray44-allocator-exhausted-single-request
+  upstream: {'status': 0, 'stdout_sha256': '75f0c56b9343f53f5a0ea7250e832069fe6148c811b2213e6d9fba7b24aadd41', 'diagnostic_sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}
+  fork:     {'status': 1, 'stdout_sha256': 'ce222125f809d9e97ee1a7685c64eadff5eb5ce469ee81642a4ea4e16571f966', 'diagnostic_sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}
+
+# AFTER the rows: --out .tmp/c0-row10
+788:786/859 reviewed_difference: immaculate/nolibc/tray44-allocator-exhausted-single-request-overlap (pristine 0.0s, fork 0.0s)
+789:787/859 reviewed_difference: immaculate/nolibc/tray44-allocator-exhausted-single-request (pristine 0.0s, fork 0.0s)
+862:Independent oracle scope: tier-b; 859 rows in 113.7s; source unchanged: True
+863:Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c0-row10/report.json
+
+# --plant
+Independent oracle scope: plant; 53 rows in 1.5s; source unchanged: True
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c0-row10-plant/report.json

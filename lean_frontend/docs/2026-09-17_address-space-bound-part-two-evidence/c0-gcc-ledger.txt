@@ -1,0 +1,21 @@
+# scripts/test_gcc_oracle.sh --no-csmith tests/minimal tests/immaculate/nolibc — observation run for the four new rows
+125:[112/149] SKIP_LEAN_FAIL  tests/minimal/112-allocator-exhausted-single-request.c: msg: "MerrOther "
+126:[113/149] SKIP_LEAN_FAIL  tests/minimal/113-allocator-exhausted-single-request-overlap.c: msg: "MerrOther "
+151:[138/149] SKIP_LEAN_FAIL  tests/immaculate/nolibc/tray44-allocator-exhausted-single-request.c: msg: "MerrOther "
+152:[139/149] SKIP_LEAN_FAIL  tests/immaculate/nolibc/tray44-allocator-exhausted-single-request-overlap.c: msg: "MerrOther "
+188:SUMMARY: total=149 compared=103 agree=100 agree_nd=0 triaged=3 disagree=0 o2_agree=8 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=9 skip_lean_fail=8 skip_ub=27 triaged_addr=2 triaged_ub=1
+189:gcc second-oracle lane OK
+
+# diff scripts/gcc_oracle_baseline.txt (before -> after C0)
+7a8,11
+> # 2026-09-17 address-space-bound part two C0: 4 rows hand-inserted (sorted by key) at their observed statuses — the two tray-44 witnesses
+> #   tests/minimal/112-…/113-… (part one C1c; the lane reported them "new file (not in baseline, not fatal)") and their tests/immaculate/nolibc
+> #   tray44-* GATING copies (C0(a)); all four SKIP_LEAN_FAIL (Lean's verdict is the out-of-memory Error line — no gcc comparison), O2 `-`.
+> #   Record: lean_frontend/docs/2026-09-17_address-space-bound-part-two-record.md §C0.
+1883a1888,1889
+> tests/immaculate/nolibc/tray44-allocator-exhausted-single-request.c SKIP_LEAN_FAIL -
+> tests/immaculate/nolibc/tray44-allocator-exhausted-single-request-overlap.c SKIP_LEAN_FAIL -
+2001a2008,2009
+> tests/minimal/112-allocator-exhausted-single-request.c SKIP_LEAN_FAIL -
+> tests/minimal/113-allocator-exhausted-single-request-overlap.c SKIP_LEAN_FAIL -
+[diff rc=1]
