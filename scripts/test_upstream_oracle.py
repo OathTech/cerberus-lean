@@ -9,8 +9,11 @@ behaviours — each row classed, cited, and binding both full observation
 signatures. Raw process failures are reported separately from completed
 semantic verdicts. WP-O (2026-09-16, lean_frontend/docs/2026-09-16_charter-
 pristine-oracle-instrument.md O1) widened the corpus to every corpus the
-fork-vs-Lean lanes walk, mirroring each lane's flags, exclusions and per-case
-timeout (cited at each block of corpus()).
+fork-vs-Lean lanes GATE on (Tier A/B baselines) plus the tests/ci and csmith
+reporting corpora, mirroring each owning lane's flags, exclusions and per-case
+timeout (cited at each block of corpus()). NOT walked: test_ci_sweep.sh's
+fourteen other suites (LADDER Tier C row C4, a scoreboard with no baseline) —
+named in the report's not_applicable list.
 
 Scopes: the default selection (`--corpus tier-b`) is LADDER Tier B row 10;
 libxml2 chvalid is its own Tier B row (`--corpus libxml2_chvalid`); tests/ci and
@@ -89,9 +92,13 @@ LEAN_STATUSES = ('lean_agreement', 'lean_difference', 'lean_both_undecodable', '
                  'lean_bridge_failed', 'lean_not_applicable')
 
 
-def lean_recipe(sources, args, bridge_flags=(), libc=False, projection='full'):
+def lean_recipe(sources, args, bridge_flags=(), libc=False, projection='full', capped=False):
+    # `capped`: the owning lane runs its bridge AND its Lean driver under CAPPED_TEST
+    # (test_libc_exec.sh:95/:103, test_immaculate.sh:163/:171, test_libxml2.sh:143/:203/:213,
+    # test_libxml2_uri.sh:185 + run_capped :105-108); test_exec.sh, test_bytes.sh,
+    # test_multi_tu.sh, test_cn_coverage.sh and test_verify.sh do not (pre-merge audit M5).
     return {'tus': [(list(bridge_flags), str(src)) for src in sources], 'args': list(args),
-            'libc': libc, 'projection': projection}
+            'libc': libc, 'projection': projection, 'capped': capped}
 
 
 def validate_build(path):
@@ -120,13 +127,29 @@ def validate_build(path):
 
 
 def citation_exists(citation: str) -> bool:
-    """A citation is a repo-relative file (optionally `:lines` / `#anchor`) or an ISO-fix id R<n>
-    present in VALIDATION.md §2's register table."""
+    """A citation is a GIT-TRACKED repo-relative file (optionally `:N`/`:N-M` lines that exist in
+    it, or `#anchor`) or an ISO-fix id R<n> present in VALIDATION.md §2's register table. A scratch,
+    ignored or untracked file is not a record (pre-merge audit N1); `..` components are refused;
+    if git is unavailable the check raises and the lane fails closed."""
     if re.fullmatch(r'R[0-9]+', citation):
         table = (ROOT / 'lean_frontend/VALIDATION.md').read_text()
         return re.search(r'^\| \*\*' + citation + r'\*\* \|', table, re.M) is not None
-    path = re.sub(r'(:[0-9]+(-[0-9]+)?|#.*)$', '', citation)
-    return bool(path) and not Path(path).is_absolute() and (ROOT / path).is_file()
+    match = re.fullmatch(r'([^:#]+?)(?::([0-9]+)(?:-([0-9]+))?)?(?:#[^#]*)?', citation)
+    if not match:
+        return False
+    path, start, end = match[1], match[2], match[3]
+    if not path or Path(path).is_absolute() or '..' in Path(path).parts or not (ROOT / path).is_file():
+        return False
+    tracked = subprocess.run(['git', '-C', str(ROOT), 'ls-files', '--error-unmatch', '--', path],
+                             capture_output=True)
+    if tracked.returncode != 0:
+        return False
+    if start:
+        lines = len((ROOT / path).read_text(errors='replace').splitlines())
+        first, last = int(start), int(end) if end else int(start)
+        if not 1 <= first <= last <= lines:
+            return False
+    return True
 
 
 def load_register(path):
@@ -151,8 +174,8 @@ def load_register(path):
             raise ValueError(f'{where}: citation must be a non-empty string or list of them')
         for citation in citations:
             if not citation_exists(citation):
-                raise ValueError(f'{where}: citation {citation!r} is neither an existing repo file '
-                                 f'nor an ISO-fix register id present in VALIDATION.md §2')
+                raise ValueError(f'{where}: citation {citation!r} is neither a git-tracked repo file (with the '
+                                 f'cited lines present, no `..`) nor an ISO-fix register id present in VALIDATION.md §2')
         if not isinstance(row['rationale'], str) or not row['rationale'].strip():
             raise ValueError(f'{where}: rationale must be a non-empty string')
         for side in ('upstream', 'fork'):
@@ -216,9 +239,15 @@ def synthetic_record(prefix, status, stdout: bytes, stderr: bytes):
     return record_of(prefix, status)
 
 
-def capture(prefix, command, env, limit):
+# The per-test memory cap of the capping lanes: scripts/common.sh:389 (`CERB_TEST_MEM_MAX`,
+# default 4G) and :401 (`CAPPED_TEST=(env "CERB_MEM_MAX=$TEST_MEM_MAX" "$CAPPED_BIN")`), always
+# placed OUTSIDE `timeout` (e.g. test_libc_exec.sh:85/:95/:103).
+CAPPED_TEST = ['env', 'CERB_MEM_MAX=' + os.environ.get('CERB_TEST_MEM_MAX', '4G'), str(ROOT / 'scripts/capped')]
+
+
+def capture(prefix, command, env, limit, wrapper=()):
     started = time.monotonic()
-    command = ['timeout', str(limit), *map(str, command)]
+    command = [*map(str, wrapper), 'timeout', str(limit), *map(str, command)]
     prefix.with_suffix('.command.json').write_text(json.dumps(command) + '\n')
     with prefix.with_suffix('.stdout').open('wb') as stdout, prefix.with_suffix('.stderr').open('wb') as stderr:
         proc = subprocess.run(command, cwd=ROOT, env=env, stdout=stdout, stderr=stderr)
@@ -233,30 +262,37 @@ def signature(record):
 
 def compare(left, right, kind, exception=None):
     """left = pristine upstream, right = fork. Returns (status, reason)."""
-    # A signal kill (137) on either side is never admitted.
+    # A signal kill (137) on either side is never admitted — registered or not.
     if left['status'] == 137 or right['status'] == 137:
         return 'incomplete', 'signal termination (137) on either side is never admitted'
+    if exception is not None:
+        # [AGENT, pre-merge audit M1 — the orchestrator's reading of ruling (1) with the standing
+        # "pin moved → difference" rule]: a REGISTERED case is ALWAYS judged by its row. Both
+        # signatures must reproduce the row exactly; anything else — a fork side that now times
+        # out, a both-sides timeout, a moved sha — is `difference` ("reviewed pin moved"). The
+        # `matching_incomplete` shortcut below is for UNREGISTERED cases only.
+        if right['status'] == 124:
+            return 'difference', 'reviewed difference pin moved: the registered fork side timed out (never admissible)'
+        if exception.get('rationale') and exception['upstream'] == signature(left) and \
+                exception['fork'] == signature(right):
+            # A pristine-side timeout is admitted ONLY by a row of an incomplete-admitting class
+            # (charter O1: the citation explains the non-termination — draft 37 for `node`); the
+            # loader enforces this too, kept here so compare() is fail-closed on its own.
+            if left['status'] == 124 and exception['class'] not in INCOMPLETE_ADMITTING:
+                return 'incomplete', 'pristine timeout admissible only through a resource/shared-model-fix row'
+            return 'reviewed_difference', exception['rationale']
+        return 'difference', 'reviewed difference pin moved (stale or changed exception); review before changing it'
+    # Unregistered cases from here on.
     # [USER 2026-09-17] ("(1) agree"): BOTH engines exceeded the lane's own bound —
     # the REPORTED class `matching_incomplete`: counted, never agreement, not a
-    # failure; no register row is ever written for it (a row is irrelevant here).
-    # Any ONE-sided timeout stays `incomplete` and fatal exactly as before.
+    # failure; no register row is ever written for it. Any ONE-sided timeout
+    # stays `incomplete` and fatal exactly as before.
     if left['status'] == 124 and right['status'] == 124:
         return 'matching_incomplete', 'both engines exceeded the lane bound; counted, not agreement'
     if right['status'] == 124:
         return 'incomplete', 'fork-side timeout is never admitted'
     if left['status'] == 124:
-        # A pristine-side timeout is admitted ONLY by a reviewed row of an
-        # incomplete-admitting class binding both signatures (charter O1: the
-        # citation explains the non-termination — draft 37 for `node`).
-        if exception and exception['class'] in INCOMPLETE_ADMITTING and exception.get('rationale') and \
-                exception['upstream'] == signature(left) and exception['fork'] == signature(right):
-            return 'reviewed_difference', exception['rationale']
         return 'incomplete', 'pristine timeout without an admitting reviewed row (class resource/shared-model-fix)'
-    if exception:
-        if exception.get('rationale') and exception.get('upstream') == signature(left) and \
-                exception.get('fork') == signature(right):
-            return 'reviewed_difference', exception['rationale']
-        return 'difference', 'reviewed difference pin moved (stale or changed exception); review before changing it'
     if kind == 'batch':
         try:
             a, b = load_capture(left['capture']), load_capture(right['capture'])
@@ -297,7 +333,11 @@ def corpus(cn_root, stage):
     # Tier A single-file exec corpora: test_exec.sh's exclusions (:403-406
     # `! -name "*.syntax-only.c" ! -name "*.exhaust.c"`) and oracle flags
     # (:442-443 `--nolibc --exec --batch --mode=exhaustive`); test_libc_exec.sh
-    # runs the oracle WITH libc (:87 `--exec --batch`, default mode).
+    # runs the oracle WITH libc (:87 `--exec --batch`, default mode). Per-case
+    # bounds, each the owning lane's own: test_exec.sh:169 TIMEOUT_SECS=30
+    # (minimal/coverage/debug/float), test_bytes.sh:47 TIMEOUT_SECS=30,
+    # test_libc_exec.sh:37 TIMEOUT_SECS=300 (pre-merge audit M2).
+    bounds = {'minimal': 30, 'coverage': 30, 'debug': 30, 'float': 30, 'bytes': 30, 'libc_exec': 300}
     for folder in ('minimal', 'coverage', 'debug', 'float', 'bytes', 'libc_exec'):
         paths = sorted((ROOT / 'tests' / folder).rglob('*.c'))
         if not paths:
@@ -312,12 +352,12 @@ def corpus(cn_root, stage):
             # test_bytes.sh:79-81/:88 bridges with `--nolibc --cabs-json`;
             # test_libc_exec.sh:97/:104-105 `--batch --first --libc … --libc-tu …`.
             if folder == 'libc_exec':
-                lean = lean_recipe([rel(path)], ['--batch', '--first'], libc=True)
+                lean = lean_recipe([rel(path)], ['--batch', '--first'], libc=True, capped=True)
             elif folder == 'bytes':
                 lean = lean_recipe([rel(path)], ['--batch'], bridge_flags=['--nolibc'])
             else:
                 lean = lean_recipe([rel(path)], ['--batch'])
-            add(str(path.relative_to(ROOT / 'tests')), 'batch', flags + [rel(path)], folder, lean=lean)
+            add(str(path.relative_to(ROOT / 'tests')), 'batch', flags + [rel(path)], folder, bounds[folder], lean=lean)
     # Multi-TU (test_multi_tu.sh:139 `.c` files in sorted name order; :149-150
     # `--nolibc --exec --batch --mode=exhaustive a.c b.c …`; :66 TIMEOUT_SECS=30).
     # tests/multi_tu_tray is LADDER Tier A row 6b, the SAME engine invocation:
@@ -354,9 +394,10 @@ def corpus(cn_root, stage):
             tus.append(cn_root / extra[3:] if extra.startswith('cn:') else ROOT / 'tests/cn_coverage' / extra)
         if not all(p.is_file() for p in tus):
             raise ValueError(f'CN input missing: {name}')
-        # Lean: test_cn_coverage.sh:235 `-I <dir> --cabs-json <tu>` per TU, :239 `--batch <jsons>`.
+        # Lean: test_cn_coverage.sh:235 `-I <dir> --cabs-json <tu>` per TU, :239 `--batch <jsons>`;
+        # bound :86 TIMEOUT_SECS=30.
         add(f'cn/{name}', 'batch', ['--exec', '--batch', '--nolibc', '--mode=exhaustive',
-                                   '-I', str(path.parent), *map(str, tus)], 'cn',
+                                   '-I', str(path.parent), *map(str, tus)], 'cn', 30,
             lean=lean_recipe(map(str, tus), ['--batch'], bridge_flags=['-I', str(path.parent)]))
     prep = subprocess.check_output([str(ROOT / 'scripts/libxml2_prep.sh'), 'uri.c'], text=True).splitlines()
     if not prep:
@@ -373,11 +414,14 @@ def corpus(cn_root, stage):
         # --nolibc surfaces must fail with the unknown-procedure `memset` Error), whose text embeds a
         # symbol id the two engines number differently (VALIDATION.md §1(a), upstream-tray 17) —
         # compared here under the labelled `failure-class` projection; the libc row stays `full`.
+        # Bound: test_libxml2_uri.sh:58 TIMEOUT_SECS=300 (pre-merge audit M2); that lane caps
+        # oracle, bridge and Lean (run_capped :105-108, :185).
         add('libxml2/uri-' + mode, 'batch', ['--exec', '--batch',
-            *(['--nolibc'] if mode == 'nolibc' else []), *prep[:-1], *map(str, tus)], 'libxml2_uri',
+            *(['--nolibc'] if mode == 'nolibc' else []), *prep[:-1], *map(str, tus)], 'libxml2_uri', 300,
             lean=lean_recipe(map(str, tus), ['--batch', '--first'], bridge_flags=prep[:-1], libc=(mode == 'libc'),
-                             projection='failure-class' if mode == 'nolibc' else 'full'))
-    # Same representative input through legacy parse/typecheck/pretty-print CLI.
+                             projection='failure-class' if mode == 'nolibc' else 'full', capped=True))
+    # Same representative input through legacy parse/typecheck/pretty-print CLI. These
+    # three rows have no owning lane; they run at the `--timeout` default.
     simple = 'tests/minimal/001-return-literal.c'
     add('cli/core-dump', 'core', ['--nolibc', '--pp=core', simple], 'cli')
     add('cli/typecheck-core', 'typecheck', ['--nolibc', '--typecheck-core', simple], 'cli')
@@ -402,7 +446,7 @@ def corpus(cn_root, stage):
             # [+ `--args "ab cd"`] [+ the libc pin + 12 metadata TUs].
             largs = ['--batch', '--first'] + (['--args', 'ab cd'] if sub == 'argv' else [])
             add(f'immaculate/{sub}/{path.stem}{suffix}', 'batch', ['--exec', '--batch', *extra, rel(path)],
-                'immaculate', 60, lean=lean_recipe([rel(path)], largs, libc=(sub == 'libc')))
+                'immaculate', 60, lean=lean_recipe([rel(path)], largs, libc=(sub == 'libc'), capped=True))
     # tests/ci (LADDER Tier C: `test_exec.sh --write-baseline=… tests/ci`;
     # test_exec.sh:403-406 recursive find minus .syntax-only.c/.exhaust.c,
     # :442-443 flags, :169 TIMEOUT_SECS=30).
@@ -455,7 +499,7 @@ def corpus(cn_root, stage):
         # :214-215 `--batch --first <slice.json> <chvalid.json>`.
         add(f'libxml2/chvalid/{path.stem}', 'batch',
             ['--nolibc', '--exec', '--batch', *flags, rel(path), chvalid], 'libxml2_chvalid', 300,
-            lean=lean_recipe([rel(path), chvalid], ['--batch', '--first'], bridge_flags=flags))
+            lean=lean_recipe([rel(path), chvalid], ['--batch', '--first'], bridge_flags=flags, capped=True))
     # csmith (test_csmith_corpus.sh: materialisation :53-68 — csmith_cerberus.h +
     # safe_math.h copied beside PREFIXED copies whose `#include "csmith.h"`
     # becomes `#define CSMITH_MINIMAL` + `#include "csmith_cerberus.h"`,
@@ -538,9 +582,10 @@ def run_lean(directory, case, fork_side, env, limit, libc_args):
     """The fork's --cabs-json bridge per TU (as the fork-vs-Lean lanes do), then the
     Lean driver on the JSONs; LEAN_ABORT_ON_PANIC=1 as scripts/common.sh:319."""
     bridges, jsons = [], []
+    wrapper = CAPPED_TEST if case.lean.get('capped') else ()
     for i, (bridge_flags, source) in enumerate(case.lean['tus']):
         record = capture(directory / f'bridge{i}', [fork_side['binary'], '--runtime=' + str(fork_side['runtime']),
-                                                     *bridge_flags, '--cabs-json', source], env, limit)
+                                                     *bridge_flags, '--cabs-json', source], env, limit, wrapper)
         bridges.append(record)
         if record['status'] != 0 or Path(record['capture'] + '.stdout').stat().st_size == 0:
             return {'status': 'lean_bridge_failed', 'reason': f'cabs-json of {source}: exit {record["status"]}',
@@ -550,7 +595,7 @@ def run_lean(directory, case, fork_side, env, limit, libc_args):
         jsons.append(str(json_path))
     args = [*case.lean['args'], *(libc_args if case.lean.get('libc') else []), *jsons]
     lean_env = {**env, 'LEAN_ABORT_ON_PANIC': '1'}
-    record = capture(directory / 'lean', [LEAN_BIN, *args], lean_env, limit)
+    record = capture(directory / 'lean', [LEAN_BIN, *args], lean_env, limit, wrapper)
     return {'status': None, 'reason': '', 'bridges': bridges, 'lean': record}
 
 
@@ -615,6 +660,18 @@ def hermetic_plants(register_path):
     expect_reject('pristine-timeout-under-diagnostic-text', lambda d: (
         d['cases'][first].update({'class': 'diagnostic-text'}), set_status(d, 'upstream', 124)))
     expect_reject('malformed-sha', lambda d: d['cases'][first]['fork'].update(stdout_sha256='xyz'))
+    # Pre-merge audit N1: a citation must be a git-TRACKED file whose cited lines exist.
+    with tempfile.NamedTemporaryFile('w', suffix='.md', dir=ROOT / '.tmp', delete=False) as scratch:
+        scratch.write('not a record\n')
+        untracked = str(Path(scratch.name).relative_to(ROOT))
+    try:
+        expect_reject('untracked-citation', lambda d: d['cases'][first].update(citation=untracked))
+    finally:
+        os.unlink(ROOT / untracked)
+    expect_reject('out-of-range-line-citation', lambda d: d['cases'][first].update(citation='tests/multi_tu_tray/README.md:99999'))
+    expect_reject('inverted-line-range-citation', lambda d: d['cases'][first].update(citation='tests/multi_tu_tray/README.md:9-3'))
+    expect_reject('parent-directory-citation', lambda d: d['cases'][first].update(citation='../lem-lean/README.md'))
+    rows = None
     try:
         rows = load_register(register_path)
         results.append(('register/committed-loads', True, f'{len(rows)} rows, every class/citation valid'))
@@ -633,8 +690,8 @@ def hermetic_plants(register_path):
         ('compare/pristine-timeout+admitting-row', compare(timeout_, done, 'batch', admitting)[0], 'reviewed_difference'),
         ('compare/pristine-timeout+diagnostic-row', compare(timeout_, done, 'batch', diagnostic)[0], 'incomplete'),
         ('compare/pristine-timeout+no-row', compare(timeout_, done, 'batch', None)[0], 'incomplete'),
-        ('compare/pristine-timeout+moved-fork-signature', compare(timeout_, other, 'batch', admitting)[0], 'incomplete'),
-        ('compare/fork-timeout+row', compare(done, timeout_, 'batch', fork_side)[0], 'incomplete'),
+        ('compare/pristine-timeout+moved-fork-signature', compare(timeout_, other, 'batch', admitting)[0], 'difference'),
+        ('compare/fork-timeout+row', compare(done, timeout_, 'batch', fork_side)[0], 'difference'),
         ('compare/pristine-kill+row', compare(killed, done, 'batch', dict(admitting, upstream=killed))[0], 'incomplete'),
         ('compare/fork-kill', compare(done, killed, 'batch', None)[0], 'incomplete'),
         ('compare/stale-row-pair-now-agrees', compare(done, done, 'batch', dict(admitting, upstream=other))[0], 'difference'),
@@ -645,8 +702,13 @@ def hermetic_plants(register_path):
         # class; every one-sided timeout and every 137 stays fatal; a row cannot change that.
         ('compare/one-sided-pristine-timeout-no-row', compare(timeout_, done, 'batch', None)[0], 'incomplete'),
         ('compare/one-sided-fork-timeout', compare(done, timeout_, 'batch', None)[0], 'incomplete'),
-        ('compare/both-sides-timeout', compare(timeout_, timeout_, 'batch', None)[0], 'matching_incomplete'),
-        ('compare/both-sides-timeout+row-irrelevant', compare(timeout_, timeout_, 'batch', admitting)[0], 'matching_incomplete'),
+        ('compare/unregistered-both-sides-timeout', compare(timeout_, timeout_, 'batch', None)[0], 'matching_incomplete'),
+        # Pre-merge audit M1: a REGISTERED case is always judged by its row — a both-sides
+        # timeout on a registered case is a moved pin, RED; with the committed `node` row too.
+        ('compare/registered-both-sides-timeout+row', compare(timeout_, timeout_, 'batch', admitting)[0], 'difference'),
+        ('compare/registered-node-row-fork-also-times-out',
+         compare(timeout_, timeout_, 'batch', rows['multi_tu_tray/node']) [0] if rows and 'multi_tu_tray/node' in rows else 'NO-NODE-ROW',
+         'difference'),
         ('compare/both-sides-kill', compare(killed, killed, 'batch', None)[0], 'incomplete'),
         ('compare/timeout-vs-kill', compare(timeout_, killed, 'batch', None)[0], 'incomplete'),
     ]
@@ -728,6 +790,12 @@ def main():
                    'reason': 'fork-only harness rows / Core text under the tolerated renumbering class; MAIN-mode rows are walked'},
                   {'interface': 'tests/immaculate/*.lean in-Lean probes',
                    'reason': 'no oracle side'},
+                  {'interface': 'test_ci_sweep.sh suites other than tests/ci (test_ci_sweep.sh:90-104): '
+                                'tests/gcc-torture/breakdown/{success,fail,limbus,undefined,invalid,not_std_compliant,'
+                                'not_supported}, tests/tcc, tests/suite, tests/pnvi_testsuite, tests/hacl-star, '
+                                'tests/freebsd, tests/examples, tests/cheri-ci',
+                   'reason': 'LADDER Tier C row C4, a fork-vs-Lean scoreboard with no baseline — not a gated corpus; '
+                             'not walked here (pre-merge audit M3)'},
                   {'interface': 'Lean unit/kernel gates and generated fixture pins',
                    'reason': 'provider-specific artifacts; not upstream OCaml interfaces'},
               ]}

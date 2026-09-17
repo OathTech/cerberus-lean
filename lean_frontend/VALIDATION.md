@@ -118,11 +118,22 @@ pristine are therefore a separately gated inventory: the register
 `diagnostic-text` | `resource` | `missing-feature` | `shared-model-fix`,
 cited to an upstream-tray draft, an ISO-fix register id or a dated record,
 with a rationale and both engines' full signatures) is the ONLY permitted
-list of fork≠pristine behaviours, and LADDER Tier B row 10
-(`scripts/test_upstream_oracle.py`) is its gate: pristine vs fork over every
-corpus the fork-vs-Lean lanes walk, every unexplained difference RED, a
-pristine-side non-termination admitted only through a cited
-`resource`/`shared-model-fix` row (never the fork side), stale rows RED.
+list of fork≠pristine behaviours OBSERVED on the walked corpora; the fork's
+source-level deltas from upstream are the reviewed
+`scripts/fork_drift_manifest.txt` (§6, `check_fork_drift.sh`), of which the
+register is the behavioural projection — a delta with no register row is
+either unobservable on the corpora or a missing case, and the S1 charter's
+three-way report is how a slice shows which. LADDER Tier B row 10
+(`scripts/test_upstream_oracle.py`) is the register's gate: pristine vs fork
+over every corpus the fork-vs-Lean lanes GATE on (the Tier A/B baselines)
+plus the `tests/ci` and csmith reporting corpora — `test_ci_sweep.sh`'s
+fourteen other suites (Tier C row C4, a scoreboard with no baseline) are not
+walked and are named as such in the lane's report — every unexplained
+difference RED, a pristine-side non-termination admitted only through a
+cited `resource`/`shared-model-fix` row (never the fork side), stale rows
+RED, and a REGISTERED case always judged by its row: a registered case whose
+fork side times out, or a both-sides timeout on a registered case, is RED —
+the pin moved.
 Today the inventory is exactly 3 `shared-model-fix` rows (the cross-TU
 struct-value cases of upstream-tray drafts 37/38/39, where the fork answers
 `Specified(7)` and pristine loops or rejects); `diagnostic-text` is a
@@ -393,8 +404,11 @@ task; current measurements are in the CI reporting record.
 **Fork ≠ pristine — the register (`scripts/upstream_oracle_differences.json`,
 schema 2; gate: LADDER Tier B row 10).** These are not Lean-vs-oracle rows:
 they are the fork OCaml's reviewed deviations from pristine upstream
-`b9aeedcb4`, the mirror twin's own exception list (§0, the reference
-doctrine). Every row binds both engines' signatures (exit status, stdout
+`b9aeedcb4` as OBSERVED on row 10's corpora — the mirror twin's own exception
+list (§0, the reference doctrine). Source-level fork≠upstream deltas that no
+walked corpus witnesses are recorded as content pins in
+`scripts/fork_drift_manifest.txt` (§6) and become entries here only once a
+corpus observes them. Every row binds both engines' signatures (exit status, stdout
 sha256, stderr sha256 under the lane's diagnostic projection) and moves only
 by a cited re-record.
 
@@ -437,7 +451,10 @@ by a cited re-record.
   `matching_incomplete` — never agreement, not a failure; any ONE-sided
   timeout (either side) and any 137 stay `incomplete` and fatal exactly as
   before, and no register row is written for a matching timeout (the loader
-  still refuses fork-side 124/137). Standing members: `tests/ci`
+  still refuses fork-side 124/137). The class is for UNREGISTERED cases: a
+  registered case is always judged by its row, so a both-sides timeout (or a
+  fork timeout) on a registered case is `difference` — the pin moved
+  (pre-merge audit M1, [AGENT] reading flagged to the operator). Standing members: `tests/ci`
   `0023-jump1.c`/`0025-jump3.c` (30 s) and 21 of the first csmith shard's 50
   programs (15 s) — the fork lanes' own `CERB_SKIP` rows. `--corpus ci` and
   `--corpus csmith --shard K/34` are Tier C reporting rows that now exit 0
@@ -463,14 +480,21 @@ pristine engine (`b9aeedcb4` + upstream Lem `3802cb0`; kept standing by
 `scripts/ensure_independent_oracle.py`, which reuses the lane's own
 fail-closed manifest validator and never deletes or overwrites a build) is
 compared with the fork OCaml by LADDER Tier B row 10 over every corpus the
-fork-vs-Lean lanes walk — `tests/{minimal,coverage,debug,float,bytes,
+fork-vs-Lean lanes GATE on — `tests/{minimal,coverage,debug,float,bytes,
 libc_exec}`, `tests/multi_tu` + `tests/multi_tu_tray`, the 213 CN rows, the
 libxml2 `uri` harness (libc and nolibc), `tests/immaculate` (nolibc/argv/
 libc), `tests/verify` + the `lean_frontend/corpus` main-mode fixtures, and
 two legacy CLI modes (855 cases, ~2 min warm); libxml2 `chvalid` is its own
 Tier B row (4 slices, ~7 min); `tests/ci` and the csmith corpus are
-reporting rows. Each corpus runs with the flags, exclusions and per-case
-timeout of the lane that owns it (cited in `corpus()`); the fork-only
+reporting rows; `test_ci_sweep.sh`'s fourteen other suites (Tier C row C4,
+`tests/gcc-torture/breakdown/*`, `tests/tcc`, `tests/suite`,
+`tests/pnvi_testsuite`, `tests/hacl-star`, `tests/freebsd`, `tests/examples`,
+`tests/cheri-ci` — a scoreboard with no baseline) are not walked and are
+named in the report's `not_applicable`. Each corpus runs with the flags,
+exclusions and per-case timeout of the lane that owns it (cited in
+`corpus()`; `libc_exec` and `uri` at their lanes' 300 s, `immaculate` 60 s,
+csmith 15 s, the rest 30 s; the three CLI rows, which no lane owns, at the
+lane's default 30 s); the fork-only
 interfaces (`--cabs-json`, `--call` and the wrapper TUs that mirror it,
 `--pp=core` pin derivations, `--batch-alloc-census`) are named as not
 applicable. The register (§3) is the exception list; everything else must
@@ -485,7 +509,9 @@ are attributed, not conflated, and a shared-model change cannot move the
 oracle and Lean together unnoticed. **Three engines on one input:**
 `test_upstream_oracle.py --with-lean` (Tier C row C5) adds the Lean engine
 through the fork's `--cabs-json` bridge exactly as each owning lane runs it
-and reports `pristine | fork | lean` per case — report-only here (Lean vs
+(bridge and driver under the lane's per-test memory cap `CAPPED_TEST` where
+that lane caps: libc_exec, immaculate, uri, chvalid) and reports `pristine |
+fork | lean` per case — report-only here (Lean vs
 fork is gated by its own lanes); at WP-O's landing every one of its 40
 Lean≠fork rows was a recorded pin of the owning lane (record §O2).
 
@@ -522,7 +548,7 @@ lanes, with their recorded states:
 | `test_csmith_corpus.sh` | 1,669 in-tree csmith programs | classified pinned baseline (sharded; reporting tier full-pass): 0 MISMATCH/DIFF rows; the non-MATCH rows are 499 `CERB_SKIP` (oracle-side) + 9 `TIMEOUT` (derived from `scripts/exec_csmith_corpus_baseline.txt` at `928aa1e76`; the header's per-row narrative is the arc-13 record) |
 | `test_ci_sweep.sh` | 2,186-file upstream CI suite | [Repaired candidate measurement](docs/2026-09-06_ci-reporting-results.md): 1,359 matching observations, one UB-location difference, three filesystem refusals, three Lean timeouts and 820 oracle-side non-comparisons. All 15 fresh TSVs/raw records are archived. The default TSVs under `tests/ci_sweep/results/` remain historical (14 from August 22, TCC from September 2); no automatic baseline adoption. |
 | `fuzz_csmith.sh` | generated csmith programs | deterministic seeded fuzz kit (reporting tier) |
-| `test_upstream_oracle.py` (+ `--plant`) | pristine upstream `b9aeedcb4` vs fork OCaml over the Tier B row-10 corpus (855 cases: the six Tier A exec corpora, both multi-TU roots, 213 CN rows, uri ×2, immaculate, verify + corpus, 3 CLI rows) | **Tier B row 10 GATE**: `passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 3, 'interface_agreement': 2}` at WP-O O5 (2026-09-17; before the two rulings: 822 / 11 / 20 / 2); the 3 reviewed rows are the register's (§3); plants: 16 doctored registers rejected at load, the compare() timeout/kill/stale matrix (both-sides 124 → `matching_incomplete`, one-sided and 137 fatal), the projection plants (frame positions only → `matching_failure`; exception text / frame function / non-frame position → `difference`), a fork-verdict mutation and a REAL registered difference with its row withheld → RED |
+| `test_upstream_oracle.py` (+ `--plant`) | pristine upstream `b9aeedcb4` vs fork OCaml over the Tier B row-10 corpus (855 cases: the six Tier A exec corpora, both multi-TU roots, 213 CN rows, uri ×2, immaculate, verify + corpus, 3 CLI rows) | **Tier B row 10 GATE**: `passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 3, 'interface_agreement': 2}` at WP-O O5 (2026-09-17; before the two rulings: 822 / 11 / 20 / 2); the 3 reviewed rows are the register's (§3); plants: 19 doctored registers rejected at load (incl. untracked-file, out-of-range-line and `..` citations) and the committed register loads, the compare() timeout/kill/stale matrix (unregistered both-sides 124 → `matching_incomplete`; a registered case judged by its row — its fork timing out or a both-sides timeout is `difference`; one-sided and 137 fatal), the projection plants (frame positions only → `matching_failure`; exception text / frame function / non-frame position → `difference`), a fork-verdict mutation and a REAL registered difference with its row withheld → RED |
 | `test_upstream_oracle.py --corpus libxml2_chvalid` | pristine vs fork on the 4 chvalid slices (the fork lane's flags and 300 s bound) | **Tier B GATE**: 4/4 `semantic_agreement` (~7 min) |
 | `test_upstream_oracle.py --with-lean` | the same corpus, three engines | Tier C row C5, report-only Lean column: 813 agree / 28 difference / 12 both-undecodable / 2 n/a at WP-O, all 40 Lean≠fork rows recorded pins (§4) |
 | `test_upstream_oracle.py --corpus ci` / `--corpus csmith --shard K/34` | `tests/ci` (242 cases) / the 1669 staged csmith programs | Tier C reporting rows, rc 0 since [USER 2026-09-17]: ci `passed; {'semantic_agreement': 134, 'matching_incomplete': 2, 'matching_failure': 106}`; csmith shard 1/34 `subset_passed; {'semantic_agreement': 26, 'matching_failure': 3, 'matching_incomplete': 21}`, ~11 min per shard (~6 h for the corpus — never one step) |
