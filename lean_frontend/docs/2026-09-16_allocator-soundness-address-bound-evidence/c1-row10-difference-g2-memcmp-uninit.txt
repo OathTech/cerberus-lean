@@ -79,3 +79,8 @@ cerberus: internal error, [31muncaught exception[m:
 >           Called from Cerb_backend__Pipeline.interp_backend in file "backend/common/pipeline.ml", line 604, characters 21-85
 >           Called from Dune__exe__Main.cerberus in file "backend/driver/main.ml", lines 309-335, characters 8-15
 # Diagnosis [AGENT]: the exception HEADER line 'File "memory/concrete/impl_mem.ml", line N, characters 16-22: Assertion failed' carries the memcmp assert's source line (pristine 2659; fork 2664 after C1's +5 net lines above it) and is NOT a backtrace frame, so the lane's diagnostic projection (frames only, [USER 2026-09-17]) leaves it unnormalised; every other differing line is a frame position the projection already normalises (this case was matching_failure at WP-O O5). Same failure, same status: a diagnostic-text-class difference.
+
+# N3 ride-along (audit 2026-09-17): the three §S1 lines re-sourced verbatim from the surviving C1 logs (.tmp/c1-row10-summary.txt, .tmp/c1-three-engine.log)
+row10 rc=1 wall=114s
+three-engine rc=1 wall=252s
+Independent oracle: failed; {'semantic_agreement': 822, 'matching_failure': 27, 'reviewed_difference': 3, 'interface_agreement': 2, 'difference': 1}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/.tmp/c1-three-engine/report.json
