@@ -1,0 +1,22 @@
+# tests/address_space/expectations.txt — the FORK oracle's complete observation tokens per <program, top>
+# (scripts/observations.py tokens, policy batch, projection full; several verdicts joined by ' ;; '), written by
+# scripts/test_address_space.sh --record-expectations ONLY after every case read LEAN = FORK through the codec
+# (the lane's LEAN≠FORK leg). Fail-closed both directions: every row must be reproduced, every case must have a
+# row. Re-record = a dedicated instrument commit with its justification (address-space-bound part two, C3,
+# 2026-09-17; the pre-fix regime of upstream-tray draft 44 is what the --selftest plant P1 forges).
+# format: <program>\t<top>\t<tokens>
+array-40	64	VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+array-40	32	ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+array-40	8	ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+malloc-one	64	VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+malloc-one	32	ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+malloc-one	8	ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+nested-scopes	64	VAL:{value: "Specified(9)", stdout: "", stderr: "", blocked: "false"}
+nested-scopes	32	VAL:{value: "Specified(9)", stdout: "", stderr: "", blocked: "false"}
+nested-scopes	8	ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+three-ints-then-array	64	VAL:{value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}
+three-ints-then-array	32	ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+three-ints-then-array	8	ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+two-ints	64	VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
+two-ints	32	VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
+two-ints	8	ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}

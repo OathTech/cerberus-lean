@@ -1,0 +1,82 @@
+# scripts/test_address_space.sh --record-expectations (the first agreeing run; every case LEAN = FORK), then the default check, then --selftest — verbatim
+
+tiny-address-space differential lane (address-space-bound part two, C3)
+========================================================================
+corpus: 5 programs x bounds 64 32 8 = 15 cases; both engines --address-space-top N
+  AGREE      array-40                 top=64  VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      array-40                 top=32  ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      array-40                 top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      malloc-one               top=64  VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      malloc-one               top=32  ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      malloc-one               top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      nested-scopes            top=64  VAL:{value: "Specified(9)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      nested-scopes            top=32  VAL:{value: "Specified(9)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      nested-scopes            top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      three-ints-then-array    top=64  VAL:{value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      three-ints-then-array    top=32  ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      three-ints-then-array    top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      two-ints                 top=64  VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      two-ints                 top=32  VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      two-ints                 top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+EXPECTATIONS RECORDED: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/tests/address_space/expectations.txt (15 rows)
+/home/dev/projects/cerberus-lean-proj/scripts/ce  --record-expectations  2.56s user 1.64s system 108% cpu 3.863 total
+
+## default mode
+
+tiny-address-space differential lane (address-space-bound part two, C3)
+========================================================================
+corpus: 5 programs x bounds 64 32 8 = 15 cases; both engines --address-space-top N
+  AGREE      array-40                 top=64  VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      array-40                 top=32  ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      array-40                 top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      malloc-one               top=64  VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      malloc-one               top=32  ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      malloc-one               top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      nested-scopes            top=64  VAL:{value: "Specified(9)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      nested-scopes            top=32  VAL:{value: "Specified(9)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      nested-scopes            top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      three-ints-then-array    top=64  VAL:{value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      three-ints-then-array    top=32  ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      three-ints-then-array    top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      two-ints                 top=64  VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      two-ints                 top=32  VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      two-ints                 top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+
+  EXPECT OK    15 pinned rows = 15 observed cases, every token identical
+test_address_space: OK (15 cases: LEAN = FORK through the shared codec at tops 64 32 8; every fork observation = its pinned row in expectations.txt)
+$CE ./scripts/test_address_space.sh  2.55s user 1.64s system 108% cpu 3.859 total
+
+## --selftest
+
+tiny-address-space differential lane (address-space-bound part two, C3)
+========================================================================
+corpus: 5 programs x bounds 64 32 8 = 15 cases; both engines --address-space-top N
+  AGREE      array-40                 top=64  VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      array-40                 top=32  ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      array-40                 top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      malloc-one               top=64  VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      malloc-one               top=32  ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      malloc-one               top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      nested-scopes            top=64  VAL:{value: "Specified(9)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      nested-scopes            top=32  VAL:{value: "Specified(9)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      nested-scopes            top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      three-ints-then-array    top=64  VAL:{value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      three-ints-then-array    top=32  ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      three-ints-then-array    top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      two-ints                 top=64  VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      two-ints                 top=32  VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      two-ints                 top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+
+test_address_space: SELFTEST — planting on scratch copies of the expectations (loud plant banner; the committed file is untouched)
+  PLANT OK   [P1 exhausted case forged to the pre-fix ACTIVE verdict (Specified(6) where the kill is pinned)] ->   EXPECT FAIL  three-ints-then-array top=32: expected [VAL:{value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}] observed [ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}]
+  PLANT OK   [P2 missing expectations file] ->   EXPECT FAIL  expectations file not found: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/scripts/observations/test_address_space.G5u9nR7Laf/address_space.oX3fBiJrlp/plants.IitULS/does-not-exist.txt
+  PLANT OK   [P3 truncated expectations (last row dropped)] ->   EXPECT FAIL  two-ints top=8: observed but NOT in the expectations file (observed: ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""})
+  PLANT OK   [P4 a row for a case this run never produced] ->   EXPECT FAIL  absent-program top=64: pinned in the expectations file but NOT a case of this run
+  REVERTED (the committed expectations):
+  EXPECT OK    15 pinned rows = 15 observed cases, every token identical
+test_address_space: SELFTEST OK (4 plants rejected — the forged pre-fix ACTIVE verdict, a missing file, a truncated file, a phantom row; the committed file green)
+$CE ./scripts/test_address_space.sh --selftest  2.53s user 1.62s system 108% cpu 3.831 total
+
+## wall
+.tmp/c3-lane.txt:3.859 total
+.tmp/c3-lane-selftest.txt:3.831 total

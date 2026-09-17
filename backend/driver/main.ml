@@ -96,7 +96,7 @@ let cerberus debug_level progress core_obj
              runtime_path_opt incl_dirs incl_files cpp_only
              link_lib_path link_core_obj
              impl_name
-             exec exec_mode iso_switches switches batch batch_alloc_census concurrency
+             exec exec_mode iso_switches switches batch batch_alloc_census address_space_top concurrency
              astprints pprints ppflags pp_ail_out pp_core_out
              sequentialise_core rewrite_core typecheck_core defacto permissive ignore_bitfields
              fs_dump fs trace
@@ -125,8 +125,9 @@ let cerberus debug_level progress core_obj
   let conf = { astprints; pprints; ppflags; ppouts; debug_level; typecheck_core;
                rewrite_core; sequentialise_core; cpp_cmd; cpp_stderr = true; cpp_save = None;
                (* address-space-bound slice (2026-09-17): the desugar entry and the execution
-                  entry (driver_conf below) take the SAME top — the one named default *)
-               address_space_top = Driver_ocaml.address_space_top_default } in
+                  entry (driver_conf below) take the SAME top — the --address-space-top value
+                  (default Driver_ocaml.address_space_top_default, upstream's) *)
+               address_space_top } in
   let prelude =
     (* Looking for and parsing the core standard library *)
     let switches =
@@ -323,8 +324,7 @@ let cerberus debug_level progress core_obj
           let open Driver_ocaml in
           let () = Tags.reset_tagDefs () in (* TODO: check this *)
           let () = Tags.set_tagDefs core_file.tagDefs in
-          let driver_conf = {concurrency; exec_mode; fs_dump; trace;
-                             address_space_top = address_space_top_default} in
+          let driver_conf = {concurrency; exec_mode; fs_dump; trace; address_space_top} in
           interp_backend io core_file ~args ~batch ~fs ~driver_conf
         else
           match output_name with
@@ -527,6 +527,31 @@ let batch_alloc_census =
              {live: N, dead: M} line from the final memory state" in
   Arg.(value & flag & info["batch-alloc-census"] ~doc)
 
+(* address-space-bound slice (2026-09-17) — FORK-ONLY flag, no pristine counterpart
+   (the --batch-alloc-census shape): the top of the address space the run's initial
+   memory state is built with (mem.lem initial_mem_state, the concrete/VIP allocator's
+   initial cursor). Passed to BOTH entry points — Pipeline.configuration (the desugarer's
+   constant-expression mini-run) and Driver_ocaml.driver_conf (the execution driver) —
+   so the two share one value by construction. Default = upstream's value,
+   Driver_ocaml.address_space_top_default (matched mode never passes the flag; LADDER
+   Tier B row 10 lists it as a fork-only interface). A tiny top makes the allocator's
+   exhausted regime reachable by ordinary programs: scripts/test_address_space.sh. *)
+let address_space_top =
+  let doc = "(fork addition; FORK-ONLY, no pristine counterpart) the top of the address \
+             space: the concrete/VIP allocator's initial cursor, i.e. the memory state \
+             every run starts from. A positive integer (decimal, or 0x/0o/0b prefixed); \
+             default = upstream's 0xFFFFFFFFFFFF. Received by both the desugarer's \
+             constant-expression mini-run and the execution driver." in
+  let parser s =
+    match Z.of_string s with
+    | z when Z.sign z > 0 -> Result.Ok z
+    | _ -> Result.Error (`Msg "the address-space top must be a positive integer")
+    | exception Invalid_argument _ ->
+        Result.Error (`Msg "the address-space top must be a positive integer (decimal or 0x/0o/0b)") in
+  let printer ppf z = Format.pp_print_string ppf (Z.to_string z) in
+  Arg.(value & opt (conv (parser, printer)) Driver_ocaml.address_space_top_default
+       & info ["address-space-top"] ~docv:"N" ~doc)
+
 let typecheck_core =
   let doc = "typecheck the elaborated Core program" in
   Arg.(value & flag & info["typecheck-core"] ~doc)
@@ -567,7 +592,7 @@ let () =
                          link_lib_path $ link_core_obj $
                          impl $
                          exec $ exec_mode $ iso $ switches $ batch $
-                         batch_alloc_census $
+                         batch_alloc_census $ address_space_top $
                          concurrency $
                          astprints $ pprints $ ppflags $ pp_ail_out $ pp_core_out $
                          sequentialise $ rewrite $ typecheck_core $ defacto $ permissive $ ignore_bitfields $

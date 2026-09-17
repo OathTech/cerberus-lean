@@ -1,0 +1,28 @@
+# the fork oracle's --help entry for the FORK-ONLY flag (cerberus --help=plain), verbatim
+       --address-space-top=N (absent=281474976710655)
+           (fork addition; FORK-ONLY, no pristine counterpart) the top of the
+           address space: the concrete/VIP allocator's initial cursor, i.e.
+           the memory state every run starts from. A positive integer
+           (decimal, or 0x/0o/0b prefixed); default = upstream's
+           0xFFFFFFFFFFFF. Received by both the desugarer's
+           constant-expression mini-run and the execution driver.
+
+
+# refusal shapes (cmdliner), verbatim
+$ cerberus --nolibc --exec --batch --address-space-top 0 tests/address_space/two-ints.c
+Usage: cerberus [--help] [OPTION]… [FILE]…
+cerberus: option --address-space-top: the address-space top must be a
+          positive integer
+[rc=124 — cmdliner's exit code for a command-line parse error]
+$ cerberus --nolibc --exec --batch --address-space-top -3 tests/address_space/two-ints.c
+Usage: cerberus [--help] [OPTION]… [FILE]…
+cerberus: unknown option -3
+[rc=124 — cmdliner's exit code for a command-line parse error]
+$ cerberus --nolibc --exec --batch --address-space-top abc tests/address_space/two-ints.c
+Usage: cerberus [--help] [OPTION]… [FILE]…
+cerberus: option --address-space-top: the address-space top must be a
+          positive integer (decimal or 0x/0o/0b)
+[rc=124 — cmdliner's exit code for a command-line parse error]
+$ … --address-space-top 0x40 two-ints.c (hex accepted)
+Defined {value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
+Time spent: 0.023658 seconds

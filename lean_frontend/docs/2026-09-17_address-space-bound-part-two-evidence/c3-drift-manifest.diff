@@ -1,0 +1,22 @@
+# diff scripts/fork_drift_manifest.txt (C2 head -> C3)
+diff --git a/scripts/fork_drift_manifest.txt b/scripts/fork_drift_manifest.txt
+index 9701dafab..17afbbf42 100644
+--- a/scripts/fork_drift_manifest.txt
++++ b/scripts/fork_drift_manifest.txt
+@@ -1,3 +1,7 @@
++# address-space-bound part two C3, 2026-09-17 [AGENT]: one [source-content] pin moved — backend/driver/main.ml 5e4b2121… -> eea477c2… — the FORK-ONLY `--address-space-top N` flag (the --batch-alloc-census shape; a Z.t
++# converter; default Driver_ocaml.address_space_top_default) wired into Pipeline.configuration and Driver_ocaml.driver_conf.
++# Pristine upstream has no such parameter; matched mode never passes it (row 10 lists it not_applicable); its tiny-top
++# differential lane is scripts/test_address_space.sh (LADDER Tier A row 12). Single-row edit. Record: §C3.
+ # address-space-bound part two C2, 2026-09-17 [AGENT]: the address-space TOP becomes a quantified entry parameter
+ # (route A; [USER 2026-09-16] "the semantics should be quantified over such bounds"; charter
+ # lean_frontend/docs/2026-09-17_charter-address-space-bound-part-two.md; fence extension granted 2026-09-17). GENUINE
+@@ -340,7 +344,7 @@ util/cerb_fresh.ml
+ 100644 ad215848e3c780115da1029301ea80a6442d55d8c01386dbbd21f71d723ed7b6 backend/common/pipeline.ml
+ 100644 6257177174ed0fe34a6f9d67fef5caeb935ceccb074612cbe13c93f516d444f8 backend/common/pipeline.mli
+ 100644 2a2d4d1b5ce9b61811f245ed00ce27a907a52de84174b67fa16548f5c2372ef0 backend/driver/dune
+-100644 5e4b2121e40feb19ba8c0defa258fc6856668502a3476578c82c4fba4889c6dc backend/driver/main.ml
++100644 eea477c22a3213febdb2081060720c89a55aa34afb8c0ad56936043578cff6b8 backend/driver/main.ml
+ 100644 5f64fc9cadd7064237ef4f3403641a7870be35a06d5a0b07257c7ea6a72c44f3 backend/lean_export/cabs_json.ml
+ 100644 6940e7e73f0bd7d1fedfa9d83f9401125064171b6e9b26c62493cc667bcedc4d backend/lean_export/dune
+ 100644 a3e314407d7f252f3613639df3325589fd9c653a9bd7d2b3caa66f07e712e444 cerberus-lib.opam

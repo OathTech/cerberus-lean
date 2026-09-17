@@ -837,8 +837,10 @@ def main():
                                        'text compared raw ([USER 2026-09-17], allocator-soundness C1b); stderr only; raw '
                                        'stderr retained in every capture',
               'not_applicable': [
-                  {'interface': '--cabs-json, --call, --batch-alloc-census',
-                   'reason': 'fork extensions; absent from pristine upstream CLI'},
+                  {'interface': '--cabs-json, --call, --batch-alloc-census, --address-space-top',
+                   'reason': 'fork extensions; absent from pristine upstream CLI (--address-space-top: the address-space '
+                             'top as a driver parameter, address-space-bound part two C3 2026-09-17 — matched mode never '
+                             'passes it; its tiny-top lane is LADDER Tier A row 12, fork vs Lean only)'},
                   {'interface': 'test_verify.sh call-point rows (Lean --call + oracle wrapper TUs) and --pp=core pin derivations',
                    'reason': 'fork-only harness rows / Core text under the tolerated renumbering class; MAIN-mode rows are walked'},
                   {'interface': 'tests/immaculate/*.lean in-Lean probes',

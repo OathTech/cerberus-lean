@@ -602,6 +602,7 @@ lanes, with their recorded states:
 | `test_exec.sh --check-baseline` | upstream `tests/minimal` | 111/111 at the pinned baseline (106 + the five byte-bridge rows 107–111, 2026-09-11) |
 | `test_exec.sh` (coverage/debug/float baselines) | upstream suites | rc 0 at pinned baselines (recorded DIFFs unchanged) |
 | `test_bytes.sh` | `tests/bytes` | 9/9 at committed upstream `.exec` records + 5/5 reject pins (oracle-independent) |
+| `test_address_space.sh` (+ `--selftest`) | `tests/address_space` (5 programs × tops 64/32/8; LADDER Tier A row 12, address-space-bound part two C3, 2026-09-17) | both engines at TINY address-space tops (the fork's FORK-ONLY `--address-space-top N`, cerberus-lean's `--address-space-top N` — the parameter of §7 instantiated where the allocator's exhausted regime is reached by ordinary programs): 15/15 LEAN = FORK complete observations through the shared codec (any difference fatal — the S4 class) AND every fork observation = its pinned row in `tests/address_space/expectations.txt`, fail-closed both directions; `--selftest` rejects the exhausted case forged to draft 44's pre-fix ACTIVE verdict, a missing/truncated file and a phantom row |
 | `test_parse.sh` | tests/minimal + tests/ci | Cabs-JSON bridge, 234 files, 100% |
 | `test_core.sh` | tests/minimal (+ tests/ci) | Core text parser vs oracle `--pp=core`, 111/111 minimal |
 | `test_elab.sh` | elaboration corpus | recorded same/diff state, rc 0 |
