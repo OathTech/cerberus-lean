@@ -5,6 +5,10 @@
 # TRIAGED_* rows are justified per-file in scripts/gcc_oracle_triage.txt.
 # 2026-09-03 zero-discrepancy Z1: 7 rows for the new tests/immaculate/nolibc/zd-*.c pins hand-inserted (sorted by key)
 #   at their observed statuses (3 TRIAGED via gcc_oracle_triage.txt; record docs/2026-09-03_zero-discrepancy-Z1-record.md §9).
+# 2026-09-17 address-space-bound part two C0: 4 rows hand-inserted (sorted by key) at their observed statuses — the two tray-44 witnesses
+#   tests/minimal/112-…/113-… (part one C1c; the lane reported them "new file (not in baseline, not fatal)") and their tests/immaculate/nolibc
+#   tray44-* GATING copies (C0(a)); all four SKIP_LEAN_FAIL (Lean's verdict is the out-of-memory Error line — no gcc comparison), O2 `-`.
+#   Record: lean_frontend/docs/2026-09-17_address-space-bound-part-two-record.md §C0.
 csmith/sa_csmith_001.c AGREE O2_AGREE
 csmith/sa_csmith_002.c SKIP_LEAN_CRASH -
 csmith/sa_csmith_003.c SKIP_LEAN_CRASH -
@@ -1881,6 +1885,8 @@ tests/immaculate/nolibc/s9-enum-signedness.c AGREE -
 tests/immaculate/nolibc/s9-enum-sizeof-route.c AGREE -
 tests/immaculate/nolibc/trap-bool-uninit.c SKIP_UB -
 tests/immaculate/nolibc/trap-bool-write.c SKIP_UB -
+tests/immaculate/nolibc/tray44-allocator-exhausted-single-request.c SKIP_LEAN_FAIL -
+tests/immaculate/nolibc/tray44-allocator-exhausted-single-request-overlap.c SKIP_LEAN_FAIL -
 tests/immaculate/nolibc/zd-d1-float-inf-to-int-ub.c SKIP_UB -
 tests/immaculate/nolibc/zd-d2-ptr-to-int-narrow-ub.c SKIP_UB -
 tests/immaculate/nolibc/zd-d5-device-range-load.c TRIAGED_UB -
@@ -1999,6 +2005,8 @@ tests/minimal/108-sizeof-5byte-multibyte-literal.c AGREE O2_AGREE
 tests/minimal/109-escape-hex-all-bytes.c AGREE -
 tests/minimal/110-escape-octal-all-bytes.c AGREE -
 tests/minimal/111-escape-nul-inside-literal.c AGREE -
+tests/minimal/112-allocator-exhausted-single-request.c SKIP_LEAN_FAIL -
+tests/minimal/113-allocator-exhausted-single-request-overlap.c SKIP_LEAN_FAIL -
 # 2026-09-03 zero-discrepancy Z2: 3 rows for the new tests/immaculate/nolibc/zd-z2*.c pins hand-inserted (classes as measured by the lane on the Z2 binary; record docs/2026-09-04_zero-discrepancy-Z2-record.md §5/§11)
 tests/immaculate/nolibc/zd-z2fl03-nan-to-int.c SKIP_LEAN_CRASH -
 tests/immaculate/nolibc/zd-z2i01-cerbty-int32-uac.c SKIP_GCC_COMPILE -
