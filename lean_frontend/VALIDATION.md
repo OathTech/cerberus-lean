@@ -139,7 +139,10 @@ struct-value cases of upstream-tray drafts 37/38/39, where the fork answers
 `Specified(7)` and pristine loops or rejects); `diagnostic-text` is a
 permitted class with zero rows — [USER 2026-09-17] ("(2) agree"): the lane's
 diagnostic projection normalises source positions inside OCaml backtrace
-frames, so a both-crash pair whose frames differ only there is a
+frames — and, since the allocator-soundness slice's C1b (2026-09-17; the
+[USER 2026-09-17] ruling quoted in §3), the position in the exception HEADER
+line `File "…", line N, characters A-B: <text>`, path and text compared raw —
+so a both-crash pair whose frames or header differ only there is a
 `matching_failure`, not a row; and [USER 2026-09-17] ("(1) agree"): a
 BOTH-sides timeout at the lane's own bound is the counted, non-failing
 `matching_incomplete` class, never a row (one-sided timeouts and signal kills
@@ -466,10 +469,21 @@ by a cited re-record.
   register's stderr signature already used (the `Time spent` trailer removed)
   — additionally normalises `line N[-M], characters A-B` positions inside
   OCaml backtrace frames (`Raised at` / `Raised by primitive operation at` /
-  `Called from` / `Re-raised at … in file "…"`) in BOTH engines' stderr; the
-  exception text, the frames' function and file names, non-frame lines and
-  every stdout byte are compared untouched, and the raw stderr is retained in
-  every capture. A both-crash pair whose frames differ only in positions
+  `Called from` / `Re-raised at … in file "…"`) in BOTH engines' stderr, and —
+  allocator-soundness C1b, 2026-09-17; [USER 2026-09-17], verbatim: *"yes,
+  agreed regarding landing C1 as-is and then working on C2/C3 separately"*,
+  given on the orchestrator's proposal that this projection be extended to the
+  header — the same position in an OCaml exception HEADER line `File "<path>",
+  line N[-M], characters A-B: <text>` (the `Assert_failure`/`Match_failure`
+  printers; a fork edit ABOVE an assert site shifts it exactly as it shifts
+  frames: C1's +5 lines moved `impl_mem.ml`'s `memcmp` assert 2659 → 2664,
+  `immaculate/libc/g2-memcmp-uninit`, record
+  `docs/2026-09-16_allocator-soundness-address-bound-record.md` §S1), the path
+  and the text after the colon still byte-compared; the exception text, the
+  frames' function and file names, non-frame lines (a Cerberus diagnostic
+  quoting `line N, characters A-B` included) and every stdout byte (a
+  header-shaped stdout line included) are compared untouched, and the raw
+  stderr is retained in every capture. A both-crash pair whose frames differ only in positions
   (generated `.ml` line numbers shifted by the fork's `.lem` edits,
   `lem_list.ml` frames from the different Lem runtime, `pipeline.ml`/`main.ml`
   frames from the fork's driver additions) is therefore a `matching_failure`

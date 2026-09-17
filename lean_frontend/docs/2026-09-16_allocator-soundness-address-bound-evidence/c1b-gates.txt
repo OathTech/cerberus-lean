@@ -1,0 +1,23 @@
+# C1b pre-commit gates (verbatim; scripts/ce)
+row10 rc=0 wall=114s
+ci rc=0 wall=137s
+test_unit rc=0 wall=151s
+chain done
+
+## --plant
+46:PLANT OK   projection/header-position-only: got 'matching_failure', want 'matching_failure'
+47:PLANT OK   projection/header-and-frame-positions-only: got 'matching_failure', want 'matching_failure'
+48:PLANT OK   projection/header-file-path-differs: got 'difference', want 'difference'
+49:PLANT OK   projection/header-exception-text-differs: got 'difference', want 'difference'
+50:PLANT OK   projection/header-shape-in-stdout-not-projected: got 'difference', want 'difference'
+51:PLANT OK   projection/header-shape-in-stdout-raw-sha-differs: got True, want True
+52:PLANT OK   projection/non-header-position-line-differs: got 'difference', want 'difference'
+53:PLANT OK   projection/header-raw-stderr-retained: got True, want True
+58:Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/.tmp/upstream-oracle-6ix6j_7r/report.json
+
+## row 10
+Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 3, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/.tmp/upstream-oracle-2oa6ingh/report.json
+## --corpus ci
+Independent oracle: passed; {'semantic_agreement': 134, 'matching_incomplete': 2, 'matching_failure': 106}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/.tmp/upstream-oracle-ndgv8z2u/report.json
+## test_unit.sh
+477:Total: 11 passed, 0 failed

@@ -212,14 +212,28 @@ def load_register(path):
 # whose frames differ ONLY in positions is the same failure. The exception text,
 # the frame's function and file names, every non-frame line and every stdout byte
 # are compared untouched; the raw stderr is retained in every capture.
+# (3) allocator-soundness C1b, 2026-09-17 — [USER 2026-09-17] (the ruling is quoted
+# verbatim in lean_frontend/VALIDATION.md §3; record
+# lean_frontend/docs/2026-09-16_allocator-soundness-address-bound-record.md §S1): the
+# SAME position in an OCaml exception HEADER line — `File "<path>", line N[-M],
+# characters A-B: <text>`, the Assert_failure / Match_failure printers' shape — is
+# normalised to `line N, characters A-B`; the path and the exception TEXT after the
+# colon stay byte-compared. A fork edit ABOVE an assert site shifts that number
+# exactly as it shifts frames (C1's +5 lines moved impl_mem.ml's memcmp assert
+# 2659 → 2664: `immaculate/libc/g2-memcmp-uninit`). Stderr only — stdout is never
+# projected; a header-shaped line in stdout is compared raw (plant-tested).
 TIME_SPENT = re.compile(rb'^Time spent: [0-9]+\.[0-9]+ seconds\n', re.M)
 FRAME_POSITION = re.compile(
     rb'^( *(?:Raised at|Raised by primitive operation at|Called from|Re-raised at) [^\n]*? in file "[^"\n]*"'
     rb'(?: \(inlined\))?), lines? [0-9]+(?:-[0-9]+)?, characters [0-9]+-[0-9]+$', re.M)
+HEADER_POSITION = re.compile(
+    rb'^( *File "[^"\n]*"), lines? [0-9]+(?:-[0-9]+)?, characters [0-9]+-[0-9]+(:[^\n]*)$', re.M)
 
 
 def project_diagnostics(stderr: bytes) -> bytes:
-    return FRAME_POSITION.sub(rb'\1, line N, characters A-B', TIME_SPENT.sub(b'', stderr))
+    projected = TIME_SPENT.sub(b'', stderr)
+    projected = FRAME_POSITION.sub(rb'\1, line N, characters A-B', projected)
+    return HEADER_POSITION.sub(rb'\1, line N, characters A-B\2', projected)
 
 
 def record_of(prefix, status, seconds=0.0, command=()):
@@ -744,6 +758,42 @@ def hermetic_plants(register_path):
             ('projection/stdout-beside-crash-not-matching', compare(a, g, 'batch', None)[0], 'difference'),
             ('projection/raw-stderr-retained', a['stderr_sha256'] != b['stderr_sha256'] and a['diagnostic_sha256'] == b['diagnostic_sha256'], True),
         ]
+        # allocator-soundness C1b (2026-09-17, [USER 2026-09-17]): the exception HEADER line's
+        # position — the real `immaculate/libc/g2-memcmp-uninit` shape after C1's line shift.
+        hdr = (b'cerberus: internal error, uncaught exception:\n'
+               b'          File "memory/concrete/impl_mem.ml", line 2659, characters 16-22: Assertion failed\n'
+               b'          Raised at Cerb_frontend__Impl_mem.Concrete.memcmp.get_bytes.(fun) in file '
+               b'"memory/concrete/impl_mem.ml", line 2659, characters 16-28\n'
+               b'          Called from Cerb_frontend__Nondeterminism.nd_bind.(fun) in file '
+               b'"ocaml_frontend/generated/nondeterminism.ml", line 66, characters 26-31\n')
+        hdr_pos = hdr.replace(b'line 2659, characters 16-22: Assertion failed', b'line 2664, characters 16-22: Assertion failed')
+        hdr_all = (hdr_pos.replace(b'line 2659, characters 16-28', b'line 2664, characters 16-28')
+                   .replace(b'line 66, characters 26-31', b'line 64, characters 26-31'))
+        hdr_path = hdr.replace(b'File "memory/concrete/impl_mem.ml", line 2659', b'File "memory/vip/impl_mem.ml", line 2659')
+        hdr_text = hdr.replace(b'characters 16-22: Assertion failed', b'characters 16-22: Pattern matching failed')
+        out_a = b'File "memory/concrete/impl_mem.ml", line 2659, characters 16-22: Assertion failed\n'
+        out_b = b'File "memory/concrete/impl_mem.ml", line 2664, characters 16-22: Assertion failed\n'
+        dia_a = b'cerberus: warning at line 12, characters 3-9: unused variable\n' + hdr
+        dia_b = b'cerberus: warning at line 13, characters 3-9: unused variable\n' + hdr
+        rh = synthetic_record(tmp / 'hdr', 125, b'', hdr)
+        rp = synthetic_record(tmp / 'hdr_pos', 125, b'', hdr_pos)
+        ra = synthetic_record(tmp / 'hdr_all', 125, b'', hdr_all)
+        rf = synthetic_record(tmp / 'hdr_path', 125, b'', hdr_path)
+        rt = synthetic_record(tmp / 'hdr_text', 125, b'', hdr_text)
+        ro = synthetic_record(tmp / 'out_a', 125, out_a, hdr)
+        rq = synthetic_record(tmp / 'out_b', 125, out_b, hdr)
+        rd = synthetic_record(tmp / 'dia_a', 125, b'', dia_a)
+        re_ = synthetic_record(tmp / 'dia_b', 125, b'', dia_b)
+        checks += [
+            ('projection/header-position-only', compare(rh, rp, 'batch', None)[0], 'matching_failure'),
+            ('projection/header-and-frame-positions-only', compare(rh, ra, 'batch', None)[0], 'matching_failure'),
+            ('projection/header-file-path-differs', compare(rh, rf, 'batch', None)[0], 'difference'),
+            ('projection/header-exception-text-differs', compare(rh, rt, 'batch', None)[0], 'difference'),
+            ('projection/header-shape-in-stdout-not-projected', compare(ro, rq, 'batch', None)[0], 'difference'),
+            ('projection/header-shape-in-stdout-raw-sha-differs', ro['stdout_sha256'] != rq['stdout_sha256'], True),
+            ('projection/non-header-position-line-differs', compare(rd, re_, 'batch', None)[0], 'difference'),
+            ('projection/header-raw-stderr-retained', rh['stderr_sha256'] != rp['stderr_sha256'] and rh['diagnostic_sha256'] == rp['diagnostic_sha256'], True),
+        ]
         for name, got, want in checks:
             results.append((name, got == want, f'got {got!r}, want {want!r}'))
     return results
@@ -782,7 +832,10 @@ def main():
               'diagnostic_projection': 'remove the whole-line ^Time spent: <decimal> seconds trailer; normalise '
                                        '`line N[-M], characters A-B` inside OCaml backtrace frames (Raised at / Raised by '
                                        'primitive operation at / Called from / Re-raised at … in file "…") to `line N, '
-                                       'characters A-B` ([USER 2026-09-17]); raw stderr retained in every capture',
+                                       'characters A-B` ([USER 2026-09-17]); normalise the same position in an OCaml '
+                                       'exception HEADER line `File "<path>", line N[-M], characters A-B: <text>` — path and '
+                                       'text compared raw ([USER 2026-09-17], allocator-soundness C1b); stderr only; raw '
+                                       'stderr retained in every capture',
               'not_applicable': [
                   {'interface': '--cabs-json, --call, --batch-alloc-census',
                    'reason': 'fork extensions; absent from pristine upstream CLI'},
