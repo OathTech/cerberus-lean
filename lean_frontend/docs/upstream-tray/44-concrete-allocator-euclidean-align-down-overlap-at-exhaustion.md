@@ -208,4 +208,4 @@ witness `lean_frontend/test/Unit/AllocatorSoundnessTest.lean` (`allocator-soundn
 post-fix killed / killed / killed / active at 4, the pre-fix values quoted as the negative control); fork-drift
 content pins for both files (`scripts/fork_drift_manifest.txt`, header note "allocator-soundness C1");
 `lean_frontend/VALIDATION.md` §3 "Fork ≠ pristine" entry — two `shared-model-fix` register rows since C1c (2026-09-17):
-`tests/minimal/112-allocator-exhausted-single-request.c` and `113-…-overlap.c`, the audit's witnesses, in `scripts/exec_baseline.txt` (fork = Lean) and `scripts/upstream_oracle_differences.json` (pristine `Specified(6)`/`Specified(106)` vs the kill).
+`tests/minimal/112-allocator-exhausted-single-request.c` and `113-…-overlap.c`, the audit's witnesses, in `scripts/exec_baseline.txt` (class `CERB_SKIP` — the exec lane does not sample Lean after an oracle error line; fork = Lean on them is shown by the kernel theorem, the unit witness and the three-engine report) and `scripts/upstream_oracle_differences.json` (pristine `Specified(6)`/`Specified(106)` vs the kill).

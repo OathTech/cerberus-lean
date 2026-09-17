@@ -461,7 +461,7 @@ by a cited re-record.
   `audit/allocator-part-one`); UNOBSERVED by every previously walked corpus (no
   corpus program requested within `align/2` of its cursor) — the §0 doctrine's
   missing-case disjunct, now closed: both witnesses are `tests/minimal` rows
-  (`scripts/exec_baseline.txt`, MATCH — fork = Lean) and register rows. The C1
+  (`scripts/exec_baseline.txt`, class `CERB_SKIP`: the exec lane does not sample Lean after an oracle `Error {` line, so these two rows GATE nothing on the Lean side — fork = Lean on them is evidenced by the kernel theorem, the unit witness's exact kill text and the three-engine report's `lean_agreement`, not by a pinned baseline; a gating pin is `tests/immaculate/nolibc` rows, part two's first instrument commit) and register rows. The C1
   text of this entry called the deviation "UNOBSERVABLE at upstream's bound
   (~2^48 bytes of cumulative allocation needed)" — FALSE; one request suffices.
   The fork takes remedy 1 in BOTH OCaml models (`memory/concrete/impl_mem.ml:
@@ -475,8 +475,8 @@ by a cited re-record.
   `Classical.choice`, `Quot.sound`) and `allocator_below_request_kills` (remedy 1
   in kernel terms), plus the runtime witness `allocator-soundness-test` (the four
   draft-44 states on the actual `CerbMem.allocator`, the pre-fix values as the
-  negative control). Fork engines AGREE with each other (Tier A rows 1–4b unmoved,
-  the two new rows MATCH); both files' content pins moved
+  negative control). Fork engines AGREE with each other (Tier A rows 1–4b unmoved;
+  the two new exec rows are `CERB_SKIP`, see above — the agreement on them is the theorem + witness + three-engine report); both files' content pins moved
   (`scripts/fork_drift_manifest.txt`, header notes "allocator-soundness C1"/"C1c").
   The rows retire when upstream takes the fix. A tiny address-space bound (the
   charter's part two, C2/C3) widens the witness set; it does not create it.
