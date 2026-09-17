@@ -194,7 +194,8 @@ let ident_cmp = fun ident1 ident2 ->
 let is_null (ptr: Impl_mem.pointer_value) : bool =
   let (Nondeterminism.ND f) =
     Impl_mem.eq_ptrval Cerb_location.unknown ptr (Impl_mem.null_ptrval Ctype.void) in
-  match f (Impl_mem.initial_mem_state) with
+  (* address-space-bound slice (2026-09-17): the named default; cerberus-bmc is not ladder-built *)
+  match f (Impl_mem.initial_mem_state Cerb_backend.Driver_ocaml.address_space_top_default) with
   | (Nondeterminism.NDactive b,_) -> b
   | _ -> assert false
 

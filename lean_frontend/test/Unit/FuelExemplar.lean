@@ -123,11 +123,23 @@ def exemplarFile : file core_run_annotation :=
     loop_attributes1 := default,
     visible_objects_env0 := default }
 
-/-- The shipped cold start: `(initial_driver_state sup file fs).1` with the
+/-- The address-space top the exemplar's cold start is built with — a TEST-CHOSEN value
+    (address-space-bound slice, 2026-09-17; the ruling allows test-suite choices): 64 KiB, a
+    small machine with ample room for the setup's errno object; never the executable's
+    default. The top is a PARAMETER of `dst₀`/`initial_driver_state` (a consumer theorem
+    quantifies it); the ∀-fuel theorem below is stated AT this value because the symbolic
+    route's setup `rfl`s (`drive_after_setup`, the errno `allocateObject`) evaluate the
+    allocator on a CONCRETE cursor — generalising the statement to `∀ top, 8 ≤ top → …` needs
+    the allocator's two branch conditions discharged from the hypothesis instead (OWED;
+    part-two record). -/
+def exemplarTop : Int := 0x10000
+
+/-- The shipped cold start: `(initial_driver_state sup top file fs).1` with the
     production filesystem state (Main.lean's `drSt`), at the ambient
-    instance (the generated `initial_driver_state` is fuel-lifted). -/
-def dst₀ [LemFuel] (sup : Nat) : driver_state :=
-  (initial_driver_state sup exemplarFile CerbFS.fs_initial_state).1
+    instance (the generated `initial_driver_state` is fuel-lifted); `top` is
+    the address-space top (`exemplarTop` for the theorem). -/
+def dst₀ [LemFuel] (sup : Nat) (top : Int) : driver_state :=
+  (initial_driver_state sup top exemplarFile CerbFS.fs_initial_state).1
 
 /-- THE SHIPPED RUN at fuel `n`: the production runner `CerbND.runND` on
     the production pipeline `drive`, cold start, `["cmdname"]` — the
@@ -135,7 +147,7 @@ def dst₀ [LemFuel] (sup : Nat) : driver_state :=
     ⟨fuel⟩` around `runPipeline`, exactly). -/
 def run (n : Nat) :
     List (nd_status driver_result driver_error driver_state × List String × driver_state) :=
-  @CerbND.runND _ _ _ _ _ ⟨n⟩ (@drive ⟨n⟩ fmapEmpty false exemplarFile ["cmdname"]) (@dst₀ ⟨n⟩ 0)
+  @CerbND.runND _ _ _ _ _ ⟨n⟩ (@drive ⟨n⟩ fmapEmpty false exemplarFile ["cmdname"]) (@dst₀ ⟨n⟩ 0 exemplarTop)
 
 /-- The postcondition: the delivered Core value is `Specified(42)`. -/
 def post (r : driver_result) (_ : driver_state) : Prop :=
@@ -414,7 +426,7 @@ def setupTail [LemFuel] (tid0 : Nat) : driverM Unit :=
 
 /-- The state at `driver2`'s entry, at the ambient instance. -/
 def S₁ [LemFuel] : driver_state :=
-  (runOne (setupTail 0) (runOne (driver_globals fmapEmpty false exemplarFile) (dst₀ 0)).2).2
+  (runOne (setupTail 0) (runOne (driver_globals fmapEmpty false exemplarFile) (dst₀ 0 exemplarTop)).2).2
 
 /-- The setup split at the shipped pipeline (consumer shape
     `drive_after_setup`), ambient `Nat.succ (Nat.succ k)`: the concrete
@@ -426,7 +438,7 @@ theorem drive_after_setup (k : Nat) (dstD : driver_state)
     (hdrv2 : runOne (@driver2 ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty false) (@S₁ ⟨Nat.succ (Nat.succ k)⟩)
       = (NDactive (), dstD)) :
     runOne (@drive ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty false exemplarFile ["cmdname"])
-        (@dst₀ ⟨Nat.succ (Nat.succ k)⟩ 0)
+        (@dst₀ ⟨Nat.succ (Nat.succ k)⟩ 0 exemplarTop)
       = (NDactive (@finalize ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty "drive (without concur)" dstD), dstD) := by
   conv => lhs; unfold drive
   -- driver_globals: spawn thread 0, no globals

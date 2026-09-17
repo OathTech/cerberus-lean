@@ -14,7 +14,19 @@ type driver_conf = {
   concurrency: bool;
   fs_dump: bool;
   trace: bool;
+  (* address-space-bound slice (2026-09-17): the address-space top the run's initial
+     memory state is built with (mem.lem initial_mem_state; Driver.initial_driver_state) *)
+  address_space_top: Z.t;
 }
+
+(* address-space-bound slice (2026-09-17): THE ONE OCaml address-space numeral — the default
+   top of the address space (the concrete/VIP allocator's initial cursor), formerly the
+   literal `Z.of_int 0xFFFFFFFFFFFF` inside memory/concrete/impl_mem.ml:508 (and
+   memory/vip/impl_mem.ml:175). Upstream's value, so matched mode is unchanged. Every
+   driver (cerberus, and the not-ladder-built web/bmc/rt_ocaml backends) takes its default
+   from HERE; the semantics (frontend/model, memory/) never reads it — a fork-only flag
+   overrides it per run. *)
+let address_space_top_default : Z.t = Z.of_int 0xFFFFFFFFFFFF
 
 type execution_result = (Core.value list, Errors.error) Exception.exceptM
 
@@ -154,7 +166,7 @@ let batch_drive (file: 'a Core.file) args fs_state conf =
   (* changing the annotations type from unit to core_run_annotation *)
   let file = Core_run_aux.convert_file file in
   (* computing the value (or values if exhaustive) *)
-  let initial_dr_st = Driver.initial_driver_state file fs_state in
+  let initial_dr_st = Driver.initial_driver_state conf.address_space_top file fs_state in
   let values = Smt2.runND conf.exec_mode Impl_mem.cs_module (Driver.drive conf.concurrency file args) initial_dr_st in
   List.mapi (fun i (res, z3_strs, nd_st) ->
     let result = begin match res with
@@ -195,7 +207,7 @@ let drive file args fs_state conf : execution_result =
   (* changing the annotations type from unit to core_run_annotation *)
   let file = Core_run_aux.convert_file file in
   (* computing the value (or values if exhaustive) *)
-  let initial_dr_st = Driver.initial_driver_state file fs_state in
+  let initial_dr_st = Driver.initial_driver_state conf.address_space_top file fs_state in
   let values = Smt2.runND conf.exec_mode Impl_mem.cs_module
       (Driver.drive conf.concurrency file args) initial_dr_st in
   let n_actives = List.length (List.filter isActive values) in

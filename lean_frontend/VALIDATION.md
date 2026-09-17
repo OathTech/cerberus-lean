@@ -94,7 +94,8 @@ passed all 90 in its identified full run (see the audit repair record).
 Terminology. **oracle** = the OCaml Cerberus built from this
 repository's `.lem` + OCaml sources, run in the MATCHED MODE (same
 `--nolibc`/libc linkage, `--mode=exhaustive` or `--first` ≙ single trace,
-default switches, no `--concurrency`). **upstream** / **pristine** =
+default switches, no `--concurrency`, the default address-space top — neither
+engine passes `--address-space-top`, §7). **upstream** / **pristine** =
 un-forked Cerberus @ `b9aeedcb4` — as source, `deps/cerberus-upstream`; as an
 ENGINE, the independently compiled build (pristine source + upstream Lem
 `3802cb0`, git archives, `DUNE_CACHE=disabled`, hash-pinned manifest) that
@@ -352,7 +353,9 @@ a bug today and what is a bug still open, in the class vocabulary.
   working practices ban; the oracle's behaviour is a tray candidate).
 - *Accepted command line:* `--batch | --pp-core | --parse-core` (argv[0]),
   `--first`, `--stdin`, `--libc <core>`/`--libc-tu <json>`, `--call <f>`
-  [`--call-args`], `--args <str>`, `--trace-nodes`, `--fuel <N>`; any
+  [`--call-args`], `--args <str>`, `--trace-nodes`, `--fuel <N>`, `--address-space-top <N>`
+  (address-space-bound slice, 2026-09-17: the run's address-space top, a positive
+  integer; absent = upstream's value; 0 or a non-numeral refused, exit 2 — §7); any
   other `--` token, or a known flag out of its canonical position, is
   refused (Z-24; it used to be treated as a file name).
 
@@ -871,6 +874,32 @@ depend on how each body consumes exhaustion (lem-lean fuel-parameter record
 §5) and need composition proofs. A FUEL row is never counted as agreement.
 Records: `docs/2026-09-02_fuel-arc-design.md`,
 `docs/2026-09-04_fuel-parameter-C1-record.md`.
+**The address-space top is a parameter too** (address-space-bound slice,
+2026-09-17; [USER 2026-09-16] *"the semantics should be quantified over such
+bounds"*; record `docs/2026-09-17_address-space-bound-part-two-record.md`,
+design DESIGN.md §4). The concrete allocator's initial cursor — upstream's
+`last_address = 0xFFFFFFFFFFFF` = 281474976710655 — is no longer a literal in
+`memory/concrete/impl_mem.ml`/`memory/vip/impl_mem.ml` or a field default in
+`CerbMem.lean`: `Mem.initial_mem_state : integer -> mem_state`
+(`CerbMem.initialMemState top`) takes it, `initial_driver_state sup top file fs`
+and `Cabs_to_ail.desugar sup top …` (the desugar state carries it for the
+const-expr mini-run's own driver state) thread it, and each executable
+instantiates it ONCE at its entry: `cerberus-lean … --address-space-top N`
+(default `Main.lean` `defaultAddressSpaceTop`, THE ONLY address-space numeral
+permitted in the repository's Lean text — `check_no_fuel_numerals.sh`'s A1–A3
+shapes, plant-tested; 0 or a non-numeral is refused, exit 2) and the fork
+oracle's `Driver_ocaml.address_space_top_default` (the fork-only
+`--address-space-top N` flag of C3; pristine upstream has no such parameter).
+Matched mode passes the flag on neither engine, so every baseline row is
+unmoved; the tests choose their own values (`FuelExemplar.exemplarTop`, the
+speclab gates' `gateAddressSpaceTop`, …) as the ruling allows. A consumer
+theorem quantifies `∀ top` alongside `∀ fuel`; the exemplar's own ∀-fuel
+theorem is stated at its test-chosen top (the symbolic route's setup `rfl`s
+evaluate the errno allocation on a concrete cursor; generalising it under
+`8 ≤ top` is OWED — record, open items). A tiny top is a legitimate instance:
+the allocator kills out of memory exactly where its soundness contract
+(`CerbMem.allocator_active_sound`) says the cursor is below the request.
+
 ## 8. How often
 
 Per `scripts/LADDER.md`: Tier A (every commit) = `test_unit.sh` +

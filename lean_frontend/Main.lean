@@ -498,7 +498,7 @@ def findRuntimeDir : IO String := do
     would be let-SUNK past the NEXT TU's `setDigestIO`, stamping this
     TU's symbols with the wrong digest (see CerberusFresh.forceIO and
     test/Unit/FreshIntTest.lean testDigestGlobal). -/
-def frontendTU [LemFuel] (quiet : Bool) (supply : Nat)
+def frontendTU [LemFuel] (quiet : Bool) (supply : Nat) (addressSpaceTop : Int)
     (coreEvalStuff : Fmap String sym × fun_map Unit × impl)
     (ailnames : Fmap String sym) (stdFunMap : fun_map Unit) (coreImpl : impl)
     (tunit : translation_unit) : IO (Except UInt8 (file Unit × Nat)) := do
@@ -518,7 +518,7 @@ def frontendTU [LemFuel] (quiet : Bool) (supply : Nat)
   -- pins this). The mini-run's own extent still sees the translated
   -- definitions via the reader_seed run_const_expr_driver.
   let desugRes ← (CerberusFresh.forceIO
-    (fun () => desugar fmapEmpty supply coreEvalStuff cnInit "main" tunit) : BaseIO _)
+    (fun () => desugar fmapEmpty supply addressSpaceTop coreEvalStuff cnInit "main" tunit) : BaseIO _)
   match desugRes with
   | .Result (_, (mainSym, ailProg), supplyAfterDesugar) =>
     say s!"  desugaring succeeded!"
@@ -598,7 +598,7 @@ def frontendTU [LemFuel] (quiet : Bool) (supply : Nat)
 
 /-- Load and assemble the libc library Core file (see the module note at
     "C-libc loading" above). -/
-def loadLibc [LemFuel] (quiet : Bool) (supply0 : Nat)
+def loadLibc [LemFuel] (quiet : Bool) (supply0 : Nat) (addressSpaceTop : Int)
     (coreEvalStuff : Fmap String sym × fun_map Unit × impl)
     (ailnames : Fmap String sym) (stdFunMap : fun_map Unit) (coreImpl : impl)
     (libcCorePath : String) (libcTuJsons : List String) :
@@ -635,7 +635,7 @@ def loadLibc [LemFuel] (quiet : Bool) (supply0 : Nat)
       | .ok t => pure t
       | .error e => return (← bail s!"cabs-json parse error in {j}: {e}")
     let _ ← (CerberusFresh.setDigestIO digest : BaseIO Unit)
-    match ← frontendTU true supply coreEvalStuff ailnames stdFunMap coreImpl tunit with
+    match ← frontendTU true supply addressSpaceTop coreEvalStuff ailnames stdFunMap coreImpl tunit with
     | .error _ => return (← bail s!"frontend failed for libc metadata TU {j}")
     | .ok (f, supply') => metaFiles := f :: metaFiles; supply := supply'
   let metaFile ← match link metaFiles with
@@ -864,6 +864,10 @@ def loadLibc [LemFuel] (quiet : Bool) (supply0 : Nat)
     failures). -/
 def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     (firstTrace : Bool)
+    -- the address-space top (address-space-bound slice, 2026-09-17): ONE value for
+    -- both entry points — the desugarer's const-expr mini-run (via frontendTU →
+    -- desugar) and the execution driver (initial_driver_state) — from `--address-space-top`
+    (addressSpaceTop : Int)
     (callFn : Option (String × List Int)) (traceNodes : Bool)
     (libc : Option (String × List String))
     (progArgs : List String)
@@ -935,7 +939,7 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
   let mut supply : Nat := 0
   match libc with
   | some (libcCore, libcTus) =>
-    match ← loadLibc quiet supply coreEvalStuff ailnames stdFunMap coreImpl libcCore libcTus with
+    match ← loadLibc quiet supply addressSpaceTop coreEvalStuff ailnames stdFunMap coreImpl libcCore libcTus with
     | .error code => return code
     | .ok (libcFile, supply') => coreFiles := [libcFile]; supply := supply'
   | none => pure ()
@@ -955,7 +959,7 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     -- BaseIO variant: a discarded pure call is dead-code-eliminated
     -- (CerbTags set/reset pattern, arc-4 S3b).
     let _ ← (CerberusFresh.setDigestIO digest : BaseIO Unit)
-    match ← frontendTU quiet supply coreEvalStuff ailnames stdFunMap coreImpl tunit with
+    match ← frontendTU quiet supply addressSpaceTop coreEvalStuff ailnames stdFunMap coreImpl tunit with
     | .error code => return code
     | .ok (coreFile, supply') => coreFiles := coreFile :: coreFiles; supply := supply'
 
@@ -1016,7 +1020,9 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     let fsState := CerbFS.fs_initial_state
     -- Entry shape (b), charter section 1.3: the supply-parameterized
     -- pure constructor — one draw (the run-init seed) from the stream.
-    let (drSt, _supplyFinal) := initial_driver_state supply runFile fsState
+    -- The address-space top is the run's parameter (the same value the
+    -- desugarer was seeded with above).
+    let (drSt, _supplyFinal) := initial_driver_state supply addressSpaceTop runFile fsState
     say s!"  executing Core..."
     -- Reader seed: execution-slice entry — the linked table, passed as
     -- the value in hand (the load→seed loop is closed).
@@ -1149,6 +1155,17 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     on it. -/
 def defaultFuel : Nat := 100000000  -- FUEL-DEFAULT (the one allowed fuel numeral)
 
+/-- The default top of the address space — the concrete allocator's initial cursor
+    (`CerbMem.initialMemState`, `MemState.lastAddress`), a PARAMETER of the semantics since
+    the address-space-bound slice (2026-09-17; [USER 2026-09-16] "the semantics should be
+    quantified over such bounds"). Upstream's value (`memory/concrete/impl_mem.ml:508` before
+    the slice; now `Driver_ocaml.address_space_top_default`), so matched mode is unchanged;
+    overridable per run by `--address-space-top N`; the ONE address-space numeral the Lean
+    text may carry (`scripts/check_no_fuel_numerals.sh`, the A-shapes). It enters the run at
+    its TWO entry points — the desugarer (the const-expr mini-run's driver state) and the
+    execution driver — from this one value. -/
+def defaultAddressSpaceTop : Int := 0xFFFFFFFFFFFF  -- ADDRESS-SPACE-DEFAULT (the one allowed address-space numeral)
+
 /-- Zero-discrepancy Z-24/Z-25 (charter §2.3; [USER 2026-09-03] Q7: REFUSE,
     do not plumb): every `--`-prefixed token the positional parser does not
     accept is REFUSED — loud (exit 2) and feature-ATTRIBUTED (exception class
@@ -1167,7 +1184,7 @@ def refuseFlag (flag : String) : IO Unit := do
     else if flag == "--batch" || flag == "--pp-core" || flag == "--parse-core" || flag == "--first" then
       "known flag out of its canonical position (`--batch`, `--pp-core` or `--parse-core` must be argv[0]; `--first` must immediately follow `--batch`/`--pp-core`)"
     else
-      "unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>"
+      "unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>, --address-space-top <N>"
   IO.eprintln s!"cerberus-lean: refused — {flag}: {feature} (see VALIDATION.md, zero-discrepancy Z-24)"
   IO.Process.exit 2
 
@@ -1236,6 +1253,11 @@ def main (args : List String) : IO Unit := do
   -- bind — never a verdict — and a silent fallback to the default would
   -- be the fail-open shape the working practices ban.
   let mut fuelStr : Option String := none
+  -- --address-space-top <N> (address-space-bound slice, 2026-09-17): the run's
+  -- address-space top, a positive integer; absent = `defaultAddressSpaceTop`
+  -- (upstream's value); zero or a non-numeral is REFUSED (exit 2), exactly like
+  -- --fuel — a silent fallback would be the fail-open shape the practices ban.
+  let mut addressSpaceTopStr : Option String := none
   let mut restArgs : List String := []
   -- --parse-core consumes its file list itself (below); nothing to scan
   let mut pending := if parseCoreMode then [] else rest1
@@ -1249,10 +1271,11 @@ def main (args : List String) : IO Unit := do
     | "--args" :: v :: rest => progArgsStr := some v; pending := rest
     | "--trace-nodes" :: rest => traceNodes := true; pending := rest
     | "--fuel" :: v :: rest => fuelStr := some v; pending := rest
+    | "--address-space-top" :: v :: rest => addressSpaceTopStr := some v; pending := rest
     | ["--libc"] | ["--libc-tu"] | ["--call"] | ["--call-args"]
-    | ["--args"] | ["--fuel"] =>
+    | ["--args"] | ["--fuel"] | ["--address-space-top"] =>
       IO.eprintln "cerberus-lean: --libc/--libc-tu/--call/--call-args/\
-        --args/--fuel require an argument"
+        --args/--fuel/--address-space-top require an argument"
       IO.Process.exit 1
     | a :: rest =>
       -- Z-24: a `--` token here is not a file name (except `--stdin`)
@@ -1277,6 +1300,17 @@ def main (args : List String) : IO Unit := do
         else pure n
       | none => do
         IO.eprintln s!"cerberus-lean: refused — --fuel {s}: not a decimal numeral (the fuel is a positive integer; default {defaultFuel}; see VALIDATION.md, fuel)"
+        IO.Process.exit 2
+  let addressSpaceTop : Int ← match addressSpaceTopStr with
+    | none => pure defaultAddressSpaceTop
+    | some s => match s.toNat? with
+      | some n =>
+        if n == 0 then do
+          IO.eprintln s!"cerberus-lean: refused — --address-space-top {s}: the address-space top must be a positive integer (the allocator's initial cursor; default {defaultAddressSpaceTop}; see VALIDATION.md, address-space top)"
+          IO.Process.exit 2
+        else pure (n : Int)
+      | none => do
+        IO.eprintln s!"cerberus-lean: refused — --address-space-top {s}: not a decimal numeral (the address-space top is a positive integer; default {defaultAddressSpaceTop}; see VALIDATION.md, address-space top)"
         IO.Process.exit 2
   let callFn : Option (String × List Int) ← match callName, callArgsStr with
     | none, none => pure none
@@ -1382,6 +1416,6 @@ def main (args : List String) : IO Unit := do
   -- fuel'd function below `runPipeline` reads this instance; nothing else
   -- in the repository builds one (`scripts/check_no_fuel_numerals.sh`).
   let code ← (letI : LemFuel := ⟨fuel⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace
-    callFn traceNodes libc progArgs tunits)
+    addressSpaceTop callFn traceNodes libc progArgs tunits)
   if code != 0 then
     IO.Process.exit code

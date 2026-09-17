@@ -81,6 +81,10 @@ type configuration = {
   cpp_cmd: string;
   cpp_stderr: bool; (* pipe cpp stderr to stderr *)
   cpp_save: string option;
+  (* address-space-bound slice (2026-09-17): the address-space top the desugarer seeds its
+     state with (Cabs_to_ail.desugar; the const-expr mini-run's driver state) — the driver
+     passes the SAME value here and in Driver_ocaml.driver_conf *)
+  address_space_top: Z.t;
 }
 
 type io_helpers = {
@@ -203,7 +207,7 @@ let c_frontend ?(cn_init_scope=Cn_desugaring.empty_init) (conf, io) (core_stdlib
        fresh-symbol stream explicitly; on this target the supply
        argument and the returned final-supply component are DEAD (the
        ambient Cerb_fresh.int is the counter) — pass 0, drop it. *)
-    Cabs_to_ail.desugar 0 (ailnames, core_stdlib_fun_map, core_impl) cn_init_scope
+    Cabs_to_ail.desugar 0 conf.address_space_top (ailnames, core_stdlib_fun_map, core_impl) cn_init_scope
       "main" cabs_tunit >>= fun (markers_env, ail_prog, _dead_supply) ->
           (* arc-13 single-supply backstop: every current-digest symbol in
              the desugared program must have been minted by Cerb_fresh.int

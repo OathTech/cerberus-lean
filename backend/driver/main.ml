@@ -123,7 +123,10 @@ let cerberus debug_level progress core_obj
   (* set global configuration *)
   set_cerb_conf ~backend_name:"Driver" ~exec exec_mode ~concurrency QuoteStd ~defacto ~permissive ~agnostic ~ignore_bitfields;
   let conf = { astprints; pprints; ppflags; ppouts; debug_level; typecheck_core;
-               rewrite_core; sequentialise_core; cpp_cmd; cpp_stderr = true; cpp_save = None } in
+               rewrite_core; sequentialise_core; cpp_cmd; cpp_stderr = true; cpp_save = None;
+               (* address-space-bound slice (2026-09-17): the desugar entry and the execution
+                  entry (driver_conf below) take the SAME top — the one named default *)
+               address_space_top = Driver_ocaml.address_space_top_default } in
   let prelude =
     (* Looking for and parsing the core standard library *)
     let switches =
@@ -320,7 +323,8 @@ let cerberus debug_level progress core_obj
           let open Driver_ocaml in
           let () = Tags.reset_tagDefs () in (* TODO: check this *)
           let () = Tags.set_tagDefs core_file.tagDefs in
-          let driver_conf = {concurrency; exec_mode; fs_dump; trace} in
+          let driver_conf = {concurrency; exec_mode; fs_dump; trace;
+                             address_space_top = address_space_top_default} in
           interp_backend io core_file ~args ~batch ~fs ~driver_conf
         else
           match output_name with

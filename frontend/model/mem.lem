@@ -38,7 +38,14 @@ declare lean target_rep function overlapping = `CerbMem.overlapping`
 
 
 type mem_state
-val initial_mem_state: mem_state
+(* address-space-bound slice (2026-09-17; [USER 2026-09-16] "the semantics should be
+   quantified over such bounds"): the initial memory state takes the address-space TOP
+   (the concrete/VIP allocator's initial cursor, formerly a literal inside each
+   implementation) as an explicit parameter threaded from the driver's entry
+   (driver.lem initial_driver_state*, and the desugar state for the const-expr
+   mini-run); matched mode instantiates upstream's value from the executables'
+   command-line default. *)
+val initial_mem_state: integer -> mem_state
 declare ocaml target_rep type mem_state = `Impl_mem.mem_state`
 declare lean target_rep type mem_state = `CerbMem.MemState`
 declare ocaml target_rep function initial_mem_state = `Impl_mem.initial_mem_state`

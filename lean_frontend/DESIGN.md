@@ -139,6 +139,31 @@ deleted, gate-enforced by `scripts/check_no_fuel_numerals.sh`. Records:
 lem-lean `doc/lean-backend/2026-09-03_fuel-parameter-design.md` (R1–R3),
 `docs/2026-09-04_fuel-parameter-C1-record.md`.
 
+**The address-space top joins fuel** (address-space-bound slice, 2026-09-17;
+[USER 2026-09-16]: "the semantics should be quantified over such bounds so we
+could (in principle) be running on a tiny machine with a tiny amount of memory
+to allocate, and the reasoning has to quantify over the bound"). The concrete
+allocator's initial cursor — upstream's `last_address = 0xFFFFFFFFFFFF`, a
+literal inside `memory/concrete/impl_mem.ml` and a structure-field default in
+`CerbMem.lean` until the slice — is an explicit PARAMETER of the shared model:
+`Mem.initial_mem_state : integer -> mem_state` (`CerbMem.initialMemState top`;
+`MemState.lastAddress` has no default), threaded to the TWO places the model
+builds a memory state — the execution entry `initial_driver_state sup top file
+fs` (`initial_driver_state_given sup top file fs` for the const-expr mini-run)
+and the desugar state (`Cabs_to_ail.desugar sup top …` seeds
+`Cabs_to_ail_effect.state.address_space_top`, which the desugarer's
+integer-constant-expression mini-run reads to build ITS driver state,
+`mini_pipeline.lem evalConstantExpressionAux`) — from ONE command-line default on
+each engine: `Main.lean` `defaultAddressSpaceTop` (`--address-space-top N`; the
+one address-space numeral, gate-enforced by `scripts/check_no_fuel_numerals.sh`'s
+A-shapes) and the fork's `Driver_ocaml.address_space_top_default` (filled into
+both `Pipeline.configuration` and `Driver_ocaml.driver_conf` by the driver). A
+consumer theorem therefore quantifies `∀ top` over `initial_driver_state`/`drive`;
+matched mode instantiates upstream's value, so no baseline moves. Not a reader
+constant (the rejected route: a leading binder on every `reader_consumer` seam),
+not a literal in any definition. Record:
+`docs/2026-09-17_address-space-bound-part-two-record.md`.
+
 ## 5. Differential validation: the oracle, lanes, baselines, plants
 
 The compiled OCaml implementation is the reference oracle. This project

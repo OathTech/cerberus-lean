@@ -1,5 +1,6 @@
 #!/bin/bash
-# check_no_fuel_numerals.sh — GATE: no fuel numeral anywhere in the Lean text
+# check_no_fuel_numerals.sh — GATE: no fuel numeral — and, since the address-space-
+# bound slice (2026-09-17), no ADDRESS-SPACE-TOP numeral — anywhere in the Lean text
 # a consumer reasons against (fuel-parameter arc, 2026-09-04; [USER 2026-09-03]
 # "Any and all magic values that are hardcoded and can't be quantified over
 # are definitionally bugs"; lean_frontend/DESIGN.md §4 "No magic values").
@@ -16,10 +17,11 @@
 # they choose must arrive from OUTSIDE the Lean text (`--fuel N` on the
 # gate binaries' command line, scripts/common.sh CERB_TEST_FUEL).
 #
-# THE ONE ALLOWED SITE — Main.lean, allowlisted by exact line content (the
-# harness default and the single instantiation that consumes it):
+# THE ALLOWED SITES — Main.lean, allowlisted by exact line content (the
+# harness defaults and the single fuel instantiation that consumes one):
 #   def defaultFuel : Nat := 100000000  -- FUEL-DEFAULT (the one allowed fuel numeral)
 #   let code ← (letI : LemFuel := ⟨fuel⟩; runPipeline …
+#   def defaultAddressSpaceTop : Int := 0xFFFFFFFFFFFF  -- ADDRESS-SPACE-DEFAULT
 # Any other occurrence of the shapes below fails, naming file:line.
 #
 # Forbidden shapes (each a hardcoded fuel no context could quantify over):
@@ -43,8 +45,20 @@
 #       (def|abbrev|let|letI) …[Ff]uel… := <numeral>   (Main.lean's
 #                                            defaultFuel is the allowlisted
 #                                            exception)
-# Vacuity guards: ≥ MIN_FILES files scanned and ≥ one `_lemFuel` worker seen,
-# else FAIL (not scanning real generated code is a failure, not a pass).
+#
+# Address-space-top shapes (address-space-bound slice, 2026-09-17; [USER 2026-09-16]
+# the bound is a quantified parameter whose matched-mode instance is upstream's
+# 0xFFFFFFFFFFFF = 281474976710655; the allocator's initial cursor enters the run
+# ONLY from `--address-space-top` via `initialMemState top` / `desugar … top …`):
+#   A1  0xFFFFFFFFFFFF / 0xffffffffffff    the default's hex spelling (exactly 12
+#                                            hex digits — CerbFloat's 13-digit mantissa
+#                                            masks are not hits)
+#   A2  281474976710655                    the default in decimal
+#   A3  lastAddress := <numeral> /          a cursor literal in a MemState literal or a
+#       last_address= <numeral>              pasted OCaml record (tests choose a NAMED
+#                                            value, exactly as they do for fuel)
+# Vacuity guards: ≥ MIN_FILES files scanned, ≥ one `_lemFuel` worker seen and the
+# `lastAddress` field seen, else FAIL (not scanning real code is a failure, not a pass).
 #
 # WHAT THIS GATE IS (pre-merge audit M2, 2026-09-04): a plant-tested
 # SPEEDBUMP over the enumerated idiomatic shapes above (bare/hex/ascribed/
@@ -70,6 +84,7 @@ MIN_FILES=150
 ALLOW_MAIN=(
   'def defaultFuel : Nat := 100000000'
   'let code ← (letI : LemFuel := ⟨fuel⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace'
+  'def defaultAddressSpaceTop : Int := 0xFFFFFFFFFFFF'
 )
 
 scan_files() {  # <repo root>
@@ -95,6 +110,7 @@ run_gate() {  # <repo root>; prints verdict lines; returns 0/1
   n=$(echo "$files" | grep -c .)
   if [[ "$n" -lt "$MIN_FILES" ]]; then echo "check_no_fuel_numerals: FAIL (vacuous): only $n files to scan (< $MIN_FILES) — regenerate lean_frontend/generated first"; return 1; fi
   if ! echo "$files" | xargs grep -l '_lemFuel' > /dev/null 2>&1; then echo "check_no_fuel_numerals: FAIL (vacuous): no fuel worker (_lemFuel) in the scanned files"; return 1; fi
+  if ! echo "$files" | xargs grep -l 'lastAddress' > /dev/null 2>&1; then echo "check_no_fuel_numerals: FAIL (vacuous): no MemState.lastAddress field in the scanned files (CerbMem.lean missing from the scan set)"; return 1; fi
   rows=$(for f in $files; do strip_comments "$f"; done)
   # drop the allowlisted Main.lean lines (exact trimmed content, Main.lean only —
   # the hand-written file AND its generated/ copy)
@@ -124,14 +140,20 @@ run_gate() {  # <repo root>; prints verdict lines; returns 0/1
   # always single-component
   report F5 '⟨[[:space:]]*(\([[:space:]]*)?(0x[0-9a-fA-F]+|[1-9][0-9]*)[^,⟩]*⟩'
   report F6 '^[^:]*:[0-9]+:[[:space:]]*(private[[:space:]]+|protected[[:space:]]+|noncomputable[[:space:]]+)*(def|abbrev|let|letI)[[:space:]]+[^:=]*[Ff]uel[^:=]*(:[^=]*)?:=[[:space:]]*[0-9]+[[:space:]]*$'
+  # A1-A3: the address-space top (2026-09-17). A1 = exactly twelve hex f's after 0x, not
+  # preceded by a hex digit/x and not followed by one (the 13-digit mantissa masks in
+  # CerbFloat.lean are not hits); A2 = the decimal; A3 = a cursor literal in a record.
+  report A1 '(^|[^0-9a-fA-Fx])0[xX][fF]{12}([^0-9a-fA-F]|$)'
+  report A2 '(^|[^0-9])281474976710655([^0-9]|$)'
+  report A3 '(lastAddress[[:space:]]*:=|last_address[[:space:]]*=)[[:space:]]*\(?[[:space:]]*(0[xX][0-9a-fA-F]+|[0-9]+)'
   if [[ $status -eq 0 ]]; then
-    echo "check_no_fuel_numerals: OK ($n files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6); allowed Main.lean sites seen: $allowed_hits of $((2 * ${#ALLOW_MAIN[@]})) (hand-written + generated copy))"
+    echo "check_no_fuel_numerals: OK ($n files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6), no address-space-top literal (A1-A3); allowed Main.lean sites seen: $allowed_hits of $((2 * ${#ALLOW_MAIN[@]})) (hand-written + generated copy))"
   fi
   return $status
 }
 
 if [[ "${1:-}" == "--selftest" ]]; then
-  echo "check_no_fuel_numerals: SELFTEST — planting F1-F6 into a scratch copy of the scan set (loud plant banner; nothing in the tree is touched)"
+  echo "check_no_fuel_numerals: SELFTEST — planting F1-F6 and A1-A3 into a scratch copy of the scan set (loud plant banner; nothing in the tree is touched)"
   W=$(mktemp -d "${TMPDIR:-/tmp}/nofuel-plant.XXXXXX") || exit 1
   trap 'rm -rf "$W"' EXIT
   R="$W/root"; LF="$R/lean_frontend"; mkdir -p "$LF/generated" "$LF/test/Unit" "$LF/speclab/test/SLUnit" "$R/tests/immaculate"
@@ -168,6 +190,18 @@ if [[ "${1:-}" == "--selftest" ]]; then
   plant "M2 E6 LemFuel.mk (expr)"                F4 CerbND.lean 'def auditE6 : LemFuel := LemFuel.mk (10^8)'
   plant "M2 E7 worker at a hex literal"          F3 CerbND.lean 'def auditE7 := @driver2_lemFuel ⟨fuelVar⟩ 0x5F5E100 fmapEmpty false'
   plant "M2 E3 arithmetic ⟨10^8⟩"                F5 CerbND.lean 'def auditE3 := @driver2 ⟨10^8⟩ fmapEmpty false'
+  # address-space-bound slice (2026-09-17): the A-shapes — the default's hex (upper/lower)
+  # and decimal spellings and a cursor literal — in a seam, in the generated tree, in a
+  # unit test, in speclab and in an in-Lean probe; plus the allowlisted CONTENT in a
+  # file that is not Main.lean (the allowlist is Main.lean-only). The unplanted set's
+  # green run below is the check that Main.lean's own allowlisted line is ACCEPTED
+  # (`allowed Main.lean sites seen: 6 of 6`).
+  plant "A1 the default hex in a seam"              A1 CerbMem.lean 'def plantTop : Int := 0xFFFFFFFFFFFF'
+  plant "A1 lowercase hex in the generated tree"    A1 generated/Driver.lean 'def plantTop2 : Int := 0xffffffffffff'
+  plant "A1 allowlist-shaped line outside Main"     A1 CerbND.lean 'def defaultAddressSpaceTop : Int := 0xFFFFFFFFFFFF'
+  plant "A2 the default in decimal in a unit test"  A2 test/Unit/MonadicFailstop.lean 'def plantTop3 := initialMemState 281474976710655'
+  plant "A3 lastAddress literal in speclab"         A3 speclab/test/SLUnit/CoreGateTest.lean 'def plantSt : MemState := { lastAddress := 4096 }'
+  plant "A3 last_address= literal in a probe"       A3 ../tests/immaculate/illtyped-store.lean 'def plantSt2 := last_address= 0x1000'
   # E5 — indirection through a non-fuel-named constant — is NOT regex-closable
   # (no shape distinguishes `budget` from any other Nat); the selftest records
   # that the gate stays GREEN on it, so the limit is visible, never silent
@@ -178,7 +212,7 @@ if [[ "${1:-}" == "--selftest" ]]; then
   echo "  REVERTED (unplanted scratch copy):"
   out=$(run_gate "$R"); rc=$?; echo "  $out"
   if [[ $rc -ne 0 ]]; then echo "  PLANT FAIL [green baseline]: the unplanted scan set is not green" >&2; fail=1; fi
-  if [[ $fail -eq 0 ]]; then echo "check_no_fuel_numerals: SELFTEST OK (20 plants red with the declared label; E5 indirection a recorded known gap; unplanted set green)"; else echo "check_no_fuel_numerals: SELFTEST FAILED" >&2; fi
+  if [[ $fail -eq 0 ]]; then echo "check_no_fuel_numerals: SELFTEST OK (26 plants red with the declared label — F1-F6 and A1-A3; E5 indirection a recorded known gap; unplanted set green)"; else echo "check_no_fuel_numerals: SELFTEST FAILED" >&2; fi
   exit $fail
 fi
 

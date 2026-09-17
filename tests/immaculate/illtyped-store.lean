@@ -33,6 +33,13 @@ def intTy : ctype := Ctype [] (.Basic (.Integer (.Signed .Int_)))
 -- the probe takes it from its command line (`--fuel N`, passed by
 -- test_immaculate.sh as $CERB_TEST_FUEL — a test-suite choice, never a
 -- numeral in the Lean text; scripts/check_no_fuel_numerals.sh).
+-- address-space-bound slice (2026-09-17): the initial memory state takes the
+-- address-space top as a parameter. This probe's value is TEST-CHOSEN (the
+-- ruling allows test-suite choices) and IRRELEVANT to its verdict: the
+-- ill-typed-store guard fires before any allocation or cursor read, so the
+-- KILL below is the same at every positive top.
+def probeAddressSpaceTop : Int := 0x10000
+
 def runStore [LemFuel] (mv : MemValue) :
     nd_action Footprint String mem_error
       (mem_constraint IntegerValue) MemState :=
@@ -41,7 +48,7 @@ def runStore [LemFuel] (mv : MemValue) :
   -- scope — the empty map is the pre-C1 (unset-global) state.
   match storeM fmapEmpty (CerbLocation.other "illtyped-store probe") intTy false
       (nullPtrval intTy) mv with
-  | ND f => (f initialMemState).1
+  | ND f => (f (initialMemState probeAddressSpaceTop)).1
 
 def mainAt [LemFuel] : IO Unit := do
   -- Leg 1: _Bool-typed value stored at signed-int type (mem-incompatible).

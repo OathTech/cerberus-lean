@@ -1,0 +1,79 @@
+# diff scripts/fork_drift_manifest.txt (C0 head -> C2)
+0a1,17
+> # address-space-bound part two C2, 2026-09-17 [AGENT]: the address-space TOP becomes a quantified entry parameter
+> # (route A; [USER 2026-09-16] "the semantics should be quantified over such bounds"; charter
+> # lean_frontend/docs/2026-09-17_charter-address-space-bound-part-two.md; fence extension granted 2026-09-17). GENUINE
+> # shared-model SIGNATURE change, identity at the default: mem.lem `initial_mem_state: integer -> mem_state`; driver.lem
+> # `initial_driver_state_with top …`/`initial_driver_state top …`/`initial_driver_state_given sup top …`;
+> # cabs_to_ail_effect.lem state + `address_space_top`, `initial_state sup top …`, `get_address_space_top`, `eval sup top …`;
+> # cabs_to_ail.lem `desugar sup top …` (+ the :1137 mini-run call); mini_pipeline.lem `evalConstantExpressionAux`/
+> # `evalIntegerConstantExpression sup top …`. Fifteen [source-content] pins moved (driver_ocaml.ml c3aac381… -> 65907c6a…, driver_ocaml.mli 4360c8a0… -> 91d09d39…, pipeline.ml 958f266d… -> ad215848…, pipeline.mli 4daefed8… -> 62571771…, main.ml e33b2045… -> 5e4b2121…, cabs_to_ail.lem 5e45fca8… -> 8804250d…, cabs_to_ail_effect.lem a8cd5b21… -> 13a63383…, driver.lem 067f1830… -> bd89e63b…, mem.lem 91898bb3… -> abff8e1d…, mini_pipeline.lem 2a631f74… -> 6fec753e…, impl_mem.ml 88f958f5… -> 3293b888…, impl_mem.ml 97a5da4c… -> 4ba6dc41…, impl_mem.ml 58a46f12… -> 8bcbe8da…, impl_mem.ml 4bc49e63… -> ab57c73b…, memory_model.ml 03bbf030… -> f6c74e4d…);
+> # four unbuilt backends (web/instance.ml, bmc/main.ml, bmc/bmc_utils.ml, ocaml/runtime/rt_ocaml.ml) now differ from
+> # upstream by the mechanical edit (pass the ONE named default Driver_ocaml.address_space_top_default) — they lie OUTSIDE
+> # this gate's oracle SURFACES (backend/web, backend/bmc, backend/ocaml are not ladder-built), so they are NOT manifested
+> # here; the literal Z.of_int 0xFFFFFFFFFFFF LEFT memory/concrete/impl_mem.ml:508 and vip:175 for
+> # backend/common/driver_ocaml.ml (the one OCaml numeral; driver_conf + Pipeline.configuration carry the value).
+> # Layer 2: four [expected-semantic] diff pins moved (cabs_to_ail_effect.ml d252a154… -> fbb0a9dc…, cabs_to_ail.ml 4e43f561… -> db65a20d…, mini_pipeline.ml 75e92ed1… -> bedc4b14…, driver.ml 405c834f… -> beaa991f…) and mem.ml
+> # ADDED to [expected-cosmetic] (its generated delta is COMMENT-ONLY: the lem comment + the `(*val …*)` echo; verified by
+> # comment-strip). Single-row edits, not a wholesale --refresh (which strips this header). Record:
+> # lean_frontend/docs/2026-09-17_address-space-bound-part-two-record.md §C2.
+321,324c338,341
+< 100644 c3aac381b7060f28b7fda8bed04b00edbdcedaf5a6078fd3d60c9cc0bbcff075 backend/common/driver_ocaml.ml
+< 100644 4360c8a0ab0709f0d7c99478e555da87c27fad36980667d4d60aa958270442b4 backend/common/driver_ocaml.mli
+< 100644 958f266db8880c1ab47d3fe12d2a3f4967d2ede0f64c95914adb6c5aea57227f backend/common/pipeline.ml
+< 100644 4daefed842d45a19976f16f2c0c38dd299cd4f6753950e2f7d23974e8d72f022 backend/common/pipeline.mli
+---
+> 100644 65907c6a9fa3816f49fdb3147585630008efe596ecf2ccc4963976ab6c4e669d backend/common/driver_ocaml.ml
+> 100644 91d09d39c2b2e4ef9b870ea665f588f446ca7b5bb84e6701211861ff2a36565e backend/common/driver_ocaml.mli
+> 100644 ad215848e3c780115da1029301ea80a6442d55d8c01386dbbd21f71d723ed7b6 backend/common/pipeline.ml
+> 100644 6257177174ed0fe34a6f9d67fef5caeb935ceccb074612cbe13c93f516d444f8 backend/common/pipeline.mli
+326c343
+< 100644 e33b20452aad36707d313df450ca0e8e5c5326f114796524c6c646e33658563b backend/driver/main.ml
+---
+> 100644 5e4b2121e40feb19ba8c0defa258fc6856668502a3476578c82c4fba4889c6dc backend/driver/main.ml
+341,342c358,359
+< 100644 5e45fca82e0e7330dd1aca51cc85cd35d976fef891a3742a53f3c51337669e7e frontend/model/cabs_to_ail.lem
+< 100644 a8cd5b21a3941d661775765b204f8807b6b3ceebbc8a46c916929539cbd3eedc frontend/model/cabs_to_ail_effect.lem
+---
+> 100644 8804250d1136399f919fcdaa94605fd1fd7116164da67bdeba6ae09e0cdb1144 frontend/model/cabs_to_ail.lem
+> 100644 13a633831226f8474eb6ffa74b4ac1d42d8db35052230dca6ab735bcd1a078b9 frontend/model/cabs_to_ail_effect.lem
+360c377
+< 100644 067f18309657d4eb913eae840fec193a52c85a681afcebcd2a48353b49419eca frontend/model/driver.lem
+---
+> 100644 bd89e63be77612e246dc2438fa5b16e9c27207cf7c3d8c896016dd8295e31810 frontend/model/driver.lem
+367,368c384,385
+< 100644 91898bb378f44784142af8773e8784f0b6e4aa33d422e672552bd5b52624e7b8 frontend/model/mem.lem
+< 100644 2a631f74dd94633b08a34a052197a3028f63cbd8e87a035192e3d865d1c79627 frontend/model/mini_pipeline.lem
+---
+> 100644 abff8e1d7161472b9bb6b03b76d4dc24b03f83a0226dd6ee190811361503c327 frontend/model/mem.lem
+> 100644 6fec753e35d6e7ff2732e02c3f4edb19ca5b5f891b5b467b911a42d819e9974a frontend/model/mini_pipeline.lem
+381,384c398,401
+< 100644 88f958f5bcc3cd4fbf2b8fa1bbc3baf30b48ad0f0de0aca0b14287b9bf24857f memory/cheri-coq/impl_mem.ml
+< 100644 97a5da4c290f3000a3016b988ef50752ea10caaabc31fa2c86f707284324286b memory/concrete/impl_mem.ml
+< 100644 58a46f129c3376fb12f3fd47ccf08e5ec1c7f1c4a543dd410d57421601653878 memory/symbolic/impl_mem.ml
+< 100644 4bc49e634bae47d38e1c1009c9c9679eb3a34c228baf6478770818e614944e90 memory/vip/impl_mem.ml
+---
+> 100644 3293b8888c276125e5e1158a2241fc272ec96d1526761c813777d638b5f62a2c memory/cheri-coq/impl_mem.ml
+> 100644 4ba6dc417a79e9af5875e7d3800bd70061929250e1c450185e7345e36df05ce0 memory/concrete/impl_mem.ml
+> 100644 8bcbe8da2e8bf7c9e32a3afc6d7dbea4c590bb116b7f05ad6a001ee3650c64f9 memory/symbolic/impl_mem.ml
+> 100644 ab57c73b0fc3fca8375a3868a0dbec017f6fe73bcb9b633db8e4bb37351fbbf0 memory/vip/impl_mem.ml
+387c404
+< 100644 03bbf03077ffbc083a9157d62e664919abfde89a9b467767bddf3e4a83db2c40 ocaml_frontend/memory_model.ml
+---
+> 100644 f6c74e4da7436bd7306a9ca874916e7aca24600ebeef857877faf92427944e9f ocaml_frontend/memory_model.ml
+396,397c413,414
+< d252a154bca00b92a9dbe4422e40849d361bf1ad48dfc033be718aefb7e9f05d cabs_to_ail_effect.ml
+< 4e43f561d853351c040b4a53fc03636c3e869c62ff727db49584a22bdb89ea08 cabs_to_ail.ml
+---
+> fbb0a9dcc1b53344b89ff7a7a121d67b141e90d153c927c3199a2836112ecbeb cabs_to_ail_effect.ml
+> db65a20d952f400d5a8a114aec056aa1794ae8fc6a5faacb13e66e2bbc92180a cabs_to_ail.ml
+401c418
+< 75e92ed1280fc1c45fd3e1d3e1c023467aa7542526dba4f2193485f123277cc6 mini_pipeline.ml
+---
+> bedc4b1446ba24d333420c8c0f70ded984dee00fdd12034f02907c4b959d136b mini_pipeline.ml
+404c421
+< 405c834f7108e9ae3614f74ab51089947539f9800c419738e61f056bcc97aa13 driver.ml
+---
+> beaa991f84cb029c803a52e25a74af696bfa85254d7e8ac876dea38d041ba562 driver.ml
+420a438
+> 1da4330c75ee0ee80b8afa8cbb6c42559a492fd761b4d5a12653ed1c7fd3babf mem.ml

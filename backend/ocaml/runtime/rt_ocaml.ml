@@ -197,11 +197,15 @@ let subf = M.op_fval Mem_common.FloatSub
 let mulf = M.op_fval Mem_common.FloatMul
 let divf = M.op_fval Mem_common.FloatDiv
 
-let eq n m = Option.get (M.eq_ival (Some M.initial_mem_state) n m)
-let lt n m = Option.get (M.lt_ival (Some M.initial_mem_state) n m)
-let gt n m = Option.get (M.lt_ival (Some M.initial_mem_state) m n)
-let le n m = Option.get (M.le_ival (Some M.initial_mem_state) n m)
-let ge n m = Option.get (M.le_ival (Some M.initial_mem_state) m n)
+(* address-space-bound slice (2026-09-17): the initial memory state takes the address-space
+   top; this runtime passes the named default (Cerb_backend.Driver_ocaml — the backend's
+   commented-out dune stanza would need cerb_backend in its libraries). NOT ladder-built. *)
+let initial_mem_state = M.initial_mem_state Cerb_backend.Driver_ocaml.address_space_top_default
+let eq n m = Option.get (M.eq_ival (Some initial_mem_state) n m)
+let lt n m = Option.get (M.lt_ival (Some initial_mem_state) n m)
+let gt n m = Option.get (M.lt_ival (Some initial_mem_state) m n)
+let le n m = Option.get (M.le_ival (Some initial_mem_state) n m)
+let ge n m = Option.get (M.le_ival (Some initial_mem_state) m n)
 
 let valid_for_deref_ptrval p = return @@ M.validForDeref_ptrval p
 let memcmp p q r = return @@ M.memcmp p q r
@@ -352,7 +356,8 @@ let dummy_file =
 
 let quit f =
   try
-    let initial_state = Driver.initial_driver_state dummy_file
+    (* address-space-bound slice (2026-09-17): the named default; NOT ladder-built *)
+    let initial_state = Driver.initial_driver_state Cerb_backend.Driver_ocaml.address_space_top_default dummy_file
         Sibylfs.fs_initial_state in
     match Smt2.runND Random Impl_mem.cs_module (Driver.liftMem (f (fun x -> raise (Exit x)) ())) initial_state with
     | _ -> raise (Error "continuation not raised")

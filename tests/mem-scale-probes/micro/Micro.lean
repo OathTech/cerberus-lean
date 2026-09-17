@@ -12,13 +12,20 @@ def zeroByte : AbsByte := { prov := .Prov_none, copyOffset := none, value := som
 def charArrTy (n : Nat) : ctype := Ctype [] (.Array0 unsigned_char (some (n : Int)))
 def intArrTy (n : Nat) : ctype := Ctype [] (.Array0 signed_int (some (n : Int)))
 def tagDefs : CerbTags.TagDefsMap := fmapEmpty
+/-- The address-space top this instrument's states are built with — a MEASUREMENT
+    choice (address-space-bound slice, 2026-09-17: `initialMemState` takes the top as a
+    parameter; the ruling allows test-suite choices), independent of the executable's
+    default: 2^47, a 48-bit-class region whose bytemap keys exceed Lean's small-Int
+    bound (LEAN_MAX_SMALL_INT = 2^31-1 on 64-bit) exactly as the driver's default
+    region does — the property the `hi` cases measure. -/
+def microTop : Int := 1 <<< 47
+
 /-- Address base. `lo` = 0x1000 (keys fit Lean's small-Int range);
-    `hi` = the concrete allocator's real region (lastAddress =
-    0xFFFFFFFFFFFF, CerbMem.MemState) — 48-bit keys exceed Lean's
-    small-Int bound (LEAN_MAX_SMALL_INT = 2^31-1 on 64-bit), so every
-    bytemap key becomes a heap-allocated big integer. -/
+    `hi` = just below `microTop` (48-bit-class keys: every bytemap key
+    becomes a heap-allocated big integer, as in the concrete allocator's
+    real region). -/
 def baseOf (n : Nat) : String → Int
-  | "hi" => 0xFFFFFFFFFFFF - (n : Int) - 0x10000
+  | "hi" => microTop - (n : Int) - 0x10000
   | _ => 0x1000
 
 /-- Time `act` on `n`. Two guards against the compiler moving the pure
@@ -65,10 +72,10 @@ where
     | "replicate" => timeIt c n fun n => (List.replicate n unspecByte).length
     -- allocation: replicate + per-byte TreeMap insert (writeBytesTo)
     | "alloc" => timeIt c n fun n =>
-        (writeBytesTo initialMemState base (List.replicate n unspecByte)).bytemap.size
+        (writeBytesTo (initialMemState microTop) base (List.replicate n unspecByte)).bytemap.size
     -- load side: per-byte TreeMap lookup (readBytesFrom) over a resident map
     | "read" =>
-        let st := writeBytesTo initialMemState base (List.replicate n zeroByte)
+        let st := writeBytesTo (initialMemState microTop) base (List.replicate n zeroByte)
         force st.bytemap.size
         timeIt c n fun n => (readBytesFrom st base n).length
     -- repr of an N-element char array of zeros (a_zero_global / b_zero_local)
@@ -93,15 +100,15 @@ where
         timeIt c n fun n => match bytesToInt bytes false with | some v => v.toNat % 251 | none => 0
     -- N single-byte stores at consecutive addresses (d_loop's map-update cost)
     | "store_loop" => timeIt c n fun n =>
-        (Nat.fold n (fun i _ st => writeBytesTo st (base + i) [zeroByte]) initialMemState).bytemap.size
+        (Nat.fold n (fun i _ st => writeBytesTo st (base + i) [zeroByte]) (initialMemState microTop)).bytemap.size
     -- N single-byte loads (readBytesFrom size 1) over a resident map
     | "load_loop" =>
-        let st := writeBytesTo initialMemState base (List.replicate n zeroByte)
+        let st := writeBytesTo (initialMemState microTop) base (List.replicate n zeroByte)
         force st.bytemap.size
         timeIt c n fun n => Nat.fold n (fun i _ acc => acc + (readBytesFrom st (base + i) 1).length) 0
     -- the whole by-value copy path: read N bytes, abst as char[N], repr, write back
     | "copy_chararray" =>
-        let st := writeBytesTo initialMemState base (List.replicate n zeroByte)
+        let st := writeBytesTo (initialMemState microTop) base (List.replicate n zeroByte)
         force st.bytemap.size
         timeIt c n fun n =>
           let bytes := readBytesFrom st base n

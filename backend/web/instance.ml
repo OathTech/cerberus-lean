@@ -44,6 +44,8 @@ let setup conf =
                            else conf.cpp_cmd);
       cpp_stderr=         false;
       cpp_save=           None;
+      (* address-space-bound slice (2026-09-17): the named default; cerberus-web is not ladder-built *)
+      address_space_top=  Cerb_backend.Driver_ocaml.address_space_top_default;
     }
   in { pipeline= pipeline_conf;
        io= dummy_io;
@@ -632,7 +634,8 @@ let step ~conf ~filename (active_node_opt: Instance_api.active_node option) =
     end >>= fun core ->
     Tags.set_tagDefs core.tagDefs;
     let core'    = Core_run_aux.convert_file core in
-    let st0      = Driver.initial_driver_state core' Sibylfs.fs_initial_state (* TODO *) in
+    (* address-space-bound slice (2026-09-17): the configuration's top; cerberus-web is not ladder-built *)
+    let st0      = Driver.initial_driver_state conf.pipeline.address_space_top core' Sibylfs.fs_initial_state (* TODO *) in
     let (m, st)  = (Driver.drive false core' [], st0) in
     last_node_id := 0;
     let node_info= `Init in

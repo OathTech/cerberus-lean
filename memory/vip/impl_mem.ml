@@ -167,12 +167,14 @@ type mem_state = {
   last_used: allocation_id option;
 } [@@warning "-unused-field"]
 
-let initial_mem_state: mem_state =
+(* address-space-bound slice (2026-09-17): the address-space top is the driver's parameter
+   (see memory/concrete/impl_mem.ml initial_mem_state). *)
+let initial_mem_state (address_space_top: Z.t) : mem_state =
   { allocations= IntMap.empty
   ; bytemap= IntMap.empty
   ; funptrmap= IntMap.empty
   ; next_alloc_id= Z.zero
-  ; last_address= Z.of_int 0xFFFFFFFFFFFF
+  ; last_address= address_space_top
   ; last_used= None }
 
 type 'a memM =

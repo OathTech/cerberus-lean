@@ -33,12 +33,17 @@ set_option autoImplicit false
 def ppOf (d : generic_fun_map_decl Unit Unit) : Except String String :=
   SpecLabEmitCore.ppFunMapDecl d
 
+/-- The address-space top the gate's driver state is built with — a TEST-CHOSEN value
+    (address-space-bound slice, 2026-09-17; the ruling allows test-suite choices): 4 GiB,
+    ample for every pinned program's few allocations; never the executable's default. -/
+def gateAddressSpaceTop : Int := 0x100000000
+
 /-- Run the assembled file through the production driver entry
 (`drive`, `["cmdname"]`, default fs) and project the single-execution
 verdict. -/
 def runFile [LemFuel] (f : file core_run_annotation) : Sum Int String :=
   match CerbND.runND (drive f.tagDefs false f ["cmdname"])
-      ((initial_driver_state 0 f CerbFS.fs_initial_state).1) with
+      ((initial_driver_state 0 gateAddressSpaceTop f CerbFS.fs_initial_state).1) with
   | [(Active r, _, _)] =>
     match r.dres_core_value with
     | Vloaded (LVspecified (OVinteger (CerbMem.IntegerValue.IV _ n))) =>

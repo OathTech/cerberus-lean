@@ -102,7 +102,9 @@ let cerberus debug_level progress core_obj
   set_cerb_conf ~backend_name:"Bmc" ~exec exec_mode ~concurrency QuoteStd ~defacto ~permissive:false ~agnostic:false ~ignore_bitfields:false;
   let conf = { astprints; pprints; ppflags; ppouts=[]; debug_level; typecheck_core;
                rewrite_core; sequentialise_core; cpp_cmd; cpp_stderr = true;
-               cpp_save= None } in
+               cpp_save= None;
+               (* address-space-bound slice (2026-09-17): the named default; cerberus-bmc is not ladder-built *)
+               address_space_top= Cerb_backend.Driver_ocaml.address_space_top_default } in
   let prelude =
     (* Looking for and parsing the core standard library *)
     Switches.set switches;

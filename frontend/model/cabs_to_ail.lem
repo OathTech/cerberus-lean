@@ -1133,8 +1133,9 @@ let evaluate_integer_constant_expression loc ty_opt expr =
      round-trip on the OCaml target, where the mini-run draws
      ambiently) *)
   E.get_fresh_sym_supply >>= fun sup ->
+  E.get_address_space_top >>= fun address_space_top ->
   E.liftException
-      (Mini_pipeline.evalIntegerConstantExpression sup loc core_env sigm ty_opt expr) >>= fun (n, sup') ->
+      (Mini_pipeline.evalIntegerConstantExpression sup address_space_top loc core_env sigm ty_opt expr) >>= fun (n, sup') ->
   E.set_fresh_sym_supply sup' >>
   E.return n
 
@@ -4970,9 +4971,12 @@ import Core
    desugar state with it, and returns the final supply beside the
    result. DEAD on the OCaml target (ambient counter; callers pass 0
    and ignore the returned component). *)
-val desugar: nat -> (map string Symbol.sym) * Core.fun_map unit * Core.impl -> Cn_desugaring.init_scope -> string -> translation_unit ->
+val desugar: nat -> integer -> (map string Symbol.sym) * Core.fun_map unit * Core.impl -> Cn_desugaring.init_scope -> string -> translation_unit ->
   Exception.exceptM (E.fin_markers_env * ail_program unit * nat) Errors.error
-let desugar sup core_eval_stuff cn_eval_stuff startup_str (TUnit edecls) =
+(* address-space-bound slice (2026-09-17): the second parameter is the address-space top
+   the desugar state is seeded with (E.initial_state), read back by the const-expr
+   mini-run; the driver passes the same value here and to the execution entry. *)
+let desugar sup address_space_top core_eval_stuff cn_eval_stuff startup_str (TUnit edecls) =
 (*
   E.eval sym_counter core_eval_stuff cn_eval_stuff (
     E.under_scope E.Scope_file (
@@ -5047,7 +5051,7 @@ let desugar sup core_eval_stuff cn_eval_stuff startup_str (TUnit edecls) =
     )
   ) 
 *)
-  E.eval sup core_eval_stuff cn_eval_stuff (
+  E.eval sup address_space_top core_eval_stuff cn_eval_stuff (
     E.under_scope E.Scope_file (
       register_cn_predicate_names edecls                       >>= fun () ->
       register_cn_function_names edecls                        >>= fun () ->

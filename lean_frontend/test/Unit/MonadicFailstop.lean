@@ -14,15 +14,20 @@ def stops (m : CerbMem.memM a) (s : MemState) (msg : String) : Bool :=
 def active (m : CerbMem.memM a) (s : MemState) : Bool :=
   match step m s with | (NDactive _, _) => true | _ => false
 
+/-- The address-space top of the witnesses' base state — a TEST-CHOSEN value (address-space-
+    bound slice, 2026-09-17); the fail-stops under test never read the cursor. -/
+def testAddressSpaceTop : Int := 0x10000
+
 def checks (fuel : Nat) : List (String × Bool) := Id.run do
   letI := LemFuel.mk fuel
+  let st0 := initialMemState testAddressSpaceTop
   let tags : CerbTags.TagDefsMap := default
   let loc := CerbLocation.unknown
   let iv := IntegerValue.IV .Prov_none
   let ptr := PointerValue.PV (.Prov_some 7) (.PVconcrete none 100)
   let alloc : Allocation := { base := 100, size := 1 }
-  let st : MemState := { initialMemState with
-    allocations := initialMemState.allocations.insert 7 alloc
+  let st : MemState := { st0 with
+    allocations := st0.allocations.insert 7 alloc
     lastUsed := some 99 }
   let dead := { st with deadAllocations := [7], dynamicAddrs := [100] }
   let va := { st with varargs := [(4, (1, []))] }
@@ -55,7 +60,7 @@ def checks (fuel : Nat) : List (String × Bool) := Id.run do
       | (NDkilled (Other _), _) => true | _ => false),
     ("continuation cannot revive failure or overwrite its state",
       stops (nd_bind memcmpStop (fun _ => memReturn ())) st cmpMsg &&
-        (step (nd_bind memcmpStop (fun _ => ND fun _ => (NDactive (), initialMemState))) st).2.lastUsed == some 7),
+        (step (nd_bind memcmpStop (fun _ => ND fun _ => (NDactive (), st0))) st).2.lastUsed == some 7),
     ("UTF-8 and control bytes are escaped", batchRecord "a\n\"\\—" ==
       "ModelFailure {msg: \"a\\n\\\"\\\\\\226\\128\\148\"}")]
 

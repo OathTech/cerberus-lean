@@ -1,0 +1,78 @@
+# C2 FAST-GATE tails at the committed C2 tree (verbatim; every lane via scripts/ce). Earlier runs at the tree ONE diagnostic-string edit before (refuseFlag's accepted-flag list) are noted where they were not repeated.
+## make prelude-src lean-prelude-src
+[STAMP] recording Lean lem-sync content stamp
+check_lem_sync: recorded lean_frontend/lem_sync.sha256 (src 037dee26c6472b1bf7f8d628bec1b7e64d2f9d12d67c81bd37b55e634fd34b2d, gen cd499eab48146463197f60b35a9fb26c31337bab7d06b2f1d9af43047c2619b5)
+/home/dev/projects/cerberus-lean-proj/scripts/ce make prelude-src   34.72s user 0.71s system 100% cpu 35.399 total
+check_lem_sync: recorded lean_frontend/lem_sync.sha256 (src 037dee26c6472b1bf7f8d628bec1b7e64d2f9d12d67c81bd37b55e634fd34b2d, gen cd499eab48146463197f60b35a9fb26c31337bab7d06b2f1d9af43047c2619b5)
+## generated deltas (Lean / OCaml) from the C0 tree
+lean: Cabs_to_ail.lean
+lean: Main.lean
+lean: CerbMem.lean
+lean: Cabs_to_ail_effect.lean
+lean: Mini_pipeline.lean
+lean: Driver.lean
+ocaml: mini_pipeline.ml
+ocaml: cabs_to_ail.ml
+ocaml: driver.ml
+ocaml: cabs_to_ail_effect.ml
+ocaml: mem.ml
+## engine rebuild
+✔ [285/285] Built «cerberus-lean»:exe (531ms)
+build_cerberus rc=0
+✔ [285/285] Built «cerberus-lean»:exe (533ms)
+build_lean rc=0
+## speclab build (tree before the refuseFlag string edit; speclab does not depend on Main)
+speclab build rc=0
+## check_fork_drift.sh (after the manifest re-pin)
+check_fork_content: OK — 76 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 25 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+## test_unit.sh (final tree = release A1; the standalone run at the pre-string tree quoted for the plant lines)
+Total: 11 passed, 0 failed
+  PLANT OK   [A1 the default hex in a seam] -> check_no_fuel_numerals: FAIL (A1): fuel numeral shape found:
+  PLANT OK   [A1 lowercase hex in the generated tree] -> check_no_fuel_numerals: FAIL (A1): fuel numeral shape found:
+  PLANT OK   [A1 allowlist-shaped line outside Main] -> check_no_fuel_numerals: FAIL (A1): fuel numeral shape found:
+  PLANT OK   [A2 the default in decimal in a unit test] -> check_no_fuel_numerals: FAIL (A2): fuel numeral shape found:
+  PLANT OK   [A3 lastAddress literal in speclab] -> check_no_fuel_numerals: FAIL (A3): fuel numeral shape found:
+  PLANT OK   [A3 last_address= literal in a probe] -> check_no_fuel_numerals: FAIL (A3): fuel numeral shape found:
+  check_no_fuel_numerals: OK (324 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6), no address-space-top literal (A1-A3); allowed Main.lean sites seen: 6 of 6 (hand-written + generated copy))
+check_no_fuel_numerals: SELFTEST OK (26 plants red with the declared label — F1-F6 and A1-A3; E5 indirection a recorded known gap; unplanted set green)
+check_no_fuel_numerals: OK (324 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6), no address-space-top literal (A1-A3); allowed Main.lean sites seen: 6 of 6 (hand-written + generated copy))
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 25 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+## test_immaculate.sh (final tree)
+  MATCH          tray44-allocator-exhausted-single-request  O[ERR:{msg: "MerrOther "Concrete.allocator: failed (out of memory)""}] L[ERR:{msg: "MerrOther "Concrete.allocator: failed (out of memory)""}]
+  MATCH          tray44-allocator-exhausted-single-request-overlap  O[ERR:{msg: "MerrOther "Concrete.allocator: failed (out of memory)""}] L[ERR:{msg: "MerrOther "Concrete.allocator: failed (out of memory)""}]
+  KILL           illtyped-store      
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+## test_upstream_oracle.py (final tree)
+Independent oracle scope: tier-b; 859 rows in 114.9s; source unchanged: True
+Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}
+row10 rc=0
+Independent oracle scope: plant; 53 rows in 1.6s; source unchanged: True
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}
+plant rc=0
+## release.py --mode fast (final tree; the previous attempt read 'Source unchanged: False' because the worker overwrote an evidence file mid-run — rc 1, correctly; re-run untouched)
+PASSED A1 (210.6s)
+PASSED A2 (27.8s)
+PASSED A3 (50.7s)
+PASSED A4 (22.4s)
+PASSED A4b (23.8s)
+PASSED A4c (3.0s)
+PASSED A5 (21.6s)
+PASSED A6 (2.1s)
+PASSED A6b (3.5s)
+PASSED A7 (10.3s)
+PASSED A8 (8.8s)
+PASSED A9 (16.7s)
+PASSED A10 (16.4s)
+PASSED A11 (57.5s)
+fast: passed; 14/14 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+release rc=0
+## speclab gate lanes, Tier B row 6 (pre-string tree)
+test_speclab_divmod: PASS (--gate)
+test_speclab_bytearr: PASS (--gate)
+test_speclab_list: PASS (--gate)
+test_speclab_tree: PASS (--gate)
+test_speclab_seed: PASS (--gate)
+test_speclab: PASS (both pipelines agree on Specified(0))
+test_speclab: PASS (both pipelines agree on Specified(2))

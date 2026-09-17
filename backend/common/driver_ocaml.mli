@@ -6,7 +6,11 @@ type driver_conf = {
   concurrency: bool;
   fs_dump: bool;
   trace: bool;
+  address_space_top: Z.t; (* the address-space top the run's initial memory state is built with (2026-09-17) *)
 }
+
+(* THE ONE OCaml address-space numeral (upstream's value); see driver_ocaml.ml *)
+val address_space_top_default : Z.t
 
 type execution_result = (Core.value list, Errors.error) Exception.exceptM
 

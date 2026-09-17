@@ -500,12 +500,15 @@ module Concrete : Memory = struct
     requested: (address * Z.t) list; (* the addresses (and object sizes) that were allocated with cerb::with_address() *)
   }
   
-  let initial_mem_state = {
+  (* address-space-bound slice (2026-09-17): the top of the address space is the driver's
+     parameter (Driver_ocaml.address_space_top_default in matched mode = the value that
+     was the literal here); the semantics no longer fixes it. *)
+  let initial_mem_state address_space_top = {
     next_alloc_id= Z.zero;
     next_iota= Z.zero;
     allocations= IntMap.empty;
     iota_map= IntMap.empty;
-    last_address= Z.of_int 0xFFFFFFFFFFFF; (* TODO: this is a random impl-def choice *)
+    last_address= address_space_top;
     funptrmap = IntMap.empty;
     varargs = IntMap.empty;
     next_varargs_id = Z.zero;

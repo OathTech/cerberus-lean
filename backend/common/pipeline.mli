@@ -19,6 +19,7 @@ type configuration = {
   cpp_cmd: string;
   cpp_stderr: bool;
   cpp_save: string option; (* Save the result of pre-processing to this file *)
+  address_space_top: Z.t; (* the address-space top the desugar state is seeded with (2026-09-17) *)
 }
 
 type io_helpers = {

@@ -238,6 +238,12 @@ type state = <|
      the fork-drift manifest (renumber=arc13), and native/fresh_int.c for
      the Lean-side margin backstop. *)
   fresh_sym_supply: nat;
+  (* address-space-bound slice (2026-09-17): the address-space TOP the const-expr
+     mini-run's driver state is built with (mini_pipeline.lem
+     evalConstantExpressionAux -> Driver.initial_driver_state_given); seeded by the
+     desugar entry from the executable's command-line default, so the desugarer and
+     the execution driver share ONE value by construction. *)
+  address_space_top: integer;
   (* table (with stacked scopes) associating C identifiers to symbols *)
   
   registered_external_identifiers: map (Symbol.identifier * namespace) (scope * (A.ail_identifier * identifier_kind * maybe linkage));
@@ -574,12 +580,13 @@ let empty_switch_info =
    stream: Main seeds it once; desugar, const-expr mini-runs,
    elaboration and the run-init seed all draw from and return to it.
    On the OCaml target the field stays DEAD (arc-13 scheme R-B). *)
-val initial_state: nat -> (map string Symbol.sym) * Core.fun_map unit * Core.impl -> Cn_desugaring.init_scope -> state_with_markers
-let initial_state fresh_sym_supply_seed core_eval_stuff cn_eval_stuff = <|
+val initial_state: nat -> integer -> (map string Symbol.sym) * Core.fun_map unit * Core.impl -> Cn_desugaring.init_scope -> state_with_markers
+let initial_state fresh_sym_supply_seed address_space_top core_eval_stuff cn_eval_stuff = <|
   inner= <|
     aux_supply=      0;
     scope_id_supply= 0;
     fresh_sym_supply= fresh_sym_supply_seed;
+    address_space_top= address_space_top;
     
     registered_external_identifiers= Map.empty;
     registered_identifiers=      Scope_table.empty;
@@ -699,14 +706,20 @@ val set_fresh_sym_supply: nat -> desugM unit
 let set_fresh_sym_supply n =
   modify_inner (fun st -> ((), <| st with fresh_sym_supply= n |>))
 
-val eval: forall 'a. nat -> (map string Symbol.sym) * Core.fun_map unit * Core.impl -> Cn_desugaring.init_scope -> desugM 'a -> Exception.exceptM (fin_markers_env * 'a * nat) Errors.error
-let cabs_to_ail_effect_eval sup core_eval_stuff cn_eval_stuff m =
+(* address-space-bound slice (2026-09-17): read the seeded address-space top for the
+   const-expr mini-run (cabs_to_ail.lem, the evalIntegerConstantExpression call). *)
+val get_address_space_top: desugM integer
+let get_address_space_top =
+  modify_inner (fun st -> (st.address_space_top, st))
+
+val eval: forall 'a. nat -> integer -> (map string Symbol.sym) * Core.fun_map unit * Core.impl -> Cn_desugaring.init_scope -> desugM 'a -> Exception.exceptM (fin_markers_env * 'a * nat) Errors.error
+let cabs_to_ail_effect_eval sup address_space_top core_eval_stuff cn_eval_stuff m =
   State_exception.eval begin
     m >>= fun res ->
     fin_markers_env () >>= fun markers ->
     get_fresh_sym_supply >>= fun sup' ->
     State_exception.return (markers, res, sup')
-  end (initial_state sup core_eval_stuff cn_eval_stuff)
+  end (initial_state sup address_space_top core_eval_stuff cn_eval_stuff)
 let inline eval = cabs_to_ail_effect_eval
 
 

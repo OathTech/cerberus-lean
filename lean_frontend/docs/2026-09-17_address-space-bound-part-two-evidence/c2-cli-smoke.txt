@@ -1,0 +1,37 @@
+# C2 smoke: the new CLI surface (Lean) — verbatim (LEAN_ABORT_ON_PANIC=1; cabs-jsons of tests/minimal/001-return-literal.c and 112-allocator-exhausted-single-request.c made by the rebuilt fork oracle --cabs-json). The errno int (size 4, align 4) needs top >= 8.
+$ cerberus-lean --batch  001.json
+Defined {value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+[rc=0]
+$ cerberus-lean --batch --address-space-top 0 001.json
+cerberus-lean: refused — --address-space-top 0: the address-space top must be a positive integer (the allocator's initial cursor; default 281474976710655; see VALIDATION.md, address-space top)
+[rc=2]
+$ cerberus-lean --batch --address-space-top abc 001.json
+cerberus-lean: refused — --address-space-top abc: not a decimal numeral (the address-space top is a positive integer; default 281474976710655; see VALIDATION.md, address-space top)
+[rc=2]
+$ cerberus-lean --batch --address-space-top -5 001.json
+cerberus-lean: refused — --address-space-top -5: not a decimal numeral (the address-space top is a positive integer; default 281474976710655; see VALIDATION.md, address-space top)
+[rc=2]
+$ cerberus-lean --batch --address-space-top 64 001.json
+Defined {value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+[rc=0]
+$ cerberus-lean --batch --address-space-top 8 001.json
+Defined {value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+[rc=0]
+$ cerberus-lean --batch --address-space-top 7 001.json
+Error {msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
+[rc=1]
+$ cerberus-lean --batch --address-space-top 281474976710655 001.json
+Defined {value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+[rc=0]
+$ cerberus-lean --batch 001.json --address-space-top
+cerberus-lean: --libc/--libc-tu/--call/--call-args/--args/--fuel/--address-space-top require an argument
+[rc=1]
+$ cerberus-lean --batch --address-space-topx 5 001.json   (an unknown flag: the Z-24 refusal, its accepted list now names --address-space-top)
+cerberus-lean: refused — --address-space-topx: unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>, --address-space-top <N> (see VALIDATION.md, zero-discrepancy Z-24)
+[rc=2]
+$ cerberus-lean --batch 112.json   (the tray-44 witness at the default: the kill)
+Error {msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
+[rc=1]
+$ cerberus-lean --batch --address-space-top 4096 112.json   (a tiny top: the same kill — the request exceeds any cursor)
+Error {msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
+[rc=1]

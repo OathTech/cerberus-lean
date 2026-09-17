@@ -150,7 +150,12 @@ structure Allocation where
 structure MemState where
   nextAllocId : StorageInstanceId := 0
   nextIota : SymbolicStorageInstanceId := 0
-  lastAddress : Address := 0xFFFFFFFFFFFF
+  -- last_address — the allocator's cursor (impl_mem.ml:1252-1263). NO default since the
+  -- address-space-bound slice (2026-09-17; [USER 2026-09-16]): the top of the address
+  -- space is a PARAMETER of the semantics (`initialMemState addressSpaceTop`, threaded
+  -- from the driver's entry), never a literal in a definition; matched mode instantiates
+  -- upstream's value from Main.lean `defaultAddressSpaceTop` (`--address-space-top N`).
+  lastAddress : Address
   -- arc-6 S3: Std.TreeMap Int (OCaml: IntMap = Map.Make(Z), impl_mem.ml:93);
   -- never enumerated (order-unobserved), keys unique -> results identical to
   -- the previous assoc list at O(log n)
@@ -1777,7 +1782,15 @@ def overlapping (f1 f2 : Footprint) : Bool :=
   | .FP _ b1 sz1, .FP _ b2 sz2 =>
     !(b1 + sz1 ≤ b2 || b2 + sz2 ≤ b1)
 
-def initialMemState : MemState := {}
+/-- The initial memory state at address-space top `addressSpaceTop` — impl_mem.ml:503-516
+    `initial_mem_state`, whose `last_address` was the literal `0xFFFFFFFFFFFF` (:508, "a random
+    impl-def choice") until the address-space-bound slice (2026-09-17; [USER 2026-09-16] "the
+    semantics should be quantified over such bounds"): the top is a PARAMETER threaded from
+    the driver's entry (`initial_driver_state`, and the desugar state for the const-expr
+    mini-run), so a consumer theorem quantifies `∀ top`; matched mode instantiates upstream's
+    value from `Main.lean` `defaultAddressSpaceTop` (`--address-space-top N`). Every other
+    field is the OCaml record's empty/zero. -/
+def initialMemState (addressSpaceTop : Int) : MemState := { lastAddress := addressSpaceTop }
 
 /-! ## Pretty-printing (arc-10 S3 — real mirrors of the OCaml printers)
 

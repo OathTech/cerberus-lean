@@ -566,7 +566,9 @@ let cs_module = (module Constraints : Constraints with type t = mem_iv_constrain
 type footprint = Defacto_memory_types.impl_footprint
 let overlapping _ _ = false
 type mem_state = Defacto_memory.impl_mem_state
-let initial_mem_state = Defacto_memory.impl_initial_mem_state
+(* address-space-bound slice (2026-09-17): the defacto state has no address cursor — the
+   driver's address-space top is accepted and unused. *)
+let initial_mem_state (_address_space_top: Z.t) = Defacto_memory.impl_initial_mem_state
 type 'a memM =
   ('a, string, Mem_common.mem_error, integer_value Mem_common.mem_constraint, mem_state) Nondeterminism.ndM
 let return = Defacto_memory.impl_return

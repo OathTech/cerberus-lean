@@ -86,13 +86,13 @@ declare {lean} reader_seed val run_const_expr_driver
    redirect ambiently); the desugM caller draws/restores the dead
    field — behavior unchanged. *)
 val evalConstantExpressionAux:
-  nat ->
+  nat -> integer ->
   Loc.t -> (map string Symbol.sym) * C.fun_map unit * C.impl ->
   A.sigma unit ->
   (GenTypes.genTypeCategory -> Eff.exceptM unit Errors.error) ->
   maybe Ctype.ctype -> A.expression unit -> Eff.exceptM (C.value * nat) Errors.error
 
-let evalConstantExpressionAux sup loc (*TODO*)(ailnames, stdlib_fun_map, impl) sigm typing_guard ty_opt expr =
+let evalConstantExpressionAux sup address_space_top loc (*TODO*)(ailnames, stdlib_fun_map, impl) sigm typing_guard ty_opt expr =
   let toAilTau: A.expression unit -> ErrorMonad.errorM (A.expression GenTypes.genTypeCategory) =
     GenTyping.annotate_expression (GenTyping.annotate_block Nothing) sigm [] (*TODO: check*)GenTyping.CTXother in
   
@@ -160,7 +160,7 @@ let evalConstantExpressionAux sup loc (*TODO*)(ailnames, stdlib_fun_map, impl) s
              ; C.visible_objects_env = Map.empty
            |> 
           in
-          let (init_dr_st, sup') = Driver.initial_driver_state_given sup_after_elab dummy_core_file Fs.fs_initial_state in
+          let (init_dr_st, sup') = Driver.initial_driver_state_given sup_after_elab address_space_top dummy_core_file Fs.fs_initial_state in
           (* spawning a thread with the Core expression we just generated as it's arena *)
           let ((tid, core_st), run_st) = State.runStateM (
             Core_run.spawn_thread Nothing <|
@@ -199,11 +199,11 @@ let evalConstantExpressionAux sup loc (*TODO*)(ailnames, stdlib_fun_map, impl) s
 
 
 val evalIntegerConstantExpression:
-  nat ->
+  nat -> integer ->
   Loc.t -> (map string Symbol.sym) * C.fun_map unit * C.impl -> A.sigma unit ->
   maybe Ctype.ctype -> A.expression unit -> Eff.exceptM (integer * nat) Errors.error
 
-let evalIntegerConstantExpression sup loc core_env sigm ty_opt expr =
+let evalIntegerConstantExpression sup address_space_top loc core_env sigm ty_opt expr =
   let typing_guard gtc =
     let do_fail =
       Eff.fail (loc, Errors.DESUGAR (Errors.Desugar_UndefinedBehaviour Undefined.UB055_invalid_integer_constant_expression))
@@ -218,7 +218,7 @@ let evalIntegerConstantExpression sup loc core_env sigm ty_opt expr =
             do_fail
     end in
   
-  evalConstantExpressionAux sup loc core_env sigm typing_guard ty_opt expr >>= function
+  evalConstantExpressionAux sup address_space_top loc core_env sigm typing_guard ty_opt expr >>= function
     | (C.Vloaded (C.LVspecified (C.OVinteger ival)), sup') ->
         match Mem.eval_integer_value ival with
           | Just n ->

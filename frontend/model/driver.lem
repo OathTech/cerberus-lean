@@ -1517,13 +1517,13 @@ let finalize debug_str dr_st =
    initial_core_run_state — signature Nat -> file -> fs_state ->
    driver_state * Nat, entry shape (b); OCaml: unchanged behavior, the
    run-state redirect carries no draw). *)
-let initial_driver_state_with run_st file fs_state =
+let initial_driver_state_with address_space_top run_st file fs_state =
   <|
     core_file=         file;
     core_extern=       Core_linking.create_extern_symmap file;
     core_state=        Core_run.initial_core_state;
     core_run_state=    run_st;
-    layout_state=      Mem.initial_mem_state;
+    layout_state=      Mem.initial_mem_state address_space_top;
     concurrency_state= Cmm_op.symInitialState Cmm_op.symInitialPre;
     fs_state=          fs_state;
     trace=             [];
@@ -1532,13 +1532,16 @@ let initial_driver_state_with run_st file fs_state =
     dr_step_counter=   0;
   |>
 
-let initial_driver_state file fs_state =
-  initial_driver_state_with (Core_run.initial_core_run_state (Caux.collect_labeled_continuations_NEW file)) file fs_state
+(* address-space-bound slice (2026-09-17): the address-space top is the FIRST explicit
+   parameter of every entry (the Lean supply binder the backend inserts stays ahead of
+   it); a consumer theorem quantifies it. *)
+let initial_driver_state address_space_top file fs_state =
+  initial_driver_state_with address_space_top (Core_run.initial_core_run_state (Caux.collect_labeled_continuations_NEW file)) file fs_state
 
 (* the explicit-supply variant for the const-expr mini-run: consumes
    exactly one draw (the run-seed), mirroring the lifted entry above *)
-let initial_driver_state_given sup file fs_state =
-  ( initial_driver_state_with (Core_run.initial_core_run_state_given sup (Caux.collect_labeled_continuations_NEW file)) file fs_state
+let initial_driver_state_given sup address_space_top file fs_state =
+  ( initial_driver_state_with address_space_top (Core_run.initial_core_run_state_given sup (Caux.collect_labeled_continuations_NEW file)) file fs_state
   , sup+1 )
 
 

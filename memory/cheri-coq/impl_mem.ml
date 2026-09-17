@@ -268,7 +268,9 @@ module CHERIMorello : Memory = struct
   type footprint = MM.footprint
   type mem_state = MM.mem_state
 
-  let initial_mem_state = MM.initial_mem_state
+  (* address-space-bound slice (2026-09-17): the Coq-extracted state fixes its own layout —
+     the driver's address-space top is accepted and unused. *)
+  let initial_mem_state (_address_space_top: Z.t) = MM.initial_mem_state
   let overlapping = MM.overlapping
 
   let cs_module = (module struct

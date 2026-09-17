@@ -36,7 +36,9 @@ module type Memory = sig
   val overlapping: footprint -> footprint -> bool
   
   type mem_state
-  val initial_mem_state: mem_state
+  (* address-space-bound slice (2026-09-17): the initial state takes the address-space
+     top (the allocator's initial cursor) from the driver — mem.lem initial_mem_state. *)
+  val initial_mem_state: Z.t -> mem_state
   
   type 'a memM =
     ('a, string, Mem_common.mem_error, integer_value Mem_common.mem_constraint, mem_state) Nondeterminism.ndM
