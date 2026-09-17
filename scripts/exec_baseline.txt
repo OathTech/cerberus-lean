@@ -111,3 +111,5 @@
 109-escape-hex-all-bytes.c MATCH
 110-escape-octal-all-bytes.c MATCH
 111-escape-nul-inside-literal.c MATCH
+112-allocator-exhausted-single-request.c CERB_SKIP
+113-allocator-exhausted-single-request-overlap.c CERB_SKIP

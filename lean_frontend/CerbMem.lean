@@ -2074,11 +2074,14 @@ def readonlyStatusForAlloc (pref : prefix0) (initOpt : Option MemValue) : Readon
 
 /-- allocator — impl_mem.ml:1247-1270, the arithmetic verbatim on Z (Int),
     AFTER remedy 1 of upstream-tray draft 44 (fork fix, 2026-09-16 — the
-    fork deviates from pristine `b9aeedcb4` here; UNOBSERVABLE at upstream's
-    bound; VALIDATION.md §3 "Fork ≠ pristine"):
+    fork deviates from pristine `b9aeedcb4` here, OBSERVABLY at upstream's
+    own bound: one `malloc` request larger than the cursor by less than
+    `align/2` — tests/minimal/112-allocator-exhausted-single-request.c —
+    gets `Specified(6)` from pristine and the out-of-memory kill from the
+    fork and Lean; register rows, VALIDATION.md §3 "Fork ≠ pristine"):
     `z = last_address - sz` (:1252); `z < 0` → `fail (MerrOther
     "Concrete.allocator: failed (out of memory)")` (:1255-1256 — THE FIX: the
-    cursor is below the request, so no rounding may run. Pristine :1253 rounded
+    cursor is below the request, so no rounding may run. Pristine :1254 rounded
     `z - (if q < 0 then -m else m)`, a truncating-division idiom, but
     `Z.quomod = ediv_rem` (impl_mem.ml:9) is EUCLIDEAN — `m ≥ 0` always — so
     for `z < 0` the line ADDED `m` and, for `-align/2 < z < 0`, SUCCEEDED at an
@@ -2100,7 +2103,9 @@ def readonlyStatusForAlloc (pref : prefix0) (initOpt : Option MemValue) : Readon
     same text.
     CONTRACT — kernel theorem `CerbMem.allocator_active_sound`
     (CerbMemAllocatorProofs.lean): an ACTIVE result `a` has `align ∣ a`,
-    `0 < a`, `a + sz ≤ st.lastAddress`, and the new cursor is `a`; the
+    `0 < a`, `a + sz ≤ st.lastAddress` (its end at or below the cursor —
+    disjoint from everything at or above it, for `sz ≥ 0`), and the new
+    cursor is `a`; the
     below-the-request regime is `allocator_below_request_kills`. Runtime
     witness: `test/Unit/AllocatorSoundnessTest.lean` (the four draft-44
     states, with the pre-fix values as the negative control).

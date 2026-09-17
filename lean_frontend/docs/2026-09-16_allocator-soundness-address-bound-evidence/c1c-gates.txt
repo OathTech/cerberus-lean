@@ -1,0 +1,27 @@
+# C1c pre-commit gates (verbatim; scripts/ce)
+row10 rc=0 wall=115s
+plant rc=0 wall=2s
+ci rc=0 wall=137s
+exec-baseline rc=0 wall=28s
+test_unit rc=0 wall=154s
+chain done
+
+## row 10
+114:112/857 reviewed_difference: minimal/112-allocator-exhausted-single-request.c (pristine 0.0s, fork 0.0s)
+115:113/857 reviewed_difference: minimal/113-allocator-exhausted-single-request-overlap.c (pristine 0.0s, fork 0.0s)
+861:Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 5, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address
+## --plant
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/.
+## --corpus ci
+Independent oracle: passed; {'semantic_agreement': 134, 'matching_incomplete': 2, 'matching_failure': 106}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-addres
+## test_exec.sh --check-baseline
+128:[112/113] CERB_SKIP 112-allocator-exhausted-single-request (error: MerrOther )
+129:[113/113] CERB_SKIP 113-allocator-exhausted-single-request-overlap (error: MerrOther )
+155:SUMMARY: total=113 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=5 cerb_floor=0 cerb_inconsistent=0
+159:Baseline check: 0 regression(s), 0 improvement(s)
+## test_unit.sh
+2:check_handwritten_sync: OK (49 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+441:allocator-soundness-test: OK (4/4 states; kernel theorem CerbMem.allocator_active_sound compiled)
+477:Total: 11 passed, 0 failed
+482:check_theorem_axioms: D14 grep-ban OK (no native_decide/bv_decide in 1 tree(s) + 49 hand-written seam files + LemLibTest.lean)
+811:check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 24 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pi

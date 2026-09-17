@@ -505,16 +505,20 @@ the flexible-array-member compatibility question, 42 = unary minus on a floating
     the printf parser family lost its fuel there. Drafted by Claude (Fable 5.1) under operator
     direction; AI-provenance note per the tray's policy.
 44. **44-concrete-allocator-euclidean-align-down-overlap-at-exhaustion.md** — TRUE BUG /
-    model soundness (slotting note: minor at the default address-space bound — the exhausted
-    regime needs ~2^48 bytes of cumulative allocation, no test reaches it — but real for any
-    smaller address space and for proofs over all runs; ranks with 34, the same allocator).
+    model soundness (slotting note, re-slotted 2026-09-17 [AGENT] after the part-one pre-merge
+    audit refuted the draft's "no test reaches it": OBSERVABLE at the default address-space bound
+    — ONE `malloc` request larger than the cursor by less than `align/2`, a 13-line program
+    (`tests/minimal/112-allocator-exhausted-single-request.c`), makes upstream return an
+    overlapping, misaligned object (`Specified(6)`) where the fork kills; ranks with the
+    true-bug tier's silent-wrong-value bugs, beside 34, the same allocator).
     `Concrete.allocator` (`memory/concrete/impl_mem.ml:1247-1262`; VIP twin
     `memory/vip/impl_mem.ml:202-211`) aligns the new base with `z - (if q < 0 then -m else m)`,
     a TRUNCATING-division idiom, but `quomod = ediv_rem` (`:9`) is Euclidean: once the cursor is
     below the request (`z < 0`) the line ADDS the remainder, and for `-align/2 < z < 0` the
     allocation SUCCEEDS at an address in `(0, align)` — an object overlapping the last live one
     and not `align`-aligned — instead of the out-of-memory kill. Reproduced on the reference's
-    Zarith arithmetic and on the Lean mirror (cursor 3, 4-byte object aligned 4 → address 2).
+    Zarith arithmetic and on the Lean mirror (cursor 3, 4-byte object aligned 4 → address 2), and
+    by the witness program on all three engines (pristine `Specified(6)`, fork = Lean out of memory).
     Remedy 1 (fail when `z < 0` before rounding; the `q < 0` branch becomes dead) in both models.
     Fork fix RULED [USER 2026-09-16] ("unambiguously wrong … allowed to fix ahead of upstream"),
     scheduled after the pristine-oracle instrument slice. Found by the cerberus-sl S2 agent

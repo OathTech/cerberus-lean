@@ -1,3 +1,10 @@
+# allocator-soundness C1c, 2026-09-17 [AGENT]: NO pin moved — a header CORRECTION. The C1 note below first said the
+# allocator deviation was "UNOBSERVABLE at upstream's bound (~2^48 bytes of cumulative allocation needed)": FALSE —
+# the part-one pre-merge audit (lean_frontend/docs/2026-09-17_allocator-part-one-audit-premerge.md M1, branch
+# audit/allocator-part-one) showed ONE malloc request larger than the cursor (by less than align/2) reaches the regime:
+# tests/minimal/112-allocator-exhausted-single-request.c / 113-…-overlap.c — pristine b9aeedcb4 Specified(6) /
+# Specified(106), fork = Lean out-of-memory. Two shared-model-fix register rows added; the C1 note's classification
+# line is corrected in place. Record: lean_frontend/docs/2026-09-16_allocator-soundness-address-bound-record.md §M1.
 # allocator-soundness C1, 2026-09-16 [AGENT]: two [source-content] pins moved — memory/concrete/impl_mem.ml
 # e55389c6… -> 97a5da4c… and memory/vip/impl_mem.ml 1491d4a2… -> 4bc49e63… — remedy 1 of upstream-tray draft 44
 # ([USER 2026-09-16] "unambiguously wrong … allowed to fix ahead of upstream"): `allocator` kills with the EXISTING
@@ -6,8 +13,9 @@
 # `quomod = ediv_rem` ADDED m to a negative z and could return an address in (0, align) overlapping the live object
 # at last_address — is deleted (concrete :1252-1263, vip :207-218; a two-line fork comment at each site). Hand-file
 # (layer 1) OCaml only: no .lem touched, so both generated trees and layer 2 (22 hash-pinned files) are unchanged.
-# UNOBSERVABLE at upstream's bound (~2^48 bytes of cumulative allocation needed): NO register row
-# (scripts/upstream_oracle_differences.json unchanged); recorded in lean_frontend/VALIDATION.md §3 "Fork ≠ pristine".
+# OBSERVABLE at upstream's bound by ONE request larger than the cursor (corrected by the C1c note above, 2026-09-17):
+# two shared-model-fix register rows (scripts/upstream_oracle_differences.json minimal/112-…, minimal/113-…);
+# recorded in lean_frontend/VALIDATION.md §3 "Fork ≠ pristine".
 # Lean mirror lean_frontend/CerbMem.lean `allocator` (line by line, new cites) + the kernel theorem
 # lean_frontend/CerbMemAllocatorProofs.lean `allocator_active_sound` + the runtime witness
 # lean_frontend/test/Unit/AllocatorSoundnessTest.lean. Single-row edits, not a wholesale --refresh (which strips

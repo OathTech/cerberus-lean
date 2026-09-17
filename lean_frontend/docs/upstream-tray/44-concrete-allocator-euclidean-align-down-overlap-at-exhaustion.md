@@ -1,7 +1,7 @@
 # `Concrete.allocator` (and the VIP twin) SUCCEEDS with an overlapping, misaligned object once the address space is exhausted below the request: the align-down step is a truncating-division idiom applied to a Euclidean `quomod`
 
 **Affected:** `memory/concrete/impl_mem.ml:9` (`module Z … let quomod = ediv_rem` — EUCLIDEAN
-division, `0 ≤ m < |align|`), `:1247-1262` (`allocator`; the rounding line is `:1253`), `:508`
+division, `0 ≤ m < |align|`), `:1247-1262` (`allocator`; the rounding line is `:1254`), `:508`
 (`initial_mem_state`: `last_address = Z.of_int 0xFFFFFFFFFFFF; (* TODO: this is a random impl-def
 choice *)`). The same idiom, verbatim, in the VIP model: `memory/vip/impl_mem.ml:8` and `:202-211`.
 `allocator_with_address` (`:1267`) only checks alignment and does no rounding — unaffected. The
@@ -19,7 +19,7 @@ let allocator (sz: Z.t) (align: Z.t) : (storage_instance_id * address) memM =   
     let open Z in
     let z = sub st.last_address sz in
     let (q,m) = quomod z align in
-    let z' = sub z (if q < zero then neg m else m) in                            (* :1253 *)
+    let z' = sub z (if q < zero then neg m else m) in                            (* :1254 *)
     if z' <= zero then
       fail (MerrOther "Concrete.allocator: failed (out of memory)")
     else
@@ -39,12 +39,62 @@ branch ADDS `m` to a negative `z`:
   OVERLAPS the most recently allocated live object (whose base is `last_address`), and `z'` is in
   general not `align`-aligned.
 
+History (2026-09-17): the idiom is ORIGINAL, not a regression — present since the allocator was
+written; not introduced by the 2026-05 Z refactor. At upstream `adee05e5a^` (before the 2026-05-19
+commit "Remove indirect use of Z through Lem's Nat_big_num") the allocator read
+`let (q,m) = quomod z align in let z' = sub z (if less q zero then negate m else m)` with
+`N = Nat_big_num`, whose `quomod = Big_int.quomod_big_int` is ALSO Euclidean
+(`Big_int.quomod_big_int (-1) 4 = (-1, 3)`, `Big_int.quomod_big_int (-5) 4 = (-2, 3)`); the 2026-05
+refactor to `Z.ediv_rem` preserved the behaviour exactly. The `if q < 0 then -m else m` fix-up is what
+one writes for C-style TRUNCATING division (under truncation it rounds a negative `z` further down,
+so exhaustion always kills); under either Euclidean library it adds the remainder instead.
+
 ## Reproducer
 
-No C program reaches the regime at the default bound: `last_address` starts at `0xFFFFFFFFFFFF`
+~~No C program reaches the regime at the default bound: `last_address` starts at `0xFFFFFFFFFFFF`
 and only decreases (a kill does not restore it), so the cumulative size of every `create`/`alloc`
-in one run would have to exceed about 2^48 bytes. The defect is reproduced by evaluating the
-allocator's arithmetic directly, on both engines, 2026-09-16.
+in one run would have to exceed about 2^48 bytes.~~ **ERRATUM 2026-09-17 [AGENT]** (found by the
+independent pre-merge audit of the fork's fix, `2026-09-17_allocator-part-one-audit-premerge.md`
+M1, on the fork's branch `audit/allocator-part-one` — credit to the auditor): the cursor does not
+have to fall by 2^48; ONE request larger than the cursor by less than `align/2` enters the regime.
+A program reads its own cursor as `(uintptr_t)malloc(1)` — `malloc` is `std.core:350`
+`alloc(IvMaxAlignment, size)` behind `malloc_proxy(size_ptr: pointer)`, whose call site `create`s
+an 8-byte argument temporary before `alloc` runs, so the cursor at `alloc` is `a − 8`, and
+`IvMaxAlignment` is 8 — so a request of `a − 7` bytes gives `z = −1` and pristine returns
+`z' = z + (z mod 8) = 6`. The whole program (the fork's `tests/minimal/112-allocator-exhausted-single-request.c`):
+
+```c
+#include <stdlib.h>
+#include <stdint.h>
+int main(void) {
+  uintptr_t a; char *p; char *q;
+  q = malloc(1);
+  if (q == NULL) return 3;
+  a = (uintptr_t)q;
+  p = malloc((size_t)(a - 7));
+  if (p == NULL) return 4;
+  return (int)((uintptr_t)p & 0xff);
+}
+```
+
+Run as `cerberus --nolibc --exec --batch --mode=exhaustive` on the three engines (2026-09-17, verbatim;
+`Time spent` trailer omitted):
+
+```
+pristine b9aeedcb4:  Defined {value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}   [rc=0]
+fork (remedy 1):     Error {msg: "MerrOther "Concrete.allocator: failed (out of memory)""}      [rc=1]
+Lean (the mirror):   Error {msg: "MerrOther "Concrete.allocator: failed (out of memory)""}      [rc=1]
+```
+
+— pristine hands out address 6: not 8-aligned, and the new object `[6, a − 1)` ends ABOVE the cursor
+`a − 8`, i.e. overlaps the live argument temporary. The self-checking variant
+(`tests/minimal/113-allocator-exhausted-single-request-overlap.c`: exit = low byte + 100 if the new
+object ends above the cursor + 50 if 8-aligned) exits `Specified(106)` on pristine and kills on the
+fork and Lean — the complete defect signature at the default bound, in ~40 ms. Requests of `a − 6`
+and `a − 5` give pristine `Specified(4)` / `Specified(2)`; `a − 4` and `a − 8` kill on all three
+engines (the window is exactly the arithmetic's).
+
+The arithmetic alone was the original reproduction (2026-09-16), kept below.
 
 The reference's own arithmetic (OCaml 5.4.0, Zarith `ediv_rem`; the body of `:1251-1256` copied
 verbatim into a standalone program):
@@ -79,8 +129,10 @@ allocation fails.
 
 ## Impact
 
-Any run whose cumulative allocation exceeds the address-space bound: at the default bound this is
-about 2^48 bytes, so no test program is affected today. The defect matters in two other settings:
+Any run in which ONE request is larger than the current cursor by less than `align/2` — at the
+default bound an ordinary 13-line `malloc` program (the Reproducer) does it, so upstream is affected
+today, not only at small bounds (the 2026-09-16 text said "no test program is affected today"; see the
+erratum above). The defect matters further in two settings:
 (1) any smaller address space — the bound is, in upstream's own words, "a random impl-def choice",
 and a model instantiated with a small address space (a tiny target, or a semantics quantified over
 the bound) reaches the exhausted regime with ordinary programs and then reports a SUCCESSFUL
@@ -100,11 +152,20 @@ Either of the following, in BOTH `memory/concrete/impl_mem.ml` and `memory/vip/i
 
 ## Classification
 
-**TRUE BUG** (model soundness, not an ISO matter): the allocator violates its own invariant — fresh
-objects disjoint from live ones and aligned — in a reachable state of the model, and the intended
-kill (`z' ≤ 0`) is defeated by a division-convention mismatch between the idiom and the `quomod`
-definition four lines into the file. Minor at the default bound (unreachable in practice); real for
-small address spaces and for verification over all runs.
+**TRUE BUG (model soundness AND ISO §7.22.3#1: a successful allocation that is misaligned and
+overlaps a live object).** The allocator violates its own invariant — fresh objects disjoint from
+live ones and aligned — in a reachable state of the model, and the intended kill (`z' ≤ 0`) is
+defeated by a division-convention mismatch between the idiom and the `quomod` definition four lines
+into the file. C11 §7.22.3#1 (`tools/n1570.json`), verbatim: *"The pointer returned if the
+allocation succeeds is suitably aligned so that it may be assigned to a pointer to any type of
+object with a fundamental alignment requirement and then used to access such an object or an array
+of such objects in the space allocated (until the space is explicitly deallocated). The lifetime of
+an allocated object extends from the allocation until the deallocation. Each such allocation shall
+yield a pointer to an object disjoint from any other object."* On the Reproducer's witness,
+pristine's SUCCESSFUL `malloc` returns address 6 — not suitably aligned (the model's own
+`IvMaxAlignment` is 8) and not disjoint from the live object at the cursor. Observable at the
+default bound by one request (Reproducer erratum, 2026-09-17); also real for any smaller address
+space and for verification over all runs.
 
 ## Provenance
 
@@ -122,7 +183,7 @@ File together with 34 (the same allocator; `align = 0`).
 wrong' category where we are allowed to fix ahead of upstream."* The fork will take remedy 1 in both
 models and in the Lean mirror (`CerbMem.lean:2093-2107`), with a unit test pinning the four states
 above, the fork-drift manifest rows for the two OCaml files, and a `VALIDATION.md` §3 entry as a
-fork≠pristine deviation (unobservable at the default bound) — a slice chartered after the
+fork≠pristine deviation (then believed unobservable at the default bound — see the erratum) — a slice chartered after the
 pristine-oracle instrument (WP-O) lands, per the operator's sequencing.
 
 The same message carried the operator's direction on the bound itself, verbatim: *"Btw, I thought
@@ -146,4 +207,5 @@ cites); the GENERAL kernel theorem `CerbMem.allocator_active_sound` + `allocator
 witness `lean_frontend/test/Unit/AllocatorSoundnessTest.lean` (`allocator-soundness-test`: the four states above,
 post-fix killed / killed / killed / active at 4, the pre-fix values quoted as the negative control); fork-drift
 content pins for both files (`scripts/fork_drift_manifest.txt`, header note "allocator-soundness C1");
-`lean_frontend/VALIDATION.md` §3 "Fork ≠ pristine" entry — UNOBSERVABLE at upstream's bound, NO register row.
+`lean_frontend/VALIDATION.md` §3 "Fork ≠ pristine" entry — two `shared-model-fix` register rows since C1c (2026-09-17):
+`tests/minimal/112-allocator-exhausted-single-request.c` and `113-…-overlap.c`, the audit's witnesses, in `scripts/exec_baseline.txt` (fork = Lean) and `scripts/upstream_oracle_differences.json` (pristine `Specified(6)`/`Specified(106)` vs the kill).

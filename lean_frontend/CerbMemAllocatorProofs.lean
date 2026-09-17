@@ -38,8 +38,9 @@ theorem allocator_below_request_kills (st : MemState) (sz align : Int)
   simp [allocatorStep, allocator, h]
 
 /-- The allocator's contract: an ACTIVE allocation `a` is `align`-aligned, strictly
-    positive, disjoint from everything at or above the cursor
-    (`a + sz ≤ st.lastAddress`), and the new cursor is `a`.
+    positive, its end `a + sz` at or below the cursor (`a + sz ≤ st.lastAddress` —
+    disjoint from everything at or above the cursor, for `sz ≥ 0`; the statement
+    itself needs no such hypothesis), and the new cursor is `a`.
     No hypothesis on `sz` or `align` is needed: `align = 0` is the refusal arm
     (never active), and for `align ≠ 0` the Euclidean remainder is non-negative, so
     the align-down step only lowers the base — the charter's

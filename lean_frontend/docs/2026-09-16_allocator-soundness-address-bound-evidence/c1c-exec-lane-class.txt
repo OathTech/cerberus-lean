@@ -1,0 +1,11 @@
+# C1c exec lane: the witnesses' class in test_exec.sh (verbatim, single-file mode with -v; the lane's own recipe)
+/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/.tmp/c1c/exec-113.log:17:[1/1] CERB_SKIP 113-allocator-exhausted-single-request-overlap (error: MerrOther )
+/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/.tmp/c1c/exec-113.log:42:SUMMARY: total=1 match=0 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_s
+/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/.tmp/c1c/exec-113.log:44:FAILED: zero comparisons happened (all files skipped) — vacuous run
+/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/.tmp/c1c/exec-112.log:18:[1/1] CERB_SKIP 112-allocator-exhausted-single-request (error: MerrOther )
+/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/.tmp/c1c/exec-112.log:43:SUMMARY: total=1 match=0 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_s
+/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/allocator-soundness-address-bound/.tmp/c1c/exec-112.log:45:FAILED: zero comparisons happened (all files skipped) — vacuous run
+
+# --write-baseline diff (git diff scripts/exec_baseline.txt after the recipe): only additions
++112-allocator-exhausted-single-request.c CERB_SKIP
++113-allocator-exhausted-single-request-overlap.c CERB_SKIP

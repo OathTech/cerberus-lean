@@ -1,0 +1,36 @@
+# C1c — the audit's witnesses (tests/minimal/112-…, 113-…) on the three engines, by hand, 2026-09-17 (verbatim; scripts/ce; flags = test_exec.sh's / row 10's: --nolibc --exec --batch --mode=exhaustive; Lean via the exec lane's bridge recipe test_exec.sh:443-451 — --nolibc --cabs-json, then cerberus-lean --batch under LEAN_ABORT_ON_PANIC=1 and scripts/capped, default fuel)
+## pristine b9aeedcb4 (.validation-foundations/independent-oracle-v2) and fork (_build) — Time spent trailers are the engines' own
+### 112-allocator-exhausted-single-request / pristine
+Defined {value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}
+Time spent: 0.037936 seconds
+[rc=0]
+### 112-allocator-exhausted-single-request / fork
+Error {msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
+Time spent: 0.037615 seconds
+[rc=1]
+### 113-allocator-exhausted-single-request-overlap / pristine
+Defined {value: "Specified(106)", stdout: "", stderr: "", blocked: "false"}
+Time spent: 0.036046 seconds
+[rc=0]
+### 113-allocator-exhausted-single-request-overlap / fork
+Error {msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
+Time spent: 0.037150 seconds
+[rc=1]
+## Lean (lean_frontend/.lake/build/bin/cerberus-lean; the '--fuel …' text in the banner lines below is the default fuel value the lane does not pass explicitly)
+### 112-allocator-exhausted-single-request / bridge rc=0 (614135 bytes)
+### 112-allocator-exhausted-single-request / LEAN (cerberus-lean --batch, LEAN_ABORT_ON_PANIC=1, capped, --fuel 100000000)
+Error {msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
+[rc=1]
+### 113-allocator-exhausted-single-request-overlap / bridge rc=0 (676194 bytes)
+### 113-allocator-exhausted-single-request-overlap / LEAN (cerberus-lean --batch, LEAN_ABORT_ON_PANIC=1, capped, --fuel 100000000)
+Error {msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
+[rc=1]
+
+## row-10 harvest run (before the register rows) — the two signatures, verbatim from .tmp/c1c/row10-harvest/report.json
+minimal/112-allocator-exhausted-single-request.c | difference | completed semantic observations differ
+  upstream: status=0 stdout_sha256=75f0c56b9343f53f5a0ea7250e832069fe6148c811b2213e6d9fba7b24aadd41 diagnostic_sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  fork: status=1 stdout_sha256=ce222125f809d9e97ee1a7685c64eadff5eb5ce469ee81642a4ea4e16571f966 diagnostic_sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+minimal/113-allocator-exhausted-single-request-overlap.c | difference | completed semantic observations differ
+  upstream: status=0 stdout_sha256=e17cb1bc5caaced5c76d327c79a9f2fe28871277a1adf293b0ffc6a747678edb diagnostic_sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  fork: status=1 stdout_sha256=ce222125f809d9e97ee1a7685c64eadff5eb5ce469ee81642a4ea4e16571f966 diagnostic_sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+harvest verdict: Independent oracle: failed; {'semantic_agreement': 822, 'matching_failure': 28, 'difference': 2, 'reviewed_difference': 3, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/ce

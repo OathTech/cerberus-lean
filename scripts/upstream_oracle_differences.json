@@ -60,6 +60,42 @@
         "stdout_sha256": "aac62ecb735949971f5164c5eb81b3f0a550a69e76e2eb8a945c7117c37cf0c9",
         "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       }
+    },
+    "minimal/112-allocator-exhausted-single-request.c": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/44-concrete-allocator-euclidean-align-down-overlap-at-exhaustion.md",
+        "lean_frontend/docs/2026-09-16_allocator-soundness-address-bound-record.md"
+      ],
+      "rationale": "`q = malloc(1); p = malloc((size_t)((uintptr_t)q - 7)); return (int)((uintptr_t)p & 0xff);` \u2014 ONE request larger than the cursor by 7 bytes (malloc_proxy's 8-byte argument temporary puts the cursor at a - 8, so z = last_address - sz = -1; IvMaxAlignment = 8). Pristine upstream b9aeedcb4 (memory/concrete/impl_mem.ml:1254, the truncating-division idiom `z - (if q < 0 then -m else m)` over the EUCLIDEAN quomod = ediv_rem, :9) ADDS the remainder to the negative z and SUCCEEDS at address z' = -1 + 7 = 6: an ACTIVE allocation that is NOT 8-aligned and whose object ends ABOVE the cursor (overlapping the live argument temporary) \u2014 `Defined {value: \"Specified(6)\", stdout: \"\", stderr: \"\", blocked: \"false\"}` rc 0, against C11 \u00a77.22.3#1 (suitably aligned; disjoint from any other object). The fork (remedy 1: the out-of-memory kill BEFORE rounding) and Lean answer `Error {msg: \"MerrOther \"Concrete.allocator: failed (out of memory)\"\"}` rc 1. The idiom is ORIGINAL, not a regression: at upstream adee05e5a^ (before the 2026-05-19 commit \"Remove indirect use of Z through Lem's Nat_big_num\") the allocator read `let (q,m) = quomod z align in let z' = sub z (if less q zero then negate m else m)` with N = Nat_big_num, whose quomod = Big_int.quomod_big_int is ALSO Euclidean (Big_int.quomod_big_int (-1) 4 = (-1, 3); (-5) 4 = (-2, 3)); the 2026-05 refactor to Z.ediv_rem preserved the behaviour exactly \u2014 present since the allocator was written; not introduced by the 2026-05 Z refactor. Class shared-model-fix (allocator-soundness slice C1, remedy 1 of draft 44; [USER 2026-09-16] \"unambiguously wrong \u2026 allowed to fix ahead of upstream\"); found OBSERVABLE at upstream's bound by the part-one pre-merge audit (M1). The row retires when upstream takes the fix. The owning fork-vs-Lean lane (test_exec.sh) records the file CERB_SKIP \u2014 an oracle-side `Error` is a non-comparison in its taxonomy; Lean = fork (the same Error line) is evidenced by the three-engine report and the record.",
+      "upstream": {
+        "status": 0,
+        "stdout_sha256": "75f0c56b9343f53f5a0ea7250e832069fe6148c811b2213e6d9fba7b24aadd41",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "fork": {
+        "status": 1,
+        "stdout_sha256": "ce222125f809d9e97ee1a7685c64eadff5eb5ce469ee81642a4ea4e16571f966",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "minimal/113-allocator-exhausted-single-request-overlap.c": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/44-concrete-allocator-euclidean-align-down-overlap-at-exhaustion.md",
+        "lean_frontend/docs/2026-09-16_allocator-soundness-address-bound-record.md"
+      ],
+      "rationale": "The self-checking variant of minimal/112: exit = low byte of p, + 100 if the new object ends ABOVE the cursor at alloc time (a - 8), + 50 if p is 8-aligned; 4 if malloc failed. Pristine upstream b9aeedcb4 (impl_mem.ml:1254, the Euclidean-quomod align-down defect of draft 44) returns `Defined {value: \"Specified(106)\", stdout: \"\", stderr: \"\", blocked: \"false\"}` rc 0 = address 6 + 100 (the new object overlaps the live argument temporary) + 0 (NOT 8-aligned): the complete defect signature \u2014 an ACTIVE, misaligned, overlapping allocation \u2014 at upstream's own address-space bound. The fork (remedy 1) and Lean kill: `Error {msg: \"MerrOther \"Concrete.allocator: failed (out of memory)\"\"}` rc 1. The idiom is ORIGINAL, not a regression: at upstream adee05e5a^ (before the 2026-05-19 commit \"Remove indirect use of Z through Lem's Nat_big_num\") the allocator read `let (q,m) = quomod z align in let z' = sub z (if less q zero then negate m else m)` with N = Nat_big_num, whose quomod = Big_int.quomod_big_int is ALSO Euclidean (Big_int.quomod_big_int (-1) 4 = (-1, 3); (-5) 4 = (-2, 3)); the 2026-05 refactor to Z.ediv_rem preserved the behaviour exactly \u2014 present since the allocator was written; not introduced by the 2026-05 Z refactor. Class shared-model-fix (allocator-soundness slice C1, remedy 1 of draft 44; [USER 2026-09-16] \"unambiguously wrong \u2026 allowed to fix ahead of upstream\"); found OBSERVABLE at upstream's bound by the part-one pre-merge audit (M1). The row retires when upstream takes the fix. The owning fork-vs-Lean lane (test_exec.sh) records the file CERB_SKIP \u2014 an oracle-side `Error` is a non-comparison in its taxonomy; Lean = fork (the same Error line) is evidenced by the three-engine report and the record.",
+      "upstream": {
+        "status": 0,
+        "stdout_sha256": "e17cb1bc5caaced5c76d327c79a9f2fe28871277a1adf293b0ffc6a747678edb",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "fork": {
+        "status": 1,
+        "stdout_sha256": "ce222125f809d9e97ee1a7685c64eadff5eb5ce469ee81642a4ea4e16571f966",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
     }
   }
 }
