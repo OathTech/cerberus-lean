@@ -29,7 +29,9 @@ was pushed; nothing was merged; no mainline was touched.
 | `3debab120` | O1 — corpus widening, register schema 2, plants | `scripts/test_upstream_oracle.py`, `scripts/upstream_oracle_differences.json`, evidence `o1-*` |
 | `57a0e4ee0` | O2 — `--with-lean` three-engine column; LADDER Tier C row C5 | `scripts/test_upstream_oracle.py`, `scripts/LADDER.md`, evidence `o2-*` |
 | `664f9d0a7` | O4 — doctrine: VALIDATION §0/§3/§4/§5/§8, LADDER row 10/6b/12/C6/C7 | `lean_frontend/VALIDATION.md`, `scripts/LADDER.md`, evidence `o4-*` |
-| (this) | the record + evidence dir | this file, `…-record-evidence/` |
+| `419c572a1` | the record + evidence dir (first version) | this file, `…-record-evidence/` |
+| `9cbd9b86f` | **O5** — the two [USER 2026-09-17] rulings: `matching_incomplete`, backtrace-position normalisation; register = 3 tray rows | `scripts/test_upstream_oracle.py`, the register, `VALIDATION.md`, `LADDER.md`, `tests/multi_tu_tray/README.md`, evidence `o5-*` |
+| (this) | the record amendment (§1, §3.3, §7) | this file |
 
 Fence check: only fenced files were edited (`test_upstream_oracle.py`, the register, the new
 ensure-script, `LADDER.md`, `VALIDATION.md`, the record + evidence, the container hook).
@@ -199,7 +201,12 @@ The 4 tray rows that AGREE (`arr-1-2-return`, `fam-vs-array-return` — both `Er
 with the SAME symbol numbers on both engines; `arr-1-2-arg`, `arr-2-2-arg` — `Specified(7)` on
 both) need no row: the tray README's three-engine table is reproduced exactly.
 
-[AGENT] on the 20 diagnostic-text rows — the reading conflict, raised (§7): charter O1's parenthetical
+**SUPERSEDED by O5 (§7, [USER 2026-09-17] ruling 2): the 21 `diagnostic-text` rows above (097 + 16 +
+4) were DELETED at `9cbd9b86f` — the lane's diagnostic projection now normalises backtrace frame
+positions and every one of those pairs reads `matching_failure`; the register is exactly the 3
+`shared-model-fix` tray rows. The table stays as the record of what was measured.**
+
+[AGENT] on the 20 diagnostic-text rows — the reading conflict, raised (§7) and now moot: charter O1's parenthetical
 lists drafts 37/38/39 as THE example of "an existing citation"; §3 S1 defines the stop as a
 difference "no EXISTING citation explains (a new semantics finding)". The backtrace-position class is
 explained by the 2026-09-06 record's own table row and remedy ("pin both … with the reviewed
@@ -497,6 +504,55 @@ A5, A6, A6b, A9–A11, B1, B4, B5, B10.1) reports its committed state unchanged;
   drift are candidates for it.
 - No `release.py` change was needed; `reporting_result` marks C6/C7 `failed` in `--mode reporting`
   while their both-sides timeouts stand — honest, documented in LADDER.
+
+### 7.1 Resolution — O5 (`9cbd9b86f`, 2026-09-17)
+
+The orchestrator re-verified the slice independently (row 10 full + plant, `test_unit.sh`,
+`release.py --mode fast` — all reproduced the lines above) and put the two S5 questions to the
+operator as three questions: (1) both-sides timeouts → a REPORTED class `matching_incomplete`
+(both sides status 124 at the lane's own bound), counted, NOT failing; any ONE-sided timeout
+(either side) and any 137 stay `incomplete` and fatal; no register row for matching timeouts;
+(2) backtrace-position normalisation → the diagnostic projection additionally normalises
+`line N, characters A-B` inside OCaml backtrace frames in BOTH engines' stderr, so a both-crash
+pair whose frames differ only in positions is a `matching_failure`; the 21 `diagnostic-text` rows
+are DELETED and the register becomes exactly the 3 `shared-model-fix` tray rows, the class kept
+with zero rows; (3) the reading conflict, moot given (2).
+
+**[USER 2026-09-17], verbatim:** *"(1) agree, (2) agree, (3) redundant per 2. Agree wiht the audit
+as proposed"*.
+
+Applied at `9cbd9b86f` exactly as stated (nothing else changed): `compare()` — 137 on either side
+→ `incomplete`; both 124 → `matching_incomplete` (a row is irrelevant; the loader still refuses
+fork-side 124/137); fork-only 124 → `incomplete`; pristine-only 124 → admitted only through a
+cited `resource`/`shared-model-fix` row, as before. `project_diagnostics()` — the `Time spent`
+trailer removed, then `line N[-M], characters A-B` inside frames beginning `Raised at` / `Raised
+by primitive operation at` / `Called from` / `Re-raised at` (… `in file "…"[ (inlined)]`) →
+`line N, characters A-B`; exception text, frame function/file names, non-frame lines, stdout
+untouched; raw stderr retained ([AGENT] reading: "Raised by primitive operation at" is the
+OCaml frame form of "Raised at" and is included). Twelve hermetic plants added (the timeout/kill
+matrix; frame-positions-only → `matching_failure`; exception-text, frame-function, non-frame-
+position and stdout-beside-crash differences → `difference`; raw sha differs while the
+diagnostic sha agrees). The 21 rows deleted (`o5-register-rows-deleted.txt`); `VALIDATION.md`
+§0/§3/§4/§5, `LADDER.md` rows 10/C6/C7 and `tests/multi_tu_tray/README.md` updated.
+
+**Gates at `9cbd9b86f`, verbatim (`o5-gate-full.txt`, `o5-gate-plant.txt`, `o5-gate-ci.txt`,
+`o5-gate-csmith.txt`, `o5-gate-test_unit.txt`):**
+```
+Independent oracle scope: tier-b; 855 rows in 115.9s; source unchanged: True
+Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 3, 'interface_agreement': 2}; …/.tmp/o5-gate/full/report.json
+Independent oracle scope: plant; 40 rows in 1.4s; source unchanged: True
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 38}; …/.tmp/o5-gate/plant/report.json
+--corpus ci:                Independent oracle: passed; {'semantic_agreement': 134, 'matching_incomplete': 2, 'matching_failure': 106}   (rc 0)
+--corpus csmith --shard 1/34: Independent oracle: subset_passed; {'semantic_agreement': 26, 'matching_failure': 3, 'matching_incomplete': 21}   (rc 0; 641.2 s)
+./scripts/test_unit.sh: rc 0
+```
+Row 10 reads `matching_failure` 28, not the 32 the orchestrator's expected shape named: the 4 ci
+`.error.c` rows are in C6 (`--corpus ci`), not in row 10 — 11 + 17 = 28 there and 102 + 4 = 106
+in C6 (derived). Every other count is unchanged from §3.5/§4 (822 / 2; C6 134 / 2; C7 26 / 21 /
+3), i.e. the two rulings moved exactly the rows they name and nothing else; `test_unit.sh` is
+green. The FULL gate of §6 was run at `664f9d0a7` and is not re-run here: O5 changes only this
+lane, its register and documentation, and the orchestrator's re-verification is the reading of
+record.
 
 **The one-line rule handed to the S1 charter:** *a shared-model slice reports `pristine | fork |
 lean` over the full pristine corpus (`python3 scripts/test_upstream_oracle.py --with-lean`, plus
