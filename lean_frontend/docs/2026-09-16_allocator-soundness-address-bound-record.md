@@ -644,3 +644,10 @@ landing certifications (the "long builds of real content" case, not a grind).
 10. `.tmp/` artefacts (`c1-*`, `c1b-*`, `c1c*`, `c1c-release/`, `c1c-three-engine/`,
     `upstream-oracle-*`, `g2/`, `ocaml-witness/`, `lean_frontend/.tmp/*Probe.lean`) are ephemeral per
     the container rule; everything cited is in the evidence directory.
+
+
+## Landing — part one (2026-09-17)
+
+[USER 2026-09-17], verbatim: *"Go ahead and land it on main."* — in reply to the orchestrator's merge ask naming the branch head `4539c60e1` (11 commits over mainline `4a23d98aa`: C1 `7b51b0b43`, interim record `a2cf688c0`, C1b `f9843725d`, record `f5b1578dc`, C1c `b7fec4d63`, record `c58b7d70e`, the D1 correction `a0e33bf85`, the audit report `13613d9c9` and its §A delta `4539c60e1` — the audit branch's `c46b303ac`/`f8222307f` cherry-picked), the audit's verdicts (MERGE-WITH-FIXES → §A FIXES-ACCEPTED, MERGE once D1 fixed — fixed), and the re-gate at that head. Orchestrator re-gate, verbatim: `fast: passed; 14/14 selected commands completed successfully.` / `Source unchanged: True. Complete tier selection: True.` / `Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 5, 'interface_agreement': 2}`. The FULL battery (37/37, zero baseline movement) ran at the C1c head `b7fec4d63`; the commits above it are docs only.
+
+**For cerberus-sl (the re-pin target).** [USER 2026-09-17]: *"I have confirmation from cerberus-sl that 'part 1' is exactly what they need to close their proof gap."* The landing commit is the fast-forward head of `mdd/cerberus-lean` carrying this note; `CerbMem.allocator`'s type is unchanged; `import CerbMemAllocatorProofs` provides `CerbMem.allocator_active_sound` (an ACTIVE allocation is `align`-aligned, positive, ends at or below the cursor, and becomes the cursor — no hypothesis on `sz`/`align`) and `CerbMem.allocator_below_request_kills`. Part two (the address-space bound as a quantified entry parameter; consumer-confirmed modest blast radius) is chartered separately.
