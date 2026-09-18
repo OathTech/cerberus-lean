@@ -20,8 +20,13 @@
   WHAT IS SHIPPED (kernel-checked, axiom cone = the standard three,
   probed by scripts/check_theorem_axioms.sh's FUEL leg):
 
-  * `exemplar_certified_shipped_forall (fuel : Nat)` — THE ∀-fuel theorem
-    in EXACTLY the consumer's §6 shape over `run fuel` = the production
+  * `exemplar_certified_shipped_forall (fuel : Nat) (top : Int) (h : 8 ≤ top)`
+    — THE ∀-fuel, ∀-address-space-top theorem (the top since the address-space-
+    bound slice, C4 2026-09-18: `errnoAction_active` discharges drive's errno
+    allocation + store SYMBOLICALLY under `8 ≤ top` — the 4-byte/align-4 errno
+    object is the first allocation, and below 8 the run is the out-of-memory
+    kill before `main`; the post-setup state `S₁ top` is stated explicitly)
+    in EXACTLY the consumer's §6 shape over `run fuel top` = the production
     runner on the production pipeline, both at the instance `⟨fuel⟩`, by
     the consumer's SYMBOLIC route (design note §1.6 route iii): a
     test-local round library (`Round`: `runOne` and its bind/get/update/
@@ -123,31 +128,22 @@ def exemplarFile : file core_run_annotation :=
     loop_attributes1 := default,
     visible_objects_env0 := default }
 
-/-- The address-space top the exemplar's cold start is built with — a TEST-CHOSEN value
-    (address-space-bound slice, 2026-09-17; the ruling allows test-suite choices): 64 KiB, a
-    small machine with ample room for the setup's errno object; never the executable's
-    default. The top is a PARAMETER of `dst₀`/`initial_driver_state` (a consumer theorem
-    quantifies it); the ∀-fuel theorem below is stated AT this value because the symbolic
-    route's setup `rfl`s (`drive_after_setup`, the errno `allocateObject`) evaluate the
-    allocator on a CONCRETE cursor — generalising the statement to `∀ top, 8 ≤ top → …` needs
-    the allocator's two branch conditions discharged from the hypothesis instead (OWED;
-    part-two record). -/
-def exemplarTop : Int := 0x10000
-
 /-- The shipped cold start: `(initial_driver_state sup top file fs).1` with the
     production filesystem state (Main.lean's `drSt`), at the ambient
     instance (the generated `initial_driver_state` is fuel-lifted); `top` is
-    the address-space top (`exemplarTop` for the theorem). -/
+    the address-space top — a PARAMETER the theorems quantify (address-space-
+    bound slice; the setup needs `8 ≤ top`, `errnoAction_active`). -/
 def dst₀ [LemFuel] (sup : Nat) (top : Int) : driver_state :=
   (initial_driver_state sup top exemplarFile CerbFS.fs_initial_state).1
 
-/-- THE SHIPPED RUN at fuel `n`: the production runner `CerbND.runND` on
-    the production pipeline `drive`, cold start, `["cmdname"]` — the
-    whole thing at ONE instance `⟨n⟩` (Main.lean's `letI : LemFuel :=
-    ⟨fuel⟩` around `runPipeline`, exactly). -/
-def run (n : Nat) :
+/-- THE SHIPPED RUN at fuel `n` and address-space top `top`: the production
+    runner `CerbND.runND` on the production pipeline `drive`, cold start at
+    `top`, `["cmdname"]` — the whole thing at ONE instance `⟨n⟩` (Main.lean's
+    `letI : LemFuel := ⟨fuel⟩` around `runPipeline`, exactly; `top` is
+    Main.lean's `--address-space-top`). -/
+def run (n : Nat) (top : Int) :
     List (nd_status driver_result driver_error driver_state × List String × driver_state) :=
-  @CerbND.runND _ _ _ _ _ ⟨n⟩ (@drive ⟨n⟩ fmapEmpty false exemplarFile ["cmdname"]) (@dst₀ ⟨n⟩ 0 exemplarTop)
+  @CerbND.runND _ _ _ _ _ ⟨n⟩ (@drive ⟨n⟩ fmapEmpty false exemplarFile ["cmdname"]) (@dst₀ ⟨n⟩ 0 top)
 
 /-- The postcondition: the delivered Core value is `Specified(42)`. -/
 def post (r : driver_result) (_ : driver_state) : Prop :=
@@ -157,8 +153,8 @@ def post (r : driver_result) (_ : driver_state) : Prop :=
 
 /-- The consumer's acceptance shape at fuel 0: the runner's own leaf
     (`CerbND.runNDFuel_zero`) — nothing of the pipeline runs. -/
-theorem exemplar_certified_shipped_zero :
-    ∀ o ∈ run 0,
+theorem exemplar_certified_shipped_zero (top : Int) :
+    ∀ o ∈ run 0 top,
       (∃ st, o.1 = Killed st CerbND.fuelExhaustedKill) ∨ (∃ r, o.1 = Active r ∧ post r o.2.2) := by
   intro o ho
   have h := List.mem_singleton.mp ho
@@ -173,8 +169,8 @@ theorem exemplar_certified_shipped_zero :
     distinguished kill, state unchanged. By `rfl` evaluation of the
     concrete prefix (the elaborator's whnf of the SETUP is cheap; it is a
     driver ROUND that is not). -/
-theorem exemplar_killed_at_one :
-    ∀ o ∈ run (Nat.succ 0), ∃ st, o.1 = Killed st CerbND.fuelExhaustedKill := by
+theorem exemplar_killed_at_one (top : Int) :
+    ∀ o ∈ run (Nat.succ 0) top, ∃ st, o.1 = Killed st CerbND.fuelExhaustedKill := by
   intro o ho
   have h := List.mem_singleton.mp ho
   subst h
@@ -394,6 +390,100 @@ open Round
 theorem alignofIval_signed_int (k : Nat) :
     @CerbMem.alignofIval ⟨Nat.succ k⟩ fmapEmpty signed_int = CerbMem.integerIval 4 := rfl
 
+/-! ### The errno allocation at a SYMBOLIC address-space top (address-space-bound slice,
+    C4 2026-09-18, pre-merge audit F1): drive's first memory action — the errno `int`
+    (4 bytes, align 4) allocated and stored `0` on the COLD state `initialMemState top` —
+    discharged from `8 ≤ top` by the allocator's own arithmetic (`omega` over the Euclidean
+    remainder) and the store's guards, instead of the former `rfl` on a concrete cursor. -/
+
+/-- The errno object's address at top `top`: the cursor `top - 4` aligned down to 4. -/
+def errnoAddr (top : Int) : Int := top - 4 - (top - 4) % 4
+
+/-- The errno pointer: allocation id 0 at `errnoAddr top`. -/
+def errnoPtr (top : Int) : CerbMem.PointerValue :=
+  .PV (.Prov_some 0) (.PVconcrete none (errnoAddr top))
+
+/-- The errno allocation record (uninitialised → writable, prefix "errno"). -/
+def errnoAlloc (top : Int) : CerbMem.Allocation :=
+  { base := errnoAddr top, size := 4, ty := some signed_int, isReadonly := .IsWritable, prefix_ := PrefOther "errno" }
+
+/-- The memory state after `allocateObject` (before the store): the allocator's update, the
+    record at id 0, the 4 unspecified bytes written at the address. -/
+def σalloc (top : Int) : CerbMem.MemState :=
+  CerbMem.writeBytesTo
+    { CerbMem.initialMemState top with
+        nextAllocId := 1
+        lastUsed := some 0
+        lastAddress := errnoAddr top
+        allocations := (CerbMem.initialMemState top).allocations.insert 0 (errnoAlloc top) }
+    (errnoAddr top)
+    (CerbMem.memValueToBytes fmapEmpty (CerbMem.initialMemState top).funptrmap (.MVunspecified signed_int)).snd
+
+/-- drive's errno memory action, exactly as `drive` states it (driver.lem:1860-1868; the
+    alignment written as its value, `alignofIval_signed_int`). -/
+def errnoAction [LemFuel] : CerbMem.memM CerbMem.PointerValue :=
+  nd_bind (CerbMem.allocateObject fmapEmpty 0 (PrefOther "errno") (CerbMem.integerIval 4) signed_int none none)
+    (fun (ptr_val : CerbMem.PointerValue) =>
+      let zero := CerbMem.integerValueMval (Signed Int_) (CerbMem.integerIval (0 : Int))
+      nd_bind (CerbMem.storeM fmapEmpty (CerbLocation.other "errno init") signed_int false ptr_val zero)
+        (fun (_ : CerbMem.Footprint) => nd_return ptr_val))
+
+/-- The allocator on the cold state: ACTIVE at `errnoAddr top` whenever `8 ≤ top` (the two
+    kills — `top - 4 < 0` and the aligned-down candidate `≤ 0` — are both excluded by `omega`). -/
+theorem allocator_errno (top : Int) (h : 8 ≤ top) :
+    runOne (CerbMem.allocator 4 4) (CerbMem.initialMemState top) =
+      (NDactive ((0 : Int), errnoAddr top),
+       { CerbMem.initialMemState top with nextAllocId := 1, lastUsed := some 0, lastAddress := errnoAddr top }) := by
+  have h1 : ¬ ((top - 4 : Int) < 0) := by omega
+  simp only [runOne, CerbMem.allocator, CerbMem.initialMemState, errnoAddr]
+  simp [h1]
+  omega
+
+theorem allocateObject_errno (k : Nat) (top : Int) (h : 8 ≤ top) :
+    runOne (@CerbMem.allocateObject ⟨Nat.succ k⟩ fmapEmpty 0 (PrefOther "errno") (CerbMem.integerIval 4) signed_int none none)
+        (CerbMem.initialMemState top) = (NDactive (errnoPtr top), σalloc top) := by
+  have hsz : (CerbMem.sizeofCtype fmapEmpty signed_int : Int) = 4 := by decide
+  unfold CerbMem.allocateObject
+  simp only [CerbMem.integerIval]
+  rw [hsz]
+  exact (runOne_bind_active (allocator_errno top h)).trans rfl
+
+/-- The store of `0` through the errno pointer on `σalloc top` is ACTIVE: type-compatible,
+    the record found at id 0, in bounds (the object is exactly the store), writable, not an
+    atomic member access. -/
+theorem storeM_errno_active (k : Nat) (top : Int) :
+    (runOne (@CerbMem.storeM ⟨Nat.succ k⟩ fmapEmpty (CerbLocation.other "errno init") signed_int false (errnoPtr top)
+        (CerbMem.integerValueMval (Signed Int_) (CerbMem.integerIval (0 : Int)))) (σalloc top)).1
+      = NDactive (.FP .W (errnoAddr top) 4) := by
+  have hcompat : CerbMem.ctypeMemCompatible signed_int
+      (CerbMem.typeofMval (CerbMem.integerValueMval (Signed Int_) (CerbMem.integerIval (0 : Int)))) = true := by decide
+  have hget : (σalloc top).allocations.get? 0 = some (errnoAlloc top) := by
+    first | rfl | decide | (simp [σalloc, CerbMem.writeBytesTo, CerbMem.initialMemState])
+  have hsz : (CerbMem.sizeofCtype fmapEmpty signed_int : Int) = 4 := by decide
+  have hbounds : CerbMem.isInBounds (errnoAlloc top) (errnoAddr top) 4 = true := by
+    simp [CerbMem.isInBounds, errnoAlloc]
+  have hro : (errnoAlloc top).isReadonly = .IsWritable := rfl
+  have hatomic : @CerbMem.isAtomicMemberAccess ⟨Nat.succ k⟩ fmapEmpty (errnoAlloc top) signed_int (errnoAddr top) = false := rfl
+  unfold CerbMem.storeM
+  simp only [runOne, errnoPtr, hcompat, hget]
+  simp only [hsz, hbounds, hro, hatomic, Bool.not_true, Bool.false_eq_true, if_false]
+
+/-- The memory state after drive's whole errno action at top `top`. -/
+def σstore [LemFuel] (top : Int) : CerbMem.MemState :=
+  (runOne (CerbMem.storeM fmapEmpty (CerbLocation.other "errno init") signed_int false (errnoPtr top)
+      (CerbMem.integerValueMval (Signed Int_) (CerbMem.integerIval (0 : Int)))) (σalloc top)).2
+
+/-- THE errno lemma: on the cold state at any top ≥ 8, drive's errno action is ACTIVE with the
+    errno pointer and leaves `σstore top`. -/
+theorem errnoAction_active (k : Nat) (top : Int) (h : 8 ≤ top) :
+    runOne (@errnoAction ⟨Nat.succ k⟩) (CerbMem.initialMemState top) =
+      (NDactive (errnoPtr top), @σstore ⟨Nat.succ k⟩ top) := by
+  unfold errnoAction
+  rw [runOne_bind_active (allocateObject_errno k top h)]
+  dsimp only
+  rw [runOne_bind_active (Prod.ext (storeM_errno_active k top) rfl)]
+  rfl
+
 /-- The post-setup state, from the ENGINE's own setup stages composed at
     the ambient instance: `driver_globals` (spawns thread 0; no globals),
     then drive's errno allocation (driver.lem:1860-1868 — the text of
@@ -424,9 +514,27 @@ def setupTail [LemFuel] (tid0 : Nat) : driverM Unit :=
            env := th_st.env, current_proc_opt := some mainSym } : thread_state)
     | _ => (failwithI "ERROR (in Driver 2)" : ndM Unit step_kind driver_error mem_iv_constraint driver_state)))
 
-/-- The state at `driver2`'s entry, at the ambient instance. -/
-def S₁ [LemFuel] : driver_state :=
-  (runOne (setupTail 0) (runOne (driver_globals fmapEmpty false exemplarFile) (dst₀ 0 exemplarTop)).2).2
+/-- The state after `driver_globals` (thread 0 spawned; no globals) at top `top` — the memory
+    is still the cold `initialMemState top`. -/
+def s₁ [LemFuel] (top : Int) : driver_state :=
+  (runOne (driver_globals fmapEmpty false exemplarFile) (dst₀ 0 top)).2
+
+/-- Thread 0 at `driver2`'s entry: `main`'s arena parked, the errno pointer at top `top`, the
+    spawned thread's environment (`[fmapEmpty]`, driver.lem's `driver_spawn_thread`). -/
+def thS (top : Int) : thread_state :=
+  { arena := mainBody, stack0 := Stack_empty, errno := errnoPtr top,
+    current_loc := CerbLocation.other "Driver.drive",
+    exec_loc := ELoc_normal [(mainSym, CerbLocation.other "Driver.drive")],
+    env := [fmapEmpty], current_proc_opt := some mainSym }
+
+/-- The state at `driver2`'s entry at top `top`, STATED EXPLICITLY (C4): `s₁ top` with the
+    memory after the errno action and thread 0 updated — `drive_after_setup` CHECKS that the
+    generated `drive` reaches exactly this record (its last setup `rfl`), so no hand-built
+    state can drift from the pipeline. -/
+def S₁ [LemFuel] (top : Int) : driver_state :=
+  { s₁ top with
+      layout_state := σstore top
+      core_state0 := { (s₁ top).core_state0 with thread_states := [(0, (none, thS top))] } }
 
 /-- The setup split at the shipped pipeline (consumer shape
     `drive_after_setup`), ambient `Nat.succ (Nat.succ k)`: the concrete
@@ -434,11 +542,11 @@ def S₁ [LemFuel] : driver_state :=
     setup bind on a concrete state, at the symbolic fuel — every fuel
     match reduces on `Nat.succ _`), leaving `driver2` at `S₁` as a
     hypothesis. -/
-theorem drive_after_setup (k : Nat) (dstD : driver_state)
-    (hdrv2 : runOne (@driver2 ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty false) (@S₁ ⟨Nat.succ (Nat.succ k)⟩)
+theorem drive_after_setup (k : Nat) (top : Int) (h : 8 ≤ top) (dstD : driver_state)
+    (hdrv2 : runOne (@driver2 ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty false) (@S₁ ⟨Nat.succ (Nat.succ k)⟩ top)
       = (NDactive (), dstD)) :
     runOne (@drive ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty false exemplarFile ["cmdname"])
-        (@dst₀ ⟨Nat.succ (Nat.succ k)⟩ 0 exemplarTop)
+        (@dst₀ ⟨Nat.succ (Nat.succ k)⟩ 0 top)
       = (NDactive (@finalize ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty "drive (without concur)" dstD), dstD) := by
   conv => lhs; unfold drive
   -- driver_globals: spawn thread 0, no globals
@@ -452,46 +560,48 @@ theorem drive_after_setup (k : Nat) (dstD : driver_state)
     (z := (CerbLocation.unknown, ([] : List (sym × core_base_type)), mainBody)) (s' := _) rfl).trans ?_
   -- no params: argc/argv skipped
   refine (runOne_bind_active (z := mainBody) (s' := _) rfl).trans ?_
-  -- errno: real allocateObject/storeM on the cold memory. The alignment
-  -- argument is rewritten to its value first (alignofIval_signed_int:
-  -- `allocator` divides by it, and div/mod do not fold on a symbolic-fuel
-  -- divisor by rfl).
+  -- errno: real allocateObject/storeM on the cold memory at the SYMBOLIC top —
+  -- `errnoAction_active` (C4) under `8 ≤ top`. The alignment argument is
+  -- rewritten to its value first (alignofIval_signed_int).
   rw [alignofIval_signed_int]
-  refine (runOne_bind_active (z := _) (s' := _) (runOne_liftMem_active rfl)).trans ?_
-  -- park main's arena; driver2; finalize
+  refine (runOne_bind_active (z := errnoPtr top) (s' := _)
+    (runOne_liftMem_active (errnoAction_active (Nat.succ k) top h))).trans ?_
+  -- park main's arena (reaching EXACTLY the explicit `S₁ top`); driver2; finalize
   refine (runOne_bind_active (z := ()) (s' := dstD) ?_).trans ?_
-  · refine (runOne_bind_active (z := ()) (s' := @S₁ ⟨Nat.succ (Nat.succ k)⟩) rfl).trans ?_
+  · refine (runOne_bind_active (z := ()) (s' := @S₁ ⟨Nat.succ (Nat.succ k)⟩ top) rfl).trans ?_
     exact hdrv2
   · refine (runOne_bind_active (z := dstD) (s' := dstD) rfl).trans ?_
     rfl
 
 /-- The round on `S₁` at ANY ambient fuel ≥ 2: PROGRAM-DONE in one round
     (consumer shape `driver2_done`); the successor state is explicit. -/
-theorem round_done (k : Nat) :
+theorem round_done (k : Nat) (top : Int) :
     ∃ (thF : thread_state),
-      runOne (@driver2 ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty false) (@S₁ ⟨Nat.succ (Nat.succ k)⟩) =
-        (NDactive (), { @S₁ ⟨Nat.succ (Nat.succ k)⟩ with core_state0 :=
-          { (@S₁ ⟨Nat.succ (Nat.succ k)⟩).core_state0 with thread_states :=
+      runOne (@driver2 ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty false) (@S₁ ⟨Nat.succ (Nat.succ k)⟩ top) =
+        (NDactive (), { @S₁ ⟨Nat.succ (Nat.succ k)⟩ top with core_state0 :=
+          { (@S₁ ⟨Nat.succ (Nat.succ k)⟩ top).core_state0 with thread_states :=
             [(0, (none, { thF with stack0 := Stack_empty, arena := mk_value_e fortyTwo }))] } }) := by
   refine ⟨_, driver2_done (Nat.succ k) fmapEmpty _ _ _ _ fortyTwo rfl
     (loop_step_done k fmapEmpty fmapEmpty rfl rfl) rfl⟩
 
-/-- THE ∀-FUEL EXEMPLAR (the consumer's §6 shape), by the symbolic route:
-    fuel 0 and 1 kill (the runner leaf; the first memory operation),
-    every fuel ≥ 2 delivers `Specified(42)` in one round. -/
-theorem exemplar_certified_shipped_forall (fuel : Nat) :
-    ∀ o ∈ run fuel,
+/-- THE ∀-FUEL, ∀-TOP EXEMPLAR (the consumer's §6 shape), by the symbolic route:
+    fuel 0 and 1 kill (the runner leaf; the first memory operation), every
+    fuel ≥ 2 delivers `Specified(42)` in one round — at EVERY address-space top
+    with room for the setup's errno object (`8 ≤ top`; below it the run is the
+    out-of-memory kill before `main`, not covered by this statement). -/
+theorem exemplar_certified_shipped_forall (fuel : Nat) (top : Int) (h : 8 ≤ top) :
+    ∀ o ∈ run fuel top,
       (∃ st, o.1 = Killed st CerbND.fuelExhaustedKill) ∨ (∃ r, o.1 = Active r ∧ post r o.2.2) := by
   cases fuel with
-  | zero => exact exemplar_certified_shipped_zero
+  | zero => exact exemplar_certified_shipped_zero top
   | succ n =>
     cases n with
     | zero =>
       intro o ho
-      exact Or.inl (exemplar_killed_at_one o ho)
+      exact Or.inl (exemplar_killed_at_one top o ho)
     | succ k =>
-      obtain ⟨thF, hdrv2⟩ := round_done k
-      have hrun := drive_after_setup k _ hdrv2
+      obtain ⟨thF, hdrv2⟩ := round_done k top
+      have hrun := drive_after_setup k top h _ hdrv2
       intro o ho
       unfold run at ho
       rw [runND_active hrun] at ho
@@ -502,7 +612,7 @@ theorem exemplar_certified_shipped_forall (fuel : Nat) :
 end FuelExemplar
 
 def main : IO UInt32 := do
-  IO.println "FuelExemplar: exemplar_certified_shipped_forall (∀ fuel over the shipped `@drive ⟨fuel⟩`; the consumer's §6 shape, symbolic round library) — kernel-checked at compile time"
+  IO.println "FuelExemplar: exemplar_certified_shipped_forall (∀ fuel, ∀ address-space top ≥ 8 over the shipped `@drive ⟨fuel⟩` from `initial_driver_state _ top`; the consumer's §6 shape, symbolic round library + the symbolic errno lemma) — kernel-checked at compile time"
   IO.println "FuelExemplar: exemplar_certified_shipped_zero (fuel 0 → the runner's distinguished kill) — kernel-checked at compile time"
   IO.println "FuelExemplar: exemplar_killed_at_one (fuel 1 → the kill at the first memory operation; fuels ≥ 2 deliver Specified(42)) — kernel-checked at compile time"
   return 0

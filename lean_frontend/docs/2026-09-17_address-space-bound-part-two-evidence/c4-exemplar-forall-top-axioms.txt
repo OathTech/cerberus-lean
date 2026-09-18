@@ -1,0 +1,21 @@
+# C4 F1 — the exemplar's statements and axiom cones (scripts/lean_probe.sh .tmp/ExemplarAxioms.lean from lean_frontend/, capped; #check / #print axioms), verbatim. Lake rebuilt Unit.FuelExemplar at 07:04:36 UTC from the 07:04:34 source (lake build fuel-exemplar-test, 5.4 s wall); the exe printed:
+FuelExemplar: exemplar_certified_shipped_forall (∀ fuel, ∀ address-space top ≥ 8 over the shipped `@drive ⟨fuel⟩` from `initial_driver_state _ top`; the consumer's §6 shape, symbolic round library + the symbolic errno lemma) — kernel-checked at compile time
+[rc=0]
+
+FuelExemplar.exemplar_certified_shipped_forall : ∀ (fuel : Nat) (top : Int),
+  8 ≤ top →
+    ∀ (o : nd_status driver_result driver_error driver_state × List String × driver_state),
+      o ∈ FuelExemplar.run fuel top →
+        (∃ st, o.fst = Killed st CerbND.fuelExhaustedKill) ∨ ∃ r, o.fst = Active r ∧ FuelExemplar.post r o.snd.snd
+FuelExemplar.errnoAction_active : ∀ (k : Nat) (top : Int),
+  8 ≤ top →
+    FuelExemplar.Round.runOne FuelExemplar.errnoAction (CerbMem.initialMemState top) =
+      (NDactive (FuelExemplar.errnoPtr top), FuelExemplar.σstore top)
+FuelExemplar.run : Nat → Int → List (nd_status driver_result driver_error driver_state × List String × driver_state)
+@FuelExemplar.S₁ : [LemFuel] → Int → driver_state
+'FuelExemplar.exemplar_certified_shipped_forall' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FuelExemplar.exemplar_certified_shipped_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FuelExemplar.exemplar_killed_at_one' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FuelExemplar.errnoAction_active' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FuelExemplar.drive_after_setup' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FuelExemplar.round_done' depends on axioms: [propext, Classical.choice, Quot.sound]

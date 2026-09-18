@@ -3,7 +3,8 @@
 # scripts/test_address_space.sh --record-expectations ONLY after every case read LEAN = FORK through the codec
 # (the lane's LEAN≠FORK leg). Fail-closed both directions: every row must be reproduced, every case must have a
 # row. Re-record = a dedicated instrument commit with its justification (address-space-bound part two, C3,
-# 2026-09-17; the pre-fix regime of upstream-tray draft 44 is what the --selftest plant P1 forges).
+# 2026-09-17; the discriminator window-char-int7@32 is the one case old != fixed — its VERIFIED pre-fix
+# observation Specified(2) is what the --selftest plant P1 forges; C4 2026-09-18).
 # format: <program>\t<top>\t<tokens>
 array-40	64	VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
 array-40	32	ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
@@ -20,3 +21,6 @@ three-ints-then-array	8	ERR:{msg: "MerrOther \"Concrete.allocator: failed (out o
 two-ints	64	VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
 two-ints	32	VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
 two-ints	8	ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+window-char-int7	64	VAL:{value: "Specified(28)", stdout: "", stderr: "", blocked: "false"}
+window-char-int7	32	ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+window-char-int7	8	ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}

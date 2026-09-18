@@ -1166,6 +1166,17 @@ def defaultFuel : Nat := 100000000  -- FUEL-DEFAULT (the one allowed fuel numera
     execution driver — from this one value. -/
 def defaultAddressSpaceTop : Int := 0xFFFFFFFFFFFF  -- ADDRESS-SPACE-DEFAULT (the one allowed address-space numeral)
 
+/-- The address-space top's DOMAIN (C4, pre-merge audit + the consumer's review, 2026-09-18): an
+    address must fit an LP64 pointer, so `0 < top < 2^(8 · sizeof_pointer)` = `2^64` — derived from
+    `CerberusImpl.sizeof_pointer = some 8` (ocaml_implementation.ml `DefaultImpl.sizeof_pointer =
+    Some 8`, the fork oracle's converter derives the same bound), not a numeral of its own; a missing
+    pointer size (`none`) makes the domain EMPTY — every top is refused (fail-closed). The consumer's
+    invariant `MemWF.la_wf` needs `lastAddress ≤ 2^64` and `la_pos` positivity; consumer theorems
+    quantify `∀ top` under this domain. -/
+def addressSpaceLimit : Nat := match CerberusImpl.sizeof_pointer with
+  | some bytes => 2 ^ (8 * bytes)
+  | none => 0
+
 /-- Zero-discrepancy Z-24/Z-25 (charter §2.3; [USER 2026-09-03] Q7: REFUSE,
     do not plumb): every `--`-prefixed token the positional parser does not
     accept is REFUSED — loud (exit 2) and feature-ATTRIBUTED (exception class
@@ -1305,12 +1316,14 @@ def main (args : List String) : IO Unit := do
     | none => pure defaultAddressSpaceTop
     | some s => match s.toNat? with
       | some n =>
-        if n == 0 then do
-          IO.eprintln s!"cerberus-lean: refused — --address-space-top {s}: the address-space top must be a positive integer (the allocator's initial cursor; default {defaultAddressSpaceTop}; see VALIDATION.md, address-space top)"
+        -- the DOMAIN 0 < top < 2^64 (addressSpaceLimit; the fork oracle's converter refuses with the
+        -- SAME sentence — mirror doctrine; only its exit code is cmdliner's)
+        if n == 0 || n ≥ addressSpaceLimit then do
+          IO.eprintln s!"cerberus-lean: refused — --address-space-top {s}: the address-space top must fit an LP64 pointer: 0 < top < 2^64 (CerberusImpl.sizeof_pointer = some 8; the allocator's initial cursor; default {defaultAddressSpaceTop}; see VALIDATION.md, address-space top)"
           IO.Process.exit 2
         else pure (n : Int)
       | none => do
-        IO.eprintln s!"cerberus-lean: refused — --address-space-top {s}: not a decimal numeral (the address-space top is a positive integer; default {defaultAddressSpaceTop}; see VALIDATION.md, address-space top)"
+        IO.eprintln s!"cerberus-lean: refused — --address-space-top {s}: not a decimal numeral (the address-space top is a decimal positive integer, 0 < top < 2^64; default {defaultAddressSpaceTop}; see VALIDATION.md, address-space top)"
         IO.Process.exit 2
   let callFn : Option (String × List Int) ← match callName, callArgsStr with
     | none, none => pure none

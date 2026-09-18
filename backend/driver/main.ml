@@ -539,15 +539,29 @@ let batch_alloc_census =
 let address_space_top =
   let doc = "(fork addition; FORK-ONLY, no pristine counterpart) the top of the address \
              space: the concrete/VIP allocator's initial cursor, i.e. the memory state \
-             every run starts from. A positive integer (decimal, or 0x/0o/0b prefixed); \
-             default = upstream's 0xFFFFFFFFFFFF. Received by both the desugarer's \
-             constant-expression mini-run and the execution driver." in
+             every run starts from. A DECIMAL positive integer that fits an LP64 pointer \
+             (0 < N < 2^64, sizeof_pointer = 8 — the same domain and refusal text as \
+             cerberus-lean's --address-space-top); default = upstream's 0xFFFFFFFFFFFF. \
+             Received by both the desugarer's constant-expression mini-run and the \
+             execution driver." in
+  (* C4 (pre-merge audit + the consumer's review, 2026-09-18): DECIMAL-ONLY (Z.of_string's 0x/0o/0b
+     prefixes were an asymmetry with cerberus-lean's toNat? — mirror doctrine) and the DOMAIN
+     0 < top < 2^(8 * sizeof_pointer) derived from Ocaml_implementation.DefaultImpl.impl.sizeof_pointer
+     (= Some 8; CerberusImpl.sizeof_pointer = some 8 on the Lean side derives the same bound); an
+     unknown pointer size makes the domain empty — every top refused (fail-closed). The refusal
+     SENTENCE is the one cerberus-lean prints; the exit code is cmdliner's (124). *)
+  let limit =
+    match Cerb_frontend.Ocaml_implementation.DefaultImpl.impl.sizeof_pointer with
+    | Some bytes -> Z.shift_left Z.one (8 * bytes)
+    | None -> Z.zero in
+  let is_decimal s = String.length s > 0 && String.for_all (fun c -> '0' <= c && c <= '9') s in
   let parser s =
-    match Z.of_string s with
-    | z when Z.sign z > 0 -> Result.Ok z
-    | _ -> Result.Error (`Msg "the address-space top must be a positive integer")
-    | exception Invalid_argument _ ->
-        Result.Error (`Msg "the address-space top must be a positive integer (decimal or 0x/0o/0b)") in
+    if not (is_decimal s) then
+      Result.Error (`Msg "the address-space top must be a decimal positive integer, 0 < top < 2^64 (not a decimal numeral)")
+    else
+      let z = Z.of_string s in
+      if Z.sign z > 0 && Z.lt z limit then Result.Ok z
+      else Result.Error (`Msg "the address-space top must fit an LP64 pointer: 0 < top < 2^64 (ocaml_implementation.ml DefaultImpl.sizeof_pointer = Some 8)") in
   let printer ppf z = Format.pp_print_string ppf (Z.to_string z) in
   Arg.(value & opt (conv (parser, printer)) Driver_ocaml.address_space_top_default
        & info ["address-space-top"] ~docv:"N" ~doc)

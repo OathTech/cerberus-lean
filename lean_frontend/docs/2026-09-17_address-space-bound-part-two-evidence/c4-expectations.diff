@@ -1,0 +1,10 @@
+# diff tests/address_space/expectations.txt (C3 -> C4): additions only + the header note
+6c6,7
+< # 2026-09-17; the pre-fix regime of upstream-tray draft 44 is what the --selftest plant P1 forges).
+---
+> # 2026-09-17; the discriminator window-char-int7@32 is the one case old != fixed — its VERIFIED pre-fix
+> # observation Specified(2) is what the --selftest plant P1 forges; C4 2026-09-18).
+22a24,26
+> window-char-int7	64	VAL:{value: "Specified(28)", stdout: "", stderr: "", blocked: "false"}
+> window-char-int7	32	ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+> window-char-int7	8	ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}

@@ -17,6 +17,17 @@
 # (the driver's errno int — 4 bytes, align 4 — is the first object and fits at 4; the
 # SECOND object of every program exhausts: z = 4 - size <= 0 is never a positive address).
 #
+# THE DISCRIMINATOR (C4, pre-merge audit F2, 2026-09-18): the corpus contains exactly one case
+# on which the PRE-FIX allocator (pristine b9aeedcb4, upstream-tray draft 44) and the FIXED one
+# (remedy 1) decide differently — `window-char-int7` at top 32 (errno -> 28, `char c` -> 27,
+# `int a[7]`: z = 27 - 28 = -1, inside the defect window -align/2 < z < 0: old ACTIVE at address
+# 2, fixed KILL; the program returns the address's low byte, so pre-fix = Specified(2), fixed =
+# the out-of-memory Error). The old-body outcome is EXECUTED, not hand arithmetic: the Lean probe
+# lean_frontend/docs/2026-09-17_address-space-bound-part-two-evidence/c4-old-allocator-probe.lean
+# (the 4a23d98aa `CerbMem.allocator`, run on the exact cursor). On every OTHER case old = fixed
+# (the audit's reconstruction, allocator_arithmetic.py): those cases test exhaustion and the
+# parameter's threading, not the draft-44 defect.
+#
 # Two fail-closed legs per case <program, bound>:
 #   LEAN≠FORK  the two engines' complete observations differ under the codec — a
 #              zero-discrepancy finding (charter stop rule S4); fatal, reported per case.
@@ -32,13 +43,19 @@
 #                           observations — REFUSED unless every LEAN≠FORK leg agreed
 #                           (a dedicated instrument commit, justification in the message)
 #   --selftest              run the engines once, then PLANT on scratch copies of the
-#                           expectations: (P1) the exhausted case `three-ints-then-array`
-#                           at top 32 rewritten to the PRE-FIX-shaped ACTIVE verdict
-#                           (draft 44's regime: an allocation where the kill is expected)
-#                           must be REJECTED; (P2) a missing expectations file, (P3) a
-#                           truncated one (last row dropped) and (P4) a row for an absent
-#                           case must each be REJECTED; then the committed file must be
-#                           green (the unplanted control). Loud plant banner.
+#                           expectations: (P1) the DISCRIMINATOR `window-char-int7` at top 32
+#                           rewritten to its VERIFIED PRE-FIX observation Specified(2) (the
+#                           probe above) must be REJECTED; (P2) a missing expectations file,
+#                           (P3) a truncated one (last row dropped) and (P4) a row for an
+#                           absent case must each be REJECTED; (P5-P7, audit F3) a phantom,
+#                           a duplicate and a malformed row appended WITHOUT a final newline
+#                           must each be REJECTED exactly like terminated ones, and (P8) the
+#                           committed file with its final newline removed must be ACCEPTED;
+#                           (P9-P11, the DOMAIN) both engines must REFUSE
+#                           `--address-space-top 18446744073709551616` (= 2^64) and `0x40`
+#                           (not decimal) with the mirrored sentence, and ACCEPT `64`; then
+#                           the committed file must be green (the unplanted control). Loud
+#                           plant banner.
 #
 # Environment: TIMEOUT_SECS (default 30) per engine invocation; SKIP_BUILD=1 as in
 # common.sh (fresh binaries required). Exit: 0 iff green; any failure is fatal and named.
@@ -127,7 +144,10 @@ check_expectations() {  # <expectations-file> <observed-tsv> ; prints verdict li
     local ef="$1" ob="$2" bad=0 n=0
     [[ -f "$ef" ]] || { echo "  EXPECT FAIL  expectations file not found: $ef"; return 1; }
     declare -A EXP=()
-    while IFS=$'\t' read -r en eb et; do
+    # pre-merge audit F3 (2026-09-18): `|| [[ -n "$en" ]]` processes a NONEMPTY final record that EOF
+    # cut before its newline — without it a phantom/duplicate/malformed last row silently vanished
+    # (fail-open); the observed-table loop below is written the same way for consistency.
+    while IFS=$'\t' read -r en eb et || [[ -n "$en" ]]; do
         [[ -z "$en" || "$en" == \#* ]] && continue
         [[ -n "$eb" && -n "$et" ]] || { echo "  EXPECT FAIL  malformed expectations row: '$en	$eb	$et'"; return 1; }
         [[ -n "${EXP["$en/$eb"]+x}" ]] && { echo "  EXPECT FAIL  duplicate expectations row for $en top=$eb"; return 1; }
@@ -135,7 +155,8 @@ check_expectations() {  # <expectations-file> <observed-tsv> ; prints verdict li
     done < "$ef"
     [[ $n -gt 0 ]] || { echo "  EXPECT FAIL  expectations file has no rows: $ef"; return 1; }
     declare -A SEEN=()
-    while IFS=$'\t' read -r on ob_ ot; do
+    while IFS=$'\t' read -r on ob_ ot || [[ -n "$on" ]]; do
+        [[ -z "$on" ]] && continue
         SEEN["$on/$ob_"]=1
         if [[ -z "${EXP["$on/$ob_"]+x}" ]]; then
             echo "  EXPECT FAIL  $on top=$ob_: observed but NOT in the expectations file (observed: $ot)"; bad=$((bad + 1))
@@ -157,7 +178,8 @@ if $RECORD; then
         echo "# scripts/test_address_space.sh --record-expectations ONLY after every case read LEAN = FORK through the codec"
         echo "# (the lane's LEAN≠FORK leg). Fail-closed both directions: every row must be reproduced, every case must have a"
         echo "# row. Re-record = a dedicated instrument commit with its justification (address-space-bound part two, C3,"
-        echo "# 2026-09-17; the pre-fix regime of upstream-tray draft 44 is what the --selftest plant P1 forges)."
+        echo "# 2026-09-17; the discriminator window-char-int7@32 is the one case old != fixed — its VERIFIED pre-fix"
+        echo "# observation Specified(2) is what the --selftest plant P1 forges; C4 2026-09-18)."
         echo "# format: <program>\t<top>\t<tokens>"
         cat "$OBSERVED"
     } > "$DEFAULT_EXPECT" || fail "cannot write $DEFAULT_EXPECT"
@@ -175,29 +197,69 @@ if $SELFTEST; then
         if [[ $rc -ne 0 ]]; then echo "  PLANT OK   [$1] -> $(grep -m1 'EXPECT FAIL' <<<"$out")"
         else echo "  PLANT FAIL [$1]: the doctored expectations were ACCEPTED"; fails=$((fails + 1)); fi
     }
-    # P1: the exhausted case forged to the PRE-FIX-shaped ACTIVE verdict (draft 44's regime)
-    grep -qP '^three-ints-then-array\t32\tERR:' "$DEFAULT_EXPECT" \
-        || fail "selftest premise: the committed row 'three-ints-then-array top=32' is not the out-of-memory kill (the P1 plant needs an exhausted case)"
+    # P1: THE DISCRIMINATOR forged to its VERIFIED pre-fix observation (audit F2): window-char-int7@32 —
+    # old allocator ACTIVE at address 2 (executed: c4-old-allocator-probe), the program returns the
+    # address's low byte -> Specified(2); the fixed engines kill (the pinned row).
+    grep -qP '^window-char-int7\t32\tERR:' "$DEFAULT_EXPECT" \
+        || fail "selftest premise: the committed row 'window-char-int7 top=32' is not the out-of-memory kill (the P1 plant needs the discriminator's fixed outcome)"
     python3 - "$DEFAULT_EXPECT" "$W/p1.txt" <<'PY'
 import sys
 src, dst = sys.argv[1], sys.argv[2]
-forged = 'VAL:{value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}'
+forged = 'VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}'
 out = []
 for line in open(src):
-    if line.startswith('three-ints-then-array\t32\t'):
-        line = 'three-ints-then-array\t32\t' + forged + '\n'
+    if line.startswith('window-char-int7\t32\t'):
+        line = 'window-char-int7\t32\t' + forged + '\n'
     out.append(line)
 open(dst, 'w').write(''.join(out))
 PY
-    expect_red "P1 exhausted case forged to the pre-fix ACTIVE verdict (Specified(6) where the kill is pinned)" "$W/p1.txt"
+    expect_red "P1 the discriminator window-char-int7@32 forged to its verified PRE-FIX observation (Specified(2) where the kill is pinned)" "$W/p1.txt"
     expect_red "P2 missing expectations file" "$W/does-not-exist.txt"
     grep -v '^#' "$DEFAULT_EXPECT" | head -n -1 > "$W/p3.txt"
     expect_red "P3 truncated expectations (last row dropped)" "$W/p3.txt"
     { cat "$DEFAULT_EXPECT"; printf 'absent-program\t64\tVAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}\n'; } > "$W/p4.txt"
     expect_red "P4 a row for a case this run never produced" "$W/p4.txt"
+    # audit F3 (2026-09-18): the same doctored rows WITHOUT a trailing newline — the pre-fix reader dropped
+    # an unterminated final record silently (fail-open); each must be rejected exactly like P4/duplicate/malformed
+    { cat "$DEFAULT_EXPECT"; printf 'absent-program\t64\tVAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}'; } > "$W/p5.txt"
+    expect_red "P5 phantom row WITHOUT a final newline" "$W/p5.txt"
+    { cat "$DEFAULT_EXPECT"; grep -v '^#' "$DEFAULT_EXPECT" | head -n 1 | tr -d '\n'; } > "$W/p6.txt"
+    expect_red "P6 duplicate row WITHOUT a final newline" "$W/p6.txt"
+    { cat "$DEFAULT_EXPECT"; printf 'two-ints\t64'; } > "$W/p7.txt"
+    expect_red "P7 malformed row WITHOUT a final newline" "$W/p7.txt"
+    head -c -1 "$DEFAULT_EXPECT" > "$W/p8.txt"
+    [[ "$(tail -c 1 "$W/p8.txt")" != "" ]] || fail "selftest premise: p8 still ends with a newline"
+    if check_expectations "$W/p8.txt" "$OBSERVED" > "$W/p8.out"; then echo "  PLANT OK   [P8 the committed file with its final newline removed is ACCEPTED (the last row is read)] -> $(grep -m1 'EXPECT OK' "$W/p8.out")"
+    else echo "  PLANT FAIL [P8]: a valid file without a final newline was REJECTED: $(grep -m1 'EXPECT FAIL' "$W/p8.out")"; fails=$((fails + 1)); fi
+    # the DOMAIN (C4, the consumer's review): 0 < top < 2^64, DECIMAL only, the SAME refusal sentence on both
+    # engines (mirror doctrine; the exit codes are the CLI libraries': cmdliner 124, cerberus-lean 2)
+    dprog="$CORPUS/window-char-int7.c"; djson="$RUN/window-char-int7.json"
+    [[ -s "$djson" ]] || fail "selftest premise: $djson missing"
+    cli_case() {  # <label> <value> <expect: refuse-domain|refuse-decimal|accept>
+        local label="$1" v="$2" want="$3" orc=0 lrc=0 oerr lerr oout lout ok=1
+        oout=$(timeout "${TIMEOUT_SECS}s" opam exec --switch="$PROJECT_ROOT" -- "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
+            --nolibc --exec --batch --mode=exhaustive --address-space-top "$v" "$dprog" 2>"$W/cli.oerr") || orc=$?
+        lout=$(timeout "${TIMEOUT_SECS}s" env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --batch --address-space-top "$v" "$djson" 2>"$W/cli.lerr") || lrc=$?
+        # cmdliner wraps and indents its error text: strip ANSI, join lines, collapse whitespace runs
+        oerr=$(sed 's/\x1b\[[0-9;]*m//g' "$W/cli.oerr" | tr '\n' ' ' | tr -s ' '); lerr=$(tr '\n' ' ' < "$W/cli.lerr" | tr -s ' ')
+        case "$want" in
+            refuse-domain)
+                [[ $orc -ne 0 && $lrc -ne 0 && "$oerr" == *"the address-space top must fit an LP64 pointer: 0 < top < 2^64"* \
+                    && "$lerr" == *"the address-space top must fit an LP64 pointer: 0 < top < 2^64"* ]] || ok=0 ;;
+            refuse-decimal)
+                [[ $orc -ne 0 && $lrc -ne 0 && "$oerr" == *"not a decimal numeral"* && "$lerr" == *"not a decimal numeral"* ]] || ok=0 ;;
+            accept)
+                [[ $orc -eq 0 && $lrc -eq 0 && "$oout" == *'Defined {value: "Specified(28)"'* && "$lout" == *'Defined {value: "Specified(28)"'* ]] || ok=0 ;;
+        esac
+        if [[ $ok -eq 1 ]]; then echo "  PLANT OK   [$label] -> fork rc=$orc lean rc=$lrc"
+        else echo "  PLANT FAIL [$label]: fork rc=$orc [$oout | $oerr] lean rc=$lrc [$lout | $lerr]"; fails=$((fails + 1)); fi
+    }
+    cli_case "P9 --address-space-top 18446744073709551616 (= 2^64) REFUSED on both engines with the mirrored domain sentence" 18446744073709551616 refuse-domain
+    cli_case "P10 --address-space-top 0x40 (not decimal) REFUSED on both engines" 0x40 refuse-decimal
+    cli_case "P11 --address-space-top 64 ACCEPTED on both engines (window-char-int7 -> Specified(28))" 64 accept
     echo "  REVERTED (the committed expectations):"
     if check_expectations "$DEFAULT_EXPECT" "$OBSERVED"; then :; else echo "  PLANT FAIL [control]: the committed expectations are not green" >&2; fails=$((fails + 1)); fi
-    if [[ $fails -eq 0 ]]; then echo "test_address_space: SELFTEST OK (4 plants rejected — the forged pre-fix ACTIVE verdict, a missing file, a truncated file, a phantom row; the committed file green)"; exit 0; fi
+    if [[ $fails -eq 0 ]]; then echo "test_address_space: SELFTEST OK (11 plants — P1 the discriminator's verified pre-fix observation, P2 missing file, P3 truncated, P4 phantom row, P5-P7 phantom/duplicate/malformed rows without a final newline all REJECTED; P8 the valid file without a final newline ACCEPTED; P9/P10 the out-of-domain and non-decimal tops REFUSED on both engines, P11 a decimal top accepted; the committed file green)"; exit 0; fi
     echo "test_address_space: SELFTEST FAILED ($fails)" >&2; exit 1
 fi
 

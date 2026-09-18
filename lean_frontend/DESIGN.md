@@ -158,7 +158,13 @@ each engine: `Main.lean` `defaultAddressSpaceTop` (`--address-space-top N`; the
 one address-space numeral, gate-enforced by `scripts/check_no_fuel_numerals.sh`'s
 A-shapes) and the fork's `Driver_ocaml.address_space_top_default` (filled into
 both `Pipeline.configuration` and `Driver_ocaml.driver_conf` by the driver). A
-consumer theorem therefore quantifies `∀ top` over `initial_driver_state`/`drive`;
+consumer theorem therefore quantifies `∀ top` over `initial_driver_state`/`drive`
+— under the parameter's DOMAIN `0 < top < 2^64` (an address fits an LP64
+pointer: `2^(8 · sizeof_pointer)` with `CerberusImpl.sizeof_pointer = some 8`,
+the bound both CLIs derive and refuse outside of with one mirrored sentence;
+the consumer's `MemWF.la_wf` needs `lastAddress ≤ 2^64`) and, for the driver's
+setup to reach `main`, the room hypothesis `8 ≤ top` (the errno `int` is the
+first object; below it the run is the out-of-memory kill before `main`);
 matched mode instantiates upstream's value, so no baseline moves. Not a reader
 constant (the rejected route: a leading binder on every `reader_consumer` seam),
 not a literal in any definition. Record:

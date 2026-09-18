@@ -1,0 +1,54 @@
+# C4 FAST-GATE tails at the C4 tree (verbatim; every lane via scripts/ce)
+## release.py --mode fast (16 lanes incl. A12.1/A12.2)
+PASSED A1 (210.9s)
+PASSED A2 (28.1s)
+PASSED A3 (52.4s)
+PASSED A4 (22.8s)
+PASSED A4b (24.4s)
+PASSED A4c (3.1s)
+PASSED A5 (24.5s)
+PASSED A6 (2.4s)
+PASSED A6b (3.8s)
+PASSED A7 (11.8s)
+PASSED A8 (9.3s)
+PASSED A9 (17.3s)
+PASSED A10 (17.7s)
+PASSED A11 (58.5s)
+PASSED A12.1 (4.8s)
+PASSED A12.2 (4.6s)
+fast: passed; 16/16 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+release rc=0
+## test_unit.sh (A1) verdicts from the release log
+  check_no_fuel_numerals: OK (324 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6), no address-space-top literal (A1-A3); allowed Main.lean sites seen: 6 of 6 (hand-written + generated copy))
+check_no_fuel_numerals: SELFTEST OK (26 plants red with the declared label — F1-F6 and A1-A3; E5 indirection a recorded known gap; unplanted set green)
+check_no_fuel_numerals: OK (324 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6), no address-space-top literal (A1-A3); allowed Main.lean sites seen: 6 of 6 (hand-written + generated copy))
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 25 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+## fuel-exemplar-test (A1)
+FuelExemplar: exemplar_certified_shipped_forall (∀ fuel, ∀ address-space top ≥ 8 over the shipped `@drive ⟨fuel⟩` from `initial_driver_state _ top`; the consumer's §6 shape, symbolic round library + the symbolic errno lemma) — kernel-checked at compile time
+✓ fuel-exemplar-test PASSED
+## test_address_space.sh (A12.2) / --selftest (A12.1)
+test_address_space: OK (18 cases: LEAN = FORK through the shared codec at tops 64 32 8; every fork observation = its pinned row in expectations.txt)
+test_address_space: SELFTEST — planting on scratch copies of the expectations (loud plant banner; the committed file is untouched)
+  PLANT OK   [P1 the discriminator window-char-int7@32 forged to its verified PRE-FIX observation (Specified(2) where the kill is pinned)] ->   EXPECT FAIL  window-char-int7 top=32: expected [VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}] observed [ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}]
+  PLANT OK   [P2 missing expectations file] ->   EXPECT FAIL  expectations file not found: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-fast/A12.1/observations/test_address_space.LBl8D6S0SK/address_space.DeVz3t3DrB/plants.vkZ41d/does-not-exist.txt
+  PLANT OK   [P3 truncated expectations (last row dropped)] ->   EXPECT FAIL  window-char-int7 top=8: observed but NOT in the expectations file (observed: ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""})
+  PLANT OK   [P4 a row for a case this run never produced] ->   EXPECT FAIL  absent-program top=64: pinned in the expectations file but NOT a case of this run
+  PLANT OK   [P5 phantom row WITHOUT a final newline] ->   EXPECT FAIL  absent-program top=64: pinned in the expectations file but NOT a case of this run
+  PLANT OK   [P6 duplicate row WITHOUT a final newline] ->   EXPECT FAIL  duplicate expectations row for array-40 top=64
+  PLANT OK   [P7 malformed row WITHOUT a final newline] ->   EXPECT FAIL  malformed expectations row: 'two-ints	64	'
+  PLANT OK   [P8 the committed file with its final newline removed is ACCEPTED (the last row is read)] ->   EXPECT OK    18 pinned rows = 18 observed cases, every token identical
+  PLANT OK   [P9 --address-space-top 18446744073709551616 (= 2^64) REFUSED on both engines with the mirrored domain sentence] -> fork rc=124 lean rc=2
+  PLANT OK   [P10 --address-space-top 0x40 (not decimal) REFUSED on both engines] -> fork rc=124 lean rc=2
+  PLANT OK   [P11 --address-space-top 64 ACCEPTED on both engines (window-char-int7 -> Specified(28))] -> fork rc=0 lean rc=0
+test_address_space: SELFTEST OK (11 plants — P1 the discriminator's verified pre-fix observation, P2 missing file, P3 truncated, P4 phantom row, P5-P7 phantom/duplicate/malformed rows without a final newline all REJECTED; P8 the valid file without a final newline ACCEPTED; P9/P10 the out-of-domain and non-decimal tops REFUSED on both engines, P11 a decimal top accepted; the committed file green)
+## test_upstream_oracle.py / --plant
+Independent oracle scope: plant; 53 rows in 1.6s; source unchanged: True
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}
+Independent oracle scope: tier-b; 859 rows in 119.6s; source unchanged: True
+Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}
+## test_immaculate.sh
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+## check_fork_drift.sh (after the C4 main.ml re-pin) / check_no_fuel_numerals.sh
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 25 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+check_no_fuel_numerals: OK (324 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6), no address-space-top literal (A1-A3); allowed Main.lean sites seen: 6 of 6 (hand-written + generated copy))

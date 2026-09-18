@@ -602,7 +602,7 @@ lanes, with their recorded states:
 | `test_exec.sh --check-baseline` | upstream `tests/minimal` | 111/111 at the pinned baseline (106 + the five byte-bridge rows 107–111, 2026-09-11) |
 | `test_exec.sh` (coverage/debug/float baselines) | upstream suites | rc 0 at pinned baselines (recorded DIFFs unchanged) |
 | `test_bytes.sh` | `tests/bytes` | 9/9 at committed upstream `.exec` records + 5/5 reject pins (oracle-independent) |
-| `test_address_space.sh` (+ `--selftest`) | `tests/address_space` (5 programs × tops 64/32/8; LADDER Tier A row 12, address-space-bound part two C3, 2026-09-17) | both engines at TINY address-space tops (the fork's FORK-ONLY `--address-space-top N`, cerberus-lean's `--address-space-top N` — the parameter of §7 instantiated where the allocator's exhausted regime is reached by ordinary programs): 15/15 LEAN = FORK complete observations through the shared codec (any difference fatal — the S4 class) AND every fork observation = its pinned row in `tests/address_space/expectations.txt`, fail-closed both directions; `--selftest` rejects the exhausted case forged to draft 44's pre-fix ACTIVE verdict, a missing/truncated file and a phantom row |
+| `test_address_space.sh` (+ `--selftest`) | `tests/address_space` (6 programs × tops 64/32/8; LADDER Tier A row 12, address-space-bound part two C3/C4, 2026-09-17/18) | both engines at TINY address-space tops (the fork's FORK-ONLY `--address-space-top N`, cerberus-lean's `--address-space-top N` — the parameter of §7 instantiated where the allocator's exhausted regime is reached by ordinary programs): 18/18 LEAN = FORK complete observations through the shared codec (any difference fatal — the S4 class) AND every fork observation = its pinned row in `tests/address_space/expectations.txt`, fail-closed both directions (an unterminated final row is read — audit F3); the corpus holds ONE genuine discriminator of the draft-44 defect, `window-char-int7@32` (pre-fix `Specified(2)`, executed by the old-body probe; fixed: the kill), and `--selftest` rejects that case forged to its pre-fix observation, a missing/truncated file, phantom/duplicate/malformed rows with and without a final newline, accepts the valid file without its final newline, and checks both CLIs refuse `2^64` and `0x40` and accept `64` |
 | `test_parse.sh` | tests/minimal + tests/ci | Cabs-JSON bridge, 234 files, 100% |
 | `test_core.sh` | tests/minimal (+ tests/ci) | Core text parser vs oracle `--pp=core`, 111/111 minimal |
 | `test_elab.sh` | elaboration corpus | recorded same/diff state, rc 0 |
@@ -892,14 +892,35 @@ shapes, plant-tested; 0 or a non-numeral is refused, exit 2) and the fork
 oracle's `Driver_ocaml.address_space_top_default` (the fork-only
 `--address-space-top N` flag of C3; pristine upstream has no such parameter).
 Matched mode passes the flag on neither engine, so every baseline row is
-unmoved; the tests choose their own values (`FuelExemplar.exemplarTop`, the
-speclab gates' `gateAddressSpaceTop`, …) as the ruling allows. A consumer
-theorem quantifies `∀ top` alongside `∀ fuel`; the exemplar's own ∀-fuel
-theorem is stated at its test-chosen top (the symbolic route's setup `rfl`s
-evaluate the errno allocation on a concrete cursor; generalising it under
-`8 ≤ top` is OWED — record, open items). A tiny top is a legitimate instance:
-the allocator kills out of memory exactly where its soundness contract
-(`CerbMem.allocator_active_sound`) says the cursor is below the request.
+unmoved; the tests choose their own values (`MonadicFailstop.testAddressSpaceTop`,
+the speclab gates' `gateAddressSpaceTop`, …) as the ruling allows. **The DOMAIN**
+(C4, 2026-09-18 — the pre-merge audit and the consumer's review
+`cerberus-sl/docs/2026-09-18_s3-checkpoint-review.md`: their invariant
+`MemWF.la_wf` needs `lastAddress ≤ 2^64` and `la_pos` positivity): an address
+must fit an LP64 pointer, so `0 < top < 2^64` — `2^(8 · sizeof_pointer)`,
+derived on both engines from the implementation's `sizeof_pointer = 8`
+(`CerberusImpl.sizeof_pointer`, `ocaml_implementation.ml DefaultImpl`), and
+both CLIs refuse anything else — non-decimal spellings included — with the
+same sentence (`the address-space top must fit an LP64 pointer: 0 < top <
+2^64`; only the exit code is the CLI library's). A consumer theorem quantifies
+`∀ top` under that domain, alongside `∀ fuel`; the driver's SETUP needs
+`8 ≤ top` — its errno `int` (4 bytes, align 4) is the first object, and a
+smaller top kills out of memory BEFORE `main` runs (the consumer review's
+second fact: a small top OOMs on errno before the program's own state exists),
+so a startup theorem carries that room hypothesis while a client-facing
+result may fold the OOM into its admitted outcomes. The exemplar's theorem IS
+that startup theorem in miniature: `FuelExemplar.exemplar_certified_shipped_forall
+(fuel : Nat) (top : Int) (h : 8 ≤ top)` — ∀ fuel, ∀ top with room for errno —
+by the symbolic errno lemma `errnoAction_active` (C4, 2026-09-18; the errno
+allocation and store discharged from `8 ≤ top` by the allocator's arithmetic and
+the store's guards, the post-setup state `S₁ top` stated explicitly), axioms the
+standard trio. A tiny top is a legitimate instance. The allocator's two kills, stated
+exactly: it kills when `cursor − size < 0` (`CerbMem.allocator_below_request_kills`,
+remedy 1 in kernel terms) and when the aligned-down candidate address is `≤ 0`
+(cursor 4, request 4, align 4 kills with cursor = request; cursor 5 kills too);
+an ACTIVE result satisfies `CerbMem.allocator_active_sound` — a NECESSARY
+condition on active allocations (aligned, positive, ending at or below the
+cursor), not a characterisation of failure.
 
 ## 8. How often
 
