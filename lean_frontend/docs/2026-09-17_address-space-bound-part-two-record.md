@@ -1,9 +1,11 @@
-# Record — address-space bound, PART TWO (2026-09-17) — COMPLETE: C0 (the witnesses' gating pin), C2 (the bound as a quantified entry parameter, route A), C3 (the fork-only flag + the tiny-address-space lane); FULL GATE GREEN (`full: passed; 39/39`, source unchanged) AT THE C3 HEAD
+# Record — address-space bound, PART TWO (2026-09-17/18) — COMPLETE: C0 (the witnesses' gating pin), C2 (the bound as a quantified entry parameter, route A), C3 (the fork-only flag + the tiny-address-space lane), C4 (the pre-merge audit's fixes + the DOMAIN `0 < top < 2^64`); FULL GATE GREEN at the C3 head AND at the C4 head
 
-**Status [AGENT, worker, 2026-09-17]:** all three chartered deliverables are LANDED on
+**Status [AGENT, worker, 2026-09-18]:** all three chartered deliverables are LANDED on
 `arc/address-space-bound-part-two` (base: mainline `e64819de7`, charter `ea517c1f9`): **C0**
 `bda7a3e1b14868699e68682e6d18fe979412b323`, **C2** `24af7239b6c6da4a0c47914124a0e5bd96a0405b`, **C3**
-`9a8caddc1cc9d3963e0156ea01d5b3481a028d79`. The slice first STOPPED at C2's design step (stop rules S2 +
+`9a8caddc1cc9d3963e0156ea01d5b3481a028d79`; the independent pre-merge audit (Codex, `b7e190f04`,
+REQUEST CHANGES: F1–F4 + two corrections) and the consumer review's DOMAIN requirement are applied in **C4**
+`dc035396af88355515e651859bcd1543c7ff30bc` — §"Audit fixes" (F1 is DONE: the exemplar theorem is `∀ fuel, ∀ top, 8 ≤ top → …`). The slice first STOPPED at C2's design step (stop rules S2 +
 S6: the chartered route A ripples into gate-compiled and exported sites outside the fence — the interim
 record `5d6d42f5c`, its §C2 ripple table); the orchestrator EXTENDED the fence to exactly the sites that
 table listed ("fence extension granted 2026-09-17", [AGENT orchestrator] within the [USER 2026-09-17]
@@ -88,14 +90,15 @@ All §1 cites re-verified and CORRECT unless listed (the interim record's list s
   outside the fence and untouched.
 - **E11 (C2, docs).** `VALIDATION.md` §3(c)'s "Accepted command line" bullet is outside the chartered
   `§0/§5/§7` but MUST name the new flag (a stale accepted-flag list is a doc defect): one bullet edited.
-- **E12 (C2, FuelExemplar — OWED).** The charter's "the FuelExemplar theorem's statement now quantifies the
+- **E12 (C2, FuelExemplar — was OWED; RESOLVED by C4 F1, §"Audit fixes").** The charter's "the FuelExemplar theorem's statement now quantifies the
   bound too" is not free: `drive_after_setup`'s errno step (`runOne_liftMem_active rfl`) evaluates
   `allocateObject` — hence `allocator`'s two branch conditions — on a CONCRETE cursor by `rfl`, and `S₁`
   is a concrete state; a symbolic `top` needs the conditions discharged from a hypothesis (`8 ≤ top` for the
   4-byte/align-4 errno object) and `S₁` restated symbolically — proof surgery, not a bounded edit (part one's
   S2 pattern: no grind). [AGENT] `dst₀ [LemFuel] (sup : Nat) (top : Int)` and `run` take the top as a
-  PARAMETER (the definitions are quantifiable); the theorem is stated at the test-chosen `exemplarTop`
-  (0x10000; docstring says so); the `∀ top, 8 ≤ top → …` generalisation is OWED (open items).
+  PARAMETER; at C2 the theorem was stated at a test-chosen `exemplarTop` and `run` did NOT yet take `top`
+  (the interim text's "`dst₀` and `run`" was wrong of `run` — audit F1). C4 delivers the generalisation:
+  `run (n) (top)`, `exemplar_certified_shipped_forall (fuel) (top) (h : 8 ≤ top)`, `exemplarTop` deleted.
 - **E13 (C3, refusal shapes).** The fork oracle's `--address-space-top 0` / `abc` are refused by cmdliner's
   own converter error (usage message, exit 124 — cmdliner's parse-error code; `-3` is read as an unknown
   option), where cerberus-lean refuses with exit 2 naming the default: the SHAPES differ by the two CLI
@@ -170,7 +173,7 @@ ADDRESS-SPACE-DEFAULT (the one allowed address-space numeral)`, `--address-space
 `--fuel` (absent → default; `0` → "must be a positive integer"; non-numeral → "not a decimal numeral", both
 exit 2 naming the default), threaded `runPipeline → frontendTU/loadLibc → desugar` and `→
 initial_driver_state`; `refuseFlag`'s accepted list names it (K2); tests/probes with NAMED test-chosen values
-independent of the default — `FuelExemplar.exemplarTop = 0x10000` (`dst₀`/`run` take `top`; E12),
+independent of the default — at C2 `FuelExemplar.exemplarTop = 0x10000` (superseded by C4: `run`/`S₁`/the theorem take `top`; E12),
 `MonadicFailstop.testAddressSpaceTop = 0x10000`, the five SLUnit `gateAddressSpaceTop = 0x100000000`,
 `illtyped-store.probeAddressSpaceTop = 0x10000` (its KILL is independent of the value: the guard fires before
 any allocation), `Micro.microTop = 1 <<< 47` (a 48-bit-class region — big-integer bytemap keys, the property
@@ -214,8 +217,23 @@ record — `scripts/semantics-pin.env`; nothing more).** Old → new, exactly:
   ty_opt expr` → `… (sup : Nat) (address_space_top1 : Int) loc …`; `evalConstantExpressionAux` likewise.
 - `drive`, `CerbMem.allocator`, `CerbMemAllocatorProofs.*`: UNCHANGED. Consumer theorems quantify `∀ top`
   beside `∀ fuel`; matched mode instantiates `top = 0xFFFFFFFFFFFF` (= 281474976710655) from `Main.lean`
-  `defaultAddressSpaceTop`; a tiny `top` is a legitimate instance (the allocator kills out of memory exactly
-  where `allocator_active_sound` says the cursor is below the request).
+  `defaultAddressSpaceTop`; a tiny `top` is a legitimate instance. The allocator's two kills, exactly (audit
+  F4): it kills when `cursor − size < 0` (`allocator_below_request_kills`) and when the aligned-down candidate
+  address is `≤ 0`; an ACTIVE result satisfies `allocator_active_sound` — a NECESSARY condition (aligned,
+  positive, ending at or below the cursor, becoming the cursor), not a characterisation of failure.
+- **THE DOMAIN (C4, from your review — `docs/2026-09-18_s3-checkpoint-review.md`):** `0 < top < 2^64`. Both
+  CLIs refuse anything else (and any non-decimal spelling) with one sentence, `the address-space top must fit
+  an LP64 pointer: 0 < top < 2^64`, the bound derived from `sizeof_pointer = 8` (`CerberusImpl.sizeof_pointer`;
+  `ocaml_implementation.ml DefaultImpl`) — your *"`MemWF.la_wf` in HeapModel.lean, line 140, requires
+  `lastAddress ≤ 2^64`; `la_pos` also requires positivity. An unrestricted integer initial cursor does not
+  establish these facts."* Consumer theorems quantify `∀ top` UNDER this domain. **The setup hypothesis:** the
+  driver's errno `int` (4 bytes, align 4) is the first allocation, so a run reaches `main` only for `8 ≤ top` —
+  your *"With a sufficiently small top, the driver can OOM while allocating errno, before `main` or its Iris
+  state is initialised."* The exemplar's theorem now carries exactly that hypothesis:
+  `FuelExemplar.exemplar_certified_shipped_forall (fuel : Nat) (top : Int) (h : 8 ≤ top)`, with the symbolic
+  errno lemma `errnoAction_active (k top) (h : 8 ≤ top) : runOne errnoAction (initialMemState top) = (NDactive
+  (errnoPtr top), σstore top)` — `errnoAddr top = top − 4 − (top − 4) % 4` — as the reusable startup fact
+  (`test/Unit/FuelExemplar.lean`, a test module; lift it into a seam if you want to import it).
 
 **The chartered gates, verbatim (`c2-fast-gate-tails.txt`; every lane via `scripts/ce`; at the committed
 C2 tree unless noted):**
@@ -377,14 +395,17 @@ row 10 1:55; `release.py --mode fast` 7:57; the five speclab gates 1:20 + 4 × 8
 (main.ml) 2.8 s; the lane 3.9 s per pass; `test_unit.sh` 3:28; row 10 1:55; FULL 1:17:55 (39 lanes; B1 10:02, B7 21:37, B9 21:40, B12 6:58 dominate);
 `--with-lean` 4:12.
 
+C4: the F1 probe iteration ~10 min (06:55–07:05, six probe elaborations of ≤ 2 s each once the imports were
+cached; `lake build fuel-exemplar-test` 5.4 s); the lane 4.6 s / selftest 4.8 s (18 cases, 11 plants);
+`release.py --mode fast` ≈ 8 min; row 10 ≈ 2 min; FULL 1:20:25.
+
 ## Open items
 
 1. **[orchestrator] E10 — confirm the OCaml numeral's home** (`backend/common/driver_ocaml.ml`
    `address_space_top_default`, not `main.ml`): the [AGENT] resolution of the rule conflict; a one-line
    relocation if refused (then the unbuilt callers need a ruling that they may reference nothing).
-2. **[owed] the FuelExemplar `∀ top` generalisation** (E12): `exemplar_certified_shipped_forall (fuel) (top)
-   (h : 8 ≤ top)` needs `drive_after_setup`'s errno `rfl` replaced by a lemma discharging `allocator`'s two
-   branch conditions from `h` and `S₁` restated in `top`; `dst₀`/`run` already take `top`.
+2. ~~[owed] the FuelExemplar `∀ top` generalisation~~ — DONE in C4 (F1): exactly the route named here
+   (`errnoAction_active` for the errno step; `S₁ top` explicit); `run` takes `top` since C4.
 3. **[orchestrator, instrument] E7** — `test_immaculate.sh --record-baseline` strips hand-added header notes
    (not fixed here by instruction).
 4. **[orchestrator, operational] E8** — worktree priming should regenerate `lean_frontend/generated/`.
@@ -398,3 +419,162 @@ row 10 1:55; `release.py --mode fast` 7:57; the five speclab gates 1:20 + 4 × 8
    CONSUMER RE-PIN NOTE (§C2) and nothing more.
 8. `.tmp/` artefacts (`c0-*`, `c2-*`, `c3-*`, `smoke*`, the release/row-10 report dirs) are ephemeral;
    everything cited is in the evidence directory.
+
+## Audit fixes — C4 `dc035396af88355515e651859bcd1543c7ff30bc` (pre-merge audit `docs/2026-09-18_address-space-bound-part-two-audit-premerge.md`, Codex, REQUEST CHANGES; + the consumer's review `cerberus-sl/docs/2026-09-18_s3-checkpoint-review.md`)
+
+The audit's F1–F4 and its two corrections, and the DOMAIN requirement the orchestrator relayed from the
+consumer's review, are all applied in ONE commit, C4; every decision below is [AGENT worker] within the
+orchestrator's instruction (verbatim in this section where it bound a choice).
+
+**F1 — the bound-quantified execution theorem: DONE (not deferred).** `test/Unit/FuelExemplar.lean`:
+`exemplar_certified_shipped_forall (fuel : Nat) (top : Int) (h : 8 ≤ top) : ∀ o ∈ run fuel top, (∃ st, o.1 =
+Killed st CerbND.fuelExhaustedKill) ∨ (∃ r, o.1 = Active r ∧ post r o.2.2)` — `run (n : Nat) (top : Int)` runs
+the production `drive` from `dst₀ 0 top = (initial_driver_state 0 top exemplarFile fs).1`; `exemplarTop` is
+DELETED (the interim record's "`dst₀` and `run` take `top`" was false of `run` — corrected: both do now). The
+route the audit asked for: drive's errno step is no longer a `rfl` on a concrete cursor but the lemma
+`errnoAction_active (k top) (h : 8 ≤ top) : runOne (@errnoAction ⟨k+1⟩) (initialMemState top) = (NDactive
+(errnoPtr top), σstore top)` — `allocator_errno` (the allocator's two kills excluded by `omega` from
+`8 ≤ top`: `top − 4 < 0` and the aligned-down candidate `≤ 0`, via `Int`'s Euclidean `%`),
+`allocateObject_errno` (the record inserted at id 0, the 4 unspecified bytes written — closed by `trans rfl`
+against an EXPLICIT post-allocation state `σalloc top`), `storeM_errno_active` (the store's guards discharged:
+type-compatible by `decide`, the record read back at id 0, `isInBounds` by `simp` at the symbolic address,
+writable, not an atomic member access). The post-setup state is stated EXPLICITLY — `S₁ [LemFuel] (top) := { s₁
+top with layout_state := σstore top, core_state0 := { … thread_states := [(0, (none, thS top))] } }` with
+`thS top`'s `errno := errnoPtr top` and the spawned thread's `env := [fmapEmpty]` — and `drive_after_setup (k
+top) (h : 8 ≤ top)` CHECKS by its last setup `rfl` that the generated `drive` reaches exactly it;
+`round_done (k top)` needs no hypothesis (the `hsteps` `rfl` holds with the post-store memory a SYMBOLIC term —
+`step_ctx` on the pure-value arena never forces it: a free-`σ` `rfl` in the development probe
+`c4-f1-development-probe.lean`). Axioms (`c4-exemplar-forall-top-axioms.txt`, verbatim): every one of
+`exemplar_certified_shipped_forall`, `exemplar_certified_shipped_zero`, `exemplar_killed_at_one`,
+`errnoAction_active`, `drive_after_setup`, `round_done` `depends on axioms: [propext, Classical.choice,
+Quot.sound]`; kernel-only tactics, no option bumps; `lake build fuel-exemplar-test` re-elaborated the module
+in 5.4 s. What the theorem now says for the consumer: at EVERY fuel and EVERY address-space top with room
+for the errno object, the shipped pipeline's outcome is the fuel kill or `Specified(42)`; the OOM-before-main
+regime (`top < 8`) is outside its statement, as the consumer review's second fact requires one to say.
+Wall: ~10 minutes of probe iteration (`06:55 → 07:05`), within the bound.
+
+**F2 — a GENUINE tiny-bound discriminator.** `tests/address_space/window-char-int7.c` — `char c; int a[7];
+return (int)((uintptr_t)a & 0xff);` — at top 32: errno → cursor 28, `c` (1, align 1) → 27, `a` (28 bytes,
+align 4): `z = 27 − 28 = −1`, inside draft 44's window `−align/2 < z < 0`. The old-body outcome is EXECUTED,
+as instructed: `c4-old-allocator-probe.lean` carries `CerbMem.allocator` at `4a23d98aa` (part one's base —
+NOT `e64819de7^`, which is `4539c60e1` and already inside part one's range; the body was extracted by `git
+show` and is byte-identical modulo the rename, checked by `diff`) beside this tree's fixed body, both run
+over the program's schedule from `initialMemState top` at 64/32/8 (`c4-old-allocator-probe.out`, verbatim):
+```
+== OLD body (4a23d98aa, pre-remedy-1), top = 32: initialMemState 32
+   errno int (size 4, align 4) at cursor 32: ACTIVE id=0 addr=28 cursor'=28
+   char c (size 1, align 1) at cursor 28: ACTIVE id=1 addr=27 cursor'=27
+   int a[7] (size 28, align 4) at cursor 27: ACTIVE id=2 addr=2 cursor'=2
+== FIXED body (this tree, CerbMem.allocator), top = 32: initialMemState 32
+   errno int (size 4, align 4) at cursor 32: ACTIVE id=0 addr=28 cursor'=28
+   char c (size 1, align 1) at cursor 28: ACTIVE id=1 addr=27 cursor'=27
+   int a[7] (size 28, align 4) at cursor 27: KILLED[MerrOther Concrete.allocator: failed (out of memory)] cursor=27
+```
+(top 64: both ACTIVE at 28; top 8: both kill at `a`). The program's only observable is the low byte of `a`'s
+address, so the pre-fix observation is `Specified(2)` (address 2: misaligned, overlapping errno at 28..32 —
+the complete draft-44 signature); the fixed engines' real outcome is pinned: the three new rows of
+`tests/address_space/expectations.txt` (verbatim; the 15 existing rows unchanged, `diff` = additions only):
+```
+window-char-int7	64	VAL:{value: "Specified(28)", stdout: "", stderr: "", blocked: "false"}
+window-char-int7	32	ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+window-char-int7	8	ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+```
+(`Specified(28)` at 64 also confirms the allocation ORDER errno → `c` → `a` on both engines.) Plant P1 now
+forges THIS case to `Specified(2)`; the lane header, `expectations.txt`'s header, LADDER A12 and VALIDATION §5
+name the discriminator and say every other case is old = fixed (the audit's reconstruction). The audit's
+`malloc(9)@32` alternative was not added (one discriminator was asked for; the record notes it).
+
+**F3 — the unterminated final row (fail-open) — fixed.** `scripts/test_address_space.sh` `check_expectations`:
+both `read` loops are `while IFS=$'\t' read -r … || [[ -n "$first" ]]; do`, so a nonempty final record cut
+by EOF is processed exactly like a terminated one. Plants (`--selftest`, verbatim in `c4-lane-selftest.txt`):
+`P5 phantom row WITHOUT a final newline` → `EXPECT FAIL absent-program top=64: pinned … NOT a case of this run`;
+`P6 duplicate row WITHOUT a final newline` → `EXPECT FAIL duplicate expectations row for array-40 top=64`; `P7
+malformed row WITHOUT a final newline` → `EXPECT FAIL malformed expectations row: 'two-ints	64	'`; `P8 the
+committed file with its final newline removed is ACCEPTED (the last row is read)` → `EXPECT OK 18 pinned rows =
+18 observed cases`; P2/P3/P4 kept.
+
+**F4 — the allocator contract stated exactly.** `VALIDATION.md` §7 and this record's consumer note: the
+allocator kills when `cursor − size < 0` (`CerbMem.allocator_below_request_kills`) and when the aligned-down
+candidate is `≤ 0` (cursor 4, request 4, align 4 kills with cursor = request; cursor 5 too — the corpus's
+`three-ints-then-array@32` is the equality case); an ACTIVE result satisfies `CerbMem.allocator_active_sound`
+— a NECESSARY condition, not a characterisation of failure. The "kills exactly where … `allocator_active_sound`
+says" sentence is gone from both.
+
+**Corrections.** (i) Register arithmetic: `minimal/112-…` and `immaculate/nolibc/tray44-…-single-request`
+rationales now read "ONE request larger than the cursor by 1 byte (… the cursor at a − 8 and the request is
+a − 7 bytes, so z = −1 …; the part-two pre-merge audit corrected the earlier "by 7 bytes")" — the two
+`-overlap` rows never said it; signatures untouched (row 10 unmoved). (ii) The record's `run` signature: see
+F1 (`run (n : Nat) (top : Int)` — it did NOT take `top` before C4; E12 and open item 2 are amended below).
+
+**DOMAIN (the consumer's review; [AGENT orchestrator] within the ruling).** Both CLIs refuse a top outside
+`0 < top < 2^64` with the MIRRORED sentence `the address-space top must fit an LP64 pointer: 0 < top < 2^64`,
+each deriving the bound from its implementation's pointer size rather than a numeral: `Main.lean`
+`addressSpaceLimit : Nat := match CerberusImpl.sizeof_pointer with | some bytes => 2 ^ (8 * bytes) | none =>
+0` (a missing size makes the domain EMPTY — fail-closed) and `main.ml` `Z.shift_left Z.one (8 * bytes)` from
+`Ocaml_implementation.DefaultImpl.impl.sizeof_pointer` (`Some 8`); the fork's converter is DECIMAL-ONLY
+(`String.for_all` digits) so `0x40` is refused on both engines (the audit's base-prefix asymmetry, mirror
+doctrine); non-decimal input says `not a decimal numeral` on both. The exit codes remain the CLI libraries'
+(cmdliner 124 — it also wraps and indents its text, which the plant normalises; cerberus-lean 2). Plants (the
+lane's `--selftest`, verbatim): `P9 --address-space-top 18446744073709551616 (= 2^64) REFUSED on both engines
+with the mirrored domain sentence -> fork rc=124 lean rc=2`; `P10 --address-space-top 0x40 (not decimal)
+REFUSED on both engines -> fork rc=124 lean rc=2`; `P11 --address-space-top 64 ACCEPTED on both engines
+(window-char-int7 -> Specified(28)) -> fork rc=0 lean rc=0`. Docs: DESIGN.md §4 and VALIDATION.md §7 state
+the domain, that consumer theorems quantify `∀ top` under it, and the setup hypothesis `8 ≤ top`. The
+CONSUMER RE-PIN NOTE (§C2) gains, verbatim from the consumer review: *"`MemWF.la_wf` in HeapModel.lean, line
+140, requires `lastAddress ≤ 2^64`; `la_pos` also requires positivity. An unrestricted integer initial cursor
+does not establish these facts."* and *"With a sufficiently small top, the driver can OOM while allocating
+errno, before `main` or its Iris state is initialised."* — hence the domain and the `8 ≤ top` startup
+hypothesis (the exemplar's theorem now carries exactly that hypothesis and no more).
+
+**E12 — RESOLVED by F1** (the theorem is `∀ top, 8 ≤ top → …`; `run` takes `top`; `exemplarTop` deleted).
+**Open item 2 — CLOSED.** Drift manifest: `main.ml` re-pinned once more (single row) + a C4 note; the gate is
+green. **E15 (this section).** The pre-fix `CerbMem.allocator` is at `4a23d98aa`, not at `e64819de7^` (which
+already carries remedy 1) — the orchestrator's cite was off by the part-one range.
+
+**C4 FAST-GATE at the C4 tree (verbatim; `c4-*`):**
+```
+fast: passed; 16/16 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Total: 11 passed, 0 failed
+check_no_fuel_numerals: OK (324 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6), no address-space-top literal (A1-A3); allowed Main.lean sites seen: 6 of 6 (hand-written + generated copy))
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 25 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+FuelExemplar: exemplar_certified_shipped_forall (∀ fuel, ∀ address-space top ≥ 8 over the shipped `@drive ⟨fuel⟩` from `initial_driver_state _ top`; the consumer's §6 shape, symbolic round library + the symbolic errno lemma) — kernel-checked at compile time
+test_address_space: OK (18 cases: LEAN = FORK through the shared codec at tops 64 32 8; every fork observation = its pinned row in expectations.txt)
+test_address_space: SELFTEST OK (11 plants — P1 the discriminator's verified pre-fix observation, P2 missing file, P3 truncated, P4 phantom row, P5-P7 phantom/duplicate/malformed rows without a final newline all REJECTED; P8 the valid file without a final newline ACCEPTED; P9/P10 the out-of-domain and non-decimal tops REFUSED on both engines, P11 a decimal top accepted; the committed file green)
+Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+```
+The eleven plant lines (`c4-lane-selftest.txt`, verbatim): PLANT OK   [P1 the discriminator window-char-int7@32 forged to its verified PRE-FIX observation (Specified(2) where the kill is pinned)]; PLANT OK   [P2 missing expectations file]; PLANT OK   [P3 truncated expectations (last row dropped)]; PLANT OK   [P4 a row for a case this run never produced]; PLANT OK   [P5 phantom row WITHOUT a final newline]; PLANT OK   [P6 duplicate row WITHOUT a final newline]; PLANT OK   [P7 malformed row WITHOUT a final newline]; PLANT OK   [P8 the committed file with its final newline removed is ACCEPTED (the last row is read)]; PLANT OK   [P9 --address-space-top 18446744073709551616 (= 2^64) REFUSED on both engines with the mirrored domain sentence]; PLANT OK   [P10 --address-space-top 0x40 (not decimal) REFUSED on both engines]; PLANT OK   [P11 --address-space-top 64 ACCEPTED on both engines (window-char-int7.
+
+**FULL gate at the C4 head (`release.py --mode full`, ONCE; verbatim per-lane tails in
+`c4-release-full-tails.txt`):**
+`release.py --mode full --out .tmp/c4-release-full` at `dc035396a`, nothing touching the tree meanwhile (wall 1:20:25; the record amendment was
+held in `.tmp/` until it finished — E14):
+```
+full: passed; 39/39 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+```
+Per lane (id status seconds): A1 passed 300s / A2 passed 34s / A3 passed 54s / A4 passed 23s / A4b passed 24s / A4c passed 3s / A5 passed 22s / A6 passed 2s / A6b passed 4s / A7 passed 10s / A8 passed 9s / A9 passed 17s / A10 passed 17s / A11 passed 58s / A12.1 passed 5s / A12.2 passed 4s / B1 passed 618s / B2 passed 23s / B3 passed 15s / B4 passed 46s / B5 passed 67s / B6.1 passed 2s / B6.2 passed 2s / B6.3 passed 3s / B6.4 passed 3s / B6.5 passed 3s / B6.6 passed 4s / B6.7 passed 3s / B7 passed 1311s / B8.1 passed 13s / B8.2 passed 223s / B8.3 passed 6s / B8.4 passed 16s / B9 passed 1310s / B10.1 passed 118s / B10.2 passed 2s / B11.1 passed 15s / B11.2 passed 7s / B12 passed 427s. Load-bearing lines, verbatim:
+```
+[A1] Total: 11 passed, 0 failed
+[A1] check_no_fuel_numerals: OK (324 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6), no address-space-top literal (A1-A3); allowed Main.lean sites seen: 6 of 6 (hand-written + generated copy))
+[A1] check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 25 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+[A1] ✓ fuel-exemplar-test PASSED
+[A2] SUMMARY: total=113 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=5 cerb_floor=0 cerb_inconsistent=0
+[A2] Baseline check: 0 regression(s), 0 improvement(s)
+[A3] Baseline check: 0 regression(s), 0 improvement(s)
+[A4] Baseline check: 0 regression(s), 0 improvement(s)
+[A4b] Baseline check: 0 regression(s), 0 improvement(s)
+[A12.1] test_address_space: SELFTEST OK (11 plants — P1 the discriminator's verified pre-fix observation, P2 missing file, P3 truncated, P4 phantom row, P5-P7 phantom/duplicate/malformed rows without a final newline all REJECTED; P8 the valid file without a final newline ACCEPTED; P9/P10 the out-of-domain and non-decimal tops REFUSED on
+[A12.2] test_address_space: OK (18 cases: LEAN = FORK through the shared codec at tops 64 32 8; every fork observation = its pinned row in expectations.txt)
+[B5] OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtype
+[B7] SUMMARY: total=2001 compared=1916 agree=1904 agree_nd=0 triaged=12 disagree=0 o2_agree=196 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=12 skip_lean_fail=13 skip_lean_timeout=11 skip_ub=47 triaged_addr=11 triaged_ub=1
+[B7] Baseline check: 0 regression(s), 0 improvement(s)
+[B7] gcc second-oracle lane OK
+[B10.1] Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}
+[B10.2] Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}
+[B11.2] check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent
+[B12] Independent oracle: passed; {'semantic_agreement': 4}
+```
+Zero movement of any baseline row; row 10 exactly C0's verdict; the 18-case lane and its 11 plants green inside the certification.
