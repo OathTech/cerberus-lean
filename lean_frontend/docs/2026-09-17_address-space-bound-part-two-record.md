@@ -1,11 +1,13 @@
-# Record — address-space bound, PART TWO (2026-09-17/18) — COMPLETE: C0 (the witnesses' gating pin), C2 (the bound as a quantified entry parameter, route A), C3 (the fork-only flag + the tiny-address-space lane), C4 (the pre-merge audit's fixes + the DOMAIN `0 < top < 2^64`); FULL GATE GREEN at the C3 head AND at the C4 head
+# Record — address-space bound, PART TWO (2026-09-17/18) — COMPLETE: C0 (the witnesses' gating pin), C2 (the bound as a quantified entry parameter, route A), C3 (the fork-only flag + the tiny-address-space lane), C4 (the pre-merge audit's fixes + the DOMAIN `0 < top < 2^64`), C5 (the re-review's R1: one shared CLI grammar, + two doc corrections); FULL GATE GREEN at the C3 head AND at the C4 head; C5 gated fast
 
 **Status [AGENT, worker, 2026-09-18]:** all three chartered deliverables are LANDED on
 `arc/address-space-bound-part-two` (base: mainline `e64819de7`, charter `ea517c1f9`): **C0**
 `bda7a3e1b14868699e68682e6d18fe979412b323`, **C2** `24af7239b6c6da4a0c47914124a0e5bd96a0405b`, **C3**
 `9a8caddc1cc9d3963e0156ea01d5b3481a028d79`; the independent pre-merge audit (Codex, `b7e190f04`,
 REQUEST CHANGES: F1–F4 + two corrections) and the consumer review's DOMAIN requirement are applied in **C4**
-`dc035396af88355515e651859bcd1543c7ff30bc` — §"Audit fixes" (F1 is DONE: the exemplar theorem is `∀ fuel, ∀ top, 8 ≤ top → …`). The slice first STOPPED at C2's design step (stop rules S2 +
+`dc035396af88355515e651859bcd1543c7ff30bc` — §"Audit fixes" (F1 is DONE: the exemplar theorem is `∀ fuel, ∀ top, 8 ≤ top → …`);
+the re-review (`0990c4560`: F1–F4 CLOSED, one P2 R1 + two doc corrections) is applied in **C5** `a31f88107af89cef5791ea4b05c00868be1f7076` —
+§"Re-review fixes" — under the operator's *"Fix all remaining issues, then land this"*. The slice first STOPPED at C2's design step (stop rules S2 +
 S6: the chartered route A ripples into gate-compiled and exported sites outside the fence — the interim
 record `5d6d42f5c`, its §C2 ripple table); the orchestrator EXTENDED the fence to exactly the sites that
 table listed ("fence extension granted 2026-09-17", [AGENT orchestrator] within the [USER 2026-09-17]
@@ -579,3 +581,46 @@ Per lane (id status seconds): A1 passed 300s / A2 passed 34s / A3 passed 54s / A
 [B12] Independent oracle: passed; {'semantic_agreement': 4}
 ```
 Zero movement of any baseline row; row 10 exactly C0's verdict; the 18-case lane and its 11 plants green inside the certification.
+
+## Re-review fixes — C5 `a31f88107af89cef5791ea4b05c00868be1f7076` (Codex re-review `docs/2026-09-18_address-space-bound-part-two-audit-rereview.md`, `0990c4560`: F1–F4 CLOSED; one P2 (R1) + two documentation corrections; the operator: *"Fix all remaining issues, then land this"*)
+
+**R1 — the shared grammar.** Lean's parser used `String.toNat?` alone, which accepts single underscore
+separators between digits (`6_4` = 64), while the fork's C4 converter is digit-only — reproduced before the
+fix on both engines (`6_4`, `00_64`, `1_8446744073709551615` accepted by Lean, refused by the fork; `2^64 − 1`
+accepted and `2^64` refused on both). Policy ([AGENT orchestrator], mirror doctrine): the SHARED grammar is
+"nonempty ASCII decimal digits, `0 < value < 2^64`" on both engines. `Main.lean`: the string is validated as
+`!s.isEmpty && s.all Char.isDigit` BEFORE `toNat?`, else the existing "not a decimal numeral" refusal naming
+the default. `--fuel` is UNTOUCHED ([AGENT worker]: Lean-only, no mirror requirement, narrowing its grammar is
+outside this slice — `--fuel 1_0` still parses as 10). Plants (`test_address_space.sh --selftest`, verbatim
+in `c5-lane-selftest.txt`): `P12 --address-space-top 6_4 (an underscore separator) REFUSED on both engines ->
+fork rc=124 lean rc=2`; `P13 --address-space-top 1_8446744073709551615 (a separator inside 2^64 - 1) REFUSED on
+both engines -> fork rc=124 lean rc=2`; `P14 --address-space-top 18446744073709551615 (= 2^64 - 1, the last
+value of the exclusive bound) ACCEPTED on both engines (window-char-int7 -> Specified(216)) -> fork rc=0 lean
+rc=0` — the boundary is identical on both sides (exclusive at 2^64, as the C4 text says); P9–P11 kept
+(`cli_case` now takes the expected verdict value for `accept`). VALIDATION §7 carries the grammar sentence
+beside the domain sentence; LADDER A12 names P12–P14.
+
+**Documentation corrections.** (1) The lane header (`test_address_space.sh:16-21`), LADDER A12 and
+VALIDATION §5 no longer say "the second object of every program exhausts at top 8": each program's schedule
+is in its header; at top 8 every program exhausts before main's last object — the second object in the five
+original programs, the THIRD in `window-char-int7` (errno at 4, `char c` at 3, `int a[7]` exhausts). (2) The
+old-body probe is an EXECUTED ALLOCATION SCHEDULE — the pre-fix `allocator` applied step by step to the exact
+states, giving address 2 — not a complete pre-fix C run through the frontend and batch printer; the C
+observation `Specified(2)` is DERIVED from that address and the program's return expression. Said so wherever
+the probe is cited: the lane header, `window-char-int7.c`'s header, LADDER A12, VALIDATION §5, plant P1's
+label, and this record's §F2 (edited in place).
+
+**Gates at the C5 head (verbatim; `c5-*`).** The FULL battery is NOT re-run for a CLI-parse + docs change
+([AGENT orchestrator]); the last FULL head is `dc035396a` (§"Audit fixes": `full: passed; 39/39`).
+```
+fast: passed; 16/16 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Total: 11 passed, 0 failed
+check_no_fuel_numerals: OK (324 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6), no address-space-top literal (A1-A3); allowed Main.lean sites seen: 6 of 6 (hand-written + generated copy))
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 25 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+test_address_space: OK (18 cases: LEAN = FORK through the shared codec at tops 64 32 8; every fork observation = its pinned row in expectations.txt)
+test_address_space: SELFTEST OK (14 plants — P1 the discriminator's derived pre-fix observation, P2 missing file, P3 truncated, P4 phantom row, P5-P7 phantom/duplicate/malformed rows without a final newline all REJECTED; P8 the valid file without a final newline ACCEPTED; P9/P10 the out-of-domain and non-decimal tops REFUSED on both engines, P11 a decimal top accepted; P12/P13 underscore-separated spellings REFUSED on both, P14 2^64 - 1 ACCEPTED on both; t
+Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}
+```
+The fourteen plant lines (`c5-lane-selftest.txt`, verbatim): PLANT OK   [P1 the discriminator window-char-int7@32 forged to its DERIVED pre-fix observation (Specified(2) — the executed old allocation at address 2 + the program's return expression — where the kill is pinned)]; PLANT OK   [P2 missing expectations file]; PLANT OK   [P3 truncated expectations (last row dropped)]; PLANT OK   [P4 a row for a case this run never produced]; PLANT OK   [P5 phantom row WITHOUT a final newline]; PLANT OK   [P6 duplicate row WITHOUT a final newline]; PLANT OK   [P7 malformed row WITHOUT a final newline]; PLANT OK   [P8 the committed file with its final newline removed is ACCEPTED (the last row is read)]; PLANT OK   [P9 --address-space-top 18446744073709551616 (= 2^64) REFUSED on both engines with the mirrored domain sentence]; PLANT OK   [P10 --address-space-top 0x40 (not decimal) REFUSED on both engines]; PLANT OK   [P11 --address-space-top 64 ACCEPTED on both engines (window-char-int7; PLANT OK   [P12 --address-space-top 6_4 (an underscore separator) REFUSED on both engines]; PLANT OK   [P13 --address-space-top 1_8446744073709551615 (a separator inside 2^64 - 1) REFUSED on both engines]; PLANT OK   [P14 --address-space-top 18446744073709551615 (= 2^64 - 1, the last value of the exclusive bound) ACCEPTED on both engines (window-char-int7.
