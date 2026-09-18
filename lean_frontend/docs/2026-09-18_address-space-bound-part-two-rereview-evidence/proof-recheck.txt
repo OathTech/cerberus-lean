@@ -1,0 +1,16 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+'review_quantified_production_run' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FuelExemplar.exemplar_certified_shipped_forall' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FuelExemplar.errnoAction_active' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FuelExemplar.drive_after_setup' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FuelExemplar.round_done' depends on axioms: [propext, Classical.choice, Quot.sound]
+def FuelExemplar.run : Nat →
+  Int → List (nd_status driver_result driver_error driver_state × List String × driver_state) :=
+fun n top => CerbND.runND (drive fmapEmpty false FuelExemplar.exemplarFile ["cmdname"]) (FuelExemplar.dst₀ 0 top)
+review_quantified_production_run (fuel : Nat) (top : Int) (h : 8 ≤ top)
+  (o : nd_status driver_result driver_error driver_state × List String × driver_state) :
+  o ∈
+      CerbND.runND (drive fmapEmpty false FuelExemplar.exemplarFile ["cmdname"])
+        (initial_driver_state 0 top FuelExemplar.exemplarFile CerbFS.fs_initial_state).fst →
+    (∃ st, o.fst = Killed st CerbND.fuelExhaustedKill) ∨
+      ∃ r, o.fst = Active r ∧ r.dres_core_value = FuelExemplar.fortyTwo

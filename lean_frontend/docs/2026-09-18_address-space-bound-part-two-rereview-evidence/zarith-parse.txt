@@ -1,0 +1,5 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+"6_4" -> 64
+"6__4" -> 64
+"64_" -> 64
+"_64" -> INVALID Z.of_substring_base: invalid digit

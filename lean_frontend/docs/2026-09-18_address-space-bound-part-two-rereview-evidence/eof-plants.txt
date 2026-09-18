@@ -1,0 +1,16 @@
+control: exit=0
+  EXPECT OK    18 pinned rows = 18 observed cases, every token identical
+phantom-newline: exit=1
+  EXPECT FAIL  phantom top=64: pinned in the expectations file but NOT a case of this run
+phantom-no-newline: exit=1
+  EXPECT FAIL  phantom top=64: pinned in the expectations file but NOT a case of this run
+duplicate-newline: exit=1
+  EXPECT FAIL  duplicate expectations row for array-40 top=64
+duplicate-no-newline: exit=1
+  EXPECT FAIL  duplicate expectations row for array-40 top=64
+malformed-newline: exit=1
+  EXPECT FAIL  malformed expectations row: 'broken-row		'
+malformed-no-newline: exit=1
+  EXPECT FAIL  malformed expectations row: 'broken-row		'
+valid-no-final-newline: exit=0
+  EXPECT OK    18 pinned rows = 18 observed cases, every token identical

@@ -1,0 +1,1397 @@
+{
+  "fresh_fast": {
+    "original_report": ".tmp/audit-address-space-part-two-rereview/fast/report.json",
+    "original_report_sha256": "2767ca9c65612638b8de52b63cd3d8ca21759dbd5bc1a0bee3f9439e76e791cd",
+    "retained_output_hashes_verified": 32,
+    "schema": 2,
+    "mode": "fast",
+    "status": "passed",
+    "started_utc": "20260918T182634.894202Z",
+    "finished_utc": "2026-09-18T18:34:50.856260+00:00",
+    "selection_complete": true,
+    "selected": [
+      "A1",
+      "A2",
+      "A3",
+      "A4",
+      "A4b",
+      "A4c",
+      "A5",
+      "A6",
+      "A6b",
+      "A7",
+      "A8",
+      "A9",
+      "A10",
+      "A11",
+      "A12.1",
+      "A12.2"
+    ],
+    "source_before": {
+      "branch": "arc/address-space-bound-part-two",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "head": "2f4898cf7803450965af785412ad657b25a08d6d",
+      "status": "",
+      "untracked_sha256": {}
+    },
+    "source_after": {
+      "branch": "arc/address-space-bound-part-two",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "head": "2f4898cf7803450965af785412ad657b25a08d6d",
+      "status": "",
+      "untracked_sha256": {}
+    },
+    "source_unchanged": true,
+    "artifact_issues": [],
+    "release_certification": "incomplete: reporting/adoption/audit exits require separate evidence",
+    "environment": {
+      "CERB_DRIVER_FRESH_OVERRIDE": null,
+      "CERB_FORK_DRIFT_DEV_SKIP": null,
+      "CERB_LEAN_BIN_OVERRIDE": null,
+      "CERB_MEM_MAX": null,
+      "CERB_ORACLE_BIN_OVERRIDE": null,
+      "CERB_TEST_MEM_MAX": null,
+      "DUNE_CACHE": null,
+      "NO_COLOR": "1",
+      "SKIP_BUILD": null,
+      "TERM": "dumb",
+      "TIMEOUT_SECS": null
+    },
+    "lanes": [
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-c61f235eb01d43808956fcc125a7471e",
+        "command": [
+          "./scripts/test_unit.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A1",
+        "process_group": 1699447,
+        "required": true,
+        "seconds": 211.14,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A1/stderr",
+        "stderr_sha256": "55ed3d35f1c0ff2b6c2cd7491b53a8abadf5d8e8e5812362600a34915b30e52c",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A1/stdout",
+        "stdout_sha256": "9c91036bb0222087b358edb163b43739952f539e62dd44a88679fcda2a7a8482",
+        "summaries": [],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-1087199f78164fc7b0c6156332b69a57",
+        "command": [
+          "./scripts/test_exec.sh",
+          "--check-baseline"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A2",
+        "process_group": 1721050,
+        "required": true,
+        "seconds": 28.722,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A2/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A2/stdout",
+        "stdout_sha256": "174d7e96ff62e4ad99c84b4ca2154ed3d62476ebbddcf5ed4d81aa5713c429ed",
+        "summaries": [
+          "SUMMARY: total=113 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=5 cerb_floor=0 cerb_inconsistent=0",
+          "Baseline check: 0 regression(s), 0 improvement(s)",
+          "BASELINE OK"
+        ],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-8e6f420ab1ab44b991e88bf2896b4036",
+        "command": [
+          "./scripts/test_exec.sh",
+          "--check-baseline=scripts/exec_coverage_baseline.txt",
+          "tests/coverage"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A3",
+        "process_group": 1727604,
+        "required": true,
+        "seconds": 52.394,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A3/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A3/stdout",
+        "stdout_sha256": "142c1bbbdb24337900e20b6a50e71acfe7098af002424cf3bcf55bbc04257b23",
+        "summaries": [
+          "SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0",
+          "Baseline check: 0 regression(s), 0 improvement(s)",
+          "BASELINE OK"
+        ],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-fc0802b86e9e44338cc7d6f7369fc638",
+        "command": [
+          "./scripts/test_exec.sh",
+          "--check-baseline=scripts/exec_debug_baseline.txt",
+          "tests/debug"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A4",
+        "process_group": 1739425,
+        "required": true,
+        "seconds": 23.065,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A4/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A4/stdout",
+        "stdout_sha256": "98c3093457e71c3dafcd505c3d5b8faebc4372bc0d149f22b6e304ef4a43ce6b",
+        "summaries": [
+          "SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0",
+          "Baseline check: 0 regression(s), 0 improvement(s)",
+          "BASELINE OK"
+        ],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-64eebb07d34d480dbe2e02ab90857e54",
+        "command": [
+          "./scripts/test_exec.sh",
+          "--check-baseline=scripts/exec_float_baseline.txt",
+          "tests/float"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A4b",
+        "process_group": 1744895,
+        "required": true,
+        "seconds": 24.568,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A4b/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A4b/stdout",
+        "stdout_sha256": "61e539a1ce3620574044541e3e45bd9bff780543e10ae8190ff301e569f3b8b5",
+        "summaries": [
+          "SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0",
+          "Baseline check: 0 regression(s), 0 improvement(s)",
+          "BASELINE OK"
+        ],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-2643b6e5a7b844b18306ab7653d0d2ed",
+        "command": [
+          "./scripts/test_bytes.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A4c",
+        "process_group": 1751206,
+        "required": true,
+        "seconds": 3.183,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A4c/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A4c/stdout",
+        "stdout_sha256": "b975bef89d6f86f7dbb9f23855580218b9b125f45a2a03c18d2bcf49d1de41fa",
+        "summaries": [
+          "SUMMARY: exec_match=9 neg_pinned=5 fail=0"
+        ],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-a99fb35344174dbe8379ca25e1bf7def",
+        "command": [
+          "./scripts/test_libc_exec.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A5",
+        "process_group": 1751961,
+        "required": true,
+        "seconds": 23.312,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A5/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A5/stdout",
+        "stdout_sha256": "1dfeb4f3df60ebf1b91854461262cf7fe0a5469c4007d10afe854ff65eeb0428",
+        "summaries": [
+          "SUMMARY: match=12 diff=0"
+        ],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-629b608d3a664221a05346875ae5e617",
+        "command": [
+          "./scripts/test_multi_tu.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A6",
+        "process_group": 1753648,
+        "required": true,
+        "seconds": 2.231,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A6/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A6/stdout",
+        "stdout_sha256": "c495cfc27c2dec880aaffdf7f6b98fb61b858e8dec1954ae3e1b95f5b470cd9d",
+        "summaries": [
+          "SUMMARY: total=2 match=2 fail=0"
+        ],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-5c4f5697415b4ae29e571ee9632c1a00",
+        "command": [
+          "./scripts/test_multi_tu.sh",
+          "--failure-class-projection",
+          "tests/multi_tu_tray"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A6b",
+        "process_group": 1754179,
+        "required": true,
+        "seconds": 3.633,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A6b/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A6b/stdout",
+        "stdout_sha256": "d0d96cc96e1332287e9c30c087bac16d34b853332bfbafd162fdab9853ff9f31",
+        "summaries": [
+          "SUMMARY: total=7 match=7 fail=0"
+        ],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-512bd15da66e486a810d58f56f91b4f3",
+        "command": [
+          "./scripts/test_parse.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A7",
+        "process_group": 1755029,
+        "required": true,
+        "seconds": 10.695,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A7/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A7/stdout",
+        "stdout_sha256": "a3b54ccbfe01c793edede9c2674717d656959e1d32f91fc5e97c8301a77b87d3",
+        "summaries": [],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-a92d523429454eeb8376adec80cfc8ae",
+        "command": [
+          "./scripts/test_core.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A8",
+        "process_group": 1757771,
+        "required": true,
+        "seconds": 9.394,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A8/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A8/stdout",
+        "stdout_sha256": "49b584d419da7367972e65804376cb6903f98f57dddcf1d0ac081d2e413e77e9",
+        "summaries": [],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-eafde5abc763404d91744e6012311c84",
+        "command": [
+          "./scripts/test_elab.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A9",
+        "process_group": 1763178,
+        "required": true,
+        "seconds": 17.205,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A9/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A9/stdout",
+        "stdout_sha256": "7a97eb93737beb38ce61c234b33c45cc32ef84d66319fa69eb898b5471b5b43e",
+        "summaries": [
+          "SUMMARY: total=113 same=108 diff=5 ocaml_fail=0 lean_fail=0"
+        ],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-729eb474984c4070a7fcc00bb9f378a7",
+        "command": [
+          "./scripts/test_libxml2_uri.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A10",
+        "process_group": 1766386,
+        "required": true,
+        "seconds": 16.603,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A10/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A10/stdout",
+        "stdout_sha256": "cdb32e88bfb81dac861a9d432ac532a5aaea4da4f542daa05149139347a9f6a3",
+        "summaries": [],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-ded19b82a81a40d7bc0764d8070ecbd9",
+        "command": [
+          "./scripts/test_cn_coverage.sh",
+          "--check-baseline"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A11",
+        "process_group": 1767135,
+        "required": true,
+        "seconds": 59.117,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A11/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A11/stdout",
+        "stdout_sha256": "c040cf0faa30f0bff9846a59471d03c5764e971d51690494b080dd22e57226f5",
+        "summaries": [
+          "SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0",
+          "BASELINE OK (213 entries, exact match)"
+        ],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-fbc31fbf54364c7d9f9a3ca92bbf5436",
+        "command": [
+          "./scripts/test_address_space.sh",
+          "--selftest"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A12.1",
+        "process_group": 1780157,
+        "required": true,
+        "seconds": 4.735,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A12.1/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A12.1/stdout",
+        "stdout_sha256": "6a37d610750a7213558d514583c583498201ae9b30ef2ba0774201f4da56524a",
+        "summaries": [],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-792fc42d4d924d2588ffa6dd8beccea4",
+        "command": [
+          "./scripts/test_address_space.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A12.2",
+        "process_group": 1781203,
+        "required": true,
+        "seconds": 4.484,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A12.2/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/fast/A12.2/stdout",
+        "stdout_sha256": "bed6d460f9c838318c8443d2bf6d262546b0c4a3780ac3a2788aadd1b7029324",
+        "summaries": [],
+        "tier": "A"
+      }
+    ]
+  },
+  "fresh_B10_only": {
+    "original_report": ".tmp/audit-address-space-part-two-rereview/oracle/report.json",
+    "original_report_sha256": "6944a1efbffeb146b8e3b750d6ba93d305a0d9f1d924b306453ac1c6e9474b99",
+    "retained_output_hashes_verified": 4,
+    "schema": 2,
+    "mode": "full",
+    "status": "incomplete",
+    "started_utc": "20260918T183515.427370Z",
+    "finished_utc": "2026-09-18T18:37:15.907699+00:00",
+    "selection_complete": false,
+    "selected": [
+      "B10.1",
+      "B10.2"
+    ],
+    "source_before": {
+      "branch": "arc/address-space-bound-part-two",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "head": "2f4898cf7803450965af785412ad657b25a08d6d",
+      "status": "",
+      "untracked_sha256": {}
+    },
+    "source_after": {
+      "branch": "arc/address-space-bound-part-two",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "head": "2f4898cf7803450965af785412ad657b25a08d6d",
+      "status": "",
+      "untracked_sha256": {}
+    },
+    "source_unchanged": true,
+    "artifact_issues": [],
+    "release_certification": "incomplete: reporting/adoption/audit exits require separate evidence",
+    "environment": {
+      "CERB_DRIVER_FRESH_OVERRIDE": null,
+      "CERB_FORK_DRIFT_DEV_SKIP": null,
+      "CERB_LEAN_BIN_OVERRIDE": null,
+      "CERB_MEM_MAX": null,
+      "CERB_ORACLE_BIN_OVERRIDE": null,
+      "CERB_TEST_MEM_MAX": null,
+      "DUNE_CACHE": null,
+      "NO_COLOR": "1",
+      "SKIP_BUILD": null,
+      "TERM": "dumb",
+      "TIMEOUT_SECS": null
+    },
+    "lanes": [
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-bdb77baf504d474aa7c9a972447e6790",
+        "command": [
+          "python3",
+          "scripts/test_upstream_oracle.py",
+          "--out",
+          "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/oracle/B10.1/independent-oracle"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B10.1",
+        "process_group": 1783262,
+        "required": true,
+        "seconds": 117.547,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/oracle/B10.1/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/oracle/B10.1/stdout",
+        "stdout_sha256": "aa5e34f1c3b46aa0ace8c14efd477a96d48f74a24bd7e4ba9c8dc786c34ab3e5",
+        "summaries": [],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-da74b4c7d5a64a5d9cd145dd43bb3f2e",
+        "command": [
+          "python3",
+          "scripts/test_upstream_oracle.py",
+          "--plant",
+          "--out",
+          "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/oracle/B10.2/independent-oracle"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B10.2",
+        "process_group": 1795074,
+        "required": true,
+        "seconds": 1.78,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/oracle/B10.2/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/oracle/B10.2/stdout",
+        "stdout_sha256": "da3185c687d78b047edab48470b86424578b1d45d340ab05d305948984193bfb",
+        "summaries": [],
+        "tier": "B"
+      }
+    ]
+  },
+  "historical_full_integrity_only": {
+    "original_report": ".tmp/c4-release-full/report.json",
+    "original_report_sha256": "c3850195fa05fb5ee4f5ea00190a544241ade52ef5d6771aaff7f1d4d759e347",
+    "retained_output_hashes_verified": 78,
+    "schema": 2,
+    "mode": "full",
+    "status": "passed",
+    "started_utc": "20260918T071940.392468Z",
+    "finished_utc": "2026-09-18T08:40:05.604072+00:00",
+    "selection_complete": true,
+    "selected": [
+      "A1",
+      "A2",
+      "A3",
+      "A4",
+      "A4b",
+      "A4c",
+      "A5",
+      "A6",
+      "A6b",
+      "A7",
+      "A8",
+      "A9",
+      "A10",
+      "A11",
+      "A12.1",
+      "A12.2",
+      "B1",
+      "B2",
+      "B3",
+      "B4",
+      "B5",
+      "B6.1",
+      "B6.2",
+      "B6.3",
+      "B6.4",
+      "B6.5",
+      "B6.6",
+      "B6.7",
+      "B7",
+      "B8.1",
+      "B8.2",
+      "B8.3",
+      "B8.4",
+      "B9",
+      "B10.1",
+      "B10.2",
+      "B11.1",
+      "B11.2",
+      "B12"
+    ],
+    "source_before": {
+      "branch": "arc/address-space-bound-part-two",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "head": "dc035396af88355515e651859bcd1543c7ff30bc",
+      "status": "",
+      "untracked_sha256": {}
+    },
+    "source_after": {
+      "branch": "arc/address-space-bound-part-two",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "head": "dc035396af88355515e651859bcd1543c7ff30bc",
+      "status": "",
+      "untracked_sha256": {}
+    },
+    "source_unchanged": true,
+    "artifact_issues": [],
+    "release_certification": "incomplete: reporting/adoption/audit exits require separate evidence",
+    "environment": {
+      "CERB_DRIVER_FRESH_OVERRIDE": null,
+      "CERB_FORK_DRIFT_DEV_SKIP": null,
+      "CERB_LEAN_BIN_OVERRIDE": null,
+      "CERB_MEM_MAX": null,
+      "CERB_ORACLE_BIN_OVERRIDE": null,
+      "CERB_TEST_MEM_MAX": null,
+      "DUNE_CACHE": null,
+      "NO_COLOR": null,
+      "SKIP_BUILD": null,
+      "TERM": "xterm-256color",
+      "TIMEOUT_SECS": null
+    },
+    "lanes": [
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-6e9b60f4cfd3409faa88e39cda5f6575",
+        "command": [
+          "./scripts/test_unit.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A1",
+        "process_group": 1043019,
+        "required": true,
+        "seconds": 300.144,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A1/stderr",
+        "stderr_sha256": "c43d03da904b6ee94c3ecf0ebb2cc2a5380f79272a4c57db7323d78a1e9c48c8",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A1/stdout",
+        "stdout_sha256": "f55db5fb2d3250481c24b0b377a683cab70611e15a79f67d7237ad5ed4ad4443",
+        "summaries": [],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-cdb715f49b7045cbbf7cebe5142d6a22",
+        "command": [
+          "./scripts/test_exec.sh",
+          "--check-baseline"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A2",
+        "process_group": 2143768,
+        "required": true,
+        "seconds": 34.29,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A2/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A2/stdout",
+        "stdout_sha256": "5a11ebab88cf62c9ea87c4fc97d26057614aa2d3138566739c962065ca40e625",
+        "summaries": [
+          "SUMMARY: total=113 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=5 cerb_floor=0 cerb_inconsistent=0",
+          "Baseline check: 0 regression(s), 0 improvement(s)",
+          "BASELINE OK"
+        ],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-2d83d6d675414c7c95aa20f80008ab2b",
+        "command": [
+          "./scripts/test_exec.sh",
+          "--check-baseline=scripts/exec_coverage_baseline.txt",
+          "tests/coverage"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A3",
+        "process_group": 2172571,
+        "required": true,
+        "seconds": 53.673,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A3/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A3/stdout",
+        "stdout_sha256": "9c11bf1ae7156dd05aa9f8fce2e252b000bcb7ae3b4ef8f095105f7574f42ccd",
+        "summaries": [
+          "SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0",
+          "Baseline check: 0 regression(s), 0 improvement(s)",
+          "BASELINE OK"
+        ],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-2f2b27257af04fce8143ceef079d23c7",
+        "command": [
+          "./scripts/test_exec.sh",
+          "--check-baseline=scripts/exec_debug_baseline.txt",
+          "tests/debug"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A4",
+        "process_group": 2202939,
+        "required": true,
+        "seconds": 22.664,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A4/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A4/stdout",
+        "stdout_sha256": "d5d5d845e835fe2247157878d84a979ba80033dfa99b92449bc67626e9990efa",
+        "summaries": [
+          "SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0",
+          "Baseline check: 0 regression(s), 0 improvement(s)",
+          "BASELINE OK"
+        ],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-332238947dd8486a93a2f77f621cce49",
+        "command": [
+          "./scripts/test_exec.sh",
+          "--check-baseline=scripts/exec_float_baseline.txt",
+          "tests/float"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A4b",
+        "process_group": 2208197,
+        "required": true,
+        "seconds": 24.064,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A4b/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A4b/stdout",
+        "stdout_sha256": "4a176138fbab00217050cd1563c717550999324b1b5e60902bc52712c9e22fab",
+        "summaries": [
+          "SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0",
+          "Baseline check: 0 regression(s), 0 improvement(s)",
+          "BASELINE OK"
+        ],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-4da084792cf24e8cb0df8b024149ac0c",
+        "command": [
+          "./scripts/test_bytes.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A4c",
+        "process_group": 2213719,
+        "required": true,
+        "seconds": 3.233,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A4c/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A4c/stdout",
+        "stdout_sha256": "bfa55437dd8c2e8b91883875579aa7fdb27bf1ac1288095366d7304c97f7f271",
+        "summaries": [
+          "SUMMARY: exec_match=9 neg_pinned=5 fail=0"
+        ],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-a3ba422dac364bf086faabc418e71490",
+        "command": [
+          "./scripts/test_libc_exec.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A5",
+        "process_group": 2214429,
+        "required": true,
+        "seconds": 21.763,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A5/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A5/stdout",
+        "stdout_sha256": "43375ffc0bd3aee3ab035cc1b0e6f614aea809a9d7d6b9bf73f206cf2a30deb1",
+        "summaries": [
+          "SUMMARY: match=12 diff=0"
+        ],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-0db9641d78914424aa7f0a713dd33f86",
+        "command": [
+          "./scripts/test_multi_tu.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A6",
+        "process_group": 2215786,
+        "required": true,
+        "seconds": 2.13,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A6/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A6/stdout",
+        "stdout_sha256": "57b5af8f3d2503749f7f57e9c1a89adea50a693c067abf9b94eda1205be05375",
+        "summaries": [
+          "SUMMARY: total=2 match=2 fail=0"
+        ],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-79e64da764044e7d856ea1e829f205e8",
+        "command": [
+          "./scripts/test_multi_tu.sh",
+          "--failure-class-projection",
+          "tests/multi_tu_tray"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A6b",
+        "process_group": 2216297,
+        "required": true,
+        "seconds": 3.533,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A6b/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A6b/stdout",
+        "stdout_sha256": "a85ce2d126e57b16f73fcd57ec08c1882331a9eb00dd56dd00d905a1cd116af5",
+        "summaries": [
+          "SUMMARY: total=7 match=7 fail=0"
+        ],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-428634149dd2495b926127d8298a6dff",
+        "command": [
+          "./scripts/test_parse.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A7",
+        "process_group": 2217138,
+        "required": true,
+        "seconds": 10.444,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A7/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A7/stdout",
+        "stdout_sha256": "b8ffba1ae0349b22f09c01a1de918cd96ff4d31285a2e99ff9956110c6d2deff",
+        "summaries": [],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-4dd03079146d4d27a618e620bfc5cc09",
+        "command": [
+          "./scripts/test_core.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A8",
+        "process_group": 2219661,
+        "required": true,
+        "seconds": 8.99,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A8/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A8/stdout",
+        "stdout_sha256": "d12bc9a5f6beeb51496d2b1b476ee8c00b7259aa0e1e34a7f5d51884cac6aee5",
+        "summaries": [],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-6ef8ffe11e754b7ca9791884f97d6adf",
+        "command": [
+          "./scripts/test_elab.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A9",
+        "process_group": 2221892,
+        "required": true,
+        "seconds": 16.801,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A9/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A9/stdout",
+        "stdout_sha256": "a352c2db11106aa73aa68bcb808065fc85c6675ef8a67f3d29f34a98514e1c1a",
+        "summaries": [
+          "SUMMARY: total=113 same=108 diff=5 ocaml_fail=0 lean_fail=0"
+        ],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-904f722e24644916b6b26b796f244fe9",
+        "command": [
+          "./scripts/test_libxml2_uri.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A10",
+        "process_group": 2225182,
+        "required": true,
+        "seconds": 16.604,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A10/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A10/stdout",
+        "stdout_sha256": "dd12e1041f81adc7b1c9cfd192eb2e05c9fd306f080775f1fb75936bb18b4ac6",
+        "summaries": [],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-bc34f8de5af8450289e46898e8a0fd69",
+        "command": [
+          "./scripts/test_cn_coverage.sh",
+          "--check-baseline"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A11",
+        "process_group": 2226050,
+        "required": true,
+        "seconds": 57.718,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A11/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A11/stdout",
+        "stdout_sha256": "2572e9a00907392f2a8c783dd43af03bbda1431def844f86539d8fc3d55c1cf5",
+        "summaries": [
+          "SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0",
+          "BASELINE OK (213 entries, exact match)"
+        ],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-d1f464aa0aca4b549d5954580135adf5",
+        "command": [
+          "./scripts/test_address_space.sh",
+          "--selftest"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A12.1",
+        "process_group": 2238699,
+        "required": true,
+        "seconds": 4.585,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A12.1/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A12.1/stdout",
+        "stdout_sha256": "b1b5e27656f40cd2cd3ee81a14e971b89c27b6062085da565d7d260346cc8c7a",
+        "summaries": [],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-b1e97672301e4ff5bc551e879d74eb3d",
+        "command": [
+          "./scripts/test_address_space.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "A12.2",
+        "process_group": 2239690,
+        "required": true,
+        "seconds": 4.435,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A12.2/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/A12.2/stdout",
+        "stdout_sha256": "e65b85fc739bee92dbb312f3248b62bebc287ebafe744770d14fb4cf84e76b2a",
+        "summaries": [],
+        "tier": "A"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-ccc2f78081d34bb795b93b2f2048fbb6",
+        "command": [
+          "./scripts/test_libxml2.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B1",
+        "process_group": 2240591,
+        "required": true,
+        "seconds": 617.995,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B1/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B1/stdout",
+        "stdout_sha256": "7b7942841dbcc461c9e0f84d23007a4fc91b8d82cfc20a61344fea0de5e6e609",
+        "summaries": [
+          "SUMMARY: total=4 match=4 fail=0 (points: 1354, 22 observations each)"
+        ],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-68978b64087e451e88b4712b326d8b41",
+        "command": [
+          "./scripts/test_parse.sh",
+          "tests/ci"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B2",
+        "process_group": 2257401,
+        "required": true,
+        "seconds": 23.112,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B2/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B2/stdout",
+        "stdout_sha256": "2e81ac29037a015ed9bbb1432c4e46422b7d7fa5e6138cb132f0f2d8beaf4fc6",
+        "summaries": [],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-2baa853ddd884b8dae92da7f4816302e",
+        "command": [
+          "./scripts/test_core.sh",
+          "tests/ci"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B3",
+        "process_group": 2262962,
+        "required": true,
+        "seconds": 15.05,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B3/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B3/stdout",
+        "stdout_sha256": "f9d76edf2a0355394010c0fa2d26d658445fcfdb231b8b39cebad59a7c790cc3",
+        "summaries": [],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-2283ab0130c54148a2a1c8fd91f3d1a8",
+        "command": [
+          "./scripts/test_verify.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B4",
+        "process_group": 2266667,
+        "required": true,
+        "seconds": 46.1,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B4/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B4/stdout",
+        "stdout_sha256": "abb3863486a17a5f86dcec896ce32154d937dee20e6e505897a682b7b3881f91",
+        "summaries": [
+          "test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)"
+        ],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-4aa618d4f5f64bd49e11e1dc25d18242",
+        "command": [
+          "./scripts/test_immaculate.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B5",
+        "process_group": 2269744,
+        "required": true,
+        "seconds": 67.266,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B5/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B5/stdout",
+        "stdout_sha256": "2b9dffbf391fb6f03b1714bbf1e92439ae3d40f162b796f2028bc6163463367c",
+        "summaries": [],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-c28f449373b8423294450537b0e6af0e",
+        "command": [
+          "./scripts/test_speclab.sh",
+          "--selftest"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B6.1",
+        "process_group": 2274856,
+        "required": true,
+        "seconds": 2.281,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B6.1/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B6.1/stdout",
+        "stdout_sha256": "433de6409de4e325ec289b402b99af80ae1b1aec2412bd94cbe943b1be8cd586",
+        "summaries": [],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-d15310eeb7f74583a47895a16fbb916c",
+        "command": [
+          "./scripts/test_speclab.sh",
+          "--plant"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B6.2",
+        "process_group": 2275343,
+        "required": true,
+        "seconds": 2.231,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B6.2/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B6.2/stdout",
+        "stdout_sha256": "aa839c96ac93364cd5420c01c4554352cee438237b4c6f16d748250797651e89",
+        "summaries": [],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-24c9459eed0345a4988556f23d911868",
+        "command": [
+          "./scripts/test_speclab_divmod.sh",
+          "--gate"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B6.3",
+        "process_group": 2275830,
+        "required": true,
+        "seconds": 2.583,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B6.3/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B6.3/stdout",
+        "stdout_sha256": "2aee03f72f37879c66c9e764a6686d8e3a5504542060f46dcec47bfd804bf109",
+        "summaries": [],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-cbc0ab79427a4b8085f6113c9080e33e",
+        "command": [
+          "./scripts/test_speclab_bytearr.sh",
+          "--gate"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B6.4",
+        "process_group": 2276296,
+        "required": true,
+        "seconds": 2.832,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B6.4/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B6.4/stdout",
+        "stdout_sha256": "09f8b8928f06a45cc4231c68980d21f066c0d3e3ca9a82673ea72aa8b9668d86",
+        "summaries": [],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-1befda0607be4408a2038afea5959828",
+        "command": [
+          "./scripts/test_speclab_list.sh",
+          "--gate"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B6.5",
+        "process_group": 2276750,
+        "required": true,
+        "seconds": 3.233,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B6.5/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B6.5/stdout",
+        "stdout_sha256": "a267a8bc271140089bad49e5b006408bd49edb71673ad405b8305a556b8b1b4a",
+        "summaries": [],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-b892f90aa7064506b8df752e638daa2f",
+        "command": [
+          "./scripts/test_speclab_tree.sh",
+          "--gate"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B6.6",
+        "process_group": 2277204,
+        "required": true,
+        "seconds": 3.834,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B6.6/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B6.6/stdout",
+        "stdout_sha256": "fbfcd7d1053654fb2d78db520f269aaaf684dae1968714ffcf0a8a007ef438e6",
+        "summaries": [],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-9c817fd33db4471e9580186946b2fe87",
+        "command": [
+          "./scripts/test_speclab_seed.sh",
+          "--gate"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B6.7",
+        "process_group": 2277655,
+        "required": true,
+        "seconds": 2.732,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B6.7/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B6.7/stdout",
+        "stdout_sha256": "908c9794fa40a780156afb5cd17c3e3d037e2766f96438d0e64880836690c2f2",
+        "summaries": [],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-93406ebddbb64eb4bc70538c43a5d6da",
+        "command": [
+          "./scripts/test_gcc_oracle.sh",
+          "--check-baseline"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B7",
+        "process_group": 2278104,
+        "required": true,
+        "seconds": 1310.529,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B7/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B7/stdout",
+        "stdout_sha256": "7cb0ca05a5e4a818e0c291ccac254148276a1b3074a202f930d78ee034c855d0",
+        "summaries": [
+          "SUMMARY: total=2001 compared=1916 agree=1904 agree_nd=0 triaged=12 disagree=0 o2_agree=196 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=12 skip_lean_fail=13 skip_lean_timeout=11 skip_ub=47 triaged_addr=11 triaged_ub=1",
+          "Baseline check: 0 regression(s), 0 improvement(s)"
+        ],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-fe69e0609e3e4e31b1776ed474625705",
+        "command": [
+          "./scripts/test_hang_plant.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B8.1",
+        "process_group": 2487198,
+        "required": true,
+        "seconds": 13.421,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B8.1/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B8.1/stdout",
+        "stdout_sha256": "7bf6cf22fdb8391becfd21d8c6319a6e7284d8e1d9d94a5cafd191a1c7bc41f9",
+        "summaries": [],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-772edd0d7a1c4213970a40cd82465a6d",
+        "command": [
+          "./scripts/test_kill_plant.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B8.2",
+        "process_group": 2487928,
+        "required": true,
+        "seconds": 223.464,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B8.2/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B8.2/stdout",
+        "stdout_sha256": "0170fbc403ddeca50546603c0abea07961882f695e242039a70d8074cd2f8a77",
+        "summaries": [],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-c7fa3738b5184eda86425b5f26ae41d1",
+        "command": [
+          "./scripts/test_fuel_plant.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B8.3",
+        "process_group": 2497285,
+        "required": true,
+        "seconds": 6.337,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B8.3/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B8.3/stdout",
+        "stdout_sha256": "99bfbe63fb9247818778a14a8d5a75bd423f335e455c649d6e643079e2a65d21",
+        "summaries": [],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-90ea4544355a40e191f88e0b311860a7",
+        "command": [
+          "./scripts/test_failstop_plant.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B8.4",
+        "process_group": 2500863,
+        "required": true,
+        "seconds": 15.854,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B8.4/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B8.4/stdout",
+        "stdout_sha256": "8e00f022c8b529640b39f92320de95d96108c7085018b5cf10aa287e4fdb5b19",
+        "summaries": [],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-53ea24a2819c4a12894b38d067fd4a19",
+        "command": [
+          "python3",
+          "scripts/test_observation_lanes.py",
+          "--out",
+          "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B9/plants"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B9",
+        "process_group": 2505988,
+        "required": true,
+        "seconds": 1310.341,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B9/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B9/stdout",
+        "stdout_sha256": "a4a25b8bc9dbedd3851ccdfa3061cca3b464d7862f4259c19cb2a99fecf4c5d6",
+        "summaries": [],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-dc65a1b07df44fb8a47db973e0d7c5ae",
+        "command": [
+          "python3",
+          "scripts/test_upstream_oracle.py",
+          "--out",
+          "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B10.1/independent-oracle"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B10.1",
+        "process_group": 2608833,
+        "required": true,
+        "seconds": 118.022,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B10.1/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B10.1/stdout",
+        "stdout_sha256": "efd89d824825047f56bc9b3e7caeead8f115cfadb9f26414b6c8b90192464a1e",
+        "summaries": [],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-cd9597d448d74ad39cd4ee2b1a5f9e50",
+        "command": [
+          "python3",
+          "scripts/test_upstream_oracle.py",
+          "--plant",
+          "--out",
+          "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B10.2/independent-oracle"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B10.2",
+        "process_group": 2617038,
+        "required": true,
+        "seconds": 1.73,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B10.2/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B10.2/stdout",
+        "stdout_sha256": "1a030a6e663a09400ee424ed315ee67b5945866a1e65e3b7ea63ea6bbe8bc50d",
+        "summaries": [],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-f732da89731742ac9254bb85a3fd0c91",
+        "command": [
+          "./scripts/check_failure_reach.sh",
+          "--selftest"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B11.1",
+        "process_group": 2617283,
+        "required": true,
+        "seconds": 15.1,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B11.1/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B11.1/stdout",
+        "stdout_sha256": "59f3c5fe389fe7caa8bae376ef70923a484361d9c8f349ba382ae46260d6feea",
+        "summaries": [],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-87670ef13d3b4cf68d6e4fb033dda1e3",
+        "command": [
+          "./scripts/check_failure_reach.sh"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B11.2",
+        "process_group": 2617476,
+        "required": true,
+        "seconds": 6.839,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B11.2/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B11.2/stdout",
+        "stdout_sha256": "78db5e419d3a9db2c221815a3bcdae160ba0fe4fe3edb9afb9b8bdbd768054da",
+        "summaries": [],
+        "tier": "B"
+      },
+      {
+        "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-a94efaca70174b0baa18ac3b7e29ecc9",
+        "command": [
+          "python3",
+          "scripts/test_upstream_oracle.py",
+          "--corpus",
+          "libxml2_chvalid",
+          "--out",
+          "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B12/independent-oracle"
+        ],
+        "containment_cleaned": true,
+        "exit_status": 0,
+        "id": "B12",
+        "process_group": 2617547,
+        "required": true,
+        "seconds": 427.276,
+        "status": "passed",
+        "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B12/stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c4-release-full/B12/stdout",
+        "stdout_sha256": "cf73ed6db6718af14ab91d4a0d36b977c5aaa3111c8f811756eea9f64eccdfe0",
+        "summaries": [],
+        "tier": "B"
+      }
+    ]
+  }
+}

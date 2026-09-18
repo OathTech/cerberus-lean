@@ -1,0 +1,93 @@
+{
+  "B10.1": {
+    "original_report": ".tmp/audit-address-space-part-two-rereview/oracle/B10.1/independent-oracle/report.json",
+    "original_report_sha256": "c5fe4257f382b0d9aaf102311c95135cf027c5db58400303571365ce8169c637",
+    "schema": 2,
+    "status": "passed",
+    "counts": {
+      "interface_agreement": 2,
+      "matching_failure": 28,
+      "reviewed_difference": 7,
+      "semantic_agreement": 822
+    },
+    "scope": "tier-b",
+    "corpus_selection": "tier-b",
+    "seconds": 117.4,
+    "source": {
+      "branch": "arc/address-space-bound-part-two",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "head": "2f4898cf7803450965af785412ad657b25a08d6d",
+      "status": "",
+      "untracked_sha256": {}
+    },
+    "source_after": {
+      "branch": "arc/address-space-bound-part-two",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "head": "2f4898cf7803450965af785412ad657b25a08d6d",
+      "status": "",
+      "untracked_sha256": {}
+    },
+    "source_unchanged": true,
+    "with_lean": false,
+    "lean_gating": "none \u2014 the Lean column is a report; Lean-vs-fork is gated by its own lanes",
+    "fork_binary": {
+      "path": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/_build/default/backend/driver/main.exe",
+      "sha256": "dd81b29993e3b85a064c6c162ef1afd9d4947c1cc18e31bfce994433caea4c4f"
+    },
+    "upstream_build_manifest": {
+      "path": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.validation-foundations/independent-oracle-v2/manifest.json",
+      "sha256": "2e246413d36d23cc4c06d5580984eb4d3b8d2677fdf727948717504649799be6"
+    },
+    "manifest_files": {
+      "scripts/upstream_oracle_differences.json": "2875fc305f93bce06b0cec266a9e887e6de27a8270758d51bf1b6a1c8873eb74",
+      "tests/cn_coverage/manifest.txt": "2793555241d27db5111036878cd1992783353827cabfaf526c55bd60df747059",
+      "tests/libxml2/config/config.h": "2208b3b3791e0a5020aea282ce9d56550d23588e569c7eac7ba5685c467cbe6d",
+      "tests/libxml2/config/libxml/xmlversion.h": "ff570d9f1d993a4f7d496b900282fe9eb660678940771f8796bc11dcc0e9a3e2"
+    }
+  },
+  "B10.2": {
+    "original_report": ".tmp/audit-address-space-part-two-rereview/oracle/B10.2/independent-oracle/report.json",
+    "original_report_sha256": "79fe334825b11ee4eaad93794846d130abcad48386b81dab0f3bd2021290a307",
+    "schema": 2,
+    "status": "plants_passed",
+    "counts": {
+      "plant_ok": 51,
+      "plant_rejected": 1,
+      "semantic_agreement": 1
+    },
+    "scope": "plant",
+    "corpus_selection": "tier-b",
+    "seconds": 1.6,
+    "source": {
+      "branch": "arc/address-space-bound-part-two",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "head": "2f4898cf7803450965af785412ad657b25a08d6d",
+      "status": "",
+      "untracked_sha256": {}
+    },
+    "source_after": {
+      "branch": "arc/address-space-bound-part-two",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "head": "2f4898cf7803450965af785412ad657b25a08d6d",
+      "status": "",
+      "untracked_sha256": {}
+    },
+    "source_unchanged": true,
+    "with_lean": false,
+    "lean_gating": "none \u2014 the Lean column is a report; Lean-vs-fork is gated by its own lanes",
+    "fork_binary": {
+      "path": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/_build/default/backend/driver/main.exe",
+      "sha256": "dd81b29993e3b85a064c6c162ef1afd9d4947c1cc18e31bfce994433caea4c4f"
+    },
+    "upstream_build_manifest": {
+      "path": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.validation-foundations/independent-oracle-v2/manifest.json",
+      "sha256": "2e246413d36d23cc4c06d5580984eb4d3b8d2677fdf727948717504649799be6"
+    },
+    "manifest_files": {
+      "scripts/upstream_oracle_differences.json": "2875fc305f93bce06b0cec266a9e887e6de27a8270758d51bf1b6a1c8873eb74",
+      "tests/cn_coverage/manifest.txt": "2793555241d27db5111036878cd1992783353827cabfaf526c55bd60df747059",
+      "tests/libxml2/config/config.h": "2208b3b3791e0a5020aea282ce9d56550d23588e569c7eac7ba5685c467cbe6d",
+      "tests/libxml2/config/libxml/xmlversion.h": "ff570d9f1d993a4f7d496b900282fe9eb660678940771f8796bc11dcc0e9a3e2"
+    }
+  }
+}

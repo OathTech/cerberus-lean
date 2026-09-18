@@ -1,0 +1,2 @@
+All 15 prior address-space expectation rows unchanged; exactly three window-char-int7 rows added.
+Pristine register unchanged except rationale text; no signature or classification change.

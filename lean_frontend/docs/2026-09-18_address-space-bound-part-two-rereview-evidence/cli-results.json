@@ -1,0 +1,511 @@
+[
+  {
+    "input": null,
+    "in_domain": true,
+    "fork": {
+      "status": 0,
+      "stderr": "Time spent: 0.023648 seconds\n",
+      "tokens": [
+        "VAL:{value: \"Specified(216)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ]
+    },
+    "lean": {
+      "status": 0,
+      "stderr": "",
+      "tokens": [
+        "VAL:{value: \"Specified(216)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ]
+    }
+  },
+  {
+    "input": "1",
+    "in_domain": true,
+    "fork": {
+      "status": 1,
+      "stderr": "Time spent: 0.022447 seconds\n",
+      "tokens": [
+        "ERR:{msg: \"MerrOther \\\"Concrete.allocator: failed (out of memory)\\\"\"}"
+      ]
+    },
+    "lean": {
+      "status": 1,
+      "stderr": "",
+      "tokens": [
+        "ERR:{msg: \"MerrOther \\\"Concrete.allocator: failed (out of memory)\\\"\"}"
+      ]
+    }
+  },
+  {
+    "input": "7",
+    "in_domain": true,
+    "fork": {
+      "status": 1,
+      "stderr": "Time spent: 0.021705 seconds\n",
+      "tokens": [
+        "ERR:{msg: \"MerrOther \\\"Concrete.allocator: failed (out of memory)\\\"\"}"
+      ]
+    },
+    "lean": {
+      "status": 1,
+      "stderr": "",
+      "tokens": [
+        "ERR:{msg: \"MerrOther \\\"Concrete.allocator: failed (out of memory)\\\"\"}"
+      ]
+    }
+  },
+  {
+    "input": "8",
+    "in_domain": true,
+    "fork": {
+      "status": 1,
+      "stderr": "Time spent: 0.022649 seconds\n",
+      "tokens": [
+        "ERR:{msg: \"MerrOther \\\"Concrete.allocator: failed (out of memory)\\\"\"}"
+      ]
+    },
+    "lean": {
+      "status": 1,
+      "stderr": "",
+      "tokens": [
+        "ERR:{msg: \"MerrOther \\\"Concrete.allocator: failed (out of memory)\\\"\"}"
+      ]
+    }
+  },
+  {
+    "input": "31",
+    "in_domain": true,
+    "fork": {
+      "status": 1,
+      "stderr": "Time spent: 0.022578 seconds\n",
+      "tokens": [
+        "ERR:{msg: \"MerrOther \\\"Concrete.allocator: failed (out of memory)\\\"\"}"
+      ]
+    },
+    "lean": {
+      "status": 1,
+      "stderr": "",
+      "tokens": [
+        "ERR:{msg: \"MerrOther \\\"Concrete.allocator: failed (out of memory)\\\"\"}"
+      ]
+    }
+  },
+  {
+    "input": "32",
+    "in_domain": true,
+    "fork": {
+      "status": 1,
+      "stderr": "Time spent: 0.023653 seconds\n",
+      "tokens": [
+        "ERR:{msg: \"MerrOther \\\"Concrete.allocator: failed (out of memory)\\\"\"}"
+      ]
+    },
+    "lean": {
+      "status": 1,
+      "stderr": "",
+      "tokens": [
+        "ERR:{msg: \"MerrOther \\\"Concrete.allocator: failed (out of memory)\\\"\"}"
+      ]
+    }
+  },
+  {
+    "input": "33",
+    "in_domain": true,
+    "fork": {
+      "status": 1,
+      "stderr": "Time spent: 0.023484 seconds\n",
+      "tokens": [
+        "ERR:{msg: \"MerrOther \\\"Concrete.allocator: failed (out of memory)\\\"\"}"
+      ]
+    },
+    "lean": {
+      "status": 1,
+      "stderr": "",
+      "tokens": [
+        "ERR:{msg: \"MerrOther \\\"Concrete.allocator: failed (out of memory)\\\"\"}"
+      ]
+    }
+  },
+  {
+    "input": "64",
+    "in_domain": true,
+    "fork": {
+      "status": 0,
+      "stderr": "Time spent: 0.023385 seconds\n",
+      "tokens": [
+        "VAL:{value: \"Specified(28)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ]
+    },
+    "lean": {
+      "status": 0,
+      "stderr": "",
+      "tokens": [
+        "VAL:{value: \"Specified(28)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ]
+    }
+  },
+  {
+    "input": "00064",
+    "in_domain": true,
+    "fork": {
+      "status": 0,
+      "stderr": "Time spent: 0.022551 seconds\n",
+      "tokens": [
+        "VAL:{value: \"Specified(28)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ]
+    },
+    "lean": {
+      "status": 0,
+      "stderr": "",
+      "tokens": [
+        "VAL:{value: \"Specified(28)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ]
+    }
+  },
+  {
+    "input": "9223372036854775808",
+    "in_domain": true,
+    "fork": {
+      "status": 0,
+      "stderr": "Time spent: 0.023875 seconds\n",
+      "tokens": [
+        "VAL:{value: \"Specified(220)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ]
+    },
+    "lean": {
+      "status": 0,
+      "stderr": "",
+      "tokens": [
+        "VAL:{value: \"Specified(220)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ]
+    }
+  },
+  {
+    "input": "18446744073709551615",
+    "in_domain": true,
+    "fork": {
+      "status": 0,
+      "stderr": "Time spent: 0.024120 seconds\n",
+      "tokens": [
+        "VAL:{value: \"Specified(216)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ]
+    },
+    "lean": {
+      "status": 0,
+      "stderr": "",
+      "tokens": [
+        "VAL:{value: \"Specified(216)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ]
+    }
+  },
+  {
+    "input": "0",
+    "in_domain": false,
+    "fork": {
+      "status": 124,
+      "stderr": "Usage: cerberus [--help] [OPTION]\u2026 [FILE]\u2026\ncerberus: option '--address-space-top': the address-space top must fit an\n          LP64 pointer: 0 < top < 2^64 (ocaml_implementation.ml\n          DefaultImpl.sizeof_pointer = Some 8)\n",
+      "refused_as_expected": true
+    },
+    "lean": {
+      "status": 2,
+      "stderr": "cerberus-lean: refused \u2014 --address-space-top 0: the address-space top must fit an LP64 pointer: 0 < top < 2^64 (CerberusImpl.sizeof_pointer = some 8; the allocator's initial cursor; default 281474976710655; see VALIDATION.md, address-space top)\n",
+      "refused_as_expected": true
+    }
+  },
+  {
+    "input": "18446744073709551616",
+    "in_domain": false,
+    "fork": {
+      "status": 124,
+      "stderr": "Usage: cerberus [--help] [OPTION]\u2026 [FILE]\u2026\ncerberus: option '--address-space-top': the address-space top must fit an\n          LP64 pointer: 0 < top < 2^64 (ocaml_implementation.ml\n          DefaultImpl.sizeof_pointer = Some 8)\n",
+      "refused_as_expected": true
+    },
+    "lean": {
+      "status": 2,
+      "stderr": "cerberus-lean: refused \u2014 --address-space-top 18446744073709551616: the address-space top must fit an LP64 pointer: 0 < top < 2^64 (CerberusImpl.sizeof_pointer = some 8; the allocator's initial cursor; default 281474976710655; see VALIDATION.md, address-space top)\n",
+      "refused_as_expected": true
+    }
+  },
+  {
+    "input": "18446744073709551617",
+    "in_domain": false,
+    "fork": {
+      "status": 124,
+      "stderr": "Usage: cerberus [--help] [OPTION]\u2026 [FILE]\u2026\ncerberus: option '--address-space-top': the address-space top must fit an\n          LP64 pointer: 0 < top < 2^64 (ocaml_implementation.ml\n          DefaultImpl.sizeof_pointer = Some 8)\n",
+      "refused_as_expected": true
+    },
+    "lean": {
+      "status": 2,
+      "stderr": "cerberus-lean: refused \u2014 --address-space-top 18446744073709551617: the address-space top must fit an LP64 pointer: 0 < top < 2^64 (CerberusImpl.sizeof_pointer = some 8; the allocator's initial cursor; default 281474976710655; see VALIDATION.md, address-space top)\n",
+      "refused_as_expected": true
+    }
+  },
+  {
+    "input": "1208925819614629174706176",
+    "in_domain": false,
+    "fork": {
+      "status": 124,
+      "stderr": "Usage: cerberus [--help] [OPTION]\u2026 [FILE]\u2026\ncerberus: option '--address-space-top': the address-space top must fit an\n          LP64 pointer: 0 < top < 2^64 (ocaml_implementation.ml\n          DefaultImpl.sizeof_pointer = Some 8)\n",
+      "refused_as_expected": true
+    },
+    "lean": {
+      "status": 2,
+      "stderr": "cerberus-lean: refused \u2014 --address-space-top 1208925819614629174706176: the address-space top must fit an LP64 pointer: 0 < top < 2^64 (CerberusImpl.sizeof_pointer = some 8; the allocator's initial cursor; default 281474976710655; see VALIDATION.md, address-space top)\n",
+      "refused_as_expected": true
+    }
+  },
+  {
+    "input": "-1",
+    "in_domain": false,
+    "fork": {
+      "status": 124,
+      "stderr": "Usage: cerberus [--help] [OPTION]\u2026 [FILE]\u2026\ncerberus: unknown option '-1'\n",
+      "refused_as_expected": true
+    },
+    "lean": {
+      "status": 2,
+      "stderr": "cerberus-lean: refused \u2014 --address-space-top -1: not a decimal numeral (the address-space top is a decimal positive integer, 0 < top < 2^64; default 281474976710655; see VALIDATION.md, address-space top)\n",
+      "refused_as_expected": true
+    }
+  },
+  {
+    "input": "+64",
+    "in_domain": false,
+    "fork": {
+      "status": 124,
+      "stderr": "Usage: cerberus [--help] [OPTION]\u2026 [FILE]\u2026\ncerberus: option '--address-space-top': the address-space top must be a\n          decimal positive integer, 0 < top < 2^64 (not a decimal numeral)\n",
+      "refused_as_expected": true
+    },
+    "lean": {
+      "status": 2,
+      "stderr": "cerberus-lean: refused \u2014 --address-space-top +64: not a decimal numeral (the address-space top is a decimal positive integer, 0 < top < 2^64; default 281474976710655; see VALIDATION.md, address-space top)\n",
+      "refused_as_expected": true
+    }
+  },
+  {
+    "input": "0x40",
+    "in_domain": false,
+    "fork": {
+      "status": 124,
+      "stderr": "Usage: cerberus [--help] [OPTION]\u2026 [FILE]\u2026\ncerberus: option '--address-space-top': the address-space top must be a\n          decimal positive integer, 0 < top < 2^64 (not a decimal numeral)\n",
+      "refused_as_expected": true
+    },
+    "lean": {
+      "status": 2,
+      "stderr": "cerberus-lean: refused \u2014 --address-space-top 0x40: not a decimal numeral (the address-space top is a decimal positive integer, 0 < top < 2^64; default 281474976710655; see VALIDATION.md, address-space top)\n",
+      "refused_as_expected": true
+    }
+  },
+  {
+    "input": "0o100",
+    "in_domain": false,
+    "fork": {
+      "status": 124,
+      "stderr": "Usage: cerberus [--help] [OPTION]\u2026 [FILE]\u2026\ncerberus: option '--address-space-top': the address-space top must be a\n          decimal positive integer, 0 < top < 2^64 (not a decimal numeral)\n",
+      "refused_as_expected": true
+    },
+    "lean": {
+      "status": 2,
+      "stderr": "cerberus-lean: refused \u2014 --address-space-top 0o100: not a decimal numeral (the address-space top is a decimal positive integer, 0 < top < 2^64; default 281474976710655; see VALIDATION.md, address-space top)\n",
+      "refused_as_expected": true
+    }
+  },
+  {
+    "input": "0b1000000",
+    "in_domain": false,
+    "fork": {
+      "status": 124,
+      "stderr": "Usage: cerberus [--help] [OPTION]\u2026 [FILE]\u2026\ncerberus: option '--address-space-top': the address-space top must be a\n          decimal positive integer, 0 < top < 2^64 (not a decimal numeral)\n",
+      "refused_as_expected": true
+    },
+    "lean": {
+      "status": 2,
+      "stderr": "cerberus-lean: refused \u2014 --address-space-top 0b1000000: not a decimal numeral (the address-space top is a decimal positive integer, 0 < top < 2^64; default 281474976710655; see VALIDATION.md, address-space top)\n",
+      "refused_as_expected": true
+    }
+  },
+  {
+    "input": "6_4",
+    "in_domain": false,
+    "fork": {
+      "status": 124,
+      "stderr": "Usage: cerberus [--help] [OPTION]\u2026 [FILE]\u2026\ncerberus: option '--address-space-top': the address-space top must be a\n          decimal positive integer, 0 < top < 2^64 (not a decimal numeral)\n",
+      "refused_as_expected": true
+    },
+    "lean": {
+      "status": 0,
+      "stderr": "",
+      "refused_as_expected": false,
+      "unexpected_stdout": "Defined {value: \"Specified(28)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n"
+    }
+  },
+  {
+    "input": "6__4",
+    "in_domain": false,
+    "fork": {
+      "status": 124,
+      "stderr": "Usage: cerberus [--help] [OPTION]\u2026 [FILE]\u2026\ncerberus: option '--address-space-top': the address-space top must be a\n          decimal positive integer, 0 < top < 2^64 (not a decimal numeral)\n",
+      "refused_as_expected": true
+    },
+    "lean": {
+      "status": 2,
+      "stderr": "cerberus-lean: refused \u2014 --address-space-top 6__4: not a decimal numeral (the address-space top is a decimal positive integer, 0 < top < 2^64; default 281474976710655; see VALIDATION.md, address-space top)\n",
+      "refused_as_expected": true
+    }
+  },
+  {
+    "input": "64_",
+    "in_domain": false,
+    "fork": {
+      "status": 124,
+      "stderr": "Usage: cerberus [--help] [OPTION]\u2026 [FILE]\u2026\ncerberus: option '--address-space-top': the address-space top must be a\n          decimal positive integer, 0 < top < 2^64 (not a decimal numeral)\n",
+      "refused_as_expected": true
+    },
+    "lean": {
+      "status": 2,
+      "stderr": "cerberus-lean: refused \u2014 --address-space-top 64_: not a decimal numeral (the address-space top is a decimal positive integer, 0 < top < 2^64; default 281474976710655; see VALIDATION.md, address-space top)\n",
+      "refused_as_expected": true
+    }
+  },
+  {
+    "input": "_64",
+    "in_domain": false,
+    "fork": {
+      "status": 124,
+      "stderr": "Usage: cerberus [--help] [OPTION]\u2026 [FILE]\u2026\ncerberus: option '--address-space-top': the address-space top must be a\n          decimal positive integer, 0 < top < 2^64 (not a decimal numeral)\n",
+      "refused_as_expected": true
+    },
+    "lean": {
+      "status": 2,
+      "stderr": "cerberus-lean: refused \u2014 --address-space-top _64: not a decimal numeral (the address-space top is a decimal positive integer, 0 < top < 2^64; default 281474976710655; see VALIDATION.md, address-space top)\n",
+      "refused_as_expected": true
+    }
+  },
+  {
+    "input": "_",
+    "in_domain": false,
+    "fork": {
+      "status": 124,
+      "stderr": "Usage: cerberus [--help] [OPTION]\u2026 [FILE]\u2026\ncerberus: option '--address-space-top': the address-space top must be a\n          decimal positive integer, 0 < top < 2^64 (not a decimal numeral)\n",
+      "refused_as_expected": true
+    },
+    "lean": {
+      "status": 2,
+      "stderr": "cerberus-lean: refused \u2014 --address-space-top _: not a decimal numeral (the address-space top is a decimal positive integer, 0 < top < 2^64; default 281474976710655; see VALIDATION.md, address-space top)\n",
+      "refused_as_expected": true
+    }
+  },
+  {
+    "input": "0_0",
+    "in_domain": false,
+    "fork": {
+      "status": 124,
+      "stderr": "Usage: cerberus [--help] [OPTION]\u2026 [FILE]\u2026\ncerberus: option '--address-space-top': the address-space top must be a\n          decimal positive integer, 0 < top < 2^64 (not a decimal numeral)\n",
+      "refused_as_expected": true
+    },
+    "lean": {
+      "status": 2,
+      "stderr": "cerberus-lean: refused \u2014 --address-space-top 0_0: the address-space top must fit an LP64 pointer: 0 < top < 2^64 (CerberusImpl.sizeof_pointer = some 8; the allocator's initial cursor; default 281474976710655; see VALIDATION.md, address-space top)\n",
+      "refused_as_expected": true
+    }
+  },
+  {
+    "input": "00_64",
+    "in_domain": false,
+    "fork": {
+      "status": 124,
+      "stderr": "Usage: cerberus [--help] [OPTION]\u2026 [FILE]\u2026\ncerberus: option '--address-space-top': the address-space top must be a\n          decimal positive integer, 0 < top < 2^64 (not a decimal numeral)\n",
+      "refused_as_expected": true
+    },
+    "lean": {
+      "status": 0,
+      "stderr": "",
+      "refused_as_expected": false,
+      "unexpected_stdout": "Defined {value: \"Specified(28)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n"
+    }
+  },
+  {
+    "input": "1_8446744073709551615",
+    "in_domain": false,
+    "fork": {
+      "status": 124,
+      "stderr": "Usage: cerberus [--help] [OPTION]\u2026 [FILE]\u2026\ncerberus: option '--address-space-top': the address-space top must be a\n          decimal positive integer, 0 < top < 2^64 (not a decimal numeral)\n",
+      "refused_as_expected": true
+    },
+    "lean": {
+      "status": 0,
+      "stderr": "",
+      "refused_as_expected": false,
+      "unexpected_stdout": "Defined {value: \"Specified(216)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n"
+    }
+  },
+  {
+    "input": "1_8446744073709551616",
+    "in_domain": false,
+    "fork": {
+      "status": 124,
+      "stderr": "Usage: cerberus [--help] [OPTION]\u2026 [FILE]\u2026\ncerberus: option '--address-space-top': the address-space top must be a\n          decimal positive integer, 0 < top < 2^64 (not a decimal numeral)\n",
+      "refused_as_expected": true
+    },
+    "lean": {
+      "status": 2,
+      "stderr": "cerberus-lean: refused \u2014 --address-space-top 1_8446744073709551616: the address-space top must fit an LP64 pointer: 0 < top < 2^64 (CerberusImpl.sizeof_pointer = some 8; the allocator's initial cursor; default 281474976710655; see VALIDATION.md, address-space top)\n",
+      "refused_as_expected": true
+    }
+  },
+  {
+    "input": "64 ",
+    "in_domain": false,
+    "fork": {
+      "status": 124,
+      "stderr": "Usage: cerberus [--help] [OPTION]\u2026 [FILE]\u2026\ncerberus: option '--address-space-top': the address-space top must be a\n          decimal positive integer, 0 < top < 2^64 (not a decimal numeral)\n",
+      "refused_as_expected": true
+    },
+    "lean": {
+      "status": 2,
+      "stderr": "cerberus-lean: refused \u2014 --address-space-top 64 : not a decimal numeral (the address-space top is a decimal positive integer, 0 < top < 2^64; default 281474976710655; see VALIDATION.md, address-space top)\n",
+      "refused_as_expected": true
+    }
+  },
+  {
+    "input": " 64",
+    "in_domain": false,
+    "fork": {
+      "status": 124,
+      "stderr": "Usage: cerberus [--help] [OPTION]\u2026 [FILE]\u2026\ncerberus: option '--address-space-top': the address-space top must be a\n          decimal positive integer, 0 < top < 2^64 (not a decimal numeral)\n",
+      "refused_as_expected": true
+    },
+    "lean": {
+      "status": 2,
+      "stderr": "cerberus-lean: refused \u2014 --address-space-top  64: not a decimal numeral (the address-space top is a decimal positive integer, 0 < top < 2^64; default 281474976710655; see VALIDATION.md, address-space top)\n",
+      "refused_as_expected": true
+    }
+  },
+  {
+    "input": "abc",
+    "in_domain": false,
+    "fork": {
+      "status": 124,
+      "stderr": "Usage: cerberus [--help] [OPTION]\u2026 [FILE]\u2026\ncerberus: option '--address-space-top': the address-space top must be a\n          decimal positive integer, 0 < top < 2^64 (not a decimal numeral)\n",
+      "refused_as_expected": true
+    },
+    "lean": {
+      "status": 2,
+      "stderr": "cerberus-lean: refused \u2014 --address-space-top abc: not a decimal numeral (the address-space top is a decimal positive integer, 0 < top < 2^64; default 281474976710655; see VALIDATION.md, address-space top)\n",
+      "refused_as_expected": true
+    }
+  },
+  {
+    "input": "",
+    "in_domain": false,
+    "fork": {
+      "status": 124,
+      "stderr": "Usage: cerberus [--help] [OPTION]\u2026 [FILE]\u2026\ncerberus: option '--address-space-top': the address-space top must be a\n          decimal positive integer, 0 < top < 2^64 (not a decimal numeral)\n",
+      "refused_as_expected": true
+    },
+    "lean": {
+      "status": 2,
+      "stderr": "cerberus-lean: refused \u2014 --address-space-top : not a decimal numeral (the address-space top is a decimal positive integer, 0 < top < 2^64; default 281474976710655; see VALIDATION.md, address-space top)\n",
+      "refused_as_expected": true
+    }
+  }
+]

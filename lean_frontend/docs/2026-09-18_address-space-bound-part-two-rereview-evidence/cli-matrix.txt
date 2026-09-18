@@ -1,0 +1,35 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+None: in_domain=True; fork=0, lean=0; tokens=['VAL:{value: "Specified(216)", stdout: "", stderr: "", blocked: "false"}']
+'1': in_domain=True; fork=1, lean=1; tokens=['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+'7': in_domain=True; fork=1, lean=1; tokens=['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+'8': in_domain=True; fork=1, lean=1; tokens=['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+'31': in_domain=True; fork=1, lean=1; tokens=['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+'32': in_domain=True; fork=1, lean=1; tokens=['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+'33': in_domain=True; fork=1, lean=1; tokens=['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+'64': in_domain=True; fork=0, lean=0; tokens=['VAL:{value: "Specified(28)", stdout: "", stderr: "", blocked: "false"}']
+'00064': in_domain=True; fork=0, lean=0; tokens=['VAL:{value: "Specified(28)", stdout: "", stderr: "", blocked: "false"}']
+'9223372036854775808': in_domain=True; fork=0, lean=0; tokens=['VAL:{value: "Specified(220)", stdout: "", stderr: "", blocked: "false"}']
+'18446744073709551615': in_domain=True; fork=0, lean=0; tokens=['VAL:{value: "Specified(216)", stdout: "", stderr: "", blocked: "false"}']
+'0': in_domain=False; fork=124, lean=2; refused_as_expected fork=True, lean=True
+'18446744073709551616': in_domain=False; fork=124, lean=2; refused_as_expected fork=True, lean=True
+'18446744073709551617': in_domain=False; fork=124, lean=2; refused_as_expected fork=True, lean=True
+'1208925819614629174706176': in_domain=False; fork=124, lean=2; refused_as_expected fork=True, lean=True
+'-1': in_domain=False; fork=124, lean=2; refused_as_expected fork=True, lean=True
+'+64': in_domain=False; fork=124, lean=2; refused_as_expected fork=True, lean=True
+'0x40': in_domain=False; fork=124, lean=2; refused_as_expected fork=True, lean=True
+'0o100': in_domain=False; fork=124, lean=2; refused_as_expected fork=True, lean=True
+'0b1000000': in_domain=False; fork=124, lean=2; refused_as_expected fork=True, lean=True
+'6_4': in_domain=False; fork=124, lean=0; refused_as_expected fork=True, lean=False
+'6__4': in_domain=False; fork=124, lean=2; refused_as_expected fork=True, lean=True
+'64_': in_domain=False; fork=124, lean=2; refused_as_expected fork=True, lean=True
+'_64': in_domain=False; fork=124, lean=2; refused_as_expected fork=True, lean=True
+'_': in_domain=False; fork=124, lean=2; refused_as_expected fork=True, lean=True
+'0_0': in_domain=False; fork=124, lean=2; refused_as_expected fork=True, lean=True
+'00_64': in_domain=False; fork=124, lean=0; refused_as_expected fork=True, lean=False
+'1_8446744073709551615': in_domain=False; fork=124, lean=0; refused_as_expected fork=True, lean=False
+'1_8446744073709551616': in_domain=False; fork=124, lean=2; refused_as_expected fork=True, lean=True
+'64 ': in_domain=False; fork=124, lean=2; refused_as_expected fork=True, lean=True
+' 64': in_domain=False; fork=124, lean=2; refused_as_expected fork=True, lean=True
+'abc': in_domain=False; fork=124, lean=2; refused_as_expected fork=True, lean=True
+'': in_domain=False; fork=124, lean=2; refused_as_expected fork=True, lean=True
+CLI matrix: 33 inputs; unexpected acceptance for ['6_4', '00_64', '1_8446744073709551615']

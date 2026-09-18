@@ -1,0 +1,18 @@
+{
+  "head": "2f4898cf7803450965af785412ad657b25a08d6d",
+  "full_proof_probe_starts_with_unchanged_exemplar_source": true,
+  "proof_probe_suffix_matches_retained_assertion": true,
+  "sha256": {
+    "backend/driver/main.ml": "29958a993e8223fa713d9d6a0e73bec031d3e41beae73492b7b67113d15bdff4",
+    "lean_frontend/Main.lean": "57e96bde586cecf9f8a52765086af023abfb7df02a68f6f65b37f76ef10917bf",
+    "lean_frontend/test/Unit/FuelExemplar.lean": "277b09ada4d65776dbe643ed457267925c126f0f9270844eba759d6b19f39cca",
+    "scripts/test_address_space.sh": "1ecbff30f9697b684f431579c3d50dbf6d03592aec1fe96bce98cbf35ba5cf4e",
+    "scripts/upstream_oracle_differences.json": "2875fc305f93bce06b0cec266a9e887e6de27a8270758d51bf1b6a1c8873eb74",
+    "tests/address_space/expectations.txt": "a0f8c7a0bfa9513db4e589b5421dd1ad276d0ba82689bda2e73b48e880f70975",
+    "tests/address_space/window-char-int7.c": "8d17532eaaa83c28ca51ad2fbafb2df22469461d9939e46e40e796387b6587fc",
+    "_build/default/backend/driver/main.exe": "dd81b29993e3b85a064c6c162ef1afd9d4947c1cc18e31bfce994433caea4c4f",
+    "lean_frontend/.lake/build/bin/cerberus-lean": "37440538276788ff6f910a394fceb46f1fab2c7a7e34c33ebf65bdfab9510810",
+    "lean_frontend/.tmp/audit-address-space-part-two-rereview/RecheckExemplar.lean": "f6069df102d55aebf790cd6f0f16b7eff072404792db1fa686a3728023a14ae2",
+    "lean_frontend/docs/2026-09-17_address-space-bound-part-two-evidence/c4-old-allocator-probe.lean": "07b95d794509d366d6bc32590c211f1aa6291ad744d0f3492edae0fa3123d79e"
+  }
+}

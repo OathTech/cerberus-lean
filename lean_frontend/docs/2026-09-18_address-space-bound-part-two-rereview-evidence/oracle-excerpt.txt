@@ -1,0 +1,7 @@
+check_driver_fresh: oracle OK (bin dd81b29993e3b85a064c6c162ef1afd9d4947c1cc18e31bfce994433caea4c4f, src 2b8b576816681316ce0c0b690dc78a63f813ac8a7391f976bdf4684a18f47634)
+112/859 reviewed_difference: minimal/112-allocator-exhausted-single-request.c (pristine 0.0s, fork 0.0s)
+113/859 reviewed_difference: minimal/113-allocator-exhausted-single-request-overlap.c (pristine 0.0s, fork 0.0s)
+786/859 reviewed_difference: immaculate/nolibc/tray44-allocator-exhausted-single-request-overlap (pristine 0.0s, fork 0.0s)
+787/859 reviewed_difference: immaculate/nolibc/tray44-allocator-exhausted-single-request (pristine 0.0s, fork 0.0s)
+Independent oracle scope: tier-b; 859 rows in 117.4s; source unchanged: True
+Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two-rereview/oracle/B10.1/independent-oracle/report.json

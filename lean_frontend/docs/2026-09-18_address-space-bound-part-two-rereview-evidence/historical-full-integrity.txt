@@ -1,0 +1,2 @@
+Historical C4 full report: head=dc035396af88355515e651859bcd1543c7ff30bc; status=passed; selection_complete=True; source_unchanged=True; passed=39/39; artifact_issues=[]
+All 78 retained output-stream hashes match. This is an integrity check, not a fresh full run.

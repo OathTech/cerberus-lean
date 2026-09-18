@@ -1,0 +1,26 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+Lean 4.32.2; Int (-1)%4=3 (-1)/4=-1 (Euclidean, as Zarith ediv_rem)
+== OLD body (4a23d98aa, pre-remedy-1), top = 64: initialMemState 64
+   errno int (size 4, align 4) at cursor 64: ACTIVE id=0 addr=60 cursor'=60
+   char c (size 1, align 1) at cursor 60: ACTIVE id=1 addr=59 cursor'=59
+   int a[7] (size 28, align 4) at cursor 59: ACTIVE id=2 addr=28 cursor'=28
+== FIXED body (this tree, CerbMem.allocator), top = 64: initialMemState 64
+   errno int (size 4, align 4) at cursor 64: ACTIVE id=0 addr=60 cursor'=60
+   char c (size 1, align 1) at cursor 60: ACTIVE id=1 addr=59 cursor'=59
+   int a[7] (size 28, align 4) at cursor 59: ACTIVE id=2 addr=28 cursor'=28
+== OLD body (4a23d98aa, pre-remedy-1), top = 32: initialMemState 32
+   errno int (size 4, align 4) at cursor 32: ACTIVE id=0 addr=28 cursor'=28
+   char c (size 1, align 1) at cursor 28: ACTIVE id=1 addr=27 cursor'=27
+   int a[7] (size 28, align 4) at cursor 27: ACTIVE id=2 addr=2 cursor'=2
+== FIXED body (this tree, CerbMem.allocator), top = 32: initialMemState 32
+   errno int (size 4, align 4) at cursor 32: ACTIVE id=0 addr=28 cursor'=28
+   char c (size 1, align 1) at cursor 28: ACTIVE id=1 addr=27 cursor'=27
+   int a[7] (size 28, align 4) at cursor 27: KILLED[MerrOther Concrete.allocator: failed (out of memory)] cursor=27
+== OLD body (4a23d98aa, pre-remedy-1), top = 8: initialMemState 8
+   errno int (size 4, align 4) at cursor 8: ACTIVE id=0 addr=4 cursor'=4
+   char c (size 1, align 1) at cursor 4: ACTIVE id=1 addr=3 cursor'=3
+   int a[7] (size 28, align 4) at cursor 3: KILLED[MerrOther Concrete.allocator: failed (out of memory)] cursor=3
+== FIXED body (this tree, CerbMem.allocator), top = 8: initialMemState 8
+   errno int (size 4, align 4) at cursor 8: ACTIVE id=0 addr=4 cursor'=4
+   char c (size 1, align 1) at cursor 4: ACTIVE id=1 addr=3 cursor'=3
+   int a[7] (size 28, align 4) at cursor 3: KILLED[MerrOther Concrete.allocator: failed (out of memory)] cursor=3
