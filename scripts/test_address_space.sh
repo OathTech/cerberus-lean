@@ -14,17 +14,23 @@
 # projection full, sequence comparison — no codec change).
 #
 # Bounds (BOUNDS below): 64 (every program fits), 32 (the larger programs exhaust), 8
-# (the driver's errno int — 4 bytes, align 4 — is the first object and fits at 4; the
-# SECOND object of every program exhausts: z = 4 - size <= 0 is never a positive address).
+# (the driver's errno int — 4 bytes, align 4 — is the first object and fits at 4; each
+# program's schedule is in its header — at top 8 every program exhausts before main's last
+# object: in the five original programs the SECOND object (z = 4 - size <= 0 is never a
+# positive address), in `window-char-int7` the THIRD — `char c` still fits at 3, `int a[7]`
+# exhausts; re-review correction 1).
 #
 # THE DISCRIMINATOR (C4, pre-merge audit F2, 2026-09-18): the corpus contains exactly one case
 # on which the PRE-FIX allocator (pristine b9aeedcb4, upstream-tray draft 44) and the FIXED one
 # (remedy 1) decide differently — `window-char-int7` at top 32 (errno -> 28, `char c` -> 27,
 # `int a[7]`: z = 27 - 28 = -1, inside the defect window -align/2 < z < 0: old ACTIVE at address
 # 2, fixed KILL; the program returns the address's low byte, so pre-fix = Specified(2), fixed =
-# the out-of-memory Error). The old-body outcome is EXECUTED, not hand arithmetic: the Lean probe
-# lean_frontend/docs/2026-09-17_address-space-bound-part-two-evidence/c4-old-allocator-probe.lean
-# (the 4a23d98aa `CerbMem.allocator`, run on the exact cursor). On every OTHER case old = fixed
+# the out-of-memory Error). What is EXECUTED is the old ALLOCATION SCHEDULE — the pre-fix
+# `allocator` (4a23d98aa) applied step by step to the exact states by the Lean probe
+# lean_frontend/docs/2026-09-17_address-space-bound-part-two-evidence/c4-old-allocator-probe.lean,
+# giving address 2 — NOT a complete pre-fix C run through the frontend and batch printer; the C
+# observation Specified(2) is DERIVED from that address and the program's return expression
+# (re-review correction 2). On every OTHER case old = fixed
 # (the audit's reconstruction, allocator_arithmetic.py): those cases test exhaustion and the
 # parameter's threading, not the draft-44 defect.
 #
@@ -53,9 +59,15 @@
 #                           committed file with its final newline removed must be ACCEPTED;
 #                           (P9-P11, the DOMAIN) both engines must REFUSE
 #                           `--address-space-top 18446744073709551616` (= 2^64) and `0x40`
-#                           (not decimal) with the mirrored sentence, and ACCEPT `64`; then
-#                           the committed file must be green (the unplanted control). Loud
-#                           plant banner.
+#                           (not decimal) with the mirrored sentence, and ACCEPT `64`;
+#                           (P12-P14, the SHARED GRAMMAR — re-review R1: nonempty ASCII digits,
+#                           0 < value < 2^64, identical on both engines) `6_4` and
+#                           `1_8446744073709551615` (underscore separators, which
+#                           `String.toNat?` alone accepted) REFUSED on both, and
+#                           `18446744073709551615` (= 2^64 - 1, the exclusive bound's last
+#                           value) ACCEPTED on both with the same observation; then the
+#                           committed file must be green (the unplanted control). Loud plant
+#                           banner.
 #
 # Environment: TIMEOUT_SECS (default 30) per engine invocation; SKIP_BUILD=1 as in
 # common.sh (fresh binaries required). Exit: 0 iff green; any failure is fatal and named.
@@ -213,7 +225,7 @@ for line in open(src):
     out.append(line)
 open(dst, 'w').write(''.join(out))
 PY
-    expect_red "P1 the discriminator window-char-int7@32 forged to its verified PRE-FIX observation (Specified(2) where the kill is pinned)" "$W/p1.txt"
+    expect_red "P1 the discriminator window-char-int7@32 forged to its DERIVED pre-fix observation (Specified(2) — the executed old allocation at address 2 + the program's return expression — where the kill is pinned)" "$W/p1.txt"
     expect_red "P2 missing expectations file" "$W/does-not-exist.txt"
     grep -v '^#' "$DEFAULT_EXPECT" | head -n -1 > "$W/p3.txt"
     expect_red "P3 truncated expectations (last row dropped)" "$W/p3.txt"
@@ -235,8 +247,8 @@ PY
     # engines (mirror doctrine; the exit codes are the CLI libraries': cmdliner 124, cerberus-lean 2)
     dprog="$CORPUS/window-char-int7.c"; djson="$RUN/window-char-int7.json"
     [[ -s "$djson" ]] || fail "selftest premise: $djson missing"
-    cli_case() {  # <label> <value> <expect: refuse-domain|refuse-decimal|accept>
-        local label="$1" v="$2" want="$3" orc=0 lrc=0 oerr lerr oout lout ok=1
+    cli_case() {  # <label> <value> <expect: refuse-domain|refuse-decimal|accept> [<accepted verdict value>]
+        local label="$1" v="$2" want="$3" val="${4:-}" orc=0 lrc=0 oerr lerr oout lout ok=1
         oout=$(timeout "${TIMEOUT_SECS}s" opam exec --switch="$PROJECT_ROOT" -- "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" \
             --nolibc --exec --batch --mode=exhaustive --address-space-top "$v" "$dprog" 2>"$W/cli.oerr") || orc=$?
         lout=$(timeout "${TIMEOUT_SECS}s" env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --batch --address-space-top "$v" "$djson" 2>"$W/cli.lerr") || lrc=$?
@@ -249,17 +261,22 @@ PY
             refuse-decimal)
                 [[ $orc -ne 0 && $lrc -ne 0 && "$oerr" == *"not a decimal numeral"* && "$lerr" == *"not a decimal numeral"* ]] || ok=0 ;;
             accept)
-                [[ $orc -eq 0 && $lrc -eq 0 && "$oout" == *'Defined {value: "Specified(28)"'* && "$lout" == *'Defined {value: "Specified(28)"'* ]] || ok=0 ;;
+                [[ -n "$val" ]] || fail "cli_case accept needs the expected verdict value"
+                [[ $orc -eq 0 && $lrc -eq 0 && "$oout" == *"Defined {value: \"$val\""* && "$lout" == *"Defined {value: \"$val\""* ]] || ok=0 ;;
         esac
         if [[ $ok -eq 1 ]]; then echo "  PLANT OK   [$label] -> fork rc=$orc lean rc=$lrc"
         else echo "  PLANT FAIL [$label]: fork rc=$orc [$oout | $oerr] lean rc=$lrc [$lout | $lerr]"; fails=$((fails + 1)); fi
     }
     cli_case "P9 --address-space-top 18446744073709551616 (= 2^64) REFUSED on both engines with the mirrored domain sentence" 18446744073709551616 refuse-domain
     cli_case "P10 --address-space-top 0x40 (not decimal) REFUSED on both engines" 0x40 refuse-decimal
-    cli_case "P11 --address-space-top 64 ACCEPTED on both engines (window-char-int7 -> Specified(28))" 64 accept
+    cli_case "P11 --address-space-top 64 ACCEPTED on both engines (window-char-int7 -> Specified(28))" 64 accept 'Specified(28)'
+    # the SHARED GRAMMAR (C5, re-review R1): underscore separators refused on both; 2^64 - 1 accepted on both
+    cli_case "P12 --address-space-top 6_4 (an underscore separator) REFUSED on both engines" 6_4 refuse-decimal
+    cli_case "P13 --address-space-top 1_8446744073709551615 (a separator inside 2^64 - 1) REFUSED on both engines" 1_8446744073709551615 refuse-decimal
+    cli_case "P14 --address-space-top 18446744073709551615 (= 2^64 - 1, the last value of the exclusive bound) ACCEPTED on both engines (window-char-int7 -> Specified(216))" 18446744073709551615 accept 'Specified(216)'
     echo "  REVERTED (the committed expectations):"
     if check_expectations "$DEFAULT_EXPECT" "$OBSERVED"; then :; else echo "  PLANT FAIL [control]: the committed expectations are not green" >&2; fails=$((fails + 1)); fi
-    if [[ $fails -eq 0 ]]; then echo "test_address_space: SELFTEST OK (11 plants — P1 the discriminator's verified pre-fix observation, P2 missing file, P3 truncated, P4 phantom row, P5-P7 phantom/duplicate/malformed rows without a final newline all REJECTED; P8 the valid file without a final newline ACCEPTED; P9/P10 the out-of-domain and non-decimal tops REFUSED on both engines, P11 a decimal top accepted; the committed file green)"; exit 0; fi
+    if [[ $fails -eq 0 ]]; then echo "test_address_space: SELFTEST OK (14 plants — P1 the discriminator's derived pre-fix observation, P2 missing file, P3 truncated, P4 phantom row, P5-P7 phantom/duplicate/malformed rows without a final newline all REJECTED; P8 the valid file without a final newline ACCEPTED; P9/P10 the out-of-domain and non-decimal tops REFUSED on both engines, P11 a decimal top accepted; P12/P13 underscore-separated spellings REFUSED on both, P14 2^64 - 1 ACCEPTED on both; the committed file green)"; exit 0; fi
     echo "test_address_space: SELFTEST FAILED ($fails)" >&2; exit 1
 fi
 

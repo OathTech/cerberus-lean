@@ -455,8 +455,9 @@ Wall: ~10 minutes of probe iteration (`06:55 → 07:05`), within the bound.
 
 **F2 — a GENUINE tiny-bound discriminator.** `tests/address_space/window-char-int7.c` — `char c; int a[7];
 return (int)((uintptr_t)a & 0xff);` — at top 32: errno → cursor 28, `c` (1, align 1) → 27, `a` (28 bytes,
-align 4): `z = 27 − 28 = −1`, inside draft 44's window `−align/2 < z < 0`. The old-body outcome is EXECUTED,
-as instructed: `c4-old-allocator-probe.lean` carries `CerbMem.allocator` at `4a23d98aa` (part one's base —
+align 4): `z = 27 − 28 = −1`, inside draft 44's window `−align/2 < z < 0`. What is EXECUTED is the old ALLOCATION SCHEDULE — the pre-fix
+`allocator` applied step by step to the exact states — not a complete pre-fix C run through the frontend and
+batch printer (re-review correction 2; the C observation `Specified(2)` is DERIVED below): `c4-old-allocator-probe.lean` carries `CerbMem.allocator` at `4a23d98aa` (part one's base —
 NOT `e64819de7^`, which is `4539c60e1` and already inside part one's range; the body was extracted by `git
 show` and is byte-identical modulo the rename, checked by `diff`) beside this tree's fixed body, both run
 over the program's schedule from `initialMemState top` at 64/32/8 (`c4-old-allocator-probe.out`, verbatim):

@@ -1,0 +1,57 @@
+# C5 gate tails at the C5 tree (verbatim; every lane via scripts/ce). The FULL battery was NOT re-run for this CLI-parse + docs change ([AGENT orchestrator]); the last FULL head is dc035396a (c4-release-full-tails.txt).
+## release.py --mode fast (16 lanes incl. A1 = test_unit.sh, A12.1/A12.2)
+PASSED A1 (212.9s)
+PASSED A2 (27.9s)
+PASSED A3 (51.7s)
+PASSED A4 (23.1s)
+PASSED A4b (24.5s)
+PASSED A4c (3.2s)
+PASSED A5 (24.6s)
+PASSED A6 (2.3s)
+PASSED A6b (3.6s)
+PASSED A7 (10.4s)
+PASSED A8 (8.9s)
+PASSED A9 (27.9s)
+PASSED A10 (32.6s)
+PASSED A11 (113.5s)
+PASSED A12.1 (8.8s)
+PASSED A12.2 (10.7s)
+fast: passed; 16/16 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+release rc=0
+## test_unit.sh (A1) verdicts
+Total: 11 passed, 0 failed
+  check_no_fuel_numerals: OK (324 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6), no address-space-top literal (A1-A3); allowed Main.lean sites seen: 6 of 6 (hand-written + generated copy))
+check_no_fuel_numerals: SELFTEST OK (26 plants red with the declared label — F1-F6 and A1-A3; E5 indirection a recorded known gap; unplanted set green)
+check_no_fuel_numerals: OK (324 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6), no address-space-top literal (A1-A3); allowed Main.lean sites seen: 6 of 6 (hand-written + generated copy))
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 25 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+## test_address_space.sh (standalone + A12.2) / --selftest (A12.1)
+test_address_space: OK (18 cases: LEAN = FORK through the shared codec at tops 64 32 8; every fork observation = its pinned row in expectations.txt)
+lane rc=0
+test_address_space: SELFTEST — planting on scratch copies of the expectations (loud plant banner; the committed file is untouched)
+  PLANT OK   [P1 the discriminator window-char-int7@32 forged to its DERIVED pre-fix observation (Specified(2) — the executed old allocation at address 2 + the program's return expression — where the kill is pinned)] ->   EXPECT FAIL  window-char-int7 top=32: expected [VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}] observed [ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}]
+  PLANT OK   [P2 missing expectations file] ->   EXPECT FAIL  expectations file not found: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/scripts/observations/test_address_space.cjGEOOnCDA/address_space.dTioYM6DKV/plants.QXbdAD/does-not-exist.txt
+  PLANT OK   [P3 truncated expectations (last row dropped)] ->   EXPECT FAIL  window-char-int7 top=8: observed but NOT in the expectations file (observed: ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""})
+  PLANT OK   [P4 a row for a case this run never produced] ->   EXPECT FAIL  absent-program top=64: pinned in the expectations file but NOT a case of this run
+  PLANT OK   [P5 phantom row WITHOUT a final newline] ->   EXPECT FAIL  absent-program top=64: pinned in the expectations file but NOT a case of this run
+  PLANT OK   [P6 duplicate row WITHOUT a final newline] ->   EXPECT FAIL  duplicate expectations row for array-40 top=64
+  PLANT OK   [P7 malformed row WITHOUT a final newline] ->   EXPECT FAIL  malformed expectations row: 'two-ints	64	'
+  PLANT OK   [P8 the committed file with its final newline removed is ACCEPTED (the last row is read)] ->   EXPECT OK    18 pinned rows = 18 observed cases, every token identical
+  PLANT OK   [P9 --address-space-top 18446744073709551616 (= 2^64) REFUSED on both engines with the mirrored domain sentence] -> fork rc=124 lean rc=2
+  PLANT OK   [P10 --address-space-top 0x40 (not decimal) REFUSED on both engines] -> fork rc=124 lean rc=2
+  PLANT OK   [P11 --address-space-top 64 ACCEPTED on both engines (window-char-int7 -> Specified(28))] -> fork rc=0 lean rc=0
+  PLANT OK   [P12 --address-space-top 6_4 (an underscore separator) REFUSED on both engines] -> fork rc=124 lean rc=2
+  PLANT OK   [P13 --address-space-top 1_8446744073709551615 (a separator inside 2^64 - 1) REFUSED on both engines] -> fork rc=124 lean rc=2
+  PLANT OK   [P14 --address-space-top 18446744073709551615 (= 2^64 - 1, the last value of the exclusive bound) ACCEPTED on both engines (window-char-int7 -> Specified(216))] -> fork rc=0 lean rc=0
+test_address_space: SELFTEST OK (14 plants — P1 the discriminator's derived pre-fix observation, P2 missing file, P3 truncated, P4 phantom row, P5-P7 phantom/duplicate/malformed rows without a final newline all REJECTED; P8 the valid file without a final newline ACCEPTED; P9/P10 the out-of-domain and non-decimal tops REFUSED on both engines, P11 a decimal top accepted; P12/P13 underscore-separated spellings REFUSED on both, P14 2^64 - 1 ACCEPTED on both; the committed file green)
+selftest rc=0
+## test_upstream_oracle.py / --plant (unchanged)
+Independent oracle scope: plant; 53 rows in 1.6s; source unchanged: True
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}
+plant rc=0
+Independent oracle scope: tier-b; 859 rows in 136.0s; source unchanged: True
+Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}
+row10 rc=0
+## the R1 reproduction BEFORE the fix (Lean at the C4 binary; fork at C4) and the smoke AFTER (c5-build)
+before: lean 6_4 -> Defined Specified(28); 00_64 -> Specified(28); 1_8446744073709551615 -> Specified(216); fork refuses all three 'not a decimal numeral'; 18446744073709551615 -> Specified(216) on both; 18446744073709551616 refused on both
+after:  lean 6_4 / 00_64 / 1_8446744073709551615 -> 'refused — … not a decimal numeral …'; 18446744073709551615 -> Specified(216); 64 -> Specified(28); --fuel 1_0 untouched (parses as 10: 'Error {msg: "lem: fuel exhausted"}')

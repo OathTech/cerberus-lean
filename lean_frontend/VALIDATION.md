@@ -602,7 +602,7 @@ lanes, with their recorded states:
 | `test_exec.sh --check-baseline` | upstream `tests/minimal` | 111/111 at the pinned baseline (106 + the five byte-bridge rows 107–111, 2026-09-11) |
 | `test_exec.sh` (coverage/debug/float baselines) | upstream suites | rc 0 at pinned baselines (recorded DIFFs unchanged) |
 | `test_bytes.sh` | `tests/bytes` | 9/9 at committed upstream `.exec` records + 5/5 reject pins (oracle-independent) |
-| `test_address_space.sh` (+ `--selftest`) | `tests/address_space` (6 programs × tops 64/32/8; LADDER Tier A row 12, address-space-bound part two C3/C4, 2026-09-17/18) | both engines at TINY address-space tops (the fork's FORK-ONLY `--address-space-top N`, cerberus-lean's `--address-space-top N` — the parameter of §7 instantiated where the allocator's exhausted regime is reached by ordinary programs): 18/18 LEAN = FORK complete observations through the shared codec (any difference fatal — the S4 class) AND every fork observation = its pinned row in `tests/address_space/expectations.txt`, fail-closed both directions (an unterminated final row is read — audit F3); the corpus holds ONE genuine discriminator of the draft-44 defect, `window-char-int7@32` (pre-fix `Specified(2)`, executed by the old-body probe; fixed: the kill), and `--selftest` rejects that case forged to its pre-fix observation, a missing/truncated file, phantom/duplicate/malformed rows with and without a final newline, accepts the valid file without its final newline, and checks both CLIs refuse `2^64` and `0x40` and accept `64` |
+| `test_address_space.sh` (+ `--selftest`) | `tests/address_space` (6 programs × tops 64/32/8; LADDER Tier A row 12, address-space-bound part two C3/C4/C5, 2026-09-17/18) | both engines at TINY address-space tops (the fork's FORK-ONLY `--address-space-top N`, cerberus-lean's `--address-space-top N` — the parameter of §7 instantiated where the allocator's exhausted regime is reached by ordinary programs): 18/18 LEAN = FORK complete observations through the shared codec (any difference fatal — the S4 class) AND every fork observation = its pinned row in `tests/address_space/expectations.txt`, fail-closed both directions (an unterminated final row is read — audit F3); the corpus holds ONE genuine discriminator of the draft-44 defect, `window-char-int7@32` (the pre-fix ALLOCATION at address 2 executed by the old-body probe, the C observation `Specified(2)` derived from it; fixed: the kill), and `--selftest` rejects that case forged to its pre-fix observation, a missing/truncated file, phantom/duplicate/malformed rows with and without a final newline, accepts the valid file without its final newline, and checks both CLIs refuse `2^64`, `0x40`, `6_4` and `1_8446744073709551615`, and accept `64` and `2^64 − 1` |
 | `test_parse.sh` | tests/minimal + tests/ci | Cabs-JSON bridge, 234 files, 100% |
 | `test_core.sh` | tests/minimal (+ tests/ci) | Core text parser vs oracle `--pp=core`, 111/111 minimal |
 | `test_elab.sh` | elaboration corpus | recorded same/diff state, rc 0 |
@@ -902,7 +902,12 @@ derived on both engines from the implementation's `sizeof_pointer = 8`
 (`CerberusImpl.sizeof_pointer`, `ocaml_implementation.ml DefaultImpl`), and
 both CLIs refuse anything else — non-decimal spellings included — with the
 same sentence (`the address-space top must fit an LP64 pointer: 0 < top <
-2^64`; only the exit code is the CLI library's). A consumer theorem quantifies
+2^64`; only the exit code is the CLI library's). **The shared grammar** (C5,
+re-review R1; [AGENT orchestrator], mirror doctrine): the flag's argument is
+"nonempty ASCII decimal digits, `0 < value < 2^64`" on BOTH engines — Lean
+validates the digits BEFORE `String.toNat?` (which alone accepts `6_4`), the
+fork's converter is digit-only; `18446744073709551615` (= 2^64 − 1) is the
+last accepted value on both (LADDER A12 plants P12–P14). A consumer theorem quantifies
 `∀ top` under that domain, alongside `∀ fuel`; the driver's SETUP needs
 `8 ≤ top` — its errno `int` (4 bytes, align 4) is the first object, and a
 smaller top kills out of memory BEFORE `main` runs (the consumer review's

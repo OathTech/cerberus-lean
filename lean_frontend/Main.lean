@@ -1312,9 +1312,13 @@ def main (args : List String) : IO Unit := do
       | none => do
         IO.eprintln s!"cerberus-lean: refused — --fuel {s}: not a decimal numeral (the fuel is a positive integer; default {defaultFuel}; see VALIDATION.md, fuel)"
         IO.Process.exit 2
+  -- The SHARED GRAMMAR (C5, re-review R1; [AGENT orchestrator], mirror doctrine): "nonempty ASCII
+  -- decimal digits, 0 < value < 2^64" on BOTH engines. `String.toNat?` alone also accepts single
+  -- underscore separators (`6_4` = 64), which the fork's digit-only converter refuses — so the
+  -- string is validated as digits FIRST; `--fuel` (Lean-only, no mirror) keeps its parser.
   let addressSpaceTop : Int ← match addressSpaceTopStr with
     | none => pure defaultAddressSpaceTop
-    | some s => match s.toNat? with
+    | some s => match (if !s.isEmpty && s.all Char.isDigit then s.toNat? else none) with
       | some n =>
         -- the DOMAIN 0 < top < 2^64 (addressSpaceLimit; the fork oracle's converter refuses with the
         -- SAME sentence — mirror doctrine; only its exit code is cmdliner's)

@@ -11,9 +11,11 @@
 // -> cursor 27; `a` (28 bytes, align 4): z = 27 - 28 = -1 — inside the defect window -align/2 < z < 0. Old: q = -1,
 // m = 3, z' = z - (-m) = 2 -> ACTIVE at address 2 (misaligned, overlapping errno at 28..32). Fixed: z < 0 -> KILL. The
 // program's only observable is the low byte of `a`'s address, so the pre-fix observation is Specified(2) and the fixed
-// engines' is the out-of-memory Error; the old-body outcome is EXECUTED (not hand arithmetic) by the Lean probe
-// lean_frontend/docs/2026-09-17_address-space-bound-part-two-evidence/c4-old-allocator-probe.lean (the pre-part-one
-// CerbMem.allocator body at 4a23d98aa, run on the exact cursor). At top 64: errno -> 60, c -> 59, a: z = 31, m = 3,
+// engines' is the out-of-memory Error. What is EXECUTED is the old ALLOCATION SCHEDULE — the pre-part-one
+// CerbMem.allocator body at 4a23d98aa applied step by step to the exact states by the Lean probe
+// lean_frontend/docs/2026-09-17_address-space-bound-part-two-evidence/c4-old-allocator-probe.lean, giving address 2 —
+// not a complete pre-fix C run through the frontend and batch printer; Specified(2) is DERIVED from that address and
+// the return expression. At top 64: errno -> 60, c -> 59, a: z = 31, m = 3,
 // z' = 28 on BOTH bodies -> Specified(28). At top 8: errno -> 4, c -> 3, a: z = -25 -> both kill. The --selftest plant P1
 // forges THIS case at top 32 to Specified(2) and must be rejected.
 #include <stdint.h>
