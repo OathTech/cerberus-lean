@@ -1,0 +1,9 @@
+112/859 reviewed_difference: minimal/112-allocator-exhausted-single-request.c (pristine 0.0s, fork 0.0s)
+113/859 reviewed_difference: minimal/113-allocator-exhausted-single-request-overlap.c (pristine 0.0s, fork 0.0s)
+786/859 reviewed_difference: immaculate/nolibc/tray44-allocator-exhausted-single-request-overlap (pristine 0.0s, fork 0.0s)
+787/859 reviewed_difference: immaculate/nolibc/tray44-allocator-exhausted-single-request (pristine 0.0s, fork 0.0s)
+Independent oracle scope: tier-b; 859 rows in 116.2s; source unchanged: True
+Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two/focused/B10.1/independent-oracle/report.json
+3/3 plant_ok: plant/withheld-row:minimal/112-allocator-exhausted-single-request.c — minimal/112-allocator-exhausted-single-request.c: with its register row -> reviewed_difference; row withheld -> difference (completed semantic observations differ)
+Independent oracle scope: plant; 53 rows in 1.6s; source unchanged: True
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two/focused/B10.2/independent-oracle/report.json

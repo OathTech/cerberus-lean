@@ -1,0 +1,12 @@
+control: exit=0
+  EXPECT OK    15 pinned rows = 15 observed cases, every token identical
+phantom-newline: exit=1
+  EXPECT FAIL  phantom top=64: pinned in the expectations file but NOT a case of this run
+phantom-no-newline: exit=0
+  EXPECT OK    15 pinned rows = 15 observed cases, every token identical
+duplicate-no-newline: exit=0
+  EXPECT OK    15 pinned rows = 15 observed cases, every token identical
+malformed-no-newline: exit=0
+  EXPECT OK    15 pinned rows = 15 observed cases, every token identical
+valid-last-row-no-newline: exit=1
+  EXPECT FAIL  two-ints top=8: observed but NOT in the expectations file (observed: ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""})

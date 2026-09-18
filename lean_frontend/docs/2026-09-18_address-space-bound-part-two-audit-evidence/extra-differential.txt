@@ -1,0 +1,52 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+two-ints@1: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+two-ints@3: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+two-ints@4: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+two-ints@7: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+two-ints@8: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+two-ints@9: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+two-ints@12: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+two-ints@13: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+two-ints@16: AGREE ['VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}']
+two-ints@17: AGREE ['VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}']
+two-ints@24: AGREE ['VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}']
+two-ints@25: AGREE ['VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}']
+two-ints@31: AGREE ['VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}']
+two-ints@32: AGREE ['VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}']
+two-ints@33: AGREE ['VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}']
+two-ints@40: AGREE ['VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}']
+two-ints@41: AGREE ['VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}']
+two-ints@64: AGREE ['VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}']
+two-ints@65: AGREE ['VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}']
+two-ints@18446744073709551625: AGREE ['VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}']
+CLI fork 0: rc=124; Usage: cerberus [--help] [OPTION]… [FILE]…
+CLI lean 0: rc=2; cerberus-lean: refused — --address-space-top 0: the address-space top must be a positive integer (the allocator's initial cursor; default 281474976710655; see VALIDATION.md, address-space top)
+CLI fork abc: rc=124; Usage: cerberus [--help] [OPTION]… [FILE]…
+CLI lean abc: rc=2; cerberus-lean: refused — --address-space-top abc: not a decimal numeral (the address-space top is a positive integer; default 281474976710655; see VALIDATION.md, address-space top)
+CLI fork -1: rc=124; Usage: cerberus [--help] [OPTION]… [FILE]…
+CLI lean -1: rc=2; cerberus-lean: refused — --address-space-top -1: not a decimal numeral (the address-space top is a positive integer; default 281474976710655; see VALIDATION.md, address-space top)
+CLI fork 0x40: rc=0; Defined {value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
+CLI lean 0x40: rc=2; cerberus-lean: refused — --address-space-top 0x40: not a decimal numeral (the address-space top is a positive integer; default 281474976710655; see VALIDATION.md, address-space top)
+CLI fork 64: rc=0; Defined {value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
+CLI lean 64: rc=0; Defined {value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
+malloc-nine@1: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+malloc-nine@3: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+malloc-nine@4: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+malloc-nine@7: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+malloc-nine@8: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+malloc-nine@9: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+malloc-nine@12: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+malloc-nine@13: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+malloc-nine@16: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+malloc-nine@17: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+malloc-nine@24: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+malloc-nine@25: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+malloc-nine@31: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+malloc-nine@32: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+malloc-nine@33: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+malloc-nine@40: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+malloc-nine@41: AGREE ['ERR:{msg: "MerrOther \\"Concrete.allocator: failed (out of memory)\\""}']
+malloc-nine@64: AGREE ['VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}']
+malloc-nine@65: AGREE ['VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}']
+malloc-nine@18446744073709551625: AGREE ['VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}']
+Extra differential: 40/40 equal full observations (20 bounds, 2 programs); CLI matrix printed above.

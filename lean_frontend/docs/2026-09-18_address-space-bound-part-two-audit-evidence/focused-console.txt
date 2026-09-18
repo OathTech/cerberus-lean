@@ -1,0 +1,11 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+Release evidence: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two/focused
+RUN B5: ./scripts/test_immaculate.sh
+PASSED B5 (67.9s)
+RUN B10.1: python3 scripts/test_upstream_oracle.py
+PASSED B10.1 (116.4s)
+RUN B10.2: python3 scripts/test_upstream_oracle.py --plant
+PASSED B10.2 (1.8s)
+full: incomplete; 3/3 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: False.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.

@@ -1,0 +1,15 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+'audit_initial_cursor' depends on axioms: [propext, Classical.choice, Quot.sound]
+'audit_given_cursor' depends on axioms: [propext, Classical.choice, Quot.sound]
+'audit_desugar_cursor' depends on axioms: [propext, Classical.choice, Quot.sound]
+initial_state (fresh_sym_supply_seed : Nat) (address_space_top1 : Int)
+  (core_eval_stuff1 : Fmap String sym × fun_map Unit × impl) (cn_eval_stuff : init_scope) : state_with_markers
+get_address_space_top : state_with_markers → exceptM (Int × state_with_markers) (CerbLocation.Loc × cause)
+def FuelExemplar.run : Nat → List (nd_status driver_result driver_error driver_state × List String × driver_state) :=
+fun n =>
+  CerbND.runND (drive fmapEmpty false FuelExemplar.exemplarFile ["cmdname"])
+    (FuelExemplar.dst₀ 0 FuelExemplar.exemplarTop)
+FuelExemplar.exemplar_certified_shipped_forall (fuel : Nat)
+  (o : nd_status driver_result driver_error driver_state × List String × driver_state) :
+  o ∈ FuelExemplar.run fuel →
+    (∃ st, o.fst = Killed st CerbND.fuelExhaustedKill) ∨ ∃ r, o.fst = Active r ∧ FuelExemplar.post r o.snd.snd

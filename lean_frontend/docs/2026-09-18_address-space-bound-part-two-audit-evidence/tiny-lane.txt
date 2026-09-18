@@ -1,0 +1,30 @@
+Building cerberus (OCaml)...
+check_lem_sync: OK (src 037dee26c6472b1bf7f8d628bec1b7e64d2f9d12d67c81bd37b55e634fd34b2d, gen 08b84774381fd86eeb1a658efa47a9b372ebb438085530b5ab6ba045da3eec8d)
+check_driver_fresh: recorded oracle stamp (bin 93c45eeb79873b9a2233da5a84ca4f2cc4ba81a645ae34d83ec374ca40cb4ead, src 93d79acfe23b02914783dd6ebb4d5076f40a737c770f644e391c6687cecdddba)
+Building cerberus-lean (Lean)...
+instead of
+  String → String
+Build completed successfully (285 jobs).
+check_driver_fresh: recorded lean stamp (bin dee4e2658712cbd35f17e5b6fc600ca6e9a0b3fed34acf8a6f5c39b54f1f4592, src 3f2a8f0d03e676affe5f1b8e15fee4ab23e9003beb00d203c47001144b913bfb)
+
+tiny-address-space differential lane (address-space-bound part two, C3)
+========================================================================
+corpus: 5 programs x bounds 64 32 8 = 15 cases; both engines --address-space-top N
+  AGREE      array-40                 top=64  VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      array-40                 top=32  ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      array-40                 top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      malloc-one               top=64  VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      malloc-one               top=32  ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      malloc-one               top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      nested-scopes            top=64  VAL:{value: "Specified(9)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      nested-scopes            top=32  VAL:{value: "Specified(9)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      nested-scopes            top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      three-ints-then-array    top=64  VAL:{value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      three-ints-then-array    top=32  ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      three-ints-then-array    top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      two-ints                 top=64  VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      two-ints                 top=32  VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      two-ints                 top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+
+  EXPECT OK    15 pinned rows = 15 observed cases, every token identical
+test_address_space: OK (15 cases: LEAN = FORK through the shared codec at tops 64 32 8; every fork observation = its pinned row in expectations.txt)

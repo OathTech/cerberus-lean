@@ -1,0 +1,4 @@
+Historical full report: source=9a8caddc1cc9d3963e0156ea01d5b3481a028d79; status=passed; selection_complete=True; source_unchanged=True; lanes=39; passed=39; artifact_issues=[]
+Historical full report: all 78 retained stdout/stderr hashes match report.json. This is an evidence-integrity check, not a fresh full run.
+C3 to audited head changed paths: ['lean_frontend/docs/2026-09-17_address-space-bound-part-two-evidence/c3-release-full-tails.txt', 'lean_frontend/docs/2026-09-17_address-space-bound-part-two-evidence/c3-with-lean-report.txt', 'lean_frontend/docs/2026-09-17_address-space-bound-part-two-record.md']
+Fresh fast report: source=88c5a827b1fc7195d85e923c9569e56fbefb4065; status=passed; selection_complete=True; source_unchanged=True; passed=16/16

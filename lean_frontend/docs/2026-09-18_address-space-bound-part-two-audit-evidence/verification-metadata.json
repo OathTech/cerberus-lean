@@ -1,0 +1,776 @@
+{
+  "fresh_fast": {
+    "raw_report": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two/fast/report.json",
+    "raw_report_sha256": "a916b850874c88457558f865857461591d6dfc55ecfbef863989a977385139fd",
+    "status": "passed",
+    "mode": "fast",
+    "selection_complete": true,
+    "source_unchanged": true,
+    "source_before": {
+      "branch": "arc/address-space-bound-part-two",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "head": "88c5a827b1fc7195d85e923c9569e56fbefb4065",
+      "status": "",
+      "untracked_sha256": {}
+    },
+    "source_after": {
+      "branch": "arc/address-space-bound-part-two",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "head": "88c5a827b1fc7195d85e923c9569e56fbefb4065",
+      "status": "",
+      "untracked_sha256": {}
+    },
+    "started_utc": "20260918T060900.891833Z",
+    "finished_utc": "2026-09-18T06:17:12.943675+00:00",
+    "artifact_issues": [],
+    "lanes": [
+      {
+        "id": "A1",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 211.497,
+        "command": [
+          "./scripts/test_unit.sh"
+        ],
+        "stdout_sha256": "d31ffa90fb8ad9a240aa44cc716924c2ac1c5fb744ea81b6f46a1fa9c016a8d9",
+        "stderr_sha256": "20121ab7e501a0a8b8370ae94e8c311cf8bdce43661feea673ee541eedb116e5"
+      },
+      {
+        "id": "A2",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 28.422,
+        "command": [
+          "./scripts/test_exec.sh",
+          "--check-baseline"
+        ],
+        "stdout_sha256": "9357b61dd49804a9b80678facd3cc20ab6bd45bebd1441d8ea2446eab8c3c0b5",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A3",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 52.56,
+        "command": [
+          "./scripts/test_exec.sh",
+          "--check-baseline=scripts/exec_coverage_baseline.txt",
+          "tests/coverage"
+        ],
+        "stdout_sha256": "893d9365616eb75d0f162080642cbb1e9965d62c086663a4ee406356c53bfce2",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A4",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 22.811,
+        "command": [
+          "./scripts/test_exec.sh",
+          "--check-baseline=scripts/exec_debug_baseline.txt",
+          "tests/debug"
+        ],
+        "stdout_sha256": "b5b9bf2d217d2af7642038327bc17c94976ec90baf6cf464a8232fd32e585f26",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A4b",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 24.367,
+        "command": [
+          "./scripts/test_exec.sh",
+          "--check-baseline=scripts/exec_float_baseline.txt",
+          "tests/float"
+        ],
+        "stdout_sha256": "63ec5ef0ed42aba61bf526eb2d5bc631d588414b88697afe67fae2f04a6340c7",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A4c",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 3.133,
+        "command": [
+          "./scripts/test_bytes.sh"
+        ],
+        "stdout_sha256": "d918b4cc322fda0972072593a60262c8f4217c98bd7a0df20e6cea749815e805",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A5",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 23.018,
+        "command": [
+          "./scripts/test_libc_exec.sh"
+        ],
+        "stdout_sha256": "12394b731f07705aa499ed80176ac6eea28ba3e2e2eb508be44d99ecf0acf911",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A6",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 2.232,
+        "command": [
+          "./scripts/test_multi_tu.sh"
+        ],
+        "stdout_sha256": "7bdc5694c38fe0eb215eed40b5a3ae71e86c4dad3590270628daf6c66a001eef",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A6b",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 3.638,
+        "command": [
+          "./scripts/test_multi_tu.sh",
+          "--failure-class-projection",
+          "tests/multi_tu_tray"
+        ],
+        "stdout_sha256": "6fa4a81e3956701a1684edc3335f754a7910bff211c4708fc7883b3212705133",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A7",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 10.594,
+        "command": [
+          "./scripts/test_parse.sh"
+        ],
+        "stdout_sha256": "e4eca7ccefd80b341771c845211073a438243e05c26b986c398bda75a7ec6a07",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A8",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 8.941,
+        "command": [
+          "./scripts/test_core.sh"
+        ],
+        "stdout_sha256": "d84351b4440004cb999bfa4e17ce507c027a7cadc150954cfefb1b1b27aa2035",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A9",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 16.803,
+        "command": [
+          "./scripts/test_elab.sh"
+        ],
+        "stdout_sha256": "35810e98b6d1d216a4746b73f05b5bd38e0bbb66745671bb1844951c714dba1f",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A10",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 16.353,
+        "command": [
+          "./scripts/test_libxml2_uri.sh"
+        ],
+        "stdout_sha256": "9922c16c4c61cbdaa7c04e53813ef8783f4aa51b6f0b29b94b5292e8853c59b8",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A11",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 58.417,
+        "command": [
+          "./scripts/test_cn_coverage.sh",
+          "--check-baseline"
+        ],
+        "stdout_sha256": "ff567fa7c3c519d97697bedd7900a380a76ad0eefd4792b7686bde3c67bdd647",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A12.1",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 3.984,
+        "command": [
+          "./scripts/test_address_space.sh",
+          "--selftest"
+        ],
+        "stdout_sha256": "555dd01461b48063c19fff8b6fbfb076d0ce35ff196f9a9031026e8c39edf123",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A12.2",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 3.934,
+        "command": [
+          "./scripts/test_address_space.sh"
+        ],
+        "stdout_sha256": "faca73261640d9e2298a80318031859f5f6637f527d77f1d9ccfe3a1c0ea78c8",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ]
+  },
+  "fresh_focused": {
+    "raw_report": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two/focused/report.json",
+    "raw_report_sha256": "a3b0da548ea71dd6c037efc27247655d099d0c75294eedf54c04a4c3ef9635d9",
+    "status": "incomplete",
+    "mode": "full",
+    "selection_complete": false,
+    "source_unchanged": true,
+    "source_before": {
+      "branch": "arc/address-space-bound-part-two",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "head": "88c5a827b1fc7195d85e923c9569e56fbefb4065",
+      "status": "",
+      "untracked_sha256": {}
+    },
+    "source_after": {
+      "branch": "arc/address-space-bound-part-two",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "head": "88c5a827b1fc7195d85e923c9569e56fbefb4065",
+      "status": "",
+      "untracked_sha256": {}
+    },
+    "started_utc": "20260918T062513.722735Z",
+    "finished_utc": "2026-09-18T06:28:21.027259+00:00",
+    "artifact_issues": [],
+    "lanes": [
+      {
+        "id": "B5",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 67.948,
+        "command": [
+          "./scripts/test_immaculate.sh"
+        ],
+        "stdout_sha256": "aef02d15d3e64a6814b8bac857f207bd78c516a53dfeae88d1cd9391f18abe07",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B10.1",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 116.385,
+        "command": [
+          "python3",
+          "scripts/test_upstream_oracle.py",
+          "--out",
+          "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two/focused/B10.1/independent-oracle"
+        ],
+        "stdout_sha256": "e6c48b748e148a0cf0f2af83cb00a079cb948a8abbba5aae3e3a4dd23ca63c7f",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B10.2",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 1.781,
+        "command": [
+          "python3",
+          "scripts/test_upstream_oracle.py",
+          "--plant",
+          "--out",
+          "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/audit-address-space-part-two/focused/B10.2/independent-oracle"
+        ],
+        "stdout_sha256": "18dd3d87db038077be402919cdf6035d1e531a7648a8f41aa63bf338c9f1654c",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ]
+  },
+  "historical_full": {
+    "raw_report": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c3-release-full/report.json",
+    "raw_report_sha256": "92c59ffd024f4e0499ae664a4d870f2eaf18f22684fc8df7e474260becb43189",
+    "status": "passed",
+    "mode": "full",
+    "selection_complete": true,
+    "source_unchanged": true,
+    "source_before": {
+      "branch": "arc/address-space-bound-part-two",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "head": "9a8caddc1cc9d3963e0156ea01d5b3481a028d79",
+      "status": "",
+      "untracked_sha256": {}
+    },
+    "source_after": {
+      "branch": "arc/address-space-bound-part-two",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "head": "9a8caddc1cc9d3963e0156ea01d5b3481a028d79",
+      "status": "",
+      "untracked_sha256": {}
+    },
+    "started_utc": "20260917T232201.560184Z",
+    "finished_utc": "2026-09-18T00:39:56.123722+00:00",
+    "artifact_issues": [],
+    "lanes": [
+      {
+        "id": "A1",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 207.778,
+        "command": [
+          "./scripts/test_unit.sh"
+        ],
+        "stdout_sha256": "d7569baa9ef3c36e2c4fe3366a76671dfa23f96966a1e8cdf8e3849ccb8655f0",
+        "stderr_sha256": "e0cb51a9aa77c5925bfcbee00210f2a5bce52fae5792e51a56efd9f9e7435331"
+      },
+      {
+        "id": "A2",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 33.179,
+        "command": [
+          "./scripts/test_exec.sh",
+          "--check-baseline"
+        ],
+        "stdout_sha256": "cbca9f495138b2334fe84b8c8509bc368f2318d0bd8006df366e81074a58544d",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A3",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 50.648,
+        "command": [
+          "./scripts/test_exec.sh",
+          "--check-baseline=scripts/exec_coverage_baseline.txt",
+          "tests/coverage"
+        ],
+        "stdout_sha256": "19c907869bddf2eaf32bee451c4febc4a1fe146a13957ac85c15d8251e7c0802",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A4",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 22.361,
+        "command": [
+          "./scripts/test_exec.sh",
+          "--check-baseline=scripts/exec_debug_baseline.txt",
+          "tests/debug"
+        ],
+        "stdout_sha256": "1534308daefb9333c8dff3ae6e5f60fb7f7f12ec3bdcb1c4b30c25760b362ba9",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A4b",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 23.713,
+        "command": [
+          "./scripts/test_exec.sh",
+          "--check-baseline=scripts/exec_float_baseline.txt",
+          "tests/float"
+        ],
+        "stdout_sha256": "14975c67187d2d364c9a808d87a3343e61d53b2e00cfed6c027318201ba855a9",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A4c",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 3.082,
+        "command": [
+          "./scripts/test_bytes.sh"
+        ],
+        "stdout_sha256": "c902b8c2c4931fe71c6bbe5ca5cfd5e7aa69418dfeb331bdd6beebfe8b86a50b",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A5",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 21.562,
+        "command": [
+          "./scripts/test_libc_exec.sh"
+        ],
+        "stdout_sha256": "753c7a40504160c714c34a44adfcbb7a97f952f71452016ae3a91d07bc407cdb",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A6",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 2.131,
+        "command": [
+          "./scripts/test_multi_tu.sh"
+        ],
+        "stdout_sha256": "3fd540e57489c63db1fc7aae526ae8a50737c9c88fe0c77767d0bcd0b6235232",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A6b",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 3.534,
+        "command": [
+          "./scripts/test_multi_tu.sh",
+          "--failure-class-projection",
+          "tests/multi_tu_tray"
+        ],
+        "stdout_sha256": "3ab0844b31fe1c03ce15a825376f347efa9278ee455164f010147e5d00fae3bc",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A7",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 10.294,
+        "command": [
+          "./scripts/test_parse.sh"
+        ],
+        "stdout_sha256": "ec14abee7de958497adaeeb916fea8295e1988ce2f5368baefc9041ff711fd13",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A8",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 8.893,
+        "command": [
+          "./scripts/test_core.sh"
+        ],
+        "stdout_sha256": "a462079a283e1e2ed0f30625c507e7a2ba31ec0259a2ca91833a964345f67ed1",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A9",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 16.552,
+        "command": [
+          "./scripts/test_elab.sh"
+        ],
+        "stdout_sha256": "985582ad914772c6a766268da4c589e919b4526b789811872f540d5948c522a5",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A10",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 16.451,
+        "command": [
+          "./scripts/test_libxml2_uri.sh"
+        ],
+        "stdout_sha256": "764dfbcf1284bfb0ccfe534791f4837a0858e2e4b73ce22aa7582a9c512be025",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A11",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 57.106,
+        "command": [
+          "./scripts/test_cn_coverage.sh",
+          "--check-baseline"
+        ],
+        "stdout_sha256": "06a68446c40f0932e9a91372af1984cdc47e85751665498dc74a9f15f0393e1a",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A12.1",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 3.933,
+        "command": [
+          "./scripts/test_address_space.sh",
+          "--selftest"
+        ],
+        "stdout_sha256": "0bede2f4e2e5e440444e8e718efe4b6719947963200ec7dfa18b642dd2311493",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "A12.2",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 3.883,
+        "command": [
+          "./scripts/test_address_space.sh"
+        ],
+        "stdout_sha256": "d6dbc0c8b3d68c133c4e4400a0189901fc326981742a4e32e06114640c6d3e2e",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B1",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 601.853,
+        "command": [
+          "./scripts/test_libxml2.sh"
+        ],
+        "stdout_sha256": "f7d3253f4eea1f050bf9073e33c7d4a809e67fd4ddc4d0d7aefb12d99143bddf",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B2",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 22.823,
+        "command": [
+          "./scripts/test_parse.sh",
+          "tests/ci"
+        ],
+        "stdout_sha256": "e6c7b65df2074597e570ae95bdc02e6ac0a3f04e3ef1c52bc488c10f3f54ba35",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B3",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 14.8,
+        "command": [
+          "./scripts/test_core.sh",
+          "tests/ci"
+        ],
+        "stdout_sha256": "da4960eccb287a58e1933e8f4a41af2831af0f5b55a7287d185cc03f5764c962",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B4",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 45.497,
+        "command": [
+          "./scripts/test_verify.sh"
+        ],
+        "stdout_sha256": "5aa0dd146d77cfeb6b7d9f81e7e1b4bbbfd254d6cd21680f05c69d457edfd1f0",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B5",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 66.568,
+        "command": [
+          "./scripts/test_immaculate.sh"
+        ],
+        "stdout_sha256": "beb7e8c9c786b432a202c8761a9c7b786357e43d9d55f8986bac5a254a64c687",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B6.1",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 2.232,
+        "command": [
+          "./scripts/test_speclab.sh",
+          "--selftest"
+        ],
+        "stdout_sha256": "5e716c3cd02afac1b31635331295364df7dc9b62693eacc702d97352aefe21d0",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B6.2",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 2.231,
+        "command": [
+          "./scripts/test_speclab.sh",
+          "--plant"
+        ],
+        "stdout_sha256": "fbb08a5e08c05e322790774d2b6279dc2f2a632fe5b359f1fca4ebfe4d9b739b",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B6.3",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 2.532,
+        "command": [
+          "./scripts/test_speclab_divmod.sh",
+          "--gate"
+        ],
+        "stdout_sha256": "55df2def65d84b3e8411b775e571fdcaaa40630eb5530c811521924f339d7b1f",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B6.4",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 2.832,
+        "command": [
+          "./scripts/test_speclab_bytearr.sh",
+          "--gate"
+        ],
+        "stdout_sha256": "9ad2947fe7b8e4d68bfe87622aba71aa394c1b0cff8a932f94bbf12381fe9b85",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B6.5",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 3.233,
+        "command": [
+          "./scripts/test_speclab_list.sh",
+          "--gate"
+        ],
+        "stdout_sha256": "4932b0210511348fc09ec8adad16a281035eb26f2089cc68a603126fa12d6e61",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B6.6",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 3.784,
+        "command": [
+          "./scripts/test_speclab_tree.sh",
+          "--gate"
+        ],
+        "stdout_sha256": "eb3ffe349ab6b093b7df09b8e17166c5f8642fd1e23f2706d0d516b021c185aa",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B6.7",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 2.734,
+        "command": [
+          "./scripts/test_speclab_seed.sh",
+          "--gate"
+        ],
+        "stdout_sha256": "53a3572326a95d735ae73ec12717a1cd8571a20bbddef8ba19758dcdbdc79135",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B7",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 1296.583,
+        "command": [
+          "./scripts/test_gcc_oracle.sh",
+          "--check-baseline"
+        ],
+        "stdout_sha256": "6e85767d2c7ef54a23a2bd5ee9e415c47a86d50d223c4a620c975c54535a3107",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B8.1",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 13.424,
+        "command": [
+          "./scripts/test_hang_plant.sh"
+        ],
+        "stdout_sha256": "ec75475c65a4f29c0d1125578950b63f593f888d02e34ca0611c7bafbfe777b6",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B8.2",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 227.375,
+        "command": [
+          "./scripts/test_kill_plant.sh"
+        ],
+        "stdout_sha256": "5fe97e6cd39ba1f775caa26e13dd3de899cb5d3a1f63ac5e3a5c73dd206d563c",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B8.3",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 6.337,
+        "command": [
+          "./scripts/test_fuel_plant.sh"
+        ],
+        "stdout_sha256": "437f24d9b6f6332a98a4cd1567752f2084b00243ed209aba1bafd4e256b50bca",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B8.4",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 15.805,
+        "command": [
+          "./scripts/test_failstop_plant.sh"
+        ],
+        "stdout_sha256": "8e00f022c8b529640b39f92320de95d96108c7085018b5cf10aa287e4fdb5b19",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B9",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 1300.041,
+        "command": [
+          "python3",
+          "scripts/test_observation_lanes.py",
+          "--out",
+          "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c3-release-full/B9/plants"
+        ],
+        "stdout_sha256": "9368ff935d14bbb7cfbb0935f2519fb89ad90694c000a8d73dd786cdade80b38",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B10.1",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 115.124,
+        "command": [
+          "python3",
+          "scripts/test_upstream_oracle.py",
+          "--out",
+          "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c3-release-full/B10.1/independent-oracle"
+        ],
+        "stdout_sha256": "5818833cc5a025afeb595f179808ca25121cd8670824e6d13890c8820ff557a5",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B10.2",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 1.73,
+        "command": [
+          "python3",
+          "scripts/test_upstream_oracle.py",
+          "--plant",
+          "--out",
+          "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c3-release-full/B10.2/independent-oracle"
+        ],
+        "stdout_sha256": "91cec4ba1426df392489161cc065ad2b7abb6301fa0b48b7e9a79254e9b0f772",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B11.1",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 15.35,
+        "command": [
+          "./scripts/check_failure_reach.sh",
+          "--selftest"
+        ],
+        "stdout_sha256": "04574c17c5223c642a01ddd1bf6715ff8966b6bf28903f8d484d3e828954235a",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B11.2",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 7.039,
+        "command": [
+          "./scripts/check_failure_reach.sh"
+        ],
+        "stdout_sha256": "78db5e419d3a9db2c221815a3bcdae160ba0fe4fe3edb9afb9b8bdbd768054da",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "B12",
+        "status": "passed",
+        "exit_status": 0,
+        "seconds": 418.014,
+        "command": [
+          "python3",
+          "scripts/test_upstream_oracle.py",
+          "--corpus",
+          "libxml2_chvalid",
+          "--out",
+          "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c3-release-full/B12/independent-oracle"
+        ],
+        "stdout_sha256": "bf7e600e67c7eddb71a85dbd16eba7d7c0678f86f9175b847ea48ac34481cc38",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ]
+  }
+}
