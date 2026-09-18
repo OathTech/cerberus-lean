@@ -1,0 +1,155 @@
+# release.py --mode full at the C3 head 9a8caddc1cc9d3963e0156ea01d5b3481a028d79 — per-lane VERBATIM verdict tails (the last summary-shaped lines of each lane's stdout, from .tmp/c3-release-full/<ID>/stdout; sha256 of each lane's stdout as recorded in report.json). Certification:
+  full: passed; 39/39 selected commands completed successfully.
+  Source unchanged: True. Complete tier selection: True.
+  release_certification: "incomplete: reporting/adoption/audit exits require separate evidence"
+  started_utc 20260917T232201.560184Z finished_utc 2026-09-18T00:39:56.123722+00:00 (wall 1:17:55)
+
+## A1: ./scripts/test_unit.sh  [passed, exit 0, 207.8s, stdout sha256 d7569baa9ef3c36e…]
+    check_fork_content: OK — 76 source files content/mode-pinned
+    check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 25 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin f6542f8 = lem -v)
+    check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+    test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+
+## A2: ./scripts/test_exec.sh --check-baseline  [passed, exit 0, 33.2s, stdout sha256 cbca9f495138b233…]
+    SUMMARY: total=113 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=5 cerb_floor=0 cerb_inconsistent=0
+    Baseline check: 0 regression(s), 0 improvement(s)
+
+## A3: ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage  [passed, exit 0, 50.6s, stdout sha256 19c907869bddf2ea…]
+    SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+    Baseline check: 0 regression(s), 0 improvement(s)
+
+## A4: ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug  [passed, exit 0, 22.4s, stdout sha256 1534308daefb9333…]
+    SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+    Baseline check: 0 regression(s), 0 improvement(s)
+
+## A4b: ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float  [passed, exit 0, 23.7s, stdout sha256 14975c67187d2d36…]
+    SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+    Baseline check: 0 regression(s), 0 improvement(s)
+
+## A4c: ./scripts/test_bytes.sh  [passed, exit 0, 3.1s, stdout sha256 c902b8c2c4931fe7…]
+    SUMMARY: exec_match=9 neg_pinned=5 fail=0
+
+## A5: ./scripts/test_libc_exec.sh  [passed, exit 0, 21.6s, stdout sha256 753c7a40504160c7…]
+    SUMMARY: match=12 diff=0
+
+## A6: ./scripts/test_multi_tu.sh  [passed, exit 0, 2.1s, stdout sha256 3fd540e57489c63d…]
+    SUMMARY: total=2 match=2 fail=0
+
+## A6b: ./scripts/test_multi_tu.sh --failure-class-projection tests/multi_tu_tray  [passed, exit 0, 3.5s, stdout sha256 3ab0844b31fe1c03…]
+    SUMMARY: total=7 match=7 fail=0
+
+## A7: ./scripts/test_parse.sh  [passed, exit 0, 10.3s, stdout sha256 ec14abee7de95849…]
+    Total:          113
+
+## A8: ./scripts/test_core.sh  [passed, exit 0, 8.9s, stdout sha256 a462079a283e1e2e…]
+    Total:          113
+
+## A9: ./scripts/test_elab.sh  [passed, exit 0, 16.6s, stdout sha256 985582ad914772c6…]
+    SUMMARY: total=113 same=108 diff=5 ocaml_fail=0 lean_fail=0
+
+## A10: ./scripts/test_libxml2_uri.sh  [passed, exit 0, 16.5s, stdout sha256 764dfbcf1284bfb0…]
+    GATE PASS: all lane expectations pinned-green + baseline unchanged (16/16)
+
+## A11: ./scripts/test_cn_coverage.sh --check-baseline  [passed, exit 0, 57.1s, stdout sha256 06a68446c40f0932…]
+    SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0
+
+## A12.1: ./scripts/test_address_space.sh --selftest  [passed, exit 0, 3.9s, stdout sha256 0bede2f4e2e5e440…]
+    test_address_space: SELFTEST OK (4 plants rejected — the forged pre-fix ACTIVE verdict, a missing file, a truncated file, a phantom row; the committed file green)
+
+## A12.2: ./scripts/test_address_space.sh  [passed, exit 0, 3.9s, stdout sha256 d6dbc0c8b3d68c13…]
+    test_address_space: OK (15 cases: LEAN = FORK through the shared codec at tops 64 32 8; every fork observation = its pinned row in expectations.txt)
+
+## B1: ./scripts/test_libxml2.sh  [passed, exit 0, 601.9s, stdout sha256 f7d3253f4eea1f05…]
+    SUMMARY: total=4 match=4 fail=0 (points: 1354, 22 observations each)
+
+## B2: ./scripts/test_parse.sh tests/ci  [passed, exit 0, 22.8s, stdout sha256 e6c7b65df2074597…]
+    Total:          250
+
+## B3: ./scripts/test_core.sh tests/ci  [passed, exit 0, 14.8s, stdout sha256 da4960eccb287a58…]
+    Total:          250
+
+## B4: ./scripts/test_verify.sh  [passed, exit 0, 45.5s, stdout sha256 5aa0dd146d77cfeb…]
+    Build completed successfully (285 jobs).
+    check_driver_fresh: recorded lean stamp (bin dee4e2658712cbd35f17e5b6fc600ca6e9a0b3fed34acf8a6f5c39b54f1f4592, src 3f2a8f0d03e676affe5f1b8e15fee4ab23e9003beb00d203c47001144b913bfb)
+    test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+
+## B5: ./scripts/test_immaculate.sh  [passed, exit 0, 66.6s, stdout sha256 beb7e8c9c786b432…]
+    OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+
+## B6.1: ./scripts/test_speclab.sh --selftest  [passed, exit 0, 2.2s, stdout sha256 5e716c3cd02afac1…]
+    test_speclab: PASS (both pipelines agree on Specified(0))
+
+## B6.2: ./scripts/test_speclab.sh --plant  [passed, exit 0, 2.2s, stdout sha256 fbb08a5e08c05e32…]
+    test_speclab: PASS (both pipelines agree on Specified(2))
+
+## B6.3: ./scripts/test_speclab_divmod.sh --gate  [passed, exit 0, 2.5s, stdout sha256 55df2def65d84b3e…]
+    CoreGateTest: ALL PASSED
+    test_speclab_divmod: PASS (--gate)
+
+## B6.4: ./scripts/test_speclab_bytearr.sh --gate  [passed, exit 0, 2.8s, stdout sha256 9ad2947fe7b8e4d6…]
+    ByteArrGateTest: ALL PASSED
+    test_speclab_bytearr: PASS (--gate)
+
+## B6.5: ./scripts/test_speclab_list.sh --gate  [passed, exit 0, 3.2s, stdout sha256 4932b0210511348f…]
+    ListGateTest: ALL PASSED
+    test_speclab_list: PASS (--gate)
+
+## B6.6: ./scripts/test_speclab_tree.sh --gate  [passed, exit 0, 3.8s, stdout sha256 eb3ffe349ab6b093…]
+      PASS  exec [rotate swap-plant]: Specified(7) — content break at the locus val's first wire byte; LEAK-FREE (baseline)
+    TreeGateTest: ALL PASSED
+    test_speclab_tree: PASS (--gate)
+
+## B6.7: ./scripts/test_speclab_seed.sh --gate  [passed, exit 0, 2.7s, stdout sha256 53a3572326a95d73…]
+    SeedGateTest: ALL PASSED
+    test_speclab_seed: PASS (--gate)
+
+## B7: ./scripts/test_gcc_oracle.sh --check-baseline  [passed, exit 0, 1296.6s, stdout sha256 6e85767d2c7ef54a…]
+    SUMMARY: total=2001 compared=1916 agree=1904 agree_nd=0 triaged=12 disagree=0 o2_agree=196 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=12 skip_lean_fail=13 skip_lean_timeout=11 skip_ub=47 triaged_addr=11 triaged_ub=1
+    Baseline check: 0 regression(s), 0 improvement(s)
+    gcc second-oracle lane OK
+
+## B8.1: ./scripts/test_hang_plant.sh  [passed, exit 0, 13.4s, stdout sha256 ec75475c65a4f29c…]
+    test_hang_plant: all plants read as expected (sleep→HANG, busy→TIMEOUT, both lanes; missing record→harness error)
+
+## B8.2: ./scripts/test_kill_plant.sh  [passed, exit 0, 227.4s, stdout sha256 5fe97e6cd39ba1f7…]
+    PLANT OK   [libc_exec no MATCH]: SUMMARY: match=0 diff=12
+    PLANT OK   [immaculate no MATCH]
+    test_kill_plant: all plants read as expected (cap breach -> OOM-KILLED witness; ci_sweep LEAN_KILL, libc_exec KILL, immaculate KILL, uri/libxml2 FAIL-killed; SIGKILL stub NOT the cap class; native exit(137) still compared; no MATCH anywhere)
+
+## B8.3: ./scripts/test_fuel_plant.sh  [passed, exit 0, 6.3s, stdout sha256 437f24d9b6f6332a…]
+    PLANT OK   [exec/kill fatal]: FAILED: 1 Lean fuel exhaustion(s) — the fuel budget is a port artifact; a FUEL row is never agreement
+    PLANT OK   [exec/words is a verdict row]: [1/1] MISMATCH 001-return-literal: Lean=VAL:{value: "Specified(0)", stdout: "lem: fuel exhausted\n", stderr: "", blocked: "false"} Cerberus=VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked
+    PLANT OK   [exec/real driver at the default fuel -> MATCH]: [1/1] MATCH 001-return-literal: VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+    test_fuel_plant: ALL PLANTS OK (FUEL classification live in exec/gcc/ci_sweep/cn_coverage/measure; negatives not FUEL; the real driver at --fuel 1 reads FUEL and at the default MATCH; --fuel 0/non-numeral/out-of-position/missing refused)
+
+## B8.4: ./scripts/test_failstop_plant.sh  [passed, exit 0, 15.8s, stdout sha256 8e00f022c8b52964…]
+    test_failstop_plant: PASS (11 class and rejection checks)
+
+## B9: python3 scripts/test_observation_lanes.py --out /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c3-release-full/B9/plants  [passed, exit 0, 1300.0s, stdout sha256 9368ff935d14bbb7…]
+    PLANT OK   exec: ub-difference-new-baseline
+
+## B10.1: python3 scripts/test_upstream_oracle.py --out /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c3-release-full/B10.1/independent-oracle  [passed, exit 0, 115.1s, stdout sha256 5818833cc5a025af…]
+    857/859 semantic_agreement: corpus/p10_gcd_rec (pristine 0.0s, fork 0.0s)
+    858/859 semantic_agreement: corpus/p11_gcd_iter (pristine 0.0s, fork 0.0s)
+    859/859 semantic_agreement: corpus/p12_pt_midpoint (pristine 0.0s, fork 0.0s)
+    Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c3-release-full/B10.1/independent-oracle/report.json
+
+## B10.2: python3 scripts/test_upstream_oracle.py --plant --out /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c3-release-full/B10.2/independent-oracle  [passed, exit 0, 1.7s, stdout sha256 91cec4ba1426df39…]
+    1/3 semantic_agreement: minimal/001-return-literal.c (pristine 0.0s, fork 0.0s)
+    2/3 plant_rejected: plant/unexpected-verdict (pristine 0.0s, fork 0.0s)
+    3/3 plant_ok: plant/withheld-row:minimal/112-allocator-exhausted-single-request.c — minimal/112-allocator-exhausted-single-request.c: with its register row -> reviewed_difference; row withheld -> difference (completed semantic observations differ)
+    Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c3-release-full/B10.2/independent-oracle/report.json
+
+## B11.1: ./scripts/check_failure_reach.sh --selftest  [passed, exit 0, 15.3s, stdout sha256 04574c17c5223c64…]
+      PLANT OK   [P3 a REACHABLE row's reach class edited to UNKNOWN without --reseal] rc=1 ->   SEAL MISMATCH (row edited without --reseal; a class change is a review change): lean_frontend/CerbDecode.lean _private.CerbDecode.0.CerbDecode.decode_character_constant_aux «s!"decode_character_constant: invalid char constant =
+    check_failure_reach: SELFTEST OK (5 plants with the declared message — a new site in a generated exec-closure definition, a DISCARDABLE dead let-binding, an unsealed class edit, a phantom row, an edited tally — and the unplanted register green)
+
+## B11.2: ./scripts/check_failure_reach.sh  [passed, exit 0, 7.0s, stdout sha256 78db5e419d3a9db2…]
+    check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+
+## B12: python3 scripts/test_upstream_oracle.py --corpus libxml2_chvalid --out /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c3-release-full/B12/independent-oracle  [passed, exit 0, 418.0s, stdout sha256 bf7e600e67c7eddb…]
+    2/4 semantic_agreement: libxml2/chvalid/chvalid_battery_01 (pristine 53.7s, fork 53.7s)
+    3/4 semantic_agreement: libxml2/chvalid/chvalid_battery_02 (pristine 53.2s, fork 53.3s)
+    4/4 semantic_agreement: libxml2/chvalid/chvalid_battery_03 (pristine 56.8s, fork 54.7s)
+    Independent oracle: passed; {'semantic_agreement': 4}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/address-space-bound-part-two/.tmp/c3-release-full/B12/independent-oracle/report.json
+
