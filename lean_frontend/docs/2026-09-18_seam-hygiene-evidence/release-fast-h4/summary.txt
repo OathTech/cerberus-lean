@@ -1,0 +1,3 @@
+fast: passed; 16/16 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.

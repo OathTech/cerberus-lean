@@ -1,0 +1,10 @@
+# record-quote-check (audit M1 re-check, H4): every indented/fenced quoted line of 2026-09-18_seam-hygiene-record.md checked as an exact substring (ellipsis-split) of some file in this evidence dir (this file excluded)
+# 216 quoted lines; 8 NOT backed by an evidence file — each labelled in the record as terminal-quoted (§2.2, audit N4) or a source excerpt (§3.1, `git show 0eafc94a4:scripts/observations.py`):
+L129: check_failure_reach: FAIL —
+L130: NEW pure exec-closure site (no register row — review it): lean_frontend/CerbMem.lean:1419 CerbMem.maxIval failwithI «"CerbMem.maxIval: the concrete memory model requires a compl» position=LET-BOUND scope=EXEC
+L131: NEW pure exec-closure site (no register row — review it): lean_frontend/CerbMem.lean:1447 CerbMem.minIval failwithI «"CerbMem.minIval: the concrete memory model requires a compl» position=ARGUMENT scope=EXEC
+L132: STALE register row (site gone or its key moved): lean_frontend/CerbMem.lean CerbMem.maxIval failwithI «"CerbMem.memValueToBytes_append: the concrete memory model r» scope=EXEC
+L133: STALE register row (site gone or its key moved): lean_frontend/CerbMem.lean CerbMem.minIval failwithI «"CerbMem.memValueToBytes_append: the concrete memory model r» scope=EXEC
+L230: if lean[1] != b'LemLib.failwithIImpl' and not (
+L231: policy == 'immaculate' and lean[1] in IMMACULATE_PANICS):
+L232: raise ProtocolError('unreviewed panic origin')

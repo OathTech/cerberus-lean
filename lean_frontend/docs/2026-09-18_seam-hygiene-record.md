@@ -3,7 +3,7 @@
 **Status:** [AGENT worker, Claude Fable] record ending the slice chartered in
 `2026-09-18_charter-seam-hygiene.md` (branch `arc/seam-hygiene`, worktree
 `worktrees/cerberus-lean-arc/seam-hygiene`, charter head `0eafc94a4` on mainline `0457732e1`).
-Deliverables, in order: **H1 `fce1de9f8`**, **H2 `ee1eaf94d`**, **H3 `dde3b766b`**, this record.
+Deliverables, in order: **H1 `fce1de9f8`**, **H2 `ee1eaf94d`**, **H3 `dde3b766b`**, this record (`34b8e15a8`), then — after the independent pre-merge audit (`audit/seam-hygiene` @ `05d208f45`, MERGE-WITH-FIXES, no MAJOR) — **H4 `cef347c6c`** (the audit's fixes, §10) and this amendment.
 The slice first STOPPED at charter rule S3 (then S1) after H1 was built and gated (§3 — the
 interim record of that stop was commit `db640b214`; its content is folded in here); the
 orchestrator verified both blocking facts and EXTENDED THE FENCE (§0), after which H1–H3 landed
@@ -192,19 +192,29 @@ every run (the charter asked for two; the third shows a prefixed message):
 Same message text (or the OCaml text as the suffix of the self-locating prefix), same exit status; only
 the `PANIC at <site>` head moves — to the PRIVATE-mangled LemLib name (§3).
 
-### 2.6 Gates at the H1 commit (verbatim; `…evidence/test_unit_h1_*`, `test_immaculate_h1_green*`, `gates_h1_*`)
+### 2.6 Gates at the H1 commit (verbatim; `…evidence/test_unit_h1_verdicts.txt`, `test_immaculate_h1_green.txt`, `gates_h1_verdicts.txt`)
+
+`test_unit.sh` (incl. the register gate) and the immaculate lane:
 
     Total: 12 passed, 0 failed
     check_theorem_axioms: generated-tree census OK (219 files: 0 axioms, boundary-opaque population = the 16 registered rows exactly-once (incl. CerbFuel.fuelExhaustedLoc), 0 unsafeCast)
-    check_theorem_axioms: C2 ratchet OK (375 files scanned recursively: 0 axioms, 0 runEffectful, seam population = the 38 pinned path-qualified counted rows exactly incl. the extern class; …)
+    check_theorem_axioms: C2 ratchet OK (377 files scanned recursively: 0 axioms, 0 runEffectful, seam population = the 38 pinned path-qualified counted rows exactly incl. the extern class; lem tests/ scaffolds asserted outside the surface)
     check_sorry_token: OK (318 files scanned comment-stripped — generated 219, hand-written+test 64, LemLib 35; 0 sorry tokens)
+    check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; r
     OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
-    row 2:  SUMMARY: total=113 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=5 cerb_floor=0 cerb_inconsistent=0 | Baseline check: 0 regression(s), 0 improvement(s)
-    row 3:  SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0 | Baseline check: 0 regression(s), 0 improvement(s)
-    row 4:  SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0 | Baseline check: 0 regression(s), 0 improvement(s)
-    row 4b: SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0 | Baseline check: 0 regression(s), 0 improvement(s)
-    row 10: Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}
-    row 10 --plant: Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}
+
+Tier A rows 2, 3, 4, 4b (each `SUMMARY` line followed by its `Baseline check` line, in that order) and row 10 + `--plant`:
+
+    SUMMARY: total=113 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=5 cerb_floor=0 cerb_inconsistent=0
+    Baseline check: 0 regression(s), 0 improvement(s)
+    SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+    Baseline check: 0 regression(s), 0 improvement(s)
+    SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+    Baseline check: 0 regression(s), 0 improvement(s)
+    SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+    Baseline check: 0 regression(s), 0 improvement(s)
+    Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/seam-hygiene/.tmp/upstream-oracle-o0po2fcr/report.json
+    Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/seam-hygiene/.tmp/upstream-oracle-06ozer03/report.json
 
 (The failure-reach line of §2.2 is part of `test_unit`. The census is unchanged by H1 — 16 opaques,
 38 pins — as expected.)
@@ -311,14 +321,21 @@ memReturn (decide (a1 > a2))` for symbolic `a1 a2`. Z2-M-20 lives in the dated Z
 Semantics switches" paragraph gained the sentence that the arms are in the explicit shape and the row is
 closed; `lean_frontend/CLAUDE.md`'s CerbGlobal row updated. Dated records were not edited.
 
-### 4.4 Gates at the H2 commit (verbatim; `…evidence/gates_h2_*`)
+### 4.4 Gates at the H2 commit (verbatim; `…evidence/gates_h2_verdicts.txt` — `test_unit`, immaculate, rows 2/3/4/4b as SUMMARY + Baseline pairs, row 10 + `--plant`)
 
+    opaque-failure-test: PASS — the two seam identities are not rfl-provable (#guard_msgs on failing rfl), `failwithI` is opaque in the environment, default arms still reduce; every switch-conditioned arm reduces to its default (has_switch … = false by rfl
     Total: 12 passed, 0 failed
-    check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly … UNKNOWN=19; every row sealed; tally line consistent)
-    OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 … R2 … R3 … R5 … — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
-    rows 2/3/4/4b: Baseline check: 0 regression(s), 0 improvement(s) (each; the SUMMARY lines equal §2.6's)
-    row 10: Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}
-    row 10 --plant: Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}
+    check_theorem_axioms: generated-tree census OK (219 files: 0 axioms, boundary-opaque population = the 16 registered rows exactly-once (incl. CerbFuel.fuelExhaustedLoc), 0 unsafeCast)
+    check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-
+    check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVA
+    OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VAL
+    SUMMARY: total=113 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=5 cerb_floor=0 cerb_inconsistent=0
+    Baseline check: 0 regression(s), 0 improvement(s)
+    SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+    SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+    SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+    Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/seam-hygiene/.tmp/upstream-oracle-e928pnd5/report.json
+    Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/seam-hygiene/.tmp/upstream-oracle-t6b89_dm/report.json
 
 (The register is unchanged by H2: the kills are `NDkilled`/`kill (Other …)` nodes, not census tokens.)
 
@@ -379,16 +396,22 @@ and 13 PIN rows removed (CerbUtils: IMPLBY `begin_timing_impl`/`end_timing_impl`
 The census stays fail-closed: an unregistered opaque or a missing registered one is RED by its own
 logic (unchanged code paths; only rows moved).
 
-### 5.5 Gates at the H3 commit (verbatim; `…evidence/gates_h3_*`)
+### 5.5 Gates at the H3 commit (verbatim; `…evidence/gates_h3_verdicts.txt` — same layout as §4.4)
 
+    opaque-failure-test: PASS — the two seam identities are not rfl-provable (#guard_msgs on failing rfl), `failwithI` is opaque in the environment, default arms still reduce; every switch-conditioned arm reduces to its default (has_switch … = false by rfl
     Total: 12 passed, 0 failed
     check_theorem_axioms: generated-tree census OK (219 files: 0 axioms, boundary-opaque population = the 12 registered rows exactly-once (incl. CerbFuel.fuelExhaustedLoc), 0 unsafeCast)
-    check_theorem_axioms: C2 ratchet OK (377 files scanned recursively: 0 axioms, 0 runEffectful, seam population = the 25 pinned path-qualified counted rows exactly incl. the extern class; …)
-    check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly … UNKNOWN=19; every row sealed; tally line consistent)
-    OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 … R2 … R3 … R5 … — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
-    rows 2/3/4/4b: Baseline check: 0 regression(s), 0 improvement(s) (each; SUMMARY lines equal §2.6's)
-    row 10: Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}
-    row 10 --plant: Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}
+    check_theorem_axioms: C2 ratchet OK (377 files scanned recursively: 0 axioms, 0 runEffectful, seam population = the 25 pinned path-qualified counted rows exactly incl. the extern class; lem tests/ scaffolds asserted outside the surface)
+    check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-
+    check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVA
+    OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VAL
+    SUMMARY: total=113 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=5 cerb_floor=0 cerb_inconsistent=0
+    Baseline check: 0 regression(s), 0 improvement(s)
+    SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+    SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+    SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+    Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/seam-hygiene/.tmp/upstream-oracle-ci3jlzgl/report.json
+    Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/seam-hygiene/.tmp/upstream-oracle-h6dtsq_f/report.json
 
 ### 5.6 The FULL battery at the H3 head (`release.py --mode full`, Tier A + B; verbatim per-lane tails)
 
@@ -679,5 +702,97 @@ stderr + rc + line1 for the three programs, `after-unmangled-demo.stderr`, `code
 `gates_h1_rows2-4b_row10_full.log` + `gates_h1_verdicts.txt`. H2: `gates_h2_full.log` +
 `gates_h2_verdicts.txt`. H3: `beq-memvalue-old-witness.{lean,txt}`, `beq-agreement-plant.txt`,
 `h3-print-axioms.txt`, `check_theorem_axioms_h3.txt`, `gates_h3_full.log` + `gates_h3_verdicts.txt`,
-`release-full/` (release.py's own evidence directory: per-lane logs + `summary`). Container-side
+`release-full/` (`summary.txt`, `report.json`, `release_full.log`, `release-full-tails.txt`). H4 (§10): `test_unit_h4_full.log` + `test_unit_h4_verdicts.txt`, `gates_h4_full.log` + `gates_h4_verdicts.txt`, `release-fast-h4/{summary.txt,report.json}`, `record-quote-check-h4.txt` (the M1 re-check of every quoted line). Container-side
 scratch (`.tmp/seam-hygiene/`, build logs, cabs-jsons) is ephemeral and not committed.
+
+## 10. Audit fixes (H4 `cef347c6c`) — the independent pre-merge audit and what changed
+
+**The audit:** branch `audit/seam-hygiene` @ `05d208f45`, report
+`lean_frontend/docs/2026-09-19_seam-hygiene-audit-premerge.md` (+ its evidence dir), worktree
+`worktrees/cerberus-lean-audit/seam-hygiene` (read-only to the worker). Verdict [AGENT auditor]:
+**MERGE-WITH-FIXES, no MAJOR**; it reproduced everything — 0 hunks of class (f) (a hunk changing a
+default arm), the FULL battery clean at `34b8e15a8` (`full: passed; 39/39 … Source unchanged: True.`),
+row 10 `{822, 28, 7, 2}`, the structural `BEq` against the retired impl on 1156 pairs with 0
+disagreements. The orchestrator ([AGENT orchestrator], 2026-09-19) directed the fixes below as ONE
+commit plus this amendment, with the FULL battery NOT re-run for a constructor reorder + comments + docs
+— the audit's clean FULL at `34b8e15a8` is the reference; gates at the H4 head: `test_unit.sh`,
+`release.py --mode fast`, `test_immaculate.sh`, row 10 + `--plant`.
+
+### 10.1 Per finding → change
+
+| finding | change (file:line at `cef347c6c`) |
+|---|---|
+| **M4** MINOR — `CerbSwitch`'s derived `Inhabited` default had moved (`.strict_reads` → `.pointer_arith .PERMISSIVE`) because H2 placed the new constructors FIRST: kernel-visible, unclaimed (no consumer: every use is a `has_switch …` call) | `lean_frontend/CerbGlobal.lean`: the four constructors are APPENDED after the lem subset (`… | cheri | pointer_arith (mode) | strict_pointer_equality | strict_pointer_relationals | zero_initialised`) with a comment naming the hazard; `default = .strict_reads` again, PINNED by `example : (default : CerbSwitch) = .strict_reads := rfl` beside the `has_switch_*_eq` lemmas and by the same example in `test/Unit/OpaqueFailureTest.lean`. Lesson recorded: a derived instance is constructor-order-dependent — an E-list item the slice should have caught (the same hazard class as the outcomes design's generated-default finding). |
+| **M1** MINOR — record §2.6 quoted `375 files` under "verbatim"; no evidence file carries it (H1 evidence: `377`; BEFORE: `374`) | Record §2.6, §4.4, §5.5 REBUILT mechanically from the evidence files (`test_unit_h1_verdicts.txt`, `test_immaculate_h1_green.txt`, `gates_h{1,2,3}_verdicts.txt`): every quoted line is now a stand-alone line pulled from its file (my labels — `row 2:`, `(each …)` — moved out of the code blocks; the abbreviated `…` lines replaced by the full lines). Re-check of EVERY quoted line of this amended record (`…evidence/record-quote-check-h4.txt`; the check excludes its own output): 216 quoted lines, each an exact substring (ellipsis-split) of some evidence file, EXCEPT 8 that are labelled as such in the text: the 5 lines of the register gate's first RED run (§2.2 — quoted from the terminal; that log was overwritten; audit N4) and the 3-line pre-H1 source excerpt of `observations.py:207-209` (§3.1 — reproducible as `git show 0eafc94a4:scripts/observations.py`). The `375` was a hand-edited number in a verbatim block: the house rule was breached and is now met. |
+| **M2** MINOR — `h1-site-table.md` rows 828/837/1190 named `_append`/`_indexed` prefixes the code does not carry | The three rows now state the prefixes actually in the code (`CerbMem.memValueToBytes:` / `CerbMem.reconstructValue:` — the SAME prefix as the paired worker, §2.1) and say the edit plan's prefix was equalised before the build (the table had been generated from the plan, not the tree). |
+| **M3** MINOR — `VALIDATION.md:1027-1030` still enumerated the deleted `CerbMem.beqMemValueSafe` as a runtime-boundary row with a live VF-3 obligation; `TODO.md:232` likewise; `VALIDATION.md:722` said "15 registered rows" | `VALIDATION.md`: the bullet is a LEFT-the-boundary history line pointing at §5.3 (the VF-3 correspondence obligation for this row CLOSED — witnessed 23 pairs here, 1156 by the audit); the gate-table parenthetical reads "12 registered rows since seam-hygiene H3, 2026-09-19 — …; history: 15 … 16 … 12"; `TODO.md`'s residual retires `beqMemValueSafe` (F7's digest obligation stays). Both files are in the fence for this ([AGENT orchestrator]). |
+| **N1** NOTE — `oomKill`'s docstring cites were −3 off | `CerbMem.lean` oomKill docstring: `impl_mem.ml:1258-1259 and :1263-1264 in this tree; the allocator's older per-line comments are −3 from these`. |
+| **N2** NOTE — the `intfromptr` comment inverted the implication | `CerbMem.lean` intfromptr arm comment: `is_PNVI ()` "is IMPLIED BY either disjunct — and also by `SW_PNVI PLAIN`, where the OCaml takes the default arm — so its `false` (Z-24) refutes both". Record §4.2's row says the same ("the coarser predicate"). |
+| **N3** NOTE — `doLoad`'s header said strict_reads is "refused set" two lines above the explicit guard | `CerbMem.lean` doLoad header: the PNVI `expose_allocations` arm (:1570) "is DECLARED (refused set, Z-24; not one of the eight explicit arms); SW_strict_reads (:1601-1606) is the EXPLICIT `if has_switch .strict_reads then <loud kill> else …` guard below (seam-hygiene H2)". |
+| **N8** NOTE (optional — taken, trivial with a plant) — `LEAN_PANIC`'s free-form location field absorbed a second space after the origin | `scripts/observations.py`: `LEAN_PANIC = rb'PANIC at ([^ \r\n]+) ([^ \r\n]+:[0-9]+:[0-9]+): (.+)'` (the location has no spaces), payload = group 3; plant `test_panic_origin_location_field_is_not_free_form` in `scripts/test_observations.py`: the real line accepted under immaculate/litmus; the same line with a second space after the origin, or a space inside the location, is no Lean panic header → `fatal engine diagnostic` (the FATAL class, fail-closed). `python3 scripts/test_observations.py` → `Ran 25 tests … OK`. |
+
+### 10.2 Recorded observations (no change; the auditor's notes stand)
+
+- **N4** — the §2.2 FAIL transcript has no evidence file: quoted from the worker's terminal; the log was
+  overwritten by the green re-run. Disclosed in the record then and now; nothing can restore it.
+- **N5** — the KEPT origin in `IMMACULATE_PANICS`, `_private.CerberusImpl.0.CerberusImpl.typeof_enum_impl`,
+  is INFERRED from Lean's private-name mangling (`_private.<module>.0.<decl>`, the same shape the
+  lane-witnessed `_private.CerbDecode.0.CerbDecode.decode_character_constant_aux` entry had) — it has NOT
+  been witnessed by a run. No `tests/immaculate` (or other corpus) program reaches the unregistered-enum
+  panic: `typeof_enum` is consulted only for enum tags the same elaboration registered, and a use of an
+  unregistered tag is a constraint violation the frontend rejects earlier; constructing a reaching program
+  was not attempted. If the name is wrong, the failure mode is the loud one (`unreviewed panic origin`),
+  never a silent acceptance.
+- **N6** — the fork oracle CLI ACCEPTS `--switches=strict_reads` (and answers as without); the Z-24 refusal
+  is the LEAN driver's, and no lane passes switches to the oracle. The record's "the switch set is refused"
+  means: refused by this port and never set by any lane on either engine.
+- **N7** — the SET branches are refusals of the whole operation, not ports of the OCaml arm (e.g. `loadM`
+  kills on EVERY load under `SW_strict_reads`, where the OCaml fails only on `MVunspecified`). This is the
+  charter's chosen shape (`<loud kill: … is not ported …>`, the `zap_dead_pointers` precedent), unreachable
+  under the refused set; porting the arms is a different slice.
+- **N9** — the register seal covers the eight class columns, not the `need`/`cite`/`note` prose (by design,
+  `check_failure_reach.py:SEALED`); "every row sealed" in this record means exactly that.
+- **N10** — the audit's primed worktree was stale on both sides, as the worker's was (E9): a second
+  occurrence of the `new-worktree.sh` priming shape (it copies `_build`/`generated/` from the primary,
+  which had moved past its binaries) — outside this slice; for the operator.
+
+### 10.3 Gates at the H4 head `cef347c6c` (verbatim; `…evidence/test_unit_h4_verdicts.txt`, `gates_h4_verdicts.txt`, `release-fast-h4/`)
+
+`test_unit.sh` (before the commit, on the H4 content; the same run is A1 of the fast battery below):
+
+    Total: 12 passed, 0 failed
+    check_theorem_axioms: generated-tree census OK (219 files: 0 axioms, boundary-opaque population = the 12 registered rows exactly-once (incl. CerbFuel.fuelExhaustedLoc), 0 unsafeCast)
+    check_theorem_axioms: C2 ratchet OK (378 files scanned recursively: 0 axioms, 0 runEffectful, seam population = the 25 pinned path-qualified counted rows exactly incl. the extern class; lem tests/ scaffolds asserted outside the surface)
+    check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-
+    opaque-failure-test: PASS — the two seam identities are not rfl-provable (#guard_msgs on failing rfl), `failwithI` is opaque in the environment, default arms still reduce; every switch-conditioned arm reduces to its default (has_switch … = false by rfl
+
+`release.py --mode fast` at the head:
+
+    PASSED A1 (296.4s)
+    PASSED A2 (58.2s)
+    PASSED A3 (51.8s)
+    PASSED A4 (22.8s)
+    PASSED A4b (24.3s)
+    PASSED A4c (3.2s)
+    PASSED A5 (25.4s)
+    PASSED A6 (2.2s)
+    PASSED A6b (3.6s)
+    PASSED A7 (10.4s)
+    PASSED A8 (8.9s)
+    PASSED A9 (16.8s)
+    PASSED A10 (16.7s)
+    PASSED A11 (58.2s)
+    PASSED A12.1 (4.9s)
+    PASSED A12.2 (4.5s)
+    fast: passed; 16/16 selected commands completed successfully.
+    Source unchanged: True. Complete tier selection: True.
+
+`test_immaculate.sh`, row 10, row 10 `--plant` at the head:
+
+    OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register' — and th
+    Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/seam-hygiene/.tmp/upstream-oracle-77rkym22/report.json
+    Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/seam-hygiene/.tmp/upstream-oracle-8ryk4vno/report.json
+
+FULL battery: NOT re-run ([AGENT orchestrator]: a constructor reorder + comments + docs); the reference
+is the audit's clean FULL at `34b8e15a8` — `full: passed; 39/39 selected commands completed successfully.
+Source unchanged: True.` (audit report §2.7).

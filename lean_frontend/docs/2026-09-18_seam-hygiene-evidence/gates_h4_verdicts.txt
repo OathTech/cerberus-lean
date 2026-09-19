@@ -1,0 +1,30 @@
+2:### release fast
+5:PASSED A1 (296.4s)
+7:PASSED A2 (58.2s)
+9:PASSED A3 (51.8s)
+11:PASSED A4 (22.8s)
+13:PASSED A4b (24.3s)
+15:PASSED A4c (3.2s)
+17:PASSED A5 (25.4s)
+19:PASSED A6 (2.2s)
+21:PASSED A6b (3.6s)
+23:PASSED A7 (10.4s)
+25:PASSED A8 (8.9s)
+27:PASSED A9 (16.8s)
+29:PASSED A10 (16.7s)
+31:PASSED A11 (58.2s)
+33:PASSED A12.1 (4.9s)
+35:PASSED A12.2 (4.5s)
+36:fast: passed; 16/16 selected commands completed successfully.
+37:Source unchanged: True. Complete tier selection: True.
+38:Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+39:fast rc=0
+40:### immaculate
+125:OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register' — and th
+126:immaculate rc=0
+127:### row 10
+989:Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/seam-hygiene/.tmp/upstream-oracle-77rkym22/report.json
+990:row10 rc=0
+991:### row 10 --plant
+1048:Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/seam-hygiene/.tmp/upstream-oracle-8ryk4vno/report.json
+1049:row10plant rc=0

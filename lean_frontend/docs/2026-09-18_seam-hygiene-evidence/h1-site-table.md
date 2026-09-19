@@ -76,13 +76,13 @@
 | CerbMem.lean | 660 | `CerbMem.splitBytesProv` | UNREACHABLE-BY-INVARIANT | REPLACE |
 | CerbMem.lean | 706 | `CerbMem.memValueToBytes_lemFuel` | UNREACHABLE-BY-INVARIANT | REPLACE + prefix `CerbMem.memValueToBytes:` |
 | CerbMem.lean | 718 | `CerbMem.memValueToBytes_lemFuel` | UNREACHABLE-BY-INVARIANT | REPLACE + prefix `CerbMem.memValueToBytes:` |
-| CerbMem.lean | 828 | `CerbMem.memValueToBytes_append_lemFuel (outside the exec closure; no register row)` | — | REPLACE + prefix `CerbMem.memValueToBytes_append:` |
-| CerbMem.lean | 837 | `CerbMem.memValueToBytes_append_lemFuel (outside the exec closure; no register row)` | — | REPLACE + prefix `CerbMem.memValueToBytes_append:` |
+| CerbMem.lean | 828 | `CerbMem.memValueToBytes_append_lemFuel (outside the exec closure; no register row)` | — | REPLACE + prefix `CerbMem.memValueToBytes:` — the SAME prefix as the paired worker (record §2.1; the edit plan's `_append` prefix was equalised before the build; audit M2) |
+| CerbMem.lean | 837 | `CerbMem.memValueToBytes_append_lemFuel (outside the exec closure; no register row)` | — | REPLACE + prefix `CerbMem.memValueToBytes:` (same as 828) |
 | CerbMem.lean | 1051 | `CerbMem.reconstructValue_lemFuel` | REACHABLE | REPLACE + prefix `CerbMem.reconstructValue:` |
 | CerbMem.lean | 1120 | `CerbMem.reconstructValue_lemFuel` | UNREACHABLE-BY-INVARIANT | REPLACE |
 | CerbMem.lean | 1130 | `CerbMem.reconstructValue_lemFuel` | UNKNOWN | REPLACE |
 | CerbMem.lean | 1134 | `CerbMem.reconstructValue_lemFuel` | UNREACHABLE-BY-INVARIANT | REPLACE |
-| CerbMem.lean | 1190 | `CerbMem.reconstructValue_indexed_lemFuel (outside the exec closure; no register row)` | — | REPLACE + prefix `CerbMem.reconstructValue_indexed:` |
+| CerbMem.lean | 1190 | `CerbMem.reconstructValue_indexed_lemFuel (outside the exec closure; no register row)` | — | REPLACE + prefix `CerbMem.reconstructValue:` — the SAME prefix as the paired worker (record §2.1; audit M2) |
 | CerbMem.lean | 1229 | `CerbMem.reconstructValue_indexed_lemFuel (outside the exec closure; no register row)` | — | REPLACE |
 | CerbMem.lean | 1237 | `CerbMem.reconstructValue_indexed_lemFuel (outside the exec closure; no register row)` | — | REPLACE |
 | CerbMem.lean | 1241 | `CerbMem.reconstructValue_indexed_lemFuel (outside the exec closure; no register row)` | — | REPLACE |
