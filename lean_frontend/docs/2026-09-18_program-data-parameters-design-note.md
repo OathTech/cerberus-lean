@@ -60,3 +60,15 @@ cerberus-sl's items 2 (enum) and 1/6 (digest) close; item 3–5/7 are the seam-h
 ## 7. Sequencing
 
 Seam hygiene (in flight) → this arc's S0 probe → E-A → D-A (if Q2 yes) → the concurrency landing as scheduled (or the concurrency landing between S0 and E-A if the seam-hygiene and concurrency queues collide on `VALIDATION.md`) → S1-pre / the outcomes design. All facts here were read at `e64819de7`/`0457732e1`; the charter re-verifies at its base.
+
+
+## 8. Decisions (2026-09-19)
+
+[USER 2026-09-19], on how to decide: *"I'm interested in making decisions that are consequential in some way but for the other kinds of decisions, which are really more implementation-focused, I think you can make the calls."*
+
+- **Q1 [AGENT]: route E-A** — the enum's compatible type as a SIBLING MAP beside the tag definitions, a reader on Lean, the GCC rule in lem; E-B (a new `tag_definition` arm) rejected: it forces a match arm into every OCaml site inspecting tag definitions across four memory models and the SMT/bmc backends, and into every Lean match, including any consumer destructuring — for the identical kernel-visible property. The ~101 OCaml layout call sites stay untouched.
+- **Q2 [USER]: together.** *"yeah, I agree on Q2, let's roll it together"* — the digest (route D-A, `declare {lean} reader val digest`) rides in the SAME arc as the enum: ONE consumer re-pin (`drive`'s entry gains its reader arguments once), the effect-erasure invariant page closes for good. The design point to pin: in a multi-TU link, which unit's digest the run mints with — today the global's last-set value; mirror it exactly (the S0 probe and the charter record it).
+- **Q3 [AGENT]: the one-day multi-reader probe first** (S0) — lem-lean's DESIGN.md says readers compose as a list; no program at the pin `f6542f8` has been generated with two or three reader constants plus `reader_consumer` and `reader_seed` together. If the backend needs a fix it is a paired lem-lean slice BEFORE E-A, found in a day rather than mid-slice.
+- **Q4 [AGENT]: the fork's OCaml keeps its enum registry** (and its digest global) — the `tagDefs` shape: the oracle mirrors upstream's mutable globals exactly; the Lean carries the same information as data; every lane shows the two computations equal. Threading data through the OCaml too would add fork-vs-upstream drift in the oracle for no differential benefit.
+
+The arc: S0 (probe) → E-A → D-A → record; branch `arc/program-data-parameters`.
