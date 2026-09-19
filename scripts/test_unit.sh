@@ -33,6 +33,9 @@ UNIT_TESTS=(
     "are-compatible-test"
     # parser-progress-measure D4.2 (2026-09-15): the many/many1 restatement's equivalence theorems
     "many-restatement-test"
+    # seam-hygiene H1 (2026-09-18): the seams' failure leaves are opaque — #guard_msgs on the
+    # two failing rfl probes + `failwithI` opaque in the environment + default-arm controls
+    "opaque-failure-test"
 )
 
 # ---------------------------------------------------------------------------

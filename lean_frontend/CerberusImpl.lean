@@ -139,7 +139,7 @@ def aux_ibty : integerBaseType → integerBaseType
     -- aliased" assertion, kind 1) but the missing entry is a width the
     -- implementation never defined (kind 2 shape); either reading gives no
     -- meaning to `__cerbty_int128_t` on DefaultImpl — a loud fail-stop
-    | none => panic! s!"DefaultImpl.type_alias_map has no alias for an N-family width of {n} (ocaml_implementation.ml:39-44, :155-160: Option.get raises on the oracle); zero-discrepancy Z2-I-03"
+    | none => failwithI s!"DefaultImpl.type_alias_map has no alias for an N-family width of {n} (ocaml_implementation.ml:39-44, :155-160: Option.get raises on the oracle); zero-discrepancy Z2-I-03"
   | .Intmax_t => .Long     -- :45-46, :162
   | .Intptr_t => .Long     -- :47-48, :163
   | ibty => ibty           -- :49-50
@@ -176,9 +176,9 @@ def sizeof_ity (ity : integerType) : Option Nat :=
       | .Int_ => 4
       | .Long | .LongLong => 8
       | .IntN_t _ | .Int_leastN_t _ | .Int_fastN_t _ | .Intmax_t | .Intptr_t =>
-        panic! "assert false: DefaultImpl.sizeof_ity reached an un-normalised base type (ocaml_implementation.ml:188-193)")
+        failwithI "assert false: DefaultImpl.sizeof_ity reached an un-normalised base type (ocaml_implementation.ml:188-193)")
   | .Enum0 _ | .Wchar_t | .Wint_t | .Size_t | .Ptrdiff_t =>
-    panic! "assert false: DefaultImpl.sizeof_ity reached an un-normalised type (ocaml_implementation.ml:195-200)"
+    failwithI "assert false: DefaultImpl.sizeof_ity reached an un-normalised type (ocaml_implementation.ml:195-200)"
   | .Ptraddr_t => some 8                                                 -- :201
 
 /-- Precision (number of value bits) of an integer type.

@@ -1,3 +1,4 @@
+import LemLib
 /-
   Minimal filesystem model for Cerberus.
   Corresponds to: sibylfs/src/ via the Sibylfs OCaml wrapper
@@ -226,18 +227,18 @@ def fs_open (st : FsState) (path : String) (oflag : Int) (_ : Option Int) : FsSt
   -- runtime/libc/include/posix/fcntl.h:27-45): O_WRONLY=0o4, O_RDWR=0o10,
   -- O_CREAT=0o40, O_EXCL=0o100, O_TRUNC=0o400, O_APPEND=0o1000.
   if oflag < 0 then
-    panic! (refusal s!"open of '{path}' with the NEGATIVE oflag {oflag}"
+    failwithI (refusal s!"open of '{path}' with the NEGATIVE oflag {oflag}"
       "SibylFS converts it with Nat_big_num.to_int32 to a negative flag word and tests the bits of that; this model's Nat conversion would read it as no flags (a read-only open)" moverFlags)
   else
   let flags := oflag.toNat
   if flags &&& 0o100 != 0 then
-    panic! (refusal s!"open of '{path}' with O_EXCL (oflag {oflag})"
+    failwithI (refusal s!"open of '{path}' with O_EXCL (oflag {oflag})"
       "SibylFS answers EEXIST for an existing file and creates with the given mode otherwise; this model ignored the flag" moverFlags)
   else
   match lookupFile st path with
   | none =>
     if flags &&& 0o40 == 0 then
-      panic! (refusal s!"open of the MISSING file '{path}' without O_CREAT (oflag {oflag})"
+      failwithI (refusal s!"open of the MISSING file '{path}' without O_CREAT (oflag {oflag})"
         "SibylFS answers ENOENT (fopen returns NULL); this model used to create the file empty and serve EOF reads" moverFlags)
     else
       -- O_CREAT on a missing file: created empty, offset 0 — as SibylFS
@@ -250,14 +251,14 @@ def fs_open (st : FsState) (path : String) (oflag : Int) (_ : Option Int) : FsSt
     -- served STALE data later with no refused op on the path. Read-only
     -- reopen is content-correct and stays served.
     if flags &&& 0o4 != 0 || flags &&& 0o10 != 0 || flags &&& 0o400 != 0 || flags &&& 0o1000 != 0 then
-      panic! (refusal s!"open of the existing {contents.length}-byte file '{path}' with write/truncate/append intent (oflag {oflag})"
+      failwithI (refusal s!"open of the existing {contents.length}-byte file '{path}' with write/truncate/append intent (oflag {oflag})"
         "the minimal fs model cannot track the resulting content state (O_TRUNC/write modes ignored); serving this fd would answer with WRONG data" moverFlags)
     else
       mkFd st
 
 def fs_close (st : FsState) (fd : Int) : FsState × (Sum FsError Nat) :=
   if isStdFd fd then
-    panic! (refusal s!"close of fd {fd}" "fds 0,1,2 are open in SibylFS's initial state; this model has no entry for them and answered EBADF" moverStdFds)
+    failwithI (refusal s!"close of fd {fd}" "fds 0,1,2 are open in SibylFS's initial state; this model has no entry for them and answered EBADF" moverStdFds)
   else
   let fdN := fdOf fd
   match lookupFd st fdN with
@@ -279,7 +280,7 @@ def fs_write (st : FsState) (fd : Int) (data : List Char) (count : Int) : FsStat
   -- not mirrored — refused, never clamped)
   let n := countOf count
   if n > data.length then
-    panic! (refusal s!"write on fd {fd} of {n} bytes from a {data.length}-byte buffer"
+    failwithI (refusal s!"write on fd {fd} of {n} bytes from a {data.length}-byte buffer"
       "SibylFS writes `abs size` bytes from the buffer; this model has not mirrored the shorter-buffer arm" moverOffsets)
   else
   let data := data.take n
@@ -292,7 +293,7 @@ def fs_write (st : FsState) (fd : Int) (data : List Char) (count : Int) : FsStat
     -- where POSIX keeps the inode) is replaced by a refusal (zero-discrepancy
     -- Z2-F-03; fail-closed, never a default)
     match lookupFile st entry.path with
-    | none => panic! (refusal s!"write on fd {fd} whose file '{entry.path}' is gone" "the model's file table lost the fd's file" moverOffsets)
+    | none => failwithI (refusal s!"write on fd {fd} whose file '{entry.path}' is gone" "the model's file table lost the fd's file" moverOffsets)
     | some contents =>
     -- Fail-closed (header): the model can only APPEND. That is correct
     -- exactly when the fd's offset sits at the current end of file
@@ -306,7 +307,7 @@ def fs_write (st : FsState) (fd : Int) (data : List Char) (count : Int) : FsStat
       let st' := setFd { st with files := files' } fdN { entry with offset := newContents.length }
       (st', .inr data.length)
     else
-      panic! (refusal s!"write on fd {fd} at offset {entry.offset} of the {contents.length}-byte file '{entry.path}'"
+      failwithI (refusal s!"write on fd {fd} at offset {entry.offset} of the {contents.length}-byte file '{entry.path}'"
         "the minimal fs model can only append at end-of-file; answering would write WRONG data" moverOffsets)
 
 def fs_read (st : FsState) (fd : Int) (count : Int) : FsState × (Sum FsError (List Char)) :=
@@ -322,7 +323,7 @@ def fs_read (st : FsState) (fd : Int) (count : Int) : FsState × (Sum FsError (L
     match lookupFile st entry.path with
     | none =>
       -- unreachable: unlink/rename refuse while an fd is open (table)
-      panic! (refusal s!"read on fd {fd} whose file '{entry.path}' is gone" "the model's file table lost the fd's file" moverOffsets)
+      failwithI (refusal s!"read on fd {fd} whose file '{entry.path}' is gone" "the model's file table lost the fd's file" moverOffsets)
     | some contents =>
       -- Fail-closed (header): serve only the two patterns the model
       -- answers correctly — a read at offset 0 (prefix of the file,
@@ -335,17 +336,17 @@ def fs_read (st : FsState) (fd : Int) (count : Int) : FsState × (Sum FsError (L
         let data := contents.take (countOf count)   -- sibylfs.ml run_read: abs size
         (setFd st fdN { entry with offset := data.length }, .inr data)
       else
-        panic! (refusal s!"read on fd {fd} at offset {entry.offset} of the {contents.length}-byte file '{entry.path}'"
+        failwithI (refusal s!"read on fd {fd} at offset {entry.offset} of the {contents.length}-byte file '{entry.path}'"
           "the minimal fs model can only serve whole-prefix (offset 0) or at-EOF reads; answering would return WRONG data" moverOffsets)
 
 def fs_mkdir (st : FsState) (path : String) (mode : Int) : FsState × (Sum FsError Nat) :=
-  panic! (refusal s!"mkdir '{path}' (mode {mode})" "SibylFS creates a directory (EEXIST/ENOENT/EACCES per POSIX); this model has no directories and answered a success-returning no-op" moverDirs)
+  failwithI (refusal s!"mkdir '{path}' (mode {mode})" "SibylFS creates a directory (EEXIST/ENOENT/EACCES per POSIX); this model has no directories and answered a success-returning no-op" moverDirs)
 
 def fs_pwrite (st : FsState) (fd : Int) (data : List Char) (count offset : Int) : FsState × (Sum FsError Nat) :=
   let fdN := fdOf fd
   let n := countOf count   -- sibylfs.ml run_pwrite: abs size
   if n > data.length then
-    panic! (refusal s!"pwrite on fd {fd} of {n} bytes from a {data.length}-byte buffer"
+    failwithI (refusal s!"pwrite on fd {fd} of {n} bytes from a {data.length}-byte buffer"
       "SibylFS writes `abs size` bytes from the buffer; this model has not mirrored the shorter-buffer arm" moverOffsets)
   else
   let data := data.take n
@@ -353,7 +354,7 @@ def fs_pwrite (st : FsState) (fd : Int) (data : List Char) (count offset : Int) 
   | none => (st, .inl .ebadf)   -- EBADF, as SibylFS (unknown fd, or a std fd: no write flag on the dummy fid, fs_spec.lem:5006-5012)
   | some entry =>
     match lookupFile st entry.path with   -- Z2-F-03 (see fs_write)
-    | none => panic! (refusal s!"pwrite on fd {fd} whose file '{entry.path}' is gone" "the model's file table lost the fd's file" moverOffsets)
+    | none => failwithI (refusal s!"pwrite on fd {fd} whose file '{entry.path}' is gone" "the model's file table lost the fd's file" moverOffsets)
     | some contents =>
     -- fs_spec.lem:4287 fsop_pwrite_checks: `fsm_cond_raise EINVAL (ofs < 0)`
     if offset < 0 then (st, .inl (.other "EINVAL")) else
@@ -366,7 +367,7 @@ def fs_pwrite (st : FsState) (fd : Int) (data : List Char) (count offset : Int) 
       let files' := (entry.path, newContents) :: st.files.filter (fun (p, _) => p != entry.path)
       ({ st with files := files' }, .inr data.length)
     else
-      panic! (refusal s!"pwrite on fd {fd} at requested offset {offset} of the {contents.length}-byte file '{entry.path}'"
+      failwithI (refusal s!"pwrite on fd {fd} at requested offset {offset} of the {contents.length}-byte file '{entry.path}'"
         "the minimal fs model can only append at end-of-file; answering would write WRONG data" moverOffsets)
 
 def fs_pread (st : FsState) (fd : Int) (count off : Int) : FsState × (Sum FsError (List Char)) :=
@@ -376,7 +377,7 @@ def fs_pread (st : FsState) (fd : Int) (count off : Int) : FsState × (Sum FsErr
   | some entry =>
     match lookupFile st entry.path with
     | none =>
-      panic! (refusal s!"pread on fd {fd} whose file '{entry.path}' is gone" "the model's file table lost the fd's file" moverOffsets)
+      failwithI (refusal s!"pread on fd {fd} whose file '{entry.path}' is gone" "the model's file table lost the fd's file" moverOffsets)
     | some contents =>
       -- Fail-closed (header): pread at offset 0 (prefix) or at EOF
       -- (empty) are the two patterns the model answers correctly; POSIX
@@ -389,12 +390,12 @@ def fs_pread (st : FsState) (fd : Int) (count off : Int) : FsState × (Sum FsErr
       else if off == 0 then
         (st, .inr (contents.take (countOf count)))   -- sibylfs.ml run_pread: abs size
       else
-        panic! (refusal s!"pread on fd {fd} at requested offset {off} of the {contents.length}-byte file '{entry.path}'"
+        failwithI (refusal s!"pread on fd {fd} at requested offset {off} of the {contents.length}-byte file '{entry.path}'"
           "the minimal fs model can only serve whole-prefix (offset 0) or at-EOF reads; answering would return WRONG data" moverOffsets)
 
 def fs_rename (st : FsState) (oldP newP : String) : FsState × (Sum FsError Nat) :=
   if anyFdOn st oldP || anyFdOn st newP then
-    panic! (refusal s!"rename '{oldP}' → '{newP}' while an fd is open on one of them"
+    failwithI (refusal s!"rename '{oldP}' → '{newP}' while an fd is open on one of them"
       "in POSIX the open fd follows the file; this model's fd entry kept the OLD path (later reads would answer ENOENT)" moverOffsets)
   else
   match lookupFile st oldP with
@@ -410,25 +411,25 @@ def fs_umask (st : FsState) (mask : Int) : FsState × (Sum FsError Nat) :=
   ({ st with umask := mask }, .inr old.toNat)
 
 def fs_chmod (st : FsState) (path : String) (mode : Int) : FsState × (Sum FsError Nat) :=
-  panic! (refusal s!"chmod '{path}' (mode {mode})" "SibylFS changes the mode (ENOENT/EPERM per POSIX; later stat sees it); this model has no permission state and answered a success-returning no-op" moverDirs)
+  failwithI (refusal s!"chmod '{path}' (mode {mode})" "SibylFS changes the mode (ENOENT/EPERM per POSIX; later stat sees it); this model has no permission state and answered a success-returning no-op" moverDirs)
 
 def fs_chdir (st : FsState) (dir : String) : FsState × (Sum FsError Nat) :=
-  panic! (refusal s!"chdir '{dir}'" "SibylFS resolves later relative paths against the new directory (ENOENT/ENOTDIR per POSIX); this model recorded the string and kept resolving paths verbatim" moverDirs)
+  failwithI (refusal s!"chdir '{dir}'" "SibylFS resolves later relative paths against the new directory (ENOENT/ENOTDIR per POSIX); this model recorded the string and kept resolving paths verbatim" moverDirs)
 
 def fs_chown (st : FsState) (path : String) (uid gid : Int) : FsState × (Sum FsError Nat) :=
-  panic! (refusal s!"chown '{path}' ({uid}:{gid})" "SibylFS changes the owner (ENOENT/EPERM per POSIX; later stat sees it); this model has no ownership state and answered a success-returning no-op" moverDirs)
+  failwithI (refusal s!"chown '{path}' ({uid}:{gid})" "SibylFS changes the owner (ENOENT/EPERM per POSIX; later stat sees it); this model has no ownership state and answered a success-returning no-op" moverDirs)
 
 def fs_link (st : FsState) (oldP newP : String) : FsState × (Sum FsError Nat) :=
-  panic! (refusal s!"link '{oldP}' → '{newP}'" "SibylFS creates a hard link (EEXIST/ENOENT per POSIX); this model answered ENOSYS, which the driver turns into errno + −1 for the C program to absorb" moverLinks)
+  failwithI (refusal s!"link '{oldP}' → '{newP}'" "SibylFS creates a hard link (EEXIST/ENOENT per POSIX); this model answered ENOSYS, which the driver turns into errno + −1 for the C program to absorb" moverLinks)
 
 def fs_readlink (st : FsState) (path : String) : FsState × (Sum FsError (List Char)) :=
-  panic! (refusal s!"readlink '{path}'" "SibylFS reads the link target (EINVAL/ENOENT per POSIX); this model answered ENOSYS (errno + −1)" moverLinks)
+  failwithI (refusal s!"readlink '{path}'" "SibylFS reads the link target (EINVAL/ENOENT per POSIX); this model answered ENOSYS (errno + −1)" moverLinks)
 
 def fs_symlink (st : FsState) (target lpath : String) : FsState × (Sum FsError Nat) :=
-  panic! (refusal s!"symlink '{target}' ← '{lpath}'" "SibylFS creates a symbolic link (EEXIST/ENOENT per POSIX); this model answered ENOSYS (errno + −1)" moverLinks)
+  failwithI (refusal s!"symlink '{target}' ← '{lpath}'" "SibylFS creates a symbolic link (EEXIST/ENOENT per POSIX); this model answered ENOSYS (errno + −1)" moverLinks)
 
 def fs_rmdir (st : FsState) (path : String) : FsState × (Sum FsError Nat) :=
-  panic! (refusal s!"rmdir '{path}'" "SibylFS removes a directory (ENOENT/ENOTEMPTY/ENOTDIR per POSIX); this model has no directories and answered a success-returning no-op" moverDirs)
+  failwithI (refusal s!"rmdir '{path}'" "SibylFS removes a directory (ENOENT/ENOTEMPTY/ENOTDIR per POSIX); this model has no directories and answered a success-returning no-op" moverDirs)
 
 def fs_truncate (st : FsState) (path : String) (len : Int) : FsState × (Sum FsError Nat) :=
   -- fs_spec.lem:4020 fsop_truncate_checks: `fsm_cond_raise EINVAL (len < 0)`
@@ -442,10 +443,10 @@ def fs_truncate (st : FsState) (path : String) (len : Int) : FsState × (Sum FsE
   | none => (st, .inl .enoent)  -- ENOENT, as SibylFS (:4024; a directory path would be EISDIR :4025 — not distinguished, header)
   | some contents =>
     if anyFdOn st path then
-      panic! (refusal s!"truncate '{path}' to {len} while an fd is open on it"
+      failwithI (refusal s!"truncate '{path}' to {len} while an fd is open on it"
         "in POSIX the open fds' offsets keep (a later read/write sees the truncated file); this model's append-only fd invariant would break silently" moverOffsets)
     else if len > (contents.length : Int) then
-      panic! (refusal s!"truncate '{path}' ({contents.length} bytes) to the LARGER length {len}"
+      failwithI (refusal s!"truncate '{path}' ({contents.length} bytes) to the LARGER length {len}"
         "POSIX zero-extends the file; this model's List.take left the content unchanged" moverOffsets)
     else
       let files' := (path, contents.take len.toNat) :: st.files.filter (fun (p, _) => p != path)
@@ -453,7 +454,7 @@ def fs_truncate (st : FsState) (path : String) (len : Int) : FsState × (Sum FsE
 
 def fs_unlink (st : FsState) (path : String) : FsState × (Sum FsError Nat) :=
   if anyFdOn st path then
-    panic! (refusal s!"unlink '{path}' while an fd is open on it"
+    failwithI (refusal s!"unlink '{path}' while an fd is open on it"
       "in POSIX the file persists until the last close (the open fd keeps reading it); this model removed it (later reads would answer ENOENT)" moverOffsets)
   else
   match lookupFile st path with
@@ -466,7 +467,7 @@ def fs_unlink (st : FsState) (path : String) : FsState × (Sum FsError Nat) :=
     whence: 0 = SEEK_SET (absolute), 1 = SEEK_CUR (relative), 2 = SEEK_END. -/
 def fs_lseek (st : FsState) (fd offset whence : Int) : FsState × (Sum FsError Nat) :=
   if isStdFd fd then
-    panic! (refusal s!"lseek on fd {fd}" "fds 0,1,2 are SibylFS's std fds; this model has no entry for them and answered EBADF" moverStdFds)
+    failwithI (refusal s!"lseek on fd {fd}" "fds 0,1,2 are SibylFS's std fds; this model has no entry for them and answered EBADF" moverStdFds)
   else
   match st.fds.find? (fun (f, _) => f == fdOf fd) with
   | none => (st, .inl .ebadf)   -- EBADF, as SibylFS (fs_spec.lem:5075, posix/lseek.md EBADF:1)
@@ -483,7 +484,7 @@ def fs_lseek (st : FsState) (fd offset whence : Int) : FsState × (Sum FsError N
     else
     match lookupFile st entry.path with
     | none =>
-      panic! (refusal s!"lseek on fd {fd} whose file '{entry.path}' is gone" "the model's file table lost the fd's file" moverOffsets)
+      failwithI (refusal s!"lseek on fd {fd} whose file '{entry.path}' is gone" "the model's file table lost the fd's file" moverOffsets)
     | some contents =>
       let size : Int := contents.length
       let newOffset : Int := match whence with
@@ -492,7 +493,7 @@ def fs_lseek (st : FsState) (fd offset whence : Int) : FsState × (Sum FsError N
         | _ => size + offset                       -- SEEK_END (whence = 2, the only value left)
       if newOffset < 0 then (st, .inl (.other "EINVAL"))   -- EINVAL, as SibylFS (fs_spec.lem:5119, EINVAL:2)
         else if newOffset > size then
-          panic! (refusal s!"lseek on fd {fd} to offset {newOffset} past the end of the {size}-byte file '{entry.path}'"
+          failwithI (refusal s!"lseek on fd {fd} to offset {newOffset} past the end of the {size}-byte file '{entry.path}'"
             "POSIX allows it (a later read answers 0 bytes, a later write creates a hole); this model would then refuse or serve EOF inconsistently" moverOffsets)
         else
           let entry' := { entry with offset := newOffset.toNat }
@@ -501,21 +502,21 @@ def fs_lseek (st : FsState) (fd offset whence : Int) : FsState × (Sum FsError N
           ({ st with fds := fds' }, .inr newOffset.toNat)
 
 def fs_stat (st : FsState) (path : String) : FsState × (Sum FsError FsStat) :=
-  panic! (refusal s!"stat '{path}'" "SibylFS answers the real st_dev/st_ino/st_mode/st_nlink/uid/gid/rdev/size fields (tests/suite/fs/stat.c: 2049 1 33261 1 0 0 0 10); this model answered zeroed fields except size (0 0 420 1 0 0 0 10)" moverStat)
+  failwithI (refusal s!"stat '{path}'" "SibylFS answers the real st_dev/st_ino/st_mode/st_nlink/uid/gid/rdev/size fields (tests/suite/fs/stat.c: 2049 1 33261 1 0 0 0 10); this model answered zeroed fields except size (0 0 420 1 0 0 0 10)" moverStat)
 
 def fs_lstat (st : FsState) (path : String) : FsState × (Sum FsError FsStat) :=
-  panic! (refusal s!"lstat '{path}'" "SibylFS answers the real stat fields (no symlink following); this model answered zeroed fields except size" moverStat)
+  failwithI (refusal s!"lstat '{path}'" "SibylFS answers the real stat fields (no symlink following); this model answered zeroed fields except size" moverStat)
 
 def fs_opendir (st : FsState) (path : String) : FsState × (Sum FsError Nat) :=
-  panic! (refusal s!"opendir '{path}'" "SibylFS opens a directory stream (ENOENT/ENOTDIR per POSIX); this model has no directories and answered a fresh fd for any path" moverDirs)
+  failwithI (refusal s!"opendir '{path}'" "SibylFS opens a directory stream (ENOENT/ENOTDIR per POSIX); this model has no directories and answered a fresh fd for any path" moverDirs)
 
 def fs_readdir (st : FsState) (dir : Int) : FsState × (Sum FsError (List Char)) :=
-  panic! (refusal s!"readdir on {dir}" "SibylFS answers the next entry name; this model answered an always-empty stream" moverDirs)
+  failwithI (refusal s!"readdir on {dir}" "SibylFS answers the next entry name; this model answered an always-empty stream" moverDirs)
 
 def fs_rewinddir (st : FsState) (dir : Int) : FsState :=
-  panic! (refusal s!"rewinddir on {dir}" "SibylFS rewinds a directory stream; this model has no directories and answered a no-op" moverDirs)
+  failwithI (refusal s!"rewinddir on {dir}" "SibylFS rewinds a directory stream; this model has no directories and answered a no-op" moverDirs)
 
 def fs_closedir (st : FsState) (dir : Int) : FsState × (Sum FsError Nat) :=
-  panic! (refusal s!"closedir on {dir}" "SibylFS closes a directory stream; this model has no directories" moverDirs)
+  failwithI (refusal s!"closedir on {dir}" "SibylFS closes a directory stream; this model has no directories" moverDirs)
 
 end CerbFS

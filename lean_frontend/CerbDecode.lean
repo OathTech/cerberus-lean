@@ -38,7 +38,7 @@ def decode_integer_constant (str : String) : basis × Int :=
   -- attribute (cerb_attributes.lem:38,74); the C lexer never yields an
   -- empty integer constant. Listed in the Z2 record §10.
   if chars.isEmpty then
-    panic! "Decode.decode_integer_constant: empty constant has no meaning (decode.ml:7-8 str.[0] raises — an OCaml-execution artifact, not the referent); zero-discrepancy Z2-DC-01"
+    failwithI "Decode.decode_integer_constant: empty constant has no meaning (decode.ml:7-8 str.[0] raises — an OCaml-execution artifact, not the referent); zero-discrepancy Z2-DC-01"
   else
   let (digits, basisN, b) := match chars with
     | '0' :: 'x' :: rest | '0' :: 'X' :: rest => (rest, 16, Hexadecimal)
@@ -118,18 +118,18 @@ private def decode_character_constant_aux (str : String) : Int :=
       -- anything else falls through to failwith (:199-200)
       let c := str.front
       if basicSourceChar c then Int.ofNat c.toNat
-      else panic! s!"decode_character_constant: invalid char constant ==> {str} (decode.ml:199-200)"
+      else failwithI s!"decode_character_constant: invalid char constant ==> {str} (decode.ml:199-200)"
     else if str.startsWith "\\x" then
       -- Hexadecimal escape sequence — STD §6.4.4.4#9, decode.ml:169-183:
       -- every span char must be a hex digit, else failwith
       let hexs := (str.drop 2).toString
       if hexs.isEmpty then
-        panic! "decode_character_constant, invalid constant: '\\x' (decode.ml:171-172)"
+        failwithI "decode_character_constant, invalid constant: '\\x' (decode.ml:171-172)"
       else if hexs.toList.all (fun c =>
           ('0' ≤ c && c ≤ '9') || ('A' ≤ c && c ≤ 'F') || ('a' ≤ c && c ≤ 'f')) then
         (decode_integer_constant ("0x" ++ hexs)).2
       else
-        panic! s!"decode_character_constant, started like an hexa constant, but failed: {hexs} (decode.ml:182-183)"
+        failwithI s!"decode_character_constant, started like an hexa constant, but failed: {hexs} (decode.ml:182-183)"
     else if str.startsWith "\\" && str.length ≥ 2 then
       -- Octal escape sequence — STD §6.4.4.4 octal-escape-sequence,
       -- decode.ml:184-197. QUIRK MIRRORED: upstream's validator accepts
@@ -141,14 +141,14 @@ private def decode_character_constant_aux (str : String) : Int :=
       if octs.toList.all (fun c => '0' ≤ c && c ≤ '8') then
         (decode_integer_constant ("0" ++ octs)).2
       else
-        panic! s!"decode_character_constant, started like an octal constant, but failed: {octs} (decode.ml:196-197)"
+        failwithI s!"decode_character_constant, started like an octal constant, but failed: {octs} (decode.ml:196-197)"
     else if str.isEmpty then
-      panic! "decode_character_constant: empty constant (decode.ml:162-163)"
+      failwithI "decode_character_constant: empty constant (decode.ml:162-163)"
     else
       -- multi-character constants and everything else — decode.ml:199-200
       -- (also subsumes the bare "\\" arm, decode.ml:165-167: length-1
       -- backslash fails in the single-char table above)
-      panic! s!"decode_character_constant: invalid char constant ==> {str} (decode.ml:199-200)"
+      failwithI s!"decode_character_constant: invalid char constant ==> {str} (decode.ml:199-200)"
 
 /-- Decode a C character constant string to its integer value (ASCII).
     Corresponds to: Decode.decode_character_constant in decode.ml:201-219

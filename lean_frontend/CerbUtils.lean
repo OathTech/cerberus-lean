@@ -1,3 +1,4 @@
+import LemLib
 /-
   Utility functions for Cerberus Lean port.
   Corresponds to various OCaml modules.
@@ -133,7 +134,7 @@ def gcc_builtin_generic_ffs (n : Int) : Int :=
     exactly trailing_zeros). -/
 def gcc_builtin_ctz (n : Int) : Int :=
   if n == 0 then
-    panic! "Ocaml_gcc_builtins.ctz: zero argument (ocaml_gcc_builtins.ml:5 assert)"
+    failwithI "Ocaml_gcc_builtins.ctz: zero argument (ocaml_gcc_builtins.ml:5 assert)"
   else Int.ofNat (trailingZerosZ n)
 
 /-- bswap16 — ocaml_gcc_builtins.ml:13-18:
@@ -143,7 +144,7 @@ def gcc_builtin_ctz (n : Int) : Int :=
     wrap). Swap per :16-17. -/
 def gcc_builtin_bswap16 (n : Int) : Int :=
   if n < 0 || n > 0xFFFF then
-    panic! "Ocaml_gcc_builtins.bswap16: out of range (ocaml_gcc_builtins.ml:15 assert)"
+    failwithI "Ocaml_gcc_builtins.bswap16: out of range (ocaml_gcc_builtins.ml:15 assert)"
   else
     let v := n.toNat
     Int.ofNat (((v &&& 0xFF) <<< 8) ||| ((v >>> 8) &&& 0xFF))
@@ -152,7 +153,7 @@ def gcc_builtin_bswap16 (n : Int) : Int :=
     [0, 0xFFFFFFFF]; swap per :24-26. -/
 def gcc_builtin_bswap32 (n : Int) : Int :=
   if n < 0 || n > 0xFFFFFFFF then
-    panic! "Ocaml_gcc_builtins.bswap32: out of range (ocaml_gcc_builtins.ml:22 assert)"
+    failwithI "Ocaml_gcc_builtins.bswap32: out of range (ocaml_gcc_builtins.ml:22 assert)"
   else
     let v := n.toNat
     let b0 := v &&& 0xFF
@@ -169,7 +170,7 @@ def gcc_builtin_bswap32 (n : Int) : Int :=
     clamp + always-unsigned result). -/
 def gcc_builtin_bswap64 (n : Int) : Int :=
   if n < -(2 ^ 63) || n ≥ 2 ^ 63 then
-    panic! "Ocaml_gcc_builtins.bswap64: Z.to_int64 overflow (ocaml_gcc_builtins.ml:30)"
+    failwithI "Ocaml_gcc_builtins.bswap64: Z.to_int64 overflow (ocaml_gcc_builtins.ml:30)"
   else
     let v := (Int.emod n (2 ^ 64)).toNat  -- the int64 bit pattern (euclidean mod)
     let b0 := v &&& 0xFF

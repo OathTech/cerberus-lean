@@ -232,13 +232,13 @@ class ObservationTests(unittest.TestCase):
                 (fuel, b'', 1, 'batch'), (multi(OK, fuel), b'', 0, 'batch'),
                 (OK, b'lem: fuel exhausted\n', 0, 'batch'),
                 (b'', b'internal error: lem: fuel exhausted\n', 125, 'litmus'),
-                (b'', b'PANIC at LemLib.failwithIImpl LemLib.lean:10:3: lem: fuel exhausted\n', 134, 'litmus')]:
+                (b'', b'PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: lem: fuel exhausted\n', 134, 'litmus')]:
             with self.subTest(policy=policy, rc=rc), self.assertRaisesRegex(ProtocolError, 'fuel exhausted'):
                 parse(out, err, rc, policy)
 
     def test_internal_failure_policy_is_narrow(self):
         ocaml = b'internal error: intentional failure\n'
-        lean = b'PANIC at LemLib.failwithIImpl LemLib.lean:10:3: intentional failure\n'
+        lean = b'PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: intentional failure\n'
         a = parse(b'', ocaml, 125, 'litmus')
         b = parse(b'', lean, 134, 'litmus')
         self.assertEqual(a.verdicts, b.verdicts)
@@ -262,7 +262,7 @@ class ObservationTests(unittest.TestCase):
 
     def test_failure_continuation_is_preserved_and_extra_fatal_rejects(self):
         oracle = b'internal error: reason\n'
-        lean = b'PANIC at LemLib.failwithIImpl LemLib.lean:10:3: reason\n'
+        lean = b'PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: reason\n'
         a = parse(b'', oracle + b'left payload\n', 125, 'litmus')
         b = parse(b'', lean + b'right payload\n', 134, 'litmus')
         self.assertNotEqual(a.verdicts, b.verdicts)
@@ -274,7 +274,7 @@ class ObservationTests(unittest.TestCase):
                 parse(b'', lean + extra, 134, 'litmus')
 
     def test_known_trace_envelopes_only_are_normalized(self):
-        lean = b'PANIC at LemLib.failwithIImpl LemLib.lean:10:3: reason\n'
+        lean = b'PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: reason\n'
         trace = (b'backtrace:\n/tmp/lean(+0x12) [0x1234]\n'
                  b'timeout: the monitored command dumped core\n'
                  b'/tmp/scripts/capped: line 55: 123 Aborted                 "$@"\n')
@@ -291,13 +291,46 @@ class ObservationTests(unittest.TestCase):
         with self.assertRaises(ProtocolError):
             parse(b'', oracle.replace(b'Failure("internal error: reason")', b'Failure("different")'), 125, 'litmus')
 
+    def test_panic_origin_acceptance_after_seam_hygiene(self):
+        # seam-hygiene H1 (2026-09-19; lean_frontend/docs/2026-09-18_seam-hygiene-record.md §3):
+        # every hand-written seam failure is LemLib's `failwithI`, whose `private` impl
+        # prints the PRIVATE-MANGLED origin — real transcript, g4-bswap64-overflow.
+        real = (b'PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: '
+                b'Ocaml_gcc_builtins.bswap64: Z.to_int64 overflow (ocaml_gcc_builtins.ml:30)\n')
+        for policy in ('immaculate', 'litmus'):
+            with self.subTest(policy=policy):
+                obs = parse(b'', real, 134, policy)
+                self.assertTrue(obs.internal)
+                self.assertEqual(obs.verdicts[0].kind, 'InternalError')
+        # batch never decodes a panic: the FATAL class, unchanged before/after H1
+        with self.assertRaisesRegex(ProtocolError, 'fatal engine diagnostic'):
+            parse(b'', real, 134, 'batch')
+        # the pre-H1 literal `LemLib.failwithIImpl` is never printed (the impl is private)
+        # and is no longer accepted
+        with self.assertRaisesRegex(ProtocolError, 'unreviewed panic origin'):
+            parse(b'', real.replace(b'_private.LemLib.0.failwithIImpl', b'LemLib.failwithIImpl'), 134, 'immaculate')
+        # a STALE seam origin (a site H1 moved to failwithI) is rejected under immaculate
+        stale = b'PANIC at CerbMem.casePtrval CerbMem:1385:4: case_ptrval\n'
+        with self.assertRaisesRegex(ProtocolError, 'unreviewed panic origin'):
+            parse(b'', stale, 134, 'immaculate')
+        # an unknown origin is rejected under every failure policy
+        for policy in ('immaculate', 'litmus'):
+            with self.subTest(policy=policy), self.assertRaisesRegex(ProtocolError, 'unreviewed panic origin'):
+                parse(b'', b'PANIC at Other.unreviewed Other:10:3: unrelated panic\n', 134, policy)
+        # the one seam site that still panics under its own name (the KEPT
+        # CerberusImpl.lean:69 typeof_enum_impl) is accepted under immaculate only
+        kept = b'PANIC at _private.CerberusImpl.0.CerberusImpl.typeof_enum_impl CerberusImpl:69:12: Ocaml_implementation.typeof_enum: tag was not registered (ocaml_implementation.ml:146-149)\n'
+        self.assertTrue(parse(b'', kept, 134, 'immaculate').internal)
+        with self.assertRaisesRegex(ProtocolError, 'unreviewed panic origin'):
+            parse(b'', kept, 134, 'litmus')
+
     def test_immaculate_validates_before_coarse_crash_projection(self):
-        good = b'PANIC at CerbMem.memcmpM.getBytes CerbMem:2774:10: assertion\n'
+        good = b'PANIC at _private.CerberusImpl.0.CerberusImpl.typeof_enum_impl CerberusImpl:69:12: assertion\n'
         self.assertTrue(parse(b'', good, 134, 'immaculate').internal)
         for out, err, rc in [(b'corrupted bytes\n', good, 134),
                              (OK, good, 134), (b'', good, 125),
                              (b'', good.replace(b'assertion', b'lem: fuel exhausted'), 134),
-                             (b'', good.replace(b'CerbMem.memcmpM.getBytes', b'Other.unreviewed'), 134)]:
+                             (b'', good.replace(b'_private.CerberusImpl.0.CerberusImpl.typeof_enum_impl', b'Other.unreviewed'), 134)]:
             with self.subTest(out=out, err=err, rc=rc), self.assertRaises(ProtocolError):
                 parse(out, err, rc, 'immaculate')
 

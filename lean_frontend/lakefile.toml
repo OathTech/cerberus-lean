@@ -280,3 +280,13 @@ root = "Unit.AreCompatibleTest"
 name = "many-restatement-test"
 srcDir = "test"
 root = "Unit.ManyRestatementTest"
+
+# seam-hygiene H1 (2026-09-18): the hand-written seams' failure leaves are LemLib's opaque
+# `failwithI` — `#guard_msgs` on the orchestrator's two FAILING `rfl` probes (a transparent
+# leaf would make them succeed and the build RED), `failwithI` opaque in the environment,
+# default arms still reduce; H2: `CerbGlobal.has_switch … = false` by rfl for the ported arms
+[[lean_exe]]
+name = "opaque-failure-test"
+srcDir = "test"
+root = "Unit.OpaqueFailureTest"
+moreLinkArgs = ["native/md5.o"]

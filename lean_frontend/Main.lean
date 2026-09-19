@@ -67,7 +67,7 @@ def loadCoreImpl (implFile : CoreParser.CoreFile) : impl :=
       -- audit F2), so the error arm is unreachable here
       let ic := match CoreParser.pImplConstant name with
         | .ok ic => ic
-        | .error e => panic! e
+        | .error e => failwithI s!"Main.loadCoreImpl: {e}"
       fmapAddBy implementation_constant_compare ic d acc)
     fmapEmpty
 

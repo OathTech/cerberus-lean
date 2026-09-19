@@ -1,3 +1,4 @@
+import LemLib
 /-
   Floating-point operations for Cerberus.
   Corresponds to: util/cerb_floating.ml and OCaml float builtins.
@@ -299,7 +300,7 @@ def of_string (s : String) : Float :=
       (parseDecimal cs).map fun (m, e10, nd) => scaledToBits neg m 10 e10 nd
   match bits with
   | some b => Float.ofBits b
-  | none => panic! s!"CerbFloat.of_string: {s} (OCaml Cerb_floating.of_string raises Failure)"
+  | none => failwithI s!"CerbFloat.of_string: {s} (OCaml Cerb_floating.of_string raises Failure)"
 
 /-! ## Exact decimal formatting (arc-10 S3, pp-placeholder text class)
 
@@ -423,7 +424,7 @@ def truncToInt (f : Float) : Int :=
   let expBits := ((bits >>> 52) &&& 0x7FF).toNat
   let mantBits := (bits &&& 0xFFFFFFFFFFFFF).toNat
   if expBits == 0x7FF then
-    panic! "CerbFloat.truncToInt: nan/inf (OCaml Z.of_float raises Z.Overflow)"
+    failwithI "CerbFloat.truncToInt: nan/inf (OCaml Z.of_float raises Z.Overflow)"
   else
     let mant := if expBits == 0 then mantBits else mantBits + (1 <<< 52)
     -- unbiased exponent minus mantissa width: value = mant · 2^(expBits−1075)

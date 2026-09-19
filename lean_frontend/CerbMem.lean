@@ -277,8 +277,8 @@ def combineProv : Provenance → Provenance → Provenance
   | .Prov_device, .Prov_some _ => .Prov_device
   | .Prov_device, .Prov_device => .Prov_device
   -- PNVI-ae-udi only; concrete model doesn't use Prov_symbolic (impl_mem.ml:390-394)
-  | .Prov_symbolic _, _ => panic! "Concrete.combine_prov: found a Prov_symbolic"
-  | _, .Prov_symbolic _ => panic! "Concrete.combine_prov: found a Prov_symbolic"
+  | .Prov_symbolic _, _ => failwithI "Concrete.combine_prov: found a Prov_symbolic"
+  | _, .Prov_symbolic _ => failwithI "Concrete.combine_prov: found a Prov_symbolic"
 
 /-! ## Layout computation — impl_mem.ml:98-273 (offsetsof / sizeof / alignof)
 
@@ -333,7 +333,7 @@ def combineProv : Provenance → Provenance → Provenance
 def targetPtrSize : Nat :=
   match CerberusImpl.sizeof_pointer with
   | some n => n
-  | none => panic! "the concrete memory model requires a complete implementation"
+  | none => failwithI "CerbMem.targetPtrSize: the concrete memory model requires a complete implementation"
 
 /- The threaded tag environment is the Fmap itself (the same value the
    ambient global holds); enumeration-spine conversion happens only at
@@ -418,7 +418,7 @@ def offsetsof_lemFuel (lemFuel : Nat) (ambient : TagDefs) (tagDefs : TagDefs) (t
   | 0 => fuelExhaustedWith "CerbMem.offsetsof: fuel exhausted" ([], 0)
   | lemFuel + 1 =>
     match CerbTagsWf.lookupEntry tagDefs tagSym with
-    | none => panic! "CerbMem.offsetsof: unknown tag (OCaml: Pmap.find Not_found)"
+    | none => failwithI "CerbMem.offsetsof: unknown tag (OCaml: Pmap.find Not_found)"
     | some (_, (_, StructDef membrs_ flexibleOpt)) =>
       let membrs := match flexibleOpt with
         | none => membrs_
@@ -446,18 +446,18 @@ def sizeofCtype_lemFuel (lemFuel : Nat) (ambient : TagDefs) (tagDefs : TagDefs) 
     match cty with
     | Ctype _ ty_ =>
       match ty_ with
-      | .Void0 => panic! "CerbMem.sizeofCtype: Void (impl_mem.ml:134-135 assert false)"
-      | .Array0 _ none => panic! "CerbMem.sizeofCtype: incomplete array (impl_mem.ml:134-135 assert false)"
+      | .Void0 => failwithI "CerbMem.sizeofCtype: Void (impl_mem.ml:134-135 assert false)"
+      | .Array0 _ none => failwithI "CerbMem.sizeofCtype: incomplete array (impl_mem.ml:134-135 assert false)"
       | .Function _ _ _ | .FunctionNoParams _ =>
-        panic! "CerbMem.sizeofCtype: function type (impl_mem.ml:134-135 assert false)"
+        failwithI "CerbMem.sizeofCtype: function type (impl_mem.ml:134-135 assert false)"
       | .Basic (.Integer ity) =>
         match CerberusImpl.sizeof_ity ity with      -- impl_mem.ml:136-141
         | some n => n
-        | none => panic! "the concrete memory model requires a complete implementation sizeof INTEGER"
+        | none => failwithI "CerbMem.sizeofCtype: the concrete memory model requires a complete implementation sizeof INTEGER"
       | .Basic (.Floating fty) =>
         match CerberusImpl.sizeof_fty fty with      -- impl_mem.ml:143-148
         | some n => n
-        | none => panic! "the concrete memory model requires a complete implementation sizeof FLOAT"
+        | none => failwithI "CerbMem.sizeofCtype: the concrete memory model requires a complete implementation sizeof FLOAT"
       | .Array0 elemCty (some n) => n.toNat * sizeofCtype_lemFuel lemFuel ambient tagDefs elemCty  -- impl_mem.ml:150-151 (sizeof ~tagDefs)
       | .Pointer _ _ => targetPtrSize               -- impl_mem.ml:153-158
       | .Atomic innerCty => sizeofCtype_lemFuel lemFuel ambient tagDefs innerCty    -- impl_mem.ml:160-161 (sizeof ~tagDefs)
@@ -481,7 +481,7 @@ def sizeofCtype_lemFuel (lemFuel : Nat) (ambient : TagDefs) (tagDefs : TagDefs) 
           -- trailing padding up to the max alignment — impl_mem.ml:189-191
           let x := maxSize % maxAlign
           if x == 0 then maxSize else maxSize + (maxAlign - x)
-        | _ => panic! "CerbMem.sizeofCtype: Union tag not a UnionDef (OCaml: assert false / Not_found)"
+        | _ => failwithI "CerbMem.sizeofCtype: Union tag not a UnionDef (OCaml: assert false / Not_found)"
       | .Byte => 1                                  -- impl_mem.ml:193-194
 
 /-- alignof — impl_mem.ml:196-273.
@@ -499,17 +499,17 @@ def alignofCtype_lemFuel (lemFuel : Nat) (ambient : TagDefs) (tagDefs : TagDefs)
     match cty with
     | Ctype _ ty_ =>
       match ty_ with
-      | .Void0 => panic! "CerbMem.alignofCtype: Void (impl_mem.ml:198-199 assert false)"
+      | .Void0 => failwithI "CerbMem.alignofCtype: Void (impl_mem.ml:198-199 assert false)"
       | .Function _ _ _ | .FunctionNoParams _ =>
-        panic! "CerbMem.alignofCtype: function type (impl_mem.ml:216-218 assert false)"
+        failwithI "CerbMem.alignofCtype: function type (impl_mem.ml:216-218 assert false)"
       | .Basic (.Integer ity) =>
         match CerberusImpl.alignof_ity ity with     -- impl_mem.ml:200-206
         | some n => n
-        | none => panic! "the concrete memory model requires a complete implementation alignof INTEGER"
+        | none => failwithI "CerbMem.alignofCtype: the concrete memory model requires a complete implementation alignof INTEGER"
       | .Basic (.Floating fty) =>
         match CerberusImpl.alignof_fty fty with     -- impl_mem.ml:207-213
         | some n => n
-        | none => panic! "the concrete memory model requires a complete implementation alignof FLOATING"
+        | none => failwithI "CerbMem.alignofCtype: the concrete memory model requires a complete implementation alignof FLOATING"
       | .Array0 elemCty _ => alignofCtype_lemFuel lemFuel ambient tagDefs elemCty   -- impl_mem.ml:214-215 (alignof ~tagDefs)
       | .Pointer _ _ => targetPtrSize               -- impl_mem.ml:219-225
       | .Atomic innerCty => alignofCtype_lemFuel lemFuel ambient tagDefs innerCty   -- impl_mem.ml:226-227 (alignof ~tagDefs)
@@ -524,7 +524,7 @@ def alignofCtype_lemFuel (lemFuel : Nat) (ambient : TagDefs) (tagDefs : TagDefs)
           membrs.foldl (init := init) fun acc memb =>
             let (_, (_, alignOpt, _, ty)) := memb
             max (memberAlign_lemFuel lemFuel ambient tagDefs alignOpt ty) acc  -- impl_mem.ml:242-251
-        | _ => panic! "CerbMem.alignofCtype: Struct tag not a StructDef (OCaml: assert false / Not_found)"
+        | _ => failwithI "CerbMem.alignofCtype: Struct tag not a StructDef (OCaml: assert false / Not_found)"
       | .Union0 tagSym =>                           -- impl_mem.ml:253-271
         -- GLOBAL read, deliberately: impl_mem.ml:255 is
         -- `Pmap.find tag_sym (Tags.tagDefs ())` — NOT ~tagDefs (the
@@ -534,7 +534,7 @@ def alignofCtype_lemFuel (lemFuel : Nat) (ambient : TagDefs) (tagDefs : TagDefs)
           membrs.foldl (init := (0 : Nat)) fun acc memb =>
             let (_, (_, alignOpt, _, ty)) := memb
             max (memberAlign_lemFuel lemFuel ambient tagDefs alignOpt ty) acc
-        | _ => panic! "CerbMem.alignofCtype: Union tag not a UnionDef (OCaml: assert false / Not_found)"
+        | _ => failwithI "CerbMem.alignofCtype: Union tag not a UnionDef (OCaml: assert false / Not_found)"
       | .Byte => 1                                  -- impl_mem.ml:272-273
 
 end
@@ -601,7 +601,7 @@ def intToBytes (signed : Bool) (val_ : Int) (size : Nat) : List (Option UInt8) :
   let lo : Int := if signed then -half else 0
   let hi : Int := (if signed then half else modulusVal) - 1
   if !(lo ≤ val_ && val_ ≤ hi) || totalBits > 128 then
-    panic! s!"failed: bytes_of_int({if signed then "signed" else "unsigned"}), i= {val_}, nbits= {totalBits}, [{lo} ... {hi}] (impl_mem.ml:1105-1109 assert false)"
+    failwithI s!"CerbMem.intToBytes: failed: bytes_of_int({if signed then "signed" else "unsigned"}), i= {val_}, nbits= {totalBits}, [{lo} ... {hi}] (impl_mem.ml:1105-1109 assert false)"
   else
   let unsigned : Int := if val_ < 0 then modulusVal + val_ else val_
   List.range size |>.map fun i =>
@@ -616,8 +616,8 @@ def intToBytes (signed : Bool) (val_ : Int) (size : Nat) : List (Option UInt8) :
     integer type has 1 ≤ sizeof ≤ 8, and loads are sizeof-sliced). -/
 def bytesToInt (bytes : List AbsByte) (signed : Bool) : Option Int :=
   if bytes.any (·.value.isNone) then none
-  else if bytes.isEmpty then panic! "Concrete.int_of_bytes: [] (impl_mem.ml:742-743 assert false)"
-  else if bytes.length > 16 then panic! "Concrete.int_of_bytes: more than 16 bytes (impl_mem.ml:744-745 assert false)"
+  else if bytes.isEmpty then failwithI "Concrete.int_of_bytes: [] (impl_mem.ml:742-743 assert false)"
+  else if bytes.length > 16 then failwithI "Concrete.int_of_bytes: more than 16 bytes (impl_mem.ml:744-745 assert false)"
   else
     let rec go (bs : List AbsByte) (i : Nat) (acc : Int) : Int :=
       match bs with
@@ -657,7 +657,7 @@ def provFromIntegerBytes (bytes : List AbsByte) : Provenance :=
     Empty byte list: OCaml failwith (impl_mem.ml:433-434) — mirrored. -/
 def splitBytesProv (bytes : List AbsByte) : Provenance × Bool :=
   match bytes with
-  | [] => panic! "Concrete.AbsByte.split_bytes: called on an empty list"
+  | [] => failwithI "Concrete.AbsByte.split_bytes: called on an empty list"
   | b :: _ =>
     let prov := if bytes.all (fun b' => b'.prov == b.prov) then b.prov else .Prov_none
     let validPtr := (bytes.zipIdx.all fun (b', i) =>
@@ -703,7 +703,7 @@ def memValueToBytes_lemFuel (lemFuel : Nat) (ambient : TagDefs) (funptrmap : Fun
     -- get, impl_mem.ml:1186-1191)
     let sz := match CerberusImpl.sizeof_ity ity with
       | some n => n
-      | none => panic! "the concrete memory model requires a complete implementation sizeof INTEGER"
+      | none => failwithI "CerbMem.memValueToBytes: the concrete memory model requires a complete implementation sizeof INTEGER"
     -- :1147 `AilTypesAux.is_signed_ity ity` = `Implementation.is_signed_ity`
     -- (ailTypesAux.lem:28) = the CerberusImpl mirror
     let rawBytes := intToBytes (CerberusImpl.is_signed_ity ity) n sz
@@ -715,7 +715,7 @@ def memValueToBytes_lemFuel (lemFuel : Nat) (ambient : TagDefs) (funptrmap : Fun
     -- CerberusImpl.sizeof_fty)
     let sz := match CerberusImpl.sizeof_fty fty with
       | some n => n
-      | none => panic! "the concrete memory model requires a complete implementation sizeof FLOAT"
+      | none => failwithI "CerbMem.memValueToBytes: the concrete memory model requires a complete implementation sizeof FLOAT"
     -- :1153-1155 `bytes_of_int true 8 (Z.of_int64 (Int64.bits_of_float fval))`:
     -- the SIGNED int64 reading of the bit pattern (so the assert's range
     -- is [-2^63, 2^63-1]); the bytes are the same two's complement
@@ -825,7 +825,7 @@ def memValueToBytes_append_lemFuel (lemFuel : Nat) (ambient : TagDefs) (funptrma
   | .MVinteger ity (.IV prov n) =>
     let sz := match CerberusImpl.sizeof_ity ity with
       | some n => n
-      | none => panic! "the concrete memory model requires a complete implementation sizeof INTEGER"
+      | none => failwithI "CerbMem.memValueToBytes: the concrete memory model requires a complete implementation sizeof INTEGER"
     -- :1147 `AilTypesAux.is_signed_ity ity` = `Implementation.is_signed_ity`
     -- (ailTypesAux.lem:28) = the CerberusImpl mirror
     let rawBytes := intToBytes (CerberusImpl.is_signed_ity ity) n sz
@@ -834,7 +834,7 @@ def memValueToBytes_append_lemFuel (lemFuel : Nat) (ambient : TagDefs) (funptrma
   | .MVfloating fty fv =>
     let sz := match CerberusImpl.sizeof_fty fty with
       | some n => n
-      | none => panic! "the concrete memory model requires a complete implementation sizeof FLOAT"
+      | none => failwithI "CerbMem.memValueToBytes: the concrete memory model requires a complete implementation sizeof FLOAT"
     -- :1153-1155 `bytes_of_int true 8 (Z.of_int64 (Int64.bits_of_float fval))`:
     -- the SIGNED int64 reading of the bit pattern (so the assert's range
     -- is [-2^63, 2^63-1]); the bytes are the same two's complement
@@ -1048,7 +1048,7 @@ def reconstructValue_lemFuel (lemFuel : Nat) (ambient : TagDefs)
         match funptrmap.find? (fun (a, _) => a == ptrAddr) with
         | some (_, (fileDig, name)) =>
           .MVpointer pointeeCty (.PV prov (.PVfunction (Symbol fileDig ptrAddr.toNat (SD_Id name))))
-        | none => panic! s!"unknown function pointer: {ptrAddr}"
+        | none => failwithI s!"CerbMem.reconstructValue: unknown function pointer: {ptrAddr}"
       | _ =>
         .MVpointer pointeeCty (.PV prov (.PVconcrete none ptrAddr.toNat))
     | none =>
@@ -1117,7 +1117,7 @@ def reconstructValue_lemFuel (lemFuel : Nat) (ambient : TagDefs)
     match CerbTagsWf.lookupEntry ambient tagSym with
     | some (_, (_, UnionDef membrs)) =>
       match membrs with
-      | [] => panic! "CerbMem.reconstructValue: empty UnionDef (OCaml: match failure)"
+      | [] => failwithI "CerbMem.reconstructValue: empty UnionDef (OCaml: match failure)"
       | (firstIdent, (_, _, _, firstTy)) :: _ =>
         let (membIdent, membTy) :=
           match unionmap.find? (fun (a, _) => a == addr) with
@@ -1127,11 +1127,11 @@ def reconstructValue_lemFuel (lemFuel : Nat) (ambient : TagDefs)
             -- Eq Symbol.identifier instance does (impl_mem.ml:1085-1090)
             match membrs.find? (fun (i, _) => idEqual i membr) with
             | some (i, (_, _, _, t)) => (i, t)
-            | none => panic! "CerbMem.reconstructValue: recorded union member not in UnionDef (OCaml: assert false)"
+            | none => failwithI "CerbMem.reconstructValue: recorded union member not in UnionDef (OCaml: assert false)"
         let mval := reconstructValue_lemFuel lemFuel ambient unionmap funptrmap addr membTy
           (bytes.take (sizeofCtype ambient membTy))  -- self membr_ty bs1 — impl_mem.ml:1091
         .MVunion tagSym membIdent mval
-    | _ => panic! "CerbMem.reconstructValue: Union tag not a UnionDef (OCaml: assert false)"
+    | _ => failwithI "CerbMem.reconstructValue: Union tag not a UnionDef (OCaml: assert false)"
   | _ => .MVunspecified ty
 
 /-- Measured wrapper (C4): fuel-free, hypothesis `CerbTagsWf.Acyclic ambient`
@@ -1187,7 +1187,7 @@ def reconstructValue_indexed_lemFuel (lemFuel : Nat) (ambient : TagDefs)
         match funptrmap.find? (fun (a, _) => a == ptrAddr) with
         | some (_, (fileDig, name)) =>
           .MVpointer pointeeCty (.PV prov (.PVfunction (Symbol fileDig ptrAddr.toNat (SD_Id name))))
-        | none => panic! s!"unknown function pointer: {ptrAddr}"
+        | none => failwithI s!"CerbMem.reconstructValue: unknown function pointer: {ptrAddr}"
       | _ =>
         .MVpointer pointeeCty (.PV prov (.PVconcrete none ptrAddr.toNat))
     | none =>
@@ -1226,7 +1226,7 @@ def reconstructValue_indexed_lemFuel (lemFuel : Nat) (ambient : TagDefs)
     match CerbTagsWf.lookupEntry ambient tagSym with
     | some (_, (_, UnionDef membrs)) =>
       match membrs with
-      | [] => panic! "CerbMem.reconstructValue: empty UnionDef (OCaml: match failure)"
+      | [] => failwithI "CerbMem.reconstructValue: empty UnionDef (OCaml: match failure)"
       | (firstIdent, (_, _, _, firstTy)) :: _ =>
         let (membIdent, membTy) :=
           match unionmap.find? (fun (a, _) => a == addr) with
@@ -1234,11 +1234,11 @@ def reconstructValue_indexed_lemFuel (lemFuel : Nat) (ambient : TagDefs)
           | some (_, membr) =>
             match membrs.find? (fun (i, _) => idEqual i membr) with
             | some (i, (_, _, _, t)) => (i, t)
-            | none => panic! "CerbMem.reconstructValue: recorded union member not in UnionDef (OCaml: assert false)"
+            | none => failwithI "CerbMem.reconstructValue: recorded union member not in UnionDef (OCaml: assert false)"
         let mval := reconstructValue_indexed_lemFuel lemFuel ambient unionmap funptrmap addr membTy
           (bytes.take (sizeofCtype ambient membTy))
         .MVunion tagSym membIdent mval
-    | _ => panic! "CerbMem.reconstructValue: Union tag not a UnionDef (OCaml: assert false)"
+    | _ => failwithI "CerbMem.reconstructValue: Union tag not a UnionDef (OCaml: assert false)"
   | _ => .MVunspecified ty
 
 /-- C1 equality: the linear (consume-and-return-rest) reconstruction equals
@@ -1302,7 +1302,7 @@ def typeofMval_lemFuel (lemFuel : Nat) : MemValue → ctype :=
   | .MVinteger ity _ => mkCtype (.Basic (.Integer ity))
   | .MVfloating fty _ => mkCtype (.Basic (.Floating fty))
   | .MVpointer refTy _ => mkCtype (.Pointer no_qualifiers refTy)
-  | .MVarray [] => panic! "CerbMem.typeofMval: MVarray [] (OCaml: assert false, ill-formed value)"
+  | .MVarray [] => failwithI "CerbMem.typeofMval: MVarray [] (OCaml: assert false, ill-formed value)"
   | .MVarray (mval :: rest) =>
     mkCtype (.Array0 (typeofMval_lemFuel lemFuel mval) (some ((rest.length + 1 : Nat) : Int)))
   | .MVstruct tagSym _ => mkCtype (.Struct tagSym)
@@ -1382,7 +1382,7 @@ def casePtrval {α : Type} [Inhabited α] (pv : PointerValue)
     -- the moment Z-06 mirrored the device ranges (Z2-M-02, Z2 audit;
     -- tests/z2-probes/mem/device_funptr_call.c: calling through
     -- `(void(*)(void))0xABC` reaches this arm from core_eval.lem:920).
-    panic! "case_ptrval"
+    failwithI "CerbMem.casePtrval: case_ptrval"
 
 /-- case_funsym_opt — impl_mem.ml:1816-1827 -/
 def caseFunsymOpt (st : MemState) (pv : PointerValue) : Option sym :=
@@ -1416,7 +1416,7 @@ def maxIval (ity : integerType) : IntegerValue :=
     | _ => ity
   let size := match CerberusImpl.sizeof_ity ity with
     | some n => n
-    | none => panic! "the concrete memory model requires a complete implementation MAX"
+    | none => failwithI "CerbMem.maxIval: the concrete memory model requires a complete implementation MAX"
   let signedMax : Int := (2 ^ (size * 8 - 1)) - 1
   let unsignedMax : Int := (2 ^ (size * 8)) - 1
   integerIval (match ity with
@@ -1425,7 +1425,7 @@ def maxIval (ity : integerType) : IntegerValue :=
     | .Size_t | .Wchar_t | .Unsigned _ => unsignedMax
     | .Ptrdiff_t | .Wint_t | .Signed _ => signedMax
     | .Ptraddr_t => unsignedMax
-    | .Enum0 _ => panic! "maxIval: Enum after typeof_enum (OCaml: assert false)")
+    | .Enum0 _ => failwithI "maxIval: Enum after typeof_enum (OCaml: assert false)")
 
 /-- min_ival — impl_mem.ml:2405-2434. Enum through typeof_enum
     (impl_mem.ml:2407-2410). Char: signed → -2^7 (OCaml hardcodes 8-1
@@ -1444,9 +1444,9 @@ def minIval (ity : integerType) : IntegerValue :=
     | .Ptrdiff_t | .Signed _ =>
       match CerberusImpl.sizeof_ity ity with
       | some n => -(2 ^ (n * 8 - 1))
-      | none => panic! "the concrete memory model requires a complete implementation MIN"
+      | none => failwithI "CerbMem.minIval: the concrete memory model requires a complete implementation MIN"
     | .Ptraddr_t => 0
-    | .Enum0 _ => panic! "minIval: Enum after typeof_enum (OCaml: assert false)")
+    | .Enum0 _ => failwithI "minIval: Enum after typeof_enum (OCaml: assert false)")
 
 def sizeofIval [LemFuel] (tagDefs : TagDefs) (ty : ctype) : IntegerValue := integerIval (sizeofCtype tagDefs ty)
 def alignofIval [LemFuel] (tagDefs : TagDefs) (ty : ctype) : IntegerValue := integerIval (alignofCtype tagDefs ty)
@@ -1457,7 +1457,7 @@ def alignofIval [LemFuel] (tagDefs : TagDefs) (ty : ctype) : IntegerValue := int
     only through the concurrency mode, which is REFUSED (Z-24/Z-25) and
     non-functional on the oracle itself. -/
 def concurReadIval (_ : integerType) (_ : sym) : IntegerValue :=
-  panic! "TODO: concurRead_ival"
+  failwithI "CerbMem.concurReadIval: TODO: concurRead_ival"
 
 /-! ### Integer division/remainder helpers
 
@@ -1538,7 +1538,7 @@ def opIval (op : integer_operator) (v1 v2 : IntegerValue) : IntegerValue :=
       -- either, so this is a loud refusal, not the fail-OPEN `.toNat`
       -- clamp that stood here. Unreachable from C: the shift elaboration
       -- guards negative counts (UB) before the `^` (std.core shift procs).
-      if n2 < 0 then panic! "CerbMem.opIval IntExp: negative exponent has no meaning in the model (impl_mem.ml:2490 Z.pow raises Invalid_argument — an OCaml-execution artifact, not the referent); unreachable behind the shift guards"
+      if n2 < 0 then failwithI "CerbMem.opIval IntExp: negative exponent has no meaning in the model (impl_mem.ml:2490 Z.pow raises Invalid_argument — an OCaml-execution artifact, not the referent); unreachable behind the shift guards"
       else .IV Provenance.Prov_none (n1 ^ n2.toNat)
 
 /-- offsetof_ival — impl_mem.ml:2193-2201: offsetsof (WITHOUT
@@ -1554,7 +1554,7 @@ def offsetofIval [LemFuel] (tagDefs : TagDefs) (tagDefsMap : CerbTags.TagDefsMap
   let (xs, _) := offsetsof tagDefs tagDefsMap tag
   match xs.find? (fun (ident, _, _) => idEqual ident memb) with
   | some (_, _, off) => integerIval off
-  | none => panic! "Concrete.offsetof_ival: invalid memb_ident"
+  | none => failwithI "Concrete.offsetof_ival: invalid memb_ident"
 
 /-! ## Bitwise operations — impl_mem.ml:2497-2511: pure two's-complement
     arithmetic on unbounded Z — `Z.(sub (neg n) (of_int 1))`, `Z.logand`,
@@ -1727,10 +1727,10 @@ def arrayShiftPtrval [LemFuel] (tagDefs : TagDefs) (pv : PointerValue) (elemTy :
       | _ => Int.ofNat (sizeofCtype tagDefs elemTy)
     let offset := sz * ival
     match prov, base with
-    | .Prov_symbolic _, _ => panic! "Concrete.array_shift_ptrval found a Prov_symbolic"
+    | .Prov_symbolic _, _ => failwithI "Concrete.array_shift_ptrval found a Prov_symbolic"
     | _, .PVnull _ =>
-      panic! s!"TODO(pure shift a null pointer should be undefined behaviour), offset:{offset}"
-    | _, .PVfunction _ => panic! "Concrete.array_shift_ptrval, PVfunction"
+      failwithI s!"CerbMem.arrayShiftPtrval: TODO(pure shift a null pointer should be undefined behaviour), offset:{offset}"
+    | _, .PVfunction _ => failwithI "Concrete.array_shift_ptrval, PVfunction"
     | _, .PVconcrete um addr => .PV prov (.PVconcrete um (addr + offset))
 
 /-- member_shift_ptrval — impl_mem.ml:2223-2242.
@@ -1753,7 +1753,7 @@ def memberShiftPtrval [LemFuel] (tagDefs : TagDefs) (pv : PointerValue) (tag : s
     -- impl_mem.ml:2239-2240: failwith "Concrete.member_shift_ptrval,
     -- PVfunction" — mirrored as a panic (arc-14 S1 F1, sem:S8; was a
     -- self-confessed fail→value divergence returning pv unchanged).
-    panic! "Concrete.member_shift_ptrval, PVfunction (impl_mem.ml:2239-2240)"
+    failwithI "Concrete.member_shift_ptrval, PVfunction (impl_mem.ml:2239-2240)"
   | .PV prov (.PVconcrete _ addr) =>
     .PV prov (.PVconcrete unionMem (addr + offsetVal))
 
@@ -1765,7 +1765,7 @@ def bytefromint (iv : IntegerValue) : IntegerValue :=
   match iv with
   | .IV _ n =>
     if 0 ≤ n && n ≤ 255 then iv
-    else panic! "CerbMem.bytefromint: value out of byte range (impl_mem.ml:2776 assert)"
+    else failwithI "CerbMem.bytefromint: value out of byte range (impl_mem.ml:2776 assert)"
 
 /-- intfrombyte — impl_mem.ml:2779-2781: same assert, value unchanged
     (arc-14 S1 F1, sem:S6; the assert was previously dropped). -/
@@ -1773,7 +1773,7 @@ def intfrombyte (iv : IntegerValue) : IntegerValue :=
   match iv with
   | .IV _ n =>
     if 0 ≤ n && n ≤ 255 then iv
-    else panic! "CerbMem.intfrombyte: value out of byte range (impl_mem.ml:2780 assert)"
+    else failwithI "CerbMem.intfrombyte: value out of byte range (impl_mem.ml:2780 assert)"
 
 /-- overlapping — impl_mem.ml:527-532 -/
 def overlapping (f1 f2 : Footprint) : Bool :=
@@ -1992,17 +1992,17 @@ end
     concrete model) — fail-stop likewise. -/
 
 def deriveCap (_ : Bool) (_ : derivecap_op) (_ _ : IntegerValue) : IntegerValue :=
-  panic! "assert false (* CHERI only *): Concrete.derive_cap (impl_mem.ml:2175-2176)"
+  failwithI "assert false (* CHERI only *): Concrete.derive_cap (impl_mem.ml:2175-2176)"
 def capAssignValue (_ : CerbLocation.Loc) (_ _ : IntegerValue) : IntegerValue :=
-  panic! "assert false (* CHERI only *): Concrete.cap_assign_value (impl_mem.ml:2178-2179)"
+  failwithI "assert false (* CHERI only *): Concrete.cap_assign_value (impl_mem.ml:2178-2179)"
 def nullCap (_ : Bool) : IntegerValue :=
-  panic! "assert false (* CHERI only *): Concrete.null_cap (impl_mem.ml:2184-2185)"
+  failwithI "assert false (* CHERI only *): Concrete.null_cap (impl_mem.ml:2184-2185)"
 def ptrTIntValue (_ : IntegerValue) : IntegerValue :=
-  panic! "assert false (* CHERI only *): Concrete.ptr_t_int_value (impl_mem.ml:2181-2182)"
+  failwithI "assert false (* CHERI only *): Concrete.ptr_t_int_value (impl_mem.ml:2181-2182)"
 def cheriPointerHashPrintf (_ : Bool) (_ : PointerValue) : String :=
-  panic! "CHERI only: cheri_pointer_hash_printf has no concrete-model body"
+  failwithI "CHERI only: cheri_pointer_hash_printf has no concrete-model body"
 def getIntrinsicTypeSpec (_ : String) : Option intrinsics_signature :=
-  panic! "assert false (* CHERI only *): Concrete.get_intrinsic_type_spec (impl_mem.ml:2187-2188)"
+  failwithI "assert false (* CHERI only *): Concrete.get_intrinsic_type_spec (impl_mem.ml:2187-2188)"
 
 /-! ## Monadic operations -/
 

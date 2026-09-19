@@ -59,13 +59,24 @@ OCAML_ENVELOPE = b'cerberus: internal error, uncaught exception:'
 # `failure-class` projection: the one shape it rewrites — a symbol's NUMBER as
 # `Symbol.show` prints it (`Symbol(<digits>, <description>)`, symbol.lem).
 SYMBOL_NUMBER = re.compile(rb'Symbol\([0-9]+, ')
-# These existing negative pins are coarse CRASH checks, never semantic or
-# diagnostic agreement. New panic origins need explicit review here.
+# The one panic origin every policy accepts: LemLib's failure leaf. Its impl is
+# `private` (lem-lean lean-lib/LemLib.lean:167 `private unsafe def failwithIImpl`),
+# so the runtime prints the PRIVATE-MANGLED name — the unmangled
+# `LemLib.failwithIImpl` this constant replaced (seam-hygiene H1, 2026-09-19,
+# lean_frontend/docs/2026-09-18_seam-hygiene-record.md §3) is NEVER printed and
+# was a dead accept (real transcripts: that record's evidence `after-*.stderr`).
+LEMLIB_FAILWITHI_ORIGIN = b'_private.LemLib.0.failwithIImpl'
+# Seam panic origins the IMMACULATE policy additionally accepts — the coarse
+# CRASH pins, never semantic or diagnostic agreement. Since seam-hygiene H1 every
+# hand-written failure site of the exec closure is LemLib's `failwithI` (the
+# register scripts/failure_reach_register.txt is the review), so this set is
+# exactly the seam sites that STILL panic under their own name: the one KEPT
+# `panic!` — CerberusImpl.lean typeof_enum_impl (the fence-forbidden enum
+# registry seam; `private`, hence the mangled name). Anything else is
+# ProtocolError('unreviewed panic origin') — fail-closed; a new origin needs
+# explicit review here.
 IMMACULATE_PANICS = {
-    b'CerbMem.memcmpM.getBytes', b'CerbUtils.gcc_builtin_bswap64',
-    b'_private.CerbDecode.0.CerbDecode.decode_character_constant_aux',
-    b'CerbMem.sizeofCtype_lemFuel', b'CerbFS.fs_opendir',
-    b'CerbFloat.truncToInt', b'CerbMem.allocator', b'CerbMem.casePtrval',
+    b'_private.CerberusImpl.0.CerberusImpl.typeof_enum_impl',
 }
 
 
@@ -204,7 +215,7 @@ def failure_message(stderr: bytes, status: int | None, policy: str) -> bytes | N
     if status != (134 if lean else 125):
         raise ProtocolError('internal failure has the wrong exit status')
     if lean:
-        if lean[1] != b'LemLib.failwithIImpl' and not (
+        if lean[1] != LEMLIB_FAILWITHI_ORIGIN and not (
                 policy == 'immaculate' and lean[1] in IMMACULATE_PANICS):
             raise ProtocolError('unreviewed panic origin')
         payload = [lean[2]]
