@@ -77,7 +77,30 @@ example : CerbMem.bytesToInt [{ value := none }] false = none := rfl
 #check (CerbMem.targetPtrSize : Nat)
 #check (CerbMem.bytesToInt : List CerbMem.AbsByte → Bool → Option Int)
 
+/-! ## H2 — the switch-conditioned arms reduce to their defaults (seam-hygiene H2, 2026-09-19)
+
+`CerbMem` writes every switch-conditioned arm of impl_mem.ml as
+`if CerbGlobal.has_switch … then <loud kill> else <default>`; the switch set is the
+empty list (`CerbGlobal.switches = []`), so each test is `false` by `rfl` and each arm
+reduces to its default — the statement a consumer proves through. -/
+
+example : CerbGlobal.has_switch .strict_pointer_equality = false := rfl
+example : CerbGlobal.has_switch .strict_pointer_relationals = false := rfl
+example : CerbGlobal.has_switch (.pointer_arith .PERMISSIVE) = false := rfl
+example : CerbGlobal.has_switch (.pointer_arith .STRICT) = false := rfl
+example : CerbGlobal.has_switch .zero_initialised = false := rfl
+example : CerbGlobal.has_switch .strict_reads = false := rfl
+example : CerbGlobal.has_switch .forbid_nullptr_free = false := rfl
+example : CerbGlobal.has_switch .zap_dead_pointers = false := rfl
+example : CerbGlobal.is_PNVI () = false := rfl
+example : CerbGlobal.has_strict_pointer_arith () = false := rfl
+
+-- hence an arm IS its default: gt_ptrval on two concrete pointers is the address comparison
+example (loc : CerbLocation.Loc) (a1 a2 : Int) :
+    CerbMem.gtPtrval loc (.PV .Prov_none (.PVconcrete none a1)) (.PV .Prov_none (.PVconcrete none a2))
+      = CerbMem.memReturn (decide (a1 > a2)) := rfl
+
 end OpaqueFailureTest
 
 def main : IO Unit := do
-  IO.println "opaque-failure-test: PASS — the two seam identities are not rfl-provable (#guard_msgs on failing rfl), `failwithI` is opaque in the environment, default arms still reduce"
+  IO.println "opaque-failure-test: PASS — the two seam identities are not rfl-provable (#guard_msgs on failing rfl), `failwithI` is opaque in the environment, default arms still reduce; every switch-conditioned arm reduces to its default (has_switch … = false by rfl)"

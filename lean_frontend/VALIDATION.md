@@ -316,7 +316,15 @@ a bug today and what is a bug still open, in the class vocabulary.
   configuration (kernel-transparent, `rfl` lemmas — no opaque boundary
   row remains; `docs/2026-09-05_cerbglobal-defs-record.md`), so every
   `Switches.has_switch` read in the exec cone evaluates as the oracle's
-  default by definition; `using_concurrency` is `def … := false` with
+  default by definition;
+  since the seam-hygiene slice (2026-09-19, `docs/2026-09-18_seam-hygiene-record.md`
+  §4) every switch-conditioned arm of `impl_mem.ml` is written in `CerbMem` in the
+  explicit `if has_switch … then <loud kill> else <default>` shape — `CerbSwitch`
+  carries the four switches those arms test (`strict_pointer_equality`,
+  `strict_pointer_relationals`, `pointer_arith PERMISSIVE|STRICT`,
+  `zero_initialised`, mirroring `switches.ml`), so the specialisation to the empty
+  set is kernel-visible (`CerbGlobal.has_switch_*_eq`, by `rfl`) and greppable, and
+  the Z2 record's formerly DECLARED row Z2-M-20 is closed; `using_concurrency` is `def … := false` with
   `using_concurrency_eq : using_concurrency () = false := rfl`, its
   parameterisation (step 2) owned by the concurrency feature branch.
   The oracle's `--switches=PNVI` CHANGES the answer (an integer→pointer

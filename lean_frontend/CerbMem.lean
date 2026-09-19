@@ -2165,6 +2165,14 @@ def allocateObject [LemFuel] (tagDefs : TagDefs) (_ : Nat) (pref : prefix0) (ali
   nd_bind (allocator size alignN) fun (idAddr : StorageInstanceId × Address) =>  -- :1291-1292
   let (allocId, addr) := idAddr
   ND fun st =>
+    -- :1318-1324 SW_zero_initialised (the `None` init branch's bytemap choice) →
+    -- zero-filled bytes. Refused set (Z-24): the default arm (:1325-1329 repr of
+    -- MVunspecified, below) is the only reachable one; the set case is loud
+    -- (seam-hygiene H2). The guard is that branch's test, `init_opt = None ∧
+    -- has_switch`, hoisted in front of the unchanged body.
+    if initOpt.isNone && CerbGlobal.has_switch .zero_initialised then
+      (NDkilled (Other (MerrOther "allocateObject: SW_zero_initialised is set but the zero-fill arm (impl_mem.ml:1318-1324) is not ported — switches are refused (Z-24)")), st)
+    else
     -- readonly_status per init_opt — impl_mem.ml:1304-1333 (see
     -- readonlyStatusForAlloc above)
     let alloc : Allocation := { base := addr, size := size, ty := some ty,
@@ -2297,20 +2305,33 @@ def killM (loc : CerbLocation.Loc) (isDynamic : Bool) (pv : PointerValue) : memM
     Not ported: Prov_symbolic iota resolution (PNVI-ae-udi; the concrete
     Lean model never mints Prov_symbolic).
 
-    DECLARED (zero-discrepancy Z2-M-20) — the SWITCH-CONDITIONED arms of
-    impl_mem.ml are not ported; each is reachable only when its switch is
-    set, and the switch set is REFUSED by this port (Z-24, VALIDATION.md
-    "Refused command-line flags"), so on the matched default set
-    (`Switches.set []`, main.ml:129-143 — every `has_switch` false,
-    `is_PNVI ()` false; Z2 audit §2.9 table) the default arm is the only
-    one either engine executes: `SW_strict_pointer_equality` (eq_ptrval
-    :1852-1853), `SW_strict_pointer_relationals` (lt/gt/le/ge_ptrval
-    :1889-1939), `SW_pointer_arith PERMISSIVE/STRICT` (diff_ptrval
-    :1970-1975; eff_array_shift_ptrval :2265-2350), `SW_forbid_nullptr_free`
-    (kill :1466 — the set case is loud here), `SW_zap_dead_pointers` (kill
-    :1511/:1547 — loud), `SW_zero_initialised` (allocate_object :1310),
-    `SW_strict_reads` (load :1593), and the `is_PNVI ()` arms of
-    ptrfromint/intfromptr (:2147-2160, :2445-2452). -/
+    PORTED IN THE EXPLICIT SHAPE (seam-hygiene H2, 2026-09-19,
+    docs/2026-09-18_seam-hygiene-record.md §4; formerly DECLARED as
+    zero-discrepancy Z2-M-20 — Z2 record 2026-09-04 row Z2-M-20) — every
+    SWITCH-CONDITIONED arm of impl_mem.ml is written here as
+    `if CerbGlobal.has_switch … then <loud kill> else <the default arm>`:
+    the switch set is REFUSED by this port (Z-24, VALIDATION.md §3 "(c)
+    Semantics switches"), so on the matched default set (`Switches.set []`,
+    main.ml:129-143; `CerbGlobal.switches = []`, every `has_switch … = false`
+    and `is_PNVI () = false` by `rfl` — CerbGlobal.lean, and the eight
+    `has_switch_*_eq` lemmas) each guard reduces to its default arm — the
+    only arm either engine executes — and a consumer's proof rewrites with
+    the lemma instead of trusting a comment; the SET branch is a loud kill
+    naming the un-ported OCaml arm (never reachable while the switch set is
+    refused; hermetic pin: test/Unit/OpaqueFailureTest.lean). The arms, at
+    THIS tree's impl_mem.ml lines: `SW_strict_pointer_equality` (eq_ptrval
+    :1860 → eqPtrval), `SW_strict_pointer_relationals` (lt/gt/le/ge_ptrval
+    :1897/:1915/:1930/:1947 → lt/gt/le/gePtrval), `SW_pointer_arith
+    PERMISSIVE` (diff_ptrval :1978 → diffPtrval), `SW_pointer_arith STRICT`
+    ∨ (`is_PNVI` ∧ ¬PERMISSIVE) (eff_array_shift_ptrval :2345-2346 Prov_some,
+    :2357-2358 Prov_none → effArrayShiftPtrval), `SW_forbid_nullptr_free`
+    (kill :1474 → killM), `SW_zap_dead_pointers` (kill :1518/:1552 → killM),
+    `SW_zero_initialised` (allocate_object :1318 → allocateObject),
+    `SW_strict_reads` (load :1601 → loadM), and the PNVI arms of ptrfromint
+    (`is_PNVI ()` :2154) and intfromptr (`SW_PNVI AE ∨ AE_UDI` :2454, guarded
+    by the coarser `is_PNVI ()`). The per-arm `:NNNN` comments elsewhere in
+    this file predate the part-one +8 line shift of impl_mem.ml. Not in this
+    shape (out of the eight): load's PNVI `expose_allocations` arm (:1570). -/
 
 /-- device_ranges — impl_mem.ml:620-624, verbatim: two hard-coded ranges
     ("to match the Charon tests"; each 4 bytes). An integer in a range casts
@@ -2366,6 +2387,11 @@ def loadM [LemFuel] (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (p
         | .MVunspecified _ => true
         | _ => false
       if isTrap then fail_ (MerrTrapRepresentation LoadAccess)
+      -- :1601-1606 SW_strict_reads → MerrReadUninit on an unspecified value.
+      -- Refused set (Z-24): the default arm is the only reachable one; the set
+      -- case is loud (seam-hygiene H2)
+      else if CerbGlobal.has_switch .strict_reads then
+        (NDkilled (Other (MerrOther "loadM: SW_strict_reads is set but the strict-reads arm (impl_mem.ml:1601-1606) is not ported — switches are refused (Z-24)")), st)
       else (NDactive (fp, mv), { st with lastUsed := allocOpt })
     match pv with
     | .PV _ (.PVnull _) => fail_ (MerrAccess LoadAccess NullPtr)          -- impl_mem.ml:1605-1606
@@ -2517,7 +2543,12 @@ def eqPtrval (_ : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
       | .Prov_some allocId1, .Prov_some allocId2 => allocId1 == allocId2
       | .Prov_device, .Prov_device => true
       | _, _ => false
-    if sameProv then
+    -- :1860-1861 SW_strict_pointer_equality → numeric equality only. The switch
+    -- set is refused (Z-24), so the OCaml default arm is the only reachable one;
+    -- the set case is loud (seam-hygiene H2, the zap_dead_pointers shape)
+    if CerbGlobal.has_switch .strict_pointer_equality then
+      kill (Other (MerrOther "eqPtrval: SW_strict_pointer_equality is set but the strict-equality arm (impl_mem.ml:1860-1861) is not ported — switches are refused (Z-24)"))
+    else if sameProv then
       memReturn (addr1 == addr2)
     else
       msum "pointer equality"
@@ -2530,10 +2561,10 @@ def nePtrval [LemFuel] (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM 
 /-! Relational pointer operators — impl_mem.ml:1886-1955 (arc-14 S1 F1,
     sem:G1: the kill-paths are restored — these previously returned a
     silent `false` for null/function/mixed operands where upstream FAILS).
-    The SW_strict_pointer_relationals branches (:1889-1895 etc.) are not
-    ported — the Lean pipeline never sets that switch (same fencing as
-    diff_ptrval below); the non-strict path compares concrete addresses
-    regardless of provenance. Only lt_ptrval has a dedicated null arm
+    The SW_strict_pointer_relationals branches (:1897 etc. in this tree) are
+    guarded in the explicit `if has_switch … then <loud kill> else <default>`
+    shape (seam-hygiene H2; the set is refused, Z-24); the non-strict path
+    compares concrete addresses regardless of provenance. Only lt_ptrval has a dedicated null arm
     upstream (:1898-1900); gt/le/ge fall to their generic MerrWIP arm —
     mirrored arm-for-arm, including the exact error strings. -/
 
@@ -2541,7 +2572,10 @@ def nePtrval [LemFuel] (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM 
 def ltPtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   match pv1, pv2 with
   | .PV _ (.PVconcrete _ a1), .PV _ (.PVconcrete _ a2) =>
-    memReturn (a1 < a2)                                       -- :1896-1897 (non-strict)
+    -- :1897-1903 SW_strict_pointer_relationals: refused set (Z-24), set case loud (H2)
+    if CerbGlobal.has_switch .strict_pointer_relationals then
+      kill (Other (MerrOther "ltPtrval: SW_strict_pointer_relationals is set but the strict-relational arm (impl_mem.ml:1897-1903) is not ported — switches are refused (Z-24)"))
+    else memReturn (a1 < a2)                                  -- :1896-1897 (non-strict)
   | .PV _ (.PVnull _), _ | _, .PV _ (.PVnull _) =>
     memFail (MerrWIP "lt_ptrval ==> one null pointer") loc    -- :1898-1900
   | _, _ => memFail (MerrWIP "lt_ptrval") loc                 -- :1901-1902
@@ -2550,26 +2584,35 @@ def ltPtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
 def gtPtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   match pv1, pv2 with
   | .PV _ (.PVconcrete _ a1), .PV _ (.PVconcrete _ a2) =>
-    memReturn (a1 > a2)                                       -- :1914-1915 (non-strict)
+    -- :1915-1921 SW_strict_pointer_relationals: refused set (Z-24), set case loud (H2)
+    if CerbGlobal.has_switch .strict_pointer_relationals then
+      kill (Other (MerrOther "gtPtrval: SW_strict_pointer_relationals is set but the strict-relational arm (impl_mem.ml:1915-1921) is not ported — switches are refused (Z-24)"))
+    else memReturn (a1 > a2)                                  -- :1914-1915 (non-strict)
   | _, _ => memFail (MerrWIP "gt_ptrval") loc                 -- :1916-1917
 
 /-- le_ptrval — impl_mem.ml:1919-1935. -/
 def lePtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   match pv1, pv2 with
   | .PV _ (.PVconcrete _ a1), .PV _ (.PVconcrete _ a2) =>
-    memReturn (a1 ≤ a2)                                       -- :1930-1932 (non-strict)
+    -- :1930-1938 SW_strict_pointer_relationals: refused set (Z-24), set case loud (H2)
+    if CerbGlobal.has_switch .strict_pointer_relationals then
+      kill (Other (MerrOther "lePtrval: SW_strict_pointer_relationals is set but the strict-relational arm (impl_mem.ml:1930-1938) is not ported — switches are refused (Z-24)"))
+    else memReturn (a1 ≤ a2)                                  -- :1930-1932 (non-strict)
   | _, _ => memFail (MerrWIP "le_ptrval") loc                 -- :1934-1935
 
 /-- ge_ptrval — impl_mem.ml:1937-1953. -/
 def gePtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   match pv1, pv2 with
   | .PV _ (.PVconcrete _ a1), .PV _ (.PVconcrete _ a2) =>
-    memReturn (a1 ≥ a2)                                       -- :1948-1950 (non-strict)
+    -- :1947-1955 SW_strict_pointer_relationals: refused set (Z-24), set case loud (H2)
+    if CerbGlobal.has_switch .strict_pointer_relationals then
+      kill (Other (MerrOther "gePtrval: SW_strict_pointer_relationals is set but the strict-relational arm (impl_mem.ml:1947-1955) is not ported — switches are refused (Z-24)"))
+    else memReturn (a1 ≥ a2)                                  -- :1948-1950 (non-strict)
   | _, _ => memFail (MerrWIP "ge_ptrval") loc                 -- :1952-1953
 
 /-- diff_ptrval — impl_mem.ml:1954-1984 (strict, non-PERMISSIVE path;
-    the SW_pointer_arith PERMISSIVE branch at :1970-1975 is not ported —
-    the Lean pipeline never sets that switch — and the Prov_symbolic
+    the SW_pointer_arith PERMISSIVE branch at :1978-1983 in this tree is
+    guarded in the explicit loud-kill shape, seam-hygiene H2 — and the Prov_symbolic
     iota arms at :1987-2058 are unreachable here: the concrete Lean
     model never mints Prov_symbolic).
     Valid only when BOTH pointers carry the SAME Prov_some allocation id
@@ -2582,7 +2625,12 @@ def gePtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
 def diffPtrval [LemFuel] (tagDefs : TagDefs) (loc : CerbLocation.Loc) (diffTy : ctype) (pv1 pv2 : PointerValue) : memM IntegerValue :=
   ND fun st =>
     let errorPostcond := (NDkilled (failReason MerrPtrdiff loc), st)
-    match pv1, pv2 with
+    -- :1978-1983 SW_pointer_arith PERMISSIVE → a provenance-blind subtraction.
+    -- Refused set (Z-24): the default arm is the only reachable one; the set
+    -- case is loud (seam-hygiene H2)
+    if CerbGlobal.has_switch (.pointer_arith .PERMISSIVE) then
+      (NDkilled (Other (MerrOther "diffPtrval: SW_pointer_arith PERMISSIVE is set but the permissive arm (impl_mem.ml:1978-1983) is not ported — switches are refused (Z-24)")), st)
+    else match pv1, pv2 with
     | .PV (.Prov_some allocId1) (.PVconcrete _ addr1),
       .PV (.Prov_some allocId2) (.PVconcrete _ addr2) =>
       if allocId1 == allocId2 then
@@ -2704,6 +2752,13 @@ def intfromptr (loc : CerbLocation.Loc) (_ : ctype) (ity : integerType)
   | .PV prov (.PVnull _) => memReturn (.IV prov 0)
   | .PV prov (.PVfunction (Symbol _ n _)) => memReturn (.IV prov n)
   | .PV prov (.PVconcrete _ addr) =>
+    -- :2454-2461 `has_switch (SW_PNVI AE) || has_switch (SW_PNVI AE_UDI)` →
+    -- expose_allocation. Guarded by the coarser `is_PNVI ()` (the one PNVI
+    -- predicate this port exposes; it implies both and is `false`, Z-24) exactly
+    -- as ptrfromint's arm is; the set case is loud (seam-hygiene H2)
+    if CerbGlobal.is_PNVI () then
+      kill (Other (MerrOther "intfromptr: a PNVI switch is set but the expose_allocation arm (impl_mem.ml:2454-2461) is not ported — switches are refused (Z-24)"))
+    else
     let (.IV _ ityMin) := minIval ity
     let (.IV _ ityMax) := maxIval ity
     if addr < ityMin || ityMax < addr then
@@ -2728,8 +2783,9 @@ def intfromptr (loc : CerbLocation.Loc) (_ : ctype) (ity : integerType)
     refused, Z-24) — loud; `Prov_some` (:2325-2337) → `PV (Prov_some id,
     PVconcrete (None, addr + offset))`; `Prov_none` (:2338-2343) → likewise
     with `Prov_none`; `Prov_device` (:2344-2346) → likewise. The
-    `SW_pointer_arith STRICT`/`is_PNVI` bounds arms (:2327-2335, :2339-2341)
-    are switch-conditioned — refused set, default arm only (Z2-M-20 note).
+    `SW_pointer_arith STRICT`/`is_PNVI` bounds arms (:2345-2354, :2357-2360 in
+    this tree) are switch-conditioned — guarded in the explicit loud-kill
+    shape, seam-hygiene H2; refused set, default arm only.
     REACHABILITY: `PtrArrayShift` is emitted only under strict/PNVI/CHERI
     (translation.lem:2112-2119), all refused — this port retires a dead
     panic-vs-UB046 divergence rather than carrying it. Evaluation-order
@@ -2746,7 +2802,15 @@ def effArrayShiftPtrval [LemFuel] (tagDefs : TagDefs) (loc : CerbLocation.Loc) (
     kill (kill_reason.Other (MerrOther "effArrayShiftPtrval: Prov_symbolic in concrete model"))
   | .PV prov (.PVconcrete _ addr), .IV _ ival =>
     let offset : Int := (sizeofCtype tagDefs elemTy : Int) * ival               -- :2246
-    memReturn (.PV prov (.PVconcrete none (addr + offset)))                     -- :2336/:2343/:2346
+    -- :2345-2346 (Prov_some) / :2357-2358 (Prov_none): `SW_pointer_arith STRICT ||
+    -- (is_PNVI () && not PERMISSIVE)` selects the bounds-checking arms; the
+    -- Prov_device arm (:2362-2364) has no guard. Refused set (Z-24): the default
+    -- arm is the only reachable one; the set case is loud (seam-hygiene H2)
+    if (match prov with | .Prov_device => false | _ => true) &&
+       (CerbGlobal.has_switch (.pointer_arith .STRICT) ||
+        (CerbGlobal.is_PNVI () && !CerbGlobal.has_switch (.pointer_arith .PERMISSIVE))) then
+      kill (Other (MerrOther "effArrayShiftPtrval: SW_pointer_arith STRICT (or a PNVI switch without PERMISSIVE) is set but the bounds-checking arms (impl_mem.ml:2345-2354, 2357-2360) are not ported — switches are refused (Z-24)"))
+    else memReturn (.PV prov (.PVconcrete none (addr + offset)))                -- :2336/:2343/:2346
 
 def effMemberShiftPtrval [LemFuel] (tagDefs : TagDefs) (_ : CerbLocation.Loc) (pv : PointerValue) (tag : sym) (member : identifier) : memM PointerValue :=
   memReturn (memberShiftPtrval tagDefs pv tag member)

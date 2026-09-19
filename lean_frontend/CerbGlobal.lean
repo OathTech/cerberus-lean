@@ -66,14 +66,38 @@ inductive ExecutionMode where
 
 /-! ## Switches
     Corresponds to: Switches.cerb_switch in switches.ml:1-44
-    The lem file only exposes a subset of the full OCaml switch type. -/
+    The lem file only exposes a subset of the full OCaml switch type; the
+    constructors below are the lem subset PLUS (seam-hygiene H2, 2026-09-19,
+    docs/2026-09-18_seam-hygiene-record.md §4 — fence extension granted
+    2026-09-19) the four switches impl_mem.ml tests in its switch-conditioned
+    arms, so those arms can be written in the explicit
+    `if has_switch … then <loud kill> else <default>` shape and a consumer can
+    state `has_switch … = false` by `rfl`. Naming mirrors switches.ml with the
+    `SW_` prefix dropped, as for the existing constructors. No generated module
+    matches on this type (Global.lean:61 only abbreviates it). -/
+
+/-- The payload of `SW_pointer_arith of [ `PERMISSIVE | `STRICT ]`
+    (switches.ml:5; `--switches=strict_pointer_arith` /
+    `permissive_pointer_arith` read it at :65-67). -/
+inductive PointerArithMode where
+  | PERMISSIVE
+  | STRICT
+  deriving BEq, Inhabited, Repr
 
 inductive CerbSwitch where
+  -- switches.ml:5 `SW_pointer_arith of [ `PERMISSIVE | `STRICT ]`
+  | pointer_arith (mode : PointerArithMode)
   | strict_reads
   | forbid_nullptr_free
   | zap_dead_pointers
+  -- switches.ml:15 `SW_strict_pointer_equality`
+  | strict_pointer_equality
+  -- switches.ml:18 `SW_strict_pointer_relationals`
+  | strict_pointer_relationals
   | inner_arg_temps
   | permissive_printf
+  -- switches.ml:32 `SW_zero_initialised`
+  | zero_initialised
   -- DECLARED (zero-discrepancy Z2-G-02, INSTRUMENT): the lem model's
   -- `SW_no_integer_provenance` (global.lem:66) names `Switches.SW_no_integer_
   -- provenance` as its OCaml target_rep (global.lem:81) — a constructor
@@ -174,9 +198,12 @@ def is_CHERI (_ : Unit) : Bool :=
     subset (`CerbSwitch`), so the test is written as its value. -/
 def is_PNVI (_ : Unit) : Bool := false
 
-/-- `has_switch (SW_pointer_arith `STRICT)` (switches.ml:159-160) over the
-    empty list; `SW_pointer_arith` is not in the lem subset. -/
-def has_strict_pointer_arith (_ : Unit) : Bool := false
+/-- `has_switch (SW_pointer_arith `STRICT)` (switches.ml:159-160) — written
+    as its OCaml body since the switch has a constructor (seam-hygiene H2;
+    until then `SW_pointer_arith` was not in the lem subset and the test was
+    written as its value, `false`). -/
+def has_strict_pointer_arith (_ : Unit) : Bool :=
+  has_switch (.pointer_arith .STRICT)
 
 /-! ## The contract: what the kernel sees
     Each read is its default by `rfl`; a consumer's proof through a switch
@@ -191,6 +218,15 @@ theorem isPermissive_eq : isPermissive () = false := rfl
 theorem isAgnostic_eq : isAgnostic () = false := rfl
 theorem isIgnoreBitfields_eq : isIgnoreBitfields () = false := rfl
 theorem has_switch_eq (sw : CerbSwitch) : has_switch sw = false := rfl
+-- the eight switch-conditioned arms of impl_mem.ml (CerbMem.lean, seam-hygiene H2):
+theorem has_switch_strict_reads_eq : has_switch .strict_reads = false := rfl
+theorem has_switch_forbid_nullptr_free_eq : has_switch .forbid_nullptr_free = false := rfl
+theorem has_switch_zap_dead_pointers_eq : has_switch .zap_dead_pointers = false := rfl
+theorem has_switch_strict_pointer_equality_eq : has_switch .strict_pointer_equality = false := rfl
+theorem has_switch_strict_pointer_relationals_eq : has_switch .strict_pointer_relationals = false := rfl
+theorem has_switch_pointer_arith_permissive_eq : has_switch (.pointer_arith .PERMISSIVE) = false := rfl
+theorem has_switch_pointer_arith_strict_eq : has_switch (.pointer_arith .STRICT) = false := rfl
+theorem has_switch_zero_initialised_eq : has_switch .zero_initialised = false := rfl
 theorem is_CHERI_eq : is_CHERI () = false := rfl
 theorem is_PNVI_eq : is_PNVI () = false := rfl
 theorem has_strict_pointer_arith_eq : has_strict_pointer_arith () = false := rfl
