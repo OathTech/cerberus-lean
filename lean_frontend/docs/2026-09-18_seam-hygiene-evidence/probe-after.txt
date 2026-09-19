@@ -1,0 +1,25 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+../.tmp/seam-hygiene/ProbeAfter.lean:3:76: error: Type mismatch
+  rfl
+has type
+  ?m.7 = ?m.7
+but is expected to have type
+  CerbMem.combineProv (CerbMem.Provenance.Prov_symbolic 0) CerbMem.Provenance.Prov_none = CerbMem.Provenance.Prov_none
+../.tmp/seam-hygiene/ProbeAfter.lean:4:48: error: Type mismatch
+  rfl
+has type
+  ?m.5 = ?m.5
+but is expected to have type
+  CerbMem.bytesToInt [] false = none
+../.tmp/seam-hygiene/ProbeAfter.lean:6:79: error: Tactic `rfl` failed: The left-hand side
+  CerbMem.combineProv (CerbMem.Provenance.Prov_symbolic 0) CerbMem.Provenance.Prov_none
+is not definitionally equal to the right-hand side
+  CerbMem.Provenance.Prov_none
+
+⊢ CerbMem.combineProv (CerbMem.Provenance.Prov_symbolic 0) CerbMem.Provenance.Prov_none = CerbMem.Provenance.Prov_none
+../.tmp/seam-hygiene/ProbeAfter.lean:7:51: error: Tactic `rfl` failed: The left-hand side
+  CerbMem.bytesToInt [] false
+is not definitionally equal to the right-hand side
+  none
+
+⊢ CerbMem.bytesToInt [] false = none

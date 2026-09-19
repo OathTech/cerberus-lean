@@ -1,0 +1,9 @@
+[immaculate/before] g4-bswap64-overflow rc=0: INTERNAL_ERROR:{msg: "Ocaml_gcc_builtins.bswap64: Z.to_int64 overflow (ocaml_gcc_builtins.ml:30)"} 
+[immaculate/before] zd-z2m02-device-funptr-call rc=0: INTERNAL_ERROR:{msg: "case_ptrval"} 
+[immaculate/after] g4-bswap64-overflow rc=2: OBSERVATION ERROR: unreviewed panic origin 
+[immaculate/after] zd-z2m02-device-funptr-call rc=2: OBSERVATION ERROR: unreviewed panic origin 
+[batch/before] g4-bswap64-overflow rc=2: OBSERVATION ERROR: fatal engine diagnostic; no completed observation 
+[batch/before] zd-z2m02-device-funptr-call rc=2: OBSERVATION ERROR: fatal engine diagnostic; no completed observation 
+[batch/after] g4-bswap64-overflow rc=2: OBSERVATION ERROR: fatal engine diagnostic; no completed observation 
+[batch/after] zd-z2m02-device-funptr-call rc=2: OBSERVATION ERROR: fatal engine diagnostic; no completed observation 
+[immaculate/after with the site rewritten to the codec's literal LemLib.failwithIImpl]: INTERNAL_ERROR:{msg: "Ocaml_gcc_builtins.bswap64: Z.to_int64 overflow (ocaml_gcc_builtins.ml:30)"}

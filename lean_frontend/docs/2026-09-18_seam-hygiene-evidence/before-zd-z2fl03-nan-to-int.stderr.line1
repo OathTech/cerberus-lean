@@ -1,0 +1,1 @@
+PANIC at CerbFloat.truncToInt CerbFloat:426:4: CerbFloat.truncToInt: nan/inf (OCaml Z.of_float raises Z.Overflow)
