@@ -96,6 +96,9 @@ example : CerbGlobal.has_switch .forbid_nullptr_free = false := rfl
 example : CerbGlobal.has_switch .zap_dead_pointers = false := rfl
 example : CerbGlobal.is_PNVI () = false := rfl
 example : CerbGlobal.has_strict_pointer_arith () = false := rfl
+-- the derived `Inhabited` default of `CerbSwitch` is still the first lem-subset constructor
+-- (pre-merge audit M4: a first-placed new constructor had moved it)
+example : (default : CerbGlobal.CerbSwitch) = .strict_reads := rfl
 
 -- hence an arm IS its default: gt_ptrval on two concrete pointers is the address comparison
 example (loc : CerbLocation.Loc) (a1 a2 : Int) :

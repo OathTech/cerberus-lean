@@ -85,19 +85,11 @@ inductive PointerArithMode where
   deriving BEq, Inhabited, Repr
 
 inductive CerbSwitch where
-  -- switches.ml:5 `SW_pointer_arith of [ `PERMISSIVE | `STRICT ]`
-  | pointer_arith (mode : PointerArithMode)
   | strict_reads
   | forbid_nullptr_free
   | zap_dead_pointers
-  -- switches.ml:15 `SW_strict_pointer_equality`
-  | strict_pointer_equality
-  -- switches.ml:18 `SW_strict_pointer_relationals`
-  | strict_pointer_relationals
   | inner_arg_temps
   | permissive_printf
-  -- switches.ml:32 `SW_zero_initialised`
-  | zero_initialised
   -- DECLARED (zero-discrepancy Z2-G-02, INSTRUMENT): the lem model's
   -- `SW_no_integer_provenance` (global.lem:66) names `Switches.SW_no_integer_
   -- provenance` as its OCaml target_rep (global.lem:81) — a constructor
@@ -107,6 +99,18 @@ inductive CerbSwitch where
   -- dead constructor kept so the lem declaration stays resolvable.
   | no_integer_provenance
   | cheri
+  -- The four switches impl_mem.ml's switch-conditioned arms test (seam-hygiene
+  -- H2), APPENDED after the lem subset so the derived `Inhabited` default stays
+  -- `.strict_reads` (pre-merge audit M4: a first-placed constructor had moved it
+  -- to `.pointer_arith .PERMISSIVE` — kernel-visible; pinned by `default_eq` below).
+  -- switches.ml:5 `SW_pointer_arith of [ `PERMISSIVE | `STRICT ]`
+  | pointer_arith (mode : PointerArithMode)
+  -- switches.ml:15 `SW_strict_pointer_equality`
+  | strict_pointer_equality
+  -- switches.ml:18 `SW_strict_pointer_relationals`
+  | strict_pointer_relationals
+  -- switches.ml:32 `SW_zero_initialised`
+  | zero_initialised
   deriving BEq, Inhabited, Repr
 
 /-! ## Configuration
@@ -227,6 +231,9 @@ theorem has_switch_strict_pointer_relationals_eq : has_switch .strict_pointer_re
 theorem has_switch_pointer_arith_permissive_eq : has_switch (.pointer_arith .PERMISSIVE) = false := rfl
 theorem has_switch_pointer_arith_strict_eq : has_switch (.pointer_arith .STRICT) = false := rfl
 theorem has_switch_zero_initialised_eq : has_switch .zero_initialised = false := rfl
+-- the derived `Inhabited` default is the first constructor, `.strict_reads` — pinned so a
+-- constructor reorder cannot move it silently again (pre-merge audit M4)
+example : (default : CerbSwitch) = .strict_reads := rfl
 theorem is_CHERI_eq : is_CHERI () = false := rfl
 theorem is_PNVI_eq : is_PNVI () = false := rfl
 theorem has_strict_pointer_arith_eq : has_strict_pointer_arith () = false := rfl

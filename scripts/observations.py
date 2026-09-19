@@ -50,7 +50,9 @@ FUEL_RECORD = re.compile(rb'^(?:Error \{msg: "lem: fuel exhausted"\}|'
                          rb'lem: fuel exhausted|internal error: lem: fuel exhausted|'
                          rb'PANIC at [^\r\n]*: lem: fuel exhausted)$', re.M)
 CAP_OOM = re.compile(Path(__file__).with_name('cap_oom.regex').read_bytes().strip(), re.M)
-LEAN_PANIC = re.compile(rb'PANIC at ([^ \r\n]+) [^\r\n]+:[0-9]+:[0-9]+: (.+)')
+# origin, then the `<module>:<line>:<col>` location (no spaces — pre-merge audit N8: a
+# free-form location field absorbed a stray second space after the origin), then the message
+LEAN_PANIC = re.compile(rb'PANIC at ([^ \r\n]+) ([^ \r\n]+:[0-9]+:[0-9]+): (.+)')
 LEAN_FRAME = re.compile(rb'[^\r\n]+\([^()\r\n]*\) \[0x[0-9a-fA-F]+\]')
 ABORT_WRAPPER = re.compile(rb'[^\r\n]*/scripts/capped: line [0-9]+: +[0-9]+ Aborted(?: \(core dumped\))? +"\$@"')
 OCAML_FRAME = re.compile(rb'          (?:Raised at|Raised by primitive operation at|Called from|Re-raised at) '
@@ -218,7 +220,7 @@ def failure_message(stderr: bytes, status: int | None, policy: str) -> bytes | N
         if lean[1] != LEMLIB_FAILWITHI_ORIGIN and not (
                 policy == 'immaculate' and lean[1] in IMMACULATE_PANICS):
             raise ProtocolError('unreviewed panic origin')
-        payload = [lean[2]]
+        payload = [lean[3]]
         remaining = lines[1:]
         if b'backtrace:' in remaining:
             at = remaining.index(b'backtrace:')

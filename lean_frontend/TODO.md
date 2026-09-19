@@ -229,7 +229,8 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   (erratum appended to that record).
 - Open obligations the audit lists as residual, all already carried: fuel
   monotonicity/propagation (lem TODO 13), native/logical correspondence
-  (`beqMemValueSafe`, digest; F7), the pure-failure correspondence design
+  (digest; F7 — `beqMemValueSafe`'s obligation CLOSED 2026-09-19: `BEq MemValue`
+  is the structural `beqMemValue`, seam-hygiene H3), the pure-failure correspondence design
   (master plan step 2), C-P1 timing, consumer proof-check at the current
   pin (their step 6). Repeat risk map = master plan step 7.
 

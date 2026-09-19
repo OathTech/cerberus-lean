@@ -291,6 +291,18 @@ class ObservationTests(unittest.TestCase):
         with self.assertRaises(ProtocolError):
             parse(b'', oracle.replace(b'Failure("internal error: reason")', b'Failure("different")'), 125, 'litmus')
 
+    def test_panic_origin_location_field_is_not_free_form(self):
+        # pre-merge audit N8: a second space after the origin must not be absorbed by the
+        # location field — the line then is no Lean panic header at all (FATAL class)
+        real = b'PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: reason\n'
+        for policy in ('immaculate', 'litmus'):
+            with self.subTest(policy=policy):
+                self.assertTrue(parse(b'', real, 134, policy).internal)
+                with self.assertRaisesRegex(ProtocolError, 'fatal engine diagnostic'):
+                    parse(b'', real.replace(b'failwithIImpl LemLib', b'failwithIImpl  LemLib'), 134, policy)
+                with self.assertRaisesRegex(ProtocolError, 'fatal engine diagnostic'):
+                    parse(b'', real.replace(b'LemLib:168:2:', b'Lem Lib:168:2:'), 134, policy)
+
     def test_panic_origin_acceptance_after_seam_hygiene(self):
         # seam-hygiene H1 (2026-09-19; lean_frontend/docs/2026-09-18_seam-hygiene-record.md §3):
         # every hand-written seam failure is LemLib's `failwithI`, whose `private` impl

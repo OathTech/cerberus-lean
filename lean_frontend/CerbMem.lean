@@ -2095,7 +2095,8 @@ def readonlyStatusForAlloc (pref : prefix0) (initOpt : Option MemValue) : Readon
     readonlyStatusForAlloc pref none = .IsWritable := rfl
 
 /-- The allocator's out-of-memory kill — `fail (MerrOther "Concrete.allocator:
-    failed (out of memory)")` (impl_mem.ml:1255-1256 and :1260-1261), NAMED so a
+    failed (out of memory)")` (impl_mem.ml:1258-1259 and :1263-1264 in this tree;
+    the allocator's older per-line comments are −3 from these), NAMED so a
     consumer classifies the outcome by this constant instead of matching the
     string (seam-hygiene H3, 2026-09-19; cerberus-sl's request item 4, interim).
     `mem_error` has no OOM constructor (mem_common.lem:129-132) — a shared-model
@@ -2389,8 +2390,11 @@ def loadM [LemFuel] (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (p
   ND fun st =>
     let fail_ (err : mem_error) := (NDkilled (failReason err loc), st)
     -- do_load — impl_mem.ml:1556-1603 (`last_used= alloc_id_opt` :1567
-    -- mirrored — Z2-M-16; the PNVI `expose_allocations` arm :1562-1566 and
-    -- SW_strict_reads :1593-1598 are switch-conditioned, refused set — Z-24)
+    -- mirrored — Z2-M-16). Switch-conditioned arms: the PNVI `expose_allocations`
+    -- arm (:1570 in this tree) is DECLARED (refused set, Z-24; not one of the
+    -- eight explicit arms); SW_strict_reads (:1601-1606) is the EXPLICIT
+    -- `if has_switch .strict_reads then <loud kill> else …` guard below
+    -- (seam-hygiene H2)
     let doLoad (allocOpt : Option StorageInstanceId) (addr : Int) :=
       let size := sizeofCtype tagDefs ty
       let bytes := readBytesFrom st addr size
@@ -2772,8 +2776,10 @@ def intfromptr (loc : CerbLocation.Loc) (_ : ctype) (ity : integerType)
   | .PV prov (.PVconcrete _ addr) =>
     -- :2454-2461 `has_switch (SW_PNVI AE) || has_switch (SW_PNVI AE_UDI)` →
     -- expose_allocation. Guarded by the coarser `is_PNVI ()` (the one PNVI
-    -- predicate this port exposes; it implies both and is `false`, Z-24) exactly
-    -- as ptrfromint's arm is; the set case is loud (seam-hygiene H2)
+    -- predicate this port exposes; it is IMPLIED BY either disjunct — and also
+    -- by `SW_PNVI PLAIN`, where the OCaml takes the default arm — so its `false`
+    -- (Z-24) refutes both) exactly as ptrfromint's arm is; the set case is loud
+    -- (seam-hygiene H2)
     if CerbGlobal.is_PNVI () then
       kill (Other (MerrOther "intfromptr: a PNVI switch is set but the expose_allocation arm (impl_mem.ml:2454-2461) is not ported — switches are refused (Z-24)"))
     else
