@@ -1,0 +1,602 @@
+[
+  {
+    "case": "array-read-sequential",
+    "model": "sequential",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "lean_tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "array-read-sequential",
+    "model": "sc",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "lean_tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "atomic-exchange",
+    "model": "sequential",
+    "fork_status": 125,
+    "lean_status": 134,
+    "full_tokens_agree": null,
+    "fork_tokens": null,
+    "lean_tokens": null,
+    "fork_protocol_error": "fatal engine diagnostic; no completed observation",
+    "lean_protocol_error": "fatal engine diagnostic; no completed observation"
+  },
+  {
+    "case": "atomic-exchange",
+    "model": "sc",
+    "fork_status": 125,
+    "lean_status": 134,
+    "full_tokens_agree": null,
+    "fork_tokens": null,
+    "lean_tokens": null,
+    "fork_protocol_error": "fatal engine diagnostic; no completed observation",
+    "lean_protocol_error": "fatal engine diagnostic; no completed observation"
+  },
+  {
+    "case": "byte-read-sequential",
+    "model": "sequential",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "lean_tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "byte-read-sequential",
+    "model": "sc",
+    "fork_status": 1,
+    "lean_status": 1,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf well_formed_rf\"}"
+    ],
+    "lean_tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf well_formed_rf\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "byte-write-sequential",
+    "model": "sequential",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "VAL:{value: \"Specified(256)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "lean_tokens": [
+      "VAL:{value: \"Specified(256)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "byte-write-sequential",
+    "model": "sc",
+    "fork_status": 1,
+    "lean_status": 1,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf well_formed_rf\"}"
+    ],
+    "lean_tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf well_formed_rf\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "cmpxchg-control",
+    "model": "sequential",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "lean_tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "cmpxchg-control",
+    "model": "sc",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "lean_tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "memcpy-equal-value-race",
+    "model": "sequential",
+    "fork_status": 1,
+    "lean_status": 1,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "lean_tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "memcpy-equal-value-race",
+    "model": "sc",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": false,
+    "fork_tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf well_formed_rf\"}"
+    ],
+    "lean_tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf det_read\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "memcpy-race",
+    "model": "sequential",
+    "fork_status": 1,
+    "lean_status": 1,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "lean_tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "memcpy-race",
+    "model": "sc",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": false,
+    "fork_tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf well_formed_rf\"}"
+    ],
+    "lean_tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf det_read\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "memcpy-read-race",
+    "model": "sequential",
+    "fork_status": 1,
+    "lean_status": 1,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "lean_tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "memcpy-read-race",
+    "model": "sc",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": false,
+    "fork_tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf well_formed_rf\"}"
+    ],
+    "lean_tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf det_read\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "memcpy-sequential",
+    "model": "sequential",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "VAL:{value: \"Specified(7)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "lean_tokens": [
+      "VAL:{value: \"Specified(7)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "memcpy-sequential",
+    "model": "sc",
+    "fork_status": 1,
+    "lean_status": 1,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf well_formed_rf\"}"
+    ],
+    "lean_tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf well_formed_rf\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "nonatomic-race-control",
+    "model": "sequential",
+    "fork_status": 1,
+    "lean_status": 1,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "lean_tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "nonatomic-race-control",
+    "model": "sc",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}"
+    ],
+    "lean_tokens": [
+      "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "overlap-base-race",
+    "model": "sequential",
+    "fork_status": 1,
+    "lean_status": 1,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "lean_tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "overlap-base-race",
+    "model": "sc",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}"
+    ],
+    "lean_tokens": [
+      "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "overlap-byte-race",
+    "model": "sequential",
+    "fork_status": 1,
+    "lean_status": 1,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "lean_tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "overlap-byte-race",
+    "model": "sc",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "lean_tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "scalar-control",
+    "model": "sequential",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "VAL:{value: \"Specified(7)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "lean_tokens": [
+      "VAL:{value: \"Specified(7)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "scalar-control",
+    "model": "sc",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "VAL:{value: \"Specified(7)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "lean_tokens": [
+      "VAL:{value: \"Specified(7)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "seqrmw-seq-na-control",
+    "model": "sequential",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "lean_tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "seqrmw-seq-na-control",
+    "model": "sc",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "lean_tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "seqrmw-seq-publish-control",
+    "model": "sequential",
+    "fork_status": 1,
+    "lean_status": 1,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "lean_tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "seqrmw-seq-publish-control",
+    "model": "sc",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "lean_tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "seqrmw-unseq-na",
+    "model": "sequential",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "lean_tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "seqrmw-unseq-na",
+    "model": "sc",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "lean_tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "seqrmw-unseq-publish",
+    "model": "sequential",
+    "fork_status": 1,
+    "lean_status": 1,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "lean_tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "seqrmw-unseq-publish",
+    "model": "sc",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}",
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "lean_tokens": [
+      "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}",
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "seqrmw-unseq-same",
+    "model": "sequential",
+    "fork_status": 1,
+    "lean_status": 1,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "UB:{ub: \"UB035_unsequenced_race\", stderr: \"\", loc: \"<1:34--1:41>\"}"
+    ],
+    "lean_tokens": [
+      "UB:{ub: \"UB035_unsequenced_race\", stderr: \"\", loc: \"<1:34--1:41>\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "seqrmw-unseq-same",
+    "model": "sc",
+    "fork_status": 1,
+    "lean_status": 1,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "UB:{ub: \"UB035_unsequenced_race\", stderr: \"\", loc: \"<1:34--1:41>\"}"
+    ],
+    "lean_tokens": [
+      "UB:{ub: \"UB035_unsequenced_race\", stderr: \"\", loc: \"<1:34--1:41>\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "struct-read-sequential",
+    "model": "sequential",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "lean_tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "struct-read-sequential",
+    "model": "sc",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "lean_tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "uninit-read",
+    "model": "sequential",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "VAL:{value: \"Unspecified('signed int')\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "lean_tokens": [
+      "VAL:{value: \"Unspecified('signed int')\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  },
+  {
+    "case": "uninit-read",
+    "model": "sc",
+    "fork_status": 0,
+    "lean_status": 0,
+    "full_tokens_agree": true,
+    "fork_tokens": [
+      "VAL:{value: \"Unspecified('signed int')\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "lean_tokens": [
+      "VAL:{value: \"Unspecified('signed int')\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "fork_protocol_error": null,
+    "lean_protocol_error": null
+  }
+]

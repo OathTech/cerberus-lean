@@ -1,0 +1,44 @@
+control 0 0 '[MATCH] probe.c (SC): {Specified(7)}\nDIFF_FAIL=0 COMPARE_FAIL=0\n'
+fork-kill 137 0 '[MATCH] probe.c (SC): {Specified(7)}\nDIFF_FAIL=0 COMPARE_FAIL=0\n'
+lean-kill 0 137 '[MATCH] probe.c (SC): {Specified(7)}\nDIFF_FAIL=0 COMPARE_FAIL=0\n'
+both-timeout 124 124 '[MATCH] probe.c (SC): {Specified(7)}\nDIFF_FAIL=0 COMPARE_FAIL=0\n'
+reference-control 0 [OK]   IRIW+sc+sc+sc_sc+sc_sc.c: {Specified(0),Specified(1),Specified(10),Specified(11),Specified(12),Specified(13),Specified(14),Specified(15),Specified(2),Specified(3),Specified(4),Specified(6),Specified(7),Specified(8),Specified(9)}
+[OK]   LB+sc_sc+sc_sc.c: {Specified(0),Specified(1),Specified(2)}
+[OK]   MP+na+na.c: {UB005_data_race}
+[OK]   MP+na_sc+sc_na+globals.c: {Specified(1),Specified(2)}
+[OK]   MP+na_sc+sc_na.c: {Specified(1),Specified(2)}
+[OK]   SB+sc_sc+sc_sc+globals.c: {Specified(1),Specified(2),Specified(3)}
+[OK]   SB+sc_sc+sc_sc.c: {Specified(1),Specified(2),Specified(3)}
+[OK]   WRC+sc+sc_sc+sc_sc.c: {Specified(0),Specified(1),Specified(4),Specified(5),Specified(7)}
+[OK]   coherence+init+sc_sc.c: {Specified(1)}
+[OK]   coherence+sc_sc_sc.c: {Specified(1)}
+[OK]   datarace+Rna+Rna.c: {Specified(0)}
+[OK]   datarace+Rna+Rna_Wna.c: {UB005_data_race}
+[OK]   datarace+Rna+Wna.c: {UB005_data_race}
+[OK]   datarace+Wna+Wna+globals.c: {UB005_data_race}
+[OK]   datarace+Wna+Wna.c: {UB005_data_race}
+[OK]   datarace+Wna_sc+sc_Rna.c: {Specified(1),UB005_data_race}
+[OK]   globals+init+Rna_Rna.c: {Specified(10)}
+[OK]   globals+init+Wna_Wna.c: {Specified(3)}
+[OK]   hb-mo-cycle+Wsc_Wsc_Rsc+Wsc_Wsc_Rsc.c: {Specified(1),Specified(2),Specified(3)}
+sc_reference: all 19 SC rows agree with the derivation
+reference-duplicate 0 [OK]   IRIW+sc+sc+sc_sc+sc_sc.c: {Specified(0),Specified(1),Specified(10),Specified(11),Specified(12),Specified(13),Specified(14),Specified(15),Specified(2),Specified(3),Specified(4),Specified(6),Specified(7),Specified(8),Specified(9)}
+[OK]   LB+sc_sc+sc_sc.c: {Specified(0),Specified(1),Specified(2)}
+[OK]   MP+na+na.c: {UB005_data_race}
+[OK]   MP+na_sc+sc_na+globals.c: {Specified(1),Specified(2)}
+[OK]   MP+na_sc+sc_na.c: {Specified(1),Specified(2)}
+[OK]   SB+sc_sc+sc_sc+globals.c: {Specified(1),Specified(2),Specified(3)}
+[OK]   SB+sc_sc+sc_sc.c: {Specified(1),Specified(2),Specified(3)}
+[OK]   WRC+sc+sc_sc+sc_sc.c: {Specified(0),Specified(1),Specified(4),Specified(5),Specified(7)}
+[OK]   coherence+init+sc_sc.c: {Specified(1)}
+[OK]   coherence+sc_sc_sc.c: {Specified(1)}
+[OK]   datarace+Rna+Rna.c: {Specified(0)}
+[OK]   datarace+Rna+Rna_Wna.c: {UB005_data_race}
+[OK]   datarace+Rna+Wna.c: {UB005_data_race}
+[OK]   datarace+Wna+Wna+globals.c: {UB005_data_race}
+[OK]   datarace+Wna+Wna.c: {UB005_data_race}
+[OK]   datarace+Wna_sc+sc_Rna.c: {Specified(1),UB005_data_race}
+[OK]   globals+init+Rna_Rna.c: {Specified(10)}
+[OK]   globals+init+Wna_Wna.c: {Specified(3)}
+[OK]   hb-mo-cycle+Wsc_Wsc_Rsc+Wsc_Wsc_Rsc.c: {Specified(1),Specified(2),Specified(3)}
+sc_reference: all 19 SC rows agree with the derivation

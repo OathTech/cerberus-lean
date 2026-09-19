@@ -1,0 +1,46 @@
+[
+  {
+    "case": "control",
+    "fork_status": 0,
+    "lean_status": 0,
+    "helper_status": 0,
+    "stdout": "[MATCH] probe.c (SC): {Specified(7)}\nDIFF_FAIL=0 COMPARE_FAIL=0\n",
+    "stderr": ""
+  },
+  {
+    "case": "fork-kill",
+    "fork_status": 137,
+    "lean_status": 0,
+    "helper_status": 0,
+    "stdout": "[MATCH] probe.c (SC): {Specified(7)}\nDIFF_FAIL=0 COMPARE_FAIL=0\n",
+    "stderr": ""
+  },
+  {
+    "case": "lean-kill",
+    "fork_status": 0,
+    "lean_status": 137,
+    "helper_status": 0,
+    "stdout": "[MATCH] probe.c (SC): {Specified(7)}\nDIFF_FAIL=0 COMPARE_FAIL=0\n",
+    "stderr": ""
+  },
+  {
+    "case": "both-timeout",
+    "fork_status": 124,
+    "lean_status": 124,
+    "helper_status": 0,
+    "stdout": "[MATCH] probe.c (SC): {Specified(7)}\nDIFF_FAIL=0 COMPARE_FAIL=0\n",
+    "stderr": ""
+  },
+  {
+    "case": "reference-control",
+    "status": 0,
+    "stdout": "[OK]   IRIW+sc+sc+sc_sc+sc_sc.c: {Specified(0),Specified(1),Specified(10),Specified(11),Specified(12),Specified(13),Specified(14),Specified(15),Specified(2),Specified(3),Specified(4),Specified(6),Specified(7),Specified(8),Specified(9)}\n[OK]   LB+sc_sc+sc_sc.c: {Specified(0),Specified(1),Specified(2)}\n[OK]   MP+na+na.c: {UB005_data_race}\n[OK]   MP+na_sc+sc_na+globals.c: {Specified(1),Specified(2)}\n[OK]   MP+na_sc+sc_na.c: {Specified(1),Specified(2)}\n[OK]   SB+sc_sc+sc_sc+globals.c: {Specified(1),Specified(2),Specified(3)}\n[OK]   SB+sc_sc+sc_sc.c: {Specified(1),Specified(2),Specified(3)}\n[OK]   WRC+sc+sc_sc+sc_sc.c: {Specified(0),Specified(1),Specified(4),Specified(5),Specified(7)}\n[OK]   coherence+init+sc_sc.c: {Specified(1)}\n[OK]   coherence+sc_sc_sc.c: {Specified(1)}\n[OK]   datarace+Rna+Rna.c: {Specified(0)}\n[OK]   datarace+Rna+Rna_Wna.c: {UB005_data_race}\n[OK]   datarace+Rna+Wna.c: {UB005_data_race}\n[OK]   datarace+Wna+Wna+globals.c: {UB005_data_race}\n[OK]   datarace+Wna+Wna.c: {UB005_data_race}\n[OK]   datarace+Wna_sc+sc_Rna.c: {Specified(1),UB005_data_race}\n[OK]   globals+init+Rna_Rna.c: {Specified(10)}\n[OK]   globals+init+Wna_Wna.c: {Specified(3)}\n[OK]   hb-mo-cycle+Wsc_Wsc_Rsc+Wsc_Wsc_Rsc.c: {Specified(1),Specified(2),Specified(3)}\nsc_reference: all 19 SC rows agree with the derivation\n",
+    "stderr": ""
+  },
+  {
+    "case": "reference-duplicate",
+    "status": 0,
+    "stdout": "[OK]   IRIW+sc+sc+sc_sc+sc_sc.c: {Specified(0),Specified(1),Specified(10),Specified(11),Specified(12),Specified(13),Specified(14),Specified(15),Specified(2),Specified(3),Specified(4),Specified(6),Specified(7),Specified(8),Specified(9)}\n[OK]   LB+sc_sc+sc_sc.c: {Specified(0),Specified(1),Specified(2)}\n[OK]   MP+na+na.c: {UB005_data_race}\n[OK]   MP+na_sc+sc_na+globals.c: {Specified(1),Specified(2)}\n[OK]   MP+na_sc+sc_na.c: {Specified(1),Specified(2)}\n[OK]   SB+sc_sc+sc_sc+globals.c: {Specified(1),Specified(2),Specified(3)}\n[OK]   SB+sc_sc+sc_sc.c: {Specified(1),Specified(2),Specified(3)}\n[OK]   WRC+sc+sc_sc+sc_sc.c: {Specified(0),Specified(1),Specified(4),Specified(5),Specified(7)}\n[OK]   coherence+init+sc_sc.c: {Specified(1)}\n[OK]   coherence+sc_sc_sc.c: {Specified(1)}\n[OK]   datarace+Rna+Rna.c: {Specified(0)}\n[OK]   datarace+Rna+Rna_Wna.c: {UB005_data_race}\n[OK]   datarace+Rna+Wna.c: {UB005_data_race}\n[OK]   datarace+Wna+Wna+globals.c: {UB005_data_race}\n[OK]   datarace+Wna+Wna.c: {UB005_data_race}\n[OK]   datarace+Wna_sc+sc_Rna.c: {Specified(1),UB005_data_race}\n[OK]   globals+init+Rna_Rna.c: {Specified(10)}\n[OK]   globals+init+Wna_Wna.c: {Specified(3)}\n[OK]   hb-mo-cycle+Wsc_Wsc_Rsc+Wsc_Wsc_Rsc.c: {Specified(1),Specified(2),Specified(3)}\nsc_reference: all 19 SC rows agree with the derivation\n",
+    "stderr": ""
+  }
+]

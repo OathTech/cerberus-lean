@@ -1,0 +1,904 @@
+[
+  {
+    "case": "array-read-sequential",
+    "model": "sequential",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/array-read-sequential.c"
+    ],
+    "status": 0,
+    "seconds": 0.03,
+    "tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "array-read-sequential",
+    "model": "sc",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/array-read-sequential.c"
+    ],
+    "status": 0,
+    "seconds": 0.03,
+    "tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "atomic-exchange",
+    "model": "sequential",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/atomic-exchange.c"
+    ],
+    "status": 125,
+    "seconds": 0.03,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "diagnostics": " Cerb_frontend__Translation_effect.with_block_objects.(fun) in file \"ocaml_frontend/generated/translation_effect.ml\", line 175, characters 18-26\n          Called from Cerb_frontend__State.bind.(fun) in file \"ocaml_frontend/generated/state.ml\", line 13, characters 18-23\n          Called from Cerb_frontend__State.bind.(fun) in file \"ocaml_frontend/generated/state.ml\", line 13, characters 18-23\n          Called from Cerb_frontend__State.bind.(fun) in file \"ocaml_frontend/generated/state.ml\", line 13, characters 18-23\n          Called from Cerb_frontend__State.bind.(fun) in file \"ocaml_frontend/generated/state.ml\", line 13, characters 18-23\n          Called from Cerb_frontend__State.bind.(fun) in file \"ocaml_frontend/generated/state.ml\", line 13, characters 18-23\n          Called from Cerb_frontend__Translation_effect.runStateM_errors in file \"ocaml_frontend/generated/translation_effect.ml\", line 265, characters 19-35\n          Called from Cerb_frontend__Translation.translate in file \"ocaml_frontend/generated/translation.ml\", line 4693, characters 4-96\n          Called from Cerb_backend__Pipeline.c_frontend_and_elaboration.(fun) in file \"backend/common/pipeline.ml\", line 270, characters 34-110\n          Called from Dune__exe__Main.frontend in file \"backend/driver/main.ml\", line 29, characters 4-60\n          Called from Dune__exe__Main.cerberus.main.(fun) in file \"backend/driver/main.ml\", line 161, characters 6-47\n          Called from Cerb_frontend__Exception.except_foldlM.(fun) in file \"ocaml_frontend/generated/exception.ml\", line 69, characters 18-25\n          Called from Dune__exe__Main.cerberus.(fun) in file \"backend/driver/main.ml\", line 321, characters 8-24\n          Called from Dune__exe__Main.cerberus in file \"backend/driver/main.ml\", lines 316-342, characters 8-15\n          Called from Cmdliner_term.app.(fun) in file \"cmdliner_term.ml\", line 22, characters 19-24\n          Called from Cmdliner_eval.run_parser in file \"cmdliner_eval.ml\", line 41, characters 7-16\n",
+    "stdout_tail": ""
+  },
+  {
+    "case": "atomic-exchange",
+    "model": "sc",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/atomic-exchange.c"
+    ],
+    "status": 125,
+    "seconds": 0.032,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "diagnostics": " Cerb_frontend__Translation_effect.with_block_objects.(fun) in file \"ocaml_frontend/generated/translation_effect.ml\", line 175, characters 18-26\n          Called from Cerb_frontend__State.bind.(fun) in file \"ocaml_frontend/generated/state.ml\", line 13, characters 18-23\n          Called from Cerb_frontend__State.bind.(fun) in file \"ocaml_frontend/generated/state.ml\", line 13, characters 18-23\n          Called from Cerb_frontend__State.bind.(fun) in file \"ocaml_frontend/generated/state.ml\", line 13, characters 18-23\n          Called from Cerb_frontend__State.bind.(fun) in file \"ocaml_frontend/generated/state.ml\", line 13, characters 18-23\n          Called from Cerb_frontend__State.bind.(fun) in file \"ocaml_frontend/generated/state.ml\", line 13, characters 18-23\n          Called from Cerb_frontend__Translation_effect.runStateM_errors in file \"ocaml_frontend/generated/translation_effect.ml\", line 265, characters 19-35\n          Called from Cerb_frontend__Translation.translate in file \"ocaml_frontend/generated/translation.ml\", line 4693, characters 4-96\n          Called from Cerb_backend__Pipeline.c_frontend_and_elaboration.(fun) in file \"backend/common/pipeline.ml\", line 270, characters 34-110\n          Called from Dune__exe__Main.frontend in file \"backend/driver/main.ml\", line 29, characters 4-60\n          Called from Dune__exe__Main.cerberus.main.(fun) in file \"backend/driver/main.ml\", line 161, characters 6-47\n          Called from Cerb_frontend__Exception.except_foldlM.(fun) in file \"ocaml_frontend/generated/exception.ml\", line 69, characters 18-25\n          Called from Dune__exe__Main.cerberus.(fun) in file \"backend/driver/main.ml\", line 321, characters 8-24\n          Called from Dune__exe__Main.cerberus in file \"backend/driver/main.ml\", lines 316-342, characters 8-15\n          Called from Cmdliner_term.app.(fun) in file \"cmdliner_term.ml\", line 22, characters 19-24\n          Called from Cmdliner_eval.run_parser in file \"cmdliner_eval.ml\", line 41, characters 7-16\n",
+    "stdout_tail": ""
+  },
+  {
+    "case": "byte-read-sequential",
+    "model": "sequential",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/byte-read-sequential.c"
+    ],
+    "status": 0,
+    "seconds": 0.034,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "byte-read-sequential",
+    "model": "sc",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/byte-read-sequential.c"
+    ],
+    "status": 1,
+    "seconds": 0.03,
+    "tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf well_formed_rf\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "byte-write-sequential",
+    "model": "sequential",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/byte-write-sequential.c"
+    ],
+    "status": 0,
+    "seconds": 0.03,
+    "tokens": [
+      "VAL:{value: \"Specified(256)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "byte-write-sequential",
+    "model": "sc",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/byte-write-sequential.c"
+    ],
+    "status": 1,
+    "seconds": 0.031,
+    "tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf well_formed_rf\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "cmpxchg-control",
+    "model": "sequential",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/cmpxchg-control.c"
+    ],
+    "status": 0,
+    "seconds": 0.033,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "cmpxchg-control",
+    "model": "sc",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/cmpxchg-control.c"
+    ],
+    "status": 0,
+    "seconds": 0.031,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "memcpy-equal-value-race",
+    "model": "sequential",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/memcpy-equal-value-race.c"
+    ],
+    "status": 1,
+    "seconds": 0.03,
+    "tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "memcpy-equal-value-race",
+    "model": "sc",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/memcpy-equal-value-race.c"
+    ],
+    "status": 0,
+    "seconds": 0.039,
+    "tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf well_formed_rf\"}"
+    ],
+    "count": 108
+  },
+  {
+    "case": "memcpy-race",
+    "model": "sequential",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/memcpy-race.c"
+    ],
+    "status": 1,
+    "seconds": 0.034,
+    "tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "memcpy-race",
+    "model": "sc",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/memcpy-race.c"
+    ],
+    "status": 0,
+    "seconds": 0.038,
+    "tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf well_formed_rf\"}"
+    ],
+    "count": 108
+  },
+  {
+    "case": "memcpy-read-race",
+    "model": "sequential",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/memcpy-read-race.c"
+    ],
+    "status": 1,
+    "seconds": 0.032,
+    "tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "memcpy-read-race",
+    "model": "sc",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/memcpy-read-race.c"
+    ],
+    "status": 0,
+    "seconds": 0.037,
+    "tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf well_formed_rf\"}"
+    ],
+    "count": 108
+  },
+  {
+    "case": "memcpy-sequential",
+    "model": "sequential",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/memcpy-sequential.c"
+    ],
+    "status": 0,
+    "seconds": 0.034,
+    "tokens": [
+      "VAL:{value: \"Specified(7)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "memcpy-sequential",
+    "model": "sc",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/memcpy-sequential.c"
+    ],
+    "status": 1,
+    "seconds": 0.033,
+    "tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf well_formed_rf\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "nonatomic-race-control",
+    "model": "sequential",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/nonatomic-race-control.c"
+    ],
+    "status": 1,
+    "seconds": 0.029,
+    "tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "nonatomic-race-control",
+    "model": "sc",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/nonatomic-race-control.c"
+    ],
+    "status": 0,
+    "seconds": 0.031,
+    "tokens": [
+      "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}"
+    ],
+    "count": 2
+  },
+  {
+    "case": "overlap-base-race",
+    "model": "sequential",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/overlap-base-race.c"
+    ],
+    "status": 1,
+    "seconds": 0.029,
+    "tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "overlap-base-race",
+    "model": "sc",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/overlap-base-race.c"
+    ],
+    "status": 0,
+    "seconds": 0.034,
+    "tokens": [
+      "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}"
+    ],
+    "count": 5
+  },
+  {
+    "case": "overlap-byte-race",
+    "model": "sequential",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/overlap-byte-race.c"
+    ],
+    "status": 1,
+    "seconds": 0.033,
+    "tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "overlap-byte-race",
+    "model": "sc",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/overlap-byte-race.c"
+    ],
+    "status": 0,
+    "seconds": 0.032,
+    "tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 5
+  },
+  {
+    "case": "scalar-control",
+    "model": "sequential",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/scalar-control.c"
+    ],
+    "status": 0,
+    "seconds": 0.032,
+    "tokens": [
+      "VAL:{value: \"Specified(7)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "scalar-control",
+    "model": "sc",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/scalar-control.c"
+    ],
+    "status": 0,
+    "seconds": 0.032,
+    "tokens": [
+      "VAL:{value: \"Specified(7)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "seqrmw-seq-na-control",
+    "model": "sequential",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/seqrmw-seq-na-control.c"
+    ],
+    "status": 0,
+    "seconds": 0.031,
+    "tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "seqrmw-seq-na-control",
+    "model": "sc",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/seqrmw-seq-na-control.c"
+    ],
+    "status": 0,
+    "seconds": 0.03,
+    "tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "seqrmw-seq-publish-control",
+    "model": "sequential",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/seqrmw-seq-publish-control.c"
+    ],
+    "status": 1,
+    "seconds": 0.029,
+    "tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "seqrmw-seq-publish-control",
+    "model": "sc",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/seqrmw-seq-publish-control.c"
+    ],
+    "status": 0,
+    "seconds": 0.034,
+    "tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 10
+  },
+  {
+    "case": "seqrmw-unseq-na",
+    "model": "sequential",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/seqrmw-unseq-na.c"
+    ],
+    "status": 0,
+    "seconds": 0.028,
+    "tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "seqrmw-unseq-na",
+    "model": "sc",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/seqrmw-unseq-na.c"
+    ],
+    "status": 0,
+    "seconds": 0.031,
+    "tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "seqrmw-unseq-publish",
+    "model": "sequential",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/seqrmw-unseq-publish.c"
+    ],
+    "status": 1,
+    "seconds": 0.031,
+    "tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "seqrmw-unseq-publish",
+    "model": "sc",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/seqrmw-unseq-publish.c"
+    ],
+    "status": 0,
+    "seconds": 0.048,
+    "tokens": [
+      "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}",
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 53
+  },
+  {
+    "case": "seqrmw-unseq-same",
+    "model": "sequential",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/seqrmw-unseq-same.c"
+    ],
+    "status": 1,
+    "seconds": 0.031,
+    "tokens": [
+      "UB:{ub: \"UB035_unsequenced_race\", stderr: \"\", loc: \"<1:34--1:41>\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "seqrmw-unseq-same",
+    "model": "sc",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/seqrmw-unseq-same.c"
+    ],
+    "status": 1,
+    "seconds": 0.033,
+    "tokens": [
+      "UB:{ub: \"UB035_unsequenced_race\", stderr: \"\", loc: \"<1:34--1:41>\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "struct-read-sequential",
+    "model": "sequential",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/struct-read-sequential.c"
+    ],
+    "status": 0,
+    "seconds": 0.034,
+    "tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "struct-read-sequential",
+    "model": "sc",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/struct-read-sequential.c"
+    ],
+    "status": 0,
+    "seconds": 0.034,
+    "tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "uninit-read",
+    "model": "sequential",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/uninit-read.c"
+    ],
+    "status": 0,
+    "seconds": 0.033,
+    "tokens": [
+      "VAL:{value: \"Unspecified('signed int')\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "uninit-read",
+    "model": "sc",
+    "side": "fork",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/uninit-read.c"
+    ],
+    "status": 0,
+    "seconds": 0.031,
+    "tokens": [
+      "VAL:{value: \"Unspecified('signed int')\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  }
+]

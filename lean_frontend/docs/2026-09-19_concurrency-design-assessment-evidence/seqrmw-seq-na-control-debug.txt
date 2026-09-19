@@ -1,0 +1,189 @@
+EMPTY CONSTRAINTS
+EMPTY CONSTRAINTS
+Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+[0.0230] 0. Using 'concrete'
+[0.0232] 1. Core standard library loaded.
+[0.0232] 2. Implementation file loaded.
+(debug 2): Using the C frontend
+[0.0233] 3. C parsing completed!
+(debug 2): attempting to register identifier `x' with scope= prototype(0) with namespace= ordinary, kind= parameter, linkage= Just (none)
+(debug 2): internal_register_identifier ==> link_opt <> Just Linkage_external
+(debug 2): lookup registered ==> Nothing
+(debug 2): lookup external ==> Nothing
+(debug 2): attempting to register internal object declaration of `Symbol(483, SD_ObjectAddress"x")' with qs, ty= signed int
+(debug 2): attempting to register identifier `__builtin_ffs' with scope= file with namespace= ordinary, kind= function, linkage= Just (external)
+(debug 2): internal_register_identifier ==> link_opt = Just Linkage_external
+(debug 2): lookup external ==> Nothing
+(debug 2): registering function declaration of 'Symbol(484, SD_Id("__builtin_ffs"))' with PROTOTYPE with decl= function (signed int) returning signed int
+(debug 2): attempting to register identifier `x' with scope= prototype(1) with namespace= ordinary, kind= parameter, linkage= Just (none)
+(debug 2): internal_register_identifier ==> link_opt <> Just Linkage_external
+(debug 2): lookup registered ==> Nothing
+(debug 2): lookup external ==> Nothing
+(debug 2): attempting to register internal object declaration of `Symbol(485, SD_ObjectAddress"x")' with qs, ty= signed long
+(debug 2): attempting to register identifier `__builtin_ffsl' with scope= file with namespace= ordinary, kind= function, linkage= Just (external)
+(debug 2): internal_register_identifier ==> link_opt = Just Linkage_external
+(debug 2): lookup external ==> Nothing
+(debug 2): registering function declaration of 'Symbol(486, SD_Id("__builtin_ffsl"))' with PROTOTYPE with decl= function (signed long) returning signed int
+(debug 2): attempting to register identifier `x' with scope= prototype(2) with namespace= ordinary, kind= parameter, linkage= Just (none)
+(debug 2): internal_register_identifier ==> link_opt <> Just Linkage_external
+(debug 2): lookup registered ==> Nothing
+(debug 2): lookup external ==> Nothing
+(debug 2): attempting to register internal object declaration of `Symbol(487, SD_ObjectAddress"x")' with qs, ty= signed long long
+(debug 2): attempting to register identifier `__builtin_ffsll' with scope= file with namespace= ordinary, kind= function, linkage= Just (external)
+(debug 2): internal_register_identifier ==> link_opt = Just Linkage_external
+(debug 2): lookup external ==> Nothing
+(debug 2): registering function declaration of 'Symbol(488, SD_Id("__builtin_ffsll"))' with PROTOTYPE with decl= function (signed long long) returning signed int
+(debug 2): attempting to register identifier `x' with scope= prototype(3) with namespace= ordinary, kind= parameter, linkage= Just (none)
+(debug 2): internal_register_identifier ==> link_opt <> Just Linkage_external
+(debug 2): lookup registered ==> Nothing
+(debug 2): lookup external ==> Nothing
+(debug 2): attempting to register internal object declaration of `Symbol(489, SD_ObjectAddress"x")' with qs, ty= unsigned int
+(debug 2): attempting to register identifier `__builtin_ctz' with scope= file with namespace= ordinary, kind= function, linkage= Just (external)
+(debug 2): internal_register_identifier ==> link_opt = Just Linkage_external
+(debug 2): lookup external ==> Nothing
+(debug 2): registering function declaration of 'Symbol(490, SD_Id("__builtin_ctz"))' with PROTOTYPE with decl= function (unsigned int) returning signed int
+(debug 2): attempting to register identifier `x' with scope= prototype(4) with namespace= ordinary, kind= parameter, linkage= Just (none)
+(debug 2): internal_register_identifier ==> link_opt <> Just Linkage_external
+(debug 2): lookup registered ==> Nothing
+(debug 2): lookup external ==> Nothing
+(debug 2): attempting to register internal object declaration of `Symbol(491, SD_ObjectAddress"x")' with qs, ty= unsigned long
+(debug 2): attempting to register identifier `__builtin_ctzl' with scope= file with namespace= ordinary, kind= function, linkage= Just (external)
+(debug 2): internal_register_identifier ==> link_opt = Just Linkage_external
+(debug 2): lookup external ==> Nothing
+(debug 2): registering function declaration of 'Symbol(492, SD_Id("__builtin_ctzl"))' with PROTOTYPE with decl= function (unsigned long) returning signed int
+(debug 2): attempting to register identifier `x' with scope= prototype(5) with namespace= ordinary, kind= parameter, linkage= Just (none)
+(debug 2): internal_register_identifier ==> link_opt <> Just Linkage_external
+(debug 2): lookup registered ==> Nothing
+(debug 2): lookup external ==> Nothing
+(debug 2): attempting to register internal object declaration of `Symbol(493, SD_ObjectAddress"x")' with qs, ty= unsigned long long
+(debug 2): attempting to register identifier `__builtin_ctzll' with scope= file with namespace= ordinary, kind= function, linkage= Just (external)
+(debug 2): internal_register_identifier ==> link_opt = Just Linkage_external
+(debug 2): lookup external ==> Nothing
+(debug 2): registering function declaration of 'Symbol(494, SD_Id("__builtin_ctzll"))' with PROTOTYPE with decl= function (unsigned long long) returning signed int
+(debug 2): Cabs_to_ail, TSpec_name ==> __cerbty_uint16_t
+(debug 2): Cabs_to_ail, TSpec_name ==> __cerbty_uint16_t
+(debug 2): attempting to register identifier `x' with scope= prototype(6) with namespace= ordinary, kind= parameter, linkage= Just (none)
+(debug 2): internal_register_identifier ==> link_opt <> Just Linkage_external
+(debug 2): lookup registered ==> Nothing
+(debug 2): lookup external ==> Nothing
+(debug 2): attempting to register internal object declaration of `Symbol(495, SD_ObjectAddress"x")' with qs, ty= uint16_t
+(debug 2): attempting to register identifier `__builtin_bswap16' with scope= file with namespace= ordinary, kind= function, linkage= Just (external)
+(debug 2): internal_register_identifier ==> link_opt = Just Linkage_external
+(debug 2): lookup external ==> Nothing
+(debug 2): registering function declaration of 'Symbol(496, SD_Id("__builtin_bswap16"))' with PROTOTYPE with decl= function (uint16_t) returning uint16_t
+(debug 2): Cabs_to_ail, TSpec_name ==> __cerbty_uint32_t
+(debug 2): Cabs_to_ail, TSpec_name ==> __cerbty_uint32_t
+(debug 2): attempting to register identifier `x' with scope= prototype(7) with namespace= ordinary, kind= parameter, linkage= Just (none)
+(debug 2): internal_register_identifier ==> link_opt <> Just Linkage_external
+(debug 2): lookup registered ==> Nothing
+(debug 2): lookup external ==> Nothing
+(debug 2): attempting to register internal object declaration of `Symbol(497, SD_ObjectAddress"x")' with qs, ty= uint32_t
+(debug 2): attempting to register identifier `__builtin_bswap32' with scope= file with namespace= ordinary, kind= function, linkage= Just (external)
+(debug 2): internal_register_identifier ==> link_opt = Just Linkage_external
+(debug 2): lookup external ==> Nothing
+(debug 2): registering function declaration of 'Symbol(498, SD_Id("__builtin_bswap32"))' with PROTOTYPE with decl= function (uint32_t) returning uint32_t
+(debug 2): Cabs_to_ail, TSpec_name ==> __cerbty_uint64_t
+(debug 2): Cabs_to_ail, TSpec_name ==> __cerbty_uint64_t
+(debug 2): attempting to register identifier `x' with scope= prototype(8) with namespace= ordinary, kind= parameter, linkage= Just (none)
+(debug 2): internal_register_identifier ==> link_opt <> Just Linkage_external
+(debug 2): lookup registered ==> Nothing
+(debug 2): lookup external ==> Nothing
+(debug 2): attempting to register internal object declaration of `Symbol(499, SD_ObjectAddress"x")' with qs, ty= uint64_t
+(debug 2): attempting to register identifier `__builtin_bswap64' with scope= file with namespace= ordinary, kind= function, linkage= Just (external)
+(debug 2): internal_register_identifier ==> link_opt = Just Linkage_external
+(debug 2): lookup external ==> Nothing
+(debug 2): registering function declaration of 'Symbol(500, SD_Id("__builtin_bswap64"))' with PROTOTYPE with decl= function (uint64_t) returning uint64_t
+(debug 2): attempting to register identifier `__builtin_unreachable' with scope= file with namespace= ordinary, kind= function, linkage= Just (external)
+(debug 2): internal_register_identifier ==> link_opt = Just Linkage_external
+(debug 2): lookup external ==> Nothing
+(debug 2): registering function declaration of 'Symbol(501, SD_Id("__builtin_unreachable"))' with PROTOTYPE with decl= function () returning void
+(debug 2): ENTERING Scope(2): block(10)
+(debug 2): EXITING Scope(2): block(10)
+(debug 2): attempting to register identifier `main' with scope= file with namespace= ordinary, kind= function, linkage= Just (external)
+(debug 2): internal_register_identifier ==> link_opt = Just Linkage_external
+(debug 2): lookup external ==> Nothing
+(debug 2): registering function declaration of 'Symbol(502, SD_Id("main"))' with decl= function () returning signed int
+(debug 2): DESUGARING, CabsEident: x
+(debug 2): BROKEN: desugar_declaration_base
+(debug 2): BROKEN: desugar_declaration_base
+(debug 2): TODO ==> USING `desugar_init_declarator_BROKEN'
+warning: AilTypesAux.is_vla is BOGUS
+(debug 2): attempting to register identifier `x' with scope= block(11) with namespace= ordinary, kind= object, linkage= Just (none)
+(debug 2): internal_register_identifier ==> link_opt <> Just Linkage_external
+(debug 2): lookup registered ==> Nothing
+(debug 2): lookup external ==> Nothing
+(debug 2): attempting to register internal object declaration of `Symbol(504, SD_ObjectAddress"x")' with qs, ty= signed int
+(debug 2): Hello, ty' = signed int
+(debug 2): TODO ==> USING `desugar_init_declarator_BROKEN'
+warning: AilTypesAux.is_vla is BOGUS
+(debug 2): attempting to register identifier `y' with scope= block(11) with namespace= ordinary, kind= object, linkage= Just (none)
+(debug 2): internal_register_identifier ==> link_opt <> Just Linkage_external
+(debug 2): lookup registered ==> Nothing
+(debug 2): lookup external ==> Nothing
+(debug 2): attempting to register internal object declaration of `Symbol(505, SD_ObjectAddress"y")' with qs, ty= signed int
+(debug 2): Hello, ty' = signed int
+(debug 2): attempting to resolve ordinary identifier `x
+(debug 2): USED IDENTIFIER
+(debug 2): before fetch_object_declaration ==> "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/seqrmw-seq-na-control.c:1:35:"
+(debug 2): DESUGARING, CabsEident: y
+(debug 2): attempting to resolve ordinary identifier `y
+(debug 2): USED IDENTIFIER
+(debug 2): before fetch_object_declaration ==> "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/seqrmw-seq-na-control.c:1:47:"
+(debug 2): registering function definition of 'Symbol(502, SD_Id("main"))' with params: []
+(debug 2): KKK: check + find STD quote
+(debug 2): KKK: check + find STD quote
+(debug 2): KKK: check + find STD quote
+(debug 2): KKK: check + find STD quote
+(debug 2): KKK: check + find STD quote
+(debug 2): KKK: check + find STD quote
+(debug 2): KKK: check + find STD quote
+(debug 2): KKK: check + find STD quote
+(debug 2): KKK: check + find STD quote
+(debug 2): KKK: check + find STD quote
+(debug 2): KKK: check + find STD quote
+[0.0238] 4. Cabs -> Ail completed!
+warning: (unsure) wf_type, Function calls ==> wf_lvalue_aux
+warning: (unsure) wf_type, Function calls ==> wf_lvalue_aux
+warning: (unsure) wf_type, Function calls ==> wf_lvalue_aux
+warning: (unsure) wf_type, Function calls ==> wf_lvalue_aux
+warning: (unsure) wf_type, Function calls ==> wf_lvalue_aux
+warning: (unsure) wf_type, Function calls ==> wf_lvalue_aux
+warning: (unsure) wf_type, Function calls ==> wf_lvalue_aux
+warning: (unsure) wf_type, Function calls ==> wf_lvalue_aux
+warning: (unsure) wf_type, Function calls ==> wf_lvalue_aux
+warning: (unsure) wf_type, Function calls ==> wf_lvalue_aux
+warning: (unsure) wf_type, Function calls ==> wf_lvalue_aux
+warning: (unsure) annotate_sigma doesn't look at [ret_qs]
+(debug 2): [well_typed_assignment] OK: bullet 1
+(debug 2): [well_typed_assignment] OK: bullet 1
+(debug 2): [AilEident (gamma)] Symbol(504, SD_ObjectAddress"x") -- signed int
+(debug 2): GenLValueType ==>signed int
+(debug 2): [AilEident (gamma)] Symbol(505, SD_ObjectAddress"y") -- signed int
+(debug 2): GenLValueType ==>signed int
+(debug 2): [well_typed_assignment] OK: bullet 1
+[0.0239] 5. Ail typing completed!
+[0.0239] 6. Translation to Core completed!
+(debug 2): HELLO from Smt2.runND, exec mode= exhaustive
+(debug 2): ENTERING Driver.driver2
+(debug 2): SB-TAG aid 0 pol Pos ctx Csseq[Csseq[CTX]]
+(debug 2): SB-TAG aid 1 pol Pos ctx Csseq[Csseq[CTX]]
+(debug 2): SB-TAG aid 2 pol Pos ctx Csseq[Csseq[CTX]]
+(debug 2): SC-RECORD aid 2 tid 0 sb_before {(0, 0); (0, 1)} asw_before {}
+(debug 2): SB-TAG aid 3 pol Pos ctx Csseq[Cannot[Csseq[CTX]]]
+(debug 2): SC-RECORD aid 3 tid 0 sb_before {(0, 0); (0, 1); (0, 2)} asw_before {}
+(debug 2): SC-RECORD aid 4 tid 0 sb_before {(0, 0); (0, 1); (0, 2); (0, 3)} asw_before {}
+(debug 2): SC-RECORD aid 5 tid 0 sb_before {(0, 0); (0, 1); (0, 2); (0, 3); (0, 4)} asw_before {}
+(debug 2): SB-TAG aid 6 pol Pos ctx Csseq[Cannot[Csseq[Csseq[Cbound[CTX]]]]]
+(debug 2): SC-RECORD aid 6 tid 0 sb_before {(0, 0); (0, 1); (0, 2); (0, 3); (0, 4); (0, 5)} asw_before {}
+(debug 1): KILLING alloc_id= 1
+(debug 2): SB-TAG aid 7 pol Pos ctx Csseq[Cannot[Csseq[Csseq[CTX]]]]
+(debug 1): KILLING alloc_id= 2
+(debug 2): SB-TAG aid 8 pol Pos ctx Csseq[Cannot[Csseq[Csseq[CTX]]]]
+(debug 2): ND2.pick [misc: new_drive_core_threads] (|ms| = singleton)
+(debug 2): ND2.pick [misc: driver non_blocked] (|ms| = singleton)
+(debug 2): SC candidate execution: (pre_ex: {2; 3; 4; 5; 6}, wit: rf: {(2, 4); (3, 6)}, mo: {}, sc: {}, lo: {}, tot: {}, committed: [6; 5; 4; 3; 2])
+  actions: {Store (aid: 2, tid: 0, mo: NA, loc: TODO, val: TODO); Store (aid: 3, tid: 0, mo: NA, loc: TODO, val: TODO); Load (aid: 4, tid: 0, mo: NA, loc: TODO, val: TODO); Store (aid: 5, tid: 0, mo: NA, loc: TODO, val: TODO); Load (aid: 6, tid: 0, mo: NA, loc: TODO, val: TODO)}
+  sb: trancl of {(2, 3); (3, 4); (4, 5); (5, 6)}
+  asw: {}
+(debug 2): ENTERING Driver.hack
+Time spent: 0.024173 seconds

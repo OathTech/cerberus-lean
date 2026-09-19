@@ -1,0 +1,14 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+test: coherent SC execution passes every consistency leaf
+  ✓ PASS
+test: PLANT: rf corrupted to the earlier store FAILS the tree (named leaf)
+  ✓ PASS
+test: PLANT names a coherence leaf
+  ✓ PASS
+test: unsynchronised NA store/load across threads IS a data race
+  ✓ PASS
+test: the same pair ordered by asw is race-free
+  ✓ PASS
+  (plant's failing leaves: [coherent_memory_use, sc_accesses_sc_reads_restricted])
+
+5 passed, 0 failed
