@@ -1,0 +1,101 @@
+check_theorem_axioms: hand-written axiom census OK (0 axioms — the arc-17 S2b end state)
+check_theorem_axioms: generated-tree census OK (219 files: 0 axioms, boundary-opaque population = the 12 registered rows exactly-once (incl. CerbFuel.fuelExhaustedLoc), 0 unsafeCast)
+check_theorem_axioms: C2 ratchet OK (377 files scanned recursively: 0 axioms, 0 runEffectful, seam population = the 25 pinned path-qualified counted rows exactly incl. the extern class; lem tests/ scaffolds asserted outside the surface)
+check_theorem_axioms: D14 grep-ban OK (no native_decide/bv_decide in 1 tree(s) + 49 hand-written seam files + LemLibTest.lean)
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+'core_object_type_of_ctype' does not depend on any axioms
+'get_membersDefs' depends on axioms: [propext, Classical.choice, Quot.sound]
+'zeros_aux' depends on axioms: [propext, Classical.choice, Quot.sound]
+'fresh_symbol'' does not depend on any axioms
+'match_pattern' depends on axioms: [propext]
+'convert_pexpr' does not depend on any axioms
+'nd_bind' does not depend on any axioms
+'subst_sym_pexpr' depends on axioms: [propext, Classical.choice, Quot.sound]
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+'driver2' depends on axioms: [propext, Classical.choice, Quot.sound]
+check_theorem_axioms: driver2 cone sorryAx-free + ofReduce*-free + DAEMON-free (arc-8 S3 bar)
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+'driver2' depends on axioms: [propext, Classical.choice, Quot.sound]
+'drive' depends on axioms: [propext, Classical.choice, Quot.sound]
+'initial_driver_state' depends on axioms: [propext, Classical.choice, Quot.sound]
+'desugar' depends on axioms: [propext, Classical.choice, Quot.sound]
+'annotate_program' depends on axioms: [propext, Classical.choice, Quot.sound]
+'translate' depends on axioms: [propext, Classical.choice, Quot.sound]
+'link' depends on axioms: [propext, Classical.choice, Quot.sound]
+'convert_file' does not depend on any axioms
+'CerbCall.driveCall' depends on axioms: [propext, Classical.choice, Quot.sound]
+check_theorem_axioms: C2 entry census OK (9 entries, every cone ⊆ [propext, Classical.choice, Quot.sound])
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+'CerbMem.chunksOf_eq_range_map' depends on axioms: [propext, Quot.sound]
+'CerbMem.reconstructValue_lemFuel_eq_indexed' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbMem.reconstructValue_eq_indexed' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbMem.foldl_append_eq_flatten_reverse' depends on axioms: [propext]
+'CerbMem.memValueToBytes_lemFuel_eq_append' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbMem.memValueToBytes_eq_append' depends on axioms: [propext, Classical.choice, Quot.sound]
+check_theorem_axioms: mem-scale S1 leg OK (6 C1/C3 equality theorems, every cone ⊆ [propext, Classical.choice, Quot.sound])
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+'nd_bind_lemFuel_zero' does not depend on any axioms
+'liftND_lemFuel_zero' does not depend on any axioms
+'liftAction_lemFuel_zero' does not depend on any axioms
+'print_eval_conv_aux_lemFuel_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'drive_nonmemory_steps_aux2_lemFuel_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'driver2_lemFuel_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'find_array_index_lemFuel_zero' depends on axioms: [propext]
+'easy_update_mem_value_aux_lemFuel_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'memcmp_load_aux_lemFuel_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.fuelExhaustedKill_eq' does not depend on any axioms
+'CerbND.runNDFuel_zero' does not depend on any axioms
+'CerbND.runND1Fuel_zero' does not depend on any axioms
+'CerbND.runND1TraceFuel_zero' depends on axioms: [propext]
+'CerbND.fuelExhaustedKill_ne_Undef0' does not depend on any axioms
+'CerbND.fuelExhaustedKill_ne_Other' does not depend on any axioms
+'CerbND.driver2_wrapper_defeq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.print_eval_conv_aux_wrapper_defeq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.drive_nonmemory_steps_aux2_wrapper_defeq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'hack_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Driver_lemMeasureProofs.hack_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.nd_bind_wrapper_defeq' does not depend on any axioms
+'CerbND.liftND_wrapper_defeq' does not depend on any axioms
+'CerbND.liftAction_wrapper_defeq' does not depend on any axioms
+'CerbND.runND_eq' does not depend on any axioms
+'CerbND.runND1_eq' does not depend on any axioms
+'CerbND.runND1Trace_eq' depends on axioms: [propext]
+'FuelExemplar.exemplar_certified_shipped_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FuelExemplar.exemplar_killed_at_one' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FuelExemplar.exemplar_certified_shipped_forall' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Ctype_lemMeasureProofs.ctypeEqual_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Core_lemMeasureProofs.eq_core_base_type_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Defacto_memory_aux_lemMeasureProofs.fake_mem_value_eq_measure_sufficient' depends on axioms: [propext, Quot.sound]
+'ctypeEqual_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'eq_core_base_type_measure_sufficient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'fake_mem_value_eq_measure_sufficient' depends on axioms: [propext, Quot.sound]
+'CerbFail.failStopND_step' does not depend on any axioms
+'CerbFail.bind_preserves' depends on axioms: [propext]
+'CerbFail.lift_preserves' depends on axioms: [propext]
+'CerbFail.liftMem_preserves' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbFail.run_preserves' depends on axioms: [propext]
+'CerbFail.run1_preserves' depends on axioms: [propext]
+'CerbFail.runTrace_preserves' depends on axioms: [propext]
+'CerbFail.pipeline_preserves' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbFail.zero_precedes' does not depend on any axioms
+'CerbFail.failStopND_ne_active' does not depend on any axioms
+'CerbFail.failStopKill_ne_undef' does not depend on any axioms
+'CerbFail.failStopKill_ne_other' does not depend on any axioms
+'CerbND.runNDFuel_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.runND1Fuel_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.runND1TraceFuel_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.nd_bind_lemFuel_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.liftND_lemFuel_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.liftAction_lemFuel_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.runND_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.runND1_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.runND1Trace_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.nd_bind_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.liftND_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.liftAction_stable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.FuelProof.run_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.FuelProof.run1_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.FuelProof.trace_eq_of_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbND.FuelProof.observationStability' depends on axioms: [propext, Classical.choice, Quot.sound]
+check_theorem_axioms: FUEL arc leg OK (63 contract lemmas — generated _zero, runner leaves/parametricity, ∀-fuel exemplar, measured obligations, fail-stop propagation, and six-worker ND stability, every cone ⊆ [propext, Classical.choice, Quot.sound])
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)

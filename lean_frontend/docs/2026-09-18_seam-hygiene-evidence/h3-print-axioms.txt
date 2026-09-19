@@ -1,0 +1,5 @@
+'CerbMem.allocator_below_request_kills' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbMem.allocator_active_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbMem.oomKill' does not depend on any axioms
+CerbMem.allocator_below_request_kills : ∀ (st : CerbMem.MemState) (sz align : Int),
+  st.lastAddress - sz < 0 → CerbMem.allocatorStep sz align st = (NDkilled CerbMem.oomKill, st)

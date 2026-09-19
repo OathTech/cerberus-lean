@@ -123,6 +123,7 @@ Current unit tests:
 - `fuel-exemplar-test` — the consumer-shaped ∀-fuel, ∀-address-space-top theorem over the shipped pipeline `@drive ⟨fuel⟩` from `initial_driver_state _ top` (`exemplar_certified_shipped_forall (fuel) (top) (h : 8 ≤ top)`; the errno allocation + store discharged symbolically by `errnoAction_active` — address-space-bound part two C4, 2026-09-18) (test/Unit/FuelExemplar.lean)
 - `fuel-forms-tool` (not a pass/fail exe: the INSTRUMENT of `scripts/check_fuel_forms.sh`) — `test/Unit/FuelFormsTool.lean` imports the compiled environment at runtime and classifies every fuel'd worker MEASURED/ABSORBING/AMBIENT with its drive-cone reachability (C2; P0 2026-09-05: MEASURED checks the argument correspondence against the wrapper's own body in MetaM, ABSORBING = "kill at zero" checks the `_zero` lemma's left-hand side and cone)
 - `core-parser-test` — 280 tests for `CoreParser.lean`
+- `opaque-failure-test` — seam hygiene (2026-09-19): `#guard_msgs` on the two FAILING `rfl` probes of the seam failure leaves (a transparent leaf would turn the build RED), `failwithI` opaque in the environment, default arms reduce; every `CerbGlobal.has_switch … = false` by `rfl` and an arm reduces to its default; `oomKill`/`STD_`/timing identities by `rfl`; the structural `BEq MemValue` agrees with the retired impl on 23 pinned pairs (exit 1 on disagreement)
 - `fresh-int-test` — verifies `fresh_int`/`Symbol.fresh` generate unique values (+ the native-obj fresh-counter floor probe)
 - `pp-test` — pretty-printer mirrors (ctype/value shapes + float formatting), plus byte/text batch escaping against an OCaml 5.4.0 all-byte transcript (`Unit.BatchEscapeTest`).
 
@@ -420,5 +421,5 @@ dated records — do not maintain status lists here. Start points:
 - Hand-written files in `lean_frontend/`, generated files in `lean_frontend/generated/`
 - `set_option autoImplicit true` in hand-written files (project default is false)
 - Follow OCaml implementation as reference, with lean-c-semantics as secondary reference
-- No sorry in hand-written code — use `fail`, `panic!`, or real implementations
+- No sorry in hand-written code — use `fail`, `failwithI` (LemLib's opaque failure leaf — never `panic!`, which is transparent and reduces to `default` in the kernel; seam-hygiene 2026-09-19, `docs/2026-09-18_seam-hygiene-record.md`), or real implementations
 - Bug reports: lem-backend defects → the lem-lean repo (`doc/lean-backend/` records, `tests/comprehensive` reproducers); upstream-facing reports → `lean_frontend/docs/upstream-tray/<target>/`

@@ -1,0 +1,201 @@
+# release.py --mode full at H3 head dde3b766b — per-lane verbatim tails (last 3 stdout lines of each lane) + release.py's PASSED lines
+# release log: 39 PASSED / 0 FAILED
+
+=== A1: PASSED A1 (215.8s)
+  OK (refused as declared): crlf_string
+  OK (admitted as declared): crlf_code [RENUMBER-ONLY ADMIT plant/crlf_code class=LAYOUT ids=1 moved=1 canon=8c8910c71fce]
+test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+
+=== A2: PASSED A2 (29.8s)
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+
+=== A3: PASSED A3 (51.2s)
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+
+=== A4: PASSED A4 (22.7s)
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+
+=== A4b: PASSED A4b (23.9s)
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+
+=== A4c: PASSED A4c (3.1s)
+
+SUMMARY: exec_match=9 neg_pinned=5 fail=0
+ALL AT COMMITTED EXPECTEDS
+
+=== A5: PASSED A5 (21.9s)
+
+SUMMARY: match=12 diff=0
+ALL MATCH RECORDED BASELINE
+
+=== A6: PASSED A6 (2.2s)
+==================================================
+SUMMARY: total=2 match=2 fail=0
+ALL PASSED
+
+=== A6b: PASSED A6b (3.5s)
+==================================================
+SUMMARY: total=7 match=7 fail=0
+ALL PASSED
+
+=== A7: PASSED A7 (10.4s)
+batch diagnostic producers: 8/8 passed
+cabs bytes probe: 128 raw bytes 0x80..0xFF crossed the bridge as one code point each (valid UTF-8 JSON; Lean sizeof = 129)
+ALL PASSED
+
+=== A8: PASSED A8 (8.9s)
+Success rate:   100% (of cerberus successes)
+
+ALL PASSED
+
+=== A9: PASSED A9 (16.7s)
+  LEAN_FAIL:  0
+
+SUMMARY: total=113 same=108 diff=5 ocaml_fail=0 lean_fail=0
+
+=== A10: PASSED A10 (16.5s)
+
+==================================================
+GATE PASS: all lane expectations pinned-green + baseline unchanged (16/16)
+
+=== A11: PASSED A11 (57.8s)
+
+Checking against baseline (exact match, fail-closed both directions): /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/seam-hygiene/tests/cn_coverage/baseline.txt
+BASELINE OK (213 entries, exact match)
+
+=== A12.1: PASSED A12.1 (4.9s)
+  REVERTED (the committed expectations):
+  EXPECT OK    18 pinned rows = 18 observed cases, every token identical
+test_address_space: SELFTEST OK (14 plants — P1 the discriminator's derived pre-fix observation, P2 missing file, P3 truncated, P4 phantom row, P5-P7 phantom/duplicate/malformed rows without a final newline all REJECTED; P8 the valid file without a final newline ACCEPTED; P9/P10 the out-of-domain 
+
+=== A12.2: PASSED A12.2 (4.4s)
+
+  EXPECT OK    18 pinned rows = 18 observed cases, every token identical
+test_address_space: OK (18 cases: LEAN = FORK through the shared codec at tops 64 32 8; every fork observation = its pinned row in expectations.txt)
+
+=== B1: PASSED B1 (606.0s)
+==================================================
+SUMMARY: total=4 match=4 fail=0 (points: 1354, 22 observations each)
+ALL PASSED
+
+=== B2: PASSED B2 (22.9s)
+batch diagnostic producers: 8/8 passed
+cabs bytes probe: 128 raw bytes 0x80..0xFF crossed the bridge as one code point each (valid UTF-8 JSON; Lean sizeof = 129)
+ALL PASSED
+
+=== B3: PASSED B3 (14.9s)
+Success rate:   100% (of cerberus successes)
+
+ALL PASSED
+
+=== B4: PASSED B4 (45.3s)
+check_driver_fresh: recorded lean stamp (bin a4c5fef9c6684cd6623acf0d8839e498f5d14e9fb720254642170fc717b908ff, src 795a03670377b004e9f10c9e6bc8e6861fec9e32988e2648504f69c219363e81)
+
+test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+
+=== B5: PASSED B5 (66.5s)
+  KILL           illtyped-store      
+
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register' — and the in
+
+=== B6.1: PASSED B6.1 (162.3s)
+  lean:   exit=0 verdict=Specified(0)
+  expect: Specified(0)
+test_speclab: PASS (both pipelines agree on Specified(0))
+
+=== B6.2: PASSED B6.2 (2.2s)
+  lean:   exit=0 verdict=Specified(2)
+  expect: Specified(2)
+test_speclab: PASS (both pipelines agree on Specified(2))
+
+=== B6.3: PASSED B6.3 (9.0s)
+  PASS  exec [plant]: Specified(1) — the wrong-operator plant is RED in-logic
+CoreGateTest: ALL PASSED
+test_speclab_divmod: PASS (--gate)
+
+=== B6.4: PASSED B6.4 (8.4s)
+  PASS  exec [getarr plant]: Specified(1) — the wrong-index plant is RED in-logic
+ByteArrGateTest: ALL PASSED
+test_speclab_bytearr: PASS (--gate)
+
+=== B6.5: PASSED B6.5 (8.8s)
+  PASS  leak [build-only]: final allocations = 1
+ListGateTest: ALL PASSED
+test_speclab_list: PASS (--gate)
+
+=== B6.6: PASSED B6.6 (9.5s)
+  PASS  leak [build-only]: final allocations = 1
+TreeGateTest: ALL PASSED
+test_speclab_tree: PASS (--gate)
+
+=== B6.7: PASSED B6.7 (8.2s)
+  PASS  exec [swap plant]: Specified(9) — the lost-update plant is RED in-logic at post-state cell 1, byte 0
+SeedGateTest: ALL PASSED
+test_speclab_seed: PASS (--gate)
+
+=== B7: PASSED B7 (1299.0s)
+
+Baseline check: 0 regression(s), 0 improvement(s)
+gcc second-oracle lane OK
+
+=== B8.1: PASSED B8.1 (13.4s)
+PLANT OK   [sweep/busy → LEAN_TIMEOUT]: ci	tests/ci/0001-emptymain.c	LEAN_TIMEOUT	TIMEOUT(cpu 2.99s of 3.00s wall; timeout 3s)
+PLANT OK   [classifier fail-closed]: HARNESS ERROR: time record /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/seam-hygiene/.tmp/scripts/hang-plant.ly50C06wsj/does-not-exist.time missing
+test_hang_plant: all plants read as expected (sleep→HANG, busy→TIMEOUT, both lanes; missing record→harness error)
+
+=== B8.2: PASSED B8.2 (226.5s)
+PLANT OK   [libxml2 -> Lean OOM-KILLED]: [chvalid_battery_00] FAIL: Lean OOM-KILLED (exit 137; cgroup memory cap CERB_TEST_MEM_MAX=4G breached — memory.events oom_kill=1)
+PLANT OK   [gcc_oracle exit(137) native -> compared (AGREE gcc=137 lean={137}), not SKIP_GCC_KILL]: [1/1] AGREE  .tmp/scripts/kill-plant.ai7bRSCbt0/gcc137/exit137.c: gcc=137 lean={137}
+test_kill_plant: all plants read as expected (cap breach -> OOM-KILLED witness; ci_sweep LEAN_KILL, libc_exec KILL, immaculate KILL, uri/libxml2 FAIL-killed; SIGKILL stub NOT the cap class; native exit(137) still compared; no MATCH anywhere)
+
+=== B8.3: PASSED B8.3 (6.3s)
+PLANT OK   [--fuel without an argument refused]
+
+test_fuel_plant: ALL PLANTS OK (FUEL classification live in exec/gcc/ci_sweep/cn_coverage/measure; negatives not FUEL; the real driver at --fuel 1 reads FUEL and at the default MATCH; --fuel 0/non-numeral/out-of-position/missing refused)
+
+=== B8.4: PASSED B8.4 (15.8s)
+PLANT OK [measure/ordinary]
+PLANT OK [exec/malformed]
+test_failstop_plant: PASS (11 class and rejection checks)
+
+=== B9: PASSED B9 (1322.5s)
+PLANT OK   speclab_seed: descendant-oom
+PLANT OK   speclab_seed: oracle-exit2
+observation lane plants: 93/93 passed
+
+=== B10.1: PASSED B10.1 (117.3s)
+859/859 semantic_agreement: corpus/p12_pt_midpoint (pristine 0.0s, fork 0.0s)
+Independent oracle scope: tier-b; 859 rows in 117.0s; source unchanged: True
+Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/seam-hygiene/.tmp/seam-hygiene/release-full/run/B10.1/independent-oracle/report.json
+
+=== B10.2: PASSED B10.2 (1.8s)
+3/3 plant_ok: plant/withheld-row:minimal/112-allocator-exhausted-single-request.c — minimal/112-allocator-exhausted-single-request.c: with its register row -> reviewed_difference; row withheld -> difference (completed semantic observations differ)
+Independent oracle scope: plant; 53 rows in 1.6s; source unchanged: True
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/seam-hygiene/.tmp/seam-hygiene/release-full/run/B10.2/independent-oracle/report.json
+
+=== B11.1: PASSED B11.1 (16.4s)
+  UNPLANTED:
+    check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every
+check_failure_reach: SELFTEST OK (5 plants with the declared message — a new site in a generated exec-closure definition, a DISCARDABLE dead let-binding, an unsealed class edit, a phantom row, an edited tally — and the unplanted register green)
+
+=== B11.2: PASSED B11.2 (7.2s)
+check_failure_reach: instrument built + census taken in 7 s (FAILURE_REACH rows 21249, FAILURE_RANGE rows 11307; counts: {"generated:monadic_ascribed":263,"generated:pure_or_unresolved":1253,"handwritten:pure_or_unresolved":121})
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row
+
+=== B12: PASSED B12 (505.6s)
+4/4 semantic_agreement: libxml2/chvalid/chvalid_battery_03 (pristine 84.3s, fork 55.6s)
+Independent oracle scope: libxml2_chvalid; 4 rows in 505.4s; source unchanged: True
+Independent oracle: passed; {'semantic_agreement': 4}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/seam-hygiene/.tmp/seam-hygiene/release-full/run/B12/independent-oracle/report.json
+
+=== summary.txt
+full: incomplete; 39/39 selected commands completed successfully.
+Source unchanged: False. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.

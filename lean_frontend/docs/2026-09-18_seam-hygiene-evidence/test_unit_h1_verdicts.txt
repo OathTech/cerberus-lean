@@ -1,13 +1,9 @@
-2:check_handwritten_sync: OK (49 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
-476:=== opaque-failure-test ===
 480:opaque-failure-test: PASS — the two seam identities are not rfl-provable (#guard_msgs on failing rfl), `failwithI` is opaque in the environment, default arms still reduce
-481:✓ opaque-failure-test PASSED
 484:Total: 12 passed, 0 failed
-486:check_theorem_axioms: hand-written axiom census OK (0 axioms — the arc-17 S2b end state)
 487:check_theorem_axioms: generated-tree census OK (219 files: 0 axioms, boundary-opaque population = the 16 registered rows exactly-once (incl. CerbFuel.fuelExhaustedLoc), 0 unsafeCast)
-488:check_theorem_axioms: C2 ratchet OK (375 files scanned recursively: 0 axioms, 0 runEffectful, seam population = the 38 pinned path-qualified counted rows exactly incl. the extern class; lem tests/ scaffolds asserted outside th
+488:check_theorem_axioms: C2 ratchet OK (377 files scanned recursively: 0 axioms, 0 runEffectful, seam population = the 38 pinned path-qualified counted rows exactly incl. the extern class; lem tests/ scaffolds asserted outside the surface)
 581:check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
 582:check_sorry_token: OK (318 files scanned comment-stripped — generated 219, hand-written+test 64, LemLib 35; 0 sorry tokens)
-796:    check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISC
-799:check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDA
-838:test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+797:    check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; r
+800:check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach
+839:test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)

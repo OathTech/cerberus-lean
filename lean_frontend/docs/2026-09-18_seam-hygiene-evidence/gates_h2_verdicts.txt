@@ -1,0 +1,32 @@
+2:### test_unit
+481:opaque-failure-test: PASS — the two seam identities are not rfl-provable (#guard_msgs on failing rfl), `failwithI` is opaque in the environment, default arms still reduce; every switch-conditioned arm reduces to its default (has_switch … = false by rfl
+485:Total: 12 passed, 0 failed
+488:check_theorem_axioms: generated-tree census OK (219 files: 0 axioms, boundary-opaque population = the 16 registered rows exactly-once (incl. CerbFuel.fuelExhaustedLoc), 0 unsafeCast)
+798:    check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-
+801:check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVA
+841:unit rc=0
+842:### immaculate
+927:OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VAL
+928:immaculate rc=0
+929:### row 2
+1083:SUMMARY: total=113 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=5 cerb_floor=0 cerb_inconsistent=0
+1087:Baseline check: 0 regression(s), 0 improvement(s)
+1089:row2 rc=0
+1090:### row 3
+1343:SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+1347:Baseline check: 0 regression(s), 0 improvement(s)
+1349:row3 rc=0
+1350:### row 4
+1481:SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+1485:Baseline check: 0 regression(s), 0 improvement(s)
+1487:row4 rc=0
+1488:### row 4b
+1622:SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+1626:Baseline check: 0 regression(s), 0 improvement(s)
+1628:row4b rc=0
+1629:### row 10
+2491:Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/seam-hygiene/.tmp/upstream-oracle-e928pnd5/report.json
+2492:row10 rc=0
+2493:### row 10 --plant
+2550:Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/seam-hygiene/.tmp/upstream-oracle-t6b89_dm/report.json
+2551:row10plant rc=0

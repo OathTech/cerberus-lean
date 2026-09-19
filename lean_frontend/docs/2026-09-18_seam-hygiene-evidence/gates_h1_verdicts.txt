@@ -1,0 +1,22 @@
+2:### row 2
+156:SUMMARY: total=113 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=5 cerb_floor=0 cerb_inconsistent=0
+160:Baseline check: 0 regression(s), 0 improvement(s)
+162:row2 rc=0
+163:### row 3
+416:SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+420:Baseline check: 0 regression(s), 0 improvement(s)
+422:row3 rc=0
+423:### row 4
+554:SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+558:Baseline check: 0 regression(s), 0 improvement(s)
+560:row4 rc=0
+561:### row 4b
+695:SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+699:Baseline check: 0 regression(s), 0 improvement(s)
+701:row4b rc=0
+702:### row 10
+1564:Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/seam-hygiene/.tmp/upstream-oracle-o0po2fcr/report.json
+1565:row10 rc=0
+1566:### row 10 --plant
+1623:Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/seam-hygiene/.tmp/upstream-oracle-06ozer03/report.json
+1624:row10plant rc=0
