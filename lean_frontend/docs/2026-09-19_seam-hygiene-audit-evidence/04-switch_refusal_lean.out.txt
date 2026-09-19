@@ -1,0 +1,10 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+[lean --batch --switches=strict_reads /dev/null]
+cerberus-lean: refused — --switches=strict_reads: semantics switches (PVI/PNVI/strict_pointer_arith/CHERI/…) are not supported by this port — matched (default-switch) mode is the harness contract and CerbGlobal's switch set is permanently empty; the oracle's `--switches=…` changes the answer (e.g. PNVI turns an integer→pointer UB043 into a value) (see VALIDATION.md, zero-discrepancy Z-24)
+rc=2
+[lean --batch --switches strict_reads /dev/null]
+cerberus-lean: refused — --switches: semantics switches (PVI/PNVI/strict_pointer_arith/CHERI/…) are not supported by this port — matched (default-switch) mode is the harness contract and CerbGlobal's switch set is permanently empty; the oracle's `--switches=…` changes the answer (e.g. PNVI turns an integer→pointer UB043 into a value) (see VALIDATION.md, zero-discrepancy Z-24)
+rc=2
+[lean --batch --first --switches=PNVI /dev/null]
+cerberus-lean: refused — --switches=PNVI: semantics switches (PVI/PNVI/strict_pointer_arith/CHERI/…) are not supported by this port — matched (default-switch) mode is the harness contract and CerbGlobal's switch set is permanently empty; the oracle's `--switches=…` changes the answer (e.g. PNVI turns an integer→pointer UB043 into a value) (see VALIDATION.md, zero-discrepancy Z-24)
+rc=2

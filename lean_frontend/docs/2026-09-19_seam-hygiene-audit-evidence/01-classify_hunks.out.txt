@@ -1,0 +1,231 @@
+[fce1de9f8] lean_frontend/CerbDecode.lean -38,7 +38,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbDecode.lean -118,18 +118,18 -> a
+      a:same-text
+      a:same-text
+      a:same-text
+[fce1de9f8] lean_frontend/CerbDecode.lean -141,14 +141,14 -> a
+      a:same-text
+      a:same-text
+      a:same-text
+[fce1de9f8] lean_frontend/CerbFS.lean -226,18 +227,18 -> a
+      a:same-text
+      a:same-text
+      a:same-text
+[fce1de9f8] lean_frontend/CerbFS.lean -250,14 +251,14 -> a
+      a:same-text
+      a:same-text
+[fce1de9f8] lean_frontend/CerbFS.lean -279,7 +280,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbFS.lean -292,7 +293,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbFS.lean -306,7 +307,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbFS.lean -322,7 +323,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbFS.lean -335,17 +336,17 -> a
+      a:same-text
+      a:same-text
+      a:same-text
+[fce1de9f8] lean_frontend/CerbFS.lean -353,7 +354,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbFS.lean -366,7 +367,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbFS.lean -376,7 +377,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbFS.lean -389,12 +390,12 -> a
+      a:same-text
+      a:same-text
+[fce1de9f8] lean_frontend/CerbFS.lean -410,25 +411,25 -> a
+      a:same-text
+      a:same-text
+      a:same-text
+      a:same-text
+      a:same-text
+      a:same-text
+      a:same-text
+[fce1de9f8] lean_frontend/CerbFS.lean -442,10 +443,10 -> a
+      a:same-text
+      a:same-text
+[fce1de9f8] lean_frontend/CerbFS.lean -453,7 +454,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbFS.lean -466,7 +467,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbFS.lean -483,7 +484,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbFS.lean -492,7 +493,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbFS.lean -501,21 +502,21 -> a
+      a:same-text
+      a:same-text
+      a:same-text
+      a:same-text
+      a:same-text
+      a:same-text
+[fce1de9f8] lean_frontend/CerbFloat.lean -299,7 +300,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbFloat.lean -423,7 +424,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbLocation.lean -130,7 +131,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbLocation.lean -236,7 +237,7 -> a
+      a:prefixed(CerbLocation.simpleLocation:)
+[fce1de9f8] lean_frontend/CerbMem.lean -277,8 +277,8 -> a
+      a:same-text
+      a:same-text
+[fce1de9f8] lean_frontend/CerbMem.lean -333,7 +333,7 -> a
+      a:prefixed(CerbMem.targetPtrSize:)
+[fce1de9f8] lean_frontend/CerbMem.lean -418,7 +418,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbMem.lean -446,18 +446,18 -> a
+      a:same-text
+      a:same-text
+      a:same-text
+      a:prefixed(CerbMem.sizeofCtype:)
+      a:prefixed(CerbMem.sizeofCtype:)
+[fce1de9f8] lean_frontend/CerbMem.lean -481,7 +481,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbMem.lean -499,17 +499,17 -> a
+      a:same-text
+      a:same-text
+      a:prefixed(CerbMem.alignofCtype:)
+      a:prefixed(CerbMem.alignofCtype:)
+[fce1de9f8] lean_frontend/CerbMem.lean -524,7 +524,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbMem.lean -534,7 +534,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbMem.lean -601,7 +601,7 -> a
+      a:prefixed(CerbMem.intToBytes:)
+[fce1de9f8] lean_frontend/CerbMem.lean -616,8 +616,8 -> a
+      a:same-text
+      a:same-text
+[fce1de9f8] lean_frontend/CerbMem.lean -657,7 +657,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbMem.lean -703,7 +703,7 -> a
+      a:prefixed(CerbMem.memValueToBytes:)
+[fce1de9f8] lean_frontend/CerbMem.lean -715,7 +715,7 -> a
+      a:prefixed(CerbMem.memValueToBytes:)
+[fce1de9f8] lean_frontend/CerbMem.lean -825,7 +825,7 -> a
+      a:prefixed(CerbMem.memValueToBytes:)
+[fce1de9f8] lean_frontend/CerbMem.lean -834,7 +834,7 -> a
+      a:prefixed(CerbMem.memValueToBytes:)
+[fce1de9f8] lean_frontend/CerbMem.lean -1048,7 +1048,7 -> a
+      a:prefixed(CerbMem.reconstructValue:)
+[fce1de9f8] lean_frontend/CerbMem.lean -1117,7 +1117,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbMem.lean -1127,11 +1127,11 -> a
+      a:same-text
+      a:same-text
+[fce1de9f8] lean_frontend/CerbMem.lean -1187,7 +1187,7 -> a
+      a:prefixed(CerbMem.reconstructValue:)
+[fce1de9f8] lean_frontend/CerbMem.lean -1226,7 +1226,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbMem.lean -1234,11 +1234,11 -> a
+      a:same-text
+      a:same-text
+[fce1de9f8] lean_frontend/CerbMem.lean -1302,7 +1302,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbMem.lean -1382,7 +1382,7 -> a
+      a:prefixed(CerbMem.casePtrval:)
+[fce1de9f8] lean_frontend/CerbMem.lean -1416,7 +1416,7 -> a
+      a:prefixed(CerbMem.maxIval:)
+[fce1de9f8] lean_frontend/CerbMem.lean -1425,7 +1425,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbMem.lean -1444,9 +1444,9 -> a
+      a:prefixed(CerbMem.minIval:)
+      a:same-text
+[fce1de9f8] lean_frontend/CerbMem.lean -1457,7 +1457,7 -> a
+      a:prefixed(CerbMem.concurReadIval:)
+[fce1de9f8] lean_frontend/CerbMem.lean -1538,7 +1538,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbMem.lean -1554,7 +1554,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbMem.lean -1727,10 +1727,10 -> a
+      a:same-text
+      a:prefixed(CerbMem.arrayShiftPtrval:)
+      a:same-text
+[fce1de9f8] lean_frontend/CerbMem.lean -1753,7 +1753,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbMem.lean -1765,7 +1765,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbMem.lean -1773,7 +1773,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbMem.lean -1992,17 +1992,17 -> a
+      a:same-text
+      a:same-text
+      a:same-text
+      a:same-text
+      a:same-text
+      a:same-text
+[fce1de9f8] lean_frontend/CerbUtils.lean -133,7 +134,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbUtils.lean -143,7 +144,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbUtils.lean -152,7 +153,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerbUtils.lean -169,7 +170,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerberusImpl.lean -139,7 +139,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/CerberusImpl.lean -176,9 +176,9 -> a
+      a:same-text
+      a:same-text
+[fce1de9f8] lean_frontend/CoreParser.lean -2410,7 +2410,7 -> a
+      a:same-text
+[fce1de9f8] lean_frontend/Main.lean -67,7 +67,7 -> a
+      a':var-wrapped(Main.loadCoreImpl)
+== fce1de9f8: seam-file hunks by class: {'a': 67, 'imp': 4}
+[ee1eaf94d] lean_frontend/CerbGlobal.lean -66,14 +66,38 -> g:CerbGlobal(fence ext 2)
+      REMOVED=[]
+      ADDED=['| PERMISSIVE', '| STRICT', '| pointer_arith (mode : PointerArithMode)', '| strict_pointer_equality', '| strict_pointer_relationals', '| zero_initialised']
+[ee1eaf94d] lean_frontend/CerbGlobal.lean -174,9 +198,12 -> g:CerbGlobal(fence ext 2)
+      REMOVED=['def has_strict_pointer_arith (_ : Unit) : Bool := false']
+      ADDED=['def has_strict_pointer_arith (_ : Unit) : Bool :=']
+[ee1eaf94d] lean_frontend/CerbGlobal.lean -191,6 +218,15 -> g:CerbGlobal(fence ext 2)
+      REMOVED=[]
+      ADDED=['theorem has_switch_strict_reads_eq : has_switch .strict_reads = false := rfl', 'theorem has_switch_forbid_nullptr_free_eq : has_switch .forbid_nullptr_free = false := rfl', 'theorem has_switch_zap_dead_pointers_eq : has_switch .zap_dead_pointers = false := rfl', 'theorem has_switch_strict_pointer_equality_eq : has_switch .strict_pointer_equality = false := rfl', 'theorem has_switch_strict_pointer_relationals_eq : has_switch .strict_pointer_relationals = false := rfl', 'theorem has_switch_pointer_arith_permissive_eq : has_switch (.pointer_arith .PERMISSIVE) = false := rfl', 'theorem has
+[ee1eaf94d] lean_frontend/CerbMem.lean -2165,6 +2165,14 -> b'
+      pure insertion: ['if initOpt.isNone && CerbGlobal.has_switch .zero_initialised', '(NDkilled (Other (MerrOther "allocateObject: SW_zero_initial', 'else']
+[ee1eaf94d] lean_frontend/CerbMem.lean -2297,20 +2305,33 -> f
+      REMOVED=['    DECLARED (zero-discrepancy Z2-M-20) — the SWITCH-CONDITIONED arms of', '    impl_mem.ml are not ported; each is reachable only when its switch is', '    set, and the switch set is REFUSED by this port (Z-24, VALIDATION.md', '    "Refused command-line flags"), so on the matched default set', '    (`Switches.set []`, main.ml:129-143 — every `has_switch` false,', '    `is_PNVI ()` false; Z2 audit §2.9 table) the default arm is the only', '    one either engine executes: `SW_strict_pointer_equality` (eq_ptrval', '    :1852-1853), `SW_strict_pointer_relationals` (lt/gt/le/ge_ptrval', 
+      ADDED=['    PORTED IN THE EXPLICIT SHAPE (seam-hygiene H2, 2026-09-19,', '    docs/2026-09-18_seam-hygiene-record.md §4; formerly DECLARED as', '    zero-discrepancy Z2-M-20 — Z2 record 2026-09-04 row Z2-M-20) — every', '    SWITCH-CONDITIONED arm of impl_mem.ml is written here as', '    `if CerbGlobal.has_switch … then <loud kill> else <the default arm>`:', '    the switch set is REFUSED by this port (Z-24, VALIDATION.md §3 "(c)', '    Semantics switches"), so on the matched default set (`Switches.set []`,', '    main.ml:129-143; `CerbGlobal.switches = []`, every `has_switch … = false`', '   
+[ee1eaf94d] lean_frontend/CerbMem.lean -2366,6 +2387,11 -> b'
+      pure insertion: ['if CerbGlobal.has_switch .strict_reads then', '(NDkilled (Other (MerrOther "loadM: SW_strict_reads is set b']
+[ee1eaf94d] lean_frontend/CerbMem.lean -2530,10 +2561,10 -> doc
+[ee1eaf94d] lean_frontend/CerbMem.lean -2550,26 +2584,35 -> f
+      REMOVED=['    memReturn (a1 > a2)                                       -- :1914-1915 (non-strict)', '    memReturn (a1 ≤ a2)                                       -- :1930-1932 (non-strict)', '    memReturn (a1 ≥ a2)                                       -- :1948-1950 (non-strict)', '    the SW_pointer_arith PERMISSIVE branch at :1970-1975 is not ported —', '    the Lean pipeline never sets that switch — and the Prov_symbolic']
+      ADDED=['    -- :1915-1921 SW_strict_pointer_relationals: refused set (Z-24), set case loud (H2)', '    if CerbGlobal.has_switch .strict_pointer_relationals then', '      kill (Other (MerrOther "gtPtrval: SW_strict_pointer_relationals is set but the strict-relational arm (impl_mem.ml:1915-1921) is not ported — switches are refused (Z-24)"))', '    else memReturn (a1 > a2)                                  -- :1914-1915 (non-strict)', '    -- :1930-1938 SW_strict_pointer_relationals: refused set (Z-24), set case loud (H2)', '    if CerbGlobal.has_switch .strict_pointer_relationals then', '      k
+      added non-guard lines: ['guarded in the explicit loud-kill shape, seam-hygiene H2 — and the Prov_symbolic']
+[ee1eaf94d] lean_frontend/CerbMem.lean -2704,6 +2752,13 -> b'
+      pure insertion: ['if CerbGlobal.is_PNVI () then', 'kill (Other (MerrOther "intfromptr: a PNVI switch is set but', 'else']
+[ee1eaf94d] lean_frontend/CerbMem.lean -2728,8 +2783,9 -> f
+      REMOVED=['    `SW_pointer_arith STRICT`/`is_PNVI` bounds arms (:2327-2335, :2339-2341)', '    are switch-conditioned — refused set, default arm only (Z2-M-20 note).']
+      ADDED=['    `SW_pointer_arith STRICT`/`is_PNVI` bounds arms (:2345-2354, :2357-2360 in', '    this tree) are switch-conditioned — guarded in the explicit loud-kill', '    shape, seam-hygiene H2; refused set, default arm only.']
+== ee1eaf94d: seam-file hunks by class: {'g:CerbGlobal(fence ext 2)': 3, "b'": 3, 'f': 3, 'b': 4, 'doc': 1}
+[dde3b766b] lean_frontend/CerbMem.lean -224,28 +224,37 -> e
+      REMOVED=['private unsafe def beqMemValueImpl : MemValue → MemValue → Bool', '| .MVarray e1, .MVarray e2 =>', 'e1.length == e2.length && (e1.zip e2).all (fun (a, b) => beqMemValueImpl a b)', '| .MVstruct t1 ms1, .MVstruct t2 ms2 =>', '(ms1.zip ms2).all (fun ((i1, c1, v1), (i2, c2, v2)) =>', '| .MVunion t1 m1 v1, .MVunion t2 m2 v2 =>', 'private opaque beqMemValueSafe : MemValue → MemValue → Bool', 'instance : BEq MemValue where beq := beqMemValueSafe']
+      ADDED=['mutual', 'def beqMemValue : MemValue → MemValue → Bool', '| .MVarray e1, .MVarray e2 => beqMemValueList e1 e2', '| .MVstruct t1 ms1, .MVstruct t2 ms2 => t1 == t2 && beqMemValueMembers ms1 ms2', '| .MVunion t1 m1 v1, .MVunion t2 m2 v2 => t1 == t2 && m1 == m2 && beqMemValue v1 v2', 'def beqMemValueList : List MemValue → List MemValue → Bool', '| [], [] => true', '| a :: as, b :: bs => beqMemValue a b && beqMemValueList as bs', '| _, _ => false', 'def beqMemValueMembers : List (identifier × ctype × MemValue) → List (identifier × ctype × MemValue) → Bool', '| [], [] => true', '| (i1, c1, v
+[dde3b766b] lean_frontend/CerbUtils.lean -10,42 +10,25 -> d
+      REMOVED=['private unsafe def timingStackRef : IO.Ref (List (String × Float)) :=', 'private unsafe def begin_timing_impl (_ : String) : Unit := ()', 'private unsafe def end_timing_impl (_ : Unit) : Unit := ()', 'opaque begin_timing : String → Unit', 'opaque end_timing : Unit → Unit', 'private unsafe def logRef : IO.Ref (List String) :=', 'private unsafe def STD_impl {α : Type} [Inhabited α] (s : String) (x : α) : α :=', 'opaque STD_ {α : Type} [Inhabited α] : String → α → α']
+      ADDED=['def begin_timing (_ : String) : Unit := ()', 'def end_timing (_ : Unit) : Unit := ()', 'def STD_ {α : Type} (_ : String) (x : α) : α := x']
+== dde3b766b: seam-file hunks by class: {'e': 1, 'c': 3, 'd': 1}
+== leaf-swap detail (a) tally by kind:
+    CerbLocation.lean a:prefixed(CerbLocation.simpleLocation:)
+    CerbMem.lean a:prefixed(CerbMem.targetPtrSize:)
+    CerbMem.lean a:prefixed(CerbMem.sizeofCtype:)
+    CerbMem.lean a:prefixed(CerbMem.sizeofCtype:)
+    CerbMem.lean a:prefixed(CerbMem.alignofCtype:)
+    CerbMem.lean a:prefixed(CerbMem.alignofCtype:)
+    CerbMem.lean a:prefixed(CerbMem.intToBytes:)
+    CerbMem.lean a:prefixed(CerbMem.memValueToBytes:)
+    CerbMem.lean a:prefixed(CerbMem.memValueToBytes:)
+    CerbMem.lean a:prefixed(CerbMem.memValueToBytes:)
+    CerbMem.lean a:prefixed(CerbMem.memValueToBytes:)
+    CerbMem.lean a:prefixed(CerbMem.reconstructValue:)
+    CerbMem.lean a:prefixed(CerbMem.reconstructValue:)
+    CerbMem.lean a:prefixed(CerbMem.casePtrval:)
+    CerbMem.lean a:prefixed(CerbMem.maxIval:)
+    CerbMem.lean a:prefixed(CerbMem.minIval:)
+    CerbMem.lean a:prefixed(CerbMem.concurReadIval:)
+    CerbMem.lean a:prefixed(CerbMem.arrayShiftPtrval:)
+    {'a:same-text': 90, 'TOTAL': 109, 'a:prefixed': 18, "a':var-wrapped": 1}

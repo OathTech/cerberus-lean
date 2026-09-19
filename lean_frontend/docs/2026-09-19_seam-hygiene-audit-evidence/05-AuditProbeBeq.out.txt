@@ -1,0 +1,22 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+ordered pairs checked: 1156 (values: 34); new==true on 34; DISAGREEMENTS: 0
+named adversarial pairs (old, new), both directions:
+  nA,nB: (false, false)   nB,nA: (false, false)
+  nA,nC: (false, false)   nC,nA: (false, false)
+  aE,aEE: (false, false)   aEE,aE: (false, false)
+  st1,st1c: (false, false)   st1c,st1: (false, false)
+  st1,st1i: (false, false)   st1i,st1: (false, false)
+  st1,st1t: (false, false)   st1t,st1: (false, false)
+  st2,st2r: (false, false)   st2r,st2: (false, false)
+  un1,un1b: (false, false)   un1b,un1: (false, false)
+  un1,un1t: (false, false)   un1t,un1: (false, false)
+  u0,u2: (false, false)   u2,u0: (false, false)
+  p8,p8p: (false, false)   p8p,p8: (false, false)
+  i1,i1L: (false, false)   i1L,i1: (false, false)
+  fnan,fnan: (false, false)   fnan,fnan: (false, false)
+  aNaN,aNaN: (false, false)   aNaN,aNaN: (false, false)
+  deep1,deep1': (true, true)   deep1',deep1: (true, true)
+  deep1,deep2: (false, false)   deep2,deep1: (false, false)
+  aE,stE: (false, false)   stE,aE: (false, false)
+non-reflexive under the new instance: [fnan, aNaN] (expected exactly the NaN carriers: fnan, aNaN)
+0

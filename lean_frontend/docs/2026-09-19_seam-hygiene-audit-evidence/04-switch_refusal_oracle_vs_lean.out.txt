@@ -1,0 +1,15 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+[oracle --switches=strict_reads]
+Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+Time spent: 0.034620 seconds
+rc=0
+[oracle no switch]
+Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+Time spent: 0.037327 seconds
+rc=0
+[lean --switches=strict_reads]
+cerberus-lean: refused — --nolibc: unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>, --address-space-top <N> (see VALIDATION.md, zero-discrepancy Z-24)
+rc=2
+[lean --switches strict_reads]
+cerberus-lean: refused — --nolibc: unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>, --address-space-top <N> (see VALIDATION.md, zero-discrepancy Z-24)
+rc=2

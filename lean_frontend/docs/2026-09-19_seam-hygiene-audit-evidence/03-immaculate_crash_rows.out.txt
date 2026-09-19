@@ -1,0 +1,12 @@
+row                                status tokens         origin | message | message-in-base-panic?
+f3-raw-high-byte-char-const        134    INTERNAL_ERROR _private.LemLib.0.failwithIImpl | decode_character_constant: invalid char constant ==> Ã© (decode.ml:199 | SAME-TEXT (base literal contains 'decode_character_constant: invalid cha')
+f3-raw-high-byte-int               134    INTERNAL_ERROR _private.LemLib.0.failwithIImpl | decode_character_constant: invalid char constant ==> Ã (decode.ml:199- | SAME-TEXT (base literal contains 'decode_character_constant: invalid cha')
+f3-raw-high-byte-uchar             134    INTERNAL_ERROR _private.LemLib.0.failwithIImpl | decode_character_constant: invalid char constant ==> Ã (decode.ml:199- | SAME-TEXT (base literal contains 'decode_character_constant: invalid cha')
+g4-bswap64-overflow                134    INTERNAL_ERROR _private.LemLib.0.failwithIImpl | Ocaml_gcc_builtins.bswap64: Z.to_int64 overflow (ocaml_gcc_builtins.ml | SAME-TEXT (base literal contains 'Ocaml_gcc_builtins.bswap64: Z.to_int64')
+g5-decode-multichar                134    INTERNAL_ERROR _private.LemLib.0.failwithIImpl | decode_character_constant: invalid char constant ==> ab (decode.ml:199 | SAME-TEXT (base literal contains 'decode_character_constant: invalid cha')
+offsetof-union-member              134    INTERNAL_ERROR _private.LemLib.0.failwithIImpl | CerbMem.sizeofCtype: Union tag not a UnionDef (OCaml: assert false / N | SAME-TEXT (base literal contains 'CerbMem.sizeofCtype: Union tag not a U')
+zd-z2f04-closedir                  134    INTERNAL_ERROR _private.LemLib.0.failwithIImpl | CerbFS refusal (fail-closed fs-model boundary): opendir '.' — SibylFS  | NOT FOUND
+zd-z2fl03-nan-to-int               134    INTERNAL_ERROR _private.LemLib.0.failwithIImpl | CerbFloat.truncToInt: nan/inf (OCaml Z.of_float raises Z.Overflow) | SAME-TEXT (base literal contains 'CerbFloat.truncToInt: nan/inf (OCaml Z')
+zd-z2m02-device-funptr-call        134    INTERNAL_ERROR _private.LemLib.0.failwithIImpl | CerbMem.casePtrval: case_ptrval | PREFIXED (base literal contains 'case_ptrval')
+g2-memcmp-uninit                   1      MODEL_FAILURE: (no PANIC head) 
+zd-z2m01-aligned-alloc-zero-zero   1      MODEL_FAILURE: (no PANIC head) 

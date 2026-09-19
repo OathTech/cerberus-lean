@@ -1,0 +1,9 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+../.tmp/audit/probes/AuditProbeVacuity.lean:36:0: error: ❌️ Docstring on `#guard_msgs` does not match generated message:
+
+- error: Tactic `rfl` failed: The left-hand side
+-   AuditVacuity.combineProvOld (CerbMem.Provenance.Prov_symbolic 0) CerbMem.Provenance.Prov_none
+- is not definitionally equal to the right-hand side
+-   CerbMem.Provenance.Prov_none
+ 
+- ⊢ AuditVacuity.combineProvOld (CerbMem.Provenance.Prov_symbolic 0) CerbMem.Provenance.Prov_none = CerbMem.Provenance.Prov_none

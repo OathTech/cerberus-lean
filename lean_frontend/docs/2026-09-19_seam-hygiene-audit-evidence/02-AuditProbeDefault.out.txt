@@ -1,0 +1,9 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+../.tmp/audit/probes/AuditProbeDefault.lean:7:63: error: Type mismatch
+  rfl
+has type
+  ?m.7 = ?m.7
+but is expected to have type
+  default = CerbGlobal.CerbSwitch.strict_reads
+@[implicit_reducible] def CerbGlobal.instInhabitedCerbSwitch : Inhabited CerbGlobal.CerbSwitch :=
+{ default := CerbGlobal.instInhabitedCerbSwitch.default }

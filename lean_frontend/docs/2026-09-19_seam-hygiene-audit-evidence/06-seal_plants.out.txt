@@ -1,0 +1,23 @@
+===== plant pa
+check_failure_reach: FAIL —
+  SEAL MISMATCH (row edited without --reseal; a class change is a review change): lean_frontend/CerbMem.lean CerbMem.casePtrval «"CerbMem.casePtrval: case_ptrval" /-- case_funsym_opt — impl» position=TAIL reviewed=TAIL reach=UNKNOWN
+  `# tally:` line does not equal the rows: register says `sites=233 exec=231 unresolved-owner=2 reviewed-TAIL=179 reviewed-NON-TAIL=54 UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19 discardable=0`, rows give `sites=233 exec=231 unresolved-owner=2 reviewed-TAIL=179 reviewed-NON-TAIL=54 UNREACHABLE-BY-INVARIANT=166 REACHABLE
+rc=0
+===== plant pb
+check_failure_reach: FAIL —
+  SEAL MISMATCH (row edited without --reseal; a class change is a review change): lean_frontend/CerbFloat.lean CerbFloat.truncToInt «"CerbFloat.truncToInt: nan/inf (OCaml Z.of_float raises Z.Ov» position=STMT-NEWLINE reviewed=TAIL reach=REACHABLE
+  NEW pure exec-closure site (no register row — review it): lean_frontend/CerbFloat.lean:427 CerbFloat.truncToInt failwithI «"CerbFloat.truncToInt: nan/inf (OCaml Z.of_float raises Z.Ov» position=STMT-NEWLINE scope=EXEC
+  STALE register row (site gone or its key moved): lean_frontend/CerbFloat.lean CerbFloat.truncToInt panic! «"CerbFloat.truncToInt: nan/inf (OCaml Z.of_float raises Z.Ov» scope=EXEC
+rc=0
+===== plant pc
+check_failure_reach: FAIL —
+  SEAL MISMATCH (row edited without --reseal; a class change is a review change): lean_frontend/CerbMem.lean CerbMem.targetPtrSize «"the concrete memory model requires a» position=TAIL reviewed=TAIL reach=UNREACHABLE-BY-INVARIANT
+  NEW pure exec-closure site (no register row — review it): lean_frontend/CerbMem.lean:345 CerbMem.targetPtrSize failwithI «"CerbMem.targetPtrSize: the concrete memory model requires a» position=TAIL scope=EXEC
+  STALE register row (site gone or its key moved): lean_frontend/CerbMem.lean CerbMem.targetPtrSize failwithI «"the concrete memory model requires a» scope=EXEC
+rc=0
+===== plant pd
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent
+rc=0
+===== plant pe
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=166 REACHABLE=47 UNKNOWN=20; every row sealed; tally line consistent
+rc=0

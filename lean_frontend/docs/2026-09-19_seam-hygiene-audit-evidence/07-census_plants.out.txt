@@ -1,0 +1,18 @@
+# Auditor census plants (item 5) — scripts/check_theorem_axioms.sh on a SCRATCH ROOT (.tmp/audit/census-plant: copies of scripts/, lean_frontend/*.lean, lean_frontend/generated/, test/, the LemLib package). The unplanted control passes both census legs (12 opaques / 25 pins) and fails only at a later build-dependent exemplar-probe leg (scratch has no build) — so the plants below are demonstrable at the legs they target.
+===== UNPLANTED control
+2:check_theorem_axioms: hand-written axiom census OK (0 axioms — the arc-17 S2b end state)
+3:check_theorem_axioms: generated-tree census OK (219 files: 0 axioms, boundary-opaque population = the 12 registered rows exactly-once (incl. CerbFuel.fuelExhaustedLoc), 0 unsafeCast)
+4:check_theorem_axioms: C2 ratchet OK (318 files scanned recursively: 0 axioms, 0 runEffectful, seam population = the 25 pinned path-qualified counted rows exactly incl. the extern class; lem tests/ scaffolds asserted outside the surface)
+5:check_theorem_axioms: D14 grep-ban OK (no native_decide/bv_decide in 1 tree(s) + 49 hand-written seam files + LemLibTest.lean)
+13:check_theorem_axioms: FAIL — exemplar probe for 'core_object_type_of_ctype' did not run cleanly (matched 0 lines; fail-closed)
+===== PLANT 1: `opaque begin_timing` (+ an implemented_by twin) re-planted in generated/CerbUtils.lean — UNREGISTERED direction
+2:check_theorem_axioms: hand-written axiom census OK (0 axioms — the arc-17 S2b end state)
+3:check_theorem_axioms: FAIL — boundary-opaque census: UNREGISTERED opaque CerbUtils.lean:begin_timing (x1) in the build tree — every opaque is a declared-boundary decision; register it in OPAQUE_WANT with its class, or remove it
+4:check_theorem_axioms: FAIL — boundary-opaque census: UNREGISTERED opaque CerbUtils.lean:begin_timing_plant (x1) in the build tree — every opaque is a declared-boundary decision; register it in OPAQUE_WANT with its class, or remove it
+===== PLANT 2: registered `opaque bounded_integer` turned into a def — found-0 direction
+2:check_theorem_axioms: hand-written axiom census OK (0 axioms — the arc-17 S2b end state)
+3:check_theorem_axioms: FAIL — boundary-opaque census: registered opaque CerbUtils.lean:bounded_integer found 0 time(s) in the build copy, expected exactly 1 (0 = copy-pipeline/scanner drift or opaque->def; 2+ = duplicated; fail-closed)
+===== PLANT 3: a surviving `private unsafe def STD_impl` re-planted in CerbUtils.lean + its generated copy — seam-pin direction
+2:check_theorem_axioms: hand-written axiom census OK (0 axioms — the arc-17 S2b end state)
+3:check_theorem_axioms: generated-tree census OK (219 files: 0 axioms, boundary-opaque population = the 12 registered rows exactly-once (incl. CerbFuel.fuelExhaustedLoc), 0 unsafeCast)
+4:check_theorem_axioms: FAIL — C2 ratchet leg 3: implemented_by/unsafe/unsafeBaseIO/extern census row(s) not matching the pinned population (scripts/unsafebaseio_allowlist.txt PIN rows; format KIND PATH NAME COUNT). Every such seam is a declared-boundary decision — register it there with its Q4 

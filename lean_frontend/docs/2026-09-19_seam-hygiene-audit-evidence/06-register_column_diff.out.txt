@@ -1,0 +1,22 @@
+rows base/head: 233/233; tally line identical: True; header lines identical: True
+changed-column patterns: {('token', 'seal'): 84, ('token', 'msg', 'seal'): 14}
+rows with any change outside token/msg/seal: 0 []
+token transitions: Counter({('panic!', 'failwithI'): 98})
+panic! rows remaining at head: 0
+seal recompute (sha256 of 8 sealed cols)[:16] == seal column: base bad=0 head bad=0
+reach classes of the 98 token-changed rows: {'UNREACHABLE-BY-INVARIANT': 48, 'REACHABLE': 44, 'UNKNOWN': 6}
+msg-key changes (14):
+  CerbMem.lean CerbMem.targetPtrSize: '"the concrete memory model requires a complete imp' -> '"CerbMem.targetPtrSize: the concrete memory model '
+  CerbMem.lean CerbMem.sizeofCtype_lemFuel: '"the concrete memory model requires a complete imp' -> '"CerbMem.sizeofCtype: the concrete memory model re'
+  CerbMem.lean CerbMem.sizeofCtype_lemFuel: '"the concrete memory model requires a complete imp' -> '"CerbMem.sizeofCtype: the concrete memory model re'
+  CerbMem.lean CerbMem.alignofCtype_lemFuel: '"the concrete memory model requires a complete imp' -> '"CerbMem.alignofCtype: the concrete memory model r'
+  CerbMem.lean CerbMem.alignofCtype_lemFuel: '"the concrete memory model requires a complete imp' -> '"CerbMem.alignofCtype: the concrete memory model r'
+  CerbMem.lean CerbMem.intToBytes: 's!"failed: bytes_of_int({if signed then "signed" e' -> 's!"CerbMem.intToBytes: failed: bytes_of_int({if si'
+  CerbMem.lean CerbMem.memValueToBytes_lemFuel: '"the concrete memory model requires a complete imp' -> '"CerbMem.memValueToBytes: the concrete memory mode'
+  CerbMem.lean CerbMem.memValueToBytes_lemFuel: '"the concrete memory model requires a complete imp' -> '"CerbMem.memValueToBytes: the concrete memory mode'
+  CerbMem.lean CerbMem.reconstructValue_lemFuel: 's!"unknown function pointer: {ptrAddr}" | _ => .MV' -> 's!"CerbMem.reconstructValue: unknown function poin'
+  CerbMem.lean CerbMem.casePtrval: '"case_ptrval" /-- case_funsym_opt — impl_mem.ml:18' -> '"CerbMem.casePtrval: case_ptrval" /-- case_funsym_'
+  CerbMem.lean CerbMem.maxIval: '"the concrete memory model requires a complete imp' -> '"CerbMem.maxIval: the concrete memory model requir'
+  CerbMem.lean CerbMem.minIval: '"the concrete memory model requires a complete imp' -> '"CerbMem.minIval: the concrete memory model requir'
+  CerbMem.lean CerbMem.arrayShiftPtrval: 's!"TODO(pure shift a null pointer should be undefi' -> 's!"CerbMem.arrayShiftPtrval: TODO(pure shift a nul'
+  Main.lean <unresolved compiler declaration>: 'e fmapAddBy implementation_constant_compare ic d a' -> 's!"Main.loadCoreImpl: {e}" fmapAddBy implementatio'

@@ -1,0 +1,20 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+../.tmp/audit/probes/AuditProbeA.lean:12:79: error: Tactic `rfl` failed: The left-hand side
+  CerbMem.combineProv (CerbMem.Provenance.Prov_symbolic 0) CerbMem.Provenance.Prov_none
+is not definitionally equal to the right-hand side
+  CerbMem.Provenance.Prov_none
+
+⊢ CerbMem.combineProv (CerbMem.Provenance.Prov_symbolic 0) CerbMem.Provenance.Prov_none = CerbMem.Provenance.Prov_none
+../.tmp/audit/probes/AuditProbeA.lean:13:51: error: Tactic `rfl` failed: The left-hand side
+  CerbMem.bytesToInt [] false
+is not definitionally equal to the right-hand side
+  none
+
+⊢ CerbMem.bytesToInt [] false = none
+opaque failwithI : {α : Type} → [Inhabited α] → String → α
+'failwithI' does not depend on any axioms
+'CerbMem.allocator_below_request_kills' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbMem.allocator_active_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbMem.oomKill' does not depend on any axioms
+CerbMem.allocator_below_request_kills : ∀ (st : CerbMem.MemState) (sz align : Int),
+  st.lastAddress - sz < 0 → CerbMem.allocatorStep sz align st = (NDkilled CerbMem.oomKill, st)

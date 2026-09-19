@@ -1,0 +1,57 @@
+case                                       policy     BASE                                                         HEAD
+mangled LemLib origin, real msg            batch      ERR:fatal engine diagnostic; no completed observation        ERR:fatal engine diagnostic; no completed observation
+mangled LemLib origin, real msg            immaculate ERR:unreviewed panic origin                                  OK:InternalError:Ocaml_gcc_builtins.bswap64: Z.to_int64 o   <== DIFFERS
+mangled LemLib origin, real msg            litmus     ERR:unreviewed panic origin                                  OK:InternalError:Ocaml_gcc_builtins.bswap64: Z.to_int64 o   <== DIFFERS
+OLD unmangled literal                      batch      ERR:fatal engine diagnostic; no completed observation        ERR:fatal engine diagnostic; no completed observation
+OLD unmangled literal                      immaculate OK:InternalError:Ocaml_gcc_builtins.bswap64: Z.to_int64 o    ERR:unreviewed panic origin   <== DIFFERS
+OLD unmangled literal                      litmus     OK:InternalError:Ocaml_gcc_builtins.bswap64: Z.to_int64 o    ERR:unreviewed panic origin   <== DIFFERS
+stale seam origin CerbMem.casePtrval       batch      ERR:fatal engine diagnostic; no completed observation        ERR:fatal engine diagnostic; no completed observation
+stale seam origin CerbMem.casePtrval       immaculate OK:InternalError:case_ptrval                                 ERR:unreviewed panic origin   <== DIFFERS
+stale seam origin CerbMem.casePtrval       litmus     ERR:unreviewed panic origin                                  ERR:unreviewed panic origin
+stale seam origin CerbFloat.truncToInt     batch      ERR:fatal engine diagnostic; no completed observation        ERR:fatal engine diagnostic; no completed observation
+stale seam origin CerbFloat.truncToInt     immaculate OK:InternalError:CerbFloat.truncToInt: nan/inf               ERR:unreviewed panic origin   <== DIFFERS
+stale seam origin CerbFloat.truncToInt     litmus     ERR:unreviewed panic origin                                  ERR:unreviewed panic origin
+unknown origin                             batch      ERR:fatal engine diagnostic; no completed observation        ERR:fatal engine diagnostic; no completed observation
+unknown origin                             immaculate ERR:unreviewed panic origin                                  ERR:unreviewed panic origin
+unknown origin                             litmus     ERR:unreviewed panic origin                                  ERR:unreviewed panic origin
+KEPT typeof_enum_impl origin               batch      ERR:fatal engine diagnostic; no completed observation        ERR:fatal engine diagnostic; no completed observation
+KEPT typeof_enum_impl origin               immaculate ERR:unreviewed panic origin                                  OK:InternalError:Ocaml_implementation.typeof_enum: tag wa   <== DIFFERS
+KEPT typeof_enum_impl origin               litmus     ERR:unreviewed panic origin                                  ERR:unreviewed panic origin
+CerbTags tripwire origin                   batch      ERR:fatal engine diagnostic; no completed observation        ERR:fatal engine diagnostic; no completed observation
+CerbTags tripwire origin                   immaculate ERR:unreviewed panic origin                                  ERR:unreviewed panic origin
+CerbTags tripwire origin                   litmus     ERR:unreviewed panic origin                                  ERR:unreviewed panic origin
+mangled origin + FUEL msg                  batch      ERR:fuel exhausted; exploration incomplete                   ERR:fuel exhausted; exploration incomplete
+mangled origin + FUEL msg                  immaculate ERR:fuel exhausted; exploration incomplete                   ERR:fuel exhausted; exploration incomplete
+mangled origin + FUEL msg                  litmus     ERR:fuel exhausted; exploration incomplete                   ERR:fuel exhausted; exploration incomplete
+stale origin + FUEL msg                    batch      ERR:fuel exhausted; exploration incomplete                   ERR:fuel exhausted; exploration incomplete
+stale origin + FUEL msg                    immaculate ERR:fuel exhausted; exploration incomplete                   ERR:fuel exhausted; exploration incomplete
+stale origin + FUEL msg                    litmus     ERR:fuel exhausted; exploration incomplete                   ERR:fuel exhausted; exploration incomplete
+forged: origin with trailing space         batch      ERR:fatal engine diagnostic; no completed observation        ERR:fatal engine diagnostic; no completed observation
+forged: origin with trailing space         immaculate ERR:unreviewed panic origin                                  OK:InternalError:Ocaml_gcc_builtins.bswap64: Z.to_int64 o   <== DIFFERS
+forged: origin with trailing space         litmus     ERR:unreviewed panic origin                                  OK:InternalError:Ocaml_gcc_builtins.bswap64: Z.to_int64 o   <== DIFFERS
+forged: newline inside origin              batch      ERR:fatal engine diagnostic; no completed observation        ERR:fatal engine diagnostic; no completed observation
+forged: newline inside origin              immaculate ERR:fatal engine diagnostic; no completed observation        ERR:fatal engine diagnostic; no completed observation
+forged: newline inside origin              litmus     ERR:fatal engine diagnostic; no completed observation        ERR:fatal engine diagnostic; no completed observation
+forged: origin prefix-extended             batch      ERR:fatal engine diagnostic; no completed observation        ERR:fatal engine diagnostic; no completed observation
+forged: origin prefix-extended             immaculate ERR:unreviewed panic origin                                  ERR:unreviewed panic origin
+forged: origin prefix-extended             litmus     ERR:unreviewed panic origin                                  ERR:unreviewed panic origin
+forged: origin with embedded space         batch      ERR:fatal engine diagnostic; no completed observation        ERR:fatal engine diagnostic; no completed observation
+forged: origin with embedded space         immaculate ERR:unreviewed panic origin                                  ERR:unreviewed panic origin
+forged: origin with embedded space         litmus     ERR:unreviewed panic origin                                  ERR:unreviewed panic origin
+forged: CR inside origin                   batch      ERR:fatal engine diagnostic; no completed observation        ERR:fatal engine diagnostic; no completed observation
+forged: CR inside origin                   immaculate ERR:fatal engine diagnostic; no completed observation        ERR:fatal engine diagnostic; no completed observation
+forged: CR inside origin                   litmus     ERR:fatal engine diagnostic; no completed observation        ERR:fatal engine diagnostic; no completed observation
+mangled origin, wrong status 1             batch      ERR:fatal engine diagnostic; no completed observation        ERR:fatal engine diagnostic; no completed observation
+mangled origin, wrong status 1             immaculate ERR:internal failure has the wrong exit status               ERR:internal failure has the wrong exit status
+mangled origin, wrong status 1             litmus     ERR:internal failure has the wrong exit status               ERR:internal failure has the wrong exit status
+mangled origin, stdout beside              batch      ERR:fatal engine diagnostic; no completed observation        ERR:fatal engine diagnostic; no completed observation
+mangled origin, stdout beside              immaculate ERR:unreviewed panic origin                                  ERR:unexpected stdout beside internal failure   <== DIFFERS
+mangled origin, stdout beside              litmus     ERR:unreviewed panic origin                                  ERR:unexpected stdout beside internal failure   <== DIFFERS
+OCaml internal error (control)             batch      ERR:fatal engine diagnostic; no completed observation        ERR:fatal engine diagnostic; no completed observation
+OCaml internal error (control)             immaculate OK:InternalError:Ocaml_gcc_builtins.bswap64: Z.to_int64 o    OK:InternalError:Ocaml_gcc_builtins.bswap64: Z.to_int64 o
+OCaml internal error (control)             litmus     OK:InternalError:Ocaml_gcc_builtins.bswap64: Z.to_int64 o    OK:InternalError:Ocaml_gcc_builtins.bswap64: Z.to_int64 o
+
+batch-policy rows that differ base vs head: 0
+HEAD IMMACULATE_PANICS = [b'_private.CerberusImpl.0.CerberusImpl.typeof_enum_impl']
+BASE IMMACULATE_PANICS = [b'CerbFS.fs_opendir', b'CerbFloat.truncToInt', b'CerbMem.allocator', b'CerbMem.casePtrval', b'CerbMem.memcmpM.getBytes', b'CerbMem.sizeofCtype_lemFuel', b'CerbUtils.gcc_builtin_bswap64', b'_private.CerbDecode.0.CerbDecode.decode_character_constant_aux']
+HEAD LEMLIB_FAILWITHI_ORIGIN = b'_private.LemLib.0.failwithIImpl'

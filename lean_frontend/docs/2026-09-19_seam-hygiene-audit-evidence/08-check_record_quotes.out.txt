@@ -1,0 +1,22 @@
+quoted lines: 168 missing: 21
+  MISSING record.md:129: check_failure_reach: FAIL —
+  MISSING record.md:130: NEW pure exec-closure site (no register row — review it): lean_frontend/CerbMem.lean:1419 CerbMem.maxIval failwithI «"CerbMem.maxIval: the concrete memory model requires a compl» position=LET-BOUND sc
+  MISSING record.md:131: NEW pure exec-closure site (no register row — review it): lean_frontend/CerbMem.lean:1447 CerbMem.minIval failwithI «"CerbMem.minIval: the concrete memory model requires a compl» position=ARGUMENT sco
+  MISSING record.md:132: STALE register row (site gone or its key moved): lean_frontend/CerbMem.lean CerbMem.maxIval failwithI «"CerbMem.memValueToBytes_append: the concrete memory model r» scope=EXEC
+  MISSING record.md:133: STALE register row (site gone or its key moved): lean_frontend/CerbMem.lean CerbMem.minIval failwithI «"CerbMem.memValueToBytes_append: the concrete memory model r» scope=EXEC
+  MISSING record.md:199: check_theorem_axioms: C2 ratchet OK (375 files scanned recursively: 0 axioms, 0 runEffectful, seam population = the 38 pinned path-qualified counted rows exactly incl. the extern class; …)
+  MISSING record.md:202: row 2:  SUMMARY: total=113 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=5 cerb_floor=0 cerb_inconsistent=0 | Baseline check: 0 regression(s),
+  MISSING record.md:203: row 3:  SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0 | Baseline check: 0 regression(s
+  MISSING record.md:204: row 4:  SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0 | Baseline check: 0 regression(s), 
+  MISSING record.md:205: row 4b: SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0 | Baseline check: 0 regression(s), 0
+  MISSING record.md:206: row 10: Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}
+  MISSING record.md:207: row 10 --plant: Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}
+  MISSING record.md:220: if lean[1] != b'LemLib.failwithIImpl' and not (
+  MISSING record.md:221: policy == 'immaculate' and lean[1] in IMMACULATE_PANICS):
+  MISSING record.md:222: raise ProtocolError('unreviewed panic origin')
+  MISSING record.md:319: rows 2/3/4/4b: Baseline check: 0 regression(s), 0 improvement(s) (each; the SUMMARY lines equal §2.6's)
+  MISSING record.md:320: row 10: Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}
+  MISSING record.md:321: row 10 --plant: Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}
+  MISSING record.md:389: rows 2/3/4/4b: Baseline check: 0 regression(s), 0 improvement(s) (each; SUMMARY lines equal §2.6's)
+  MISSING record.md:390: row 10: Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}
+  MISSING record.md:391: row 10 --plant: Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}
