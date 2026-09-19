@@ -1,0 +1,32 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+IRIW+rel+rel+acq_acq+acq_acq.c PASS
+IRIW+sc+sc+sc_sc+sc_sc.c PASS
+LB+acq_rel+acq_rel.c PASS
+LB+rlx_rlx+rlx_rlx.c PASS
+LB+sc_sc+sc_sc.c PASS
+MP+na+na.c PASS
+MP+na_rel+acq_na.c PASS
+MP+na_sc+sc_na+globals.c PASS
+MP+na_sc+sc_na.c PASS
+RMW-strong-equal.c PASS
+RMW-strong-unequal.c PASS
+RMW-weak-equal.c PASS
+RMW-weak-unequal.c PASS
+SB+rel_acq+rel_acq.c PASS
+SB+sc_sc+sc_sc+globals.c PASS
+SB+sc_sc+sc_sc.c PASS
+WRC+sc+sc_sc+sc_sc.c PASS
+coherence+init+sc_sc.c PASS
+coherence+sc_sc_sc.c PASS
+datarace+Rna+Rna.c PASS
+datarace+Rna+Rna_Wna.c PASS
+datarace+Rna+Wna.c PASS
+datarace+Wna+Wna+globals.c PASS
+datarace+Wna+Wna.c PASS
+datarace+Wna_sc+sc_Rna.c PASS
+fence+sc+sc_sc.c PASS
+fence+sc_sc.c PASS
+globals+init+Rna_Rna.c PASS
+globals+init+Wna_Wna.c PASS
+hb-mo-cycle+Wsc_Wsc_Rsc+Wsc_Wsc_Rsc.c PASS
+Independent checked litmus: 30 / 30

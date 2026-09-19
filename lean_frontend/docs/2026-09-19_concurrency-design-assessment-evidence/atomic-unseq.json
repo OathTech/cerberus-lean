@@ -1,0 +1,68 @@
+[
+  {
+    "case": "atomic-unseq-single",
+    "side": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/atomic-unseq-single.c"
+    ],
+    "status": 1,
+    "tokens": [
+      "UB:{ub: \"UB035_unsequenced_race\", stderr: \"\", loc: \"<2:39--2:94>\"}"
+    ]
+  },
+  {
+    "case": "atomic-unseq-single",
+    "side": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/atomic-unseq-single/source.json"
+    ],
+    "status": 1,
+    "tokens": [
+      "UB:{ub: \"UB035_unsequenced_race\", stderr: \"\", loc: \"<2:39--2:94>\"}"
+    ]
+  },
+  {
+    "case": "atomic-unseq-empty-sibling",
+    "side": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/probes/atomic-unseq-empty-sibling.c"
+    ],
+    "status": 0,
+    "tokens": [
+      "UB:{ub: \"UB035_unsequenced_race\", stderr: \"\", loc: \"<2:100--2:162>\"}"
+    ]
+  },
+  {
+    "case": "atomic-unseq-empty-sibling",
+    "side": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/atomic-unseq-empty-sibling/source.json"
+    ],
+    "status": 0,
+    "tokens": [
+      "UB:{ub: \"UB035_unsequenced_race\", stderr: \"\", loc: \"<2:100--2:162>\"}"
+    ]
+  }
+]

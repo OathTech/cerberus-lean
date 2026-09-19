@@ -1,0 +1,33 @@
+{
+  "reviewed_head": "38d7d2123ca1dd2a0769c19518b9410c7d4ea1f5",
+  "legacy_head": "086d8762d382eff375c101f5f0c64d3ffe9bccc7",
+  "mainline_at_packaging": "0457732e1865a3ba2bc678f6ca8c35e532471baa",
+  "tracked_diff": "",
+  "build_command": "/home/dev/projects/cerberus-lean-proj/scripts/ce bash -c 'set -e; export DUNE_CACHE=disabled; make prelude-src lean-prelude-src; opam exec --switch=. -- dune build --force backend/driver/main.exe cerberus-lib.install; cd lean_frontend; CERB_MEM_MAX=32G ../scripts/capped lake build cerberus-lean sc-bridge-test'",
+  "build_exit": 0,
+  "new_general_theorems_proved": false,
+  "full_current_release_battery_rerun": false,
+  "sha256": {
+    "frontend/model/driver.lem": "8bddad90f38a23e33bafae305c57839658e712a58cf9a478a41a59baf7f51db2",
+    "frontend/model/core_run_aux.lem": "44b8d404b953fcb27b228785165e25ab605b0c50fb8846230b509aed74c90683",
+    "frontend/model/core_reduction.lem": "154d0a63af5f917fa774bd2992bb1e24966810f17b3f629a58fb87ab10309ac9",
+    "frontend/model/cmm_aux.lem": "1423f979488bb91eaac9edfd8c6eb9e1196a767d6a3207847e3d7b0888ffed72",
+    "frontend/concurrency/cmm_csem.lem": "b369185ac1d15705f9173d089722fa484d0af9f5802ff7b206af5a67cc3ed9ab",
+    "frontend/concurrency/cmm_op.lem": "6f9815daf5b2500f1ce90581c3b371a53935db109a3c25032579400f02856505",
+    "lean_frontend/Main.lean": "e6e4701c9372c696d25b8c232372bb4f9349de3629a66dfc8975927c53cd2c0c",
+    "lean_frontend/CerbMem.lean": "606c2c0a3c8ae9b10d53d58f1e86e58a91159c71fcb968fd18d24b67b6080dc7",
+    "scripts/test_litmus.sh": "8d2bb0a094b5e6c9c467bbba80a88a8541a06df77ea9908336ed53f09150fa65",
+    "tests/litmus/sc_reference.py": "0471e5c75d27d27d8c89e033cad78ef6193eb7ee880e87a557b770c188ca68fd",
+    "tests/litmus/expectations.txt": "859e710856ae568c2169239153d6184f0f9e8edcf08cc7c7fc88e450fccc5109",
+    "_build/default/backend/driver/main.exe": "cdba93e9ced304713c31c9596cdceadc209846247a5f916fe739bff025c41004",
+    "lean_frontend/.lake/build/bin/cerberus-lean": "234c9f684aee8d8fff6c7a421b46970818c877790742d0923302c0211ff4daf0",
+    "lean_frontend/.lake/build/bin/sc-bridge-test": "cfae8b932b9df05213c0e8e7ddb94cff13b18f59b8a27b996700f8c9fb4bcd6c",
+    "scripts/capped": "88cc51b9b8556c4e0404a60d71ed94a694d58aaa66db2165f4f881de35ff57bb",
+    "ocaml_frontend/lem_sync.sha256": "cc43b2e1515f887830a5aa1c5820382a3896cce09693518968eeac562f017530",
+    "lean_frontend/lem_sync.sha256": "78a2d0b41f50067b6e8fd6d4a13c4da8c7337520a6383385c4420edd94e1e53d",
+    "current-mainline-instrument:scripts/capped": "2dd1bcc1b8040c445ffe689707c89586aa852ade9c1fba0ecaee3091d49a280f",
+    "current-mainline-instrument:scripts/observations.py": "bfd8d18846dd656d94ea4cb3c9a70474e0a947b2fb92568a21698e4445bd230c"
+  },
+  "ocaml_frontend/generated_manifest_sha256": "43175417624441c843aee5c9e5bdc217e89e70ba43a97bb97b9aa554ff8d86d1",
+  "lean_frontend/generated_manifest_sha256": "870327880c6bd8da491b13bcdf89057ca63111fefd7bec7e095e1f25d9971e0d"
+}

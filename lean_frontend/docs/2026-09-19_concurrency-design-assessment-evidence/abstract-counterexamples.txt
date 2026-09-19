@@ -1,0 +1,4 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+missing sequenced-before premise: data_races_empty=true; well_formed_threads=true; failing_leaves=[det_read, consistent_non_atomic_rf]
+missing value-correspondence premise: data_races_empty=true; well_formed_threads=true; failing_leaves=[well_formed_rf]
+positive control: data_races_empty=true; well_formed_threads=true; failing_leaves=[]

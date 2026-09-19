@@ -1,0 +1,1382 @@
+[
+  {
+    "name": "IRIW+rel+rel+acq_acq+acq_acq.c",
+    "class": "NONSC",
+    "target": "REFUSE",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/IRIW+rel+rel+acq_acq+acq_acq.c"
+      ],
+      "status": 1,
+      "seconds": 0.03,
+      "full_set": [
+        "ERR:{msg: \"model refused: atomic memory order Release is outside the SC fragment (seq_cst only)\"}"
+      ],
+      "count": 1
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/IRIW+rel+rel+acq_acq+acq_acq.c/source.json"
+      ],
+      "status": 1,
+      "seconds": 0.07,
+      "full_set": [
+        "ERR:{msg: \"model refused: atomic memory order Release is outside the SC fragment (seq_cst only)\"}"
+      ],
+      "count": 1
+    },
+    "projection": "{ERROR}",
+    "passed": true
+  },
+  {
+    "name": "IRIW+sc+sc+sc_sc+sc_sc.c",
+    "class": "SC",
+    "target": "{Specified(0),Specified(1),Specified(10),Specified(11),Specified(12),Specified(13),Specified(14),Specified(15),Specified(2),Specified(3),Specified(4),Specified(6),Specified(7),Specified(8),Specified(9)}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/IRIW+sc+sc+sc_sc+sc_sc.c"
+      ],
+      "status": 0,
+      "seconds": 15.169,
+      "full_set": [
+        "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(10)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(11)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(12)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(13)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(14)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(15)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(4)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(6)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(7)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(8)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(9)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 6300
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/IRIW+sc+sc+sc_sc+sc_sc.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 33.245,
+      "full_set": [
+        "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(10)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(11)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(12)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(13)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(14)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(15)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(4)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(6)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(7)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(8)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(9)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 6300
+    },
+    "projection": "{Specified(0),Specified(1),Specified(10),Specified(11),Specified(12),Specified(13),Specified(14),Specified(15),Specified(2),Specified(3),Specified(4),Specified(6),Specified(7),Specified(8),Specified(9)}",
+    "passed": true
+  },
+  {
+    "name": "LB+acq_rel+acq_rel.c",
+    "class": "NONSC",
+    "target": "REFUSE",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/LB+acq_rel+acq_rel.c"
+      ],
+      "status": 1,
+      "seconds": 0.035,
+      "full_set": [
+        "ERR:{msg: \"model refused: atomic memory order Acquire is outside the SC fragment (seq_cst only)\"}"
+      ],
+      "count": 1
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/LB+acq_rel+acq_rel.c/source.json"
+      ],
+      "status": 1,
+      "seconds": 0.084,
+      "full_set": [
+        "ERR:{msg: \"model refused: atomic memory order Acquire is outside the SC fragment (seq_cst only)\"}"
+      ],
+      "count": 1
+    },
+    "projection": "{ERROR}",
+    "passed": true
+  },
+  {
+    "name": "LB+rlx_rlx+rlx_rlx.c",
+    "class": "NONSC",
+    "target": "REFUSE",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/LB+rlx_rlx+rlx_rlx.c"
+      ],
+      "status": 1,
+      "seconds": 0.03,
+      "full_set": [
+        "ERR:{msg: \"model refused: atomic memory order Relaxed is outside the SC fragment (seq_cst only)\"}"
+      ],
+      "count": 1
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/LB+rlx_rlx+rlx_rlx.c/source.json"
+      ],
+      "status": 1,
+      "seconds": 0.083,
+      "full_set": [
+        "ERR:{msg: \"model refused: atomic memory order Relaxed is outside the SC fragment (seq_cst only)\"}"
+      ],
+      "count": 1
+    },
+    "projection": "{ERROR}",
+    "passed": true
+  },
+  {
+    "name": "LB+sc_sc+sc_sc.c",
+    "class": "SC",
+    "target": "{Specified(0),Specified(1),Specified(2)}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/LB+sc_sc+sc_sc.c"
+      ],
+      "status": 0,
+      "seconds": 0.043,
+      "full_set": [
+        "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 20
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/LB+sc_sc+sc_sc.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 0.095,
+      "full_set": [
+        "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 20
+    },
+    "projection": "{Specified(0),Specified(1),Specified(2)}",
+    "passed": true
+  },
+  {
+    "name": "MP+na+na.c",
+    "class": "SC",
+    "target": "{UB005_data_race}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/MP+na+na.c"
+      ],
+      "status": 0,
+      "seconds": 0.031,
+      "full_set": [
+        "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}"
+      ],
+      "count": 3
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/MP+na+na.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 0.072,
+      "full_set": [
+        "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}"
+      ],
+      "count": 3
+    },
+    "projection": "{UB005_data_race}",
+    "passed": true
+  },
+  {
+    "name": "MP+na_rel+acq_na.c",
+    "class": "NONSC",
+    "target": "REFUSE",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/MP+na_rel+acq_na.c"
+      ],
+      "status": 1,
+      "seconds": 0.028,
+      "full_set": [
+        "ERR:{msg: \"model refused: atomic memory order Release is outside the SC fragment (seq_cst only)\"}"
+      ],
+      "count": 1
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/MP+na_rel+acq_na.c/source.json"
+      ],
+      "status": 1,
+      "seconds": 0.075,
+      "full_set": [
+        "ERR:{msg: \"model refused: atomic memory order Release is outside the SC fragment (seq_cst only)\"}"
+      ],
+      "count": 1
+    },
+    "projection": "{ERROR}",
+    "passed": true
+  },
+  {
+    "name": "MP+na_sc+sc_na+globals.c",
+    "class": "SC",
+    "target": "{Specified(1),Specified(2)}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/MP+na_sc+sc_na+globals.c"
+      ],
+      "status": 0,
+      "seconds": 0.038,
+      "full_set": [
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 15
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/MP+na_sc+sc_na+globals.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 0.094,
+      "full_set": [
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 15
+    },
+    "projection": "{Specified(1),Specified(2)}",
+    "passed": true
+  },
+  {
+    "name": "MP+na_sc+sc_na.c",
+    "class": "SC",
+    "target": "{Specified(1),Specified(2)}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/MP+na_sc+sc_na.c"
+      ],
+      "status": 0,
+      "seconds": 0.038,
+      "full_set": [
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 15
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/MP+na_sc+sc_na.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 0.09,
+      "full_set": [
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 15
+    },
+    "projection": "{Specified(1),Specified(2)}",
+    "passed": true
+  },
+  {
+    "name": "RMW-strong-equal.c",
+    "class": "RMW",
+    "target": "{Specified(5)}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/RMW-strong-equal.c"
+      ],
+      "status": 0,
+      "seconds": 0.031,
+      "full_set": [
+        "VAL:{value: \"Specified(5)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 1
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/RMW-strong-equal.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 0.09,
+      "full_set": [
+        "VAL:{value: \"Specified(5)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 1
+    },
+    "projection": "{Specified(5)}",
+    "passed": true
+  },
+  {
+    "name": "RMW-strong-unequal.c",
+    "class": "RMW",
+    "target": "{Specified(0)}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/RMW-strong-unequal.c"
+      ],
+      "status": 0,
+      "seconds": 0.03,
+      "full_set": [
+        "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 1
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/RMW-strong-unequal.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 0.077,
+      "full_set": [
+        "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 1
+    },
+    "projection": "{Specified(0)}",
+    "passed": true
+  },
+  {
+    "name": "RMW-weak-equal.c",
+    "class": "RMW",
+    "target": "{Specified(0),Specified(5)}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/RMW-weak-equal.c"
+      ],
+      "status": 0,
+      "seconds": 0.033,
+      "full_set": [
+        "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(5)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 2
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/RMW-weak-equal.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 0.081,
+      "full_set": [
+        "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(5)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 2
+    },
+    "projection": "{Specified(0),Specified(5)}",
+    "passed": true
+  },
+  {
+    "name": "RMW-weak-unequal.c",
+    "class": "RMW",
+    "target": "{Specified(0)}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/RMW-weak-unequal.c"
+      ],
+      "status": 0,
+      "seconds": 0.033,
+      "full_set": [
+        "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 1
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/RMW-weak-unequal.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 0.073,
+      "full_set": [
+        "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 1
+    },
+    "projection": "{Specified(0)}",
+    "passed": true
+  },
+  {
+    "name": "SB+rel_acq+rel_acq.c",
+    "class": "NONSC",
+    "target": "REFUSE",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/SB+rel_acq+rel_acq.c"
+      ],
+      "status": 1,
+      "seconds": 0.032,
+      "full_set": [
+        "ERR:{msg: \"model refused: atomic memory order Release is outside the SC fragment (seq_cst only)\"}"
+      ],
+      "count": 1
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/SB+rel_acq+rel_acq.c/source.json"
+      ],
+      "status": 1,
+      "seconds": 0.086,
+      "full_set": [
+        "ERR:{msg: \"model refused: atomic memory order Release is outside the SC fragment (seq_cst only)\"}"
+      ],
+      "count": 1
+    },
+    "projection": "{ERROR}",
+    "passed": true
+  },
+  {
+    "name": "SB+sc_sc+sc_sc+globals.c",
+    "class": "SC",
+    "target": "{Specified(1),Specified(2),Specified(3)}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/SB+sc_sc+sc_sc+globals.c"
+      ],
+      "status": 0,
+      "seconds": 0.043,
+      "full_set": [
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 20
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/SB+sc_sc+sc_sc+globals.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 0.106,
+      "full_set": [
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 20
+    },
+    "projection": "{Specified(1),Specified(2),Specified(3)}",
+    "passed": true
+  },
+  {
+    "name": "SB+sc_sc+sc_sc.c",
+    "class": "SC",
+    "target": "{Specified(1),Specified(2),Specified(3)}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/SB+sc_sc+sc_sc.c"
+      ],
+      "status": 0,
+      "seconds": 0.042,
+      "full_set": [
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 20
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/SB+sc_sc+sc_sc.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 0.097,
+      "full_set": [
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 20
+    },
+    "projection": "{Specified(1),Specified(2),Specified(3)}",
+    "passed": true
+  },
+  {
+    "name": "WRC+sc+sc_sc+sc_sc.c",
+    "class": "SC",
+    "target": "{Specified(0),Specified(1),Specified(4),Specified(5),Specified(7)}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/WRC+sc+sc_sc+sc_sc.c"
+      ],
+      "status": 0,
+      "seconds": 0.458,
+      "full_set": [
+        "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(4)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(5)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(7)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 336
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/WRC+sc+sc_sc+sc_sc.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 0.988,
+      "full_set": [
+        "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(4)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(5)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(7)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 336
+    },
+    "projection": "{Specified(0),Specified(1),Specified(4),Specified(5),Specified(7)}",
+    "passed": true
+  },
+  {
+    "name": "coherence+init+sc_sc.c",
+    "class": "SC",
+    "target": "{Specified(1)}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/coherence+init+sc_sc.c"
+      ],
+      "status": 0,
+      "seconds": 0.03,
+      "full_set": [
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 1
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/coherence+init+sc_sc.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 0.081,
+      "full_set": [
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 1
+    },
+    "projection": "{Specified(1)}",
+    "passed": true
+  },
+  {
+    "name": "coherence+sc_sc_sc.c",
+    "class": "SC",
+    "target": "{Specified(1)}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/coherence+sc_sc_sc.c"
+      ],
+      "status": 0,
+      "seconds": 0.031,
+      "full_set": [
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 1
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/coherence+sc_sc_sc.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 0.084,
+      "full_set": [
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 1
+    },
+    "projection": "{Specified(1)}",
+    "passed": true
+  },
+  {
+    "name": "datarace+Rna+Rna.c",
+    "class": "SC",
+    "target": "{Specified(0)}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/datarace+Rna+Rna.c"
+      ],
+      "status": 0,
+      "seconds": 0.033,
+      "full_set": [
+        "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 6
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/datarace+Rna+Rna.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 0.083,
+      "full_set": [
+        "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 6
+    },
+    "projection": "{Specified(0)}",
+    "passed": true
+  },
+  {
+    "name": "datarace+Rna+Rna_Wna.c",
+    "class": "SC",
+    "target": "{UB005_data_race}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/datarace+Rna+Rna_Wna.c"
+      ],
+      "status": 0,
+      "seconds": 0.032,
+      "full_set": [
+        "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}"
+      ],
+      "count": 10
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/datarace+Rna+Rna_Wna.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 0.083,
+      "full_set": [
+        "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}"
+      ],
+      "count": 10
+    },
+    "projection": "{UB005_data_race}",
+    "passed": true
+  },
+  {
+    "name": "datarace+Rna+Wna.c",
+    "class": "SC",
+    "target": "{UB005_data_race}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/datarace+Rna+Wna.c"
+      ],
+      "status": 0,
+      "seconds": 0.031,
+      "full_set": [
+        "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}"
+      ],
+      "count": 3
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/datarace+Rna+Wna.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 0.085,
+      "full_set": [
+        "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}"
+      ],
+      "count": 3
+    },
+    "projection": "{UB005_data_race}",
+    "passed": true
+  },
+  {
+    "name": "datarace+Wna+Wna+globals.c",
+    "class": "SC",
+    "target": "{UB005_data_race}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/datarace+Wna+Wna+globals.c"
+      ],
+      "status": 0,
+      "seconds": 0.028,
+      "full_set": [
+        "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}"
+      ],
+      "count": 2
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/datarace+Wna+Wna+globals.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 0.075,
+      "full_set": [
+        "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}"
+      ],
+      "count": 2
+    },
+    "projection": "{UB005_data_race}",
+    "passed": true
+  },
+  {
+    "name": "datarace+Wna+Wna.c",
+    "class": "SC",
+    "target": "{UB005_data_race}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/datarace+Wna+Wna.c"
+      ],
+      "status": 0,
+      "seconds": 0.031,
+      "full_set": [
+        "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}"
+      ],
+      "count": 2
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/datarace+Wna+Wna.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 0.075,
+      "full_set": [
+        "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}"
+      ],
+      "count": 2
+    },
+    "projection": "{UB005_data_race}",
+    "passed": true
+  },
+  {
+    "name": "datarace+Wna_sc+sc_Rna.c",
+    "class": "SC",
+    "target": "{Specified(1),UB005_data_race}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/datarace+Wna_sc+sc_Rna.c"
+      ],
+      "status": 0,
+      "seconds": 0.034,
+      "full_set": [
+        "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}",
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 15
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/datarace+Wna_sc+sc_Rna.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 0.088,
+      "full_set": [
+        "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}",
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 15
+    },
+    "projection": "{Specified(1),UB005_data_race}",
+    "passed": true
+  },
+  {
+    "name": "fence+sc+sc_sc.c",
+    "class": "NONSC",
+    "target": "REFUSE",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/fence+sc+sc_sc.c"
+      ],
+      "status": 1,
+      "seconds": 0.032,
+      "full_set": [
+        "ERR:{msg: \"model refused: fence (Seq_cst) is outside the SC fragment\"}"
+      ],
+      "count": 1
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/fence+sc+sc_sc.c/source.json"
+      ],
+      "status": 1,
+      "seconds": 0.082,
+      "full_set": [
+        "ERR:{msg: \"model refused: fence (Seq_cst) is outside the SC fragment\"}"
+      ],
+      "count": 1
+    },
+    "projection": "{ERROR}",
+    "passed": true
+  },
+  {
+    "name": "fence+sc_sc.c",
+    "class": "NONSC",
+    "target": "REFUSE",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/fence+sc_sc.c"
+      ],
+      "status": 1,
+      "seconds": 0.031,
+      "full_set": [
+        "ERR:{msg: \"model refused: atomic memory order Relaxed is outside the SC fragment (seq_cst only)\"}"
+      ],
+      "count": 1
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/fence+sc_sc.c/source.json"
+      ],
+      "status": 1,
+      "seconds": 0.072,
+      "full_set": [
+        "ERR:{msg: \"model refused: atomic memory order Relaxed is outside the SC fragment (seq_cst only)\"}"
+      ],
+      "count": 1
+    },
+    "projection": "{ERROR}",
+    "passed": true
+  },
+  {
+    "name": "globals+init+Rna_Rna.c",
+    "class": "SC",
+    "target": "{Specified(10)}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/globals+init+Rna_Rna.c"
+      ],
+      "status": 0,
+      "seconds": 0.032,
+      "full_set": [
+        "VAL:{value: \"Specified(10)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 6
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/globals+init+Rna_Rna.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 0.083,
+      "full_set": [
+        "VAL:{value: \"Specified(10)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 6
+    },
+    "projection": "{Specified(10)}",
+    "passed": true
+  },
+  {
+    "name": "globals+init+Wna_Wna.c",
+    "class": "SC",
+    "target": "{Specified(3)}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/globals+init+Wna_Wna.c"
+      ],
+      "status": 0,
+      "seconds": 0.031,
+      "full_set": [
+        "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 2
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/globals+init+Wna_Wna.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 0.082,
+      "full_set": [
+        "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 2
+    },
+    "projection": "{Specified(3)}",
+    "passed": true
+  },
+  {
+    "name": "hb-mo-cycle+Wsc_Wsc_Rsc+Wsc_Wsc_Rsc.c",
+    "class": "SC",
+    "target": "{Specified(1),Specified(2),Specified(3)}",
+    "fork": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=exhaustive",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/tests/litmus/hb-mo-cycle+Wsc_Wsc_Rsc+Wsc_Wsc_Rsc.c"
+      ],
+      "status": 0,
+      "seconds": 0.085,
+      "full_set": [
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 70
+    },
+    "lean": {
+      "args": [
+        "timeout",
+        "45s",
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/litmus/hb-mo-cycle+Wsc_Wsc_Rsc+Wsc_Wsc_Rsc.c/source.json"
+      ],
+      "status": 0,
+      "seconds": 0.181,
+      "full_set": [
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+        "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "count": 70
+    },
+    "projection": "{Specified(1),Specified(2),Specified(3)}",
+    "passed": true
+  }
+]

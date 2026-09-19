@@ -1,0 +1,784 @@
+[
+  {
+    "case": "array-read-sequential",
+    "model": "sequential",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/array-read-sequential/sequential/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.078,
+    "tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "array-read-sequential",
+    "model": "sc",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/array-read-sequential/sc/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.081,
+    "tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "atomic-exchange",
+    "model": "sequential",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/atomic-exchange/sequential/source.json"
+    ],
+    "status": 134,
+    "seconds": 1.141,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "diagnostics": "an_frontend/.lake/build/bin/cerberus-lean(+0xf7bed7) [0x595a34a47ed7]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean(+0xc46925) [0x595a34712925]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean(+0xc46e17) [0x595a34712e17]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean(+0xc46ec9) [0x595a34712ec9]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dcb7cd) [0x595a388977cd]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean(+0xd4da3c) [0x595a34819a3c]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean(+0xd64a8b) [0x595a34830a8b]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean(+0xd66d29) [0x595a34832d29]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean(+0xd6bfbf) [0x595a34837fbf]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean(+0x4d7fd57) [0x595a3884bd57]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean(+0x4d80225) [0x595a3884c225]\n/lib/x86_64-linux-gnu/libc.so.6(+0x9cb84) [0x72594009cb84]\n/lib/x86_64-linux-gnu/libc.so.6(+0x129ecc) [0x725940129ecc]\n/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped: line 55: 2935775 Aborted                 (core dumped) \"$@\"\n",
+    "stdout_tail": ""
+  },
+  {
+    "case": "atomic-exchange",
+    "model": "sc",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/atomic-exchange/sc/source.json"
+    ],
+    "status": 134,
+    "seconds": 1.147,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "diagnostics": "an_frontend/.lake/build/bin/cerberus-lean(+0xf7bed7) [0x5a4390e54ed7]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean(+0xc46925) [0x5a4390b1f925]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean(+0xc46e17) [0x5a4390b1fe17]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean(+0xc46ec9) [0x5a4390b1fec9]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dcb7cd) [0x5a4394ca47cd]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean(+0xd4da3c) [0x5a4390c26a3c]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean(+0xd64a8b) [0x5a4390c3da8b]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean(+0xd66d29) [0x5a4390c3fd29]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean(+0xd6bfbf) [0x5a4390c44fbf]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean(+0x4d7fd57) [0x5a4394c58d57]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean(+0x4d80225) [0x5a4394c59225]\n/lib/x86_64-linux-gnu/libc.so.6(+0x9cb84) [0x799fe629cb84]\n/lib/x86_64-linux-gnu/libc.so.6(+0x129ecc) [0x799fe6329ecc]\n/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped: line 55: 2936054 Aborted                 (core dumped) \"$@\"\n",
+    "stdout_tail": ""
+  },
+  {
+    "case": "byte-read-sequential",
+    "model": "sequential",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/byte-read-sequential/sequential/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.082,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "byte-read-sequential",
+    "model": "sc",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/byte-read-sequential/sc/source.json"
+    ],
+    "status": 1,
+    "seconds": 0.057,
+    "tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf well_formed_rf\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "byte-write-sequential",
+    "model": "sequential",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/byte-write-sequential/sequential/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.068,
+    "tokens": [
+      "VAL:{value: \"Specified(256)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "byte-write-sequential",
+    "model": "sc",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/byte-write-sequential/sc/source.json"
+    ],
+    "status": 1,
+    "seconds": 0.085,
+    "tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf well_formed_rf\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "cmpxchg-control",
+    "model": "sequential",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/cmpxchg-control/sequential/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.094,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "cmpxchg-control",
+    "model": "sc",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/cmpxchg-control/sc/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.085,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "memcpy-equal-value-race",
+    "model": "sequential",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/memcpy-equal-value-race/sequential/source.json"
+    ],
+    "status": 1,
+    "seconds": 0.083,
+    "tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "memcpy-equal-value-race",
+    "model": "sc",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/memcpy-equal-value-race/sc/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.102,
+    "tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf det_read\"}"
+    ],
+    "count": 108
+  },
+  {
+    "case": "memcpy-race",
+    "model": "sequential",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/memcpy-race/sequential/source.json"
+    ],
+    "status": 1,
+    "seconds": 0.078,
+    "tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "memcpy-race",
+    "model": "sc",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/memcpy-race/sc/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.089,
+    "tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf det_read\"}"
+    ],
+    "count": 108
+  },
+  {
+    "case": "memcpy-read-race",
+    "model": "sequential",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/memcpy-read-race/sequential/source.json"
+    ],
+    "status": 1,
+    "seconds": 0.06,
+    "tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "memcpy-read-race",
+    "model": "sc",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/memcpy-read-race/sc/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.106,
+    "tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf det_read\"}"
+    ],
+    "count": 108
+  },
+  {
+    "case": "memcpy-sequential",
+    "model": "sequential",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/memcpy-sequential/sequential/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.079,
+    "tokens": [
+      "VAL:{value: \"Specified(7)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "memcpy-sequential",
+    "model": "sc",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/memcpy-sequential/sc/source.json"
+    ],
+    "status": 1,
+    "seconds": 0.077,
+    "tokens": [
+      "ERR:{msg: \"model inconsistent: the SC run's candidate execution fails the SC consistency predicate at leaf well_formed_rf\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "nonatomic-race-control",
+    "model": "sequential",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/nonatomic-race-control/sequential/source.json"
+    ],
+    "status": 1,
+    "seconds": 0.082,
+    "tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "nonatomic-race-control",
+    "model": "sc",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/nonatomic-race-control/sc/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.081,
+    "tokens": [
+      "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}"
+    ],
+    "count": 2
+  },
+  {
+    "case": "overlap-base-race",
+    "model": "sequential",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/overlap-base-race/sequential/source.json"
+    ],
+    "status": 1,
+    "seconds": 0.079,
+    "tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "overlap-base-race",
+    "model": "sc",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/overlap-base-race/sc/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.066,
+    "tokens": [
+      "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}"
+    ],
+    "count": 5
+  },
+  {
+    "case": "overlap-byte-race",
+    "model": "sequential",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/overlap-byte-race/sequential/source.json"
+    ],
+    "status": 1,
+    "seconds": 0.04,
+    "tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "overlap-byte-race",
+    "model": "sc",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/overlap-byte-race/sc/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.082,
+    "tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 5
+  },
+  {
+    "case": "scalar-control",
+    "model": "sequential",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/scalar-control/sequential/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.075,
+    "tokens": [
+      "VAL:{value: \"Specified(7)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "scalar-control",
+    "model": "sc",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/scalar-control/sc/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.081,
+    "tokens": [
+      "VAL:{value: \"Specified(7)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "seqrmw-seq-na-control",
+    "model": "sequential",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/seqrmw-seq-na-control/sequential/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.09,
+    "tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "seqrmw-seq-na-control",
+    "model": "sc",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/seqrmw-seq-na-control/sc/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.061,
+    "tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "seqrmw-seq-publish-control",
+    "model": "sequential",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/seqrmw-seq-publish-control/sequential/source.json"
+    ],
+    "status": 1,
+    "seconds": 0.08,
+    "tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "seqrmw-seq-publish-control",
+    "model": "sc",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/seqrmw-seq-publish-control/sc/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.08,
+    "tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 10
+  },
+  {
+    "case": "seqrmw-unseq-na",
+    "model": "sequential",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/seqrmw-unseq-na/sequential/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.067,
+    "tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "seqrmw-unseq-na",
+    "model": "sc",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/seqrmw-unseq-na/sc/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.057,
+    "tokens": [
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "seqrmw-unseq-publish",
+    "model": "sequential",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/seqrmw-unseq-publish/sequential/source.json"
+    ],
+    "status": 1,
+    "seconds": 0.08,
+    "tokens": [
+      "ERR:{msg: \"model refused: thread spawn (par) under the sequential model; select --concurrency=sc\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "seqrmw-unseq-publish",
+    "model": "sc",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/seqrmw-unseq-publish/sc/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.117,
+    "tokens": [
+      "UB:{ub: \"UB005_data_race\", stderr: \"\", loc: \"<other location: concurrency (SC instance): data race>\"}",
+      "VAL:{value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 53
+  },
+  {
+    "case": "seqrmw-unseq-same",
+    "model": "sequential",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/seqrmw-unseq-same/sequential/source.json"
+    ],
+    "status": 1,
+    "seconds": 0.063,
+    "tokens": [
+      "UB:{ub: \"UB035_unsequenced_race\", stderr: \"\", loc: \"<1:34--1:41>\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "seqrmw-unseq-same",
+    "model": "sc",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/seqrmw-unseq-same/sc/source.json"
+    ],
+    "status": 1,
+    "seconds": 0.076,
+    "tokens": [
+      "UB:{ub: \"UB035_unsequenced_race\", stderr: \"\", loc: \"<1:34--1:41>\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "struct-read-sequential",
+    "model": "sequential",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/struct-read-sequential/sequential/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.055,
+    "tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "struct-read-sequential",
+    "model": "sc",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/struct-read-sequential/sc/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.052,
+    "tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "uninit-read",
+    "model": "sequential",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/uninit-read/sequential/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.059,
+    "tokens": [
+      "VAL:{value: \"Unspecified('signed int')\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  },
+  {
+    "case": "uninit-read",
+    "model": "sc",
+    "side": "lean",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "--concurrency=sc",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/concurrency-design-20260919/.tmp/concurrency-design-audit/captures/uninit-read/sc/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.04,
+    "tokens": [
+      "VAL:{value: \"Unspecified('signed int')\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "count": 1
+  }
+]
