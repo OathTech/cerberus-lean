@@ -1,0 +1,25 @@
+open import Pervasives
+
+(* S0 control: ONE reader + reader_consumer + reader_seed (the suite's
+   test_reader_consumer.lem shape) — must generate, as today's model does. *)
+
+val tagDefs : unit -> map nat nat
+declare lean target_rep function tagDefs u = `ProbeImpl.tagDefsUnreachable` u
+declare {lean} reader val tagDefs
+
+val consume1 : nat -> nat
+declare lean target_rep function consume1 = `ProbeImpl.consume1`
+declare {lean} reader_consumer val consume1
+
+val getD : map nat nat -> nat -> nat
+let getD m k = match Map.lookup k m with | Just v -> v | Nothing -> 0 end
+
+val uses_one : nat -> nat
+let uses_one x = x + getD (tagDefs ()) 1 + consume1 x
+
+val seed_entry1 : map nat nat -> nat -> nat
+let seed_entry1 tds x = uses_one x + consume1 x
+declare {lean} reader_seed val seed_entry1
+
+val via_seed1 : nat -> nat
+let via_seed1 x = seed_entry1 (Map.insert 1 5 Map.empty) x

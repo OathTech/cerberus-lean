@@ -1,0 +1,22 @@
+open import Pervasives
+
+(* S0 negative control: a reader_consumer called from an ASSERT — the
+   backend's RC-rel/RC-scope guard. Expected: generation-time error. *)
+
+val tagDefs : unit -> map nat nat
+declare lean target_rep function tagDefs u = `ProbeImpl.tagDefsUnreachable` u
+declare {lean} reader val tagDefs
+
+val digest : unit -> string
+declare lean target_rep function digest u = `ProbeImpl.digestUnreachable` u
+declare {lean} reader val digest
+
+val enum_defs : unit -> map nat nat
+declare lean target_rep function enum_defs u = `ProbeImpl.enumDefsUnreachable` u
+declare {lean} reader val enum_defs
+
+val consume : nat -> nat
+declare lean target_rep function consume = `ProbeImpl.consume`
+declare {lean} reader_consumer val consume
+
+assert consumer_in_assert : (consume 0 = 0)

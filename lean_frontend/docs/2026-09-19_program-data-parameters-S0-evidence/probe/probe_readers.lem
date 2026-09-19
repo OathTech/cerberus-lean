@@ -1,0 +1,62 @@
+open import Pervasives Assert_extra
+
+(* S0 multi-reader probe (2026-09-19, charter P1): THREE reader constants
+   of the arc's shapes, a reader_consumer with a hand-written Lean stub
+   taking all three leading arguments, a supply-lifted def in the same
+   cone, lifted defs using one / two / three readers, and an
+   [Inhabited]-threaded polymorphic def, to READ the emitted binder order.
+   NO reader_seed here (see probe_seed3.lem / probe_seed1.lem). *)
+
+(* --- the three readers (unit -> T each; names as the arc will use) --- *)
+val tagDefs : unit -> map nat nat
+declare lean target_rep function tagDefs u = `ProbeImpl.tagDefsUnreachable` u
+declare {lean} reader val tagDefs
+
+val digest : unit -> string
+declare lean target_rep function digest u = `ProbeImpl.digestUnreachable` u
+declare {lean} reader val digest
+
+val enum_defs : unit -> map nat nat
+declare lean target_rep function enum_defs u = `ProbeImpl.enumDefsUnreachable` u
+declare {lean} reader val enum_defs
+
+(* --- the consumer: ProbeImpl.consume takes the readers as LEADING args --- *)
+val consume : nat -> nat
+declare lean target_rep function consume = `ProbeImpl.consume`
+declare {lean} reader_consumer val consume
+
+(* --- a supply in the same cone --- *)
+val counter : unit -> nat
+declare lean target_rep function counter u = 0
+declare {lean} supply val counter
+
+val getD : map nat nat -> nat -> nat
+let getD m k = match Map.lookup k m with | Just v -> v | Nothing -> 0 end
+
+(* one reader *)
+val uses_one : nat -> nat
+let uses_one x = x + getD (tagDefs ()) 1
+
+(* two readers (one direct, one through the lifted callee) *)
+val uses_two : nat -> nat
+let uses_two x = uses_one x + String.stringLength (digest ())
+
+(* three readers + the consumer *)
+val uses_three : nat -> nat
+let uses_three x = uses_two x + getD (enum_defs ()) 1 + consume x
+
+(* consumer through a HOF (bare reference: partial-application repair) *)
+val maps_consume : list nat -> list nat
+let maps_consume l = List.map consume l
+
+(* supply draw beside the three readers: readers, then supply *)
+val draw_and_read : nat -> nat
+let draw_and_read x = counter () + uses_three x
+
+(* [Inhabited] + readers + supply in one def *)
+val all_binders : forall 'a. list 'a -> 'a
+let all_binders l =
+  match l with
+    | x :: _ -> if counter () + getD (tagDefs ()) 0 = 0 then x else x
+    | [] -> failwith "all_binders: empty"
+  end

@@ -1,0 +1,28 @@
+open import Pervasives
+
+(* S0 negative control: a reader read in a NON-LIFTED position — an
+   instance method (instances are never lifted). Expected: a fail-closed
+   generation-time error. *)
+
+val tagDefs : unit -> map nat nat
+declare lean target_rep function tagDefs u = `ProbeImpl.tagDefsUnreachable` u
+declare {lean} reader val tagDefs
+
+val digest : unit -> string
+declare lean target_rep function digest u = `ProbeImpl.digestUnreachable` u
+declare {lean} reader val digest
+
+val enum_defs : unit -> map nat nat
+declare lean target_rep function enum_defs u = `ProbeImpl.enumDefsUnreachable` u
+declare {lean} reader val enum_defs
+
+val getD : map nat nat -> nat -> nat
+let getD m k = match Map.lookup k m with | Just v -> v | Nothing -> 0 end
+
+class (Tagged 'a)
+  val tagged : 'a -> nat
+end
+
+instance (Tagged nat)
+  let tagged x = x + getD (tagDefs ()) 0
+end

@@ -1,0 +1,11 @@
+open import Pervasives
+import Pm_readers
+
+(* S0 multi-MODULE probe, module 2: lifted defs over the readers declared
+   in Pm_readers (cross-module reader collection + consumer injection). *)
+
+val uses_all : nat -> nat
+let uses_all x = Pm_readers.uses_one x + String.stringLength (Pm_readers.digest ()) + Pm_readers.getD (Pm_readers.enum_defs ()) 1 + Pm_readers.consume x
+
+val draw_all : nat -> nat
+let draw_all x = Pm_readers.counter () + uses_all x

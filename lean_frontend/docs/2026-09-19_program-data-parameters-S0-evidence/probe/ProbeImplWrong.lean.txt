@@ -1,0 +1,21 @@
+/- S0 NEGATIVE control: the SAME stub with the readers in the WRONG order
+   (tagDefs, digest, enum_defs). The generated call sites pass
+   (digest, enum_defs, tagDefs) positionally, so the build must fail
+   with a type error at the String/Fmap positions. -/
+import LemLib
+
+namespace ProbeImpl
+
+def tagDefsUnreachable (_ : Unit) : Fmap Nat Nat := fmapEmpty
+def digestUnreachable (_ : Unit) : String := ""
+def enumDefsUnreachable (_ : Unit) : Fmap Nat Nat := fmapEmpty
+
+def consume (tagDefs : Fmap Nat Nat) (digest : String) (enum_defs : Fmap Nat Nat) (x : Nat) : Nat :=
+  x + 100 * (fmapElements tagDefs).length
+    + 10000 * ((fmapElements enum_defs).foldl (fun acc p => acc + p.2) 0)
+    + 1000000 * digest.length
+
+def consume1 (tagDefs : Fmap Nat Nat) (x : Nat) : Nat :=
+  x + 100 * (fmapElements tagDefs).length
+
+end ProbeImpl

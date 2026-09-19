@@ -1,0 +1,33 @@
+open import Pervasives
+
+(* S0 probe: the same three readers + a reader_seed def (the arc's
+   mini_pipeline.run_const_expr_driver shape). Expected from
+   lean_backend.ml:4459-4464 (read before running): a generation-time
+   refusal "reader_seed requires exactly one declared reader". *)
+
+val tagDefs : unit -> map nat nat
+declare lean target_rep function tagDefs u = `ProbeImpl.tagDefsUnreachable` u
+declare {lean} reader val tagDefs
+
+val digest : unit -> string
+declare lean target_rep function digest u = `ProbeImpl.digestUnreachable` u
+declare {lean} reader val digest
+
+val enum_defs : unit -> map nat nat
+declare lean target_rep function enum_defs u = `ProbeImpl.enumDefsUnreachable` u
+declare {lean} reader val enum_defs
+
+val consume : nat -> nat
+declare lean target_rep function consume = `ProbeImpl.consume`
+declare {lean} reader_consumer val consume
+
+val getD : map nat nat -> nat -> nat
+let getD m k = match Map.lookup k m with | Just v -> v | Nothing -> 0 end
+
+val uses_three : nat -> nat
+let uses_three x = x + getD (tagDefs ()) 1 + String.stringLength (digest ()) + getD (enum_defs ()) 1 + consume x
+
+(* the seed: first argument = the injection value for lifted callees *)
+val seed_entry : map nat nat -> nat -> nat
+let seed_entry tds x = uses_three x
+declare {lean} reader_seed val seed_entry
