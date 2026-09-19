@@ -22,9 +22,12 @@
 # Line numbers are advisory (drift with edits); identifier is normative.
 #
 # --- survivors after C2 (the standing allowlist) ---
-lean_frontend/CerbUtils.lean	timingStackRef	permanent-declared	KEEP (no-op timing ref, intentionally unread; OCaml module-shape parity)
-lean_frontend/CerbUtils.lean	logRef	permanent-declared	KEEP (write-only log ref, nothing reads it; shape parity)
-lean_frontend/CerbUtils.lean	STD_impl	permanent-declared	KEEP (writes logRef only; value-identity otherwise)
+# --- retired 2026-09-19 (seam-hygiene H3, docs/2026-09-18_seam-hygiene-record.md §5) ---
+# lean_frontend/CerbUtils.lean timingStackRef / logRef / STD_impl (+ begin_timing_impl,
+# end_timing_impl) — DELETED: `begin_timing`/`end_timing`/`STD_` are plain value
+# identities (nothing ever read the refs); lean_frontend/CerbMem.lean beqMemValueImpl —
+# DELETED: `BEq MemValue` is the structural `beqMemValue`. 11 + 2 PIN rows and 3 KEEP
+# rows left the pins (38 -> 25 PIN rows); 4 opaques left OPAQUE_WANT (16 -> 12).
 lean_frontend/CerbUtils.lean	boundedIntegerImpl	permanent-declared	KEEP (deterministic stub `pure lo`; documented residual with named mover in-file — RNG threading iff load-bearing)
 lean_frontend/CerberusImpl.lean	typeof_enum_impl	temporal(reader/supply-machinery-follow-up-slice, explicitly NOT in-arc)	KEEP (enum registry read; genuinely stateful seam mirroring OCaml DefaultImpl ref)
 lean_frontend/CerberusImpl.lean	register_enum_impl	temporal(reader/supply-machinery-follow-up-slice, explicitly NOT in-arc)	KEEP (enum registry write during elaboration)
@@ -98,9 +101,10 @@ lem-lean/lean-lib/LemLib.lean	runEffectful_impl	L2-delete	DELETE (the axiom scaf
 #   section above).
 # - CerberusImpl enum registry (temporal; mover: reader/supply
 #   machinery follow-up slice, explicitly NOT in-arc).
-# - CerbUtils no-op timing/log refs + boundedIntegerImpl stub
-#   (permanent-declared family).
-# - CerbMem beqMemValueImpl (safe perf seam: opaque + implemented_by).
+# - CerbUtils boundedIntegerImpl stub (permanent-declared); the timing/log
+#   refs became value identities at seam-hygiene H3 (2026-09-19).
+# - CerbMem: NO rows since seam-hygiene H3 (beqMemValueImpl -> the structural
+#   `beqMemValue`, kernel-transparent).
 # - test/Unit/FuelFormsTool.lean main (C4, 2026-09-05): the fuel-forms
 #   GATE TOOL's entry point is `unsafe` only because it calls
 #   `Lean.enableInitializersExecution` before `importModules (loadExts :=
@@ -131,19 +135,6 @@ PIN UNSAFEBASEIO lean_frontend/CerberusImpl.lean register_enum_impl 2
 PIN UNSAFEBASEIO lean_frontend/CerberusImpl.lean typeof_enum_impl 2
 PIN UNSAFEDECL lean_frontend/CerberusImpl.lean register_enum_impl 2
 PIN UNSAFEDECL lean_frontend/CerberusImpl.lean typeof_enum_impl 2
-PIN IMPLBY lean_frontend/CerbUtils.lean begin_timing_impl 2
 PIN IMPLBY lean_frontend/CerbUtils.lean boundedIntegerImpl 2
-PIN IMPLBY lean_frontend/CerbUtils.lean end_timing_impl 2
-PIN IMPLBY lean_frontend/CerbUtils.lean STD_impl 2
 PIN UNSAFEBASEIO lean_frontend/CerbUtils.lean boundedIntegerImpl 2
-PIN UNSAFEBASEIO lean_frontend/CerbUtils.lean logRef 2
-PIN UNSAFEBASEIO lean_frontend/CerbUtils.lean STD_impl 2
-PIN UNSAFEBASEIO lean_frontend/CerbUtils.lean timingStackRef 2
-PIN UNSAFEDECL lean_frontend/CerbUtils.lean begin_timing_impl 2
 PIN UNSAFEDECL lean_frontend/CerbUtils.lean boundedIntegerImpl 2
-PIN UNSAFEDECL lean_frontend/CerbUtils.lean end_timing_impl 2
-PIN UNSAFEDECL lean_frontend/CerbUtils.lean logRef 2
-PIN UNSAFEDECL lean_frontend/CerbUtils.lean STD_impl 2
-PIN UNSAFEDECL lean_frontend/CerbUtils.lean timingStackRef 2
-PIN IMPLBY lean_frontend/CerbMem.lean beqMemValueImpl 2
-PIN UNSAFEDECL lean_frontend/CerbMem.lean beqMemValueImpl 2

@@ -203,7 +203,9 @@ fi
 # (History: with_tagDefs LEFT the list at effect-retirement C1 — charter
 # section 7.2 "boundary-opaque expectation list shrinks"; the digest
 # opaque conversion was C2; the 11 CerbGlobal rows LEFT on 2026-09-05,
-# 26 -> 15.)
+# 26 -> 15; CerbFail.modelFailStopLoc joined at C-TF1, 15 -> 16; the CerbUtils
+# timing/log trio and CerbMem.beqMemValueSafe LEFT at seam-hygiene H3 2026-09-19,
+# 16 -> 12 — the reviewed population is 12.)
 OPAQUE_WANT=(
   # CerberusFresh — the digest boundary (VALIDATION.md §4), [seam]
   'CerberusFresh.lean:md5Hex' 'CerberusFresh.lean:digestIO' 'CerberusFresh.lean:setDigestIO'
@@ -214,13 +216,14 @@ OPAQUE_WANT=(
   # eleven config/switch opaques (never-written refs) became plain `def`s
   # of the default configuration; an opaque reappearing there fails
   # below as UNREGISTERED, by design.
-  # CerbUtils — no-op timing/log refs + boundedIntegerImpl stub, permanent-declared, [seam]
-  'CerbUtils.lean:begin_timing' 'CerbUtils.lean:end_timing' 'CerbUtils.lean:STD_'
+  # CerbUtils — the boundedIntegerImpl stub, permanent-declared, [seam]; the
+  # timing/log trio (begin_timing/end_timing/STD_) LEFT at seam-hygiene H3
+  # (2026-09-19): plain value identities, no opaque (fence extension (3))
   'CerbUtils.lean:bounded_integer'
   # CerberusImpl — enum registry, temporal (mover: reader/supply follow-up), [seam]
   'CerberusImpl.lean:typeof_enum' 'CerberusImpl.lean:register_enum'
-  # CerbMem — the safe structural BEq on MemValue (implemented_by), [seam]
-  'CerbMem.lean:beqMemValueSafe'
+  # CerbMem — NO rows since seam-hygiene H3 (2026-09-19): beqMemValueSafe LEFT,
+  # `BEq MemValue` is the structural `beqMemValue` (kernel-transparent)
   # CerbFuel — the fuel-exhaustion atom (FUEL arc, docs/2026-09-02_fuel-arc-
   # design.md §1.1/§2): [pure] — value-carrying, NO native binding, no
   # unsafe/implemented_by/extern; exists to be unforgeable, not to hide an

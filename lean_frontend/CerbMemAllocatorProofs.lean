@@ -28,13 +28,13 @@ def allocatorStep (sz align : Int) (st : MemState) :
   match allocator sz align with | ND f => f st
 
 /-- Remedy 1 itself, in kernel terms: when the cursor is below the request the
-    allocator KILLS with the out-of-memory error and leaves the state unchanged —
+    allocator KILLS with the out-of-memory error `oomKill` (the NAMED kill,
+    seam-hygiene H3) and leaves the state unchanged —
     the regime where pristine `b9aeedcb4` (impl_mem.ml:1253) could return an
     overlapping, misaligned address (draft 44). -/
 theorem allocator_below_request_kills (st : MemState) (sz align : Int)
     (h : st.lastAddress - sz < 0) :
-    allocatorStep sz align st =
-      (NDkilled (Other (MerrOther "Concrete.allocator: failed (out of memory)")), st) := by
+    allocatorStep sz align st = (NDkilled oomKill, st) := by
   simp [allocatorStep, allocator, h]
 
 /-- The allocator's contract: an ACTIVE allocation `a` is `align`-aligned, strictly

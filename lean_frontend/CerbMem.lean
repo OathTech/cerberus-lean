@@ -224,28 +224,37 @@ instance : BEq PointerValue where
 instance : BEq IntegerValue where
   beq | .IV p1 n1, .IV p2 n2 => p1 == p2 && n1 == n2
 
-/-- Structural MemValue equality — OCaml `(=)` parity: every constructor
-    compares ALL payloads (ity/fty/refTy/ctype/members). Kept in the
-    unsafe+opaque sandwich for the MVarray/MVstruct nested recursion. -/
-private unsafe def beqMemValueImpl : MemValue → MemValue → Bool
+/-! Structural MemValue equality — OCaml `(=)` parity: every constructor
+    compares ALL payloads (ity/fty/refTy/ctype/members); `MVfloating` compares
+    its `Float` with `==` (IEEE: NaN ≠ NaN, as OCaml `(=)` on floats). A
+    kernel-transparent mutual structural recursion in the `memValueSize` shape
+    above (seam-hygiene H3, 2026-09-19): the `unsafe` impl behind an `opaque`
+    "sandwich" that stood here for the nested recursion (`beqMemValueSafe`) is
+    retired; the two agree on the 23 pinned pairs of
+    test/Unit/OpaqueFailureTest.lean (witnessed on the retired impl, record §5).
+    A length mismatch is `false` (the pairwise recursion), exactly as the
+    retired `length == length && zip.all` was. -/
+mutual
+def beqMemValue : MemValue → MemValue → Bool
   | .MVunspecified t1, .MVunspecified t2 => t1 == t2
   | .MVinteger ity1 v1, .MVinteger ity2 v2 => ity1 == ity2 && v1 == v2
   | .MVfloating fty1 v1, .MVfloating fty2 v2 => fty1 == fty2 && v1 == v2
   | .MVpointer t1 v1, .MVpointer t2 v2 => t1 == t2 && v1 == v2
-  | .MVarray e1, .MVarray e2 =>
-    e1.length == e2.length && (e1.zip e2).all (fun (a, b) => beqMemValueImpl a b)
-  | .MVstruct t1 ms1, .MVstruct t2 ms2 =>
-    t1 == t2 && ms1.length == ms2.length &&
-    (ms1.zip ms2).all (fun ((i1, c1, v1), (i2, c2, v2)) =>
-      i1 == i2 && c1 == c2 && beqMemValueImpl v1 v2)
-  | .MVunion t1 m1 v1, .MVunion t2 m2 v2 =>
-    t1 == t2 && m1 == m2 && beqMemValueImpl v1 v2
+  | .MVarray e1, .MVarray e2 => beqMemValueList e1 e2
+  | .MVstruct t1 ms1, .MVstruct t2 ms2 => t1 == t2 && beqMemValueMembers ms1 ms2
+  | .MVunion t1 m1 v1, .MVunion t2 m2 v2 => t1 == t2 && m1 == m2 && beqMemValue v1 v2
   | _, _ => false
+def beqMemValueList : List MemValue → List MemValue → Bool
+  | [], [] => true
+  | a :: as, b :: bs => beqMemValue a b && beqMemValueList as bs
+  | _, _ => false
+def beqMemValueMembers : List (identifier × ctype × MemValue) → List (identifier × ctype × MemValue) → Bool
+  | [], [] => true
+  | (i1, c1, v1) :: r1, (i2, c2, v2) :: r2 => i1 == i2 && c1 == c2 && beqMemValue v1 v2 && beqMemValueMembers r1 r2
+  | _, _ => false
+end
 
-@[implemented_by beqMemValueImpl]
-private opaque beqMemValueSafe : MemValue → MemValue → Bool
-
-instance : BEq MemValue where beq := beqMemValueSafe
+instance : BEq MemValue where beq := beqMemValue
 instance : BEq Footprint where
   beq | .FP a1 b1 s1, .FP a2 b2 s2 => a1 == a2 && b1 == b2 && s1 == s2
 instance : Ord Footprint where
@@ -2085,6 +2094,15 @@ def readonlyStatusForAlloc (pref : prefix0) (initOpt : Option MemValue) : Readon
 @[simp] theorem readonlyStatusForAlloc_none (pref : prefix0) :
     readonlyStatusForAlloc pref none = .IsWritable := rfl
 
+/-- The allocator's out-of-memory kill — `fail (MerrOther "Concrete.allocator:
+    failed (out of memory)")` (impl_mem.ml:1255-1256 and :1260-1261), NAMED so a
+    consumer classifies the outcome by this constant instead of matching the
+    string (seam-hygiene H3, 2026-09-19; cerberus-sl's request item 4, interim).
+    `mem_error` has no OOM constructor (mem_common.lem:129-132) — a shared-model
+    `MerrOutOfMemory` is a separate slice. `allocator_below_request_kills`
+    (CerbMemAllocatorProofs.lean) is stated with it. -/
+def oomKill : kill_reason mem_error := Other (MerrOther "Concrete.allocator: failed (out of memory)")
+
 /-- allocator — impl_mem.ml:1247-1270, the arithmetic verbatim on Z (Int),
     AFTER remedy 1 of upstream-tray draft 44 (fork fix, 2026-09-16 — the
     fork deviates from pristine `b9aeedcb4` here, OBSERVABLY at upstream's
@@ -2130,14 +2148,14 @@ def allocator (sz align : Int) : memM (StorageInstanceId × Address) :=
     let allocId := st.nextAllocId
     let z := st.lastAddress - sz                                                 -- :1252
     if z < 0 then                                                                -- :1255-1256 (draft 44 fix)
-      (NDkilled (Other (MerrOther "Concrete.allocator: failed (out of memory)")), st)
+      (NDkilled oomKill, st)
     else if align == 0 then                                                      -- :1258 quomod → Division_by_zero
       (NDkilled (CerbFail.failStopKill "CerbMem.allocator: alignment 0 has no meaning in the model (impl_mem.ml:1258 quomod raises Division_by_zero — an OCaml-execution artifact, not the referent); operator decision pending, zero-discrepancy Z2 record §10"), st)
     else
       let m := z % align                                                         -- :1258 (Euclidean remainder, m ≥ 0)
       let z' := z - m                                                            -- :1259 (align down)
       if z' ≤ 0 then                                                             -- :1260-1261
-        (NDkilled (Other (MerrOther "Concrete.allocator: failed (out of memory)")), st)
+        (NDkilled oomKill, st)
       else                                                                       -- :1263-1270
         (NDactive (allocId, z'),
          { st with nextAllocId := allocId + 1, lastUsed := some allocId, lastAddress := z' })

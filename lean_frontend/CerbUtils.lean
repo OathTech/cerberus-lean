@@ -10,42 +10,25 @@ namespace CerbUtils
 /-! ## Timing
     Corresponds to: Cerb_debug.begin_timing/end_timing in cerb_debug.ml
     (OCaml records wall-clock time to cerb.prof).
-    NO-OP STUBS (comment corrected arc-14 S1 F6, sem:N6 — the old claim
-    "We use Lean's IO for the same purpose" was untrue): profiling is not
-    ported (it is not observable on any differential path). `begin_timing`
-    and `end_timing` do nothing; `timingStackRef` below is retained only
-    so the shape matches the OCaml module — it is intentionally unread. -/
+    VALUE IDENTITIES (seam-hygiene H3, 2026-09-19, docs/2026-09-18_seam-
+    hygiene-record.md §5; were `opaque … implemented_by` no-op impls beside an
+    intentionally unread `IO.Ref`, arc-14 S1 F6): profiling is not ported (it
+    is not observable on any differential path), so both are plain `def`s
+    returning `()` — kernel-transparent, nothing hidden, no boundary row. -/
 
-private unsafe def timingStackRef : IO.Ref (List (String × Float)) :=
-  unsafeBaseIO (IO.mkRef [])
+def begin_timing (_ : String) : Unit := ()
 
-private unsafe def begin_timing_impl (_ : String) : Unit := ()
-
-private unsafe def end_timing_impl (_ : Unit) : Unit := ()
-
-@[implemented_by begin_timing_impl]
-opaque begin_timing : String → Unit
-
-@[implemented_by end_timing_impl]
-opaque end_timing : Unit → Unit
+def end_timing (_ : Unit) : Unit := ()
 
 /-! ## Logging
-    Corresponds to: Cerb_logging.log_standard in cerb_logging.ml.
-    Returns the value unchanged (the OCaml side logs; sem:N6: `logRef`
-    accumulates the messages but nothing READS the log — the store exists
-    for parity of shape only, not observable behavior). -/
+    Corresponds to: Cerb_logging.log_standard in cerb_logging.ml — the OCaml
+    side logs the ISO citation and returns the value unchanged. VALUE IDENTITY
+    (seam-hygiene H3): the former impl pushed the string onto an `IO.Ref`
+    that nothing ever read (grep over the tree, record §5), so `STD_ s x = x`
+    as a plain `def`; the `[Inhabited α]` binder went with the impl (generated
+    call sites pass the two explicit arguments only). -/
 
-private unsafe def logRef : IO.Ref (List String) :=
-  unsafeBaseIO (IO.mkRef [])
-
-private unsafe def STD_impl {α : Type} [Inhabited α] (s : String) (x : α) : α :=
-  unsafeBaseIO do
-    let log ← logRef.get
-    logRef.set (s :: log)
-    pure x
-
-@[implemented_by STD_impl]
-opaque STD_ {α : Type} [Inhabited α] : String → α → α
+def STD_ {α : Type} (_ : String) (x : α) : α := x
 
 /-! ## List utilities
     Corresponds to: OCaml List.remove_assoc -/
