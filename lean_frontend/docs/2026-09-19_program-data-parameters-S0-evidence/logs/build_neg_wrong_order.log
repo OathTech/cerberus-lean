@@ -1,0 +1,43 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+⚠ [3/35] Replayed LemLib
+warning: LemLib.lean:1203:17: unused variable `cmp`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [18/35] Replayed LemLib.Word
+warning: LemLib/Word.lean:147:43: unused variable `len`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [27/35] Replayed LemLib.List_extra
+warning: LemLib/List_extra.lean:26:82: unused variable `xs`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: LemLib/List_extra.lean:29:68: unused variable `x`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [30/35] Replayed LemLib.Machine_word
+warning: LemLib/Machine_word.lean:52:40: unused variable `x`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+✔ [33/35] Built ProbeImpl (163ms)
+✖ [34/35] Building Probe_readers (176ms)
+trace: .> LEAN_PATH=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/program-data-parameters/.tmp/pdp-s0/lean-lib/.lake/build/lib/lean:/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/program-data-parameters/.tmp/pdp-s0/probe/.lake/build/lib/lean /home/dev/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean -DautoImplicit=false /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/program-data-parameters/.tmp/pdp-s0/probe/Probe_readers.lean -o /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/program-data-parameters/.tmp/pdp-s0/probe/.lake/build/lib/lean/Probe_readers.olean -i /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/program-data-parameters/.tmp/pdp-s0/probe/.lake/build/lib/lean/Probe_readers.ilean -c /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/program-data-parameters/.tmp/pdp-s0/probe/.lake/build/ir/Probe_readers.c --setup /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/program-data-parameters/.tmp/pdp-s0/probe/.lake/build/ir/Probe_readers.setup.json --json
+error: Probe_readers.lean:50:285: Application type mismatch: The argument
+  _lemReader_digest
+has type
+  String
+but is expected to have type
+  Fmap Nat Nat
+in the application
+  ProbeImpl.consume _lemReader_digest
+error: Probe_readers.lean:53:194: Application type mismatch: The argument
+  _lemReader_digest
+has type
+  String
+but is expected to have type
+  Fmap Nat Nat
+in the application
+  ProbeImpl.consume _lemReader_digest
+error: Lean exited with code 1
+Some required targets logged failures:
+- Probe_readers
+error: build failed

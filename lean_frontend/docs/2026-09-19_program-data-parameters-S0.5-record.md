@@ -122,8 +122,8 @@ git+file:///home/dev/projects/cerberus-lean-proj/deps/lem-pinned#cerberus-pin`.
 
 ## 4. B1 — the Lake pin, and the pin triple after the move
 
-`lean_frontend/lakefile.toml` `rev` → the full hash, one comment line
-naming this slice in the existing trail; then `scripts/ce
+`lean_frontend/lakefile.toml` `rev` → the full hash, a six-line comment
+block naming this slice in the existing trail (audit N2: not "one line"); then `scripts/ce
 ../scripts/capped lake update LemLib` in `lean_frontend/` (verbatim: `info:
 LemLib: URL has changed; deleting '…/lean_frontend/.lake/packages/LemLib'
 and cloning again` / `info: LemLib: cloning
@@ -159,6 +159,19 @@ A0 (before any lem-lean edit; `scripts/ce lem -v` → `Lem f6542f8`;
 to identical content): `find ocaml_frontend/generated lean_frontend/generated
 -type f | sort | xargs sha256sum` → `.tmp/s05/gen-before.sha256`, 305 files
 (86 + 219; derived split); extra `gen-before-sibylfs.sha256`, 16 files.
+
+Precision (pre-merge audit N2, 2026-09-20): A0's `make prelude-src` was
+ALSO a timestamp no-op for `ocaml_frontend/generated` (no `.lem` had
+changed), so the snapshot's OCaml half hashes the tree the worktree
+already held — generated under `Lem f6542f8` with the lem-sync stamp in
+force. That tree IS the `f6542f8` reference: three wiped re-derivations
+reproduce every one of its hashes — B2's second pass below (new lem), the
+orchestrator's old-lem scratch worktree at `4e01a8811`
+(`.tmp/s05/orch-oldlem-scratch-trees.sha256`, 305 = 305, `diff` empty)
+and the auditor's third witness under both lems
+(`2026-09-20_program-data-parameters-S0.5-audit-premerge.md` §2.2). The
+lem-sync stamps themselves are git-ignored, so `git status` cannot
+witness them; `check_lem_sync.sh --check`/`--check-lean` do (§5, §7).
 
 B2 first pass — NOT a valid witness for the OCaml tree (charter erratum,
 §9): `scripts/ce make prelude-src lean-prelude-src` with the `.lem` sources
@@ -385,9 +398,24 @@ selftest's stderr is clean. `check_fuel_forms.sh:161-162,183-184` sort and
 - Lake's `lake update LemLib` re-cloned the package ("URL has changed"),
   so the "full Lean rebuild" the charter budgeted at up to ~1 h took 260 s
   (Lake replayed the unchanged modules).
+- Pre-merge audit M1 (MINOR, 2026-09-20): the S0 evidence directory's
+  `logs/` had 11 of its 12 `INDEX.txt`-listed files UNCOMMITTED — the
+  repository-wide `.gitignore:59` `*.log` (a Coq/LaTeX artefact rule)
+  swallowed them at `f417066ff`; every quote drawn from them was
+  re-derived true by the auditor. Fixed in the audit-fix commit by
+  `git add -f` of the 11 files (each `sha256sum -c` OK against INDEX). A
+  `.gitignore` negation for evidence directories is an operator call (no
+  earlier evidence directory carries a `.log`); not made here.
 
 ## 10. Inputs to the E-A/D-A charter
 
+- Pre-merge audit N1 (2026-09-20): positional seeding takes a def's OWN
+  leading parameter as the N-th seed whenever the parameter count is ≥ N
+  (`let seed_two av bv x` under three readers compiles with `x` as
+  gamma's seed AND the own argument — type-guarded only). Every seed def
+  E-A/D-A writes therefore gets a per-seed VALUE pin (a swap or a slide
+  changes an observable value), and lem-lean `DESIGN.md`'s `reader_seed`
+  row gains that sentence at its next touch.
 - The `.lem` head change the N-ary rule enables: `mini_pipeline.lem:70
   run_const_expr_driver tds dr_st` → `run_const_expr_driver <digest>
   <enum_definitions> tds dr_st` (seed order = sorted reader names:

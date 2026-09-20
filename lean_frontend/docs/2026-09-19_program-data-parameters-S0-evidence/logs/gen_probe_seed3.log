@@ -1,0 +1,13 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+no location information available
+  Warning: renaming 'bool' to 'bool0' for target lean
+no location information available
+  Warning: renaming 'Eq' to 'Eq0' for target lean
+no location information available
+  Warning: renaming 'Ord' to 'Ord0' for target lean
+no location information available
+  Warning: renaming 'set' to 'set0' for target lean
+File "probe_seed3.lem", line 32, character 24 to line 32, character 35
+  Error: Lean backend: reader_seed requires exactly one declared reader
+  original input: "uses_three x"
+

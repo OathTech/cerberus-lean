@@ -1,0 +1,9 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+no location information available
+  Warning: renaming 'bool' to 'bool0' for target lean
+no location information available
+  Warning: renaming 'Eq' to 'Eq0' for target lean
+no location information available
+  Warning: renaming 'Ord' to 'Ord0' for target lean
+no location information available
+  Warning: renaming 'set' to 'set0' for target lean

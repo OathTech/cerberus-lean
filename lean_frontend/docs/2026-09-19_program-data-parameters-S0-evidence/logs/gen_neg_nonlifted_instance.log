@@ -1,0 +1,13 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+no location information available
+  Warning: renaming 'bool' to 'bool0' for target lean
+no location information available
+  Warning: renaming 'Eq' to 'Eq0' for target lean
+no location information available
+  Warning: renaming 'Ord' to 'Ord0' for target lean
+no location information available
+  Warning: renaming 'set' to 'set0' for target lean
+File "neg_nonlifted_instance.lem", line 27, character 18 to line 27, character 40 processed by: inline_exp_macro, inline_exp
+  Error: Lean backend: reader-lifted call inside an instance method (unsupported: instance fields cannot take extra parameters)
+  original input: "x + getD (tagDefs ()) 0"
+

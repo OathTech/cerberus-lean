@@ -1,0 +1,13 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+no location information available
+  Warning: renaming 'bool' to 'bool0' for target lean
+no location information available
+  Warning: renaming 'Eq' to 'Eq0' for target lean
+no location information available
+  Warning: renaming 'Ord' to 'Ord0' for target lean
+no location information available
+  Warning: renaming 'set' to 'set0' for target lean
+File "neg_consumer_in_assert.lem", line 22, character 30 to line 22, character 36
+  Error: Lean backend: reader_consumer call outside a reader-injection scope (unsupported: indreln rules, lemmas/asserts, and other non-lifted contexts have no reader value to pass — RC-rel/RC-scope)
+  original input: "consume"
+

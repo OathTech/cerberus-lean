@@ -1,0 +1,32 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+⚠ [3/45] Replayed LemLib
+warning: LemLib.lean:1203:17: unused variable `cmp`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [18/45] Replayed LemLib.Word
+warning: LemLib/Word.lean:147:43: unused variable `len`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [27/45] Replayed LemLib.List_extra
+warning: LemLib/List_extra.lean:26:82: unused variable `xs`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: LemLib/List_extra.lean:29:68: unused variable `x`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [30/45] Replayed LemLib.Machine_word
+warning: LemLib/Machine_word.lean:52:40: unused variable `x`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+✔ [35/45] Built ProbeImpl (161ms)
+ℹ [38/45] Replayed ProbeCheck
+info: ProbeCheck.lean:33:0: 'uses_three' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: ProbeCheck.lean:34:0: 'maps_consume' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: ProbeCheck.lean:35:0: 'draw_and_read' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: ProbeCheck.lean:36:0: 'all_binders' depends on axioms: [propext]
+ℹ [43/45] Replayed PmCheck
+info: PmCheck.lean:15:0: 'uses_all' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: PmCheck.lean:16:0: 'draw_all' depends on axioms: [propext, Classical.choice, Quot.sound]
+ℹ [44/45] Replayed Seed1Check
+info: Seed1Check.lean:9:0: 'via_seed1' does not depend on any axioms
+Build completed successfully (45 jobs).
