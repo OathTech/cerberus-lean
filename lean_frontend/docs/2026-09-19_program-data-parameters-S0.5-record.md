@@ -163,8 +163,9 @@ to identical content): `find ocaml_frontend/generated lean_frontend/generated
 Precision (pre-merge audit N2 + delta re-read N8, 2026-09-20): whether
 A0's `make prelude-src` re-ran lem on `ocaml_frontend/generated` is NOT
 witnessed (no A0 log exists; the circumstantial evidence — `cp -a` priming
-mtimes, the pre-A0 stamp already at `src 037dee26…` — is undetermined
-either way). Either way the snapshot's OCaml half hashes a tree generated
+mtimes, the `stamps-before/` copy — taken post-A0, pre-B2-second-pass —
+already at `src 037dee26…` — is undetermined either way; timing per the
+audit's final-confirmation NOTE). Either way the snapshot's OCaml half hashes a tree generated
 under `Lem f6542f8` with the lem-sync stamp in force, and that tree IS the
 `f6542f8` reference: three wiped re-derivations
 reproduce every one of its hashes — B2's second pass below (new lem), the
@@ -443,3 +444,26 @@ One commit: the four pin files (§4), `scripts/fork_drift_manifest.txt`
 are the record). Nothing pushed; `arc/program-data-parameters` awaits the
 pre-merge audit ask and sign-off; lem-lean `program-data-parameters` awaits
 its own.
+
+## 12. Landing (2026-09-20)
+
+[USER 2026-09-20], verbatim: *"Go ahead with both merges"* — the sign-off
+for the two named merges of the orchestrator's merge ask: **merge 1**
+lem-lean `mdd/lean-backend` `f6542f8` → `4307dc5` (ff-only, one commit, the
+pinned hash unchanged); **merge 2** cerberus `mdd/cerberus-lean`
+`b7e45d55e` → the arc head including this landing commit (ff-only: the
+audited range `b7e45d55e..aa6effbd2`, the three audit-document commits
+cherry-picked from `audit/program-data-parameters-S0.5`, and this note).
+Order lem-lean first, then cerberus, by the orchestrator in the primary
+checkouts. After both, the pin invariant re-closes: lem-lean mainline =
+`deps/lem-pinned` = opam pin (`lem -v` → `Lem 4307dc5`) = the Lake
+`LemLib` rev. Then: the primary checkout's generated trees are re-derived
+(stale since before the 2026-09-17..19 merges — audit N4); the lem-lean
+worker and audit worktrees and the cerberus audit worktree retire;
+`arc/program-data-parameters` continues into E-A/D-A.
+
+Follow-ups carried forward (none blocks): audit N1 → per-seed VALUE pins
+in the E-A/D-A charter + the `DESIGN.md` `reader_seed` sentence at the next
+lem-lean touch; audit N6 → `scripts/check_lakefile_roots.sh` `export
+LC_ALL=C` (a one-line gate fix, its own commit); the `.gitignore` negation
+for evidence-directory logs — an operator call.
