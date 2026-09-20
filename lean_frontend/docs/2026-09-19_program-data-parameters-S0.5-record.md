@@ -160,11 +160,13 @@ to identical content): `find ocaml_frontend/generated lean_frontend/generated
 -type f | sort | xargs sha256sum` → `.tmp/s05/gen-before.sha256`, 305 files
 (86 + 219; derived split); extra `gen-before-sibylfs.sha256`, 16 files.
 
-Precision (pre-merge audit N2, 2026-09-20): A0's `make prelude-src` was
-ALSO a timestamp no-op for `ocaml_frontend/generated` (no `.lem` had
-changed), so the snapshot's OCaml half hashes the tree the worktree
-already held — generated under `Lem f6542f8` with the lem-sync stamp in
-force. That tree IS the `f6542f8` reference: three wiped re-derivations
+Precision (pre-merge audit N2 + delta re-read N8, 2026-09-20): whether
+A0's `make prelude-src` re-ran lem on `ocaml_frontend/generated` is NOT
+witnessed (no A0 log exists; the circumstantial evidence — `cp -a` priming
+mtimes, the pre-A0 stamp already at `src 037dee26…` — is undetermined
+either way). Either way the snapshot's OCaml half hashes a tree generated
+under `Lem f6542f8` with the lem-sync stamp in force, and that tree IS the
+`f6542f8` reference: three wiped re-derivations
 reproduce every one of its hashes — B2's second pass below (new lem), the
 orchestrator's old-lem scratch worktree at `4e01a8811`
 (`.tmp/s05/orch-oldlem-scratch-trees.sha256`, 305 = 305, `diff` empty)
@@ -401,8 +403,10 @@ selftest's stderr is clean. `check_fuel_forms.sh:161-162,183-184` sort and
 - Pre-merge audit M1 (MINOR, 2026-09-20): the S0 evidence directory's
   `logs/` had 11 of its 12 `INDEX.txt`-listed files UNCOMMITTED — the
   repository-wide `.gitignore:59` `*.log` (a Coq/LaTeX artefact rule)
-  swallowed them at `f417066ff`; every quote drawn from them was
-  re-derived true by the auditor. Fixed in the audit-fix commit by
+  swallowed them at `f417066ff`; the three generation-time quotes drawn
+  from them (S0 record §1.5 N0/N1/N2) were re-derived true by the auditor;
+  the build-log quotes (§1.4 tail, N3, N4) rest on the files matching
+  INDEX.txt's hashes (audit delta re-read M2). Fixed in the audit-fix commit by
   `git add -f` of the 11 files (each `sha256sum -c` OK against INDEX). A
   `.gitignore` negation for evidence directories is an operator call (no
   earlier evidence directory carries a `.log`); not made here.
