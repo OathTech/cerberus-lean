@@ -649,3 +649,28 @@ Phase 2 does not start (the D-A route, §3.1, is the operator's open decision).
 battery re-runs and row 1 must be GREEN — `check_fuel_forms` included, with the hardened gate that
 builds its carrier modules — and every row must again show zero movement. Until then the Phase 1 commit
 is a kill-loss-containment checkpoint, not a certified state.
+
+## 8. The seven permanent witnesses (second Phase 1 commit; [AGENT orchestrator] ruling (2))
+
+`tests/immaculate/nolibc/d3-{s3-alignas-enum, s4a-tentative-enum, s4b-fdecl-enum-param, s4c-extern-redecl-enum,
+s5a-generic-enum, s5b-types-compatible-enum, s8-sizeof-enum-expr}.c` — the §4.2 witnesses made permanent (each
+header names the desugar-time read it exercises and quotes the pre-seed crash verbatim). S-1 and S-7 have no
+oracle-accepted witness (§4.2) and stay documented here; their seeds are load-bearing by the static reach.
+
+Baseline re-record (`scripts/test_immaculate.sh --record-baseline`, 71 s → `BASELINE RECORDED`), the file diff
+against the pre-record copy, verbatim: `90a91,98` = the 8-line header note naming this slice; `93a102,108` = the
+seven new `MATCH` rows (`d3-s3-alignas-enum MATCH | L=VAL:{value: "Specified(7)", …}`, `d3-s4a … Specified(1)`,
+`d3-s4b … Specified(2)`, `d3-s4c … Specified(1)`, `d3-s5a … Specified(7)`, `d3-s5b … Specified(1)`, `d3-s8 …
+Specified(4)`); `pre-existing rows removed/changed: 0; header lines removed: 0; new rows: 7`. Then
+`test_immaculate.sh` → rc 0, `OK: lane matches the committed baseline (…)` with all seven `MATCH`; the pristine
+lane `python3 scripts/test_upstream_oracle.py --only "immaculate/nolibc/d3-"` → `7/7 semantic_agreement` …
+`Independent oracle: subset_passed; {'semantic_agreement': 7}` (a subset run, never a full-lane certification).
+
+**F-2 (process finding, repaired here):** the FIRST `--record-baseline` of this slice silently DROPPED 14 header
+lines of the committed baseline (the ISO-fix R5 pin note and the Finding-3 pins note, `baseline.txt:77-90`):
+they had been hand-edited into the file after their re-records and never added to the recipe's header block in
+`test_immaculate.sh`, so the recipe — the documented authority — did not reproduce the committed header. Repaired
+by putting the 14 lines into the script's header block byte for byte (a comment in the script says why), then
+re-recording; the diff above is against the pre-record copy, so it shows the repair worked (0 header lines
+removed). Lesson for the lane's doctrine: a baseline header edit must go through the recipe, or the next honest
+re-record erases it.

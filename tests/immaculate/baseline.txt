@@ -88,9 +88,24 @@
 # LEAN_ABORT_ON_PANIC=1 abort): recorded MATCH | L=CRASH, the both-crash pair shape. Before D2 the Lean
 # side could not even READ the cabs-json of these files (raw bytes => non-UTF-8 JSON); the bridge now
 # carries one Char per byte. f3-escaped-high-byte-uchar is the escaped control twin (MATCH Specified(195)).
+#
+# program-data parameters E-A (2026-09-20; record docs/2026-09-20_program-data-parameters-EA-DA-record.md §4):
+# the seven d3-* rows are the permanent witnesses of the DESUGAR-TIME enum reads the D3 seeds cover
+# (S-3 _Alignas alignof_ty; S-4a/b/c the three redeclaration compatibility checks; S-5a _Generic overlap;
+# S-5b __builtin_types_compatible_p; S-8/S-9 sizeof of an enum-typed expression + its ctype read). The
+# standing corpora exercise NONE of the nine seed sites; before the seeds every one of these crashed on the
+# Lean side with the lookupEnum failwithI (the desugar entry's enum map is EMPTY) while the oracle ran them.
+# Recorded MATCH by the seed commit; the S-1/S-7 classes have no oracle-accepted witness (record §4.2).
 argv1-args MATCH | L=VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 argv2-args MATCH | L=VAL:{value: "Specified(97)", stdout: "", stderr: "", blocked: "false"}
 argv3-args MATCH | L=VAL:{value: "Specified(11)", stdout: "", stderr: "", blocked: "false"}
+d3-s3-alignas-enum MATCH | L=VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+d3-s4a-tentative-enum MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+d3-s4b-fdecl-enum-param MATCH | L=VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+d3-s4c-extern-redecl-enum MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+d3-s5a-generic-enum MATCH | L=VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+d3-s5b-types-compatible-enum MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+d3-s8-sizeof-enum-expr MATCH | L=VAL:{value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}
 f3-escaped-high-byte-uchar MATCH | L=VAL:{value: "Specified(195)", stdout: "", stderr: "", blocked: "false"}
 f3-raw-high-byte-char-const MATCH | L=CRASH
 f3-raw-high-byte-int MATCH | L=CRASH
