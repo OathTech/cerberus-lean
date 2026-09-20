@@ -42,10 +42,16 @@ moreLeanArgs = ["-DautoImplicit=false"]
 # and the projection-on-non-parameter refusal in the measure renderer;
 # lem-lean doc/lean-backend/2026-09-05_measure-hypothesis-record.md; this
 # repo: docs/2026-09-05_fuel-parameter-C4-record.md).
+# program-data-parameters S0.5 2026-09-19: bumped to 4307dc5 (N-ary
+# `reader_seed`: with N declared readers a seed def's first N parameters
+# seed them, positionally in the global sorted reader order; the "exactly
+# one declared reader" guard deleted; lean-lib/ byte-identical to f6542f8;
+# lem-lean doc/lean-backend/2026-09-19_nary-reader-seed-record.md; this
+# repo: docs/2026-09-19_program-data-parameters-S0.5-record.md).
 [[require]]
 name = "LemLib"
 git = "https://github.com/OathTech/lem-lean"
-rev = "f6542f8e6860d12d4655e6648bc4c45dabd1d798"
+rev = "4307dc5108bbe71de2f323712443cab6c2b3c0da"
 subDir = "lean-lib"
 
 [[lean_lib]]

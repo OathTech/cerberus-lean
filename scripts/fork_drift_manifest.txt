@@ -1,3 +1,10 @@
+# program-data-parameters S0.5, 2026-09-20 [AGENT; fence extended for this one row + this NOTE by the orchestrator, S4 resolution]:
+# [meta] lem-pin f6542f8 -> 4307dc5 (the N-ary reader_seed backend rule, lem-lean 4307dc5 — lem-lean
+# doc/lean-backend/2026-09-19_nary-reader-seed-record.md); the pin bump alone is byte-identical on this tree — both
+# generated trees re-derived from wiped trees under Lem 4307dc5, 305 = 305 files, hash-list diff empty
+# (ocaml_frontend/generated 86 + lean_frontend/generated 219; sibylfs 16 = 16), lem-sync stamps unchanged, layer-2 set
+# unchanged (25 differing generated files, all hash-pinned). Single-row edit, not a wholesale --refresh (which strips this
+# header). Record: lean_frontend/docs/2026-09-19_program-data-parameters-S0.5-record.md.
 # address-space-bound part two C4, 2026-09-18 [AGENT]: one [source-content] pin moved — backend/driver/main.ml eea477c2… -> 29958a99… — the pre-merge audit + the consumer's review: the --address-space-top converter is
 # DECIMAL-ONLY (the 0x/0o/0b asymmetry with cerberus-lean removed) and enforces the DOMAIN 0 < top < 2^(8 * sizeof_pointer)
 # (Ocaml_implementation.DefaultImpl.impl.sizeof_pointer = Some 8) with the sentence cerberus-lean prints ("the address-space
@@ -262,7 +269,7 @@ merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
 #   were derived with (the layer-2 hashes are relative to it). Cross-checked
 #   against `lem -v` by the gate when lem is on PATH (P0 repair 2026-09-05;
 #   was a stale af5df71, audit F4 (c)). Refresh recipe rewrites it.
-lem-pin=f6542f8
+lem-pin=4307dc5
 renumber=arc13
 [files]
 Makefile
