@@ -252,3 +252,25 @@ untracked E-A record draft (`lean_frontend/docs/2026-09-20_program-data-paramete
 Evidence under `.tmp/s15/` is ephemeral (deleted at slice end; the verbatim lines above are the record).
 Next, without a boundary wait (the orchestrator's re-launch instruction): `git apply .tmp/eada/stageA.patch`
 and E-A Phase 1 continues under its charter with the extended fence.
+
+## Erratum [AGENT 2026-09-20] — the `check_fuel_forms: OK` line quoted in §7.2 was a VACUOUS verdict
+
+The Tier A row-1 tail quoted above, `check_fuel_forms: OK (81 fuel'd
+workers: 62 MEASURED … 12 of them under a hypothesis …)`, is a verbatim
+quote of what the gate printed at this head — and the verdict it states
+was vacuous on nine obligations (the six `CerbMem` rows of
+`scripts/fuel_hypotheses.txt:60-65` and the three hand-written seam
+obligations): `lean_frontend/CerbMem_lemMeasureProofs.lean` had not
+compiled since seam-hygiene H1 (`fce1de9f8`, 2026-09-19), no step of
+row 1 rebuilt it (a Lake root imported by nothing), and
+`scripts/check_fuel_forms.sh` imported its pre-H1 `.olean` as found.
+Finding F-1, found by the E-A Phase 1 worker on 2026-09-20 and repaired by
+the hotfix `fix/fuel-forms-carriers` (record
+`docs/2026-09-20_fuel-forms-carriers-hotfix-record.md` §0: the gate now
+builds every module it imports, plant P24), which lands immediately after
+this range. Every OTHER verdict quoted in §7 stands: the pin bump moved
+no source, and the byte-identity witness (§5) is independent of the
+gate. Raised by the combined pre-merge audit
+(`docs/2026-09-20_s15-and-fuel-forms-hotfix-audit-premerge.md` M1); this
+paragraph is that audit's fix, committed on `fix/s15-record-erratum` from
+`52af8ccf1` so that it lands WITH the range.
