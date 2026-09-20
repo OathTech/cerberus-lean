@@ -883,3 +883,26 @@ with `…` here, nothing paraphrased):
 
 Zero lane movement against §4.2 run 2 and the seam-hygiene record's quotes — stop rule S2 not
 triggered; nothing re-baselined. Every lane that calls `build_lean` ran the option-(a) command.
+
+## 9. Landing (2026-09-20)
+
+[USER 2026-09-20], verbatim: *"Great, run the merges and regen"* — the
+sign-off for the three named merges of the orchestrator's merge ask,
+executed in order by the orchestrator in the primary checkouts, ff-only:
+**merge 1** lem-lean `mdd/lean-backend` `4307dc5` → `38f87d5`
+(`mutual-fuel-readers`, one commit); **merge 2** cerberus
+`mdd/cerberus-lean` `e283bed77` → `8c712657f` (`fix/s15-record-erratum`:
+the E-A/D-A charter, the S1.5 charter, the pin bump, the S1.5 record's
+erratum — the audited range exactly); **merge 3** cerberus `8c712657f` →
+the head of `fix/fuel-forms-carriers` including this landing commit (the
+hotfix charter, the hotfix, the audit fixes, the audit document with its
+delta re-read, this note). Pre-merge audit:
+`docs/2026-09-20_s15-and-fuel-forms-hotfix-audit-premerge.md` — all three
+ranges MERGEABLE after the delta re-read; its N8 (the S1.5 erratum's
+"§5" should read "§6") is corrected by this commit in the S1.5 record.
+After merge 3 the pin invariant holds (lem-lean mainline = `deps/lem-pinned`
+= `lem -v` = the Lake rev = `38f87d5`) and the primary checkout is
+regenerated and built (`build_lean`, every root). Then `arc/program-data-parameters`
+(E-A Phase 1 at `b61db241d`) rebases onto the new mainline for its
+mandatory full re-gate.
+

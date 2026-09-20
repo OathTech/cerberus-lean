@@ -269,8 +269,8 @@ the hotfix `fix/fuel-forms-carriers` (record
 `docs/2026-09-20_fuel-forms-carriers-hotfix-record.md` §0: the gate now
 builds every module it imports, plant P24), which lands immediately after
 this range. Every OTHER verdict quoted in §7 stands: the pin bump moved
-no source, and the byte-identity witness (§5) is independent of the
-gate. Raised by the combined pre-merge audit
+no source, and the byte-identity witness (§6, B3) is independent of the
+gate (section cite corrected at landing — audit delta re-read N8). Raised by the combined pre-merge audit
 (`docs/2026-09-20_s15-and-fuel-forms-hotfix-audit-premerge.md` M1); this
 paragraph is that audit's fix, committed on `fix/s15-record-erratum` from
 `52af8ccf1` so that it lands WITH the range.
