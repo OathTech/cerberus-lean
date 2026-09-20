@@ -8,7 +8,7 @@ import sys
 import tempfile
 import unittest
 
-from observations import ProtocolError, escape, load_capture, parse, unescape
+from observations import LEMLIB_FAILWITHI_ORIGIN, ProtocolError, escape, load_capture, parse, unescape
 
 
 OK = b'Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}\n'
@@ -329,20 +329,25 @@ class ObservationTests(unittest.TestCase):
         for policy in ('immaculate', 'litmus'):
             with self.subTest(policy=policy), self.assertRaisesRegex(ProtocolError, 'unreviewed panic origin'):
                 parse(b'', b'PANIC at Other.unreviewed Other:10:3: unrelated panic\n', 134, policy)
-        # the one seam site that still panics under its own name (the KEPT
-        # CerberusImpl.lean:69 typeof_enum_impl) is accepted under immaculate only
+        # the formerly KEPT seam origin (CerberusImpl.lean typeof_enum_impl, the enum
+        # registry read) was DELETED by program-data parameters E-A (2026-09-20): it is
+        # no longer accepted under ANY policy — an unreviewed panic under immaculate
+        # must still be rejected (the set is empty, the branch intact)
         kept = b'PANIC at _private.CerberusImpl.0.CerberusImpl.typeof_enum_impl CerberusImpl:69:12: Ocaml_implementation.typeof_enum: tag was not registered (ocaml_implementation.ml:146-149)\n'
-        self.assertTrue(parse(b'', kept, 134, 'immaculate').internal)
-        with self.assertRaisesRegex(ProtocolError, 'unreviewed panic origin'):
-            parse(b'', kept, 134, 'litmus')
+        for policy in ('immaculate', 'litmus'):
+            with self.subTest(policy=policy), self.assertRaisesRegex(ProtocolError, 'unreviewed panic origin'):
+                parse(b'', kept, 134, policy)
+        # the enum lookup miss now arrives under the LemLib origin like every other seam failure
+        miss = LEMLIB_FAILWITHI_ORIGIN
+        self.assertTrue(parse(b'', b'PANIC at ' + miss + b' LemLib:168:2: Ocaml_implementation.typeof_enum: \'Symbol(7, None)\' was not registered\n', 134, 'immaculate').internal)
 
     def test_immaculate_validates_before_coarse_crash_projection(self):
-        good = b'PANIC at _private.CerberusImpl.0.CerberusImpl.typeof_enum_impl CerberusImpl:69:12: assertion\n'
+        good = b'PANIC at ' + LEMLIB_FAILWITHI_ORIGIN + b' LemLib:168:2: assertion\n'
         self.assertTrue(parse(b'', good, 134, 'immaculate').internal)
         for out, err, rc in [(b'corrupted bytes\n', good, 134),
                              (OK, good, 134), (b'', good, 125),
                              (b'', good.replace(b'assertion', b'lem: fuel exhausted'), 134),
-                             (b'', good.replace(b'_private.CerberusImpl.0.CerberusImpl.typeof_enum_impl', b'Other.unreviewed'), 134)]:
+                             (b'', good.replace(LEMLIB_FAILWITHI_ORIGIN, b'Other.unreviewed'), 134)]:
             with self.subTest(out=out, err=err, rc=rc), self.assertRaises(ProtocolError):
                 parse(out, err, rc, 'immaculate')
 

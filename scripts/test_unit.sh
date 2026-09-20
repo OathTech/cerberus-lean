@@ -36,6 +36,9 @@ UNIT_TESTS=(
     # seam-hygiene H1 (2026-09-18): the seams' failure leaves are opaque — #guard_msgs on the
     # two failing rfl probes + `failwithI` opaque in the environment + default-arm controls
     "opaque-failure-test"
+    # program-data parameters E-A (2026-09-20): the enum's compatible type is program data —
+    # the design note §4 kernel pins + the retired-name negative controls
+    "enum-data-test"
 )
 
 # ---------------------------------------------------------------------------

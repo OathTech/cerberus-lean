@@ -106,6 +106,7 @@ def rotateFileU (s : TUSyms)
   { main := some s.main
     calling_convention0 := Normal_callconv
     tagDefs := nodeTagDefs
+    enumDefs := fmapEmpty
     stdlib := ListAppend.listStdlib
     impl0 := fmapEmpty
     globs := []

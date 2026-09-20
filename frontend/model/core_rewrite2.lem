@@ -808,6 +808,7 @@ let rw_file file =
   let file = 
     <| main    = file.main
      ; tagDefs = file.tagDefs
+     ; enumDefs = file.enumDefs
      ; stdlib  = stdlib
      ; impl    = impl
      ; globs   = globs

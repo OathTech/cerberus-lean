@@ -255,23 +255,23 @@ def checkSignature (fname : String) (retTy : ctype) (ptys : List ctype) (nargs :
 
 /-- Stage: allocate and initialise errno — verbatim `drive`
     (driver.lem:1860-1868), BEFORE the call site runs (Z2-C-02). -/
-def allocErrno [LemFuel] (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)) (tid0 : Nat) :
+def allocErrno [LemFuel] (enumDefs : Fmap sym integerType) (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)) (tid0 : Nat) :
     driverM CerbMem.PointerValue :=
   liftMem (nd_bind
-    (CerbMem.allocateObject tagDefs tid0 (PrefOther "errno")
-      (CerbMem.alignofIval tagDefs signed_int) signed_int none none)
+    (CerbMem.allocateObject enumDefs tagDefs tid0 (PrefOther "errno")
+      (CerbMem.alignofIval enumDefs tagDefs signed_int) signed_int none none)
     (fun (ptr_val : CerbMem.PointerValue) =>
       let zero := CerbMem.integerValueMval (Signed Int_)
         (CerbMem.integerIval (0 : Int))
       nd_bind
-        (CerbMem.storeM tagDefs (CerbLocation.other "errno init")
+        (CerbMem.storeM enumDefs tagDefs (CerbLocation.other "errno init")
           signed_int false ptr_val zero)
         (fun (_ : CerbMem.Footprint) => nd_return ptr_val)))
 
 /-- Stage: park the rendered call site in thread 0's arena (drive's
     thread-state update, driver.lem:1870-1880, with `main_sym` := `fsym`),
     run the driver loop, finalize. -/
-def callFinish [LemFuel] (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+def callFinish [LemFuel] (enumDefs : Fmap sym integerType) (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     (tid0 : Nat) (fsym : sym) (callExpr : CE) (errno_ptr_val : CerbMem.PointerValue) :
     driverM driver_result :=
   nd_bind get_thread_states
@@ -287,9 +287,9 @@ def callFinish [LemFuel] (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition
              env := th_st.env,
              current_proc_opt := some fsym } : thread_state))
           (fun (_ : Unit) =>
-        nd_bind (driver2 tagDefs false) (fun (_ : Unit) =>
+        nd_bind (driver2 enumDefs tagDefs false) (fun (_ : Unit) =>
         nd_bind nd_get (fun (dr_st' : driver_state) =>
-        nd_return (finalize tagDefs "driveCall" dr_st'))))
+        nd_return (finalize enumDefs tagDefs "driveCall" dr_st'))))
     | _ => kill (Other (DErr_other
         "driveCall: not exactly one thread after globals")))
 
@@ -299,10 +299,10 @@ def callFinish [LemFuel] (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition
     0's arena, run the driver loop, finalize. Structure is `drive`
     (driver.lem:1727) with the documented substitutions (header) — every
     combinator is the generated driver's own. -/
-def driveCall [LemFuel] (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+def driveCall [LemFuel] (enumDefs : Fmap sym integerType) (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     (file1 : file core_run_annotation) (fname : String)
     (args : List value) : driverM driver_result :=
-  nd_bind (driver_globals tagDefs false file1) (fun (tid0 : Nat) =>
+  nd_bind (driver_globals enumDefs tagDefs false file1) (fun (tid0 : Nat) =>
   nd_bind nd_get (fun (post_globals_dr_st : driver_state) =>
   let cf := post_globals_dr_st.core_file
   nd_bind (resolveFunSym cf fname) (fun (fsym : sym) =>
@@ -313,8 +313,8 @@ def driveCall [LemFuel] (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)
   nd_bind (lookupFunParams cf fsym) (fun (params : List (sym × core_base_type)) =>
   nd_bind (lookupSignature cf fsym) (fun (sig : ctype × List ctype) =>
   nd_bind (checkSignature fname sig.1 sig.2 args.length) (fun (_ : Unit) =>
-  nd_bind (allocErrno tagDefs tid0) (fun (errno_ptr_val : CerbMem.PointerValue) =>
+  nd_bind (allocErrno enumDefs tagDefs tid0) (fun (errno_ptr_val : CerbMem.PointerValue) =>
   let callExpr := mkCallSite convSym fsym (List.zip (params.map Prod.fst) sig.2) args sig.1
-  callFinish tagDefs tid0 fsym callExpr errno_ptr_val))))))))
+  callFinish enumDefs tagDefs tid0 fsym callExpr errno_ptr_val))))))))
 
 end CerbCall

@@ -123,17 +123,17 @@ theorem pull_constrained_measure_sufficient (n : Nat) (g : generic_pexpr Unit sy
     (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
 theorem step_eval_pexpr_stable_aux [LemFuel] (k : Nat) :
-    ∀ (td : Fmap sym (CerbLocation.Loc × tag_definition)) (n : Nat) (loc1 : CerbLocation.Loc)
+    ∀ (ed : Fmap sym integerType) (ed : Fmap sym integerType) (td : Fmap sym (CerbLocation.Loc × tag_definition)) (n : Nat) (loc1 : CerbLocation.Loc)
       (pcl : Option CerbLocation.Loc) (ce : Fmap sym sym) (env1 : List (Fmap sym value))
       (mso : Option CerbMem.MemState) (file1 : generic_file Unit core_run_annotation) (hc : Bool)
       (e : generic_pexpr Unit sym) (f g : Nat),
     generic_pexpr.lemSize e ≤ k → generic_pexpr.lemSize e ≤ f → generic_pexpr.lemSize e ≤ g →
-    step_eval_pexpr_lemFuel f td n loc1 pcl ce env1 mso file1 hc e =
-      step_eval_pexpr_lemFuel g td n loc1 pcl ce env1 mso file1 hc e := by
+    step_eval_pexpr_lemFuel f ed td n loc1 pcl ce env1 mso file1 hc e =
+      step_eval_pexpr_lemFuel g ed td n loc1 pcl ce env1 mso file1 hc e := by
   induction k with
-  | zero => intro td n loc1 pcl ce env1 mso file1 hc e f g hk _ _; have := pexpr_lemSize_pos e; omega
+  | zero => intro ed td n loc1 pcl ce env1 mso file1 hc e f g hk _ _; have := pexpr_lemSize_pos e; omega
   | succ k ih =>
-    intro td n loc1 pcl ce env1 mso file1 hc e f g hk hf hg
+    intro ed td n loc1 pcl ce env1 mso file1 hc e f g hk hf hg
     cases f with
     | zero => have := pexpr_lemSize_pos e; omega
     | succ f =>
@@ -142,9 +142,9 @@ theorem step_eval_pexpr_stable_aux [LemFuel] (k : Nat) :
       | succ g =>
         have key : ∀ (m : Nat) (hc' : Bool) (y : generic_pexpr Unit sym),
             generic_pexpr.lemSize y < generic_pexpr.lemSize e →
-            step_eval_pexpr_lemFuel f td m loc1 pcl ce env1 mso file1 hc' y =
-              step_eval_pexpr_lemFuel g td m loc1 pcl ce env1 mso file1 hc' y :=
-          fun m hc' y hy => ih td m loc1 pcl ce env1 mso file1 hc' y f g (by omega) (by omega) (by omega)
+            step_eval_pexpr_lemFuel f ed td m loc1 pcl ce env1 mso file1 hc' y =
+              step_eval_pexpr_lemFuel g ed td m loc1 pcl ce env1 mso file1 hc' y :=
+          fun m hc' y hy => ih ed td m loc1 pcl ce env1 mso file1 hc' y f g (by omega) (by omega) (by omega)
         obtain ⟨an, u, pexpr_⟩ := e
         cases u
         cases pexpr_ <;> simp (disch := size_lt) only [step_eval_pexpr_lemFuel, key]
@@ -177,14 +177,14 @@ theorem step_eval_pexpr_stable_aux [LemFuel] (k : Nat) :
           exact key (n + 1) false q (by have := pexpr_mem_lt_aux4 x q _ hx; size_lt)
 
 /-- THE OBLIGATION, exactly as Core_eval_auxiliary.lean states and delegates it. -/
-theorem step_eval_pexpr_measure_sufficient [LemFuel] (_lemReader_tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+theorem step_eval_pexpr_measure_sufficient [LemFuel] (_lemReader_enum_definitions : Fmap sym integerType) (_lemReader_tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     (n : Nat) (loc1 : CerbLocation.Loc) (parent_call_loc_opt : Option CerbLocation.Loc)
     (core_extern1 : Fmap sym sym) (env1 : List (Fmap sym value)) (mem_st_opt : Option CerbMem.MemState)
     (file1 : generic_file Unit core_run_annotation) (hasConstrained : Bool) (pexpr1 : generic_pexpr Unit sym)
     (lemFuel : Nat) (lemMeasureLe : generic_pexpr.lemSize pexpr1 ≤ lemFuel) :
-    step_eval_pexpr_lemFuel lemFuel _lemReader_tagDefs n loc1 parent_call_loc_opt core_extern1 env1 mem_st_opt file1 hasConstrained pexpr1 =
-      step_eval_pexpr _lemReader_tagDefs n loc1 parent_call_loc_opt core_extern1 env1 mem_st_opt file1 hasConstrained pexpr1 :=
-  step_eval_pexpr_stable_aux (generic_pexpr.lemSize pexpr1) _lemReader_tagDefs n loc1 parent_call_loc_opt core_extern1
+    step_eval_pexpr_lemFuel lemFuel _lemReader_enum_definitions _lemReader_tagDefs n loc1 parent_call_loc_opt core_extern1 env1 mem_st_opt file1 hasConstrained pexpr1 =
+      step_eval_pexpr _lemReader_enum_definitions _lemReader_tagDefs n loc1 parent_call_loc_opt core_extern1 env1 mem_st_opt file1 hasConstrained pexpr1 :=
+  step_eval_pexpr_stable_aux (generic_pexpr.lemSize pexpr1) _lemReader_enum_definitions _lemReader_tagDefs n loc1 parent_call_loc_opt core_extern1
     env1 mem_st_opt file1 hasConstrained pexpr1 lemFuel (generic_pexpr.lemSize pexpr1) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
 end Core_eval_lemMeasureProofs

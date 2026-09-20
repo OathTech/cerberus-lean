@@ -89,15 +89,15 @@ theorem find_array_index_measure_sufficient (size : Nat) (i : Nat) (ival_ : inte
   find_array_index_stable_aux (size - i + 1) size i ival_ lemFuel (size - i + 1) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
 theorem easy_update_mem_value_aux_stable_aux [LemFuel] (k : Nat) :
-    ∀ (td : Fmap sym (CerbLocation.Loc × tag_definition)) (loc1 : CerbLocation.Loc) (is_strong : Bool)
+    ∀ (ed : Fmap sym integerType) (ed : Fmap sym integerType) (td : Fmap sym (CerbLocation.Loc × tag_definition)) (loc1 : CerbLocation.Loc) (is_strong : Bool)
       (write_ty : ctype) (sh : List shift_path_element) (write_mval current_mval : impl_mem_value) (f g : Nat),
     List.length sh + 1 ≤ k → List.length sh + 1 ≤ f → List.length sh + 1 ≤ g →
-    easy_update_mem_value_aux_lemFuel f td loc1 is_strong write_ty sh write_mval current_mval =
-      easy_update_mem_value_aux_lemFuel g td loc1 is_strong write_ty sh write_mval current_mval := by
+    easy_update_mem_value_aux_lemFuel f ed td loc1 is_strong write_ty sh write_mval current_mval =
+      easy_update_mem_value_aux_lemFuel g ed td loc1 is_strong write_ty sh write_mval current_mval := by
   induction k with
-  | zero => intro td loc1 is_strong write_ty sh write_mval current_mval f g hk; omega
+  | zero => intro ed td loc1 is_strong write_ty sh write_mval current_mval f g hk; omega
   | succ k ih =>
-    intro td loc1 is_strong write_ty sh write_mval current_mval f g hk hf hg
+    intro ed td loc1 is_strong write_ty sh write_mval current_mval f g hk hf hg
     cases f with
     | zero => omega
     | succ f =>
@@ -106,33 +106,33 @@ theorem easy_update_mem_value_aux_stable_aux [LemFuel] (k : Nat) :
       | succ g =>
         have key : ∀ (wty : ctype) (tl : List shift_path_element) (wmv cmv : impl_mem_value),
             List.length tl < List.length sh →
-            easy_update_mem_value_aux_lemFuel f td loc1 is_strong wty tl wmv cmv =
-              easy_update_mem_value_aux_lemFuel g td loc1 is_strong wty tl wmv cmv :=
-          fun wty tl wmv cmv hy => ih td loc1 is_strong wty tl wmv cmv f g (by omega) (by omega) (by omega)
+            easy_update_mem_value_aux_lemFuel f ed td loc1 is_strong wty tl wmv cmv =
+              easy_update_mem_value_aux_lemFuel g ed td loc1 is_strong wty tl wmv cmv :=
+          fun wty tl wmv cmv hy => ih ed td loc1 is_strong wty tl wmv cmv f g (by omega) (by omega) (by omega)
         rcases sh with _ | ⟨spe, sh'⟩
         · simp only [easy_update_mem_value_aux_lemFuel]
         · cases spe <;> cases current_mval <;> simp (disch := size_lt) only [easy_update_mem_value_aux_lemFuel, key]
 
 /-- THE OBLIGATION, exactly as Defacto_memory_auxiliary.lean states and delegates it. -/
-theorem easy_update_mem_value_aux_measure_sufficient [LemFuel] (_lemReader_tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+theorem easy_update_mem_value_aux_measure_sufficient [LemFuel] (_lemReader_enum_definitions : Fmap sym integerType) (_lemReader_tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     (loc1 : CerbLocation.Loc) (is_strong : Bool) (write_ty : ctype) (sh : List shift_path_element)
     (write_mval : impl_mem_value) (current_mval : impl_mem_value) (lemFuel : Nat)
     (lemMeasureLe : List.length sh + 1 ≤ lemFuel) :
-    easy_update_mem_value_aux_lemFuel lemFuel _lemReader_tagDefs loc1 is_strong write_ty sh write_mval current_mval =
-      easy_update_mem_value_aux _lemReader_tagDefs loc1 is_strong write_ty sh write_mval current_mval :=
-  easy_update_mem_value_aux_stable_aux (List.length sh + 1) _lemReader_tagDefs loc1 is_strong write_ty sh write_mval current_mval
+    easy_update_mem_value_aux_lemFuel lemFuel _lemReader_enum_definitions _lemReader_tagDefs loc1 is_strong write_ty sh write_mval current_mval =
+      easy_update_mem_value_aux _lemReader_enum_definitions _lemReader_tagDefs loc1 is_strong write_ty sh write_mval current_mval :=
+  easy_update_mem_value_aux_stable_aux (List.length sh + 1) _lemReader_enum_definitions _lemReader_tagDefs loc1 is_strong write_ty sh write_mval current_mval
     lemFuel (List.length sh + 1) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
 theorem memcmp_load_aux_stable_aux [LemFuel] (k : Nat) :
-    ∀ (td : Fmap sym (CerbLocation.Loc × tag_definition)) (ptrval : impl_pointer_value) (offset max_offset : Int)
+    ∀ (ed : Fmap sym integerType) (ed : Fmap sym integerType) (td : Fmap sym (CerbLocation.Loc × tag_definition)) (ptrval : impl_pointer_value) (offset max_offset : Int)
       (acc : List impl_mem_value) (f g : Nat),
     Int.toNat (max_offset - offset) + 1 ≤ k → Int.toNat (max_offset - offset) + 1 ≤ f →
     Int.toNat (max_offset - offset) + 1 ≤ g →
-    memcmp_load_aux_lemFuel f td ptrval offset max_offset acc = memcmp_load_aux_lemFuel g td ptrval offset max_offset acc := by
+    memcmp_load_aux_lemFuel f ed td ptrval offset max_offset acc = memcmp_load_aux_lemFuel g ed td ptrval offset max_offset acc := by
   induction k with
-  | zero => intro td ptrval offset max_offset acc f g hk; omega
+  | zero => intro ed td ptrval offset max_offset acc f g hk; omega
   | succ k ih =>
-    intro td ptrval offset max_offset acc f g hk hf hg
+    intro ed td ptrval offset max_offset acc f g hk hf hg
     cases f with
     | zero => omega
     | succ f =>
@@ -145,18 +145,18 @@ theorem memcmp_load_aux_stable_aux [LemFuel] (k : Nat) :
         · rename_i h
           have h' : ¬ (offset ≥ max_offset) := fun hle => h (decide_eq_true hle)
           have key : ∀ (pv : impl_pointer_value) (acc' : List impl_mem_value),
-              memcmp_load_aux_lemFuel f td pv (offset + 1) max_offset acc' =
-                memcmp_load_aux_lemFuel g td pv (offset + 1) max_offset acc' :=
-            fun pv acc' => ih td pv (offset + 1) max_offset acc' f g (by omega) (by omega) (by omega)
+              memcmp_load_aux_lemFuel f ed td pv (offset + 1) max_offset acc' =
+                memcmp_load_aux_lemFuel g ed td pv (offset + 1) max_offset acc' :=
+            fun pv acc' => ih ed td pv (offset + 1) max_offset acc' f g (by omega) (by omega) (by omega)
           simp only [key]
 
 /-- THE OBLIGATION, exactly as Defacto_memory_auxiliary.lean states and delegates it. -/
-theorem memcmp_load_aux_measure_sufficient [LemFuel] (_lemReader_tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+theorem memcmp_load_aux_measure_sufficient [LemFuel] (_lemReader_enum_definitions : Fmap sym integerType) (_lemReader_tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     (ptrval : impl_pointer_value) (offset : Int) (max_offset : Int) (acc : List impl_mem_value) (lemFuel : Nat)
     (lemMeasureLe : Int.toNat (max_offset - offset) + 1 ≤ lemFuel) :
-    memcmp_load_aux_lemFuel lemFuel _lemReader_tagDefs ptrval offset max_offset acc =
-      memcmp_load_aux _lemReader_tagDefs ptrval offset max_offset acc :=
-  memcmp_load_aux_stable_aux (Int.toNat (max_offset - offset) + 1) _lemReader_tagDefs ptrval offset max_offset acc
+    memcmp_load_aux_lemFuel lemFuel _lemReader_enum_definitions _lemReader_tagDefs ptrval offset max_offset acc =
+      memcmp_load_aux _lemReader_enum_definitions _lemReader_tagDefs ptrval offset max_offset acc :=
+  memcmp_load_aux_stable_aux (Int.toNat (max_offset - offset) + 1) _lemReader_enum_definitions _lemReader_tagDefs ptrval offset max_offset acc
     lemFuel (Int.toNat (max_offset - offset) + 1) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
 end Defacto_memory_lemMeasureProofs

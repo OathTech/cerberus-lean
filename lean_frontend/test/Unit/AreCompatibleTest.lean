@@ -43,7 +43,7 @@ def main : IO UInt32 := do
   IO.println "test: Ctype_aux.are_compatible0 — array-bound arm (finding 5 repair) + cross-TU struct member"
   let emptyTags : Fmap sym (CerbLocation.Loc × tag_definition) := fromList []
   let ac (tags : Fmap sym (CerbLocation.Loc × tag_definition)) (t1 t2 : ctype) : Bool :=
-    are_compatible0 tags (qty t1) (qty t2)
+    are_compatible0 fmapEmpty tags (qty t1) (qty t2)   -- the enum reader first (program-data parameters E-A, 2026-09-20)
   let t1 := tag "tu-one" 1
   let t2 := tag "tu-two" 2
   let tags12 := fromList [structS t1 (some 1), structS t2 (some 2)]

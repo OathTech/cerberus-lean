@@ -46,7 +46,7 @@ def runStore [LemFuel] (mv : MemValue) :
   -- effect-retirement C1: storeM takes the tag table by value
   -- (reader_consumer); this probe stores a scalar with no tag in
   -- scope — the empty map is the pre-C1 (unset-global) state.
-  match storeM fmapEmpty (CerbLocation.other "illtyped-store probe") intTy false
+  match storeM fmapEmpty fmapEmpty (CerbLocation.other "illtyped-store probe") intTy false
       (nullPtrval intTy) mv with
   | ND f => (f (initialMemState probeAddressSpaceTop)).1
 

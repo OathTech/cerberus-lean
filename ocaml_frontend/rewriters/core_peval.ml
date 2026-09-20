@@ -863,6 +863,7 @@ let rewrite_file file =
   { main = file.main
   ; calling_convention = file.calling_convention
   ; tagDefs = file.tagDefs
+  ; enumDefs = file.enumDefs
   ; stdlib = rewrite_fun_map file.stdlib
   ; impl = rewrite_impl file.impl
   ; globs = rewrite_globs_list file.globs

@@ -31,26 +31,26 @@ def checks (fuel : Nat) : List (String × Bool) := Id.run do
     lastUsed := some 99 }
   let dead := { st with deadAllocations := [7], dynamicAddrs := [100] }
   let va := { st with varargs := [(4, (1, []))] }
-  let memcmpStop := memcmpM tags ptr ptr (iv 1)
+  let memcmpStop := memcmpM fmapEmpty tags ptr ptr (iv 1)
   let cmpMsg := "Concrete.memcmp: non-integer byte (impl_mem.ml:2658-2659 assert false)"
   let liveByte := writeBytesTo st 100 [{ prov := .Prov_none, copyOffset := none, value := some 42 }]
   return [
     ("allocator zero alignment remains a refusal", stops (allocator 0 0) st
       "CerbMem.allocator: alignment 0 has no meaning in the model (impl_mem.ml:1258 quomod raises Division_by_zero — an OCaml-execution artifact, not the referent); operator decision pending, zero-discrepancy Z2 record §10"),
     ("allocator ordinary alignment", active (allocator 1 1) st),
-    ("requested address", stops (allocateObject tags 0 (PrefOther "test") (iv 1) unsigned_char (some 100) none) st
+    ("requested address", stops (allocateObject fmapEmpty tags 0 (PrefOther "test") (iv 1) unsigned_char (some 100) none) st
       "TODO: cerb::with_address() is yet implemented"),
-    ("ordinary allocation", active (allocateObject tags 0 (PrefOther "test") (iv 1) unsigned_char none none) st),
+    ("ordinary allocation", active (allocateObject fmapEmpty tags 0 (PrefOther "test") (iv 1) unsigned_char none none) st),
     ("dead static allocation", stops (killM loc false ptr) dead "Concrete: FREE was called on a dead allocation"),
     ("live static allocation", active (killM loc false ptr) st),
     ("dead dynamic allocation remains UB", match step (killM loc true ptr) dead with
       | (NDkilled (Undef0 _ _), _) => true | _ => false),
-    ("function pointer shift", stops (effArrayShiftPtrval tags loc (.PV .Prov_none (.PVfunction default)) unsigned_char (iv 1)) st
+    ("function pointer shift", stops (effArrayShiftPtrval fmapEmpty tags loc (.PV .Prov_none (.PVfunction default)) unsigned_char (iv 1)) st
       "Concrete.eff_array_shift_ptrval, PVfunction"),
-    ("ordinary pointer shift", active (effArrayShiftPtrval tags loc ptr unsigned_char (iv 1)) st),
+    ("ordinary pointer shift", active (effArrayShiftPtrval fmapEmpty tags loc ptr unsigned_char (iv 1)) st),
     ("unspecified memcmp byte", stops memcmpStop st cmpMsg),
     ("memcmp retains load's updated state", (step memcmpStop st).2.lastUsed == some 7),
-    ("specified memcmp byte", match step (memcmpM tags ptr ptr (iv 1)) liveByte with
+    ("specified memcmp byte", match step (memcmpM fmapEmpty tags ptr ptr (iv 1)) liveByte with
       | (NDactive (.IV _ value), _) => value == 0 | _ => false),
     ("noninitial va_list", stops (vaList 4) va "va_list: assert (n = 0) failed (impl_mem.ml:2760)"),
     ("initial va_list", active (vaList 4) { va with varargs := [(4, (0, []))] }),

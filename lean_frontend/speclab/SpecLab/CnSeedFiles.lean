@@ -94,6 +94,7 @@ def swapFileU (mainDecl : generic_fun_map_decl Unit Unit)
   { main := some swapMainSym
     calling_convention0 := Normal_callconv
     tagDefs := fmapEmpty
+    enumDefs := fmapEmpty
     stdlib := seedStdlib
     impl0 := seedImpl
     globs := []

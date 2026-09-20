@@ -37,25 +37,25 @@ open CerbCtypeMeasure
 
 /-- The joint stability lemma for the mutual block: above each member's measure, any
     two fuels agree. -/
-theorem stable_aux (k : Nat) :
+theorem stable_aux (enumDefs : Fmap sym integerType) (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)) (k : Nat) :
     (∀ (t1 t2 : Table) (A : List (sym × sym)) (qs1 qs2 : qualifiers) (ty1 ty2 : ctype) (f g : Nat),
       auxBound (t1, t2, A) (qs1, ty1) (qs2, ty2) ≤ k →
       auxBound (t1, t2, A) (qs1, ty1) (qs2, ty2) ≤ f →
       auxBound (t1, t2, A) (qs1, ty1) (qs2, ty2) ≤ g →
-      are_compatible_aux_lemFuel f (t1, t2, A) (qs1, ty1) (qs2, ty2) =
-        are_compatible_aux_lemFuel g (t1, t2, A) (qs1, ty1) (qs2, ty2)) ∧
+      are_compatible_aux_lemFuel f enumDefs tagDefs (t1, t2, A) (qs1, ty1) (qs2, ty2) =
+        are_compatible_aux_lemFuel g enumDefs tagDefs (t1, t2, A) (qs1, ty1) (qs2, ty2)) ∧
     (∀ (t1 t2 : Table) (A : List (sym × sym)) (acc : Bool) (l1 l2 : List Param) (f g : Nat),
       paramsAuxBound (t1, t2, A) (l1, l2) ≤ k →
       paramsAuxBound (t1, t2, A) (l1, l2) ≤ f →
       paramsAuxBound (t1, t2, A) (l1, l2) ≤ g →
-      are_compatible_params_aux0_lemFuel f (t1, t2, A) acc (l1, l2) =
-        are_compatible_params_aux0_lemFuel g (t1, t2, A) acc (l1, l2)) ∧
+      are_compatible_params_aux0_lemFuel f enumDefs tagDefs (t1, t2, A) acc (l1, l2) =
+        are_compatible_params_aux0_lemFuel g enumDefs tagDefs (t1, t2, A) acc (l1, l2)) ∧
     (∀ (t1 t2 : Table) (A : List (sym × sym)) (ps1 ps2 : List Param) (f g : Nat),
       paramsBound (t1, t2, A) ps1 ps2 ≤ k →
       paramsBound (t1, t2, A) ps1 ps2 ≤ f →
       paramsBound (t1, t2, A) ps1 ps2 ≤ g →
-      are_compatible_params0_lemFuel f (t1, t2, A) ps1 ps2 =
-        are_compatible_params0_lemFuel g (t1, t2, A) ps1 ps2) := by
+      are_compatible_params0_lemFuel f enumDefs tagDefs (t1, t2, A) ps1 ps2 =
+        are_compatible_params0_lemFuel g enumDefs tagDefs (t1, t2, A) ps1 ps2) := by
   induction k with
   | zero =>
     refine ⟨?_, ?_, ?_⟩
@@ -68,7 +68,7 @@ theorem stable_aux (k : Nat) :
   | succ k ih =>
     obtain ⟨ih1, ih2, ih3⟩ := ih
     refine ⟨?_, ?_, ?_⟩
-    -- ===== are_compatible_aux =====
+    -- ===== are_compatible_aux enumDefs tagDefs =====
     · intro t1 t2 A qs1 qs2 ty1 ty2 f g hk hf hg
       have hpos := auxBound_pos (t1, t2, A) (qs1, ty1) (qs2, ty2)
       cases f with
@@ -81,15 +81,15 @@ theorem stable_aux (k : Nat) :
       have key : ∀ (A' : List (sym × sym)) (q1 : qualifiers) (u1 : ctype) (q2 : qualifiers)
           (u2 : ctype),
           auxGeneral (t1, t2, A') (q1, u1) (q2, u2) < auxBound (t1, t2, A) (qs1, ty1) (qs2, ty2) →
-          are_compatible_aux_lemFuel f (t1, t2, A') (q1, u1) (q2, u2) =
-            are_compatible_aux_lemFuel g (t1, t2, A') (q1, u1) (q2, u2) := by
+          are_compatible_aux_lemFuel f enumDefs tagDefs (t1, t2, A') (q1, u1) (q2, u2) =
+            are_compatible_aux_lemFuel g enumDefs tagDefs (t1, t2, A') (q1, u1) (q2, u2) := by
         intro A' q1 u1 q2 u2 h
         have := auxBound_le_general (t1, t2, A') (q1, u1) (q2, u2)
         exact ih1 t1 t2 A' q1 q2 u1 u2 f g (by omega) (by omega) (by omega)
       have keyP : ∀ (ps1 ps2 : List Param),
           paramsBound (t1, t2, A) ps1 ps2 < auxBound (t1, t2, A) (qs1, ty1) (qs2, ty2) →
-          are_compatible_params0_lemFuel f (t1, t2, A) ps1 ps2 =
-            are_compatible_params0_lemFuel g (t1, t2, A) ps1 ps2 := by
+          are_compatible_params0_lemFuel f enumDefs tagDefs (t1, t2, A) ps1 ps2 =
+            are_compatible_params0_lemFuel g enumDefs tagDefs (t1, t2, A) ps1 ps2 := by
         intro ps1 ps2 h
         exact ih3 t1 t2 A ps1 ps2 f g (by omega) (by omega) (by omega)
       obtain ⟨a1, ty1⟩ := ty1
@@ -189,15 +189,15 @@ theorem stable_aux (k : Nat) :
       | succ g =>
       have key1 : ∀ (q1 : qualifiers) (u1 : ctype) (q2 : qualifiers) (u2 : ctype),
           auxGeneral (t1, t2, A) (q1, u1) (q2, u2) < paramsAuxBound (t1, t2, A) (l1, l2) →
-          are_compatible_aux_lemFuel f (t1, t2, A) (q1, u1) (q2, u2) =
-            are_compatible_aux_lemFuel g (t1, t2, A) (q1, u1) (q2, u2) := by
+          are_compatible_aux_lemFuel f enumDefs tagDefs (t1, t2, A) (q1, u1) (q2, u2) =
+            are_compatible_aux_lemFuel g enumDefs tagDefs (t1, t2, A) (q1, u1) (q2, u2) := by
         intro q1 u1 q2 u2 h
         have := auxBound_le_general (t1, t2, A) (q1, u1) (q2, u2)
         exact ih1 t1 t2 A q1 q2 u1 u2 f g (by omega) (by omega) (by omega)
       have key2 : ∀ (acc' : Bool) (m1 m2 : List Param),
           paramsAuxBound (t1, t2, A) (m1, m2) < paramsAuxBound (t1, t2, A) (l1, l2) →
-          are_compatible_params_aux0_lemFuel f (t1, t2, A) acc' (m1, m2) =
-            are_compatible_params_aux0_lemFuel g (t1, t2, A) acc' (m1, m2) := by
+          are_compatible_params_aux0_lemFuel f enumDefs tagDefs (t1, t2, A) acc' (m1, m2) =
+            are_compatible_params_aux0_lemFuel g enumDefs tagDefs (t1, t2, A) acc' (m1, m2) := by
         intro acc' m1 m2 h
         exact ih2 t1 t2 A acc' m1 m2 f g (by omega) (by omega) (by omega)
       rcases l1 with _ | ⟨⟨q1, u1, b1⟩, ps1⟩ <;> rcases l2 with _ | ⟨⟨q2, u2, b2⟩, ps2⟩ <;>
@@ -217,33 +217,33 @@ theorem stable_aux (k : Nat) :
       exact ih2 t1 t2 A true ps1 ps2 f g (by omega) (by omega) (by omega)
 
 /-- THE OBLIGATION, exactly as Ctype_aux_auxiliary.lean states and delegates it. -/
-theorem are_compatible_aux_measure_sufficient (p : Env) (p0 p1 : qualifiers × ctype) (lemFuel : Nat)
+theorem are_compatible_aux_measure_sufficient (enumDefs : Fmap sym integerType) (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)) (p : Env) (p0 p1 : qualifiers × ctype) (lemFuel : Nat)
     (lemMeasureLe : auxBound p p0 p1 ≤ lemFuel) :
-    are_compatible_aux_lemFuel lemFuel p p0 p1 = are_compatible_aux p p0 p1 := by
+    are_compatible_aux_lemFuel lemFuel enumDefs tagDefs p p0 p1 = are_compatible_aux enumDefs tagDefs p p0 p1 := by
   obtain ⟨t1, t2, A⟩ := p
   obtain ⟨qs1, ty1⟩ := p0
   obtain ⟨qs2, ty2⟩ := p1
-  exact (stable_aux (auxBound (t1, t2, A) (qs1, ty1) (qs2, ty2))).1 t1 t2 A qs1 qs2 ty1 ty2 lemFuel
+  exact (stable_aux enumDefs tagDefs (auxBound (t1, t2, A) (qs1, ty1) (qs2, ty2))).1 t1 t2 A qs1 qs2 ty1 ty2 lemFuel
     (auxBound (t1, t2, A) (qs1, ty1) (qs2, ty2)) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
 /-- THE OBLIGATION for the hoisted-tail member (`lemTail` = the pair of parameter lists). -/
-theorem are_compatible_params_aux0_measure_sufficient (env1 : Env) (acc : Bool)
+theorem are_compatible_params_aux0_measure_sufficient (enumDefs : Fmap sym integerType) (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)) (env1 : Env) (acc : Bool)
     (lemTail : List Param × List Param) (lemFuel : Nat)
     (lemMeasureLe : paramsAuxBound env1 lemTail ≤ lemFuel) :
-    are_compatible_params_aux0_lemFuel lemFuel env1 acc lemTail =
+    are_compatible_params_aux0_lemFuel lemFuel enumDefs tagDefs env1 acc lemTail =
       are_compatible_params_aux0 env1 acc lemTail := by
   obtain ⟨t1, t2, A⟩ := env1
   obtain ⟨l1, l2⟩ := lemTail
-  exact (stable_aux (paramsAuxBound (t1, t2, A) (l1, l2))).2.1 t1 t2 A acc l1 l2 lemFuel
+  exact (stable_aux enumDefs tagDefs (paramsAuxBound (t1, t2, A) (l1, l2))).2.1 t1 t2 A acc l1 l2 lemFuel
     (paramsAuxBound (t1, t2, A) (l1, l2)) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
 /-- THE OBLIGATION, exactly as Ctype_aux_auxiliary.lean states and delegates it. -/
-theorem are_compatible_params0_measure_sufficient (env1 : Env) (params1 params2 : List Param)
+theorem are_compatible_params0_measure_sufficient (enumDefs : Fmap sym integerType) (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)) (env1 : Env) (params1 params2 : List Param)
     (lemFuel : Nat) (lemMeasureLe : paramsBound env1 params1 params2 ≤ lemFuel) :
-    are_compatible_params0_lemFuel lemFuel env1 params1 params2 =
+    are_compatible_params0_lemFuel lemFuel enumDefs tagDefs env1 params1 params2 =
       are_compatible_params0 env1 params1 params2 := by
   obtain ⟨t1, t2, A⟩ := env1
-  exact (stable_aux (paramsBound (t1, t2, A) params1 params2)).2.2 t1 t2 A params1 params2 lemFuel
+  exact (stable_aux enumDefs tagDefs (paramsBound (t1, t2, A) params1 params2)).2.2 t1 t2 A params1 params2 lemFuel
     (paramsBound (t1, t2, A) params1 params2) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
 end Ctype_aux_lemMeasureProofs

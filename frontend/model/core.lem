@@ -418,6 +418,11 @@ type generic_file 'bty 'a = <|
   main: maybe Symbol.sym;
   calling_convention: calling_convention;
   tagDefs: core_tag_definitions;
+  (* program-data parameters E-A (2026-09-20): the enums' compatible types
+     (from the sigma's enum_definitions; linking merges it as tagDefs). The
+     Core TEXT printer/parser do not carry it (a .core input mirrors the
+     oracle's empty registry there). *)
+  enumDefs: map Symbol.sym Ctype.integerType;
   stdlib: generic_fun_map 'bty 'a;
   impl: generic_impl 'bty;
   globs: list (Symbol.sym * generic_globs 'a 'bty);

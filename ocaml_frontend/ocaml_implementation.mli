@@ -45,5 +45,9 @@ val hafniumIntImpl: IntegerImpl.implementation
 val set: implementation -> unit
 val get: unit -> implementation
 
+(* the enum registry as a map (program-data parameters E-A, 2026-09-20): the
+   OCaml rep of the shared lem val Implementation.enum_definitions *)
+val enum_definitions: unit -> (Symbol.sym, integerType) Pmap.map
+
 val alignof_proxy: (union_tag, (alignment option * ctype) list) Pmap.map -> ctype -> int option
 

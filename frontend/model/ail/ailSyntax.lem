@@ -312,6 +312,12 @@ type sigma 'a = <|
   function_definitions: list (sigma_function_definition 'a);
   static_assertions: list (sigma_static_assertion 'a);
   tag_definitions: list sigma_tag_definition;
+  (* program-data parameters E-A (2026-09-20): the compatible integer type
+     the desugarer decided for each enum tag (GCC's rule,
+     Implementation.enum_compatible_type) — PROGRAM DATA beside the tag
+     definitions; on OCaml the same decision also lives in the
+     DefaultImpl registry, which the oracle keeps reading. *)
+  enum_definitions: list (Symbol.sym * Ctype.integerType);
   extern_idmap: map Symbol.identifier sigma_extern_id;
   typedef_attributes: map ail_identifier Annot.attributes;
   loop_attributes: Annot.loop_attributes;
@@ -329,6 +335,7 @@ let empty_sigma : sigma 'a = <|
   function_definitions = [];
   static_assertions = [];
   tag_definitions = [];
+  enum_definitions = [];
   extern_idmap = Map.empty;
   typedef_attributes = Map.empty;
   loop_attributes = Map.empty;

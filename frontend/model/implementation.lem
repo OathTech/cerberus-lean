@@ -2,41 +2,125 @@ open import Pervasives Utils
 import AilSyntax Ctype IntegerImpl
 
 val max_alignment: nat
-val is_signed_ity: Ctype.integerType -> bool
-val sizeof_ity: Ctype.integerType -> maybe nat
-val precision_ity: Ctype.integerType -> maybe nat
 val sizeof_fty: Ctype.floatingType -> maybe nat
-val alignof_ity: Ctype.integerType -> maybe nat
 val alignof_fty: Ctype.floatingType -> maybe nat
-
-val register_enum: Symbol.sym -> list integer -> bool
-val typeof_enum: Symbol.sym -> Ctype.integerType
-val normalise_integerType: Ctype.integerType -> Ctype.integerType
 
 declare ocaml target_rep function max_alignment = `(Ocaml_implementation.get()).max_alignment`
 declare lean target_rep function max_alignment = `CerberusImpl.max_alignment`
-declare ocaml target_rep function is_signed_ity = `(Ocaml_implementation.get()).is_signed_ity`
-declare lean target_rep function is_signed_ity = `CerberusImpl.is_signed_ity`
-declare ocaml target_rep function sizeof_ity = `(Ocaml_implementation.get()).sizeof_ity`
-declare lean target_rep function sizeof_ity = `CerberusImpl.sizeof_ity`
-declare ocaml target_rep function precision_ity = `(Ocaml_implementation.get()).precision_ity`
-declare lean target_rep function precision_ity = `CerberusImpl.precision_ity`
 declare ocaml target_rep function sizeof_fty = `(Ocaml_implementation.get()).sizeof_fty`
 declare lean target_rep function sizeof_fty = `CerberusImpl.sizeof_fty`
-declare ocaml target_rep function alignof_ity = `(Ocaml_implementation.get()).alignof_ity`
-declare lean target_rep function alignof_ity = `CerberusImpl.alignof_ity`
 declare ocaml target_rep function alignof_fty = `(Ocaml_implementation.get()).alignof_fty`
 declare lean target_rep function alignof_fty = `CerberusImpl.alignof_fty`
+
+(* ---- The enum's compatible type as PROGRAM DATA (program-data parameters
+   E-A, 2026-09-20; lean_frontend/docs/2026-09-20_program-data-parameters-EA-DA-record.md).
+
+   OCaml (the oracle, unchanged): DefaultImpl keeps its mutable registry
+   (ocaml_frontend/ocaml_implementation.ml:124-150) — `register_enum` decides
+   the compatible type and pushes, `typeof_enum` looks it up; the layout
+   functions normalise through it.  `enum_definitions ()` is that registry
+   read as a map (Ocaml_implementation.enum_definitions).
+   Lean: `enum_definitions` is an ambient READER — every def that
+   (transitively) reads it takes the per-program map as a leading parameter
+   (`_lemReader_enum_definitions`, sorted-name order digest, enum_definitions,
+   tagDefs); the desugarer records the decided type in the sigma
+   (A.enum_definitions), the elaborator carries it into the Core file
+   (C.enumDefs), linking merges it, and the entries seed the reader from the
+   program — the same information the OCaml registry holds, as data.
+   `register_enum` on Lean is the pure `true` (the redefinition case is caught
+   by the `tag_definitions` check just before it, cabs_to_ail_effect.lem
+   register_tag_definition). *)
+
+(* GCC's rule — ocaml_implementation.ml:130-136 (no -fshort-enums): the
+   compatible type is `signed int` iff an enumerator is negative, else
+   `unsigned int`.  SHARED body: both engines compute it. *)
+val enum_compatible_type: list integer -> Ctype.integerType
+let enum_compatible_type ns =
+  if List.any (fun n -> n < 0) ns then Ctype.Signed Ctype.Int_ else Ctype.Unsigned Ctype.Int_
+
+val enum_definitions: unit -> map Symbol.sym Ctype.integerType
+declare ocaml target_rep function enum_definitions = `Ocaml_implementation.enum_definitions`
+(* target-coverage stub only: the reader mechanism rewrites every applied
+   `enum_definitions ()` site to the reader parameter (as CerbTags.tagDefsUnreachable) *)
+declare lean target_rep function enum_definitions u = `CerberusImpl.enumDefinitionsUnreachable` u
+declare {lean} reader val enum_definitions
+
+val register_enum: Symbol.sym -> list integer -> bool
 declare ocaml target_rep function register_enum = `(Ocaml_implementation.get()).register_enum`
 declare lean target_rep function register_enum = `CerberusImpl.register_enum`
-declare ocaml target_rep function typeof_enum = `(Ocaml_implementation.get()).typeof_enum`
-declare lean target_rep function typeof_enum = `CerberusImpl.typeof_enum`
+
+(* the named lookup — SHARED body over the reader; the OCaml failure text is
+   ocaml_implementation.ml:146-149's (no lem caller today: ailTypesAux.lem's
+   uses are commented out; it stays as the named lookup) *)
+val typeof_enum: Symbol.sym -> Ctype.integerType
+let typeof_enum tag_sym =
+  match Map.lookup tag_sym (enum_definitions ()) with
+    | Just ity -> ity
+    | Nothing ->
+        Assert_extra.failwith ("Ocaml_implementation.typeof_enum: '" ^ show tag_sym ^ "' was not registered")
+  end
+
+(* normalise FIRST, one consumer (record D2): the Lean rep
+   CerberusImpl.normalise_integerType takes the readers in sorted order —
+   (digest) (enumDefs) (tagDefs) — and its Enum arm is the lookup in enumDefs
+   (failing with the OCaml text on a miss); the OCaml rep is unchanged. *)
+val normalise_integerType: Ctype.integerType -> Ctype.integerType
 declare ocaml target_rep function normalise_integerType = `Ocaml_implementation.normalise_integerType (Ocaml_implementation.get())`
 declare lean target_rep function normalise_integerType = `CerberusImpl.normalise_integerType`
+declare {lean} reader_consumer val normalise_integerType
 
+(* The four layout vals are SHARED one-line wrappers: normalise, then the
+   `*_norm` rep on the normalised type.  The reps carry the previous
+   target_reps unchanged — OCaml `(Ocaml_implementation.get()).sizeof_ity`
+   re-normalises an already-normalised type (idempotent: Common.
+   normalise_integerType_ ocaml_implementation.ml:37-66 maps resolved
+   Signed/Unsigned through the alias table to themselves, the four named
+   types to fixed points, and never sees an Enum after the first pass);
+   Lean `CerberusImpl.sizeof_ity` etc. are functions of the (normalised)
+   type alone — an un-normalised Enum reaching them is the UNREACHABLE-BY-
+   INVARIANT leaf. *)
+val is_signed_ity_norm: Ctype.integerType -> bool
+val sizeof_ity_norm: Ctype.integerType -> maybe nat
+val precision_ity_norm: Ctype.integerType -> maybe nat
+val alignof_ity_norm: Ctype.integerType -> maybe nat
+declare ocaml target_rep function is_signed_ity_norm = `(Ocaml_implementation.get()).is_signed_ity`
+declare lean target_rep function is_signed_ity_norm = `CerberusImpl.is_signed_ity`
+declare ocaml target_rep function sizeof_ity_norm = `(Ocaml_implementation.get()).sizeof_ity`
+declare lean target_rep function sizeof_ity_norm = `CerberusImpl.sizeof_ity`
+declare ocaml target_rep function precision_ity_norm = `(Ocaml_implementation.get()).precision_ity`
+declare lean target_rep function precision_ity_norm = `CerberusImpl.precision_ity`
+declare ocaml target_rep function alignof_ity_norm = `(Ocaml_implementation.get()).alignof_ity`
+declare lean target_rep function alignof_ity_norm = `CerberusImpl.alignof_ity`
+
+(* On the OCaml target the four wrappers keep their previous reps (the
+   with_tagDefs precedent, ctype_aux.lem): the lem body is Lean-only, so the
+   generated OCaml layout path is byte-identical to before and no generated
+   definition named is_signed_ity/sizeof_ity/... appears in implementation.ml
+   — lem's OCaml renamer would otherwise rename ailTypesAux.lem's alias
+   `let is_signed_ity = Implementation.is_signed_ity` to is_signed_ity0 and
+   break the non-generated callers memory/{concrete,vip}/impl_mem.ml. *)
+val is_signed_ity: Ctype.integerType -> bool
+let is_signed_ity ity = is_signed_ity_norm (normalise_integerType ity)
+declare ocaml target_rep function is_signed_ity = `(Ocaml_implementation.get()).is_signed_ity`
+val sizeof_ity: Ctype.integerType -> maybe nat
+let sizeof_ity ity = sizeof_ity_norm (normalise_integerType ity)
+declare ocaml target_rep function sizeof_ity = `(Ocaml_implementation.get()).sizeof_ity`
+val precision_ity: Ctype.integerType -> maybe nat
+let precision_ity ity = precision_ity_norm (normalise_integerType ity)
+declare ocaml target_rep function precision_ity = `(Ocaml_implementation.get()).precision_ity`
+val alignof_ity: Ctype.integerType -> maybe nat
+let alignof_ity ity = alignof_ity_norm (normalise_integerType ity)
+declare ocaml target_rep function alignof_ity = `(Ocaml_implementation.get()).alignof_ity`
+
+(* alignof_ty (the desugarer's _Alignas/redeclaration alignment check,
+   cabs_to_ail_effect.lem get_alignof): its OCaml rep `alignof` normalises
+   integer member types through `(get ()).alignof_ity` — i.e. through the
+   enum registry — so the Lean rep needs the map: a reader consumer too
+   (charter erratum, record §0). *)
 val alignof_ty: map AilSyntax.ail_identifier (list (maybe Ctype.alignment * Ctype.ctype)) ->  Ctype.ctype -> maybe nat
 declare ocaml target_rep function alignof_ty = `Ocaml_implementation.alignof_proxy`
 declare lean target_rep function alignof_ty = `CerberusImpl.alignof_ty`
+declare {lean} reader_consumer val alignof_ty
 
 val integerImpl: unit -> IntegerImpl.implementation
 let integerImpl () =

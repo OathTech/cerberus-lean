@@ -1825,6 +1825,67 @@ let get_tag_definitions =
     st.tag_definitions
   )
 
+(* program-data parameters E-A (2026-09-20): the enums registered so far, as
+   the sigma records them — (tag, compatible type) by GCC's rule — from the
+   desugar state's tag definitions (register_tag_definition inserts an
+   Enum_definition right after register_enum). Used by the three sigma
+   builders below and, as a MAP, by the D3 seeds (the value the Lean enum
+   reader takes at a desugar-time read; dead on OCaml). *)
+val enum_definitions_of_tag_definitions: map A.ail_identifier tag_definition -> list (Symbol.sym * Ctype.integerType)
+let enum_definitions_of_tag_definitions tagDefs =
+  List.foldr (fun (sym, def) acc ->
+    match def with
+      | Enum_definition ns ->
+          (sym, Implementation.enum_compatible_type ns) :: acc
+      | _ ->
+          acc
+    end
+  ) [] (Map_extra.toList tagDefs)
+
+val enum_map_of_tag_definitions: map A.ail_identifier tag_definition -> map Symbol.sym Ctype.integerType
+let enum_map_of_tag_definitions tagDefs = Map.fromList (enum_definitions_of_tag_definitions tagDefs)
+
+(* The tag-definition table at DESUGAR time is EMPTY on both engines: the
+   oracle's Tags global is unset until elaboration (ocaml_frontend/tags.ml:
+   Tags.tagDefs () raises "Tags definitions must be set by Tags.set_tagDefs
+   before any use" — so no desugar-time read of it can exist on the oracle),
+   and the Lean entry passes the empty table to desugar (Main.lean
+   frontendTU: "EMPTY during desugar/typing/elaboration, mirroring the
+   oracle's empty Tags global there"). The D3 seeds pass THIS value for the
+   tagDefs reader — the value the enclosing _lemReader_tagDefs binder holds
+   at every seeded site — so a seeded callee sees exactly what the unseeded
+   lifted path saw. (Charter erratum: Ctype_aux.tagDefs () as the seed is
+   NOT dead on OCaml — an argument is evaluated strictly, and the libc.co
+   build raised the Failure above.) *)
+val desugar_time_tagDefs: map Symbol.sym (Loc.t * Ctype.tag_definition)
+let desugar_time_tagDefs = Map.empty
+
+(* D3 seed defs (see mini_pipeline.lem's block): the desugarer's calls into
+   the enum-reading compatibility/composite/alignment functions *)
+val are_compatible_seeded:
+  map Symbol.sym Ctype.integerType -> map Symbol.sym (Loc.t * Ctype.tag_definition) ->
+  (Ctype.qualifiers * Ctype.ctype) -> (Ctype.qualifiers * Ctype.ctype) -> bool
+let are_compatible_seeded en tds p1 p2 = AilTypesAux.are_compatible p1 p2
+declare {lean} reader_seed val are_compatible_seeded
+
+val make_composite_seeded:
+  map Symbol.sym Ctype.integerType -> map Symbol.sym (Loc.t * Ctype.tag_definition) ->
+  Ctype.ctype -> Ctype.ctype -> maybe Ctype.ctype
+let make_composite_seeded en tds ty1 ty2 = AilTypesAux.make_composite ty1 ty2
+declare {lean} reader_seed val make_composite_seeded
+
+val make_composite_fdecl_seeded:
+  map Symbol.sym Ctype.integerType -> map Symbol.sym (Loc.t * Ctype.tag_definition) ->
+  fun_declaration -> fun_declaration -> maybe fun_declaration
+let make_composite_fdecl_seeded en tds d1 d2 = make_composite_fdecl d1 d2
+declare {lean} reader_seed val make_composite_fdecl_seeded
+
+val alignof_ty_seeded:
+  map Symbol.sym Ctype.integerType -> map Symbol.sym (Loc.t * Ctype.tag_definition) ->
+  map A.ail_identifier (list (maybe Ctype.alignment * Ctype.ctype)) -> Ctype.ctype -> maybe nat
+let alignof_ty_seeded en tds pseudo_tagDefs ty = Implementation.alignof_ty pseudo_tagDefs ty
+declare {lean} reader_seed val alignof_ty_seeded
+
 
 
 val get_anonymous_struct_or_union:
@@ -2028,7 +2089,7 @@ let register_global_object_definition2 loc sym link gdef =
         match (prev_gdef, gdef) with
           | (Tentative _ prev_ty, Tentative loc_def ty) ->
               (* TODO: this function is not correct for desugaring *)
-              match AilTypesAux.make_composite prev_ty ty with
+              match make_composite_seeded (enum_map_of_tag_definitions st.tag_definitions) desugar_time_tagDefs prev_ty ty with
                 | Nothing ->
                     let () = Debug.print_debug 0 [] (fun () ->
                       "  prev_ty: " ^ Pp.stringFromAil_ctype Ctype.no_qualifiers prev_ty ^ "\n" ^
@@ -2148,11 +2209,12 @@ let register_function_declaration loc attrs sym is_proto decl =
       ) params ^ ")" in
   *)
   
+  get_tag_definitions >>= fun tagDefs ->
   read_inner (fun st ->
     Map.lookup sym st.function_declarations
   ) >>= function
     | Just (prev_has_proto, prev_loc, prev_attrs, prev_decl) ->
-        match make_composite_fdecl prev_decl decl with
+        match make_composite_fdecl_seeded (enum_map_of_tag_definitions tagDefs) desugar_time_tagDefs prev_decl decl with
           | Nothing ->
               (* TODO: check that we are indeed only dealing with same scope redefinition here *)
               constraint_violation loc Constraint.SameScopeIncompatibleDeclarations
@@ -2214,7 +2276,7 @@ let get_alignof =
       | Enum_definition _ ->
           [(* dummy, this won't be called *)]
     end tagDefs in
-  return (fun z -> Implementation.alignof_ty pseudo_tagDefs z)
+  return (fun z -> alignof_ty_seeded (enum_map_of_tag_definitions tagDefs) desugar_time_tagDefs pseudo_tagDefs z)
 
 (* STD §6.7.5#7 *)
 let get_compatible_alignment_requirements loc new_align_opt prev_align_opt =
@@ -2275,6 +2337,8 @@ let register_external_object_declaration sym ((isTentative, loc, attrs, new_dur,
       "' with dur: " ^ string_of_storageDuration new_dur ^ " qs, ty: " ^ Pp.stringFromAil_ctype new_qs new_ty)
   ) >>
   
+  get_tag_definitions >>= fun tagDefs ->
+  let en = enum_map_of_tag_definitions tagDefs in
   read_inner (fun st ->
     Map.lookup sym st.external_object_declarations
   ) >>= function
@@ -2283,7 +2347,7 @@ let register_external_object_declaration sym ((isTentative, loc, attrs, new_dur,
           "has previous decl ==> with dur: " ^ string_of_storageDuration prev_dur ^
           " qs, ty: " ^ Pp.stringFromAil_ctype prev_qs prev_ty ^
           " are_compatible ?= " ^
-          (if AilTypesAux.are_compatible (new_qs, new_ty) (prev_qs, prev_ty)
+          (if are_compatible_seeded en desugar_time_tagDefs (new_qs, new_ty) (prev_qs, prev_ty)
            then "true" else "false")
         ) in
     
@@ -2291,7 +2355,7 @@ let register_external_object_declaration sym ((isTentative, loc, attrs, new_dur,
           constraint_violation loc Constraint.ThreadLocalShouldAppearInEveryDeclaration
         
         (* TODO: what about the storage duration and isRegister?? *)
-        else if not (AilTypesAux.are_compatible (new_qs, new_ty) (prev_qs, prev_ty)) then
+        else if not (are_compatible_seeded en desugar_time_tagDefs (new_qs, new_ty) (prev_qs, prev_ty)) then
 
 (*
 (Ctype.storageDuration * (* isRegister *) bool * Ctype.qualifiers * Ctype.ctype)
@@ -2309,7 +2373,7 @@ let register_external_object_declaration sym ((isTentative, loc, attrs, new_dur,
           (* TODO: check that is ok to use AilTypesAux.make_composite for object types (see comment in AilTypesAux) *)
           (* TODO: what about qualifiers? *)
           if true (* AilTypesAux.is_array prev_ty && AilTypesAux.is_array new_ty *) then
-            match AilTypesAux.make_composite prev_ty new_ty with
+            match make_composite_seeded en desugar_time_tagDefs prev_ty new_ty with
               | Just ty' ->
                   (* TODO: what about ty' ?? *)
                   let decl = (isTentative, loc, attrs, new_dur, isRegister, align_opt, new_qs, new_ty) in
@@ -2540,6 +2604,7 @@ let mk_current_ail_sigma =
               end
             ) [] (Map_extra.toList ident_tagDefs)
           end;
+        A.enum_definitions= enum_definitions_of_tag_definitions ident_tagDefs;
         A.extern_idmap= Map.empty;
         A.typedef_attributes= Map.empty;
         A.loop_attributes= Map.empty;
@@ -2726,6 +2791,7 @@ let extract_program startup_str =
                                acc
                            end
                         ) [] $ Map_extra.toList st.tag_definitions;
+     A.enum_definitions= enum_definitions_of_tag_definitions st.tag_definitions;
     A.extern_idmap= extern_idmap;
     A.typedef_attributes= Map.map (fun (z, _, _) -> z) st.typedef_definitions;
     A.loop_attributes = st.loop_attributes;
@@ -2811,6 +2877,7 @@ let get_sigma_sofar =
                                  acc
                              end
                           ) [] $ Map_extra.toList st.tag_definitions;
+       A.enum_definitions= enum_definitions_of_tag_definitions st.tag_definitions;
        A.extern_idmap= Map.empty;
        A.typedef_attributes= Map.map (fun (z, _, _) -> z) st.typedef_definitions;
        A.loop_attributes= st.loop_attributes;

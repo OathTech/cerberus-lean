@@ -205,7 +205,9 @@ fi
 # opaque conversion was C2; the 11 CerbGlobal rows LEFT on 2026-09-05,
 # 26 -> 15; CerbFail.modelFailStopLoc joined at C-TF1, 15 -> 16; the CerbUtils
 # timing/log trio and CerbMem.beqMemValueSafe LEFT at seam-hygiene H3 2026-09-19,
-# 16 -> 12 — the reviewed population is 12.)
+# 16 -> 12; the CerberusImpl enum pair LEFT at program-data parameters E-A
+# 2026-09-20 (the enum's compatible type is program data — a lem reader, no
+# registry), 12 -> 10 — the reviewed population is 10.)
 OPAQUE_WANT=(
   # CerberusFresh — the digest boundary (VALIDATION.md §4), [seam]
   'CerberusFresh.lean:md5Hex' 'CerberusFresh.lean:digestIO' 'CerberusFresh.lean:setDigestIO'
@@ -220,8 +222,11 @@ OPAQUE_WANT=(
   # timing/log trio (begin_timing/end_timing/STD_) LEFT at seam-hygiene H3
   # (2026-09-19): plain value identities, no opaque (fence extension (3))
   'CerbUtils.lean:bounded_integer'
-  # CerberusImpl — enum registry, temporal (mover: reader/supply follow-up), [seam]
-  'CerberusImpl.lean:typeof_enum' 'CerberusImpl.lean:register_enum'
+  # CerberusImpl — NO rows since program-data parameters E-A (2026-09-20): the
+  # enum registry (typeof_enum/register_enum opaques) is DELETED — the enum map
+  # is the lem reader `enum_definitions`, `normalise_integerType` a plain def
+  # over it, `register_enum` the pure `true`; an opaque reappearing there fails
+  # below as UNREGISTERED, by design.
   # CerbMem — NO rows since seam-hygiene H3 (2026-09-19): beqMemValueSafe LEFT,
   # `BEq MemValue` is the structural `beqMemValue` (kernel-transparent)
   # CerbFuel — the fuel-exhaustion atom (FUEL arc, docs/2026-09-02_fuel-arc-

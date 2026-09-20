@@ -292,6 +292,7 @@ let link_aux f1 f2 =
     <| main=    main;
        calling_convention= f1.calling_convention;
        tagDefs= f1.tagDefs union f2.tagDefs;
+       enumDefs= f1.enumDefs union f2.enumDefs;
        stdlib=  f1.stdlib;
        impl=    f1.impl;
        globs=   merge_globs f1.globs f2.globs reduntant_globs;

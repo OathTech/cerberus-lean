@@ -28,9 +28,15 @@
 # identities (nothing ever read the refs); lean_frontend/CerbMem.lean beqMemValueImpl —
 # DELETED: `BEq MemValue` is the structural `beqMemValue`. 11 + 2 PIN rows and 3 KEEP
 # rows left the pins (38 -> 25 PIN rows); 4 opaques left OPAQUE_WANT (16 -> 12).
+# --- retired 2026-09-20 (program-data parameters E-A, docs/2026-09-20_program-data-parameters-EA-DA-record.md) ---
+# lean_frontend/CerberusImpl.lean typeof_enum_impl / register_enum_impl (+ enumRegistryRef, the
+# `initialize` cell, `opaque typeof_enum`/`register_enum`) — DELETED: the enum's compatible type is
+# PROGRAM DATA (the lem reader `Implementation.enum_definitions`, carried in A.sigma.enum_definitions
+# and the Core file's enumDefs; `CerberusImpl.normalise_integerType enumDefs tagDefs` is the lookup,
+# `register_enum` the pure `true`). The temporal class's named mover ("reader/supply-machinery
+# follow-up slice") is this slice. 2 KEEP rows and 6 PIN rows left the pins (25 -> 19 PIN rows);
+# 2 opaques left OPAQUE_WANT (12 -> 10).
 lean_frontend/CerbUtils.lean	boundedIntegerImpl	permanent-declared	KEEP (deterministic stub `pure lo`; documented residual with named mover in-file — RNG threading iff load-bearing)
-lean_frontend/CerberusImpl.lean	typeof_enum_impl	temporal(reader/supply-machinery-follow-up-slice, explicitly NOT in-arc)	KEEP (enum registry read; genuinely stateful seam mirroring OCaml DefaultImpl ref)
-lean_frontend/CerberusImpl.lean	register_enum_impl	temporal(reader/supply-machinery-follow-up-slice, explicitly NOT in-arc)	KEEP (enum registry write during elaboration)
 # --- retired 2026-09-05 (reasoning-artifact audit instance A, step 1;
 # docs/2026-09-05_cerbglobal-defs-record.md) ---
 # lean_frontend/CerbGlobal.lean confRef / switchesRef / getConf /
@@ -99,8 +105,8 @@ lem-lean/lean-lib/LemLib.lean	runEffectful_impl	L2-delete	DELETE (the axiom scaf
 #   (IO-typed, honest signatures; driver-side callers).
 # - CerbGlobal: NO rows since 2026-09-05 (plain defs; see the retired
 #   section above).
-# - CerberusImpl enum registry (temporal; mover: reader/supply
-#   machinery follow-up slice, explicitly NOT in-arc).
+# - CerberusImpl: NO rows since 2026-09-20 (program-data parameters E-A:
+#   the enum registry is program data; see the retired section above).
 # - CerbUtils boundedIntegerImpl stub (permanent-declared); the timing/log
 #   refs became value identities at seam-hygiene H3 (2026-09-19).
 # - CerbMem: NO rows since seam-hygiene H3 (beqMemValueImpl -> the structural
@@ -129,12 +135,6 @@ PIN UNSAFEDECL lean_frontend/CerberusFresh.lean digest_impl 2
 PIN UNSAFEDECL lean_frontend/CerberusFresh.lean digestPure 2
 PIN UNSAFEDECL lean_frontend/CerberusFresh.lean forceIO_impl 2
 PIN UNSAFEDECL lean_frontend/CerberusFresh.lean forceThunkIO 2
-PIN IMPLBY lean_frontend/CerberusImpl.lean register_enum_impl 2
-PIN IMPLBY lean_frontend/CerberusImpl.lean typeof_enum_impl 2
-PIN UNSAFEBASEIO lean_frontend/CerberusImpl.lean register_enum_impl 2
-PIN UNSAFEBASEIO lean_frontend/CerberusImpl.lean typeof_enum_impl 2
-PIN UNSAFEDECL lean_frontend/CerberusImpl.lean register_enum_impl 2
-PIN UNSAFEDECL lean_frontend/CerberusImpl.lean typeof_enum_impl 2
 PIN IMPLBY lean_frontend/CerbUtils.lean boundedIntegerImpl 2
 PIN UNSAFEBASEIO lean_frontend/CerbUtils.lean boundedIntegerImpl 2
 PIN UNSAFEDECL lean_frontend/CerbUtils.lean boundedIntegerImpl 2

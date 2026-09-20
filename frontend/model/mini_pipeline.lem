@@ -40,6 +40,7 @@ let empty_sigma = <|
   A.function_definitions= [];
   A.static_assertions= [];
   A.tag_definitions= [];
+  A.enum_definitions= [];
   A.extern_idmap= Map.empty;
   A.typedef_attributes= Map.empty;
   A.loop_attributes= Map.empty;
@@ -61,13 +62,25 @@ let inline (>>=) = Eff.bind
    tag definitions (arc-2 S6, replacing the former inline with_tagDefs
    extent). The action must be BUILT here: under the Lean reader lifting,
    driver2 binds its tagDefs source at construction. On the Lean target
-   this function is reader_seed — its first argument is the injection
-   value for every lifted callee in the body — and with_tagDefs
-   additionally sets the ambient global for the run's extent so
-   hand-written memory-model reads agree with the seed (the split-read
-   divergence found by the pre-merge audit is closed: both sides = tds).
-   On OCaml this is semantically identical to the previous inline code. *)
-let run_const_expr_driver tds dr_st =
+   this function is reader_seed — its leading arguments are the injection
+   values for every lifted callee in the body, one per declared reader in
+   the sorted reader order (program-data parameters E-A, 2026-09-20: [en]
+   the enum map, [tds] the tag definitions; the N-ary rule of lem-lean
+   4307dc5 — a seed def's first N parameters are the seeds, so adding a
+   reader re-partitions this head) — and with_tagDefs additionally sets
+   the ambient global for the run's extent so hand-written memory-model
+   reads agree with the seed (the split-read divergence found by the
+   pre-merge audit is closed: both sides = tds). On OCaml [en] is DEAD
+   (the registry is ambient there) and the rest is semantically identical
+   to the previous inline code. The val fixes the seeds' TYPES: the enum
+   seed is not used by the lem body itself (only injected on Lean), so
+   without it lem would generalise it to a type variable. *)
+val run_const_expr_driver:
+  map Symbol.sym Ctype.integerType ->
+  map Symbol.sym (Loc.t * Ctype.tag_definition) ->
+  Driver.driver_state ->
+  list (ND.nd_status Driver.driver_result Driver.driver_error Driver.driver_state * list string * Driver.driver_state)
+let run_const_expr_driver en tds dr_st =
   let driver_action =
     ND.bind (Driver.driver2 false) (fun () ->
       ND.bind ND.get (fun dr_st' ->
@@ -154,6 +167,7 @@ let evalConstantExpressionAux sup address_space_top loc (*TODO*)(ailnames, stdli
              ; C.globs= []
              ; C.funs= Map.empty
              ; C.tagDefs= Map.empty
+             ; C.enumDefs= Map.empty
              ; C.extern= Map.empty
              ; C.funinfo= Map.empty 
              ; C.loop_attributes= Map.empty 
@@ -182,7 +196,13 @@ let evalConstantExpressionAux sup address_space_top loc (*TODO*)(ailnames, stdli
         (* run the evaluator (arc-2 S6: built AND run inside
            run_const_expr_driver so the Lean reader seeding covers the
            action's construction — see that function's comment) *)
+        (* the seeds: the enums registered SO FAR — the sigma-so-far's
+           enum_definitions (Q-A: equal to the OCaml registry's content at
+           this moment, since register_tag_definition inserts into
+           tag_definitions right after register_enum); the translated tag
+           definitions *)
         let execs = run_const_expr_driver
+                      (Map.fromList sigm.A.enum_definitions)
                       (Translation.translate_tag_definitions sigm.A.tag_definitions)
                       dr_st in
         match execs with
@@ -243,6 +263,53 @@ let typecheckAil sigm gamm expr =
     | Right a_expr ->
         Right (Translation_aux.ctype_of a_expr)
   end
+
+(* ---- D3 SEEDS (program-data parameters E-A, 2026-09-20; record §1/§4). On the
+   Lean target the enum map is an ambient reader whose value at the desugar
+   entry is EMPTY; the OCaml desugarer reads the registry AS OF THE MOMENT.
+   So every desugar-time path into the enum-reading typing/layout functions
+   goes through a `reader_seed` def whose seeds are the enums registered SO
+   FAR (the sigma-so-far's / desugar state's enum_definitions) and the
+   enclosing tag-definition binder — the Lean value then equals the OCaml
+   registry's content at that moment (register_tag_definition inserts into
+   tag_definitions right after register_enum; nothing else registers). The
+   seed defs take one value per declared reader in the sorted order (en,
+   tds), then the wrapped function's own arguments; on OCaml the seeds are
+   DEAD (the [USER 2026-09-04] exception). Their vals fix the seeds' types
+   (a seed used only by injection would otherwise generalise — record W11);
+   the two seeds have DIFFERENT types, so a positional slip (audit N1) is a
+   type error, not a silent value change. *)
+val evalIntegerConstantExpression_seeded:
+  map Symbol.sym Ctype.integerType -> map Symbol.sym (Loc.t * Ctype.tag_definition) ->
+  nat -> integer ->
+  Loc.t -> (map string Symbol.sym) * C.fun_map unit * C.impl -> A.sigma unit ->
+  maybe Ctype.ctype -> A.expression unit -> Eff.exceptM (integer * nat) Errors.error
+let evalIntegerConstantExpression_seeded en tds sup address_space_top loc core_env sigm ty_opt expr =
+  evalIntegerConstantExpression sup address_space_top loc core_env sigm ty_opt expr
+declare {lean} reader_seed val evalIntegerConstantExpression_seeded
+
+val typecheckAil_seeded:
+  map Symbol.sym Ctype.integerType -> map Symbol.sym (Loc.t * Ctype.tag_definition) ->
+  A.sigma unit -> A.gamma -> A.expression unit -> either (Loc.t * TypingError.typing_error) Ctype.ctype
+let typecheckAil_seeded en tds sigm gamm expr = typecheckAil sigm gamm expr
+declare {lean} reader_seed val typecheckAil_seeded
+
+(* the desugarer's two direct typing calls (typeof(e), sizeof e) *)
+val annotate_expression_seeded:
+  map Symbol.sym Ctype.integerType -> map Symbol.sym (Loc.t * Ctype.tag_definition) ->
+  (A.sigma unit -> A.gamma -> A.bindings -> list (A.statement unit) -> ErrorMonad.errorM (list (A.statement GenTypes.genTypeCategory))) ->
+  A.sigma unit -> A.gamma -> GenTyping.annotation_context -> A.expression unit -> ErrorMonad.errorM (A.expression GenTypes.genTypeCategory)
+let annotate_expression_seeded en tds annotate_block sigm gamm ctx expr =
+  GenTyping.annotate_expression annotate_block sigm gamm ctx expr
+declare {lean} reader_seed val annotate_expression_seeded
+
+(* the desugarer reads the typed expression's ctype right after (S-9): the
+   genType -> ctype interpretation normalises integer types *)
+val qualified_ctype_of_seeded:
+  map Symbol.sym Ctype.integerType -> map Symbol.sym (Loc.t * Ctype.tag_definition) ->
+  A.expression GenTypes.genTypeCategory -> Ctype.qualifiers * Ctype.ctype
+let qualified_ctype_of_seeded en tds a_expr = Translation_aux.qualified_ctype_of a_expr
+declare {lean} reader_seed val qualified_ctype_of_seeded
 
 val in_range_of_signed_int: integer -> maybe bool
 let in_range_of_signed_int n =

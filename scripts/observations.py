@@ -71,15 +71,15 @@ LEMLIB_FAILWITHI_ORIGIN = b'_private.LemLib.0.failwithIImpl'
 # Seam panic origins the IMMACULATE policy additionally accepts — the coarse
 # CRASH pins, never semantic or diagnostic agreement. Since seam-hygiene H1 every
 # hand-written failure site of the exec closure is LemLib's `failwithI` (the
-# register scripts/failure_reach_register.txt is the review), so this set is
-# exactly the seam sites that STILL panic under their own name: the one KEPT
-# `panic!` — CerberusImpl.lean typeof_enum_impl (the fence-forbidden enum
-# registry seam; `private`, hence the mangled name). Anything else is
-# ProtocolError('unreviewed panic origin') — fail-closed; a new origin needs
-# explicit review here.
-IMMACULATE_PANICS = {
-    b'_private.CerberusImpl.0.CerberusImpl.typeof_enum_impl',
-}
+# register scripts/failure_reach_register.txt is the review); the ONE seam site
+# that still panicked under its own name after H1 — CerberusImpl.lean
+# typeof_enum_impl, the enum registry read — was DELETED by program-data
+# parameters E-A (2026-09-20: the enum's compatible type is program data; the
+# lookup miss is a `failwithI` leaf, so it arrives under the LemLib origin like
+# every other seam failure). The set is EMPTY and the mechanism stays fail-closed:
+# anything not the LemLib origin is ProtocolError('unreviewed panic origin'); a
+# new origin needs explicit review here.
+IMMACULATE_PANICS = set()
 
 
 def unescape(data: bytes) -> bytes:

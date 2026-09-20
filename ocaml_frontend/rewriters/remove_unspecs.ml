@@ -104,6 +104,7 @@ let rewrite_file file =
   { main = file.main
   ; calling_convention = file.calling_convention
   ; tagDefs = file.tagDefs
+  ; enumDefs = file.enumDefs
   ; stdlib = Pmap.map rewrite_fun_map_decl file.stdlib
   ; impl = Pmap.map rewrite_impl_decl file.impl
   ; globs = List.map (fun (sym, glob) -> (sym, rewrite_globs glob)) file.globs

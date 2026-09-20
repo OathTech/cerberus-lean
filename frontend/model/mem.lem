@@ -190,6 +190,11 @@ declare ocaml target_rep function ptrfromint = `Impl_mem.ptrfromint`
 declare lean target_rep function ptrfromint = `CerbMem.ptrfromint`
 declare ocaml target_rep function intfromptr = `Impl_mem.intfromptr`
 declare lean target_rep function intfromptr = `CerbMem.intfromptr`
+(* program-data parameters E-A (2026-09-20): intfromptr's range check is
+   min_ival/max_ival on the target integer type (impl_mem.ml:2439-2461), which
+   resolve an Enum through the registry on OCaml — so the CerbMem rep takes the
+   readers too: the 17th consumer (record erratum W14). *)
+declare {lean} reader_consumer val intfromptr
 
 val derive_cap : bool(* is_signed *) -> Mem_common.derivecap_op -> integer_value -> integer_value -> integer_value
 val cap_assign_value: Loc.t -> integer_value -> integer_value -> integer_value
@@ -267,6 +272,10 @@ declare lean target_rep function va_list = `CerbMem.vaList`
 val copy_alloc_id: integer_value -> pointer_value -> memM pointer_value
 declare ocaml target_rep function copy_alloc_id = `Impl_mem.copy_alloc_id`
 declare lean target_rep function copy_alloc_id = `CerbMem.copyAllocId`
+(* program-data parameters E-A (2026-09-20): copy_alloc_id's range check is
+   intfromptr's (impl_mem.ml:2766-2770), a reader consumer — so this rep is one
+   too: the 18th consumer (record erratum W15). *)
+declare {lean} reader_consumer val copy_alloc_id
 declare {lean} fuel_consumer val copy_alloc_id
 
 (* Byte casting operations *)
@@ -296,8 +305,14 @@ declare ocaml target_rep function integer_ival = `Impl_mem.integer_ival`
 declare lean target_rep function integer_ival = `CerbMem.integerIval`
 declare ocaml target_rep function max_ival = `Impl_mem.max_ival`
 declare lean target_rep function max_ival = `CerbMem.maxIval`
+(* program-data parameters E-A (2026-09-20): max_ival/min_ival normalise an
+   Enum through the registry on OCaml (impl_mem.ml:2369-2372, :2407-2410);
+   the CerbMem reps normalise through CerberusImpl.normalise_integerType and
+   so take the readers — consumers, like the 16 above. *)
+declare {lean} reader_consumer val max_ival
 declare ocaml target_rep function min_ival = `Impl_mem.min_ival`
 declare lean target_rep function min_ival = `CerbMem.minIval`
+declare {lean} reader_consumer val min_ival
 declare ocaml target_rep function op_ival = `Impl_mem.op_ival`
 declare lean target_rep function op_ival = `CerbMem.opIval`
 declare ocaml target_rep function offsetof_ival = `Impl_mem.offsetof_ival`

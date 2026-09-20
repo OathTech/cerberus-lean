@@ -73,6 +73,7 @@ def divmodI8FileU (mainDecl : generic_fun_map_decl Unit Unit)
   { main := some mainSym
     calling_convention0 := Normal_callconv
     tagDefs := fmapEmpty
+    enumDefs := fmapEmpty
     stdlib := divmodStdlib
     impl0 := fmapEmpty
     globs := []

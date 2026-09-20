@@ -68,6 +68,7 @@ def memcpyFileU (mainDecl : generic_fun_map_decl Unit Unit)
   { main := some mainSym
     calling_convention0 := Normal_callconv
     tagDefs := fmapEmpty
+    enumDefs := fmapEmpty
     stdlib := DivMod.divmodStdlib
     impl0 := fmapEmpty
     globs := []
@@ -84,6 +85,7 @@ def getarrFileU (mainDecl : generic_fun_map_decl Unit Unit)
   { main := some mainSym
     calling_convention0 := Normal_callconv
     tagDefs := fmapEmpty
+    enumDefs := fmapEmpty
     stdlib := DivMod.divmodStdlib
     impl0 := fmapEmpty
     globs := []

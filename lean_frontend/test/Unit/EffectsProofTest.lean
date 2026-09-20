@@ -43,7 +43,7 @@ example (a a' : List annot) (i : integerType) :
     reader parameter IS the state. (Concrete instance — evaluation; the
     symbolic lookup lemmas live in lem-lean's LemLibTest.) -/
 example :
-    get_membersDefs
+    get_membersDefs fmapEmpty
       (fmapAddBy symbol_compare (Symbol "" 0 SD_None)
         (CerbLocation.unknown, UnionDef []) fmapEmpty)
       (Symbol "" 0 SD_None)

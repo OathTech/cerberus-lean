@@ -119,6 +119,7 @@ def exemplarFile : file core_run_annotation :=
   { main := some mainSym,
     calling_convention0 := default,
     tagDefs := default,
+    enumDefs := default,
     stdlib := fmapEmpty,
     impl0 := fmapEmpty,
     globs := [],
@@ -143,7 +144,7 @@ def dst₀ [LemFuel] (sup : Nat) (top : Int) : driver_state :=
     Main.lean's `--address-space-top`). -/
 def run (n : Nat) (top : Int) :
     List (nd_status driver_result driver_error driver_state × List String × driver_state) :=
-  @CerbND.runND _ _ _ _ _ ⟨n⟩ (@drive ⟨n⟩ fmapEmpty false exemplarFile ["cmdname"]) (@dst₀ ⟨n⟩ 0 top)
+  @CerbND.runND _ _ _ _ _ ⟨n⟩ (@drive ⟨n⟩ fmapEmpty fmapEmpty false exemplarFile ["cmdname"]) (@dst₀ ⟨n⟩ 0 top)
 
 /-- The postcondition: the delivered Core value is `Specified(42)`. -/
 def post (r : driver_result) (_ : driver_state) : Prop :=
@@ -265,14 +266,14 @@ theorem prepare_exit_single (cs : core_state) (th : thread_state) (v : value)
 /-- One worklist step at counter `fl + 2` (ambient `Nat.succ k`): the
     single thread's step list is `[Step_done2 v]`; the loop records it and
     stops (`find_can_advance` finds nothing to advance). -/
-theorem loop_step_done {k : Nat} (fl : Nat) (tds : Fmap sym (CerbLocation.Loc × tag_definition))
+theorem loop_step_done {k : Nat} (fl : Nat) (eds : Fmap sym integerType) (tds : Fmap sym (CerbLocation.Loc × tag_definition))
     (acc : Fmap thread_id (List core_step2))
     {dst : driver_state} {th : thread_state} {v : value}
     (hth : dst.core_state0.thread_states = [(0, (none, th))])
-    (hsteps : @step_ctx ⟨Nat.succ k⟩ tds dst.layout_state dst.core_file dst.core_extern 0
+    (hsteps : @step_ctx ⟨Nat.succ k⟩ eds tds dst.layout_state dst.core_file dst.core_extern 0
       (none, th) = [Step_done2 v]) :
     runOne (@drive_nonmemory_steps_aux2_lemFuel ⟨Nat.succ k⟩ (Nat.succ (Nat.succ fl))
-        tds acc [0]) dst =
+        eds tds acc [0]) dst =
       (NDactive (fmapAddBy defaultCompare 0 [Step_done2 v] acc), dst) := by
   conv => lhs; unfold drive_nonmemory_steps_aux2_lemFuel
   refine (runOne_bind_active (z := [Step_done2 v]) (s' := dst) ?_).trans ?_
@@ -282,19 +283,19 @@ theorem loop_step_done {k : Nat} (fl : Nat) (tds : Fmap sym (CerbLocation.Loc ×
             dst.core_state0.thread_states with
           | some z => z
           | none => failwithI _;
-        @step_ctx ⟨Nat.succ k⟩ tds dst.layout_state dst.core_file dst.core_extern 0 th_info) = _
+        @step_ctx ⟨Nat.succ k⟩ eds tds dst.layout_state dst.core_file dst.core_extern 0 th_info) = _
     rw [hth]
     exact hsteps
   · dsimp only [find_can_advance, can_advance]
     conv => lhs; unfold drive_nonmemory_steps_aux2_lemFuel
     rfl
 
-theorem process_done {k : Nat} (tds : Fmap sym (CerbLocation.Loc × tag_definition))
+theorem process_done {k : Nat} (eds : Fmap sym integerType) (tds : Fmap sym (CerbLocation.Loc × tag_definition))
     (cont : Bool → ndM Unit step_kind driver_error
       (mem_constraint CerbMem.IntegerValue) driver_state)
     (v : value) (dst : driver_state) (th : thread_state)
     (hth : dst.core_state0.thread_states = [(0, (none, th))]) :
-    runOne (@process_core_step2 ⟨Nat.succ k⟩ tds false cont (Step_done2 v)) dst =
+    runOne (@process_core_step2 ⟨Nat.succ k⟩ eds tds false cont (Step_done2 v)) dst =
       (NDactive (), { dst with core_state0 :=
         { dst.core_state0 with thread_states :=
             [(0, (none, { th with stack0 := Stack_empty, arena := mk_value_e v }))] } }) := by
@@ -308,14 +309,14 @@ theorem process_done {k : Nat} (tds : Fmap sym (CerbLocation.Loc × tag_definiti
     loop's result `[Step_done2 v]` for thread 0, the round prepares the
     exit (the arena becomes the value, the stack empties). -/
 theorem driver2_done {k : Nat} (fl : Nat)
-    (tds : Fmap sym (CerbLocation.Loc × tag_definition))
+    (eds : Fmap sym integerType) (tds : Fmap sym (CerbLocation.Loc × tag_definition))
     (dst dstF : driver_state) (th thF : thread_state) (v : value)
     (hth : dst.core_state0.thread_states = [(0, (none, th))])
-    (hloop : runOne (@drive_nonmemory_steps_aux2_lemFuel ⟨Nat.succ k⟩ (Nat.succ k) tds
+    (hloop : runOne (@drive_nonmemory_steps_aux2_lemFuel ⟨Nat.succ k⟩ (Nat.succ k) eds tds
         fmapEmpty [0]) dst =
       (NDactive (fmapAddBy defaultCompare 0 [Step_done2 v] fmapEmpty), dstF))
     (hthF : dstF.core_state0.thread_states = [(0, (none, thF))]) :
-    runOne (@driver2_lemFuel ⟨Nat.succ k⟩ (Nat.succ fl) tds false) dst =
+    runOne (@driver2_lemFuel ⟨Nat.succ k⟩ (Nat.succ fl) eds tds false) dst =
       (NDactive (), { dstF with core_state0 :=
         { dstF.core_state0 with thread_states :=
             [(0, (none, { thF with stack0 := Stack_empty, arena := mk_value_e v }))] } }) := by
@@ -355,13 +356,13 @@ theorem driver2_done {k : Nat} (fl : Nat)
     refine (runOne_bind_active (z := ((0 : Nat), some (Step_done2 v)))
       (s' := dstF) (by rfl)).trans ?_
     dsimp only
-    exact process_done tds _ v dstF thF hthF
+    exact process_done eds tds _ v dstF thF hthF
 
-theorem finalize_done {k : Nat} (tds : Fmap sym (CerbLocation.Loc × tag_definition))
+theorem finalize_done {k : Nat} (eds : Fmap sym integerType) (tds : Fmap sym (CerbLocation.Loc × tag_definition))
     (s : String) (dst : driver_state) (th : thread_state) (v : value)
     (hth : dst.core_state0.thread_states = [(0, (none, th))])
     (harena : th.arena = mk_value_e v) :
-    (@finalize ⟨Nat.succ k⟩ tds s dst).dres_core_value = v := by
+    (@finalize ⟨Nat.succ k⟩ eds tds s dst).dres_core_value = v := by
   unfold finalize
   rw [hth]
   dsimp only
@@ -388,7 +389,7 @@ open Round
     before the errno step; `setupTail` states it as the value). At a
     literal fuel — the pre-arc exemplar — the same term folded. -/
 theorem alignofIval_signed_int (k : Nat) :
-    @CerbMem.alignofIval ⟨Nat.succ k⟩ fmapEmpty signed_int = CerbMem.integerIval 4 := rfl
+    @CerbMem.alignofIval ⟨Nat.succ k⟩ fmapEmpty fmapEmpty signed_int = CerbMem.integerIval 4 := rfl
 
 /-! ### The errno allocation at a SYMBOLIC address-space top (address-space-bound slice,
     C4 2026-09-18, pre-merge audit F1): drive's first memory action — the errno `int`
@@ -417,15 +418,15 @@ def σalloc (top : Int) : CerbMem.MemState :=
         lastAddress := errnoAddr top
         allocations := (CerbMem.initialMemState top).allocations.insert 0 (errnoAlloc top) }
     (errnoAddr top)
-    (CerbMem.memValueToBytes fmapEmpty (CerbMem.initialMemState top).funptrmap (.MVunspecified signed_int)).snd
+    (CerbMem.memValueToBytes fmapEmpty fmapEmpty (CerbMem.initialMemState top).funptrmap (.MVunspecified signed_int)).snd
 
 /-- drive's errno memory action, exactly as `drive` states it (driver.lem:1860-1868; the
     alignment written as its value, `alignofIval_signed_int`). -/
 def errnoAction [LemFuel] : CerbMem.memM CerbMem.PointerValue :=
-  nd_bind (CerbMem.allocateObject fmapEmpty 0 (PrefOther "errno") (CerbMem.integerIval 4) signed_int none none)
+  nd_bind (CerbMem.allocateObject fmapEmpty fmapEmpty 0 (PrefOther "errno") (CerbMem.integerIval 4) signed_int none none)
     (fun (ptr_val : CerbMem.PointerValue) =>
       let zero := CerbMem.integerValueMval (Signed Int_) (CerbMem.integerIval (0 : Int))
-      nd_bind (CerbMem.storeM fmapEmpty (CerbLocation.other "errno init") signed_int false ptr_val zero)
+      nd_bind (CerbMem.storeM fmapEmpty fmapEmpty (CerbLocation.other "errno init") signed_int false ptr_val zero)
         (fun (_ : CerbMem.Footprint) => nd_return ptr_val))
 
 /-- The allocator on the cold state: ACTIVE at `errnoAddr top` whenever `8 ≤ top` (the two
@@ -440,9 +441,9 @@ theorem allocator_errno (top : Int) (h : 8 ≤ top) :
   omega
 
 theorem allocateObject_errno (k : Nat) (top : Int) (h : 8 ≤ top) :
-    runOne (@CerbMem.allocateObject ⟨Nat.succ k⟩ fmapEmpty 0 (PrefOther "errno") (CerbMem.integerIval 4) signed_int none none)
+    runOne (@CerbMem.allocateObject ⟨Nat.succ k⟩ fmapEmpty fmapEmpty 0 (PrefOther "errno") (CerbMem.integerIval 4) signed_int none none)
         (CerbMem.initialMemState top) = (NDactive (errnoPtr top), σalloc top) := by
-  have hsz : (CerbMem.sizeofCtype fmapEmpty signed_int : Int) = 4 := by decide
+  have hsz : (CerbMem.sizeofCtype fmapEmpty fmapEmpty signed_int : Int) = 4 := by decide
   unfold CerbMem.allocateObject
   simp only [CerbMem.integerIval]
   rw [hsz]
@@ -452,25 +453,25 @@ theorem allocateObject_errno (k : Nat) (top : Int) (h : 8 ≤ top) :
     the record found at id 0, in bounds (the object is exactly the store), writable, not an
     atomic member access. -/
 theorem storeM_errno_active (k : Nat) (top : Int) :
-    (runOne (@CerbMem.storeM ⟨Nat.succ k⟩ fmapEmpty (CerbLocation.other "errno init") signed_int false (errnoPtr top)
+    (runOne (@CerbMem.storeM ⟨Nat.succ k⟩ fmapEmpty fmapEmpty (CerbLocation.other "errno init") signed_int false (errnoPtr top)
         (CerbMem.integerValueMval (Signed Int_) (CerbMem.integerIval (0 : Int)))) (σalloc top)).1
       = NDactive (.FP .W (errnoAddr top) 4) := by
   have hcompat : CerbMem.ctypeMemCompatible signed_int
       (CerbMem.typeofMval (CerbMem.integerValueMval (Signed Int_) (CerbMem.integerIval (0 : Int)))) = true := by decide
   have hget : (σalloc top).allocations.get? 0 = some (errnoAlloc top) := by
     first | rfl | decide | (simp [σalloc, CerbMem.writeBytesTo, CerbMem.initialMemState])
-  have hsz : (CerbMem.sizeofCtype fmapEmpty signed_int : Int) = 4 := by decide
+  have hsz : (CerbMem.sizeofCtype fmapEmpty fmapEmpty signed_int : Int) = 4 := by decide
   have hbounds : CerbMem.isInBounds (errnoAlloc top) (errnoAddr top) 4 = true := by
     simp [CerbMem.isInBounds, errnoAlloc]
   have hro : (errnoAlloc top).isReadonly = .IsWritable := rfl
-  have hatomic : @CerbMem.isAtomicMemberAccess ⟨Nat.succ k⟩ fmapEmpty (errnoAlloc top) signed_int (errnoAddr top) = false := rfl
+  have hatomic : @CerbMem.isAtomicMemberAccess ⟨Nat.succ k⟩ fmapEmpty fmapEmpty (errnoAlloc top) signed_int (errnoAddr top) = false := rfl
   unfold CerbMem.storeM
   simp only [runOne, errnoPtr, hcompat, hget]
   simp only [hsz, hbounds, hro, hatomic, Bool.not_true, Bool.false_eq_true, if_false]
 
 /-- The memory state after drive's whole errno action at top `top`. -/
 def σstore [LemFuel] (top : Int) : CerbMem.MemState :=
-  (runOne (CerbMem.storeM fmapEmpty (CerbLocation.other "errno init") signed_int false (errnoPtr top)
+  (runOne (CerbMem.storeM fmapEmpty fmapEmpty (CerbLocation.other "errno init") signed_int false (errnoPtr top)
       (CerbMem.integerValueMval (Signed Int_) (CerbMem.integerIval (0 : Int)))) (σalloc top)).2
 
 /-- THE errno lemma: on the cold state at any top ≥ 8, drive's errno action is ACTIVE with the
@@ -496,12 +497,12 @@ theorem errnoAction_active (k : Nat) (top : Int) (h : 8 ≤ top) :
     theorem, so no hand-built state can drift from the pipeline. -/
 def setupTail [LemFuel] (tid0 : Nat) : driverM Unit :=
   nd_bind (liftMem (nd_bind
-      (CerbMem.allocateObject fmapEmpty tid0 (PrefOther "errno")
+      (CerbMem.allocateObject fmapEmpty fmapEmpty tid0 (PrefOther "errno")
         (CerbMem.integerIval 4) signed_int none none)   -- = alignofIval fmapEmpty signed_int (alignofIval_signed_int)
       (fun (ptr_val : CerbMem.PointerValue) =>
         let zero := CerbMem.integerValueMval (Signed Int_) (CerbMem.integerIval (0 : Int))
         nd_bind
-          (CerbMem.storeM fmapEmpty (CerbLocation.other "errno init") signed_int false ptr_val zero)
+          (CerbMem.storeM fmapEmpty fmapEmpty (CerbLocation.other "errno init") signed_int false ptr_val zero)
           (fun (_ : CerbMem.Footprint) => nd_return ptr_val))))
     (fun (errno_ptr_val : CerbMem.PointerValue) =>
   nd_bind get_thread_states (fun (x : List (Nat × (Option thread_id × thread_state))) =>
@@ -517,7 +518,7 @@ def setupTail [LemFuel] (tid0 : Nat) : driverM Unit :=
 /-- The state after `driver_globals` (thread 0 spawned; no globals) at top `top` — the memory
     is still the cold `initialMemState top`. -/
 def s₁ [LemFuel] (top : Int) : driver_state :=
-  (runOne (driver_globals fmapEmpty false exemplarFile) (dst₀ 0 top)).2
+  (runOne (driver_globals fmapEmpty fmapEmpty false exemplarFile) (dst₀ 0 top)).2
 
 /-- Thread 0 at `driver2`'s entry: `main`'s arena parked, the errno pointer at top `top`, the
     spawned thread's environment (`[fmapEmpty]`, driver.lem's `driver_spawn_thread`). -/
@@ -543,11 +544,11 @@ def S₁ [LemFuel] (top : Int) : driver_state :=
     match reduces on `Nat.succ _`), leaving `driver2` at `S₁` as a
     hypothesis. -/
 theorem drive_after_setup (k : Nat) (top : Int) (h : 8 ≤ top) (dstD : driver_state)
-    (hdrv2 : runOne (@driver2 ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty false) (@S₁ ⟨Nat.succ (Nat.succ k)⟩ top)
+    (hdrv2 : runOne (@driver2 ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty fmapEmpty false) (@S₁ ⟨Nat.succ (Nat.succ k)⟩ top)
       = (NDactive (), dstD)) :
-    runOne (@drive ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty false exemplarFile ["cmdname"])
+    runOne (@drive ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty fmapEmpty false exemplarFile ["cmdname"])
         (@dst₀ ⟨Nat.succ (Nat.succ k)⟩ 0 top)
-      = (NDactive (@finalize ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty "drive (without concur)" dstD), dstD) := by
+      = (NDactive (@finalize ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty fmapEmpty "drive (without concur)" dstD), dstD) := by
   conv => lhs; unfold drive
   -- driver_globals: spawn thread 0, no globals
   refine (runOne_bind_active (z := (0 : Nat)) (s' := _) rfl).trans ?_
@@ -577,12 +578,12 @@ theorem drive_after_setup (k : Nat) (top : Int) (h : 8 ≤ top) (dstD : driver_s
     (consumer shape `driver2_done`); the successor state is explicit. -/
 theorem round_done (k : Nat) (top : Int) :
     ∃ (thF : thread_state),
-      runOne (@driver2 ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty false) (@S₁ ⟨Nat.succ (Nat.succ k)⟩ top) =
+      runOne (@driver2 ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty fmapEmpty false) (@S₁ ⟨Nat.succ (Nat.succ k)⟩ top) =
         (NDactive (), { @S₁ ⟨Nat.succ (Nat.succ k)⟩ top with core_state0 :=
           { (@S₁ ⟨Nat.succ (Nat.succ k)⟩ top).core_state0 with thread_states :=
             [(0, (none, { thF with stack0 := Stack_empty, arena := mk_value_e fortyTwo }))] } }) := by
-  refine ⟨_, driver2_done (Nat.succ k) fmapEmpty _ _ _ _ fortyTwo rfl
-    (loop_step_done k fmapEmpty fmapEmpty rfl rfl) rfl⟩
+  refine ⟨_, driver2_done (Nat.succ k) fmapEmpty fmapEmpty _ _ _ _ fortyTwo rfl
+    (loop_step_done k fmapEmpty fmapEmpty fmapEmpty rfl rfl) rfl⟩
 
 /-- THE ∀-FUEL, ∀-TOP EXEMPLAR (the consumer's §6 shape), by the symbolic route:
     fuel 0 and 1 kill (the runner leaf; the first memory operation), every
@@ -607,7 +608,7 @@ theorem exemplar_certified_shipped_forall (fuel : Nat) (top : Int) (h : 8 ≤ to
       rw [runND_active hrun] at ho
       have h := List.mem_singleton.mp ho
       subst h
-      exact Or.inr ⟨_, rfl, finalize_done fmapEmpty _ _ _ fortyTwo rfl rfl⟩
+      exact Or.inr ⟨_, rfl, finalize_done fmapEmpty fmapEmpty _ _ _ fortyTwo rfl rfl⟩
 
 end FuelExemplar
 

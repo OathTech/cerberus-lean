@@ -4237,12 +4237,16 @@ val translate_program:
   translation_stdlib ->
   maybe Symbol.sym * A.sigma GenTypes.genTypeCategory ->
   E.elabM (  C.core_tag_definitions
+           * map Symbol.sym Ctype.integerType
            * list (Symbol.sym * (C.generic_globs unit unit))
            * C.generic_fun_map unit unit
            * map Symbol.sym (Loc.t * Annot.attributes * Ctype.ctype * list (maybe Symbol.sym * Ctype.ctype) * bool * bool) )
 
 let translate_program stdlib (startup_sym_opt, sigm) =
   let core_tagDefs = translate_tag_definitions sigm.A.tag_definitions in
+  (* program-data parameters E-A (2026-09-20): the enums' compatible types
+     ride beside the tag definitions into the Core file *)
+  let core_enumDefs = Map.fromList sigm.A.enum_definitions in
   
   E.foldlM (fun (gacc, facc, finfoacc) (sym, (loc, decl_attrs, decl)) ->
     (* for each Ail declaration *)
@@ -4540,7 +4544,7 @@ let translate_program stdlib (startup_sym_opt, sigm) =
           (Symbol.PrefStringLiteral loc (Symbol.digest_of_sym sym)) in
       E.return ((sym, C.GlobalDef (C.BTy_object C.OTy_pointer, ty) expr) :: acc)
   end globs (List.reverse xs) >>= fun globs' ->
-  E.return (core_tagDefs, globs', cfuns, funinfo)
+  E.return (core_tagDefs, core_enumDefs, globs', cfuns, funinfo)
 
 
 let translate_extern_map (_, sigm) =
@@ -4570,12 +4574,13 @@ val translate:
     (C.file unit * nat)
 let translate sup (ailnames, stdlib_fun_map) callconv impl prog =
   let translation_stdlib = mk_translation_stdlib (ailnames, stdlib_fun_map) in
-  let ((core_tagDefs, cglobs, (*cdecls, *) cfuns, funinfo), st) =
+  let ((core_tagDefs, core_enumDefs, cglobs, (*cdecls, *) cfuns, funinfo), st) =
     E.runStateM_errors (translate_program translation_stdlib prog) (E.elab_init sup callconv)
   in
   (<| C.main= fst prog;
      C.calling_convention= callconv;
      C.tagDefs= core_tagDefs;
+     C.enumDefs= core_enumDefs;
      C.stdlib= stdlib_fun_map;
      C.impl= impl;
      C.globs= Core_linking.merge_globs cglobs [] []; (* topological sort *)

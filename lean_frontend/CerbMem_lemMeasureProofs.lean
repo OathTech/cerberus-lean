@@ -90,10 +90,10 @@ theorem unqualifyAndUnatomic_measure_sufficient (cty : ctype) (lemFuel : Nat)
     unqualifyAndUnatomic_lemFuel lemFuel cty = unqualifyAndUnatomic cty :=
   unqualifyAndUnatomic_stable_aux (ctype.lemSize cty) cty lemFuel (ctype.lemSize cty) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
-theorem memValueToBytes_stable_aux (k : Nat) :
+theorem memValueToBytes_stable_aux (enumDefs : CerberusImpl.EnumDefs) (k : Nat) :
     ∀ (ambient : CerbTags.TagDefsMap) (funptrmap : Funptrmap) (v : MemValue) (f g : Nat),
     memValueSize v ≤ k → memValueSize v ≤ f → memValueSize v ≤ g →
-    memValueToBytes_lemFuel f ambient funptrmap v = memValueToBytes_lemFuel g ambient funptrmap v := by
+    memValueToBytes_lemFuel f enumDefs ambient funptrmap v = memValueToBytes_lemFuel g enumDefs ambient funptrmap v := by
   induction k with
   | zero => intro ambient funptrmap v f g hk _ _; have := memValueSize_pos v; omega
   | succ k ih =>
@@ -105,7 +105,7 @@ theorem memValueToBytes_stable_aux (k : Nat) :
       | zero => have := memValueSize_pos v; omega
       | succ g =>
         have key : ∀ (fpm : Funptrmap) (y : MemValue), memValueSize y < memValueSize v →
-            memValueToBytes_lemFuel f ambient fpm y = memValueToBytes_lemFuel g ambient fpm y :=
+            memValueToBytes_lemFuel f enumDefs ambient fpm y = memValueToBytes_lemFuel g enumDefs ambient fpm y :=
           fun fpm y hy => ih ambient fpm y f g (by omega) (by omega) (by omega)
         cases v <;> simp (disch := size_lt) only [memValueToBytes_lemFuel, key]
         case MVarray elems =>
@@ -127,10 +127,10 @@ theorem memValueToBytes_stable_aux (k : Nat) :
 
 /-- THE OBLIGATION (the seam twin of the generated shape; its `[LemFuel]`
     went at C4 with the layout oracle's — audit F-A5). -/
-theorem memValueToBytes_measure_sufficient (ambient : CerbTags.TagDefsMap) (funptrmap : Funptrmap)
+theorem memValueToBytes_measure_sufficient (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap) (funptrmap : Funptrmap)
     (val_ : MemValue) (lemFuel : Nat) (lemMeasureLe : memValueSize val_ ≤ lemFuel) :
-    memValueToBytes_lemFuel lemFuel ambient funptrmap val_ = memValueToBytes ambient funptrmap val_ :=
-  memValueToBytes_stable_aux (memValueSize val_) ambient funptrmap val_ lemFuel (memValueSize val_)
+    memValueToBytes_lemFuel lemFuel enumDefs ambient funptrmap val_ = memValueToBytes enumDefs ambient funptrmap val_ :=
+  memValueToBytes_stable_aux enumDefs (memValueSize val_) ambient funptrmap val_ lemFuel (memValueSize val_)
     (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
 
@@ -153,7 +153,7 @@ theorem memValueToBytes_measure_sufficient (ambient : CerbTags.TagDefsMap) (funp
 section Layout
 open CerbTagsWf
 
-variable (ambient tagDefs : CerbTags.TagDefsMap) (R : Entry → Nat) (L : List Entry)
+variable (enumDefs : CerberusImpl.EnumDefs) (ambient tagDefs : CerbTags.TagDefsMap) (R : Entry → Nat) (L : List Entry)
 
 /-- The weight of the entries of `L` ranked at most `v`. -/
 def W (v : Entry) : Nat :=
@@ -418,7 +418,7 @@ end Layout
 section LayoutStable
 open CerbTagsWf
 
-variable (ambient tagDefs : CerbTags.TagDefsMap) (R : Entry → Nat) (L : List Entry)
+variable (enumDefs : CerberusImpl.EnumDefs) (ambient tagDefs : CerbTags.TagDefsMap) (R : Entry → Nat) (L : List Entry)
 
 theorem lookup_of_entry {m : CerbTags.TagDefsMap} {t s : sym} {v : Entry}
     (h : lookupEntry m t = some (s, v)) : lookup m t = some v := by
@@ -451,19 +451,19 @@ theorem layout_stable_aux
     (k : Nat) :
     (∀ (ty : ctype) (f g : Nat), pot ambient tagDefs R L ty ≤ k →
         pot ambient tagDefs R L ty ≤ f → pot ambient tagDefs R L ty ≤ g →
-        alignofCtype_lemFuel f ambient tagDefs ty = alignofCtype_lemFuel g ambient tagDefs ty) ∧
+        alignofCtype_lemFuel f enumDefs ambient tagDefs ty = alignofCtype_lemFuel g enumDefs ambient tagDefs ty) ∧
     (∀ (ty : ctype) (f g : Nat), pot ambient tagDefs R L ty + 1 ≤ k →
         pot ambient tagDefs R L ty + 1 ≤ f → pot ambient tagDefs R L ty + 1 ≤ g →
-        sizeofCtype_lemFuel f ambient tagDefs ty = sizeofCtype_lemFuel g ambient tagDefs ty) ∧
+        sizeofCtype_lemFuel f enumDefs ambient tagDefs ty = sizeofCtype_lemFuel g enumDefs ambient tagDefs ty) ∧
     (∀ (al : Option alignment) (ty : ctype) (f g : Nat), mPot ambient tagDefs R L al ty + 1 ≤ k →
         mPot ambient tagDefs R L al ty + 1 ≤ f → mPot ambient tagDefs R L al ty + 1 ≤ g →
-        memberAlign_lemFuel f ambient tagDefs al ty = memberAlign_lemFuel g ambient tagDefs al ty) ∧
+        memberAlign_lemFuel f enumDefs ambient tagDefs al ty = memberAlign_lemFuel g enumDefs ambient tagDefs al ty) ∧
     (∀ (members : List Member) (f g : Nat), membersPot ambient tagDefs R L members + 2 ≤ k →
         membersPot ambient tagDefs R L members + 2 ≤ f → membersPot ambient tagDefs R L members + 2 ≤ g →
-        offsetsofMembers_lemFuel f ambient tagDefs members = offsetsofMembers_lemFuel g ambient tagDefs members) ∧
+        offsetsofMembers_lemFuel f enumDefs ambient tagDefs members = offsetsofMembers_lemFuel g enumDefs ambient tagDefs members) ∧
     (∀ (t : sym) (flag : Bool) (f g : Nat), oPot ambient tagDefs R L t flag ≤ k →
         oPot ambient tagDefs R L t flag ≤ f → oPot ambient tagDefs R L t flag ≤ g →
-        offsetsof_lemFuel f ambient tagDefs t flag = offsetsof_lemFuel g ambient tagDefs t flag) := by
+        offsetsof_lemFuel f enumDefs ambient tagDefs t flag = offsetsof_lemFuel g enumDefs ambient tagDefs t flag) := by
   induction k with
   | zero =>
     refine ⟨?_, ?_, ?_, ?_, ?_⟩
@@ -499,8 +499,8 @@ theorem layout_stable_aux
           have hl : lookup tagDefs t = some (l, StructDef membrs flex) := lookup_of_entry heq
           rw [pot_struct ambient tagDefs R L an t _ hl] at hk hf hg
           have hcong : ∀ (acc : Nat) (memb : Member), memb ∈ membrs →
-              max (memberAlign_lemFuel f ambient tagDefs memb.2.2.1 memb.2.2.2.2) acc =
-              max (memberAlign_lemFuel g ambient tagDefs memb.2.2.1 memb.2.2.2.2) acc := by
+              max (memberAlign_lemFuel f enumDefs ambient tagDefs memb.2.2.1 memb.2.2.2.2) acc =
+              max (memberAlign_lemFuel g enumDefs ambient tagDefs memb.2.2.1 memb.2.2.2.2) acc := by
             intro acc memb hmemb
             have hm := mPot_le ambient tagDefs R L hR hLS hLU (Or.inl hl)
               (fun y hy => mem_memberTypes_of_struct membrs flex ⟨memb, hmemb, hy⟩)
@@ -556,7 +556,7 @@ theorem layout_stable_aux
       case Struct t =>
         have hA := ihA (Ctype an (.Struct t)) f g (by omega) (by omega) (by omega)
         rw [hA]
-        have hO : offsetsof_lemFuel f ambient tagDefs t true = offsetsof_lemFuel g ambient tagDefs t true := by
+        have hO : offsetsof_lemFuel f enumDefs ambient tagDefs t true = offsetsof_lemFuel g enumDefs ambient tagDefs t true := by
           rcases hl : lookup tagDefs t with _ | ⟨l, d⟩
           · rw [pot_struct_none ambient tagDefs R L an t hl] at hk hf hg
             exact ihO t true f g (by rw [oPot_of_none ambient tagDefs R L hl]; omega)
@@ -581,13 +581,13 @@ theorem layout_stable_aux
           have hfold : ∀ (init : Nat × Nat), membrs.foldl (fun (acc : Nat × Nat) memb =>
               let (accSize, accAlign) := acc
               let (_, (_, alignOpt, _, ty)) := memb
-              (max accSize (sizeofCtype_lemFuel f ambient tagDefs ty),
-               max accAlign (memberAlign_lemFuel f ambient tagDefs alignOpt ty))) init =
+              (max accSize (sizeofCtype_lemFuel f enumDefs ambient tagDefs ty),
+               max accAlign (memberAlign_lemFuel f enumDefs ambient tagDefs alignOpt ty))) init =
             membrs.foldl (fun (acc : Nat × Nat) memb =>
               let (accSize, accAlign) := acc
               let (_, (_, alignOpt, _, ty)) := memb
-              (max accSize (sizeofCtype_lemFuel g ambient tagDefs ty),
-               max accAlign (memberAlign_lemFuel g ambient tagDefs alignOpt ty))) init := by
+              (max accSize (sizeofCtype_lemFuel g enumDefs ambient tagDefs ty),
+               max accAlign (memberAlign_lemFuel g enumDefs ambient tagDefs alignOpt ty))) init := by
             apply lfoldl_congr
             intro acc memb hmemb
             obtain ⟨accSize, accAlign⟩ := acc
@@ -631,16 +631,16 @@ theorem layout_stable_aux
       have hfold : ∀ (init : List (identifier × ctype × Nat) × Nat), members.foldl (fun (acc : List (identifier × ctype × Nat) × Nat) memb =>
           let (xs, lastOffset) := acc
           let (ident, (_, alignOpt, _, ty)) := memb
-          let size := sizeofCtype_lemFuel f ambient tagDefs ty
-          let align := memberAlign_lemFuel f ambient tagDefs alignOpt ty
+          let size := sizeofCtype_lemFuel f enumDefs ambient tagDefs ty
+          let align := memberAlign_lemFuel f enumDefs ambient tagDefs alignOpt ty
           let x := lastOffset % align
           let pad := if x == 0 then 0 else align - x
           ((ident, ty, lastOffset + pad) :: xs, lastOffset + pad + size)) init =
         members.foldl (fun (acc : List (identifier × ctype × Nat) × Nat) memb =>
           let (xs, lastOffset) := acc
           let (ident, (_, alignOpt, _, ty)) := memb
-          let size := sizeofCtype_lemFuel g ambient tagDefs ty
-          let align := memberAlign_lemFuel g ambient tagDefs alignOpt ty
+          let size := sizeofCtype_lemFuel g enumDefs ambient tagDefs ty
+          let align := memberAlign_lemFuel g enumDefs ambient tagDefs alignOpt ty
           let x := lastOffset % align
           let pad := if x == 0 then 0 else align - x
           ((ident, ty, lastOffset + pad) :: xs, lastOffset + pad + size)) init := by
@@ -669,8 +669,8 @@ theorem layout_stable_aux
       · rename_i s l membrs flex heq
         have hl : lookup tagDefs t = some (l, StructDef membrs flex) := lookup_of_entry heq
         rw [oPot_of_struct ambient tagDefs R L hl flag] at hk hf hg
-        show offsetsofMembers_lemFuel f ambient tagDefs (structMembers membrs flex flag) =
-          offsetsofMembers_lemFuel g ambient tagDefs (structMembers membrs flex flag)
+        show offsetsofMembers_lemFuel f enumDefs ambient tagDefs (structMembers membrs flex flag) =
+          offsetsofMembers_lemFuel g enumDefs ambient tagDefs (structMembers membrs flex flag)
         exact ihOM _ f g (by omega) (by omega) (by omega)
       · rfl
 
@@ -796,57 +796,57 @@ theorem membersPot_le_entry (ambient tagDefs : CerbTags.TagDefsMap) (R : Entry �
     parameters, `(lemHyp : H)`, `(lemFuel : Nat)`, `(lemMeasureLe : μ ≤ lemFuel)`,
     conclusion `worker lemFuel … = wrapper …`) -/
 
-theorem alignofCtype_measure_sufficient (ambient : CerbTags.TagDefsMap) (cty : ctype)
+theorem alignofCtype_measure_sufficient (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap) (cty : ctype)
     (lemHyp : CerbTagsWf.Acyclic ambient) (lemFuel : Nat)
     (lemMeasureLe : CerbTagsWf.envBound ambient cty ≤ lemFuel) :
-    alignofCtype_lemFuel lemFuel ambient ambient cty = alignofCtype ambient cty := by
+    alignofCtype_lemFuel lemFuel enumDefs ambient ambient cty = alignofCtype enumDefs ambient cty := by
   obtain ⟨R, hR⟩ := lemHyp
   have hW := W_le_defsWeight ambient R
   have hp := pot_le ambient ambient R (entries ambient) _ hW cty
-  have h := (layout_stable_aux ambient ambient R (entries ambient) hR (fun _ _ h => lookup_mem_entries h)
+  have h := (layout_stable_aux enumDefs ambient ambient R (entries ambient) hR (fun _ _ h => lookup_mem_entries h)
     (fun _ _ h => lookup_mem_entries h) (pot ambient ambient R (entries ambient) cty)).1
   exact h cty lemFuel (envBound ambient cty) (Nat.le_refl _) (by unfold envBound at lemMeasureLe; omega) (by unfold envBound; omega)
 
-theorem sizeofCtype_measure_sufficient (ambient : CerbTags.TagDefsMap) (cty : ctype)
+theorem sizeofCtype_measure_sufficient (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap) (cty : ctype)
     (lemHyp : CerbTagsWf.Acyclic ambient) (lemFuel : Nat)
     (lemMeasureLe : CerbTagsWf.envBound ambient cty ≤ lemFuel) :
-    sizeofCtype_lemFuel lemFuel ambient ambient cty = sizeofCtype ambient cty := by
+    sizeofCtype_lemFuel lemFuel enumDefs ambient ambient cty = sizeofCtype enumDefs ambient cty := by
   obtain ⟨R, hR⟩ := lemHyp
   have hW := W_le_defsWeight ambient R
   have hp := pot_le ambient ambient R (entries ambient) _ hW cty
-  have h := (layout_stable_aux ambient ambient R (entries ambient) hR (fun _ _ h => lookup_mem_entries h)
+  have h := (layout_stable_aux enumDefs ambient ambient R (entries ambient) hR (fun _ _ h => lookup_mem_entries h)
     (fun _ _ h => lookup_mem_entries h) (pot ambient ambient R (entries ambient) cty + 1)).2.1
   exact h cty lemFuel (envBound ambient cty) (Nat.le_refl _) (by unfold envBound at lemMeasureLe; omega) (by unfold envBound; omega)
 
-theorem memberAlign_measure_sufficient (ambient : CerbTags.TagDefsMap) (alignOpt : Option alignment) (ty : ctype)
+theorem memberAlign_measure_sufficient (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap) (alignOpt : Option alignment) (ty : ctype)
     (lemHyp : CerbTagsWf.Acyclic ambient) (lemFuel : Nat)
     (lemMeasureLe : CerbTagsWf.memberBound ambient alignOpt ty ≤ lemFuel) :
-    memberAlign_lemFuel lemFuel ambient ambient alignOpt ty = memberAlign ambient alignOpt ty := by
+    memberAlign_lemFuel lemFuel enumDefs ambient ambient alignOpt ty = memberAlign enumDefs ambient alignOpt ty := by
   obtain ⟨R, hR⟩ := lemHyp
   have hW := W_le_defsWeight ambient R
   have hp := mPot_le_size ambient ambient R (entries ambient) _ hW alignOpt ty
-  have h := (layout_stable_aux ambient ambient R (entries ambient) hR (fun _ _ h => lookup_mem_entries h)
+  have h := (layout_stable_aux enumDefs ambient ambient R (entries ambient) hR (fun _ _ h => lookup_mem_entries h)
     (fun _ _ h => lookup_mem_entries h) (mPot ambient ambient R (entries ambient) alignOpt ty + 1)).2.2.1
   exact h alignOpt ty lemFuel (memberBound ambient alignOpt ty) (Nat.le_refl _)
     (by unfold memberBound at lemMeasureLe; omega) (by unfold memberBound; omega)
 
-theorem offsetsofMembers_measure_sufficient (ambient : CerbTags.TagDefsMap)
+theorem offsetsofMembers_measure_sufficient (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap)
     (members : List (identifier × (attributes × Option alignment × qualifiers × ctype)))
     (lemHyp : CerbTagsWf.Acyclic ambient) (lemFuel : Nat)
     (lemMeasureLe : CerbTagsWf.membersBound ambient members ≤ lemFuel) :
-    offsetsofMembers_lemFuel lemFuel ambient ambient members = offsetsofMembers ambient members := by
+    offsetsofMembers_lemFuel lemFuel enumDefs ambient ambient members = offsetsofMembers enumDefs ambient members := by
   obtain ⟨R, hR⟩ := lemHyp
   have hW := W_le_defsWeight ambient R
   have hp := membersPot_le_size ambient ambient R (entries ambient) _ hW members
-  have h := (layout_stable_aux ambient ambient R (entries ambient) hR (fun _ _ h => lookup_mem_entries h)
+  have h := (layout_stable_aux enumDefs ambient ambient R (entries ambient) hR (fun _ _ h => lookup_mem_entries h)
     (fun _ _ h => lookup_mem_entries h) (membersPot ambient ambient R (entries ambient) members + 2)).2.2.2.1
   exact h members lemFuel (membersBound ambient members) (Nat.le_refl _)
     (by unfold membersBound at lemMeasureLe; omega) (by unfold membersBound; omega)
 
-theorem offsetsof_measure_sufficient (ambient tagDefs : CerbTags.TagDefsMap) (tagSym : sym) (ignoreFlexible : Bool)
+theorem offsetsof_measure_sufficient (enumDefs : CerberusImpl.EnumDefs) (ambient tagDefs : CerbTags.TagDefsMap) (tagSym : sym) (ignoreFlexible : Bool)
     (lemHyp : CerbTagsWf.AcyclicPair ambient tagDefs) (lemFuel : Nat)
     (lemMeasureLe : CerbTagsWf.offsetsofBound ambient tagDefs ≤ lemFuel) :
-    offsetsof_lemFuel lemFuel ambient tagDefs tagSym ignoreFlexible = offsetsof ambient tagDefs tagSym ignoreFlexible := by
+    offsetsof_lemFuel lemFuel enumDefs ambient tagDefs tagSym ignoreFlexible = offsetsof enumDefs ambient tagDefs tagSym ignoreFlexible := by
   obtain ⟨R, hR⟩ := lemHyp
   have hW := W_le_defsWeight2 ambient tagDefs R
   have hLS : ∀ t v, lookup tagDefs t = some v → v ∈ entries ambient ++ entries tagDefs :=
@@ -865,7 +865,7 @@ theorem offsetsof_measure_sufficient (ambient tagDefs : CerbTags.TagDefsMap) (ta
         simp only at h2
         omega
       | UnionDef membrs => rw [oPot_of_union ambient tagDefs R _ hl]; omega
-  have h := (layout_stable_aux ambient tagDefs R (entries ambient ++ entries tagDefs) hR hLS hLU
+  have h := (layout_stable_aux enumDefs ambient tagDefs R (entries ambient ++ entries tagDefs) hR hLS hLU
     (oPot ambient tagDefs R (entries ambient ++ entries tagDefs) tagSym ignoreFlexible)).2.2.2.2
   exact h tagSym ignoreFlexible lemFuel (offsetsofBound ambient tagDefs) (Nat.le_refl _) (by omega) hp
 
@@ -910,8 +910,8 @@ theorem foldl_offs_mem {α : Type} (F : (List (identifier × ctype × Nat) × Na
       · exact Or.inl h
     · exact Or.inr ⟨a', List.mem_cons_of_mem _ ha', hty⟩
 
-theorem offsetsofMembers_types (n : Nat) (ambient tagDefs : CerbTags.TagDefsMap) (members : List Member) :
-    ∀ x ∈ (offsetsofMembers_lemFuel (n + 1) ambient tagDefs members).1, ∃ mb ∈ members, x.2.1 = mb.2.2.2.2 := by
+theorem offsetsofMembers_types (n : Nat) (enumDefs : CerberusImpl.EnumDefs) (ambient tagDefs : CerbTags.TagDefsMap) (members : List Member) :
+    ∀ x ∈ (offsetsofMembers_lemFuel (n + 1) enumDefs ambient tagDefs members).1, ∃ mb ∈ members, x.2.1 = mb.2.2.2.2 := by
   intro x hx
   simp only [offsetsofMembers_lemFuel, List.mem_reverse] at hx
   rcases foldl_offs_mem _ (fun mb : Member => mb.2.2.2.2) (fun acc a => ⟨a.1, _, rfl⟩) members ([], 0) x hx with h | h
@@ -921,9 +921,9 @@ theorem offsetsofMembers_types (n : Nat) (ambient tagDefs : CerbTags.TagDefsMap)
 /-- `offsetsof` on a tag KNOWN to resolve (`hl`): every member type it returns
     is among the definition's `memberTypes`. The unknown-tag arm is excluded by
     `hl` — the struct arm of `reconstructValue` supplies it from its own guard. -/
-theorem offsetsof_types (n : Nat) (ambient tagDefs : CerbTags.TagDefsMap) (t : sym) (flag : Bool)
+theorem offsetsof_types (n : Nat) (enumDefs : CerberusImpl.EnumDefs) (ambient tagDefs : CerbTags.TagDefsMap) (t : sym) (flag : Bool)
     (v : Entry) (hl : lookup tagDefs t = some v) :
-    ∀ x ∈ (offsetsof_lemFuel (n + 2) ambient tagDefs t flag).1, x.2.1 ∈ memberTypes v.2 := by
+    ∀ x ∈ (offsetsof_lemFuel (n + 2) enumDefs ambient tagDefs t flag).1, x.2.1 ∈ memberTypes v.2 := by
   intro x hx
   simp only [offsetsof_lemFuel] at hx
   split at hx
@@ -932,7 +932,7 @@ theorem offsetsof_types (n : Nat) (ambient tagDefs : CerbTags.TagDefsMap) (t : s
   · rename_i s l membrs flex heq
     have hl' := lookup_of_entry heq
     rw [hl'] at hl; cases hl
-    obtain ⟨mb, hmb, hty⟩ := offsetsofMembers_types n ambient tagDefs (structMembers membrs flex flag) x hx
+    obtain ⟨mb, hmb, hty⟩ := offsetsofMembers_types n enumDefs ambient tagDefs (structMembers membrs flex flag) x hx
     rw [hty]; exact structMembers_types membrs flex flag hmb _ (mem_memberTypes1_ty mb)
   · rename_i s l membrs heq
     have hl' := lookup_of_entry heq
@@ -942,13 +942,13 @@ theorem offsetsof_types (n : Nat) (ambient tagDefs : CerbTags.TagDefsMap) (t : s
     rw [← hx]
     exact mem_memberTypes_of_union membrs ⟨mb, hmb, mem_memberTypes1_ty mb⟩
 
-theorem reconstructValue_stable_aux (ambient : CerbTags.TagDefsMap) (R : Entry → Nat)
+theorem reconstructValue_stable_aux (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap) (R : Entry → Nat)
     (hR : Ranked (lookup ambient) (lookup ambient) R) (k : Nat) :
     ∀ (unionmap : List (Int × identifier)) (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte) (f g : Nat),
     pot ambient ambient R (entries ambient) ty ≤ k → pot ambient ambient R (entries ambient) ty ≤ f →
     pot ambient ambient R (entries ambient) ty ≤ g →
-    reconstructValue_lemFuel f ambient unionmap funptrmap addr ty bytes =
-      reconstructValue_lemFuel g ambient unionmap funptrmap addr ty bytes := by
+    reconstructValue_lemFuel f enumDefs ambient unionmap funptrmap addr ty bytes =
+      reconstructValue_lemFuel g enumDefs ambient unionmap funptrmap addr ty bytes := by
   have hLS : ∀ t v, lookup ambient t = some v → v ∈ entries ambient := fun _ _ h => lookup_mem_entries h
   induction k with
   | zero => intro _ _ _ ty _ f g hk _ _; have := pot_pos ambient ambient R (entries ambient) ty; omega
@@ -963,7 +963,7 @@ theorem reconstructValue_stable_aux (ambient : CerbTags.TagDefsMap) (R : Entry �
     | succ g =>
     have key : ∀ (um : List (Int × identifier)) (fpm : Funptrmap) (ad : Int) (y : ctype) (bs : List AbsByte),
         pot ambient ambient R (entries ambient) y < pot ambient ambient R (entries ambient) ty →
-        reconstructValue_lemFuel f ambient um fpm ad y bs = reconstructValue_lemFuel g ambient um fpm ad y bs :=
+        reconstructValue_lemFuel f enumDefs ambient um fpm ad y bs = reconstructValue_lemFuel g enumDefs ambient um fpm ad y bs :=
       fun um fpm ad y bs hy => ih um fpm ad y bs f g (by omega) (by omega) (by omega)
     obtain ⟨an, ty_⟩ := ty
     cases ty_ <;> simp only [reconstructValue_lemFuel]
@@ -990,7 +990,7 @@ theorem reconstructValue_stable_aux (ambient : CerbTags.TagDefsMap) (R : Entry �
         have hl : lookup ambient t = some v := lookup_of_entry heq
         have hb : offsetsofBound ambient ambient = (defsWeight ambient + defsWeight ambient + defsWeight ambient + 1) + 2 := by
           unfold offsetsofBound; omega
-        have hoffs := offsetsof_types (defsWeight ambient + defsWeight ambient + defsWeight ambient + 1) ambient ambient t true v hl
+        have hoffs := offsetsof_types (defsWeight ambient + defsWeight ambient + defsWeight ambient + 1) enumDefs ambient ambient t true v hl
         have h2 := pot_struct ambient ambient R (entries ambient) an t v hl
         to_congr
         all_goals
@@ -1029,16 +1029,16 @@ theorem reconstructValue_stable_aux (ambient : CerbTags.TagDefsMap) (R : Entry �
       · rfl
 
 /-- THE OBLIGATION (the seam twin of the generated `assuming` shape). -/
-theorem reconstructValue_measure_sufficient (ambient : CerbTags.TagDefsMap) (unionmap : List (Int × identifier))
+theorem reconstructValue_measure_sufficient (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap) (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte)
     (lemHyp : CerbTagsWf.Acyclic ambient) (lemFuel : Nat)
     (lemMeasureLe : CerbTagsWf.envBound ambient ty ≤ lemFuel) :
-    reconstructValue_lemFuel lemFuel ambient unionmap funptrmap addr ty bytes =
-      reconstructValue ambient unionmap funptrmap addr ty bytes := by
+    reconstructValue_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr ty bytes =
+      reconstructValue enumDefs ambient unionmap funptrmap addr ty bytes := by
   obtain ⟨R, hR⟩ := lemHyp
   have hW := W_le_defsWeight ambient R
   have hp := pot_le ambient ambient R (entries ambient) _ hW ty
-  exact reconstructValue_stable_aux ambient R hR (pot ambient ambient R (entries ambient) ty) unionmap funptrmap addr ty bytes
+  exact reconstructValue_stable_aux enumDefs ambient R hR (pot ambient ambient R (entries ambient) ty) unionmap funptrmap addr ty bytes
     lemFuel (envBound ambient ty) (Nat.le_refl _) (by unfold envBound at lemMeasureLe; omega) (by unfold envBound; omega)
 
 end Reconstruct

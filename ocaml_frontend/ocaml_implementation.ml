@@ -409,6 +409,19 @@ let hafniumIntImpl: IntegerImpl.implementation =
   (Ptraddr_t)
 
 
+(* program-data parameters E-A (2026-09-20; lean_frontend/docs/
+   2026-09-20_program-data-parameters-EA-DA-record.md): the enum registry
+   read as a map — the OCaml rep of the SHARED lem val
+   `Implementation.enum_definitions` (implementation.lem), which on the Lean
+   target is the ambient reader carrying the same information as program
+   data. DefaultImpl.registered_enums is the ONE registry: MorelloImpl and
+   HafniumImpl reuse DefaultImpl.register_enum/typeof_enum. The oracle's
+   own layout functions keep reading the registry directly; this function
+   is called only by generated code whose result is dead on this target. *)
+let enum_definitions () =
+  List.fold_left (fun m (s, ity) -> Pmap.add s ity m)
+    (Pmap.empty Symbol.symbol_compare) !DefaultImpl.registered_enums
+
 (* TODO: this is horrible... *)
 let (set, get) : (implementation -> unit) * (unit -> implementation) =
   (* NOTE: to prevent nasty bugs the setter can only be called once *)

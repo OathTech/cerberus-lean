@@ -109,6 +109,7 @@ def appendFileU (targetSym : sym)
   { main := some mainSym
     calling_convention0 := Normal_callconv
     tagDefs := intListTagDefs
+    enumDefs := fmapEmpty
     stdlib := listStdlib
     impl0 := fmapEmpty
     globs := []

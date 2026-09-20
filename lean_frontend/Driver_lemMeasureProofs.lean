@@ -42,11 +42,11 @@ namespace Driver_lemMeasureProofs
     the value pexpr with its annotations reset (core_eval.lem:583-584, the
     `PEval cval -> EU.return pexpr_` arm under `Pexpr [] () <$> …`). -/
 theorem step_eval_pexpr_value [LemFuel] (m : Nat) (hm : 1 ≤ m)
-    (td : Fmap sym (CerbLocation.Loc × tag_definition)) (n : Nat) (loc1 : CerbLocation.Loc)
+    (ed : Fmap sym integerType) (td : Fmap sym (CerbLocation.Loc × tag_definition)) (n : Nat) (loc1 : CerbLocation.Loc)
     (pcl : Option CerbLocation.Loc) (ce : Fmap sym sym) (env1 : List (Fmap sym value))
     (mso : Option CerbMem.MemState) (file1 : generic_file Unit core_run_annotation) (hc : Bool)
     (annots : List annot) (cval : value) :
-    step_eval_pexpr_lemFuel m td n loc1 pcl ce env1 mso file1 hc (Pexpr annots () (PEval cval)) =
+    step_eval_pexpr_lemFuel m ed td n loc1 pcl ce env1 mso file1 hc (Pexpr annots () (PEval cval)) =
       Result (Defined (Pexpr [] () (PEval cval))) := by
   cases m with
   | zero => omega
@@ -58,11 +58,11 @@ theorem step_eval_pexpr_value [LemFuel] (m : Nat) (hm : 1 ≤ m)
     `step_eval_pexpr` (the measured wrapper, at its own measure ≥ 1) returns
     the value pexpr and `valueFromPexpr` accepts it (core_aux.lem:862-868). -/
 theorem hack_value [LemFuel] (m : Nat) (hm : 1 ≤ m)
-    (td : Fmap sym (CerbLocation.Loc × tag_definition)) (ce : Fmap sym sym)
+    (ed : Fmap sym integerType) (td : Fmap sym (CerbLocation.Loc × tag_definition)) (ce : Fmap sym sym)
     (env1 : List (Fmap sym value)) (mem_st : CerbMem.MemState)
     (file1 : generic_file Unit core_run_annotation) (csm : Fmap sym object_value)
     (annots : List annot) (cval : value) :
-    hack_lemFuel m td ce env1 mem_st file1 csm (Pexpr annots () (PEval cval)) = cval := by
+    hack_lemFuel m ed td ce env1 mem_st file1 csm (Pexpr annots () (PEval cval)) = cval := by
   cases m with
   | zero => omega
   | succ m =>
@@ -73,13 +73,13 @@ theorem hack_value [LemFuel] (m : Nat) (hm : 1 ≤ m)
     under `IsValuePexpr pexpr1`, at every fuel at or above `lemSize pexpr1` the
     worker equals the wrapper (both are the pexpr's value). -/
 theorem hack_measure_sufficient [LemFuel]
-    (_lemReader_tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+    (_lemReader_enum_definitions : Fmap sym integerType) (_lemReader_tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     (core_extern1 : Fmap sym sym) (env1 : List (Fmap sym value)) (mem_st : CerbMem.MemState)
     (core_file1 : generic_file Unit core_run_annotation) (concur_sym_map : Fmap sym object_value)
     (pexpr1 : generic_pexpr Unit sym) (lemHyp : CerbCoreShape.IsValuePexpr pexpr1) (lemFuel : Nat)
     (lemMeasureLe : generic_pexpr.lemSize pexpr1 ≤ lemFuel) :
-    hack_lemFuel lemFuel _lemReader_tagDefs core_extern1 env1 mem_st core_file1 concur_sym_map pexpr1 =
-      hack _lemReader_tagDefs core_extern1 env1 mem_st core_file1 concur_sym_map pexpr1 := by
+    hack_lemFuel lemFuel _lemReader_enum_definitions _lemReader_tagDefs core_extern1 env1 mem_st core_file1 concur_sym_map pexpr1 =
+      hack _lemReader_enum_definitions _lemReader_tagDefs core_extern1 env1 mem_st core_file1 concur_sym_map pexpr1 := by
   obtain ⟨annots, cval, rfl⟩ := lemHyp
   have hpos := pexpr_lemSize_pos (Pexpr annots () (PEval cval) : pexpr)
   unfold hack

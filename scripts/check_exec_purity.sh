@@ -39,9 +39,15 @@
 #     enforced both-directions by check_theorem_axioms.sh's C2 ratchet
 #     leg 3 (any new implemented_by/unsafe/unsafeBaseIO site fails
 #     naming itself).
-#   CerbFloat/CerbUtils/... — unchanged (CerbUtils no-op timing/log
-#     refs + boundedIntegerImpl stub: permanent-declared, Q4;
-#     CerberusImpl enum registry: temporal with a named mover, Q4).
+#   CerbFloat/CerbUtils/... — unchanged (CerbUtils boundedIntegerImpl
+#     stub: permanent-declared, Q4).
+#   CerberusImpl.lean — ZERO seams since program-data parameters E-A
+#     (2026-09-20, docs/2026-09-20_program-data-parameters-EA-DA-record.md):
+#     the enum registry (IO.Ref + implemented_by opaques, the ONE kept
+#     `panic!`) is DELETED — the enum's compatible type is PROGRAM DATA
+#     (the lem reader `enum_definitions`, carried in the sigma and the Core
+#     file), `normalise_integerType enumDefs tagDefs` the lookup with a
+#     `failwithI` leaf, `register_enum` the pure `true`.
 #   CerbGlobal.lean — plain `def`s of the default configuration since
 #     2026-09-05 (the never-written refs and their opaque readers are
 #     DELETED; docs/2026-09-05_cerbglobal-defs-record.md); zero seams.

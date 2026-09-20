@@ -169,13 +169,13 @@ theorem loadedValueFromMemValue_measure_sufficient (mem_val : CerbMem.MemValue) 
   loadedValueFromMemValue_stable_aux (CerbMem.memValueSize mem_val) mem_val lemFuel (CerbMem.memValueSize mem_val) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
 theorem memValueFromValue_stable_aux (k : Nat) :
-    ∀ (td : Fmap sym (CerbLocation.Loc × tag_definition)) (ty1 : ctype) (cval : value) (f g : Nat),
+    ∀ (ed : Fmap sym integerType) (ed : Fmap sym integerType) (td : Fmap sym (CerbLocation.Loc × tag_definition)) (ty1 : ctype) (cval : value) (f g : Nat),
     ctype.lemSize ty1 ≤ k → ctype.lemSize ty1 ≤ f → ctype.lemSize ty1 ≤ g →
-    memValueFromValue_lemFuel f td ty1 cval = memValueFromValue_lemFuel g td ty1 cval := by
+    memValueFromValue_lemFuel f ed td ty1 cval = memValueFromValue_lemFuel g ed td ty1 cval := by
   induction k with
-  | zero => intro td ty1 cval f g hk _ _; have := ctype_lemSize_pos ty1; omega
+  | zero => intro ed td ty1 cval f g hk _ _; have := ctype_lemSize_pos ty1; omega
   | succ k ih =>
-    intro td ty1 cval f g hk hf hg
+    intro ed td ty1 cval f g hk hf hg
     cases f with
     | zero => have := ctype_lemSize_pos ty1; omega
     | succ f =>
@@ -183,8 +183,8 @@ theorem memValueFromValue_stable_aux (k : Nat) :
       | zero => have := ctype_lemSize_pos ty1; omega
       | succ g =>
         have key : ∀ (cv : value) (y : ctype), ctype.lemSize y < ctype.lemSize ty1 →
-            memValueFromValue_lemFuel f td y cv = memValueFromValue_lemFuel g td y cv :=
-          fun cv y hy => ih td y cv f g (by omega) (by omega) (by omega)
+            memValueFromValue_lemFuel f ed td y cv = memValueFromValue_lemFuel g ed td y cv :=
+          fun cv y hy => ih ed td y cv f g (by omega) (by omega) (by omega)
         have hsz := unatomic_size_le ty1
         rcases hu : unatomic ty1 with ⟨annots1, ty_⟩
         rw [hu] at hsz
@@ -192,10 +192,10 @@ theorem memValueFromValue_stable_aux (k : Nat) :
         split <;> (try simp (disch := size_lt) only [key])
 
 /-- THE OBLIGATION, exactly as Core_aux_auxiliary.lean states and delegates it. -/
-theorem memValueFromValue_measure_sufficient (_lemReader_tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+theorem memValueFromValue_measure_sufficient (_lemReader_enum_definitions : Fmap sym integerType) (_lemReader_tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
     (ty1 : ctype) (cval : value) (lemFuel : Nat) (lemMeasureLe : ctype.lemSize ty1 ≤ lemFuel) :
-    memValueFromValue_lemFuel lemFuel _lemReader_tagDefs ty1 cval = memValueFromValue _lemReader_tagDefs ty1 cval :=
-  memValueFromValue_stable_aux (ctype.lemSize ty1) _lemReader_tagDefs ty1 cval lemFuel (ctype.lemSize ty1)
+    memValueFromValue_lemFuel lemFuel _lemReader_enum_definitions _lemReader_tagDefs ty1 cval = memValueFromValue _lemReader_enum_definitions _lemReader_tagDefs ty1 cval :=
+  memValueFromValue_stable_aux (ctype.lemSize ty1) _lemReader_enum_definitions _lemReader_tagDefs ty1 cval lemFuel (ctype.lemSize ty1)
     (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
 theorem subst_sym_pexpr_stable_aux (k : Nat) : ∀ (sym1 : sym) (cval : value) (e : generic_pexpr Unit sym) (f g : Nat),

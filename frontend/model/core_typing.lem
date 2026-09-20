@@ -1968,6 +1968,7 @@ let typecheck_program file =
       main= file.main;
       calling_convention = file.calling_convention;
       tagDefs= file.tagDefs;
+      enumDefs= file.enumDefs;
       stdlib= stdlib';
       impl= impl';
       globs= List.reverse rev_globs';

@@ -293,10 +293,11 @@ def selfTest : IO Unit := do
   match CerberusImpl.sizeof_ity (Signed Int_) with
   | some n => IO.println s!"  sizeof(int) = {n}"
   | none => IO.println "  sizeof(int) = unknown"
-  let maxInt := CerbMem.maxIval (Signed Int_)
+  -- the two readers (enum map, tag table): a literal non-enum type consults neither
+  let maxInt := CerbMem.maxIval fmapEmpty fmapEmpty (Signed Int_)
   let (.IV _ maxN) := maxInt
   IO.println s!"  max(signed int) = {maxN}"
-  let minInt := CerbMem.minIval (Signed Int_)
+  let minInt := CerbMem.minIval fmapEmpty fmapEmpty (Signed Int_)
   let (.IV _ minN) := minInt
   IO.println s!"  min(signed int) = {minN}"
   let bytes := CerbMem.intToBytes true 42 4
@@ -517,8 +518,14 @@ def frontendTU [LemFuel] (quiet : Bool) (supply : Nat) (addressSpaceTop : Int)
   -- mirror, charter section 4.2 — the offsetof-union-member crash pair
   -- pins this). The mini-run's own extent still sees the translated
   -- definitions via the reader_seed run_const_expr_driver.
+  -- Program-data parameters E-A (2026-09-20): `enum_definitions` is the
+  -- SECOND reader (sorted order: enum_definitions, tagDefs). At the desugar
+  -- entry the map is EMPTY — every desugar-time read of it is seeded from
+  -- the desugar state at its site (record §1, D3), exactly as the oracle's
+  -- registry is filled as enums are registered; a miss here would be a
+  -- seeding gap (loud: `Ocaml_implementation.typeof_enum: … was not registered`).
   let desugRes ← (CerberusFresh.forceIO
-    (fun () => desugar fmapEmpty supply addressSpaceTop coreEvalStuff cnInit "main" tunit) : BaseIO _)
+    (fun () => desugar fmapEmpty fmapEmpty supply addressSpaceTop coreEvalStuff cnInit "main" tunit) : BaseIO _)
   match desugRes with
   | .Result (_, (mainSym, ailProg), supplyAfterDesugar) =>
     say s!"  desugaring succeeded!"
@@ -526,13 +533,19 @@ def frontendTU [LemFuel] (quiet : Bool) (supply : Nat) (addressSpaceTop : Int)
     say s!"    declarations: {List.length ailProg.declarations}"
     say s!"    function defs: {List.length ailProg.function_definitions}"
     say s!"    tag defs: {List.length ailProg.tag_definitions}"
+    say s!"    enum defs: {List.length ailProg.enum_definitions}"
+    -- The COMPLETE per-TU enum map from the sigma (D3): typing and
+    -- elaboration receive what the oracle's registry holds after this TU's
+    -- desugaring — the same GCC-rule decisions, as data.
+    let enumDefs : Fmap sym integerType := Lem_Map.fromList ailProg.enum_definitions
 
-    -- Step 2: Typecheck AIL (mirrors pipeline.ml:217-219)
+    -- Step 2: Typecheck AIL (mirrors pipeline.ml:217-219); reader-lifted since
+    -- E-A (its layout reads normalise through the enum map)
     say "  typechecking AIL..."
     let ailInput := (mainSym, ailProg)
     let tyRes ← (CerberusFresh.forceIO (fun () =>
       to_exception (fun (p : CerbLocation.Loc × typing_error) => (p.1, AIL_TYPING p.2))
-        (annotate_program ailInput)) : BaseIO _)
+        (annotate_program enumDefs fmapEmpty ailInput)) : BaseIO _)
     match tyRes with
     | .Exception (loc, cause) =>
       if quiet then
@@ -560,7 +573,7 @@ def frontendTU [LemFuel] (quiet : Bool) (supply : Nat) (addressSpaceTop : Int)
       -- doctrine; the value-passing replaces the write scaffold).
       let callconv := Normal_callconv
       let (coreFile, supplyAfterTranslate) ← (CerberusFresh.forceIO (fun () =>
-        translate fmapEmpty supplyAfterDesugar (ailnames, stdFunMap) callconv coreImpl typedProg) : BaseIO _)
+        translate enumDefs fmapEmpty supplyAfterDesugar (ailnames, stdFunMap) callconv coreImpl typedProg) : BaseIO _)
       say s!"  translation succeeded!"
       say s!"    main: {match coreFile.main with | some _ => "found" | none => "not found"}"
       say s!"    funs: {List.length (fmapElements coreFile.funs)}"
@@ -834,6 +847,11 @@ def loadLibc [LemFuel] (quiet : Bool) (supply0 : Nat) (addressSpaceTop : Int)
     main := none
     calling_convention0 := metaFile.calling_convention0
     tagDefs := tagDefs
+    -- program-data parameters E-A: the read_core_object mirror carries NO enum
+    -- map (pipeline.ml:666 fills no registry for a .co input; record W2). The
+    -- metadata TUs' own enum decisions are inert here: the dump's enum tags
+    -- are library (`""`-digest) symbols the stitch never renames.
+    enumDefs := fmapEmpty
     stdlib := stdFunMap
     impl0 := coreImpl
     globs := globs
@@ -1034,9 +1052,9 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     -- non-batch; progArgs is the parsed --args list (empty without the
     -- flag, so the historical ["cmdname"] argv is byte-unchanged).
     let driverAction := match callFn with
-      | none => drive runFile.tagDefs false runFile ("cmdname" :: progArgs)
+      | none => drive runFile.enumDefs runFile.tagDefs false runFile ("cmdname" :: progArgs)
       | some (fname, argInts) =>
-        CerbCall.driveCall runFile.tagDefs runFile fname
+        CerbCall.driveCall runFile.enumDefs runFile.tagDefs runFile fname
           (argInts.map CerbCall.intValue)
     -- --first (arc-5 S3): single-trace runner for programs whose exhaustive
     -- trace set is combinatorially large (libxml2-scale differentials);
