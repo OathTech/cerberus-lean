@@ -1,3 +1,11 @@
+# program-data-parameters S1.5, 2026-09-20 [AGENT; single row + this NOTE, the S0.5 practice]:
+# [meta] lem-pin 4307dc5 -> 38f87d5 (fuel'd truly-mutual blocks compose with reader lifting — the a618b9c scope-cut guard
+# deleted in lem-lean 38f87d5, doc/lean-backend/2026-09-20_fuel-mutual-reader-record.md; born from E-A Phase 1's S4 stop on
+# ail/ailTypesAux.lem:784-862 with the enum reader declared). The pin bump alone is byte-identical on this tree — both
+# generated trees re-derived from WIPED trees under Lem 38f87d5 equal the Lem 4307dc5 snapshot (.tmp/s15/gen-before.sha256,
+# 305 files = ocaml_frontend/generated 86 + lean_frontend/generated 219; sibylfs 16), lem-sync stamps unchanged, layer-2 set
+# unchanged (25 differing generated files, all hash-pinned). Not a --refresh. Record:
+# lean_frontend/docs/2026-09-20_program-data-parameters-S1.5-record.md.
 # program-data-parameters S0.5, 2026-09-20 [AGENT; fence extended for this one row + this NOTE by the orchestrator, S4 resolution]:
 # [meta] lem-pin f6542f8 -> 4307dc5 (the N-ary reader_seed backend rule, lem-lean 4307dc5 — lem-lean
 # doc/lean-backend/2026-09-19_nary-reader-seed-record.md); the pin bump alone is byte-identical on this tree — both
@@ -269,7 +277,7 @@ merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
 #   were derived with (the layer-2 hashes are relative to it). Cross-checked
 #   against `lem -v` by the gate when lem is on PATH (P0 repair 2026-09-05;
 #   was a stale af5df71, audit F4 (c)). Refresh recipe rewrites it.
-lem-pin=4307dc5
+lem-pin=38f87d5
 renumber=arc13
 [files]
 Makefile

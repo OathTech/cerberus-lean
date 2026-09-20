@@ -48,10 +48,20 @@ moreLeanArgs = ["-DautoImplicit=false"]
 # one declared reader" guard deleted; lean-lib/ byte-identical to f6542f8;
 # lem-lean doc/lean-backend/2026-09-19_nary-reader-seed-record.md; this
 # repo: docs/2026-09-19_program-data-parameters-S0.5-record.md).
+# program-data-parameters S1.5 2026-09-20: bumped to 38f87d5 (fuel'd
+# TRULY-MUTUAL blocks compose with reader lifting: the a618b9c scope-cut
+# guard "'declare {lean} fuel val' in a mutual block combined with reader
+# lifting" deleted — workers, wrappers, `fuel_measure` obligations and
+# `_zero` lemmas of a lifted mutual block carry the reader binders as the
+# single-def case does; supply x mutual and seed x mutual stay refused;
+# lean-lib/ byte-identical to 4307dc5; the cerberus trees byte-identical at
+# this pin (no fuel'd mutual block is reader-lifted at the current .lem);
+# lem-lean doc/lean-backend/2026-09-20_fuel-mutual-reader-record.md; this
+# repo: docs/2026-09-20_program-data-parameters-S1.5-record.md).
 [[require]]
 name = "LemLib"
 git = "https://github.com/OathTech/lem-lean"
-rev = "4307dc5108bbe71de2f323712443cab6c2b3c0da"
+rev = "38f87d5fa6b29ec90edfa457faba8a309e32c118"
 subDir = "lean-lib"
 
 [[lean_lib]]
