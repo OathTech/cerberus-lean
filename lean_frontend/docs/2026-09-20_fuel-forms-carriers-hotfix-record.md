@@ -18,6 +18,19 @@ extended for this commit to `lean_frontend/CerbMem.lean` (the two arms only, in 
 honest line) and the restored `Reconstruct` proof section. §3.6 has what landed under the ruling. `build_lean` is option (b) — (a) was taken and then
 reverted when the discovery Tier A run showed the fork-drift manifest pins `common.sh`'s content (§1.3).
 
+**Pre-merge audit and the fix commit (2026-09-20, later the same day).** The combined audit
+`docs/2026-09-20_s15-and-fuel-forms-hotfix-audit-premerge.md` (commit `3d614bcda` on
+`audit/fuel-forms-carriers`) read the hotfix range MERGE-WITH-FIXES: two MINOR (M2 — the option-(b)
+residual is not empty: `CerbConcurrency` is a Lake root imported by nothing and built by no gate or
+exe; M3 — §5 described `CLAUDE.md` rows the commit did not contain) + notes N1 (register cites in the
+base frame), N2 (a type-punning witness would make the recorded-member row REACHABLE), N3 (the
+DEFINITION of the arms changed — re-pin-visible), N6 (`test_unit.sh:224` "24 plants"). Rulings [AGENT
+orchestrator]: REBASE onto `8c712657f` (S1.5 lands first); ONE fix commit — M2 → **option (a) after
+all** with the `common.sh` manifest row re-pinned as a single-row edit + dated NOTE, M3, N1, N3, N6, N2
+as a recorded follow-up; ONE full re-gate. §8 has the rebase evidence, the fix commit's contents and
+the re-gate. Section text below that the fix commit superseded is marked "(superseded — §8)" rather
+than rewritten, except §5, which the audit's M3 required to state what the docs actually say.
+
 Every quoted block below is verbatim from a log under `.tmp/ffc/` (ephemeral; the lines are copied
 here). Derived tallies are labelled DERIVED.
 
@@ -131,7 +144,7 @@ this run; widened to 320 afterwards):
 The selftest's final UNPLANTED policy check is RED for the row-6 reason (§2, §3) — `SELFTEST FAILED
 (1)`; the 25 plants are independent of it.
 
-### 1.3 `build_lean`: the measurement and the choice — (b), for a fence reason
+### 1.3 `build_lean`: the measurement and the choice — (a), taken on the audit's M2
 
 `lake build CerberusLean cerberus-lean` (every Lake root + the exe) on the warm primed tree, after H2
 (`.tmp/ffc/build-all-roots-{1,2}.log`):
@@ -139,24 +152,30 @@ The selftest's final UNPLANTED policy check is RED for the row-6 reason (§2, §
     RUN 1  09:12:38 → 09:12:55   Build completed successfully (395 jobs).   [DERIVED: 17 s; 58 targets "Built" — 55 stale :c.o objects + the exe relink + CerbMemAllocatorProofs, CerbFailProofs, CerbNDFuelProofs]
     RUN 2  09:12:55 → 09:12:56   Build completed successfully (395 jobs).   [DERIVED: 1 s; 0 "Built", all replayed]
 
-Seconds, not minutes — so (a) was taken first and `scripts/common.sh build_lean` ran `lake build
-CerberusLean cerberus-lean` through the discovery Tier A run (§4.2 run 1). That run's A1 showed the
-COST the charter did not price: `scripts/fork_drift_manifest.txt:423` pins `scripts/common.sh`'s
-CONTENT (`[source-content]` row `100755 77f5ab3a… scripts/common.sh`), so the fork-drift gate's
-content layer reads any `common.sh` edit as drift —
+Seconds, not minutes. The history of the choice, honestly: (a) was taken first; the discovery Tier A
+run (§4.2 run 1) then showed `scripts/fork_drift_manifest.txt` pins `scripts/common.sh`'s CONTENT
+(`[source-content]` row `100755 77f5ab3a… scripts/common.sh`), so the fork-drift content layer read
+the hunk as drift —
 
     check_fork_content: FAIL — source-content drift inside reviewed file(s):
     scripts/common.sh: expected ('100755', '77f5ab3a841446962926185d3db8c0e3853fada26ff7708fdd3b47dcab0c3413'), actual ('100755', 'dccc92117e296446995e1dcbceb9ce35e70f3344e910f95ea29e9014586dd2bb')
 
-— and re-pinning that row is a manifest edit outside both the charter's fence and the ruling's
-extension (the charter's forbidden list names "the pin files"). Rule conflict → fail-closed with the
-minimum change: **(b) taken** — `common.sh` reverted to base (`git checkout -- scripts/common.sh`;
-the file is untouched in this commit), the gate's own carrier build (H1) is the protection for the
-class F-1 belongs to (every module the gate certifies is built from source by the gate). What (b)
-leaves open: a Lake root that NO gate imports (today the `Cerb*Proofs` modules the unit exes import —
-they are built by `test_unit.sh`'s `lake build <exe>` — and nothing else; DERIVED from the roots
-list) could still go stale unnoticed by `build_lean`'s consumers. The (a) follow-up is two hunks and
-is recorded in §6 for the orchestrator.
+— and a manifest re-pin was outside the fence, so the first commit took (b) and recorded (a) as a
+follow-up. The pre-merge audit's **M2** measured the residual (b) leaves and found it is NOT the
+"`Cerb*Proofs` modules the unit exes build, and nothing else" the first record claimed: of the 123
+comment-stripped `CerberusLean` roots, minus every module some `.lean` under `generated/`, `test/`,
+`speclab/` imports, minus the gate's four entries and its 100 carriers, ONE root remains —
+**`CerbConcurrency`** (the hand-written concurrency-stub seam; `.olean` dated 2026-08-22; up to date by
+Lake's traces today, but nothing would notice if it were not) — and **`Cabs_to_ail_auxiliary`** is
+unimported too (a carrier, so the hardened gate builds it; `build_lean`'s consumers did not). Exactly
+the F-1 shape. Ruling [AGENT orchestrator, on M2]: **(a) after all**, with the manifest row re-pinned
+as a deliberate single-row edit + dated NOTE (never `--refresh`). The fix commit (§8): `build_lean`
+runs `lake build CerberusLean cerberus-lean`; `scripts/fork_drift_manifest.txt`'s `[source-content]`
+row for `scripts/common.sh` → sha256 `008b5ade8b923f9d7ae0fe6fce837dee3e7a75ef2c414dde8791a78633545744`
+with a NOTE naming the hunk and the three roots. Consequence: every lane that calls `build_lean`
+refuses, by name, on ANY root that does not compile; the gate additionally builds its own imports
+(H1), so the two protections are independent. Under (a) every root compiled on the rebased tree
+(§8.3) — no new finding of the "a root fails under (a)" class.
 
 ## 2. H2 — the mechanical repairs (`lean_frontend/CerbMem_lemMeasureProofs.lean`, working tree)
 
@@ -300,7 +319,7 @@ Complete, kernel-only tactics, standard axioms. The register text the gate would
 
 ### 3.4 What the load site can cite — the two hypotheses are not alike
 
-**`Closed` HAS a frontend invariant.** The load is `loadM tagDefs loc ty pv` (`CerbMem.lean:2389`),
+**`Closed` HAS a frontend invariant.** The load is `loadM tagDefs loc ty pv` (`CerbMem.lean:2419` at the sealed head; `:2389` in the base tree — audit N1),
 `ty` the Core `load` action's ctype; every rvalue use of an lvalue outside
 `sizeof`/`&`/`++`/`--`/`.`/`=` performs the lvalue conversion at `genTyping.lem:1819-1826`, and an
 INCOMPLETE non-array type there is `UB020_nonarray_incomplete_lvalue_conversion` (STD §6.3.2.1#2,
@@ -313,7 +332,7 @@ defined tag is defined; the frontend's `tag_definitions` become the Core program
 program the frontend accepts; the caveats are the register's existing ones (hand-authored Core; the
 F-A2 `_Alignas` class is about acyclicity, not closure).
 
-**`UnionMapOk` has NONE.** `unionmap` is `st.lastUsedUnionMembers` (`CerbMem.lean:2404`), the
+**`UnionMapOk` has NONE.** `unionmap` is `st.lastUsedUnionMembers` (`CerbMem.lean:2434` at the head), the
 identifier recorded per ADDRESS by the last union-member store there (impl_mem.ml
 `last_used_union_members`, :1080-1090); the strong form above demands that identifier be a member of
 EVERY union in the table — false as soon as two unions with different member names have both been
@@ -359,8 +378,8 @@ for F-A2 ("the wrapper fails loudly outside it").
     text" is an allowed discrepancy class). Costs: a `CerbMem.lean` edit (a seam file — FORBIDDEN in
     this slice's fence, so a fence extension or a follow-up slice), `scripts/failure_reach_register.txt`
     moves (one new/moved site, the union leaf's position class), the mirror-OCaml note cites
-    impl_mem.ml:1061-1073/1085-1090 for the reshaped arms. No register move, no new hypothesis, no
-    consumer-visible change. [AGENT] assessment: the least-cost route that keeps row 6 MEASURED under
+    impl_mem.ml:1061-1073/1085-1090 for the reshaped arms. No register move, no new hypothesis; the DEFINITION of the two arms changes (a
+    re-pin-visible change for any consumer that unfolds them — audit N3, §7), behaviour on the defined domain does not. [AGENT] assessment: the least-cost route that keeps row 6 MEASURED under
     its reviewed hypothesis — not prototyped (it needs the forbidden file), the argument is the
     structural one above.
 (e) **Make the two leaves transparent again** — reverses seam-hygiene H1 for two of its 98 sites;
@@ -382,7 +401,7 @@ closes by `rfl` on these arms):
   identical (the guard re-reads a lookup `offsetsof` performs anyway). On the failing input: the same
   kill one frame earlier; the failure TEXT differs from the oracle's exception text (an allowed
   discrepancy class) — and at the load site it is shadowed: `doLoad` computes `sizeofCtype tagDefs ty`
-  BEFORE `reconstructValue` (`CerbMem.lean:2398-2404`), whose `offsetsof` leaf fires first on the same
+  BEFORE `reconstructValue` (`CerbMem.lean:2428-2434` at the head — `size` :2429, the call :2434; audit N1), whose `offsetsof` leaf fires first on the same
   unknown tag.
 - **Union arm** — the `membrs.find?` match moved OUTWARD: the `.MVunion tagSym <ident>
   (reconstructValue_lemFuel … <ty> (bytes.take (sizeofCtype ambient <ty>)))` result is built in the two
@@ -672,59 +691,38 @@ plainly rather than claiming otherwise.
 Zero lane movement (the SUMMARY lines equal the seam-hygiene record's §2.6/§10.3 quotes and A9's
 recorded `same=108 diff=5`) — stop rule S2 not triggered; nothing re-baselined.
 
-## 5. Errata and doc rows — APPLIED in this commit
+## 5. Errata and doc rows — as COMMITTED (rewritten on the audit's M3 to the committed text)
 
-**`docs/2026-09-18_seam-hygiene-record.md`** — a dated §12 erratum appended after §11 (history not
-rewritten; the paragraph as committed says the same as this draft, plus the option-(d) repair):
+**`docs/2026-09-18_seam-hygiene-record.md`** — a dated `## 12. Erratum [AGENT 2026-09-20]` appended after
+§11 (18 lines; nothing above it changed): the row-1 verdicts of §2.6/§4.4/§5.5/§5.6/§10.3 were vacuous
+on nine obligations; the mechanism; "Every other line of those verdicts stands"; the repair (the gate
+builds every module it imports — P24, `build_lean` builds every root, option (d)).
 
-> **Erratum [AGENT 2026-09-20]** (`docs/2026-09-20_fuel-forms-carriers-hotfix-record.md` §0): the
-> `test_unit.sh` verdicts quoted in §2.6, §4.4, §5.5, §5.6 (A1) and §10.3 (A1) were VACUOUS on nine
-> obligations. H1 (`fce1de9f8`) made two failure leaves opaque that
-> `lean_frontend/CerbMem_lemMeasureProofs.lean` rewrote with `panic_eq_default`; the module has not
-> compiled since, but no build in row 1 rebuilt it (it is a Lake root nothing imports) and
-> `check_fuel_forms.sh` imported its pre-H1 `.olean` as found — so `check_fuel_forms: OK (81 fuel'd
-> workers: 62 MEASURED …)` certified the six `CerbMem` rows of `scripts/fuel_hypotheses.txt` and the
-> three seam obligations from an artifact that no longer corresponded to its source. Every other line
-> of those verdicts stands. The gate now builds every module it imports (hotfix
-> `fix/fuel-forms-carriers`); row 6's hypothesis is under the operator's ruling.
+**`VALIDATION.md`, the `check_fuel_forms.sh` row** — two insertions, verbatim:
 
-**`VALIDATION.md:729`, the `check_fuel_forms.sh` row** — inserted after "the classifier is
-`lean_frontend/test/Unit/FuelFormsTool.lean` (runtime `importModules`, no source regex; …)":
+> ; **the gate BUILDS every module it imports before importing it** (hotfix `fix/fuel-forms-carriers` 2026-09-20, finding F-1 — `docs/2026-09-20_fuel-forms-carriers-hotfix-record.md`: `lake build` of the exec entries and every `*_auxiliary`/`*_lemMeasureProofs` carrier, and the selftest's scratch decoys compiled from source — fail-closed, the FAIL naming the module; until then a carrier's `.olean` was imported AS FOUND, and `CerbMem_lemMeasureProofs`' pre-seam-hygiene artifact certified nine obligations vacuously from 2026-09-19 to 2026-09-20).
 
-> ; **the gate BUILDS every module it imports before importing it** (hotfix 2026-09-20, F-1: the exec
-> entries and every carrier by `lake build`, the selftest's scratch decoys from source — fail-closed,
-> the FAIL naming the module; until then a carrier's stale `.olean` was imported as found and
-> `CerbMem_lemMeasureProofs`' pre-seam-hygiene artifact certified nine obligations vacuously for a
-> day), and `--selftest` P24 plants that state (a stale-valid `.olean` over a source that no longer
-> compiles) and asserts the FAIL names the module with the `.olean` untouched
+> `--selftest` plants six doctored tables, three doctored registers, the F-1 stale-carrier plant P24 (a stale-valid `.olean` over a source that no longer compiles: the gate must FAIL naming the module with the `.olean` untouched) and 15 COMPILED decoys (
 
-and "15 COMPILED decoys" → "15 COMPILED decoys + the F-1 stale-carrier plant (P24)".
+**`lean_frontend/CLAUDE.md`** — four rows, verbatim as committed:
 
-**`lean_frontend/CLAUDE.md`** — applied: the `fuel-forms-tool` bullet gains: "the gate `lake build`s the exec
-entries and every carrier module and compiles its scratch decoys from source before the tool imports
-anything (hotfix 2026-09-20, F-1); P24 plants a stale-valid `.olean` over an uncompilable source";
-the `CerbMem_lemMeasureProofs.lean` row becomes: "The hand-written MEASURED seams' sufficiency
-theorems (`typeofMval`/`unqualifyAndUnatomic`/`memValueToBytes` and the five layout obligations under
-`CerbTagsWf.Acyclic`/`AcyclicPair`, same shape and namespace rule as the generated ones — the
-fuel-forms gate classifies them by the same rule). A Lake root nothing imports: built by `build_lean`
-(every root, 2026-09-20) and by the fuel-forms gate itself. `reconstructValue`'s obligation (register
-row 6): needs no equation about the opaque leaves — the arms guard/select before recursing (option (d))".
-The `common.sh` row: "`build_lean` builds EVERY Lake root + the exe"; the testing section's plant count
-"24 plants" → "25 plants … and the F-1 stale-carrier plant P24".
+> - `fuel-forms-tool` (not a pass/fail exe: the INSTRUMENT of `scripts/check_fuel_forms.sh`) — `test/Unit/FuelFormsTool.lean` imports the compiled environment at runtime and classifies every fuel'd worker MEASURED/ABSORBING/AMBIENT with its drive-cone reachability (C2; P0 2026-09-05: MEASURED checks the argument correspondence against the wrapper's own body in MetaM, ABSORBING = "kill at zero" checks the `_zero` lemma's left-hand side and cone); the gate `lake build`s the exec entries and every carrier module and compiles its scratch decoys from source BEFORE the tool imports anything (hotfix `fix/fuel-forms-carriers` 2026-09-20, F-1: a carrier's stale `.olean` had been imported as found), and its `--selftest` P24 plants a stale-valid `.olean` over an uncompilable source
+
+> literal 0 on its own binders; 25 plants incl. 15 compiled decoys and the F-1 stale-carrier plant P24 (2026-09-20) — the
+
+> | `CerbMem_lemMeasureProofs.lean` | The hand-written MEASURED seams' sufficiency theorems: `CerbMem.typeofMval/unqualifyAndUnatomic/memValueToBytes_measure_sufficient` and the six layout/reconstruct obligations under `CerbTagsWf.Acyclic`/`AcyclicPair` (rows 1–6 of `scripts/fuel_hypotheses.txt`), same shape and namespace rule as the generated ones — the fuel-forms gate classifies them by the same rule. A Lake root NOTHING imports: built by `build_lean` (every root, 2026-09-20) and by the fuel-forms gate itself (H1, every carrier it imports) — it did not compile from seam-hygiene H1 to 2026-09-20 while its stale `.olean` was imported (hotfix `fix/fuel-forms-carriers`, `docs/2026-09-20_fuel-forms-carriers-hotfix-record.md`). The reconstruct proof needs no equation about the opaque failure leaves: `reconstructValue_lemFuel`'s struct/union arms guard the tag lookup / select the union member BEFORE recursing (option (d)), so every leaf is a whole, fuel-independent result |
+
+> | `scripts/common.sh` | Shared helpers (build, run, paths). `build_lean` builds EVERY Lake root + the exe (`lake build CerberusLean cerberus-lean`, hotfix 2026-09-20 on the audit's M2: a root nothing imports — `CerbMem_lemMeasureProofs`, `CerbConcurrency`, `Cabs_to_ail_auxiliary` — can no longer go stale unnoticed; measured 17 s first pass / 1 s steady on a warm tree; its content is pinned in `scripts/fork_drift_manifest.txt`, re-pinned with a dated NOTE) |
 
 ## 6. Observations outside the fence (for the orchestrator; follow-ups, not changed here)
 
-- FOLLOW-UP (a) for the orchestrator — `build_lean` builds every root: two hunks, both outside this
-  commit's fence once the manifest is involved. (1) `scripts/common.sh` `build_lean`: `lake build
-  cerberus-lean` → `lake build CerberusLean cerberus-lean` (the hunk as it ran in the discovery Tier A
-  run is in `.tmp/ffc/working-tree.patch`; comment text: "EVERY Lake root, not just the exe's closure
-  … measured 17 s first pass / 1 s steady"). (2) `scripts/fork_drift_manifest.txt:423`: re-pin the
-  `[source-content]` row for `scripts/common.sh` to the new sha256 — a deliberate manifest refresh,
-  reviewed. Cost when done: every lane refuses on any stale root; ~1 s steady-state.
+- (DONE in the fix commit, §8 — was a follow-up) `build_lean` builds every root, option (a).
+- FOLLOW-UP (audit N2): a type-punning witness under `tests/failure-probes/reach/` — store a member of
+  `union U1` at `a`, load `union U2` at `a` — would move the recorded-member row from `UNKNOWN` to
+  `REACHABLE` (both crash: the oracle's `assert false`, Lean's `failwithI`), the more informative
+  class; §3.4 (iii) states the route. Outside every fence here.
+- (DONE in the fix commit, §8 — was left for fence reasons) `scripts/test_unit.sh:224` "24 plants" → 25.
 - (FIXED under the extended fence, §3.6) `scripts/check_lakefile_roots.sh`'s "all built" wording.
-- `scripts/test_unit.sh:224`, a COMMENT: "`--selftest (24 plants incl. …)`" is now 25 — the file is in
-  the fence only if the invocation changes (it did not), so the one-token comment is left for the next
-  slice that touches it.
 - `scripts/test_unit.sh` builds each unit exe with `lake build "$test"` and never the carriers; with
   H1 the fuel-forms gate builds them, and with (a) `build_lean` does too — but `test_unit.sh` itself
   does not call `build_lean`, so the gate's own build is the load-bearing one there.
@@ -734,3 +732,154 @@ The `common.sh` row: "`build_lean` builds EVERY Lake root + the exe"; the testin
   after each merge, or a first-thing build in `new-worktree.sh`, removes it.
 - `Core_unstruct_auxiliary.olean` is an orphan artifact in `.lake` (no source since effect-retirement
   C1); never imported; harmless; `lake clean` territory.
+
+## 7. Consumer note (cerberus-sl) — audit N3
+
+The DEFINITION of `CerbMem.reconstructValue_lemFuel` changed shape in its `Struct`/`Union0` arms (the
+tag-lookup guard; the member selection moved outside the recursion — §3.6); behaviour on the defined
+domain is identical, but any proof that UNFOLDS those arms sees the new term. cerberus-sl unfolds
+`reconstructValue_lemFuel` in six proofs (`Repr.lean:246,383,406,412,464,574`, per the audit's
+read-only grep), all on the Integer/pointer arms, which a `match` on a concrete ctype constructor
+reduces past the struct/union arms — nothing breaks at their pin; it is a re-pin-visible change and is
+named here for their re-pin notes. The twin `reconstructValue_indexed_lemFuel` moved identically.
+
+## 8. Rebase, the fix commit and the re-gate (2026-09-20, after the pre-merge audit)
+
+### 8.1 The rebase onto `8c712657f`
+
+`git rebase 8c712657f` on `fix/fuel-forms-carriers` (working tree clean): `Successfully rebased and
+updated refs/heads/fix/fuel-forms-carriers`. The two commits re-applied without conflict (the S1.5
+range `e283bed77..8c712657f` touches `lakefile.toml`/three `lake-manifest.json`/`fork_drift_manifest.txt`
+/ three docs — disjoint from the hotfix's nine files). Evidence that the diff is unchanged:
+
+    $ git range-diff e283bed77..5a5579209 8c712657f..HEAD
+    1:  faec26faf = 1:  b89a010ab docs(charter): hotfix — the fuel-forms gate builds its carrier modules; CerbMem_lemMeasureProofs repaired after seam-hygiene H1 …
+    2:  5a5579209 = 2:  5d462da86 hotfix fix/fuel-forms-carriers: the fuel-forms gate builds every module it imports (F-1 plant P24); reconstructValue's struct/union arms …
+    $ git diff --stat 5a5579209 HEAD -- <the hotfix commit's nine files>
+    (empty)
+
+(`=` in `range-diff` = identical patch text.) Rebased heads: charter `b89a010ab`, hotfix `5d462da86`.
+After the rebase the fork-drift manifest's `lem-pin=38f87d5` equals the switch's `lem -v`, so row 1's
+fork-drift gate can pass (§8.4).
+
+### 8.2 The fix commit (the audit's rulings, one commit)
+
+- **M2 → option (a):** `scripts/common.sh` `build_lean` runs `lake build CerberusLean cerberus-lean`
+  (the measured hunk, §1.3; comment names F-1, `CerbConcurrency`, `Cabs_to_ail_auxiliary`);
+  `scripts/fork_drift_manifest.txt` `[source-content]` row for `scripts/common.sh` re-pinned
+  `77f5ab3a… → 008b5ade8b923f9d7ae0fe6fce837dee3e7a75ef2c414dde8791a78633545744` as a single-row edit
+  + one dated NOTE (no `--refresh`; the oracle surface untouched). Standalone check before the tier
+  run: `check_fork_content: OK — 76 source files content/mode-pinned` / `check_fork_drift: OK — layer
+  1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 25 differing
+  generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin
+  38f87d5 = lem -v)`.
+- **M3:** §5 rewritten to quote the committed `VALIDATION.md`/`CLAUDE.md` rows verbatim; the
+  `CLAUDE.md` `CerbMem_lemMeasureProofs.lean` and `common.sh` rows now carry the option-(a) wording
+  (true again); the seam-hygiene §12 sentence says "`build_lean` builds every root" again.
+- **N1:** the register's new row cites the load site at head numbers (`CerbMem.lean:2428-2434`: `size`
+  :2429, the call :2434; `def loadM` :2419); §3.4 likewise. The `need` field is outside the seal, so
+  no reseal was needed; the gate re-ran green (§8.4).
+- **N3:** §7 (the consumer note) + §3.5 (d) reworded ("the DEFINITION of the two arms changes").
+- **N6:** `scripts/test_unit.sh:224` "24 plants" → "25 plants … and the F-1 stale-carrier plant P24".
+- **N2:** recorded as a follow-up in §6 (a type-punning witness; outside every fence here).
+- Nothing else moved; `scripts/fuel_hypotheses.txt` untouched.
+
+### 8.3 The whole-tree build on the rebased tree (option (a)'s own command)
+
+`lake build CerberusLean cerberus-lean` from `lean_frontend/` (`.tmp/ffc/build-rebased.log`):
+
+    19:24:46
+    info: LemLib: URL has changed; deleting '…/lean_frontend/.lake/packages/LemLib' and cloning again
+    info: LemLib: checking out revision '38f87d5fa6b29ec90edfa457faba8a309e32c118'
+    Build completed successfully (395 jobs).
+    EXIT=0
+    19:27:10
+
+[DERIVED: 2 min 24 s wall, 277 targets Built, 0 Replayed — the LemLib pin move rebuilt everything;
+every Lake root compiled, `CerbConcurrency` and `Cabs_to_ail_auxiliary` included — no new finding of
+the "a root fails under (a)" class.]
+
+### 8.4 The re-gate — Tier A rows 1–12 incl. 4b/4c/6b on this content
+
+`release.py --mode fast` twice on the fix content, BEFORE the commit (the run certifies this tree; the
+commit adds only this section): a first run (`.tmp/ffc/release-fast-rebased/`, 19:29 →) passed all 16
+lanes but read `Source unchanged: False` because §8.1–8.3 of this record were written while it ran —
+so it was re-run with nothing touched in the worktree. The FINAL run (`.tmp/ffc/release-fast-rebased-final/`):
+
+    19:38:33
+    PASSED A1 (219.1s)
+    PASSED A2 (27.9s)
+    PASSED A3 (51.4s)
+    PASSED A4 (22.5s)
+    PASSED A4b (24.0s)
+    PASSED A4c (3.1s)
+    PASSED A5 (22.0s)
+    PASSED A6 (2.2s)
+    PASSED A6b (3.6s)
+    PASSED A7 (10.7s)
+    PASSED A8 (9.0s)
+    PASSED A9 (17.0s)
+    PASSED A10 (17.9s)
+    PASSED A11 (59.4s)
+    PASSED A12.1 (5.1s)
+    PASSED A12.2 (4.6s)
+    fast: passed; 16/16 selected commands completed successfully.
+    Source unchanged: True. Complete tier selection: True.
+
+**Row 1 FULLY GREEN** (`A1/stdout`; every gate, in order; long lines quoted in full in §4.1 are shortened
+with `…` here, nothing paraphrased):
+
+    check_handwritten_sync: OK (49 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+    Total: 12 passed, 0 failed
+    check_exec_purity: CLEAN (11 modules)
+    check_theorem_axioms: generated-tree census OK (219 files: 0 axioms, boundary-opaque population = the 12 registered rows exactly-once (incl. CerbFuel.fuelExhaustedLoc), 0 unsafeCast)
+    check_theorem_axioms: C2 ratchet OK (398 files scanned recursively: 0 axioms, 0 runEffectful, seam population = the 25 pinned path-qualified counted rows exactly incl. the extern class; lem tests/ scaffolds asserted outside the surface)
+    check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+    check_sorry_token: OK (318 files scanned comment-stripped — generated 219, hand-written+test 64, LemLib 35; 0 sorry tokens)
+    test_exec: SELFTEST OK (E0 pre-repair collapse reproduced; E1-E7: …)
+    check_no_fuel_numerals: OK (325 files scanned comment-stripped; …; allowed Main.lean sites seen: 6 of 6 (hand-written + generated copy))
+    check_lakefile_roots: OK (218 roots = 218 generated modules + the exe root Main; 85 auxiliary modules listed as roots — names only; every carrier is built by check_fuel_forms.sh)
+    check_fuel_forms: SELFTEST OK (25 plants with the declared label — …)
+    check_fuel_forms: OK (81 fuel'd workers: 62 MEASURED (…; 12 of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), 13 ABSORBING = kill at zero (…), 0 reachable-AMBIENT = the 0 rows of fuel_forms_pending.txt exactly, 6 ambient unreachable from the drive cone)
+    check_failure_reach: SELFTEST OK (5 plants with the declared message — …)
+    check_failure_reach: OK (234 pure failure sites = the 234 register rows exactly (232 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=167 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+    check_exec_totality: CLEAN (22 generated modules + hand-written CerbND, 0 allowlisted)
+    check_lem_sync: OK (src 037dee26c6472b1bf7f8d628bec1b7e64d2f9d12d67c81bd37b55e634fd34b2d, gen 08b84774381fd86eeb1a658efa47a9b372ebb438085530b5ab6ba045da3eec8d)
+    check_lem_sync: lean OK (src 037dee26c6472b1bf7f8d628bec1b7e64d2f9d12d67c81bd37b55e634fd34b2d, gen cd499eab48146463197f60b35a9fb26c31337bab7d06b2f1d9af43047c2619b5)
+    check_fork_drift: SELFTEST OK (14 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; unplanted gate green)
+    check_fork_content: OK — 76 source files content/mode-pinned
+    check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 25 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 38f87d5 = lem -v)
+    check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+    test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+
+**Rows 2–12, every tail verbatim:**
+
+    A2   SUMMARY: total=113 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=5 cerb_floor=0 cerb_inconsistent=0
+         Baseline check: 0 regression(s), 0 improvement(s)
+    A3   SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+         Baseline check: 0 regression(s), 0 improvement(s)
+    A4   SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+         Baseline check: 0 regression(s), 0 improvement(s)
+    A4b  SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+         Baseline check: 0 regression(s), 0 improvement(s)
+    A4c  SUMMARY: exec_match=9 neg_pinned=5 fail=0
+         ALL AT COMMITTED EXPECTEDS
+    A5   SUMMARY: match=12 diff=0
+         ALL MATCH RECORDED BASELINE
+    A6   SUMMARY: total=2 match=2 fail=0
+         ALL PASSED
+    A6b  SUMMARY: total=7 match=7 fail=0
+         ALL PASSED
+    A7   cabs bytes probe: 128 raw bytes 0x80..0xFF crossed the bridge as one code point each (valid UTF-8 JSON; Lean sizeof = 129)
+         ALL PASSED
+    A8   ALL PASSED
+    A9   SUMMARY: total=113 same=108 diff=5 ocaml_fail=0 lean_fail=0
+    A10  GATE PASS: all lane expectations pinned-green + baseline unchanged (16/16)
+    A11  BASELINE OK (213 entries, exact match)
+    A12.1  EXPECT OK    18 pinned rows = 18 observed cases, every token identical
+           test_address_space: SELFTEST OK (14 plants — …)
+    A12.2  EXPECT OK    18 pinned rows = 18 observed cases, every token identical
+           test_address_space: OK (18 cases: LEAN = FORK through the shared codec at tops 64 32 8; every fork observation = its pinned row in expectations.txt)
+
+Zero lane movement against §4.2 run 2 and the seam-hygiene record's quotes — stop rule S2 not
+triggered; nothing re-baselined. Every lane that calls `build_lean` ran the option-(a) command.

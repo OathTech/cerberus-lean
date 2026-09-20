@@ -817,7 +817,7 @@ fuel'd workers: 62 MEASURED …)` in those runs certified the six `CerbMem` rows
 `scripts/fuel_hypotheses.txt` and the three seam obligations (`typeofMval`, `unqualifyAndUnatomic`,
 `memValueToBytes`) VACUOUSLY (the F2/F3 class of the 2026-09-05 whole-project audit). Every other line
 of those verdicts stands, and the slice's core claim (no behaviour change) is unaffected. Repaired by
-the hotfix: the gate builds every module it imports (plant P24), and
+the hotfix: the gate builds every module it imports (plant P24), `build_lean` builds every root, and
 `reconstructValue_lemFuel`'s struct/union arms take the whole-result leaf shape (option (d)) so the
 row-6 proof closes under its reviewed hypothesis. This paragraph is the record of the gap; the sections
 above are left as written.

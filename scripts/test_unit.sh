@@ -221,7 +221,8 @@ fi
 # worker that is either unreachable from the drive cone (kernel constant
 # closure, mutual blocks included) or a reviewed row of
 # scripts/fuel_forms_pending.txt (both directions). Plant-tested by its
-# --selftest (24 plants incl. the whole-project audit's two decoys verbatim).
+# --selftest (25 plants incl. the whole-project audit's two decoys verbatim
+# and the F-1 stale-carrier plant P24, 2026-09-20).
 # Fail-closed.
 FUELFORMS_SH="$(dirname "$PURITY_SH")/check_fuel_forms.sh"
 if ! "$FUELFORMS_SH" --selftest; then

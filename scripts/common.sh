@@ -285,8 +285,22 @@ build_lean() {
         echo "Error: build_lean REFUSED — hand-written lean_frontend/*.lean not propagated to lean_frontend/generated/ (run: make lean-prelude-src, then build_lean); building now would produce a binary that does not correspond to its sources" >&2
         exit 1
     fi
+    # EVERY Lake root, not just the exe's closure (hotfix fix/fuel-forms-carriers,
+    # 2026-09-20 — finding F-1, option (a) taken on the pre-merge audit's M2):
+    # `lake build cerberus-lean` builds Main's import closure only, so a root
+    # nothing imports can stop compiling with no lane noticing — as
+    # CerbMem_lemMeasureProofs did from seam-hygiene H1 fce1de9f8 to the hotfix
+    # (the fuel-forms gate imported its stale .olean), and as CerbConcurrency
+    # (a hand-written seam root imported by nothing, built by no gate or exe)
+    # and Cabs_to_ail_auxiliary (unimported; a carrier the hardened gate builds)
+    # still could. `CerberusLean` is the library of ALL roots (lakefile.toml).
+    # Measured on the warm primed tree 2026-09-20: 17 s on the first pass (58
+    # stale objects rebuilt), 1 s steady-state (395 jobs replayed) — record
+    # docs/2026-09-20_fuel-forms-carriers-hotfix-record.md §1.3. A root that
+    # fails to compile fails this build by name (Lake's "Some required targets
+    # logged failures" list) — a finding, never something to work around.
     local _log="$TMP_DIR/build_lean.$$.log"
-    if ! (cd "$PROJECT_ROOT/lean_frontend" && "$SCRIPT_DIR/capped" lake build cerberus-lean) > "$_log" 2>&1; then
+    if ! (cd "$PROJECT_ROOT/lean_frontend" && "$SCRIPT_DIR/capped" lake build CerberusLean cerberus-lean) > "$_log" 2>&1; then
         echo "Error: cerberus-lean build FAILED (lake build exit nonzero); last 40 lines:" >&2
         tail -40 "$_log" >&2
         rm -f "$_log"
