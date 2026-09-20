@@ -803,3 +803,21 @@ Source unchanged: True.` (audit report §2.7).
 [USER 2026-09-19], verbatim: *"Great, land this."* — the merge sign-off, given after the orchestrator's merge ask naming the range (9 commits over mainline `0457732e1`: charter `0eafc94a4`, interim stop record `db640b214`, H1 `fce1de9f8`, H2 `ee1eaf94d`, H3 `dde3b766b`, record `34b8e15a8`, H4 `cef347c6c`, record §10 `1f50cc418`, the audit report as received `f664ab2ff` — the audit branch's `05d208f45` cherry-picked), the audit chain (MERGE-WITH-FIXES, no MAJOR → H4), and the orchestrator's re-gate at `1f50cc418`, verbatim: `fast: passed; 16/16 selected commands completed successfully.` / `Source unchanged: True. Complete tier selection: True.` / immaculate `OK: lane matches the committed baseline (…)` / `Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}` / `Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}`. The FULL battery reference is the audit's clean run at `34b8e15a8` (`full: passed; 39/39 … Source unchanged: True.`); H4 is a constructor reorder + documentation ([AGENT orchestrator]: not re-run for it).
 
 **For cerberus-sl** (their items 3, 4-interim, 5b, 7-partial): no seam default in the execution closure is kernel-visible any more (the two identities their probe and ours reproduced are no longer `rfl`-provable; `test/Unit/OpaqueFailureTest.lean`); `CerbMem.oomKill` names the allocator's kill and `allocator_below_request_kills` is stated with it; `CerbGlobal.has_switch_*_eq : has_switch .<s> = false := rfl` for the eight switches, so each explicit arm reduces to its default; the timing/log stubs are identities; `BEq MemValue` is structural. The one kept panic is the enum-registry seam (the program-data parameters arc retires it). No signature changed for the consumer.
+
+## 12. Erratum [AGENT 2026-09-20] — the Tier A row-1 verdicts above were vacuous on nine obligations
+
+(`docs/2026-09-20_fuel-forms-carriers-hotfix-record.md` §0, hotfix `fix/fuel-forms-carriers`.) The
+`test_unit.sh` verdicts quoted in §2.6 (H1 head), §4.4 (H2 head), §5.5/§5.6 (H3 head, A1 of the FULL
+battery) and §10.3 (H4 head, `PASSED A1 (296.4s)`) certified nine obligations from an artifact that no
+longer corresponded to its source. H1 (`fce1de9f8`) made two failure leaves opaque that
+`lean_frontend/CerbMem_lemMeasureProofs.lean` rewrote with `panic_eq_default`; the module did not
+compile from H1 to 2026-09-20, but no step of row 1 rebuilt it (a Lake root nothing imports) and
+`scripts/check_fuel_forms.sh` imported its pre-H1 `.olean` as found — so `check_fuel_forms: OK (81
+fuel'd workers: 62 MEASURED …)` in those runs certified the six `CerbMem` rows of
+`scripts/fuel_hypotheses.txt` and the three seam obligations (`typeofMval`, `unqualifyAndUnatomic`,
+`memValueToBytes`) VACUOUSLY (the F2/F3 class of the 2026-09-05 whole-project audit). Every other line
+of those verdicts stands, and the slice's core claim (no behaviour change) is unaffected. Repaired by
+the hotfix: the gate builds every module it imports (plant P24), and
+`reconstructValue_lemFuel`'s struct/union arms take the whole-result leaf shape (option (d)) so the
+row-6 proof closes under its reviewed hypothesis. This paragraph is the record of the gap; the sections
+above are left as written.

@@ -53,6 +53,18 @@
 #                scripts/fuel_forms_pending.txt; a pending row that is no longer
 #                reachable-ambient is RED too (stale pin) — the register moves
 #                only by explicit edit, both directions.
+# THE GATE BUILDS WHAT IT LOADS (H1 of hotfix fix/fuel-forms-carriers, 2026-09-20;
+# finding F-1, docs/2026-09-20_fuel-forms-carriers-hotfix-record.md §0): before
+# the tool imports anything, table_of_tree runs `lake build` on the exec entries
+# AND every carrier, and compiles the selftest's scratch decoys from source —
+# fail-closed, the FAIL naming the module. Until then the gate imported the
+# carriers' .olean files AS FOUND: CerbMem_lemMeasureProofs (a Lake root no other
+# module imports, so no exe/test build ever rebuilt it) did not compile from
+# seam-hygiene H1 (fce1de9f8, 2026-09-19) to this hotfix, and its pre-H1 .olean
+# certified the six CerbMem rows of fuel_hypotheses.txt and the three seam
+# obligations VACUOUSLY. --selftest P24 reproduces that state in-plant (a
+# stale-valid .olean over a source that no longer compiles) and asserts the
+# FAIL names the module and the stale .olean was not consulted.
 # Vacuity guards: ≥ 60 workers, ≥ 30 measured, ≥ 10 absorbing, the tool's
 # summary line present, and the four forms PARTITION the table (their counts
 # sum to the worker count — audit M2). `--selftest` plants on a scratch copy
@@ -88,6 +100,11 @@ CAPPED="$SCRIPT_DIR/capped"
 # "never 2>/dev/null an install/build step"; the caller prints the tail on
 # failure). Extra module names/dirs for the selftest's plants via
 # FUELFORMS_EXTRA_MODULES / FUELFORMS_EXTRA_PATH.
+# The exec entries the tool imports (with the carriers and the selftest's
+# extras they make up the tool's whole import list — every one of which
+# table_of_tree BUILDS FROM SOURCE before the import; H1 below).
+ENTRY_MODULES="Driver CerbCall CerbND Main"
+
 table_of_tree() {
   local log="$1" aux
   # every obligation carrier: the generated *_auxiliary modules AND every
@@ -97,11 +114,43 @@ table_of_tree() {
   # FUELFORMS_EXCLUDE_MODULES (selftest only): drop a carrier so a decoy of a
   # REAL obligation can be compiled in its place (P11)
   for ex in ${FUELFORMS_EXCLUDE_MODULES:-}; do aux=$(echo "$aux" | grep -vx "$ex"); done
+  # H1 (hotfix fix/fuel-forms-carriers, 2026-09-20 — finding F-1): BUILD every
+  # module the tool will import, from source, before importing it. Until this
+  # step the gate built only the tool and `importModules`'d whatever .olean the
+  # carriers had: CerbMem_lemMeasureProofs.lean — a Lake root imported by no
+  # other module, so no exe/test build ever rebuilt it — stopped compiling at
+  # seam-hygiene H1 (fce1de9f8, 2026-09-19: its two `panic_eq_default` rewrites
+  # met the now-opaque `failwithI`), and the gate went on loading its pre-H1
+  # .olean; the six CerbMem rows of fuel_hypotheses.txt and the three seam
+  # obligations passed VACUOUSLY until the E-A Phase 1 worker built the module
+  # by hand. Lake decides staleness by its traces (source hash + dependency
+  # hashes), so a .olean older than its source can no longer be imported
+  # silently. Fail-closed: the FAIL names the module(s) Lake reports.
+  local blog="${log}.build"; : > "$blog"
+  # shellcheck disable=SC2086
+  if ! (cd "$LF" && "$CAPPED" lake build $ENTRY_MODULES $aux >> "$blog" 2>&1); then
+    local failed
+    failed=$(awk '/^Some required targets logged failures:/{f=1; next} f && /^- /{sub(/^- /, ""); printf "%s ", $0}' "$blog")
+    cat "$blog" >> "$log"
+    # (stderr: the caller redirects this function's stdout into the table file)
+    echo "check_fuel_forms: FAIL — obligation carrier / entry module(s) did not compile from source: ${failed:-<see the log tail> }(the gate imports nothing it has not just built — F-1, 2026-09-20; log tail follows)" >&2; tail -20 "$blog" >&2; return 1
+  fi
+  cat "$blog" >> "$log"
+  # the selftest's scratch decoys (FUELFORMS_EXTRA_MODULES, sources under
+  # FUELFORMS_EXTRA_PATH): the same rule — compiled from source HERE, into
+  # FUELFORMS_EXTRA_PATH, never imported as found (P24 plants a stale-valid
+  # .olean over a source that no longer compiles)
+  local m
+  for m in ${FUELFORMS_EXTRA_MODULES:-}; do
+    if ! (cd "$LF" && "$CAPPED" lake env lean --root="$FUELFORMS_EXTRA_PATH" -o "$FUELFORMS_EXTRA_PATH/$m.olean" "$FUELFORMS_EXTRA_PATH/$m.lean" >> "$log" 2>&1); then
+      echo "check_fuel_forms: FAIL — extra module \`$m\` (FUELFORMS_EXTRA_PATH=$FUELFORMS_EXTRA_PATH) did not compile from source (the gate imports nothing it has not just built — F-1, 2026-09-20; log tail follows)" >&2; tail -20 "$log" >&2; return 1
+    fi
+  done
   if ! (cd "$LF" && "$CAPPED" lake build fuel-forms-tool >> "$log" 2>&1); then
-    echo "check_fuel_forms: FAIL — could not build fuel-forms-tool (log tail follows)"; tail -20 "$log"; return 1
+    echo "check_fuel_forms: FAIL — could not build fuel-forms-tool (log tail follows)" >&2; tail -20 "$log" >&2; return 1
   fi
   # shellcheck disable=SC2086
-  (cd "$LF" && "$CAPPED" lake env bash -c 'LEAN_PATH="${FUELFORMS_EXTRA_PATH:+$FUELFORMS_EXTRA_PATH:}$LEAN_PATH" exec ./.lake/build/bin/fuel-forms-tool "$@"' _ Driver CerbCall CerbND Main $aux ${FUELFORMS_EXTRA_MODULES:-} 2>> "$log")
+  (cd "$LF" && "$CAPPED" lake env bash -c 'LEAN_PATH="${FUELFORMS_EXTRA_PATH:+$FUELFORMS_EXTRA_PATH:}$LEAN_PATH" exec ./.lake/build/bin/fuel-forms-tool "$@"' _ $ENTRY_MODULES $aux ${FUELFORMS_EXTRA_MODULES:-} 2>> "$log")
 }
 
 # policy <table-file> <pending-file> <hypotheses-register>: prints verdict lines, returns 0/1
@@ -196,7 +245,7 @@ policy() {
   return $rc
 }
 
-TBL=$(mktemp); LOG="${TBL}.log"; PLANTDIR=$(mktemp -d); trap 'rm -rf "$TBL" "${TBL}.p" "${TBL}.pend" "${TBL}.hreg" "$LOG" "$PLANTDIR"' EXIT
+TBL=$(mktemp); LOG="${TBL}.log"; PLANTDIR=$(mktemp -d); trap 'rm -rf "$TBL" "${TBL}.p" "${TBL}.pend" "${TBL}.hreg" "$LOG" "${LOG}.build" "$PLANTDIR"' EXIT
 if ! table_of_tree "$LOG" > "$TBL"; then echo "check_fuel_forms: FAIL — the classifier tool failed (fail-closed); diagnostics tail:"; tail -20 "$LOG"; exit 1; fi
 
 if [[ "${1:-}" == "--selftest" ]]; then
@@ -346,11 +395,9 @@ def pl_ztc_lemFuel {a info err cs st : Type} (lemFuel : Nat) (m : ndM a info err
 theorem pl_ztc_lemFuel_zero {a info err cs st : Type} (m : ndM a info err cs st) (st0 : st) :
     pl_ztc_lemFuel 1 m st0 = [(nd_status.Killed st0 CerbND.fuelExhaustedKill, [], st0)] := rfl
 LEAN
-  for m in FuelFormsPlantTrue FuelFormsPlantWorker FuelFormsPlantContra FuelFormsPlantAudit; do
-    if ! (cd "$LF" && "$CAPPED" lake env lean --root="$PLANTDIR" -o "$PLANTDIR/$m.olean" "$PLANTDIR/$m.lean" >> "$LOG" 2>&1); then
-      echo "  PLANT FAIL [compiling $m]"; tail -20 "$LOG"; fails=$((fails+1))
-    fi
-  done
+  # (The decoys are compiled by table_of_tree itself — H1: the gate builds
+  # every module it imports, the scratch extras included; a decoy that does
+  # not compile fails the run that lists it, loudly.)
   # row_detail <label> <worker> <form> <detail-substring> <table>: the tool's row for
   # <worker> has the declared form AND its detail carries the specific message
   row_detail() {
@@ -400,9 +447,6 @@ theorem CerbMem.sizeofCtype_measure_sufficient (ambient : CerbTags.TagDefsMap) (
     CerbMem.sizeofCtype_lemFuel lemFuel ambient ambient cty = CerbMem.sizeofCtype ambient cty :=
   absurd rfl extra
 LEAN
-  if ! (cd "$LF" && "$CAPPED" lake env lean --root="$PLANTDIR" -o "$PLANTDIR/FuelFormsPlantExtra.olean" "$PLANTDIR/FuelFormsPlantExtra.lean" >> "$LOG" 2>&1); then
-    echo "  PLANT FAIL [compiling FuelFormsPlantExtra]"; tail -20 "$LOG"; fails=$((fails+1))
-  fi
   if FUELFORMS_EXTRA_PATH="$PLANTDIR" FUELFORMS_EXTRA_MODULES="FuelFormsPlantExtra FuelFormsPlantContra" FUELFORMS_EXCLUDE_MODULES="CerbMem_lemMeasureProofs" table_of_tree "$LOG" > "${TBL}.p"; then
     grep -E $'^FUEL_FORM\tCerbMem\.(sizeofCtype|alignofCtype)_lemFuel\t' "${TBL}.p" | cut -c1-260 | sed 's/^/    plant table: /'
     plant "P11 decoy of a REAL obligation with an EXTRA Prop binder and the register's exact hypothesis (CerbMem.sizeofCtype): MALFORMED by the binder check" "not the contract's shape" "${TBL}.p" "$PENDING" "$HYPREG"
@@ -424,8 +468,38 @@ LEAN
   grep -v $'^CerbMem\.sizeofCtype_lemFuel\t' "$HYPREG" > "${TBL}.hreg"; plant "P8 register row of a measured-under-hypothesis worker deleted (CerbMem.sizeofCtype)" "no reviewed register row" "$TBL" "$PENDING" "${TBL}.hreg"
   { cat "$HYPREG"; printf 'hack_lemFuel\t0 < k\tdriver.lem:1 planted\t[PLANT]\n'; } > "${TBL}.hreg"; plant "P9 stale register row (hack under 0 < k — hack IS measured, under CerbCoreShape.IsValuePexpr pexpr1, not under this)" "stale register row" "$TBL" "$PENDING" "${TBL}.hreg"
   { cat "$HYPREG"; printf 'phantom_lemFuel\tTrue\tno cite here\t[PLANT]\n'; } > "${TBL}.hreg"; plant "P9b register row without a .lem:<line> cite" "not of the form" "$TBL" "$PENDING" "${TBL}.hreg"
+  # P24 (hotfix fix/fuel-forms-carriers, 2026-09-20 — F-1 reproduced in-plant):
+  # a carrier module whose .olean is PRESENT AND VALID (compiled from an
+  # earlier, correct source) while its SOURCE no longer compiles — the exact
+  # state of CerbMem_lemMeasureProofs from seam-hygiene H1 (fce1de9f8) to this
+  # hotfix, when the gate imported the stale .olean and certified six register
+  # rows vacuously. The gate must FAIL naming the module, and the stale .olean
+  # must be untouched afterwards (same size and mtime: the gate neither
+  # consulted nor rewrote it — the verdict came from the SOURCE).
+  cat > "$PLANTDIR/FuelFormsPlantStaleCarrier.lean" <<'LEAN'
+import CerbMem
+-- the "earlier, correct" source: compiles
+theorem CerbMem.plantStaleCarrier_ok : True := trivial
+LEAN
+  stale_olean="$PLANTDIR/FuelFormsPlantStaleCarrier.olean"
+  if ! (cd "$LF" && "$CAPPED" lake env lean --root="$PLANTDIR" -o "$stale_olean" "$PLANTDIR/FuelFormsPlantStaleCarrier.lean" >> "$LOG" 2>&1) || [[ ! -s "$stale_olean" ]]; then
+    echo "  PLANT FAIL [P24 premise: could not produce the stale-but-valid .olean]"; tail -20 "$LOG"; fails=$((fails+1))
+  fi
+  stale_id=$(stat -c '%s %Y' "$stale_olean" 2>&1)
+  cat > "$PLANTDIR/FuelFormsPlantStaleCarrier.lean" <<'LEAN'
+import CerbMem
+-- the source AFTER a seam change the proof did not follow: does NOT compile
+theorem CerbMem.plantStaleCarrier_broken : (1 : Nat) = 2 := rfl
+LEAN
+  p24_out=$(FUELFORMS_EXTRA_PATH="$PLANTDIR" FUELFORMS_EXTRA_MODULES="FuelFormsPlantStaleCarrier" table_of_tree "$LOG" 2>&1); p24_rc=$?
+  if (( p24_rc != 0 )) && grep -q 'check_fuel_forms: FAIL — extra module `FuelFormsPlantStaleCarrier` .* did not compile from source' <<<"$p24_out" \
+      && [[ -s "$stale_olean" && "$(stat -c '%s %Y' "$stale_olean" 2>&1)" == "$stale_id" ]]; then
+    echo "  PLANT OK   [P24 carrier with a stale-valid .olean and a source that no longer compiles (F-1 in-plant): the gate FAILS naming the module; the stale .olean untouched] -> $(grep -m1 'did not compile from source' <<<"$p24_out" | cut -c1-320)"
+  else
+    echo "  PLANT FAIL [P24 stale-carrier]: rc=$p24_rc stale_olean=$( [[ -s "$stale_olean" ]] && stat -c '%s %Y' "$stale_olean" || echo missing ) (premise $stale_id)"; echo "$p24_out" | sed 's/^/      /'; fails=$((fails+1))
+  fi
   echo "  UNPLANTED:"; policy "$TBL" "$PENDING" "$HYPREG" | sed 's/^/    /' || fails=$((fails+1))
-  if (( fails == 0 )); then echo "check_fuel_forms: SELFTEST OK (24 plants with the declared label — 6 on the table (incl. the ABSORBING-cone plant), 3 on the hypothesis register, 15 compiled decoys: the C4 four (type True / wrong worker / contradictory hypothesis caught by the register / extra binder), the whole-project audit's two decoys verbatim (review_bad _zero about runNDFuel; review_shift at literal 0), wrong fuel position, swapped worker-side and wrapper-side arguments, changed measure, wrapper calling another worker, hidden premise, and three _zero decoys (a POSITIVE control ABSORBING, a term for a binder, fuel 1) — each rejected with its own message; unplanted table green)"; exit 0; else echo "check_fuel_forms: SELFTEST FAILED ($fails)"; exit 1; fi
+  if (( fails == 0 )); then echo "check_fuel_forms: SELFTEST OK (25 plants with the declared label — 6 on the table (incl. the ABSORBING-cone plant), 3 on the hypothesis register, 15 compiled decoys: the C4 four (type True / wrong worker / contradictory hypothesis caught by the register / extra binder), the whole-project audit's two decoys verbatim (review_bad _zero about runNDFuel; review_shift at literal 0), wrong fuel position, swapped worker-side and wrapper-side arguments, changed measure, wrapper calling another worker, hidden premise, and three _zero decoys (a POSITIVE control ABSORBING, a term for a binder, fuel 1) — each rejected with its own message; and the F-1 stale-carrier plant P24 (a stale-valid .olean over a source that no longer compiles: the gate FAILS naming the module); unplanted table green)"; exit 0; else echo "check_fuel_forms: SELFTEST FAILED ($fails)"; exit 1; fi
 fi
 
 policy "$TBL" "$PENDING" "$HYPREG"

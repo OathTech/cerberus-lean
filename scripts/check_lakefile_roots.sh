@@ -47,7 +47,10 @@ run_gate() {  # <lakefile.toml> <generated dir>
   if [[ -n "$missing" ]]; then echo "check_lakefile_roots: FAIL — generated module(s) NOT a Lake root (their obligations would never build):"; echo "$missing" | sed 's/^/  /'; status=1; fi
   if [[ -n "$extra" ]]; then echo "check_lakefile_roots: FAIL — Lake root(s) with no generated module:"; echo "$extra" | sed 's/^/  /'; status=1; fi
   local naux; naux=$(echo "$gens" | grep -c '_auxiliary$')
-  [[ $status -eq 0 ]] && echo "check_lakefile_roots: OK ($n roots = $(echo "$gens" | grep -c .) generated modules + the exe root Main; $naux auxiliary modules all built)"
+  # (NAME check only — this gate builds nothing; "all built" was an unbacked
+  # claim until hotfix fix/fuel-forms-carriers 2026-09-20. check_fuel_forms.sh
+  # builds every carrier it imports; build_lean builds the exe's closure.)
+  [[ $status -eq 0 ]] && echo "check_lakefile_roots: OK ($n roots = $(echo "$gens" | grep -c .) generated modules + the exe root Main; $naux auxiliary modules listed as roots — names only; every carrier is built by check_fuel_forms.sh)"
   return $status
 }
 

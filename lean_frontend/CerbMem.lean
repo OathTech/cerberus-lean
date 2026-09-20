@@ -1102,44 +1102,67 @@ def reconstructValue_lemFuel (lemFuel : Nat) (ambient : TagDefs)
     | some n => .MVinteger .Char0 (.IV (provFromIntegerBytes (bytes.take 1)) n)
     | none => .MVunspecified ty
   | Ctype _ (.Struct tagSym) =>
-    -- impl_mem.ml:1061-1073: member-wise reconstruct at the offsetsof
+    -- impl_mem.ml:1065-1075: member-wise reconstruct at the offsetsof
     -- offsets (ignore_flexible=true), skipping inter-member padding.
     -- NOTE OCaml's `self ~offset:pad` advances the member addr by the
     -- PADDING before the member only, not by the member offset
-    -- (impl_mem.ml:1063-1067) — mirrored quirk; addr is only consulted
+    -- (impl_mem.ml:1069-1072) — mirrored quirk; addr is only consulted
     -- by nested union lookups.
-    let (offs, _) := offsetsof ambient ambient tagSym (ignoreFlexible := true)
-    let (revXs, _) := offs.foldl
-      (init := (([] : List (identifier × ctype × MemValue)), (0 : Nat)))
-      fun (acc : List (identifier × ctype × MemValue) × Nat) (memb : identifier × ctype × Nat) =>
-        let (revXs, prevEnd) := acc
-        let (ident, membTy, off) := memb
-        let pad := off - prevEnd
-        let membBytes := bytes.drop off |>.take (sizeofCtype ambient membTy)
-        let mval := reconstructValue_lemFuel lemFuel ambient unionmap funptrmap (addr + (pad : Int)) membTy membBytes
-        ((ident, membTy, mval) :: revXs, off + sizeofCtype ambient membTy)
-    .MVstruct tagSym revXs.reverse
+    -- An UNKNOWN tag is OCaml's `Pmap.find` Not_found inside `sizeof cty`
+    -- (:1067) / `offsetsof` (:1073): the exception escapes and nothing of
+    -- the struct is computed — so the leaf is the WHOLE result here, and
+    -- the fold runs only once the tag is known to resolve (hotfix
+    -- fix/fuel-forms-carriers option (d), 2026-09-20 — record
+    -- docs/2026-09-20_fuel-forms-carriers-hotfix-record.md §3.5: the
+    -- former shape folded over the failure value's projection
+    -- `(failwithI …).fst`, a fail-open-shaped remnant; the row-6 measure
+    -- proof needs no equation about the opaque leaf). `offsetsof`'s own
+    -- leaf is untouched; the message differs from the oracle's exception
+    -- text (failure TEXT is an allowed discrepancy class).
+    match CerbTagsWf.lookupEntry ambient tagSym with
+    | none => failwithI "CerbMem.reconstructValue: unknown struct tag (OCaml: Pmap.find Not_found in sizeof/offsetsof, impl_mem.ml:1067/1073)"
+    | some _ =>
+      let (offs, _) := offsetsof ambient ambient tagSym (ignoreFlexible := true)
+      let (revXs, _) := offs.foldl
+        (init := (([] : List (identifier × ctype × MemValue)), (0 : Nat)))
+        fun (acc : List (identifier × ctype × MemValue) × Nat) (memb : identifier × ctype × Nat) =>
+          let (revXs, prevEnd) := acc
+          let (ident, membTy, off) := memb
+          let pad := off - prevEnd
+          let membBytes := bytes.drop off |>.take (sizeofCtype ambient membTy)
+          let mval := reconstructValue_lemFuel lemFuel ambient unionmap funptrmap (addr + (pad : Int)) membTy membBytes
+          ((ident, membTy, mval) :: revXs, off + sizeofCtype ambient membTy)
+      .MVstruct tagSym revXs.reverse
   | Ctype _ (.Union0 tagSym) =>
-    -- impl_mem.ml:1074-1095: select the member recorded in
+    -- impl_mem.ml:1076-1096: select the member recorded in
     -- last_used_union_members at this address; default to the FIRST
-    -- declared member when absent (impl_mem.ml:1080-1083).
+    -- declared member when absent (:1084-1086).
     match CerbTagsWf.lookupEntry ambient tagSym with
     | some (_, (_, UnionDef membrs)) =>
       match membrs with
       | [] => failwithI "CerbMem.reconstructValue: empty UnionDef (OCaml: match failure)"
       | (firstIdent, (_, _, _, firstTy)) :: _ =>
-        let (membIdent, membTy) :=
-          match unionmap.find? (fun (a, _) => a == addr) with
-          | none => (firstIdent, firstTy)
-          | some (_, membr) =>
-            -- ident comparison is by NAME (idEqual), as OCaml's
-            -- Eq Symbol.identifier instance does (impl_mem.ml:1085-1090)
-            match membrs.find? (fun (i, _) => idEqual i membr) with
-            | some (i, (_, _, _, t)) => (i, t)
-            | none => failwithI "CerbMem.reconstructValue: recorded union member not in UnionDef (OCaml: assert false)"
-        let mval := reconstructValue_lemFuel lemFuel ambient unionmap funptrmap addr membTy
-          (bytes.take (sizeofCtype ambient membTy))  -- self membr_ty bs1 — impl_mem.ml:1091
-        .MVunion tagSym membIdent mval
+        -- ident comparison is by NAME (idEqual), as OCaml's
+        -- Eq Symbol.identifier instance does (:1088). A recorded identifier
+        -- that names no member is OCaml's `assert false` (:1089-1090): the
+        -- exception escapes, no member is reconstructed — so the leaf is the
+        -- WHOLE result (hotfix fix/fuel-forms-carriers option (d),
+        -- 2026-09-20, record §3.5; the former shape recursed on the failure
+        -- value's `.snd`). The member is selected BEFORE the recursion; the
+        -- recursive call is `self membr_ty bs1` (:1093), the result `MVunion`
+        -- (:1094).
+        match unionmap.find? (fun (a, _) => a == addr) with
+        | none =>
+          .MVunion tagSym firstIdent
+            (reconstructValue_lemFuel lemFuel ambient unionmap funptrmap addr firstTy
+              (bytes.take (sizeofCtype ambient firstTy)))
+        | some (_, membr) =>
+          match membrs.find? (fun (i, _) => idEqual i membr) with
+          | some (membIdent, (_, _, _, membTy)) =>
+            .MVunion tagSym membIdent
+              (reconstructValue_lemFuel lemFuel ambient unionmap funptrmap addr membTy
+                (bytes.take (sizeofCtype ambient membTy)))
+          | none => failwithI "CerbMem.reconstructValue: recorded union member not in UnionDef (OCaml: assert false)"
     | _ => failwithI "CerbMem.reconstructValue: Union tag not a UnionDef (OCaml: assert false)"
   | _ => .MVunspecified ty
 
@@ -1154,7 +1177,9 @@ def reconstructValue (ambient : TagDefs) (unionmap : List (Int × identifier))
 /-! ### C1 reference form + equality theorem (mem-scale S1, 2026-09-02)
 
 `reconstructValue_indexed_lemFuel` is the PRE-C1 text of
-`reconstructValue_lemFuel` verbatim (name and recursive calls renamed;
+`reconstructValue_lemFuel` verbatim (name and recursive calls renamed; its
+struct/union arms restated identically with the linear form's — hotfix
+fix/fuel-forms-carriers option (d), 2026-09-20;
 the doc comments of the arms are in the live definition above): its
 array arm re-slices from the array's start per element,
 `bytes.drop (i * elemSize) |>.take elemSize` — the index-slicing form,
@@ -1220,33 +1245,38 @@ def reconstructValue_indexed_lemFuel (lemFuel : Nat) (ambient : TagDefs)
     | some n => .MVinteger .Char0 (.IV (provFromIntegerBytes (bytes.take 1)) n)
     | none => .MVunspecified ty
   | Ctype _ (.Struct tagSym) =>
-    let (offs, _) := offsetsof ambient ambient tagSym (ignoreFlexible := true)
-    let (revXs, _) := offs.foldl
-      (init := (([] : List (identifier × ctype × MemValue)), (0 : Nat)))
-      fun (acc : List (identifier × ctype × MemValue) × Nat) (memb : identifier × ctype × Nat) =>
-        let (revXs, prevEnd) := acc
-        let (ident, membTy, off) := memb
-        let pad := off - prevEnd
-        let membBytes := bytes.drop off |>.take (sizeofCtype ambient membTy)
-        let mval := reconstructValue_indexed_lemFuel lemFuel ambient unionmap funptrmap (addr + (pad : Int)) membTy membBytes
-        ((ident, membTy, mval) :: revXs, off + sizeofCtype ambient membTy)
-    .MVstruct tagSym revXs.reverse
+    match CerbTagsWf.lookupEntry ambient tagSym with
+    | none => failwithI "CerbMem.reconstructValue: unknown struct tag (OCaml: Pmap.find Not_found in sizeof/offsetsof, impl_mem.ml:1067/1073)"
+    | some _ =>
+      let (offs, _) := offsetsof ambient ambient tagSym (ignoreFlexible := true)
+      let (revXs, _) := offs.foldl
+        (init := (([] : List (identifier × ctype × MemValue)), (0 : Nat)))
+        fun (acc : List (identifier × ctype × MemValue) × Nat) (memb : identifier × ctype × Nat) =>
+          let (revXs, prevEnd) := acc
+          let (ident, membTy, off) := memb
+          let pad := off - prevEnd
+          let membBytes := bytes.drop off |>.take (sizeofCtype ambient membTy)
+          let mval := reconstructValue_indexed_lemFuel lemFuel ambient unionmap funptrmap (addr + (pad : Int)) membTy membBytes
+          ((ident, membTy, mval) :: revXs, off + sizeofCtype ambient membTy)
+      .MVstruct tagSym revXs.reverse
   | Ctype _ (.Union0 tagSym) =>
     match CerbTagsWf.lookupEntry ambient tagSym with
     | some (_, (_, UnionDef membrs)) =>
       match membrs with
       | [] => failwithI "CerbMem.reconstructValue: empty UnionDef (OCaml: match failure)"
       | (firstIdent, (_, _, _, firstTy)) :: _ =>
-        let (membIdent, membTy) :=
-          match unionmap.find? (fun (a, _) => a == addr) with
-          | none => (firstIdent, firstTy)
-          | some (_, membr) =>
-            match membrs.find? (fun (i, _) => idEqual i membr) with
-            | some (i, (_, _, _, t)) => (i, t)
-            | none => failwithI "CerbMem.reconstructValue: recorded union member not in UnionDef (OCaml: assert false)"
-        let mval := reconstructValue_indexed_lemFuel lemFuel ambient unionmap funptrmap addr membTy
-          (bytes.take (sizeofCtype ambient membTy))
-        .MVunion tagSym membIdent mval
+        match unionmap.find? (fun (a, _) => a == addr) with
+        | none =>
+          .MVunion tagSym firstIdent
+            (reconstructValue_indexed_lemFuel lemFuel ambient unionmap funptrmap addr firstTy
+              (bytes.take (sizeofCtype ambient firstTy)))
+        | some (_, membr) =>
+          match membrs.find? (fun (i, _) => idEqual i membr) with
+          | some (membIdent, (_, _, _, membTy)) =>
+            .MVunion tagSym membIdent
+              (reconstructValue_indexed_lemFuel lemFuel ambient unionmap funptrmap addr membTy
+                (bytes.take (sizeofCtype ambient membTy)))
+          | none => failwithI "CerbMem.reconstructValue: recorded union member not in UnionDef (OCaml: assert false)"
     | _ => failwithI "CerbMem.reconstructValue: Union tag not a UnionDef (OCaml: assert false)"
   | _ => .MVunspecified ty
 

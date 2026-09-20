@@ -872,16 +872,22 @@ theorem offsetsof_measure_sufficient (ambient tagDefs : CerbTags.TagDefsMap) (ta
 end LayoutObligations
 
 /-! ### reconstructValue: recursion on the ctype being reconstructed, through
-    member types read from the tag environment (impl_mem.ml:916-1095). The
+    member types read from the tag environment (impl_mem.ml:916-1096). The
     struct arm's member types come out of `offsetsof` — characterized below:
-    every `(ident, ty, off)` it returns has `ty` among the definition's
-    `memberTypes`, so the potential descends by the same hop inequality. -/
+    every `(ident, ty, off)` it returns for a tag that RESOLVES has `ty` among
+    the definition's `memberTypes`, so the potential descends by the same hop
+    inequality. Both arms of `reconstructValue_lemFuel` guard their tag lookup
+    and select the union member BEFORE any recursion (hotfix
+    fix/fuel-forms-carriers option (d), 2026-09-20 — record
+    docs/2026-09-20_fuel-forms-carriers-hotfix-record.md §3): every failure
+    leaf is a WHOLE result, fuel-independent, closed by `rfl`; no equation about
+    LemLib's opaque `failwithI` is needed (none exists — the pre-hotfix
+    `panic_eq_default` rewrote leaves the recursion entered, which seam-hygiene
+    H1 made opaque, and under `Acyclic` alone the old shape was unprovable in
+    principle: record §3.1). -/
 
 section Reconstruct
 open CerbTagsWf
-
-theorem panic_eq_default {α : Type} [Inhabited α] (m d : String) (l c : Nat) (msg : String) :
-    (panicWithPosWithDecl m d l c msg : α) = default := rfl
 
 /-- A fold that conses one element per member (the `offsetsofMembers` fold): every
     element of the result is from the seed or from a member. -/
@@ -912,27 +918,29 @@ theorem offsetsofMembers_types (n : Nat) (ambient tagDefs : CerbTags.TagDefsMap)
   · cases h
   · exact h
 
-theorem offsetsof_types (n : Nat) (ambient tagDefs : CerbTags.TagDefsMap) (t : sym) (flag : Bool) :
-    ∀ x ∈ (offsetsof_lemFuel (n + 2) ambient tagDefs t flag).1,
-      ∃ v : Entry, lookup tagDefs t = some v ∧ x.2.1 ∈ memberTypes v.2 := by
+/-- `offsetsof` on a tag KNOWN to resolve (`hl`): every member type it returns
+    is among the definition's `memberTypes`. The unknown-tag arm is excluded by
+    `hl` — the struct arm of `reconstructValue` supplies it from its own guard. -/
+theorem offsetsof_types (n : Nat) (ambient tagDefs : CerbTags.TagDefsMap) (t : sym) (flag : Bool)
+    (v : Entry) (hl : lookup tagDefs t = some v) :
+    ∀ x ∈ (offsetsof_lemFuel (n + 2) ambient tagDefs t flag).1, x.2.1 ∈ memberTypes v.2 := by
   intro x hx
   simp only [offsetsof_lemFuel] at hx
   split at hx
-  · rw [panic_eq_default] at hx; cases hx
+  · rename_i heq
+    simp [lookup, heq] at hl
   · rename_i s l membrs flex heq
-    have hl := lookup_of_entry heq
+    have hl' := lookup_of_entry heq
+    rw [hl'] at hl; cases hl
     obtain ⟨mb, hmb, hty⟩ := offsetsofMembers_types n ambient tagDefs (structMembers membrs flex flag) x hx
-    exact ⟨_, hl, by rw [hty]; exact structMembers_types membrs flex flag hmb _ (mem_memberTypes1_ty mb)⟩
+    rw [hty]; exact structMembers_types membrs flex flag hmb _ (mem_memberTypes1_ty mb)
   · rename_i s l membrs heq
-    have hl := lookup_of_entry heq
+    have hl' := lookup_of_entry heq
+    rw [hl'] at hl; cases hl
     simp only [List.mem_map] at hx
     obtain ⟨mb, hmb, hx⟩ := hx
-    refine ⟨_, hl, ?_⟩
     rw [← hx]
     exact mem_memberTypes_of_union membrs ⟨mb, hmb, mem_memberTypes1_ty mb⟩
-
-theorem pot_default (ambient tagDefs : CerbTags.TagDefsMap) (R : Entry → Nat) (L : List Entry) :
-    pot ambient tagDefs R L (default : identifier × ctype).2 = 2 := rfl
 
 theorem reconstructValue_stable_aux (ambient : CerbTags.TagDefsMap) (R : Entry → Nat)
     (hR : Ranked (lookup ambient) (lookup ambient) R) (k : Nat) :
@@ -974,21 +982,27 @@ theorem reconstructValue_stable_aux (ambient : CerbTags.TagDefsMap) (R : Entry �
       have hp := pot_atomic ambient ambient R (entries ambient) an c
       exact key _ _ _ c bytes (by omega)
     case Struct t =>
-      have hb : offsetsofBound ambient ambient = (defsWeight ambient + defsWeight ambient + defsWeight ambient + 1) + 2 := by
-        unfold offsetsofBound; omega
-      have hoffs := offsetsof_types (defsWeight ambient + defsWeight ambient + defsWeight ambient + 1) ambient ambient t true
-      to_congr
-      all_goals
-        intro acc memb hmemb
-        obtain ⟨revXs, prevEnd⟩ := acc
-        obtain ⟨ident, membTy, off⟩ := memb
-        dsimp only
-        have hm : (ident, membTy, off) ∈ (offsetsof_lemFuel ((defsWeight ambient + defsWeight ambient + defsWeight ambient + 1) + 2) ambient ambient t true).1 := by
-          unfold offsetsof at hmemb; rw [hb] at hmemb; exact hmemb
-        obtain ⟨v, hl, hty⟩ := hoffs _ hm
-        have h1 := pot_member ambient ambient R (entries ambient) hR hLS hLS (Or.inl hl) hty
+      split
+      · -- unknown tag: the whole result is the (fuel-independent) leaf
+        rfl
+      · rename_i p heq
+        obtain ⟨s, v⟩ := p
+        have hl : lookup ambient t = some v := lookup_of_entry heq
+        have hb : offsetsofBound ambient ambient = (defsWeight ambient + defsWeight ambient + defsWeight ambient + 1) + 2 := by
+          unfold offsetsofBound; omega
+        have hoffs := offsetsof_types (defsWeight ambient + defsWeight ambient + defsWeight ambient + 1) ambient ambient t true v hl
         have h2 := pot_struct ambient ambient R (entries ambient) an t v hl
-        rw [key _ _ _ membTy _ (by simp only at h1; omega)]
+        to_congr
+        all_goals
+          intro acc memb hmemb
+          obtain ⟨revXs, prevEnd⟩ := acc
+          obtain ⟨ident, membTy, off⟩ := memb
+          dsimp only
+          have hm : (ident, membTy, off) ∈ (offsetsof_lemFuel ((defsWeight ambient + defsWeight ambient + defsWeight ambient + 1) + 2) ambient ambient t true).1 := by
+            unfold offsetsof at hmemb; rw [hb] at hmemb; exact hmemb
+          have hty := hoffs _ hm
+          have h1 := pot_member ambient ambient R (entries ambient) hR hLS hLS (Or.inl hl) hty
+          rw [key _ _ _ membTy _ (by simp only at h1; omega)]
     case Union0 t =>
       split
       · rename_i s l membrs heq
@@ -1001,22 +1015,17 @@ theorem reconstructValue_stable_aux (ambient : CerbTags.TagDefsMap) (R : Entry �
             mem_memberTypes_of_union _ ⟨_, List.mem_cons_self .., mem_memberTypes1_ty (firstIdent, (at_, al, q, firstTy))⟩
           split
           · -- no recorded member: the first member
-            simp only
             have h1 := pot_member ambient ambient R (entries ambient) hR hLS hLS (Or.inl hl) hfirst
             rw [key _ _ _ firstTy _ (by omega)]
           · rename_i a membr heq2
             split
             · rename_i i at2 al2 q2 t2 heq3
-              simp only
               have hmem : t2 ∈ memberTypes (l, UnionDef ((firstIdent, (at_, al, q, firstTy)) :: rest)).2 :=
                 mem_memberTypes_of_union _ ⟨_, List.mem_of_find?_eq_some heq3, mem_memberTypes1_ty (i, (at2, al2, q2, t2))⟩
               have h1 := pot_member ambient ambient R (entries ambient) hR hLS hLS (Or.inl hl) hmem
               rw [key _ _ _ t2 _ (by omega)]
-            · rename_i heq3
-              rw [panic_eq_default]
-              have h1 := pot_default ambient ambient R (entries ambient)
-              have h3 := W_self R (entries ambient) (hLS _ _ hl)
-              rw [key _ _ _ _ _ (by rw [h1]; omega)]
+            · -- recorded member not in the definition: the whole result is the leaf
+              rfl
       · rfl
 
 /-- THE OBLIGATION (the seam twin of the generated `assuming` shape). -/
