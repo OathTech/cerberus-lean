@@ -123,7 +123,7 @@ theorem pull_constrained_measure_sufficient (n : Nat) (g : generic_pexpr Unit sy
     (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
 theorem step_eval_pexpr_stable_aux [LemFuel] (k : Nat) :
-    ∀ (ed : Fmap sym integerType) (ed : Fmap sym integerType) (td : Fmap sym (CerbLocation.Loc × tag_definition)) (n : Nat) (loc1 : CerbLocation.Loc)
+    ∀ (ed : Fmap sym integerType) (td : Fmap sym (CerbLocation.Loc × tag_definition)) (n : Nat) (loc1 : CerbLocation.Loc)
       (pcl : Option CerbLocation.Loc) (ce : Fmap sym sym) (env1 : List (Fmap sym value))
       (mso : Option CerbMem.MemState) (file1 : generic_file Unit core_run_annotation) (hc : Bool)
       (e : generic_pexpr Unit sym) (f g : Nat),

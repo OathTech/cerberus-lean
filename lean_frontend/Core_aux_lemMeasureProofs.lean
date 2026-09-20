@@ -169,7 +169,7 @@ theorem loadedValueFromMemValue_measure_sufficient (mem_val : CerbMem.MemValue) 
   loadedValueFromMemValue_stable_aux (CerbMem.memValueSize mem_val) mem_val lemFuel (CerbMem.memValueSize mem_val) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
 theorem memValueFromValue_stable_aux (k : Nat) :
-    ∀ (ed : Fmap sym integerType) (ed : Fmap sym integerType) (td : Fmap sym (CerbLocation.Loc × tag_definition)) (ty1 : ctype) (cval : value) (f g : Nat),
+    ∀ (ed : Fmap sym integerType) (td : Fmap sym (CerbLocation.Loc × tag_definition)) (ty1 : ctype) (cval : value) (f g : Nat),
     ctype.lemSize ty1 ≤ k → ctype.lemSize ty1 ≤ f → ctype.lemSize ty1 ≤ g →
     memValueFromValue_lemFuel f ed td ty1 cval = memValueFromValue_lemFuel g ed td ty1 cval := by
   induction k with

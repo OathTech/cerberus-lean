@@ -231,7 +231,7 @@ theorem are_compatible_params_aux0_measure_sufficient (enumDefs : Fmap sym integ
     (lemTail : List Param × List Param) (lemFuel : Nat)
     (lemMeasureLe : paramsAuxBound env1 lemTail ≤ lemFuel) :
     are_compatible_params_aux0_lemFuel lemFuel enumDefs tagDefs env1 acc lemTail =
-      are_compatible_params_aux0 env1 acc lemTail := by
+      are_compatible_params_aux0 enumDefs tagDefs env1 acc lemTail := by
   obtain ⟨t1, t2, A⟩ := env1
   obtain ⟨l1, l2⟩ := lemTail
   exact (stable_aux enumDefs tagDefs (paramsAuxBound (t1, t2, A) (l1, l2))).2.1 t1 t2 A acc l1 l2 lemFuel
@@ -241,7 +241,7 @@ theorem are_compatible_params_aux0_measure_sufficient (enumDefs : Fmap sym integ
 theorem are_compatible_params0_measure_sufficient (enumDefs : Fmap sym integerType) (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)) (env1 : Env) (params1 params2 : List Param)
     (lemFuel : Nat) (lemMeasureLe : paramsBound env1 params1 params2 ≤ lemFuel) :
     are_compatible_params0_lemFuel lemFuel enumDefs tagDefs env1 params1 params2 =
-      are_compatible_params0 env1 params1 params2 := by
+      are_compatible_params0 enumDefs tagDefs env1 params1 params2 := by
   obtain ⟨t1, t2, A⟩ := env1
   exact (stable_aux enumDefs tagDefs (paramsBound (t1, t2, A) params1 params2)).2.2 t1 t2 A params1 params2 lemFuel
     (paramsBound (t1, t2, A) params1 params2) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)

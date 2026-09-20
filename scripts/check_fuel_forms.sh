@@ -305,13 +305,16 @@ LEAN
   # register is consulted, which is right. P10 therefore restates the REAL
   # CerbMem.alignofCtype obligation — shape-correct, μ = the wrapper's measure —
   # under the CONTRADICTORY hypothesis `cty ≠ cty`, compiled in the P11 run
-  # where CerbMem_lemMeasureProofs is excluded.)
+  # where CerbMem_lemMeasureProofs is excluded.) Both decoys restate REAL
+  # obligations and therefore follow the workers' signatures: since
+  # program-data parameters E-A (2026-09-20) the layout workers/wrappers take
+  # the enum map `enumDefs : CerberusImpl.EnumDefs` before `ambient`.
   cat > "$PLANTDIR/FuelFormsPlantContra.lean" <<'LEAN'
 import CerbMem
-theorem CerbMem.alignofCtype_measure_sufficient (ambient : CerbTags.TagDefsMap) (cty : ctype)
+theorem CerbMem.alignofCtype_measure_sufficient (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap) (cty : ctype)
     (lemHyp : cty ≠ cty) (lemFuel : Nat)
     (_lemMeasureLe : CerbTagsWf.envBound ambient cty ≤ lemFuel) :
-    CerbMem.alignofCtype_lemFuel lemFuel ambient ambient cty = CerbMem.alignofCtype ambient cty :=
+    CerbMem.alignofCtype_lemFuel lemFuel enumDefs ambient ambient cty = CerbMem.alignofCtype enumDefs ambient cty :=
   absurd rfl lemHyp
 LEAN
   # P12–P22 (P0 audit F2, 2026-09-05; record docs/2026-09-05_p0-instruments-record.md
@@ -441,10 +444,10 @@ LEAN
   # extra binder — the SHAPE is what the plant tests, the proof is irrelevant)
   cat > "$PLANTDIR/FuelFormsPlantExtra.lean" <<'LEAN'
 import CerbMem
-theorem CerbMem.sizeofCtype_measure_sufficient (ambient : CerbTags.TagDefsMap) (cty : ctype)
+theorem CerbMem.sizeofCtype_measure_sufficient (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap) (cty : ctype)
     (extra : cty ≠ cty) (lemHyp : CerbTagsWf.Acyclic ambient) (lemFuel : Nat)
     (_lemMeasureLe : CerbTagsWf.envBound ambient cty ≤ lemFuel) :
-    CerbMem.sizeofCtype_lemFuel lemFuel ambient ambient cty = CerbMem.sizeofCtype ambient cty :=
+    CerbMem.sizeofCtype_lemFuel lemFuel enumDefs ambient ambient cty = CerbMem.sizeofCtype enumDefs ambient cty :=
   absurd rfl extra
 LEAN
   if FUELFORMS_EXTRA_PATH="$PLANTDIR" FUELFORMS_EXTRA_MODULES="FuelFormsPlantExtra FuelFormsPlantContra" FUELFORMS_EXCLUDE_MODULES="CerbMem_lemMeasureProofs" table_of_tree "$LOG" > "${TBL}.p"; then

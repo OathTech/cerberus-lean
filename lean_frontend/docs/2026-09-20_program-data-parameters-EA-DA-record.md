@@ -674,3 +674,200 @@ by putting the 14 lines into the script's header block byte for byte (a comment 
 re-recording; the diff above is against the pre-record copy, so it shows the repair worked (0 header lines
 removed). Lesson for the lane's doctrine: a baseline header edit must go through the recipe, or the next honest
 re-record erases it.
+
+## 9. Rebase onto the landed mainline (`5407597d9` = F-1 hotfix + S1.5 landing), and the mandatory full re-gate
+
+### 9.1 The rebase (`git rebase 5407597d9` from `b61db241d`; both commits replayed with their messages)
+
+Mainline range `52af8ccf1..5407597d9`: `8c712657f` (S1.5 record erratum), `b89a010ab`/`5d462da86`/`e5065fc5a`
+(hotfix `fix/fuel-forms-carriers`: the fuel-forms gate builds every carrier module; `reconstructValue_lemFuel`'s
+struct/union arms take the whole-result leaf shape — option (d); `build_lean` builds EVERY Lake root),
+`027b6fc66`/`1ee426e2b` (the combined pre-merge audit), `5407597d9` (landing note). Replayed heads:
+**`3ad477462`** (E-A Phase 1) and **`70408e483`** (the seven witnesses). Conflicts at the first replay, one line each:
+- `lean_frontend/CerbMem.lean` (4 hunks = the struct/union arms of `reconstructValue_lemFuel` and its `_indexed` twin):
+  KEPT the hotfix's shape (the struct arm guards `CerbTagsWf.lookupEntry ambient tagSym` before the fold; the union arm
+  selects the member before recursing; every leaf is the WHOLE result) and re-applied the `enumDefs` thread inside it
+  (`offsetsof enumDefs ambient ambient`, `sizeofCtype enumDefs ambient`, `reconstructValue_lemFuel lemFuel enumDefs
+  ambient …`) — both intents; 0 bare-`ambient` applications remain.
+- `lean_frontend/CerbMem_lemMeasureProofs.lean` (4 hunks in the `Reconstruct` section): KEPT the hotfix's proof shape
+  (`offsetsof_types … (v : Entry) (hl : lookup tagDefs t = some v)`, the `split`/`rfl` leaves, `panic_eq_default` and
+  `pot_default` gone) and added my reader binder (`(enumDefs : CerberusImpl.EnumDefs)` on `offsetsof_types` and
+  `reconstructValue_stable_aux`; `enumDefs` before `ambient` in every worker/wrapper application) — every obligation's
+  statement is the hotfix's shape plus the reader binder; `fuel_hypotheses.txt` untouched.
+- `scripts/failure_reach_register.txt` (1 hunk, the tally line): took the mainline line as a placeholder; the register
+  is RE-DERIVED below via `check_failure_reach.sh --emit` → review → `--reseal` (never a hand-merge of sealed rows).
+- No conflict in `scripts/test_unit.sh` (the hotfix's "25 plants" comment and my `enum-data-test` entry both present),
+  `scripts/fork_drift_manifest.txt` (the hotfix's `scripts/common.sh` re-pin + NOTE beside my rows + NOTE),
+  `lean_frontend/CLAUDE.md`/`VALIDATION.md` (Phase 1 did not touch them). The second replay was clean.
+`git status --short` after the rebase: clean. `git log --oneline 5407597d9..HEAD`: `70408e483 tests(immaculate): seven
+desugar-time enum-read witnesses …` / `3ad477462 program-data-parameters E-A Phase 1: …` (same messages).
+
+### 9.2 The consumer re-pin note (cerberus-sl; the operator relays)
+
+Pin target: this branch's head after the E-A audit and ff-only merge (readers `enum_definitions`, `tagDefs` — D-A is
+NOT in this range). Signature changes since your `035f12c`-era pin of `mdd/cerberus-lean`:
+1. **One new leading argument, `enumDefs : Fmap sym integerType`, BEFORE `tagDefs` on every reader-taking generated
+   signature** (the global sorted reader order is `enum_definitions`, `tagDefs`): `drive enumDefs tagDefs …`,
+   `driver2`, `driver_globals`, `finalize`, `desugar`, `translate`, and every def that carried `_lemReader_tagDefs`;
+   NEWLY reader-taking (had no reader before): `GenTyping.annotate_program enumDefs tagDefs p`, `Implementation.
+   {sizeof_ity, alignof_ity, is_signed_ity, precision_ity, integerImpl, normalise_ctype, is_compatible_with_size_t,
+   is_compatible_with_ptrdiff_t, is_signed_or_unsigned}`, `AilTypesAux.are_compatible`/`make_composite`/…,
+   `Ctype_aux.are_compatible_aux`/`match_integer_ctype`, `GenTyping.*`, `GenTypesAux.*`, `Translation_aux.
+   {ctype_of, qualified_ctype_of, combine_params_args}`, `Mem_common.*`, `Core_typing.*` (the full list: §3.4).
+   `initial_driver_state` is UNCHANGED (W7 — it is supply-lifted only).
+2. **`Core.file` has a new field `enumDefs : Fmap sym integerType`** (beside `tagDefs`; linking unions it): your
+   three full-file literals `CertP.lean:67,77,89` gain `enumDefs := F.enumDefs` (or `fmapEmpty` for a file with no
+   enums); `Program := ⟨file, supply⟩` is unchanged. The run's reader value is `runFile.enumDefs`; the elaborator's
+   is the per-TU `Lem_Map.fromList sigma.enum_definitions` (`A.sigma` has the new field `enum_definitions : List
+   (sym × integerType)`).
+3. **`CerberusImpl.{sizeof_ity, is_signed_ity, alignof_ity, precision_ity}` keep their type-only signatures** — but
+   they are now functions of a RESOLVED type: an `Enum0` reaching them is the `failwithI` leaf. Resolve first with
+   `CerberusImpl.normalise_integerType enumDefs tagDefs ity` (the one consumer; `.Enum0 s` ↦ the map's entry,
+   `failwithI "Ocaml_implementation.typeof_enum: '…' was not registered"` on a miss) or `CerberusImpl.resolveEnum
+   enumDefs ity` (Enum-only); `CerberusImpl.typeof_enum`, `register_enum`'s effect, `enumRegistryRef` are GONE.
+   Payoff: `Implementation.sizeof_ity e t (.Enum0 s) = some 4` is `rfl` given `e = Lem_Map.fromList [(s, .Unsigned
+   .Int_)]` (test/Unit/EnumDataTest.lean); `sizeofCtype tds (enum s)` is a function of program data.
+4. **CerbMem** (if you call the hand-written stubs directly): every `reader_consumer` stub takes `enumDefs` FIRST —
+   `allocateObject enumDefs tagDefs …`, `loadM`, `storeM`, `sizeofIval`, `alignofIval`, `offsetofIval`, `maxIval
+   enumDefs tagDefs ity`, `minIval`, `intfromptr`, `copyAllocId`, … (18); the measured layout workers/wrappers
+   (`sizeofCtype enumDefs ambient cty`, `alignofCtype`, `offsetsof`, `memberAlign`, `offsetsofMembers`,
+   `memValueToBytes`, `reconstructValue`) likewise. The sufficiency theorems in `CerbMem_lemMeasureProofs.lean`
+   carry the same extra binder; `fuel_hypotheses.txt` is unmoved.
+5. **`reconstructValue_lemFuel`'s struct/union arms are reshaped by the F-1 hotfix** (in this range's base, `5d462da86`):
+   the struct arm guards `lookupEntry` before its fold; the union arm selects the member before recursing; each failure
+   leaf is the WHOLE result — if you unfold these arms (`TreeRotExhibit.lean:148`, `ListRevExhibit.lean:260` did), the
+   match structure changed; the `_indexed` twin and `reconstructValue_lemFuel_eq_indexed` are restated identically.
+6. **Seeds (S0.5 audit N1):** if you write a `reader_seed` def, its first N parameters (N = 2 here) are the seeds in
+   the sorted order, and a def with ≥ N parameters silently takes its own leading parameter as a seed — give every seed
+   def a `val` and a VALUE pin; the two seeds have different types here, so a slip is a type error.
+7. `CerberusFresh.digest` is UNCHANGED in this range (D-A is deferred; §3.1): `SymFresh.lean:70-75`'s property stays
+   as it is; the `HeapNeg.lean`/`SymFresh.lean` prose about `set_digest` is not yet stale.
+
+### 9.3 Post-rebase fixes (uncommitted at the re-gate; folded into the record commit, as ruled), regeneration and builds
+
+The replayed commits compiled against the hotfix base needed four mechanical residues, found by the first
+`build_lean` over every root (`Some required targets logged failures: Ctype_aux_lemMeasureProofs,
+Defacto_memory_lemMeasureProofs, CerbMem_lemMeasureProofs, Core_aux_lemMeasureProofs, Core_eval_lemMeasureProofs`):
+- `Core_aux_/Core_eval_/Defacto_memory_lemMeasureProofs.lean`: my rebase-time binder substitution had doubled the
+  `(ed : Fmap sym integerType)` binder on the `∀`-headed `stable_aux` lemmas (`(ed …) (ed …) (td …)`) — de-duplicated
+  (`Invalid alternative name `zero`` was the symptom: the extra binder shifted the `intro` names).
+- `Ctype_aux_lemMeasureProofs.lean`: the two obligation RIGHT-hand sides (`are_compatible_params_aux0 env1 acc
+  lemTail`, `are_compatible_params0 env1 params1 params2`) lacked the reader arguments the wrappers now take.
+- `CerbMem_lemMeasureProofs.lean` (the merged `Reconstruct` section): one `offsetsof_lemFuel (…) ambient ambient t
+  true` inside the hotfix's `hm` step lacked `enumDefs`.
+- `scripts/check_fuel_forms.sh` — **W18 (fence extension, GRANTED [AGENT orchestrator] at the resume):** the
+  self-test's two COMPILED decoys P10/P11 restate REAL obligations (`CerbMem.alignofCtype_measure_sufficient` under
+  `cty ≠ cty`; `CerbMem.sizeofCtype_measure_sufficient` with an extra binder) whose signatures E-A changed, so they
+  failed to compile against `sizeofCtype_lemFuel lemFuel enumDefs ambient …` (`PLANT FAIL [tool with the extra-binder
+  + contradictory-hypothesis decoys]` → `check_fuel_forms: SELFTEST FAILED (3)`); restated with `(enumDefs :
+  CerberusImpl.EnumDefs)` before `ambient` and a comment saying why. Nothing else in the gate moved.
+- `scripts/failure_reach_register.txt`: re-derived (`--emit` → 237 rows; the class columns of every row equal to the
+  git text-merge's — `diff` of columns 1–8: 0 lines, so no new review was needed; `--reseal` → `resealed 237 rows`);
+  tally `sites=237 exec=235 unresolved-owner=2 reviewed-TAIL=184 reviewed-NON-TAIL=53 UNREACHABLE-BY-INVARIANT=169
+  REACHABLE=49 UNKNOWN=19 discardable=0` (= the hotfix's 234 + my +5 −2). Gate: `check_failure_reach: OK (237 pure
+  failure sites = the 237 register rows exactly (235 in the exec dependency closure + 2 unresolved-owner; …); position
+  classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=169 REACHABLE=49 UNKNOWN=19; every row sealed;
+  tally line consistent)`.
+
+Regeneration at `Lem 38f87d5`: `make rc=0 wall=40s`, stamps `check_lem_sync: recorded ocaml_frontend/lem_sync.sha256
+(src bc2f8bbbcb90a6ca30b3cbdbf4df3944edd9d0554ab7c038f7be9c559aa5e12d, gen b2f073232e32ac707650a45766014dede7b8de6b9181e6243ce6bfefac73456c)`
+/ `… lean_frontend/lem_sync.sha256 (src bc2f8bbb…, gen eb2b61a1268f8425ec9b73c1d3fa2d1175c51a596db3ea602de02a315bd232e3)`
+(the same values as before the rebase — the mainline range touched no `.lem`). `build_cerberus rc=0 wall=6s`
+(`oracle stamp bin 55e8055f…`); `build_lean` (EVERY root) → `Build completed successfully (395 jobs).` /
+`check_driver_fresh: recorded lean stamp (bin 80f2e318ce1cf114b03d4a2745aadad33f2533c69e154db42d5dacba4450b724, src
+7e778bf7b36f729b05c9431b80d35d135e43b2028994c4c04ac596ab62439d54)` (40 s on the first pass with the residues, 1 s
+replay after); the eight proof modules `lake build … rc=0 wall=4s`; speclab `Build completed successfully (148 jobs).`
+(91 s); the 14 unit exes `rc=0`.
+
+### 9.4 The mandatory full re-gate
+
+Standalone row 1 after the fixes (`scripts/ce ./scripts/test_unit.sh`, `test_unit rc=0 wall=216s`), verbatim:
+`Total: 13 passed, 0 failed` · `check_exec_purity: CLEAN (11 modules)` · `check_theorem_axioms: OK (effect-retirement
+C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)` · `check_sorry_token: OK (319 files
+scanned comment-stripped — generated 219, hand-written+test 65, LemLib 35; 0 sorry tokens)` · `test_exec: SELFTEST
+OK (…)` · `check_no_fuel_numerals: OK (326 files …)` · `gen_fuel_parametricity: OK (14 …)` · `check_lakefile_roots: OK
+(218 roots = 218 generated modules + the exe root Main; 85 auxiliary modules listed as roots — names only; every
+carrier is built by check_fuel_forms.sh)` · **`check_fuel_forms: SELFTEST OK (25 plants with the declared label — 6 on
+the table (incl. the ABSORBING-cone plant), 3 on the hypothesis register, 15 compiled decoys: …)`** ·
+**`check_fuel_forms: OK (81 fuel'd workers: 62 MEASURED (obligation of the contract's shape incl. argument
+correspondence against the wrapper's body; every obligation + proof cone ⊆ the standard three; 12 of them under a
+hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), 13 ABSORBING = kill at zero (…)`** (real:
+the carriers are built by the gate — F-1 closed) · `check_failure_reach: OK (237 …)` (above) · `check_exec_totality:
+CLEAN (22 generated modules + hand-written CerbND, 0 allowlisted)` · `check_lem_sync: OK (src bc2f8bbb…, gen
+b2f07323…)` / `check_lem_sync: lean OK (src bc2f8bbb…, gen eb2b61a1…)` · **`check_fork_drift: OK — layer 1: 82
+oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 29 differing generated files, all
+hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 38f87d5 = lem -v)`** ·
+`check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)` · `test_renumber_plants: OK (12
+plants: refusals refuse, admits admit with declared class)`.
+
+**The battery** (`scripts/ce python3 scripts/release.py --mode full --out .tmp/eada/regate-full`, ONE run, Tier A + B):
+`full: incomplete; 39/39 selected commands completed successfully.` / `Source unchanged: False. Complete tier
+selection: True.` (the eight post-rebase files were uncommitted during the run; "incomplete" is the runner's standing
+wording for the non-tier obligations) — **wall 5464 s (91 min)**. Every row `PASSED`: `A1 (309.3s) A2 (54.0s) A3
+(55.8s) A4 (23.1s) A4b (24.5s) A4c (3.1s) A5 (22.3s) A6 (2.2s) A6b (3.6s) A7 (10.6s) A8 (9.2s) A9 (18.8s) A10 (17.3s)
+A11 (58.7s) A12.1 (4.9s) A12.2 (4.5s) B1 (739.6s) B2 (23.6s) B3 (15.5s) B4 (48.8s) B5 (71.9s) B6.1 (78.2s) B6.2 (2.3s)
+B6.3 (9.7s) B6.4 (9.1s) B6.5 (9.4s) B6.6 (10.9s) B6.7 (9.0s) B7 (1350.7s) B8.1 (13.4s) B8.2 (241.9s) B8.3 (6.3s) B8.4
+(16.5s) B9 (1489.3s) B10.1 (208.0s) B10.2 (2.3s) B11.1 (18.1s) B11.2 (7.9s) B12 (457.9s)`.
+
+Tier A in the battery: row 1's key lines = §9.4's standalone lines verbatim (`Total: 13 passed, 0 failed`,
+`check_fuel_forms: OK (81 …)`, `SELFTEST OK (25 plants …)`, `check_failure_reach: OK (237 …)`, `check_fork_drift: OK —
+layer 1: 82 … layer 2: 29 … lem-pin 38f87d5 = lem -v`, `check_lem_sync: OK`/`lean OK`, `check_theorem_axioms: OK`,
+`check_exec_purity: CLEAN (11 modules)`); rows 2–12 = the §5 tails (SUMMARY lines identical, `BASELINE OK` ×4, A4c
+`exec_match=9 neg_pinned=5`, A5 `match=12 diff=0`, A6 `2/2`, A6b `7/7`, A7/A8 `ALL PASSED`, A9 `same=108 diff=5`,
+A10 `GATE PASS … (16/16)`, A11 `BASELINE OK (213 entries, exact match)`, A12 `18/18`).
+
+Tier B, verbatim tails:
+- B1 `test_libxml2.sh`: `SUMMARY: total=4 match=4 fail=0 (points: 1354, 22 observations each)` / `ALL PASSED`.
+- B2 `test_parse.sh tests/ci`: `Total: 250` / `Cerberus parse: 247 ok, 3 failed` / `Lean parse: 128 ok, 0 failed, 0 timeout
+  (>60s; fatal), 0 lean failure(s) …` / `Lean front end: 117 rejected (exit 1 + a printed Error/Undefined verdict; not a
+  parse failure), 2 internal-error-expected (…)` / `Success rate: 51% (of cerberus successes)` / `batch diagnostic
+  producers: 8/8 passed` / `ALL PASSED` (the lane's standing shape: the seam-hygiene record §5.6 quotes the same trailing
+  lines).
+- B3 `test_core.sh tests/ci`: `Success rate: 100% (of cerberus successes)` / `ALL PASSED`.
+- B4 `test_verify.sh`: `test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)`.
+- B5 `test_immaculate.sh`: `OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 …, R2 …,
+  R3 …, R5 …)` — the seven d3 rows MATCH inside it.
+- B6.1/B6.2 `test_speclab.sh --selftest`/`--plant`: `test_speclab: PASS (both pipelines agree on Specified(0))` /
+  `… Specified(2))`; B6.3–B6.7 the five gates: `CoreGateTest: ALL PASSED`, `ByteArrGateTest: ALL PASSED`,
+  `ListGateTest: ALL PASSED`, `TreeGateTest: ALL PASSED`, `SeedGateTest: ALL PASSED`.
+- B7 `test_gcc_oracle.sh --check-baseline`: `SUMMARY: total=2008 compared=1923 agree=1911 agree_nd=0 triaged=12 disagree=0
+  o2_agree=197 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=12 skip_lean_fail=13 skip_lean_timeout=11 skip_ub=47
+  triaged_addr=11 triaged_ub=1` / `Baseline check: 0 regression(s), 0 improvement(s)` (1350.7 s).
+- B8.1–B8.4 plant batteries: `test_hang_plant: all plants read as expected (sleep→HANG, busy→TIMEOUT, both lanes; missing
+  record→harness error)`; `test_kill_plant: all plants read as expected (…)`; `test_fuel_plant: ALL PLANTS OK (…)`;
+  `test_failstop_plant: PASS (11 class and rejection checks)`.
+- B9 `test_observation_lanes.py`: `observation lane plants: 93/93 passed` (1489 s — the immaculate plants re-run the
+  lane, now seven cases longer).
+- **B10.1 pristine**: `Independent oracle: passed; {'semantic_agreement': 829, 'matching_failure': 28,
+  'reviewed_difference': 7, 'interface_agreement': 2}` — 829 = 822 + the seven d3 cases (an ADDITION of corpus, each
+  `semantic_agreement`); **W19 (charter erratum):** the charter's/re-launch's expectation `'reviewed_difference': 3` is
+  STALE — the register `scripts/upstream_oracle_differences.json` has held SEVEN cases since before this arc (identical
+  at `52af8ccf1` and at this head; no history entry in the range: the three multi-TU tray rows + `minimal/112`,
+  `minimal/113`, `immaculate/nolibc/tray44-allocator-exhausted-single-request{,-overlap}` — the allocator-soundness
+  slice's rows), and the last three mainline full batteries (2026-09-17 address-space part two, 2026-09-18 seam hygiene,
+  its audit) all quote `'reviewed_difference': 7`. NOT movement. B10.2 `--plant`: `Independent oracle: plants_passed;
+  {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}`.
+- B11.1/B11.2 `check_failure_reach.sh --selftest` / gate: `check_failure_reach: SELFTEST OK (5 plants …)`; `check_failure_reach:
+  OK (237 pure failure sites = the 237 register rows exactly (…); every row sealed; tally line consistent)`.
+- B12 pristine chvalid: `4/4 semantic_agreement …` / `Independent oracle: passed; {'semantic_agreement': 4}`.
+
+**ZERO lane movement** across Tier A and Tier B (stop rule S2 never triggered); row 1 FULLY green with the hardened
+fuel-forms gate — §7's mandatory condition is met.
+
+### 9.5 Final register/manifest counts (this head)
+
+`unsafebaseio_allowlist.txt` KEEP 1 / PIN 19 (was 3 / 25); `OPAQUE_WANT` 10 (was 12); `failure_reach_register.txt` 237
+rows (mainline's 234 after the hotfix + this slice's +5 −2), tally `sites=237 exec=235 unresolved-owner=2
+reviewed-TAIL=184 reviewed-NON-TAIL=53 UNREACHABLE-BY-INVARIANT=169 REACHABLE=49 UNKNOWN=19 discardable=0`;
+`fork_drift_manifest.txt` `[files]` 82 (was 76), `[source-content]` 82 pins (12 moved + 6 new by this slice; the
+hotfix's `scripts/common.sh` re-pin beside them), layer 2: 29 (19 semantic + 10 cosmetic; was 25 = 13 + 12), `lem-pin
+38f87d5`; `fuel_hypotheses.txt` UNMOVED (12 hypothesis rows); `tests/immaculate/baseline.txt` +7 rows (§8);
+`IMMACULATE_PANICS = set()`. Consumers: 18. Readers: `enum_definitions`, `tagDefs`.
+
+### 9.6 Commit
+
+ONE commit for this section: the eight post-rebase files (five `*_lemMeasureProofs.lean` binder residues, the
+`check_fuel_forms.sh` decoy restatement W18, the re-derived register, this record). Then `.tmp/eada/` (the Stage A
+patch, the generated-tree snapshots, the reach/manifest/register scripts, the witness probes, every lane log quoted
+above) is DELETED — the record carries what matters. STOP for the E-A audit ask; Phase 2/D-A does not start (the
+operator's decision, §3.1).

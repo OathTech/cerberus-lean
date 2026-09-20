@@ -998,7 +998,7 @@ theorem reconstructValue_stable_aux (enumDefs : CerberusImpl.EnumDefs) (ambient 
           obtain ⟨revXs, prevEnd⟩ := acc
           obtain ⟨ident, membTy, off⟩ := memb
           dsimp only
-          have hm : (ident, membTy, off) ∈ (offsetsof_lemFuel ((defsWeight ambient + defsWeight ambient + defsWeight ambient + 1) + 2) ambient ambient t true).1 := by
+          have hm : (ident, membTy, off) ∈ (offsetsof_lemFuel ((defsWeight ambient + defsWeight ambient + defsWeight ambient + 1) + 2) enumDefs ambient ambient t true).1 := by
             unfold offsetsof at hmemb; rw [hb] at hmemb; exact hmemb
           have hty := hoffs _ hm
           have h1 := pot_member ambient ambient R (entries ambient) hR hLS hLS (Or.inl hl) hty

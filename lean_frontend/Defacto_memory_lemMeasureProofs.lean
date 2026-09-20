@@ -89,7 +89,7 @@ theorem find_array_index_measure_sufficient (size : Nat) (i : Nat) (ival_ : inte
   find_array_index_stable_aux (size - i + 1) size i ival_ lemFuel (size - i + 1) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
 theorem easy_update_mem_value_aux_stable_aux [LemFuel] (k : Nat) :
-    ∀ (ed : Fmap sym integerType) (ed : Fmap sym integerType) (td : Fmap sym (CerbLocation.Loc × tag_definition)) (loc1 : CerbLocation.Loc) (is_strong : Bool)
+    ∀ (ed : Fmap sym integerType) (td : Fmap sym (CerbLocation.Loc × tag_definition)) (loc1 : CerbLocation.Loc) (is_strong : Bool)
       (write_ty : ctype) (sh : List shift_path_element) (write_mval current_mval : impl_mem_value) (f g : Nat),
     List.length sh + 1 ≤ k → List.length sh + 1 ≤ f → List.length sh + 1 ≤ g →
     easy_update_mem_value_aux_lemFuel f ed td loc1 is_strong write_ty sh write_mval current_mval =
@@ -124,7 +124,7 @@ theorem easy_update_mem_value_aux_measure_sufficient [LemFuel] (_lemReader_enum_
     lemFuel (List.length sh + 1) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
 theorem memcmp_load_aux_stable_aux [LemFuel] (k : Nat) :
-    ∀ (ed : Fmap sym integerType) (ed : Fmap sym integerType) (td : Fmap sym (CerbLocation.Loc × tag_definition)) (ptrval : impl_pointer_value) (offset max_offset : Int)
+    ∀ (ed : Fmap sym integerType) (td : Fmap sym (CerbLocation.Loc × tag_definition)) (ptrval : impl_pointer_value) (offset max_offset : Int)
       (acc : List impl_mem_value) (f g : Nat),
     Int.toNat (max_offset - offset) + 1 ≤ k → Int.toNat (max_offset - offset) + 1 ≤ f →
     Int.toNat (max_offset - offset) + 1 ≤ g →
