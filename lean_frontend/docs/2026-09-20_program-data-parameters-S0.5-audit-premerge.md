@@ -1,0 +1,306 @@
+# Pre-merge audit — program-data parameters S0.5: N-ary `reader_seed` (lem-lean `f6542f8..4307dc5` + cerberus `b7e45d55e..4e01a8811`; 2026-09-20)
+
+**Ranges.** lem-lean `f6542f8..4307dc5` — ONE commit, 13 files (`src/lean_backend.ml` 92 lines changed; `tests/comprehensive/{Makefile,test_reader_multi.lem,lean-test/{TestReaderMultiImpl,TestReaderMultiCheck,TestReaderMultiExec}.lean,lean-test/lakefile.lean,negative/neg_seed_{arity,noreader,nonvar}.lem,invariance/inv_reader_multi.lem}`; `doc/lean-backend/DESIGN.md`; the record `doc/lean-backend/2026-09-19_nary-reader-seed-record.md`). cerberus-lean `b7e45d55e..4e01a8811` — FIVE commits (`7f29a7cb1` design note; `a36382579` design note §8 + S0 charter; `f417066ff` S0 record + evidence dir; `d5a1025ff` S0.5 charter; `4e01a8811` the pin bump + one manifest row + the S0.5 record). Confirmed: `git diff --stat b7e45d55e 4e01a8811 -- . ':!lean_frontend/docs'` = exactly `lean_frontend/lake-manifest.json | 4`, `lean_frontend/lakefile.toml | 8`, `lean_frontend/speclab/lake-manifest.json | 4`, `scripts/fork_drift_manifest.txt | 9`, `tests/mem-scale-probes/micro/lake-manifest.json | 4` — `5 files changed, 21 insertions(+), 8 deletions(-)`. Bases: cerberus mainline `mdd/cerberus-lean` = `b7e45d55e` (the primary checkout is parked there); lem-lean mainline `mdd/lean-backend` = `f6542f8` (0 commits ahead of the pin at the time of writing).
+**Heads audited:** cerberus `4e01a8811` as branch `audit/program-data-parameters-S0.5` in `worktrees/cerberus-lean-audit/program-data-parameters-S0.5`; lem-lean `4307dc5` as branch `audit/program-data-parameters-S0.5` in `worktrees/lem-lean-audit/program-data-parameters-S0.5`.
+**Who:** an INDEPENDENT pre-merge auditor (Claude, Fable 5.1) — [AGENT auditor] throughout. I wrote none of either range. Every claim marked *reproduced* is my own run in the two audit worktrees; quoted outputs are verbatim; tallies are labelled derived. The standing rulings the ranges implement — [USER 2026-09-19] *"I'm interested in making decisions that are consequential in some way but for the other kinds of decisions, which are really more implementation-focused, I think you can make the calls."* / *"yeah, I agree on Q2, let's roll it together"*, [USER 2026-09-04] *"we don't change the lem structure for ocaml"*, [USER 2026-09-08] *"we should \*NOT\* be building anything new out-of-policy"*, the Q-B decision **[AGENT, orchestrator], flagged**, and the S4 fence extension [AGENT, orchestrator] — are not questioned here; whether the code and the records implement EXACTLY them is.
+**Evidence:** this document IS the record (the brief: commit ONLY the audit document). Scratch — my probes, generated Lean, build/sweep/regeneration logs, the `comm` construction — lives under the two audit worktrees' git-ignored `.tmp/audit/` (`probes/`, `sweep/`, `regen/`, `comm/`, `s0repro/`, `old_backend.ml`, `build_lem.log`), ephemeral; every line this document relies on is quoted here.
+
+**What I ran (2026-09-20 ≈ 00:50–01:15 UTC; box load 0.4–5.5; one heavy job at a time; every `lake` through `cerberus-lean/scripts/capped`; every cerberus `make`/gate through the container's `scripts/ce`).** Read in order: the S0.5 charter (§0 rulings, §1 facts, §2 deliverables, §3 fence/stops), the S0 charter, the design note §8, the S0 record (all 737 lines), the S0.5 record, the lem-lean record, the reference audit format, then the full `lean_backend.ml` diff at `4307dc5` and the surrounding code at every named site (old and new), the test files, the pin-bump diffs, the manifest header. Built `./lem` in the lem-lean audit worktree (`scripts/ce make` → `Lem 4307dc5`); the old `Lem f6542f8` is the container's `lem-lean/lem`, called by path / via a one-line wrapper. *Reproduced:* nine auditor probe programs + a scratch Lake project against `lean-lib` @ `4307dc5` (toolchain `v4.28.0`, capped) — `Build completed successfully (54 jobs)`; seven negative probes under the new lem and three under the old; my own old-vs-new sweep of `tests/comprehensive` (55 + 2 joint invocations) and `tests/backends` (12); BOTH cerberus generated trees wiped and re-derived under the OLD lem and under the NEW lem in my worktree, hashed and diffed (the third byte-identity witness); `check_lem_sync --check/--check-lean`, `check_fork_drift.sh`, `check_lakefile_roots.sh` at the head; the `comm` locale construction on scratch listings (3 plants + 218 single-drop plants); every gate tail quoted in the three records checked against the worker's and the orchestrator's evidence files; the S0 record's P2 count and P3 rule against the sources; ~40 file:line cites; the committed S0 evidence directory against its own `INDEX.txt`.
+
+## 0. Verdict
+
+- **lem-lean `f6542f8..4307dc5`: MERGEABLE.** No MAJOR, no MINOR. The rule is implemented exactly as chartered and as the record describes: the association is total over the sorted reader list, every injection site inside a seed def receives the seed of ITS reader (§2.1 (g)), it holds across modules including a seed def in a module that imports none of the reader modules (§2.1 (c)), the deleted guard's concern is met by construction (§2.1 (h)), the two new `order ()` texts cannot disagree with the sort (§2.1), the internal-error branch is unreachable by any lem program (§2.1 (e)), reserved-name and duplicate-name refusals fire (§2.1 (d), (f)), and N = 1 is byte-identical on every existing program (§2.1 sweep: the only delta is `test_reader_multi.lem`, which the old lem refuses with `reader_seed requires exactly one declared reader`). One NOTE worth the operator's eye (N1): positional seeding silently takes a def's own leading parameter as the N-th seed when the parameter count is ≥ N — inherent to the chartered rule (and to the 1-ary rule before it), type-guarded by Lean, otherwise caught only by the value pins the S0 rules already mandate.
+- **cerberus `b7e45d55e..4e01a8811`: MERGE-WITH-FIXES.** No MAJOR. The pin bump is inert: my third witness — both trees WIPED and re-derived under `Lem f6542f8` and under `Lem 4307dc5` — is `305 = 305` files, hash-list diff EMPTY, sibylfs `16 = 16`, both stamps identical, and identical to the worker's `gen-after.sha256` (§2.2); the fork-drift gate passes at the head with `lem-pin 4307dc5 = lem -v` (§2.2). Every quoted gate tail in the S0.5 record resolves verbatim in the worker's or the orchestrator's evidence (§2.3). **One MINOR (M1):** the S0 evidence directory committed at `f417066ff` is missing 11 of the 12 `logs/*.log` files its own `INDEX.txt` lists — swallowed by `.gitignore:59 *.log` — while the S0 record §1.4/§1.5/§6, the S0.5 charter §1 and the lem-lean record §2.1 cite them as the verbatim source of the failing case. The files exist untracked in the arc worktree and match `INDEX.txt`; the quotes are TRUE (I re-derived N0/N1/N2 from the committed probe sources under the old lem, §2.3). Fix: a docs-only commit that force-adds the 11 files (or amends §6); no re-gate.
+
+## 1. Findings
+
+Grades: MAJOR = a trust gap, a hidden real difference, or a ruling not implemented; MINOR = a fail-open shape, an overclaim/misquote in a normative document or record, or an unclaimed change, each with a small fix; NOTE = precision, process, or a residual the merge need not wait for. Severities are [AGENT auditor] judgments.
+
+### M1 — MINOR — the S0 evidence directory's `logs/` is 11 files short of its own `INDEX.txt` (git-ignored `*.log`)
+
+**Where:** `lean_frontend/docs/2026-09-19_program-data-parameters-S0-evidence/` (commit `f417066ff`). The S0 record §6: *"`logs/` (`lem_version.txt`; `gen_*.log` per program; `build_positive.log` (the green build), `build_neg_assert.log`, `build_neg_wrong_order.log`, `build_positive_regreen.log`)"*; §1.5 quotes N0–N4 from `logs/gen_probe_seed3.log`, `logs/gen_neg_nonlifted_instance.log`, `logs/gen_neg_consumer_in_assert.log`, `logs/build_neg_assert.log`, `logs/build_neg_wrong_order.log`; §1.4 from `logs/build_positive.log`. The S0.5 charter §1 and the lem-lean record §2.1 cite `logs/gen_probe_seed3.log` for the failing case.
+**Reproduction** (*reproduced*): `git ls-files <evidence dir>` → 27 files, of which under `logs/` ONLY `logs/lem_version.txt`; `INDEX.txt` lists 38 files (12 under `logs/`). Every INDEX entry whose file is not committed:
+```
+NOT COMMITTED: ./logs/build_neg_assert.log
+NOT COMMITTED: ./logs/build_neg_wrong_order.log
+NOT COMMITTED: ./logs/build_positive.log
+NOT COMMITTED: ./logs/build_positive_regreen.log
+NOT COMMITTED: ./logs/gen_neg_consumer_in_assert.log
+NOT COMMITTED: ./logs/gen_neg_nonlifted_assert.log
+NOT COMMITTED: ./logs/gen_neg_nonlifted_instance.log
+NOT COMMITTED: ./logs/gen_pm_joint.log
+NOT COMMITTED: ./logs/gen_probe_readers.log
+NOT COMMITTED: ./logs/gen_probe_seed1.log
+NOT COMMITTED: ./logs/gen_probe_seed3.log
+```
+Cause: `git check-ignore -v` → `.gitignore:59:*.log	lean_frontend/docs/2026-09-19_program-data-parameters-S0-evidence/logs/gen_probe_seed3.log` (same for every `.log`; `lem_version.txt` survived by its extension). `sha256sum -c` of INDEX against the committed tree: `OK 26` (every committed file matches). In the arc worktree the 11 files are PRESENT, untracked (mtime `Sep 19 22:35`), and `sha256sum -c` of the 11 INDEX log rows against them → 11 × `OK`. No `.log` is committed anywhere under `lean_frontend/docs` (`git ls-files lean_frontend/docs | grep -c '\.log$'` → `0`; the seam-hygiene evidence dir uses `.txt` names).
+**Are the quotes true?** Yes — re-derived from the COMMITTED probe sources with the OLD lem (`lem-lean/lem`, `Lem f6542f8`, the S0 §1.2 flags), verbatim:
+```
+File "probe_seed3.lem", line 32, character 24 to line 32, character 35
+  Error: Lean backend: reader_seed requires exactly one declared reader
+  original input: "uses_three x"
+```
+```
+File "neg_nonlifted_instance.lem", line 27, character 18 to line 27, character 40 processed by: inline_exp_macro, inline_exp
+  Error: Lean backend: reader-lifted call inside an instance method (unsupported: instance fields cannot take extra parameters)
+  original input: "x + getD (tagDefs ()) 0"
+```
+```
+File "neg_consumer_in_assert.lem", line 22, character 30 to line 22, character 36
+  Error: Lean backend: reader_consumer call outside a reader-injection scope (unsupported: indreln rules, lemmas/asserts, and other non-lifted contexts have no reader value to pass — RC-rel/RC-scope)
+  original input: "consume"
+```
+(= S0 record §1.5 N0/N1/N2 character-for-character; the four `Warning: renaming …` lines the old lem also prints are not part of the quoted blocks.) The N3/N4 build-log quotes and the §1.4 build tail I did not re-derive (they need the S0 scratch package; the untracked files match INDEX, which is the same worker's hash list — a weaker witness, stated as such).
+**Why it matters:** "the repo is the record"; a record that names evidence files that are not in the repo is a record-integrity defect, and `*.log` in a global ignore is a fail-open shape for every future evidence directory.
+**Fix:** one docs-only commit on the arc branch: `git add -f` the 11 files from the arc worktree (verify against INDEX first — they match today), or amend §6 to say the logs are not committed and point at INDEX. Consider a `.gitignore` negation `!lean_frontend/docs/**/*.log` (outside every fence — operator call). No re-gate: no source, binary or generated file moves.
+
+### N1 — NOTE — positional seeding takes a def's OWN leading parameter as the N-th seed whenever the parameter count is ≥ N (inherent to the chartered rule; type-guarded; value pins are the mitigation)
+
+*Reproduced* (my `neg_arity2.lem`: the three-reader header of `test_reader_multi.lem`, then `val seed_two : nat -> string -> nat -> nat` / `let seed_two av bv x = uses_three x` / `declare {lean} reader_seed val seed_two` — the writer supplies TWO seeds and one own argument). New lem: `rc=0` (accepted), generated:
+```
+def  seed_two  (av : Nat) (bv : String) (x : Nat)  : Nat := ( uses_three av bv x)  x
+```
+— `x` is gamma's seed AND the own argument; it compiles (gamma : Nat = x : Nat). The arity refusal fires only for FEWER than N parameters (`List.length pats < n`, `:4482`); with ≥ N the first N are taken (`List.filteri (fun i _ -> i < n)`, `:4487`) — exactly the rule the charter A1 and the record §2.3 state ("its first N parameters are the seeds"). The 1-ary rule had the same shape (`let f x = …` seeded with `x`). Lean catches a type-different swallow at build time (the record §2.6 says the backend never checks a seed's type against its reader); a type-coincident one is caught only by a VALUE pin — the same class as the alpha/gamma swap the record documents. Cerberus consequence: none today (`run_const_expr_driver tds dr_st`, N = 1 → `tds`); at E-A/D-A `run_const_expr_driver <digest> <enum_definitions> tds dr_st` with N = 3 is right, and a LATER fourth reader would silently make `dr_st` a seed unless its type differs. Recommendation (not blocking): one sentence in `DESIGN.md`'s row ("a seed def with exactly N parameters has no own arguments; adding a reader re-partitions every seed def's parameters") and, in the E-A/D-A charter, a kernel value pin per seed def (S0 rule 4 already implies it). A fail-closed alternative (an explicit arity in the declare, or a seed-vs-reader type check in the backend) is new machinery outside this fence.
+
+### N2 — NOTE — record precision: the A0 snapshot's OCaml half was not re-derived at A0 either; the stamps are git-ignored; "one comment line"
+
+(i) The S0.5 record §5 describes A0 as *"`scripts/ce make prelude-src lean-prelude-src`; the sync stamps re-recorded to identical content"* and identifies the timestamp no-op ONLY for B2's first pass (§9 erratum). The same no-op applies at A0: with the `.lem` sources unchanged, `make prelude-src` did not run lem on the OCaml tree, so the OCaml half of `gen-before.sha256` hashes the tree the worktree already held (its stamp `gen 08b84774…` is the `f6542f8` output — the seam-hygiene audit's rebuild at `34b8e15a8` recorded the same value under `f6542f8`). The witness chain is nevertheless sound: the orchestrator's `orch-oldlem-scratch-trees.sha256` (old lem, scratch trees) has the identical hash SET (*reproduced*: `diff <(awk '{print $1}' gen-after.sha256 | sort) <(awk '{print $1}' orch-oldlem-scratch-trees.sha256 | sort)` → `rc=0`, 305 = 305), and my §2.2 third witness re-derives BOTH trees from wiped state under the old lem. Honest but imprecise; no fix needed beyond a sentence. (ii) lem-lean record §6 and S0.5 record §5: *"the sync stamps re-recorded to the same content: `git status` clean after"* — `ocaml_frontend/lem_sync.sha256` and `lean_frontend/lem_sync.sha256` are git-ignored (`.gitignore:15-16`), so `git status` cannot witness them; the S0.5 record's B2 comparison against `stamps-before/` copies is the proper witness (*reproduced*: `stamps-before/*` = the arc worktree's current stamps = my regenerated stamps, §2.2). (iii) S0.5 record §4: *"one comment line naming this slice in the existing trail"* — the `lakefile.toml` diff adds six comment lines (a paragraph in the trail's established style).
+
+### N3 — NOTE — the reserved-binder check runs AFTER the association is built; immaterial, both refuse
+
+`seed_info` (`:4470-4501`) builds the association before `reserved_binder_check ()` runs (`:4576`, `if fuel_info <> None || seed_info <> None`). For a seed named `_lemReader_alpha` the association `(_lemReader_alpha ↦ _lemReader_alpha)` is built and then refused (§2.1 (d)); for `_lemReader_zzz` likewise. Fail-closed either way; recorded because under the OLD lem the (deleted) `<> 1` guard refused these programs FIRST — the reserved check now carries them alone, as intended.
+
+### N4 — NOTE — process: the primed audit worktree's generated trees were stale, and so are the primary checkout's
+
+My cerberus audit worktree arrived with stamps `src 0ea744e4…` against a `.lem` tree hashing `037dee26…` and 218 (not 219) Lean files — the same shape as the seam-hygiene audit's N10 (priming copies the primary checkout's `generated/`, which is itself stale: the orchestrator's `orch-primary-trees.sha256` has 304 rows with a different hash set). I regenerated before any claim (§2.2). Outside both fences; the priming recipe deserves a look.
+
+### N5 — NOTE — the orchestrator's Part B re-run covered rows 1, 2, 4c, 6b, 12a/12b; rows 3–11 rest on the worker's Tier A evidence, which I verified verbatim
+
+`orch-partB-gates.log`: `=== ORCH ROW1 …`/`=== ROW1 EXIT=0 ===`, `ROW 4c EXIT=0`, `ROW 6b EXIT=0`, `ROW 12a/12b EXIT=0`, `ROW 2 EXIT=0`. Every §7.1 line of the record for A2–A12.2 is the last summary line of `release-tierA/<lane>/stdout` (§2.3). I did not re-run Tier A (my re-derived gates: lem-sync, fork-drift, lakefile-roots).
+
+### N6 — NOTE — the `comm` locale finding (record §8 (b)) is CONFIRMED, and the false-positive shape is concrete
+
+§2.5: under the ambient `en_US.UTF-8` a dropped root alone is still attributed correctly (with the three `comm` warnings); a dropped root PLUS an orphan module prints three phantom names in BOTH columns; under `LC_ALL=C` the lists are exact. Over all 218 single-drop plants: `hidden(in neither column)=0; misattributed(in the extra column)=0`. The equal-set real path is silent. The worker's remedy (`export LC_ALL=C`, mirror of `check_fork_drift.sh:84`/`:125`) is the right one; outside this fence.
+
+### N7 — NOTE — the orchestrator's boundary transcript lines have no evidence file
+
+S0.5 record §3: `git -C deps/lem-pinned reset --hard …` → `HEAD is now at 4307dc5 …`; `scripts/ce make rebuild-lem` → `⊘ removed lem.2026-05-01 / ∗ installed lem.2026-05-01 / [LEM] installed Lem 4307dc5`; §4: the four `info: LemLib: …` lines of `lake update LemLib`. Terminal quotes, no log. Their OUTCOMES are verified (*reproduced*, read-only): `deps/lem-pinned` HEAD `4307dc5108bbe71de2f323712443cab6c2b3c0da` on `cerberus-pin`; `opam pin list --switch=.` → `lem.2026-05-01    git  git+file:///home/dev/projects/cerberus-lean-proj/deps/lem-pinned#cerberus-pin`; `scripts/ce lem -v` → `Lem 4307dc5`; the four pin files carry the full hash; the arc worktree's fetched package `rev-parse HEAD` → `4307dc5108bbe71de2f323712443cab6c2b3c0da`; lem-lean `program-data-parameters` = `4307dc51…`, `mdd/lean-backend` = `f6542f8e…`; `git diff --stat f6542f8 4307dc5 -- lean-lib` → empty. Recorded so the reader knows those lines rest on transcription.
+
+## 2. The scope items — what I did, verbatim outputs, verdict
+
+### 2.1 The backend diff, adversarially (item 1)
+
+**The change, by reading** (`git show 4307dc5 -- src/lean_backend.ml`, 92 lines): `St.reader_seed_param : string option ref` → `(string * string) list option ref` (`:351`; reset `:434` textually unchanged); `reader_inject_name` (`:3182-3192`): `None → pname`, `Some assoc → List.assoc_opt pname assoc`, miss → `raise … "internal error — reader binder '%s' has no seed …"`; `seed_info` (`:4470-4501`): `readers = get_reader_params ()`, `n`, the `n = 0` refusal, the `List.length pats < n` refusal (message names `n` and `order ()`), `List.filteri (fun i _ -> i < n) pats` paired by `List.combine readers seed_pats`, each `P_var v | P_var_annot (v, _)` → `(pname, v)`, else the plural refusal naming `(i + 1) n (reader_name cref)`; the `Some _ when List.length (get_reader_params ()) <> 1` arm deleted; the mutual/instance/fuel arms (`:4503-4511`), the reserved-binder check (`:4531-4550`, called `:4576`), "unexpectedly reader-lifted" (`:4592-4596`) and the save/restore (`:4597-4599`) unchanged in text. `lean-lib/`: `git diff --stat f6542f8 4307dc5 -- lean-lib` → empty (*reproduced*).
+
+**Every use of `reader_seed_param` at `4307dc5`** (`grep -n`, *reproduced*): `:351` (declaration), `:434` (`reset_invocation`), `:3169` (`reader_consumer_scope_check`, `<> None`), `:3183` (`reader_inject_name`), `:4597-4599` (save/restore). Nothing else read it as a string; (h) holds. The three injection sites all route through `reader_inject_name`: `reader_args_output` `:3194-3197` (consumer call sites, every reader), the applied reader read `:5857`, the bare reader reference `:5975` (eta-expanded).
+
+**`order ()` vs the sort.** The sort key is `lean_reader_param_name env cref = "_lemReader_" ^ Name.to_string (Path.get_name cd.const_binding)` (`:498-500`), compared by `String.compare` (`:604`); `order ()` prints `reader_name cref = Name.to_string (Path.get_name … const_binding)` over the SAME cached list in list order (`:4474-4479`). With a constant prefix, `String.compare` on the binder names is the byte comparison of the names, so the printed order IS the sort order; they cannot disagree. *Reproduced* on the S0 shape: `reader_seed def must take 3 seed arguments (one per declared reader, in the global sorted reader order: digest, enum_defs, tagDefs)` while the generated binders are `(_lemReader_digest …) (_lemReader_enum_defs …) (_lemReader_tagDefs …)` (§2.3 / the S0 record §1.3).
+
+**Probes** (all under `.tmp/audit/probes/` of the lem-lean audit worktree; generated with the NEW `./lem -wl ign -lean -outdir .`; compiled by a scratch Lake project `require LemLib from "../../../lean-lib"`, `leanprover/lean4:v4.28.0`, `scripts/capped lake build`; the three-reader header is `test_reader_multi.lem`'s: `gamma`, `alpha` : `unit -> nat`, `beta : unit -> string`, consumer `combine` → `AuditImpl.combine (alpha) (beta) (gamma) (x) := alpha * 1000 + beta.length * 100 + gamma * 10 + x`, `uses_three x = alpha () * 100 + stringLength (beta ()) * 10 + gamma () + x`). Build tail, verbatim (`build_probes.log`):
+```
+info: SwapCheck.lean:9:0: 'via_swapped' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: XmodCheck.lean:11:0: 'via_pipe' depends on axioms: [propext, Classical.choice, Quot.sound]
+Build completed successfully (54 jobs).
+rc=0 END 2026-09-20T01:05:36Z
+```
+Every `example` below elaborated in that build (rc 0).
+
+**(a) two same-typed readers swapped positionally.** `let seed_swapped gv bv av x = uses_three x` (the writer INTENDS gv = gamma, av = alpha), `let via_swapped x = seed_swapped 9 "ab" 7 x`. Generated:
+```
+def  seed_swapped  (gv : Nat) (bv : String) (av : Nat) (x : Nat)  : Nat := ( uses_three gv bv av)  x
+```
+— position 1 → alpha regardless of the name. Pins (SwapCheck.lean): `example : Nat → String → Nat → Nat → Nat := seed_swapped` (the TYPE pin cannot see it), `example : via_swapped 3 = 930 := by decide` (alpha := 9, gamma := 7: 900 + 20 + 7 + 3), `example : via_swapped 3 ≠ 732 := by decide` (the intended 700 + 20 + 9 + 3 is NOT produced). So only a VALUE pin catches it, and `test_reader_multi.lem`'s pins would: `TestReaderMultiCheck.lean:57-60` (`seed3 7 "ab" 9 3 = 8110 := rfl`, `seed3 9 "ab" 7 3 = 10306 := rfl`, `seed3 7 "ab" 9 3 ≠ seed3 9 "ab" 7 3 := by decide`) and the compiled `r6` in `TestReaderMultiExec.lean:31-32`. **Holds.**
+
+**(b) more than N parameters / exactly N.** `let seed_extra av bv gv p q x = uses_three x + p * q`; `let seed_exact av bv gv = uses_three 0`. Generated:
+```
+def  seed_extra  (av : Nat) (bv : String) (gv : Nat) (p : Nat) (q : Nat) (x : Nat)  : Nat := ( uses_three av bv gv)  x  +  (p  *  q)
+def  seed_exact  (av : Nat) (bv : String) (gv : Nat)  : Nat := ( uses_three av bv gv) (  0)
+```
+Pins: `seed_extra (av := 7) (bv := "ab") (gv := 9) (p := 2) (q := 5) 3 = 742 := rfl`, `via_extra 3 = 742 := by decide`, `seed_exact 7 "ab" 9 = 729 := rfl`. The extras are the def's own arguments. **Holds** (and see N1 for the ≥ N shape).
+
+**(c) cross-module — cerberus's real shape.** Five files, ONE invocation (`Pr_sym.lem` reader `digest : unit -> string`; `Pr_impl.lem` reader `enum_defs : unit -> nat`; `Pr_ctype.lem` reader `tagDefs : unit -> nat`; `Pr_mem.lem` imports the three, consumer `consume` → `AuditImpl.consume (digest : String) (enum_defs : Nat) (tagDefs : Nat) (x : Nat) := x + 100 * tagDefs + 10000 * enum_defs + 1000000 * digest.length`, lifted `uses_all x = consume x + Pr_ctype.tagDefs () + Pr_impl.enum_defs () + stringLength (Pr_sym.digest ())` and `uses_tag`; `Pr_pipe.lem` imports ONLY `Pr_mem` and holds the seed def `let run_driver dv ev tv x = Pr_mem.uses_all x + Pr_mem.uses_tag x` + `via_pipe x = run_driver "ab" 3 7 x`). Generated (`Pr_mem.lean:35`, `Pr_pipe.lean:30`):
+```
+def  uses_all (_lemReader_digest : String) (_lemReader_enum_defs : Nat) (_lemReader_tagDefs : Nat)  (x : Nat)  : Nat :=  (((AuditImpl.consume _lemReader_digest _lemReader_enum_defs _lemReader_tagDefs)  x  + _lemReader_tagDefs)  + _lemReader_enum_defs)  +  S…
+def  run_driver  (dv : String) (ev : Nat) (tv : Nat) (x : Nat)  : Nat := ( uses_all dv ev tv)  x  + ( uses_tag dv ev tv)  x
+```
+(user modules carry no namespace; `S…` truncates `String.length (_lemReader_digest)`). Pins: `example : String → Nat → Nat → Nat → Nat := run_driver`; `run_driver (dv := "ab") (ev := 3) (tv := 7) 5 = 2030729 := rfl`; `via_pipe 5 = 2030729 := by decide`; `uses_all (_lemReader_digest := "ab") (_lemReader_enum_defs := 3) (_lemReader_tagDefs := 7) 5 = 2030717 := rfl`; `run_driver "ab" 7 3 5 ≠ run_driver "ab" 3 7 5 := by decide`. Sorted order `digest < enum_defs < tagDefs`, the association and the injection all hold across modules, including for a seed module that imports none of the reader modules — the reader list is invocation-global (`lean_reader_get_params` walks `c_env_all_consts env.c_env`; `main.ml:286` typechecks every module before the single `output` call `:322/:328`, whose first act is `Lean_backend.lean_analysis_prepass_all env mods` (`process_file.ml:414-415`)). Negative control — the OLD lem on the same five files:
+```
+File "Pr_pipe.lem", line 5, character 29 to line 5, character 65 processed by: inline_exp_macro, inline_exp
+  Error: Lean backend: reader_seed requires exactly one declared reader
+  original input: "Pr_mem.uses_all x + Pr_mem.uses_tag x"
+```
+**Holds.**
+
+**(d) seed parameters named like reserved synthesized names** — four negatives, NEW lem, all `rc=1`:
+```
+File "neg_res1.lem", line 18, character 38 to line 18, character 49
+  Error: Lean backend: binder '_lemReader_alpha' collides with a reserved synthesized binder (the reserved-name contract: 'lemFuel', 'lemMeasureLe', 'lemHyp' and the '_lemReader_'/'_lemSupply' prefixes are the backend's, in parameters AND clause bodies; a shadowed fuel/reader/supply/hypothesis binder is silently wrong) — rename the variable
+  original input: "uses_three x"
+```
+```
+File "neg_res2.lem", line 18, character 29 to line 18, character 40
+  Error: Lean backend: binder 'lemFuel' collides with a reserved synthesized binder (the reserved-name contract: … ) — rename the variable
+  original input: "uses_three x"
+```
+`neg_res3.lem` (`_lemReader_zzz`, a reserved prefix that is no real binder) and `neg_res4.lem` (`_lemSupply_q`) → the same refusal naming `'_lemReader_zzz'` / `'_lemSupply_q'`. (Under the OLD lem `neg_res1` was refused by the deleted guard instead: `reader_seed requires exactly one declared reader`.) **Refuses.**
+
+**(e) is the internal-error branch reachable?** By reading: `reader_inject_name pname` is called with `pname` from (i) `reader_args_output` — iterating `get_reader_params ()`, the very list `seed_info` zipped the seeds onto (`List.combine readers seed_pats` with `readers = get_reader_params ()`), and (ii) `reader_param_name cd.descr` / `reader_param_name const.descr` for a `cref` with `is_reader_cref cref` — the same `lean_reader_param_name` on a constant that `lean_reader_get_params` necessarily included (it filters `c_env_all_consts env.c_env` by `lean_reader_is_reader`, and `env` is the program-complete environment, above). The cache is `[invocation]`-lifetime (`:216-223`) and `reset_invocation` clears it together with `reader_seed_param` (`:434-435`). So inside a seed def every looked-up binder is in the association's domain; a miss needs a reader constant outside `c_env_all_consts` — impossible — or a non-deterministic `lean_reader_param_name` — it is a pure string concatenation. **Unreachable by any lem program; fail-closed if the invariant were ever broken.** The cross-module probe (c) is the widest-scope empirical case and did not reach it.
+
+**(f) two reader constants with the same unqualified name in different modules** (`Pd_a.lem` `cfg : unit -> nat`, `Pd_b.lem` `cfg : unit -> string`, `Pd_c.lem` imports both, uses both qualified, and declares a `reader_seed` def `s a b x`); one invocation, NEW lem (`rc=1`; identical under the OLD lem):
+```
+no location information available
+  Error: Lean backend: two reader constants share the unqualified name behind binder '_lemReader_cfg' (Pd_b.cfg and Pd_a.cfg) — their injected binders would silently conflate; rename one of them
+```
+— raised by `lean_param_dup_check` (`:580-592`) from `lean_reader_get_params` (`:605`), which the pre-pass calls (`:1177`) before any def is rendered: no seed association is ever built. **Refuses first.**
+
+**(g) `reader_consumer_scope_check` inside a seed def, and the three injection sites.** `probe_direct.lem`: `let seed_direct av bv gv x = alpha () + x` (applied reader read), `let seed_bare av bv gv x = apply_unit gamma + x` (bare reader reference), `let seed_cons av bv gv x = combine x` (consumer applied), `let seed_hof av bv gv l = List.map combine l` (consumer as a HOF argument). Generated:
+```
+def  seed_direct  (av : Nat) (bv : String) (gv : Nat) (x : Nat)  : Nat := av  +  x
+def  seed_bare  (av : Nat) (bv : String) (gv : Nat) (x : Nat)  : Nat :=  apply_unit (fun (_ : Unit) => gv)  +  x
+def  seed_cons  (av : Nat) (bv : String) (gv : Nat) (x : Nat)  : Nat := ( AuditImpl.combine av bv gv)  x
+def  seed_hof  (av : Nat) (bv : String) (gv : Nat) (l : List (Nat))  : List (Nat) :=  List.map ( AuditImpl.combine av bv gv)  l
+```
+Pins: `seed_direct 7 "ab" 9 3 = 10`, `seed_bare 7 "ab" 9 3 = 12`, `seed_cons 7 "ab" 9 3 = 7293`, `seed_cons 9 "ab" 7 3 = 9273` (all `rfl`), `seed_hof 7 "ab" 9 [3] = [7293] := by decide`. The scope check (`:3167-3171`, `!St.reader_seed_param <> None`) admits the consumer inside the seed def, and each of the three sites receives the seed of ITS reader. **Holds.**
+
+**(h) the deleted guard.** Its concern (`f6542f8:4459-4464`, verbatim in the charter §1): *"The seed name overrides EVERY injected reader parameter — with more than one reader that would silently conflate them"* — true of `Some seed -> seed` (`f6542f8:3170-3173`: one name for every binder). At `4307dc5` the value is a per-binder association keyed by the binder name, total over the sorted list, and the lookup is `List.assoc_opt pname assoc` — two binders receive the same seed only if the writer names two seed positions identically, which lem's typechecker refuses (*reproduced*, `neg_dupvar.lem` `let seed_dup a a x = …` → `Type error: duplicate binding: a`, both lems). (a)/(c)/(g) show distinct seeds reaching distinct binders. **Met by construction; nothing else depended on the single string** (the five uses above).
+
+**Extra probes.** A type-annotated seed `let seed_ann (av : nat) bv gv x = …` (record §2.6's pre-existing `P_typ` refusal) → `Error: Lean backend: reader_seed def's seed arguments must be simple variables (argument 1 of 3, the seed for reader alpha, is not)` (*reproduced*, matches the record's wording). The shipped negatives re-run by hand match the record §3.3 word-for-word (the suite lines §2.3).
+
+**The N = 1 regression sweep, my own** (`.tmp/audit/sweep/`; OLD `lem-lean/lem` = `Lem f6542f8` vs NEW `./lem` = `Lem 4307dc5`; `tests/comprehensive`: 55 single-file invocations with the Makefile's `-wl ign -i ../../library/pervasives.lem -lean` + the two joint invocations; `tests/backends`: the 12 `leantests` files with `-wl ign -lean`):
+```
+Only in …/.tmp/audit/sweep/new/comprehensive/test_reader_multi: Test_reader_multi_auxiliary.lean
+Only in …/.tmp/audit/sweep/new/comprehensive/test_reader_multi: Test_reader_multi.lean
+diff rc=1
+== diff -r backends ==
+diff rc=0
+```
+File counts comprehensive old/new `116`/`118`, backends `22`/`22`; the only exit-code mismatch over all 69 invocation pairs: `comprehensive/test_reader_multi old_exit=1 new_exit=0`; the old lem's refusal, verbatim:
+```
+File "test_reader_multi.lem", line 81, character 30 to line 81, character 46
+  Error: Lean backend: reader_seed requires exactly one declared reader
+  original input: "draws_and_reads x"
+```
+= the lem-lean record §4 and the S0.5 record §3 exactly (a first pass of my two joint invocations failed identically on both lems — my zsh passed the file pair as one argument; redone with word-splitting, both `old_exit=0 new_exit=0`, 4 + 4 files identical). `examples/ppcmem-model` and `examples/cpp` I did not sweep (the worker's and the orchestrator's sweeps did: `20/20` identical, cpp refused on both). **Verdict: the rule is load-bearing exactly where claimed and byte-inert everywhere else in the two corpora I swept.**
+
+### 2.2 Byte identity — the third witness (item 2)
+
+*Reproduced* in my cerberus audit worktree at `4e01a8811` (`.tmp/audit/regen/regen.log`), the old lem via a one-line wrapper `exec /home/dev/projects/cerberus-lean-proj/lem-lean/lem "$@"` placed FIRST on `PATH` inside `scripts/ce` (`which lem` → the wrapper; `lem -v` → `Lem f6542f8`), then the switch's lem (`which lem` → `…/cerberus-lean/_opam/bin/lem`; `lem -v` → `Lem 4307dc5`); each pass `make clean-prelude-src clean-sibylfs-src && rm -rf lean_frontend/generated && make prelude-src lean-prelude-src`, then `find ocaml_frontend/generated lean_frontend/generated -type f | sort | xargs sha256sum`. Verbatim key lines:
+```
+START 2026-09-20T01:11:07Z HEAD=4e01a8811 load=0.42 1.11 4.10
+== [OLD] wipe + regenerate under lem f6542f8 (wrapper first on PATH) ==
+Lem f6542f8
+check_lem_sync: recorded ocaml_frontend/lem_sync.sha256 (src 037dee26c6472b1bf7f8d628bec1b7e64d2f9d12d67c81bd37b55e634fd34b2d, gen 08b84774381fd86eeb1a658efa47a9b372ebb438085530b5ab6ba045da3eec8d)
+check_handwritten_sync: OK (49 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+check_lem_sync: recorded lean_frontend/lem_sync.sha256 (src 037dee26c6472b1bf7f8d628bec1b7e64d2f9d12d67c81bd37b55e634fd34b2d, gen cd499eab48146463197f60b35a9fb26c31337bab7d06b2f1d9af43047c2619b5)
+old regen rc=0  2026-09-20T01:11:44Z
+old: 305 files; sibylfs 16
+== [NEW] wipe + regenerate under the switch lem ==
+Lem 4307dc5
+check_lem_sync: recorded ocaml_frontend/lem_sync.sha256 (src 037dee26c6472b1bf7f8d628bec1b7e64d2f9d12d67c81bd37b55e634fd34b2d, gen 08b84774381fd86eeb1a658efa47a9b372ebb438085530b5ab6ba045da3eec8d)
+check_lem_sync: recorded lean_frontend/lem_sync.sha256 (src 037dee26c6472b1bf7f8d628bec1b7e64d2f9d12d67c81bd37b55e634fd34b2d, gen cd499eab48146463197f60b35a9fb26c31337bab7d06b2f1d9af43047c2619b5)
+new regen rc=0  2026-09-20T01:12:26Z
+new: 305 files; sibylfs 16
+== diff old.sha256 new.sha256 ==
+diff rc=0
+== diff old-sibylfs new-sibylfs ==
+diff rc=0
+== stamps old vs new ==
+ocaml stamp diff rc=0
+lean stamp diff rc=0
+== diff new.sha256 vs the worker's gen-after.sha256 (arc wt) ==
+diff rc=0
+== diff new-sibylfs vs worker's gen-after-sibylfs ==
+diff rc=0
+check_lem_sync: OK (src 037dee26c6472b1bf7f8d628bec1b7e64d2f9d12d67c81bd37b55e634fd34b2d, gen 08b84774381fd86eeb1a658efa47a9b372ebb438085530b5ab6ba045da3eec8d)
+check_lem_sync: lean OK (src 037dee26c6472b1bf7f8d628bec1b7e64d2f9d12d67c81bd37b55e634fd34b2d, gen cd499eab48146463197f60b35a9fb26c31337bab7d06b2f1d9af43047c2619b5)
+check_fork_content: OK — 76 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 76 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 25 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 4307dc5 = lem -v)
+check_lakefile_roots: OK (218 roots = 218 generated modules + the exe root Main; 85 auxiliary modules all built)
+```
+Derived split of the 305: `219 lean_frontend/generated` + `86 ocaml_frontend/generated` (= the record's and the manifest NOTE's `86 + 219`). **The two existing witnesses** (the worker's `gen-before.sha256` (A0, `Sep 19 22:56`, before the lem-lean build at `23:02`) = `gen-after.sha256` (B2 second pass, wiped, new lem): `diff` → `rc=0`, 305 = 305, sibylfs `rc=0` 16 = 16; the orchestrator's `orch-worktree-trees.sha256` = `gen-after.sha256` (`rc=0`) and `orch-oldlem-scratch-trees.sha256` with the identical hash set) I checked as stated; the `gen-before.sha256` provenance is honest with the precision caveat of N2 (its OCaml half was the worktree's existing `f6542f8` tree, not re-run at A0 — irrelevant now that BOTH old-lem derivations from wiped trees agree). **Verdict: the pin bump is byte-inert on this tree, by three independent derivations; the lem-sync, fork-drift and lakefile-roots gates are green at the head with the manifest's one-row edit.**
+
+### 2.3 Records vs evidence, verbatim (item 3)
+
+**The lem-lean record §5 vs the worker's `.tmp/suite_a2.log`** (1450 lines; read with `awk` — the shell's `grep` is a snapshot function that returns nothing under git-ignored `.tmp/`): `59: === Generation: 55 passed, 0 failed, 0 skipped ===`; `44:   OK: test_reader_multi.lem`; `60-61` the two `(joint)` lines; `1210: Build completed successfully (169 jobs).`; `815: info: TestReaderMultiCheck.lean:69:0: 'via_seed3' depends on axioms: [propext, Classical.choice, Quot.sound]`; `816: … 'uses_three' depends on axioms: [propext, Classical.choice, Quot.sound]`; `1212/1214` the two panic legs; `1216-1217` tuple-once; `1219: OK: compiled draw sequences hold`; `1221: OK: compiled consumer injection holds`; `1223:   OK: compiled N-ary seed injection holds`; `1225/1227` the two fuel legs; `1293-1295` the three `OK (rejected as declared): negative/neg_seed_{arity,nonvar,noreader}.lem`; `1336-1337` `inv_reader_consumer.lem` / `inv_reader_multi.lem (5 artifacts byte-identical across ocaml/hol/isa/coq)`; `1446: OK: 10 proofs modules scanned; …`; `1448: OK: 257 files scanned; no lemDefaultFuel, …`; `1450: SUITE EXIT=0`. Counts (derived, awk): `rejected as declared` 101, `OK: parity` 26, `OK: both fail` 6, `XFAIL (expected, registered)` 4, `^ *FAIL` 4 — = the record's 101 / 26 / 6 / 4 / 4. The record's `./lem -v` → `Lem f6542f8-dirty` is a terminal line (not in the log; the sweep log has `== new lem version:    Lem f6542f8-dirty`). **All resolve.** The record §4 sweep: `.tmp/s05/sweep.log` lines `1-2` (`== pinned lem version: Lem f6542f8` / `== new lem version:    Lem f6542f8-dirty`), the tail (`ppcmem-model: IDENTICAL (20 files)`, `cpp: IDENTICAL (0 files)`, the verbatim pinned-lem refusal, `pin_exit=1` / `new_exit=0`), `rediff_comprehensive.txt` = the two `Only in …` lines. **Resolve.**
+
+**The S0.5 record §3 vs the orchestrator's `orch-partA-suite.log`** (1396 lines; `cmp` with the lem-lean worker's `.tmp/orch-suite.log` → identical): `64: === Generation: 55 passed …`; `1156: Build completed successfully (169 jobs).`; `1169:   OK: compiled N-ary seed injection holds`; `1239-1241` the three new negatives; `1283: OK: inv_reader_multi.lem …`; `952-953` `via_seed3`/`uses_three` trio; `1396: === SUITE EXIT=0 ===`; counts 101 / 26 / 6 / 4 / 4. `orch-partA-sweep-logs-only/c-old.test_reader_multi.log` = the quoted refusal (after `scripts/ce`'s env banner). **Resolve.**
+
+**The S0.5 record §5–§8 vs `.tmp/s05/`:** §5's `before: 305 files; after: 305 files` / `diff rc=0` — `wc -l` 305/305, `diff` rc 0, sibylfs 16/16 rc 0; `stamps-before/{ocaml,lean}_lem_sync.sha256` = the arc worktree's stamps = mine (§2.2). §6 vs `build_b3.log`: `6: check_driver_fresh: recorded oracle stamp (bin 2751fb71ae2fee1847a6c57b2f3f03952a2d08fc797d33d225f10159489044cf, src 2b8b576816681316ce0c0b690dc78a63f813ac8a7391f976bdf4684a18f47634)`; `10: Build completed successfully (285 jobs).`; `11: check_driver_fresh: recorded lean stamp (bin 8e9f7fb1a1c99ef9a8ea05fcdddc8fa5f7cc961f1644a3680306699534595729, src 86bb9da365eeee8ef529e25f520a46c1f6753599861b219792ba13e5c168fa97)`; `12: build_cerberus+build_lean rc=0 wall=260s`; `2859: Build completed successfully (148 jobs).`; `2860: speclab rc=0 wall=95s`; `2861: TOTAL wall=355s`. §7 vs `release-tierA/`: `summary.txt` = `fast: failed; 15/16 selected commands completed successfully.` / `Source unchanged: True. Complete tier selection: True.`; `tierA_b4.log` `FAILED A1 (228.5s)` and `TIERA wall=501s`; every §7.1 row = the summary lines of `<lane>/stdout` (A2 `total=113 match=90 ub_match=18 …` / `Baseline check: 0 regression(s), 0 improvement(s)` / `BASELINE OK`; A3 `total=212 match=183 ub_match=16`; A4 `total=90 match=66 ub_match=20`; A4b `total=93 match=93`; A4c `exec_match=9 neg_pinned=5 fail=0`; A5 `match=12 diff=0` / `ALL MATCH RECORDED BASELINE`; A6 `total=2 match=2`; A6b `total=7 match=7`; A7/A8 `Success rate:   100% (of cerberus successes)` / `ALL PASSED`; A9 `total=113 same=108 diff=5 ocaml_fail=0 lean_fail=0`; A10 `[lean+libc] EXACT MATCH with ORACLE_LIBC (16/16 URI corpus)` / `GATE PASS …(16/16)`; A11 `total=213 match=207 ub_match=6 …` / `BASELINE OK (213 entries, exact match)`; A12.1 `test_address_space: SELFTEST OK (14 plants — …; the committed file green)`; A12.2 `EXPECT OK    18 pinned rows = 18 observed cases, every token identical` / `test_address_space: OK (18 cases: …)`). §7.2 vs `A1/stdout:731-735`: `UNPLANTED:` / `PLANT FAIL [unplanted gate is not green]:` / `check_fork_drift: FAIL — lem-pin stale: manifest records lem-pin=f6542f8, 'lem -v' says 4307dc5 — both generated trees must be re-derived with the pinned lem and the manifest refreshed deliberately` / `check_fork_drift: SELFTEST FAILED (1)` / `test_unit: fork-drift gate SELFTEST FAILED` (and `483: Total: 12 passed, 0 failed`, `712-714` totality + lem-sync OK). §7.4 vs `row1_rerun.stdout` (750 lines): `:733` / `:736` the `check_fork_drift: OK — … lem-pin 4307dc5 = lem -v` lines, `:750 test_renumber_plants: OK (12 plants: …)`, `:483 Total: 12 passed, 0 failed`, `:658/:660 check_lakefile_roots: OK (218 roots = 218 generated modules + the exe root Main; 85 auxiliary modules all built)`, `:695/:698 check_fuel_forms: OK (81 fuel'd workers: 62 MEASURED …`, `:708/:711 check_failure_reach: OK (233 …`. §8 vs `row1_rerun.stderr:84-90` (the `OBSERVATION ERROR: unknown or malformed stdout record: b'Defined {value: "Specified(0)", stdout: "'` line + 2 × 3 `comm:` lines) and `noise/*.err` (`check_lakefile_roots.sh_--selftest.err`: the six `comm` lines; `test_exec.sh_--selftest.err`: the one `OBSERVATION ERROR`; the other three: only the `scripts/ce` banner). **Every quoted line resolves; no hand-edited number found.** §3's boundary transcript lines: N7.
+
+**The S0 record against the sources at the head** (no `.lem`/`.ml`/hand-written Lean changed in the range, so head = base for these): **P2** — `grep -n 'declare {lean} reader' frontend/model/*.lem` → `ctype_aux.lem:36` (`tagDefs`), `mini_pipeline.lem:78` (`reader_seed val run_const_expr_driver`), and exactly SIXTEEN `reader_consumer` in `mem.lem` at `:96,97,98,163,176,182,213,217,225,229,239,243,247,306,310,327` (`grep -c` → `16`); `symbol.lem:242` the one `supply`. `ctype_aux.lem:11` the `val tagDefs`, `mini_pipeline.lem:70` `let run_const_expr_driver tds dr_st`, `:80-86` the *"On the OCaml target the threaded values are DEAD (the mints redirect ambiently)"* comment, `:185-187` the caller, `cabs_to_ail.lem:1131-1133` *"DEAD round-trip on the OCaml target"*, `symbol.lem:44-46` the digest val + reps, `:247-262` the four `digest()` mints, `:276-278` `fresh_given_int`, `:280-281` `fresh_object_address` — all as cited. The Lean sites: `Main.lean:520/533/562` `forceIO`, `:521` `desugar fmapEmpty …`, `:563` `translate fmapEmpty …`, `:616/:637/:961` `setDigestIO`, `:975` `link coreFiles`, `:1025` `initial_driver_state supply …`, `:1037` `drive runFile.tagDefs …`, `:1039` `CerbCall.driveCall runFile.tagDefs …`; `CerbCall.lean:156` `(CerberusFresh.digest ())`, `:258/:274/:302` the `tagDefs` binders — all as cited. **P3 (the multi-TU digest rule)** — OCaml: `Cerb_fresh.set_digest` is called at `pipeline.ml:185` (top of `c_frontend`), `:280` (top of `core_frontend`), `main.ml:270` (the `--cabs-json` path); `read_core_object` `pipeline.ml:666` sets none; `main.ml:156-160` folds `frontend` over `core_libraries … @ files` (libraries first, then the `.c` files in argument order); `Core_linking.link` then `interp_backend` with no `set_digest` between (`:316-330`); `fork_renumber.ml:49` `fresh_symbol' run_st = (Symbol.fresh (), run_st)` → `Symbol (digest()) …` (`symbol.lem:247-249`) — the LAST TU's digest. Lean: `Main.lean:1423-1431` builds `tunits` by `tunits ++ [(digest, tunit)]` over `readInputs restArgs` (command-line order); libc loading (`:940-945`) precedes `for (digest, tunit) in tunits do … setDigestIO digest … frontendTU` (`:946-964`); then `link` `:975`, `initial_driver_state` `:1025`, `drive`/`driveCall` `:1037/:1039` with no set between — the LAST program TU's digest. `scripts/test_multi_tu.sh:7` *"linked in SORTED name order, both sides"*, `:139` `find … -name "*.c" | sort`. **The rule holds on both engines as pinned; no discrepancy.** `cerb_fresh.ml:88-95` (`let digest, set_digest = … Digest.file filename …`) and `:22-31` (the backstop's DESUGAR-window scope) as cited. **P1's seven rules** are consistent with the code I read and probed: rule 1 (sort by unqualified name, `:594-606`) — probes (a)/(c); rule 2 (every lifted def takes ALL readers) — `uses_tag` in (c) takes three binders while reading one; rule 3 (value pins for same-typed maps) — (a); rule 4 (seeds' callers pass values) — `via_*`; rule 5 (supply after readers) — the record's generated `draws_and_reads`/`seed3_draws` heads and `TestReaderMultiCheck.lean:27-29,36-37`; rule 6 (non-lifted positions fail-closed) — N1/N2 re-derived above; rule 7 (`_lemReader_*` reserved, no duplicate unqualified names) — (d), (f). The S0 record's *"every comprehensive test declares at most one reader; `test_target_reps.lem`'s 2 is one declare + one comment"* (*reproduced* at `f6542f8`): `1` for `test_fuel_measure`, `test_fuel_param`, `test_reader_consumer`, `test_supply`; `2` for `test_target_reps.lem` = `:338` (a comment) + `:348` (`declare {lean} reader val ambient_env`). The S0 record's evidence directory: M1.
+
+### 2.4 Docs integrity (item 4)
+
+**The manifest NOTE vs the facts** (`scripts/fork_drift_manifest.txt` diff at `4e01a8811`: `+7` header lines, the one `-lem-pin=f6542f8`/`+lem-pin=4307dc5` row, nothing else — *reproduced* by reading the diff): "`[meta] lem-pin f6542f8 -> 4307dc5`" ✓; "both generated trees re-derived from wiped trees under Lem 4307dc5, 305 = 305 files, hash-list diff empty (ocaml_frontend/generated 86 + lean_frontend/generated 219; sibylfs 16 = 16)" ✓ (§2.2, both the worker's files and my derivation); "lem-sync stamps unchanged" ✓; "layer-2 set unchanged (25 differing generated files, all hash-pinned)" ✓ (the gate line at the head); "Single-row edit, not a wholesale --refresh (which strips this header)" ✓ — `check_fork_drift.sh:244-263`: `--refresh` rewrites the file from a fixed nine-line header and emits only `merge-base=`/`lem-pin=` under `[meta]` (no `renumber=`, no dated notes); the header's own definition of the row (*"the lem-lean commit BOTH generated trees were derived with (the layer-2 hashes are relative to it)"*, `:266-270` of the manifest) is exactly what moved. The NOTE's date `2026-09-20` = the commit's (`Sun Sep 20 00:12:25 2026 +0000`). Provenance `[AGENT; fence extended … by the orchestrator, S4 resolution]` ✓ consistent with the record §7.3 and the commit message.
+
+**The lakefile comment trail:** the six new lines follow the established per-bump paragraph form (C1/C3/C4 above them), name the slice, the rule, the deleted guard, `lean-lib/` byte-identity, and both records — content-checked against §2.1/§2.2 ✓ (the record calls it "one comment line": N2 (iii)). `rev`/`inputRev` = `4307dc5108bbe71de2f323712443cab6c2b3c0da` in all four files; `be1cebe36` (the template) touched exactly the same four files (*reproduced*: `git show --stat be1cebe36`).
+
+**Provenance marks, cross-document:** the two [USER 2026-09-19] quotes are character-identical in the design note §8, the S0 charter §0, the S0.5 charter §0, the S0 record §0, the S0.5 record §1 and the lem-lean record §1; [USER 2026-09-04] *"we don't change the lem structure for ocaml"* identical in the S0.5 charter §0, the S0 record §1.6, the S0.5 record §1, the lem-lean record §1 (its ORIGIN is a pointer to a 2026-09-04 exchange I cannot see — "not checked"); [USER 2026-09-08] identical everywhere. Q2 is [USER] in the design note §8 and cited as such downstream; Q1/Q3/Q4 [AGENT] (design note §8, S0 charter §0). **Q-B** is marked [AGENT] and flagged in EVERY place it appears: S0 record §5 (*"consequential — for the operator … [AGENT] recommendation: N-ary"*), S0.5 charter §0 (*"decided [AGENT], flagged to the operator"*), S0.5 record §1 (*"[AGENT, orchestrator], flagged to the operator"*), lem-lean record §1 (*"decided [AGENT] by the orchestrator, flagged to the operator"*), lem-lean commit message (*"[AGENT] Q-B (N-ary, flagged to the operator)"*), cerberus `d5a1025ff` message (*"Q-B decided [AGENT] N-ary …, flagged"*); the S4 resolution is `[AGENT, orchestrator]` in the record §7.3 and the manifest NOTE. **Consistent.**
+
+**Cites spot-checked** (all resolve unless noted; *reproduced* by `sed -n`/`git show`): S0.5 charter §0/§1 at `f6542f8`: `lean_backend.ml:599` (the `List.sort` line), `:341-346`, `:429`, `:491`, `:535-548`, `:575-584`, `:589-601`, `:1189-1191`, `:1275-1278`, `:3136`, `:3162-3178` (scope check `:3162-3166`, `reader_inject_name` `:3170-3173`, `reader_args_output` `:3175-3178`), `:4441-4457`/`:4450`/`:4453`/`:4456`, `:4459-4464`, `:4465-4473`, `:4538`, `:4554-4561`, `:5819`, `:5937`; `DESIGN.md:505` (the row), `:240-241` (no 1-ary wording — the record §7 erratum is right), `:259-260`; `README.md:136-137` (no 1-ary rule); `tests/comprehensive/Makefile:7-9`, `:22`, `:99-109`, `:142-171`, `:239-254`; `lakefile.lean:8`, `:113-114`; cerberus `Makefile:205` (one line off — `:204` is `PRELUDE_SRC_DIR =`, `:205` `OCAML_SRC =`), `:307`, `:335-336`, `:337-341`, `:360-361`; `lakefile.toml:48` and `lake-manifest.json:8` at the base. S0.5 record: `check_fork_drift.sh:169-175` (the block is `:169-179`; the `fail` at `:175`), `:84`/`:125` (`export LC_ALL=C`), `:336` (`lem-ok`); `check_lakefile_roots.sh:22-33` (`roots_of` is `:25-34`), `:42`, `:45-46`; `observations.py:420`, `:332`; `test_exec.sh:335`; `check_fuel_forms.sh:161-162,183-184`; `mini_pipeline.lem:70`, `:78`, `:80-86`, `:185-187`; `cabs_to_ail.lem:1131-1133`. lem-lean record §2.5 at `4307dc5`: `:351`, `:434`, `:4470-4501`, `:4503`, `:3182-3192`, `:3167`, `:4597-4599`, `:1194-1196`, `:3194-3197`, `:5857`, `:5975`; `DESIGN.md:259-262` reworded; the row now at `:510` (was `:505`). **41 cites checked; 3 are one-to-few lines off (`Makefile:205`, `check_fork_drift.sh:169-175`, `check_lakefile_roots.sh:22-33`), none misleading.**
+
+### 2.5 The follow-up finding — `check_lakefile_roots.sh:45-46` (item 5)
+
+*Reproduced* on scratch listings (`.tmp/audit/comm/`; the real 218-name generated-module list of the arc worktree, `LC_ALL=C sort`ed as the script does; this shell: `LANG=en_US.UTF-8`, `LC_COLLATE="en_US.UTF-8"`, `LC_ALL=` unset). The C and en_US orders of the real list differ (first differing rows: `CabsImport`, `Cerb_attributes`, `Cerb_attributes_auxiliary`, …). Verbatim:
+```
+=== EXPERIMENT: roots = gens minus one (Core_aux_auxiliary) [dropped root]; gens = full; both LC_ALL=C sorted; comm under ambient en_US vs C ===
+-- LANG=en_US.UTF-8 LC_ALL=<unset> --
+missing=[Core_aux_auxiliary ] extra=[ ]
+stderr:
+  comm: file 1 is not in sorted order
+  comm: file 2 is not in sorted order
+  comm: input is not in sorted order
+-- LANG=en_US.UTF-8 LC_ALL=C --
+missing=[Core_aux_auxiliary ] extra=[ ]
+stderr:
+=== EXPERIMENT: phantom root added (Phantom_auxiliary) ===
+-- LANG=en_US.UTF-8 LC_ALL=<unset> --
+missing=[ ] extra=[Phantom_auxiliary ]
+stderr:
+-- LANG=en_US.UTF-8 LC_ALL=C --
+missing=[ ] extra=[Phantom_auxiliary ]
+stderr:
+=== EXPERIMENT: BOTH a dropped root (CerbPP) and an orphan generated module (Cerb_zz_auxiliary) ===
+-- LANG=en_US.UTF-8 LC_ALL=<unset> --
+missing=[CerbPP CerbParserProgress Cerb_zz_auxiliary CerberusFresh CerberusImpl ] extra=[CerbParserProgress CerberusFresh CerberusImpl ]
+stderr:
+  comm: file 1 is not in sorted order
+  comm: file 2 is not in sorted order
+  comm: input is not in sorted order
+-- LANG=en_US.UTF-8 LC_ALL=C --
+missing=[CerbPP Cerb_zz_auxiliary ] extra=[ ]
+stderr:
+=== the real path (equal sets) under en_US: silent? ===
+(above: any output = a warning or a difference)
+=== can a genuinely missing name be HIDDEN (appear in neither -13 nor -23)? brute check over all 219 single drops under en_US ===
+single-drop plants: 219; hidden(in neither column)=0; misattributed(in the extra column)=0
+```
+(the brute-check banner says 219; the list has 218 rows — derived count 218.) Reading: `comm` assigns a line to column 1 or 2 by the FILE it came from and to column 3 only on string equality, so a name present in exactly one file can never appear as "common" whatever the merge order — the genuinely missing `CerbPP`/`Cerb_zz_auxiliary` are in `missing` in every configuration; the misordering shows up as COMMON names spilled into both columns (the three phantom names) — a false FAIL with a wrong diagnostic, never a false PASS. The equal-set real path is silent (218 = 218 pairable). **The worker's analysis is confirmed by construction; the printed lists CAN be wrong (shown), the verdict direction cannot.** Not fixed (out of both fences; the remedy `export LC_ALL=C` is right).
+
+## 3. Verified clean (checked and found correct; by my own reproduction unless marked "by reading")
+
+- Range fences: cerberus non-doc diff = exactly the five files (§header); the lem-lean commit = the 13 files of the charter's Part A fence — `src/lean_backend.ml` hunks are all inside the seed machinery + the two comments (`:1194-1196`, `:3160-3166`); no grammar, lifting, other emitter or `lean-lib/` change (by reading the full diff; `lean-lib` diff empty).
+- The record §2.5 claim "zero warnings attributed to `lean_backend.ml`": my `build_lem.log` has 29 `Warning` lines, in `patterns.ml` 9, `backend.ml` 7, `convert_relations.ml` 6, `types.ml`/`typed_ast_syntax.ml`/`typed_ast.ml`/`syntactic_tests.ml` 1 each, `File "_none_"` 14 (deprecated auto-include alerts); none in `lean_backend.ml`.
+- The shipped test's arithmetic (`8110`, `10306`, `7293`, `9273`, `733`, `84`, `82`, `12`, `732`, `(7333, 41)`) re-derived by hand from the `.lem` bodies and `TestReaderMultiImpl.combine`; `test_reader_multi.lem:81` is `let seed3_draws av bv gv x = draws_and_reads x` — the old lem's error location ("defs render last-to-first").
+- The pin triple after the move (N7's list) and what is NOT yet true (lem-lean mainline `mdd/lean-backend` = `f6542f8`) — as the record §4 states.
+- The `[USER 2026-09-08]` ruling: the additions are one backend rule, tests/probes (kernel `rfl`/`decide` pins on concrete values in lem-lean's test scaffolds — the existing `TestReaderConsumerCheck` class), docs and records; no new proof or artefact surface in cerberus (no `.lem`, no hand-written Lean, no generated file moved — §2.2).
+- The `[USER 2026-09-04]` ruling: no cerberus `.lem` changed; the OCaml tree is byte-identical (§2.2); the Q-B consequence (two OCaml-dead parameters) is DEFERRED to E-A/D-A and flagged with its precedent (`mini_pipeline.lem:80-86`, `cabs_to_ail.lem:1131-1133`, both verified at the head).
+- The S0 record's P2 sixteen-consumer count, P3 rule, and the "at most one reader per comprehensive test" claim (§2.3); the S0 §1.5 N0/N1/N2 quotes re-derived verbatim (M1).
+- The reserved-name contract (`_lemReader_*`, `_lemSupply*`, `lemFuel`) refuses in seed positions (§2.1 (d)); duplicate unqualified reader names refuse before any seed processing (§2.1 (f)); a duplicate seed variable is a lem type error.
+- `check_fork_drift.sh`'s `--refresh` strips the dated header and drops `renumber=` (`:244-263`, by reading) — the record §7.2's observation and the NOTE's claim.
+- Every evidence file the S0.5 record names under `.tmp/s05/` exists in the arc worktree with the stated content (§2.3); `orch-partA-suite.log` = the lem-lean worker's `orch-suite.log` byte-for-byte.
+
+## 4. What I did not check
+
+- Tier A rows 1–12 were NOT re-run by me (the byte-identity, lem-sync, fork-drift and lakefile-roots gates were); rows 3–11 rest on the worker's `release-tierA/*/stdout`, verified verbatim (N5). No Tier B was chartered or run.
+- I did not rebuild either cerberus engine (`build_cerberus`/`build_lean`/speclab) at the head; the §6 stamps and job counts are the worker's `build_b3.log`. LemLib is byte-identical, so no Lean artefact could differ by the bump.
+- The `examples/ppcmem-model` and `examples/cpp` corpora of the A3 sweep (the worker's and the orchestrator's sweeps cover them; mine covered `tests/comprehensive` and `tests/backends`).
+- The S0 record's §1.4 build tail and §1.5 N3/N4 quotes (the untracked logs match `INDEX.txt`, whose hashes are the same worker's — M1 states the weaker witness); I did not rebuild the S0 scratch package.
+- The orchestrator's boundary transcript lines (`rebuild-lem`, `lake update`) beyond their outcomes (N7).
+- The origin of the [USER 2026-09-04] *"we don't change the lem structure for ocaml"* quote beyond the documents' mutual citation.
+- Whether the consumer (cerberus-sl, read-only to me) is affected — nothing in this range changes any generated or hand-written Lean, so no re-pin note is due here (the records say the same).
+- A rebase of either range onto a moved mainline (both mainlines are at the ranges' bases at the time of writing).
+
+## 5. Provenance
+
+[AGENT auditor] throughout; no [USER] ruling is created or revised here. Quotations marked `[USER …]` are copied from the charters/records. All measurements 2026-09-20 ≈ 00:50–01:15 UTC in the two audit worktrees (cerberus at `4e01a8811`, regenerated 01:11–01:12; lem-lean at `4307dc5`, `./lem` built 01:01), box load recorded in the logs. Scratch under both worktrees' `.tmp/audit/` (git-ignored) may be deleted; everything this document relies on is quoted above. Nothing was pushed, merged or committed on any mainline or worker branch; `deps/lem-pinned`, the shared switch, the primary checkouts, the worker worktrees (read-only) and the consumer repo were not touched; `make rebuild-lem` was not run.
