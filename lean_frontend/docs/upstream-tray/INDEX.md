@@ -524,6 +524,21 @@ the flexible-array-member compatibility question, 42 = unary minus on a floating
     scheduled after the pristine-oracle instrument slice. Found by the cerberus-sl S2 agent
     (Claude, Anthropic), verified and drafted by Claude (Fable 5.1) under operator direction;
     file together with 34.
+45. **45-core-match-pattern-truncating-zip-arity.md** — TRUE BUG / Core-level fail-open
+    default, ISO-independent (slotting note, 2026-09-20 [AGENT]: with the Core-level soundness gaps —
+    not C-reachable, the elaborator never emits the mismatch — behind the C-reachable true bugs;
+    consumer-requested, cerberus-sl hidden-state note item 7). `Core_aux.match_pattern`
+    (`core_aux.lem:2033-2039`) and `Core_typing.typecheck_pattern` (`core_typing.lem:182-186`) fold
+    tuple patterns over Lem's TRUNCATING `List.zip` (`list.lem:987-992`), so a pattern `(a, b)`
+    MATCHES the value `(1, 2, 3)` binding the prefix (`select_case` commits to the arm instead of
+    trying the next), and a `Ctuple` pattern of the wrong arity TYPECHECKS against a tuple type,
+    surplus sub-patterns silently dropped. Upstream's own `simpl_match_pattern`
+    (`core_rewrite.lem:1287-1300`) already guards the same shape with `if List.length pats' <>
+    List.length cvals then Nothing`. Witness: a `.core` `case (1, 2, 3) of | (a, b) => a + b | _ => 0`
+    — pristine `b9aeedcb4` gives `Specified(3)`. LANDED on the fork's `fix/match-pattern-arity` (shared
+    body, both guards; record `lean_frontend/docs/2026-09-20_match-pattern-arity-record.md`; kernel
+    facts in `test/Unit/MatchPatternArityTest.lean`). Drafted by Claude (Fable 5.1) under operator
+    direction; AI-provenance note per the tray's policy.
 
 Amended 2026-09-05: draft 10 gains an addendum for the STRING-LITERAL
 form of `\?` (`"\?"` reaches the same decoder from translation.ml:3029;

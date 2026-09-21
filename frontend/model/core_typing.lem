@@ -180,6 +180,15 @@ and typecheck_pattern expected_bTy (Pattern annots pat) =
             error "typecheck_pattern: Ccons: wrong number of arguments"
 
         | (Ctuple, BTy_tuple bTys, _) ->
+            (* FORK 2026-09-20 (upstream-tray draft 45): fail CLOSED on a
+               tuple-arity mismatch. Lem's List.zip TRUNCATES
+               (library/list.lem:987-992), so a Ctuple pattern whose arity differs
+               from the expected tuple type was ACCEPTED, the surplus sub-patterns
+               or component types silently dropped from the typed pattern. Same
+               error TYPE as the shape mismatch below; only the found-text differs. *)
+            if List.length bTys <> List.length pats then
+              E.fail loc (MismatchExpected "Ctuple" expected_bTy "tuple pattern of a different arity")
+            else
             List.unzip <$> E.mapM (fun (bTy, pat) ->
               typecheck_pattern bTy pat
             ) (List.zip bTys pats) >>= fun (envs, tpats) ->

@@ -1,3 +1,23 @@
+# INTEGRATION 2026-09-23 [AGENT; orchestrator's rebase go]: fix/match-pattern-arity REBASED onto mainline 34ac493f9 (= df85e95b7 +
+# the run-digest slice D-S). Where D-S and this branch both moved a pin (core_run.lem/.ml: D-S's run-state digest + this branch's
+# let-form/Erun fit checks; core_typing.lem/.ml as before with E-A) the content and delta pins below are RECOMPUTED from the
+# COMBINED regenerated source at each replayed commit — never a side's hash. The replayed commits keep their messages.
+# INTEGRATION 2026-09-22 [AGENT; orchestrator's rebase go]: fix/match-pattern-arity REBASED onto mainline df85e95b7 (= 5407597d9 +
+# the program-data-parameters E-A range). Where E-A and this branch both moved a pin (core_typing.lem/.ml: E-A's dead `enumDefs`
+# field + this branch's arity guards) the content and delta pins below are RECOMPUTED from the COMBINED regenerated source at each
+# replayed commit — never a side's hash. The four replayed commits keep their messages; their NOTEs follow, newest first.
+# match-pattern-arity, 2026-09-20 [AGENT; charter lean_frontend/docs/2026-09-20_charter-match-pattern-arity.md; single rows + this NOTE, no --refresh]:
+# cerberus-sl hidden-state note item 7 ([USER 2026-09-20 via cerberus-sl] "we can ask for this immediately"). Two SHARED-MODEL
+# guards mirroring upstream's own simpl_match_pattern (core_rewrite.lem:1287-1300): frontend/model/core_aux.lem match_pattern's
+# Ctuple arm returns Nothing when |pats'| <> |cvals'| (Lem's List.zip truncates — a pattern of arity 2 matched a value of arity 3,
+# binding the prefix); frontend/model/core_typing.lem typecheck_pattern's (Ctuple, BTy_tuple bTys, _) arm fails with the EXISTING
+# MismatchExpected "Ctuple" when |bTys| <> |pats| (it ACCEPTED the mismatch and dropped the surplus sub-patterns). Layer 1: the
+# core_aux.lem [source-content] pin moved (547a673e… -> 28b4d085…); core_typing.lem is NEW to [files] (it was byte-identical to
+# upstream). Layer 2: core_aux.ml MOVES from [expected-cosmetic] (its delta was the trailing-newline echo only) to
+# [expected-semantic] (c0546a67… -> c2e521a9…: the guard + the same newline echo); core_typing.ml is a NEW [expected-semantic] row
+# (b8f9c4bd…; it was byte-identical to upstream's generated tree). Unobservable on elaborator output (the elaborator builds tuple
+# patterns from the types it just produced): every lane unchanged, no oracle-differences register row. Upstream-tray draft 45.
+# Record: lean_frontend/docs/2026-09-20_match-pattern-arity-record.md.
 # D-S audit comment corrections, 2026-09-22 [AGENT; four single-row edits, never --refresh]:
 # implementation.lem names only enumDefs/tagDefs readers; core_run_aux.lem describes the explicitly
 # threaded Lean supply. Two [source-content] pins and the two corresponding generated-OCaml diff
@@ -441,7 +461,7 @@ util/cerb_fresh.ml
 100644 185b1d2afb9e0d3598c664a50d7106b8cc195add6049b358c0c92c8305e60dc2 frontend/model/cerb_attributes.lem
 100644 c4426c93453c70139f7693096cb2d3796dee1676344652c2c6271303a2d392ae frontend/model/cn.lem
 100644 bf183f3dc55fb5d962089cba9ebc82485a204d34958de5381cf784e155935504 frontend/model/core.lem
-100644 547a673e1005de22b202460107a8c14f2e3c5cd40c697a213432fe4956d28514 frontend/model/core_aux.lem
+100644 28b4d0858adcab19914ca8d71c9a98254edefca78e48b0bd4f3e6ae47244f622 frontend/model/core_aux.lem
 100644 4ade27ce2e7431592228e81b1b33184e975d78710bfecc93910df867d5d3dd4b frontend/model/core_eval.lem
 100644 7821d8255a206e9f3f6c2ff9993b48917903fce4bd6bb185912a223edf9cc392 frontend/model/core_linking.lem
 100644 7f61895fe9f448d6b28d0290e9982a7dc4213508e23b9fd4c71f04a6828de5a7 frontend/model/core_reduction.lem
@@ -449,7 +469,7 @@ util/cerb_fresh.ml
 100644 5f48b77c80e37636b9baa20ab3ebe93f606740c5d7510fa4404109b875d29571 frontend/model/core_rewrite2.lem
 100644 d60d191695e55a7a32f93f028d91f0fe46e3adc69af4db9cff6cc45bef9b89eb frontend/model/core_run.lem
 100644 32f4c87c8a09bc7e3f4b753fadd791b88ca558acbc34cfca6a3f0b49009ca6e7 frontend/model/core_run_aux.lem
-100644 516ec242858e9406e7f96813aa2651f440a8b86955d69db99981de196a3dffa2 frontend/model/core_typing.lem
+100644 eeed68c8b02966a8f4cd7e386d4dd62c5e3ea2fb6d28a2231e79a7006ba256b8 frontend/model/core_typing.lem
 100644 b3607f3932ab346b9a6496b3f2036459923372ce9d70c8629104d6ef4a5fd71a frontend/model/ctype.lem
 100644 d7e2ece8db3097af54ddb846ce20907a15e5c905f610df014ae6ffcb197b48c7 frontend/model/ctype_aux.lem
 100644 02178e49fd9acc0f84ae2a15b72a6454a1689f7024f172c1eda4d85b96327965 frontend/model/debug.lem
@@ -497,6 +517,7 @@ util/cerb_fresh.ml
 100755 9a07e1a9188443cebef04bef184bbac1a876c996fad0caca90ea9b4ce3605292 tools/check_lem_sync.sh
 100644 ee912ae7803e9d42fbf5ef85fdac484586571d4f4b2eb17745431ca9c19aacf8 util/cerb_fresh.ml
 [expected-semantic]
+c2e521a92e83a56a8dab06139196f33e96bd3854300896f5725ef56f8b04fe1d core_aux.ml
 ceca3526d3ddbd55345eee29f0c5b2626b56c516014cdd73fb3bf5db20f50ac2 cabs_to_ail_effect.ml
 0aefe2af044772ef6a5e4be8bfdfa6bb1ae52cddcaf15d7b771b0abe3d13922b cabs_to_ail.ml
 22b0b094c6622a92dfdff511a05f19de93f445c5f47d149deec3ed223e582f98 core_reduction.ml
@@ -513,12 +534,11 @@ fa725f3e09e5ae317d685fda82c4be9dcfeca9a99ed47b1ebb4f2dd6a0a343b6 symbol.ml
 0151eee4e5d4dda205ec022437cd3807d5fdde8eec365c1ea36205b7693b1c2a ailSyntax.ml
 efe1a293fdf87eb7a264b3d5a2705d9f9421115f9137772c0b6a539a5049b8fb core.ml
 aae2f7294241e5b942c4d2f9a0b847dd72570a72037590b9df577586b23758d4 core_linking.ml
-afb324d5930473b6c3e34f3fc418e93e06ee89b77e824f18e99cd7600f7fd89d core_typing.ml
+acef776c2b669bc5f9e0bf034b16dfafc49b478bb2570c5327ca8331b4162e98 core_typing.ml
 d40900445568d01254a2e1cfef5d50706aba8d4067a74aab34a929339e0a3fd3 genTyping.ml
 89421ef29756b34e3f3e10ad2559fea2d3ae3c5bad15222d23c7c64e2005dce3 implementation.ml
 [expected-cosmetic]
 f353c48b912b1f5ac4a73b42b981d01c38ac19760867ad8e043072e9489b383c cn.ml
-c0546a677a6bcdd16cc1630ad2360179ef2b74406520e27ec4d7378c6155a8f6 core_aux.ml
 45eeff90ad101db49d28a6ca58bfdcf0bdd2625423ecc646777f31487601546d ctype.ml
 f52f2e5074d521bca92f84a496050d0295550475b16ac3f3c2e01243f5297208 defacto_memory_types.ml
 b0c09cbc54c6e976b401e001bf4ba4e037ea8c4f0c941dbe394a2ff6afba8deb lem_debug.ml

@@ -488,6 +488,11 @@ theorem match_pattern_stable_aux (k : Nat) : ∀ (e : generic_pattern sym) (cval
         obtain ⟨an, pat⟩ := e
         simp only [match_pattern_lemFuel]
         split <;> (try simp (disch := size_lt) only [key])
+        -- The tuple arm is `if not (|pats'| == |cvals'|) then none else lemListFoldr …` since the
+        -- fail-closed arity guard (match-pattern-arity slice, 2026-09-20; core_aux.lem match_pattern,
+        -- mirroring core_rewrite.lem:1287-1290): a NON-recursive branch. Split the `if`; the
+        -- mismatch branch is `none = none`; the other is the list traversal exactly as before.
+        all_goals (split <;> try rfl)
         all_goals
           apply lemListFoldr_congr; intro p acc hp
           obtain ⟨pat', q⟩ := p

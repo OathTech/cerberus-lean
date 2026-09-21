@@ -362,6 +362,17 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
 
 ## Small items (independent; can ride along with any fix batch)
 
+- **`match_pattern`/`typecheck_pattern` fail CLOSED on tuple-arity mismatch — LANDED
+  (2026-09-20, `fix/match-pattern-arity`, record
+  `docs/2026-09-20_match-pattern-arity-record.md`; cerberus-sl hidden-state note item 7,
+  [USER 2026-09-20 via cerberus-sl] "we can ask for this immediately").** Both shared-model
+  zips (`core_aux.lem` matcher, `core_typing.lem` typing rule) guard the arity like upstream's
+  own `simpl_match_pattern` (`core_rewrite.lem:1287-1300`); kernel facts T1–T4 + typing pin T5
+  in `test/Unit/MatchPatternArityTest.lean` (`match-pattern-arity-test`). Left: (i) upstream-tray
+  draft 45 UNFILED (operator network window); (ii) `subst_pattern_val`/`subst_pattern_pexpr`
+  still zip — reachable only after a successful match, so equal lengths on every call (stated,
+  not changed); (iii) the consumer's selector equality (`SelectAgreesC`) is theirs to discharge
+  at the one re-pin (their §4 Q4) — T1–T3 are its matcher-level premises.
 - **C-TF1 landed (2026-09-08, `docs/2026-09-08_monadic-failstop-record.md`) — follow-ups.**
   (a) Byte/text escaping is separated in `arc/batch-diagnostic-bytes`
   (`docs/2026-09-09_batch-diagnostic-bytes-record.md`, full Tier A+B and

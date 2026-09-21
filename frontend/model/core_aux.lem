@@ -2030,6 +2030,17 @@ let rec match_pattern (Pattern _ pat) cval =
         match_pattern pat' (Vctype ty)
 (*      | Vlist of core_base_type * list (generic_value 'sym) *)
     | (CaseCtor Ctuple pats', Vtuple cvals') -> 
+        (* FORK 2026-09-20 (cerberus-sl hidden-state note item 7; upstream-tray
+           draft 45): fail CLOSED on a tuple-arity mismatch. Lem's List.zip
+           TRUNCATES (library/list.lem:987-992, `| _ -> []` on unequal tails), so
+           without this guard a pattern of arity 2 MATCHED a value of arity 3
+           (binding the prefix) and a pattern of arity 3 matched a value of
+           arity 2. Mirrors upstream's own guard in simpl_match_pattern
+           (core_rewrite.lem:1287-1290). Nothing = NO MATCH, so select_case
+           tries the next arm; the bindings and their order are unchanged. *)
+        if List.length pats' <> List.length cvals' then
+          Nothing
+        else
         List.foldr (fun (pat', cval') acc ->
           Maybe.bind acc (fun xs ->
             Maybe.bind (match_pattern pat' cval') (fun x ->

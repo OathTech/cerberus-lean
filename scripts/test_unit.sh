@@ -41,6 +41,9 @@ UNIT_TESTS=(
     "enum-data-test"
     # D-S: run digest as state, kernel acceptance facts and old-arity rejection.
     "run-digest-test"
+    # match-pattern-arity (2026-09-20, cerberus-sl item 7): match_pattern/typecheck_pattern fail
+    # closed on tuple-arity mismatch — T1–T3 by rfl, T4 negative control, T5 typing pin (runtime)
+    "match-pattern-arity-test"
 )
 
 # ---------------------------------------------------------------------------
