@@ -1,0 +1,37 @@
+# SC prototype seed targets. Donor 86a2aea54; provenance in README.md.
+# Row: <file> <class> <target>. Full engine observations must agree before
+# comparing this weaker reference projection. SC rows have a mechanical
+# scalar transcription; RMW rows use upstream header expectations. NONSC
+# rows require an explicit model refusal, never coercion to seq_cst.
+# PENDING rows always fail: their old blanket fence refusal is not accepted
+# as support. A pending reference is distinct from an implementation gap.
+IRIW+sc+sc+sc_sc+sc_sc.c  SC  {Specified(0),Specified(1),Specified(10),Specified(11),Specified(12),Specified(13),Specified(14),Specified(15),Specified(2),Specified(3),Specified(4),Specified(6),Specified(7),Specified(8),Specified(9)}
+LB+sc_sc+sc_sc.c  SC  {Specified(0),Specified(1),Specified(2)}
+MP+na+na.c  SC  {UB005_data_race}
+MP+na_sc+sc_na.c  SC  {Specified(1),Specified(2)}
+SB+sc_sc+sc_sc.c  SC  {Specified(1),Specified(2),Specified(3)}
+WRC+sc+sc_sc+sc_sc.c  SC  {Specified(0),Specified(1),Specified(4),Specified(5),Specified(7)}
+coherence+init+sc_sc.c  SC  {Specified(1)}
+coherence+sc_sc_sc.c  SC  {Specified(1)}
+datarace+Rna+Rna.c  SC  {Specified(0)}
+datarace+Rna+Rna_Wna.c  SC  {UB005_data_race}
+datarace+Rna+Wna.c  SC  {UB005_data_race}
+datarace+Wna+Wna.c  SC  {UB005_data_race}
+datarace+Wna_sc+sc_Rna.c  SC  {Specified(1),UB005_data_race}
+hb-mo-cycle+Wsc_Wsc_Rsc+Wsc_Wsc_Rsc.c  SC  {Specified(1),Specified(2),Specified(3)}
+RMW-strong-equal.c  RMW  {Specified(5)}
+RMW-strong-unequal.c  RMW  {Specified(0)}
+RMW-weak-equal.c  RMW  {Specified(0),Specified(5)}
+RMW-weak-unequal.c  RMW  {Specified(0)}
+SB+rel_acq+rel_acq.c  NONSC  REFUSE
+LB+acq_rel+acq_rel.c  NONSC  REFUSE
+LB+rlx_rlx+rlx_rlx.c  NONSC  REFUSE
+MP+na_rel+acq_na.c  NONSC  REFUSE
+IRIW+rel+rel+acq_acq+acq_acq.c  NONSC  REFUSE
+fence+sc_sc.c  NONSC  REFUSE
+SB+sc_sc+sc_sc+globals.c  SC  {Specified(1),Specified(2),Specified(3)}
+MP+na_sc+sc_na+globals.c  SC  {Specified(1),Specified(2)}
+datarace+Wna+Wna+globals.c  SC  {UB005_data_race}
+globals+init+Wna_Wna.c  SC  {Specified(3)}
+globals+init+Rna_Rna.c  SC  {Specified(10)}
+fence+sc+sc_sc.c  PENDING  UNRESOLVED

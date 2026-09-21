@@ -1,0 +1,59 @@
+(* Checked state lifting for the SC observation adapter. The ordinary ND lift
+   remains unchanged. A check runs after every returned memory node, including
+   failure and branching, so effects before failure are not success-only data.
+   An existing kill remains primary; any additional fault evidence belongs in
+   the returned state. A new check failure stops a still-live continuation. *)
+open import Pervasives
+open import Nondeterminism
+
+declare {lean} extra_import `CerbFuel`
+
+val checked_action: forall 'a 'info 'err 'cs 'st.
+  maybe (kill_reason 'err) -> nd_action 'a 'info 'err 'cs 'st -> nd_action 'a 'info 'err 'cs 'st
+let checked_action failure action =
+  match action with
+    | NDkilled _ -> action
+    | _ -> match failure with
+        | Nothing -> action
+        | Just reason -> NDkilled reason
+      end
+  end
+
+val lift_checked: forall 'a 'info1 'info2 'err1 'err2 'cs 'st1 'st2.
+  ('st2 -> 'st1) ->
+  ('st2 -> 'st1 -> 'st2) ->
+  ('info1 -> 'info2) ->
+  ('err1 -> 'err2) ->
+  ('st2 -> (maybe (kill_reason 'err2) * 'st2)) ->
+  ndM 'a 'info1 'err1 'cs 'st1 -> ndM 'a 'info2 'err2 'cs 'st2
+
+let rec lift_checked_action get put liftInfo liftErr postNode = function
+  | NDactive a -> NDactive a
+  | NDkilled r ->
+      NDkilled match r with
+        | Undef loc ubs -> Undef loc ubs
+        | Error loc str -> Error loc str
+        | Other err -> Other (liftErr err)
+      end
+  | NDnd info str_ms ->
+      NDnd (liftInfo info) (List.map (fun (info, m) ->
+        (liftInfo info, lift_checked get put liftInfo liftErr postNode m)) str_ms)
+  | NDguard info cs m ->
+      NDguard (liftInfo info) cs (lift_checked get put liftInfo liftErr postNode m)
+  | NDbranch info cs left right ->
+      NDbranch (liftInfo info) cs
+        (lift_checked get put liftInfo liftErr postNode left)
+        (lift_checked get put liftInfo liftErr postNode right)
+  | NDstep info info_ms ->
+      NDstep (liftInfo info) (List.map (fun (info, m) ->
+        (liftInfo info, lift_checked get put liftInfo liftErr postNode m)) info_ms)
+end
+and lift_checked get put liftInfo liftErr postNode (ND m) =
+  ND (fun outer ->
+    let (action, inner) = m (get outer) in
+    let (failure, outer') = postNode (put outer inner) in
+    (checked_action failure (lift_checked_action get put liftInfo liftErr postNode action), outer')
+  )
+
+declare {lean} fuel val lift_checked = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
+declare {lean} fuel val lift_checked_action = `fun _ => NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg)`

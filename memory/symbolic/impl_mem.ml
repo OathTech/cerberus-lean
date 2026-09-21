@@ -569,6 +569,17 @@ type mem_state = Defacto_memory.impl_mem_state
 (* address-space-bound slice (2026-09-17): the defacto state has no address cursor — the
    driver's address-space top is accepted and unused. *)
 let initial_mem_state (_address_space_top: Z.t) = Defacto_memory.impl_initial_mem_state
+
+(* SC observation adapter is not implemented for this object-model instance.
+   Absence is explicit at both initialization and extraction; no empty stream
+   can be mistaken for a complete observation. Existing execution is unchanged. *)
+type representation_byte = unit
+type memory_observation =
+  (pointer_value, mem_value, representation_byte) Mem_common.memory_observation
+let begin_observing (_: mem_state) : mem_state option = None
+let stop_observing (st: mem_state) = st
+let take_observations (_: mem_state) : (memory_observation list * mem_state) option = None
+
 type 'a memM =
   ('a, string, Mem_common.mem_error, integer_value Mem_common.mem_constraint, mem_state) Nondeterminism.ndM
 let return = Defacto_memory.impl_return

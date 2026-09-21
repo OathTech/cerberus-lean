@@ -69,3 +69,6 @@ Monadic_parsing_lemMeasureProofs.lean
 CerbFail.lean
 CerbFailProofs.lean
 CerbNDFuelProofs.lean
+
+# SC prototype: checked lifting and its exact disabled-mode erasure.
+CerbNDObserveProofs.lean

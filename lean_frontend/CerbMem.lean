@@ -130,6 +130,10 @@ structure AbsByte where
   value : Option UInt8 := none
   deriving BEq, Inhabited, Repr
 
+/-- Passive object-model observations, shared with the OCaml implementation.
+    The driver separately supplies actor, source sequencing and memory order. -/
+abbrev MemoryObservation := memory_observation PointerValue MemValue AbsByte
+
 /-- Taint status for PNVI-ae -/
 inductive Taint where
   | Unexposed
@@ -176,7 +180,42 @@ structure MemState where
   -- no batch-path consumer.
   lastUsed : Option StorageInstanceId := none
   requested : List (Address × Int) := []
+  observations : Option (List MemoryObservation) := none
   deriving Inhabited
+
+/-- Newest first internally; disabled observation leaves the state unchanged. -/
+def recordObservation (observation : MemoryObservation) (st : MemState) : MemState :=
+  match st.observations with
+  | none => st
+  | some xs => { st with observations := some (observation :: xs) }
+
+def beginObserving (st : MemState) : Option MemState :=
+  some (match st.observations with
+    | none => { st with observations := some [] }
+    | some _ => st)
+
+def stopObserving (st : MemState) : MemState := { st with observations := none }
+
+def takeObservations (st : MemState) : Option (List MemoryObservation × MemState) :=
+  match st.observations with
+  | none => none
+  | some xs => some (xs.reverse, { st with observations := some [] })
+
+/-- Recording only changes the observation component. This is a local state
+    law, not yet a theorem about erasure of complete memory computations. -/
+theorem stopObserving_recordObservation (observation : MemoryObservation) (st : MemState) :
+    stopObserving (recordObservation observation st) = stopObserving st := by
+  cases h : st.observations <;> simp [recordObservation, stopObserving, h]
+
+theorem stopObserving_takeObservations (st after : MemState) (observations : List MemoryObservation)
+    (h : takeObservations st = some (observations, after)) :
+    stopObserving after = stopObserving st := by
+  cases hObs : st.observations with
+  | none => simp [takeObservations, hObs] at h
+  | some xs =>
+    simp [takeObservations, hObs] at h
+    rcases h with ⟨_, rfl⟩
+    rfl
 
 /-! ## Instances
 
@@ -2228,17 +2267,19 @@ def allocateObject [LemFuel] (tagDefs : TagDefs) (_ : Nat) (pref : prefix0) (ali
                                 isReadonly := readonlyStatusForAlloc pref initOpt,
                                 prefix_ := pref }
     let st' := { st with allocations := st.allocations.insert allocId alloc }
-    let st' := match initOpt with
+    let (st', initializationBytes) := match initOpt with
       | some val_ =>
         -- repr threads the funptrmap into the state — impl_mem.ml:1336-1344
         let (fpm, bs) := memValueToBytes tagDefs st'.funptrmap val_
-        writeBytesTo { st' with funptrmap := fpm } addr bs
+        (writeBytesTo { st' with funptrmap := fpm } addr bs, bs)
       | none =>
         -- :1315-1319 `repr st.funptrmap (MVunspecified ty)` (funptrmap
         -- result discarded, `let (_, pre_bs)`)
         let (_, bs) := memValueToBytes tagDefs st'.funptrmap (.MVunspecified ty)
-        writeBytesTo st' addr bs
-    (NDactive (.PV (.Prov_some allocId) (.PVconcrete none addr)), st')
+        (writeBytesTo st' addr bs, [])
+    let pointer := PointerValue.PV (.Prov_some allocId) (.PVconcrete none addr)
+    (NDactive pointer, recordObservation
+      (Observe_allocation pointer allocId addr size (some ty) initOpt initializationBytes) st')
 
 /-- allocate_region — impl_mem.ml:1420-1435: `allocator size_n align_n`
     (:1421, no clamp, a negative size flows through the Z arithmetic —
@@ -2261,9 +2302,11 @@ def allocateRegion [LemFuel] (_ : Nat) (_pref : prefix0) (alignIv sizeIv : Integ
   ND fun st =>
     let alloc : Allocation := { base := addr, size := sizeN, ty := none,
                                 isReadonly := .IsWritable, prefix_ := PrefMalloc }  -- :1429
-    (NDactive (.PV (.Prov_some allocId) (.PVconcrete none addr)),
-     { st with allocations := st.allocations.insert allocId alloc,
-               dynamicAddrs := addr :: st.dynamicAddrs })                            -- :1430-1434
+    let pointer := PointerValue.PV (.Prov_some allocId) (.PVconcrete none addr)
+    (NDactive pointer, recordObservation
+      (Observe_allocation pointer allocId addr sizeN none none [])
+      { st with allocations := st.allocations.insert allocId alloc,
+                dynamicAddrs := addr :: st.dynamicAddrs })                            -- :1430-1434
 
 /-! ### Kill — impl_mem.ml:1464-1550 (zero-discrepancy Z-07/Z-08/Z-10, noodle
     D6/D7; the arms and their ORDER mirror `kill loc is_dyn` exactly — the
@@ -2317,7 +2360,9 @@ def killM (loc : CerbLocation.Loc) (isDynamic : Bool) (pv : PointerValue) : memM
           fail_ (MerrOutsideLifetime s!"Concrete.get_allocation, alloc_id={allocId}")
         | some alloc =>
           if addr == alloc.base then                                             -- :1535-1546
-            let st' := { st with
+            let st' := recordObservation
+              (Observe_deallocation loc isDynamic pv allocId (some (alloc.base, alloc.size)))
+              { st with
               deadAllocations := allocId :: st.deadAllocations
               lastUsed := some allocId                                             -- :1541
               allocations := st.allocations.erase allocId }
@@ -2438,13 +2483,19 @@ def loadM [LemFuel] (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (p
         | .MVinteger _ (.IV _ n) => n != 0 && n != 1
         | .MVunspecified _ => true
         | _ => false
-      if isTrap then fail_ (MerrTrapRepresentation LoadAccess)
+      -- impl_mem.ml:1575 updates last_used before its trap check (:1586-1597).
+      -- The checked read has occurred even when its representation then traps;
+      -- preserve that failure-time state (SC prototype effect inventory E01).
+      let loadedState := recordObservation
+        (Observe_access loc LoadAccess ty pv allocOpt addr size bytes mv)
+        { st with lastUsed := allocOpt }
+      if isTrap then (NDkilled (failReason (MerrTrapRepresentation LoadAccess) loc), loadedState)
       -- :1601-1606 SW_strict_reads → MerrReadUninit on an unspecified value.
       -- Refused set (Z-24): the default arm is the only reachable one; the set
       -- case is loud (seam-hygiene H2)
       else if CerbGlobal.has_switch .strict_reads then
         (NDkilled (Other (MerrOther "loadM: SW_strict_reads is set but the strict-reads arm (impl_mem.ml:1601-1606) is not ported — switches are refused (Z-24)")), st)
-      else (NDactive (fp, mv), { st with lastUsed := allocOpt })
+      else (NDactive (fp, mv), loadedState)
     match pv with
     | .PV _ (.PVnull _) => fail_ (MerrAccess LoadAccess NullPtr)          -- impl_mem.ml:1605-1606
     | .PV _ (.PVfunction _) => fail_ (MerrAccess LoadAccess FunctionPtr)  -- impl_mem.ml:1607-1608
@@ -2505,7 +2556,10 @@ def storeM [LemFuel] (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (
           else st'
         | none => st'
       let fp : Footprint := .FP .W addr (sizeofCtype tagDefs ty)
-      (NDactive fp, { st' with lastUsed := allocOpt.map Prod.fst })                 -- :1687 last_used
+      (NDactive fp, recordObservation
+        (Observe_access loc StoreAccess ty pv (allocOpt.map Prod.fst) addr
+          (sizeofCtype tagDefs ty) bytes mv)
+        { st' with lastUsed := allocOpt.map Prod.fst })                 -- :1687 last_used
     -- ill-typed-store guard — impl_mem.ml:1673-1681: checked BEFORE the
     -- provenance/pointer-kind match (so it wins over NullPtr etc.);
     -- OCaml's diagnostic printfs (:1674-1680) are not mirrored, the
@@ -3058,6 +3112,7 @@ def vaStart (args : List (ctype × PointerValue)) : memM IntegerValue :=
   ND fun st =>
     let id := st.nextVarargsId
     (NDactive (.IV .Prov_none id),
+     recordObservation (Observe_varargs Varargs_create id)
      { st with varargs := varargsAdd id (0, args) st.varargs
                nextVarargsId := st.nextVarargsId + 1 })
 
@@ -3072,8 +3127,10 @@ def vaCopy (va : IntegerValue) : memM IntegerValue :=
       | some (_, entry) =>
         let id' := st.nextVarargsId
         (NDactive (.IV .Prov_none id'),
+         recordObservation (Observe_varargs Varargs_create id')
+         (recordObservation (Observe_varargs Varargs_read id)
          { st with varargs := varargsAdd id' entry st.varargs
-                   nextVarargsId := st.nextVarargsId + 1 })
+                   nextVarargsId := st.nextVarargsId + 1 }))
       | none => (NDkilled (failReason (MerrWIP "va_copy: not initiliased")), st)
   | _ => memFail (MerrWIP "va_copy: invalid va_list")
 
@@ -3086,9 +3143,11 @@ def vaArg (va : IntegerValue) (_ : ctype) : memM PointerValue :=
     ND fun st =>
       match st.varargs.find? (fun e => e.1 == id) with
       | some (_, (i, args)) =>
+        let st := recordObservation (Observe_varargs Varargs_read id) st
         match args[i.toNat]? with
         | some (_, ptr) =>
           (NDactive ptr,
+           recordObservation (Observe_varargs Varargs_advance id)
            { st with varargs := varargsAdd id (i + 1, args) st.varargs })
         | none =>
           (NDkilled (failReason (MerrWIP "va_arg: invalid number of arguments")), st)
@@ -3101,7 +3160,8 @@ def vaEnd (va : IntegerValue) : memM Unit :=
   | .IV .Prov_none id =>
     ND fun st =>
       if st.varargs.any (fun e => e.1 == id) then
-        (NDactive (), { st with varargs := st.varargs.filter (fun e => e.1 != id) })
+        (NDactive (), recordObservation (Observe_varargs Varargs_delete id)
+          { st with varargs := st.varargs.filter (fun e => e.1 != id) })
       else
         (NDkilled (failReason (MerrWIP "va_end: not initiliased")), st)
   | _ => memFail (MerrWIP "va_end: invalid va_list")
@@ -3117,8 +3177,9 @@ def vaList (vaIdx : Int) : memM (List (ctype × PointerValue)) :=
   ND fun st =>
     match st.varargs.find? (fun e => e.1 == vaIdx) with
     | some (_, (n, args)) =>
-      if n == 0 then (NDactive args, st)
-      else (NDkilled (CerbFail.failStopKill "va_list: assert (n = 0) failed (impl_mem.ml:2760)"), st)
+      let st' := recordObservation (Observe_varargs Varargs_read vaIdx) st
+      if n == 0 then (NDactive args, st')
+      else (NDkilled (CerbFail.failStopKill "va_list: assert (n = 0) failed (impl_mem.ml:2760)"), st')
     | none => (NDkilled (failReason (MerrWIP "va_list")), st)
 
 /-! ### Misc -/

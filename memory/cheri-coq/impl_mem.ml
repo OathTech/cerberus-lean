@@ -271,6 +271,17 @@ module CHERIMorello : Memory = struct
   (* address-space-bound slice (2026-09-17): the Coq-extracted state fixes its own layout —
      the driver's address-space top is accepted and unused. *)
   let initial_mem_state (_address_space_top: Z.t) = MM.initial_mem_state
+
+  (* SC observation adapter is not implemented for this object-model instance.
+     Absence is explicit at both initialization and extraction; no empty stream
+     can be mistaken for a complete observation. Existing execution is unchanged. *)
+  type representation_byte = unit
+  type memory_observation =
+    (pointer_value, mem_value, representation_byte) Mem_common.memory_observation
+  let begin_observing (_: mem_state) : mem_state option = None
+  let stop_observing (st: mem_state) = st
+  let take_observations (_: mem_state) : (memory_observation list * mem_state) option = None
+
   let overlapping = MM.overlapping
 
   let cs_module = (module struct

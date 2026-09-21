@@ -174,7 +174,7 @@ LEM_SRC_AUX       = $(LEM_PRELUDE) \
                     builtins.lem formatted.lem pp.lem implementation.lem \
                     $(LEM_DEFACTO) \
                     $(LEM_UTILS) \
-                    nondeterminism.lem \
+                    nondeterminism.lem nd_observe.lem \
                     $(LEM_CONC_INTERF) \
                     $(LEM_CORE) \
                     $(LEM_CORE_TYPING) \

@@ -479,6 +479,10 @@ module Concrete : Memory = struct
             `NewTaint xs
   end
   
+  type representation_byte = AbsByte.t
+  type memory_observation =
+    (pointer_value, mem_value, representation_byte) Mem_common.memory_observation
+
   type mem_state = {
     next_alloc_id: storage_instance_id;
     next_iota: symbolic_storage_instance_id;
@@ -498,6 +502,7 @@ module Concrete : Memory = struct
     last_used: storage_instance_id option;
 
     requested: (address * Z.t) list; (* the addresses (and object sizes) that were allocated with cerb::with_address() *)
+    observations: memory_observation list option; (* newest first; None disables recording *)
   }
   
   (* address-space-bound slice (2026-09-17): the top of the address space is the driver's
@@ -520,7 +525,25 @@ module Concrete : Memory = struct
     dynamic_addrs= [];
     last_used= None;
     requested= [];
+    observations= None;
   }
+
+  let record_observation observation st =
+    match st.observations with
+    | None -> st
+    | Some xs -> { st with observations= Some (observation :: xs) }
+
+  let begin_observing st =
+    Some (match st.observations with
+      | None -> { st with observations= Some [] }
+      | Some _ -> st)
+
+  let stop_observing st = { st with observations= None }
+
+  let take_observations st =
+    match st.observations with
+    | None -> None
+    | Some xs -> Some (List.rev xs, { st with observations= Some [] })
   
   (* TODO *)
   type footprint =
@@ -1313,6 +1336,9 @@ module Concrete : Memory = struct
       | None ->
           let alloc = {prefix= pref; base= addr; size= size; ty= Some ty; is_readonly= IsWritable; taint= `Unexposed} in
           update (fun st ->
+            record_observation
+            (Observe_allocation (PV (Prov_some alloc_id, PVconcrete (None, addr)),
+                                 alloc_id, addr, size, Some ty, None, []))
             { st with allocations= IntMap.add alloc_id alloc st.allocations;
                       bytemap=
                         if Switches.(has_switch SW_zero_initialised) then
@@ -1343,6 +1369,9 @@ module Concrete : Memory = struct
           update (fun st ->
             let (funptrmap, pre_bs) = repr st.funptrmap mval in
             let bs = List.mapi (fun i b -> (Z.add addr (Z.of_int i), b)) pre_bs in
+            record_observation
+            (Observe_allocation (PV (Prov_some alloc_id, PVconcrete (None, addr)),
+                                 alloc_id, addr, size, Some ty, Some mval, pre_bs))
             { st with
                 allocations= IntMap.add alloc_id alloc st.allocations;
                 bytemap=
@@ -1436,6 +1465,9 @@ module Concrete : Memory = struct
     (* TODO: why aren't we using the argument pref? *)
     let alloc = {prefix= Symbol.PrefMalloc; base= addr; size= size_n; ty= None; is_readonly= IsWritable; taint= `Unexposed} in
     update (fun st ->
+      record_observation
+      (Observe_allocation (PV (Prov_some alloc_id, PVconcrete (None, addr)),
+                           alloc_id, addr, size_n, None, None, []))
       { st with
           allocations= IntMap.add alloc_id alloc st.allocations;
           dynamic_addrs= addr :: st.dynamic_addrs }
@@ -1469,7 +1501,12 @@ module Concrete : Memory = struct
     ((), { st with bytemap= bytemap' })
     )
   
-  let kill loc is_dyn : pointer_value -> unit memM = function
+  let observe_deallocation loc is_dyn ptr alloc_id st =
+    let region = Option.map (fun alloc -> (alloc.base, alloc.size))
+      (IntMap.find_opt alloc_id st.allocations) in
+    record_observation (Observe_deallocation (loc, is_dyn, ptr, alloc_id, region)) st
+
+  let kill loc is_dyn ptr : unit memM = match ptr with
     | PV (_, PVnull _) ->
         if Switches.(has_switch SW_forbid_nullptr_free) then
           fail ~loc MerrFreeNullPtr
@@ -1511,7 +1548,7 @@ module Concrete : Memory = struct
            PNVI-ae-udi stuff separated to avoid polluting the
            vanilla PNVI code) *)
         update begin fun st ->
-          {st with dead_allocations= alloc_id :: st.dead_allocations;
+          {(observe_deallocation loc is_dyn ptr alloc_id st) with dead_allocations= alloc_id :: st.dead_allocations;
                    last_used= Some alloc_id;
                    allocations= IntMap.remove alloc_id st.allocations}
         end >>= fun () ->
@@ -1545,7 +1582,7 @@ module Concrete : Memory = struct
                   "KILLING alloc_id= " ^ Z.to_string alloc_id
                 );
                 update begin fun st ->
-                  {st with dead_allocations= alloc_id :: st.dead_allocations;
+                  {(observe_deallocation loc is_dyn ptr alloc_id st) with dead_allocations= alloc_id :: st.dead_allocations;
                            last_used= Some alloc_id;
                            allocations= IntMap.remove alloc_id st.allocations}
                 end >>= fun () ->
@@ -1572,7 +1609,10 @@ module Concrete : Memory = struct
       else
         return ()
       end >>= fun () ->
-      update (fun st -> { st with last_used= alloc_id_opt }) >>= fun () ->
+      update (fun st -> record_observation
+        (Observe_access (loc, LoadAccess, ty, PV (prov, ptrval_), alloc_id_opt,
+                         addr, sizeof ty, bs, mval))
+        { st with last_used= alloc_id_opt }) >>= fun () ->
       let fp = FP (`R, addr, (sizeof ty)) in
       begin match bs' with
         | [] ->
@@ -1692,6 +1732,9 @@ module Concrete : Memory = struct
         update begin fun st ->
           let (funptrmap, pre_bs) = repr st.funptrmap mval in
           let bs = List.mapi (fun i b -> (Z.add addr (Z.of_int i), b)) pre_bs in
+          record_observation
+          (Observe_access (loc, StoreAccess, ty, PV (prov, ptrval_), alloc_id_opt,
+                           addr, sizeof ty, pre_bs, mval))
           { st with last_used= alloc_id_opt;
                     bytemap=
                       List.fold_left (fun acc (addr, b) ->
@@ -2706,7 +2749,8 @@ VIP:type pointer_value =
   let va_start args =
     get >>= fun st ->
     let id = st.next_varargs_id in
-    update (fun st -> { st with varargs = IntMap.add id (0, args) st.varargs;
+    update (fun st -> record_observation (Observe_varargs (Varargs_create, id))
+                     { st with varargs = IntMap.add id (0, args) st.varargs;
                                 next_varargs_id = Z.succ st.next_varargs_id;
                       } ) >>= fun _ ->
     return (IV (Prov_none, id))
@@ -2717,10 +2761,13 @@ VIP:type pointer_value =
       get >>= fun st ->
       begin match IntMap.find_opt id st.varargs with
         | Some args ->
+          let source_id = id in
           let id = st.next_varargs_id in
-          update (fun st -> { st with varargs = IntMap.add id args st.varargs;
+          update (fun st -> record_observation (Observe_varargs (Varargs_create, id))
+                           (record_observation (Observe_varargs (Varargs_read, source_id))
+                            { st with varargs = IntMap.add id args st.varargs;
                                       next_varargs_id = Z.succ st.next_varargs_id;
-                            } ) >>= fun _ ->
+                            })) >>= fun _ ->
           return (IV (Prov_none, id))
         | None ->
             fail (MerrWIP "va_copy: not initiliased")
@@ -2734,9 +2781,11 @@ VIP:type pointer_value =
       get >>= fun st ->
       begin match IntMap.find_opt id st.varargs with
         | Some (i, args) ->
+          update (record_observation (Observe_varargs (Varargs_read, id))) >>= fun () ->
           begin match List.nth_opt args i with
             | Some (_, ptr) -> (* TODO: check type is compatible *)
-              update (fun st -> { st with varargs = IntMap.add id (i+1, args) st.varargs })
+              update (fun st -> record_observation (Observe_varargs (Varargs_advance, id))
+                               { st with varargs = IntMap.add id (i+1, args) st.varargs })
               >>= fun _ ->
               return ptr
             | None ->
@@ -2754,7 +2803,8 @@ VIP:type pointer_value =
       get >>= fun st ->
       begin match IntMap.find_opt id st.varargs with
         | Some _ ->
-          update (fun st -> { st with varargs = IntMap.remove id st.varargs })
+          update (fun st -> record_observation (Observe_varargs (Varargs_delete, id))
+                           { st with varargs = IntMap.remove id st.varargs })
         | None ->
             fail (MerrWIP "va_end: not initiliased")
       end
@@ -2765,6 +2815,7 @@ VIP:type pointer_value =
     get >>= fun st ->
     begin match IntMap.find_opt va_idx st.varargs with
       | Some (n, args) ->
+          update (record_observation (Observe_varargs (Varargs_read, va_idx))) >>= fun () ->
           assert (n = 0); (* not sure what happens with n <> 0 *)
           return args
       | None ->

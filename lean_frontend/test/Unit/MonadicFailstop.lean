@@ -34,6 +34,10 @@ def checks (fuel : Nat) : List (String × Bool) := Id.run do
   let memcmpStop := memcmpM tags ptr ptr (iv 1)
   let cmpMsg := "Concrete.memcmp: non-integer byte (impl_mem.ml:2658-2659 assert false)"
   let liveByte := writeBytesTo st 100 [{ prov := .Prov_none, copyOffset := none, value := some 42 }]
+  let boolTy := Ctype [] (.Basic (.Integer .Bool0))
+  let trapByte := writeBytesTo st 100 [{ value := some 2 }]
+  let boolLoad := loadM tags loc boolTy ptr
+  let trapResult := step boolLoad trapByte
   return [
     ("allocator zero alignment remains a refusal", stops (allocator 0 0) st
       "CerbMem.allocator: alignment 0 has no meaning in the model (impl_mem.ml:1258 quomod raises Division_by_zero — an OCaml-execution artifact, not the referent); operator decision pending, zero-discrepancy Z2 record §10"),
@@ -50,6 +54,14 @@ def checks (fuel : Nat) : List (String × Bool) := Id.run do
     ("ordinary pointer shift", active (effArrayShiftPtrval tags loc ptr unsigned_char (iv 1)) st),
     ("unspecified memcmp byte", stops memcmpStop st cmpMsg),
     ("memcmp retains load's updated state", (step memcmpStop st).2.lastUsed == some 7),
+    ("trap read remains UB", match trapResult.1 with
+      | NDkilled (Undef0 _ _) => true | _ => false),
+    ("trap read retains last-used update", trapResult.2.lastUsed == some 7),
+    ("unspecified Bool trap retains last-used update", (step boolLoad st).2.lastUsed == some 7),
+    ("invalid pointer fails before last-used update",
+      (step (loadM tags loc boolTy (nullPtrval boolTy)) st).2.lastUsed == some 99),
+    ("trap continuation cannot reset last-used update",
+      (step (nd_bind boolLoad (fun _ => ND fun _ => (NDactive (), st0))) trapByte).2.lastUsed == some 7),
     ("specified memcmp byte", match step (memcmpM tags ptr ptr (iv 1)) liveByte with
       | (NDactive (.IV _ value), _) => value == 0 | _ => false),
     ("noninitial va_list", stops (vaList 4) va "va_list: assert (n = 0) failed (impl_mem.ml:2760)"),

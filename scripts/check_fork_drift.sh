@@ -37,7 +37,9 @@
 #   already-excused file flips the hash and is loud too. Cosmetic
 #   entries were verified comment/blank-line-only at manifest time
 #   (strip check in the refresh recipe); the hash pin subsumes the
-#   check at gate time.
+#   check at gate time. Fork-only generated modules must exactly match
+#   [expected-added], with SHA-256 of their complete contents. Missing pristine
+#   files, unregistered additions, duplicate pins and non-regular entries fail.
 # Layer 3: [source-content] pins every layer-1 file's bytes and git-style
 #   mode, including .lem sources, handwritten fresh supply/renumbering,
 #   driver changes and build/runtime helpers. An edit inside an already
@@ -231,14 +233,16 @@ gate() {
             | sha256sum | awk '{print $1}'
     }
 
-    # differing/extra files, basenames (fail on Only-in: tree shape must match)
-    local raw live_diff_files
-    raw=$(diff -rq "$UP_TREE" "$FORK_TREE" | sort)
-    if grep -q '^Only in' <<<"$raw"; then
-        echo "check_fork_drift: FAIL — generated trees differ in FILE SET:" >&2
-        grep '^Only in' <<<"$raw" | sed 's/^/    /' >&2
-        exit 1
-    fi
+    # New shared modules have no pristine predecessor. Each addition is named
+    # and content-pinned separately; removals, missing pins and extra files fail.
+    local raw live_diff_files added_pins diff_rc
+    local addition_args=()
+    [[ $REFRESH -eq 1 ]] && addition_args=(--emit-additions)
+    added_pins=$(python3 "$ROOT/scripts/check_fork_generated.py" \
+        --upstream "$UP_TREE" --fork "$FORK_TREE" --manifest "$MANIFEST" \
+        "${addition_args[@]}") || fail "generated addition check failed"
+    raw=$(diff -rq "$UP_TREE" "$FORK_TREE"); diff_rc=$?
+    [[ $diff_rc -le 1 ]] || fail "generated-tree diff failed (exit $diff_rc)"
     live_diff_files=$(sed -n 's/^Files .*\/\([^ /]*\) and .* differ$/\1/p' <<<"$raw" | sort)
 
     if [[ $REFRESH -eq 1 ]]; then
@@ -276,6 +280,8 @@ gate() {
                 [[ -n "$f" ]] || continue
                 grep -qx "$f" <<<"$old_cosmetic" && echo "$(diff_hash "$f") $f"
             done <<<"$live_diff_files"
+            echo "[expected-added]"
+            [[ -z "$added_pins" ]] || printf '%s\n' "$added_pins"
         } > "$MANIFEST"
         echo "check_fork_drift: manifest REFRESHED at $MANIFEST — review the git diff hunk-by-hunk and commit with justification (this is a Tier-B deliberate act, not a gate pass)."
         exit 0
@@ -423,6 +429,44 @@ awk '1; /^100[67][45][45] [0-9a-f]+ util\/cerb_fresh.ml$/{print}' "$PLANTDIR/m.c
 plant "S13 duplicate source-content pin" nonzero "duplicate [source-content] entry" C 0 "$PLANTDIR/m.content-dup" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$PLANTDIR/lem-ok" 0
 sed '/^100[67][45][45] [0-9a-f]* util\/cerb_fresh.ml$/d' "$PLANTDIR/m.c" > "$PLANTDIR/m.content-missing"
 plant "S14 missing source-content pin" nonzero "source-content path set differs" C 0 "$PLANTDIR/m.content-missing" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$PLANTDIR/lem-ok" 0
+# S15-S22 exercise additions through the full gate, including its actual
+# helper invocation. Only these copied generated files and manifests change.
+cp -a "$FORK_TREE_DEFAULT" "$PLANTDIR/generated"
+python3 - "$PLANTDIR" <<'PY'
+from pathlib import Path
+import hashlib
+import sys
+p = Path(sys.argv[1])
+source = "let sc_generated_addition_plant = 1\n"
+addition = p / "generated/sc_generated_addition_plant.ml"
+addition.write_text(source)
+row = hashlib.sha256(source.encode()).hexdigest() + " " + addition.name + "\n"
+manifest = (p / "m.c").read_text()
+if "\n[expected-added]\n" not in manifest:
+    manifest += "\n[expected-added]\n"
+base = manifest.replace("\n[expected-added]\n", "\n[expected-added]\n" + row, 1)
+(p / "m.added").write_text(base)
+(p / "m.added-missing").write_text(manifest)
+(p / "m.added-duplicate").write_text(base.replace(row, row + row, 1))
+PY
+plant "S15 registered generated addition" 0 "$OKMSG" C 0 "$PLANTDIR/m.added" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$PLANTDIR/generated" "$PLANTDIR/lem-ok" 0
+printf 'let changed_content = 2\n' >> "$PLANTDIR/generated/sc_generated_addition_plant.ml"
+plant "S16 registered addition changed" nonzero "generated addition content drift" C 0 "$PLANTDIR/m.added" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$PLANTDIR/generated" "$PLANTDIR/lem-ok" 0
+printf 'let sc_generated_addition_plant = 1\n' > "$PLANTDIR/generated/sc_generated_addition_plant.ml"
+plant "S17 generated addition without pin" nonzero "generated addition set drift" C 0 "$PLANTDIR/m.added-missing" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$PLANTDIR/generated" "$PLANTDIR/lem-ok" 0
+plant "S18 duplicate generated addition pin" nonzero "duplicate generated addition pin" C 0 "$PLANTDIR/m.added-duplicate" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$PLANTDIR/generated" "$PLANTDIR/lem-ok" 0
+mv "$PLANTDIR/generated/sc_generated_addition_plant.ml" "$PLANTDIR/addition.saved"
+plant "S19 registered generated addition missing" nonzero "generated addition set drift" C 0 "$PLANTDIR/m.added" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$PLANTDIR/generated" "$PLANTDIR/lem-ok" 0
+cp "$PLANTDIR/addition.saved" "$PLANTDIR/generated/sc_generated_addition_plant.ml"
+cp "$PLANTDIR/addition.saved" "$PLANTDIR/generated/sc_unregistered_plant.ml"
+plant "S20 extra unregistered generated module" nonzero "generated addition set drift" C 0 "$PLANTDIR/m.added" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$PLANTDIR/generated" "$PLANTDIR/lem-ok" 0
+rm "$PLANTDIR/generated/sc_unregistered_plant.ml"
+mv "$PLANTDIR/generated/annot.ml" "$PLANTDIR/annot.saved"
+plant "S21 pristine generated file removed" nonzero "pristine generated files missing from fork" C 0 "$PLANTDIR/m.added" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$PLANTDIR/generated" "$PLANTDIR/lem-ok" 0
+mv "$PLANTDIR/annot.saved" "$PLANTDIR/generated/annot.ml"
+rm "$PLANTDIR/generated/sc_generated_addition_plant.ml"
+ln -s "$PLANTDIR/addition.saved" "$PLANTDIR/generated/sc_generated_addition_plant.ml"
+plant "S22 generated addition replaced by symlink" nonzero "non-regular generated entry" C 0 "$PLANTDIR/m.added" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$PLANTDIR/generated" "$PLANTDIR/lem-ok" 0
 # unplanted: the real manifest, the real prerequisites, lem as found on PATH
 echo "  UNPLANTED:"
 if out=$( ( unset CERB_FORK_DRIFT_DEV_SKIP; gate "$MANIFEST_DEFAULT" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$LEM_ON_PATH" 0 ) 2>&1 ); then
@@ -431,7 +475,7 @@ else
     echo "  PLANT FAIL [unplanted gate is not green]:"; sed 's/^/      /' <<<"$out"; fails=$((fails+1))
 fi
 if (( fails == 0 )); then
-    echo "check_fork_drift: SELFTEST OK (14 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; unplanted gate green)"
+    echo "check_fork_drift: SELFTEST OK (22 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; S15-S22 generated additions and file-set controls; unplanted gate green)"
     exit 0
 else
     echo "check_fork_drift: SELFTEST FAILED ($fails)"; exit 1

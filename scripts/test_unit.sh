@@ -24,6 +24,7 @@ UNIT_TESTS=(
     # main reports success; its cone is probed by check_theorem_axioms.sh
     "fuel-exemplar-test"
     "monadic-failstop-test"
+    "sc-prototype-test"
     # allocator soundness (upstream-tray draft 44, 2026-09-16): the four draft-44
     # states on the actual CerbMem.allocator; its import compiles the kernel theorem
     "allocator-soundness-test"
@@ -78,6 +79,7 @@ for test in "${TESTS[@]}"; do
     # The C-TF1 test receives its fuel explicitly: 2 is liftND + liftAction's
     # minimum, and the second run checks a larger caller-selected budget.
     if [[ "$test" == monadic-failstop-test ]]; then test_args=(2 17); fi
+    if [[ "$test" == sc-prototype-test ]]; then test_args=(17 64); fi
     if "$bin" "${test_args[@]}"; then
         echo "${GREEN}✓ $test PASSED${NC}"
         total_pass=$((total_pass + 1))
@@ -136,6 +138,10 @@ if ! "$(dirname "$PURITY_SH")/test_gcc_capture.sh"; then
 fi
 if ! python3 "$(dirname "$PURITY_SH")/test_observations.py"; then
     echo "test_unit: observation codec/capture plants FAILED"
+    exit 1
+fi
+if ! bash "$(dirname "$PURITY_SH")/test_litmus.sh" --selftest; then
+    echo "test_unit: SC litmus harness plants FAILED"
     exit 1
 fi
 if ! python3 "$(dirname "$PURITY_SH")/test_capture_prerequisites.py"; then

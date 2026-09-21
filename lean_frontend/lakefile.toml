@@ -130,6 +130,7 @@ roots = [
   "Monadic_parsing", "Monadic_parsing_auxiliary",
   "Multiset", "Multiset_auxiliary",
   "Nondeterminism", "Nondeterminism_auxiliary",
+  "Nd_observe", "Nd_observe_auxiliary", "CerbNDObserveProofs",
   "Pp", "Pp_auxiliary",
   "Product", "Product_auxiliary",
   "Range", "Range_auxiliary",
@@ -305,4 +306,10 @@ root = "Unit.ManyRestatementTest"
 name = "opaque-failure-test"
 srcDir = "test"
 root = "Unit.OpaqueFailureTest"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "sc-prototype-test"
+srcDir = "test"
+root = "Unit.SCPrototype"
 moreLinkArgs = ["native/md5.o"]

@@ -39,6 +39,13 @@ module type Memory = sig
   (* address-space-bound slice (2026-09-17): the initial state takes the address-space
      top (the allocator's initial cursor) from the driver — mem.lem initial_mem_state. *)
   val initial_mem_state: Z.t -> mem_state
+
+  type representation_byte
+  type memory_observation =
+    (pointer_value, mem_value, representation_byte) Mem_common.memory_observation
+  val begin_observing: mem_state -> mem_state option
+  val stop_observing: mem_state -> mem_state
+  val take_observations: mem_state -> (memory_observation list * mem_state) option
   
   type 'a memM =
     ('a, string, Mem_common.mem_error, integer_value Mem_common.mem_constraint, mem_state) Nondeterminism.ndM

@@ -51,6 +51,25 @@ declare lean target_rep type mem_state = `CerbMem.MemState`
 declare ocaml target_rep function initial_mem_state = `Impl_mem.initial_mem_state`
 declare lean target_rep function initial_mem_state = `CerbMem.initialMemState`
 
+type representation_byte
+declare ocaml target_rep type representation_byte = `Impl_mem.representation_byte`
+declare lean target_rep type representation_byte = `CerbMem.AbsByte`
+
+type memory_observation = Mem_common.memory_observation pointer_value mem_value representation_byte
+
+(* Nothing means this memory-model implementation has no observation adapter.
+   A caller must not substitute an empty observation list for that result.
+   Disabled observations preserve the existing sequential memory behavior. *)
+val begin_observing: mem_state -> maybe mem_state
+val stop_observing: mem_state -> mem_state
+val take_observations: mem_state -> maybe (list memory_observation * mem_state)
+declare ocaml target_rep function begin_observing = `Impl_mem.begin_observing`
+declare lean target_rep function begin_observing = `CerbMem.beginObserving`
+declare ocaml target_rep function stop_observing = `Impl_mem.stop_observing`
+declare lean target_rep function stop_observing = `CerbMem.stopObserving`
+declare ocaml target_rep function take_observations = `Impl_mem.take_observations`
+declare lean target_rep function take_observations = `CerbMem.takeObservations`
+
 
 type memM 'a =
   Nondeterminism.ndM 'a string Mem_common.mem_error (Mem_common.mem_constraint integer_value) mem_state

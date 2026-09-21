@@ -1458,3 +1458,13 @@ let serialise_mem_state dig (st: mem_state) : Cerb_json.json =
 (* fork addition (2026-09-01): census not wired for VIP — reported
    loudly as unsupported by the driver, never silently elided. *)
 let alloc_census_opt (_: mem_state) : (int * int) option = None
+
+(* SC observation adapter is not implemented for this object-model instance.
+   Absence is explicit at both initialization and extraction; no empty stream
+   can be mistaken for a complete observation. Existing execution is unchanged. *)
+type representation_byte = unit
+type memory_observation =
+  (pointer_value, mem_value, representation_byte) Mem_common.memory_observation
+let begin_observing (_: mem_state) : mem_state option = None
+let stop_observing (st: mem_state) = st
+let take_observations (_: mem_state) : (memory_observation list * mem_state) option = None

@@ -1,3 +1,16 @@
+# SC prototype observation adapter, 2026-09-21 [AGENT]:
+# Shared passive observations, optional concrete-memory journaling and explicit
+# unsupported observer capabilities for the other memory implementations; checked
+# ND lifting is a new generated module. Sequential execution still uses the old
+# lift and observation=None. Generated mem_common.ml adds the observation types
+# and derived instances. nd_observe.ml has no pristine predecessor and is pinned
+# in [expected-added]; eight full-gate plants check that extension.
+# mem.ml now contains a type alias and moves from cosmetic to semantic.
+# The Makefile includes the new shared module. Paired component probes and the
+# kernel-checked same-fuel disabled-lift erasure are recorded in
+# lean_frontend/docs/2026-09-21_sc-prototype-progress.md. This is not SC support.
+# Full integration gates remain required before a code commit.
+#
 # program-data-parameters S1.5, 2026-09-20 [AGENT; single row + this NOTE, the S0.5 practice]:
 # [meta] lem-pin 4307dc5 -> 38f87d5 (fuel'd truly-mutual blocks compose with reader lifting — the a618b9c scope-cut guard
 # deleted in lem-lean 38f87d5, doc/lean-backend/2026-09-20_fuel-mutual-reader-record.md; born from E-A Phase 1's S4 stop on
@@ -340,8 +353,10 @@ frontend/model/global.lem
 frontend/model/implementation.lem
 frontend/model/loc.lem
 frontend/model/mem.lem
+frontend/model/mem_common.lem
 frontend/model/mini_pipeline.lem
 frontend/model/monadic_parsing.lem
+frontend/model/nd_observe.lem
 frontend/model/nondeterminism.lem
 frontend/model/pp.lem
 frontend/model/state.lem
@@ -368,7 +383,7 @@ tools/check_handwritten_sync.sh
 tools/check_lem_sync.sh
 util/cerb_fresh.ml
 [source-content]
-100644 527b04f09e22919ad64ca2c4fa676f3d1c86b1714d5b109dd076ebe98c9e32f9 Makefile
+100644 5178b20c5db0d6de7d44d19523dc72d22bb8ec6b5e2b7ccd75ecdf1a92f564f0 Makefile
 100644 f4901556a3001f3a4968c4a66205da6615e18b4618a21ac9852f27386ffe19d5 backend/common/ail_sym_hwm.ml
 100644 65907c6a9fa3816f49fdb3147585630008efe596ecf2ccc4963976ab6c4e669d backend/common/driver_ocaml.ml
 100644 91d09d39c2b2e4ef9b870ea665f588f446ca7b5bb84e6701211861ff2a36565e backend/common/driver_ocaml.mli
@@ -416,9 +431,11 @@ util/cerb_fresh.ml
 100644 c536bc19c689f1403e8296152886d948fcf66ce84cbccf56bf7b4e28216634c1 frontend/model/global.lem
 100644 69eec9cc42d84c187dbe39e6229dab8e9e59e7aa3187e7fbc5640a9478d2d995 frontend/model/implementation.lem
 100644 ae79a26c1cfd62acdf18ca6479625de8db05e01f43bdc3dc829cc5a83f465111 frontend/model/loc.lem
-100644 abff8e1d7161472b9bb6b03b76d4dc24b03f83a0226dd6ee190811361503c327 frontend/model/mem.lem
+100644 628286d0cc4e7e51556395bcff539a4306b1cf3aee22e4960f78dfee22cea964 frontend/model/mem.lem
+100644 400061704d663177f7db01f085e270dc252c30fd34cfe78888ef79cdd9b02852 frontend/model/mem_common.lem
 100644 6fec753e35d6e7ff2732e02c3f4edb19ca5b5f891b5b467b911a42d819e9974a frontend/model/mini_pipeline.lem
 100644 da04e3c262a6e776e977bac03e820d17a3c54065009ae7bd255bfadb900b9524 frontend/model/monadic_parsing.lem
+100644 338f0cb297f4d7409fe8f00a1370e1f92304649a69de71d0e94392a852da0a4c frontend/model/nd_observe.lem
 100644 fc90e8eb740711176ddf98d9ebb929e6746604ea50375b08762646edb69e0493 frontend/model/nondeterminism.lem
 100644 b8bd6d19e3130795183c9524fa62052e96b9497cb17ddca7e3763d9171791543 frontend/model/pp.lem
 100644 8de49b4f9775e7d4f7b07f4d2c6757e9597c34a95d61658b0914e15db4511898 frontend/model/state.lem
@@ -430,13 +447,13 @@ util/cerb_fresh.ml
 100644 3393b3fecc9a230bfebba003b484c023d9680d8f66859468c0f7b763fe8952a1 frontend/model/translation_aux.lem
 100644 c13fc48fb6e67cf01edfbfee4e79c4bbe89c12bfa2c4506499b7b7ef99de10c8 frontend/model/translation_effect.lem
 100644 9427c936dcfe2bb47a984c6d73db12bf1c7012bb85b0b63156b5edececf9bf7c frontend/model/utils.lem
-100644 3293b8888c276125e5e1158a2241fc272ec96d1526761c813777d638b5f62a2c memory/cheri-coq/impl_mem.ml
-100644 4ba6dc417a79e9af5875e7d3800bd70061929250e1c450185e7345e36df05ce0 memory/concrete/impl_mem.ml
-100644 8bcbe8da2e8bf7c9e32a3afc6d7dbea4c590bb116b7f05ad6a001ee3650c64f9 memory/symbolic/impl_mem.ml
-100644 ab57c73b0fc3fca8375a3868a0dbec017f6fe73bcb9b633db8e4bb37351fbbf0 memory/vip/impl_mem.ml
+100644 c402b956e8456340bd36bf02390e1aa972498ecedbffaeeb53924775f8ef0195 memory/cheri-coq/impl_mem.ml
+100644 3af386d90757ab2ea4ddfe00976576e993a8d96da2dc646df5c46b9241b88920 memory/concrete/impl_mem.ml
+100644 3e287ab7fc555a32c185896af17e27848b18ac9c8e6ee1c03e599ac54f8743c7 memory/symbolic/impl_mem.ml
+100644 7b865d6d837e6308d7c8020e93740bae7f9470fd58a29d719f9aecacf9b434f6 memory/vip/impl_mem.ml
 100644 4ea44bb0710cf2a2ebe448974705289c36906d5a3b321c74da3cf6a92fda7859 ocaml_frontend/dune
 100644 5835e51d0f5368186ce5b04ede62796c443134778072a0a9dc3a660effa8ef81 ocaml_frontend/fork_renumber.ml
-100644 f6c74e4da7436bd7306a9ca874916e7aca24600ebeef857877faf92427944e9f ocaml_frontend/memory_model.ml
+100644 85c8cf34e30b2624c0184f69dfc5cfbe7056f72bcdfa181a797fd2a454fbbb30 ocaml_frontend/memory_model.ml
 100644 d1d5f0a2ca4cc5a53e8b068d3bb9f219fe5eaec29457f25032352271ed240095 runtime/libc/dune
 100644 cf6fbe0be7dae96f6ce2c8cf7d7013b89d350da563e5179be8a2bb298d7ee24a runtime/libcore/impls/i686-apple-darwin10-gcc-4.2.1.impl
 100755 008b5ade8b923f9d7ae0fe6fce837dee3e7a75ef2c414dde8791a78633545744 scripts/common.sh
@@ -458,6 +475,9 @@ beaa991f84cb029c803a52e25a74af696bfa85254d7e8ac876dea38d041ba562 driver.ml
 1b3c441a39dadde45c5de8f95cee4c1210dac4de976d8864fd1529d427a948d3 core_eval.ml
 6ba1f4842fe4d8ef55b6405b6c2f1b88f20fc0e2b245230d680314ad0e6cb59f translation.ml
 6cc50123c4727ca848299fc38a7f62c889acd6e5f5c1ce5a5c732b52e9abd05c monadic_parsing.ml
+06593c9c41899cd3497ad903dfde90cbd9c4fc68a6f7932caaa8f434f7f204c2 mem.ml
+2ef8c172bbe21aa73105d79a03de558034693d5364a5bc20f395079de1121f7e mem_common.ml
+
 [expected-cosmetic]
 75dbb3f1b524df384b8783896995e45dbee6f6c123a990b2d5848c23595f9131 ailSyntax.ml
 f353c48b912b1f5ac4a73b42b981d01c38ac19760867ad8e043072e9489b383c cn.ml
@@ -470,4 +490,6 @@ e5b26939dde79f51654d4696010595af8178cb301e4e093973012ed00726eacd nondeterminism.
 98ce65a030e34b6f691e82d328aaf48e4cc2522ec4094aa145465810c658bdca pp.ml
 ab2dbee332b13d97f1752d5aecc0b8cbb95da5adf8c61cb3e5065dd0230ba2c1 std.ml
 c2008a0bb34b578d774f2816db605a7fa67a2e890eddd7f5052a02c521a336ff utils.ml
-1da4330c75ee0ee80b8afa8cbb6c42559a492fd761b4d5a12653ed1c7fd3babf mem.ml
+
+[expected-added]
+d6ecea69ec621eac79b99c0bb92527a6980326bafe055a7b670f04d9abe72fd5 nd_observe.ml

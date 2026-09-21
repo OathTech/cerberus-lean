@@ -18,6 +18,32 @@ type access_kind =
   | LoadAccess
   | StoreAccess
 
+type varargs_observation =
+  | Varargs_create
+  | Varargs_read
+  | Varargs_advance
+  | Varargs_delete
+
+(* Passive observations of the concrete object model. These are not Cmm
+   actions: the driver supplies actor, memory order and source sequencing.
+   In particular, a representation range is not asserted to be a C memory
+   location, and allocator/metadata effects are not ordinary C stores.
+   Recording a read precedes any trap-representation failure after the read.
+   Byte payloads retain the memory model's representation/provenance data. *)
+type memory_observation 'ptr 'value 'byte =
+  | Observe_access of Loc.t * access_kind * Ctype.ctype * 'ptr
+                    * maybe integer (* resolved storage instance, if any *)
+                    * integer       (* representation base address *)
+                    * integer       (* reported access size *)
+                    * list 'byte * 'value
+  | Observe_allocation of 'ptr * integer (* storage instance *)
+                        * integer (* base *) * integer (* size *)
+                        * maybe Ctype.ctype * maybe 'value
+                        * list 'byte (* supplied initialization, if any *)
+  | Observe_deallocation of Loc.t * bool (* dynamic deallocation *) * 'ptr * integer (* storage instance *)
+                          * maybe (integer * integer) (* known base and size *)
+  | Observe_varargs of varargs_observation * integer (* abstract va_list id *)
+
 type access_error =
   | NullPtr
   | FunctionPtr
