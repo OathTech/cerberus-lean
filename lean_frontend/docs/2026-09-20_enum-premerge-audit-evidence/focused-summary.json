@@ -1,0 +1,55 @@
+{
+  "matched_full_observation_pairs": [
+    "aggregate-array",
+    "callback-array-index",
+    "callback-switch",
+    "cast-pointer",
+    "enum-unsigned-limit",
+    "memcpy-enum",
+    "shadow-signedness",
+    "sizeof-enum-control",
+    "stmt-direct-enum-control",
+    "stmt-typeof-enum",
+    "stmt-typeof-int-control",
+    "stmt-typeof-local-enum",
+    "stmt-typeof-nested",
+    "stmt-typeof-signed",
+    "union-enum"
+  ],
+  "divergent_pairs": [
+    "callback-assign",
+    "callback-conditional",
+    "callback-equality",
+    "callback-init",
+    "callback-param",
+    "callback-return"
+  ],
+  "failure_or_rejection_pairs": [
+    "forward-enum",
+    "generic-duplicate",
+    "stmt-sizeof-enum",
+    "stmt-sizeof-int-control",
+    "stmt-sizeof-local-enum",
+    "stmt-sizeof-nested",
+    "stmt-sizeof-signed"
+  ],
+  "matched_value_pairs": [
+    "aggregate-array",
+    "callback-array-index",
+    "callback-switch",
+    "enum-unsigned-limit",
+    "memcpy-enum",
+    "shadow-signedness",
+    "sizeof-enum-control",
+    "stmt-direct-enum-control",
+    "stmt-typeof-enum",
+    "stmt-typeof-int-control",
+    "stmt-typeof-local-enum",
+    "stmt-typeof-nested",
+    "stmt-typeof-signed",
+    "union-enum"
+  ],
+  "matched_undefined_pairs": [
+    "cast-pointer"
+  ]
+}

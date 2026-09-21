@@ -1,0 +1,659 @@
+[
+  {
+    "case": "callback-array-index",
+    "engine": "base-fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-array-index.c"
+    ],
+    "status": 0,
+    "seconds": 0.031,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-array-index",
+    "engine": "base-lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/callback-array-index/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.068,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-array-index",
+    "engine": "pristine",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-array-index.c"
+    ],
+    "status": 0,
+    "seconds": 0.031,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-assign",
+    "engine": "base-fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-assign.c"
+    ],
+    "status": 0,
+    "seconds": 0.03,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-assign",
+    "engine": "base-lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/callback-assign/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.062,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-assign",
+    "engine": "pristine",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-assign.c"
+    ],
+    "status": 0,
+    "seconds": 0.03,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-conditional",
+    "engine": "base-fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-conditional.c"
+    ],
+    "status": 0,
+    "seconds": 0.03,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-conditional",
+    "engine": "base-lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/callback-conditional/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.071,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-conditional",
+    "engine": "pristine",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-conditional.c"
+    ],
+    "status": 0,
+    "seconds": 0.03,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-equality",
+    "engine": "base-fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-equality.c"
+    ],
+    "status": 0,
+    "seconds": 0.03,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-equality",
+    "engine": "base-lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/callback-equality/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.066,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-equality",
+    "engine": "pristine",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-equality.c"
+    ],
+    "status": 0,
+    "seconds": 0.03,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-init",
+    "engine": "base-fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-init.c"
+    ],
+    "status": 0,
+    "seconds": 0.031,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-init",
+    "engine": "base-lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/callback-init/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.077,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-init",
+    "engine": "pristine",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-init.c"
+    ],
+    "status": 0,
+    "seconds": 0.029,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-param",
+    "engine": "base-fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-param.c"
+    ],
+    "status": 0,
+    "seconds": 0.028,
+    "tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-param",
+    "engine": "base-lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/callback-param/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.061,
+    "tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-param",
+    "engine": "pristine",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-param.c"
+    ],
+    "status": 0,
+    "seconds": 0.031,
+    "tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-return",
+    "engine": "base-fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-return.c"
+    ],
+    "status": 0,
+    "seconds": 0.03,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-return",
+    "engine": "base-lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/callback-return/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.065,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-return",
+    "engine": "pristine",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-return.c"
+    ],
+    "status": 0,
+    "seconds": 0.03,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-switch",
+    "engine": "base-fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-switch.c"
+    ],
+    "status": 0,
+    "seconds": 0.03,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-switch",
+    "engine": "base-lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/callback-switch/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.052,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-switch",
+    "engine": "pristine",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-switch.c"
+    ],
+    "status": 0,
+    "seconds": 0.028,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "sizeof-enum-control",
+    "engine": "base-fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/sizeof-enum-control.c"
+    ],
+    "status": 0,
+    "seconds": 0.031,
+    "tokens": [
+      "VAL:{value: \"Specified(4)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "sizeof-enum-control",
+    "engine": "base-lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/sizeof-enum-control/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.079,
+    "tokens": [
+      "VAL:{value: \"Specified(4)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "sizeof-enum-control",
+    "engine": "pristine",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/sizeof-enum-control.c"
+    ],
+    "status": 0,
+    "seconds": 0.03,
+    "tokens": [
+      "VAL:{value: \"Specified(4)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "stmt-sizeof-enum",
+    "engine": "base-fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/stmt-sizeof-enum.c"
+    ],
+    "status": 125,
+    "seconds": 0.032,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "stderr_head": "internal error: TODO msg: Statement expressions are only allowed inside functions\ncerberus: internal error, uncaught exception:\n          Failure(\"internal error: TODO msg: Statement expressions are only allowed inside functions\")\n          Raised at Stdlib.failwith in file \"stdlib.ml\", line 29, characters 17-33\n          Called from Cerb_frontend__GenTyping.annotate_expression.(fun) in file \"ocaml_frontend/generated/genTyping.ml\", line 1613, characters 53-86\n          Called from Cerb_frontend__ErrorMonad.bind1.(fun) in file \"ocaml_frontend/generated/errorMonad.ml\", line 43, characters 35-40\n          Called from Cerb_frontend__ErrorMonad.bind1.(fun) in file \"ocaml_frontend/generated/errorMonad.ml\", line 41, characters 9-13\n          Called from Cerb_frontend__ErrorMonad.run in file \"ocaml_frontend/generated/errorMonad.ml\" (inlined), line 36, characters 82-88\n          Called from Cerb_frontend__ErrorMonad.runErrorMonad in file \"ocaml_frontend/generated/errorMonad.ml\", line 64, charac"
+  },
+  {
+    "case": "stmt-sizeof-enum",
+    "engine": "base-lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/stmt-sizeof-enum/source.json"
+    ],
+    "status": 134,
+    "seconds": 1.137,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "stderr_head": "PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: TODO msg: Statement expressions are only allowed inside functions\nbacktrace:\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dae985) [0x55eee1d60985]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4da60a7) [0x55eee1d580a7]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4da618b) [0x55eee1d5818b]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4db76dc) [0x55eee1d696dc]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x101270c) [0x55eeddfc470c]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/"
+  },
+  {
+    "case": "stmt-sizeof-enum",
+    "engine": "pristine",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/stmt-sizeof-enum.c"
+    ],
+    "status": 125,
+    "seconds": 0.031,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "stderr_head": "internal error: TODO msg: Statement expressions are only allowed inside functions\ncerberus: internal error, uncaught exception:\n          Failure(\"internal error: TODO msg: Statement expressions are only allowed inside functions\")\n          Raised at Stdlib.failwith in file \"stdlib.ml\", line 29, characters 17-33\n          Called from Cerb_frontend__GenTyping.annotate_expression.(fun) in file \"ocaml_frontend/generated/genTyping.ml\", line 1613, characters 53-86\n          Called from Cerb_frontend__ErrorMonad.bind1.(fun) in file \"ocaml_frontend/generated/errorMonad.ml\", line 43, characters 35-40\n          Called from Cerb_frontend__ErrorMonad.bind1.(fun) in file \"ocaml_frontend/generated/errorMonad.ml\", line 41, characters 9-13\n          Called from Cerb_frontend__ErrorMonad.run in file \"ocaml_frontend/generated/errorMonad.ml\" (inlined), line 36, characters 82-88\n          Called from Cerb_frontend__ErrorMonad.runErrorMonad in file \"ocaml_frontend/generated/errorMonad.ml\", line 64, charac"
+  },
+  {
+    "case": "stmt-sizeof-int-control",
+    "engine": "base-fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/stmt-sizeof-int-control.c"
+    ],
+    "status": 125,
+    "seconds": 0.029,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "stderr_head": "internal error: TODO msg: Statement expressions are only allowed inside functions\ncerberus: internal error, uncaught exception:\n          Failure(\"internal error: TODO msg: Statement expressions are only allowed inside functions\")\n          Raised at Stdlib.failwith in file \"stdlib.ml\", line 29, characters 17-33\n          Called from Cerb_frontend__GenTyping.annotate_expression.(fun) in file \"ocaml_frontend/generated/genTyping.ml\", line 1613, characters 53-86\n          Called from Cerb_frontend__ErrorMonad.bind1.(fun) in file \"ocaml_frontend/generated/errorMonad.ml\", line 43, characters 35-40\n          Called from Cerb_frontend__ErrorMonad.bind1.(fun) in file \"ocaml_frontend/generated/errorMonad.ml\", line 41, characters 9-13\n          Called from Cerb_frontend__ErrorMonad.run in file \"ocaml_frontend/generated/errorMonad.ml\" (inlined), line 36, characters 82-88\n          Called from Cerb_frontend__ErrorMonad.runErrorMonad in file \"ocaml_frontend/generated/errorMonad.ml\", line 64, charac"
+  },
+  {
+    "case": "stmt-sizeof-int-control",
+    "engine": "base-lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/stmt-sizeof-int-control/source.json"
+    ],
+    "status": 134,
+    "seconds": 1.144,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "stderr_head": "PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: TODO msg: Statement expressions are only allowed inside functions\nbacktrace:\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dae985) [0x5b7743f84985]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4da60a7) [0x5b7743f7c0a7]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4da618b) [0x5b7743f7c18b]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4db76dc) [0x5b7743f8d6dc]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x101270c) [0x5b77401e870c]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/"
+  },
+  {
+    "case": "stmt-sizeof-int-control",
+    "engine": "pristine",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/stmt-sizeof-int-control.c"
+    ],
+    "status": 125,
+    "seconds": 0.031,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "stderr_head": "internal error: TODO msg: Statement expressions are only allowed inside functions\ncerberus: internal error, uncaught exception:\n          Failure(\"internal error: TODO msg: Statement expressions are only allowed inside functions\")\n          Raised at Stdlib.failwith in file \"stdlib.ml\", line 29, characters 17-33\n          Called from Cerb_frontend__GenTyping.annotate_expression.(fun) in file \"ocaml_frontend/generated/genTyping.ml\", line 1613, characters 53-86\n          Called from Cerb_frontend__ErrorMonad.bind1.(fun) in file \"ocaml_frontend/generated/errorMonad.ml\", line 43, characters 35-40\n          Called from Cerb_frontend__ErrorMonad.bind1.(fun) in file \"ocaml_frontend/generated/errorMonad.ml\", line 41, characters 9-13\n          Called from Cerb_frontend__ErrorMonad.run in file \"ocaml_frontend/generated/errorMonad.ml\" (inlined), line 36, characters 82-88\n          Called from Cerb_frontend__ErrorMonad.runErrorMonad in file \"ocaml_frontend/generated/errorMonad.ml\", line 64, charac"
+  },
+  {
+    "case": "stmt-typeof-enum",
+    "engine": "base-fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/stmt-typeof-enum.c"
+    ],
+    "status": 0,
+    "seconds": 0.031,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "stmt-typeof-enum",
+    "engine": "base-lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/stmt-typeof-enum/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.087,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "stmt-typeof-enum",
+    "engine": "pristine",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/stmt-typeof-enum.c"
+    ],
+    "status": 0,
+    "seconds": 0.034,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "stmt-typeof-int-control",
+    "engine": "base-fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/stmt-typeof-int-control.c"
+    ],
+    "status": 0,
+    "seconds": 0.031,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "stmt-typeof-int-control",
+    "engine": "base-lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/stmt-typeof-int-control/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.074,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "stmt-typeof-int-control",
+    "engine": "pristine",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/stmt-typeof-int-control.c"
+    ],
+    "status": 0,
+    "seconds": 0.03,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  }
+]

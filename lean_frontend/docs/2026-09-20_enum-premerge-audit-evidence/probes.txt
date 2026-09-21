@@ -1,0 +1,57 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+aggregate-array fork 0 ['VAL:{value: "Specified(18)", stdout: "", stderr: "", blocked: "false"}']
+aggregate-array lean 0 ['VAL:{value: "Specified(18)", stdout: "", stderr: "", blocked: "false"}']
+callback-array-index fork 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+callback-array-index lean 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+callback-assign fork 0 ['VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}']
+callback-assign lean 134 fatal engine diagnostic; no completed observation
+callback-conditional fork 0 ['VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}']
+callback-conditional lean 134 fatal engine diagnostic; no completed observation
+callback-equality fork 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+callback-equality lean 134 fatal engine diagnostic; no completed observation
+callback-init fork 0 ['VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}']
+callback-init lean 134 fatal engine diagnostic; no completed observation
+callback-param fork 0 ['VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}']
+callback-param lean 134 fatal engine diagnostic; no completed observation
+callback-return fork 0 ['VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}']
+callback-return lean 134 fatal engine diagnostic; no completed observation
+callback-switch fork 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+callback-switch lean 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+cast-pointer fork 1 ['UB:{ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "<1:45--1:55>"}']
+cast-pointer lean 1 ['UB:{ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "<1:45--1:55>"}']
+enum-unsigned-limit fork 0 ['VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}']
+enum-unsigned-limit lean 0 ['VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}']
+forward-enum fork 1 empty or truncated observation
+forward-enum lean 1 ['ERR:{msg: "desugaring failed at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/forward-enum.c:1:6-7"}']
+generic-duplicate fork 1 empty or truncated observation
+generic-duplicate lean 1 ['ERR:{msg: "desugaring failed at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/generic-duplicate.c:1:36-81"}']
+memcpy-enum fork 0 ['VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}']
+memcpy-enum lean 0 ['VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}']
+shadow-signedness fork 0 ['VAL:{value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}']
+shadow-signedness lean 0 ['VAL:{value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}']
+sizeof-enum-control fork 0 ['VAL:{value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}']
+sizeof-enum-control lean 0 ['VAL:{value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}']
+stmt-direct-enum-control fork 0 ['VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}']
+stmt-direct-enum-control lean 0 ['VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}']
+stmt-sizeof-enum fork 125 fatal engine diagnostic; no completed observation
+stmt-sizeof-enum lean 134 fatal engine diagnostic; no completed observation
+stmt-sizeof-int-control fork 125 fatal engine diagnostic; no completed observation
+stmt-sizeof-int-control lean 134 fatal engine diagnostic; no completed observation
+stmt-sizeof-local-enum fork 125 fatal engine diagnostic; no completed observation
+stmt-sizeof-local-enum lean 134 fatal engine diagnostic; no completed observation
+stmt-sizeof-nested fork 125 fatal engine diagnostic; no completed observation
+stmt-sizeof-nested lean 134 fatal engine diagnostic; no completed observation
+stmt-sizeof-signed fork 125 fatal engine diagnostic; no completed observation
+stmt-sizeof-signed lean 134 fatal engine diagnostic; no completed observation
+stmt-typeof-enum fork 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+stmt-typeof-enum lean 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+stmt-typeof-int-control fork 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+stmt-typeof-int-control lean 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+stmt-typeof-local-enum fork 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+stmt-typeof-local-enum lean 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+stmt-typeof-nested fork 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+stmt-typeof-nested lean 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+stmt-typeof-signed fork 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+stmt-typeof-signed lean 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+union-enum fork 0 ['VAL:{value: "Specified(255)", stdout: "", stderr: "", blocked: "false"}']
+union-enum lean 0 ['VAL:{value: "Specified(255)", stdout: "", stderr: "", blocked: "false"}']

@@ -1,0 +1,25 @@
+{
+  "stable_uncommitted_before": {
+    "head": "c32d9618d087532969a87bf6f3fa064a7c08de19",
+    "branch": "audit",
+    "status": "M probe",
+    "diff_sha256": "ea397530f0a1eb690db2c9d03368b9c4fb1e74b6ec13b1dacb2f7e2e0fcf31b8",
+    "untracked_sha256": {}
+  },
+  "stable_uncommitted_after": {
+    "head": "c32d9618d087532969a87bf6f3fa064a7c08de19",
+    "branch": "audit",
+    "status": "M probe",
+    "diff_sha256": "ea397530f0a1eb690db2c9d03368b9c4fb1e74b6ec13b1dacb2f7e2e0fcf31b8",
+    "untracked_sha256": {}
+  },
+  "changed_after": {
+    "head": "c32d9618d087532969a87bf6f3fa064a7c08de19",
+    "branch": "audit",
+    "status": "M probe",
+    "diff_sha256": "8d279abbf68e98a6ec02eec59e421727acb7b4de439ae5a087e6c60e934f74f8",
+    "untracked_sha256": {}
+  },
+  "stable_dirty_unchanged": true,
+  "changed_dirty_unchanged": false
+}

@@ -1,0 +1,7 @@
+lean_frontend/AilTypesAux_lemMeasureProofs.lean MECHANICAL
+lean_frontend/CerbMem_lemMeasureProofs.lean MECHANICAL
+lean_frontend/Core_aux_lemMeasureProofs.lean MECHANICAL
+lean_frontend/Core_eval_lemMeasureProofs.lean MECHANICAL
+lean_frontend/Ctype_aux_lemMeasureProofs.lean MECHANICAL
+lean_frontend/Defacto_memory_lemMeasureProofs.lean MECHANICAL
+lean_frontend/Driver_lemMeasureProofs.lean MECHANICAL

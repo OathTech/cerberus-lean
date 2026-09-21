@@ -1,0 +1,112 @@
+[
+  {
+    "path": "frontend/model/implementation.lem",
+    "line": 70,
+    "declaration": "declare {lean} reader_consumer val normalise_integerType"
+  },
+  {
+    "path": "frontend/model/implementation.lem",
+    "line": 123,
+    "declaration": "declare {lean} reader_consumer val alignof_ty"
+  },
+  {
+    "path": "frontend/model/mem.lem",
+    "line": 96,
+    "declaration": "declare {lean} reader_consumer val allocate_object"
+  },
+  {
+    "path": "frontend/model/mem.lem",
+    "line": 97,
+    "declaration": "declare {lean} reader_consumer val load"
+  },
+  {
+    "path": "frontend/model/mem.lem",
+    "line": 98,
+    "declaration": "declare {lean} reader_consumer val store"
+  },
+  {
+    "path": "frontend/model/mem.lem",
+    "line": 163,
+    "declaration": "declare {lean} reader_consumer val diff_ptrval"
+  },
+  {
+    "path": "frontend/model/mem.lem",
+    "line": 176,
+    "declaration": "declare {lean} reader_consumer val validForDeref_ptrval"
+  },
+  {
+    "path": "frontend/model/mem.lem",
+    "line": 182,
+    "declaration": "declare {lean} reader_consumer val isWellAligned_ptrval"
+  },
+  {
+    "path": "frontend/model/mem.lem",
+    "line": 197,
+    "declaration": "declare {lean} reader_consumer val intfromptr"
+  },
+  {
+    "path": "frontend/model/mem.lem",
+    "line": 218,
+    "declaration": "declare {lean} reader_consumer val array_shift_ptrval"
+  },
+  {
+    "path": "frontend/model/mem.lem",
+    "line": 222,
+    "declaration": "declare {lean} reader_consumer val member_shift_ptrval"
+  },
+  {
+    "path": "frontend/model/mem.lem",
+    "line": 230,
+    "declaration": "declare {lean} reader_consumer val eff_array_shift_ptrval"
+  },
+  {
+    "path": "frontend/model/mem.lem",
+    "line": 234,
+    "declaration": "declare {lean} reader_consumer val eff_member_shift_ptrval"
+  },
+  {
+    "path": "frontend/model/mem.lem",
+    "line": 244,
+    "declaration": "declare {lean} reader_consumer val memcpy"
+  },
+  {
+    "path": "frontend/model/mem.lem",
+    "line": 248,
+    "declaration": "declare {lean} reader_consumer val memcmp"
+  },
+  {
+    "path": "frontend/model/mem.lem",
+    "line": 252,
+    "declaration": "declare {lean} reader_consumer val realloc"
+  },
+  {
+    "path": "frontend/model/mem.lem",
+    "line": 278,
+    "declaration": "declare {lean} reader_consumer val copy_alloc_id"
+  },
+  {
+    "path": "frontend/model/mem.lem",
+    "line": 312,
+    "declaration": "declare {lean} reader_consumer val max_ival"
+  },
+  {
+    "path": "frontend/model/mem.lem",
+    "line": 315,
+    "declaration": "declare {lean} reader_consumer val min_ival"
+  },
+  {
+    "path": "frontend/model/mem.lem",
+    "line": 321,
+    "declaration": "declare {lean} reader_consumer val offsetof_ival"
+  },
+  {
+    "path": "frontend/model/mem.lem",
+    "line": 325,
+    "declaration": "declare {lean} reader_consumer val sizeof_ival"
+  },
+  {
+    "path": "frontend/model/mem.lem",
+    "line": 342,
+    "declaration": "declare {lean} reader_consumer val alignof_ival"
+  }
+]

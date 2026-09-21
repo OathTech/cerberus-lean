@@ -1,0 +1,27 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+[MKDIR] ocaml_frontend/generated
+[LEM] generating files in [ocaml_frontend/generated] (log in [ocaml_frontend/lem.log])
+[SED] patching things up in [ocaml_frontend/generated]
+[STAMP] recording lem-sync content stamp
+check_lem_sync: recorded ocaml_frontend/lem_sync.sha256 (src 037dee26c6472b1bf7f8d628bec1b7e64d2f9d12d67c81bd37b55e634fd34b2d, gen 08b84774381fd86eeb1a658efa47a9b372ebb438085530b5ab6ba045da3eec8d)
+[MKDIR] sibylfs/generated
+[LEM] generating files in [sibylfs/generated] (log in [sibylfs/lem.log])
+[CP] sibylfs/generated/abstract_string.mli sibylfs/generated/fs_dict_wrappers.mli sibylfs/generated/fs_interface.mli sibylfs/generated/lem_support.mli
+[CP] sibylfs/generated/abstract_string.ml sibylfs/generated/fs_dict_wrappers.ml sibylfs/generated/fs_interface.ml sibylfs/generated/fs_dump.ml sibylfs/generated/fs_printer.ml sibylfs/generated/lem_support.ml
+[SED] patching things up in [sibylfs/generated]
+[MKDIR] lean_frontend/generated
+[LEM] generating Lean files in [lean_frontend/generated] (log in [lean_frontend/lem.log])
+[COPY] 49 hand-written Lean files (lean_frontend/handwritten_copy.manifest) into [lean_frontend/generated]
+check_handwritten_sync: OK (49 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+[STAMP] recording Lean lem-sync content stamp
+check_lem_sync: recorded lean_frontend/lem_sync.sha256 (src 037dee26c6472b1bf7f8d628bec1b7e64d2f9d12d67c81bd37b55e634fd34b2d, gen cd499eab48146463197f60b35a9fb26c31337bab7d06b2f1d9af43047c2619b5)
+check_lem_sync: OK (src 037dee26c6472b1bf7f8d628bec1b7e64d2f9d12d67c81bd37b55e634fd34b2d, gen 08b84774381fd86eeb1a658efa47a9b372ebb438085530b5ab6ba045da3eec8d)
+(debug 0): constructValue_aux: is WRONG for union ==> always assigning the first member
+Building cerberus (OCaml)...
+check_lem_sync: OK (src 037dee26c6472b1bf7f8d628bec1b7e64d2f9d12d67c81bd37b55e634fd34b2d, gen 08b84774381fd86eeb1a658efa47a9b372ebb438085530b5ab6ba045da3eec8d)
+check_driver_fresh: recorded oracle stamp (bin 6e8e34cf8be97de95c4f8eefab66ab20b4564ef4224e54ac435062e254c13aac, src 2b8b576816681316ce0c0b690dc78a63f813ac8a7391f976bdf4684a18f47634)
+Building cerberus-lean (Lean)...
+instead of
+  String → String
+Build completed successfully (395 jobs).
+check_driver_fresh: recorded lean stamp (bin 688cf879063e124660783b307d3565bbc72f13862b5b019a07741a9fd8883f93, src 809ad92c6258415628ce87897cdc185da6caea6b4e05863552647bd3b3506d66)

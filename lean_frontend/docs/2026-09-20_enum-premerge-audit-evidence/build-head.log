@@ -1,0 +1,42 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+[MKDIR] ocaml_frontend/generated
+[LEM] generating files in [ocaml_frontend/generated] (log in [ocaml_frontend/lem.log])
+[SED] patching things up in [ocaml_frontend/generated]
+[STAMP] recording lem-sync content stamp
+check_lem_sync: recorded ocaml_frontend/lem_sync.sha256 (src bc2f8bbbcb90a6ca30b3cbdbf4df3944edd9d0554ab7c038f7be9c559aa5e12d, gen b2f073232e32ac707650a45766014dede7b8de6b9181e6243ce6bfefac73456c)
+[MKDIR] sibylfs/generated
+[LEM] generating files in [sibylfs/generated] (log in [sibylfs/lem.log])
+[CP] sibylfs/generated/abstract_string.mli sibylfs/generated/fs_dict_wrappers.mli sibylfs/generated/fs_interface.mli sibylfs/generated/lem_support.mli
+[CP] sibylfs/generated/abstract_string.ml sibylfs/generated/fs_dict_wrappers.ml sibylfs/generated/fs_interface.ml sibylfs/generated/fs_dump.ml sibylfs/generated/fs_printer.ml sibylfs/generated/lem_support.ml
+[SED] patching things up in [sibylfs/generated]
+[MKDIR] lean_frontend/generated
+[LEM] generating Lean files in [lean_frontend/generated] (log in [lean_frontend/lem.log])
+[COPY] 49 hand-written Lean files (lean_frontend/handwritten_copy.manifest) into [lean_frontend/generated]
+check_handwritten_sync: OK (49 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+[STAMP] recording Lean lem-sync content stamp
+check_lem_sync: recorded lean_frontend/lem_sync.sha256 (src bc2f8bbbcb90a6ca30b3cbdbf4df3944edd9d0554ab7c038f7be9c559aa5e12d, gen eb2b61a1268f8425ec9b73c1d3fa2d1175c51a596db3ea602de02a315bd232e3)
+Warning: Unable to read directory /home/dev. Will not look for root in parent
+directories.
+Reason: /home/dev: Permission denied
+To remove this warning, set your root explicitly using --root.
+check_lem_sync: OK (src bc2f8bbbcb90a6ca30b3cbdbf4df3944edd9d0554ab7c038f7be9c559aa5e12d, gen b2f073232e32ac707650a45766014dede7b8de6b9181e6243ce6bfefac73456c)
+(debug 0): constructValue_aux: is WRONG for union ==> always assigning the first member
+Building cerberus (OCaml)...
+check_lem_sync: OK (src bc2f8bbbcb90a6ca30b3cbdbf4df3944edd9d0554ab7c038f7be9c559aa5e12d, gen b2f073232e32ac707650a45766014dede7b8de6b9181e6243ce6bfefac73456c)
+check_driver_fresh: recorded oracle stamp (bin 480a48fad25ff8e0026bd111cc97fbf774fbf5b58e3e3d2bab9b90ea35fd47a7, src 592ad09d487abc94f5ccc26748a4490bbe7a64d2193a0b6a75fe5893dacd3804)
+Building cerberus-lean (Lean)...
+✔ [394/395] Built Main:c.o (15s)
+✔ [395/395] Built «cerberus-lean»:exe (548ms)
+Build completed successfully (395 jobs).
+check_driver_fresh: recorded lean stamp (bin 80f2e318ce1cf114b03d4a2745aadad33f2533c69e154db42d5dacba4450b724, src 7e778bf7b36f729b05c9431b80d35d135e43b2028994c4c04ac596ab62439d54)
+ensure_independent_oracle: ABSENT — building the pristine oracle into /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2
+  lem-repo:      /home/dev/projects/cerberus-lean-proj/lem-lean
+  cerberus-repo: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920
+lem-compiler: passed (7.02s)
+lem-libraries: passed (1.223s)
+lem-runtime-build: passed (4.441s)
+lem-runtime-install: passed (0.151s)
+cerberus-generation: passed (19.386s)
+cerberus-build: passed (9.823s)
+Independent upstream oracle: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/manifest.json
+ensure_independent_oracle: BUILT+VALID standing build: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.validation-foundations/independent-oracle-v2/manifest.json (cerberus b9aeedcb4, lem 3802cb0)

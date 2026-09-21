@@ -1,0 +1,18 @@
+{
+  "head": {
+    "driver_fresh.oracle.sha256": "27f4be259a8acdafaca3230bdfd0df549e9af01a6d6ed876368878d285ca7869",
+    "driver_fresh.lean.sha256": "2b8ca391782fe410c2430ac150ff4c2f1ab46a0c2795151a1bd8ab822eefab65",
+    "ocaml_frontend/lem_sync.sha256": "9a392ac1aca1a29b344e96a0c41c48258637af34acba53cdfcf981e7f89b86a8",
+    "lean_frontend/lem_sync.sha256": "ae77e051c0e008139c6e835bc34411054e18b72eb4ea710945fb2f0a33d8efe0",
+    "_build/default/backend/driver/main.exe": "480a48fad25ff8e0026bd111cc97fbf774fbf5b58e3e3d2bab9b90ea35fd47a7",
+    "lean_frontend/.lake/build/bin/cerberus-lean": "80f2e318ce1cf114b03d4a2745aadad33f2533c69e154db42d5dacba4450b724"
+  },
+  "base": {
+    "driver_fresh.oracle.sha256": "d838e99cb6df789757aced39fdc3d51d8f8b8724d2418a22f4d8096f01b8fdd4",
+    "driver_fresh.lean.sha256": "a5281729e3b9031ca2b879de31f263b14b328b8c9f3bdd300b3950d5314365be",
+    "ocaml_frontend/lem_sync.sha256": "a9e7fcc62953dac2585fd183f5bc78dbdad74a332d0c20b0ba0df41883426c09",
+    "lean_frontend/lem_sync.sha256": "5b349756f7ba74f5f97334dee475e31ea04a60c46f3eab44e866eed3888f6c43",
+    "_build/default/backend/driver/main.exe": "6e8e34cf8be97de95c4f8eefab66ab20b4564ef4224e54ac435062e254c13aac",
+    "lean_frontend/.lake/build/bin/cerberus-lean": "688cf879063e124660783b307d3565bbc72f13862b5b019a07741a9fd8883f93"
+  }
+}

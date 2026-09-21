@@ -1,0 +1,23 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+base ocaml 0 signed32=true
+signed128=true
+unsigned128=false
+
+base lean signed32 0 true
+
+base lean signed128 0 true
+
+base lean unsigned128 0 false
+
+head ocaml 0 signed32=true
+signed128=true
+unsigned128=false
+
+head lean signed32 0 true
+
+head lean signed128 134  PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: DefaultImpl.type_alias_map has no alias for an N-family width of 128 (ocaml_implementation.ml:39-44, :155-160: Option.get raises on the oracle); zero-discrepancy Z2-I-03
+backtrace:
+/home/dev/.elan/toolchains/leanprover--lean4---v4.32.2/bin/../li
+head lean unsigned128 134  PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: DefaultImpl.type_alias_map has no alias for an N-family width of 128 (ocaml_implementation.ml:39-44, :155-160: Option.get raises on the oracle); zero-discrepancy Z2-I-03
+backtrace:
+/home/dev/.elan/toolchains/leanprover--lean4---v4.32.2/bin/../li

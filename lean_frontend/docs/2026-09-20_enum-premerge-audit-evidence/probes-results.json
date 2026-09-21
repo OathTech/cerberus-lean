@@ -1,0 +1,908 @@
+[
+  {
+    "case": "aggregate-array",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/aggregate-array.c"
+    ],
+    "status": 0,
+    "seconds": 0.032,
+    "tokens": [
+      "VAL:{value: \"Specified(18)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "aggregate-array",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/aggregate-array/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.068,
+    "tokens": [
+      "VAL:{value: \"Specified(18)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-array-index",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-array-index.c"
+    ],
+    "status": 0,
+    "seconds": 0.033,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-array-index",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/callback-array-index/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.091,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-assign",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-assign.c"
+    ],
+    "status": 0,
+    "seconds": 0.032,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-assign",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/callback-assign/source.json"
+    ],
+    "status": 134,
+    "seconds": 1.138,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "stderr_tail": "571d2f8a546f]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc8bc2) [0x571d337aabc2]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc76b3) [0x571d337a96b3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc7987) [0x571d337a9987]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0xec34e1) [0x571d2f8a54e1]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc7987) [0x571d337a9987]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped: line 55: 3594904 Aborted                 (core dumped) \"$@\"\n"
+  },
+  {
+    "case": "callback-conditional",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-conditional.c"
+    ],
+    "status": 0,
+    "seconds": 0.032,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-conditional",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/callback-conditional/source.json"
+    ],
+    "status": 134,
+    "seconds": 1.14,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "stderr_tail": "5da21a019bc2]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc76b3) [0x5da21a0186b3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc7987) [0x5da21a018987]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0xec34e1) [0x5da2161144e1]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc7987) [0x5da21a018987]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc910e) [0x5da21a01a10e]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped: line 55: 3595260 Aborted                 (core dumped) \"$@\"\n"
+  },
+  {
+    "case": "callback-equality",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-equality.c"
+    ],
+    "status": 0,
+    "seconds": 0.032,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-equality",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/callback-equality/source.json"
+    ],
+    "status": 134,
+    "seconds": 1.143,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "stderr_tail": "58fdd375b10e]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc76b3) [0x58fdd37596b3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc7987) [0x58fdd3759987]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0xec346f) [0x58fdcf85546f]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc924e) [0x58fdd375b24e]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc76b3) [0x58fdd37596b3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped: line 55: 3595425 Aborted                 (core dumped) \"$@\"\n"
+  },
+  {
+    "case": "callback-init",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-init.c"
+    ],
+    "status": 0,
+    "seconds": 0.033,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-init",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/callback-init/source.json"
+    ],
+    "status": 134,
+    "seconds": 1.145,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "stderr_tail": "5a03b6ca04e1]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc7987) [0x5a03baba4987]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc910e) [0x5a03baba610e]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc76b3) [0x5a03baba46b3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc7987) [0x5a03baba4987]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0xec346f) [0x5a03b6ca046f]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped: line 55: 3595540 Aborted                 (core dumped) \"$@\"\n"
+  },
+  {
+    "case": "callback-param",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-param.c"
+    ],
+    "status": 0,
+    "seconds": 0.029,
+    "tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-param",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/callback-param/source.json"
+    ],
+    "status": 134,
+    "seconds": 1.154,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "stderr_tail": "57a385e536b3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc7987) [0x57a385e53987]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0xec346f) [0x57a381f4f46f]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc8bc2) [0x57a385e54bc2]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc76b3) [0x57a385e536b3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc7987) [0x57a385e53987]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped: line 55: 3595677 Aborted                 (core dumped) \"$@\"\n"
+  },
+  {
+    "case": "callback-return",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-return.c"
+    ],
+    "status": 0,
+    "seconds": 0.029,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-return",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/callback-return/source.json"
+    ],
+    "status": 134,
+    "seconds": 1.137,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "stderr_tail": "x6293cd4a024e]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc76b3) [0x6293cd49e6b3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0xcffcf3) [0x6293c93d6cf3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc8c7e) [0x6293cd49fc7e]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc76b3) [0x6293cd49e6b3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0xcfff6e) [0x6293c93d6f6e]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped: line 55: 3595816 Aborted                 (core dumped) \"$@\"\n"
+  },
+  {
+    "case": "callback-switch",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-switch.c"
+    ],
+    "status": 0,
+    "seconds": 0.03,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "callback-switch",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/callback-switch/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.08,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "cast-pointer",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/cast-pointer.c"
+    ],
+    "status": 1,
+    "seconds": 0.03,
+    "tokens": [
+      "UB:{ub: \"UB024_out_of_range_pointer_to_integer_conversion\", stderr: \"\", loc: \"<1:45--1:55>\"}"
+    ]
+  },
+  {
+    "case": "cast-pointer",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/cast-pointer/source.json"
+    ],
+    "status": 1,
+    "seconds": 0.077,
+    "tokens": [
+      "UB:{ub: \"UB024_out_of_range_pointer_to_integer_conversion\", stderr: \"\", loc: \"<1:45--1:55>\"}"
+    ]
+  },
+  {
+    "case": "enum-unsigned-limit",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/enum-unsigned-limit.c"
+    ],
+    "status": 0,
+    "seconds": 0.029,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "enum-unsigned-limit",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/enum-unsigned-limit/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.072,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "forward-enum",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/forward-enum.c"
+    ],
+    "status": 1,
+    "seconds": 0.031,
+    "protocol_error": "empty or truncated observation",
+    "stderr_tail": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/forward-enum.c:1:6: error: such construction is not allowed for enumerators\nenum E; extern enum E x; enum E { A, B }; enum E x=B; int main(void){return x;}\n     ^ \n\u00a76.7.2.3#7: \n7   A declaration of the form\n             struct-or-union identifier ;\n    specifies a structure or union type and declares the identifier as a tag of that type.131)\n\nFOOTNOTE.131: \nA similar construction with enum does not exist.\nTime spent: 0.022638 seconds\n"
+  },
+  {
+    "case": "forward-enum",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/forward-enum/source.json"
+    ],
+    "status": 1,
+    "seconds": 0.083,
+    "tokens": [
+      "ERR:{msg: \"desugaring failed at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/forward-enum.c:1:6-7\"}"
+    ]
+  },
+  {
+    "case": "generic-duplicate",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/generic-duplicate.c"
+    ],
+    "status": 1,
+    "seconds": 0.028,
+    "protocol_error": "empty or truncated observation",
+    "stderr_tail": "ric-duplicate.c:1:36: error: constraint violation: type 'enum E' in generic association compatible with previously specified type 'unsigned int'\nenum E {A,B};int main(void){return _Generic(0,enum E:1,unsigned int:2,default:3);}\n                                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n\u00a76.5.1.1#2, sentence 3: \n2   A generic selection shall have no more than one default generic association. The type\n    name in a generic association shall specify a complete object type other than a variably\n    modified type. No two generic associations in the same generic selection shall specify\n    compatible types. The controlling expression of a generic selection shall have type\n    compatible with at most one of the types named in its generic association list. If a\n    generic selection has no default generic association, its controlling expression shall\n    have type compatible with exactly one of the types named in its generic association list.\nTime spent: 0.021600 seconds\n"
+  },
+  {
+    "case": "generic-duplicate",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/generic-duplicate/source.json"
+    ],
+    "status": 1,
+    "seconds": 0.068,
+    "tokens": [
+      "ERR:{msg: \"desugaring failed at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/generic-duplicate.c:1:36-81\"}"
+    ]
+  },
+  {
+    "case": "memcpy-enum",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/memcpy-enum.c"
+    ],
+    "status": 0,
+    "seconds": 0.03,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "memcpy-enum",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/memcpy-enum/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.081,
+    "tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "shadow-signedness",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/shadow-signedness.c"
+    ],
+    "status": 0,
+    "seconds": 0.031,
+    "tokens": [
+      "VAL:{value: \"Specified(6)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "shadow-signedness",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/shadow-signedness/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.078,
+    "tokens": [
+      "VAL:{value: \"Specified(6)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "sizeof-enum-control",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/sizeof-enum-control.c"
+    ],
+    "status": 0,
+    "seconds": 0.03,
+    "tokens": [
+      "VAL:{value: \"Specified(4)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "sizeof-enum-control",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/sizeof-enum-control/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.075,
+    "tokens": [
+      "VAL:{value: \"Specified(4)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "stmt-direct-enum-control",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/stmt-direct-enum-control.c"
+    ],
+    "status": 0,
+    "seconds": 0.033,
+    "tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "stmt-direct-enum-control",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/stmt-direct-enum-control/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.08,
+    "tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "stmt-sizeof-enum",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/stmt-sizeof-enum.c"
+    ],
+    "status": 125,
+    "seconds": 0.03,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "stderr_tail": "nd.(fun) in file \"backend/common/pipeline.ml\", line 260, characters 2-20\n          Called from Cerb_backend__Pipeline.c_frontend_and_elaboration in file \"backend/common/pipeline.ml\", line 265, characters 2-73\n          Called from Dune__exe__Main.frontend in file \"backend/driver/main.ml\", line 29, characters 4-60\n          Called from Dune__exe__Main.cerberus.main.(fun) in file \"backend/driver/main.ml\", line 158, characters 6-47\n          Called from Cerb_frontend__Exception.except_foldlM.(fun) in file \"ocaml_frontend/generated/exception.ml\", line 69, characters 18-25\n          Called from Dune__exe__Main.cerberus.(fun) in file \"backend/driver/main.ml\", line 318, characters 8-24\n          Called from Dune__exe__Main.cerberus in file \"backend/driver/main.ml\", lines 313-339, characters 8-15\n          Called from Cmdliner_term.app.(fun) in file \"cmdliner_term.ml\", line 22, characters 19-24\n          Called from Cmdliner_eval.run_parser in file \"cmdliner_eval.ml\", line 41, characters 7-16\n"
+  },
+  {
+    "case": "stmt-sizeof-enum",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/stmt-sizeof-enum/source.json"
+    ],
+    "status": 134,
+    "seconds": 1.148,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "stderr_tail": "cc265f052f3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc910e) [0x5cc265f0710e]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc76b3) [0x5cc265f056b3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc72f3) [0x5cc265f052f3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc910e) [0x5cc265f0710e]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc76b3) [0x5cc265f056b3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped: line 55: 3596118 Aborted                 (core dumped) \"$@\"\n"
+  },
+  {
+    "case": "stmt-sizeof-int-control",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/stmt-sizeof-int-control.c"
+    ],
+    "status": 125,
+    "seconds": 0.03,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "stderr_tail": "nd.(fun) in file \"backend/common/pipeline.ml\", line 260, characters 2-20\n          Called from Cerb_backend__Pipeline.c_frontend_and_elaboration in file \"backend/common/pipeline.ml\", line 265, characters 2-73\n          Called from Dune__exe__Main.frontend in file \"backend/driver/main.ml\", line 29, characters 4-60\n          Called from Dune__exe__Main.cerberus.main.(fun) in file \"backend/driver/main.ml\", line 158, characters 6-47\n          Called from Cerb_frontend__Exception.except_foldlM.(fun) in file \"ocaml_frontend/generated/exception.ml\", line 69, characters 18-25\n          Called from Dune__exe__Main.cerberus.(fun) in file \"backend/driver/main.ml\", line 318, characters 8-24\n          Called from Dune__exe__Main.cerberus in file \"backend/driver/main.ml\", lines 313-339, characters 8-15\n          Called from Cmdliner_term.app.(fun) in file \"cmdliner_term.ml\", line 22, characters 19-24\n          Called from Cmdliner_eval.run_parser in file \"cmdliner_eval.ml\", line 41, characters 7-16\n"
+  },
+  {
+    "case": "stmt-sizeof-int-control",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/stmt-sizeof-int-control/source.json"
+    ],
+    "status": 134,
+    "seconds": 1.149,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "stderr_tail": "63cc7fe62f3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc910e) [0x563cc7fe810e]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc76b3) [0x563cc7fe66b3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc72f3) [0x563cc7fe62f3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc910e) [0x563cc7fe810e]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc76b3) [0x563cc7fe66b3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped: line 55: 3596161 Aborted                 (core dumped) \"$@\"\n"
+  },
+  {
+    "case": "stmt-sizeof-local-enum",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/stmt-sizeof-local-enum.c"
+    ],
+    "status": 125,
+    "seconds": 0.032,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "stderr_tail": "nd.(fun) in file \"backend/common/pipeline.ml\", line 260, characters 2-20\n          Called from Cerb_backend__Pipeline.c_frontend_and_elaboration in file \"backend/common/pipeline.ml\", line 265, characters 2-73\n          Called from Dune__exe__Main.frontend in file \"backend/driver/main.ml\", line 29, characters 4-60\n          Called from Dune__exe__Main.cerberus.main.(fun) in file \"backend/driver/main.ml\", line 158, characters 6-47\n          Called from Cerb_frontend__Exception.except_foldlM.(fun) in file \"ocaml_frontend/generated/exception.ml\", line 69, characters 18-25\n          Called from Dune__exe__Main.cerberus.(fun) in file \"backend/driver/main.ml\", line 318, characters 8-24\n          Called from Dune__exe__Main.cerberus in file \"backend/driver/main.ml\", lines 313-339, characters 8-15\n          Called from Cmdliner_term.app.(fun) in file \"cmdliner_term.ml\", line 22, characters 19-24\n          Called from Cmdliner_eval.run_parser in file \"cmdliner_eval.ml\", line 41, characters 7-16\n"
+  },
+  {
+    "case": "stmt-sizeof-local-enum",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/stmt-sizeof-local-enum/source.json"
+    ],
+    "status": 134,
+    "seconds": 1.155,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "stderr_tail": "3b598a072f3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc910e) [0x63b598a0910e]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc76b3) [0x63b598a076b3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc72f3) [0x63b598a072f3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc910e) [0x63b598a0910e]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc76b3) [0x63b598a076b3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped: line 55: 3596190 Aborted                 (core dumped) \"$@\"\n"
+  },
+  {
+    "case": "stmt-sizeof-nested",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/stmt-sizeof-nested.c"
+    ],
+    "status": 125,
+    "seconds": 0.031,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "stderr_tail": "nd.(fun) in file \"backend/common/pipeline.ml\", line 260, characters 2-20\n          Called from Cerb_backend__Pipeline.c_frontend_and_elaboration in file \"backend/common/pipeline.ml\", line 265, characters 2-73\n          Called from Dune__exe__Main.frontend in file \"backend/driver/main.ml\", line 29, characters 4-60\n          Called from Dune__exe__Main.cerberus.main.(fun) in file \"backend/driver/main.ml\", line 158, characters 6-47\n          Called from Cerb_frontend__Exception.except_foldlM.(fun) in file \"ocaml_frontend/generated/exception.ml\", line 69, characters 18-25\n          Called from Dune__exe__Main.cerberus.(fun) in file \"backend/driver/main.ml\", line 318, characters 8-24\n          Called from Dune__exe__Main.cerberus in file \"backend/driver/main.ml\", lines 313-339, characters 8-15\n          Called from Cmdliner_term.app.(fun) in file \"cmdliner_term.ml\", line 22, characters 19-24\n          Called from Cmdliner_eval.run_parser in file \"cmdliner_eval.ml\", line 41, characters 7-16\n"
+  },
+  {
+    "case": "stmt-sizeof-nested",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/stmt-sizeof-nested/source.json"
+    ],
+    "status": 134,
+    "seconds": 1.142,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "stderr_tail": "9b2e7e2d2f3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc910e) [0x59b2e7e2f10e]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc76b3) [0x59b2e7e2d6b3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc72f3) [0x59b2e7e2d2f3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc910e) [0x59b2e7e2f10e]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc76b3) [0x59b2e7e2d6b3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped: line 55: 3596297 Aborted                 (core dumped) \"$@\"\n"
+  },
+  {
+    "case": "stmt-sizeof-signed",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/stmt-sizeof-signed.c"
+    ],
+    "status": 125,
+    "seconds": 0.029,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "stderr_tail": "nd.(fun) in file \"backend/common/pipeline.ml\", line 260, characters 2-20\n          Called from Cerb_backend__Pipeline.c_frontend_and_elaboration in file \"backend/common/pipeline.ml\", line 265, characters 2-73\n          Called from Dune__exe__Main.frontend in file \"backend/driver/main.ml\", line 29, characters 4-60\n          Called from Dune__exe__Main.cerberus.main.(fun) in file \"backend/driver/main.ml\", line 158, characters 6-47\n          Called from Cerb_frontend__Exception.except_foldlM.(fun) in file \"ocaml_frontend/generated/exception.ml\", line 69, characters 18-25\n          Called from Dune__exe__Main.cerberus.(fun) in file \"backend/driver/main.ml\", line 318, characters 8-24\n          Called from Dune__exe__Main.cerberus in file \"backend/driver/main.ml\", lines 313-339, characters 8-15\n          Called from Cmdliner_term.app.(fun) in file \"cmdliner_term.ml\", line 22, characters 19-24\n          Called from Cmdliner_eval.run_parser in file \"cmdliner_eval.ml\", line 41, characters 7-16\n"
+  },
+  {
+    "case": "stmt-sizeof-signed",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/stmt-sizeof-signed/source.json"
+    ],
+    "status": 134,
+    "seconds": 1.149,
+    "protocol_error": "fatal engine diagnostic; no completed observation",
+    "stderr_tail": "b511bf5c2f3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc910e) [0x5b511bf5e10e]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc76b3) [0x5b511bf5c6b3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc72f3) [0x5b511bf5c2f3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc910e) [0x5b511bf5e10e]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean(+0x4dc76b3) [0x5b511bf5c6b3]\n/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped: line 55: 3596358 Aborted                 (core dumped) \"$@\"\n"
+  },
+  {
+    "case": "stmt-typeof-enum",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/stmt-typeof-enum.c"
+    ],
+    "status": 0,
+    "seconds": 0.03,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "stmt-typeof-enum",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/stmt-typeof-enum/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.067,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "stmt-typeof-int-control",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/stmt-typeof-int-control.c"
+    ],
+    "status": 0,
+    "seconds": 0.029,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "stmt-typeof-int-control",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/stmt-typeof-int-control/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.072,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "stmt-typeof-local-enum",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/stmt-typeof-local-enum.c"
+    ],
+    "status": 0,
+    "seconds": 0.03,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "stmt-typeof-local-enum",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/stmt-typeof-local-enum/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.067,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "stmt-typeof-nested",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/stmt-typeof-nested.c"
+    ],
+    "status": 0,
+    "seconds": 0.031,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "stmt-typeof-nested",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/stmt-typeof-nested/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.071,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "stmt-typeof-signed",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/stmt-typeof-signed.c"
+    ],
+    "status": 0,
+    "seconds": 0.031,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "stmt-typeof-signed",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/stmt-typeof-signed/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.08,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "union-enum",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/union-enum.c"
+    ],
+    "status": 0,
+    "seconds": 0.031,
+    "tokens": [
+      "VAL:{value: \"Specified(255)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "union-enum",
+    "engine": "lean",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--batch",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/captures/union-enum/source.json"
+    ],
+    "status": 0,
+    "seconds": 0.074,
+    "tokens": [
+      "VAL:{value: \"Specified(255)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  }
+]

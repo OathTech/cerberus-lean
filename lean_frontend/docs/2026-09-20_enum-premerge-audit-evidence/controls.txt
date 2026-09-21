@@ -1,0 +1,40 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+callback-array-index base-fork 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+callback-array-index base-lean 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+callback-array-index pristine 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+callback-assign base-fork 0 ['VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}']
+callback-assign base-lean 0 ['VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}']
+callback-assign pristine 0 ['VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}']
+callback-conditional base-fork 0 ['VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}']
+callback-conditional base-lean 0 ['VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}']
+callback-conditional pristine 0 ['VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}']
+callback-equality base-fork 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+callback-equality base-lean 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+callback-equality pristine 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+callback-init base-fork 0 ['VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}']
+callback-init base-lean 0 ['VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}']
+callback-init pristine 0 ['VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}']
+callback-param base-fork 0 ['VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}']
+callback-param base-lean 0 ['VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}']
+callback-param pristine 0 ['VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}']
+callback-return base-fork 0 ['VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}']
+callback-return base-lean 0 ['VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}']
+callback-return pristine 0 ['VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}']
+callback-switch base-fork 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+callback-switch base-lean 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+callback-switch pristine 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+sizeof-enum-control base-fork 0 ['VAL:{value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}']
+sizeof-enum-control base-lean 0 ['VAL:{value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}']
+sizeof-enum-control pristine 0 ['VAL:{value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}']
+stmt-sizeof-enum base-fork 125 fatal engine diagnostic; no completed observation
+stmt-sizeof-enum base-lean 134 fatal engine diagnostic; no completed observation
+stmt-sizeof-enum pristine 125 fatal engine diagnostic; no completed observation
+stmt-sizeof-int-control base-fork 125 fatal engine diagnostic; no completed observation
+stmt-sizeof-int-control base-lean 134 fatal engine diagnostic; no completed observation
+stmt-sizeof-int-control pristine 125 fatal engine diagnostic; no completed observation
+stmt-typeof-enum base-fork 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+stmt-typeof-enum base-lean 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+stmt-typeof-enum pristine 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+stmt-typeof-int-control base-fork 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+stmt-typeof-int-control base-lean 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']
+stmt-typeof-int-control pristine 0 ['VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}']

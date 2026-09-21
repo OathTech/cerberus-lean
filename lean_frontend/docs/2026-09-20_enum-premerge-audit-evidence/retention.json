@@ -1,0 +1,13 @@
+{
+  "focused_archive_regular_files": 393,
+  "release_receipt_regular_files": 156,
+  "pristine_case_reports": 2,
+  "retention": "Full release report, runner summary, and each lane top-level receipt. Individual standard-corpus captures/build products are not archived. All focused probe captures are archived.",
+  "formatting_originals": [
+    "constructors.txt",
+    "constructors/bmc_record.ml",
+    "generated-callback-excerpts.txt",
+    "run_probes.py",
+    "sign-normalisation/run.log"
+  ]
+}

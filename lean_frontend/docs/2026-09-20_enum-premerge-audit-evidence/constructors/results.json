@@ -1,0 +1,82 @@
+[
+  {
+    "case": "web_record",
+    "side": "base",
+    "args": [
+      "ocamlc",
+      "-c",
+      "-I",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/ocaml_frontend/.cerb_frontend.objs/byte",
+      "-I",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/util/.cerb_util.objs/byte",
+      "-I",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_opam/lib/lem_zarith",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/constructors/web_record_base.cmo",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/constructors/web_record.ml"
+    ],
+    "status": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "web_record",
+    "side": "head",
+    "args": [
+      "ocamlc",
+      "-c",
+      "-I",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/ocaml_frontend/.cerb_frontend.objs/byte",
+      "-I",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/util/.cerb_util.objs/byte",
+      "-I",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_opam/lib/lem_zarith",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/constructors/web_record_head.cmo",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/constructors/web_record.ml"
+    ],
+    "status": 2,
+    "stdout": "",
+    "stderr": "File \"/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/constructors/web_record.ml\", lines 6-17, characters 2-3:\n 6 | ..{ main=    file.main;\n 7 |     calling_convention= file.calling_convention;\n 8 |     tagDefs= file.tagDefs;\n 9 |     stdlib=  file.stdlib;\n10 |     impl=    file.impl;\n...\n14 |     funinfo= file.funinfo;\n15 |     loop_attributes0= file.loop_attributes0;\n16 |     visible_objects_env= file.visible_objects_env;\n17 |   }\nError: Some record fields are undefined: enumDefs\n"
+  },
+  {
+    "case": "bmc_record",
+    "side": "base",
+    "args": [
+      "ocamlc",
+      "-c",
+      "-I",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/ocaml_frontend/.cerb_frontend.objs/byte",
+      "-I",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/util/.cerb_util.objs/byte",
+      "-I",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_opam/lib/lem_zarith",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/constructors/bmc_record_base.cmo",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/constructors/bmc_record.ml"
+    ],
+    "status": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "bmc_record",
+    "side": "head",
+    "args": [
+      "ocamlc",
+      "-c",
+      "-I",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/ocaml_frontend/.cerb_frontend.objs/byte",
+      "-I",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_build/default/util/.cerb_util.objs/byte",
+      "-I",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/_opam/lib/lem_zarith",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/constructors/bmc_record_head.cmo",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/constructors/bmc_record.ml"
+    ],
+    "status": 2,
+    "stdout": "",
+    "stderr": "File \"/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/constructors/bmc_record.ml\", lines 6-18, characters 1-3:\n 6 | .({\n 7 |   main=    (file1.main);\n 8 |   calling_convention= (file1.calling_convention);\n 9 |   tagDefs= (file1.tagDefs);\n10 |   stdlib=  (file1.stdlib);\n...\n15 |   extern=  file1.extern;\n16 |   loop_attributes0= file1.loop_attributes0;\n17 |   visible_objects_env = file1.visible_objects_env;\n18 |  })\nError: Some record fields are undefined: enumDefs\n"
+  }
+]

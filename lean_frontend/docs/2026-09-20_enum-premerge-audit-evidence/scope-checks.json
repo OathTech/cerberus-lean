@@ -1,0 +1,45 @@
+{
+  "unchanged_scope": [
+    {
+      "path": "scripts/fuel_hypotheses.txt",
+      "identical": true,
+      "sha256": "f9e8506695ca90637095a60b08fff3eda6267888d9e44465abe96170f31f5090"
+    },
+    {
+      "path": "scripts/upstream_oracle_differences.json",
+      "identical": true,
+      "sha256": "2875fc305f93bce06b0cec266a9e887e6de27a8270758d51bf1b6a1c8873eb74"
+    },
+    {
+      "path": "lean_frontend/handwritten_copy.manifest",
+      "identical": true,
+      "sha256": "ff0edff1e63170b778a264a385aabef9c6f75aa0318569afd09e8044428afd73"
+    },
+    {
+      "path": "frontend/model/symbol.lem",
+      "identical": true,
+      "sha256": "78d81bc2def76f3db0bd5e30ead86a3700855d3be1da6bf534d9217f4834ef6c"
+    },
+    {
+      "path": "lean_frontend/CerberusFresh.lean",
+      "identical": true,
+      "sha256": "4ada084cc409ab01967a68cf4144d4809e5513a98ac58639e64238b155c2b38a"
+    },
+    {
+      "path": "lean_frontend/native/md5.c",
+      "identical": true,
+      "sha256": "3743615aa8ba58e74819504d9a066fc902c808024c16e15ca4504a821d4824c0"
+    }
+  ],
+  "baseline_removed": [],
+  "baseline_changed": [],
+  "baseline_added": [
+    "d3-s3-alignas-enum",
+    "d3-s4a-tentative-enum",
+    "d3-s4b-fdecl-enum-param",
+    "d3-s4c-extern-redecl-enum",
+    "d3-s5a-generic-enum",
+    "d3-s5b-types-compatible-enum",
+    "d3-s8-sizeof-enum-expr"
+  ]
+}

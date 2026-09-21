@@ -1,0 +1,130 @@
+[
+  {
+    "case": "callback-assign",
+    "args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-assign.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/gcc/callback-assign"
+    ],
+    "compile_status": 0,
+    "compile_stderr": "",
+    "run_status": 1,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "callback-conditional",
+    "args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-conditional.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/gcc/callback-conditional"
+    ],
+    "compile_status": 0,
+    "compile_stderr": "",
+    "run_status": 1,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "callback-equality",
+    "args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-equality.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/gcc/callback-equality"
+    ],
+    "compile_status": 0,
+    "compile_stderr": "",
+    "run_status": 3,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "callback-init",
+    "args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-init.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/gcc/callback-init"
+    ],
+    "compile_status": 0,
+    "compile_stderr": "",
+    "run_status": 1,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "callback-param",
+    "args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-param.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/gcc/callback-param"
+    ],
+    "compile_status": 0,
+    "compile_stderr": "",
+    "run_status": 2,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "callback-return",
+    "args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/callback-return.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/gcc/callback-return"
+    ],
+    "compile_status": 0,
+    "compile_stderr": "",
+    "run_status": 1,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "stmt-typeof-int-control",
+    "args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/stmt-typeof-int-control.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/gcc/stmt-typeof-int-control"
+    ],
+    "compile_status": 0,
+    "compile_stderr": "",
+    "run_status": 3,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "stmt-sizeof-int-control",
+    "args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/stmt-sizeof-int-control.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/gcc/stmt-sizeof-int-control"
+    ],
+    "compile_status": 0,
+    "compile_stderr": "",
+    "run_status": 4,
+    "stdout": "",
+    "stderr": ""
+  }
+]
