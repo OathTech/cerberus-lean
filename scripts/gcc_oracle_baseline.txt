@@ -9,6 +9,11 @@
 #   tests/minimal/112-…/113-… (part one C1c; the lane reported them "new file (not in baseline, not fatal)") and their tests/immaculate/nolibc
 #   tray44-* GATING copies (C0(a)); all four SKIP_LEAN_FAIL (Lean's verdict is the out-of-memory Error line — no gcc comparison), O2 `-`.
 #   Record: lean_frontend/docs/2026-09-17_address-space-bound-part-two-record.md §C0.
+# 2026-09-21 program-data parameters E-A (instrument commit on d995e7f57): 13 rows hand-inserted (sorted by key) at their observed statuses
+#   for the new tests/immaculate/nolibc/d3-*.c enum witnesses — the lane reported each "new file (not in baseline, not fatal)" in the
+#   slice's source-stable full run (12 AGREE/-, d3-s4b-fdecl-enum-param.c AGREE/O2_AGREE); rows written by the lane itself
+#   (--write-baseline over tests/immaculate/nolibc, 49 rows, the 36 pre-existing ones byte-identical). Record:
+#   lean_frontend/docs/2026-09-20_program-data-parameters-EA-DA-record.md §10.6 (B7 tail).
 csmith/sa_csmith_001.c AGREE O2_AGREE
 csmith/sa_csmith_002.c SKIP_LEAN_CRASH -
 csmith/sa_csmith_003.c SKIP_LEAN_CRASH -
@@ -1861,6 +1866,19 @@ tests/float/102-dec-point-one-sums.c AGREE -
 tests/float/103-dec-long-midpoint.c AGREE -
 tests/float/104-dec-random-17-digits.c AGREE -
 tests/float/105-suffixes.c AGREE -
+tests/immaculate/nolibc/d3-s3-alignas-enum.c AGREE -
+tests/immaculate/nolibc/d3-s4a-tentative-enum.c AGREE -
+tests/immaculate/nolibc/d3-s4b-fdecl-enum-param.c AGREE O2_AGREE
+tests/immaculate/nolibc/d3-s4c-extern-redecl-enum.c AGREE -
+tests/immaculate/nolibc/d3-s5a-generic-enum.c AGREE -
+tests/immaculate/nolibc/d3-s5b-types-compatible-enum.c AGREE -
+tests/immaculate/nolibc/d3-s7-callback-assign.c AGREE -
+tests/immaculate/nolibc/d3-s7-callback-conditional.c AGREE -
+tests/immaculate/nolibc/d3-s7-callback-equality.c AGREE -
+tests/immaculate/nolibc/d3-s7-callback-init.c AGREE -
+tests/immaculate/nolibc/d3-s7-callback-param.c AGREE -
+tests/immaculate/nolibc/d3-s7-callback-return.c AGREE -
+tests/immaculate/nolibc/d3-s8-sizeof-enum-expr.c AGREE -
 tests/immaculate/nolibc/f3-escaped-high-byte-uchar.c AGREE -
 tests/immaculate/nolibc/f3-raw-high-byte-char-const.c SKIP_LEAN_CRASH -
 tests/immaculate/nolibc/f3-raw-high-byte-int.c SKIP_LEAN_CRASH -
