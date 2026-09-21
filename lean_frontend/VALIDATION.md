@@ -1038,8 +1038,12 @@ left the list 2026-09-05, see below):
   2026-09-03] Q7, §3). Step 2 — the configuration as a reader-lifted
   parameter — is a separate slice; `using_concurrency`'s step 2 belongs
   to the concurrency feature branch;)
-- `CerberusImpl`'s enum registry — temporal; mover: the arc's
-  reader/supply machinery in a follow-up slice;
+- `CerberusImpl`'s enum registry — LEFT the boundary 2026-09-20
+  (program-data parameters E-A, `docs/2026-09-20_program-data-parameters-
+  EA-DA-record.md`): the enum's compatible type is program data (the lem
+  reader `enum_definitions`); no registry, no opaque, no `implemented_by`
+  remains in `CerberusImpl.lean`. The DIGEST seam stays on this list (its
+  D-A route is an open operator decision, record §3.1);
 - `CerbUtils` no-op timing/log refs + the `boundedIntegerImpl` stub —
   permanent-declared (OCaml module-shape parity);
 - LemLib's `failwithIImpl`/`fuelExhaustedWithImpl` panic bindings

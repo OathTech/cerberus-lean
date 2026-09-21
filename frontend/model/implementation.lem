@@ -99,8 +99,27 @@ declare lean target_rep function alignof_ity_norm = `CerberusImpl.alignof_ity`
    — lem's OCaml renamer would otherwise rename ailTypesAux.lem's alias
    `let is_signed_ity = Implementation.is_signed_ity` to is_signed_ity0 and
    break the non-generated callers memory/{concrete,vip}/impl_mem.ml. *)
+(* resolve_enum: an Enum through the map, every other constructor untouched —
+   the `match ity with Enum tag_sym -> typeof_enum tag_sym | _ -> ity` step
+   OCaml's Common.is_signed_ity performs BEFORE reading the constructor
+   (ocaml_implementation.ml:79-85). SHARED body. *)
+val resolve_enum: Ctype.integerType -> Ctype.integerType
+let resolve_enum ity =
+  match ity with
+    | Ctype.Enum tag_sym -> typeof_enum tag_sym
+    | _ -> ity
+  end
+
+(* is_signed_ity resolves ONLY an enum (pre-merge audit E4, 2026-09-20; charter
+   D2 erratum W20): OCaml's Common.is_signed_ity (ocaml_implementation.ml:79-94)
+   never consults the width-alias table — `Signed (IntN_t 128)` is `true`
+   there, where full normalisation would hit the alias table's Option.get.
+   sizeof_ity/alignof_ity/precision_ity below DO normalise fully, because
+   OCaml's own do: DefaultImpl.sizeof_ity (:172-174) and alignof_ity (:214-216)
+   match on Common.normalise_integerType_'s result, and Common.precision_ity
+   (:68-70) calls sizeof_ity first. *)
 val is_signed_ity: Ctype.integerType -> bool
-let is_signed_ity ity = is_signed_ity_norm (normalise_integerType ity)
+let is_signed_ity ity = is_signed_ity_norm (resolve_enum ity)
 declare ocaml target_rep function is_signed_ity = `(Ocaml_implementation.get()).is_signed_ity`
 val sizeof_ity: Ctype.integerType -> maybe nat
 let sizeof_ity ity = sizeof_ity_norm (normalise_integerType ity)

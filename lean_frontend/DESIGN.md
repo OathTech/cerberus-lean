@@ -92,10 +92,16 @@ output returns values, the driver prints. `LemLib.runEffectful` — the
 old effect-projection axiom — is DELETED, and lem refuses
 `declare {lean} effectful` outright. Zero `axiom` declarations exist
 in this repository OR in LemLib (gate-enforced recursively; see
-VALIDATION.md §3). The surviving pure-signature runtime seams (the
-per-TU digest read and enum registry) remain opaque declarations with
-ambient native implementations on the declared `@[implemented_by]`/`@[extern]` boundary,
-machine-pinned in `scripts/unsafebaseio_allowlist.txt`. The default
+VALIDATION.md §3). The surviving pure-signature runtime seam — the
+per-TU digest read — remains an opaque declaration with an ambient native
+implementation on the declared `@[implemented_by]`/`@[extern]` boundary,
+machine-pinned in `scripts/unsafebaseio_allowlist.txt`. The enum registry
+LEFT that boundary on 2026-09-20 (program-data parameters E-A,
+`docs/2026-09-20_program-data-parameters-EA-DA-record.md`): the enum's
+compatible type is program data — the lem reader `enum_definitions`,
+carried in the sigma and the Core file and passed to every lifted def as a
+leading parameter — so the layout of an enum type is a function of the
+program the kernel can see. The default
 configuration switches became transparent definitions on 2026-09-05.
 Pinning the remaining boundary population does not prove agreement between
 its logical and native behavior.

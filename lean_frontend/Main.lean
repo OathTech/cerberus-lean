@@ -519,7 +519,7 @@ def frontendTU [LemFuel] (quiet : Bool) (supply : Nat) (addressSpaceTop : Int)
   -- pins this). The mini-run's own extent still sees the translated
   -- definitions via the reader_seed run_const_expr_driver.
   -- Program-data parameters E-A (2026-09-20): `enum_definitions` is the
-  -- SECOND reader (sorted order: enum_definitions, tagDefs). At the desugar
+  -- FIRST reader (sorted order: enum_definitions, tagDefs). At the desugar
   -- entry the map is EMPTY — every desugar-time read of it is seeded from
   -- the desugar state at its site (record §1, D3), exactly as the oracle's
   -- registry is filled as enums are registered; a miss here would be a

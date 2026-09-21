@@ -95,7 +95,12 @@
 # S-5b __builtin_types_compatible_p; S-8/S-9 sizeof of an enum-typed expression + its ctype read). The
 # standing corpora exercise NONE of the nine seed sites; before the seeds every one of these crashed on the
 # Lean side with the lookupEnum failwithI (the desugar entry's enum map is EMPTY) while the oracle ran them.
-# Recorded MATCH by the seed commit; the S-1/S-7 classes have no oracle-accepted witness (record §4.2).
+# Recorded MATCH by the seed commit. The d3-s7-callback-* rows (pre-merge audit E1, 2026-09-20; record §10): the
+# GNU `typeof(({ … }))` statement-expression witnesses of the S-7 typing site — the record's earlier claim that S-7
+# has no oracle-accepted witness was WRONG (the parser recognises `typeof`, not `__typeof__`); before the E1 fix the
+# seeded typer was handed a block-typing CALLBACK built outside the seed, so every one of them crashed on Lean
+# (lookupEnum failwithI) while the oracle ran them. Only S-1 (a cast inside an integer constant expression) has no
+# oracle-accepted witness (the oracle rejects casts there).
 argv1-args MATCH | L=VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 argv2-args MATCH | L=VAL:{value: "Specified(97)", stdout: "", stderr: "", blocked: "false"}
 argv3-args MATCH | L=VAL:{value: "Specified(11)", stdout: "", stderr: "", blocked: "false"}
@@ -105,6 +110,12 @@ d3-s4b-fdecl-enum-param MATCH | L=VAL:{value: "Specified(2)", stdout: "", stderr
 d3-s4c-extern-redecl-enum MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
 d3-s5a-generic-enum MATCH | L=VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
 d3-s5b-types-compatible-enum MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+d3-s7-callback-assign MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+d3-s7-callback-conditional MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+d3-s7-callback-equality MATCH | L=VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+d3-s7-callback-init MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+d3-s7-callback-param MATCH | L=VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+d3-s7-callback-return MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
 d3-s8-sizeof-enum-expr MATCH | L=VAL:{value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}
 f3-escaped-high-byte-uchar MATCH | L=VAL:{value: "Specified(195)", stdout: "", stderr: "", blocked: "false"}
 f3-raw-high-byte-char-const MATCH | L=CRASH

@@ -1,3 +1,12 @@
+# program-data-parameters E-A pre-merge-audit repairs, 2026-09-21 [AGENT; single-row edits + this NOTE — never --refresh]:
+# three [source-content] pins moved for the audit's E1/E4 fixes (record §10): frontend/model/mini_pipeline.lem (the
+# annotate_expression seed now takes the return-type option and builds the block-typing callback INSIDE its extent),
+# frontend/model/cabs_to_ail.lem (its two call sites pass `Just ret_ty`/`Nothing`), frontend/model/implementation.lem
+# (shared `resolve_enum`; `is_signed_ity` resolves ONLY an enum, as OCaml's Common.is_signed_ity does). Layer 2: the
+# [expected-semantic] hashes of implementation.ml, mini_pipeline.ml and cabs_to_ail.ml moved accordingly (the set of 29
+# differing generated files is unchanged). ORACLE BEHAVIOUR unchanged: the wrappers keep their OCaml reps; resolve_enum
+# has no OCaml caller; the seed arguments are dead on OCaml. backend/web/instance.ml and backend/bmc/bmc_utils.ml (E2,
+# dead `enumDefs` fields preserved from the file) are outside this gate's oracle surfaces. lem-pin unchanged (38f87d5).
 # program-data-parameters E-A Phase 1, 2026-09-20 [AGENT; single-row edits + this NOTE, the S0.5 practice — never --refresh]:
 # the enum's compatible type is PROGRAM DATA (lean_frontend/docs/2026-09-20_program-data-parameters-EA-DA-record.md). Layer 1
 # (+6): ocaml_frontend/ocaml_implementation.{ml,mli} (`enum_definitions`, the registry read as a map — the OCaml rep of the shared
@@ -412,7 +421,7 @@ util/cerb_fresh.ml
 100644 59d2cd240e91897161704a8bdd5fc91d3688aed8ddb1ddae1cd02724a85b135d frontend/model/any.lem
 100644 50aa5bac4e18b2d0e1e63da58fec61d6dd1b09105b423bc834a49801e8ac4279 frontend/model/boot.lem
 100644 a3bce9ed29041d602cdc128dba43f4422beeb230e1d28939f06b68e9408fe7ea frontend/model/builtins.lem
-100644 1a1e666c724da293b4e605262eeecb2bb98e65c4e8d3e510a0ca0e5fec3a2441 frontend/model/cabs_to_ail.lem
+100644 2a59d024b40b33e33a9e91b1a0756db824a2a417cfc1923248e91568cb5efbc3 frontend/model/cabs_to_ail.lem
 100644 43205d9e9b60c2cb85194af37d99eeea19827f63e626902b6b7b8d0e3ec2ea19 frontend/model/cabs_to_ail_effect.lem
 100644 185b1d2afb9e0d3598c664a50d7106b8cc195add6049b358c0c92c8305e60dc2 frontend/model/cerb_attributes.lem
 100644 c4426c93453c70139f7693096cb2d3796dee1676344652c2c6271303a2d392ae frontend/model/cn.lem
@@ -438,10 +447,10 @@ util/cerb_fresh.ml
 100644 bea12923a5e3d19566b6d6b6acf08f0a69645b4a963141059416227d4b9f2751 frontend/model/formatted.lem
 100644 5079002023f7e22633acbd6b112f99213227475c4d19d3b1859ea388b322de80 frontend/model/fs.lem
 100644 c536bc19c689f1403e8296152886d948fcf66ce84cbccf56bf7b4e28216634c1 frontend/model/global.lem
-100644 508e67bc81ae3f643db8a67a18c5af924bea2316663344ee958acd25732c26ab frontend/model/implementation.lem
+100644 56fa43800b08efb63513e9e50b385fa984d9de101260a8022ea022eee41fcfa6 frontend/model/implementation.lem
 100644 ae79a26c1cfd62acdf18ca6479625de8db05e01f43bdc3dc829cc5a83f465111 frontend/model/loc.lem
 100644 e75c7bf7333be72f00f62818a620d9bb1491ca1f6a6a99273d6a45f8f5caf7ca frontend/model/mem.lem
-100644 e8410cb13736a214c45c96bf06e9fc9427d1b8f96f9dbf626c59480df5c681a9 frontend/model/mini_pipeline.lem
+100644 a3a70aa3eaadea8859b3dc4ff82b9eab37f04c772a52671c694123d143b9bb8e frontend/model/mini_pipeline.lem
 100644 da04e3c262a6e776e977bac03e820d17a3c54065009ae7bd255bfadb900b9524 frontend/model/monadic_parsing.lem
 100644 fc90e8eb740711176ddf98d9ebb929e6746604ea50375b08762646edb69e0493 frontend/model/nondeterminism.lem
 100644 b8bd6d19e3130795183c9524fa62052e96b9497cb17ddca7e3763d9171791543 frontend/model/pp.lem
@@ -474,11 +483,11 @@ util/cerb_fresh.ml
 100644 ee912ae7803e9d42fbf5ef85fdac484586571d4f4b2eb17745431ca9c19aacf8 util/cerb_fresh.ml
 [expected-semantic]
 ceca3526d3ddbd55345eee29f0c5b2626b56c516014cdd73fb3bf5db20f50ac2 cabs_to_ail_effect.ml
-e3569e0584df972bbcfa71e245247bf051494909fd9e9ac3adb4d47b886abd0a cabs_to_ail.ml
+0aefe2af044772ef6a5e4be8bfdfa6bb1ae52cddcaf15d7b771b0abe3d13922b cabs_to_ail.ml
 22b0b094c6622a92dfdff511a05f19de93f445c5f47d149deec3ed223e582f98 core_reduction.ml
 75a320908b313d9b5e75c611b4643d107b0d5a0d3e25b9f480ee323b891b84d8 core_run_aux.ml
 7d4e9c99b3954e7c103d98b371dfd3f9e56c4fb22f32886db3f5382d66db6fa9 core_run.ml
-761ecee2a5776321200a0de257a44d465cfd01ea415ff842dee22441d3a7f0e5 mini_pipeline.ml
+ce623c07f7ddbb8f5d7a4f5b59e8263e84e7cb6533061e5b2e817d10c1914825 mini_pipeline.ml
 51f56677431b4c6095ef8523761c5879f7fe0f1b20f882977bf6555184f2d2e8 symbol.ml
 4af72185cf6ea64c94506ded11858db5884ecaed067b20dd9dcaf4a6aed31418 translation_effect.ml
 beaa991f84cb029c803a52e25a74af696bfa85254d7e8ac876dea38d041ba562 driver.ml
@@ -491,7 +500,7 @@ efe1a293fdf87eb7a264b3d5a2705d9f9421115f9137772c0b6a539a5049b8fb core.ml
 aae2f7294241e5b942c4d2f9a0b847dd72570a72037590b9df577586b23758d4 core_linking.ml
 afb324d5930473b6c3e34f3fc418e93e06ee89b77e824f18e99cd7600f7fd89d core_typing.ml
 d40900445568d01254a2e1cfef5d50706aba8d4067a74aab34a929339e0a3fd3 genTyping.ml
-c101dfd938707a7a70964eb588c2448c57ec48ba1a2cb73955f315d6a621ea7b implementation.ml
+91498892261929c6e1e6488c414e5d3cb1723ea8abbb9cbfbcf634ce3925d4fe implementation.ml
 [expected-cosmetic]
 f353c48b912b1f5ac4a73b42b981d01c38ac19760867ad8e043072e9489b383c cn.ml
 c0546a677a6bcdd16cc1630ad2360179ef2b74406520e27ec4d7378c6155a8f6 core_aux.ml

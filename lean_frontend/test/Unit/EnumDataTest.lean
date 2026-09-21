@@ -20,6 +20,8 @@ the one consumer. These pins are the design note's checks, kernel-only (`rfl`/`d
   * `register_enum s ns = true` — the Lean rep is the pure value (the OCaml keeps its registry);
   * the seed-value pin the S0.5 audit's N1 asks for: a DIFFERENT map gives a different answer
     (`Signed` vs `Unsigned`), so a positional mix-up of same-typed maps cannot type-check silently;
+  * E4 controls: `is_signed_ity` on an unsupported alias width answers by constructor (OCaml's domain),
+    `sizeof_ity` on it stays an opaque failure leaf (no value provable);
   * NEGATIVE controls (`#guard_msgs`): the retired names `CerberusImpl.typeof_enum`,
     `CerberusImpl.enumRegistryRef`, `CerberusImpl.register_enum_impl` no longer elaborate.
 
@@ -52,6 +54,27 @@ example : is_signed_ity eU t (.Enum0 s) = false := rfl
 example : is_signed_ity eS t (.Enum0 s) = true := rfl
 example : precision_ity eU t (.Enum0 s) = some 32 := by decide
 example : precision_ity eS t (.Enum0 s) = some 31 := by decide
+
+/-! ## E4 controls (pre-merge audit 2026-09-20; charter D2 erratum W20): `is_signed_ity` resolves
+    ONLY an enum — OCaml's `Common.is_signed_ity` (ocaml_implementation.ml:79-94) never consults the
+    width-alias table, so an UNSUPPORTED width keeps its constructor's answer on both engines;
+    `sizeof_ity` DOES normalise fully (:172-174) and fails closed on that width on both. -/
+
+example : is_signed_ity eU t (.Signed (.IntN_t 128)) = true := rfl      -- unsupported width: the constructor decides
+example : is_signed_ity eU t (.Unsigned (.IntN_t 128)) = false := rfl
+example : is_signed_ity eU t (.Signed (.IntN_t 32)) = true := rfl       -- supported-width control
+example : is_signed_ity eU t (.Unsigned (.IntN_t 32)) = false := rfl
+example : sizeof_ity eU t (.Signed (.IntN_t 32)) = some 4 := rfl        -- the alias table, where it applies
+
+/-- error: Tactic `rfl` failed: The left-hand side
+  sizeof_ity eU t (Signed (IntN_t 128))
+is not definitionally equal to the right-hand side
+  some 16
+
+⊢ sizeof_ity eU t (Signed (IntN_t 128)) = some 16
+-/
+#guard_msgs in
+example : sizeof_ity eU t (.Signed (.IntN_t 128)) = some 16 := by rfl   -- fail-closed on the unsupported width: the leaf is opaque (no value is provable)
 
 /-! ## GCC's rule, in lem -/
 

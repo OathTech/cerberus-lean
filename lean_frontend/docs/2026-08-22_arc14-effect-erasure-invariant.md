@@ -1,5 +1,17 @@
 # The effect-erasure soundness invariant (arc-14 S1 F5, sem:S17)
 
+> **ENUM HALF RETIRED 2026-09-20 (program-data parameters E-A,
+> `2026-09-20_program-data-parameters-EA-DA-record.md`).** The enum
+> registry seam (`CerberusImpl.typeof_enum`/`register_enum`, the `IO.Ref`
+> and the one kept `panic!`) is DELETED: the enum's compatible type is
+> program data — the lem reader `enum_definitions` (sigma field
+> `enum_definitions`, Core-file field `enumDefs`, linked, passed to every
+> lifted def as a leading parameter in the sorted order `enum_definitions`,
+> `tagDefs`). Every sentence below about the enum registry is history. **The
+> DIGEST seam REMAINS** on this page's terms (`CerberusFresh.digest`,
+> `scripts/unsafebaseio_allowlist.txt` PIN rows): its route (D-A) is an open
+> operator decision (record §3.1) — this page is not retired.
+
 > **SCOPE-SHRINK ADDENDUM (effect-retirement C2, 2026-09-01 — charter
 > §7.1: addendum, not deletion).** The effect-retirement arc deleted
 > most of the seam table below: `CerbTags.*` (the tag table is passed

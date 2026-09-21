@@ -1,14 +1,6 @@
 # Program-data parameters — E-A + D-A record (2026-09-20)
 
-**Status:** Phase 1 (E-A) IN PROGRESS at the S1.5 re-launch (Part B landed as `52af8ccf1`, S1.5 record); the S4 stop, the rulings and the housekeeping are §2 (history). Phase 1's build log is §3; its gates/registers/commit follow as §4–§7. **Scope change [AGENT worker, flagged]: Phase 1 is E-A ALONE — the `digest` reader (D-A's lem line) is BLOCKED structurally (§3.1); readers in Phase 1 are `enum_definitions`, `tagDefs`.** **Phase 1 is COMMITTED with Tier A row 1 red on exactly `check_fuel_forms` (F-1, pre-existing on mainline `e283bed77`; hotfix `fix/fuel-forms-carriers` in flight) — [AGENT orchestrator] ruling: kill-loss containment outweighs the green-gate rule because that red line is neither caused nor touched by this slice and every other row/sub-gate is green with zero movement (§5). A FULL re-gate — row 1 GREEN with the hardened fuel-forms gate — is MANDATORY after this branch rebases onto the landed hotfix, BEFORE any merge ask (§7).** (a lem-lean
-backend refusal from the reader machinery) with a **fence ruling request (S6/S3-analogue)**
-attached; see §2. Worker [AGENT] on `arc/program-data-parameters`, worktree
-`worktrees/cerberus-lean-arc/program-data-parameters`, base `e110d7db2` (= mainline
-`e283bed77` + the charter). Charter:
-`2026-09-20_charter-program-data-parameters-EA-DA.md`. Nothing is committed past the charter;
-the Stage A lem edits (§1.3) sit UNCOMMITTED in the working tree; both generated trees equal
-their `e110d7db2` state (219/219 Lean modules byte-equal to the pre-edit snapshot, both lem-sync
-stamps unchanged). Phase 2 appends.
+**Status (final, 2026-09-21):** E-A is DONE and audited — Phase 1 = E-A ALONE (readers `enum_definitions`, `tagDefs`; the `digest` reader is BLOCKED structurally at this pin, §3.1 — the D-A route is the operator's open decision). The branch `arc/program-data-parameters` = mainline `5407597d9` + `3ad477462` (E-A Phase 1) + `70408e483` (seven D3 witnesses) + `0e1968ffb` (rebase, first full re-gate, record) + the pre-merge-audit repair commit (§10: E1 the seed-closure regression, E2 two Core-file literals, E3 the run-integrity claim, E4 the signedness domain, six more witnesses, the boundary docs). The FINAL source-stable full battery (§10.6, evidence dir `2026-09-20_program-data-parameters-EA-DA-evidence/`) is the certification; the earlier runs (§5, §9.4) are dated history, as are the two stops (§2 S4/S6 on 2026-09-20; §3.6 F-1). Waiting for the E-A delta audit; Phase 2 does not start.
 
 ## 0. Decisions restated (provenance as in the charter §0) and errata found in Phase 1
 
@@ -443,7 +435,7 @@ declares (W14/W15) regenerated after those lines were captured; the current stam
 the E-A1(b) dynamic run, the D3 seeds (S-1..S-6), E-A5's exe run, E-A6 and Tier A are NOT yet done.
 Consumers added this session beyond the charter's list, within the fence: `intfromptr` (W14) and
 `copy_alloc_id` (W15) — both call `max_ival`/`min_ival` (impl_mem.ml:2439-2461, :2766-2770), so
-their CerbMem reps take the readers (18 consumers now).
+their CerbMem reps take the readers (the census: 22 `reader_consumer` declares — 20 in `mem.lem`, 2 in `implementation.lem` — the earlier "18" counted only the CerbMem stubs and miscounted; corrected §10).
 
 ### 3.7 Interim rulings on the two blockers (2026-09-20, [AGENT orchestrator], relayed verbatim in substance)
 
@@ -528,7 +520,7 @@ was not registered` — the `lookupEnum` leaf on the entry's empty map; the orac
 | S-5a | `d3-s5a-generic-enum` | `_Generic(e, enum E: 7, long: 9, default: 3)` | `find_compatible_generic_association` (the overlap check between two TYPE associations; a single association MATCHED — nothing to compare) |
 | S-5b | `d3-s5b-builtin-compat-enum` | `__builtin_types_compatible_p(enum E, unsigned int)` | `desugar_expression`'s builtin arm → `are_compatible` |
 | S-8 | `d3-s8-sizeof-enum-expr` | `sizeof((enum E)1 + 1)` | `desugar_expression`'s sizeof arm → `GenTyping.annotate_expression` (usual arithmetic conversions → `integer_promotion` → `normalise_integerType`) |
-| S-7 | (no witness) | `__typeof__(e + 1) y` | the ORACLE's C parser rejects every spelling: `error: unexpected token after ')' and before 'y'` (in a block), `error: unexpected token after '__typeof__' and before '__typeof__' / parsing "typedef_name": seen "LNAME", expecting "TYPE"` (at file scope), same for `__typeof__((e + 1))` — a `cerberus --cabs-json` input cannot reach `TSpec_typeof_expr` with an arithmetic operand; seeded anyway (D3) |
+| S-7 | six witnesses (§10 E1: `d3-s7-callback-*`) — CORRECTED | `typeof(({ enum E e = A; unsigned int *p = &e; p; })) x` | my `__typeof__` spellings were parse errors, so I wrongly recorded "no oracle-accepted witness"; the parser recognises `typeof` (the pre-merge audit's reproducers), and even `typeof(e + 1) y` runs on both engines. The site reads the map through the BLOCK-typing callback — which E1 found was built outside the seed (§10) |
 | S-1 | (no witness) | a constant expression with an enum-TYPED operand outside `sizeof` | the oracle rejects casts there (`error: feature not yet supported: cast operator in `integer constant expressions'`), enumeration constants are `int`-typed (§6.7.2.2#3), and `sizeof(enum-expr)` is folded by S-8 before S-1's typing sees it — no oracle-accepted witness; seeded anyway (D3): the mini-pipeline's typing/translation of a constant expression take the sigma-so-far's map |
 | S-6 | — | — | `in_range_of_signed_int`: `Mem.min/max_ival (Signed Int_)`, enum-free by construction; left on the binder (a future enum there would be LOUD) |
 
@@ -713,7 +705,9 @@ NOT in this range). Signature changes since your `035f12c`-era pin of `mdd/cerbe
    {sizeof_ity, alignof_ity, is_signed_ity, precision_ity, integerImpl, normalise_ctype, is_compatible_with_size_t,
    is_compatible_with_ptrdiff_t, is_signed_or_unsigned}`, `AilTypesAux.are_compatible`/`make_composite`/…,
    `Ctype_aux.are_compatible_aux`/`match_integer_ctype`, `GenTyping.*`, `GenTypesAux.*`, `Translation_aux.
-   {ctype_of, qualified_ctype_of, combine_params_args}`, `Mem_common.*`, `Core_typing.*` (the full list: §3.4).
+   {ctype_of, qualified_ctype_of, combine_params_args}`, `Mem_common.{derive_intrinsic_signature, resolve_arg,
+   try_usual_arithmetic}` — the authoritative list is the GENERATED tree's binders (§3.4's census of 119 newly lifted
+   decls; `Core_typing.*` is NOT among them — the field addition does not make those defs read the map).
    `initial_driver_state` is UNCHANGED (W7 — it is supply-lifted only).
 2. **`Core.file` has a new field `enumDefs : Fmap sym integerType`** (beside `tagDefs`; linking unions it): your
    three full-file literals `CertP.lean:67,77,89` gain `enumDefs := F.enumDefs` (or `fmapEmpty` for a file with no
@@ -725,11 +719,15 @@ NOT in this range). Signature changes since your `035f12c`-era pin of `mdd/cerbe
    `CerberusImpl.normalise_integerType enumDefs tagDefs ity` (the one consumer; `.Enum0 s` ↦ the map's entry,
    `failwithI "Ocaml_implementation.typeof_enum: '…' was not registered"` on a miss) or `CerberusImpl.resolveEnum
    enumDefs ity` (Enum-only); `CerberusImpl.typeof_enum`, `register_enum`'s effect, `enumRegistryRef` are GONE.
-   Payoff: `Implementation.sizeof_ity e t (.Enum0 s) = some 4` is `rfl` given `e = Lem_Map.fromList [(s, .Unsigned
-   .Int_)]` (test/Unit/EnumDataTest.lean); `sizeofCtype tds (enum s)` is a function of program data.
+   Payoff: `sizeof_ity e t (.Enum0 s) = some 4` (the generated `Implementation` wrapper; generated modules carry no
+   namespace) is `rfl` given `e = Lem_Map.fromList [(s, .Unsigned .Int_)]` (test/Unit/EnumDataTest.lean);
+   `CerbMem.sizeofCtype enumDefs tds (Ctype [] (Basic (Integer (.Enum0 s))))` is a function of program data — the enum
+   argument is the map, first. `is_signed_ity e t ity` resolves ONLY an enum (audit E4): on `Signed (IntN_t 128)` it
+   answers `true` as the OCaml does; `sizeof_ity`/`alignof_ity`/`precision_ity` normalise fully.
 4. **CerbMem** (if you call the hand-written stubs directly): every `reader_consumer` stub takes `enumDefs` FIRST —
    `allocateObject enumDefs tagDefs …`, `loadM`, `storeM`, `sizeofIval`, `alignofIval`, `offsetofIval`, `maxIval
-   enumDefs tagDefs ity`, `minIval`, `intfromptr`, `copyAllocId`, … (18); the measured layout workers/wrappers
+   enumDefs tagDefs ity`, `minIval`, `intfromptr`, `copyAllocId`, … (the 20 `mem.lem` consumers; `implementation.lem`'s
+   two are `normalise_integerType` and `alignof_ty`); the measured layout workers/wrappers
    (`sizeofCtype enumDefs ambient cty`, `alignofCtype`, `offsetsof`, `memberAlign`, `offsetsofMembers`,
    `memValueToBytes`, `reconstructValue`) likewise. The sufficiency theorems in `CerbMem_lemMeasureProofs.lean`
    carry the same extra binder; `fuel_hypotheses.txt` is unmoved.
@@ -737,9 +735,11 @@ NOT in this range). Signature changes since your `035f12c`-era pin of `mdd/cerbe
    the struct arm guards `lookupEntry` before its fold; the union arm selects the member before recursing; each failure
    leaf is the WHOLE result — if you unfold these arms (`TreeRotExhibit.lean:148`, `ListRevExhibit.lean:260` did), the
    match structure changed; the `_indexed` twin and `reconstructValue_lemFuel_eq_indexed` are restated identically.
-6. **Seeds (S0.5 audit N1):** if you write a `reader_seed` def, its first N parameters (N = 2 here) are the seeds in
-   the sorted order, and a def with ≥ N parameters silently takes its own leading parameter as a seed — give every seed
-   def a `val` and a VALUE pin; the two seeds have different types here, so a slip is a type error.
+6. **Seeds (S0.5 audit N1 + this audit's E1):** if you write a `reader_seed` def, its first N parameters (N = 2 here)
+   are the seeds in the sorted order, and a def with ≥ N parameters silently takes its own leading parameter as a seed —
+   give every seed def a `val` and a VALUE pin (the two seeds have different types here, so a slip is a type error).
+   AND: a `reader_seed` does not re-seed closures constructed OUTSIDE its extent — a reader-lifted function value passed
+   INTO a seed is already applied to the caller's binders; pass the data it is built from and construct it inside (§10 E1).
 7. `CerberusFresh.digest` is UNCHANGED in this range (D-A is deferred; §3.1): `SymFresh.lean:70-75`'s property stays
    as it is; the `HeapNeg.lean`/`SymFresh.lean` prose about `set_digest` is not yet stale.
 
@@ -802,8 +802,12 @@ plants: refusals refuse, admits admit with declared class)`.
 
 **The battery** (`scripts/ce python3 scripts/release.py --mode full --out .tmp/eada/regate-full`, ONE run, Tier A + B):
 `full: incomplete; 39/39 selected commands completed successfully.` / `Source unchanged: False. Complete tier
-selection: True.` (the eight post-rebase files were uncommitted during the run; "incomplete" is the runner's standing
-wording for the non-tier obligations) — **wall 5464 s (91 min)**. Every row `PASSED`: `A1 (309.3s) A2 (54.0s) A3
+selection: True.` — **wall 5464 s (91 min)**. **This run is INCOMPLETE as the runner says (E3 of the pre-merge audit, §10):**
+`Source unchanged: False` means the source identity CHANGED DURING THE RUN — I edited this record while the battery ran
+(the runner compares the complete before/after source and external-input identities; a stable dirty tree compares
+EQUAL, so my earlier explanation "the eight files were uncommitted" was WRONG, and "incomplete" here is the tier-run
+status, not the separate `Release certification` sentence). Its 39 row verdicts stand as history; it is NOT the
+certification — §10.6's source-stable run is. Every row `PASSED`: `A1 (309.3s) A2 (54.0s) A3
 (55.8s) A4 (23.1s) A4b (24.5s) A4c (3.1s) A5 (22.3s) A6 (2.2s) A6b (3.6s) A7 (10.6s) A8 (9.2s) A9 (18.8s) A10 (17.3s)
 A11 (58.7s) A12.1 (4.9s) A12.2 (4.5s) B1 (739.6s) B2 (23.6s) B3 (15.5s) B4 (48.8s) B5 (71.9s) B6.1 (78.2s) B6.2 (2.3s)
 B6.3 (9.7s) B6.4 (9.1s) B6.5 (9.4s) B6.6 (10.9s) B6.7 (9.0s) B7 (1350.7s) B8.1 (13.4s) B8.2 (241.9s) B8.3 (6.3s) B8.4
@@ -862,7 +866,7 @@ reviewed-TAIL=184 reviewed-NON-TAIL=53 UNREACHABLE-BY-INVARIANT=169 REACHABLE=49
 `fork_drift_manifest.txt` `[files]` 82 (was 76), `[source-content]` 82 pins (12 moved + 6 new by this slice; the
 hotfix's `scripts/common.sh` re-pin beside them), layer 2: 29 (19 semantic + 10 cosmetic; was 25 = 13 + 12), `lem-pin
 38f87d5`; `fuel_hypotheses.txt` UNMOVED (12 hypothesis rows); `tests/immaculate/baseline.txt` +7 rows (§8);
-`IMMACULATE_PANICS = set()`. Consumers: 18. Readers: `enum_definitions`, `tagDefs`.
+`IMMACULATE_PANICS = set()`. Consumers: 22 `reader_consumer` declares (20 `mem.lem` + 2 `implementation.lem`). Readers: `enum_definitions`, `tagDefs`.
 
 ### 9.6 Commit
 
@@ -871,3 +875,234 @@ ONE commit for this section: the eight post-rebase files (five `*_lemMeasureProo
 patch, the generated-tree snapshots, the reach/manifest/register scripts, the witness probes, every lane log quoted
 above) is DELETED — the record carries what matters. STOP for the E-A audit ask; Phase 2/D-A does not start (the
 operator's decision, §3.1).
+
+## 10. Pre-merge audit repairs (Codex audit `2026-09-20_enum-premerge-audit.md`, REQUEST CHANGES on `5407597d9..0e1968ffb`; every premise verified by the orchestrator [AGENT] and reproduced by me)
+
+### 10.1 E1 (P1, a REGRESSION) — the block-typing callback captured the empty enum map outside the seed
+
+Reproduced on my head binary `0e1968ffb` through the exec lane on the audit's six reproducers (`.tmp/eada2/prefix/`),
+verbatim: `[1/6] LEAN_CRASH d3-s7-callback-assign (exit 134): PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2:
+Ocaml_implementation.typeof_enum: 'Symbol(19, SD_Id("E"))' was no` — the same line for `conditional`, `equality`,
+`init`, `param`, `return`; `SUMMARY: total=6 match=0 … crash=6` (the fork oracle: `Specified(1)`, `1`, `3`, `1`, `2`,
+`1`). Cause (the audit's, confirmed in the generated tree): `Mini_pipeline.annotate_expression_seeded en tds
+annotate_block …` received the callback `GenTyping.annotate_block (Just ret_ty)` built at the CALL SITE
+(`cabs_to_ail.lem:1761`, `:2414`) — `annotate_block` is itself reader-lifted, so the generated call passed
+`(annotate_block _lemReader_enum_definitions _lemReader_tagDefs) (some ret_ty)`, a closure already applied to the OUTER
+binders (the desugar entry's EMPTY enum map); the seed forwarded it unchanged. **Fix:** the seed takes the DATA the
+callback is built from — `annotate_expression_seeded en tds (ret_ty : maybe Ctype.ctype) sigm gamm ctx expr =
+GenTyping.annotate_expression (GenTyping.annotate_block ret_ty) sigm gamm ctx expr` — and both call sites pass `(Just
+ret_ty)` / `Nothing`. **Per-seed review of function-typed arguments crossing the seed boundary (the same hazard):**
+`run_const_expr_driver en tds dr_st` — none (a `driver_state`: Core data, no Lean closure); `evalIntegerConstantExpression_seeded
+… core_env sigm ty_opt expr` — none (`core_env` is three maps of Core declarations; the `typing_guard` closure is built
+INSIDE `evalIntegerConstantExpression`, within the seed); `typecheckAil_seeded sigm gamm expr` — none (`typecheckAil`
+builds `annotate_block Nothing` inside); `annotate_expression_seeded` — FIXED (the only one); `qualified_ctype_of_seeded
+a_expr` — none; `are_compatible_seeded p1 p2`, `make_composite_seeded ty1 ty2`, `make_composite_fdecl_seeded d1 d2`
+(`fun_declaration` = data), `alignof_ty_seeded pseudo_tagDefs ty`, `find_compatible_generic_association_seeded p gs` — none.
+**lem-lean DESIGN follow-up (a doc sentence at the next lem-lean touch, not this slice):** "a `reader_seed` does not
+re-seed closures constructed outside its extent." Six PERMANENT witnesses `tests/immaculate/nolibc/d3-s7-callback-
+{init,assign,conditional,equality,param,return}.c` (the audit's sources, headers naming the read and the pre-fix crash),
+baseline rows ADDED via the recipe (§10.5). **Erratum W21** to §4.2 and the baseline header: S-7 HAS oracle-accepted
+witnesses — the parser recognises `typeof`, not `__typeof__` (my spellings were parse errors); only S-1 (a cast inside an
+integer constant expression) has none.
+
+### 10.2 E2 (P2) — two remaining full `Core.file` literals lacked `enumDefs`
+
+`backend/web/instance.ml:334-346` and `backend/bmc/bmc_utils.ml:413-426` are full literals (all base fields incl.
+`calling_convention`) that omitted the new field — the auditor type-checked the extracted records: `Some record fields
+are undefined: enumDefs`. Fixed: `enumDefs= file.enumDefs;` / `enumDefs= (file1.enumDefs);` — PRESERVED, never an empty
+map. Complete scan of non-generated OCaml for full `Core.file` literals (`tagDefs` + `calling_convention` + `funinfo` in
+one literal; `.tmp/eada2` scan): `pipeline.ml:288,518,679`, `core_peval.ml:865`, `remove_unspecs.ml:106` (done in Phase
+1), `instance.ml:334`, `bmc_utils.ml:413` (done now) — no other. `backend/absint/src/cfg.ml:1025` is NOT a `Core.file`
+(absint's own record: no `calling_convention`/`extern`/`loop_attributes0`, `impl = ()`); `backend/ocaml/{driver/main.ml:75,
+driver/core_opt.ml:58,77, runtime/rt_ocaml.ml:348}` already lack `calling_convention` — pre-existing stale literals that
+cannot compile with or without this slice (left as they are). **Erratum W22 to W9:** "not in the selected build graph" is
+not evidence that a constructor remains valid after a required field is added — the check is the type-check the auditor
+performed, and it is now part of the E2 scan above. Neither file is on the fork-drift oracle surface (`check_fork_drift.sh`
+`SURFACES` = frontend, backend/common, backend/driver, backend/lean_export, ocaml_frontend, memory, util, …), so no
+manifest row moves.
+
+### 10.3 E4 (P2, a zero-discrepancy violation) — `is_signed_ity` must resolve ONLY an enum
+
+OCaml's `Common.is_signed_ity` (`ocaml_implementation.ml:79-94`) resolves an `Enum` through `typeof_enum` and then reads the
+CONSTRUCTOR — `Signed _ → true`, `Unsigned _ → false` — never the width-alias table; my D2 wrapper `is_signed_ity ity =
+is_signed_ity_norm (normalise_integerType ity)` normalised the alias table too, so `Signed (IntN_t 128)` aborted on Lean
+(`DefaultImpl.type_alias_map has no alias for an N-family width of 128`) where the OCaml answers `true` (the audit's
+table: base Lean `true`, base/head OCaml `true`, head Lean abort). **Fix:** a SHARED lem def `resolve_enum ity = match ity
+with Enum s -> typeof_enum s | _ -> ity` (implementation.lem, beside `typeof_enum`) and `is_signed_ity ity =
+is_signed_ity_norm (resolve_enum ity)`; `sizeof_ity`/`alignof_ity`/`precision_ity` KEEP full normalisation because OCaml's
+own do — `DefaultImpl.sizeof_ity` (`:172-174`) and `alignof_ity` (`:214-216`) match on `Common.normalise_integerType_`'s
+result, and `Common.precision_ity` (`:68-70`) calls `sizeof_ity` FIRST (so an unsupported width fails closed there on both
+engines). **Erratum W20 to charter D2** ("same for `is_signed_ity`" was wrong: the four layout vals do not share one
+normalisation shape). Controls in `EnumDataTest`: `is_signed_ity eU t (.Signed (.IntN_t 128)) = true` and `(.Unsigned
+(.IntN_t 128)) = false` by `rfl`, the supported-width pair, `sizeof_ity eU t (.Signed (.IntN_t 32)) = some 4`, and a
+`#guard_msgs` negative that `sizeof_ity eU t (.Signed (.IntN_t 128)) = some 16` is NOT provable by `rfl` (the leaf is
+opaque — fail-closed as before). The failure-reach register gains `typeof_enum`'s generated leaf (now in the exec closure
+through `resolve_enum` → `is_signed_ity`): reviewed REACHABLE, the same class as `lookupEnum` (a Core-text input naming an
+enum tag; a both-crash pair with `ocaml_implementation.ml:146-149`).
+
+### 10.4 E3 (P2, record integrity) — the first full run was INCOMPLETE
+
+§9.4 is corrected in place: `Source unchanged: False` = the source identity changed DURING the run (I edited this record
+while the battery ran), so that run is labelled incomplete and kept as history; the FINAL re-gate (§10.6) is a
+source-stable run on a tree I did not touch, whose `report.json` and `summary.txt` are RETAINED in
+`lean_frontend/docs/2026-09-20_program-data-parameters-EA-DA-evidence/` (JSON/txt — `.gitignore:59` swallows `*.log`, so no
+logs are kept; the record quotes the tails). **Erratum W23** to my earlier reading of the runner.
+
+### 10.5 Docs and boundary (with the fix)
+
+`lean_frontend/README.md`, `DESIGN.md`, `VALIDATION.md`'s boundary bullet: the enum registry LEFT the boundary (the digest
+seam stays, explicitly); `docs/2026-08-22_arc14-effect-erasure-invariant.md` gains the dated header "ENUM HALF RETIRED
+2026-09-20 … the DIGEST seam REMAINS"; `Main.lean`'s desugar comment says FIRST reader; the consumer census is 22
+`reader_consumer` declares (20 `mem.lem` + 2 `implementation.lem`; "18" counted the CerbMem stubs and miscounted) at its
+three mentions; the consumer note (§9.2) is tightened to the generated signatures (no `Core_typing.*`; the enum argument
+shown in the `sizeofCtype` example; the E4 domain rule; the E1 closure rule). Baseline: the six `d3-s7-callback-*` rows
+ADDED via `test_immaculate.sh --record-baseline` with the header note corrected (S-7 has witnesses; S-1 does not).
+
+### 10.6 The final, source-stable re-gate (the certification of this branch)
+
+**What is in the repair commit** (one commit on `0e1968ffb`): lem `frontend/model/mini_pipeline.lem` (E1 seed),
+`cabs_to_ail.lem` (E1 call sites), `implementation.lem` (E4 `resolve_enum` + `is_signed_ity`); OCaml
+`backend/web/instance.ml`, `backend/bmc/bmc_utils.ml` (E2); Lean `CerberusImpl.lean` (comment), `Main.lean` (comment),
+`test/Unit/EnumDataTest.lean` (E4 controls); tests `tests/immaculate/nolibc/d3-s7-callback-{init,assign,conditional,
+equality,param,return}.c` + `tests/immaculate/baseline.txt` (+6 rows via the recipe; the S-1/S-7 header note CORRECTED —
+the one replaced header line is that correction, rows removed/changed 0) + `scripts/test_immaculate.sh` (the header
+note); registers `scripts/failure_reach_register.txt` (238 rows: +1 `Implementation.lean typeof_enum` REACHABLE, resealed;
+tally `sites=238 exec=236 unresolved-owner=2 reviewed-TAIL=185 reviewed-NON-TAIL=53 UNREACHABLE-BY-INVARIANT=169
+REACHABLE=50 UNKNOWN=19 discardable=0`), `scripts/fork_drift_manifest.txt` (three `[source-content]` pins + three
+`[expected-semantic]` hashes moved, one NOTE; set 29 unchanged); docs `README.md`, `DESIGN.md`, `VALIDATION.md`, the
+effect-erasure page header, this record, and the evidence dir `2026-09-20_program-data-parameters-EA-DA-evidence/`
+(`report.json` + `summary.txt` of the run below — JSON/txt, not `.log`).
+
+**Focused verdicts on the repaired tree (before the battery):** regeneration `Lem 38f87d5` `make rc=0 wall=39s`
+(`check_lem_sync: recorded ocaml_frontend/lem_sync.sha256 (src ef81624da3fe5a53d3e99d696d86fec8af241a9d32921552adfed1f419a7867a,
+gen 5192589f474b9834b036a34b4c9f5be279a03aa057fd895d2c6e067d68b42082)` / `… lean_frontend/lem_sync.sha256 (src ef81624d…, gen
+c6c8a49dc76f34edef76c087a1b33b33b19f3b9a677bffa819acb730dd764d36)`); `build_cerberus rc=0 wall=8s` (`oracle stamp bin
+e13a6474…`); E2 type-check the auditor's way (the extracted `instance.ml`/`bmc_utils.ml` records compiled against the
+freshly built `cerb_frontend` interfaces): `web_record head 0 (no diagnostics)`, `bmc_record head 0 (no diagnostics)`
+(the optional `dune` targets themselves need `z3`/`fpath`, absent here, as for the auditor); `build_lean` (every root)
+`Build completed successfully (395 jobs).` (57 s; `lean stamp bin e76f7087…`); speclab `148 jobs`; the 14 unit exes;
+`enum-data-test` with the E4 controls → `EnumDataTest: … kernel-checked at compile time` rc 0 (pin cone `[propext,
+Classical.choice, Quot.sound]`; the `#guard_msgs` negative fires on the opaque leaf: `Tactic `rfl` failed: … sizeof_ity eU t
+(Signed (IntN_t 128)) … some 16`). **The six E1 witnesses through the exec lane — BEFORE the fix on `0e1968ffb`'s binary:**
+`[1/6] LEAN_CRASH d3-s7-callback-assign (exit 134): PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2:
+Ocaml_implementation.typeof_enum: 'Symbol(19, SD_Id("E"))' was no` (and the same for `conditional`, `equality`, `init`, `param`,
+`return`; `SUMMARY: total=6 match=0 … crash=6`); **AFTER:** `[1/6] MATCH d3-s7-callback-assign: VAL:{value: "Specified(1)", …}`,
+`conditional Specified(1)`, `equality Specified(3)`, `init Specified(1)`, `param Specified(2)`, `return Specified(1)`;
+`SUMMARY: total=6 match=6 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 …`. `test_immaculate.sh` (72 s) → `OK: lane matches
+the committed baseline …` with the six new rows `MATCH`; pristine `test_upstream_oracle.py --only "immaculate/nolibc/d3-s7-"` →
+`Independent oracle: subset_passed; {'semantic_agreement': 6}`; `check_failure_reach: OK (238 pure failure sites = the 238
+register rows exactly (236 in the exec dependency closure + 2 unresolved-owner; …); every row sealed; tally line consistent)`;
+`check_fork_content: OK — 82 source files content/mode-pinned` / `check_fork_drift: OK — layer 1: 82 … layer 2: 29 … lem-pin
+38f87d5 = lem -v`.
+
+**The battery** (`scripts/ce python3 scripts/release.py --mode full --out .tmp/eada2/final`), started only after every edit
+above (this record included) and on a tree NOT touched until it ended; its `report.json`/`summary.txt` are copied to the
+evidence dir afterwards and the tails appended below:
+
+**Runner verdict (verbatim, `summary.txt`):** `full: passed; 39/39 selected commands completed successfully.` /
+`Source unchanged: True. Complete tier selection: True.` / `Release certification: incomplete: reporting/adoption/audit
+exits require separate evidence.` (the third sentence is the runner's standing release-exit sentence — the reporting/
+adoption/audit exits are separate evidence by design; it is not a tier verdict). Wall: `release.py rc=0 wall=5495s`
+(started `20260921T015126.988243Z`, finished `2026-09-21T03:23:02.570402+00:00`). `report.json`: `status passed`,
+`source_unchanged True`, `selection_complete True`; `source_before` = `source_after` = head `0e1968ffb6d4736e60a7b53bee2fb3eb2c336304`
+with the SAME dirty-tree `diff_sha256 161aa5801989884babf08814b2b9f61b1a1265f64b6f5b5903d23ce158018af5` (the repair
+diff, uncommitted during the run and committed as the fix commit with this record) — and my own before/after snapshot of
+the tree (`git status --short | sha256sum` = `4671fadf…`, `git diff | sha256sum` = `161aa580…`, the six witnesses + this
+record = `d06af24a…`) is identical on both sides. All 39 lanes `passed`: `A1 (226.6s) A2 (29.4s) A3 (52.7s) A4 (23.6s)
+A4b (25.1s) A4c (3.2s) A5 (26.8s) A6 (2.4s) A6b (3.8s) A7 (10.8s) A8 (9.2s) A9 (18.2s) A10 (18.0s) A11 (59.7s) A12.1 (5.0s)
+A12.2 (4.6s) B1 (756.1s) B2 (23.9s) B3 (15.6s) B4 (46.7s) B5 (75.4s) B6.1 (3.8s) B6.2 (2.3s) B6.3 (9.6s) B6.4 (9.0s) B6.5 (9.6s)
+B6.6 (10.1s) B6.7 (8.8s) B7 (1533.9s) B8.1 (13.4s) B8.2 (261.8s) B8.3 (6.3s) B8.4 (16.6s) B9 (1600.6s) B10.1 (119.8s) B10.2 (1.8s)
+B11.1 (15.4s) B11.2 (6.7s) B12 (427.7s)`. Evidence dir: `report.json` sha256 `0ecc6f902341254e75f04f6456c11aacbd346da55bbce9705f2b2f64c0074b3c`,
+`summary.txt` sha256 `8a982b1a5855d318a90fc19da8e4d0a9850345dbf4422e741b0b604d8c2fdf20`.
+
+**Tier A, verbatim tails (from `A*/stdout` of the run):**
+- A1 `test_unit.sh`: `Total: 13 passed, 0 failed`; `✓ enum-data-test PASSED` (its line: `EnumDataTest: the enum's compatible
+  type is program data — normalise/sizeof/alignof/is_signed/precision at a registered enum by rfl/decide given the map;
+  GCC's rule in lem; register_enum = true; the retired registry names no longer elaborate …`; pin cone
+  `'EnumDataTest.sizeof_enum_pin' depends on axioms: [propext, Classical.choice, Quot.sound]`); `check_exec_purity: CLEAN
+  (11 modules)`; `check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the
+  standard three)`; `check_sorry_token: OK (319 files scanned comment-stripped — generated 219, hand-written+test 65,
+  LemLib 35; 0 sorry tokens)`; `check_no_fuel_numerals: OK (326 files scanned …)`; `gen_fuel_parametricity: OK (14 ambient
+  fuel wrappers …)`; `check_lakefile_roots: OK (218 roots = 218 generated modules + the exe root Main; 85 auxiliary
+  modules …)`; `check_fuel_forms: SELFTEST OK (25 plants with the declared label — …)`; `check_fuel_forms: OK (81 fuel'd
+  workers: 62 MEASURED (… 12 of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions),
+  13 ABSORBING = kill at zero (…), 0 reachable-AMBIENT = the 0 rows of fuel_forms_pending.txt exactly, 6 ambient
+  unreachable from the drive cone)`; `check_failure_reach: OK (238 pure failure sites = the 238 register rows exactly
+  (236 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position
+  classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=169 REACHABLE=50 UNKNOWN=19; every row sealed; tally
+  line consistent …)`; `check_exec_totality: CLEAN (22 generated modules + hand-written CerbND, 0 allowlisted)`;
+  `check_lem_sync: OK (src ef81624d…, gen 5192589f…)` / `check_lem_sync: lean OK (src ef81624d…, gen c6c8a49d…)`;
+  `check_fork_content: OK — 82 source files content/mode-pinned`; `check_fork_drift: OK — layer 1: 82 oracle-surface files
+  = manifest (set, C-locale canonical, no duplicates); layer 2: 29 differing generated files, all hash-pinned (merge-base
+  b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 38f87d5 = lem -v)`; `check_fixture_freeze: OK (16 fixture files match
+  the pinned manifest; name set exact)`; `test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared
+  class)`. (Standalone on the same tree just before the battery: `test_unit rc=0 wall=227s`, the same lines.)
+- A2 `SUMMARY: total=113 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0
+  cerb_skip=5 cerb_floor=0 cerb_inconsistent=0` / `Baseline check: 0 regression(s), 0 improvement(s)` / `BASELINE OK`.
+- A3 `SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 … cerb_skip=13 …` / `BASELINE OK`.
+- A4 `SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 … cerb_skip=4 …` / `BASELINE OK`.
+- A4b `SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 … cerb_skip=0 …` / `BASELINE OK`.
+- A4c `SUMMARY: exec_match=9 neg_pinned=5 fail=0` / `ALL AT COMMITTED EXPECTEDS`.
+- A5 `SUMMARY: match=12 diff=0` / `ALL MATCH RECORDED BASELINE`.
+- A6 `SUMMARY: total=2 match=2 fail=0` / `ALL PASSED`; A6b `SUMMARY: total=7 match=7 fail=0` / `ALL PASSED`.
+- A7 `Lean parse: 113 ok, 0 failed, 0 timeout (>60s; fatal), 0 lean failure(s) …` / `Success rate: 100% (of cerberus
+  successes)` / `batch diagnostic producers: 8/8 passed` / `ALL PASSED`; A8 `Cerberus --pp: 113 ok, 0 failed` / `Lean
+  parse: 113 ok, 0 failed` / `ALL PASSED`.
+- A9 `SUMMARY: total=113 same=108 diff=5 ocaml_fail=0 lean_fail=0` (reporting mode; unchanged).
+- A10 `[lean+libc] EXACT MATCH with ORACLE_LIBC (16/16 URI corpus)` / `GATE PASS: all lane expectations pinned-green +
+  baseline unchanged (16/16)`.
+- A11 `SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 …` / `BASELINE OK (213 entries,
+  exact match)`.
+- A12.1 `test_address_space: SELFTEST OK (14 plants — …)`; A12.2 `test_address_space: OK (18 cases: LEAN = FORK through the
+  shared codec at tops 64 32 8; every fork observation = its pinned row in expectations.txt)`.
+
+**Tier B, verbatim tails:**
+- B1 `test_libxml2.sh`: `SUMMARY: total=4 match=4 fail=0 (points: 1354, 22 observations each)` / `ALL PASSED`.
+- B2 `test_parse.sh tests/ci`: `batch diagnostic producers: 8/8 passed` / `ALL PASSED` (the standing shape, §9).
+- B3 `test_core.sh tests/ci`: `Total: 250` / `Cerberus --pp: 128 ok, 122 failed` / `Lean parse: 128 ok, 0 failed` /
+  `Success rate: 100% (of cerberus successes)` / `ALL PASSED`.
+- B4 `test_verify.sh`: `Build completed successfully (395 jobs).` / `check_driver_fresh: recorded lean stamp (bin
+  e76f70878fa51f8665a28856256ad3bde635590978124a393b27b162e45ccdae, src d53c64965d4132773e11771962c697bb181815c96cc7e41ae3699ea8de92ce3c)`
+  / `test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)`.
+- B5 `test_immaculate.sh`: the six E1 witnesses inside it — `MATCH d3-s7-callback-assign O[VAL:{value: "Specified(1)", …}]
+  L[VAL:{value: "Specified(1)", …}]`, `… d3-s7-callback-conditional … Specified(1)`, `… d3-s7-callback-equality … Specified(3)`,
+  `… d3-s7-callback-init … Specified(1)`, `… d3-s7-callback-param … Specified(2)`, `… d3-s7-callback-return … Specified(1)`
+  (oracle = Lean on each) — and the verdict `OK: lane matches the committed baseline (MATCH except the ISO-fix register
+  pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize
+  ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6
+  TRIPWIRE / illtyped-store KILL).`
+- B6.1/B6.2 `test_speclab: PASS (both pipelines agree on Specified(0))` / `… Specified(2))`; B6.3–B6.7 `CoreGateTest: ALL
+  PASSED`, `ByteArrGateTest: ALL PASSED`, `ListGateTest: ALL PASSED`, `TreeGateTest: ALL PASSED`, `SeedGateTest: ALL PASSED`.
+- B7 `test_gcc_oracle.sh --check-baseline`: `SUMMARY: total=2014 compared=1929 agree=1917 agree_nd=0 triaged=12 disagree=0
+  o2_agree=197 skip_gcc_compile=1 skip_gcc_stdout=1 skip_lean_crash=12 skip_lean_fail=13 skip_lean_timeout=11 skip_ub=47
+  triaged_addr=11 triaged_ub=1` / `Baseline check: 0 regression(s), 0 improvement(s)` / `gcc second-oracle lane OK`
+  (1533.9 s). [DERIVED] vs §9's `total=2008 compared=1923 agree=1911`: +6 = the six new witness files, each reported by
+  the lane as `new file (not in baseline, not fatal): tests/immaculate/nolibc/d3-s7-callback-{assign,conditional,equality,
+  init,param,return}.c AGREE/-` (as the seven earlier d3 files are, e.g. `… d3-s4b-fdecl-enum-param.c AGREE/O2_AGREE`);
+  every other count identical. The lane's gcc baseline was NOT edited (S2: no re-baselining in this slice; the 13 d3
+  rows' admission to that baseline is a housekeeping item for the orchestrator, not a movement).
+- B8.1 `test_hang_plant: all plants read as expected (sleep→HANG, busy→TIMEOUT, both lanes; missing record→harness error)`;
+  B8.2 `test_kill_plant: all plants read as expected (cap breach -> OOM-KILLED witness; …; no MATCH anywhere)`; B8.3
+  `test_fuel_plant: ALL PLANTS OK (…)`; B8.4 `test_failstop_plant: PASS (11 class and rejection checks)`.
+- B9 `test_observation_lanes.py`: `observation lane plants: 93/93 passed` (1600.6 s; the immaculate plants re-run the lane,
+  now thirteen d3 cases longer).
+- **B10.1 pristine** `test_upstream_oracle.py`: `Independent oracle scope: tier-b; 872 rows in 119.5s; source unchanged:
+  True` / `Independent oracle: passed; {'semantic_agreement': 835, 'matching_failure': 28, 'reviewed_difference': 7,
+  'interface_agreement': 2}` — **835 = 829 + the six new witnesses** ([DERIVED]; each of the thirteen d3 rows is
+  `semantic_agreement`: `768/872 semantic_agreement: immaculate/nolibc/d3-s7-callback-assign` … `773/872 … d3-s7-callback-return`
+  alongside the seven of §9); `reviewed_difference: 7` = the register's seven (W19), `matching_failure: 28`,
+  `interface_agreement: 2` unchanged.
+- B10.2 `--plant`: `Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}`.
+- B11.1 `check_failure_reach.sh --selftest`: `check_failure_reach: SELFTEST OK (5 plants with the declared message — …; and
+  the unplanted register green)`; B11.2 `check_failure_reach: OK (238 pure failure sites = the 238 register rows exactly …)`.
+- B12 `--corpus libxml2_chvalid`: `Independent oracle scope: libxml2_chvalid; 4 rows in 427.5s; source unchanged: True` /
+  `Independent oracle: passed; {'semantic_agreement': 4}`.
+
+**Movement (S2): none.** Every baseline lane reports `0 regression(s), 0 improvement(s)` / `BASELINE OK` / `exact match`;
+immaculate and cn_coverage at their committed baselines; the only count changes anywhere are the +6 corpus ADDITIONS
+(B5 rows, B7 `total`/`compared`/`agree`, B10.1 `semantic_agreement`), each labelled derived above. No baseline was
+re-recorded except `tests/immaculate/baseline.txt` by the recipe (+6 rows, additions-only evidence in §10.3).
+
+**State after this section:** the fix commit (this record's §10 + the files listed at the top of §10.6 + the evidence dir)
+is the ONLY commit added on `0e1968ffb`; `.tmp/eada2/` deleted; `git status` clean. STOPPED for the delta audit. Phase 2
+(D-A) NOT started — the operator's open decision (§3.1).

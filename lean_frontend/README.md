@@ -11,8 +11,11 @@ The execution definitions pass the repository's totality and axiom gates,
 and differential lanes compare their printed observations with the fork's
 OCaml engine. There are still explicit failure, fuel, representation and
 runtime-boundary obligations. In particular, deliberate pure failures can
-be erased by Lean evaluation, and enum/digest seams retain ambient runtime
-state behind pure signatures. Zero added axiom declarations does not prove
+be erased by Lean evaluation, and the digest seam retains ambient runtime
+state behind a pure signature (the enum registry no longer does: since
+program-data parameters E-A, 2026-09-20, the enum's compatible type is
+program data — a reader parameter of the model). Zero added axiom
+declarations does not prove
 agreement between those declarations and their native implementations.
 See the [supported profile](docs/2026-09-06_supported-profile.md) and
 [VALIDATION.md](VALIDATION.md) for measured scope and remaining release exits.

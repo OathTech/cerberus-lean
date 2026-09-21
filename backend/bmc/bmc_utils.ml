@@ -411,6 +411,7 @@ let set_uid file1 =
   main=    (file1.main);
   calling_convention= (file1.calling_convention);
   tagDefs= (file1.tagDefs);
+  enumDefs= (file1.enumDefs); (* program-data parameters E-A (2026-09-20): preserved, never emptied *)
   stdlib=  (file1.stdlib);
   impl=    (file1.impl);
   globs=   List.map set_uid_globs file1.globs;

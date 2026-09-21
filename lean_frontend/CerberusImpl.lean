@@ -101,9 +101,12 @@ def register_enum (_ : sym) (_ : List Int) : Bool := true
     instantiated with ~typeof_enum ~char_is_signed:true as DefaultImpl does
     (ocaml_implementation.ml:257). OCaml first resolves Enum through
     typeof_enum, then matches; on Lean the resolution happens BEFORE this
-    function — the lem wrapper `Implementation.is_signed_ity` normalises through
-    the reader, CerbMem resolves through `resolveEnum` — so the `Enum` arm here
-    is the OCaml's `assert false`: unreachable by construction, a loud leaf. -/
+    function — the lem wrapper `Implementation.is_signed_ity` resolves ONLY an
+    enum through the reader (`Implementation.resolve_enum`, the OCaml's own
+    shape; NOT the alias table — audit E4: `Signed (IntN_t 128)` is `true` on
+    both engines), CerbMem resolves through `resolveEnum` — so the `Enum` arm
+    here is the OCaml's `assert false`: unreachable by construction, a loud
+    leaf. -/
 def is_signed_ity (ity : integerType) : Bool :=
   match ity with
   | .Char0 => true      -- char_is_signed = true for DefaultImpl

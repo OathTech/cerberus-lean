@@ -294,13 +294,24 @@ val typecheckAil_seeded:
 let typecheckAil_seeded en tds sigm gamm expr = typecheckAil sigm gamm expr
 declare {lean} reader_seed val typecheckAil_seeded
 
-(* the desugarer's two direct typing calls (typeof(e), sizeof e) *)
+(* the desugarer's two direct typing calls (typeof(e), sizeof e).
+   CLOSURE HAZARD (pre-merge audit E1, 2026-09-20 — record §10): a reader_seed
+   re-seeds only what is constructed INSIDE its extent. The block-typing
+   callback `GenTyping.annotate_block ret_ty` is itself reader-lifted, so a
+   callback built at the CALL SITE (outside the seed) is already applied to
+   the caller's binders — the desugar entry's EMPTY enum map — and forwarding
+   it into the seed cannot re-seed it (`typeof(({ enum E e = A; unsigned int
+   *p = &e; p; }))` crashed on Lean while the oracle ran it). The seed therefore
+   takes the DATA the callback is built from (the enclosing return type) and
+   constructs the callback in its own body. lem-lean design follow-up (a doc
+   sentence at the next lem-lean touch, not this slice): "a reader_seed does
+   not re-seed closures constructed outside its extent". *)
 val annotate_expression_seeded:
   map Symbol.sym Ctype.integerType -> map Symbol.sym (Loc.t * Ctype.tag_definition) ->
-  (A.sigma unit -> A.gamma -> A.bindings -> list (A.statement unit) -> ErrorMonad.errorM (list (A.statement GenTypes.genTypeCategory))) ->
+  maybe Ctype.ctype ->
   A.sigma unit -> A.gamma -> GenTyping.annotation_context -> A.expression unit -> ErrorMonad.errorM (A.expression GenTypes.genTypeCategory)
-let annotate_expression_seeded en tds annotate_block sigm gamm ctx expr =
-  GenTyping.annotate_expression annotate_block sigm gamm ctx expr
+let annotate_expression_seeded en tds ret_ty sigm gamm ctx expr =
+  GenTyping.annotate_expression (GenTyping.annotate_block ret_ty) sigm gamm ctx expr
 declare {lean} reader_seed val annotate_expression_seeded
 
 (* the desugarer reads the typed expression's ctype right after (S-9): the
