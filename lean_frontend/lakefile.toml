@@ -132,6 +132,7 @@ roots = [
   "Nondeterminism", "Nondeterminism_auxiliary",
   "Nd_observe", "Nd_observe_auxiliary", "CerbNDObserveProofs",
   "Sc_order", "Sc_order_auxiliary", "Sc_order_lemMeasureProofs",
+  "Sc_representation", "Sc_representation_auxiliary", "CerbSCRepresentation",
   "Sc_runtime", "Sc_runtime_auxiliary", "CerbSCByteInstances", "CerbSCOperational",
   "Pp", "Pp_auxiliary",
   "Product", "Product_auxiliary",
@@ -152,7 +153,7 @@ roots = [
   "CerbLocation",
   "CerberusFresh",
   "CerbGlobal",
-  "CerbFloat",
+  "CerbFloat", "CerbFloatValue",
   "CerbUtils",
   "CerbPP",
   "CerbMem",
@@ -321,3 +322,25 @@ name = "sc-protocol-test"
 srcDir = "test"
 root = "Unit.SCProtocol"
 moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "sc-fences-test"
+srcDir = "test"
+root = "Unit.SCFences"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "sc-representation-test"
+srcDir = "test"
+root = "Unit.SCRepresentation"
+
+[[lean_exe]]
+name = "sc-cas-test"
+srcDir = "test"
+root = "Unit.SCCAS"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "float-representation-test"
+srcDir = "test"
+root = "Unit.FloatRepresentation"

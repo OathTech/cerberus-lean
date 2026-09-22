@@ -1,0 +1,30 @@
+(* C17 compare-exchange compares object representations (WG14 DR 431,
+   N1906). This operation receives the bytes of completed typed reads;
+   it does not load memory, erase provenance from stored values, or choose
+   values for the concrete model's unspecified representation bytes. *)
+open import Pervasives
+
+type sc_representation_comparison =
+  | SC_same_bits
+  | SC_different_bits
+  | SC_unspecified_representation
+  | SC_representation_size_mismatch
+
+(* Inspect every byte before comparing. In particular a known difference
+   must not turn an otherwise unsupported padding comparison into false. *)
+let sc_specified_bytes bytes =
+  List.foldr (fun byte rest ->
+    match (byte, rest) with
+      | (Just value, Just values) -> Just (value :: values)
+      | (_, _) -> Nothing
+    end) (Just []) bytes
+
+val sc_compare_representation:
+  list (maybe integer) -> list (maybe integer) -> sc_representation_comparison
+let sc_compare_representation left right =
+  if List.length left <> List.length right then SC_representation_size_mismatch
+  else match (sc_specified_bytes left, sc_specified_bytes right) with
+    | (Just left_bits, Just right_bits) ->
+        if left_bits = right_bits then SC_same_bits else SC_different_bits
+    | (_, _) -> SC_unspecified_representation
+  end

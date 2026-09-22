@@ -156,7 +156,7 @@ LEM_CABS_TO_AIL   = cabs_to_ail_aux.lem scope_table.lem \
                     desugaring_init.lem cabs_to_ail_effect.lem cabs_to_ail.lem mini_pipeline.lem
 LEM_CORE_TO_CORE  = core_sequentialise.lem core_indet.lem core_rewrite.lem \
                     core_unstruct.lem
-LEM_CORE_DYNAMICS = core_run_aux.lem sc_order.lem sc_runtime.lem core_eval.lem core_run.lem core_reduction.lem core_reduction_aux.lem driver.lem
+LEM_CORE_DYNAMICS = core_run_aux.lem sc_order.lem sc_representation.lem sc_runtime.lem core_eval.lem core_run.lem core_reduction.lem core_reduction_aux.lem driver.lem
 LEM_ELABORATION   = translation_effect.lem translation_aux.lem translation.lem 
 LEM_DEFACTO       = mem_common.lem defacto_memory_types.lem \
                     defacto_memory_aux.lem defacto_memory.lem mem.lem \

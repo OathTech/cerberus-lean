@@ -54,28 +54,47 @@ theorem completed_effects tid parent value (s : sc_state) :
       {sc_child_id := tid, sc_child_parent := parent, sc_child_value := value,
        sc_child_effects := sc_thread_effects tid s} :: s.sc_completed := rfl
 
-/-- Every offered machine choice comes from the actual current Core reducer.
-    No new expression evaluator or quotient of choices is involved. -/
+/-- Each offered step is the owned suspended request, or a runnable current
+Core reduction when that thread has no suspension. Other threads stay eligible. -/
 theorem choices_iff [LemFuel] tags (sc : sc_state) (s : driver_state)
     (choice : Nat × core_step2) :
     choice ∈ sc_choices tags sc s ↔
       ∃ thInfo, (choice.1, thInfo) ∈ s.core_state0.thread_states ∧
-        choice.2 ∈ step_ctx_with tags (some (sc_control choice.1 sc))
-          s.layout_state s.core_file s.core_extern choice.1 thInfo ∧
-        (match choice.2 with | Step_blocked2 => false | _ => true) = true := by
+        (match Lem_List.lookupBy (fun x y : Nat => x == y) choice.1 s.sc_pending with
+        | some pending => choice.2 = pending
+        | none => choice.2 ∈ step_ctx_with tags (some (sc_control choice.1 sc))
+            s.layout_state s.core_file s.core_extern choice.1 thInfo ∧
+            (match choice.2 with | Step_blocked2 => false | _ => true) = true) := by
   rcases choice with ⟨tid, step⟩
   simp only [sc_choices]
   constructor
   · intro h
     rcases List.mem_flatten.mp h with ⟨xs, hxs, hx⟩
     rcases List.mem_map.mp hxs with ⟨⟨other, thInfo⟩, hthread, rfl⟩
-    rcases List.mem_map.mp hx with ⟨offered, hoffered, heq⟩
-    rcases List.mem_filter.mp hoffered with ⟨hstep, hrunnable⟩
-    cases heq
-    exact ⟨thInfo, hthread, hstep, hrunnable⟩
-  · rintro ⟨thInfo, hthread, hstep, hrunnable⟩
+    cases found : Lem_List.lookupBy (fun x y : Nat => x == y) other s.sc_pending with
+    | some pending =>
+      simp only [found, List.mem_singleton] at hx
+      cases hx
+      exact ⟨thInfo, hthread, by simp only [found]⟩
+    | none =>
+      simp only [found] at hx
+      rcases List.mem_map.mp hx with ⟨offered, hoffered, heq⟩
+      rcases List.mem_filter.mp hoffered with ⟨hstep, hrunnable⟩
+      cases heq
+      refine ⟨thInfo, hthread, ?_⟩
+      simp only [found]
+      refine ⟨hstep, ?_⟩
+      cases step <;> exact hrunnable
+  · rintro ⟨thInfo, hthread, hstep⟩
     apply List.mem_flatten.mpr
     refine ⟨_, List.mem_map.mpr ⟨(tid, thInfo), hthread, rfl⟩, ?_⟩
-    exact List.mem_map.mpr ⟨step, List.mem_filter.mpr ⟨hstep, hrunnable⟩, rfl⟩
+    cases found : Lem_List.lookupBy (fun x y : Nat => x == y) tid s.sc_pending with
+    | some pending =>
+      simp only [found] at hstep ⊢
+      cases hstep
+      exact List.mem_singleton_self _
+    | none =>
+      simp only [found] at hstep ⊢
+      exact List.mem_map.mpr ⟨step, List.mem_filter.mpr hstep, rfl⟩
 
 end CerbSCOperational

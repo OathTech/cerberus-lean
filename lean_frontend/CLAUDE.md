@@ -260,7 +260,7 @@ a binary built from the old copy.
 | `CerbDebug.lean` | Debug level and output functions |
 | `CerbDecode.lean` | Integer/character constant decoding. Arc-14 F2: decode.ml's exhaustive fail-CLOSED table with C11 cites; `\?` -> 63 and hex escaped_char are documented Lean-right divergences (oracle-wrong: upstream tray 10/11) |
 | `CerbGlobal.lean` | The DEFAULT configuration and switch set as plain `def`s (execution mode `none`, every flag `false`, switch set `[]`), each with a `rfl` lemma — the values the oracle driver holds in matched mode, cited line by line; no process state since 2026-09-05 (`docs/2026-09-05_cerbglobal-defs-record.md`); `CerbSwitch` = the lem subset + the four switches impl_mem.ml's switch-conditioned arms test (seam-hygiene H2, 2026-09-19), each `has_switch_*_eq : … = false := rfl`, so `CerbMem` writes those arms as `if has_switch … then <loud kill> else <default>` |
-| `CerbFloat.lean` | IEEE 754 float operations; lawful total Ord Float (NaN reflexive, arc-14 F4) |
+| `CerbFloat.lean` / `CerbFloatValue.lean` | Binary64 values with exact representation storage, concrete-target arithmetic, parsing and formatting; numeric equality remains distinct from bit equality |
 | `CerbUtils.lean` | Timing/logging VALUE IDENTITIES (plain `def`s since seam-hygiene H3, 2026-09-19; no opaque, no `IO.Ref`), GCC builtins on Z/two's-complement semantics mirroring ocaml_gcc_builtins.ml per-line (arc-14 F2: ffs(-1)=1, ctz(0)/bswap asserts panic) |
 | `CerbPP.lean` | Pretty-printer placeholders |
 | `CerbFS.lean` | In-memory filesystem model |

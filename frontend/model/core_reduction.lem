@@ -103,7 +103,20 @@ type action_request2 'a =
                    *  (Mem.mem_value -> core_runM Mem.mem_value)
                    *  (completion_receipt -> Mem.footprint -> Mem.mem_value -> Mem.mem_value -> 'a)
   
-  (* TODO: RMW, Fence *)
+  (* Internal phases retain the original completion builder. Only the first
+     constructor can be produced directly by a Core action. *)
+  | CompareExchangeRequest2 of bool * Ctype.ctype * Mem.pointer_value * Mem.pointer_value
+      * Mem.mem_value * Cmm.memory_order * Cmm.memory_order
+      * (completion_receipt -> list Mem.footprint -> bool -> 'a)
+  | CompareExchangeObjectRequest2 of bool * Ctype.ctype * Mem.pointer_value * Mem.pointer_value
+      * Mem.mem_value * list Mem.representation_byte * Sc_order.sc_predecessors * list Mem.footprint
+      * (completion_receipt -> list Mem.footprint -> bool -> 'a)
+  | CompareExchangeWritebackRequest2 of Ctype.ctype * Mem.pointer_value * Mem.mem_value
+      * Sc_order.sc_predecessors * list Mem.footprint
+      * (completion_receipt -> list Mem.footprint -> bool -> 'a)
+
+  (* TODO: historical standalone RMW *)
+  | FenceRequest2 of Cmm.memory_order * (completion_receipt -> 'a)
   | KillRequest2 of (* is_dynamic *)bool * Mem.pointer_value * (completion_receipt -> 'a)
 
 
@@ -639,12 +652,47 @@ type action_step =
   | ACTION_EVAL of string * core_runM (Core.action core_run_annotation)
   | ACTION_ILLTYPED of string
 
-val step_action:
+val step_action_with:
+    bool ->
     list Annot.annot ->
     (Core.pexpr -> core_runM Core.value) -> maybe nat -> Core.action core_run_annotation -> action_step
-let step_action e_annots full_eval_pexpr is_excluded (Action loc act_annots act) =
+let step_action_with with_sc e_annots full_eval_pexpr is_excluded (Action loc act_annots act) =
   let wrap z =
     Action loc act_annots z in
+  let compare_exchange weak pe1 pe2 pe3 pe4 success failure =
+    match (act_valueFromPexpr pe1, act_valueFromPexpr pe2,
+                    act_valueFromPexpr pe3, act_valueFromPexpr pe4) with
+          | (Just (Vctype ty), Just (Vobject (OVpointer object_ptr)),
+             Just (Vobject (OVpointer expected)), Just desired) ->
+              match memValueFromValue ty desired with
+                | Nothing -> ACTION_ILLTYPED "compare-exchange desired value"
+                | Just desired_value ->
+                    ACTION_REQUEST "CompareExchangeRequest" loc
+                      (CompareExchangeRequest2 weak ty object_ptr expected desired_value success failure
+                        (fun _ footprints succeeded ->
+                          let annotations = List.map (fun footprint ->
+                            match is_excluded with
+                              | Nothing -> DA_pos [] footprint
+                              | Just excluded -> DA_neg excluded [] footprint
+                            end) footprints in
+                          Expr [] (Eannot annotations (Caux.mk_value_e
+                            (Vloaded (LVspecified (OVinteger
+                              (Mem.integer_ival (if succeeded then 1 else 0)))))))))
+              end
+          | (Just _, Just _, Just _, Just _) -> ACTION_ILLTYPED "compare-exchange operands"
+          | (_, _, _, _) ->
+              ACTION_EVAL "eval operands of compare-exchange" begin
+                full_eval_pexpr pe1 >>= fun a ->
+                full_eval_pexpr pe2 >>= fun b ->
+                full_eval_pexpr pe3 >>= fun c ->
+                full_eval_pexpr pe4 >>= fun d ->
+                E.return (wrap (if weak then
+                  CompareExchangeWeak (Caux.mk_value_pe a) (Caux.mk_value_pe b)
+                    (Caux.mk_value_pe c) (Caux.mk_value_pe d) success failure
+                else CompareExchangeStrong (Caux.mk_value_pe a) (Caux.mk_value_pe b)
+                    (Caux.mk_value_pe c) (Caux.mk_value_pe d) success failure))
+              end
+        end in
   match act with
     | Create pe1 pe2 pref ->
         match (act_valueFromPexpr pe1, act_valueFromPexpr pe2) with
@@ -805,12 +853,17 @@ let step_action e_annots full_eval_pexpr is_excluded (Action loc act_annots act)
         end
     | RMW _ _ _ _ _ _ ->
         error "TODO[Core_reduction]: RMW"
-    | Fence _ ->
-        error "TODO[Core_reduction]: Fence"
-    | CompareExchangeStrong _ _ _ _ _ _ ->
-        error "TODO[Core_reduction]: CompareExchangeStrong"
-    | CompareExchangeWeak _ _ _ _ _ _ ->
-        error "TODO[Core_reduction]: CompareExchangeWeak"
+    | Fence order ->
+        if with_sc then
+          ACTION_REQUEST "FenceRequest" loc
+            (FenceRequest2 order (fun _ -> Caux.mk_value_e Vunit))
+        else error "TODO[Core_reduction]: Fence"
+    | CompareExchangeStrong pe1 pe2 pe3 pe4 success failure ->
+        if with_sc then compare_exchange false pe1 pe2 pe3 pe4 success failure
+        else error "TODO[Core_reduction]: CompareExchangeStrong"
+    | CompareExchangeWeak pe1 pe2 pe3 pe4 success failure ->
+        if with_sc then compare_exchange true pe1 pe2 pe3 pe4 success failure
+        else error "TODO[Core_reduction]: CompareExchangeWeak"
     | LinuxFence _ ->
         error "TODO[Core_reduction]: LinuxFence"
     | LinuxLoad _ _ _ ->
@@ -821,6 +874,10 @@ let step_action e_annots full_eval_pexpr is_excluded (Action loc act_annots act)
         error "TODO[Core_reduction]: LinuxRMW"
 end
 
+
+(* Keep the existing sequential entry and its evidenced unimplemented arms. *)
+let step_action e_annots full_eval_pexpr is_excluded action =
+  step_action_with false e_annots full_eval_pexpr is_excluded action
 
 val     break_at_sseq: context -> maybe (context * Core.pattern * context * Core.expr core_run_annotation)
 let rec break_at_sseq ctx =
@@ -1194,7 +1251,8 @@ let step_ctx_with sc_context mem_st file core_extern current_tid (parent_tid_opt
         let process_action is_excluded wrap_act z =
           let Action _ action_annotation _ = z in
           let action_polarity = match is_excluded with Nothing -> Pos | Just _ -> Neg end in
-          match step_action e_annots full_eval_pexpr' is_excluded z with
+          match step_action_with (match sc_context with Nothing -> false | Just _ -> true end)
+            e_annots full_eval_pexpr' is_excluded z with
             | ACTION_REQUEST debug_str loc _request ->
                 let loc' =
                   if Loc.is_library_location loc then
@@ -1223,6 +1281,17 @@ let step_ctx_with sc_context mem_st file core_extern current_tid (parent_tid_opt
                         KillRequest2 is_dynamic ptrval (fun aid ->
                           wrap_completed aid (mk_expr' aid)
                         )
+                    | CompareExchangeRequest2 weak ty object_ptr expected desired success failure mk_expr' ->
+                        CompareExchangeRequest2 weak ty object_ptr expected desired success failure
+                          (fun receipt footprints succeeded ->
+                            wrap_completed receipt (mk_expr' receipt footprints succeeded))
+                    | CompareExchangeObjectRequest2 _ _ _ _ _ _ _ _ _ ->
+                        error "Core action produced an internal compare-exchange phase"
+                    | CompareExchangeWritebackRequest2 _ _ _ _ _ _ ->
+                        error "Core action produced an internal compare-exchange phase"
+                    | FenceRequest2 order mk_expr' ->
+                        FenceRequest2 order (fun receipt ->
+                          wrap_completed receipt (mk_expr' receipt))
                     | SeqRMWRequest2 _ _ _ _ ->
                         (* this is not possible *)
                         error "Core_reduction step_action returned SeqRMWRequest2"

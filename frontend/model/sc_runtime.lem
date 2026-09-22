@@ -8,6 +8,9 @@ import Mem Mem_common Cmm_csem Sc_order
 type sc_request_kind =
   | SC_access of Cmm_csem.memory_order * Core.polarity
   | SC_seq_rmw
+  | SC_cas_expected of Cmm_csem.memory_order * Cmm_csem.memory_order * Core.polarity
+  | SC_cas_object of Core.polarity
+  | SC_cas_writeback of Core.polarity
   | SC_lifetime of Core.polarity
   | SC_memop of Mem_common.memop
   | SC_runtime of string
@@ -38,6 +41,7 @@ type sc_state = <|
   sc_current_effects: Sc_order.sc_predecessors;
   sc_effects: list sc_effect; (* newest first, preserving occurrence identity *)
   sc_completed: list sc_completed_child;
+  sc_fences: list sc_request; (* completed fence occurrences, newest first *)
   sc_join_history: list (Mem_common.thread_id * Sc_order.sc_predecessors);
 |>
 
@@ -46,6 +50,7 @@ let sc_initial_state = <|
   sc_current_effects= {};
   sc_effects= [];
   sc_completed= [];
+  sc_fences= [];
   sc_join_history= [];
 |>
 
@@ -60,6 +65,9 @@ let sc_effect_polarity request observation =
   match request.sc_request_kind with
     | SC_access _ polarity -> polarity
     | SC_lifetime polarity -> polarity
+    | SC_cas_expected _ _ polarity -> polarity
+    | SC_cas_object polarity -> polarity
+    | SC_cas_writeback polarity -> polarity
     | SC_seq_rmw ->
         match observation with
           | Mem_common.Observe_access _ Mem_common.StoreAccess _ _ _ _ _ _ _ -> Core.Neg
@@ -88,7 +96,10 @@ let sc_thread_effects tid state =
     (Core.Pos, (tid, recorded.sc_effect_id)))
     (List.filter (fun recorded -> recorded.sc_effect_request.sc_request_thread = tid)
       state.sc_effects)) in
-  own union (match List.lookup tid state.sc_join_history with Nothing -> {} | Just effects -> effects end)
+  let fences = Set.fromList (List.map (fun request ->
+    (Core.Pos, (tid, request.sc_request_id)))
+    (List.filter (fun request -> request.sc_request_thread = tid) state.sc_fences)) in
+  own union fences union (match List.lookup tid state.sc_join_history with Nothing -> {} | Just effects -> effects end)
 
 let sc_note_join tid effects state =
   let previous = match List.lookup tid state.sc_join_history with Nothing -> {} | Just prior -> prior end in
@@ -116,3 +127,54 @@ let sc_receipt state =
 (* Comparison derivation needs the concrete abstract-byte field instance. These
    records are retained by occurrence ID, never deduplicated by their payload. *)
 declare {lean} extra_import `CerbSCByteInstances`
+
+
+(* Fences have source ordering and an SC position, but perform no concrete
+   object-memory access. Their occurrence is the fresh request identity. *)
+let sc_record_fence state =
+  match state.sc_current_request with
+    | Just request ->
+        match request.sc_request_kind with
+          | SC_fence Cmm_csem.Seq_cst ->
+              Just <| state with
+                sc_fences= request :: state.sc_fences;
+                sc_current_effects= {(Core.Pos, (request.sc_request_thread, request.sc_request_id))};
+              |>
+          | _ -> Nothing
+        end
+    | Nothing -> Nothing
+  end
+
+(* Named SC execution does not coerce executed weaker orders. This condition
+   is about the selected model, not the C program's well-typedness or UB. *)
+let sc_request_in_model = function
+  | SC_access order _ -> order = Cmm_csem.NA || order = Cmm_csem.Seq_cst
+  | SC_fence order -> order = Cmm_csem.Seq_cst
+  | SC_seq_rmw -> true
+  | SC_cas_expected success failure _ ->
+      success = Cmm_csem.Seq_cst && failure = Cmm_csem.Seq_cst
+  | SC_cas_object _ -> true
+  | SC_cas_writeback _ -> true
+  | SC_lifetime _ -> true
+  | SC_memop _ -> true
+  | SC_runtime _ -> true
+end
+
+
+(* Read bytes come from the actual completed typed access. Re-encoding its
+   value would lose padding and provenance information. No second read occurs. *)
+let sc_current_read_representation state =
+  match state.sc_current_request with
+    | Nothing -> Nothing
+    | Just request ->
+        match List.concat (List.map (fun recorded ->
+          if recorded.sc_effect_request.sc_request_id = request.sc_request_id then
+            match recorded.sc_effect_observation with
+              | Mem_common.Observe_access _ Mem_common.LoadAccess _ _ _ _ _ bytes _ -> [bytes]
+              | _ -> []
+            end
+          else []) state.sc_effects) with
+          | [bytes] -> Just bytes
+          | _ -> Nothing
+        end
+  end

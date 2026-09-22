@@ -5,7 +5,7 @@ import Core_aux Builtins Core_linking
 module Caux = Core_aux
 
 open import Utils Show Errors Trace_event
-import Cmm_op Cmm_csem Sc_order Sc_runtime Nd_observe
+import Cmm_op Cmm_csem Sc_order Sc_runtime Sc_representation Nd_observe
 
 import Core_eval Core_run Core_reduction
 
@@ -73,6 +73,7 @@ type driver_state = <|
   trace:             list trace_event;
   
   sc_state: maybe Sc_runtime.sc_state;
+  sc_pending: list (Mem_common.thread_id * Core_reduction.core_step2);
   symbolic_assoc: map Symbol.sym Core.object_value;
   
   blocked: bool; (* concurrency model ended by blocking *)
@@ -727,6 +728,47 @@ let update_core_state core_st dr_st =
 
 
 (* POST REDUCTION SEMANTICS *)
+let sc_merge_receipt previous (aid, current) =
+  (aid, Just (previous union (match current with Nothing -> {} | Just effects -> effects end)))
+
+let sc_suspend_cas tid loc request =
+  ND.get >>= fun state ->
+  match state.sc_state with
+    | Just sc ->
+        match sc.Sc_runtime.sc_current_request with
+          | Just current ->
+              let annotation = Sc_order.sc_before_annotation
+                (Sc_order.sc_promote sc.Sc_runtime.sc_current_effects)
+                current.Sc_runtime.sc_request_annotation in
+              let polarity = match current.Sc_runtime.sc_request_kind with
+                | Sc_runtime.SC_cas_expected _ _ polarity -> polarity
+                | Sc_runtime.SC_cas_object polarity -> polarity
+                | Sc_runtime.SC_cas_writeback polarity -> polarity
+                | _ -> Core.Pos
+              end in
+              let next = Core_reduction.Step_action_request2 annotation polarity
+                "SC compare-exchange phase" loc tid false (SEU.return request) in
+              ND.update (fun state -> <| state with sc_pending=
+                (tid, next) :: List.filter (fun (other, _) -> other <> tid) state.sc_pending |>)
+          | Nothing -> ND.kill (ND.Other (DErr_concurrency "SC compare-exchange phase has no owner"))
+        end
+    | Nothing -> ND.kill (ND.Other (DErr_concurrency "SC compare-exchange requested outside SC mode"))
+  end
+
+let sc_cas_read_representation =
+  ND.get >>= fun state ->
+  match state.sc_state with
+    | Just sc ->
+        match Sc_runtime.sc_current_read_representation sc with
+          | Just bytes -> ND.return bytes
+          | Nothing -> ND.kill (ND.Other (DErr_concurrency "SC compare-exchange has no unique completed read"))
+        end
+    | Nothing -> ND.kill (ND.Other (DErr_concurrency "SC compare-exchange requested outside SC mode"))
+  end
+
+let sc_cas_current_effects state =
+  match state.sc_state with Nothing -> {} | Just sc -> sc.Sc_runtime.sc_current_effects end
+
 val action_request_with:
   Loc.t -> Mem.thread_id -> (driver_state -> Core_run.completion_receipt) -> Core_reduction.action_request2 Core_run.thread_state -> driverM unit
 let action_request_with loc tid receipt request =
@@ -798,6 +840,61 @@ let action_request_with loc tid receipt request =
       )
 *)
   
+  | Core_reduction.CompareExchangeRequest2 weak ty object_ptr expected desired _ _ complete ->
+      driver_liftMem (Mem.load loc ty expected) >>= fun (footprint, _) ->
+      sc_cas_read_representation >>= fun expected_bytes ->
+      ND.get >>= fun state ->
+      sc_suspend_cas tid loc (Core_reduction.CompareExchangeObjectRequest2 weak ty object_ptr
+        expected desired expected_bytes (sc_cas_current_effects state) [footprint] complete)
+
+  | Core_reduction.CompareExchangeObjectRequest2 weak ty object_ptr expected desired expected_bytes previous footprints complete ->
+      (* Only this object read/conditional store is indivisible. Expected's
+         ordinary read and failure write-back are separate scheduler phases. *)
+      let atomic_ty = Ctype.Ctype [] (Ctype.Atomic (Ctype.unatomic ty)) in
+      driver_liftMem (Mem.load loc atomic_ty object_ptr) >>= fun (read_footprint, actual) ->
+      sc_cas_read_representation >>= fun object_bytes ->
+      let comparison = Sc_representation.sc_compare_representation
+        (List.map Mem.representation_bits object_bytes) (List.map Mem.representation_bits expected_bytes) in
+      (match comparison with
+        | Sc_representation.SC_same_bits ->
+            if weak then ND.pick (SK_misc ["SC weak compare-exchange spurious failure"]) [true; false]
+            else ND.return true
+        | Sc_representation.SC_different_bits -> ND.return false
+        | Sc_representation.SC_unspecified_representation ->
+            ND.kill (ND.Other (DErr_concurrency "SC representation gap: compare-exchange has unspecified bytes"))
+        | Sc_representation.SC_representation_size_mismatch ->
+            ND.kill (ND.Other (DErr_concurrency "SC representation gap: compare-exchange read sizes differ"))
+      end) >>= fun succeeded ->
+      if succeeded then
+        driver_liftMem (Mem.store loc atomic_ty false object_ptr desired) >>= fun write_footprint ->
+        ND.update (fun state -> <| state with core_state= Core_run.update_thread_state tid
+          (complete (sc_merge_receipt previous (receipt state))
+            (footprints ++ [read_footprint; write_footprint]) true) state.core_state |>)
+      else
+        ND.get >>= fun state ->
+        sc_suspend_cas tid loc (Core_reduction.CompareExchangeWritebackRequest2 ty expected actual
+          (previous union sc_cas_current_effects state) (footprints ++ [read_footprint]) complete)
+
+  | Core_reduction.CompareExchangeWritebackRequest2 ty expected actual previous footprints complete ->
+      driver_liftMem (Mem.store loc ty false expected actual) >>= fun footprint ->
+      ND.update (fun state -> <| state with core_state= Core_run.update_thread_state tid
+        (complete (sc_merge_receipt previous (receipt state)) (footprints ++ [footprint]) false) state.core_state |>)
+
+  | Core_reduction.FenceRequest2 _ mk_th_st' ->
+      ND.get >>= fun before ->
+      match before.sc_state with
+        | Nothing -> ND.kill (ND.Other (DErr_concurrency "SC fence requested outside SC mode"))
+        | Just sc ->
+            match Sc_runtime.sc_record_fence sc with
+              | Nothing -> ND.kill (ND.Other (DErr_concurrency "SC fence has no matching owned request"))
+              | Just sc' ->
+                  ND.update (fun dr_st ->
+                    let after = <| dr_st with sc_state= Just sc' |> in
+                    <| after with core_state= Core_run.update_thread_state tid
+                        (mk_th_st' (receipt after)) after.core_state |>)
+            end
+      end
+
   | Core_reduction.KillRequest2 is_dynamic ptr_val mk_th_st' ->
       let () = Debug.print_debug_located 3 [Debug.DB_driver] loc (fun () -> "REQUEST KILL") in (* DEBUG *)
       driver_liftMem (Mem.kill loc is_dynamic ptr_val) >>
@@ -1471,19 +1568,26 @@ let sc_enable = ND.ND (fun dr_st ->
   match Mem.begin_observing dr_st.layout_state with
     | Nothing -> (ND.NDkilled (ND.Other (DErr_concurrency "SC port gap: memory observer unavailable")), dr_st)
     | Just memory -> (ND.NDactive (), <| dr_st with layout_state= memory;
-        sc_state= Just Sc_runtime.sc_initial_state |>)
+        sc_state= Just Sc_runtime.sc_initial_state; sc_pending= [] |>)
   end)
 
 let sc_kind_of_request polarity = function
   | Core_reduction.LoadRequest2 order _ _ _ -> Sc_runtime.SC_access order polarity
   | Core_reduction.StoreRequest2 order _ _ _ _ _ -> Sc_runtime.SC_access order polarity
   | Core_reduction.SeqRMWRequest2 _ _ _ _ -> Sc_runtime.SC_seq_rmw
+  | Core_reduction.CompareExchangeRequest2 _ _ _ _ _ success failure _ ->
+      Sc_runtime.SC_cas_expected success failure polarity
+  | Core_reduction.CompareExchangeObjectRequest2 _ _ _ _ _ _ _ _ _ -> Sc_runtime.SC_cas_object polarity
+  | Core_reduction.CompareExchangeWritebackRequest2 _ _ _ _ _ _ -> Sc_runtime.SC_cas_writeback polarity
+  | Core_reduction.FenceRequest2 order _ -> Sc_runtime.SC_fence order
   | _ -> Sc_runtime.SC_lifetime polarity
 end
 
 type sc_step_progress = SC_continue | SC_halted | SC_blocked
 
 let sc_service_step tid step =
+  ND.update (fun state -> <| state with sc_pending=
+    List.filter (fun (other, _) -> other <> tid) state.sc_pending |>) >>
   let resume th_st =
     ND.update (fun dr_st -> <| dr_st with
       core_state= Core_run.update_thread_state tid th_st dr_st.core_state;
@@ -1492,8 +1596,11 @@ let sc_service_step tid step =
   match step with
     | Core_reduction.Step_action_request2 annotation polarity _ loc _ _ request_m ->
         liftCore_run request_m >>= fun request ->
-        sc_begin_request tid (sc_kind_of_request polarity request) annotation >>
-        action_request_with loc tid sc_receipt_from_state request >> ND.return SC_continue
+        let kind = sc_kind_of_request polarity request in
+        if Sc_runtime.sc_request_in_model kind then
+          sc_begin_request tid kind annotation >>
+          action_request_with loc tid sc_receipt_from_state request >> ND.return SC_continue
+        else ND.kill (ND.Other (DErr_concurrency "SC model excludes the requested memory order"))
     | Core_reduction.Step_memop_request2 annotation loc memop values _ _ resume_request ->
         sc_begin_request tid (Sc_runtime.SC_memop memop) annotation >>
         perform_memop_with loc memop values tid
@@ -1578,10 +1685,13 @@ let sc_service_step tid step =
 
 let sc_choices sc dr_st =
   List.concat (List.map (fun (tid, th_info) ->
-          List.map (fun step -> (tid, step))
-            (List.filter (function Core_reduction.Step_blocked2 -> false | _ -> true end)
-              (Core_reduction.step_ctx_with (Just (Sc_runtime.sc_control tid sc))
-                dr_st.layout_state dr_st.core_file dr_st.core_extern tid th_info))
+          match List.lookup tid dr_st.sc_pending with
+            | Just pending -> [(tid, pending)]
+            | Nothing -> List.map (fun step -> (tid, step))
+                (List.filter (function Core_reduction.Step_blocked2 -> false | _ -> true end)
+                  (Core_reduction.step_ctx_with (Just (Sc_runtime.sc_control tid sc))
+                    dr_st.layout_state dr_st.core_file dr_st.core_extern tid th_info))
+          end
         ) dr_st.core_state.Core_run.thread_states)
 
 (* The authoritative relation includes every current Core step. No normalization
@@ -1767,6 +1877,7 @@ let initial_driver_state_with address_space_top run_st file fs_state =
     fs_state=          fs_state;
     trace=             [];
     sc_state=          Nothing;
+    sc_pending=        [];
     symbolic_assoc=    Map.empty;
     blocked=           false;
     dr_step_counter=   0;

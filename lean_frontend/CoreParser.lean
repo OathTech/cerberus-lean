@@ -84,7 +84,7 @@ def lexSym (s : String) : P Unit := do
 /-- Result of parsing a numeric literal: either integer or floating-point. -/
 inductive NumLit where
   | int : Int → NumLit
-  | float : Float → NumLit
+  | float : CerbFloat.Value → NumLit
 
 /-- Parse a numeric literal (integer or float).
     Integer: [0-9]+
@@ -1160,8 +1160,8 @@ private partial def pPexprMinus : P PE := do
   -- pp's output (`string_of_float neg_infinity` = "-inf"), not `0 - inf`.
   let special ← attempt (do
       let id ← lexIdent
-      if id == "inf" then pure (some (-(1.0 / 0.0 : Float)))
-      else if id == "nan" then pure (some (-(0.0 / 0.0 : Float)))
+      if id == "inf" then pure (some (CerbFloat.Value.ofBits 0xfff0000000000000))
+      else if id == "nan" then pure (some (CerbFloat.Value.ofBits 0xfff8000000000000))
       else fail "not a float special") <|> pure none
   match special with
   | some f => return (mkPE (PEval (Vobject (OVfloating f))))
@@ -1518,8 +1518,8 @@ partial def pPexprAtom (minPrec : Nat := 0) : P PE := do
       -- token, a Parser.Error in pexpr position (zero-discrepancy Z2-CP-11:
       -- this made it `PEsym "_"`).
       if id == "_" then fail "CoreParser: `_` is not a pexpr (core_lexer.mll:328 UNDERSCORE; zero-discrepancy Z2-CP-11)"
-      else if id == "inf" then return (mkPE (PEval (Vobject (OVfloating (1.0 / 0.0 : Float)))))
-      else if id == "nan" then return (mkPE (PEval (Vobject (OVfloating (0.0 / 0.0 : Float)))))
+      else if id == "inf" then return (mkPE (PEval (Vobject (OVfloating (CerbFloat.Value.ofBits 0x7ff0000000000000)))))
+      else if id == "nan" then return (mkPE (PEval (Vobject (OVfloating (CerbFloat.Value.ofBits 0x7ff8000000000000)))))
       -- Handle __conv_int__
       else if id == "__conv_int__" then
         lexSym "("

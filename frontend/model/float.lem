@@ -2,7 +2,7 @@ open import Bool Basic_classes Num
 
 type float
 declare ocaml target_rep type float = `float`
-declare lean target_rep type float = `Float`
+declare lean target_rep type float = `CerbFloat.Value`
 
 (* Relational operations *)
 

@@ -26,11 +26,15 @@ UNIT_TESTS=(
     "monadic-failstop-test"
     "sc-prototype-test"
     "sc-protocol-test"
+    "sc-fences-test"
+    "sc-cas-test"
+    "sc-representation-test"
     # allocator soundness (upstream-tray draft 44, 2026-09-16): the four draft-44
     # states on the actual CerbMem.allocator; its import compiles the kernel theorem
     "allocator-soundness-test"
     # semantics-audit repairs D1 (2026-09-11): CerbFloat.of_string binary64 bit-pattern pins
     "float-literal-test"
+    "float-representation-test"
     # semantics-audit repairs D3 (2026-09-11): Ctype_aux.are_compatible array-bound arm (finding 5)
     "are-compatible-test"
     # parser-progress-measure D4.2 (2026-09-15): the many/many1 restatement's equivalence theorems
@@ -81,7 +85,7 @@ for test in "${TESTS[@]}"; do
     # minimum, and the second run checks a larger caller-selected budget.
     if [[ "$test" == monadic-failstop-test ]]; then test_args=(2 17); fi
     if [[ "$test" == sc-prototype-test ]]; then test_args=(17 64); fi
-    if [[ "$test" == sc-protocol-test ]]; then test_args=(64); fi
+    if [[ "$test" == sc-protocol-test || "$test" == sc-fences-test || "$test" == sc-cas-test ]]; then test_args=(64); fi
     if "$bin" "${test_args[@]}"; then
         echo "${GREEN}✓ $test PASSED${NC}"
         total_pass=$((total_pass + 1))

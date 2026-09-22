@@ -181,7 +181,7 @@ def stringFromPointerValue (_isVerbose : Bool) (ptrval : CerbMem.PointerValue) :
 
 /-- Mirrors Decode.format_string_of_float (decode.ml:228-232):
     Printf.sprintf "%.<prec>f" — exact impl in CerbFloat.formatFixed. -/
-def format_string_of_float (prec : Nat) (f : Float) : String :=
+def format_string_of_float (prec : Nat) (f : CerbFloat.Value) : String :=
   CerbFloat.formatFixed prec f
 
 /-! ## Residual placeholders — the ENUMERATED pretty-printer-arc residual

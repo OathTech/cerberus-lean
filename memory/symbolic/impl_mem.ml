@@ -574,6 +574,7 @@ let initial_mem_state (_address_space_top: Z.t) = Defacto_memory.impl_initial_me
    Absence is explicit at both initialization and extraction; no empty stream
    can be mistaken for a complete observation. Existing execution is unchanged. *)
 type representation_byte = unit
+let representation_bits (_: representation_byte) : Z.t option = None
 type memory_observation =
   (pointer_value, mem_value, representation_byte) Mem_common.memory_observation
 let begin_observing (_: mem_state) : mem_state option = None

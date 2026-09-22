@@ -55,6 +55,12 @@ type representation_byte
 declare ocaml target_rep type representation_byte = `Impl_mem.representation_byte`
 declare lean target_rep type representation_byte = `CerbMem.AbsByte`
 
+(* A projection of already observed bytes, never a new memory access.
+   Nothing preserves an unspecified byte or an unavailable adapter. *)
+val representation_bits: representation_byte -> maybe integer
+declare ocaml target_rep function representation_bits = `Impl_mem.representation_bits`
+declare lean target_rep function representation_bits = `CerbMem.representationBits`
+
 type memory_observation = Mem_common.memory_observation pointer_value mem_value representation_byte
 
 (* Nothing means this memory-model implementation has no observation adapter.

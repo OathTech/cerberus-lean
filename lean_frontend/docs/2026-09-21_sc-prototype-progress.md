@@ -5,7 +5,7 @@ This file records evidence and next actions; it does not replace the charter.
 
 ## Current status
 
-**2026-09-22: SC protocol checkpoint validated after exact diagnostic review. Fresh Tier A and three-engine checks pass; earlier unaffected Tier B checks retain identical executable inputs. Atomic/fault integration continues under the user's fail-closed policy.**
+**2026-09-22: CAS, fences and the NaN representation repair are promoted but uncommitted. Component checks and Tier A pass; the first full run stopped at a new GCC fixture disagreement after 28 passing lanes. The fixture has a reviewed refinement with a retained negative control; fresh validation follows. Public SC verdict checking remains incomplete.**
 Branch `arc/sc-prototype`, worktree
 `/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype`.
 Implementation base: `5407597d9eeba0259d65b728e86a860ad4614ab3`.
@@ -13,9 +13,9 @@ Implementation base: `5407597d9eeba0259d65b728e86a860ad4614ab3`.
 | Package | Status | Next evidence |
 |---|---|---|
 | S0 reference/baseline/instruments | Full pre-change baseline passed (39/39 commands); contract, inventory and repaired harness implemented | Fresh tests and integration gates for the changes |
-| S1 driver/scheduler/threads | Production protocol, paired controls, connection plants and diagnostic repair validated | Retain checkpoint and continue atomic phases |
-| S2 effects/representation/sequencing | Passive journal, checked lift and annotated requests integrated; paired controls pass | Remaining representation/location/lifetime composition and correspondence |
-| S3 SC atomics/races/verdicts | Fence draft passes paired controls; padding-CAS upstream gap will fail closed | Atomic/fault paths, races, C entry and diagnostic families |
+| S1 driver/scheduler/threads | Protocol checkpoint committed at `06681abd3`; pending requests now support CAS phases | Validate current atomic slice |
+| S2 effects/representation/sequencing | Observation journal and representation repair integrated; ordinary RMW resumption and byte-source accounting drafted separately | Remaining grouping/location/lifetime composition and correspondence |
+| S3 SC atomics/races/verdicts | CAS/fence component and C recording controls pass; unspecified CAS bytes fail closed | Fresh integration, race/consistency checking and C entry |
 | S4 operational API/laws | Checked ND lifting and same-fuel erasure integrated and compiled | Importable production definitions and driver laws |
 | S5 integrated completion | Not started | Final inventory, fresh gates and reproducible report |
 
@@ -76,12 +76,16 @@ for S0 onward; these setup checks do not claim those results.
 
 ## Next action
 
-Checkpoint the validated protocol slice, then promote and integrate the paired
-fence draft. Continue atomic requests with separate expected-read, atomic-object
-and failed-write-back phases, representation comparison, and fault/race checking.
+The CAS/fence/float checkpoint passes fresh Tier A+B (39/39), the 864-case
+three-engine comparison and its production connection controls. Its retained
+[evidence](2026-09-21_sc-prototype-evidence/atomic/README.md) records unchanged
+sources and the same 40 existing Lean discrepancy IDs. This is one implementation
+slice, not the completed prototype or a whole-program SC verdict engine.
+
+Continue ordinary RMW scheduling, byte-source composition, helper ordering and
+interruption, the race/consistency checker and public operational/C interfaces.
 The [user's fail-closed policy](2026-09-21_sc-upstream-gap-policy.md) is resolved;
-no further padding decision is pending. The remaining work is implementation,
-reference checking and validation, not routine user approval.
+no further padding decision is pending. The customer remains strictly read-only.
 
 ## S0 working evidence
 
@@ -356,3 +360,182 @@ CAS phase edges at `do_po_e` and actions at `intermediate_to_bmc_actions`; the
 draft must preserve those edges and the indivisible object RMW while allowing
 interleavings around expected reads/write-back. No production CAS success is
 claimed by this checkpoint.
+
+## Atomic foundations promoted; CAS phases in draft
+
+[AGENT] After local protocol commit `06681abd3`, promoted the reviewed fence
+request/receipt and weak-order refusal paths, the shared representation
+comparison, five kernel laws, and the paired memory-byte projection. The
+projection reads existing byte bits and preserves absence; it does not perform
+another memory access or alter provenance/copy metadata. Non-concrete adapters
+explicitly return unavailable. Protocol test helpers are shared by the two
+test entries without changing the 18 original controls.
+
+Both production targets regenerate with shared source hash
+`5c43f8af980629af5bb2b849c9197a7792cd35a5f98ecbeddf76653f9aa09954`;
+all 54 handwritten copies match. Both production builds pass (Lean 412 jobs).
+The test build passes (277 jobs), followed by the 18 protocol controls, seven
+fence/weak-order groups, and 11 representation controls. Logs and the guarded
+promotion manifest are `.tmp/sc-prototype/atomic-foundations-*`. This new slice
+is uncommitted and has not run its integration ladder or register reviews.
+
+The separate `.tmp/sc-prototype/sc-cas-draft` adds scheduler-owned suspended
+Core requests for three CAS phases, actual completed-read byte extraction,
+strong comparison, weak spurious failure and failure write-back. Only the
+object read/conditional store is indivisible. Completion retains all phase
+predecessors and footprints; phase source edges follow upstream BMC's CAS
+`do_po_e` edges. Both Lem targets generate (attempt 3), but compile checks,
+the scheduler-choice law update and actual execution controls remain. The first
+generation attempt exposed unsupported Lem or-pattern syntax; the second used
+an incorrect basename-only dependency resolver. Attempt 3 preserves original
+dependency paths. These were draft instrumentation failures, not C outcomes.
+Do not promote the CAS sources or claim CAS support on generation alone.
+
+## CAS execution controls and floating-point representation repair
+
+[AGENT, 2026-09-22] CAS draft generation attempt 4 and both target compilation
+pass. The scheduler membership theorem now characterizes exactly the offered
+pending request or runnable ordinary Core step of each active thread. The paired
+original 18 protocol controls and nine integer/failure/interleaving CAS groups
+pass; the concurrency witnesses enumerate 175 and 210 alternatives. These remain
+unchecked recording controls, not completed SC race/consistency verdicts.
+
+Three double CAS controls exposed an inherited Lean NaN payload loss: eleven
+of twelve CAS groups pass, while unequal-NaN failure write-back loses the
+object's payload. Both the interpreter and a fresh native closure reproduce it.
+Actual native OCaml passes all twelve. Two sequential C copy reproductions give
+pristine/fork `Specified(1)` versus Lean `Specified(0)`. This is a port defect
+with known upstream behavior, so the upstream-gap fail-closed policy does not
+excuse leaving it unimplemented.
+
+The [float repair record](2026-09-22_sc-float-representation-repair.md) details
+the evidence, failed probe attempts and isolated `.tmp/sc-prototype/sc-float-draft`.
+The draft retains binary64 bits in a transparent value carrier, with two kernel
+round-trip laws. All 784 rows of an actual OCaml arithmetic matrix match the
+interpreted draft. Both Lem targets generate; leaf modules compile. Next: check
+the full frontend closure and native memory/CAS behavior, promote only after
+those checks, then continue atomic/race checker integration. Production remains
+the uncommitted atomic foundations; neither CAS nor the float draft is promoted.
+
+## CAS and float repair promoted; production controls pass
+
+[AGENT] The fresh native float-repair frontend matches both references on all
+five C regressions. The combined CAS draft passes all twelve groups, including
+the previously failing NaN write-back. The repair and CAS are now promoted under
+a source-hash guard (`cas-float-promotion.json`). Both targets regenerate and
+both production builds pass; all 55 handwritten copies match. Lean builds all
+415 jobs. All seven native component executables pass, including the 784-row
+arithmetic reference table, 42 literal pins and repaired formatting controls.
+Five C regressions are added to the existing float lane with new MATCH entries.
+
+The [atomic slice review](2026-09-22_sc-atomic-slice-review.md) explains shared
+semantics, oracle drift and the 240-site failure census (173 invariant-unreachable,
+48 reachable, 19 unknown; zero discardable). Ten old failure arms preserve their
+classes under a helper rename; two internal CAS phase arms have source-invariant
+reviews. Historical fork-manifest comments and renumber metadata are retained.
+Next: fresh integration gates/three-engine report and C-to-CAS controls, then
+continue SC race/consistency and remaining atomic integration. This slice is
+still uncommitted and the public SC entry remains explicitly incomplete.
+
+
+Integration attempt status: `cas-float-fast-20260922` is an environment-launch
+failure (no `scripts/ce`, all lanes refused). `cas-float-fast-env-20260922` found
+an F5 notation guard collision on the numeric anonymous constructor in
+`CerbFloatValue.binary`; this has been replaced by the definitionally equal
+named `ofBits` call, with the guard unchanged. The direct guard passes. The
+runner was stopped and retained its report before sources changed; production
+Lean rebuild 2 is underway. Do not count either attempt as Tier A certification.
+
+
+The F5 repair rebuild passes all 415 jobs and leaves the native executable
+byte-identical. Seven actual C-to-Core recording controls now agree exhaustively
+between the native engines, preserving full duplicate token sequences; three
+NaN/signed-zero C controls agree as selected traces only. Original larger
+exhaustive timeouts remain recorded. Pristine/fork/Lean all reject the `_Atomic
+double` qualifier spelling used by an initial fixture; the accepted
+`_Atomic(double)` form reaches CAS. See the atomic slice review for this separate
+upstream frontend gap. Next integration attempt uses the loaded project environment
+and the unchanged fuel-notation guard; no current Tier A success is claimed.
+
+## Current integration and next scheduling drafts
+
+`cas-float-fast-repair-20260922` passes all 16 Tier A lanes with unchanged
+sources. The full run passes its first 28 lanes, including Tier A, libxml2,
+fixture checks and all spec-lab families. B7 then finds a new disagreement in
+`109-nan-arithmetic.c`: native GCC selects the other NaN operand's payload at
+`-O0`. The runner was stopped through normal SIGTERM cleanup before any source
+edit; its report is **incomplete**, with B7 interrupted and source unchanged.
+The original mismatch and partial captures are retained, not counted as a pass.
+
+The [float repair record](2026-09-22_sc-float-representation-repair.md) records
+the minimized diagnostic: GCC prints payload 2 at `-O0` and payload 1 at `-O2`;
+pristine/fork/Lean consistently implement the pinned OCaml choice. The new
+ordinary C fixture now gives both NaNs the same sign and payload, retaining a
+signaling operand to test quieting. It returns zero at both GCC optimization
+levels and on pristine/fork/Lean. The earlier native recorder still returns
+one on the refined input, so it continues to detect the old payload-loss defect.
+The 784-row exact OCaml matrix retains distinct operand signs/payloads. No
+semantic implementation, expected result, comparator or triage ledger changes.
+Fresh integration and the mandatory three-engine report are required after
+this fixture edit. Scratch evidence: `nan-gcc-fixture-review/`.
+
+Independent next-slice sources remain under `.tmp/sc-prototype/`:
+`sc-byte-sources-draft` now generates both targets, but is not compiled or
+promoted; `sc-seq-rmw-draft` splits ordinary read/modify/write only in the SC
+scheduler and retains the sequential handler byte-for-byte, but is not yet
+generated or tested. Its source rationale is Memarian's thesis pp. 64/67:
+ordinary RMW is indivisible against indeterminate calls within its own thread,
+while another thread can interleave between read and write. `helper-resumption-review.md`
+records the remaining general helper/FS resumption issues, not a claimed solution.
+`remaining-atomic-paths/` retains seven pristine/fork/Lean frontend probes,
+including the existing failures for atomic postfix/exchange/fetch/signal-fence
+paths and the successful upstream `atomic_init` SC-store elaboration. These
+refusals and failures are not counted as feature support. `plant_atomic_production.py`
+is prepared for fresh production-connection mutation tests.
+
+## CAS/float checkpoint validation completed
+
+The fresh `cas-float-full-fixture-repair-20260922` run passes all 39 required
+Tier A/B commands; every exit is zero, the complete tier is selected, sources
+are unchanged and there are no artifact issues. B7 passes 2,006 GCC cases with
+no baseline regression; B9 passes 93 observation mutation checks. The mandatory
+three-engine run passes 864 rows: pristine/fork 827 semantic agreements, 14
+reviewed differences, 21 matching failures and two interface agreements; Lean
+822 agreements, 28 differences, 12 both-undecodable and two inapplicable rows.
+All 40 discrepancy IDs are unchanged from the protocol checkpoint. These
+classifications are preserved, not relabeled as agreements. The earlier failed
+and incomplete release attempts remain retained with their original statuses.
+
+Six fresh production controls/mutations pass: positive CAS and fence controls,
+then removal of weak spurious failure, invention of an unspecified-representation
+mismatch, removal of CAS phase edges and admission of weaker orders. Two selected
+pointer-CAS C traces also pass, including dereferencing the pointer written back
+to expected on failure; their original exhaustive timeout remains incomplete.
+The legacy `Driver.trace` review is resolved: it is an existing lossy diagnostic
+summary. The complete SC occurrence journal is the interface for checking and
+reasoning; optional legacy CAS display entries are not a missing memory effect.
+
+The [atomic evidence index](2026-09-21_sc-prototype-evidence/atomic/README.md)
+retains reports, commands, raw execution observations, source identities,
+component controls, plants and failed attempts. Archive members are verified by
+size and hash. Successful Cabs AST exports are inventoried generated inputs;
+all execution stdout/stderr remains byte-exact. Release certification is still
+incomplete: passing the command ladder does not complete this charter's
+semantic, interface and final-review obligations.
+
+The next ordinary-RMW draft now generates both targets and passes seven native
+control groups in each engine, including inter-thread read/write interleaving,
+same-thread call exclusion, weak-order refusal, failed writes and intervening
+lifetime end. The same Lean implementation passes protocol/CAS/fence regressions.
+Six C inputs parse/elaborate; the OCaml recording entry builds. Its Lean entry
+has one pending native Main compilation after a short scratch timeout, which
+remains incomplete. Resume that compile and run the actual paired C controls.
+
+The byte-source draft's first generation and five Lean memory controls/laws
+pass; the OCaml keyword collision has a source repair awaiting generation 2,
+with three additional memory controls prepared. The helper-order candidate
+remains ungenerated and requires a source-order review before promotion.
+Separate resumption notes retain the concrete filesystem snapshot hazards.
+Three kernel recorder-retention laws pass on current production definitions;
+they are not yet exported or a claim of ISO correspondence. No follow-up draft
+is included in this checkpoint's executable-source certification.

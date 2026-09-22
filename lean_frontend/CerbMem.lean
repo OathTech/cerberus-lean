@@ -72,7 +72,7 @@ inductive IntegerValue where
 
 /-- floating_value = float — impl_mem.ml:306-308
     The concrete model uses raw OCaml floats -/
-abbrev FloatingValue := Float
+abbrev FloatingValue := CerbFloat.Value
 
 /-- mem_value — impl_mem.ml:310-317
     7 constructors (no MVdelayed/MVcomposite — those are defacto model only) -/
@@ -129,6 +129,11 @@ structure AbsByte where
   copyOffset : Option Int := none
   value : Option UInt8 := none
   deriving BEq, Inhabited, Repr
+
+/-- Project only specified representation bits. Provenance and copy offsets
+    remain in the original byte; absence does not choose an arbitrary value. -/
+def representationBits (byte : AbsByte) : Option Int :=
+  byte.value.map (fun value => Int.ofNat value.toNat)
 
 /-- Passive object-model observations, shared with the OCaml implementation.
     The driver separately supplies actor, source sequencing and memory order. -/
@@ -1066,7 +1071,7 @@ def reconstructValue_lemFuel (lemFuel : Nat) (ambient : TagDefs)
     match bytesToInt bytes false with
     | some n =>
       let bits : UInt64 := n.toNat.toUInt64
-      .MVfloating fty (Float.ofBits bits)
+      .MVfloating fty (CerbFloat.Value.ofBits bits)
     | none => .MVunspecified ty
   | Ctype _ (.Pointer _ pointeeCty) =>
     -- impl_mem.ml:995-1058. MVpointer stores the POINTEE type: every
@@ -1247,7 +1252,7 @@ def reconstructValue_indexed_lemFuel (lemFuel : Nat) (ambient : TagDefs)
     match bytesToInt bytes false with
     | some n =>
       let bits : UInt64 := n.toNat.toUInt64
-      .MVfloating fty (Float.ofBits bits)
+      .MVfloating fty (CerbFloat.Value.ofBits bits)
     | none => .MVunspecified ty
   | Ctype _ (.Pointer _ pointeeCty) =>
     match bytesToInt bytes false with
@@ -1738,7 +1743,7 @@ def strFval (s : String) : FloatingValue := CerbFloat.of_string s
 
 /-- case_fval — impl_mem.ml:2526-2527
     In the concrete model, always calls fconcrete -/
-def caseFval {α : Type} (fv : FloatingValue) (_ : Unit → α) (onConcrete : Float → α) : α :=
+def caseFval {α : Type} (fv : FloatingValue) (_ : Unit → α) (onConcrete : CerbFloat.Value → α) : α :=
   onConcrete fv
 
 def opFval (op : floating_operator) (v1 v2 : FloatingValue) : FloatingValue :=
@@ -1751,7 +1756,7 @@ def ltFval (v1 v2 : FloatingValue) : Bool := v1 < v2
 def leFval (v1 v2 : FloatingValue) : Bool := v1 <= v2
 
 def fvfromint (iv : IntegerValue) : FloatingValue :=
-  match iv with | .IV _ n => Float.ofInt n
+  match iv with | .IV _ n => CerbFloat.Value.ofInt n
 /-- ivfromfloat — impl_mem.ml:2553-2554: `IV (Prov_none, Z.of_float fval)`.
     Z.of_float truncates toward ZERO keeping the sign (verified against
     zarith: of_float (-2.9) = -2); CerbFloat.truncToInt mirrors that

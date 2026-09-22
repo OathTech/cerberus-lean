@@ -480,6 +480,10 @@ module Concrete : Memory = struct
   end
   
   type representation_byte = AbsByte.t
+  (* Existing representation bits only. Provenance/copy metadata remains in
+     the memory value and journal; unspecified bytes remain unspecified. *)
+  let representation_bits (byte: representation_byte) =
+    Option.map (fun c -> Z.of_int (Char.code c)) byte.AbsByte.value
   type memory_observation =
     (pointer_value, mem_value, representation_byte) Mem_common.memory_observation
 

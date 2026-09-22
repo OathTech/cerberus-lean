@@ -1,43 +1,13 @@
-import LemLib
-/-
-  Floating-point operations for Cerberus.
-  Corresponds to: util/cerb_floating.ml and OCaml float builtins.
-
-  Maps Cerberus float to Lean's Float (IEEE 754 double).
-  This is a leaf module — no imports from generated code.
--/
-
--- Ord Float — a total, reflexive order (sem:N8 fix: the previous
--- `if x<y .lt else if x==y .eq else .gt` returned .gt for EVERY NaN
--- comparison, including `compare nan nan` — irreflexive, an unlawful
--- order once a float keys a set). Mirrors OCaml Stdlib.compare's key
--- properties: NaN equals itself and sorts below every non-NaN value
--- (+0.0/-0.0 compare equal here — OCaml's compare distinguishes them).
--- DECLARED UNREACHABLE (zero-discrepancy Z-62, charter §2.7): this instance
--- and the `floatMul/Add/Sub/Div/of_int/floatEq/Lt/Le` helpers are referenced
--- only from generated/Defacto_memory.lean and generated/Float.lean (grep),
--- never from the concrete exec cone (`CerbMem.opFval` uses the Float ops
--- directly); no `Set Float`/`compare` on floats exists in the exec cone
--- (AilSyntax compares the literal STRING). Mirror `Stdlib.compare`'s ±0.0
--- distinction if a float-keyed set ever enters an exec path.
-instance : Ord Float where
-  compare x y :=
-    if x < y then .lt
-    else if y < x then .gt
-    else match x.isNaN, y.isNaN with
-      | true,  true  => .eq
-      | true,  false => .lt
-      | false, true  => .gt
-      | false, false => .eq
+import CerbFloatValue
 
 namespace CerbFloat
 
-def floatEq (x y : Float) : Bool := x == y
-def floatLt (x y : Float) : Bool := x < y
-def floatLe (x y : Float) : Bool := x <= y
+def floatEq (x y : Value) : Bool := x == y
+def floatLt (x y : Value) : Bool := x < y
+def floatLe (x y : Value) : Bool := x <= y
 
-def floatAdd (x y : Float) : Float := x + y
-def floatSub (x y : Float) : Float := x - y
+def floatAdd (x y : Value) : Value := x + y
+def floatSub (x y : Value) : Value := x - y
 /-- DOCUMENTED-DELIBERATE DIVERGENCE (upstream cerberus bug, recorded in
     lembugs/2026-08-19_upstream-float-mul.md): the OCaml target of lem's
     `Float.floatMul` is `Cerb_floating.mul`, which upstream defines as
@@ -50,11 +20,11 @@ def floatSub (x y : Float) : Float := x - y
     The concrete model's own op_fval (impl_mem.ml:2529-2537, mirrored by
     CerbMem.opFval) uses `*.` directly and is NOT affected — which is
     why today's corpus doesn't surface it. -/
-def floatMul (x y : Float) : Float := x * y
-def floatDiv (x y : Float) : Float := x / y
+def floatMul (x y : Value) : Value := x * y
+def floatDiv (x y : Value) : Value := x / y
 
 /-- Corresponds to: float_of_int in OCaml -/
-def of_int (n : Int) : Float := Float.ofInt n
+def of_int (n : Int) : Value := Value.ofInt n
 
 /-! ## String → Float parsing — correctly rounded (semantics-audit repairs, 2026-09-11)
 
@@ -95,7 +65,7 @@ def of_int (n : Int) : Float := Float.ofInt n
     sign, optional suffix), THE IEEE 754-2019 binary64 value nearest to the
     literal's exact rational value under round-to-nearest-even, with gradual
     underflow to subnormals and signed zero, and overflow to ±inf — in exact
-    `Nat` arithmetic on `num/den`, assembled bit by bit with `Float.ofBits`.
+    `Nat` arithmetic on `num/den`, assembled bit by bit with `Value.ofBits`.
     NO `Float` arithmetic happens before that final assembly:
     `Float.ofNat`/`Float.scaleB`/`Float.ofScientific` — the pre-2026-09-11
     implementation — WERE the defect (finding 4 of the 2026-09-11 semantics
@@ -284,7 +254,7 @@ private def parseHex (cs : List Char) : Option (Nat × Int × Nat) := do
     trailing `f`/`F`/`l`/`L` is dropped; a leading `-`/`+` sets the sign (a
     negative zero is a negative zero); `0x`/`0X` selects the hexadecimal form.
     Malformed input: OCaml raises `Failure` — mirrored with `panic!`. -/
-def of_string (s : String) : Float :=
+def of_string (s : String) : Value :=
   let s' := if s.endsWith "f" || s.endsWith "F" || s.endsWith "l" || s.endsWith "L"
     then s.dropRight 1
     else s
@@ -299,7 +269,7 @@ def of_string (s : String) : Float :=
     | _ =>
       (parseDecimal cs).map fun (m, e10, nd) => scaledToBits neg m 10 e10 nd
   match bits with
-  | some b => Float.ofBits b
+  | some b => Value.ofBits b
   | none => failwithI s!"CerbFloat.of_string: {s} (OCaml Cerb_floating.of_string raises Failure)"
 
 /-! ## Exact decimal formatting (arc-10 S3, pp-placeholder text class)
@@ -317,7 +287,7 @@ test/Unit/PPTest.lean. -/
 
 /-- IEEE-754 double decomposition: (sign, m, e) with |f| = m·2^e (m = 0
     iff f = ±0). Finite inputs only (callers branch on nan/inf first). -/
-private def decomposeFinite (f : Float) : Bool × Nat × Int :=
+private def decomposeFinite (f : Value) : Bool × Nat × Int :=
   let bits := f.toBits
   let sign := bits >>> 63 == 1
   let expField := ((bits >>> 52) &&& 0x7FF).toNat
@@ -340,11 +310,10 @@ private def scaledRound (m : Nat) (e : Int) (p : Int) : Nat :=
 /-- C printf `%.<prec>f` of a double, exactly (glibc: correctly rounded,
     half-even on the exact binary value). Mirror target:
     Decode.format_string_of_float (ocaml_frontend/decode.ml:228-232).
-    nan/inf: "nan"/"inf"/"-inf" like glibc %f, except that a negative
-    NaN's "-nan" is not reproduced (DELIBERATE: Lean gives no portable
-    NaN sign access; unobservable in the corpora). -/
-def formatFixed (prec : Nat) (f : Float) : String :=
-  if f.isNaN then "nan"
+    nan/inf: "nan"/"-nan"/"inf"/"-inf" like glibc %f; the explicit
+    representation retains the sign of every NaN. -/
+def formatFixed (prec : Nat) (f : Value) : String :=
+  if f.isNaN then (if f.toBits >>> 63 == 1 then "-nan" else "nan")
   else if f.isInf then (if f < 0 then "-inf" else "inf")
   else
     let (sign, m, e) := decomposeFinite f
@@ -367,9 +336,9 @@ private def numDigits (n : Nat) : Nat := (toString n).length
     exact value); use `%e` style iff the decimal exponent X < -4 or
     X ≥ 12; strip trailing fraction zeros; exponent `e±dd` (≥ 2 digits);
     then valid_float_lexem appends "." iff the result is a plain integer
-    lexeme. NaN sign caveat as in formatFixed. -/
-def string_of_float (f : Float) : String :=
-  if f.isNaN then "nan"
+    lexeme. NaN sign is retained, as in formatFixed. -/
+def string_of_float (f : Value) : String :=
+  if f.isNaN then (if f.toBits >>> 63 == 1 then "-nan" else "nan")
   else if f.isInf then (if f < 0 then "-inf" else "inf")
   else
     let (sign, m, e) := decomposeFinite f
@@ -419,7 +388,7 @@ def string_of_float (f : Float) : String :=
     with panic! — nothing catches Z.Overflow on the OCaml path either).
     Implemented bit-exactly from the IEEE 754 representation (NOT via
     Float.toUInt64, which clamps negatives to 0). -/
-def truncToInt (f : Float) : Int :=
+def truncToInt (f : Value) : Int :=
   let bits := f.toBits
   let expBits := ((bits >>> 52) &&& 0x7FF).toNat
   let mantBits := (bits &&& 0xFFFFFFFFFFFFF).toNat
@@ -434,6 +403,6 @@ def truncToInt (f : Float) : Int :=
     if bits >>> 63 == 1 then -(mag : Int) else (mag : Int)
 
 /-- Corresponds to: int_of_float in OCaml (truncation toward zero). -/
-def to_int (f : Float) : Int := truncToInt f
+def to_int (f : Value) : Int := truncToInt f
 
 end CerbFloat
