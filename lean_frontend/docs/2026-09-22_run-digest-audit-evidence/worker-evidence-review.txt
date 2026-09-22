@@ -1,0 +1,25 @@
+Worker report: passed= True complete= True source unchanged= True
+Worker full report: all 39 commands passed; source and external identities equal
+Recorded artifact identities changed (this report does not certify artifact immutability): 16
+  _build/default/backend/driver/main.exe
+  _build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.cmo
+  _build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.cmt
+  _build/install/default/lib/cerberus-lib/frontend/cerb_frontend__Version.o
+  _build/install/default/lib/cerberus-lib/frontend/version.ml
+  _build/install/default/lib/cerberus-lib/mem/concrete/mem_concrete.a
+  _build/install/default/lib/cerberus-lib/mem/concrete/mem_concrete.cma
+  _build/install/default/lib/cerberus-lib/mem/concrete/mem_concrete.cmxs
+  _build/install/default/lib/cerberus-lib/mem/vip/mem_vip.a
+  _build/install/default/lib/cerberus-lib/mem/vip/mem_vip.cma
+  _build/install/default/lib/cerberus-lib/mem/vip/mem_vip.cmxs
+  _build/install/default/lib/cerberus/runtime/libc/libc.co
+  _build/install/default/lib/cerberus/runtime/libc/libc_inner_arg_temps.co
+  _build/install/default/lib/cerberus/runtime/libc/libm.co
+  driver_fresh.lean.sha256
+  driver_fresh.oracle.sha256
+Worker three-engine counts: {'interface_agreement': 2, 'matching_failure': 28, 'reviewed_difference': 7, 'semantic_agreement': 835}
+Worker three-engine Lean counts: {'lean_agreement': 830, 'lean_both_undecodable': 12, 'lean_difference': 28, 'lean_not_applicable': 2}
+lean worker final stamp: 'commit c103b3c379e5e3f180417a1cd8bcec1415a1690d +dirty\nbin f4e16efcba43c4aaa701030c64eb4f1d2821078190d282262ff3b53cd1d4a2b8\nsrc 4d8e61eb83e047689ca239b20c24993ab9688aa99956ecdfbe5046f940b1d9d4\n'
+oracle worker final stamp: 'commit c103b3c379e5e3f180417a1cd8bcec1415a1690d +dirty\nbin dd5642866f76d57fe1ffae7d205745c3239309caf793fe10e011a26d4a407337\nsrc 743ae0e0dd1a94b90a2a5ab2d029f8009766ec40818987988ca1ad4f4e0ab253\n'
+lean-generation worker final stamp: 'src f19d08b6ec36db3646f1ba39229119734cbe83f36170064b812a7e7846d326d1\ngen 424fbc24f298743a2ac56c3a7570751995e06d6614cd7f4c99b362d63b1df7f8\n'
+ocaml-generation worker final stamp: 'src f19d08b6ec36db3646f1ba39229119734cbe83f36170064b812a7e7846d326d1\ngen cc6fc62fa5298be787eead8ce52ef0170d74a348f6b8e1d1151662a4dbcc8753\n'

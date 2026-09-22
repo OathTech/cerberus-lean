@@ -1,0 +1,21 @@
+{
+  "driver_fresh.lean.sha256": {
+    "audit": "commit 24f19d6f5a63204afff1991e3fc1fcf5b28ad420\nbin f4e16efcba43c4aaa701030c64eb4f1d2821078190d282262ff3b53cd1d4a2b8\nsrc 4d8e61eb83e047689ca239b20c24993ab9688aa99956ecdfbe5046f940b1d9d4\n",
+    "worker_after": "commit c103b3c379e5e3f180417a1cd8bcec1415a1690d +dirty\nbin f4e16efcba43c4aaa701030c64eb4f1d2821078190d282262ff3b53cd1d4a2b8\nsrc 4d8e61eb83e047689ca239b20c24993ab9688aa99956ecdfbe5046f940b1d9d4\n"
+  },
+  "driver_fresh.oracle.sha256": {
+    "audit": "commit 24f19d6f5a63204afff1991e3fc1fcf5b28ad420\nbin 3512260391487e1bfb1a62811a767bdfeb03aeb802a377043db4e767ea95c7f5\nsrc 743ae0e0dd1a94b90a2a5ab2d029f8009766ec40818987988ca1ad4f4e0ab253\n",
+    "worker_after": "commit c103b3c379e5e3f180417a1cd8bcec1415a1690d +dirty\nbin dd5642866f76d57fe1ffae7d205745c3239309caf793fe10e011a26d4a407337\nsrc 743ae0e0dd1a94b90a2a5ab2d029f8009766ec40818987988ca1ad4f4e0ab253\n"
+  },
+  "lean_frontend/lem_sync.sha256": {
+    "audit": "src f19d08b6ec36db3646f1ba39229119734cbe83f36170064b812a7e7846d326d1\ngen 424fbc24f298743a2ac56c3a7570751995e06d6614cd7f4c99b362d63b1df7f8\n",
+    "worker_after": "src f19d08b6ec36db3646f1ba39229119734cbe83f36170064b812a7e7846d326d1\ngen 424fbc24f298743a2ac56c3a7570751995e06d6614cd7f4c99b362d63b1df7f8\n"
+  },
+  "ocaml_frontend/lem_sync.sha256": {
+    "audit": "src f19d08b6ec36db3646f1ba39229119734cbe83f36170064b812a7e7846d326d1\ngen cc6fc62fa5298be787eead8ce52ef0170d74a348f6b8e1d1151662a4dbcc8753\n",
+    "worker_after": "src f19d08b6ec36db3646f1ba39229119734cbe83f36170064b812a7e7846d326d1\ngen cc6fc62fa5298be787eead8ce52ef0170d74a348f6b8e1d1151662a4dbcc8753\n"
+  },
+  "reviewed_source_files_match": true,
+  "native_assertions_passed": 26,
+  "full_start_utc": "2026-09-22T18:29:04.918878+00:00"
+}
