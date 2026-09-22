@@ -1,0 +1,20 @@
+{
+  "provenance": "[AGENT] Historical comparison, not a new A/B run on the item-7 base",
+  "audit_commit": "97c98bcce",
+  "reviewed_head": "24f19d6f5a63204afff1991e3fc1fcf5b28ad420",
+  "report_source": {
+    "branch": "audit/run-digest-20260922",
+    "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "head": "24f19d6f5a63204afff1991e3fc1fcf5b28ad420",
+    "status": "",
+    "untracked_sha256": {}
+  },
+  "archive_sha256": "248905cf4378dcc8b7bd56d5fcc908a1488c5a93aacfb7fe02b291a67f97a8d5",
+  "lean_counts": {
+    "lean_agreement": 830,
+    "lean_both_undecodable": 12,
+    "lean_difference": 28,
+    "lean_not_applicable": 2
+  },
+  "difference_count": 40
+}

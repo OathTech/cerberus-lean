@@ -1,0 +1,187 @@
+{
+  "started_utc": "20260922T164837.675942Z",
+  "finished_utc": "2026-09-22T18:10:40.792834+00:00",
+  "status": "passed",
+  "source_unchanged": true,
+  "selection_complete": true,
+  "release_certification": "incomplete: reporting/adoption/audit exits require separate evidence",
+  "source_before": {
+    "branch": "fix/match-pattern-arity",
+    "diff_sha256": "bc5a1d74aee13c018687ad357150c0281cc52e9632c0c331dd200aa3a4c9b05f",
+    "head": "8d4901c65d7677a977bb9ba4b4293b93e466e40a",
+    "status": "M lean_frontend/docs/2026-09-20_match-pattern-arity-record.md\n M lean_frontend/docs/2026-09-22_match-pattern-arity-closure-evidence/README.md\n M lean_frontend/test/Unit/MatchPatternArityTest.lean\n?? lean_frontend/docs/2026-09-22_match-pattern-arity-closure-evidence/rebased-df85e95b7/",
+    "untracked_sha256": {
+      "lean_frontend/docs/2026-09-22_match-pattern-arity-closure-evidence/rebased-df85e95b7/README.md": "337ecf9d008fb8aa0ced357785703739124bc0c9891009c536dd61ca41aac250"
+    }
+  },
+  "source_after": {
+    "branch": "fix/match-pattern-arity",
+    "diff_sha256": "bc5a1d74aee13c018687ad357150c0281cc52e9632c0c331dd200aa3a4c9b05f",
+    "head": "8d4901c65d7677a977bb9ba4b4293b93e466e40a",
+    "status": "M lean_frontend/docs/2026-09-20_match-pattern-arity-record.md\n M lean_frontend/docs/2026-09-22_match-pattern-arity-closure-evidence/README.md\n M lean_frontend/test/Unit/MatchPatternArityTest.lean\n?? lean_frontend/docs/2026-09-22_match-pattern-arity-closure-evidence/rebased-df85e95b7/",
+    "untracked_sha256": {
+      "lean_frontend/docs/2026-09-22_match-pattern-arity-closure-evidence/rebased-df85e95b7/README.md": "337ecf9d008fb8aa0ced357785703739124bc0c9891009c536dd61ca41aac250"
+    }
+  },
+  "source_equal": true,
+  "external_inputs_equal": true,
+  "artifacts_equal": true,
+  "lanes": {
+    "A1": [
+      "passed",
+      0
+    ],
+    "A2": [
+      "passed",
+      0
+    ],
+    "A3": [
+      "passed",
+      0
+    ],
+    "A4": [
+      "passed",
+      0
+    ],
+    "A4b": [
+      "passed",
+      0
+    ],
+    "A4c": [
+      "passed",
+      0
+    ],
+    "A5": [
+      "passed",
+      0
+    ],
+    "A6": [
+      "passed",
+      0
+    ],
+    "A6b": [
+      "passed",
+      0
+    ],
+    "A7": [
+      "passed",
+      0
+    ],
+    "A8": [
+      "passed",
+      0
+    ],
+    "A9": [
+      "passed",
+      0
+    ],
+    "A10": [
+      "passed",
+      0
+    ],
+    "A11": [
+      "passed",
+      0
+    ],
+    "A12.1": [
+      "passed",
+      0
+    ],
+    "A12.2": [
+      "passed",
+      0
+    ],
+    "B1": [
+      "passed",
+      0
+    ],
+    "B2": [
+      "passed",
+      0
+    ],
+    "B3": [
+      "passed",
+      0
+    ],
+    "B4": [
+      "passed",
+      0
+    ],
+    "B5": [
+      "passed",
+      0
+    ],
+    "B6.1": [
+      "passed",
+      0
+    ],
+    "B6.2": [
+      "passed",
+      0
+    ],
+    "B6.3": [
+      "passed",
+      0
+    ],
+    "B6.4": [
+      "passed",
+      0
+    ],
+    "B6.5": [
+      "passed",
+      0
+    ],
+    "B6.6": [
+      "passed",
+      0
+    ],
+    "B6.7": [
+      "passed",
+      0
+    ],
+    "B7": [
+      "passed",
+      0
+    ],
+    "B8.1": [
+      "passed",
+      0
+    ],
+    "B8.2": [
+      "passed",
+      0
+    ],
+    "B8.3": [
+      "passed",
+      0
+    ],
+    "B8.4": [
+      "passed",
+      0
+    ],
+    "B9": [
+      "passed",
+      0
+    ],
+    "B10.1": [
+      "passed",
+      0
+    ],
+    "B10.2": [
+      "passed",
+      0
+    ],
+    "B11.1": [
+      "passed",
+      0
+    ],
+    "B11.2": [
+      "passed",
+      0
+    ],
+    "B12": [
+      "passed",
+      0
+    ]
+  }
+}

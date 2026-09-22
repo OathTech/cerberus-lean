@@ -1,0 +1,27 @@
+{
+  "base": "df85e95b7b37826dfb3f2ac97a41473580f1e0b9",
+  "head": "b85f5bc83ed79554af3bd3bb4f4a16582917ccb5",
+  "files": {
+    "frontend/model/core_aux.lem": "dee01667c7056938400f1ce4befd199b8f2c5bcdef6ae34fa59ae8a80558af37",
+    "frontend/model/core_reduction.lem": "cf062e7a0ce3872dd6c7a843207f9205ae8c8c39a7824e2714ac75e22640f052",
+    "frontend/model/core_run.lem": "73ba87a3394805e395597753b01f5efd8bbf4f42fd276efcccff17a7807b9bff",
+    "frontend/model/core_typing.lem": "fe75fa375b50c6cdb3713e1e876173cf3e7cdd26918256032d50b1b1e75451d1",
+    "lean_frontend/Core_aux_lemMeasureProofs.lean": "a7eb7a807ed17188b344965c1389f25d66fcc41a30e78658e449a17a45a1df77",
+    "lean_frontend/TODO.md": "d254adba2a84b1bbf822106484df48c6eb6a045c3a82232d929258537dcaa8cd",
+    "lean_frontend/docs/2026-09-20_charter-match-pattern-arity.md": "cc71859528eef6b7c8b754f4806c28e81a1387b55979f11edef9edfd6610fbf3",
+    "lean_frontend/docs/2026-09-20_match-pattern-arity-record.md": "74f51f4842d5582c3ac4739773e3b16695bb634f1ca61bb9c9c99ce428e103b0",
+    "lean_frontend/docs/2026-09-22_match-pattern-arity-closure-evidence/README.md": "63209ab7809a851d41cf0b65e7b5393c05b06d4df3fa94f7641e49c511ff8f50",
+    "lean_frontend/docs/2026-09-22_match-pattern-arity-closure-evidence/rebased-df85e95b7/README.md": "337ecf9d008fb8aa0ced357785703739124bc0c9891009c536dd61ca41aac250",
+    "lean_frontend/docs/2026-09-22_match-pattern-arity-closure-evidence/rebased-df85e95b7/report.json": "67dbd0ab3341403a88633f8707da30a27162f6807daf975b6f78e9036b0a21ed",
+    "lean_frontend/docs/2026-09-22_match-pattern-arity-closure-evidence/rebased-df85e95b7/summary.txt": "8a982b1a5855d318a90fc19da8e4d0a9850345dbf4422e741b0b604d8c2fdf20",
+    "lean_frontend/docs/2026-09-22_match-pattern-arity-closure-evidence/report.json": "93a1f92a25616a91e0faa9f38a0fbd9c50563293b722a8c56bbf0de5417dc9f9",
+    "lean_frontend/docs/2026-09-22_match-pattern-arity-closure-evidence/summary.txt": "8a982b1a5855d318a90fc19da8e4d0a9850345dbf4422e741b0b604d8c2fdf20",
+    "lean_frontend/docs/upstream-tray/45-core-match-pattern-truncating-zip-arity.md": "3f6b3c5daa1528fd11b59d9b08dab4e74957127bc4ad346008f72e843d54d69b",
+    "lean_frontend/docs/upstream-tray/INDEX.md": "9546c6c2dbfe8a863e8306814a93a4d9682b855b9057fdea8686c964e60462f3",
+    "lean_frontend/lakefile.toml": "3d330f26086094e6683a97d6b742eeed750a59edd6e5ec082cba608f784449cf",
+    "lean_frontend/test/Unit/MatchPatternArityTest.lean": "09111af992d54c7ca3f22e97008a791044a5d9a12f8c2896523415c7daf9333f",
+    "scripts/failure_reach_register.txt": "4772ca62956ce75e9cce1891433a6bc03898c8a5626fd5e6b6095ae391997743",
+    "scripts/fork_drift_manifest.txt": "268365b9c0462d30fb8556218061c2d1d993887201e4c05186190b020d2eafe0",
+    "scripts/test_unit.sh": "ba4b22b3a42a9e12d9e22bb13b5a3b4cf65dd3864fec1c1ac591a8ee778994f7"
+  }
+}
