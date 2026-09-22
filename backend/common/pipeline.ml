@@ -458,8 +458,8 @@ let untype_file (file: 'a Core.typed_file) : 'a Core.file =
     let aux = function
       | Epure pe ->
           Epure (untype_pexpr pe)
-      | Ememop (memop, pes) ->
-          Ememop (memop, List.map untype_pexpr pes)
+      | Ememop (_mem_annot, memop, pes) ->
+          Ememop (_mem_annot, memop, List.map untype_pexpr pes)
       | Eaction (Paction (p, act)) ->
           Eaction (Paction (p, untype_action act))
       | Ecase (pe, xs) ->

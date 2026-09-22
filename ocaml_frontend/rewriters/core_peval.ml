@@ -330,8 +330,8 @@ let rec subst_sym_expr2 sym z (Expr (annot, expr_)) =
         , match expr_ with
             | Epure pe ->
                 Epure (subst_sym_pexpr2 sym z pe)
-            | Ememop (memop, pes) ->
-                Ememop (memop, List.map (subst_sym_pexpr2 sym z) pes)
+            | Ememop (_mem_annot, memop, pes) ->
+                Ememop (_mem_annot, memop, List.map (subst_sym_pexpr2 sym z) pes)
             | Elet (pat, pe1, e2) ->
                 Elet ( pat
                      , subst_sym_pexpr2 sym z pe1

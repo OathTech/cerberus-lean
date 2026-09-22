@@ -63,7 +63,7 @@ ENFORCE="${ENFORCE:-0}"
 # listed modules. Record: docs/2026-09-01_s-basket.md.
 EXEC_MODULES=(Core_run Core_reduction Core_eval Driver Core_run_aux
               Core_aux Defacto_memory Defacto_memory_aux Ctype_aux
-              Nondeterminism Nd_observe Mem_aux
+              Nondeterminism Nd_observe Sc_order Sc_runtime Mem_aux
               Utils Annot Ctype Core State_exception_undefined
               State State_exception Translation_aux Cerb_attributes
               Formatted Monadic_parsing)

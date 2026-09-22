@@ -5,7 +5,7 @@ let rec sequentialise_expr (Expr annot expr_) =
   Expr annot match expr_ with
     | Epure _ ->
         expr_
-    | Ememop _ _ ->
+    | Ememop _ _ _ ->
         expr_
     | Eaction _ ->
         expr_

@@ -131,6 +131,8 @@ roots = [
   "Multiset", "Multiset_auxiliary",
   "Nondeterminism", "Nondeterminism_auxiliary",
   "Nd_observe", "Nd_observe_auxiliary", "CerbNDObserveProofs",
+  "Sc_order", "Sc_order_auxiliary", "Sc_order_lemMeasureProofs",
+  "Sc_runtime", "Sc_runtime_auxiliary", "CerbSCByteInstances", "CerbSCOperational",
   "Pp", "Pp_auxiliary",
   "Product", "Product_auxiliary",
   "Range", "Range_auxiliary",
@@ -312,4 +314,10 @@ moreLinkArgs = ["native/md5.o"]
 name = "sc-prototype-test"
 srcDir = "test"
 root = "Unit.SCPrototype"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "sc-protocol-test"
+srcDir = "test"
+root = "Unit.SCProtocol"
 moreLinkArgs = ["native/md5.o"]

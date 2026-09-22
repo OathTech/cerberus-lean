@@ -5,7 +5,7 @@ import Core_aux Builtins Core_linking
 module Caux = Core_aux
 
 open import Utils Show Errors Trace_event
-import Cmm_op Cmm_csem
+import Cmm_op Cmm_csem Sc_order Sc_runtime Nd_observe
 
 import Core_eval Core_run Core_reduction
 
@@ -72,6 +72,7 @@ type driver_state = <|
   fs_state:          Fs.fs_state;           (* state of the file system *)
   trace:             list trace_event;
   
+  sc_state: maybe Sc_runtime.sc_state;
   symbolic_assoc: map Symbol.sym Core.object_value;
   
   blocked: bool; (* concurrency model ended by blocking *)
@@ -126,6 +127,38 @@ let inline (>>=)      = ND.bind
 let inline (>>) m1 m2 = ND.bind m1 (fun _ -> m2)
 
 
+(* Drain after each ND memory node, including a killed node. A missing
+   observer or request owner is an explicit port gap, never an empty effect. *)
+let sc_post_memory dr_st =
+  match dr_st.sc_state with
+    | Nothing -> (Nothing, dr_st)
+    | Just initial_sc ->
+        if initial_sc.Sc_runtime.sc_current_request = Nothing then
+          (Just (ND.Other (DErr_concurrency "SC port gap: unowned memory node")), dr_st)
+        else match Mem.take_observations dr_st.layout_state with
+          | Nothing -> (Just (ND.Other (DErr_concurrency "SC port gap: memory observer unavailable")), dr_st)
+          | Just (observations, memory) ->
+              List.foldl (fun (failure, current) observation ->
+                match failure with
+                  | Just _ -> (failure, current)
+                  | Nothing ->
+                      match current.sc_state with
+                        | Nothing -> (Just (ND.Other (DErr_concurrency "SC port gap: observer state lost")), current)
+                        | Just sc ->
+                            let aid = current.core_run_state.Core_run.aid_supply in
+                            match Sc_runtime.sc_record_effect aid observation sc with
+                              | Nothing -> (Just (ND.Other (DErr_concurrency "SC port gap: unowned memory effect")), current)
+                              | Just sc' -> (Nothing, <| current with
+                                  sc_state= Just sc';
+                                  core_run_state= <| current.core_run_state with Core_run.aid_supply= aid + 1 |>;
+                                |>)
+                            end
+                      end
+                end
+              ) (Nothing, <| dr_st with layout_state= memory |>) observations
+        end
+  end
+
 val liftMem: forall 'a. Mem.memM 'a -> driverM 'a
 let liftMem m =
   ND.liftND (fun dr_st -> dr_st.layout_state)
@@ -133,6 +166,31 @@ let liftMem m =
     (fun err_str -> SK_misc ["memory"; err_str])
     (fun mem_err -> DErr_memory mem_err)
     m
+
+val driver_liftMem: forall 'a. Mem.memM 'a -> driverM 'a
+let driver_liftMem m =
+  ND.ND (fun dr_st ->
+    let get state = state.layout_state in
+    let put state memory = <| state with layout_state= memory |> in
+    let info label = SK_misc ["memory"; label] in
+    let err cause = DErr_memory cause in
+    let ND.ND run =
+      match dr_st.sc_state with
+        | Nothing -> ND.liftND get put info err m
+        | Just _ -> Nd_observe.lift_checked get put info err sc_post_memory m
+      end in
+    run dr_st)
+
+let sc_receipt_from_state dr_st =
+  match dr_st.sc_state with
+    | Nothing -> error "SC completion requested in sequential state"
+    | Just sc ->
+        match Sc_runtime.sc_receipt sc with
+          | Nothing -> error "SC completion has no active request"
+          | Just receipt -> receipt
+        end
+  end
+
 
 val get_thread_states: driverM (list (Mem.thread_id * (maybe Mem.thread_id * Core_run.thread_state)))
 let get_thread_states =
@@ -189,8 +247,8 @@ let liftCore_run m =
         ND.kill (ND.Other (DErr_core_run err))
   end
 
-val drive_fs_step: Mem.thread_id -> Core_run.thread_state -> driver_state -> Core_run.fs_oper -> driverM unit
-let drive_fs_step tid th_st dr_st fs_oper =
+val drive_fs_step_with: (driver_state -> Core_run.thread_state -> Core_run.thread_state) -> Mem.thread_id -> Core_run.thread_state -> driver_state -> Core_run.fs_oper -> driverM unit
+let drive_fs_step_with complete tid th_st dr_st fs_oper =
   let th_st_from_int n =
     let (Core.Expr arena_annots _) = th_st.Core_run.arena in
     <| th_st with Core_run.arena= Core.Expr arena_annots (Core.Epure (Caux.mk_specified_pe (Caux.mk_integer_pe n))) |>
@@ -205,7 +263,7 @@ let drive_fs_step tid th_st dr_st fs_oper =
   in
   let update fs_st th_st =
     ND.update $ fun dr_st ->
-      let core_st' = Core_run.update_thread_state tid th_st dr_st.core_state in
+      let core_st' = Core_run.update_thread_state tid (complete dr_st th_st) dr_st.core_state in
       <| dr_st with
         fs_state= fs_st;
         core_state= core_st';
@@ -216,7 +274,7 @@ let drive_fs_step tid th_st dr_st fs_oper =
     let errname = Fs.fs_string_of_error e in
     let err = Builtins.translate_errno ("__cerbvar_" ^ errname) in
     let err_mval = Mem.integer_value_mval (Ctype.Signed Ctype.Int_) (Mem.integer_ival err) in
-    liftMem $ Mem.store (Loc.other "update errno") Ctype.signed_int false th_st.Core_run.errno err_mval
+    driver_liftMem $ Mem.store (Loc.other "update errno") Ctype.signed_int false th_st.Core_run.errno err_mval
   in
   let return (fs_st, res) =
     match res with
@@ -235,7 +293,7 @@ let drive_fs_step tid th_st dr_st fs_oper =
       | Right buf ->
         let n = integerFromNat $ List.length buf in
         (* TODO: store chars is wrong here!! it adds a \0 in the end of the array *)
-        liftMem (Formatted.store_chars_in_array false ptr buf) >>
+        driver_liftMem (Formatted.store_chars_in_array false ptr buf) >>
         update fs_st (th_st_from_int n)
     end
   in
@@ -247,13 +305,13 @@ let drive_fs_step tid th_st dr_st fs_oper =
       | Right buf ->
         let buf_trunc = List.take (natFromInteger max) buf in
         let n = integerFromNat $ List.length buf_trunc in
-        liftMem (Formatted.store_chars_in_array false ptr buf_trunc) >>
+        driver_liftMem (Formatted.store_chars_in_array false ptr buf_trunc) >>
         update fs_st (th_st_from_int n)
     end
   in
   let update_stdout out_chars =
     ND.update (fun dr_st ->
-      let core_st' = Core_run.update_thread_state tid (th_st_from_int (integerFromNat (List.length out_chars))) dr_st.core_state in
+      let core_st' = Core_run.update_thread_state tid (complete dr_st (th_st_from_int (integerFromNat (List.length out_chars)))) dr_st.core_state in
       <| dr_st with
         core_state= <| core_st' with
           Core_run.io= <| dr_st.core_state.Core_run.io with Core_run.stdout=
@@ -266,7 +324,7 @@ let drive_fs_step tid th_st dr_st fs_oper =
   in
   let update_stderr out_chars =
     ND.update (fun dr_st ->
-      let core_st' = Core_run.update_thread_state tid (th_st_from_int (integerFromNat (List.length out_chars))) dr_st.core_state in
+      let core_st' = Core_run.update_thread_state tid (complete dr_st (th_st_from_int (integerFromNat (List.length out_chars)))) dr_st.core_state in
       <| dr_st with
         core_state= <| core_st' with
           Core_run.io= <| dr_st.core_state.Core_run.io with Core_run.stderr=
@@ -308,7 +366,7 @@ let drive_fs_step tid th_st dr_st fs_oper =
     | Right [] ->
       update fs_st (th_st_from_ptr (Mem.null_ptrval dirent_cty))
     | Right dir_name ->
-      liftMem (update_mem dir_name) >>= fun dirent_ptr ->
+      driver_liftMem (update_mem dir_name) >>= fun dirent_ptr ->
       update fs_st (th_st_from_ptr dirent_ptr)
     end
   in
@@ -341,7 +399,7 @@ let drive_fs_step tid th_st dr_st fs_oper =
       store_error e >>
       update fs_st (th_st_from_int (0 - 1))
     | Right stat ->
-      liftMem (update_mem stat) >>
+      driver_liftMem (update_mem stat) >>
       update fs_st (th_st_from_int 0)
     end
   in
@@ -406,7 +464,7 @@ let drive_fs_step tid th_st dr_st fs_oper =
     | Core_run.FS_CLOSEDIR dir ->
       return $ Fs.fs_closedir dr_st.fs_state dir
     | Core_run.FS_PRINTF fmt args ->
-      liftMem (Formatted.printf th_st.Core_run.current_loc (printf_eval_conv dr_st th_st) fmt args) >>= function
+      driver_liftMem (Formatted.printf th_st.Core_run.current_loc (printf_eval_conv dr_st th_st) fmt args) >>= function
         | Left err ->
           error "TODO: printf error"
         | Right (Undefined.Defined buf) ->
@@ -417,7 +475,7 @@ let drive_fs_step tid th_st dr_st fs_oper =
           ND.kill (ND.Undef loc ubs)
       end
     | Core_run.FS_VPRINTF fd fmt ap ->
-      liftMem (Formatted.vprintf th_st.Core_run.current_loc (printf_eval_conv dr_st th_st) fmt ap) >>= function
+      driver_liftMem (Formatted.vprintf th_st.Core_run.current_loc (printf_eval_conv dr_st th_st) fmt ap) >>= function
         | Left err ->
           error "TODO: vprintf error"
         | Right (Undefined.Defined buf) ->
@@ -438,7 +496,7 @@ let drive_fs_step tid th_st dr_st fs_oper =
           ND.kill (ND.Undef loc ubs)
       end
     | Core_run.FS_VSNPRINTF ptr size fmt ap ->
-      liftMem (Formatted.vsnprintf th_st.Core_run.current_loc (printf_eval_conv dr_st th_st) ptr size fmt ap) >>= function
+      driver_liftMem (Formatted.vsnprintf th_st.Core_run.current_loc (printf_eval_conv dr_st th_st) ptr size fmt ap) >>= function
         | Left err ->
           error "TODO: vprintf error"
         | Right (Undefined.Defined n) ->
@@ -449,6 +507,10 @@ let drive_fs_step tid th_st dr_st fs_oper =
           ND.kill (ND.Undef loc ubs)
       end
   end
+
+
+let drive_fs_step tid th_st dr_st fs_oper =
+  drive_fs_step_with (fun _ result -> result) tid th_st dr_st fs_oper
 
 
 
@@ -484,6 +546,7 @@ let rec drive_core_thread2 tid =
             dr_step_counter= dr_st.dr_step_counter + 1;
           |>) >>= fun () ->
           drive_core_thread2 parent_tid )
+    | Core_reduction.Step_join2 _ _ _ -> error "SC join reached legacy driver"
     | (Core_reduction.Step_blocked2 as step) ->
         (SK_misc ["blocked("^show tid^")"], ND.return (Just step))
     | Core_reduction.Step_done2 cval ->
@@ -591,7 +654,7 @@ let rec drive_core_thread2 tid =
             ND.mapM_ drive_core_thread2 spawn_tids >>= fun () ->
             drive_core_thread2 tid )
 
-    | Core_reduction.Step_fs2 tid th_st m_fs_step ->
+    | Core_reduction.Step_fs2 _ tid th_st _ m_fs_step ->
         (* TODO: can m_fs_step change the thread state?, If so this is wrong *)
         ( SK_misc ["fs_step"]
         , liftCore_run m_fs_step                >>= fun fs_step ->
@@ -609,10 +672,10 @@ let rec drive_core_thread2 tid =
 
     | Core_reduction.Step_error2 debug_str ->
         error ("WIP: Step_error --> " ^ debug_str)
-    | (Core_reduction.Step_action_request2 str _ _ _ _ as step) ->
+    | (Core_reduction.Step_action_request2 _ _ str _ _ _ _ as step) ->
         ( SK_action_request str
         , ND.return (Just step) )
-    | (Core_reduction.Step_memop_request2 _ _ _ _ _ _ as step) -> 
+    | (Core_reduction.Step_memop_request2 _ _ _ _ _ _ _ as step) ->
         ( SK_memop_request
         , ND.return (Just step) )
   end) (Core_reduction.step_ctx dr_st.layout_state dr_st.core_file dr_st.core_extern tid th_info)
@@ -664,36 +727,37 @@ let update_core_state core_st dr_st =
 
 
 (* POST REDUCTION SEMANTICS *)
-val action_request_sequential2:
-  Loc.t -> Mem.thread_id -> Cmm.aid -> Core_reduction.action_request2 Core_run.thread_state -> driverM unit
-let action_request_sequential2 loc tid aid = function
+val action_request_with:
+  Loc.t -> Mem.thread_id -> (driver_state -> Core_run.completion_receipt) -> Core_reduction.action_request2 Core_run.thread_state -> driverM unit
+let action_request_with loc tid receipt request =
+  match request with
   | Core_reduction.AllocRequest2 pref align_ival size_ival mk_th_st' ->
       let () = Debug.print_debug_located 3 [Debug.DB_driver] loc (fun () -> "REQUEST ALLOC") in (* DEBUG *)
-      liftMem (Mem.allocate_region tid pref align_ival size_ival) >>= fun ptrval ->
+      driver_liftMem (Mem.allocate_region tid pref align_ival size_ival) >>= fun ptrval ->
       ND.update (fun dr_st ->
         <| dr_st with
-          core_state= Core_run.update_thread_state tid (mk_th_st' aid ptrval) dr_st.core_state;
+          core_state= Core_run.update_thread_state tid (mk_th_st' (receipt dr_st) ptrval) dr_st.core_state;
           trace= ME_allocate_region tid pref align_ival size_ival ptrval :: dr_st.trace
         |>
       )
   
   | Core_reduction.CreateRequest2 pref align_ival lvalue_ty req_addr_opt init_opt mk_th_st' ->
       let () = Debug.print_debug_located 3 [Debug.DB_driver] loc (fun () -> "REQUEST CREATE") in (* DEBUG *)
-      liftMem (Mem.allocate_object tid pref align_ival lvalue_ty req_addr_opt init_opt) >>= fun ptrval ->
+      driver_liftMem (Mem.allocate_object tid pref align_ival lvalue_ty req_addr_opt init_opt) >>= fun ptrval ->
       ND.update (fun dr_st ->
         <| dr_st with
-          core_state= Core_run.update_thread_state tid (mk_th_st' aid ptrval) dr_st.core_state;
+          core_state= Core_run.update_thread_state tid (mk_th_st' (receipt dr_st) ptrval) dr_st.core_state;
           trace= ME_allocate_object tid pref align_ival lvalue_ty init_opt ptrval :: dr_st.trace
         |>
       )
   
   | Core_reduction.LoadRequest2 mo lvalue_ty ptr_val mk_th_st' ->
       let () = Debug.print_debug_located 3 [Debug.DB_driver] loc (fun () -> "REQUEST LOAD") in (* DEBUG *)
-      liftMem (Mem.load loc lvalue_ty ptr_val) >>= fun (fp, mval) ->
-      liftMem (Mem.prefix_of_pointer ptr_val)  >>= fun pref       ->
+      driver_liftMem (Mem.load loc lvalue_ty ptr_val) >>= fun (fp, mval) ->
+      driver_liftMem (Mem.prefix_of_pointer ptr_val)  >>= fun pref       ->
       ND.update (fun dr_st ->
         <| dr_st with
-          core_state= Core_run.update_thread_state tid (mk_th_st' aid fp mval) dr_st.core_state;
+          core_state= Core_run.update_thread_state tid (mk_th_st' (receipt dr_st) fp mval) dr_st.core_state;
           trace= ME_load loc pref lvalue_ty ptr_val mval :: dr_st.trace
         |>
       )
@@ -702,23 +766,23 @@ let action_request_sequential2 loc tid aid = function
       let () = Debug.print_debug_located 3 [Debug.DB_driver] loc (fun () -> "REQUEST STORE") in (* DEBUG *)
       (* TODO: need to make memory layout detect unsequenced races (use to make
          the concurency to the check even in the sequential mode) *)
-      liftMem (Mem.store loc lvalue_ty is_locking ptr_val mem_val) >>= fun fp ->
-      liftMem (Mem.prefix_of_pointer ptr_val) >>= fun pref ->
+      driver_liftMem (Mem.store loc lvalue_ty is_locking ptr_val mem_val) >>= fun fp ->
+      driver_liftMem (Mem.prefix_of_pointer ptr_val) >>= fun pref ->
       ND.update (fun dr_st ->
         <| dr_st with
-          core_state= Core_run.update_thread_state tid (mk_th_st' aid fp) dr_st.core_state;
+          core_state= Core_run.update_thread_state tid (mk_th_st' (receipt dr_st) fp) dr_st.core_state;
           trace= ME_store loc pref lvalue_ty is_locking ptr_val mem_val :: dr_st.trace
         |>
       )
   
   | Core_reduction.SeqRMWRequest2 lvalue_ty ptr_val mk_mval' mk_th_st' ->
-      liftMem (Mem.load loc lvalue_ty ptr_val)              >>= fun (_, mval) ->
+      driver_liftMem (Mem.load loc lvalue_ty ptr_val)              >>= fun (_, mval) ->
       liftCore_run (mk_mval' mval)                          >>= fun mval'     ->
-      liftMem (Mem.store loc lvalue_ty false ptr_val mval') >>= fun fp        ->
-      liftMem (Mem.prefix_of_pointer ptr_val)               >>= fun pref      ->
+      driver_liftMem (Mem.store loc lvalue_ty false ptr_val mval') >>= fun fp        ->
+      driver_liftMem (Mem.prefix_of_pointer ptr_val)               >>= fun pref      ->
       ND.update (fun dr_st ->
         <| dr_st with
-          core_state= Core_run.update_thread_state tid (mk_th_st' aid fp mval mval') dr_st.core_state;
+          core_state= Core_run.update_thread_state tid (mk_th_st' (receipt dr_st) fp mval mval') dr_st.core_state;
           trace= ME_seq_rmw loc pref lvalue_ty ptr_val mval mval' :: dr_st.trace
         |>
       )
@@ -736,14 +800,18 @@ let action_request_sequential2 loc tid aid = function
   
   | Core_reduction.KillRequest2 is_dynamic ptr_val mk_th_st' ->
       let () = Debug.print_debug_located 3 [Debug.DB_driver] loc (fun () -> "REQUEST KILL") in (* DEBUG *)
-      liftMem (Mem.kill loc is_dynamic ptr_val) >>
+      driver_liftMem (Mem.kill loc is_dynamic ptr_val) >>
       ND.update (fun dr_st ->
         <| dr_st with
-          core_state= Core_run.update_thread_state tid (mk_th_st' aid) dr_st.core_state;
+          core_state= Core_run.update_thread_state tid (mk_th_st' (receipt dr_st)) dr_st.core_state;
           trace= ME_kill loc is_dynamic ptr_val :: dr_st.trace
         |>
       )
 end
+
+
+let action_request_sequential2 loc tid aid request =
+  action_request_with loc tid (fun _ -> Core_run.sequential_receipt aid) request
 
 
 val perform_action_request2:
@@ -762,11 +830,12 @@ let perform_action_request2 with_concurrency loc tid request =
       action_request_sequential2 loc tid aid request
   end
 
-val perform_memop_request2: Loc.t -> Mem_common.memop -> list Core.value -> Mem.thread_id -> (Core.value -> Core_run.thread_state) -> driverM unit
-let perform_memop_request2 loc memop cvals tid mk_th_st =
+val perform_memop_with: Loc.t -> Mem_common.memop -> list Core.value -> Mem.thread_id -> (driver_state -> Core.value -> Core_run.thread_state) -> driverM unit
+let perform_memop_with loc memop cvals tid complete =
+  let mk_th_st value = value in
   match (memop, cvals) with
     | (Mem_common.Ptrdiff, [Core.Vctype ty; Core.Vobject (Core.OVpointer ptr_val1); Core.Vobject (Core.OVpointer ptr_val2)]) ->
-        liftMem (Mem.diff_ptrval loc ty ptr_val1 ptr_val2) >>= fun ival ->
+        driver_liftMem (Mem.diff_ptrval loc ty ptr_val1 ptr_val2) >>= fun ival ->
         ND.return (mk_th_st (Core.Vobject (Core.OVinteger ival)))
     
     | (Mem_common.IntFromPtr, [Core.Vctype ref_ty; Core.Vctype (Ctype.Ctype _ (Ctype.Basic (Ctype.Integer ity))); Core.Vobject (Core.OVpointer ptr_val)]) ->
@@ -775,63 +844,63 @@ let perform_memop_request2 loc memop cvals tid mk_th_st =
         else
           ND.return ()
         end >>= fun () -> (* DEBUG *)
-        liftMem (Mem.intfromptr loc ref_ty ity ptr_val) >>= fun ival ->
+        driver_liftMem (Mem.intfromptr loc ref_ty ity ptr_val) >>= fun ival ->
         ND.return (mk_th_st (Core.Vobject (Core.OVinteger ival)))
     
     | (Mem_common.PtrFromInt, [Core.Vctype (Ctype.Ctype _ (Ctype.Basic (Ctype.Integer ity))); Core.Vctype ref_ty; Core.Vobject (Core.OVinteger ival)]) ->
-        liftMem (Mem.ptrfromint loc ity ref_ty ival) >>= fun ptrval ->
+        driver_liftMem (Mem.ptrfromint loc ity ref_ty ival) >>= fun ptrval ->
         ND.return (mk_th_st (Core.Vobject (Core.OVpointer ptrval)))
     
     | (Mem_common.PtrValidForDeref, [Core.Vctype ref_ty; Core.Vobject (Core.OVpointer ptr_val)]) ->
-        liftMem (Mem.validForDeref_ptrval ref_ty ptr_val) >>= fun is_valid ->
+        driver_liftMem (Mem.validForDeref_ptrval ref_ty ptr_val) >>= fun is_valid ->
         ND.return (mk_th_st (if is_valid then Core.Vtrue else Core.Vfalse))
     
     | (Mem_common.PtrEq, [Core.Vobject (Core.OVpointer ptr_val1); Core.Vobject (Core.OVpointer ptr_val2)]) ->
         ND.print_debug 2 [Debug.DB_driver] (fun () -> "PtrEq") >> (* DEBUG *)
-        liftMem (Mem.eq_ptrval loc ptr_val1 ptr_val2) >>= fun is_eq ->
+        driver_liftMem (Mem.eq_ptrval loc ptr_val1 ptr_val2) >>= fun is_eq ->
         ND.return (mk_th_st (if is_eq then Core.Vtrue else Core.Vfalse))
     
     | (Mem_common.PtrNe, [Core.Vobject (Core.OVpointer ptr_val1); Core.Vobject (Core.OVpointer ptr_val2)]) ->
-        liftMem (Mem.ne_ptrval loc ptr_val1 ptr_val2) >>= fun is_ne ->
+        driver_liftMem (Mem.ne_ptrval loc ptr_val1 ptr_val2) >>= fun is_ne ->
         ND.return (mk_th_st (if is_ne then Core.Vtrue else Core.Vfalse))
     
     | (Mem_common.PtrLt, [Core.Vobject (Core.OVpointer ptr_val1); Core.Vobject (Core.OVpointer ptr_val2)]) ->
-        liftMem (Mem.lt_ptrval loc ptr_val1 ptr_val2) >>= fun is_lt ->
+        driver_liftMem (Mem.lt_ptrval loc ptr_val1 ptr_val2) >>= fun is_lt ->
         ND.return (mk_th_st (if is_lt then Core.Vtrue else Core.Vfalse))
     
     | (Mem_common.PtrGt, [Core.Vobject (Core.OVpointer ptr_val1); Core.Vobject (Core.OVpointer ptr_val2)]) ->
-        liftMem (Mem.gt_ptrval loc ptr_val1 ptr_val2) >>= fun is_gt ->
+        driver_liftMem (Mem.gt_ptrval loc ptr_val1 ptr_val2) >>= fun is_gt ->
         ND.return (mk_th_st (if is_gt then Core.Vtrue else Core.Vfalse))
     
     | (Mem_common.PtrLe, [Core.Vobject (Core.OVpointer ptr_val1); Core.Vobject (Core.OVpointer ptr_val2)]) ->
-        liftMem (Mem.le_ptrval loc ptr_val1 ptr_val2) >>= fun is_le ->
+        driver_liftMem (Mem.le_ptrval loc ptr_val1 ptr_val2) >>= fun is_le ->
         ND.return (mk_th_st (if is_le then Core.Vtrue else Core.Vfalse))
     
     | (Mem_common.PtrGe, [Core.Vobject (Core.OVpointer ptr_val1); Core.Vobject (Core.OVpointer ptr_val2)]) ->
-        liftMem (Mem.ge_ptrval loc ptr_val1 ptr_val2) >>= fun is_ge ->
+        driver_liftMem (Mem.ge_ptrval loc ptr_val1 ptr_val2) >>= fun is_ge ->
         ND.return (mk_th_st (if is_ge then Core.Vtrue else Core.Vfalse))
     
     | (Mem_common.Memcpy, [Core.Vobject (Core.OVpointer ptr_val1); Core.Vobject (Core.OVpointer ptr_val2);
                           Core.Vobject (Core.OVinteger size_ival)]) ->
-        liftMem (Mem.memcpy loc ptr_val1 ptr_val2 size_ival) >>= fun res ->
+        driver_liftMem (Mem.memcpy loc ptr_val1 ptr_val2 size_ival) >>= fun res ->
         ND.return (mk_th_st (Core.Vobject (Core.OVpointer res)))
     
     | (Mem_common.Memcmp, [Core.Vobject (Core.OVpointer ptr_val1); Core.Vobject (Core.OVpointer ptr_val2);
                           Core.Vobject (Core.OVinteger size_ival)]) ->
-        liftMem (Mem.memcmp ptr_val1 ptr_val2 size_ival) >>= fun res ->
+        driver_liftMem (Mem.memcmp ptr_val1 ptr_val2 size_ival) >>= fun res ->
         ND.return (mk_th_st (Core.Vobject (Core.OVinteger res)))
     
     | (Mem_common.PtrWellAligned, [Core.Vctype ref_ty; Core.Vobject (Core.OVpointer ptrval)]) ->
-        liftMem (Mem.isWellAligned_ptrval ref_ty ptrval) >>= fun b ->
+        driver_liftMem (Mem.isWellAligned_ptrval ref_ty ptrval) >>= fun b ->
         ND.return (mk_th_st (if b then Core.Vtrue else Core.Vfalse))
     
     | (Mem_common.Realloc, [Core.Vobject (Core.OVinteger align_ival); Core.Vobject (Core.OVpointer old_ptr);
                           Core.Vobject (Core.OVinteger size_ival)]) ->
-        liftMem (Mem.realloc loc tid align_ival old_ptr size_ival) >>= fun res ->
+        driver_liftMem (Mem.realloc loc tid align_ival old_ptr size_ival) >>= fun res ->
         ND.return (mk_th_st (Core.Vobject (Core.OVpointer res)))
 
     | (Mem_common.PtrArrayShift, [Core.Vobject (Core.OVpointer ptrval); Core.Vctype ty; Core.Vobject (Core.OVinteger n_ival)]) ->
-        liftMem (Mem.eff_array_shift_ptrval loc ptrval ty n_ival) >>= fun res ->
+        driver_liftMem (Mem.eff_array_shift_ptrval loc ptrval ty n_ival) >>= fun res ->
         ND.update (fun dr_st ->
           <| dr_st with
             trace= ME_eff_array_shift_ptrval ptrval ty n_ival res :: dr_st.trace
@@ -840,7 +909,7 @@ let perform_memop_request2 loc memop cvals tid mk_th_st =
         ND.return (mk_th_st (Core.Vobject (Core.OVpointer res)))
 
     | (Mem_common.PtrMemberShift tag_sym membr_ident, [Core.Vobject (Core.OVpointer ptrval)]) ->
-        liftMem (Mem.eff_member_shift_ptrval loc ptrval tag_sym membr_ident) >>= fun res ->
+        driver_liftMem (Mem.eff_member_shift_ptrval loc ptrval tag_sym membr_ident) >>= fun res ->
         ND.update (fun dr_st ->
           <| dr_st with
             trace= ME_eff_member_shift_ptrval tag_sym membr_ident ptrval res :: dr_st.trace
@@ -854,23 +923,23 @@ let perform_memop_request2 loc memop cvals tid mk_th_st =
             | Core.Vtuple [Core.Vctype ty; Core.Vobject (Core.OVpointer ptr)] -> (ty, ptr)
             | _ -> error "va_start"
           end) ty_cvals in
-        liftMem (Mem.va_start ty_ptrs) >>= fun res ->
+        driver_liftMem (Mem.va_start ty_ptrs) >>= fun res ->
         ND.return (mk_th_st (Core.Vobject (Core.OVinteger res)))
 
     | (Mem_common.Va_copy, [Core.Vobject (Core.OVinteger va)]) ->
-        liftMem (Mem.va_copy va) >>= fun res ->
+        driver_liftMem (Mem.va_copy va) >>= fun res ->
         ND.return (mk_th_st (Core.Vobject (Core.OVinteger res)))
 
     | (Mem_common.Va_arg, [Core.Vobject (Core.OVinteger va); Core.Vctype ty]) ->
-        liftMem (Mem.va_arg va ty) >>= fun res ->
+        driver_liftMem (Mem.va_arg va ty) >>= fun res ->
         ND.return (mk_th_st (Core.Vobject (Core.OVpointer res)))
 
     | (Mem_common.Va_end, [Core.Vobject (Core.OVinteger va)]) ->
-        liftMem (Mem.va_end va) >>
+        driver_liftMem (Mem.va_end va) >>
         ND.return (mk_th_st Core.Vunit)
 
     | (Mem_common.Copy_alloc_id, [Core.Vobject (Core.OVinteger ival); Core.Vobject (Core.OVpointer ptrval)]) ->
-        liftMem (Mem.copy_alloc_id ival ptrval) >>= fun ptrval' ->
+        driver_liftMem (Mem.copy_alloc_id ival ptrval) >>= fun ptrval' ->
         ND.return (mk_th_st (Core.Vobject (Core.OVpointer ptrval')))
 
     | (Mem_common.CHERI_intrinsic str (ret_ty, tys), cvals) ->
@@ -878,7 +947,7 @@ let perform_memop_request2 loc memop cvals tid mk_th_st =
           Utils.map2 (fun ty cval ->
             fromJust "CHERI_intrinsic call" (Caux.memValueFromValue ty cval)
           ) tys cvals in
-        liftMem (Mem.call_intrinsic loc str mvals) >>= fun res_opt ->
+        driver_liftMem (Mem.call_intrinsic loc str mvals) >>= fun res_opt ->
         match res_opt with
           | Just res ->
               ND.return (mk_th_st (Core.Vloaded (snd (Caux.loadedValueFromMemValue res))))
@@ -888,9 +957,9 @@ let perform_memop_request2 loc memop cvals tid mk_th_st =
 
     | _ ->
         error ("INVALID memop request: " ^ show memop ^ " ==> " ^ Pp.stringFromCore_value (Core.Vtuple cvals) )
-  end >>= fun th_st' ->
+  end >>= fun value ->
   ND.update (fun dr_st ->
-    update_core_state (Core_run.update_thread_state tid th_st' dr_st.core_state) dr_st
+    update_core_state (Core_run.update_thread_state tid (complete dr_st value) dr_st.core_state) dr_st
   )
 
 
@@ -908,6 +977,10 @@ let perform_memop_request2 loc memop cvals tid mk_th_st =
 
 
 
+let perform_memop_request2 loc memop cvals tid mk_th_st =
+  perform_memop_with loc memop cvals tid (fun _ value -> mk_th_st value)
+
+
 let can_advance = function
   | Core_reduction.Step_ccall2 _ _ ->
       false
@@ -915,9 +988,10 @@ let can_advance = function
       true
   | Core_reduction.Step_tau2 _ _ _ ->
       true
-  | Core_reduction.Step_action_request2 _ _ _ is_unseq_with_ccall _ ->
+  | Core_reduction.Step_action_request2 _ _ _ _ _ is_unseq_with_ccall _ ->
       (* TODO: only correct if there is only ONE thread *)
       not is_unseq_with_ccall (* false *)
+  | Core_reduction.Step_join2 _ _ _ -> false
   | Core_reduction.Step_blocked2 ->
       false
   | Core_reduction.Step_error2 str ->
@@ -926,12 +1000,12 @@ let can_advance = function
       true
   | Core_reduction.Step_done2 _ ->
       false
-  | Core_reduction.Step_memop_request2 _ _ _ _ is_unseq_with_ccall _ ->
+  | Core_reduction.Step_memop_request2 _ _ _ _ _ is_unseq_with_ccall _ ->
       (* TODO: only correct if there is only ONE thread *)
       not is_unseq_with_ccall (* false *)
   | Core_reduction.Step_spawn_threads2 _ _ ->
       true
-  | Core_reduction.Step_fs2 _ _ _ ->
+  | Core_reduction.Step_fs2 _ _ _ _ _ ->
       false
   | Core_reduction.Step_nd2 _ ->
       true
@@ -976,7 +1050,7 @@ let advance_step tid step =
         |>) >>= fun () ->
         ND.return NOWAKEUP
 
-    | Core_reduction.Step_action_request2 _ loc tid is_unseq_with_ccall m_request ->
+    | Core_reduction.Step_action_request2 _ _ _ loc tid is_unseq_with_ccall m_request ->
         begin if is_unseq_with_ccall then
           ND.return ()
         else
@@ -985,6 +1059,7 @@ let advance_step tid step =
         end >>= fun () ->
         ND.return NOWAKEUP
 
+    | Core_reduction.Step_join2 _ _ _ -> error "SC join reached sequential advance"
     | Core_reduction.Step_blocked2 ->
         ND.return NOWAKEUP
 
@@ -1012,11 +1087,11 @@ let advance_step tid step =
     | Core_reduction.Step_done2 cval ->
         ND.return NOWAKEUP
 
-    | Core_reduction.Step_memop_request2 loc memop cvals tid is_unseq_with_ccall mk_th_st ->
+    | Core_reduction.Step_memop_request2 _ loc memop cvals tid is_unseq_with_ccall mk_th_st ->
         begin if is_unseq_with_ccall then
           ND.return ()
         else
-          perform_memop_request2 loc memop cvals tid mk_th_st
+          perform_memop_request2 loc memop cvals tid (fun value -> mk_th_st (Core_run.sequential_receipt 0) value)
         end >>= fun () ->
         ND.return NOWAKEUP
 
@@ -1037,7 +1112,7 @@ let advance_step tid step =
         |>) >>= fun () ->
         ND.return (WAKEUP false spawn_tids)
 
-    | Core_reduction.Step_fs2 _ _ _ ->
+    | Core_reduction.Step_fs2 _ _ _ _ _ ->
         error "TODO: Step_fs2"
     
     | Core_reduction.Step_nd2 th_sts ->
@@ -1174,7 +1249,7 @@ let rec drive_nonmemory_steps_aux (acc: map Mem.thread_id (list Core_reduction.c
                   |>) >>= fun () ->
                   ND.return CONTINUE
 
-              | Core_reduction.Step_action_request2 _ _ _ _ ->
+              | Core_reduction.Step_action_request2 _ _ _ _ _ _ ->
                   ND.return (SAVE_STEPS step next_steps)
 
               | Core_reduction.Step_aseq _ _ _ _ ->
@@ -1208,7 +1283,7 @@ let rec drive_nonmemory_steps_aux (acc: map Mem.thread_id (list Core_reduction.c
               | Core_reduction.Step_done2 cval ->
                   ND.return (PROGRAM_DONE cval)
 
-              | Core_reduction.Step_memop_request2 _ _ _ _ ->
+              | Core_reduction.Step_memop_request2 _ _ _ _ _ ->
                   ND.return (SAVE_STEPS step next_steps)
 
               | Core_reduction.Step_spawn_threads2 mk_parent_th_st spawn_th_sts ->
@@ -1323,13 +1398,13 @@ let prepare_exit core_st cval =
 (* performing all action and memop requests until there are no more *)
 val process_core_step2: bool -> (bool -> driverM unit) -> Core_reduction.core_step2 -> driverM unit
 let process_core_step2 with_concurrency driver2 = function
-  | Core_reduction.Step_action_request2 _ loc tid _ m_request ->
+  | Core_reduction.Step_action_request2 _ _ _ loc tid _ m_request ->
       liftCore_run m_request >>= fun request ->
       perform_action_request2 with_concurrency loc tid request >>= fun () ->
       driver2 with_concurrency
 
-  | Core_reduction.Step_memop_request2 loc memop cvals tid _ mk_th_st ->
-      perform_memop_request2 loc memop cvals tid mk_th_st >>= fun () ->
+  | Core_reduction.Step_memop_request2 _ loc memop cvals tid _ mk_th_st ->
+      perform_memop_request2 loc memop cvals tid (fun value -> mk_th_st (Core_run.sequential_receipt 0) value) >>= fun () ->
       driver2 with_concurrency
   
   | Core_reduction.Step_done2 cval ->
@@ -1351,7 +1426,7 @@ let process_core_step2 with_concurrency driver2 = function
       |>) >>= fun () ->
         driver2 with_concurrency
   
-  | Core_reduction.Step_fs2 tid th_st m_fs_step ->
+  | Core_reduction.Step_fs2 _ tid th_st _ m_fs_step ->
       liftCore_run m_fs_step >>= function
         | Core_reduction.FS_done cval ->
             ND.update (fun dr_st ->
@@ -1369,8 +1444,172 @@ let process_core_step2 with_concurrency driver2 = function
 end
 
 
+let sc_request_state tid kind annotation dr_st =
+  match dr_st.sc_state with
+    | Nothing -> dr_st
+    | Just sc ->
+        let aid = dr_st.core_run_state.Core_run.aid_supply in
+        <| dr_st with
+          sc_state= Just (Sc_runtime.sc_begin_request
+            <| Sc_runtime.sc_request_id= aid; Sc_runtime.sc_request_thread= tid;
+               Sc_runtime.sc_request_annotation= annotation; Sc_runtime.sc_request_kind= kind |> sc);
+          core_run_state= <| dr_st.core_run_state with Core_run.aid_supply= aid + 1 |>;
+        |>
+  end
+
+let sc_begin_request tid kind annotation =
+  ND.update (sc_request_state tid kind annotation)
+
+let sc_initial_annotation tid dr_st =
+  match dr_st.sc_state with
+    | Nothing -> Core_run.empty_annotation
+    | Just sc -> Sc_order.sc_before_annotation (Sc_runtime.sc_thread_effects tid sc)
+        Core_run.empty_annotation
+  end
+
+let sc_enable = ND.ND (fun dr_st ->
+  match Mem.begin_observing dr_st.layout_state with
+    | Nothing -> (ND.NDkilled (ND.Other (DErr_concurrency "SC port gap: memory observer unavailable")), dr_st)
+    | Just memory -> (ND.NDactive (), <| dr_st with layout_state= memory;
+        sc_state= Just Sc_runtime.sc_initial_state |>)
+  end)
+
+let sc_kind_of_request polarity = function
+  | Core_reduction.LoadRequest2 order _ _ _ -> Sc_runtime.SC_access order polarity
+  | Core_reduction.StoreRequest2 order _ _ _ _ _ -> Sc_runtime.SC_access order polarity
+  | Core_reduction.SeqRMWRequest2 _ _ _ _ -> Sc_runtime.SC_seq_rmw
+  | _ -> Sc_runtime.SC_lifetime polarity
+end
+
+type sc_step_progress = SC_continue | SC_halted | SC_blocked
+
+let sc_service_step tid step =
+  let resume th_st =
+    ND.update (fun dr_st -> <| dr_st with
+      core_state= Core_run.update_thread_state tid th_st dr_st.core_state;
+      dr_step_counter= dr_st.dr_step_counter + 1;
+    |>) >> ND.return SC_continue in
+  match step with
+    | Core_reduction.Step_action_request2 annotation polarity _ loc _ _ request_m ->
+        liftCore_run request_m >>= fun request ->
+        sc_begin_request tid (sc_kind_of_request polarity request) annotation >>
+        action_request_with loc tid sc_receipt_from_state request >> ND.return SC_continue
+    | Core_reduction.Step_memop_request2 annotation loc memop values _ _ resume_request ->
+        sc_begin_request tid (Sc_runtime.SC_memop memop) annotation >>
+        perform_memop_with loc memop values tid
+          (fun dr_st value -> resume_request (sc_receipt_from_state dr_st) value) >> ND.return SC_continue
+    | Core_reduction.Step_ccall2 _ call_m ->
+        liftCore_run call_m >>= resume
+    | Core_reduction.Step_with_runstate2 kind step_m ->
+        match kind with
+          | Core_reduction.RSK_tau _ (Core_run.TSK_Return sym value) ->
+              ND.update (fun dr_st -> <| dr_st with trace= ME_function_return sym value :: dr_st.trace |>)
+          | _ -> ND.return ()
+        end >> liftCore_run step_m >>= resume
+    | Core_reduction.Step_tau2 _ kind th_st ->
+        match kind with
+          | Core_run.TSK_Return sym value ->
+              ND.update (fun dr_st -> <| dr_st with trace= ME_function_return sym value :: dr_st.trace |>)
+          | _ -> ND.return ()
+        end >> resume th_st
+    | Core_reduction.Step_nd2 states ->
+        ND.pick (SK_misc ["SC Core choice"]) states >>= resume
+    | Core_reduction.Step_spawn_threads2 make_parent children ->
+        ND.get >>= fun before ->
+        let ((tids, core_st), run_st) = State.runStateM
+          (State.foldlM (fun (tids, core_st) child ->
+             State.bind (Core_run.spawn_thread (Just tid) child core_st)
+               (fun (child_tid, core_st') -> State.return (child_tid :: tids, core_st'))
+           ) ([], before.core_state) children) before.core_run_state in
+        ND.update (fun dr_st -> <| dr_st with core_state= core_st; core_run_state= run_st |>) >>
+        (* Child errno is a distinct object. C11 7.5p3 gives it an indeterminate
+           initial value; retain upstream's explicit no-zero-store requirement. *)
+        ND.mapM_ (fun child_tid ->
+          sc_begin_request child_tid (Sc_runtime.SC_runtime "child errno allocation") Core_run.empty_annotation >>
+          driver_liftMem (Mem.allocate_object child_tid (Symbol.PrefOther "errno")
+            (Mem.alignof_ival Ctype.signed_int) Ctype.signed_int Nothing Nothing) >>= fun pointer ->
+          ND.update (fun dr_st ->
+            match List.lookup child_tid dr_st.core_state.Core_run.thread_states with
+              | Nothing -> dr_st
+              | Just (_, child) ->
+                  let child' = <| child with Core_run.errno= pointer;
+                    Core_run.arena= Sc_order.sc_inherit_expr
+                      (sc_initial_annotation child_tid dr_st) child.Core_run.arena |> in
+                  <| dr_st with core_state= Core_run.update_thread_state child_tid child' dr_st.core_state |>
+            end)
+        ) (List.reverse tids) >>
+        (* Preserve child order: the fold's accumulator is newest first. *)
+        resume (make_parent (List.reverse tids))
+    | Core_reduction.Step_thread_done2 parent value ->
+        ND.update (fun dr_st ->
+          match dr_st.sc_state with
+            | Nothing -> dr_st
+            | Just sc -> <| dr_st with
+                core_state= <| dr_st.core_state with Core_run.thread_states=
+                  List.filter (fun (other, _) -> other <> tid) dr_st.core_state.Core_run.thread_states |>;
+                sc_state= Just (Sc_runtime.sc_complete_child tid parent value sc);
+                dr_step_counter= dr_st.dr_step_counter + 1;
+              |>
+          end) >> ND.return SC_continue
+    | Core_reduction.Step_done2 value ->
+        ND.update (fun dr_st -> <| dr_st with core_state= prepare_exit dr_st.core_state value |>) >> ND.return SC_halted
+    | Core_reduction.Step_fs2 annotation _ th_st resume_fs operation_m ->
+        sc_begin_request tid (Sc_runtime.SC_runtime "Core filesystem/runtime operation") annotation >>
+        liftCore_run operation_m >>= function
+          | Core_reduction.FS_done value ->
+              ND.update (fun dr_st -> <| dr_st with core_state= prepare_exit dr_st.core_state value |>) >> ND.return SC_halted
+          | Core_reduction.FS_oper operation ->
+              ND.get >>= fun dr_st ->
+              drive_fs_step_with
+                (fun after result ->
+                  match result.Core_run.arena with
+                    | Core.Expr _ (Core.Epure pe) -> resume_fs (sc_receipt_from_state after) pe
+                    | _ -> error "SC runtime completion did not return a pure expression"
+                  end) tid th_st dr_st operation >> ND.return SC_continue
+        end
+    | Core_reduction.Step_join2 _ predecessors th_st ->
+        ND.update (fun dr_st -> match dr_st.sc_state with
+          | Nothing -> dr_st
+          | Just sc -> <| dr_st with sc_state= Just (Sc_runtime.sc_note_join tid predecessors sc) |>
+        end) >> resume th_st
+    | Core_reduction.Step_blocked2 -> ND.return SC_blocked
+    | Core_reduction.Step_error2 message -> ND.kill (ND.Other (DErr_core_run (Illformed_program message)))
+  end
+
+let sc_choices sc dr_st =
+  List.concat (List.map (fun (tid, th_info) ->
+          List.map (fun step -> (tid, step))
+            (List.filter (function Core_reduction.Step_blocked2 -> false | _ -> true end)
+              (Core_reduction.step_ctx_with (Just (Sc_runtime.sc_control tid sc))
+                dr_st.layout_state dr_st.core_file dr_st.core_extern tid th_info))
+        ) dr_st.core_state.Core_run.thread_states)
+
+(* The authoritative relation includes every current Core step. No normalization
+   or state merging hides an alternative. Exploration optimizations require a
+   separate correspondence argument; resource bounds are not language bounds. *)
+let sc_step () =
+  ND.get >>= fun dr_st ->
+  match dr_st.sc_state with
+    | Nothing -> ND.kill (ND.Other (DErr_concurrency "SC state is not initialized"))
+    | Just sc ->
+        let choices = sc_choices sc dr_st in
+        match choices with
+          | [] -> ND.update (fun state -> <| state with blocked= true |>) >> ND.return SC_blocked
+          | _ -> ND.pick (SK_misc ["SC thread/Core step"]) choices >>= fun (tid, step) ->
+              sc_service_step tid step
+        end
+  end
+
+
 val     driver2: bool -> driverM unit
 let rec driver2 with_concurrency =
+  if with_concurrency then
+    sc_step () >>= (function
+      | SC_continue -> driver2 true
+      | SC_halted -> ND.return ()
+      | SC_blocked -> ND.return ()
+    end)
+  else
   let () = Debug.print_debug 2 [] (fun () -> "ENTERING Driver.driver2") in
   new_drive_core_threads   () >>= fun tid_steps ->
   ND.get >>= fun post_core_dr_st ->
@@ -1527,6 +1766,7 @@ let initial_driver_state_with address_space_top run_st file fs_state =
     concurrency_state= Cmm_op.symInitialState Cmm_op.symInitialPre;
     fs_state=          fs_state;
     trace=             [];
+    sc_state=          Nothing;
     symbolic_assoc=    Map.empty;
     blocked=           false;
     dr_step_counter=   0;
@@ -1567,6 +1807,16 @@ let driver_update_thread_state tid th_st =
 let inline update_thread_state = driver_update_thread_state
 
 
+let initialize_thread_state tid th_st =
+  ND.update (fun dr_st ->
+    let th_st' = match dr_st.sc_state with
+      | Nothing -> th_st
+      | Just _ -> <| th_st with Core_run.arena=
+          Sc_order.sc_inherit_expr (sc_initial_annotation tid dr_st) th_st.Core_run.arena |>
+      end in
+    <| dr_st with core_state= Core_run.update_thread_state tid th_st' dr_st.core_state |>)
+
+
 val driver_globals: bool -> Core.file Core_run.core_run_annotation -> driverM Mem.thread_id
 let driver_globals with_concurrency file =
   (* spawning a thread for the initialisation of globals, and later the execution of main *)
@@ -1597,7 +1847,7 @@ let driver_globals with_concurrency file =
     (* setting up the initialisation of the current global in thread 0 *)
     get_thread_states >>= function
       | [(_, (_, th_st))] ->
-        update_thread_state tid0 <|
+        initialize_thread_state tid0 <|
           (* the previously evaluated globals are substituted in the body of the
              global we are about to evaluate *)
           Core_run.arena= expr;
@@ -1624,7 +1874,7 @@ let driver_globals with_concurrency file =
                   | Nothing ->
                       error "WIP: driver_globals"
                   | Just cval ->
-                      update_thread_state tid0
+                      initialize_thread_state tid0
                         <| th_st with
                             Core_run.env = Core_aux.update_env (Core.Pattern [] (Core.CaseBase (Just (glob_sym), glob_bTy))) cval th_st.Core_run.env
                         |>
@@ -1644,7 +1894,9 @@ let driver_globals with_concurrency file =
           error "ERROR (in Driver, global init didn't evaluate to value)"
     end
   ) glob_defs >>
-  ND.return tid0
+  ND.ND (fun dr_st -> (ND.NDactive tid0,
+    sc_request_state tid0 (Sc_runtime.SC_runtime "startup argv/errno")
+      (sc_initial_annotation tid0 dr_st) dr_st))
 
 
 
@@ -1672,7 +1924,7 @@ let prepare_main_args loc callconv tid0 main_sym arg_strs argc_sym argv_sym =
 
   (* allocating and initialising the objects pointed to by the elements of argv *)
   ND.foldlM (fun ptr_vals (arg_mem_val, arg_ty) ->
-    liftMem (
+    driver_liftMem (
       Mem.bind (Mem.allocate_object tid0 (Symbol.PrefOther "argv refs") (Mem.alignof_ival arg_ty) arg_ty Nothing Nothing) (fun ptr_val ->
         Mem.bind (Mem.store (Loc.other "argv refs init") arg_ty false ptr_val arg_mem_val) (fun _ ->
           Mem.return (ptr_val :: ptr_vals)
@@ -1685,7 +1937,7 @@ let prepare_main_args loc callconv tid0 main_sym arg_strs argc_sym argv_sym =
   (* NOTE: the element argv[argc] is required to be a null pointer
       by the STD, hence argv has one more element than the number
       of supplied arguments *)
- liftMem begin
+ driver_liftMem begin
     let pref = Symbol.PrefSource loc [main_sym; argv_sym(*TODO: change the sym?*)] in
     let argv_array_ty = Ctype.Ctype [] (Ctype.Array Ctype.pointer_to_char (Just (1 + (integerFromNat (List.length ptr_vals_rev))))) in
     let argv_array_mem_val = Mem.array_mval (
@@ -1702,7 +1954,7 @@ let prepare_main_args loc callconv tid0 main_sym arg_strs argc_sym argv_sym =
   match callconv with
     | Core.Normal_callconv ->
         let argc_mem_val = Mem.integer_mval (Ctype.Signed Ctype.Int_) number_of_args in
-        liftMem begin
+        driver_liftMem begin
           let pref = Symbol.PrefSource loc [main_sym; argc_sym] in
           Mem.bind (Mem.allocate_object tid0 pref (Mem.alignof_ival Ctype.signed_int) Ctype.signed_int Nothing Nothing) (fun argc_ptr_val ->
           Mem.bind (Mem.store (Loc.other "argc init") Ctype.signed_int false argc_ptr_val argc_mem_val) (fun _ ->
@@ -1730,8 +1982,8 @@ let prepare_main_args loc callconv tid0 main_sym arg_strs argc_sym argv_sym =
 
 
 
-val drive: bool -> Core.file Core_run.core_run_annotation -> list string -> driverM driver_result
-let drive (with_concurrency: bool) file (arg_strs: list string) =
+val drive_recorded: bool -> Core.file Core_run.core_run_annotation -> list string -> driverM driver_result
+let drive_recorded (with_concurrency: bool) file (arg_strs: list string) =
   (* Setting the read-only tag definitions (used by the memory model) *)
   (* first we execute the body of global definitions and remove their symbols
      from the rest of the program *)
@@ -1793,7 +2045,7 @@ let drive (with_concurrency: bool) file (arg_strs: list string) =
                    ND.return (Core.Vobject (Core.OVinteger (Mem.integer_ival number_of_args)))
               else *)
                 (* allocating and initialising an object for main.argc *)
-                liftMem (
+                driver_liftMem (
                   Mem.bind (Mem.allocate_object tid0 (Symbol.PrefSource loc [main_sym; argc_sym])
                               (Mem.alignof_ival Ctype.signed_int) Ctype.signed_int Nothing Nothing) (fun ptr_val ->
                     Mem.bind (Mem.store (Loc.other "argc init") Ctype.signed_int false ptr_val argc_mem_val) (fun _ ->
@@ -1805,7 +2057,7 @@ let drive (with_concurrency: bool) file (arg_strs: list string) =
               
               (* allocating and initialising the objects pointed to by the elements of argv *)
               ND.foldlM (fun ptr_vals (arg_mem_val, arg_ty) ->
-                liftMem (
+                driver_liftMem (
                   Mem.bind (Mem.allocate_object tid0 (Symbol.PrefOther "argv refs") (Mem.alignof_ival arg_ty) arg_ty Nothing Nothing) (fun ptr_val ->
                     Mem.bind (Mem.store (Loc.other "argv refs init") arg_ty false ptr_val arg_mem_val) (fun _ ->
                       Mem.return (ptr_val :: ptr_vals)
@@ -1822,7 +2074,7 @@ let drive (with_concurrency: bool) file (arg_strs: list string) =
               let argv_array_ty = Ctype.Ctype [] (Ctype.Array argv_array_elem_ty (Just (1 + (integerFromNat $ List.length ptr_vals_rev)))) in
               let argv_array_mem_val = Mem.array_mval $
                 List.map (Mem.pointer_mval Ctype.char) (List.reverse ptr_vals_rev ++ [Mem.null_ptrval Ctype.char]) in
-              liftMem (
+              driver_liftMem (
                 Mem.bind (Mem.allocate_object tid0 (Symbol.PrefSource loc [main_sym; argv_sym(*TODO: change the sym?*)])
                             (Mem.alignof_ival argv_array_ty) argv_array_ty Nothing Nothing) (fun array_ptr_val ->
                 Mem.bind (Mem.store (Loc.other "argv array init") argv_array_ty false array_ptr_val argv_array_mem_val) (fun _ ->
@@ -1844,7 +2096,7 @@ let drive (with_concurrency: bool) file (arg_strs: list string) =
               (* Adding the values of argc and argv to the Core symbol environment *)
               get_thread_states >>= function
                 | [(_, (_, th_st))] ->
-                  update_thread_state tid0
+                  initialize_thread_state tid0
                     <| th_st with
                         Core_run.env =
                           match th_st.Core_run.env with
@@ -1865,7 +2117,7 @@ let drive (with_concurrency: bool) file (arg_strs: list string) =
         end >>= fun expr ->
         
         (* allocating and initialising errno *)
-        liftMem (
+        driver_liftMem (
           Mem.bind (Mem.allocate_object tid0 (Symbol.PrefOther "errno") (Mem.alignof_ival Ctype.signed_int) Ctype.signed_int Nothing Nothing) (fun ptr_val ->
             let zero = Mem.integer_value_mval (Ctype.Signed Ctype.Int_) (Mem.integer_ival 0) in
             Mem.bind (Mem.store (Loc.other "errno init") Ctype.signed_int false ptr_val zero) (fun _ ->
@@ -1876,7 +2128,7 @@ let drive (with_concurrency: bool) file (arg_strs: list string) =
         
         get_thread_states >>= function
           | [(_, (_, th_st))] ->
-              update_thread_state tid0 <|
+              initialize_thread_state tid0 <|
                 Core_run.arena= expr;
                 Core_run.stack= Core_run.Stack_empty (*Core_run.push_empty_continuation (Just main_sym) Core_run.empty_stack*);
                 Core_run.errno= errno_ptr_val;
@@ -1891,11 +2143,31 @@ let drive (with_concurrency: bool) file (arg_strs: list string) =
         driver2 with_concurrency >>
         
         if with_concurrency then
-          error "CONCURRENCY IS BROKEN"
+          ND.read (fun dr_st' ->
+            if dr_st'.blocked then
+              <|
+                dres_blocked= true;
+                dres_concurrency_state= dr_st'.concurrency_state;
+                dres_driver_steps= dr_st'.dr_step_counter;
+                dres_core_value= Core.Vunit; (* no return value; blocked flag is authoritative *)
+                dres_stdout= List.foldr String.stringAppend "" (Dlist.toList dr_st'.core_state.Core_run.io.Core_run.stdout);
+                dres_stderr= List.foldr String.stringAppend "" (Dlist.toList dr_st'.core_state.Core_run.io.Core_run.stderr);
+              |>
+            else finalize "drive recorded SC" dr_st')
         else
           ND.get >>= fun dr_st' ->
           ND.return (finalize "drive (without concur)" dr_st')
+
 end
+
+(* Temporary S1 entry separation: drive_recorded true exposes actual schedules
+   for component tests. The public SC entry cannot report a completed SC result
+   until S3's atomic/race/fence checks are connected. *)
+let drive with_concurrency file args =
+  if with_concurrency then
+    sc_enable >> drive_recorded true file args >>= fun _ ->
+    ND.kill (ND.Other (DErr_concurrency "SC port gap: atomic/race/fence checker integration pending"))
+  else drive_recorded false file args
 
 
 (* === Totality declares (arc 3 sweep, 2026-08-18, final batch): Lean-target only.

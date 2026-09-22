@@ -591,7 +591,7 @@ let rec symbolify_expr ((Expr (annot, expr_)) : parsed_expr) : (unit expr) Eff.t
    | Epure _pe ->
        symbolify_pexpr _pe >>= fun pe ->
        Eff.return (Epure pe)
-   | Ememop (_memop, _pes) ->
+   | Ememop (_mem_annot, _memop, _pes) ->
        begin
          let open Mem_common in
          match _memop with
@@ -646,7 +646,7 @@ let rec symbolify_expr ((Expr (annot, expr_)) : parsed_expr) : (unit expr) Eff.t
               assert false
        end >>= fun memop ->
        Eff.mapM symbolify_pexpr _pes >>= fun pes ->
-       Eff.return (Ememop (memop, pes))
+       Eff.return (Ememop (_mem_annot, memop, pes))
    | Eaction _pact ->
        symbolify_paction _pact >>= fun pact ->
        Eff.return (Eaction pact)
@@ -1643,7 +1643,7 @@ expr:
 | PURE pe_= delimited(LPAREN, pexpr, RPAREN)
     { Expr ([Aloc (region ($startpos, $endpos) NoCursor)], Epure pe_) }
 | MEMOP LPAREN memop= memop_op COMMA pes= separated_list(COMMA, pexpr) RPAREN
-    { Expr ([Aloc (region ($startpos, $endpos) NoCursor)], Ememop (memop, pes)) }
+    { Expr ([Aloc (region ($startpos, $endpos) NoCursor)], Ememop ((), memop, pes)) }
 | LET _pat= pattern EQ _pe1= pexpr IN _e2= expr
     { Expr ( [Aloc (region ($startpos, $endpos) NoCursor)]
            , Elet (_pat, _pe1, _e2) ) }

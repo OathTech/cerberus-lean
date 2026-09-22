@@ -1604,7 +1604,7 @@ let rec collect_labels env (Expr _ expr_) =
   match expr_ with
     | Epure _ ->
         E.return env
-    | Ememop _ _ ->
+    | Ememop _ _ _ ->
         E.return env
     | Eaction _ ->
         E.return env
@@ -1673,13 +1673,13 @@ and typecheck_expr callconv tagDefs (env: typing_env) expected_bTy (Expr annot e
   Expr annot <$> match expr_ with
     | Epure pe ->
         Epure <$> typecheck_export_pexpr tagDefs env expected_bTy pe
-    | Ememop memop pes ->
+    | Ememop mem_annot memop pes ->
         let (ret_bTy, bTys) = memop_signature memop in
         E.mapM (fun (bTy, pe) ->
           typecheck_export_pexpr tagDefs env bTy pe
         ) (List.zip bTys pes) >>= fun pes' ->
         guard_match loc "memop()" expected_bTy ret_bTy >>
-        E.return (Ememop memop pes')
+        E.return (Ememop mem_annot memop pes')
     | (Eaction (Paction p act)) ->
         (Eaction -| Paction p)
           <$> typecheck_action tagDefs env expected_bTy act

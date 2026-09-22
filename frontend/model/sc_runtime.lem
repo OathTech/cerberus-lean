@@ -1,0 +1,118 @@
+(* Operational SC bookkeeping. This recorder retains concrete memory effects;
+   it is not, by itself, a consistency checker or a whole-program verdict. *)
+open import Pervasives Core_run_aux
+import Mem Mem_common Cmm_csem Sc_order
+
+(* The request boundary and its internal observations are distinct. The journal
+   order is not silently promoted to C sequenced-before or to scheduling points. *)
+type sc_request_kind =
+  | SC_access of Cmm_csem.memory_order * Core.polarity
+  | SC_seq_rmw
+  | SC_lifetime of Core.polarity
+  | SC_memop of Mem_common.memop
+  | SC_runtime of string
+  | SC_fence of Cmm_csem.memory_order
+
+type sc_request = <|
+  sc_request_id: Cmm_csem.aid;
+  sc_request_thread: Mem_common.thread_id;
+  sc_request_annotation: core_run_annotation;
+  sc_request_kind: sc_request_kind;
+|>
+
+type sc_effect = <|
+  sc_effect_id: Cmm_csem.aid;
+  sc_effect_request: sc_request;
+  sc_effect_observation: Mem.memory_observation;
+|>
+
+type sc_completed_child = <|
+  sc_child_id: Mem_common.thread_id;
+  sc_child_parent: Mem_common.thread_id;
+  sc_child_value: Core.value;
+  sc_child_effects: Sc_order.sc_predecessors;
+|>
+
+type sc_state = <|
+  sc_current_request: maybe sc_request;
+  sc_current_effects: Sc_order.sc_predecessors;
+  sc_effects: list sc_effect; (* newest first, preserving occurrence identity *)
+  sc_completed: list sc_completed_child;
+  sc_join_history: list (Mem_common.thread_id * Sc_order.sc_predecessors);
+|>
+
+let sc_initial_state = <|
+  sc_current_request= Nothing;
+  sc_current_effects= {};
+  sc_effects= [];
+  sc_completed= [];
+  sc_join_history= [];
+|>
+
+let sc_begin_request request state =
+  <| state with
+    sc_current_request= Just <| request with sc_request_annotation=
+      Sc_order.sc_thread_annotation request.sc_request_thread request.sc_request_annotation |>;
+    sc_current_effects= {};
+  |>
+
+let sc_effect_polarity request observation =
+  match request.sc_request_kind with
+    | SC_access _ polarity -> polarity
+    | SC_lifetime polarity -> polarity
+    | SC_seq_rmw ->
+        match observation with
+          | Mem_common.Observe_access _ Mem_common.StoreAccess _ _ _ _ _ _ _ -> Core.Neg
+          | _ -> Core.Pos
+        end
+    | _ -> Core.Pos
+  end
+
+(* The driver owns the fresh supply. No independent supply or implicit fresh
+   event is introduced by this function. Missing ownership is an explicit gap. *)
+let sc_record_effect aid observation state =
+  match state.sc_current_request with
+    | Nothing -> Nothing
+    | Just request ->
+        let predecessor = (sc_effect_polarity request observation,
+                           (request.sc_request_thread, aid)) in
+        Just <| state with
+          sc_current_effects= Set.insert predecessor state.sc_current_effects;
+          sc_effects= <| sc_effect_id= aid; sc_effect_request= request;
+                        sc_effect_observation= observation |> :: state.sc_effects;
+        |>
+  end
+
+let sc_thread_effects tid state =
+  let own = Set.fromList (List.map (fun recorded ->
+    (Core.Pos, (tid, recorded.sc_effect_id)))
+    (List.filter (fun recorded -> recorded.sc_effect_request.sc_request_thread = tid)
+      state.sc_effects)) in
+  own union (match List.lookup tid state.sc_join_history with Nothing -> {} | Just effects -> effects end)
+
+let sc_note_join tid effects state =
+  let previous = match List.lookup tid state.sc_join_history with Nothing -> {} | Just prior -> prior end in
+  <| state with sc_join_history= (tid, previous union effects) ::
+      List.filter (fun (other, _) -> other <> tid) state.sc_join_history |>
+
+let sc_control tid state = <|
+  prior_events= sc_thread_effects tid state;
+  completed_children= List.map (fun child ->
+    (child.sc_child_id, (child.sc_child_value, child.sc_child_effects)))
+    (List.filter (fun child -> child.sc_child_parent = tid) state.sc_completed);
+|>
+
+let sc_complete_child tid parent value state =
+  <| state with sc_completed=
+    <| sc_child_id= tid; sc_child_parent= parent; sc_child_value= value;
+       sc_child_effects= sc_thread_effects tid state |> :: state.sc_completed |>
+
+let sc_receipt state =
+  match state.sc_current_request with
+    | Nothing -> Nothing
+    | Just request -> Just (request.sc_request_id, Just state.sc_current_effects)
+  end
+
+(* Comparison derivation needs the concrete abstract-byte field instance. These
+   records are retained by occurrence ID, never deduplicated by their payload. *)
+declare {lean} extra_import `CerbSCByteInstances`

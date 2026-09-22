@@ -179,7 +179,7 @@ let rec free_expr acc (Expr _ e) =
   match e with
   | Epure pe ->
       free_pexpr acc pe
-  | Ememop _ pes ->
+  | Ememop _ _ pes ->
       List.foldl free_pexpr acc pes
   | Eaction pact ->
       free_paction acc pact

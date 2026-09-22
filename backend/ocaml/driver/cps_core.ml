@@ -129,7 +129,7 @@ let cps_transform_expr globs bvs core_expr =
     let to_basic e = (bbs, ((pat1, e)::es, (pat2, ce))) in
     match e_ with
     | Epure pe            -> to_basic (CpsPure pe)
-    | Ememop (memop, pes) -> to_basic (CpsMemop (memop, pes))
+    | Ememop (_mem_annot, memop, pes) -> to_basic (CpsMemop (memop, pes))
     | Eaction act         -> to_basic (CpsAction act)
     | Eccall (_, _, nm, pes) ->
       let (bb, args) = block_call es pat2 ce in

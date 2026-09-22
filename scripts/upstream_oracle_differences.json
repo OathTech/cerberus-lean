@@ -134,6 +134,125 @@
         "stdout_sha256": "ce222125f809d9e97ee1a7685c64eadff5eb5ce469ee81642a4ea4e16571f966",
         "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       }
+    },
+    "minimal/097-null-ptr-arith.undef.c": {
+      "class": "diagnostic-text",
+      "citation": [
+        "lean_frontend/docs/2026-09-21_sc-protocol-diagnostic-review.md"
+      ],
+      "rationale": "Both engines preserve exit 125 and identical stdout. Under the existing diagnostic projection, the only difference is one backtrace frame renamed by the shared SC protocol refactoring: Called from Cerb_frontend__Core_reduction.step_ctx.(fun) in file \"ocaml_frontend/generated/core_reduction.ml\" -> Called from Cerb_frontend__Core_reduction.step_ctx_with.(fun) in file \"ocaml_frontend/generated/core_reduction.ml\". The exception payload and all other projected stderr bytes are unchanged. This is an exact diagnostic difference, not successful semantic agreement. Preserve the strict global projection; this row pins the complete original pair and retires if the upstream/fork signatures converge.",
+      "upstream": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "b207827358461014933750d8e8924b3d31d4e9083a66fb50c0f71251eaa72858"
+      },
+      "fork": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "ee6714391a936967bb83078b0e69a60ab2bde57ec70c8d4e9670f211e23633ad"
+      }
+    },
+    "immaculate/nolibc/zd-z2fl03-nan-to-int": {
+      "class": "diagnostic-text",
+      "citation": [
+        "lean_frontend/docs/2026-09-21_sc-protocol-diagnostic-review.md"
+      ],
+      "rationale": "Both engines preserve exit 125 and identical stdout. Under the existing diagnostic projection, the only difference is one backtrace frame renamed by the shared SC protocol refactoring: Called from Cerb_frontend__Core_reduction.step_ctx.(fun) in file \"ocaml_frontend/generated/core_reduction.ml\" -> Called from Cerb_frontend__Core_reduction.step_ctx_with.(fun) in file \"ocaml_frontend/generated/core_reduction.ml\". The exception payload and all other projected stderr bytes are unchanged. This is an exact diagnostic difference, not successful semantic agreement. Preserve the strict global projection; this row pins the complete original pair and retires if the upstream/fork signatures converge.",
+      "upstream": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "a8aed81ebd2694a31719159a618fecf63fe023bc4d22fec1b7e4d661dcd959c3"
+      },
+      "fork": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "57f027bd1b710f022399b4cc7fd9f18504fa45c7793bba906f5427209448c42d"
+      }
+    },
+    "immaculate/nolibc/zd-z2m01-aligned-alloc-zero-nolibc": {
+      "class": "diagnostic-text",
+      "citation": [
+        "lean_frontend/docs/2026-09-21_sc-protocol-diagnostic-review.md"
+      ],
+      "rationale": "Both engines preserve exit 125 and identical stdout. Under the existing diagnostic projection, the only difference is one backtrace frame renamed by the shared SC protocol refactoring: Called from Cerb_frontend__Core_reduction.step_ctx.(fun) in file \"ocaml_frontend/generated/core_reduction.ml\" -> Called from Cerb_frontend__Core_reduction.step_ctx_with.(fun) in file \"ocaml_frontend/generated/core_reduction.ml\". The exception payload and all other projected stderr bytes are unchanged. This is an exact diagnostic difference, not successful semantic agreement. Preserve the strict global projection; this row pins the complete original pair and retires if the upstream/fork signatures converge.",
+      "upstream": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "a4a9c0fa7192077d66c7619ce2ff04cd970d76c93bbf6b2250510b3925cc602a"
+      },
+      "fork": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "f98734ebff2dfb0b7b4578785ca45a71051c4abf64e6434d91b3bcbdfc5a1c99"
+      }
+    },
+    "immaculate/nolibc/zd-z2m02-device-funptr-call": {
+      "class": "diagnostic-text",
+      "citation": [
+        "lean_frontend/docs/2026-09-21_sc-protocol-diagnostic-review.md"
+      ],
+      "rationale": "Both engines preserve exit 125 and identical stdout. Under the existing diagnostic projection, the only difference is one backtrace frame renamed by the shared SC protocol refactoring: Called from Cerb_frontend__Core_reduction.step_ctx.(fun) in file \"ocaml_frontend/generated/core_reduction.ml\" -> Called from Cerb_frontend__Core_reduction.step_ctx_with.(fun) in file \"ocaml_frontend/generated/core_reduction.ml\". The exception payload and all other projected stderr bytes are unchanged. This is an exact diagnostic difference, not successful semantic agreement. Preserve the strict global projection; this row pins the complete original pair and retires if the upstream/fork signatures converge.",
+      "upstream": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "588e74803edc35c117e0e5a1a22f34acfbf85404ecd58b3cf16a954d8ccf621a"
+      },
+      "fork": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "eaddc071d56bf690d3fe38be567c13ad329cbfc2a443f16f2247f43495b8b8d7"
+      }
+    },
+    "immaculate/libc/s4b-memcmp-hugesize": {
+      "class": "diagnostic-text",
+      "citation": [
+        "lean_frontend/docs/2026-09-21_sc-protocol-diagnostic-review.md"
+      ],
+      "rationale": "Both engines preserve exit 125 and identical stdout. Under the existing diagnostic projection, the only difference is one backtrace frame renamed by the shared SC protocol refactoring: Called from Cerb_frontend__Driver.perform_memop_request2 in file \"ocaml_frontend/generated/driver.ml\" -> Called from Cerb_frontend__Driver.perform_memop_with in file \"ocaml_frontend/generated/driver.ml\". The exception payload and all other projected stderr bytes are unchanged. This is an exact diagnostic difference, not successful semantic agreement. Preserve the strict global projection; this row pins the complete original pair and retires if the upstream/fork signatures converge.",
+      "upstream": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "df318b21963bd954a493c771533b5d4ea0aa2c82271b63a013efb795ad68ab95"
+      },
+      "fork": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "57e784e5b2e70e4c57a245f96b9f97ea1d2708832a41b7432249ee2735bdf894"
+      }
+    },
+    "immaculate/libc/zd-z2m01-aligned-alloc-zero-zero": {
+      "class": "diagnostic-text",
+      "citation": [
+        "lean_frontend/docs/2026-09-21_sc-protocol-diagnostic-review.md"
+      ],
+      "rationale": "Both engines preserve exit 125 and identical stdout. Under the existing diagnostic projection, the only difference is one backtrace frame renamed by the shared SC protocol refactoring: Called from Cerb_frontend__Core_reduction.step_ctx.(fun) in file \"ocaml_frontend/generated/core_reduction.ml\" -> Called from Cerb_frontend__Core_reduction.step_ctx_with.(fun) in file \"ocaml_frontend/generated/core_reduction.ml\". The exception payload and all other projected stderr bytes are unchanged. This is an exact diagnostic difference, not successful semantic agreement. Preserve the strict global projection; this row pins the complete original pair and retires if the upstream/fork signatures converge.",
+      "upstream": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "a4a9c0fa7192077d66c7619ce2ff04cd970d76c93bbf6b2250510b3925cc602a"
+      },
+      "fork": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "f98734ebff2dfb0b7b4578785ca45a71051c4abf64e6434d91b3bcbdfc5a1c99"
+      }
+    },
+    "immaculate/libc/zd-z2m01-aligned-alloc-zero": {
+      "class": "diagnostic-text",
+      "citation": [
+        "lean_frontend/docs/2026-09-21_sc-protocol-diagnostic-review.md"
+      ],
+      "rationale": "Both engines preserve exit 125 and identical stdout. Under the existing diagnostic projection, the only difference is one backtrace frame renamed by the shared SC protocol refactoring: Called from Cerb_frontend__Core_reduction.step_ctx.(fun) in file \"ocaml_frontend/generated/core_reduction.ml\" -> Called from Cerb_frontend__Core_reduction.step_ctx_with.(fun) in file \"ocaml_frontend/generated/core_reduction.ml\". The exception payload and all other projected stderr bytes are unchanged. This is an exact diagnostic difference, not successful semantic agreement. Preserve the strict global projection; this row pins the complete original pair and retires if the upstream/fork signatures converge.",
+      "upstream": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "a4a9c0fa7192077d66c7619ce2ff04cd970d76c93bbf6b2250510b3925cc602a"
+      },
+      "fork": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "f98734ebff2dfb0b7b4578785ca45a71051c4abf64e6434d91b3bcbdfc5a1c99"
+      }
     }
   }
 }

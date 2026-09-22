@@ -1855,7 +1855,7 @@ private partial def pExprMemop : P Expr' := do
   lexSym ","
   let pes ← sepByComma pPexpr
   lexSym ")"
-  return (mkE (Ememop memop pes))
+  return (mkE (Ememop () memop pes))
 
 private partial def pExprLet : P Expr' := do
   lexKw "let"
@@ -2614,7 +2614,7 @@ private partial def relocE (ctx : RelocCtx) : Expr' → Expr'
     let rp := relocPE ctx
     Expr (relocAnnots ctx annots) (match e_ with
       | Epure pe => Epure (rp pe)
-      | Ememop op pes => Ememop op (pes.map rp)
+      | Ememop a op pes => Ememop a op (pes.map rp)
       | Eaction (Paction pol act) => Eaction (Paction pol (relocAction ctx act))
       | Ecase pe alts => Ecase (rp pe) (alts.map fun (pat, e) => (relocPat ctx pat, r e))
       | Elet pat pe e => Elet (relocPat ctx pat) (rp pe) (r e)
@@ -2916,7 +2916,7 @@ private partial def renameE (ctx : RenameCtx) : Expr' → Expr'
     let rp := renamePE ctx
     Expr (renameAnnots ctx annots) (match e_ with
       | Epure pe => Epure (rp pe)
-      | Ememop op pes => Ememop (renameMemop ctx op) (pes.map rp)
+      | Ememop a op pes => Ememop a (renameMemop ctx op) (pes.map rp)
       | Eaction (Paction pol act) => Eaction (Paction pol (renameAction ctx act))
       | Ecase pe alts => Ecase (rp pe) (alts.map fun (pat, e) => (renamePat ctx pat, r e))
       | Elet pat pe e => Elet (renamePat ctx pat) (rp pe) (r e)

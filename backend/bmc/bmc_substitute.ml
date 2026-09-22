@@ -140,8 +140,8 @@ let rec unsafe_substitute_expr (map: substitute_map)
   let ret = match expr_ with
     | Epure pe ->
         Epure(unsafe_substitute_pexpr map pe)
-    | Ememop(op, pelist) ->
-        Ememop(op, List.map (unsafe_substitute_pexpr map) pelist)
+    | Ememop (_mem_annot, op, pelist) ->
+        Ememop (_mem_annot, op, List.map (unsafe_substitute_pexpr map) pelist)
     | Eaction(Paction(p, action)) ->
         Eaction(Paction(p, unsafe_substitute_action map action))
     | Ecase (pe, clist) ->

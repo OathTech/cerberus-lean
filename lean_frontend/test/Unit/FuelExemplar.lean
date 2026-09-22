@@ -75,6 +75,7 @@
 
 import CerbND
 import CerbCall
+import CerbSCOperational
 import Core
 import Core_run_aux
 import Driver
@@ -188,6 +189,16 @@ namespace Round
 def runOne {a info err cs st : Type} (m : ndM a info err cs st) (s : st) :
     nd_action a info err cs st × st :=
   match m with | ND f => f s
+
+/-- The test's observer is the provider's actual next-node operation. -/
+theorem runOne_eq_node {a info err cs st : Type} (m : ndM a info err cs st) (s : st) :
+    runOne m s = CerbSCOperational.node m s := by cases m <;> rfl
+
+theorem runOne_driver_liftMem_disabled {a : Type} [LemFuel]
+    {m : ndM a String mem_error (mem_constraint CerbMem.IntegerValue) CerbMem.MemState}
+    {s : driver_state} (h : s.sc_state0 = none) :
+    runOne (driver_liftMem m) s = runOne (liftMem m) s := by
+  rw [runOne_eq_node, CerbSCOperational.lift_disabled m s h, ← runOne_eq_node]
 
 theorem runOne_return {a b c d st : Type} (x : a) (s : st) :
     runOne (nd_return x : ndM a c b d st) s = (NDactive x, s) := rfl
@@ -548,7 +559,7 @@ theorem drive_after_setup (k : Nat) (top : Int) (h : 8 ≤ top) (dstD : driver_s
     runOne (@drive ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty false exemplarFile ["cmdname"])
         (@dst₀ ⟨Nat.succ (Nat.succ k)⟩ 0 top)
       = (NDactive (@finalize ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty "drive (without concur)" dstD), dstD) := by
-  conv => lhs; unfold drive
+  conv => lhs; unfold drive; dsimp only; unfold drive_recorded
   -- driver_globals: spawn thread 0, no globals
   refine (runOne_bind_active (z := (0 : Nat)) (s' := _) rfl).trans ?_
   -- nd_get
@@ -565,7 +576,9 @@ theorem drive_after_setup (k : Nat) (top : Int) (h : 8 ≤ top) (dstD : driver_s
   -- rewritten to its value first (alignofIval_signed_int).
   rw [alignofIval_signed_int]
   refine (runOne_bind_active (z := errnoPtr top) (s' := _)
-    (runOne_liftMem_active (errnoAction_active (Nat.succ k) top h))).trans ?_
+    ((@runOne_driver_liftMem_disabled _ ⟨Nat.succ (Nat.succ k)⟩
+        (@errnoAction ⟨Nat.succ (Nat.succ k)⟩) (@s₁ ⟨Nat.succ (Nat.succ k)⟩ top) (by rfl)).trans
+      (runOne_liftMem_active (errnoAction_active (Nat.succ k) top h)))).trans ?_
   -- park main's arena (reaching EXACTLY the explicit `S₁ top`); driver2; finalize
   refine (runOne_bind_active (z := ()) (s' := dstD) ?_).trans ?_
   · refine (runOne_bind_active (z := ()) (s' := @S₁ ⟨Nat.succ (Nat.succ k)⟩ top) rfl).trans ?_

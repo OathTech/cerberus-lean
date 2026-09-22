@@ -186,7 +186,7 @@ let rec fetch_types (Expr annot expr_) =
 (*
     | Epure pe ->
         [typeof_pexpr pe]
-    | Ememop of Mem_common.memop * list (generic_pexpr 'bty 'sym) (* pointer op involving memory *)
+    | Ememop of 'a * Mem_common.memop * list (generic_pexpr 'bty 'sym) (* pointer op involving memory *)
     | Eaction of (generic_paction 'a 'bty 'sym) (* memory action *)
     | Ecase of (generic_pexpr 'bty 'sym) * list ((generic_pattern 'bty 'sym) * (generic_expr 'a 'bty 'sym)) (* pattern matching *)
     | Elet of (generic_pattern 'bty 'sym) * (generic_pexpr 'bty 'sym) * (generic_expr 'a 'bty 'sym) (* Core let *)
@@ -303,7 +303,7 @@ let rec explode_expr env (Expr annot expr_ as expr) =
           end
         else
           expr
-    | Ememop _ _ ->
+    | Ememop _ _ _ ->
         expr
     | Eaction _ ->
         expr

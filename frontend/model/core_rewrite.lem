@@ -149,7 +149,7 @@ let rec remove_skips (Expr annot expr_ as expr) =
     | Epure pe ->
         (* unchanged *)
         expr
-    | Ememop _ _ ->
+    | Ememop _ _ _ ->
         (* unchanged *)
         expr
     | Eaction _ ->
@@ -229,7 +229,7 @@ let rec remove_unseqs (Expr annot expr_ as expr) =
     | Epure _ ->
         (* unchanged *)
         expr
-    | Ememop _ _ ->
+    | Ememop _ _ _ ->
         (* unchanged *)
         expr
     | Eaction _ ->
@@ -418,7 +418,7 @@ let rec remove_dead_aux (Expr annot expr_ as expr) =
   match expr_ with
     | Epure _ ->
         Left expr
-    | Ememop _ _ ->
+    | Ememop _ _ _ ->
         Left expr
     | Eaction _ ->
         Left expr
@@ -569,7 +569,7 @@ let rec flatten_seqs (Expr annot expr_ as expr) =
   match expr_ with
     | Epure _ ->
         expr
-    | Ememop _ _ ->
+    | Ememop _ _ _ ->
         expr
     | Eaction _ ->
         expr
@@ -769,8 +769,8 @@ let rec remove_conv_int (Expr annot expr_) =
   Expr annot match expr_ with
     | Epure pe ->
         Epure (remove_conv_int_pexpr pe)
-    | Ememop memop pes ->
-        Ememop memop (List.map remove_conv_int_pexpr pes)
+    | Ememop mem_annot memop pes ->
+        Ememop mem_annot memop (List.map remove_conv_int_pexpr pes)
     | Eaction pact ->
         Eaction (remove_conv_int_paction pact)
     | Ecase pe pat_es ->
@@ -873,7 +873,7 @@ let rec sequentialise_creates_kills (Expr annot expr_) =
   Expr annot match expr_ with
     | Epure _ ->
         expr_
-    | Ememop _ _ ->
+    | Ememop _ _ _ ->
         expr_
     | Eaction _ ->
         expr_
@@ -1109,7 +1109,7 @@ let rec pure_propagation2 (Expr annot expr_ as expr) =
   match expr_ with
     | Epure _ ->
         expr
-    | Ememop _ _ ->
+    | Ememop _ _ _ ->
         expr
     | Eaction _ ->
         expr
@@ -1398,7 +1398,7 @@ let rec simpl_case (Expr annot expr_ as expr) =
   match expr_ with
     | Epure pe ->
         wrap $ Epure (simpl_case_pexpr pe)
-    | Ememop _ _ ->
+    | Ememop _ _ _ ->
         expr
     | Eaction _ ->
         expr

@@ -786,7 +786,7 @@ let rec add_e ~sequentialise (in_v, out_v) in_pat (Expr (_, e_)) =
   match e_ with
   | Epure pe ->
     add_pe (in_v, out_v) in_pat pe
-  | Ememop (memop, pes) ->
+  | Ememop (_mem_annot, memop, pes) ->
     List.fold_left (fun acc pe ->
         let (sym, pat) = new_symbol () in
         acc >>= fun (syms, in_v) ->

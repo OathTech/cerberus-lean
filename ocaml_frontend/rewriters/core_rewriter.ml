@@ -338,9 +338,9 @@ module Rewriter = functor (Eff: Monad) -> struct
       | Epure pe ->
           aux_pexpr pe >>= fun pe' ->
           return_wrap (Epure pe')
-      | Ememop (mop, pes) ->
+      | Ememop (_mem_annot, mop, pes) ->
           mapM aux_pexpr pes >>= fun pes' ->
-          return_wrap (Ememop (mop, pes'))
+          return_wrap (Ememop (_mem_annot, mop, pes'))
       | Eaction (Paction (p, act)) ->
           aux_action act >>= fun act' ->
           return_wrap (Eaction (Paction (p, act')))

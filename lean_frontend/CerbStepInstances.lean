@@ -30,23 +30,23 @@
   `env : list (map sym value)` is an OCaml Pmap, which stores its ordering
   closure, so OCaml (=) raises on it. core_runM values are functions.
 
-  Constructor classification (12 constructors):
+  Constructor classification (13 constructors):
   | constructor          | payloads                                              | class      |
   |-----------------------|------------------------------------------------------|------------|
   | Step_ccall2           | thread_id (Nat), core_runM thread_state (FUNCTION)   | panic      |
   | Step_with_runstate2   | runstate_step_kind, core_runM thread_state (FUNCTION)| panic      |
   | Step_tau2             | String, core_tau_step_kind, thread_state (CLOSURES)  | panic      |
-  | Step_action_request2  | String, Loc, thread_id, Bool,                        |            |
+  | Step_action_request2  | Annotation, Polarity, String, Loc, thread_id, Bool,                        |            |
   |                       |   core_runM (action_request2 thread_state) (FUNCTION)| panic      |
   | Step_blocked2         | (nullary)                                            | true       |
   | Step_error2           | String                                               | structural |
   | Step_thread_done2     | thread_id (Nat), value                               | structural |
   | Step_done2            | value                                                | structural |
-  | Step_memop_request2   | Loc, memop, List value, thread_id, Bool,             |            |
+  | Step_memop_request2   | annotation, Loc, memop, List value, thread_id, Bool,             |            |
   |                       |   (value -> thread_state) (FUNCTION)                 | panic      |
   | Step_spawn_threads2   | (List thread_id -> thread_state) (FUNCTION),         |            |
   |                       |   List thread_state (CLOSURES)                       | panic      |
-  | Step_fs2              | thread_id, thread_state (CLOSURES),                  |            |
+  | Step_fs2              | Annotation, thread_id, thread_state (CLOSURES), resume (FUNCTION),                  |            |
   |                       |   core_runM fs_oper_or_done (FUNCTION)               | panic      |
   | Step_nd2              | List thread_state (CLOSURES)                         | panic      |
 
@@ -157,13 +157,15 @@ private def beqCoreStep2 : core_step2 → core_step2 → Bool
       (failwithI "BEq core_step2: functional value (Step_with_runstate2)" : Bool)
   | .Step_tau2 _ _ _, .Step_tau2 _ _ _ =>
       (failwithI "BEq core_step2: functional value (Step_tau2)" : Bool)
-  | .Step_action_request2 _ _ _ _ _, .Step_action_request2 _ _ _ _ _ =>
+  | .Step_action_request2 _ _ _ _ _ _ _, .Step_action_request2 _ _ _ _ _ _ _ =>
       (failwithI "BEq core_step2: functional value (Step_action_request2)" : Bool)
-  | .Step_memop_request2 _ _ _ _ _ _, .Step_memop_request2 _ _ _ _ _ _ =>
+  | .Step_memop_request2 _ _ _ _ _ _ _, .Step_memop_request2 _ _ _ _ _ _ _ =>
       (failwithI "BEq core_step2: functional value (Step_memop_request2)" : Bool)
   | .Step_spawn_threads2 _ _, .Step_spawn_threads2 _ _ =>
       (failwithI "BEq core_step2: functional value (Step_spawn_threads2)" : Bool)
-  | .Step_fs2 _ _ _, .Step_fs2 _ _ _ =>
+  | .Step_join2 _ _ _, .Step_join2 _ _ _ =>
+      (failwithI "BEq core_step2: functional value (Step_join2)" : Bool)
+  | .Step_fs2 _ _ _ _ _, .Step_fs2 _ _ _ _ _ =>
       (failwithI "BEq core_step2: functional value (Step_fs2)" : Bool)
   | .Step_nd2 _, .Step_nd2 _ =>
       (failwithI "BEq core_step2: functional value (Step_nd2)" : Bool)
@@ -181,15 +183,16 @@ private def blockTag : core_step2 → Nat
   | .Step_ccall2 _ _ => 0
   | .Step_with_runstate2 _ _ => 1
   | .Step_tau2 _ _ _ => 2
-  | .Step_action_request2 _ _ _ _ _ => 3
+  | .Step_action_request2 _ _ _ _ _ _ _ => 3
   | .Step_error2 _ => 4
   | .Step_thread_done2 _ _ => 5
   | .Step_done2 _ => 6
-  | .Step_memop_request2 _ _ _ _ _ _ => 7
+  | .Step_memop_request2 _ _ _ _ _ _ _ => 7
   | .Step_spawn_threads2 _ _ => 8
-  | .Step_fs2 _ _ _ => 9
+  | .Step_fs2 _ _ _ _ _ => 9
   | .Step_nd2 _ => 10
-  | .Step_blocked2 => 11  -- unreachable via compareCoreStep2 (handled first)
+  | .Step_join2 _ _ _ => 11
+  | .Step_blocked2 => 12  -- unreachable via compareCoreStep2 (handled first)
 
 private def compareCoreStep2 (x y : core_step2) : Ordering :=
   match x, y with

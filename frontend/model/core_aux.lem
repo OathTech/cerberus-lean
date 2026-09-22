@@ -1013,8 +1013,8 @@ let rec subst_sym_expr sym cval (Expr annot expr_) =
   Expr annot match expr_ with
     | Epure pe ->
         Epure (subst_sym_pexpr sym cval pe)
-    | Ememop memop pes ->
-        Ememop memop (List.map (subst_sym_pexpr sym cval) pes)
+    | Ememop mem_annot memop pes ->
+        Ememop mem_annot memop (List.map (subst_sym_pexpr sym cval) pes)
     | Elet pat pe1 e2 ->
         Elet pat (subst_sym_pexpr sym cval pe1)
           (if in_pattern sym pat then e2 else subst_sym_expr sym cval e2)
@@ -1286,8 +1286,8 @@ let rec unsafe_subst_sym_expr sym pe' (Expr annot expr_) =
   Expr annot match expr_ with
     | Epure pe ->
         Epure (unsafe_subst_sym_pexpr sym pe' pe)
-    | Ememop memop pes ->
-        Ememop memop (List.map (unsafe_subst_sym_pexpr sym pe') pes)
+    | Ememop mem_annot memop pes ->
+        Ememop mem_annot memop (List.map (unsafe_subst_sym_pexpr sym pe') pes)
     | Elet pat pe1 e2 ->
         Elet pat (unsafe_subst_sym_pexpr sym pe' pe1) (if in_pattern sym pat then e2 else unsafe_subst_sym_expr sym pe' e2)
     | Eif pe1 e2 e3 ->
@@ -1548,7 +1548,7 @@ let rec to_pure (Expr annot expr_) (*(expr : expr 'a)*) =
   match expr_ with
     | Epure pe ->
         Just pe
-    | Ememop _ _ ->
+    | Ememop _ _ _ ->
         Nothing
     | Elet pat pe1 e2 ->
         match to_pure e2 with
@@ -1641,7 +1641,7 @@ let rec subst_wait tid v (Expr annot expr_) =
   Expr annot match expr_ with
   | Epure _ ->
       expr_
-  | Ememop _ _ ->
+  | Ememop _ _ _ ->
       expr_
   | Elet sym pe1 e2 ->
       Elet sym pe1 (subst_wait tid v e2)
@@ -1707,7 +1707,7 @@ let rec find_labeled_continuation sym (Expr annot expr_) =
   match expr_ with
     | Epure _ ->
         Nothing
-    | Ememop _ _ ->
+    | Ememop _ _ _ ->
         Nothing
     | Eaction _ ->
         Nothing
@@ -1803,7 +1803,7 @@ let rec find_labeled_continuation2_aux acc sym (Expr annot expr_) =
   match expr_ with
     | Epure _ ->
         acc
-    | Ememop _ _ ->
+    | Ememop _ _ _ ->
         acc
     | Eaction _ ->
         acc
@@ -1907,7 +1907,7 @@ let rec collect_labeled_continuations (Expr annot expr_) =
   match expr_ with
     | Epure _ ->
         Map.empty
-    | Ememop _ _ ->
+    | Ememop _ _ _ ->
         Map.empty
     | Elet _ _ e2 ->
         collect_labeled_continuations e2
@@ -1972,7 +1972,7 @@ let rec has_sseqs expr =
   match expr with
     | Epure _ ->
         false
-    | Ememop _ _ ->
+    | Ememop _ _ _ ->
         false
     | Eaction p ->
         false
@@ -2141,7 +2141,7 @@ let mk_ccall_e_ annots cty pe pes =
 
 val mk_memop_e: Mem_common.memop -> list pexpr -> expr unit
 let mk_memop_e mop pes =
-  Expr [] (Ememop mop pes)
+  Expr [] (Ememop () mop pes)
 
 val mk_wait_e: forall 'a. Mem_common.thread_id -> expr 'a
 let mk_wait_e tid =
@@ -2214,7 +2214,7 @@ let rec collect_saves_aux st (Expr annots expr_) =
   match expr_ with
     | Epure _ ->
         st
-    | Ememop _ _ ->
+    | Ememop _ _ _ ->
         st
     | Eaction _ ->
         st
@@ -2317,7 +2317,7 @@ let rec m_collect_saves_aux st (Expr annots expr_) =
   match expr_ with
     | Epure _ ->
         st
-    | Ememop _ _ ->
+    | Ememop _ _ _ ->
         st
     | Eaction _ ->
         st

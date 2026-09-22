@@ -292,7 +292,7 @@ let set_uid file =
   let rec set_e (Expr (annots, e_)) =
     let e_' = match e_ with
       | Epure pe -> Epure (set_pe pe)
-      | Ememop (memop, pes) -> Ememop (memop, List.map set_pe pes)
+      | Ememop (_mem_annot, memop, pes) -> Ememop (_mem_annot, memop, List.map set_pe pes)
       | Eaction pact -> Eaction pact
       | Ecase (pe, cases) ->
         Ecase (set_pe pe, List.mapi (fun i (pat, e) -> (pat, set_e e)) cases)

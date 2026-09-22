@@ -622,7 +622,7 @@ let rec pp_expr expr =
       begin match e with
         | Epure pe ->
             with_grouped_arg (pp_keyword "pure") (pp_pexpr pe)
-        | Ememop (memop, pes) ->
+        | Ememop (_mem_annot, memop, pes) ->
             pp_keyword "memop" ^^ P.parens (Pp_mem.pp_memop memop ^^ P.comma ^^^ comma_list pp_pexpr pes)
         | Eaction (Paction (p, (Action (_, bs, act)))) ->
             add_polarity p (pp_action act)

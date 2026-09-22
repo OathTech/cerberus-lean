@@ -498,7 +498,7 @@ partial def ppExprH_ (ctx : HoistCtx) :
   | Erun a s pes => do
     let _ : Unit := a
     pure s!"(Erun () {← liftE (ppSym s)} {← liftE (ppList ppPexpr pes)})"
-  | Ememop mo pes => do
+  | Ememop _ mo pes => do
     -- S3 additions: PtrEq/PtrNe (null comparisons in the list walks)
     -- + PtrWellAligned (the (struct int_list*) cast of malloc's
     -- void*)
@@ -508,7 +508,7 @@ partial def ppExprH_ (ctx : HoistCtx) :
       | PtrNe => pure "PtrNe"
       | PtrWellAligned => pure "PtrWellAligned"
       | _ => throw "ppExpr_: unhandled memop kind"
-    pure s!"(Ememop {m} {← liftE (ppList ppPexpr pes)})"
+    pure s!"(Ememop () {m} {← liftE (ppList ppPexpr pes)})"
   | _ => throw "ppExpr_: unhandled expression constructor"
 
 partial def ppExprH (ctx : HoistCtx) :

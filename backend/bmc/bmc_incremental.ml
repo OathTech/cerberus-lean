@@ -417,9 +417,9 @@ module BmcInline = struct
     | Epure pe ->
         inline_pe pe >>= fun inlined_pe ->
         return (Epure(inlined_pe))
-    | Ememop (memop, pes) ->
+    | Ememop (_mem_annot, memop, pes) ->
         mapM inline_pe pes >>= fun inlined_pes ->
-        return (Ememop (memop, inlined_pes))
+        return (Ememop (_mem_annot, memop, inlined_pes))
     | Eaction pact -> (* TODO: lazy assumption on structure of Core from C *)
         inline_action pact >>= fun inlined_pact ->
         return (Eaction inlined_pact)
@@ -973,9 +973,9 @@ module BmcSSA = struct
     | Epure pe ->
         ssa_pe pe >>= fun ssad_pe ->
         return (Epure ssad_pe)
-    | Ememop (memop, pelist) ->
+    | Ememop (_mem_annot, memop, pelist) ->
         mapM ssa_pe pelist >>= fun ssad_pelist ->
-        return (Ememop(memop, ssad_pelist))
+        return (Ememop (_mem_annot, memop, ssad_pelist))
     | Eaction paction ->
         ssa_action paction >>= fun ssad_paction ->
         return (Eaction ssad_paction)
@@ -1669,7 +1669,7 @@ module BmcZ3 = struct
     (match expr_ with
     | Epure pe ->
         z3_pe pe
-    | Ememop (PtrValidForDeref, [ctype;ptr]) ->
+    | Ememop (_mem_annot, PtrValidForDeref, [ctype;ptr]) ->
         (* TODO: includes type *)
         bmc_debug_print 7 "TODO: PtrValidForDeref: check type";
         bmc_debug_print 7 "TODO: PtrValidForDeref: check object lifetime";
@@ -1691,36 +1691,36 @@ module BmcZ3 = struct
         return (mk_and [is_hb_before_kill
                        ;PointerSort.valid_ptr z3d_ptr
                        ;PointerSort.ptr_in_range z3d_ptr])
-    | Ememop (PtrEq, [p1;p2]) ->
+    | Ememop (_mem_annot, PtrEq, [p1;p2]) ->
         z3_pe p1 >>= fun z3d_p1 ->
         z3_pe p2 >>= fun z3d_p2 ->
         return (PointerSort.ptr_eq z3d_p1 z3d_p2)
-    | Ememop (PtrNe, [p1;p2]) ->
+    | Ememop (_mem_annot, PtrNe, [p1;p2]) ->
         z3_pe p1 >>= fun z3d_p1 ->
         z3_pe p2 >>= fun z3d_p2 ->
         return (mk_not (PointerSort.ptr_eq z3d_p1 z3d_p2))
-    | Ememop (PtrLt, [p1;p2]) ->
+    | Ememop (_mem_annot, PtrLt, [p1;p2]) ->
         z3_pe p1 >>= fun z3d_p1 ->
         z3_pe p2 >>= fun z3d_p2 ->
         (* TODO: Get rid of this code duplication *)
         return (binop_to_z3 OpLt (PointerSort.get_addr_index z3d_p1)
                                  (PointerSort.get_addr_index z3d_p2))
-    | Ememop (PtrGt, [p1;p2]) ->
+    | Ememop (_mem_annot, PtrGt, [p1;p2]) ->
         z3_pe p1 >>= fun z3d_p1 ->
         z3_pe p2 >>= fun z3d_p2 ->
         return (binop_to_z3 OpGt (PointerSort.get_addr_index z3d_p1)
                                  (PointerSort.get_addr_index z3d_p2))
-    | Ememop (PtrLe, [p1;p2]) ->
+    | Ememop (_mem_annot, PtrLe, [p1;p2]) ->
         z3_pe p1 >>= fun z3d_p1 ->
         z3_pe p2 >>= fun z3d_p2 ->
         return (binop_to_z3 OpLe (PointerSort.get_addr_index z3d_p1)
                                  (PointerSort.get_addr_index z3d_p2))
-    | Ememop (PtrGe, [p1;p2]) ->
+    | Ememop (_mem_annot, PtrGe, [p1;p2]) ->
         z3_pe p1 >>= fun z3d_p1 ->
         z3_pe p2 >>= fun z3d_p2 ->
         return (binop_to_z3 OpGe (PointerSort.get_addr_index z3d_p1)
                                  (PointerSort.get_addr_index z3d_p2))
-    | Ememop (Ptrdiff, [((Pexpr(_,BTy_ctype, (PEval (Vctype ctype)))) as ty);p1;p2]) ->
+    | Ememop (_mem_annot, Ptrdiff, [((Pexpr(_,BTy_ctype, (PEval (Vctype ctype)))) as ty);p1;p2]) ->
         assert (g_pnvi);
         z3_pe ty >>= fun _ ->
         z3_pe p1 >>= fun z3d_p1 ->
@@ -1737,7 +1737,7 @@ module BmcZ3 = struct
         let type_size = PointerSort.type_size ctype file in
         (* TODO *)
         return (binop_to_z3 OpDiv raw_ptr_diff (int_to_z3 type_size))
-    | Ememop(IntFromPtr, [ctype_src; ctype_dst; ptr]) ->
+    | Ememop (_mem_annot, IntFromPtr, [ctype_src; ctype_dst; ptr]) ->
         assert (g_pnvi);
         z3_pe ctype_src >>= fun _ ->
         z3_pe ctype_dst >>= fun _ ->
@@ -1751,7 +1751,7 @@ module BmcZ3 = struct
         return (mk_ite (PointerSort.is_null z3d_ptr) (int_to_z3 0)
                        (PointerSort.get_addr_index z3d_ptr)
                )
-    | Ememop(PtrFromInt, [ctype_src;ctype_dst;ival]) ->
+    | Ememop (_mem_annot, PtrFromInt, [ctype_src;ctype_dst;ival]) ->
         assert (g_pnvi);
         z3_pe ctype_src >>= fun _ ->
         z3_pe ctype_dst >>= fun _ ->
@@ -1773,9 +1773,9 @@ module BmcZ3 = struct
                        PointerSort.mk_null
                        (PointerSort.mk_ptr_from_int_addr new_prov_sym z3d_ival)
                )
-    | Ememop (Memcmp, [p;q;size]) ->
+    | Ememop (_mem_annot, Memcmp, [p;q;size]) ->
         assert false
-    | Ememop (PtrWellAligned,[ctype_pe;ptr]) ->
+    | Ememop (_mem_annot, PtrWellAligned,[ctype_pe;ptr]) ->
         assert (g_pnvi);
         (* We only support this with byte-wise mode *)
         (* address of ptr % align of ctype is 0 *)
@@ -1789,7 +1789,7 @@ module BmcZ3 = struct
         return (mk_eq (Z3.Arithmetic.Integer.mk_mod g_ctx addr_of_ptr alignment)
                       (int_to_z3 0)
                )
-    | Ememop (PtrArrayShift,
+    | Ememop (_mem_annot, PtrArrayShift,
               [ptr;Pexpr(_, BTy_ctype, PEval (Vctype ctype));index]) ->
         (* We treat this like a PEarray_shift;
          * except in the memory model we add a check for pointer
@@ -1812,7 +1812,7 @@ module BmcZ3 = struct
         add_action uid intermediate_action >>
 
         return ret_ptr
-    | Ememop (memop,_ ) ->
+    | Ememop (_mem_annot, memop,_ ) ->
         failwith (sprintf "TODO: support %s"
                           (pp_to_string (Pp_mem.pp_memop memop)))
     | Eaction action ->
@@ -2454,18 +2454,18 @@ module BmcBind = struct
     (match expr_ with
     | Epure pe ->
         bind_pe pe
-    | Ememop(PtrValidForDeref, args) (* fall through *)
-    | Ememop(PtrEq, args)            (* fall through *)
-    | Ememop(PtrNe, args)            (* fall through *)
-    | Ememop(PtrLt, args)            (* fall through *)
-    | Ememop(PtrGt, args)            (* fall through *)
-    | Ememop(PtrLe, args)            (* fall through *)
-    | Ememop(PtrGe, args)            (* fall through *)
-    | Ememop(Ptrdiff, args)          (* fall through *)
-    | Ememop(IntFromPtr, args)       (* fall through *)
-    | Ememop(PtrFromInt, args)       (* fall through *)
-    | Ememop(PtrWellAligned, args)   (* fall through *)
-    | Ememop(PtrArrayShift,args) ->  (* fall through *)
+    | Ememop (_mem_annot, PtrValidForDeref, args) (* fall through *)
+    | Ememop (_mem_annot, PtrEq, args)            (* fall through *)
+    | Ememop (_mem_annot, PtrNe, args)            (* fall through *)
+    | Ememop (_mem_annot, PtrLt, args)            (* fall through *)
+    | Ememop (_mem_annot, PtrGt, args)            (* fall through *)
+    | Ememop (_mem_annot, PtrLe, args)            (* fall through *)
+    | Ememop (_mem_annot, PtrGe, args)            (* fall through *)
+    | Ememop (_mem_annot, Ptrdiff, args)          (* fall through *)
+    | Ememop (_mem_annot, IntFromPtr, args)       (* fall through *)
+    | Ememop (_mem_annot, PtrFromInt, args)       (* fall through *)
+    | Ememop (_mem_annot, PtrWellAligned, args)   (* fall through *)
+    | Ememop (_mem_annot, PtrArrayShift,args) ->  (* fall through *)
         mapM bind_pe args >>= fun bound_args ->
         return (List.concat bound_args)
     | Ememop _ ->
@@ -2850,7 +2850,7 @@ module BmcVC = struct
     let uid = get_id_expr expr in
     match expr_ with
     | Epure pe      -> vcs_pe pe
-    | Ememop (Ptrdiff, [ctype;pe1;pe2]) ->
+    | Ememop (_mem_annot, Ptrdiff, [ctype;pe1;pe2]) ->
         assert (g_pnvi);
         vcs_pe pe1 >>= fun vcs_pe1 ->
         vcs_pe pe2 >>= fun vcs_pe2 ->
@@ -2868,7 +2868,7 @@ module BmcVC = struct
                  ] in
         return ((valid_assert, dbg_valid_ptr)
                 :: (vcs_pe1 @ vcs_pe2))
-    | Ememop (PtrArrayShift,[ptr;ty;index]) ->
+    | Ememop (_mem_annot, PtrArrayShift,[ptr;ty;index]) ->
         assert (g_pnvi);
         (* TODO: do we need to check the resulting value? *)
         vcs_pe ptr >>= fun vcs_ptr ->
@@ -2893,7 +2893,7 @@ module BmcVC = struct
         return ((valid_assert, dbg_valid_ptr)
                 :: (in_range_assert, dbg_arith_in_range)
                 :: (vcs_ptr @ vcs_ty @ vcs_index))
-    | Ememop(IntFromPtr, [ctype_src;ctype_dst;ptr]) ->
+    | Ememop (_mem_annot, IntFromPtr, [ctype_src;ctype_dst;ptr]) ->
         (* assert ptr is null or ptr is (prov,a) and
          * a is in value_range (ctype_int) *)
         vcs_pe ctype_src >>= fun vcs_ctype_src ->
@@ -2914,7 +2914,7 @@ module BmcVC = struct
                       ;binop_to_z3 OpGe ptr_addr min_value
                       ;binop_to_z3 OpLe ptr_addr max_value
                       ], dbg) ::(vcs_ctype_src @ vcs_ctype_dst @ vcs_ptr))
-    | Ememop (memop, pes) ->
+    | Ememop (_mem_annot, memop, pes) ->
         mapM vcs_pe pes >>= fun vcss_pes ->
         begin match memop with
         | PtrValidForDeref | PtrEq | PtrNe | PtrLt | PtrGt | PtrLe | PtrGe
@@ -3064,7 +3064,7 @@ module BmcRet = struct
     match expr_ with
     | Epure pe ->
         return []
-    | Ememop (memop, pes) ->
+    | Ememop (_mem_annot, memop, pes) ->
         return []
     | Eaction paction ->
         return []
@@ -4162,7 +4162,7 @@ module BmcSeqMem = struct
     match expr_ with
     | Epure pe      ->
         return empty_ret
-    | Ememop (memop, pes) ->
+    | Ememop (_mem_annot, memop, pes) ->
         return empty_ret
     | Eaction paction ->
         do_paction paction uid
@@ -4861,22 +4861,22 @@ module BmcConcActions = struct
     (match expr_ with
     | Epure pe ->
         return []
-    | Ememop(PtrValidForDeref, _)  (* fall through *)
-    | Ememop(Ptrdiff, _)  (* fall through *)
-    | Ememop(PtrArrayShift, _) ->
+    | Ememop (_mem_annot, PtrValidForDeref, _)  (* fall through *)
+    | Ememop (_mem_annot, Ptrdiff, _)  (* fall through *)
+    | Ememop (_mem_annot, PtrArrayShift, _) ->
         get_action uid >>= fun interm_action ->
         intermediate_to_bmc_actions interm_action Pos uid
-    | Ememop(PtrEq, args)            (* fall through *)
-    | Ememop(PtrNe, args)            (* fall through *)
-    | Ememop(PtrLt, args)            (* fall through *)
-    | Ememop(PtrGt, args)            (* fall through *)
-    | Ememop(PtrLe, args)            (* fall through *)
-    | Ememop(PtrGe, args)            (* fall through *)
-    | Ememop(IntFromPtr, args)       (* fall through *)
-    | Ememop(PtrFromInt, args)       (* fall through *)
-    | Ememop(PtrWellAligned, args) ->
+    | Ememop (_mem_annot, PtrEq, args)            (* fall through *)
+    | Ememop (_mem_annot, PtrNe, args)            (* fall through *)
+    | Ememop (_mem_annot, PtrLt, args)            (* fall through *)
+    | Ememop (_mem_annot, PtrGt, args)            (* fall through *)
+    | Ememop (_mem_annot, PtrLe, args)            (* fall through *)
+    | Ememop (_mem_annot, PtrGe, args)            (* fall through *)
+    | Ememop (_mem_annot, IntFromPtr, args)       (* fall through *)
+    | Ememop (_mem_annot, PtrFromInt, args)       (* fall through *)
+    | Ememop (_mem_annot, PtrWellAligned, args) ->
         return []
-    | Ememop (memop, _) ->
+    | Ememop (_mem_annot, memop, _) ->
         failwith (sprintf "TODO: support %s"
                           (pp_to_string (Pp_mem.pp_memop memop)))
     | Eaction (Paction(pol, action)) ->
@@ -4990,7 +4990,7 @@ module BmcConcActions = struct
     (match expr_ with
     | Epure pe ->
         return []
-    | Ememop (memop, pes) ->
+    | Ememop (_mem_annot, memop, pes) ->
         return []
     | Eaction (Paction(pol, action)) ->
         (* Only need to do something for RMW *)
@@ -5333,7 +5333,7 @@ module BmcConcActions = struct
     | Epure pe ->
         do_taint_pe pe >>= fun taints ->
         return (taints, empty_deps)
-    | Ememop (memop, pes) ->
+    | Ememop (_mem_annot, memop, pes) ->
         mapM do_taint_pe pes >>= fun taints ->
         return (union_taints taints, empty_deps)
     | Eaction paction ->

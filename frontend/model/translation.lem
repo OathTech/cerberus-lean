@@ -483,7 +483,7 @@ else
                   | A.Ge -> Mem_common.PtrGe
                   | (*BISECT-IGNORE*) _ -> error "[Translation.translate_relational_operator], 'bop' must be relational"
                 end in
-                Caux.mk_wseq_e memop_wrp.E.sym_pat (C.Expr [] (C.Ememop memop [obj1_wrp.E.sym_pe; obj2_wrp.E.sym_pe])) (
+                Caux.mk_wseq_e memop_wrp.E.sym_pat (C.Expr [] (C.Ememop () memop [obj1_wrp.E.sym_pe; obj2_wrp.E.sym_pe])) (
                   Caux.add_std "§6.5.8#6" (
                     Caux.mk_pure_e (
                       Caux.mk_if_pe memop_wrp.E.sym_pe
@@ -591,7 +591,7 @@ else (* both operand have pointer type *)
               so nothing is done here for (§6.5.9#5 sentence 3) *)
       Caux.mk_case_e (Caux.mk_tuple_pe [e1_wrp.E.sym_pe; e2_wrp.E.sym_pe])
         [ ( Caux.mk_tuple_pat [ Caux.mk_specified_pat obj1_wrp.E.sym_pat; Caux.mk_specified_pat obj2_wrp.E.sym_pat ]
-          , Caux.mk_wseq_e memop_wrp.E.sym_pat (C.Expr [] (C.Ememop memop [obj1_wrp.E.sym_pe; obj2_wrp.E.sym_pe])) begin
+          , Caux.mk_wseq_e memop_wrp.E.sym_pat (C.Expr [] (C.Ememop () memop [obj1_wrp.E.sym_pe; obj2_wrp.E.sym_pe])) begin
               Caux.mk_pure_e begin
                 Caux.mk_std_pe "§6.5.9#3" begin
                   Caux.mk_if_pe memop_wrp.E.sym_pe
@@ -1935,7 +1935,7 @@ else if AilTypesAux.is_pointer cast_ty && AilTypesAux.is_arithmetic e_ty then
                 Caux.mk_case_e e_wrp.E.sym_pe
                   [ ( Caux.mk_specified_pat obj_wrp.E.sym_pat
                     , Caux.mk_wseq_e (Caux.mk_sym_pat let_sym (C.BTy_object C.OTy_pointer))
-                        (C.Expr [] (C.Ememop Mem_common.PtrFromInt [Caux.mk_ail_ctype_pe e_ty; Caux.mk_ail_ctype_pe ref_ty; obj_wrp.E.sym_pe]))
+                        (C.Expr [] (C.Ememop () Mem_common.PtrFromInt [Caux.mk_ail_ctype_pe e_ty; Caux.mk_ail_ctype_pe ref_ty; obj_wrp.E.sym_pe]))
                         (Caux.mk_pure_e (Caux.mk_specified_pe (Caux.mk_sym_pe let_sym))) )
                   ; ( Caux.mk_unspecified_pat (Caux.mk_empty_pat C.BTy_ctype)
                     , (* Casting an unspecified integer to a pointer type gives an unspecified pointer *)
@@ -1953,7 +1953,7 @@ else if AilTypesAux.is_arithmetic cast_ty && AilTypesAux.is_pointer e_ty then
                     Caux.mk_case_e e_wrp.E.sym_pe
                       [ ( Caux.mk_specified_pat obj_wrp.E.sym_pat
                         , Caux.mk_wseq_e (Caux.mk_sym_pat let_sym (C.BTy_object C.OTy_integer))
-                            (C.Expr [] (C.Ememop Mem_common.IntFromPtr [Caux.mk_ail_ctype_pe ref_ty; Caux.mk_ail_ctype_pe cast_ty; obj_wrp.E.sym_pe]))
+                            (C.Expr [] (C.Ememop () Mem_common.IntFromPtr [Caux.mk_ail_ctype_pe ref_ty; Caux.mk_ail_ctype_pe cast_ty; obj_wrp.E.sym_pe]))
                             (Caux.mk_pure_e (Caux.mk_specified_pe (Caux.mk_sym_pe let_sym))) )
                       ; ( Caux.mk_unspecified_pat (Caux.mk_empty_pat C.BTy_ctype)
                         , (* Casting an unspecified pointer to an integer type gives an unspecified integer *)
@@ -2006,7 +2006,7 @@ else (* pointer <-> pointer cast *)
                       Caux.mk_case_e e_wrp.E.sym_pe
                         [ ( Caux.mk_specified_pat obj_wrp.E.sym_pat
                           , Caux.mk_wseq_e (Caux.mk_sym_pat let_sym C.BTy_boolean)
-                              (C.Expr [] (C.Ememop Mem_common.PtrWellAligned [Caux.mk_ail_ctype_pe cast_ref_ty; obj_wrp.E.sym_pe]))
+                              (C.Expr [] (C.Ememop () Mem_common.PtrWellAligned [Caux.mk_ail_ctype_pe cast_ref_ty; obj_wrp.E.sym_pe]))
                               (Caux.mk_pure_e (Caux.mk_specified_pe (Caux.mk_if_pe (Caux.mk_sym_pe let_sym) obj_wrp.E.sym_pe ub_pe))) )
                         ; ( Caux.mk_unspecified_pat (Caux.mk_empty_pat C.BTy_ctype)
                           , (* we are being daemonic (case where the resulting pointer would be misaligned) *)
@@ -2200,7 +2200,7 @@ else if AilTypesAux.is_pointer (ctype_of e1) && AilTypesAux.is_pointer (ctype_of
                                         ; Caux.mk_specified_pat obj2_wrp.E.sym_pat ]
                     , (* Both operand are specified *)
                       Caux.mk_wseq_e memop_wrp.E.sym_pat
-                        (C.Expr [] (C.Ememop Mem_common.Ptrdiff [diff_ty_pe; obj1_wrp.E.sym_pe; obj2_wrp.E.sym_pe]))
+                        (C.Expr [] (C.Ememop () Mem_common.Ptrdiff [diff_ty_pe; obj1_wrp.E.sym_pe; obj2_wrp.E.sym_pe]))
                         begin
                           Caux.mk_pure_e begin
                             Caux.mk_if_pe (stdlib.mkcall_is_representable memop_wrp.E.sym_pe Ctype.ptrdiff_t)
@@ -2248,7 +2248,7 @@ else
                          (* Both operand are specified *)
 begin if Global.has_strict_pointer_arith () || Global.is_CHERI () || Global.is_PNVI () then
                         Caux.mk_wseq_e res_wrp.E.sym_pat
-                          (C.Expr [] (C.Ememop Mem_common.PtrArrayShift [ptr_obj_wrp.E.sym_pe; Caux.mk_ail_ctype_pe ref_ty; (Caux.mk_neg_pe ity integer_obj_wrp.E.sym_pe)]))
+                          (C.Expr [] (C.Ememop () Mem_common.PtrArrayShift [ptr_obj_wrp.E.sym_pe; Caux.mk_ail_ctype_pe ref_ty; (Caux.mk_neg_pe ity integer_obj_wrp.E.sym_pe)]))
                           (Caux.mk_pure_e (Caux.mk_specified_pe res_wrp.E.sym_pe))
 else
                         Caux.mk_pure_e begin
@@ -2580,7 +2580,7 @@ end
 
       | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBCHERI str))) [] ->
           E.return begin
-            C.Expr [] (C.Ememop (Mem_common.CHERI_intrinsic str (result_ty, [])) [])
+            C.Expr [] (C.Ememop () (Mem_common.CHERI_intrinsic str (result_ty, [])) [])
           end
       
       | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBCHERI str))) [e] ->
@@ -2598,7 +2598,7 @@ end
             begin
               Caux.mk_case_e arg_wrp.E.sym_pe
                 [ ( Caux.mk_specified_pat obj_wrp.E.sym_pat
-                  , (C.Expr [] (C.Ememop memop [obj_wrp.E.sym_pe])) )
+                  , (C.Expr [] (C.Ememop () memop [obj_wrp.E.sym_pe])) )
                 ; ( Caux.mk_empty_pat arg_bTy
                   , Caux.mk_pure_e (Caux.mk_undef_pe loc (Undefined.DUMMY "Elab, CHERI intrinsics (unspec)")) ) ]
             end
@@ -2631,7 +2631,7 @@ end
             begin
               Caux.mk_case_e args_wrp.E.sym_pe
                 [ ( Caux.mk_tuple_pat (List.map Caux.mk_specified_pat (List.reverse rev_obj_sym_pats))
-                  , (C.Expr [] (C.Ememop memop (List.reverse rev_obj_sym_pes))) )
+                  , (C.Expr [] (C.Ememop () memop (List.reverse rev_obj_sym_pes))) )
                 ; ( Caux.mk_empty_pat args_bTy
                   , Caux.mk_pure_e (Caux.mk_undef_pe loc (Undefined.DUMMY "Elab, CHERI intrinsics (unspec)")) ) ]
             end
@@ -3050,7 +3050,7 @@ end
           E.wrapped_fresh_symbol (C.BTy_object C.OTy_integer) >>= fun va_wrp ->
           E.return begin
             if last_sym = last_arg_sym then
-              Caux.mk_sseq_e va_wrp.E.sym_pat (C.Expr [] (C.Ememop Mem_common.Va_start [Caux.mk_sym_pe variadic_sym]))
+              Caux.mk_sseq_e va_wrp.E.sym_pat (C.Expr [] (C.Ememop () Mem_common.Va_start [Caux.mk_sym_pe variadic_sym]))
                 (Caux.mk_pure_e (Caux.mk_specified_pe va_wrp.E.sym_pe))
             else
               error ((Loc.stringFromLocation (Loc.locOf a_expr)) ^ " : " ^ show last_sym ^ " is not the last argument") (* it should be UB I think *)
@@ -3065,7 +3065,7 @@ end
             Caux.mk_sseq_e e_wrp.E.sym_pat core_e
               (Caux.mk_case_e e_wrp.E.sym_pe
                 [ ( Caux.mk_specified_pat case_wrp.E.sym_pat
-                  , Caux.mk_sseq_e va_wrp.E.sym_pat (C.Expr [] (C.Ememop Mem_common.Va_copy [case_wrp.E.sym_pe]))
+                  , Caux.mk_sseq_e va_wrp.E.sym_pat (C.Expr [] (C.Ememop () Mem_common.Va_copy [case_wrp.E.sym_pe]))
                       (Caux.mk_pure_e (Caux.mk_specified_pe va_wrp.E.sym_pe)) )
                 ; ( Caux.mk_unspecified_pat (Caux.mk_empty_pat C.BTy_ctype)
                   , Caux.mk_pure_e (Caux.mk_undef_exceptional_condition loc) ) ] )
@@ -3081,7 +3081,7 @@ end
               (Caux.mk_sseq_e ptr_wrp.E.sym_pat
                 (Caux.mk_case_e e_wrp.E.sym_pe
                   [ ( Caux.mk_specified_pat case_wrp.E.sym_pat
-                    , (C.Expr [] (C.Ememop Mem_common.Va_arg [case_wrp.E.sym_pe; Caux.mk_ail_ctype_pe ty])) )
+                    , (C.Expr [] (C.Ememop () Mem_common.Va_arg [case_wrp.E.sym_pe; Caux.mk_ail_ctype_pe ty])) )
                   ; ( Caux.mk_unspecified_pat (Caux.mk_empty_pat C.BTy_ctype)
                     , Caux.mk_pure_e (Caux.mk_undef_exceptional_condition loc) ) ] )
                 (Caux.pload loc (Caux.mk_ail_ctype_pe ty) ptr_wrp.E.sym_pe Cmm.NA))
@@ -3095,7 +3095,7 @@ end
             Caux.mk_sseq_e e_wrp.E.sym_pat core_e
               (Caux.mk_case_e e_wrp.E.sym_pe
                 [ ( Caux.mk_specified_pat case_wrp.E.sym_pat
-                  , (C.Expr [] (C.Ememop Mem_common.Va_end [case_wrp.E.sym_pe])) )
+                  , (C.Expr [] (C.Ememop () Mem_common.Va_end [case_wrp.E.sym_pe])) )
                 ; ( Caux.mk_unspecified_pat (Caux.mk_empty_pat C.BTy_ctype)
                   , Caux.mk_pure_e (Caux.mk_undef_exceptional_condition loc) ) ] )
           end
@@ -3132,7 +3132,7 @@ else (* is_pointer *)
               Caux.mk_case_e e_wrp.E.sym_pe
                 [ (Caux.mk_specified_pat obj_wrp.E.sym_pat,
                    Caux.mk_wseq_e memop_wrp.E.sym_pat
-                     (C.Expr [] (C.Ememop Mem_common.PtrEq [obj_wrp.E.sym_pe; Caux.mk_nullptr_pe Cty.void]))
+                     (C.Expr [] (C.Ememop () Mem_common.PtrEq [obj_wrp.E.sym_pe; Caux.mk_nullptr_pe Cty.void]))
                      begin
                        Caux.mk_pure_e begin
                          (C.Pexpr [] () (C.PEbmc_assume memop_wrp.E.sym_pe))
@@ -3177,7 +3177,7 @@ else (* is_pointer *)
                           C.Expr [Annot.Astd "§6.3.2.1#3"] (
 if Global.has_strict_pointer_arith () || Global.is_CHERI () || Global.is_PNVI () then
                             C.Ewseq res_wrp.E.sym_pat
-                            (C.Expr [] (C.Ememop Mem_common.PtrArrayShift [e_wrp.E.sym_pe; Caux.mk_ail_ctype_pe ref_ty; Caux.mk_integer_pe 0]))
+                            (C.Expr [] (C.Ememop () Mem_common.PtrArrayShift [e_wrp.E.sym_pe; Caux.mk_ail_ctype_pe ref_ty; Caux.mk_integer_pe 0]))
                             (Caux.mk_pure_e (Caux.mk_specified_pe res_wrp.E.sym_pe))
 else
                             C.Epure (

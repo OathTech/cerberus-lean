@@ -391,7 +391,7 @@ let rec indet_hack (Core.Expr annot expr_ as expr) =
   match expr_ with
     | Core.Epure _ ->
         expr
-    | Core.Ememop _ _ ->
+    | Core.Ememop _ _ _ ->
         expr
     | Core.Eskip ->
         expr

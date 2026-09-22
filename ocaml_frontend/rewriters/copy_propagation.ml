@@ -393,8 +393,8 @@ let rec propagate_expr ~unwrap_loaded env (Expr (annots, e_) as expr) =
   (* ---- Other expression forms: recurse ---- *)
   | Epure pe1 ->
       Expr (annots, Epure (pp pe1))
-  | Ememop (op, pes) ->
-      Expr (annots, Ememop (op, List.map pp pes))
+  | Ememop (_mem_annot, op, pes) ->
+      Expr (annots, Ememop (_mem_annot, op, List.map pp pes))
   | Eaction pact ->
       Expr (annots, Eaction (propagate_action env pact))
   | Ecase (pe1, arms) ->

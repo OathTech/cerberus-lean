@@ -882,6 +882,11 @@ FUEL_THMS+=(CerbND.runNDFuel_stable CerbND.runND1Fuel_stable CerbND.runND1TraceF
             CerbND.FuelProof.run_refines CerbND.FuelProof.run1_refines
             CerbND.FuelProof.trace_eq_of_refines CerbND.FuelProof.observationStability)
 
+FUEL_THMS+=(CerbSCOperational.lift_disabled CerbSCOperational.post_memory_disabled
+            CerbSCOperational.context_unseq CerbSCOperational.context_weak
+            CerbSCOperational.context_strong CerbSCOperational.caller_unseq
+            CerbSCOperational.completed_effects CerbSCOperational.choices_iff)
+
 FUEL_THMS+=(NDObserveProof.disabled NDObserveProof.existing_kill
             NDObserveProof.stops_branch NDObserveProof.failure_state
             CerbMem.stopObserving_recordObservation CerbMem.stopObserving_takeObservations)
@@ -889,6 +894,7 @@ FUEL_THMS+=(NDObserveProof.disabled NDObserveProof.existing_kill
 {
   echo "import CerbND"
   echo "import CerbNDObserveProofs"
+  echo "import CerbSCOperational"
   echo "import CerbFailProofs"
   echo "import CerbNDFuelProofs"
   echo "import Unit.FuelExemplar"

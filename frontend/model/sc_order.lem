@@ -1,0 +1,195 @@
+(* Continuation-scoped predecessor propagation for the SC driver.
+   This is metadata, not a replacement Core evaluator. Ordinary unsequenced
+   siblings remain untouched. A receipt can contain many polarized events. *)
+open import Pervasives Core Core_run_aux
+import Mem_common Cmm_csem
+
+type sc_predecessors = set (polarity * (Mem_common.thread_id * Cmm_csem.aid))
+
+let sc_positive predecessors =
+  Set.filter (fun (polarity, _) -> polarity = Pos) predecessors
+
+let sc_promote predecessors =
+  Set.map (fun (_, event) -> (Pos, event)) predecessors
+
+let sc_before_annotation predecessors annotation =
+  <| annotation with sb_before= Set.map snd predecessors union annotation.sb_before |>
+
+(* Receipts can carry predecessors from completed/created threads. Resolve
+   their edge kind when the receiving request's actor is known: Cmm sb is
+   thread-local; cross-thread creation/join edges are additional-sw. *)
+let sc_thread_annotation tid annotation =
+  let local event = fst event = tid in
+  <| annotation with
+    sb_before= Set.filter local annotation.sb_before;
+    asw_before= annotation.asw_before union
+      Set.map snd (Set.filter (fun event -> not (local event)) annotation.sb_before);
+  |>
+
+let sc_before_action predecessors (Action loc annotation action) =
+  Action loc (sc_before_annotation predecessors annotation) action
+
+val sc_add_before_expr: sc_predecessors -> expr core_run_annotation -> expr core_run_annotation
+let rec sc_add_before_expr predecessors sc_expression =
+  let Expr annotations inner = sc_expression in
+  Expr annotations match inner with
+    | Epure pe -> Epure pe
+    | Ememop annotation memop operands ->
+        Ememop (sc_before_annotation predecessors annotation) memop operands
+    | Eaction (Paction polarity action) ->
+        Eaction (Paction polarity (sc_before_action predecessors action))
+    | Ecase pe branches ->
+        Ecase pe (List.map (fun (pattern, body) ->
+          (pattern, sc_add_before_expr predecessors body)) branches)
+    | Elet pattern pe body ->
+        Elet pattern pe (sc_add_before_expr predecessors body)
+    | Eif pe yes no ->
+        Eif pe (sc_add_before_expr predecessors yes) (sc_add_before_expr predecessors no)
+    | Eccall annotation ty fn operands ->
+        Eccall (sc_before_annotation predecessors annotation) ty fn operands
+    | Eproc annotation name operands ->
+        Eproc (sc_before_annotation predecessors annotation) name operands
+    | Eunseq expressions -> Eunseq (List.map (sc_add_before_expr predecessors) expressions)
+    | Ewseq pattern first second ->
+        Ewseq pattern (sc_add_before_expr predecessors first)
+          (sc_add_before_expr (sc_positive predecessors) second)
+    | Esseq pattern first second ->
+        Esseq pattern (sc_add_before_expr predecessors first)
+          (sc_add_before_expr (sc_promote predecessors) second)
+    | Ebound body -> Ebound (sc_add_before_expr predecessors body)
+    | End expressions -> End (List.map (sc_add_before_expr predecessors) expressions)
+    | Esave label bindings body ->
+        Esave label bindings (sc_add_before_expr predecessors body)
+    | Erun annotation label operands ->
+        Erun (sc_before_annotation predecessors annotation) label operands
+    | Epar expressions -> Epar (List.map (sc_add_before_expr predecessors) expressions)
+    | Ewait tid -> Ewait tid
+    | Eannot dynamic body -> Eannot dynamic (sc_add_before_expr predecessors body)
+    | Eexcluded id action -> Eexcluded id (sc_before_action predecessors action)
+  end
+
+(* Walk from the hole outward. The result's first component is what remains
+   visible to an enclosing continuation. Strong sequencing completes negative
+   effects before its value, so outer weak sequencing must retain them too. *)
+val sc_add_before_context: sc_predecessors -> context -> (sc_predecessors * context)
+let rec sc_add_before_context predecessors ctx =
+  match ctx with
+    | CTX -> (predecessors, CTX)
+    | Cunseq annotations left inner right ->
+        let (outgoing, inner') = sc_add_before_context predecessors inner in
+        (outgoing, Cunseq annotations left inner' right)
+    | Cwseq annotations pattern inner second ->
+        let (outgoing, inner') = sc_add_before_context predecessors inner in
+        (outgoing, Cwseq annotations pattern inner'
+          (sc_add_before_expr (sc_positive outgoing) second))
+    | Csseq annotations pattern inner second ->
+        let (outgoing, inner') = sc_add_before_context predecessors inner in
+        (sc_promote outgoing, Csseq annotations pattern inner'
+          (sc_add_before_expr (sc_promote outgoing) second))
+    | Cannot annotations dynamic inner ->
+        let (outgoing, inner') = sc_add_before_context predecessors inner in
+        (outgoing, Cannot annotations dynamic inner')
+    | Cbound annotations inner ->
+        let (outgoing, inner') = sc_add_before_context predecessors inner in
+        (outgoing, Cbound annotations inner')
+  end
+
+(* A selected C call is indeterminately sequenced with caller evaluations.
+   Completed callee effects precede every remaining caller sibling, unlike an
+   ordinary Core procedure, which uses the source context above. *)
+val sc_add_before_caller: sc_predecessors -> context -> context
+let rec sc_add_before_caller predecessors ctx =
+  let predecessors = sc_promote predecessors in
+  match ctx with
+    | CTX -> CTX
+    | Cunseq annotations left inner right ->
+        Cunseq annotations (List.map (sc_add_before_expr predecessors) left)
+          (sc_add_before_caller predecessors inner)
+          (List.map (sc_add_before_expr predecessors) right)
+    | Cwseq annotations pattern inner second ->
+        Cwseq annotations pattern (sc_add_before_caller predecessors inner)
+          (sc_add_before_expr predecessors second)
+    | Csseq annotations pattern inner second ->
+        Csseq annotations pattern (sc_add_before_caller predecessors inner)
+          (sc_add_before_expr predecessors second)
+    | Cannot annotations dynamic inner ->
+        Cannot annotations dynamic (sc_add_before_caller predecessors inner)
+    | Cbound annotations inner ->
+        Cbound annotations (sc_add_before_caller predecessors inner)
+  end
+
+(* Only modern contexts are produced by Core_reduction. Retain the legacy
+   constructor untouched here; it cannot silently introduce sequencing into a
+   modern execution. The driver must identify a legacy-stack port gap. *)
+val sc_add_before_stack: sc_predecessors -> stack core_run_annotation -> stack core_run_annotation
+let rec sc_add_before_stack predecessors frames =
+  match frames with
+    | Stack_empty -> Stack_empty
+    | Stack_cons name continuation rest -> Stack_cons name continuation rest
+    | Stack_cons2 true name ctx rest ->
+        Stack_cons2 true name (sc_add_before_caller predecessors ctx)
+          (sc_add_before_stack (sc_promote predecessors) rest)
+    | Stack_cons2 false name ctx rest ->
+        let (outgoing, ctx') = sc_add_before_context predecessors ctx in
+        Stack_cons2 false name ctx' (sc_add_before_stack outgoing rest)
+  end
+
+declare {lean} termination_argument sc_add_before_caller = automatic
+declare {lean} termination_argument sc_add_before_stack = automatic
+
+declare {lean} fuel val sc_add_before_expr = `fuelExhausted sc_expression`
+declare {lean} fuel_measure val sc_add_before_expr = `lemSize sc_expression`
+declare {lean} termination_argument sc_add_before_context = automatic
+
+
+let sc_merge_annotation incoming annotation =
+  <|
+    sb_before= incoming.sb_before union annotation.sb_before;
+    dd_before= incoming.dd_before union annotation.dd_before;
+    asw_before= incoming.asw_before union annotation.asw_before;
+  |>
+
+let sc_inherit_action incoming (Action loc annotation action) =
+  Action loc (sc_merge_annotation incoming annotation) action
+
+val sc_inherit_expr: core_run_annotation -> expr core_run_annotation -> expr core_run_annotation
+let rec sc_inherit_expr incoming sc_expression =
+  let Expr annotations inner = sc_expression in
+  Expr annotations match inner with
+    | Epure pe -> Epure pe
+    | Ememop annotation memop operands ->
+        Ememop (sc_merge_annotation incoming annotation) memop operands
+    | Eaction (Paction polarity action) ->
+        Eaction (Paction polarity (sc_inherit_action incoming action))
+    | Ecase pe branches ->
+        Ecase pe (List.map (fun (pattern, body) ->
+          (pattern, sc_inherit_expr incoming body)) branches)
+    | Elet pattern pe body ->
+        Elet pattern pe (sc_inherit_expr incoming body)
+    | Eif pe yes no ->
+        Eif pe (sc_inherit_expr incoming yes) (sc_inherit_expr incoming no)
+    | Eccall annotation ty fn operands ->
+        Eccall (sc_merge_annotation incoming annotation) ty fn operands
+    | Eproc annotation name operands ->
+        Eproc (sc_merge_annotation incoming annotation) name operands
+    | Eunseq expressions -> Eunseq (List.map (sc_inherit_expr incoming) expressions)
+    | Ewseq pattern first second ->
+        Ewseq pattern (sc_inherit_expr incoming first)
+          (sc_inherit_expr incoming second)
+    | Esseq pattern first second ->
+        Esseq pattern (sc_inherit_expr incoming first)
+          (sc_inherit_expr incoming second)
+    | Ebound body -> Ebound (sc_inherit_expr incoming body)
+    | End expressions -> End (List.map (sc_inherit_expr incoming) expressions)
+    | Esave label bindings body ->
+        Esave label bindings (sc_inherit_expr incoming body)
+    | Erun annotation label operands ->
+        Erun (sc_merge_annotation incoming annotation) label operands
+    | Epar expressions -> Epar (List.map (sc_inherit_expr incoming) expressions)
+    | Ewait tid -> Ewait tid
+    | Eannot dynamic body -> Eannot dynamic (sc_inherit_expr incoming body)
+    | Eexcluded id action -> Eexcluded id (sc_inherit_action incoming action)
+  end
+
+declare {lean} fuel val sc_inherit_expr = `fuelExhausted sc_expression`
+declare {lean} fuel_measure val sc_inherit_expr = `lemSize sc_expression`

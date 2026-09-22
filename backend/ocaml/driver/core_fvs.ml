@@ -92,7 +92,7 @@ let fv_act (Paction(_, Action (_, _, act))) fvs =
 let rec fv_core (Expr (_, e_)) fvs =
   match e_ with
   | Epure pe            -> fv_pe pe fvs
-  | Ememop (memop, pes) -> List.fold_left (flip fv_pe) fvs pes
+  | Ememop (_mem_annot, memop, pes) -> List.fold_left (flip fv_pe) fvs pes
   | Eaction act         -> fv_act act fvs
   | Eccall (_, _, nm, pes) -> List.fold_left (flip fv_pe) fvs (nm::pes)
   | Eproc  (_, nm, pes) -> List.fold_left (flip fv_pe) fvs pes

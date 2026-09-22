@@ -369,7 +369,7 @@ let rec set_uid_e uid n (Expr( annots1, e_)) =
   Expr( (Auid uid' :: annots1),
   (match e_ with
   | Epure pe -> Epure (set_uid_pe uid'( 0) pe)
-  | Ememop( memop1, pes) -> Ememop( memop1, (pure_uids pes))
+  | Ememop (_mem_annot,  memop1, pes) -> Ememop (_mem_annot,  memop1, (pure_uids pes))
   | Eaction pact -> Eaction pact
   | Ecase( pe, cases) -> Ecase( (set_uid_pe uid'( 0) pe),
                         (Lem_list.mapi (fun i (pat, e) -> (pat, self (i+ 1) e)) cases))
