@@ -1106,3 +1106,26 @@ re-recorded except `tests/immaculate/baseline.txt` by the recipe (+6 rows, addit
 **State after this section:** the fix commit (this record's §10 + the files listed at the top of §10.6 + the evidence dir)
 is the ONLY commit added on `0e1968ffb`; `.tmp/eada2/` deleted; `git status` clean. STOPPED for the delta audit. Phase 2
 (D-A) NOT started — the operator's open decision (§3.1).
+
+## 11. Landing (2026-09-22)
+
+[USER 2026-09-22], verbatim: *"Go ahead with the enum merge."* — the
+sign-off for the orchestrator's merge ask: `mdd/cerberus-lean`
+`5407597d9` → the head of `arc/program-data-parameters` including this
+landing commit, ff-only, by the orchestrator in the primary checkout. The
+range: the three E-A commits (`3ad477462`, `70408e483`, `0e1968ffb`), the
+Codex-audit repairs (`d995e7f57`), the gcc-oracle ledger admission
+(`e2fc391f2`), the register repair for the two enum-lookup leaves
+(`740d115b3`, audit N2), and the two Codex audit documents committed as
+received (`39875b914` = `880a8ead8`, `e87772537` = `44e7989af`). Audits:
+`docs/2026-09-20_enum-premerge-audit.md` (REQUEST CHANGES → E1–E4
+repaired) and `docs/2026-09-21_enum-repairs-and-match-pattern-arity-audit.md`
+(E1–E4 CLOSED; N2 repaired). D-A is NOT in this range (E-A alone; the
+digest half is the run-state slice `arc/run-digest`,
+`docs/2026-09-22_charter-run-digest-as-state.md`). The lem pin is unmoved
+(`38f87d5`). After landing: the primary checkout regenerated and built;
+`fix/match-pattern-arity` rebases onto this head and recomputes the
+`core_typing`/`core_aux` pins from the combined source; `arc/run-digest`
+rebases when its turn comes; cerberus-sl's ONE re-pin note (§9.2) waits
+until all three are on the mainline.
+
