@@ -186,20 +186,28 @@ structure MemState where
   lastUsed : Option StorageInstanceId := none
   requested : List (Address × Int) := []
   observations : Option (List MemoryObservation) := none
+  suspendEnabled : Bool := false
+  suspendNext : Bool := false
   deriving Inhabited
 
 /-- Newest first internally; disabled observation leaves the state unchanged. -/
 def recordObservation (observation : MemoryObservation) (st : MemState) : MemState :=
   match st.observations with
   | none => st
-  | some xs => { st with observations := some (observation :: xs) }
+  | some xs => { st with observations := some (observation :: xs),
+                           suspendNext := st.suspendEnabled || st.suspendNext }
 
 def beginObserving (st : MemState) : Option MemState :=
   some (match st.observations with
     | none => { st with observations := some [] }
     | some _ => st)
 
-def stopObserving (st : MemState) : MemState := { st with observations := none }
+def stopObserving (st : MemState) : MemState :=
+  { st with observations := none, suspendEnabled := false, suspendNext := false }
+
+def setSuspending (enabled : Bool) (st : MemState) : Option MemState :=
+  if enabled && st.observations.isNone then none
+  else some { st with suspendEnabled := enabled, suspendNext := false }
 
 def takeObservations (st : MemState) : Option (List MemoryObservation × MemState) :=
   match st.observations with
@@ -2094,6 +2102,14 @@ abbrev memM (a : Type) := ndM a String mem_error (mem_constraint IntegerValue) M
 /-- An intentional model stop, distinct from modeled memory errors. -/
 def failStopMem {a : Type} (msg : String) : memM a := CerbFail.failStopND msg
 
+/-- Explicitly enabled scheduling control, independent of ordinary observation.
+    The original primitive body is evaluated at resume against current memory. -/
+def beforePrimitive {a : Type} (operation : Unit → memM a) : memM a :=
+  let resume := ND fun st => match operation () with | ND run => run st
+  ND fun st =>
+    if st.suspendEnabled && st.suspendNext then (NDsuspend resume, st)
+    else match resume with | ND run => run st
+
 def memReturn {a : Type} (x : a) : memM a := nd_return x
 
 /-- The concrete model's kill reason for a memory error — mirrors
@@ -2249,42 +2265,44 @@ def allocator (sz align : Int) : memM (StorageInstanceId × Address) :=
     (`readonlyStatusForAlloc`), `repr` threading the funptrmap. -/
 def allocateObject [LemFuel] (tagDefs : TagDefs) (_ : Nat) (pref : prefix0) (alignIv : IntegerValue)
     (ty : ctype) (reqAddrOpt : Option Int) (initOpt : Option MemValue) : memM PointerValue :=
-  match alignIv with
-  | .IV _ alignN =>
-  let size : Int := sizeofCtype tagDefs ty                                       -- :1289
-  match reqAddrOpt with
-  | some _ => failStopMem "TODO: cerb::with_address() is yet implemented"           -- :1293-1295
-  | none =>
-  nd_bind (allocator size alignN) fun (idAddr : StorageInstanceId × Address) =>  -- :1291-1292
-  let (allocId, addr) := idAddr
-  ND fun st =>
-    -- :1318-1324 SW_zero_initialised (the `None` init branch's bytemap choice) →
-    -- zero-filled bytes. Refused set (Z-24): the default arm (:1325-1329 repr of
-    -- MVunspecified, below) is the only reachable one; the set case is loud
-    -- (seam-hygiene H2). The guard is that branch's test, `init_opt = None ∧
-    -- has_switch`, hoisted in front of the unchanged body.
-    if initOpt.isNone && CerbGlobal.has_switch .zero_initialised then
-      (NDkilled (Other (MerrOther "allocateObject: SW_zero_initialised is set but the zero-fill arm (impl_mem.ml:1318-1324) is not ported — switches are refused (Z-24)")), st)
-    else
-    -- readonly_status per init_opt — impl_mem.ml:1304-1333 (see
-    -- readonlyStatusForAlloc above)
-    let alloc : Allocation := { base := addr, size := size, ty := some ty,
-                                isReadonly := readonlyStatusForAlloc pref initOpt,
-                                prefix_ := pref }
-    let st' := { st with allocations := st.allocations.insert allocId alloc }
-    let (st', initializationBytes) := match initOpt with
-      | some val_ =>
-        -- repr threads the funptrmap into the state — impl_mem.ml:1336-1344
-        let (fpm, bs) := memValueToBytes tagDefs st'.funptrmap val_
-        (writeBytesTo { st' with funptrmap := fpm } addr bs, bs)
-      | none =>
-        -- :1315-1319 `repr st.funptrmap (MVunspecified ty)` (funptrmap
-        -- result discarded, `let (_, pre_bs)`)
-        let (_, bs) := memValueToBytes tagDefs st'.funptrmap (.MVunspecified ty)
-        (writeBytesTo st' addr bs, [])
-    let pointer := PointerValue.PV (.Prov_some allocId) (.PVconcrete none addr)
-    (NDactive pointer, recordObservation
-      (Observe_allocation pointer allocId addr size (some ty) initOpt initializationBytes) st')
+  beforePrimitive (fun () =>
+    match alignIv with
+    | .IV _ alignN =>
+    let size : Int := sizeofCtype tagDefs ty                                       -- :1289
+    match reqAddrOpt with
+    | some _ => failStopMem "TODO: cerb::with_address() is yet implemented"           -- :1293-1295
+    | none =>
+    nd_bind (allocator size alignN) fun (idAddr : StorageInstanceId × Address) =>  -- :1291-1292
+    let (allocId, addr) := idAddr
+    ND fun st =>
+      -- :1318-1324 SW_zero_initialised (the `None` init branch's bytemap choice) →
+      -- zero-filled bytes. Refused set (Z-24): the default arm (:1325-1329 repr of
+      -- MVunspecified, below) is the only reachable one; the set case is loud
+      -- (seam-hygiene H2). The guard is that branch's test, `init_opt = None ∧
+      -- has_switch`, hoisted in front of the unchanged body.
+      if initOpt.isNone && CerbGlobal.has_switch .zero_initialised then
+        (NDkilled (Other (MerrOther "allocateObject: SW_zero_initialised is set but the zero-fill arm (impl_mem.ml:1318-1324) is not ported — switches are refused (Z-24)")), st)
+      else
+      -- readonly_status per init_opt — impl_mem.ml:1304-1333 (see
+      -- readonlyStatusForAlloc above)
+      let alloc : Allocation := { base := addr, size := size, ty := some ty,
+                                  isReadonly := readonlyStatusForAlloc pref initOpt,
+                                  prefix_ := pref }
+      let st' := { st with allocations := st.allocations.insert allocId alloc }
+      let (st', initializationBytes) := match initOpt with
+        | some val_ =>
+          -- repr threads the funptrmap into the state — impl_mem.ml:1336-1344
+          let (fpm, bs) := memValueToBytes tagDefs st'.funptrmap val_
+          (writeBytesTo { st' with funptrmap := fpm } addr bs, bs)
+        | none =>
+          -- :1315-1319 `repr st.funptrmap (MVunspecified ty)` (funptrmap
+          -- result discarded, `let (_, pre_bs)`)
+          let (_, bs) := memValueToBytes tagDefs st'.funptrmap (.MVunspecified ty)
+          (writeBytesTo st' addr bs, [])
+      let pointer := PointerValue.PV (.Prov_some allocId) (.PVconcrete none addr)
+      (NDactive pointer, recordObservation
+        (Observe_allocation pointer allocId addr size (some ty) initOpt initializationBytes) st')
+  )
 
 /-- allocate_region — impl_mem.ml:1420-1435: `allocator size_n align_n`
     (:1421, no clamp, a negative size flows through the Z arithmetic —
@@ -2300,84 +2318,88 @@ def allocateObject [LemFuel] (tagDefs : TagDefs) (_ : Nat) (pref : prefix0) (ali
     one-line cause of the Z-30 malloc OOM class
     (tests/z2-probes/mem/malloc_oom_msg.c). -/
 def allocateRegion [LemFuel] (_ : Nat) (_pref : prefix0) (alignIv sizeIv : IntegerValue) : memM PointerValue :=
-  match alignIv, sizeIv with
-  | .IV _ alignN, .IV _ sizeN =>
-  nd_bind (allocator sizeN alignN) fun (idAddr : StorageInstanceId × Address) =>   -- :1421
-  let (allocId, addr) := idAddr
-  ND fun st =>
-    let alloc : Allocation := { base := addr, size := sizeN, ty := none,
-                                isReadonly := .IsWritable, prefix_ := PrefMalloc }  -- :1429
-    let pointer := PointerValue.PV (.Prov_some allocId) (.PVconcrete none addr)
-    (NDactive pointer, recordObservation
-      (Observe_allocation pointer allocId addr sizeN none none [])
-      { st with allocations := st.allocations.insert allocId alloc,
-                dynamicAddrs := addr :: st.dynamicAddrs })                            -- :1430-1434
+  beforePrimitive (fun () =>
+    match alignIv, sizeIv with
+    | .IV _ alignN, .IV _ sizeN =>
+    nd_bind (allocator sizeN alignN) fun (idAddr : StorageInstanceId × Address) =>   -- :1421
+    let (allocId, addr) := idAddr
+    ND fun st =>
+      let alloc : Allocation := { base := addr, size := sizeN, ty := none,
+                                  isReadonly := .IsWritable, prefix_ := PrefMalloc }  -- :1429
+      let pointer := PointerValue.PV (.Prov_some allocId) (.PVconcrete none addr)
+      (NDactive pointer, recordObservation
+        (Observe_allocation pointer allocId addr sizeN none none [])
+        { st with allocations := st.allocations.insert allocId alloc,
+                  dynamicAddrs := addr :: st.dynamicAddrs })                            -- :1430-1434
+  )
 
 /-! ### Kill — impl_mem.ml:1464-1550 (zero-discrepancy Z-07/Z-08/Z-10, noodle
     D6/D7; the arms and their ORDER mirror `kill loc is_dyn` exactly — the
     charter's Z-09/Z-11/Z-12 seam rows fall inside the same hunk) -/
 
 def killM (loc : CerbLocation.Loc) (isDynamic : Bool) (pv : PointerValue) : memM Unit :=
-  ND fun st =>
-    -- every `fail ~loc` routes through the fail mapping (impl_mem.ml:540-546):
-    -- Free_non_matching/Free_dead_allocation → UB179a/UB179b, MerrOther and
-    -- Free_out_of_bound → Other (a batch Error line, not UB)
-    let fail_ (err : mem_error) := (NDkilled (failReason err loc), st)
-    match pv with
-    | .PV _ (.PVnull _) =>
-      -- :1465-1469 — NOT conditional on is_dyn: a null kill succeeds unless
-      -- SW_forbid_nullptr_free is set (the switch set is refused, Z-24)
-      if CerbGlobal.has_switch .forbid_nullptr_free then fail_ MerrFreeNullPtr
-      else (NDactive (), st)
-    | .PV _ (.PVfunction _) =>
-      fail_ (MerrOther "attempted to kill with a function pointer")             -- :1470-1471
-    | .PV .Prov_none (.PVconcrete _ _) =>
-      fail_ (MerrOther "attempted to kill with a pointer lacking a provenance")  -- :1472-1473
-    | .PV .Prov_device (.PVconcrete _ _) =>
-      (NDactive (), st)                                                          -- :1474-1476 ("TODO: should that be an error ??")
-    | .PV (.Prov_symbolic _) _ =>
-      -- :1479-1513 PNVI-ae-udi arm: the concrete Lean model never mints
-      -- Prov_symbolic (PNVI is a refused switch, Z-24) — loud, never absorbed
-      (NDkilled (Other (MerrOther "killM: Prov_symbolic in concrete model")), st)
-    | .PV (.Prov_some allocId) (.PVconcrete _ addr) =>
-      -- :1515-1549 in THIS order: is_dynamic addr (the POINTER's address, not
-      -- alloc.base) → is_dead → get_allocation → addr = alloc.base
-      if isDynamic && !st.dynamicAddrs.contains addr then
-        fail_ (MerrUndefinedFree Free_non_matching)                              -- :1518-1525
-      else if st.deadAllocations.contains allocId then
-        if isDynamic then fail_ (MerrUndefinedFree Free_dead_allocation)         -- :1529-1530
-        else
-          -- :1531-1532 `failwith "Concrete: FREE was called on a dead allocation"`
-          -- — an UNCAUGHT exception on the oracle (exit 125), mirrored as a
-          -- fail-stop carrying the OCaml text (Q4 ruling, charter §7; Z-10).
-          -- REACHABILITY: a static (scope-exit) kill finds its allocation dead
-          -- only after an ACCEPTED wrong free of the same object — i.e. only
-          -- through the tray-19 dynamic_addrs address-keying defect (Z-77: a
-          -- zero-size `alloc` minted at a live object's base; dynamic-addrs
-          -- record rows k/n', witnessed on both oracles as this failwith and
-          -- on Lean via libc-body injection) or the fork-only
-          -- `cerb::with_address` attribute. Unreachable from C through
-          -- malloc/free (argument temporaries, translation.lem:4435).
-          (NDkilled (CerbFail.failStopKill "Concrete: FREE was called on a dead allocation"), st)
-      else match st.allocations.get? allocId with
-        | none =>
-          -- :1534 get_allocation ~loc → :669-675 MerrOutsideLifetime (UB009)
-          fail_ (MerrOutsideLifetime s!"Concrete.get_allocation, alloc_id={allocId}")
-        | some alloc =>
-          if addr == alloc.base then                                             -- :1535-1546
-            let st' := recordObservation
-              (Observe_deallocation loc isDynamic pv allocId (some (alloc.base, alloc.size)))
-              { st with
-              deadAllocations := allocId :: st.deadAllocations
-              lastUsed := some allocId                                             -- :1541
-              allocations := st.allocations.erase allocId }
-            -- :1543-1546 SW_zap_dead_pointers → zap_pointers (:1447-1462, not
-            -- ported): the switch set is refused (Z-24), so the OCaml default
-            -- arm `return ()` is the only reachable one; the set case is loud
-            if CerbGlobal.has_switch .zap_dead_pointers then
-              (NDkilled (Other (MerrOther "killM: SW_zap_dead_pointers is set but zap_pointers (impl_mem.ml:1447-1462) is not ported — switches are refused (Z-24)")), st)
-            else (NDactive (), st')
-          else fail_ (MerrUndefinedFree Free_out_of_bound)                       -- :1547-1548
+  beforePrimitive (fun () =>
+    ND fun st =>
+      -- every `fail ~loc` routes through the fail mapping (impl_mem.ml:540-546):
+      -- Free_non_matching/Free_dead_allocation → UB179a/UB179b, MerrOther and
+      -- Free_out_of_bound → Other (a batch Error line, not UB)
+      let fail_ (err : mem_error) := (NDkilled (failReason err loc), st)
+      match pv with
+      | .PV _ (.PVnull _) =>
+        -- :1465-1469 — NOT conditional on is_dyn: a null kill succeeds unless
+        -- SW_forbid_nullptr_free is set (the switch set is refused, Z-24)
+        if CerbGlobal.has_switch .forbid_nullptr_free then fail_ MerrFreeNullPtr
+        else (NDactive (), st)
+      | .PV _ (.PVfunction _) =>
+        fail_ (MerrOther "attempted to kill with a function pointer")             -- :1470-1471
+      | .PV .Prov_none (.PVconcrete _ _) =>
+        fail_ (MerrOther "attempted to kill with a pointer lacking a provenance")  -- :1472-1473
+      | .PV .Prov_device (.PVconcrete _ _) =>
+        (NDactive (), st)                                                          -- :1474-1476 ("TODO: should that be an error ??")
+      | .PV (.Prov_symbolic _) _ =>
+        -- :1479-1513 PNVI-ae-udi arm: the concrete Lean model never mints
+        -- Prov_symbolic (PNVI is a refused switch, Z-24) — loud, never absorbed
+        (NDkilled (Other (MerrOther "killM: Prov_symbolic in concrete model")), st)
+      | .PV (.Prov_some allocId) (.PVconcrete _ addr) =>
+        -- :1515-1549 in THIS order: is_dynamic addr (the POINTER's address, not
+        -- alloc.base) → is_dead → get_allocation → addr = alloc.base
+        if isDynamic && !st.dynamicAddrs.contains addr then
+          fail_ (MerrUndefinedFree Free_non_matching)                              -- :1518-1525
+        else if st.deadAllocations.contains allocId then
+          if isDynamic then fail_ (MerrUndefinedFree Free_dead_allocation)         -- :1529-1530
+          else
+            -- :1531-1532 `failwith "Concrete: FREE was called on a dead allocation"`
+            -- — an UNCAUGHT exception on the oracle (exit 125), mirrored as a
+            -- fail-stop carrying the OCaml text (Q4 ruling, charter §7; Z-10).
+            -- REACHABILITY: a static (scope-exit) kill finds its allocation dead
+            -- only after an ACCEPTED wrong free of the same object — i.e. only
+            -- through the tray-19 dynamic_addrs address-keying defect (Z-77: a
+            -- zero-size `alloc` minted at a live object's base; dynamic-addrs
+            -- record rows k/n', witnessed on both oracles as this failwith and
+            -- on Lean via libc-body injection) or the fork-only
+            -- `cerb::with_address` attribute. Unreachable from C through
+            -- malloc/free (argument temporaries, translation.lem:4435).
+            (NDkilled (CerbFail.failStopKill "Concrete: FREE was called on a dead allocation"), st)
+        else match st.allocations.get? allocId with
+          | none =>
+            -- :1534 get_allocation ~loc → :669-675 MerrOutsideLifetime (UB009)
+            fail_ (MerrOutsideLifetime s!"Concrete.get_allocation, alloc_id={allocId}")
+          | some alloc =>
+            if addr == alloc.base then                                             -- :1535-1546
+              let st' := recordObservation
+                (Observe_deallocation loc isDynamic pv allocId (some (alloc.base, alloc.size)))
+                { st with
+                deadAllocations := allocId :: st.deadAllocations
+                lastUsed := some allocId                                             -- :1541
+                allocations := st.allocations.erase allocId }
+              -- :1543-1546 SW_zap_dead_pointers → zap_pointers (:1447-1462, not
+              -- ported): the switch set is refused (Z-24), so the OCaml default
+              -- arm `return ()` is the only reachable one; the set case is loud
+              if CerbGlobal.has_switch .zap_dead_pointers then
+                (NDkilled (Other (MerrOther "killM: SW_zap_dead_pointers is set but zap_pointers (impl_mem.ml:1447-1462) is not ported — switches are refused (Z-24)")), st)
+              else (NDactive (), st')
+            else fail_ (MerrUndefinedFree Free_out_of_bound)                       -- :1547-1548
+  )
 
 /-! ### Load / Store — impl_mem.ml:1552-1789
 
@@ -2467,140 +2489,144 @@ def isAtomicMemberAccess [LemFuel] (tagDefs : TagDefs) (alloc : Allocation) (lva
   | none => false
 
 def loadM [LemFuel] (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (pv : PointerValue) : memM (Footprint × MemValue) :=
-  ND fun st =>
-    let fail_ (err : mem_error) := (NDkilled (failReason err loc), st)
-    -- do_load — impl_mem.ml:1556-1603 (`last_used= alloc_id_opt` :1567
-    -- mirrored — Z2-M-16). Switch-conditioned arms: the PNVI `expose_allocations`
-    -- arm (:1570 in this tree) is DECLARED (refused set, Z-24; not one of the
-    -- eight explicit arms); SW_strict_reads (:1601-1606) is the EXPLICIT
-    -- `if has_switch .strict_reads then <loud kill> else …` guard below
-    -- (seam-hygiene H2)
-    let doLoad (allocOpt : Option StorageInstanceId) (addr : Int) :=
-      let size := sizeofCtype tagDefs ty
-      let bytes := readBytesFrom st addr size
-      let fp : Footprint := .FP .R addr size
-      -- abst at the load address with last_used_union_members and
-      -- funptrmap — impl_mem.ml:1560
-      let mv := reconstructValue tagDefs st.lastUsedUnionMembers st.funptrmap addr ty bytes
-      -- trap representation for _Bool — impl_mem.ml:1576-1591
-      let isBool := match ty with | Ctype _ (.Basic (.Integer .Bool0)) => true | _ => false
-      let isTrap := isBool && match mv with
-        | .MVinteger _ (.IV _ n) => n != 0 && n != 1
-        | .MVunspecified _ => true
-        | _ => false
-      -- impl_mem.ml:1575 updates last_used before its trap check (:1586-1597).
-      -- The checked read has occurred even when its representation then traps;
-      -- preserve that failure-time state (SC prototype effect inventory E01).
-      let loadedState := recordObservation
-        (Observe_access loc LoadAccess ty pv allocOpt addr size bytes mv)
-        { st with lastUsed := allocOpt }
-      if isTrap then (NDkilled (failReason (MerrTrapRepresentation LoadAccess) loc), loadedState)
-      -- :1601-1606 SW_strict_reads → MerrReadUninit on an unspecified value.
-      -- Refused set (Z-24): the default arm is the only reachable one; the set
-      -- case is loud (seam-hygiene H2)
-      else if CerbGlobal.has_switch .strict_reads then
-        (NDkilled (Other (MerrOther "loadM: SW_strict_reads is set but the strict-reads arm (impl_mem.ml:1601-1606) is not ported — switches are refused (Z-24)")), st)
-      else (NDactive (fp, mv), loadedState)
-    match pv with
-    | .PV _ (.PVnull _) => fail_ (MerrAccess LoadAccess NullPtr)          -- impl_mem.ml:1605-1606
-    | .PV _ (.PVfunction _) => fail_ (MerrAccess LoadAccess FunctionPtr)  -- impl_mem.ml:1607-1608
-    | .PV .Prov_none _ => fail_ (MerrAccess LoadAccess OutOfBoundPtr)     -- impl_mem.ml:1609-1610
-    | .PV .Prov_device (.PVconcrete _ addr) =>
-      -- impl_mem.ml:1611-1617: is_within_device → do_load None addr
-      if isWithinDevice tagDefs ty addr then doLoad none addr
-      else fail_ (MerrAccess LoadAccess OutOfBoundPtr)
-    | .PV (.Prov_symbolic _) _ =>
-      (NDkilled (kill_reason.Other
-        (MerrOther "loadM: Prov_symbolic in concrete model")), st)
-    | .PV (.Prov_some allocId) (.PVconcrete _ addr) =>
-      -- impl_mem.ml:1644-1664
-      if st.deadAllocations.contains allocId then
-        fail_ (MerrAccess LoadAccess DeadPtr)                             -- impl_mem.ml:1645-1650
-      else match st.allocations.get? allocId with
+  beforePrimitive (fun () =>
+    ND fun st =>
+      let fail_ (err : mem_error) := (NDkilled (failReason err loc), st)
+      -- do_load — impl_mem.ml:1556-1603 (`last_used= alloc_id_opt` :1567
+      -- mirrored — Z2-M-16). Switch-conditioned arms: the PNVI `expose_allocations`
+      -- arm (:1570 in this tree) is DECLARED (refused set, Z-24; not one of the
+      -- eight explicit arms); SW_strict_reads (:1601-1606) is the EXPLICIT
+      -- `if has_switch .strict_reads then <loud kill> else …` guard below
+      -- (seam-hygiene H2)
+      let doLoad (allocOpt : Option StorageInstanceId) (addr : Int) :=
+        let size := sizeofCtype tagDefs ty
+        let bytes := readBytesFrom st addr size
+        let fp : Footprint := .FP .R addr size
+        -- abst at the load address with last_used_union_members and
+        -- funptrmap — impl_mem.ml:1560
+        let mv := reconstructValue tagDefs st.lastUsedUnionMembers st.funptrmap addr ty bytes
+        -- trap representation for _Bool — impl_mem.ml:1576-1591
+        let isBool := match ty with | Ctype _ (.Basic (.Integer .Bool0)) => true | _ => false
+        let isTrap := isBool && match mv with
+          | .MVinteger _ (.IV _ n) => n != 0 && n != 1
+          | .MVunspecified _ => true
+          | _ => false
+        -- impl_mem.ml:1575 updates last_used before its trap check (:1586-1597).
+        -- The checked read has occurred even when its representation then traps;
+        -- preserve that failure-time state (SC prototype effect inventory E01).
+        let loadedState := recordObservation
+          (Observe_access loc LoadAccess ty pv allocOpt addr size bytes mv)
+          { st with lastUsed := allocOpt }
+        if isTrap then (NDkilled (failReason (MerrTrapRepresentation LoadAccess) loc), loadedState)
+        -- :1601-1606 SW_strict_reads → MerrReadUninit on an unspecified value.
+        -- Refused set (Z-24): the default arm is the only reachable one; the set
+        -- case is loud (seam-hygiene H2)
+        else if CerbGlobal.has_switch .strict_reads then
+          (NDkilled (Other (MerrOther "loadM: SW_strict_reads is set but the strict-reads arm (impl_mem.ml:1601-1606) is not ported — switches are refused (Z-24)")), st)
+        else (NDactive (fp, mv), loadedState)
+      match pv with
+      | .PV _ (.PVnull _) => fail_ (MerrAccess LoadAccess NullPtr)          -- impl_mem.ml:1605-1606
+      | .PV _ (.PVfunction _) => fail_ (MerrAccess LoadAccess FunctionPtr)  -- impl_mem.ml:1607-1608
+      | .PV .Prov_none _ => fail_ (MerrAccess LoadAccess OutOfBoundPtr)     -- impl_mem.ml:1609-1610
+      | .PV .Prov_device (.PVconcrete _ addr) =>
+        -- impl_mem.ml:1611-1617: is_within_device → do_load None addr
+        if isWithinDevice tagDefs ty addr then doLoad none addr
+        else fail_ (MerrAccess LoadAccess OutOfBoundPtr)
+      | .PV (.Prov_symbolic _) _ =>
+        (NDkilled (kill_reason.Other
+          (MerrOther "loadM: Prov_symbolic in concrete model")), st)
+      | .PV (.Prov_some allocId) (.PVconcrete _ addr) =>
+        -- impl_mem.ml:1644-1664
+        if st.deadAllocations.contains allocId then
+          fail_ (MerrAccess LoadAccess DeadPtr)                             -- impl_mem.ml:1645-1650
+        else match st.allocations.get? allocId with
+          | none =>
+            -- get_allocation (via is_within_bound) — impl_mem.ml:669-675
+            fail_ (MerrOutsideLifetime s!"Concrete.get_allocation, alloc_id={allocId}")
+          | some alloc =>
+            if !isInBounds alloc addr (sizeofCtype tagDefs ty) then
+              fail_ (MerrAccess LoadAccess OutOfBoundPtr)                   -- impl_mem.ml:1651-1656
+            else if isAtomicMemberAccess tagDefs alloc ty addr then
+              fail_ (MerrAccess LoadAccess AtomicMemberof)                  -- impl_mem.ml:1658-1660
+            else doLoad (some allocId) addr
+  )
+
+def storeM [LemFuel] (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (isLocking : Bool) (pv : PointerValue) (mv : MemValue) : memM Footprint :=
+  beforePrimitive (fun () =>
+    ND fun st =>
+      let fail_ (err : mem_error) := (NDkilled (failReason err loc), st)
+      -- select_ro_kind — impl_mem.ml:1704-1710
+      let selectRoKind : prefix0 → readonly_kind := fun pref =>
+        match pref with
+        | PrefTemporaryLifetime _ _ => readonly_kind.ReadonlyTemporaryLifetime
+        | PrefStringLiteral _ _ => readonly_kind.ReadonlyStringLiteral
+        | _ => readonly_kind.ReadonlyConstQualified
+      -- do_store — impl_mem.ml:1683-1703: bytemap write threads the
+      -- funptrmap from repr; then the last_used_union_members update iff
+      -- the pointer is PVconcrete (Some membr, _) (union member_shift,
+      -- impl_mem.ml:1694-1701)
+      -- `allocOpt` is the OCaml `alloc_id_opt`: None on the device path
+      -- (:1723 `do_store None addr`), so no is_locking readonly update there
+      let doStore (allocOpt : Option (Int × Allocation)) (unionMem : Option identifier) (addr : Int) :=
+        let (fpm, bytes) := memValueToBytes tagDefs st.funptrmap mv
+        let st' := writeBytesTo { st with funptrmap := fpm } addr bytes
+        let st' := match unionMem with
+          | some membr => { st' with lastUsedUnionMembers :=
+              (addr, membr) :: st'.lastUsedUnionMembers.filter (fun (a, _) => a != addr) }
+          | none => st'
+        -- is_locking — impl_mem.ml:1776-1787: readonly kind from the
+        -- allocation's prefix
+        let st' := match allocOpt with
+          | some (allocId, alloc) =>
+            if isLocking then
+              { st' with allocations := st'.allocations.map fun (id : Int) (a : Allocation) =>
+                  if id == allocId then
+                    { a with isReadonly := .IsReadOnly (selectRoKind alloc.prefix_) }
+                  else a }
+            else st'
+          | none => st'
+        let fp : Footprint := .FP .W addr (sizeofCtype tagDefs ty)
+        (NDactive fp, recordObservation
+          (Observe_access loc StoreAccess ty pv (allocOpt.map Prod.fst) addr
+            (sizeofCtype tagDefs ty) bytes mv)
+          { st' with lastUsed := allocOpt.map Prod.fst })                 -- :1687 last_used
+      -- ill-typed-store guard — impl_mem.ml:1673-1681: checked BEFORE the
+      -- provenance/pointer-kind match (so it wins over NullPtr etc.);
+      -- OCaml's diagnostic printfs (:1674-1680) are not mirrored, the
+      -- failure is (MerrOther, non-UB → Other kill, batch Error line).
+      if !(ctypeMemCompatible ty (typeofMval mv)) then
+        fail_ (MerrOther "store with an ill-typed memory value")
+      else
+      match pv with
+      | .PV _ (.PVnull _) => fail_ (MerrAccess StoreAccess NullPtr)          -- impl_mem.ml:1712-1713 (order per :1711-1717)
+      | .PV _ (.PVfunction _) => fail_ (MerrAccess StoreAccess FunctionPtr)  -- impl_mem.ml:1714-1715
+      | .PV .Prov_none _ => fail_ (MerrAccess StoreAccess OutOfBoundPtr)     -- impl_mem.ml:1716-1717
+      | .PV .Prov_device (.PVconcrete unionMem addr) =>
+        -- impl_mem.ml:1718-1724: is_within_device → do_store None addr
+        if isWithinDevice tagDefs ty addr then doStore none unionMem addr
+        else fail_ (MerrAccess StoreAccess OutOfBoundPtr)
+      | .PV (.Prov_symbolic _) _ =>
+        (NDkilled (kill_reason.Other
+          (MerrOther "storeM: Prov_symbolic in concrete model")), st)
+      | .PV (.Prov_some allocId) (.PVconcrete unionMem addr) =>
+        -- impl_mem.ml:1762-1789: NO is_dead check on the store path — a
+        -- dead allocation is caught by is_within_bound's get_allocation
+        -- (MerrOutsideLifetime); bounds are checked BEFORE readonly
+        match st.allocations.get? allocId with
         | none =>
-          -- get_allocation (via is_within_bound) — impl_mem.ml:669-675
           fail_ (MerrOutsideLifetime s!"Concrete.get_allocation, alloc_id={allocId}")
         | some alloc =>
           if !isInBounds alloc addr (sizeofCtype tagDefs ty) then
-            fail_ (MerrAccess LoadAccess OutOfBoundPtr)                   -- impl_mem.ml:1651-1656
-          else if isAtomicMemberAccess tagDefs alloc ty addr then
-            fail_ (MerrAccess LoadAccess AtomicMemberof)                  -- impl_mem.ml:1658-1660
-          else doLoad (some allocId) addr
-
-def storeM [LemFuel] (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (isLocking : Bool) (pv : PointerValue) (mv : MemValue) : memM Footprint :=
-  ND fun st =>
-    let fail_ (err : mem_error) := (NDkilled (failReason err loc), st)
-    -- select_ro_kind — impl_mem.ml:1704-1710
-    let selectRoKind : prefix0 → readonly_kind := fun pref =>
-      match pref with
-      | PrefTemporaryLifetime _ _ => readonly_kind.ReadonlyTemporaryLifetime
-      | PrefStringLiteral _ _ => readonly_kind.ReadonlyStringLiteral
-      | _ => readonly_kind.ReadonlyConstQualified
-    -- do_store — impl_mem.ml:1683-1703: bytemap write threads the
-    -- funptrmap from repr; then the last_used_union_members update iff
-    -- the pointer is PVconcrete (Some membr, _) (union member_shift,
-    -- impl_mem.ml:1694-1701)
-    -- `allocOpt` is the OCaml `alloc_id_opt`: None on the device path
-    -- (:1723 `do_store None addr`), so no is_locking readonly update there
-    let doStore (allocOpt : Option (Int × Allocation)) (unionMem : Option identifier) (addr : Int) :=
-      let (fpm, bytes) := memValueToBytes tagDefs st.funptrmap mv
-      let st' := writeBytesTo { st with funptrmap := fpm } addr bytes
-      let st' := match unionMem with
-        | some membr => { st' with lastUsedUnionMembers :=
-            (addr, membr) :: st'.lastUsedUnionMembers.filter (fun (a, _) => a != addr) }
-        | none => st'
-      -- is_locking — impl_mem.ml:1776-1787: readonly kind from the
-      -- allocation's prefix
-      let st' := match allocOpt with
-        | some (allocId, alloc) =>
-          if isLocking then
-            { st' with allocations := st'.allocations.map fun (id : Int) (a : Allocation) =>
-                if id == allocId then
-                  { a with isReadonly := .IsReadOnly (selectRoKind alloc.prefix_) }
-                else a }
-          else st'
-        | none => st'
-      let fp : Footprint := .FP .W addr (sizeofCtype tagDefs ty)
-      (NDactive fp, recordObservation
-        (Observe_access loc StoreAccess ty pv (allocOpt.map Prod.fst) addr
-          (sizeofCtype tagDefs ty) bytes mv)
-        { st' with lastUsed := allocOpt.map Prod.fst })                 -- :1687 last_used
-    -- ill-typed-store guard — impl_mem.ml:1673-1681: checked BEFORE the
-    -- provenance/pointer-kind match (so it wins over NullPtr etc.);
-    -- OCaml's diagnostic printfs (:1674-1680) are not mirrored, the
-    -- failure is (MerrOther, non-UB → Other kill, batch Error line).
-    if !(ctypeMemCompatible ty (typeofMval mv)) then
-      fail_ (MerrOther "store with an ill-typed memory value")
-    else
-    match pv with
-    | .PV _ (.PVnull _) => fail_ (MerrAccess StoreAccess NullPtr)          -- impl_mem.ml:1712-1713 (order per :1711-1717)
-    | .PV _ (.PVfunction _) => fail_ (MerrAccess StoreAccess FunctionPtr)  -- impl_mem.ml:1714-1715
-    | .PV .Prov_none _ => fail_ (MerrAccess StoreAccess OutOfBoundPtr)     -- impl_mem.ml:1716-1717
-    | .PV .Prov_device (.PVconcrete unionMem addr) =>
-      -- impl_mem.ml:1718-1724: is_within_device → do_store None addr
-      if isWithinDevice tagDefs ty addr then doStore none unionMem addr
-      else fail_ (MerrAccess StoreAccess OutOfBoundPtr)
-    | .PV (.Prov_symbolic _) _ =>
-      (NDkilled (kill_reason.Other
-        (MerrOther "storeM: Prov_symbolic in concrete model")), st)
-    | .PV (.Prov_some allocId) (.PVconcrete unionMem addr) =>
-      -- impl_mem.ml:1762-1789: NO is_dead check on the store path — a
-      -- dead allocation is caught by is_within_bound's get_allocation
-      -- (MerrOutsideLifetime); bounds are checked BEFORE readonly
-      match st.allocations.get? allocId with
-      | none =>
-        fail_ (MerrOutsideLifetime s!"Concrete.get_allocation, alloc_id={allocId}")
-      | some alloc =>
-        if !isInBounds alloc addr (sizeofCtype tagDefs ty) then
-          fail_ (MerrAccess StoreAccess OutOfBoundPtr)                     -- impl_mem.ml:1763-1765
-        else match alloc.isReadonly with
-          | .IsReadOnly kind => fail_ (MerrWriteOnReadOnly kind)           -- impl_mem.ml:1768-1770
-          | .IsWritable =>
-            if isAtomicMemberAccess tagDefs alloc ty addr then
-              -- NOTE: OCaml reports LoadAccess here (impl_mem.ml:1772-1774
-              -- — looks like an upstream copy-paste; mirrored as-is)
-              fail_ (MerrAccess LoadAccess AtomicMemberof)
-            else doStore (some (allocId, alloc)) unionMem addr
+            fail_ (MerrAccess StoreAccess OutOfBoundPtr)                     -- impl_mem.ml:1763-1765
+          else match alloc.isReadonly with
+            | .IsReadOnly kind => fail_ (MerrWriteOnReadOnly kind)           -- impl_mem.ml:1768-1770
+            | .IsWritable =>
+              if isAtomicMemberAccess tagDefs alloc ty addr then
+                -- NOTE: OCaml reports LoadAccess here (impl_mem.ml:1772-1774
+                -- — looks like an upstream copy-paste; mirrored as-is)
+                fail_ (MerrAccess LoadAccess AtomicMemberof)
+              else doStore (some (allocId, alloc)) unionMem addr
+  )
 
 /-! ### Pointer comparisons — impl_mem.ml:1830+ -/
 
@@ -3114,62 +3140,70 @@ private def varargsAdd (id : Int) (v : Int × List (ctype × PointerValue))
 /-- va_start — impl_mem.ml:2698-2704: fresh id bound to (index 0, args),
     next_varargs_id bumped, returns `IV (Prov_none, id)`. -/
 def vaStart (args : List (ctype × PointerValue)) : memM IntegerValue :=
-  ND fun st =>
-    let id := st.nextVarargsId
-    (NDactive (.IV .Prov_none id),
-     recordObservation (Observe_varargs Varargs_create id)
-     { st with varargs := varargsAdd id (0, args) st.varargs
-               nextVarargsId := st.nextVarargsId + 1 })
+  beforePrimitive (fun () =>
+    ND fun st =>
+      let id := st.nextVarargsId
+      (NDactive (.IV .Prov_none id),
+       recordObservation (Observe_varargs Varargs_create id)
+       { st with varargs := varargsAdd id (0, args) st.varargs
+                 nextVarargsId := st.nextVarargsId + 1 })
+  )
 
 /-- va_copy — impl_mem.ml:2706-2721: duplicate the (index, args) entry
     under a fresh id (the copy's index advances independently). Only a
     `Prov_none` integer is a valid va_list value. -/
 def vaCopy (va : IntegerValue) : memM IntegerValue :=
-  match va with
-  | .IV .Prov_none id =>
-    ND fun st =>
-      match st.varargs.find? (fun e => e.1 == id) with
-      | some (_, entry) =>
-        let id' := st.nextVarargsId
-        (NDactive (.IV .Prov_none id'),
-         recordObservation (Observe_varargs Varargs_create id')
-         (recordObservation (Observe_varargs Varargs_read id)
-         { st with varargs := varargsAdd id' entry st.varargs
-                   nextVarargsId := st.nextVarargsId + 1 }))
-      | none => (NDkilled (failReason (MerrWIP "va_copy: not initiliased")), st)
-  | _ => memFail (MerrWIP "va_copy: invalid va_list")
+  beforePrimitive (fun () =>
+    match va with
+    | .IV .Prov_none id =>
+      ND fun st =>
+        match st.varargs.find? (fun e => e.1 == id) with
+        | some (_, entry) =>
+          let id' := st.nextVarargsId
+          (NDactive (.IV .Prov_none id'),
+           recordObservation (Observe_varargs Varargs_create id')
+           (recordObservation (Observe_varargs Varargs_read id)
+           { st with varargs := varargsAdd id' entry st.varargs
+                     nextVarargsId := st.nextVarargsId + 1 }))
+        | none => (NDkilled (failReason (MerrWIP "va_copy: not initiliased")), st)
+    | _ => memFail (MerrWIP "va_copy: invalid va_list")
+  )
 
 /-- va_arg — impl_mem.ml:2723-2741: read the pointer at the current index
     and ADVANCE the index (IntMap.add on the existing id). No ctype
     compatibility check, mirroring OCaml's TODO at :2730. -/
 def vaArg (va : IntegerValue) (_ : ctype) : memM PointerValue :=
-  match va with
-  | .IV .Prov_none id =>
-    ND fun st =>
-      match st.varargs.find? (fun e => e.1 == id) with
-      | some (_, (i, args)) =>
-        let st := recordObservation (Observe_varargs Varargs_read id) st
-        match args[i.toNat]? with
-        | some (_, ptr) =>
-          (NDactive ptr,
-           recordObservation (Observe_varargs Varargs_advance id)
-           { st with varargs := varargsAdd id (i + 1, args) st.varargs })
-        | none =>
-          (NDkilled (failReason (MerrWIP "va_arg: invalid number of arguments")), st)
-      | none => (NDkilled (failReason (MerrWIP "va_arg: not initiliased")), st)
-  | _ => memFail (MerrWIP "va_arg: invalid va_list")
+  beforePrimitive (fun () =>
+    match va with
+    | .IV .Prov_none id =>
+      ND fun st =>
+        match st.varargs.find? (fun e => e.1 == id) with
+        | some (_, (i, args)) =>
+          let st := recordObservation (Observe_varargs Varargs_read id) st
+          match args[i.toNat]? with
+          | some (_, ptr) =>
+            (NDactive ptr,
+             recordObservation (Observe_varargs Varargs_advance id)
+             { st with varargs := varargsAdd id (i + 1, args) st.varargs })
+          | none =>
+            (NDkilled (failReason (MerrWIP "va_arg: invalid number of arguments")), st)
+        | none => (NDkilled (failReason (MerrWIP "va_arg: not initiliased")), st)
+    | _ => memFail (MerrWIP "va_arg: invalid va_list")
+  )
 
 /-- va_end — impl_mem.ml:2743-2754: IntMap.remove of an initialised id. -/
 def vaEnd (va : IntegerValue) : memM Unit :=
-  match va with
-  | .IV .Prov_none id =>
-    ND fun st =>
-      if st.varargs.any (fun e => e.1 == id) then
-        (NDactive (), recordObservation (Observe_varargs Varargs_delete id)
-          { st with varargs := st.varargs.filter (fun e => e.1 != id) })
-      else
-        (NDkilled (failReason (MerrWIP "va_end: not initiliased")), st)
-  | _ => memFail (MerrWIP "va_end: invalid va_list")
+  beforePrimitive (fun () =>
+    match va with
+    | .IV .Prov_none id =>
+      ND fun st =>
+        if st.varargs.any (fun e => e.1 == id) then
+          (NDactive (), recordObservation (Observe_varargs Varargs_delete id)
+            { st with varargs := st.varargs.filter (fun e => e.1 != id) })
+        else
+          (NDkilled (failReason (MerrWIP "va_end: not initiliased")), st)
+    | _ => memFail (MerrWIP "va_end: invalid va_list")
+  )
 
 /-- va_list — impl_mem.ml:2756-2764: retrieve the argument list for an id
     (the variadic-call consumer, formatted.lem:799 vsnprintf). OCaml
@@ -3179,13 +3213,15 @@ def vaEnd (va : IntegerValue) : memM Unit :=
     different failure class). Unreachable from generated code: va_list is
     only applied to a fresh va_start id (index 0). -/
 def vaList (vaIdx : Int) : memM (List (ctype × PointerValue)) :=
-  ND fun st =>
-    match st.varargs.find? (fun e => e.1 == vaIdx) with
-    | some (_, (n, args)) =>
-      let st' := recordObservation (Observe_varargs Varargs_read vaIdx) st
-      if n == 0 then (NDactive args, st')
-      else (NDkilled (CerbFail.failStopKill "va_list: assert (n = 0) failed (impl_mem.ml:2760)"), st')
-    | none => (NDkilled (failReason (MerrWIP "va_list")), st)
+  beforePrimitive (fun () =>
+    ND fun st =>
+      match st.varargs.find? (fun e => e.1 == vaIdx) with
+      | some (_, (n, args)) =>
+        let st' := recordObservation (Observe_varargs Varargs_read vaIdx) st
+        if n == 0 then (NDactive args, st')
+        else (NDkilled (CerbFail.failStopKill "va_list: assert (n = 0) failed (impl_mem.ml:2760)"), st')
+      | none => (NDkilled (failReason (MerrWIP "va_list")), st)
+  )
 
 /-! ### Misc -/
 

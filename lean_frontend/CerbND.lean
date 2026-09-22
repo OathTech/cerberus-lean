@@ -138,6 +138,9 @@ def runNDFuel (fuel : Nat)
           runNDFuel fuel branch st' ++ acc
         ) []
 
+      | (NDsuspend continuation, st') =>
+        runNDFuel fuel continuation st'
+
       | (NDguard _info _constraint continuation, st') =>
         -- UNREACHABLE by construction (header, Z-59): no `NDguard` is ever
         -- produced with the concrete model's total eq/lt/le_ival; the
@@ -224,6 +227,9 @@ def runND1Fuel (fuel : Nat)
         | [] => []
         | (_, branch) :: _ => runND1Fuel fuel branch st'
 
+      | (NDsuspend continuation, st') =>
+        runND1Fuel fuel continuation st'
+
       | (NDguard _info _constraint continuation, st') =>
         runND1Fuel fuel continuation st'
 
@@ -274,6 +280,9 @@ def runND1TraceFuel (showInfo : info → String) (fuel : Nat)
         | (_, branch) :: _ =>
           let (labels, execs) := runND1TraceFuel showInfo fuel branch st'
           (label :: labels, execs)
+      | (NDsuspend continuation, st') =>
+        let (labels, execs) := runND1TraceFuel showInfo fuel continuation st'
+        ("NDsuspend" :: labels, execs)
       | (NDguard info _constraint continuation, st') =>
         let (labels, execs) := runND1TraceFuel showInfo fuel continuation st'
         (s!"NDguard[{showInfo info}]" :: labels, execs)

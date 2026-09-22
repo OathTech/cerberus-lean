@@ -28,7 +28,7 @@ def run [LemFuel] (body : expr core_run_annotation) := runProgram (program body)
 def outcomeText : nd_status driver_result driver_error driver_state → String
   | Active result => if result.dres_blocked then "blocked" else "active"
   | Killed _ (Error0 _ msg) => "Error: " ++ msg
-  | Killed _ (Other (DErr_concurrency msg)) => "SC gap: " ++ msg
+  | Killed _ (Other (DErr_concurrency msg)) => "SC gap: " ++ sc_fault_message msg
   | Killed _ (Other (DErr_core_run (Illformed_program msg))) => "Core: " ++ msg
   | Killed _ _ => "killed (other cause)"
 

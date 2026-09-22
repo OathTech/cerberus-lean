@@ -86,3 +86,12 @@ theorem hack_measure_sufficient [LemFuel]
   rw [hack_value lemFuel (by omega), hack_value _ hpos]
 
 end Driver_lemMeasureProofs
+
+/-- The generated worker already fails explicitly at zero fuel. Lem omits its
+automatic certificate because the source argument is the unit pattern `()`.
+Keep the exact worker equation in this imported fuel-obligation carrier. -/
+theorem sc_driver_machine_lemFuel_zero [LemFuel]
+    (tags : Fmap sym (CerbLocation.Loc × tag_definition)) (unitArg : Unit) :
+    sc_driver_machine_lemFuel 0 tags unitArg =
+      ND (fun state =>
+        (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), state)) := rfl

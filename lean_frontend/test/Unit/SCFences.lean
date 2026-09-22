@@ -16,12 +16,14 @@ def checkFences (fuel : Nat) (name : String) (body : expr core_run_annotation)
     match outcome with | Active r => !r.dres_blocked && test s | _ => false)
   IO.println (name ++ ": " ++ toString results.length ++ " alternatives; pass=" ++ toString passed) >>= fun _ => pure passed
 
-def checkWeakOrder (fuel : Nat) (order : memory_order) (make : memory_order → expr core_run_annotation) : Bool :=
+def checkWeakOrder (fuel : Nat) (order : memory_order) (make : memory_order → expr core_run_annotation)
+    (kind : memory_order → sc_request_kind) : Bool :=
   letI := LemFuel.mk fuel
   let results := runProgram (program (make order)) memorySetup
   !results.isEmpty && results.all (fun (outcome, _, s) =>
     (memoryEffects s).isEmpty && match outcome with
-    | Killed _ (Other (DErr_concurrency msg)) => msg == "SC model excludes the requested memory order"
+    | Killed _ (Other (DErr_concurrency msg)) => msg == SC_fault_order (kind order) &&
+        sc_fault_message msg == "SC model excludes the requested memory order"
     | _ => false)
 
 def main (args : List String) : IO UInt32 := do
@@ -64,8 +66,9 @@ def main (args : List String) : IO UInt32 := do
     (Load0 (pe (Vctype unsigned_char)) (pe (Vobject (OVpointer (pointer 20 200)))) order))))
   let store := fun order => Expr [] (Eaction (Paction Pos (Action (CerbLocation.other "SC weak store") empty_annotation
     (Store0 false (pe (Vctype unsigned_char)) (pe (Vobject (OVpointer (pointer 20 200)))) (pe (intval 7)) order))))
-  for (name, make) in [("load",load),("store",store),("fence",fenceExpr)] do
-    let passed := weak.all (fun order => checkWeakOrder fuel order make)
+  for (name, make, kind) in [("load",load,fun order => SC_access order Pos),
+      ("store",store,fun order => SC_access order Pos),("fence",fenceExpr,SC_fence)] do
+    let passed := weak.all (fun order => checkWeakOrder fuel order make kind)
     IO.println ("five weak orders refused before " ++ name ++ " effects: pass=" ++ toString passed)
     good := passed && good
   return if good then 0 else 1

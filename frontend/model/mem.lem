@@ -69,6 +69,10 @@ type memory_observation = Mem_common.memory_observation pointer_value mem_value 
 val begin_observing: mem_state -> maybe mem_state
 val stop_observing: mem_state -> mem_state
 val take_observations: mem_state -> maybe (list memory_observation * mem_state)
+(* Explicit SC service scheduling support; Nothing is unavailable, not success. *)
+val set_suspending: bool -> mem_state -> maybe mem_state
+declare ocaml target_rep function set_suspending = `Impl_mem.set_suspending`
+declare lean target_rep function set_suspending = `CerbMem.setSuspending`
 declare ocaml target_rep function begin_observing = `Impl_mem.begin_observing`
 declare lean target_rep function begin_observing = `CerbMem.beginObserving`
 declare ocaml target_rep function stop_observing = `Impl_mem.stop_observing`

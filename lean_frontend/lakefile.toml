@@ -134,6 +134,7 @@ roots = [
   "Sc_order", "Sc_order_auxiliary", "Sc_order_lemMeasureProofs",
   "Sc_representation", "Sc_representation_auxiliary", "CerbSCRepresentation",
   "Sc_runtime", "Sc_runtime_auxiliary", "CerbSCByteInstances", "CerbSCOperational",
+  "CerbNDSuspension", "CerbMemSuspension", "CerbSCHelperOrder", "CerbSCServices", "CerbSCFaults",
   "Sc_byte_sources", "Sc_byte_sources_auxiliary", "CerbSCByteSources",
   "Pp", "Pp_auxiliary",
   "Product", "Product_auxiliary",
@@ -356,4 +357,34 @@ moreLinkArgs = ["native/md5.o"]
 name = "sc-byte-sources-test"
 srcDir = "test"
 root = "Unit.SCByteSources"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "nd-suspension-test"
+srcDir = "test"
+root = "Unit.NDSuspension"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "memory-suspension-test"
+srcDir = "test"
+root = "Unit.MemSuspension"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "sc-helper-order-test"
+srcDir = "test"
+root = "Unit.SCHelperOrder"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "sc-services-test"
+srcDir = "test"
+root = "Unit.SCServices"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "sc-faults-test"
+srcDir = "test"
+root = "Unit.SCFaults"
 moreLinkArgs = ["native/md5.o"]

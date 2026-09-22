@@ -76,6 +76,7 @@
 import CerbND
 import CerbCall
 import CerbSCOperational
+import CerbMemSuspension
 import Core
 import Core_run_aux
 import Driver
@@ -450,11 +451,22 @@ theorem allocator_errno (top : Int) (h : 8 ≤ top) :
   simp [h1]
   omega
 
+/-- The sequential exemplar's primitive wrapper does not suspend. -/
+theorem runOne_beforePrimitive_disabled {α : Type}
+    (operation : Unit → CerbMem.memM α) (state : CerbMem.MemState)
+    (disabled : state.suspendEnabled = false) :
+    runOne (CerbMem.beforePrimitive operation) state = runOne (operation ()) state := by
+  have bridge (m : CerbMem.memM α) : runOne m state = CerbMemSuspension.node m state := by
+    cases m <;> rfl
+  rw [bridge (CerbMem.beforePrimitive operation), bridge (operation ())]
+  exact CerbMemSuspension.disabled operation state disabled
+
 theorem allocateObject_errno (k : Nat) (top : Int) (h : 8 ≤ top) :
     runOne (@CerbMem.allocateObject ⟨Nat.succ k⟩ fmapEmpty 0 (PrefOther "errno") (CerbMem.integerIval 4) signed_int none none)
         (CerbMem.initialMemState top) = (NDactive (errnoPtr top), σalloc top) := by
   have hsz : (CerbMem.sizeofCtype fmapEmpty signed_int : Int) = 4 := by decide
   unfold CerbMem.allocateObject
+  rw [runOne_beforePrimitive_disabled _ _ rfl]
   simp only [CerbMem.integerIval]
   rw [hsz]
   exact (runOne_bind_active (allocator_errno top h)).trans rfl
@@ -476,6 +488,7 @@ theorem storeM_errno_active (k : Nat) (top : Int) :
   have hro : (errnoAlloc top).isReadonly = .IsWritable := rfl
   have hatomic : @CerbMem.isAtomicMemberAccess ⟨Nat.succ k⟩ fmapEmpty (errnoAlloc top) signed_int (errnoAddr top) = false := rfl
   unfold CerbMem.storeM
+  rw [runOne_beforePrimitive_disabled _ _ (show (σalloc top).suspendEnabled = false from rfl)]
   simp only [runOne, errnoPtr, hcompat, hget]
   simp only [hsz, hbounds, hro, hatomic, Bool.not_true, Bool.false_eq_true, if_false]
 

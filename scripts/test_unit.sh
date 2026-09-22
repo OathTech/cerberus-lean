@@ -30,6 +30,11 @@ UNIT_TESTS=(
     "sc-cas-test"
     "sc-seq-rmw-test"
     "sc-byte-sources-test"
+    "nd-suspension-test"
+    "memory-suspension-test"
+    "sc-helper-order-test"
+    "sc-services-test"
+    "sc-faults-test"
     "sc-representation-test"
     # allocator soundness (upstream-tray draft 44, 2026-09-16): the four draft-44
     # states on the actual CerbMem.allocator; its import compiles the kernel theorem
@@ -87,7 +92,16 @@ for test in "${TESTS[@]}"; do
     # minimum, and the second run checks a larger caller-selected budget.
     if [[ "$test" == monadic-failstop-test ]]; then test_args=(2 17); fi
     if [[ "$test" == sc-prototype-test ]]; then test_args=(17 64); fi
-    if [[ "$test" == sc-protocol-test || "$test" == sc-fences-test || "$test" == sc-cas-test || "$test" == sc-seq-rmw-test || "$test" == sc-byte-sources-test ]]; then test_args=(64); fi
+    case "$test" in
+        sc-protocol-test|sc-fences-test|sc-cas-test|sc-seq-rmw-test|sc-byte-sources-test|nd-suspension-test|memory-suspension-test|sc-helper-order-test|sc-services-test|sc-faults-test) test_args=(64) ;;
+    esac
+    if [[ "$test" == memory-suspension-test ]]; then test_args=(64 65536); fi
+    if [[ "$test" == sc-services-test ]]; then
+        "$PROJECT_ROOT/tools/check_lem_sync.sh" --check
+        DUNE_CACHE=disabled "$SCRIPT_DIR/capped" dune build --root "$PROJECT_ROOT" -j 2 \
+            memory/concrete/sc_prototype_controls/controls.exe
+        timeout 30 "$PROJECT_ROOT/_build/default/memory/concrete/sc_prototype_controls/controls.exe"
+    fi
     if "$bin" "${test_args[@]}"; then
         echo "${GREEN}✓ $test PASSED${NC}"
         total_pass=$((total_pass + 1))

@@ -54,6 +54,8 @@ inductive ActionRefines (R : ndM a info err cs st → ndM a info err cs st → s
   | nd (i : info) (s : st) {xs ys}
       (h : ListRel (fun x y => x.1 = y.1 ∧ R x.2 y.2 s) xs ys) :
       ActionRefines R (NDnd i xs, s) (NDnd i ys, s)
+  | suspend (s : st) {x y} (h : R x y s) :
+      ActionRefines R (NDsuspend x, s) (NDsuspend y, s)
   | guard (i : info) (c : cs) (s : st) {x y} (h : R x y s) :
       ActionRefines R (NDguard i c x, s) (NDguard i c y, s)
   | branch (i : info) (c : cs) (s : st) {x₁ y₁ x₂ y₂}
@@ -81,6 +83,7 @@ theorem action_refl {R : ndM a info err cs st → ndM a info err cs st → st �
     induction xs with
     | nil => exact .nil
     | cons x xs ih => exact .cons ⟨rfl, hR x.2 s⟩ ih
+  | NDsuspend x => exact .suspend s (hR x s)
   | NDguard i c x => exact .guard i c s (hR x s)
   | NDbranch i c x y => exact .branch i c s (hR x s) (hR y s)
   | NDstep i xs =>
@@ -172,6 +175,9 @@ theorem run_refines {n k : Nat} (hn : n ≤ k)
         | nd i u hb =>
           simp only [runNDFuel, hp, hq]
           exact fold_refines _ _ (fun _ _ h => ih hnk h.2) hb .nil
+        | suspend u hc =>
+          simp only [runNDFuel, hp, hq]
+          exact ih hnk hc
         | guard i c u hc =>
           simp only [runNDFuel, hp, hq]
           exact ih hnk hc
@@ -209,6 +215,9 @@ theorem run1_refines {n k : Nat} (hn : n ≤ k)
           | cons hxy _ =>
             simp only [runND1Fuel, hp, hq]
             exact ih hnk hxy.2
+        | suspend u hc =>
+          simp only [runND1Fuel, hp, hq]
+          exact ih hnk hc
         | guard i c u hc =>
           simp only [runND1Fuel, hp, hq]
           exact ih hnk hc
@@ -253,6 +262,9 @@ theorem trace_eq_of_refines {n k : Nat} (hn : n ≤ k) (showInfo : info → Stri
           | cons hxy _ =>
             simp only [runND1TraceFuel, hp, hq] at hc ⊢
             rw [ih hnk hxy.2 hc, hlen]
+        | suspend u hx =>
+          simp only [runND1TraceFuel, hp, hq] at hc ⊢
+          rw [ih hnk hx hc]
         | guard i c u hx =>
           simp only [runND1TraceFuel, hp, hq] at hc ⊢
           rw [ih hnk hx hc]
@@ -298,6 +310,9 @@ theorem bind_refines {b b' : Nat} (hb : b ≤ b') (d : Nat)
          | NDnd i xs =>
            simp only [Refines, nd_bind_lemFuel, node, hp]
            exact .nd i u (listRel_map _ _ (fun p => ⟨rfl, ih hbb d p.2 u⟩) xs)
+         | NDsuspend x =>
+           simp only [Refines, nd_bind_lemFuel, node, hp]
+           exact .suspend u (ih hbb d x u)
          | NDguard i c x =>
            simp only [Refines, nd_bind_lemFuel, node, hp]
            exact .guard i c u (ih hbb d x u)
@@ -357,6 +372,9 @@ theorem lift_refines (b : Nat)
           simp only [liftAction_lemFuel]
           exact .nd (infoMap i) s
             (listRel_map _ _ (fun p => ⟨rfl, (ih b' hbb).1 d p.2 s⟩) xs)
+        | NDsuspend x =>
+          simp only [liftAction_lemFuel]
+          exact .suspend s ((ih b' hbb).1 d x s)
         | NDguard i c x =>
           simp only [liftAction_lemFuel]
           exact .guard (infoMap i) c s ((ih b' hbb).1 d x s)

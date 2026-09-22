@@ -1,0 +1,11 @@
+name = "SCConsumerExample"
+defaultTargets = ["SCConsumer"]
+moreLeanArgs = ["-DautoImplicit=false"]
+packagesDir = "../../.lake/packages"
+
+[[require]]
+name = "CerberusLean"
+path = "../.."
+
+[[lean_lib]]
+name = "SCConsumer"

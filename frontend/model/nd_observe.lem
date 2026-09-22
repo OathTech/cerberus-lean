@@ -44,6 +44,8 @@ let rec lift_checked_action get put liftInfo liftErr postNode = function
       NDbranch (liftInfo info) cs
         (lift_checked get put liftInfo liftErr postNode left)
         (lift_checked get put liftInfo liftErr postNode right)
+  | NDsuspend continuation ->
+      NDsuspend (lift_checked get put liftInfo liftErr postNode continuation)
   | NDstep info info_ms ->
       NDstep (liftInfo info) (List.map (fun (info, m) ->
         (liftInfo info, lift_checked get put liftInfo liftErr postNode m)) info_ms)

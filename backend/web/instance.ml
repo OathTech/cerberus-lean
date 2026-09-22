@@ -553,7 +553,7 @@ let multiple_steps step_state (m, st) =
                       None, "CHERI error"
                 end
             | Driver.DErr_concurrency str ->
-                None, "Concurrency error: " ^ str
+                None, "Concurrency error: " ^ Sc_runtime.sc_fault_message str
             | Driver.DErr_other str ->
                 None, str
           in
@@ -573,6 +573,8 @@ let multiple_steps step_state (m, st) =
         |> fun s -> Debug.print 0 "finish guard"; s
       | (NDnd (_, ms), st') ->
         (None, create_leafs st' ms step_state)
+      | (NDsuspend continuation, st') ->
+        (None, create_leafs st' [(SK_misc ["suspend"], continuation)] step_state)
       | (NDstep (_, ms), st') ->
         (None, create_leafs st' ms step_state)
     in

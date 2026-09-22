@@ -5,7 +5,7 @@ This file records evidence and next actions; it does not replace the charter.
 
 ## Current status
 
-**2026-09-22: CAS/fences/float are committed at `fb72dd9fb`. The following ordinary-RMW and physical byte-source slice passes both builds, targeted controls, all 39 Tier A/B lanes and the mandatory 864-row three-engine report, with unchanged discrepancy IDs. Public SC verdict checking remains incomplete; helper resumption and location/consistency work continue.**
+**2026-09-22: resumable helper services, typed SC faults and the external import example pass production validation. All 39 Tier A/B lanes pass; the 864-row three-engine report retains exactly the preceding checkpoint's classifications and decoded results, including its 40 Lean discrepancy IDs. Public SC verdict checking remains incomplete. A concrete mixed-size reference decision is pending with the user.**
 Branch `arc/sc-prototype`, worktree
 `/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype`.
 Implementation base: `5407597d9eeba0259d65b728e86a860ad4614ab3`.
@@ -13,10 +13,10 @@ Implementation base: `5407597d9eeba0259d65b728e86a860ad4614ab3`.
 | Package | Status | Next evidence |
 |---|---|---|
 | S0 reference/baseline/instruments | Baseline, contract, inventory and repaired harness retained; current slice passes fresh integration | Continue reference and location interpretation review |
-| S1 driver/scheduler/threads | Protocol plus owned CAS and ordinary-RMW phases implemented | Owned resumable helper services and complete choice laws |
-| S2 effects/representation/sequencing | Journal, float representation, ordinary-RMW phases and physical byte sources validated | Helper order/interruption, location/lifetime composition and correspondence |
+| S1 driver/scheduler/threads | Protocol, owned CAS/ordinary-RMW phases and complete resumable service machine validated | Final scheduler/interface review and complete C entry |
+| S2 effects/representation/sequencing | Journal, float representation, physical byte sources, helper ordering and resumption validated | Location/lifetime composition and external correspondence |
 | S3 SC atomics/races/verdicts | CAS/fences validated; unspecified CAS bytes explicitly unsupported | Race/consistency checking, remaining atomic frontend paths and C entry |
-| S4 operational API/laws | Checked lifting, choices and recorder/byte-accounting laws exported | Independent import example and resumption laws |
+| S4 operational API/laws | Checked lifting, choices, recorder, byte-accounting and resumption laws; separate import example passes | Complete public interface, conservativity domains and remaining correspondence |
 | S5 integrated completion | Intermediate slices validated; prototype incomplete | Final inventory, complete SC integration and reproducible report |
 
 ## Setup record
@@ -76,16 +76,22 @@ for S0 onward; these setup checks do not claim those results.
 
 ## Next action
 
-Retain and commit the validated RMW/byte-source checkpoint, then compile and
-exercise the prepared typed continuation, helper-order, fault-identity and
-independent import drafts. The [current evidence index](2026-09-21_sc-prototype-evidence/rmw-byte-sources/README.md)
-records all 39 passing lanes and the unchanged 40 discrepancy IDs across the
-864-row three-engine report. Draft code is not covered by that certification.
+The service slice's [review](2026-09-22_sc-service-slice-review.md) and
+[evidence](2026-09-21_sc-prototype-evidence/services/README.md) are complete.
+The [reference proposal](2026-09-21_sc-prototype-evidence/reference-followup/location-reference-decision.md)
+asks whether to retain pinned Cmm with explicit gaps on evidenced unresolved
+mixed-size/location cases (recommended), or adopt the published mixed-size
+model as an additional named reference. This changes reference/coverage policy;
+it is not a proof-convenience restriction. The required asynchronous question
+has been submitted; no answer or new runtime policy is recorded yet.
 
-Continue owned helper resumption, filesystem state preservation, location/RF
-composition, SC races and consistency, and public operational/C interfaces.
-The [padding policy](2026-09-21_sc-upstream-gap-policy.md) is resolved; no new
-padding discussion is needed. The customer remains strictly read-only.
+After that decision, continue location/RF composition, prefix race/consistency
+checking, remaining atomic frontend paths and the public operational/C entry.
+The [independent investigations](2026-09-21_sc-prototype-evidence/reference-followup/README.md)
+also retain concrete stream-lock and floating-value adapter findings. Missing
+implementation mechanisms remain work, not new coverage exclusions. The earlier
+[CAS padding policy](2026-09-21_sc-upstream-gap-policy.md) remains resolved.
+The customer remains strictly read-only; no build or migration was performed.
 
 ## S0 working evidence
 

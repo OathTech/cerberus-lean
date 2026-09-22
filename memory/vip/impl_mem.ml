@@ -1469,3 +1469,4 @@ type memory_observation =
 let begin_observing (_: mem_state) : mem_state option = None
 let stop_observing (st: mem_state) = st
 let take_observations (_: mem_state) : (memory_observation list * mem_state) option = None
+let set_suspending enabled (st: mem_state) : mem_state option = if enabled then None else Some st

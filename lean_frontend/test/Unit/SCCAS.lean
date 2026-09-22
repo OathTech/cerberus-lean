@@ -122,7 +122,9 @@ def main (args : List String) : IO UInt32 := do
     (!gap.isEmpty && gap.all (fun (outcome, _, state) =>
       (memoryEffects state).length == 2 && byteAt state 200 == some 7 && byteAt state 300 == none &&
       match outcome with
-      | Killed _ (Other (DErr_concurrency msg)) => msg == "SC representation gap: compare-exchange has unspecified bytes"
+      | Killed _ (Other (DErr_concurrency msg)) => msg == SC_fault_unspecified_representation &&
+          sc_fault_class msg == SC_failure_representation &&
+          sc_fault_message msg == "SC representation gap: compare-exchange has unspecified bytes"
       | _ => false))) && good
   let badObject := runCAS fuel (casExpr false Seq_cst Seq_cst (.PV .Prov_none (.PVnull atomicByte))) (some 7)
   good := (← check "object failure preserves completed expected read"
@@ -134,7 +136,8 @@ def main (args : List String) : IO UInt32 := do
   good := (← check "weak order is refused before expected read"
     (!excluded.isEmpty && excluded.all (fun (outcome, _, state) =>
       (memoryEffects state).isEmpty && match outcome with
-      | Killed _ (Other (DErr_concurrency msg)) => msg == "SC model excludes the requested memory order"
+      | Killed _ (Other (DErr_concurrency msg)) => msg == SC_fault_order (SC_cas_expected Relaxed Seq_cst Pos) &&
+          sc_fault_message msg == "SC model excludes the requested memory order"
       | _ => false))) && good
   for (expected, witness, label) in
       [(7, ["E", "S", "O", "W"], "interleaving after expected read"),

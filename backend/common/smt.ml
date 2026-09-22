@@ -609,7 +609,7 @@ let dot_from_nd_tree t =
           | Driver.DErr_memory err ->
               Mem_common.instance_Show_Show_Mem_common_mem_error_dict.Lem_pervasives.show_method err
           | Driver.DErr_concurrency str ->
-              "Concurrency error: " ^ str
+              "Concurrency error: " ^ Sc_runtime.sc_fault_message str
           | Driver.DErr_other str ->
               str in
         let str_r = begin match r with

@@ -506,7 +506,9 @@ module Concrete : Memory = struct
     last_used: storage_instance_id option;
 
     requested: (address * Z.t) list; (* the addresses (and object sizes) that were allocated with cerb::with_address() *)
-    observations: memory_observation list option; (* newest first; None disables recording *)
+    observations: memory_observation list option;
+    mem_suspend_enabled: bool;
+    mem_suspend_next: bool; (* newest first; None disables recording *)
   }
   
   (* address-space-bound slice (2026-09-17): the top of the address space is the driver's
@@ -530,19 +532,26 @@ module Concrete : Memory = struct
     last_used= None;
     requested= [];
     observations= None;
+    mem_suspend_enabled= false;
+    mem_suspend_next= false;
   }
 
   let record_observation observation st =
     match st.observations with
     | None -> st
-    | Some xs -> { st with observations= Some (observation :: xs) }
+    | Some xs -> { st with observations= Some (observation :: xs);
+                            mem_suspend_next= st.mem_suspend_enabled || st.mem_suspend_next }
 
   let begin_observing st =
     Some (match st.observations with
       | None -> { st with observations= Some [] }
       | Some _ -> st)
 
-  let stop_observing st = { st with observations= None }
+  let stop_observing st = { st with observations= None; mem_suspend_enabled= false; mem_suspend_next= false }
+
+  let set_suspending enabled st =
+    if enabled && st.observations=None then None
+    else Some { st with mem_suspend_enabled=enabled; mem_suspend_next=false }
 
   let take_observations st =
     match st.observations with
@@ -563,6 +572,16 @@ module Concrete : Memory = struct
   
   type 'a memM = ('a, mem_error, integer_value mem_constraint, mem_state) Eff.eff
   
+  (* The thunk delays the original primitive's checks until its actual turn.
+     A suspended continuation runs that primitive directly, without pausing a
+     second time at its own entry. No primitive body is split internally. *)
+  let before_primitive operation =
+    let open Nondeterminism in
+    let resume = ND (fun st -> let ND run = operation () in run st) in
+    ND (fun st ->
+      if st.mem_suspend_enabled && st.mem_suspend_next then (NDsuspend resume, st)
+      else let ND run = resume in run st)
+
   let return = Eff.return
   let bind = Eff.(>>=)
   
@@ -1321,6 +1340,8 @@ module Concrete : Memory = struct
       failwith "allocator_with_address ==> requested adddress has wrong alignment"
   
   let allocate_object tid pref (*is_zero_init*) (IV (_, align)) ty req_addr_opt init_opt : pointer_value memM =
+    before_primitive (fun () ->
+
 (*    print_bytemap "ENTERING ALLOC_STATIC" >>= fun () -> *)
     let size = sizeof ty in
     begin match req_addr_opt with
@@ -1386,7 +1407,8 @@ module Concrete : Memory = struct
           )
     end >>= fun () ->
     return (PV (Prov_some alloc_id, PVconcrete (None, addr)))
-  
+    )
+
   let update_prefix (pref, mval) =
     match mval with
     | MVpointer (_, PV (Prov_some alloc_id, _)) ->
@@ -1459,6 +1481,8 @@ module Concrete : Memory = struct
       return None
 
   let allocate_region tid pref (IV (_, align_n)) (IV (_, size_n)) =
+    before_primitive (fun () ->
+
     allocator size_n align_n >>= fun (alloc_id, addr) ->
     Cerb_debug.print_debug 1 [] (fun () ->
       "DYNAMIC ALLOC - pref: " ^ String_symbol.string_of_prefix pref ^ (* pref will always be Core *)
@@ -1480,6 +1504,8 @@ module Concrete : Memory = struct
   
   (* zap (make unspecified) any pointer in the memory with provenance matching a
      given allocation id *)
+    )
+
   let zap_pointers alloc_id =
     modify (fun st ->
       let bytemap' = IntMap.fold (fun _ alloc acc ->
@@ -1510,7 +1536,9 @@ module Concrete : Memory = struct
       (IntMap.find_opt alloc_id st.allocations) in
     record_observation (Observe_deallocation (loc, is_dyn, ptr, alloc_id, region)) st
 
-  let kill loc is_dyn ptr : unit memM = match ptr with
+  let kill loc is_dyn ptr : unit memM =
+    before_primitive (fun () ->
+ match ptr with
     | PV (_, PVnull _) ->
         if Switches.(has_switch SW_forbid_nullptr_free) then
           fail ~loc MerrFreeNullPtr
@@ -1597,8 +1625,11 @@ module Concrete : Memory = struct
               end else
                 fail ~loc (MerrUndefinedFree Free_out_of_bound)
         end
-  
+    )
+
   let load loc ty (PV (prov, ptrval_)) =
+    before_primitive (fun () ->
+
     Cerb_debug.print_debug 10(*KKK*) [] (fun () ->
       "ENTERING LOAD: " ^ Cerb_location.location_to_string loc
     );
@@ -1714,9 +1745,11 @@ module Concrete : Memory = struct
                       do_load (Some alloc_id) addr
                 end
           end
-  
-  
+    )
+
   let store loc ty is_locking (PV (prov, ptrval_)) mval =
+    before_primitive (fun () ->
+
     Cerb_debug.print_debug 10(*KKK*) [] (fun () ->
       "ENTERING STORE: ty=" ^ String_core_ctype.string_of_ctype ty ^
       " -> @" ^ Pp_utils.to_plain_string (pp_pointer_value (PV (prov, ptrval_))) ^
@@ -1850,7 +1883,8 @@ module Concrete : Memory = struct
   dot_of_mem_state st;
   return ret
 *)
-  
+    )
+
   let null_ptrval ty =
     PV (Prov_none, PVnull ty)
   
@@ -2751,6 +2785,8 @@ VIP:type pointer_value =
         fail ~loc (MerrWIP "realloc: invalid pointer")
 
   let va_start args =
+    before_primitive (fun () ->
+
     get >>= fun st ->
     let id = st.next_varargs_id in
     update (fun st -> record_observation (Observe_varargs (Varargs_create, id))
@@ -2758,8 +2794,11 @@ VIP:type pointer_value =
                                 next_varargs_id = Z.succ st.next_varargs_id;
                       } ) >>= fun _ ->
     return (IV (Prov_none, id))
+    )
 
   let va_copy va =
+    before_primitive (fun () ->
+
     match va with
     | IV (Prov_none, id) ->
       get >>= fun st ->
@@ -2778,8 +2817,11 @@ VIP:type pointer_value =
       end
     | _ ->
       fail (MerrWIP "va_copy: invalid va_list")
+    )
 
   let va_arg va ty =
+    before_primitive (fun () ->
+
     match va with
     | IV (Prov_none, id) ->
       get >>= fun st ->
@@ -2800,8 +2842,11 @@ VIP:type pointer_value =
       end
     | _ ->
       fail (MerrWIP "va_arg: invalid va_list")
+    )
 
   let va_end va =
+    before_primitive (fun () ->
+
     match va with
     | IV (Prov_none, id) ->
       get >>= fun st ->
@@ -2814,8 +2859,11 @@ VIP:type pointer_value =
       end
     | _ ->
       fail (MerrWIP "va_end: invalid va_list")
+    )
 
   let va_list va_idx =
+    before_primitive (fun () ->
+
     get >>= fun st ->
     begin match IntMap.find_opt va_idx st.varargs with
       | Some (n, args) ->
@@ -2825,6 +2873,7 @@ VIP:type pointer_value =
       | None ->
           fail (MerrWIP "va_list")
     end
+    )
 
   let copy_alloc_id ival ptrval =
     (* cast_ptrval_to_ival(uintptr_t,𝑝1),cast_ival_to_ptrval(void,𝑥) *)

@@ -401,7 +401,7 @@ def driverErrorBatchMsg : driver_error → String
     | .Unresolved_symbol loc sym =>
       s!"unresolved symbol: {CerbMem.ppSymbol sym} at {CerbLocation.stringFromLocation loc}"  -- :508-509
   | .DErr_memory merr => Lem_Show.show0 merr    -- driver_ocaml.ml:25-26
-  | .DErr_concurrency s => s!"Concurrency error: {s}"
+  | .DErr_concurrency s => s!"Concurrency error: {sc_fault_message s}"
   | .DErr_other s => s
 
 /-! ## Elaborated-Core signature dump (`--pp-core`, arc-4 S4)
@@ -1132,7 +1132,7 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
               | .MerrOutsideLifetime s => IO.println s!"  result: Killed (outside lifetime: {s})"
               | .MerrAccess _ _ => IO.println s!"  result: Killed (memory access error)"
               | _ => IO.println s!"  result: Killed (memory error)"
-            | .DErr_concurrency s => IO.println s!"  result: Killed (concurrency: {s})"
+            | .DErr_concurrency s => IO.println s!"  result: Killed (concurrency: {sc_fault_message s})"
             | .DErr_other s => IO.println s!"  result: Killed (other: {s})"
       return 0
 

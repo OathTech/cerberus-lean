@@ -59,7 +59,7 @@ declare lean target_rep function stringFromCore_core_state = `CerbPP.stringFromC
 type driver_error =
   | DErr_core_run of core_run_cause
   | DErr_memory of Mem_common.mem_error
-  | DErr_concurrency of string
+  | DErr_concurrency of Sc_runtime.sc_fault
   | DErr_other of string
 
 type driver_state = <|
@@ -135,20 +135,20 @@ let sc_post_memory dr_st =
     | Nothing -> (Nothing, dr_st)
     | Just initial_sc ->
         if initial_sc.Sc_runtime.sc_current_request = Nothing then
-          (Just (ND.Other (DErr_concurrency "SC port gap: unowned memory node")), dr_st)
+          (Just (ND.Other (DErr_concurrency Sc_runtime.SC_fault_unowned_memory_node)), dr_st)
         else match Mem.take_observations dr_st.layout_state with
-          | Nothing -> (Just (ND.Other (DErr_concurrency "SC port gap: memory observer unavailable")), dr_st)
+          | Nothing -> (Just (ND.Other (DErr_concurrency Sc_runtime.SC_fault_observer_unavailable)), dr_st)
           | Just (observations, memory) ->
               List.foldl (fun (failure, current) observation ->
                 match failure with
                   | Just _ -> (failure, current)
                   | Nothing ->
                       match current.sc_state with
-                        | Nothing -> (Just (ND.Other (DErr_concurrency "SC port gap: observer state lost")), current)
+                        | Nothing -> (Just (ND.Other (DErr_concurrency Sc_runtime.SC_fault_observer_lost)), current)
                         | Just sc ->
                             let aid = current.core_run_state.Core_run.aid_supply in
                             match Sc_runtime.sc_record_effect aid observation sc with
-                              | Nothing -> (Just (ND.Other (DErr_concurrency "SC port gap: unowned memory effect")), current)
+                              | Nothing -> (Just (ND.Other (DErr_concurrency Sc_runtime.SC_fault_unowned_memory_effect)), current)
                               | Just sc' -> (Nothing, <| current with
                                   sc_state= Just sc';
                                   core_run_state= <| current.core_run_state with Core_run.aid_supply= aid + 1 |>;
@@ -757,12 +757,12 @@ let sc_suspend_action phase missing_owner outside_mode tid loc request =
 
 let sc_suspend_cas tid loc request =
   sc_suspend_action "SC compare-exchange phase"
-    "SC compare-exchange phase has no owner" "SC compare-exchange requested outside SC mode"
+    Sc_runtime.SC_fault_cas_no_owner Sc_runtime.SC_fault_cas_outside_mode
     tid loc request
 
 let sc_suspend_seq_rmw tid loc request =
   sc_suspend_action "SC ordinary RMW write phase"
-    "SC ordinary RMW phase has no owner" "SC ordinary RMW phase requested outside SC mode"
+    Sc_runtime.SC_fault_rmw_no_owner Sc_runtime.SC_fault_rmw_outside_mode
     tid loc request
 
 let sc_cas_read_representation =
@@ -771,9 +771,9 @@ let sc_cas_read_representation =
     | Just sc ->
         match Sc_runtime.sc_current_read_representation sc with
           | Just bytes -> ND.return bytes
-          | Nothing -> ND.kill (ND.Other (DErr_concurrency "SC compare-exchange has no unique completed read"))
+          | Nothing -> ND.kill (ND.Other (DErr_concurrency Sc_runtime.SC_fault_cas_read_shape))
         end
-    | Nothing -> ND.kill (ND.Other (DErr_concurrency "SC compare-exchange requested outside SC mode"))
+    | Nothing -> ND.kill (ND.Other (DErr_concurrency Sc_runtime.SC_fault_cas_outside_mode))
   end
 
 let sc_cas_current_effects state =
@@ -879,9 +879,9 @@ let action_request_with loc tid receipt request =
             else ND.return true
         | Sc_representation.SC_different_bits -> ND.return false
         | Sc_representation.SC_unspecified_representation ->
-            ND.kill (ND.Other (DErr_concurrency "SC representation gap: compare-exchange has unspecified bytes"))
+            ND.kill (ND.Other (DErr_concurrency Sc_runtime.SC_fault_unspecified_representation))
         | Sc_representation.SC_representation_size_mismatch ->
-            ND.kill (ND.Other (DErr_concurrency "SC representation gap: compare-exchange read sizes differ"))
+            ND.kill (ND.Other (DErr_concurrency Sc_runtime.SC_fault_representation_size))
       end) >>= fun succeeded ->
       if succeeded then
         driver_liftMem (Mem.store loc atomic_ty false object_ptr desired) >>= fun write_footprint ->
@@ -901,10 +901,10 @@ let action_request_with loc tid receipt request =
   | Core_reduction.FenceRequest2 _ mk_th_st' ->
       ND.get >>= fun before ->
       match before.sc_state with
-        | Nothing -> ND.kill (ND.Other (DErr_concurrency "SC fence requested outside SC mode"))
+        | Nothing -> ND.kill (ND.Other (DErr_concurrency Sc_runtime.SC_fault_fence_outside_mode))
         | Just sc ->
             match Sc_runtime.sc_record_fence sc with
-              | Nothing -> ND.kill (ND.Other (DErr_concurrency "SC fence has no matching owned request"))
+              | Nothing -> ND.kill (ND.Other (DErr_concurrency Sc_runtime.SC_fault_fence_owner))
               | Just sc' ->
                   ND.update (fun dr_st ->
                     let after = <| dr_st with sc_state= Just sc' |> in
@@ -1584,7 +1584,7 @@ let sc_initial_annotation tid dr_st =
 
 let sc_enable = ND.ND (fun dr_st ->
   match Mem.begin_observing dr_st.layout_state with
-    | Nothing -> (ND.NDkilled (ND.Other (DErr_concurrency "SC port gap: memory observer unavailable")), dr_st)
+    | Nothing -> (ND.NDkilled (ND.Other (DErr_concurrency Sc_runtime.SC_fault_observer_unavailable)), dr_st)
     | Just memory -> (ND.NDactive (), <| dr_st with layout_state= memory;
         sc_state= Just Sc_runtime.sc_initial_state; sc_pending= [] |>)
   end)
@@ -1603,6 +1603,35 @@ let sc_kind_of_request polarity = function
 end
 
 type sc_step_progress = SC_continue | SC_halted | SC_blocked
+
+(* Saved computations use the existing driver state, not the enclosing machine
+   state. This keeps the complete configuration free of negative recursion. *)
+type sc_saved_service = <|
+  sc_saved_request: Sc_runtime.sc_request;
+  sc_saved_effects: Sc_order.sc_predecessors;
+  sc_saved_computation: driverM sc_step_progress;
+|>
+
+type sc_services = <|
+  sc_suspended_services: list sc_saved_service;
+  sc_filesystem_owner: maybe Mem.thread_id;
+|>
+
+type sc_machine_state = <|
+  sc_driver_state: driver_state;
+  sc_service_state: sc_services;
+|>
+
+type sc_machineM 'a = ND.ndM 'a step_kind driver_error Mem.mem_iv_constraint sc_machine_state
+
+type sc_service_choice =
+  | SC_start_service of Mem.thread_id * Core_reduction.core_step2
+  | SC_resume_service of sc_saved_service
+
+let sc_empty_services = <| sc_suspended_services= []; sc_filesystem_owner= Nothing |>
+
+let sc_machine_initial state = <| sc_driver_state= state; sc_service_state= sc_empty_services |>
+
 
 let sc_service_step tid step =
   ND.update (fun state -> <| state with sc_pending=
@@ -1627,7 +1656,7 @@ let sc_service_step tid step =
                   ty ptr before_value after_value (sc_cas_current_effects before) complete)
             | _ -> action_request_with loc tid sc_receipt_from_state request
           end) >> ND.return SC_continue
-        else ND.kill (ND.Other (DErr_concurrency "SC model excludes the requested memory order"))
+        else ND.kill (ND.Other (DErr_concurrency (Sc_runtime.SC_fault_order kind)))
     | Core_reduction.Step_memop_request2 annotation loc memop values _ _ resume_request ->
         sc_begin_request tid (Sc_runtime.SC_memop memop) annotation >>
         perform_memop_with loc memop values tid
@@ -1710,42 +1739,200 @@ let sc_service_step tid step =
     | Core_reduction.Step_error2 message -> ND.kill (ND.Other (DErr_core_run (Illformed_program message)))
   end
 
-let sc_choices sc dr_st =
-  List.concat (List.map (fun (tid, th_info) ->
-          match List.lookup tid dr_st.sc_pending with
-            | Just pending -> [(tid, pending)]
-            | Nothing -> List.map (fun step -> (tid, step))
-                (List.filter (function Core_reduction.Step_blocked2 -> false | _ -> true end)
-                  (Core_reduction.step_ctx_with (Just (Sc_runtime.sc_control tid sc))
-                    dr_st.layout_state dr_st.core_file dr_st.core_extern tid th_info))
-          end
-        ) dr_st.core_state.Core_run.thread_states)
+let sc_thread_choices tid th_info sc dr_st =
+  match List.lookup tid dr_st.sc_pending with
+    | Just pending -> [(tid, pending)]
+    | Nothing -> List.map (fun step -> (tid, step))
+        (List.filter (function Core_reduction.Step_blocked2 -> false | _ -> true end)
+          (Core_reduction.step_ctx_with (Just (Sc_runtime.sc_control tid sc))
+            dr_st.layout_state dr_st.core_file dr_st.core_extern tid th_info))
+  end
 
-(* The authoritative relation includes every current Core step. No normalization
-   or state merging hides an alternative. Exploration optimizations require a
-   separate correspondence argument; resource bounds are not language bounds. *)
+(* Core component choices, before saved-service and filesystem ownership. *)
+let sc_choices sc dr_st =
+  List.concat (List.map (fun (tid, th_info) -> sc_thread_choices tid th_info sc dr_st)
+    dr_st.core_state.Core_run.thread_states)
+
+let sc_saved_thread saved = saved.sc_saved_request.Sc_runtime.sc_request_thread
+
+let sc_drop_saved tid services = <| services with sc_suspended_services=
+  List.filter (fun saved -> sc_saved_thread saved <> tid) services.sc_suspended_services |>
+
+let sc_finish_service tid services =
+  let services = sc_drop_saved tid services in
+  <| services with sc_filesystem_owner=
+    if services.sc_filesystem_owner = Just tid then Nothing else services.sc_filesystem_owner |>
+
+let sc_is_filesystem_step = function
+  | Core_reduction.Step_fs2 _ _ _ _ _ -> true
+  | _ -> false
+end
+
+let sc_step_may_suspend = function
+  | Core_reduction.Step_memop_request2 _ _ _ _ _ _ _ -> true
+  | Core_reduction.Step_fs2 _ _ _ _ _ -> true
+  | _ -> false
+end
+
+let sc_filesystem_available tid services =
+  match services.sc_filesystem_owner with
+    | Nothing -> true
+    | Just owner -> owner = tid
+  end
+
+(* Configuration failure is an explicit port/protocol failure. It is not C UB. *)
+let sc_memory_mode enabled state =
+  match Mem.set_suspending enabled state.layout_state with
+    | Nothing -> (Just (DErr_concurrency Sc_runtime.SC_fault_suspension_unavailable), state)
+    | Just memory -> (Nothing, <| state with layout_state= memory |>)
+  end
+
+let sc_restore_service saved state =
+  match state.sc_state with
+    | Nothing -> (Just (DErr_concurrency Sc_runtime.SC_fault_resume_outside_mode), state)
+    | Just current -> (Nothing, <| state with sc_state= Just <| current with
+        Sc_runtime.sc_current_request= Just saved.sc_saved_request;
+        Sc_runtime.sc_current_effects= saved.sc_saved_effects;
+      |> |>)
+  end
+
+let sc_machine_return services progress state =
+  let (failure, driver) = sc_memory_mode false state.sc_driver_state in
+  let after = <| sc_driver_state= driver; sc_service_state= services |> in
+  match failure with
+    | Nothing -> (ND.NDactive progress, after)
+    | Just reason -> (ND.NDkilled (ND.Other reason), after)
+  end
+
+(* Interpret ONE selected service before binding the global scheduler loop.
+   Ordinary ND alternatives are preserved. Only typed suspension returns to
+   scheduling; every failure retains the full current machine configuration. *)
+let rec sc_capture_service tid computation = ND.ND (fun machine ->
+  let ND.ND run = computation in
+  let (action, driver) = run machine.sc_driver_state in
+  let after = <| machine with sc_driver_state= driver |> in
+  match action with
+    | ND.NDactive progress ->
+        sc_machine_return (sc_finish_service tid after.sc_service_state) progress after
+    | ND.NDkilled reason -> (ND.NDkilled reason, after)
+    | ND.NDsuspend continuation ->
+        match driver.sc_state with
+          | Nothing -> (ND.NDkilled (ND.Other (DErr_concurrency Sc_runtime.SC_fault_suspend_outside_mode)), after)
+          | Just current ->
+              match current.Sc_runtime.sc_current_request with
+                | Nothing -> (ND.NDkilled (ND.Other (DErr_concurrency Sc_runtime.SC_fault_suspend_no_owner)), after)
+                | Just request ->
+                    if request.Sc_runtime.sc_request_thread <> tid then
+                      (ND.NDkilled (ND.Other (DErr_concurrency Sc_runtime.SC_fault_suspend_wrong_thread)), after)
+                    else
+                      let saved = <| sc_saved_request= request;
+                        sc_saved_effects= current.Sc_runtime.sc_current_effects;
+                        sc_saved_computation= continuation |> in
+                      let services = sc_drop_saved tid after.sc_service_state in
+                      let services = <| services with sc_suspended_services=
+                        saved :: services.sc_suspended_services |> in
+                      sc_machine_return services SC_continue after
+              end
+        end
+    | ND.NDguard info condition continuation ->
+        (ND.NDguard info condition (sc_capture_service tid continuation), after)
+    | ND.NDbranch info condition first second ->
+        (ND.NDbranch info condition (sc_capture_service tid first) (sc_capture_service tid second), after)
+    | ND.NDnd info choices ->
+        (ND.NDnd info (List.map (fun (label, next) -> (label, sc_capture_service tid next)) choices), after)
+    | ND.NDstep info choices ->
+        (ND.NDstep info (List.map (fun (label, next) -> (label, sc_capture_service tid next)) choices), after)
+  end)
+
+(* A paused thread never re-evaluates its Core arena just to discard the result.
+   Lookup compares thread identifiers only, never saved computations. *)
+let sc_machine_choices sc machine =
+  let state = machine.sc_driver_state in
+  let services = machine.sc_service_state in
+  List.concat (List.map (fun (tid, th_info) ->
+    match List.find (fun saved -> sc_saved_thread saved = tid) services.sc_suspended_services with
+      | Just saved -> [SC_resume_service saved]
+      | Nothing -> List.map (fun (_, step) -> SC_start_service tid step)
+          (List.filter (fun (_, step) ->
+              not (sc_is_filesystem_step step) || sc_filesystem_available tid services)
+            (sc_thread_choices tid th_info sc state))
+    end) state.core_state.Core_run.thread_states)
+
+let sc_start_machine_choice choice = ND.ND (fun machine ->
+  let (tid, computation, enabled, initial_failure, driver, services) =
+    match choice with
+      | SC_start_service tid step ->
+          let services = sc_drop_saved tid machine.sc_service_state in
+          let services = if sc_is_filesystem_step step then
+              <| services with sc_filesystem_owner= Just tid |> else services in
+          (tid, sc_service_step tid step, sc_step_may_suspend step, Nothing,
+            machine.sc_driver_state, services)
+      | SC_resume_service saved ->
+          let tid = sc_saved_thread saved in
+          let (failure, driver) = sc_restore_service saved machine.sc_driver_state in
+          (tid, saved.sc_saved_computation, true, failure, driver,
+            sc_drop_saved tid machine.sc_service_state)
+    end in
+  let prepared = <| sc_driver_state= driver; sc_service_state= services |> in
+  match initial_failure with
+    | Just reason -> (ND.NDkilled (ND.Other reason), prepared)
+    | Nothing ->
+        let (failure, driver) = sc_memory_mode enabled driver in
+        let prepared = <| prepared with sc_driver_state= driver |> in
+        match failure with
+          | Just reason -> (ND.NDkilled (ND.Other reason), prepared)
+          | Nothing -> let ND.ND run = sc_capture_service tid computation in run prepared
+        end
+  end)
+
+(* This is the authoritative complete-machine selection, including saved
+   services. Core-only sc_choices remains a separately named component view. *)
 let sc_step () =
-  ND.get >>= fun dr_st ->
-  match dr_st.sc_state with
-    | Nothing -> ND.kill (ND.Other (DErr_concurrency "SC state is not initialized"))
+  ND.get >>= fun machine ->
+  match machine.sc_driver_state.sc_state with
+    | Nothing -> ND.kill (ND.Other (DErr_concurrency Sc_runtime.SC_fault_uninitialized))
     | Just sc ->
-        let choices = sc_choices sc dr_st in
-        match choices with
-          | [] -> ND.update (fun state -> <| state with blocked= true |>) >> ND.return SC_blocked
-          | _ -> ND.pick (SK_misc ["SC thread/Core step"]) choices >>= fun (tid, step) ->
-              sc_service_step tid step
+        match sc_machine_choices sc machine with
+          | [] -> ND.update (fun state -> <| state with sc_driver_state=
+              <| state.sc_driver_state with blocked= true |> |>) >> ND.return SC_blocked
+          | choices -> ND.pick (SK_misc ["SC thread/Core/service step"]) choices >>= sc_start_machine_choice
         end
   end
+
+let rec sc_driver_machine () =
+  sc_step () >>= function
+    | SC_continue -> sc_driver_machine ()
+    | SC_halted -> ND.return ()
+    | SC_blocked -> ND.return ()
+  end
+
+(* The existing batch observation exposes driver_state. Retain auxiliary
+   machine state in EACH continuation; a getter that recreates empty services
+   at each node would lose paused work. Direct sc_step preserves full state. *)
+let rec sc_project services computation = ND.ND (fun driver ->
+  let ND.ND run = computation in
+  let (action, machine) = run <| sc_driver_state= driver; sc_service_state= services |> in
+  let services = machine.sc_service_state in
+  let driver = machine.sc_driver_state in
+  match action with
+    | ND.NDactive value -> (ND.NDactive value, driver)
+    | ND.NDkilled reason -> (ND.NDkilled reason, driver)
+    | ND.NDsuspend continuation -> (ND.NDsuspend (sc_project services continuation), driver)
+    | ND.NDguard info condition continuation ->
+        (ND.NDguard info condition (sc_project services continuation), driver)
+    | ND.NDbranch info condition first second ->
+        (ND.NDbranch info condition (sc_project services first) (sc_project services second), driver)
+    | ND.NDnd info choices ->
+        (ND.NDnd info (List.map (fun (label, next) -> (label, sc_project services next)) choices), driver)
+    | ND.NDstep info choices ->
+        (ND.NDstep info (List.map (fun (label, next) -> (label, sc_project services next)) choices), driver)
+  end)
 
 
 val     driver2: bool -> driverM unit
 let rec driver2 with_concurrency =
   if with_concurrency then
-    sc_step () >>= (function
-      | SC_continue -> driver2 true
-      | SC_halted -> ND.return ()
-      | SC_blocked -> ND.return ()
-    end)
+    sc_project sc_empty_services (sc_driver_machine ())
   else
   let () = Debug.print_debug 2 [] (fun () -> "ENTERING Driver.driver2") in
   new_drive_core_threads   () >>= fun tid_steps ->
@@ -2304,7 +2491,7 @@ end
 let drive with_concurrency file args =
   if with_concurrency then
     sc_enable >> drive_recorded true file args >>= fun _ ->
-    ND.kill (ND.Other (DErr_concurrency "SC port gap: atomic/race/fence checker integration pending"))
+    ND.kill (ND.Other (DErr_concurrency Sc_runtime.SC_fault_checker_pending))
   else drive_recorded false file args
 
 
@@ -2338,3 +2525,9 @@ declare {lean} fuel val hack = `fuelExhausted Vunit`
    Proof in lean_frontend/Driver_lemMeasureProofs.lean; row in
    scripts/fuel_hypotheses.txt. *)
 declare {lean} fuel_measure val hack = `lemSize pexpr1` assuming `CerbCoreShape.IsValuePexpr pexpr1`
+
+declare {lean} fuel val sc_capture_service = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
+
+declare {lean} fuel val sc_driver_machine = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
+
+declare {lean} fuel val sc_project = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`

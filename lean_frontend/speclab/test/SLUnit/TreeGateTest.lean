@@ -73,7 +73,7 @@ def runFileT [LemFuel] (f : file core_run_annotation) : IO (Sum (Int × Nat) Str
             s!"Killed: Unresolved_symbol {n} " ++
               (match d with | SD_Id s => s | _ => "<anon>")
         | DErr_memory merr => s!"Killed: memory error {Lem_Show.show0 merr}"
-        | DErr_concurrency s => s!"Killed: concurrency {s}"
+        | DErr_concurrency s => s!"Killed: concurrency {sc_fault_message s}"
         | DErr_other s => s!"Killed: {s}")
   | [] => .inr "no executions"
   | _ => .inr "multiple executions"

@@ -47,6 +47,7 @@ module type Memory = sig
   val begin_observing: mem_state -> mem_state option
   val stop_observing: mem_state -> mem_state
   val take_observations: mem_state -> (memory_observation list * mem_state) option
+  val set_suspending: bool -> mem_state -> mem_state option
   
   type 'a memM =
     ('a, string, Mem_common.mem_error, integer_value Mem_common.mem_constraint, mem_state) Nondeterminism.ndM

@@ -54,8 +54,8 @@ theorem completed_effects tid parent value (s : sc_state) :
       {sc_child_id := tid, sc_child_parent := parent, sc_child_value := value,
        sc_child_effects := sc_thread_effects tid s} :: s.sc_completed := rfl
 
-/-- Each offered step is the owned suspended request, or a runnable current
-Core reduction when that thread has no suspension. Other threads stay eligible. -/
+/-- Core component enumeration. The complete machine additionally selects saved
+helper services and applies filesystem ownership; see its separate choice law. -/
 theorem choices_iff [LemFuel] tags (sc : sc_state) (s : driver_state)
     (choice : Nat × core_step2) :
     choice ∈ sc_choices tags sc s ↔
@@ -66,7 +66,7 @@ theorem choices_iff [LemFuel] tags (sc : sc_state) (s : driver_state)
             s.layout_state s.core_file s.core_extern choice.1 thInfo ∧
             (match choice.2 with | Step_blocked2 => false | _ => true) = true) := by
   rcases choice with ⟨tid, step⟩
-  simp only [sc_choices]
+  simp only [sc_choices, sc_thread_choices]
   constructor
   · intro h
     rcases List.mem_flatten.mp h with ⟨xs, hxs, hx⟩

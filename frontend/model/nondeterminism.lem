@@ -47,6 +47,7 @@ type nd_action 'a 'info 'err 'cs 'st =
   | NDguard of 'info * 'cs * ndM 'a 'info 'err 'cs 'st
   | NDbranch of 'info * 'cs * ndM 'a 'info 'err 'cs 'st * ndM 'a 'info 'err 'cs 'st
   | NDstep of 'info * list ('info * ndM 'a 'info 'err 'cs 'st)
+  | NDsuspend of ndM 'a 'info 'err 'cs 'st
 
 and ndM 'a 'info 'err 'cs 'st =
   ND of ('st -> (nd_action 'a 'info 'err 'cs 'st * 'st))
@@ -72,6 +73,8 @@ let rec nd_bind (ND m_act) f =
           (NDguard debug_str cs (nd_bind m_act' f), st')
       | (NDbranch debug_str cs m_act1 m_act2, st') ->
           (NDbranch debug_str cs (nd_bind m_act1 f) (nd_bind m_act2 f), st')
+      | (NDsuspend continuation, st') ->
+          (NDsuspend (nd_bind continuation f), st')
       | (NDstep info str_ms, st') ->
           (NDstep info (List.map (fun (str, m) -> (str, nd_bind m f)) str_ms), st')
     end
@@ -269,6 +272,8 @@ let rec liftAction get put liftInfo liftErr = function
       NDguard (liftInfo info) cs (liftND get put liftInfo liftErr act)
   | NDbranch info cs m_act1 m_act2 ->
       NDbranch (liftInfo info) cs (liftND get put liftInfo liftErr m_act1) (liftND get put liftInfo liftErr m_act2)
+  | NDsuspend continuation ->
+      NDsuspend (liftND get put liftInfo liftErr continuation)
   | NDstep info info_ms ->
       NDstep (liftInfo info) (List.map (fun (info, m) -> (liftInfo info, liftND get put liftInfo liftErr m)) info_ms)
 end
@@ -280,6 +285,10 @@ and liftND get put liftInfo liftErr (ND m) =
   )
 
 
+
+(* An internal service suspension with no choice or debug-text interpretation.
+   Generic runners resume it; the SC service worker can retain its continuation. *)
+let nd_suspend continuation = ND (fun st -> (NDsuspend continuation, st))
 
 let mk_step info xs =
   let () = Debug.print_debug 2 [] (fun () ->

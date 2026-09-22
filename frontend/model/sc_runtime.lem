@@ -16,6 +16,87 @@ type sc_request_kind =
   | SC_runtime of string
   | SC_fence of Cmm_csem.memory_order
 
+
+(* Typed identities preserve all existing diagnostics. Categories describe the
+   fault; they introduce neither an ISO UB verdict nor a new coverage policy. *)
+type sc_fault =
+  | SC_fault_unowned_memory_node
+  | SC_fault_observer_unavailable
+  | SC_fault_observer_lost
+  | SC_fault_unowned_memory_effect
+  | SC_fault_cas_no_owner
+  | SC_fault_cas_outside_mode
+  | SC_fault_rmw_no_owner
+  | SC_fault_rmw_outside_mode
+  | SC_fault_cas_read_shape
+  | SC_fault_unspecified_representation
+  | SC_fault_representation_size
+  | SC_fault_fence_outside_mode
+  | SC_fault_fence_owner
+  | SC_fault_order of sc_request_kind
+  | SC_fault_uninitialized
+  | SC_fault_checker_pending
+  | SC_fault_suspension_unavailable
+  | SC_fault_resume_outside_mode
+  | SC_fault_suspend_outside_mode
+  | SC_fault_suspend_no_owner
+  | SC_fault_suspend_wrong_thread
+
+type sc_fault_category =
+  | SC_failure_representation
+  | SC_failure_observation
+  | SC_failure_protocol
+  | SC_failure_order
+  | SC_failure_unimplemented
+
+let sc_fault_message = function
+  | SC_fault_unowned_memory_node -> "SC port gap: unowned memory node"
+  | SC_fault_observer_unavailable -> "SC port gap: memory observer unavailable"
+  | SC_fault_observer_lost -> "SC port gap: observer state lost"
+  | SC_fault_unowned_memory_effect -> "SC port gap: unowned memory effect"
+  | SC_fault_cas_no_owner -> "SC compare-exchange phase has no owner"
+  | SC_fault_cas_outside_mode -> "SC compare-exchange requested outside SC mode"
+  | SC_fault_rmw_no_owner -> "SC ordinary RMW phase has no owner"
+  | SC_fault_rmw_outside_mode -> "SC ordinary RMW phase requested outside SC mode"
+  | SC_fault_cas_read_shape -> "SC compare-exchange has no unique completed read"
+  | SC_fault_unspecified_representation -> "SC representation gap: compare-exchange has unspecified bytes"
+  | SC_fault_representation_size -> "SC representation gap: compare-exchange read sizes differ"
+  | SC_fault_fence_outside_mode -> "SC fence requested outside SC mode"
+  | SC_fault_fence_owner -> "SC fence has no matching owned request"
+  | SC_fault_order _ -> "SC model excludes the requested memory order"
+  | SC_fault_uninitialized -> "SC state is not initialized"
+  | SC_fault_checker_pending -> "SC port gap: atomic/race/fence checker integration pending"
+  | SC_fault_suspension_unavailable -> "SC port gap: memory suspension unavailable"
+  | SC_fault_resume_outside_mode -> "SC service resumed without SC state"
+  | SC_fault_suspend_outside_mode -> "SC service suspended without SC state"
+  | SC_fault_suspend_no_owner -> "SC service suspension has no owner"
+  | SC_fault_suspend_wrong_thread -> "SC service suspension changed its thread owner"
+end
+
+let sc_fault_class = function
+  | SC_fault_unowned_memory_node -> SC_failure_protocol
+  | SC_fault_observer_unavailable -> SC_failure_observation
+  | SC_fault_observer_lost -> SC_failure_protocol
+  | SC_fault_unowned_memory_effect -> SC_failure_protocol
+  | SC_fault_cas_no_owner -> SC_failure_protocol
+  | SC_fault_cas_outside_mode -> SC_failure_protocol
+  | SC_fault_rmw_no_owner -> SC_failure_protocol
+  | SC_fault_rmw_outside_mode -> SC_failure_protocol
+  | SC_fault_cas_read_shape -> SC_failure_protocol
+  | SC_fault_unspecified_representation -> SC_failure_representation
+  | SC_fault_representation_size -> SC_failure_representation
+  | SC_fault_fence_outside_mode -> SC_failure_protocol
+  | SC_fault_fence_owner -> SC_failure_protocol
+  | SC_fault_order _ -> SC_failure_order
+  | SC_fault_uninitialized -> SC_failure_protocol
+  | SC_fault_checker_pending -> SC_failure_unimplemented
+  | SC_fault_suspension_unavailable -> SC_failure_observation
+  | SC_fault_resume_outside_mode -> SC_failure_protocol
+  | SC_fault_suspend_outside_mode -> SC_failure_protocol
+  | SC_fault_suspend_no_owner -> SC_failure_protocol
+  | SC_fault_suspend_wrong_thread -> SC_failure_protocol
+end
+
 type sc_request = <|
   sc_request_id: Cmm_csem.aid;
   sc_request_thread: Mem_common.thread_id;
@@ -76,17 +157,30 @@ let sc_effect_polarity request observation =
     | _ -> Core.Pos
   end
 
+(* Internal memory helpers execute their existing monadic accesses in order.
+   This annotation rule applies only inside that one owned request; it neither
+   orders unsequenced sibling requests nor chooses interruption points. *)
+let sc_internal_annotation kind predecessors annotation =
+  match kind with
+    | SC_memop _ -> Sc_order.sc_before_annotation (Sc_order.sc_promote predecessors) annotation
+    | SC_runtime _ -> Sc_order.sc_before_annotation (Sc_order.sc_promote predecessors) annotation
+    | _ -> annotation
+  end
+
 (* The driver owns the fresh supply. No independent supply or implicit fresh
    event is introduced by this function. Missing ownership is an explicit gap. *)
 let sc_record_effect aid observation state =
   match state.sc_current_request with
     | Nothing -> Nothing
     | Just request ->
+        let observed_request = <| request with sc_request_annotation=
+          sc_internal_annotation request.sc_request_kind state.sc_current_effects
+            request.sc_request_annotation |> in
         let predecessor = (sc_effect_polarity request observation,
                            (request.sc_request_thread, aid)) in
         Just <| state with
           sc_current_effects= Set.insert predecessor state.sc_current_effects;
-          sc_effects= <| sc_effect_id= aid; sc_effect_request= request;
+          sc_effects= <| sc_effect_id= aid; sc_effect_request= observed_request;
                         sc_effect_observation= observation |> :: state.sc_effects;
         |>
   end

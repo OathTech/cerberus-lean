@@ -131,6 +131,8 @@ let runND exec_mode (type cs) cs_module (m: ('a, Driver.step_kind, 'err, cs, 'st
                 end >>= fun xs2 ->
                 return (xs1 @ xs2)
                 end
+      | (NDsuspend continuation, st') ->
+          aux continuation st'
       | (NDstep (info, str_ms), st') ->
           (* Printf.fprintf stderr "%sNDstep[%s]\n" (String.make !pad ' ')
             (Driver.instance_Show_Show_Driver_step_kind_dict.show_method info);

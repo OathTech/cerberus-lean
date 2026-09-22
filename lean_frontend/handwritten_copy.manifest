@@ -76,5 +76,10 @@ CerbNDObserveProofs.lean
 CerbSCByteInstances.lean
 CerbSCByteSources.lean
 CerbSCOperational.lean
+CerbNDSuspension.lean
+CerbMemSuspension.lean
+CerbSCHelperOrder.lean
+CerbSCServices.lean
+CerbSCFaults.lean
 CerbSCRepresentation.lean
 Sc_order_lemMeasureProofs.lean
