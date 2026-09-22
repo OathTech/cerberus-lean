@@ -424,6 +424,32 @@ def testExprAtoms : TestM Unit := do
   -- Seq_rmw (from real output)
   assertOk "expr seq_rmw" (run CoreParser.pExpr "seq_rmw('signed int', a_553, a_554 => case a_554 of | Specified(a_555 : integer) => Specified(conv_int('signed int', catch_exceptional_condition_add('signed int', conv_int('signed int', a_555), 1))) | Unspecified(_ : ctype) => Unspecified('signed int') end)")
 
+  -- Atomic update: the address and bound update value must remain distinct.
+  for forward in [false, true] do
+    let keyword := if forward then "atomic_update_with_forward" else "atomic_update"
+    let parsed := run CoreParser.pExpr
+      s!"{keyword}('signed int', address_101, old_102 => old_102, seq_cst)"
+    assertEq s!"atomic update preserves address, binder and result mode {forward}"
+      (parsed.map fun e => match e with
+        | Expr _ (Eaction (Paction Pos (Action _ _ (AtomicUpdate mode _
+            (Pexpr _ _ (PEsym address)) binder (Pexpr _ _ (PEsym body)) order)))) =>
+          mode == forward && address == CoreParser.internSym "address_101" &&
+          binder == CoreParser.internSym "old_102" && body == binder &&
+          address != binder && order == Seq_cst
+        | _ => false) true
+  assertErr "atomic update requires an explicit order"
+    (run CoreParser.pExpr "atomic_update('signed int', p, old => old)")
+  assertErr "atomic update rejects an unknown order"
+    (run CoreParser.pExpr "atomic_update('signed int', p, old => old, imaginary)")
+  assertEq "atomic update retains a shadowing pure let"
+    ((run CoreParser.pExpr
+      "atomic_update('signed int', p, old => let old: loaded integer = Specified(9) in old, seq_cst)").map
+      fun e => match e with
+      | Expr _ (Eaction (Paction Pos (Action _ _ (AtomicUpdate _ _ _ binder
+          (Pexpr _ _ (PElet (Pattern _ (CaseBase (some inner, _))) _
+            (Pexpr _ _ (PEsym body)))) _)))) => binder == inner && body == inner
+      | _ => false) true
+
   -- bound
   assertOk "expr bound pure" (run CoreParser.pExpr "bound(pure(Specified(42)))")
   assertOk "expr bound let" (run CoreParser.pExpr "bound(let weak a_508 : pointer = pure(x) in load('signed int', a_508))")

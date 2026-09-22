@@ -216,3 +216,5 @@ type token =
   | CONV_INT
   | WRAPI of Core.iop
   | CATCH_EXCEPTIONAL_CONDITION of Core.iop
+  | ATOMIC_UPDATE
+  | ATOMIC_UPDATE_WITH_FORWARD

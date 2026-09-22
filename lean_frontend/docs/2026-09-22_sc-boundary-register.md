@@ -2,7 +2,9 @@
 
 2026-09-22. Live register under the
 [user's general fail-closed policy](2026-09-21_sc-upstream-gap-policy.md).
-Production status below is audited against `3864dbb1f438d5efecdd10748c8d3bf1a05c9e9c`.
+The original production audit was at `3864dbb1f438d5efecdd10748c8d3bf1a05c9e9c`.
+Subsequent source-graph and [atomic-update validation](2026-09-22_sc-atomic-update-review.md)
+are incorporated below; unimplemented guards remain labelled as such.
 Reference identities remain the charter's base `5407597d9` and pristine
 Cerberus `b9aeedcb4dd438763b0eef7f95ac19e93875d7de`; no replacement mixed-size
 reference has been adopted. Historical evidence records proposals and earlier
@@ -127,7 +129,7 @@ turn every listed feature into a semantic-gap refusal.
 | ID | Case, evidence and current status | Completion or review obligation |
 |---|---|---|
 | SC-P01 | `Driver.drive true` ends recorded completion with `SC_fault_checker_pending`; public race/consistency and program-level outcome interface unfinished | Connect prefix fault detection, SC consistency and explicit incomplete outcomes; retain faults before divergence and across rejected candidates. A refusal is not a completed checker. |
-| SC-P02 | Atomic frontend paths: postfix/prefix/compound operations, exchange, fetch/flag functions, signal fence, runtime-valued orders, non-synchronizing atomic initialization, earlier struct-CAS cast defect; `_Atomic int` qualifier syntax drops atomicity in retained S0 probes | Implement available operation-specific semantics through actual C lowering and journal. Preserve single evaluation of operands, arithmetic and failure prefixes. See [remaining atomic audit](2026-09-21_sc-prototype-evidence/reference-followup/remaining-atomic-source-review.md), [S0 evidence](2026-09-21_sc-prototype-evidence/s0), and CAS evidence above. Signal fence must not become inter-thread synchronization. Legacy conditional `RMW` is not unconditional exchange. |
+| SC-P02 | Exchange and atomic postfix/prefix/compound lowering, `_Atomic int` qualifier preservation and compatible-aggregate CAS arguments now have [validated implementations](2026-09-22_sc-atomic-update-review.md). Fetch/flag functions, signal fences, runtime-valued orders, non-synchronizing atomic initialization and remaining conversion paths are outstanding | Implement available operation-specific semantics through actual C lowering and journal. Preserve single evaluation of operands, arithmetic and failure prefixes. See [remaining atomic audit](2026-09-21_sc-prototype-evidence/reference-followup/remaining-atomic-source-review.md), [S0 evidence](2026-09-21_sc-prototype-evidence/s0), and CAS evidence above. Signal fence must not become inter-thread synchronization. Legacy conditional `RMW` is not unconditional exchange. |
 | SC-P03 | Scalar Cmm RF uses instantiated `MemValue` equality: identical-bit NaNs compare unequal; opposite signed zeros compare equal in the actual four predicate probes | Build a faithful logical-value/representation/provenance adapter. Do not restrict C NaNs or casually change generic memory equality. See [value audit](2026-09-21_sc-prototype-evidence/reference-followup/cmm-float-values-review.md). Predicate rejection alone is not a C fault. |
 | SC-P04 | Effect inventory E03–E05/E10: allocation, deallocation, metadata zapping and address reuse; scalar SC checker excludes lifetime actions and its lifetime sketch is commented out | Preserve concrete lifetime transitions and derive composition from C/DR403. Keep dynamic deallocation/reuse distinct from automatic lifetime end; zapping is not an invented source store. No blanket dynamic-allocation refusal. A concrete unresolved case must get its own SC-G entry if found. |
 | SC-P05 | E21: abstract varargs ids/cursors are preserved. Four [actual C traces](2026-09-21_sc-prototype-evidence/varargs/README.md) distinguish shared metadata from `va_copy` and join-ordered controls; the source audit finds available semantic guidance | Implement the per-id metadata location/conflict adapter alongside ordinary memory accesses. Pair counts in the selected traces are diagnostics, not SC verdicts. Preserve `va_arg` cursor updates, independent copies and deletion; no invented byte writes or blanket variadic-call refusal. |
@@ -141,7 +143,7 @@ turn every listed feature into a semantic-gap refusal.
 | SC-D02 | Memory observer or suspension unavailable in another object-model instance | Explicit `SC_fault_observer_unavailable` / `SC_fault_suspension_unavailable`; concrete default is the charter instance. Supporting another instance needs its effect implementation, never an empty journal. |
 | SC-D03 | Executed memory order outside the named SC model | `SC_fault_order` with request kind. Preserve exact order; do not silently strengthen it. Separate invalid operation-specific orders from merely out-of-model orders when the final outcome interface is connected. |
 | SC-D04 | E23 concrete memory intrinsic is already unsupported; other models have different implementations | Preserve model-specific failure. It is not an effect-free intrinsic or authority to disable another model's operation. |
-| SC-D05 | Existing upstream frontend limitations, including bitfields; existing memcpy-overlap UB-check omission | Preserve and disclose individual upstream behavior/limitations. The policy is not authority to silently change existing sequential semantics or ban every memcpy. Source checklist: [effect inventory](2026-09-21_sc-effect-inventory.md). |
+| SC-D05 | Existing upstream frontend limitations, including bitfields; existing memcpy-overlap UB-check omission; floating unary-minus lowering described below | Preserve and disclose individual upstream behavior/limitations. The policy is not authority to silently change existing sequential semantics or ban every memcpy. Source checklist: [effect inventory](2026-09-21_sc-effect-inventory.md). |
 | SC-D06 | Fuel/resource exhaustion, blocked execution, ordinary model errors and C UB | Preserve distinct payloads and states. Exhaustion does not establish safety; blocking is not normal value completion; implementation assertions/backtraces are not C semantics. |
 
 The 21 constructors of `Sc_runtime.sc_fault` at the audited checkpoint are
@@ -149,6 +151,18 @@ accounted for by SC-G01, SC-P01 and SC-D01–D03. Their current coarse category
 `SC_failure_representation` includes both SC-G01 and size disagreement; consumers
 must use the typed identity, not assume that category means upstream ambiguity.
 The planned SC-G02/03 outcomes need their own identities and contextual evidence.
+
+**SC-D05 observation, atomic-update validation:** the floating unary-minus arm
+in `Translation` lowers `-e` to `0.0 - e`; this arm is byte-identical to the
+pinned pristine reference. The actual `exchange-double.c` journal consequently
+shows positive zero supplied by the `-0.0` initializer. That case does not test
+preservation of negative-zero bits. A separate expression producing negative
+zero by underflow, and independent Core representation controls, exercise the
+exchange path with the intended input. See the
+[atomic-update review](2026-09-22_sc-atomic-update-review.md). This records a
+pre-existing sequential lowering behavior; no new SC guard, arithmetic repair
+or blanket floating-point refusal is claimed. Any repair must identify its
+ISO/reference basis and undergo shared-model validation.
 
 The subsequent [source-graph slice](2026-09-22_sc-source-graph-review.md) adds
 `sc_graph_issue` diagnostics for duplicate/missing occurrence IDs, erroneous

@@ -17,6 +17,7 @@ end
 
 module type PP_CORE =
 sig
+  val pp_memory_order: Cmm_csem.memory_order -> PPrint.document
   val pp_core_object_type: core_object_type -> PPrint.document
   val pp_core_base_type: core_base_type -> PPrint.document
   val pp_object_value: object_value -> PPrint.document
@@ -44,4 +45,3 @@ module WithStd: PP_CORE
 module WithLocations : PP_CORE
 module WithLocationsAndStd: PP_CORE
 module WithExplode : PP_CORE
-

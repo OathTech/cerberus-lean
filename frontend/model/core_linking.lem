@@ -154,6 +154,9 @@ let free_action acc (Action _ _ act_) =
       let ss3 = (free_pexpr {} pe3) \ { sym } in
       Set.(union) ss3 (free_pexpr (free_pexpr acc pe1) pe2)
       (* (free_pexpr (free_pexpr (free_pexpr acc pe1) pe2) pe3) \ { sym } *)
+  | AtomicUpdate _ pe1 pe2 sym pe3 _ ->
+      let ss3 = (free_pexpr {} pe3) \ { sym } in
+      Set.(union) ss3 (free_pexpr (free_pexpr acc pe1) pe2)
   | RMW pe1 pe2 pe3 pe4 _ _ ->
       free_pexpr (free_pexpr (free_pexpr (free_pexpr acc pe1) pe2) pe3) pe4
   | Fence _ ->

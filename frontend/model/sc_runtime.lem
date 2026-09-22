@@ -15,6 +15,7 @@ type sc_request_kind =
   | SC_memop of Mem_common.memop
   | SC_runtime of string
   | SC_fence of Cmm_csem.memory_order
+  | SC_atomic_update of Cmm_csem.memory_order
 
 
 (* Typed identities preserve all existing diagnostics. Categories describe the
@@ -244,6 +245,7 @@ let sc_record_fence state =
 let sc_request_in_model = function
   | SC_access order _ -> order = Cmm_csem.NA || order = Cmm_csem.Seq_cst
   | SC_fence order -> order = Cmm_csem.Seq_cst
+  | SC_atomic_update order -> order = Cmm_csem.Seq_cst
   | SC_seq_rmw -> true
   | SC_cas_expected success failure _ ->
       success = Cmm_csem.Seq_cst && failure = Cmm_csem.Seq_cst

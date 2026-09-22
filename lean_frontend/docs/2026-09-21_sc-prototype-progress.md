@@ -5,7 +5,7 @@ This file records evidence and next actions; it does not replace the charter.
 
 ## Current status
 
-**2026-09-22: the user resolved the mixed-size decision: retain pinned Cerberus/Cmm and fail closed on evidenced unresolved semantic boundaries in general, documenting every case. The boundary register records three evidenced gaps and separates unfinished work and other diagnostics. Resumable helper services, typed SC faults and the external import example passed all 39 Tier A/B lanes; the 864-row three-engine report retained the preceding checkpoint's exact classifications and decoded results, including its 40 Lean discrepancy IDs. The source-graph slice subsequently passed the same full/three-engine checks, with all classifications and decoded tokens unchanged. Public SC verdict checking remains incomplete.**
+**2026-09-22: the user resolved the mixed-size decision: retain pinned Cerberus/Cmm and fail closed on evidenced unresolved semantic boundaries in general, documenting every case. The boundary register records three evidenced gaps and separates unfinished work and other diagnostics. Resumable helper services, typed SC faults and the external import example passed all 39 Tier A/B lanes; the 864-row three-engine report retained the preceding checkpoint's exact classifications and decoded results, including its 40 Lean discrepancy IDs. The source-graph slice subsequently passed the same full/three-engine checks, with all classifications and decoded tokens unchanged. Unconditional atomic updates, exchange, atomic operators and qualifier repairs now also pass full/three-engine validation, with the same classifications and decoded tokens. Public SC verdict checking remains incomplete.**
 Branch `arc/sc-prototype`, worktree
 `/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype`.
 Implementation base: `5407597d9eeba0259d65b728e86a860ad4614ab3`.
@@ -15,7 +15,7 @@ Implementation base: `5407597d9eeba0259d65b728e86a860ad4614ab3`.
 | S0 reference/baseline/instruments | Baseline, contract, inventory and repaired harness retained; current slice passes fresh integration | Continue reference and location interpretation review |
 | S1 driver/scheduler/threads | Protocol, owned CAS/ordinary-RMW phases and complete resumable service machine validated | Final scheduler/interface review and complete C entry |
 | S2 effects/representation/sequencing | Journal, float representation, physical byte sources, helper ordering and resumption validated | Location/lifetime composition and external correspondence |
-| S3 SC atomics/races/verdicts | CAS/fences validated; unspecified CAS bytes explicitly unsupported | Race/consistency checking, remaining atomic frontend paths and C entry |
+| S3 SC atomics/races/verdicts | CAS/fences and unconditional atomic updates validated; exchange/operators/qualifiers covered; unspecified CAS bytes explicitly unsupported | Race/consistency checking, remaining atomic frontend paths and C entry |
 | S4 operational API/laws | Checked lifting, choices, recorder, byte-accounting and resumption laws; separate import example passes | Complete public interface, conservativity domains and remaining correspondence |
 | S5 integrated completion | Intermediate slices validated; prototype incomplete | Final inventory, complete SC integration and reproducible report |
 
@@ -639,3 +639,29 @@ do not. This is SC-P05 implementation guidance, not a new upstream gap.
 The atomic follow-up also records literal-only memory-order decoding and
 `atomic_init`'s current assignment macro as implementation obligations. No
 atomic draft result is claimed by this graph checkpoint.
+
+
+## Unconditional atomic updates validated
+
+The [atomic-update review](2026-09-22_sc-atomic-update-review.md) records the
+new Core action, indivisible driver service and actual exchange/operator
+lowering. The qualifier and compatible-aggregate CAS repairs are included.
+Seventeen paired Core groups, four kernel statements, parser/roundtrip checks,
+37 actual C journals and five compiled disconnection plants pass. Thirty-one
+positive selected C cases and six exact negative outcomes have paired evidence.
+Only one of eight bounded exhaustive cases completed; the remaining seven
+timeouts remain incomplete. The correction to the parameter-case expectation
+and the accidentally stale diagnostic run remain explicit in the record.
+
+The frozen 39-lane full run passes, and the 864-row three-engine comparison
+retains every prior classification, decoded token and the same 40 discrepancy
+IDs. [Raw evidence](2026-09-21_sc-prototype-evidence/atomic-updates/README.md),
+including generation/build failures and mutation results, is retained with
+verified hashes. No whole-program safety result follows from recorder outputs.
+
+Follow-up drafts for init/flags, runtime orders, signal fences, integer fetch,
+logical values and a separate instantiation of the unchanged Cmm predicates
+remain unbuilt/unpromoted at this checkpoint. They need review and validation;
+they are not part of this slice's support claim. Public race/consistency
+checking, precise boundary guards and the full operational interface remain
+mandatory charter work. No customer or pin change was made.

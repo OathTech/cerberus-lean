@@ -827,6 +827,19 @@ let action_request_with loc tid receipt request =
         |>
       )
   
+  | Core_reduction.AtomicUpdateRequest2 _ lvalue_ty ptr_val update complete ->
+      let atomic_ty = Ctype.Ctype [] (Ctype.Atomic (Ctype.unatomic lvalue_ty)) in
+      driver_liftMem (Mem.load loc atomic_ty ptr_val) >>= fun (_, before) ->
+      ND.get >>= fun current ->
+      liftCore_run (update current.layout_state before) >>= fun after ->
+      driver_liftMem (Mem.store loc atomic_ty false ptr_val after) >>= fun fp ->
+      driver_liftMem (Mem.prefix_of_pointer ptr_val) >>= fun pref ->
+      ND.update (fun dr_st ->
+        <| dr_st with
+          core_state= Core_run.update_thread_state tid (complete (receipt dr_st) fp before after) dr_st.core_state;
+          trace= ME_seq_rmw loc pref lvalue_ty ptr_val before after :: dr_st.trace
+        |>)
+
   | Core_reduction.SeqRMWRequest2 lvalue_ty ptr_val mk_mval' mk_th_st' ->
       driver_liftMem (Mem.load loc lvalue_ty ptr_val)              >>= fun (_, mval) ->
       liftCore_run (mk_mval' mval)                          >>= fun mval'     ->
@@ -1592,6 +1605,7 @@ let sc_enable = ND.ND (fun dr_st ->
 let sc_kind_of_request polarity = function
   | Core_reduction.LoadRequest2 order _ _ _ -> Sc_runtime.SC_access order polarity
   | Core_reduction.StoreRequest2 order _ _ _ _ _ -> Sc_runtime.SC_access order polarity
+  | Core_reduction.AtomicUpdateRequest2 order _ _ _ _ -> Sc_runtime.SC_atomic_update order
   | Core_reduction.SeqRMWRequest2 _ _ _ _ -> Sc_runtime.SC_seq_rmw
   | Core_reduction.SeqRMWWriteRequest2 _ _ _ _ _ _ -> Sc_runtime.SC_seq_rmw
   | Core_reduction.CompareExchangeRequest2 _ _ _ _ _ success failure _ ->

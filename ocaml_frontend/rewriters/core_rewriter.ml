@@ -282,6 +282,11 @@ module Rewriter = functor (Eff: Monad) -> struct
           aux_pexpr pe2 >>= fun pe2' ->
           aux_pexpr pe3 >>= fun pe3' ->
           return_wrap (SeqRMW (b, pe1', pe2', sym, pe3'))
+      | AtomicUpdate (b, pe1, pe2, sym, pe3, mo) ->
+          aux_pexpr pe1 >>= fun pe1' ->
+          aux_pexpr pe2 >>= fun pe2' ->
+          aux_pexpr pe3 >>= fun pe3' ->
+          return_wrap (AtomicUpdate (b, pe1', pe2', sym, pe3', mo))
       | RMW0 (pe1, pe2, pe3, pe4, mo1, mo2) ->
           aux_pexpr pe1 >>= fun pe1' ->
           aux_pexpr pe2 >>= fun pe2' ->

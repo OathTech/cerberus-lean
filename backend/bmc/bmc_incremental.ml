@@ -407,7 +407,9 @@ module BmcInline = struct
         inline_pe pe3 >>= fun inlined_pe3 ->
         return (LinuxRMW(inlined_pe1, inlined_pe2, inlined_pe3, mo))
     | SeqRMW _ ->
-        failwith "TODO: SeqRMW"  
+        failwith "TODO: SeqRMW"
+    | AtomicUpdate _ ->
+        failwith "TODO: AtomicUpdate is not implemented by BMC"
     ) >>= fun inlined_action ->
     return (Paction(p, Action(loc, a, inlined_action)))
 
@@ -963,6 +965,8 @@ module BmcSSA = struct
         return (LinuxRMW(ssad_pe1, ssad_pe2, ssad_pe3, mo))
     | SeqRMW _ ->
         failwith "TODO: SeqRMW"
+    | AtomicUpdate _ ->
+        failwith "TODO: AtomicUpdate is not implemented by BMC"
     ) >>= fun ssad_action ->
     return (Paction(p, Action(loc, a, ssad_action)))
 
@@ -2446,6 +2450,8 @@ module BmcBind = struct
         return (bound_pe1 @ bound_pe2 @ bound_pe3)
     | SeqRMW _ ->
         failwith "TODO: SeqRMW"
+    | AtomicUpdate _ ->
+        failwith "TODO: AtomicUpdate is not implemented by BMC"
     )
 
   let rec bind_e (Expr(annots, expr_) as expr: unit typed_expr)
@@ -2844,6 +2850,8 @@ module BmcVC = struct
     | LinuxRMW _ -> assert false
     | SeqRMW _ ->
         failwith "TODO: SeqRMW"
+    | AtomicUpdate _ ->
+        failwith "TODO: AtomicUpdate is not implemented by BMC"
 
   let rec vcs_e (Expr(annots, expr_) as expr)
                    : (bmc_vc list) eff =

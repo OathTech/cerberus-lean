@@ -136,6 +136,8 @@ let keywords =
       ("store",  T.STORE );
       ("store_lock",  T.STORE_LOCK );
       ("load",   T.LOAD  );
+      ("atomic_update", T.ATOMIC_UPDATE);
+      ("atomic_update_with_forward", T.ATOMIC_UPDATE_WITH_FORWARD);
       ("seq_rmw",   T.SEQ_RMW  );
       ("seq_rmw_with_forward",   T.SEQ_RMW_WITH_FORWARD  );
       ("rmw",    T.RMW   );

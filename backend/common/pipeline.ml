@@ -438,6 +438,8 @@ let untype_file (file: 'a Core.typed_file) : 'a Core.file =
                    Load0 (untype_pexpr pe1, untype_pexpr pe2, mo)
                | SeqRMW (b, pe1, pe2, sym, pe3) ->
                    SeqRMW (b, untype_pexpr pe1, untype_pexpr pe2, sym, untype_pexpr pe3)
+               | AtomicUpdate (b, pe1, pe2, sym, pe3, mo) ->
+                   AtomicUpdate (b, untype_pexpr pe1, untype_pexpr pe2, sym, untype_pexpr pe3, mo)
                | RMW0 (pe1, pe2, pe3, pe4, mo1, mo2) ->
                    RMW0 (untype_pexpr pe1, untype_pexpr pe2, untype_pexpr pe3, untype_pexpr pe4, mo1, mo2)
                | Fence0 mo ->

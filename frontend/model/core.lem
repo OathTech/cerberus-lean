@@ -286,8 +286,14 @@ type generic_action_ 'bty 'sym =  (* memory actions *)
  | LinuxFence of Linux.linux_memory_order
  | LinuxLoad of (generic_pexpr 'bty 'sym) * (generic_pexpr 'bty 'sym) * Linux.linux_memory_order
  | LinuxStore of (generic_pexpr 'bty 'sym) * (generic_pexpr 'bty 'sym) * (generic_pexpr 'bty 'sym) * Linux.linux_memory_order
+
  | LinuxRMW of (generic_pexpr 'bty 'sym) * (generic_pexpr 'bty 'sym) * (generic_pexpr 'bty 'sym) * Linux.linux_memory_order
 
+
+ (* Atomic update: old/new result flag, lvalue type/address, loaded-value
+    binder and pure update expression, explicit memory order. Unlike SeqRMW
+    this is indivisible between threads; historical conditional RMW is unchanged. *)
+ | AtomicUpdate of bool * (generic_pexpr 'bty 'sym) * (generic_pexpr 'bty 'sym) * 'sym * (generic_pexpr 'bty 'sym) * Cmm_csem.memory_order
 
 type generic_action 'a 'bty 'sym = 
  | Action of Loc.t * 'a * (generic_action_ 'bty 'sym)

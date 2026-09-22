@@ -1774,6 +1774,21 @@ private partial def pActionSeqRMWForward : P Act := do
   lexSym ")"
   return (SeqRMW true pe1 pe2 s pe3)
 
+private partial def pActionAtomicUpdate (forward : Bool) : P Act := do
+  lexKw (if forward then "atomic_update_with_forward" else "atomic_update")
+  lexSym "("
+  let ty ← pPexpr
+  lexSym ","
+  let ptr ← pPexpr
+  lexSym ","
+  let binder ← lexSymId
+  lexSym "=>"
+  let update ← pPexpr
+  lexSym ","
+  let order ← pMemoryOrder
+  lexSym ")"
+  return (AtomicUpdate forward ty ptr binder update order)
+
 private partial def pActionRMW : P Act := do
   lexKw "rmw"
   lexSym "("
@@ -1804,7 +1819,7 @@ private partial def pAction : P Act := do
   let c ← peek?
   match c with
   | some 'c' => (attempt pActionCreate) <|> pActionCreateReadOnly
-  | some 'a' => pActionAlloc
+  | some 'a' => (attempt (pActionAtomicUpdate true)) <|> (attempt (pActionAtomicUpdate false)) <|> pActionAlloc
   | some 'f' => (attempt pActionFree) <|> pActionFence
   | some 'k' => pActionKill
   | some 's' => (attempt pActionStoreLock) <|> (attempt pActionStore) <|> (attempt pActionSeqRMWForward) <|> pActionSeqRMW
@@ -2594,6 +2609,7 @@ private def relocAct (ctx : RelocCtx) (act : Act) : Act :=
   | Store0 b pe1 pe2 pe3 mo => Store0 b (r pe1) (r pe2) (r pe3) mo
   | Load0 pe1 pe2 mo => Load0 (r pe1) (r pe2) mo
   | SeqRMW b pe1 pe2 s pe3 => SeqRMW b (r pe1) (r pe2) s (r pe3)
+  | AtomicUpdate b pe1 pe2 s pe3 mo => AtomicUpdate b (r pe1) (r pe2) s (r pe3) mo
   | RMW0 pe1 pe2 pe3 pe4 mo1 mo2 => RMW0 (r pe1) (r pe2) (r pe3) (r pe4) mo1 mo2
   | Fence0 mo => Fence0 mo
   | CompareExchangeStrong pe1 pe2 pe3 pe4 mo1 mo2 =>
@@ -2892,6 +2908,7 @@ private def renameAct (ctx : RenameCtx) (act : Act) : Act :=
   | Store0 b pe1 pe2 pe3 mo => Store0 b (r pe1) (r pe2) (r pe3) mo
   | Load0 pe1 pe2 mo => Load0 (r pe1) (r pe2) mo
   | SeqRMW b pe1 pe2 s pe3 => SeqRMW b (r pe1) (r pe2) (ctx.onSym s) (r pe3)
+  | AtomicUpdate b pe1 pe2 s pe3 mo => AtomicUpdate b (r pe1) (r pe2) (ctx.onSym s) (r pe3) mo
   | RMW0 pe1 pe2 pe3 pe4 mo1 mo2 => RMW0 (r pe1) (r pe2) (r pe3) (r pe4) mo1 mo2
   | Fence0 mo => Fence0 mo
   | CompareExchangeStrong pe1 pe2 pe3 pe4 mo1 mo2 =>

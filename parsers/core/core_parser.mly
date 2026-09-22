@@ -772,6 +772,14 @@ and symbolify_action_ = function
        symbolify_pexpr _pe3 >>= fun pe3 ->
        Eff.return (SeqRMW (b, pe1, pe3, sym, pe3))
      )
+ | AtomicUpdate (b, _pe1, _pe2, _sym, _pe3, mo) ->
+     symbolify_pexpr _pe1 >>= fun pe1 ->
+     symbolify_pexpr _pe2 >>= fun pe2 ->
+     under_scope (
+       register_sym _sym    >>= fun sym ->
+       symbolify_pexpr _pe3 >>= fun pe3 ->
+       Eff.return (AtomicUpdate (b, pe1, pe2, sym, pe3, mo))
+     )
  | Load0 (_pe1, _pe2, mo) ->
      symbolify_pexpr _pe1 >>= fun pe1 ->
      symbolify_pexpr _pe2 >>= fun pe2 ->
@@ -1150,6 +1158,7 @@ let mk_file decls =
 %token SLASH_BACKSLASH BACKSLASH_SLASH
 
 (* memory actions *)
+%token ATOMIC_UPDATE ATOMIC_UPDATE_WITH_FORWARD
 %token CREATE CREATE_READONLY ALLOC STORE STORE_LOCK LOAD SEQ_RMW SEQ_RMW_WITH_FORWARD KILL FREE RMW FENCE (* COMPARE_EXCHANGE_STRONG *)
 
 (* continuation operators *)
@@ -1728,6 +1737,11 @@ action:
     { SeqRMW (false, _pe1, _pe2, _sym, _pe3) }
 | SEQ_RMW_WITH_FORWARD LPAREN _pe1= pexpr COMMA _pe2= pexpr COMMA _sym= SYM EQ_GT _pe3= pexpr (*COMMA mo= memory_order*) RPAREN
     { SeqRMW (true, _pe1, _pe2, _sym, _pe3) }
+
+| ATOMIC_UPDATE LPAREN _pe1= pexpr COMMA _pe2= pexpr COMMA _sym= SYM EQ_GT _pe3= pexpr COMMA mo= memory_order RPAREN
+    { AtomicUpdate (false, _pe1, _pe2, _sym, _pe3, mo) }
+| ATOMIC_UPDATE_WITH_FORWARD LPAREN _pe1= pexpr COMMA _pe2= pexpr COMMA _sym= SYM EQ_GT _pe3= pexpr COMMA mo= memory_order RPAREN
+    { AtomicUpdate (true, _pe1, _pe2, _sym, _pe3, mo) }
 
 | RMW LPAREN _pe1= pexpr COMMA _pe2= pexpr COMMA _pe3= pexpr COMMA _pe4= pexpr COMMA mo1= memory_order COMMA mo2= memory_order RPAREN
     { RMW0 (_pe1, _pe2, _pe3, _pe4, mo1, mo2) }

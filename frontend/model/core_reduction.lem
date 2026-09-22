@@ -2,7 +2,7 @@ open import Pervasives
 open import Utils
 open import Core Core_aux Core_run_aux
 
-import State Sc_order
+import State Sc_order Errors
 import Core_eval Cmm_aux Cmm_csem
 
 import Cerb_attributes
@@ -126,6 +126,13 @@ type action_request2 'a =
   | FenceRequest2 of Cmm.memory_order * (completion_receipt -> 'a)
   | KillRequest2 of (* is_dynamic *)bool * Mem.pointer_value * (completion_receipt -> 'a)
 
+
+
+  (* An unconditional atomic update owns both checked accesses. Unlike the
+     ordinary SeqRMW request, the SC driver never suspends between them. *)
+  | AtomicUpdateRequest2 of Cmm.memory_order * Ctype.ctype * Mem.pointer_value
+      * (Mem.mem_state -> Mem.mem_value -> core_runM Mem.mem_value)
+      * (completion_receipt -> Mem.footprint -> Mem.mem_value -> Mem.mem_value -> 'a)
 
 type runstate_step_kind =
   | RSK_eval of string
@@ -818,6 +825,8 @@ let step_action_with with_sc e_annots full_eval_pexpr is_excluded (Action loc ac
                 E.return (wrap (Load (Caux.mk_value_pe cval1) (Caux.mk_value_pe cval2) mo))
               end
         end
+    | AtomicUpdate _ _ _ _ _ _ ->
+        ACTION_ILLTYPED "AtomicUpdate requires the enclosing Core context"
     | SeqRMW _ _ _ _ _ ->
         error "Core_reduction.step_action ==> SeqRMW" (* this should not be possible *)
     | Alloc pe1 pe2 pref ->
@@ -1301,6 +1310,9 @@ let step_ctx_with sc_context mem_st file core_extern current_tid (parent_tid_opt
                           wrap_completed receipt (mk_expr' receipt))
                     | SeqRMWWriteRequest2 _ _ _ _ _ _ ->
                         error "Core action produced an internal sequential RMW phase"
+                    | AtomicUpdateRequest2 order ty ptr update complete ->
+                        AtomicUpdateRequest2 order ty ptr update (fun receipt fp before after ->
+                          wrap_completed receipt (complete receipt fp before after))
                     | SeqRMWRequest2 _ _ _ _ ->
                         (* this is not possible *)
                         error "Core_reduction step_action returned SeqRMWRequest2"
@@ -1333,6 +1345,38 @@ let step_ctx_with sc_context mem_st file core_extern current_tid (parent_tid_opt
                 wrap_expr expr'
               end
           
+          | Eaction (Paction p (Action loc action_annotation (AtomicUpdate with_forward pe1 pe2 sym pe3 order))) ->
+              if p = Neg then
+                Step_error2 "AtomicUpdate requires positive polarity"
+              else match sc_context with
+                | Nothing -> Step_error2 "AtomicUpdate requires SC execution"
+                | Just _ ->
+                    Step_action_request2 action_annotation Pos "AtomicUpdate" loc current_tid (is_unseq_with_ccall ctx) begin
+                      full_eval_pexpr' pe1 >>= fun type_value ->
+                      full_eval_pexpr' pe2 >>= fun pointer_value ->
+                      match (type_value, pointer_value) with
+                        | (Vctype ty, Vobject (OVpointer ptrval)) ->
+                            E.return (AtomicUpdateRequest2 order ty ptrval (fun current_memory before ->
+                              match th_st.env with
+                                | [] -> SEU.fail (Errors.Illformed_program "AtomicUpdate has no environment")
+                                | frame :: rest ->
+                                    let update_state = <| th_st with env=
+                                      Map.insert sym (snd (Caux.valueFromMemValue before)) frame :: rest |> in
+                                    full_eval_pexpr update_state core_extern current_memory file pe3 >>= fun value ->
+                                    match memValueFromValue (Ctype.Ctype [] (Ctype.unatomic_ ty)) value with
+                                      | Just after -> E.return after
+                                      | Nothing -> SEU.fail (Errors.Illformed_program "AtomicUpdate result does not match its object type")
+                                    end
+                              end)
+                              (fun receipt fp before after ->
+                                wrap_completed receipt (Expr [] (Eannot [DA_pos [] fp]
+                                  (Caux.mk_value_e (snd (Caux.valueFromMemValue
+                                    (if with_forward then after else before))))))))
+                        | _ -> SEU.fail (Errors.Illformed_program "AtomicUpdate requires a type and object pointer")
+                      end
+                    end
+              end
+
           | Eaction (Paction p (Action loc action_annotation (SeqRMW with_forward pe1 pe2 sym pe3))) ->
               if p = Neg then
                 error "TODO(better typing) negative SeqRMW should be forbidden by the typecheck"

@@ -671,9 +671,9 @@ val translate_postfix:
   A.expression GenTypes.genTypeCategory ->
   E.elabM (C.expr unit)
 let translate_postfix loc translate_expr stdlib result_ty op e =
-  (* TODO: use atomic RMW if the type is atomic *)
-  (* NOTE: if I read N2329 correctly, in C2X this will not be an RMW for the atomic case (but a do while
-           with compare_exchange_weak with seq_cst, seq_cst) *)
+  (* C11 6.5.2.4p2: atomic postfix is one seq_cst RMW. Ordinary
+     SeqRMW keeps its existing inter-thread interruption semantics. *)
+  let is_atomic = AilTypesAux.is_atomic (ctype_of e) in
   let (std_para, core_op, int_op, ptr_shift_const) =
     match op with
       | A.PostfixIncr ->
@@ -685,7 +685,7 @@ let translate_postfix loc translate_expr stdlib result_ty op e =
     end in
   let std_sentence_n (n: nat) = "§6.5.2.4" ^ std_para ^ ", sentence " ^ show n in
   (* STD §6.5.2.4 *)
-  warn_atomic_elaboration (AilTypesAux.is_atomic (ctype_of e)) >>= fun () ->
+
   let ty  = AilTypesAux.rvalue_coercion (snd (from_lvalue_type e)) in
   let oTy = force_core_object_type_of_ctype ty    in
   let core_ty_e = Caux.mk_ail_ctype_pe ty in
@@ -697,7 +697,10 @@ let translate_postfix loc translate_expr stdlib result_ty op e =
     E.return begin
       Caux.add_stds ["§6.5.2.4"; std_sentence_n 1; std_sentence_n 3] begin
         Caux.mk_wseq_e lvalue_wrp.E.sym_pat core_e begin
-          Caux.seq_rmw loc false(* return the value of the load *) core_ty_e oTy lvalue_wrp.E.sym_pe load_wrp.E.sym_sym begin
+          (if is_atomic then
+             fun upd -> Caux.atomic_update loc false core_ty_e lvalue_wrp.E.sym_pe load_wrp.E.sym_sym upd Cmm.Seq_cst
+           else
+             fun upd -> Caux.seq_rmw loc false core_ty_e oTy lvalue_wrp.E.sym_pe load_wrp.E.sym_sym upd) begin
             Caux.mk_case_pe load_wrp.E.sym_pe
               [ ( Caux.mk_specified_pat obj_wrp.E.sym_pat
                 , Caux.mk_specified_pe begin
@@ -717,7 +720,7 @@ match Ctype.unatomic_ ty with
                       let core_postfix = Caux.mk_op_pe core_op obj_wrp.E.sym_pe (Caux.mk_integer_pe 1) in
                       let promoted_ty =
                         fromJust "Translation.translate_postfix promotion"
-                          (AilTypesAux.promotion (Implementation.integerImpl ()) (ctype_of e)) in
+                          (AilTypesAux.promotion (Implementation.integerImpl ()) (Ctype.unatomic (ctype_of e))) in
                       let promoted_e = stdlib.mkcall_conv_int promoted_ty obj_wrp.E.sym_pe in
                       stdlib.mkcall_conv_int result_ty begin
       mk_cheri begin
@@ -1170,8 +1173,9 @@ type atomic_explicit =
   | LinuxLoad
   | LinuxFence
   | LinuxRMW
+  | AtomicExchangeExplicit
 
-let translate_atomic_explicit loc translate_expr atomic_op args =
+let translate_atomic_explicit loc translate_expr stdlib atomic_op args =
   match (atomic_op, args) with
     | (AtomicStoreExplicit, [lobject_e; desired_e; order_e]) ->
         let mo = translate_memory_order order_e in
@@ -1199,6 +1203,36 @@ let translate_atomic_explicit loc translate_expr atomic_op args =
                 ; ( Caux.mk_unspecified_pat (Caux.mk_empty_pat C.BTy_ctype)
                   , Caux.mk_pure_e (Caux.mk_undef_pe loc Undefined.UB_unspecified_lvalue) ) ]
             end
+        end
+    | (AtomicExchangeExplicit, [object_e; desired_e; order_e]) ->
+        let order = translate_memory_order order_e in
+        let ref_ty = match ctype_of object_e with
+          | Ctype.Ctype _ (Ctype.Pointer _ ty) -> Ctype.Ctype [] (Ctype.unatomic_ ty)
+          | _ -> illTypedAil loc "AilEcall atomic_exchange_explicit"
+        end in
+        let oTy = force_core_object_type_of_ctype ref_ty in
+        (* The parameter conversion completes as part of argument evaluation,
+           before the atomic object read. Reuse assignment conversion rather
+           than inserting a C cast, which has different pointer checks. *)
+        translate_assignment_conversion translate_expr stdlib ref_ty desired_e
+          >>= fun (arg_oTy, raw_desired, convert_desired) ->
+        E.wrapped_fresh_symbol (C.BTy_loaded arg_oTy) >>= fun raw_wrp ->
+        let core_desired = Caux.mk_wseq_e raw_wrp.E.sym_pat raw_desired
+          (Caux.mk_pure_e (convert_desired raw_wrp.E.sym_pe)) in
+        E.wrapped_fresh_symbol (C.BTy_loaded C.OTy_pointer) >>= fun loaded_object_wrp ->
+        E.wrapped_fresh_symbol (C.BTy_object C.OTy_pointer) >>= fun object_wrp ->
+        E.wrapped_fresh_symbol (C.BTy_loaded oTy) >>= fun desired ->
+        E.wrapped_fresh_symbol (C.BTy_loaded oTy) >>= fun previous ->
+        translate_expr object_e >>= fun core_object ->
+        E.return begin
+          Caux.mk_sseq_e (Caux.mk_tuple_pat [loaded_object_wrp.E.sym_pat; desired.E.sym_pat])
+            (Caux.mk_unseq_e [core_object; core_desired])
+            (Caux.mk_case_e loaded_object_wrp.E.sym_pe
+              [ (Caux.mk_specified_pat object_wrp.E.sym_pat,
+                  Caux.atomic_update loc false (Caux.mk_ail_ctype_pe ref_ty)
+                    object_wrp.E.sym_pe previous.E.sym_sym desired.E.sym_pe order)
+              ; (Caux.mk_unspecified_pat (Caux.mk_empty_pat C.BTy_ctype),
+                  Caux.mk_pure_e (Caux.mk_undef_pe loc Undefined.UB_unspecified_lvalue)) ])
         end
     | (AtomicLoadExplicit, [lobject_e; order_e]) ->
         let mo = translate_memory_order order_e in
@@ -2508,6 +2542,54 @@ end
           end
       
       | A.AilEcompoundAssign e1 aop e2 ->
+        if AilTypesAux.is_atomic (ctype_of e1) then
+          (* Evaluate both source operands once, retaining their unsequenced
+             evaluation. The update body reuses the ordinary operator translator
+             on fresh value binders, then converts its pure result back to the
+             object's type. No synthetic operand performs another memory load. *)
+          let ty1 = Ctype.unatomic (ctype_of e1) in
+          let ty2 = ctype_of e2 in
+          let gty1 = GenTypes.inject_type ty1 in
+          let gty2 = GenTypes.inject_type ty2 in
+          let arith_gty = match aop with
+            | A.Add -> if GenTypesAux.is_pointer gty1 then gty1 else GenTypesAux.usual_arithmetic gty1 gty2
+            | A.Sub -> if GenTypesAux.is_pointer gty1 then gty1 else GenTypesAux.usual_arithmetic gty1 gty2
+            | A.Shl -> GenTypesAux.integer_promote gty1
+            | A.Shr -> GenTypesAux.integer_promote gty1
+            | _ -> GenTypesAux.usual_arithmetic gty1 gty2
+          end in
+          let oTy1 = force_core_object_type_of_ctype ty1 in
+          let oTy2 = force_core_object_type_of_ctype ty2 in
+          E.wrapped_fresh_symbol (C.BTy_object C.OTy_pointer) >>= fun address_wrp ->
+          E.wrapped_fresh_symbol (C.BTy_loaded oTy1) >>= fun loaded_wrp ->
+          E.wrapped_fresh_symbol (C.BTy_loaded oTy2) >>= fun right_wrp ->
+          self e1 >>= fun core_e1 ->
+          self e2 >>= fun core_e2 ->
+          let left_value = A.AnnotatedExpression (GenTypes.GenRValueType gty1) [] loc
+            (A.AilEident loaded_wrp.E.sym_sym) in
+          let right_value = A.AnnotatedExpression (GenTypes.GenRValueType gty2) [] loc
+            (A.AilEident right_wrp.E.sym_sym) in
+          let operation = A.AnnotatedExpression (GenTypes.GenRValueType arith_gty) [] loc
+            (A.AilEbinary left_value (A.Arithmetic aop) right_value) in
+          self operation >>= fun operation_core ->
+          match Caux.to_pure_structural operation_core with
+            | Just update ->
+                let converted_update =
+                  if AilTypesAux.is_arithmetic ty1 then
+                    conv_loaded_arith stdlib (ctype_of operation) ty1 update
+                  else update in
+                E.return begin
+                  Caux.add_std "§6.5.16.2#3" begin
+                    Caux.mk_wseq_e (Caux.mk_tuple_pat [address_wrp.E.sym_pat; right_wrp.E.sym_pat])
+                      (Caux.mk_unseq_e [core_e1; core_e2])
+                      (Caux.atomic_update loc true (Caux.mk_ail_ctype_pe ty1)
+                        address_wrp.E.sym_pe loaded_wrp.E.sym_sym converted_update Cmm.Seq_cst)
+                  end
+                end
+            | Nothing ->
+                illTypedAil loc "atomic compound assignment update is not pure in this object model"
+          end
+        else
           (* TODO: this elaboration is wrong because it duplicates any side-effect in E1 *)
           (* TODO: and this is duplicating facts about the typing of Ail arithmetic binary operators *)
           let (e1_rvalue, arith_gty) = match (e1, e2) with
@@ -2537,23 +2619,25 @@ end
           end
       
       | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBatomic A.AilBAstore))) es ->
-          translate_atomic_explicit loc self AtomicStoreExplicit es
+          translate_atomic_explicit loc self stdlib AtomicStoreExplicit es
+      | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBatomic A.AilBAexchange))) es ->
+          translate_atomic_explicit loc self stdlib AtomicExchangeExplicit es
       | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBatomic A.AilBAload))) es ->
-          translate_atomic_explicit loc self AtomicLoadExplicit es
+          translate_atomic_explicit loc self stdlib AtomicLoadExplicit es
       | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEident (Symbol.Symbol _ _ (Symbol.SD_Id "atomic_thread_fence")))) es ->
-          translate_atomic_explicit loc self AtomicThreadFence es
+          translate_atomic_explicit loc self stdlib AtomicThreadFence es
       | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBatomic A.AilBAcompare_exchange_strong))) es ->
-          translate_atomic_explicit loc self AtomicCompareExchangeStrongExplicit es
+          translate_atomic_explicit loc self stdlib AtomicCompareExchangeStrongExplicit es
       | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBatomic A.AilBAcompare_exchange_weak))) es ->
-          translate_atomic_explicit loc self AtomicCompareExchangeWeakExplicit es
+          translate_atomic_explicit loc self stdlib AtomicCompareExchangeWeakExplicit es
       | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBlinux A.AilBLwrite))) es ->
-          translate_atomic_explicit loc self LinuxStore es
+          translate_atomic_explicit loc self stdlib LinuxStore es
       | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBlinux A.AilBLread))) es ->
-          translate_atomic_explicit loc self LinuxLoad es
+          translate_atomic_explicit loc self stdlib LinuxLoad es
       | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBlinux A.AilBLfence))) es ->
-          translate_atomic_explicit loc self LinuxFence es
+          translate_atomic_explicit loc self stdlib LinuxFence es
       | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBlinux A.AilBLrmw))) es ->
-          translate_atomic_explicit loc self LinuxRMW es
+          translate_atomic_explicit loc self stdlib LinuxRMW es
       
       | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin A.AilBcopy_alloc_id)) [from_e; to_e] ->
           E.wrapped_fresh_symbol (C.BTy_loaded C.OTy_integer) >>= fun loaded_from_wrp ->

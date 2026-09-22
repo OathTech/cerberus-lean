@@ -21,6 +21,7 @@ end
 
 module type PP_CORE =
 sig
+  val pp_memory_order: Cmm_csem.memory_order -> PPrint.document
   val pp_core_object_type: core_object_type -> PPrint.document
   val pp_core_base_type: core_base_type -> PPrint.document
   val pp_object_value: object_value -> PPrint.document
@@ -710,6 +711,12 @@ and pp_action act =
           pp_symbol sym ^^^ !^ "=>" ^^^
           pp_pexpr e2
         )
+    | AtomicUpdate (b, ty, ptr, sym, update, mo) ->
+        let kw = if b then "atomic_update_with_forward" else "atomic_update" in
+        pp_keyword kw ^^ P.parens (
+          pp_pexpr ty ^^ P.comma ^^^ pp_pexpr ptr ^^ P.comma ^^^
+          pp_symbol sym ^^^ !^ "=>" ^^^ pp_pexpr update ^^ P.comma ^^^
+          pp_memory_order mo)
     | RMW0 (ty, e1, e2, e3, mo1, mo2) ->
         pp_keyword "rmw" ^^
         P.parens (pp_pexpr ty ^^ P.comma ^^^ pp_pexpr e1 ^^ P.comma ^^^

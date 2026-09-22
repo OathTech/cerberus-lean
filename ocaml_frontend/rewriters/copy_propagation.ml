@@ -348,6 +348,9 @@ let propagate_action env (Paction (pol, Action (loc, a, act_))) =
         Load0 (pp pe1, pp pe2, mo)
     | SeqRMW (lk, pe1, pe2, sym, pe3) ->
         SeqRMW (lk, pp pe1, pp pe2, sym, pp pe3)
+    | AtomicUpdate (lk, pe1, pe2, sym, pe3, mo) ->
+        AtomicUpdate (lk, pp pe1, pp pe2, sym,
+          propagate_pexpr (Pmap.remove sym env) pe3, mo)
     | RMW0 (pe1, pe2, pe3, pe4, mo1, mo2) ->
         RMW0 (pp pe1, pp pe2, pp pe3, pp pe4, mo1, mo2)
     | Fence0 mo ->

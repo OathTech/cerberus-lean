@@ -244,6 +244,8 @@ let pp_action_ctor act =
         "seq_rmw"
     | SeqRMW (true, _, _, _, _) ->
         "seq_rmw_with_forward"
+    | AtomicUpdate (b, _, _, _, _, _) ->
+        if b then "atomic_update_with_forward" else "atomic_update"
     | RMW0 _ ->
         "rmw"
     | Fence0 _ ->
@@ -295,6 +297,11 @@ let dtree_of_action act =
             ; dtree_of_pexpr pe1
             ; Dleaf (pp_symbol sym)
             ; dtree_of_pexpr pe3 ] )
+      | AtomicUpdate (b, pe1, pe2, sym, pe3, mo) ->
+          ( (if b then "atomic_update_with_forward" else "atomic_update")
+          , [ dtree_of_pexpr pe1; dtree_of_pexpr pe2
+            ; Dleaf (pp_symbol sym); dtree_of_pexpr pe3
+            ; Dleaf (Pp_core.Basic.pp_memory_order mo) ] )
       | RMW0 _ ->
           ( "rmw"
           , [] )

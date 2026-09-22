@@ -629,6 +629,8 @@ KKK
         end
     | SeqRMW _ _ _ _ _ ->
         error "Core_run ==> SeqRMW"
+    | AtomicUpdate _ _ _ _ _ _ ->
+        error "Core_run ==> AtomicUpdate requires the modern driver"
     | RMW pe1 pe2 pe3 pe4 mo1 mo2 ->
         match (valueFromPexpr pe1, valueFromPexpr pe2, valueFromPexpr pe3, valueFromPexpr pe4) with
           | (Just (Vctype ty), Just (Vobject (OVpointer ptr_val)), Just cval_expected, Just cval_desired) ->

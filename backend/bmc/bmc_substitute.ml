@@ -132,6 +132,8 @@ let unsafe_substitute_action (map: substitute_map)
                   memorder)
     | SeqRMW _ ->
         failwith "TODO: SeqRMW"
+    | AtomicUpdate _ ->
+        failwith "TODO: AtomicUpdate is not implemented by BMC"
   in
   Action(loc, a, ret)
 

@@ -697,7 +697,7 @@ let rec annotate_expression annotate_block sigm gamm ctx (AnnotatedExpression ()
                        complete object type, but then #2 defers to §6.5.6#2 which does. *)
               if AAux.modifiable sigm qs' ty' && (AAux.atomic_qualified_unqualified AAux.is_real ty' ||
                                                   AAux.atomic_qualified_unqualified (AAux.is_pointer_to_complete_object sigm) ty') then
-                E.return (AilEunary uop e', GenRValueType (inject_type ty'))
+                E.return (AilEunary uop e', GenRValueType (inject_type (Cty.unatomic ty')))
               else
                 E.constraint_violation (with_cursor_from (locOf e) loc) (InvalidArgumentTypeUnaryIncrement ty')
           | _ ->
@@ -714,7 +714,7 @@ let rec annotate_expression annotate_block sigm gamm ctx (AnnotatedExpression ()
                        complete object type, but then #2 defers to §6.5.6#2 which does. *)
               if AAux.modifiable sigm qs' ty' && (AAux.atomic_qualified_unqualified AAux.is_real ty' ||
                                                   AAux.atomic_qualified_unqualified (AAux.is_pointer_to_complete_object sigm) ty') then
-                E.return (AilEunary uop e', GenRValueType (inject_type ty'))
+                E.return (AilEunary uop e', GenRValueType (inject_type (Cty.unatomic ty')))
               else
                 E.constraint_violation (with_cursor_from (locOf e) loc) (InvalidArgumentTypeUnaryDecrement ty')
           | _ ->
@@ -1585,8 +1585,9 @@ let rec annotate_expression annotate_block sigm gamm ctx (AnnotatedExpression ()
         match GenTypes.genTypeCategoryOf e1' with
           | GenLValueType qs ty _ -> 
               AAux.lvalue_coercion sigm ty >>= fun ty1 ->
+              let ty1 = Cty.unatomic ty1 in
                 if    AAux.modifiable sigm qs ty
-                   && (AAux.is_arithmetic ty1 && is_arithmetic gty2 || AAux.is_pointer_to_complete_object sigm ty && is_integer gty2) then
+                   && (AAux.is_arithmetic ty1 && is_arithmetic gty2 || AAux.is_pointer_to_complete_object sigm ty1 && is_integer gty2) then
                   E.return (AilEcompoundAssign e1' aop e2', GenRValueType (inject_type ty1))
                 else
                   E.constraint_violation (with_regions_and_cursor [locOf e1; locOf e2] (Just loc))
@@ -1601,8 +1602,9 @@ let rec annotate_expression annotate_block sigm gamm ctx (AnnotatedExpression ()
         match GenTypes.genTypeCategoryOf e1' with
           | GenLValueType qs ty _ -> 
               AAux.lvalue_coercion sigm ty >>= fun ty1 ->
+              let ty1 = Cty.unatomic ty1 in
                 if    AAux.modifiable sigm qs ty
-                   && (AAux.is_arithmetic ty1 && is_arithmetic gty2 || AAux.is_pointer_to_complete_object sigm ty && is_integer gty2) then
+                   && (AAux.is_arithmetic ty1 && is_arithmetic gty2 || AAux.is_pointer_to_complete_object sigm ty1 && is_integer gty2) then
                   E.return (AilEcompoundAssign e1' aop e2', GenRValueType (inject_type ty1))
                 else
                   E.constraint_violation (with_regions_and_cursor [locOf e1; locOf e2] (Just loc))
@@ -1616,7 +1618,8 @@ let rec annotate_expression annotate_block sigm gamm ctx (AnnotatedExpression ()
         annotate_rvalue e2     >>= fun (e2', gty2) ->
         match GenTypes.genTypeCategoryOf e1' with
           | GenLValueType qs ty _ ->
-              inject_type <$> AAux.lvalue_coercion sigm ty >>= fun gty1 ->
+              AAux.lvalue_coercion sigm ty >>= fun ty1 ->
+              let gty1 = inject_type (Cty.unatomic ty1) in
               if AAux.modifiable sigm qs ty then
                 well_typed_binary_arithmetic CompoundAssignmentOthersOperandTypes (locOf e1) loc (locOf e2) gty1 aop gty2 >>
                 E.return (AilEcompoundAssign e1' aop e2', GenRValueType gty1)
@@ -1942,7 +1945,10 @@ and annotate_arguments_aux add_casts annotate_block sigm gamm n_args n_params lo
           annotate_assignee Loc.unknown rvalue_ty arg_e >>= fun a_arg_e ->
           annotate_arguments_aux  args' params'         >>= fun a_args' ->
           let a_arg_e' =
-            if add_casts then
+            (* Assignment compatibility has already been checked. C casts
+               cannot represent structure/union argument conversion; retain
+               those values directly instead of constructing ill-typed AIL. *)
+            if add_casts && AAux.is_scalar rvalue_ty then
               AnnotatedExpression (GenRValueType (GenTypes.inject_type rvalue_ty)) [] (Loc.locOf a_arg_e)
                 (AilEcast no_qualifiers rvalue_ty a_arg_e)
             else

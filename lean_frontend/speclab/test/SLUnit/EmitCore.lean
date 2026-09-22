@@ -377,6 +377,8 @@ def ppAction_ : generic_action_ Unit sym → Except String String
     -- S2 surface: `seq_rmw(ty, ptr, x => e)` (postfix ++ in the
     -- harness loops) — CoreParser.lean pActionSeqRMW[Forward]
     pure s!"(SeqRMW {ppBool b} {← ppPexpr pe1} {← ppPexpr pe2} {← ppSym s} {← ppPexpr pe3})"
+  | AtomicUpdate b pe1 pe2 s pe3 mo => do
+    pure s!"(AtomicUpdate {ppBool b} {← ppPexpr pe1} {← ppPexpr pe2} {← ppSym s} {← ppPexpr pe3} {← ppMemOrder mo})"
   | _ => throw "ppAction_: unhandled action constructor"
 
 def ppAction : generic_action Unit Unit sym → Except String String

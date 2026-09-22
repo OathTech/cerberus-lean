@@ -2132,7 +2132,8 @@ and desugar_parameter_declaration is_first fundef param_decl =
           let (isAtomic, tquals_qs) = translate_type_qualifiers specifs.type_qualifiers in
           (* STD §6.9.1#7, sentence 4 *)
           let (_qs, _ty) =
-            mk_qs_ctype (Ctype.combine_qualifiers specs_qs tquals_qs) base_ty in
+            mk_qs_ctype (Ctype.combine_qualifiers specs_qs tquals_qs)
+              (if isAtomic then Ctype.mk_ctype_atomic base_ty else base_ty) in
           
           if AilTypesAux.is_void _ty then
             match fundef with
@@ -2173,7 +2174,7 @@ and desugar_parameter_declaration is_first fundef param_decl =
                   let dur = determinate_storage_duration link scs in
                   E.register_internal_object_declaration sym (Loc.locOf ident, dur, isRegister, Nothing, qs, ty) >>
                   E.return (Just ident, ( qs
-                                      , if isAtomic then Ctype.mk_ctype_atomic ty else ty
+                                      , ty
                                       , isRegister ))
             end
     | PDeclaration_abs_decl specifs abs_decltor_opt ->
@@ -2191,10 +2192,11 @@ and desugar_parameter_declaration is_first fundef param_decl =
           let (isAtomic, tquals_qs) = translate_type_qualifiers specifs.type_qualifiers in
           (* STD §6.9.1#7, sentence 4 *)
           let (_qs, _ty) =
-            mk_qs_ctype (Ctype.combine_qualifiers specs_qs tquals_qs) base_ty in
+            mk_qs_ctype (Ctype.combine_qualifiers specs_qs tquals_qs)
+              (if isAtomic then Ctype.mk_ctype_atomic base_ty else base_ty) in
           let (qs, ty) = AilTypesAux.adjust _qs _ty in
           let ret = (Nothing, ( qs
-                              , if isAtomic then Ctype.mk_ctype_atomic ty else ty
+                              , ty
                               , List.elem SC_register specifs.storage_classes )) in
           match fundef with
             | IsFunDef ->
@@ -2630,8 +2632,8 @@ and desugar_init_declarator attrs isAtomic has_alignment base_qs base_ty (scs: l
   match idecltor with
     | InitDecl loc decltor Nothing ->
         desugar_declarator NotFunDef decltor >>= fun ((ident_attrs, ident), mk_qs_ctype) ->
-        let (qs, _ty) = mk_qs_ctype base_qs base_ty in
-        let ty = if isAtomic then wrap_atomic _ty else _ty in
+        let atomic_base_ty = if isAtomic then Ctype.mk_ctype_atomic base_ty else base_ty in
+        let (qs, ty) = mk_qs_ctype base_qs atomic_base_ty in
         let mk_desug_init =
           fun () -> E.return Nothing in
         (* STD §6.9.2#2, sentence 1 *)
@@ -2662,8 +2664,8 @@ and desugar_init_declarator attrs isAtomic has_alignment base_qs base_ty (scs: l
           E.fail loc (Errors.Desugar_MiscViolation Errors.TypedefInitializer)
         else
           desugar_declarator NotFunDef decltor >>= fun ((ident_attrs, ident), mk_qs_ctype) ->
-          let (qs, _ty) = mk_qs_ctype base_qs base_ty in
-          let ty = if isAtomic then wrap_atomic _ty else _ty in
+          let atomic_base_ty = if isAtomic then Ctype.mk_ctype_atomic base_ty else base_ty in
+          let (qs, ty) = mk_qs_ctype base_qs atomic_base_ty in
           (* TODO: check that we really never have parameter objects here *)
           let kind = if AilTypesAux.is_function ty then E.OK_function else E.OK_object false in
           (* TODO: I don't like the fact that we are using this function directly here *)
@@ -2713,9 +2715,10 @@ and desugar_struct_declaration struct_decl =
             (* NOTE: the checks for §6.7.2.1#3 are done by desugar_type_specifiers because
                we need to special case the last member. *)
             let (qs, ty) =
-              mk_qs_ctype (Ctype.combine_qualifiers tquals_qs specs_qs) base_ty in
+              mk_qs_ctype (Ctype.combine_qualifiers tquals_qs specs_qs)
+                (if isAtomic then Ctype.mk_ctype_atomic base_ty else base_ty) in
             desugar_alignment_specifiers (Loc.locOf ident) ty align_specs >>= fun align_opt ->
-            E.return (ident, (Annot.combine_attributes outer_attrs attrs, align_opt, qs, if isAtomic then wrap_atomic ty else ty))
+            E.return (ident, (Annot.combine_attributes outer_attrs attrs, align_opt, qs, ty))
           ) sdecltors
     
     | Struct_assert sa_decl ->
@@ -2919,8 +2922,9 @@ and desugar_type_name (Type_name specs tquals align_specs abs_decltor_opt) =
   let (isAtomic, tquals_qs) = translate_type_qualifiers tquals in
   
   let (qs, ty) =
-    mk_qs_ctype (Ctype.combine_qualifiers specs_qs tquals_qs) base_ty in
-  E.return (qs, (if isAtomic then wrap_atomic ty else ty))
+    mk_qs_ctype (Ctype.combine_qualifiers specs_qs tquals_qs)
+      (if isAtomic then Ctype.mk_ctype_atomic base_ty else base_ty) in
+  E.return (qs, ty)
 
 
 
@@ -3556,9 +3560,12 @@ and desugar_declaration_base attrs specifs idecltors =
                pattern match on [ty]) *)
             let (isAtomic, tquals_qs) = translate_type_qualifiers specifs.type_qualifiers in
             let base_qs = Ctype.combine_qualifiers specs_qs tquals_qs in
-            desugar_init_declarator_BROKEN base_qs base_ty specifs.storage_classes init >>= fun (ident, is_tentative, (qs, _ty), mk_desug_init) ->
+            (* Both the declaration and its delayed initializer must receive
+               the qualified base type, before pointer/array declarators. *)
+            let atomic_base_ty = if isAtomic then Ctype.mk_ctype_atomic base_ty else base_ty in
+            desugar_init_declarator_BROKEN base_qs atomic_base_ty specifs.storage_classes init >>= fun (ident, is_tentative, (qs, cty), mk_desug_init) ->
             let ident_loc = Loc.locOf ident in
-            let (Ctype.Ctype _ ty as cty) = if isAtomic then Ctype.mk_ctype_atomic _ty else _ty in
+            let Ctype.Ctype _ ty = cty in
             
             if is_tentative then
               (* NOTE: this shouldn't be possible since tentative definition are file scoped *)

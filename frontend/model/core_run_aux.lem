@@ -672,6 +672,8 @@ and convert_action_ act_ =
         SeqRMW b (convert_pexpr pe1) (convert_pexpr pe2) sym (convert_pexpr pe3)
     | Load pe1 pe2 mo ->
         Load (convert_pexpr pe1) (convert_pexpr pe2) mo
+    | AtomicUpdate b pe1 pe2 sym pe3 mo ->
+        AtomicUpdate b (convert_pexpr pe1) (convert_pexpr pe2) sym (convert_pexpr pe3) mo
     | RMW pe1 pe2 pe3 pe4 mo1 mo2 ->
         RMW (convert_pexpr pe1) (convert_pexpr pe2) (convert_pexpr pe3) (convert_pexpr pe4) mo1 mo2
     | Fence mo ->

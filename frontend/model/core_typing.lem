@@ -1287,6 +1287,23 @@ let infer_action tagDefs env (Action loc annot act_) =
                 E.fail loc (CoreTyping_TODO "SeqRMW, not storable")
 *)
         end
+    | AtomicUpdate b pe1 pe2 sym pe3 mo ->
+        match pe1 with
+          | Pexpr _ _ (PEval (Vctype ty)) ->
+              let tpe1 = Pexpr [] BTy_ctype (PEval (Vctype ty)) in
+              match core_object_type_of_ctype ty with
+                | Just lvalue_oTy ->
+                    let env' = insert_tdecl (Sym sym) (TDsym (BTy_loaded lvalue_oTy)) env in
+                    typecheck_export_pexpr tagDefs env (BTy_object OTy_pointer) pe2 >>= fun tpe2 ->
+                    typecheck_export_pexpr tagDefs env' (BTy_loaded lvalue_oTy)  pe3 >>= fun tpe3 ->
+                    E.return (BTy_loaded lvalue_oTy, AtomicUpdate b tpe1 tpe2 sym tpe3 mo)
+                | Nothing ->
+                    E.fail loc (CoreTyping_TODO "AtomicUpdate, not oTy")
+              end
+          | _ ->
+                E.fail loc (CoreTyping_TODO "first operand of AtomicUpdate must be a value")
+
+        end
     | Load pe1 pe2 mo ->
         match pe1 with
           | Pexpr _ _ (PEval (Vctype ty)) ->
@@ -1432,6 +1449,24 @@ let typecheck_action tagDefs env bTy (Action loc annot act_) =
               end
           | _ ->
                 E.fail loc (CoreTyping_TODO "first operand of SeqRMW must be a value")
+
+        end
+    | AtomicUpdate b pe1 pe2 sym pe3 mo ->
+        match pe1 with
+          | Pexpr _ _ (PEval (Vctype ty)) ->
+              let tpe1 = Pexpr [] BTy_ctype (PEval (Vctype ty)) in
+              match core_object_type_of_ctype ty with
+                | Just lvalue_oTy ->
+                    guard_match loc "atomic_update()" bTy (BTy_loaded lvalue_oTy) >>
+                    let env' = insert_tdecl (Sym sym) (TDsym (BTy_loaded lvalue_oTy)) env in
+                    typecheck_export_pexpr tagDefs env (BTy_object OTy_pointer) pe2 >>= fun tpe2 ->
+                    typecheck_export_pexpr tagDefs env' (BTy_loaded lvalue_oTy)  pe3 >>= fun tpe3 ->
+                    E.return (AtomicUpdate b tpe1 tpe2 sym tpe3 mo)
+                | Nothing ->
+                    E.fail loc (CoreTyping_TODO "AtomicUpdate, not oTy")
+              end
+          | _ ->
+                E.fail loc (CoreTyping_TODO "first operand of AtomicUpdate must be a value")
 
         end
   | Load pe1 pe2 mo ->
@@ -1680,6 +1715,8 @@ and typecheck_expr callconv tagDefs (env: typing_env) expected_bTy (Expr annot e
         ) (List.zip bTys pes) >>= fun pes' ->
         guard_match loc "memop()" expected_bTy ret_bTy >>
         E.return (Ememop mem_annot memop pes')
+    | Eaction (Paction Neg (Action _ _ (AtomicUpdate _ _ _ _ _ _))) ->
+        E.fail loc (CoreTyping_TODO "AtomicUpdate requires positive polarity")
     | (Eaction (Paction p act)) ->
         (Eaction -| Paction p)
           <$> typecheck_action tagDefs env expected_bTy act

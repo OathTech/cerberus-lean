@@ -572,9 +572,16 @@ let seq_rmw loc with_forward ty oTy x sym upd =
 
 
 
+(* This constructor has explicit atomicity; it never uses the ordinary
+   SeqRMW compatibility lowering into two independently visible accesses. *)
+let atomic_update loc with_forward ty ptr sym upd order =
+  Expr [] (Eaction (Paction Pos (Action loc default
+    (AtomicUpdate with_forward ty ptr sym upd order))))
+
 (* for a given Ctype returns the corresponding "zero" value *)
 (*val     zeros: AilSyntax.tag_definition -> ctype -> pexpr *)
 (* see §6.7.9#10 *)
+
 let rec zeros_aux tagDefs (Ctype _ ty) =
   let zero_ival = Mem.integer_ival 0 in
   match ty with
@@ -1091,6 +1098,11 @@ and subst_sym_action_ sym cval = function
         begin
           if sym = sym' then pe3 else subst_sym_pexpr sym cval pe3
         end
+  | AtomicUpdate b pe1 pe2 sym' pe3 mo ->
+      AtomicUpdate b (subst_sym_pexpr sym cval pe1) (subst_sym_pexpr sym cval pe2) sym'
+        begin
+          if sym = sym' then pe3 else subst_sym_pexpr sym cval pe3
+        end mo
   | RMW pe1 pe2 pe3 pe4 mo1 mo2 ->
       RMW (subst_sym_pexpr sym cval pe1) (subst_sym_pexpr sym cval pe2)
         (subst_sym_pexpr sym cval pe3) (subst_sym_pexpr sym cval pe4) mo1 mo2
@@ -1363,6 +1375,11 @@ and unsafe_subst_sym_action_ a pe' = function
         begin
           if a = sym' then pe3 else unsafe_subst_sym_pexpr a pe' pe3
         end
+  | AtomicUpdate b pe1 pe2 sym' pe3 mo ->
+      AtomicUpdate b (unsafe_subst_sym_pexpr a pe' pe1) (unsafe_subst_sym_pexpr a pe' pe2) sym'
+        begin
+          if a = sym' then pe3 else unsafe_subst_sym_pexpr a pe' pe3
+        end mo
   | RMW pe1 pe2 pe3 pe4 mo1 mo2 ->
       RMW (unsafe_subst_sym_pexpr a pe' pe1) (unsafe_subst_sym_pexpr a pe' pe2)
         (unsafe_subst_sym_pexpr a pe' pe3) (unsafe_subst_sym_pexpr a pe' pe4) mo1 mo2
@@ -1529,6 +1546,66 @@ let rec subst_pattern (Pattern _ pat) pe' expr =
         Nothing
   end
 
+
+
+(* Structural conversion for the effect-free arithmetic expression produced
+   while lowering AtomicUpdate. Retaining lexical lets avoids substitution and
+   its possible growth. Effectful Core constructs fail explicitly with Nothing.
+   This does not use to_pure's execution-arena shape hypothesis. *)
+val to_pure_structural: forall 'a. expr 'a -> maybe pexpr
+val to_pures_structural: forall 'a. list (expr 'a) -> maybe (list pexpr)
+val pure_branches_structural: forall 'a. list (pattern * expr 'a) -> maybe (list (pattern * pexpr))
+let rec to_pure_structural e =
+  match e with
+    | Expr annots e0 ->
+      match e0 with
+        | Epure pe -> Just pe
+        | Elet pat pe body ->
+            Maybe.map (fun rest -> Pexpr annots () (PElet pat pe rest)) (to_pure_structural body)
+        | Ewseq pat first rest ->
+            match (to_pure_structural first, to_pure_structural rest) with
+              | (Just pe1, Just pe2) -> Just (Pexpr annots () (PElet pat pe1 pe2))
+              | _ -> Nothing
+            end
+        | Esseq pat first rest ->
+            match (to_pure_structural first, to_pure_structural rest) with
+              | (Just pe1, Just pe2) -> Just (Pexpr annots () (PElet pat pe1 pe2))
+              | _ -> Nothing
+            end
+        | Eunseq es ->
+            Maybe.map (fun pes -> Pexpr annots () (PEctor Ctuple pes)) (to_pures_structural es)
+        | Eif pe left right ->
+            match (to_pure_structural left, to_pure_structural right) with
+              | (Just pe1, Just pe2) -> Just (Pexpr annots () (PEif pe pe1 pe2))
+              | _ -> Nothing
+            end
+        | Ecase pe branches ->
+            Maybe.map (fun bs -> Pexpr annots () (PEcase pe bs)) (pure_branches_structural branches)
+        | Ebound body -> to_pure_structural body
+        | _ -> Nothing
+      end
+  end
+and to_pures_structural es =
+  match es with
+    | [] -> Just []
+    | e :: rest ->
+        match (to_pure_structural e, to_pures_structural rest) with
+          | (Just pe, Just pes) -> Just (pe :: pes)
+          | _ -> Nothing
+        end
+  end
+and pure_branches_structural branches =
+  match branches with
+    | [] -> Just []
+    | (pat, e) :: rest ->
+        match (to_pure_structural e, pure_branches_structural rest) with
+          | (Just pe, Just bs) -> Just ((pat, pe) :: bs)
+          | _ -> Nothing
+        end
+  end
+declare {lean} structural val to_pure_structural
+declare {lean} structural val to_pures_structural
+declare {lean} structural val pure_branches_structural
 
 
 val     to_pure: forall 'a. expr 'a -> maybe pexpr

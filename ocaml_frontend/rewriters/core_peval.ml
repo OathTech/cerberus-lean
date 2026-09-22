@@ -410,6 +410,11 @@ and subst_sym_action_2 sym z = function
         else
           subst_sym_pexpr2 sym z pe3 in
       SeqRMW (b, subst_sym_pexpr2 sym z pe1, subst_sym_pexpr2 sym z pe2, rmw_sym, pe3')
+  | AtomicUpdate (b, pe1, pe2, update_sym, pe3, mo) ->
+      let pe3' = if Symbol.symbolEquality sym update_sym then pe3
+                 else subst_sym_pexpr2 sym z pe3 in
+      AtomicUpdate (b, subst_sym_pexpr2 sym z pe1, subst_sym_pexpr2 sym z pe2,
+                    update_sym, pe3', mo)
   | RMW0 (pe1, pe2, pe3, pe4, mo1, mo2) ->
       RMW0 ( subst_sym_pexpr2 sym z pe1, subst_sym_pexpr2 sym z pe2
            , subst_sym_pexpr2 sym z pe3, subst_sym_pexpr2 sym z pe4, mo1, mo2 )
