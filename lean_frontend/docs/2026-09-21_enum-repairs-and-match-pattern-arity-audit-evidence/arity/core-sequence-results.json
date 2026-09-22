@@ -1,0 +1,398 @@
+[
+  {
+    "case": "seq-strong-mismatch",
+    "engine": "base-default",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/seq-strong-mismatch.core"
+    ],
+    "status": 1,
+    "protocol_error": "empty or truncated observation"
+  },
+  {
+    "case": "seq-strong-mismatch",
+    "engine": "base-typed",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/seq-strong-mismatch.core"
+    ],
+    "status": 1,
+    "protocol_error": "empty or truncated observation"
+  },
+  {
+    "case": "seq-strong-mismatch",
+    "engine": "head-default",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/seq-strong-mismatch.core"
+    ],
+    "status": 1,
+    "protocol_error": "empty or truncated observation"
+  },
+  {
+    "case": "seq-strong-mismatch",
+    "engine": "head-typed",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/seq-strong-mismatch.core"
+    ],
+    "status": 1,
+    "protocol_error": "empty or truncated observation"
+  },
+  {
+    "case": "seq-strong-mismatch",
+    "engine": "pristine-default",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/seq-strong-mismatch.core"
+    ],
+    "status": 1,
+    "protocol_error": "empty or truncated observation"
+  },
+  {
+    "case": "seq-strong-mismatch",
+    "engine": "pristine-typed",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/seq-strong-mismatch.core"
+    ],
+    "status": 1,
+    "protocol_error": "empty or truncated observation"
+  },
+  {
+    "case": "seq-weak-mismatch",
+    "engine": "base-default",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/seq-weak-mismatch.core"
+    ],
+    "status": 1,
+    "protocol_error": "empty or truncated observation"
+  },
+  {
+    "case": "seq-weak-mismatch",
+    "engine": "base-typed",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/seq-weak-mismatch.core"
+    ],
+    "status": 1,
+    "protocol_error": "empty or truncated observation"
+  },
+  {
+    "case": "seq-weak-mismatch",
+    "engine": "head-default",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/seq-weak-mismatch.core"
+    ],
+    "status": 1,
+    "protocol_error": "empty or truncated observation"
+  },
+  {
+    "case": "seq-weak-mismatch",
+    "engine": "head-typed",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/seq-weak-mismatch.core"
+    ],
+    "status": 1,
+    "protocol_error": "empty or truncated observation"
+  },
+  {
+    "case": "seq-weak-mismatch",
+    "engine": "pristine-default",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/seq-weak-mismatch.core"
+    ],
+    "status": 1,
+    "protocol_error": "empty or truncated observation"
+  },
+  {
+    "case": "seq-weak-mismatch",
+    "engine": "pristine-typed",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/seq-weak-mismatch.core"
+    ],
+    "status": 1,
+    "protocol_error": "empty or truncated observation"
+  },
+  {
+    "case": "unseq-strong-mismatch",
+    "engine": "base-default",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-strong-mismatch.core"
+    ],
+    "status": 0,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "unseq-strong-mismatch",
+    "engine": "base-typed",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-strong-mismatch.core"
+    ],
+    "status": 0,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "unseq-strong-mismatch",
+    "engine": "head-default",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-strong-mismatch.core"
+    ],
+    "status": 0,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "unseq-strong-mismatch",
+    "engine": "head-typed",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-strong-mismatch.core"
+    ],
+    "status": 0,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "unseq-strong-mismatch",
+    "engine": "pristine-default",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-strong-mismatch.core"
+    ],
+    "status": 0,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "unseq-strong-mismatch",
+    "engine": "pristine-typed",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-strong-mismatch.core"
+    ],
+    "status": 0,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "unseq-weak-mismatch",
+    "engine": "base-default",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-weak-mismatch.core"
+    ],
+    "status": 0,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "unseq-weak-mismatch",
+    "engine": "base-typed",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-weak-mismatch.core"
+    ],
+    "status": 0,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "unseq-weak-mismatch",
+    "engine": "head-default",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-weak-mismatch.core"
+    ],
+    "status": 0,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "unseq-weak-mismatch",
+    "engine": "head-typed",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-weak-mismatch.core"
+    ],
+    "status": 0,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "unseq-weak-mismatch",
+    "engine": "pristine-default",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-weak-mismatch.core"
+    ],
+    "status": 0,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  },
+  {
+    "case": "unseq-weak-mismatch",
+    "engine": "pristine-typed",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-weak-mismatch.core"
+    ],
+    "status": 0,
+    "tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ]
+  }
+]

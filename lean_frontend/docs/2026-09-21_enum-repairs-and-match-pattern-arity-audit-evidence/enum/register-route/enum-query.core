@@ -1,0 +1,2 @@
+proc main (): eff loaded integer :=
+  pure (Specified (if is_signed('enum E') then 1 else 0))

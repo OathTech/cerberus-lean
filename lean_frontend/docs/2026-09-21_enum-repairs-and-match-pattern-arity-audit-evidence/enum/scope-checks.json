@@ -1,0 +1,67 @@
+{
+  "scripts/gcc_oracle_baseline.txt": {
+    "before": 2001,
+    "after": 2014,
+    "added": {
+      "tests/immaculate/nolibc/d3-s7-callback-return.c": "tests/immaculate/nolibc/d3-s7-callback-return.c AGREE -",
+      "tests/immaculate/nolibc/d3-s8-sizeof-enum-expr.c": "tests/immaculate/nolibc/d3-s8-sizeof-enum-expr.c AGREE -",
+      "tests/immaculate/nolibc/d3-s7-callback-param.c": "tests/immaculate/nolibc/d3-s7-callback-param.c AGREE -",
+      "tests/immaculate/nolibc/d3-s4c-extern-redecl-enum.c": "tests/immaculate/nolibc/d3-s4c-extern-redecl-enum.c AGREE -",
+      "tests/immaculate/nolibc/d3-s4a-tentative-enum.c": "tests/immaculate/nolibc/d3-s4a-tentative-enum.c AGREE -",
+      "tests/immaculate/nolibc/d3-s7-callback-assign.c": "tests/immaculate/nolibc/d3-s7-callback-assign.c AGREE -",
+      "tests/immaculate/nolibc/d3-s7-callback-init.c": "tests/immaculate/nolibc/d3-s7-callback-init.c AGREE -",
+      "tests/immaculate/nolibc/d3-s7-callback-conditional.c": "tests/immaculate/nolibc/d3-s7-callback-conditional.c AGREE -",
+      "tests/immaculate/nolibc/d3-s4b-fdecl-enum-param.c": "tests/immaculate/nolibc/d3-s4b-fdecl-enum-param.c AGREE O2_AGREE",
+      "tests/immaculate/nolibc/d3-s5b-types-compatible-enum.c": "tests/immaculate/nolibc/d3-s5b-types-compatible-enum.c AGREE -",
+      "tests/immaculate/nolibc/d3-s3-alignas-enum.c": "tests/immaculate/nolibc/d3-s3-alignas-enum.c AGREE -",
+      "tests/immaculate/nolibc/d3-s7-callback-equality.c": "tests/immaculate/nolibc/d3-s7-callback-equality.c AGREE -",
+      "tests/immaculate/nolibc/d3-s5a-generic-enum.c": "tests/immaculate/nolibc/d3-s5a-generic-enum.c AGREE -"
+    },
+    "removed": [],
+    "changed": {}
+  },
+  "tests/immaculate/baseline.txt": {
+    "before": 75,
+    "after": 81,
+    "added": {
+      "d3-s7-callback-equality": "d3-s7-callback-equality MATCH | L=VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+      "d3-s7-callback-assign": "d3-s7-callback-assign MATCH | L=VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+      "d3-s7-callback-param": "d3-s7-callback-param MATCH | L=VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+      "d3-s7-callback-conditional": "d3-s7-callback-conditional MATCH | L=VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+      "d3-s7-callback-init": "d3-s7-callback-init MATCH | L=VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}",
+      "d3-s7-callback-return": "d3-s7-callback-return MATCH | L=VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    },
+    "removed": [],
+    "changed": {}
+  },
+  "worker_report": {
+    "status": "passed",
+    "source_unchanged": true,
+    "selection_complete": true,
+    "started_utc": "20260921T015126.988243Z",
+    "finished_utc": "2026-09-21T03:23:02.570402+00:00",
+    "source_equal": true,
+    "external_equal": true,
+    "artifact_differences": [],
+    "witness_sha_match": {
+      "tests/immaculate/nolibc/d3-s7-callback-assign.c": true,
+      "tests/immaculate/nolibc/d3-s7-callback-conditional.c": true,
+      "tests/immaculate/nolibc/d3-s7-callback-equality.c": true,
+      "tests/immaculate/nolibc/d3-s7-callback-init.c": true,
+      "tests/immaculate/nolibc/d3-s7-callback-param.c": true,
+      "tests/immaculate/nolibc/d3-s7-callback-return.c": true
+    },
+    "all_lanes_pass": true
+  },
+  "reader_consumers": {
+    "frontend/model/mem.lem": 20,
+    "frontend/model/implementation.lem": 2
+  },
+  "overlapping_changed_paths": [
+    "frontend/model/core_typing.lem",
+    "lean_frontend/Core_aux_lemMeasureProofs.lean",
+    "lean_frontend/lakefile.toml",
+    "scripts/fork_drift_manifest.txt",
+    "scripts/test_unit.sh"
+  ]
+}

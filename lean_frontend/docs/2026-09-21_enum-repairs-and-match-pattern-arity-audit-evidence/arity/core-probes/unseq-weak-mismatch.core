@@ -1,0 +1,3 @@
+proc main (): eff loaded integer :=
+  let weak (a: integer, b: integer) = unseq(pure (1), pure (2), pure (3)) in
+    pure (Specified (a + b))

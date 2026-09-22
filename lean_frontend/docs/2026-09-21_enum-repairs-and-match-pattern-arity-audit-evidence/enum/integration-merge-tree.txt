@@ -1,0 +1,13 @@
+a4c65c0495cf46663bb6007ec067615bafcc8e19
+lean_frontend/lakefile.toml
+scripts/fork_drift_manifest.txt
+scripts/test_unit.sh
+
+Auto-merging frontend/model/core_typing.lem
+Auto-merging lean_frontend/Core_aux_lemMeasureProofs.lean
+Auto-merging lean_frontend/lakefile.toml
+CONFLICT (content): Merge conflict in lean_frontend/lakefile.toml
+Auto-merging scripts/fork_drift_manifest.txt
+CONFLICT (content): Merge conflict in scripts/fork_drift_manifest.txt
+Auto-merging scripts/test_unit.sh
+CONFLICT (content): Merge conflict in scripts/test_unit.sh

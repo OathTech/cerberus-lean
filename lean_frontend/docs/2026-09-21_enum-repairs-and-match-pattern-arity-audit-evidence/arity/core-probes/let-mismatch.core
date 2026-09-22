@@ -1,0 +1,3 @@
+proc main (): eff loaded integer :=
+  let (a: integer, b: integer) = (1, 2, 3) in
+    pure (Specified (a + b))

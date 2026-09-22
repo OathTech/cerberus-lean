@@ -1,0 +1,92 @@
+[
+  {
+    "case": "signed-control",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/register-route/signed-control.core"
+    ],
+    "status": 0,
+    "stdout": "Defined {value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+    "stderr": "Time spent: 0.023025 seconds\n"
+  },
+  {
+    "case": "signed-control",
+    "engine": "pristine",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/register-route/signed-control.core"
+    ],
+    "status": 0,
+    "stdout": "Defined {value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+    "stderr": "Time spent: 0.022653 seconds\n"
+  },
+  {
+    "case": "signed-control",
+    "engine": "lean-parse-only",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--parse-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/register-route/signed-control.core"
+    ],
+    "status": 2,
+    "stdout": "",
+    "stderr": "cerberus-lean: refused \u2014 LEAN_ABORT_ON_PANIC is not set: a Lean panic! (this port's fail-stop mirror of every OCaml failwith/assert/uncaught exception) would print and then CONTINUE with a default value, converting a crash into a verdict; set LEAN_ABORT_ON_PANIC=1 (every harness does: scripts/common.sh run_cerberus_lean; see VALIDATION.md, zero-discrepancy Z2-FL-03)\n"
+  },
+  {
+    "case": "enum-query",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/register-route/enum-query.core"
+    ],
+    "status": 1,
+    "stdout": "",
+    "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/register-route/enum-query.core:2:34: error: unknown ctype 'enum'\n  pure (Specified (if is_signed('enum E') then 1 else 0))\n                                 ^~~~ \nTime spent: 0.023039 seconds\n"
+  },
+  {
+    "case": "enum-query",
+    "engine": "pristine",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/register-route/enum-query.core"
+    ],
+    "status": 1,
+    "stdout": "",
+    "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/register-route/enum-query.core:2:34: error: unknown ctype 'enum'\n  pure (Specified (if is_signed('enum E') then 1 else 0))\n                                 ^~~~ \nTime spent: 0.021806 seconds\n"
+  },
+  {
+    "case": "enum-query",
+    "engine": "lean-parse-only",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--parse-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/register-route/enum-query.core"
+    ],
+    "status": 2,
+    "stdout": "",
+    "stderr": "cerberus-lean: refused \u2014 LEAN_ABORT_ON_PANIC is not set: a Lean panic! (this port's fail-stop mirror of every OCaml failwith/assert/uncaught exception) would print and then CONTINUE with a default value, converting a crash into a verdict; set LEAN_ABORT_ON_PANIC=1 (every harness does: scripts/common.sh run_cerberus_lean; see VALIDATION.md, zero-discrepancy Z2-FL-03)\n"
+  }
+]

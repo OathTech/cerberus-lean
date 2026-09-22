@@ -1,0 +1,22 @@
+{
+  "enum": {
+    "head": "e2fc391f21fd659c74f4dfdecdf7cc9fd45a2009",
+    "started_utc": "20260921T222015.125247Z",
+    "finished_utc": "2026-09-21T23:48:40.333234+00:00",
+    "lanes": 39,
+    "source_equal": true,
+    "external_equal": true,
+    "artifacts_equal": true,
+    "report_sha256": "4739ceea27066276fced0e67b614d754c3b66e978a6e61ba373b6e4a48bb7001"
+  },
+  "arity": {
+    "head": "14457f1a0b30e1de3762310af51684bf6d2e347f",
+    "started_utc": "20260921T234840.383483Z",
+    "finished_utc": "2026-09-22T01:17:50.550134+00:00",
+    "lanes": 39,
+    "source_equal": true,
+    "external_equal": true,
+    "artifacts_equal": true,
+    "report_sha256": "510c291f2773074367559a0acc092180c7dba7be2ef79e8f866d3da688f85828"
+  }
+}

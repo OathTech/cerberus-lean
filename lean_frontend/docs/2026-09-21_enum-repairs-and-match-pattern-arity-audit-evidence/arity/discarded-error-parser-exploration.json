@@ -1,0 +1,212 @@
+[
+  {
+    "case": "pure-let-discarded-error",
+    "engine": "base",
+    "typed": false,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/pure-let-discarded-error.core"
+    ],
+    "status": 1,
+    "stdout": "",
+    "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/pure-let-discarded-error.core:2:72: error: unexpected token '\"'\n  pure (Specified (let (a: integer, b: integer) = (1, 2, error(\"surplus\", 3)) in a + b))\n                                                                       ^ \nTime spent: 0.047485 seconds\n"
+  },
+  {
+    "case": "pure-let-discarded-error",
+    "engine": "base",
+    "typed": true,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/pure-let-discarded-error.core"
+    ],
+    "status": 1,
+    "stdout": "",
+    "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/pure-let-discarded-error.core:2:72: error: unexpected token '\"'\n  pure (Specified (let (a: integer, b: integer) = (1, 2, error(\"surplus\", 3)) in a + b))\n                                                                       ^ \nTime spent: 0.034389 seconds\n"
+  },
+  {
+    "case": "pure-let-discarded-error",
+    "engine": "head",
+    "typed": false,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/pure-let-discarded-error.core"
+    ],
+    "status": 1,
+    "stdout": "",
+    "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/pure-let-discarded-error.core:2:72: error: unexpected token '\"'\n  pure (Specified (let (a: integer, b: integer) = (1, 2, error(\"surplus\", 3)) in a + b))\n                                                                       ^ \nTime spent: 0.039464 seconds\n"
+  },
+  {
+    "case": "pure-let-discarded-error",
+    "engine": "head",
+    "typed": true,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/pure-let-discarded-error.core"
+    ],
+    "status": 1,
+    "stdout": "",
+    "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/pure-let-discarded-error.core:2:72: error: unexpected token '\"'\n  pure (Specified (let (a: integer, b: integer) = (1, 2, error(\"surplus\", 3)) in a + b))\n                                                                       ^ \nTime spent: 0.037359 seconds\n"
+  },
+  {
+    "case": "pure-let-discarded-error",
+    "engine": "pristine",
+    "typed": false,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/pure-let-discarded-error.core"
+    ],
+    "status": 1,
+    "stdout": "",
+    "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/pure-let-discarded-error.core:2:72: error: unexpected token '\"'\n  pure (Specified (let (a: integer, b: integer) = (1, 2, error(\"surplus\", 3)) in a + b))\n                                                                       ^ \nTime spent: 0.035578 seconds\n"
+  },
+  {
+    "case": "pure-let-discarded-error",
+    "engine": "pristine",
+    "typed": true,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/pure-let-discarded-error.core"
+    ],
+    "status": 1,
+    "stdout": "",
+    "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/pure-let-discarded-error.core:2:72: error: unexpected token '\"'\n  pure (Specified (let (a: integer, b: integer) = (1, 2, error(\"surplus\", 3)) in a + b))\n                                                                       ^ \nTime spent: 0.034595 seconds\n"
+  },
+  {
+    "case": "unseq-discarded-error",
+    "engine": "base",
+    "typed": false,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-discarded-error.core"
+    ],
+    "status": 1,
+    "stdout": "",
+    "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-discarded-error.core:2:85: error: unexpected token '\"'\n  let weak (a: integer, b: integer) = unseq(pure (1), pure (2), pure (error(\"surplus\", 3))) in\n                                                                                    ^ \nTime spent: 0.033168 seconds\n"
+  },
+  {
+    "case": "unseq-discarded-error",
+    "engine": "base",
+    "typed": true,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-discarded-error.core"
+    ],
+    "status": 1,
+    "stdout": "",
+    "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-discarded-error.core:2:85: error: unexpected token '\"'\n  let weak (a: integer, b: integer) = unseq(pure (1), pure (2), pure (error(\"surplus\", 3))) in\n                                                                                    ^ \nTime spent: 0.034238 seconds\n"
+  },
+  {
+    "case": "unseq-discarded-error",
+    "engine": "head",
+    "typed": false,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-discarded-error.core"
+    ],
+    "status": 1,
+    "stdout": "",
+    "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-discarded-error.core:2:85: error: unexpected token '\"'\n  let weak (a: integer, b: integer) = unseq(pure (1), pure (2), pure (error(\"surplus\", 3))) in\n                                                                                    ^ \nTime spent: 0.038167 seconds\n"
+  },
+  {
+    "case": "unseq-discarded-error",
+    "engine": "head",
+    "typed": true,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-discarded-error.core"
+    ],
+    "status": 1,
+    "stdout": "",
+    "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-discarded-error.core:2:85: error: unexpected token '\"'\n  let weak (a: integer, b: integer) = unseq(pure (1), pure (2), pure (error(\"surplus\", 3))) in\n                                                                                    ^ \nTime spent: 0.048222 seconds\n"
+  },
+  {
+    "case": "unseq-discarded-error",
+    "engine": "pristine",
+    "typed": false,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-discarded-error.core"
+    ],
+    "status": 1,
+    "stdout": "",
+    "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-discarded-error.core:2:85: error: unexpected token '\"'\n  let weak (a: integer, b: integer) = unseq(pure (1), pure (2), pure (error(\"surplus\", 3))) in\n                                                                                    ^ \nTime spent: 0.035908 seconds\n"
+  },
+  {
+    "case": "unseq-discarded-error",
+    "engine": "pristine",
+    "typed": true,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-discarded-error.core"
+    ],
+    "status": 1,
+    "stdout": "",
+    "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-discarded-error.core:2:85: error: unexpected token '\"'\n  let weak (a: integer, b: integer) = unseq(pure (1), pure (2), pure (error(\"surplus\", 3))) in\n                                                                                    ^ \nTime spent: 0.034068 seconds\n"
+  }
+]

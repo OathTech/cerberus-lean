@@ -1,0 +1,27 @@
+{
+  "ocaml_frontend/generated": {
+    "added": [],
+    "removed": [],
+    "changed": [
+      "core_aux.ml",
+      "core_typing.ml"
+    ]
+  },
+  "lean_frontend/generated": {
+    "added": [],
+    "removed": [],
+    "changed": [
+      "Core_aux.lean",
+      "Core_aux_lemMeasureProofs.lean",
+      "Core_typing.lean"
+    ]
+  },
+  "measure_statement_identical": true,
+  "head": "14457f1a0b30e1de3762310af51684bf6d2e347f",
+  "fresh_stamps": {
+    "driver_fresh.oracle.sha256": "commit 14457f1a0b30e1de3762310af51684bf6d2e347f\nbin eac509e2ee0968e9d1ab205ce657d7e24b55da4014b4bda718e46d2992d88d3a\nsrc e45f2f5831c6055df81f50d5045daa639712c7b2d2e395f6d5085871a32218d9\n",
+    "driver_fresh.lean.sha256": "commit 14457f1a0b30e1de3762310af51684bf6d2e347f\nbin 4a46813306ed37475d544a8352c92c375485f63be4c424168958b1bdb64d75fc\nsrc 6e5ec9931b55850652e57b2b1185273836433a4a00fe2e29ef2e800585273057\n",
+    "ocaml_frontend/lem_sync.sha256": "src 8c6c998668dcf84e3c07001145d92cf00723b78af8002e2a75408b0d5f2fc12c\ngen f209620843823c5fafc6f45dfd64db7f7dcb4a7e80b42fdfca854f5e04112d8a\n",
+    "lean_frontend/lem_sync.sha256": "src 8c6c998668dcf84e3c07001145d92cf00723b78af8002e2a75408b0d5f2fc12c\ngen ffca606c216b29167bce4e7ddfdb4a0ec23cfe9c47708afb353b4db24db54363\n"
+  }
+}

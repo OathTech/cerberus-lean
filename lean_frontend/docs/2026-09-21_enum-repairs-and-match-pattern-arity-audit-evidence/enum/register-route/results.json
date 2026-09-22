@@ -1,0 +1,92 @@
+[
+  {
+    "case": "signed-control",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/register-route/signed-control.core"
+    ],
+    "status": 0,
+    "stdout": "Defined {value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+    "stderr": "Time spent: 0.023221 seconds\n"
+  },
+  {
+    "case": "signed-control",
+    "engine": "pristine",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/register-route/signed-control.core"
+    ],
+    "status": 0,
+    "stdout": "Defined {value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+    "stderr": "Time spent: 0.022962 seconds\n"
+  },
+  {
+    "case": "signed-control",
+    "engine": "lean-parse-only",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--parse-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/register-route/signed-control.core"
+    ],
+    "status": 0,
+    "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/register-route/signed-control.core: Core file: 0 fun, 1 proc, 0 def/impl, 0 struct/union, 0 glob, 0 builtin\n",
+    "stderr": ""
+  },
+  {
+    "case": "enum-query",
+    "engine": "fork",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/register-route/enum-query.core"
+    ],
+    "status": 1,
+    "stdout": "",
+    "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/register-route/enum-query.core:2:34: error: unknown ctype 'enum'\n  pure (Specified (if is_signed('enum E') then 1 else 0))\n                                 ^~~~ \nTime spent: 0.024490 seconds\n"
+  },
+  {
+    "case": "enum-query",
+    "engine": "pristine",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/register-route/enum-query.core"
+    ],
+    "status": 1,
+    "stdout": "",
+    "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/register-route/enum-query.core:2:34: error: unknown ctype 'enum'\n  pure (Specified (if is_signed('enum E') then 1 else 0))\n                                 ^~~~ \nTime spent: 0.024052 seconds\n"
+  },
+  {
+    "case": "enum-query",
+    "engine": "lean-parse-only",
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/scripts/capped",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/lean_frontend/.lake/build/bin/cerberus-lean",
+      "--parse-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/register-route/enum-query.core"
+    ],
+    "status": 0,
+    "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/register-route/enum-query.core: Core file: 0 fun, 1 proc, 0 def/impl, 0 struct/union, 0 glob, 0 builtin\n",
+    "stderr": ""
+  }
+]

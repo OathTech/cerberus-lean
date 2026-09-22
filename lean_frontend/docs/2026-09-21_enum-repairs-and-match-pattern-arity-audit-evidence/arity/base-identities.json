@@ -1,0 +1,28 @@
+{
+  "head": "5407597d9eeba0259d65b728e86a860ad4614ab3",
+  "status": "",
+  "stamps": {
+    "driver_fresh.oracle.sha256": "commit 5407597d9eeba0259d65b728e86a860ad4614ab3\nbin 6e8e34cf8be97de95c4f8eefab66ab20b4564ef4224e54ac435062e254c13aac\nsrc 2b8b576816681316ce0c0b690dc78a63f813ac8a7391f976bdf4684a18f47634\n",
+    "driver_fresh.lean.sha256": "commit 5407597d9eeba0259d65b728e86a860ad4614ab3\nbin 688cf879063e124660783b307d3565bbc72f13862b5b019a07741a9fd8883f93\nsrc 809ad92c6258415628ce87897cdc185da6caea6b4e05863552647bd3b3506d66\n",
+    "ocaml_frontend/lem_sync.sha256": "src 037dee26c6472b1bf7f8d628bec1b7e64d2f9d12d67c81bd37b55e634fd34b2d\ngen 08b84774381fd86eeb1a658efa47a9b372ebb438085530b5ab6ba045da3eec8d\n",
+    "lean_frontend/lem_sync.sha256": "src 037dee26c6472b1bf7f8d628bec1b7e64d2f9d12d67c81bd37b55e634fd34b2d\ngen cd499eab48146463197f60b35a9fb26c31337bab7d06b2f1d9af43047c2619b5\n"
+  },
+  "checks": [
+    {
+      "kind": "oracle",
+      "status": 0,
+      "stdout": "check_driver_fresh: oracle OK (bin 6e8e34cf8be97de95c4f8eefab66ab20b4564ef4224e54ac435062e254c13aac, src 2b8b576816681316ce0c0b690dc78a63f813ac8a7391f976bdf4684a18f47634)\n",
+      "stderr": ""
+    },
+    {
+      "kind": "lean",
+      "status": 0,
+      "stdout": "check_driver_fresh: lean OK (bin 688cf879063e124660783b307d3565bbc72f13862b5b019a07741a9fd8883f93, src 809ad92c6258415628ce87897cdc185da6caea6b4e05863552647bd3b3506d66)\n",
+      "stderr": ""
+    }
+  ],
+  "binaries": {
+    "_build/default/backend/driver/main.exe": "6e8e34cf8be97de95c4f8eefab66ab20b4564ef4224e54ac435062e254c13aac",
+    "lean_frontend/.lake/build/bin/cerberus-lean": "688cf879063e124660783b307d3565bbc72f13862b5b019a07741a9fd8883f93"
+  }
+}

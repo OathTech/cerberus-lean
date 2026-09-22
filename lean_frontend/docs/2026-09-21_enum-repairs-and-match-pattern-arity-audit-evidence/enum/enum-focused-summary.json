@@ -1,0 +1,8 @@
+{
+  "source_cases": 32,
+  "engine_runs": 64,
+  "successful_cases": 24,
+  "pristine_all_equal": true,
+  "gcc_all_equal": true,
+  "native_all_empty_output": true
+}

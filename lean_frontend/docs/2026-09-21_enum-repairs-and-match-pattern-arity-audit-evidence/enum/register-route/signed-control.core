@@ -1,0 +1,2 @@
+proc main (): eff loaded integer :=
+  pure (Specified (if is_signed('signed int') then 1 else 0))

@@ -1,0 +1,82 @@
+[
+  {
+    "side": "head",
+    "engine": "ocaml-compile",
+    "args": [
+      "ocamlfind",
+      "ocamlc",
+      "-package",
+      "lem,pprint,unix,str",
+      "-linkpkg",
+      "-I",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/_build/default/ocaml_frontend/.cerb_frontend.objs/byte",
+      "-I",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/_build/default/util/.cerb_util.objs/byte",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/_build/default/util/cerb_util.cma",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/_build/default/sibylfs/sibylfs.cma",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/_build/default/memory/concrete/mem_concrete.cma",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/sign-normalisation/sign.ml",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/sign-normalisation/head-sign.exe"
+    ],
+    "status": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "side": "head",
+    "engine": "ocaml",
+    "args": [
+      "ocamlrun",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/sign-normalisation/head-sign.exe"
+    ],
+    "status": 0,
+    "stdout": "signed32=true\nsigned128=true\nunsigned128=false\n",
+    "stderr": ""
+  },
+  {
+    "side": "head",
+    "engine": "lean",
+    "case": "signed32",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/scripts/lean_probe.sh",
+      ".tmp/EnumSignAudit-signed32.lean"
+    ],
+    "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/lean_frontend",
+    "status": 0,
+    "stdout": "true\n",
+    "stderr": ""
+  },
+  {
+    "side": "head",
+    "engine": "lean",
+    "case": "signed128",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/scripts/lean_probe.sh",
+      ".tmp/EnumSignAudit-signed128.lean"
+    ],
+    "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/lean_frontend",
+    "status": 0,
+    "stdout": "true\n",
+    "stderr": ""
+  },
+  {
+    "side": "head",
+    "engine": "lean",
+    "case": "unsigned128",
+    "args": [
+      "timeout",
+      "30s",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/scripts/lean_probe.sh",
+      ".tmp/EnumSignAudit-unsigned128.lean"
+    ],
+    "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/lean_frontend",
+    "status": 0,
+    "stdout": "false\n",
+    "stderr": ""
+  }
+]

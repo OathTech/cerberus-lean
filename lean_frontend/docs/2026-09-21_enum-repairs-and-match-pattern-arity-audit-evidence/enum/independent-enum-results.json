@@ -1,0 +1,746 @@
+[
+  {
+    "case": "aggregate-array",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/aggregate-array.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(18)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(18)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/aggregate-array.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/aggregate-array/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 18,
+    "gcc_match": true
+  },
+  {
+    "case": "callback-array-index",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-array-index.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-array-index.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/callback-array-index/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 3,
+    "gcc_match": true
+  },
+  {
+    "case": "callback-assign",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-assign.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-assign.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/callback-assign/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 1,
+    "gcc_match": true
+  },
+  {
+    "case": "callback-conditional",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-conditional.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-conditional.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/callback-conditional/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 1,
+    "gcc_match": true
+  },
+  {
+    "case": "callback-equality",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-equality.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-equality.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/callback-equality/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 3,
+    "gcc_match": true
+  },
+  {
+    "case": "callback-init",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-init.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-init.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/callback-init/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 1,
+    "gcc_match": true
+  },
+  {
+    "case": "callback-local-enum",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-local-enum.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-local-enum.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/callback-local-enum/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 1,
+    "gcc_match": true
+  },
+  {
+    "case": "callback-nested-enum",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-nested-enum.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-nested-enum.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/callback-nested-enum/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 1,
+    "gcc_match": true
+  },
+  {
+    "case": "callback-param",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-param.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-param.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/callback-param/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 2,
+    "gcc_match": true
+  },
+  {
+    "case": "callback-return",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-return.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-return.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/callback-return/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 1,
+    "gcc_match": true
+  },
+  {
+    "case": "callback-shadow-enum",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-shadow-enum.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-shadow-enum.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/callback-shadow-enum/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 1,
+    "gcc_match": true
+  },
+  {
+    "case": "callback-signed-enum",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-signed-enum.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-signed-enum.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/callback-signed-enum/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 1,
+    "gcc_match": true
+  },
+  {
+    "case": "callback-switch",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-switch.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/callback-switch.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/callback-switch/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 3,
+    "gcc_match": true
+  },
+  {
+    "case": "enum-unsigned-limit",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/enum-unsigned-limit.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/enum-unsigned-limit.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/enum-unsigned-limit/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 1,
+    "gcc_match": true
+  },
+  {
+    "case": "memcpy-enum",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/memcpy-enum.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/memcpy-enum.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/memcpy-enum/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 1,
+    "gcc_match": true
+  },
+  {
+    "case": "shadow-signedness",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/shadow-signedness.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(6)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(6)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/shadow-signedness.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/shadow-signedness/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 6,
+    "gcc_match": true
+  },
+  {
+    "case": "sizeof-enum-control",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/sizeof-enum-control.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(4)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(4)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/sizeof-enum-control.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/sizeof-enum-control/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 4,
+    "gcc_match": true
+  },
+  {
+    "case": "stmt-direct-enum-control",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/stmt-direct-enum-control.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/stmt-direct-enum-control.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/stmt-direct-enum-control/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 2,
+    "gcc_match": true
+  },
+  {
+    "case": "stmt-typeof-enum",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/stmt-typeof-enum.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/stmt-typeof-enum.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/stmt-typeof-enum/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 3,
+    "gcc_match": true
+  },
+  {
+    "case": "stmt-typeof-int-control",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/stmt-typeof-int-control.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/stmt-typeof-int-control.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/stmt-typeof-int-control/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 3,
+    "gcc_match": true
+  },
+  {
+    "case": "stmt-typeof-local-enum",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/stmt-typeof-local-enum.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/stmt-typeof-local-enum.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/stmt-typeof-local-enum/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 3,
+    "gcc_match": true
+  },
+  {
+    "case": "stmt-typeof-nested",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/stmt-typeof-nested.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/stmt-typeof-nested.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/stmt-typeof-nested/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 3,
+    "gcc_match": true
+  },
+  {
+    "case": "stmt-typeof-signed",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/stmt-typeof-signed.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/stmt-typeof-signed.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/stmt-typeof-signed/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 3,
+    "gcc_match": true
+  },
+  {
+    "case": "union-enum",
+    "pristine_args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/union-enum.c"
+    ],
+    "pristine_status": 0,
+    "pristine_tokens": [
+      "VAL:{value: \"Specified(255)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "expected": [
+      "VAL:{value: \"Specified(255)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+    ],
+    "pristine_match": true,
+    "gcc_args": [
+      "gcc",
+      "-std=gnu11",
+      "-O0",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/union-enum.c",
+      "-o",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/independent-captures/union-enum/native"
+    ],
+    "gcc_compile_status": 0,
+    "native_status": 255,
+    "gcc_match": true
+  }
+]

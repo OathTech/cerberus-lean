@@ -1,0 +1,212 @@
+[
+  {
+    "case": "pure-let-discarded-error",
+    "engine": "base",
+    "typed": false,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/pure-let-discarded-error.core"
+    ],
+    "status": 1,
+    "stdout": "Error {msg: \"surplus\"}\n",
+    "stderr": "Time spent: 0.025238 seconds\n"
+  },
+  {
+    "case": "pure-let-discarded-error",
+    "engine": "base",
+    "typed": true,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/pure-let-discarded-error.core"
+    ],
+    "status": 0,
+    "stdout": "Defined {value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+    "stderr": "Time spent: 0.023868 seconds\n"
+  },
+  {
+    "case": "pure-let-discarded-error",
+    "engine": "head",
+    "typed": false,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/pure-let-discarded-error.core"
+    ],
+    "status": 1,
+    "stdout": "Error {msg: \"surplus\"}\n",
+    "stderr": "Time spent: 0.024715 seconds\n"
+  },
+  {
+    "case": "pure-let-discarded-error",
+    "engine": "head",
+    "typed": true,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/pure-let-discarded-error.core"
+    ],
+    "status": 0,
+    "stdout": "Defined {value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+    "stderr": "Time spent: 0.024629 seconds\n"
+  },
+  {
+    "case": "pure-let-discarded-error",
+    "engine": "pristine",
+    "typed": false,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/pure-let-discarded-error.core"
+    ],
+    "status": 1,
+    "stdout": "Error {msg: \"surplus\"}\n",
+    "stderr": "Time spent: 0.022410 seconds\n"
+  },
+  {
+    "case": "pure-let-discarded-error",
+    "engine": "pristine",
+    "typed": true,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/pure-let-discarded-error.core"
+    ],
+    "status": 0,
+    "stdout": "Defined {value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+    "stderr": "Time spent: 0.024910 seconds\n"
+  },
+  {
+    "case": "unseq-discarded-error",
+    "engine": "base",
+    "typed": false,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-discarded-error.core"
+    ],
+    "status": 1,
+    "stdout": "Error {msg: \"surplus\"}\n",
+    "stderr": "Time spent: 0.023403 seconds\n"
+  },
+  {
+    "case": "unseq-discarded-error",
+    "engine": "base",
+    "typed": true,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-base-20260920/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-discarded-error.core"
+    ],
+    "status": 0,
+    "stdout": "Defined {value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+    "stderr": "Time spent: 0.024368 seconds\n"
+  },
+  {
+    "case": "unseq-discarded-error",
+    "engine": "head",
+    "typed": false,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-discarded-error.core"
+    ],
+    "status": 1,
+    "stdout": "Error {msg: \"surplus\"}\n",
+    "stderr": "Time spent: 0.023490 seconds\n"
+  },
+  {
+    "case": "unseq-discarded-error",
+    "engine": "head",
+    "typed": true,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-discarded-error.core"
+    ],
+    "status": 0,
+    "stdout": "Defined {value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+    "stderr": "Time spent: 0.026619 seconds\n"
+  },
+  {
+    "case": "unseq-discarded-error",
+    "engine": "pristine",
+    "typed": false,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-discarded-error.core"
+    ],
+    "status": 1,
+    "stdout": "Error {msg: \"surplus\"}\n",
+    "stderr": "Time spent: 0.023582 seconds\n"
+  },
+  {
+    "case": "unseq-discarded-error",
+    "engine": "pristine",
+    "typed": true,
+    "args": [
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.validation-foundations/independent-oracle-v2/cerberus/_build/install/default",
+      "--nolibc",
+      "--exec",
+      "--batch",
+      "--mode=exhaustive",
+      "--typecheck-core",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/match-pattern-arity-20260921/.tmp/two-range-audit/core-probes/unseq-discarded-error.core"
+    ],
+    "status": 0,
+    "stdout": "Defined {value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+    "stderr": "Time spent: 0.025352 seconds\n"
+  }
+]

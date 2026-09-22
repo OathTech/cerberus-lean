@@ -1,0 +1,5 @@
+proc main (): eff loaded integer :=
+  case (1, 2) of
+    | (a: integer, b: integer, c: integer) => pure (Specified (a + b))
+    | _: (integer, integer) => pure (Specified (0))
+  end

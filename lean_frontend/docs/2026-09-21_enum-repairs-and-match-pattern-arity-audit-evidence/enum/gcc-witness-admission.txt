@@ -1,0 +1,13 @@
+[297/2014] AGREE  tests/immaculate/nolibc/d3-s3-alignas-enum.c: gcc=7 lean={7}
+[298/2014] AGREE  tests/immaculate/nolibc/d3-s4a-tentative-enum.c: gcc=1 lean={1}
+[299/2014] AGREE O2_AGREE tests/immaculate/nolibc/d3-s4b-fdecl-enum-param.c: gcc=2 lean={2}
+[300/2014] AGREE  tests/immaculate/nolibc/d3-s4c-extern-redecl-enum.c: gcc=1 lean={1}
+[301/2014] AGREE  tests/immaculate/nolibc/d3-s5a-generic-enum.c: gcc=7 lean={7}
+[302/2014] AGREE  tests/immaculate/nolibc/d3-s5b-types-compatible-enum.c: gcc=1 lean={1}
+[303/2014] AGREE  tests/immaculate/nolibc/d3-s7-callback-assign.c: gcc=1 lean={1}
+[304/2014] AGREE  tests/immaculate/nolibc/d3-s7-callback-conditional.c: gcc=1 lean={1}
+[305/2014] AGREE  tests/immaculate/nolibc/d3-s7-callback-equality.c: gcc=3 lean={3}
+[306/2014] AGREE  tests/immaculate/nolibc/d3-s7-callback-init.c: gcc=1 lean={1}
+[307/2014] AGREE  tests/immaculate/nolibc/d3-s7-callback-param.c: gcc=2 lean={2}
+[308/2014] AGREE  tests/immaculate/nolibc/d3-s7-callback-return.c: gcc=1 lean={1}
+[309/2014] AGREE  tests/immaculate/nolibc/d3-s8-sizeof-enum-expr.c: gcc=4 lean={4}

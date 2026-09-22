@@ -1,0 +1,134 @@
+[
+  {
+    "case": "callback-assign",
+    "engine": "lean",
+    "before": {
+      "status": 134,
+      "tokens": null,
+      "protocol_error": "fatal engine diagnostic; no completed observation"
+    },
+    "after": {
+      "status": 0,
+      "tokens": [
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "protocol_error": null
+    }
+  },
+  {
+    "case": "callback-conditional",
+    "engine": "lean",
+    "before": {
+      "status": 134,
+      "tokens": null,
+      "protocol_error": "fatal engine diagnostic; no completed observation"
+    },
+    "after": {
+      "status": 0,
+      "tokens": [
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "protocol_error": null
+    }
+  },
+  {
+    "case": "callback-equality",
+    "engine": "lean",
+    "before": {
+      "status": 134,
+      "tokens": null,
+      "protocol_error": "fatal engine diagnostic; no completed observation"
+    },
+    "after": {
+      "status": 0,
+      "tokens": [
+        "VAL:{value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "protocol_error": null
+    }
+  },
+  {
+    "case": "callback-init",
+    "engine": "lean",
+    "before": {
+      "status": 134,
+      "tokens": null,
+      "protocol_error": "fatal engine diagnostic; no completed observation"
+    },
+    "after": {
+      "status": 0,
+      "tokens": [
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "protocol_error": null
+    }
+  },
+  {
+    "case": "callback-param",
+    "engine": "lean",
+    "before": {
+      "status": 134,
+      "tokens": null,
+      "protocol_error": "fatal engine diagnostic; no completed observation"
+    },
+    "after": {
+      "status": 0,
+      "tokens": [
+        "VAL:{value: \"Specified(2)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "protocol_error": null
+    }
+  },
+  {
+    "case": "callback-return",
+    "engine": "lean",
+    "before": {
+      "status": 134,
+      "tokens": null,
+      "protocol_error": "fatal engine diagnostic; no completed observation"
+    },
+    "after": {
+      "status": 0,
+      "tokens": [
+        "VAL:{value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
+      ],
+      "protocol_error": null
+    }
+  },
+  {
+    "case": "forward-enum",
+    "engine": "lean",
+    "before": {
+      "status": 1,
+      "tokens": [
+        "ERR:{msg: \"desugaring failed at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/forward-enum.c:1:6-7\"}"
+      ],
+      "protocol_error": null
+    },
+    "after": {
+      "status": 1,
+      "tokens": [
+        "ERR:{msg: \"desugaring failed at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/forward-enum.c:1:6-7\"}"
+      ],
+      "protocol_error": null
+    }
+  },
+  {
+    "case": "generic-duplicate",
+    "engine": "lean",
+    "before": {
+      "status": 1,
+      "tokens": [
+        "ERR:{msg: \"desugaring failed at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-premerge-20260920/.tmp/enum-premerge/probes/generic-duplicate.c:1:36-81\"}"
+      ],
+      "protocol_error": null
+    },
+    "after": {
+      "status": 1,
+      "tokens": [
+        "ERR:{msg: \"desugaring failed at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-audit/enum-repairs-20260921/.tmp/two-range-audit/probes/generic-duplicate.c:1:36-81\"}"
+      ],
+      "protocol_error": null
+    }
+  }
+]
