@@ -270,6 +270,9 @@ PRE-FIX (`14457f1a0`; `.tmp/mpa/prefix-r1r2-probe.log`), verbatim:
 operand vanished under `--typecheck-core`). -/
 
 def tagsEmpty : Fmap sym (CerbLocation.Loc × tag_definition) := fmapEmpty
+/-- the enum-definitions reader the program-data-parameters arc (E-A, mainline `df85e95b7`) threads through the
+    drive cone (`_lemReader_enum_definitions`); empty here — no enum is involved in these bindings -/
+def enumsEmpty : Fmap sym integerType := fmapEmpty
 def peU : pexpr := Pexpr [] () (PEval Vunit)
 def peT : pexpr := Pexpr [] () (PEval Vtrue)
 def peF : pexpr := Pexpr [] () (PEval Vfalse)
@@ -355,7 +358,7 @@ inductive RouteOutcome where
 def eletRoute (fuel : Nat) (arena : expr core_run_annotation) : RouteOutcome :=
   letI := LemFuel.mk fuel
   let thSt : thread_state := { (default : thread_state) with arena := arena, env := [emptyEnv] }
-  let steps := core_thread_step2 tagsEmpty (CerbMem.initialMemState testAddressSpaceTop)
+  let steps := core_thread_step2 enumsEmpty tagsEmpty (CerbMem.initialMemState testAddressSpaceTop)
     (default : generic_file Unit core_run_annotation) fmapEmpty fmapEmpty 0 (none, thSt)
   match steps with
   | [Step_eval "Elet" m] =>
@@ -368,7 +371,7 @@ def eletRoute (fuel : Nat) (arena : expr core_run_annotation) : RouteOutcome :=
 /-- the `PElet` route of `Core_eval.step_eval_pexpr` -/
 def peletRoute (fuel : Nat) (pe : pexpr) : RouteOutcome :=
   letI := LemFuel.mk fuel
-  match step_eval_pexpr tagsEmpty 0 CerbLocation.Loc.unknown none fmapEmpty [emptyEnv] none
+  match step_eval_pexpr enumsEmpty tagsEmpty 0 CerbLocation.Loc.unknown none fmapEmpty [emptyEnv] none
       (default : generic_file Unit core_run_annotation) false pe with
   | Exception (Illformed_program msg) => .illformed msg
   | Result (Defined _) => .defined

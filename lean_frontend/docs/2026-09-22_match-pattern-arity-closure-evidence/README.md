@@ -14,3 +14,5 @@ and `summary.txt` here. Both files are copied byte-for-byte from `.tmp/mpa/closu
 Expected on this base (mainline `5407597d9`, E-A not landed): 39/39 lanes passed, `Source unchanged: True`,
 pristine tier-B `{'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7,
 'interface_agreement': 2}`, chvalid `{'semantic_agreement': 4}` — zero movement (stop rule S2 otherwise).
+
+The subdirectory `rebased-df85e95b7/` holds the battery of the head REBASED onto the post-enum mainline (record §14).

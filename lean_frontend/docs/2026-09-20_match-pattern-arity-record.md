@@ -1527,3 +1527,247 @@ Tier A row 1 (`scripts/test_unit.sh match-pattern-arity-test`, `.tmp/mpa/unit-ro
 HOLD: the frozen full battery is NOT re-run for round 2 (orchestrator: after the enum arc lands, rebase
 `fix/match-pattern-arity` onto the new mainline — the 5-file overlap, pins recomputed from the combined source —
 and run ONE frozen battery on that final head for the delta audit).
+
+## 14. REBASE onto the post-enum mainline `df85e95b7` (2026-09-22) — the final head for the delta audit
+
+**Go [AGENT orchestrator]:** the enum arc landed (`mdd/cerberus-lean` = `df85e95b7b37826dfb3f2ac97a41473580f1e0b9` =
+`5407597d9` + E-A through `e87772537` + the landing note); lem pin unchanged (38f87d5 everywhere). `git rebase df85e95b7`
+in the worktree; the four commits replayed with their messages:
+
+    8d4901c65 closure round 2: subst_pattern declines on arity mismatch (Nothing) — one outcome kind across --rewrite/default; register row re-rationalised
+    6f02b42de fix/match-pattern-arity CLOSURE round (pre-merge audit R1/R2/N1): typing's tuple-EXPRESSION arms fail closed; every tuple-binding path guards its arity (one loud leaf); both engines' let-forms report Illformed_program = the PElet route
+    60e1d192f fix/match-pattern-arity: match_pattern and typecheck_pattern fail CLOSED on tuple-arity mismatch (cerberus-sl hidden-state note item 7; shared body, mirrors core_rewrite.lem:1287-1300) + kernel facts T1-T5 + tray draft 45
+    373a057ea docs(charter): match_pattern fails closed on tuple-arity mismatch (cerberus-sl hidden-state note item 7; [USER 2026-09-20 via cerberus-sl] "we can ask for this immediately") — …
+
+`git status` after the rebase: clean (empty).
+
+### 14.1 Conflict resolutions (inside the replayed commits)
+
+- **`lean_frontend/lakefile.toml`, `scripts/test_unit.sh`** (commit 2): both sides' additions kept — E-A's `enum-data-test`
+  block/entry and this branch's `match-pattern-arity-test` (14 exes). Commit 3's `test_args` line auto-merged.
+- **`frontend/model/core_typing.lem`** (E-A's dead `enumDefs` field at `:1968` vs the arity guards): auto-merged, both intents.
+- **`lean_frontend/Core_aux_lemMeasureProofs.lean`** (E-A's `enumDefs` reader binders on `memValueFromValue` vs the
+  `all_goals (split <;> try rfl)` lines in five other proofs): auto-merged, both intents.
+- **`scripts/failure_reach_register.txt`** (commits 3, 4; the tally line): the MAINLINE register (E-A's 238 rows) as the base +
+  this branch's one row (`tuple_arity_error`; round-1 class at commit 3, round-2 class at commit 4), `check_failure_reach.py
+  --reseal` recomputing the tally — 239 rows; final tally `sites=239 exec=237 unresolved-owner=2 reviewed-TAIL=186
+  reviewed-NON-TAIL=53 UNREACHABLE-BY-INVARIANT=170 REACHABLE=48 UNKNOWN=21 discardable=0`.
+- **`scripts/fork_drift_manifest.txt`** (commits 2, 3, 4): the MAINLINE manifest as the base at each replayed commit, this
+  branch's NOTEs re-applied verbatim (+ one INTEGRATION NOTE), and every affected pin RECOMPUTED from the COMBINED
+  regenerated source at that commit (`make prelude-src` on the resolved tree; `sha256` of the source; `sha256` of the
+  label-normalised `diff -u` against `deps/cerberus-upstream`) — never a side's hash. The gate was run at each of the
+  three resolutions before `git rebase --continue`, each `check_fork_drift: OK — layer 1: 82 oracle-surface files =
+  manifest …; layer 2: 29 differing generated files, all hash-pinned (merge-base b9aeedcb4…; lem-pin 38f87d5 = lem -v)`
+  (E-A: 82 source files, 29 differing generated files; this branch adds no file to either set).
+
+  Pins recomputed (mainline `df85e95b7` value → combined value at each commit), verbatim from the resolution logs:
+
+      commit 2 (60e1d192f):
+      [source-content] frontend/model/core_aux.lem: 547a673e… -> 28b4d085…
+      [source-content] frontend/model/core_typing.lem: 516ec242… -> eeed68c8…
+      [expected-cosmetic -> expected-semantic] core_aux.ml: c0546a67… -> c2e521a9…
+      [expected-semantic] core_typing.ml: afb324d5… -> acef776c…
+      commit 3 (6f02b42de):
+      [source-content] frontend/model/core_aux.lem: 28b4d085… -> 314c447f…
+      [source-content] frontend/model/core_typing.lem: eeed68c8… -> fe75fa37…
+      [source-content] frontend/model/core_run.lem: 1427069b… -> 73ba87a3…
+      [source-content] frontend/model/core_reduction.lem: 7f61895f… -> cf062e7a…
+      [expected-semantic] core_aux.ml: c2e521a9… -> e20dc5a1…
+      [expected-semantic] core_typing.ml: acef776c… -> a7674e2f…
+      [expected-semantic] core_run.ml: 7d4e9c99… -> ab8326bb…
+      [expected-semantic] core_reduction.ml: 22b0b094… -> 1c95fd93…
+      commit 4 (8d4901c65):
+      [source-content] frontend/model/core_aux.lem: 314c447f… -> dee01667…
+      [expected-semantic] core_aux.ml: e20dc5a1… -> 5a20bc6b…
+
+  The COMBINED-only values are `core_typing.lem eeed68c8… → fe75fa37…` and `core_typing.ml acef776c… → a7674e2f…` (E-A's
+  field + this branch's guards; before the rebase this branch had `35c09007…/b2c028a9…` and `b8f9c4bd…/fee46402…`, E-A had
+  `516ec242…` and `afb324d5…`). `core_aux`/`core_run`/`core_reduction` are untouched by E-A, so their combined values equal
+  this branch's pre-rebase values.
+
+  **A first attempt was aborted and redone [AGENT, reported]:** the row-moving script inserted `core_aux.ml`'s row after a
+  header NOTE line that ENDS with the text `[expected-semantic]` (mainline line 133), i.e. inside the header, and the
+  gate's FAIL (`differing now but not excused (NEW OCaml-token drift): core_aux.ml`) was read only after `--continue`
+  (reproduced on a throwaway worktree of that commit). `git rebase --abort`, script anchored at line start with a
+  placement self-check, the whole replay redone with each resolution gated fail-closed before continuing.
+
+### 14.2 Regeneration, builds, row 1, the Core probes, the combined register
+
+Regeneration from the combined source (Lem 38f87d5; `.tmp/mpa/regen-rb-final.log`): both trees; against the primary
+checkout at `df85e95b7` (regenerated by the orchestrator) the generated deltas are exactly this branch's modules —
+`Core_aux(.lean/_auxiliary/_lemMeasureProofs)`, `Core_reduction`, `Core_run`, `Core_typing` / `core_aux.ml`,
+`core_reduction.ml`, `core_run.ml`, `core_typing.ml`.
+
+Build chain (`.tmp/mpa/rebase-build.log`), verbatim:
+
+    === build_cerberus rc=0 end Tue Sep 22 04:36:00 PM UTC 2026 wall=9s
+    === build_lean rc=0 end Tue Sep 22 04:37:01 PM UTC 2026 wall=61s
+    === speclab rc=0 end Tue Sep 22 04:38:34 PM UTC 2026 wall=93s
+
+**The unit test needed one adaptation to E-A [AGENT]:** the program-data-parameters arc threads a new reader
+`_lemReader_enum_definitions : Fmap sym integerType` through the drive cone, so `core_thread_step2` and `step_eval_pexpr`
+take it as their first argument; the two runtime routes of `MatchPatternArityTest.lean` pass an empty map (`enumsEmpty`,
+no enum is involved in these bindings). The first run of the suite failed to compile the test at those two calls (`Application
+type mismatch … failed to synthesize instance`, `.tmp/mpa/unit-rebase.log` of that run, since overwritten); fixed, and the
+FULL suite re-run — Tier A row 1 on the rebased head (`scripts/test_unit.sh`, all 14 exes; `.tmp/mpa/unit-rebase.log`;
+`.tmp/mpa/rebase-tail.log`), verbatim:
+
+    === unit test rc=0 end Tue Sep 22 04:47:37 PM UTC 2026 wall=221s
+    ✓ enum-data-test PASSED
+    match-pattern-arity-test: OK (8/8 item-7 witnesses + 19/19 closure-round witnesses; kernel theorems T1a T1b T1_wrapper T1_anyFuel T2 T3 T3_select T4_neg and the R2_* equations (loud leaf / subst_pattern declines) compiled; #print axioms pinned by #guard_msgs: [propext] on T1a/T1b/T2/T3/T3_select/T4_neg, the trio on T1_anyFuel)
+    ✓ match-pattern-arity-test PASSED
+    Total: 14 passed, 0 failed
+
+its gates, verbatim:
+
+    check_exec_purity: CLEAN (11 modules)
+    check_theorem_axioms: hand-written axiom census OK (0 axioms — the arc-17 S2b end state)
+    check_no_fuel_numerals: OK (327 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6), no address-space-top literal (A1-A3); allowed Main.lean sites seen: 6 of 6 (hand-written + generated copy))
+    check_lakefile_roots: OK (218 roots = 218 generated modules + the exe root Main; 85 auxiliary modules listed as roots — names only; every carrier is built by check_fuel_forms.sh)
+    check_fuel_forms: forms partition OK (62 MEASURED + 13 ABSORBING + 0 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+    check_exec_totality: CLEAN (22 generated modules + hand-written CerbND, 0 allowlisted)
+    check_lem_sync: OK (src 11b2445fac45f86592241ca0e33a77b66ce622d37edf8df25efdf1ec9d2d592e, gen 4493c23aa30ad86e7f00c2f78d38ca65a0fe42b185a8002fd47263fcdaaf3c7e)
+    check_lem_sync: lean OK (src 11b2445fac45f86592241ca0e33a77b66ce622d37edf8df25efdf1ec9d2d592e, gen 288824afa6821954006f44850b749f11fa866126692024e2c5481c70cbcca72e)
+    check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+    check_failure_reach: OK (239 pure failure sites = the 239 register rows exactly (237 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=170 REACHABLE=48 UNKNOWN=21; every row
+    check_fork_drift: OK — layer 1: 82 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 29 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 38f87d5 = lem -v)
+
+(E-A's register rows + this branch's one = 239: `237 in the exec dependency closure + 2 unresolved-owner`;
+`UNREACHABLE-BY-INVARIANT=170 REACHABLE=48 UNKNOWN=21` = E-A's 169/48/21 plus this row. Fork drift: E-A's 82 source
+files / 29 differing generated files, unchanged in count by this branch.)
+
+The Core probe set on the rebased fork binary (`.tmp/mpa/postfix-oracle-rebase.log`), IDENTICAL line for line to round 2's
+(§13.3) — `diff` empty; verbatim:
+
+    === REBASED fork pure-let-mismatch.core ===
+    --- default:
+    Error {msg: "ill-formed program: `PElet: the pattern didn't match pe1'"}
+    --- --typecheck-core:
+    .tmp/mpa/core-probes/pure-let-mismatch.core:2:51: error: this expression is of type 'tuple of a different arity' but an expression of type '(integer,integer)' was expected
+    --- --rewrite:
+    Error {msg: "ill-formed program: `PElet: the pattern didn't match pe1'"}
+    === REBASED fork let-mismatch.core ===
+    --- default:
+    Error {msg: "ill-formed program: `Elet: the pattern didn't match pe1'"}
+    --- --typecheck-core:
+    .tmp/mpa/core-probes/let-mismatch.core:2:34: error: this expression is of type 'tuple of a different arity' but an expression of type '(integer,integer)' was expected
+    --- --rewrite:
+    Error {msg: "ill-formed program: `PElet: the pattern didn't match pe1'"}
+    === REBASED fork let-nested-mismatch.core ===
+    --- default:
+    Error {msg: "ill-formed program: `Elet: the pattern didn't match pe1'"}
+    --- --typecheck-core:
+    .tmp/mpa/core-probes/let-nested-mismatch.core:2:49: error: this expression is of type 'tuple of a different arity' but an expression of type '(integer,integer)' was expected
+    --- --rewrite:
+    Error {msg: "ill-formed program: `PElet: the pattern didn't match pe1'"}
+    === REBASED fork unseq-weak-mismatch.core ===
+    --- default:
+    Error {msg: "ill-formed program: `Ewseq: the pattern didn't match e1'"}
+    --- --typecheck-core:
+    .tmp/mpa/core-probes/unseq-weak-mismatch.core:2:39: error: this expression is of type 'unseq of a different arity' but an expression of type '(integer,integer)' was expected
+    --- --rewrite:
+    Error {msg: "ill-formed program: `Ewseq: the pattern didn't match e1'"}
+    === REBASED fork unseq-strong-mismatch.core ===
+    --- default:
+    Error {msg: "ill-formed program: `Esseq: the pattern didn't match e1'"}
+    --- --typecheck-core:
+    .tmp/mpa/core-probes/unseq-strong-mismatch.core:2:41: error: this expression is of type 'unseq of a different arity' but an expression of type '(integer,integer)' was expected
+    --- --rewrite:
+    Error {msg: "ill-formed program: `Esseq: the pattern didn't match e1'"}
+    === REBASED fork pure-let-discarded-error.core ===
+    --- default:
+    Error {msg: "surplus"}
+    --- --typecheck-core:
+    .tmp/mpa/core-probes/pure-let-discarded-error.core:2:51: error: this expression is of type 'tuple of a different arity' but an expression of type '(integer,integer)' was expected
+    --- --rewrite:
+    Error {msg: "surplus"}
+    === REBASED fork unseq-discarded-error.core ===
+    --- default:
+    Error {msg: "surplus"}
+    --- --typecheck-core:
+    .tmp/mpa/core-probes/unseq-discarded-error.core:2:39: error: this expression is of type 'unseq of a different arity' but an expression of type '(integer,integer)' was expected
+    --- --rewrite:
+    Error {msg: "surplus"}
+    === REBASED fork tray45.core ===
+    --- default:
+    Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+    --- --typecheck-core:
+    .tmp/mpa/core-probes/tray45.core:3:7: error: this expression is of type 'tuple pattern of a different arity' but an expression of type '(integer,integer,integer)' was expected
+    --- --rewrite:
+    Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+    === REBASED fork fitting.core ===
+    --- default:
+    Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+    --- --typecheck-core:
+    Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+    --- --rewrite:
+    Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+
+
+### 14.3 The frozen full battery on the rebased head
+
+Written BEFORE the launch; nothing touched during; the runner's `report.json`/`summary.txt` copied afterwards into
+`docs/2026-09-22_match-pattern-arity-closure-evidence/rebased-df85e95b7/`. Expected: 39/39, `Source unchanged: True`,
+pristine tier-B `semantic_agreement: 835` (E-A's 13 witnesses on the mainline) with `reviewed_difference: 7`, chvalid 4,
+zero movement (S2).
+
+Run: `launch Tue Sep 22 04:48:37 PM UTC 2026`; `release.py exit=0 end Tue Sep 22 06:10:40 PM UTC 2026` (wall 82 min, DERIVED). Every lane, verbatim:
+
+    PASSED A1 (219.0s)
+    PASSED A2 (28.0s)
+    PASSED A3 (51.5s)
+    PASSED A4 (22.7s)
+    PASSED A4b (24.1s)
+    PASSED A4c (3.1s)
+    PASSED A5 (22.8s)
+    PASSED A6 (2.2s)
+    PASSED A6b (3.8s)
+    PASSED A7 (11.1s)
+    PASSED A8 (9.0s)
+    PASSED A9 (17.1s)
+    PASSED A10 (17.4s)
+    PASSED A11 (62.7s)
+    PASSED A12.1 (5.4s)
+    PASSED A12.2 (5.0s)
+    PASSED B1 (626.7s)
+    PASSED B2 (22.7s)
+    PASSED B3 (15.1s)
+    PASSED B4 (46.1s)
+    PASSED B5 (72.0s)
+    PASSED B6.1 (3.7s)
+    PASSED B6.2 (2.3s)
+    PASSED B6.3 (9.4s)
+    PASSED B6.4 (8.8s)
+    PASSED B6.5 (9.1s)
+    PASSED B6.6 (9.9s)
+    PASSED B6.7 (8.6s)
+    PASSED B7 (1312.6s)
+    PASSED B8.1 (13.3s)
+    PASSED B8.2 (259.4s)
+    PASSED B8.3 (6.3s)
+    PASSED B8.4 (16.2s)
+    PASSED B9 (1403.7s)
+    PASSED B10.1 (119.2s)
+    PASSED B10.2 (1.8s)
+    PASSED B11.1 (15.8s)
+    PASSED B11.2 (7.1s)
+    PASSED B12 (426.8s)
+
+B10.1/B10.2/B12, verbatim (paths elided):
+
+    Independent oracle: passed; {'semantic_agreement': 835, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}
+    Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}
+    Independent oracle: passed; {'semantic_agreement': 4}
+
+The certification lines, verbatim:
+
+    full: passed; 39/39 selected commands completed successfully.
+    Source unchanged: True. Complete tier selection: True.
+    Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+
+ZERO movement (S2 not triggered): pristine tier-B `835/28/7/2` = the post-enum mainline's counts (E-A's 13 witnesses
+landed; `reviewed_difference: 7` unchanged), chvalid 4; every baseline lane at its baseline. `report.json` records
+`source_unchanged: true`. External note: another agent's `test_observation_lanes.py`/`sc-prototype` lane started on the box
+during B9–B12 (not this worker's); every lane still passed within its timeout.
+
+Head after this commit: the record + evidence commit on top of `8d4901c65` (the four replayed commits); `git status` clean.
