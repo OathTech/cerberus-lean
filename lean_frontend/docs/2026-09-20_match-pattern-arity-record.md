@@ -1149,3 +1149,381 @@ launch Tue Sep 22 04:21:05 AM UTC 2026; release.py exit=0 end Tue Sep 22 05:45:2
     full: passed; 39/39 selected commands completed successfully.
     Source unchanged: True. Complete tier selection: True.
     Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+
+## 13. CLOSURE ROUND 2 (2026-09-22) — `subst_pattern` declines; one outcome kind across `--rewrite`/default
+
+**The final policy, in one paragraph (closure round 2, 2026-09-22, [AGENT orchestrator] ruling):** a tuple
+pattern that does not fit its tuple (arity, at any depth) is a malformed Core program, and every path reports
+it through ONE outcome kind. The MATCHER returns `Nothing`, so the SELECTOR falls through to the next arm
+(`case`; the consumer's contract, unchanged). TYPING rejects it when Core typing runs (`--typecheck-core`, off
+by default): the tuple-pattern rule and the tuple-expression, `unseq` and `par` rules all fail with the existing
+`MismatchExpected`. The LET-FORMS of BOTH engines (`Core_reduction.one_step` — the driver's — and
+`Core_run.core_thread_step2`: `Elet`/`Ewseq`/`Esseq`) check `match_pattern` before `update_env` and raise
+`Illformed_program "<form>: the pattern didn't match …"`, the same channel as the `PElet` route, so the default
+run and `--rewrite` agree. The REWRITER declines: the `maybe`-returning `subst_pattern` returns `Nothing` on a
+mismatch (its value arms use `match_pattern` as the fit test, so nested mismatches decline too), and
+`pure_propagation2`/`to_pure` then leave the binding for the runtime to report. The non-`maybe` HELPERS
+(`subst_pattern_val`, `unsafe_subst_pattern`, `update_env_aux`) keep the loud leaf `tuple_arity_error` as the
+backstop — every live caller of theirs is now post-match, so the leaf has no executing route (register class
+UNREACHABLE-BY-INVARIANT, invariant "fit-check before bind").
+
+**Erratum to the audit's R2 cite [AGENT, accepted by the orchestrator as a fence extension]:** the audit named
+`core_run.lem:872-879` as the ordinary `let`'s binding site; that is `Core_run.core_thread_step2`, the SECOND
+engine. The driver steps with `Core_reduction` (`driver.lem` `drive_core_thread2 → Core_reduction.core_step2 →
+step_ctx → one_step`), whose six let-form sites (`core_reduction.lem:351-426`) bind through `update_env` just the
+same. Evidence: the first post-fix run of the audit's `let-mismatch.core` (default mode), with only `core_run.lem`
+guarded, died in the new loud leaf with the backtrace `Failure("internal error: Core_aux.update_env_aux: tuple
+pattern of arity 2 bound to a tuple of arity 3 (upstream-tray draft 45)") … Called from
+Cerb_frontend__Core_aux.update_env … Called from Cerb_frontend__Core_reduction.one_step.(fun) in file
+"ocaml_frontend/generated/core_reduction.ml", line 410 … Called from Cerb_frontend__Driver.liftCore_run.(fun) in
+file "ocaml_frontend/generated/driver.ml", line 163`. Both engines are guarded.
+
+### 13.1 The change (`core_aux.lem`, verbatim hunks)
+
+```diff
+--- a/frontend/model/core_aux.lem
++++ b/frontend/model/core_aux.lem
+@@ -1122,13 +1122,64 @@ and subst_sym_paction sym cval (Paction p act) =
+ 
++(* FORK 2026-09-22 (closure round 2): match_pattern MOVED here, verbatim, from its place
++   just before select_case — Lem is definition-before-use and subst_pattern (below)
++   now uses it as its fit test. Body unchanged (the round-1 arity guard included). *)
++val     match_pattern: pattern -> value -> maybe (list (Symbol.sym * value))
++let rec match_pattern (Pattern _ pat) cval =
++  match (pat, cval) with
++    | (CaseBase (Nothing, _), _) ->
++        Just []
++    | (CaseBase (Just sym, _), _) ->
++        Just [(sym, cval)]
++(*      | Vobject of (generic_object_value 'sym) *)
++    | (CaseCtor Cspecified [pat'], Vloaded (LVspecified oval)) ->
++        match_pattern pat' (Vobject oval)
++    | (CaseCtor Cunspecified [pat'], Vloaded (LVunspecified ty)) ->
++        match_pattern pat' (Vctype ty)
++(*      | Vlist of core_base_type * list (generic_value 'sym) *)
++    | (CaseCtor Ctuple pats', Vtuple cvals') -> 
++        (* FORK 2026-09-20 (cerberus-sl hidden-state note item 7; upstream-tray
++           draft 45): fail CLOSED on a tuple-arity mismatch. Lem's List.zip
++           TRUNCATES (library/list.lem:987-992, `| _ -> []` on unequal tails), so
++           without this guard a pattern of arity 2 MATCHED a value of arity 3
++           (binding the prefix) and a pattern of arity 3 matched a value of
++           arity 2. Mirrors upstream's own guard in simpl_match_pattern
++           (core_rewrite.lem:1287-1290). Nothing = NO MATCH, so select_case
++           tries the next arm; the bindings and their order are unchanged. *)
++        if List.length pats' <> List.length cvals' then
++          Nothing
++        else
++        List.foldr (fun (pat', cval') acc ->
++          Maybe.bind acc (fun xs ->
++            Maybe.bind (match_pattern pat' cval') (fun x ->
++              Just (x++xs)
++            )
++          )
++        ) (Just []) (List.zip pats' cvals')
++    | (CaseCtor (Cnil _) [], Vlist _ []) ->
++        let () = Debug.warn [] (fun () -> "Pattern matching nil without checking types!") in
++        Just []
++    | (CaseCtor Ccons [pat_x; pat_xs], Vlist ty (x::xs)) ->
++        Maybe.bind (match_pattern pat_x x) (fun x ->
++          Maybe.bind (match_pattern pat_xs (Vlist ty xs)) (fun xs ->
++            Just (x++xs)
++          )
++        )
++    | _ ->
++        Nothing
++  end
++
+ (* FORK 2026-09-22 (upstream-tray draft 45; R2 of the pre-merge audit
+    lean_frontend/docs/2026-09-21_enum-repairs-and-match-pattern-arity-audit.md):
+-   THE ONE loud leaf of the tuple-BINDING helpers below — subst_pattern_val,
+-   unsafe_subst_pattern, subst_pattern, update_env_aux — on a tuple-arity
++   THE ONE loud leaf of the non-`maybe` tuple-BINDING helpers below —
++   subst_pattern_val, unsafe_subst_pattern, update_env_aux — on a tuple-arity
+    mismatch. Each binds a tuple pattern against a tuple by List.zip, which
+    TRUNCATES (library/list.lem:987-992): a pattern of arity 2 against a tuple
+-   of arity 3 silently bound the prefix. They are reached WITHOUT a prior
+-   match_pattern (to_pure and core_rewrite's pure_propagation2 -> subst_pattern;
+-   the Core_run/Core_reduction let-forms -> update_env), so each guards its own
+-   arity. A mismatch is a malformed Core program (the Core typechecker is OFF by
+-   default) and the outcome is this leaf: OCaml Cerb_debug.error, Lean
++   of arity 3 silently bound the prefix. The policy (closure rounds 1-2, audit
++   R2): a mismatch is a malformed Core program (the Core typechecker is OFF by
++   default) and every path reports it through ONE outcome kind — the let-forms
++   of both engines (Core_run, Core_reduction) check match_pattern and raise
++   Illformed_program exactly as the PElet route does; the `maybe`-returning
++   subst_pattern DECLINES (Nothing) so the rewriter/to_pure leave the binding
++   to the runtime; and these three helpers, whose live callers are all
++   post-match, keep this loud backstop: OCaml Cerb_debug.error, Lean
+    LemLib.failwithI — one reviewed row of scripts/failure_reach_register.txt. *)
+@@ -1526,4 +1577,13 @@ let rec subst_pattern (Pattern _ pat) pe' expr =
+         (* populated list (value) *)
+-        Just (subst_pattern_val pat1 cval $
+-          subst_pattern_val pat2 (Vlist bTy_elem cvals) expr)
++        (* FORK 2026-09-22 (closure round 2, audit R2 ruling): DECLINE (Nothing) unless the
++           whole pattern FITS the value — the same predicate as the let-forms and
++           select_case — so a tuple-arity mismatch anywhere inside is left to the
++           runtime's Illformed_program route, never to subst_pattern_val's loud leaf.
++           (match_pattern's Cnil arm Debug.warn is silent below debug level 2.) *)
++        match match_pattern (Pattern [] (CaseCtor Ccons [pat1; pat2])) (Vlist bTy_elem (cval::cvals)) with
++          | Nothing -> Nothing
++          | Just _ ->
++              Just (subst_pattern_val pat1 cval $
++                subst_pattern_val pat2 (Vlist bTy_elem cvals) expr)
++        end
+     | (CaseCtor Ccons [pat1; pat2], Pexpr _ _ (PEctor Ccons [pe1; pe2])) ->
+@@ -1535,12 +1595,17 @@ let rec subst_pattern (Pattern _ pat) pe' expr =
+     | (CaseCtor Ctuple pats', Pexpr _ () (PEval (Vtuple cvals))) ->
+-        (* FORK 2026-09-22: arity guards (see tuple_arity_error) *)
+-        if List.length pats' <> List.length cvals then
+-          tuple_arity_error "subst_pattern" (List.length pats') (List.length cvals)
+-        else
+-        Just $ List.foldr (fun (pat', cval) acc ->
+-          subst_pattern_val pat' cval acc
+-        ) expr (List.zip pats' cvals)
++        (* FORK 2026-09-22 (closure round 2, audit R2 ruling): DECLINE (Nothing) unless the
++           whole tuple pattern FITS the tuple value (match_pattern: equal arity here and
++           in every nested tuple) — see the Ccons arm above. *)
++        match match_pattern (Pattern [] (CaseCtor Ctuple pats')) (Vtuple cvals) with
++          | Nothing -> Nothing
++          | Just _ ->
++              Just $ List.foldr (fun (pat', cval) acc ->
++                subst_pattern_val pat' cval acc
++              ) expr (List.zip pats' cvals)
++        end
+     | (CaseCtor Ctuple pats', Pexpr _ _ (PEctor Ctuple pes)) ->
++        (* FORK 2026-09-22 (closure round 2): DECLINE (Nothing) on unequal arity; nested
++           mismatches decline through the recursive subst_pattern calls below. *)
+         if List.length pats' <> List.length pes then
+-          tuple_arity_error "subst_pattern" (List.length pats') (List.length pes)
++          Nothing
+         else
+@@ -2053,46 +2118,2 @@ let rec has_sseqs expr =
+ 
+-val     match_pattern: pattern -> value -> maybe (list (Symbol.sym * value))
+-let rec match_pattern (Pattern _ pat) cval =
+-  match (pat, cval) with
+-    | (CaseBase (Nothing, _), _) ->
+-        Just []
+-    | (CaseBase (Just sym, _), _) ->
+-        Just [(sym, cval)]
+-(*      | Vobject of (generic_object_value 'sym) *)
+-    | (CaseCtor Cspecified [pat'], Vloaded (LVspecified oval)) ->
+-        match_pattern pat' (Vobject oval)
+-    | (CaseCtor Cunspecified [pat'], Vloaded (LVunspecified ty)) ->
+-        match_pattern pat' (Vctype ty)
+-(*      | Vlist of core_base_type * list (generic_value 'sym) *)
+-    | (CaseCtor Ctuple pats', Vtuple cvals') -> 
+-        (* FORK 2026-09-20 (cerberus-sl hidden-state note item 7; upstream-tray
+-           draft 45): fail CLOSED on a tuple-arity mismatch. Lem's List.zip
+-           TRUNCATES (library/list.lem:987-992, `| _ -> []` on unequal tails), so
+-           without this guard a pattern of arity 2 MATCHED a value of arity 3
+-           (binding the prefix) and a pattern of arity 3 matched a value of
+-           arity 2. Mirrors upstream's own guard in simpl_match_pattern
+-           (core_rewrite.lem:1287-1290). Nothing = NO MATCH, so select_case
+-           tries the next arm; the bindings and their order are unchanged. *)
+-        if List.length pats' <> List.length cvals' then
+-          Nothing
+-        else
+-        List.foldr (fun (pat', cval') acc ->
+-          Maybe.bind acc (fun xs ->
+-            Maybe.bind (match_pattern pat' cval') (fun x ->
+-              Just (x++xs)
+-            )
+-          )
+-        ) (Just []) (List.zip pats' cvals')
+-    | (CaseCtor (Cnil _) [], Vlist _ []) ->
+-        let () = Debug.warn [] (fun () -> "Pattern matching nil without checking types!") in
+-        Just []
+-    | (CaseCtor Ccons [pat_x; pat_xs], Vlist ty (x::xs)) ->
+-        Maybe.bind (match_pattern pat_x x) (fun x ->
+-          Maybe.bind (match_pattern pat_xs (Vlist ty xs)) (fun xs ->
+-            Just (x++xs)
+-          )
+-        )
+-    | _ ->
+-        Nothing
+-  end
+ 
+@@ -2494,5 +2515,5 @@ let rec update_env_aux (Pattern _ pat) cval env =
+     | (CaseCtor Ctuple pats', Vtuple cvals) ->
+-        (* FORK 2026-09-22: arity guard (see tuple_arity_error) — Core_run's
+-           let-forms check match_pattern first and report Illformed_program;
+-           Core_reduction's reach this leaf directly *)
++        (* FORK 2026-09-22: arity guard (see tuple_arity_error) — the let-forms of
++           BOTH engines (Core_run, Core_reduction) check match_pattern first and
++           report Illformed_program; this leaf is the backstop *)
+         if List.length pats' <> List.length cvals then
+```
+
+Design notes [AGENT worker, under the ruling]: Lem is definition-before-use and `match_pattern` sat AFTER
+`subst_pattern` (`:2071` vs `:1515`; the first regeneration failed: `core_aux.lem, line 1535 … Type error: unbound
+variable: match_pattern`), so the `match_pattern` block (`val` + `let rec … end`) is MOVED up verbatim to precede
+the binding helpers (now `:1127`), body unchanged — the historical cites `core_aux.lem:2019-2050`/`:2033-2039` in
+this record and tray 45 are as-of-then. The value arms test the WHOLE pattern with `match_pattern`
+(equal arity at every depth), not a top-level length — a length check alone would have sent a NESTED mismatch
+(`((a,b),c)` against `((1,2,3),4)`) through `subst_pattern_val` into the loud leaf under `--rewrite`, i.e. a
+second outcome kind; the `Ccons` value arm gets the same test for the same reason (a tuple element of a list).
+`match_pattern`'s `Cnil` arm calls `Debug.warn`, which `Cerb_debug.warn` prints only at debug level > 1
+(`util/cerb_debug.ml:47-49`) — silent by default; the only lane that runs `--rewrite` is `libc_prep.sh`'s dump
+of the well-typed libc. The pexpr-tuple arm declines on unequal length; nested pexpr mismatches decline through
+the recursive `subst_pattern` calls (`maybe` chain). `subst_pattern_val`/`unsafe_subst_pattern`/`update_env_aux`
+keep the leaf (the ruling); their comment names the policy. The measure proof of `subst_pattern` needed no
+further change (the value arms are fuel-independent: closed by `rfl`; the pexpr arm's `if` by the round-1 line).
+
+### 13.2 Witnesses (`test/Unit/MatchPatternArityTest.lean`; kernel `rfl`)
+
+`R2_subst_pattern_val_tuple_23/_32 : subst_pattern (flat 2|3) (mk_value_pe (vals 3|2)) body = none`;
+`R2_subst_pattern_pe_23 : subst_pattern (flat 2) pe3u body = none`; nested `R2_subst_pattern_nested_val :
+subst_pattern (tuple [flat 2, leaf 5]) (mk_value_pe (Vtuple [vals 3, Vunit])) body = none` and its pexpr twin;
+fitting `R2_subst_pattern_fit(_pe) = some unitBody`. The leaf pins for `subst_pattern_val`/`unsafe_subst_pattern`/
+`update_env_aux` stay. Run output, verbatim:
+
+    === match-pattern-arity-test ===
+    ✔ [222/223] Built Core_aux_lemMeasureProofs:c.o (9.5s)
+    ✔ [223/223] Built «match-pattern-arity-test»:exe (352ms)
+    Build completed successfully (223 jobs).
+    match-pattern-arity-test: match_pattern / typecheck_pattern fail closed on tuple-arity mismatch (cerberus-sl item 7); T1–T4 kernel-checked at compile time; closure round R1/R2 witnesses at fuel 17
+    PASS T1a match_pattern tup2 v3: got none; pre-fix: some [(Symbol "d" 1 SD_None, Vunit), (Symbol "d" 2 SD_None, Vtrue)] (the truncating prefix — the defect)
+    PASS T1b match_pattern tup3 v2: got none; pre-fix: some [(Symbol "d" 1 SD_None, Vunit), (Symbol "d" 2 SD_None, Vtrue)] (the truncating prefix — the defect)
+    PASS T2 select_case v3 [(tup2, pair arm), (wild, wildcard arm)]: got some "wildcard arm"; pre-fix: some "pair arm" (the pair arm selected on a triple)
+    PASS T3 match_pattern tup2 v2: got some [(Symbol "d" 1 SD_None, Vunit), (Symbol "d" 2 SD_None, Vtrue)]; pre-fix: some [(Symbol "d" 1 SD_None, Vunit), (Symbol "d" 2 SD_None, Vtrue)] (unchanged)
+    PASS T3_select select_case cons v2 [(tup2, []), (wild, [(s3, Vunit)])]: got some [(Symbol "d" 1 SD_None, Vunit), (Symbol "d" 2 SD_None, Vtrue)]; pre-fix: some [(Symbol "d" 1 SD_None, Vunit), (Symbol "d" 2 SD_None, Vtrue)] (unchanged)
+    PASS T5a typecheck_pattern (BTy_tuple [unit, boolean, boolean]) tup2: got Exception (CORE_TYPING (MismatchExpected "Ctuple" (BTy_tuple <3 components>) "tuple pattern of a different arity")); pre-fix: Result (typed Ctuple pattern with 2 sub-patterns) (ACCEPTED — the defect)
+    PASS T5b typecheck_pattern (BTy_tuple [unit, boolean]) tup3: got Exception (CORE_TYPING (MismatchExpected "Ctuple" (BTy_tuple <2 components>) "tuple pattern of a different arity")); pre-fix: Result (typed Ctuple pattern with 2 sub-patterns) (ACCEPTED, third sub-pattern DROPPED — the defect)
+    PASS T5c typecheck_pattern (BTy_tuple [unit, boolean]) tup2 (positive control): got Result (typed Ctuple pattern with 2 sub-patterns); pre-fix: Result (typed Ctuple pattern with 2 sub-patterns) (unchanged)
+    PASS R1 typecheck_pexpr (unit, boolean) (unit, true, false): got Exception (MismatchExpected "Ctuple" _ "tuple of a different arity"); pre-fix: Result (PEctor Ctuple with 2 operands) — the third DELETED
+    PASS R1 typecheck_pexpr (unit, boolean, boolean) (unit, true): got Exception (MismatchExpected "Ctuple" _ "tuple of a different arity"); pre-fix: Result (PEctor Ctuple with 2 operands) — the third TYPE dropped
+    PASS R1 typecheck_pexpr nested (unit, (boolean, boolean)) (unit, (true, false, false)): got Exception (MismatchExpected "Ctuple" _ "tuple of a different arity"); pre-fix: Result (PEctor Ctuple with 2 operands) — the inner surplus DELETED
+    PASS R1 typecheck_pexpr fitting (unit, boolean, boolean): operands preserved byte-identical: got Result (PEctor Ctuple with 3 operands); pre-fix: Result (PEctor Ctuple with 3 operands) (unchanged)
+    PASS R1 typecheck_pexpr fitting nested: operands preserved byte-identical: got Result (PEctor Ctuple with 2 operands); pre-fix: Result (unchanged)
+    PASS R1 typecheck_expr (unit, boolean) unseq(unit, true, false): got Exception (MismatchExpected "Eunseq" _ "unseq of a different arity"); pre-fix: Result (Eunseq with 2 operands) — the third DELETED
+    PASS R1 typecheck_expr (unit, boolean, boolean) unseq(unit, true): got Exception (MismatchExpected "Eunseq" _ "unseq of a different arity"); pre-fix: Result (Eunseq with 2 operands)
+    PASS R1 typecheck_expr fitting unseq(unit, true, false): operands preserved byte-identical: got Result (Eunseq with 3 operands); pre-fix: Result (Eunseq with 3 operands) (unchanged)
+    PASS R1 typecheck_expr (unit, boolean) par(unit, true, false): got Exception (MismatchExpected "Epar" _ "par of a different arity"); pre-fix: Result (Epar with 2 operands) — the third DELETED
+    PASS R1 typecheck_expr (unit, boolean, boolean) par(unit, true): got Exception (MismatchExpected "Epar" _ "par of a different arity"); pre-fix: Result (Epar with 2 operands)
+    PASS R1 typecheck_expr fitting par(unit, true, false): operands preserved byte-identical: got Result (Epar with 3 operands); pre-fix: Result (Epar with 3 operands) (unchanged)
+    PASS R2 Core_run Elet (k0, k1) = (unit, unit, unit): Illformed_program: got MatchPatternArityTest.RouteOutcome.illformed "Elet: the pattern didn't match pe1"; pre-fix: the prefix bound, e2 stepped (oracle: Specified(3) on let-mismatch.core)
+    PASS R2 Core_eval PElet (k0, k1) = (unit, unit, unit): Illformed_program: got MatchPatternArityTest.RouteOutcome.illformed "PElet: the pattern didn't match pe1"; pre-fix: Illformed_program "PElet: the pattern didn't match pe1" (already, via select_case)
+    PASS R2 default = rewrite: both routes Illformed_program: got Elet MatchPatternArityTest.RouteOutcome.illformed "Elet: the pattern didn't match pe1" / PElet MatchPatternArityTest.RouteOutcome.illformed "PElet: the pattern didn't match pe1"; pre-fix: DISAGREED: Elet bound the prefix, PElet failed
+    PASS R2 fitting (k0, k1) = (unit, unit): both routes Defined: got Elet MatchPatternArityTest.RouteOutcome.defined / PElet MatchPatternArityTest.RouteOutcome.defined; pre-fix: both Defined (unchanged)
+    PASS R2 Core_reduction one_step Elet (k0, k1) = (unit, unit, unit): Illformed_program (the driver's engine): got MatchPatternArityTest.RouteOutcome.illformed "Elet: the pattern didn't match pe1"; pre-fix: TAU Elet with the prefix bound (oracle default: Specified(3) on let-mismatch.core)
+    PASS R2 Core_reduction one_step Ewseq (k0, k1) = pure (unit, unit, unit): Illformed_program: got MatchPatternArityTest.RouteOutcome.illformed "Ewseq: the pattern didn't match e1"; pre-fix: TAU Ewseq with the prefix bound (oracle default: Specified(3) on unseq-weak-mismatch.core)
+    PASS R2 Core_reduction one_step Esseq (k0, k1) = pure (unit, unit, unit): Illformed_program: got MatchPatternArityTest.RouteOutcome.illformed "Esseq: the pattern didn't match e1"; pre-fix: TAU Esseq with the prefix bound (oracle default: Specified(3) on unseq-strong-mismatch.core)
+    PASS R2 Core_reduction one_step fitting Elet (k0, k1) = (unit, unit): TAU (unchanged): got MatchPatternArityTest.RouteOutcome.defined; pre-fix: TAU Elet (unchanged)
+    match-pattern-arity-test: OK (8/8 item-7 witnesses + 19/19 closure-round witnesses; kernel theorems T1a T1b T1_wrapper T1_anyFuel T2 T3 T3_select T4_neg and the R2_* equations (loud leaf / subst_pattern declines) compiled; #print axioms pinned by #guard_msgs: [propext] on T1a/T1b/T2/T3/T3_select/T4_neg, the trio on T1_anyFuel)
+    ✓ match-pattern-arity-test PASSED
+    ==========================================
+    Total: 1 passed, 0 failed
+
+### 13.3 The engines — `unseq-weak/strong-mismatch.core` under `--rewrite`, before (round 1) and after (round 2), verbatim
+
+Before (round 1; `.tmp/mpa/postfix-oracle-closure.log` as quoted in §12.5): default
+`Error {msg: "ill-formed program: \`Ewseq: the pattern didn't match e1'"}` / `--rewrite` `internal error:
+Core_aux.subst_pattern: tuple pattern of arity 2 bound to a tuple of arity 3 (upstream-tray draft 45)` (and the
+`Esseq` twin) — two outcome kinds. After:
+
+    === POST-FIX fork pure-let-mismatch.core ===
+    --- default:
+    Error {msg: "ill-formed program: `PElet: the pattern didn't match pe1'"}
+    --- --typecheck-core:
+    .tmp/mpa/core-probes/pure-let-mismatch.core:2:51: error: this expression is of type 'tuple of a different arity' but an expression of type '(integer,integer)' was expected
+    --- --rewrite:
+    Error {msg: "ill-formed program: `PElet: the pattern didn't match pe1'"}
+    === POST-FIX fork let-mismatch.core ===
+    --- default:
+    Error {msg: "ill-formed program: `Elet: the pattern didn't match pe1'"}
+    --- --typecheck-core:
+    .tmp/mpa/core-probes/let-mismatch.core:2:34: error: this expression is of type 'tuple of a different arity' but an expression of type '(integer,integer)' was expected
+    --- --rewrite:
+    Error {msg: "ill-formed program: `PElet: the pattern didn't match pe1'"}
+    === POST-FIX fork let-nested-mismatch.core ===
+    --- default:
+    Error {msg: "ill-formed program: `Elet: the pattern didn't match pe1'"}
+    --- --typecheck-core:
+    .tmp/mpa/core-probes/let-nested-mismatch.core:2:49: error: this expression is of type 'tuple of a different arity' but an expression of type '(integer,integer)' was expected
+    --- --rewrite:
+    Error {msg: "ill-formed program: `PElet: the pattern didn't match pe1'"}
+    === POST-FIX fork unseq-weak-mismatch.core ===
+    --- default:
+    Error {msg: "ill-formed program: `Ewseq: the pattern didn't match e1'"}
+    --- --typecheck-core:
+    .tmp/mpa/core-probes/unseq-weak-mismatch.core:2:39: error: this expression is of type 'unseq of a different arity' but an expression of type '(integer,integer)' was expected
+    --- --rewrite:
+    Error {msg: "ill-formed program: `Ewseq: the pattern didn't match e1'"}
+    === POST-FIX fork unseq-strong-mismatch.core ===
+    --- default:
+    Error {msg: "ill-formed program: `Esseq: the pattern didn't match e1'"}
+    --- --typecheck-core:
+    .tmp/mpa/core-probes/unseq-strong-mismatch.core:2:41: error: this expression is of type 'unseq of a different arity' but an expression of type '(integer,integer)' was expected
+    --- --rewrite:
+    Error {msg: "ill-formed program: `Esseq: the pattern didn't match e1'"}
+    === POST-FIX fork pure-let-discarded-error.core ===
+    --- default:
+    Error {msg: "surplus"}
+    --- --typecheck-core:
+    .tmp/mpa/core-probes/pure-let-discarded-error.core:2:51: error: this expression is of type 'tuple of a different arity' but an expression of type '(integer,integer)' was expected
+    --- --rewrite:
+    Error {msg: "surplus"}
+    === POST-FIX fork unseq-discarded-error.core ===
+    --- default:
+    Error {msg: "surplus"}
+    --- --typecheck-core:
+    .tmp/mpa/core-probes/unseq-discarded-error.core:2:39: error: this expression is of type 'unseq of a different arity' but an expression of type '(integer,integer)' was expected
+    --- --rewrite:
+    Error {msg: "surplus"}
+    === POST-FIX fork tray45.core ===
+    --- default:
+    Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+    --- --typecheck-core:
+    .tmp/mpa/core-probes/tray45.core:3:7: error: this expression is of type 'tuple pattern of a different arity' but an expression of type '(integer,integer,integer)' was expected
+    --- --rewrite:
+    Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+    === POST-FIX fork fitting.core ===
+    --- default:
+    Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+    --- --typecheck-core:
+    Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+    --- --rewrite:
+    Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+
+— `unseq-weak-mismatch.core`/`unseq-strong-mismatch.core`: default and `--rewrite` now print the SAME line (`Ewseq: …` / `Esseq: …` ill-formed program); every other probe unchanged from §12.5.
+
+### 13.4 The register row, re-rationalised (`scripts/failure_reach_register.txt`; re-emitted, reviewed, re-sealed)
+
+Re-emitted from the round-2 census (`check_failure_reach.py --emit --seed <register>`): the SAME 235 sites, no UNREVIEWED row — the leaf's key is unchanged, its executing routes are gone. Class: **UNREACHABLE-BY-INVARIANT** (not UNKNOWN), because the register's rule for that class is an invariant NAME with `.lem` cites, and one exists — "fit-check before bind": every live caller of the three leaf-calling helpers is post-match or binds a non-tuple (each caller cited in the row). UNKNOWN would be the class if a syntactic route existed with neither witness nor invariant; none does (the round-1 routes `pure_propagation2`/`to_pure → subst_pattern` now decline). The row (`git diff`, verbatim; the tally moves REACHABLE 49 → 48, UNREACHABLE-BY-INVARIANT 167 → 168):
+
+    -# tally: sites=235 exec=233 unresolved-owner=2 reviewed-TAIL=182 reviewed-NON-TAIL=53 UNREACHABLE-BY-INVARIANT=167 REACHABLE=49 UNKNOWN=19 discardable=0
+    +# tally: sites=235 exec=233 unresolved-owner=2 reviewed-TAIL=182 reviewed-NON-TAIL=53 UNREACHABLE-BY-INVARIANT=168 REACHABLE=48 UNKNOWN=19 discardable=0
+    -lean_frontend/generated/Core_aux.lean	tuple_arity_error	failwithI	( String.append "Core_aux." (String.append who (String.appen	EXEC	TAIL	TAIL	REACHABLE	Core-text input (malformed Core: a tuple pattern bound to a tuple of another arity; the Core typechecker is OFF by default, --typecheck-core rejects it): core_rewrite pure_propagation2 -> subst_pattern under --rewrite (witness: the audit's unseq-weak-mismatch.core / unseq-strong-mismatch.core, record §12.5 — the fork oracle dies in this leaf), to_pure -> subst_pattern, and update_env_aux from any caller that skips match_pattern (Core_run's and Core_reduction's let-forms check it first and report Illformed_program). Unreachable on elaborator output (the elaborator builds tuple patterns from the types it just produced).	core_aux.lem tuple_arity_error (the ONE leaf of subst_pattern_val / unsafe_subst_pattern x2 / subst_pattern x2 / update_env_aux); upstream-tray draft 45; lean_frontend/docs/2026-09-20_match-pattern-arity-record.md §12	match-pattern-arity closure round 2026-09-22 (pre-merge audit R2): the arity guard's loud leaf — OCaml Cerb_debug.error, Lean failwithI	89fde1fa3e68da7f
+    +lean_frontend/generated/Core_aux.lean	tuple_arity_error	failwithI	( String.append "Core_aux." (String.append who (String.appen	EXEC	TAIL	TAIL	UNREACHABLE-BY-INVARIANT	fit-check before bind (closure round 2, 2026-09-22): every live caller of the three helpers that call this leaf is post-match or binds a non-tuple — subst_pattern_val <- subst_pattern's value arms, each guarded by `match match_pattern (whole pattern) value with Nothing -> Nothing` (core_aux.lem subst_pattern, the Ccons and Ctuple value arms; the Cspecified/Cunspecified arms pass object/ctype values, never tuples) and <- unsafe_subst_pattern; unsafe_subst_pattern's only live callers pass mk_unit_pe (core_rewrite.lem remove_skips :179/:191 — never a tuple; :1173/:1205 are inside comments); update_env_aux <- update_env <- the let-forms of both engines after a match_pattern check (core_run.lem Elet/Ewseq/Esseq; core_reduction.lem one_step Elet x2/Ewseq x2/Esseq x2) or with a CaseBase pattern (core_reduction.lem mk_sym_pat :472/:1471). A fitting whole implies fitting components (match_pattern recurses with equal lengths). Round 1 had it REACHABLE via pure_propagation2/to_pure -> subst_pattern, which now DECLINES (Nothing) instead.	core_aux.lem tuple_arity_error (the ONE leaf of subst_pattern_val / unsafe_subst_pattern x2 / update_env_aux); core_aux.lem subst_pattern value arms; core_run.lem, core_reduction.lem let-forms; upstream-tray draft 45; lean_frontend/docs/2026-09-20_match-pattern-arity-record.md §13.4	match-pattern-arity closure rounds 1-2 (pre-merge audit R2): the arity guard's loud backstop — OCaml Cerb_debug.error, Lean failwithI; no executing route since round 2	31247800402322e0
+
+The gate after the re-seal, verbatim:
+
+    check_failure_reach: OK (235 pure failure sites = the 235 register rows exactly (233 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=168 REACHABLE=48 UNKNOWN=19; every row sealed; tally line consistent)
+
+### 13.5 Manifest and gates
+
+Manifest: `core_aux.lem 314c447f… → dee01667…`, `core_aux.ml e20dc5a1… → 5a20bc6b…` (7 hunks vs upstream: the moved function + the guards) + a round-2 NOTE; `check_fork_drift: OK — layer 1: 77 …; layer 2: 26 differing generated files, all hash-pinned` (run before the build). Build chain (`.tmp/mpa/round2-build.log`), verbatim:
+
+    === build_cerberus rc=0 end Tue Sep 22 06:16:59 AM UTC 2026 wall=15s
+    === build_lean rc=0 end Tue Sep 22 06:17:53 AM UTC 2026 wall=54s
+    === speclab rc=0 end Tue Sep 22 06:17:56 AM UTC 2026 wall=3s
+    === unit test rc=0 end Tue Sep 22 06:22:21 AM UTC 2026 wall=265s
+
+Tier A row 1 (`scripts/test_unit.sh match-pattern-arity-test`, `.tmp/mpa/unit-round2.log`; exit 0), its gates verbatim (the failure-reach line is the PRE-re-seal one — same key, class re-reviewed afterwards, §13.4):
+
+    check_exec_purity: CLEAN (11 modules)
+    check_theorem_axioms: hand-written axiom census OK (0 axioms — the arc-17 S2b end state)
+    check_no_fuel_numerals: OK (326 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6), no address-space-top literal (A1-A3); allowed Main.lean sites seen: 6 of 6 (hand-written + generated copy))
+    check_lakefile_roots: OK (218 roots = 218 generated modules + the exe root Main; 85 auxiliary modules listed as roots — names only; every carrier is built by check_fuel_forms.sh)
+    check_fuel_forms: forms partition OK (62 MEASURED + 13 ABSORBING + 0 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+    check_failure_reach: OK (235 pure failure sites = the 235 register rows exactly (233 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=167 REACHABLE=49 UNKNOWN=19; every row sealed; tally line consistent)
+    check_exec_totality: CLEAN (22 generated modules + hand-written CerbND, 0 allowlisted)
+    check_lem_sync: OK (src be8b3a90f5de94d885d612a72af1e2b61b57aa9f13565f21d114faf97570c2cb, gen 43d1da7308b331210d3f67872fa06f1a6451e6cad149a7f4756780599447a263)
+    check_lem_sync: lean OK (src be8b3a90f5de94d885d612a72af1e2b61b57aa9f13565f21d114faf97570c2cb, gen 1925e3d85726352a5ef15e42124197751771ae741e3e10dd647182fe651262bc)
+    check_fork_drift: OK — layer 1: 77 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 26 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 38f87d5 = lem -v)
+    check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+
+HOLD: the frozen full battery is NOT re-run for round 2 (orchestrator: after the enum arc lands, rebase
+`fix/match-pattern-arity` onto the new mainline — the 5-file overlap, pins recomputed from the combined source —
+and run ONE frozen battery on that final head for the delta audit).

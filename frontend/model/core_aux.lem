@@ -1120,17 +1120,68 @@ and subst_sym_paction sym cval (Paction p act) =
 
 
 
+(* FORK 2026-09-22 (closure round 2): match_pattern MOVED here, verbatim, from its place
+   just before select_case — Lem is definition-before-use and subst_pattern (below)
+   now uses it as its fit test. Body unchanged (the round-1 arity guard included). *)
+val     match_pattern: pattern -> value -> maybe (list (Symbol.sym * value))
+let rec match_pattern (Pattern _ pat) cval =
+  match (pat, cval) with
+    | (CaseBase (Nothing, _), _) ->
+        Just []
+    | (CaseBase (Just sym, _), _) ->
+        Just [(sym, cval)]
+(*      | Vobject of (generic_object_value 'sym) *)
+    | (CaseCtor Cspecified [pat'], Vloaded (LVspecified oval)) ->
+        match_pattern pat' (Vobject oval)
+    | (CaseCtor Cunspecified [pat'], Vloaded (LVunspecified ty)) ->
+        match_pattern pat' (Vctype ty)
+(*      | Vlist of core_base_type * list (generic_value 'sym) *)
+    | (CaseCtor Ctuple pats', Vtuple cvals') -> 
+        (* FORK 2026-09-20 (cerberus-sl hidden-state note item 7; upstream-tray
+           draft 45): fail CLOSED on a tuple-arity mismatch. Lem's List.zip
+           TRUNCATES (library/list.lem:987-992, `| _ -> []` on unequal tails), so
+           without this guard a pattern of arity 2 MATCHED a value of arity 3
+           (binding the prefix) and a pattern of arity 3 matched a value of
+           arity 2. Mirrors upstream's own guard in simpl_match_pattern
+           (core_rewrite.lem:1287-1290). Nothing = NO MATCH, so select_case
+           tries the next arm; the bindings and their order are unchanged. *)
+        if List.length pats' <> List.length cvals' then
+          Nothing
+        else
+        List.foldr (fun (pat', cval') acc ->
+          Maybe.bind acc (fun xs ->
+            Maybe.bind (match_pattern pat' cval') (fun x ->
+              Just (x++xs)
+            )
+          )
+        ) (Just []) (List.zip pats' cvals')
+    | (CaseCtor (Cnil _) [], Vlist _ []) ->
+        let () = Debug.warn [] (fun () -> "Pattern matching nil without checking types!") in
+        Just []
+    | (CaseCtor Ccons [pat_x; pat_xs], Vlist ty (x::xs)) ->
+        Maybe.bind (match_pattern pat_x x) (fun x ->
+          Maybe.bind (match_pattern pat_xs (Vlist ty xs)) (fun xs ->
+            Just (x++xs)
+          )
+        )
+    | _ ->
+        Nothing
+  end
+
 (* FORK 2026-09-22 (upstream-tray draft 45; R2 of the pre-merge audit
    lean_frontend/docs/2026-09-21_enum-repairs-and-match-pattern-arity-audit.md):
-   THE ONE loud leaf of the tuple-BINDING helpers below — subst_pattern_val,
-   unsafe_subst_pattern, subst_pattern, update_env_aux — on a tuple-arity
+   THE ONE loud leaf of the non-`maybe` tuple-BINDING helpers below —
+   subst_pattern_val, unsafe_subst_pattern, update_env_aux — on a tuple-arity
    mismatch. Each binds a tuple pattern against a tuple by List.zip, which
    TRUNCATES (library/list.lem:987-992): a pattern of arity 2 against a tuple
-   of arity 3 silently bound the prefix. They are reached WITHOUT a prior
-   match_pattern (to_pure and core_rewrite's pure_propagation2 -> subst_pattern;
-   the Core_run/Core_reduction let-forms -> update_env), so each guards its own
-   arity. A mismatch is a malformed Core program (the Core typechecker is OFF by
-   default) and the outcome is this leaf: OCaml Cerb_debug.error, Lean
+   of arity 3 silently bound the prefix. The policy (closure rounds 1-2, audit
+   R2): a mismatch is a malformed Core program (the Core typechecker is OFF by
+   default) and every path reports it through ONE outcome kind — the let-forms
+   of both engines (Core_run, Core_reduction) check match_pattern and raise
+   Illformed_program exactly as the PElet route does; the `maybe`-returning
+   subst_pattern DECLINES (Nothing) so the rewriter/to_pure leave the binding
+   to the runtime; and these three helpers, whose live callers are all
+   post-match, keep this loud backstop: OCaml Cerb_debug.error, Lean
    LemLib.failwithI — one reviewed row of scripts/failure_reach_register.txt. *)
 val tuple_arity_error: forall 'a. string -> nat -> nat -> 'a
 let tuple_arity_error who n_pats n_vals =
@@ -1524,8 +1575,17 @@ let rec subst_pattern (Pattern _ pat) pe' expr =
         Just expr
     | (CaseCtor Ccons [pat1; pat2], Pexpr _ () (PEval (Vlist bTy_elem (cval::cvals)))) ->
         (* populated list (value) *)
-        Just (subst_pattern_val pat1 cval $
-          subst_pattern_val pat2 (Vlist bTy_elem cvals) expr)
+        (* FORK 2026-09-22 (closure round 2, audit R2 ruling): DECLINE (Nothing) unless the
+           whole pattern FITS the value — the same predicate as the let-forms and
+           select_case — so a tuple-arity mismatch anywhere inside is left to the
+           runtime's Illformed_program route, never to subst_pattern_val's loud leaf.
+           (match_pattern's Cnil arm Debug.warn is silent below debug level 2.) *)
+        match match_pattern (Pattern [] (CaseCtor Ccons [pat1; pat2])) (Vlist bTy_elem (cval::cvals)) with
+          | Nothing -> Nothing
+          | Just _ ->
+              Just (subst_pattern_val pat1 cval $
+                subst_pattern_val pat2 (Vlist bTy_elem cvals) expr)
+        end
     | (CaseCtor Ccons [pat1; pat2], Pexpr _ _ (PEctor Ccons [pe1; pe2])) ->
         (* populated list (pure expr) *)
         match subst_pattern pat2 pe2 expr with
@@ -1533,16 +1593,21 @@ let rec subst_pattern (Pattern _ pat) pe' expr =
           | Nothing -> Nothing
         end
     | (CaseCtor Ctuple pats', Pexpr _ () (PEval (Vtuple cvals))) ->
-        (* FORK 2026-09-22: arity guards (see tuple_arity_error) *)
-        if List.length pats' <> List.length cvals then
-          tuple_arity_error "subst_pattern" (List.length pats') (List.length cvals)
-        else
-        Just $ List.foldr (fun (pat', cval) acc ->
-          subst_pattern_val pat' cval acc
-        ) expr (List.zip pats' cvals)
+        (* FORK 2026-09-22 (closure round 2, audit R2 ruling): DECLINE (Nothing) unless the
+           whole tuple pattern FITS the tuple value (match_pattern: equal arity here and
+           in every nested tuple) — see the Ccons arm above. *)
+        match match_pattern (Pattern [] (CaseCtor Ctuple pats')) (Vtuple cvals) with
+          | Nothing -> Nothing
+          | Just _ ->
+              Just $ List.foldr (fun (pat', cval) acc ->
+                subst_pattern_val pat' cval acc
+              ) expr (List.zip pats' cvals)
+        end
     | (CaseCtor Ctuple pats', Pexpr _ _ (PEctor Ctuple pes)) ->
+        (* FORK 2026-09-22 (closure round 2): DECLINE (Nothing) on unequal arity; nested
+           mismatches decline through the recursive subst_pattern calls below. *)
         if List.length pats' <> List.length pes then
-          tuple_arity_error "subst_pattern" (List.length pats') (List.length pes)
+          Nothing
         else
         List.foldr (fun (pat', pe) acc ->
           match acc with
@@ -2051,50 +2116,6 @@ let rec has_sseqs expr =
 
 
 
-val     match_pattern: pattern -> value -> maybe (list (Symbol.sym * value))
-let rec match_pattern (Pattern _ pat) cval =
-  match (pat, cval) with
-    | (CaseBase (Nothing, _), _) ->
-        Just []
-    | (CaseBase (Just sym, _), _) ->
-        Just [(sym, cval)]
-(*      | Vobject of (generic_object_value 'sym) *)
-    | (CaseCtor Cspecified [pat'], Vloaded (LVspecified oval)) ->
-        match_pattern pat' (Vobject oval)
-    | (CaseCtor Cunspecified [pat'], Vloaded (LVunspecified ty)) ->
-        match_pattern pat' (Vctype ty)
-(*      | Vlist of core_base_type * list (generic_value 'sym) *)
-    | (CaseCtor Ctuple pats', Vtuple cvals') -> 
-        (* FORK 2026-09-20 (cerberus-sl hidden-state note item 7; upstream-tray
-           draft 45): fail CLOSED on a tuple-arity mismatch. Lem's List.zip
-           TRUNCATES (library/list.lem:987-992, `| _ -> []` on unequal tails), so
-           without this guard a pattern of arity 2 MATCHED a value of arity 3
-           (binding the prefix) and a pattern of arity 3 matched a value of
-           arity 2. Mirrors upstream's own guard in simpl_match_pattern
-           (core_rewrite.lem:1287-1290). Nothing = NO MATCH, so select_case
-           tries the next arm; the bindings and their order are unchanged. *)
-        if List.length pats' <> List.length cvals' then
-          Nothing
-        else
-        List.foldr (fun (pat', cval') acc ->
-          Maybe.bind acc (fun xs ->
-            Maybe.bind (match_pattern pat' cval') (fun x ->
-              Just (x++xs)
-            )
-          )
-        ) (Just []) (List.zip pats' cvals')
-    | (CaseCtor (Cnil _) [], Vlist _ []) ->
-        let () = Debug.warn [] (fun () -> "Pattern matching nil without checking types!") in
-        Just []
-    | (CaseCtor Ccons [pat_x; pat_xs], Vlist ty (x::xs)) ->
-        Maybe.bind (match_pattern pat_x x) (fun x ->
-          Maybe.bind (match_pattern pat_xs (Vlist ty xs)) (fun xs ->
-            Just (x++xs)
-          )
-        )
-    | _ ->
-        Nothing
-  end
 
 val     select_case: forall 'a. (Symbol.sym -> value -> 'a -> 'a) -> value -> list (pattern * 'a) -> maybe 'a
 let rec select_case subst_sym cval = function
@@ -2492,9 +2513,9 @@ let rec update_env_aux (Pattern _ pat) cval env =
         update_env_aux pat1 cval1 $
           update_env_aux pat2 (Vlist bTy_elem cvals) env
     | (CaseCtor Ctuple pats', Vtuple cvals) ->
-        (* FORK 2026-09-22: arity guard (see tuple_arity_error) — Core_run's
-           let-forms check match_pattern first and report Illformed_program;
-           Core_reduction's reach this leaf directly *)
+        (* FORK 2026-09-22: arity guard (see tuple_arity_error) — the let-forms of
+           BOTH engines (Core_run, Core_reduction) check match_pattern first and
+           report Illformed_program; this leaf is the backstop *)
         if List.length pats' <> List.length cvals then
           tuple_arity_error "update_env_aux" (List.length pats') (List.length cvals)
         else

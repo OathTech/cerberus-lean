@@ -1,3 +1,10 @@
+# match-pattern-arity CLOSURE round 2, 2026-09-22 [AGENT; orchestrator ruling on the round-1 residual; single rows + this NOTE]:
+# core_aux.lem's `maybe`-returning subst_pattern DECLINES (Nothing) on a tuple-arity mismatch — its two value arms fit-test the
+# whole pattern with match_pattern (nested mismatches decline too), its pexpr-tuple arm on unequal length — so --rewrite and the
+# default run give the SAME Illformed_program; match_pattern is MOVED up verbatim (Lem is definition-before-use) to precede the
+# binding helpers; the three non-`maybe` helpers keep the tuple_arity_error backstop (its register row re-classed
+# UNREACHABLE-BY-INVARIANT: every live caller is post-match). Layer 1: core_aux.lem 314c447f… -> dee01667…. Layer 2: core_aux.ml
+# e20dc5a1… -> 5a20bc6b… (7 hunks vs upstream: the moved function + the guards). Record §13.
 # match-pattern-arity CLOSURE round, 2026-09-22 [AGENT; pre-merge audit lean_frontend/docs/2026-09-21_enum-repairs-and-match-pattern-arity-audit.md
 # R1/R2, orchestrator rulings; single rows + this NOTE, no --refresh]: R1 — core_typing.lem's tuple-EXPRESSION zips fail closed
 # (typecheck_pexpr's PEctor Ctuple arm, typecheck_expr's Eunseq and Epar arms: MismatchExpected on unequal lengths; before, the
@@ -474,7 +481,7 @@ util/cerb_fresh.ml
 100644 185b1d2afb9e0d3598c664a50d7106b8cc195add6049b358c0c92c8305e60dc2 frontend/model/cerb_attributes.lem
 100644 c4426c93453c70139f7693096cb2d3796dee1676344652c2c6271303a2d392ae frontend/model/cn.lem
 100644 bf183f3dc55fb5d962089cba9ebc82485a204d34958de5381cf784e155935504 frontend/model/core.lem
-100644 314c447fac234c6021ec427ead83a056449d016aed6ff575bf97b2f74334172f frontend/model/core_aux.lem
+100644 dee01667c7056938400f1ce4befd199b8f2c5bcdef6ae34fa59ae8a80558af37 frontend/model/core_aux.lem
 100644 4ade27ce2e7431592228e81b1b33184e975d78710bfecc93910df867d5d3dd4b frontend/model/core_eval.lem
 100644 7821d8255a206e9f3f6c2ff9993b48917903fce4bd6bb185912a223edf9cc392 frontend/model/core_linking.lem
 100644 cf062e7a0ce3872dd6c7a843207f9205ae8c8c39a7824e2714ac75e22640f052 frontend/model/core_reduction.lem
@@ -530,7 +537,7 @@ util/cerb_fresh.ml
 100755 9a07e1a9188443cebef04bef184bbac1a876c996fad0caca90ea9b4ce3605292 tools/check_lem_sync.sh
 100644 ee912ae7803e9d42fbf5ef85fdac484586571d4f4b2eb17745431ca9c19aacf8 util/cerb_fresh.ml
 [expected-semantic]
-e20dc5a1e9f9bf4687669adfe6bf17765d445cf1c57d16c3d0932c9aebe75d54 core_aux.ml
+5a20bc6b1e3e4cd9af04c1316e4a2b8354ccfab68e2fea3561acfd7cdfb3a093 core_aux.ml
 ceca3526d3ddbd55345eee29f0c5b2626b56c516014cdd73fb3bf5db20f50ac2 cabs_to_ail_effect.ml
 0aefe2af044772ef6a5e4be8bfdfa6bb1ae52cddcaf15d7b771b0abe3d13922b cabs_to_ail.ml
 1c95fd93b067730026f2c9cfde1d1551d0872192f691a6067654bf9ee44395d5 core_reduction.ml

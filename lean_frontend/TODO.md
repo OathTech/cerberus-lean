@@ -376,8 +376,10 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   **Closure round (2026-09-22, record §12; audit R1/R2):** (ii) above was FALSE — the helpers are
   reached without the matcher; every tuple-binding helper now guards its arity (one loud leaf
   `Core_aux.tuple_arity_error`, a `failure_reach_register` row), Core_run's `Elet`/`Ewseq`/`Esseq`
-  check the matcher (Illformed_program = the PElet route), and the typechecker's tuple-EXPRESSION
-  arms (`PEctor Ctuple`, `Eunseq`, `Epar`) fail closed instead of deleting operands. Left: (iv) the
+  check the matcher (Illformed_program = the PElet route), the typechecker's tuple-EXPRESSION
+  arms (`PEctor Ctuple`, `Eunseq`, `Epar`) fail closed instead of deleting operands, and (round 2)
+  the `maybe`-returning `subst_pattern` DECLINES (`Nothing`, fit-tested by `match_pattern`) so
+  `--rewrite` = default = `Illformed_program` — the loud leaf is the backstop (no executing route). Left: (iv) the
   OTHER truncating `List.zip`s of `core_typing.lem` are CALL-arity checks, not tuple binding —
   `PEcall` `:766`/`:1167`, `Eproc`/`Eccall`/`Erun` argument lists `:1689`, `:1739-1759`, `:1773`,
   `:1843` — same fail-open class (surplus arguments dropped from the typed program), out of this

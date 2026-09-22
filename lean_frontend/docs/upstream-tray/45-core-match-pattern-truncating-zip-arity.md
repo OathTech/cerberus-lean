@@ -241,13 +241,39 @@ expected "… of a different arity") else <the present body>`; (R2) the let-form
 (`core_reduction.lem:351-426`, the engine the driver steps with) and `Core_run.core_thread_step2` (`core_run.lem:872-879,
 1450, 1494`) — check `match_pattern pat cval` before `update_env` and report `Illformed_program "<Elet|Ewseq|Esseq>:
 the pattern didn't match …"` through the monadic channel — the same outcome as the `PElet` route, so default =
-`--rewrite`; and every
-tuple-binding helper (`subst_pattern_val`, `unsafe_subst_pattern` ×2, `subst_pattern` ×2, `update_env_aux`)
-guards its arity with ONE shared loud leaf, `Core_aux.tuple_arity_error` (`Cerb_debug.error` on the OCaml
-side), since these are pure functions with no failure channel and a mismatch is a malformed Core program.
-Upstream may prefer `Nothing` in the `maybe`-typed `subst_pattern`; the fork chose one behaviour for
-every helper. Fitting inputs are unchanged (the fork pins operand preservation byte-identically).
+`--rewrite`; the
+`maybe`-returning `subst_pattern` returns `Nothing` on a mismatch (fit-tested by `match_pattern`, so nested
+mismatches decline too) and the rewriter/`to_pure` leave the binding to the runtime; and the non-`maybe`
+helpers (`subst_pattern_val`, `unsafe_subst_pattern` ×2, `update_env_aux`) guard their arity with ONE shared
+loud leaf, `Core_aux.tuple_arity_error` (`Cerb_debug.error` on the OCaml side) — the backstop behind callers
+that are all post-match. Fitting inputs are unchanged (the fork pins operand preservation byte-identically).
 
-**Fork status:** LANDED in the closure round of `fix/match-pattern-arity` (record
+**The final policy, in one paragraph (closure round 2, 2026-09-22, [AGENT orchestrator] ruling):** a tuple
+pattern that does not fit its tuple (arity, at any depth) is a malformed Core program, and every path reports
+it through ONE outcome kind. The MATCHER returns `Nothing`, so the SELECTOR falls through to the next arm
+(`case`; the consumer's contract, unchanged). TYPING rejects it when Core typing runs (`--typecheck-core`, off
+by default): the tuple-pattern rule and the tuple-expression, `unseq` and `par` rules all fail with the existing
+`MismatchExpected`. The LET-FORMS of BOTH engines (`Core_reduction.one_step` — the driver's — and
+`Core_run.core_thread_step2`: `Elet`/`Ewseq`/`Esseq`) check `match_pattern` before `update_env` and raise
+`Illformed_program "<form>: the pattern didn't match …"`, the same channel as the `PElet` route, so the default
+run and `--rewrite` agree. The REWRITER declines: the `maybe`-returning `subst_pattern` returns `Nothing` on a
+mismatch (its value arms use `match_pattern` as the fit test, so nested mismatches decline too), and
+`pure_propagation2`/`to_pure` then leave the binding for the runtime to report. The non-`maybe` HELPERS
+(`subst_pattern_val`, `unsafe_subst_pattern`, `update_env_aux`) keep the loud leaf `tuple_arity_error` as the
+backstop — every live caller of theirs is now post-match, so the leaf has no executing route (register class
+UNREACHABLE-BY-INVARIANT, invariant "fit-check before bind").
+
+**Erratum to the audit's R2 cite (the fork's audit named the second engine):** the audit named
+`core_run.lem:872-879` as the ordinary `let`'s binding site; that is `Core_run.core_thread_step2`, the SECOND
+engine. The driver steps with `Core_reduction` (`driver.lem` `drive_core_thread2 → Core_reduction.core_step2 →
+step_ctx → one_step`), whose six let-form sites (`core_reduction.lem:351-426`) bind through `update_env` just the
+same. Evidence: the first post-fix run of the audit's `let-mismatch.core` (default mode), with only `core_run.lem`
+guarded, died in the new loud leaf with the backtrace `Failure("internal error: Core_aux.update_env_aux: tuple
+pattern of arity 2 bound to a tuple of arity 3 (upstream-tray draft 45)") … Called from
+Cerb_frontend__Core_aux.update_env … Called from Cerb_frontend__Core_reduction.one_step.(fun) in file
+"ocaml_frontend/generated/core_reduction.ml", line 410 … Called from Cerb_frontend__Driver.liftCore_run.(fun) in
+file "ocaml_frontend/generated/driver.ml", line 163`. Both engines are guarded.
+
+**Fork status:** LANDED in the closure rounds of `fix/match-pattern-arity` (record
 `lean_frontend/docs/2026-09-20_match-pattern-arity-record.md` §12, with the hunks, the pre-fix engine
 quotes on the audit's probes and the runtime witnesses `test/Unit/MatchPatternArityTest.lean`).

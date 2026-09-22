@@ -39,8 +39,8 @@ actual generated definitions plus kernel facts — the shapes are the audit's `A
 (evidence dir `…-audit-evidence/arity/`), reused verbatim. R1: `typecheck_pexpr`'s tuple-EXPRESSION
 arm, `typecheck_expr`'s `Eunseq` and `Epar` arms REJECT an arity mismatch (both directions, nested) and
 PRESERVE every operand of a fitting input byte-identically (erase the type annotation, compare). R2:
-`subst_pattern_val`, `unsafe_subst_pattern`, `subst_pattern`, `update_env_aux` return THE loud leaf
-`Core_aux.tuple_arity_error` on a mismatch (kernel `rfl`: the leaf is `failwithI`, opaque, so the
+`subst_pattern_val`, `unsafe_subst_pattern`, `update_env_aux` return THE loud leaf
+`Core_aux.tuple_arity_error` on a mismatch (the `maybe`-returning `subst_pattern` DECLINES: `none`, round 2) (kernel `rfl`: the leaf is `failwithI`, opaque, so the
 equation is the statement that the result IS the leaf — never evaluated at runtime), fitting inputs
 unchanged; the ordinary `Elet` through `Core_run.core_thread_step2` and the `PElet` route through
 `Core_eval.step_eval_pexpr` give the SAME `Illformed_program` outcome (default = `--rewrite`). The two
@@ -240,9 +240,17 @@ theorem R2_subst_pattern_val_fit : subst_pattern_val (flat 2) (vals 2) body = un
 theorem R2_unsafe_subst_pattern_val_23 : unsafe_subst_pattern (flat 2) (mk_value_pe (vals 3)) body = tuple_arity_error "unsafe_subst_pattern" 2 3 := rfl
 theorem R2_unsafe_subst_pattern_pe_23 : unsafe_subst_pattern (flat 2) pe3u body = tuple_arity_error "unsafe_subst_pattern" 2 3 := rfl
 theorem R2_unsafe_subst_pattern_fit : unsafe_subst_pattern (flat 2) (mk_value_pe (vals 2)) body = unitBody := rfl
-theorem R2_subst_pattern_val_tuple_23 : subst_pattern (flat 2) (mk_value_pe (vals 3)) body = tuple_arity_error "subst_pattern" 2 3 := rfl
-theorem R2_subst_pattern_pe_23 : subst_pattern (flat 2) pe3u body = tuple_arity_error "subst_pattern" 2 3 := rfl
+/-! The `maybe`-returning `subst_pattern` DECLINES (closure round 2 ruling): `none` on a mismatch, at the top
+level and nested (the value arms use `match_pattern` as the fit test), so `pure_propagation2`/`to_pure`
+leave the binding to the runtime's `Illformed_program` route — one outcome KIND on every path. -/
+theorem R2_subst_pattern_val_tuple_23 : subst_pattern (flat 2) (mk_value_pe (vals 3)) body = none := rfl
+theorem R2_subst_pattern_val_tuple_32 : subst_pattern (flat 3) (mk_value_pe (vals 2)) body = none := rfl
+theorem R2_subst_pattern_pe_23 : subst_pattern (flat 2) pe3u body = none := rfl
+/-- nested: `((k0, k1), k5)` against `((unit, unit, unit), unit)` — declines, never the loud leaf -/
+theorem R2_subst_pattern_nested_val : subst_pattern (tuple [flat 2, leaf 5]) (mk_value_pe (Vtuple [vals 3, Vunit])) body = none := rfl
+theorem R2_subst_pattern_nested_pe : subst_pattern (tuple [flat 2, leaf 5]) (Pexpr [] () (PEctor Ctuple [pe3u, unitPe])) body = none := rfl
 theorem R2_subst_pattern_fit : subst_pattern (flat 2) (mk_value_pe (vals 2)) body = some unitBody := rfl
+theorem R2_subst_pattern_fit_pe : subst_pattern (flat 2) (Pexpr [] () (PEctor Ctuple [unitPe, unitPe])) body = some unitBody := rfl
 theorem R2_update_env_aux_23 : update_env_aux (flat 2) (vals 3) emptyEnv = tuple_arity_error "update_env_aux" 2 3 := rfl
 theorem R2_update_env_aux_32 : update_env_aux (flat 3) (vals 2) emptyEnv = tuple_arity_error "update_env_aux" 3 2 := rfl
 /-- the matcher on the same shape, for the record: NO MATCH -/
@@ -464,5 +472,5 @@ def main (args : List String) : IO UInt32 := do
   if failed then
     IO.eprintln "match-pattern-arity-test: FAILED (a runtime witness disagrees with the fail-closed expectation)"
     return 1
-  IO.println "match-pattern-arity-test: OK (8/8 item-7 witnesses + 19/19 closure-round witnesses; kernel theorems T1a T1b T1_wrapper T1_anyFuel T2 T3 T3_select T4_neg and the R2_* leaf equations compiled; #print axioms pinned by #guard_msgs: [propext] on T1a/T1b/T2/T3/T3_select/T4_neg, the trio on T1_anyFuel)"
+  IO.println "match-pattern-arity-test: OK (8/8 item-7 witnesses + 19/19 closure-round witnesses; kernel theorems T1a T1b T1_wrapper T1_anyFuel T2 T3 T3_select T4_neg and the R2_* equations (loud leaf / subst_pattern declines) compiled; #print axioms pinned by #guard_msgs: [propext] on T1a/T1b/T2/T3/T3_select/T4_neg, the trio on T1_anyFuel)"
   return 0
