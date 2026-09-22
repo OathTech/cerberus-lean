@@ -8,9 +8,15 @@
 > `enum_definitions`, Core-file field `enumDefs`, linked, passed to every
 > lifted def as a leading parameter in the sorted order `enum_definitions`,
 > `tagDefs`). Every sentence below about the enum registry is history. **The
-> DIGEST seam REMAINS** on this page's terms (`CerberusFresh.digest`,
-> `scripts/unsafebaseio_allowlist.txt` PIN rows): its route (D-A) is an open
-> operator decision (record §3.1) — this page is not retired.
+> DIGEST seam REMAINS for FRONTEND minting only** on this page's terms
+> (`CerberusFresh.digest`, `scripts/unsafebaseio_allowlist.txt` PIN rows).
+> The run's minting digest is run-state data since D-S 2026-09-22:
+> `core_run_state.sym_digest`, seeded by the driver entry;
+> `fresh_given_int d n = Symbol d n SD_None`. The frontend's
+> `Symbol.fresh*` reads remain the seam, including the current-digest seed
+> of const-expr mini-runs. The non-`_given` core-state constructor
+> draws its supply through Lean's threaded `fresh_int`, not an ambient read.
+> See `2026-09-22_run-digest-as-state-record.md`; this page is not retired.
 
 > **SCOPE-SHRINK ADDENDUM (effect-retirement C2, 2026-09-01 — charter
 > §7.1: addendum, not deletion).** The effect-retirement arc deleted

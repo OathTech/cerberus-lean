@@ -1,0 +1,15 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+web_entry rc=0
+open Cerb_frontend
+open Cerb_backend
+open Cerb_util
+type conf = { pipeline : Pipeline.configuration }
+let check (conf : conf) (core' : Core_run_aux.core_run_annotation Core.file) : Driver.driver_state =
+  Driver.initial_driver_state conf.pipeline.address_space_top (Cerb_fresh.digest ()) core' Sibylfs.fs_initial_state
+runtime_entry rc=0
+open Cerb_frontend
+open Cerb_backend
+open Cerb_util
+let check (dummy_file : Core_run_aux.core_run_annotation Core.file) : Driver.driver_state =
+  Driver.initial_driver_state Cerb_backend.Driver_ocaml.address_space_top_default (Cerb_fresh.digest ()) dummy_file
+        Sibylfs.fs_initial_state

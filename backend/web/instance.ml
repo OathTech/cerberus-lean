@@ -636,7 +636,7 @@ let step ~conf ~filename (active_node_opt: Instance_api.active_node option) =
     Tags.set_tagDefs core.tagDefs;
     let core'    = Core_run_aux.convert_file core in
     (* address-space-bound slice (2026-09-17): the configuration's top; cerberus-web is not ladder-built *)
-    let st0      = Driver.initial_driver_state conf.pipeline.address_space_top core' Sibylfs.fs_initial_state (* TODO *) in
+    let st0      = Driver.initial_driver_state conf.pipeline.address_space_top (Cerb_fresh.digest ()) core' Sibylfs.fs_initial_state (* TODO *) in
     let (m, st)  = (Driver.drive false core' [], st0) in
     last_node_id := 0;
     let node_info= `Init in

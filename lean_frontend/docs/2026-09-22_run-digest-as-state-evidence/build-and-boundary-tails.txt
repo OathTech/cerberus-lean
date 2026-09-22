@@ -1,0 +1,49 @@
+regenerate (verbatim tail)
+check_lem_sync: recorded ocaml_frontend/lem_sync.sha256 (src f19d08b6ec36db3646f1ba39229119734cbe83f36170064b812a7e7846d326d1, gen cc6fc62fa5298be787eead8ce52ef0170d74a348f6b8e1d1151662a4dbcc8753)
+[MKDIR] sibylfs/generated
+[LEM] generating files in [sibylfs/generated] (log in [sibylfs/lem.log])
+[CP] sibylfs/generated/abstract_string.mli sibylfs/generated/fs_dict_wrappers.mli sibylfs/generated/fs_interface.mli sibylfs/generated/lem_support.mli
+[CP] sibylfs/generated/abstract_string.ml sibylfs/generated/fs_dict_wrappers.ml sibylfs/generated/fs_interface.ml sibylfs/generated/fs_dump.ml sibylfs/generated/fs_printer.ml sibylfs/generated/lem_support.ml
+[SED] patching things up in [sibylfs/generated]
+[MKDIR] lean_frontend/generated
+[LEM] generating Lean files in [lean_frontend/generated] (log in [lean_frontend/lem.log])
+[COPY] 49 hand-written Lean files (lean_frontend/handwritten_copy.manifest) into [lean_frontend/generated]
+check_handwritten_sync: OK (49 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+[STAMP] recording Lean lem-sync content stamp
+check_lem_sync: recorded lean_frontend/lem_sync.sha256 (src f19d08b6ec36db3646f1ba39229119734cbe83f36170064b812a7e7846d326d1, gen 424fbc24f298743a2ac56c3a7570751995e06d6614cd7f4c99b362d63b1df7f8)
+
+build-ocaml (verbatim tail)
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+Building cerberus (OCaml)...
+check_lem_sync: OK (src f19d08b6ec36db3646f1ba39229119734cbe83f36170064b812a7e7846d326d1, gen cc6fc62fa5298be787eead8ce52ef0170d74a348f6b8e1d1151662a4dbcc8753)
+(debug 0): constructValue_aux: is WRONG for union ==> always assigning the first member
+check_driver_fresh: recorded oracle stamp (bin eeb282fbcfde485ed1fa7b82099709521548b2c78458c9dc3f2f9173fe7b87ad, src d4e40829a5a80e246f1a4741c34e4bf426781e605eab0b31fe4c528ef362e6b5)
+
+build-lean (verbatim tail)
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+Building cerberus-lean (Lean)...
+✔ [394/395] Built Main:c.o (15s)
+✔ [395/395] Built «cerberus-lean»:exe (539ms)
+Build completed successfully (395 jobs).
+check_driver_fresh: recorded lean stamp (bin f4e16efcba43c4aaa701030c64eb4f1d2821078190d282262ff3b53cd1d4a2b8, src 4d8e61eb83e047689ca239b20c24993ab9688aa99956ecdfbe5046f940b1d9d4)
+
+build-speclab (verbatim tail)
+✔ [137/148] Built SpecLab.CnSeedCore (9.8s)
+✔ [138/148] Built SpecLab.ByteArrCore (25s)
+✔ [139/148] Built SpecLab.ListAppendCore (62s)
+✔ [140/148] Built SpecLab.DivModCore (69s)
+✔ [141/148] Built SpecLab.DivModFiles (284ms)
+✔ [142/148] Built SpecLab.ByteArrFiles (276ms)
+✔ [143/148] Built SpecLab.ListAppendFiles (285ms)
+✔ [144/148] Built SpecLab.CnSeedFiles (279ms)
+✔ [145/148] Built SpecLab.TreeRotCore (94s)
+✔ [146/148] Built SpecLab.TreeRotFiles (306ms)
+✔ [147/148] Built SpecLab (231ms)
+Build completed successfully (148 jobs).
+
+boundary-gates (verbatim tail)
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+check_fork_content: OK — 82 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 82 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 29 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 38f87d5 = lem -v)
+check_failure_reach: instrument built + census taken in 6 s (FAILURE_REACH rows 21273, FAILURE_RANGE rows 11330; counts: {"generated:monadic_ascribed":263,"generated:pure_or_unresolved":1254,"handwritten:pure_or_unresolved":126})
+check_failure_reach: OK (238 pure failure sites = the 238 register rows exactly (236 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=169 REACHABLE=50 UNKNOWN=19; every row sealed; tally line consistent)

@@ -1020,8 +1020,11 @@ seams — not axioms, enumerated and machine-pinned
 each with its ruled classification [USER 2026-08-31] (`CerbGlobal`
 left the list 2026-09-05, see below):
 
-- the digest boundary (`CerberusFresh.digest`/`forceIO`/`md5Hex`) —
-  kernel-checked opaques with native `@[implemented_by]`/`@[extern]`
+- the FRONTEND digest boundary (`CerberusFresh.digest`/`forceIO`/`md5Hex`) —
+  the run's minting digest is explicit run-state data since D-S 2026-09-22
+  (`core_run_state.sym_digest`, seeded from the last program TU; empty
+  without one). Frontend `Symbol.fresh*` reads and the const-expr mini-run
+  seed remain this seam: kernel-checked opaques with native `@[implemented_by]`/`@[extern]`
   bindings (the C2 conversion; nothing postulated, no proof can
   unfold them);
 - (`CerbMem.beqMemValueSafe` — LEFT the boundary 2026-09-19, seam-hygiene

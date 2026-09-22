@@ -59,8 +59,8 @@
     where the wrapper's carry the wrapper TU's call-site region — a UB
     raised BY the create/store of a fresh temporary (none exists) would
     print a different `loc`; UBs inside `f`'s body carry the fixture's
-    own locations on both sides. The `PrefFunArg` digest is the TU's
-    (`Symbol.digest ()` mirror, translation.lem:965) — observable only
+    own locations on both sides. The `PrefFunArg` digest is the run's
+    explicit digest (last program TU; translation.lem:965 prefix shape) — observable only
     through `prefix_of_pointer` (trace-only, CerbMem Z2-M-06). The
     binder symbols of the argument pointers are `f`'s OWN parameter
     symbols (the elaborator draws fresh ones): the caller's env frame
@@ -145,7 +145,7 @@ def callLoc : CerbLocation.Loc := CerbLocation.other "CerbCall.driveCall"
     core_aux.lem:521-530, `mk_alignof_pe` :367-368, `mk_ail_ctype_pe`
     :328-329, `mk_wseq_e` :2098-2099, `mk_pure_e` :2077-2078,
     `mk_sym_pat`/`mk_sym_pe` :227/:280-281, `mk_empty_pat` :219-220. -/
-def argCreate (convSym psym : sym) (ty : ctype) (v : value) (n : Int) : CE :=
+def argCreate (digest : String) (convSym psym : sym) (ty : ctype) (v : value) (n : Int) : CE :=
   let tyPe : PE := mkPE (PEval (Vctype ty))
   let convValue : PE := mkPE (PEcall (Sym convSym) [tyPe, mkPE (PEval v)])
   let mo : memory_order := if is_atomic ty then Seq_cst else NA
@@ -153,7 +153,7 @@ def argCreate (convSym psym : sym) (ty : ctype) (v : value) (n : Int) : CE :=
   let unitPat : generic_pattern sym := Pattern [] (CaseBase (none, BTy_unit))
   let create : CE := mkE (Eaction (Paction Pos (Action callLoc default
     (Create (mkPE (PEctor Civalignof [tyPe])) tyPe
-      (PrefFunArg callLoc (CerberusFresh.digest ()) n)))))
+      (PrefFunArg callLoc digest n)))))
   let store : CE := mkE (Eaction (Paction Pos (Action callLoc default
     (Store0 false tyPe (mkPE (PEsym psym)) convValue mo))))
   mkE (Ewseq ptrPat create (mkE (Ewseq unitPat store (mkE (Epure (mkPE (PEsym psym)))))))
@@ -179,12 +179,12 @@ def mkUnseq : List CE → CE
     matches `Vloaded (LVspecified (OVpointer pv))`), `killall_pat` is a
     unit pattern for < 2 arguments else a tuple of units (:1008-1013), and
     each kill is `pkill loc (Static ty) arg_ptr_pe` (:1103-1106). -/
-def mkCallSite (convSym fsym : sym) (params : List (sym × ctype)) (args : List value)
+def mkCallSite (digest : String) (convSym fsym : sym) (params : List (sym × ctype)) (args : List value)
     (retTy : ctype) : CE :=
   let creates : List (generic_pattern sym × CE) :=
     (List.zip params args).zipIdx.map fun (pv : ((sym × ctype) × value) × Nat) =>
       let (((psym, ty), v), i) := pv
-      (Pattern [] (CaseBase (some psym, BTy_object OTy_pointer)), argCreate convSym psym ty v i)
+      (Pattern [] (CaseBase (some psym, BTy_object OTy_pointer)), argCreate digest convSym psym ty v i)
   let argPes : List PE := params.map fun (p : sym × ctype) => mkPE (PEsym p.1)
   let funPe : PE := mkPE (PEval (Vloaded (LVspecified (OVpointer (CerbMem.funPtrval fsym)))))
   let retPat : generic_pattern sym := Pattern [] (CaseBase (some fsym, BTy_loaded OTy_integer))
@@ -300,7 +300,7 @@ def callFinish [LemFuel] (enumDefs : Fmap sym integerType) (tagDefs : Fmap sym (
     (driver.lem:1727) with the documented substitutions (header) — every
     combinator is the generated driver's own. -/
 def driveCall [LemFuel] (enumDefs : Fmap sym integerType) (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
-    (file1 : file core_run_annotation) (fname : String)
+    (digest : String) (file1 : file core_run_annotation) (fname : String)
     (args : List value) : driverM driver_result :=
   nd_bind (driver_globals enumDefs tagDefs false file1) (fun (tid0 : Nat) =>
   nd_bind nd_get (fun (post_globals_dr_st : driver_state) =>
@@ -314,7 +314,7 @@ def driveCall [LemFuel] (enumDefs : Fmap sym integerType) (tagDefs : Fmap sym (C
   nd_bind (lookupSignature cf fsym) (fun (sig : ctype × List ctype) =>
   nd_bind (checkSignature fname sig.1 sig.2 args.length) (fun (_ : Unit) =>
   nd_bind (allocErrno enumDefs tagDefs tid0) (fun (errno_ptr_val : CerbMem.PointerValue) =>
-  let callExpr := mkCallSite convSym fsym (List.zip (params.map Prod.fst) sig.2) args sig.1
+  let callExpr := mkCallSite digest convSym fsym (List.zip (params.map Prod.fst) sig.2) args sig.1
   callFinish enumDefs tagDefs tid0 fsym callExpr errno_ptr_val))))))))
 
 end CerbCall

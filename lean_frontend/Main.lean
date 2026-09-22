@@ -498,7 +498,8 @@ def findRuntimeDir : IO String := do
     internally (Symbol.fresh → `digest ()`), and a plain pure `let` here
     would be let-SUNK past the NEXT TU's `setDigestIO`, stamping this
     TU's symbols with the wrong digest (see CerberusFresh.forceIO and
-    test/Unit/FreshIntTest.lean testDigestGlobal). -/
+    test/Unit/FreshIntTest.lean testDigestGlobal). This is frontend-only:
+    the run receives `runDigest tunits` as data and never reads the global. -/
 def frontendTU [LemFuel] (quiet : Bool) (supply : Nat) (addressSpaceTop : Int)
     (coreEvalStuff : Fmap String sym × fun_map Unit × impl)
     (ailnames : Fmap String sym) (stdFunMap : fun_map Unit) (coreImpl : impl)
@@ -962,7 +963,8 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     | .ok (libcFile, supply') => coreFiles := [libcFile]; supply := supply'
   | none => pure ()
   for (digest, tunit) in tunits do
-    -- Per-TU digest, before the TU's frontend stages — mirror of
+    -- Frontend-only per-TU digest; execution receives `runDigest tunits`.
+    -- Before the TU's frontend stages — mirror of
     -- `Cerb_fresh.set_digest filename` at the top of the OCaml c_frontend
     -- (backend/common/pipeline.ml:181; ref cell util/cerb_fresh.ml:7-10).
     -- The digest is the ORACLE'S: `Digest.file` of the C source, carried
@@ -1040,7 +1042,7 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     -- pure constructor — one draw (the run-init seed) from the stream.
     -- The address-space top is the run's parameter (the same value the
     -- desugarer was seeded with above).
-    let (drSt, _supplyFinal) := initial_driver_state supply addressSpaceTop runFile fsState
+    let (drSt, _supplyFinal) := initial_driver_state supply addressSpaceTop (runDigest tunits) runFile fsState
     say s!"  executing Core..."
     -- Reader seed: execution-slice entry — the linked table, passed as
     -- the value in hand (the load→seed loop is closed).
@@ -1054,7 +1056,7 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     let driverAction := match callFn with
       | none => drive runFile.enumDefs runFile.tagDefs false runFile ("cmdname" :: progArgs)
       | some (fname, argInts) =>
-        CerbCall.driveCall runFile.enumDefs runFile.tagDefs runFile fname
+        CerbCall.driveCall runFile.enumDefs runFile.tagDefs (runDigest tunits) runFile fname
           (argInts.map CerbCall.intValue)
     -- --first (arc-5 S3): single-trace runner for programs whose exhaustive
     -- trace set is combinatorially large (libxml2-scale differentials);

@@ -1,0 +1,6 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+[MKDIR] ocaml_frontend/generated
+[LEM] generating files in [ocaml_frontend/generated] (log in [ocaml_frontend/lem.log])
+File "frontend/model/mini_pipeline.lem", line 178, character 111 to line 178, character 116
+  Type error: unbound field name: digest
+make: *** [Makefile:223: ocaml_frontend/generated/utils.ml] Error 1

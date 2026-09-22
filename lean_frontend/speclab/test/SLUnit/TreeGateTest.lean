@@ -45,13 +45,16 @@ def ppOfT (d : generic_fun_map_decl Unit Unit) : Except String String :=
     ample for every pinned program's few allocations; never the executable's default. -/
 def gateAddressSpaceTop : Int := 0x100000000
 
+/-- The gate's explicit run digest (test-chosen, distinct from library symbols). -/
+def gateRunDigest : String := "900150983cd24fb0d6963f7d28e17f72"
+
 /-- Run the assembled file through the production driver entry and
 project (verdict, final allocation-map size). Effect-retirement C1:
 no ambient CerbTags set/reset — layouts reach CerbMem by value via the
 `drive` reader seed; supply-parameterized entry (seed 0). -/
 def runFileT [LemFuel] (f : file core_run_annotation) : IO (Sum (Int × Nat) String) := do
   return match CerbND.runND (drive f.enumDefs f.tagDefs false f ["cmdname"])
-      ((initial_driver_state 0 gateAddressSpaceTop f CerbFS.fs_initial_state).1) with
+      ((initial_driver_state 0 gateAddressSpaceTop gateRunDigest f CerbFS.fs_initial_state).1) with
   | [(Active r, _, st)] =>
     match r.dres_core_value with
     | Vloaded (LVspecified (OVinteger (CerbMem.IntegerValue.IV _ n))) =>

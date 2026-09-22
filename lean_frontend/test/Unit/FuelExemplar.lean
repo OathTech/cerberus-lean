@@ -20,13 +20,13 @@
   WHAT IS SHIPPED (kernel-checked, axiom cone = the standard three,
   probed by scripts/check_theorem_axioms.sh's FUEL leg):
 
-  * `exemplar_certified_shipped_forall (fuel : Nat) (top : Int) (h : 8 ≤ top)`
+  * `exemplar_certified_shipped_forall (fuel : Nat) (top : Int) (digest : String) (h : 8 ≤ top)`
     — THE ∀-fuel, ∀-address-space-top theorem (the top since the address-space-
     bound slice, C4 2026-09-18: `errnoAction_active` discharges drive's errno
     allocation + store SYMBOLICALLY under `8 ≤ top` — the 4-byte/align-4 errno
     object is the first allocation, and below 8 the run is the out-of-memory
-    kill before `main`; the post-setup state `S₁ top` is stated explicitly)
-    in EXACTLY the consumer's §6 shape over `run fuel top` = the production
+    kill before `main`; the post-setup state `S₁ top digest` is stated explicitly)
+    in EXACTLY the consumer's §6 shape over `run fuel top digest` = the production
     runner on the production pipeline, both at the instance `⟨fuel⟩`, by
     the consumer's SYMBOLIC route (design note §1.6 route iii): a
     test-local round library (`Round`: `runOne` and its bind/get/update/
@@ -129,22 +129,22 @@ def exemplarFile : file core_run_annotation :=
     loop_attributes1 := default,
     visible_objects_env0 := default }
 
-/-- The shipped cold start: `(initial_driver_state sup top file fs).1` with the
+/-- The shipped cold start: `(initial_driver_state sup top digest file fs).1` with the
     production filesystem state (Main.lean's `drSt`), at the ambient
-    instance (the generated `initial_driver_state` is fuel-lifted); `top` is
-    the address-space top — a PARAMETER the theorems quantify (address-space-
+    instance (the entry is supply-lifted only; the runner uses fuel); `top` is
+    the address-space top and `digest` the run digest — PARAMETERS the theorems quantify (address-space-
     bound slice; the setup needs `8 ≤ top`, `errnoAction_active`). -/
-def dst₀ [LemFuel] (sup : Nat) (top : Int) : driver_state :=
-  (initial_driver_state sup top exemplarFile CerbFS.fs_initial_state).1
+def dst₀ [LemFuel] (sup : Nat) (top : Int) (digest : String) : driver_state :=
+  (initial_driver_state sup top digest exemplarFile CerbFS.fs_initial_state).1
 
 /-- THE SHIPPED RUN at fuel `n` and address-space top `top`: the production
     runner `CerbND.runND` on the production pipeline `drive`, cold start at
     `top`, `["cmdname"]` — the whole thing at ONE instance `⟨n⟩` (Main.lean's
     `letI : LemFuel := ⟨fuel⟩` around `runPipeline`, exactly; `top` is
     Main.lean's `--address-space-top`). -/
-def run (n : Nat) (top : Int) :
+def run (n : Nat) (top : Int) (digest : String) :
     List (nd_status driver_result driver_error driver_state × List String × driver_state) :=
-  @CerbND.runND _ _ _ _ _ ⟨n⟩ (@drive ⟨n⟩ fmapEmpty fmapEmpty false exemplarFile ["cmdname"]) (@dst₀ ⟨n⟩ 0 top)
+  @CerbND.runND _ _ _ _ _ ⟨n⟩ (@drive ⟨n⟩ fmapEmpty fmapEmpty false exemplarFile ["cmdname"]) (@dst₀ ⟨n⟩ 0 top digest)
 
 /-- The postcondition: the delivered Core value is `Specified(42)`. -/
 def post (r : driver_result) (_ : driver_state) : Prop :=
@@ -154,8 +154,8 @@ def post (r : driver_result) (_ : driver_state) : Prop :=
 
 /-- The consumer's acceptance shape at fuel 0: the runner's own leaf
     (`CerbND.runNDFuel_zero`) — nothing of the pipeline runs. -/
-theorem exemplar_certified_shipped_zero (top : Int) :
-    ∀ o ∈ run 0 top,
+theorem exemplar_certified_shipped_zero (top : Int) (digest : String) :
+    ∀ o ∈ run 0 top digest,
       (∃ st, o.1 = Killed st CerbND.fuelExhaustedKill) ∨ (∃ r, o.1 = Active r ∧ post r o.2.2) := by
   intro o ho
   have h := List.mem_singleton.mp ho
@@ -170,8 +170,8 @@ theorem exemplar_certified_shipped_zero (top : Int) :
     distinguished kill, state unchanged. By `rfl` evaluation of the
     concrete prefix (the elaborator's whnf of the SETUP is cheap; it is a
     driver ROUND that is not). -/
-theorem exemplar_killed_at_one (top : Int) :
-    ∀ o ∈ run (Nat.succ 0) top, ∃ st, o.1 = Killed st CerbND.fuelExhaustedKill := by
+theorem exemplar_killed_at_one (top : Int) (digest : String) :
+    ∀ o ∈ run (Nat.succ 0) top digest, ∃ st, o.1 = Killed st CerbND.fuelExhaustedKill := by
   intro o ho
   have h := List.mem_singleton.mp ho
   subst h
@@ -517,8 +517,8 @@ def setupTail [LemFuel] (tid0 : Nat) : driverM Unit :=
 
 /-- The state after `driver_globals` (thread 0 spawned; no globals) at top `top` — the memory
     is still the cold `initialMemState top`. -/
-def s₁ [LemFuel] (top : Int) : driver_state :=
-  (runOne (driver_globals fmapEmpty fmapEmpty false exemplarFile) (dst₀ 0 top)).2
+def s₁ [LemFuel] (top : Int) (digest : String) : driver_state :=
+  (runOne (driver_globals fmapEmpty fmapEmpty false exemplarFile) (dst₀ 0 top digest)).2
 
 /-- Thread 0 at `driver2`'s entry: `main`'s arena parked, the errno pointer at top `top`, the
     spawned thread's environment (`[fmapEmpty]`, driver.lem's `driver_spawn_thread`). -/
@@ -528,14 +528,14 @@ def thS (top : Int) : thread_state :=
     exec_loc := ELoc_normal [(mainSym, CerbLocation.other "Driver.drive")],
     env := [fmapEmpty], current_proc_opt := some mainSym }
 
-/-- The state at `driver2`'s entry at top `top`, STATED EXPLICITLY (C4): `s₁ top` with the
+/-- The state at `driver2`'s entry at top `top`, STATED EXPLICITLY (C4): `s₁ top digest` with the
     memory after the errno action and thread 0 updated — `drive_after_setup` CHECKS that the
     generated `drive` reaches exactly this record (its last setup `rfl`), so no hand-built
     state can drift from the pipeline. -/
-def S₁ [LemFuel] (top : Int) : driver_state :=
-  { s₁ top with
+def S₁ [LemFuel] (top : Int) (digest : String) : driver_state :=
+  { s₁ top digest with
       layout_state := σstore top
-      core_state0 := { (s₁ top).core_state0 with thread_states := [(0, (none, thS top))] } }
+      core_state0 := { (s₁ top digest).core_state0 with thread_states := [(0, (none, thS top))] } }
 
 /-- The setup split at the shipped pipeline (consumer shape
     `drive_after_setup`), ambient `Nat.succ (Nat.succ k)`: the concrete
@@ -543,11 +543,11 @@ def S₁ [LemFuel] (top : Int) : driver_state :=
     setup bind on a concrete state, at the symbolic fuel — every fuel
     match reduces on `Nat.succ _`), leaving `driver2` at `S₁` as a
     hypothesis. -/
-theorem drive_after_setup (k : Nat) (top : Int) (h : 8 ≤ top) (dstD : driver_state)
-    (hdrv2 : runOne (@driver2 ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty fmapEmpty false) (@S₁ ⟨Nat.succ (Nat.succ k)⟩ top)
+theorem drive_after_setup (k : Nat) (top : Int) (digest : String) (h : 8 ≤ top) (dstD : driver_state)
+    (hdrv2 : runOne (@driver2 ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty fmapEmpty false) (@S₁ ⟨Nat.succ (Nat.succ k)⟩ top digest)
       = (NDactive (), dstD)) :
     runOne (@drive ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty fmapEmpty false exemplarFile ["cmdname"])
-        (@dst₀ ⟨Nat.succ (Nat.succ k)⟩ 0 top)
+        (@dst₀ ⟨Nat.succ (Nat.succ k)⟩ 0 top digest)
       = (NDactive (@finalize ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty fmapEmpty "drive (without concur)" dstD), dstD) := by
   conv => lhs; unfold drive
   -- driver_globals: spawn thread 0, no globals
@@ -567,20 +567,20 @@ theorem drive_after_setup (k : Nat) (top : Int) (h : 8 ≤ top) (dstD : driver_s
   rw [alignofIval_signed_int]
   refine (runOne_bind_active (z := errnoPtr top) (s' := _)
     (runOne_liftMem_active (errnoAction_active (Nat.succ k) top h))).trans ?_
-  -- park main's arena (reaching EXACTLY the explicit `S₁ top`); driver2; finalize
+  -- park main's arena (reaching EXACTLY the explicit `S₁ top digest`); driver2; finalize
   refine (runOne_bind_active (z := ()) (s' := dstD) ?_).trans ?_
-  · refine (runOne_bind_active (z := ()) (s' := @S₁ ⟨Nat.succ (Nat.succ k)⟩ top) rfl).trans ?_
+  · refine (runOne_bind_active (z := ()) (s' := @S₁ ⟨Nat.succ (Nat.succ k)⟩ top digest) rfl).trans ?_
     exact hdrv2
   · refine (runOne_bind_active (z := dstD) (s' := dstD) rfl).trans ?_
     rfl
 
 /-- The round on `S₁` at ANY ambient fuel ≥ 2: PROGRAM-DONE in one round
     (consumer shape `driver2_done`); the successor state is explicit. -/
-theorem round_done (k : Nat) (top : Int) :
+theorem round_done (k : Nat) (top : Int) (digest : String) :
     ∃ (thF : thread_state),
-      runOne (@driver2 ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty fmapEmpty false) (@S₁ ⟨Nat.succ (Nat.succ k)⟩ top) =
-        (NDactive (), { @S₁ ⟨Nat.succ (Nat.succ k)⟩ top with core_state0 :=
-          { (@S₁ ⟨Nat.succ (Nat.succ k)⟩ top).core_state0 with thread_states :=
+      runOne (@driver2 ⟨Nat.succ (Nat.succ k)⟩ fmapEmpty fmapEmpty false) (@S₁ ⟨Nat.succ (Nat.succ k)⟩ top digest) =
+        (NDactive (), { @S₁ ⟨Nat.succ (Nat.succ k)⟩ top digest with core_state0 :=
+          { (@S₁ ⟨Nat.succ (Nat.succ k)⟩ top digest).core_state0 with thread_states :=
             [(0, (none, { thF with stack0 := Stack_empty, arena := mk_value_e fortyTwo }))] } }) := by
   refine ⟨_, driver2_done (Nat.succ k) fmapEmpty fmapEmpty _ _ _ _ fortyTwo rfl
     (loop_step_done k fmapEmpty fmapEmpty fmapEmpty rfl rfl) rfl⟩
@@ -590,19 +590,19 @@ theorem round_done (k : Nat) (top : Int) :
     fuel ≥ 2 delivers `Specified(42)` in one round — at EVERY address-space top
     with room for the setup's errno object (`8 ≤ top`; below it the run is the
     out-of-memory kill before `main`, not covered by this statement). -/
-theorem exemplar_certified_shipped_forall (fuel : Nat) (top : Int) (h : 8 ≤ top) :
-    ∀ o ∈ run fuel top,
+theorem exemplar_certified_shipped_forall (fuel : Nat) (top : Int) (digest : String) (h : 8 ≤ top) :
+    ∀ o ∈ run fuel top digest,
       (∃ st, o.1 = Killed st CerbND.fuelExhaustedKill) ∨ (∃ r, o.1 = Active r ∧ post r o.2.2) := by
   cases fuel with
-  | zero => exact exemplar_certified_shipped_zero top
+  | zero => exact exemplar_certified_shipped_zero top digest
   | succ n =>
     cases n with
     | zero =>
       intro o ho
-      exact Or.inl (exemplar_killed_at_one top o ho)
+      exact Or.inl (exemplar_killed_at_one top digest o ho)
     | succ k =>
-      obtain ⟨thF, hdrv2⟩ := round_done k top
-      have hrun := drive_after_setup k top h _ hdrv2
+      obtain ⟨thF, hdrv2⟩ := round_done k top digest
+      have hrun := drive_after_setup k top digest h _ hdrv2
       intro o ho
       unfold run at ho
       rw [runND_active hrun] at ho
@@ -613,7 +613,7 @@ theorem exemplar_certified_shipped_forall (fuel : Nat) (top : Int) (h : 8 ≤ to
 end FuelExemplar
 
 def main : IO UInt32 := do
-  IO.println "FuelExemplar: exemplar_certified_shipped_forall (∀ fuel, ∀ address-space top ≥ 8 over the shipped `@drive ⟨fuel⟩` from `initial_driver_state _ top`; the consumer's §6 shape, symbolic round library + the symbolic errno lemma) — kernel-checked at compile time"
+  IO.println "FuelExemplar: exemplar_certified_shipped_forall (∀ fuel, ∀ address-space top ≥ 8, ∀ digest over the shipped `@drive ⟨fuel⟩` from `initial_driver_state _ top digest`; the consumer's §6 shape, symbolic round library + the symbolic errno lemma) — kernel-checked at compile time"
   IO.println "FuelExemplar: exemplar_certified_shipped_zero (fuel 0 → the runner's distinguished kill) — kernel-checked at compile time"
   IO.println "FuelExemplar: exemplar_killed_at_one (fuel 1 → the kill at the first memory operation; fuels ≥ 2 deliver Specified(42)) — kernel-checked at compile time"
   return 0

@@ -85,12 +85,12 @@ declare ocaml target_rep function fresh_elab_int = `Fork_renumber.fresh_elab_int
 val fresh_elab_sym: Symbol.symbol_description -> elabM Symbol.sym
 let fresh_elab_sym descr =
   bind fresh_elab_int (fun n ->
-  return (Symbol.set_symbol_description (Symbol.fresh_given_int n) descr))
+  return (Symbol.set_symbol_description (Symbol.fresh_given_int (Symbol.digest ()) n) descr))
 
 val fresh_elab_pretty_with_id: (nat -> string) -> elabM Symbol.sym
 let fresh_elab_pretty_with_id mkStr =
   bind fresh_elab_int (fun n ->
-  return (Symbol.set_symbol_description (Symbol.fresh_given_int n) (Symbol.SD_Id (mkStr n))))
+  return (Symbol.set_symbol_description (Symbol.fresh_given_int (Symbol.digest ()) n) (Symbol.SD_Id (mkStr n))))
 
 (* Run a supply-consuming sub-computation against the elaboration
    supply: f receives the current supply and returns (result, final
@@ -155,7 +155,7 @@ let with_block_objects binds ma = fun st ->
     (* TODO: fail if sym IN acc *)
     if qs.Ctype.const then
       let (n, stx') = fresh_elab_int stx in
-      let sym' = Symbol.fresh_given_int n in
+      let sym' = Symbol.fresh_given_int (Symbol.digest ()) n in
       ((sym, (qs, ty, sym')) :: xs_acc, Map.insert sym sym' map_acc, stx')
     else
       (xs_acc, map_acc, stx)

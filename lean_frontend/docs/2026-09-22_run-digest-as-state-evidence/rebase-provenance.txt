@@ -1,0 +1,14 @@
+Original enum base: e2fc391f21fd659c74f4dfdecdf7cc9fd45a2009
+Rebased enum base: e877725373bd38564bf07aac7a3b8d195de0d35d
+Rebased charter head: c103b3c37
+The full runner was interrupted with SIGTERM after 28 completed lanes passed.
+Its report says incomplete and source_unchanged=true; B7 was interrupted.
+Wall time: 2466.3 seconds; prior process wait: 40.1 seconds.
+Before rebase: 30/30 frozen implementation/record SHA-256 pins matched.
+After rebase: all implementation pins still match. Only the delivery record
+was subsequently amended for rebase provenance and inherited audit findings.
+Enum delta outside docs: scripts/failure_reach_register.txt only.
+The register corrections are inherited from 740d115b3 (N2), with no D-S edit.
+The retained pre-rebase report has its original paths; logs now live under
+.tmp/run-digest/full-pre-rebase. It is historical incomplete evidence only.
+A fresh full battery is required on the rebased, newly frozen tree.

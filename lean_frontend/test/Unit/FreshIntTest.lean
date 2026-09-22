@@ -33,6 +33,8 @@ def assertEqual {α : Type} [BEq α] [Repr α] (label : String) (got expected : 
     each draw returns the current supply and advances by one. -/
 example : LemLib.supplySplit 100 = (100, 101) := rfl
 
+def testRunDigest : String := "900150983cd24fb0d6963f7d28e17f72"
+
 def symId : sym → Nat := fun | Symbol _ n _ => n
 
 def testSupplyThreading : IO Bool := do
@@ -61,7 +63,7 @@ def testSupplyFamily : IO Bool := do
   let okP3 ← assertEqual "fresh_pretty_with_id descr"
     (match sp with | Symbol _ _ (SD_Id s) => s | _ => "<not SD_Id>") "while_700"
   -- fresh_given_int is pure (no draw): the explicit-seed builder
-  let sg := fresh_given_int 900
+  let sg := fresh_given_int testRunDigest 900
   let okG ← assertEqual "fresh_given_int id" (symId sg) 900
   if okP && okP2 && okP3 && okG then
     IO.println "  ✓ PASS"

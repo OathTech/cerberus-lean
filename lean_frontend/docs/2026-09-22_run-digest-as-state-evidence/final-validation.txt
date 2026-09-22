@@ -1,0 +1,21 @@
+full: passed; 39/39 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+Full wall time: 17453.5 seconds; wait before start: 120.2 seconds.
+Per-lane coordination wait: 12395.581 seconds; derived active wall time: 5057.919 seconds.
+Enum head rechecked: e877725373bd38564bf07aac7a3b8d195de0d35d; rebased before this frozen battery.
+Frozen implementation/record hashes checked: 30/30 (derived count); no changes.
+Critical unchanged files (byte comparison with the rebased charter head):
+scripts/failure_reach_register.txt
+scripts/unsafebaseio_allowlist.txt
+scripts/check_theorem_axioms.sh
+lean_frontend/handwritten_copy.manifest
+lean_frontend/CerberusFresh.lean
+lean_frontend/CoreParser.lean
+scripts/upstream_oracle_differences.json
+Pristine oracle counts (verbatim report JSON object):
+{"interface_agreement": 2, "matching_failure": 28, "reviewed_difference": 7, "semantic_agreement": 835}
+Pristine report path: .tmp/run-digest/full/B10.1/independent-oracle/report.json
+A9 reporting summary equals the inherited enum audit: SUMMARY: total=113 same=108 diff=5 ocaml_fail=0 lean_fail=0
+Final source changes after the battery: evidence copies only.
+Diff whitespace check: clean outside full-lane-tails.txt. Its three flagged trailing-space lines (324, 325, 462) are preserved verbatim from gate stdout.

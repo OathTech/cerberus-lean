@@ -314,3 +314,10 @@ moreLinkArgs = ["native/md5.o"]
 name = "enum-data-test"
 srcDir = "test"
 root = "Unit.EnumDataTest"
+
+# D-S: explicit run digest, consumer acceptance equations and entry/fixture pins.
+[[lean_exe]]
+name = "run-digest-test"
+srcDir = "test"
+root = "Unit.RunDigestTest"
+moreLinkArgs = ["native/md5.o"]

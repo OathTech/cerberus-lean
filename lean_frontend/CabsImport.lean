@@ -817,3 +817,12 @@ def parseJson (input : String) : Except String (String × translation_unit) := d
   .ok (digest, tunit)
 
 end CabsImport
+
+/-- The run mints with the LAST program TU's digest, in frontend order
+    (S0 record §3; pipeline.ml:666 leaves `.co` inputs alone). With no
+    program TU, use the fresh process's empty digest. Library and metadata
+    TUs do not select this value. Execution receives it as data. -/
+def runDigest (tunits : List (String × translation_unit)) : String :=
+  match tunits.getLast? with
+  | some (digest, _) => digest
+  | none => ""

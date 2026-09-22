@@ -14,6 +14,17 @@ its adoption and landing require discussion. The current
 supersedes older sampled counts. The legacy csmith run remains independently
 owned and hands off; this roadmap does not authorize operating it.
 
+## Run digest as state (D-S, 2026-09-22)
+
+- Runtime minting takes `core_run_state.sym_digest`, seeded explicitly by the
+  driver entry from the last program TU (empty without one). The frontend
+  digest seam remains. The acceptance facts, validation evidence and combined
+  E-A/D-S consumer re-pin note are in
+  [the D-S record](docs/2026-09-22_run-digest-as-state-record.md).
+- cerberus-sl takes one re-pin after E-A and D-S land: carry `Program.digest`,
+  add the run-state invariant, and remove `MintDigestC` and its pin. Landing
+  and the consumer's own proof/corpus checks remain separate from this slice.
+
 ## Queued larger work
 
 - **Concurrency (cmm) instantiation** — concurrency is currently
@@ -229,7 +240,7 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   (erratum appended to that record).
 - Open obligations the audit lists as residual, all already carried: fuel
   monotonicity/propagation (lem TODO 13), native/logical correspondence
-  (digest; F7 — `beqMemValueSafe`'s obligation CLOSED 2026-09-19: `BEq MemValue`
+  (frontend digest only since D-S; F7 — `beqMemValueSafe`'s obligation CLOSED 2026-09-19: `BEq MemValue`
   is the structural `beqMemValue`, seam-hygiene H3), the pure-failure correspondence design
   (master plan step 2), C-P1 timing, consumer proof-check at the current
   pin (their step 6). Repeat risk map = master plan step 7.

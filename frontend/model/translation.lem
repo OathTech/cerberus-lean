@@ -3325,8 +3325,8 @@ let rec erase_loop_control_aux stmt =
          still discarded, only the supply flows back). *)
       let (nc, st_c) = elc_fresh_int st in
       let (nb, st_b) = elc_fresh_int st_c in
-      let continue_sym = Symbol.set_symbol_description (Symbol.fresh_given_int nc) (Symbol.SD_Id ("continue_" ^ show nc)) in
-      let break_sym    = Symbol.set_symbol_description (Symbol.fresh_given_int nb) (Symbol.SD_Id ("break_" ^ show nb)) in
+      let continue_sym = Symbol.set_symbol_description (Symbol.fresh_given_int (Symbol.digest ()) nc) (Symbol.SD_Id ("continue_" ^ show nc)) in
+      let break_sym    = Symbol.set_symbol_description (Symbol.fresh_given_int (Symbol.digest ()) nb) (Symbol.SD_Id ("break_" ^ show nb)) in
       let (ret, st')   = mf <| elc_continue= Just continue_sym; elc_break= Just break_sym; elc_supply= st_b.elc_supply |> in
       ((continue_sym, break_sym, ret), <| st_b with elc_supply= st'.elc_supply |>) in
   A.mk_statement_full loc stmt.A.desug_info stmt.A.attrs <$> match stmt.A.node with

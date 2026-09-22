@@ -1,0 +1,27 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+Building cerberus (OCaml)...
+check_lem_sync: OK (src f19d08b6ec36db3646f1ba39229119734cbe83f36170064b812a7e7846d326d1, gen cc6fc62fa5298be787eead8ce52ef0170d74a348f6b8e1d1151662a4dbcc8753)
+(debug 0): constructValue_aux: is WRONG for union ==> always assigning the first member
+check_driver_fresh: recorded oracle stamp (bin 564cc4f713ce5d36f9eca14ff6b1299ccea0cd1f77c3f51daa6419a1c1a2edce, src 743ae0e0dd1a94b90a2a5ab2d029f8009766ec40818987988ca1ad4f4e0ab253)
+web_entry rc=0
+open Cerb_frontend
+open Cerb_backend
+open Cerb_util
+type conf = { pipeline : Pipeline.configuration }
+let check (conf : conf) (core' : Core_run_aux.core_run_annotation Core.file) : Driver.driver_state =
+  Driver.initial_driver_state conf.pipeline.address_space_top (Cerb_fresh.digest ()) core' Sibylfs.fs_initial_state
+runtime_entry rc=0
+open Cerb_frontend
+open Cerb_backend
+open Cerb_util
+let check (dummy_file : Core_run_aux.core_run_annotation Core.file) : Driver.driver_state =
+  Driver.initial_driver_state Cerb_backend.Driver_ocaml.address_space_top_default (Cerb_fresh.digest ()) dummy_file
+        Sibylfs.fs_initial_state
+wrong_digest expected rejection rc=2
+File ".tmp/run-digest/optional/wrong_digest.ml", line 5, characters 82-83:
+5 |   Driver.initial_driver_state Cerb_backend.Driver_ocaml.address_space_top_default 0 dummy_file
+                                                                                      ^
+Error: The constant 0 has type int but an expression was expected of type
+         Digest.t = string
+check_fork_content: OK — 82 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 82 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 29 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 38f87d5 = lem -v)

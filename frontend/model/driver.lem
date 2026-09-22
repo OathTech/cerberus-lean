@@ -1514,7 +1514,7 @@ let finalize debug_str dr_st =
    const-expr mini-run can build the state from an EXPLICITLY threaded
    supply (initial_driver_state_given) while the production entry
    below keeps the one supply draw (Lean: supply-lifted via
-   initial_core_run_state — signature Nat -> file -> fs_state ->
+   initial_core_run_state — signature Nat -> integer -> Symbol.digest -> file -> fs_state ->
    driver_state * Nat, entry shape (b); OCaml: unchanged behavior, the
    run-state redirect carries no draw). *)
 let initial_driver_state_with address_space_top run_st file fs_state =
@@ -1534,14 +1534,15 @@ let initial_driver_state_with address_space_top run_st file fs_state =
 
 (* address-space-bound slice (2026-09-17): the address-space top is the FIRST explicit
    parameter of every entry (the Lean supply binder the backend inserts stays ahead of
-   it); a consumer theorem quantifies it. *)
-let initial_driver_state address_space_top file fs_state =
-  initial_driver_state_with address_space_top (Core_run.initial_core_run_state (Caux.collect_labeled_continuations_NEW file)) file fs_state
+   it); a consumer theorem quantifies it. The run digest is the SECOND explicit
+   parameter (D-S, 2026-09-22). *)
+let initial_driver_state address_space_top digest file fs_state =
+  initial_driver_state_with address_space_top (Core_run.initial_core_run_state digest (Caux.collect_labeled_continuations_NEW file)) file fs_state
 
 (* the explicit-supply variant for the const-expr mini-run: consumes
    exactly one draw (the run-seed), mirroring the lifted entry above *)
-let initial_driver_state_given sup address_space_top file fs_state =
-  ( initial_driver_state_with address_space_top (Core_run.initial_core_run_state_given sup (Caux.collect_labeled_continuations_NEW file)) file fs_state
+let initial_driver_state_given sup address_space_top digest file fs_state =
+  ( initial_driver_state_with address_space_top (Core_run.initial_core_run_state_given sup digest (Caux.collect_labeled_continuations_NEW file)) file fs_state
   , sup+1 )
 
 

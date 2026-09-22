@@ -1,0 +1,128 @@
+diff --git a/backend/common/driver_ocaml.ml b/backend/common/driver_ocaml.ml
+index 077753bbe..f57afc1b9 100644
+--- a/backend/common/driver_ocaml.ml
++++ b/backend/common/driver_ocaml.ml
+@@ -169 +169 @@ let batch_drive (file: 'a Core.file) args fs_state conf =
+-  let initial_dr_st = Driver.initial_driver_state conf.address_space_top file fs_state in
++  let initial_dr_st = Driver.initial_driver_state conf.address_space_top (Cerb_fresh.digest ()) file fs_state in
+@@ -210 +210 @@ let drive file args fs_state conf : execution_result =
+-  let initial_dr_st = Driver.initial_driver_state conf.address_space_top file fs_state in
++  let initial_dr_st = Driver.initial_driver_state conf.address_space_top (Cerb_fresh.digest ()) file fs_state in
+diff --git a/backend/ocaml/runtime/rt_ocaml.ml b/backend/ocaml/runtime/rt_ocaml.ml
+index 349ef6891..3a1417216 100644
+--- a/backend/ocaml/runtime/rt_ocaml.ml
++++ b/backend/ocaml/runtime/rt_ocaml.ml
+@@ -360 +360 @@ let quit f =
+-    let initial_state = Driver.initial_driver_state Cerb_backend.Driver_ocaml.address_space_top_default dummy_file
++    let initial_state = Driver.initial_driver_state Cerb_backend.Driver_ocaml.address_space_top_default (Cerb_fresh.digest ()) dummy_file
+diff --git a/backend/web/instance.ml b/backend/web/instance.ml
+index 0ea311419..b7e4159d4 100644
+--- a/backend/web/instance.ml
++++ b/backend/web/instance.ml
+@@ -639 +639 @@ let step ~conf ~filename (active_node_opt: Instance_api.active_node option) =
+-    let st0      = Driver.initial_driver_state conf.pipeline.address_space_top core' Sibylfs.fs_initial_state (* TODO *) in
++    let st0      = Driver.initial_driver_state conf.pipeline.address_space_top (Cerb_fresh.digest ()) core' Sibylfs.fs_initial_state (* TODO *) in
+diff --git a/frontend/model/core_run.lem b/frontend/model/core_run.lem
+index 3dd346f38..ae1eae4ee 100644
+--- a/frontend/model/core_run.lem
++++ b/frontend/model/core_run.lem
+@@ -119 +119 @@ let fresh_symbol' =
+-    (Symbol.fresh_given_int n, <| run_st with sym_supply= n+1 |>)
++    (Symbol.fresh_given_int run_st.sym_digest n, <| run_st with sym_supply= n+1 |>)
+@@ -124 +124,2 @@ let fresh_symbol' =
+-   the LEAN-target scheme only (arc-2 purity). See
++   the LEAN-target scheme only (arc-2 purity). The digest is the state's;
++   the unchanged OCaml rep reads the ambient, equal value. See
+diff --git a/frontend/model/core_run_aux.lem b/frontend/model/core_run_aux.lem
+index 342ecb8d9..5a7a2057b 100644
+--- a/frontend/model/core_run_aux.lem
++++ b/frontend/model/core_run_aux.lem
+@@ -249,0 +250,2 @@ type core_run_state = <|
++  (* The digest every run-minted symbol carries; seeded by the driver entry; no step writes it. *)
++  sym_digest:      Symbol.digest;
+@@ -270,2 +272,2 @@ val initial_core_state: core_state
+-val initial_core_run_state: map Symbol.sym (labeled_continuations core_run_annotation) -> core_run_state
+-val initial_core_run_state_given: nat -> map Symbol.sym (labeled_continuations core_run_annotation) -> core_run_state
++val initial_core_run_state: Symbol.digest -> map Symbol.sym (labeled_continuations core_run_annotation) -> core_run_state
++val initial_core_run_state_given: nat -> Symbol.digest -> map Symbol.sym (labeled_continuations core_run_annotation) -> core_run_state
+@@ -286 +288 @@ let initial_core_state = <|
+-let initial_core_run_state_given sup xs = <|
++let initial_core_run_state_given sup dg xs = <|
+@@ -290,0 +293 @@ let initial_core_run_state_given sup xs = <|
++  sym_digest=      dg;
+@@ -299,2 +302,2 @@ let initial_core_run_state_given sup xs = <|
+-let initial_core_run_state xs =
+-  initial_core_run_state_given (Symbol.fresh_int ()) xs
++let initial_core_run_state dg xs =
++  initial_core_run_state_given (Symbol.fresh_int ()) dg xs
+diff --git a/frontend/model/driver.lem b/frontend/model/driver.lem
+index bf102ee05..58a032a24 100644
+--- a/frontend/model/driver.lem
++++ b/frontend/model/driver.lem
+@@ -1517 +1517 @@ let finalize debug_str dr_st =
+-   initial_core_run_state — signature Nat -> file -> fs_state ->
++   initial_core_run_state — signature Nat -> integer -> Symbol.digest -> file -> fs_state ->
+@@ -1537,3 +1537,4 @@ let initial_driver_state_with address_space_top run_st file fs_state =
+-   it); a consumer theorem quantifies it. *)
+-let initial_driver_state address_space_top file fs_state =
+-  initial_driver_state_with address_space_top (Core_run.initial_core_run_state (Caux.collect_labeled_continuations_NEW file)) file fs_state
++   it); a consumer theorem quantifies it. The run digest is the SECOND explicit
++   parameter (D-S, 2026-09-22). *)
++let initial_driver_state address_space_top digest file fs_state =
++  initial_driver_state_with address_space_top (Core_run.initial_core_run_state digest (Caux.collect_labeled_continuations_NEW file)) file fs_state
+@@ -1543,2 +1544,2 @@ let initial_driver_state address_space_top file fs_state =
+-let initial_driver_state_given sup address_space_top file fs_state =
+-  ( initial_driver_state_with address_space_top (Core_run.initial_core_run_state_given sup (Caux.collect_labeled_continuations_NEW file)) file fs_state
++let initial_driver_state_given sup address_space_top digest file fs_state =
++  ( initial_driver_state_with address_space_top (Core_run.initial_core_run_state_given sup digest (Caux.collect_labeled_continuations_NEW file)) file fs_state
+diff --git a/frontend/model/mini_pipeline.lem b/frontend/model/mini_pipeline.lem
+index 3cf0ab1fb..6282a3499 100644
+--- a/frontend/model/mini_pipeline.lem
++++ b/frontend/model/mini_pipeline.lem
+@@ -177 +177,2 @@ let evalConstantExpressionAux sup address_space_top loc (*TODO*)(ailnames, stdli
+-          let (init_dr_st, sup') = Driver.initial_driver_state_given sup_after_elab address_space_top dummy_core_file Fs.fs_initial_state in
++          (* Frontend-phase seed: the desugarer's current TU digest (S0 record section 5 Q-C). *)
++          let (init_dr_st, sup') = Driver.initial_driver_state_given sup_after_elab address_space_top (digest ()) dummy_core_file Fs.fs_initial_state in
+diff --git a/frontend/model/symbol.lem b/frontend/model/symbol.lem
+index a843449e5..4ef127f45 100644
+--- a/frontend/model/symbol.lem
++++ b/frontend/model/symbol.lem
+@@ -276,3 +276,3 @@ let fresh_fancy str_opt =
+-val fresh_given_int: nat -> sym
+-let fresh_given_int n =
+-  Symbol (digest()) n SD_None
++val fresh_given_int: digest -> nat -> sym
++let fresh_given_int d n =
++  Symbol d n SD_None
+diff --git a/frontend/model/translation.lem b/frontend/model/translation.lem
+index c6be5cb21..06e62c9a1 100644
+--- a/frontend/model/translation.lem
++++ b/frontend/model/translation.lem
+@@ -3328,2 +3328,2 @@ let rec erase_loop_control_aux stmt =
+-      let continue_sym = Symbol.set_symbol_description (Symbol.fresh_given_int nc) (Symbol.SD_Id ("continue_" ^ show nc)) in
+-      let break_sym    = Symbol.set_symbol_description (Symbol.fresh_given_int nb) (Symbol.SD_Id ("break_" ^ show nb)) in
++      let continue_sym = Symbol.set_symbol_description (Symbol.fresh_given_int (Symbol.digest ()) nc) (Symbol.SD_Id ("continue_" ^ show nc)) in
++      let break_sym    = Symbol.set_symbol_description (Symbol.fresh_given_int (Symbol.digest ()) nb) (Symbol.SD_Id ("break_" ^ show nb)) in
+diff --git a/frontend/model/translation_effect.lem b/frontend/model/translation_effect.lem
+index a89e6ebc8..3d302c064 100644
+--- a/frontend/model/translation_effect.lem
++++ b/frontend/model/translation_effect.lem
+@@ -88 +88 @@ let fresh_elab_sym descr =
+-  return (Symbol.set_symbol_description (Symbol.fresh_given_int n) descr))
++  return (Symbol.set_symbol_description (Symbol.fresh_given_int (Symbol.digest ()) n) descr))
+@@ -93 +93 @@ let fresh_elab_pretty_with_id mkStr =
+-  return (Symbol.set_symbol_description (Symbol.fresh_given_int n) (Symbol.SD_Id (mkStr n))))
++  return (Symbol.set_symbol_description (Symbol.fresh_given_int (Symbol.digest ()) n) (Symbol.SD_Id (mkStr n))))
+@@ -158 +158 @@ let with_block_objects binds ma = fun st ->
+-      let sym' = Symbol.fresh_given_int n in
++      let sym' = Symbol.fresh_given_int (Symbol.digest ()) n in
+diff --git a/ocaml_frontend/fork_renumber.ml b/ocaml_frontend/fork_renumber.ml
+index ce1a4fcea..913a5f5a3 100644
+--- a/ocaml_frontend/fork_renumber.ml
++++ b/ocaml_frontend/fork_renumber.ml
+@@ -57 +57 @@ let fresh_symbol' run_st = (Symbol.fresh (), run_st)
+-let initial_core_run_state xs : Core_run_aux.core_run_state = {
++let initial_core_run_state (_digest : Digest.t) xs : Core_run_aux.core_run_state = {
+@@ -61,0 +62,2 @@ let initial_core_run_state xs : Core_run_aux.core_run_state = {
++  (* D-S: the entry passes this same global value; runtime minting stays ambient. *)
++  sym_digest = Cerb_fresh.digest ();

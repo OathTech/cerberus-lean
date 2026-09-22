@@ -39,6 +39,8 @@ UNIT_TESTS=(
     # program-data parameters E-A (2026-09-20): the enum's compatible type is program data —
     # the design note §4 kernel pins + the retired-name negative controls
     "enum-data-test"
+    # D-S: run digest as state, kernel acceptance facts and old-arity rejection.
+    "run-digest-test"
 )
 
 # ---------------------------------------------------------------------------

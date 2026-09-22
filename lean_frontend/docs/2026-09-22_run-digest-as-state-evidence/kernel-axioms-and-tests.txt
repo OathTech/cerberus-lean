@@ -1,0 +1,28 @@
+'RunDigestTest.mint_eq' does not depend on any axioms
+'RunDigestTest.mintDigest' does not depend on any axioms
+'RunDigestTest.runDigest_empty' does not depend on any axioms
+'RunDigestTest.runDigest_last' does not depend on any axioms
+'RunDigestTest.runDigest_reversed' does not depend on any axioms
+'RunDigestTest.fixture_shape' depends on axioms: [propext, Classical.choice, Quot.sound]
+'RunDigestTest.fixture_entry_digest' does not depend on any axioms
+'RunDigestTest.entry_digest' depends on axioms: [propext, Classical.choice, Quot.sound]
+'RunDigestTest.given_entry_digest' depends on axioms: [propext, Classical.choice, Quot.sound]
+'RunDigestTest.core_given_digest' does not depend on any axioms
+'RunDigestTest.core_entry_digest' does not depend on any axioms
+'RunDigestTest.entry_mint' depends on axioms: [propext, Classical.choice, Quot.sound]
+'RunDigestTest.mint_preserves_digest' does not depend on any axioms
+initial_driver_state (_lemSupply_fresh_int : Nat) (address_space_top1 : Int) (digest1 : String)
+  (file1 : generic_file Unit core_run_annotation) (fs_state2 : CerbFS.FsState) : driver_state × Nat
+initial_driver_state_given (sup : Nat) (address_space_top1 : Int) (digest1 : String)
+  (file1 : generic_file Unit core_run_annotation) (fs_state2 : CerbFS.FsState) : driver_state × Nat
+initial_core_run_state (_lemSupply_fresh_int : Nat) (dg : String)
+  (xs : Fmap sym (labeled_continuations core_run_annotation)) : core_run_state × Nat
+initial_core_run_state_given (sup : Nat) (dg : String) (xs : Fmap sym (labeled_continuations core_run_annotation)) :
+  core_run_state
+fresh_given_int (d : String) (n : Nat) : sym
+T1 PASS: fresh_given_int d n = Symbol d n SD_None (rfl)
+T2 PASS: forall m, symDigest (fresh_given_int d m) = d (rfl)
+T3 PASS: empty, last-unit and reversed-order digest pins (rfl)
+T4 PASS: committed cabs-json digest is 32 lowercase hex digits and nonempty (decide); parsed entry agrees
+T5 PASS: both entries and constructors seed the digest; run mint uses it and preserves it (rfl)
+T6 PASS: old fresh_given_int arity rejected (#guard_msgs)

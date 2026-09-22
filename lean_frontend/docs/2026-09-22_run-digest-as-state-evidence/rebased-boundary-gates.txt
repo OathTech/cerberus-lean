@@ -1,0 +1,5 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+check_fork_content: OK — 82 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 82 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 29 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 38f87d5 = lem -v)
+check_failure_reach: instrument built + census taken in 12 s (FAILURE_REACH rows 21273, FAILURE_RANGE rows 11330; counts: {"generated:monadic_ascribed":263,"generated:pure_or_unresolved":1254,"handwritten:pure_or_unresolved":126})
+check_failure_reach: OK (238 pure failure sites = the 238 register rows exactly (236 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=169 REACHABLE=48 UNKNOWN=21; every row sealed; tally line consistent)

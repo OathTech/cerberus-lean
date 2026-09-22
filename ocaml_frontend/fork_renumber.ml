@@ -54,11 +54,13 @@ let fresh_symbol' run_st = (Symbol.fresh (), run_st)
    never reads the field. The arc-2 seed draw was the last numbering
    divergence from upstream (S0 probe: +1 ambient id per const-expr
    mini-run). *)
-let initial_core_run_state xs : Core_run_aux.core_run_state = {
+let initial_core_run_state (_digest : Digest.t) xs : Core_run_aux.core_run_state = {
   Core_run_aux.tid_supply = 0;
   aid_supply = 0;
   excluded_supply = 0;
   sym_supply = 0;
+  (* D-S: the entry passes this same global value; runtime minting stays ambient. *)
+  sym_digest = Cerb_fresh.digest ();
   labeled = xs;
 }
 

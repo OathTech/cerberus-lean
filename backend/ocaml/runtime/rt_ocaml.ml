@@ -357,7 +357,7 @@ let dummy_file =
 let quit f =
   try
     (* address-space-bound slice (2026-09-17): the named default; NOT ladder-built *)
-    let initial_state = Driver.initial_driver_state Cerb_backend.Driver_ocaml.address_space_top_default dummy_file
+    let initial_state = Driver.initial_driver_state Cerb_backend.Driver_ocaml.address_space_top_default (Cerb_fresh.digest ()) dummy_file
         Sibylfs.fs_initial_state in
     match Smt2.runND Random Impl_mem.cs_module (Driver.liftMem (f (fun x -> raise (Exit x)) ())) initial_state with
     | _ -> raise (Error "continuation not raised")

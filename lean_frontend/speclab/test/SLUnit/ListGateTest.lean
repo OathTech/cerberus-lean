@@ -45,6 +45,9 @@ def ppOfL (d : generic_fun_map_decl Unit Unit) : Except String String :=
     ample for every pinned program's few allocations; never the executable's default. -/
 def gateAddressSpaceTop : Int := 0x100000000
 
+/-- The gate's explicit run digest (test-chosen, distinct from library symbols). -/
+def gateRunDigest : String := "900150983cd24fb0d6963f7d28e17f72"
+
 /-- Run the assembled file through the production driver entry and
 project (verdict, final allocation-map size). Effect-retirement C1:
 the CerbTags global is GONE — struct layouts reach CerbMem by VALUE
@@ -53,7 +56,7 @@ story; the entry is supply-parameterized (seed 0 — authored-Core ids
 are name-hash interned, not drawn). -/
 def runFileL [LemFuel] (f : file core_run_annotation) : IO (Sum (Int × Nat) String) := do
   return match CerbND.runND (drive f.enumDefs f.tagDefs false f ["cmdname"])
-      ((initial_driver_state 0 gateAddressSpaceTop f CerbFS.fs_initial_state).1) with
+      ((initial_driver_state 0 gateAddressSpaceTop gateRunDigest f CerbFS.fs_initial_state).1) with
   | [(Active r, _, st)] =>
     match r.dres_core_value with
     | Vloaded (LVspecified (OVinteger (CerbMem.IntegerValue.IV _ n))) =>
