@@ -5,7 +5,7 @@ This file records evidence and next actions; it does not replace the charter.
 
 ## Current status
 
-**2026-09-22: resumable helper services, typed SC faults and the external import example pass production validation. All 39 Tier A/B lanes pass; the 864-row three-engine report retains exactly the preceding checkpoint's classifications and decoded results, including its 40 Lean discrepancy IDs. Public SC verdict checking remains incomplete. A concrete mixed-size reference decision is pending with the user.**
+**2026-09-22: the user resolved the mixed-size decision: retain pinned Cerberus/Cmm and fail closed on evidenced unresolved semantic boundaries in general, documenting every case. The boundary register records three evidenced gaps and separates unfinished work and other diagnostics. Resumable helper services, typed SC faults and the external import example passed all 39 Tier A/B lanes; the 864-row three-engine report retained the preceding checkpoint's exact classifications and decoded results, including its 40 Lean discrepancy IDs. The source-graph slice subsequently passed the same full/three-engine checks, with all classifications and decoded tokens unchanged. Public SC verdict checking remains incomplete.**
 Branch `arc/sc-prototype`, worktree
 `/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype`.
 Implementation base: `5407597d9eeba0259d65b728e86a860ad4614ab3`.
@@ -78,20 +78,59 @@ for S0 onward; these setup checks do not claim those results.
 
 The service slice's [review](2026-09-22_sc-service-slice-review.md) and
 [evidence](2026-09-21_sc-prototype-evidence/services/README.md) are complete.
-The [reference proposal](2026-09-21_sc-prototype-evidence/reference-followup/location-reference-decision.md)
-asks whether to retain pinned Cmm with explicit gaps on evidenced unresolved
-mixed-size/location cases (recommended), or adopt the published mixed-size
-model as an additional named reference. This changes reference/coverage policy;
-it is not a proof-convenience restriction. The required asynchronous question
-has been submitted; no answer or new runtime policy is recorded yet.
+[USER, 2026-09-22] selected the first option in the historical
+[reference proposal](2026-09-21_sc-prototype-evidence/reference-followup/location-reference-decision.md)
+and generalized it: fail closed on evidenced unresolved semantic boundaries,
+documenting every case. The [policy](2026-09-21_sc-upstream-gap-policy.md), charter
+and [boundary register](2026-09-22_sc-boundary-register.md) record the decision.
+No additional reference was adopted. The preserved proposal's pending-question
+and source-freeze wording is historical, superseded by this entry.
 
-After that decision, continue location/RF composition, prefix race/consistency
-checking, remaining atomic frontend paths and the public operational/C entry.
+Continue location/RF composition, prefix race/consistency checking, remaining
+atomic frontend paths and the public operational/C entry. Source-order paths
+through all journal vertices now have a validated adapter. Next connect location,
+value and atomic synchronization information; the graph alone does not settle
+whether a conflicting pair is unordered in full happens-before. Implement and
+validate the remaining atomic operations through the actual frontend.
 The [independent investigations](2026-09-21_sc-prototype-evidence/reference-followup/README.md)
 also retain concrete stream-lock and floating-value adapter findings. Missing
-implementation mechanisms remain work, not new coverage exclusions. The earlier
-[CAS padding policy](2026-09-21_sc-upstream-gap-policy.md) remains resolved.
+implementation mechanisms remain work, not new coverage exclusions. Only the
+CAS unspecified-representation guard is implemented; precise mixed-size and
+stream-synchronization guards remain outstanding. All 21 current typed SC fault
+constructors were accounted for in the register; their categories must not all
+be interpreted as upstream semantic gaps.
 The customer remains strictly read-only; no build or migration was performed.
+
+## General gap policy and source graph: validated checkpoint
+
+[USER, 2026-09-22] generalized fail-closed handling of evidenced unresolved
+semantic boundaries, requiring every case to be documented. The new
+[register](2026-09-22_sc-boundary-register.md) records SC-G01 unspecified CAS,
+SC-G02 location/RF composition and SC-G03 stream synchronization. It separately
+accounts for implementation obligations and all existing typed diagnostics.
+This resolves the previous reference decision; no further confirmation is needed.
+
+[AGENT] added `Sc_graph`, a pure query over the actual recorded state, with
+closure through every effect/fence before projecting to access endpoints. It
+retains malformed graph data with typed diagnostics, and never derives source
+ordering from execution order. The [slice review](2026-09-22_sc-source-graph-review.md)
+records the reference and limitations: source-order closure is not full hb,
+location interpretation or a public SC verdict.
+
+The isolated 12 paired graph controls pass. Eight actual C recorder executions
+agree with an independent reachability traversal; their original outcomes are
+unchanged. Shared journal fields differ only at the copied source-location
+paths, retained in raw captures. Production generation and fork-manifest checks
+pass. The new production executable passes the 12 controls plus four actual
+driver controls (fences, unsequenced alternatives, nested spawn/join and a fault
+prefix), and its unit gate suite passes. Three compiled semantic-disconnection
+plants fail their designated controls. All 39 full Tier A/B lanes pass, with
+source unchanged and no artifact issues. The 864-row three-engine comparison
+retains the preceding exact classifications, decoded tokens and 40 discrepancy
+IDs. [Evidence](2026-09-21_sc-prototype-evidence/source-graph/README.md) includes
+verified raw-observation archives. First-generation,
+test-compilation and omitted-libc-linking attempts remain explicit failures in
+the working evidence. No SC-G02/03 guard is claimed by this slice.
 
 ## S0 working evidence
 
@@ -589,3 +628,14 @@ ordering, typed fault identities and a separate consumer import example. Source
 review covers current-state resumption, filesystem snapshot ownership, the
 unchanged primitive bodies and missing location interpretations. This is
 continuing work, not a new authorization or completion barrier.
+
+
+## Additional reference audit retained with the source graph
+
+The [varargs audit](2026-09-21_sc-prototype-evidence/varargs/README.md) records
+four actual C traces. Shared-list and concurrent copy/advance executions expose
+unordered abstract metadata updates; independent-copy and join-ordered controls
+do not. This is SC-P05 implementation guidance, not a new upstream gap.
+The atomic follow-up also records literal-only memory-order decoding and
+`atomic_init`'s current assignment macro as implementation obligations. No
+atomic draft result is claimed by this graph checkpoint.

@@ -75,6 +75,7 @@ CerbNDFuelProofs.lean
 CerbNDObserveProofs.lean
 CerbSCByteInstances.lean
 CerbSCByteSources.lean
+CerbSCGraph.lean
 CerbSCOperational.lean
 CerbNDSuspension.lean
 CerbMemSuspension.lean

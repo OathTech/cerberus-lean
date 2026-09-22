@@ -1,3 +1,8 @@
+# SC source-order graph / general boundary policy, 2026-09-22 [AGENT]:
+# Review: lean_frontend/docs/2026-09-22_sc-source-graph-review.md.
+# sc_graph.ml is a new pure journal query, with explicit malformed-graph
+# diagnostics and closure before projection. No driver/scheduler change.
+# The new concrete control target links the actual generated graph module.
 # SC helper-service/fault slice, 2026-09-22 [AGENT]:
 # Review: lean_frontend/docs/2026-09-22_sc-service-slice-review.md.
 # Typed ND suspension and current-state helper continuation preserve primitive
@@ -393,6 +398,7 @@ frontend/model/nd_observe.lem
 frontend/model/nondeterminism.lem
 frontend/model/pp.lem
 frontend/model/sc_byte_sources.lem
+frontend/model/sc_graph.lem
 frontend/model/sc_order.lem
 frontend/model/sc_representation.lem
 frontend/model/sc_runtime.lem
@@ -407,6 +413,8 @@ frontend/model/translation_effect.lem
 frontend/model/utils.lem
 memory/cheri-coq/impl_mem.ml
 memory/concrete/impl_mem.ml
+memory/concrete/sc_graph_controls/controls.ml
+memory/concrete/sc_graph_controls/dune
 memory/concrete/sc_prototype_controls/controls.ml
 memory/concrete/sc_prototype_controls/dune
 memory/symbolic/impl_mem.ml
@@ -427,8 +435,9 @@ tools/check_driver_fresh.sh
 tools/check_handwritten_sync.sh
 tools/check_lem_sync.sh
 util/cerb_fresh.ml
+
 [source-content]
-100644 c6c05bd16547fbc3a88105b29449b6d302819b296e4fe696d6c1e841831065b5 Makefile
+100644 dfd3861370eca4387679ad306527aef238dbc902b5ff979ff1801f96ff4ca88a Makefile
 100644 f4901556a3001f3a4968c4a66205da6615e18b4618a21ac9852f27386ffe19d5 backend/common/ail_sym_hwm.ml
 100644 4674daca7ac423d665e84afb7ed476651b1b32d72711be506ebc81e99d200a40 backend/common/driver_ocaml.ml
 100644 91d09d39c2b2e4ef9b870ea665f588f446ca7b5bb84e6701211861ff2a36565e backend/common/driver_ocaml.mli
@@ -489,6 +498,7 @@ util/cerb_fresh.ml
 100644 bc35259f51dae53da89ce357d039940beddee56b75c5ada59ac51adbce738e16 frontend/model/nondeterminism.lem
 100644 b8bd6d19e3130795183c9524fa62052e96b9497cb17ddca7e3763d9171791543 frontend/model/pp.lem
 100644 2e16ecd4eba502ec0e346ee1e11dc0dc60b5a54849ee6cb12c66a79ae153084a frontend/model/sc_byte_sources.lem
+100644 7ab6129c99d4d8f3445576cf988943378ed94f0eee1b70968eede3022fa5b593 frontend/model/sc_graph.lem
 100644 744f1ffa440d8acf7b803e4d5b3ca833cf21748b01d34ecc617fcd9e1e7f5e4f frontend/model/sc_order.lem
 100644 4d2b4776afb41da99361716e5d88d106c7a6e9398ecb375ab97b67cca6667a75 frontend/model/sc_representation.lem
 100644 b51b1df77d5d73503934a1ef9754e57aacadd4377d4eeb9e5f1ca01d55906c88 frontend/model/sc_runtime.lem
@@ -503,6 +513,8 @@ util/cerb_fresh.ml
 100644 9427c936dcfe2bb47a984c6d73db12bf1c7012bb85b0b63156b5edececf9bf7c frontend/model/utils.lem
 100644 42af52b18cfb1ade5d202526b0b523efe62b3e7f206ce6cef45cd7d087e82f8c memory/cheri-coq/impl_mem.ml
 100644 6c74199f4fabd89d6ba69f0861e8bfe5efb01b40464f6c95e720b95cfbc1e049 memory/concrete/impl_mem.ml
+100644 6445e13828f4cd472669682a630a034c6f77c847a8bbd396d285070c987c20d7 memory/concrete/sc_graph_controls/controls.ml
+100644 0eb6c108716d692409cea0ed97015ec898223c1e1af4725c9daf0ef51c16dc35 memory/concrete/sc_graph_controls/dune
 100644 c77e141c6eff185723b34847e2330d71aae8f013abf735541af75387a005a1a9 memory/concrete/sc_prototype_controls/controls.ml
 100644 0eb6c108716d692409cea0ed97015ec898223c1e1af4725c9daf0ef51c16dc35 memory/concrete/sc_prototype_controls/dune
 100644 871b18de5b512d57a32dc73c55a66376d89e0d71986800e84d0204e88a0e75ac memory/symbolic/impl_mem.ml
@@ -523,6 +535,7 @@ util/cerb_fresh.ml
 100755 e2d0b6b781462ce2d57f613185fc863d9fff7f6af889172e9bc813f4bf4e3c7c tools/check_handwritten_sync.sh
 100755 9a07e1a9188443cebef04bef184bbac1a876c996fad0caca90ea9b4ce3605292 tools/check_lem_sync.sh
 100644 ee912ae7803e9d42fbf5ef85fdac484586571d4f4b2eb17745431ca9c19aacf8 util/cerb_fresh.ml
+
 [expected-semantic]
 db65a20d952f400d5a8a114aec056aa1794ae8fc6a5faacb13e66e2bbc92180a cabs_to_ail.ml
 fbb0a9dcc1b53344b89ff7a7a121d67b141e90d153c927c3199a2836112ecbeb cabs_to_ail_effect.ml
@@ -563,3 +576,4 @@ d1c5c6cfa427a343df9791195199ee0bbe32f01a234b8a645491e8c764881a82 nd_observe.ml
 6804e12a7a5373bbe28eed57a0ab4bb3e5a09db6aa1d902fc8bd6f1ae8cba0da sc_order.ml
 4d1ea8e50e0c86bc0cb97c87d84608a359502d906c842cbc5260dc12ce25a7b0 sc_representation.ml
 fb27e8f7617a13eb780a3e18d9314c226c415eb9b9acd490a44baac0c4e2ecc8 sc_runtime.ml
+7aa9bd9f977137fbe5f2ac0bd41c4ae8a8b033815ac6419a0e61915761a76b52 sc_graph.ml

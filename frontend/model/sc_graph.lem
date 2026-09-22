@@ -1,0 +1,113 @@
+(* Source-order graph of a recorded SC prefix. Every completed memory effect
+   and fence is a vertex, including allocation/lifetime/varargs effects. Close
+   before projecting to Cmm accesses: dropping intermediate vertices first can
+   erase real source order. Journal position, fresh-ID order and SC fence order
+   are NOT source-order edges. This is sb/asw closure, not atomic sw or full hb.
+   It neither supplies C locations/RF nor gives an SC consistency/race verdict. *)
+open import Pervasives Relation Set_extra
+import Core_run_aux Mem_common Sc_runtime Cmm_csem
+
+type sc_graph_node = <|
+  sc_node_id: Cmm_csem.aid;
+  sc_node_thread: Mem_common.thread_id;
+  sc_node_annotation: Core_run_aux.core_run_annotation;
+|>
+
+type sc_graph_edge_kind = SC_edge_sb | SC_edge_asw | SC_edge_dd
+
+(* Protocol diagnostics, not C UB and not the semantic gaps SC-G01--03.
+   Keep all nodes/edges even when malformed, so a diagnostic cannot silently
+   turn a broken graph into an apparently supported execution. *)
+type sc_graph_issue =
+  | SC_graph_duplicate_id of Cmm_csem.aid
+  | SC_graph_missing_source of sc_graph_edge_kind * Cmm_csem.aid * Cmm_csem.aid
+  | SC_graph_sb_thread_label of Cmm_csem.aid * Cmm_csem.aid
+  | SC_graph_cross_thread_sb of Cmm_csem.aid * Cmm_csem.aid
+  | SC_graph_same_thread_asw of Cmm_csem.aid * Cmm_csem.aid
+  | SC_graph_cycle of Cmm_csem.aid
+
+type sc_source_graph = <|
+  sc_graph_nodes: list sc_graph_node;
+  sc_graph_sb: set (Cmm_csem.aid * Cmm_csem.aid);
+  sc_graph_asw: set (Cmm_csem.aid * Cmm_csem.aid);
+  sc_graph_dd: set (Cmm_csem.aid * Cmm_csem.aid);
+  sc_graph_sbasw: set (Cmm_csem.aid * Cmm_csem.aid);
+  sc_graph_issues: list sc_graph_issue;
+|>
+
+let sc_effect_node observed = <|
+  sc_node_id= observed.Sc_runtime.sc_effect_id;
+  sc_node_thread= observed.Sc_runtime.sc_effect_request.Sc_runtime.sc_request_thread;
+  sc_node_annotation= observed.Sc_runtime.sc_effect_request.Sc_runtime.sc_request_annotation;
+|>
+
+let sc_fence_node request = <|
+  sc_node_id= request.Sc_runtime.sc_request_id;
+  sc_node_thread= request.Sc_runtime.sc_request_thread;
+  sc_node_annotation= request.Sc_runtime.sc_request_annotation;
+|>
+
+let sc_prefix_nodes state =
+  List.map sc_effect_node state.Sc_runtime.sc_effects ++
+  List.map sc_fence_node state.Sc_runtime.sc_fences
+
+let sc_node_edges node =
+  let annotation = node.sc_node_annotation in
+  let target = node.sc_node_id in
+  (Set.map (fun (_, source) -> (source, target)) annotation.Core_run_aux.sb_before,
+   Set.map (fun source -> (source, target)) annotation.Core_run_aux.asw_before,
+   Set.map (fun source -> (source, target)) annotation.Core_run_aux.dd_before)
+
+let sc_missing_source kind source target owners =
+  match List.lookup source owners with
+    | Nothing -> [SC_graph_missing_source kind source target]
+    | Just _ -> []
+  end
+
+let sc_node_issues owners node =
+  let target = node.sc_node_id in
+  let thread = node.sc_node_thread in
+  let annotation = node.sc_node_annotation in
+  let sb_issues = List.concat (List.map (fun (label, source) ->
+    match List.lookup source owners with
+      | Nothing -> [SC_graph_missing_source SC_edge_sb source target]
+      | Just owner ->
+          (if owner = label then [] else [SC_graph_sb_thread_label source target]) ++
+          (if owner = thread then [] else [SC_graph_cross_thread_sb source target])
+    end) (Set_extra.toOrderedList annotation.Core_run_aux.sb_before)) in
+  let asw_issues = List.concat (List.map (fun source ->
+    match List.lookup source owners with
+      | Nothing -> [SC_graph_missing_source SC_edge_asw source target]
+      | Just owner ->
+          if owner = thread then [SC_graph_same_thread_asw source target] else []
+    end) (Set_extra.toOrderedList annotation.Core_run_aux.asw_before)) in
+  let dd_issues = List.concat (List.map (fun source ->
+    sc_missing_source SC_edge_dd source target owners)
+    (Set_extra.toOrderedList annotation.Core_run_aux.dd_before)) in
+  sb_issues ++ asw_issues ++ dd_issues
+
+let sc_build_source_graph nodes =
+  let owners = List.map (fun node -> (node.sc_node_id, node.sc_node_thread)) nodes in
+  let (sb, asw, dd) = List.foldl (fun (sb, asw, dd) node ->
+    let (s, a, d) = sc_node_edges node in (sb union s, asw union a, dd union d))
+    ({}, {}, {}) nodes in
+  let closure = transitiveClosure (sb union asw) in
+  let (_, duplicates) = List.foldl (fun (seen, issues) node ->
+    let id = node.sc_node_id in
+    (Set.insert id seen,
+     if id IN seen then SC_graph_duplicate_id id :: issues else issues)) ({}, []) nodes in
+  let cycles = List.map (fun (source, _) -> SC_graph_cycle source)
+    (Set_extra.toOrderedList (Set.filter (fun (source, target) -> source = target) closure)) in
+  <| sc_graph_nodes= nodes;
+     sc_graph_sb= sb; sc_graph_asw= asw; sc_graph_dd= dd;
+     sc_graph_sbasw= closure;
+     sc_graph_issues= List.reverse duplicates ++
+       List.concat (List.map (sc_node_issues owners) nodes) ++ cycles |>
+
+let sc_prefix_graph state = sc_build_source_graph (sc_prefix_nodes state)
+
+(* Projection is deliberately after closure. The caller chooses its endpoints;
+   omitted intermediate effects still transmit actual source order. *)
+let sc_project_sbasw endpoints graph =
+  Set.filter (fun (source, target) -> source IN endpoints && target IN endpoints)
+    graph.sc_graph_sbasw

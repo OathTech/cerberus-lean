@@ -91,7 +91,13 @@ exception; numeric overlap by itself is not a definition of every C memory
 location. The scalar Cmm `rf` needs a matching whole-value writer; it cannot be
 applied universally to representation operations. The overlap adapter has
 unimplemented footprint/value operations, and its race predicate still uses
-equal locations. Those facts are reference limitations, not runtime guards.
+equal locations. Those facts are reference limitations, not implemented runtime
+guards. The user's 2026-09-22 [general policy](2026-09-21_sc-upstream-gap-policy.md)
+requires explicit unsupported outcomes when an evidenced unresolved composition
+is needed, retaining the pinned reference. The
+[boundary register](2026-09-22_sc-boundary-register.md) distinguishes those cases
+from adapter work and tracks guard implementation. It does not authorize
+refusing every representation operation outside the scalar checker domain.
 
 Dynamic deallocation and subsequent reuse follow the allocation order and
 synchronization described by [WG14 DR403](https://www.open-std.org/jtc1/sc22/wg14/www/docs/dr_403.htm),

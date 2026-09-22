@@ -30,6 +30,7 @@ UNIT_TESTS=(
     "sc-cas-test"
     "sc-seq-rmw-test"
     "sc-byte-sources-test"
+    "sc-graph-test"
     "nd-suspension-test"
     "memory-suspension-test"
     "sc-helper-order-test"
@@ -93,7 +94,7 @@ for test in "${TESTS[@]}"; do
     if [[ "$test" == monadic-failstop-test ]]; then test_args=(2 17); fi
     if [[ "$test" == sc-prototype-test ]]; then test_args=(17 64); fi
     case "$test" in
-        sc-protocol-test|sc-fences-test|sc-cas-test|sc-seq-rmw-test|sc-byte-sources-test|nd-suspension-test|memory-suspension-test|sc-helper-order-test|sc-services-test|sc-faults-test) test_args=(64) ;;
+        sc-protocol-test|sc-fences-test|sc-cas-test|sc-seq-rmw-test|sc-byte-sources-test|sc-graph-test|nd-suspension-test|memory-suspension-test|sc-helper-order-test|sc-services-test|sc-faults-test) test_args=(64) ;;
     esac
     if [[ "$test" == memory-suspension-test ]]; then test_args=(64 65536); fi
     if [[ "$test" == sc-services-test ]]; then
@@ -101,6 +102,12 @@ for test in "${TESTS[@]}"; do
         DUNE_CACHE=disabled "$SCRIPT_DIR/capped" dune build --root "$PROJECT_ROOT" -j 2 \
             memory/concrete/sc_prototype_controls/controls.exe
         timeout 30 "$PROJECT_ROOT/_build/default/memory/concrete/sc_prototype_controls/controls.exe"
+    fi
+    if [[ "$test" == sc-graph-test ]]; then
+        "$PROJECT_ROOT/tools/check_lem_sync.sh" --check
+        DUNE_CACHE=disabled "$SCRIPT_DIR/capped" dune build --root "$PROJECT_ROOT" -j 2 \
+            memory/concrete/sc_graph_controls/controls.exe
+        timeout 30 "$PROJECT_ROOT/_build/default/memory/concrete/sc_graph_controls/controls.exe"
     fi
     if "$bin" "${test_args[@]}"; then
         echo "${GREEN}✓ $test PASSED${NC}"

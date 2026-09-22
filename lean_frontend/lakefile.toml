@@ -136,6 +136,7 @@ roots = [
   "Sc_runtime", "Sc_runtime_auxiliary", "CerbSCByteInstances", "CerbSCOperational",
   "CerbNDSuspension", "CerbMemSuspension", "CerbSCHelperOrder", "CerbSCServices", "CerbSCFaults",
   "Sc_byte_sources", "Sc_byte_sources_auxiliary", "CerbSCByteSources",
+  "Sc_graph", "Sc_graph_auxiliary", "CerbSCGraph",
   "Pp", "Pp_auxiliary",
   "Product", "Product_auxiliary",
   "Range", "Range_auxiliary",
@@ -387,4 +388,10 @@ moreLinkArgs = ["native/md5.o"]
 name = "sc-faults-test"
 srcDir = "test"
 root = "Unit.SCFaults"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "sc-graph-test"
+srcDir = "test"
+root = "Unit.SCGraph"
 moreLinkArgs = ["native/md5.o"]

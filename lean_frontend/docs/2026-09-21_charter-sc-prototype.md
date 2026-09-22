@@ -92,13 +92,16 @@ record the derivation and any remaining uncertainty.
 
 ### 2.2 Coverage is not theorem scope
 
-[USER, 2026-09-21 clarification] Evidenced upstream modeling gaps fail closed.
-For CAS depending on unspecified padding, retain an explicit unsupported outcome
-until the upstream gap is resolved; do not invent a comparison semantics. This
-is an acknowledged coverage limit, not C undefined behavior or an impossible
-execution. The [upstream-gap policy](2026-09-21_sc-upstream-gap-policy.md) records
-the precise distinction and the reasoning-client obligation. Missing port work
-with available semantic guidance remains in scope.
+[USER, 2026-09-21 clarification; generalized 2026-09-22] Evidenced unresolved
+semantic boundaries fail closed. Retain the pinned Cerberus/Cmm reference and
+an explicit unsupported outcome until each gap is resolved; do not invent a
+comparison, mixed-size or stream-synchronization semantics. Document every case
+in the [boundary register](2026-09-22_sc-boundary-register.md), with evidence,
+precise scope, implementation status and resolution criterion. This is an
+acknowledged coverage limit, not C undefined behavior or an impossible execution.
+The [upstream-gap policy](2026-09-21_sc-upstream-gap-policy.md) records the precise
+distinction and reasoning-client obligation. Missing port work with available
+semantic guidance remains in scope.
 
 - No new loop-free, scalar-only, lifetime/privacy, expression-shape or similar
   runtime restriction may be introduced to make a proof convenient.
