@@ -373,6 +373,17 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   still zip — reachable only after a successful match, so equal lengths on every call (stated,
   not changed); (iii) the consumer's selector equality (`SelectAgreesC`) is theirs to discharge
   at the one re-pin (their §4 Q4) — T1–T3 are its matcher-level premises.
+  **Closure round (2026-09-22, record §12; audit R1/R2):** (ii) above was FALSE — the helpers are
+  reached without the matcher; every tuple-binding helper now guards its arity (one loud leaf
+  `Core_aux.tuple_arity_error`, a `failure_reach_register` row), Core_run's `Elet`/`Ewseq`/`Esseq`
+  check the matcher (Illformed_program = the PElet route), and the typechecker's tuple-EXPRESSION
+  arms (`PEctor Ctuple`, `Eunseq`, `Epar`) fail closed instead of deleting operands. Left: (iv) the
+  OTHER truncating `List.zip`s of `core_typing.lem` are CALL-arity checks, not tuple binding —
+  `PEcall` `:766`/`:1167`, `Eproc`/`Eccall`/`Erun` argument lists `:1689`, `:1739-1759`, `:1773`,
+  `:1843` — same fail-open class (surplus arguments dropped from the typed program), out of this
+  slice's rulings; a charter of their own; (v) `Core_reduction` — THE engine the driver steps with — had its six let-form sites guarded
+  too (the audit cited `core_run.lem`, the second engine); `update_env_aux`'s loud leaf is the backstop;
+  (vi) `VALIDATION.md` §3 and `LADDER.md` row 1's exe count were outside both fences.
 - **C-TF1 landed (2026-09-08, `docs/2026-09-08_monadic-failstop-record.md`) — follow-ups.**
   (a) Byte/text escaping is separated in `arc/batch-diagnostic-bytes`
   (`docs/2026-09-09_batch-diagnostic-bytes-record.md`, full Tier A+B and

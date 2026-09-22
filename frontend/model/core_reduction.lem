@@ -9,6 +9,7 @@ import Cerb_attributes
 
 (* TODO *)
 import Core_run
+import Errors (* FORK 2026-09-22 (audit R2): Illformed_program for the let-form fit checks *)
 (* Lean: the executable fuel MEASURE of the get_ctx/get_ctx_unseq_aux block
    (CerbCoreMeasure.getCtxBound) — see the fuel_measure declares at the end of
    this file; seam lean_frontend/CerbCoreMeasure.lean (fuel-measure-cost arc,
@@ -348,7 +349,20 @@ let one_step eval_pexpr full_eval_pexpr env (Expr annots expr_ as expr) =
           | Just cval ->
               (* let pat = v in E2 --> { v / pat } E2 *)
               (* reduction: LET(last step) *)
-              Just (TAU "Elet" (update_env pat cval env) e2)
+              (* FORK 2026-09-22 (upstream-tray draft 45; audit R2): Core_reduction is the
+                 driver's stepping engine (drive_core_thread2 -> core_step2 -> step_ctx -> one_step);
+                 its let-forms bind through update_env, which never consults the matcher. Check
+                 that the pattern FITS first and report a non-fitting one (a tuple-arity mismatch
+                 in particular) as the SAME Illformed_program the PElet route reports
+                 (core_eval.lem select_case), through the same monadic channel — so the default
+                 path and --rewrite (which turns this Elet into that PElet) agree. update_env's own
+                 guard, tuple_arity_error, stays the loud backstop. *)
+              match match_pattern pat cval with
+                | Nothing ->
+                    Just (TAU_WITH_RUNSTATE "Elet" (SEU.runEU (EU.fail (Errors.Illformed_program "Elet: the pattern didn't match pe1"))))
+                | Just _ ->
+                    Just (TAU "Elet" (update_env pat cval env) e2)
+              end
           | Nothing ->
               Just begin
               (*              eval e1 = v
@@ -357,7 +371,11 @@ let one_step eval_pexpr full_eval_pexpr env (Expr annots expr_ as expr) =
                 (* reduction: LET(first step) + LET-UNDEF *)
                 TAU_WITH_RUNSTATE "Elet" begin
                   full_eval_pexpr pe1 >>= fun cval ->
-                  E.return (update_env pat cval env, e2)
+                  (* FORK 2026-09-22 (audit R2): the pattern must fit — see the value case above *)
+                  match match_pattern pat cval with
+                    | Nothing -> SEU.runEU (EU.fail (Errors.Illformed_program "Elet: the pattern didn't match pe1"))
+                    | Just _ -> E.return (update_env pat cval env, e2)
+                  end
                 end
               end
         end
@@ -395,7 +413,11 @@ let one_step eval_pexpr full_eval_pexpr env (Expr annots expr_ as expr) =
           | Just cval ->
               (* letw pat = v in E2 --> { v / pat } E2 *)
               (* reduction: LETW-PURE *)
-              TAU "Ewseq" (update_env pat cval env) e2
+              (* FORK 2026-09-22 (audit R2): the pattern must fit — see Elet above *)
+              match match_pattern pat cval with
+                | Nothing -> TAU_WITH_RUNSTATE "Ewseq" (SEU.runEU (EU.fail (Errors.Illformed_program "Ewseq: the pattern didn't match e1")))
+                | Just _ -> TAU "Ewseq" (update_env pat cval env) e2
+              end
           | Nothing ->
               error "Core_reduction.one_step Ewseq saw a non-evaluated e1"
         end
@@ -404,7 +426,11 @@ let one_step eval_pexpr full_eval_pexpr env (Expr annots expr_ as expr) =
           | Just cval ->
               (* letw pat = {A}v in E2 --> {A} { v / pat } E2 *)
               (* reduction: LETW-ANNOT *)
-              TAU "Ewseq Eannot" (update_env pat cval env) (Expr [] (Eannot xs e2))
+              (* FORK 2026-09-22 (audit R2): the pattern must fit — see Elet above *)
+              match match_pattern pat cval with
+                | Nothing -> TAU_WITH_RUNSTATE "Ewseq Eannot" (SEU.runEU (EU.fail (Errors.Illformed_program "Ewseq: the pattern didn't match e1")))
+                | Just _ -> TAU "Ewseq Eannot" (update_env pat cval env) (Expr [] (Eannot xs e2))
+              end
           | Nothing ->
               error "Core_reduction.one_step Ewseq Eannot saw a non-evaluated e1"
         end
@@ -413,7 +439,11 @@ let one_step eval_pexpr full_eval_pexpr env (Expr annots expr_ as expr) =
           | Just cval ->
               (* lets pat = v in E2 --> { v / pat } E2 *)
               (* reduction: LETS-PURE *)
-              TAU "Esseq" (update_env pat cval env) e2
+              (* FORK 2026-09-22 (audit R2): the pattern must fit — see Elet above *)
+              match match_pattern pat cval with
+                | Nothing -> TAU_WITH_RUNSTATE "Esseq" (SEU.runEU (EU.fail (Errors.Illformed_program "Esseq: the pattern didn't match e1")))
+                | Just _ -> TAU "Esseq" (update_env pat cval env) e2
+              end
           | Nothing ->
             error "Core_reduction.one_step Esseq saw a non-evaluated e1"
         end
@@ -423,7 +453,11 @@ let one_step eval_pexpr full_eval_pexpr env (Expr annots expr_ as expr) =
           | Just cval ->
               (* lets pat = {A}v in E2 --> {A} { v / pat } E2 *)
               (* reduction: LETS-ANNOT *)
-              TAU "Esseq Eannot" (update_env pat cval env) (Expr [] (Eannot xs e2))
+              (* FORK 2026-09-22 (audit R2): the pattern must fit — see Elet above *)
+              match match_pattern pat cval with
+                | Nothing -> TAU_WITH_RUNSTATE "Esseq Eannot" (SEU.runEU (EU.fail (Errors.Illformed_program "Esseq: the pattern didn't match e1")))
+                | Just _ -> TAU "Esseq Eannot" (update_env pat cval env) (Expr [] (Eannot xs e2))
+              end
           | Nothing ->
               error "Core_reduction.one_step Esseq Eannot saw a non-evaluated e1"
         end

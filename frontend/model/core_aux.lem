@@ -1120,6 +1120,23 @@ and subst_sym_paction sym cval (Paction p act) =
 
 
 
+(* FORK 2026-09-22 (upstream-tray draft 45; R2 of the pre-merge audit
+   lean_frontend/docs/2026-09-21_enum-repairs-and-match-pattern-arity-audit.md):
+   THE ONE loud leaf of the tuple-BINDING helpers below — subst_pattern_val,
+   unsafe_subst_pattern, subst_pattern, update_env_aux — on a tuple-arity
+   mismatch. Each binds a tuple pattern against a tuple by List.zip, which
+   TRUNCATES (library/list.lem:987-992): a pattern of arity 2 against a tuple
+   of arity 3 silently bound the prefix. They are reached WITHOUT a prior
+   match_pattern (to_pure and core_rewrite's pure_propagation2 -> subst_pattern;
+   the Core_run/Core_reduction let-forms -> update_env), so each guards its own
+   arity. A mismatch is a malformed Core program (the Core typechecker is OFF by
+   default) and the outcome is this leaf: OCaml Cerb_debug.error, Lean
+   LemLib.failwithI — one reviewed row of scripts/failure_reach_register.txt. *)
+val tuple_arity_error: forall 'a. string -> nat -> nat -> 'a
+let tuple_arity_error who n_pats n_vals =
+  error ("Core_aux." ^ who ^ ": tuple pattern of arity " ^ show n_pats ^
+         " bound to a tuple of arity " ^ show n_vals ^ " (upstream-tray draft 45)")
+
 val     subst_pattern_val: forall 'a. pattern -> value -> expr 'a -> expr 'a
 let rec subst_pattern_val (Pattern _ pat) cval expr =
   (* TODO (maybe), Carray, Civmax, Civmin, Civsizeof, Civalignof *)
@@ -1138,6 +1155,10 @@ let rec subst_pattern_val (Pattern _ pat) cval expr =
         subst_pattern_val pat1 cval1 $
           subst_pattern_val pat2 (Vlist bTy_elem cvals) expr
     | (CaseCtor Ctuple pats', Vtuple cvals) ->
+        (* FORK 2026-09-22: arity guard (see tuple_arity_error above) *)
+        if List.length pats' <> List.length cvals then
+          tuple_arity_error "subst_pattern_val" (List.length pats') (List.length cvals)
+        else
         List.foldr (fun (pat', cval') acc ->
           subst_pattern_val pat' cval' acc
         ) expr (List.zip pats' cvals)
@@ -1422,10 +1443,17 @@ let rec unsafe_subst_pattern (Pattern _ pat) pe' expr =
         unsafe_subst_pattern pat1 pe1 $
           unsafe_subst_pattern pat2 pe2 expr
     | (CaseCtor Ctuple pats', Pexpr _ () (PEval (Vtuple cvals))) ->
+        (* FORK 2026-09-22: arity guards (see tuple_arity_error) *)
+        if List.length pats' <> List.length cvals then
+          tuple_arity_error "unsafe_subst_pattern" (List.length pats') (List.length cvals)
+        else
         List.foldr (fun (pat', cval) acc ->
           subst_pattern_val pat' cval acc
         ) expr (List.zip pats' cvals)
     | (CaseCtor Ctuple pats', Pexpr _ _ (PEctor Ctuple pes)) ->
+        if List.length pats' <> List.length pes then
+          tuple_arity_error "unsafe_subst_pattern" (List.length pats') (List.length pes)
+        else
         List.foldr (fun (pat', pe) acc ->
           unsafe_subst_pattern pat' pe acc
         ) expr (List.zip pats' pes)
@@ -1505,10 +1533,17 @@ let rec subst_pattern (Pattern _ pat) pe' expr =
           | Nothing -> Nothing
         end
     | (CaseCtor Ctuple pats', Pexpr _ () (PEval (Vtuple cvals))) ->
+        (* FORK 2026-09-22: arity guards (see tuple_arity_error) *)
+        if List.length pats' <> List.length cvals then
+          tuple_arity_error "subst_pattern" (List.length pats') (List.length cvals)
+        else
         Just $ List.foldr (fun (pat', cval) acc ->
           subst_pattern_val pat' cval acc
         ) expr (List.zip pats' cvals)
     | (CaseCtor Ctuple pats', Pexpr _ _ (PEctor Ctuple pes)) ->
+        if List.length pats' <> List.length pes then
+          tuple_arity_error "subst_pattern" (List.length pats') (List.length pes)
+        else
         List.foldr (fun (pat', pe) acc ->
           match acc with
             | Just e -> subst_pattern pat' pe e
@@ -2457,6 +2492,12 @@ let rec update_env_aux (Pattern _ pat) cval env =
         update_env_aux pat1 cval1 $
           update_env_aux pat2 (Vlist bTy_elem cvals) env
     | (CaseCtor Ctuple pats', Vtuple cvals) ->
+        (* FORK 2026-09-22: arity guard (see tuple_arity_error) — Core_run's
+           let-forms check match_pattern first and report Illformed_program;
+           Core_reduction's reach this leaf directly *)
+        if List.length pats' <> List.length cvals then
+          tuple_arity_error "update_env_aux" (List.length pats') (List.length cvals)
+        else
         List.foldr (fun (pat', cval') acc ->
           update_env_aux pat' cval' acc
         ) env (List.zip pats' cvals)

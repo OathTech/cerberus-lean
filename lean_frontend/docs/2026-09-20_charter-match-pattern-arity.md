@@ -45,3 +45,27 @@
 ## 5. Record and reporting
 
 The report to the orchestrator: the head hash; the two lem hunks verbatim; T1–T5 output verbatim; the pre-fix quote; every Tier A/B tail; the manifest rows; whether `core_aux.ml`/`core_typing.ml` were upstream-identical before; deviations. Then stop.
+
+## Errata (2026-09-22, after the pre-merge audit `2026-09-21_enum-repairs-and-match-pattern-arity-audit.md`; [AGENT orchestrator rulings R1/R2/N1])
+
+- **§1, the post-match premise, FALSE.** "`subst_pattern_val` (tuple arm `:1141-1143`) and its pexpr twin
+  run only AFTER a successful match; once the matcher is fail-closed their zip sees equal lengths on
+  every reachable call" — wrong on two counts: there is no `subst_pattern_pexpr`, and the helpers are
+  reached WITHOUT a prior `match_pattern` (`to_pure → subst_pattern`, `core_aux.lem:1536-1546`;
+  `pure_propagation2 → subst_pattern`, `core_rewrite.lem:1187-1193, 1219-1225`; `subst_pattern`/
+  `unsafe_subst_pattern → subst_pattern_val`; and `Core_run`/`Core_reduction`'s `Elet`/`Ewseq`/`Esseq` →
+  `update_env`, never the matcher). The audit's `ArityAudit.lean` kernel-checked the counterexample.
+  Consequence: §3's "Forbidden: `subst_pattern_val`/`_pexpr` and every other zip site" was the wrong
+  fence — lifted by the closure-round rulings (R2), which guard every tuple-binding path.
+- **§1 "Why it is unobservable … fixes BOTH", INCOMPLETE.** The typechecker's tuple-EXPRESSION arms
+  (`core_typing.lem:884-887`, `Eunseq :1786-1795`, `Epar :1853`) also zip truncatingly — and DELETE the
+  surplus operands from the typed program (audit R1). D2 covered the pattern rule only; the record's
+  claim "a `.core` input with a mismatched arity now fails typing" was over-broad until the closure
+  round (R1).
+- **§0 "the files are disjoint from E-A's", FALSE.** The audit's `git merge-tree` against
+  `arc/program-data-parameters` reports conflicts in `lakefile.toml`, `scripts/test_unit.sh` and
+  `scripts/fork_drift_manifest.txt`, and textual overlap in `core_typing.lem` and
+  `Core_aux_lemMeasureProofs.lean`. Integration: rebase onto the mainline after the enum arc lands, keep
+  both unit registrations, recompute the typing module's content/delta pins from the COMBINED source
+  (never pick either branch's hash) — not in this round.
+- **§2 D3/§4 "Total: 14 passed"**: 13 on this branch (the 14th exe is the enum arc's).

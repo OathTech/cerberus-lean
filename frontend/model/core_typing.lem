@@ -882,6 +882,13 @@ and typecheck_pexpr tagDefs (env: typing_env) (bTy: core_base_type) (Pexpr annot
           | (Ccons, _, _) ->
               E.fail loc (MismatchExpected "Ccons" bTy "list")
           | (Ctuple, BTy_tuple bTys, _) ->
+              (* FORK 2026-09-22 (upstream-tray draft 45; audit R1): fail CLOSED on a
+                 tuple-arity mismatch. List.zip TRUNCATES, so a tuple EXPRESSION of the
+                 wrong arity was accepted and REBUILT with the surplus operands DELETED
+                 (an `error(...)` among them vanished from the typed program). *)
+              if List.length bTys <> List.length pes then
+                E.fail loc (MismatchExpected "Ctuple" bTy "tuple of a different arity")
+              else
               E.mapM (fun (bTy, pe) -> typecheck_pexpr tagDefs env bTy pe)
                 (List.zip bTys pes) >>=
               (fun pes' -> E.return (PEctor Ctuple pes'))
@@ -1789,6 +1796,11 @@ and typecheck_expr callconv tagDefs (env: typing_env) expected_bTy (Expr annot e
         (* TODO: forbid jumps, par(), ... *)
         match expected_bTy with
           | BTy_tuple bTys ->
+              (* FORK 2026-09-22 (upstream-tray draft 45; audit R1): arity guard —
+                 List.zip truncated and DELETED the surplus operands *)
+              if List.length bTys <> List.length es then
+                E.fail loc (MismatchExpected "Eunseq" expected_bTy "unseq of a different arity")
+              else
               Eunseq <$> E.mapM (fun (bTy, e) -> typecheck_expr env bTy e)
                           (List.zip bTys es)
           | _ -> E.fail loc (CoreTyping_TODO "UNSEQ illtyped")
@@ -1850,6 +1862,11 @@ and typecheck_expr callconv tagDefs (env: typing_env) expected_bTy (Expr annot e
           E.fail loc (CoreTyping_TODO "Epar must have at least 2 operands")
         else match expected_bTy with
           | BTy_tuple bTys ->
+              (* FORK 2026-09-22 (upstream-tray draft 45; audit R1): the same
+                 arity guard as Eunseq (same truncating shape) *)
+              if List.length bTys <> List.length es then
+                E.fail loc (MismatchExpected "Epar" expected_bTy "par of a different arity")
+              else
               Epar <$> E.mapM (uncurry $ typecheck_expr env) (List.zip bTys es)
           | _ ->
               E.fail loc (CoreTyping_TODO "Epar has as tuple type")

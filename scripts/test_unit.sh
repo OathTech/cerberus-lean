@@ -86,6 +86,9 @@ for test in "${TESTS[@]}"; do
     # The C-TF1 test receives its fuel explicitly: 2 is liftND + liftAction's
     # minimum, and the second run checks a larger caller-selected budget.
     if [[ "$test" == monadic-failstop-test ]]; then test_args=(2 17); fi
+    # The item-7 closure round's Elet/PElet runtime routes need an ambient LemFuel; the exe
+    # takes it here (no fuel numeral in test/Unit/MatchPatternArityTest.lean).
+    if [[ "$test" == match-pattern-arity-test ]]; then test_args=(17); fi
     if "$bin" "${test_args[@]}"; then
         echo "${GREEN}✓ $test PASSED${NC}"
         total_pass=$((total_pass + 1))

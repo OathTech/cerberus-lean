@@ -1,5 +1,7 @@
 import Core_aux
 import Core_typing
+import Core_run
+import Core_reduction
 import Core_aux_lemMeasureProofs
 
 /-! # MatchPatternArityTest — kernel facts for cerberus-sl hidden-state note item 7
@@ -29,7 +31,21 @@ the worker at the pattern's own size; `T1_anyFuel` lifts T1 to EVERY fuel at or 
 through the sufficiency theorem `Core_aux_lemMeasureProofs.match_pattern_measure_sufficient`
 (re-established in this slice with its statement unchanged).
 
-No proof method beyond `rfl`/`rw`/`exact`/`nomatch`; no option bumps; kernel-only. -/
+No proof method beyond `rfl`/`rw`/`exact`/`nomatch`; no option bumps; kernel-only.
+
+CLOSURE ROUND (2026-09-22; pre-merge audit `docs/2026-09-21_enum-repairs-and-match-pattern-arity-audit.md`
+R1/R2, orchestrator rulings): the SURROUNDING typing and binding paths, as RUNTIME witnesses on the
+actual generated definitions plus kernel facts — the shapes are the audit's `ArityAudit.lean`
+(evidence dir `…-audit-evidence/arity/`), reused verbatim. R1: `typecheck_pexpr`'s tuple-EXPRESSION
+arm, `typecheck_expr`'s `Eunseq` and `Epar` arms REJECT an arity mismatch (both directions, nested) and
+PRESERVE every operand of a fitting input byte-identically (erase the type annotation, compare). R2:
+`subst_pattern_val`, `unsafe_subst_pattern`, `subst_pattern`, `update_env_aux` return THE loud leaf
+`Core_aux.tuple_arity_error` on a mismatch (kernel `rfl`: the leaf is `failwithI`, opaque, so the
+equation is the statement that the result IS the leaf — never evaluated at runtime), fitting inputs
+unchanged; the ordinary `Elet` through `Core_run.core_thread_step2` and the `PElet` route through
+`Core_eval.step_eval_pexpr` give the SAME `Illformed_program` outcome (default = `--rewrite`). The two
+runtime routes need an ambient `[LemFuel]`: `main` takes the fuel from its argument (the
+`monadic-failstop-test` idiom; `scripts/test_unit.sh` passes it) — no fuel numeral in this file. -/
 
 namespace MatchPatternArityTest
 
@@ -194,16 +210,259 @@ def checks : List Check := [
   { name := "T5c typecheck_pattern (BTy_tuple [unit, boolean]) tup2 (positive control)", ok := isTypedCtuple 2 t5c, got := classifyTyping t5c,
     preFix := "Result (typed Ctuple pattern with 2 sub-patterns) (unchanged)" } ]
 
+/-! ## Closure round — R2: the tuple-BINDING helpers that never consult the matcher
+
+Shapes = the audit's `ArityAudit.lean`. PRE-FIX (the model as built at `14457f1a0`; `.tmp/mpa/prefix-r1r2-probe.log`,
+`.tmp/mpa/prefix-r2-env-probe.log`; the audit kernel-checked the same by `rfl`), verbatim:
+  `pre-fix subst_pattern_val (flat 2) (vals 3) body = Epure (PEval Vunit)   [= unitBody: key 0 WAS substituted]`
+  `pre-fix unsafe_subst_pattern (flat 2) (mk_value_pe (vals 3)) body = Epure (PEval Vunit)   [= unitBody: key 0 WAS substituted]`
+  `pre-fix unsafe_subst_pattern (flat 2) (PEctor Ctuple [u,u,u]) body = Epure (PEval Vunit)   [= unitBody: key 0 WAS substituted]`
+  `pre-fix subst_pattern (flat 2) (mk_value_pe (vals 3)) body = some (Epure (PEval Vunit)   [= unitBody: key 0 WAS substituted])`
+  `pre-fix subst_pattern (flat 2) (PEctor Ctuple [u,u,u]) body = some (Epure (PEval Vunit)   [= unitBody: key 0 WAS substituted])`
+  `pre-fix update_env_aux (flat 2) (vals 3) fmapEmpty : bound keys = [0, 1]`
+  `pre-fix update_env_aux (flat 3) (vals 2) fmapEmpty : bound keys = [0, 1]`
+— every helper substituted/bound the PREFIX. -/
+
+def key (i : Nat) : sym := sym.Symbol "audit" i SD_None
+def leaf (i : Nat) : pattern := Pattern [] (CaseBase (some (key i), BTy_unit))
+def tuple (ps : List pattern) : pattern := Pattern [] (CaseCtor Ctuple ps)
+def flat (n : Nat) : pattern := tuple ((List.range n).map leaf)
+def vals (n : Nat) : value := Vtuple (List.replicate n Vunit)
+def body : expr Unit := Expr [] (Epure (Pexpr [] () (PEsym (key 0))))
+def unitBody : expr Unit := Expr [] (Epure (Pexpr [] () (PEval Vunit)))
+def unitPe : pexpr := Pexpr [] () (PEval Vunit)
+def pe3u : pexpr := Pexpr [] () (PEctor Ctuple [unitPe, unitPe, unitPe])
+def emptyEnv : Fmap sym value := fmapEmpty
+
+theorem R2_subst_pattern_val_23 : subst_pattern_val (flat 2) (vals 3) body = tuple_arity_error "subst_pattern_val" 2 3 := rfl
+theorem R2_subst_pattern_val_32 : subst_pattern_val (flat 3) (vals 2) body = tuple_arity_error "subst_pattern_val" 3 2 := rfl
+theorem R2_subst_pattern_val_fit : subst_pattern_val (flat 2) (vals 2) body = unitBody := rfl
+theorem R2_unsafe_subst_pattern_val_23 : unsafe_subst_pattern (flat 2) (mk_value_pe (vals 3)) body = tuple_arity_error "unsafe_subst_pattern" 2 3 := rfl
+theorem R2_unsafe_subst_pattern_pe_23 : unsafe_subst_pattern (flat 2) pe3u body = tuple_arity_error "unsafe_subst_pattern" 2 3 := rfl
+theorem R2_unsafe_subst_pattern_fit : unsafe_subst_pattern (flat 2) (mk_value_pe (vals 2)) body = unitBody := rfl
+theorem R2_subst_pattern_val_tuple_23 : subst_pattern (flat 2) (mk_value_pe (vals 3)) body = tuple_arity_error "subst_pattern" 2 3 := rfl
+theorem R2_subst_pattern_pe_23 : subst_pattern (flat 2) pe3u body = tuple_arity_error "subst_pattern" 2 3 := rfl
+theorem R2_subst_pattern_fit : subst_pattern (flat 2) (mk_value_pe (vals 2)) body = some unitBody := rfl
+theorem R2_update_env_aux_23 : update_env_aux (flat 2) (vals 3) emptyEnv = tuple_arity_error "update_env_aux" 2 3 := rfl
+theorem R2_update_env_aux_32 : update_env_aux (flat 3) (vals 2) emptyEnv = tuple_arity_error "update_env_aux" 3 2 := rfl
+/-- the matcher on the same shape, for the record: NO MATCH -/
+theorem R2_matcher_23 : match_pattern (flat 2) (vals 3) = none := rfl
+
+/-! ## Closure round — R1: the typechecker's tuple-EXPRESSION paths (runtime; `partial def`s)
+
+PRE-FIX (`14457f1a0`; `.tmp/mpa/prefix-r1r2-probe.log`), verbatim:
+  `pre-fix typecheck_pexpr tys2 tup3 = Result (PEctor Ctuple with 2 operands)`
+  `pre-fix typecheck_pexpr tys3 tup2 = Result (PEctor Ctuple with 2 operands)`
+  `pre-fix typecheck_pexpr tysNested nested = Result (PEctor Ctuple with 2 operands)`
+  `pre-fix typecheck_expr tys2 (Eunseq [u,u,u]) = Result (Eunseq with 2 operands)`
+  `pre-fix typecheck_expr tys3 (Eunseq [u,u]) = Result (Eunseq with 2 operands)`
+  `pre-fix typecheck_expr tys2 (Epar [u,u,u]) = Result (Epar with 2 operands)`
+  `pre-fix typecheck_expr tys3 (Epar [u,u]) = Result (Epar with 2 operands)`
+— accepted, and the typed program REBUILT with the surplus operand DELETED (the audit: an `error(<<<surplus>>>, 3)`
+operand vanished under `--typecheck-core`). -/
+
+def tagsEmpty : Fmap sym (CerbLocation.Loc × tag_definition) := fmapEmpty
+def peU : pexpr := Pexpr [] () (PEval Vunit)
+def peT : pexpr := Pexpr [] () (PEval Vtrue)
+def peF : pexpr := Pexpr [] () (PEval Vfalse)
+def tysUB : core_base_type := BTy_tuple [BTy_unit, BTy_boolean]
+def tysUBB : core_base_type := BTy_tuple [BTy_unit, BTy_boolean, BTy_boolean]
+def peUB : pexpr := Pexpr [] () (PEctor Ctuple [peU, peT])
+def peUBB : pexpr := Pexpr [] () (PEctor Ctuple [peU, peT, peF])
+def tysNested : core_base_type := BTy_tuple [BTy_unit, BTy_tuple [BTy_boolean, BTy_boolean]]
+def peNestedBad : pexpr := Pexpr [] () (PEctor Ctuple [peU, Pexpr [] () (PEctor Ctuple [peT, peF, peF])])
+def peNestedFit : pexpr := Pexpr [] () (PEctor Ctuple [peU, Pexpr [] () (PEctor Ctuple [peT, peF])])
+def eU : expr Unit := Expr [] (Epure peU)
+def eT : expr Unit := Expr [] (Epure peT)
+def eF : expr Unit := Expr [] (Epure peF)
+
+/-- erase the type annotation of a typed pure expression (the shapes these witnesses use) -/
+partial def eraseP {b : Type} : generic_pexpr b sym → Option pexpr
+  | Pexpr annots _ (PEval v) => some (Pexpr annots () (PEval v))
+  | Pexpr annots _ (PEsym s) => some (Pexpr annots () (PEsym s))
+  | Pexpr annots _ (PEctor c pes) => do let pes' ← pes.mapM eraseP; pure (Pexpr annots () (PEctor c pes'))
+  | _ => none
+partial def eraseE : generic_expr Unit core_base_type sym → Option (expr Unit)
+  | Expr annots (Epure pe) => (eraseP pe).map fun pe' => Expr annots (Epure pe')
+  | Expr annots (Eunseq es) => do let es' ← es.mapM eraseE; pure (Expr annots (Eunseq es'))
+  | Expr annots (Epar es) => do let es' ← es.mapM eraseE; pure (Expr annots (Epar es'))
+  | _ => none
+
+def classifyPexprTyping : exceptM (generic_pexpr inferred sym) (CerbLocation.Loc × cause) → String
+  | Result (Pexpr _ _ (PEctor Ctuple ps)) => s!"Result (PEctor Ctuple with {ps.length} operands)"
+  | Result _ => "Result (other)"
+  | Exception (_, CORE_TYPING (MismatchExpected ctx _ found)) => s!"Exception (MismatchExpected {repr ctx} _ {repr found})"
+  | Exception _ => "Exception (other)"
+def classifyExprTyping : exceptM (generic_expr Unit core_base_type sym) (CerbLocation.Loc × cause) → String
+  | Result (Expr _ (Eunseq es)) => s!"Result (Eunseq with {es.length} operands)"
+  | Result (Expr _ (Epar es)) => s!"Result (Epar with {es.length} operands)"
+  | Result _ => "Result (other)"
+  | Exception (_, CORE_TYPING (MismatchExpected ctx _ found)) => s!"Exception (MismatchExpected {repr ctx} _ {repr found})"
+  | Exception (_, CORE_TYPING (CoreTyping_TODO t)) => s!"Exception (CoreTyping_TODO {repr t})"
+  | Exception _ => "Exception (other)"
+def isTupleExprMismatch (ctx : String) : exceptM (generic_pexpr inferred sym) (CerbLocation.Loc × cause) → Bool
+  | Exception (_, CORE_TYPING (MismatchExpected c (BTy_tuple _) found)) => c == ctx && found.endsWith "of a different arity"
+  | _ => false
+def isExprMismatch (ctx : String) : exceptM (generic_expr Unit core_base_type sym) (CerbLocation.Loc × cause) → Bool
+  | Exception (_, CORE_TYPING (MismatchExpected c (BTy_tuple _) found)) => c == ctx && found.endsWith "of a different arity"
+  | _ => false
+/-- fitting input: accepted AND every operand preserved (byte-identical after erasing the annotation) -/
+def preservedP (tys : core_base_type) (pe : pexpr) : Bool :=
+  match typecheck_pexpr tagsEmpty empty_env tys pe with
+  | Result r => eraseP r == some pe
+  | _ => false
+def preservedE (tys : core_base_type) (e : expr Unit) : Bool :=
+  match typecheck_expr Normal_callconv tagsEmpty empty_env tys e with
+  | Result r => eraseE r == some e
+  | _ => false
+def tP (tys : core_base_type) (pe : pexpr) := typecheck_pexpr tagsEmpty empty_env tys pe
+def tE (tys : core_base_type) (e : expr Unit) := typecheck_expr Normal_callconv tagsEmpty empty_env tys e
+
+/-! ## Closure round — R2: the ordinary `Elet` (Core_run) = the `PElet` route (Core_eval) on a mismatch
+
+PRE-FIX at the ORACLE (fork binary built at `14457f1a0`, the audit's `let-mismatch.core`; record §12):
+default `Defined {value: "Specified(3)", …}` (the prefix bound) vs `--rewrite` (the rewriter's `PElet`)
+`Error {msg: "ill-formed program: \`PElet: the pattern didn't match pe1'"}` — the two binding
+mechanisms disagreed. -/
+
+/-- `let (k0, k1) = (unit, unit, unit) in unit` as a Core_run arena -/
+def eletArena : expr core_run_annotation :=
+  Expr [] (Elet (flat 2) (mk_value_pe (vals 3)) (Expr [] (Epure unitPe)))
+def eletArenaFit : expr core_run_annotation :=
+  Expr [] (Elet (flat 2) (mk_value_pe (vals 2)) (Expr [] (Epure unitPe)))
+/-- the same binding as the rewriter's `PElet` -/
+def peletPe : pexpr := Pexpr [] () (PElet (flat 2) (mk_value_pe (vals 3)) unitPe)
+def peletPeFit : pexpr := Pexpr [] () (PElet (flat 2) (mk_value_pe (vals 2)) unitPe)
+/-- the address-space top of the (untouched) memory state — a TEST-CHOSEN named value, as
+    `monadic-failstop-test` does; the step under test evaluates a `PEval` and never reads memory -/
+def testAddressSpaceTop : Int := 0x10000
+
+inductive RouteOutcome where
+  | illformed (msg : String)
+  | defined
+  | other (what : String)
+  deriving BEq, Repr
+
+/-- the ordinary `Elet` step of `Core_run.core_thread_step2`, its `Step_eval` payload run on a default run state -/
+def eletRoute (fuel : Nat) (arena : expr core_run_annotation) : RouteOutcome :=
+  letI := LemFuel.mk fuel
+  let thSt : thread_state := { (default : thread_state) with arena := arena, env := [emptyEnv] }
+  let steps := core_thread_step2 tagsEmpty (CerbMem.initialMemState testAddressSpaceTop)
+    (default : generic_file Unit core_run_annotation) fmapEmpty fmapEmpty 0 (none, thSt)
+  match steps with
+  | [Step_eval "Elet" m] =>
+      match m (default : core_run_state) with
+      | Exception (Illformed_program msg) => .illformed msg
+      | Result (Defined _, _) => .defined
+      | Result _ => .other "Result (not Defined)"
+      | Exception _ => .other "Exception (other cause)"
+  | _ => .other s!"{steps.length} step(s), not a single Step_eval Elet"
+/-- the `PElet` route of `Core_eval.step_eval_pexpr` -/
+def peletRoute (fuel : Nat) (pe : pexpr) : RouteOutcome :=
+  letI := LemFuel.mk fuel
+  match step_eval_pexpr tagsEmpty 0 CerbLocation.Loc.unknown none fmapEmpty [emptyEnv] none
+      (default : generic_file Unit core_run_annotation) false pe with
+  | Exception (Illformed_program msg) => .illformed msg
+  | Result (Defined _) => .defined
+  | Result _ => .other "Result (not Defined)"
+  | Exception _ => .other "Exception (other cause)"
+
+def isIllformed : RouteOutcome → Bool
+  | .illformed _ => true
+  | _ => false
+
+/-! `Core_reduction.one_step` is THE engine the driver steps with (`driver.lem` `drive_core_thread2 →
+Core_reduction.core_step2 → step_ctx → one_step`; the post-fix oracle backtrace on the audit's
+`let-mismatch.core` names `Core_reduction.one_step`) — `Core_run.core_thread_step2` above is the
+second engine. Its let-forms bind a VALUE through `update_env` in a pure `TAU` step; after the
+closure round a non-fitting pattern yields `TAU_WITH_RUNSTATE` with the same `Illformed_program`
+computation the `PElet` route produces. The two evaluators it takes are stubs — never called on a
+`PEval` operand. -/
+def stubEval : pexpr → stExceptUndefM pexpr core_run_state core_run_cause :=
+  fun _ _ => Exception (Illformed_program "stub: not called")
+def stubFull : pexpr → core_run_state → exceptM (t0 value × core_run_state) core_run_cause :=
+  fun _ _ => Exception (Illformed_program "stub: not called")
+def reductionRoute (label : String) (arena : expr core_run_annotation) : RouteOutcome :=
+  match one_step0 stubEval stubFull [emptyEnv] arena with
+  | some (TAU_WITH_RUNSTATE l m) =>
+      if l != label then .other s!"TAU_WITH_RUNSTATE {l}" else
+      match m (default : core_run_state) with
+      | Exception (Illformed_program msg) => .illformed msg
+      | Result (Defined _, _) => .defined
+      | Result _ => .other "Result (not Defined)"
+      | Exception _ => .other "Exception (other cause)"
+  | some (TAU l _ _) => if l == label then .defined else .other s!"TAU {l}"
+  | some _ => .other "another one_step shape"
+  | none => .other "none"
+def wseqArena : expr core_run_annotation :=
+  Expr [] (Ewseq (flat 2) (Expr [] (Epure (mk_value_pe (vals 3)))) (Expr [] (Epure unitPe)))
+def sseqArena : expr core_run_annotation :=
+  Expr [] (Esseq (flat 2) (Expr [] (Epure (mk_value_pe (vals 3)))) (Expr [] (Epure unitPe)))
+
+structure Check2 where
+  name : String
+  ok : Bool
+  got : String
+  preFix : String
+
+def closureChecks (fuel : Nat) : List Check2 :=
+  let elet := eletRoute fuel eletArena
+  let pelet := peletRoute fuel peletPe
+  [ { name := "R1 typecheck_pexpr (unit, boolean) (unit, true, false)", ok := isTupleExprMismatch "Ctuple" (tP tysUB peUBB), got := classifyPexprTyping (tP tysUB peUBB),
+      preFix := "Result (PEctor Ctuple with 2 operands) — the third DELETED" },
+    { name := "R1 typecheck_pexpr (unit, boolean, boolean) (unit, true)", ok := isTupleExprMismatch "Ctuple" (tP tysUBB peUB), got := classifyPexprTyping (tP tysUBB peUB),
+      preFix := "Result (PEctor Ctuple with 2 operands) — the third TYPE dropped" },
+    { name := "R1 typecheck_pexpr nested (unit, (boolean, boolean)) (unit, (true, false, false))", ok := isTupleExprMismatch "Ctuple" (tP tysNested peNestedBad), got := classifyPexprTyping (tP tysNested peNestedBad),
+      preFix := "Result (PEctor Ctuple with 2 operands) — the inner surplus DELETED" },
+    { name := "R1 typecheck_pexpr fitting (unit, boolean, boolean): operands preserved byte-identical", ok := preservedP tysUBB peUBB, got := classifyPexprTyping (tP tysUBB peUBB),
+      preFix := "Result (PEctor Ctuple with 3 operands) (unchanged)" },
+    { name := "R1 typecheck_pexpr fitting nested: operands preserved byte-identical", ok := preservedP tysNested peNestedFit, got := classifyPexprTyping (tP tysNested peNestedFit),
+      preFix := "Result (unchanged)" },
+    { name := "R1 typecheck_expr (unit, boolean) unseq(unit, true, false)", ok := isExprMismatch "Eunseq" (tE tysUB (Expr [] (Eunseq [eU, eT, eF]))), got := classifyExprTyping (tE tysUB (Expr [] (Eunseq [eU, eT, eF]))),
+      preFix := "Result (Eunseq with 2 operands) — the third DELETED" },
+    { name := "R1 typecheck_expr (unit, boolean, boolean) unseq(unit, true)", ok := isExprMismatch "Eunseq" (tE tysUBB (Expr [] (Eunseq [eU, eT]))), got := classifyExprTyping (tE tysUBB (Expr [] (Eunseq [eU, eT]))),
+      preFix := "Result (Eunseq with 2 operands)" },
+    { name := "R1 typecheck_expr fitting unseq(unit, true, false): operands preserved byte-identical", ok := preservedE tysUBB (Expr [] (Eunseq [eU, eT, eF])), got := classifyExprTyping (tE tysUBB (Expr [] (Eunseq [eU, eT, eF]))),
+      preFix := "Result (Eunseq with 3 operands) (unchanged)" },
+    { name := "R1 typecheck_expr (unit, boolean) par(unit, true, false)", ok := isExprMismatch "Epar" (tE tysUB (Expr [] (Epar [eU, eT, eF]))), got := classifyExprTyping (tE tysUB (Expr [] (Epar [eU, eT, eF]))),
+      preFix := "Result (Epar with 2 operands) — the third DELETED" },
+    { name := "R1 typecheck_expr (unit, boolean, boolean) par(unit, true)", ok := isExprMismatch "Epar" (tE tysUBB (Expr [] (Epar [eU, eT]))), got := classifyExprTyping (tE tysUBB (Expr [] (Epar [eU, eT]))),
+      preFix := "Result (Epar with 2 operands)" },
+    { name := "R1 typecheck_expr fitting par(unit, true, false): operands preserved byte-identical", ok := preservedE tysUBB (Expr [] (Epar [eU, eT, eF])), got := classifyExprTyping (tE tysUBB (Expr [] (Epar [eU, eT, eF]))),
+      preFix := "Result (Epar with 3 operands) (unchanged)" },
+    { name := "R2 Core_run Elet (k0, k1) = (unit, unit, unit): Illformed_program", ok := isIllformed elet, got := (repr elet).pretty,
+      preFix := "the prefix bound, e2 stepped (oracle: Specified(3) on let-mismatch.core)" },
+    { name := "R2 Core_eval PElet (k0, k1) = (unit, unit, unit): Illformed_program", ok := isIllformed pelet, got := (repr pelet).pretty,
+      preFix := "Illformed_program \"PElet: the pattern didn't match pe1\" (already, via select_case)" },
+    { name := "R2 default = rewrite: both routes Illformed_program", ok := isIllformed elet && isIllformed pelet, got := s!"Elet {(repr elet).pretty} / PElet {(repr pelet).pretty}",
+      preFix := "DISAGREED: Elet bound the prefix, PElet failed" },
+    { name := "R2 fitting (k0, k1) = (unit, unit): both routes Defined", ok := eletRoute fuel eletArenaFit == .defined && peletRoute fuel peletPeFit == .defined,
+      got := s!"Elet {(repr (eletRoute fuel eletArenaFit)).pretty} / PElet {(repr (peletRoute fuel peletPeFit)).pretty}", preFix := "both Defined (unchanged)" },
+    { name := "R2 Core_reduction one_step Elet (k0, k1) = (unit, unit, unit): Illformed_program (the driver's engine)", ok := isIllformed (reductionRoute "Elet" eletArena), got := (repr (reductionRoute "Elet" eletArena)).pretty,
+      preFix := "TAU Elet with the prefix bound (oracle default: Specified(3) on let-mismatch.core)" },
+    { name := "R2 Core_reduction one_step Ewseq (k0, k1) = pure (unit, unit, unit): Illformed_program", ok := isIllformed (reductionRoute "Ewseq" wseqArena), got := (repr (reductionRoute "Ewseq" wseqArena)).pretty,
+      preFix := "TAU Ewseq with the prefix bound (oracle default: Specified(3) on unseq-weak-mismatch.core)" },
+    { name := "R2 Core_reduction one_step Esseq (k0, k1) = pure (unit, unit, unit): Illformed_program", ok := isIllformed (reductionRoute "Esseq" sseqArena), got := (repr (reductionRoute "Esseq" sseqArena)).pretty,
+      preFix := "TAU Esseq with the prefix bound (oracle default: Specified(3) on unseq-strong-mismatch.core)" },
+    { name := "R2 Core_reduction one_step fitting Elet (k0, k1) = (unit, unit): TAU (unchanged)", ok := reductionRoute "Elet" eletArenaFit == .defined, got := (repr (reductionRoute "Elet" eletArenaFit)).pretty,
+      preFix := "TAU Elet (unchanged)" } ]
+
 end MatchPatternArityTest
 
-def main : IO UInt32 := do
-  IO.println "match-pattern-arity-test: match_pattern / typecheck_pattern fail closed on tuple-arity mismatch (cerberus-sl item 7); T1–T4 kernel-checked at compile time"
+def main (args : List String) : IO UInt32 := do
+  -- the ambient fuel of the two Core_run/Core_eval routes comes from the caller (scripts/test_unit.sh), never from a numeral here
+  let some fuel := args.head?.bind String.toNat?
+    | IO.eprintln "match-pattern-arity-test: usage: match-pattern-arity-test <fuel : Nat> (the ambient LemFuel of the Elet/PElet runtime witnesses)"; return 2
+  IO.println s!"match-pattern-arity-test: match_pattern / typecheck_pattern fail closed on tuple-arity mismatch (cerberus-sl item 7); T1–T4 kernel-checked at compile time; closure round R1/R2 witnesses at fuel {fuel}"
   let mut failed := false
   for c in MatchPatternArityTest.checks do
+    IO.println s!"{if c.ok then "PASS" else "FAIL"} {c.name}: got {c.got}; pre-fix: {c.preFix}"
+    failed := failed || !c.ok
+  for c in MatchPatternArityTest.closureChecks fuel do
     IO.println s!"{if c.ok then "PASS" else "FAIL"} {c.name}: got {c.got}; pre-fix: {c.preFix}"
     failed := failed || !c.ok
   if failed then
     IO.eprintln "match-pattern-arity-test: FAILED (a runtime witness disagrees with the fail-closed expectation)"
     return 1
-  IO.println "match-pattern-arity-test: OK (8/8 runtime witnesses; kernel theorems T1a T1b T1_wrapper T1_anyFuel T2 T3 T3_select T4_neg compiled; #print axioms = [propext] on each, pinned by #guard_msgs)"
+  IO.println "match-pattern-arity-test: OK (8/8 item-7 witnesses + 19/19 closure-round witnesses; kernel theorems T1a T1b T1_wrapper T1_anyFuel T2 T3 T3_select T4_neg and the R2_* leaf equations compiled; #print axioms pinned by #guard_msgs: [propext] on T1a/T1b/T2/T3/T3_select/T4_neg, the trio on T1_anyFuel)"
   return 0

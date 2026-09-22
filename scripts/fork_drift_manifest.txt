@@ -1,3 +1,16 @@
+# match-pattern-arity CLOSURE round, 2026-09-22 [AGENT; pre-merge audit lean_frontend/docs/2026-09-21_enum-repairs-and-match-pattern-arity-audit.md
+# R1/R2, orchestrator rulings; single rows + this NOTE, no --refresh]: R1 — core_typing.lem's tuple-EXPRESSION zips fail closed
+# (typecheck_pexpr's PEctor Ctuple arm, typecheck_expr's Eunseq and Epar arms: MismatchExpected on unequal lengths; before, the
+# surplus operands were DELETED from the typed program). R2 — the tuple-BINDING helpers that never consult the matcher get an
+# explicit arity guard with ONE shared loud leaf, core_aux.lem tuple_arity_error (subst_pattern_val, unsafe_subst_pattern x2,
+# subst_pattern x2, update_env_aux; OCaml Cerb_debug.error / Lean failwithI — one new failure_reach_register row), and Core_run's
+# Elet/Ewseq/Esseq check match_pattern before update_env, reporting Illformed_program exactly as the PElet route does (default =
+# --rewrite) — and so do Core_reduction's six let-form sites (one_step: Elet x2, Ewseq x2, Esseq x2; THE engine the driver steps
+# with, drive_core_thread2 -> core_step2 -> step_ctx -> one_step; + `import Errors`). Layer 1: core_aux.lem 28b4d085… -> 314c447f…,
+# core_typing.lem 35c09007… -> b2c028a9…, core_run.lem 1427069b… -> 73ba87a3…, core_reduction.lem 7f61895f… -> cf062e7a….
+# Layer 2 ([expected-semantic], all four already there): core_aux.ml c2e521a9… -> e20dc5a1…, core_typing.ml b8f9c4bd… -> fee46402…,
+# core_run.ml 7d4e9c99… -> ab8326bb…, core_reduction.ml 22b0b094… -> 1c95fd93…. Unobservable on elaborator output; every lane unchanged. Record:
+# lean_frontend/docs/2026-09-20_match-pattern-arity-record.md §12 (closure round).
 # INTEGRATION 2026-09-23 [AGENT; orchestrator's rebase go]: fix/match-pattern-arity REBASED onto mainline 34ac493f9 (= df85e95b7 +
 # the run-digest slice D-S). Where D-S and this branch both moved a pin (core_run.lem/.ml: D-S's run-state digest + this branch's
 # let-form/Erun fit checks; core_typing.lem/.ml as before with E-A) the content and delta pins below are RECOMPUTED from the
@@ -461,15 +474,15 @@ util/cerb_fresh.ml
 100644 185b1d2afb9e0d3598c664a50d7106b8cc195add6049b358c0c92c8305e60dc2 frontend/model/cerb_attributes.lem
 100644 c4426c93453c70139f7693096cb2d3796dee1676344652c2c6271303a2d392ae frontend/model/cn.lem
 100644 bf183f3dc55fb5d962089cba9ebc82485a204d34958de5381cf784e155935504 frontend/model/core.lem
-100644 28b4d0858adcab19914ca8d71c9a98254edefca78e48b0bd4f3e6ae47244f622 frontend/model/core_aux.lem
+100644 314c447fac234c6021ec427ead83a056449d016aed6ff575bf97b2f74334172f frontend/model/core_aux.lem
 100644 4ade27ce2e7431592228e81b1b33184e975d78710bfecc93910df867d5d3dd4b frontend/model/core_eval.lem
 100644 7821d8255a206e9f3f6c2ff9993b48917903fce4bd6bb185912a223edf9cc392 frontend/model/core_linking.lem
-100644 7f61895fe9f448d6b28d0290e9982a7dc4213508e23b9fd4c71f04a6828de5a7 frontend/model/core_reduction.lem
+100644 cf062e7a0ce3872dd6c7a843207f9205ae8c8c39a7824e2714ac75e22640f052 frontend/model/core_reduction.lem
 100644 0630b14d31c11aa34ff2765ac1810d80aeadc02d4497ba80af0eb348bfff1db2 frontend/model/core_rewrite.lem
 100644 5f48b77c80e37636b9baa20ab3ebe93f606740c5d7510fa4404109b875d29571 frontend/model/core_rewrite2.lem
-100644 d60d191695e55a7a32f93f028d91f0fe46e3adc69af4db9cff6cc45bef9b89eb frontend/model/core_run.lem
+100644 f184255014782cc6f8e527c7715249ab60b44abadc02a02fc29bbdfe02ed9170 frontend/model/core_run.lem
 100644 32f4c87c8a09bc7e3f4b753fadd791b88ca558acbc34cfca6a3f0b49009ca6e7 frontend/model/core_run_aux.lem
-100644 eeed68c8b02966a8f4cd7e386d4dd62c5e3ea2fb6d28a2231e79a7006ba256b8 frontend/model/core_typing.lem
+100644 fe75fa375b50c6cdb3713e1e876173cf3e7cdd26918256032d50b1b1e75451d1 frontend/model/core_typing.lem
 100644 b3607f3932ab346b9a6496b3f2036459923372ce9d70c8629104d6ef4a5fd71a frontend/model/ctype.lem
 100644 d7e2ece8db3097af54ddb846ce20907a15e5c905f610df014ae6ffcb197b48c7 frontend/model/ctype_aux.lem
 100644 02178e49fd9acc0f84ae2a15b72a6454a1689f7024f172c1eda4d85b96327965 frontend/model/debug.lem
@@ -517,12 +530,12 @@ util/cerb_fresh.ml
 100755 9a07e1a9188443cebef04bef184bbac1a876c996fad0caca90ea9b4ce3605292 tools/check_lem_sync.sh
 100644 ee912ae7803e9d42fbf5ef85fdac484586571d4f4b2eb17745431ca9c19aacf8 util/cerb_fresh.ml
 [expected-semantic]
-c2e521a92e83a56a8dab06139196f33e96bd3854300896f5725ef56f8b04fe1d core_aux.ml
+e20dc5a1e9f9bf4687669adfe6bf17765d445cf1c57d16c3d0932c9aebe75d54 core_aux.ml
 ceca3526d3ddbd55345eee29f0c5b2626b56c516014cdd73fb3bf5db20f50ac2 cabs_to_ail_effect.ml
 0aefe2af044772ef6a5e4be8bfdfa6bb1ae52cddcaf15d7b771b0abe3d13922b cabs_to_ail.ml
-22b0b094c6622a92dfdff511a05f19de93f445c5f47d149deec3ed223e582f98 core_reduction.ml
+1c95fd93b067730026f2c9cfde1d1551d0872192f691a6067654bf9ee44395d5 core_reduction.ml
 b9f1e58c1d52cd0680a56e7dcd4e3d8e5d2eadbe1d1575f4ad0442d3efd2b3a5 core_run_aux.ml
-1bcc364225eada1d59d171f95b1c2ddd7792db87ae503c67609105e353f38b42 core_run.ml
+1553e2a81e10b96bf0d349577c6e814ad4b53005c988f67f4b12dc6fcbda7ebe core_run.ml
 0043fe1a21ec09cb8dd805b47fac4dce6dc094d9b61780adefb0828963cfc656 mini_pipeline.ml
 fa725f3e09e5ae317d685fda82c4be9dcfeca9a99ed47b1ebb4f2dd6a0a343b6 symbol.ml
 97763753365c911f580751d4a73bc0e6f3adb3ce96a5f8f98e374d285c4fc6d0 translation_effect.ml
@@ -534,7 +547,7 @@ fa725f3e09e5ae317d685fda82c4be9dcfeca9a99ed47b1ebb4f2dd6a0a343b6 symbol.ml
 0151eee4e5d4dda205ec022437cd3807d5fdde8eec365c1ea36205b7693b1c2a ailSyntax.ml
 efe1a293fdf87eb7a264b3d5a2705d9f9421115f9137772c0b6a539a5049b8fb core.ml
 aae2f7294241e5b942c4d2f9a0b847dd72570a72037590b9df577586b23758d4 core_linking.ml
-acef776c2b669bc5f9e0bf034b16dfafc49b478bb2570c5327ca8331b4162e98 core_typing.ml
+a7674e2f7375a400582675aa54325cad4172c61601d5d8a06535c9e72c079c00 core_typing.ml
 d40900445568d01254a2e1cfef5d50706aba8d4067a74aab34a929339e0a3fd3 genTyping.ml
 89421ef29756b34e3f3e10ad2559fea2d3ae3c5bad15222d23c7c64e2005dce3 implementation.ml
 [expected-cosmetic]

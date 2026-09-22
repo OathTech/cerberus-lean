@@ -131,9 +131,15 @@ value" as an extra premise, which is an engine property leaking into program rea
 fork's verification consumer asked for the fix (cerberus-sl, hidden-state note item 7: *"on an arity
 mismatch `match_pattern` returns NO MATCH (`Nothing`), not an error, so that `select_case` CONTINUES to
 later arms … and a successful match keeps the calculus's bindings and their order"*). The
-post-match substitutions `subst_pattern_val`/`subst_pattern_pexpr` (`core_aux.lem:1123-1145`, tuple arm
-`:1141-1143`) zip too, but run only AFTER a successful match, so with the matcher guarded their zips see
-equal lengths on every reachable call.
+tuple-BINDING helpers `subst_pattern_val` (`core_aux.lem:1123-1145`, tuple arm `:1141-1143`),
+`unsafe_subst_pattern` (`:1403`, two tuple arms), `subst_pattern` (`:1484`, two tuple arms) and
+`update_env_aux` (`:2443`, tuple arm `:2459-2462`) zip the same way, and — CORRECTED 2026-09-22 after the
+fork's pre-merge audit (this draft first said they ran "only after a successful match"; there is also no
+`subst_pattern_pexpr`) — they are reached WITHOUT a prior `match_pattern`: `to_pure → subst_pattern`
+(`core_aux.lem:1536-1546`), `pure_propagation2 → subst_pattern` (`core_rewrite.lem:1187-1193,
+1219-1225`), `subst_pattern`/`unsafe_subst_pattern → subst_pattern_val` on tuple components, and the
+`Elet`/`Ewseq`/`Esseq` rules of BOTH engines → `update_env` (`core_run.lem:872-879, 1450, 1494`;
+`core_reduction.lem:351-426`). See "The surrounding paths" below.
 
 ## Proposed remedy
 
@@ -187,8 +193,61 @@ for upstream): both guards above in `core_aux.lem` and `core_typing.lem` (a fork
 the fuel-measure sufficiency proof of `match_pattern` re-established with its statement unchanged
 (`lean_frontend/Core_aux_lemMeasureProofs.lean`); the kernel facts the consumer named as its acceptance
 premises — `match_pattern (pair) (triple) = none`, `select_case … = some <wildcard arm>`, bindings and
-their order unchanged on a fitting match — by `rfl`, axiom-free, plus the pre-fix negative control and
-the typing pin, in `lean_frontend/test/Unit/MatchPatternArityTest.lean` (`match-pattern-arity-test`);
+their order unchanged on a fitting match — by `rfl` (`#print axioms` = `[propext]`, inherited from the
+model's `lemListZip`; the any-fuel lift `T1_anyFuel` the standard trio), plus the pre-fix negative
+control and the typing pin, in `lean_frontend/test/Unit/MatchPatternArityTest.lean` (`match-pattern-arity-test`);
 fork-drift manifest rows for `core_aux.lem`/`core_typing.lem` (layer 1) and the generated
 `core_aux.ml`/`core_typing.ml` (layer 2). No lane moved (the defect is unobservable on elaborator output),
 so no pristine-oracle register row exists; the witness above is carried as TEXT here, not as a fixture.
+
+## The surrounding paths (closure round, 2026-09-22 — the fork's pre-merge audit R1/R2)
+
+The fork's independent pre-merge audit (`lean_frontend/docs/2026-09-21_enum-repairs-and-match-pattern-arity-audit.md`,
+evidence `…-audit-evidence/arity/`) found the same truncating-`zip` default in the paths AROUND the two
+guards above, on the same `.core` inputs. Both are in upstream `master` @ `b9aeedcb4` unchanged.
+
+**R1 — Core typing DELETES surplus tuple operands.** `typecheck_pexpr`'s tuple-expression arm
+(`core_typing.lem:884-887`, `E.mapM … (List.zip bTys pes)`, reached from the `PElet` inference branches
+`:772-782`/`:1174-1181` and the `Elet` rule `:1709-1718`), `typecheck_expr`'s `Eunseq` arm (`:1786-1795`)
+and its `Epar` arm (`:1853`) zip the expected component types against the operands and REBUILD the
+expression from the zip — so a tuple expression of the wrong arity is accepted and its surplus operands
+are removed from the typed program. The audit's table, verbatim (`pure-let-mismatch.core`:
+`proc main (): eff loaded integer := pure (Specified (let (a: integer, b: integer) = (1, 2, 3) in a + b))`):
+
+| Engine/tree | Default | Add `--typecheck-core` |
+|---|---|---|
+| Base `5407597d9` | `Specified(3)`, exit 0 | `Specified(3)`, exit 0 |
+| Pristine `b9aeedcb4` | `Specified(3)`, exit 0 | `Specified(3)`, exit 0 |
+| Arity head `14457f1a0` | `PElet: the pattern didn't match pe1`, exit 1 | `Specified(3)`, exit 0 |
+
+and `--pp=core --typecheck-core` prints the tuple as `(1, 2)` where the default dump keeps `(1, 2, 3)`.
+The deletion can SUPPRESS a failure: with the surplus operand written `error(<<<surplus>>>, 3)`
+(`pure-let-discarded-error.core`, and the `unseq(pure (1), pure (2), pure (error(<<<surplus>>>, 3)))`
+twin), base, pristine and the arity head all give `Error {msg: "surplus"}`, exit 1, by default — and
+`Specified(3)`, exit 0, with `--typecheck-core`: typing deleted the erroring operand.
+
+**R2 — the other tuple-BINDING paths bypass the matcher.** `Core_run`'s ordinary `let` (`core_run.lem:872-879`)
+binds through `update_env` (`core_aux.lem:2459-2462`, zip, no arity check), as do its `Ewseq`/`Esseq`
+(`:1450`, `:1494`) and `Core_reduction`'s let-forms; `core_rewrite`'s ordinary-let rule (`:1122-1130`)
+turns an `Elet` into a `PElet`, which `core_eval.lem:1007-1018` evaluates through `select_case` — so once
+the matcher is guarded the two mechanisms DISAGREE (`let-mismatch.core`: default `Specified(3)`,
+`--rewrite` the `PElet` error). The substitution helpers are reached without the matcher (paths above);
+the audit's `ArityAudit.lean` kernel-checks `match_pattern pair triple = none` while `subst_pattern_val
+pair triple body`, `subst_pattern` and `unsafe_subst_pattern` substitute the prefix.
+
+**Proposed remedy (the fork's closure-round patch, shared body):** (R1) at each of the three typing
+sites, `if List.length bTys <> List.length <operands> then E.fail loc (MismatchExpected "<Ctuple|Eunseq|Epar>"
+expected "… of a different arity") else <the present body>`; (R2) the let-forms of BOTH engines — `Core_reduction.one_step`
+(`core_reduction.lem:351-426`, the engine the driver steps with) and `Core_run.core_thread_step2` (`core_run.lem:872-879,
+1450, 1494`) — check `match_pattern pat cval` before `update_env` and report `Illformed_program "<Elet|Ewseq|Esseq>:
+the pattern didn't match …"` through the monadic channel — the same outcome as the `PElet` route, so default =
+`--rewrite`; and every
+tuple-binding helper (`subst_pattern_val`, `unsafe_subst_pattern` ×2, `subst_pattern` ×2, `update_env_aux`)
+guards its arity with ONE shared loud leaf, `Core_aux.tuple_arity_error` (`Cerb_debug.error` on the OCaml
+side), since these are pure functions with no failure channel and a mismatch is a malformed Core program.
+Upstream may prefer `Nothing` in the `maybe`-typed `subst_pattern`; the fork chose one behaviour for
+every helper. Fitting inputs are unchanged (the fork pins operand preservation byte-identically).
+
+**Fork status:** LANDED in the closure round of `fix/match-pattern-arity` (record
+`lean_frontend/docs/2026-09-20_match-pattern-arity-record.md` §12, with the hunks, the pre-fix engine
+quotes on the audit's probes and the runtime witnesses `test/Unit/MatchPatternArityTest.lean`).

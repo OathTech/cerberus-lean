@@ -301,6 +301,11 @@ theorem subst_pattern_val_stable_aux {a : Type} (k : Nat) : ∀ (e : generic_pat
         obtain ⟨an, pat⟩ := e
         simp only [subst_pattern_val_lemFuel]
         split <;> (try simp (disch := size_lt) only [key])
+        -- The tuple arm(s) — one — are `if not (|pats'| == |…|) then tuple_arity_error … else
+        -- lemListFoldr …` since the fail-closed arity guard (match-pattern-arity closure round,
+        -- 2026-09-22, audit R2): a NON-recursive branch. Split the `if`; the mismatch branch is the
+        -- same leaf on both sides (rfl); the other is the list traversal exactly as before.
+        all_goals (split <;> try rfl)
         all_goals
           apply lemListFoldr_congr; intro p acc hp
           obtain ⟨pat', q⟩ := p
@@ -420,6 +425,11 @@ theorem unsafe_subst_pattern_stable_aux {a : Type} (k : Nat) : ∀ (e : generic_
         obtain ⟨an, pat⟩ := e
         simp only [unsafe_subst_pattern_lemFuel]
         split <;> (try simp (disch := size_lt) only [key])
+        -- The tuple arm(s) — two (value tuple, pexpr tuple) — are `if not (|pats'| == |…|) then tuple_arity_error … else
+        -- lemListFoldr …` since the fail-closed arity guard (match-pattern-arity closure round,
+        -- 2026-09-22, audit R2): a NON-recursive branch. Split the `if`; the mismatch branch is the
+        -- same leaf on both sides (rfl); the other is the list traversal exactly as before.
+        all_goals (split <;> try rfl)
         all_goals
           apply lemListFoldr_congr; intro p acc hp
           obtain ⟨pat', q⟩ := p
@@ -454,6 +464,11 @@ theorem subst_pattern_stable_aux {a : Type} (k : Nat) : ∀ (e : generic_pattern
         obtain ⟨an, pat⟩ := e
         simp only [subst_pattern_lemFuel]
         split <;> (try simp (disch := size_lt) only [key])
+        -- The tuple arm(s) — two (value tuple, pexpr tuple) — are `if not (|pats'| == |…|) then tuple_arity_error … else
+        -- lemListFoldr …` since the fail-closed arity guard (match-pattern-arity closure round,
+        -- 2026-09-22, audit R2): a NON-recursive branch. Split the `if`; the mismatch branch is the
+        -- same leaf on both sides (rfl); the other is the list traversal exactly as before.
+        all_goals (split <;> try rfl)
         all_goals
           apply lemListFoldr_congr; intro p acc hp
           obtain ⟨pat', q⟩ := p
@@ -630,6 +645,11 @@ theorem update_env_aux_stable_aux {a : Type} [Lem_Map.MapKeyType a] (k : Nat) : 
         obtain ⟨an, pat⟩ := e
         simp only [update_env_aux_lemFuel]
         split <;> (try simp (disch := size_lt) only [key])
+        -- The tuple arm(s) — one — are `if not (|pats'| == |…|) then tuple_arity_error … else
+        -- lemListFoldr …` since the fail-closed arity guard (match-pattern-arity closure round,
+        -- 2026-09-22, audit R2): a NON-recursive branch. Split the `if`; the mismatch branch is the
+        -- same leaf on both sides (rfl); the other is the list traversal exactly as before.
+        all_goals (split <;> try rfl)
         all_goals
           apply lemListFoldr_congr; intro p acc hp
           obtain ⟨pat', q⟩ := p
