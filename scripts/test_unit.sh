@@ -28,6 +28,8 @@ UNIT_TESTS=(
     "sc-protocol-test"
     "sc-fences-test"
     "sc-cas-test"
+    "sc-seq-rmw-test"
+    "sc-byte-sources-test"
     "sc-representation-test"
     # allocator soundness (upstream-tray draft 44, 2026-09-16): the four draft-44
     # states on the actual CerbMem.allocator; its import compiles the kernel theorem
@@ -85,7 +87,7 @@ for test in "${TESTS[@]}"; do
     # minimum, and the second run checks a larger caller-selected budget.
     if [[ "$test" == monadic-failstop-test ]]; then test_args=(2 17); fi
     if [[ "$test" == sc-prototype-test ]]; then test_args=(17 64); fi
-    if [[ "$test" == sc-protocol-test || "$test" == sc-fences-test || "$test" == sc-cas-test ]]; then test_args=(64); fi
+    if [[ "$test" == sc-protocol-test || "$test" == sc-fences-test || "$test" == sc-cas-test || "$test" == sc-seq-rmw-test || "$test" == sc-byte-sources-test ]]; then test_args=(64); fi
     if "$bin" "${test_args[@]}"; then
         echo "${GREEN}✓ $test PASSED${NC}"
         total_pass=$((total_pass + 1))

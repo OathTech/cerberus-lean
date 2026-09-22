@@ -5,19 +5,19 @@ This file records evidence and next actions; it does not replace the charter.
 
 ## Current status
 
-**2026-09-22: CAS, fences and the NaN representation repair are promoted but uncommitted. Component checks and Tier A pass; the first full run stopped at a new GCC fixture disagreement after 28 passing lanes. The fixture has a reviewed refinement with a retained negative control; fresh validation follows. Public SC verdict checking remains incomplete.**
+**2026-09-22: CAS/fences/float are committed at `fb72dd9fb`. The following ordinary-RMW and physical byte-source slice passes both builds, targeted controls, all 39 Tier A/B lanes and the mandatory 864-row three-engine report, with unchanged discrepancy IDs. Public SC verdict checking remains incomplete; helper resumption and location/consistency work continue.**
 Branch `arc/sc-prototype`, worktree
 `/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype`.
 Implementation base: `5407597d9eeba0259d65b728e86a860ad4614ab3`.
 
 | Package | Status | Next evidence |
 |---|---|---|
-| S0 reference/baseline/instruments | Full pre-change baseline passed (39/39 commands); contract, inventory and repaired harness implemented | Fresh tests and integration gates for the changes |
-| S1 driver/scheduler/threads | Protocol checkpoint committed at `06681abd3`; pending requests now support CAS phases | Validate current atomic slice |
-| S2 effects/representation/sequencing | Observation journal and representation repair integrated; ordinary RMW resumption and byte-source accounting drafted separately | Remaining grouping/location/lifetime composition and correspondence |
-| S3 SC atomics/races/verdicts | CAS/fence component and C recording controls pass; unspecified CAS bytes fail closed | Fresh integration, race/consistency checking and C entry |
-| S4 operational API/laws | Checked ND lifting and same-fuel erasure integrated and compiled | Importable production definitions and driver laws |
-| S5 integrated completion | Not started | Final inventory, fresh gates and reproducible report |
+| S0 reference/baseline/instruments | Baseline, contract, inventory and repaired harness retained; current slice passes fresh integration | Continue reference and location interpretation review |
+| S1 driver/scheduler/threads | Protocol plus owned CAS and ordinary-RMW phases implemented | Owned resumable helper services and complete choice laws |
+| S2 effects/representation/sequencing | Journal, float representation, ordinary-RMW phases and physical byte sources validated | Helper order/interruption, location/lifetime composition and correspondence |
+| S3 SC atomics/races/verdicts | CAS/fences validated; unspecified CAS bytes explicitly unsupported | Race/consistency checking, remaining atomic frontend paths and C entry |
+| S4 operational API/laws | Checked lifting, choices and recorder/byte-accounting laws exported | Independent import example and resumption laws |
+| S5 integrated completion | Intermediate slices validated; prototype incomplete | Final inventory, complete SC integration and reproducible report |
 
 ## Setup record
 
@@ -76,16 +76,16 @@ for S0 onward; these setup checks do not claim those results.
 
 ## Next action
 
-The CAS/fence/float checkpoint passes fresh Tier A+B (39/39), the 864-case
-three-engine comparison and its production connection controls. Its retained
-[evidence](2026-09-21_sc-prototype-evidence/atomic/README.md) records unchanged
-sources and the same 40 existing Lean discrepancy IDs. This is one implementation
-slice, not the completed prototype or a whole-program SC verdict engine.
+Retain and commit the validated RMW/byte-source checkpoint, then compile and
+exercise the prepared typed continuation, helper-order, fault-identity and
+independent import drafts. The [current evidence index](2026-09-21_sc-prototype-evidence/rmw-byte-sources/README.md)
+records all 39 passing lanes and the unchanged 40 discrepancy IDs across the
+864-row three-engine report. Draft code is not covered by that certification.
 
-Continue ordinary RMW scheduling, byte-source composition, helper ordering and
-interruption, the race/consistency checker and public operational/C interfaces.
-The [user's fail-closed policy](2026-09-21_sc-upstream-gap-policy.md) is resolved;
-no further padding decision is pending. The customer remains strictly read-only.
+Continue owned helper resumption, filesystem state preservation, location/RF
+composition, SC races and consistency, and public operational/C interfaces.
+The [padding policy](2026-09-21_sc-upstream-gap-policy.md) is resolved; no new
+padding discussion is needed. The customer remains strictly read-only.
 
 ## S0 working evidence
 
@@ -539,3 +539,47 @@ Separate resumption notes retain the concrete filesystem snapshot hazards.
 Three kernel recorder-retention laws pass on current production definitions;
 they are not yet exported or a claim of ISO correspondence. No follow-up draft
 is included in this checkpoint's executable-source certification.
+
+## Ordinary RMW and physical byte sources promoted
+
+The [RMW/byte-source review](2026-09-22_sc-rmw-byte-source-review.md) records the
+source rationale, actual changes, native controls and kernel laws. The six C
+RMW selected-trace controls pass in both engines. Five also agree exhaustively
+on full observations (1, 1, 48, 48 and 336 alternatives); the parallel increment
+case times out in both engines at 12 seconds and remains incomplete.
+
+Byte-source generation 2 and both paired eight-group memory controls pass;
+the OCaml keyword failure remains historical evidence. Both features are now
+production sources. Their fresh OCaml build and 442-job Lean build pass, as do
+five native production control executables. Three previously probed recorder
+retention laws are now exported from `CerbSCOperational` and compile in the
+production package. Six native production connection controls/mutations pass.
+
+The failure register adds only the reviewed internal RMW phase guard (241 total,
+zero discardable); all prior rows are byte-identical. The fork manifest retains
+all historical review text and metadata, adding the new shared accounting leaf
+and only the intended changed-source hashes. Fresh full integration and the
+mandatory three-engine comparison follow on frozen sources. These accounting
+laws do not decide the still-unresolved C memory-location interpretation.
+
+## Ordinary RMW and byte-source validation completed
+
+The frozen `rmw-byte-full-20260922` run passes every one of the 39 selected
+Tier A/B commands, with source unchanged and no artifact issue. The mandatory
+three-engine run passes 864 rows with exactly the prior 40 discrepancy IDs.
+Five production native executables and six production connection controls pass;
+all current control binaries match their captures after the proof rebuild.
+
+The [retained checkpoint](2026-09-21_sc-prototype-evidence/rmw-byte-sources/README.md)
+contains full reports, raw observations, verified archives, source identities,
+component and real C controls, register reviews and original failed/incomplete
+attempts. Five C controls agree exhaustively and six pass selected execution;
+the parallel exhaustive timeout stays incomplete. No public SC verdict or
+whole-program definedness follows from these recording controls.
+
+Prepared follow-up code remains isolated and uncompiled at this checkpoint:
+typed helper suspension, explicit memory suspension mode, same-request helper
+ordering, typed fault identities and a separate consumer import example. Source
+review covers current-state resumption, filesystem snapshot ownership, the
+unchanged primitive bodies and missing location interpretations. This is
+continuing work, not a new authorization or completion barrier.

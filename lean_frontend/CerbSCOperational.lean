@@ -97,4 +97,37 @@ theorem choices_iff [LemFuel] tags (sc : sc_state) (s : driver_state)
       simp only [found] at hstep ⊢
       exact List.mem_map.mpr ⟨step, List.mem_filter.mpr hstep, rfl⟩
 
+
+/-- Recording an effect preserves its owning request. -/
+theorem ownership_retained aid observed (state after : sc_state)
+    (h : sc_record_effect aid observed state = some after) :
+    after.sc_current_request = state.sc_current_request := by
+  cases owner : state.sc_current_request with
+  | none => simp [sc_record_effect, owner] at h
+  | some request =>
+    simp only [sc_record_effect, owner, Option.some.injEq] at h
+    cases h
+    rfl
+
+/-- Earlier occurrences survive exactly, including equal-valued effects. -/
+theorem older_history_retained aid observed (state after : sc_state)
+    (h : sc_record_effect aid observed state = some after) :
+    after.sc_effects.tail = state.sc_effects := by
+  cases owner : state.sc_current_request with
+  | none => simp [sc_record_effect, owner] at h
+  | some request =>
+    simp only [sc_record_effect, owner, Option.some.injEq] at h
+    cases h
+    rfl
+
+theorem one_more_occurrence aid observed (state after : sc_state)
+    (h : sc_record_effect aid observed state = some after) :
+    after.sc_effects.length = state.sc_effects.length + 1 := by
+  cases owner : state.sc_current_request with
+  | none => simp [sc_record_effect, owner] at h
+  | some request =>
+    simp only [sc_record_effect, owner, Option.some.injEq] at h
+    cases h
+    rfl
+
 end CerbSCOperational

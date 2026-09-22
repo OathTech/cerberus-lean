@@ -1,0 +1,85 @@
+(* Physical byte-source accounting over the actual SC journal. This does not
+   define C memory locations, Cmm reads-from, happens-before, or a race verdict.
+   Source identity is chosen by occurrence and range, never value equality.
+   Allocation supplies initial representation, including unspecified bytes;
+   it is distinguished from a source-level store. Metadata can alter the
+   interpretation of a representation (e.g. lifetime pointer zapping), so the
+   returned provenance is not a claim that byte values remain unchanged. *)
+open import Pervasives
+import Mem_common Sc_runtime Cmm_csem
+
+type sc_byte_source =
+  | SC_byte_store of Cmm_csem.aid * integer (* offset in that store *)
+  | SC_byte_allocation of Cmm_csem.aid * integer
+  | SC_byte_no_observed_source
+  | SC_byte_storage_unresolved
+  | SC_byte_after_deallocation of Cmm_csem.aid
+
+val sc_contains_address: integer -> integer -> integer -> bool
+let sc_contains_address base size address =
+  base <= address && address < base + size
+
+(* The caller supplies the older journal suffix, newest first. Reads do not
+   become writes; repeated equal-value stores remain different occurrences. *)
+val sc_byte_source_at:
+  integer -> integer -> list Sc_runtime.sc_effect -> sc_byte_source
+let rec sc_byte_source_at storage address history =
+  match history with
+    | [] -> SC_byte_no_observed_source
+    | observed :: older ->
+        let aid = observed.Sc_runtime.sc_effect_id in
+        match observed.Sc_runtime.sc_effect_observation with
+          | Mem_common.Observe_access _ Mem_common.StoreAccess _ _ (Just owner) base size _ _ ->
+              if storage = owner && sc_contains_address base size address then
+                SC_byte_store aid (address - base)
+              else sc_byte_source_at storage address older
+          | Mem_common.Observe_allocation _ owner base size _ _ _ ->
+              if storage = owner && sc_contains_address base size address then
+                SC_byte_allocation aid (address - base)
+              else sc_byte_source_at storage address older
+          | Mem_common.Observe_deallocation _ _ _ owner _ ->
+              if storage = owner then SC_byte_after_deallocation aid
+              else sc_byte_source_at storage address older
+          | _ -> sc_byte_source_at storage address older
+        end
+  end
+
+(* One source per actual captured byte. This uses the captured representation
+   length; malformed length/reporting discrepancies remain a separate check.
+   There is no re-load, value encoding, or mutation of the memory model. *)
+let sc_byte_sources storage base bytes older =
+  snd (List.foldl (fun (address, sources) _ ->
+    let source = match storage with
+      | Nothing -> SC_byte_storage_unresolved
+      | Just owner -> sc_byte_source_at owner address older
+    end in
+    (address - 1, source :: sources))
+    (base + integerFromNat (List.length bytes) - 1, []) (List.reverse bytes))
+
+type sc_read_byte_sources = <|
+  sc_read_source_id: Cmm_csem.aid;
+  sc_read_reported_size: integer;
+  sc_read_sources: list sc_byte_source;
+|>
+
+(* Process every effect with its exact older suffix. The result follows the
+   input journal's newest-first occurrence order, retaining duplicate values.
+   A terminal failed read is included if the memory observer captured it. *)
+val sc_read_byte_history: list Sc_runtime.sc_effect -> list sc_read_byte_sources
+let rec sc_read_byte_history history =
+  match history with
+    | [] -> []
+    | observed :: older ->
+        let rest = sc_read_byte_history older in
+        match observed.Sc_runtime.sc_effect_observation with
+          | Mem_common.Observe_access _ Mem_common.LoadAccess _ _ storage base size bytes _ ->
+              <| sc_read_source_id= observed.Sc_runtime.sc_effect_id;
+                 sc_read_reported_size= size;
+                 sc_read_sources= sc_byte_sources storage base bytes older |>
+              :: rest
+          | _ -> rest
+        end
+  end
+
+declare {lean} termination_argument sc_byte_source_at = automatic
+declare {lean} termination_argument sc_read_byte_history = automatic

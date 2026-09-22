@@ -134,6 +134,7 @@ roots = [
   "Sc_order", "Sc_order_auxiliary", "Sc_order_lemMeasureProofs",
   "Sc_representation", "Sc_representation_auxiliary", "CerbSCRepresentation",
   "Sc_runtime", "Sc_runtime_auxiliary", "CerbSCByteInstances", "CerbSCOperational",
+  "Sc_byte_sources", "Sc_byte_sources_auxiliary", "CerbSCByteSources",
   "Pp", "Pp_auxiliary",
   "Product", "Product_auxiliary",
   "Range", "Range_auxiliary",
@@ -344,3 +345,15 @@ moreLinkArgs = ["native/md5.o"]
 name = "float-representation-test"
 srcDir = "test"
 root = "Unit.FloatRepresentation"
+
+[[lean_exe]]
+name = "sc-seq-rmw-test"
+srcDir = "test"
+root = "Unit.SCSeqRMW"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "sc-byte-sources-test"
+srcDir = "test"
+root = "Unit.SCByteSources"
+moreLinkArgs = ["native/md5.o"]

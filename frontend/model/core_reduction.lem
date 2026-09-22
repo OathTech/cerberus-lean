@@ -103,6 +103,13 @@ type action_request2 'a =
                    *  (Mem.mem_value -> core_runM Mem.mem_value)
                    *  (completion_receipt -> Mem.footprint -> Mem.mem_value -> Mem.mem_value -> 'a)
   
+  (* Ordinary RMW remains indivisible only with respect to other Core
+     reductions in its own thread, not other threads. The driver owns this
+     suspended store phase; a Core action never creates it directly. *)
+  | SeqRMWWriteRequest2 of Ctype.ctype * Mem.pointer_value * Mem.mem_value * Mem.mem_value
+      * Sc_order.sc_predecessors
+      * (completion_receipt -> Mem.footprint -> Mem.mem_value -> Mem.mem_value -> 'a)
+
   (* Internal phases retain the original completion builder. Only the first
      constructor can be produced directly by a Core action. *)
   | CompareExchangeRequest2 of bool * Ctype.ctype * Mem.pointer_value * Mem.pointer_value
@@ -1292,6 +1299,8 @@ let step_ctx_with sc_context mem_st file core_extern current_tid (parent_tid_opt
                     | FenceRequest2 order mk_expr' ->
                         FenceRequest2 order (fun receipt ->
                           wrap_completed receipt (mk_expr' receipt))
+                    | SeqRMWWriteRequest2 _ _ _ _ _ _ ->
+                        error "Core action produced an internal sequential RMW phase"
                     | SeqRMWRequest2 _ _ _ _ ->
                         (* this is not possible *)
                         error "Core_reduction step_action returned SeqRMWRequest2"

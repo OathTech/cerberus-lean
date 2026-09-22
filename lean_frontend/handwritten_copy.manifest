@@ -74,6 +74,7 @@ CerbNDFuelProofs.lean
 # SC prototype: checked lifting and its exact disabled-mode erasure.
 CerbNDObserveProofs.lean
 CerbSCByteInstances.lean
+CerbSCByteSources.lean
 CerbSCOperational.lean
 CerbSCRepresentation.lean
 Sc_order_lemMeasureProofs.lean

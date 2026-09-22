@@ -731,7 +731,7 @@ let update_core_state core_st dr_st =
 let sc_merge_receipt previous (aid, current) =
   (aid, Just (previous union (match current with Nothing -> {} | Just effects -> effects end)))
 
-let sc_suspend_cas tid loc request =
+let sc_suspend_action phase missing_owner outside_mode tid loc request =
   ND.get >>= fun state ->
   match state.sc_state with
     | Just sc ->
@@ -747,13 +747,23 @@ let sc_suspend_cas tid loc request =
                 | _ -> Core.Pos
               end in
               let next = Core_reduction.Step_action_request2 annotation polarity
-                "SC compare-exchange phase" loc tid false (SEU.return request) in
+                phase loc tid false (SEU.return request) in
               ND.update (fun state -> <| state with sc_pending=
                 (tid, next) :: List.filter (fun (other, _) -> other <> tid) state.sc_pending |>)
-          | Nothing -> ND.kill (ND.Other (DErr_concurrency "SC compare-exchange phase has no owner"))
+          | Nothing -> ND.kill (ND.Other (DErr_concurrency missing_owner))
         end
-    | Nothing -> ND.kill (ND.Other (DErr_concurrency "SC compare-exchange requested outside SC mode"))
+    | Nothing -> ND.kill (ND.Other (DErr_concurrency outside_mode))
   end
+
+let sc_suspend_cas tid loc request =
+  sc_suspend_action "SC compare-exchange phase"
+    "SC compare-exchange phase has no owner" "SC compare-exchange requested outside SC mode"
+    tid loc request
+
+let sc_suspend_seq_rmw tid loc request =
+  sc_suspend_action "SC ordinary RMW write phase"
+    "SC ordinary RMW phase has no owner" "SC ordinary RMW phase requested outside SC mode"
+    tid loc request
 
 let sc_cas_read_representation =
   ND.get >>= fun state ->
@@ -840,6 +850,14 @@ let action_request_with loc tid receipt request =
       )
 *)
   
+  | Core_reduction.SeqRMWWriteRequest2 lvalue_ty ptr_val mval mval' previous mk_th_st' ->
+      driver_liftMem (Mem.store loc lvalue_ty false ptr_val mval') >>= fun fp ->
+      driver_liftMem (Mem.prefix_of_pointer ptr_val) >>= fun pref ->
+      ND.update (fun dr_st -> <| dr_st with
+        core_state= Core_run.update_thread_state tid
+          (mk_th_st' (sc_merge_receipt previous (receipt dr_st)) fp mval mval') dr_st.core_state;
+        trace= ME_seq_rmw loc pref lvalue_ty ptr_val mval mval' :: dr_st.trace |>)
+
   | Core_reduction.CompareExchangeRequest2 weak ty object_ptr expected desired _ _ complete ->
       driver_liftMem (Mem.load loc ty expected) >>= fun (footprint, _) ->
       sc_cas_read_representation >>= fun expected_bytes ->
@@ -1575,6 +1593,7 @@ let sc_kind_of_request polarity = function
   | Core_reduction.LoadRequest2 order _ _ _ -> Sc_runtime.SC_access order polarity
   | Core_reduction.StoreRequest2 order _ _ _ _ _ -> Sc_runtime.SC_access order polarity
   | Core_reduction.SeqRMWRequest2 _ _ _ _ -> Sc_runtime.SC_seq_rmw
+  | Core_reduction.SeqRMWWriteRequest2 _ _ _ _ _ _ -> Sc_runtime.SC_seq_rmw
   | Core_reduction.CompareExchangeRequest2 _ _ _ _ _ success failure _ ->
       Sc_runtime.SC_cas_expected success failure polarity
   | Core_reduction.CompareExchangeObjectRequest2 _ _ _ _ _ _ _ _ _ -> Sc_runtime.SC_cas_object polarity
@@ -1599,7 +1618,15 @@ let sc_service_step tid step =
         let kind = sc_kind_of_request polarity request in
         if Sc_runtime.sc_request_in_model kind then
           sc_begin_request tid kind annotation >>
-          action_request_with loc tid sc_receipt_from_state request >> ND.return SC_continue
+          (match request with
+            | Core_reduction.SeqRMWRequest2 ty ptr mk_value complete ->
+                driver_liftMem (Mem.load loc ty ptr) >>= fun (_, before_value) ->
+                liftCore_run (mk_value before_value) >>= fun after_value ->
+                ND.get >>= fun before ->
+                sc_suspend_seq_rmw tid loc (Core_reduction.SeqRMWWriteRequest2
+                  ty ptr before_value after_value (sc_cas_current_effects before) complete)
+            | _ -> action_request_with loc tid sc_receipt_from_state request
+          end) >> ND.return SC_continue
         else ND.kill (ND.Other (DErr_concurrency "SC model excludes the requested memory order"))
     | Core_reduction.Step_memop_request2 annotation loc memop values _ _ resume_request ->
         sc_begin_request tid (Sc_runtime.SC_memop memop) annotation >>
