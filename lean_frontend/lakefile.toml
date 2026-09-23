@@ -138,6 +138,7 @@ roots = [
   "Nd_observe", "Nd_observe_auxiliary", "CerbNDObserveProofs",
   "Sc_order", "Sc_order_auxiliary", "Sc_order_lemMeasureProofs",
   "Sc_representation", "Sc_representation_auxiliary", "CerbSCRepresentation",
+  "Sc_global_bindings", "Sc_global_bindings_auxiliary", "CerbSCGlobalBindings",
   "Sc_spawn", "Sc_spawn_auxiliary", "CerbSCSpawn",
   "Sc_call_context", "Sc_call_context_auxiliary",
   "Sc_call_scope", "Sc_call_scope_auxiliary",
@@ -472,4 +473,10 @@ moreLinkArgs = ["native/md5.o"]
 name = "sc-happens-before-test"
 srcDir = "test"
 root = "Unit.SCHappensBefore"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "sc-global-bindings-test"
+srcDir = "test"
+root = "Unit.SCGlobalBindings"
 moreLinkArgs = ["native/md5.o"]

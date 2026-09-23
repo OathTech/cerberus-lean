@@ -5,7 +5,7 @@ import Core_aux Builtins Core_linking
 module Caux = Core_aux
 
 open import Utils Show Errors Trace_event
-import Cmm_op Cmm_csem Sc_order Sc_runtime Sc_scopes Sc_prefix_obligations Sc_representation Nd_observe
+import Cmm_op Cmm_csem Sc_order Sc_runtime Sc_scopes Sc_prefix_obligations Sc_representation Sc_global_bindings Nd_observe
 
 import Core_eval Core_run Core_reduction
 
@@ -76,6 +76,7 @@ type driver_state = <|
   
   sc_state: maybe Sc_runtime.sc_state;
   sc_prefix_obligations: list Sc_prefix_obligations.sc_prefix_obligation;
+  sc_global_bindings: list Sc_global_bindings.sc_global_binding;
   sc_pending: list (Mem_common.thread_id * Core_reduction.core_step2);
   symbolic_assoc: map Symbol.sym Core.object_value;
   
@@ -1646,7 +1647,7 @@ let sc_enable = ND.ND (fun dr_st ->
   match Mem.begin_observing dr_st.layout_state with
     | Nothing -> (ND.NDkilled (ND.Other (DErr_concurrency Sc_runtime.SC_fault_observer_unavailable)), dr_st)
     | Just memory -> (ND.NDactive (), <| dr_st with layout_state= memory;
-        sc_state= Just Sc_runtime.sc_initial_state; sc_pending= []; sc_prefix_obligations= [] |>)
+        sc_state= Just Sc_runtime.sc_initial_state; sc_pending= []; sc_prefix_obligations= []; sc_global_bindings= [] |>)
   end)
 
 let sc_kind_of_request polarity = function
@@ -2187,6 +2188,7 @@ let initial_driver_state_with address_space_top run_st file fs_state =
     sc_state=          Nothing;
     sc_pending=        [];
     sc_prefix_obligations= [];
+    sc_global_bindings= [];
     symbolic_assoc=    Map.empty;
     blocked=           false;
     dr_step_counter=   0;
@@ -2227,14 +2229,25 @@ let driver_update_thread_state tid th_st =
 let inline update_thread_state = driver_update_thread_state
 
 
-let initialize_thread_state tid th_st =
+(* The optional receipt is installed by the SAME existing ND.update which
+   binds a successful global initializer. No extra step, read or event occurs. *)
+let initialize_thread_state_with_binding binding tid th_st =
   ND.update (fun dr_st ->
-    let th_st' = match dr_st.sc_state with
-      | Nothing -> th_st
-      | Just _ -> <| th_st with Core_run.arena=
-          Sc_order.sc_inherit_expr (sc_initial_annotation tid dr_st) th_st.Core_run.arena |>
+    let annotation = match dr_st.sc_state with
+      | Nothing -> Nothing
+      | Just _ -> Just (sc_initial_annotation tid dr_st)
       end in
-    <| dr_st with core_state= Core_run.update_thread_state tid th_st' dr_st.core_state |>)
+    let th_st' = Sc_global_bindings.sc_initialization_thread annotation th_st in
+    let bindings = match binding with
+      | Nothing -> dr_st.sc_global_bindings
+      | Just (symbol, value) -> Sc_global_bindings.sc_note_global_binding
+          dr_st.sc_state tid dr_st.dr_step_counter symbol value dr_st.sc_global_bindings
+      end in
+    <| dr_st with core_state= Core_run.update_thread_state tid th_st' dr_st.core_state;
+       sc_global_bindings= bindings |>)
+
+let initialize_thread_state tid th_st =
+  initialize_thread_state_with_binding Nothing tid th_st
 
 
 val driver_globals: bool -> Core.file Core_run.core_run_annotation -> driverM Mem.thread_id
@@ -2294,7 +2307,7 @@ let driver_globals with_concurrency file =
                   | Nothing ->
                       error "WIP: driver_globals"
                   | Just cval ->
-                      initialize_thread_state tid0
+                      initialize_thread_state_with_binding (Just (glob_sym,cval)) tid0
                         <| th_st with
                             Core_run.env = Core_aux.update_env (Core.Pattern [] (Core.CaseBase (Just (glob_sym), glob_bTy))) cval th_st.Core_run.env
                         |>

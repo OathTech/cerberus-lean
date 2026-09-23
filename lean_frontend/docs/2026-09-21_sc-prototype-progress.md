@@ -3,7 +3,25 @@
 Governing document: [SC prototype charter](2026-09-21_charter-sc-prototype.md).
 This file records evidence and next actions; it does not replace the charter.
 
-## Latest validated component — lexical spawn and HB, September 23
+## Latest validated component — successful global bindings, September 23
+
+The [global-binding component](2026-09-23_sc-global-bindings-work.md) passes all
+39 full lanes and the mandatory 864-case comparison, with source unchanged,
+no artifact issues and zero observation/classification changes from spawn/HB.
+Ten paired controls, twelve kernel laws and two producer mutants validate the
+actual successful initializer update and recording restart. Four C controls
+preserve each engine's complete old recording and match full outcomes. Their raw
+metadata differences remain explicit in [SC-D16](2026-09-23_sc-global-binding-comparison.md);
+no exact paired C journal correspondence is claimed. The same 40 known Lean
+discrepancy/undecodable IDs remain in the general corpus.
+
+The next prepared component supplies physical atomic-source and pinned reference
+synchronization queries. Its value/location/MO interpretation remains an explicit
+obligation. Library ownership and guards, lifetime composition, and complete
+public SC outcomes also remain open. Two additional native atexit controls extend
+SC-G08's documented internal-object evidence. The whole charter is incomplete.
+
+## Prior component — lexical spawn and HB, September 23
 
 The [spawn and HB component](2026-09-23_sc-spawn-hb-work.md) passes all 39 full
 validation lanes and the mandatory 864-case report, with unchanged observations,

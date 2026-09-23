@@ -1,0 +1,32 @@
+(* Passive successful-initializer receipts. Actual Core values remain intact;
+   no memory read, allocation, event, source-role classification or library
+   synchronization is invented. The caller must use this in the SAME existing
+   successful-binding update, never before evaluation or on a failed initializer. *)
+open import Pervasives
+import Sc_runtime Core Core_run Sc_order
+
+type sc_global_binding = <|
+  sc_binding_symbol: Symbol.sym;
+  sc_binding_value: Core.value;
+  sc_binding_thread: Mem_common.thread_id;
+  sc_binding_step: nat;
+  sc_binding_effect_frontier: nat;
+|>
+
+let sc_note_global_binding state thread step symbol value previous =
+  match state with
+    | Nothing -> previous
+    | Just sc -> <| sc_binding_symbol= symbol; sc_binding_value= value;
+        sc_binding_thread= thread; sc_binding_step= step;
+        sc_binding_effect_frontier= List.length sc.Sc_runtime.sc_effects |> :: previous
+  end
+
+(* Same source-order inheritance used by Driver.initialize_thread_state.
+   Factoring it permits the successful initializer update to record the binding
+   alongside the existing state change, without another ND node or fuel charge. *)
+let sc_initialization_thread annotation thread =
+  match annotation with
+    | Nothing -> thread
+    | Just before -> <| thread with Core_run.arena=
+        Sc_order.sc_inherit_expr before thread.Core_run.arena |>
+  end

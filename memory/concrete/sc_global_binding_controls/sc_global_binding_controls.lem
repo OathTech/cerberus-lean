@@ -1,0 +1,35 @@
+open import Pervasives Core Core_run_aux
+import Sc_global_bindings Sc_runtime Sc_order Map_extra
+
+let sc_global_binding_checks digest =
+  let symbol = Symbol.Symbol digest 1 Symbol.SD_None in
+  let observed = <| Sc_runtime.sc_effect_id= 9;
+    Sc_runtime.sc_effect_request= <| Sc_runtime.sc_request_id= 8;
+      Sc_runtime.sc_request_thread= 7; Sc_runtime.sc_request_kind= Sc_runtime.SC_runtime "global control";
+      Sc_runtime.sc_request_annotation= empty_annotation;Sc_runtime.sc_request_scopes= [] |>;
+    Sc_runtime.sc_effect_observation= Mem_common.Observe_varargs Mem_common.Varargs_create 4 |> in
+  let sc = <| Sc_runtime.sc_initial_state with Sc_runtime.sc_effects= [observed] |> in
+  let previous = [<| Sc_global_bindings.sc_binding_symbol= symbol;Sc_global_bindings.sc_binding_value= Vunit;
+    Sc_global_bindings.sc_binding_thread= 2;Sc_global_bindings.sc_binding_step= 3;
+    Sc_global_bindings.sc_binding_effect_frontier= 0 |>] in
+  let added = Sc_global_bindings.sc_note_global_binding (Just sc) 7 11 symbol Vtrue previous in
+  let thread = <| Core_run.arena= Expr [] (Erun empty_annotation symbol []);
+    Core_run.stack= Core_run.Stack_empty;Core_run.errno= Mem.null_ptrval Ctype.signed_int;
+    Core_run.current_loc= Loc.other "global receipt";Core_run.exec_loc= Core_run.ELoc_globals;
+    Core_run.env= [Map.insert symbol Vtrue Map.empty];Core_run.current_proc_opt= Nothing |> in
+  let annotation = <| empty_annotation with sb_before= {(7,9)} |> in
+  let initialized = Sc_global_bindings.sc_initialization_thread (Just annotation) thread in
+  let head = match added with [] -> Nothing | b :: _ -> Just b end in
+  let older = match added with [] -> [] | _ :: rest -> rest end in
+  [
+   ("disabled capture keeps previous receipts", Sc_global_bindings.sc_note_global_binding Nothing 7 11 symbol Vtrue previous = previous);
+   ("success adds exactly one receipt", List.length added = 2);
+   ("success preserves complete earlier receipt list", older = previous);
+   ("actual symbol retained", match head with Just b -> b.Sc_global_bindings.sc_binding_symbol = symbol | _ -> false end);
+   ("actual Core value retained", match head with Just b -> b.Sc_global_bindings.sc_binding_value = Vtrue | _ -> false end);
+   ("actual thread and step retained", match head with Just b -> b.Sc_global_bindings.sc_binding_thread = 7 && b.Sc_global_bindings.sc_binding_step = 11 | _ -> false end);
+   ("frontier counts existing effects without inventing one", match head with Just b -> b.Sc_global_bindings.sc_binding_effect_frontier = 1 | _ -> false end);
+   ("source order uses existing inheritance", match initialized.Core_run.arena with Expr _ (Erun a label []) -> a.sb_before = {(7,9)} && label = symbol | _ -> false end);
+   ("existing environment retained", List.map Map_extra.toList initialized.Core_run.env = List.map Map_extra.toList thread.Core_run.env);
+   ("existing location and stack retained", initialized.Core_run.current_loc = thread.Core_run.current_loc && initialized.Core_run.stack = thread.Core_run.stack)
+  ]

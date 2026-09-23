@@ -28,7 +28,7 @@ intentional coverage. Never describe a proposed guard as implemented.
 | SC-G05 | Generic atomic pointer fetch add/sub in the contradictory C11/reference domain | Typed update-body producer implemented; paired controls, full Tier A+B and three-engine comparison pass | Preserve checked object read; no pointer arithmetic result or store invented |
 | SC-G06 | Consuming lock-free properties without a pinned target configuration | Runtime query producer passes component controls, all 39 full lanes and the unchanged 864-case comparison; numeric `#if` still silently treats absent markers as zero | Explicit configuration gap where a property is required; no invented all-lock-free or never-lock-free policy |
 | SC-G07 | Unsequenced C atomic evaluations encounter the pinned Cmm function-call assumption | Actual C traces and predicate discrepancy retained; precise composition guard outstanding | Explicit sequencing/composition gap; preserve independently justified faults and actual source order |
-| SC-G08 | Concurrent library operations depend on omitted synchronization of shared internal state | Actual `at_quick_exit` registration traces retained; precise internal-object guard outstanding | Explicit runtime-model gap; omitted implementation protection is not caller UB |
+| SC-G08 | Concurrent library operations depend on omitted synchronization of shared internal state | Actual `at_quick_exit` and `atexit` registration traces retained; precise internal-object guard outstanding | Explicit runtime-model gap; omitted implementation protection is not caller UB |
 
 ### SC-G01 — unspecified bytes in compare-exchange
 
@@ -252,6 +252,18 @@ registrations have 137 effects and no such pair. Neither calls `quick_exit`.
 N1570 7.1.4p5 requires protection of shared library internals; 7.22.4.3's
 qualification about racing termination does not excuse two registrations.
 
+**September 23 extension:** two selected native `atexit` controls also reach the
+actual bound internal `head` allocation (`stdlib.c:149–199`, via `__cxa_atexit`).
+The parallel control completes with 158 effects and three unordered cross-thread
+overlap pairs; the ordered control completes with 156 effects and no such pair.
+Both return `Specified(0)` with empty output. These are source-order diagnostics,
+not full HB, paired Lean or exhaustive SC classifications. The
+[component record and retained captures](2026-09-23_sc-global-bindings-work.md#frozen-integration-and-next-work)
+keep the actual object binding and complete journals. N1570 7.22.4.2p2's
+qualification about a call to `exit` is not a general exception for concurrent
+registrations. The existing guard remains outstanding; no blanket refusal of
+library calls follows.
+
 **Guard obligation:** identify executed, resolved library operations and the
 actual affected internal object. Function spellings, filenames or a global
 runtime order are insufficient. Missing protection must not become ISO caller
@@ -302,6 +314,7 @@ turn every listed feature into a semantic-gap refusal.
 | SC-D13 | Historical cross-target trace mismatch caused by unmatched selection in the diagnostic instrument | Resolved for the four retained controls: native Random.int was compared with Lean first-selection despite the native filename. Matched first selection on the identical C paths gives exact agreement of the documented effect-metadata projection. Rendered location/type/value are outside that projection; no full-journal or general trace-equivalence claim follows. Original captures and the failed comparison are retained. Public SC checking remains pending under SC-P01. |
 | SC-D14 | Existing Z2-F-04 directory-stream C proxy failure | Native `opendir(".")` reaches an internal `store(signed int*)` mismatch with `Specified(1)`. Lean now stops earlier with SC-D07's typed missing-directory-stream coverage result. Keep the full distinct observations; neither is C UB or completed support. Port the available directory semantics and separately review the actual Core/proxy failure before changing its outcome. See the [baseline review](2026-09-23_sc-filesystem-baseline-review.md). |
 | SC-D15 | The concrete atomic-allocation check reports UB042 for selected byte accesses to an atomic scalar | Two load/store controls have identical complete decoded UB042 observations on pinned pristine, fork OCaml and Lean. The byte-identical native check applies to atomic allocations generally; the cited ISO member clause addresses atomic structures/unions. Preserve the actual earlier refusal and prefix without asserting that it proves ISO UB or substituting later RF diagnostics. See the [scope review](2026-09-23_sc-atomic-allocation-boundary.md); resolution requires review of the concrete check and atomic representation semantics. |
+| SC-D16 | Raw binding/journal metadata differs across the native libc object loader and Lean's Core-text/metadata loader | Existing frontend symbol and function-pointer-byte differences remain explicit. New receipts also expose driver-step differences; a loaded-value/constructor example has identical same-Core paired behavior but loses the distinction through the actual printer/parser. Preserve all raw data and per-engine bindings; no step-level correspondence or runtime refusal follows from matching C outcomes. See the [comparison and transport review](2026-09-23_sc-global-binding-comparison.md). This is transport/correspondence work, not an ISO semantic gap. |
 
 The 21 constructors of `Sc_runtime.sc_fault` at the audited checkpoint are
 accounted for by SC-G01, SC-P01 and SC-D01–D03. Their current coarse category

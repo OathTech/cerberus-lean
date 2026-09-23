@@ -98,3 +98,4 @@ CerbFSDriverProofs.lean
 CerbSCSpawn.lean
 CerbSCActionIdentity.lean
 CerbSCHappensBefore.lean
+CerbSCGlobalBindings.lean
