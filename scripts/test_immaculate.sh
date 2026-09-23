@@ -258,8 +258,8 @@ if $RECORD_BASELINE; then
         echo "# Status vocabulary:"
         echo "#   MATCH        oracle and Lean agree on the semantic verdict (control rows)."
         echo "#   DIFF         both sides produced a verdict; they disagree (the target bug)."
-        echo "#   ORACLE_CRASH oracle fail-closed with an uncaught exception / assert;"
-        echo "#                Lean silently returned a value (Lean-side latent-wrong)."
+        echo "#   ORACLE_CRASH oracle failed with an uncaught exception / assert;"
+        echo "#                Lean produced the pinned observation (value, UB or error)."
         echo "#   CONFLATED    G6 in-Lean probe: two distinct hash-colliding identifiers"
         echo "#                intern to the SAME symbol (silent conflation)."
         echo "#"
@@ -310,7 +310,12 @@ if $RECORD_BASELINE; then
         echo "# ([USER 2026-09-03] docs/2026-09-03_logical-semantics-referent-ruling.md); the logical meaning of a Core"
         echo "# rem_t by zero is an operator decision (record §10). Z2 probe-integration pins"
         echo "# (record §5): zd-z2-free-funptr (Z-07 re-witness, MATCH), zd-z2m03-malloc-oom-msg (MATCH — Lean runs"
-        echo "# it since Z2-M-04), zd-z2fl03-nan-to-int and zd-z2f04-closedir (both-crash MATCH | L=CRASH pairs)."
+        echo "# it since Z2-M-04), zd-z2fl03-nan-to-int (both-crash MATCH | L=CRASH)."
+        echo "# zd-z2f04-closedir was also both-crash. SC filesystem repair (2026-09-23)"
+        echo "# now pins ORACLE_CRASH with Lean's explicit missing-coverage error at opendir."
+        echo "# The native Core proxy still crashes; Lean stops earlier at its unported directory"
+        echo "# stream. Neither result claims support or C UB. See docs/2026-09-23_sc-filesystem-"
+        echo "# baseline-review.md and boundary register SC-D07/SC-D14. Exactly this row changes."
         echo "#"
         echo "# zero-discrepancy Z3 pins (2026-09-05; charter row Z-28 / detective RC-2, record"
         echo "# docs/2026-09-05_zero-discrepancy-Z3-record.md): zd-z28-<name> are BYTE-IDENTICAL copies of three of"
@@ -321,6 +326,22 @@ if $RECORD_BASELINE; then
         echo "# exhaustive pnvi spot sweep does). zd-z28-addr-layout-{a,b} are one program under two digests"
         echo "# (comment-only difference), so the program's globals land at DIFFERENT positions among the libc"
         echo "# TUs' globals on both engines. All five pinned DIFF before the fix, re-recorded MATCH by the fix commit."
+        cat <<'BASELINE_HISTORY'
+# ISO-fix register R5 pin (2026-09-15; [USER 2026-09-15] ruling, charter
+# lean_frontend/docs/2026-09-11_codex-charter-semantics-audit-repairs.md §6; record
+# lean_frontend/docs/2026-09-11_semantics-audit-repairs-record.md §D1b): r5-hex-subnormal-double-rounding
+# is ORACLE-WRONG — the OCaml runtime's caml_float_of_hex (floats.c:355,369) rounds a >53-bit
+# hexadecimal mantissa twice when the result is subnormal (C11 §6.4.4.2#3 requires correct
+# rounding; gcc and Python agree with Lean). Recorded DIFF | L=Specified(1) (oracle Specified(0));
+# it flips to MATCH and RETIRES R5 when the OCaml runtime is fixed (tray ocaml/01, Cerberus-facing 40).
+# Finding-3 pins (2026-09-11 semantics-audit repairs D2, the byte-preserving Cabs bridge; record
+# lean_frontend/docs/2026-09-11_semantics-audit-repairs-record.md §D2): f3-raw-high-byte-{int,uchar,char-const}
+# MATERIALISE a raw source byte >= 0x80 from a string literal / character constant — both engines
+# fail-stop at the decoder (oracle decode.ml:199-200 uncaught Failure exit 125; Lean CerbDecode panic,
+# LEAN_ABORT_ON_PANIC=1 abort): recorded MATCH | L=CRASH, the both-crash pair shape. Before D2 the Lean
+# side could not even READ the cabs-json of these files (raw bytes => non-UTF-8 JSON); the bridge now
+# carries one Char per byte. f3-escaped-high-byte-uchar is the escaped control twin (MATCH Specified(195)).
+BASELINE_HISTORY
         cat "$OUTPUT_DIR/baseline.new"
     } > "$BASELINE"
     echo "BASELINE RECORDED: $BASELINE"
