@@ -464,10 +464,13 @@ theorem subst_pattern_stable_aux {a : Type} (k : Nat) : ∀ (e : generic_pattern
         obtain ⟨an, pat⟩ := e
         simp only [subst_pattern_lemFuel]
         split <;> (try simp (disch := size_lt) only [key])
-        -- The tuple arm(s) — two (value tuple, pexpr tuple) — are `if not (|pats'| == |…|) then tuple_arity_error … else
-        -- lemListFoldr …` since the fail-closed arity guard (match-pattern-arity closure round,
-        -- 2026-09-22, audit R2): a NON-recursive branch. Split the `if`; the mismatch branch is the
-        -- same leaf on both sides (rfl); the other is the list traversal exactly as before.
+        -- subst_pattern DECLINES on a non-fitting tuple (closure round 2, 2026-09-22, audit R2 ruling): its
+        -- two VALUE arms (Ccons, Ctuple) are `match match_pattern … with none => none | some _ => some (…)`
+        -- — fuel-independent, so after the arm split they are syntactically equal on both sides (`rfl`);
+        -- its pexpr-tuple arm is `if not (|pats'| == |pes|) then none else lemListFoldr …` — a NON-recursive
+        -- `if`, split below (`none = none` by rfl), then the list traversal exactly as before. The loud
+        -- leaf `tuple_arity_error` is NOT in this function (it is subst_pattern_val's, unsafe_subst_pattern's
+        -- and update_env_aux's backstop). Comment corrected 2026-09-23 (second-round audit N3).
         all_goals (split <;> try rfl)
         all_goals
           apply lemListFoldr_congr; intro p acc hp

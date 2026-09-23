@@ -142,3 +142,11 @@ stop and ask.
 0 improvements, 15 unit exes; evidence under `2026-09-22_match-pattern-arity-closure-evidence/round3-34ac493f9/`); any
 corpus movement = STOP. Build coordination: no `lake`/`dune`/`make prelude-src`/lane script until the orchestrator's
 mainline `34ac493f9` re-verification printed `=== ALL DONE`; one heavy job at a time; ~45 min per pass = stop and report.
+
+**Ruling on the guard's own finding (2026-09-23) — the shipped Core library's `pread`/`pwrite` declarations.** [USER
+2026-09-23], verbatim: *"Yeah, we shoudl fix and file to the tray, per our rule that unambiguous bugs get fixes"*. Scope
+[AGENT orchestrator], exactly: add the fourth formal `integer` to `builtin pwrite` and `builtin pread` in BOTH
+`runtime/libcore/std.core` (`:618-619`) and `runtime/libcore/std_inner_arg_temps.core` (`:574-575`), with a one-line FORK
+comment citing the call sites and both runtime arms (`core_reduction_aux.lem:218-236`, `core_run.lem:1269-1287`) and tray 45;
+nothing else in those files. The fence widens by exactly those two files plus their fork-drift rows. Verification:
+`libc_prep.sh --check` must report the `tests/libc/libc.core` pin unchanged (a drift = STOP, never `--record`).

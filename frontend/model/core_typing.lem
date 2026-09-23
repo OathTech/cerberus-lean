@@ -762,6 +762,13 @@ let rec infer_pexpr tagDefs env ((Pexpr annot _ pexpr_ as pexpr) : generic_pexpr
     | PEcall nm pes ->
         match Map.lookup nm env.decls with
           | Just (TDfun ret_bTy bTys) ->
+              (* FORK 2026-09-23 (upstream-tray draft 45; audit R3): fail CLOSED on an
+                 argument-list arity mismatch — List.zip TRUNCATES, so a surplus argument
+                 (an `error(...)` among them) was DELETED from the typed program and a
+                 shortage was accepted. Same guard shape as the R1 tuple guards. *)
+              if List.length bTys <> List.length pes then
+                E.fail loc (MismatchExpected "PEcall" (BTy_tuple bTys) "argument list of a different arity")
+              else
               Pexpr annot (toInferred ret_bTy) <$> (PEcall nm <$> E.mapM (fun (bTy, pe) ->
                 typecheck_pexpr tagDefs env bTy pe) (List.zip bTys pes))
           | Just _ ->
@@ -1170,8 +1177,12 @@ and typecheck_pexpr tagDefs (env: typing_env) (bTy: core_base_type) (Pexpr annot
         match Map.lookup nm env.decls with
           | Just (TDfun ret_bTy bTys) ->
             guard_match loc "function call" bTy ret_bTy >>
+            (* FORK 2026-09-23 (audit R3): argument-list arity guard, as in infer_pexpr *)
+            (if List.length bTys <> List.length pes then
+               E.fail loc (MismatchExpected "PEcall" (BTy_tuple bTys) "argument list of a different arity")
+             else
             (PEcall nm <$> E.mapM (fun (bTy, pe) ->
-              typecheck_pexpr tagDefs env bTy pe) (List.zip bTys pes))
+              typecheck_pexpr tagDefs env bTy pe) (List.zip bTys pes)))
           | Just _ ->
               E.fail loc (CoreTyping_TODO ("illtyped a fun/proc symbolic ==> " ^ Pp.stringFromCore_pexpr pexpr))
           | Nothing ->
@@ -1691,6 +1702,11 @@ and typecheck_expr callconv tagDefs (env: typing_env) expected_bTy (Expr annot e
         Epure <$> typecheck_export_pexpr tagDefs env expected_bTy pe
     | Ememop memop pes ->
         let (ret_bTy, bTys) = memop_signature memop in
+        (* FORK 2026-09-23 (audit R3): argument-list arity guard — a surplus
+           memop operand (an `error(...)`) was DELETED by the truncating zip *)
+        if List.length bTys <> List.length pes then
+          E.fail loc (MismatchExpected "memop()" (BTy_tuple bTys) "argument list of a different arity")
+        else
         E.mapM (fun (bTy, pe) ->
           typecheck_export_pexpr tagDefs env bTy pe
         ) (List.zip bTys pes) >>= fun pes' ->
@@ -1741,14 +1757,26 @@ and typecheck_expr callconv tagDefs (env: typing_env) expected_bTy (Expr annot e
                     | Nothing ->
                         E.fail loc (CoreTyping_TODO "ccall to a variadic C procedure must at least have a list of pointers as last argument")
                     | Just (xs, last_pe) ->
+                        (* FORK 2026-09-23 (audit R3): the trailing variadic bundle is split
+                           off first (xs = the fixed actuals); require EXACTLY |params| of
+                           them, zip THAT prefix (the old code zipped `pes`, the whole list,
+                           truncated by List.zip), then typecheck the bundle separately.
+                           The site's existing error constructor (as :1742). *)
+                        if List.length params <> List.length xs then
+                          E.fail loc (CoreTyping_TODO "ccall to a variadic C procedure: fixed-argument list of a different arity than the function type's parameters")
+                        else
                         E.mapM (fun ((_, ty, _), pe) ->
                           typecheck_ccall_argument ty pe
-                        ) (List.zip params pes) >>= fun pes' ->
+                        ) (List.zip params xs) >>= fun pes' ->
                         typecheck_export_pexpr tagDefs env
                           (BTy_list (BTy_tuple [BTy_ctype; BTy_object OTy_pointer])) last_pe >>= fun last_pe' ->
                         E.return (pes' ++ [last_pe'])
                   end
                 else
+                  (* FORK 2026-09-23 (audit R3): fixed-arity ccall — argument-list arity guard *)
+                  if List.length params <> List.length pes then
+                    E.fail loc (CoreTyping_TODO "ccall: argument list of a different arity than the C function type's parameters")
+                  else
                   E.mapM (fun ((_, ty, _), pe) -> typecheck_ccall_argument ty pe) (List.zip params pes)
                 (* else match callconv with
                   | Normal_callconv ->
@@ -1775,6 +1803,10 @@ and typecheck_expr callconv tagDefs (env: typing_env) expected_bTy (Expr annot e
     | Eproc annot nm pes ->
         match Map.lookup nm env.decls with
           | Just (TDproc ret_bTy bTys) ->
+              (* FORK 2026-09-23 (audit R3): argument-list arity guard (see PEcall) *)
+              if List.length bTys <> List.length pes then
+                E.fail loc (MismatchExpected "proc" (BTy_tuple bTys) "argument list of a different arity")
+              else
               E.mapM (fun (bTy, pe) ->
                 typecheck_export_pexpr tagDefs env bTy pe
               ) (List.zip bTys pes) >>= fun pes' ->
@@ -1847,6 +1879,10 @@ and typecheck_expr callconv tagDefs (env: typing_env) expected_bTy (Expr annot e
         match Map.lookup sym env.labs with
           | Just (bTy, bTys) ->
 (*            guard_match loc "run" expected_bTy bTy >> *) (* TODO check *)
+              (* FORK 2026-09-23 (audit R3): argument-list arity guard (see PEcall) *)
+              if List.length bTys <> List.length pes then
+                E.fail loc (MismatchExpected "run" (BTy_tuple bTys) "argument list of a different arity")
+              else
               begin
                 Erun annot sym <$> E.mapM (fun (bTy, pe) ->
                   typecheck_pexpr tagDefs env bTy pe

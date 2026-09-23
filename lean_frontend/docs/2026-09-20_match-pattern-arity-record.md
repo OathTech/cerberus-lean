@@ -271,7 +271,15 @@ their order are exactly today's `x++xs` right fold (T3, T3_select). The selector
 `select_case subst_sym_expr v pats = selectCaseE v pats` (and the `subst_sym_pexpr`/`selectCaseP` twin)
 is THEIR theorem against THEIR calculus; T1–T3 are its matcher-level premises on concrete terms — the
 general statement is the definition's now-guarded tuple arm plus the unchanged others. The typing guard
-(D2) is additional: a `.core` input with a mismatched arity now fails Core typing on both fork engines.
+(D2) is additional — and, CORRECTED 2026-09-23 (second-round audit N3, `docs/2026-09-22_match-pattern-arity-rereview.md`;
+the sentence here used to say "a `.core` input with a mismatched arity now fails Core typing on both fork engines", which
+R3 refuted): the EXACT set that Core typing (`--typecheck-core`, off by default) rejects after round 3 (§15) is — tuple
+PATTERNS of the wrong arity (`typecheck_pattern`), tuple EXPRESSIONS, `unseq` and `par` of the wrong arity
+(`typecheck_pexpr`/`typecheck_expr`), and ARGUMENT LISTS of the wrong length at the seven call arms `PEcall` (inference and
+checking), `Ememop`, `Eccall` (fixed, and the fixed prefix of a variadic call), `Eproc`, `Erun`; at RUNTIME, independently
+of typing, both engines' let-forms and both engines' `Erun` reject a non-fitting pattern / a wrong-length argument list with
+`Illformed_program`. Nothing else is claimed: other zips in the model were inspected by the audit and reported without a
+live counterexample (`equalInferred`, `to_pure`'s `Ecase`, `Esave`).
 Bundling: the consumer wants ONE re-pin covering E-A, the run-digest slice and this (their §4 Q4) — this
 slice changes no signature (both fixes are inside existing bodies), so the re-pin cost is the semantics
 rebuild alone. ~~`subst_pattern_val`/`subst_pattern_pexpr` (`core_aux.lem:1123-1145`, tuple arm `:1141-1143`) still zip: they run
@@ -1771,3 +1779,564 @@ landed; `reviewed_difference: 7` unchanged), chvalid 4; every baseline lane at i
 during B9–B12 (not this worker's); every lane still passed within its timeout.
 
 Head after this commit: the record + evidence commit on top of `8d4901c65` (the four replayed commits); `git status` clean.
+
+## 15. CLOSURE ROUND 3 (2026-09-23) — argument-list arity (second-round audit R3/R4/N3 rolled into item 7)
+
+**Provenance.** [USER 2026-09-23] *"Yes, we will roll R3 / R4 into this as a closure. The digest fix landed on main"*;
+[USER via auditor, 2026-09-22] *"if we find defects which could reasonably get rolled into this, we can propose them as
+fixes"*; the audit `docs/2026-09-22_match-pattern-arity-rereview.md` (`3e8f7c4bd`, fast-forwarded onto the branch); the
+orchestrator's rulings = the charter's Addendum A3 (commit `ec02f452d`). Base: the branch rebased onto mainline
+`34ac493f9` (post-run-digest; §14's method — six commits replayed, two stops, pins recomputed from the combined source:
+`core_run.lem 1427069b…/73ba87a3… → f1842550…`, `core_run.ml … → 1553e2a8…`, both COMBINED values, D-S's run-state
+digest + this branch's fit checks; the fork-drift gate green at each stop and on the regenerated head: `82 … 29 …`).
+The rebased head's FAST-GATE: regen + `build_cerberus` + `build_lean` (every root) + speclab green; `Total: 15 passed,
+0 failed` (`enum-data-test`, `run-digest-test`, `match-pattern-arity-test` among them); `check_failure_reach: OK (239 …)`.
+
+### 15.1 The findings, pre-fix (the fork binary built at `8d4901c65` — pristine's paths at these sites; verbatim, `.tmp/mpa/r3/prefix-fork*.log`)
+
+    === PRE-FIX fork@8d4901c65 core/fun-error.core ===
+    --- default                   : Error {msg: "surplus"} [rc=1]
+    --- --rewrite                 : Error {msg: "surplus"} [rc=1]
+    --- --typecheck-core          : Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --typecheck-core --rewrite: Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    === PRE-FIX fork@8d4901c65 core/fun-fit.core ===
+    --- default                   : Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --rewrite                 : Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --typecheck-core          : Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --typecheck-core --rewrite: Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    === PRE-FIX fork@8d4901c65 core/fun-short.core ===
+    --- default                   : internal error: CALL() |params|= 2 <> |args|= 1 cerberus: internal error, [31muncaught exception[m: [rc=125]
+    --- --rewrite                 : internal error: CALL() |params|= 2 <> |args|= 1 cerberus: internal error, [31muncaught exception[m: [rc=125]
+    --- --typecheck-core          : internal error: CALL() |params|= 2 <> |args|= 1 cerberus: internal error, [31muncaught exception[m: [rc=125]
+    --- --typecheck-core --rewrite: internal error: CALL() |params|= 2 <> |args|= 1 cerberus: internal error, [31muncaught exception[m: [rc=125]
+    === PRE-FIX fork@8d4901c65 core/proc-error.core ===
+    --- default                   : Error {msg: "surplus"} [rc=1]
+    --- --rewrite                 : Error {msg: "surplus"} [rc=1]
+    --- --typecheck-core          : Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --typecheck-core --rewrite: Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    === PRE-FIX fork@8d4901c65 core/proc-fit.core ===
+    --- default                   : Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --rewrite                 : Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --typecheck-core          : Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --typecheck-core --rewrite: Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    === PRE-FIX fork@8d4901c65 adjacent-core/memop-error.core ===
+    --- default                   : Error {msg: "surplus"} [rc=1]
+    --- --rewrite                 : Error {msg: "surplus"} [rc=1]
+    --- --typecheck-core          : Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --typecheck-core --rewrite: Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    === PRE-FIX fork@8d4901c65 adjacent-core/memop-fit.core ===
+    --- default                   : Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --rewrite                 : Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --typecheck-core          : Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --typecheck-core --rewrite: Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    === PRE-FIX fork@8d4901c65 adjacent-core/memop-short.core ===
+    --- default                   : internal error: INVALID memop request: ptreq ==> (NULL(void)) cerberus: internal error, [31muncaught exception[m: [rc=125]
+    --- --rewrite                 : internal error: INVALID memop request: ptreq ==> (NULL(void)) cerberus: internal error, [31muncaught exception[m: [rc=125]
+    --- --typecheck-core          : internal error: INVALID memop request: ptreq ==> (NULL(void)) cerberus: internal error, [31muncaught exception[m: [rc=125]
+    --- --typecheck-core --rewrite: internal error: INVALID memop request: ptreq ==> (NULL(void)) cerberus: internal error, [31muncaught exception[m: [rc=125]
+    === PRE-FIX fork@8d4901c65 core/run-fixed-error.core ===
+    --- default                   : Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --rewrite                 : Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --typecheck-core          : Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --typecheck-core --rewrite: Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    === PRE-FIX fork@8d4901c65 core/run-fixed-fit.core ===
+    --- default                   : Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --rewrite                 : Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --typecheck-core          : Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --typecheck-core --rewrite: Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    === PRE-FIX fork@8d4901c65 core/run-fixed-long.core ===
+    --- default                   : Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --rewrite                 : Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --typecheck-core          : Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --typecheck-core --rewrite: Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    === PRE-FIX fork@8d4901c65 adjacent-core/run-short-stale.core ===
+    --- default                   : Defined {value: "Specified(11)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --rewrite                 : Defined {value: "Specified(11)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --typecheck-core          : Defined {value: "Specified(11)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --typecheck-core --rewrite: Defined {value: "Specified(11)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    === PRE-FIX fork@8d4901c65 adjacent-core/run-short-control.core ===
+    --- default                   : Defined {value: "Specified(21)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --rewrite                 : Defined {value: "Specified(21)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --typecheck-core          : Defined {value: "Specified(21)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    --- --typecheck-core --rewrite: Defined {value: "Specified(21)", stdout: "", stderr: "", blocked: "false"} [rc=0]
+    === PRE-FIX fork@8d4901c65 adjacent-core/ccall-error.core ===
+    --- default                   : Error {msg: "surplus"} [rc=1]
+    --- --rewrite                 : Error {msg: "surplus"} [rc=1]
+    --- --typecheck-core          : internal error: null function pointer cerberus: internal error, [31muncaught exception[m: [rc=125]
+    --- --typecheck-core --rewrite: internal error: null function pointer cerberus: internal error, [31muncaught exception[m: [rc=125]
+    === PRE-FIX fork@8d4901c65 adjacent-core/ccall-fit.core ===
+    --- default                   : internal error: null function pointer cerberus: internal error, [31muncaught exception[m: [rc=125]
+    --- --rewrite                 : internal error: null function pointer cerberus: internal error, [31muncaught exception[m: [rc=125]
+    --- --typecheck-core          : internal error: null function pointer cerberus: internal error, [31muncaught exception[m: [rc=125]
+    --- --typecheck-core --rewrite: internal error: null function pointer cerberus: internal error, [31muncaught exception[m: [rc=125]
+    === PRE-FIX fork@8d4901c65 adjacent-core/ccall-short.core ===
+    --- default                   : internal error: null function pointer cerberus: internal error, [31muncaught exception[m: [rc=125]
+    --- --rewrite                 : internal error: null function pointer cerberus: internal error, [31muncaught exception[m: [rc=125]
+    --- --typecheck-core          : internal error: null function pointer cerberus: internal error, [31muncaught exception[m: [rc=125]
+    --- --typecheck-core --rewrite: internal error: null function pointer cerberus: internal error, [31muncaught exception[m: [rc=125]
+
+— R3: a surplus argument, even an `error(...)`, is DELETED by typing (`fun/proc/memop-error`: default `Error {msg: "surplus"}`
+rc 1, typed `Specified(3)`/`(1)` rc 0); a shortage to a fun/memop is caught only by the RUNTIME's own checks (`CALL()
+|params|= 2 <> |args|= 1`, `INVALID memop request`), not by typing. R4: `run loop(2, error(...))` gives `Specified(2)` in
+every mode (the surplus never evaluated), `run loop(1)` with two parameters gives `Specified(11)` (the missing `j` kept its
+OLD binding); the fit control `run loop(1,20)` gives `Specified(21)`. The `ccall` rows: the null function pointer makes every
+mode end in the existing `null function pointer` internal error EXCEPT `ccall-error` default/`--rewrite` (`Error
+{msg: "surplus"}`) — typing deleted the erroring surplus there too (the audit's reading; not claimed as a successful run).
+The Lean typing definitions pre-fix (the audit's direct probe): a 1-formal fun/proc/continuation given 0 actuals returns
+`Result` with 0 arguments; given 2 or 3, `Result` with 1.
+
+### 15.2 The fixes (shared body; every hunk verbatim)
+
+```diff
+--- a/frontend/model/core_reduction.lem
++++ b/frontend/model/core_reduction.lem
+@@ -1468,2 +1468,10 @@ let step_ctx mem_st file core_extern current_tid (parent_tid_opt, th_st) =
+                   | Just (sym_bTys, cont_expr) ->
++                      (* FORK 2026-09-23 (upstream-tray draft 45; audit R4): the argument
++                         list must FIT the continuation's parameters BEFORE any argument is
++                         evaluated — List.zip truncated: a surplus argument (an `error(...)`)
++                         was never evaluated and a shortage silently kept the parameter's OLD
++                         binding. Same channel as this file's let-form fit checks (:362/:418). *)
++                      if List.length sym_bTys <> List.length pes then
++                        SEU.runEU (EU.fail (Errors.Illformed_program "Erun: the argument list does not fit the continuation's parameters"))
++                      else
+                       E.foldlM (fun acc ((sym, bTy), pe) ->
+--- a/frontend/model/core_run.lem
++++ b/frontend/model/core_run.lem
+@@ -1563,2 +1563,8 @@ BEFORE EVAL_PEXPR2
+             | Just (sym_bTys, cont_expr) ->
++                (* FORK 2026-09-23 (audit R4): the argument list must FIT the continuation's
++                   parameters BEFORE substitution (List.zip truncated) — the same
++                   Illformed_program channel as this file's let-form fit checks (:885/:1463). *)
++                if List.length sym_bTys <> List.length pes then
++                  SEU.runE (Exception.fail (Illformed_program "Erun: the argument list does not fit the continuation's parameters"))
++                else
+                 let cont_expr' = List.foldl (fun acc ((sym, _), pe) ->
+--- a/frontend/model/core_typing.lem
++++ b/frontend/model/core_typing.lem
+@@ -764,2 +764,9 @@ let rec infer_pexpr tagDefs env ((Pexpr annot _ pexpr_ as pexpr) : generic_pexpr
+           | Just (TDfun ret_bTy bTys) ->
++              (* FORK 2026-09-23 (upstream-tray draft 45; audit R3): fail CLOSED on an
++                 argument-list arity mismatch — List.zip TRUNCATES, so a surplus argument
++                 (an `error(...)` among them) was DELETED from the typed program and a
++                 shortage was accepted. Same guard shape as the R1 tuple guards. *)
++              if List.length bTys <> List.length pes then
++                E.fail loc (MismatchExpected "PEcall" (BTy_tuple bTys) "argument list of a different arity")
++              else
+               Pexpr annot (toInferred ret_bTy) <$> (PEcall nm <$> E.mapM (fun (bTy, pe) ->
+@@ -1172,4 +1179,8 @@ and typecheck_pexpr tagDefs (env: typing_env) (bTy: core_base_type) (Pexpr annot
+             guard_match loc "function call" bTy ret_bTy >>
++            (* FORK 2026-09-23 (audit R3): argument-list arity guard, as in infer_pexpr *)
++            (if List.length bTys <> List.length pes then
++               E.fail loc (MismatchExpected "PEcall" (BTy_tuple bTys) "argument list of a different arity")
++             else
+             (PEcall nm <$> E.mapM (fun (bTy, pe) ->
+-              typecheck_pexpr tagDefs env bTy pe) (List.zip bTys pes))
++              typecheck_pexpr tagDefs env bTy pe) (List.zip bTys pes)))
+           | Just _ ->
+@@ -1693,2 +1704,7 @@ and typecheck_expr callconv tagDefs (env: typing_env) expected_bTy (Expr annot e
+         let (ret_bTy, bTys) = memop_signature memop in
++        (* FORK 2026-09-23 (audit R3): argument-list arity guard — a surplus
++           memop operand (an `error(...)`) was DELETED by the truncating zip *)
++        if List.length bTys <> List.length pes then
++          E.fail loc (MismatchExpected "memop()" (BTy_tuple bTys) "argument list of a different arity")
++        else
+         E.mapM (fun (bTy, pe) ->
+@@ -1743,5 +1759,13 @@ and typecheck_expr callconv tagDefs (env: typing_env) expected_bTy (Expr annot e
+                     | Just (xs, last_pe) ->
++                        (* FORK 2026-09-23 (audit R3): the trailing variadic bundle is split
++                           off first (xs = the fixed actuals); require EXACTLY |params| of
++                           them, zip THAT prefix (the old code zipped `pes`, the whole list,
++                           truncated by List.zip), then typecheck the bundle separately.
++                           The site's existing error constructor (as :1742). *)
++                        if List.length params <> List.length xs then
++                          E.fail loc (CoreTyping_TODO "ccall to a variadic C procedure: fixed-argument list of a different arity than the function type's parameters")
++                        else
+                         E.mapM (fun ((_, ty, _), pe) ->
+                           typecheck_ccall_argument ty pe
+-                        ) (List.zip params pes) >>= fun pes' ->
++                        ) (List.zip params xs) >>= fun pes' ->
+                         typecheck_export_pexpr tagDefs env
+@@ -1751,2 +1775,6 @@ and typecheck_expr callconv tagDefs (env: typing_env) expected_bTy (Expr annot e
+                 else
++                  (* FORK 2026-09-23 (audit R3): fixed-arity ccall — argument-list arity guard *)
++                  if List.length params <> List.length pes then
++                    E.fail loc (CoreTyping_TODO "ccall: argument list of a different arity than the C function type's parameters")
++                  else
+                   E.mapM (fun ((_, ty, _), pe) -> typecheck_ccall_argument ty pe) (List.zip params pes)
+@@ -1777,2 +1805,6 @@ and typecheck_expr callconv tagDefs (env: typing_env) expected_bTy (Expr annot e
+           | Just (TDproc ret_bTy bTys) ->
++              (* FORK 2026-09-23 (audit R3): argument-list arity guard (see PEcall) *)
++              if List.length bTys <> List.length pes then
++                E.fail loc (MismatchExpected "proc" (BTy_tuple bTys) "argument list of a different arity")
++              else
+               E.mapM (fun (bTy, pe) ->
+@@ -1849,2 +1881,6 @@ and typecheck_expr callconv tagDefs (env: typing_env) expected_bTy (Expr annot e
+ (*            guard_match loc "run" expected_bTy bTy >> *) (* TODO check *)
++              (* FORK 2026-09-23 (audit R3): argument-list arity guard (see PEcall) *)
++              if List.length bTys <> List.length pes then
++                E.fail loc (MismatchExpected "run" (BTy_tuple bTys) "argument list of a different arity")
++              else
+               begin
+--- a/runtime/libcore/std.core
++++ b/runtime/libcore/std.core
+@@ -617,4 +617,5 @@ builtin read     (integer, pointer, integer)  : eff loaded pointer
+ builtin close    (integer)                    : eff loaded pointer
+-builtin pwrite   (integer, [integer], integer): eff loaded pointer
+-builtin pread    (integer, pointer, integer)  : eff loaded pointer
++-- FORK 2026-09-23 ([USER] "unambiguous bugs get fixes"; upstream-tray draft 45 "std.core pread/pwrite declaration arity"): the fourth formal is the offset the call sites below pass and both runtime arms consume (core_reduction_aux.lem:218-236, core_run.lem:1269-1287)
++builtin pwrite   (integer, [integer], integer, integer): eff loaded pointer
++builtin pread    (integer, pointer, integer, integer): eff loaded pointer
+ builtin link     ([integer], [integer])       : eff loaded pointer
+--- a/runtime/libcore/std_inner_arg_temps.core
++++ b/runtime/libcore/std_inner_arg_temps.core
+@@ -573,4 +573,5 @@ builtin read     (integer, pointer, integer)  : eff loaded pointer
+ builtin close    (integer)                    : eff loaded pointer
+-builtin pwrite   (integer, [integer], integer): eff loaded pointer
+-builtin pread    (integer, pointer, integer)  : eff loaded pointer
++-- FORK 2026-09-23 ([USER] "unambiguous bugs get fixes"; upstream-tray draft 45 "std.core pread/pwrite declaration arity"): the fourth formal is the offset the call sites below pass and both runtime arms consume (core_reduction_aux.lem:218-236, core_run.lem:1269-1287)
++builtin pwrite   (integer, [integer], integer, integer): eff loaded pointer
++builtin pread    (integer, pointer, integer, integer): eff loaded pointer
+ builtin link     ([integer], [integer])       : eff loaded pointer
+```
+
+Decisions [AGENT worker, under Addendum A3]:
+- R3 uses `MismatchExpected "<syntax-info>" (BTy_tuple bTys) "argument list of a different arity"` at the five arms whose
+  formals ARE core base types (`PEcall` ×2 with `"PEcall"`, `Ememop` with `"memop()"`, `Eproc` with `"proc"`, `Erun` with
+  `"run"`) — the R1 shape, the formals' types as the "expected" tuple so the rendering shows them. At the two `Eccall` arms the
+  formals are C types (`(qualifiers × ctype × Bool)`), so the "expected" slot has no honest `core_base_type`; the arm's own
+  existing constructor `CoreTyping_TODO` (used at `:1742` for the variadic-bundle error) carries the message — no new
+  `core_typing_cause` constructor (the OCaml-visible type is untouched).
+- Variadic `Eccall`: the bundle is split first (`List.dest_init pes = Just (xs, last_pe)`), the guard is `|params| = |xs|` on
+  the FIXED prefix, the zip is over `xs` (the old code zipped `pes`, the whole list — truncated by `zip`, so equal to `xs`'s
+  zip only when the guard holds), then the bundle is typechecked separately as before.
+- R4: `core_reduction.lem` `step_ctx`'s `Erun` (the driver's engine) — `if List.length sym_bTys <> List.length pes then
+  SEU.runEU (EU.fail (Errors.Illformed_program "Erun: the argument list does not fit the continuation's parameters")) else <the
+  foldlM>`, inside the existing `Step_with_runstate2 (RSK_eval "Erun")` computation (the same channel as its let-form fit
+  checks); `core_run.lem`'s `Erun` — `SEU.runE (Exception.fail (Illformed_program "Erun: …"))` before the substitution fold
+  (as its let-form checks). The check precedes ANY evaluation/substitution. `one_step`/`step_ctx`/`core_thread_step2` carry
+  no `fuel_measure`; no measure-proof statement moved (the build's `Core_aux_lemMeasureProofs` is unchanged but for the N3
+  comment).
+- No new pure failure leaf: every new failure is monadic (`E.fail`, `EU.fail`, `Exception.fail`) — confirmed by the gate
+  (§15.4), not assumed.
+
+### 15.2b A finding of the guard itself — the shipped Core library's `pread`/`pwrite` declarations (STOPPED, ruling asked)
+
+The first FAST-GATE of the round-3 tree stopped in `build_cerberus`: the libc build (`dune build cerberus.install`; the
+`runtime/libc/dune` recipe runs the pipeline with `--sequentialise --rewrite`, which typechecks the WHOLE file, stdlib included)
+now fails, verbatim:
+
+    runtime/libcore/std.core:686:7: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer,pointer,integer)' was expected
+
+Root cause (verified in the worktree; the orchestrator verified the second variant independently): `std.core:618-619` and
+`std_inner_arg_temps.core:574-575` DECLARE `builtin pwrite (integer, [integer], integer)` and `builtin pread (integer, pointer,
+integer)` — three formals — while their proxies CALL them with four (`std.core:673`/`:686`, `std_inner_arg_temps.core:618`/`:627`:
+`…, size, off`) and both engines' runtime arms consume four values (`core_reduction_aux.lem:218-236`, `core_run.lem:1269-1287`,
+`| _ -> error "pread"`). Upstream's truncating `Eproc` typing deleted `off` at libc-compile time, so the shipped `libc.co`
+calls the builtins with three values and the runtime arms would `error` — `pread`/`pwrite` have never worked through the
+shipped libc; no corpus program calls them (grep over `tests/` empty), so no lane ever saw it. Both files are byte-identical
+to upstream and OUTSIDE this slice's fence (`runtime` is a fork-drift oracle surface): the worker STOPPED and asked
+([AGENT worker, 2026-09-23]; the orchestrator relayed the options to the operator with recommendation (A)).
+
+Options put to the operator: **(A)** add the fourth formal to both declarations in both files (matches call sites and runtime;
+two new fork-drift rows + one NOTE; the `tests/libc/libc.core` content-hash pin contains no `pread`/`pwrite` text, so it is
+expected NOT to move — verified by `libc_prep.sh --check` after the rebuild, a drift there being a STOP); **(B)** exempt
+`BuiltinDecl` procs from the guard (keeps the fail-open truncation exactly where it hides a real bug; not recommended);
+**(C)** land R3 without the `Eproc` arm (leaves the audit's `proc-error.core` witness open).
+
+Pre-(A) observation (the round-3 fork binary; every `--typecheck-core` run of any Core program now fails at the stdlib line,
+because typing covers the stdlib too), verbatim in §15.4.
+
+**Ruling — option (A).** [USER 2026-09-23], verbatim: *"Yeah, we shoudl fix and file to the tray, per our rule that unambiguous
+bugs get fixes"*. Scope [AGENT orchestrator]: the fourth formal `integer` on `builtin pwrite`/`builtin pread` in BOTH stdlib
+files, one-line FORK comment, nothing else there; the fence widens by exactly those two files and their fork-drift rows.
+
+Applied under the ruling (both files, four formals, one-line FORK comment). The libc build BEFORE (`.tmp/mpa/r3/chain-b.log`) and AFTER (`.tmp/mpa/r3/chain-c.log`; `dune build cerberus.install` now passes, `libc.co`/`libc_inner_arg_temps.co` rebuilt at 01:35:16), verbatim:
+
+    /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-fix/match-pattern-arity/runtime/libcore/std.core:686:7: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer,pointer,integer)' was expected
+
+    === build_cerberus (post-(A)) start Wed Sep 23 01:35:14 AM UTC 2026
+    === build_cerberus rc=0 wall=2s
+    === libc_prep --check Wed Sep 23 01:35:17 AM UTC 2026
+    libc_prep: OK (content hash verified: pin + regenerated dump == d93b99cd55dae4b23071262a24d235c69489c8e41011554194126ecc81555a0a, 4188542 bytes)
+    libc_prep: OK (lane-loaded staging verified: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-fix/match-pattern-arity/_build/install/default/lib/cerberus/runtime/libc/libc.co byte-matches build-tree libc.co)
+    libc_prep: libc.co version (informational): ocaml:5.4.0+cerb:git-cn-pin-931-gec02f452d-dirty+mem:concrete
+    === libc_prep rc=0
+
+The `tests/libc/libc.core` content-hash pin is UNCHANGED (`d93b99cd…`, the dump has no stdlib text) — no `--record`. Fork-drift: `runtime/libcore/std.core` (`6f78799f…`) and `runtime/libcore/std_inner_arg_temps.core` (`7eb46288…`) become `[files]` + `[source-content]` rows with one dated NOTE; the gate: `check_fork_drift: OK — layer 1: 84 oracle-surface files = manifest …; layer 2: 29 differing generated files, all hash-pinned` (82 → 84, deltas unchanged). Tray 45 carries the upstream bug ("std.core pread/pwrite declaration arity").
+
+### 15.3 Witnesses
+
+`test/Unit/MatchPatternArityTest.lean`, round-3 section (no new exe): the generated `Core_typing` arms on 0..3-actual grids for a 1-formal `fun` (`typecheck_pexpr` AND `infer_pexpr`), `proc`, continuation (`Erun`), memop (`Va_end`, the 1-formal memop) and fixed `ccall` (`int(int)`), plus the variadic `ccall` fit control (1 fixed actual + the bundle) and its 0/2-fixed rejections — every fit case pinned by erasing the typed result's annotation and comparing it `==` to the input (a dropped operand cannot pass); R4: both engines' `Erun` step — `Core_reduction.step_ctx` (the driver's) with a two-parameter label on surplus (with an `error(...)` operand) / shortage / fit (fit: arena = body, `i := true`, `j := false`), and `Core_run.core_thread_step2` on the same (fit: the body with both substituted). Ambient fuel from argv (17). Output, verbatim (`.tmp/mpa/r3/unit-b-one.log`):
+
+    === match-pattern-arity-test ===
+    Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+    Build completed successfully (223 jobs).
+    match-pattern-arity-test: match_pattern / typecheck_pattern fail closed on tuple-arity mismatch (cerberus-sl item 7); T1–T4 kernel-checked at compile time; closure round R1/R2 witnesses at fuel 17
+    PASS T1a match_pattern tup2 v3: got none; pre-fix: some [(Symbol "d" 1 SD_None, Vunit), (Symbol "d" 2 SD_None, Vtrue)] (the truncating prefix — the defect)
+    PASS T1b match_pattern tup3 v2: got none; pre-fix: some [(Symbol "d" 1 SD_None, Vunit), (Symbol "d" 2 SD_None, Vtrue)] (the truncating prefix — the defect)
+    PASS T2 select_case v3 [(tup2, pair arm), (wild, wildcard arm)]: got some "wildcard arm"; pre-fix: some "pair arm" (the pair arm selected on a triple)
+    PASS T3 match_pattern tup2 v2: got some [(Symbol "d" 1 SD_None, Vunit), (Symbol "d" 2 SD_None, Vtrue)]; pre-fix: some [(Symbol "d" 1 SD_None, Vunit), (Symbol "d" 2 SD_None, Vtrue)] (unchanged)
+    PASS T3_select select_case cons v2 [(tup2, []), (wild, [(s3, Vunit)])]: got some [(Symbol "d" 1 SD_None, Vunit), (Symbol "d" 2 SD_None, Vtrue)]; pre-fix: some [(Symbol "d" 1 SD_None, Vunit), (Symbol "d" 2 SD_None, Vtrue)] (unchanged)
+    PASS T5a typecheck_pattern (BTy_tuple [unit, boolean, boolean]) tup2: got Exception (CORE_TYPING (MismatchExpected "Ctuple" (BTy_tuple <3 components>) "tuple pattern of a different arity")); pre-fix: Result (typed Ctuple pattern with 2 sub-patterns) (ACCEPTED — the defect)
+    PASS T5b typecheck_pattern (BTy_tuple [unit, boolean]) tup3: got Exception (CORE_TYPING (MismatchExpected "Ctuple" (BTy_tuple <2 components>) "tuple pattern of a different arity")); pre-fix: Result (typed Ctuple pattern with 2 sub-patterns) (ACCEPTED, third sub-pattern DROPPED — the defect)
+    PASS T5c typecheck_pattern (BTy_tuple [unit, boolean]) tup2 (positive control): got Result (typed Ctuple pattern with 2 sub-patterns); pre-fix: Result (typed Ctuple pattern with 2 sub-patterns) (unchanged)
+    PASS R1 typecheck_pexpr (unit, boolean) (unit, true, false): got Exception (MismatchExpected "Ctuple" _ "tuple of a different arity"); pre-fix: Result (PEctor Ctuple with 2 operands) — the third DELETED
+    PASS R1 typecheck_pexpr (unit, boolean, boolean) (unit, true): got Exception (MismatchExpected "Ctuple" _ "tuple of a different arity"); pre-fix: Result (PEctor Ctuple with 2 operands) — the third TYPE dropped
+    PASS R1 typecheck_pexpr nested (unit, (boolean, boolean)) (unit, (true, false, false)): got Exception (MismatchExpected "Ctuple" _ "tuple of a different arity"); pre-fix: Result (PEctor Ctuple with 2 operands) — the inner surplus DELETED
+    PASS R1 typecheck_pexpr fitting (unit, boolean, boolean): operands preserved byte-identical: got Result (PEctor Ctuple with 3 operands); pre-fix: Result (PEctor Ctuple with 3 operands) (unchanged)
+    PASS R1 typecheck_pexpr fitting nested: operands preserved byte-identical: got Result (PEctor Ctuple with 2 operands); pre-fix: Result (unchanged)
+    PASS R1 typecheck_expr (unit, boolean) unseq(unit, true, false): got Exception (MismatchExpected "Eunseq" _ "unseq of a different arity"); pre-fix: Result (Eunseq with 2 operands) — the third DELETED
+    PASS R1 typecheck_expr (unit, boolean, boolean) unseq(unit, true): got Exception (MismatchExpected "Eunseq" _ "unseq of a different arity"); pre-fix: Result (Eunseq with 2 operands)
+    PASS R1 typecheck_expr fitting unseq(unit, true, false): operands preserved byte-identical: got Result (Eunseq with 3 operands); pre-fix: Result (Eunseq with 3 operands) (unchanged)
+    PASS R1 typecheck_expr (unit, boolean) par(unit, true, false): got Exception (MismatchExpected "Epar" _ "par of a different arity"); pre-fix: Result (Epar with 2 operands) — the third DELETED
+    PASS R1 typecheck_expr (unit, boolean, boolean) par(unit, true): got Exception (MismatchExpected "Epar" _ "par of a different arity"); pre-fix: Result (Epar with 2 operands)
+    PASS R1 typecheck_expr fitting par(unit, true, false): operands preserved byte-identical: got Result (Epar with 3 operands); pre-fix: Result (Epar with 3 operands) (unchanged)
+    PASS R2 Core_run Elet (k0, k1) = (unit, unit, unit): Illformed_program: got MatchPatternArityTest.RouteOutcome.illformed "Elet: the pattern didn't match pe1"; pre-fix: the prefix bound, e2 stepped (oracle: Specified(3) on let-mismatch.core)
+    PASS R2 Core_eval PElet (k0, k1) = (unit, unit, unit): Illformed_program: got MatchPatternArityTest.RouteOutcome.illformed "PElet: the pattern didn't match pe1"; pre-fix: Illformed_program "PElet: the pattern didn't match pe1" (already, via select_case)
+    PASS R2 default = rewrite: both routes Illformed_program: got Elet MatchPatternArityTest.RouteOutcome.illformed "Elet: the pattern didn't match pe1" / PElet MatchPatternArityTest.RouteOutcome.illformed "PElet: the pattern didn't match pe1"; pre-fix: DISAGREED: Elet bound the prefix, PElet failed
+    PASS R2 fitting (k0, k1) = (unit, unit): both routes Defined: got Elet MatchPatternArityTest.RouteOutcome.defined / PElet MatchPatternArityTest.RouteOutcome.defined; pre-fix: both Defined (unchanged)
+    PASS R2 Core_reduction one_step Elet (k0, k1) = (unit, unit, unit): Illformed_program (the driver's engine): got MatchPatternArityTest.RouteOutcome.illformed "Elet: the pattern didn't match pe1"; pre-fix: TAU Elet with the prefix bound (oracle default: Specified(3) on let-mismatch.core)
+    PASS R2 Core_reduction one_step Ewseq (k0, k1) = pure (unit, unit, unit): Illformed_program: got MatchPatternArityTest.RouteOutcome.illformed "Ewseq: the pattern didn't match e1"; pre-fix: TAU Ewseq with the prefix bound (oracle default: Specified(3) on unseq-weak-mismatch.core)
+    PASS R2 Core_reduction one_step Esseq (k0, k1) = pure (unit, unit, unit): Illformed_program: got MatchPatternArityTest.RouteOutcome.illformed "Esseq: the pattern didn't match e1"; pre-fix: TAU Esseq with the prefix bound (oracle default: Specified(3) on unseq-strong-mismatch.core)
+    PASS R2 Core_reduction one_step fitting Elet (k0, k1) = (unit, unit): TAU (unchanged): got MatchPatternArityTest.RouteOutcome.defined; pre-fix: TAU Elet (unchanged)
+    PASS R3 typecheck_pexpr PEcall f with 0 actual(s) for 1 formal: got Exception (MismatchExpected "PEcall" _ "argument list of a different arity"); pre-fix: Result with 0 arguments (ACCEPTED — the defect)
+    PASS R3 typecheck_pexpr PEcall f with 1 actual(s) for 1 formal (fit: every argument kept): got Result (PEcall with 1 arguments); pre-fix: Result with 1 argument (unchanged)
+    PASS R3 typecheck_pexpr PEcall f with 2 actual(s) for 1 formal: got Exception (MismatchExpected "PEcall" _ "argument list of a different arity"); pre-fix: Result with 1 argument (the surplus DELETED — the defect)
+    PASS R3 typecheck_pexpr PEcall f with 3 actual(s) for 1 formal: got Exception (MismatchExpected "PEcall" _ "argument list of a different arity"); pre-fix: Result with 1 argument (the surplus DELETED — the defect)
+    PASS R3 infer_pexpr PEcall f with 0 actual(s) for 1 formal: got Exception (MismatchExpected "PEcall" _ "argument list of a different arity"); pre-fix: Result with 0 arguments (ACCEPTED — the defect)
+    PASS R3 infer_pexpr PEcall f with 1 actual(s) for 1 formal (fit: every argument kept): got Result (PEcall with 1 arguments); pre-fix: Result with 1 argument (unchanged)
+    PASS R3 infer_pexpr PEcall f with 2 actual(s) for 1 formal: got Exception (MismatchExpected "PEcall" _ "argument list of a different arity"); pre-fix: Result with 1 argument (the surplus DELETED — the defect)
+    PASS R3 infer_pexpr PEcall f with 3 actual(s) for 1 formal: got Exception (MismatchExpected "PEcall" _ "argument list of a different arity"); pre-fix: Result with 1 argument (the surplus DELETED — the defect)
+    PASS R3 typecheck_expr Eproc p with 0 actual(s) for 1 formal: got Exception (MismatchExpected "proc" _ "argument list of a different arity"); pre-fix: Result with 0 arguments (ACCEPTED — the defect)
+    PASS R3 typecheck_expr Eproc p with 1 actual(s) for 1 formal (fit: every argument kept): got Result (Eproc with 1 arguments); pre-fix: Result with 1 argument (unchanged)
+    PASS R3 typecheck_expr Eproc p with 2 actual(s) for 1 formal: got Exception (MismatchExpected "proc" _ "argument list of a different arity"); pre-fix: Result with 1 argument (the surplus DELETED — the defect)
+    PASS R3 typecheck_expr Eproc p with 3 actual(s) for 1 formal: got Exception (MismatchExpected "proc" _ "argument list of a different arity"); pre-fix: Result with 1 argument (the surplus DELETED — the defect)
+    PASS R3 typecheck_expr Erun loop with 0 actual(s) for 1 formal: got Exception (MismatchExpected "run" _ "argument list of a different arity"); pre-fix: Result with 0 arguments (ACCEPTED — the defect)
+    PASS R3 typecheck_expr Erun loop with 1 actual(s) for 1 formal (fit: every argument kept): got Result (Erun with 1 arguments); pre-fix: Result with 1 argument (unchanged)
+    PASS R3 typecheck_expr Erun loop with 2 actual(s) for 1 formal: got Exception (MismatchExpected "run" _ "argument list of a different arity"); pre-fix: Result with 1 argument (the surplus DELETED — the defect)
+    PASS R3 typecheck_expr Erun loop with 3 actual(s) for 1 formal: got Exception (MismatchExpected "run" _ "argument list of a different arity"); pre-fix: Result with 1 argument (the surplus DELETED — the defect)
+    PASS R3 typecheck_expr Ememop Va_end with 0 actual(s) for 1 formal: got Exception (MismatchExpected "memop()" _ "argument list of a different arity"); pre-fix: Result with 0 arguments (ACCEPTED — the defect)
+    PASS R3 typecheck_expr Ememop Va_end with 1 actual(s) for 1 formal (fit: every argument kept): got Result (Ememop with 1 arguments); pre-fix: Result with 1 argument (unchanged)
+    PASS R3 typecheck_expr Ememop Va_end with 2 actual(s) for 1 formal: got Exception (MismatchExpected "memop()" _ "argument list of a different arity"); pre-fix: Result with 1 argument (the surplus DELETED — the defect)
+    PASS R3 typecheck_expr Ememop Va_end with 3 actual(s) for 1 formal: got Exception (MismatchExpected "memop()" _ "argument list of a different arity"); pre-fix: Result with 1 argument (the surplus DELETED — the defect)
+    PASS R3 typecheck_expr Eccall fixed int(int) with 0 actual(s) for 1 formal: got Exception (CoreTyping_TODO "ccall: argument list of a different arity than the C function type's parameters"); pre-fix: Result with 0 arguments (ACCEPTED — the defect)
+    PASS R3 typecheck_expr Eccall fixed int(int) with 1 actual(s) for 1 formal (fit: every argument kept): got Result (Eccall with 1 arguments); pre-fix: Result with 1 argument (unchanged)
+    PASS R3 typecheck_expr Eccall fixed int(int) with 2 actual(s) for 1 formal: got Exception (CoreTyping_TODO "ccall: argument list of a different arity than the C function type's parameters"); pre-fix: Result with 1 argument (the surplus DELETED — the defect)
+    PASS R3 typecheck_expr Eccall fixed int(int) with 3 actual(s) for 1 formal: got Exception (CoreTyping_TODO "ccall: argument list of a different arity than the C function type's parameters"); pre-fix: Result with 1 argument (the surplus DELETED — the defect)
+    PASS R3 typecheck_expr Eccall variadic int(int, ...): 1 fixed actual + the bundle (fit: every argument kept): got Result (Eccall with 2 arguments); pre-fix: Result with 2 arguments (unchanged)
+    PASS R3 typecheck_expr Eccall variadic: 0 fixed actuals + the bundle: got Exception (CoreTyping_TODO "ccall to a variadic C procedure: fixed-argument list of a different arity than the function type's parameters"); pre-fix: the bundle zipped against the fixed parameter (accepted — the defect)
+    PASS R3 typecheck_expr Eccall variadic: 2 fixed actuals + the bundle: got Exception (CoreTyping_TODO "ccall to a variadic C procedure: fixed-argument list of a different arity than the function type's parameters"); pre-fix: the surplus fixed actual DELETED (the defect)
+    PASS R4 Core_reduction step_ctx: run loop(true, false, error(surplus)) — 3 actuals for 2 params: got Illformed_program "Erun: the argument list does not fit the continuation's parameters"; pre-fix: bound the prefix; the erroring surplus never evaluated (oracle: run-fixed-error.core Specified(2))
+    PASS R4 Core_reduction step_ctx: run loop(true) — 1 actual for 2 params (shortage): got Illformed_program "Erun: the argument list does not fit the continuation's parameters"; pre-fix: bound i only; j kept its OLD binding (oracle: run-short-stale.core Specified(11))
+    PASS R4 Core_reduction step_ctx: run loop(true, false) — fit: arena = body, i := true, j := false: got bound (arena = body: true; i := Vtrue; j := Vfalse); pre-fix: the same (unchanged; oracle: run loop(1,20) -> Specified(21))
+    PASS R4 Core_run core_thread_step2: run loop(true, false, error(surplus)) — 3 actuals for 2 params: got Illformed_program "Erun: the argument list does not fit the continuation's parameters"; pre-fix: substituted the prefix; the surplus dropped
+    PASS R4 Core_run core_thread_step2: run loop(true) — shortage: got Illformed_program "Erun: the argument list does not fit the continuation's parameters"; pre-fix: substituted i only; j left free in the body
+    PASS R4 Core_run core_thread_step2: run loop(true, false) — fit: body with both substituted: got substituted body (Vtrue, Vfalse); pre-fix: the same (unchanged)
+    match-pattern-arity-test: OK (8/8 item-7 witnesses + 19/19 closure-round witnesses + 33/33 round-3 argument-list witnesses; kernel theorems T1a T1b T1_wrapper T1_anyFuel T2 T3 T3_select T4_neg and the R2_* equations (loud leaf / subst_pattern declines) compiled; #print axioms pinned by #guard_msgs: [propext] on T1a/T1b/T2/T3/T3_select/T4_neg, the trio on T1_anyFuel)
+    ✓ match-pattern-arity-test PASSED
+    ==========================================
+    Total: 1 passed, 0 failed
+
+### 15.4 Post-fix engines (verbatim), typed-dump pins, gates
+
+The five witnesses + controls on the round-3 fork binary (post-(A)), four modes, verbatim (`.tmp/mpa/r3/postfix-fork.log`; 10 s timeout per run):
+
+    === POST-FIX fork core/fun-error.core ===
+    --- default                   : Error {msg: "surplus"} 
+    [rc=1]
+    --- --rewrite                 : Error {msg: "surplus"} 
+    [rc=1]
+    --- --typecheck-core          : .tmp/mpa/r3/core/fun-error.core:3:18: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer,integer)' was expected   pure(Specified(f(1,2,error(<<<surplus>>>,3)))) 
+    [rc=1]
+    --- --typecheck-core --rewrite: .tmp/mpa/r3/core/fun-error.core:3:18: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer,integer)' was expected   pure(Specified(f(1,2,error(<<<surplus>>>,3)))) 
+    [rc=1]
+    === POST-FIX fork core/fun-fit.core ===
+    --- default                   : Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"} 
+    [rc=0]
+    --- --rewrite                 : Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"} 
+    [rc=0]
+    --- --typecheck-core          : Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"} 
+    [rc=0]
+    --- --typecheck-core --rewrite: Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"} 
+    [rc=0]
+    === POST-FIX fork core/fun-short.core ===
+    --- default                   : internal error: CALL() |params|= 2 <> |args|= 1 cerberus: internal error, uncaught exception: 
+    [rc=125]
+    --- --rewrite                 : internal error: CALL() |params|= 2 <> |args|= 1 cerberus: internal error, uncaught exception: 
+    [rc=125]
+    --- --typecheck-core          : .tmp/mpa/r3/core/fun-short.core:3:18: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer,integer)' was expected   pure(Specified(f(1))) 
+    [rc=1]
+    --- --typecheck-core --rewrite: .tmp/mpa/r3/core/fun-short.core:3:18: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer,integer)' was expected   pure(Specified(f(1))) 
+    [rc=1]
+    === POST-FIX fork core/proc-error.core ===
+    --- default                   : Error {msg: "surplus"} 
+    [rc=1]
+    --- --rewrite                 : Error {msg: "surplus"} 
+    [rc=1]
+    --- --typecheck-core          : .tmp/mpa/r3/core/proc-error.core:3:3: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer,integer)' was expected   pcall(f,1,2,error(<<<surplus>>>,3)) 
+    [rc=1]
+    --- --typecheck-core --rewrite: .tmp/mpa/r3/core/proc-error.core:3:3: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer,integer)' was expected   pcall(f,1,2,error(<<<surplus>>>,3)) 
+    [rc=1]
+    === POST-FIX fork core/proc-fit.core ===
+    --- default                   : Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"} 
+    [rc=0]
+    --- --rewrite                 : Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"} 
+    [rc=0]
+    --- --typecheck-core          : Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"} 
+    [rc=0]
+    --- --typecheck-core --rewrite: Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"} 
+    [rc=0]
+    === POST-FIX fork adjacent-core/memop-error.core ===
+    --- default                   : Error {msg: "surplus"} 
+    [rc=1]
+    --- --rewrite                 : Error {msg: "surplus"} 
+    [rc=1]
+    --- --typecheck-core          : .tmp/mpa/r3/adjacent-core/memop-error.core:2:27: error: this expression is of type 'argument list of a different arity' but an expression of type '(pointer,pointer)' was expected   let strong b: boolean = memop(PtrEq,NULL(void),NU
+    [rc=1]
+    --- --typecheck-core --rewrite: .tmp/mpa/r3/adjacent-core/memop-error.core:2:27: error: this expression is of type 'argument list of a different arity' but an expression of type '(pointer,pointer)' was expected   let strong b: boolean = memop(PtrEq,NULL(void),NU
+    [rc=1]
+    === POST-FIX fork adjacent-core/memop-fit.core ===
+    --- default                   : Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"} 
+    [rc=0]
+    --- --rewrite                 : Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"} 
+    [rc=0]
+    --- --typecheck-core          : Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"} 
+    [rc=0]
+    --- --typecheck-core --rewrite: Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"} 
+    [rc=0]
+    === POST-FIX fork adjacent-core/memop-short.core ===
+    --- default                   : internal error: INVALID memop request: ptreq ==> (NULL(void)) cerberus: internal error, uncaught exception: 
+    [rc=125]
+    --- --rewrite                 : internal error: INVALID memop request: ptreq ==> (NULL(void)) cerberus: internal error, uncaught exception: 
+    [rc=125]
+    --- --typecheck-core          : .tmp/mpa/r3/adjacent-core/memop-short.core:2:27: error: this expression is of type 'argument list of a different arity' but an expression of type '(pointer,pointer)' was expected   let strong b: boolean = memop(PtrEq,NULL(void)) i
+    [rc=1]
+    --- --typecheck-core --rewrite: .tmp/mpa/r3/adjacent-core/memop-short.core:2:27: error: this expression is of type 'argument list of a different arity' but an expression of type '(pointer,pointer)' was expected   let strong b: boolean = memop(PtrEq,NULL(void)) i
+    [rc=1]
+    === POST-FIX fork core/run-fixed-error.core ===
+    --- default                   : Error {msg: "ill-formed program: `Erun: the argument list does not fit the continuation's parameters'"} 
+    [rc=1]
+    --- --rewrite                 : Error {msg: "ill-formed program: `Erun: the argument list does not fit the continuation's parameters'"} 
+    [rc=1]
+    --- --typecheck-core          : .tmp/mpa/r3/core/run-fixed-error.core:3:19: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer)' was expected     if i < 2 then run loop(2,error(<<<surplus>>>,3)) else pure(S
+    [rc=1]
+    --- --typecheck-core --rewrite: .tmp/mpa/r3/core/run-fixed-error.core:3:19: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer)' was expected     if i < 2 then run loop(2,error(<<<surplus>>>,3)) else pure(S
+    [rc=1]
+    === POST-FIX fork core/run-fixed-fit.core ===
+    --- default                   : Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"} 
+    [rc=0]
+    --- --rewrite                 : Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"} 
+    [rc=0]
+    --- --typecheck-core          : Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"} 
+    [rc=0]
+    --- --typecheck-core --rewrite: Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"} 
+    [rc=0]
+    === POST-FIX fork core/run-fixed-long.core ===
+    --- default                   : Error {msg: "ill-formed program: `Erun: the argument list does not fit the continuation's parameters'"} 
+    [rc=1]
+    --- --rewrite                 : Error {msg: "ill-formed program: `Erun: the argument list does not fit the continuation's parameters'"} 
+    [rc=1]
+    --- --typecheck-core          : .tmp/mpa/r3/core/run-fixed-long.core:3:19: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer)' was expected     if i < 2 then run loop(2,3) else pure(Specified(i)) 
+    [rc=1]
+    --- --typecheck-core --rewrite: .tmp/mpa/r3/core/run-fixed-long.core:3:19: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer)' was expected     if i < 2 then run loop(2,3) else pure(Specified(i)) 
+    [rc=1]
+    === POST-FIX fork adjacent-core/run-short-stale.core ===
+    --- default                   : Error {msg: "ill-formed program: `Erun: the argument list does not fit the continuation's parameters'"} 
+    [rc=1]
+    --- --rewrite                 : Error {msg: "ill-formed program: `Erun: the argument list does not fit the continuation's parameters'"} 
+    [rc=1]
+    --- --typecheck-core          : .tmp/mpa/r3/adjacent-core/run-short-stale.core:2:82: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer,integer)' was expected   save loop: loaded integer (i: integer := 0, j
+    [rc=1]
+    --- --typecheck-core --rewrite: .tmp/mpa/r3/adjacent-core/run-short-stale.core:2:82: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer,integer)' was expected   save loop: loaded integer (i: integer := 0, j
+    [rc=1]
+    === POST-FIX fork adjacent-core/run-short-control.core ===
+    --- default                   : Defined {value: "Specified(21)", stdout: "", stderr: "", blocked: "false"} 
+    [rc=0]
+    --- --rewrite                 : Defined {value: "Specified(21)", stdout: "", stderr: "", blocked: "false"} 
+    [rc=0]
+    --- --typecheck-core          : Defined {value: "Specified(21)", stdout: "", stderr: "", blocked: "false"} 
+    [rc=0]
+    --- --typecheck-core --rewrite: Defined {value: "Specified(21)", stdout: "", stderr: "", blocked: "false"} 
+    [rc=0]
+    === POST-FIX fork adjacent-core/ccall-error.core ===
+    --- default                   : Error {msg: "surplus"} 
+    [rc=1]
+    --- --rewrite                 : Error {msg: "surplus"} 
+    [rc=1]
+    --- --typecheck-core          : .tmp/mpa/r3/adjacent-core/ccall-error.core:2:3: error: CoreTyping_TODO(ccall: argument list of a different arity than the C function type's parameters)   ccall('signed int(signed int)*',Specified(NULL(void)),NULL(void),error(<<<su
+    [rc=1]
+    --- --typecheck-core --rewrite: .tmp/mpa/r3/adjacent-core/ccall-error.core:2:3: error: CoreTyping_TODO(ccall: argument list of a different arity than the C function type's parameters)   ccall('signed int(signed int)*',Specified(NULL(void)),NULL(void),error(<<<su
+    [rc=1]
+    === POST-FIX fork adjacent-core/ccall-fit.core ===
+    --- default                   : internal error: null function pointer cerberus: internal error, uncaught exception: 
+    [rc=125]
+    --- --rewrite                 : internal error: null function pointer cerberus: internal error, uncaught exception: 
+    [rc=125]
+    --- --typecheck-core          : internal error: null function pointer cerberus: internal error, uncaught exception: 
+    [rc=125]
+    --- --typecheck-core --rewrite: internal error: null function pointer cerberus: internal error, uncaught exception: 
+    [rc=125]
+    === POST-FIX fork adjacent-core/ccall-short.core ===
+    --- default                   : internal error: null function pointer cerberus: internal error, uncaught exception: 
+    [rc=125]
+    --- --rewrite                 : internal error: null function pointer cerberus: internal error, uncaught exception: 
+    [rc=125]
+    --- --typecheck-core          : .tmp/mpa/r3/adjacent-core/ccall-short.core:2:3: error: CoreTyping_TODO(ccall: argument list of a different arity than the C function type's parameters)   ccall('signed int(signed int)*',Specified(NULL(void))) 
+    [rc=1]
+    --- --typecheck-core --rewrite: .tmp/mpa/r3/adjacent-core/ccall-short.core:2:3: error: CoreTyping_TODO(ccall: argument list of a different arity than the C function type's parameters)   ccall('signed int(signed int)*',Specified(NULL(void))) 
+    [rc=1]
+
+— typed modes reject with the structured typing failure (`MismatchExpected` rendered by `pp_errors`; `CoreTyping_TODO` for `ccall`), the deletion is gone; default/`--rewrite` report `Illformed_program` for the `run` cases and leave the fun/proc/memop surplus-error cases as `Error {msg: "surplus"}` (default mode does not typecheck); every control is unchanged in all four modes. The pre-(A) observation (round-3 binary before the stdlib fix): every `--typecheck-core` run failed at `std.core:686` (§15.2b), verbatim in `.tmp/mpa/r3/postfix-preA-fork.log`.
+
+Typed-dump pins of the fitting controls (`--typecheck-core --pp=core` vs `--pp=core`), verbatim:
+
+    === typed dumps of the fitting controls (--typecheck-core --pp=core vs --pp=core) ===
+    core/fun-fit: typed dump == untyped dump (byte-identical, 116 bytes)
+    core/proc-fit: typed dump == untyped dump (byte-identical, 135 bytes)
+    adjacent-core/memop-fit: typed dump == untyped dump (byte-identical, 141 bytes)
+    adjacent-core/run-short-control: typed dump == untyped dump (byte-identical, 164 bytes)
+
+Row 1 (`scripts/test_unit.sh`, all exes; `.tmp/mpa/r3/unit-b.log`), verbatim:
+
+    Total: 15 passed, 0 failed
+    check_theorem_axioms: hand-written axiom census OK (0 axioms — the arc-17 S2b end state)
+    check_no_fuel_numerals: OK (328 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6), no address-space-top literal (A1-A3); allowed Main.lean sites seen: 6 of 6 (hand-written + generated copy))
+    check_lakefile_roots: OK (218 roots = 218 generated modules + the exe root Main; 85 auxiliary modules listed as roots — names only; every carrier is built by check_fuel_forms.sh)
+    check_fuel_forms: forms partition OK (62 MEASURED + 13 ABSORBING + 0 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+    check_failure_reach: OK (239 pure failure sites = the 239 register rows exactly (237 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=170 REACHABLE=48 UNKNOWN=21; every row sealed; tally line consistent)
+    check_exec_totality: CLEAN (22 generated modules + hand-written CerbND, 0 allowlisted)
+    check_fork_drift: OK — layer 1: 84 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 29 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 38f87d5 = lem -v)
+    check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+
+The six lanes the orchestrator ran on the mainline, on this tree, verbatim:
+
+    === scripts/test_exec.sh --check-baseline ===
+    === EXIT=0 wall=29s
+    === scripts/test_multi_tu.sh ===
+    === EXIT=0 wall=3s
+    === scripts/test_multi_tu.sh --failure-class-projection tests/multi_tu_tray ===
+    === EXIT=0 wall=3s
+    === scripts/test_address_space.sh ===
+    === EXIT=0 wall=5s
+    === scripts/test_immaculate.sh ===
+    === EXIT=0 wall=73s
+    === scripts/test_libc_exec.sh ===
+    === EXIT=0 wall=23s
+
+### 15.5 N3
+
+§7's sentence replaced by the exact enforced set (above, §7); the stale proof comment on `subst_pattern`'s arms corrected
+(`Core_aux_lemMeasureProofs.lean`; comment only, proof and statement unchanged); TODO.md's deferral (iv) converted into
+the implemented account, including R4 which it did not list. Tray 45 gains "Argument lists".
+
+### 15.6 The frozen full battery on the round-3 head
+
+**Advance justification [AGENT worker, written before launch]:** the ~90-minute `release.py --mode full` sweep is the
+repository-required differential-corpus and harness-plant battery (Tier A + B, 39 lanes) — not a proof-search or
+term-grind pass; it runs once, on the clean committed head of commit B, with the tree frozen; its `report.json`/`summary.txt`
+are copied into `docs/2026-09-22_match-pattern-arity-closure-evidence/round3-34ac493f9/` afterwards and the verbatim lane
+and certification lines appended here (commit C). Expected: `Source unchanged: True`, 39/39, pristine 835/28/7/2, chvalid 4,
+gcc-oracle 0 regressions / 0 improvements, 15 unit exes; any movement anywhere = STOP.
+
+ROUND3_BATTERY_PLACEHOLDER

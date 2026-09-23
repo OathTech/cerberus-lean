@@ -379,11 +379,21 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   check the matcher (Illformed_program = the PElet route), the typechecker's tuple-EXPRESSION
   arms (`PEctor Ctuple`, `Eunseq`, `Epar`) fail closed instead of deleting operands, and (round 2)
   the `maybe`-returning `subst_pattern` DECLINES (`Nothing`, fit-tested by `match_pattern`) so
-  `--rewrite` = default = `Illformed_program` — the loud leaf is the backstop (no executing route). Left: (iv) the
-  OTHER truncating `List.zip`s of `core_typing.lem` are CALL-arity checks, not tuple binding —
-  `PEcall` `:766`/`:1167`, `Eproc`/`Eccall`/`Erun` argument lists `:1689`, `:1739-1759`, `:1773`,
-  `:1843` — same fail-open class (surplus arguments dropped from the typed program), out of this
-  slice's rulings; a charter of their own; (v) `Core_reduction` — THE engine the driver steps with — had its six let-form sites guarded
+  `--rewrite` = default = `Illformed_program` — the loud leaf is the backstop (no executing route). (iv) ~~the
+  OTHER truncating `List.zip`s of `core_typing.lem` are CALL-arity checks … out of this slice's rulings; a
+  charter of their own~~ — DONE in closure round 3 (2026-09-23, record §15; second-round audit R3/R4 rolled in
+  [USER 2026-09-23]): the seven argument-list arms of `core_typing.lem` (`PEcall` inference + checking, `Ememop`,
+  `Eccall` fixed + the fixed prefix of a variadic call, `Eproc`, `Erun`) guard the count before zipping, both
+  directions, with the existing `MismatchExpected` (`CoreTyping_TODO` at the two `Eccall` arms, the site's own
+  constructor); AND — which the deferral did not list — `Erun` at RUNTIME in both engines
+  (`core_reduction.lem` `step_ctx`'s `Erun`, the driver's; `core_run.lem`'s) checks the argument count before
+  evaluation/substitution and raises `Illformed_program` (pre-fix a surplus `error(...)` was never evaluated and a
+  shortage kept the parameter's OLD binding). Fitting inputs preserve every argument (pinned structurally). The guard's own
+  finding: the shipped stdlib's `builtin pread`/`pwrite` declarations had THREE formals against four-argument
+  call sites and four-value runtime arms (`std.core:618-619`, `std_inner_arg_temps.core:574-575`) — FIXED in both
+  files ([USER 2026-09-23] "unambiguous bugs get fixes"), tray 45 subsection. Left
+  from the audit's inspection, reported without a live counterexample: `equalInferred`'s tuple zip
+  (`core_typing_aux.lem`), `to_pure`'s `Ecase` and `Esave` traversals. (v) `Core_reduction` — THE engine the driver steps with — had its six let-form sites guarded
   too (the audit cited `core_run.lem`, the second engine); `update_env_aux`'s loud leaf is the backstop;
   (vi) `VALIDATION.md` §3 and `LADDER.md` row 1's exe count were outside both fences.
 - **C-TF1 landed (2026-09-08, `docs/2026-09-08_monadic-failstop-record.md`) — follow-ups.**

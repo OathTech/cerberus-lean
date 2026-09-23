@@ -1466,6 +1466,14 @@ let step_ctx mem_st file core_extern current_tid (parent_tid_opt, th_st) =
                       error ("Erun couldn't resolve label: `" ^ show sym ^
                              "' for procedure `" ^ show current_proc ^ "'")
                   | Just (sym_bTys, cont_expr) ->
+                      (* FORK 2026-09-23 (upstream-tray draft 45; audit R4): the argument
+                         list must FIT the continuation's parameters BEFORE any argument is
+                         evaluated — List.zip truncated: a surplus argument (an `error(...)`)
+                         was never evaluated and a shortage silently kept the parameter's OLD
+                         binding. Same channel as this file's let-form fit checks (:362/:418). *)
+                      if List.length sym_bTys <> List.length pes then
+                        SEU.runEU (EU.fail (Errors.Illformed_program "Erun: the argument list does not fit the continuation's parameters"))
+                      else
                       E.foldlM (fun acc ((sym, bTy), pe) ->
                         full_eval_pexpr' pe >>= fun cval ->
                         E.return (update_env (Caux.mk_sym_pat sym bTy) cval acc)

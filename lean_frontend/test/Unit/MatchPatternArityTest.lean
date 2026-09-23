@@ -2,6 +2,7 @@ import Core_aux
 import Core_typing
 import Core_run
 import Core_reduction
+import Core_eval
 import Core_aux_lemMeasureProofs
 
 /-! # MatchPatternArityTest — kernel facts for cerberus-sl hidden-state note item 7
@@ -292,11 +293,18 @@ partial def eraseP {b : Type} : generic_pexpr b sym → Option pexpr
   | Pexpr annots _ (PEval v) => some (Pexpr annots () (PEval v))
   | Pexpr annots _ (PEsym s) => some (Pexpr annots () (PEsym s))
   | Pexpr annots _ (PEctor c pes) => do let pes' ← pes.mapM eraseP; pure (Pexpr annots () (PEctor c pes'))
+  | Pexpr annots _ (PEcall nm pes) => do let pes' ← pes.mapM eraseP; pure (Pexpr annots () (PEcall nm pes'))
+  | Pexpr annots _ (PEerror msg pe) => (eraseP pe).map fun pe' => Pexpr annots () (PEerror msg pe')
   | _ => none
 partial def eraseE : generic_expr Unit core_base_type sym → Option (expr Unit)
   | Expr annots (Epure pe) => (eraseP pe).map fun pe' => Expr annots (Epure pe')
   | Expr annots (Eunseq es) => do let es' ← es.mapM eraseE; pure (Expr annots (Eunseq es'))
   | Expr annots (Epar es) => do let es' ← es.mapM eraseE; pure (Expr annots (Epar es'))
+  | Expr annots (Eproc a nm pes) => do let pes' ← pes.mapM eraseP; pure (Expr annots (Eproc a nm pes'))
+  | Expr annots (Erun a l pes) => do let pes' ← pes.mapM eraseP; pure (Expr annots (Erun a l pes'))
+  | Expr annots (Ememop op pes) => do let pes' ← pes.mapM eraseP; pure (Expr annots (Ememop op pes'))
+  | Expr annots (Eccall a tpe fpe pes) => do
+      let tpe' ← eraseP tpe; let fpe' ← eraseP fpe; let pes' ← pes.mapM eraseP; pure (Expr annots (Eccall a tpe' fpe' pes'))
   | _ => none
 
 def classifyPexprTyping : exceptM (generic_pexpr inferred sym) (CerbLocation.Loc × cause) → String
@@ -458,6 +466,153 @@ def closureChecks (fuel : Nat) : List Check2 :=
     { name := "R2 Core_reduction one_step fitting Elet (k0, k1) = (unit, unit): TAU (unchanged)", ok := reductionRoute "Elet" eletArenaFit == .defined, got := (repr (reductionRoute "Elet" eletArenaFit)).pretty,
       preFix := "TAU Elet (unchanged)" } ]
 
+/-! ## Closure round 3 (2026-09-23; second-round audit R3/R4) — ARGUMENT-LIST arity
+
+PRE-FIX (the fork binary built at `8d4901c65`, the audit's witnesses; record §15), verbatim: `fun-error.core` /
+`proc-error.core` default `Error {msg: "surplus"}` [rc=1] but `--typecheck-core` `Defined {value: "Specified(3)", …}` [rc=0]
+(the erroring surplus argument DELETED by typing); `memop-error.core` likewise (`Specified(1)`); `run-fixed-error.core`
+`Specified(2)` in every mode (the surplus never evaluated); `run-short-stale.core` `Specified(11)` in every mode (the
+missing `j` kept its OLD binding); control `run-short-control.core` (`run loop(1,20)`) `Specified(21)`. The Lean typing
+definitions, pre-fix: a 1-formal fun/proc/continuation given 0 actuals returns `Result` with 0 arguments, given 2 or 3
+returns `Result` with 1 (the audit's direct probe). -/
+
+def fSym : sym := sym.Symbol "audit" 30 SD_None
+def pSym : sym := sym.Symbol "audit" 31 SD_None
+def loopSym : sym := sym.Symbol "audit" 32 SD_None
+def procSym : sym := sym.Symbol "audit" 33 SD_None
+def iSym : sym := sym.Symbol "audit" 34 SD_None
+def jSym : sym := sym.Symbol "audit" 35 SD_None
+/-- `f : unit -> unit` (1 formal), `p : unit -> eff unit` (1 formal), label `loop(i : unit)` (1 formal) -/
+def envR3 : typing_env :=
+  { decls := Lem_Map.fromList [(Sym fSym, TDfun BTy_unit [BTy_unit]), (Sym pSym, TDproc BTy_unit [BTy_unit])],
+    labs := Lem_Map.fromList [(loopSym, (BTy_unit, [BTy_unit]))] }
+def actuals (n : Nat) : List pexpr := List.replicate n peU
+def isArgArity (ctx : String) : exceptM (generic_pexpr inferred sym) (CerbLocation.Loc × cause) → Bool
+  | Exception (_, CORE_TYPING (MismatchExpected c (BTy_tuple _) "argument list of a different arity")) => c == ctx
+  | _ => false
+def isArgArityE (ctx : String) : exceptM (generic_expr Unit core_base_type sym) (CerbLocation.Loc × cause) → Bool
+  | Exception (_, CORE_TYPING (MismatchExpected c (BTy_tuple _) "argument list of a different arity")) => c == ctx
+  | Exception (_, CORE_TYPING (CoreTyping_TODO t)) => ctx == "ccall" && (t.startsWith "ccall")
+  | _ => false
+/-- typed result erased = the input (every argument kept) -/
+def keptP (pe : pexpr) (r : exceptM (generic_pexpr inferred sym) (CerbLocation.Loc × cause)) : Bool :=
+  match r with | Result r' => eraseP r' == some pe | _ => false
+def keptE (e : expr Unit) (r : exceptM (generic_expr Unit core_base_type sym) (CerbLocation.Loc × cause)) : Bool :=
+  match r with | Result r' => eraseE r' == some e | _ => false
+def callPe (n : Nat) : pexpr := Pexpr [] () (PEcall (Sym fSym) (actuals n))
+def procE (n : Nat) : expr Unit := Expr [] (Eproc () (Sym pSym) (actuals n))
+def runE (n : Nat) : expr Unit := Expr [] (Erun () loopSym (actuals n))
+def intPe : pexpr := mk_integer_pe 0
+def memopE (n : Nat) : expr Unit := Expr [] (Ememop Va_end (List.replicate n intPe))
+-- C function type `int(int)` behind a pointer, and a null function pointer: the fixed ccall's operands
+def intCty : ctype := Ctype [] (Basic (Integer (Signed Int_)))
+def fnTy (variadic : Bool) : ctype := Ctype [] (Pointer no_qualifiers (Ctype [] (Function (no_qualifiers, intCty) [(no_qualifiers, intCty, false)] variadic)))
+def nullPtr (ty : ctype) : CerbMem.PointerValue := .PV .Prov_none (.PVnull ty)
+def fptrPe (variadic : Bool) : pexpr := Pexpr [] () (PEval (Vloaded (LVspecified (OVpointer (nullPtr (fnTy variadic))))))
+def ptrArg : pexpr := Pexpr [] () (PEval (Vobject (OVpointer (nullPtr (Ctype [] ctype_.Void0)))))
+def ccallE (n : Nat) : expr Unit := Expr [] (Eccall () (Pexpr [] () (PEval (Vctype (fnTy false)))) (fptrPe false) (List.replicate n ptrArg))
+/-- the variadic call: |params| = 1 fixed actuals + the trailing (ctype, pointer)-list bundle -/
+def bundlePe : pexpr := Pexpr [] () (PEval (Vlist (BTy_tuple [BTy_ctype, BTy_object OTy_pointer]) []))
+def ccallVarE (nFixed : Nat) : expr Unit := Expr [] (Eccall () (Pexpr [] () (PEval (Vctype (fnTy true)))) (fptrPe true) (List.replicate nFixed ptrArg ++ [bundlePe]))
+def tP3 (pe : pexpr) := typecheck_pexpr tagsEmpty envR3 BTy_unit pe
+def iP3 (pe : pexpr) := infer_pexpr tagsEmpty envR3 pe
+def tE3 (bTy : core_base_type) (e : expr Unit) := typecheck_expr Normal_callconv tagsEmpty envR3 bTy e
+def classifyR3P : exceptM (generic_pexpr inferred sym) (CerbLocation.Loc × cause) → String
+  | Result (Pexpr _ _ (PEcall _ pes)) => s!"Result (PEcall with {pes.length} arguments)"
+  | Result _ => "Result (other)"
+  | Exception (_, CORE_TYPING (MismatchExpected ctx _ found)) => s!"Exception (MismatchExpected {repr ctx} _ {repr found})"
+  | Exception (_, CORE_TYPING (CoreTyping_TODO t)) => s!"Exception (CoreTyping_TODO {repr t})"
+  | Exception _ => "Exception (other)"
+def classifyR3E : exceptM (generic_expr Unit core_base_type sym) (CerbLocation.Loc × cause) → String
+  | Result (Expr _ (Eproc _ _ pes)) => s!"Result (Eproc with {pes.length} arguments)"
+  | Result (Expr _ (Erun _ _ pes)) => s!"Result (Erun with {pes.length} arguments)"
+  | Result (Expr _ (Ememop _ pes)) => s!"Result (Ememop with {pes.length} arguments)"
+  | Result (Expr _ (Eccall _ _ _ pes)) => s!"Result (Eccall with {pes.length} arguments)"
+  | Result _ => "Result (other)"
+  | Exception (_, CORE_TYPING (MismatchExpected ctx _ found)) => s!"Exception (MismatchExpected {repr ctx} _ {repr found})"
+  | Exception (_, CORE_TYPING (CoreTyping_TODO t)) => s!"Exception (CoreTyping_TODO {repr t})"
+  | Exception _ => "Exception (other)"
+
+/-! ### R4 — the `Erun` step of BOTH engines: surplus / shortage / fit -/
+def loopBody : expr core_run_annotation := Expr [] (Epure (Pexpr [] () (PEctor Ctuple [Pexpr [] () (PEsym iSym), Pexpr [] () (PEsym jSym)])))
+def labeledR4 : Fmap sym (labeled_continuations core_run_annotation) :=
+  Lem_Map.fromList [(procSym, Lem_Map.fromList [(loopSym, ([(iSym, BTy_unit), (jSym, BTy_boolean)], loopBody))])]
+def runStR4 : core_run_state := { (default : core_run_state) with labeled := labeledR4 }
+def runArena (pes : List pexpr) : expr core_run_annotation := Expr [] (Erun empty_annotation loopSym pes)
+def surplusErr : pexpr := Pexpr [] () (PEerror "surplus" peU)
+inductive RunOutcome where
+  | illformed (msg : String)
+  | bound (arenaIsBody : Bool) (iVal jVal : Option value)
+  | substituted (arena : Option pexpr)
+  | other (what : String)
+def showOptVal : Option value → String
+  | some v => showVal v
+  | none => "unbound"
+def reprRun : RunOutcome → String
+  | .illformed msg => s!"Illformed_program {repr msg}"
+  | .bound b i j => s!"bound (arena = body: {b}; i := {showOptVal i}; j := {showOptVal j})"
+  | .substituted (some (Pexpr _ _ (PEctor Ctuple [Pexpr _ _ (PEval a), Pexpr _ _ (PEval b)]))) => s!"substituted body ({showVal a}, {showVal b})"
+  | .substituted (some _) => "substituted body (other shape)"
+  | .substituted none => "substituted (arena not Epure)"
+  | .other w => s!"other: {w}"
+def isRunIllformed : RunOutcome → Bool
+  | .illformed _ => true
+  | _ => false
+def lookupSym (s : sym) (m : Fmap sym value) : Option value := fmapLookupBy (@Lem_Map.MapKeyType.mapKeyCompare sym _) s m
+/-- the driver's engine: `Core_reduction.step_ctx` on `run loop(pes)` inside `procSym` -/
+def reductionErun (fuel : Nat) (pes : List pexpr) : RunOutcome :=
+  letI := LemFuel.mk fuel
+  let thSt : thread_state := { (default : thread_state) with arena := runArena pes, env := [emptyEnv], current_proc_opt := some procSym }
+  match step_ctx enumsEmpty tagsEmpty (CerbMem.initialMemState testAddressSpaceTop) (default : generic_file Unit core_run_annotation) fmapEmpty 0 (none, thSt) with
+  | [Step_with_runstate2 (RSK_eval "Erun") m] =>
+      match m runStR4 with
+      | Exception (Illformed_program msg) => .illformed msg
+      | Result (Defined th', _) =>
+          match th'.env with
+          | e :: _ => .bound (th'.arena == loopBody) (lookupSym iSym e) (lookupSym jSym e)
+          | [] => .other "empty env"
+      | Result _ => .other "Result (not Defined)"
+      | Exception _ => .other "Exception (other cause)"
+  | steps => .other s!"{steps.length} step(s), not a single Step_with_runstate2 (RSK_eval Erun)"
+/-- the second engine: `Core_run.core_thread_step2` on `run loop(pes)` with `procSym` on the stack -/
+def coreRunErun (fuel : Nat) (pes : List pexpr) : RunOutcome :=
+  letI := LemFuel.mk fuel
+  let thSt : thread_state := { (default : thread_state) with arena := runArena pes, env := [emptyEnv], stack0 := Stack_cons (some procSym) [] Stack_empty }
+  match core_thread_step2 enumsEmpty tagsEmpty (CerbMem.initialMemState testAddressSpaceTop) (default : generic_file Unit core_run_annotation) fmapEmpty fmapEmpty 0 (none, thSt) with
+  | [Step_tau "Erun" _ m] =>
+      match m runStR4 with
+      | Exception (Illformed_program msg) => .illformed msg
+      | Result (Defined th', _) =>
+          match th'.arena with
+          | Expr _ (Epure pe) => .substituted (some pe)
+          | _ => .substituted none
+      | Result _ => .other "Result (not Defined)"
+      | Exception _ => .other "Exception (other cause)"
+  | steps => .other s!"{steps.length} step(s), not a single Step_tau Erun"
+def substitutedBody : pexpr := Pexpr [] () (PEctor Ctuple [peT, peF])
+
+def round3Checks (fuel : Nat) : List Check2 :=
+  let grid := fun (name : String) (ok : Nat → Bool) (got : Nat → String) (fitN : Nat) =>
+    (List.range 4).map fun n =>
+      let fit := if n == fitN then " (fit: every argument kept)" else ""
+      let pre := if n == fitN then "Result with 1 argument (unchanged)" else if n == 0 then "Result with 0 arguments (ACCEPTED — the defect)" else "Result with 1 argument (the surplus DELETED — the defect)"
+      ({ name := s!"R3 {name} with {n} actual(s) for 1 formal{fit}", ok := ok n, got := got n, preFix := pre } : Check2)
+  grid "typecheck_pexpr PEcall f" (fun n => if n == 1 then keptP (callPe 1) (tP3 (callPe 1)) else isArgArity "PEcall" (tP3 (callPe n))) (fun n => classifyR3P (tP3 (callPe n))) 1 ++
+  grid "infer_pexpr PEcall f" (fun n => if n == 1 then keptP (callPe 1) (iP3 (callPe 1)) else isArgArity "PEcall" (iP3 (callPe n))) (fun n => classifyR3P (iP3 (callPe n))) 1 ++
+  grid "typecheck_expr Eproc p" (fun n => if n == 1 then keptE (procE 1) (tE3 BTy_unit (procE 1)) else isArgArityE "proc" (tE3 BTy_unit (procE n))) (fun n => classifyR3E (tE3 BTy_unit (procE n))) 1 ++
+  grid "typecheck_expr Erun loop" (fun n => if n == 1 then keptE (runE 1) (tE3 BTy_unit (runE 1)) else isArgArityE "run" (tE3 BTy_unit (runE n))) (fun n => classifyR3E (tE3 BTy_unit (runE n))) 1 ++
+  grid "typecheck_expr Ememop Va_end" (fun n => if n == 1 then keptE (memopE 1) (tE3 BTy_unit (memopE 1)) else isArgArityE "memop()" (tE3 BTy_unit (memopE n))) (fun n => classifyR3E (tE3 BTy_unit (memopE n))) 1 ++
+  grid "typecheck_expr Eccall fixed int(int)" (fun n => if n == 1 then keptE (ccallE 1) (tE3 (BTy_loaded OTy_integer) (ccallE 1)) else isArgArityE "ccall" (tE3 (BTy_loaded OTy_integer) (ccallE n))) (fun n => classifyR3E (tE3 (BTy_loaded OTy_integer) (ccallE n))) 1 ++
+  [ { name := "R3 typecheck_expr Eccall variadic int(int, ...): 1 fixed actual + the bundle (fit: every argument kept)", ok := keptE (ccallVarE 1) (tE3 (BTy_loaded OTy_integer) (ccallVarE 1)), got := classifyR3E (tE3 (BTy_loaded OTy_integer) (ccallVarE 1)), preFix := "Result with 2 arguments (unchanged)" },
+    { name := "R3 typecheck_expr Eccall variadic: 0 fixed actuals + the bundle", ok := isArgArityE "ccall" (tE3 (BTy_loaded OTy_integer) (ccallVarE 0)), got := classifyR3E (tE3 (BTy_loaded OTy_integer) (ccallVarE 0)), preFix := "the bundle zipped against the fixed parameter (accepted — the defect)" },
+    { name := "R3 typecheck_expr Eccall variadic: 2 fixed actuals + the bundle", ok := isArgArityE "ccall" (tE3 (BTy_loaded OTy_integer) (ccallVarE 2)), got := classifyR3E (tE3 (BTy_loaded OTy_integer) (ccallVarE 2)), preFix := "the surplus fixed actual DELETED (the defect)" },
+    { name := "R4 Core_reduction step_ctx: run loop(true, false, error(surplus)) — 3 actuals for 2 params", ok := isRunIllformed (reductionErun fuel [peT, peF, surplusErr]), got := reprRun (reductionErun fuel [peT, peF, surplusErr]), preFix := "bound the prefix; the erroring surplus never evaluated (oracle: run-fixed-error.core Specified(2))" },
+    { name := "R4 Core_reduction step_ctx: run loop(true) — 1 actual for 2 params (shortage)", ok := isRunIllformed (reductionErun fuel [peT]), got := reprRun (reductionErun fuel [peT]), preFix := "bound i only; j kept its OLD binding (oracle: run-short-stale.core Specified(11))" },
+    { name := "R4 Core_reduction step_ctx: run loop(true, false) — fit: arena = body, i := true, j := false", ok := (match reductionErun fuel [peT, peF] with | .bound true (some Vtrue) (some Vfalse) => true | _ => false), got := reprRun (reductionErun fuel [peT, peF]), preFix := "the same (unchanged; oracle: run loop(1,20) -> Specified(21))" },
+    { name := "R4 Core_run core_thread_step2: run loop(true, false, error(surplus)) — 3 actuals for 2 params", ok := isRunIllformed (coreRunErun fuel [peT, peF, surplusErr]), got := reprRun (coreRunErun fuel [peT, peF, surplusErr]), preFix := "substituted the prefix; the surplus dropped" },
+    { name := "R4 Core_run core_thread_step2: run loop(true) — shortage", ok := isRunIllformed (coreRunErun fuel [peT]), got := reprRun (coreRunErun fuel [peT]), preFix := "substituted i only; j left free in the body" },
+    { name := "R4 Core_run core_thread_step2: run loop(true, false) — fit: body with both substituted", ok := (match coreRunErun fuel [peT, peF] with | .substituted (some pe) => pe == substitutedBody | _ => false), got := reprRun (coreRunErun fuel [peT, peF]), preFix := "the same (unchanged)" } ]
+
 end MatchPatternArityTest
 
 def main (args : List String) : IO UInt32 := do
@@ -472,8 +627,11 @@ def main (args : List String) : IO UInt32 := do
   for c in MatchPatternArityTest.closureChecks fuel do
     IO.println s!"{if c.ok then "PASS" else "FAIL"} {c.name}: got {c.got}; pre-fix: {c.preFix}"
     failed := failed || !c.ok
+  for c in MatchPatternArityTest.round3Checks fuel do
+    IO.println s!"{if c.ok then "PASS" else "FAIL"} {c.name}: got {c.got}; pre-fix: {c.preFix}"
+    failed := failed || !c.ok
   if failed then
     IO.eprintln "match-pattern-arity-test: FAILED (a runtime witness disagrees with the fail-closed expectation)"
     return 1
-  IO.println "match-pattern-arity-test: OK (8/8 item-7 witnesses + 19/19 closure-round witnesses; kernel theorems T1a T1b T1_wrapper T1_anyFuel T2 T3 T3_select T4_neg and the R2_* equations (loud leaf / subst_pattern declines) compiled; #print axioms pinned by #guard_msgs: [propext] on T1a/T1b/T2/T3/T3_select/T4_neg, the trio on T1_anyFuel)"
+  IO.println "match-pattern-arity-test: OK (8/8 item-7 witnesses + 19/19 closure-round witnesses + 33/33 round-3 argument-list witnesses; kernel theorems T1a T1b T1_wrapper T1_anyFuel T2 T3 T3_select T4_neg and the R2_* equations (loud leaf / subst_pattern declines) compiled; #print axioms pinned by #guard_msgs: [propext] on T1a/T1b/T2/T3/T3_select/T4_neg, the trio on T1_anyFuel)"
   return 0

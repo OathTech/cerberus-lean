@@ -16,3 +16,5 @@ pristine tier-B `{'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_d
 'interface_agreement': 2}`, chvalid `{'semantic_agreement': 4}` — zero movement (stop rule S2 otherwise).
 
 The subdirectory `rebased-df85e95b7/` holds the battery of the head REBASED onto the post-enum mainline (record §14).
+
+The subdirectory `round3-34ac493f9/` holds the battery of closure round 3 (argument-list arity) on the head rebased onto mainline `34ac493f9` (record §15).

@@ -277,3 +277,76 @@ file "ocaml_frontend/generated/driver.ml", line 163`. Both engines are guarded.
 **Fork status:** LANDED in the closure rounds of `fix/match-pattern-arity` (record
 `lean_frontend/docs/2026-09-20_match-pattern-arity-record.md` §12, with the hunks, the pre-fix engine
 quotes on the audit's probes and the runtime witnesses `test/Unit/MatchPatternArityTest.lean`).
+
+## Argument lists (closure round 3, 2026-09-23 — the fork's second-round audit R3/R4)
+
+The same truncating `List.zip` binds ARGUMENT LISTS against formals, unchecked, at seven `core_typing.lem` arms — `PEcall`
+inference `:766` and checking `:1174`, `Ememop` `:1696`, `Eccall` fixed `:1752` and variadic `:1746` (which zips the
+WHOLE actual list, bundle included, against the fixed parameters), `Eproc` `:1780`, `Erun` `:1855` — and at `Erun`'s
+RUNTIME binding in both engines: `core_reduction.lem:1468-1473` (`E.foldlM … (List.zip sym_bTys pes)`, the driver's engine)
+and `core_run.lem:1563-1565` (`List.foldl … unsafe_subst_sym_expr … (List.zip sym_bTys pes)`). All on `master` @ `b9aeedcb4`.
+
+Consequences, on pristine and fork alike before the fix (the audit's witnesses, run as `cerberus --nolibc --exec --batch
+--mode=exhaustive <file>`; verbatim):
+
+```
+fun-error.core    fun f(a: integer,b: integer): integer := a+b / pure(Specified(f(1,2,error(<<<surplus>>>,3))))
+  default: Error {msg: "surplus"} [rc=1]        --typecheck-core: Defined {value: "Specified(3)", …} [rc=0]
+proc-error.core   pcall(f,1,2,error(<<<surplus>>>,3))
+  default: Error {msg: "surplus"} [rc=1]        --typecheck-core: Defined {value: "Specified(3)", …} [rc=0]
+memop-error.core  memop(PtrEq,NULL(void),NULL(void),error(<<<surplus>>>,3))
+  default: Error {msg: "surplus"} [rc=1]        --typecheck-core: Defined {value: "Specified(1)", …} [rc=0]
+run-fixed-error.core   save loop: loaded integer (i: integer := 1) in if i < 2 then run loop(2,error(<<<surplus>>>,3)) else pure(Specified(i))
+  every mode: Defined {value: "Specified(2)", …} [rc=0]     — the erroring surplus argument is never evaluated
+run-short-stale.core   save loop: loaded integer (i: integer := 0, j: integer := 10) in if i < 1 then run loop(1) else pure(Specified(i+j))
+  every mode: Defined {value: "Specified(11)", …} [rc=0]    — the missing `j` keeps its OLD binding
+run-short-control.core (run loop(1,20)): every mode Specified(21)   — the fitting control
+```
+
+Core typing (when it runs) DELETES the surplus argument — turning a failing program into a succeeding one — and accepts a
+shortage; `Erun`'s execution truncates on the default path, without typing. Same class as the tuple case: pristine differs
+from the fixed fork only on malformed hand-written Core (the elaborator emits fitting argument lists); not reachable from C.
+
+**Proposed remedy (the fork's round-3 patch, shared body):** at each of the seven typing arms, guard the count BEFORE the zip
+— `if List.length <formals> <> List.length <actuals> then E.fail loc (MismatchExpected "<PEcall|memop()|proc|run>"
+(BTy_tuple bTys) "argument list of a different arity") else …` (for `Eccall`, whose formals are C types, the arm's existing
+`CoreTyping_TODO` with a message; the variadic arm splits the bundle first and guards/zips the FIXED prefix `xs`); at both
+runtime `Erun` sites, `if List.length sym_bTys <> List.length pes then <Illformed_program "Erun: the argument list does not fit
+the continuation's parameters"> else …` before any evaluation/substitution. Fitting inputs are unchanged (the fork pins every
+argument's preservation structurally and the typed `--pp=core` dumps of the fitting controls).
+
+**Fork status:** LANDED in closure round 3 of `fix/match-pattern-arity` (record
+`lean_frontend/docs/2026-09-20_match-pattern-arity-record.md` §15, with the hunks and the post-fix engine rows).
+
+### std.core `pread`/`pwrite`: builtin declaration arity (found by the argument-list guard, 2026-09-23)
+
+`runtime/libcore/std.core:618-619` (and the second stdlib variant `runtime/libcore/std_inner_arg_temps.core:574-575`, from
+which `runtime/libc/dune` builds `libc_inner_arg_temps.co`) declare
+
+```
+builtin pwrite   (integer, [integer], integer): eff loaded pointer
+builtin pread    (integer, pointer, integer)  : eff loaded pointer
+```
+
+— THREE formals — while the same files' proxies call them with FOUR (`std.core:673` `pcall(<builtin_pwrite>, fd, cs, size,
+off)`, `:686` `pcall(<builtin_pread>, fd, buf, size, off)`; `std_inner_arg_temps.core:618`/`:627`), and both execution
+engines' runtime arms consume FOUR values (`core_reduction_aux.lem:218-236`: `[Vobject (OVinteger fd_ival); …; Vobject
+(OVinteger off_ival)] -> … FS_PREAD fd bufptr size off | _ -> error "pread"`; `core_run.lem:1269-1287` likewise). The
+declarations are what `typecheck_program` registers (`core_typing.lem`, the `BuiltinDecl` arm), so when the libc is compiled
+(`runtime/libc/dune`: `--sequentialise --rewrite`, which typechecks the whole file, stdlib included) upstream's truncating
+`Eproc` typing DELETES `off` from both calls: the shipped `libc.co` calls `builtin_pread`/`builtin_pwrite` with three values,
+which the runtime arms reject with `error "pread"`/`error "pwrite"` — i.e. `pread`/`pwrite` have never worked through the
+shipped libc, and nothing noticed because no test program calls them (the fork's corpora have no caller). Both files are
+byte-identical to `master` @ `b9aeedcb4`. With the argument-list guard in place the libc build fails instead, verbatim:
+
+```
+runtime/libcore/std.core:686:7: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer,pointer,integer)' was expected
+```
+
+**Proposed remedy:** add the fourth formal to both declarations in both files —
+`builtin pwrite (integer, [integer], integer, integer): eff loaded pointer`, `builtin pread (integer, pointer, integer, integer): eff
+loaded pointer` — which matches the call sites and the runtime arms; nothing else changes.
+
+**Fork status:** FIXED ahead of upstream in both stdlib files ([USER 2026-09-23], verbatim: *"Yeah, we shoudl fix and file to
+the tray, per our rule that unambiguous bugs get fixes"*); the fork's `libc.co` now carries four-argument `pread`/`pwrite`
+calls; the `tests/libc/libc.core` dump pin (no stdlib text) is unchanged — record §15.2b.
