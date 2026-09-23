@@ -5,14 +5,16 @@ This file records evidence and next actions; it does not replace the charter.
 
 ## Current status
 
-**2026-09-23: the general fail-closed policy is recorded in eight
-evidenced boundary entries. SC-G01/G04/G05 have validated producers;
-SC-G02/G03/G06/G07/G08 still require precise guards. The atomic interfaces and
-source-location transport are committed at `3f9705c9b`. Lossless value keys,
-the mechanically derived reference instance, and variadic metadata queries now
-pass all 39 Tier A+B lanes and the 864-case three-engine comparison, with no
-changed classifications or complete decoded observations and the same 40 Lean
-discrepancy IDs. Public SC checking and the whole prototype remain incomplete.**
+**2026-09-23: eight evidenced boundaries are registered. SC-G01/G04/G05 and
+the runtime SC-G06 query have validated producers. The atomic interface
+completion passes all 39 Tier A+B commands and the 864-case three-engine
+comparison, preserving all prior observations/classifications and the same
+40 Lean discrepancy/undecodable IDs. Numeric G06 preprocessing and precise
+G02/G03/G07/G08 guards remain open. Public SC checking and the whole prototype
+remain incomplete.** Lossless value keys and variadic queries are committed at
+`f93530586`; this component's [review](2026-09-23_sc-atomic-completion-review.md)
+and [evidence](2026-09-21_sc-prototype-evidence/atomic-completion/README.md)
+record its validation and the unpromoted location/scope/prefix drafts.
 Branch `arc/sc-prototype`, worktree
 `/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype`.
 Implementation base: `5407597d9eeba0259d65b728e86a860ad4614ab3`.
@@ -93,16 +95,20 @@ and [boundary register](2026-09-22_sc-boundary-register.md) record the decision.
 No additional reference was adopted. The preserved proposal's pending-question
 and source-freeze wording is historical, superseded by this entry.
 
-Next complete and validate `kill_dependency`, the remaining atomic character
-aliases and the runtime lock-free query boundary. Then continue location/RF
-composition, prefix race/consistency checking and the public operational/C entry. Source-order paths
-through all journal vertices now have a validated adapter. Next connect location,
-value and atomic synchronization information; the graph alone does not settle
-whether a conflicting pair is unordered in full happens-before. Implement and
-validate the remaining atomic operations through the actual frontend.
+Continue the substantial location/value/RF/HB and prefix-observation slice.
+The dependency builtin, character aliases and runtime lock-free query boundary
+now pass full integration. Connect the retained byte, access-group and call-scope
+drafts to the actual per-alternative machine state and precise boundary guards.
+Source-order paths through all journal vertices have a validated adapter, but
+the graph alone does not settle full happens-before. Keep interpretation
+obligations separate from independent Core faults, and internal arena completion
+separate from the outer C execution. Finish G06 preprocessing and the public
+operational/C entry without inventing a target configuration or shrinking runtime
+coverage to the scalar checker's domain.
 The [independent investigations](2026-09-21_sc-prototype-evidence/reference-followup/README.md)
 also retain concrete stream-lock and floating-value adapter findings. Missing
-implementation mechanisms remain work, not new coverage exclusions. SC-G01/G04/G05 have validated producers; the register tracks the remaining
+implementation mechanisms remain work, not new coverage exclusions. SC-G01/G04/G05
+and runtime G06 have validated producers; the register tracks the remaining
 precise guards. All 21 typed SC fault constructors at the initial register
 checkpoint were accounted for; their categories must not all
 be interpreted as upstream semantic gaps.
@@ -789,3 +795,59 @@ integration. The ignored draft's
 generation and identity-macro tests do not certify its actual builtin/query. No
 customer write, mainline merge, push, dependency change or new reference is
 authorized by this checkpoint.
+
+
+## Atomic interface completion — component validation, September 23
+
+Parent `f93530586`; the [review](2026-09-23_sc-atomic-completion-review.md)
+records available `kill_dependency`, character alias and runtime lock-free query
+rules. Reached configuration queries retain argument effects and prior faults
+and report a precise typed gap without loading the object. The preprocessor
+constant definitions are unchanged; their silent numeric fallback remains an
+open SC-G06 defect. Component evidence includes 31 paired dependency C cases,
+17 paired query runtime cases, eight reviewed malformed calls, six alias cases,
+25 paired Core groups, both parser suites, compiled internal-evaluator transport
+and three production-lowering mutations with their unchanged control.
+Failed instrument/expectation attempts remain retained. An existing atomic
+initializer conversion defect is recorded separately as SC-D05 and local draft
+45; no new concurrency refusal or sequential repair is adopted.
+
+Next: complete manifest/freshness review, normal rebuilding and frozen full
+39-command validation plus the 864-case three-engine comparison. This is an
+intermediate component slice. Continue location/value/RF composition, full HB,
+prefix faults, remaining precise guards and the public C/operational interface.
+
+
+## Atomic interface component checkpoint, September 23
+
+Parent `f93530586`; [review](2026-09-23_sc-atomic-completion-review.md) and
+[retained evidence](2026-09-21_sc-prototype-evidence/atomic-completion/README.md).
+All 39 Tier A+B commands pass on frozen sources with no artifact issue. The
+mandatory 864-case three-engine report exactly preserves the prior observations,
+classifications and 40 discrepancy/undecodable IDs. The mistaken 8 GiB per-test
+invocation, its correctly failed kill plant, interruption and full retry at the
+standard 4 GiB per-test cap remain retained. No baseline, semantic source or
+resource bound was changed to conceal a failed result.
+
+Runtime G06, dependency evaluation and character aliases have completed this
+component validation. G06 numeric preprocessing remains an open defect. The
+default zapping claim in E05/P04 is corrected from actual paired memory-body
+evidence: target lifetime ends but stored pointer bytes remain unchanged under
+the existing disabled switch. Lossless byte identity is not universal RF
+equivalence; actual byte copying can change copy metadata without changing the
+pointer value.
+
+Independent frozen-period drafts are retained, not promoted: byte keys and
+access grouping, actual definition/call/parameter identity, shared per-branch
+call scopes, and prefix sequencing queries. Their source, kernel laws, actual
+native C/Core controls, paired component controls and failed predecessors have
+explicitly bounded claims. A real-service counterexample requires keeping
+interpretation obligations separately from later Core faults. An internal arena
+completion during startup is not a public C completion. See the current boundary
+register and evidence follow-up notes.
+
+Continue the substantial location/value/RF/HB and prefix-observation integration
+slice, including precise G02/G03/G07/G08 guards, G06 preprocessing, and the public
+operational/C interface. Do not stop at this component commit or call the SC
+prototype complete. The customer remains strictly read-only; no merge, push,
+dependency or reference change follows from this checkpoint.

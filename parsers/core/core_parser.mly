@@ -1125,7 +1125,7 @@ let mk_file decls =
 %token NULL TRUE FALSE UNIT_VALUE
 %token ARRAY_SHIFT MEMBER_SHIFT
 %token SOURCE_PEXPR SOURCE_EXPR
-%token UNDEF ERROR MODEL_GAP UNSPECIFIED_ATOMIC_ORDER POINTER_ATOMIC_FETCH
+%token UNDEF ERROR MODEL_GAP UNSPECIFIED_ATOMIC_ORDER POINTER_ATOMIC_FETCH ATOMIC_LOCK_FREE_CONFIGURATION
 %token<string> CSTRING STRING
 %token IF THEN ELSE
 %nonassoc ELSE
@@ -1586,6 +1586,9 @@ pexpr:
 | MODEL_GAP LPAREN UNSPECIFIED_ATOMIC_ORDER RPAREN
     { let loc = region ($startpos, $endpos) NoCursor in
       Pexpr ([Aloc loc], (), PEmodel_gap (loc, Model_gap_unspecified_atomic_order)) }
+| MODEL_GAP LPAREN ATOMIC_LOCK_FREE_CONFIGURATION RPAREN
+    { let loc = region ($startpos, $endpos) NoCursor in
+      Pexpr ([Aloc loc], (), PEmodel_gap (loc, Model_gap_atomic_lock_free_configuration)) }
 | MODEL_GAP LPAREN POINTER_ATOMIC_FETCH RPAREN
     { let loc = region ($startpos, $endpos) NoCursor in
       Pexpr ([Aloc loc], (), PEmodel_gap (loc, Model_gap_pointer_atomic_fetch)) }

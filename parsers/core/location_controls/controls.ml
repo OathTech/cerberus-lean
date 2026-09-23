@@ -25,6 +25,7 @@ let gap = pe (PEmodel_gap (Cerb_location.other "gap body", Model_gap_unspecified
 let action = e (Eaction (Paction (Pos, Action (Cerb_location.point p, (), SignalFence Cmm_csem.Seq_cst))))
 let cases = [
   "all-locations", e (Epure gap);
+  "lock-free-gap", e (Epure (pe (PEmodel_gap (Cerb_location.other "lock-free configuration", Model_gap_atomic_lock_free_configuration))));
   "unknown-direct", Expr ([],Epure (Pexpr ([],(),PEundef (Cerb_location.unknown, Undefined.UB045a_division_by_zero))));
   "nested-pure", e (Epure (pe (PEif (bool, failure, gap))));
   "list-nodes", e (Epure (pe (PEctor (Ccons, [gap; pe (PEctor (Ccons, [failure; Pexpr ([],(),PEctor (Cnil BTy_unit,[]))]))]))));

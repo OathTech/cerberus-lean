@@ -493,6 +493,7 @@ let pp_ail_builtin = function
   | AilBatomic b ->
     begin match b with
       | AilBAsignal_fence -> !^"atomic_signal_fence"
+      | AilBAis_lock_free -> !^"atomic_is_lock_free"
       | AilBAthread_fence -> !^"atomic_thread_fence"
       | AilBAstore -> !^"atomic_store_explicit"
       | AilBAload -> !^"atomic_load_explicit"
@@ -501,6 +502,7 @@ let pp_ail_builtin = function
       | AilBAcompare_exchange_weak -> !^"atomic_compare_exchange_weak_explicit"
       | AilBAfetch_key -> !^"atomic_fetch_key_explicit"
       | AilBAinit -> !^"atomic_init"
+      | AilBAkill_dependency -> !^"kill_dependency"
       | AilBAfetch op ->
           let key = match op with
             | Add -> "add" | Sub -> "sub" | Band -> "and"

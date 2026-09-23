@@ -294,6 +294,8 @@ let translate_builtin_varnames (Symbol.Identifier _ str) =
     | "__cerbvar_EXDEV" -> const_ic $ translate_errno str
     
     (* stdatomic.h *)
+    | "__cerbvar_atomic_is_lock_free" ->
+        Just (AilEbuiltin (AilBatomic AilBAis_lock_free))
     | "__cerbvar_memory_order_relaxed" ->
         const_ic $ encode_memory_order Cmm_csem.Relaxed
     | "__cerbvar_memory_order_consume" ->
@@ -310,6 +312,8 @@ let translate_builtin_varnames (Symbol.Identifier _ str) =
         Just (AilEbuiltin (AilBatomic AilBAsignal_fence))
     | "__cerbvar_atomic_thread_fence" ->
         Just (AilEbuiltin (AilBatomic AilBAthread_fence))
+    | "__cerbvar_kill_dependency" ->
+        Just (AilEbuiltin (AilBatomic AilBAkill_dependency))
     | "__cerbvar_atomic_init" ->
         Just (AilEbuiltin (AilBatomic AilBAinit))
     | "__cerbvar_atomic_store_explicit" ->

@@ -26,7 +26,7 @@ intentional coverage. Never describe a proposed guard as implemented.
 | SC-G03 | Concurrent use of a runtime stream requires missing stream synchronization | Precise guard and call/stream identification outstanding | Explicit runtime-model gap; library implementation races must not become ISO caller UB |
 | SC-G04 | Executed abstract unspecified atomic memory order | Typed Core producer implemented; paired controls, full Tier A+B and three-engine comparison pass | Preserve completed arguments and independent known-order UB; no chosen order or synthetic conditional UB |
 | SC-G05 | Generic atomic pointer fetch add/sub in the contradictory C11/reference domain | Typed update-body producer implemented; paired controls, full Tier A+B and three-engine comparison pass | Preserve checked object read; no pointer arithmetic result or store invented |
-| SC-G06 | Consuming lock-free properties without a pinned target configuration | No complete query/constant/preprocessor guard; numeric `#if` still silently treats absent markers as zero | Explicit configuration gap where a property is required; no invented all-lock-free or never-lock-free policy |
+| SC-G06 | Consuming lock-free properties without a pinned target configuration | Runtime query producer passes component controls, all 39 full lanes and the unchanged 864-case comparison; numeric `#if` still silently treats absent markers as zero | Explicit configuration gap where a property is required; no invented all-lock-free or never-lock-free policy |
 | SC-G07 | Unsequenced C atomic evaluations encounter the pinned Cmm function-call assumption | Actual C traces and predicate discrepancy retained; precise composition guard outstanding | Explicit sequencing/composition gap; preserve independently justified faults and actual source order |
 | SC-G08 | Concurrent library operations depend on omitted synchronization of shared internal state | Actual `at_quick_exit` registration traces retained; precise internal-object guard outstanding | Explicit runtime-model gap; omitted implementation protection is not caller UB |
 
@@ -184,9 +184,16 @@ The candidate division-by-zero marker changes stringification and is unadopted.
 `atomic_flag`'s guaranteed flag-operation behavior is distinct from the generic
 query's type domain; the current struct representation cannot settle that domain.
 
-**Current behavior:** no dedicated producer or complete preprocessing guard is
-installed. The retained `implementation-1` is unbuilt and unadopted. The silent
-preprocessing fallback is an open defect, not a supported configuration.
+**Current behavior:** the [atomic completion slice](2026-09-23_sc-atomic-completion-review.md)
+implements the runtime query's available argument rules and emits the typed
+`Model_gap_atomic_lock_free_configuration`. Paired C controls retain completed
+argument effects and prior faults; null pointers do not trigger object loads.
+Both parsers and the internal constant evaluator transport the identity and
+location. Component controls, all 39 full lanes and the unchanged 864-case
+comparison pass. The ten constant definitions are unchanged and no complete
+preprocessing guard is installed.
+The silent preprocessing fallback is an open defect, not a supported configuration.
+The earlier draft's unbuilt status is superseded only for the runtime path.
 
 **Revisit:** a pinned target configuration and its operational query semantics,
 or precise unsupported diagnostics for every consuming interface. Available
@@ -261,9 +268,9 @@ turn every listed feature into a semantic-gap refusal.
 | ID | Case, evidence and current status | Completion or review obligation |
 |---|---|---|
 | SC-P01 | `Driver.drive true` ends recorded completion with `SC_fault_checker_pending`; public race/consistency and program-level outcome interface unfinished | Connect prefix fault detection, SC consistency and explicit incomplete outcomes; retain faults before divergence and across rejected candidates. A refusal is not a completed checker. |
-| SC-P02 | Exchange/operator lowering, qualifier preservation and aggregate CAS arguments are [validated](2026-09-22_sc-atomic-update-review.md); integer fetch, callable flags/fences, runtime orders, signal fences and non-synchronizing initialization now have a [validated interface slice](2026-09-22_sc-atomic-surface-review.md). Remaining public aliases, `kill_dependency`, query/configuration handling and final interface audit are outstanding | Finish available operation-specific semantics through actual C lowering and journal. `kill_dependency` must preserve evaluation and terminate dependency without strengthening consume; its absence is port work. SC-G06 identifies unresolved configuration, not permission to omit available query rules. Preserve single evaluation, arithmetic and failure prefixes. Legacy conditional `RMW` is not unconditional exchange. |
+| SC-P02 | Exchange/operator lowering, qualifier preservation and aggregate CAS arguments are [validated](2026-09-22_sc-atomic-update-review.md); integer fetch, callable flags/fences, runtime orders, signal fences and non-synchronizing initialization now have a [validated interface slice](2026-09-22_sc-atomic-surface-review.md). Public character aliases, `kill_dependency` and the runtime query producer now have [passing component controls](2026-09-23_sc-atomic-completion-review.md), with all 39 full lanes and the unchanged 864-case comparison passing; preprocessing configuration and the final interface audit remain outstanding | Finish available operation-specific semantics through actual C lowering and journal. `kill_dependency` must preserve evaluation and terminate dependency without strengthening consume; its absence is port work. SC-G06 identifies unresolved configuration, not permission to omit available query rules. Preserve single evaluation, arithmetic and failure prefixes. Legacy conditional `RMW` is not unconditional exchange. |
 | SC-P03 | Scalar Cmm RF uses instantiated `MemValue` equality: identical-bit NaNs compare unequal; opposite signed zeros compare equal in the actual four predicate probes. A separate lossless key/interner/reference carrier now has [paired component controls and kernel laws](2026-09-23_sc-value-metadata-review.md); the full 39-command ladder and unchanged 864-case three-engine comparison pass, while actual RF integration remains pending | Finish the logical-value/representation/provenance adapter. Raw keys preserve typed views; their equality is not automatically cross-view RF equality. Do not restrict C NaNs or change generic memory equality. See [value audit](2026-09-21_sc-prototype-evidence/reference-followup/cmm-float-values-review.md). Predicate rejection alone is not a C fault. |
-| SC-P04 | Effect inventory E03–E05/E10: allocation, deallocation, metadata zapping and address reuse; scalar SC checker excludes lifetime actions and its lifetime sketch is commented out | Preserve concrete lifetime transitions and derive composition from C/DR403. Keep dynamic deallocation/reuse distinct from automatic lifetime end; zapping is not an invented source store. No blanket dynamic-allocation refusal. A concrete unresolved case must get its own SC-G entry if found. |
+| SC-P04 | Effect inventory E03–E05/E10: allocation, deallocation, lifetime metadata and address reuse; native pointer zapping is behind a switch disabled in the matched profile; scalar SC checker excludes lifetime actions and its lifetime sketch is commented out | Preserve concrete lifetime transitions and derive composition from C/DR403. Keep dynamic deallocation/reuse distinct from automatic lifetime end; zapping is not an invented source store. No blanket dynamic-allocation refusal. A concrete unresolved case must get its own SC-G entry if found. |
 | SC-P05 | E21: abstract varargs ids/cursors are preserved. The per-ID query now has [ten paired groups, eight paired actual C traces and kernel origin/order laws](2026-09-23_sc-value-metadata-review.md); the full slice passes integration; five additional publication controls separate source-only pairs from full HB, while public integration remains pending | Connect the actual full hb relation, prefix-fault policy and ordinary object conflicts. The source-only selected queries are diagnostics, not SC verdicts. Preserve `va_arg` cursor updates, independent copies and deletion; no invented byte writes or blanket variadic-call refusal. The original [source audit](2026-09-21_sc-prototype-evidence/varargs/README.md) remains available guidance. |
 | SC-P06 | Helper source order/resumption, child errno, SC fences and CAS were originally open mechanisms; current slices have implemented controls/laws | Retain completed evidence and finish correspondence/interface integration. Do not relabel these as upstream gaps; SC fence runtime coverage uses the reviewed fence-aware reference, not the narrower scalar checker alone. |
 | SC-P07 | Resolved in the validated interface slice: Core text transport dropped libc source locations. Explicit expression/action/failure locations restore exact observations for both original flag failures; 322 parser checks and full integration pass | Retain the [before/after evidence](2026-09-21_sc-prototype-evidence/atomic-surface-location-transport/README.md) and regression controls. This was port work, not an upstream semantic gap; no locations were removed from comparison and no unrewritten metadata bodies substituted. The format does not claim lossless transport of every Core metadata field. |
@@ -276,15 +283,16 @@ turn every listed feature into a semantic-gap refusal.
 | SC-D02 | Memory observer or suspension unavailable in another object-model instance | Explicit `SC_fault_observer_unavailable` / `SC_fault_suspension_unavailable`; concrete default is the charter instance. Supporting another instance needs its effect implementation, never an empty journal. |
 | SC-D03 | Executed memory order outside the named SC model | `SC_fault_order` with request kind. Preserve exact order; do not silently strengthen it. Separate invalid operation-specific orders from merely out-of-model orders when the final outcome interface is connected. |
 | SC-D04 | E23 concrete memory intrinsic is already unsupported; other models have different implementations | Preserve model-specific failure. It is not an effect-free intrinsic or authority to disable another model's operation. |
-| SC-D05 | Existing upstream frontend limitations, including bitfields; existing memcpy-overlap UB-check omission; floating unary-minus lowering described below | Preserve and disclose individual upstream behavior/limitations. The policy is not authority to silently change existing sequential semantics or ban every memcpy. Source checklist: [effect inventory](2026-09-21_sc-effect-inventory.md). |
+| SC-D05 | Existing upstream frontend limitations, including bitfields; existing memcpy-overlap UB-check omission; floating unary-minus and atomic initializer lowering described below | Preserve and disclose individual upstream behavior/limitations. The policy is not authority to silently change existing sequential semantics or ban every memcpy. Source checklist: [effect inventory](2026-09-21_sc-effect-inventory.md). |
 | SC-D06 | Fuel/resource exhaustion, blocked execution, ordinary model errors and C UB | Preserve distinct payloads and states. Exhaustion does not establish safety; blocking is not normal value completion; implementation assertions/backtraces are not C semantics. |
 
 The 21 constructors of `Sc_runtime.sc_fault` at the audited checkpoint are
 accounted for by SC-G01, SC-P01 and SC-D01–D03. Their current coarse category
 `SC_failure_representation` includes both SC-G01 and size disagreement; consumers
 must use the typed identity, not assume that category means upstream ambiguity.
-The planned SC-G02/03/06/07/08 outcomes need their own identities and contextual
-evidence. SC-G04/05 use separate typed Core `Errors.Model_gap` identities.
+The planned SC-G02/03/07/08 outcomes need their own identities and contextual
+evidence. SC-G04/05 and the runtime SC-G06 producer use separate typed Core
+`Errors.Model_gap` identities; SC-G06 preprocessing remains unguarded.
 
 **SC-D05 observation, atomic-update validation:** the floating unary-minus arm
 in `Translation` lowers `-e` to `0.0 - e`; this arm is byte-identical to the
@@ -297,6 +305,20 @@ exchange path with the intended input. See the
 pre-existing sequential lowering behavior; no new SC guard, arithmetic repair
 or blanket floating-point refusal is claimed. Any repair must identify its
 ISO/reference basis and undergo shared-model validation.
+
+**SC-D05 observation, atomic completion:** the unchanged declaration lowering
+misses conversions for `_Atomic(int*) x=0`, `_Atomic(unsigned char) x=257`
+and `_Atomic(int) x=3.9`. Pristine and fork ordinary drivers fail in all three;
+four conversion controls complete identically. The SC query control preserves
+the prior pointer-initializer type error and prefix rather than replacing it
+with a configuration gap. The [local upstream draft](upstream-tray/45-atomic-declaration-initializer-conversions.md)
+records the exact source basis and prospective repair. No repair is adopted.
+Two query static-assert controls, including a short-circuited call, are rejected
+by the existing syntactic integer-constant-expression classifier before the
+internal evaluator is reached. Separate compiled Ail controls exercise that
+evaluator's typed-gap transport; they do not establish C acceptance. These
+individual existing limitations do not justify blanket atomic or constant-
+expression refusals.
 
 The subsequent [source-graph slice](2026-09-22_sc-source-graph-review.md) adds
 `sc_graph_issue` diagnostics for duplicate/missing occurrence IDs, erroneous
@@ -323,3 +345,33 @@ outcome, minimal regression and distinguishing controls, checked state/effect
 preservation, paired OCaml/Lean evidence, and applicable integration results.
 On resolution, retain the ID and evidence, mark the case resolved with the new
 pinned reference and replacement behavior, and keep its regression controls.
+
+
+## September 23 integration findings
+
+The [atomic-interface checkpoint](2026-09-23_sc-atomic-completion-review.md)
+validates the runtime G06 producer; numeric preprocessing remains unguarded.
+No G02/G03/G07/G08 producer is claimed by that checkpoint.
+
+- **SC-P04 / SC-P03:** paired actual memory-body controls preserve stored pointer
+  representations across target lifetime end in the current profile while
+  marking/removing the target allocation. `SW_zap_dead_pointers` is disabled;
+  its native alternative is not a default SC effect or a newly authorized
+  switch port. Actual memcpy preserves pointer value/bits/provenance while
+  losing byte-copy indices. Thus lossless byte-key equality alone is not RF
+  value equality. [Evidence and corrected expectation](2026-09-21_sc-prototype-evidence/atomic-completion/followup/byte-metadata.md).
+- **SC-G07 / SC-P01:** the actual service observer finds the unresolved sequencing
+  witness before a later UB035 transition. Immediate refusal there would hide
+  an independent Core fault. Keep interpretation obligations alongside actual
+  continuations and faults, forbidding a supported certificate while unresolved.
+  Missing-result primitives still stop their actual path. [Timing evidence](2026-09-21_sc-prototype-evidence/atomic-completion/followup/prefix-faults.md).
+- **SC-G03 / SC-G08:** artifact-bound definitions, actual call boundaries and
+  existing parameter reads now have isolated diagnostics and shared-query laws.
+  They distinguish slots from FILE values, repeated calls, recursion and
+  same-name source decoys. They remain drafts; full HB/resource-scope and fault
+  causality are required before a guard. [Scope evidence](2026-09-21_sc-prototype-evidence/atomic-completion/followup/call-scopes.md).
+- **SC-P01:** global initialization also runs the internal machine to
+  `SC_halted`/`prepare_exit`. Those events alone are not whole-C-program
+  completion. The public interface must preserve the actual outer
+  initialization/main/finalization protocol. This is available-guidance port
+  work, not an upstream ambiguity or a new runtime exclusion.

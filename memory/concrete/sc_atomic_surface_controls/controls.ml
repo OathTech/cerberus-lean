@@ -86,7 +86,8 @@ let () =
     let _,_,rows=run (fun _ _ -> seq (Expr ([],Epure (Pexpr ([],(),PEundef (loc,Undefined.UB045a_division_by_zero))))) (gap_expr gap)) in
     check (name^": prior C fault remains C fault") (all (function
       | N.Killed (_,N.Undef0 (_,[Undefined.UB045a_division_by_zero])),_,_ -> true | _ -> false) rows)
-  ) [Model_gap_unspecified_atomic_order;Model_gap_pointer_atomic_fetch];
+  ) [Model_gap_unspecified_atomic_order;Model_gap_pointer_atomic_fetch;
+     Model_gap_atomic_lock_free_configuration];
   let open Cmm_csem in
   let orders=[Relaxed;Consume;Acquire;Release;Acq_rel;Seq_cst] in
   check "all six signal orders retain exact occurrences without memory effects"

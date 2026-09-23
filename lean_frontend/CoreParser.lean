@@ -1392,6 +1392,7 @@ partial def pPexprAtom (minPrec : Nat := 0) : P PE := do
       let gap ← match ← lexIdent with
         | "unspecified_atomic_order" => pure Model_gap_unspecified_atomic_order
         | "pointer_atomic_fetch" => pure Model_gap_pointer_atomic_fetch
+        | "atomic_lock_free_configuration" => pure Model_gap_atomic_lock_free_configuration
         | name => fail s!"unknown model gap: {name}"
       let _ ← pstring ")"
       let endB ← getByte

@@ -452,7 +452,8 @@ def testExprAtoms : TestM Unit := do
 
   -- Typed model gaps survive parsing with their distinct identities.
   for (name, gap) in [("unspecified_atomic_order", Model_gap_unspecified_atomic_order),
-      ("pointer_atomic_fetch", Model_gap_pointer_atomic_fetch)] do
+      ("pointer_atomic_fetch", Model_gap_pointer_atomic_fetch),
+      ("atomic_lock_free_configuration", Model_gap_atomic_lock_free_configuration)] do
     assertEq s!"model gap identity {name}"
       ((run CoreParser.pPexpr s!"model_gap({name})").map fun parsed => match parsed with
         | Pexpr _ _ (PEmodel_gap _ actual) => actual == gap

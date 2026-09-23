@@ -229,10 +229,12 @@ and generic_pattern 'sym =
 type core_model_gap =
  | Model_gap_unspecified_atomic_order
  | Model_gap_pointer_atomic_fetch
+ | Model_gap_atomic_lock_free_configuration
 
 let core_model_gap_name = function
  | Model_gap_unspecified_atomic_order -> "unspecified_atomic_order"
  | Model_gap_pointer_atomic_fetch -> "pointer_atomic_fetch"
+ | Model_gap_atomic_lock_free_configuration -> "atomic_lock_free_configuration"
 end
 
 type generic_pexpr_ 'bty 'sym =  (* Core pure expressions *)

@@ -188,6 +188,11 @@ let evalConstantExpressionAux sup address_space_top loc (*TODO*)(ailnames, stdli
         match execs with
           | [(ND.Active dres, _, _ )] ->
               Eff.return (dres.Driver.dres_core_value, sup_after_init)
+          | [(ND.Killed _ (ND.Other (Driver.DErr_core_run (Errors.Model_gap gap_loc gap))), _, _)] ->
+              (* Constant-expression consumption needs the missing target
+                 configuration too; preserve the typed gap, never a host assert
+                 or a fabricated integer/UB. *)
+              Eff.fail (gap_loc, Errors.CORE_RUN (Errors.Model_gap gap_loc gap))
           | [(ND.Killed _ (ND.Undef ub_loc [ub]), _, _)] ->
               Eff.fail (ub_loc, Errors.DESUGAR (Errors.Desugar_UndefinedBehaviour ub))
           | [(ND.Killed _ (ND.Error loc "§6.6#4 failed"), _, _)] ->

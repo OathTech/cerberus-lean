@@ -14,6 +14,15 @@ concrete proposed remedy and a classification (TRUE BUG / INTENDED GAP /
 UNCLEAR) with justification; this ranking puts true bugs first and
 questions last.
 
+## Added September 23, 2026
+
+[45 — atomic declaration initializer conversions](45-atomic-declaration-initializer-conversions.md):
+TRUE BUG, local draft, not filed. Three legal scalar initializers fail in pinned
+pristine and fork; four controls complete identically. The prospective remedy
+converts through the non-atomic value type while retaining atomic allocation
+and initialization types. No repair, current-upstream verification or duplicate
+search is claimed. See the draft for scope and AI provenance.
+
 ## Ranking (by upstream value)
 
 1. **01-float-mul-is-addition.md** — TRUE BUG. `Cerb_floating.mul` is

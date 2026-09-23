@@ -30,6 +30,7 @@ type atomic_operations_synopsys =
   | AtomicCompareExchange
   | AtomicInit
   | AtomicFetch
+  | AtomicIsLockFree
 
 type illegal_alignas =
   | IllegalAlignas_typedef
@@ -265,6 +266,8 @@ let std_of_atomic_operation_synopsis = function
       ["§7.17.2.2#1"]
   | AtomicFetch ->
       ["§7.17.7.5#2"]
+  | AtomicIsLockFree ->
+      ["§7.17.5.1#1"]
 end
 
 let std_of_violation = function

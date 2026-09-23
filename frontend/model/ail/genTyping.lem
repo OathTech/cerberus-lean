@@ -892,6 +892,25 @@ let rec annotate_expression annotate_block sigm gamm ctx (AnnotatedExpression ()
         let loc_cursor = Loc.with_cursor loc' in
         let memorder_ty = Builtins.atomic_memory_order_type in
         match (b, args) with
+        | (AilBatomic AilBAis_lock_free, []) ->
+            E.constraint_violation loc_cursor (FunctionCallTooFewArguments 1 0)
+        | (AilBatomic AilBAis_lock_free, object_e :: args) ->
+            annotate_rvalue object_e >>= fun (object_e', object_gty) ->
+            match object_gty with
+              | GenPointer qs object_ty ->
+                  guard_violation loc_cursor
+                    (AtomicAddressArgumentMustBeAtomic AtomicIsLockFree object_ty)
+                    (AAux.is_atomic object_ty) >>= fun () ->
+                  annotate_arguments loc_cursor false args (Just []) >>= fun rest ->
+                  let params = [(no_qualifiers, Ctype [] (Pointer qs object_ty), false)] in
+                  let ret_ty = Ctype [] (Basic (Integer Bool)) in
+                  let fn_ty = GenRValueType (GenFunction (no_qualifiers, ret_ty) params false) in
+                  E.return (AilEcall (AnnotatedExpression fn_ty annots' loc' (AilEbuiltin b))
+                    (object_e' :: rest), GenRValueType (inject_type ret_ty))
+              | gty ->
+                  E.constraint_violation loc_cursor
+                    (AtomicAddressArgumentMustBePointer AtomicIsLockFree gty)
+            end
         | (AilBatomic AilBAthread_fence, args) ->
             let parameters = [(no_qualifiers, memorder_ty, false)] in
             annotate_arguments loc_cursor false args (Just parameters) >>= fun args' ->
@@ -905,6 +924,23 @@ let rec annotate_expression annotate_block sigm gamm ctx (AnnotatedExpression ()
             let function_type = GenRValueType (GenFunction (no_qualifiers, Ctype [] Void) parameters false) in
             E.return (AilEcall (AnnotatedExpression function_type annots' loc' (AilEbuiltin b)) args',
                       GenRValueType GenVoid)
+
+        | (AilBatomic AilBAkill_dependency, args) ->
+            (* 7.17.3.1: preserve the argument's type after normal argument
+               decays/lvalue conversion, without default argument promotions. *)
+            match args with
+              | [value_e] ->
+                  annotate_rvalue value_e >>= fun (value_e', value_gty) ->
+                  GenTypesAux.interpret_genType loc_cursor (Implementation.integerImpl ()) value_gty >>= fun value_ty ->
+                  well_typed_assignment sigm false FunctionParameterAsSimpleAssignment loc_cursor
+                    value_ty value_gty value_e' >>= fun () ->
+                  let parameters = [(no_qualifiers, value_ty, false)] in
+                  let function_type = GenRValueType (GenFunction (no_qualifiers, value_ty) parameters false) in
+                  E.return (AilEcall (AnnotatedExpression function_type annots' loc' (AilEbuiltin b)) [value_e'],
+                            GenRValueType value_gty)
+              | [] -> E.constraint_violation loc_cursor (FunctionCallTooFewArguments 1 0)
+              | _ -> E.constraint_violation loc_cursor (FunctionCallTooManyArguments 1 (List.length args))
+            end
 
         | (AilBatomic AilBAinit, object_e :: args) ->
             annotate_rvalue object_e >>= fun (object_e', object_gty) ->

@@ -108,6 +108,8 @@ type ail_builtin_atomic =
   | AilBAinit
   | AilBAfetch of arithmeticOperator
   | AilBAsignal_fence
+  | AilBAkill_dependency
+  | AilBAis_lock_free
 
 type ail_builtin_linux =
   | AilBLfence

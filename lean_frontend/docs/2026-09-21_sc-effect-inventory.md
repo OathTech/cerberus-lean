@@ -45,7 +45,7 @@ representation, dynamic allocation, or hidden helper accesses.
 | E02 `D:705`, `M:1675`, `L:2474` store | Checked write, encoded bytes, function-pointer map, union member, optional readonly locking, last-used metadata; returns footprint | Record equal-value writes too; keep access/type/readonly checks before mutation | Primitive committed write; same-value race, overlapping offsets, disjoint subobjects |
 | E03 `D:672`, `M:1428`, `L:2256` allocate region | Allocator cursor/id state, live allocation and dynamic address; returns pointer | Fresh identity and exact OOM state; allocation is not an ordinary store | Allocation installation; zero size, exhausted address space, repeated allocations |
 | E04 `D:682`, `M:1296`, `L:2210` create object | Allocation plus unspecified representation or supplied initialization, readonly status and function-pointer encoding; returns pointer | Optional initialization bypasses `store`; distinguish unspecified representation from an initialized value; preserve allocator changes on later failure | Creation and initialized bytes at their source; strings, const objects, temporaries, atomic initialization |
-| E05 `D:739`, `M:1472`, `L:2272` kill | Lifetime end, allocation removal/dead list, pointer zapping in other stored representations; returns unit | Checked static/dynamic deallocation, preserved provenance rules; zapping is model metadata, not an invented source-level write by every affected thread | Lifetime end plus explicit metadata classification; invalid free, stale pointer, copied pointer, reuse |
+| E05 `D:739`, `M:1472`, `L:2272` kill | Lifetime end and allocation removal/dead list; returns unit. Native pointer zapping is behind a switch disabled in the matched profile | Checked static/dynamic deallocation, preserved provenance rules; zapping is model metadata, not an invented source-level write by every affected thread | Lifetime end plus explicit metadata classification; invalid free, stale pointer, copied pointer, reuse |
 | E06 `D:715` ordinary `SeqRMW` | Checked load, Core calculation, checked store; returns old/new values and updates trace | This is ordinary C increment/update, not an atomic RMW. Preserve exclusion/source-sequencing rules. Failed calculation/store retains the read and preceding state | E01/E02 with distinct event ids and correct continuation annotations; `x++ + y`, `x++ + x`, failed update |
 | E07 future atomic RMW/CAS requests | Object read and possible write; CAS also reads expected and may update expected | Strong/weak mismatch and spurious failure; object RMW indivisibility is distinct from expected-object effects; validate success/failure orders and operand evaluation | E01/E02 grouped according to reference action; exchange, CAS equal/unequal/spurious, effectful arguments |
 | E08 `D:816`, `M:2643`, `L:2883` memcpy | Forward checked unsigned-char load/store pairs; returns destination | Current request runs the existing loop without scheduler yields. Preserve partial prefix if a later read/write fails; preserve upstream overlap omission as an upstream issue | Primitive byte effects, not final diff; copy/read, copy race, unchanged destination bytes, mid-copy fault |
@@ -89,7 +89,7 @@ representation, dynamic allocation, or hidden helper accesses.
    continuation update. Legacy whole-arena tagging invents `sb` edges for
    unsequenced siblings. Source `sb`, `asw`, `hb` and scheduling order remain
    separate; Cmm candidate membership and fault detection remain separate too.
-3. Lifetime metadata (including pointer zapping), allocator reuse ordering and
+3. Lifetime metadata, allocator reuse ordering and
    abstract varargs state require a documented composition with concurrency.
    The scalar SC checker excludes Alloc/Dealloc; that is a checker limitation,
    not authorization to exclude dynamic memory at runtime.
@@ -103,3 +103,13 @@ representation, dynamic allocation, or hidden helper accesses.
 The September 19 byte/copy/race reproductions are retained in the audit evidence
 directory. They are historical measurements until rerun on fresh prototype
 artifacts. This inventory does not count those failures as already repaired.
+
+
+September 23 clarification: E05 inventories the native zapping source path,
+not an enabled effect of the concrete matched profile. Native kill invokes it
+only with `SW_zap_dead_pointers`; Lean's supported switch value is false and
+its alternative explicitly refuses. Paired actual-body controls show target
+removal/dead identity with unchanged stored pointer bytes and no extra C store.
+The failed contrary expectation and its source-based correction are retained in
+the [byte-metadata follow-up](2026-09-21_sc-prototype-evidence/atomic-completion/followup/byte-metadata.md).
+No configuration or semantics was changed to satisfy that expectation.

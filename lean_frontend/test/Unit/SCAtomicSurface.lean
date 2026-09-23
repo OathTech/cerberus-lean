@@ -33,7 +33,8 @@ def main (args : List String) : IO UInt32 := do
   let check := fun label pass => do
     IO.println s!"{label}: {pass}"
     return pass
-  for gap in [Model_gap_unspecified_atomic_order, Model_gap_pointer_atomic_fetch] do
+  for gap in [Model_gap_unspecified_atomic_order, Model_gap_pointer_atomic_fetch,
+      Model_gap_atomic_lock_free_configuration] do
     let name := core_model_gap_name gap
     let rows := runBody fuel (gapExpr gap)
     good := (← check s!"{name}: direct typed refusal"

@@ -2875,6 +2875,24 @@ end
             A.AnnotatedExpression annot [] loc (A.AilEassign e1 (A.AnnotatedExpression (GenTypes.GenRValueType arith_gty) [] loc (A.AilEbinary e1_rvalue (A.Arithmetic aop) e2)))
           end
       
+      | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBatomic A.AilBAkill_dependency))) es ->
+          (* 7.17.3.1 identity value, with exactly the original argument effects.
+             The current executor has no dependency transport (Core_run's dd
+             is empty), and SC rejects consume execution. This lowering adds
+             no call boundary, fence, yield or source-order edge. A future
+             dependency-aware executor must retain the dependency cut here. *)
+          match es with
+            | [value_e] -> self value_e
+            | _ -> illTypedAil loc "kill_dependency expects one argument"
+          end
+      | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBatomic A.AilBAis_lock_free))) [object_e] ->
+          (* DR465: the pointed-to type determines the query; null is allowed.
+             Evaluate the argument exactly once, without an object access. The
+             pinned target has no lock-free configuration (registered SC-G06). *)
+          self object_e >>= fun object_core ->
+          E.wrapped_fresh_symbol (C.BTy_loaded C.OTy_pointer) >>= fun object_wrp ->
+          E.return (Caux.mk_sseq_e object_wrp.E.sym_pat object_core
+            (Caux.mk_pure_e (Caux.mk_model_gap_pe loc C.Model_gap_atomic_lock_free_configuration)))
       | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBatomic A.AilBAinit))) es ->
           translate_atomic_explicit loc self stdlib AtomicInit es
       | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBatomic A.AilBAstore))) es ->

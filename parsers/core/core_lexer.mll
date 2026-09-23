@@ -95,6 +95,7 @@ let keywords =
       ("model_gap", T.MODEL_GAP);
       ("unspecified_atomic_order", T.UNSPECIFIED_ATOMIC_ORDER);
       ("pointer_atomic_fetch", T.POINTER_ATOMIC_FETCH);
+      ("atomic_lock_free_configuration", T.ATOMIC_LOCK_FREE_CONFIGURATION);
       ("error",        T.ERROR       );
       ("let",          T.LET         );
       ("in",           T.IN          );

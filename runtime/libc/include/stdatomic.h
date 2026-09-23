@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <uchar.h>
 
 #define ATOMIC_BOOL_LOCK_FREE      __cerbvar_ATOMIC_BOOL_LOCK_FREE
 #define ATOMIC_CHAR_LOCK_FREE      __cerbvar_ATOMIC_CHAR_LOCK_FREE
@@ -49,6 +50,8 @@ void atomic_flag_clear_explicit(volatile atomic_flag *object, memory_order order
 
 #define ATOMIC_VAR_INIT(value) (value)
 
+#define kill_dependency(y) __cerbvar_kill_dependency((y))
+
 
 // C11 7.17.2.2: initialization is not an atomic operation.
 #define atomic_init(obj, value) __cerbvar_atomic_init((obj), (value))
@@ -58,7 +61,7 @@ void atomic_thread_fence(memory_order order);
 void atomic_signal_fence(memory_order order);
 
 
-#define atomic_is_lock_free(obj)    __cerbvar_atomic_is_lock_free(sizeof(obj))
+#define atomic_is_lock_free(obj)    __cerbvar_atomic_is_lock_free((obj))
 
 typedef _Atomic(_Bool)                  atomic_bool;
 typedef _Atomic(char)                   atomic_char;
@@ -72,9 +75,9 @@ typedef _Atomic(long)                   atomic_long;
 typedef _Atomic(unsigned long)          atomic_ulong;
 typedef _Atomic(long long)              atomic_llong;
 typedef _Atomic(unsigned long long)     atomic_ullong;
-//typedef _Atomic(char16_t)               atomic_char16_t;
-//typedef _Atomic(char32_t)               atomic_char32_t;
-//typedef _Atomic(wchar_t)                atomic_wchar_t;
+typedef _Atomic(char16_t)               atomic_char16_t;
+typedef _Atomic(char32_t)               atomic_char32_t;
+typedef _Atomic(wchar_t)                atomic_wchar_t;
 typedef _Atomic(int_least8_t)           atomic_int_least8_t;
 typedef _Atomic(uint_least8_t)          atomic_uint_least8_t;
 typedef _Atomic(int_least16_t)          atomic_int_least16_t;
