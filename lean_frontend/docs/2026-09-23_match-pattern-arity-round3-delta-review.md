@@ -425,3 +425,89 @@ not merge silently is the rebase's unrecorded removal of mainline's `moreLinkArg
 a one-line restore plus a row-1 relink, or an explicit operator acceptance as a post-merge hotfix; F2–F4 are docs/test
 tightenings that can ride on commit D or follow. Merge authority rests with the operator; this document is a review, not
 a sign-off.
+
+---
+
+## Commit D — `e5532b3468c2a89d87070cb53d5b01764ad5e8b5` (parent `fda652269`; reviewed from `git show` in this worktree, no build, worker worktree untouched)
+
+[AGENT — second pass, 2026-09-23, on the orchestrator's message (a); its message (b) — the worktree free for probes and the
+new gate log `round3-e5532b346-gates.log` — had NOT arrived, so nothing below quotes a gate log or a probe I ran. The
+earlier `=== ALL DONE (rc=2)` line in `round3-fda652269-gates.log` is, per the orchestrator, an ABORT marker (its run
+waited 120 min for another agent's batteries and exited without gating) and is NOT verification of anything.]
+
+**Is D docs-only?** No — and it should not be, since F1 required a lakefile line. `git show --stat e5532b346`, verbatim:
+
+     lean_frontend/docs/2026-09-20_match-pattern-arity-record.md | 210 +++…-
+     lean_frontend/lakefile.toml                                 |   2 +
+     lean_frontend/test/Unit/MatchPatternArityTest.lean          |   4 +-
+     3 files changed, 214 insertions(+), 2 deletions(-)
+
+No `.lem`, no pin, no manifest, no register change; neither `lakefile.toml` nor the test file is in any pinned manifest
+(`fork_drift_manifest.txt` 0 hits; `handwritten_copy.manifest`'s one `lakefile.toml` hit is a `#` comment line).
+`git merge-base --is-ancestor fda652269 e5532b346` → yes; `fix/match-pattern-arity` = `e5532b346`.
+
+**F1 (P2) — CLOSED by D, pending the orchestrator's gate.** The lakefile hunk is exactly `+moreLinkArgs = ["native/md5.o"]`
+`+` (blank) after `root = "Unit.RunDigestTest"`. Against mainline, `git diff 34ac493f9 e5532b346 -- lean_frontend/lakefile.toml`
+is now a PURE ADDITION (only `+` lines: the comment + the `match-pattern-arity-test` stanza with its own `moreLinkArgs`,
+after mainline's intact `run-digest-test` stanza). §14.1's correction paragraph is accurate (`34ac493f9:323` is the line;
+verified earlier). Its parenthetical "nothing in its closure references the `md5.o` externs today" is an inference from the
+successful link, not a measurement; I did not build. The relink evidence in §15.7 (`.rsp` 171 tokens, token 120 =
+`"native/md5.o"`; `.trace` `#[native/md5.o]`; `Total: 15 passed, 0 failed`) is worker-reported and UNVERIFIED-HERE — it is
+what the orchestrator's re-verification of `e5532b346` must confirm.
+
+**F2 (P3) — closed.** §15.6's new "Disclosure" paragraph states the 29-of-1,778 install-tree artefacts, the stamp
+transition `commit ec02f452d… +dirty` → `commit 7acc7326b…`, the identical Lean hash / changed oracle hash
+(`4f62a322… → 53a6698e…`), `artifact_issues: []`, and the source/install-tree distinction — each item matches my measurement.
+
+**F3 (P3) — closed.** The predicate now requires `t ==` one of the two exact strings; both equal the `.lem` literals at
+`e5532b346:frontend/model/core_typing.lem:1766` (`"ccall to a variadic C procedure: fixed-argument list of a different arity
+than the function type's parameters"`) and `:1778` (`"ccall: argument list of a different arity than the C function type's
+parameters"`). The pre-existing `:1758` bundle error can no longer satisfy it.
+
+**F4 (P3) — closed.** §15.2b now reads "no C or Core program under `tests/` calls them (the only `pread`/`pwrite` hit under
+`tests/` is a README note on the Lean FS model's `fs_pwrite`, `tests/z2-probes/fs/README.md`; the load-bearing count is
+`tests/libc/libc.core` = 0)" — exact against `git grep`.
+
+**§15.1b (the four omitted witnesses) — accurate where checkable.** The four sources quoted equal the files I read from the
+worker's `.tmp/mpa/r3/core/` before the hold (`run-fixed-short`, `fun-long`, `proc-long`, `proc-short`, byte-for-byte as far as
+printed). The pre-fix evidence it cites from the second-round audit is CORROBORATED from the COMMITTED tarball
+`2026-09-22_match-pattern-arity-rereview-evidence/focused-evidence.tar.gz` (extracted to `/tmp/claude-1000`), verbatim:
+
+    core-probes.py:43:     r=subprocess.run(cmd,capture_output=True,timeout=3 if p.stem=='run-fixed-short' else 20,env={…})
+    core-results-run-fixed.json: {'engine': 'fork',     'case': 'run-fixed-short', 'mode': 'default',       'exit': 124, …}
+                                 {'engine': 'fork',     'case': 'run-fixed-short', 'mode': 'rewrite',       'exit': 124, …}
+                                 {'engine': 'fork',     'case': 'run-fixed-short', 'mode': 'typed',         'exit': 124, …}
+                                 {'engine': 'fork',     'case': 'run-fixed-short', 'mode': 'typed-rewrite', 'exit': 124, …}
+                                 {'engine': 'pristine', 'case': 'run-fixed-short', 'mode': 'default',       'exit': 124, …}
+                                 {'engine': 'pristine', 'case': 'run-fixed-short', 'mode': 'rewrite',       'exit': 124, …}
+                                 {'engine': 'pristine', 'case': 'run-fixed-short', 'mode': 'typed',         'exit': 124, …}
+                                 {'engine': 'pristine', 'case': 'run-fixed-short', 'mode': 'typed-rewrite', 'exit': 124, …}
+    (the fifth, non-executing `typed-dump` mode is exit 0 on both engines — §15.1b names the four executing modes, so its "ALL FOUR" is exact)
+    core-captures/fork/fun-long/default.stderr : internal error: CALL() |params|= 2 <> |args|= 3cerberus: internal error, uncaught exception: … Failure("internal error: CALL() |params|= 2 <> |args|= 3") …
+    core-captures/fork/fun-long/typed.stdout   : Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+    core-captures/fork/proc-long/default.stdout: Error {msg: "ill-formed program: `calling procedure `Symbol(484, SD_Id("f"))' with the wrong number of args: |args|=3expecting: 2'"}
+    core-captures/fork/proc-long/typed.stdout  : Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+    core-captures/fork/proc-short/typed.stdout : Error {msg: "ill-formed program: `calling procedure `Symbol(484, SD_Id("f"))' with the wrong number of args: |args|=1expecting: 2'"}
+
+— the pre-fix reading in §15.1b (surplus caught only at runtime, deleted-and-succeeding under typing; `run-fixed-short`
+non-terminating pre-fix on fork AND pristine) is therefore supported by committed evidence, not only by the worker's own
+first run (whose 3 h 11 m hang is worker/orchestrator-reported). The POST-fix rows for the four files (`Illformed_program
+"Erun: …"` in default/`--rewrite`, typing rejections at `:3:19`/`:3:18`/`:3:3`, `CALL()`/`call_proc` errors unchanged in the
+untyped modes) are consistent in shape with §15.4's verified rows but UNVERIFIED-HERE (they are what my optional probes
+would re-run when (b) opens). §15.1b correctly states that these are CLI rows only and that §15.3/§15.4 tallies are unchanged.
+
+**§15.7 — the disclosure of the amend.** Present: the first cut `fd36cc973` (never reported) carried an unfilled
+`D_FASTGATE_PLACEHOLDER`; the shell did not stop on the fill step's failure; the commit was amended before any report.
+`grep -c PLACEHOLDER` on D's record → `0`. The fail-open shape (a chain step failing without stopping the chain) is
+exactly the class the house rule names; it was caught before reporting and is disclosed — noted, no finding.
+
+**Residual after D:** N5/N6 left as cosmetic (stated in §15.7); the fast-gate results in §15.7 and the four post-fix
+witness rows await the orchestrator's independent re-verification of `e5532b346` and, optionally, my probes.
+
+## VERDICT (updated for D)
+
+[AGENT] **Merge-ready as is at `e5532b346`, conditional on the orchestrator's independent re-verification of that head
+coming back green** (row 1 with `run-digest-test` relinked, failure-reach 239, fork-drift 84/29 — the worker's claims in
+§15.7 are not accepted as evidence here). Commit D closes F1–F4 exactly as proposed, adds the four omitted witnesses with
+committed corroboration for their pre-fix behaviour, and touches no product code, pin or manifest. Merge authority rests
+with the operator.
