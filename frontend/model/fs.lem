@@ -169,3 +169,116 @@ declare lean target_rep function fs_rewinddir = `CerbFS.fs_rewinddir`
 val fs_closedir: fs_state -> integer -> fs_state * (either fs_error nat)
 declare ocaml target_rep function fs_closedir = `Sibylfs.run_closedir`
 declare lean target_rep function fs_closedir = `CerbFS.fs_closedir`
+
+(* A fault is not errno. The state is the last defined filesystem state,
+   which may be before a failed transition or after a failed return decoder.
+   The Driver keeps this receipt separately from its committed fs_state. *)
+type fs_fault
+declare ocaml target_rep type fs_fault = `Fs_checked.fault`
+declare lean target_rep type fs_fault = `CerbFS.FsFault`
+
+val fs_fault_message: fs_fault -> string
+declare ocaml target_rep function fs_fault_message = `Fs_checked.fault_text`
+declare lean target_rep function fs_fault_message = `CerbFS.FsFault.text`
+
+type fs_checked_result 'a = fs_state * either fs_fault (either fs_error 'a)
+
+val fs_mkdir_checked: fs_state -> string -> integer -> fs_checked_result nat
+declare ocaml target_rep function fs_mkdir_checked = `Fs_checked.run_mkdir`
+declare lean target_rep function fs_mkdir_checked = `CerbFS.fs_mkdir_result`
+
+val fs_open_checked: fs_state -> string -> integer -> maybe integer -> fs_checked_result nat
+declare ocaml target_rep function fs_open_checked = `Fs_checked.run_open`
+declare lean target_rep function fs_open_checked = `CerbFS.fs_open_result`
+
+val fs_close_checked: fs_state -> integer -> fs_checked_result nat
+declare ocaml target_rep function fs_close_checked = `Fs_checked.run_close`
+declare lean target_rep function fs_close_checked = `CerbFS.fs_close_result`
+
+val fs_write_checked: fs_state -> integer -> list char -> integer -> fs_checked_result nat
+declare ocaml target_rep function fs_write_checked = `Fs_checked.run_write`
+declare lean target_rep function fs_write_checked = `CerbFS.fs_write_result`
+
+val fs_read_checked: fs_state -> integer -> integer -> fs_checked_result (list char)
+declare ocaml target_rep function fs_read_checked = `Fs_checked.run_read`
+declare lean target_rep function fs_read_checked = `CerbFS.fs_read_result`
+
+val fs_pwrite_checked: fs_state -> integer -> list char -> integer -> integer -> fs_checked_result nat
+declare ocaml target_rep function fs_pwrite_checked = `Fs_checked.run_pwrite`
+declare lean target_rep function fs_pwrite_checked = `CerbFS.fs_pwrite_result`
+
+val fs_pread_checked: fs_state -> integer -> integer -> integer -> fs_checked_result (list char)
+declare ocaml target_rep function fs_pread_checked = `Fs_checked.run_pread`
+declare lean target_rep function fs_pread_checked = `CerbFS.fs_pread_result`
+
+val fs_rename_checked: fs_state -> string -> string -> fs_checked_result nat
+declare ocaml target_rep function fs_rename_checked = `Fs_checked.run_rename`
+declare lean target_rep function fs_rename_checked = `CerbFS.fs_rename_result`
+
+val fs_umask_checked: fs_state -> integer -> fs_checked_result nat
+declare ocaml target_rep function fs_umask_checked = `Fs_checked.run_umask`
+declare lean target_rep function fs_umask_checked = `CerbFS.fs_umask_result`
+
+val fs_chmod_checked: fs_state -> string -> integer -> fs_checked_result nat
+declare ocaml target_rep function fs_chmod_checked = `Fs_checked.run_chmod`
+declare lean target_rep function fs_chmod_checked = `CerbFS.fs_chmod_result`
+
+val fs_chdir_checked: fs_state -> string -> fs_checked_result nat
+declare ocaml target_rep function fs_chdir_checked = `Fs_checked.run_chdir`
+declare lean target_rep function fs_chdir_checked = `CerbFS.fs_chdir_result`
+
+val fs_chown_checked: fs_state -> string -> integer -> integer -> fs_checked_result nat
+declare ocaml target_rep function fs_chown_checked = `Fs_checked.run_chown`
+declare lean target_rep function fs_chown_checked = `CerbFS.fs_chown_result`
+
+val fs_link_checked: fs_state -> string -> string -> fs_checked_result nat
+declare ocaml target_rep function fs_link_checked = `Fs_checked.run_link`
+declare lean target_rep function fs_link_checked = `CerbFS.fs_link_result`
+
+val fs_readlink_checked: fs_state -> string -> fs_checked_result (list char)
+declare ocaml target_rep function fs_readlink_checked = `Fs_checked.run_readlink`
+declare lean target_rep function fs_readlink_checked = `CerbFS.fs_readlink_result`
+
+val fs_symlink_checked: fs_state -> string -> string -> fs_checked_result nat
+declare ocaml target_rep function fs_symlink_checked = `Fs_checked.run_symlink`
+declare lean target_rep function fs_symlink_checked = `CerbFS.fs_symlink_result`
+
+val fs_rmdir_checked: fs_state -> string -> fs_checked_result nat
+declare ocaml target_rep function fs_rmdir_checked = `Fs_checked.run_rmdir`
+declare lean target_rep function fs_rmdir_checked = `CerbFS.fs_rmdir_result`
+
+val fs_truncate_checked: fs_state -> string -> integer -> fs_checked_result nat
+declare ocaml target_rep function fs_truncate_checked = `Fs_checked.run_truncate`
+declare lean target_rep function fs_truncate_checked = `CerbFS.fs_truncate_result`
+
+val fs_unlink_checked: fs_state -> string -> fs_checked_result nat
+declare ocaml target_rep function fs_unlink_checked = `Fs_checked.run_unlink`
+declare lean target_rep function fs_unlink_checked = `CerbFS.fs_unlink_result`
+
+val fs_lseek_checked: fs_state -> integer -> integer -> integer -> fs_checked_result nat
+declare ocaml target_rep function fs_lseek_checked = `Fs_checked.run_lseek`
+declare lean target_rep function fs_lseek_checked = `CerbFS.fs_lseek_result`
+
+val fs_stat_checked: fs_state -> string -> fs_checked_result fs_stat
+declare ocaml target_rep function fs_stat_checked = `Fs_checked.run_stat`
+declare lean target_rep function fs_stat_checked = `CerbFS.fs_stat_result`
+
+val fs_lstat_checked: fs_state -> string -> fs_checked_result fs_stat
+declare ocaml target_rep function fs_lstat_checked = `Fs_checked.run_lstat`
+declare lean target_rep function fs_lstat_checked = `CerbFS.fs_lstat_result`
+
+val fs_opendir_checked: fs_state -> string -> fs_checked_result nat
+declare ocaml target_rep function fs_opendir_checked = `Fs_checked.run_opendir`
+declare lean target_rep function fs_opendir_checked = `CerbFS.fs_opendir_result`
+
+val fs_readdir_checked: fs_state -> integer -> fs_checked_result (list char)
+declare ocaml target_rep function fs_readdir_checked = `Fs_checked.run_readdir`
+declare lean target_rep function fs_readdir_checked = `CerbFS.fs_readdir_result`
+
+val fs_rewinddir_checked: fs_state -> integer -> fs_checked_result unit
+declare ocaml target_rep function fs_rewinddir_checked = `Fs_checked.run_rewinddir`
+declare lean target_rep function fs_rewinddir_checked = `CerbFS.fs_rewinddir_result`
+
+val fs_closedir_checked: fs_state -> integer -> fs_checked_result nat
+declare ocaml target_rep function fs_closedir_checked = `Fs_checked.run_closedir`
+declare lean target_rep function fs_closedir_checked = `CerbFS.fs_closedir_result`

@@ -93,3 +93,5 @@ CerbSCByteKeys.lean
 CerbSCAccessGroups.lean
 CerbSCSequencing.lean
 CerbSCPrefixObligations.lean
+CerbFSProofs.lean
+CerbFSDriverProofs.lean

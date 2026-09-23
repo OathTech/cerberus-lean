@@ -555,6 +555,8 @@ let multiple_steps step_state (m, st) =
                 end
             | Driver.DErr_concurrency str ->
                 None, "Concurrency error: " ^ Sc_runtime.sc_fault_message str
+            | Driver.DErr_filesystem fault ->
+                None, "Filesystem boundary: " ^ Fs_checked.fault_text fault
             | Driver.DErr_other str ->
                 None, str
           in

@@ -143,6 +143,7 @@ roots = [
   "Sc_scopes", "Sc_scopes_auxiliary", "CerbSCScopes", "CerbSCByteKeys", "CerbSCAccessGroups",
   "Sc_access_group", "Sc_access_group_auxiliary",
   "Sc_runtime", "Sc_runtime_auxiliary", "CerbSCByteInstances", "CerbSCOperational",
+  "CerbFSProofs", "CerbFSDriverProofs",
   "CerbNDSuspension", "CerbMemSuspension", "CerbSCHelperOrder", "CerbSCServices", "CerbSCFaults",
   "Sc_byte_sources", "Sc_byte_sources_auxiliary", "CerbSCByteSources",
   "Sc_access_sequencing", "Sc_access_sequencing_auxiliary", "CerbSCSequencing",
@@ -450,4 +451,10 @@ moreLinkArgs = ["native/md5.o"]
 name = "sc-reference-equality-test"
 srcDir = "test"
 root = "Unit.SCReferenceEquality"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "fs-boundary-test"
+srcDir = "test"
+root = "Unit.FSBoundary"
 moreLinkArgs = ["native/md5.o"]

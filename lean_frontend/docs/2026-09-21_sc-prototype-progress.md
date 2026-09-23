@@ -5,21 +5,37 @@ This file records evidence and next actions; it does not replace the charter.
 
 ## Latest validated component — September 23
 
-The [prefix integration](2026-09-23_sc-prefix-integration-work.md) passes all 39
-full suites and the mandatory 864-case three-engine comparison with zero
-changes from the atomic-interface checkpoint, including the same 40 known Lean
-difference/undecodable IDs. Its retained evidence was independently verified.
-The actual machine now retains call scopes and sequencing obligations without
-replacing independent faults or deleting alternatives; 47 production laws and
-producer plants check those interfaces. The Cmm equality selector is repaired.
+The [filesystem repair](2026-09-23_sc-filesystem-repair-work.md) passes all 39
+full integration commands and the mandatory 864-case three-engine comparison.
+Exactly the reviewed directory row changes from an undecodable Lean crash to
+its typed missing-coverage error; the other 863 projected observations and
+classifications match the prefix checkpoint. The same 40 known Lean discrepancy
+or undecodable IDs remain (29 differences, 11 both-undecodable). Evidence archives
+are independently read back and hashed. The [baseline review](2026-09-23_sc-filesystem-baseline-review.md)
+records the one-row instrument change and the original failed run (37 passed,
+B5/B9 failed); no comparison projection was weakened.
 
-[Filesystem defects](2026-09-23_sc-filesystem-boundary-review.md) and further
-library-origin/parameter-read obligations are documented with exact evidence.
-Their isolated proposals remain drafts. Next: repair filesystem behavior needed
-for stream controls, complete location/value/RF/HB composition and precise
-remaining guards, then complete the public operational/C entry. Public checking
-and the whole prototype remain incomplete. The following entries preserve the
-prior component history.
+The checked 25-entry filesystem interface preserves precise upstream refusals,
+ordinary errno, missing coverage and protocol faults separately. Driver retains
+the last defined filesystem state and completed memory/output effects; thirteen
+kernel laws, 16 Lean and 14 native Driver controls, paired leaf matrices and three
+production-connection plants validate that transport. The
+[boundary inventory](2026-09-23_sc-filesystem-boundary-inventory.md) documents each
+currently identified filesystem case and its resolution task. SC-D13's finite
+trace discrepancy is resolved as unmatched diagnostic selection; the larger
+C-libc recording timeouts remain explicit.
+
+Next: repair the newly reproduced spawned-branch lexical-label defect (SC-P08),
+then finish location/value/RF/HB composition, remaining precise guards and the
+public operational/C entry. Action-identity drafts retain both RMW occurrences;
+30 local/conditional laws and six native selected RMW/HB diagnostics support the
+next adapter step. The shared all-vertex HB query additionally passes 17 paired
+controls, eight retention/diagnostic laws and six native actual-C relation and
+exact instrument-erasure checks. Four further conditional prefix laws and
+97 actual consecutive-prefix checks preserve old ordering on these controls. Those drafts supply no completed checker or
+general HB correspondence. Library role/artifact binding and numeric G06 preprocessing
+remain open. The whole SC prototype is incomplete; customer sources remain
+strictly read-only. The entries below preserve earlier component history.
 
 ## Prior atomic-interface status
 
@@ -878,3 +894,21 @@ slice, including precise G02/G03/G07/G08 guards, G06 preprocessing, and the publ
 operational/C interface. Do not stop at this component commit or call the SC
 prototype complete. The customer remains strictly read-only; no merge, push,
 dependency or reference change follows from this checkpoint.
+
+## Prefix checkpoint and filesystem continuation, September 23
+
+Commit `d0d41f4b2` retains call scopes, byte/access identities and pending prefix
+sequencing obligations, with Cmm equality-selector repair. The component's39
+full integration commands and864-case report pass unchanged; the detailed
+[record](2026-09-23_sc-prefix-integration-work.md) and archived evidence state
+the limits. This is not a completed SC checker.
+
+The [filesystem repair](2026-09-23_sc-filesystem-repair-work.md) now completes
+its component validation: 25 checked entries, 13 kernel laws, 16 Lean and 14 native
+Driver controls, three sensitive production plants, all 39 integration commands
+and the 864-case report with its reviewed directory-boundary delta. The latest status above supersedes the prior
+12-law/pending-plants development entry. Actual C controls cover normal
+operations, typed specials, independent memory faults and explicit remaining
+coverage. The detailed inventory distinguishes every identified boundary.
+Continue the charter's RF/location/HB, library guards and public SC interface.
+Customer read-only; no merge or push is authorized by this checkpoint.

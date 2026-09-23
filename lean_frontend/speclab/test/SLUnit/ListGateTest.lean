@@ -77,6 +77,7 @@ def runFileL [LemFuel] (f : file core_run_annotation) : IO (Sum (Int × Nat) Str
               (match d with | SD_Id s => s | _ => "<anon>")
         | DErr_memory merr => s!"Killed: memory error {Lem_Show.show0 merr}"
         | DErr_concurrency s => s!"Killed: concurrency {sc_fault_message s}"
+        | DErr_filesystem fault => s!"Killed: filesystem {CerbFS.FsFault.text fault}"
         | DErr_other s => s!"Killed: {s}")
   | [] => .inr "no executions"
   | _ => .inr "multiple executions"

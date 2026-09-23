@@ -60,6 +60,7 @@ type driver_error =
   | DErr_core_run of core_run_cause
   | DErr_memory of Mem_common.mem_error
   | DErr_concurrency of Sc_runtime.sc_fault
+  | DErr_filesystem of Fs.fs_fault
   | DErr_other of string
 
 type driver_state = <|
@@ -69,7 +70,8 @@ type driver_state = <|
   core_run_state:    Core_run.core_run_state;   (* state of the core evaluator *)
   layout_state:      Mem.mem_state;         (* state of memory layout model *)
   concurrency_state: Cmm_op.symState;       (* state of the concurrency memmodel *)
-  fs_state:          Fs.fs_state;           (* state of the file system *)
+  fs_state:          Fs.fs_state;           (* committed filesystem state *)
+  fs_boundary_failure: maybe (Fs.fs_state * Fs.fs_fault); (* last defined FS state on a killed branch *)
   trace:             list trace_event;
   
   sc_state: maybe Sc_runtime.sc_state;
@@ -259,6 +261,21 @@ let liftCore_run m =
         ND.kill (ND.Other (DErr_core_run err))
   end
 
+(* Keep the old success callback and its commit point: buffer/errno/stat
+   memory work can fail before fs_state is committed. A filesystem boundary
+   instead records the last defined leaf state and kills without Core completion,
+   an errno write, or a step-count increment. ND retains independent branches. *)
+val driver_fs_result: forall 'a. Fs.fs_checked_result 'a ->
+  ((Fs.fs_state * either Fs.fs_error 'a) -> driverM unit) -> driverM unit
+let driver_fs_result (fs_st, result) complete =
+  match result with
+    | Left fault ->
+        ND.ND (fun current ->
+          (ND.NDkilled (ND.Other (DErr_filesystem fault)),
+           <| current with fs_boundary_failure= Just (fs_st, fault) |>))
+    | Right value -> complete (fs_st, value)
+  end
+
 val drive_fs_step_with: (driver_state -> Core_run.thread_state -> Core_run.thread_state) -> Mem.thread_id -> Core_run.thread_state -> driver_state -> Core_run.fs_oper -> driverM unit
 let drive_fs_step_with complete tid th_st dr_st fs_oper =
   let th_st_from_int n =
@@ -417,11 +434,11 @@ let drive_fs_step_with complete tid th_st dr_st fs_oper =
   in
   match fs_oper with
     | Core_run.FS_MKDIR path mode ->
-      return $ Fs.fs_mkdir dr_st.fs_state path mode
+      driver_fs_result (Fs.fs_mkdir_checked dr_st.fs_state path mode) (return)
     | Core_run.FS_OPEN path oflag mode_opt ->
-      return $ Fs.fs_open dr_st.fs_state path oflag mode_opt
+      driver_fs_result (Fs.fs_open_checked dr_st.fs_state path oflag mode_opt) (return)
     | Core_run.FS_CLOSE fd ->
-      return $ Fs.fs_close dr_st.fs_state fd
+      driver_fs_result (Fs.fs_close_checked dr_st.fs_state fd) (return)
     | Core_run.FS_WRITE fd buf size ->
       match natFromInteger fd with
       | 0 ->
@@ -431,50 +448,51 @@ let drive_fs_step_with complete tid th_st dr_st fs_oper =
       | 2 ->
         update_stderr (List.take (natFromInteger size) buf)
       | _ ->
-        return $ Fs.fs_write dr_st.fs_state fd buf size
+        driver_fs_result (Fs.fs_write_checked dr_st.fs_state fd buf size) (return)
       end
     | Core_run.FS_READ fd ptr size ->
-      store_buffer ptr $ Fs.fs_read dr_st.fs_state fd size
+      driver_fs_result (Fs.fs_read_checked dr_st.fs_state fd size) (store_buffer ptr)
     | Core_run.FS_PWRITE fd buf size off ->
-      return $ Fs.fs_pwrite dr_st.fs_state fd buf size off
+      driver_fs_result (Fs.fs_pwrite_checked dr_st.fs_state fd buf size off) (return)
     | Core_run.FS_PREAD fd ptr size off ->
-      store_buffer ptr $ Fs.fs_pread dr_st.fs_state fd size off
+      driver_fs_result (Fs.fs_pread_checked dr_st.fs_state fd size off) (store_buffer ptr)
     | Core_run.FS_UMASK mode ->
-      return $ Fs.fs_umask dr_st.fs_state mode
+      driver_fs_result (Fs.fs_umask_checked dr_st.fs_state mode) (return)
     | Core_run.FS_CHMOD path mode ->
-      return $ Fs.fs_chmod dr_st.fs_state path mode
+      driver_fs_result (Fs.fs_chmod_checked dr_st.fs_state path mode) (return)
     | Core_run.FS_CHDIR path ->
-      return $ Fs.fs_chdir dr_st.fs_state path
+      driver_fs_result (Fs.fs_chdir_checked dr_st.fs_state path) (return)
     | Core_run.FS_CHOWN path uid gid ->
-      return $ Fs.fs_chown dr_st.fs_state path uid gid
+      driver_fs_result (Fs.fs_chown_checked dr_st.fs_state path uid gid) (return)
     | Core_run.FS_LINK oldpath newpath ->
-      return $ Fs.fs_link dr_st.fs_state oldpath newpath
+      driver_fs_result (Fs.fs_link_checked dr_st.fs_state oldpath newpath) (return)
     | Core_run.FS_READLINK path ptr max ->
-      store_buffer_trunc ptr max $ Fs.fs_readlink dr_st.fs_state path
+      driver_fs_result (Fs.fs_readlink_checked dr_st.fs_state path) (store_buffer_trunc ptr max)
     | Core_run.FS_STAT path ptr ->
-      store_stat ptr $ Fs.fs_stat dr_st.fs_state path
+      driver_fs_result (Fs.fs_stat_checked dr_st.fs_state path) (store_stat ptr)
     | Core_run.FS_LSTAT path ptr ->
-      store_stat ptr $ Fs.fs_lstat dr_st.fs_state path
+      driver_fs_result (Fs.fs_lstat_checked dr_st.fs_state path) (store_stat ptr)
     | Core_run.FS_SYMLINK target lpath ->
-      return $ Fs.fs_symlink dr_st.fs_state target lpath
+      driver_fs_result (Fs.fs_symlink_checked dr_st.fs_state target lpath) (return)
     | Core_run.FS_RMDIR path ->
-      return $ Fs.fs_rmdir dr_st.fs_state path
+      driver_fs_result (Fs.fs_rmdir_checked dr_st.fs_state path) (return)
     | Core_run.FS_TRUNCATE path len ->
-      return $ Fs.fs_truncate dr_st.fs_state path len
+      driver_fs_result (Fs.fs_truncate_checked dr_st.fs_state path len) (return)
     | Core_run.FS_UNLINK path ->
-      return $ Fs.fs_unlink dr_st.fs_state path
+      driver_fs_result (Fs.fs_unlink_checked dr_st.fs_state path) (return)
     | Core_run.FS_LSEEK fd off whence ->
-      return $ Fs.fs_lseek dr_st.fs_state fd off whence
+      driver_fs_result (Fs.fs_lseek_checked dr_st.fs_state fd off whence) (return)
     | Core_run.FS_RENAME oldpath newpath ->
-      return $ Fs.fs_rename dr_st.fs_state oldpath newpath
+      driver_fs_result (Fs.fs_rename_checked dr_st.fs_state oldpath newpath) (return)
     | Core_run.FS_OPENDIR path ->
-      return $ Fs.fs_opendir dr_st.fs_state path
+      driver_fs_result (Fs.fs_opendir_checked dr_st.fs_state path) (return)
     | Core_run.FS_READDIR dir ->
-      store_dir $ Fs.fs_readdir dr_st.fs_state dir
+      driver_fs_result (Fs.fs_readdir_checked dr_st.fs_state dir) (store_dir)
     | Core_run.FS_REWINDDIR dir ->
-      update (Fs.fs_rewinddir dr_st.fs_state dir) (th_st_from_void ())
+      driver_fs_result (Fs.fs_rewinddir_checked dr_st.fs_state dir)
+        (fun (fs_st, _) -> update fs_st (th_st_from_void ()))
     | Core_run.FS_CLOSEDIR dir ->
-      return $ Fs.fs_closedir dr_st.fs_state dir
+      driver_fs_result (Fs.fs_closedir_checked dr_st.fs_state dir) (return)
     | Core_run.FS_PRINTF fmt args ->
       driver_liftMem (Formatted.printf th_st.Core_run.current_loc (printf_eval_conv dr_st th_st) fmt args) >>= function
         | Left err ->
@@ -500,7 +518,7 @@ let drive_fs_step_with complete tid th_st dr_st fs_oper =
           | 2 ->
             update_stderr buf
           | _ ->
-            return $ Fs.fs_write dr_st.fs_state fd buf size
+            driver_fs_result (Fs.fs_write_checked dr_st.fs_state fd buf size) (return)
           end
         | Right (Undefined.Error loc str) ->
           ND.kill (ND.Error loc str)
@@ -2164,6 +2182,7 @@ let initial_driver_state_with address_space_top run_st file fs_state =
     layout_state=      Mem.initial_mem_state address_space_top;
     concurrency_state= Cmm_op.symInitialState Cmm_op.symInitialPre;
     fs_state=          fs_state;
+    fs_boundary_failure= Nothing;
     trace=             [];
     sc_state=          Nothing;
     sc_pending=        [];

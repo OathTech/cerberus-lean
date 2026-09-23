@@ -38,6 +38,8 @@ let string_of_driver_error = function
       Mem_common.instance_Show_Show_Mem_common_mem_error_dict.Lem_pervasives.show_method err
   | Driver.DErr_concurrency str ->
       "Concurrency error: " ^ Sc_runtime.sc_fault_message str
+  | Driver.DErr_filesystem fault ->
+      "Filesystem boundary: " ^ Fs_checked.fault_text fault
   | Driver.DErr_other str ->
       str
 

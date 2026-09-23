@@ -281,6 +281,7 @@ turn every listed feature into a semantic-gap refusal.
 | SC-P05 | E21: abstract varargs ids/cursors are preserved. The per-ID query now has [ten paired groups, eight paired actual C traces and kernel origin/order laws](2026-09-23_sc-value-metadata-review.md); the full slice passes integration; five additional publication controls separate source-only pairs from full HB, while public integration remains pending | Connect the actual full hb relation, prefix-fault policy and ordinary object conflicts. The source-only selected queries are diagnostics, not SC verdicts. Preserve `va_arg` cursor updates, independent copies and deletion; no invented byte writes or blanket variadic-call refusal. The original [source audit](2026-09-21_sc-prototype-evidence/varargs/README.md) remains available guidance. |
 | SC-P06 | Helper source order/resumption, child errno, SC fences and CAS were originally open mechanisms; current slices have implemented controls/laws | Retain completed evidence and finish correspondence/interface integration. Do not relabel these as upstream gaps; SC fence runtime coverage uses the reviewed fence-aware reference, not the narrower scalar checker alone. |
 | SC-P07 | Resolved in the validated interface slice: Core text transport dropped libc source locations. Explicit expression/action/failure locations restore exact observations for both original flag failures; 322 parser checks and full integration pass | Retain the [before/after evidence](2026-09-21_sc-prototype-evidence/atomic-surface-location-transport/README.md) and regression controls. This was port work, not an upstream semantic gap; no locations were removed from comparison and no unrewritten metadata bodies substituted. The format does not claim lossless transport of every Core metadata field. |
+| SC-P08 | Spawned Epar branches discard their enclosing procedure identity, so direct child loop labels cannot resolve | Newly reproduced in the unchecked native SC recorder and pinned pristine source. An isolated native repair inherits the lexical procedure while retaining an empty child stack; direct/nested finite-loop controls complete and six retained C/RMW observations remain exact. The shared constructor has 11 paired controls and seven kernel laws; its production connection and integration are pending. This is required structured-thread port work, not a loop exclusion or C UB. The filesystem evidence archive retains `sc-spawn-label-draft/review.md` and all original failures. |
 
 ## Other explicit boundaries and fault identities
 
@@ -292,8 +293,14 @@ turn every listed feature into a semantic-gap refusal.
 | SC-D04 | E23 concrete memory intrinsic is already unsupported; other models have different implementations | Preserve model-specific failure. It is not an effect-free intrinsic or authority to disable another model's operation. |
 | SC-D05 | Existing upstream frontend limitations, including bitfields; existing memcpy-overlap UB-check omission; floating unary-minus and atomic initializer lowering described below | Preserve and disclose individual upstream behavior/limitations. The policy is not authority to silently change existing sequential semantics or ban every memcpy. Source checklist: [effect inventory](2026-09-21_sc-effect-inventory.md). |
 | SC-D06 | Fuel/resource exhaustion, blocked execution, ordinary model errors and C UB | Preserve distinct payloads and states. Exhaustion does not establish safety; blocking is not normal value completion; implementation assertions/backtraces are not C semantics. |
-| SC-D07 | Inherited Lean filesystem-model coverage, including `lseek`/`close` on standard descriptors 0–2 | Preserve the explicit `CerbFS` refusal; do not substitute EBADF or a successful stream query. This is missing filesystem port coverage with available SibylFS guidance, not an unresolved ISO/Cmm interpretation or SC-G03 stream-lock guard. The historical table in [CerbFS.lean](../CerbFS.lean) overstates fidelity; the [confirmed defects and repair obligations](2026-09-23_sc-filesystem-boundary-review.md) supersede that claim. |
+| SC-D07 | Inherited Lean filesystem-model coverage, including `lseek`/`close` on standard descriptors 0–2 | The checked port now repairs standard descriptors, open, close, I/O, seeking and selected closed-file path operations. Remaining operations and open-inode retention fail explicitly as missing coverage. Available SibylFS guidance remains required port work, distinct from ISO/Cmm interpretation or SC-G03 stream locks. The [repair record](2026-09-23_sc-filesystem-repair-work.md) gives the precise tested domain. All 39 integration commands pass after the explicit one-row baseline update. The 864-case report retains the reviewed change from a Lean crash to its typed directory coverage error. The [operation inventory](2026-09-23_sc-filesystem-boundary-inventory.md) lists every currently identified filesystem case. |
 | SC-D08 | Overlapping Lean/OCaml target declarations for Cmm action, pre-execution and witness equality | Confirmed port defect: two equality discrepancies and one Lean comparison refusal in four paired probes. Repair the selectors to choose the existing OCaml executable definitions; retain predicate bodies. This is required port work, not an unresolved ISO choice or an allowed exclusion. Eight paired repair controls, six instance-selection laws, all 39 integration commands and the unchanged 864-case three-engine comparison pass. |
+| SC-D09 | SibylFS `run_umask` decodes `RV_file_perm` with `return_nat`, after the mask update and OS return | Confirmed upstream wrapper failure, not errno or C UB. The validated production checked path replaces the guessed normal return with the updated-state receipt and a typed return-decoder fault. Preserve this refusal until the upstream wrapper contract is resolved; no rollback or successful mask return is authorized by the current policy. |
+| SC-D10 | A filesystem write reaches `List_array.list_array_write` with more bytes requested than supplied | Preserve that precise source-level failure, its phase and last defined state. Descriptor rights and negative-offset errors can prevent reaching it; do not refuse early from the argument lengths alone. The checked production path and 528 paired I/O controls retain it distinctly from errno and host failures; actual Driver controls now retain the fault receipt and prefix. |
+| SC-D11 | Inherited `Ord CerbFS.FsState` returns `.eq` for every pair | Confirmed API defect: distinct states are silently identified by ordering. The generated Driver comparison requires an instance, so removal failed to compile. The repaired body is a named opaque unsupported-comparison failure; no replacement order is fabricated. Structural representation equality and field inspection remain. The production instance-selection law, runtime refusal control and full integration pass. |
+| SC-D12 | Ordinary C `umask(mode_t)` proxy loads a signed int from a 16-bit parameter slot | Pinned header/proxy mismatch: the reached load faults before `FS_UMASK`, on pristine and both fork targets. Preserve that preceding memory fault; do not reinterpret it as the later SC-D09 decoder boundary or bypass it with a guessed C return. |
+| SC-D13 | Historical cross-target trace mismatch caused by unmatched selection in the diagnostic instrument | Resolved for the four retained controls: native Random.int was compared with Lean first-selection despite the native filename. Matched first selection on the identical C paths gives exact agreement of the documented effect-metadata projection. Rendered location/type/value are outside that projection; no full-journal or general trace-equivalence claim follows. Original captures and the failed comparison are retained. Public SC checking remains pending under SC-P01. |
+| SC-D14 | Existing Z2-F-04 directory-stream C proxy failure | Native `opendir(".")` reaches an internal `store(signed int*)` mismatch with `Specified(1)`. Lean now stops earlier with SC-D07's typed missing-directory-stream coverage result. Keep the full distinct observations; neither is C UB or completed support. Port the available directory semantics and separately review the actual Core/proxy failure before changing its outcome. See the [baseline review](2026-09-23_sc-filesystem-baseline-review.md). |
 
 The 21 constructors of `Sc_runtime.sc_fault` at the audited checkpoint are
 accounted for by SC-G01, SC-P01 and SC-D01–D03. Their current coarse category
@@ -337,7 +344,7 @@ guessing a caller. These are also SC-D01 protocol findings. The
 query retains malformed data and diagnostics; its lack of diagnostics is not
 a complete Cmm well-formedness, consistency or SC support verdict.
 
-**SC-D07 observation, prefix integration:** actual parallel `ftell(stdout)`
+**SC-D07 historical observation, prefix integration before repair:** actual parallel `ftell(stdout)`
 calls reach `CerbFS.fs_lseek` on descriptor 1. The unchanged pre-slice and new
 Lean instruments both stop at the existing opaque refusal, while the native
 recorder completes. SibylFS starts descriptors 0–2 on a root-directory dummy
@@ -359,11 +366,59 @@ The isolated descriptor repair passes 24 cases and twelve draft laws; it is not
 production coverage. The 30-case native open matrix also prevents an invented
 double-slash refusal or unconditional flag-first policy.
 
+The [ongoing repair](2026-09-23_sc-filesystem-repair-work.md) adopts the
+checked transitions and connects all25 filesystem entries to Driver. Ordinary
+errno, upstream special kind/phase, missing port coverage and protocol failure
+remain distinct. Thirteen production laws,16 Lean and14 native Driver controls,
+and the paired leaf matrices pass. The earlier opaque-abort case that loses a
+preceding diagnostic is retained as a historical failure. Smaller actual C
+recordings validate fault/output transport; the larger parallel ftell recording
+is still incomplete at its resource bound. Full 39-command integration and the
+mandatory 864-case report pass with exactly the reviewed directory-boundary change.
+Upstream `OS_special` supplies no successor state: retain the last defined OS
+state and failure phase, and never invent a post-failure state. This is an
+explicit limit of that upstream result, not permission to erase prior effects.
+
 **SC-D08 validation:** the equality-target correction now passes all 39
 integration commands and the unchanged 864-case three-engine comparison. Eight
 paired equality controls and six actual production instance-selection laws
 cover the repair. This fixes the selector overlap; it does not claim arbitrary
 structural comparison of functions. [Full component record](2026-09-23_sc-prefix-integration-work.md).
+
+**SC-D09 trigger and evidence:** every reached `run_umask` call that completes
+its OS transitions supplies `RV_file_perm` to the numeric return decoder. In
+the pinned, unchanged `sibylfs/src/sibylfs.lem`, `run_umask` calls `run` with
+`return_nat`; the latter accepts only `RV_none` and `RV_num`. The actual
+`os_umask` in `sibylfs/src/fs_spec.lem` updates the process mask and sets a
+pending `RV_file_perm` result. The wrapper subsequently completes `OS_RETURN`
+before failing with `return_nat`. Six native reproductions, including negative
+and extra-bit masks, retain the preceding successful file creation, the exact
+raw return and the post-return OS state. Six paired draft controls match those
+fault/prefix/state projections. [Repair record](2026-09-23_sc-filesystem-repair-work.md).
+This is not an `OS_special`, and the state differs from the operation input.
+
+**SC-D09 resolution criterion:** a pinned upstream resolution of the wrapper's
+permission-valued result and a reviewed port of that contract, with updated-
+state and return-value controls. Until then, expose the decoder refusal and its
+last defined state. Driver integration now has exact entry/receipt laws and
+paired prefix/state controls. Ordinary whole-C umask reaches SC-D12 first, so
+those controls do not establish whole-C reachability of this decoder. OCaml integer conversion overflow is
+separate: Lem's logical 32-bit conversion remains modular under the existing
+LemLib D4 ruling, without an invented host-range restriction.
+
+**SC-D10 evidence and removal task:** `sibylfs/src/list_array.lem` explicitly
+fails with `t.ml/write: offset + length greater than length of string` when
+the requested source slice is too short. The checked native adapter recognizes
+only that exact failure from the actual transition, preserving its TAU phase;
+it does not catch arbitrary `Failure`, allocation failure or numeric conversion
+exceptions as model gaps. The 58 native interface controls include the reached
+failure after file creation and a negative-offset pwrite that instead returns
+EINVAL. The 528 paired I/O controls cover rights, offsets, append, zero counts
+and signed counts, with exact result/fault, content and offset observations.
+This is an internal filesystem-request boundary; it does not establish ISO C
+UB or permit dropping preceding memory faults. The checked Driver connection
+and paired failure-state witnesses pass together with full integration. Revisit the result only if the
+pinned upstream leaf changes; this case has available source semantics.
 
 **SC-G03/G08 adapter findings:** actual linking can replace a body at a colliding
 symbol, and the Core stdlib source is separate from the C-library input's origin.
@@ -423,3 +478,48 @@ No G02/G03/G07/G08 producer is claimed by that checkpoint.
   completion. The public interface must preserve the actual outer
   initialization/main/finalization protocol. This is available-guidance port
   work, not an upstream ambiguity or a new runtime exclusion.
+
+**SC-D11 scope and removal task:** the inherited `Ord FsState` body was
+`compare _ _ := .eq`. Different file contents or masks were therefore collapsed
+by this comparison API. The production instance-selection law selects the named opaque
+failure, and a runtime comparison exits134 with that exact unsupported message.
+Positive field inspection and structural equality controls still complete. A future order requires a reviewed correspondence with the native
+full filesystem state (including its environment); sorting the reduced record
+would not establish it. This is missing comparison port coverage, not an ISO
+concurrency decision. The existing `<fs_state>` display is also incomplete;
+state receipts must be inspected through their fields, never identified by that
+placeholder. Generated record comparison needs the instance even where the
+execution path has no identified whole-filesystem ordering call.
+
+**SC-D12 evidence and resolution:** `runtime/libc/include/posix/sys/types.h`
+defines `mode_t` as `uint16_t`, while `runtime/libcore/std.core`'s ordinary
+`umask_proxy` loads `signed int` from that parameter pointer. The actual C
+control in `c-pipeline-2` stops with `UB_CERB002a_out_of_bound_load` in all three
+engines before reaching the filesystem wrapper. This is an observed model
+fault caused by the proxy mismatch, not a new ISO UB classification for calling
+`umask`. The separate `std_inner_arg_temps.core` proxy takes a value; this control
+does not establish its whole-C behavior. Resolve the pinned proxy/header
+contract before claiming ordinary C reachability of the SC-D09 decoder test.
+Driver-level `FS_UMASK` controls still witness that downstream decoder boundary.
+
+**SC-D13 instrument resolution:** the original four controls compare different
+selection policies. The native file named `first_smt2.ml` still calls Random.int;
+Lean selects the first alternative. `selection-review-2` replaces exactly that
+native choice and reruns the identical original C paths. All four effect-metadata
+projections then match. Full native-to-native captures identify 4, 7 and 3 cleanup
+storage/range differences and 28 parallel entries attributable to that selection.
+No executable semantics, journal field or observation baseline is normalized.
+
+The historical `raw_journal_equal` field compares a projection which omits
+rendered location/type/value. The corrected review names that limit explicitly;
+occurrence/request/thread/scope identities, annotations, ranges, bytes,
+provenance and copy offsets remain compared. The earlier failed review and all
+raw captures are retained. These finite controls resolve the reported instrument
+mismatch, not general trace correspondence. The two larger C-libc recordings
+still time out at their original 20 second bound.
+
+The [filesystem inventory](2026-09-23_sc-filesystem-boundary-inventory.md) gives
+the seven selected open specials, all fourteen unported operations, open-inode
+and non-root-cwd gaps, unsupported state ordering, and protocol-fault classes.
+Available-guidance gaps remain required port work. The public SC entry still
+fails closed immediately with checker-pending; no completed SC mode is claimed.
