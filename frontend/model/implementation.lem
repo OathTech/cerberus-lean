@@ -22,8 +22,8 @@ declare lean target_rep function alignof_fty = `CerberusImpl.alignof_fty`
    read as a map (Ocaml_implementation.enum_definitions).
    Lean: `enum_definitions` is an ambient READER — every def that
    (transitively) reads it takes the per-program map as a leading parameter
-   (`_lemReader_enum_definitions`, sorted-name order digest, enum_definitions,
-   tagDefs); the desugarer records the decided type in the sigma
+   (`_lemReader_enum_definitions`, sorted-name order enum_definitions,
+   tagDefs; digest is run-state data, not a reader); the desugarer records the decided type in the sigma
    (A.enum_definitions), the elaborator carries it into the Core file
    (C.enumDefs), linking merges it, and the entries seed the reader from the
    program — the same information the OCaml registry holds, as data.
@@ -62,7 +62,7 @@ let typeof_enum tag_sym =
 
 (* normalise FIRST, one consumer (record D2): the Lean rep
    CerberusImpl.normalise_integerType takes the readers in sorted order —
-   (digest) (enumDefs) (tagDefs) — and its Enum arm is the lookup in enumDefs
+   (enumDefs) (tagDefs) — and its Enum arm is the lookup in enumDefs
    (failing with the OCaml text on a miss); the OCaml rep is unchanged. *)
 val normalise_integerType: Ctype.integerType -> Ctype.integerType
 declare ocaml target_rep function normalise_integerType = `Ocaml_implementation.normalise_integerType (Ocaml_implementation.get())`

@@ -1,0 +1,8 @@
+fast: passed; 16/16 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+Frozen source/record comparison: 10/10 unchanged (derived count).
+Runner wall time 7597.7s, including 7087.617s of per-lane coordination waits; initial wait before launch 5286.1s.
+Derived total elapsed 12883.8s; runner time excluding lane waits 510.083s.
+Original independent Tier B/C5 evidence remains at audited head 24f19d6f5; this is the final documentation/comment correction Tier A run.
+Verbatim-evidence whitespace exceptions: generated-comment-diff.txt lines 32, 39, 43, 45 retain unified-diff context spaces; row-1-stdout.txt lines 637, 686, 687, 704 retain gate-output trailing spaces/tabs. All source and other staged files pass git diff --cached --check.

@@ -3,8 +3,11 @@
 Delivery on `arc/run-digest`. The final frozen-tree verdict is in the committed
 [full summary](2026-09-22_run-digest-as-state-evidence/summary.txt) and
 [report](2026-09-22_run-digest-as-state-evidence/report.json). This record and all
-implementation files are written before that run; only evidence files are copied
-after it exits. No landing or push is part of this slice.
+implementation files were written before that run; only evidence files were
+copied after it exited. The post-review documentation corrections below are
+explicitly later changes, tracked in
+[the review-fix record](2026-09-22_run-digest-review-fixes.md); they do not alter
+the original frozen report. Landing was separately authorized after review.
 
 ## 0. Decisions, provenance and base
 
@@ -45,7 +48,7 @@ No machine-global install, baseline change, pin-file change, or push is authoriz
 | `ocaml_frontend/fork_renumber.ml` | Mirror accepts the new argument and seeds `sym_digest = Cerb_fresh.digest ()`; `sym_supply = 0` divergence preserved; `fresh_symbol'` unchanged. |
 | `backend/common/driver_ocaml.ml` | Both entries receive `(Cerb_fresh.digest ())`. |
 | `backend/web/instance.ml`, `backend/ocaml/runtime/rt_ocaml.ml` | Optional-backend entries receive the same global value, also type-checked in isolation. |
-| `lean_frontend/CabsImport.lean` | Importable pure `runDigest`: last program TU, `""` for none. Existing module, no new seam or manifest entry (§5). |
+| `lean_frontend/CabsImport.lean` | Importable pure `runDigest`: last program Cabs TU, `""` for an empty Cabs list. Existing module, no new seam or manifest entry (§5). |
 | `lean_frontend/Main.lean` | Calls that selector at the driver entry and `CerbCall.driveCall`; frontend `setDigestIO`/`forceIO` unchanged, comments narrowed. |
 | `lean_frontend/CerbCall.lean` | Digest forwarded through `driveCall`, `mkCallSite`, `argCreate` to `PrefFunArg`; no ambient read in this engine. |
 | `lean_frontend/test/Unit/FuelExemplar.lean` | Quantifies the run and its setup/round lemmas over digest, preserving the universal theorem. |
@@ -132,9 +135,15 @@ paragraph of the E-A record §9.2 and incorporates its enum migration.
 
 1. Carry `Program.digest : String` as a field seeded from the pipeline's run entry,
    with `progOf F supply digest`. Quote and check that value in all eight captured
-   modules alongside `supply` and `tagDefs`. It is the LAST program translation
-   unit's digest in frontend order, not necessarily the digest of `main`'s symbol.
-   With no program TU it is `""`; metadata and libc units do not select it.
+   modules alongside `supply` and `tagDefs`. In Lean's Cabs execution pipeline,
+   it is the LAST program Cabs TU's digest in frontend order, not necessarily
+   the digest of `main`'s symbol. An empty Cabs list selects `""`; metadata and
+   libc units do not select it. This rule is specific to that entry. OCaml
+   Core text (`.core`) sets its file digest, including after a C input;
+   `.co`/`.o` objects preserve the preceding global (empty only if nothing has
+   set it). Other entry paths must carry their actual entry digest, never
+   infer it from absence of Cabs TUs. Lean's `--parse-core` does not execute
+   Core text. [AGENT 2026-09-22: audit D1 correction.]
    The existing nonempty-digest freshness hypothesis remains a per-program fact.
 2. Generated entry shapes are now
    `initial_driver_state sup top digest file fs` and
@@ -354,6 +363,6 @@ Directory: `2026-09-22_run-digest-as-state-evidence/`. It contains the final
 `report.json`/`summary.txt`, T1–T6 and guarded axiom outputs, build/gate tails,
 wall-time/process-wait log, exact manifest pins and every Lem/OCaml hunk in
 `lem-ocaml.diff`. The latter is the verbatim zero-context source diff for review. Full per-lane
-logs remain under `.tmp/run-digest/full` in this worktree. No final-run source
-file is edited while the runner is active, and the pre-freeze record is not
-rewritten afterwards to manufacture a source-stability claim.
+logs remain under `.tmp/run-digest/full` in this worktree. No source file was
+edited during the original frozen run. The post-review documentation corrections
+are recorded separately and make no new source-stability claim for that report.

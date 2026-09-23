@@ -1,0 +1,57 @@
+--- audited/ocaml_frontend/generated/core_run_aux.ml
++++ corrected/ocaml_frontend/generated/core_run_aux.ml
+@@ -243,10 +243,11 @@
+   (* Symbol-id supply for symbols created DURING execution (arc-2 S1):
+      threaded like the other supplies instead of the ambient
+      Symbol.fresh counter, so the run relation is a pure function of its
+-     state. Seeded below from the ambient counter (one read at init).
++     state. On Lean, seeded from the explicitly threaded frontend supply
++     (one supply draw at init; the _given constructor takes it directly).
+      PRECISE invariant (audit-corrected): ids are unique WITHIN a driver
+-     run, and distinct from all ambient ids drawn BEFORE that run's
+-     init. A run's threaded range can overlap ambient ids drawn AFTER
++     run, and distinct from all frontend ids drawn BEFORE that run's
++     init. A run's threaded range can overlap frontend ids drawn AFTER
+      init (e.g. desugaring resuming past a mid-desugar const-expr run) â
+      latent-safe because run-created symbols do not escape their run
+      (they appear only as arena binders and Load value names); a
+--- audited/ocaml_frontend/generated/implementation.ml
++++ corrected/ocaml_frontend/generated/implementation.ml
+@@ -17,8 +17,8 @@
+    read as a map (Ocaml_implementation.enum_definitions).
+    Lean: `enum_definitions` is an ambient READER â every def that
+    (transitively) reads it takes the per-program map as a leading parameter
+-   (`_lemReader_enum_definitions`, sorted-name order digest, enum_definitions,
+-   tagDefs); the desugarer records the decided type in the sigma
++   (`_lemReader_enum_definitions`, sorted-name order enum_definitions,
++   tagDefs; digest is run-state data, not a reader); the desugarer records the decided type in the sigma
+    (A.enum_definitions), the elaborator carries it into the Core file
+    (C.enumDefs), linking merges it, and the entries seed the reader from the
+    program â the same information the OCaml registry holds, as data.
+@@ -50,7 +50,7 @@
+ 
+ (* normalise FIRST, one consumer (record D2): the Lean rep
+    CerberusImpl.normalise_integerType takes the readers in sorted order â
+-   (digest) (enumDefs) (tagDefs) â and its Enum arm is the lookup in enumDefs
++   (enumDefs) (tagDefs) â and its Enum arm is the lookup in enumDefs
+    (failing with the OCaml text on a miss); the OCaml rep is unchanged. *)
+ (*val normalise_integerType: Ctype.integerType -> Ctype.integerType*)
+ 
+--- audited/lean_frontend/generated/CabsImport.lean
++++ corrected/lean_frontend/generated/CabsImport.lean
+@@ -818,10 +818,11 @@
+ 
+ end CabsImport
+ 
+-/-- The run mints with the LAST program TU's digest, in frontend order
+-    (S0 record §3; pipeline.ml:666 leaves `.co` inputs alone). With no
+-    program TU, use the fresh process's empty digest. Library and metadata
+-    TUs do not select this value. Execution receives it as data. -/
++/-- The Cabs execution pipeline selects the LAST program TU's digest, in
++    frontend order, or "" for an empty list. Library and metadata TUs do
++    not select this value. Other entry paths must carry their actual entry
++    digest: OCaml Core text sets it; Core objects preserve the current global
++    (S0 record §3 erratum). Lean's --parse-core does not execute Core text. -/
+ def runDigest (tunits : List (String × translation_unit)) : String :=
+   match tunits.getLast? with
+   | some (digest, _) => digest

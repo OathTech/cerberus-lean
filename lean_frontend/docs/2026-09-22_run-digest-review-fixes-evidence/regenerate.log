@@ -1,0 +1,5 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+make: Nothing to be done for 'prelude-src'.
+[MKDIR] lean_frontend/generated
+[LEM] generating Lean files in [lean_frontend/generated] (log in [lean_frontend/lem.log])
+make: *** [Makefile:352: lean-prelude-src] Terminated

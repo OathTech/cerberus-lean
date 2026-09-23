@@ -1,0 +1,7 @@
+SOURCE COMMENT-ONLY: frontend/model/implementation.lem
+SOURCE COMMENT-ONLY: frontend/model/core_run_aux.lem
+SOURCE COMMENT-ONLY: lean_frontend/CabsImport.lean
+GENERATED COMMENT-ONLY: ocaml_frontend/generated/core_run_aux.ml
+GENERATED COMMENT-ONLY: ocaml_frontend/generated/implementation.ml
+GENERATED COMMENT-ONLY: lean_frontend/generated/CabsImport.lean
+Derived generated comparison: 305 files; 3 comment-only changes; 302 byte-identical files.

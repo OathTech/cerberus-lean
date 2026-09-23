@@ -1,0 +1,1 @@
+Verified 12 files and all archive members; 5367 capture records; 39/39 commands; source, external inputs and recorded artifacts stable; 26 native assertions; pristine and three-engine counts.

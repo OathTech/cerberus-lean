@@ -520,6 +520,19 @@ holds exactly.
 
 ## 3. P3 — the multi-TU digest, pinned from source
 
+**Erratum [AGENT 2026-09-22, run-digest audit D1]:** the OCaml inventory below
+correctly distinguishes `.core` text (sets the digest) from `.co`/`.o` objects
+(preserve it); the later D-S design note and charter accidentally grouped them.
+The shared last-program-TU conclusion applies to the Cabs execution pipeline
+and the C-input differential lanes. It does not define an arbitrary entry from
+the absence of Cabs TUs: OCaml Core text sets `Digest.file filename`, even after
+a C input, while objects retain whichever digest was previously installed.
+That retained global is empty only if no prior input set it. Lean's
+`--parse-core` does not execute Core text. D-S's pure `runDigest [] = ""` is
+specifically the Cabs entry's empty-list rule; consumers of other entries carry
+the actual entry value. The historical D-A reader proposal below was superseded
+by D-S run-state data; its probe transcripts remain historical evidence.
+
 **OCaml.** `Cerb_fresh.set_digest filename` (`util/cerb_fresh.ml:88-95`:
 `digest := Digest.file filename`, resets the TU window) is called at
 exactly three sites: `backend/common/pipeline.ml:185` (top of
@@ -529,7 +542,7 @@ file — this is how each cabs-json carries its TU's digest).
 `read_core_object` (`pipeline.ml:666`, `.co`/`.o` inputs — libc.co in
 libc mode) sets NO digest. The driver's `main` (`main.ml:156-160`) folds
 `frontend` over `core_libraries … @ files` — libraries FIRST, then the
-`.c` files in ARGUMENT order — then `Core_linking.link` (`:318-322`)
+input files in ARGUMENT order — then `Core_linking.link` (`:318-322`)
 and, under `exec`, `interp_backend` (`:323-328`) with no `set_digest`
 between link and run. Run-time minting is `Fork_renumber.fresh_symbol'`
 (`ocaml_frontend/fork_renumber.ml:49`) = `Symbol.fresh ()` =
@@ -546,17 +559,20 @@ the oracle's `Digest.file` of the C source), each before that TU's
 `frontendTU`; libc loading (`:940-945`) precedes the program loop
 (`:946-964`); then `link coreFiles` (`:975`), `initial_driver_state`
 (`:1025`), `drive`/`driveCall` (`:1037/:1039`) with no set between.
-**Therefore the value in force at `drive` is the digest of the LAST
-program TU on the command line — the same TU as the OCaml's.**
+**For a nonempty program Cabs list, the value in force at `drive` is the
+digest of its LAST TU — the same TU as OCaml in the C-input lanes.**
 
-**The rule D-A must mirror (pinned):** *the run's `digest` reader value
-= the digest of the LAST translation unit the frontend processed (the
-last `.c`/`.core` argument; in every lane both engines receive the TUs
-in the same order — `scripts/test_multi_tu.sh:7,139` links "in SORTED
-name order, both sides"); libc dump/metadata digests are set earlier
-and never win; `.co` inputs set nothing.* Each frontend stage keeps its
-own TU's digest (the per-TU seed replaces the per-TU `setDigestIO`).
-The engines AGREE today — **no finding**.
+**The rule proposed for D-A (historical; domain clarified by the erratum):**
+OCaml's run receives the current global after processing all inputs: the last
+`.c`/`.core` input sets it, and `.co`/`.o` objects preserve it. In the C-input
+lanes, Lean's nonempty Cabs list selects that same last program TU; both engines
+receive the TUs in the same order (`scripts/test_multi_tu.sh:7,139` links "in
+SORTED name order, both sides"). Library/metadata digests are installed earlier
+and do not win when program Cabs TUs are present. The old D-A proposal replaced
+each per-TU installation with a reader seed; D-S instead keeps those frontend
+installations and carries the run entry's digest as state data. The original
+C-input-lane source comparison found agreement; it did not establish a common
+empty-input rule for all entry paths.
 
 **What is observable.** No printer prints a digest: `pp_symbol.ml:5,12,38`
 destructure `Symbol (_, n, sd)`; `symbol.lem:203-205` `show_symbol`

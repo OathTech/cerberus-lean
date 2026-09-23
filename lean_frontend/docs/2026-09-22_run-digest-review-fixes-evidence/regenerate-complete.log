@@ -1,0 +1,8 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+make: Nothing to be done for 'prelude-src'.
+[MKDIR] lean_frontend/generated
+[LEM] generating Lean files in [lean_frontend/generated] (log in [lean_frontend/lem.log])
+[COPY] 49 hand-written Lean files (lean_frontend/handwritten_copy.manifest) into [lean_frontend/generated]
+check_handwritten_sync: OK (49 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+[STAMP] recording Lean lem-sync content stamp
+check_lem_sync: recorded lean_frontend/lem_sync.sha256 (src 4f3e7268b1abdaba6ee65c1822b280ae5e46649b15358087e829f6f07b1ed167, gen 424fbc24f298743a2ac56c3a7570751995e06d6614cd7f4c99b362d63b1df7f8)

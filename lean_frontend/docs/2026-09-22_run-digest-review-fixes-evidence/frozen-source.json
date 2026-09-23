@@ -1,0 +1,12 @@
+{
+  "frontend/model/core_run_aux.lem": "32f4c87c8a09bc7e3f4b753fadd791b88ca558acbc34cfca6a3f0b49009ca6e7",
+  "frontend/model/implementation.lem": "e330da78c27654f8c371e4cbe31ecd98c9305c06afc6daa65edfba7fad371e45",
+  "lean_frontend/CabsImport.lean": "944b025d30487596b0bd639d05242aceb7e0c0d942508e922c24de91f0ce0dcb",
+  "lean_frontend/TODO.md": "18df5ebfcd56d47996e861242c2f19e1bd9fba36b9eac1ec7713f92465d4ef95",
+  "lean_frontend/docs/2026-09-19_program-data-parameters-S0-record.md": "d9bb830a2559626d97731b02fd6b2c92df9925ecee8954dd3ec226cc472f453e",
+  "lean_frontend/docs/2026-09-20_run-digest-as-state-design-note.md": "40d2b3ffd50fe65e92317f50de4a66c5bf86291271c892a4b2a4e40f547790a3",
+  "lean_frontend/docs/2026-09-22_charter-run-digest-as-state.md": "111ebe123c8991dadda2a9e63a14409cdac0db664fa20db6d2fa19ff01a58dff",
+  "lean_frontend/docs/2026-09-22_run-digest-as-state-record.md": "78ee872bffd3405ba17ba14f046f71f4f099a392483cc5574c5318ac44c892c4",
+  "lean_frontend/docs/2026-09-22_run-digest-review-fixes.md": "6938f9d0cada0cabe0768a3b8cc0452bd0cc949c7e9dfd8c20acc84b142dec93",
+  "scripts/fork_drift_manifest.txt": "fe817534deb07c6fff08b0c69464c5a7c1823ee68eff834fc4950b9f6a74705f"
+}

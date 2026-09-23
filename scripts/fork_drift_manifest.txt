@@ -1,3 +1,8 @@
+# D-S audit comment corrections, 2026-09-22 [AGENT; four single-row edits, never --refresh]:
+# implementation.lem names only enumDefs/tagDefs readers; core_run_aux.lem describes the explicitly
+# threaded Lean supply. Two [source-content] pins and the two corresponding generated-OCaml diff
+# pins move for comments only. File sets unchanged (82 source / 29 generated). Code-token comparison:
+# lean_frontend/docs/2026-09-22_run-digest-review-fixes.md and its evidence.
 # D-S run digest as state, 2026-09-22 [AGENT; single-row edits + this NOTE, never --refresh]:
 # nine [source-content] pins and seven [expected-semantic] pins move: symbol's explicit digest argument;
 # core_run_aux's sym_digest field and constructors; core_run's state mint (OCaml rep unchanged); driver's
@@ -443,7 +448,7 @@ util/cerb_fresh.ml
 100644 0630b14d31c11aa34ff2765ac1810d80aeadc02d4497ba80af0eb348bfff1db2 frontend/model/core_rewrite.lem
 100644 5f48b77c80e37636b9baa20ab3ebe93f606740c5d7510fa4404109b875d29571 frontend/model/core_rewrite2.lem
 100644 d60d191695e55a7a32f93f028d91f0fe46e3adc69af4db9cff6cc45bef9b89eb frontend/model/core_run.lem
-100644 350995ae658571d838164fd2a7c857d9c2705e3591130f1ac40c66ff0ad1ae94 frontend/model/core_run_aux.lem
+100644 32f4c87c8a09bc7e3f4b753fadd791b88ca558acbc34cfca6a3f0b49009ca6e7 frontend/model/core_run_aux.lem
 100644 516ec242858e9406e7f96813aa2651f440a8b86955d69db99981de196a3dffa2 frontend/model/core_typing.lem
 100644 b3607f3932ab346b9a6496b3f2036459923372ce9d70c8629104d6ef4a5fd71a frontend/model/ctype.lem
 100644 d7e2ece8db3097af54ddb846ce20907a15e5c905f610df014ae6ffcb197b48c7 frontend/model/ctype_aux.lem
@@ -457,7 +462,7 @@ util/cerb_fresh.ml
 100644 bea12923a5e3d19566b6d6b6acf08f0a69645b4a963141059416227d4b9f2751 frontend/model/formatted.lem
 100644 5079002023f7e22633acbd6b112f99213227475c4d19d3b1859ea388b322de80 frontend/model/fs.lem
 100644 c536bc19c689f1403e8296152886d948fcf66ce84cbccf56bf7b4e28216634c1 frontend/model/global.lem
-100644 56fa43800b08efb63513e9e50b385fa984d9de101260a8022ea022eee41fcfa6 frontend/model/implementation.lem
+100644 e330da78c27654f8c371e4cbe31ecd98c9305c06afc6daa65edfba7fad371e45 frontend/model/implementation.lem
 100644 ae79a26c1cfd62acdf18ca6479625de8db05e01f43bdc3dc829cc5a83f465111 frontend/model/loc.lem
 100644 e75c7bf7333be72f00f62818a620d9bb1491ca1f6a6a99273d6a45f8f5caf7ca frontend/model/mem.lem
 100644 fd4fd0a2087125b00025c0ba7bf98035abb6b9daa5a9d474ca5b81e89735344b frontend/model/mini_pipeline.lem
@@ -495,7 +500,7 @@ util/cerb_fresh.ml
 ceca3526d3ddbd55345eee29f0c5b2626b56c516014cdd73fb3bf5db20f50ac2 cabs_to_ail_effect.ml
 0aefe2af044772ef6a5e4be8bfdfa6bb1ae52cddcaf15d7b771b0abe3d13922b cabs_to_ail.ml
 22b0b094c6622a92dfdff511a05f19de93f445c5f47d149deec3ed223e582f98 core_reduction.ml
-a5b22e3943850b3c7dbe9934fe11ae4364dd0cd9d37506edad4adbd9f1681034 core_run_aux.ml
+b9f1e58c1d52cd0680a56e7dcd4e3d8e5d2eadbe1d1575f4ad0442d3efd2b3a5 core_run_aux.ml
 1bcc364225eada1d59d171f95b1c2ddd7792db87ae503c67609105e353f38b42 core_run.ml
 0043fe1a21ec09cb8dd805b47fac4dce6dc094d9b61780adefb0828963cfc656 mini_pipeline.ml
 fa725f3e09e5ae317d685fda82c4be9dcfeca9a99ed47b1ebb4f2dd6a0a343b6 symbol.ml
@@ -510,7 +515,7 @@ efe1a293fdf87eb7a264b3d5a2705d9f9421115f9137772c0b6a539a5049b8fb core.ml
 aae2f7294241e5b942c4d2f9a0b847dd72570a72037590b9df577586b23758d4 core_linking.ml
 afb324d5930473b6c3e34f3fc418e93e06ee89b77e824f18e99cd7600f7fd89d core_typing.ml
 d40900445568d01254a2e1cfef5d50706aba8d4067a74aab34a929339e0a3fd3 genTyping.ml
-91498892261929c6e1e6488c414e5d3cb1723ea8abbb9cbfbcf634ce3925d4fe implementation.ml
+89421ef29756b34e3f3e10ad2559fea2d3ae3c5bad15222d23c7c64e2005dce3 implementation.ml
 [expected-cosmetic]
 f353c48b912b1f5ac4a73b42b981d01c38ac19760867ad8e043072e9489b383c cn.ml
 c0546a677a6bcdd16cc1630ad2360179ef2b74406520e27ec4d7378c6155a8f6 core_aux.ml

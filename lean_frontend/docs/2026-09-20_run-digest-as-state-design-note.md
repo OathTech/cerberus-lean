@@ -54,14 +54,36 @@ let initial_driver_state_given sup address_space_top digest file fs_state =
 ```
 (today `:1520-1544`). Parameter order: the address-space top stays the first explicit parameter (its slice's rule), the digest second, then `file`, `fs_state`. On the Lean target the supply binder the backend inserts stays ahead: `initial_driver_state (sup : Nat) (address_space_top : Int) (digest : String) (file) (fs_state) : driver_state × Nat`.
 
-Callers: OCaml `backend/common/driver_ocaml.ml:169,210` pass `(Cerb_fresh.digest ())` (the global at that point = the digest of the last translation unit the frontend processed — §3.5), `backend/web/instance.ml:638` and `backend/ocaml/runtime/rt_ocaml.ml:360` likewise (compiler-forced, dead-equal); `mini_pipeline.lem`'s const-expr mini-run (`initial_driver_state_given`) passes the desugarer's current digest (`Symbol.digest ()` — the same TU's). Lean `Main.lean:1025` passes `runDigest`, `CerbCall.driveCall` the same value; `CerbCall.lean:156`'s `PrefFunArg callLoc (CerberusFresh.digest ()) n` takes it too (a prefix, not an identity — for uniformity).
+Callers: OCaml `backend/common/driver_ocaml.ml:169,210` pass `(Cerb_fresh.digest ())` (the global at that point, selected by the actual input path — §3.5), `backend/web/instance.ml:638` and `backend/ocaml/runtime/rt_ocaml.ml:360` likewise (compiler-forced, dead-equal); `mini_pipeline.lem`'s const-expr mini-run (`initial_driver_state_given`) passes the desugarer's current digest (`Symbol.digest ()` — the same TU's). Lean `Main.lean:1025` passes `runDigest`, `CerbCall.driveCall` the same value; `CerbCall.lean:156`'s `PrefFunArg callLoc (CerberusFresh.digest ()) n` takes it too (a prefix, not an identity — for uniformity).
 
-### 3.5 Which digest the run receives — the rule both engines already follow
-Pinned from both engines' sources in `2026-09-19_program-data-parameters-S0-record.md` §3: **the run's digest = the digest of the LAST translation unit the frontend processed** (`cerberus a.c b.c` → `Digest.file "b.c"`; on Lean, `tunits` in command-line order, `Main.lean:946-964`; libc dump/metadata digests are set earlier and never win; `.co`/`.core` inputs set nothing). The Lean entry computes it as a pure function of the units, `runDigest : List (digest × translation_unit) → String`, pinned by `runDigest tunits = (tunits.getLast h).1` (`rfl`), and passes it. The OCaml side passes the global's current value, which IS that digest — the lanes see identical behaviour (this is the zero-movement argument: the value did not change, its provenance did).
+### 3.5 Which digest the run receives — entry-specific rules
+[AGENT 2026-09-22, audit D1 correction] In Lean's Cabs execution pipeline,
+**the run's digest is the LAST program Cabs TU's digest**, in `tunits` order
+(`cerberus a.c b.c` → `Digest.file "b.c"`). `runDigest` returns `""` for an
+empty Cabs list; library and metadata units do not select this value. This is
+an entry rule for this pipeline, not a rule for every possible input path.
+Lean's `--parse-core` parses and prints Core text; it does not execute it.
+
+OCaml passes the current global at its entry. Both the C frontend and the
+Core-text frontend set it: `backend/driver/main.ml:26–32` sends `.core` to
+`core_frontend`, whose first action is `Cerb_fresh.set_digest filename`
+(`backend/common/pipeline.ml:279–280`). Thus `p.core` supplies its own file
+digest, and Core text processed after C replaces the C input's digest.
+`.co`/`.o` use `read_core_object` (`pipeline.ml:668`), which preserves the
+current global; that value is empty only when nothing has previously set it.
+The setter uses `Digest.file filename` (`util/cerb_fresh.ml:88–95`).
+
+The original statement that `.co` and `.core` both set nothing was wrong.
+The S0 record §3's OCaml inventory already distinguishes them; its erratum
+clarifies the domain of the shared Cabs rule. Consumers must carry the actual
+entry digest for other entry paths, never infer it from the absence of Cabs TUs.
+The implementation stays unchanged: `runDigest` selects the last Cabs digest
+or `""`, and OCaml passes its global. The reviewed differential lanes retain
+the same values.
 
 ### 3.6 What does NOT change
 - Frontend minting (`Symbol.fresh*` during desugaring/elaboration) keeps the ambient `digest()`; `CerberusFresh.digest`/`setDigestIO`/`forceIO` stay for that phase; the effect-erasure page stays open for that one seam. No consumer theorem mentions frontend minting (your proofs quantify over the captured `file`).
-- `CoreParser.mkSym`'s `""` digest for the quoted library (`CoreParser.lean:242-243`) — your item 6's premise — is untouched: library symbols stay distinct from minted ones because the run digest is a 32-hex-digit MD5 (an entry-shape pin: `runDigest … ≠ ""`), which is exactly `symFresh_of_digest`'s `hP : P.digest ≠ ""`.
+- `CoreParser.mkSym`'s `""` digest for the quoted library (`CoreParser.lean:242-243`) — your item 6's premise — is untouched: for a nonempty list of validated Cabs inputs, the selected digest is a 32-hex-digit MD5, and the committed fixture pins one such entry. Library-symbol freshness still requires the per-program hypothesis `symFresh_of_digest`'s `hP : P.digest ≠ ""`; arbitrary entry arguments and `runDigest []` need not satisfy it.
 - The reader machinery, the enum map (E-A), the OCaml oracle's behaviour, every baseline.
 
 ## 4. Consumer-visible surface (your re-pin)

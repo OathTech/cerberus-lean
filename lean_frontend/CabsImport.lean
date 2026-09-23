@@ -818,10 +818,11 @@ def parseJson (input : String) : Except String (String × translation_unit) := d
 
 end CabsImport
 
-/-- The run mints with the LAST program TU's digest, in frontend order
-    (S0 record §3; pipeline.ml:666 leaves `.co` inputs alone). With no
-    program TU, use the fresh process's empty digest. Library and metadata
-    TUs do not select this value. Execution receives it as data. -/
+/-- The Cabs execution pipeline selects the LAST program TU's digest, in
+    frontend order, or "" for an empty list. Library and metadata TUs do
+    not select this value. Other entry paths must carry their actual entry
+    digest: OCaml Core text sets it; Core objects preserve the current global
+    (S0 record §3 erratum). Lean's --parse-core does not execute Core text. -/
 def runDigest (tunits : List (String × translation_unit)) : String :=
   match tunits.getLast? with
   | some (digest, _) => digest

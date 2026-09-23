@@ -17,13 +17,18 @@ owned and hands off; this roadmap does not authorize operating it.
 ## Run digest as state (D-S, 2026-09-22)
 
 - Runtime minting takes `core_run_state.sym_digest`, seeded explicitly by the
-  driver entry from the last program TU (empty without one). The frontend
-  digest seam remains. The acceptance facts, validation evidence and combined
+  driver entry from the last program Cabs TU (empty for an empty Cabs list).
+  Other input paths carry their actual entry digest: OCaml Core text sets it,
+  while Core objects preserve the current global. The frontend digest seam
+  remains. The acceptance facts, validation evidence and combined
   E-A/D-S consumer re-pin note are in
   [the D-S record](docs/2026-09-22_run-digest-as-state-record.md).
 - cerberus-sl takes one re-pin after E-A and D-S land: carry `Program.digest`,
-  add the run-state invariant, and remove `MintDigestC` and its pin. Landing
-  and the consumer's own proof/corpus checks remain separate from this slice.
+  add the run-state invariant, and remove `MintDigestC` and its pin. The
+  [independent review](docs/2026-09-22_run-digest-audit.md) found no implementation
+  blocker; its documentation corrections and authorized landing are recorded
+  [here](docs/2026-09-22_run-digest-review-fixes.md). The consumer's proof/corpus
+  checks remain a separate adoption step.
 
 ## Queued larger work
 

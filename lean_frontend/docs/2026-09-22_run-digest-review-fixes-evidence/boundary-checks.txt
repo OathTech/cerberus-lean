@@ -1,0 +1,13 @@
+$ tools/check_lem_sync.sh --check
+check_lem_sync: OK (src 4f3e7268b1abdaba6ee65c1822b280ae5e46649b15358087e829f6f07b1ed167, gen be5c44696908123cd5eb8aee0332253772efac499d0f1662b317ec2e6f778df6)
+exit=0
+$ tools/check_lem_sync.sh --check-lean
+check_lem_sync: lean OK (src 4f3e7268b1abdaba6ee65c1822b280ae5e46649b15358087e829f6f07b1ed167, gen 424fbc24f298743a2ac56c3a7570751995e06d6614cd7f4c99b362d63b1df7f8)
+exit=0
+$ tools/check_handwritten_sync.sh
+check_handwritten_sync: OK (49 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+exit=0
+$ scripts/check_fork_drift.sh
+check_fork_content: OK — 82 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 82 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 29 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 38f87d5 = lem -v)
+exit=0

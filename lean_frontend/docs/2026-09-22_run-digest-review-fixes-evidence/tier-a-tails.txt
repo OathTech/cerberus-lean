@@ -1,0 +1,223 @@
+A1 passed (224.626s): ./scripts/test_unit.sh
+[stdout: verbatim tail]
+  OK (refused as declared): l4_comment_release
+  OK (refused as declared): count_mismatch
+  OK (refused as declared): appended_line
+  OK (refused as declared): token_change
+  OK (refused as declared): section_reorder
+  OK (admitted as declared): strict_renumber [RENUMBER-ONLY ADMIT plant/strict_renumber class=STRICT ids=1 moved=1 canon=d7b6d3c7463e]
+  OK (admitted as declared): layout_rewrap [RENUMBER-ONLY ADMIT plant/layout_rewrap class=LAYOUT ids=2 moved=2 canon=9b2ed22f1988]
+  OK (refused as declared): crlf_string
+  OK (admitted as declared): crlf_code [RENUMBER-ONLY ADMIT plant/crlf_code class=LAYOUT ids=1 moved=1 canon=8c8910c71fce]
+test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+[stderr: verbatim tail]
+test_only_elapsed_diagnostic_trailer_is_projected (__main__.UpstreamInstrumentTests.test_only_elapsed_diagnostic_trailer_is_projected) ... ok
+test_real_control_and_same_value_byte_mutation (__main__.UpstreamInstrumentTests.test_real_control_and_same_value_byte_mutation) ... ok
+test_reviewed_difference_moves_fail_closed (__main__.UpstreamInstrumentTests.test_reviewed_difference_moves_fail_closed) ... ok
+test_status_and_fatal_suffix_cannot_hide_behind_verdict (__main__.UpstreamInstrumentTests.test_status_and_fatal_suffix_cannot_hide_behind_verdict) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.253s
+
+OK
+OBSERVATION ERROR: unknown or malformed stdout record: b'Defined {value: "Specified(0)", stdout: "'
+[A1 unit total and final fork-drift verdicts, verbatim]
+Total: 14 passed, 0 failed
+check_fork_drift: SELFTEST OK (14 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; unplanted gate green)
+check_fork_content: OK — 82 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 82 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 29 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 38f87d5 = lem -v)
+
+A2 passed (28.62s): ./scripts/test_exec.sh --check-baseline
+[stdout: verbatim tail]
+  Mismatch:   0 (includes one-sided-UB DIFFs)
+
+Match rate:   100% (complete observations; UB_DIFF is a difference)
+
+SUMMARY: total=113 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=5 cerb_floor=0 cerb_inconsistent=0
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/run-digest/scripts/exec_baseline.txt
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+
+A3 passed (52.763s): ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage
+[stdout: verbatim tail]
+  Mismatch:   0 (includes one-sided-UB DIFFs)
+
+Match rate:   100% (complete observations; UB_DIFF is a difference)
+
+SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/run-digest/scripts/exec_coverage_baseline.txt
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+
+A4 passed (23.063s): ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug
+[stdout: verbatim tail]
+  Mismatch:   0 (includes one-sided-UB DIFFs)
+
+Match rate:   100% (complete observations; UB_DIFF is a difference)
+
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/run-digest/scripts/exec_debug_baseline.txt
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+
+A4b passed (24.567s): ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float
+[stdout: verbatim tail]
+  Mismatch:   0 (includes one-sided-UB DIFFs)
+
+Match rate:   100% (complete observations; UB_DIFF is a difference)
+
+SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+
+Checking against baseline: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/run-digest/scripts/exec_float_baseline.txt
+
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+
+A4c passed (3.133s): ./scripts/test_bytes.sh
+[stdout: verbatim tail]
+[MATCH] function_return.exec.c: return code: 0
+[MATCH] memcpy.exec.c: return code: 0
+[NEG_OK] byte_is_not_char.c: Lean-side desugar/typing rejection at the committed diagnostic line 4 (rc 1)
+[NEG_OK] no_add.c: Lean-side desugar/typing rejection at the committed diagnostic line 8 (rc 1)
+[NEG_OK] no_shift_left.c: Lean-side desugar/typing rejection at the committed diagnostic line 8 (rc 1)
+[NEG_OK] no_shift_right.c: Lean-side desugar/typing rejection at the committed diagnostic line 8 (rc 1)
+[NEG_OK] only_unsigned_char.c: Lean-side desugar/typing rejection at the committed diagnostic line 1 (rc 1)
+
+SUMMARY: exec_match=9 neg_pinned=5 fail=0
+ALL AT COMMITTED EXPECTEDS
+
+A5 passed (21.961s): ./scripts/test_libc_exec.sh
+[stdout: verbatim tail]
+  MATCH 006-strlen-snprintf: Defined {value: "Specified(18)", stdout: "", stderr: "", blocked: "false"}
+  MATCH 007-va-user-vsnprintf: Defined {value: "Specified(16)", stdout: "", stderr: "", blocked: "false"}
+  MATCH 008-aligned-alloc-bad-size: Undefined {ub: "DUMMY(align_alloc)", stderr: "", loc: "<8:28--8:48>"}
+  MATCH 009-aligned-alloc-3: Defined {value: "Specified(11)", stdout: "", stderr: "", blocked: "false"}
+  MATCH 010-int32-printf: Defined {value: "Specified(0)", stdout: "7\n", stderr: "", blocked: "false"}
+  MATCH 011-decimal-sweep: Defined {value: "Specified(0)", stdout: "8058938944302713231\n194266234449066599
+  MATCH 012-global-alloc-order: Defined {value: "Specified(0)", stdout: "s1=281474976707472 c1=281474976707471 i
+
+SUMMARY: match=12 diff=0
+ALL MATCH RECORDED BASELINE
+
+A6 passed (2.233s): ./scripts/test_multi_tu.sh
+[stdout: verbatim tail]
+Running multi-TU differential comparison (2 tests)...
+==================================================
+PROJECTION: full (complete verdict tokens)
+Raw observation evidence (kept on failure or under CERB_OBSERVATION_DIR; removed on exit 0): /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/run-digest/.tmp/run-digest-review/fast/A6/observations/test_multi_tu.POmFt3yI89
+[1] MATCH basic: 31 execution(s), VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+[2] MATCH tentative: 1 execution(s), VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+
+==================================================
+SUMMARY: total=2 match=2 fail=0
+ALL PASSED
+
+A6b passed (3.585s): ./scripts/test_multi_tu.sh --failure-class-projection tests/multi_tu_tray
+[stdout: verbatim tail]
+[2] MATCH arr-1-2-return: 1 execution(s), ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(_, SD_Id(\"S\")) vs Symbol(_, SD_Id(\"S\"))'"}
+[3] MATCH arr-2-2-arg: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[4] MATCH arr-2-2-return: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[5] MATCH arr-incomplete-ptr-return: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+[6] MATCH fam-vs-array-return: 1 execution(s), ERR:{msg: "ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(_, SD_Id(\"S\")) vs Symbol(_, SD_Id(\"S\"))'"}
+[7] MATCH node: 1 execution(s), VAL:{value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
+
+==================================================
+SUMMARY: total=7 match=7 fail=0
+ALL PASSED
+
+A7 passed (10.647s): ./scripts/test_parse.sh
+[stdout: verbatim tail]
+================================
+Total:          113
+Cerberus parse: 113 ok, 0 failed
+Lean parse:     113 ok, 0 failed, 0 timeout (>60s; fatal), 0 lean failure(s) (crash / nonzero exit without a printed verdict; fatal)
+Lean front end: 0 rejected (exit 1 + a printed Error/Undefined verdict; not a parse failure), 0 internal-error-expected (failwithI panic on an *.error.c input, oracle-mirrored)
+Success rate:   100% (of cerberus successes)
+
+batch diagnostic producers: 8/8 passed
+cabs bytes probe: 128 raw bytes 0x80..0xFF crossed the bridge as one code point each (valid UTF-8 JSON; Lean sizeof = 129)
+ALL PASSED
+
+A8 passed (9.293s): ./scripts/test_core.sh
+[stdout: verbatim tail]
+
+================================
+Results (8 seconds)
+================================
+Total:          113
+Cerberus --pp:  113 ok, 0 failed
+Lean parse:     113 ok, 0 failed
+Success rate:   100% (of cerberus successes)
+
+ALL PASSED
+
+A9 passed (18.105s): ./scripts/test_elab.sh
+[stdout: verbatim tail]
+[113/113] DIFF 113-allocator-exhausted-single-request-overlap
+
+============================================
+Elaborated-Core signature differential (reporting mode)
+  SAME:       108
+  DIFF:       5
+  OCAML_FAIL: 0
+  LEAN_FAIL:  0
+
+SUMMARY: total=113 same=108 diff=5 ocaml_fail=0 lean_fail=0
+
+A10 passed (17.452s): ./scripts/test_libxml2_uri.sh
+[stdout: verbatim tail]
+==================================================
+[prep] pins verified; 5 TUs
+[oracle+libc] exit=0 wall=0:01.23 maxRSS=203116kB
+[ocaml-nolibc] exit=1: Error {msg: "ill-formed program: `calling an unknown procedure: Symbol(1451, SD_Id("memset"))'"}
+[lean-nolibc] exit=1 wall=0:01.13 maxRSS=201424kB: Error {msg: "ill-formed program: `calling an unknown procedure: Symbol(968, SD_Id("memset"))'"}
+[lean+libc] exit=0 wall=0:10.21 maxRSS=286408kB: Defined {value: "Specified(600741297)", stdout: "uri 0 rc=0 scheme=http server=example.com port=8080
+[lean+libc] EXACT MATCH with ORACLE_LIBC (16/16 URI corpus)
+
+==================================================
+GATE PASS: all lane expectations pinned-green + baseline unchanged (16/16)
+
+A11 passed (59.217s): ./scripts/test_cn_coverage.sh --check-baseline
+[stdout: verbatim tail]
+  LEAN_FAIL:     0  LEAN_CRASH: 0  FUEL: 0  LEAN_ERROR: 0  LEAN_TIMEOUT: 0
+Oracle-side (no comparison possible):
+  ORACLE_FAIL:   0  ORACLE_TIMEOUT: 0  ORACLE_INCONSISTENT: 0
+
+Agreement tally: 213/213 compared (213 run, 0 oracle-side unobservable)
+
+SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0
+
+Checking against baseline (exact match, fail-closed both directions): /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/run-digest/tests/cn_coverage/baseline.txt
+BASELINE OK (213 entries, exact match)
+
+A12.1 passed (4.887s): ./scripts/test_address_space.sh --selftest
+[stdout: verbatim tail]
+  PLANT OK   [P8 the committed file with its final newline removed is ACCEPTED (the last row is read)] ->   EXPECT OK    18 pinned rows = 18 observed cases, every token identical
+  PLANT OK   [P9 --address-space-top 18446744073709551616 (= 2^64) REFUSED on both engines with the mirrored domain sentence] -> fork rc=124 lean rc=2
+  PLANT OK   [P10 --address-space-top 0x40 (not decimal) REFUSED on both engines] -> fork rc=124 lean rc=2
+  PLANT OK   [P11 --address-space-top 64 ACCEPTED on both engines (window-char-int7 -> Specified(28))] -> fork rc=0 lean rc=0
+  PLANT OK   [P12 --address-space-top 6_4 (an underscore separator) REFUSED on both engines] -> fork rc=124 lean rc=2
+  PLANT OK   [P13 --address-space-top 1_8446744073709551615 (a separator inside 2^64 - 1) REFUSED on both engines] -> fork rc=124 lean rc=2
+  PLANT OK   [P14 --address-space-top 18446744073709551615 (= 2^64 - 1, the last value of the exclusive bound) ACCEPTED on both engines (window-char-int7 -> Specified(216))] -> fork rc=0 lean rc=0
+  REVERTED (the committed expectations):
+  EXPECT OK    18 pinned rows = 18 observed cases, every token identical
+test_address_space: SELFTEST OK (14 plants — P1 the discriminator's derived pre-fix observation, P2 missing file, P3 truncated, P4 phantom row, P5-P7 phantom/duplicate/malformed rows without a final newline all REJECTED; P8 the valid file without a final newline ACCEPTED; P9/P10 the out-of-domain and non-decimal tops REFUSED on both engines, P11 a decimal top accepted; P12/P13 underscore-separated spellings REFUSED on both, P14 2^64 - 1 ACCEPTED on both; the committed file green)
+
+A12.2 passed (4.487s): ./scripts/test_address_space.sh
+[stdout: verbatim tail]
+  AGREE      three-ints-then-array    top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      two-ints                 top=64  VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      two-ints                 top=32  VAL:{value: "Specified(12)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      two-ints                 top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      window-char-int7         top=64  VAL:{value: "Specified(28)", stdout: "", stderr: "", blocked: "false"}
+  AGREE      window-char-int7         top=32  ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+  AGREE      window-char-int7         top=8   ERR:{msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}
+
+  EXPECT OK    18 pinned rows = 18 observed cases, every token identical
+test_address_space: OK (18 cases: LEAN = FORK through the shared codec at tops 64 32 8; every fork observation = its pinned row in expectations.txt)
