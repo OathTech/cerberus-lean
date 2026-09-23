@@ -1,0 +1,49 @@
+open import Pervasives Set_extra
+import Sc_synchronization Sc_atomic_sources Sc_atomic_source_controls Sc_reference Sc_reference_aux Sc_graph Sc_action_identity Core_run_aux
+
+let sc_sync_checks byte =
+  let atomic = Sc_runtime.SC_access Cmm_csem.Seq_cst Core.Pos in
+  let write = Sc_atomic_source_controls.sc_atomic_fixture byte 1 1 atomic Mem_common.StoreAccess (Just 7) 100 4 4 in
+  let read0 = Sc_atomic_source_controls.sc_atomic_fixture byte 3 3 atomic Mem_common.LoadAccess (Just 7) 100 4 4 in
+  let read = <| read0 with Sc_runtime.sc_effect_request= <| read0.Sc_runtime.sc_effect_request with Sc_runtime.sc_request_thread= 1 |> |> in
+  let node id thread before = <| Sc_graph.sc_node_id= id; Sc_graph.sc_node_thread= thread;
+    Sc_graph.sc_node_annotation= <| Core_run_aux.empty_annotation with
+      Core_run_aux.sb_before= Set.fromList (List.map (fun n -> (thread,n)) before) |> |> in
+  let graph = Sc_graph.sc_build_source_graph [node 0 0 [];node 1 0 [0];node 3 1 [];node 4 1 [3]] in
+  let aliases = List.map (fun id -> <| Sc_action_identity.sc_alias_occurrence= id;Sc_action_identity.sc_alias_action= id |>) [0;1;3;4] in
+  let receipt = Sc_atomic_sources.sc_atomic_source_for aliases read [write] in
+  let loc = Sc_reference_aux.Loc_hol 0 in
+  let value = Sc_reference_aux.Cvalue_hol 0 in
+  let writer = Sc_reference.Store 1 (Sc_reference_aux.Tid_hol 0) Sc_reference.Seq_cst loc value in
+  let reader = Sc_reference.Load 3 (Sc_reference_aux.Tid_hol 1) Sc_reference.Seq_cst loc value in
+  let release = Sc_reference.Fence 0 (Sc_reference_aux.Tid_hol 0) Sc_reference.Seq_cst in
+  let acquire = Sc_reference.Fence 4 (Sc_reference_aux.Tid_hol 1) Sc_reference.Seq_cst in
+  let inputs = <| Sc_synchronization.sc_sync_actions= [release;writer;reader;acquire];
+    Sc_synchronization.sc_sync_sb= {(release,writer);(reader,acquire)};
+    Sc_synchronization.sc_sync_asw= {}; Sc_synchronization.sc_sync_mo= {};
+    Sc_synchronization.sc_sync_lo= {};Sc_synchronization.sc_sync_other_rf= [] |> in
+  let run i rs = Sc_synchronization.sc_replay_synchronization graph aliases i rs in
+  let result = run inputs [receipt] in
+  let pairs r = Set_extra.toOrderedList (Set.map (fun (a,b) -> (Sc_reference.aid_of a,Sc_reference.aid_of b)) r.Sc_synchronization.sc_sync_sw) in
+  let missing = run <| inputs with Sc_synchronization.sc_sync_actions= [release;writer;acquire] |> [receipt] in
+  let duplicate = run <| inputs with Sc_synchronization.sc_sync_actions= writer :: inputs.Sc_synchronization.sc_sync_actions |> [receipt] in
+  let wrong = run <| inputs with Sc_synchronization.sc_sync_actions= [Sc_reference.Load 1 (Sc_reference_aux.Tid_hol 0) Sc_reference.Seq_cst loc value;reader] |> [receipt] in
+  let unresolved = run inputs [Sc_atomic_sources.sc_atomic_source_for aliases read []] in
+  let conflict = run <| inputs with Sc_synchronization.sc_sync_other_rf= [(writer,reader)] |> [receipt] in
+  let same = run <| inputs with Sc_synchronization.sc_sync_actions= [writer;Sc_reference.Load 3 (Sc_reference_aux.Tid_hol 0) Sc_reference.Seq_cst loc value];Sc_synchronization.sc_sync_sb= {} |> [receipt] in
+  [
+   ("physical atomic RF reaches the exact four fence-aware SW edges", pairs result = [(0,3);(0,4);(1,3);(1,4)]);
+   ("release sequence includes its head", (writer,writer) IN result.Sc_synchronization.sc_sync_rs);
+   ("hypothetical release sequence includes atomic write", (writer,writer) IN result.Sc_synchronization.sc_sync_hrs);
+   ("shared HB retains complete fence bridge", (0,4) IN result.Sc_synchronization.sc_sync_hb.Sc_happens_before.sc_hb_relation);
+   ("valid replay has no diagnostics", result.Sc_synchronization.sc_sync_issues = [] && result.Sc_synchronization.sc_sync_hb.Sc_happens_before.sc_hb_issues = []);
+   ("no invented RF synchronization", pairs (run inputs []) = []);
+   ("same-thread pair is not SW", pairs same = []);
+   ("missing action endpoint remains explicit", match missing.Sc_synchronization.sc_sync_issues with [Sc_synchronization.SC_sync_ambiguous_endpoint 1 3 [_] []] -> true | _ -> false end);
+   ("duplicate equal action endpoint remains explicit", match duplicate.Sc_synchronization.sc_sync_issues with [Sc_synchronization.SC_sync_ambiguous_endpoint 1 3 [_;_] [_]] -> true | _ -> false end);
+   ("a reference load cannot become an RF writer", match wrong.Sc_synchronization.sc_sync_issues with [Sc_synchronization.SC_sync_wrong_action_kind _ _] -> true | _ -> false end);
+   ("unresolved physical source stays diagnostic", match unresolved.Sc_synchronization.sc_sync_issues with [Sc_synchronization.SC_sync_unresolved_atomic_source _] -> true | _ -> false end);
+   ("other RF cannot silently overwrite atomic derivation", match conflict.Sc_synchronization.sc_sync_issues with [Sc_synchronization.SC_sync_atomic_target_in_other_rf _ _] -> true | _ -> false end);
+   ("duplicate receipts retain multiplicity", List.length (run inputs [receipt;receipt]).Sc_synchronization.sc_sync_atomic_receipts = 2 && List.length (run inputs [receipt;receipt]).Sc_synchronization.sc_sync_resolutions = 2);
+   ("earlier fault still retains read identity", List.map (fun r -> r.Sc_atomic_sources.sc_atomic_read.Sc_runtime.sc_effect_id) unresolved.Sc_synchronization.sc_sync_atomic_receipts = [3])
+  ]

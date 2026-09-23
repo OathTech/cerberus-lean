@@ -3,7 +3,26 @@
 Governing document: [SC prototype charter](2026-09-21_charter-sc-prototype.md).
 This file records evidence and next actions; it does not replace the charter.
 
-## Latest validated component — successful global bindings, September 23
+## Latest validated component — atomic sources and synchronization, September 23
+
+The [query component](2026-09-23_sc-atomic-sync-work.md) passes all 39 full lanes
+and the mandatory 864-case report, with source unchanged, no artifact issues and
+zero complete observation/classification changes from global bindings. Thirty
+paired controls, thirteen kernel laws, ten native C relation/erasure controls and
+two rejected compiled mutations validate the installed queries. The same 40 known
+Lean discrepancy/undecodable IDs remain in the general corpus.
+
+Physical atomic-source receipts preserve unresolved evidence. Pinned release
+sequences and fence-aware synchronization feed the existing all-vertex HB query;
+its diagnostics remain separately inspectable. Action/location/value/MO and
+non-atomic RF interpretations are still inputs, not established C correspondences.
+No public C verdict or new supported-program classification is enabled.
+
+Continue with actual linker/artifact attribution, precise library guards,
+location/value and lifetime composition, and complete public outcomes. The whole
+charter remains incomplete.
+
+## Prior component — successful global bindings, September 23
 
 The [global-binding component](2026-09-23_sc-global-bindings-work.md) passes all
 39 full lanes and the mandatory 864-case comparison, with source unchanged,

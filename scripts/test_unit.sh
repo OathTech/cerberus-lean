@@ -38,6 +38,7 @@ UNIT_TESTS=(
     "sc-spawn-test"
     "sc-global-bindings-test"
     "sc-happens-before-test"
+    "sc-synchronization-test"
     "nd-suspension-test"
     "memory-suspension-test"
     "sc-helper-order-test"
@@ -143,6 +144,12 @@ for test in "${TESTS[@]}"; do
         DUNE_CACHE=disabled "$SCRIPT_DIR/capped" dune build --root "$PROJECT_ROOT" -j 2 \
             memory/concrete/sc_spawn_controls/controls.exe
         timeout 30 "$PROJECT_ROOT/_build/default/memory/concrete/sc_spawn_controls/controls.exe"
+    fi
+    if [[ "$test" == sc-synchronization-test ]]; then
+        "$PROJECT_ROOT/tools/check_lem_sync.sh" --check
+        DUNE_CACHE=disabled "$SCRIPT_DIR/capped" dune build --root "$PROJECT_ROOT" -j 2 \
+            memory/concrete/sc_synchronization_controls/controls.exe
+        timeout 30 "$PROJECT_ROOT/_build/default/memory/concrete/sc_synchronization_controls/controls.exe"
     fi
     if [[ "$test" == sc-happens-before-test ]]; then
         "$PROJECT_ROOT/tools/check_lem_sync.sh" --check

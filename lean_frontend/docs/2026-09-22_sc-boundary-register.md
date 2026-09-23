@@ -112,6 +112,20 @@ parallel `fputc('A', stdout)` / `fputc('B', stdout)` records 271 effects and
 not exhaustive SC outcomes or caller UB. Buffered stdout is empty in these
 captures; no flush result was inferred.
 
+A later [bounded diagnostic](2026-09-21_sc-prototype-evidence/atomic-sync/README.md)
+retains zero-length paths (`sc-stream-draft/zero-length-1` and its review in the
+component archive). Both ordered and parallel `fread` pairs return zero and
+preserve full prior observations after query erasure. Each records ten accesses
+to the same FILE storage; the parallel pair has five source-unordered conflicting
+pairs, the ordered pair none. Transfer length zero therefore does not by itself
+justify skipping stream-access analysis. The pinned `fwrite` path also calls
+`__fwritex` at length zero, but both its ordered/parallel instruments timed out
+at 20 seconds (exit 124); no complete `fwrite` result is claimed. These are
+source/selected-trace facts, not caller UB or a new lock semantics. The review
+also records N1570 7.21.8.1p3/7.21.8.2p3's zero-length requirements alongside
+7.21.2p7–8; an internal field update alone is not treated as a separate
+observable-conformance verdict.
+
 **Guard obligation:** identify executed stream operations and the stream object
 whose required synchronization is missing. Inter-thread stream use that depends
 on those missing lock effects requires SC-G03; ordinary buffer formatting

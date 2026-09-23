@@ -1,3 +1,11 @@
+# SC physical atomic-source and reference synchronization queries, 2026-09-23 [AGENT]:
+# Review: lean_frontend/docs/2026-09-23_sc-atomic-sync-work.md.
+# Two shared queries retain completed reads, per-byte sources, aliases, explicit
+# reference inputs and diagnostics. RS/HRS/fence-aware SW feed the existing
+# all-vertex HB query. New paired fixtures and build roots are registered.
+# No public verdict, new language exclusion or behavioral baseline change.
+# This component awaits full validation. Earlier comments are refresh-time
+# history; global bindings passed full validation at 074c7348a.
 # SC successful global bindings, 2026-09-23 [AGENT], validation pending:
 # Review: lean_frontend/docs/2026-09-23_sc-global-bindings-work.md.
 # One passive receipt at the existing successful initializer update; complete
@@ -513,6 +521,7 @@ frontend/model/pp.lem
 frontend/model/sc_access_group.lem
 frontend/model/sc_access_sequencing.lem
 frontend/model/sc_action_identity.lem
+frontend/model/sc_atomic_sources.lem
 frontend/model/sc_byte_key.lem
 frontend/model/sc_byte_sources.lem
 frontend/model/sc_call_context.lem
@@ -529,6 +538,7 @@ frontend/model/sc_representation.lem
 frontend/model/sc_runtime.lem
 frontend/model/sc_scopes.lem
 frontend/model/sc_spawn.lem
+frontend/model/sc_synchronization.lem
 frontend/model/sc_value.lem
 frontend/model/sc_varargs.lem
 frontend/model/state.lem
@@ -570,6 +580,12 @@ memory/concrete/sc_spawn_controls/controls.ml
 memory/concrete/sc_spawn_controls/dune
 memory/concrete/sc_spawn_controls/sc_spawn_controls.lem
 memory/concrete/sc_spawn_controls/sc_spawn_controls.ml
+memory/concrete/sc_synchronization_controls/controls.ml
+memory/concrete/sc_synchronization_controls/dune
+memory/concrete/sc_synchronization_controls/sc_atomic_source_controls.lem
+memory/concrete/sc_synchronization_controls/sc_atomic_source_controls.ml
+memory/concrete/sc_synchronization_controls/sc_synchronization_controls.lem
+memory/concrete/sc_synchronization_controls/sc_synchronization_controls.ml
 memory/concrete/sc_value_controls/controls.ml
 memory/concrete/sc_value_controls/dune
 memory/concrete/sc_varargs_controls/controls.ml
@@ -609,7 +625,7 @@ tools/check_lem_sync.sh
 util/cerb_fresh.ml
 util/cerb_location_json.ml
 [source-content]
-100644 c68d19159ddb5bb05ca6b9d1d6bbe358f3b2a28286862678d9e38e0e396496a2 Makefile
+100644 4a52ca23de07ae96e1f87569f56a9247d178019b2851d327681b5087f9b3ddcd Makefile
 100644 f4901556a3001f3a4968c4a66205da6615e18b4618a21ac9852f27386ffe19d5 backend/common/ail_sym_hwm.ml
 100644 0a55bfb2d1cc722f085e5aae0889d8e51d8496364ca7c3b31f4ef70c5efd6118 backend/common/driver_ocaml.ml
 100644 91d09d39c2b2e4ef9b870ea665f588f446ca7b5bb84e6701211861ff2a36565e backend/common/driver_ocaml.mli
@@ -676,6 +692,7 @@ util/cerb_location_json.ml
 100644 48806e291b9bf5ff2b7097bb9ec55789f04189a2dff69d80bb660218288068d3 frontend/model/sc_access_group.lem
 100644 765a442b7b823975f25b2f4b122f036cf1156766e28bacb31ede7b9a9bad3562 frontend/model/sc_access_sequencing.lem
 100644 aebe9a6ecd836b7a2472cbff1a8cfb8aed75a6a6cf558c42e535034c40023ab7 frontend/model/sc_action_identity.lem
+100644 acbe35c1e9bd71066c02b93fc44372deeeb775cb7aa3e74c4e879242f1693cbf frontend/model/sc_atomic_sources.lem
 100644 4ff2dda68f2e60e64a9d0aa8fcafeea5b781daaae41ec4a740acf99803a61e5e frontend/model/sc_byte_key.lem
 100644 2e16ecd4eba502ec0e346ee1e11dc0dc60b5a54849ee6cb12c66a79ae153084a frontend/model/sc_byte_sources.lem
 100644 2c5a6066b867e5513490f8d7d04486c1e45ddbd6d74b2f14fb69e858c945ac15 frontend/model/sc_call_context.lem
@@ -692,6 +709,7 @@ util/cerb_location_json.ml
 100644 96e85058dfd27b62a3b16d490a4e002ef404ba6acf963f6670f2bda3d9bdf0ee frontend/model/sc_runtime.lem
 100644 37af2ee62b9b3928dc17e9e25f2ae237ab8ca38563ca69c7816edc94bf283269 frontend/model/sc_scopes.lem
 100644 c30a244380691f931aa8cd5d9b518b72d404ddf73384737b8eed3bd912534f94 frontend/model/sc_spawn.lem
+100644 525c31b1e30cdbc4ed5b6af5fcb92ae73ee151aba2977784203c93782c24fe24 frontend/model/sc_synchronization.lem
 100644 2e9d2e5ef196f38133bcc07b50af2c3b3ec47d9ff3513ed20e2e0bfb45e0bd32 frontend/model/sc_value.lem
 100644 b4b4e65f23627351ec15c349e89354a17b89860a3e467c17a20419e4e58a5914 frontend/model/sc_varargs.lem
 100644 8de49b4f9775e7d4f7b07f4d2c6757e9597c34a95d61658b0914e15db4511898 frontend/model/state.lem
@@ -733,6 +751,12 @@ util/cerb_location_json.ml
 100644 0eb6c108716d692409cea0ed97015ec898223c1e1af4725c9daf0ef51c16dc35 memory/concrete/sc_spawn_controls/dune
 100644 680272c67e258f3e8ed535f6ed7663262657cf421ef239a9c8cd1ff068f48091 memory/concrete/sc_spawn_controls/sc_spawn_controls.lem
 100644 1c99afa43205eb271de32b2be78e5dfed2d403876d504c62d3a4741fa2ee6e03 memory/concrete/sc_spawn_controls/sc_spawn_controls.ml
+100644 c8e4754f1440e357660257f67a23c28338bc6b9063a3ee80d6d59880bc0fa35b memory/concrete/sc_synchronization_controls/controls.ml
+100644 0eb6c108716d692409cea0ed97015ec898223c1e1af4725c9daf0ef51c16dc35 memory/concrete/sc_synchronization_controls/dune
+100644 60b2e60a5f1cbd7eb1279c4798213122ba13964898d17b6e35cb5342d3b570da memory/concrete/sc_synchronization_controls/sc_atomic_source_controls.lem
+100644 24aaa1a104cb06ff30e6ff08d120eddd03282254795540162860072ce950f6d5 memory/concrete/sc_synchronization_controls/sc_atomic_source_controls.ml
+100644 a8b7c2c6b7132753155ab5c0858e512800880d937861e981529c22f3e74e3df6 memory/concrete/sc_synchronization_controls/sc_synchronization_controls.lem
+100644 4273de3fd37c98d9b323ce171f7f6fc3ed904c25bd7ef554848b424c8088f199 memory/concrete/sc_synchronization_controls/sc_synchronization_controls.ml
 100644 787a415feec81cb49b40211f0c32054fb5770bc8b599b599a21bc35dce0c0575 memory/concrete/sc_value_controls/controls.ml
 100644 0eb6c108716d692409cea0ed97015ec898223c1e1af4725c9daf0ef51c16dc35 memory/concrete/sc_value_controls/dune
 100644 f5bd0a2cf7a5e6ff864f4b35486fadfe5814a2691d28ca10d5cb2e8240874f4a memory/concrete/sc_varargs_controls/controls.ml
@@ -818,6 +842,7 @@ d1c5c6cfa427a343df9791195199ee0bbe32f01a234b8a645491e8c764881a82 nd_observe.ml
 79c542c3c35d5021f07b990f68bef1fe1d57272ed9ac80bcbf43a816a765ebe0 sc_access_group.ml
 80d69ad3b4ff965ea4e7851d60d3ac1fd1a9bf4d5588747b2847cdc332c8d23e sc_access_sequencing.ml
 e470602cb09cc2ad16c7e552d749e70bc0727dea23d51d5b947115beea70d583 sc_action_identity.ml
+84faac2644c716a9c1a8994d83e68b3bf78e148b99e609723001603a0f44c5b1 sc_atomic_sources.ml
 3f82df57ab14d355589d7ea975135aa4a13c2ae29e6f81518b9e10e8a570b582 sc_byte_key.ml
 5b85962570b452da9e6ee17fea72b7eef4680fd04bdcfa183fce92f7add2bbb3 sc_byte_sources.ml
 06fada4bf4047a11876f50e851babce9d33f9bb1322c2ca46c985f7efe9d0f9f sc_call_context.ml
@@ -834,5 +859,6 @@ f74deee4c92cab4e812bef9422ba4dff03053f179160bc4c3d8fabaa47d5ddfe sc_reference.ml
 cba5d2f9f698c14a3797c2b7d5b156c8b9c11177b686eeccd9b9ff7fc698b3cc sc_runtime.ml
 86c02195f4d9a064204aae0495f759ae86b890c022d7982a81368ba11b9d68d8 sc_scopes.ml
 af69c81e86175c143f178bc4e61ef095b9af3f66b7bd987439ad635df8e029f3 sc_spawn.ml
+9920ba95f8d95b1d5e6cf3fe9e2687deb06c6855e058d9d78d4eed7a76f0f0e9 sc_synchronization.ml
 f5e98530b0b111079d001f7399ac308aa4b14959088c4fec89c722a7334b2d6a sc_value.ml
 e1bf8e6e64c040818527339bc0ab67f6932805dfc7853a4a58a7a3e460718305 sc_varargs.ml

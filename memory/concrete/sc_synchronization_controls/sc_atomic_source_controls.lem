@@ -1,0 +1,52 @@
+open import Pervasives
+import Sc_atomic_sources Sc_action_identity Sc_runtime Mem Mem_common Core Core_run_aux Ctype Cmm_csem
+
+let sc_atomic_fixture byte id request kind access owner base size count = <|
+  Sc_runtime.sc_effect_id= id;
+  Sc_runtime.sc_effect_request= <| Sc_runtime.sc_request_id= request;
+    Sc_runtime.sc_request_thread= 0; Sc_runtime.sc_request_kind= kind;
+    Sc_runtime.sc_request_annotation= Core_run_aux.empty_annotation;
+    Sc_runtime.sc_request_scopes= [] |>;
+  Sc_runtime.sc_effect_observation= Mem_common.Observe_access Loc.unknown access
+    Ctype.signed_int (Mem.null_ptrval Ctype.signed_int) owner base size
+    (List.replicate count byte) (Mem.unspecified_mval Ctype.signed_int) |>
+
+let sc_atomic_source_checks byte =
+  let atomic = Sc_runtime.SC_access Cmm_csem.Seq_cst Core.Pos in
+  let ordinary = Sc_runtime.SC_access Cmm_csem.NA Core.Pos in
+  let mk id kind access base size count = sc_atomic_fixture byte id id kind access (Just 7) base size count in
+  let write = mk 1 atomic Mem_common.StoreAccess 100 4 4 in
+  let partial = mk 2 ordinary Mem_common.StoreAccess 101 1 1 in
+  let read = mk 3 atomic Mem_common.LoadAccess 100 4 4 in
+  let later = mk 4 atomic Mem_common.StoreAccess 100 4 4 in
+  let aliases = Sc_action_identity.sc_action_aliases [write;partial;read;later] [] in
+  let single = Sc_atomic_sources.sc_atomic_source_for aliases read [write] in
+  let mixed = Sc_atomic_sources.sc_atomic_source_for aliases read [partial;write] in
+  let overwritten = Sc_atomic_sources.sc_atomic_source_for aliases read [write;partial] in
+  let short = mk 3 atomic Mem_common.LoadAccess 100 4 3 in
+  let small = mk 3 atomic Mem_common.LoadAccess 100 1 1 in
+  let unknown = sc_atomic_fixture byte 3 3 atomic Mem_common.LoadAccess Nothing 100 4 4 in
+  let aliases_bad = <| Sc_action_identity.sc_alias_occurrence= 1; Sc_action_identity.sc_alias_action= 1 |> :: aliases in
+  let rmw_read = sc_atomic_fixture byte 10 99 (Sc_runtime.SC_atomic_update Cmm_csem.Seq_cst) Mem_common.LoadAccess (Just 7) 100 4 4 in
+  let rmw_write = sc_atomic_fixture byte 11 99 (Sc_runtime.SC_atomic_update Cmm_csem.Seq_cst) Mem_common.StoreAccess (Just 7) 100 4 4 in
+  let rmw_aliases = Sc_action_identity.sc_action_aliases [write;rmw_read;rmw_write;read] [] in
+  let edge r = r.Sc_atomic_sources.sc_atomic_source_edge in
+  let issues r = r.Sc_atomic_sources.sc_atomic_source_issues in
+  [
+    ("whole older store supplies the candidate", edge single = Just (1,3) && issues single = []);
+    ("every original byte offset retained", single.Sc_atomic_sources.sc_atomic_read_bytes = [Sc_byte_sources.SC_byte_store 1 0;Sc_byte_sources.SC_byte_store 1 1;Sc_byte_sources.SC_byte_store 1 2;Sc_byte_sources.SC_byte_store 1 3]);
+    ("intervening partial store prevents invented whole source", edge mixed = Nothing && issues mixed = [Sc_atomic_sources.SC_atomic_read_no_single_store]);
+    ("later whole overwrite supersedes older partial source", edge overwritten = Just (1,3));
+    ("empty captured representation remains diagnostic", issues (Sc_atomic_sources.sc_atomic_source_for aliases (mk 3 atomic Mem_common.LoadAccess 100 0 0) [write]) = [Sc_atomic_sources.SC_atomic_read_bad_capture]);
+    ("short captured representation remains diagnostic", issues (Sc_atomic_sources.sc_atomic_source_for aliases short [write]) = [Sc_atomic_sources.SC_atomic_read_bad_capture]);
+    ("unknown storage remains diagnostic", issues (Sc_atomic_sources.sc_atomic_source_for aliases unknown [write]) = [Sc_atomic_sources.SC_atomic_read_missing_storage]);
+    ("absent writer remains diagnostic", issues (Sc_atomic_sources.sc_atomic_source_for aliases read []) = [Sc_atomic_sources.SC_atomic_read_no_single_store]);
+    ("subrange of one writer is not a whole-object candidate", issues (Sc_atomic_sources.sc_atomic_source_for aliases small [write]) = [Sc_atomic_sources.SC_atomic_read_different_range]);
+    ("duplicate occurrence ID remains diagnostic", match issues (Sc_atomic_sources.sc_atomic_source_for aliases read [write;write]) with [Sc_atomic_sources.SC_atomic_read_ambiguous_store xs] -> List.length xs = 2 | _ -> false end);
+    ("equal duplicate alias remains diagnostic", issues (Sc_atomic_sources.sc_atomic_source_for aliases_bad read [write]) = [Sc_atomic_sources.SC_atomic_read_ambiguous_alias [1;1] [3]]);
+    ("following write cannot source an earlier read", List.map edge (Sc_atomic_sources.sc_atomic_source_history aliases [later;read;write]) = [Just (1,3)]);
+    ("RMW read cannot read its later write phase", edge (Sc_atomic_sources.sc_atomic_source_for rmw_aliases rmw_read [write]) = Just (1,10));
+    ("RMW source write maps to the shared action", edge (Sc_atomic_sources.sc_atomic_source_for rmw_aliases read [rmw_write;rmw_read;write]) = Just (10,3));
+    ("ordinary representation reads are outside this query", Sc_atomic_sources.sc_atomic_source_history aliases [mk 3 ordinary Mem_common.LoadAccess 100 4 4;partial;write] = []);
+    ("wrong storage writer is not silently substituted", edge (Sc_atomic_sources.sc_atomic_source_for aliases read [sc_atomic_fixture byte 1 1 atomic Mem_common.StoreAccess (Just 8) 100 4 4]) = Nothing)
+  ]

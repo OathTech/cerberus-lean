@@ -1,0 +1,84 @@
+(* Query only: physical atomic-source receipts joined to an explicit reference
+   projection. The action/value/location and MO interpretations remain inputs;
+   this does not certify those interpretations or emit a language verdict.
+   Every unresolved receipt and endpoint issue is retained. Missing information
+   must never be read as proof of absent synchronization. *)
+open import Pervasives Relation Set_extra
+import Sc_reference Sc_atomic_sources Sc_graph Sc_action_identity Sc_happens_before
+
+type sc_sync_inputs = <|
+  sc_sync_actions: list Sc_reference.action;
+  sc_sync_sb: set (Sc_reference.action * Sc_reference.action);
+  sc_sync_asw: set (Sc_reference.action * Sc_reference.action);
+  sc_sync_mo: set (Sc_reference.action * Sc_reference.action);
+  sc_sync_lo: set (Sc_reference.action * Sc_reference.action);
+  sc_sync_other_rf: list (Sc_reference.action * Sc_reference.action);
+|>
+
+type sc_sync_issue =
+  | SC_sync_unresolved_atomic_source of Sc_atomic_sources.sc_atomic_source_receipt
+  | SC_sync_ambiguous_endpoint of Cmm_csem.aid * Cmm_csem.aid * list Sc_reference.action * list Sc_reference.action
+  | SC_sync_wrong_action_kind of Sc_reference.action * Sc_reference.action
+  | SC_sync_atomic_target_in_other_rf of Sc_reference.action * Sc_reference.action
+
+type sc_sync_edge_receipt = <|
+  sc_sync_source_receipt: Sc_atomic_sources.sc_atomic_source_receipt;
+  sc_sync_resolved_edge: maybe (Sc_reference.action * Sc_reference.action);
+  sc_sync_edge_issues: list sc_sync_issue;
+|>
+
+let sc_sync_resolve actions receipt =
+  let initial = <| sc_sync_source_receipt= receipt;
+    sc_sync_resolved_edge= Nothing; sc_sync_edge_issues= [] |> in
+  if not (List.null receipt.Sc_atomic_sources.sc_atomic_source_issues) then
+    <| initial with sc_sync_edge_issues= [SC_sync_unresolved_atomic_source receipt] |>
+  else match receipt.Sc_atomic_sources.sc_atomic_source_edge with
+    | Nothing -> <| initial with sc_sync_edge_issues= [SC_sync_unresolved_atomic_source receipt] |>
+    | Just (source, target) ->
+      let from = List.filter (fun a -> Sc_reference.aid_of a = source) actions in
+      let to = List.filter (fun a -> Sc_reference.aid_of a = target) actions in
+      match (from, to) with
+        | ([a], [b]) ->
+          if Sc_reference.is_write a && Sc_reference.is_read b && Sc_reference.is_seq_cst b then
+            <| initial with sc_sync_resolved_edge= Just (a,b) |>
+          else <| initial with sc_sync_edge_issues= [SC_sync_wrong_action_kind a b] |>
+        | _ -> <| initial with sc_sync_edge_issues= [SC_sync_ambiguous_endpoint source target from to] |>
+      end
+  end
+
+type sc_sync_result = <|
+  sc_sync_original: sc_sync_inputs;
+  sc_sync_atomic_receipts: list Sc_atomic_sources.sc_atomic_source_receipt;
+  sc_sync_resolutions: list sc_sync_edge_receipt;
+  sc_sync_rf: set (Sc_reference.action * Sc_reference.action);
+  sc_sync_rs: set (Sc_reference.action * Sc_reference.action);
+  sc_sync_hrs: set (Sc_reference.action * Sc_reference.action);
+  sc_sync_sw: set (Sc_reference.action * Sc_reference.action);
+  sc_sync_hb: Sc_happens_before.sc_hb_result;
+  sc_sync_issues: list sc_sync_issue;
+|>
+
+let sc_replay_synchronization graph aliases inputs atomic_receipts =
+  let resolutions = List.map (sc_sync_resolve inputs.sc_sync_actions) atomic_receipts in
+  let edges = List.concat (List.map (fun receipt ->
+    match receipt.sc_sync_resolved_edge with Nothing -> [] | Just edge -> [edge] end) resolutions) in
+  let rf = Set.fromList (inputs.sc_sync_other_rf ++ edges) in
+  let actions = Set.fromList inputs.sc_sync_actions in
+  (* These pinned predicates do not inspect lk. Preserve its formal parameter
+     with an explicit constant only here; no location classification is claimed. *)
+  let lk = fun (_ : Sc_reference.location) -> Sc_reference.Non_Atomic in
+  let rs = Sc_reference.release_sequence_set actions lk inputs.sc_sync_mo in
+  let hrs = Sc_reference.hypothetical_release_sequence_set actions lk inputs.sc_sync_mo in
+  let sw = Sc_reference.release_acquire_fenced_synchronizes_with_set actions
+    inputs.sc_sync_sb inputs.sc_sync_asw rf inputs.sc_sync_lo rs hrs in
+  let synchronization = List.map (fun (a,b) -> (Sc_reference.aid_of a, Sc_reference.aid_of b))
+    (Set_extra.toList sw) in
+  <| sc_sync_original= inputs;
+     sc_sync_atomic_receipts= atomic_receipts;
+     sc_sync_resolutions= resolutions;
+     sc_sync_rf= rf; sc_sync_rs= rs; sc_sync_hrs= hrs; sc_sync_sw= sw;
+     sc_sync_hb= Sc_happens_before.sc_build_happens_before graph aliases synchronization;
+     sc_sync_issues= List.concat (List.map (fun r -> r.sc_sync_edge_issues) resolutions) ++
+       List.concat (List.map (fun (a,b) ->
+         if Sc_reference.is_read b && Sc_reference.is_seq_cst b then
+           [SC_sync_atomic_target_in_other_rf a b] else []) inputs.sc_sync_other_rf) |>

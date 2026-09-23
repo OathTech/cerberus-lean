@@ -156,7 +156,7 @@ LEM_CABS_TO_AIL   = cabs_to_ail_aux.lem scope_table.lem \
                     desugaring_init.lem cabs_to_ail_effect.lem cabs_to_ail.lem mini_pipeline.lem
 LEM_CORE_TO_CORE  = core_sequentialise.lem core_indet.lem core_rewrite.lem \
                     core_unstruct.lem
-LEM_CORE_DYNAMICS = core_run_aux.lem sc_spawn.lem sc_call_context.lem sc_call_scope.lem sc_scopes.lem sc_order.lem sc_representation.lem sc_runtime.lem sc_access_group.lem sc_byte_sources.lem sc_graph.lem sc_action_identity.lem sc_happens_before.lem sc_access_sequencing.lem sc_prefix_obligations.lem sc_varargs.lem core_eval.lem core_run.lem sc_global_bindings.lem core_reduction.lem core_reduction_aux.lem driver.lem
+LEM_CORE_DYNAMICS = core_run_aux.lem sc_spawn.lem sc_call_context.lem sc_call_scope.lem sc_scopes.lem sc_order.lem sc_representation.lem sc_runtime.lem sc_access_group.lem sc_byte_sources.lem sc_graph.lem sc_action_identity.lem sc_happens_before.lem sc_atomic_sources.lem sc_synchronization.lem sc_access_sequencing.lem sc_prefix_obligations.lem sc_varargs.lem core_eval.lem core_run.lem sc_global_bindings.lem core_reduction.lem core_reduction_aux.lem driver.lem
 LEM_ELABORATION   = atomic_order.lem translation_effect.lem translation_aux.lem translation.lem
 LEM_DEFACTO       = sc_value.lem sc_byte_key.lem mem_common.lem defacto_memory_types.lem \
                     defacto_memory_aux.lem defacto_memory.lem mem.lem \

@@ -1,0 +1,117 @@
+(* Physical source receipts for completed atomic reads. This is not RF value
+   equality, C object identity, an SC consistency check or a language verdict.
+   Only actual older byte contributors may supply a synchronization candidate.
+   Ordinary representation reads stay outside this atomic-only query. *)
+open import Pervasives
+import Mem_common Sc_runtime Sc_byte_sources Sc_action_identity
+
+let sc_is_atomic_read observed =
+  match observed.Sc_runtime.sc_effect_observation with
+    | Mem_common.Observe_access _ Mem_common.LoadAccess _ _ _ _ _ _ _ ->
+        match observed.Sc_runtime.sc_effect_request.Sc_runtime.sc_request_kind with
+          | Sc_runtime.SC_access Cmm_csem.Seq_cst _ -> true
+          | Sc_runtime.SC_atomic_update Cmm_csem.Seq_cst -> true
+          | Sc_runtime.SC_cas_object _ -> true
+          | _ -> false
+        end
+    | _ -> false
+  end
+
+type sc_atomic_source_issue =
+  | SC_atomic_read_bad_capture
+  | SC_atomic_read_missing_storage
+  | SC_atomic_read_no_single_store
+  | SC_atomic_read_ambiguous_store of list Sc_runtime.sc_effect
+  | SC_atomic_read_different_range
+  | SC_atomic_read_ambiguous_alias of list Cmm_csem.aid * list Cmm_csem.aid
+
+type sc_atomic_source_receipt = <|
+  sc_atomic_read: Sc_runtime.sc_effect;
+  sc_atomic_read_bytes: list Sc_byte_sources.sc_byte_source;
+  sc_atomic_source_store: maybe Sc_runtime.sc_effect;
+  sc_atomic_source_edge: maybe (Cmm_csem.aid * Cmm_csem.aid);
+  sc_atomic_source_issues: list sc_atomic_source_issue;
+|>
+
+type sc_atomic_source_resolution = <|
+  sc_atomic_resolved_store: maybe Sc_runtime.sc_effect;
+  sc_atomic_resolved_edge: maybe (Cmm_csem.aid * Cmm_csem.aid);
+  sc_atomic_resolved_issues: list sc_atomic_source_issue;
+|>
+
+let sc_atomic_resolution_initial issues = <|
+  sc_atomic_resolved_store= Nothing; sc_atomic_resolved_edge= Nothing;
+  sc_atomic_resolved_issues= issues |>
+
+(* This keeps each byte's physical offset in the receipt. A single writer ID
+   alone does not establish that the two accesses cover the same atomic object. *)
+let sc_single_byte_store sources = match sources with
+  | Sc_byte_sources.SC_byte_store writer _ :: rest ->
+      if List.all (fun source -> match source with
+          | Sc_byte_sources.SC_byte_store other _ -> writer = other
+          | _ -> false
+        end) rest then Just writer else Nothing
+  | _ -> Nothing
+end
+
+let sc_atomic_source_resolve aliases observed older sources =
+  match observed.Sc_runtime.sc_effect_observation with
+    | Mem_common.Observe_access _ Mem_common.LoadAccess _ _ storage base size bytes _ ->
+        let initial = sc_atomic_resolution_initial [] in
+        if size <= 0 || size <> integerFromNat (List.length bytes) then
+          <| initial with sc_atomic_resolved_issues= [SC_atomic_read_bad_capture] |>
+        else match storage with
+          | Nothing -> <| initial with sc_atomic_resolved_issues= [SC_atomic_read_missing_storage] |>
+          | Just owner -> match sc_single_byte_store sources with
+            | Nothing -> <| initial with sc_atomic_resolved_issues= [SC_atomic_read_no_single_store] |>
+            | Just writer ->
+                let candidates = List.filter (fun candidate -> candidate.Sc_runtime.sc_effect_id = writer) older in
+                match candidates with
+                  | [source] ->
+                    let retained = <| initial with sc_atomic_resolved_store= Just source |> in
+                    match source.Sc_runtime.sc_effect_observation with
+                      | Mem_common.Observe_access _ Mem_common.StoreAccess _ _ (Just owner') base' size' bytes' _ ->
+                          if owner = owner' && base = base' && size = size' &&
+                              size' = integerFromNat (List.length bytes') then
+                            let from = Sc_action_identity.sc_lookup_actions writer aliases in
+                            let to = Sc_action_identity.sc_lookup_actions observed.Sc_runtime.sc_effect_id aliases in
+                            match (from, to) with
+                              | ([a], [b]) -> <| retained with sc_atomic_resolved_edge= Just (a,b) |>
+                              | _ -> <| retained with sc_atomic_resolved_issues= [SC_atomic_read_ambiguous_alias from to] |>
+                            end
+                          else <| retained with sc_atomic_resolved_issues= [SC_atomic_read_different_range] |>
+                      | _ -> <| retained with sc_atomic_resolved_issues= [SC_atomic_read_different_range] |>
+                    end
+                  | _ -> <| initial with sc_atomic_resolved_issues= [SC_atomic_read_ambiguous_store candidates] |>
+                end
+            end
+        end
+    | _ -> sc_atomic_resolution_initial [SC_atomic_read_bad_capture]
+  end
+
+(* The original read and source vector are unconditional receipt fields.
+   Resolution cannot delete them when it encounters malformed/ambiguous input. *)
+let sc_atomic_source_for aliases observed older =
+  let sources = match observed.Sc_runtime.sc_effect_observation with
+    | Mem_common.Observe_access _ Mem_common.LoadAccess _ _ storage base _ bytes _ ->
+        Sc_byte_sources.sc_byte_sources storage base bytes older
+    | _ -> []
+  end in
+  let resolved = sc_atomic_source_resolve aliases observed older sources in
+  <| sc_atomic_read= observed; sc_atomic_read_bytes= sources;
+     sc_atomic_source_store= resolved.sc_atomic_resolved_store;
+     sc_atomic_source_edge= resolved.sc_atomic_resolved_edge;
+     sc_atomic_source_issues= resolved.sc_atomic_resolved_issues |>
+
+(* Newest first. Each receipt uses precisely its read's older suffix, so a
+   following equal-value store or the write phase of the same RMW cannot be
+   mistaken for its source. Non-atomic reads require their own value/range
+   composition and are not rejected or certified by this query. *)
+let rec sc_atomic_source_history aliases history = match history with
+  | [] -> []
+  | observed :: older ->
+      let rest = sc_atomic_source_history aliases older in
+      if sc_is_atomic_read observed then sc_atomic_source_for aliases observed older :: rest else rest
+end
+
+declare {lean} termination_argument sc_atomic_source_history = automatic

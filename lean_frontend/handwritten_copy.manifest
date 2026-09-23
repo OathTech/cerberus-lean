@@ -99,3 +99,5 @@ CerbSCSpawn.lean
 CerbSCActionIdentity.lean
 CerbSCHappensBefore.lean
 CerbSCGlobalBindings.lean
+CerbSCAtomicSources.lean
+CerbSCSynchronization.lean
