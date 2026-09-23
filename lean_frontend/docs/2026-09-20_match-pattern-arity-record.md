@@ -1553,6 +1553,12 @@ in the worktree; the four commits replayed with their messages:
 
 - **`lean_frontend/lakefile.toml`, `scripts/test_unit.sh`** (commit 2): both sides' additions kept — E-A's `enum-data-test`
   block/entry and this branch's `match-pattern-arity-test` (14 exes). Commit 3's `test_args` line auto-merged.
+  **Correction (2026-09-23, round-3 delta review F1):** at the SECOND rebase (onto `34ac493f9`, §15) the same keep-both
+  resolution of `lakefile.toml` placed this branch's stanza BETWEEN `run-digest-test`'s `root = "Unit.RunDigestTest"` and
+  mainline's `moreLinkArgs = ["native/md5.o"]`, so `run-digest-test` LOST its `moreLinkArgs` line (mainline `34ac493f9:323`)
+  while this branch's exe carried the one surviving line — an unrecorded mainline change; the exe still linked (nothing in
+  its closure references the `md5.o` externs today), so the loss was latent. Restored in commit D; `run-digest-test`
+  relinked WITH `md5.o` (§15.7).
 - **`frontend/model/core_typing.lem`** (E-A's dead `enumDefs` field at `:1968` vs the arity guards): auto-merged, both intents.
 - **`lean_frontend/Core_aux_lemMeasureProofs.lean`** (E-A's `enumDefs` reader binders on `memValueFromValue` vs the
   `all_goals (split <;> try rfl)` lines in five other proofs): auto-merged, both intents.
@@ -1885,6 +1891,116 @@ mode end in the existing `null function pointer` internal error EXCEPT `ccall-er
 The Lean typing definitions pre-fix (the audit's direct probe): a 1-formal fun/proc/continuation given 0 actuals returns
 `Result` with 0 arguments; given 2 or 3, `Result` with 1.
 
+
+### 15.1b The four audit witnesses omitted from §15.1 (added 2026-09-23 after the orchestrator's review; docs-only commit D)
+
+§15.1 quoted sixteen of the audit's twenty Core witnesses. Four files in `.tmp/mpa/r3/core/` were NOT quoted: `run-fixed-short.core`,
+`fun-long.core`, `proc-long.core`, `proc-short.core`. Not a deliberate exclusion [AGENT worker]: my first pre-fix run iterated every
+file unbounded and stalled on `run-fixed-short.core`; I then re-ran a hand-picked sixteen with a 10-second timeout and left these
+four out. They are CLI rows only — the unit exe's round-3 rows are synthetic grids — so §15.3's tallies (8/8 + 19/19 + 33/33) and
+§15.4's suite lines are unchanged by this addition.
+
+Sources:
+
+    -- core/run-fixed-short.core — zero actuals against one formal
+    proc main (): eff loaded integer :=
+      save loop: loaded integer (i: integer := 1) in
+        if i < 2 then run loop() else pure(Specified(i))
+    -- core/fun-long.core — three actuals against two formals (surplus, no error operand)
+    fun f(a: integer,b: integer): integer := a+b
+    proc main (): eff loaded integer :=
+      pure(Specified(f(1,2,3)))
+    -- core/proc-long.core
+    proc f(a: integer,b: integer): eff loaded integer := pure(Specified(a+b))
+    proc main (): eff loaded integer :=
+      pcall(f,1,2,3)
+    -- core/proc-short.core — one actual against two formals
+    proc f(a: integer,b: integer): eff loaded integer := pure(Specified(a+b))
+    proc main (): eff loaded integer :=
+      pcall(f,1)
+
+**Pre-fix, `run-fixed-short.core` — NON-TERMINATION.** The truncating `Erun` binding turns a terminating intent into an infinite
+loop: `run loop()` with zero actuals binds nothing, `i` keeps its initial `1`, `i < 2` stays true, and the program runs `loop`
+forever. Evidence, verbatim: (i) my first pre-fix run (the fork binary built at `8d4901c65`, no timeout) printed for this file
+`--- default: ` and nothing more — the invocation hung; the orchestrator found and killed that `main.exe --mode=exhaustive …
+run-fixed-short.core` process after **3 h 11 m** (its later `--rewrite`/typed lines in that log are POST-fix: by then `main.exe`
+had been rebuilt with R3/R4 at 01:10, so they are not quoted as pre-fix); (ii) the second-round audit's bounded collector
+(`core-probes.py:43`: `timeout=3 if p.stem=='run-fixed-short' else 20`) records, in `core-results-run-fixed.json`, `exit 124`
+(= its 3-second timeout) for `run-fixed-short` in ALL FOUR modes (`default`, `rewrite`, `typed`, `typed-rewrite`) on BOTH
+engines — `"engine": "fork"` and `"engine": "pristine"` — with empty stdout/stderr captures; upstream behaves identically. This
+is stronger than the stale-binding observation (`run-short-stale.core`, §15.1): a shortage does not merely keep an old value,
+it can make the program diverge. I have no bounded pre-fix run of my own for this file.
+
+**Pre-fix, the other three** (my first run, the portion produced BEFORE 01:10 on the `8d4901c65` binary; each corroborated by
+the audit's retained `core-captures/fork/<case>/<mode>.stdout|stderr`), verbatim:
+
+    === PRE-FIX fork@8d4901c65 fun-long.core ===
+    --- default: internal error: CALL() |params|= 2 <> |args|= 3 cerberus: internal error, uncaught exception:           Failure("internal error: CALL() |params|= 2 <> |args|= 3")
+    --- --rewrite: internal error: CALL() |params|= 2 <> |args|= 3 cerberus: internal error, uncaught exception:           Failure("internal error: CALL() |params|= 2 <> |args|= 3")
+    --- --typecheck-core: Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+    === PRE-FIX fork@8d4901c65 proc-long.core ===
+    --- default: Error {msg: "ill-formed program: `calling procedure `Symbol(484, SD_Id("f"))' with the wrong number of args: |args|=3expecting: 2'"}
+    --- --rewrite: Error {msg: "ill-formed program: `calling procedure `Symbol(484, SD_Id("f"))' with the wrong number of args: |args|=3expecting: 2'"}
+    --- --typecheck-core: Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+    === PRE-FIX fork@8d4901c65 proc-short.core ===
+    --- default: Error {msg: "ill-formed program: `calling procedure `Symbol(484, SD_Id("f"))' with the wrong number of args: |args|=1expecting: 2'"}
+    --- --rewrite: Error {msg: "ill-formed program: `calling procedure `Symbol(484, SD_Id("f"))' with the wrong number of args: |args|=1expecting: 2'"}
+    --- --typecheck-core: Error {msg: "ill-formed program: `calling procedure `Symbol(484, SD_Id("f"))' with the wrong number of args: |args|=1expecting: 2'"}
+
+(the combined `--typecheck-core --rewrite` mode of that run passed both flags as one word and is not quoted; the audit's
+`typed-rewrite` captures equal its `typed` ones: `Specified(3)` for `fun-long`/`proc-long`, the `|args|=1expecting: 2` error for
+`proc-short`). Reading: pre-fix, a SURPLUS was caught only at RUNTIME (`CALL()`'s own check for `fun`, `call_proc`'s for
+`proc`) and, under Core typing, silently DELETED — the surplus programs then SUCCEED (`Specified(3)`); a SHORTAGE to a `proc`
+was caught at runtime in every mode because typing had truncated the two formals to the single actual and the runtime check
+then saw `|args|=1`.
+
+**Post-fix (the round-3 fork binary, head `fda652269`; 10-second timeout per run; all four modes), verbatim:**
+
+    === POST-FIX fork@fda652269 core/run-fixed-short.core ===
+    --- default                   : Error {msg: "ill-formed program: `Erun: the argument list does not fit the continuation's parameters'"} 
+    [rc=1]
+    --- --rewrite                 : Error {msg: "ill-formed program: `Erun: the argument list does not fit the continuation's parameters'"} 
+    [rc=1]
+    --- --typecheck-core          : .tmp/mpa/r3/core/run-fixed-short.core:3:19: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer)' was expected     if i < 2 then run loop() else pure(Specified(i)) 
+    [rc=1]
+    --- --typecheck-core --rewrite: .tmp/mpa/r3/core/run-fixed-short.core:3:19: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer)' was expected     if i < 2 then run loop() else pure(Specified(i)) 
+    [rc=1]
+    === POST-FIX fork@fda652269 core/fun-long.core ===
+    --- default                   : internal error: CALL() |params|= 2 <> |args|= 3 cerberus: internal error, [31muncaught exception[m: 
+    [rc=125]
+    --- --rewrite                 : internal error: CALL() |params|= 2 <> |args|= 3 cerberus: internal error, [31muncaught exception[m: 
+    [rc=125]
+    --- --typecheck-core          : .tmp/mpa/r3/core/fun-long.core:3:18: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer,integer)' was expected   pure(Specified(f(1,2,3))) 
+    [rc=1]
+    --- --typecheck-core --rewrite: .tmp/mpa/r3/core/fun-long.core:3:18: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer,integer)' was expected   pure(Specified(f(1,2,3))) 
+    [rc=1]
+    === POST-FIX fork@fda652269 core/proc-long.core ===
+    --- default                   : Error {msg: "ill-formed program: `calling procedure `Symbol(484, SD_Id("f"))' with the wrong number of args: |args|=3expecting: 2'"} 
+    [rc=1]
+    --- --rewrite                 : Error {msg: "ill-formed program: `calling procedure `Symbol(484, SD_Id("f"))' with the wrong number of args: |args|=3expecting: 2'"} 
+    [rc=1]
+    --- --typecheck-core          : .tmp/mpa/r3/core/proc-long.core:3:3: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer,integer)' was expected   pcall(f,1,2,3) 
+    [rc=1]
+    --- --typecheck-core --rewrite: .tmp/mpa/r3/core/proc-long.core:3:3: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer,integer)' was expected   pcall(f,1,2,3) 
+    [rc=1]
+    === POST-FIX fork@fda652269 core/proc-short.core ===
+    --- default                   : Error {msg: "ill-formed program: `calling procedure `Symbol(484, SD_Id("f"))' with the wrong number of args: |args|=1expecting: 2'"} 
+    [rc=1]
+    --- --rewrite                 : Error {msg: "ill-formed program: `calling procedure `Symbol(484, SD_Id("f"))' with the wrong number of args: |args|=1expecting: 2'"} 
+    [rc=1]
+    --- --typecheck-core          : .tmp/mpa/r3/core/proc-short.core:3:3: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer,integer)' was expected   pcall(f,1) 
+    [rc=1]
+    --- --typecheck-core --rewrite: .tmp/mpa/r3/core/proc-short.core:3:3: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer,integer)' was expected   pcall(f,1) 
+    [rc=1]
+
+— `run-fixed-short` TERMINATES: default and `--rewrite` report `Illformed_program "Erun: the argument list does not fit the
+continuation's parameters"` at the first `run loop()` (the R4 guard, before any binding); Core typing rejects it at
+`:3:19`. `fun-long`/`proc-long`: default and `--rewrite` unchanged (the runtime's own `CALL()`/`call_proc` count checks, as
+before); the typed modes now REJECT where they used to succeed with `Specified(3)` (the surplus deleted). `proc-short`:
+default/`--rewrite` unchanged; the typed modes now report the TYPING rejection instead of reaching the runtime's `call_proc`
+error on a truncated call. Round-3 binary = the one the frozen battery (§15.6) exercised; the ccall rows re-run alongside
+are identical to §15.4.
+
 ### 15.2 The fixes (shared body; every hunk verbatim)
 
 ```diff
@@ -2034,7 +2150,8 @@ integer)` — three formals — while their proxies CALL them with four (`std.co
 `…, size, off`) and both engines' runtime arms consume four values (`core_reduction_aux.lem:218-236`, `core_run.lem:1269-1287`,
 `| _ -> error "pread"`). Upstream's truncating `Eproc` typing deleted `off` at libc-compile time, so the shipped `libc.co`
 calls the builtins with three values and the runtime arms would `error` — `pread`/`pwrite` have never worked through the
-shipped libc; no corpus program calls them (grep over `tests/` empty), so no lane ever saw it. Both files are byte-identical
+shipped libc; no C or Core program under `tests/` calls them (the only `pread`/`pwrite` hit under `tests/` is a README note on the
+Lean FS model's `fs_pwrite`, `tests/z2-probes/fs/README.md`; the load-bearing count is `tests/libc/libc.core` = 0), so no lane ever saw it. Both files are byte-identical
 to upstream and OUTSIDE this slice's fence (`runtime` is a fork-drift oracle surface): the worker STOPPED and asked
 ([AGENT worker, 2026-09-23]; the orchestrator relayed the options to the operator with recommendation (A)).
 
@@ -2395,5 +2512,96 @@ The certification lines, verbatim:
     Source unchanged: True. Complete tier selection: True.
     Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
 
+**Disclosure (round-3 delta review F2):** `report.json` records `source_before == source_after` (head `7acc7326b`, empty diff,
+clean status) but `artifacts_before != artifacts_after` for **29 of 1,778** recorded entries — all under `_build/install/default/`
+(the OCaml `Version` module and everything that embeds it: `main.exe`, `cerb_backend.*`, `mem_concrete.*`, `mem_vip.*`, `libc.co`,
+`libc_inner_arg_temps.co`, `libm.co`) plus the two freshness stamps, whose text moved from `commit ec02f452d… +dirty` (binaries
+built from the then-uncommitted round-3 tree) to `commit 7acc7326b…` (the lanes' own build steps rebuilt the version stamp once
+the commit existed); the Lean binary's hash is identical before/after, the oracle's is not (`4f62a322… → 53a6698e…`);
+`artifact_issues: []`. The source identity — the trust anchor — is clean and equal; "tree frozen" is true of the source, not
+of the install tree's version-stamped binaries.
+
 ZERO movement (S2 not triggered): pristine 835/28/7/2 and chvalid 4 = the mainline's counts; every baseline lane at its
 baseline; `report.json` `source_unchanged: true` on the clean committed head `7acc7326b` (commit B).
+
+### 15.7 Commit D (docs/test/lakefile only): the round-3 delta review's F1-F4 + §15.1b, and its FAST-GATE
+
+Scope (the round-3 delta review `docs/2026-09-23_match-pattern-arity-round3-delta-review.md`, mainline `7c92c8e18`; verdict
+"merge-ready after the listed P2 (F1)"): **F1** `run-digest-test`'s `moreLinkArgs = ["native/md5.o"]` restored in
+`lakefile.toml` (§14.1 corrected to the exact account); **F2** the §15.6 artefact disclosure; **F3** the test predicate
+`isArgArityE "ccall"` now matches the two exact recorded `CoreTyping_TODO` messages instead of any message starting with
+`ccall`; **F4** §15.2b's `tests/` wording; and §15.1b (the four omitted witnesses, pre- and post-fix). Docs, one test
+predicate and one lakefile line — no code, no pins; the reviewer and the operator waived the frozen battery for this
+class ("FAST-GATE … No battery"). N5 (a `core_run.lem` comment whose `:885/:1463` cite sits one line above the payload
+lines) and N6 (one blank manifest line) are code/manifest cosmetics outside D's fence and are left as they are.
+
+FAST-GATE on D's tree (no hand-written `.lem` changed, so no regeneration; chain `.tmp/mpa-draft/chain-D.sh`, logs
+`chain-D.log` / `unit-D.log`; steps: `scripts/ce scripts/build_lean.sh`, then a verbose `lake build run-digest-test` to
+capture the relink, then the full `scripts/test_unit.sh`). Verbatim from `chain-D.log` (lake truncates its `trace:` line
+at 260 characters — quoted as printed):
+
+    === build_lean start Wed Sep 23 06:03:23 AM UTC 2026
+    Build completed successfully (395 jobs).
+    === build_lean rc=0 wall=1s
+    === run-digest-test relink (verbose) Wed Sep 23 06:03:24 AM UTC 2026
+    ℹ [241/241] Built «run-digest-test»:exe (872ms)
+    trace: .> /home/dev/.elan/toolchains/leanprover--lean4---v4.32.2/bin/clang -o /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-fix/match-pattern-arity/lean_frontend/.lake/build/bin/run-digest-test @/home/dev/projects/cerberus-lean-proj/worktrees/c
+    === full unit suite start Wed Sep 23 06:03:26 AM UTC 2026
+    === unit suite rc=0 wall=224s
+
+The relink's link response file `lean_frontend/.lake/build/bin/run-digest-test.rsp` (written 2026-09-23 06:03:24 UTC, the
+relink step's timestamp) has 171 tokens; token 120 is `"native/md5.o"` — i.e. `run-digest-test` was
+relinked WITH `md5.o`; its `.trace` file records the link input `#[native/md5.o]`. (Derived: token position and count.)
+
+Verbatim from `unit-D.log` (the 15-exe suite; the run-digest-test section includes the `241 jobs` rebuild of the relinked
+exe):
+
+    === run-digest-test ===
+    ✓ run-digest-test PASSED
+    === match-pattern-arity-test ===
+    match-pattern-arity-test: OK (8/8 item-7 witnesses + 19/19 closure-round witnesses + 33/33 round-3 argument-list witnesses; kernel theorems T1a T1b T1_wrapper T1_anyFuel T2 T3 T3_select T4_neg and the R2_* equations (loud leaf / subst_pattern declines) compiled; #print axioms pinned by #guard_msgs: [propext] on T1a/T1b/T2/T3/T3_select/T4_neg, the trio on T1_anyFuel)
+    ✓ match-pattern-arity-test PASSED
+    Total: 15 passed, 0 failed
+
+The three checkers' verdict lines as printed by the suite (verbatim; the plant sub-lines `PLANT OK [S1..S11]` all passed
+and are in the log):
+
+    check_fuel_forms: forms partition OK (62 MEASURED + 13 ABSORBING + 0 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+    check_failure_reach: OK (239 pure failure sites = the 239 register rows exactly (237 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=170 REACHABLE=48 UNKNOWN=21; every row sealed; tally line consistent)
+    check_fork_drift: OK — layer 1: 84 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 29 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 38f87d5 = lem -v)
+
+The `ccall` probe rows re-run on the round-3 binary (the F3 predicate change is test-side only; the CLI rows are the same
+texts as the §15.4 rows — asserted mechanically before this section was written). Verbatim from `postfix-four.log`:
+
+    === POST-FIX fork@fda652269 adjacent-core/ccall-error.core ===
+    --- default                   : Error {msg: "surplus"}
+    [rc=1]
+    --- --rewrite                 : Error {msg: "surplus"}
+    [rc=1]
+    --- --typecheck-core          : .tmp/mpa/r3/adjacent-core/ccall-error.core:2:3: error: CoreTyping_TODO(ccall: argument list of a different arity than the C function type's parameters)   ccall('signed int(signed int)*',Specified(NULL(void)),NULL(void),error(<<<su
+    [rc=1]
+    --- --typecheck-core --rewrite: .tmp/mpa/r3/adjacent-core/ccall-error.core:2:3: error: CoreTyping_TODO(ccall: argument list of a different arity than the C function type's parameters)   ccall('signed int(signed int)*',Specified(NULL(void)),NULL(void),error(<<<su
+    [rc=1]
+    === POST-FIX fork@fda652269 adjacent-core/ccall-fit.core ===
+    --- default                   : internal error: null function pointer cerberus: internal error, [31muncaught exception[m:
+    [rc=125]
+    --- --rewrite                 : internal error: null function pointer cerberus: internal error, [31muncaught exception[m:
+    [rc=125]
+    --- --typecheck-core          : internal error: null function pointer cerberus: internal error, [31muncaught exception[m:
+    [rc=125]
+    --- --typecheck-core --rewrite: internal error: null function pointer cerberus: internal error, [31muncaught exception[m:
+    [rc=125]
+    === POST-FIX fork@fda652269 adjacent-core/ccall-short.core ===
+    --- default                   : internal error: null function pointer cerberus: internal error, [31muncaught exception[m:
+    [rc=125]
+    --- --rewrite                 : internal error: null function pointer cerberus: internal error, [31muncaught exception[m:
+    [rc=125]
+    --- --typecheck-core          : .tmp/mpa/r3/adjacent-core/ccall-short.core:2:3: error: CoreTyping_TODO(ccall: argument list of a different arity than the C function type's parameters)   ccall('signed int(signed int)*',Specified(NULL(void)))
+    [rc=1]
+    --- --typecheck-core --rewrite: .tmp/mpa/r3/adjacent-core/ccall-short.core:2:3: error: CoreTyping_TODO(ccall: argument list of a different arity than the C function type's parameters)   ccall('signed int(signed int)*',Specified(NULL(void)))
+    [rc=1]
+
+[AGENT] disclosure: the first cut of this commit (`fd36cc973`, never reported) was made with this section's placeholder
+still unfilled — my chain's fill step failed (it read the response-file path from the truncated `trace:` line) and the
+shell did not stop on that failure; the commit was amended in place, before any report, to the hash the orchestrator
+receives. Nothing else changed between the two cuts.

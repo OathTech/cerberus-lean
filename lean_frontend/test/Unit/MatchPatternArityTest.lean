@@ -492,7 +492,9 @@ def isArgArity (ctx : String) : exceptM (generic_pexpr inferred sym) (CerbLocati
   | _ => false
 def isArgArityE (ctx : String) : exceptM (generic_expr Unit core_base_type sym) (CerbLocation.Loc × cause) → Bool
   | Exception (_, CORE_TYPING (MismatchExpected c (BTy_tuple _) "argument list of a different arity")) => c == ctx
-  | Exception (_, CORE_TYPING (CoreTyping_TODO t)) => ctx == "ccall" && (t.startsWith "ccall")
+  | Exception (_, CORE_TYPING (CoreTyping_TODO t)) => ctx == "ccall" &&
+      (t == "ccall: argument list of a different arity than the C function type's parameters" ||
+       t == "ccall to a variadic C procedure: fixed-argument list of a different arity than the function type's parameters")
   | _ => false
 /-- typed result erased = the input (every argument kept) -/
 def keptP (pe : pexpr) (r : exceptM (generic_pexpr inferred sym) (CerbLocation.Loc × cause)) : Bool :=

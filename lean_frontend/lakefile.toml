@@ -320,6 +320,8 @@ root = "Unit.EnumDataTest"
 name = "run-digest-test"
 srcDir = "test"
 root = "Unit.RunDigestTest"
+moreLinkArgs = ["native/md5.o"]
+
 # match-pattern-arity (2026-09-20, cerberus-sl hidden-state note item 7): match_pattern
 # and typecheck_pattern fail CLOSED on a tuple-arity mismatch — T1–T3 the consumer's
 # acceptance facts by rfl (none on mismatch, select_case continues, bindings + order
