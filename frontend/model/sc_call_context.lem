@@ -1,0 +1,80 @@
+(* Passive call identity over the actual Core_reduction thread state.
+   Resolution follows Core_run.call_proc, including stdlib precedence. Nothing
+   here reads object memory, creates an event, or classifies a library call.
+   Normal_callconv bindings are argument-slot pointers, NOT argument values. *)
+open import Pervasives
+import Core Core_run_aux Symbol
+
+type sc_call_definition =
+  | SC_call_stdlib of Symbol.sym
+  | SC_call_program of Symbol.sym
+  | SC_call_unresolved of Symbol.sym
+
+type sc_call_frame = <|
+  sc_frame_called: maybe Symbol.sym;
+  sc_frame_definition: maybe sc_call_definition;
+  sc_frame_arguments: list (Symbol.sym * Core.core_base_type * maybe Core.value);
+  sc_frame_environment: maybe (map Symbol.sym Core.value);
+|>
+
+(* The owner of a body is explicit: a stdlib symbol is not conflated with an
+   equal program-map key, and an unresolved procedure never means no arguments. *)
+let sc_resolve_call file extern called =
+  match Map.lookup called file.Core.stdlib with
+    | Just (Core.Proc _ _ _ parameters _) ->
+        (SC_call_stdlib called, parameters)
+    | _ ->
+        let resolved = match Map.lookup called extern with
+          | Just target -> target
+          | Nothing -> called
+        end in
+        match Map.lookup resolved file.Core.funs with
+          | Just (Core.Proc _ _ _ parameters _) ->
+              (SC_call_program resolved, parameters)
+          | _ -> (SC_call_unresolved resolved, [])
+        end
+  end
+
+let sc_call_frame file extern called environment =
+  let (definition, arguments) = match called with
+    | Nothing -> (Nothing, [])
+    | Just name ->
+        let (definition, parameters) = sc_resolve_call file extern name in
+        (Just definition, List.map (fun (formal, ty) ->
+          (formal, ty, match environment with
+            | Nothing -> Nothing
+            | Just bindings -> Map.lookup formal bindings
+          end)) parameters)
+  end in
+  <| sc_frame_called= called; sc_frame_definition= definition;
+     sc_frame_arguments= arguments; sc_frame_environment= environment |>
+
+(* Each Stack_cons2 is one saved caller paired with the next environment.
+   Keep the unsupported legacy stack explicitly instead of guessing that the
+   current_proc_opt field has its different legacy meaning. Extra environments
+   are ordinary after Epar, which inherits lexical scopes without callers. *)
+type sc_call_tail =
+  | SC_call_lexical_tail of list (map Symbol.sym Core.value)
+  | SC_call_legacy_stack of Core_run_aux.stack Core_run_aux.core_run_annotation
+      * list (map Symbol.sym Core.value)
+
+let rec sc_call_frames file extern current stack environments =
+  let (environment, older) = match environments with
+    | [] -> (Nothing, [])
+    | first :: rest -> (Just first, rest)
+  end in
+  let frame = sc_call_frame file extern current environment in
+  match stack with
+    | Core_run_aux.Stack_empty -> ([frame], SC_call_lexical_tail older)
+    | Core_run_aux.Stack_cons2 _ caller _ rest ->
+        let (frames, tail) = sc_call_frames file extern caller rest older in
+        (frame :: frames, tail)
+    | Core_run_aux.Stack_cons _ _ _ ->
+        ([frame], SC_call_legacy_stack stack older)
+  end
+
+let sc_thread_call_context file extern thread =
+  sc_call_frames file extern thread.Core_run_aux.current_proc_opt
+    thread.Core_run_aux.stack thread.Core_run_aux.env
+
+declare {lean} termination_argument sc_call_frames = automatic

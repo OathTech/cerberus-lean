@@ -272,10 +272,13 @@ let aid_of a =
     | Dealloc aid _ _           -> aid (* CSEM *)
     end
 
+(* The executable equality branches are shared by OCaml and Lean. Their
+   structural fallbacks must exclude both targets: overlapping selectors used
+   to inline the fallback in Lean, bypassing the action-ID/set definitions. *)
 val action_equality: action -> action -> bool
 let {ocaml; lean} action_equality a1 a2 = 
   aid_of a1 = aid_of a2
-let inline ~{ocaml} action_equality a1 a2 = 
+let inline ~{ocaml; lean} action_equality a1 a2 =
   unsafe_structural_equality a1 a2
 
 instance (Eq action)                              (* CSEM *)
@@ -403,7 +406,7 @@ let {ocaml; lean} pre_execution_equal pre1 pre2 =                     (* CSEM *)
   Set.setEqual pre1.asw pre2.asw &&                             (* CSEM *)
   Set.setEqual pre1.dd pre2.dd                                  (* CSEM *)
 
-let inline ~{ocaml} pre_execution_equal pre1 pre2 = (* CSEM *)
+let inline ~{ocaml; lean} pre_execution_equal pre1 pre2 = (* CSEM *)
   unsafe_structural_equality pre1 pre2              (* CSEM *)
 
 instance (Eq pre_execution)                                       (* CSEM *)
@@ -470,7 +473,7 @@ let {ocaml; lean} execution_witness_equal wit1 wit2 =                           
   Set.setEqual wit1.lo wit2.lo &&                                           (* CSEM *)
   Set.setEqual wit1.tot wit2.tot                                            (* CSEM *)
 
-let inline ~{ocaml} execution_witness_equal wit1 wit2 = (* CSEM *)
+let inline ~{ocaml; lean} execution_witness_equal wit1 wit2 = (* CSEM *)
   unsafe_structural_equality wit1 wit2                  (* CSEM *)
 
 instance (Eq execution_witness)                        (* CSEM *)

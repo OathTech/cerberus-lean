@@ -512,6 +512,13 @@ module Concrete : Memory = struct
      the memory value and journal; unspecified bytes remain unspecified. *)
   let representation_bits (byte: representation_byte) =
     Option.map (fun c -> Z.of_int (Char.code c)) byte.AbsByte.value
+  (* Lossless projection; no encoding, decoding, or memory access. *)
+  let sc_byte_key_concrete (byte: representation_byte) = Sc_byte_key.{
+    sc_byte_provenance = sc_provenance_key byte.AbsByte.prov;
+    sc_byte_copy_offset = Option.map Z.of_int byte.AbsByte.copy_offset;
+    sc_byte_bits = representation_bits byte;
+  }
+  let sc_byte_key byte = Some (sc_byte_key_concrete byte)
   type memory_observation =
     (pointer_value, mem_value, representation_byte) Mem_common.memory_observation
 

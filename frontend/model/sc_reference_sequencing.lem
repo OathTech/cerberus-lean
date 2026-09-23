@@ -1,0 +1,20 @@
+(* Witnesses of the pinned reference's sequencing-domain assumption (SC-G07).
+   Consumes an already constructed reference pre-execution: this module does
+   not choose C locations, group effects, invent source order, or classify UB.
+   Both orientations are retained, as in the reference's quantified formula. *)
+open import Pervasives
+import Set_extra Sc_reference
+
+let sc_reference_sequencing_violation execution left right =
+  not ((not ((Sc_reference.tid_of left = Sc_reference.tid_of right) &&
+    (left <> right) &&
+    not (Sc_reference.is_at_non_atomic_location execution.Sc_reference.lk left &&
+         Sc_reference.is_at_non_atomic_location execution.Sc_reference.lk right))) ||
+    ((left, right) IN execution.Sc_reference.sb ||
+     (right, left) IN execution.Sc_reference.sb))
+
+let sc_reference_sequencing_witnesses execution =
+  let actions = Set_extra.toList execution.Sc_reference.actions in
+  List.concat (List.map (fun left ->
+    List.map (fun right -> (left, right))
+      (List.filter (sc_reference_sequencing_violation execution left) actions)) actions)

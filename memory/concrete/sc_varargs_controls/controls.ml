@@ -7,7 +7,7 @@ let read=Mem_common.Varargs_read
 let kinds=[Mem_common.Varargs_create;read;Mem_common.Varargs_advance;Mem_common.Varargs_delete]
 let check name good=Printf.printf "%s: %b\n%!" name good;if not good then exit 1
 let observed e = {Sc_runtime.sc_effect_id=e.V.sc_va_occurrence;
-  sc_effect_request={Sc_runtime.sc_request_id=e.V.sc_va_request;sc_request_thread=e.V.sc_va_thread;
+  sc_effect_request={Sc_runtime.sc_request_id=e.V.sc_va_request;sc_request_thread=e.V.sc_va_thread;sc_request_scopes=[];
     sc_request_annotation={Core_run_aux.sb_before=set[];asw_before=set[];dd_before=set[]};
     sc_request_kind=Sc_runtime.SC_runtime "metadata control"};
   sc_effect_observation=Mem_common.Observe_varargs(e.V.sc_va_operation,e.V.sc_va_identity)}

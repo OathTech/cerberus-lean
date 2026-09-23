@@ -229,8 +229,15 @@ effects; comma and function-wrapper controls retain their real ordering.
 These do not yet validate a paired production composition guard.
 Scheduler order must not become an invented source edge, UB or empty behavior.
 
-**Current behavior:** no dedicated guard. Public completion remains
-`SC_fault_checker_pending`; the internal recorder cannot certify these traces.
+**Current behavior:** no complete composition guard. The current driver retains
+pending access-sequencing witnesses with their source graphs at discovery; the
+accumulator preserves earlier evidence and later independent faults. A conditional
+kernel law connects these witnesses to the reference predicate, with the missing
+C location/action mapping stated as premises. This is evidence toward G07, not
+a complete guard or a verdict. Public completion remains `SC_fault_checker_pending`;
+the internal recorder cannot certify these traces. The
+[work record](2026-09-23_sc-prefix-integration-work.md) records paired actual C
+controls, malformed-graph limits and compiled producer-disconnection plants.
 
 **Revisit:** a pinned resolution of both assumptions in the C operational
 composition, with implicit/macro/function and independent-fault controls.
@@ -267,7 +274,7 @@ turn every listed feature into a semantic-gap refusal.
 
 | ID | Case, evidence and current status | Completion or review obligation |
 |---|---|---|
-| SC-P01 | `Driver.drive true` ends recorded completion with `SC_fault_checker_pending`; public race/consistency and program-level outcome interface unfinished | Connect prefix fault detection, SC consistency and explicit incomplete outcomes; retain faults before divergence and across rejected candidates. A refusal is not a completed checker. |
+| SC-P01 | `Driver.drive true` immediately returns `SC_fault_checker_pending` before execution; public race/consistency and program-level outcome interface unfinished | Connect prefix fault detection, SC consistency and explicit incomplete outcomes; retain faults before divergence and across rejected candidates. A refusal is not a completed checker. |
 | SC-P02 | Exchange/operator lowering, qualifier preservation and aggregate CAS arguments are [validated](2026-09-22_sc-atomic-update-review.md); integer fetch, callable flags/fences, runtime orders, signal fences and non-synchronizing initialization now have a [validated interface slice](2026-09-22_sc-atomic-surface-review.md). Public character aliases, `kill_dependency` and the runtime query producer now have [passing component controls](2026-09-23_sc-atomic-completion-review.md), with all 39 full lanes and the unchanged 864-case comparison passing; preprocessing configuration and the final interface audit remain outstanding | Finish available operation-specific semantics through actual C lowering and journal. `kill_dependency` must preserve evaluation and terminate dependency without strengthening consume; its absence is port work. SC-G06 identifies unresolved configuration, not permission to omit available query rules. Preserve single evaluation, arithmetic and failure prefixes. Legacy conditional `RMW` is not unconditional exchange. |
 | SC-P03 | Scalar Cmm RF uses instantiated `MemValue` equality: identical-bit NaNs compare unequal; opposite signed zeros compare equal in the actual four predicate probes. A separate lossless key/interner/reference carrier now has [paired component controls and kernel laws](2026-09-23_sc-value-metadata-review.md); the full 39-command ladder and unchanged 864-case three-engine comparison pass, while actual RF integration remains pending | Finish the logical-value/representation/provenance adapter. Raw keys preserve typed views; their equality is not automatically cross-view RF equality. Do not restrict C NaNs or change generic memory equality. See [value audit](2026-09-21_sc-prototype-evidence/reference-followup/cmm-float-values-review.md). Predicate rejection alone is not a C fault. |
 | SC-P04 | Effect inventory E03–E05/E10: allocation, deallocation, lifetime metadata and address reuse; native pointer zapping is behind a switch disabled in the matched profile; scalar SC checker excludes lifetime actions and its lifetime sketch is commented out | Preserve concrete lifetime transitions and derive composition from C/DR403. Keep dynamic deallocation/reuse distinct from automatic lifetime end; zapping is not an invented source store. No blanket dynamic-allocation refusal. A concrete unresolved case must get its own SC-G entry if found. |
@@ -285,6 +292,8 @@ turn every listed feature into a semantic-gap refusal.
 | SC-D04 | E23 concrete memory intrinsic is already unsupported; other models have different implementations | Preserve model-specific failure. It is not an effect-free intrinsic or authority to disable another model's operation. |
 | SC-D05 | Existing upstream frontend limitations, including bitfields; existing memcpy-overlap UB-check omission; floating unary-minus and atomic initializer lowering described below | Preserve and disclose individual upstream behavior/limitations. The policy is not authority to silently change existing sequential semantics or ban every memcpy. Source checklist: [effect inventory](2026-09-21_sc-effect-inventory.md). |
 | SC-D06 | Fuel/resource exhaustion, blocked execution, ordinary model errors and C UB | Preserve distinct payloads and states. Exhaustion does not establish safety; blocking is not normal value completion; implementation assertions/backtraces are not C semantics. |
+| SC-D07 | Inherited Lean filesystem-model coverage, including `lseek`/`close` on standard descriptors 0–2 | Preserve the explicit `CerbFS` refusal; do not substitute EBADF or a successful stream query. This is missing filesystem port coverage with available SibylFS guidance, not an unresolved ISO/Cmm interpretation or SC-G03 stream-lock guard. The historical table in [CerbFS.lean](../CerbFS.lean) overstates fidelity; the [confirmed defects and repair obligations](2026-09-23_sc-filesystem-boundary-review.md) supersede that claim. |
+| SC-D08 | Overlapping Lean/OCaml target declarations for Cmm action, pre-execution and witness equality | Confirmed port defect: two equality discrepancies and one Lean comparison refusal in four paired probes. Repair the selectors to choose the existing OCaml executable definitions; retain predicate bodies. This is required port work, not an unresolved ISO choice or an allowed exclusion. Eight paired repair controls, six instance-selection laws, all 39 integration commands and the unchanged 864-case three-engine comparison pass. |
 
 The 21 constructors of `Sc_runtime.sc_fault` at the audited checkpoint are
 accounted for by SC-G01, SC-P01 and SC-D01–D03. Their current coarse category
@@ -322,9 +331,48 @@ expression refusals.
 
 The subsequent [source-graph slice](2026-09-22_sc-source-graph-review.md) adds
 `sc_graph_issue` diagnostics for duplicate/missing occurrence IDs, erroneous
-thread annotations and cycles. These are also SC-D01 protocol findings. The
+thread annotations and cycles. The passive call-scope tracker likewise retains
+missing-thread, unknown-depth and legacy-transition diagnostics rather than
+guessing a caller. These are also SC-D01 protocol findings. The
 query retains malformed data and diagnostics; its lack of diagnostics is not
 a complete Cmm well-formedness, consistency or SC support verdict.
+
+**SC-D07 observation, prefix integration:** actual parallel `ftell(stdout)`
+calls reach `CerbFS.fs_lseek` on descriptor 1. The unchanged pre-slice and new
+Lean instruments both stop at the existing opaque refusal, while the native
+recorder completes. SibylFS starts descriptors 0–2 on a root-directory dummy
+file (`fs_spec.lem:5690–5696`); the Lean model lacks that object. Its refusal
+prevents an invented EBADF result. This diagnostic currently escapes the
+ordinary ND result and yields no final Lean journal; do not claim failure-state
+or scope-capture validation for this path. The
+[work record](2026-09-23_sc-prefix-integration-work.md) records the exact
+comparison and limits. Resolve this case by porting the corresponding SibylFS
+state/operation and preserving failure transport, with standard-descriptor,
+ordinary-file and unknown-descriptor controls. Do not broadly refuse stdio or
+classify the missing implementation as caller UB.
+
+**SC-D07 follow-up:** 32 paired leaf cases confirm wrong descriptor reuse,
+missing access checks, open/path/permission fail-open cases and incorrect
+combined-error selection. Each trigger, reference result, current status and
+removal task is in the [filesystem boundary review](2026-09-23_sc-filesystem-boundary-review.md).
+The isolated descriptor repair passes 24 cases and twelve draft laws; it is not
+production coverage. The 30-case native open matrix also prevents an invented
+double-slash refusal or unconditional flag-first policy.
+
+**SC-D08 validation:** the equality-target correction now passes all 39
+integration commands and the unchanged 864-case three-engine comparison. Eight
+paired equality controls and six actual production instance-selection laws
+cover the repair. This fixes the selector overlap; it does not claim arbitrary
+structural comparison of functions. [Full component record](2026-09-23_sc-prefix-integration-work.md).
+
+**SC-G03/G08 adapter findings:** actual linking can replace a body at a colliding
+symbol, and the Core stdlib source is separate from the C-library input's origin.
+A function can overwrite a FILE parameter before its first read. The retained
+[linker](2026-09-21_sc-prototype-evidence/prefix-integration/followup/definition-sources.md)
+and [parameter](2026-09-21_sc-prototype-evidence/prefix-integration/followup/parameter-reads.md)
+evidence documents these adapter obligations and the current draft limits.
+Neither names nor a first parameter read establish a stream identity or lock.
+These are implementation obligations, not newly unsupported C constructs.
 
 ## Preservation and client contract
 

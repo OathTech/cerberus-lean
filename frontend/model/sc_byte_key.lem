@@ -1,0 +1,17 @@
+(* Lossless identity of one already-observed concrete representation byte.
+   This is not C value equality, a location interpretation, or reads-from.
+   An absent bit value denotes an unspecified byte. Absence of this whole
+   adapter is represented separately by the Mem interface's outer maybe. *)
+open import Pervasives
+import Sc_value
+
+type sc_byte_key = <|
+  sc_byte_provenance: Sc_value.sc_provenance_key;
+  sc_byte_copy_offset: maybe integer;
+  sc_byte_bits: maybe integer;
+|>
+
+instance (Eq sc_byte_key)
+  let (=) x y = unsafe_structural_equality x y
+  let (<>) x y = not (unsafe_structural_equality x y)
+end

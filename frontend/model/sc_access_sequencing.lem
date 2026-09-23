@@ -1,0 +1,75 @@
+(* Sufficient witnesses for SC-G07, over actual captured accesses.
+   This query does NOT claim the converse: NA initialization of an atomic
+   location also depends on location classification, and fences need review.
+   It neither interprets C locations/RF nor kills an operational continuation.
+   A reference connection must preserve distinct request actions, their thread
+   and SC roles, and source order. Malformed graphs remain separate diagnostics. *)
+open import Pervasives Relation
+import Cmm_csem Mem_common Sc_runtime Sc_graph
+
+(* Only roles already fixed by an owned, in-model memory request. The payload
+   is the actually observed access, not an uncompleted request or guessed load.
+   NA means this request's order; it does NOT assert a non-atomic C location. *)
+let sc_access_request_order kind =
+  if not (Sc_runtime.sc_request_in_model kind) then Nothing else match kind with
+  | Sc_runtime.SC_access order _ ->
+      if order = Cmm_csem.NA || order = Cmm_csem.Seq_cst then Just order else Nothing
+  | Sc_runtime.SC_atomic_update Cmm_csem.Seq_cst -> Just Cmm_csem.Seq_cst
+  | Sc_runtime.SC_cas_object _ -> Just Cmm_csem.Seq_cst
+  | Sc_runtime.SC_seq_rmw -> Just Cmm_csem.NA
+  | Sc_runtime.SC_cas_expected _ _ _ -> Just Cmm_csem.NA
+  | Sc_runtime.SC_cas_writeback _ -> Just Cmm_csem.NA
+  | Sc_runtime.SC_lifetime _ -> Just Cmm_csem.NA
+  | Sc_runtime.SC_memop _ -> Just Cmm_csem.NA
+  | Sc_runtime.SC_runtime _ -> Just Cmm_csem.NA
+  | _ -> Nothing
+end
+
+let sc_observed_access_order observed =
+  match observed.Sc_runtime.sc_effect_observation with
+    | Mem_common.Observe_access _ _ _ _ _ _ _ _ _ ->
+        sc_access_request_order observed.Sc_runtime.sc_effect_request.Sc_runtime.sc_request_kind
+    | _ -> Nothing
+  end
+
+type sc_access_sequence_witness = <|
+  sc_sequence_left: Sc_runtime.sc_effect;
+  sc_sequence_right: Sc_runtime.sc_effect;
+|>
+
+let sc_access_sequence_pair sb left right =
+  let l = left.Sc_runtime.sc_effect_request in
+  let r = right.Sc_runtime.sc_effect_request in
+  (* The id comparison removes the duplicate orientation only. It is NOT sb.
+     Read/write occurrences of the same compound atomic request never become
+     a pair of distinct Cmm actions merely because they have different ids. *)
+  left.Sc_runtime.sc_effect_id < right.Sc_runtime.sc_effect_id &&
+  l.Sc_runtime.sc_request_thread = r.Sc_runtime.sc_request_thread &&
+  l.Sc_runtime.sc_request_id <> r.Sc_runtime.sc_request_id &&
+  not ((left.Sc_runtime.sc_effect_id, right.Sc_runtime.sc_effect_id) IN sb) &&
+  not ((right.Sc_runtime.sc_effect_id, left.Sc_runtime.sc_effect_id) IN sb) &&
+  match (sc_observed_access_order left, sc_observed_access_order right) with
+    | (Just a, Just b) -> a = Cmm_csem.Seq_cst || b = Cmm_csem.Seq_cst
+    | _ -> false
+  end
+
+let sc_access_sequence_witnesses_closed sb history =
+  List.concat (List.map (fun left -> List.foldr (fun right rest ->
+    if sc_access_sequence_pair sb left right then
+      <| sc_sequence_left= left; sc_sequence_right= right |> :: rest
+    else rest) [] history) history)
+
+let sc_access_sequence_witnesses graph history =
+  (* Close through ALL source vertices, including lifetime and metadata, before
+     choosing access endpoints. Additional-sw/HB is not substituted for sb. *)
+  sc_access_sequence_witnesses_closed
+    (transitiveClosure graph.Sc_graph.sc_graph_sb) history
+
+(* For graphs made by sc_build_source_graph, reuse its closure when there are
+   no additional synchronization edges. With such edges, compute sb alone.
+   CerbSCSequencing proves equality to the query above on constructed graphs;
+   an arbitrary caller-supplied record need not satisfy that invariant. *)
+let sc_access_sequence_witnesses_reusing_graph graph history =
+  sc_access_sequence_witnesses_closed
+    (if Set.null graph.Sc_graph.sc_graph_asw then graph.Sc_graph.sc_graph_sbasw
+     else transitiveClosure graph.Sc_graph.sc_graph_sb) history

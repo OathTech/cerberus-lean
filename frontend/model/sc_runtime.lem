@@ -1,7 +1,7 @@
 (* Operational SC bookkeeping. This recorder retains concrete memory effects;
    it is not, by itself, a consistency checker or a whole-program verdict. *)
 open import Pervasives Core_run_aux
-import Mem Mem_common Cmm_csem Sc_order
+import Mem Mem_common Cmm_csem Sc_order Sc_scopes
 
 (* The request boundary and its internal observations are distinct. The journal
    order is not silently promoted to C sequenced-before or to scheduling points. *)
@@ -104,6 +104,7 @@ type sc_request = <|
   sc_request_thread: Mem_common.thread_id;
   sc_request_annotation: core_run_annotation;
   sc_request_kind: sc_request_kind;
+  sc_request_scopes: list nat; (* live call identities, innermost first *)
 |>
 
 type sc_effect = <|
@@ -126,6 +127,7 @@ type sc_state = <|
   sc_completed: list sc_completed_child;
   sc_fences: list sc_request; (* completed fence occurrences, newest first *)
   sc_join_history: list (Mem_common.thread_id * Sc_order.sc_predecessors);
+  sc_scopes: Sc_scopes.sc_scope_state;
 |>
 
 let sc_initial_state = <|
@@ -135,6 +137,7 @@ let sc_initial_state = <|
   sc_completed= [];
   sc_fences= [];
   sc_join_history= [];
+  sc_scopes= Sc_scopes.sc_scope_initial;
 |>
 
 let sc_begin_request request state =

@@ -1,5 +1,5 @@
 open import Pervasives
-import Symbol Float Ctype Mem_common Sc_value
+import Symbol Float Ctype Mem_common Sc_value Sc_byte_key
 import AilSyntax
 
 type pointer_value
@@ -67,6 +67,13 @@ declare lean target_rep type representation_byte = `CerbMem.AbsByte`
 val representation_bits: representation_byte -> maybe integer
 declare ocaml target_rep function representation_bits = `Impl_mem.representation_bits`
 declare lean target_rep function representation_bits = `CerbMem.representationBits`
+
+(* Lossless projection of a byte already captured by the concrete observer.
+   Outer Nothing means adapter unavailable; unspecified bits remain inside
+   a present key. This does not decide logical value equality or reads-from. *)
+val sc_byte_key: representation_byte -> maybe Sc_byte_key.sc_byte_key
+declare ocaml target_rep function sc_byte_key = `Impl_mem.sc_byte_key`
+declare lean target_rep function sc_byte_key = `CerbMem.scByteKey`
 
 type memory_observation = Mem_common.memory_observation pointer_value mem_value representation_byte
 

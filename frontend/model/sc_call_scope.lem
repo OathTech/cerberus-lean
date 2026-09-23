@@ -1,0 +1,47 @@
+(* Inspect ONE actual Core transition, before a scheduler loop is bound to it.
+   Stack shape, not names or environment equality, identifies call boundaries.
+   No new event, memory access, yield, or library classification is introduced.
+   A caller must supply consecutive states of the SAME thread; this query is
+   not valid over arbitrary sampled states that may hide a call and return. *)
+open import Pervasives
+import Core_run_aux Sc_call_context
+
+val sc_stack_depth: forall 'a. Core_run_aux.stack 'a -> maybe nat
+let rec sc_stack_depth stack = match stack with
+  | Core_run_aux.Stack_empty -> Just 0
+  | Core_run_aux.Stack_cons2 _ _ _ rest ->
+      match sc_stack_depth rest with
+        | Nothing -> Nothing
+        | Just depth -> Just (depth + 1)
+      end
+  | Core_run_aux.Stack_cons _ _ _ -> Nothing
+end
+
+type sc_call_boundary =
+  | SC_call_unchanged of nat
+  | SC_call_enter of nat
+  | SC_call_return of nat
+  | SC_call_depth_jump of nat * nat
+  | SC_call_legacy_depth
+
+let sc_call_boundary before after =
+  match (sc_stack_depth before.Core_run_aux.stack,
+         sc_stack_depth after.Core_run_aux.stack) with
+    | (Just old, Just next) ->
+        if old = next then SC_call_unchanged old
+        else if next = old + 1 then SC_call_enter next
+        else if old = next + 1 then SC_call_return old
+        else SC_call_depth_jump old next
+    | _ -> SC_call_legacy_depth
+  end
+
+(* This entry frame is a raw binding snapshot. Normal-call arguments are slot
+   pointers, and are NOT silently interpreted as the slot's stored C value. *)
+let sc_entry_frame file extern after =
+  Sc_call_context.sc_call_frame file extern after.Core_run_aux.current_proc_opt
+    (match after.Core_run_aux.env with
+      | [] -> Nothing
+      | first :: _ -> Just first
+    end)
+
+declare {lean} termination_argument sc_stack_depth = automatic

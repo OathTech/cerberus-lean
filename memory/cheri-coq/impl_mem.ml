@@ -278,6 +278,7 @@ module CHERIMorello : Memory = struct
   let sc_value_key (_: mem_value) : Sc_value.sc_value_key option = None
   type representation_byte = unit
   let representation_bits (_: representation_byte) : Z.t option = None
+  let sc_byte_key (_: representation_byte) : Sc_byte_key.sc_byte_key option = None
   type memory_observation =
     (pointer_value, mem_value, representation_byte) Mem_common.memory_observation
   let begin_observing (_: mem_state) : mem_state option = None

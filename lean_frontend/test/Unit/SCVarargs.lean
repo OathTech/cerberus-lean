@@ -12,7 +12,7 @@ private def observed (e : sc_varargs_event) : sc_effect :=
   ⟨e.sc_va_occurrence,
     ⟨e.sc_va_request,e.sc_va_thread,
       ⟨edges [], setFromListBy setElemCompare [], setFromListBy setElemCompare []⟩,
-      SC_runtime "metadata control"⟩,
+      SC_runtime "metadata control", []⟩,
     Observe_varargs e.sc_va_operation e.sc_va_identity⟩
 
 private def checks : List (String × Bool) := Id.run do

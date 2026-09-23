@@ -8,7 +8,7 @@ let node ?(sb=[]) ?(asw=[]) ?(dd=[]) id thread =
 let graph = G.sc_build_source_graph
 let equal xs s = Pset.equal (set xs) s
 let has edge g = Pset.mem edge g.G.sc_graph_sbasw
-let request id thread sb asw kind = {S.sc_request_id=id;sc_request_thread=thread;
+let request id thread sb asw kind = {S.sc_request_id=id;sc_request_thread=thread;sc_request_scopes=[];
   sc_request_annotation=annotation sb asw [];sc_request_kind=kind}
 let observed id req obs = {S.sc_effect_id=id;sc_effect_request=req;sc_effect_observation=obs}
 let () =

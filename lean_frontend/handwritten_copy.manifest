@@ -88,3 +88,8 @@ Sc_order_lemMeasureProofs.lean
 CerbSCAtomicSurface.lean
 CerbSCValues.lean
 CerbSCVarargs.lean
+CerbSCScopes.lean
+CerbSCByteKeys.lean
+CerbSCAccessGroups.lean
+CerbSCSequencing.lean
+CerbSCPrefixObligations.lean

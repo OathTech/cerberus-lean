@@ -1,0 +1,91 @@
+(* Passive per-branch call scopes for the actual Core transition observer.
+   Entry ids have their own supply and are NOT Cmm action ids or order edges.
+   Driver observes consecutive Core transitions and retains these scopes in
+   each SC alternative. This observer alone supplies no library guard. *)
+open import Pervasives
+import Cmm_csem Core_run_aux Mem_common Sc_call_context Sc_call_scope
+
+type sc_scope_entry = <|
+  sc_scope_id: nat;
+  sc_scope_thread: Mem_common.thread_id;
+  sc_scope_parent: maybe nat;
+  sc_scope_frame: Sc_call_context.sc_call_frame;
+  sc_scope_effect_frontier: Cmm_csem.aid; (* next unused id; NOT source order *)
+|>
+
+type sc_scope_event =
+  | SC_scope_entered of sc_scope_entry
+  | SC_scope_returned of nat * Cmm_csem.aid
+  | SC_scope_discarded of Mem_common.thread_id * list nat * Cmm_csem.aid
+
+type sc_scope_issue =
+  | SC_scope_depth_mismatch of Mem_common.thread_id * nat * maybe nat
+  | SC_scope_unexpected_boundary of Mem_common.thread_id * Sc_call_scope.sc_call_boundary
+  | SC_scope_missing_return of Mem_common.thread_id
+  | SC_scope_missing_thread of Mem_common.thread_id
+
+type sc_scope_state = <|
+  sc_scope_next: nat;
+  sc_scope_live: list (Mem_common.thread_id * list nat); (* innermost first *)
+  sc_scope_events: list sc_scope_event; (* newest first, never deduplicated *)
+  sc_scope_issues: list sc_scope_issue;
+|>
+
+let sc_scope_initial = <|
+  sc_scope_next= 0; sc_scope_live= []; sc_scope_events= []; sc_scope_issues= [];
+|>
+
+let sc_scope_thread tid state =
+  match List.lookup tid state.sc_scope_live with
+    | Nothing -> []
+    | Just active -> active
+  end
+
+let sc_scope_set_thread tid active state =
+  <| state with sc_scope_live= (tid, active) ::
+    List.filter (fun (other, _) -> other <> tid) state.sc_scope_live |>
+
+let sc_scope_note issue state =
+  <| state with sc_scope_issues= issue :: state.sc_scope_issues |>
+
+let sc_scope_observe file extern tid frontier before after state =
+  let active = sc_scope_thread tid state in
+  let depth = Sc_call_scope.sc_stack_depth before.Core_run_aux.stack in
+  let state = if depth = Just (List.length active) then state else
+    sc_scope_note (SC_scope_depth_mismatch tid (List.length active) depth) state in
+  match Sc_call_scope.sc_call_boundary before after with
+    | Sc_call_scope.SC_call_unchanged _ -> state
+    | Sc_call_scope.SC_call_enter _ ->
+        let id = state.sc_scope_next in
+        let entry = <|
+          sc_scope_id= id; sc_scope_thread= tid;
+          sc_scope_parent= (match active with [] -> Nothing | first :: _ -> Just first end);
+          sc_scope_frame= Sc_call_scope.sc_entry_frame file extern after;
+          sc_scope_effect_frontier= frontier;
+        |> in
+        let state = sc_scope_set_thread tid (id :: active) state in
+        <| state with sc_scope_next= id + 1;
+          sc_scope_events= SC_scope_entered entry :: state.sc_scope_events |>
+    | Sc_call_scope.SC_call_return _ ->
+        match active with
+          | [] -> sc_scope_note (SC_scope_missing_return tid) state
+          | first :: rest ->
+              let state = sc_scope_set_thread tid rest state in
+              <| state with sc_scope_events=
+                SC_scope_returned first frontier :: state.sc_scope_events |>
+        end
+    | boundary -> sc_scope_note (SC_scope_unexpected_boundary tid boundary) state
+  end
+
+(* prepare_exit discards Core frames at an arena boundary. Global initializers
+   also use it, so this does NOT by itself mean the C program terminated. Keep
+   actual discarded scopes distinct from normal returns; a fault retains them. *)
+let sc_scope_discard tid frontier state =
+  let active = sc_scope_thread tid state in
+  match active with
+    | [] -> state
+    | _ :: _ ->
+        let state = sc_scope_set_thread tid [] state in
+        <| state with sc_scope_events=
+          SC_scope_discarded tid active frontier :: state.sc_scope_events |>
+  end

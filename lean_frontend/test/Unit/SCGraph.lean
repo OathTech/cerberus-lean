@@ -16,7 +16,7 @@ private def equalEdges (xs : List (Nat × Nat)) (ys : Pset (Nat × Nat)) :=
   setEqualBy setElemCompare (edges xs) ys
 
 private def request (id thread : Nat) (sb : List (Nat × Nat)) (asw : List Nat)
-    (kind : sc_request_kind) : sc_request := ⟨id, thread, annotation sb asw [], kind⟩
+    (kind : sc_request_kind) : sc_request := ⟨id, thread, annotation sb asw [], kind, []⟩
 private def effect (id : Nat) (req : sc_request) (obs : CerbMem.MemoryObservation) : sc_effect :=
   ⟨id, req, obs⟩
 

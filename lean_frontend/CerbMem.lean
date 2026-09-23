@@ -18,6 +18,7 @@ import Ctype
 import Symbol
 import Mem_common
 import Sc_value
+import Sc_byte_key
 import Nondeterminism
 import CerbFail
 import CerbTags
@@ -315,6 +316,15 @@ def scProvenanceKey : Provenance → sc_provenance_key
   | .Prov_some id => .SC_storage_provenance id
   | .Prov_symbolic id => .SC_symbolic_provenance id
   | .Prov_device => .SC_device_provenance
+
+/-- Pure lossless byte projection, paired with Impl_mem.sc_byte_key_concrete. -/
+def scByteKeyConcrete (byte : AbsByte) : sc_byte_key :=
+  { sc_byte_provenance := scProvenanceKey byte.prov
+    sc_byte_copy_offset := byte.copyOffset
+    sc_byte_bits := representationBits byte }
+
+def scByteKey (byte : AbsByte) : Option sc_byte_key :=
+  some (scByteKeyConcrete byte)
 
 def scPointerKey : PointerValue → sc_pointer_key
   | .PV prov base => (scProvenanceKey prov, match base with

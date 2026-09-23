@@ -3,7 +3,25 @@
 Governing document: [SC prototype charter](2026-09-21_charter-sc-prototype.md).
 This file records evidence and next actions; it does not replace the charter.
 
-## Current status
+## Latest validated component — September 23
+
+The [prefix integration](2026-09-23_sc-prefix-integration-work.md) passes all 39
+full suites and the mandatory 864-case three-engine comparison with zero
+changes from the atomic-interface checkpoint, including the same 40 known Lean
+difference/undecodable IDs. Its retained evidence was independently verified.
+The actual machine now retains call scopes and sequencing obligations without
+replacing independent faults or deleting alternatives; 47 production laws and
+producer plants check those interfaces. The Cmm equality selector is repaired.
+
+[Filesystem defects](2026-09-23_sc-filesystem-boundary-review.md) and further
+library-origin/parameter-read obligations are documented with exact evidence.
+Their isolated proposals remain drafts. Next: repair filesystem behavior needed
+for stream controls, complete location/value/RF/HB composition and precise
+remaining guards, then complete the public operational/C entry. Public checking
+and the whole prototype remain incomplete. The following entries preserve the
+prior component history.
+
+## Prior atomic-interface status
 
 **2026-09-23: eight evidenced boundaries are registered. SC-G01/G04/G05 and
 the runtime SC-G06 query have validated producers. The atomic interface
@@ -18,6 +36,15 @@ record its validation and the unpromoted location/scope/prefix drafts.
 Branch `arc/sc-prototype`, worktree
 `/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype`.
 Implementation base: `5407597d9eeba0259d65b728e86a860ad4614ab3`.
+
+**Development history after `3c7173732` (now superseded by the validated component above):** the
+[prefix integration work](2026-09-23_sc-prefix-integration-work.md) connects
+lossless byte keys, access groups and per-alternative call scopes to the actual
+machine. Production builds, twelve native controls and two Lean operational
+controls pass. The paired C metadata collection retains frontend-symbol and
+function-pointer-byte differences, plus an inherited filesystem refusal now
+registered as SC-D07. This is uncommitted development evidence; no new full
+slice certification or G02/G03/G07/G08 producer is claimed.
 
 | Package | Status | Next evidence |
 |---|---|---|

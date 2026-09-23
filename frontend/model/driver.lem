@@ -5,7 +5,7 @@ import Core_aux Builtins Core_linking
 module Caux = Core_aux
 
 open import Utils Show Errors Trace_event
-import Cmm_op Cmm_csem Sc_order Sc_runtime Sc_representation Nd_observe
+import Cmm_op Cmm_csem Sc_order Sc_runtime Sc_scopes Sc_prefix_obligations Sc_representation Nd_observe
 
 import Core_eval Core_run Core_reduction
 
@@ -73,6 +73,7 @@ type driver_state = <|
   trace:             list trace_event;
   
   sc_state: maybe Sc_runtime.sc_state;
+  sc_prefix_obligations: list Sc_prefix_obligations.sc_prefix_obligation;
   sc_pending: list (Mem_common.thread_id * Core_reduction.core_step2);
   symbolic_assoc: map Symbol.sym Core.object_value;
   
@@ -128,6 +129,16 @@ let inline (>>=)      = ND.bind
 let inline (>>) m1 m2 = ND.bind m1 (fun _ -> m2)
 
 
+(* This channel follows the existing ND state, including every alternative and
+   failure-time state. It does not replace a fault, remove a continuation or
+   certify a prefix. Independent errors after discovery remain observable. *)
+let sc_note_prefix dr_st =
+  match dr_st.sc_state with
+    | Nothing -> dr_st
+    | Just sc -> <| dr_st with sc_prefix_obligations=
+        Sc_prefix_obligations.sc_accumulate_sequence_obligations sc dr_st.sc_prefix_obligations |>
+  end
+
 (* Drain after each ND memory node, including a killed node. A missing
    observer or request owner is an explicit port gap, never an empty effect. *)
 let sc_post_memory dr_st =
@@ -149,7 +160,7 @@ let sc_post_memory dr_st =
                             let aid = current.core_run_state.Core_run.aid_supply in
                             match Sc_runtime.sc_record_effect aid observation sc with
                               | Nothing -> (Just (ND.Other (DErr_concurrency Sc_runtime.SC_fault_unowned_memory_effect)), current)
-                              | Just sc' -> (Nothing, <| current with
+                              | Just sc' -> (Nothing, sc_note_prefix <| current with
                                   sc_state= Just sc';
                                   core_run_state= <| current.core_run_state with Core_run.aid_supply= aid + 1 |>;
                                 |>)
@@ -922,7 +933,7 @@ let action_request_with loc tid receipt request =
               | Nothing -> ND.kill (ND.Other (DErr_concurrency Sc_runtime.SC_fault_fence_owner))
               | Just sc' ->
                   ND.update (fun dr_st ->
-                    let after = <| dr_st with sc_state= Just sc' |> in
+                    let after = sc_note_prefix <| dr_st with sc_state= Just sc' |> in
                     <| after with core_state= Core_run.update_thread_state tid
                         (mk_th_st' (receipt after)) after.core_state |>)
             end
@@ -937,7 +948,7 @@ let action_request_with loc tid receipt request =
               | Nothing -> ND.kill (ND.Other (DErr_concurrency Sc_runtime.SC_fault_fence_owner))
               | Just sc' ->
                   ND.update (fun dr_st ->
-                    let after = <| dr_st with sc_state= Just sc' |> in
+                    let after = sc_note_prefix <| dr_st with sc_state= Just sc' |> in
                     <| after with core_state= Core_run.update_thread_state tid
                         (mk_th_st' (receipt after)) after.core_state |>)
             end
@@ -1597,7 +1608,8 @@ let sc_request_state tid kind annotation dr_st =
         <| dr_st with
           sc_state= Just (Sc_runtime.sc_begin_request
             <| Sc_runtime.sc_request_id= aid; Sc_runtime.sc_request_thread= tid;
-               Sc_runtime.sc_request_annotation= annotation; Sc_runtime.sc_request_kind= kind |> sc);
+               Sc_runtime.sc_request_annotation= annotation; Sc_runtime.sc_request_kind= kind;
+               Sc_runtime.sc_request_scopes= Sc_scopes.sc_scope_thread tid sc.Sc_runtime.sc_scopes |> sc);
           core_run_state= <| dr_st.core_run_state with Core_run.aid_supply= aid + 1 |>;
         |>
   end
@@ -1616,7 +1628,7 @@ let sc_enable = ND.ND (fun dr_st ->
   match Mem.begin_observing dr_st.layout_state with
     | Nothing -> (ND.NDkilled (ND.Other (DErr_concurrency Sc_runtime.SC_fault_observer_unavailable)), dr_st)
     | Just memory -> (ND.NDactive (), <| dr_st with layout_state= memory;
-        sc_state= Just Sc_runtime.sc_initial_state; sc_pending= [] |>)
+        sc_state= Just Sc_runtime.sc_initial_state; sc_pending= []; sc_prefix_obligations= [] |>)
   end)
 
 let sc_kind_of_request polarity = function
@@ -1665,11 +1677,38 @@ let sc_empty_services = <| sc_suspended_services= []; sc_filesystem_owner= Nothi
 let sc_machine_initial state = <| sc_driver_state= state; sc_service_state= sc_empty_services |>
 
 
+(* Observe each actual call/return transition before installing the new Core
+   thread. Scope ids are per alternative and never consume action ids. *)
+let sc_observe_thread tid after dr_st =
+  match dr_st.sc_state with
+    | Nothing -> dr_st
+    | Just sc ->
+        let scopes = match List.lookup tid dr_st.core_state.Core_run.thread_states with
+          | Nothing -> Sc_scopes.sc_scope_note (Sc_scopes.SC_scope_missing_thread tid) sc.Sc_runtime.sc_scopes
+          | Just (_, before) -> Sc_scopes.sc_scope_observe dr_st.core_file dr_st.core_extern
+              tid dr_st.core_run_state.Core_run.aid_supply before after sc.Sc_runtime.sc_scopes
+        end in
+        <| dr_st with sc_state= Just <| sc with Sc_runtime.sc_scopes= scopes |> |>
+  end
+
+(* prepare_exit is also used between global initializers. Discarded frames
+   are not normal returns or evidence that the outer C execution ended. *)
+let sc_discard_scopes dr_st =
+  match dr_st.sc_state with
+    | Nothing -> dr_st
+    | Just sc ->
+        let scopes = List.foldl (fun scopes (tid, _) ->
+          Sc_scopes.sc_scope_discard tid dr_st.core_run_state.Core_run.aid_supply scopes)
+          sc.Sc_runtime.sc_scopes dr_st.core_state.Core_run.thread_states in
+        <| dr_st with sc_state= Just <| sc with Sc_runtime.sc_scopes= scopes |> |>
+  end
+
 let sc_service_step tid step =
   ND.update (fun state -> <| state with sc_pending=
     List.filter (fun (other, _) -> other <> tid) state.sc_pending |>) >>
   let resume th_st =
-    ND.update (fun dr_st -> <| dr_st with
+    ND.update (fun dr_st ->
+      let dr_st = sc_observe_thread tid th_st dr_st in <| dr_st with
       core_state= Core_run.update_thread_state tid th_st dr_st.core_state;
       dr_step_counter= dr_st.dr_step_counter + 1;
     |>) >> ND.return SC_continue in
@@ -1747,12 +1786,16 @@ let sc_service_step tid step =
               |>
           end) >> ND.return SC_continue
     | Core_reduction.Step_done2 value ->
-        ND.update (fun dr_st -> <| dr_st with core_state= prepare_exit dr_st.core_state value |>) >> ND.return SC_halted
+        ND.update (fun dr_st ->
+          let dr_st = sc_discard_scopes dr_st in
+          <| dr_st with core_state= prepare_exit dr_st.core_state value |>) >> ND.return SC_halted
     | Core_reduction.Step_fs2 annotation _ th_st resume_fs operation_m ->
         sc_begin_request tid (Sc_runtime.SC_runtime "Core filesystem/runtime operation") annotation >>
         liftCore_run operation_m >>= function
           | Core_reduction.FS_done value ->
-              ND.update (fun dr_st -> <| dr_st with core_state= prepare_exit dr_st.core_state value |>) >> ND.return SC_halted
+              ND.update (fun dr_st ->
+                let dr_st = sc_discard_scopes dr_st in
+                <| dr_st with core_state= prepare_exit dr_st.core_state value |>) >> ND.return SC_halted
           | Core_reduction.FS_oper operation ->
               ND.get >>= fun dr_st ->
               drive_fs_step_with
@@ -2124,6 +2167,7 @@ let initial_driver_state_with address_space_top run_st file fs_state =
     trace=             [];
     sc_state=          Nothing;
     sc_pending=        [];
+    sc_prefix_obligations= [];
     symbolic_assoc=    Map.empty;
     blocked=           false;
     dr_step_counter=   0;

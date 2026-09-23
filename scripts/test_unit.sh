@@ -39,6 +39,9 @@ UNIT_TESTS=(
     "memory-suspension-test"
     "sc-helper-order-test"
     "sc-services-test"
+    "sc-scopes-test"
+    "sc-sequencing-test"
+    "sc-reference-equality-test"
     "sc-faults-test"
     "sc-representation-test"
     # allocator soundness (upstream-tray draft 44, 2026-09-16): the four draft-44
@@ -98,7 +101,7 @@ for test in "${TESTS[@]}"; do
     if [[ "$test" == monadic-failstop-test ]]; then test_args=(2 17); fi
     if [[ "$test" == sc-prototype-test ]]; then test_args=(17 64); fi
     case "$test" in
-        sc-protocol-test|sc-fences-test|sc-cas-test|sc-seq-rmw-test|sc-atomic-update-test|sc-atomic-surface-test|sc-byte-sources-test|sc-graph-test|nd-suspension-test|memory-suspension-test|sc-helper-order-test|sc-services-test|sc-faults-test) test_args=(64) ;;
+        sc-protocol-test|sc-fences-test|sc-cas-test|sc-seq-rmw-test|sc-atomic-update-test|sc-atomic-surface-test|sc-byte-sources-test|sc-graph-test|nd-suspension-test|memory-suspension-test|sc-helper-order-test|sc-services-test|sc-scopes-test|sc-sequencing-test|sc-faults-test) test_args=(64) ;;
     esac
     if [[ "$test" == memory-suspension-test ]]; then test_args=(64 65536); fi
     if [[ "$test" == sc-services-test ]]; then
@@ -106,6 +109,18 @@ for test in "${TESTS[@]}"; do
         DUNE_CACHE=disabled "$SCRIPT_DIR/capped" dune build --root "$PROJECT_ROOT" -j 2 \
             memory/concrete/sc_prototype_controls/controls.exe
         timeout 30 "$PROJECT_ROOT/_build/default/memory/concrete/sc_prototype_controls/controls.exe"
+    fi
+    if [[ "$test" == sc-reference-equality-test ]]; then
+        "$PROJECT_ROOT/tools/check_lem_sync.sh" --check
+        DUNE_CACHE=disabled "$SCRIPT_DIR/capped" dune build --root "$PROJECT_ROOT" -j 2 \
+            memory/concrete/sc_reference_equality_controls/controls.exe
+        timeout 30 "$PROJECT_ROOT/_build/default/memory/concrete/sc_reference_equality_controls/controls.exe"
+    fi
+    if [[ "$test" == sc-sequencing-test ]]; then
+        "$PROJECT_ROOT/tools/check_lem_sync.sh" --check
+        DUNE_CACHE=disabled "$SCRIPT_DIR/capped" dune build --root "$PROJECT_ROOT" -j 2 \
+            memory/concrete/sc_sequencing_controls/controls.exe
+        timeout 30 "$PROJECT_ROOT/_build/default/memory/concrete/sc_sequencing_controls/controls.exe"
     fi
     if [[ "$test" == sc-graph-test ]]; then
         "$PROJECT_ROOT/tools/check_lem_sync.sh" --check

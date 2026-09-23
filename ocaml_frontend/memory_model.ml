@@ -43,6 +43,7 @@ module type Memory = sig
   type representation_byte
   val sc_value_key: mem_value -> Sc_value.sc_value_key option
   val representation_bits: representation_byte -> Z.t option
+  val sc_byte_key: representation_byte -> Sc_byte_key.sc_byte_key option
   type memory_observation =
     (pointer_value, mem_value, representation_byte) Mem_common.memory_observation
   val begin_observing: mem_state -> mem_state option

@@ -1,0 +1,65 @@
+(* Passive grouping of captured access occurrences. The input is chronological.
+   Only an adjacent read/write pair owned by the same indivisible Core atomic
+   request can be grouped. Ordinary SeqRMW and helpers remain separate accesses.
+   Unpaired reads may be failed CAS, partial/faulted requests, or ordinary loads;
+   this query deliberately does not decide completion or invent a final action.
+   Physical ranges constrain grouping; they do not define C memory locations. *)
+open import Pervasives
+import Sc_runtime Mem_common
+
+type sc_access_group =
+  | SC_access_single of Sc_runtime.sc_effect
+  | SC_access_atomic_pair of Sc_runtime.sc_effect * Sc_runtime.sc_effect
+
+let sc_is_access observed =
+  match observed.Sc_runtime.sc_effect_observation with
+    | Mem_common.Observe_access _ _ _ _ _ _ _ _ _ -> true
+    | _ -> false
+  end
+
+let sc_access_effects history = List.filter sc_is_access history
+
+let sc_same_compound_kind left right =
+  match (left, right) with
+    | (Sc_runtime.SC_atomic_update a, Sc_runtime.SC_atomic_update b) -> a = b
+    | (Sc_runtime.SC_cas_object a, Sc_runtime.SC_cas_object b) -> a = b
+    | _ -> false
+  end
+
+let sc_can_pair_accesses first second =
+  let left = first.Sc_runtime.sc_effect_request in
+  let right = second.Sc_runtime.sc_effect_request in
+  first.Sc_runtime.sc_effect_id <> second.Sc_runtime.sc_effect_id &&
+  left.Sc_runtime.sc_request_id = right.Sc_runtime.sc_request_id &&
+  left.Sc_runtime.sc_request_thread = right.Sc_runtime.sc_request_thread &&
+  sc_same_compound_kind left.Sc_runtime.sc_request_kind right.Sc_runtime.sc_request_kind &&
+  match (first.Sc_runtime.sc_effect_observation, second.Sc_runtime.sc_effect_observation) with
+    | (Mem_common.Observe_access _ Mem_common.LoadAccess _ _ (Just owner) base size _ _,
+       Mem_common.Observe_access _ Mem_common.StoreAccess _ _ (Just other) start width _ _) ->
+        owner = other && base = start && size = width
+    | _ -> false
+  end
+
+(* Keeping non-access effects as adjacency barriers prevents grouping across a
+   hidden allocation/deallocation/metadata operation. They are still retained
+   in the authoritative journal; this result is explicitly the access view. *)
+let rec sc_group_accesses history =
+  match history with
+    | [] -> []
+    | [first] -> if sc_is_access first then [SC_access_single first] else []
+    | first :: second :: rest ->
+        if sc_can_pair_accesses first second then
+          SC_access_atomic_pair first second :: sc_group_accesses rest
+        else
+          let tail = sc_group_accesses (second :: rest) in
+          if sc_is_access first then SC_access_single first :: tail else tail
+  end
+
+let sc_group_occurrences = function
+  | SC_access_single observed -> [observed]
+  | SC_access_atomic_pair first second -> [first; second]
+end
+
+let sc_ungroup_accesses groups = List.concat (List.map sc_group_occurrences groups)
+
+declare {lean} termination_argument sc_group_accesses = automatic
