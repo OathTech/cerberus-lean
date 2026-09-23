@@ -2605,3 +2605,41 @@ texts as the §15.4 rows — asserted mechanically before this section was writt
 still unfilled — my chain's fill step failed (it read the response-file path from the truncated `trace:` line) and the
 shell did not stop on that failure; the commit was amended in place, before any report, to the hash the orchestrator
 receives. Nothing else changed between the two cuts.
+
+## 16. LANDING (2026-09-23)
+
+[USER 2026-09-23] verbatim: "Go ahead with the merge" — after the merge ask that named the final head
+`9b141aca1` (= the orchestrator-verified `e5532b346` + the three cherry-picked delta-review commits,
+`git diff --stat e5532b346 9b141aca1` = `lean_frontend/docs/2026-09-23_match-pattern-arity-round3-delta-review.md`
+alone, 616 insertions). Range landed: `mdd/cerberus-lean` `34ac493f9` -> this head, ff-only, 13 commits + this
+landing note (item 7 rounds 1–3, the `std.core`/`std_inner_arg_temps.core` `pread`/`pwrite` declaration fix under
+[USER 2026-09-23] "Yeah, we shoudl fix and file to the tray, per our rule that unambiguous bugs get fixes", the
+second-round Codex audit, and the round-3 Fable delta review — final verdict, verbatim: "Merge-ready as is at
+`e5532b346`."). Pins unchanged: lem-pin `38f87d5` everywhere. No push.
+
+Orchestrator's independent re-verification of `e5532b346` (the worker's worktree, wiped regeneration, both builds;
+`.tmp/orch/round3-e5532b346-gates.log`, 06:12–06:18 UTC; tree clean before and after) — verbatim:
+
+    Total: 15 passed, 0 failed
+    check_failure_reach: OK (239 pure failure sites = the 239 register rows exactly (237 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; …
+    check_fork_drift: OK — layer 1: 84 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 29 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 38f87d5 = lem -v)
+    check_fuel_forms: OK (81 fuel'd workers: 62 MEASURED …
+    libc_prep: OK (content hash verified: pin + regenerated dump == d93b99cd55dae4b23071262a24d235c69489c8e41011554194126ecc81555a0a, 4188542 bytes)
+    SUMMARY: total=113 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=5 cerb_floor=0 cerb_inconsistent=0
+    Baseline check: 0 regression(s), 0 improvement(s)
+    SUMMARY: total=2 match=2 fail=0
+    SUMMARY: total=7 match=7 fail=0
+    test_address_space: OK (18 cases: LEAN = FORK through the shared codec at tops 64 32 8; every fork observation = its pinned row in expectations.txt)
+    OK: lane matches the committed baseline (MATCH except the ISO-fix register pins …
+    SUMMARY: match=12 diff=0
+    === ALL DONE (rc=0) 2026-09-23T06:18:52Z ===
+
+Every round-3 witness ran in the four modes (`timeout 60`); the zero-actual `run loop()` witness that did not
+terminate pre-fix reports `Error {msg: "ill-formed program: \`Erun: the argument list does not fit the
+continuation's parameters'"}` (rc=1) in default/`--rewrite` and the arity typing error in the typed modes; every
+fitting control is unchanged. `run-digest-test.rsp` contains `native/md5.o` (delta review F1 closed). The frozen
+full battery (§15.6, code head `7acc7326b`, committed evidence `…closure-evidence/round3-34ac493f9/`) — verbatim:
+`full: passed; 39/39 selected commands completed successfully.` / `Source unchanged: True. Complete tier selection:
+True.`; pristine 835/28/7/2, chvalid 4, gcc-oracle 0/0. Post-landing: primary checkout regenerated + rebuilt +
+row 1 (tails in the orchestrator's landing message); the ONE cerberus-sl re-pin note (E-A + run-digest + item 7)
+follows this landing.
