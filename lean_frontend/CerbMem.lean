@@ -17,6 +17,7 @@ import IntegerType
 import Ctype
 import Symbol
 import Mem_common
+import Sc_value
 import Nondeterminism
 import CerbFail
 import CerbTags
@@ -305,6 +306,42 @@ def beqMemValueMembers : List (identifier × ctype × MemValue) → List (identi
   | (i1, c1, v1) :: r1, (i2, c2, v2) :: r2 => i1 == i2 && c1 == c2 && beqMemValue v1 v2 && beqMemValueMembers r1 r2
   | _, _ => false
 end
+
+/-! Logical SC value keys. Paired with Impl_mem.sc_value_key_concrete.
+    This leaves MemValue's OCaml-parity BEq and C arithmetic equality unchanged.
+    Pointer/integer provenance and all type/aggregate payloads are retained. -/
+def scProvenanceKey : Provenance → sc_provenance_key
+  | .Prov_none => .SC_no_provenance
+  | .Prov_some id => .SC_storage_provenance id
+  | .Prov_symbolic id => .SC_symbolic_provenance id
+  | .Prov_device => .SC_device_provenance
+
+def scPointerKey : PointerValue → sc_pointer_key
+  | .PV prov base => (scProvenanceKey prov, match base with
+    | .PVnull ty => .SC_null_pointer ty
+    | .PVfunction sym => .SC_function_pointer sym
+    | .PVconcrete member address => .SC_concrete_pointer member address)
+
+mutual
+def scValueKeyConcrete : MemValue → sc_value_key
+  | .MVunspecified ty => .SC_unspecified_value ty
+  | .MVinteger ity (.IV prov n) => .SC_integer_value ity (scProvenanceKey prov) n
+  | .MVfloating fty value => .SC_floating_value fty value.toBits.toInt64.toInt
+  | .MVpointer ty pointer => .SC_pointer_value ty (scPointerKey pointer)
+  | .MVarray values => .SC_array_value (scValueKeys values)
+  | .MVstruct tag members => .SC_struct_value tag (scMemberKeys members)
+  | .MVunion tag id value => .SC_union_value tag id (scValueKeyConcrete value)
+def scValueKeys : List MemValue → List sc_value_key
+  | [] => []
+  | value :: rest => scValueKeyConcrete value :: scValueKeys rest
+def scMemberKeys : List (identifier × ctype × MemValue) →
+    List (identifier × ctype × sc_value_key)
+  | [] => []
+  | (id, ty, value) :: rest => (id, ty, scValueKeyConcrete value) :: scMemberKeys rest
+end
+
+def scValueKey (value : MemValue) : Option sc_value_key :=
+  some (scValueKeyConcrete value)
 
 instance : BEq MemValue where beq := beqMemValue
 instance : BEq Footprint where

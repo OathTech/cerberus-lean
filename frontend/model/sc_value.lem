@@ -1,0 +1,48 @@
+import Pervasives Ctype Symbol
+
+(* Logical value identity for an SC reference instance. No C equality
+   operator, representation comparison or object-memory operation is performed.
+   Floating values carry the concrete model's exact signed binary64 bit word. *)
+open import Pervasives
+import Ctype Symbol
+
+type sc_provenance_key =
+  | SC_no_provenance
+  | SC_storage_provenance of integer
+  | SC_symbolic_provenance of integer
+  | SC_device_provenance
+
+type sc_pointer_base_key =
+  | SC_null_pointer of Ctype.ctype
+  | SC_function_pointer of Symbol.sym
+  | SC_concrete_pointer of maybe Symbol.identifier * integer
+
+type sc_pointer_key = sc_provenance_key * sc_pointer_base_key
+
+type sc_value_key =
+  | SC_unspecified_value of Ctype.ctype
+  | SC_integer_value of Ctype.integerType * sc_provenance_key * integer
+  | SC_floating_value of Ctype.floatingType * integer
+  | SC_pointer_value of Ctype.ctype * sc_pointer_key
+  | SC_array_value of list sc_value_key
+  | SC_struct_value of Symbol.sym * list (Symbol.identifier * Ctype.ctype * sc_value_key)
+  | SC_union_value of Symbol.sym * Symbol.identifier * sc_value_key
+
+(* Structural identity deliberately includes metadata that the C type/symbol
+   equivalence functions may ignore. This is a lossless key, not that semantic
+   equivalence relation. *)
+instance (Eq sc_value_key)
+  let (=) x y = unsafe_structural_equality x y
+  let (<>) x y = not (unsafe_structural_equality x y)
+end
+
+(* Tokens are local to one candidate, not C integers. Tables only grow, so the
+   list length supplies a fresh natural identifier for each distinct key. *)
+type sc_value_table = list (sc_value_key * nat)
+let sc_intern_value key (table: sc_value_table) =
+  match List.lookup key table with
+    | Just token -> (token, table)
+    | Nothing ->
+        let token = List.length table in
+        (token, (key, token) :: table)
+  end

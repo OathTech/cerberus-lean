@@ -5,7 +5,14 @@ This file records evidence and next actions; it does not replace the charter.
 
 ## Current status
 
-**2026-09-22: the user resolved the mixed-size decision: retain pinned Cerberus/Cmm and fail closed on evidenced unresolved semantic boundaries in general, documenting every case. The boundary register records five evidenced gaps (the two latest guards still need validation) and separates unfinished work and other diagnostics. Resumable helper services, typed SC faults and the external import example passed all 39 Tier A/B lanes; the 864-row three-engine report retained the preceding checkpoint's exact classifications and decoded results, including its 40 Lean discrepancy IDs. The source-graph slice subsequently passed the same full/three-engine checks, with all classifications and decoded tokens unchanged. Unconditional atomic updates, exchange, atomic operators and qualifier repairs now also pass full/three-engine validation, with the same classifications and decoded tokens. Public SC verdict checking remains incomplete.**
+**2026-09-23: the general fail-closed policy is recorded in eight
+evidenced boundary entries. SC-G01/G04/G05 have validated producers;
+SC-G02/G03/G06/G07/G08 still require precise guards. The atomic interfaces and
+source-location transport are committed at `3f9705c9b`. Lossless value keys,
+the mechanically derived reference instance, and variadic metadata queries now
+pass all 39 Tier A+B lanes and the 864-case three-engine comparison, with no
+changed classifications or complete decoded observations and the same 40 Lean
+discrepancy IDs. Public SC checking and the whole prototype remain incomplete.**
 Branch `arc/sc-prototype`, worktree
 `/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype`.
 Implementation base: `5407597d9eeba0259d65b728e86a860ad4614ab3`.
@@ -86,18 +93,18 @@ and [boundary register](2026-09-22_sc-boundary-register.md) record the decision.
 No additional reference was adopted. The preserved proposal's pending-question
 and source-freeze wording is historical, superseded by this entry.
 
-Continue location/RF composition, prefix race/consistency checking, remaining
-atomic frontend paths and the public operational/C entry. Source-order paths
+Next complete and validate `kill_dependency`, the remaining atomic character
+aliases and the runtime lock-free query boundary. Then continue location/RF
+composition, prefix race/consistency checking and the public operational/C entry. Source-order paths
 through all journal vertices now have a validated adapter. Next connect location,
 value and atomic synchronization information; the graph alone does not settle
 whether a conflicting pair is unordered in full happens-before. Implement and
 validate the remaining atomic operations through the actual frontend.
 The [independent investigations](2026-09-21_sc-prototype-evidence/reference-followup/README.md)
 also retain concrete stream-lock and floating-value adapter findings. Missing
-implementation mechanisms remain work, not new coverage exclusions. Only the
-CAS unspecified-representation guard is implemented; precise mixed-size and
-stream-synchronization guards remain outstanding. All 21 current typed SC fault
-constructors were accounted for in the register; their categories must not all
+implementation mechanisms remain work, not new coverage exclusions. SC-G01/G04/G05 have validated producers; the register tracks the remaining
+precise guards. All 21 typed SC fault constructors at the initial register
+checkpoint were accounted for; their categories must not all
 be interpreted as upstream semantic gaps.
 The customer remains strictly read-only; no build or migration was performed.
 
@@ -735,3 +742,50 @@ their Lean laws and actual driver integration remain unfinished. They are not
 part of this validated slice. Available-guidance atomic work, including
 `kill_dependency` and remaining public aliases, remains required. Customer and
 dependency pins are unchanged; the customer repository remains read-only.
+
+## Value and varargs adapters — integration preparation
+
+The [current adapter review](2026-09-23_sc-value-metadata-review.md) records
+eighteen paired value groups, ten paired metadata groups, eight exact paired C
+queries, fifteen kernel laws, nine compiled positive/mutation controls and nine
+derivation checks. Both targets generate and build. Initial native-name, proof,
+diagnostic JSON/link and control-syntax failures remain retained as failures.
+The new reference instance preserves predicate bodies; raw keys retain bits and
+provenance without changing ordinary memory equality. Varargs witnesses retain
+actual journal identity. At this preparation stage frozen integration was still
+pending; the following checkpoint records its completed validation.
+
+The full source-only query is not yet full happens-before, and raw value identity
+does not settle cross-view reads-from. Public prefix checking and precise gap
+guards remain unfinished. The completed full ladder and mandatory three-engine
+report validate this adapter slice; they do not complete the whole SC charter.
+
+
+## S2/S3 value and metadata component checkpoint, September 23
+
+Parent `3f9705c9b`; the [component review](2026-09-23_sc-value-metadata-review.md)
+and [evidence summary](2026-09-21_sc-prototype-evidence/value-metadata/summary.json)
+record the frozen 39-command full pass and unchanged 864-case three-engine
+comparison. Eighteen paired value groups, ten metadata groups, fifteen kernel
+laws, nine derivation checks, nine compiled controls/mutations and eight actual
+C metadata comparisons pass. Failed and interrupted predecessors are retained.
+
+Raw keys are lossless values, not final cross-view RF equality. Source-only
+ordering is not full HB. Additional actual-C diagnostics expose both limits,
+preserve independent faults, and show why ordinary declaration-plus-atomic_init
+uses the already reviewed fence-aware condition. Five publication controls
+separate the native full-HB diagnostic from paired source-only recorder evidence.
+Allocation/child-errno initialization composition is a recorded question, not a
+new runtime refusal. SC-G07's follow-up includes ordinary/atomic mixed pairs
+and existing UB035 prefixes; no dedicated guard is claimed.
+
+Next: promote and compile the prepared atomic-interface completion: the
+`kill_dependency`/character aliases and available runtime lock-free query rules.
+The combined thirteen-file draft preserves all ten unresolved preprocessor
+constant definitions and adds no numeric configuration. Validate actual builtin
+behavior against complete paired observations and meaningful source-order/effect
+controls, then continue final location/HB/RF, fault and public-interface
+integration. The ignored draft's
+generation and identity-macro tests do not certify its actual builtin/query. No
+customer write, mainline merge, push, dependency change or new reference is
+authorized by this checkpoint.

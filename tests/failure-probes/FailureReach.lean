@@ -7,6 +7,11 @@ import Translation
 import Core_linking
 import Core_typing
 import Mini_pipeline
+-- Standalone SC reference/adapters are scanned even before Driver uses them.
+-- Import them so the compiler identifies their owners and actual dependencies.
+import Sc_reference
+import CerbSCValues
+import CerbSCVarargs
 
 open Lean in
 run_cmd do

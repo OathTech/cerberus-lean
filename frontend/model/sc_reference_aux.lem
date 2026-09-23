@@ -1,0 +1,141 @@
+(* Derived logical-carrier instance; predicate bodies unchanged. *)
+(* The types and functions defined in this file are parameters to the
+   axiomatic model: users of the axiomatic model can implement them
+   however they wish by building the model with their own version of
+   cmm_aux.lem. *)
+
+open import Pervasives Show Show_extra
+
+type aid_impl = nat
+type program_impl = nat
+type tid_impl = Tid_hol of nat
+type location_impl = Loc_hol of nat
+type cvalue_impl = Cvalue_hol of nat
+
+instance (Eq tid_impl)
+  let (=) x y = unsafe_structural_equality x y
+  let (<>) x y = not (unsafe_structural_equality x y)
+end
+
+instance (SetType tid_impl)
+  let setElemCompare x y = defaultCompare x y
+end
+
+instance (Eq location_impl)
+  let (=) x y = unsafe_structural_equality x y
+  let (<>) x y = not (unsafe_structural_equality x y)
+end
+
+instance (SetType location_impl)
+  let setElemCompare = defaultCompare
+end
+
+instance (Eq cvalue_impl)
+  let (=) x y = unsafe_structural_equality x y
+  let (<>) x y = not (unsafe_structural_equality x y)
+end
+
+instance (SetType cvalue_impl)
+  let setElemCompare x y = defaultCompare x y
+end
+
+instance (Show tid_impl)
+  let show tid =
+    match tid with
+    | Tid_hol n -> show n
+    end
+end
+
+instance (Show location_impl)
+  let show location =
+    match location with
+    | Loc_hol n -> show n
+    end
+end
+
+instance (Show cvalue_impl)
+  let show cvalue =
+    match cvalue with
+    | Cvalue_hol n -> show n
+    end
+end
+
+type footprint_impl = set location_impl
+
+val footprint_of_loc_impl: location_impl -> footprint_impl
+let footprint_of_loc_impl loc = {loc}
+
+val footprint_empty_impl: footprint_impl
+(* We also annotate the type in the let to avoid the Ocaml-error
+"contains type variables that cannot be generalized" *)
+let footprint_empty_impl: footprint_impl = Set.empty
+
+val footprint_leq_impl: footprint_impl -> footprint_impl -> bool
+let footprint_leq_impl = Set.isSubsetOf
+
+val footprint_is_empty_impl: footprint_impl -> bool
+let footprint_is_empty_impl f = Set.null f
+
+val footprint_difference_impl: footprint_impl -> footprint_impl -> footprint_impl
+let footprint_difference_impl = Set.difference
+
+val footprint_intersection_impl: footprint_impl -> footprint_impl -> footprint_impl
+let footprint_intersection_impl = Set.intersection
+
+val footprint_bigunion_impl: set footprint_impl -> footprint_impl
+(* We annotate the type in the let to avoid the Ocaml-error "contains
+   type variables that cannot be generalized". We explicitely give the
+   function a parameter "s" because otherwise the generated
+   isabelle-code is invalid (it becomes 
+     "footprint_bigunion_impl = ( ⋃ )"
+   ) *) 
+let footprint_bigunion_impl (s:set footprint_impl) : footprint_impl = Set.bigunion s
+
+(* The implementation of combine_cvalues_impl should satisfy 
+
+     combine_cvalues {value_written_by w, footprint_of w, footprint_of w} = value_written_by w
+
+   for all actions w. *)
+
+(* The first footprint is the original footprint of the write that
+   wrote the value, the second footprint is the part that we read (and
+   that should be combined with the other parts. *)
+val combine_cvalues_impl: set (cvalue_impl * footprint_impl * footprint_impl) -> maybe cvalue_impl
+let combine_cvalues_impl s = (* TODO *) Nothing
+
+
+(* Target-specific names keep this instance distinct from the live Core adapter. *)
+declare {ocaml} rename type aid_impl = sc_ref_aid_impl
+declare {lean} rename type aid_impl = sc_ref_aid_impl
+declare {ocaml} rename type cvalue_impl = sc_ref_cvalue_impl
+declare {lean} rename type cvalue_impl = sc_ref_cvalue_impl
+declare {ocaml} rename type footprint_impl = sc_ref_footprint_impl
+declare {lean} rename type footprint_impl = sc_ref_footprint_impl
+declare {ocaml} rename type location_impl = sc_ref_location_impl
+declare {lean} rename type location_impl = sc_ref_location_impl
+declare {ocaml} rename type program_impl = sc_ref_program_impl
+declare {lean} rename type program_impl = sc_ref_program_impl
+declare {ocaml} rename type tid_impl = sc_ref_tid_impl
+declare {lean} rename type tid_impl = sc_ref_tid_impl
+declare {ocaml} rename function Cvalue_hol = SCRef_Cvalue_hol
+declare {lean} rename function Cvalue_hol = SCRef_Cvalue_hol
+declare {ocaml} rename function Loc_hol = SCRef_Loc_hol
+declare {lean} rename function Loc_hol = SCRef_Loc_hol
+declare {ocaml} rename function Tid_hol = SCRef_Tid_hol
+declare {lean} rename function Tid_hol = SCRef_Tid_hol
+declare {ocaml} rename function combine_cvalues_impl = sc_ref_combine_cvalues_impl
+declare {lean} rename function combine_cvalues_impl = sc_ref_combine_cvalues_impl
+declare {ocaml} rename function footprint_bigunion_impl = sc_ref_footprint_bigunion_impl
+declare {lean} rename function footprint_bigunion_impl = sc_ref_footprint_bigunion_impl
+declare {ocaml} rename function footprint_difference_impl = sc_ref_footprint_difference_impl
+declare {lean} rename function footprint_difference_impl = sc_ref_footprint_difference_impl
+declare {ocaml} rename function footprint_empty_impl = sc_ref_footprint_empty_impl
+declare {lean} rename function footprint_empty_impl = sc_ref_footprint_empty_impl
+declare {ocaml} rename function footprint_intersection_impl = sc_ref_footprint_intersection_impl
+declare {lean} rename function footprint_intersection_impl = sc_ref_footprint_intersection_impl
+declare {ocaml} rename function footprint_is_empty_impl = sc_ref_footprint_is_empty_impl
+declare {lean} rename function footprint_is_empty_impl = sc_ref_footprint_is_empty_impl
+declare {ocaml} rename function footprint_leq_impl = sc_ref_footprint_leq_impl
+declare {lean} rename function footprint_leq_impl = sc_ref_footprint_leq_impl
+declare {ocaml} rename function footprint_of_loc_impl = sc_ref_footprint_of_loc_impl
+declare {lean} rename function footprint_of_loc_impl = sc_ref_footprint_of_loc_impl

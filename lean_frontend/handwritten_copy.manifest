@@ -86,3 +86,5 @@ CerbSCFaults.lean
 CerbSCRepresentation.lean
 Sc_order_lemMeasureProofs.lean
 CerbSCAtomicSurface.lean
+CerbSCValues.lean
+CerbSCVarargs.lean

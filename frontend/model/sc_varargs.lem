@@ -1,0 +1,73 @@
+(* Abstract va_list state is separate from the integer handle's object bytes.
+   Read/advance/create/delete observations come from the actual memory primitive.
+   This adapter neither invents byte writes nor assigns Cmm reads-from values.
+   Full verdict integration must supply justified hb, not schedule order. *)
+open import Pervasives
+import Mem_common Sc_runtime Cmm_csem
+
+type sc_varargs_event = <|
+  sc_va_occurrence: Cmm_csem.aid;
+  sc_va_request: Cmm_csem.aid;
+  sc_va_thread: Mem_common.thread_id;
+  sc_va_identity: integer;
+  sc_va_operation: Mem_common.varargs_observation;
+|>
+
+let sc_varargs_event_of observed =
+  match observed.Sc_runtime.sc_effect_observation with
+    | Mem_common.Observe_varargs operation id ->
+        Just <| sc_va_occurrence= observed.Sc_runtime.sc_effect_id;
+                sc_va_request= observed.Sc_runtime.sc_effect_request.Sc_runtime.sc_request_id;
+                sc_va_thread= observed.Sc_runtime.sc_effect_request.Sc_runtime.sc_request_thread;
+                sc_va_identity= id; sc_va_operation= operation |>
+    | _ -> Nothing
+  end
+
+let sc_varargs_events history =
+  List.foldr (fun observed rest ->
+    match sc_varargs_event_of observed with
+      | Nothing -> rest
+      | Just event -> event :: rest
+    end) [] history
+
+let sc_varargs_modifies = function
+  | Mem_common.Varargs_read -> false
+  | Mem_common.Varargs_create -> true
+  | Mem_common.Varargs_advance -> true
+  | Mem_common.Varargs_delete -> true
+end
+
+let sc_varargs_conflict left right =
+  left.sc_va_identity = right.sc_va_identity &&
+  (sc_varargs_modifies left.sc_va_operation || sc_varargs_modifies right.sc_va_operation)
+
+type sc_varargs_conflict_kind = SC_va_interthread | SC_va_unsequenced
+
+type sc_varargs_conflict_witness = <|
+  sc_va_conflict_left: sc_varargs_event;
+  sc_va_conflict_right: sc_varargs_event;
+  sc_va_conflict_kind: sc_varargs_conflict_kind;
+|>
+
+(* ID comparison removes duplicate witnesses only; it supplies NO order edge.
+   A malformed source graph must remain an independent protocol finding. *)
+let sc_varargs_ordered hb left right =
+  (left.sc_va_occurrence, right.sc_va_occurrence) IN hb
+
+let sc_varargs_unordered_pair hb left right =
+  if left.sc_va_occurrence < right.sc_va_occurrence &&
+     sc_varargs_conflict left right &&
+     not (sc_varargs_ordered hb left right) &&
+     not (sc_varargs_ordered hb right left) then
+    Just <| sc_va_conflict_left= left; sc_va_conflict_right= right;
+            sc_va_conflict_kind= if left.sc_va_thread = right.sc_va_thread
+              then SC_va_unsequenced else SC_va_interthread |>
+  else Nothing
+
+let sc_varargs_unordered_pairs hb history =
+  let events = sc_varargs_events history in
+  List.concat (List.map (fun left -> List.foldr (fun right rest ->
+    match sc_varargs_unordered_pair hb left right with
+      | Nothing -> rest
+      | Just found -> found :: rest
+    end) [] events) events)

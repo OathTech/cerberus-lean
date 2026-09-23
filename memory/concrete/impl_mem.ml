@@ -479,6 +479,34 @@ module Concrete : Memory = struct
             `NewTaint xs
   end
   
+  let sc_provenance_key = function
+    | Prov_none -> Sc_value.SC_no_provenance
+    | Prov_some id -> Sc_value.SC_storage_provenance id
+    | Prov_symbolic id -> Sc_value.SC_symbolic_provenance id
+    | Prov_device -> Sc_value.SC_device_provenance
+
+  let sc_pointer_key (PV (prov, base)) =
+    (sc_provenance_key prov,
+     match base with
+     | PVnull ty -> Sc_value.SC_null_pointer ty
+     | PVfunction sym -> Sc_value.SC_function_pointer sym
+     | PVconcrete (member, address) -> Sc_value.SC_concrete_pointer (member, address))
+
+  let rec sc_value_key_concrete = function
+    | MVunspecified ty -> Sc_value.SC_unspecified_value ty
+    | MVinteger (ity, IV (prov, n)) ->
+        Sc_value.SC_integer_value (ity, sc_provenance_key prov, n)
+    | MVfloating (fty, value) ->
+        Sc_value.SC_floating_value (fty, Z.of_int64 (Int64.bits_of_float value))
+    | MVpointer (ty, pointer) -> Sc_value.SC_pointer_value (ty, sc_pointer_key pointer)
+    | MVarray values -> Sc_value.SC_array_value (List.map sc_value_key_concrete values)
+    | MVstruct (tag, members) -> Sc_value.SC_struct_value (tag,
+        List.map (fun (id,ty,value) -> (id,ty,sc_value_key_concrete value)) members)
+    | MVunion (tag, id, value) ->
+        Sc_value.SC_union_value (tag, id, sc_value_key_concrete value)
+
+  let sc_value_key value = Some (sc_value_key_concrete value)
+
   type representation_byte = AbsByte.t
   (* Existing representation bits only. Provenance/copy metadata remains in
      the memory value and journal; unspecified bytes remain unspecified. *)

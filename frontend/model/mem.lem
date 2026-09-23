@@ -1,5 +1,5 @@
 open import Pervasives
-import Symbol Float Ctype Mem_common
+import Symbol Float Ctype Mem_common Sc_value
 import AilSyntax
 
 type pointer_value
@@ -50,6 +50,13 @@ declare ocaml target_rep type mem_state = `Impl_mem.mem_state`
 declare lean target_rep type mem_state = `CerbMem.MemState`
 declare ocaml target_rep function initial_mem_state = `Impl_mem.initial_mem_state`
 declare lean target_rep function initial_mem_state = `CerbMem.initialMemState`
+
+(* Logical Cmm values use structural keys, not host floating-point equality.
+   Nothing denotes an unavailable object-model adapter, never a default key. *)
+import Sc_value
+val sc_value_key: mem_value -> maybe Sc_value.sc_value_key
+declare ocaml target_rep function sc_value_key = `Impl_mem.sc_value_key`
+declare lean target_rep function sc_value_key = `CerbMem.scValueKey`
 
 type representation_byte
 declare ocaml target_rep type representation_byte = `Impl_mem.representation_byte`

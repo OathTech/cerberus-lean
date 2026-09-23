@@ -9,19 +9,27 @@ claim that the initial tree implements SC.
 
 Core, the object-model interface and Cmm definitions are taken from the current
 implementation base `5407597d9eeba0259d65b728e86a860ad4614ab3`, compared with
-pristine upstream `b9aeedcb4dd438763b0eef7f95ac19e93875d7de`. The retained scalar
-reference is `Cmm_csem.SC_memory_model` with `SC_condition`, not `tot_memory_model`
-or a generic modern C++/RC11 model. Its executable boolean predicates are useful
-reference instruments; the target-specific `behaviour` wrappers are not Lean
-theorems of the adapter.
+pristine upstream `b9aeedcb4dd438763b0eef7f95ac19e93875d7de`. Final integration
+uses the retained `Cmm_csem.sc_fenced_memory_model` and `sc_fenced_condition`, together with the
+executor's explicit NA/seq_cst request domain. This is the pinned fence-aware
+reference already reviewed for SC fences, not a new modern C++/RC11 model.
+The stronger `SC_memory_model`/`SC_condition` remains reference material for
+theorems that establish its hypotheses. Neither historical `behaviour` wrappers
+nor `statically_satisfied` supply a theorem of today's Core adapter.
 
-`SC_condition` admits NA/seq_cst loads/stores and seq_cst RMWs, with an atomic
-initialization condition. It excludes fences, Alloc and Dealloc. Its field
-`consistent` is `sc_accesses_consistent_execution`, and its relations are
-`release_acquire_relations`. This checker domain is smaller than the prototype's
-runtime target. The fence-aware upstream definitions to investigate are
-`sc_fenced_memory_model`/`release_acquire_fenced_relations`; merely passing
-`SC_memory_model` a fence does not establish its intended behavior.
+[AGENT, September 23] Actual C declaration followed by `atomic_init` records
+both the declaration's unspecified NA store and explicit initialization. The
+narrower condition rejects multiple NA initialization stores, while the
+fence-aware condition admits this ordinary C pattern. Retain both actual
+stores and their orders. The [follow-up](2026-09-21_sc-prototype-evidence/value-metadata/candidate-projection-followup.md)
+records four controls, their consistency leaves and independent race witnesses;
+it is not a universal equivalence proof. The fence-aware predicate's broader
+order domain does not authorize the executor to strengthen or admit weak orders.
+
+Both scalar checkers exclude allocation/deallocation actions. That reference
+domain remains smaller than the runtime target; lifetime, metadata and ordered
+representation operations require the operational composition described below.
+Passing a scalar projection alone is not a public SC verdict.
 
 ISO references are C11 N1570 3.14, 5.1.2.3–4, 6.5, 7.17 and 7.22.3, with relevant
 WG14 corrections (including DR401/402/403). Do not import later C++ rules without a

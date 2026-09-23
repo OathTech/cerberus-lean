@@ -156,12 +156,12 @@ LEM_CABS_TO_AIL   = cabs_to_ail_aux.lem scope_table.lem \
                     desugaring_init.lem cabs_to_ail_effect.lem cabs_to_ail.lem mini_pipeline.lem
 LEM_CORE_TO_CORE  = core_sequentialise.lem core_indet.lem core_rewrite.lem \
                     core_unstruct.lem
-LEM_CORE_DYNAMICS = core_run_aux.lem sc_order.lem sc_representation.lem sc_runtime.lem sc_byte_sources.lem sc_graph.lem core_eval.lem core_run.lem core_reduction.lem core_reduction_aux.lem driver.lem
+LEM_CORE_DYNAMICS = core_run_aux.lem sc_order.lem sc_representation.lem sc_runtime.lem sc_byte_sources.lem sc_graph.lem sc_varargs.lem core_eval.lem core_run.lem core_reduction.lem core_reduction_aux.lem driver.lem
 LEM_ELABORATION   = atomic_order.lem translation_effect.lem translation_aux.lem translation.lem
-LEM_DEFACTO       = mem_common.lem defacto_memory_types.lem \
+LEM_DEFACTO       = sc_value.lem mem_common.lem defacto_memory_types.lem \
                     defacto_memory_aux.lem defacto_memory.lem mem.lem \
                     mem_aux.lem
-LEM_CONC_INTERF   = cmm_aux.lem
+LEM_CONC_INTERF   = cmm_aux.lem sc_reference_aux.lem sc_reference.lem
 LEM_CONC          = cmm_csem.lem cmm_op.lem linux.lem
 
 LEM_CN            = cn.lem cn_desugaring.lem
@@ -216,7 +216,11 @@ OCAML_SRC = $(addprefix $(PRELUDE_SRC_DIR)/, $(addsuffix .ml, $(notdir $(basenam
 PRELUDE_SYNC_STAMP = ocaml_frontend/lem_sync.sha256
 
 # All targets generated at once thanks to [&:].
-$(OCAML_SRC) $(PRELUDE_SYNC_STAMP)&: $(LEM_SRC)
+.PHONY: sc-reference-check
+sc-reference-check:
+	$(Q)python3 scripts/sync_sc_reference.py
+
+$(OCAML_SRC) $(PRELUDE_SYNC_STAMP)&: $(LEM_SRC) | sc-reference-check
 	@echo "[MKDIR] $(PRELUDE_SRC_DIR)"
 	$(Q)mkdir -p $(PRELUDE_SRC_DIR)
 	@echo "[LEM] generating files in [$(PRELUDE_SRC_DIR)] (log in [ocaml_frontend/lem.log])"
@@ -227,7 +231,7 @@ $(OCAML_SRC) $(PRELUDE_SYNC_STAMP)&: $(LEM_SRC)
 	$(Q)$(SEDI) -e "s/open Operators//" $(PRELUDE_SRC_DIR)/core_run.ml
 	$(Q)$(SEDI) -e "s/open Operators//" $(PRELUDE_SRC_DIR)/driver.ml
 	$(Q)$(SEDI) -e "s/Lem_debug.DB_/Cerb_debug.DB_/g" $(OCAML_SRC)
-	$(Q)$(SEDI) -e "1 s/.*/&[@@@warning \"-8\"]/" $(PRELUDE_SRC_DIR)/cmm_csem.ml
+	$(Q)$(SEDI) -e "1 s/.*/&[@@@warning \"-8\"]/" $(PRELUDE_SRC_DIR)/cmm_csem.ml $(PRELUDE_SRC_DIR)/sc_reference.ml
 	$(Q)$(SEDI) -e "1 s/.*/&[@@@warning \"-8\"]/" $(PRELUDE_SRC_DIR)/cmm_op.ml
 	@echo "[STAMP] recording lem-sync content stamp"
 	$(Q)bash tools/check_lem_sync.sh --record
@@ -341,7 +345,7 @@ rebuild-lem:
 	@echo "[LEM] installed $$(lem -v 2>&1)"
 
 .PHONY: lean-prelude-src
-lean-prelude-src: $(LEM_SRC)
+lean-prelude-src: $(LEM_SRC) sc-reference-check
 	@echo "[MKDIR] $(LEAN_SRC_DIR)"
 	$(Q)mkdir -p $(LEAN_SRC_DIR)
 	@# effect-retirement C1: the Core_unstruct pair leaves the Lean build

@@ -275,6 +275,7 @@ module CHERIMorello : Memory = struct
   (* SC observation adapter is not implemented for this object-model instance.
      Absence is explicit at both initialization and extraction; no empty stream
      can be mistaken for a complete observation. Existing execution is unchanged. *)
+  let sc_value_key (_: mem_value) : Sc_value.sc_value_key option = None
   type representation_byte = unit
   let representation_bits (_: representation_byte) : Z.t option = None
   type memory_observation =

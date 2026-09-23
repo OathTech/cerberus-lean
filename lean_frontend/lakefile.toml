@@ -87,6 +87,9 @@ roots = [
   "Cmm_aux", "Cmm_aux_auxiliary",
   "Cmm_csem", "Cmm_csem_auxiliary",
   "Cmm_op", "Cmm_op_auxiliary",
+  "Sc_reference_aux", "Sc_reference_aux_auxiliary",
+  "Sc_reference", "Sc_reference_auxiliary",
+  "Sc_value", "Sc_value_auxiliary",
   "Cn", "Cn_auxiliary",
   "Cn_desugaring", "Cn_desugaring_auxiliary",
   "Constraint", "Constraint_auxiliary",
@@ -137,7 +140,8 @@ roots = [
   "Sc_runtime", "Sc_runtime_auxiliary", "CerbSCByteInstances", "CerbSCOperational",
   "CerbNDSuspension", "CerbMemSuspension", "CerbSCHelperOrder", "CerbSCServices", "CerbSCFaults",
   "Sc_byte_sources", "Sc_byte_sources_auxiliary", "CerbSCByteSources",
-  "Sc_graph", "Sc_graph_auxiliary", "CerbSCGraph", "CerbSCAtomicUpdate", "CerbSCAtomicSurface",
+  "Sc_graph", "Sc_graph_auxiliary", "CerbSCGraph", "CerbSCAtomicUpdate", "CerbSCAtomicSurface", "CerbSCValues",
+  "Sc_varargs", "Sc_varargs_auxiliary", "CerbSCVarargs",
   "Pp", "Pp_auxiliary",
   "Product", "Product_auxiliary",
   "Range", "Range_auxiliary",
@@ -408,4 +412,16 @@ moreLinkArgs = ["native/md5.o"]
 name = "sc-atomic-surface-test"
 srcDir = "test"
 root = "Unit.SCAtomicSurface"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "sc-values-test"
+srcDir = "test"
+root = "Unit.SCValues"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "sc-varargs-test"
+srcDir = "test"
+root = "Unit.SCVarargs"
 moreLinkArgs = ["native/md5.o"]
