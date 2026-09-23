@@ -105,6 +105,9 @@ type ail_builtin_atomic =
   | AilBAcompare_exchange_strong
   | AilBAcompare_exchange_weak
   | AilBAfetch_key
+  | AilBAinit
+  | AilBAfetch of arithmeticOperator
+  | AilBAsignal_fence
 
 type ail_builtin_linux =
   | AilBLfence

@@ -238,6 +238,8 @@ let rec export_pexpr (Pexpr annot infer pexpr_) =
         ) xs
     | PEundef loc ub ->
         E.return (PEundef loc ub)
+    | PEmodel_gap loc gap ->
+        E.return (PEmodel_gap loc gap)
     | PEerror str pe ->
         PEerror str <$> export_pexpr pe
     | PEctor ctor pes ->

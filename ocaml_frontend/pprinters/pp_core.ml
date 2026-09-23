@@ -11,6 +11,7 @@ open Cerb_pp_prelude
 
 module type CONFIG =
 sig
+  val source_locations: bool
   val show_std: bool
   val show_include: bool
   val show_locations: bool
@@ -45,6 +46,7 @@ module Make (Config: CONFIG) =
 struct
 open Config
 
+
 let in_comment ?(single_line=true) ?(with_hash=false) doc =
   let pref, suf = if with_hash then "{-#", "#-}" else "{-", "-}" in
   pp_ansi_format [Red] (fun () ->
@@ -69,6 +71,7 @@ let maybe_print_location (annot: Annot.annot list) : P.document =
 
 let precedence_pexpr = function
   | PEundef _
+  | PEmodel_gap _
   | PEerror _
   | PEval _
   | PEconstrained _
@@ -166,6 +169,14 @@ let compare_precedence p1 p2 =
 
 
 let pp_keyword w = pp_ansi_format [Bold; Magenta] (fun () -> !^ w)
+
+let source_wrap kind annot direct doc =
+  if not source_locations then doc else
+  let locs = List.filter_map (function Aloc loc -> Some loc | _ -> None) annot in
+  pp_keyword kind ^^ P.parens (
+    !^ ("<<<" ^ Cerb_location_json.encode locs direct ^ ">>>") ^^ P.comma ^^
+    P.nest 2 (P.break 1 ^^ doc))
+
 let pp_datactor c = pp_ansi_format [Yellow] (fun () -> !^ c)
 let pp_control w = pp_ansi_format [Bold; Blue] (fun () -> !^ w)
 let pp_symbol a = pp_ansi_format [Blue] (fun () -> !^ (Pp_symbol.to_string_pretty a))
@@ -433,15 +444,20 @@ let pp_bounded_integer_pexpr pp_pexpr pe =
 
 let pp_pexpr pe =
   let rec pp prec (Pexpr (annot, _, pe)) =
-    let prec' = precedence_pexpr pe in
+    let prec' = if source_locations then None else precedence_pexpr pe in
     let pp z = P.group (pp prec' z) in
     (maybe_print_location annot) ^^
-    (if compare_precedence prec' prec then fun z -> z else P.parens)
+    (fun doc ->
+      let doc = source_wrap "source_pexpr" annot
+        (match pe with PEundef (loc, _) | PEmodel_gap (loc, _) -> Some loc | _ -> None) doc in
+      if compare_precedence prec' prec then doc else P.parens doc)
     begin P.group begin match pe with
       | PEundef (_, ub) ->
           pp_keyword "undef" ^^ P.parens (P.angles (P.angles (
             pp_ansi_format [Magenta] (fun () -> !^ (Undefined.stringFromUndefined_behaviour ub))
           )))
+      | PEmodel_gap (_, gap) ->
+          pp_keyword "model_gap" ^^ P.parens (!^ (Core.core_model_gap_name gap))
       | PEerror (str, pe) ->
           pp_keyword "error" ^^ P.parens (P.dquotes (!^ str) ^^ P.comma ^^^ pp pe)
       | PEval cval ->
@@ -462,7 +478,7 @@ let pp_pexpr pe =
             Cerb_debug.warn [] (fun () ->
               "Pp_core found a Cnil with pes <> []"
             );
-          P.brackets P.empty ^^ P.colon ^^^ pp_core_base_type bTy
+          P.brackets P.empty ^^ P.colon ^^^ pp_core_base_type (if source_locations then BTy_list bTy else bTy)
       | PEctor (Ccons, pes) ->
           let to_list =
             let rec aux acc = function
@@ -473,7 +489,7 @@ let pp_pexpr pe =
               | _ ->
                   None
             in
-            aux [] pe in
+            if source_locations then None else aux [] pe in
           begin match to_list with
             | Some pes' ->
                 P.brackets (comma_list pp pes')
@@ -553,6 +569,11 @@ let rec pp_expr expr =
     let pp  z = pp false prec' z in *)
     begin
       fun doc ->
+        let doc = source_wrap "source_expr" annot
+          (match e with
+           | Eaction (Paction (_, Action (loc, _, _)))
+           | Eexcluded (_, Action (loc, _, _)) -> Some loc
+           | _ -> None) doc in
         List.fold_left (fun acc annot_elem ->
           match annot_elem with
             | Aloc loc ->
@@ -646,7 +667,7 @@ let rec pp_expr expr =
               (List.map pp es)
         | Ewseq (pat, e1, e2) ->
             pp_let ~ctor:"let weak" pp pp pat e1 e2
-        | Esseq (Pattern (_, CaseBase (None, BTy_unit)), e1, e2) ->
+        | Esseq (Pattern (_, CaseBase (None, BTy_unit)), e1, e2) when not source_locations ->
             (pp e1 ^^^ P.semi) ^^ P.hardline ^^ (pp e2)
         | Esseq (pat, e1, e2) ->
             pp_let ~ctor:"let strong" pp pp pat e1 e2
@@ -722,6 +743,8 @@ and pp_action act =
         P.parens (pp_pexpr ty ^^ P.comma ^^^ pp_pexpr e1 ^^ P.comma ^^^
                   pp_pexpr e2 ^^ P.comma ^^^ pp_pexpr e3 ^^ P.comma ^^^
                   pp_memory_order mo1 ^^ P.comma ^^^ pp_memory_order mo2)
+    | SignalFence mo ->
+        pp_keyword "signal_fence" ^^ P.parens (pp_memory_order mo)
     | Fence0 mo ->
         pp_keyword "fence" ^^ P.parens (pp_memory_order mo)
     | CompareExchangeStrong (ty, e1, e2, e3, mo1, mo2) ->
@@ -924,6 +947,7 @@ let rec pp_stack = function
 end
 
 module Basic = Make (struct
+  let source_locations = false
   let show_std = false
   let show_include = false
   let show_locations = false
@@ -933,6 +957,7 @@ module Basic = Make (struct
 end)
 
 module All = Make (struct
+  let source_locations = false
   let show_std = true
   let show_include = true
   let show_locations = false
@@ -942,6 +967,7 @@ module All = Make (struct
 end)
 
 module WithStd = Make (struct
+  let source_locations = false
   let show_std = true
   let show_include = false
   let show_locations = false
@@ -951,6 +977,7 @@ module WithStd = Make (struct
 end)
 
 module WithLocations = Make (struct
+  let source_locations = false
   let show_std = false
   let show_include = false
   let show_locations = true
@@ -960,6 +987,7 @@ module WithLocations = Make (struct
 end)
 
 module WithLocationsAndStd = Make (struct
+  let source_locations = false
   let show_std = true
   let show_include = false
   let show_locations = true
@@ -969,10 +997,21 @@ module WithLocationsAndStd = Make (struct
 end)
 
 module WithExplode = Make (struct
+  let source_locations = false
   let show_std = false
   let show_include = false
   let show_locations = false
   let show_explode_annot = true
+  let handle_location _ _ = ()
+  let handle_uid _ _ = ()
+end)
+
+module WithSourceLocations = Make (struct
+  let source_locations = true
+  let show_std = false
+  let show_include = false
+  let show_locations = false
+  let show_explode_annot = false
   let handle_location _ _ = ()
   let handle_uid _ _ = ()
 end)

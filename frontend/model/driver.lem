@@ -911,6 +911,23 @@ let action_request_with loc tid receipt request =
       ND.update (fun state -> <| state with core_state= Core_run.update_thread_state tid
         (complete (sc_merge_receipt previous (receipt state)) (footprints ++ [footprint]) false) state.core_state |>)
 
+  | Core_reduction.SignalFenceRequest2 _ mk_th_st' ->
+      ND.get >>= fun before ->
+      match before.sc_state with
+        | Nothing ->
+            ND.update (fun state -> <| state with core_state= Core_run.update_thread_state tid
+              (mk_th_st' (receipt state)) state.core_state |>)
+        | Just sc ->
+            match Sc_runtime.sc_record_signal_fence sc with
+              | Nothing -> ND.kill (ND.Other (DErr_concurrency Sc_runtime.SC_fault_fence_owner))
+              | Just sc' ->
+                  ND.update (fun dr_st ->
+                    let after = <| dr_st with sc_state= Just sc' |> in
+                    <| after with core_state= Core_run.update_thread_state tid
+                        (mk_th_st' (receipt after)) after.core_state |>)
+            end
+      end
+
   | Core_reduction.FenceRequest2 _ mk_th_st' ->
       ND.get >>= fun before ->
       match before.sc_state with
@@ -1612,6 +1629,7 @@ let sc_kind_of_request polarity = function
       Sc_runtime.SC_cas_expected success failure polarity
   | Core_reduction.CompareExchangeObjectRequest2 _ _ _ _ _ _ _ _ _ -> Sc_runtime.SC_cas_object polarity
   | Core_reduction.CompareExchangeWritebackRequest2 _ _ _ _ _ _ -> Sc_runtime.SC_cas_writeback polarity
+  | Core_reduction.SignalFenceRequest2 order _ -> Sc_runtime.SC_signal_fence order
   | Core_reduction.FenceRequest2 order _ -> Sc_runtime.SC_fence order
   | _ -> Sc_runtime.SC_lifetime polarity
 end

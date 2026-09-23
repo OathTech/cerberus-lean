@@ -457,7 +457,7 @@ def corpus(cn_root, stage):
         for path in paths:
             suffix = '-args' if sub == 'argv' else ''
             # Lean: test_immaculate.sh:163-165 `--cabs-json <c>`; :168-173 `--batch --first`
-            # [+ `--args "ab cd"`] [+ the libc pin + 12 metadata TUs].
+            # [+ `--args "ab cd"`] [+ the libc pin + 13 metadata TUs].
             largs = ['--batch', '--first'] + (['--args', 'ab cd'] if sub == 'argv' else [])
             add(f'immaculate/{sub}/{path.stem}{suffix}', 'batch', ['--exec', '--batch', *extra, rel(path)],
                 'immaculate', 60, lean=lean_recipe([rel(path)], largs, libc=(sub == 'libc'), capped=True))
@@ -929,13 +929,13 @@ def main():
         if not cases:
             raise ValueError('empty independent oracle selection')
         if args.with_lean and any(case.lean and case.lean.get('libc') for case in cases):
-            # The libc pin + the 12 metadata TU cabs-jsons (scripts/libc_prep.sh --jsons; drift-checked
+            # The libc pin + the 13 metadata TU cabs-jsons (scripts/libc_prep.sh --jsons; drift-checked
             # there), linked before the user TUs as test_libc_exec.sh:75-76 / test_immaculate.sh:210-211.
             libc_dir = out / 'libcjson'
             emitted = subprocess.check_output([str(ROOT / 'scripts/libc_prep.sh'), '--jsons', str(libc_dir)],
                                               text=True).splitlines()
-            if len(emitted) != 12 or not all(Path(p).is_file() for p in emitted):
-                raise ValueError(f'libc_prep.sh --jsons emitted {len(emitted)} paths; expected 12 metadata TUs')
+            if len(emitted) != 13 or not all(Path(p).is_file() for p in emitted):
+                raise ValueError(f'libc_prep.sh --jsons emitted {len(emitted)} paths; expected 13 metadata TUs')
             libc_args = ['--libc', str(ROOT / 'tests/libc/libc.core')]
             for path in emitted:
                 libc_args += ['--libc-tu', path]

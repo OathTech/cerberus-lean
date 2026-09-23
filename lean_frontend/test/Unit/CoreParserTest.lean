@@ -450,6 +450,24 @@ def testExprAtoms : TestM Unit := do
             (Pexpr _ _ (PEsym body)))) _)))) => binder == inner && body == inner
       | _ => false) true
 
+  -- Typed model gaps survive parsing with their distinct identities.
+  for (name, gap) in [("unspecified_atomic_order", Model_gap_unspecified_atomic_order),
+      ("pointer_atomic_fetch", Model_gap_pointer_atomic_fetch)] do
+    assertEq s!"model gap identity {name}"
+      ((run CoreParser.pPexpr s!"model_gap({name})").map fun parsed => match parsed with
+        | Pexpr _ _ (PEmodel_gap _ actual) => actual == gap
+        | _ => false) true
+  assertErr "unknown model gap is rejected"
+    (run CoreParser.pPexpr "model_gap(invented_gap)")
+  for (name, order) in [("relaxed", Relaxed), ("consume", Consume), ("acquire", Acquire),
+      ("release", Release), ("acq_rel", Acq_rel), ("seq_cst", Seq_cst)] do
+    assertEq s!"signal fence preserves {name}"
+      ((run CoreParser.pExpr s!"signal_fence({name})").map fun parsed => match parsed with
+        | Expr _ (Eaction (Paction Pos (Action _ _ (SignalFence actual)))) => actual == order
+        | _ => false) true
+  assertErr "signal fence requires an order" (run CoreParser.pExpr "signal_fence()")
+  assertErr "signal fence rejects unknown order" (run CoreParser.pExpr "signal_fence(imaginary)")
+
   -- bound
   assertOk "expr bound pure" (run CoreParser.pExpr "bound(pure(Specified(42)))")
   assertOk "expr bound let" (run CoreParser.pExpr "bound(let weak a_508 : pointer = pure(x) in load('signed int', a_508))")
@@ -899,16 +917,17 @@ def testFiles : TestM Unit := do
     IO.println "  (skipping file tests — runtime not found)"
 
   -- Arc-6 S1 parse bar: the ENTIRE pinned libc dump parses, with the
-  -- exact declaration census (191 proc — 188 unique names + the
+  -- exact declaration census (197 proc — 194 unique names + the
   -- __procfdname duplicate and the __strtox/__strtoxd decl+def pairs —
-  -- 68 globs, 1 surviving tagDef `fl`; see scripts/libc_prep.sh).
+  -- 68 globs, 1 surviving tagDef `fl`; six atomic functions were added
+  -- in the SC interface slice; see scripts/libc_prep.sh).
   let libcPath := "../tests/libc/libc.core"
   if ← System.FilePath.pathExists libcPath then
     let content ← IO.FS.readFile libcPath
     match CoreParser.parseFile content with
     | .ok cf =>
-      if cf.procs.length == 191 then pass "libc.core 191 procs"
-      else fail_ "libc.core 191 procs" s!"got {cf.procs.length}"
+      if cf.procs.length == 197 then pass "libc.core 197 procs"
+      else fail_ "libc.core 197 procs" s!"got {cf.procs.length}"
       if cf.globs.length == 68 then pass "libc.core 68 globs"
       else fail_ "libc.core 68 globs" s!"got {cf.globs.length}"
       if cf.tagDefs.length == 1 then pass "libc.core 1 tagDef (fl)"
@@ -963,6 +982,77 @@ def testFiles : TestM Unit := do
   else
     IO.println "  (skipping libc.core tests — pin not found)"
 
+-- Native-emitted fixtures also exercised by parsers/core/location_controls.
+-- Expected locations below are independent of the transport decoder.
+def sourceCheck (name : String) (ok : Bool) : TestM Unit :=
+  if ok then pass name else fail_ name "source transport mismatch"
+
+def sourceP : CerbLocation.Pos := ⟨"source >>> \\\" λ.c", 7, 13⟩
+def sourceQ : CerbLocation.Pos := ⟨"other.c", 11, 24⟩
+def sourceLocs : List CerbLocation.Loc := [
+  .unknown, .other "message >>> \\ λ", .point sourceP,
+  .region sourceP sourceQ .noCursor,
+  .region sourceP sourceQ (.pointCursor sourceQ),
+  .region sourceP sourceQ (.regionCursor sourceQ sourceP),
+  .regions [(sourceP,sourceQ),(sourceQ,sourceP)] (.regionCursor sourceP sourceQ)]
+def locations (xs : List annot) : List CerbLocation.Loc :=
+  xs.filterMap fun x => match x with | Aloc l => some l | _ => none
+
+def readBody (path : System.FilePath) : IO (generic_expr Unit Unit sym) := do
+  let text ← IO.FS.readFile path
+  let cf ← match CoreParser.parseFile text with
+    | .ok cf => pure cf
+    | .error msg => throw (IO.userError msg)
+  match cf.procs with
+  | [(_, Proc _ _ _ _ e)] => pure e
+  | _ => throw (IO.userError "unexpected file shape")
+
+def testSourceLocations : TestM Unit := do
+  let dir : System.FilePath := "../tests/core_source_locations"
+  let e ← readBody (dir / "all-locations.core")
+  sourceCheck "native locations and distinct failure location" (match e with
+    | Expr a (Epure (Pexpr b _ (PEmodel_gap l Model_gap_unspecified_atomic_order))) =>
+      locations a == sourceLocs && locations b == sourceLocs && l == .other "gap body"
+    | _ => false)
+  let e ← readBody (dir / "unknown-direct.core")
+  sourceCheck "empty annotations and explicit unknown" (match e with
+    | Expr [] (Epure (Pexpr [] _ (PEundef .unknown UB045a_division_by_zero))) => true
+    | _ => false)
+  let unknownText ← IO.FS.readFile (dir / "unknown-direct.core")
+  sourceCheck "library parser preserves explicit unknown source" (match
+      CoreParser.parseLibraryFile "runtime/libcore/transport.core" unknownText with
+    | .ok cf => match cf.procs with
+      | [(_, Proc _ _ _ _ (Expr [] (Epure (Pexpr [] _ (PEundef .unknown _)))))] => true
+      | _ => false
+    | .error _ => false)
+  let e ← readBody (dir / "nested-pure.core")
+  sourceCheck "nested failure locations" (match e with
+    | Expr _ (Epure (Pexpr _ _ (PEif _
+        (Pexpr a _ (PEundef l _)) (Pexpr b _ (PEmodel_gap r _))))) =>
+      locations a == sourceLocs && locations b == sourceLocs &&
+      l == .point sourceQ && r == .other "gap body"
+    | _ => false)
+  let e ← readBody (dir / "list-nodes.core")
+  sourceCheck "list-node annotations" (match e with
+    | Expr _ (Epure (Pexpr a _ (PEctor Ccons [_,
+        Pexpr b _ (PEctor Ccons [_, Pexpr [] _ (PEctor (Cnil BTy_unit) [])])]))) =>
+      locations a == sourceLocs && locations b == sourceLocs
+    | _ => false)
+  let e ← readBody (dir / "action-location.core")
+  sourceCheck "distinct action location" (match e with
+    | Expr a (Eaction (Paction _ (Action l _ (SignalFence Seq_cst)))) =>
+      locations a == sourceLocs && l == .point sourceP
+    | _ => false)
+  let e ← readBody (dir / "sequence-shape.core")
+  sourceCheck "sequencing shape preserved" (match e with
+    | Expr a (Esseq _ (Expr b (Eif _ _ _)) (Expr c (Epure (Pexpr _ _ (PEundef l _))))) =>
+      locations a == sourceLocs && locations b == sourceLocs &&
+      locations c == sourceLocs && l == .point sourceQ
+    | _ => false)
+  for name in ["odd-hex","bad-hex","not-json","missing-direct","extra-direct",
+               "pexpr-missing-direct","pexpr-extra-direct"] do
+    sourceCheck name (match CoreParser.parseFile (← IO.FS.readFile (dir / (name ++ ".core"))) with | .error _ => true | .ok _ => false)
+
 end CoreParserTest
 
 def runTests : CoreParserTest.TestM Unit := do
@@ -979,6 +1069,7 @@ def runTests : CoreParserTest.TestM Unit := do
   CoreParserTest.testDeclarations
   CoreParserTest.testLibcProductions
   CoreParserTest.testFiles
+  CoreParserTest.testSourceLocations
 
 def main : IO Unit := do
   IO.println "CoreParser unit tests"

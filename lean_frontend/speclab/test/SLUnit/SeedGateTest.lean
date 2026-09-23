@@ -58,6 +58,7 @@ def runFile [LemFuel] (f : file core_run_annotation) : Sum Int String :=
         match derr with
         | DErr_core_run cause =>
           match cause with
+          | .Model_gap _ gap => s!"Killed: unsupported model boundary: {core_model_gap_name gap}"
           | .Illformed_program s => s!"Killed: Illformed_program: {s}"
           | .Found_empty_stack s => s!"Killed: Found_empty_stack: {s}"
           | .Reached_end_of_proc => "Killed: Reached_end_of_proc"

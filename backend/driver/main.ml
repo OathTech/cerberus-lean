@@ -480,8 +480,8 @@ let fs =
 
 let ppflags =
   let open Pipeline in
-  let doc = "Pretty print flags [annot: include location and ISO annotations, loc: include C source locations]." in
-  Arg.(value & opt (list (enum ["annot", Annot; "loc", Loc; ])) [] &
+  let doc = "Pretty print flags [annot: include location and ISO annotations, loc: include C source locations, source: machine-readable body source locations]." in
+  Arg.(value & opt (list (enum ["annot", Annot; "loc", Loc; "source", SourceLoc; ])) [] &
        info ["pp_flags"] ~doc)
 
 let pp_ail_out =

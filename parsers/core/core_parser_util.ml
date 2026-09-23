@@ -78,6 +78,11 @@ type token =
   | FALSE
   | NOT
   | UNDEF
+  | SOURCE_PEXPR
+  | SOURCE_EXPR
+  | MODEL_GAP
+  | UNSPECIFIED_ATOMIC_ORDER
+  | POINTER_ATOMIC_FETCH
   | ERROR
   | LET
   | IN
@@ -107,6 +112,7 @@ type token =
   | SEQ_RMW_WITH_FORWARD
   | RMW
   | FENCE
+  | SIGNAL_FENCE
 (*  | COMPARE_EXCHANGE_STRONG *)
   | DEF
   | GLOB
@@ -218,3 +224,28 @@ type token =
   | CATCH_EXCEPTIONAL_CONDITION of Core.iop
   | ATOMIC_UPDATE
   | ATOMIC_UPDATE_WITH_FORWARD
+
+
+let source_annots locs annots =
+  List.map (fun loc -> Annot.Aloc loc) locs @
+  List.filter (function Annot.Aloc _ -> false | _ -> true) annots
+let source_pexpr payload (Core.Pexpr (annots, ty, pe)) =
+  let locs, direct = Cerb_location_json.decode payload in
+  let pe = match pe, direct with
+    | Core.PEundef (_, ub), Some loc -> Core.PEundef (loc, ub)
+    | Core.PEmodel_gap (_, gap), Some loc -> Core.PEmodel_gap (loc, gap)
+    | (Core.PEundef _ | Core.PEmodel_gap _), None -> Cerb_location_json.bad ()
+    | _, None -> pe
+    | _, Some _ -> Cerb_location_json.bad () in
+  Core.Pexpr (source_annots locs annots, ty, pe)
+let source_expr payload (Core.Expr (annots, e)) =
+  let locs, direct = Cerb_location_json.decode payload in
+  let e = match e, direct with
+    | Core.Eaction (Core.Paction (pol, Core.Action (_, bs, act))), Some loc ->
+        Core.Eaction (Core.Paction (pol, Core.Action (loc, bs, act)))
+    | Core.Eexcluded (n, Core.Action (_, bs, act)), Some loc ->
+        Core.Eexcluded (n, Core.Action (loc, bs, act))
+    | (Core.Eaction _ | Core.Eexcluded _), None -> Cerb_location_json.bad ()
+    | _, None -> e
+    | _, Some _ -> Cerb_location_json.bad () in
+  Core.Expr (source_annots locs annots, e)

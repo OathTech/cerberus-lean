@@ -153,7 +153,7 @@ module Rewriter = functor (Eff: Monad) -> struct
             return (x, pe')
           ) xs >>= fun xs' ->
           return_wrap (PEconstrained xs')
-      | PEundef _ ->
+      | PEundef _ | PEmodel_gap _ ->
           return pexpr
       | PEerror (str, pe) ->
           aux pe >>= fun pe' ->
@@ -295,6 +295,8 @@ module Rewriter = functor (Eff: Monad) -> struct
           return_wrap (RMW0 (pe1', pe2', pe3', pe4', mo1, mo2))
       | Fence0 mo ->
           return_wrap (Fence0 mo)
+      | SignalFence mo ->
+          return_wrap (SignalFence mo)
       | CompareExchangeStrong (pe1, pe2, pe3, pe4, mo1, mo2) ->
           aux_pexpr pe1 >>= fun pe1' ->
           aux_pexpr pe2 >>= fun pe2' ->

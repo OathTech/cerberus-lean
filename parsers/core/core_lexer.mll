@@ -90,6 +90,11 @@ let keywords =
       (* for Core (pure) expressions *)
       ("not",          T.NOT         );
       ("undef",        T.UNDEF       );
+      ("source_pexpr", T.SOURCE_PEXPR);
+      ("source_expr", T.SOURCE_EXPR);
+      ("model_gap", T.MODEL_GAP);
+      ("unspecified_atomic_order", T.UNSPECIFIED_ATOMIC_ORDER);
+      ("pointer_atomic_fetch", T.POINTER_ATOMIC_FETCH);
       ("error",        T.ERROR       );
       ("let",          T.LET         );
       ("in",           T.IN          );
@@ -142,6 +147,7 @@ let keywords =
       ("seq_rmw_with_forward",   T.SEQ_RMW_WITH_FORWARD  );
       ("rmw",    T.RMW   );
       ("fence",  T.FENCE );
+      ("signal_fence", T.SIGNAL_FENCE );
 (*      ("compare_exchange_strong",  T.COMPARE_EXCHANGE_STRONG); *)
       
       (* for toplevel declarations *)

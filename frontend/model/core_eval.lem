@@ -242,6 +242,8 @@ let rec pull_constrained n (Pexpr _ () pexpr_) =
             ) [] xs)
     | PEundef _ _ ->
         pexpr_
+    | PEmodel_gap _ _ ->
+        pexpr_
     | PEerror err_str pe ->
         wrap (PEerror err_str) pe
     | PEctor ctor pes->
@@ -602,6 +604,9 @@ let rec step_eval_pexpr n loc parent_call_loc_opt core_extern env mem_st_opt fil
                 if Loc.is_library_location undef_loc then loc else undef_loc
           end in
         Exception.return (Undefined.undef loc' [ub])
+    | PEmodel_gap gap_loc gap ->
+        let reported_location = if Loc.is_library_location gap_loc then loc else gap_loc in
+        EU.fail (Model_gap reported_location gap)
     | PEerror str debug_pe ->
         Exception.return (Undefined.error loc str)
     | PEctor ctor pes ->

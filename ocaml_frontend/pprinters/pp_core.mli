@@ -3,6 +3,7 @@ open Core
 module type CONFIG =
 sig
   (* Show ISO STD marks *)
+  val source_locations: bool
   val show_std: bool
   (* Show function from #include -- actually from .h files *)
   val show_include: bool
@@ -45,3 +46,5 @@ module WithStd: PP_CORE
 module WithLocations : PP_CORE
 module WithLocationsAndStd: PP_CORE
 module WithExplode : PP_CORE
+
+module WithSourceLocations : PP_CORE

@@ -25,37 +25,9 @@ let tag0 name = `String name  (* nullary constructor *)
             | {"tag": "Loc_region", ...} | {"tag": "Loc_regions", ...}
 *)
 
-let json_of_pos p =
-  `Assoc [
-    ("file", `String (Cerb_position.file p));
-    ("line", `Int (Cerb_position.line p));
-    ("col", `Int (Cerb_position.column p))
-  ]
-
-let json_of_cursor = function
-  | Cerb_location.NoCursor -> tag0 "NoCursor"
-  | Cerb_location.PointCursor p ->
-    tag "PointCursor" [("pos", json_of_pos p)]
-  | Cerb_location.RegionCursor (p1, p2) ->
-    tag "RegionCursor" [("begin", json_of_pos p1); ("end", json_of_pos p2)]
-
-let json_of_loc = function
-  | Cerb_location.Loc_unknown -> tag0 "Loc_unknown"
-  | Cerb_location.Loc_other s -> tag "Loc_other" [("str", `String s)]
-  | Cerb_location.Loc_point p -> tag "Loc_point" [("pos", json_of_pos p)]
-  | Cerb_location.Loc_region (p1, p2, cursor) ->
-    tag "Loc_region" [
-      ("begin", json_of_pos p1);
-      ("end", json_of_pos p2);
-      ("cursor", json_of_cursor cursor)
-    ]
-  | Cerb_location.Loc_regions (regions, cursor) ->
-    tag "Loc_regions" [
-      ("regions", `List (List.map (fun (p1, p2) ->
-        `List [json_of_pos p1; json_of_pos p2]
-      ) regions));
-      ("cursor", json_of_cursor cursor)
-    ]
+let json_of_pos = Cerb_location_json.json_of_pos
+let json_of_cursor = Cerb_location_json.json_of_cursor
+let json_of_loc = Cerb_location_json.json_of_loc
 
 (* === Identifiers === *)
 

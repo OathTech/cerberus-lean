@@ -1,0 +1,58 @@
+(* Operation-specific C11 library order constraints, independent of the
+   selected SC instance's exclusion of valid weak orders. *)
+open import Pervasives
+import Cmm_csem Undefined
+
+type atomic_order_operation =
+  | Atomic_order_store
+  | Atomic_order_load
+  | Atomic_order_exchange
+  | Atomic_order_fence
+  | Atomic_order_compare_exchange
+
+let atomic_call_order mo =
+  match mo with
+    | Cmm_csem.Relaxed -> true
+    | Cmm_csem.Consume -> true
+    | Cmm_csem.Acquire -> true
+    | Cmm_csem.Release -> true
+    | Cmm_csem.Acq_rel -> true
+    | Cmm_csem.Seq_cst -> true
+    | Cmm_csem.NA -> false
+  end
+
+(* N1570 7.17.7.4p2. Acquire and release are not comparable. The enum
+   encoding in Builtins does not define strength. *)
+let atomic_failure_no_stronger success failure =
+  match failure with
+    | Cmm_csem.Relaxed -> atomic_call_order success
+    | Cmm_csem.Consume ->
+        success IN {Cmm_csem.Consume; Cmm_csem.Acquire;
+                    Cmm_csem.Acq_rel; Cmm_csem.Seq_cst}
+    | Cmm_csem.Acquire ->
+        success IN {Cmm_csem.Acquire; Cmm_csem.Acq_rel; Cmm_csem.Seq_cst}
+    | Cmm_csem.Seq_cst -> success = Cmm_csem.Seq_cst
+    | Cmm_csem.Release -> false
+    | Cmm_csem.Acq_rel -> false
+    | Cmm_csem.NA -> false
+  end
+
+let atomic_single_order_error operation order =
+  if not (atomic_call_order order) then Just Undefined.UB108
+  else match operation with
+    | Atomic_order_store ->
+        if order IN {Cmm_csem.Consume; Cmm_csem.Acquire; Cmm_csem.Acq_rel}
+        then Just Undefined.UB205_atomic_store_memorder else Nothing
+    | Atomic_order_load ->
+        if order IN {Cmm_csem.Release; Cmm_csem.Acq_rel}
+        then Just Undefined.UB206_atomic_load_memorder else Nothing
+    | Atomic_order_exchange -> Nothing
+    | Atomic_order_fence -> Nothing
+    | Atomic_order_compare_exchange -> Nothing (* success alone is insufficient *)
+  end
+
+let atomic_compare_orders_error success failure =
+  if not (atomic_call_order success && atomic_call_order failure)
+  then Just Undefined.UB108
+  else if atomic_failure_no_stronger success failure then Nothing
+  else Just Undefined.UB207_atomic_compare_exchange_memorder

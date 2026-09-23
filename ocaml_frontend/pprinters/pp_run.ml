@@ -165,6 +165,8 @@ let pp_traces ts =
 open Errors
 
 let string_of_core_run_error = function
+  | Model_gap (_, gap) ->
+      "Model_gap[" ^ Core.core_model_gap_name gap ^ "]"
   | Illformed_program str ->
       "Illformed_program[" ^ str ^ "]"
   | Found_empty_stack str ->

@@ -736,6 +736,8 @@ KKK
               )
         end
 *)
+    | SignalFence _ ->
+        error "SignalFence requires the current Core_reduction driver"
     | Fence mo ->
         Step_action_request "FenceRequest" (
           E.fresh_action_id >>= fun fence_aid ->

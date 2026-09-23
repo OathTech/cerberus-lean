@@ -66,6 +66,7 @@ type language =
   | Cabs | Ail | Core | Types
 
 type pp_flag =
+  | SourceLoc
   | Annot
   | Loc
 
@@ -368,7 +369,8 @@ let untype_file (file: 'a Core.typed_file) : 'a Core.file =
       | (PEsym _ as pe)
       | (PEimpl _ as pe)
       | (PEval _ as pe)
-      | (PEundef _ as pe) ->
+      | (PEundef _ as pe)
+      | (PEmodel_gap _ as pe) ->
           pe
       | PEerror (str, pe) ->
           PEerror (str, untype_pexpr pe)
@@ -444,6 +446,8 @@ let untype_file (file: 'a Core.typed_file) : 'a Core.file =
                    RMW0 (untype_pexpr pe1, untype_pexpr pe2, untype_pexpr pe3, untype_pexpr pe4, mo1, mo2)
                | Fence0 mo ->
                    Fence0 mo
+               | SignalFence mo ->
+                   SignalFence mo
                | CompareExchangeStrong (pe1, pe2, pe3, pe4, mo1, mo2) ->
                    CompareExchangeStrong (untype_pexpr pe1, untype_pexpr pe2, untype_pexpr pe3, untype_pexpr pe4, mo1, mo2)
                | CompareExchangeWeak (pe1, pe2, pe3, pe4, mo1, mo2) ->
@@ -559,7 +563,8 @@ let print_core (conf, io) ~filename core_file =
       let pp_file file =
         let saved = !Cerb_colour.do_colour in
         Cerb_colour.do_colour := Unix.isatty Unix.stdout && Option.is_none fout_opt;
-        let ret = (match List.mem Annot conf.ppflags, List.mem Loc conf.ppflags with
+        let ret = (if List.mem SourceLoc conf.ppflags then Pp_core.WithSourceLocations.pp_file
+                   else match List.mem Annot conf.ppflags, List.mem Loc conf.ppflags with
                    | false, false -> Pp_core.Basic.pp_file
                    | false, true -> Pp_core.WithLocations.pp_file
                    | true, false -> Pp_core.WithStd.pp_file

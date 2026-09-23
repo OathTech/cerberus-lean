@@ -225,6 +225,16 @@ and generic_pattern 'sym =
  | Pattern of list annot * (generic_pattern_ 'sym)
 
 
+(* Typed coverage failures are distinct from C undefined behaviour. *)
+type core_model_gap =
+ | Model_gap_unspecified_atomic_order
+ | Model_gap_pointer_atomic_fetch
+
+let core_model_gap_name = function
+ | Model_gap_unspecified_atomic_order -> "unspecified_atomic_order"
+ | Model_gap_pointer_atomic_fetch -> "pointer_atomic_fetch"
+end
+
 type generic_pexpr_ 'bty 'sym =  (* Core pure expressions *)
  | PEsym of 'sym
  | PEimpl of Implementation.implementation_constant (* implementation-defined constant *)
@@ -257,6 +267,8 @@ type generic_pexpr_ 'bty 'sym =  (* Core pure expressions *)
  | PEis_unsigned of (generic_pexpr 'bty 'sym)
  | PEbmc_assume of (generic_pexpr 'bty 'sym)
  | PEare_compatible of (generic_pexpr 'bty 'sym) * (generic_pexpr 'bty 'sym)
+
+ | PEmodel_gap of Loc.t * core_model_gap
 
 and generic_pexpr 'bty 'sym = 
  | Pexpr of list annot * 'bty * (generic_pexpr_ 'bty 'sym)
@@ -294,6 +306,9 @@ type generic_action_ 'bty 'sym =  (* memory actions *)
     binder and pure update expression, explicit memory order. Unlike SeqRMW
     this is indivisible between threads; historical conditional RMW is unchanged. *)
  | AtomicUpdate of bool * (generic_pexpr 'bty 'sym) * (generic_pexpr 'bty 'sym) * 'sym * (generic_pexpr 'bty 'sym) * Cmm_csem.memory_order
+
+ (* Signal fences never create inter-thread synchronization. *)
+ | SignalFence of Cmm_csem.memory_order
 
 type generic_action 'a 'bty 'sym = 
  | Action of Loc.t * 'a * (generic_action_ 'bty 'sym)

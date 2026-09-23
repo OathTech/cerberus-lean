@@ -171,6 +171,12 @@ let translate_errno = function
   | str -> error $ "Unknown errno code: " ^ str
 end
 
+(* The runtime header's memory_order enum has values 0..5. The pinned
+   target's register_enum selects unsigned int for an all-nonnegative enum
+   (ocaml_implementation.ml DefaultImpl.register_enum, mirrored by CerberusImpl).
+   Use that compatible type for generic builtin parameter conversions. *)
+let atomic_memory_order_type = unsigned_int
+
 val encode_memory_order: Cmm_csem.memory_order -> integer
 let encode_memory_order  = function
   | Cmm_csem.Relaxed -> 0
@@ -300,8 +306,12 @@ let translate_builtin_varnames (Symbol.Identifier _ str) =
         const_ic $ encode_memory_order Cmm_csem.Acq_rel
     | "__cerbvar_memory_order_seq_cst" ->
         const_ic $ encode_memory_order Cmm_csem.Seq_cst
+    | "__cerbvar_atomic_signal_fence" ->
+        Just (AilEbuiltin (AilBatomic AilBAsignal_fence))
     | "__cerbvar_atomic_thread_fence" ->
         Just (AilEbuiltin (AilBatomic AilBAthread_fence))
+    | "__cerbvar_atomic_init" ->
+        Just (AilEbuiltin (AilBatomic AilBAinit))
     | "__cerbvar_atomic_store_explicit" ->
         Just (AilEbuiltin (AilBatomic AilBAstore))
     | "__cerbvar_atomic_load_explicit" ->
@@ -312,6 +322,16 @@ let translate_builtin_varnames (Symbol.Identifier _ str) =
         Just (AilEbuiltin (AilBatomic AilBAcompare_exchange_strong))
     | "__cerbvar_atomic_compare_exchange_weak_explicit" ->
         Just (AilEbuiltin (AilBatomic AilBAcompare_exchange_weak))
+    | "__cerbvar_atomic_fetch_add_explicit" ->
+        Just (AilEbuiltin (AilBatomic (AilBAfetch Add)))
+    | "__cerbvar_atomic_fetch_sub_explicit" ->
+        Just (AilEbuiltin (AilBatomic (AilBAfetch Sub)))
+    | "__cerbvar_atomic_fetch_and_explicit" ->
+        Just (AilEbuiltin (AilBatomic (AilBAfetch Band)))
+    | "__cerbvar_atomic_fetch_xor_explicit" ->
+        Just (AilEbuiltin (AilBatomic (AilBAfetch Bxor)))
+    | "__cerbvar_atomic_fetch_or_explicit" ->
+        Just (AilEbuiltin (AilBatomic (AilBAfetch Bor)))
     | "__cerbvar_atomic_fetch_key_explicit" ->
         Just (AilEbuiltin (AilBatomic AilBAfetch_key))
     

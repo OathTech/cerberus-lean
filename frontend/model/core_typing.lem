@@ -418,6 +418,8 @@ let rec infer_pexpr tagDefs env ((Pexpr annot _ pexpr_ as pexpr) : generic_pexpr
         error "WIP: Core_typing.infer_pexpr, PEconstrained"
     | PEundef loc ub ->
         E.return (Pexpr annot InferredUnknown (PEundef loc ub))
+    | PEmodel_gap loc gap ->
+        E.return (Pexpr annot InferredUnknown (PEmodel_gap loc gap))
     | PEerror str pe ->
         infer_pexpr tagDefs env pe >>= fun tpe ->
         E.return (Pexpr annot InferredUnknown (PEerror str tpe))
@@ -853,6 +855,8 @@ and typecheck_pexpr tagDefs (env: typing_env) (bTy: core_base_type) (Pexpr annot
         error "WIP: Core_typing.typecheck_pexpr, PEconstrained"
     | PEundef loc ub ->
         E.return (PEundef loc ub)
+    | PEmodel_gap loc gap ->
+        E.return (PEmodel_gap loc gap)
     | PEerror str pe ->
         PEerror str <$> infer_pexpr tagDefs env pe
     | PEctor ctor pes ->
@@ -1322,6 +1326,8 @@ let infer_action tagDefs env (Action loc annot act_) =
         error "WIP infer_paction: RMW"
     | Fence mo ->
         E.return (BTy_unit, Fence mo)
+    | SignalFence mo ->
+        E.return (BTy_unit, SignalFence mo)
     | CompareExchangeStrong pe1 pe2 pe3 pe4 mo1 mo2 ->
         error "WIP infer_paction: CompareExchangeStrong"
     | CompareExchangeWeak pe1 pe2 pe3 pe4 mo1 mo2 ->
@@ -1486,6 +1492,9 @@ let typecheck_action tagDefs env bTy (Action loc annot act_) =
       end
   | RMW pe1 pe2 pe3 pe4 mo1 mo2 ->
       error "WIP: RMW"
+  | SignalFence mo ->
+      guard_match loc "signal_fence()" bTy BTy_unit >>
+      E.return (SignalFence mo)
   | Fence mo ->
       guard_match loc "fence()" bTy BTy_unit >>
       E.return (Fence mo)
@@ -1717,6 +1726,8 @@ and typecheck_expr callconv tagDefs (env: typing_env) expected_bTy (Expr annot e
         E.return (Ememop mem_annot memop pes')
     | Eaction (Paction Neg (Action _ _ (AtomicUpdate _ _ _ _ _ _))) ->
         E.fail loc (CoreTyping_TODO "AtomicUpdate requires positive polarity")
+    | Eaction (Paction Neg (Action _ _ (SignalFence _))) ->
+        E.fail loc (CoreTyping_TODO "SignalFence requires positive polarity")
     | (Eaction (Paction p act)) ->
         (Eaction -| Paction p)
           <$> typecheck_action tagDefs env expected_bTy act

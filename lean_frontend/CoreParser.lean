@@ -10,6 +10,7 @@ import Std.Internal.Parsec.String
 import Std.Data.HashMap
 import Core
 import Ctype
+import CabsImport
 
 set_option autoImplicit true
 
@@ -438,6 +439,81 @@ private def mkPE (pe_ : PE_) : PE :=
 /-- Make an expr node. -/
 private def mkE (e_ : Expr'_) : Expr' :=
   Expr annots0 e_
+
+/-- Decode the same ASCII-hex JSON payload as `Cerb_location_json.decode`.
+    Locations use the existing Cabs position/cursor schema. Bad syntax fails
+    parsing; no guessed or unknown replacement location is introduced. -/
+private def sourceHexNibble (c : Char) : Except String Nat :=
+  if '0' ≤ c && c ≤ '9' then .ok (c.toNat - '0'.toNat)
+  else if 'a' ≤ c && c ≤ 'f' then .ok (c.toNat - 'a'.toNat + 10)
+  else .error "Core source location: invalid hex digit"
+
+private def sourceHexBytes : List Char → Except String (List UInt8)
+  | [] => .ok []
+  | a :: b :: rest => do
+    let x ← sourceHexNibble a
+    let y ← sourceHexNibble b
+    return UInt8.ofNat (16*x+y) :: (← sourceHexBytes rest)
+  | [_] => .error "Core source location: odd hex length"
+
+private def decodeSourceLocations (s : String) :
+    Except String (List CerbLocation.Loc × Option CerbLocation.Loc) := do
+  let bytes ← sourceHexBytes s.toList
+  let text ← match String.fromUTF8? (ByteArray.mk bytes.toArray) with
+    | some text => .ok text
+    | none => .error "Core source location: invalid UTF-8"
+  let j ← Lean.Json.parse text
+  let arr ← j.getArr?
+  match arr.toList with
+  | [locs, direct] =>
+    let locs ← (← locs.getArr?).toList.mapM CabsImport.jsonToLoc
+    let direct ← match direct with
+      | .null => .ok none
+      | j => some <$> CabsImport.jsonToLoc j
+    return (locs, direct)
+  | _ => .error "Core source location: expected location list and direct location"
+
+-- Parse-only marker: neither Core lexer admits a UID annotation. Relocation
+-- removes it, preserving explicit source unknowns and zero positions even in
+-- parseLibraryFile. Raw parser nodes already contain transient span markers.
+private def sourceMarker : annot := Auid "CoreParser.explicit-source"
+private def hasSourceMarker (annots : List annot) : Bool :=
+  annots.any (fun a => match a with | Auid "CoreParser.explicit-source" => true | _ => false)
+private def withoutSourceMarker (annots : List annot) : List annot :=
+  annots.filter (fun a => match a with | Auid "CoreParser.explicit-source" => false | _ => true)
+private def sourceAnnots (locs : List CerbLocation.Loc) (annots : List annot) : List annot :=
+  sourceMarker :: (locs.map Aloc ++ annots.filter (fun a => match a with | Aloc _ => false | _ => true))
+
+private def sourcePE (payload : String) (pe : PE) : Except String PE := do
+  let (locs, direct) ← decodeSourceLocations payload
+  let (annots, ty, body) := match pe with | Pexpr a t b => (a, t, b)
+  let body ← match body, direct with
+    | PEundef _ ub, some loc => .ok (PEundef loc ub)
+    | PEmodel_gap _ gap, some loc => .ok (PEmodel_gap loc gap)
+    | PEundef .., none | PEmodel_gap .., none =>
+      .error "Core source location: missing direct pexpr location"
+    | _, none => .ok body
+    | _, some _ => .error "Core source location: unexpected direct pexpr location"
+  return Pexpr (sourceAnnots locs annots) ty body
+
+private def sourceE (payload : String) (e : Expr') : Except String Expr' := do
+  let (locs, direct) ← decodeSourceLocations payload
+  let (annots, body) := match e with | Expr a b => (a, b)
+  let body ← match body, direct with
+    | Eaction (Paction pol (Action _ bs act)), some loc =>
+      .ok (Eaction (Paction pol (Action loc bs act)))
+    | Eexcluded n (Action _ bs act), some loc => .ok (Eexcluded n (Action loc bs act))
+    | Eaction .., none | Eexcluded .., none =>
+      .error "Core source location: missing direct action location"
+    | _, none => .ok body
+    | _, some _ => .error "Core source location: unexpected direct action location"
+  return Expr (sourceAnnots locs annots) body
+
+private partial def pSourcePayload : P String := do
+  lexSym "("
+  let payload ← lexTripleAngle
+  lexSym ","
+  return payload
 
 /-- Build a list pexpr from element pexprs. -/
 private def mkListPE (bTy : core_base_type) : List PE → PE
@@ -1268,6 +1344,13 @@ partial def pPexprAtom (minPrec : Nat := 0) : P PE := do
     let startB ← getByte   -- `$startpos` of the production (Z-01 Pos row)
     let id ← attempt (some <$> lexIdent) <|> pure none
     match id with
+    | some "source_pexpr" =>
+      let payload ← pSourcePayload
+      let pe ← pPexpr
+      lexSym ")"
+      match sourcePE payload pe with
+      | .ok pe => return pe
+      | .error msg => fail msg
     | some "undef" =>
       lexSym "("
       let ubStr ← lexDoubleAngle
@@ -1304,6 +1387,16 @@ partial def pPexprAtom (minPrec : Nat := 0) : P PE := do
           return (mkPE (PEundef undefLoc (DUMMY ((ubStr.drop 6).dropRight 1).toString)))
         else
           fail s!"invalid ub name: <<{ubStr}>>"
+    | some "model_gap" =>
+      lexSym "("
+      let gap ← match ← lexIdent with
+        | "unspecified_atomic_order" => pure Model_gap_unspecified_atomic_order
+        | "pointer_atomic_fetch" => pure Model_gap_pointer_atomic_fetch
+        | name => fail s!"unknown model gap: {name}"
+      let _ ← pstring ")"
+      let endB ← getByte
+      lexWs
+      return (mkPE (PEmodel_gap (markerLoc startB endB) gap))
     | some "error" =>
       lexSym "("
       -- PEerror's string prints DQUOTED (pp_core.ml:444-445, matching the
@@ -1806,6 +1899,13 @@ private partial def pActionRMW : P Act := do
   lexSym ")"
   return (RMW0 pe1 pe2 pe3 pe4 mo1 mo2)
 
+private partial def pActionSignalFence : P Act := do
+  lexKw "signal_fence"
+  lexSym "("
+  let mo ← pMemoryOrder
+  lexSym ")"
+  return (SignalFence mo)
+
 private partial def pActionFence : P Act := do
   lexKw "fence"
   lexSym "("
@@ -1822,7 +1922,7 @@ private partial def pAction : P Act := do
   | some 'a' => (attempt (pActionAtomicUpdate true)) <|> (attempt (pActionAtomicUpdate false)) <|> pActionAlloc
   | some 'f' => (attempt pActionFree) <|> pActionFence
   | some 'k' => pActionKill
-  | some 's' => (attempt pActionStoreLock) <|> (attempt pActionStore) <|> (attempt pActionSeqRMWForward) <|> pActionSeqRMW
+  | some 's' => (attempt pActionSignalFence) <|> (attempt pActionStoreLock) <|> (attempt pActionStore) <|> (attempt pActionSeqRMWForward) <|> pActionSeqRMW
   | some 'l' => pActionLoad
   | some 'r' => pActionRMW
   | _ => fail "expected action keyword"
@@ -2009,6 +2109,15 @@ private partial def pExprAction : P Expr' := do
   let pact ← pPaction
   return (mkE (Eaction pact))
 
+private partial def pExprSource : P Expr' := do
+  lexKw "source_expr"
+  let payload ← pSourcePayload
+  let e ← pExpr
+  lexSym ")"
+  match sourceE payload e with
+  | .ok e => return e
+  | .error msg => fail msg
+
 private partial def pExprAtom : P Expr' := do
   -- First-char dispatch to reduce attempt chains
   let c ← peek?
@@ -2021,7 +2130,7 @@ private partial def pExprAtom : P Expr' := do
   | some 'i' => (attempt pExprIf) <|> pExprAction
   | some 'c' => (attempt pExprCase) <|> (attempt pExprCcall) <|> pExprAction
   | some 'b' => (attempt pExprBound) <|> pExprAction
-  | some 's' => (attempt pExprSave) <|> pExprAction
+  | some 's' => (attempt pExprSource) <|> (attempt pExprSave) <|> pExprAction
   | some 'r' => (attempt pExprRun) <|> pExprAction
   | some 'n' => (attempt pExprNeg) <|> (attempt pExprNd) <|> pExprAction
   | _ => pExprAction
@@ -2522,10 +2631,10 @@ context carries no C location — is exactly what the exact positions now
 cover (no C-reachable instance is known: the driver's own startup runs no
 std.core code before main's first C-located node). Not stamped:
 `Symbol.Identifier` locs inside member names/ctypes (never consulted on an
-execution path). `--libc` bodies are NOT stamped (the oracle's libc.co
-carries the libc C-source locations, which the Core text dump does not
-preserve — a separate, recorded gap: UB raised inside a libc body prints
-`unknown location` on Lean; both sides classify those locs non-library).
+execution path). Libc now uses the opt-in source-bearing Core transport
+(SC-P07, 2026-09-22): explicit expression/action/failure locations come from
+libc.co, and are preserved rather than stamped. Older ordinary dumps still
+lack that information; parseFile does not invent it.
 -/
 
 /-- The relocation context: `none` = a NON-library parse (`parseFile`): the
@@ -2554,7 +2663,7 @@ private def relocLoc (ctx : RelocCtx) : CerbLocation.Loc → CerbLocation.Loc
   | l => l
 
 private def relocAnnots (ctx : RelocCtx) (annots : List annot) : List annot :=
-  annots.map fun a => match a with
+  if hasSourceMarker annots then withoutSourceMarker annots else annots.map fun a => match a with
     | Aloc l => Aloc (relocLoc ctx l)
     | a => a
 
@@ -2572,7 +2681,8 @@ private partial def relocPE (ctx : RelocCtx) : PE → PE
       | PEimpl c => PEimpl c
       | PEval v => PEval v
       | PEconstrained xs => PEconstrained (xs.map fun (c, pe) => (c, r pe))
-      | PEundef loc ub => PEundef (relocLoc ctx loc) ub
+      | PEundef loc ub => PEundef (if hasSourceMarker annots then loc else relocLoc ctx loc) ub
+      | PEmodel_gap loc gap => PEmodel_gap (if hasSourceMarker annots then loc else relocLoc ctx loc) gap
       | PEerror str pe => PEerror str (r pe)
       | PEctor c pes => PEctor c (pes.map r)
       | PEcase pe alts => PEcase (r pe) (alts.map fun (pat, pe) => (relocPat ctx pat, r pe))
@@ -2612,6 +2722,7 @@ private def relocAct (ctx : RelocCtx) (act : Act) : Act :=
   | AtomicUpdate b pe1 pe2 s pe3 mo => AtomicUpdate b (r pe1) (r pe2) s (r pe3) mo
   | RMW0 pe1 pe2 pe3 pe4 mo1 mo2 => RMW0 (r pe1) (r pe2) (r pe3) (r pe4) mo1 mo2
   | Fence0 mo => Fence0 mo
+  | SignalFence mo => SignalFence mo
   | CompareExchangeStrong pe1 pe2 pe3 pe4 mo1 mo2 =>
     CompareExchangeStrong (r pe1) (r pe2) (r pe3) (r pe4) mo1 mo2
   | CompareExchangeWeak pe1 pe2 pe3 pe4 mo1 mo2 =>
@@ -2621,8 +2732,8 @@ private def relocAct (ctx : RelocCtx) (act : Act) : Act :=
   | LinuxStore pe1 pe2 pe3 mo => LinuxStore (r pe1) (r pe2) (r pe3) mo
   | LinuxRMW pe1 pe2 pe3 mo => LinuxRMW (r pe1) (r pe2) (r pe3) mo
 
-private def relocAction (ctx : RelocCtx) : generic_action Unit Unit sym → generic_action Unit Unit sym
-  | Action loc a act => Action (relocLoc ctx loc) a (relocAct ctx act)
+private def relocAction (ctx : RelocCtx) (explicitSource : Bool) : generic_action Unit Unit sym → generic_action Unit Unit sym
+  | Action loc a act => Action (if explicitSource then loc else relocLoc ctx loc) a (relocAct ctx act)
 
 private partial def relocE (ctx : RelocCtx) : Expr' → Expr'
   | Expr annots e_ =>
@@ -2631,7 +2742,7 @@ private partial def relocE (ctx : RelocCtx) : Expr' → Expr'
     Expr (relocAnnots ctx annots) (match e_ with
       | Epure pe => Epure (rp pe)
       | Ememop a op pes => Ememop a op (pes.map rp)
-      | Eaction (Paction pol act) => Eaction (Paction pol (relocAction ctx act))
+      | Eaction (Paction pol act) => Eaction (Paction pol (relocAction ctx (hasSourceMarker annots) act))
       | Ecase pe alts => Ecase (rp pe) (alts.map fun (pat, e) => (relocPat ctx pat, r e))
       | Elet pat pe e => Elet (relocPat ctx pat) (rp pe) (r e)
       | Eif pe e1 e2 => Eif (rp pe) (r e1) (r e2)
@@ -2648,7 +2759,7 @@ private partial def relocE (ctx : RelocCtx) : Expr' → Expr'
       | Epar es => Epar (es.map r)
       | Ewait tid => Ewait tid
       | Eannot dyns e => Eannot dyns (r e)
-      | Eexcluded n act => Eexcluded n (relocAction ctx act))
+      | Eexcluded n act => Eexcluded n (relocAction ctx (hasSourceMarker annots) act))
 
 private def relocFunDecl (ctx : RelocCtx) : generic_fun_map_decl Unit Unit → generic_fun_map_decl Unit Unit
   | Fun bty params pe => Fun bty params (relocPE ctx pe)
@@ -2741,7 +2852,7 @@ def parseFileSummary (input : String) : Except String String :=
 The `--libc` loader (Main.loadLibc) parses the oracle's libc Core text dump,
 whose symbols are NAME-interned here (`mkSym`: digest "", number = the
 name's hash), and stitches it to the metadata it elaborates from the same
-12 libc TUs through the shared lem pipeline — symbols carrying the oracle's
+13 libc TUs through the shared lem pipeline — symbols carrying the oracle's
 own (digest, number) identity. Symbol IDENTITY IS BEHAVIOUR in libc mode:
 `Core_linking.merge_globs` (core_linking.lem:252-273) orders the linked
 globals by a topological sort whose tie-break is `Set_extra.choose` =
@@ -2870,6 +2981,7 @@ private partial def renamePE (ctx : RenameCtx) : PE → PE
       | PEval v => PEval (renameVal ctx v)
       | PEconstrained xs => PEconstrained (xs.map fun (c, pe) => (c, r pe))
       | PEundef loc ub => PEundef loc ub
+      | PEmodel_gap loc gap => PEmodel_gap loc gap
       | PEerror str pe => PEerror str (r pe)
       | PEctor c pes => PEctor c (pes.map r)
       | PEcase pe alts => PEcase (r pe) (alts.map fun (pat, pe) => (renamePat ctx pat, r pe))
@@ -2911,6 +3023,7 @@ private def renameAct (ctx : RenameCtx) (act : Act) : Act :=
   | AtomicUpdate b pe1 pe2 s pe3 mo => AtomicUpdate b (r pe1) (r pe2) (ctx.onSym s) (r pe3) mo
   | RMW0 pe1 pe2 pe3 pe4 mo1 mo2 => RMW0 (r pe1) (r pe2) (r pe3) (r pe4) mo1 mo2
   | Fence0 mo => Fence0 mo
+  | SignalFence mo => SignalFence mo
   | CompareExchangeStrong pe1 pe2 pe3 pe4 mo1 mo2 =>
     CompareExchangeStrong (r pe1) (r pe2) (r pe3) (r pe4) mo1 mo2
   | CompareExchangeWeak pe1 pe2 pe3 pe4 mo1 mo2 =>

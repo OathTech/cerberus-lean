@@ -16,6 +16,7 @@ type sc_request_kind =
   | SC_runtime of string
   | SC_fence of Cmm_csem.memory_order
   | SC_atomic_update of Cmm_csem.memory_order
+  | SC_signal_fence of Cmm_csem.memory_order
 
 
 (* Typed identities preserve all existing diagnostics. Categories describe the
@@ -240,10 +241,27 @@ let sc_record_fence state =
     | Nothing -> Nothing
   end
 
+(* Signal-fence occurrences retain source order and their exact order but
+   must be excluded from inter-thread SC/synchronizes-with calculations. *)
+let sc_record_signal_fence state =
+  match state.sc_current_request with
+    | Just request ->
+        match request.sc_request_kind with
+          | SC_signal_fence order ->
+              if order = Cmm_csem.NA then Nothing else Just <| state with
+                sc_fences= request :: state.sc_fences;
+                sc_current_effects= {(Core.Pos, (request.sc_request_thread, request.sc_request_id))};
+              |>
+          | _ -> Nothing
+        end
+    | Nothing -> Nothing
+  end
+
 (* Named SC execution does not coerce executed weaker orders. This condition
    is about the selected model, not the C program's well-typedness or UB. *)
 let sc_request_in_model = function
   | SC_access order _ -> order = Cmm_csem.NA || order = Cmm_csem.Seq_cst
+  | SC_signal_fence order -> order <> Cmm_csem.NA
   | SC_fence order -> order = Cmm_csem.Seq_cst
   | SC_atomic_update order -> order = Cmm_csem.Seq_cst
   | SC_seq_rmw -> true

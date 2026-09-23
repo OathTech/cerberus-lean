@@ -492,6 +492,7 @@ let rec pp_constant = function
 let pp_ail_builtin = function
   | AilBatomic b ->
     begin match b with
+      | AilBAsignal_fence -> !^"atomic_signal_fence"
       | AilBAthread_fence -> !^"atomic_thread_fence"
       | AilBAstore -> !^"atomic_store_explicit"
       | AilBAload -> !^"atomic_load_explicit"
@@ -499,6 +500,13 @@ let pp_ail_builtin = function
       | AilBAcompare_exchange_strong -> !^"atomic_compare_exchange_strong_explicit"
       | AilBAcompare_exchange_weak -> !^"atomic_compare_exchange_weak_explicit"
       | AilBAfetch_key -> !^"atomic_fetch_key_explicit"
+      | AilBAinit -> !^"atomic_init"
+      | AilBAfetch op ->
+          let key = match op with
+            | Add -> "add" | Sub -> "sub" | Band -> "and"
+            | Bxor -> "xor" | Bor -> "or"
+            | _ -> "invalid_operation" in
+          !^("atomic_fetch_" ^ key ^ "_explicit")
     end
   | AilBlinux b ->
     begin match b with

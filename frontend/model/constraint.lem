@@ -28,6 +28,8 @@ type atomic_operations_synopsys =
   | AtomicStore
   | AtomicExchange
   | AtomicCompareExchange
+  | AtomicInit
+  | AtomicFetch
 
 type illegal_alignas =
   | IllegalAlignas_typedef
@@ -214,6 +216,7 @@ type violation =
   (* Byte *)
   | TypedefBytesAreUnsignedCharsOnly
   | CastToFromByte
+  | AtomicFetchRequiresInteger of ctype
 
 
 type assignment_violation =
@@ -258,6 +261,10 @@ let std_of_atomic_operation_synopsis = function
       ["§7.17.7.3#1"]
   | AtomicCompareExchange ->
       ["§7.17.7.4#1"]
+  | AtomicInit ->
+      ["§7.17.2.2#1"]
+  | AtomicFetch ->
+      ["§7.17.7.5#2"]
 end
 
 let std_of_violation = function
@@ -501,4 +508,6 @@ let std_of_violation = function
       []
   | CastToFromByte ->
       []
+  | AtomicFetchRequiresInteger _ ->
+      ["§7.17.7.5#1"]
 end

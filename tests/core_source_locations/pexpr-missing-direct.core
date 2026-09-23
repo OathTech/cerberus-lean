@@ -1,0 +1,1 @@
+proc main(): eff unit := pure(source_pexpr(<<<5b5b5d2c6e756c6c5d>>>, model_gap(pointer_atomic_fetch)))

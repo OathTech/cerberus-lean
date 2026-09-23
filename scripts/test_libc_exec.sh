@@ -10,7 +10,7 @@
 #           loads runtime/libc/libc.co as a library first,
 #           backend/driver/main.ml:150-156)
 #   Lean  : cerberus-lean --batch --first --libc <pinned dump>
-#           --libc-tu <12 metadata cabs-jsons>   (Main.loadLibc mirror;
+#           --libc-tu <13 metadata cabs-jsons>   (Main.loadLibc mirror;
 #           see scripts/libc_prep.sh for the two-artifact trust story)
 #
 # Corpus: tests/libc_exec/*.c — the S0 survey's coverage libc wants
@@ -63,7 +63,7 @@ echo ""
 echo "libc exec differential (arc-6 S1: both sides load the C library)"
 echo "=================================================="
 
-# Pin drift-check + the 12 metadata cabs-jsons (libc_prep.sh fail-closed)
+# Pin drift-check + the 13 metadata cabs-jsons (libc_prep.sh fail-closed)
 # NOTE: not `mapfile -t X < <(cmd) || fail` — mapfile succeeds even when
 # the process-substituted cmd fails, so that guard is dead (arc-6 S5f
 # audit fix; S2-arc-5 pattern: capture rc explicitly, then split).
@@ -71,10 +71,10 @@ libc_jsons_out=$("$PROJECT_ROOT/scripts/libc_prep.sh" --jsons "$OUTPUT_DIR/libcj
     || fail "libc_prep.sh --jsons failed (pin drift or oracle missing)"
 [[ -n "$libc_jsons_out" ]] || fail "libc_prep.sh --jsons emitted no paths"
 mapfile -t LIBC_JSONS <<< "$libc_jsons_out"
-[[ ${#LIBC_JSONS[@]} -eq 12 ]] || fail "expected 12 libc metadata jsons, got ${#LIBC_JSONS[@]}"
+[[ ${#LIBC_JSONS[@]} -eq 13 ]] || fail "expected 13 libc metadata jsons, got ${#LIBC_JSONS[@]}"
 LIBC_ARGS=(--libc "$PROJECT_ROOT/tests/libc/libc.core")
 for j in "${LIBC_JSONS[@]}"; do LIBC_ARGS+=(--libc-tu "$j"); done
-echo "[prep] libc pin verified; 12 metadata TUs"
+echo "[prep] libc pin verified; 13 metadata TUs"
 
 : > "$OUTPUT_DIR/baseline.new"
 pass=0; failcnt=0

@@ -331,6 +331,7 @@ let rec set_uid_pe uid n (Pexpr( annots1, bty, pe_)) =
   | PEconstrained cs ->
     PEconstrained (Lem_list.mapi (fun i (m, pe) -> (m, self (i+ 1) pe)) cs)
   | PEundef( loc, undef1) -> PEundef( loc, undef1)
+  | PEmodel_gap (loc, gap) -> PEmodel_gap (loc, gap)
   | PEerror( err, pe) -> PEerror( err, (self( 1) pe))
   | PEctor( ctor1, pes) -> PEctor( ctor1, (selfs pes))
   | PEcase( pe, cases) -> PEcase( (self( 0) pe),

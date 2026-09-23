@@ -84,8 +84,8 @@ The Lean pipeline cannot read OCaml Marshal. Its libc artifact is split
 in two (decision log D5; scripts/libc_prep.sh):
 
 * BODIES (funs and globs, in file order) come from the PINNED text dump
-  `tests/libc/libc.core` — the stock pretty-print of libc.co
-  (`cerberus --nolibc --pp=core --pp_core_out=… libc.co`, S0 survey
+  `tests/libc/libc.core` — the source-bearing pretty-print of libc.co
+  (`cerberus --nolibc --pp=core --pp_flags=source --pp_core_out=… libc.co`, S0 survey
   §a.1), i.e. the oracle's sequentialised+rewritten libc Core, parsed by
   CoreParser. This is ORACLE-PRODUCED INPUT in the cabs-json trust
   class: pinned and drift-checked fail-closed by libc_prep.sh.
@@ -96,7 +96,7 @@ in two (decision log D5; scripts/libc_prep.sh):
   pp_core.ml:811-829 + pipeline.ml:536-549) and drops every tagDef whose
   definition site is an #include'd header (pp_cond, pp_core.ml:745-746,
   show_include=false — only `struct fl` survives in the dump). The
-  metadata is reconstructed by frontending the SAME 12 libc source TUs
+  metadata is reconstructed by frontending the SAME 13 libc source TUs
   (runtime/libc/dune:145-146, same order, same include flags) through
   our own desugar/typecheck/translate and linking them with the
   generated Core_linking — the very pipeline that produced libc.co's
@@ -394,6 +394,8 @@ def batchExitValue (v : value) : String :=
 def driverErrorBatchMsg : driver_error → String
   | .DErr_core_run cause =>
     match cause with
+    | .Model_gap loc gap =>
+      s!"unsupported model boundary: {core_model_gap_name gap} at {CerbLocation.stringFromLocation loc}"
     | .Illformed_program s => s!"ill-formed program: `{s}'"        -- pp_errors.ml:500-501
     | .Found_empty_stack s => s!"found an empty stack: `{s}'"      -- :502-503
     | .Reached_end_of_proc => "reached the end of a procedure"     -- :504-505
@@ -618,7 +620,7 @@ def loadLibc [LemFuel] (quiet : Bool) (supply0 : Nat) (addressSpaceTop : Int)
     | .ok f => pure f
     | .error e => return (← bail s!"parsing {libcCorePath}: {e}")
   say s!"    {parsed.procs.length} proc, {parsed.funs.length} fun, {parsed.globs.length} glob"
-  -- 2. Frontend the 12 metadata TUs (same order as runtime/libc/dune's
+  -- 2. Frontend the 13 metadata TUs (same order as runtime/libc/dune's
   --    libc.co link; reverse-consed accumulator exactly as the OCaml
   --    driver fold, main.ml:153-156) and link them. Zero-discrepancy Z3
   --    (Z-28): each TU runs under the digest its cabs-json carries — the
@@ -1122,6 +1124,8 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
                 | .Found_empty_stack s => s!"Found_empty_stack: {s}"
                 | .Reached_end_of_proc => "Reached_end_of_proc"
                 | .Unknown_impl => "Unknown_impl"
+                | .Model_gap loc gap =>
+                  s!"Model_gap: {core_model_gap_name gap} at {CerbLocation.stringFromLocation loc}"
                 | .Unresolved_symbol loc (Symbol _ n _) =>
                   s!"Unresolved_symbol: Symbol(_, {n}, _) at {CerbLocation.stringFromLocation loc}"
               IO.println s!"  result: Killed (core_run error: {causeStr})"
@@ -1238,7 +1242,7 @@ def main (args : List String) : IO Unit := do
   let firstTrace := (batchMode || ppCoreMode) && rest0.head? == some "--first"
   let rest1 := if firstTrace then rest0.drop 1 else rest0
   -- --libc <pinned.core> --libc-tu <json> … (arc-6 S1): additive libc
-  -- mode — load the pinned libc Core text dump plus the 12 metadata TU
+  -- mode — load the pinned libc Core text dump plus the 13 metadata TU
   -- cabs-jsons (scripts/libc_prep.sh --jsons) and link the resulting
   -- library file BEFORE the user TUs (see loadLibc / runPipeline).
   -- [AGENT:S1] explicit flags (not an auto-load convention): libc-enabled

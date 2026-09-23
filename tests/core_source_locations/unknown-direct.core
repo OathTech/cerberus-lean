@@ -1,0 +1,2 @@
+proc main(): eff unit := source_expr(<<<5b5b5d2c6e756c6c5d>>>,
+  pure(source_pexpr(<<<5b5b5d2c224c6f635f756e6b6e6f776e225d>>>, undef(<<UB045a_division_by_zero>>))))

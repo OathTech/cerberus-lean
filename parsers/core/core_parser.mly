@@ -358,6 +358,8 @@ let rec symbolify_pexpr (Pexpr (annot, (), _pexpr): parsed_pexpr) : pexpr Eff.t 
         assert false
     | PEundef (loc, ub) ->
         Eff.return (Pexpr (annot, (), PEundef (loc, ub)))
+    | PEmodel_gap (loc, gap) ->
+        Eff.return (Pexpr (annot, (), PEmodel_gap (loc, gap)))
     | PEerror (str, _pe) ->
         symbolify_pexpr _pe >>= fun pe ->
         Eff.return (Pexpr (annot, (), PEerror (str, pe)))
@@ -792,6 +794,8 @@ and symbolify_action_ = function
      Eff.return (RMW0 (pe1, pe2, pe3, pe4, mo1, mo2))
  | Fence0 mo ->
      Eff.return (Fence0 mo)
+ | SignalFence mo ->
+     Eff.return (SignalFence mo)
  | CompareExchangeStrong (_pe1, _pe2, _pe3, _pe4, mo1, mo2) ->
      symbolify_pexpr _pe1 >>= fun pe1 ->
      symbolify_pexpr _pe2 >>= fun pe2 ->
@@ -1120,7 +1124,8 @@ let mk_file decls =
 (* Core constant keywords *)
 %token NULL TRUE FALSE UNIT_VALUE
 %token ARRAY_SHIFT MEMBER_SHIFT
-%token UNDEF ERROR
+%token SOURCE_PEXPR SOURCE_EXPR
+%token UNDEF ERROR MODEL_GAP UNSPECIFIED_ATOMIC_ORDER POINTER_ATOMIC_FETCH
 %token<string> CSTRING STRING
 %token IF THEN ELSE
 %nonassoc ELSE
@@ -1159,7 +1164,7 @@ let mk_file decls =
 
 (* memory actions *)
 %token ATOMIC_UPDATE ATOMIC_UPDATE_WITH_FORWARD
-%token CREATE CREATE_READONLY ALLOC STORE STORE_LOCK LOAD SEQ_RMW SEQ_RMW_WITH_FORWARD KILL FREE RMW FENCE (* COMPARE_EXCHANGE_STRONG *)
+%token CREATE CREATE_READONLY ALLOC STORE STORE_LOCK LOAD SEQ_RMW SEQ_RMW_WITH_FORWARD KILL FREE RMW FENCE SIGNAL_FENCE (* COMPARE_EXCHANGE_STRONG *)
 
 (* continuation operators *)
 %token SAVE RUN
@@ -1574,8 +1579,16 @@ member:
 ;
 
 pexpr:
+| SOURCE_PEXPR LPAREN payload= STRING COMMA pe= pexpr RPAREN
+    { Core_parser_util.source_pexpr payload pe }
 | _pe= delimited(LPAREN, pexpr, RPAREN)
     { _pe }
+| MODEL_GAP LPAREN UNSPECIFIED_ATOMIC_ORDER RPAREN
+    { let loc = region ($startpos, $endpos) NoCursor in
+      Pexpr ([Aloc loc], (), PEmodel_gap (loc, Model_gap_unspecified_atomic_order)) }
+| MODEL_GAP LPAREN POINTER_ATOMIC_FETCH RPAREN
+    { let loc = region ($startpos, $endpos) NoCursor in
+      Pexpr ([Aloc loc], (), PEmodel_gap (loc, Model_gap_pointer_atomic_fetch)) }
 | UNDEF LPAREN ub= UB RPAREN
     { Pexpr ([Aloc (region ($startpos, $endpos) NoCursor)], (), PEundef (region ($startpos, $endpos) NoCursor, ub)) }
 | ERROR LPAREN str= STRING COMMA _pe= pexpr RPAREN
@@ -1646,6 +1659,8 @@ memop_op:
       Mem_common.PtrMemberShift (_sym, cid) }
 
 expr:
+| SOURCE_EXPR LPAREN payload= STRING COMMA e= expr RPAREN
+    { Core_parser_util.source_expr payload e }
 | e_= delimited(LPAREN, expr, RPAREN)
     { let Expr (annot, expr_) = e_ in
       Expr (Aloc (region ($startpos, $endpos) NoCursor) :: annot, expr_) }
@@ -1745,6 +1760,8 @@ action:
 
 | RMW LPAREN _pe1= pexpr COMMA _pe2= pexpr COMMA _pe3= pexpr COMMA _pe4= pexpr COMMA mo1= memory_order COMMA mo2= memory_order RPAREN
     { RMW0 (_pe1, _pe2, _pe3, _pe4, mo1, mo2) }
+| SIGNAL_FENCE LPAREN mo= memory_order RPAREN
+    { SignalFence mo }
 | FENCE LPAREN mo= memory_order RPAREN
     { Fence0 mo }
 (*

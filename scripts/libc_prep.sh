@@ -10,13 +10,13 @@
 #    Produced by the stock invocation verified in the S0 survey
 #    (docs/2026-08-19_arc6-s0-survey.md §a.1; no OCaml patching):
 #
-#        cerberus --nolibc --pp=core --pp_core_out=<out> \
+#        cerberus --nolibc --pp=core --pp_flags=source --pp_core_out=<out> \
 #            _build/default/runtime/libc/libc.co
 #
 #    read_core_object with is_lib=false pretty-prints the marshalled
 #    core_dump (backend/common/pipeline.ml:648-672; print_core at :668-670).
 #    libc.co itself is built by runtime/libc/dune:132-141 (cerberus --nolibc
-#    -I include -I include/posix --sequentialise --rewrite over the 12 libc
+#    -I include -I include/posix --sequentialise --rewrite over the 13 libc
 #    TUs), so the pinned text is the oracle's sequentialised+rewritten libc.
 #    This script FAILS (fail-closed, both directions) if the regenerated
 #    dump differs from the pin: either _build/libc.co moved (oracle drift)
@@ -36,7 +36,7 @@
 #    non-main-file decls — only `struct fl` survives). Those are
 #    reconstructed Lean-side from artifact 2.
 #
-# 2. The 12 libc METADATA TUs: cabs-json of the same 12 sources libc.co is
+# 2. The 13 libc METADATA TUs: cabs-json of the same 13 sources libc.co is
 #    built from, in the same order and with the same include flags as
 #    runtime/libc/dune:132-141 (minus --sequentialise --rewrite, which are
 #    Core-to-Core BODY passes applied after elaboration; extern/funinfo/
@@ -51,10 +51,10 @@
 #   scripts/libc_prep.sh --check              verify the pin (drift check)
 #   scripts/libc_prep.sh --record             (re)pin tests/libc/libc.core
 #   scripts/libc_prep.sh --jsons <outdir>     verify pin, then generate the
-#                                             12 metadata cabs-jsons into
+#                                             13 metadata cabs-jsons into
 #                                             <outdir> and print their paths
 #                                             in link order, ONE PER LINE
-#   scripts/libc_prep.sh --tus                print the 12 TU names in the
+#   scripts/libc_prep.sh --tus                print the 13 TU names in the
 #                                             dune link order, one per line
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
@@ -64,11 +64,11 @@ LIBC_SRC_DIR="$PROJECT_ROOT/runtime/libc"
 PIN="$PROJECT_ROOT/tests/libc/libc.core"
 PIN_HASH="$PROJECT_ROOT/tests/libc/libc.core.sha256"
 
-# The 12 TUs in the exact order of the oracle's libc link
+# The 13 TUs in the exact order of the oracle's libc link
 # (runtime/libc/dune:132-141; order matters: main.ml:150-156 folds the
 # frontend over the file list and Core_linking.link folds link_aux in
 # list order, so extern/funinfo merge order mirrors the oracle's).
-LIBC_TUS=(ctype stdio stdlib string time utime unistd stat uio internal vfscanf signal)
+LIBC_TUS=(ctype stdio stdlib string time utime unistd stat uio internal vfscanf signal stdatomic)
 
 die() { echo "libc_prep: ERROR: $*" >&2; exit 1; }
 
@@ -80,7 +80,7 @@ regen_dump() { # <out>
     local out="$1"
     ( cd "$PROJECT_ROOT" && opam exec --switch="$PROJECT_ROOT" -- \
         "$CERBERUS_BIN" --runtime="$PROJECT_ROOT/_build/install/default" \
-        --nolibc --pp=core --pp_core_out="$out" "$LIBC_CO" ) \
+        --nolibc --pp=core --pp_flags=source --pp_core_out="$out" "$LIBC_CO" ) \
       || die "dump regeneration failed (cerberus rc=$?)"
     [[ -s "$out" ]] || die "dump regeneration produced an empty file"
 }
@@ -183,7 +183,7 @@ if [[ "$MODE" == "--check" ]]; then
     exit 0
 fi
 
-# --- --jsons: generate the 12 metadata cabs-jsons ---------------------------
+# --- --jsons: generate the 13 metadata cabs-jsons ---------------------------
 OUTDIR="${2:-}"
 [[ -n "$OUTDIR" ]] || die "usage: libc_prep.sh --jsons <outdir>"
 mkdir -p "$OUTDIR"

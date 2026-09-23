@@ -890,8 +890,38 @@ let rec annotate_expression annotate_block sigm gamm ctx (AnnotatedExpression ()
     
     | AilEcall (AnnotatedExpression _ annots' loc' (AilEbuiltin b)) args ->
         let loc_cursor = Loc.with_cursor loc' in
-        let memorder_ty = Ctype [] $ Basic (Integer (Signed (Int_))) (* TODO: actually memory_order enum *) in
+        let memorder_ty = Builtins.atomic_memory_order_type in
         match (b, args) with
+        | (AilBatomic AilBAthread_fence, args) ->
+            let parameters = [(no_qualifiers, memorder_ty, false)] in
+            annotate_arguments loc_cursor false args (Just parameters) >>= fun args' ->
+            let function_type = GenRValueType (GenFunction (no_qualifiers, Ctype [] Void) parameters false) in
+            E.return (AilEcall (AnnotatedExpression function_type annots' loc' (AilEbuiltin b)) args',
+                      GenRValueType GenVoid)
+
+        | (AilBatomic AilBAsignal_fence, args) ->
+            let parameters = [(no_qualifiers, memorder_ty, false)] in
+            annotate_arguments loc_cursor false args (Just parameters) >>= fun args' ->
+            let function_type = GenRValueType (GenFunction (no_qualifiers, Ctype [] Void) parameters false) in
+            E.return (AilEcall (AnnotatedExpression function_type annots' loc' (AilEbuiltin b)) args',
+                      GenRValueType GenVoid)
+
+        | (AilBatomic AilBAinit, object_e :: args) ->
+            annotate_rvalue object_e >>= fun (object_e', object_gty) ->
+            match object_gty with
+              | GenPointer qs object_ty ->
+                  let value_ty = Ctype [] (unatomic_ object_ty) in
+                  let params = [(qs, value_ty, false)] in
+                  let gen_fun_ty = GenRValueType (GenFunction (no_qualifiers, Ctype [] Void)
+                    ((qs, Ctype [] (Pointer qs object_ty), false) :: params) false) in
+                  guard_violation loc_cursor (AtomicAddressArgumentMustBeAtomic AtomicInit object_ty)
+                    (AAux.is_atomic object_ty) >>= fun () ->
+                  annotate_arguments loc_cursor false args (Just params) >>= fun es' ->
+                  E.return (AilEcall (AnnotatedExpression gen_fun_ty annots' loc' (AilEbuiltin b))
+                    (object_e' :: es'), GenRValueType GenVoid)
+              | gty ->
+                  E.constraint_violation loc_cursor (AtomicAddressArgumentMustBePointer AtomicInit gty)
+            end
         | (AilBatomic AilBAstore, object_e :: desired_e :: order_e :: args) ->
             annotate_rvalue object_e >>= fun (object_e',  object_gty)  ->
             match object_gty with
@@ -900,17 +930,8 @@ let rec annotate_expression annotate_block sigm gamm ctx (AnnotatedExpression ()
                   let gen_fun_ty = GenRValueType (GenFunction (qs, Ctype [] Void) ((qs, Ctype [] $ Pointer qs object_ty, false) :: params_wo_ptr) false) in
                   guard_violation loc_cursor (AtomicAddressArgumentMustBeAtomic AtomicStore object_ty) (AAux.is_atomic object_ty) >>= fun () ->
                   annotate_arguments loc_cursor false (desired_e :: order_e :: args) (Just params_wo_ptr) >>= fun es' ->
-                  match memory_order_of_expr order_e with
-                  | Just Cmm_csem.Acquire ->
-                    E.undef loc_cursor Undefined.UB205_atomic_store_memorder
-                  | Just Cmm_csem.Consume ->
-                    E.undef loc_cursor Undefined.UB205_atomic_store_memorder
-                  | Just Cmm_csem.Acq_rel ->
-                    E.undef loc_cursor Undefined.UB205_atomic_store_memorder
-                  | _ ->
-                    E.return (AilEcall (AnnotatedExpression gen_fun_ty annots' loc' $ AilEbuiltin b) (object_e' :: es')
-                             , GenRValueType GenVoid)
-                  end
+                  E.return (AilEcall (AnnotatedExpression gen_fun_ty annots' loc' $ AilEbuiltin b) (object_e' :: es')
+                           , GenRValueType GenVoid)
               | gty ->
                   E.constraint_violation loc_cursor $ AtomicAddressArgumentMustBePointer AtomicStore gty
             end
@@ -924,19 +945,45 @@ let rec annotate_expression annotate_block sigm gamm ctx (AnnotatedExpression ()
                   let gen_fun_ty = GenRValueType (GenFunction (qs, ret_ty) ((qs, Ctype [] $ Pointer qs object_ty, false) :: params_wo_ptr) false) in
                   guard_violation loc_cursor (AtomicAddressArgumentMustBeAtomic AtomicLoad object_ty) (AAux.is_atomic object_ty) >>= fun () ->
                   annotate_arguments loc_cursor false (order_e :: args) (Just params_wo_ptr) >>= fun es' ->
-                  match memory_order_of_expr order_e with
-                  | Just Cmm_csem.Release ->
-                    E.undef loc_cursor Undefined.UB206_atomic_load_memorder
-                  | Just Cmm_csem.Acq_rel ->
-                    E.undef loc_cursor Undefined.UB206_atomic_load_memorder
-                  | _ ->
-                    E.return (AilEcall (AnnotatedExpression gen_fun_ty annots' loc' $ AilEbuiltin b) (object_e' :: es')
-                             , GenRValueType (inject_type ret_ty))
-                  end
+                  E.return (AilEcall (AnnotatedExpression gen_fun_ty annots' loc' $ AilEbuiltin b) (object_e' :: es')
+                           , GenRValueType (inject_type ret_ty))
               | gty ->
                   E.constraint_violation loc_cursor $ AtomicAddressArgumentMustBePointer AtomicLoad gty
             end
         
+        | (AilBatomic (AilBAfetch aop), object_e :: args) ->
+            annotate_rvalue object_e >>= fun (object_e', object_gty) ->
+            match object_gty with
+              | GenPointer qs object_ty ->
+                  let ret_ty = Cty.unatomic object_ty in
+                  guard_violation loc_cursor (AtomicAddressArgumentMustBeAtomic AtomicFetch object_ty)
+                    (AAux.is_atomic object_ty) >>= fun () ->
+                  (* Pointer add/sub applicability is contradictory in C11;
+                     retain a typed operational gap instead of inventing a
+                     constraint or a pointer arithmetic extension. *)
+                  let pointer_operation = match (ret_ty, aop) with
+                    | (Ctype _ (Pointer _ _), Add) -> true
+                    | (Ctype _ (Pointer _ _), Sub) -> true
+                    | _ -> false
+                  end in
+                  let integer_object = match ret_ty with
+                    | Ctype _ (Basic (Integer Bool)) -> false
+                    | Ctype _ (Basic (Integer _)) -> true
+                    | _ -> false
+                  end in
+                  guard_violation loc_cursor (AtomicFetchRequiresInteger object_ty)
+                    (integer_object || pointer_operation) >>= fun () ->
+                  let operand_ty = if pointer_operation then Cty.ptrdiff_t else ret_ty in
+                  let parameters = [(qs, operand_ty, false); (no_qualifiers, memorder_ty, false)] in
+                  let gen_fun_ty = GenRValueType (GenFunction (qs, ret_ty)
+                    ((qs, Ctype [] (Pointer qs object_ty), false) :: parameters) false) in
+                  annotate_arguments loc_cursor false args (Just parameters) >>= fun args' ->
+                  E.return (AilEcall (AnnotatedExpression gen_fun_ty annots' loc' (AilEbuiltin b))
+                    (object_e' :: args'), GenRValueType (inject_type ret_ty))
+              | gty ->
+                  E.constraint_violation loc_cursor (AtomicAddressArgumentMustBePointer AtomicFetch gty)
+            end
+
         | (AilBatomic AilBAexchange, object_e :: args) ->
             annotate_rvalue object_e >>= fun (object_e', object_gty) ->
             match object_gty with
@@ -965,16 +1012,8 @@ let rec annotate_expression annotate_block sigm gamm ctx (AnnotatedExpression ()
                   let (params1, params2) = List.splitAt 2 params_wo_ptr in
                   annotate_and_cast_arguments loc_cursor false [expected_e; desired_e] (Just params1)             >>= fun args1 ->
                   annotate_arguments loc_cursor false (order_success_e :: order_failure_e :: args) (Just params2) >>= fun args2 ->
-                  (* TODO: The failure argument shall be no stronger than the success argument. *)
-                  match memory_order_of_expr order_failure_e with
-                  | Just Cmm_csem.Release ->
-                    E.undef loc_cursor Undefined.UB207_atomic_compare_exchange_memorder
-                  | Just Cmm_csem.Acq_rel ->
-                    E.undef loc_cursor Undefined.UB207_atomic_compare_exchange_memorder
-                  | _ ->
-                    E.return (AilEcall (AnnotatedExpression gen_fun_ty annots' loc' $ AilEbuiltin b) (object_e' :: args1 ++ args2)
-                             , GenRValueType (GenBasic (GenInteger (Concrete Bool))))
-                  end
+                  E.return (AilEcall (AnnotatedExpression gen_fun_ty annots' loc' $ AilEbuiltin b) (object_e' :: args1 ++ args2)
+                           , GenRValueType (GenBasic (GenInteger (Concrete Bool))))
               | gty ->
                   E.constraint_violation loc_cursor $ AtomicAddressArgumentMustBePointer AtomicCompareExchange gty
             end
@@ -992,16 +1031,8 @@ let rec annotate_expression annotate_block sigm gamm ctx (AnnotatedExpression ()
                   let (params1, params2) = List.splitAt 2 params_wo_ptr in
                   annotate_and_cast_arguments loc_cursor false [expected_e; desired_e] (Just params1)             >>= fun args1 ->
                   annotate_arguments loc_cursor false (order_success_e :: order_failure_e :: args) (Just params2) >>= fun args2 ->
-                  (* TODO: The failure argument shall be no stronger than the success argument. *)
-                  match memory_order_of_expr order_failure_e with
-                  | Just Cmm_csem.Release ->
-                    E.undef loc_cursor Undefined.UB207_atomic_compare_exchange_memorder
-                  | Just Cmm_csem.Acq_rel ->
-                    E.undef loc_cursor Undefined.UB207_atomic_compare_exchange_memorder
-                  | _ ->
-                    E.return (AilEcall (AnnotatedExpression gen_fun_ty annots' loc' $ AilEbuiltin b) (object_e' :: args1 ++ args2)
-                             , GenRValueType (GenBasic (GenInteger (Concrete Bool))))
-                  end
+                  E.return (AilEcall (AnnotatedExpression gen_fun_ty annots' loc' $ AilEbuiltin b) (object_e' :: args1 ++ args2)
+                           , GenRValueType (GenBasic (GenInteger (Concrete Bool))))
               | gty ->
                   E.constraint_violation loc_cursor $ AtomicAddressArgumentMustBePointer AtomicCompareExchange gty
             end
@@ -1091,12 +1122,6 @@ let rec annotate_expression annotate_block sigm gamm ctx (AnnotatedExpression ()
        | (_, _) ->
             error "WIP: typing builtin"
     end
-    
-    (* TODO: this is wrong in so many ways!! *)
-    | AilEcall (AnnotatedExpression _ annots' loc' (AilEident (Symbol.Symbol digest s (Symbol.SD_Id "atomic_thread_fence")))) [order_e] ->
-        (* TODO: do typechecking *)
-        annotate_rvalue order_e >>= fun (order_e', order_gty) ->
-        E.return (AilEcall (AnnotatedExpression (GenRValueType GenVoid) annots' loc' (AilEident (Symbol.Symbol digest s (Symbol.SD_Id "atomic_thread_fence")))) [order_e'], GenRValueType GenVoid)
     
     | AilEcall e es ->
         E.add "§6.5.2.2#1" >>

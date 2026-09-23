@@ -25,20 +25,33 @@ typedef enum memory_order {
   memory_order_seq_cst = __cerbvar_memory_order_seq_cst
 } memory_order;
 
-// TODO: check the definition of atomic_flag
-typedef struct atomic_flag {
-  _Atomic(_Bool) _Value;
-} atomic_flag;
+#include <__cerb_atomic_flag.h>
 
 #define ATOMIC_FLAG_INIT { /*._Value=*/ 0 }
+
+/* These are ordinary library functions (7.17.8), so macro suppression and
+   taking their addresses must expose real callable definitions (7.1.4). */
+_Bool atomic_flag_test_and_set(volatile atomic_flag *object);
+_Bool atomic_flag_test_and_set_explicit(volatile atomic_flag *object, memory_order order);
+void atomic_flag_clear(volatile atomic_flag *object);
+void atomic_flag_clear_explicit(volatile atomic_flag *object, memory_order order);
+
+#define atomic_flag_test_and_set_explicit(object, order) \
+  atomic_exchange_explicit(&((object)->_Value), 1, (order))
+#define atomic_flag_test_and_set(object) \
+  atomic_flag_test_and_set_explicit((object), memory_order_seq_cst)
+#define atomic_flag_clear_explicit(object, order) \
+  atomic_store_explicit(&((object)->_Value), 0, (order))
+#define atomic_flag_clear(object) \
+  atomic_flag_clear_explicit((object), memory_order_seq_cst)
 
 
 
 #define ATOMIC_VAR_INIT(value) (value)
 
 
-//#define atomic_init(obj, value)    __cerbvar_atomic_init(obj, value)
-#define atomic_init(obj,value)   (*obj = value)
+// C11 7.17.2.2: initialization is not an atomic operation.
+#define atomic_init(obj, value) __cerbvar_atomic_init((obj), (value))
 
 
 void atomic_thread_fence(memory_order order);
@@ -97,9 +110,16 @@ typedef _Atomic(uintmax_t)              atomic_uintmax_t;
 #define atomic_compare_exchange_weak_explicit \
   __cerbvar_atomic_compare_exchange_weak_explicit
 
-// TODO!
-#define atomic_fetch_key_explicit \
-  __cerbvar_atomic_fetch_key_explicit
+#define atomic_fetch_add_explicit \
+  __cerbvar_atomic_fetch_add_explicit
+#define atomic_fetch_sub_explicit \
+  __cerbvar_atomic_fetch_sub_explicit
+#define atomic_fetch_and_explicit \
+  __cerbvar_atomic_fetch_and_explicit
+#define atomic_fetch_xor_explicit \
+  __cerbvar_atomic_fetch_xor_explicit
+#define atomic_fetch_or_explicit \
+  __cerbvar_atomic_fetch_or_explicit
 
 
 #define atomic_store(object, desired) \
@@ -114,7 +134,15 @@ typedef _Atomic(uintmax_t)              atomic_uintmax_t;
 #define atomic_compare_exchange_weak(object, expected, desired) \
   atomic_compare_exchange_weak_explicit(object, expected, desired, \
       memory_order_seq_cst, memory_order_seq_cst)
-#define atomic_fetch_key(object, operand) \
-  atomic_fetch_key_explicit(object, operand, memory_order_seq_cst)
+#define atomic_fetch_add(object, operand) \
+  atomic_fetch_add_explicit(object, operand, memory_order_seq_cst)
+#define atomic_fetch_sub(object, operand) \
+  atomic_fetch_sub_explicit(object, operand, memory_order_seq_cst)
+#define atomic_fetch_and(object, operand) \
+  atomic_fetch_and_explicit(object, operand, memory_order_seq_cst)
+#define atomic_fetch_xor(object, operand) \
+  atomic_fetch_xor_explicit(object, operand, memory_order_seq_cst)
+#define atomic_fetch_or(object, operand) \
+  atomic_fetch_or_explicit(object, operand, memory_order_seq_cst)
 
 #endif

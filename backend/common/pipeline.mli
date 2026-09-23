@@ -4,6 +4,7 @@ type language =
   | Cabs | Ail | Core | Types
 
 type pp_flag =
+  | SourceLoc
   | Annot
   | Loc
 

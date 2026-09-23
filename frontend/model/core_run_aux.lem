@@ -557,6 +557,8 @@ let rec convert_pexpr (Pexpr annot _ pexpr_) =
      PEconstrained (List.map (fun (constrs, pe) -> (constrs, convert_pexpr pe)) xs)
  | PEundef loc ub ->
      PEundef loc ub
+ | PEmodel_gap loc gap ->
+     PEmodel_gap loc gap
  | PEerror str pe ->
      PEerror str (convert_pexpr pe)
  | PEctor ctor pes ->
@@ -678,6 +680,8 @@ and convert_action_ act_ =
         RMW (convert_pexpr pe1) (convert_pexpr pe2) (convert_pexpr pe3) (convert_pexpr pe4) mo1 mo2
     | Fence mo ->
         Fence mo
+    | SignalFence mo ->
+        SignalFence mo
     | CompareExchangeStrong pe1 pe2 pe3 pe4 mo1 mo2 ->
         CompareExchangeStrong (convert_pexpr pe1) (convert_pexpr pe2) (convert_pexpr pe3) (convert_pexpr pe4) mo1 mo2
     | CompareExchangeWeak pe1 pe2 pe3 pe4 mo1 mo2 ->

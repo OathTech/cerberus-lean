@@ -19,7 +19,7 @@ let rec unsafe_substitute_pexpr (map: substitute_map)
     | PEimpl _ -> pexpr_
     | PEval _ -> pexpr_
     | PEconstrained _ -> assert false
-    | PEundef _ -> pexpr_
+    | PEundef _ | PEmodel_gap _ -> pexpr_
     | PEerror (s, pe) ->
         PEerror(s, unsafe_substitute_pexpr map pe)
     | PEctor (ctor, pelist) ->
@@ -102,6 +102,8 @@ let unsafe_substitute_action (map: substitute_map)
               mo1, mo2)
     | Fence0 mo ->
         Fence0 mo
+    | SignalFence mo ->
+        SignalFence mo
     | CompareExchangeStrong(pe1,pe2,pe3,pe4,mo1,mo2) ->
         CompareExchangeStrong(unsafe_substitute_pexpr map pe1,
                               unsafe_substitute_pexpr map pe2,

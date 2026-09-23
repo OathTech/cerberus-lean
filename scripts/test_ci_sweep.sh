@@ -14,7 +14,7 @@
 # Deliberate deltas vs test_exec.sh, all sweep-motivated:
 #   1. LIBC MODE (per-suite): the oracle runs WITHOUT --nolibc (loads
 #      runtime/libc/libc.co) and the Lean side gets
-#      --libc tests/libc/libc.core + 12 --libc-tu metadata jsons via
+#      --libc tests/libc/libc.core + 13 --libc-tu metadata jsons via
 #      scripts/libc_prep.sh --jsons (the test_libc_exec.sh mechanism,
 #      test_libc_exec.sh:66-76). Rationale: gcc-torture/tcc/suite call
 #      libc (abort/exit/printf); the --nolibc lane skips ~80% of them
@@ -156,10 +156,10 @@ if $need_libc; then
         || { echo "Error: libc_prep.sh --jsons failed (pin drift or oracle missing)" >&2; exit 1; }
     [[ -n "$libc_jsons_out" ]] || { echo "Error: libc_prep.sh --jsons emitted no paths" >&2; exit 1; }
     mapfile -t LIBC_JSONS <<< "$libc_jsons_out"
-    [[ ${#LIBC_JSONS[@]} -eq 12 ]] || { echo "Error: expected 12 libc metadata jsons, got ${#LIBC_JSONS[@]}" >&2; exit 1; }
+    [[ ${#LIBC_JSONS[@]} -eq 13 ]] || { echo "Error: expected 13 libc metadata jsons, got ${#LIBC_JSONS[@]}" >&2; exit 1; }
     LIBC_ARGS=(--libc "$PROJECT_ROOT/tests/libc/libc.core")
     for j in "${LIBC_JSONS[@]}"; do LIBC_ARGS+=(--libc-tu "$j"); done
-    echo "[prep] libc pin verified; 12 metadata TUs"
+    echo "[prep] libc pin verified; 13 metadata TUs"
 fi
 
 cd "$PROJECT_ROOT" || { echo "Error: cannot cd to $PROJECT_ROOT" >&2; exit 1; }

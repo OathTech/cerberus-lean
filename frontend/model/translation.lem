@@ -11,7 +11,7 @@ import Core Core_aux Core_typing Core_linking
 
 import Builtins Annot Decode
 
-import Cmm_csem Mem
+import Cmm_csem Mem Atomic_order
 import Linux
 
 
@@ -1174,9 +1174,40 @@ type atomic_explicit =
   | LinuxFence
   | LinuxRMW
   | AtomicExchangeExplicit
+  | AtomicInit
+  | AtomicSignalFence
+  | AtomicFetchExplicit of A.arithmeticOperator
 
-let translate_atomic_explicit loc translate_expr stdlib atomic_op args =
+let translate_atomic_explicit_constant loc translate_expr stdlib atomic_op args =
   match (atomic_op, args) with
+    | (AtomicInit, [object_e; desired_e]) ->
+        let ref_ty = match ctype_of object_e with
+          | Ctype.Ctype _ (Ctype.Pointer _ ty) -> ty
+          | _ -> illTypedAil loc "AilEcall atomic_init"
+        end in
+        let value_ty = Ctype.unatomic ref_ty in
+        let oTy = force_core_object_type_of_ctype value_ty in
+        translate_assignment_conversion translate_expr stdlib value_ty desired_e
+          >>= fun (arg_oTy, raw_desired, convert_desired) ->
+        E.wrapped_fresh_symbol (C.BTy_loaded arg_oTy) >>= fun raw_wrp ->
+        let core_desired = Caux.mk_wseq_e raw_wrp.E.sym_pat raw_desired
+          (Caux.mk_pure_e (convert_desired raw_wrp.E.sym_pe)) in
+        E.wrapped_fresh_symbol (C.BTy_loaded C.OTy_pointer) >>= fun loaded_object ->
+        E.wrapped_fresh_symbol (C.BTy_object C.OTy_pointer) >>= fun object_wrp ->
+        E.wrapped_fresh_symbol (C.BTy_loaded oTy) >>= fun desired ->
+        translate_expr object_e >>= fun core_object ->
+        E.return begin
+          Caux.add_std "§7.17.2.2#2" begin
+            Caux.mk_sseq_e (Caux.mk_tuple_pat [loaded_object.E.sym_pat; desired.E.sym_pat])
+              (Caux.mk_unseq_e [core_object; core_desired])
+              (Caux.mk_case_e loaded_object.E.sym_pe
+                [ (Caux.mk_specified_pat object_wrp.E.sym_pat,
+                    Caux.pstore loc (Caux.mk_ail_ctype_pe ref_ty)
+                      object_wrp.E.sym_pe desired.E.sym_pe Cmm.NA)
+                ; (Caux.mk_unspecified_pat (Caux.mk_empty_pat C.BTy_ctype),
+                    Caux.mk_pure_e (Caux.mk_undef_pe loc Undefined.UB_unspecified_lvalue)) ])
+          end
+        end
     | (AtomicStoreExplicit, [lobject_e; desired_e; order_e]) ->
         let mo = translate_memory_order order_e in
         let ref_ty = match ctype_of lobject_e with
@@ -1203,6 +1234,72 @@ let translate_atomic_explicit loc translate_expr stdlib atomic_op args =
                 ; ( Caux.mk_unspecified_pat (Caux.mk_empty_pat C.BTy_ctype)
                   , Caux.mk_pure_e (Caux.mk_undef_pe loc Undefined.UB_unspecified_lvalue) ) ]
             end
+        end
+    | (AtomicFetchExplicit aop, [object_e; operand_e; order_e]) ->
+        let order = translate_memory_order order_e in
+        let ref_ty = match ctype_of object_e with
+          | Ctype.Ctype _ (Ctype.Pointer _ ty) -> Ctype.unatomic ty
+          | _ -> illTypedAil loc "atomic_fetch requires a pointer"
+        end in
+        match ref_ty with
+        | Ctype.Ctype _ (Ctype.Pointer _ _) ->
+            (* The argument dispatcher already evaluated and converted every
+               argument. Preserve the checked object read before refusing the
+               unresolved C11 generic pointer-fetch operation (SC-G05). *)
+            E.wrapped_fresh_symbol (C.BTy_loaded C.OTy_pointer) >>= fun loaded_object ->
+            E.wrapped_fresh_symbol (C.BTy_object C.OTy_pointer) >>= fun object_wrp ->
+            E.wrapped_fresh_symbol (C.BTy_loaded C.OTy_pointer) >>= fun previous ->
+            translate_expr object_e >>= fun core_object ->
+            E.return (Caux.mk_sseq_e loaded_object.E.sym_pat core_object
+              (Caux.mk_case_e loaded_object.E.sym_pe
+                [ (Caux.mk_specified_pat object_wrp.E.sym_pat,
+                    Caux.atomic_update loc false (Caux.mk_ail_ctype_pe ref_ty)
+                      object_wrp.E.sym_pe previous.E.sym_sym
+                      (Caux.mk_model_gap_pe loc C.Model_gap_pointer_atomic_fetch) order)
+                ; (Caux.mk_unspecified_pat (Caux.mk_empty_pat C.BTy_ctype),
+                    Caux.mk_pure_e (Caux.mk_undef_pe loc Undefined.UB_unspecified_lvalue)) ]))
+        | Ctype.Ctype _ (Ctype.Basic (Ctype.Integer ity)) ->
+        translate_assignment_conversion translate_expr stdlib ref_ty operand_e
+          >>= fun (raw_oTy, raw_operand, convert_operand) ->
+        E.wrapped_fresh_symbol (C.BTy_loaded raw_oTy) >>= fun raw ->
+        let core_operand = Caux.mk_wseq_e raw.E.sym_pat raw_operand
+          (Caux.mk_pure_e (convert_operand raw.E.sym_pe)) in
+        E.wrapped_fresh_symbol (C.BTy_loaded C.OTy_pointer) >>= fun loaded_object ->
+        E.wrapped_fresh_symbol (C.BTy_object C.OTy_pointer) >>= fun object_wrp ->
+        E.wrapped_fresh_symbol (C.BTy_loaded C.OTy_integer) >>= fun operand ->
+        E.wrapped_fresh_symbol (C.BTy_loaded C.OTy_integer) >>= fun previous ->
+        E.wrapped_fresh_symbol (C.BTy_object C.OTy_integer) >>= fun old_value ->
+        E.wrapped_fresh_symbol (C.BTy_object C.OTy_integer) >>= fun operand_value ->
+        let arithmetic = match aop with
+          | A.Add -> Caux.mk_wrapI_pe ity C.IOpAdd old_value.E.sym_pe operand_value.E.sym_pe
+          | A.Sub -> Caux.mk_wrapI_pe ity C.IOpSub old_value.E.sym_pe operand_value.E.sym_pe
+          | A.Band -> C.Pexpr [] () (C.PEctor C.CivAND [Caux.mk_ail_ctype_pe ref_ty;
+                                              old_value.E.sym_pe; operand_value.E.sym_pe])
+          | A.Bxor -> C.Pexpr [] () (C.PEctor C.CivXOR [Caux.mk_ail_ctype_pe ref_ty;
+                                              old_value.E.sym_pe; operand_value.E.sym_pe])
+          | A.Bor -> C.Pexpr [] () (C.PEctor C.CivOR [Caux.mk_ail_ctype_pe ref_ty;
+                                            old_value.E.sym_pe; operand_value.E.sym_pe])
+          | _ -> illTypedAil loc "unsupported atomic_fetch aop"
+        end in
+        (* The same strict loaded-value arithmetic convention as the existing
+           operators. This does not introduce a universal library-entry rule. *)
+        let update = Caux.mk_case_pe (Caux.mk_tuple_pe [previous.E.sym_pe; operand.E.sym_pe])
+          [ (Caux.mk_tuple_pat [Caux.mk_specified_pat old_value.E.sym_pat;
+                               Caux.mk_specified_pat operand_value.E.sym_pat],
+              Caux.mk_specified_pe arithmetic)
+          ; (Caux.mk_empty_pat (C.BTy_tuple [C.BTy_loaded C.OTy_integer;
+                                            C.BTy_loaded C.OTy_integer]),
+              Caux.mk_unspecified_pe ref_ty) ] in
+        translate_expr object_e >>= fun core_object ->
+        E.return (Caux.mk_sseq_e (Caux.mk_tuple_pat [loaded_object.E.sym_pat; operand.E.sym_pat])
+          (Caux.mk_unseq_e [core_object; core_operand])
+          (Caux.mk_case_e loaded_object.E.sym_pe
+            [ (Caux.mk_specified_pat object_wrp.E.sym_pat,
+                Caux.atomic_update loc false (Caux.mk_ail_ctype_pe ref_ty)
+                  object_wrp.E.sym_pe previous.E.sym_sym update order)
+            ; (Caux.mk_unspecified_pat (Caux.mk_empty_pat C.BTy_ctype),
+                Caux.mk_pure_e (Caux.mk_undef_pe loc Undefined.UB_unspecified_lvalue)) ]))
+        | _ -> illTypedAil loc "atomic_fetch requires an integer or pointer object"
         end
     | (AtomicExchangeExplicit, [object_e; desired_e; order_e]) ->
         let order = translate_memory_order order_e in
@@ -1255,8 +1352,10 @@ let translate_atomic_explicit loc translate_expr stdlib atomic_op args =
                   , Caux.mk_pure_e (Caux.mk_undef_pe loc Undefined.UB_unspecified_lvalue) ) ]
             end
         end
+    | (AtomicSignalFence, [order_e]) ->
+        let mo = translate_memory_order order_e in
+        E.return (C.Expr [] (C.Eaction (C.Paction C.Pos (C.Action loc () (C.SignalFence mo)))))
     | (AtomicThreadFence, [order_e]) ->
-        (* TODO: allow non trivial call to atomic_thread_fence() ... *)
         let mo = translate_memory_order order_e in
         E.return begin
           C.Expr [] (C.Eaction (C.Paction C.Pos (C.Action loc () (C.Fence mo))))
@@ -1412,6 +1511,164 @@ let translate_atomic_explicit loc translate_expr stdlib atomic_op args =
         end
     | (*BISECT-IGNORE*) _ ->
         error "Translation.translate_explicit_atomic"
+  end
+
+
+(* Bind actual arguments once before selecting a constant-order operation.
+   The unspecified-order outcome is explicit and separate from C undefined
+   behaviour. Linux retains its existing order domain and translator. *)
+
+let atomic_order_ail loc mo =
+  A.AnnotatedExpression (GenTypes.GenRValueType GenTypes.signedInt_gty) [] loc
+    (A.AilEconst (A.ConstantInteger
+      (A.IConstant (Builtins.encode_memory_order mo) A.Decimal Nothing)))
+
+let atomic_order_undefined loc ub = Caux.mk_pure_e (Caux.mk_undef_pe loc ub)
+
+let translate_atomic_bound_argument loc translate_expr stdlib (ty, argument) =
+  translate_assignment_conversion translate_expr stdlib ty argument
+    >>= fun (raw_oTy, raw, convert) ->
+  E.wrapped_fresh_symbol (C.BTy_loaded raw_oTy) >>= fun raw_wrp ->
+  E.wrapped_fresh_symbol (C.BTy_loaded (force_core_object_type_of_ctype ty))
+    >>= fun value_wrp ->
+  let evaluated = Caux.mk_wseq_e raw_wrp.E.sym_pat raw
+    (Caux.mk_pure_e (convert raw_wrp.E.sym_pe)) in
+  let named = A.AnnotatedExpression (GenTypes.GenRValueType (GenTypes.inject_type ty))
+    [] loc (A.AilEident value_wrp.E.sym_sym) in
+  E.return (value_wrp, named, evaluated)
+
+(* `make_case` receives a specified constant order; the caller supplies the
+   explicit outcome for the abstract unspecified-value case. *)
+let translate_atomic_order_cases loc loaded_order make_case unspecified_order =
+  E.wrapped_fresh_symbol (C.BTy_object C.OTy_integer) >>= fun specified ->
+  let orders = [Cmm.Relaxed; Cmm.Consume; Cmm.Acquire;
+                Cmm.Release; Cmm.Acq_rel; Cmm.Seq_cst] in
+  E.mapM (fun mo -> make_case mo >>= fun body -> E.return (mo, body)) orders
+    >>= fun branches ->
+  let dispatch = List.foldr (fun (mo, body) rest ->
+      Caux.mk_if_e (Caux.mk_op_pe C.OpEq specified.E.sym_pe
+        (Caux.mk_integer_pe (Builtins.encode_memory_order mo)))
+        body rest)
+    (atomic_order_undefined loc Undefined.UB108) branches in
+  E.return (Caux.mk_case_e loaded_order
+    [ (Caux.mk_specified_pat specified.E.sym_pat, dispatch)
+    ; (Caux.mk_unspecified_pat (Caux.mk_empty_pat C.BTy_ctype), unspecified_order) ])
+
+(* Validate a known order even if the other CAS order is unspecified. This
+   prevents an unsupported-order diagnostic from hiding a definite invalid
+   failure order. Non-specified values defer to the explicit gap producer. *)
+let translate_atomic_known_order_guard loc loaded is_failure body =
+  E.wrapped_fresh_symbol (C.BTy_object C.OTy_integer) >>= fun specified ->
+  let integer_order = specified.E.sym_pe in
+  let equal mo = Caux.mk_op_pe C.OpEq integer_order
+    (Caux.mk_integer_pe (Builtins.encode_memory_order mo)) in
+  let orders = [Cmm.Relaxed; Cmm.Consume; Cmm.Acquire;
+                Cmm.Release; Cmm.Acq_rel; Cmm.Seq_cst] in
+  let valid = List.foldr (fun mo rest -> Caux.mk_op_pe C.OpOr (equal mo) rest)
+    (Caux.mk_value_pe C.Vfalse) orders in
+  let with_failure_check =
+    if is_failure then
+      Caux.mk_if_e (Caux.mk_op_pe C.OpOr (equal Cmm.Release) (equal Cmm.Acq_rel))
+        (atomic_order_undefined loc Undefined.UB207_atomic_compare_exchange_memorder) body
+    else body in
+  E.return (Caux.mk_case_e loaded
+    [ (Caux.mk_specified_pat specified.E.sym_pat,
+        Caux.mk_if_e valid with_failure_check (atomic_order_undefined loc Undefined.UB108))
+    ; (Caux.mk_unspecified_pat (Caux.mk_empty_pat C.BTy_ctype), body) ])
+
+(* All parameter conversions and argument alternatives precede the selected
+   call. Synthetic identifiers denote bound values; they do not repeat loads.
+   Only the executed branch diagnoses invalid operation-specific orders. *)
+let translate_atomic_explicit_dispatch loc translate_expr stdlib atomic_op args unspecified_order =
+  let memory_order_ty = Builtins.atomic_memory_order_type in
+  let atomic_argument_object_type object_e = match ctype_of object_e with
+    | Ctype.Ctype _ (Ctype.Pointer _ ty) -> Ctype.unatomic ty
+    | _ -> illTypedAil loc "atomic call target must be a pointer"
+  end in
+  let parameters = match (atomic_op, args) with
+    | (AtomicStoreExplicit, [object_e; desired_e; order_e]) ->
+        [ctype_of object_e; atomic_argument_object_type object_e; memory_order_ty]
+    | (AtomicExchangeExplicit, [object_e; desired_e; order_e]) ->
+        [ctype_of object_e; atomic_argument_object_type object_e; memory_order_ty]
+    | (AtomicLoadExplicit, [object_e; order_e]) ->
+        [ctype_of object_e; memory_order_ty]
+    | (AtomicThreadFence, [order_e]) -> [memory_order_ty]
+    | (AtomicSignalFence, [order_e]) -> [memory_order_ty]
+    | (AtomicFetchExplicit _, [object_e; operand_e; order_e]) ->
+        let operand_ty = match atomic_argument_object_type object_e with
+          | Ctype.Ctype _ (Ctype.Pointer _ _) -> Ctype.ptrdiff_t
+          | ty -> ty
+        end in
+        [ctype_of object_e; operand_ty; memory_order_ty]
+    | (AtomicCompareExchangeStrongExplicit, [object_e; expected_e; desired_e; success_e; failure_e]) ->
+        [ctype_of object_e; ctype_of expected_e; atomic_argument_object_type object_e; memory_order_ty; memory_order_ty]
+    | (AtomicCompareExchangeWeakExplicit, [object_e; expected_e; desired_e; success_e; failure_e]) ->
+        [ctype_of object_e; ctype_of expected_e; atomic_argument_object_type object_e; memory_order_ty; memory_order_ty]
+    | _ -> illTypedAil loc "atomic dispatch call arity or operation"
+  end in
+  E.mapM (translate_atomic_bound_argument loc translate_expr stdlib)
+    (List.zip parameters args) >>= fun bound_args ->
+  let names = List.map (fun (_, named, _) -> named) bound_args in
+  let wrps = List.map (fun (wrp, _, _) -> wrp) bound_args in
+  let evaluated = List.map (fun (_, _, value) -> value) bound_args in
+  let constant order_args =
+    translate_atomic_explicit_constant loc translate_expr stdlib atomic_op order_args in
+  let single operation loaded tail_args =
+    translate_atomic_order_cases loc loaded (fun order ->
+      match Atomic_order.atomic_single_order_error operation order with
+        | Just ub -> E.return (atomic_order_undefined loc ub)
+        | Nothing -> constant (tail_args ++ [atomic_order_ail loc order])
+      end) unspecified_order in
+  let pair success failure tail_args =
+    translate_atomic_order_cases loc success (fun success_order ->
+      translate_atomic_order_cases loc failure (fun failure_order ->
+        match Atomic_order.atomic_compare_orders_error success_order failure_order with
+          | Just ub -> E.return (atomic_order_undefined loc ub)
+          | Nothing -> constant (tail_args ++ [atomic_order_ail loc success_order;
+                                              atomic_order_ail loc failure_order])
+        end) unspecified_order) unspecified_order >>= fun dispatched ->
+    translate_atomic_known_order_guard loc failure true dispatched >>= fun failure_checked ->
+    translate_atomic_known_order_guard loc success false failure_checked in
+  match (atomic_op, names, wrps) with
+    | (AtomicStoreExplicit, [object_e; desired_e; _], [_; _; order]) ->
+        single Atomic_order.Atomic_order_store order.E.sym_pe [object_e; desired_e]
+    | (AtomicExchangeExplicit, [object_e; desired_e; _], [_; _; order]) ->
+        single Atomic_order.Atomic_order_exchange order.E.sym_pe [object_e; desired_e]
+    | (AtomicLoadExplicit, [object_e; _], [_; order]) ->
+        single Atomic_order.Atomic_order_load order.E.sym_pe [object_e]
+    | (AtomicThreadFence, [_], [order]) ->
+        single Atomic_order.Atomic_order_fence order.E.sym_pe []
+    | (AtomicSignalFence, [_], [order]) ->
+        single Atomic_order.Atomic_order_fence order.E.sym_pe []
+    | (AtomicFetchExplicit _, [object_e; operand_e; _], [_; _; order]) ->
+        single Atomic_order.Atomic_order_exchange order.E.sym_pe [object_e; operand_e]
+    | (AtomicCompareExchangeStrongExplicit, [object_e; expected_e; desired_e; _; _], [_; _; _; success; failure]) ->
+        pair success.E.sym_pe failure.E.sym_pe [object_e; expected_e; desired_e]
+    | (AtomicCompareExchangeWeakExplicit, [object_e; expected_e; desired_e; _; _], [_; _; _; success; failure]) ->
+        pair success.E.sym_pe failure.E.sym_pe [object_e; expected_e; desired_e]
+    | _ -> illTypedAil loc "atomic bound-argument shape"
+  end >>= fun body ->
+  let argument_evaluation = match evaluated with
+    | [only_argument] -> only_argument
+    | [] -> illTypedAil loc "atomic dispatch has no arguments"
+    | _ -> Caux.mk_unseq_e evaluated
+  end in
+  E.return (Caux.mk_sseq_e (Caux.mk_tuple_pat (List.map (fun wrp -> wrp.E.sym_pat) wrps))
+    argument_evaluation body)
+
+
+(* SC-G04: the pinned composition supplies no rule for abstract unspecified
+   memory orders. Keep this typed coverage refusal distinct from invalid enums
+   and C undefined behaviour; see the SC semantic-boundary register. *)
+let translate_atomic_explicit loc translate_expr stdlib atomic_op args =
+  match atomic_op with
+    | LinuxStore -> translate_atomic_explicit_constant loc translate_expr stdlib atomic_op args
+    | LinuxLoad -> translate_atomic_explicit_constant loc translate_expr stdlib atomic_op args
+    | LinuxFence -> translate_atomic_explicit_constant loc translate_expr stdlib atomic_op args
+    | LinuxRMW -> translate_atomic_explicit_constant loc translate_expr stdlib atomic_op args
+    | AtomicInit -> translate_atomic_explicit_constant loc translate_expr stdlib atomic_op args
+    | _ -> translate_atomic_explicit_dispatch loc translate_expr stdlib atomic_op args
+        (Caux.mk_pure_e (Caux.mk_model_gap_pe loc C.Model_gap_unspecified_atomic_order))
   end
 
 
@@ -2618,14 +2875,20 @@ end
             A.AnnotatedExpression annot [] loc (A.AilEassign e1 (A.AnnotatedExpression (GenTypes.GenRValueType arith_gty) [] loc (A.AilEbinary e1_rvalue (A.Arithmetic aop) e2)))
           end
       
+      | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBatomic A.AilBAinit))) es ->
+          translate_atomic_explicit loc self stdlib AtomicInit es
       | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBatomic A.AilBAstore))) es ->
           translate_atomic_explicit loc self stdlib AtomicStoreExplicit es
+      | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBatomic (A.AilBAfetch aop)))) es ->
+          translate_atomic_explicit loc self stdlib (AtomicFetchExplicit aop) es
       | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBatomic A.AilBAexchange))) es ->
           translate_atomic_explicit loc self stdlib AtomicExchangeExplicit es
       | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBatomic A.AilBAload))) es ->
           translate_atomic_explicit loc self stdlib AtomicLoadExplicit es
-      | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEident (Symbol.Symbol _ _ (Symbol.SD_Id "atomic_thread_fence")))) es ->
+      | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBatomic A.AilBAthread_fence))) es ->
           translate_atomic_explicit loc self stdlib AtomicThreadFence es
+      | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBatomic A.AilBAsignal_fence))) es ->
+          translate_atomic_explicit loc self stdlib AtomicSignalFence es
       | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBatomic A.AilBAcompare_exchange_strong))) es ->
           translate_atomic_explicit loc self stdlib AtomicCompareExchangeStrongExplicit es
       | A.AilEcall (A.AnnotatedExpression _ _ _ (A.AilEbuiltin (A.AilBatomic A.AilBAcompare_exchange_weak))) es ->

@@ -28,6 +28,7 @@
   (libc/include/stdalign.h as runtime/libc/include/stdalign.h)
   (libc/include/stdarg.h as runtime/libc/include/stdarg.h)
   (libc/include/stdatomic.h as runtime/libc/include/stdatomic.h)
+  (libc/include/__cerb_atomic_flag.h as runtime/libc/include/__cerb_atomic_flag.h)
   (libc/include/stdbool.h as runtime/libc/include/stdbool.h)
   (libc/include/stddef.h as runtime/libc/include/stddef.h)
   (libc/include/stdint.h as runtime/libc/include/stdint.h)

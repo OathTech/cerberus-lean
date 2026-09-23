@@ -301,6 +301,10 @@ partial def ppPexpr_ : generic_pexpr_ Unit sym → Except String String
   | PEimpl ic => do pure s!"(PEimpl {← ppImplConst ic})"
   | PEval v => do pure s!"(PEval {← ppValue v})"
   | PEundef l ub => do pure s!"(PEundef {← ppLoc l} {← ppUB ub})"
+  | PEmodel_gap l Model_gap_unspecified_atomic_order => do
+    pure s!"(PEmodel_gap {← ppLoc l} Model_gap_unspecified_atomic_order)"
+  | PEmodel_gap l Model_gap_pointer_atomic_fetch => do
+    pure s!"(PEmodel_gap {← ppLoc l} Model_gap_pointer_atomic_fetch)"
   | PEctor c pes => do pure s!"(PEctor {← ppCtor c} {← ppList ppPexpr pes})"
   | PEcase pe arms => do
     pure s!"(PEcase {← ppPexpr pe} {← ppList (ppProd ppPattern ppPexpr) arms})"
@@ -379,6 +383,8 @@ def ppAction_ : generic_action_ Unit sym → Except String String
     pure s!"(SeqRMW {ppBool b} {← ppPexpr pe1} {← ppPexpr pe2} {← ppSym s} {← ppPexpr pe3})"
   | AtomicUpdate b pe1 pe2 s pe3 mo => do
     pure s!"(AtomicUpdate {ppBool b} {← ppPexpr pe1} {← ppPexpr pe2} {← ppSym s} {← ppPexpr pe3} {← ppMemOrder mo})"
+  | SignalFence mo => do
+    pure s!"(SignalFence {← ppMemOrder mo})"
   | _ => throw "ppAction_: unhandled action constructor"
 
 def ppAction : generic_action Unit Unit sym → Except String String

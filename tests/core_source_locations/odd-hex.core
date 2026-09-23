@@ -1,0 +1,1 @@
+proc main(): eff unit := source_expr(<<<0>>>, pure(Unit))

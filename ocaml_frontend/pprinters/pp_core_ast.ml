@@ -146,6 +146,8 @@ let dtree_of_pexpr pexpr =
           Dleaf (pp_ctor "PEconstrained" ^^^ !^ (ansi_format [Red] "TODO"))
       | PEundef (loc, ub) ->
           Dleaf (pp_ctor "PEundef" ^^^ !^ (ansi_format [Red] "TODO"))
+      | PEmodel_gap (_, gap) ->
+          Dleaf (pp_ctor "PEmodel_gap" ^^^ !^ (Core.core_model_gap_name gap))
       | PEerror (str, pe) ->
           Dnode ( pp_ctor "PEerror" ^^^ P.dquotes (!^ (ansi_format [Red] str))
                 , [self pe] )
@@ -248,6 +250,8 @@ let pp_action_ctor act =
         if b then "atomic_update_with_forward" else "atomic_update"
     | RMW0 _ ->
         "rmw"
+    | SignalFence _ ->
+        "signal_fence"
     | Fence0 _ ->
         "fence"
     | CompareExchangeStrong _ ->
@@ -305,6 +309,9 @@ let dtree_of_action act =
       | RMW0 _ ->
           ( "rmw"
           , [] )
+      | SignalFence mo ->
+          ( "signal_fence"
+          , [Dleaf (Pp_core.Basic.pp_memory_order mo)] )
       | Fence0 _ ->
           ( "fence"
           , [] )

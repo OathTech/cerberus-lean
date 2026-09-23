@@ -26,7 +26,7 @@
 #                   branch-index-0's trace; see CerbND.runND1.)
 #   LEAN_LIBC     : arc-6 S1 — cerberus-lean --batch --first with the C
 #                   library loaded (--libc <pinned tests/libc/libc.core>
-#                   + the 12 metadata TU cabs-jsons from
+#                   + the 13 metadata TU cabs-jsons from
 #                   libc_prep.sh --jsons; see Main.loadLibc for the
 #                   bodies/metadata split and citations). Differential
 #                   against ORACLE_LIBC: byte-for-byte agreement on the
@@ -204,7 +204,7 @@ lean_nolibc_line=$(cat "$OUTPUT_DIR/lean.out")
     || fail "GATE: LEAN_NOLIBC expected unknown-procedure memset failure (mirroring OCAML_NOLIBC), got: ${lean_nolibc_line:0:120}"
 
 # --- LEAN_LIBC (arc-6 S1) ---------------------------------------------------
-# The pinned libc dump (drift-checked by libc_prep.sh) + the 12 metadata
+# The pinned libc dump (drift-checked by libc_prep.sh) + the 13 metadata
 # TU cabs-jsons, linked BEFORE the user TUs (Main.loadLibc / runPipeline;
 # mirrors main.ml:150-156 core_libraries-first order).
 # (rc captured explicitly — see the prep_out note above; a dead
@@ -213,7 +213,7 @@ libc_jsons_out=$("$PROJECT_ROOT/scripts/libc_prep.sh" --jsons "$OUTPUT_DIR/libcj
     || fail "libc_prep.sh --jsons failed (pin drift or oracle missing)"
 [[ -n "$libc_jsons_out" ]] || fail "libc_prep.sh --jsons emitted no paths"
 mapfile -t LIBC_JSONS <<< "$libc_jsons_out"
-[[ ${#LIBC_JSONS[@]} -eq 12 ]] || fail "expected 12 libc metadata jsons, got ${#LIBC_JSONS[@]}"
+[[ ${#LIBC_JSONS[@]} -eq 13 ]] || fail "expected 13 libc metadata jsons, got ${#LIBC_JSONS[@]}"
 LIBC_ARGS=(--libc "$PROJECT_ROOT/tests/libc/libc.core")
 for j in "${LIBC_JSONS[@]}"; do LIBC_ARGS+=(--libc-tu "$j"); done
 rc=0

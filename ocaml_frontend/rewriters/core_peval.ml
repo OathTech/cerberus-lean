@@ -263,7 +263,8 @@ let rec subst_sym_pexpr2 sym z (Pexpr (annot, bTy, pexpr_)) =
         wrap pexpr_
     | PEimpl _
     | PEval _
-    | PEundef _ ->
+    | PEundef _
+    | PEmodel_gap _ ->
         wrap pexpr_
     | PEconstrained xs ->
         wrap begin
@@ -420,6 +421,8 @@ and subst_sym_action_2 sym z = function
            , subst_sym_pexpr2 sym z pe3, subst_sym_pexpr2 sym z pe4, mo1, mo2 )
   | Fence0 mo ->
       Fence0 mo
+  | SignalFence mo ->
+      SignalFence mo
   | CompareExchangeStrong (pe1, pe2, pe3, pe4, mo1, mo2) ->
       CompareExchangeStrong ( subst_sym_pexpr2 sym z pe1, subst_sym_pexpr2 sym z pe2
                             , subst_sym_pexpr2 sym z pe3, subst_sym_pexpr2 sym z pe4, mo1, mo2 )
@@ -918,7 +921,8 @@ let is_recursive_function file sym : bool =
                   | PEsym _
                   | PEimpl _
                   | PEval _
-                  | PEundef _ ->
+                  | PEundef _
+    | PEmodel_gap _ ->
                       false
                   | PEconstrained _ ->
                       assert false

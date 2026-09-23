@@ -342,6 +342,8 @@ let string_of_constraint_violation = function
       "redefinition of '" ^ string_of_sym sym ^ "'"
   | AssertMacroExpressionScalarType ->
       "assert expression should have scalar type"
+  | AtomicFetchRequiresInteger _ ->
+      "atomic fetch requires an atomic integer object other than _Bool"
   | AtomicAddressArgumentMustBeAtomic (_, ty) ->
       "address argument to atomic operation must be a pointer to _Atomic type ('" ^ string_of_ctype ty ^ "' invalid)"
   | AtomicAddressArgumentMustBePointer (_, gty) ->
@@ -497,6 +499,9 @@ let string_of_core_linking_cause = function
 
 
 let string_of_core_run_cause = function
+  | Model_gap (loc, gap) ->
+      "unsupported model boundary: " ^ Core.core_model_gap_name gap ^
+      " at " ^ Cerb_location.location_to_string loc
   | Illformed_program str ->
       "ill-formed program: `" ^ str ^ "'"
   | Found_empty_stack str ->

@@ -205,7 +205,7 @@ module BmcInline = struct
         end
     | PEval _  -> return pe_
     | PEconstrained _ -> assert false
-    | PEundef _ -> return pe_
+    | PEundef _ | PEmodel_gap _ -> return pe_
     | PEerror _ -> return pe_
     | PEctor (ctor, pes) ->
         mapM inline_pe pes >>= fun inlined_pes ->
@@ -410,6 +410,8 @@ module BmcInline = struct
         failwith "TODO: SeqRMW"
     | AtomicUpdate _ ->
         failwith "TODO: AtomicUpdate is not implemented by BMC"
+    | SignalFence _ ->
+        failwith "SignalFence is not implemented by BMC"
     ) >>= fun inlined_action ->
     return (Paction(p, Action(loc, a, inlined_action)))
 
@@ -795,7 +797,7 @@ module BmcSSA = struct
         return pe_
     | PEval _ -> return pe_
     | PEconstrained _ -> assert false
-    | PEundef _ -> return pe_
+    | PEundef _ | PEmodel_gap _ -> return pe_
     | PEerror _ -> return pe_
     | PEctor (ctor, pelist) ->
         mapM ssa_pe pelist >>= fun ssad_pelist ->
@@ -967,6 +969,8 @@ module BmcSSA = struct
         failwith "TODO: SeqRMW"
     | AtomicUpdate _ ->
         failwith "TODO: AtomicUpdate is not implemented by BMC"
+    | SignalFence _ ->
+        failwith "SignalFence is not implemented by BMC"
     ) >>= fun ssad_action ->
     return (Paction(p, Action(loc, a, ssad_action)))
 
@@ -1293,6 +1297,8 @@ module BmcZ3 = struct
        get_file >>= fun file ->
        return (value_to_z3 cval file)
     | PEconstrained _ -> assert false
+    | PEmodel_gap _ ->
+        failwith "PEmodel_gap is not implemented by BMC"
     | PEundef _ ->
         get_file >>= fun file ->
         let sort = cbt_to_z3 bTy file in
@@ -2266,6 +2272,8 @@ module BmcBind = struct
         return []
     | PEconstrained _ ->
         assert false
+    | PEmodel_gap _ ->
+        failwith "PEmodel_gap is not implemented by BMC"
     | PEundef _ ->
         return []
     | PEerror _ ->
@@ -2452,6 +2460,8 @@ module BmcBind = struct
         failwith "TODO: SeqRMW"
     | AtomicUpdate _ ->
         failwith "TODO: AtomicUpdate is not implemented by BMC"
+    | SignalFence _ ->
+        failwith "SignalFence is not implemented by BMC"
     )
 
   let rec bind_e (Expr(annots, expr_) as expr: unit typed_expr)
@@ -2669,6 +2679,8 @@ module BmcVC = struct
        vcs_pe inline_pe
     | PEval _           -> return []
     | PEconstrained _   -> assert false
+    | PEmodel_gap _ ->
+        failwith "PEmodel_gap is not implemented by BMC"
     | PEundef (loc, ub) -> return [(mk_false, VcDebugUndef (loc,ub))]
     | PEerror (str, _)  -> return [(mk_false, VcDebugStr (string_of_int uid ^ "_" ^ str))]
     | PEctor (ctor, pelist) ->
@@ -2852,6 +2864,8 @@ module BmcVC = struct
         failwith "TODO: SeqRMW"
     | AtomicUpdate _ ->
         failwith "TODO: AtomicUpdate is not implemented by BMC"
+    | SignalFence _ ->
+        failwith "SignalFence is not implemented by BMC"
 
   let rec vcs_e (Expr(annots, expr_) as expr)
                    : (bmc_vc list) eff =
@@ -5153,6 +5167,8 @@ module BmcConcActions = struct
     | PEval cval ->
         return (Pset.empty Stdlib.compare)
     | PEconstrained _ -> assert false
+    | PEmodel_gap _ ->
+        failwith "PEmodel_gap is not implemented by BMC"
     | PEundef _ ->
         return (Pset.empty Stdlib.compare)
     | PEerror _ ->

@@ -1,0 +1,1 @@
+proc main(): eff unit := source_expr(<<<5b5b5d2c6e756c6c5d>>>, signal_fence(seq_cst))

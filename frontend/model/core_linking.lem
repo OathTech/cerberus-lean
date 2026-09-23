@@ -81,6 +81,8 @@ let rec free_pexpr acc (Pexpr _ _ pe) =
       List.foldl (fun acc (_, pe) -> free_pexpr acc pe) acc cpes
   | PEundef _ _ ->
       acc
+  | PEmodel_gap _ _ ->
+      acc
   | PEerror _ pe ->
       free_pexpr acc pe
   | PEctor _ pes ->
@@ -160,6 +162,8 @@ let free_action acc (Action _ _ act_) =
   | RMW pe1 pe2 pe3 pe4 _ _ ->
       free_pexpr (free_pexpr (free_pexpr (free_pexpr acc pe1) pe2) pe3) pe4
   | Fence _ ->
+      acc
+  | SignalFence _ ->
       acc
  | CompareExchangeStrong _ _ _ _ _ _ ->
       error "free_paction: CompareExchangeStrong"

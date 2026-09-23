@@ -5,7 +5,7 @@ This file records evidence and next actions; it does not replace the charter.
 
 ## Current status
 
-**2026-09-22: the user resolved the mixed-size decision: retain pinned Cerberus/Cmm and fail closed on evidenced unresolved semantic boundaries in general, documenting every case. The boundary register records three evidenced gaps and separates unfinished work and other diagnostics. Resumable helper services, typed SC faults and the external import example passed all 39 Tier A/B lanes; the 864-row three-engine report retained the preceding checkpoint's exact classifications and decoded results, including its 40 Lean discrepancy IDs. The source-graph slice subsequently passed the same full/three-engine checks, with all classifications and decoded tokens unchanged. Unconditional atomic updates, exchange, atomic operators and qualifier repairs now also pass full/three-engine validation, with the same classifications and decoded tokens. Public SC verdict checking remains incomplete.**
+**2026-09-22: the user resolved the mixed-size decision: retain pinned Cerberus/Cmm and fail closed on evidenced unresolved semantic boundaries in general, documenting every case. The boundary register records five evidenced gaps (the two latest guards still need validation) and separates unfinished work and other diagnostics. Resumable helper services, typed SC faults and the external import example passed all 39 Tier A/B lanes; the 864-row three-engine report retained the preceding checkpoint's exact classifications and decoded results, including its 40 Lean discrepancy IDs. The source-graph slice subsequently passed the same full/three-engine checks, with all classifications and decoded tokens unchanged. Unconditional atomic updates, exchange, atomic operators and qualifier repairs now also pass full/three-engine validation, with the same classifications and decoded tokens. Public SC verdict checking remains incomplete.**
 Branch `arc/sc-prototype`, worktree
 `/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype`.
 Implementation base: `5407597d9eeba0259d65b728e86a860ad4614ab3`.
@@ -665,3 +665,73 @@ remain unbuilt/unpromoted at this checkpoint. They need review and validation;
 they are not part of this slice's support claim. Public race/consistency
 checking, precise boundary guards and the full operational interface remain
 mandatory charter work. No customer or pin change was made.
+
+
+## Atomic interface follow-up underway
+
+After efb39628c's validated checkpoint, the combined init/flag/fetch/signal/order
+implementation was promoted from its isolated draft. Both Lem targets generated and native/Lean compilation passes. Eighteen paired
+Core groups, seven kernel laws, 134 native C outcome controls, seven additional
+native flag-function controls and six paired C sequencing controls have passed
+their stated checks. Parser/plants, broader paired C work and full integration
+remain outstanding. The
+[current review](2026-09-22_sc-atomic-surface-review.md) records exact scope,
+SC-G04/05, argument conversion repair, public fence wrappers and the unresolved
+lock-free preprocessing/query work. No whole-SC completion claim is made.
+
+The public fence path now uses actual C wrapper calls: a retained trace exposed
+missing function-call ordering in the draft's direct-name rewrite. Fence and
+flag wrappers use order-parameter types compatible with the pinned public enum,
+avoiding the native serialized-libc enum-registration failure. The public flag
+functions remain callable with macro suppression and through pointers. The
+six-body libc fixture addition was reviewed against the original: all existing
+bodies remain unchanged. See the interface review for current evidence limits.
+
+### Atomic interfaces and libc location transport — validation preparation
+
+The runtime-order/init/flag/integer-fetch/signal-fence work now has eighteen
+paired Core groups, seven kernel laws, actual C controls, prefix assertions and
+compiled sensitivity plants. Two genuine libc diagnostic-location discrepancies
+were repaired through source-bearing Core transport (SC-P07), with exact paired
+C reruns and 322 parser checks. Details and retained local evidence are in the
+[interface review](2026-09-22_sc-atomic-surface-review.md). This is not completed
+SC coverage. Prepare a frozen full/three-engine checkpoint for this substantial
+interface/transport slice, then continue lock-free configuration/query handling
+and the remaining location/stream/fault/correspondence obligations.
+
+The lock-free follow-up found C17 DR458 (preprocessor constant expressions) and
+DR465 (type-consistent queries, including null pointers). Therefore a query must
+not read the object or reject a null pointer. The pinned Cerberus still supplies
+neither lock-free configuration values nor query implementation. No invented
+all-lock-free policy or new lock-free guard has been installed. The existing
+reference probe showing silent zero in `#if` remains an open defect, not an
+accepted configuration. Sources: [DR458](https://www9.open-std.org/JTC1/SC22/WG14/issues/c11c17/issue0458.html),
+[DR465](https://www9.open-std.org/JTC1/SC22/WG14/issues/c11c17/issue0465.html).
+
+## Atomic interfaces and location transport validated
+
+2026-09-23. The frozen third full campaign passes all 39 Tier A+B commands
+with unchanged source and no artifact issue. The mandatory 864-case three-engine
+report passes with exactly the previous case identities, classifications,
+projected observations and 40 discrepancy/undecodable IDs. The failed first
+two full attempts and focused metadata rerun remain retained, with original
+statuses and channels. [Verified archives and reports](2026-09-21_sc-prototype-evidence/atomic-surface/README.md)
+include component controls, failed setup/builds, five plants, seven laws,
+eighteen paired Core groups, actual C inputs and source-location repairs.
+No public SC verdict or completed-charter claim follows from this checkpoint.
+
+The [boundary register](2026-09-22_sc-boundary-register.md) now records SC-G06
+(missing lock-free target configuration), SC-G07 (C atomic sequencing versus
+the pinned Cmm function-call assumption), and SC-G08 (missing protection of
+shared library internals). [Raw follow-up evidence](2026-09-21_sc-prototype-evidence/boundary-followup/README.md)
+includes five atomic-ordering C controls and actual parallel/ordered
+`at_quick_exit` registrations. Four open/close probes timed out without journals
+and remain incomplete. No dedicated guard for these three cases is installed;
+the numeric lock-free preprocessing fallback remains an open defect.
+
+Implementation continues on the logical-value/reference adapter and varargs
+metadata conflicts. Ignored drafts have native generation/control evidence;
+their Lean laws and actual driver integration remain unfinished. They are not
+part of this validated slice. Available-guidance atomic work, including
+`kill_dependency` and remaining public aliases, remains required. Customer and
+dependency pins are unchanged; the customer repository remains read-only.

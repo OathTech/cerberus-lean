@@ -206,7 +206,7 @@ echo "[libc]"
 libc_jsons_out=$("$PROJECT_ROOT/scripts/libc_prep.sh" --jsons "$OUTPUT_DIR/libcjson") \
     || fail "libc_prep.sh --jsons failed (pin drift or oracle missing)"
 mapfile -t LIBC_JSONS <<< "$libc_jsons_out"
-[[ ${#LIBC_JSONS[@]} -eq 12 ]] || fail "expected 12 libc metadata jsons, got ${#LIBC_JSONS[@]}"
+[[ ${#LIBC_JSONS[@]} -eq 13 ]] || fail "expected 13 libc metadata jsons, got ${#LIBC_JSONS[@]}"
 LIBC_ARGS=(--libc "$PROJECT_ROOT/tests/libc/libc.core")
 for j in "${LIBC_JSONS[@]}"; do LIBC_ARGS+=(--libc-tu "$j"); done
 for c in "$CORPUS"/libc/*.c; do

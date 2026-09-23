@@ -685,6 +685,8 @@ let rec remove_conv_int_pexpr (Pexpr annot bTy _pe) =
         end
     | PEundef _ _ ->
         _pe
+    | PEmodel_gap _ _ ->
+        _pe
     | PEerror str pe ->
         PEerror str (remove_conv_int_pexpr pe)
     | PEctor ctor pes ->
@@ -837,6 +839,8 @@ and remove_conv_int_action_ act_ =
         RMW (remove_conv_int_pexpr pe1) (remove_conv_int_pexpr pe2) (remove_conv_int_pexpr pe3) (remove_conv_int_pexpr pe4) mo1 mo2
     | Fence mo ->
         Fence mo
+    | SignalFence mo ->
+        SignalFence mo
     | CompareExchangeStrong pe1 pe2 pe3 pe4 mo1 mo2 ->
         CompareExchangeStrong (remove_conv_int_pexpr pe1) (remove_conv_int_pexpr pe2) (remove_conv_int_pexpr pe3) (remove_conv_int_pexpr pe4) mo1 mo2
     | CompareExchangeWeak pe1 pe2 pe3 pe4 mo1 mo2 ->
@@ -1022,6 +1026,8 @@ let rec isAlwaysDefined (Pexpr _ _ pexpr_) =
     | PEconstrained xs ->
         List.all (fun (_, pe) -> isAlwaysDefined pe) xs
     | PEundef _ _ ->
+        false
+    | PEmodel_gap _ _ ->
         false
     | PEerror _ _ ->
         false
@@ -1339,6 +1345,8 @@ let rec simpl_case_pexpr (Pexpr annot bTy pexpr_ as pexpr) =
     | PEconstrained _ ->
         pexpr
     | PEundef _ _ ->
+        pexpr
+    | PEmodel_gap _ _ ->
         pexpr
     | PEerror _ _ ->
         pexpr

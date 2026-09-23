@@ -134,6 +134,8 @@ type action_request2 'a =
       * (Mem.mem_state -> Mem.mem_value -> core_runM Mem.mem_value)
       * (completion_receipt -> Mem.footprint -> Mem.mem_value -> Mem.mem_value -> 'a)
 
+  | SignalFenceRequest2 of Cmm.memory_order * (completion_receipt -> 'a)
+
 type runstate_step_kind =
   | RSK_eval of string
   | RSK_tau of string * Core_run.core_tau_step_kind
@@ -869,6 +871,10 @@ let step_action_with with_sc e_annots full_eval_pexpr is_excluded (Action loc ac
         end
     | RMW _ _ _ _ _ _ ->
         error "TODO[Core_reduction]: RMW"
+    | SignalFence order ->
+        if order = Cmm.NA then ACTION_ILLTYPED "SignalFence requires an atomic memory order"
+        else ACTION_REQUEST "SignalFenceRequest" loc
+          (SignalFenceRequest2 order (fun _ -> Caux.mk_value_e Vunit))
     | Fence order ->
         if with_sc then
           ACTION_REQUEST "FenceRequest" loc
@@ -1308,6 +1314,9 @@ let step_ctx_with sc_context mem_st file core_extern current_tid (parent_tid_opt
                     | FenceRequest2 order mk_expr' ->
                         FenceRequest2 order (fun receipt ->
                           wrap_completed receipt (mk_expr' receipt))
+                    | SignalFenceRequest2 order mk_expr' ->
+                        SignalFenceRequest2 order (fun receipt ->
+                          wrap_completed receipt (mk_expr' receipt))
                     | SeqRMWWriteRequest2 _ _ _ _ _ _ ->
                         error "Core action produced an internal sequential RMW phase"
                     | AtomicUpdateRequest2 order ty ptr update complete ->
@@ -1448,6 +1457,8 @@ let step_ctx_with sc_context mem_st file core_extern current_tid (parent_tid_opt
                   end
                 end
               
+          | Eaction (Paction Neg (Action _ _ (SignalFence _))) ->
+              Step_error2 "SignalFence requires positive polarity"
           | Eaction (Paction p act) ->
               let Action loc _ _ = act in (* DEBUG *)
               match p with
