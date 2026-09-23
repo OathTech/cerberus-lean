@@ -2339,4 +2339,61 @@ are copied into `docs/2026-09-22_match-pattern-arity-closure-evidence/round3-34a
 and certification lines appended here (commit C). Expected: `Source unchanged: True`, 39/39, pristine 835/28/7/2, chvalid 4,
 gcc-oracle 0 regressions / 0 improvements, 15 unit exes; any movement anywhere = STOP.
 
-ROUND3_BATTERY_PLACEHOLDER
+Run: `launch Wed Sep 23 02:35:28 AM UTC 2026`; `release.py exit=0 end Wed Sep 23 03:58:20 AM UTC 2026`. Every lane, verbatim:
+
+    PASSED A1 (225.3s)
+    PASSED A2 (34.0s)
+    PASSED A3 (52.6s)
+    PASSED A4 (23.2s)
+    PASSED A4b (24.7s)
+    PASSED A4c (3.2s)
+    PASSED A5 (23.8s)
+    PASSED A6 (2.3s)
+    PASSED A6b (4.6s)
+    PASSED A7 (15.5s)
+    PASSED A8 (11.2s)
+    PASSED A9 (19.0s)
+    PASSED A10 (18.3s)
+    PASSED A11 (60.0s)
+    PASSED A12.1 (5.1s)
+    PASSED A12.2 (4.6s)
+    PASSED B1 (626.8s)
+    PASSED B2 (25.2s)
+    PASSED B3 (15.5s)
+    PASSED B4 (47.0s)
+    PASSED B5 (72.3s)
+    PASSED B6.1 (4.8s)
+    PASSED B6.2 (2.3s)
+    PASSED B6.3 (9.4s)
+    PASSED B6.4 (8.8s)
+    PASSED B6.5 (9.3s)
+    PASSED B6.6 (9.9s)
+    PASSED B6.7 (8.5s)
+    PASSED B7 (1327.8s)
+    PASSED B8.1 (13.4s)
+    PASSED B8.2 (249.9s)
+    PASSED B8.3 (6.3s)
+    PASSED B8.4 (16.0s)
+    PASSED B9 (1409.5s)
+    PASSED B10.1 (119.4s)
+    PASSED B10.2 (1.8s)
+    PASSED B11.1 (15.4s)
+    PASSED B11.2 (7.1s)
+    PASSED B12 (435.9s)
+
+A1's unit total, B10.1/B10.2/B12 (paths elided) and B7's regression lines, verbatim:
+
+    Total: 15 passed, 0 failed
+    Independent oracle: passed; {'semantic_agreement': 835, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}
+    Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}
+    Independent oracle: passed; {'semantic_agreement': 4}
+    Baseline check: 0 regression(s), 0 improvement(s)
+
+The certification lines, verbatim:
+
+    full: passed; 39/39 selected commands completed successfully.
+    Source unchanged: True. Complete tier selection: True.
+    Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+
+ZERO movement (S2 not triggered): pristine 835/28/7/2 and chvalid 4 = the mainline's counts; every baseline lane at its
+baseline; `report.json` `source_unchanged: true` on the clean committed head `7acc7326b` (commit B).
