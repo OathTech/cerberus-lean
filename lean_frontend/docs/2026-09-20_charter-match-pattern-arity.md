@@ -69,3 +69,76 @@ The report to the orchestrator: the head hash; the two lem hunks verbatim; T1–
   both unit registrations, recompute the typing module's content/delta pins from the COMBINED source
   (never pick either branch's hash) — not in this round.
 - **§2 D3/§4 "Total: 14 passed"**: 13 on this branch (the 14th exe is the enum arc's).
+
+## Addendum A3 — closure round 3 (2026-09-23): argument-list arity
+
+**Provenance.**
+- [USER 2026-09-23], verbatim: *"Yes, we will roll R3 / R4 into this as a closure. The digest fix landed on main"*.
+- [USER via auditor, 2026-09-22], verbatim: *"if we find defects which could reasonably get rolled into this, we can propose them as fixes"*.
+- [AGENT 2026-09-23, orchestrator]: scope, fence, acceptance and stop conditions below; the second-round audit is
+  `docs/2026-09-22_match-pattern-arity-rereview.md` (commit `3e8f7c4bd`, R3/R4/N3).
+- The standing ban, verbatim: [USER 2026-09-08] *"we should \*NOT\* be building anything new out-of-policy"* — no new
+  gates, no new `lean_exe` (extend `match-pattern-arity-test`), no general type-soundness theorem, no new
+  enumeration/literal/semantics-evaluation program proofs; [USER 2026-09-04] *"we don't change the lem structure for
+  ocaml"*.
+
+**Scope (verified by the orchestrator from source at `b85f5bc83`).**
+- **R3** — the seven unchecked argument-list zips in `frontend/model/core_typing.lem`: `PEcall` inference `:766` and
+  checking `:1174`; `Ememop` `:1696`; `Eccall` fixed `:1752` and variadic `:1746`; `Eproc` `:1780`; `Erun` `:1855`. Guard
+  the count BEFORE zipping, both directions (shortage AND surplus rejected), through the EXISTING structured failure —
+  prefer `MismatchExpected <syntax-info> <expected bTy or the ctor-name convention used at :190> "<found>"` exactly as
+  the R1 `Ctuple` guard does; do NOT add a `core_typing_cause` constructor (an OCaml-visible type) — if one seems
+  unavoidable, STOP and ask. Fitting inputs must preserve every argument (pin the typed `--typecheck-core --pp=core`
+  dump of each fitting control byte-identically to the untyped structure, or an equivalent structural count assertion —
+  a test must not be able to pass after silently dropping an operand). Variadic `Eccall` (`:1740-1750`): split the
+  trailing variadic bundle first, require exactly |params| fixed actuals in the prefix, zip that prefix, typecheck the
+  bundle separately — never a naive length check on the complete list. Name `Ememop` explicitly in the residual
+  inventory / record.
+- **R4** — `Erun` argument-count guard in BOTH execution engines before evaluation/substitution:
+  `frontend/model/core_reduction.lem:1468-1473` (the driver's engine, the `E.foldlM … (List.zip sym_bTys pes)`) and
+  `frontend/model/core_run.lem:1563-1565` (the `List.foldl … unsafe_subst_sym_expr … (List.zip sym_bTys pes)`). Report
+  through the existing `Illformed_program` channel in exactly the shape of the let-form repair at the same file's sites
+  (`core_reduction`: `TAU_WITH_RUNSTATE "Erun" (SEU.runEU (EU.fail (Errors.Illformed_program "Erun: …")))` pattern as at
+  `:362`/`:418`; `core_run`: `SEU.runE (Exception.fail (Illformed_program "Erun: …"))` pattern as at `:885`/`:1463`) —
+  mirror the existing sites, cite them. Both directions: a surplus that carries `error(...)` must now fail (the surplus is
+  never evaluated today), a shortage that would silently keep the old binding must now fail. `one_step` is not a
+  fuel-measured worker (only `one_step_unseq_aux`/`get_ctx`/`has_ccall` carry `fuel_measure` declares), so no proof
+  statement should move; if any measure-proof STATEMENT changes, STOP and report (body case-splits like round 1 are fine).
+- **N3** — record §7 (`2026-09-20_match-pattern-arity-record.md:274-275`: "a `.core` input with a mismatched arity now
+  fails Core typing on both fork engines") → replace with the exact enforced set after round 3 (tuple
+  patterns/expressions/`Eunseq`/`Epar` + the seven argument-list arms + the two `Erun` runtime guards); correct the stale
+  proof comment `Core_aux_lemMeasureProofs.lean:467-471` (`subst_pattern`'s tuple arms now decline via `match_pattern` →
+  `Nothing`; the loud leaf is in `subst_pattern_val`/`unsafe_subst_pattern`/`update_env_aux`); convert TODO.md deferral
+  (iv) (`:360-372`) into the implemented account incl. R4 (which the deferral did not list).
+
+**Tests** (extend the existing exe, no new exe): (a) `test/Unit/MatchPatternArityTest.lean` — the generated
+`Core_typing` arms on 0..3-actual grids for a 1-formal fun/proc/continuation/memop and fixed ccall, plus a variadic ccall
+fit control; both engines' `Erun` step on surplus / shortage / fit (fit preserves values, e.g. the audit's `run
+loop(1,20)` → 21). (b) the audit's retained Core-text witnesses as CLI regression rows recorded VERBATIM in the record +
+evidence dir on the fork build in default, `--rewrite`, `--typecheck-core` and both: `fun-error.core`, `proc-error.core`,
+`memop-error.core` (pre-fix: `Error{msg:"surplus"}` exit 1 default vs `Specified(3)`/`Specified(1)` exit 0 typed),
+`run-fixed-error.core` (pre-fix `Specified(2)`), `run-short-stale.core` (pre-fix `Specified(11)`), and fitting controls
+(`run loop(1,20)` → `Specified(21)` unchanged). Sources: the audit evidence dir (`core/`, `adjacent-core/`). Post-fix
+expected: typed modes reject with the structured typing failure; default/`--rewrite` report `Illformed_program` for
+run-arity, and the fun/proc/memop surplus-error cases still `Error` (unchanged, since default mode does not typecheck) —
+record what is OBSERVED, verbatim.
+
+**Registers/pins.** No new pure failure leaf is expected (`E.fail`/`Exception.fail` are monadic) — confirm with
+`check_failure_reach`, do not assume; if a new pure leaf appears necessary, STOP and ask. Fork-drift: single-row re-pins
+for `core_typing.lem`, `core_run.lem`, `core_reduction.lem` source-content + their generated deltas, one dated NOTE.
+Tray: extend `upstream-tray/45-core-match-pattern-truncating-zip-arity.md` with an "argument lists" section (the seven
+typing zips + the `Erun` runtime truncation in both engines, witnesses verbatim, pristine-vs-fork rows) — same class as
+the tuple case (pristine differs only on malformed hand-written Core; not reachable from elaborated C).
+
+**File fence.** `frontend/model/{core_typing,core_run,core_reduction}.lem`; `lean_frontend/test/Unit/MatchPatternArityTest.lean`;
+`lean_frontend/Core_aux_lemMeasureProofs.lean` (comment only, unless a proof BODY needs a split); the charter, record,
+tray 45, TODO.md; `scripts/fork_drift_manifest.txt` (single rows); `scripts/failure_reach_register.txt` only if the gate
+demands (then STOP first); the closure-evidence dir; `lakefile.toml`/`test_unit.sh` only for the rebase. Anything else =
+stop and ask.
+
+**Gates.** FAST-GATE at each commit: `make prelude-src lean-prelude-src`, `build_cerberus`, `build_lean` (via
+`scripts/ce`), `test_unit.sh` (row 1, 15 exes), the Core probes above. Then ONE frozen battery on the final head
+(records/evidence first, tree frozen; expected `Source unchanged: True`, pristine 835/28/7/2, gcc-oracle 0 regressions /
+0 improvements, 15 unit exes; evidence under `2026-09-22_match-pattern-arity-closure-evidence/round3-34ac493f9/`); any
+corpus movement = STOP. Build coordination: no `lake`/`dune`/`make prelude-src`/lane script until the orchestrator's
+mainline `34ac493f9` re-verification printed `=== ALL DONE`; one heavy job at a time; ~45 min per pass = stop and report.
