@@ -511,3 +511,106 @@ coming back green** (row 1 with `run-digest-test` relinked, failure-reach 239, f
 §15.7 are not accepted as evidence here). Commit D closes F1–F4 exactly as proposed, adds the four omitted witnesses with
 committed corroboration for their pre-fix behaviour, and touches no product code, pin or manifest. Merge authority rests
 with the operator.
+
+---
+
+## Post-marker verification (orchestrator message (b), 2026-09-23) — gate log of `e5532b346` and my own probes
+
+[AGENT — third pass. The orchestrator's independent re-verification of `e5532b346` finished and the worker worktree was
+released for read-only probes. I quote its log and ran probes; I did NOT re-run any gate or build.]
+
+**Gate log** `worktrees/cerberus-lean-fix/match-pattern-arity/.tmp/orch/round3-e5532b346-gates.log` (167,513 bytes, mtime
+2026-09-23 06:18:52 UTC), verdict lines verbatim (line numbers are the log's; `PLANT` sub-lines omitted):
+
+    1:=== ORCH ROUND3 REGEN+GATES 2026-09-23T06:12:39Z head=e5532b346 branch=fix/match-pattern-arity lem=Lem 38f87d5 ===
+    23:libc_prep: OK (content hash verified: pin + regenerated dump == d93b99cd55dae4b23071262a24d235c69489c8e41011554194126ecc81555a0a, 4188542 bytes)
+    596:Total: 15 passed, 0 failed
+    900:check_fuel_forms: forms partition OK (62 MEASURED + 13 ABSORBING + 0 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+    914:check_failure_reach: OK (239 pure failure sites = the 239 register rows exactly (237 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVA…
+    939:check_fork_drift: OK — layer 1: 84 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 29 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 38f87d5 = lem -v)
+    955:=== scripts/test_exec.sh --check-baseline ===
+    1115:=== EXIT=0 ===
+    1116:=== scripts/test_multi_tu.sh ===
+    1136:=== EXIT=0 ===
+    1137:=== scripts/test_multi_tu.sh --failure-class-projection tests/multi_tu_tray ===
+    1162:=== EXIT=0 ===
+    1163:=== scripts/test_address_space.sh ===
+    1197:=== EXIT=0 ===
+    1198:=== scripts/test_immaculate.sh ===
+    1297:=== EXIT=0 ===
+    1298:=== scripts/test_libc_exec.sh ===
+    1326:=== EXIT=0 ===
+    1327:=== WITNESSES (fork engine, 4 modes, timeout 60 each) ===
+    2381:=== ALL DONE (rc=0) 2026-09-23T06:18:52Z ===
+
+(The earlier `round3-fda652269-gates.log`'s `=== ALL DONE (rc=2)` was an ABORT marker per the orchestrator — its run waited
+120 min for another agent's batteries and exited without gating; it is not cited as verification anywhere in this review.)
+
+**F1, independent evidence:** `lean_frontend/.lake/build/bin/run-digest-test.rsp` in that worktree contains the token
+`native/md5.o` — count `1` (my `tr`/`grep -c -x` over the response file). With the log's `Total: 15 passed, 0 failed` at
+`e5532b346`, F1 is CLOSED on independent evidence, not on the worker's claim.
+
+**The binary I probed is the gated one:** `sha256sum _build/default/backend/driver/main.exe` →
+`333890f92edf0e7c53a82349bce2c852e992db5d6a93a8d93e7ec367be9e8a14`; `driver_fresh.oracle.sha256` → `commit e5532b346…` /
+`bin 333890f92edf0e7c53a82349bce2c852e992db5d6a93a8d93e7ec367be9e8a14`. Worker HEAD `e5532b346`, `git status --short` empty
+before my probes.
+
+**Probes** (cwd = the worker worktree, `NO_COLOR=1 TERM=dumb timeout 60 _build/default/backend/driver/main.exe
+--runtime=_build/install/default --nolibc --exec --batch --mode=exhaustive [--rewrite] [--typecheck-core] <file>`; four files ×
+four modes = 16 cells; `Time spent` lines dropped; nothing written there). Every cell EQUALS the log's `=== WITNESSES` row
+for the same file/mode AND the record's §15.4 (`fun-error`, `run-short-stale`, `run-fixed-fit`) / §15.1b (`run-fixed-short`)
+rows, byte-for-byte on the message text and `rc`:
+
+    === PROBE core/run-fixed-short.core [default] rc=1
+    Error {msg: "ill-formed program: `Erun: the argument list does not fit the continuation's parameters'"}
+    === PROBE core/run-fixed-short.core [--rewrite] rc=1
+    Error {msg: "ill-formed program: `Erun: the argument list does not fit the continuation's parameters'"}
+    === PROBE core/run-fixed-short.core [--typecheck-core] rc=1
+    .tmp/mpa/r3/core/run-fixed-short.core:3:19: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer)' was expected
+    === PROBE core/run-fixed-short.core [--typecheck-core --rewrite] rc=1
+    .tmp/mpa/r3/core/run-fixed-short.core:3:19: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer)' was expected
+    === PROBE core/fun-error.core [default] rc=1
+    Error {msg: "surplus"}
+    === PROBE core/fun-error.core [--rewrite] rc=1
+    Error {msg: "surplus"}
+    === PROBE core/fun-error.core [--typecheck-core] rc=1
+    .tmp/mpa/r3/core/fun-error.core:3:18: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer,integer)' was expected
+    === PROBE core/fun-error.core [--typecheck-core --rewrite] rc=1
+    .tmp/mpa/r3/core/fun-error.core:3:18: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer,integer)' was expected
+    === PROBE adjacent-core/run-short-stale.core [default] rc=1
+    Error {msg: "ill-formed program: `Erun: the argument list does not fit the continuation's parameters'"}
+    === PROBE adjacent-core/run-short-stale.core [--rewrite] rc=1
+    Error {msg: "ill-formed program: `Erun: the argument list does not fit the continuation's parameters'"}
+    === PROBE adjacent-core/run-short-stale.core [--typecheck-core] rc=1
+    .tmp/mpa/r3/adjacent-core/run-short-stale.core:2:82: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer,integer)' was expected
+    === PROBE adjacent-core/run-short-stale.core [--typecheck-core --rewrite] rc=1
+    .tmp/mpa/r3/adjacent-core/run-short-stale.core:2:82: error: this expression is of type 'argument list of a different arity' but an expression of type '(integer,integer)' was expected
+    === PROBE core/run-fixed-fit.core [default] rc=0
+    Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+    === PROBE core/run-fixed-fit.core [--rewrite] rc=0
+    Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+    === PROBE core/run-fixed-fit.core [--typecheck-core] rc=0
+    Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+    === PROBE core/run-fixed-fit.core [--typecheck-core --rewrite] rc=0
+    Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+
+(the typed-mode rows also print the source line and a `^~~~` caret line, identical to the log's; omitted above.)
+`run-fixed-short.core` — pre-fix non-terminating on fork and pristine (audit tarball: exit 124 at a 3 s timeout in all four
+executing modes) — now TERMINATES with `Illformed_program` in 0.02 s in the untyped modes and is rejected by typing at `:3:19`.
+
+**Instrument error, disclosed [AGENT]:** my first combined-mode pass passed `--typecheck-core --rewrite` as ONE word (zsh
+does not word-split an unquoted variable), producing `cerberus: unknown option '--typecheck-core --rewrite'` with rc=124 — the
+CLI's usage-error exit, which happens to equal `timeout`'s code and is NOT a timeout. Re-run with the flags split; the four
+combined-mode cells above are from the corrected run. The other twelve cells were unaffected. This is the same slip §15.1b
+discloses for the worker's first run; the record's rows were unaffected by mine.
+
+## FINAL VERDICT
+
+[AGENT] **Merge-ready as is at `e5532b346`.** The condition stated in the commit-D verdict — the orchestrator's independent
+re-verification of that head — is discharged by the log quoted above (`=== ALL DONE (rc=0)`, `Total: 15 passed, 0 failed`,
+failure-reach 239, fork-drift 84/29, libc pin unchanged, six lanes `EXIT=0`, every witness in four modes), F1 is closed on
+independent evidence (`.rsp` contains `native/md5.o`), and my own 16 probe cells on the stamped binary reproduce the record's
+rows exactly. No P1/P2 remains; N5/N6 are cosmetic. Merge authority rests with the operator; `git push` is a separate,
+operator-gated action.
+
+**Worker worktree after my probes:** HEAD `e5532b3468c2a89d87070cb53d5b01764ad5e8b5`, `git status --short` line count `0` (nothing written by the probes).
