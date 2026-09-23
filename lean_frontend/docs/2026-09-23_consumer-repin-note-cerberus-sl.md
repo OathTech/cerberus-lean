@@ -95,3 +95,8 @@ agreements, chvalid 4, gcc-oracle 0 regressions / 0 improvements, frozen battery
 None of these blocks the re-pin. lem-lean DESIGN.md follow-up sentences (the `reader_seed` extent rule); the
 `check_lakefile_roots.sh` locale note; retiring the finished worktrees. Questions to the orchestrator via the operator,
 as before.
+
+---
+Landed on `mdd/cerberus-lean` by docs-only ff on [USER 2026-09-23] "Go ahead with both" (this note's ff + the
+worktree retirement); the operator waived a separate audit for this one-file note, which quotes committed records
+and the orchestrator's own verified gate tails (record §16).
