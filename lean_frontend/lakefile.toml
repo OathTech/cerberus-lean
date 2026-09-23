@@ -138,6 +138,7 @@ roots = [
   "Nd_observe", "Nd_observe_auxiliary", "CerbNDObserveProofs",
   "Sc_order", "Sc_order_auxiliary", "Sc_order_lemMeasureProofs",
   "Sc_representation", "Sc_representation_auxiliary", "CerbSCRepresentation",
+  "Sc_spawn", "Sc_spawn_auxiliary", "CerbSCSpawn",
   "Sc_call_context", "Sc_call_context_auxiliary",
   "Sc_call_scope", "Sc_call_scope_auxiliary",
   "Sc_scopes", "Sc_scopes_auxiliary", "CerbSCScopes", "CerbSCByteKeys", "CerbSCAccessGroups",
@@ -150,6 +151,8 @@ roots = [
   "Sc_prefix_obligations", "Sc_prefix_obligations_auxiliary", "CerbSCPrefixObligations",
   "Sc_reference_sequencing", "Sc_reference_sequencing_auxiliary",
   "Sc_graph", "Sc_graph_auxiliary", "CerbSCGraph", "CerbSCAtomicUpdate", "CerbSCAtomicSurface", "CerbSCValues",
+  "Sc_action_identity", "Sc_action_identity_auxiliary", "CerbSCActionIdentity",
+  "Sc_happens_before", "Sc_happens_before_auxiliary", "CerbSCHappensBefore",
   "Sc_varargs", "Sc_varargs_auxiliary", "CerbSCVarargs",
   "Pp", "Pp_auxiliary",
   "Product", "Product_auxiliary",
@@ -457,4 +460,16 @@ moreLinkArgs = ["native/md5.o"]
 name = "fs-boundary-test"
 srcDir = "test"
 root = "Unit.FSBoundary"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "sc-spawn-test"
+srcDir = "test"
+root = "Unit.SCSpawn"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "sc-happens-before-test"
+srcDir = "test"
+root = "Unit.SCHappensBefore"
 moreLinkArgs = ["native/md5.o"]

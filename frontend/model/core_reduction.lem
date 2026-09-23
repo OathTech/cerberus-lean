@@ -2,7 +2,7 @@ open import Pervasives
 open import Utils
 open import Core Core_aux Core_run_aux
 
-import State Sc_order Errors
+import State Sc_order Sc_spawn Errors
 import Core_eval Cmm_aux Cmm_csem
 
 import Cerb_attributes
@@ -1605,15 +1605,7 @@ let step_ctx_with sc_context mem_st file core_extern current_tid (parent_tid_opt
               Step_spawn_threads2
                 (fun tids -> wrap_expr (Caux.mk_unseq_e (List.map Caux.mk_wait_e tids)))
                 begin
-                  List.map (fun e -> <|
-                    arena= e;
-                    stack= Stack_empty;
-                    errno= Mem.null_ptrval Ctype.signed_int; (* TODO: allocate errno (do not store 0) *)
-                    current_loc= th_st.current_loc;
-                    exec_loc= ELoc_normal [];
-                    env= th_st.env;
-                    current_proc_opt= Nothing;
-                  |>) es
+                  List.map (Sc_spawn.sc_spawn_child th_st) es
                 end
           | Ewait child_tid ->
               match sc_context with

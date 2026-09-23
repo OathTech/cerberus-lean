@@ -35,6 +35,8 @@ UNIT_TESTS=(
     "sc-varargs-test"
     "sc-byte-sources-test"
     "sc-graph-test"
+    "sc-spawn-test"
+    "sc-happens-before-test"
     "nd-suspension-test"
     "memory-suspension-test"
     "sc-helper-order-test"
@@ -128,6 +130,18 @@ for test in "${TESTS[@]}"; do
         DUNE_CACHE=disabled "$SCRIPT_DIR/capped" dune build --root "$PROJECT_ROOT" -j 2 \
             memory/concrete/sc_sequencing_controls/controls.exe
         timeout 30 "$PROJECT_ROOT/_build/default/memory/concrete/sc_sequencing_controls/controls.exe"
+    fi
+    if [[ "$test" == sc-spawn-test ]]; then
+        "$PROJECT_ROOT/tools/check_lem_sync.sh" --check
+        DUNE_CACHE=disabled "$SCRIPT_DIR/capped" dune build --root "$PROJECT_ROOT" -j 2 \
+            memory/concrete/sc_spawn_controls/controls.exe
+        timeout 30 "$PROJECT_ROOT/_build/default/memory/concrete/sc_spawn_controls/controls.exe"
+    fi
+    if [[ "$test" == sc-happens-before-test ]]; then
+        "$PROJECT_ROOT/tools/check_lem_sync.sh" --check
+        DUNE_CACHE=disabled "$SCRIPT_DIR/capped" dune build --root "$PROJECT_ROOT" -j 2 \
+            memory/concrete/sc_hb_controls/controls.exe
+        timeout 30 "$PROJECT_ROOT/_build/default/memory/concrete/sc_hb_controls/controls.exe"
     fi
     if [[ "$test" == sc-graph-test ]]; then
         "$PROJECT_ROOT/tools/check_lem_sync.sh" --check

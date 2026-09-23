@@ -1,0 +1,47 @@
+open import Pervasives
+import Sc_action_identity Sc_access_group Sc_runtime Mem_common Mem Core Core_run_aux Cmm_csem Ctype
+
+let sc_identity_fixture id request thread kind access owner base size = <|
+  Sc_runtime.sc_effect_id= id;
+  Sc_runtime.sc_effect_request= <|
+    Sc_runtime.sc_request_id= request; Sc_runtime.sc_request_thread= thread;
+    Sc_runtime.sc_request_kind= kind;
+    Sc_runtime.sc_request_annotation= Core_run_aux.empty_annotation;
+    Sc_runtime.sc_request_scopes= [] |>;
+  Sc_runtime.sc_effect_observation= Mem_common.Observe_access Loc.unknown access
+    Ctype.signed_int (Mem.null_ptrval Ctype.signed_int) owner base size []
+    (Mem.unspecified_mval Ctype.signed_int);
+|>
+
+
+let sc_identity_checks () =
+  let update = Sc_runtime.SC_atomic_update Cmm_csem.Seq_cst in
+  let read = sc_identity_fixture 11 90 0 update Mem_common.LoadAccess (Just 7) 100 4 in
+  let write = sc_identity_fixture 12 90 0 update Mem_common.StoreAccess (Just 7) 100 4 in
+  let other = sc_identity_fixture 31 91 1 (Sc_runtime.SC_access Cmm_csem.Seq_cst Core.Pos) Mem_common.LoadAccess (Just 7) 100 4 in
+  let aliases = Sc_action_identity.sc_action_aliases [read;write;other] [] in
+  let one raw action = <| Sc_action_identity.sc_alias_occurrence= raw; Sc_action_identity.sc_alias_action= action |> in
+  let fence = <| read.Sc_runtime.sc_effect_request with Sc_runtime.sc_request_id= 40;
+    Sc_runtime.sc_request_kind= Sc_runtime.SC_fence Cmm_csem.Seq_cst |> in
+  let signal = <| fence with Sc_runtime.sc_request_id= 41;
+    Sc_runtime.sc_request_kind= Sc_runtime.SC_signal_fence Cmm_csem.Seq_cst |> in
+  let raw_edges = [(12,31);(11,12);(31,77);(77,31);(77,78)] in
+  [
+    ("RMW source write maps to shared action", Sc_action_identity.sc_lookup_actions 12 aliases = [11]);
+    ("RMW target read retains both raw aliases", Sc_action_identity.sc_lookup_occurrences 11 aliases = [11;12]);
+    ("physical endpoints preserved in every receipt", List.map fst (Sc_action_identity.sc_project_action_edges aliases raw_edges) = raw_edges);
+    ("external edge maps through write phase", Sc_action_identity.sc_project_action_edge aliases (12,31) = Sc_action_identity.SC_edge_between_actions 11 31);
+    ("within-action edge is retained explicitly", Sc_action_identity.sc_project_action_edge aliases (11,12) = Sc_action_identity.SC_edge_within_action 11);
+    ("missing target stays visible", Sc_action_identity.sc_project_action_edge aliases (31,77) = Sc_action_identity.SC_edge_outside_actions (Just 31) Nothing);
+    ("missing source stays visible", Sc_action_identity.sc_project_action_edge aliases (77,31) = Sc_action_identity.SC_edge_outside_actions Nothing (Just 31));
+    ("two absent endpoints stay visible", Sc_action_identity.sc_project_action_edge aliases (77,78) = Sc_action_identity.SC_edge_outside_actions Nothing Nothing);
+    ("equal duplicate mapping is ambiguous", Sc_action_identity.sc_project_action_edge (one 12 11 :: aliases) (12,31) = Sc_action_identity.SC_edge_ambiguous_actions [11;11] [31]);
+    ("different duplicate mapping is ambiguous", Sc_action_identity.sc_project_action_edge (one 12 99 :: aliases) (12,31) = Sc_action_identity.SC_edge_ambiguous_actions [99;11] [31]);
+    ("thread fence retained and signal fence excluded", Sc_action_identity.sc_fence_aliases [fence;signal] = [one 40 40]);
+    ("both RMW source phases expand", Sc_action_identity.sc_expand_action_edge aliases (11,31) = [(11,31);(12,31)]);
+    ("both RMW target phases expand", Sc_action_identity.sc_expand_action_edge aliases (31,11) = [(31,11);(31,12)]);
+    ("ordinary RMW phases remain separate", Sc_action_identity.sc_action_aliases [
+      <| read with Sc_runtime.sc_effect_request= <| read.Sc_runtime.sc_effect_request with Sc_runtime.sc_request_kind= Sc_runtime.SC_seq_rmw |> |>;
+      <| write with Sc_runtime.sc_effect_request= <| write.Sc_runtime.sc_effect_request with Sc_runtime.sc_request_kind= Sc_runtime.SC_seq_rmw |> |>] [] = [one 11 11;one 12 12]);
+    ("projection retains duplicate edges", List.length (Sc_action_identity.sc_project_action_edges aliases [(12,31);(12,31)]) = 2)
+  ]

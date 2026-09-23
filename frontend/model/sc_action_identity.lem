@@ -1,0 +1,75 @@
+(* A passive, lossless map from physical occurrences to candidate reference
+   action identities. No location/value/RF interpretation or verdict occurs. *)
+open import Pervasives
+import Cmm_csem Sc_runtime Sc_access_group
+
+type sc_action_alias = <|
+  sc_alias_occurrence: Cmm_csem.aid;
+  sc_alias_action: Cmm_csem.aid;
+|>
+
+let sc_group_anchor = function
+  | Sc_access_group.SC_access_single observed -> observed.Sc_runtime.sc_effect_id
+  | Sc_access_group.SC_access_atomic_pair first _ -> first.Sc_runtime.sc_effect_id
+end
+
+let sc_group_aliases group =
+  List.map (fun observed -> <|
+    sc_alias_occurrence= observed.Sc_runtime.sc_effect_id;
+    sc_alias_action= sc_group_anchor group |>)
+    (Sc_access_group.sc_group_occurrences group)
+
+let sc_access_aliases groups = List.concat (List.map sc_group_aliases groups)
+
+(* Only actual thread fences are Cmm fence actions. Other retained vertices
+   remain in the original graph, including signal fences and lifetimes. *)
+let sc_fence_aliases requests = List.concat (List.map (fun request ->
+  match request.Sc_runtime.sc_request_kind with
+    | Sc_runtime.SC_fence _ -> [<|
+        sc_alias_occurrence= request.Sc_runtime.sc_request_id;
+        sc_alias_action= request.Sc_runtime.sc_request_id |>]
+    | _ -> []
+  end) requests)
+
+let sc_action_aliases history fences =
+  sc_access_aliases (Sc_access_group.sc_group_accesses history) ++
+  sc_fence_aliases fences
+
+(* Return EVERY occurrence of a mapping; duplicates, even equal mappings,
+   cannot be erased by converting the map into a set. *)
+let sc_lookup_actions occurrence aliases = List.map (fun entry -> entry.sc_alias_action)
+  (List.filter (fun entry -> occurrence = entry.sc_alias_occurrence) aliases)
+
+let sc_lookup_occurrences action aliases = List.map (fun entry -> entry.sc_alias_occurrence)
+  (List.filter (fun entry -> action = entry.sc_alias_action) aliases)
+
+type sc_edge_projection =
+  | SC_edge_between_actions of Cmm_csem.aid * Cmm_csem.aid
+  | SC_edge_within_action of Cmm_csem.aid
+  | SC_edge_outside_actions of maybe Cmm_csem.aid * maybe Cmm_csem.aid
+  | SC_edge_ambiguous_actions of list Cmm_csem.aid * list Cmm_csem.aid
+
+(* Outside means only absent from this map, not that the vertex was valid or
+   legitimately excluded. Graph validation and domain evidence remain required. *)
+let sc_project_action_edge aliases (source, target) =
+  let left = sc_lookup_actions source aliases in
+  let right = sc_lookup_actions target aliases in
+  match (left, right) with
+    | ([a], [b]) -> if a = b then SC_edge_within_action a
+                   else SC_edge_between_actions a b
+    | ([], []) -> SC_edge_outside_actions Nothing Nothing
+    | ([], [b]) -> SC_edge_outside_actions Nothing (Just b)
+    | ([a], []) -> SC_edge_outside_actions (Just a) Nothing
+    | _ -> SC_edge_ambiguous_actions left right
+  end
+
+(* Lists retain order and multiplicity of edge receipts; the original endpoints
+   remain available even for internal, outside or malformed edges. *)
+let sc_project_action_edges aliases edges = List.map (fun edge ->
+  (edge, sc_project_action_edge aliases edge)) edges
+
+(* Endpoint expansion only: no transitive closure or additional SB is invented.
+   Each pair is tied to its input reference edge by the caller's receipt. *)
+let sc_expand_action_edge aliases (source,target) =
+  List.concat (List.map (fun a -> List.map (fun b -> (a,b))
+    (sc_lookup_occurrences target aliases)) (sc_lookup_occurrences source aliases))

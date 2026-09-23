@@ -3,7 +3,26 @@
 Governing document: [SC prototype charter](2026-09-21_charter-sc-prototype.md).
 This file records evidence and next actions; it does not replace the charter.
 
-## Latest validated component — September 23
+## Latest validated component — lexical spawn and HB, September 23
+
+The [spawn and HB component](2026-09-23_sc-spawn-hb-work.md) passes all 39 full
+validation lanes and the mandatory 864-case report, with unchanged observations,
+source unchanged and no artifact issues. It repairs SC-P08's lost lexical owner
+at the actual Epar reducer. Direct/nested C loops complete in both engines;
+43 paired controls, 52 kernel laws, 6 native C/RMW erasures and 3 sensitive compiled
+mutants support the connection and the shared action/HB queries. No behavioral
+baseline changes in this slice. The same 40 previously recorded Lean discrepancy
+or undecodable IDs remain visible in the three-engine report.
+
+The all-vertex HB query retains every occurrence and diagnostic and still takes
+reference synchronization explicitly. Deriving actual RF/SW and completing
+location/value, lifetime/library and public outcome composition remain ongoing.
+The unadopted atomic-source follow-up has 16 paired controls, 5 retention laws and
+actual-C diagnostics; its observed earlier UB042 boundary is documented as
+[SC-D15](2026-09-23_sc-atomic-allocation-boundary.md). The public SC checker remains
+pending, and the whole charter is incomplete. Customer sources remain read-only.
+
+## Prior filesystem component — September 23
 
 The [filesystem repair](2026-09-23_sc-filesystem-repair-work.md) passes all 39
 full integration commands and the mandatory 864-case three-engine comparison.

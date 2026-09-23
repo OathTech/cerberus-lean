@@ -553,4 +553,7 @@ required prefix interface, not a completed public checker.
 Continue the whole charter: actual location/value/RF/HB interpretation, precise
 G02/G03/G06/G07/G08 handling, lifetime/library composition, all alternatives and
 public C/operational outcomes. `Driver.drive true` still returns checker-pending
-before execution. Customer sources remain read-only; no merge or push occurs.
+after an otherwise completing recorded execution; earlier execution faults are preserved.
+[September 23 correction](2026-09-23_sc-spawn-hb-work.md#public-entry-documentation-correction):
+the earlier sentence incorrectly said the pending-checker refusal preceded execution.
+Customer sources remain read-only; no merge or push occurs.

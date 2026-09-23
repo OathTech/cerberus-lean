@@ -95,3 +95,6 @@ CerbSCSequencing.lean
 CerbSCPrefixObligations.lean
 CerbFSProofs.lean
 CerbFSDriverProofs.lean
+CerbSCSpawn.lean
+CerbSCActionIdentity.lean
+CerbSCHappensBefore.lean

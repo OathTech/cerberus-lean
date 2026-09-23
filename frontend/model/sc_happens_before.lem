@@ -1,0 +1,51 @@
+(* All-vertex closure of source order and an explicitly supplied reference SW.
+   This query does not derive RF/SW, interpret locations, certify a candidate,
+   or emit a language verdict. It retains malformed inputs and their diagnostics.
+   Both occurrences of one atomic RMW share a reference action; no internal SB
+   edge is invented between them. Non-action vertices stay in the source graph. *)
+open import Pervasives Relation Set_extra
+import Cmm_csem Sc_graph Sc_action_identity
+
+type sc_hb_issue =
+  | SC_hb_alias_missing_vertex of Cmm_csem.aid
+  | SC_hb_ambiguous_occurrence of Cmm_csem.aid
+  | SC_hb_missing_reference_source of Cmm_csem.aid * Cmm_csem.aid
+  | SC_hb_missing_reference_target of Cmm_csem.aid * Cmm_csem.aid
+
+type sc_hb_result = <|
+  sc_hb_source: Sc_graph.sc_source_graph;
+  sc_hb_aliases: list Sc_action_identity.sc_action_alias;
+  sc_hb_sync_receipts: list ((Cmm_csem.aid * Cmm_csem.aid) * list (Cmm_csem.aid * Cmm_csem.aid));
+  sc_hb_lifted_sync: set (Cmm_csem.aid * Cmm_csem.aid);
+  sc_hb_relation: set (Cmm_csem.aid * Cmm_csem.aid);
+  sc_hb_cycles: list Cmm_csem.aid;
+  sc_hb_issues: list sc_hb_issue;
+|>
+
+let sc_hb_alias_issues graph aliases = List.concat (List.map (fun entry ->
+  let occurrence = entry.Sc_action_identity.sc_alias_occurrence in
+  (if List.any (fun node -> node.Sc_graph.sc_node_id = occurrence)
+        graph.Sc_graph.sc_graph_nodes then [] else [SC_hb_alias_missing_vertex occurrence]) ++
+  (if List.length (Sc_action_identity.sc_lookup_actions occurrence aliases) = 1
+    then [] else [SC_hb_ambiguous_occurrence occurrence])) aliases)
+
+let sc_hb_sync_issues aliases (source, target) =
+  (if List.null (Sc_action_identity.sc_lookup_occurrences source aliases)
+    then [SC_hb_missing_reference_source source target] else []) ++
+  (if List.null (Sc_action_identity.sc_lookup_occurrences target aliases)
+    then [SC_hb_missing_reference_target source target] else [])
+
+let sc_build_happens_before graph aliases synchronization =
+  let receipts = List.map (fun edge ->
+    (edge, Sc_action_identity.sc_expand_action_edge aliases edge)) synchronization in
+  let lifted = Set.fromList (List.concat (List.map snd receipts)) in
+  let relation = transitiveClosure (graph.Sc_graph.sc_graph_sbasw union lifted) in
+  <| sc_hb_source= graph;
+     sc_hb_aliases= aliases;
+     sc_hb_sync_receipts= receipts;
+     sc_hb_lifted_sync= lifted;
+     sc_hb_relation= relation;
+     sc_hb_cycles= List.map fst (Set_extra.toOrderedList
+       (Set.filter (fun (source, target) -> source = target) relation));
+     sc_hb_issues= sc_hb_alias_issues graph aliases ++
+       List.concat (List.map (sc_hb_sync_issues aliases) synchronization) |>

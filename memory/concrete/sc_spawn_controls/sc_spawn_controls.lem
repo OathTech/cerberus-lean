@@ -1,0 +1,35 @@
+open import Pervasives Core Core_run_aux
+import Sc_spawn Sc_call_scope Map_extra
+
+let sc_spawn_checks digest =
+  let owner = Symbol.Symbol digest 1 Symbol.SD_None in
+  let binding = Symbol.Symbol digest 2 Symbol.SD_None in
+  let expression = Expr [] (Epure (Pexpr [] () (PEval Vunit))) in
+  let loop = Expr [] (Erun empty_annotation binding []) in
+  let parent = <| arena= expression;
+    stack= Stack_cons2 false (Just owner) CTX Stack_empty;
+    errno= Mem.null_ptrval Ctype.unsigned_int;
+    current_loc= Loc.other "spawn-label-parent";
+    exec_loc= ELoc_globals;
+    env= [Map.insert binding Vtrue Map.empty;Map.empty];
+    current_proc_opt= Just owner |> in
+  let child = Sc_spawn.sc_spawn_child parent loop in
+  let nested = Sc_spawn.sc_spawn_child child expression in
+  let unowned = Sc_spawn.sc_spawn_child <| parent with current_proc_opt= Nothing |> loop in
+  [
+    ("child keeps actual lexical procedure", child.current_proc_opt = Just owner);
+    ("nested child keeps same lexical procedure", nested.current_proc_opt = Just owner);
+    ("no procedure is invented outside a procedure", unowned.current_proc_opt = Nothing);
+    ("child runs the original expression", match child.arena with
+      | Expr [] (Erun annotation label []) -> label = binding &&
+          Set.null annotation.sb_before && Set.null annotation.dd_before && Set.null annotation.asw_before
+      | _ -> false
+    end);
+    ("child retains scoped environment", (List.map Map_extra.toList child.env) = (List.map Map_extra.toList parent.env));
+    ("child does not inherit caller continuation", child.stack = Stack_empty);
+    ("child has no artificial call depth", Sc_call_scope.sc_stack_depth child.stack = Just 0);
+    ("nested spawn is not a call transition", Sc_call_scope.sc_call_boundary child nested = Sc_call_scope.SC_call_unchanged 0);
+    ("driver still owns errno allocation", child.errno = Mem.null_ptrval Ctype.signed_int);
+    ("existing source location retained", child.current_loc = parent.current_loc);
+    ("existing child execution-location behavior retained", child.exec_loc = ELoc_normal [])
+  ]

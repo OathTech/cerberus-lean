@@ -44,4 +44,3 @@ theorem result_pack_unpack {α : Type} (pair : FsState × Sum FsFault (Sum FsErr
   rcases pair with ⟨st,result⟩
   cases result <;> rfl
 end CerbFS
-

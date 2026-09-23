@@ -1,0 +1,16 @@
+(* A spawned expression remains in its enclosing procedure's lexical label
+   namespace. Its empty stack is still a new thread, not another procedure call.
+   See Core_aux.collect_labeled_continuations_NEW and Core_reduction.Erun.
+   This constructor allocates no errno object; the existing driver owns that. *)
+open import Pervasives
+import Core_run_aux Mem Ctype
+
+let sc_spawn_child parent expression = <|
+  Core_run_aux.arena= expression;
+  Core_run_aux.stack= Core_run_aux.Stack_empty;
+  Core_run_aux.errno= Mem.null_ptrval Ctype.signed_int;
+  Core_run_aux.current_loc= parent.Core_run_aux.current_loc;
+  Core_run_aux.exec_loc= Core_run_aux.ELoc_normal [];
+  Core_run_aux.env= parent.Core_run_aux.env;
+  Core_run_aux.current_proc_opt= parent.Core_run_aux.current_proc_opt;
+|>
