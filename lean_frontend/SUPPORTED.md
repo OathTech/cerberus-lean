@@ -1,9 +1,10 @@
 # Supported profile and announcement scope
 
-Checked 2026-09-24 against Cerberus `abe505d3d856162c058653019b27388e8523ce47`
-and Lem `9bb6c6b583c2eb4ecf6ca5b21a274dacc29e0fa4`. Baseline inventories
+Checked 2026-09-24 against Cerberus `603c9b69bd056cbffeca8a669bc3510a4349f882`
+and Lem `6b20bfd02de924d078725efa96c6675115b8b17a`. Baseline inventories
 at Cerberus `e9f9d049f`, cleanup changes and the exact rerun set are recorded in
-[the remediation record](docs/2026-09-24_public-readiness-remediation.md).
+[the remediation record](docs/2026-09-24_public-readiness-remediation.md) and
+[the closure record](docs/2026-09-24_public-readiness-closure.md).
 This is the current profile; the dated September 6 profile is history.
 
 [AGENT] The announcement can describe an early executable Lean port of the
@@ -34,10 +35,14 @@ CERB_SKIP (derived from `scripts/exec_baseline.txt`, 2026-09-24 at the
 baseline pin). The pristine register has seven `shared-model-fix` case
 rows, including two pairs of allocator witnesses; it does not identify
 seven independent defects. Full historical ladder/reporting runs keep
-their original dates and source pins. The MUST cleanup reruns only row 1
-and the six named fast differential lanes in its record.
+their original dates and source pins. The initial MUST checkpoint reran row 1
+and six named fast differential lanes; the closure also checks multi-TU,
+the multi-TU tray, address-space and immaculate lanes, as recorded above.
 
 Remaining work is tracked in [TODO.md](TODO.md). Concurrency prototypes
 and the archived reasoning effort are records, not offered product
 features. The successor reasoning project is `cerberus-sl`; the older
-`refined-cerberus` checkout is retired (operator scope, 2026-09-24).
+`refined-cerberus` checkout was retired on 2026-09-16. Source: [USER 2026-09-16]
+"cerberus-sl is our main upstream customer at the moment. I retired refined-cerberus (it got too messy)."
+([charter record](docs/2026-09-16_charter-allocator-soundness-address-bound.md),
+checked 2026-09-24 at `e9f9d049f`; closure F6).

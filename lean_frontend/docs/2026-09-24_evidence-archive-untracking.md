@@ -41,3 +41,22 @@ The following inventory is derived from tracked files at that pin:
 | `lean_frontend/docs/2026-09-22_run-digest-audit-evidence/lane-receipts.tar.gz` | 128800 | `2b26b13694a1ddcbaeb425ee4e4b038443a28198499b44d019ed3807e4389e00` |
 | `lean_frontend/docs/2026-09-22_run-digest-audit-evidence/pristine-captures.tar.gz` | 8380976 | `79edefc618dc42dbad6eddce2eba6bb2f1127500bbe3956b5ffd03502b5be2f5` |
 | `lean_frontend/docs/2026-09-22_run-digest-audit-evidence/pristine-reports.tar.gz` | 931736 | `248905cf4378dcc8b7bd56d5fcc908a1488c5a93aacfb7fe02b291a67f97a8d5` |
+
+## Closure addendum — provenance (2026-09-24)
+
+[AGENT] Closure F2, checked against the first cleanup head `0a6d59eed`.
+The inventory above is an agent-derived tally: 21 tracked archives totalling
+21,888,265 bytes at pre-cleanup mainline `e9f9d049f`. The operation removed
+only their HEAD tracking entries; the local files and historical Git blobs
+remain. This addendum preserves the original inventory and record.
+
+[USER 2026-09-06], verbatim excerpt of the retention ruling:
+
+> Agree on all points, and particularly on cleaning up the evidence archives. These should not be git committed, and will not be pushed. I don't actually hold strong value in such data which could be recreated, so I am fine dropping large files like this. The important thing is that runs can be reconstructed.
+
+Source: [master-plan ruling](2026-09-05_master-plan.md), present at
+`e9f9d049f`. The later operator verification reported that mainline equalled
+origin and the archives had already been pushed. [AGENT] Untracking at HEAD
+does not retract that publication: already-pushed mainline and its history
+have not been rewritten. Public remote state was not independently checked
+from this offline review environment.
