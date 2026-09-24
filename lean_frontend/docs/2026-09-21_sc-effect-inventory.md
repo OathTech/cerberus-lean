@@ -102,9 +102,10 @@ representation, dynamic allocation, or hidden helper accesses.
    abstract varargs state require a documented composition with concurrency.
    The scalar SC checker excludes Alloc/Dealloc; that is a checker limitation,
    not authorization to exclude dynamic memory at runtime.
-4. SC fences require a fence-aware upstream predicate and operation-specific
-   frontend treatment. The all-SC fence seed stays PENDING until resolved;
-   weak-order operations stay outside SC without silent coercion.
+4. SC fences use the fence-aware upstream predicate and operation-specific
+   frontend treatment. The all-SC callable-fence seed now has passing selected
+   executions through both bundled-library paths; this is not exhaustive C
+   coverage. Weak-order operations stay outside SC without silent coercion.
 5. Effects inside a request do not themselves establish permitted yields. The
    selected grouping must be justified against Core/historical integration and
    the named concurrency reference, including faults and incomplete prefixes.

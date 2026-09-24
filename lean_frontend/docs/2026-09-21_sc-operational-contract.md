@@ -74,6 +74,31 @@ a new universal adequacy theorem or second reference framework. Racy prefixes
 have independent fault handling; lifetime, representation and metadata require
 the additional composition below. No scalar test restriction narrows C3 scope.
 
+The adapter also accepts complete captured aggregate values when accesses have
+matching whole ranges. `sc_value_key` preserves their full member/element values;
+RF still requires the actual writer and matching logical value. No aggregate is
+split into synthetic actions here. Different overlapping views, including an
+allocation-supplied initial value, still require the separate composition work.
+Whole-aggregate conflicting stores remain ordinary race candidates.
+
+Integer RF tokens first use `Implementation.normalise_integerType`, the same
+enum-compatible-type registry and integer aliases used by the concrete model.
+Corresponding signed/unsigned representations then share a token while keeping
+rank and provenance. This follows the implementation choice allowed by
+[N1570 6.7.2.2p4](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf);
+no signedness is guessed from an observed enum value. Raw captures and CAS byte
+comparison are unchanged. The callable fence library's enum/unsigned parameter
+boundary is one actual consumer of this rule.
+
+The temporary library-attribution obligation excludes completed reads of normal-
+call argument slots only when the actual frame binding, full allocation extent
+and owning thread identify the slot, with no other thread accessing or changing
+its lifetime in the prefix. The test uses the slot address, not the argument's
+pointer value or its first read. Inner-argument conventions, unknown loader
+origins and pointee accesses receive no exemption. These reads remain in the
+journal and normal reference checks. This adds no lock or synchronization edge;
+G03/G08's actual shared-stream/internal-object guards remain unfinished.
+
 ## Machine and choices
 
 The whole-program provider entry is `Driver.sc_program_start`, with
@@ -249,11 +274,10 @@ must state their actual domains and resource relation; the donor's failed
 universal scalar graph theorem is not a foundation. No new runtime restriction
 is authorized by difficulty proving a theorem.
 
-Outstanding obligations at S0 are helper grouping, location/byte composition,
-lifetime/varargs integration, fence selection, source-order propagation, and
-the program-level fault interface. These are implementation/research work for
-S1–S4, not additional approval barriers unless the source and standard leave
-materially different behaviors unresolved on a concrete example. Completion
+The roadmap's C2–C4 sections own the remaining location/byte, lifetime and
+runtime coverage and final validation work. They are not additional approval
+barriers unless the source and standard leave materially different behaviors
+unresolved on a concrete example. Completion
 still requires the entire charter; a green scalar lane alone is insufficient.
 
 ## Source conclusions retained during pruning

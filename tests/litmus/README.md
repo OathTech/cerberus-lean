@@ -37,8 +37,11 @@ to this instrument, not the executable language.
 `RMW` rows retain upstream compare-exchange expectations recorded in their C
 headers. `NONSC` rows require refusal of weak orders, avoiding silent
 strengthening in SC mode. `PENDING` rows always fail the lane and give no support
-credit. In particular, the old blanket refusal of the all-SC fence example is
-not accepted as completed implementation. The fence example with relaxed
+credit. The all-SC callable-fence example now has passing selected executions
+through both bundled-library paths (allowed returns 1, 2 or 3). Its legacy
+exhaustive lane row remains pending because that recipe hardcodes `--nolibc`,
+which omits the callable fence definition. This runner limitation is not a
+semantic exclusion. The fence example with relaxed
 accesses remains outside the SC mode for those accesses.
 
 `--selftest` runs hermetic plants against the actual lane helpers and codec

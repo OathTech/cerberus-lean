@@ -58,6 +58,33 @@ private def controls (fuel : Nat) : List (String × Bool) := Id.run do
   let blockedProgram := (CerbSCOperational.start fuel 2 0x10000
     (program (Expr [] (Ewait 99))) CerbFS.fs_initial_state none ["whole-program blocked"]).1
   let blockedResults := CerbSCOperational.outcomes fuel blockedProgram
+  let normalFile := { f with calling_convention0 := Normal_callconv }
+  let slot := pointer 20 200
+  let parameter := Symbol "private-argument-control" 101 SD_None
+  let frame : sc_call_frame := ⟨some mainSym, some (SC_call_program mainSym),
+    [(parameter, BTy_object OTy_pointer, some (Vobject (OVpointer slot)))], none⟩
+  let scope : sc_scope_entry := ⟨7,0,none,frame,1⟩
+  let effect := fun id thread scopes observation =>
+    (⟨id, ⟨id,thread,empty_annotation,SC_access NA Pos,scopes⟩, observation⟩ : sc_effect)
+  let allocation := effect 0 0 [] (Observe_allocation slot 20 200 1 (some unsigned_char) none [])
+  let read := effect 1 0 [7] (Observe_access CerbLocation.unknown LoadAccess unsigned_char
+    slot (some 20) 200 1 [{value := some 7}]
+    (CerbMem.integerValueMval (Unsigned Ichar) (CerbMem.integerIval 7)))
+  let recorded := { sc_initial_state with
+    sc_effects := [read,allocation]
+    sc_scopes := { sc_scope_initial with sc_scope_events := [SC_scope_entered scope] } }
+  let shared := { read with
+    sc_effect_id := 2
+    sc_effect_request := { read.sc_effect_request with sc_request_thread := 1 } }
+  let pointee := { read with
+    sc_effect_observation := Observe_access CerbLocation.unknown
+      LoadAccess unsigned_char (pointer 30 300) (some 30) 300 1 [{value := some 7}]
+      (CerbMem.integerValueMval (Unsigned Ichar) (CerbMem.integerIval 7)) }
+  let pointedAllocation := effect 3 0 [] (Observe_allocation (pointer 30 300) 30 300 1
+    (some unsigned_char) none [])
+  let killedSlot := effect 2 1 []
+    (Observe_deallocation CerbLocation.unknown false slot 20 (some (200,1)))
+  let unknownOrigin := sc_interpret_driver { base with core_file := normalFile } recorded
   return [
     ("all existing SC diagnostics retain their text and category", diagnosticCases.all fun (fault,message,category) => sc_fault_message fault == message && sc_fault_class fault == category),
     ("uninitialized step keeps state and exposes the protocol identity", match uninitialized.1 with
@@ -96,6 +123,19 @@ private def controls (fuel : Nat) : List (String × Bool) := Id.run do
       !blockedResults.isEmpty && blockedResults.all fun (outcome, _, _) => match outcome with
         | Active value => value.dres_blocked && value.dres_core_value == Vunit
         | _ => false),
+    ("normal-call private argument read has actual slot and allocation evidence",
+      sc_private_parameter_read normalFile recorded read),
+    ("cross-thread sharing or missing allocation revokes private-slot attribution",
+      !sc_private_parameter_read normalFile { recorded with sc_effects := shared :: recorded.sc_effects } read &&
+      !sc_private_parameter_read normalFile { recorded with sc_effects := [read] } read &&
+      !sc_private_parameter_read normalFile
+        { recorded with sc_effects := killedSlot :: recorded.sc_effects } read),
+    ("pointee storage and inner-argument calls cannot borrow the slot exemption",
+      !sc_private_parameter_read normalFile
+        { recorded with sc_effects := pointee :: pointedAllocation :: recorded.sc_effects } pointee &&
+      !sc_private_parameter_read { normalFile with calling_convention0 := Inner_arg_callconv } recorded read),
+    ("private arguments do not authenticate an unknown runtime origin",
+      unknownOrigin.sc_candidate_issues.contains (SC_interpret_runtime_origin 1)),
     ("zero exploration budget reports exhaustion without starting initialization",
       match CerbSCOperational.outcomes 0 initialized.1 with
         | [(Killed _ reason, [], after)] => reason == CerbND.fuelExhaustedKill &&

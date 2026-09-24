@@ -137,6 +137,47 @@ private def arrayChecks : List (String × Bool) := Id.run do
       !sc_candidate_array_element (Ctype [] (Array0 scalar (some 0))) 100 24 104 4 &&
       !sc_candidate_array_element matrix 100 23 104 4)]
 
+private def aggregateChecks : List (String × Bool) := Id.run do
+  let scalar := Ctype [] (Basic (Integer (Unsigned Ichar)))
+  let tag := Symbol "whole-aggregate-control" 90 SD_None
+  let x := Identifier CerbLocation.unknown "x"
+  let y := Identifier CerbLocation.unknown "y"
+  let one := CerbMem.integerValueMval (Unsigned Ichar) (CerbMem.integerIval 1)
+  let two := CerbMem.integerValueMval (Unsigned Ichar) (CerbMem.integerIval 2)
+  let shapes := [(Ctype [] (Array0 scalar (some 2)), CerbMem.arrayMval [one,two]),
+    (Ctype [] (Struct tag), CerbMem.structMval tag [(x,scalar,one),(y,scalar,two)])]
+  let ptr := CerbMem.nullPtrval scalar
+  let bytes : List CerbMem.AbsByte := [{value := some 1},{value := some 2}]
+  let full := shapes.all fun (ty,value) =>
+    let allocated := occurrence 0 0 (SC_lifetime Pos)
+      (Observe_allocation ptr 20 100 2 (some ty) none [])
+    let access := fun id thread kind sb => occurrence id thread (SC_access NA Pos)
+      (Observe_access CerbLocation.unknown kind ty ptr (some 20) 100 2 bytes value) sb
+    let written := access 1 0 StoreAccess []
+    let read := access 2 0 LoadAccess [(0,1)]
+    let initialized := occurrence 0 0 (SC_lifetime Pos)
+      (Observe_allocation ptr 20 100 2 (some ty) (some value) bytes)
+    sc_candidate_accepted (classify [read,written,allocated]) &&
+    sc_candidate_accepted (classify [access 2 0 LoadAccess [(0,0)],initialized])
+  let conflicts := shapes.all fun (ty,value) =>
+    let allocated := occurrence 0 0 (SC_lifetime Pos)
+      (Observe_allocation ptr 20 100 2 (some ty) none [])
+    let written := fun id thread => occurrence id thread (SC_access NA Pos)
+      (Observe_access CerbLocation.unknown StoreAccess ty ptr (some 20) 100 2 bytes value)
+    let classified := classify [written 2 1,written 1 0,allocated]
+    setEqualBy setElemCompare classified.sc_class_data_races (set [(1,2),(2,1)])
+  let partialViews := shapes.all fun (ty,value) =>
+    let initialized := occurrence 0 0 (SC_lifetime Pos)
+      (Observe_allocation ptr 20 100 2 (some ty) (some value) bytes)
+    let narrow := occurrence 1 0 (SC_access NA Pos)
+      (Observe_access CerbLocation.unknown StoreAccess scalar ptr (some 20) 101 1
+        [{value := some 2}] two) [(0,0)]
+    !sc_candidate_supported (classify [narrow,initialized])
+  return [
+    ("complete aggregate stores and allocation values supply matching whole reads", full),
+    ("conflicting whole aggregate stores remain data races", conflicts),
+    ("aggregate allocation initialization cannot certify a different overlapping view", partialViews)]
+
 private def typedViewChecks : List (String × Bool) := Id.run do
   let unsigned := Ctype [] (Basic (Integer (Unsigned Ichar)))
   let signed := Ctype [] (Basic (Integer (Signed Ichar)))
@@ -156,6 +197,13 @@ private def typedViewChecks : List (String × Bool) := Id.run do
     ("corresponding signed and unsigned views use the same RF value in both directions",
       sc_candidate_accepted (classify [read,write,allocated]) &&
       sc_candidate_accepted (classify [reverseRead,reverseWrite,allocated])),
+    ("implementation integer aliases share tokens without collapsing different ranks",
+      sc_candidate_logical_key 8 (SC_integer_value Size_t SC_no_provenance 7) ==
+        sc_candidate_logical_key 8 (SC_integer_value (Unsigned Long) SC_no_provenance 7) &&
+      sc_candidate_logical_key 8 (SC_integer_value Ptrdiff_t SC_no_provenance (-1)) ==
+        sc_candidate_logical_key 8 (SC_integer_value (Signed Long) SC_no_provenance (-1)) &&
+      sc_candidate_logical_key 8 (SC_integer_value (Signed LongLong) SC_no_provenance 7) !=
+        sc_candidate_logical_key 8 (SC_integer_value (Signed Long) SC_no_provenance 7)),
     ("typed-view normalization preserves provenance distinctions",
       !sc_candidate_accepted (classify [changed,write,allocated]) &&
       (classify [changed,write,allocated]).sc_class_interpretation.sc_candidate_issues ==
@@ -209,7 +257,7 @@ private def checks : List (String × Bool) := Id.run do
 
 def runTests : IO UInt32 := do
   let mut passed := true
-  for (label,ok) in checks ++ metadataChecks ++ arrayChecks ++ typedViewChecks do
+  for (label,ok) in checks ++ metadataChecks ++ arrayChecks ++ aggregateChecks ++ typedViewChecks do
     IO.println s!"{label}: {ok}"
     passed := passed && ok
   return if passed then 0 else 1

@@ -97,9 +97,9 @@ capability that prevents the next necessary action; continue independent work.
   The wider-view guard retains the lowering's unspecified whole-array store
   when it precedes element accesses; unordered controls remain refused and
   no initialized values are inferred from that store.
-  Aggregate initialization, structure/union members, partial representation
-  accesses, remaining typed views, allocator reuse and runtime guards remain
-  unfinished. No full SC acceptance claim follows from this checkpoint.
+  Structure/union members, partial aggregate/representation composition,
+  remaining typed views, allocator reuse and runtime guards remain unfinished;
+  the later whole-value extension below handles complete aggregate values. No full SC acceptance claim follows from this checkpoint.
 - **C4 provider API implemented (`fad4c0428`), final acceptance still open:** `sc_program`
   packages the actual whole-program driver continuation with its state;
   `sc_program_entry` is used by both CLIs. `sc_program_start`,
@@ -137,6 +137,25 @@ capability that prevents the next necessary action; continue independent work.
   it is no longer a timeout and is still not supported. This is an exact
   relation-algorithm change, not dropped prefix checking or reduced exploration.
   Do not grow a separate exploration/checking framework.
+- **C3 whole values and callable fence integration:** the adapter accepts
+  complete aggregate stores/reads and allocation-supplied values at matching
+  whole ranges. It keeps their full keys and actual RF sources; overlapping
+  subobject composition remains guarded. Enum-compatible types and integer
+  aliases use Cerberus's existing implementation normalization before signed/
+  unsigned RF normalization. The temporary library guard now excludes only
+  evidenced private normal-call argument reads, retaining unknown-origin,
+  pointee, cross-thread access and lifetime-sharing obligations. No stream lock
+  or synchronization edge is inferred.
+  Paired selected C probes return 0 for whole aggregate copying, 4 across both
+  positive/negative enum parameter boundaries, and allowed fenced-SB results
+  (native 3, Lean 2) through the actual bundled library. Full observations and
+  commands are in `.tmp/sc-prototype/c3-whole-probes.json`; libc metadata was
+  freshly produced with the existing checked prep script. These are selected
+  executions, not complete outcome sets. Eight added focused adapter/guard
+  controls and the consolidated SC suites pass; remaining C2/C3 coverage and
+  final C4 acceptance are still open. The legacy exhaustive litmus runner's
+  fence recipe still hardcodes `--nolibc`; its PENDING row is not a new semantic
+  exclusion and must not override the approved selected-probe scope.
 - G06's chosen precise GCC preprocessor-observer experiment lacks the matching
   GCC 13.3 plugin SDK. A capability question is already pending; do not ask it
   again or bypass network controls. This blocks that experiment, not C1/C2.

@@ -112,9 +112,10 @@ implementation obligation. The physical byte-source journal is available; it
 does not itself define Cmm RF or settle nonoverlapping bytes within one scalar.
 
 **Current behavior:** no complete SC-G02 composition guard exists yet. C2 now
-classifies whole scalars and whole scalar array elements, with corresponding
-signed/unsigned integer views normalized for RF. Remaining subobject, aggregate and typed-view
-composition produces explicit port obligations, so those traces cannot certify
+classifies whole scalar/aggregate values and whole scalar array elements.
+Corresponding signed/unsigned views, implementation integer aliases and the
+registered enum-compatible types are normalized for RF. Remaining subobject,
+partial aggregate and typed-view composition produces explicit port obligations, so those traces cannot certify
 support. These temporary obligations must be narrowed by C3, not renamed as G02.
 All accesses, lifetime vertices, bytes/provenance, state and earlier findings are
 retained.
@@ -164,7 +165,9 @@ Do not equate descriptors with streams or introduce a global hb edge.
 
 **Current behavior:** no dedicated guard or complete stream-identity adapter.
 FS service ownership protects resumable abstract FS transactions only. It does
-not supply C stream synchronization. Public verdict checking remains pending.
+not supply C stream synchronization. Precise public G03 classification remains
+pending. The temporary library-attribution guard now exempts evidenced private
+normal-call argument reads; this does not identify or protect a stream.
 Retain actual memory/FS effects, output, state and independent established faults;
 do not synthesize lock effects after the fact.
 

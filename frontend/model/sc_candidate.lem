@@ -3,7 +3,7 @@
    Raw effects and aliases remain authoritative; no successful candidate may be
    inferred when an interpretation obligation remains. *)
 open import Pervasives Relation
-import Mem Mem_common Ctype Cmm_csem Sc_reference Sc_reference_aux Sc_runtime
+import Mem Mem_common Ctype Implementation Cmm_csem Sc_reference Sc_reference_aux Sc_runtime
 import Sc_value Sc_graph Sc_access_group Sc_action_identity Sc_byte_sources
 import Sc_happens_before Sc_varargs
 
@@ -13,7 +13,6 @@ type sc_interpretation_issue =
   | SC_interpret_storage of Cmm_csem.aid
   | SC_interpret_capture of Cmm_csem.aid
   | SC_interpret_value of Cmm_csem.aid
-  | SC_interpret_aggregate of Cmm_csem.aid
   | SC_interpret_order of Cmm_csem.aid
   | SC_interpret_read_source of Cmm_csem.aid
   | SC_interpret_source_range of Cmm_csem.aid * Cmm_csem.aid
@@ -93,14 +92,6 @@ let sc_candidate_access observed =
     | _ -> Nothing
   end
 
-let sc_candidate_scalar value = match value with
-  | Sc_value.SC_integer_value _ _ _ -> true
-  | Sc_value.SC_floating_value _ _ -> true
-  | Sc_value.SC_pointer_value _ _ -> true
-  | Sc_value.SC_unspecified_value _ -> true
-  | _ -> false
-end
-
 (* C11 6.5p7 permits corresponding signed/unsigned views of one object. The
    concrete model encodes signed integers in two's complement with eight-bit
    bytes (Impl_mem.repr / CerbMem.memValueToBytes). Use that shared integer
@@ -108,9 +99,16 @@ end
    remain lossless in the journal, and C arithmetic/CAS comparison is unchanged.
    This is not a general representation-to-logical-value equality rule. *)
 let sc_candidate_logical_key size key = match key with
-  | Sc_value.SC_integer_value (Ctype.Signed ibty) provenance value ->
-      Sc_value.SC_integer_value (Ctype.Unsigned ibty) provenance
-        (if value < 0 then (2 ** (8 * natFromInteger size)) + value else value)
+  | Sc_value.SC_integer_value ity provenance value ->
+      (* Reuse the actual implementation's enum-compatible type and integer
+         aliases, also used by its layout/arithmetic. Never guess enum signedness
+         from the particular value observed (C11 6.7.2.2p4). *)
+      match Implementation.normalise_integerType ity with
+        | Ctype.Signed ibty ->
+            Sc_value.SC_integer_value (Ctype.Unsigned ibty) provenance
+              (if value < 0 then (2 ** (8 * natFromInteger size)) + value else value)
+        | normalized -> Sc_value.SC_integer_value normalized provenance value
+      end
   | _ -> key
 end
 
@@ -172,8 +170,8 @@ let sc_candidate_coverage history sb hb observed =
   match observed.Sc_runtime.sc_effect_observation with
     | Mem_common.Observe_access _ _ _ _ owner base size _ _ ->
         let overlaps_other_view = List.any (fun other ->
-          match other.Sc_runtime.sc_effect_observation with
-            | Mem_common.Observe_access _ _ _ _ owner' start width _ _ ->
+          match sc_candidate_access other with
+            | Just (_, _, owner', start, width, _, _) ->
                 owner = owner' && base < start + width && start < base + size &&
                 (base <> start || size <> width) &&
                 not (sc_candidate_array_initialization_before sb hb observed other ||
@@ -223,9 +221,12 @@ let sc_candidate_add history groups aliases builder observed =
                       | (Nothing, _) -> sc_builder_issue (SC_interpret_order id) builder
                       | (_, Nothing) -> sc_builder_issue (SC_interpret_value id) builder
                       | (Just order, Just value_key) ->
-                          if not atomic && not (sc_candidate_scalar value_key) then
-                            sc_builder_issue (SC_interpret_aggregate id) builder
-                          else
+                          (* A complete captured aggregate is a value of the
+                             concrete model just like a scalar. Equal full
+                             ranges can use it directly; subobject/partial-view
+                             composition remains checked separately below.
+                             Do not reject an unused aggregate initializer merely
+                             because the scalar examples use integer tokens. *)
                             let (location, builder) = sc_intern_location key atomic builder in
                             let (token, values) = Sc_value.sc_intern_value
                               (sc_candidate_logical_key size value_key) builder.sc_builder_values in
@@ -549,7 +550,6 @@ let sc_interpretation_issue_name = function
   | SC_interpret_storage _ -> "storage identity"
   | SC_interpret_capture _ -> "access capture"
   | SC_interpret_value _ -> "logical value"
-  | SC_interpret_aggregate _ -> "aggregate value composition"
   | SC_interpret_order _ -> "memory order"
   | SC_interpret_read_source _ -> "read source composition"
   | SC_interpret_source_range _ _ -> "read/write range composition"

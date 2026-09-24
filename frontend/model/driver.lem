@@ -6,7 +6,7 @@ module Caux = Core_aux
 
 open import Utils Show Errors Trace_event
 import Cmm_op Cmm_csem Sc_order Sc_runtime Sc_scopes Sc_representation Sc_global_bindings Sc_candidate Sc_graph Nd_observe
-import Sc_link_attribution Sc_definition_sources Sc_call_context
+import Sc_link_attribution Sc_definition_sources Sc_call_context Sc_parameter_reads
 
 import Core_eval Core_run Core_reduction
 
@@ -138,9 +138,54 @@ let inline (>>) m1 m2 = ND.bind m1 (fun _ -> m2)
 (* This channel follows the existing ND state, including every alternative and
    failure-time state. It does not replace a fault, remove a continuation or
    certify a prefix. Independent errors after discovery remain observable. *)
+(* A normal-call argument binding points at its argument SLOT, not the object
+   denoted by a pointer argument. Reading a complete, allocated slot owned by
+   this thread needs no missing library protection when no other thread has
+   accessed or changed the lifetime of that storage. Keep all effects and ordinary candidate checks.
+   This exemption supplies no stream identity, value-at-entry or synchronization
+   edge. Inner-argument calling conventions do not have this slot interpretation.
+   Re-evaluate against the entire prefix, so later sharing revokes it. *)
+let sc_private_parameter_read file sc observed =
+  let request = observed.Sc_runtime.sc_effect_request in
+  file.Core.calling_convention = Core.Normal_callconv &&
+  not (List.null request.Sc_runtime.sc_request_scopes) &&
+  match observed.Sc_runtime.sc_effect_observation with
+    | Mem_common.Observe_access _ Mem_common.LoadAccess _ _ (Just owner) base width _ _ ->
+        List.any (fun prior ->
+          prior.Sc_runtime.sc_effect_request.Sc_runtime.sc_request_thread = request.Sc_runtime.sc_request_thread &&
+          match prior.Sc_runtime.sc_effect_observation with
+            | Mem_common.Observe_allocation _ storage start size _ _ _ ->
+                owner = storage && base = start && width = size
+            | _ -> false
+          end) sc.Sc_runtime.sc_effects &&
+        not (List.any (fun other ->
+          other.Sc_runtime.sc_effect_request.Sc_runtime.sc_request_thread <> request.Sc_runtime.sc_request_thread &&
+          match other.Sc_runtime.sc_effect_observation with
+            | Mem_common.Observe_access _ _ _ _ (Just storage) _ _ _ _ -> storage = owner
+            | Mem_common.Observe_allocation _ storage _ _ _ _ _ -> storage = owner
+            | Mem_common.Observe_deallocation _ _ _ storage _ -> storage = owner
+            | _ -> false
+          end) sc.Sc_runtime.sc_effects) &&
+        List.any (fun event -> match event with
+          | Sc_scopes.SC_scope_entered entry ->
+              List.any (fun (_,_,binding) ->
+                match Sc_parameter_reads.sc_classify_slot_binding binding with
+                  | Sc_parameter_reads.SC_slot_binding_key key ->
+                      match Sc_parameter_reads.sc_observed_slot_read entry key observed with
+                        | Sc_parameter_reads.SC_slot_read_found _ _ -> true
+                        | _ -> false
+                      end
+                  | _ -> false
+                end) entry.Sc_scopes.sc_scope_frame.Sc_call_context.sc_frame_arguments
+          | _ -> false
+        end) sc.Sc_runtime.sc_scopes.Sc_scopes.sc_scope_events
+    | _ -> false
+  end
+
 let sc_interpret_driver dr_st sc =
   let interpretation = Sc_candidate.sc_interpret_candidate sc in
   let issues = List.concat (List.map (fun observed ->
+    let private_parameter = sc_private_parameter_read dr_st.core_file sc observed in
     List.concat (List.map (fun scope ->
       let id = observed.Sc_runtime.sc_effect_id in
       match List.find (fun event -> match event with
@@ -155,7 +200,8 @@ let sc_interpret_driver dr_st sc =
                         match binding.Sc_link_attribution.sc_definition_selected.Sc_definition_sources.sc_selected_origin with
                           | Sc_definition_sources.SC_definition_user -> []
                           | Sc_definition_sources.SC_definition_library "Core standard library" -> []
-                          | Sc_definition_sources.SC_definition_library _ -> [Sc_candidate.SC_interpret_library_protection id]
+                          | Sc_definition_sources.SC_definition_library _ ->
+                              if private_parameter then [] else [Sc_candidate.SC_interpret_library_protection id]
                           | _ -> [Sc_candidate.SC_interpret_runtime_origin id]
                         end
                     | _ -> [Sc_candidate.SC_interpret_runtime_origin id]
