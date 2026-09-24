@@ -33,8 +33,8 @@ capability that prevents the next necessary action; continue independent work.
 - Branch/worktree: `arc/sc-prototype`,
   `/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype`.
 - Base: `5407597d9eeba0259d65b728e86a860ad4614ab3`.
-  C1 pruning and consolidation commit: `0e6947988`. C2 changes are in progress
-  in this worktree; preserve them when resuming.
+  C1 pruning and consolidation commit: `0e6947988`; C2 scalar integration
+  checkpoint: `8a350e2a1`. C2 acceptance and C3/C4 remain in progress.
 - The actual scheduler, primitive observations, atomic operations, source-order
   evidence and failure-state repairs exist. **Public SC is unfinished:**
   the new `Driver.drive true` completion path constructs and checks a candidate,
@@ -82,7 +82,20 @@ capability that prevents the next necessary action; continue independent work.
   again or bypass network controls. This blocks that experiment, not C1/C2.
   Do not guess an ABI or substitute invented lock-free constants.
 
-## Execution-cost decision pending
+## Exploration and evidence scope
+
+[USER 2026-09-24] Exhaustive C exploration is a probe for very small examples;
+enumerating all outcomes of mid-size and larger programs is not required for
+this milestone. Complete outcome-set comparisons remain on the bounded
+semantic/reference domain. Larger C cases use explicitly labelled selected
+execution/prefix checks, with complete runs where feasible. Retain the actual
+checker-disconnection, fault, blocking and exhaustion controls. This replaces
+the former C2/C4 demand for complete whole-C outcomes of every named case.
+
+This changes validation scope only. Preserve every operational choice, all
+agreed semantic coverage and the fail-closed policy. A selected execution is
+never evidence of whole-program safety or coverage. No exploration subsystem
+or general optimization framework is required to complete this module.
 
 C2 now has a real public scalar classification path. Both engines accept the
 actual C `return 0` and ordered-atomic-read controls; the latter exhaustively
@@ -107,24 +120,8 @@ selected strong-equal runs return the independently expected 5. The sequenced
 seed also exceeds the same 15-second exhaustive bound on both engines. These
 selected runs do not supply complete C outcome-set evidence.
 
-A scope decision is requested before adding an exploration subsystem:
-
-1. **Recommended:** retain all operational choices and complete C3/C4; validate
-   complete outcome sets on the bounded semantic/reference domain, and use
-   actual C pipeline cases with complete runs where feasible plus explicitly
-   labelled selected/prefix checks. Retain checker-disconnection, fault,
-   blocking and exhaustion controls. This changes the C2/C4 requirement for
-   complete whole-C outcome sets; it changes no semantics or refusal policy.
-2. Keep complete whole-C outcome-set acceptance mandatory for all named cases.
-   Add a narrowly justified exploration optimization while preserving the raw
-   machine/API choices. Exact state sharing must account for memory, source
-   graph, scopes, saved continuations, faults and fuel; comparing only final
-   values or `driver_state_eq` would be unsound. This is substantive new work,
-   not another test gate, and its sufficiency has not been established.
-
-**No acceptance requirement has been relaxed yet.** C2 remains incomplete. The
-new scalar adapter's temporary port obligations are not final exclusions; G06
-and the other C3/C4 obligations still apply under either choice. SDK capability
+C2 remains incomplete. The scalar adapter's temporary port obligations are not
+final exclusions; G06 and the other C3/C4 obligations still apply. SDK capability
 remains separately pending: `nono why` confirms package metadata paths are not
 OS-granted. No sandbox bypass or shared toolchain mutation was attempted.
 
@@ -278,7 +275,10 @@ removal. No claim that C1 itself delivers SC.
 
 **Acceptance:** real paired C SB/publication, CAS and fences plus a mixed
 safe/racy alternative, fault before a loop, blocking and fuel exhaustion traverse
-this API and have independently justified complete outcomes. Disconnecting the
+this API with independently justified observations. Exhaustive C probes are
+limited to very small examples; larger cases use labelled selected/prefix
+checks. Complete outcome sets remain required on the bounded semantic/reference
+domain. Disconnecting the
 production checker makes the C suite fail. Retain one existing helper-interleaving
 and partial-failure control, with the permitted interruption/atomic-exclusion/FS
 ownership rule and its source rationale in the operational contract. Passive
@@ -332,7 +332,7 @@ introduce a second semantics or require whole-ISO adequacy. Rewrite
 an actual step/outcome preservation property, including finality or a retained
 fault/gap. No customer build, logic, re-pin or mutation is part of this work.
 
-Validate the complete SC case families above, actual production connection,
+Validate all SC case families above under the exploration scope above, actual production connection,
 independent reference domain, and unchanged intended sequential behavior. Finish
 one short usage/support record and update this status. Completion requires the
 real C path and full agreed coverage with explicit evidenced boundaries, not

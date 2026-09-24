@@ -60,6 +60,12 @@ offered thread/service, Core and ND alternatives, not just one successful trace.
 Candidate membership alone proves neither that coverage nor recording fidelity.
 State the exact interpretation assumptions and bounds when making either claim.
 
+The operational machine retains those choices independently of how a test
+explores them. Exhaustive whole-C runs are probes for very small examples;
+selected executions/prefixes of larger C programs are integration evidence,
+not complete outcome sets or whole-program safety claims (user scope decision
+of 2026-09-24, recorded in the roadmap).
+
 Reuse complete bounded scalar outcome-set comparisons and inspect representative
 RF/MO/SC interpretations. The finite scalar enumerator does not cover fences;
 fences and repeated initialization require direct controls against the selected
