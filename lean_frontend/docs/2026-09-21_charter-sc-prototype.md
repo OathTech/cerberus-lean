@@ -35,7 +35,9 @@ capability that prevents the next necessary action; continue independent work.
 - Base: `5407597d9eeba0259d65b728e86a860ad4614ab3`.
   C1 pruning and consolidation commit: `0e6947988`; C2 scalar integration
   checkpoint: `8a350e2a1`; C3 metadata/array/view checkpoints: `0f437971a`,
-  `307ac0d3e`. C2 acceptance and C3/C4 remain in progress.
+  `307ac0d3e`, `601b6b9df`; provider entry `fad4c0428`, occurrence closure
+  `e5a6d6be9`, and prefix/fault controls `69dfd52ed`.
+  C2 acceptance and C3/C4 remain in progress.
 - The actual scheduler, primitive observations, atomic operations, source-order
   evidence and failure-state repairs exist. **Public SC is unfinished:**
   the new `Driver.drive true` completion path constructs and checks a candidate,
@@ -63,7 +65,10 @@ capability that prevents the next necessary action; continue independent work.
   and runtime inputs are in `tests/sc/`; source conclusions and the filesystem
   coverage map are in the three live specifications. Keep the latest raw full
   and three-engine reports above, and the unresolved G06 experiment only.
-- **Next: C2, production interpretation/classification and the public C path.**
+- **Next: the C3 composition decision below.** The public scalar path and
+  selected prefix/fault cases now work; ordinary ordered representation still
+  exposes the scalar construction's limit. Resolve its contract before changing
+  the candidate acceptance rule. C2's final wiring control and C3/C4 remain open.
   C3/C4 remain open. The new prefix accumulator retains witness IDs in the
   authoritative journal instead of repeated graph snapshots; the superseded
   accumulator/proof modules are removed. Full prefix interpretation still needs
@@ -378,6 +383,64 @@ a scalar-only success cannot become the definition of done. No further passive
 helper checkpoints before this connection exists.
 
 ## C3 — finish the agreed coverage and precise guards
+
+### Decision checkpoint: ordered representation composition
+
+[AGENT, pending user decision] The scalar construction cannot be the universal
+acceptance condition for the agreed operational domain. Two minimal real C
+probes now make the missing construction concrete:
+
+- `tests/sc/representation/ordered-byte-update.c` initializes an unsigned int,
+  writes its first representation byte through `unsigned char *`, then reads
+  the integer. Pristine Cerberus at the pinned commit, fork Cerberus and Lean
+  sequential execution return 1. Both SC frontends instead report the existing
+  read-source/subobject port obligations. The final integer has multiple actual
+  contributing writes; no executed whole-integer store supplied its value.
+- `tests/sc/representation/initialized-members.c` initializes a structure and
+  reads its members. The same three sequential engines return 42; both SC
+  frontends report range/subobject composition obligations. Aggregate-to-member
+  decomposition can address this case, but alone cannot solve the byte-update
+  case above.
+
+These are selected full observations, not complete outcome enumeration. Exact
+commands, 15-second bounds, statuses, observations and binary hashes are in
+`.tmp/sc-prototype/c3-ordered-composition-probes.json`. No current SC support
+claim or new model-gap classification is inferred from agreement on the refusal.
+
+Source basis: `Cmm_csem.well_formed_rf` requires equal locations, equal whole
+values and one writer per read. Its overlap model instead has footprint-valued
+RF and `combine_cvalues`, but `frontend/model/cmm_aux.lem` leaves the concrete
+footprint operations and value combination as placeholders. The concrete memory
+implementation already executes these ordered accesses. N1570 6.5p7 permits
+character access to object representations; 5.1.2.4p19 gives visibility through
+HB. A missing scalar representation is not evidence that these C programs are
+unsupported upstream. Existing SC-G02 concerns the unresolved *unordered*
+composition and does not justify excluding these ordered examples.
+
+**Recommended refinement:** give ordered non-atomic representation composition
+an explicit operational interpretation using actual concrete-memory effects,
+object footprints, contributing writes and source/HB order. Keep the pinned
+SC-fenced rules for atomic actions and synchronization, and scalar RF checks
+where that interpretation applies. Keep every recorded occurrence and offered
+choice. Unordered unresolved representation cases still fail closed under G02;
+the composition must also preserve G07 detection over all relevant evaluations,
+library-protection obligations, partial failures and retained prefix findings.
+Passing a scalar projection alone must never certify the full execution.
+
+If accepted, implement this directly in the production adapter, with the two
+probes above, an ordered byte-copy control, and a distinguishing unordered
+representation refusal. Update the contract to state exactly which operational
+conditions and pinned predicates jointly justify acceptance, then continue the
+existing C3 table and C4 finish. No new evaluator, scheduling policy, general
+explorer or checker framework is proposed.
+
+This recommendation changes the scalar reference's role in the accepted
+construction; it is not implemented or silently treated as approved. The current
+explicit port refusals remain. The user decision is whether to adopt this
+operational composition, or retain universal scalar-candidate acceptance and
+leave the module incomplete pending a broader reference composition. The latter
+cannot count as completing the present coverage contract. This is the roadmap's
+authorized significant semantic-design checkpoint, not another testing campaign.
 
 | Obligation / actual consumer | Remaining work and distinguishing acceptance cases |
 |---|---|
