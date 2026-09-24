@@ -275,6 +275,11 @@ execution is generated.
 Array element boundaries follow the captured allocation width and declared
 element counts, recursively for nested arrays (C11 6.2.5p20). This does not
 identify a partial representation access as an independent scalar object.
+Different overlapping ranges retain a port obligation. The one current
+exception is the lowering's whole-array unspecified-value store when it is
+ordered before the narrower accesses (SB within one thread, HB between threads).
+Its raw effect remains recorded, and subsequent reads must still establish RF
+from the actual contributing writer; no initialized element value is invented.
 Captured values remain lossless. Candidate RF tokens normalize corresponding
 signed/unsigned integer views using the concrete model's two's-complement
 encoding at the observed width (C11 6.5p7), retaining integer rank and provenance.

@@ -147,7 +147,27 @@ declare {lean} termination_argument sc_candidate_array_element = automatic
 (* The first integration resolves whole scalar objects and array elements. Subobject/representation
    composition has explicit port obligations until the
    operational adapter supplies their interpretation. These are not G02/UB. *)
-let sc_candidate_coverage history observed =
+(* C lowering installs an unspecified value across an automatic array before
+   its element assignments. Keep that effect and source order. It does not
+   require a mixed-view location interpretation when it precedes the narrower
+   access; reads still must establish their actual whole-value RF separately.
+   Same-thread conflicts require SB, not an interthread HB detour. *)
+let sc_candidate_array_initialization_before sb hb first second =
+  let left = first.Sc_runtime.sc_effect_request in
+  let right = second.Sc_runtime.sc_effect_request in
+  let ordered = if left.Sc_runtime.sc_request_thread = right.Sc_runtime.sc_request_thread
+    then sb else hb in
+  (first.Sc_runtime.sc_effect_id, second.Sc_runtime.sc_effect_id) IN ordered &&
+  match first.Sc_runtime.sc_effect_observation with
+    | Mem_common.Observe_access _ Mem_common.StoreAccess _ _ _ _ _ _ value ->
+        match Mem.sc_value_key value with
+          | Just (Sc_value.SC_unspecified_value (Ctype.Ctype _ (Ctype.Array _ _))) -> true
+          | _ -> false
+        end
+    | _ -> false
+  end
+
+let sc_candidate_coverage history sb hb observed =
   let id = observed.Sc_runtime.sc_effect_id in
   match observed.Sc_runtime.sc_effect_observation with
     | Mem_common.Observe_access _ _ _ _ owner base size _ _ ->
@@ -155,7 +175,9 @@ let sc_candidate_coverage history observed =
           match other.Sc_runtime.sc_effect_observation with
             | Mem_common.Observe_access _ _ _ _ owner' start width _ _ ->
                 owner = owner' && base < start + width && start < base + size &&
-                (base <> start || size <> width)
+                (base <> start || size <> width) &&
+                not (sc_candidate_array_initialization_before sb hb observed other ||
+                     sc_candidate_array_initialization_before sb hb other observed)
             | _ -> false
           end) history in
         (* Distinct range tokens are sound here only for identical or disjoint
@@ -407,7 +429,9 @@ let sc_interpret_candidate state =
      sc_candidate_issues= builder.sc_builder_issues ++ issues ++
        (if List.lookup "sw" relations <> Nothing && List.null hb.Sc_happens_before.sc_hb_issues then []
         else [SC_interpret_happens_before]) ++
-       List.concat (List.map (sc_candidate_coverage history) history) |>
+       List.concat (List.map (sc_candidate_coverage history
+         (Sc_graph.sc_occurrence_closure graph.Sc_graph.sc_graph_sb)
+         hb.Sc_happens_before.sc_hb_relation) history) |>
 
 (* The pinned fence predicate quantifies five actions. Restrict the two fence
    variables to actual fences and the two write variables to MO edges; these

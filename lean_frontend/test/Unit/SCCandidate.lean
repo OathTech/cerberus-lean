@@ -111,6 +111,12 @@ private def arrayChecks : List (String × Bool) := Id.run do
       (List.replicate 8 {value := some 0})
       (CerbMem.integerValueMval (Signed LongLong) (CerbMem.integerIval 0)))
   let overlapping := classify [wide,store 1 0 104,pair]
+  let initialized := occurrence 1 0 (SC_access NA Pos)
+    (Observe_access CerbLocation.unknown StoreAccess matrix ptr (some 20) 100 24
+      (List.replicate 24 {value := none}) (CerbMem.unspecifiedMval matrix))
+  let later := store 2 1 104
+  let published := { later with sc_effect_request := { later.sc_effect_request with
+    sc_request_annotation := ⟨set [],set [],set [1]⟩ } }
   return [
     ("nested array element stores have distinct scalar locations",
       sc_candidate_accepted disjoint),
@@ -119,6 +125,9 @@ private def arrayChecks : List (String × Bool) := Id.run do
     ("a wider overlapping array view cannot certify separate scalar locations",
       !sc_candidate_supported overlapping &&
       overlapping.sc_class_interpretation.sc_candidate_issues.contains (SC_interpret_object_layout 2)),
+    ("unspecified array initialization must precede its subobject accesses",
+      sc_candidate_accepted (classify [published,initialized,allocated]) &&
+      !sc_candidate_supported (classify [later,initialized,allocated])),
     ("array layout does not justify partial scalar or crossed-element accesses",
       !sc_candidate_array_element matrix 100 24 105 1 &&
       !sc_candidate_array_element matrix 100 24 102 4 &&

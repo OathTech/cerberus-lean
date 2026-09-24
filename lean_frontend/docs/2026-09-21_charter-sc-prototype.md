@@ -89,10 +89,13 @@ capability that prevents the next necessary action; continue independent work.
   Both public engines return 42 for the distinct-element C probe, UB005 for
   the same-element race, and 1 for the signed/unsigned view probe. These are
   selected executions, recorded with commands/status/binary hashes in
-  `.tmp/sc-prototype/c3-probes.json`; fourteen added classifier controls cover
+  `.tmp/sc-prototype/c3-probes.json`; fifteen added classifier controls cover
   these cases and prevent wider overlapping views from certifying separate
   locations. The whole-C provider API is the next independent integration;
   it must retain the remaining interpretation obligations visibly.
+  The wider-view guard retains the lowering's unspecified whole-array store
+  when it precedes element accesses; unordered controls remain refused and
+  no initialized values are inferred from that store.
   Aggregate initialization, structure/union members, partial representation
   accesses, remaining typed views, allocator reuse and runtime guards remain
   unfinished. No full SC acceptance claim follows from this checkpoint.
