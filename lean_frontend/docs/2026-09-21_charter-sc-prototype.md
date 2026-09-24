@@ -199,6 +199,17 @@ selected strong-equal runs return the independently expected 5. The sequenced
 seed also exceeds the same 15-second exhaustive bound on both engines. These
 selected runs do not supply complete C outcome-set evidence.
 
+C2 prefix checkpoint: the actual C `fault-before-loop.c` returns the same
+complete UB045a observation and source location on both selected frontends.
+`race-before-loop.c` returns explicit Lean exhaustion at fuel 256. The public
+whole-Core continuation controls additionally inspect the provider state:
+earlier race pairs and their original occurrences survive a subsequent division
+fault or exhaustion; a race-free loop has no invented finding. These are selected
+execution/prefix checks, not complete outcome sets or native fuel equivalence.
+The affected machine suite passes; commands, binary identities and observations
+are in `.tmp/sc-prototype/c2-prefix-probes.json`. No implementation change was
+needed for these cases. The final checker-disconnection control is still pending.
+
 C2 remains incomplete. The scalar adapter's temporary port obligations are not
 final exclusions; G06 and the other C3/C4 obligations still apply. SDK capability
 remains separately pending: `nono why` confirms package metadata paths are not

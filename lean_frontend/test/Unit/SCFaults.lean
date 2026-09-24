@@ -58,6 +58,37 @@ private def controls (fuel : Nat) : List (String × Bool) := Id.run do
   let blockedProgram := (CerbSCOperational.start fuel 2 0x10000
     (program (Expr [] (Ewait 99))) CerbFS.fs_initial_state none ["whole-program blocked"]).1
   let blockedResults := CerbSCOperational.outcomes fuel blockedProgram
+  let sequence := fun a b => Expr [] (Esseq (Pattern [] (CaseBase (none, BTy_unit))) a b)
+  let loopLabel := Symbol "sc-prefix-control" 102 SD_None
+  let loop := Expr [] (Esave (loopLabel, BTy_unit) []
+    (Expr [] (Erun empty_annotation loopLabel [])))
+  let fault := Expr [] (Epure (Pexpr [] ()
+    (PEundef (CerbLocation.other "SC fault before loop") UB045a_division_by_zero)))
+  let object := Symbol "sc-prefix-control" 103 SD_None
+  let action := fun a => Expr [] (Eaction (Paction Pos
+    (Action (CerbLocation.other "SC retained race") empty_annotation a)))
+  let create := action (Create (pe (Vobject (OVinteger (CerbMem.integerIval 1))))
+    (pe (Vctype unsigned_char)) (PrefOther "SC retained race"))
+  let store := fun n => action (Store0 false (pe (Vctype unsigned_char))
+    (Pexpr [] () (PEsym object)) (pe (intval n)) NA)
+  let raced := fun tail => Expr [] (Esseq
+    (Pattern [] (CaseBase (some object, BTy_object OTy_pointer))) create
+    (sequence (parExpr [store 7, store 8]) tail))
+  -- Use the existing first-choice runner on the actual public continuation.
+  -- The loop has infinitely many steps; enumerating its ND tree is not a test.
+  let selected := fun body =>
+    let entry := (CerbSCOperational.start fuel 2 0x10000 (program body)
+      CerbFS.fs_initial_state none ["whole-program prefix"]).1
+    CerbND.runND1 entry.sc_program_continuation entry.sc_program_state
+  let beforeLoop := selected (raced (sequence fault loop))
+  let exhaustedAfterRace := selected (raced loop)
+  let safeLoop := selected loop
+  let retainedRace := fun (s : driver_state) =>
+    let pairs := setToList s.sc_findings.sc_found_data_races
+    !pairs.isEmpty && pairs.all (fun (left,right) =>
+      let history := s.sc_state0.map (fun sc => sc.sc_effects) |>.getD []
+      history.any (fun e => e.sc_effect_id == left) &&
+      history.any (fun e => e.sc_effect_id == right))
   let normalFile := { f with calling_convention0 := Normal_callconv }
   let slot := pointer 20 200
   let parameter := Symbol "private-argument-control" 101 SD_None
@@ -122,6 +153,19 @@ private def controls (fuel : Nat) : List (String × Bool) := Id.run do
     ("whole-program blocking is distinct from main returning a value",
       !blockedResults.isEmpty && blockedResults.all fun (outcome, _, _) => match outcome with
         | Active value => value.dres_blocked && value.dres_core_value == Vunit
+        | _ => false),
+    ("a fault before a loop retains the earlier race and its actual occurrences",
+      !beforeLoop.isEmpty && beforeLoop.all fun (outcome, _, s) => match outcome with
+        | Killed _ (Undef0 _ [UB045a_division_by_zero]) => retainedRace s
+        | _ => false),
+    ("exhaustion after a race retains findings without inventing a completed verdict",
+      !exhaustedAfterRace.isEmpty && exhaustedAfterRace.all fun (outcome, _, s) => match outcome with
+        | Killed _ reason => reason == CerbND.fuelExhaustedKill && retainedRace s
+        | _ => false),
+    ("a loop without a race reports exhaustion with no invented race finding",
+      !safeLoop.isEmpty && safeLoop.all fun (outcome, _, s) => match outcome with
+        | Killed _ reason => reason == CerbND.fuelExhaustedKill &&
+            (setToList s.sc_findings.sc_found_data_races).isEmpty
         | _ => false),
     ("normal-call private argument read has actual slot and allocation evidence",
       sc_private_parameter_read normalFile recorded read),
