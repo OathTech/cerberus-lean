@@ -168,6 +168,14 @@ private def checks : List (String × Bool) := Id.run do
       if mask / 2^i % 2 == 1 then some edge else none)
     setEqualBy setElemCompare (sc_occurrence_closure edges)
       (set_tcByCmp (pairCompare defaultCompare defaultCompare) edges)
+  let vertices := [0,10,17,100]
+  let forward := vertices.flatMap fun a => vertices.filterMap fun b =>
+    if a < b then some (a,b) else none
+  let sparseClosure := (List.range 64).all fun mask =>
+    let edges := set ((forward.zipIdx).filterMap fun (edge,i) =>
+      if mask / 2^i % 2 == 1 then some edge else none)
+    setEqualBy setElemCompare (sc_occurrence_closure edges)
+      (set_tcByCmp (pairCompare defaultCompare defaultCompare) edges)
   let clauses := fenceCases.all fun (sb,rf,sc) =>
     let ex := candidate actions sb rf [(w,w')] sc
     !sc_candidate_fences_heeded ex && agree ex &&
@@ -194,6 +202,7 @@ private def checks : List (String × Bool) := Id.run do
     sc_candidate_relations pre wit == sc_ref_release_acquire_fenced_relations pre wit
   return [
     ("occurrence closure agrees on every three-vertex directed graph", closure),
+    ("indexed closure agrees on every four-vertex forward graph with sparse IDs", sparseClosure),
     ("candidate relation calculation agrees with pinned reference", relations),
     ("all six reference fence restrictions and edge deletion controls", clauses),
     ("fence restriction agrees with pinned predicate on bounded malformed and empty inputs", arbitrary)]

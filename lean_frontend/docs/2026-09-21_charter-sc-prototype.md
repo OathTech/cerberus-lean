@@ -100,7 +100,7 @@ capability that prevents the next necessary action; continue independent work.
   Aggregate initialization, structure/union members, partial representation
   accesses, remaining typed views, allocator reuse and runtime guards remain
   unfinished. No full SC acceptance claim follows from this checkpoint.
-- **C4 provider API implemented, final acceptance still open:** `sc_program`
+- **C4 provider API implemented (`fad4c0428`), final acceptance still open:** `sc_program`
   packages the actual whole-program driver continuation with its state;
   `sc_program_entry` is used by both CLIs. `sc_program_start`,
   `sc_program_node` and `sc_program_resume` preserve outer initialization/main/
@@ -119,14 +119,24 @@ capability that prevents the next necessary action; continue independent work.
   the global fixture also passes sequentially. Commands, statuses and complete
   observations are in `.tmp/sc-prototype/c4-probes.json`. Final C4 coverage and
   release validation remain outstanding; no full campaign was repeated.
-- **Next concrete integration:** finish C2's selected C families and C3's
-  representation/runtime adapter. Native selected SB, publication and four
-  CAS probes give allowed outcomes; the mixed example reaches its race
-  alternative. They are not complete sets or yet paired acceptance evidence.
-  The fence function needs the bundled C library; `--nolibc` leaves it
-  undefined, while the library-backed selected probe timed out at 15 seconds.
-  Resolve that actual path before granting fence-C support. Do not grow a
-  separate exploration or checking framework.
+- **Next concrete integration: C3 representation/runtime adapter and remaining
+  C2 public cases.** Selected paired SB, publication and all four CAS probes
+  give independently allowed full observations. The mixed example gives the
+  race alternative natively and the safe alternative in Lean; these different
+  selections are not a differential mismatch or complete outcome-set evidence.
+  Commands/status/binary hashes are in `.tmp/sc-prototype/c2-selected-probes.json`.
+  A native library-backed fence probe exposed prefix-closure cost. A temporary
+  five-stage profile measured 2.959 seconds in source-graph closure and 2.764
+  in lifted HB over 128 completed calls (debug run stopped at 15 seconds).
+  The production closure now indexes incoming edges and per-vertex ancestors;
+  the relation and general-graph fallback are unchanged. It agrees with the
+  reference on all 512 three-vertex directed graphs and all 64 four-vertex
+  forward graphs with sparse IDs. Both builds and SC suites/native controls
+  pass. With timing instrumentation removed, the same native fence probe
+  reaches explicit aggregate/value/library port obligations in 2.656 seconds;
+  it is no longer a timeout and is still not supported. This is an exact
+  relation-algorithm change, not dropped prefix checking or reduced exploration.
+  Do not grow a separate exploration/checking framework.
 - G06's chosen precise GCC preprocessor-observer experiment lacks the matching
   GCC 13.3 plugin SDK. A capability question is already pending; do not ask it
   again or bypass network controls. This blocks that experiment, not C1/C2.

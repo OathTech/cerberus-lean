@@ -5,6 +5,7 @@
    are NOT source-order edges. This is sb/asw closure, not atomic sw or full hb.
    It neither supplies C locations/RF nor gives an SC consistency/race verdict. *)
 open import Pervasives Relation Set_extra
+import Map_extra
 import Core_run_aux Mem_common Sc_runtime Cmm_csem
 
 type sc_graph_node = <|
@@ -90,14 +91,28 @@ let sc_node_issues owners node =
    that case process target IDs in increasing order: every predecessor's
    ancestors have already been computed. IDs order the computation only;
    the supplied edges remain its entire semantic input. Arbitrary external
-   graphs, including cycles and reverse edges, use the general operation. *)
+   graphs, including cycles and reverse edges, use the general operation.
+   Index immediate predecessors once and retain each vertex's ancestor set;
+   rescanning a growing dense closure for every vertex dominates actual libc
+   prefixes. Flatten to the original edge relation only after the fold. *)
 let sc_occurrence_closure (edges: set (Cmm_csem.aid * Cmm_csem.aid)) =
   if Set.all (fun (source,target) -> source < target) edges then
-    List.foldl (fun closed target ->
-      let parents = Set.map fst (Set.filter (fun (_,ending) -> ending = target) edges) in
-      let ancestors = Set.map fst (Set.filter (fun (_,ending) -> ending IN parents) closed) in
-      closed union Set.map (fun source -> (source,target)) (parents union ancestors))
-      {} (Set_extra.toOrderedList (Set.map snd edges))
+    let incoming = List.foldl (fun table (source,target) ->
+      let parents = match Map.lookup target table with Nothing -> {} | Just found -> found end in
+      Map.insert target (Set.insert source parents) table)
+      Map.empty (Set_extra.toOrderedList edges) in
+    let ancestry = List.foldl (fun table target ->
+      let parents = match Map.lookup target incoming with Nothing -> {} | Just found -> found end in
+      let ancestors = List.foldl (fun found parent ->
+        match Map.lookup parent table with
+          | Nothing -> found
+          | Just earlier -> found union earlier
+        end) parents (Set_extra.toOrderedList parents) in
+      Map.insert target ancestors table)
+      Map.empty (Set_extra.toOrderedList (Set.map snd edges)) in
+    Set.fromList (List.concat (List.map (fun (target,ancestors) ->
+      List.map (fun source -> (source,target)) (Set_extra.toOrderedList ancestors))
+      (Map_extra.toList ancestry)))
   else transitiveClosure edges
 
 let sc_build_source_graph nodes =
