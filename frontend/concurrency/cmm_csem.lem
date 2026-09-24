@@ -656,9 +656,9 @@ declare lean target_rep function statically_satisfied = `CerbConcurrency.statica
 let {hol; isabelle; tex} statically_satisfied condition opsem (p : program) =
   let Xs = {(Xo,Xw,rl) | opsem p Xo} in
   condition Xs
-
-
-
+(* FORK F3 (2026-09-24; base 0a6d59eed): the 23 LemUnsupported.Cmm.* reps below
+   belong to {hol; isabelle; tex}-only definitions, which Lean never renders.
+   They provide no Lean implementation or concurrency support. *)
 val observable_filter : forall. set (candidate_execution) -> set (observable_execution)
 declare lean target_rep function observable_filter = `LemUnsupported.Cmm.observable_filter`
 let {hol; isabelle; tex} observable_filter X = {(Xo,Xw) | exists rl. (Xo,Xw,rl) IN X}

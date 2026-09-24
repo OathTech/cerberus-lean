@@ -58,13 +58,16 @@ moreLeanArgs = ["-DautoImplicit=false"]
 # this pin (no fuel'd mutual block is reader-lifted at the current .lem);
 # lem-lean doc/lean-backend/2026-09-20_fuel-mutual-reader-record.md; this
 # repo: docs/2026-09-20_program-data-parameters-S1.5-record.md).
-# Public-readiness M1/M4/M8, 2026-09-24: single final cleanup pin.
+# Public-readiness M1/M4/M8, 2026-09-24: initial MUST checkpoint pin.
 # Backend refusal and local test wrapper; runtime notice comments only.
 # Evidence: docs/2026-09-24_public-readiness-remediation.md.
+# Closure F1/F3, 2026-09-24: one further pin after the Lem closure;
+# substituted-type sorry refusal and recursive-rep fixture restored.
+# Evidence: docs/2026-09-24_public-readiness-closure.md.
 [[require]]
 name = "LemLib"
 git = "https://github.com/OathTech/lem-lean"
-rev = "9bb6c6b583c2eb4ecf6ca5b21a274dacc29e0fa4"
+rev = "6b20bfd02de924d078725efa96c6675115b8b17a"
 subDir = "lean-lib"
 
 [[lean_lib]]

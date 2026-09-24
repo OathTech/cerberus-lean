@@ -59,7 +59,8 @@
 #   2. regenerate the upstream tree at the (new) merge-base with the SAME
 #      pinned lem (see the review note §3/§6 — operator action; the tree
 #      lives outside this repo)
-#   3. ./scripts/check_fork_drift.sh --refresh   # rewrites the manifest
+#   3. set [meta] lem-pin to the reviewed full 40-hex commit, then run
+#      ./scripts/check_fork_drift.sh --refresh   # preserves that full pin
 #   4. review the manifest diff hunk-by-hunk (every new [files] entry and
 #      every changed hash is a claim about the oracle), commit with the
 #      justification in the message.
@@ -155,11 +156,12 @@ gate() {
             insec && !/^[[:space:]]*(#|$)/ { print }
         ' "$MANIFEST"
     }
-    local pinned_mb live_mb pinned_lem live_lem
+    local pinned_mb live_mb pinned_lem live_lem live_prefix
     pinned_mb=$(section meta | sed -n 's/^merge-base=//p')
     [[ -n "$pinned_mb" ]] || fail "manifest has no [meta] merge-base= line"
     pinned_lem=$(section meta | sed -n 's/^lem-pin=//p')
     [[ -n "$pinned_lem" ]] || fail "manifest has no [meta] lem-pin= line (the lem-lean commit both generated trees were derived with)"
+    [[ "$pinned_lem" =~ ^[0-9a-f]{40}$ ]] || fail "manifest [meta] lem-pin must be exactly one full 40-hex commit"
 
     live_mb=$(git -C "$ROOT" merge-base "$UPSTREAM_REF" HEAD) || fail "git merge-base failed"
     if [[ "$live_mb" != "$pinned_mb" ]]; then
@@ -171,10 +173,22 @@ gate() {
     if [[ -n "$LEM_CMD" ]]; then
         live_lem=$("$LEM_CMD" -v | awk '{print $2}') || fail "'$LEM_CMD -v' failed"
         [[ -n "$live_lem" ]] || fail "'$LEM_CMD -v' printed no version"
-        if [[ $REFRESH -eq 0 && "$live_lem" != "$pinned_lem" ]]; then
+        # Closure F1 (2026-09-24; reviewed base 0a6d59eed): git describe's
+        # abbreviation length depends on the clone. Accept a 7–40 hex prefix,
+        # bare or in a hash-bearing tag-distance-gHASH form. A dirty suffix
+        # does not identify a different commit; this is not a clean-tree check.
+        live_prefix=${live_lem%-dirty}
+        if [[ "$live_prefix" =~ ^[0-9a-f]{7,40}$ ]]; then
+            :
+        elif [[ "$live_prefix" =~ ^[^[:space:]]+-[0-9]+-g([0-9a-f]{7,40})$ ]]; then
+            live_prefix=${BASH_REMATCH[1]}
+        else
+            fail "malformed lem version: '$live_lem' (need 7–40 hex digits or a hash-bearing git describe version)"
+        fi
+        if [[ "$pinned_lem" != "$live_prefix"* ]]; then
             fail "lem-pin stale: manifest records lem-pin=$pinned_lem, '$LEM_CMD -v' says $live_lem — both generated trees must be re-derived with the pinned lem and the manifest refreshed deliberately"
         fi
-        lem_note="lem-pin $pinned_lem = lem -v"
+        lem_note="lem-pin $pinned_lem matches lem -v $live_lem (hex prefix)"
     else
         lem_note="lem-pin $pinned_lem (lem not on PATH: not cross-checked)"
     fi
@@ -256,11 +270,11 @@ gate() {
             echo "# [expected-semantic]/[expected-cosmetic] = generated .ml allowed to"
             echo "# differ, pinned by sha256 of their label-normalized unified diff."
             echo "# Cosmetic = verified comment/blank-line-only at review time."
-            echo "# [meta] lem-pin = the lem-lean commit (\`lem -v\`) both generated trees"
-            echo "#   were derived with; cross-checked against \`lem -v\` when lem is on PATH."
+            echo "# [meta] lem-pin = the full 40-hex lem-lean commit both generated trees"
+            echo "#   were derived with; prefix-checked against \`lem -v\` when lem is on PATH."
             echo "[meta]"
             echo "merge-base=$live_mb"
-            echo "lem-pin=$live_lem"
+            echo "lem-pin=$pinned_lem"
             echo "[files]"
             printf '%s\n' "$live_files"
             echo "[source-content]"
@@ -423,6 +437,38 @@ awk '1; /^100[67][45][45] [0-9a-f]+ util\/cerb_fresh.ml$/{print}' "$PLANTDIR/m.c
 plant "S13 duplicate source-content pin" nonzero "duplicate [source-content] entry" C 0 "$PLANTDIR/m.content-dup" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$PLANTDIR/lem-ok" 0
 sed '/^100[67][45][45] [0-9a-f]* util\/cerb_fresh.ml$/d' "$PLANTDIR/m.c" > "$PLANTDIR/m.content-missing"
 plant "S14 missing source-content pin" nonzero "source-content path set differs" C 0 "$PLANTDIR/m.content-missing" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$PLANTDIR/lem-ok" 0
+# Closure F1: version normalization, malformed inputs and refresh retention.
+version_plant() {  # <label> <version> <expected-rc> <expected-message>
+    printf '#!/bin/sh\necho "Lem %s"\n' "$2" > "$PLANTDIR/lem-version"
+    chmod +x "$PLANTDIR/lem-version"
+    plant "$1" "$3" "$4" C 0 "$PLANTDIR/m.c" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$PLANTDIR/lem-version" 0
+}
+version_plant "S15 seven hex" "${pinned_lem_real:0:7}" 0 "$OKMSG"
+version_plant "S16 eight hex" "${pinned_lem_real:0:8}" 0 "$OKMSG"
+version_plant "S17 hash-bearing describe" "lean-backend-v0.1.0-alpha.1-12-g${pinned_lem_real:0:9}" 0 "$OKMSG"
+version_plant "S18 dirty hash" "${pinned_lem_real:0:7}-dirty" 0 "$OKMSG"
+version_plant "S19 dirty describe" "v0.1-0-g${pinned_lem_real}-dirty" 0 "$OKMSG"
+version_plant "S20 nonhex version" "2026-09-24" nonzero "malformed lem version"
+version_plant "S21 bare tag" "lean-backend-v0.1.0-alpha.1" nonzero "malformed lem version"
+version_plant "S22 short hash" "${pinned_lem_real:0:6}" nonzero "malformed lem version"
+version_plant "S23 long hash" "${pinned_lem_real}0" nonzero "malformed lem version"
+version_plant "S24 malformed describe" "v0.1-nope-g${pinned_lem_real:0:7}" nonzero "malformed lem version"
+version_plant "S25 wrong describe hash" "v0.1-1-gdeadbee" nonzero "lem-pin stale"
+sed "s/^lem-pin=.*/lem-pin=${pinned_lem_real:0:8}/" "$PLANTDIR/m.c" > "$PLANTDIR/m.short-pin"
+plant "S26 abbreviated manifest pin" nonzero "lem-pin must be exactly one full 40-hex commit" C 0 "$PLANTDIR/m.short-pin" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$PLANTDIR/lem-ok" 0
+sed 's/^lem-pin=.*/lem-pin=not-a-commit/' "$PLANTDIR/m.c" > "$PLANTDIR/m.bad-pin"
+plant "S27 nonhex manifest pin" nonzero "lem-pin must be exactly one full 40-hex commit" C 0 "$PLANTDIR/m.bad-pin" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$PLANTDIR/lem-ok" 0
+sed '/^lem-pin=/p' "$PLANTDIR/m.c" > "$PLANTDIR/m.dup-pin"
+plant "S28 duplicate manifest pin" nonzero "lem-pin must be exactly one full 40-hex commit" C 0 "$PLANTDIR/m.dup-pin" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$PLANTDIR/lem-ok" 0
+cp "$PLANTDIR/m.c" "$PLANTDIR/m.refresh"
+printf '#!/bin/sh\necho "Lem %s"\n' "${pinned_lem_real:0:7}" > "$PLANTDIR/lem-short"; chmod +x "$PLANTDIR/lem-short"
+plant "S29 refresh with abbreviated version" 0 "manifest REFRESHED" C 0 "$PLANTDIR/m.refresh" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$PLANTDIR/lem-short" 1
+if [[ $(sed -n 's/^lem-pin=//p' "$PLANTDIR/m.refresh") == "$pinned_lem_real" ]]; then
+    echo "  PLANT OK   [S29 detail] refresh preserved the full manifest pin"
+else
+    echo "  PLANT FAIL [S29 detail] refresh lost the full manifest pin"; fails=$((fails+1))
+fi
+plant "S30 refresh refuses wrong version" nonzero "lem-pin stale" C 0 "$PLANTDIR/m.refresh" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$PLANTDIR/lem-stale" 1
 # unplanted: the real manifest, the real prerequisites, lem as found on PATH
 echo "  UNPLANTED:"
 if out=$( ( unset CERB_FORK_DRIFT_DEV_SKIP; gate "$MANIFEST_DEFAULT" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$LEM_ON_PATH" 0 ) 2>&1 ); then
@@ -431,7 +477,7 @@ else
     echo "  PLANT FAIL [unplanted gate is not green]:"; sed 's/^/      /' <<<"$out"; fails=$((fails+1))
 fi
 if (( fails == 0 )); then
-    echo "check_fork_drift: SELFTEST OK (14 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; unplanted gate green)"
+    echo "check_fork_drift: SELFTEST OK (30 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; S15-S30 version forms, full-pin validation and refresh retention; unplanted gate green)"
     exit 0
 else
     echo "check_fork_drift: SELFTEST FAILED ($fails)"; exit 1

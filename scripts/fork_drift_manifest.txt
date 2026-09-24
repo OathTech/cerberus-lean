@@ -1,3 +1,10 @@
+# Public-readiness closure F1/F3, 2026-09-24 [AGENT; base 0a6d59eed].
+# Final closure Lem pin: 6b20bfd02de924d078725efa96c6675115b8b17a.
+# cmm_csem.lem adds only the explanatory FORK comment. Its propagated OCaml
+# comment is a NEW [expected-cosmetic] row: blanking exactly that comment
+# yields byte-identical cmm_csem.ml versus both the prior head and upstream.
+# No existing generated-diff pin is refreshed. Evidence and gates:
+# lean_frontend/docs/2026-09-24_public-readiness-closure.md.
 # Public-readiness single re-pin, 2026-09-24: Lem 38f87d5 -> 9bb6c6b583c2eb4ecf6ca5b21a274dacc29e0fa4.
 # Generation comparison and gates: lean_frontend/docs/2026-09-24_public-readiness-remediation.md.
 # Public-readiness M1/M4, 2026-09-24 [AGENT; single reviewed source-content rows].
@@ -396,8 +403,10 @@ merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
 # lem-pin = the lem-lean commit (`lem -v`, 2nd word) BOTH generated trees
 #   were derived with (the layer-2 hashes are relative to it). Cross-checked
 #   against `lem -v` by the gate when lem is on PATH (P0 repair 2026-09-05;
-#   was a stale af5df71, audit F4 (c)). Refresh recipe rewrites it.
-lem-pin=9bb6c6b5
+#   was a stale af5df71, audit F4 (c)). Closure F1 (2026-09-24; base
+#   0a6d59eed): full 40-hex pin, checked by validated version prefix.
+#   Set the reviewed full pin before --refresh; refresh preserves it.
+lem-pin=6b20bfd02de924d078725efa96c6675115b8b17a
 renumber=arc13
 [files]
 Makefile
@@ -497,7 +506,7 @@ util/cerb_fresh.ml
 100644 6940e7e73f0bd7d1fedfa9d83f9401125064171b6e9b26c62493cc667bcedc4d backend/lean_export/dune
 100644 a3e314407d7f252f3613639df3325589fd9c653a9bd7d2b3caa66f07e712e444 cerberus-lib.opam
 100644 efc81ffdefabd01716ec52b3e90258db0313364c5fedce611626b1ea1496cf5c cerberus.opam
-100644 e2ac087fffa4ae3cd1fad234184323b85ce5c6561c3f61e1255b2e478da9d4c7 frontend/concurrency/cmm_csem.lem
+100644 53b16ced15ce07b825cd5e60859dffcba19d83812b70da5301041e71374ac81f frontend/concurrency/cmm_csem.lem
 100644 d9fb59bfce8faf2038f3db9bcdc5c2fdb60776353f4b5bc664602fc2b42c4f24 frontend/concurrency/cmm_op.lem
 100644 08f030cb79b455238f90bd44e8c7a641d5b4b05084063af09d61329d145d54c6 frontend/model/ail/ailSyntax.lem
 100644 0b76860551c48f6403a0fa827a974c03f07b0a0b73d64c5008270b4c26634ea5 frontend/model/ail/ailTypesAux.lem
@@ -591,6 +600,7 @@ d98638c6cd2da684c37fe5685679683280a7233083e53cb988cd44047f4c8262 core_typing.ml
 d40900445568d01254a2e1cfef5d50706aba8d4067a74aab34a929339e0a3fd3 genTyping.ml
 89421ef29756b34e3f3e10ad2559fea2d3ae3c5bad15222d23c7c64e2005dce3 implementation.ml
 [expected-cosmetic]
+e0a1740dc4f5a18b91e7d6cc7cde9d5f4189e74ab9ed2c2217fdc8c4dac9a185 cmm_csem.ml
 f353c48b912b1f5ac4a73b42b981d01c38ac19760867ad8e043072e9489b383c cn.ml
 45eeff90ad101db49d28a6ca58bfdcf0bdd2625423ecc646777f31487601546d ctype.ml
 f52f2e5074d521bca92f84a496050d0295550475b16ac3f3c2e01243f5297208 defacto_memory_types.ml
