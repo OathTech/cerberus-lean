@@ -77,6 +77,25 @@ capability that prevents the next necessary action; continue independent work.
   unreachable in production by the fixed `hb`/`vse` relation-list construction
   (a reviewed source invariant, not a new theorem); all 225 registered sites
   match the fresh census. No full sequential campaign was repeated.
+- C3 varargs integration: the production classifier now derives full occurrence
+  HB from the actual reference SW and retains abstract cursor conflict IDs in
+  the ordinary prefix findings. Same-thread conflicts use source SB. Both public
+  SC frontends return 42 for a selected `varargs_vacopy.c` execution; seven new
+  classifier controls and the consolidated SC suites pass. This removes the
+  blanket metadata port obligation, not the remaining object/runtime work.
+- C3 scalar location/value extension: whole nested-array elements now have
+  distinct locations. Corresponding signed/unsigned views share RF tokens under
+  the concrete integer encoding, preserving rank/provenance and raw captures.
+  Both public engines return 42 for the distinct-element C probe, UB005 for
+  the same-element race, and 1 for the signed/unsigned view probe. These are
+  selected executions, recorded with commands/status/binary hashes in
+  `.tmp/sc-prototype/c3-probes.json`; fourteen added classifier controls cover
+  these cases and prevent wider overlapping views from certifying separate
+  locations. The whole-C provider API is the next independent integration;
+  it must retain the remaining interpretation obligations visibly.
+  Aggregate initialization, structure/union members, partial representation
+  accesses, remaining typed views, allocator reuse and runtime guards remain
+  unfinished. No full SC acceptance claim follows from this checkpoint.
 - G06's chosen precise GCC preprocessor-observer experiment lacks the matching
   GCC 13.3 plugin SDK. A capability question is already pending; do not ask it
   again or bypass network controls. This blocks that experiment, not C1/C2.

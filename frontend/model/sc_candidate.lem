@@ -5,6 +5,7 @@
 open import Pervasives Relation
 import Mem Mem_common Ctype Cmm_csem Sc_reference Sc_reference_aux Sc_runtime
 import Sc_value Sc_graph Sc_access_group Sc_action_identity Sc_byte_sources
+import Sc_happens_before Sc_varargs
 
 type sc_location_key = integer * integer * integer
 
@@ -19,7 +20,7 @@ type sc_interpretation_issue =
   | SC_interpret_source_value of Cmm_csem.aid * Cmm_csem.aid
   | SC_interpret_alias of Cmm_csem.aid
   | SC_interpret_object_layout of Cmm_csem.aid
-  | SC_interpret_metadata of Cmm_csem.aid
+  | SC_interpret_happens_before
   | SC_interpret_allocator_reuse of Cmm_csem.aid
   | SC_interpret_runtime_origin of Cmm_csem.aid
   | SC_interpret_library_protection of Cmm_csem.aid
@@ -100,6 +101,19 @@ let sc_candidate_scalar value = match value with
   | _ -> false
 end
 
+(* C11 6.5p7 permits corresponding signed/unsigned views of one object. The
+   concrete model encodes signed integers in two's complement with eight-bit
+   bytes (Impl_mem.repr / CerbMem.memValueToBytes). Use that shared integer
+   representation for RF tokens; keep the rank and provenance. Captured values
+   remain lossless in the journal, and C arithmetic/CAS comparison is unchanged.
+   This is not a general representation-to-logical-value equality rule. *)
+let sc_candidate_logical_key size key = match key with
+  | Sc_value.SC_integer_value (Ctype.Signed ibty) provenance value ->
+      Sc_value.SC_integer_value (Ctype.Unsigned ibty) provenance
+        (if value < 0 then (2 ** (8 * natFromInteger size)) + value else value)
+  | _ -> key
+end
+
 let sc_candidate_initial_aliases history = List.concat (List.map (fun observed ->
   match observed.Sc_runtime.sc_effect_observation with
     | Mem_common.Observe_allocation _ _ _ _ (Just _) (Just _) _ ->
@@ -113,19 +127,52 @@ let sc_candidate_pair groups id = List.find (fun group -> match group with
   | _ -> false
 end) groups
 
-(* The first integration resolves whole scalar objects. Subobject/representation
-   composition and abstract metadata have explicit port obligations until the
+(* Array elements are distinct C objects (C11 6.2.5p20), including recursively
+   nested arrays. The captured allocation width and declared element count
+   determine each element's stride without guessing a host layout. This only
+   recognizes a whole element; character slices of a scalar stay unresolved. *)
+let rec sc_candidate_array_element (Ctype.Ctype _ ty) base width start size =
+  if base = start && width = size then true
+  else match ty with
+    | Ctype.Array element (Just count) ->
+        if count <= 0 || width <= 0 || size <= 0 || start < base || start + size > base + width then false
+        else let stride = width / count in
+          if stride <= 0 || stride * count <> width then false
+          else let cell = base + ((start - base) / stride) * stride in
+            sc_candidate_array_element element cell stride start size
+    | _ -> false
+  end
+declare {lean} termination_argument sc_candidate_array_element = automatic
+
+(* The first integration resolves whole scalar objects and array elements. Subobject/representation
+   composition has explicit port obligations until the
    operational adapter supplies their interpretation. These are not G02/UB. *)
 let sc_candidate_coverage history observed =
   let id = observed.Sc_runtime.sc_effect_id in
   match observed.Sc_runtime.sc_effect_observation with
     | Mem_common.Observe_access _ _ _ _ owner base size _ _ ->
-        if List.any (fun other -> match other.Sc_runtime.sc_effect_observation with
-          | Mem_common.Observe_allocation _ storage start width _ _ _ ->
-              owner = Just storage && base = start && size = width
+        let overlaps_other_view = List.any (fun other ->
+          match other.Sc_runtime.sc_effect_observation with
+            | Mem_common.Observe_access _ _ _ _ owner' start width _ _ ->
+                owner = owner' && base < start + width && start < base + size &&
+                (base <> start || size <> width)
+            | _ -> false
+          end) history in
+        (* Distinct range tokens are sound here only for identical or disjoint
+           objects. Do not miss an overlapping wider view of an array merely
+           because both individual ranges passed the extent check. Remaining
+           ordered/representation composition is still a port obligation. *)
+        if overlaps_other_view then [SC_interpret_object_layout id]
+        else if List.any (fun other -> match other.Sc_runtime.sc_effect_observation with
+          | Mem_common.Observe_allocation _ storage start width ty _ _ ->
+              owner = Just storage &&
+              (if base = start && size = width then true else
+               match ty with
+                 | Just declared -> sc_candidate_array_element declared start width base size
+                 | Nothing -> false
+               end)
           | _ -> false
         end) history then [] else [SC_interpret_object_layout id]
-    | Mem_common.Observe_varargs _ _ -> [SC_interpret_metadata id]
     | Mem_common.Observe_allocation _ _ base size _ _ _ ->
         if List.any (fun other -> other.Sc_runtime.sc_effect_id < id &&
           match other.Sc_runtime.sc_effect_observation with
@@ -158,7 +205,8 @@ let sc_candidate_add history groups aliases builder observed =
                             sc_builder_issue (SC_interpret_aggregate id) builder
                           else
                             let (location, builder) = sc_intern_location key atomic builder in
-                            let (token, values) = Sc_value.sc_intern_value value_key builder.sc_builder_values in
+                            let (token, values) = Sc_value.sc_intern_value
+                              (sc_candidate_logical_key size value_key) builder.sc_builder_values in
                             let builder = <| builder with sc_builder_values= values |> in
                             let tid = Sc_reference_aux.Tid_hol
                               observed.Sc_runtime.sc_effect_request.Sc_runtime.sc_request_thread in
@@ -171,7 +219,8 @@ let sc_candidate_add history groups aliases builder observed =
                                         match Mem.sc_value_key after with
                                           | Nothing -> sc_builder_issue (SC_interpret_value id) builder
                                           | Just after_key ->
-                                              let (after_token, values) = Sc_value.sc_intern_value after_key builder.sc_builder_values in
+                                              let (after_token, values) = Sc_value.sc_intern_value
+                                                (sc_candidate_logical_key size after_key) builder.sc_builder_values in
                                               <| builder with sc_builder_values= values;
                                                 sc_builder_actions= Sc_reference.RMW id tid order location value
                                                   (Sc_reference_aux.Cvalue_hol after_token) :: builder.sc_builder_actions |>
@@ -264,6 +313,8 @@ type sc_candidate_interpretation = <|
   sc_candidate_graph: Sc_graph.sc_source_graph;
   sc_candidate_aliases: list Sc_action_identity.sc_action_alias;
   sc_candidate_execution: Sc_reference.candidate_execution;
+  sc_candidate_happens_before: Sc_happens_before.sc_hb_result;
+  sc_candidate_varargs: list Sc_varargs.sc_varargs_conflict_witness;
   sc_candidate_issues: list sc_interpretation_issue;
 |>
 
@@ -331,10 +382,31 @@ let sc_interpret_candidate state =
     Sc_reference.is_seq_cst a && Sc_reference.is_seq_cst b } in
   let wit = <| Sc_reference.rf= Set.fromList reads_from; Sc_reference.mo= mo;
     Sc_reference.sc= sc; Sc_reference.lo= {}; Sc_reference.tot= {} |> in
+  let relations = sc_candidate_relations pre wit in
+  let synchronization = match List.lookup "sw" relations with
+    | Nothing -> []
+    | Just sw -> List.map (fun (a,b) -> (Sc_reference.aid_of a, Sc_reference.aid_of b))
+        (Set_extra.toList sw)
+    end in
+  (* Lift actual reference synchronization back to every recorded occurrence.
+     Abstract cursors are not Cmm byte locations. Interthread conflicts use HB;
+     same-thread unsequenced conflicts use source SB, even if another thread
+     happens to provide an HB path between the two operations. *)
+  let hb = Sc_happens_before.sc_build_happens_before graph aliases synchronization in
+  let metadata = List.filter (fun found ->
+      found.Sc_varargs.sc_va_conflict_kind = Sc_varargs.SC_va_interthread)
+      (Sc_varargs.sc_varargs_unordered_pairs hb.Sc_happens_before.sc_hb_relation history) ++
+    List.filter (fun found ->
+      found.Sc_varargs.sc_va_conflict_kind = Sc_varargs.SC_va_unsequenced)
+      (Sc_varargs.sc_varargs_unordered_pairs
+        (Sc_graph.sc_occurrence_closure graph.Sc_graph.sc_graph_sb) history) in
   <| sc_candidate_builder= builder; sc_candidate_graph= graph;
      sc_candidate_aliases= aliases;
-     sc_candidate_execution= (pre, wit, sc_candidate_relations pre wit);
+     sc_candidate_execution= (pre, wit, relations);
+     sc_candidate_happens_before= hb; sc_candidate_varargs= metadata;
      sc_candidate_issues= builder.sc_builder_issues ++ issues ++
+       (if List.lookup "sw" relations <> Nothing && List.null hb.Sc_happens_before.sc_hb_issues then []
+        else [SC_interpret_happens_before]) ++
        List.concat (List.map (sc_candidate_coverage history) history) |>
 
 (* The pinned fence predicate quantifies five actions. Restrict the two fence
@@ -390,6 +462,13 @@ type sc_candidate_classification = <|
 let sc_candidate_pair_ids pairs = Set.map
   (fun (a,b) -> (Sc_reference.aid_of a, Sc_reference.aid_of b)) pairs
 
+let sc_candidate_varargs_pairs kind interpretation = Set.fromList
+  (List.map (fun found ->
+    (found.Sc_varargs.sc_va_conflict_left.Sc_varargs.sc_va_occurrence,
+     found.Sc_varargs.sc_va_conflict_right.Sc_varargs.sc_va_occurrence))
+    (List.filter (fun found -> found.Sc_varargs.sc_va_conflict_kind = kind)
+      interpretation.sc_candidate_varargs))
+
 let sc_classify_candidate_with check_consistency interpretation =
   let ex = interpretation.sc_candidate_execution in
   let (pre, _, _) = ex in
@@ -406,8 +485,12 @@ let sc_classify_candidate_with check_consistency interpretation =
        (List.filter (fun (_, passed) -> not passed) (if check_consistency then sc_candidate_checks ex else []));
      sc_class_atomic_sequencing= sc_candidate_pair_ids atomic_sequencing;
      (* An incomplete projection must not turn absent HB evidence into UB. *)
-     sc_class_data_races= if interpretable then sc_candidate_pair_ids (Sc_reference.data_races ex) else {};
-     sc_class_unsequenced_races= if interpretable then sc_candidate_pair_ids (Sc_reference.unsequenced_races ex) else {} |>
+     sc_class_data_races= if interpretable then
+       sc_candidate_pair_ids (Sc_reference.data_races ex) union
+         sc_candidate_varargs_pairs Sc_varargs.SC_va_interthread interpretation else {};
+     sc_class_unsequenced_races= if interpretable then
+       sc_candidate_pair_ids (Sc_reference.unsequenced_races ex) union
+         sc_candidate_varargs_pairs Sc_varargs.SC_va_unsequenced interpretation else {} |>
 
 let sc_classify_candidate interpretation = sc_classify_candidate_with true interpretation
 
@@ -449,7 +532,7 @@ let sc_interpretation_issue_name = function
   | SC_interpret_source_value _ _ -> "typed read/write value composition"
   | SC_interpret_alias _ -> "atomic action identity"
   | SC_interpret_object_layout _ -> "subobject location interpretation"
-  | SC_interpret_metadata _ -> "abstract metadata interpretation"
+  | SC_interpret_happens_before -> "occurrence happens-before interpretation"
   | SC_interpret_allocator_reuse _ -> "allocator reuse synchronization"
   | SC_interpret_runtime_origin _ -> "runtime call origin"
   | SC_interpret_library_protection _ -> "library synchronization attribution"

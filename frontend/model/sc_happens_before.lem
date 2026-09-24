@@ -39,7 +39,7 @@ let sc_build_happens_before graph aliases synchronization =
   let receipts = List.map (fun edge ->
     (edge, Sc_action_identity.sc_expand_action_edge aliases edge)) synchronization in
   let lifted = Set.fromList (List.concat (List.map snd receipts)) in
-  let relation = transitiveClosure (graph.Sc_graph.sc_graph_sbasw union lifted) in
+  let relation = Sc_graph.sc_occurrence_closure (graph.Sc_graph.sc_graph_sbasw union lifted) in
   <| sc_hb_source= graph;
      sc_hb_aliases= aliases;
      sc_hb_sync_receipts= receipts;

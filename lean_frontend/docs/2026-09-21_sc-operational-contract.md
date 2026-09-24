@@ -247,8 +247,10 @@ still requires the entire charter; a green scalar lane alone is insufficient.
   They are not automatically logical RF equality across typed views. Ordinary C
   numerical equality is unchanged. Other memory models can explicitly lack keys.
 - Varargs conflicts concern the same abstract cursor ID: read/read is harmless;
-  create/advance/delete modify metadata. Use justified HB, preserving identity
-  and multiplicity, without inventing memory writes or synchronization.
+  create/advance/delete modify metadata. The production classifier lifts pinned
+  reference SW through action aliases to the complete occurrence graph, using
+  HB for interthread conflicts and source SB for same-thread unsequenced
+  conflicts. Preserve identity and multiplicity without inventing byte writes.
 - Native object loading and Lean Core-text loading can differ in symbol IDs,
   function-pointer bytes and administrative step counts. In particular the
   printer/parser reconstructs a loaded Specified literal as a constructor.
@@ -261,14 +263,23 @@ campaign copies. Detailed historical records remain in Git at `03f7c5f32`.
 
 ## Candidate integration in progress
 
-`Sc_candidate` interprets whole scalar storage ranges as locations, interns
-lossless values, selects RF from the actual older byte contributors, and groups
+`Sc_candidate` interprets whole scalar storage ranges and whole scalar array
+elements as locations, selects RF from the actual older byte contributors, and groups
 an indivisible atomic request's read/write observations into one RMW. Initial
 writes come from actual allocation initialization or stores. MO and SC follow
 the recorder's shared increasing occurrence supply; source SB comes only from
 annotations closed through all vertices before action projection. These are
 witnesses for the recorded execution, not a theorem that every permitted
 execution is generated.
+
+Array element boundaries follow the captured allocation width and declared
+element counts, recursively for nested arrays (C11 6.2.5p20). This does not
+identify a partial representation access as an independent scalar object.
+Captured values remain lossless. Candidate RF tokens normalize corresponding
+signed/unsigned integer views using the concrete model's two's-complement
+encoding at the observed width (C11 6.5p7), retaining integer rank and provenance.
+Other value keys retain their original exact identity. This neither changes C
+arithmetic nor treats arbitrary byte equality as logical value equality.
 
 Classification uses the pinned SC-fenced predicate leaves. The fence leaf
 restricts its quantified domains to actual fences and MO/RF edges; it is checked
@@ -280,8 +291,15 @@ No order edge is inferred from IDs. Prefix findings retain occurrence IDs and
 survive later failures. The candidate
 stored at an intermediate prefix is explicitly unchecked for consistency.
 
-The first integration has temporary port obligations for non-whole-object
-locations, aggregate/typed-view RF composition, abstract metadata and allocator
+Abstract varargs conflicts now enter the same retained prefix findings as
+object conflicts. An incomplete interpretation still prevents missing ordering
+evidence from being converted to UB. The actual C `varargs_vacopy.c` control
+returns 42 on selected executions through both public SC frontends. Candidate
+controls distinguish atomic publication, shared-cursor conflicts, read/read,
+separate cursors and HB that does not establish same-thread source sequencing.
+
+The integration still has temporary port obligations for remaining subobject
+locations, aggregate/other typed-view RF composition and allocator
 reuse synchronization. These are unfinished C3 work, not new upstream gaps or
 final restrictions. Runtime attribution and precise G03/G08 handling are still
 required before public library support can be claimed. No full SC acceptance

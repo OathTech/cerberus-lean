@@ -16,8 +16,11 @@ successful execution merely by printing a verdict first. A deliberately matched
 internal model failure is recognizable by the codec, but none of the current
 support targets accepts an internal failure.
 
-The lane is expected to be red until the implementation and unresolved targets
-are completed. It does not rewrite expectations from engine output. Pristine
+Under the user-approved exploration scope of September 24, exhaustive C runs
+are probes for very small examples; this whole-directory exhaustive command is
+not a completion gate for larger seeds. Selected runs provide integration
+evidence only. Complete bounded scalar reference comparisons remain required.
+The lane does not rewrite expectations from engine output. Pristine
 upstream's broken concurrency driver is not described as an execution oracle;
 "oracle" in capture filenames means the fork OCaml side of the differential.
 
