@@ -84,7 +84,7 @@ val core_passes:
   (unit Core.file, Cerb_location.t * Errors.cause) Exception.exceptM
 
 val interp_backend:
-  io_helpers -> 'a Core.file ->
+  ?sc_origins:Sc_link_attribution.sc_link_origins -> io_helpers -> 'a Core.file ->
   args:(string list) -> batch:[`Batch | `CharonBatch | `JsonBatch | `NotBatch] -> fs:string option -> driver_conf:Driver_ocaml.driver_conf ->
   ((([`Batch | `CharonBatch | `JsonBatch] * (string list * Driver_ocaml.batch_output * (int * int) option) list), int) Either.either, Cerb_location.t * Errors.cause) Exception.exceptM
 

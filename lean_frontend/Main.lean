@@ -10,6 +10,7 @@ import Implementation
 import GenTyping
 import Translation
 import Core_run_aux
+import Sc_link_attribution
 import Driver
 import CerbND
 import CerbEscape
@@ -866,7 +867,7 @@ def loadLibc [LemFuel] (quiet : Bool) (supply0 : Nat) (addressSpaceTop : Int)
     keeps its historical exit-code behavior: 0 even on semantic stage
     failures). -/
 def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
-    (firstTrace : Bool)
+    (firstTrace : Bool) (concurrency : Bool)
     -- the address-space top (address-space-bound slice, 2026-09-17): ONE value for
     -- both entry points — the desugarer's const-expr mini-run (via frontendTU →
     -- desugar) and the execution driver (initial_driver_state) — from `--address-space-top`
@@ -933,7 +934,7 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
   -- TUs, exactly as the OCaml driver folds `core_libraries … @ files`
   -- (main.ml:150-156) — so it ends up LAST in the reverse-consed list
   -- handed to Core_linking.link, mirroring the oracle's link order.
-  let mut coreFiles : List (file Unit) := []
+  let mut coreFiles : List (sc_definition_source Unit Unit) := []
   -- Effect-retirement C1 (S1 ruling [USER 2026-08-31]): the ONE
   -- fresh-symbol stream, seeded here and threaded through every phase
   -- (per-TU desugar + const-expr mini-runs + elaboration) and into the
@@ -944,7 +945,9 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
   | some (libcCore, libcTus) =>
     match ← loadLibc quiet supply addressSpaceTop coreEvalStuff ailnames stdFunMap coreImpl libcCore libcTus with
     | .error code => return code
-    | .ok (libcFile, supply') => coreFiles := [libcFile]; supply := supply'
+    | .ok (libcFile, supply') =>
+        coreFiles := [⟨libcFile, .SC_definition_library "libc", .SC_definition_library "Core standard library"⟩]
+        supply := supply'
   | none => pure ()
   for (digest, tunit) in tunits do
     -- Per-TU digest, before the TU's frontend stages — mirror of
@@ -964,7 +967,9 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     let _ ← (CerberusFresh.setDigestIO digest : BaseIO Unit)
     match ← frontendTU quiet supply addressSpaceTop coreEvalStuff ailnames stdFunMap coreImpl tunit with
     | .error code => return code
-    | .ok (coreFile, supply') => coreFiles := coreFile :: coreFiles; supply := supply'
+    | .ok (coreFile, supply') =>
+        coreFiles := ⟨coreFile, .SC_definition_user, .SC_definition_library "Core standard library"⟩ :: coreFiles
+        supply := supply'
 
   -- Link the translated Core files — main.ml:278-281:
   --   prelude >>= main >>= begin function
@@ -975,7 +980,7 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
   -- The run-time cross-TU call remap `core_extern =
   -- Core_linking.create_extern_symmap file` (core_linking.lem:319-328) is
   -- already live in the generated driver (driver.lem:1512).
-  match link coreFiles with
+  match sc_link_attributed coreFiles with
   | .Exception (loc, cause) =>
     let msg := match cause with
       | CORE_LINKING (DuplicateExternalName (Identifier _ str)) =>
@@ -996,7 +1001,7 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
       IO.println s!"    at: {CerbLocation.stringFromLocation loc}"
       IO.println s!"    cause: {msg}"
       return 0
-  | .Result coreFile =>
+  | .Result (coreFile, scOrigins) =>
     -- chatter only for a real multi-TU link: single-file human-mode
     -- output stays byte-identical to the pre-multi-TU driver
     if tunits.length != 1 then
@@ -1026,6 +1031,7 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     -- The address-space top is the run's parameter (the same value the
     -- desugarer was seeded with above).
     let (drSt, _supplyFinal) := initial_driver_state supply addressSpaceTop runFile fsState
+    let drSt := { drSt with sc_origins := some scOrigins }
     say s!"  executing Core..."
     -- Reader seed: execution-slice entry — the linked table, passed as
     -- the value in hand (the load→seed loop is closed).
@@ -1037,7 +1043,7 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     -- non-batch; progArgs is the parsed --args list (empty without the
     -- flag, so the historical ["cmdname"] argv is byte-unchanged).
     let driverAction := match callFn with
-      | none => drive runFile.tagDefs false runFile ("cmdname" :: progArgs)
+      | none => drive runFile.tagDefs concurrency runFile ("cmdname" :: progArgs)
       | some (fname, argInts) =>
         CerbCall.driveCall runFile.tagDefs runFile fname
           (argInts.map CerbCall.intValue)
@@ -1196,12 +1202,12 @@ def refuseFlag (flag : String) : IO Unit := do
   let feature :=
     if flag.startsWith "--switches" then
       "semantics switches (PVI/PNVI/strict_pointer_arith/CHERI/…) are not supported by this port — matched (default-switch) mode is the harness contract and CerbGlobal's switch set is permanently empty; the oracle's `--switches=…` changes the answer (e.g. PNVI turns an integer→pointer UB043 into a value)"
-    else if flag == "--concurrency" then
-      "concurrency is not supported by this port (the oracle's own --concurrency mode is non-functional at b9aeedcb4: `internal error: CONCURRENCY IS BROKEN`); matched mode runs atomics sequentially on both engines"
+    else if flag.startsWith "--concurrency" then
+      "select the supported prototype explicitly with --concurrency=sc"
     else if flag == "--batch" || flag == "--pp-core" || flag == "--parse-core" || flag == "--first" then
       "known flag out of its canonical position (`--batch`, `--pp-core` or `--parse-core` must be argv[0]; `--first` must immediately follow `--batch`/`--pp-core`)"
     else
-      "unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>, --address-space-top <N>"
+      "unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --concurrency=sc, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>, --address-space-top <N>"
   IO.eprintln s!"cerberus-lean: refused — {flag}: {feature} (see VALIDATION.md, zero-discrepancy Z-24)"
   IO.Process.exit 2
 
@@ -1263,6 +1269,7 @@ def main (args : List String) : IO Unit := do
   let mut callArgsStr : Option String := none
   let mut progArgsStr : Option String := none
   let mut traceNodes : Bool := false
+  let mut concurrency : Bool := false
   -- --fuel <N> (fuel-parameter arc): the run's fuel, a positive integer;
   -- absent = `defaultFuel`. Accepted anywhere after the mode flag (the
   -- same canonical position as --libc/--call/--args); zero or a
@@ -1287,6 +1294,7 @@ def main (args : List String) : IO Unit := do
     | "--call-args" :: v :: rest => callArgsStr := some v; pending := rest
     | "--args" :: v :: rest => progArgsStr := some v; pending := rest
     | "--trace-nodes" :: rest => traceNodes := true; pending := rest
+    | "--concurrency=sc" :: rest => concurrency := true; pending := rest
     | "--fuel" :: v :: rest => fuelStr := some v; pending := rest
     | "--address-space-top" :: v :: rest => addressSpaceTopStr := some v; pending := rest
     | ["--libc"] | ["--libc-tu"] | ["--call"] | ["--call-args"]
@@ -1298,6 +1306,9 @@ def main (args : List String) : IO Unit := do
       -- Z-24: a `--` token here is not a file name (except `--stdin`)
       if a.startsWith "--" && a != "--stdin" then refuseFlag a
       restArgs := restArgs ++ [a]; pending := rest
+  if concurrency && callName.isSome then
+    IO.eprintln "cerberus-lean: --concurrency=sc requires the whole-program entry; --call is a sequential harness"
+    IO.Process.exit 2
   -- --args "ARG1 ARG2 ..." — the oracle's flag of the same name
   -- (backend/driver/main.ml:512-514): one string, split on whitespace
   -- runs (main.ml:111-113, Str.split "[ \t]+" — empty pieces dropped,
@@ -1438,7 +1449,7 @@ def main (args : List String) : IO Unit := do
   -- The ONE instantiation of the ambient fuel (fuel-parameter arc): every
   -- fuel'd function below `runPipeline` reads this instance; nothing else
   -- in the repository builds one (`scripts/check_no_fuel_numerals.sh`).
-  let code ← (letI : LemFuel := ⟨fuel⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace
+  let code ← (letI : LemFuel := ⟨fuel⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace concurrency
     addressSpaceTop callFn traceNodes libc progArgs tunits)
   if code != 0 then
     IO.Process.exit code

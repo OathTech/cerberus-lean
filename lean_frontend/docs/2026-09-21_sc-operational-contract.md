@@ -251,3 +251,32 @@ still requires the entire charter; a green scalar lane alone is insufficient.
 
 The live [boundary inputs](../../tests/sc/boundaries/README.md) replace archived
 campaign copies. Detailed historical records remain in Git at `03f7c5f32`.
+
+
+## Candidate integration in progress
+
+`Sc_candidate` interprets whole scalar storage ranges as locations, interns
+lossless values, selects RF from the actual older byte contributors, and groups
+an indivisible atomic request's read/write observations into one RMW. Initial
+writes come from actual allocation initialization or stores. MO and SC follow
+the recorder's shared increasing occurrence supply; source SB comes only from
+annotations closed through all vertices before action projection. These are
+witnesses for the recorded execution, not a theorem that every permitted
+execution is generated.
+
+Classification uses the pinned SC-fenced predicate leaves. The fence leaf
+restricts its quantified domains to actual fences and MO/RF edges; it is checked
+against the unchanged predicate, including malformed inputs. Failed consistency,
+interpretation obligations, G07 sequencing witnesses and UB findings are distinct.
+Occurrence closure uses an ordered traversal when every supplied edge points
+from a lower to a higher occurrence ID, with the general algorithm as fallback.
+No order edge is inferred from IDs. Prefix findings retain occurrence IDs and
+survive later failures. The candidate
+stored at an intermediate prefix is explicitly unchecked for consistency.
+
+The first integration has temporary port obligations for non-whole-object
+locations, aggregate/typed-view RF composition, abstract metadata and allocator
+reuse synchronization. These are unfinished C3 work, not new upstream gaps or
+final restrictions. Runtime attribution and precise G03/G08 handling are still
+required before public library support can be claimed. No full SC acceptance
+claim is made by this integration status.

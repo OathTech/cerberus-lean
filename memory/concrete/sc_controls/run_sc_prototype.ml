@@ -223,10 +223,12 @@ let typed_faults () =
       (Option.get after.D.sc_state).R.sc_effects=[] | _ -> false);
   let initial=D.initial_driver_state (Z.of_int 0x10000) program Sibylfs.fs_initial_state in
   let public=Smt2.runND Cerb_global.Exhaustive M.cs_module (D.drive true program ["typed fault control"]) initial in
-  check "public entry remains explicit about pending checker after execution"
-    (public<>[] && List.for_all (function N.Killed (_,N.Other (D.DErr_concurrency reason)),_,after ->
-      reason=R.SC_fault_checker_pending && R.sc_fault_class reason=R.SC_failure_unimplemented &&
-      (Option.get after.D.sc_state).R.sc_effects<>[] | _ -> false) public)
+  check "public entry classifies the completed execution"
+    (public<>[] && List.for_all (function N.Active _,_,after ->
+      (match after.D.sc_candidate with
+       | Some result -> Sc_candidate.sc_candidate_accepted result &&
+           (Option.get after.D.sc_state).R.sc_effects<>[]
+       | None -> false) | _ -> false) public)
 
 let diagnostic_cases = [
   (R.SC_fault_unowned_memory_node, "SC port gap: unowned memory node", R.SC_failure_protocol);
@@ -244,7 +246,10 @@ let diagnostic_cases = [
   (R.SC_fault_fence_owner, "SC fence has no matching owned request", R.SC_failure_protocol);
   (R.SC_fault_order (R.SC_access (Cmm_csem.NA,Pos)), "SC model excludes the requested memory order", R.SC_failure_order);
   (R.SC_fault_uninitialized, "SC state is not initialized", R.SC_failure_protocol);
-  (R.SC_fault_checker_pending, "SC port gap: atomic/race/fence checker integration pending", R.SC_failure_unimplemented);
+  (R.SC_fault_protocol "source graph", "SC protocol failure: source graph", R.SC_failure_protocol);
+  (R.SC_fault_interpretation ["typed view"], "SC port gap: typed view", R.SC_failure_unimplemented);
+  (R.SC_fault_candidate_rejected ["consistent_mo"], "SC inconsistent candidate: consistent_mo", R.SC_failure_inconsistent);
+  (R.SC_fault_atomic_sequencing, "SC-G07 model gap: unresolved atomic indeterminate-sequencing assumption", R.SC_failure_model_gap);
   (R.SC_fault_suspension_unavailable, "SC port gap: memory suspension unavailable", R.SC_failure_observation);
   (R.SC_fault_resume_outside_mode, "SC service resumed without SC state", R.SC_failure_protocol);
   (R.SC_fault_suspend_outside_mode, "SC service suspended without SC state", R.SC_failure_protocol);
@@ -253,7 +258,7 @@ let diagnostic_cases = [
 ]
 let diagnostics () =
   check "all existing SC diagnostics retain their text and category"
-    (List.length diagnostic_cases=21 && List.for_all (fun (fault,message,category) ->
+    (List.for_all (fun (fault,message,category) ->
       R.sc_fault_message fault=message && R.sc_fault_class fault=category) diagnostic_cases)
 
 let run_tests () = copies (); filesystems (); projections (); batch (); typed_faults (); diagnostics ()

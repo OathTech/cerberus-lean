@@ -1,4 +1,5 @@
-import CerbSCPrefixObligations
+import Driver
+import Sc_candidate
 import LemLib
 import CerbLocation
 import CerbMem
@@ -115,13 +116,14 @@ private def loadExpr (id address : Int) :=
   Expr [] (Eaction (Paction Pos (Action (CerbLocation.other "SC prefix control") empty_annotation
     (Load0 (pe (Vctype unsigned_char)) (pe (Vobject (OVpointer (pointer id address)))) Seq_cst))))
 private def allWitnesses (state : driver_state) :=
-  state.sc_prefix_obligations.flatMap sc_obligation_sequence_witnesses
-private def prefixValid (state : driver_state) := state.sc_prefix_obligations.all fun obligation =>
-  match obligation with
-  | SC_obligation_access_sequencing graph pairs =>
-    graph.sc_graph_issues.isEmpty && !pairs.isEmpty && pairs.all fun pair =>
-      sc_access_sequence_pair (set_tcByCmp (pairCompare defaultCompare defaultCompare) graph.sc_graph_sb)
-        pair.sc_sequence_left pair.sc_sequence_right
+  setToList state.sc_findings.sc_found_atomic_sequencing
+private def prefixValid (state : driver_state) := match state.sc_candidate with
+  | none => false
+  | some result =>
+      let graph := result.sc_class_interpretation.sc_candidate_graph
+      graph.sc_graph_issues.isEmpty && (allWitnesses state).all fun (a,b) =>
+        graph.sc_graph_nodes.any (fun n => n.sc_node_id == a) &&
+        graph.sc_graph_nodes.any (fun n => n.sc_node_id == b)
 
 private def controls [LemFuel] : List (String × Bool) := Id.run do
   let two := Expr [] (Eunseq [loadExpr 20 200, loadExpr 30 300])
@@ -139,21 +141,22 @@ private def controls [LemFuel] : List (String × Bool) := Id.run do
     ("every unsequenced alternative retains actual pair evidence",
       unsequenced.length > 1 && unsequenced.all fun (status,_,state) => match status with
         | Active _ => (memoryEffects state).length == 2 &&
-            state.sc_prefix_obligations.length == 1 && (allWitnesses state).length == 1 && prefixValid state
+            (allWitnesses state).length == 1 && prefixValid state
         | _ => false),
     ("source ordered alternatives acquire no sequencing obligation",
       !ordered.isEmpty && ordered.all fun (status,_,state) => match status with
-        | Active _ => (memoryEffects state).length == 2 && state.sc_prefix_obligations.isEmpty
+        | Active _ => (memoryEffects state).length == 2 && (allWitnesses state).isEmpty
         | _ => false),
     ("later independent faults retain evidence and the intervening effect",
       laterFault.length > 1 && faults.length == laterFault.length && faultIndependent &&
       faults.all fun (_,state) =>
-        (memoryEffects state).length == 3 && state.sc_prefix_obligations.length == 1 &&
+        (memoryEffects state).length == 3 &&
         (allWitnesses state).length == 1 && prefixValid state &&
-        match state.sc_state0, state.sc_prefix_obligations with
-        | some sc, [SC_obligation_access_sequencing graph _] =>
-            graph.sc_graph_nodes.length < (sc_prefix_nodes sc).length
-        | _, _ => false)]
+        match state.sc_state0 with
+        | some sc => match sc.sc_effects with
+          | newest :: _ => (allWitnesses state).all fun (a,b) => a < newest.sc_effect_id && b < newest.sc_effect_id
+          | [] => false
+        | none => false)]
 
 
 private def serviceThread (tid : Nat) : thread_state := {
@@ -197,15 +200,15 @@ private def suspensionControls [LemFuel] : List (String × Bool) := Id.run do
     | return [("other thread adds its own sequence obligation",false)]
   let some finished := resume interposed
     | return [("captured helper resumes",false)]
-  let prior := second.sc_driver_state.sc_prefix_obligations
-  let current := interposed.sc_driver_state.sc_prefix_obligations
-  let final := finished.sc_driver_state.sc_prefix_obligations
+  let prior := allWitnesses second.sc_driver_state
+  let current := allWitnesses interposed.sc_driver_state
+  let final := allWitnesses finished.sc_driver_state
   return [
     ("suspension retains the original discovered prefix",
       !prior.isEmpty && !paused.sc_service_state.sc_suspended_services.isEmpty &&
-      prior.all paused.sc_driver_state.sc_prefix_obligations.contains),
+      prior.all (allWitnesses paused.sc_driver_state).contains),
     ("resumption preserves obligations added by another thread",
-      current.length > paused.sc_driver_state.sc_prefix_obligations.length &&
+      current.length > (allWitnesses paused.sc_driver_state).length &&
       current.all final.contains && finished.sc_service_state.sc_suspended_services.isEmpty &&
       prefixValid finished.sc_driver_state)]
 

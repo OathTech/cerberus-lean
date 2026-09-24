@@ -20,7 +20,10 @@ private def diagnosticCases : List (sc_fault × String × sc_fault_category) := 
   (SC_fault_fence_owner, "SC fence has no matching owned request", SC_failure_protocol),
   ((SC_fault_order (SC_access NA Pos)), "SC model excludes the requested memory order", SC_failure_order),
   (SC_fault_uninitialized, "SC state is not initialized", SC_failure_protocol),
-  (SC_fault_checker_pending, "SC port gap: atomic/race/fence checker integration pending", SC_failure_unimplemented),
+  (SC_fault_protocol "source graph", "SC protocol failure: source graph", SC_failure_protocol),
+  (SC_fault_interpretation ["typed view"], "SC port gap: typed view", SC_failure_unimplemented),
+  (SC_fault_candidate_rejected ["consistent_mo"], "SC inconsistent candidate: consistent_mo", SC_failure_inconsistent),
+  (SC_fault_atomic_sequencing, "SC-G07 model gap: unresolved atomic indeterminate-sequencing assumption", SC_failure_model_gap),
   (SC_fault_suspension_unavailable, "SC port gap: memory suspension unavailable", SC_failure_observation),
   (SC_fault_resume_outside_mode, "SC service resumed without SC state", SC_failure_protocol),
   (SC_fault_suspend_outside_mode, "SC service suspended without SC state", SC_failure_protocol),
@@ -45,8 +48,7 @@ private def controls (fuel : Nat) : List (String × Bool) := Id.run do
       (mem_constraint CerbMem.IntegerValue) driver_state) enabled
   let publicEntry := CerbND.runND (drive f.tagDefs true f ["typed fault control"]) base
   return [
-    ("all existing SC diagnostics retain their text and category", diagnosticCases.length == 21 &&
-      diagnosticCases.all fun (fault,message,category) => sc_fault_message fault == message && sc_fault_class fault == category),
+    ("all existing SC diagnostics retain their text and category", diagnosticCases.all fun (fault,message,category) => sc_fault_message fault == message && sc_fault_class fault == category),
     ("uninitialized step keeps state and exposes the protocol identity", match uninitialized.1 with
       | NDkilled (Other (DErr_concurrency SC_fault_uninitialized)) =>
           uninitialized.2.sc_driver_state.sc_state0 == none && uninitialized.2.sc_driver_state.layout_state.bytemap == base.layout_state.bytemap &&
@@ -66,12 +68,12 @@ private def controls (fuel : Nat) : List (String × Bool) := Id.run do
     ("invalid direct CAS phase reports protocol failure without inventing a read", match badReadShape.1 with
       | NDkilled (Other (DErr_concurrency SC_fault_cas_read_shape)) => (memoryEffects badReadShape.2).isEmpty
       | _ => false),
-    ("public entry remains explicit about pending checker after execution",
-      !publicEntry.isEmpty && publicEntry.all fun (outcome, _, s) => match outcome, s.sc_state0 with
-        | Killed _ (Other (DErr_concurrency reason)), some sc =>
-            reason == SC_fault_checker_pending && sc_fault_class reason == SC_failure_unimplemented &&
-            !sc.sc_effects.isEmpty
+    ("public entry classifies the completed execution",
+      !publicEntry.isEmpty && publicEntry.all fun (outcome, _, s) => match outcome, s.sc_candidate with
+        | Active _, some result => sc_candidate_accepted result &&
+            (match s.sc_state0 with | some sc => !sc.sc_effects.isEmpty | none => false)
         | _, _ => false)]
+
 
 def runTests (args : List String) : IO UInt32 := do
   let [arg] := args | return 2

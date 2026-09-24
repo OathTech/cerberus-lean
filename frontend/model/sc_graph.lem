@@ -86,12 +86,26 @@ let sc_node_issues owners node =
     (Set_extra.toOrderedList annotation.Core_run_aux.dd_before)) in
   sb_issues ++ asw_issues ++ dd_issues
 
+(* Recorder edges point from an older occurrence to a newer occurrence. In
+   that case process target IDs in increasing order: every predecessor's
+   ancestors have already been computed. IDs order the computation only;
+   the supplied edges remain its entire semantic input. Arbitrary external
+   graphs, including cycles and reverse edges, use the general operation. *)
+let sc_occurrence_closure (edges: set (Cmm_csem.aid * Cmm_csem.aid)) =
+  if Set.all (fun (source,target) -> source < target) edges then
+    List.foldl (fun closed target ->
+      let parents = Set.map fst (Set.filter (fun (_,ending) -> ending = target) edges) in
+      let ancestors = Set.map fst (Set.filter (fun (_,ending) -> ending IN parents) closed) in
+      closed union Set.map (fun source -> (source,target)) (parents union ancestors))
+      {} (Set_extra.toOrderedList (Set.map snd edges))
+  else transitiveClosure edges
+
 let sc_build_source_graph nodes =
   let owners = List.map (fun node -> (node.sc_node_id, node.sc_node_thread)) nodes in
   let (sb, asw, dd) = List.foldl (fun (sb, asw, dd) node ->
     let (s, a, d) = sc_node_edges node in (sb union s, asw union a, dd union d))
     ({}, {}, {}) nodes in
-  let closure = transitiveClosure (sb union asw) in
+  let closure = sc_occurrence_closure (sb union asw) in
   let (_, duplicates) = List.foldl (fun (seen, issues) node ->
     let id = node.sc_node_id in
     (Set.insert id seen,

@@ -9,10 +9,14 @@ import Unit.SCLinkAttribution
 import Unit.SCSynchronization
 import Unit.SCSequencing
 import Unit.SCReferenceEquality
+import Unit.SCCandidate
 
 def main (args : List String) : IO UInt32 := do
   let [fuel] := args | return 2
   let mut failed := false
+  IO.println "SCCandidate"
+  let result ← SCUnit.SCCandidate.runTests
+  failed := failed || result != 0
   IO.println "SCValues"
   SCUnit.SCValues.runTests
   IO.println "SCRepresentation"

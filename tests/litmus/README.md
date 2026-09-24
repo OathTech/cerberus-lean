@@ -51,3 +51,11 @@ sequential behavior remains the conservativity reference. The old
 `before_baseline.txt` and automatic rerecording mode were also not ported: prior
 measurements remain in the donor history, and new support expectations require
 an independently justified change.
+
+The CAS seed result loads are explicitly sequenced before the ordinary return
+expression. Their original atomic-load-plus-ordinary-reads expression reaches
+the pinned model's G07 indeterminate-sequencing boundary even after a successful
+CAS. That expression is retained in
+[`cas-result-expression.c`](../sc/boundaries/g07/cas-result-expression.c).
+Sequencing the observation isolates the intended CAS test; its expected
+operation outcomes are unchanged. Selected runs are not exhaustive support.

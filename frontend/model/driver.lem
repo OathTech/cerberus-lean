@@ -5,7 +5,8 @@ import Core_aux Builtins Core_linking
 module Caux = Core_aux
 
 open import Utils Show Errors Trace_event
-import Cmm_op Cmm_csem Sc_order Sc_runtime Sc_scopes Sc_prefix_obligations Sc_representation Sc_global_bindings Nd_observe
+import Cmm_op Cmm_csem Sc_order Sc_runtime Sc_scopes Sc_representation Sc_global_bindings Sc_candidate Sc_graph Nd_observe
+import Sc_link_attribution Sc_definition_sources Sc_call_context
 
 import Core_eval Core_run Core_reduction
 
@@ -75,8 +76,10 @@ type driver_state = <|
   trace:             list trace_event;
   
   sc_state: maybe Sc_runtime.sc_state;
-  sc_prefix_obligations: list Sc_prefix_obligations.sc_prefix_obligation;
+  sc_findings: Sc_candidate.sc_retained_findings;
   sc_global_bindings: list Sc_global_bindings.sc_global_binding;
+  sc_origins: maybe Sc_link_attribution.sc_link_origins;
+  sc_candidate: maybe Sc_candidate.sc_candidate_classification;
   sc_pending: list (Mem_common.thread_id * Core_reduction.core_step2);
   symbolic_assoc: map Symbol.sym Core.object_value;
   
@@ -135,11 +138,45 @@ let inline (>>) m1 m2 = ND.bind m1 (fun _ -> m2)
 (* This channel follows the existing ND state, including every alternative and
    failure-time state. It does not replace a fault, remove a continuation or
    certify a prefix. Independent errors after discovery remain observable. *)
+let sc_interpret_driver dr_st sc =
+  let interpretation = Sc_candidate.sc_interpret_candidate sc in
+  let issues = List.concat (List.map (fun observed ->
+    List.concat (List.map (fun scope ->
+      let id = observed.Sc_runtime.sc_effect_id in
+      match List.find (fun event -> match event with
+        | Sc_scopes.SC_scope_entered entry -> entry.Sc_scopes.sc_scope_id = scope
+        | _ -> false
+      end) sc.Sc_runtime.sc_scopes.Sc_scopes.sc_scope_events with
+        | Just (Sc_scopes.SC_scope_entered entry) ->
+            match (dr_st.sc_origins, entry.Sc_scopes.sc_scope_frame.Sc_call_context.sc_frame_definition) with
+              | (Just origins, Just definition) ->
+                  match Sc_link_attribution.sc_selected_definition origins definition with
+                    | Just binding ->
+                        match binding.Sc_link_attribution.sc_definition_selected.Sc_definition_sources.sc_selected_origin with
+                          | Sc_definition_sources.SC_definition_user -> []
+                          | Sc_definition_sources.SC_definition_library "Core standard library" -> []
+                          | Sc_definition_sources.SC_definition_library _ -> [Sc_candidate.SC_interpret_library_protection id]
+                          | _ -> [Sc_candidate.SC_interpret_runtime_origin id]
+                        end
+                    | _ -> [Sc_candidate.SC_interpret_runtime_origin id]
+                  end
+              | _ -> [Sc_candidate.SC_interpret_runtime_origin id]
+            end
+        | _ -> [Sc_candidate.SC_interpret_runtime_origin id]
+      end) observed.Sc_runtime.sc_effect_request.Sc_runtime.sc_request_scopes)
+    ) sc.Sc_runtime.sc_effects) in
+  let issues = if List.null sc.Sc_runtime.sc_scopes.Sc_scopes.sc_scope_issues then issues
+    else Sc_candidate.SC_interpret_scope_protocol :: issues in
+  <| interpretation with Sc_candidate.sc_candidate_issues=
+    interpretation.Sc_candidate.sc_candidate_issues ++ issues |>
+
 let sc_note_prefix dr_st =
   match dr_st.sc_state with
     | Nothing -> dr_st
-    | Just sc -> <| dr_st with sc_prefix_obligations=
-        Sc_prefix_obligations.sc_accumulate_sequence_obligations sc dr_st.sc_prefix_obligations |>
+    | Just sc ->
+        let result = Sc_candidate.sc_classify_candidate_with false (sc_interpret_driver dr_st sc) in
+        <| dr_st with sc_candidate= Just result;
+          sc_findings= Sc_candidate.sc_retain_findings result dr_st.sc_findings |>
   end
 
 (* Drain after each ND memory node, including a killed node. A missing
@@ -1647,7 +1684,7 @@ let sc_enable = ND.ND (fun dr_st ->
   match Mem.begin_observing dr_st.layout_state with
     | Nothing -> (ND.NDkilled (ND.Other (DErr_concurrency Sc_runtime.SC_fault_observer_unavailable)), dr_st)
     | Just memory -> (ND.NDactive (), <| dr_st with layout_state= memory;
-        sc_state= Just Sc_runtime.sc_initial_state; sc_pending= []; sc_prefix_obligations= []; sc_global_bindings= [] |>)
+        sc_state= Just Sc_runtime.sc_initial_state; sc_pending= []; sc_findings= Sc_candidate.sc_no_findings; sc_global_bindings= []; sc_candidate= Nothing |>)
   end)
 
 let sc_kind_of_request polarity = function
@@ -2187,8 +2224,10 @@ let initial_driver_state_with address_space_top run_st file fs_state =
     trace=             [];
     sc_state=          Nothing;
     sc_pending=        [];
-    sc_prefix_obligations= [];
+    sc_findings= Sc_candidate.sc_no_findings;
     sc_global_bindings= [];
+    sc_origins= Nothing;
+    sc_candidate= Nothing;
     symbolic_assoc=    Map.empty;
     blocked=           false;
     dr_step_counter=   0;
@@ -2593,13 +2632,39 @@ let drive_recorded (with_concurrency: bool) file (arg_strs: list string) =
 
 end
 
-(* Temporary S1 entry separation: drive_recorded true exposes actual schedules
-   for component tests. The public SC entry cannot report a completed SC result
-   until S3's atomic/race/fence checks are connected. *)
+(* Interpret and classify the actual final journal. Prefix findings remain in
+   driver state on every operational failure and are consulted independently
+   of candidate consistency. This first adapter has explicit port obligations
+   for location/value/lifetime cases whose composition is still unfinished. *)
 let drive with_concurrency file args =
   if with_concurrency then
-    sc_enable >> drive_recorded true file args >>= fun _ ->
-    ND.kill (ND.Other (DErr_concurrency Sc_runtime.SC_fault_checker_pending))
+    sc_enable >> drive_recorded true file args >>= fun value ->
+    ND.get >>= fun state ->
+    match state.sc_state with
+      | Nothing -> ND.kill (ND.Other (DErr_concurrency Sc_runtime.SC_fault_uninitialized))
+      | Just recorded ->
+          let result = Sc_candidate.sc_classify_candidate (sc_interpret_driver state recorded) in
+          let findings = Sc_candidate.sc_retain_findings result state.sc_findings in
+          ND.update (fun state -> <| state with sc_candidate= Just result; sc_findings= findings |>) >>
+          let interpretation = result.Sc_candidate.sc_class_interpretation in
+          let issues = List.map Sc_candidate.sc_interpretation_issue_name interpretation.Sc_candidate.sc_candidate_issues in
+          if not (Set.null findings.Sc_candidate.sc_found_data_races) then
+            ND.kill (ND.Undef Loc.unknown [U.UB005_data_race])
+          else if not (Set.null findings.Sc_candidate.sc_found_unsequenced_races) then
+            ND.kill (ND.Undef Loc.unknown [U.UB035_unsequenced_race])
+          else if not (List.null interpretation.Sc_candidate.sc_candidate_graph.Sc_graph.sc_graph_issues) then
+            ND.kill (ND.Other (DErr_concurrency (Sc_runtime.SC_fault_protocol "source graph")))
+          else if not (List.null recorded.Sc_runtime.sc_scopes.Sc_scopes.sc_scope_issues) then
+            ND.kill (ND.Other (DErr_concurrency (Sc_runtime.SC_fault_protocol "call scopes")))
+          else if not (List.null issues) then
+            ND.kill (ND.Other (DErr_concurrency (Sc_runtime.SC_fault_interpretation issues)))
+          else if not (Set.null findings.Sc_candidate.sc_found_atomic_sequencing) then
+            ND.kill (ND.Other (DErr_concurrency Sc_runtime.SC_fault_atomic_sequencing))
+          else if not (List.null result.Sc_candidate.sc_class_failed_checks) then
+            ND.kill (ND.Other (DErr_concurrency
+              (Sc_runtime.SC_fault_candidate_rejected result.Sc_candidate.sc_class_failed_checks)))
+          else ND.return value
+    end
   else drive_recorded false file args
 
 

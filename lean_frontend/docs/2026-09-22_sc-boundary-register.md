@@ -48,12 +48,12 @@ The selected reference and current development status are in the roadmap.
 | ID | Boundary | Current enforcement | Required outcome |
 |---|---|---|---|
 | SC-G01 | CAS comparison depends on unspecified representation bytes | Implemented in the driver's `CompareExchangeObjectRequest2` arm: `SC_fault_unspecified_representation` | Explicit representation gap, preserving reads/state |
-| SC-G02 | Concurrent representation accesses require unresolved location/RF composition | Precise guard and checker integration outstanding | Explicit location/composition gap; no race-free or UB verdict inferred from the inadequate projection |
-| SC-G03 | Concurrent use of a runtime stream requires missing stream synchronization | Precise guard and call/stream identification outstanding | Explicit runtime-model gap; library implementation races must not become ISO caller UB |
+| SC-G02 | Concurrent representation accesses require unresolved location/RF composition | Temporary subobject/value port obligations active; precise G02 composition guard outstanding | Explicit location/composition gap; no race-free or UB verdict inferred from the inadequate projection |
+| SC-G03 | Concurrent use of a runtime stream requires missing stream synchronization | Actual loader/call origins connected; temporary protection-attribution port obligation, precise stream guard outstanding | Explicit runtime-model gap; library implementation races must not become ISO caller UB |
 | SC-G04 | Executed abstract unspecified atomic memory order | Typed Core producer implemented; paired controls, full Tier A+B and three-engine comparison pass | Preserve completed arguments and independent known-order UB; no chosen order or synthetic conditional UB |
 | SC-G05 | Generic atomic pointer fetch add/sub in the contradictory C11/reference domain | Typed update-body producer implemented; paired controls, full Tier A+B and three-engine comparison pass | Preserve checked object read; no pointer arithmetic result or store invented |
 | SC-G06 | Consuming lock-free properties without a pinned target configuration | Runtime query producer passes component controls, all 39 full lanes and the unchanged 864-case comparison; numeric `#if` still silently treats absent markers as zero | Explicit configuration gap where a property is required; no invented all-lock-free or never-lock-free policy |
-| SC-G07 | Unsequenced C atomic evaluations encounter the pinned Cmm function-call assumption | Actual C traces and predicate discrepancy retained; precise composition guard outstanding | Explicit sequencing/composition gap; preserve independently justified faults and actual source order |
+| SC-G07 | Unsequenced C atomic evaluations encounter the pinned Cmm function-call assumption | Whole-scalar projected guard connected; broader composition and production acceptance outstanding | Explicit sequencing/composition gap; preserve independently justified faults and actual source order |
 | SC-G08 | Concurrent library operations depend on omitted synchronization of shared internal state | Actual `at_quick_exit` and `atexit` registration traces retained; precise internal-object guard outstanding | Explicit runtime-model gap; omitted implementation protection is not caller UB |
 
 ### SC-G01 — unspecified bytes in compare-exchange
@@ -111,10 +111,12 @@ checker domain is insufficient. Ordered representation operations remain an
 implementation obligation. The physical byte-source journal is available; it
 does not itself define Cmm RF or settle nonoverlapping bytes within one scalar.
 
-**Current behavior:** no dedicated SC-G02 guard exists yet. Public SC completion
-still returns `SC_fault_checker_pending`; internal `drive_recorded` can expose
-these traces and must not certify them. Preserve all accesses, lifetime vertices,
-bytes/provenance, state and already established faults when the guard is added.
+**Current behavior:** no complete SC-G02 composition guard exists yet. C2 now
+classifies whole-scalar candidates. Unfinished subobject, aggregate and typed-view
+composition produces explicit port obligations, so those traces cannot certify
+support. These temporary obligations must be narrowed by C3, not renamed as G02.
+All accesses, lifetime vertices, bytes/provenance, state and earlier findings are
+retained.
 
 **Revisit:** a pinned upstream composition resolving these cases, or an explicit
 future user decision to add a named reference. The 2017 mixed-size model changes
@@ -269,14 +271,14 @@ effects; comma and function-wrapper controls retain their real ordering.
 These do not yet validate a paired production composition guard.
 Scheduler order must not become an invented source edge, UB or empty behavior.
 
-**Current behavior:** no complete composition guard. The current driver retains
-pending access-sequencing witnesses with their source graphs at discovery; the
-accumulator preserves earlier evidence and later independent faults. The unused
-conditional proof presentation was removed in C1. The missing C location/action
-mapping remains required: these witnesses are not a complete guard or verdict. Public completion remains `SC_fault_checker_pending`;
-the internal recorder cannot certify these traces. The
-work record records paired actual C
-controls, malformed-graph limits and compiled producer-disconnection plants.
+**Current behavior:** the public candidate classifier now identifies the pinned
+indeterminate-sequencing assumption's unordered action pairs on its whole-scalar
+projection and returns a distinct `SC_fault_atomic_sequencing` (G07) refusal.
+The prefix accumulator retains witness IDs in the authoritative journal; it no
+longer copies the source graph at every discovery. Earlier independent findings
+and operational failures remain retained. Complete C location/action composition
+and the production acceptance cases remain open; selected C traces and component
+controls do not establish complete coverage.
 
 **Revisit:** a pinned resolution of both assumptions in the C operational
 composition, with implicit/macro/function and independent-fault controls.
@@ -325,9 +327,9 @@ turn every listed feature into a semantic-gap refusal.
 
 | ID | Case, evidence and current status | Completion or review obligation |
 |---|---|---|
-| SC-P01 | `Driver.drive true` enables recording and preserves execution faults, then returns `SC_fault_checker_pending` on an otherwise completing alternative; public race/consistency and program-level outcome interface unfinished | Connect prefix fault detection, SC consistency and explicit incomplete outcomes; retain faults before divergence and across rejected candidates. A refusal is not a completed checker. |
+| SC-P01 | `Driver.drive true` now classifies otherwise completing scalar candidates; both CLIs select SC, prefix findings are retained, and port/protocol/G07/consistency outcomes are distinct. Full C2 acceptance and the whole-C provider interface remain unfinished | Connect prefix fault detection, SC consistency and explicit incomplete outcomes; retain faults before divergence and across rejected candidates. A refusal is not a completed checker. |
 | SC-P02 | Exchange/operator lowering, qualifier preservation and aggregate CAS arguments are validated; integer fetch, callable flags/fences, runtime orders, signal fences and non-synchronizing initialization now have a validated interface slice. Public character aliases, `kill_dependency` and the runtime query producer now have passing component controls, with all 39 full lanes and the unchanged 864-case comparison passing; preprocessing configuration and the final interface audit remain outstanding | Finish available operation-specific semantics through actual C lowering and journal. `kill_dependency` must preserve evaluation and terminate dependency without strengthening consume; its absence is port work. SC-G06 identifies unresolved configuration, not permission to omit available query rules. Preserve single evaluation, arithmetic and failure prefixes. Legacy conditional `RMW` is not unconditional exchange. |
-| SC-P03 | Scalar Cmm RF uses instantiated `MemValue` equality: identical-bit NaNs compare unequal; opposite signed zeros compare equal in the actual four predicate probes. A separate lossless key/interner/reference carrier now has paired component controls and kernel laws; the full 39-command ladder and unchanged 864-case three-engine comparison pass, while actual RF integration remains pending | Finish the logical-value/representation/provenance adapter. Raw keys preserve typed views; their equality is not automatically cross-view RF equality. Do not restrict C NaNs or change generic memory equality. See value audit. Predicate rejection alone is not a C fault. |
+| SC-P03 | The legacy raw-`MemValue` Cmm instance conflates signed zeros and rejects identical-bit NaNs. C2 now uses the lossless key/interner/reference carrier for actual scalar RF and reports typed-view disagreement as a port obligation; complete value/representation composition remains pending | Finish the logical-value/representation/provenance adapter. Raw keys preserve typed views; their equality is not automatically cross-view RF equality. Do not restrict C NaNs or change generic memory equality. See value audit. Predicate rejection alone is not a C fault. |
 | SC-P04 | Effect inventory E03–E05/E10: allocation, deallocation, lifetime metadata and address reuse; native pointer zapping is behind a switch disabled in the matched profile; scalar SC checker excludes lifetime actions and its lifetime sketch is commented out | Preserve concrete lifetime transitions and derive composition from C/DR403. Keep dynamic deallocation/reuse distinct from automatic lifetime end; zapping is not an invented source store. No blanket dynamic-allocation refusal. A concrete unresolved case must get its own SC-G entry if found. |
 | SC-P05 | E21: abstract varargs ids/cursors are preserved. The per-ID query now has ten paired groups, eight paired actual C traces and kernel origin/order laws; the full slice passes integration; five additional publication controls separate source-only pairs from full HB, while public integration remains pending | Connect the actual full hb relation, prefix-fault policy and ordinary object conflicts. The source-only selected queries are diagnostics, not SC verdicts. Preserve `va_arg` cursor updates, independent copies and deletion; no invented byte writes or blanket variadic-call refusal. The original source audit remains available guidance. |
 | SC-P06 | Helper source order/resumption, child errno, SC fences and CAS were originally open mechanisms; current slices have implemented controls/laws | Retain completed evidence and finish correspondence/interface integration. Do not relabel these as upstream gaps; SC fence runtime coverage uses the reviewed fence-aware reference, not the narrower scalar checker alone. |

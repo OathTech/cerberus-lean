@@ -5,6 +5,12 @@
 
   This is a leaf module — no imports from generated code.
 
+  SC prototype: Main now accepts --concurrency=sc and passes it explicitly to
+  Driver.drive. SC Core reduction receives an explicit Sc_control value. The
+  legacy Global.using_concurrency readers below remain at the sequential
+  default; the SC machine does not dispatch through those legacy readers.
+  References below to refusing --concurrency describe the pre-SC port.
+
   WHAT THIS FILE IS (reasoning-artifact audit instance A, step 1 —
   docs/2026-09-03_reasoning-artifact-audit.md §2.A; the record is
   docs/2026-09-05_cerbglobal-defs-record.md): every configuration read

@@ -156,7 +156,10 @@ let cerberus debug_level progress core_obj
   let main core_std =
     Exception.except_foldlM (fun core_files (is_lib, file) ->
       frontend ~is_lib (conf, io) file core_std >>= fun core_file ->
-      return (core_file::core_files)
+      let source = Sc_definition_sources.{sc_source_file=core_file;
+        sc_source_origin=(if is_lib then SC_definition_library file else SC_definition_user);
+        sc_source_stdlib_origin=SC_definition_library "Core standard library"} in
+      return (source::core_files)
     ) [] (core_libraries (not nolibc && not core_obj) link_lib_path link_core_obj @ (List.map (fun z -> (false, z)) files))
   in
   let epilogue n =
@@ -318,14 +321,14 @@ let cerberus debug_level progress core_obj
         prelude >>= main >>= begin function
           | [] -> assert false
           | f::fs ->
-            Core_linking.link (f::fs)
-        end >>= fun core_file ->
+            Sc_link_attribution.sc_link_attributed (f::fs)
+        end >>= fun (core_file, sc_origins) ->
         if exec then
           let open Driver_ocaml in
           let () = Tags.reset_tagDefs () in (* TODO: check this *)
           let () = Tags.set_tagDefs core_file.tagDefs in
           let driver_conf = {concurrency; exec_mode; fs_dump; trace; address_space_top} in
-          interp_backend io core_file ~args ~batch ~fs ~driver_conf
+          interp_backend ~sc_origins io core_file ~args ~batch ~fs ~driver_conf
         else
           match output_name with
           | None ->
@@ -511,10 +514,11 @@ let sequentialise =
   let doc = "Replace all unseq() with left to right wseq(s)" in
   Arg.(value & flag & info["sequentialise"] ~doc)
 
-(* TODO: is this flag being used? *)
 let concurrency =
-  let doc = "Activate the C11 concurrency" in
-  Arg.(value & flag & info["concurrency"] ~doc)
+  let doc = "Execute the sequential-consistency prototype (sc). Unsupported semantic boundaries remain explicit failures." in
+  let model = Arg.(value & opt ~vopt:(Some `SC) (some (enum ["sc", `SC])) None
+    & info ["concurrency"] ~docv:"MODEL" ~doc) in
+  Term.(const Option.is_some $ model)
 
 let batch =
   let doc = "makes the execution driver produce batch friendly output" in

@@ -37,7 +37,10 @@ type sc_fault =
   | SC_fault_fence_owner
   | SC_fault_order of sc_request_kind
   | SC_fault_uninitialized
-  | SC_fault_checker_pending
+  | SC_fault_protocol of string
+  | SC_fault_interpretation of list string
+  | SC_fault_candidate_rejected of list string
+  | SC_fault_atomic_sequencing
   | SC_fault_suspension_unavailable
   | SC_fault_resume_outside_mode
   | SC_fault_suspend_outside_mode
@@ -50,6 +53,8 @@ type sc_fault_category =
   | SC_failure_protocol
   | SC_failure_order
   | SC_failure_unimplemented
+  | SC_failure_inconsistent
+  | SC_failure_model_gap
 
 let sc_fault_message = function
   | SC_fault_unowned_memory_node -> "SC port gap: unowned memory node"
@@ -67,7 +72,10 @@ let sc_fault_message = function
   | SC_fault_fence_owner -> "SC fence has no matching owned request"
   | SC_fault_order _ -> "SC model excludes the requested memory order"
   | SC_fault_uninitialized -> "SC state is not initialized"
-  | SC_fault_checker_pending -> "SC port gap: atomic/race/fence checker integration pending"
+  | SC_fault_protocol detail -> "SC protocol failure: " ^ detail
+  | SC_fault_interpretation issues -> "SC port gap: " ^ String.concat ", " issues
+  | SC_fault_candidate_rejected checks -> "SC inconsistent candidate: " ^ String.concat ", " checks
+  | SC_fault_atomic_sequencing -> "SC-G07 model gap: unresolved atomic indeterminate-sequencing assumption"
   | SC_fault_suspension_unavailable -> "SC port gap: memory suspension unavailable"
   | SC_fault_resume_outside_mode -> "SC service resumed without SC state"
   | SC_fault_suspend_outside_mode -> "SC service suspended without SC state"
@@ -91,7 +99,10 @@ let sc_fault_class = function
   | SC_fault_fence_owner -> SC_failure_protocol
   | SC_fault_order _ -> SC_failure_order
   | SC_fault_uninitialized -> SC_failure_protocol
-  | SC_fault_checker_pending -> SC_failure_unimplemented
+  | SC_fault_protocol _ -> SC_failure_protocol
+  | SC_fault_interpretation _ -> SC_failure_unimplemented
+  | SC_fault_candidate_rejected _ -> SC_failure_inconsistent
+  | SC_fault_atomic_sequencing -> SC_failure_model_gap
   | SC_fault_suspension_unavailable -> SC_failure_observation
   | SC_fault_resume_outside_mode -> SC_failure_protocol
   | SC_fault_suspend_outside_mode -> SC_failure_protocol

@@ -603,7 +603,7 @@ let core_passes (conf, io) ~filename core_file =
       print_core (conf, io) ~filename core_file
   end
 
-let interp_backend io core_file ~args ~batch ~fs ~driver_conf =
+let interp_backend ?sc_origins io core_file ~args ~batch ~fs ~driver_conf =
   let module D = Driver_ocaml in
   let fs_state = match fs with
     | None -> Sibylfs.fs_initial_state
@@ -612,11 +612,11 @@ let interp_backend io core_file ~args ~batch ~fs ~driver_conf =
   (* TODO: temporary hack for the command name *)
   match batch with
   | (`Batch | `CharonBatch | `JsonBatch) as mode ->
-    let executions = D.batch_drive core_file ("cmdname" :: args) fs_state driver_conf in
+    let executions = D.batch_drive ?sc_origins core_file ("cmdname" :: args) fs_state driver_conf in
     return (Either.Left (mode, executions))
   | `NotBatch ->
     let open Core in
-    D.drive core_file ("cmdname" :: args) fs_state driver_conf >>= function
+    D.drive ?sc_origins core_file ("cmdname" :: args) fs_state driver_conf >>= function
       | (Vloaded (LVspecified (OVinteger ival)) :: _) ->
           return (Either.Right begin
             match Mem.eval_integer_value ival with

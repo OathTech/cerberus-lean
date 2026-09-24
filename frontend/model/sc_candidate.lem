@@ -1,0 +1,457 @@
+(* Interpretation of the actual recorder for the scalar SC integration.
+   A pending interpretation is a port obligation, never an upstream gap or UB.
+   Raw effects and aliases remain authoritative; no successful candidate may be
+   inferred when an interpretation obligation remains. *)
+open import Pervasives Relation
+import Mem Mem_common Ctype Cmm_csem Sc_reference Sc_reference_aux Sc_runtime
+import Sc_value Sc_graph Sc_access_group Sc_action_identity Sc_byte_sources
+
+type sc_location_key = integer * integer * integer
+
+type sc_interpretation_issue =
+  | SC_interpret_storage of Cmm_csem.aid
+  | SC_interpret_capture of Cmm_csem.aid
+  | SC_interpret_value of Cmm_csem.aid
+  | SC_interpret_aggregate of Cmm_csem.aid
+  | SC_interpret_order of Cmm_csem.aid
+  | SC_interpret_read_source of Cmm_csem.aid
+  | SC_interpret_source_range of Cmm_csem.aid * Cmm_csem.aid
+  | SC_interpret_source_value of Cmm_csem.aid * Cmm_csem.aid
+  | SC_interpret_alias of Cmm_csem.aid
+  | SC_interpret_object_layout of Cmm_csem.aid
+  | SC_interpret_metadata of Cmm_csem.aid
+  | SC_interpret_allocator_reuse of Cmm_csem.aid
+  | SC_interpret_runtime_origin of Cmm_csem.aid
+  | SC_interpret_library_protection of Cmm_csem.aid
+  | SC_interpret_scope_protocol
+
+type sc_candidate_builder = <|
+  sc_builder_actions: list Sc_reference.action;
+  sc_builder_locations: list (sc_location_key * (nat * bool));
+  sc_builder_values: Sc_value.sc_value_table;
+  sc_builder_issues: list sc_interpretation_issue;
+|>
+
+let sc_builder_initial = <|
+  sc_builder_actions= []; sc_builder_locations= [];
+  sc_builder_values= []; sc_builder_issues= [] |>
+
+let sc_builder_issue issue builder =
+  <| builder with sc_builder_issues= issue :: builder.sc_builder_issues |>
+
+let sc_declared_atomic key history = List.any (fun observed ->
+  match (key, observed.Sc_runtime.sc_effect_observation) with
+    | ((storage, base, size), Mem_common.Observe_allocation _ owner start width
+         (Just (Ctype.Ctype _ (Ctype.Atomic _))) _ _) ->
+        storage = owner && base = start && size = width
+    | ((storage, base, size), Mem_common.Observe_access _ _ ty _ (Just owner) start width _ _) ->
+        storage = owner && base = start && size = width &&
+        (match ty with Ctype.Ctype _ (Ctype.Atomic _) -> true | _ -> false end ||
+         match observed.Sc_runtime.sc_effect_request.Sc_runtime.sc_request_kind with
+           | Sc_runtime.SC_access Cmm_csem.Seq_cst _ -> true
+           | Sc_runtime.SC_atomic_update Cmm_csem.Seq_cst -> true
+           | Sc_runtime.SC_cas_object _ -> true
+           | _ -> false
+         end)
+    | _ -> false
+  end) history
+
+let sc_intern_location key atomic builder =
+  match List.lookup key builder.sc_builder_locations with
+    | Just (token, _) -> (token, builder)
+    | Nothing ->
+        let token = List.length builder.sc_builder_locations in
+        (token, <| builder with sc_builder_locations=
+          (key, (token, atomic)) :: builder.sc_builder_locations |>)
+  end
+
+let sc_candidate_order observed =
+  match observed.Sc_runtime.sc_effect_request.Sc_runtime.sc_request_kind with
+    | Sc_runtime.SC_access Cmm_csem.Seq_cst _ -> Just Sc_reference.Seq_cst
+    | Sc_runtime.SC_atomic_update Cmm_csem.Seq_cst -> Just Sc_reference.Seq_cst
+    | Sc_runtime.SC_cas_object _ -> Just Sc_reference.Seq_cst
+    | Sc_runtime.SC_access Cmm_csem.NA _ -> Just Sc_reference.NA
+    | Sc_runtime.SC_seq_rmw -> Just Sc_reference.NA
+    | Sc_runtime.SC_cas_expected _ _ _ -> Just Sc_reference.NA
+    | Sc_runtime.SC_cas_writeback _ -> Just Sc_reference.NA
+    | Sc_runtime.SC_lifetime _ -> Just Sc_reference.NA
+    | Sc_runtime.SC_memop _ -> Just Sc_reference.NA
+    | Sc_runtime.SC_runtime _ -> Just Sc_reference.NA
+    | _ -> Nothing
+  end
+
+(* Allocation with a supplied initial value contributes its actual initial
+   write. Allocation without such a value does not invent one. Lifetime-only
+   vertices remain in the all-vertex source graph. *)
+let sc_candidate_access observed =
+  match observed.Sc_runtime.sc_effect_observation with
+    | Mem_common.Observe_access _ kind ty _ owner base size bytes value ->
+        Just (kind, ty, owner, base, size, bytes, value)
+    | Mem_common.Observe_allocation _ owner base size (Just ty) (Just value) bytes ->
+        Just (Mem_common.StoreAccess, ty, Just owner, base, size, bytes, value)
+    | _ -> Nothing
+  end
+
+let sc_candidate_scalar value = match value with
+  | Sc_value.SC_integer_value _ _ _ -> true
+  | Sc_value.SC_floating_value _ _ -> true
+  | Sc_value.SC_pointer_value _ _ -> true
+  | Sc_value.SC_unspecified_value _ -> true
+  | _ -> false
+end
+
+let sc_candidate_initial_aliases history = List.concat (List.map (fun observed ->
+  match observed.Sc_runtime.sc_effect_observation with
+    | Mem_common.Observe_allocation _ _ _ _ (Just _) (Just _) _ ->
+        [<| Sc_action_identity.sc_alias_occurrence= observed.Sc_runtime.sc_effect_id;
+            Sc_action_identity.sc_alias_action= observed.Sc_runtime.sc_effect_id |>]
+    | _ -> []
+  end) history)
+
+let sc_candidate_pair groups id = List.find (fun group -> match group with
+  | Sc_access_group.SC_access_atomic_pair first _ -> first.Sc_runtime.sc_effect_id = id
+  | _ -> false
+end) groups
+
+(* The first integration resolves whole scalar objects. Subobject/representation
+   composition and abstract metadata have explicit port obligations until the
+   operational adapter supplies their interpretation. These are not G02/UB. *)
+let sc_candidate_coverage history observed =
+  let id = observed.Sc_runtime.sc_effect_id in
+  match observed.Sc_runtime.sc_effect_observation with
+    | Mem_common.Observe_access _ _ _ _ owner base size _ _ ->
+        if List.any (fun other -> match other.Sc_runtime.sc_effect_observation with
+          | Mem_common.Observe_allocation _ storage start width _ _ _ ->
+              owner = Just storage && base = start && size = width
+          | _ -> false
+        end) history then [] else [SC_interpret_object_layout id]
+    | Mem_common.Observe_varargs _ _ -> [SC_interpret_metadata id]
+    | Mem_common.Observe_allocation _ _ base size _ _ _ ->
+        if List.any (fun other -> other.Sc_runtime.sc_effect_id < id &&
+          match other.Sc_runtime.sc_effect_observation with
+            | Mem_common.Observe_deallocation _ true _ _ (Just (start,width)) ->
+                base < start + width && start < base + size
+            | _ -> false
+          end) history then [SC_interpret_allocator_reuse id] else []
+    | _ -> []
+  end
+
+let sc_candidate_add history groups aliases builder observed =
+  let id = observed.Sc_runtime.sc_effect_id in
+  match Sc_action_identity.sc_lookup_actions id aliases with
+    | [anchor] -> if anchor <> id then builder else
+        match sc_candidate_access observed with
+          | Nothing -> sc_builder_issue (SC_interpret_capture id) builder
+          | Just (kind, _, owner, base, size, bytes, value) ->
+              match owner with
+                | Nothing -> sc_builder_issue (SC_interpret_storage id) builder
+                | Just storage ->
+                    let key = (storage, base, size) in
+                    let atomic = sc_declared_atomic key history in
+                    if size <= 0 || integerFromNat (List.length bytes) <> size then
+                      sc_builder_issue (SC_interpret_capture id) builder
+                    else match (sc_candidate_order observed, Mem.sc_value_key value) with
+                      | (Nothing, _) -> sc_builder_issue (SC_interpret_order id) builder
+                      | (_, Nothing) -> sc_builder_issue (SC_interpret_value id) builder
+                      | (Just order, Just value_key) ->
+                          if not atomic && not (sc_candidate_scalar value_key) then
+                            sc_builder_issue (SC_interpret_aggregate id) builder
+                          else
+                            let (location, builder) = sc_intern_location key atomic builder in
+                            let (token, values) = Sc_value.sc_intern_value value_key builder.sc_builder_values in
+                            let builder = <| builder with sc_builder_values= values |> in
+                            let tid = Sc_reference_aux.Tid_hol
+                              observed.Sc_runtime.sc_effect_request.Sc_runtime.sc_request_thread in
+                            let location = Sc_reference_aux.Loc_hol location in
+                            let value = Sc_reference_aux.Cvalue_hol token in
+                            match sc_candidate_pair groups id with
+                              | Just (Sc_access_group.SC_access_atomic_pair _ second) ->
+                                  match sc_candidate_access second with
+                                    | Just (_, _, _, _, _, _, after) ->
+                                        match Mem.sc_value_key after with
+                                          | Nothing -> sc_builder_issue (SC_interpret_value id) builder
+                                          | Just after_key ->
+                                              let (after_token, values) = Sc_value.sc_intern_value after_key builder.sc_builder_values in
+                                              <| builder with sc_builder_values= values;
+                                                sc_builder_actions= Sc_reference.RMW id tid order location value
+                                                  (Sc_reference_aux.Cvalue_hol after_token) :: builder.sc_builder_actions |>
+                                        end
+                                    | _ -> sc_builder_issue (SC_interpret_capture id) builder
+                                  end
+                              | _ ->
+                                  let action = match kind with
+                                    | Mem_common.LoadAccess -> Sc_reference.Load id tid order location value
+                                    | Mem_common.StoreAccess -> Sc_reference.Store id tid order location value
+                                  end in
+                                  <| builder with sc_builder_actions= action :: builder.sc_builder_actions |>
+                            end
+                      end
+              end
+        end
+    | [] -> builder (* retained non-action source vertex *)
+    | _ -> sc_builder_issue (SC_interpret_alias id) builder
+  end
+
+let sc_candidate_action actions id = List.find (fun a -> Sc_reference.aid_of a = id) actions
+
+(* Close source relations before projecting away non-action vertices. Alias
+   projection contracts the two phases of an indivisible RMW to one action. *)
+let sc_candidate_relation actions aliases relation = Set.fromList
+  (List.concat (List.map (fun edge ->
+    match Sc_action_identity.sc_project_action_edge aliases edge with
+      | Sc_action_identity.SC_edge_between_actions source target ->
+          match (sc_candidate_action actions source, sc_candidate_action actions target) with
+            | (Just a, Just b) -> [(a,b)]
+            | _ -> []
+          end
+      | _ -> []
+    end) (Set_extra.toOrderedList relation)))
+
+let sc_candidate_source_id source = match source with
+  | Sc_byte_sources.SC_byte_store id _ -> Just id
+  | Sc_byte_sources.SC_byte_allocation id _ -> Just id
+  | _ -> Nothing
+end
+
+let sc_candidate_read_source aliases actions observed older =
+  let id = observed.Sc_runtime.sc_effect_id in
+  let bad = (Nothing, [SC_interpret_read_source id]) in
+  match sc_candidate_access observed with
+    | Just (Mem_common.LoadAccess, _, owner, base, size, bytes, _) ->
+        let sources = Sc_byte_sources.sc_byte_sources owner base bytes older in
+        match sources with
+          | [] -> bad
+          | first :: rest -> match sc_candidate_source_id first with
+              | Nothing -> bad
+              | Just writer ->
+                  if not (List.all (fun source -> sc_candidate_source_id source = Just writer) rest) then bad
+                  else match List.find (fun e -> e.Sc_runtime.sc_effect_id = writer) older with
+                    | Nothing -> bad
+                    | Just source -> match sc_candidate_access source with
+                        | Just (Mem_common.StoreAccess, _, owner', base', size', _, _) ->
+                            if owner <> owner' || base <> base' || size <> size' then
+                              (Nothing, [SC_interpret_source_range writer id])
+                            else match (Sc_action_identity.sc_lookup_actions writer aliases,
+                                        Sc_action_identity.sc_lookup_actions id aliases) with
+                              | ([source_id], [target_id]) ->
+                                  match (sc_candidate_action actions source_id, sc_candidate_action actions target_id) with
+                                    | (Just a, Just b) ->
+                                        (Just (a,b), if Sc_reference.value_written_by a = Sc_reference.value_read_by b
+                                          then [] else [SC_interpret_source_value writer id])
+                                    | _ -> bad
+                                  end
+                              | _ -> (Nothing, [SC_interpret_alias id])
+                            end
+                        | _ -> bad
+                      end
+                  end
+            end
+        end
+    | _ -> (Nothing, [])
+  end
+
+let rec sc_candidate_reads aliases actions history = match history with
+  | [] -> ([], [])
+  | observed :: older ->
+      let (rf, issues) = sc_candidate_reads aliases actions older in
+      let (edge, fresh) = sc_candidate_read_source aliases actions observed older in
+      (match edge with Nothing -> rf | Just pair -> pair :: rf end, fresh ++ issues)
+end
+declare {lean} termination_argument sc_candidate_reads = automatic
+
+type sc_candidate_interpretation = <|
+  sc_candidate_builder: sc_candidate_builder;
+  sc_candidate_graph: Sc_graph.sc_source_graph;
+  sc_candidate_aliases: list Sc_action_identity.sc_action_alias;
+  sc_candidate_execution: Sc_reference.candidate_execution;
+  sc_candidate_issues: list sc_interpretation_issue;
+|>
+
+let sc_candidate_hb actions edges =
+  let indexed = List.map (fun action -> (Sc_reference.aid_of action, action))
+    (Set_extra.toList actions) in
+  if List.length indexed = Set.size (Set.map Sc_reference.aid_of actions) &&
+     Set.all (fun (a,b) -> a IN actions && b IN actions) edges then
+    let ids = Set.map (fun (a,b) -> (Sc_reference.aid_of a, Sc_reference.aid_of b)) edges in
+    Set.fromList (List.concat (List.map (fun (source,target) ->
+      match (List.lookup source indexed, List.lookup target indexed) with
+        | (Just a, Just b) -> [(a,b)]
+        | _ -> []
+      end) (Set_extra.toOrderedList (Sc_graph.sc_occurrence_closure ids))))
+  else transitiveClosure edges
+
+(* Use the pinned synchronization/visibility definitions. Only the closure
+   algorithm changes, on the unique action-ID domain constructed above. *)
+let sc_candidate_relations pre wit =
+  let actions = pre.Sc_reference.actions in
+  let hrs = Sc_reference.hypothetical_release_sequence_set actions pre.Sc_reference.lk wit.Sc_reference.mo in
+  let rs = Sc_reference.release_sequence_set actions pre.Sc_reference.lk wit.Sc_reference.mo in
+  let sw = Sc_reference.release_acquire_fenced_synchronizes_with_set actions
+    pre.Sc_reference.sb pre.Sc_reference.asw wit.Sc_reference.rf wit.Sc_reference.lo rs hrs in
+  let hb = sc_candidate_hb actions (pre.Sc_reference.sb union sw) in
+  let vse = Sc_reference.visible_side_effect_set actions hb in
+  [("hb",hb); ("vse",vse); ("sw",sw); ("rs",rs); ("hrs",hrs)]
+
+let sc_interpret_candidate state =
+  let history = state.Sc_runtime.sc_effects in
+  let chronological = List.reverse history in
+  let groups = Sc_access_group.sc_group_accesses chronological in
+  let aliases = Sc_action_identity.sc_access_aliases groups ++
+    Sc_action_identity.sc_fence_aliases state.Sc_runtime.sc_fences ++
+    sc_candidate_initial_aliases history in
+  let builder = List.foldl (sc_candidate_add history groups aliases) sc_builder_initial chronological in
+  let fences = List.concat (List.map (fun request -> match request.Sc_runtime.sc_request_kind with
+    | Sc_runtime.SC_fence Cmm_csem.Seq_cst ->
+        [Sc_reference.Fence request.Sc_runtime.sc_request_id
+          (Sc_reference_aux.Tid_hol request.Sc_runtime.sc_request_thread) Sc_reference.Seq_cst]
+    | _ -> []
+  end) state.Sc_runtime.sc_fences) in
+  let actions = builder.sc_builder_actions ++ fences in
+  let action_set = Set.fromList actions in
+  let graph = Sc_graph.sc_prefix_graph state in
+  let sb = sc_candidate_relation actions aliases (Sc_graph.sc_occurrence_closure graph.Sc_graph.sc_graph_sb) in
+  let inherited = sc_candidate_relation actions aliases graph.Sc_graph.sc_graph_sbasw in
+  let asw = Set.filter (fun (a,b) -> Sc_reference.tid_of a <> Sc_reference.tid_of b) inherited in
+  let lk = fun location -> match location with Sc_reference_aux.Loc_hol id ->
+    if List.any (fun (_, (token, atomic)) -> token = id && atomic) builder.sc_builder_locations
+    then Sc_reference.Atomic else Sc_reference.Non_Atomic end in
+  let pre = <| Sc_reference.actions= action_set;
+    Sc_reference.threads= Set.map Sc_reference.tid_of action_set;
+    Sc_reference.lk= lk; Sc_reference.sb= sb; Sc_reference.asw= asw;
+    Sc_reference.dd= sc_candidate_relation actions aliases (Sc_graph.sc_occurrence_closure graph.Sc_graph.sc_graph_dd) |> in
+  let (reads_from, issues) = sc_candidate_reads aliases actions history in
+  (* IDs come from the recorder's common increasing occurrence supply. Here
+     they select the actual execution's MO/SC wit; they never supply sb. *)
+  let mo = { (a,b) | forall (a IN action_set) (b IN action_set) |
+    Sc_reference.aid_of a < Sc_reference.aid_of b &&
+    Sc_reference.is_write a && Sc_reference.is_write b &&
+    Sc_reference.loc_of a = Sc_reference.loc_of b && Sc_reference.is_at_atomic_location lk a } in
+  let sc = { (a,b) | forall (a IN action_set) (b IN action_set) |
+    Sc_reference.aid_of a < Sc_reference.aid_of b &&
+    Sc_reference.is_seq_cst a && Sc_reference.is_seq_cst b } in
+  let wit = <| Sc_reference.rf= Set.fromList reads_from; Sc_reference.mo= mo;
+    Sc_reference.sc= sc; Sc_reference.lo= {}; Sc_reference.tot= {} |> in
+  <| sc_candidate_builder= builder; sc_candidate_graph= graph;
+     sc_candidate_aliases= aliases;
+     sc_candidate_execution= (pre, wit, sc_candidate_relations pre wit);
+     sc_candidate_issues= builder.sc_builder_issues ++ issues ++
+       List.concat (List.map (sc_candidate_coverage history) history) |>
+
+(* The pinned fence predicate quantifies five actions. Restrict the two fence
+   variables to actual fences and the two write variables to MO edges; these
+   are conjuncts in every forbidden pattern. Restrict endpoints to A even for
+   malformed inputs. The last three patterns do not depend on r: a fence
+   already witnesses that A is nonempty. No reference assumption is needed. *)
+let sc_candidate_fences_heeded (pre, wit, _) =
+  let actions = pre.Sc_reference.actions in
+  let fences = Set.filter Sc_reference.is_fence actions in
+  let mo = Set.filter (fun (w,w') -> w IN actions && w' IN actions) wit.Sc_reference.mo in
+  forall (f IN fences) (f' IN fences) ((w,w') IN mo).
+    not (
+      (exists ((source,r) IN wit.Sc_reference.rf).
+        source = w && r IN actions && (
+          ((w',f) IN wit.Sc_reference.sc && (f,r) IN pre.Sc_reference.sb) ||
+          ((w',f) IN pre.Sc_reference.sb && (f,r) IN wit.Sc_reference.sc) ||
+          ((w',f) IN pre.Sc_reference.sb && (f,f') IN wit.Sc_reference.sc &&
+             (f',r) IN pre.Sc_reference.sb))) ||
+      ((w',f) IN pre.Sc_reference.sb && (f,f') IN wit.Sc_reference.sc && (f',w) IN pre.Sc_reference.sb) ||
+      ((w',f) IN wit.Sc_reference.sc && (f,w) IN pre.Sc_reference.sb) ||
+      ((w',f) IN pre.Sc_reference.sb && (f,w) IN wit.Sc_reference.sc))
+
+(* Keep the reference leaves and their names. In particular a failed
+   consistency predicate is not itself a C undefined-behaviour finding. *)
+let sc_candidate_checks ex = [
+  ("assumptions", Sc_reference.assumptions ex);
+  ("tot_empty", Sc_reference.tot_empty ex);
+  ("well_formed_threads", Sc_reference.well_formed_threads ex);
+  ("well_formed_rf", Sc_reference.well_formed_rf ex);
+  ("locks_only_consistent_locks", Sc_reference.locks_only_consistent_locks ex);
+  ("locks_only_consistent_lo", Sc_reference.locks_only_consistent_lo ex);
+  ("consistent_mo", Sc_reference.consistent_mo ex);
+  ("sc_accesses_consistent_sc", Sc_reference.sc_accesses_consistent_sc ex);
+  ("sc_fenced_sc_fences_heeded", sc_candidate_fences_heeded ex);
+  ("consistent_hb", Sc_reference.consistent_hb ex);
+  ("det_read", Sc_reference.det_read ex);
+  ("consistent_non_atomic_rf", Sc_reference.consistent_non_atomic_rf ex);
+  ("consistent_atomic_rf", Sc_reference.consistent_atomic_rf ex);
+  ("coherent_memory_use", Sc_reference.coherent_memory_use ex);
+  ("rmw_atomicity", Sc_reference.rmw_atomicity ex);
+  ("sc_accesses_sc_reads_restricted", Sc_reference.sc_accesses_sc_reads_restricted ex)]
+
+type sc_candidate_classification = <|
+  sc_class_interpretation: sc_candidate_interpretation;
+  sc_class_checked: bool;
+  sc_class_failed_checks: list string;
+  sc_class_atomic_sequencing: set (Cmm_csem.aid * Cmm_csem.aid);
+  sc_class_data_races: set (Cmm_csem.aid * Cmm_csem.aid);
+  sc_class_unsequenced_races: set (Cmm_csem.aid * Cmm_csem.aid);
+|>
+
+let sc_candidate_pair_ids pairs = Set.map
+  (fun (a,b) -> (Sc_reference.aid_of a, Sc_reference.aid_of b)) pairs
+
+let sc_classify_candidate_with check_consistency interpretation =
+  let ex = interpretation.sc_candidate_execution in
+  let (pre, _, _) = ex in
+  let interpretable = List.null interpretation.sc_candidate_issues &&
+    List.null interpretation.sc_candidate_graph.Sc_graph.sc_graph_issues in
+  let atomic_sequencing = { (a,b) | forall (a IN pre.Sc_reference.actions) (b IN pre.Sc_reference.actions) |
+    Sc_reference.aid_of a < Sc_reference.aid_of b && Sc_reference.tid_of a = Sc_reference.tid_of b &&
+    not (Sc_reference.is_at_non_atomic_location pre.Sc_reference.lk a &&
+         Sc_reference.is_at_non_atomic_location pre.Sc_reference.lk b) &&
+    not ((a,b) IN pre.Sc_reference.sb || (b,a) IN pre.Sc_reference.sb) } in
+  <| sc_class_interpretation= interpretation;
+     sc_class_checked= check_consistency;
+     sc_class_failed_checks= List.map (fun (name, _) -> name)
+       (List.filter (fun (_, passed) -> not passed) (if check_consistency then sc_candidate_checks ex else []));
+     sc_class_atomic_sequencing= sc_candidate_pair_ids atomic_sequencing;
+     (* An incomplete projection must not turn absent HB evidence into UB. *)
+     sc_class_data_races= if interpretable then sc_candidate_pair_ids (Sc_reference.data_races ex) else {};
+     sc_class_unsequenced_races= if interpretable then sc_candidate_pair_ids (Sc_reference.unsequenced_races ex) else {} |>
+
+let sc_classify_candidate interpretation = sc_classify_candidate_with true interpretation
+
+type sc_retained_findings = <|
+  sc_found_data_races: set (Cmm_csem.aid * Cmm_csem.aid);
+  sc_found_unsequenced_races: set (Cmm_csem.aid * Cmm_csem.aid);
+  sc_found_atomic_sequencing: set (Cmm_csem.aid * Cmm_csem.aid);
+|>
+
+let sc_no_findings = <| sc_found_data_races= {}; sc_found_unsequenced_races= {};
+  sc_found_atomic_sequencing= {} |>
+
+(* Store witness identities, not repeated graph snapshots. The authoritative
+   occurrence journal retains their evidence even if a later projection fails.
+   This channel never replaces an existing operational failure. *)
+let sc_retain_findings result previous = <|
+  sc_found_data_races= previous.sc_found_data_races union result.sc_class_data_races;
+  sc_found_unsequenced_races= previous.sc_found_unsequenced_races union result.sc_class_unsequenced_races;
+  sc_found_atomic_sequencing= previous.sc_found_atomic_sequencing union result.sc_class_atomic_sequencing |>
+
+let sc_candidate_supported result =
+  let interpretation = result.sc_class_interpretation in
+  List.null interpretation.sc_candidate_issues &&
+  List.null interpretation.sc_candidate_graph.Sc_graph.sc_graph_issues &&
+  Set.null result.sc_class_atomic_sequencing
+
+let sc_candidate_accepted result =
+  result.sc_class_checked && sc_candidate_supported result && List.null result.sc_class_failed_checks &&
+  Set.null result.sc_class_data_races && Set.null result.sc_class_unsequenced_races
+
+let sc_interpretation_issue_name = function
+  | SC_interpret_storage _ -> "storage identity"
+  | SC_interpret_capture _ -> "access capture"
+  | SC_interpret_value _ -> "logical value"
+  | SC_interpret_aggregate _ -> "aggregate value composition"
+  | SC_interpret_order _ -> "memory order"
+  | SC_interpret_read_source _ -> "read source composition"
+  | SC_interpret_source_range _ _ -> "read/write range composition"
+  | SC_interpret_source_value _ _ -> "typed read/write value composition"
+  | SC_interpret_alias _ -> "atomic action identity"
+  | SC_interpret_object_layout _ -> "subobject location interpretation"
+  | SC_interpret_metadata _ -> "abstract metadata interpretation"
+  | SC_interpret_allocator_reuse _ -> "allocator reuse synchronization"
+  | SC_interpret_runtime_origin _ -> "runtime call origin"
+  | SC_interpret_library_protection _ -> "library synchronization attribution"
+  | SC_interpret_scope_protocol -> "call-scope protocol"
+end

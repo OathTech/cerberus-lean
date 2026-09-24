@@ -33,14 +33,14 @@ capability that prevents the next necessary action; continue independent work.
 - Branch/worktree: `arc/sc-prototype`,
   `/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype`.
 - Base: `5407597d9eeba0259d65b728e86a860ad4614ab3`.
-  Latest implementation commit: `df6659ba8`; uncommitted linker/global-origin,
-  receipt and parameter-read queries remain. Keep useful code while pruning;
-  do not reset away the working tree.
+  C1 pruning and consolidation commit: `0e6947988`. C2 changes are in progress
+  in this worktree; preserve them when resuming.
 - The actual scheduler, primitive observations, atomic operations, source-order
   evidence and failure-state repairs exist. **Public SC is unfinished:**
-  `Driver.drive true` still ends otherwise-completing executions with
-  `SC_fault_checker_pending`; Lean CLI dispatch and the production litmus lane
-  are not connected. Component tests are not proof of delivered SC support.
+  the new `Driver.drive true` completion path constructs and checks a candidate,
+  and both CLIs dispatch `--concurrency=sc`. This integration is under validation;
+  complete C2 acceptance and C3/C4 coverage remain outstanding. Component tests
+  are not proof of delivered SC support.
 - The last frozen attribution snapshot passed all 39 full lanes and the 864-case
   three-engine report; source was unchanged and the wrapper exited 0. Its Lean
   report has 822 agreements, 29 differences, 11 both-undecodable and 2 n/a.
@@ -63,13 +63,70 @@ capability that prevents the next necessary action; continue independent work.
   coverage map are in the three live specifications. Keep the latest raw full
   and three-engine reports above, and the unresolved G06 experiment only.
 - **Next: C2, production interpretation/classification and the public C path.**
-  C3/C4 remain open. The old prefix proof may be removed when the final retained
-  findings accumulator replaces it; attribution queries must earn their place
-  in the actual G03/G08 producer. Do not restart the removed proof/campaign work.
+  C3/C4 remain open. The new prefix accumulator retains witness IDs in the
+  authoritative journal instead of repeated graph snapshots; the superseded
+  accumulator/proof modules are removed. Full prefix interpretation still needs
+  cost validation. Attribution queries must earn their place in the actual
+  G03/G08 producer. Actual loader/linker selection now reaches the driver;
+  reached library effects still carry a temporary protection-attribution port
+  obligation. Do not restart the removed proof/campaign work.
+- C2 checkpoint verification: both generated targets and CLIs build; the two
+  Lean suites, native controls and external example pass. The reference closure,
+  relation and fence controls pass. Fork pins and root membership pass. The
+  failure register now includes 20 pinned-reference partial-pattern sites,
+  unreachable in production by the fixed `hb`/`vse` relation-list construction
+  (a reviewed source invariant, not a new theorem); all 225 registered sites
+  match the fresh census. No full sequential campaign was repeated.
 - G06's chosen precise GCC preprocessor-observer experiment lacks the matching
   GCC 13.3 plugin SDK. A capability question is already pending; do not ask it
   again or bypass network controls. This blocks that experiment, not C1/C2.
   Do not guess an ABI or substitute invented lock-free constants.
+
+## Execution-cost decision pending
+
+C2 now has a real public scalar classification path. Both engines accept the
+actual C `return 0` and ordered-atomic-read controls; the latter exhaustively
+produces 441 executions with the same complete observation, returning 2. The
+consolidated machine/adapter/native suites pass. The new closure calculation
+matches all 512 three-vertex directed graphs; fence/relation controls compare
+against the unchanged pinned definitions. Sampled actual C executions report
+UB005 for the scalar race and allowed SC values for store buffering. These
+samples are diagnostics, not complete-outcome evidence.
+
+Exhaustive scalar-race and store-buffering C runs exceeded a 30-second bound.
+The scalar-race run still exceeds that same bound after the closure repair.
+Unsequenced atomic reads and the original strong-CAS seed exceed a 15-second bound. No complete
+outcomes or support credit are inferred from those runs. A selected race trace
+visits 19 ND choice nodes, and selected store buffering visits 109. The machine
+exposes all Core choices; candidate acceptance does not solve enumeration cost.
+
+The original CAS seed additionally reaches G07 in its final expression, which
+mixes an atomic load with unsequenced ordinary reads. That expression is retained
+as a boundary input. CAS seeds now sequence the final observation separately;
+selected strong-equal runs return the independently expected 5. The sequenced
+seed also exceeds the same 15-second exhaustive bound on both engines. These
+selected runs do not supply complete C outcome-set evidence.
+
+A scope decision is requested before adding an exploration subsystem:
+
+1. **Recommended:** retain all operational choices and complete C3/C4; validate
+   complete outcome sets on the bounded semantic/reference domain, and use
+   actual C pipeline cases with complete runs where feasible plus explicitly
+   labelled selected/prefix checks. Retain checker-disconnection, fault,
+   blocking and exhaustion controls. This changes the C2/C4 requirement for
+   complete whole-C outcome sets; it changes no semantics or refusal policy.
+2. Keep complete whole-C outcome-set acceptance mandatory for all named cases.
+   Add a narrowly justified exploration optimization while preserving the raw
+   machine/API choices. Exact state sharing must account for memory, source
+   graph, scopes, saved continuations, faults and fuel; comparing only final
+   values or `driver_state_eq` would be unsound. This is substantive new work,
+   not another test gate, and its sufficiency has not been established.
+
+**No acceptance requirement has been relaxed yet.** C2 remains incomplete. The
+new scalar adapter's temporary port obligations are not final exclusions; G06
+and the other C3/C4 obligations still apply under either choice. SDK capability
+remains separately pending: `nono why` confirms package metadata paths are not
+OS-granted. No sandbox bypass or shared toolchain mutation was attempted.
 
 ## Scope and semantic boundaries
 
