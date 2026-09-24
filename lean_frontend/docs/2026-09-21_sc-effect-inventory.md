@@ -31,11 +31,14 @@ lose reads and equal-value stores.
 
 The implemented observation boundary records primitive completed accesses and
 lifetime changes at the memory implementation, with actor and source-order
-context supplied by Core/driver. It must be passive when disabled, must not
-duplicate byte reconstruction, and must not add scheduling interruptions inside
-an existing request. The concurrent justification for grouping helper accesses
-is a separate obligation from sequential effect erasure. Source order must be
-carried through helper requests and consumed by the completed checker.
+context supplied by Core/driver. Observation itself does not change scheduling
+or duplicate byte reconstruction. Separately enabled SC helper suspension does
+permit interruption between primitive effects within a request; ordinary
+sequential execution retains the original grouping. The actual policy, atomic
+exclusions and filesystem ownership are described in the
+[operational contract](2026-09-21_sc-operational-contract.md#helper-scheduling-policy).
+Its concurrent justification is separate from sequential erasure. Source order
+must be carried through helper requests and consumed by the completed checker.
 
 In the table, `D`, `F`, `M`, and `L` mean `frontend/model/driver.lem`,
 `frontend/model/formatted.lem`, `memory/concrete/impl_mem.ml`, and
@@ -54,7 +57,7 @@ representation, dynamic allocation, or hidden helper accesses.
 | E05 `D:739`, `M:1472`, `L:2272` kill | Lifetime end and allocation removal/dead list; returns unit. Native pointer zapping is behind a switch disabled in the matched profile | Checked static/dynamic deallocation, preserved provenance rules; zapping is model metadata, not an invented source-level write by every affected thread | Lifetime end plus explicit metadata classification; invalid free, stale pointer, copied pointer, reuse |
 | E06 `D:715` ordinary `SeqRMW` | Checked load, Core calculation, checked store; returns old/new values and updates trace | This is ordinary C increment/update, not an atomic RMW. Preserve exclusion/source-sequencing rules. Failed calculation/store retains the read and preceding state | E01/E02 with distinct event ids and correct continuation annotations; `x++ + y`, `x++ + x`, failed update |
 | E07 atomic RMW/CAS requests | Object read and possible write; CAS also reads expected and may update expected | Strong/weak mismatch and spurious failure; object RMW indivisibility is distinct from expected-object effects; validate success/failure orders and operand evaluation | E01/E02 grouped according to reference action; exchange, CAS equal/unequal/spurious, effectful arguments |
-| E08 `D:816`, `M:2643`, `L:2883` memcpy | Forward checked unsigned-char load/store pairs; returns destination | Current request runs the existing loop without scheduler yields. Preserve partial prefix if a later read/write fails; preserve upstream overlap omission as an upstream issue | Primitive byte effects, not final diff; copy/read, copy race, unchanged destination bytes, mid-copy fault |
+| E08 `D:816`, `M:2643`, `L:2883` memcpy | Forward checked unsigned-char load/store pairs; returns destination | The original sequential request has no internal scheduler yield. SC helper suspension can yield between primitive effects, retaining loop order and current-state checks at resume. Preserve partial failure and the upstream overlap omission; validate the scheduling interpretation separately | Primitive byte effects, not final diff; copy/read, copy race, unchanged destination bytes, mid-copy fault |
 | E09 `D:821`, `M:2657`, `L:2918` memcmp | Reads the entire first range and then the entire second; returns comparison integer | Do not replace with an early-exit comparison. Unspecified bytes/faults follow current checks; first difference does not remove later reads | E01 for all actual reads; race beyond first unequal byte, second-buffer fault |
 | E10 `D:830`, `M:2676`, `L:2945` realloc | Validate old object, allocate, copy `min(old,new)` bytes, kill old, return new; null path allocates | Preserve helper order and completed allocation/copy on failure; do not invent rollback or shortcut lifetime events | E03/E05/E08; grow/shrink/null, failure during copy, old-pointer use |
 
@@ -64,7 +67,7 @@ representation, dynamic allocation, or hidden helper accesses.
 |---|---|---|---|
 | E11 `F:375` character-array reader; `F:479,668,694` printf conversions | Loads format and argument representations, including `%s`/`%p`; formatted text/result | Reads belong to executing thread/library call; retain actual stopping/iteration and load faults | E01 underneath all formatted calls; shared format/string races, fault after a prefix |
 | E12 `F:797,807` store characters | Checked char stores including terminating byte as implemented; returns unit | Retain partial output-buffer writes and length behavior | E02; snprintf/vsnprintf output alias and readonly/faulting tail |
-| E13 `D:238,250,299–344` filesystem helpers | read/getcwd buffers, dirent allocation/initialization, stat field stores | Keep filesystem step grouping, caller identity, error handling and prior filesystem state | E01–E04 beneath helper Mem monads; buffer publication, partial stat/dirent failure |
+| E13 `D:238,250,299–344` filesystem helpers | read/getcwd buffers, dirent allocation/initialization, stat field stores | Preserve the abstract FS transaction against competing FS services, while SC suspension permits intervening Core/memory work. Keep caller identity, error handling and failure-time state; ownership is not an ISO stream lock | E01–E04 beneath helper Mem monads; buffer publication, partial stat/dirent failure |
 | E14 `D:409,420,441` formatted filesystem operations | printf/vprintf/vsnprintf memory accesses plus FS output | Observable output and memory effects are both retained; output is not a substitute for effect recording | E11/E12 with FS-step context; output bytes and memory race controls |
 | E15 `D:219` errno error store | Writes current thread's errno object | Error handling itself may access memory; original child creation has null errno (`Core_run:1650` TODO), requiring an explicit integration repair/reference record | E02, thread initialization; child filesystem error, independent errno objects |
 | E16 `D:1675–1719,1796–1838` argv/argc | Allocations and stores for argument strings, pointer array, argc and argv | Both entry constructions need coverage; initialization precedes main/children; preserve address-space failures | E01–E04 under initial-thread context; argv access after spawn, startup OOM |

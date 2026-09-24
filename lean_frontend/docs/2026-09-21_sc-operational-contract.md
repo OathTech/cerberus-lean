@@ -42,6 +42,32 @@ describe that distinction. The latter confirms that the old integration ceased
 to run as Cerberus evolved. BMC is a separately implemented bounded reference
 where its actual operations are supported, not a full object-model oracle.
 
+## Scalar construction and coverage claim
+
+C2 must implement and explain the following connection on its justified scalar,
+NA/seq_cst domain; it is not an already established theorem of the recorder.
+An actual read supplies its RF source only after the adapter establishes the
+logical location/value interpretation. Writes and RMWs to each atomic object
+supply MO in execution order, including initialization as required by the
+reference. The selected seq_cst atomic/fence occurrences supply SC order; internal
+RMW phases are grouped as one action. Source `sb` and derived synchronization
+remain separate from scheduling order.
+
+For supported race-free executions the resulting candidate must meet the pinned
+fenced predicates. Conversely, exhaustive concrete execution must retain the
+choices needed for the permitted behaviors of this interpreted domain: all
+offered thread/service, Core and ND alternatives, not just one successful trace.
+Candidate membership alone proves neither that coverage nor recording fidelity.
+State the exact interpretation assumptions and bounds when making either claim.
+
+Reuse complete bounded scalar outcome-set comparisons and inspect representative
+RF/MO/SC interpretations. The finite scalar enumerator does not cover fences;
+fences and repeated initialization require direct controls against the selected
+pinned predicates. This is a focused implementation/validation obligation, not
+a new universal adequacy theorem or second reference framework. Racy prefixes
+have independent fault handling; lifetime, representation and metadata require
+the additional composition below. No scalar test restriction narrows C3 scope.
+
 ## Machine and choices
 
 1. Reuse the current Core state, thread states/continuations, filesystem state,
@@ -75,6 +101,42 @@ where its actual operations are supported, not a full object-model oracle.
    produce only `Specified(1)` for the SB seed in default mode. Turning that
    entry into a spawn refusal would be a semantic change, not conservativity.
    The SC entry must instead explore the intended SC choices explicitly.
+
+## Helper scheduling policy
+
+Passive memory observation and SC scheduling are distinct. Observation records
+the existing operations without creating pauses. The current SC construction
+explicitly enables suspension for `Step_memop_request2` and `Step_fs2` in
+`Driver.sc_step_may_suspend`; ordinary sequential mode keeps it disabled.
+
+- The first helper primitive runs immediately. After a completed observed effect,
+  `beforePrimitive` can suspend before the next primitive. Its continuation
+  executes the original body against the current memory at resumption; do not
+  cache its validity checks or result across another thread's step.
+- `sc_capture_service` saves the request, accumulated effects and continuation,
+  then returns to scheduling. A paused thread resumes that service rather than
+  re-evaluating its Core arena. Ordinary ND guards/branches/choices remain offered.
+  Primitive failures keep their actual state and already completed effects.
+- Ordinary action requests are not enabled for these internal pauses. In
+  particular, an atomic-update/CAS object phase remains indivisible; expected-
+  object evaluation/writeback and ordinary SeqRMW use their separate explicit
+  phases and source rules. A recorded byte is not automatically a yield point.
+- A filesystem service retains `sc_filesystem_owner` while suspended, excluding
+  competing FS services but permitting other Core/memory work. This preserves
+  the existing abstract FS transaction: `drive_fs_step_with` captures FS state,
+  performs memory work, then commits its FS result. Dropping ownership can lose
+  an intervening FS update. Ownership is neither an ISO stream lock nor a claim
+  about a real syscall's granularity; G03/G08 remain separate.
+
+Source basis: `driver.lem`'s `sc_memory_mode`, `sc_capture_service`,
+`sc_machine_choices` and `sc_start_machine_choice`; paired
+`CerbMem.beforePrimitive` / concrete `Impl_mem.before_primitive`; and the existing
+checked primitive order in memcpy/memcmp/realloc and filesystem helpers. These
+establish the construction and state-retention rationale, not by themselves a
+universal concurrent correspondence. C2 must retain the short source/reference
+argument for permitted grouping and a distinguishing helper-interleaving and
+partial-failure control when C1 deletes historical service records. Do not
+silently revert suspension or infer its justification from sequential erasure.
 
 ## Memory and ordering
 

@@ -186,6 +186,13 @@ removal. No claim that C1 itself delivers SC.
    initialization, reads-from (RF), modification order (MO), SC order and
    synchronization/HB. Use the retained small executable queries. Scheduler
    order is not source `sb`; one RMW's phases are not two atomic actions.
+   State the supported scalar construction and coverage claim in the operational
+   contract: actual reads supply RF, writes to each atomic object supply MO, and
+   the selected seq_cst atomic/fence occurrences supply SC order. Checking each recorded candidate establishes
+   membership, not coverage of every permitted execution. Preserve every offered
+   scheduler/Core/ND choice; test complete bounded outcome sets on the independent
+   scalar domain and use direct pinned-predicate controls for fences and repeated
+   initialization. No new general adequacy theorem or gate hierarchy is required.
 3. Preserve race and other established findings on prefixes, before loops and
    failed candidates. Candidate consistency rejection must not erase faults.
    Replace repeated whole-graph snapshots/closure scans with a justified shared
@@ -198,7 +205,11 @@ removal. No claim that C1 itself delivers SC.
 **Acceptance:** real paired C SB/publication, CAS and fences plus a mixed
 safe/racy alternative, fault before a loop, blocking and fuel exhaustion traverse
 this API and have independently justified complete outcomes. Disconnecting the
-production checker makes the C suite fail. This is an intermediate milestone;
+production checker makes the C suite fail. Retain one existing helper-interleaving
+and partial-failure control, with the permitted interruption/atomic-exclusion/FS
+ownership rule and its source rationale in the operational contract. Passive
+observation alone is not authority to add a scheduling point. This is an
+intermediate milestone;
 a scalar-only success cannot become the definition of done. No further passive
 helper checkpoints before this connection exists.
 
@@ -224,11 +235,28 @@ incomplete, not agreement or a semantic exclusion.
 ## C4 — provider interface and final acceptance
 
 Expose the actual machine/outcome definitions with explicit fuel and address-
-space parameters. Finish only the internal correspondence/erasure claims made
-by that API; do not introduce a second semantics or require whole-ISO adequacy.
-Rewrite `examples/sc_consumer` to invoke actual initialized Core/SC execution
-and demonstrate a useful step/outcome preservation property. No customer build,
-logic, re-pin or mutation is part of this work.
+space parameters. Minimum provider interface for downstream Iris reasoning:
+
+- An initialized whole-C configuration retaining the actual outer initialization,
+  main and finalization continuation/phase, plus saved services. `driver_state`
+  alone loses paused work; internal `SC_halted` during initialization is not
+  whole-program completion.
+- An executable step view or relation derived from the actual machine, covering
+  every offered scheduler, Core and ND alternative and exposing resulting state
+  and observations. A whole-machine presentation is sufficient; no separate
+  Iris thread-language, logic or separation rules are required here.
+- Distinct completion, fault, blocking, unsupported and exhaustion observations,
+  retaining interpretation obligations. A supported/safe conclusion cannot result
+  from omitting unsupported or unfinished alternatives.
+- Explicit fuel meaning. If a successful-at-some-fuel relation is exposed, state
+  its connection to execution and the stability needed for the claimed interface;
+  hiding fuel existentially alone does not discharge that connection.
+
+Finish only the internal correspondence/erasure claims made by that API; do not
+introduce a second semantics or require whole-ISO adequacy. Rewrite
+`examples/sc_consumer` to invoke this initialized whole-C API and demonstrate
+an actual step/outcome preservation property, including finality or a retained
+fault/gap. No customer build, logic, re-pin or mutation is part of this work.
 
 Validate the complete SC case families above, actual production connection,
 independent reference domain, and unchanged intended sequential behavior. Finish
