@@ -1,5 +1,7 @@
 import Unit.SCProtocolSupport
 
+namespace SCUnit.SCSeqRMW
+
 open SCProtocolControls Lem_Basic_classes Lem_Map
 
 private def bound (e : expr core_run_annotation) := Expr [] (Ebound e)
@@ -25,7 +27,7 @@ private def runBody (fuel : Nat) (body : expr core_run_annotation)
     (Proc CerbLocation.unknown none BTy_unit [] (storeExpr 30 300)) f.funs) }
   runProgram f setup
 
-def main (args : List String) : IO UInt32 := do
+def runTests (args : List String) : IO UInt32 := do
   let [arg] := args | return 2
   let some fuel := arg.toNat? | return 2
   let mut good := true
@@ -84,3 +86,5 @@ def main (args : List String) : IO UInt32 := do
       ((s.layout_state.bytemap.get? 200).bind (·.value)) == some 7 &&
       match outcome with | Killed _ (Undef0 _ _) => true | _ => false))) && good
   return if good then 0 else 1
+
+end SCUnit.SCSeqRMW

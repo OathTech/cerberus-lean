@@ -1,0 +1,52 @@
+(* Adversarial controls of the ACTUAL Core linker, before choosing role metadata. *)
+open import Pervasives Core Core_run_aux
+import Core_linking Core_run Sc_call_context
+
+let sc_link_symbol digest n = Symbol.Symbol digest n Symbol.SD_None
+val sc_link_body: Core.expr Core_run_aux.core_run_annotation
+let sc_link_body = Expr [] (Epure (Pexpr [] () (PEval Vunit)))
+val sc_link_empty: Core.file Core_run_aux.core_run_annotation
+let sc_link_empty = <|
+  main= Nothing; calling_convention= Normal_callconv; tagDefs= Map.empty;
+  stdlib= Map.empty; impl= Map.empty; globs= []; funs= Map.empty;
+  extern= Map.empty; funinfo= Map.empty; loop_attributes= Map.empty;
+  visible_objects_env= Map.empty;
+|>
+let sc_link_proc formal = Proc Loc.unknown Nothing BTy_unit
+  [(formal, BTy_unit)] sc_link_body
+let sc_link_calls files called expected =
+  match Core_linking.link files with
+    | Exception.Result file ->
+      match Core_run.call_proc (Core_linking.create_extern_symmap file) file called [Vtrue] with
+        | Exception.Result (bindings, _) -> Map.lookup expected bindings = Just Vtrue
+        | _ -> false
+      end
+    | _ -> false
+  end
+let sc_library_link_checks digest =
+  let target = sc_link_symbol digest 1 in
+  let user_arg = sc_link_symbol digest 2 in
+  let library_arg = sc_link_symbol digest 3 in
+  let alias = sc_link_symbol digest 4 in
+  let distinct = sc_link_symbol digest 5 in
+  let std_arg = sc_link_symbol digest 6 in
+  let user = <| sc_link_empty with funs= Map.insert target (sc_link_proc user_arg) Map.empty |> in
+  let library = <| sc_link_empty with funs= Map.insert target (sc_link_proc library_arg) Map.empty |> in
+  let no_collision = <| library with funs= Map.insert distinct (sc_link_proc library_arg) Map.empty |> in
+  let interface = Symbol.Identifier Loc.unknown "fputc" in
+  let exported = <| library with extern= Map.insert interface ([target], LK_normal target) Map.empty |> in
+  let declaration = <| sc_link_empty with extern= Map.insert interface ([alias], LK_none) Map.empty |> in
+  let duplicate = <| no_collision with extern= Map.insert interface ([distinct], LK_normal distinct) Map.empty |> in
+  let with_std = <| exported with stdlib= Map.insert alias (sc_link_proc std_arg) Map.empty |> in
+  [
+    ("reverse-consed user then library retains colliding user body", sc_link_calls [user;library] target user_arg);
+    ("reversing inputs changes colliding body owner", sc_link_calls [library;user] target library_arg);
+    ("distinct library definition remains callable", sc_link_calls [user;no_collision] distinct library_arg);
+    ("distinct user definition remains callable", sc_link_calls [user;no_collision] target user_arg);
+    ("external alias resolves loaded library definition", sc_link_calls [declaration;exported] alias library_arg);
+    ("duplicate external definitions fail linking", match Core_linking.link [duplicate;exported] with
+      | Exception.Exception _ -> true | _ -> false end);
+    ("stdlib precedence survives actual link", sc_link_calls [declaration;with_std] alias std_arg);
+    ("original pre-link symbol alone cannot identify winning body",
+      not (sc_link_calls [user;library] target library_arg))
+  ]

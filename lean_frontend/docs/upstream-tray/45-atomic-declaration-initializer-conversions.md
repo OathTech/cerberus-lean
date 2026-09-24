@@ -26,7 +26,7 @@ to integer type. Their first failure causes agree exactly. The narrowing case
 reaches the concrete `bytes_of_int` range assertion. These are failed executions,
 not three agreed C outcomes. Raw captures and exact commands are in the SC
 atomic-interface completion evidence described by its
-[review](../2026-09-23_sc-atomic-completion-review.md).
+[boundary register](../2026-09-22_sc-boundary-register.md).
 
 Four controls complete with `Specified(0)` in pristine and fork: explicit
 `(int*)0`, a pointer-valued address initializer, an uninitialized atomic pointer

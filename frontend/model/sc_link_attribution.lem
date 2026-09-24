@@ -1,0 +1,68 @@
+(* Passive attribution follows the actual successful linker steps and map
+   operations. A search through independent input maps may disagree with a union
+   whose captured comparator differs from those maps. Map.mapi preserves each
+   input map's shape/comparator; the metadata uses the SAME ordered union.
+   This is not artifact authentication, a runtime role or synchronization. *)
+open import Pervasives
+import Core Core_linking Exception Sc_definition_sources Sc_global_origins Sc_call_context
+
+type sc_definition_binding = <|
+  sc_definition_selected: Sc_definition_sources.sc_selected_source;
+  sc_definition_original_symbol: Symbol.sym;
+|>
+
+type sc_link_origins = <|
+  sc_link_function_origins: map Symbol.sym sc_definition_binding;
+  sc_link_stdlib_origins: map Symbol.sym sc_definition_binding;
+  sc_link_global_origins: list Sc_global_origins.sc_global_origin;
+|>
+
+let sc_seed_link_origins index source = <|
+  sc_link_function_origins= Map.mapi (fun symbol _ -> <| sc_definition_original_symbol= symbol;
+    sc_definition_selected= <| Sc_definition_sources.sc_selected_index= index;
+      Sc_definition_sources.sc_selected_origin= source.Sc_definition_sources.sc_source_origin |> |>)
+    source.Sc_definition_sources.sc_source_file.Core.funs;
+  sc_link_stdlib_origins= Map.mapi (fun symbol _ -> <| sc_definition_original_symbol= symbol;
+    sc_definition_selected= <| Sc_definition_sources.sc_selected_index= index;
+      Sc_definition_sources.sc_selected_origin= source.Sc_definition_sources.sc_source_stdlib_origin |> |>)
+    source.Sc_definition_sources.sc_source_file.Core.stdlib;
+  sc_link_global_origins= Sc_global_origins.sc_initial_global_origins index source;
+|>
+
+let sc_merge_link_origins linked incoming accumulated = <|
+  sc_link_function_origins= Map.(union) incoming.sc_link_function_origins accumulated.sc_link_function_origins;
+  sc_link_stdlib_origins= incoming.sc_link_stdlib_origins;
+  sc_link_global_origins= Sc_global_origins.sc_merge_global_origins linked
+    incoming.sc_link_global_origins accumulated.sc_link_global_origins;
+|>
+
+let sc_attributed_link_step (index, source) result = match result with
+  | Exception.Exception error -> Exception.Exception error
+  | Exception.Result (file, origins) ->
+    match Core_linking.link_aux source.Sc_definition_sources.sc_source_file file with
+      | Exception.Exception error -> Exception.Exception error
+      | Exception.Result linked -> Exception.Result (linked, sc_merge_link_origins linked
+          (sc_seed_link_origins index source) origins)
+    end
+end
+
+let sc_link_attributed sources = match sources with
+  | [] -> match Core_linking.link [] with
+      | Exception.Exception error -> Exception.Exception error
+      | Exception.Result file -> Exception.Result (file, <|
+          sc_link_function_origins= Map.empty;sc_link_stdlib_origins= Map.empty;
+          sc_link_global_origins= [] |>)
+    end
+  | source :: rest ->
+    let (_, indexed) = List.foldl (fun (index, acc) next ->
+      (index+1, (index,next)::acc)) (1,[]) rest in
+    List.foldl (fun result next -> sc_attributed_link_step next result)
+      (Exception.Result (source.Sc_definition_sources.sc_source_file,
+        sc_seed_link_origins 0 source)) (List.reverse indexed)
+end
+
+let sc_selected_definition origins definition = match definition with
+  | Sc_call_context.SC_call_program symbol -> Map.lookup symbol origins.sc_link_function_origins
+  | Sc_call_context.SC_call_stdlib symbol -> Map.lookup symbol origins.sc_link_stdlib_origins
+  | Sc_call_context.SC_call_unresolved _ -> Nothing
+end

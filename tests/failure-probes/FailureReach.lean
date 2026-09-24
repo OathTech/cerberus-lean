@@ -10,9 +10,11 @@ import Mini_pipeline
 -- Standalone SC reference/adapters are scanned even before Driver uses them.
 -- Import them so the compiler identifies their owners and actual dependencies.
 import Sc_reference
-import CerbSCValues
-import CerbSCVarargs
-
+import Sc_value
+import Sc_varargs
+import Sc_link_attribution
+import Sc_global_attribution
+import Sc_parameter_reads
 open Lean in
 run_cmd do
   let env ← getEnv

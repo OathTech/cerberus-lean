@@ -137,26 +137,35 @@ roots = [
   "Nondeterminism", "Nondeterminism_auxiliary",
   "Nd_observe", "Nd_observe_auxiliary", "CerbNDObserveProofs",
   "Sc_order", "Sc_order_auxiliary", "Sc_order_lemMeasureProofs",
-  "Sc_representation", "Sc_representation_auxiliary", "CerbSCRepresentation",
-  "Sc_global_bindings", "Sc_global_bindings_auxiliary", "CerbSCGlobalBindings",
-  "Sc_spawn", "Sc_spawn_auxiliary", "CerbSCSpawn",
+  "Sc_representation", "Sc_representation_auxiliary",
+  "Sc_global_bindings", "Sc_global_bindings_auxiliary",
+  "Sc_spawn", "Sc_spawn_auxiliary",
   "Sc_call_context", "Sc_call_context_auxiliary",
+  "Sc_definition_sources", "Sc_definition_sources_auxiliary",
+  "Sc_global_origins", "Sc_global_origins_auxiliary",
+  "Sc_link_attribution", "Sc_link_attribution_auxiliary",
+  "Sc_global_attribution", "Sc_global_attribution_auxiliary",
+  "Sc_parameter_reads", "Sc_parameter_reads_auxiliary",
   "Sc_call_scope", "Sc_call_scope_auxiliary",
-  "Sc_scopes", "Sc_scopes_auxiliary", "CerbSCScopes", "CerbSCByteKeys", "CerbSCAccessGroups",
+  "Sc_scopes", "Sc_scopes_auxiliary",
+  "CerbSCAccessGroups",
   "Sc_access_group", "Sc_access_group_auxiliary",
-  "Sc_runtime", "Sc_runtime_auxiliary", "CerbSCByteInstances", "CerbSCOperational",
-  "CerbFSProofs", "CerbFSDriverProofs",
-  "CerbNDSuspension", "CerbMemSuspension", "CerbSCHelperOrder", "CerbSCServices", "CerbSCFaults",
-  "Sc_byte_sources", "Sc_byte_sources_auxiliary", "CerbSCByteSources",
-  "Sc_access_sequencing", "Sc_access_sequencing_auxiliary", "CerbSCSequencing",
-  "Sc_prefix_obligations", "Sc_prefix_obligations_auxiliary", "CerbSCPrefixObligations",
-  "Sc_reference_sequencing", "Sc_reference_sequencing_auxiliary",
-  "Sc_graph", "Sc_graph_auxiliary", "CerbSCGraph", "CerbSCAtomicUpdate", "CerbSCAtomicSurface", "CerbSCValues",
-  "Sc_action_identity", "Sc_action_identity_auxiliary", "CerbSCActionIdentity",
-  "Sc_happens_before", "Sc_happens_before_auxiliary", "CerbSCHappensBefore",
-  "Sc_atomic_sources", "Sc_atomic_sources_auxiliary", "CerbSCAtomicSources",
-  "Sc_synchronization", "Sc_synchronization_auxiliary", "CerbSCSynchronization",
-  "Sc_varargs", "Sc_varargs_auxiliary", "CerbSCVarargs",
+  "Sc_runtime", "Sc_runtime_auxiliary",
+  "CerbSCByteInstances",
+  "CerbSCOperational",
+  "CerbMemSuspension",
+  "CerbSCServices",
+  "Sc_byte_sources", "Sc_byte_sources_auxiliary",
+  "Sc_access_sequencing", "Sc_access_sequencing_auxiliary",
+  "Sc_prefix_obligations", "Sc_prefix_obligations_auxiliary",
+  "CerbSCPrefixObligations",
+  "Sc_graph", "Sc_graph_auxiliary",
+  "CerbSCValues",
+  "Sc_action_identity", "Sc_action_identity_auxiliary",
+  "Sc_happens_before", "Sc_happens_before_auxiliary",
+  "Sc_atomic_sources", "Sc_atomic_sources_auxiliary",
+  "Sc_synchronization", "Sc_synchronization_auxiliary",
+  "Sc_varargs", "Sc_varargs_auxiliary",
   "Pp", "Pp_auxiliary",
   "Product", "Product_auxiliary",
   "Range", "Range_auxiliary",
@@ -335,156 +344,18 @@ root = "Unit.OpaqueFailureTest"
 moreLinkArgs = ["native/md5.o"]
 
 [[lean_exe]]
-name = "sc-prototype-test"
-srcDir = "test"
-root = "Unit.SCPrototype"
-moreLinkArgs = ["native/md5.o"]
-
-[[lean_exe]]
-name = "sc-protocol-test"
-srcDir = "test"
-root = "Unit.SCProtocol"
-moreLinkArgs = ["native/md5.o"]
-
-[[lean_exe]]
-name = "sc-fences-test"
-srcDir = "test"
-root = "Unit.SCFences"
-moreLinkArgs = ["native/md5.o"]
-
-[[lean_exe]]
-name = "sc-representation-test"
-srcDir = "test"
-root = "Unit.SCRepresentation"
-
-[[lean_exe]]
-name = "sc-cas-test"
-srcDir = "test"
-root = "Unit.SCCAS"
-moreLinkArgs = ["native/md5.o"]
-
-[[lean_exe]]
 name = "float-representation-test"
 srcDir = "test"
 root = "Unit.FloatRepresentation"
 
 [[lean_exe]]
-name = "sc-seq-rmw-test"
+name = "sc-machine-test"
 srcDir = "test"
-root = "Unit.SCSeqRMW"
+root = "Unit.SCMachine"
 moreLinkArgs = ["native/md5.o"]
 
 [[lean_exe]]
-name = "sc-byte-sources-test"
+name = "sc-adapter-test"
 srcDir = "test"
-root = "Unit.SCByteSources"
-moreLinkArgs = ["native/md5.o"]
-
-[[lean_exe]]
-name = "nd-suspension-test"
-srcDir = "test"
-root = "Unit.NDSuspension"
-moreLinkArgs = ["native/md5.o"]
-
-[[lean_exe]]
-name = "memory-suspension-test"
-srcDir = "test"
-root = "Unit.MemSuspension"
-moreLinkArgs = ["native/md5.o"]
-
-[[lean_exe]]
-name = "sc-helper-order-test"
-srcDir = "test"
-root = "Unit.SCHelperOrder"
-moreLinkArgs = ["native/md5.o"]
-
-[[lean_exe]]
-name = "sc-services-test"
-srcDir = "test"
-root = "Unit.SCServices"
-moreLinkArgs = ["native/md5.o"]
-
-[[lean_exe]]
-name = "sc-faults-test"
-srcDir = "test"
-root = "Unit.SCFaults"
-moreLinkArgs = ["native/md5.o"]
-
-[[lean_exe]]
-name = "sc-graph-test"
-srcDir = "test"
-root = "Unit.SCGraph"
-moreLinkArgs = ["native/md5.o"]
-
-
-[[lean_exe]]
-name = "sc-atomic-update-test"
-srcDir = "test"
-root = "Unit.SCAtomicUpdate"
-moreLinkArgs = ["native/md5.o"]
-
-[[lean_exe]]
-name = "sc-atomic-surface-test"
-srcDir = "test"
-root = "Unit.SCAtomicSurface"
-moreLinkArgs = ["native/md5.o"]
-
-[[lean_exe]]
-name = "sc-values-test"
-srcDir = "test"
-root = "Unit.SCValues"
-moreLinkArgs = ["native/md5.o"]
-
-[[lean_exe]]
-name = "sc-varargs-test"
-srcDir = "test"
-root = "Unit.SCVarargs"
-moreLinkArgs = ["native/md5.o"]
-
-[[lean_exe]]
-name = "sc-scopes-test"
-srcDir = "test"
-root = "Unit.SCScopes"
-moreLinkArgs = ["native/md5.o"]
-
-[[lean_exe]]
-name = "sc-sequencing-test"
-srcDir = "test"
-root = "Unit.SCSequencing"
-moreLinkArgs = ["native/md5.o"]
-
-[[lean_exe]]
-name = "sc-reference-equality-test"
-srcDir = "test"
-root = "Unit.SCReferenceEquality"
-moreLinkArgs = ["native/md5.o"]
-
-[[lean_exe]]
-name = "fs-boundary-test"
-srcDir = "test"
-root = "Unit.FSBoundary"
-moreLinkArgs = ["native/md5.o"]
-
-[[lean_exe]]
-name = "sc-spawn-test"
-srcDir = "test"
-root = "Unit.SCSpawn"
-moreLinkArgs = ["native/md5.o"]
-
-[[lean_exe]]
-name = "sc-happens-before-test"
-srcDir = "test"
-root = "Unit.SCHappensBefore"
-moreLinkArgs = ["native/md5.o"]
-
-[[lean_exe]]
-name = "sc-global-bindings-test"
-srcDir = "test"
-root = "Unit.SCGlobalBindings"
-moreLinkArgs = ["native/md5.o"]
-
-[[lean_exe]]
-name = "sc-synchronization-test"
-srcDir = "test"
-root = "Unit.SCSynchronization"
+root = "Unit.SCAdapter"
 moreLinkArgs = ["native/md5.o"]

@@ -1,6 +1,7 @@
 import Unit.SCProtocolSupport
-import CerbSCByteSources
+import Sc_byte_sources
 
+namespace SCUnit.SCByteSources
 open SCProtocolControls Lem_Basic_classes
 
 private def loc := CerbLocation.other "SC byte-source control"
@@ -110,7 +111,7 @@ private def checks (fuel : Nat) : List (String × Bool) := Id.run do
     ("allocation sources and lifetime end remain distinct from stores", lifetime),
     ("the same address in a different storage instance does not inherit a writer", differentStorage)]
 
-def main (args : List String) : IO UInt32 := do
+def runTests (args : List String) : IO UInt32 := do
   let [arg] := args | return 2
   let some fuel := arg.toNat? | return 2
   let mut good := true
@@ -118,3 +119,5 @@ def main (args : List String) : IO UInt32 := do
     IO.println s!"{label}: {ok}"
     good := good && ok
   return if good then 0 else 1
+
+end SCUnit.SCByteSources

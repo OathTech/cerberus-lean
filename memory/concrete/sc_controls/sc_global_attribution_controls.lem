@@ -1,0 +1,41 @@
+open import Pervasives
+import Core Ctype Sc_value Sc_global_bindings Sc_global_origins Sc_definition_sources Sc_global_attribution
+
+let sc_global_attribution_checks digest =
+  let symbol = Symbol.Symbol digest 1 Symbol.SD_None in
+  let other = Symbol.Symbol digest 2 Symbol.SD_None in
+  let receipt = <| Sc_global_bindings.sc_binding_symbol= symbol;
+    Sc_global_bindings.sc_binding_value= Core.Vtrue;
+    Sc_global_bindings.sc_binding_thread= 7;
+    Sc_global_bindings.sc_binding_step= 11;
+    Sc_global_bindings.sc_binding_effect_frontier= 13 |> in
+  let source index origin = Just <| Sc_definition_sources.sc_selected_index= index;
+    Sc_definition_sources.sc_selected_origin= origin |> in
+  let entry key owner = <| Sc_global_origins.sc_global_symbol= key;
+    Sc_global_origins.sc_global_source= owner |> in
+  let user = source 0 Sc_definition_sources.SC_definition_user in
+  let library = source 1 (Sc_definition_sources.SC_definition_library "explicit fixture") in
+  let query origins = Sc_global_attribution.sc_attribute_global_binding origins receipt in
+  let matching_origins origins = (query origins).Sc_global_attribution.sc_attributed_origins in
+  let storage = Sc_global_attribution.sc_global_pointer_storage in
+  let concrete = Sc_value.SC_concrete_pointer Nothing 100 in
+  [
+    ("global attribution absent origin remains absent", matching_origins [] = []);
+    ("global attribution user label retained", matching_origins [entry symbol user] = [entry symbol user]);
+    ("global attribution library label retained as supplied evidence", matching_origins [entry symbol library] = [entry symbol library]);
+    ("global attribution unknown payload retained", matching_origins [entry symbol Nothing] = [entry symbol Nothing]);
+    ("global attribution keeps ambiguous matches in input order", matching_origins [entry symbol Nothing;entry other user;entry symbol library] = [entry symbol Nothing;entry symbol library]);
+    ("global attribution different symbol does not match", matching_origins [entry other user] = []);
+    ("global attribution keeps every repeated receipt", List.length (Sc_global_attribution.sc_attribute_global_bindings [entry symbol user] [receipt;receipt]) = 2);
+    ("global attribution retains original binding frontiers", let actual = (query []).Sc_global_attribution.sc_attributed_binding in
+      actual.Sc_global_bindings.sc_binding_thread = 7 && actual.Sc_global_bindings.sc_binding_step = 11 &&
+      actual.Sc_global_bindings.sc_binding_effect_frontier = 13);
+    ("global attribution nonpointer remains nonpointer", (query []).Sc_global_attribution.sc_attributed_pointer = Nothing);
+    ("global attribution concrete storage key retained", storage (Just (Sc_value.SC_storage_provenance 17,concrete)) = Just 17);
+    ("global attribution numeric address without provenance is not storage", storage (Just (Sc_value.SC_no_provenance,concrete)) = Nothing);
+    ("global attribution symbolic provenance remains unresolved", storage (Just (Sc_value.SC_symbolic_provenance 17,concrete)) = Nothing);
+    ("global attribution device provenance remains unresolved", storage (Just (Sc_value.SC_device_provenance,concrete)) = Nothing);
+    ("global attribution null is not storage", storage (Just (Sc_value.SC_storage_provenance 17,Sc_value.SC_null_pointer Ctype.void)) = Nothing);
+    ("global attribution function pointer is not storage", storage (Just (Sc_value.SC_storage_provenance 17,Sc_value.SC_function_pointer symbol)) = Nothing);
+    ("global attribution missing pointer key stays unresolved", storage Nothing = Nothing)
+  ]

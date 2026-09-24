@@ -1,16 +1,16 @@
-import CerbSCSequencing
-
-import LemLib
-
-import CerbMem
 import Sc_reference
 import Sc_reference_aux
+import Sc_access_sequencing
+import LemLib
+import CerbMem
 import Cmm_csem
 import Ctype
 import Mem
 import LemLib.Pervasives
 import LemLib.Pervasives_extra
 import LemLib.Bridges
+
+namespace SCUnit.SCReferenceEquality
 open Lem_Num
 open Lem_Pervasives
 open Lem_List
@@ -68,6 +68,32 @@ private def checks : List (String × Bool) :=
     (name ++ " pre-execution equality retains upstream's lk omission", query 2),
     (name ++ " witness equality compares action-ID sets", query 3)]
 
-def main : IO UInt32 := do
+def runTests : IO UInt32 := do
   for (label,ok) in checks do IO.println s!"{label}: {ok}"
   return if checks.all (·.2) then 0 else 1
+
+-- Regression: generated comparisons must select the Cmm identity instances.
+namespace CerbCmmEquality
+open Lem_Basic_classes
+
+theorem reference_action_identity (a b : sc_ref_action) :
+    isEqual a b = isEqual (sc_ref_aid_of a) (sc_ref_aid_of b) := rfl
+
+theorem live_action_identity (a b : action) :
+    isEqual a b = isEqual (aid_of a) (aid_of b) := rfl
+
+theorem reference_pre_execution_instance (a b : sc_ref_pre_execution) :
+    isEqual a b = sc_ref_pre_execution_equal a b := rfl
+
+theorem live_pre_execution_instance (a b : pre_execution) :
+    isEqual a b = pre_execution_equal a b := rfl
+
+theorem reference_witness_instance (a b : sc_ref_execution_witness) :
+    isEqual a b = sc_ref_execution_witness_equal a b := rfl
+
+theorem live_witness_instance (a b : execution_witness) :
+    isEqual a b = execution_witness_equal a b := rfl
+
+end CerbCmmEquality
+
+end SCUnit.SCReferenceEquality

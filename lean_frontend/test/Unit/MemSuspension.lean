@@ -1,6 +1,8 @@
 import CerbMemSuspension
 import CerbNDFuelProofs
 
+namespace SCUnit.MemSuspension
+
 private def pointer (owner address : Int) : CerbMem.PointerValue :=
   .PV (.Prov_some owner) (.PVconcrete none address)
 private def base (top : Int) : CerbMem.MemState :=
@@ -82,7 +84,7 @@ private def controls (fuel : Nat) (top : Int) : List (String × Bool) :=
             byteAt allocated.2 address == some 42
         | _, _ => false)]
 
-def main (args : List String) : IO UInt32 := do
+def runTests (args : List String) : IO UInt32 := do
   let [arg, topArg] := args | return 2
   let .some fuel := arg.toNat? | return 2
   let .some top := topArg.toInt? | return 2
@@ -91,3 +93,5 @@ def main (args : List String) : IO UInt32 := do
     IO.println s!"{label}: {pass}"
     good := good && pass
   return if good then 0 else 1
+
+end SCUnit.MemSuspension

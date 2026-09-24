@@ -1,8 +1,10 @@
 import Unit.SCProtocolSupport
-import CerbSCAtomicSurface
+import CerbSCOperational
+import Atomic_order
 import Core_typing
 import Sc_graph
 
+namespace SCUnit.SCAtomicSurface
 open SCProtocolControls Lem_Basic_classes Lem_Map Lem_Set
 
 private def gapLoc := CerbLocation.other "SC model-gap control"
@@ -26,7 +28,7 @@ private def byteAt (s : driver_state) := (s.layout_state.bytemap.get? 200).bind 
 private def successful := fun (outcome : nd_status driver_result driver_error driver_state) =>
   match outcome with | Active r => !r.dres_blocked | _ => false
 
-def main (args : List String) : IO UInt32 := do
+def runTests (args : List String) : IO UInt32 := do
   let [arg] := args | return 2
   let some fuel := arg.toNat? | return 2
   let mut good := true
@@ -125,3 +127,5 @@ def main (args : List String) : IO UInt32 := do
       atomic_compare_orders_error success failure ==
         (if allowed.contains failure then none else some UB207_atomic_compare_exchange_memorder))) && good
   return if good then 0 else 1
+
+end SCUnit.SCAtomicSurface

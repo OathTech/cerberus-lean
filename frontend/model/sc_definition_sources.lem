@@ -1,0 +1,22 @@
+(* Passive input-origin types. Origins are supplied explicitly; they are not
+   artifact authentication or runtime roles. Selection follows the actual
+   linker operations in Sc_link_attribution, including captured comparators.
+   No independent first-hit source search is part of this module. *)
+open import Pervasives
+import Core
+
+type sc_definition_origin =
+  | SC_definition_unclassified
+  | SC_definition_user
+  | SC_definition_library of string
+
+type sc_definition_source 'a 'b = <|
+  sc_source_file: Core.generic_file 'a 'b;
+  sc_source_origin: sc_definition_origin;
+  sc_source_stdlib_origin: sc_definition_origin;
+|>
+
+type sc_selected_source = <|
+  sc_selected_index: nat;
+  sc_selected_origin: sc_definition_origin;
+|>

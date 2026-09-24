@@ -1,8 +1,6 @@
 import CerbSCOperational
-import CerbSCByteSources
+import Sc_byte_sources
 import CerbSCServices
-import CerbSCFaults
-
 /-! An external consumer of the actual operational definitions. No application
 logic, replacement transition system, fixed fuel or provider axiom is used. -/
 namespace SCConsumer
@@ -24,13 +22,6 @@ theorem offered_thread_exists [LemFuel]
     ∃ info, (choice.1, info) ∈ state.core_state0.thread_states := by
   obtain ⟨info, present, _⟩ := (CerbSCOperational.choices_iff tags sc state choice).mp offered
   exact ⟨info, present⟩
-
-/-- Clients can account for the exact captured representation length. This is
-physical accounting and makes no C location or reads-from consistency claim. -/
-theorem sources_cover_captured_bytes (owner : Option Int) (address : Int)
-    (bytes : List CerbMem.AbsByte) (older : List sc_effect) :
-    (sc_byte_sources owner address bytes older).length = bytes.length :=
-  CerbSCByteSources.sources_length owner address bytes older
 
 /-- Disabled SC observation reuses the original memory lifting operation. -/
 theorem ordinary_memory_node [LemFuel]
@@ -61,6 +52,6 @@ theorem restored_memory_assertion (saved : sc_saved_service)
 theorem model_fault_is_not_ub (fault : sc_fault) (where_ : CerbLocation.Loc)
     (causes : List undefined_behaviour) :
     (Other (DErr_concurrency fault) : kill_reason driver_error) ≠ Undef0 where_ causes :=
-  CerbSCFaults.not_undefined fault where_ causes
+  by intro h; cases h
 
 end SCConsumer

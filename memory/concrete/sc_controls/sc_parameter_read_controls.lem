@@ -1,0 +1,54 @@
+open import Pervasives Core Core_run_aux
+import Sc_parameter_reads Sc_scopes Sc_runtime Sc_call_context Sc_library_link_controls Cmm_csem Mem Mem_common Sc_value
+
+let sc_slot_read_checks _digest =
+  let frame = Sc_call_context.sc_call_frame Sc_library_link_controls.sc_link_empty Map.empty Nothing Nothing in
+  let scope = <| Sc_scopes.sc_scope_id= 7; Sc_scopes.sc_scope_thread= 2;
+    Sc_scopes.sc_scope_parent= Nothing; Sc_scopes.sc_scope_frame= frame;
+    Sc_scopes.sc_scope_effect_frontier= 0 |> in
+  (* Synthetic access records test the query; the null address is NOT a claim
+     that such a memory read executes. Actual C traces supply execution evidence. *)
+  let pointer = Mem.null_ptrval Ctype.void in
+  let binding = Just (Core.Vobject (Core.OVpointer pointer)) in
+  let sample id thread scopes access value = <|
+    Sc_runtime.sc_effect_id= id;
+    Sc_runtime.sc_effect_request= <| Sc_runtime.sc_request_id= id+10;
+      Sc_runtime.sc_request_thread= thread; Sc_runtime.sc_request_scopes= scopes;
+      Sc_runtime.sc_request_kind= Sc_runtime.SC_access Cmm_csem.NA Core.Pos;
+      Sc_runtime.sc_request_annotation= Core_run_aux.empty_annotation |>;
+    Sc_runtime.sc_effect_observation= Mem_common.Observe_access Loc.unknown access
+      Ctype.void pointer Nothing 100 8 [] value |>
+  in
+  let value = Mem.unspecified_mval Ctype.signed_int in
+  let other = Mem.unspecified_mval Ctype.void in
+  let read = sample 1 2 [7] Mem_common.LoadAccess value in
+  let read2 = sample 2 2 [7] Mem_common.LoadAccess other in
+  let found result = match result with Sc_parameter_reads.SC_slot_read_found _ _ -> true | _ -> false end in
+  let ids results = List.map (fun result -> match result with
+      | Sc_parameter_reads.SC_slot_read_found e _ -> e.Sc_runtime.sc_effect_id
+      | _ -> 999
+    end) results in
+  match Sc_parameter_reads.sc_classify_slot_binding binding with
+    | Sc_parameter_reads.SC_slot_binding_key key ->
+      let query = Sc_parameter_reads.sc_observed_slot_read scope key in
+      [
+        ("normal pointer binding exposes its actual key", Sc_parameter_reads.sc_pointer_binding_key pointer = Just key);
+        ("loaded pointer binding has the same key", Sc_parameter_reads.sc_classify_slot_binding
+          (Just (Core.Vloaded (Core.LVspecified (Core.OVpointer pointer)))) = Sc_parameter_reads.SC_slot_binding_key key);
+        ("missing binding stays explicit", Sc_parameter_reads.sc_classify_slot_binding Nothing = Sc_parameter_reads.SC_slot_binding_missing);
+        ("nonpointer binding is retained", Sc_parameter_reads.sc_classify_slot_binding (Just Core.Vunit) = Sc_parameter_reads.SC_slot_binding_nonpointer Core.Vunit);
+        ("completed load in the scope is retained", found (query read));
+        ("store is not a parameter-read witness", not (found (query (sample 1 2 [7] Mem_common.StoreAccess value))));
+        ("other thread cannot borrow caller scope", not (found (query (sample 1 3 [7] Mem_common.LoadAccess value))));
+        ("missing scope does not fabricate a binding", not (found (query (sample 1 2 [] Mem_common.LoadAccess value))));
+        ("ancestor scope remains associated with its slot", found (query (sample 1 2 [9;7] Mem_common.LoadAccess value)));
+        ("different provenance is not the same slot", not (found (Sc_parameter_reads.sc_observed_slot_read scope
+          (Sc_value.SC_storage_provenance 99, snd key) read)));
+        ("every chronological read is retained", ids (Sc_parameter_reads.sc_observed_slot_reads scope key
+          [read;sample 3 2 [7] Mem_common.StoreAccess other;read2]) = [1;2]);
+        ("later read retains its own decoded value", match query read2 with
+          | Sc_parameter_reads.SC_slot_read_found _ actual -> Mem.sc_value_key actual = Mem.sc_value_key other
+          | _ -> false end)
+      ]
+    | _ -> [("fixture key unexpectedly unavailable", false)]
+  end

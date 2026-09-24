@@ -1,5 +1,7 @@
 import Unit.SCProtocolSupport
 
+namespace SCUnit.SCCAS
+
 open SCProtocolControls Lem_Basic_classes
 
 def atomicByte : ctype := Ctype [] (Atomic unsigned_char)
@@ -101,7 +103,7 @@ def completed (fuel : Nat) (weak : Bool) (expected : UInt8) (wanted : List Bool)
        | _ => false)
     | _ => false)
 
-def main (args : List String) : IO UInt32 := do
+def runTests (args : List String) : IO UInt32 := do
   let [arg] := args | IO.eprintln "usage: sc-cas-test FUEL"; return 2
   let some fuel := arg.toNat? | IO.eprintln "invalid fuel"; return 2
   let mut good := true
@@ -150,3 +152,5 @@ def main (args : List String) : IO UInt32 := do
         | _ => false) &&
       results.any (fun (_, _, state) => phaseNames state == witness))) && good
   return if good then 0 else 1
+
+end SCUnit.SCCAS

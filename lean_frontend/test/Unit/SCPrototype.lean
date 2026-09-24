@@ -1,6 +1,8 @@
 import CerbMem
 import CerbNDObserveProofs
 
+namespace SCUnit.SCPrototype
+
 /- Component tests for the actual memory operations. These do not yet assert
    completeness of the production driver's concurrency observation path. -/
 namespace SCPrototype
@@ -95,7 +97,7 @@ def checks (fuel : Nat) : List (String × Bool) := Id.run do
 
 end SCPrototype
 
-def main (args : List String) : IO UInt32 := do
+def runTests (args : List String) : IO UInt32 := do
   if args.isEmpty then
     IO.eprintln "sc-prototype-test requires caller-selected fuel"
     return 2
@@ -106,3 +108,5 @@ def main (args : List String) : IO UInt32 := do
       IO.println s!"{if ok then "PASS" else "FAIL"} [{fuel}] {name}"
       failed := failed || !ok
   return if failed then 1 else 0
+
+end SCUnit.SCPrototype

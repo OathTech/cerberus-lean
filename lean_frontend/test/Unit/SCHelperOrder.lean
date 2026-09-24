@@ -1,6 +1,7 @@
 import Unit.SCProtocolSupport
-import CerbSCHelperOrder
+import Sc_runtime
 
+namespace SCUnit.SCHelperOrder
 open SCProtocolControls Lem_Basic_classes
 
 private def setup (s : driver_state) : driver_state :=
@@ -135,7 +136,7 @@ private def controls (fuel : Nat) : List (String × Bool) := Id.run do
         | _ => false
       | _ => false)] ++ varargsControls enabled ++ formattingControls enabled
 
-def main (args : List String) : IO UInt32 := do
+def runTests (args : List String) : IO UInt32 := do
   let [arg] := args | return 2
   let some fuel := arg.toNat? | return 2
   let mut good := true
@@ -143,3 +144,5 @@ def main (args : List String) : IO UInt32 := do
     IO.println s!"{label}: {pass}"
     good := good && pass
   return if good then 0 else 1
+
+end SCUnit.SCHelperOrder

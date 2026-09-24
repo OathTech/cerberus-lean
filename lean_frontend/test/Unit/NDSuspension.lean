@@ -1,6 +1,7 @@
-import CerbNDSuspension
+import CerbND
 import Unit.NDFuelStabilityTest
 
+namespace SCUnit.NDSuspension
 open CerbND
 private abbrev M := ndM Nat String Unit Unit Nat
 
@@ -9,15 +10,18 @@ private def suspended : M := ND fun state => (NDsuspend resumed, state + 1)
 private def failed : M := ND fun state =>
   (NDsuspend (ND fun later => (NDkilled (Other ()), later + 10)), state + 1)
 
+private def node {a info err cs st : Type} (operation : ndM a info err cs st) (state : st) :=
+  match operation with | ND run => run state
+
 private def controls (fuel : Nat) : List (String × Bool) := Id.run do
   letI := LemFuel.mk fuel
-  let first := CerbNDSuspension.node suspended 0
+  let first := node suspended 0
   let usesCurrentState := match first.1 with
-    | NDsuspend continuation => first.2 == 1 && match CerbNDSuspension.node continuation 100 with
+    | NDsuspend continuation => first.2 == 1 && match node continuation 100 with
       | (NDactive value, after) => value == 100 && after == 110
       | _ => false
     | _ => false
-  let bound := CerbNDSuspension.node (nd_bind suspended (fun value =>
+  let bound := node (nd_bind suspended (fun value =>
     ND fun state => (NDactive (value + 7), state + 20))) 0
   let bindPauses := match bound.1 with
     | NDsuspend continuation => bound.2 == 1 &&
@@ -48,7 +52,7 @@ private def controls (fuel : Nat) : List (String × Bool) := Id.run do
     ("trace runner names the typed suspension and preserves the result",
       runND1TraceFuel id fuel suspended 0 == (["NDsuspend", "NDactive"], [(Active 1, [], 11)]))]
 
-def main (args : List String) : IO UInt32 := do
+def runTests (args : List String) : IO UInt32 := do
   let [arg] := args | return 2
   let some fuel := arg.toNat? | return 2
   let mut good := true
@@ -56,3 +60,5 @@ def main (args : List String) : IO UInt32 := do
     IO.println s!"{label}: {pass}"
     good := good && pass
   return if good then 0 else 1
+
+end SCUnit.NDSuspension

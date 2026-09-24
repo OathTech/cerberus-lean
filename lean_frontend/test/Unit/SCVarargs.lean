@@ -1,5 +1,7 @@
-import CerbSCVarargs
+import Sc_varargs
+import LemLibTheorems
 
+namespace SCUnit.SCVarargs
 open Lem_Basic_classes
 
 private def edges (xs : List (Nat × Nat)) : Pset (Nat × Nat) :=
@@ -50,7 +52,9 @@ private def checks : List (String × Bool) := Id.run do
       sc_varargs_unordered_pairs (edges []) [observed (event 6 1 1 Varargs_advance),observed b,observed a] ==
         sc_varargs_unordered_pairs (edges []) [observed b,observed a])]
 
-def main : IO Unit := do
+def runTests : IO Unit := do
   for (label,good) in checks do
     IO.println s!"{label}: {good}"
     unless good do throw (IO.userError label)
+
+end SCUnit.SCVarargs

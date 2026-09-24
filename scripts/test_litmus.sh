@@ -7,8 +7,7 @@ set -uo pipefail
 
 # Hermetic plants run without building or requiring a working SC executor.
 if [[ "${1:-}" == --selftest ]]; then
-    python3 "$(dirname "${BASH_SOURCE[0]}")/test_litmus_observations.py" &&
-        python3 "$(dirname "${BASH_SOURCE[0]}")/test_litmus_references.py"
+    python3 "$(dirname "${BASH_SOURCE[0]}")/test_litmus_runner.py"
     exit $?
 fi
 case "${1:-}" in
@@ -173,8 +172,7 @@ compare_to "$EXPECTATIONS" target > "$OUTPUT_DIR/plant.control.log"
 if [[ $DIFF_FAIL -gt 0 || $COMPARE_FAIL -gt 0 ]]; then
     echo "PLANT ABORTED: positive control failed; see plant.control.log"; exit 1
 fi
-python3 "$SCRIPT_DIR/test_litmus_observations.py" || exit 1
-python3 "$SCRIPT_DIR/test_litmus_references.py" || exit 1
+python3 "$SCRIPT_DIR/test_litmus_runner.py" || exit 1
 echo "*** PLANT MODE: deliberately corrupting a reference and emptying the corpus ***"
 awk 'BEGIN {changed=0} !changed && NF && $1 !~ /^#/ {$3="{Specified(424242)}"; changed=1} {print}' "$EXPECTATIONS" > "$OUTPUT_DIR/plant.rows"
 compare_to "$OUTPUT_DIR/plant.rows" PLANT > "$OUTPUT_DIR/plant.row.log"; row_fail=$COMPARE_FAIL

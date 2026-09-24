@@ -1,3 +1,0 @@
-(executable
- (name controls)
- (libraries cerberus-lib.mem.concrete cerberus-lib.backend_common))

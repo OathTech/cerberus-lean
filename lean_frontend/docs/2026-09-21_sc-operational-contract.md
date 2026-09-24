@@ -21,7 +21,7 @@ nor `statically_satisfied` supply a theorem of today's Core adapter.
 both the declaration's unspecified NA store and explicit initialization. The
 narrower condition rejects multiple NA initialization stores, while the
 fence-aware condition admits this ordinary C pattern. Retain both actual
-stores and their orders. The [follow-up](2026-09-21_sc-prototype-evidence/value-metadata/candidate-projection-followup.md)
+stores and their orders. The follow-up
 records four controls, their consistency leaves and independent race witnesses;
 it is not a universal equivalence proof. The fence-aware predicate's broader
 order domain does not authorize the executor to strengthen or admit weak orders.
@@ -227,3 +227,27 @@ the program-level fault interface. These are implementation/research work for
 S1–S4, not additional approval barriers unless the source and standard leave
 materially different behaviors unresolved on a concrete example. Completion
 still requires the entire charter; a green scalar lane alone is insufficient.
+
+## Source conclusions retained during pruning
+
+- CAS uses representation comparison under [DR431](https://open-std.org/JTC1/SC22/WG14/issues/c11c17/issue0431.html)
+  and [N1906](https://open-std.org/jtc1/sc22/wg14/www/docs/n1906.htm). Numerical
+  MemValue equality cannot replace it: signed zero, NaNs, padding and provenance
+  distinguish the questions. G01 owns the unspecified-byte boundary.
+- [N1570](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf) 7.5p3 gives
+  other threads indeterminate initial errno; do not initialize child errno to
+  zero by applying the general thread-storage rule over that exception.
+- Lossless value keys retain types, aggregate tags, provenance and floating bits.
+  They are not automatically logical RF equality across typed views. Ordinary C
+  numerical equality is unchanged. Other memory models can explicitly lack keys.
+- Varargs conflicts concern the same abstract cursor ID: read/read is harmless;
+  create/advance/delete modify metadata. Use justified HB, preserving identity
+  and multiplicity, without inventing memory writes or synchronization.
+- Native object loading and Lean Core-text loading can differ in symbol IDs,
+  function-pointer bytes and administrative step counts. In particular the
+  printer/parser reconstructs a loaded Specified literal as a constructor.
+  Use actual per-engine bindings and retain raw metadata. Equal C outcomes do
+  not establish step-level correspondence; counters must not create HB or refusals.
+
+The live [boundary inputs](../../tests/sc/boundaries/README.md) replace archived
+campaign copies. Detailed historical records remain in Git at `03f7c5f32`.

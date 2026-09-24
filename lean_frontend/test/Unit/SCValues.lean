@@ -2,6 +2,8 @@ import CerbMem
 import CerbSCValues
 import Sc_reference
 
+namespace SCUnit.SCValues
+
 open Lem_Basic_classes
 
 private def sint : ctype := .Ctype [] (.Basic (.Integer (.Signed .Int_)))
@@ -95,7 +97,9 @@ private def checks : List (String × Bool) := Id.run do
     ("token numbering is candidate local rather than a C value",
       reverse0 == token && reverse1 == other && nan != otherNan)]
 
-def main : IO Unit := do
+def runTests : IO Unit := do
   for (label,good) in checks do
     IO.println s!"{label}: {good}"
     unless good do throw (IO.userError label)
+
+end SCUnit.SCValues

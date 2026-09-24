@@ -1,0 +1,13 @@
+(* Same Core input on both engines; no frontend symbol correspondence assumed. *)
+open import Pervasives Core Core_run_aux
+let sc_global_literal_value = Vloaded (LVspecified (OVinteger (Mem.integer_ival 7)))
+let sc_global_literal_file digest constructor =
+  let symbol = Symbol.Symbol digest 1 Symbol.SD_None in
+  let expression = Expr [] (Epure (if constructor then
+    Pexpr [] () (PEctor Cspecified [Pexpr [] () (PEval (Vobject (OVinteger (Mem.integer_ival 7))))])
+    else Pexpr [] () (PEval sc_global_literal_value))) in
+  (<| main= Nothing;calling_convention= Normal_callconv;tagDefs= Map.empty;
+      stdlib= Map.empty;impl= Map.empty;
+      globs= [(symbol,GlobalDef (BTy_loaded OTy_integer,Ctype.signed_int) expression)];
+      funs= Map.empty;extern= Map.empty;funinfo= Map.empty;loop_attributes= Map.empty;
+      visible_objects_env= Map.empty |> : Core.file Core_run_aux.core_run_annotation)

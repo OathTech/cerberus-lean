@@ -1,0 +1,42 @@
+(* Passive global-definition provenance through the actual Core linker.
+   NOT library authentication, storage identity, synchronization or a guard.
+   Global selection differs from function-map union: each merge also removes
+   redundant tentative definitions and reorders the surviving globals. Retain
+   only the actual resulting domain at EACH step, so removed origins cannot
+   shadow a later definition. No global expression is evaluated here. *)
+open import Pervasives
+import Core Core_linking Exception Sc_definition_sources
+
+type sc_global_origin = <|
+  sc_global_symbol: Symbol.sym;
+  sc_global_source: maybe Sc_definition_sources.sc_selected_source;
+|>
+
+let sc_initial_global_origins index source =
+  List.map (fun (symbol, _) -> <| sc_global_symbol= symbol;
+    sc_global_source= Just <| Sc_definition_sources.sc_selected_index= index;
+      Sc_definition_sources.sc_selected_origin= source.Sc_definition_sources.sc_source_origin |> |>)
+    source.Sc_definition_sources.sc_source_file.Core.globs
+
+let sc_lookup_global_origin symbol origins =
+  match List.find (fun entry -> entry.sc_global_symbol = symbol) origins with
+    | Nothing -> Nothing
+    | Just entry -> entry.sc_global_source
+  end
+
+(* Match merge_globs' actual ordered insertion fold, including presence with
+   an unknown payload. Project only onto the linked file's surviving domain.
+   This does not duplicate dependency sorting or expression evaluation. *)
+let sc_global_origin_map origins =
+  List.foldl (fun acc entry -> Map.insert entry.sc_global_symbol entry.sc_global_source acc)
+    Map.empty origins
+
+let sc_merge_global_origins linked incoming accumulated =
+  let selected = sc_global_origin_map (incoming ++ accumulated) in
+  List.map (fun (symbol, _) -> <|
+    sc_global_symbol= symbol;
+    sc_global_source= match Map.lookup symbol selected with
+      | Nothing -> Nothing
+      | Just origin -> origin
+    end
+  |>) linked.Core.globs

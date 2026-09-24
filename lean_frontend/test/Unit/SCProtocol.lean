@@ -1,6 +1,8 @@
 import Unit.SCProtocolSupport
 
-def main (args : List String) : IO UInt32 := do
+namespace SCUnit.SCProtocol
+
+def runTests (args : List String) : IO UInt32 := do
   let [arg] := args | IO.eprintln "requires caller-selected fuel"; return 2
   let some fuel := arg.toNat? | return 2
   letI := LemFuel.mk fuel
@@ -35,3 +37,5 @@ def main (args : List String) : IO UInt32 := do
       IO.println (name ++ ": pass=" ++ toString passed)
       good := passed && good
     return if good then 0 else 1
+
+end SCUnit.SCProtocol

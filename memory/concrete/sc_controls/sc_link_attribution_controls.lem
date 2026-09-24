@@ -1,0 +1,66 @@
+open import Pervasives Core
+import Sc_link_attribution Sc_definition_sources Sc_library_link_controls Sc_call_context Core_run
+
+(* Negative-control fixture only: this independent search is incorrect when
+   the actual map union uses a different captured comparator. *)
+let rec sc_retired_first_hit index target sources = match sources with
+  | [] -> Nothing
+  | source :: rest ->
+      match Map.lookup target source.Sc_definition_sources.sc_source_file.Core.funs with
+        | Just _ -> Just <| Sc_definition_sources.sc_selected_index= index;
+                           Sc_definition_sources.sc_selected_origin= source.Sc_definition_sources.sc_source_origin |>
+        | Nothing -> sc_retired_first_hit (index + 1) target rest
+      end
+end
+
+declare {lean} termination_argument sc_retired_first_hit = automatic
+
+let sc_attribution_checks digest coarse =
+  let sym = Sc_library_link_controls.sc_link_symbol digest in
+  let target = sym 1 in
+  let alternate = sym 9 in
+  let user_arg = sym 2 in
+  let library_arg = sym 3 in
+  let base = Sc_library_link_controls.sc_link_empty in
+  let proc = Sc_library_link_controls.sc_link_proc in
+  let user = <| base with funs= Map.insert target (proc user_arg) Map.empty |> in
+  let library = <| base with funs= Map.insert target (proc library_arg) Map.empty |> in
+  let source file origin = <| Sc_definition_sources.sc_source_file= file;
+    Sc_definition_sources.sc_source_origin= origin;
+    Sc_definition_sources.sc_source_stdlib_origin= Sc_definition_sources.SC_definition_unclassified |> in
+  let u = source user Sc_definition_sources.SC_definition_user in
+  let l = source library (Sc_definition_sources.SC_definition_library "explicit artifact") in
+  let unknown = source user Sc_definition_sources.SC_definition_unclassified in
+  let selected sources definition = match Sc_link_attribution.sc_link_attributed sources with
+    | Exception.Exception _ -> Nothing
+    | Exception.Result (_, origins) -> Sc_link_attribution.sc_selected_definition origins definition
+  end in
+  let expected index origin symbol = Just <| Sc_link_attribution.sc_definition_selected= <|
+      Sc_definition_sources.sc_selected_index= index;Sc_definition_sources.sc_selected_origin= origin |>;
+    Sc_link_attribution.sc_definition_original_symbol= symbol |> in
+  let program sources = selected sources (Sc_call_context.SC_call_program target) in
+  let stdlib sources = selected sources (Sc_call_context.SC_call_stdlib target) in
+  let std = <| l with Sc_definition_sources.sc_source_file= <| library with stdlib= library.funs |>;
+    Sc_definition_sources.sc_source_stdlib_origin= Sc_definition_sources.SC_definition_library "Core std artifact" |> in
+  let distinct = source <| base with funs= Map.insert alternate (proc library_arg) Map.empty |>
+    l.Sc_definition_sources.sc_source_origin in
+  let coarse_user = source <| base with funs= coarse target (proc user_arg) |> Sc_definition_sources.SC_definition_user in
+  let special_sources = [distinct;coarse_user] in
+  [
+   ("actual union retains colliding first user body", program [u;l] = expected 0 Sc_definition_sources.SC_definition_user target);
+   ("reversed union retains library body", program [l;u] = expected 0 l.Sc_definition_sources.sc_source_origin target);
+   ("unknown winning body is not relabelled library", program [unknown;l] = expected 0 Sc_definition_sources.SC_definition_unclassified target);
+   ("absent earlier body permits later definition", program [source base Sc_definition_sources.SC_definition_user;l] = expected 1 l.Sc_definition_sources.sc_source_origin target);
+   ("stdlib uses actual last input", stdlib [u;std] = expected 1 std.Sc_definition_sources.sc_source_stdlib_origin target);
+   ("discarded earlier stdlib stays absent", stdlib [std;u] = Nothing);
+   ("unresolved definition gets no role", selected [l] (Sc_call_context.SC_call_unresolved target) = Nothing);
+   ("earlier independent lookup reproduces wrong source on mixed comparators", sc_retired_first_hit 0 target special_sources = Just <| Sc_definition_sources.sc_selected_index= 1;Sc_definition_sources.sc_selected_origin= Sc_definition_sources.SC_definition_user |>);
+   ("actual comparator merge selects the library body source", program special_sources = expected 0 l.Sc_definition_sources.sc_source_origin alternate);
+   ("original defining key survives comparator-equivalent key replacement", match program special_sources with Just b -> b.Sc_link_attribution.sc_definition_original_symbol = alternate | _ -> false end);
+   ("actual linked callable agrees with comparator-aware attribution", match Sc_link_attribution.sc_link_attributed special_sources with
+      | Exception.Result (file, _) -> match Core_run.call_proc Map.empty file target [Vtrue] with
+          | Exception.Result (bindings, _) -> Map.lookup library_arg bindings = Just Vtrue && Map.lookup user_arg bindings = Nothing
+          | _ -> false end
+      | _ -> false end);
+   ("source list order and library symbol both remain explicit", selected [u;distinct] (Sc_call_context.SC_call_program alternate) = expected 1 l.Sc_definition_sources.sc_source_origin alternate)
+  ]

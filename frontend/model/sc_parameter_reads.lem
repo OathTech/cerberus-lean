@@ -1,0 +1,68 @@
+(* Passive evidence for Normal_callconv argument-slot reads.
+   Bindings are slot pointers, not C argument values. A result is the value of
+   THIS completed read, not the value at call entry: the callee may have written
+   its parameter before reading it. Retain every read, not only the first.
+   Inner_arg_callconv's direct bindings require their separate interpretation.
+   No memory operation or source-order edge is introduced. No FILE validity,
+   library identity, stream operation, synchronization or SC verdict is inferred. *)
+open import Pervasives
+import Core Ctype Mem Mem_common Sc_runtime Sc_scopes Sc_value
+
+let sc_pointer_binding_key pointer =
+  match Mem.sc_value_key (Mem.pointer_mval Ctype.void pointer) with
+    | Just (Sc_value.SC_pointer_value _ key) -> Just key
+    | _ -> Nothing
+  end
+
+type sc_slot_binding =
+  | SC_slot_binding_missing
+  | SC_slot_binding_nonpointer of Core.value
+  | SC_slot_binding_unavailable of Mem.pointer_value
+  | SC_slot_binding_key of Sc_value.sc_pointer_key
+
+let sc_classify_slot_binding binding =
+  match binding with
+    | Nothing -> SC_slot_binding_missing
+    | Just value ->
+      let pointer = match value with
+        | Core.Vobject (Core.OVpointer p) -> Just p
+        | Core.Vloaded (Core.LVspecified (Core.OVpointer p)) -> Just p
+        | _ -> Nothing
+      end in
+      match pointer with
+        | Nothing -> SC_slot_binding_nonpointer value
+        | Just p -> match sc_pointer_binding_key p with
+            | Nothing -> SC_slot_binding_unavailable p
+            | Just key -> SC_slot_binding_key key
+          end
+      end
+  end
+
+type sc_slot_read =
+  | SC_slot_read_other
+  | SC_slot_read_key_unavailable of Sc_runtime.sc_effect
+  | SC_slot_read_found of Sc_runtime.sc_effect * Mem.mem_value
+
+let sc_slot_read_in_scope scope observed =
+  let request = observed.Sc_runtime.sc_effect_request in
+  request.Sc_runtime.sc_request_thread = scope.Sc_scopes.sc_scope_thread &&
+  List.elem scope.Sc_scopes.sc_scope_id request.Sc_runtime.sc_request_scopes
+
+let sc_observed_slot_read scope key observed =
+  if not (sc_slot_read_in_scope scope observed) then SC_slot_read_other else
+  match observed.Sc_runtime.sc_effect_observation with
+    | Mem_common.Observe_access _ Mem_common.LoadAccess _ pointer _ _ _ _ value ->
+      match sc_pointer_binding_key pointer with
+        | Nothing -> SC_slot_read_key_unavailable observed
+        | Just actual -> if key = actual then SC_slot_read_found observed value else SC_slot_read_other
+      end
+    | _ -> SC_slot_read_other
+  end
+
+(* Chronological input gives chronological evidence. Unknown pointer-key
+   adapters remain explicit observations, never evidence that there was no read. *)
+let sc_observed_slot_reads scope key history =
+  List.foldr (fun observed rest -> match sc_observed_slot_read scope key observed with
+    | SC_slot_read_other -> rest
+    | evidence -> evidence :: rest
+  end) [] history

@@ -1,0 +1,42 @@
+(* Passive association of actual successful initializer receipts with selected
+   linker metadata. A source label is not library authentication, and a pointer
+   carried by a global binding is not proof that its storage is library-owned.
+   Preserve every matching origin (including an unknown payload), the complete
+   original receipt and the available pointer key; do not silently pick one. *)
+open import Pervasives
+import Core Mem Ctype Sc_value Sc_global_bindings Sc_global_origins
+
+let sc_global_raw_pointer_key pointer =
+  match Mem.sc_value_key (Mem.pointer_mval Ctype.void pointer) with
+    | Just (Sc_value.SC_pointer_value _ key) -> Just key
+    | _ -> Nothing
+  end
+
+let sc_global_pointer_key value = match value with
+  | Core.Vobject (Core.OVpointer pointer) -> sc_global_raw_pointer_key pointer
+  | Core.Vloaded (Core.LVspecified (Core.OVpointer pointer)) -> sc_global_raw_pointer_key pointer
+  | _ -> Nothing
+end
+
+let sc_global_pointer_storage key = match key with
+  | Just (Sc_value.SC_storage_provenance storage, Sc_value.SC_concrete_pointer _ _) -> Just storage
+  | _ -> Nothing
+end
+
+type sc_attributed_global_binding = <|
+  sc_attributed_binding: Sc_global_bindings.sc_global_binding;
+  sc_attributed_origins: list Sc_global_origins.sc_global_origin;
+  sc_attributed_pointer: maybe Sc_value.sc_pointer_key;
+  sc_attributed_storage: maybe integer;
+|>
+
+let sc_attribute_global_binding origins binding =
+  let key = sc_global_pointer_key binding.Sc_global_bindings.sc_binding_value in
+  <| sc_attributed_binding= binding;
+     sc_attributed_origins= List.filter (fun origin ->
+       origin.Sc_global_origins.sc_global_symbol = binding.Sc_global_bindings.sc_binding_symbol) origins;
+     sc_attributed_pointer= key;
+     sc_attributed_storage= sc_global_pointer_storage key |>
+
+let sc_attribute_global_bindings origins bindings =
+  List.map (sc_attribute_global_binding origins) bindings

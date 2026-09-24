@@ -67,8 +67,8 @@ let sc_access_sequence_witnesses graph history =
 
 (* For graphs made by sc_build_source_graph, reuse its closure when there are
    no additional synchronization edges. With such edges, compute sb alone.
-   CerbSCSequencing proves equality to the query above on constructed graphs;
-   an arbitrary caller-supplied record need not satisfy that invariant. *)
+   The constructed graph caches the closure of sb union asw. With empty asw
+   this is sb closure; an arbitrary supplied record need not satisfy this. *)
 let sc_access_sequence_witnesses_reusing_graph graph history =
   sc_access_sequence_witnesses_closed
     (if Set.null graph.Sc_graph.sc_graph_asw then graph.Sc_graph.sc_graph_sbasw

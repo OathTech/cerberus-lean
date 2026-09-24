@@ -1,6 +1,8 @@
 import Unit.SCProtocolSupport
 import CerbSCServices
 
+namespace SCUnit.SCServices
+
 open SCProtocolControls CerbSCOperational Lem_Basic_classes
 
 private def loc := CerbLocation.other "SC service control"
@@ -185,7 +187,7 @@ private def batchControl [LemFuel] : List (String × Bool) :=
           | _, _, _ => false)
       | _ => false))]
 
-def main (args : List String) : IO UInt32 := do
+def runTests (args : List String) : IO UInt32 := do
   let [arg] := args | return 2
   let some fuel := arg.toNat? | return 2
   let controls := @copyControls ⟨fuel⟩ ++ @filesystemControls ⟨fuel⟩ ++ projectionControls fuel ++ @batchControl ⟨fuel⟩
@@ -194,3 +196,5 @@ def main (args : List String) : IO UInt32 := do
     IO.println s!"{label}: {pass}"
     good := good && pass
   return if good then 0 else 1
+
+end SCUnit.SCServices

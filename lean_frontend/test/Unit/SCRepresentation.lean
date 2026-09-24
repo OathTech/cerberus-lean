@@ -1,5 +1,6 @@
-import CerbSCRepresentation
+import Sc_representation
 
+namespace SCUnit.SCRepresentation
 private def cases : List (String × List (Option Int) × List (Option Int) × sc_representation_comparison) :=
   [ ("same integer representation", [some 7, some 0], [some 7, some 0], .SC_same_bits)
   , ("different integer representation", [some 7, some 0], [some 8, some 0], .SC_different_bits)
@@ -17,10 +18,12 @@ private def cases : List (String × List (Option Int) × List (Option Int) × sc
   , ("size mismatch", [some 0], [some 0, some 0], .SC_representation_size_mismatch)
   ]
 
-def main : IO UInt32 := do
+def runTests : IO UInt32 := do
   let mut ok := true
   for (label, left, right, expected) in cases do
     let pass := sc_compare_representation left right == expected
     IO.println s!"{label}: {pass}"
     ok := ok && pass
   return if ok then 0 else 1
+
+end SCUnit.SCRepresentation

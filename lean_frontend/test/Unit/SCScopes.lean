@@ -1,6 +1,7 @@
-import CerbSCScopes
+import Driver
 import Unit.SCProtocolSupport
 
+namespace SCUnit.SCScopes
 open SCProtocolControls CerbSCOperational Lem_Basic_classes
 
 private def scopeSequence (left right : expr core_run_annotation) :=
@@ -45,9 +46,11 @@ private def controls [LemFuel] : List (String × Bool) := Id.run do
   return [("effect-free repeated calls keep distinct scopes at the same frontier", repeatedOK),
     ("each alternative keeps both child-call owners and no invented parent call", parallelOK)]
 
-def main (args : List String) : IO UInt32 := do
+def runTests (args : List String) : IO UInt32 := do
   let [arg] := args | return 2
   let some fuel := arg.toNat? | return 2
   let rows := @controls ⟨fuel⟩
   for (label, good) in rows do IO.println s!"{label}: {good}"
   return if rows.all (·.2) then 0 else 1
+
+end SCUnit.SCScopes

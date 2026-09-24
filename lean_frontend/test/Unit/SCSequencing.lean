@@ -14,11 +14,11 @@ import Ctype
 import LemLib.Pervasives
 import LemLib.Pervasives_extra
 import LemLib.Bridges
-import CerbSCSequencing
+import Sc_reference
+import Sc_reference_aux
 import Unit.SCProtocolSupport
 
-
-
+namespace SCUnit.SCSequencing
 open Lem_Num
 open Lem_Pervasives
 open Lem_List
@@ -210,10 +210,12 @@ private def suspensionControls [LemFuel] : List (String × Bool) := Id.run do
       prefixValid finished.sc_driver_state)]
 
 end SCPrefixOperationalControls
-def main (args : List String) : IO UInt32 := do
+def runTests (args : List String) : IO UInt32 := do
   let [arg] := args | return 2
   let some fuel := arg.toNat? | return 2
   let rows := sc_sequence_checks () ++ @SCPrefixOperationalControls.controls ⟨fuel⟩ ++
     @SCPrefixOperationalControls.suspensionControls ⟨fuel⟩
   for (label,ok) in rows do IO.println s!"{label}: {ok}"
   return if rows.all (·.2) then 0 else 1
+
+end SCUnit.SCSequencing

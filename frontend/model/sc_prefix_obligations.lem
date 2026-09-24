@@ -1,6 +1,5 @@
 (* Pending prefix evidence, not an SC verdict or an operational fault.
-   A pair has the conditional reference meaning proved in CerbSCSequencing;
-   recording it neither supplies the missing C location/action mapping nor
+   Recording a pair neither supplies the missing C location/action mapping nor
    completes G07 coverage. Absence of evidence never certifies a prefix.
    Keep the graph at discovery so later execution cannot erase the obligation. *)
 open import Pervasives

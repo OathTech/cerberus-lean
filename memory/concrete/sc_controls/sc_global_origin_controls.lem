@@ -1,0 +1,69 @@
+open import Pervasives Core Core_run_aux
+import Sc_link_attribution Core_linking Sc_definition_sources Sc_library_link_controls Sc_global_origins
+
+let sc_global_def flag = GlobalDef (BTy_boolean, Ctype.signed_int)
+  (Expr [] (Epure (Pexpr [] () (PEval (if flag then Vtrue else Vfalse)))))
+let sc_global_input origin globs extern = <|
+  Sc_definition_sources.sc_source_file= <| Sc_library_link_controls.sc_link_empty with
+    globs= globs; extern= extern |>;
+  Sc_definition_sources.sc_source_origin= origin;
+  Sc_definition_sources.sc_source_stdlib_origin= Sc_definition_sources.SC_definition_unclassified;
+|>
+let sc_global_value file symbol expected = match List.lookup symbol file.Core.globs with
+  | Just (GlobalDef _ (Expr _ (Epure (Pexpr _ _ (PEval actual))))) ->
+    actual = (if expected then Vtrue else Vfalse)
+  | _ -> false
+end
+let sc_attributed_global_check sources symbol origin index flag =
+  match Sc_link_attribution.sc_link_attributed sources with
+    | Exception.Result (file, origins) ->
+      sc_global_value file symbol flag &&
+      Sc_global_origins.sc_lookup_global_origin symbol origins.Sc_link_attribution.sc_link_global_origins = Just <|
+        Sc_definition_sources.sc_selected_index= index;
+        Sc_definition_sources.sc_selected_origin= origin |> &&
+      List.map (fun entry -> entry.Sc_global_origins.sc_global_symbol) origins.Sc_link_attribution.sc_link_global_origins =
+        List.map fst file.Core.globs
+    | _ -> false
+  end
+let sc_global_origin_checks digest =
+  let x = Sc_library_link_controls.sc_link_symbol digest 100 in
+  let y = Sc_library_link_controls.sc_link_symbol digest 101 in
+  let name = Symbol.Identifier Loc.unknown "count" in
+  let user = Sc_definition_sources.SC_definition_user in
+  let library = Sc_definition_sources.SC_definition_library "explicit artifact" in
+  let unknown = Sc_definition_sources.SC_definition_unclassified in
+  let u = sc_global_input user [(x, sc_global_def false)] Map.empty in
+  let l = sc_global_input library [(x, sc_global_def true)] Map.empty in
+  let other = sc_global_input unknown [(y, sc_global_def true)] Map.empty in
+  let tentative = sc_global_input library [(x, sc_global_def true)]
+    (Map.insert name ([x], LK_tentative x) Map.empty) in
+  let definition = sc_global_input user [(y, sc_global_def true)]
+    (Map.insert name ([y], LK_normal y) Map.empty) in
+  [
+    ("present missing-origin entry blocks a known library fallback",
+      let accumulated = [<| Sc_global_origins.sc_global_symbol= x;
+        Sc_global_origins.sc_global_source= Nothing |>] in
+      let selected = Sc_global_origins.sc_merge_global_origins l.Sc_definition_sources.sc_source_file
+        (Sc_global_origins.sc_initial_global_origins 1 l) accumulated in
+      List.length selected = 1 && Sc_global_origins.sc_lookup_global_origin x selected = Nothing);
+    ("absent accumulated entry permits the actual incoming source",
+      let selected = Sc_global_origins.sc_merge_global_origins l.Sc_definition_sources.sc_source_file
+        (Sc_global_origins.sc_initial_global_origins 1 l) [] in
+      Sc_global_origins.sc_lookup_global_origin x selected = Just <|
+        Sc_definition_sources.sc_selected_index= 1;
+        Sc_definition_sources.sc_selected_origin= library |>);
+    ("single source retains global origin", sc_attributed_global_check [l] x library 0 true);
+    ("colliding first source wins like actual globals", sc_attributed_global_check [u;l] x user 0 false);
+    ("reverse collision changes selected global", sc_attributed_global_check [l;u] x library 0 true);
+    ("distinct later global retains later index", sc_attributed_global_check [u;other] y unknown 1 true);
+    ("unclassified source shadows library global", sc_attributed_global_check [<| u with Sc_definition_sources.sc_source_origin= unknown |>;l] x unknown 0 false);
+    ("removed tentative cannot shadow reintroduced symbol", sc_attributed_global_check [tentative;definition;u] x user 2 false);
+    ("removed tentative has no retained origin", match Sc_link_attribution.sc_link_attributed [tentative;definition] with
+      | Exception.Result (file, origins) -> List.lookup x file.Core.globs = Nothing &&
+        Sc_global_origins.sc_lookup_global_origin x origins.Sc_link_attribution.sc_link_global_origins = Nothing
+      | _ -> false end);
+    ("duplicate normal extern error is retained", match Sc_link_attribution.sc_link_attributed
+      [definition; <| l with Sc_definition_sources.sc_source_file= <| l.Sc_definition_sources.sc_source_file with
+        extern= Map.insert name ([x], LK_normal x) Map.empty |> |>] with
+      | Exception.Exception _ -> true | _ -> false end)
+  ]

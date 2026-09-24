@@ -1,8 +1,8 @@
 # External SC operational consumer
 
-This separate Lake package imports the provider by path. Its six kernel
+This separate Lake package imports the provider by path. Its five kernel
 statements use the actual exported definitions: history preservation, Core
-choice membership, physical byte accounting, disabled observation, ownership
+choice membership, disabled observation, ownership
 restoration preserving a memory assertion, and model faults distinct from UB.
 It has no application-logic dependency or fixed semantic fuel.
 

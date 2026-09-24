@@ -1,7 +1,8 @@
 import Unit.SCProtocolSupport
-import CerbSCAtomicUpdate
+import Core_aux
 import Core_typing
 
+namespace SCUnit.SCAtomicUpdate
 open SCProtocolControls Lem_Basic_classes Lem_Map
 
 private def updateSym : sym := Symbol "sc-atomic-update-control" 50 SD_None
@@ -85,7 +86,7 @@ private def floatExchange (fuel : Nat) (oldBits : UInt64) : Bool :=
       | _ => false
     | _ => false)
 
-def main (args : List String) : IO UInt32 := do
+def runTests (args : List String) : IO UInt32 := do
   let [arg] := args | return 2
   let some fuel := arg.toNat? | return 2
   let mut good := true
@@ -163,3 +164,5 @@ def main (args : List String) : IO UInt32 := do
   good := (← check "unconditional floating exchange retains negative zero bits"
     (floatExchange fuel 0x8000000000000000)) && good
   return if good then 0 else 1
+
+end SCUnit.SCAtomicUpdate

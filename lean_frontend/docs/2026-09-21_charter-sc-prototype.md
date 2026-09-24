@@ -47,9 +47,25 @@ capability that prevents the next necessary action; continue independent work.
   These are sequential/component results, not SC acceptance. Current raw reports
   are `.tmp/sc-prototype/link-attribution-integration-{full,three-way}-20260923/`.
   Do not archive another copy or rerun them for this documentation change.
-- **Next: C1, the behavior-preserving pruning below.** Roadmap consolidation is
-  complete; runtime/proof/test/archive pruning has not started. C2–C4 are open.
-  Update this short section at checkpoints; do not create another progress log.
+- **C1 implemented:** removed 25 unused source modules and their registrations,
+  moved the equality/FS-instance and byte-key laws, removed the redundant global
+  linker entry, and retained the combined attribution path. No customer imports
+  of the removed proof modules were found by read-only text search.
+- SC fixtures now have two Lean entry points (`sc-machine-test`,
+  `sc-adapter-test`) and one native executable (`memory/concrete/sc_controls`).
+  The paired suites pass after fresh regeneration/build; the external consumer
+  compiles. The litmus runner integration selftest passes. Lake root membership
+  and the reviewed fork content/generated pins pass. Fresh failure-owner
+  compilation/census passes with the same 205 registered pure failure sites.
+- Deleted 22 redundant SC narratives, the 2,103-file repeated evidence tree and
+  98 superseded scratch/campaign directories. Minimal boundary, representation
+  and runtime inputs are in `tests/sc/`; source conclusions and the filesystem
+  coverage map are in the three live specifications. Keep the latest raw full
+  and three-engine reports above, and the unresolved G06 experiment only.
+- **Next: C2, production interpretation/classification and the public C path.**
+  C3/C4 remain open. The old prefix proof may be removed when the final retained
+  findings accumulator replaces it; attribution queries must earn their place
+  in the actual G03/G08 producer. Do not restart the removed proof/campaign work.
 - G06's chosen precise GCC preprocessor-observer experiment lacks the matching
   GCC 13.3 plugin SDK. A capability question is already pending; do not ask it
   again or bypass network controls. This blocks that experiment, not C1/C2.
@@ -89,10 +105,11 @@ Three supporting specifications remain live; none is another execution plan:
 - [Effect inventory](2026-09-21_sc-effect-inventory.md): E01–E25 source/effect
   obligations; historical line numbers require checking against current source.
 
-Other dated SC reviews are historical source/evidence notes, pending the bounded
-extraction in C1. They cannot direct future work or override this roadmap.
+Historical SC reviews and repeated campaign archives were removed in C1 after
+extracting live inputs and source conclusions. Their Git history is not an
+execution queue.
 
-## C1 — prune without changing runtime behavior
+## C1 — pruning decisions (implemented; deferred accumulator/query removals noted)
 
 Keep the real Driver/Core scheduler, observations/ND lifting, suspension,
 atomic/frontend/runtime surface, exact representation and source-location fixes,

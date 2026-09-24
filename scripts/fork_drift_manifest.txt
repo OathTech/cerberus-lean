@@ -1,455 +1,10 @@
-# SC physical atomic-source and reference synchronization queries, 2026-09-23 [AGENT]:
-# Review: lean_frontend/docs/2026-09-23_sc-atomic-sync-work.md.
-# Two shared queries retain completed reads, per-byte sources, aliases, explicit
-# reference inputs and diagnostics. RS/HRS/fence-aware SW feed the existing
-# all-vertex HB query. New paired fixtures and build roots are registered.
-# No public verdict, new language exclusion or behavioral baseline change.
-# This component awaits full validation. Earlier comments are refresh-time
-# history; global bindings passed full validation at 074c7348a.
-# SC successful global bindings, 2026-09-23 [AGENT], validation pending:
-# Review: lean_frontend/docs/2026-09-23_sc-global-bindings-work.md.
-# One passive receipt at the existing successful initializer update; complete
-# Core values, thread/step/effect frontier, prior receipts and source inheritance
-# are retained. Recording restart clears the receipt history. Shared helper,
-# paired fixture, Driver field/producer and build roots are reviewed here.
-# No new memory transition, library role or synchronization is introduced.
-# Earlier stage comments below are historical: spawn/HB passed full validation
-# at d3d4825d9. This new component has not yet passed full integration.
-# SC lexical spawn and HB queries, 2026-09-23 [AGENT], integration pending:
-# Review: lean_frontend/docs/2026-09-23_sc-spawn-hb-work.md.
-# Epar inherits lexical procedure ownership through the shared Sc_spawn constructor;
-# original stack/environment/errno behavior is retained. Three shared modules
-# include the constructor and two passive semantic queries. Paired fixtures and
-# kernel laws are registered. All-alias HB retains complete source vertices and
-# explicit mapping diagnostics; reference SW remains an input and no public SC
-# completion is enabled. No behavioral baseline or previous classification changes.
-# SC checked filesystem connection, 2026-09-23 [AGENT], WIP:
-# Review: lean_frontend/docs/2026-09-23_sc-filesystem-repair-work.md.
-# Shared Driver preserves successful callbacks/commit ordering and records typed
-# filesystem boundary receipts on killed branches. Native Fs_checked retains
-# pinned SibylFS selection/conversions and catches only the identified Lem leaf.
-# Lean filesystem repairs and remaining coverage faults are explicit. Typed
-# rendering, 13 laws and paired Driver controls are registered. Pure failure
-# census retires only the 36 legacy FS leaves no longer called by Driver.
-# No behavioral baseline is updated here; full gates remain pending.
-# SC prefix evidence and Cmm equality repair, 2026-09-23 [AGENT], WIP:
-# Review: lean_frontend/docs/2026-09-23_sc-prefix-integration-work.md.
-# Shared pending sequencing evidence accumulates without changing control flow,
-# state erasure laws and actual driver plants check the connection. Source order
-# closes all vertices; reuse of an already computed closure is proved equal.
-# Cmm equality target selectors are disjoint: Lean now selects the same explicit
-# action-ID and set equalities as OCaml. Derived SC reference regenerated.
-# New paired sequencing/equality units plus scopes/byte/access proofs registered.
-# Default sequential flow unchanged; no completed SC checker claim. Full gates
-# remain pending. Older manifest comments below record preceding review stages.
-# SC prefix observation integration, 2026-09-23 [AGENT], WIP:
-# Review: lean_frontend/docs/2026-09-23_sc-prefix-integration-work.md.
-# Lossless byte-key projections extend Mem and paired concrete seams; other
-# instances explicitly report unavailable. New shared passive call/scope/access
-# queries; Driver attaches per-branch scopes and snapshots request ownership.
-# Default sequential flow is unchanged; no new public SC verdict or gap guard.
-# Generated additions are semantic; existing classifications remain unchanged.
-# Full substantial-slice validation remains pending; this is not certification.
-# SC remaining atomic interfaces, 2026-09-23 [AGENT]:
-# Review: lean_frontend/docs/2026-09-23_sc-atomic-completion-review.md.
-# kill_dependency argument conversion/identity in the current no-DD executor;
-# character aliases; typed runtime lock-free configuration gap and transport.
-# All ten lock-free macro definitions are unchanged: CPP guard remains open.
-# Full slice validation pending; comments and prior classifications retained.
-# SC logical-value and metadata adapters, 2026-09-23 [AGENT]:
-# Review: lean_frontend/docs/2026-09-23_sc-value-metadata-review.md.
-# Lossless value keys preserve existing memory equality. Separate Cmm carriers
-# retain exact predicate bodies, checked by scripts/sync_sc_reference.py.
-# sc_varargs queries actual metadata events; supplied order is not inferred
-# from occurrence IDs. No public SC verdict integration is claimed here.
-# All prior review text is retained below as checkpoint history.
-# SC atomic interfaces and libc source locations, 2026-09-22 [AGENT]:
-# Review: lean_frontend/docs/2026-09-22_sc-atomic-surface-review.md.
-# Runtime order dispatch, initialization, flags, integer fetch and signal
-# fences; typed G04/G05 gaps; source-bearing libc text repairs SC-P07.
-# Atomic_order is new shared semantics. All prior review comments retained.
-# ailSyntax now changes constructors and is classified semantic.
-# Full slice validation pending; this manifest alone is not certification.
-# SC unconditional atomic-update slice, 2026-09-22 [AGENT]:
-# Review: lean_frontend/docs/2026-09-22_sc-atomic-update-review.md.
-# Add explicit atomic update semantics and exhaustive visitors, exchange and
-# operator lowering, qualification and aggregate-CAS typing repairs. Ordinary
-# SeqRMW remains unchanged. Validation in progress; hashes alone are not review.
-# SC source-order graph / general boundary policy, 2026-09-22 [AGENT]:
-# Review: lean_frontend/docs/2026-09-22_sc-source-graph-review.md.
-# sc_graph.ml is a new pure journal query, with explicit malformed-graph
-# diagnostics and closure before projection. No driver/scheduler change.
-# The new concrete control target links the actual generated graph module.
-# SC helper-service/fault slice, 2026-09-22 [AGENT]:
-# Review: lean_frontend/docs/2026-09-22_sc-service-slice-review.md.
-# Typed ND suspension and current-state helper continuation preserve primitive
-# bodies; complete-machine scheduling and batch projection retain paused work.
-# Existing SC diagnostic text is rendered from typed identities. Nondeterminism
-# now has a semantic constructor/case delta and moves out of the cosmetic list.
-# The concrete control target compiles against the actual generated modules.
-# backend/common/smt.ml remains excluded by dune; its renderer is kept in sync.
-# SC ordinary RMW / physical byte-source slice, 2026-09-22 [AGENT]:
-# Review: lean_frontend/docs/2026-09-22_sc-rmw-byte-source-review.md.
-# Only the SC scheduler splits ordinary RMW into read/calculation and owned
-# store phases. The sequential handler is byte-identical. sc_byte_sources.ml
-# is a new physical journal-accounting leaf, not a Cmm location/race checker.
-# SC atomic/floating representation slice, 2026-09-22 [AGENT]:
-# Reviewed in lean_frontend/docs/2026-09-22_sc-atomic-slice-review.md.
-# Fences, owned CAS phases and raw representation comparison extend only SC
-# execution. The floating carrier repair changes the Lean target; native OCaml
-# retains its original floating operations. Historical reviews follow intact.
-# SC protocol integration, 2026-09-21 [AGENT]:
-# Ememop carries runtime annotations; its constructors/transforms preserve them.
-# Shared completion receipts and context-scoped ordering feed the new SC scheduler;
-# driver memory lifting records every returned ND node. Default sequential wrappers
-# retain their old interfaces and ND grouping. sc_order.ml and sc_runtime.ml are
-# new shared operational modules (expected-added), not an axiomatic Cmm checker.
-# Review: lean_frontend/docs/2026-09-21_sc-protocol-review.md.
-# The full integration suite and three-engine report are required for this slice.
-# Earlier notes below retain the provenance of every pre-existing exception.
-#
-# SC prototype observation adapter, 2026-09-21 [AGENT]:
-# Shared passive observations, optional concrete-memory journaling and explicit
-# unsupported observer capabilities for the other memory implementations; checked
-# ND lifting is a new generated module. Sequential execution still uses the old
-# lift and observation=None. Generated mem_common.ml adds the observation types
-# and derived instances. nd_observe.ml has no pristine predecessor and is pinned
-# in [expected-added]; eight full-gate plants check that extension.
-# mem.ml now contains a type alias and moves from cosmetic to semantic.
-# The Makefile includes the new shared module. Paired component probes and the
-# kernel-checked same-fuel disabled-lift erasure are recorded in
-# lean_frontend/docs/2026-09-21_sc-prototype-progress.md. This is not SC support.
-# Full integration gates remain required before a code commit.
-#
-# program-data-parameters S1.5, 2026-09-20 [AGENT; single row + this NOTE, the S0.5 practice]:
-# [meta] lem-pin 4307dc5 -> 38f87d5 (fuel'd truly-mutual blocks compose with reader lifting — the a618b9c scope-cut guard
-# deleted in lem-lean 38f87d5, doc/lean-backend/2026-09-20_fuel-mutual-reader-record.md; born from E-A Phase 1's S4 stop on
-# ail/ailTypesAux.lem:784-862 with the enum reader declared). The pin bump alone is byte-identical on this tree — both
-# generated trees re-derived from WIPED trees under Lem 38f87d5 equal the Lem 4307dc5 snapshot (.tmp/s15/gen-before.sha256,
-# 305 files = ocaml_frontend/generated 86 + lean_frontend/generated 219; sibylfs 16), lem-sync stamps unchanged, layer-2 set
-# unchanged (25 differing generated files, all hash-pinned). Not a --refresh. Record:
-# lean_frontend/docs/2026-09-20_program-data-parameters-S1.5-record.md.
-# program-data-parameters S0.5, 2026-09-20 [AGENT; fence extended for this one row + this NOTE by the orchestrator, S4 resolution]:
-# [meta] lem-pin f6542f8 -> 4307dc5 (the N-ary reader_seed backend rule, lem-lean 4307dc5 — lem-lean
-# doc/lean-backend/2026-09-19_nary-reader-seed-record.md); the pin bump alone is byte-identical on this tree — both
-# generated trees re-derived from wiped trees under Lem 4307dc5, 305 = 305 files, hash-list diff empty
-# (ocaml_frontend/generated 86 + lean_frontend/generated 219; sibylfs 16 = 16), lem-sync stamps unchanged, layer-2 set
-# unchanged (25 differing generated files, all hash-pinned). Single-row edit, not a wholesale --refresh (which strips this
-# header). Record: lean_frontend/docs/2026-09-19_program-data-parameters-S0.5-record.md.
-# address-space-bound part two C4, 2026-09-18 [AGENT]: one [source-content] pin moved — backend/driver/main.ml eea477c2… -> 29958a99… — the pre-merge audit + the consumer's review: the --address-space-top converter is
-# DECIMAL-ONLY (the 0x/0o/0b asymmetry with cerberus-lean removed) and enforces the DOMAIN 0 < top < 2^(8 * sizeof_pointer)
-# (Ocaml_implementation.DefaultImpl.impl.sizeof_pointer = Some 8) with the sentence cerberus-lean prints ("the address-space
-# top must fit an LP64 pointer: 0 < top < 2^64"); plant-tested by scripts/test_address_space.sh --selftest P9-P11. Single-row
-# edit. Record: §"Audit fixes" (DOMAIN).
-# address-space-bound part two C3, 2026-09-17 [AGENT]: one [source-content] pin moved — backend/driver/main.ml 5e4b2121… -> eea477c2… — the FORK-ONLY `--address-space-top N` flag (the --batch-alloc-census shape; a Z.t
-# converter; default Driver_ocaml.address_space_top_default) wired into Pipeline.configuration and Driver_ocaml.driver_conf.
-# Pristine upstream has no such parameter; matched mode never passes it (row 10 lists it not_applicable); its tiny-top
-# differential lane is scripts/test_address_space.sh (LADDER Tier A row 12). Single-row edit. Record: §C3.
-# address-space-bound part two C2, 2026-09-17 [AGENT]: the address-space TOP becomes a quantified entry parameter
-# (route A; [USER 2026-09-16] "the semantics should be quantified over such bounds"; charter
-# lean_frontend/docs/2026-09-17_charter-address-space-bound-part-two.md; fence extension granted 2026-09-17). GENUINE
-# shared-model SIGNATURE change, identity at the default: mem.lem `initial_mem_state: integer -> mem_state`; driver.lem
-# `initial_driver_state_with top …`/`initial_driver_state top …`/`initial_driver_state_given sup top …`;
-# cabs_to_ail_effect.lem state + `address_space_top`, `initial_state sup top …`, `get_address_space_top`, `eval sup top …`;
-# cabs_to_ail.lem `desugar sup top …` (+ the :1137 mini-run call); mini_pipeline.lem `evalConstantExpressionAux`/
-# `evalIntegerConstantExpression sup top …`. Fifteen [source-content] pins moved (driver_ocaml.ml c3aac381… -> 65907c6a…, driver_ocaml.mli 4360c8a0… -> 91d09d39…, pipeline.ml 958f266d… -> ad215848…, pipeline.mli 4daefed8… -> 62571771…, main.ml e33b2045… -> 5e4b2121…, cabs_to_ail.lem 5e45fca8… -> 8804250d…, cabs_to_ail_effect.lem a8cd5b21… -> 13a63383…, driver.lem 067f1830… -> bd89e63b…, mem.lem 91898bb3… -> abff8e1d…, mini_pipeline.lem 2a631f74… -> 6fec753e…, impl_mem.ml 88f958f5… -> 3293b888…, impl_mem.ml 97a5da4c… -> 4ba6dc41…, impl_mem.ml 58a46f12… -> 8bcbe8da…, impl_mem.ml 4bc49e63… -> ab57c73b…, memory_model.ml 03bbf030… -> f6c74e4d…);
-# four unbuilt backends (web/instance.ml, bmc/main.ml, bmc/bmc_utils.ml, ocaml/runtime/rt_ocaml.ml) now differ from
-# upstream by the mechanical edit (pass the ONE named default Driver_ocaml.address_space_top_default) — they lie OUTSIDE
-# this gate's oracle SURFACES (backend/web, backend/bmc, backend/ocaml are not ladder-built), so they are NOT manifested
-# here; the literal Z.of_int 0xFFFFFFFFFFFF LEFT memory/concrete/impl_mem.ml:508 and vip:175 for
-# backend/common/driver_ocaml.ml (the one OCaml numeral; driver_conf + Pipeline.configuration carry the value).
-# Layer 2: four [expected-semantic] diff pins moved (cabs_to_ail_effect.ml d252a154… -> fbb0a9dc…, cabs_to_ail.ml 4e43f561… -> db65a20d…, mini_pipeline.ml 75e92ed1… -> bedc4b14…, driver.ml 405c834f… -> beaa991f…) and mem.ml
-# ADDED to [expected-cosmetic] (its generated delta is COMMENT-ONLY: the lem comment + the `(*val …*)` echo; verified by
-# comment-strip). Single-row edits, not a wholesale --refresh (which strips this header). Record:
-# lean_frontend/docs/2026-09-17_address-space-bound-part-two-record.md §C2.
-# allocator-soundness C1c, 2026-09-17 [AGENT]: NO pin moved — a header CORRECTION. The C1 note below first said the
-# allocator deviation was "UNOBSERVABLE at upstream's bound (~2^48 bytes of cumulative allocation needed)": FALSE —
-# the part-one pre-merge audit (lean_frontend/docs/2026-09-17_allocator-part-one-audit-premerge.md M1, branch
-# audit/allocator-part-one) showed ONE malloc request larger than the cursor (by less than align/2) reaches the regime:
-# tests/minimal/112-allocator-exhausted-single-request.c / 113-…-overlap.c — pristine b9aeedcb4 Specified(6) /
-# Specified(106), fork = Lean out-of-memory. Two shared-model-fix register rows added; the C1 note's classification
-# line is corrected in place. Record: lean_frontend/docs/2026-09-16_allocator-soundness-address-bound-record.md §M1.
-# allocator-soundness C1, 2026-09-16 [AGENT]: two [source-content] pins moved — memory/concrete/impl_mem.ml
-# e55389c6… -> 97a5da4c… and memory/vip/impl_mem.ml 1491d4a2… -> 4bc49e63… — remedy 1 of upstream-tray draft 44
-# ([USER 2026-09-16] "unambiguously wrong … allowed to fix ahead of upstream"): `allocator` kills with the EXISTING
-# out-of-memory error when the cursor is below the request (`z < 0`) BEFORE rounding, then aligns down with the
-# Euclidean remainder (`z' = z - m`); the truncating-division branch `if q < zero then neg m else m` — which with
-# `quomod = ediv_rem` ADDED m to a negative z and could return an address in (0, align) overlapping the live object
-# at last_address — is deleted (concrete :1252-1263, vip :207-218; a two-line fork comment at each site). Hand-file
-# (layer 1) OCaml only: no .lem touched, so both generated trees and layer 2 (22 hash-pinned files) are unchanged.
-# OBSERVABLE at upstream's bound by ONE request larger than the cursor (corrected by the C1c note above, 2026-09-17):
-# two shared-model-fix register rows (scripts/upstream_oracle_differences.json minimal/112-…, minimal/113-…);
-# recorded in lean_frontend/VALIDATION.md §3 "Fork ≠ pristine".
-# Lean mirror lean_frontend/CerbMem.lean `allocator` (line by line, new cites) + the kernel theorem
-# lean_frontend/CerbMemAllocatorProofs.lean `allocator_active_sound` + the runtime witness
-# lean_frontend/test/Unit/AllocatorSoundnessTest.lean. Single-row edits, not a wholesale --refresh (which strips
-# this header). Record: lean_frontend/docs/2026-09-16_allocator-soundness-address-bound-record.md §C1.
-# parser-progress-measure D1, 2026-09-15 [AGENT]: GENUINE shared-model change, an EXTENSIONALLY IDENTICAL
-# restatement — one [source-content] pin moved (frontend/model/monadic_parsing.lem 194dcdbc… -> da04e3c2… (62445706… at D1, before the D2 Lean-only `fuel_measure` declares):
-# `many`/`many1` are restated as input-indexed recursion — two mutually recursive RUN functions
-# many_run/many1_run on the input `cs`, bodies = the exact unfoldings of `many1 p <|> return []` and
-# `p >>= fun a -> many p >>= fun _as -> return (a::_as)`, plus `many p = ParserM (many_run p)` /
-# `many1 p = ParserM (many1_run p)`; the OCaml's results are unchanged on every input for every p — the
-# Lean target measures the two workers under a progress hypothesis; upstream-tray draft 43) and
-# [expected-semantic] monadic_parsing.ml ADDED (layer 2: 23 -> 24 differing generated files). Single-row
-# edits, not a wholesale --refresh (which strips this header). Record:
-# lean_frontend/docs/2026-09-11_parser-progress-measure-record.md D1/D5.1.
-# semantics-audit-repairs D3, 2026-09-11 (landed 2026-09-15) [AGENT]: GENUINE shared-model change — two
-# [source-content] pins moved (frontend/model/ctype_aux.lem 5a657d68… -> d7e2ece8…: the Array/Array arm of
-# are_compatible_aux compared `(n1_opt, n1_opt)`, a typo, now `(n1_opt, n2_opt)` per STD §6.7.6.2#6;
-# frontend/model/core_eval.lem e1fc98ed… -> 4ade27ce…: the PEmemberof(struct) exact-tag guard consults
-# Ctype_aux.are_compatible when the tags differ, the same consult memValueFromValue performs on store —
-# upstream-tray drafts 38/39); [expected-semantic] ctype_aux.ml hash moved and core_eval.ml ADDED (layer 2:
-# 22 -> 23 differing generated files). Single-row edits, not a wholesale --refresh (which strips this header).
-# Record: lean_frontend/docs/2026-09-11_semantics-audit-repairs-record.md §D3.
-# semantics-audit-repairs D2, 2026-09-11 (landed 2026-09-15) [AGENT]: one [source-content] pin moved —
-# backend/lean_export/cabs_json.ml 34f2ddcf… -> 5f64fc9c… — the byte-preserving Cabs bridge (finding 3 of
-# docs/2026-09-11_whole-project-semantics-audit.md): a new `json_of_bytes` encoder maps each source byte
-# >= 0x80 of a string-literal fragment / character-constant body / asm part to the scalar U+00XX so the
-# exported JSON is always valid UTF-8 (one Lean Char per byte, the byte-carrier convention); every text
-# field keeps json_of_string. Fork-side exporter only — the OCaml model and its generated tree are
-# untouched (layer 2 still 22 hash-pinned files); the 106 tests/minimal cabs-json outputs are byte-identical.
-# Single-row edit, not a wholesale --refresh (which strips this header). Record:
-# lean_frontend/docs/2026-09-11_semantics-audit-repairs-record.md §D2.
-# are-compatible-assumed-set, 2026-09-10 [AGENT]: two pins moved — [source-content]
-# frontend/model/ctype_aux.lem 9c81b03e… -> 5a657d68… and [expected-semantic]
-# ctype_aux.ml 8882e41d… -> afcc21e3…. This one is a GENUINE shared-model change,
-# not Lean-only declares: `are_compatible_aux` threads a path-local
-# assumed-compatible list of tag pairs (C11 §6.2.7#1's device for recursive
-# types), so the fork's OCaml oracle now terminates where upstream recurses
-# forever on a self-referential struct defined in two translation units
-# (upstream-tray draft 37); results on every previously-terminating input are
-# unchanged (record: lean_frontend/docs/2026-09-10_are-compatible-assumed-set-record.md).
-# The same edit also adds Lean-only `fuel_measure` declares + an `extra_import`.
-# Single-row edits, not a wholesale --refresh (which strips this header).
-# Fuel-measure-cost landing, 2026-09-08 [AGENT]: one [source-content] pin moved —
-# frontend/model/core_reduction.lem b80d535a… -> 7f61895f… — for LEAN-ONLY declare lines
-# (`declare {lean} extra_import `CerbCoreMeasure``; the two `fuel_measure` measures now name
-# the seam's structural definition `CerbCoreMeasure.getCtxBound`) plus comment blocks; the
-# OCaml generated tree is BYTE-IDENTICAL (lem-sync gen 295e4f82… unchanged; layer 2 still
-# 22 hash-pinned files). Single-row edit, not a wholesale --refresh (which strips this
-# header). Record: lean_frontend/docs/2026-09-07_fuel-measure-cost-record.md,
-# "Landing improvements".
-# Fuel-pending close-out, 2026-09-08 [AGENT]: two [source-content] pins moved —
-# frontend/model/core_aux.lem 64a7e8ab… -> 547a673e…, frontend/model/driver.lem
-# 5035f993… -> 067f1830… — for LEAN-ONLY declares (`declare {lean} extra_import`,
-# `declare {lean} fuel_measure … assuming …` for to_pure/to_pures/hack) plus comment
-# blocks; the OCaml generated tree is BYTE-IDENTICAL (lem-sync gen 295e4f82… unchanged;
-# layer 2 still 22 hash-pinned files). Record:
-# lean_frontend/docs/2026-09-08_fuel-pending-closeout-record.md.
-# Validation foundations, 2026-09-06 [AGENT]: [source-content] now pins
-# bytes + file modes for every [files] entry. The 71 existing source files
-# are unchanged from 89f7e6885 and retain their linked historical reviews;
-# this is an instrument freeze, not a new claim of semantic correctness.
-# The five added build/helper surfaces are reviewed in
-# lean_frontend/docs/2026-09-06_independent-oracle-and-fork-pins.md.
-# Existing 22 generated-delta hashes are unchanged. Earlier notes saying
-# hand files lack content pins describe their historical state only.
-# fork-drift manifest — the reviewed oracle-surface drift set
-# (gate: scripts/check_fork_drift.sh; review + per-hunk classification:
-# lean_frontend/docs/2026-08-21_fork-drift-review.md — [files] classes DECL/DELIB/
-# SUSPECT are per that review's §2/§5 tables).
-# Every entry is a reviewed claim about the oracle: additions/removals
-# and hash moves go through the gate's refresh recipe with a commit
-# message stating the justification.
-# NOTE (effect-retirement C1, 2026-08-31 — charter section 3.4/6.4,
-# Q1b TOLERATED [USER 2026-08-31]): lem-pin -> af5df71 (supply/
-# reader_consumer/fuel-budget backend features; the pin bump alone was
-# byte-identical on this tree). The m1/m1b/m2 model accommodations
-# change generated-OCaml TEXT in 9 modules: 7 moved
-# [expected-semantic] hashes (symbol.ml declare swap + eta-expanded
-# fresh_fancy; translation_effect.ml elab_state.fresh_supply + monadic
-# mints + with_block_objects fold threading; cabs_to_ail_effect.ml
-# seeded initial_state + eval supply round-trip + get/set helpers;
-# cabs_to_ail.ml desugar supply entry + const-expr round-trip;
-# mini_pipeline.ml explicit-supply const-expr seam;
-# core_run_aux.ml initial_core_run_state_given factoring;
-# driver.ml initial_driver_state_with/_given factoring) and 2 NEW
-# [expected-semantic] entries (ctype_aux.ml: with_tagDefs gains a lem
-# body `f ()` behind the unchanged Tags.with_tagDefs redirect,
-# set/reset_tagDefs lose their Lean-only declares; translation.ml:
-# the 15 elaboration-site mints + the m1b erase_loop_control supply
-# component + the supply-parameterized translate entry). Oracle
-# BEHAVIOR moves only in the tolerated RENUMBERING class — FINALIZED
-# at C2 (2026-09-01) per the C1-F1 adjudication [USER 2026-09-01]:
-# the class is BROADER than the S0 D1/D2 enumeration (eager-batch
-# dispersal at statement lists, call-argument batches, bind-head
-# prefixes and cross-definition elaboration prefixes — the S0 record
-# + C1 record section 5 are the mechanism analysis), and its artifact
-# scope is defined OPERATIONALLY, not by static list: every pinned
-# oracle dump that moves under re-derivation is admitted only on
-# machine-checked same-draw-count + permutation-only equivalence
-# (scripts/check_renumber_only.py; plant battery
-# scripts/test_renumber_plants.sh). Rebaselined set: 70 rows across
-# tests/verify (7), tests/corpus (20), tests/speclab (39),
-# tests/libc/libc.core (1), tests/fixtures goldens (3) — the C1
-# family commits + the C2 re-check carry the row-by-row evidence.
-# Consequence for upstream byte-fidelity (accepted knowingly, Q1b
-# ruling): the fork's oracle Core dumps diverge from un-forked
-# upstream TEXTUALLY, UP-TO-RENAMING of symbol ids, on inputs
-# triggering the class; verdicts are everywhere unmoved, and the one
-# numbering-dependent output row found is registered as finding C1-F2
-# (upstream-tray draft 17), never accommodated. The arc-13
-# check_ail_window backstop still refuses a re-threaded
-# desugar supply. Hand [files] entries pipeline.ml/fork_renumber.ml
-# carry the corresponding driver-side call-site adaptations
-# (supply args dead on OCaml, ambient mint shims).
-# [files] = oracle-surface files allowed to differ from upstream/master;
-# [expected-semantic]/[expected-cosmetic] = generated .ml allowed to
-# differ, pinned by sha256 of their label-normalized unified diff.
-# Cosmetic = verified comment/blank-line-only at review time.
-# NOTE (arc-13 S1, the renumbering — D1 scheme R-B, upstream
-# re-convergence; docs/2026-08-22_arc13-s0-scheme-decision.md): the
-# review's F-D SUSPECT family is RESOLVED — desugar + run supplies
-# re-unified onto Cerb_fresh.int on the OCaml target via three
-# ocaml-only target_reps (cabs_to_ail_effect/core_run/core_run_aux
-# .lem) + ocaml_frontend/fork_renumber.ml (NEW [files] entry); oracle
-# numbering is now byte-identical to upstream. The six moved
-# [expected-semantic] hashes are exactly this change's call-site
-# rewrites (defs dropped for target_reps, calls -> Fork_renumber.*);
-# driver.ml MOVED cosmetic->semantic (its initial_core_run_state call
-# site now rewrites — no longer blank-line-only). util/cerb_fresh.ml
-# is the arc-13 single-supply window backstop (supersedes the arc-12
-# floor); ail_sym_hwm.ml is its digest-filtered (min,max) fold;
-# the arc-12 grandfather/warn modes are DELETED (main.ml).
-# NOTE (arc-13 audit fix, A-F1 — the layer-2 pins as seam-re-thread
-# tripwire): the dynamic backstop covers the DESUGAR seam only. For
-# the run seams (core_run.lem fresh_symbol' / core_run_aux.lem
-# initial_core_run_state) THIS GATE is the standing defense: any
-# source-level re-thread of a renumbering seam changes the generated
-# OCaml call sites, so the fork-vs-upstream delta of the affected
-# [expected-semantic] file (cabs_to_ail_effect.ml / core_run.ml /
-# core_run_aux.ml / driver.ml) moves and its pinned hash below FAILS
-# the gate. ocaml_frontend/fork_renumber.ml itself is a hand file:
-# name-manifested here (layer 1), content defended by review, not by
-# a hash pin.
-# NOTE (hotfix arc/hotfix-libc-floor, 2026-08-22): ocaml_frontend/dune
-# (+ lem_sync_checked witness rule) and runtime/libc/dune (.co rules
-# depend on the witness) are NEW [files] entries — the lem-sync gate
-# (tools/check_lem_sync.sh) that fail-stops dune builds on a
-# content-stale ocaml_frontend/generated tree (the post-merge libc.co
-# certification failure). Record:
-# lean_frontend/docs/2026-08-22_arc13-hotfix-libc-floor.md.
-# NOTE (arc-14 S1 F6, 2026-08-22): cabs_to_ail_effect.ml's
-# [expected-semantic] hash moved a84ccc6b -> 3765f211 for a COMMENT-ONLY
-# reason — the sem:S18 comment-truth fix on the fresh_sym_supply field
-# (re-scoped to the arc-13 R-B reality: OCaml uses the single ambient
-# Cerb_fresh via fork_renumber; the field is Lean-only). The generated
-# .ml code is UNCHANGED; only the propagated doc-comment differs
-# (verified hunk-by-hunk). Deliberate single-line refresh (the
-# --refresh recipe was NOT used wholesale — it strips this documented
-# header; only the one hash was edited).
-# NOTE (CN-0 spec exporter, 2026-08-24 — PARKED 2026-09-02 [USER],
-# release-hygiene G5): backend/lean_export/cn_spec_json.ml was a [files]
-# entry from 2026-08-24 (the --cn-spec-json output mode; design record
-# lean_frontend/docs/2026-08-24_cn0-spec-export.md) and is REMOVED from
-# the tree with its flag plumbing in backend/driver/main.ml, its lane
-# (scripts/test_cn_spec_export.sh) and fixtures (tests/cn_spec_export/).
-# Layer-1 file-set change: -1 [files] entry; main.ml and
-# backend/lean_export/dune stay [files] entries (still carry --cabs-json)
-# with their deltas shrunk back (flag plumbing gone; the c_parser library
-# dependency the exporter alone needed dropped). No lem-generated module
-# is involved, so no [expected-*] hash moves. Archaeology: mainline
-# 90e341db2 (the last commit carrying the exporter); record
-# lean_frontend/docs/2026-09-02_release-hygiene-record.md §G5.
-# NOTE (thread-B lem totalization, 2026-08-29; record
-# lean_frontend/docs/2026-08-29_threadB-totalization.md): NEW [files]
-# entries frontend/model/{state,state_exception,translation_aux,
-# cerb_attributes}.lem — Lean-target-only totality declares
-# (termination_argument = automatic), V0 exec-cone-census E-slice.
-# Generated OCaml verified BYTE-IDENTICAL (sha256 over all 86 files),
-# so no [expected-*] hash moves: the divergence is .lem-source-only.
-# (ailTypesAux.lem + core_run_aux.lem also carry this slice's declares
-# but were already manifested.)
-# NOTE (S-basket item 3, 2026-09-01; record
-# lean_frontend/docs/2026-09-01_s-basket.md): NEW [files] entry
-# frontend/model/monadic_parsing.lem — Lean-target-only totality
-# declares (string automatic; many/many1 mutual fuel), the parked
-# printf/Monadic_parsing census tail. formatted.lem (same slice's
-# declares) was already manifested. Generated OCaml verified
-# BYTE-IDENTICAL again (sha256 over all 86 files, both rounds), so no
-# [expected-*] hash moves: .lem-source-only divergence.
-# NOTE (S-basket item 8, 2026-09-01; record
-# lean_frontend/docs/2026-09-01_s-basket.md): the --batch-alloc-census
-# oracle output mode (upstream-patch candidate; the speclab leak
-# checks' oracle-differential leg). NEW [files] entries:
-# ocaml_frontend/memory_model.ml (Memory signature gains
-# alloc_census_opt), memory/{concrete,vip,symbolic,cheri-coq}/
-# impl_mem.ml (concrete implements live/dead counts; the other three
-# return None — reported LOUDLY as "AllocCensus {unsupported}", never
-# silently elided), backend/common/driver_ocaml.{ml,mli} (batch_drive
-# returns the per-execution census from the final driver state) +
-# backend/common/pipeline.mli (type only). backend/driver/main.ml
-# (already manifested) grew the flag + the census printing, plain
-# --batch only, AFTER the verdict line. OFF BY DEFAULT: all default
-# output byte-unchanged (proof: full Tier A zero-movement at the
-# item-8 commit).
-# NOTE (zero-discrepancy Z3, 2026-09-05; record
-# lean_frontend/docs/2026-09-05_zero-discrepancy-Z3-record.md §3): the
-# already-manifested hand file backend/driver/main.ml (layer 1) grew one
-# delta inside its fork-local `--cabs-json` arm (main.ml:264-290) — the
-# TUnit JSON now carries "digest" = Digest.to_hex (Cerb_fresh.digest ()),
-# the Digest.file value set_digest just installed, so the Lean driver
-# installs the oracle's own per-TU digest (symbol digests order the
-# linked globals, core_linking.lem:252-273). Hand-file delta: name-
-# manifested here, content defended by review, not by a hash pin (A-F1
-# doctrine); no generated .ml moved, so layer 2 is unchanged.
-# NOTE (hotfix fix/fuel-forms-carriers, 2026-09-20; record
-# lean_frontend/docs/2026-09-20_fuel-forms-carriers-hotfix-record.md §1.3;
-# pre-merge audit M2 ruling [AGENT orchestrator]): the [source-content]
-# row for scripts/common.sh is RE-PINNED (77f5ab3a… -> the sha256 below)
-# for ONE hunk — build_lean runs `lake build CerberusLean cerberus-lean`
-# (every Lake root + the exe) instead of `lake build cerberus-lean` (the
-# exe's closure), so a root nothing imports (CerbMem_lemMeasureProofs,
-# whose stale .olean the fuel-forms gate imported for a day — F-1;
-# CerbConcurrency; Cabs_to_ail_auxiliary) fails every lane by name when it
-# stops compiling. Single-row edit, reviewed; nothing else in the file
-# moved; no --refresh. The oracle surface (layers 1-2) is untouched.
-# fork-drift manifest — regenerated by check_fork_drift.sh --refresh.
-# Every entry is a reviewed claim (lean_frontend/docs/2026-08-21_fork-drift-review.md):
-# [files] = oracle-surface files allowed to differ from upstream/master
-#   (a SET: compared order-insensitively in the C locale; duplicates FAIL);
-# [expected-semantic]/[expected-cosmetic] = generated .ml allowed to
-# differ, pinned by sha256 of their label-normalized unified diff.
-# Cosmetic = verified comment/blank-line-only at review time.
-# [meta] lem-pin = the lem-lean commit (`lem -v`) both generated trees
-#   were derived with; cross-checked against `lem -v` when lem is on PATH.
-# fork-drift manifest — regenerated by check_fork_drift.sh --refresh.
-# Every entry is a reviewed claim (lean_frontend/docs/2026-08-21_fork-drift-review.md):
-# [files] = oracle-surface files allowed to differ from upstream/master
-#   (a SET: compared order-insensitively in the C locale; duplicates FAIL);
-# [expected-semantic]/[expected-cosmetic] = generated .ml allowed to
-# differ, pinned by sha256 of their label-normalized unified diff.
-# Cosmetic = verified comment/blank-line-only at review time.
-# [meta] lem-pin = the lem-lean commit (`lem -v`) both generated trees
-#   were derived with; cross-checked against `lem -v` when lem is on PATH.
-# fork-drift manifest — regenerated by check_fork_drift.sh --refresh.
-# Every entry is a reviewed claim (lean_frontend/docs/2026-08-21_fork-drift-review.md):
-# [files] = oracle-surface files allowed to differ from upstream/master
-#   (a SET: compared order-insensitively in the C locale; duplicates FAIL);
-# [expected-semantic]/[expected-cosmetic] = generated .ml allowed to
-# differ, pinned by sha256 of their label-normalized unified diff.
-# Cosmetic = verified comment/blank-line-only at review time.
-# [meta] lem-pin = the lem-lean commit (`lem -v`) both generated trees
-#   were derived with; cross-checked against `lem -v` when lem is on PATH.
-# fork-drift manifest — regenerated by check_fork_drift.sh --refresh.
-# Every entry is a reviewed claim (lean_frontend/docs/2026-08-21_fork-drift-review.md):
-# [files] = oracle-surface files allowed to differ from upstream/master
-#   (a SET: compared order-insensitively in the C locale; duplicates FAIL);
-# [expected-semantic]/[expected-cosmetic] = generated .ml allowed to
-# differ, pinned by sha256 of their label-normalized unified diff.
-# Cosmetic = verified comment/blank-line-only at review time.
-# [meta] lem-pin = the lem-lean commit (`lem -v`) both generated trees
-#   were derived with; cross-checked against `lem -v` when lem is on PATH.
-# fork-drift manifest — regenerated by check_fork_drift.sh --refresh.
-# Every entry is a reviewed claim (lean_frontend/docs/2026-08-21_fork-drift-review.md):
-# [files] = oracle-surface files allowed to differ from upstream/master
-#   (a SET: compared order-insensitively in the C locale; duplicates FAIL);
-# [expected-semantic]/[expected-cosmetic] = generated .ml allowed to
-# differ, pinned by sha256 of their label-normalized unified diff.
-# Cosmetic = verified comment/blank-line-only at review time.
-# [meta] lem-pin = the lem-lean commit (`lem -v`) both generated trees
-#   were derived with; cross-checked against `lem -v` when lem is on PATH.
+# Reviewed fork surface relative to the pinned upstream and Lem versions.
+# [files]: exact set of changed oracle-surface paths.
+# [source-content]: file mode and source SHA256, including added native controls.
+# [expected-semantic]/[expected-cosmetic]: normalized generated OCaml diff hashes.
+# [expected-added]: generated modules absent upstream, pinned by content hash.
+# C1 removes unused reference/proof machinery and combines native SC controls.
+# Active scope and validation: lean_frontend/docs/2026-09-21_charter-sc-prototype.md.
 [meta]
 merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
 lem-pin=38f87d5
@@ -526,14 +81,18 @@ frontend/model/sc_byte_key.lem
 frontend/model/sc_byte_sources.lem
 frontend/model/sc_call_context.lem
 frontend/model/sc_call_scope.lem
+frontend/model/sc_definition_sources.lem
+frontend/model/sc_global_attribution.lem
 frontend/model/sc_global_bindings.lem
+frontend/model/sc_global_origins.lem
 frontend/model/sc_graph.lem
 frontend/model/sc_happens_before.lem
+frontend/model/sc_link_attribution.lem
 frontend/model/sc_order.lem
+frontend/model/sc_parameter_reads.lem
 frontend/model/sc_prefix_obligations.lem
 frontend/model/sc_reference.lem
 frontend/model/sc_reference_aux.lem
-frontend/model/sc_reference_sequencing.lem
 frontend/model/sc_representation.lem
 frontend/model/sc_runtime.lem
 frontend/model/sc_scopes.lem
@@ -551,45 +110,45 @@ frontend/model/translation_aux.lem
 frontend/model/translation_effect.lem
 frontend/model/utils.lem
 memory/cheri-coq/impl_mem.ml
-memory/concrete/fs_boundary_controls/controls.ml
-memory/concrete/fs_boundary_controls/dune
 memory/concrete/impl_mem.ml
-memory/concrete/sc_atomic_surface_controls/controls.ml
-memory/concrete/sc_atomic_surface_controls/dune
-memory/concrete/sc_atomic_update_controls/controls.ml
-memory/concrete/sc_atomic_update_controls/dune
-memory/concrete/sc_global_binding_controls/controls.ml
-memory/concrete/sc_global_binding_controls/dune
-memory/concrete/sc_global_binding_controls/sc_global_binding_controls.lem
-memory/concrete/sc_global_binding_controls/sc_global_binding_controls.ml
-memory/concrete/sc_graph_controls/controls.ml
-memory/concrete/sc_graph_controls/dune
-memory/concrete/sc_hb_controls/controls.ml
-memory/concrete/sc_hb_controls/dune
-memory/concrete/sc_hb_controls/sc_action_identity_controls.lem
-memory/concrete/sc_hb_controls/sc_action_identity_controls.ml
-memory/concrete/sc_hb_controls/sc_hb_controls.lem
-memory/concrete/sc_hb_controls/sc_hb_controls.ml
-memory/concrete/sc_prototype_controls/controls.ml
-memory/concrete/sc_prototype_controls/dune
-memory/concrete/sc_reference_equality_controls/controls.ml
-memory/concrete/sc_reference_equality_controls/dune
-memory/concrete/sc_sequencing_controls/controls.ml
-memory/concrete/sc_sequencing_controls/dune
-memory/concrete/sc_spawn_controls/controls.ml
-memory/concrete/sc_spawn_controls/dune
-memory/concrete/sc_spawn_controls/sc_spawn_controls.lem
-memory/concrete/sc_spawn_controls/sc_spawn_controls.ml
-memory/concrete/sc_synchronization_controls/controls.ml
-memory/concrete/sc_synchronization_controls/dune
-memory/concrete/sc_synchronization_controls/sc_atomic_source_controls.lem
-memory/concrete/sc_synchronization_controls/sc_atomic_source_controls.ml
-memory/concrete/sc_synchronization_controls/sc_synchronization_controls.lem
-memory/concrete/sc_synchronization_controls/sc_synchronization_controls.ml
-memory/concrete/sc_value_controls/controls.ml
-memory/concrete/sc_value_controls/dune
-memory/concrete/sc_varargs_controls/controls.ml
-memory/concrete/sc_varargs_controls/dune
+memory/concrete/sc_controls/controls.ml
+memory/concrete/sc_controls/dune
+memory/concrete/sc_controls/run_fs_boundary.ml
+memory/concrete/sc_controls/run_sc_atomic_surface.ml
+memory/concrete/sc_controls/run_sc_atomic_update.ml
+memory/concrete/sc_controls/run_sc_global_binding.ml
+memory/concrete/sc_controls/run_sc_graph.ml
+memory/concrete/sc_controls/run_sc_hb.ml
+memory/concrete/sc_controls/run_sc_link_attribution.ml
+memory/concrete/sc_controls/run_sc_prototype.ml
+memory/concrete/sc_controls/run_sc_reference_equality.ml
+memory/concrete/sc_controls/run_sc_sequencing.ml
+memory/concrete/sc_controls/run_sc_spawn.ml
+memory/concrete/sc_controls/run_sc_synchronization.ml
+memory/concrete/sc_controls/run_sc_value.ml
+memory/concrete/sc_controls/run_sc_varargs.ml
+memory/concrete/sc_controls/sc_action_identity_controls.lem
+memory/concrete/sc_controls/sc_action_identity_controls.ml
+memory/concrete/sc_controls/sc_atomic_source_controls.lem
+memory/concrete/sc_controls/sc_atomic_source_controls.ml
+memory/concrete/sc_controls/sc_global_attribution_controls.lem
+memory/concrete/sc_controls/sc_global_attribution_controls.ml
+memory/concrete/sc_controls/sc_global_binding_controls.lem
+memory/concrete/sc_controls/sc_global_binding_controls.ml
+memory/concrete/sc_controls/sc_global_origin_controls.lem
+memory/concrete/sc_controls/sc_global_origin_controls.ml
+memory/concrete/sc_controls/sc_hb_controls.lem
+memory/concrete/sc_controls/sc_hb_controls.ml
+memory/concrete/sc_controls/sc_library_link_controls.lem
+memory/concrete/sc_controls/sc_library_link_controls.ml
+memory/concrete/sc_controls/sc_link_attribution_controls.lem
+memory/concrete/sc_controls/sc_link_attribution_controls.ml
+memory/concrete/sc_controls/sc_parameter_read_controls.lem
+memory/concrete/sc_controls/sc_parameter_read_controls.ml
+memory/concrete/sc_controls/sc_spawn_controls.lem
+memory/concrete/sc_controls/sc_spawn_controls.ml
+memory/concrete/sc_controls/sc_synchronization_controls.lem
+memory/concrete/sc_controls/sc_synchronization_controls.ml
 memory/symbolic/impl_mem.ml
 memory/vip/impl_mem.ml
 ocaml_frontend/dune
@@ -625,7 +184,7 @@ tools/check_lem_sync.sh
 util/cerb_fresh.ml
 util/cerb_location_json.ml
 [source-content]
-100644 4a52ca23de07ae96e1f87569f56a9247d178019b2851d327681b5087f9b3ddcd Makefile
+100644 0df9e6103c7eeb13d2c7e3a2ee5dca292a7b4d917f1c99006ebf7adad755a9a5 Makefile
 100644 f4901556a3001f3a4968c4a66205da6615e18b4618a21ac9852f27386ffe19d5 backend/common/ail_sym_hwm.ml
 100644 0a55bfb2d1cc722f085e5aae0889d8e51d8496364ca7c3b31f4ef70c5efd6118 backend/common/driver_ocaml.ml
 100644 91d09d39c2b2e4ef9b870ea665f588f446ca7b5bb84e6701211861ff2a36565e backend/common/driver_ocaml.mli
@@ -690,21 +249,25 @@ util/cerb_location_json.ml
 100644 bc35259f51dae53da89ce357d039940beddee56b75c5ada59ac51adbce738e16 frontend/model/nondeterminism.lem
 100644 b8bd6d19e3130795183c9524fa62052e96b9497cb17ddca7e3763d9171791543 frontend/model/pp.lem
 100644 48806e291b9bf5ff2b7097bb9ec55789f04189a2dff69d80bb660218288068d3 frontend/model/sc_access_group.lem
-100644 765a442b7b823975f25b2f4b122f036cf1156766e28bacb31ede7b9a9bad3562 frontend/model/sc_access_sequencing.lem
+100644 1c9145fccc7c3394a6b1a90a61b40b50df469bff1cd34cfbbace584498489d3b frontend/model/sc_access_sequencing.lem
 100644 aebe9a6ecd836b7a2472cbff1a8cfb8aed75a6a6cf558c42e535034c40023ab7 frontend/model/sc_action_identity.lem
 100644 acbe35c1e9bd71066c02b93fc44372deeeb775cb7aa3e74c4e879242f1693cbf frontend/model/sc_atomic_sources.lem
 100644 4ff2dda68f2e60e64a9d0aa8fcafeea5b781daaae41ec4a740acf99803a61e5e frontend/model/sc_byte_key.lem
 100644 2e16ecd4eba502ec0e346ee1e11dc0dc60b5a54849ee6cb12c66a79ae153084a frontend/model/sc_byte_sources.lem
 100644 2c5a6066b867e5513490f8d7d04486c1e45ddbd6d74b2f14fb69e858c945ac15 frontend/model/sc_call_context.lem
 100644 830a522b76ebc229ee9304acffa9676dd5cddee721d3604971c565ceae037a00 frontend/model/sc_call_scope.lem
+100644 f8bab19c80a34942f237909d82c0e9e5cd34bbd823377af5e524a19ab01c2b2f frontend/model/sc_definition_sources.lem
+100644 b42f40ea730a88ccdf89f8e25fb31e917e6b8062386414861db0ab86816c0f29 frontend/model/sc_global_attribution.lem
 100644 98cc6057c38098efab016d402330b13044f87ddc2e6864239bdfe5f7892766dc frontend/model/sc_global_bindings.lem
+100644 274c7f8c8967596a6e2e035288bd41cd3b304db10ef11f27c01e3ceaa3880a3f frontend/model/sc_global_origins.lem
 100644 7ab6129c99d4d8f3445576cf988943378ed94f0eee1b70968eede3022fa5b593 frontend/model/sc_graph.lem
 100644 14713ce0be1d8d6aac1332282247080af6593599b913ebff2ccb00f850321fe7 frontend/model/sc_happens_before.lem
+100644 90a5c3e054525bdaf1c3b02e357967987e5ccc44bc255222cf73a8a4008b4b8e frontend/model/sc_link_attribution.lem
 100644 744f1ffa440d8acf7b803e4d5b3ca833cf21748b01d34ecc617fcd9e1e7f5e4f frontend/model/sc_order.lem
-100644 1bef0f329e7527f95ce3e78a58b3487c706599239f2fc67f8cb3046e983e4251 frontend/model/sc_prefix_obligations.lem
+100644 f41702690672ce910e3769addf386d5d0c95206f2248c39f2f9d2abdf0d1822e frontend/model/sc_parameter_reads.lem
+100644 7ab79187b300561d679b6f2379a1422d5efff814055d4acec62a57365f73b8b6 frontend/model/sc_prefix_obligations.lem
 100644 9ff6039164e1510f77cb5b6bffa7f9a1a5dd6fc8be384b89cfe3ece500adbda7 frontend/model/sc_reference.lem
 100644 b6442ddfb6be44f118e44d61924165f5bf8b328b70f164cdaee75ea9ae37870a frontend/model/sc_reference_aux.lem
-100644 035d77d946dfded91eaea0ac65fbf806a0ea00700904467ff1e12d0e2c164ab0 frontend/model/sc_reference_sequencing.lem
 100644 4d2b4776afb41da99361716e5d88d106c7a6e9398ecb375ab97b67cca6667a75 frontend/model/sc_representation.lem
 100644 96e85058dfd27b62a3b16d490a4e002ef404ba6acf963f6670f2bda3d9bdf0ee frontend/model/sc_runtime.lem
 100644 37af2ee62b9b3928dc17e9e25f2ae237ab8ca38563ca69c7816edc94bf283269 frontend/model/sc_scopes.lem
@@ -722,45 +285,45 @@ util/cerb_location_json.ml
 100644 c13fc48fb6e67cf01edfbfee4e79c4bbe89c12bfa2c4506499b7b7ef99de10c8 frontend/model/translation_effect.lem
 100644 9427c936dcfe2bb47a984c6d73db12bf1c7012bb85b0b63156b5edececf9bf7c frontend/model/utils.lem
 100644 45f01a3f3a042faebe80f61777da7dac5767ee1e1625fe4ff726dde2838229e7 memory/cheri-coq/impl_mem.ml
-100644 426e78699254281177e37c38e38505ee5bc81d825a8c16ae24039493f7d7f60f memory/concrete/fs_boundary_controls/controls.ml
-100644 0eb6c108716d692409cea0ed97015ec898223c1e1af4725c9daf0ef51c16dc35 memory/concrete/fs_boundary_controls/dune
 100644 0559aef2e7cfc9f3e8298a73619d2fbbabc47b0030021655efb2d29308303b9d memory/concrete/impl_mem.ml
-100644 36d7329b2eb8716d06f680e660130295ee064bff02866ff06ba12831a7a70e16 memory/concrete/sc_atomic_surface_controls/controls.ml
-100644 0eb6c108716d692409cea0ed97015ec898223c1e1af4725c9daf0ef51c16dc35 memory/concrete/sc_atomic_surface_controls/dune
-100644 f07158d2d01b5f37fbad9f153493924c2ac3ac73859dc1ff87eccceaa8e2779f memory/concrete/sc_atomic_update_controls/controls.ml
-100644 0eb6c108716d692409cea0ed97015ec898223c1e1af4725c9daf0ef51c16dc35 memory/concrete/sc_atomic_update_controls/dune
-100644 bd9cca70fa20e6488a2a6ce428478327c1c4154b24ba9d10be38a31b0b5cb3db memory/concrete/sc_global_binding_controls/controls.ml
-100644 0af6506fe120bd72628d445635d215340180b25fa67bc353b66e8ffc8ab92994 memory/concrete/sc_global_binding_controls/dune
-100644 f7f62a9aa7022e5dffe5c7857b1a323d8c68daa171d35eef9a65e57e43f3bcc0 memory/concrete/sc_global_binding_controls/sc_global_binding_controls.lem
-100644 b0522226ee44bd5d6ec2d8c2f05b67051f23fc47cfb6b8498383641ad2cd52f6 memory/concrete/sc_global_binding_controls/sc_global_binding_controls.ml
-100644 165392dc65c968f31cd0ee2d980cf7fdbdc8b155d7ab622eb228482f850b7872 memory/concrete/sc_graph_controls/controls.ml
-100644 0eb6c108716d692409cea0ed97015ec898223c1e1af4725c9daf0ef51c16dc35 memory/concrete/sc_graph_controls/dune
-100644 a96041eac67859c88f1dc326f5e6c0ea4502d49a67d6e143e84fdaaddce60a42 memory/concrete/sc_hb_controls/controls.ml
-100644 0eb6c108716d692409cea0ed97015ec898223c1e1af4725c9daf0ef51c16dc35 memory/concrete/sc_hb_controls/dune
-100644 c0db7c53d8c55238270501ead282b713a817648274ef010041fb799c70be781b memory/concrete/sc_hb_controls/sc_action_identity_controls.lem
-100644 a4f15e034c67ce246df54067f97448472d5d6457ce2d978f512ec3c8a47d58b8 memory/concrete/sc_hb_controls/sc_action_identity_controls.ml
-100644 e3c33d9c7dba3b27a1688f937f23fa15ea99cc3b2aa06c775c70e9ca62f6bd77 memory/concrete/sc_hb_controls/sc_hb_controls.lem
-100644 7487ca571d2800e7e7c93c9e1a36e42bc45ebcbfef9055362451d44b6eeebb18 memory/concrete/sc_hb_controls/sc_hb_controls.ml
-100644 c77e141c6eff185723b34847e2330d71aae8f013abf735541af75387a005a1a9 memory/concrete/sc_prototype_controls/controls.ml
-100644 0eb6c108716d692409cea0ed97015ec898223c1e1af4725c9daf0ef51c16dc35 memory/concrete/sc_prototype_controls/dune
-100644 b65efbc84a4a3e5bcad279fe9eb59d01b50bbea4073b91c98efb5a2f644d31c9 memory/concrete/sc_reference_equality_controls/controls.ml
-100644 0eb6c108716d692409cea0ed97015ec898223c1e1af4725c9daf0ef51c16dc35 memory/concrete/sc_reference_equality_controls/dune
-100644 166ac07d06ade3a217cae3cbc8cd3e7ee4fa86ad9fca9fe0521b8a2dfd7ead81 memory/concrete/sc_sequencing_controls/controls.ml
-100644 0eb6c108716d692409cea0ed97015ec898223c1e1af4725c9daf0ef51c16dc35 memory/concrete/sc_sequencing_controls/dune
-100644 a564baaf7f1523ac6bc6642d2932fed1bfb9a67677ce60a71e65c2f32faae53a memory/concrete/sc_spawn_controls/controls.ml
-100644 0eb6c108716d692409cea0ed97015ec898223c1e1af4725c9daf0ef51c16dc35 memory/concrete/sc_spawn_controls/dune
-100644 680272c67e258f3e8ed535f6ed7663262657cf421ef239a9c8cd1ff068f48091 memory/concrete/sc_spawn_controls/sc_spawn_controls.lem
-100644 1c99afa43205eb271de32b2be78e5dfed2d403876d504c62d3a4741fa2ee6e03 memory/concrete/sc_spawn_controls/sc_spawn_controls.ml
-100644 c8e4754f1440e357660257f67a23c28338bc6b9063a3ee80d6d59880bc0fa35b memory/concrete/sc_synchronization_controls/controls.ml
-100644 0eb6c108716d692409cea0ed97015ec898223c1e1af4725c9daf0ef51c16dc35 memory/concrete/sc_synchronization_controls/dune
-100644 60b2e60a5f1cbd7eb1279c4798213122ba13964898d17b6e35cb5342d3b570da memory/concrete/sc_synchronization_controls/sc_atomic_source_controls.lem
-100644 24aaa1a104cb06ff30e6ff08d120eddd03282254795540162860072ce950f6d5 memory/concrete/sc_synchronization_controls/sc_atomic_source_controls.ml
-100644 a8b7c2c6b7132753155ab5c0858e512800880d937861e981529c22f3e74e3df6 memory/concrete/sc_synchronization_controls/sc_synchronization_controls.lem
-100644 4273de3fd37c98d9b323ce171f7f6fc3ed904c25bd7ef554848b424c8088f199 memory/concrete/sc_synchronization_controls/sc_synchronization_controls.ml
-100644 787a415feec81cb49b40211f0c32054fb5770bc8b599b599a21bc35dce0c0575 memory/concrete/sc_value_controls/controls.ml
-100644 0eb6c108716d692409cea0ed97015ec898223c1e1af4725c9daf0ef51c16dc35 memory/concrete/sc_value_controls/dune
-100644 f5bd0a2cf7a5e6ff864f4b35486fadfe5814a2691d28ca10d5cb2e8240874f4a memory/concrete/sc_varargs_controls/controls.ml
-100644 0eb6c108716d692409cea0ed97015ec898223c1e1af4725c9daf0ef51c16dc35 memory/concrete/sc_varargs_controls/dune
+100644 724c19b40a3d03d2ebc964159a06f873ad50d2d4da7462cb5c06fd652952a59b memory/concrete/sc_controls/controls.ml
+100644 b31df6c49a35893422c1363d9d5582892d9ff749c241f278530b5f8d9eaae941 memory/concrete/sc_controls/dune
+100644 758c0c3924dc59498c2afd51d1ec5dd74d1555e81acf24a7bbacee9e0e5015b2 memory/concrete/sc_controls/run_fs_boundary.ml
+100644 8de7bd58171a1aed53cccdf208f68901d1778a8fa04c3914736af251c79f2626 memory/concrete/sc_controls/run_sc_atomic_surface.ml
+100644 3e1e117a4cd119b1992cf54a3ed86ca19ac4d023ac64c2fbdd17c5c58246ebd5 memory/concrete/sc_controls/run_sc_atomic_update.ml
+100644 aac722b269545d08b3e5002e9b36dc984e00b5f099187bd88225798ed6a623fd memory/concrete/sc_controls/run_sc_global_binding.ml
+100644 c711b171f22be0d28b0a9963eb313aaf3059b28b3bc748870b45401d43e21567 memory/concrete/sc_controls/run_sc_graph.ml
+100644 7141da544ee5805bc075ddad6435cae285414be50f1b9497b90637cb883bf629 memory/concrete/sc_controls/run_sc_hb.ml
+100644 1ab45af2df4fa81b3f175f39a11040873ef4a9822ade0a4ed3b3e88df445b395 memory/concrete/sc_controls/run_sc_link_attribution.ml
+100644 db281934ef9840ec654f1a596c21f3fc0335fb24f4ccef27069a781b602b691c memory/concrete/sc_controls/run_sc_prototype.ml
+100644 8c34a6ff17f9ef4cdb1e8ff87e05108f145fc71134bde4b1951f0f137f865fe2 memory/concrete/sc_controls/run_sc_reference_equality.ml
+100644 e927f2a1f0a6317d06a460cc87cc00bcca78d58763424723f35c70bdb651f896 memory/concrete/sc_controls/run_sc_sequencing.ml
+100644 700ce6b0930d17e85b7ab1a254db64b2087a0dcab5f7435ed33127edc522fad7 memory/concrete/sc_controls/run_sc_spawn.ml
+100644 d47f62acd6767be763d52409c2d32f4b7b4254f7264be6891171e61bb2036b93 memory/concrete/sc_controls/run_sc_synchronization.ml
+100644 0b532d03a6c3e522e3b71fe68541ce9646d3982cce3f834d7c6d560127548234 memory/concrete/sc_controls/run_sc_value.ml
+100644 1862af33fc2434ecc0a1057f67c45ba308e94bb65621e7b0fd75c64307a97a51 memory/concrete/sc_controls/run_sc_varargs.ml
+100644 c0db7c53d8c55238270501ead282b713a817648274ef010041fb799c70be781b memory/concrete/sc_controls/sc_action_identity_controls.lem
+100644 a4f15e034c67ce246df54067f97448472d5d6457ce2d978f512ec3c8a47d58b8 memory/concrete/sc_controls/sc_action_identity_controls.ml
+100644 60b2e60a5f1cbd7eb1279c4798213122ba13964898d17b6e35cb5342d3b570da memory/concrete/sc_controls/sc_atomic_source_controls.lem
+100644 24aaa1a104cb06ff30e6ff08d120eddd03282254795540162860072ce950f6d5 memory/concrete/sc_controls/sc_atomic_source_controls.ml
+100644 d9b16014e507742a74b406b91ef5f611c72c8d7347118ded4b1143cf2eefe4b0 memory/concrete/sc_controls/sc_global_attribution_controls.lem
+100644 9469ad9aaa4085b2ec738c3bae07ccda0e9ba30e0fb38a9c45fcbc141c99ebc5 memory/concrete/sc_controls/sc_global_attribution_controls.ml
+100644 f7f62a9aa7022e5dffe5c7857b1a323d8c68daa171d35eef9a65e57e43f3bcc0 memory/concrete/sc_controls/sc_global_binding_controls.lem
+100644 b0522226ee44bd5d6ec2d8c2f05b67051f23fc47cfb6b8498383641ad2cd52f6 memory/concrete/sc_controls/sc_global_binding_controls.ml
+100644 009e9fbbb1df1eba6388d3c1bba5aa0e938d5a215d6235ed7ce3f712b715ce87 memory/concrete/sc_controls/sc_global_origin_controls.lem
+100644 5b7c44668872ce775617c3076fe79b011ed0e78144245117ca014119420cb61a memory/concrete/sc_controls/sc_global_origin_controls.ml
+100644 e3c33d9c7dba3b27a1688f937f23fa15ea99cc3b2aa06c775c70e9ca62f6bd77 memory/concrete/sc_controls/sc_hb_controls.lem
+100644 7487ca571d2800e7e7c93c9e1a36e42bc45ebcbfef9055362451d44b6eeebb18 memory/concrete/sc_controls/sc_hb_controls.ml
+100644 a60c70f5e596fe65c8ad3cf4e5807643336c346ea988f4fdf185d359e608a86e memory/concrete/sc_controls/sc_library_link_controls.lem
+100644 752352db662965287d52eae2f66980eb2d24e4d114e6a9fb4a6cc07decee7cdc memory/concrete/sc_controls/sc_library_link_controls.ml
+100644 7cfde58be14c987d611dd6b54ad1106b151aa38c06116e0f8f89aa4d96d4dd04 memory/concrete/sc_controls/sc_link_attribution_controls.lem
+100644 5203a0cb75330352bad0c3fd5c76e0c13a8d52ca2094b4b07779a73c6603a9a1 memory/concrete/sc_controls/sc_link_attribution_controls.ml
+100644 2a49681ad85fa19128efe16d040b95e3af2897a7fbd7804b800ac37e306160f0 memory/concrete/sc_controls/sc_parameter_read_controls.lem
+100644 0bd792893c8a7d3b74b9494651c10fd206f5536deb04da0a379e3d47b84cab73 memory/concrete/sc_controls/sc_parameter_read_controls.ml
+100644 680272c67e258f3e8ed535f6ed7663262657cf421ef239a9c8cd1ff068f48091 memory/concrete/sc_controls/sc_spawn_controls.lem
+100644 1c99afa43205eb271de32b2be78e5dfed2d403876d504c62d3a4741fa2ee6e03 memory/concrete/sc_controls/sc_spawn_controls.ml
+100644 a8b7c2c6b7132753155ab5c0858e512800880d937861e981529c22f3e74e3df6 memory/concrete/sc_controls/sc_synchronization_controls.lem
+100644 4273de3fd37c98d9b323ce171f7f6fc3ed904c25bd7ef554848b424c8088f199 memory/concrete/sc_controls/sc_synchronization_controls.ml
 100644 33c3b0e4c8df34c3a4cad3ffce8f08cbfd483a20811aaaa485188fad3fcd64b7 memory/symbolic/impl_mem.ml
 100644 1d9fe0cbc7af7bfc88808d8f15068133907ec9fd553ac44f45216c0a019caf7b memory/vip/impl_mem.ml
 100644 4ea44bb0710cf2a2ebe448974705289c36906d5a3b321c74da3cf6a92fda7859 ocaml_frontend/dune
@@ -840,21 +403,25 @@ c2008a0bb34b578d774f2816db605a7fa67a2e890eddd7f5052a02c521a336ff utils.ml
 ced96f85b7bb0338e1c55d53443f424426d9b7f4634cd7a69a872649461287c5 atomic_order.ml
 d1c5c6cfa427a343df9791195199ee0bbe32f01a234b8a645491e8c764881a82 nd_observe.ml
 79c542c3c35d5021f07b990f68bef1fe1d57272ed9ac80bcbf43a816a765ebe0 sc_access_group.ml
-80d69ad3b4ff965ea4e7851d60d3ac1fd1a9bf4d5588747b2847cdc332c8d23e sc_access_sequencing.ml
+102ddb4bd1fdd930123623801b8c93e6f5a2af2ab3ef4f15aea5814e9f04d03c sc_access_sequencing.ml
 e470602cb09cc2ad16c7e552d749e70bc0727dea23d51d5b947115beea70d583 sc_action_identity.ml
 84faac2644c716a9c1a8994d83e68b3bf78e148b99e609723001603a0f44c5b1 sc_atomic_sources.ml
 3f82df57ab14d355589d7ea975135aa4a13c2ae29e6f81518b9e10e8a570b582 sc_byte_key.ml
 5b85962570b452da9e6ee17fea72b7eef4680fd04bdcfa183fce92f7add2bbb3 sc_byte_sources.ml
 06fada4bf4047a11876f50e851babce9d33f9bb1322c2ca46c985f7efe9d0f9f sc_call_context.ml
 e962fe47fb70ff4ca7ada6e9370d313bffb5bd3a575c6f15aeaea4f4cc76c11d sc_call_scope.ml
+dbaf5fdbcd78d7ea0a4a89b977ea18877ddc7731665e962e197551cbded63959 sc_definition_sources.ml
+27611fb5bbd5ea9a6129a1c7f220aa94bed29eae159300e870f0e6469e18773e sc_global_attribution.ml
 0ef99f45e842a2a2b588d97ca23ceda0fea4db7decf2fd3c95a801b5ec511b86 sc_global_bindings.ml
+dee4ff52972ebd5a92029e5a61640492c1fe8e3e8847f1d1cb64002c64cbd6c4 sc_global_origins.ml
 7aa9bd9f977137fbe5f2ac0bd41c4ae8a8b033815ac6419a0e61915761a76b52 sc_graph.ml
 cd0792ba90162facd289f1aae271694929e04d7b4f75c650e5eaf318ac991ac8 sc_happens_before.ml
+6b492e80f333ed4eafb0d9e9d855b12713701346c8926edbe0873d3bc7d185a1 sc_link_attribution.ml
 6804e12a7a5373bbe28eed57a0ab4bb3e5a09db6aa1d902fc8bd6f1ae8cba0da sc_order.ml
-94d9591b41e768cfb13c9384cd7566e07bfc988a301e675850b3e69c985f6c8e sc_prefix_obligations.ml
+9a3ea739bc66e8c9836df67f057833ba0c9407c8ae0a4aa93fd055e4fdb2848c sc_parameter_reads.ml
+643a1ab24f9e74012f6399e34539367692fb707cf41021a94453ae8442e2a48f sc_prefix_obligations.ml
 f74deee4c92cab4e812bef9422ba4dff03053f179160bc4c3d8fabaa47d5ddfe sc_reference.ml
 5382432c6d3624ffba4794113697392d706b414439047c7ad0eddba24d747e96 sc_reference_aux.ml
-425f236e0ff87e67ebb87a09fb75b63460d551982a83ad1c278e9081f674c2a3 sc_reference_sequencing.ml
 4d1ea8e50e0c86bc0cb97c87d84608a359502d906c842cbc5260dc12ce25a7b0 sc_representation.ml
 cba5d2f9f698c14a3797c2b7d5b156c8b9c11177b686eeccd9b9ff7fc698b3cc sc_runtime.ml
 86c02195f4d9a064204aae0495f759ae86b890c022d7982a81368ba11b9d68d8 sc_scopes.ml

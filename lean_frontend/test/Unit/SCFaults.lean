@@ -1,6 +1,7 @@
 import Unit.SCProtocolSupport
-import CerbSCFaults
+import CerbSCOperational
 
+namespace SCUnit.SCFaults
 open SCProtocolControls
 
 private def diagnosticCases : List (sc_fault × String × sc_fault_category) := [
@@ -72,7 +73,7 @@ private def controls (fuel : Nat) : List (String × Bool) := Id.run do
             !sc.sc_effects.isEmpty
         | _, _ => false)]
 
-def main (args : List String) : IO UInt32 := do
+def runTests (args : List String) : IO UInt32 := do
   let [arg] := args | return 2
   let some fuel := arg.toNat? | return 2
   let mut good := true
@@ -80,3 +81,5 @@ def main (args : List String) : IO UInt32 := do
     IO.println s!"{label}: {pass}"
     good := good && pass
   return if good then 0 else 1
+
+end SCUnit.SCFaults

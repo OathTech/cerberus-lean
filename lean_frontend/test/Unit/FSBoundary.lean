@@ -1,7 +1,8 @@
 import Unit.SCProtocolSupport
-import CerbFSProofs
-import CerbFSDriverProofs
+import CerbFS
+import CerbSCOperational
 
+namespace SCUnit.FSBoundary
 open SCProtocolControls CerbSCOperational
 
 private def thread : thread_state := {
@@ -113,10 +114,16 @@ private def controls [LemFuel] : IO (List (String × Bool)) := do
     ("exhaustion stays an explicit outcome", match CerbND.runNDFuel 0 alternatives state with
       | [(Killed _ reason,_,_)] => reason == CerbND.fuelExhaustedKill | _ => false)]
 
-def main (args : List String) : IO UInt32 := do
+def runTests (args : List String) : IO UInt32 := do
   let [argument] := args | return 2
   let some fuel := argument.toNat? | return 2
   let rows ← @controls ⟨fuel⟩
   for (label,passed) in rows do
     IO.println (label ++ ": " ++ toString passed)
   return if rows.all (·.2) then 0 else 1
+
+-- Generated FS comparisons must reach the named opaque boundary.
+example (left right : CerbFS.FsState) :
+    compare left right = CerbFS.compareState left right := rfl
+
+end SCUnit.FSBoundary

@@ -1,7 +1,8 @@
 import Driver
-import CerbSCSequencing
+import Sc_reference
+import Sc_reference_aux
+import Sc_access_sequencing
 import Sc_prefix_obligations
-
 set_option autoImplicit true
 namespace CerbSCPrefixObligations
 private theorem if_preserves (condition : Bool) (previous later : List sc_prefix_obligation)
@@ -32,11 +33,10 @@ theorem new_obligation (state : sc_state) (previous : List sc_prefix_obligation)
     (h : obligation ∈ sc_accumulate_sequence_obligations state previous)
     (old : obligation ∉ previous) :
     ∃ pairs, obligation = SC_obligation_access_sequencing (sc_prefix_graph state) pairs ∧
-      ∀ pair ∈ pairs, pair ∈ sc_access_sequence_witnesses
+      ∀ pair ∈ pairs, pair ∈ sc_access_sequence_witnesses_reusing_graph
         (sc_prefix_graph state) state.sc_effects.reverse := by
   unfold sc_accumulate_sequence_obligations at h
   dsimp only at h
-  simp only [sc_prefix_graph, CerbSCAccessSequencing.query_eq] at h ⊢
   split at h
   · exact False.elim (old h)
   · split at h

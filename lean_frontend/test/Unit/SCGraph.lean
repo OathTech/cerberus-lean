@@ -1,6 +1,7 @@
-import CerbSCGraph
+import Sc_graph
 import Unit.SCProtocolSupport
 
+namespace SCUnit.SCGraph
 open Lem_Basic_classes
 
 private def annotation (sb : List (Nat × Nat)) (asw dd : List Nat) : core_run_annotation :=
@@ -93,7 +94,7 @@ private def integration (fuel : Nat) : List (String × Bool) :=
       results := results ++ [(label,valid && if label == "actual fault prefix" then fault && !active else active && !fault)]
     return results
 
-def main (args : List String) : IO UInt32 := do
+def runTests (args : List String) : IO UInt32 := do
   let [arg] := args | return 2
   let some fuel := arg.toNat? | return 2
   let mut good := true
@@ -101,3 +102,5 @@ def main (args : List String) : IO UInt32 := do
     IO.println s!"{label}: {ok}"
     good := good && ok
   return if good then 0 else 1
+
+end SCUnit.SCGraph

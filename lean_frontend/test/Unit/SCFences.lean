@@ -1,5 +1,7 @@
 import Unit.SCProtocolSupport
 
+namespace SCUnit.SCFences
+
 open Lem_Basic_classes Lem_Set SCProtocolControls
 
 def fenceExpr (order : memory_order) : expr core_run_annotation :=
@@ -26,7 +28,7 @@ def checkWeakOrder (fuel : Nat) (order : memory_order) (make : memory_order → 
         sc_fault_message msg == "SC model excludes the requested memory order"
     | _ => false)
 
-def main (args : List String) : IO UInt32 := do
+def runTests (args : List String) : IO UInt32 := do
   let [arg] := args | return 2
   let some fuel := arg.toNat? | return 2
   let mut good := true
@@ -72,3 +74,5 @@ def main (args : List String) : IO UInt32 := do
     IO.println ("five weak orders refused before " ++ name ++ " effects: pass=" ++ toString passed)
     good := passed && good
   return if good then 0 else 1
+
+end SCUnit.SCFences
