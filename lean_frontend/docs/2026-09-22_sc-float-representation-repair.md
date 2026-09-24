@@ -1,8 +1,14 @@
 # SC CAS exposed a floating-point representation defect
 
+**Historical technical record.** Current work order, status and acceptance are
+owned solely by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+Old next-step, freeze, proof-count and campaign instructions below are retired.
+Unique source findings are retained only until their C1 extraction.
+
+
 [AGENT, 2026-09-22] Work in `arc/sc-prototype`, after protocol commit
 `06681abd3`. This is an inherited Lean port defect, not the upstream padding
-model gap covered by the [user's fail-closed decision](2026-09-21_sc-upstream-gap-policy.md).
+model gap covered by the [user's fail-closed decision](2026-09-22_sc-boundary-register.md#fail-closed-policy).
 The repair is promoted and passes native component checks and Tier A. The full
 run exposed a new fixture's dependence on NaN operand selection, discussed
 below; fresh integration after that fixture refinement remains outstanding.

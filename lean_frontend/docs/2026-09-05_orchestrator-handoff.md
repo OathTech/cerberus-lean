@@ -22,9 +22,8 @@ The first audit's eleven findings have implemented and tested repairs.
 The fresh document review found one material overclaim and three minor
 issues, now corrected. Its major finding means the user's conditional merge
 authorization did not apply; a renewed landing decision remains pending.
-Discuss the proposed
-[SC integration charter](2026-09-06_concurrency-integration-charter.md)
-after reviewing this candidate. The remaining text is the earlier assessment
+Current SC work follows the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+The remaining text is the earlier assessment
 handoff; its old execution queue is superseded. No customer adoption or
 legacy-run operation is implied.
 

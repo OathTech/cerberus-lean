@@ -1,9 +1,9 @@
 # SC prototype: operational contract and reference obligations
 
-2026-09-21, [AGENT]. Implementation contract under the
-[execution charter](2026-09-21_charter-sc-prototype.md). This document separates
-construction decisions from correspondence still to establish. It is not a
-claim that the initial tree implements SC.
+Technical specification supporting the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+The roadmap owns current work, checkpoints and validation cadence. This file
+owns semantic construction and reference obligations; it does not assert that
+the public SC path is complete.
 
 ## Reference identity and scope
 
@@ -100,7 +100,7 @@ location. The scalar Cmm `rf` needs a matching whole-value writer; it cannot be
 applied universally to representation operations. The overlap adapter has
 unimplemented footprint/value operations, and its race predicate still uses
 equal locations. Those facts are reference limitations, not implemented runtime
-guards. The user's 2026-09-22 [general policy](2026-09-21_sc-upstream-gap-policy.md)
+guards. The user's 2026-09-22 [general policy](2026-09-22_sc-boundary-register.md#fail-closed-policy)
 requires explicit unsupported outcomes when an evidenced unresolved composition
 is needed, retaining the pinned reference. The
 [boundary register](2026-09-22_sc-boundary-register.md) distinguishes those cases

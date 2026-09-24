@@ -1,21 +1,47 @@
 # SC semantic boundaries and implementation obligations
 
-2026-09-22. Live register under the
-[user's general fail-closed policy](2026-09-21_sc-upstream-gap-policy.md).
-The original production audit was at `3864dbb1f438d5efecdd10748c8d3bf1a05c9e9c`.
-Subsequent source-graph, [atomic-update](2026-09-22_sc-atomic-update-review.md)
-and [atomic-interface validation](2026-09-22_sc-atomic-surface-review.md)
-are incorporated below, with the September 23 reference findings. Unimplemented
-guards remain labelled as such.
-Reference identities remain the charter's base `5407597d9` and pristine
-Cerberus `b9aeedcb4dd438763b0eef7f95ac19e93875d7de`; no replacement mixed-size
-reference has been adopted. Historical evidence records proposals and earlier
-statuses; this register records the subsequent user decision.
+Live technical register supporting the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+The roadmap owns work order, acceptance and current checkpoint status. This
+register owns individual G/P/D cases; evidence counts below describe their dated
+checks, not completion of the whole SC feature.
 
-The register covers known SC boundary cases from the effect inventory, reference
-follow-up and typed-fault audit. It is not a claim that every possible upstream
-omission has been discovered. Add new cases before treating their refusal as
-intentional coverage. Never describe a proposed guard as implemented.
+## Fail-closed policy
+
+[USER, 2026-09-21]:
+
+> "This feels like a case where we should 'fail-closed' and match the Cerberus-upstream situation, until they have resolved this issue."
+
+[USER, 2026-09-22]:
+
+> "Agree, let's fail closed in general when we have such boundary cases, but make sure to document all such cases"
+
+Retain pinned Cerberus/Cmm. Reaching an evidenced unresolved interpretation
+produces a distinct unsupported/model-gap outcome, preserving completed effects,
+failure-time state, independent faults and other alternatives. Do not invent
+padding comparisons, mixed-size or library locking semantics. The C17/DR431
+representation-comparison correction is settled; its unspecified-byte composition
+with the pinned object model is the initial G01 boundary.
+
+A gap is not C UB, false CAS, normal termination, an impossible transition or an
+empty behavior set. Reasoning clients cannot discard those paths and infer
+whole-program safety/support. A theorem may establish that a stated input avoids
+a gap; its hypotheses must not become executable language restrictions. Preserve
+the absence of a supported result, not incidental host assertions or backtraces
+as C semantics. A rejected candidate must not erase independently known faults.
+
+Register a stable case ID before treating a refusal as intentional coverage:
+precise reached trigger, pinned source/ISO evidence, minimal reproducer and
+non-refusal control, retained effects/state, client consequence, actual producer
+status and resolution criterion. Revisit with a pinned upstream resolution.
+Available-guidance port work, proof difficulty, protocol defects, host failures
+and weak orders outside SC are distinct. None licenses blanket refusal of
+structs, character accesses, dynamic allocation or library calls. The scalar
+checker's smaller domain alone does not justify rejecting ordered byte accesses.
+
+The register covers known cases, not all possible upstream omissions. Proposed
+guards are not implemented guards. Original source audit: `3864dbb1f`; reference
+base `5407597d9`, pristine `b9aeedcb4dd438763b0eef7f95ac19e93875d7de`.
+The selected reference and current development status are in the roadmap.
 
 ## Evidenced unresolved semantic boundaries
 

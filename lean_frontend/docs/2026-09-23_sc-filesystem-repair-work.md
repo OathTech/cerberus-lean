@@ -1,5 +1,11 @@
 # Filesystem repair for the SC stream adapter: validated component
 
+**Historical technical record.** Current work order, status and acceptance are
+owned solely by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+Old next-step, freeze, proof-count and campaign instructions below are retired.
+Unique source findings are retained only until their C1 extraction.
+
+
 **Current status:** this component passes all 39 full integration commands and
 the mandatory 864-case three-engine report with its one reviewed directory delta. See the final sections for
 the thirteen production laws, retained evidence and SC-D13 instrument correction.

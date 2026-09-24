@@ -1,9 +1,15 @@
 # SC prototype: effect inventory at the implementation base
 
-2026-09-21, [AGENT]. Sources are at `5407597d9eeba0259d65b728e86a860ad4614ab3`;
-line numbers below describe that tree. This is a source-path inventory, not a
-claim that concurrency instrumentation exists. Every instrumentation row starts
-**unimplemented**. The progress record tracks changes to this status.
+This is a coverage/source specification, not a work queue. Use the
+[SC execution roadmap](2026-09-21_charter-sc-prototype.md) for current status and
+execution order. The original line references are from September 21; each row
+states an obligation, not a claim that its producer/checker is still unimplemented.
+
+
+The original source inventory is at `5407597d9eeba0259d65b728e86a860ad4614ab3`;
+line numbers below describe that tree. Primitive observation and much execution
+machinery now exist. Their complete connection to public SC checking remains
+open under roadmap C2/C3. This table does not maintain a second status ledger.
 
 ## Common obligations
 
@@ -23,13 +29,13 @@ nodes as well as success/failure. Extracting effects only in the successful
 continuation would lose effects before a fault. State differences alone would
 lose reads and equal-value stores.
 
-The proposed observation boundary records primitive completed accesses and
+The implemented observation boundary records primitive completed accesses and
 lifetime changes at the memory implementation, with actor and source-order
 context supplied by Core/driver. It must be passive when disabled, must not
 duplicate byte reconstruction, and must not add scheduling interruptions inside
 an existing request. The concurrent justification for grouping helper accesses
 is a separate obligation from sequential effect erasure. Source order must be
-carried to helper requests, which currently lack the needed annotations.
+carried through helper requests and consumed by the completed checker.
 
 In the table, `D`, `F`, `M`, and `L` mean `frontend/model/driver.lem`,
 `frontend/model/formatted.lem`, `memory/concrete/impl_mem.ml`, and
@@ -47,7 +53,7 @@ representation, dynamic allocation, or hidden helper accesses.
 | E04 `D:682`, `M:1296`, `L:2210` create object | Allocation plus unspecified representation or supplied initialization, readonly status and function-pointer encoding; returns pointer | Optional initialization bypasses `store`; distinguish unspecified representation from an initialized value; preserve allocator changes on later failure | Creation and initialized bytes at their source; strings, const objects, temporaries, atomic initialization |
 | E05 `D:739`, `M:1472`, `L:2272` kill | Lifetime end and allocation removal/dead list; returns unit. Native pointer zapping is behind a switch disabled in the matched profile | Checked static/dynamic deallocation, preserved provenance rules; zapping is model metadata, not an invented source-level write by every affected thread | Lifetime end plus explicit metadata classification; invalid free, stale pointer, copied pointer, reuse |
 | E06 `D:715` ordinary `SeqRMW` | Checked load, Core calculation, checked store; returns old/new values and updates trace | This is ordinary C increment/update, not an atomic RMW. Preserve exclusion/source-sequencing rules. Failed calculation/store retains the read and preceding state | E01/E02 with distinct event ids and correct continuation annotations; `x++ + y`, `x++ + x`, failed update |
-| E07 future atomic RMW/CAS requests | Object read and possible write; CAS also reads expected and may update expected | Strong/weak mismatch and spurious failure; object RMW indivisibility is distinct from expected-object effects; validate success/failure orders and operand evaluation | E01/E02 grouped according to reference action; exchange, CAS equal/unequal/spurious, effectful arguments |
+| E07 atomic RMW/CAS requests | Object read and possible write; CAS also reads expected and may update expected | Strong/weak mismatch and spurious failure; object RMW indivisibility is distinct from expected-object effects; validate success/failure orders and operand evaluation | E01/E02 grouped according to reference action; exchange, CAS equal/unequal/spurious, effectful arguments |
 | E08 `D:816`, `M:2643`, `L:2883` memcpy | Forward checked unsigned-char load/store pairs; returns destination | Current request runs the existing loop without scheduler yields. Preserve partial prefix if a later read/write fails; preserve upstream overlap omission as an upstream issue | Primitive byte effects, not final diff; copy/read, copy race, unchanged destination bytes, mid-copy fault |
 | E09 `D:821`, `M:2657`, `L:2918` memcmp | Reads the entire first range and then the entire second; returns comparison integer | Do not replace with an early-exit comparison. Unspecified bytes/faults follow current checks; first difference does not remove later reads | E01 for all actual reads; race beyond first unequal byte, second-buffer fault |
 | E10 `D:830`, `M:2676`, `L:2945` realloc | Validate old object, allocate, copy `min(old,new)` bytes, kill old, return new; null path allocates | Preserve helper order and completed allocation/copy on failure; do not invent rollback or shortcut lifetime events | E03/E05/E08; grow/shrink/null, failure during copy, old-pointer use |

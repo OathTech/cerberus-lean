@@ -1,5 +1,11 @@
 # SC atomic interfaces and source-location transport — validated slice
 
+**Historical technical record.** Current work order, status and acceptance are
+owned solely by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+Old next-step, freeze, proof-count and campaign instructions below are retired.
+Unique source findings are retained only until their C1 extraction.
+
+
 2026-09-22. Parent efb39628c3355376826b65539780b7d3eaf4e18e.
 Shared Lem generation and native/Lean compilation pass. Eighteen paired Core
 control groups and seven kernel laws now pass. The first 134 native C journals

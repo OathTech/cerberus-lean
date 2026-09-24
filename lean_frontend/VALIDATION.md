@@ -29,6 +29,13 @@ explicitly inventoried; they are not evidence of a current pass. See
 [the observation contract](docs/2026-09-05_observation-contract.md)
 for sequence/set projections and the printer's observational limits.
 
+For the SC prototype, the [execution roadmap](docs/2026-09-21_charter-sc-prototype.md#validation-cadence-and-working-rules)
+owns development/checkpoint cadence following the user's September 24 pruning
+instruction. It replaces per-helper full campaigns and permanent duplicate
+capture retention. Complete-observation, reference-fidelity and failure-integrity
+requirements remain; the full candidate release and three-engine report run at
+final acceptance. Existing script dispatch is consolidated during roadmap C1.
+
 ## 0. The aims and the rule
 
 The four aims, in priority order — [USER 2026-09-03], verbatim:

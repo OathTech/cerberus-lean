@@ -19,3 +19,10 @@ in `lean_frontend/`. See [`lean_frontend/CLAUDE.md`](lean_frontend/CLAUDE.md)
 for build instructions, architecture, and development guide;
 [`lean_frontend/VALIDATION.md`](lean_frontend/VALIDATION.md) for the
 differential-validation trust story.
+
+## Active SC work
+
+For `arc/sc-prototype`, start with the [SC execution roadmap](lean_frontend/docs/2026-09-21_charter-sc-prototype.md).
+It owns scope, pruning, work order, validation cadence, status and resumption.
+Older concurrency charters, component notes and scratch plans are historical;
+do not restart their queues or add their old gates to the roadmap.

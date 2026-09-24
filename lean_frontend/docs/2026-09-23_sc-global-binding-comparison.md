@@ -1,5 +1,11 @@
 # Global binding comparison and Core text transport
 
+**Historical technical record.** Current work order, status and acceptance are
+owned solely by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+Old next-step, freeze, proof-count and campaign instructions below are retired.
+Unique source findings are retained only until their C1 extraction.
+
+
 [AGENT, September 23] development evidence for the
 [global-binding producer](2026-09-23_sc-global-bindings-work.md). SC-D16 is a
 comparison/transport limitation, not a new runtime refusal or an ISO ambiguity.

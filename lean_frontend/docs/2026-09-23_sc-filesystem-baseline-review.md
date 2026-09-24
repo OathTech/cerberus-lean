@@ -1,5 +1,11 @@
 # Filesystem boundary: one-row instrument update
 
+**Historical technical record.** Current work order, status and acceptance are
+owned solely by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+Old next-step, freeze, proof-count and campaign instructions below are retired.
+Unique source findings are retained only until their C1 extraction.
+
+
 [AGENT, 2026-09-23] The checked filesystem interface changes exactly the
 `zd-z2f04-closedir` observation in the immaculate corpus. This record justifies
 the explicit instrument update; it does not certify directory support.

@@ -1,5 +1,11 @@
 # Concurrency: repository assessment and research direction
 
+**Historical technical record.** Current work order, status and acceptance are
+owned solely by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+Old next-step, freeze, proof-count and campaign instructions below are retired.
+Unique source findings are retained only until their C1 extraction.
+
+
 2026-09-20, Codex. **Status: research assessment and [AGENT] recommendations,
 not an implementation charter or an adoption decision.** The current user asks
 for an assessment against three goals: faithfulness to ISO C, faithfulness to
@@ -8,9 +14,9 @@ upstream Cerberus, and support for reasoning, especially in `cerberus-sl`.
 **Scope clarification [USER, 2026-09-20]:** this repository captures Cerberus's
 operational semantics and enables reasoning in the customer. Program logic,
 Iris integration, and application proofs belong in the customer. Provider
-semantic definitions and laws remain in scope. The revised
-[scoped proposal](2026-09-20_concurrency-scoped-proposal.md) applies that division
-and distinguishes implementation coverage from theorem/test restrictions.
+semantic definitions and laws remain in scope. The
+[current SC execution roadmap](2026-09-21_charter-sc-prototype.md) now owns
+implementation scope and distinguishes it from theorem/test restrictions.
 
 **Overriding constraint [USER, 2026-09-20]:** fidelity takes precedence;
 Cerberus must not be restricted for reasoning reasons. A theorem can have a
@@ -46,7 +52,7 @@ select different permitted behaviors to make a particular logic convenient.
 
 The legacy feature has 13 commits over `31eba718e`; its repaired validation
 companion adds four. Mainline has advanced 196 commits from that base. The
-[September 19 pause note](2026-09-19_concurrency-pause-note.md) preserves those
+retired September 19 pause note preserves those
 branches as records and calls for selective salvage on a new branch.
 
 This pass read source, branch history, design records, the customer's actual

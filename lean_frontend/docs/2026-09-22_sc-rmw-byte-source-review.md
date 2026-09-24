@@ -1,5 +1,11 @@
 # Ordinary RMW scheduling and physical byte-source accounting
 
+**Historical technical record.** Current work order, status and acceptance are
+owned solely by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+Old next-step, freeze, proof-count and campaign instructions below are retired.
+Unique source findings are retained only until their C1 extraction.
+
+
 This follows the validated CAS/float checkpoint `fb72dd9fb` under the SC
 prototype charter. It is a current implementation slice, not the completed
 SC checker or a whole-program definedness claim. Both production builds, targeted native controls, all 39 Tier A/B lanes and the

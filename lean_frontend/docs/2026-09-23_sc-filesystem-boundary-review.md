@@ -1,5 +1,11 @@
 # SC-D07 filesystem findings and required repairs
 
+**Historical technical record.** Current work order, status and acceptance are
+owned solely by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+Old next-step, freeze, proof-count and campaign instructions below are retired.
+Unique source findings are retained only until their C1 extraction.
+
+
 [AGENT, September 23] Direct calls to the pinned SibylFS wrapper and production
 CerbFS expose inherited port defects while preparing actual SC stream controls.
 The upstream semantics is available. These are required repairs, not new ISO

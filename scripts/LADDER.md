@@ -1,5 +1,13 @@
 # The test ladder (arc-6 S4; decision [AGENT:S4], see the arc-6 decision log)
 
+**SC prototype cadence (2026-09-24):** follow the
+[SC execution roadmap](../lean_frontend/docs/2026-09-21_charter-sc-prototype.md#validation-cadence-and-working-rules).
+Its targeted development checks and single final candidate boundary supersede
+per-helper/per-slice campaigns for this work. This catalogue still names the
+existing release lanes; C1 removes duplicate dispatch and redundant selftests.
+No runtime/test script is changed by this documentation update.
+
+
 Three documented tiers. "The fast ladder" and "the slow ladder" below are
 the normative meanings of those phrases in charters, decision logs, and
 merge checklists from arc 6 on. Every command runs from the repo root;

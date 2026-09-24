@@ -143,13 +143,9 @@ customer edit or re-pin was sent/performed as part of this work.
 
 ## Recommended next charter and decisions
 
-Prefer [scoped SC integration](2026-09-06_concurrency-integration-charter.md)
-next. The repaired instruments now support assessing it. Require a checked
-access domain, mixed-size/SeqRMW repair or attributed refusal, the accepted
-nonvacuous observer-agreement theorem, preserved S7 behavior and full
-current-mainline rebase. If a concrete strict-failure/state path blocks that
-theorem, authorize a bounded failure slice first; do not weaken the theorem
-or substitute an always-refusing fragment.
+The old SC recommendation is superseded by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+It supplies the current scope, work order and acceptance criteria. This delivery
+record retains historical validation results, not a second SC plan.
 
 For the failure design, recommend a typed strict-result translation before
 erasure, first over the demonstrated discard mechanisms and one real

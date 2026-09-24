@@ -5,22 +5,19 @@ records. (Verification-layer work is out of scope for this branch —
 the semantics is the product here; a verification layer consumes it
 downstream.)
 
-The current work order is the [master plan](docs/2026-09-05_master-plan.md).
-The validation-foundations [delivery record](docs/2026-09-06_validation-foundations-delivery.md)
-closes its G1–G7 implementation/evidence goals. The next proposed arc is
-[scoped SC integration](docs/2026-09-06_concurrency-integration-charter.md);
-its adoption and landing require discussion. The current
-[failure census](docs/2026-09-06_failure-census-and-correspondence.md)
-supersedes older sampled counts. The legacy csmith run remains independently
-owned and hands off; this roadmap does not authorize operating it.
+**Active SC work:** the [SC execution roadmap](docs/2026-09-21_charter-sc-prototype.md)
+is the single plan, current status and resumption point for `arc/sc-prototype`.
+It incorporates the September 24 pruning decision and runs through actual public
+C-to-SC integration, full agreed coverage and final acceptance. Next checkpoint:
+behavior-preserving pruning. The feature is not yet delivered.
+
+The older [master plan](docs/2026-09-05_master-plan.md) remains context for other
+work; its old SC proposals and landing obligations are superseded by that roadmap.
+The legacy csmith run remains independently owned; this backlog does not
+authorize operating it.
 
 ## Queued larger work
 
-- **Concurrency (cmm) instantiation** — concurrency is currently
-  stubbed on mainline. The owned prototype has S0–S7 SC support and a
-  repaired litmus instrument; integration still requires mixed-size/SeqRMW
-  repairs or enforced restrictions, the provider agreement theorem, current
-  mainline rebase/compatibility gates, audit and an explicit landing discussion.
 - **A-road polish basket** — backend/semantics cleanups (pure-render
   emission split, remaining audit L-slice gaps, ott finish);
   itemized with prices in

@@ -1,5 +1,12 @@
 # Master plan — cerberus-lean and lem-lean
 
+**SC work superseded September 24, 2026:** the
+[SC execution roadmap](2026-09-21_charter-sc-prototype.md) owns all current SC
+scope, order, pruning, acceptance and status. Earlier revisions below are
+historical; their SC proposal/rebase/theorem queues are not additional requirements.
+Other project work retains its own authority and status.
+
+
 **Revision 10, 2026-09-16 [AGENT orchestrator-directed].** Requested [USER
 2026-09-16]: "Great, let's update the master plan based on the audit result and
 recent work". Since revision 9 the mainline moved `a3b5d169d` → `15907f32b`
@@ -64,9 +71,8 @@ reviewability after the relevant semantics and interfaces settle.
 The adopted first execution charter is
 [Validation foundations](2026-09-05_validation-foundations-charter.md).
 Its [original delivery record](2026-09-06_validation-foundations-delivery.md)
-supplies the historical acceptance table and measurements. The [scoped concurrency integration charter](2026-09-06_concurrency-integration-charter.md)
-remains a PROPOSAL, sequenced at §3 step 8 (after the stable-profile claim)
-per [USER 2026-09-06].
+supplies the historical acceptance table and measurements. Current SC work follows the [SC execution roadmap](2026-09-21_charter-sc-prototype.md),
+which replaces this document's earlier concurrency proposals and requirements.
 The first audit, repairing-agent second pass and fresh document review are
 complete. The failure design, next charter and landing remain decisions for
 the end-of-charter discussion. The latest conditional landing authorization
@@ -308,7 +314,7 @@ the fork content pins (`[source-content]`), the release runner
 | 5 | Bytes (L4) + F7 instances + the fuel residue | Lem + Cerberus | F7: hash-minted symbols, enum registry, digest; the eight fuel-residue rows (§1). Submission track in parallel. |
 | 6 | Consumer adoption exit | refined-cerberus's agent + providers | refined-cerberus re-pin + proofs through against the current interface (F9 is a release exit, [USER 2026-09-05], §0). |
 | 7 | Risk map REPEAT → fresh-noodler exit test → stable-profile claim | Cerberus + Lem | Instruments and semantics settled; §8 exits met. |
-| 8 | ONLY THEN: scoped SC concurrency integration | Cerberus | The [charter](2026-09-06_concurrency-integration-charter.md) stays a PROPOSAL until step 7 is met; the merge comes through the orchestrator's pre-merge audit + per-merge sign-off; `arc/validation-foundations-concurrency` is portable commits for this step, not a landing candidate. §5 below is the exit checklist when the step is reached. |
+| 8 | SC development | Cerberus | Superseded by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md); no additional queue or theorem requirement here. |
 | Submission track (L7) | Declare consolidation, manual and patch series | Lem + Cerberus | In parallel with steps 5–7; failure vocabulary from step 2. |
 
 **Current handoff (revision 9, updated 2026-09-07):** the validation-
@@ -538,45 +544,13 @@ lane's reviewed-diagnostic pins hash backtrace line numbers, so a `.lem` body
 change can move one — a landing-time re-pin by the orchestrator, not a defect
 (TODO asks whether to normalise them).
 
-## 5. Concurrency repair and landing
+## 5. SC development
 
-Phase 0 landing is a near-term deliverable. The S7 fixes and corpus are
-valuable but do not replace these exit checks:
-
-1. Prepare an integration copy at an identified current mainline. Preserve
-   C4 hypotheses/P0 instruments, S7's initialization ordering and original
-   `apply_tree` bodies with measure proofs. Resolve tray draft 36's collision
-   and refresh manifests/census claims. Do not overwrite its owner's tree.
-2. Preserve the delivered CR-1 repair: capture both original engine statuses,
-   including the sequential refusal leg. The private instrument series closes
-   the negated-command status loss and ignored oracle status.
-   The [assessment probe](2026-09-05_litmus-exit-status-probe.py) must continue
-   rejecting all four plants after integration. Preserve the 26 integrated
-   plants and full observation parity alongside reference outcome sets.
-3. Repair or enforce a narrower checked domain for mixed-size overlapping
-   accesses and SeqRMW sequencing. The mixed-size case is a recorded quiet
-   wrong answer in the advertised fragment; a Phase-1 TODO does not close it.
-   Test dynamic accesses as well as the syntactic memory-order scan.
-4. Discharge the accepted consumer agreement obligation: verdict observations
-   under `epar_free`, `sc_fragment_ok`, valid initial state, appropriate fuel
-   conditions and any necessary domain restrictions. Prove single-thread SC
-   consistency and silent race checks. Literal state equality is false; the
-   six identity lemmas do not suffice. This is provider work. Any proposed
-   experimental landing without that guarantee needs an explicit end-of-work
-   decision, not silent transfer of the obligation to refined-cerberus.
-5. Audit compatibility and the whole final delta. Default mode now refuses
-   parallel spawn; compare-exchange gains sequential behavior. Name and test
-   these intentional changes. Shared semantic changes follow the approved
-   concurrency charter; Lean-plumbing-only body rewrites remain excluded.
-6. Regenerate and validate the exact candidate: cache-disabled rebuilds where
-   required, full Tier A+B, litmus checks/plants, applicable candidate reporting
-   evidence and consumer-shaped proofs. Bring the candidate, review findings
-   and consumer manifest to the operator for the landing discussion; ff-only.
-
-Integration preparation can proceed once the relevant instruments are ready.
-Do not make general failure lifting or byte migration dependencies without
-concrete evidence. An SC landing does not itself declare the entire product
-stable. Weak memory, symbolic reads, RC11 and LKMM remain future scoped work.
+Use the [SC execution roadmap](2026-09-21_charter-sc-prototype.md). It replaces
+the retired landing/proposal plan, enforced-fragment approach and additional
+proof/checkpoint obligations previously in this section. Completion means a
+faithful actual C/Core SC path with the agreed coverage and explicit evidenced
+boundaries. Merge/push and customer adoption remain separate actions.
 
 ## 6. Consumer, performance and upstream work
 
@@ -712,8 +686,8 @@ SC additionally meets section 5; upstream submission additionally meets
 section 6. Report these as distinct milestones.
 
 Unresolved critical boundaries are the pure-failure design before its larger
-transform, any relaxation of the accepted concurrency agreement obligation,
-and a local shared-model compatibility repair. Prepare evidence and concrete
+transform, and a local shared-model compatibility repair. SC decisions and
+completion obligations are owned exclusively by the SC execution roadmap. Prepare evidence and concrete
 proposals before asking for these decisions. Routine implementation choices
 stay with the agent. Each charter produces a reviewable branch and final
 report; landing on main is discussed with the operator.

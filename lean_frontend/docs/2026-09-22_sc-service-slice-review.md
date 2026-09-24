@@ -1,5 +1,11 @@
 # SC helper services and typed faults
 
+**Historical technical record.** Current work order, status and acceptance are
+owned solely by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+Old next-step, freeze, proof-count and campaign instructions below are retired.
+Unique source findings are retained only until their C1 extraction.
+
+
 [AGENT] Implementation review, 2026-09-22. Governing scope and fidelity policy:
 [charter](2026-09-21_charter-sc-prototype.md) and
 [operational contract](2026-09-21_sc-operational-contract.md).

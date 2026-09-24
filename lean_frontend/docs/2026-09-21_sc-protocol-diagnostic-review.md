@@ -1,5 +1,11 @@
 # SC protocol: seven exact upstream diagnostic differences
 
+**Historical technical record.** Current work order, status and acceptance are
+owned solely by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+Old next-step, freeze, proof-count and campaign instructions below are retired.
+Unique source findings are retained only until their C1 extraction.
+
+
 2026-09-21, [AGENT]. The first protocol full validation ran all 39 selected
 commands with unchanged sources and no artifact issues; 38 passed. B10.1
 failed on the seven cases below. Its failed status remains in the original

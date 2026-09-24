@@ -82,12 +82,9 @@ responsible for execution seams and Lem for translation/runtime mechanisms.
 
 ## Next work and landing decisions
 
-Prefer the proposed [scoped concurrency integration charter](2026-09-06_concurrency-integration-charter.md)
-next, if the repaired instruments and final review support it. Its enforced
-domain and agreement proof are the acceptance boundary. If that proof needs
-the strict-failure transform first, identify the concrete path/precondition
-that blocks it and authorize a bounded failure slice before integration.
-Do not substitute a weaker unreviewed theorem or a documentation-only guard.
+SC continuation is now governed by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+The old enforced-domain/proposed-integration recommendation is retired. This
+profile's measured validation results remain historical claims, not SC acceptance.
 
 The final review decides the larger failure design, next charter, fresh audit
 scope/scale and readiness of each exact branch. Merges remain ff-only with

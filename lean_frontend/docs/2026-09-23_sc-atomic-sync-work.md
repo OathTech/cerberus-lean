@@ -1,5 +1,11 @@
 # SC physical atomic sources and reference synchronization: validated query component
 
+**Historical technical record.** Current work order, status and acceptance are
+owned solely by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+Old next-step, freeze, proof-count and campaign instructions below are retired.
+Unique source findings are retained only until their C1 extraction.
+
+
 September 23, [AGENT], under the SC prototype charter and the user's general
 fail-closed policy. This component exposes two shared queries over actual
 recorded effects. It does not enable the public SC checker or finish its

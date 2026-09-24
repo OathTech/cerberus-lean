@@ -1,5 +1,11 @@
 # Validated lossless values and variadic metadata queries
 
+**Historical technical record.** Current work order, status and acceptance are
+owned solely by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+Old next-step, freeze, proof-count and campaign instructions below are retired.
+Unique source findings are retained only until their C1 extraction.
+
+
 2026-09-23. Parent `3f9705c9b`. This slice continues SC-P03/P05 under the
 SC charter; it does not complete the public checker or change the pinned model.
 Current production sources generate and compile in both targets. Component

@@ -1,481 +1,286 @@
-# Charter: faithful SC concurrency prototype
+# SC prototype: execution roadmap
 
-2026-09-21. **Execution charter for the user-approved SC prototype plan.**
-The objective and constraints below are [USER]; work packages, implementation
-choices and proposed checks are [AGENT] unless marked otherwise. This charter
-governs a sustained implementation effort in the dedicated worktree. Completing
-a package does not require another approval before starting the next package.
+Established September 21; consolidated September 24, 2026 after the user's
+critical review and pruning instruction. **This is the single active SC plan,
+status and resumption point.** Older charters, component work logs, audit plans
+and scratch recipes do not supply additional work or acceptance requirements.
 
-## 0. Objective and authority
+## Objective and authority
 
-Build and validate an SC execution mode over the current Cerberus semantics,
-in OCaml and Lean, with faithful memory effects, sequencing, atomic operations,
-structured threads, and outcomes. Expose the actual operational definitions and
-useful semantic laws so an external customer can reason about those semantics.
+[USER] Deliver faithful SC operational semantics through the real C/Core path
+in OCaml and Lean, with an inspectable operational API for external reasoning.
+“Fidelity is the overriding constraint. We cannot restrict cerberus for
+reasoning reasons.” The customer supplies its own logic. This repo supplies the
+semantics; a second evaluator or an unconnected proof model is not the product.
 
-[USER] project scope: this repository captures Cerberus's operational semantics
-and allows reasoning in the customer. [USER] overriding constraint, verbatim:
+[USER, September 24] Cut infrastructure that does not help deliver this feature;
+sunk cost is irrelevant. The accepted pruning plan is incorporated below.
+Its former scratch location is not needed to execute this roadmap. This ruling
+replaces earlier agent-authored per-component campaigns, proof-count targets,
+retention requirements and work-package ordering. Preserve actual semantic
+checks, complete observations and relevant independent reference comparisons.
 
-> "fidelity is the overriding constraint. We cannot restrict cerberus for reasoning reasons."
+Ordinary implementation, deletion within this plan, source investigation,
+targeted validation and coherent local commits are authorized. Continue through
+the checkpoints without routine permission requests. A checkpoint is a report
+of feature progress, not an invitation to invent another infrastructure arc.
+No merge, push, customer mutation or shared toolchain/dependency mutation is
+implied. Escalate only a concrete unresolved semantic choice or unavailable
+capability that prevents the next necessary action; continue independent work.
 
-[USER] accepted the five-part development plan: fix the SC contract, bring over
-useful execution machinery, expose relevant memory effects, implement SC
-operations/races, and validate the complete execution path. [USER] requested a
-worktree, a charter for the whole effort, and long-cycle work with minimal
-interaction. These authorize ordinary implementation, investigation, local
-tests, repairs and commits throughout this charter; they do not authorize a
-mainline merge, push, or customer modification.
+## Current status and next action
 
-This charter supersedes implementation recommendations in the
-[scoped proposal](2026-09-20_concurrency-scoped-proposal.md) wherever they differ.
-That proposal and the [research assessment](2026-09-20_concurrency-research-assessment.md)
-remain supporting analysis. The
-[September 19 landing charter](2026-09-19_charter-concurrency-landing.md) is
-withdrawn; do not revive its blanket rebase or its insufficient theorem claims.
-The earlier [pause note](2026-09-19_concurrency-pause-note.md) remains history;
-the present instruction resumes work through a fresh prototype branch.
+- Branch/worktree: `arc/sc-prototype`,
+  `/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype`.
+- Base: `5407597d9eeba0259d65b728e86a860ad4614ab3`.
+  Latest implementation commit: `df6659ba8`; uncommitted linker/global-origin,
+  receipt and parameter-read queries remain. Keep useful code while pruning;
+  do not reset away the working tree.
+- The actual scheduler, primitive observations, atomic operations, source-order
+  evidence and failure-state repairs exist. **Public SC is unfinished:**
+  `Driver.drive true` still ends otherwise-completing executions with
+  `SC_fault_checker_pending`; Lean CLI dispatch and the production litmus lane
+  are not connected. Component tests are not proof of delivered SC support.
+- The last frozen attribution snapshot passed all 39 full lanes and the 864-case
+  three-engine report; source was unchanged and the wrapper exited 0. Its Lean
+  report has 822 agreements, 29 differences, 11 both-undecodable and 2 n/a.
+  These are sequential/component results, not SC acceptance. Current raw reports
+  are `.tmp/sc-prototype/link-attribution-integration-{full,three-way}-20260923/`.
+  Do not archive another copy or rerun them for this documentation change.
+- **Next: C1, the behavior-preserving pruning below.** Roadmap consolidation is
+  complete; runtime/proof/test/archive pruning has not started. C2–C4 are open.
+  Update this short section at checkpoints; do not create another progress log.
+- G06's chosen precise GCC preprocessor-observer experiment lacks the matching
+  GCC 13.3 plugin SDK. A capability question is already pending; do not ask it
+  again or bypass network controls. This blocks that experiment, not C1/C2.
+  Do not guess an ABI or substitute invented lock-free constants.
 
-## 1. Working tree and references
+## Scope and semantic boundaries
 
-| Item | Starting identity / role |
+Use current Core execution and the concrete object model. In scope are
+structured spawn/join, all current sequencing and helper paths, ordinary and
+atomic RMW/CAS, initialization and fences, legal representation accesses,
+lifetimes, varargs, reachable library/runtime effects, faults, blocking and
+incomplete exploration. A scalar first integration is not the final language.
+Weak-memory execution, new pthreads/ISO-thread-library implementations, customer
+logic, whole-ISO mechanization and a general optimization framework are outside
+this milestone. Fix structural costs that prevent the required examples running.
+
+The reference is pinned Cerberus `b9aeedcb4dd438763b0eef7f95ac19e93875d7de`,
+including `Cmm_csem.sc_fenced_memory_model` and `sc_fenced_condition`, with the
+executor's explicit NA/seq_cst domain. Preserve initialization and SC fences;
+do not silently strengthen weak orders or substitute a different C++/RC11 model.
+The scalar predicates do not interpret every lifetime, byte or metadata effect.
+Completing that operational composition remains required work.
+
+[USER] Evidenced unresolved semantic boundaries fail closed and every case is
+documented. The [boundary register](2026-09-22_sc-boundary-register.md) owns the
+policy, exact triggers, source evidence, reproducers and resolution criteria.
+Unsupported is not C UB, false CAS, success or an empty behavior set. Preserve
+completed effects, failure-time state, independent faults and other alternatives.
+Available-guidance port work, checker limitations and difficult proofs do not
+become new upstream gaps or broad exclusions of C constructs.
+
+Three supporting specifications remain live; none is another execution plan:
+
+- [Operational contract](2026-09-21_sc-operational-contract.md): reference,
+  operation/outcome meanings and correspondence limits.
+- [Boundary register](2026-09-22_sc-boundary-register.md): G/P/D cases and policy.
+- [Effect inventory](2026-09-21_sc-effect-inventory.md): E01–E25 source/effect
+  obligations; historical line numbers require checking against current source.
+
+Other dated SC reviews are historical source/evidence notes, pending the bounded
+extraction in C1. They cannot direct future work or override this roadmap.
+
+## C1 — prune without changing runtime behavior
+
+Keep the real Driver/Core scheduler, observations/ND lifting, suspension,
+atomic/frontend/runtime surface, exact representation and source-location fixes,
+filesystem failure-state repairs, and small executable source/action/HB queries.
+Do not delete generated `Sc_*` runtime modules just because similarly named
+handwritten `CerbSC*` wrappers are removed. Required measure proofs and executable
+instances stay, including `CerbSCByteInstances` (imported by `sc_runtime.lem`),
+`Sc_order_lemMeasureProofs` and suspension changes in `CerbNDFuelProofs`.
+
+### Exact proof removals and relocations
+
+All names below are under `lean_frontend/` unless a different path is shown.
+Before deleting an exposed name, a read-only customer text search may identify
+actual use. Preserve only a genuinely used operational law or a small alias;
+this does not justify retaining the whole package or modifying the customer.
+
+| Delete | Surviving payload / edits |
 |---|---|
-| Prototype branch | `arc/sc-prototype` |
-| Prototype worktree | `/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype` |
-| Implementation base | `mdd/cerberus-lean` at `5407597d9eeba0259d65b728e86a860ad4614ab3` |
-| Pristine upstream reference | `b9aeedcb4dd438763b0eef7f95ac19e93875d7de` |
-| Legacy SC donor | `feature/concurrency`, `086d8762d382eff375c101f5f0c64d3ffe9bccc7` |
-| Repaired legacy validation donor | `arc/validation-foundations-concurrency`, `86a2aea547804b78eb7f1eae633bb9c24c713b7f` |
-| Research snapshot copied into this branch | Two September 20 documents from `02a6adc9091f72cecac6c5ff15845f93fa81fa84` |
-| Lem / LemLib pin at base | `38f87d5fa6b29ec90edfa457faba8a309e32c118` |
-| Lean toolchain at base | `leanprover/lean4:v4.32.2` |
-| Customer | `/home/dev/projects/cerberus-sl`, strictly read-only |
-| Live work record | [SC prototype progress](2026-09-21_sc-prototype-progress.md) |
+| `CerbSCMapTransport.lean`, `CerbSCLinkAttribution.lean` | No runtime consumer. Delete proof-only map safety/witness definitions and census references. Units/failure probe import the actual generated queries directly. |
+| `CerbSCActionIdentity.lean`, `CerbSCHappensBefore.lean` | Delete the unconnected `Relation.TransGen`/prefix presentation and its theorem printouts. Keep executable `Sc_action_identity` and `Sc_happens_before`. |
+| `CerbSCAtomicSources.lean`, `CerbSCAtomicSurface.lean`, `CerbSCAtomicUpdate.lean`, `CerbSCByteSources.lean`, `CerbSCFaults.lean`, `CerbSCGlobalAttribution.lean`, `CerbSCGlobalBindings.lean`, `CerbSCGraph.lean`, `CerbSCHelperOrder.lean`, `CerbSCParameterReads.lean`, `CerbSCRepresentation.lean`, `CerbSCScopes.lean`, `CerbSCSpawn.lean`, `CerbSCSynchronization.lean`, `CerbSCVarargs.lean` | Delete projection/constructor/list-law wrappers and printouts; retain the underlying definitions and branch-distinguishing behavior tests. |
+| `CerbSCSequencing.lean` and `frontend/model/sc_reference_sequencing.lem` | Delete the separate conditional presentation. Move the six `CerbCmmEquality` instance-selection equations into `test/Unit/SCReferenceEquality.lean`; they cover a real target-selection defect. |
+| `CerbFSProofs.lean`, `CerbFSDriverProofs.lean`, `CerbNDSuspension.lean` | Keep FS/suspension code and state-at-failure tests. Move `state_ordering_refuses` into `Unit.FSBoundary`; replace the test-only `node` helper with `CerbSCOperational.node` or a local helper. |
+| `CerbSCByteKeys.lean` after consolidation | Move only needed lossless key/roundtrip/injectivity laws into `CerbSCValues`; do not claim these establish logical RF equality across typed views. |
+| `CerbSCPrefixObligations.lean` when the final accumulator lands | Keep current runtime retention/tests meanwhile. Retain at most the actual public accumulator-preservation connection with its final API. |
 
-The worktree was created from the implementation base with the container's
-`scripts/new-worktree.sh`. Build/dependency state was primed locally; the
-worktree's pristine oracle was built and validated independently. This setup is
-not a fresh certification of the prototype or the mainline test suite. S0 records
-the actual initial source, tool, artifact, and validation identities.
+Keep `CerbNDObserveProofs`, `CerbMemSuspension` and narrowly useful
+`CerbSCAccessGroups` connections (disabled behavior, checked failure/current-state
+retention, exact RMW ungrouping). Reduce `CerbSCOperational`/`CerbSCServices` to
+actual offered-choice, history, restoration and projection connections; keep
+`projectAction` with `projection_node`. No generic scheduler-proof project.
 
-Keep the primary checkout and parked donor branches unchanged. Worktree-local
-builds and evidence belong here. Re-check instructions and worktree status when
-resuming; do not overwrite unfamiliar edits. Do not chase moving mainline refs
-during ordinary work. If a mainline integration becomes necessary, use the
-project's branch workflow, record before/after identities, and revalidate; never
-rewrite the parked donor branches.
+Update `handwritten_copy.manifest`, Lake roots/executables, Makefile source
+lists, test/example imports, `tests/failure-probes/FailureReach.lean`, named
+axiom-census entries and drift registrations. Remove only orphaned generated
+copies/build artifacts. Search target `extra_import`/`target_rep`, not just Lean
+imports. Regenerate both targets after shared source-list changes.
 
-## 2. Fidelity and scope
+### Consolidate tests, gates, attribution and records
 
-### 2.1 What is being captured
+- Consolidate SC units into machine/memory and adapter suites, and native
+  `memory/concrete/sc_*_controls` into one paired executable with useful fixture
+  groups. Delete trivial field/self-equality tests and unused fixture copies.
+  Keep distinct stale-state, partial-failure, alias, RMW and equality regressions.
+  Inspect FS/float branch coverage before dropping individual control rows.
+- Keep `tests/litmus` and `scripts/test_litmus.sh`; connect them in C2. Replace
+  `test_litmus_observations.py` and `test_litmus_references.py` with one small
+  runner integration selftest, then delete the old files. Reuse the shared codec;
+  test actual runner commands rather than source slices. Retain membership,
+  pending/wrong-result and failing/truncated-bridge controls.
+- A selected `test_unit.sh` invocation must run its selected tests and necessary
+  freshness precondition, not every global selftest. Batch builds; run each
+  integrity check once at release level. Remove duplicate failure-reach dispatch
+  and repeated Lem/Dune checks. Tool selftests run when that tool changes or at
+  final acceptance. Remove per-law printouts, helper mutation/positive-clone
+  campaigns and theorem-count milestones. Keep small no-axiom/sorry, purity,
+  totality, explicit-fuel, source/freshness and fork/reference integrity checks.
+- Keep the small reference derivation check (`sync_sc_reference.py`) and
+  generated-addition support (`check_fork_generated.py`); avoid duplicate calls.
+  Simplify fork-manifest chronology and redundant plants, retaining reviewed
+  pins and actual membership/content checks. Do not refresh baselines blindly.
+- Retain only attribution code consumed by the real G03/G08 producer in C3.
+  Remove redundant `sc_link_global_step`/`sc_link_with_global_origins` paths now;
+  `sc_link_attributed` already carries globals. Parameter-slot reads are not
+  call-entry values: delete their query if the eventual guard does not use it.
+  No new runtime-catalogue/authentication framework.
+- Extract minimal live G01–G08 and distinct D09/D10/D12/D14/D15/D16 reproducers
+  not already in tests, with source/pin and expected-class notes. Put inputs in
+  the test hierarchy. Preserve unique location/value/lifetime/runtime source
+  conclusions in the three specifications above, including the FS coverage map.
+  Then delete `docs/2026-09-21_sc-prototype-evidence/**` and redundant SC component,
+  research and work narratives. Keep concrete upstream-tray discrepancies.
+  History remains in Git; no archive replacement or history rewrite.
+- Delete obsolete `.tmp/sc-prototype` proof/query/census/mutation drafts and old
+  campaigns after that bounded extraction. In particular, do not promote the
+  runtime-catalogue, map/lifetime proof towers or `candidate_query.ml`. Retain
+  necessary stream/internal-state/cross-view reproducers and the current raw
+  run until superseded. Preserve a new unexplained mismatch until resolved.
 
-The target is a faithful SC operational instance over Cerberus Core and its
-object model, using the existing structured parallelism. C input travels through
-the real frontend and Core pipeline; hand-constructed graphs are supplemental
-tests. This effort includes the relevant current sequential operations and
-their interaction with scheduling, not just a newly invented scalar language.
+**Acceptance:** useful runtime behavior unchanged; required instance/import
+connections survive regeneration and affected compilation/tests; live boundary
+reproducers and obligations are retained. No whole corpus rerun for proof/doc
+removal. No claim that C1 itself delivers SC.
 
-Follow [VALIDATION.md](../VALIDATION.md)'s reference doctrine: the logical
-semantics is the referent. Preserve the Lem model, Core library behavior, and
-specified memory semantics; do not turn OCaml host-runtime accidents into Lean
-semantic limits. Preserve the repository's distinction between deliberate model
-failures, host-resource failures, and documented upstream defects. Changes to
-the shared model require a source/standards rationale and the normal discrepancy
-records; OCaml/Lean agreement cannot independently validate such a change.
+## C2 — connect actual public C-to-SC outcomes
 
-S0 names the SC predicates, operational construction, threadwise integration,
-object model, and relevant ISO clauses/corrections together. The existing
-`SC_memory_model` plus `SC_condition` is reference material, not a complete
-specification of today's Core adapter. The broken current concurrency driver
-is not evidence that every new scheduling decision is authorized. Use upstream
-definitions, historical integration and ISO requirements to resolve the gaps;
-record the derivation and any remaining uncertainty.
+1. Define the public outcome over the actual machine: completion/value,
+   faults with state/effects, retained findings, unsupported reasons, blocking
+   and incomplete exploration. One category must not erase another.
+2. Connect recorded occurrences to C locations/atomic objects, logical values,
+   initialization, reads-from (RF), modification order (MO), SC order and
+   synchronization/HB. Use the retained small executable queries. Scheduler
+   order is not source `sb`; one RMW's phases are not two atomic actions.
+3. Preserve race and other established findings on prefixes, before loops and
+   failed candidates. Candidate consistency rejection must not erase faults.
+   Replace repeated whole-graph snapshots/closure scans with a justified shared
+   or incremental computation where required. Use the existing query as a
+   bounded reference; do not drop prefix checking or simply raise limits.
+4. Wire `--concurrency=sc` and the reusable API through both actual frontends.
+   Remove the unconditional completion-time `checker_pending` only when the
+   classifier runs. Explicit temporary port failures remain visible.
 
-### 2.2 Coverage is not theorem scope
+**Acceptance:** real paired C SB/publication, CAS and fences plus a mixed
+safe/racy alternative, fault before a loop, blocking and fuel exhaustion traverse
+this API and have independently justified complete outcomes. Disconnecting the
+production checker makes the C suite fail. This is an intermediate milestone;
+a scalar-only success cannot become the definition of done. No further passive
+helper checkpoints before this connection exists.
 
-[USER, 2026-09-21 clarification; generalized 2026-09-22] Evidenced unresolved
-semantic boundaries fail closed. Retain the pinned Cerberus/Cmm reference and
-an explicit unsupported outcome until each gap is resolved; do not invent a
-comparison, mixed-size or stream-synchronization semantics. Document every case
-in the [boundary register](2026-09-22_sc-boundary-register.md), with evidence,
-precise scope, implementation status and resolution criterion. This is an
-acknowledged coverage limit, not C undefined behavior or an impossible execution.
-The [upstream-gap policy](2026-09-21_sc-upstream-gap-policy.md) records the precise
-distinction and reasoning-client obligation. Missing port work with available
-semantic guidance remains in scope.
+## C3 — finish the agreed coverage and precise guards
 
-- No new loop-free, scalar-only, lifetime/privacy, expression-shape or similar
-  runtime restriction may be introduced to make a proof convenient.
-- Proofs and exhaustive experiments may use restricted hypotheses. State them
-  as theorem/test domains, separately from the executable language.
-- Temporary unimplemented operations must fail explicitly and carry a concrete
-  port-gap entry: operation/path, missing semantic mechanism, reproducer,
-  expected reference behavior, and removal task. A refusal is not a passing
-  implementation of that operation, and a hard proof is not a port gap.
-- Intermediate incomplete code may be retained and tested as work in progress.
-  It cannot be declared the completed prototype by shrinking the target to its
-  already-working cases.
-- Weak-order execution is outside this SC development effort. A named SC mode
-  must not silently strengthen relaxed/acquire/release operations. Record its
-  actual model conditions and distinguish them from unfinished port coverage.
-  This milestone does not replace the longer-term upstream concurrency target.
-
-### 2.3 Boundaries of this effort
-
-In scope: structured spawn/join and scheduling; Core sequencing and exclusions;
-initialization; loads/stores; ordinary and atomic read/modify/write behavior;
-SC atomic operations, including compare-exchange success/failure; representation
-accesses; memory-library helpers; relevant lifetime and runtime-helper effects;
-faults and incomplete exploration; the operational Lean interface; validation.
-Investigate SC fences and other upstream actions against the exact selected
-reference rather than inheriting an unexamined exclusion from an old checker.
-
-Adding a new pthreads/ISO thread-library implementation, a weak-memory executor,
-an Iris layer, a separation logic, customer proofs, customer pin changes, and
-performance/state-space reduction projects are outside this charter. Existing
-loops, calls, pointer behavior and memory operations do not become out of scope
-merely because their concurrency integration is difficult. Runtime I/O and
-helpers must be inventoried wherever reachable; do not silently ignore their
-memory accesses.
-
-## 3. Architectural constraints
-
-1. **Reuse current Core execution.** Extend requests/continuations and scheduler
-   integration rather than duplicate expression evaluation in an SC backend.
-   Keep whole-machine and local-thread responsibilities explicit.
-2. **Preserve the concrete object model.** It owns pointer validity, bounds,
-   lifetime, byte/provenance representation, metadata, and its failure-time
-   state. Typed SC values cannot replace that object semantics.
-3. **Expose effects at their actual source.** Reads, equal-value writes,
-   initialization and accesses completed before failure must remain visible.
-   A final memory diff is insufficient. Account for memops, library paths,
-   startup and error handling as well as ordinary action requests.
-4. **Separate effects from scheduling points.** A resumable protocol is a
-   candidate, not a requirement to yield after every internal byte operation.
-   Specify indivisible operations and allowed interruption points from the
-   selected reference. Sequential erasure alone does not justify new concurrent
-   interleavings. Requests serviced after a yield must use the correct current
-   state, not an unjustified cached validity check or read value.
-5. **Preserve the ordering relations.** Source `sb`, synchronization, `hb`,
-   atomic modification/SC orders and the scheduler's selected order are distinct.
-   Do not order unsequenced siblings merely because one executes first. Spawn
-   and join establish their specified edges; sibling scheduling order does not.
-6. **Preserve location distinctions.** Allocation identity, representation
-   range, C memory location and atomic-object identity are not interchangeable.
-   Byte reads may reconstruct values from different writes. The existing
-   `Mem.overlapping` intentionally excludes read/read pairs and is not a general
-   intersection predicate. Establish conflict and reconstruction behavior from
-   the reference; do not assume either pointer equality or numeric overlap alone
-   solves every case.
-7. **Separate races from graph membership.** A concrete racy run's actual reads
-   need not form a consistent Cmm candidate. Do not discard such a run or demand
-   raw graph equality as a universal fault test. Specify operational fault
-   handling and justify any program-undefinedness correspondence separately.
-8. **One semantics, usable from Lean.** Export inspectable definitions and
-   useful equations/elimination laws. A separate proof-facing relation must be
-   defined from execution or have a proved connection covering every executable
-   choice. Do not introduce an unconnected mirror or axiomatized scheduler.
-9. **Preserve port discipline.** Prefer shared Lem definitions for common
-   semantics; mirror hand-written OCaml/Lean seams with source references.
-   Keep program data, configuration and resource parameters explicit. Respect
-   totality, fuel, purity, axiom and generated-source freshness requirements.
-
-The existing `SeqRMW` is not automatically a C atomic RMW. Its ordinary C
-sequencing/exclusion behavior must be retained. Likewise, the false `true`
-concurrency stub and unimplemented branches cannot become foundations for a
-correctness claim merely because a generated module compiles.
-
-## 4. Continuous work packages
-
-The order below supplies checkpoints, not permission barriers. Refine package
-boundaries when evidence warrants it, record the reason, and continue. Do not
-fork the effort into several competing production architectures.
-
-### S0 — Reference, baseline, and trustworthy instruments
-
-- Read the legacy audit and retained reproductions. Establish current baseline
-  behavior with current artifacts; September 19 measurements are historical.
-- Record source/tool/build identities, normal entry parameters, and full
-  observation/status handling. Validate the pristine oracle independently.
-- Write the operational contract: model identity, runnable-thread choices,
-  spawn/join, action boundaries, source ordering, SC operations, initialization,
-  lifetime integration, faults, blocking and finite/infinite execution claims.
-- Inventory reachable effect paths. Each row names its source, state effects,
-  returned value, ordering/atomicity, failure state, instrumentation point,
-  reference evidence, implementation status and test.
-- Separate runtime coverage, reference-checker coverage, proof coverage and
-  exploration bounds. Include current SC reference limitations concerning
-  footprint composition and lifetime actions.
-- Select and port the concurrency-specific validation repairs onto current
-  observation infrastructure before trusting the new litmus lane. Test original
-  exit statuses, partial output, duplicates and missing observations.
-
-**Exit evidence:** a reproducible baseline and contract, a complete source-path
-inventory with explicit unresolved items, and a non-vacuous comparison harness.
-An unresolved item can feed later work; it cannot be hidden by a passing scalar
-test or an added source restriction.
-
-### S1 — Current driver, scheduler, and structured threads
-
-- Adapt the useful selector/scheduler/startup work from the legacy branch,
-  reviewing changes against current driver signatures and state ownership.
-- Connect current Core action requests and continuations, allocate fresh event
-  and thread identities, preserve thread-local state, and implement structured
-  spawn, waiting, completion and join. Handle nested structure according to
-  Cerberus rather than excluding it for the first theorem.
-- Preserve sequential entry behavior, initialization, `errno` and other runtime
-  state. Exercise return values, blocked states, failure and resource outcomes.
-- Enumerate scheduling alternatives honestly in exhaustive mode. An arbitrary
-  selected schedule is not the whole program's behavior.
-
-**Exit evidence:** runnable structured-thread examples in both engines, local
-and global transition tests, initialization/join controls, and sequential
-regression evidence. Any still-missing effect paths are visibly unfinished;
-this package alone is not the completed SC prototype.
-
-### S2 — Memory effects, representation, lifetime, and sequencing
-
-- Complete the effect inventory through load/store, allocation/create/kill,
-  optional initialization values, `memcpy`, `memcmp`, `realloc`, and reachable
-  pointer/helper/runtime paths. Pure operations need a justified classification;
-  stateful metadata operations must not disappear.
-- Preserve byte/provenance reconstruction, checked accesses, helper iteration
-  behavior and partial failure state. Avoid reimplementing memory semantics in
-  a second event store. Reuse or refactor the authoritative operations.
-- Resolve effect grouping versus permitted scheduling interruptions. If an
-  adapter changes representation, establish its sequential erasure and the
-  separate concurrent correspondence required by its new boundaries.
-- Repair event ordering at Core continuations, unsequenced/indeterminately
-  sequenced evaluation, calls, exclusions, and ordinary `SeqRMW` paths.
-- Capture shared and private lifetime behavior without inventing ownership
-  restrictions. Account for identity reuse, stale pointers, startup and
-  initialization in the concurrency/object-model composition.
-
-**Exit evidence:** the retained byte/copy/overlap failures are repaired on the
-real C-to-Core execution path; equal-value and hidden accesses remain visible;
-ordering traces match source rules; partial failures preserve their preceding
-effects; local erasure/correspondence laws cover changed adapters. A restricted
-Cmm checker stays restricted as a checker, not as the executable language.
-
-### S3 — SC atomic operations, races, and verdicts
-
-- Establish SC loads/stores and their orders, then the supported frontend paths
-  for atomic RMW/exchange and compare-exchange. Include weak-CAS spurious
-  failure where specified, expected-value updates, successful/failed effects,
-  initialization and operation-specific memory-order validation.
-- Resolve fences and all remaining actions in the S0 inventory using the named
-  reference. Missing frontend lowering is a concrete implementation task or an
-  evidenced upstream limit, not an occasion to fabricate a Core-only success.
-- Detect conflicting unordered actions using the justified location/effect
-  interpretation. Do not let total execution order suppress a race.
-- Define how operational faults, valid race witnesses and program-level
-  definedness are reported. Preserve every relevant alternative; one apparently
-  safe schedule cannot erase a faulting one.
-- Cover faults before divergence and exhausted exploration. Do not claim
-  complete safety or definedness from terminated runs alone. State clearly
-  which prefix/infinite-execution correspondence has been established.
-
-**Exit evidence:** SC SB/MP/IRIW and publication behavior, RMW/CAS success/failure
-controls, unsynchronized and mixed-range conflicts, and fault/exhaustion plants
-all have justified classifications in both engines. SC membership and fault
-correspondence are not conflated. Unsupported weak orders are never executed
-under silently strengthened semantics.
-
-### S4 — Operational interface and semantic laws
-
-- Export the actual state, local/machine transitions, outcomes and their
-  explicit parameters. Supply practical equations, inversion and composition
-  lemmas instead of making the customer reconstruct driver arms.
-- Prefer direct definition from the executable transition functions where
-  useful. For a separate Lean presentation, establish the coverage direction
-  needed to account for every engine choice; prove the other direction when
-  claiming equivalence.
-- Establish single-thread conservativity and effect-erasure results for the
-  justified domains. Account for resource costs: equal numerical fuel is a
-  stronger contract than finite-behavior correspondence. Preserve exhaustion
-  as an actual outcome and provide a budget relation when costs change.
-- Record the exact status of correspondence with the pinned axiomatic SC
-  reference, including source sequencing, initialization, values and faults.
-  Do not assume a reference theorem whose hypotheses the adapter has not shown.
-- Add a small logic-independent external import/lemma example over the
-  exported semantics. It has no Iris or customer dependency.
-
-**Exit evidence:** consumers can import and use the operational definitions;
-claimed Lean-to-Lean connections are kernel checked without new axioms or
-`sorry`; theorem domains and outstanding external-reference claims are explicit.
-No customer application proof or full ISO mechanization is a completion gate.
-
-### S5 — Integrated validation and prototype completion
-
-- Review the final source-path inventory and retire implementation gaps in the
-  agreed SC target. Upstream omissions, unproved correspondence and tool limits
-  retain separate classifications; none may disguise an omitted target feature.
-- Run the current required sequential gates and the complete concurrency suite
-  with fresh source/build identities and the validated pristine instrument.
-- Review reference independence, all effects/scheduler connections, full
-  observations, all outcome classes, and absence of reasoning-driven guards.
-  Re-run meaningful negative plants at the final production connections.
-- Update public usage/support/validation documentation, the difference
-  registers where applicable, and the final progress/evidence record. Retain
-  minimal reproducers and exact commands for remaining upstream issues.
-
-**Exit evidence:** a reproducible, reviewable SC prototype meeting section 7.
-This closes development, not a merge or customer migration. If acceptance is
-not met, record what remains and continue the work; do not declare completion
-because an intermediate scalar prototype works.
-
-## 5. Validation contract
-
-Use [LADDER.md](../../scripts/LADDER.md), [VALIDATION.md](../VALIDATION.md) and
-the current shared observation codec. Do not replace them with the legacy
-value-only extractor or hard-code stale suite counts from this charter.
-
-| Comparison | What it establishes / does not establish |
+| Obligation / actual consumer | Remaining work and distinguishing acceptance cases |
 |---|---|
-| Fork OCaml versus Lean, matched mode | Implementation agreement for the compared full observations. Both can share the same modeling mistake. |
-| Pristine upstream / historical operational source | Independent source and execution evidence within their actual implemented domains. Today's pristine concurrency refusal is not an SC oracle. |
-| Recorded execution versus named Cmm predicates | Membership on the predicate's domain; not completeness of the executor or fidelity of the C-to-event mapping. Racy traces require their separate argument. |
-| Pinned independent litmus checker | An independently implemented model comparison with reviewed inputs, bounds and status. A different memory model is not an interchangeable oracle. |
-| Lean semantic laws | Facts checked about the actual Lean definitions or their proved presentation. They do not prove the OCaml compiler/runtime correspondence or customer logic adequacy. |
+| Location/value/RF/MO/SC adapter | Legal array/member/aggregate and signed/unsigned views; initialization; aliases and differently based overlap; equal-valued stores as distinct sources; representation/provenance and NaN/signed-zero CAS. Raw pointer/range keys are not logical value equality. |
+| Lifetime and metadata in the same findings policy | Allocation/create/free/reuse, zero size, DR403 ordering, partial helper failures, ordered char copy/compare/realloc, varargs copies/publication against actual HB. Do not silently discard effects outside the scalar reference. |
+| Atomic/source/thread behavior | Exchange/fetch, strong/weak CAS and expected writeback, operand single evaluation, ordinary SeqRMW exclusions, nested spawn/join and child loop ownership, fences, invalid and out-of-model orders. |
+| G02/G07 interpretation boundaries | Precise reached unresolved composition/atomic-sequencing witnesses, preserving independently justified UB and ordered/legal controls. Do not blanket-refuse representation operations. |
+| G03/G08 library boundaries | Connect actual loader/link selection, calls and resource/global-storage evidence directly. Handle replacements/unknown origins, zero-length actual accesses, shared stream vs shared descriptor, implicit streams and shared internals. Missing library protection is not caller UB; ordinary buffers and disjoint/ordered accesses need controls. |
+| G06 configuration consumption | Runtime and constant/preprocessor consumption fail explicitly when configuration is missing; ordinary inclusion/stringification must not change meaning. A plugin load marker is not an implemented guard. Bound the SDK-dependent callback experiment; do independent integration meanwhile. |
+| Existing G/P/D and E01–E25 rows | Every in-scope path reaches supported behavior or an evidenced precise upstream boundary. Finish available port work; document transport correspondence honestly. Do not claim raw journal equality where C loaders differ or chase unrelated corpus bugs. |
 
-Required diagnostic families include:
+**Acceptance:** every obligation above and each live effect row is accounted
+for in production and a distinguishing test. No `checker_pending`, available-
+guidance port gap or blanket language refusal counts as completion. Supported
+cases preserve all required outcomes, including safe/faulting alternatives.
+Required graph/runtime examples run at justified bounds; timeout/OOM remains
+incomplete, not agreement or a semantic exclusion.
 
-- SC SB/MP/IRIW, conditional publication, creation/join, nested structured
-  threads, blocking, and alternatives with different outcomes.
-- Whole and byte accesses, differently based overlaps, disjoint accesses,
-  equal-value stores, representation/provenance cases and uninitialized values.
-- Copy/compare/reallocation, partial failure, allocation/lifetime/reuse, and
-  reachable startup/runtime-helper effects.
-- Unsequenced expressions and same-object UB controls, call sequencing,
-  ordinary `SeqRMW`, and atomic expressions with effectful argument evaluation.
-- RMW/exchange and CAS success/failure/spurious-failure cases, initialization,
-  fences as resolved by the contract, and rejected weak orders without coercion.
-- A faulting alternative beside a safe one, a fault before a loop, insufficient
-  ambient/exploration fuel, OOM, malformed output, partial output plus exit
-  124/137, duplicate names and missing/extra records.
+## C4 — provider interface and final acceptance
 
-Retain the legacy litmus corpus and audit counterexamples as seeds. Each test
-has an independently stated expected classification; do not bless new output
-by rerecording it. Add a plant that disconnects the production driver's event
-or checking path: hand-built checker tests alone cannot detect that omission.
-Never count unsupported, unrun, timeout, tool failure, or partial exploration as
-agreement or full support. Use bounded examples for exhaustive comparisons;
-bounded search is not a semantic restriction or an infinite-execution proof.
+Expose the actual machine/outcome definitions with explicit fuel and address-
+space parameters. Finish only the internal correspondence/erasure claims made
+by that API; do not introduce a second semantics or require whole-ISO adequacy.
+Rewrite `examples/sc_consumer` to invoke actual initialized Core/SC execution
+and demonstrate a useful step/outcome preservation property. No customer build,
+logic, re-pin or mutation is part of this work.
 
-Use the current release runner: `python3 scripts/release.py --mode fast` for
-Tier A and `--mode full` for A+B, under the project environment. Follow the
-ladder's per-commit and slice-boundary rules for implementation claims; run
-affected targeted tests during development. Changes to sensitive execution or
-memory seams trigger the broader checks required there. At final completion,
-run A+B plus the concurrency-specific suite and relevant reporting obligations.
-Do not launch an unrelated csmith/reporting campaign. Documentation-only setup
-is checked as documentation and makes no semantic certification claim.
+Validate the complete SC case families above, actual production connection,
+independent reference domain, and unchanged intended sequential behavior. Finish
+one short usage/support record and update this status. Completion requires the
+real C path and full agreed coverage with explicit evidenced boundaries, not
+just passing component or inherited sequential tests. Mainline merge/push is a
+separate action.
 
-Retain commands, exit codes, raw full observations, model/version identities,
-parameters, bounds, manifests and counterexample inputs. Summaries must label
-derived tallies. A source change invalidating a checked artifact requires a
-fresh build and relevant rerun. Do not normalize away UB location, output bytes,
-distinct failures, or meaningful nondeterministic alternatives.
+## Validation cadence and working rules
 
-## 6. Autonomy, records, and escalation
+Use existing runners/codecs. These are acceptance properties, not new gates:
 
-### Continue without routine confirmation
+- Documentation edits: links/status/whitespace checks only. Proof/registration
+  pruning: dependency inspection, fresh affected compilation and affected units.
+- Semantic edits: affected SC units plus public C cases and sequential tests for
+  the changed seam. Compare complete observations, states/prefixes where claimed,
+  original statuses, output bytes and meaningful alternatives. Never weaken
+  comparison or rerecord a baseline to conceal a mismatch.
+- Instrument edits: focused selftest and a real lane control. One final mutation
+  of the actual observer/checker connection; add another only for a demonstrated
+  independent wiring blind spot. No recursive plants or per-helper campaigns.
+- Final C4: existing full A+B release once on the candidate, actual SC production
+  suite, mandatory three-engine report once, independent pinned predicates and
+  finite scalar litmus checks on their justified domain, and the external example.
+  Pristine's broken SC mode is not an SC oracle. No unrelated csmith/CI campaign.
+  Later changes rerun invalidated obligations, not all historical campaigns.
+- Keep source/build identity, command/bounds, status and raw observations once
+  per relevant run. Reuse unchanged evidence. Delete duplicated archives and
+  compiler-attempt chronicles; retain live minimal failure reproducers.
 
-The implementing agent may inspect sources/history and primary literature,
-choose faithful internal representations, edit the necessary shared Lem and
-paired seams, repair frontend/scheduler/helper integration, add focused tests
-and semantic lemmas, regenerate both targets, repair failed checks, and make
-coherent local commits. It may adjust work-package ordering based on evidence.
-These are authorized implementation choices, not new approval checkpoints.
+This cadence governs SC over older per-helper/per-slice instructions in
+`LADDER.md`, `VALIDATION.md` and component notes. The inherited integrity,
+no-axiom/sorry and full-observation rules remain. Change runner dispatch as C1
+requires; a documentation update alone does not change the scripts' behavior.
 
-After a successful checkpoint, update the live progress record and continue
-with the next unfinished task. A local commit is not a request to stop. A failed
-test normally means investigate and repair. A false theorem means retain the
-counterexample and repair the statement or implementation according to fidelity;
-it does not authorize narrowing the executor. Do not silently create a park
-record or treat context loss as cancellation.
+Use the owning worktree through `/home/dev/projects/cerberus-lean-proj/scripts/ce`;
+Lean/Lake always run capped from their owning package, with fresh generated and
+handwritten copies. One heavy worker; bounded cases; no limit increase to hide
+structural problems. Follow the hour-long build/proof stop rule. Customer
+`/home/dev/projects/cerberus-sl` is strictly read-only. Do not mutate shared
+`_opam`, dependencies, other branches or the primary checkout.
 
-Keep the progress file current enough for a new session to resume without
-reconstructing chat. For each checkpoint record: package/task, source revision,
-what changed and why, [AGENT]/[USER] decisions, commands/results/evidence paths,
-remaining gaps, and the next concrete action. Keep the charter stable except
-for clarified scope or materially revised implementation commitments. Report
-meaningful findings and blockers concisely; avoid repetitive permission requests.
+Report at each checkpoint, significant blocker, or half-day of active work:
+which public acceptance case advanced and the next concrete missing behavior.
+If no case advances, re-evaluate the dependency chain before adding a mechanism.
+No new standalone helper without an immediate production consumer; no generic
+proof, catalogue, authentication, archive or gate-management project. Record
+current status here, technical meaning in the contract, and cases in the
+boundary/effect maps. Do not create a competing roadmap or progress file.
 
-### Ask only when a real boundary is reached
-
-- If source, standard and historical evidence leave materially different
-  semantic behaviors unresolved, first produce the concrete example, options,
-  consequences and recommendation. Ask for that decision while continuing
-  independent work. A lack of proof convenience is not semantic ambiguity.
-- Ask before a mainline merge/push, customer write or repin, machine-global
-  mutation, or other action outside this authorization. Prepare the concrete
-  result first. This charter requests none of those actions automatically.
-- For a sandbox/network/tool boundary, use permitted local alternatives where
-  possible, report the actual missing capability, and never weaken a validation
-  result to pass. Limited networking is not by itself a reason to stop source
-  work. Do not publish or message external parties.
-- Apply the repository's long-build/proof-grind stop rule. Preserve evidence,
-  diagnose structure/resource use, and pursue independent work; do not respond
-  to an hour-long proof grind by increasing limits without the required review.
-
-If a real unresolved boundary prevents all meaningful progress, leave a precise
-resumption record and ask the smallest necessary question. Do not invent a
-substitute semantics to avoid interaction, and do not end at a mere plan while
-authorized implementation work remains.
-
-### Workspace and resource discipline
-
-- The customer is strictly read-only: no files, builds, caches, pins or branches
-  there are changed. Prefer `GIT_OPTIONAL_LOCKS=0` for customer Git inspection.
-- Keep all implementation and scratch artifacts in owned worktrees. Promote
-  useful evidence into repository records; do not leave durable container notes.
-- The worktree's `_opam` is shared. No package installation/removal, shared pin
-  reset, shell-profile change or global toolchain mutation is authorized.
-  Isolate a necessary dependency fix and identify its integration boundary.
-- Load the container project environment through `scripts/ce`. Every Lean/Lake
-  invocation uses the repository's `scripts/capped` from the owning package
-  directory, so its `lean-toolchain` is selected; one heavy job at a time.
-  Use lower memory caps under pressure, and bounded per-case test timeouts.
-- Regenerate after shared-source changes. Hand-written Lean seams are copied
-  according to `handwritten_copy.manifest`; never trust stale generated files,
-  copied `.olean` files or driver binaries. Follow the project's probe recipe
-  and regeneration/cache-disabled requirements for certification and plants.
-- Keep existing purity/totality/axiom checks. Do not add axioms, `sorry`, fake
-  success defaults, unchecked runtime equality for closures, or prohibited
-  non-kernel proof shortcuts to make the prototype or its proofs pass.
-
-## 7. Definition of done
-
-The prototype is complete only when all of the following are reviewable:
-
-1. A named SC operational contract, an upstream/ISO source map, and explicit
-   distinctions between reference behavior, implementation coverage and proofs.
-2. A working OCaml/Lean SC execution path through the current C/Core pipeline,
-   including the agreed scheduling, effects, atomic operations and fault policy.
-3. No unresolved implementation gap in that agreed target is concealed by a
-   narrowed language, weakened comparison, default value or vacuous check.
-   Evidenced upstream limitations remain identified as such.
-4. Current sequential behavior is preserved under the repository's validation
-   contract. Full SC observations agree between the paired implementations, and
-   independent reference checks are used within their justified domains.
-5. The operational interface is usable externally; any separate Lean
-   presentation has its claimed correspondence proved. All stronger unproved
-   reference/ISO claims and theorem-domain limits are plainly stated.
-6. Required final gates and production-connection plants pass with fresh
-   identities, and the committed usage, support, progress and evidence records
-   are sufficient to reproduce the result.
-
-Full weak-memory support, whole-ISO mechanization, a customer adequacy theorem,
-and a mainline merge are not implied by prototype completion. Conversely, a
-small proof or a green litmus subset does not establish this completion.
-
-## 8. Resuming this charter
-
-Read this charter, the live progress file, current
-[repository](../../CLAUDE.md) and [Lean](../CLAUDE.md) working practices, and
-`git status`. Confirm branch and source/tool identities, inspect unfinished
-edits and the last validation evidence, then continue the next recorded task.
-Do not rerun historical research or already-valid expensive checks without a
-reason. The initial next implementation task is S0: establish the actual
-baseline and operational/effect inventory, then repair/select the litmus
-instrument before bringing over scheduler code.
+To resume: read this file, the applicable `CLAUDE.md`, and `git status`; inspect
+the current checkpoint's actual implementation and results, then execute its
+next action. Scratch audits and historical work records are supporting material
+only. Do not restart research, resurrect discarded plans, or infer completion
+from old green reports.

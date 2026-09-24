@@ -1,5 +1,11 @@
 # Primary-source follow-up during S1 drafting
 
+**Historical technical record.** Current work order, status and acceptance are
+owned solely by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+Old next-step, freeze, proof-count and campaign instructions below are retired.
+Unique source findings are retained only until their C1 extraction.
+
+
 2026-09-21. These notes amend the pending S0/S3 source map; no new atomic
 implementation or ISO correspondence theorem is claimed.
 

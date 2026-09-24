@@ -1,5 +1,11 @@
 # SC protocol integration review
 
+**Historical technical record.** Current work order, status and acceptance are
+owned solely by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+Old next-step, freeze, proof-count and campaign instructions below are retired.
+Unique source findings are retained only until their C1 extraction.
+
+
 2026-09-21, [AGENT]. Parent: `4bba2b458`. This records the current S1/S2
 protocol slice under the [charter](2026-09-21_charter-sc-prototype.md).
 It does not claim atomic/race/fence checking or a complete SC prototype.

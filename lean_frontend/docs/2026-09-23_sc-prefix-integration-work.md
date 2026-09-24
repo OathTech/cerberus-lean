@@ -1,5 +1,11 @@
 # SC prefix integration: validated component, prototype incomplete
 
+**Historical technical record.** Current work order, status and acceptance are
+owned solely by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+Old next-step, freeze, proof-count and campaign instructions below are retired.
+Unique source findings are retained only until their C1 extraction.
+
+
 This continues the substantial location/value/RF/HB and prefix-observation
 slice after the validated atomic-interface commit `3c7173732`. The component
 now passes the full integration suite and unchanged three-engine

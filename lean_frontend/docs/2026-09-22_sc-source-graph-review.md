@@ -1,5 +1,11 @@
 # SC source-order graph and boundary-policy checkpoint
 
+**Historical technical record.** Current work order, status and acceptance are
+owned solely by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+Old next-step, freeze, proof-count and campaign instructions below are retired.
+Unique source findings are retained only until their C1 extraction.
+
+
 2026-09-22. Parent implementation `3864dbb1f`. This slice records the user's
 general fail-closed decision and supplies a checker prerequisite. Public SC
 verdict checking and the SC-G02/03 guards are still unfinished.
@@ -8,7 +14,7 @@ verdict checking and the SC-G02/03 guards are still unfinished.
 
 [USER] retained pinned Cerberus/Cmm and generalized fail-closed handling of
 evidenced unresolved semantic boundaries, requiring documentation of every case.
-The [policy](2026-09-21_sc-upstream-gap-policy.md) and
+The [policy](2026-09-22_sc-boundary-register.md#fail-closed-policy) and
 [boundary register](2026-09-22_sc-boundary-register.md) supersede the earlier
 CAS-only scope and pending mixed-size question. They distinguish semantic gaps
 from unfinished mechanisms, narrower checker domains and protocol failures.

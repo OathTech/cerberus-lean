@@ -1,5 +1,11 @@
 # SC unconditional atomic updates — validated slice
 
+**Historical technical record.** Current work order, status and acceptance are
+owned solely by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+Old next-step, freeze, proof-count and campaign instructions below are retired.
+Unique source findings are retained only until their C1 extraction.
+
+
 2026-09-22. Parent checkpoint `8427b42e785265de968e6c47d6d7f39fc10f3d87`.
 The slice passed full integration and the mandatory three-engine comparison.
 This document does not claim completion of SC-P02/the SC prototype. Component

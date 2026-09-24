@@ -1,5 +1,11 @@
 # SC-D15: atomic-allocation representation access reports UB042
 
+**Historical technical record.** Current work order, status and acceptance are
+owned solely by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+Old next-step, freeze, proof-count and campaign instructions below are retired.
+Unique source findings are retained only until their C1 extraction.
+
+
 [AGENT, September 23] The existing concrete object model refuses selected byte
 loads/stores into an atomic scalar before the atomic-source query is reached.
 This is a retained model outcome, not a new race, successful atomic read, or

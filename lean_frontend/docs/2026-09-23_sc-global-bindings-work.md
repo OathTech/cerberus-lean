@@ -1,5 +1,11 @@
 # SC successful global bindings: validated component
 
+**Historical technical record.** Current work order, status and acceptance are
+owned solely by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+Old next-step, freeze, proof-count and campaign instructions below are retired.
+Unique source findings are retained only until their C1 extraction.
+
+
 [AGENT, September 23] continuing the whole SC charter after the validated
 spawn/HB component at `d3d4825d9`. The component now passes all 39 full lanes
 and the mandatory 864-case three-engine report, with unchanged observations/classifications. This is a

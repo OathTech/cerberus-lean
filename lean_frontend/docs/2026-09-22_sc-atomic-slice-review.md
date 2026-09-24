@@ -1,5 +1,11 @@
 # SC fences, compare-exchange and representation review
 
+**Historical technical record.** Current work order, status and acceptance are
+owned solely by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+Old next-step, freeze, proof-count and campaign instructions below are retired.
+Unique source findings are retained only until their C1 extraction.
+
+
 [AGENT, 2026-09-22], parent `06681abd3`, under the
 [SC charter](2026-09-21_charter-sc-prototype.md). This is an implementation
 checkpoint in progress. The public SC entry still reports pending checker
@@ -29,7 +35,7 @@ provenance or copy metadata. The other memory adapters return unavailable.
 Unspecified bytes on either side produce an explicit unsupported result even
 if another pair of bytes differs; length mismatch is also explicit. Both reads
 and their failure-time state remain recorded. This implements the user's
-[upstream-gap policy](2026-09-21_sc-upstream-gap-policy.md), not undefined behavior,
+[upstream-gap policy](2026-09-22_sc-boundary-register.md#fail-closed-policy), not undefined behavior,
 CAS false, or silent removal of an alternative. Five kernel laws characterize
 the shared comparison's specified/unspecified cases.
 

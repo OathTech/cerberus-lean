@@ -1,8 +1,13 @@
 # Concurrency charter and legacy implementation assessment
 
+**Historical assessment of the legacy branch.** Its proposed execution/landing
+queue is retired. Current SC work follows only the
+[SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+
+
 **Recommendation: REQUEST CHANGES to the landing charter and the implementation. Keep the SC-first direction and reuse the prototype, but do not land it as the consumer's trusted concurrency model in its present form.** The principal blockers are semantic counterexamples and an unreliable legacy validation lane. They cannot be resolved by rebasing, preserving the existing 30 litmus outcomes, and attempting the proposed proofs for a bounded time.
 
-Reviewed by Codex, 2026-09-19. The [landing charter](2026-09-19_charter-concurrency-landing.md) is at `arc/concurrency-landing`, `38d7d2123ca1dd2a0769c19518b9410c7d4ea1f5`. Its only change over `feature/concurrency`, `086d8762d382eff375c101f5f0c64d3ffe9bccc7`, is the charter itself. The implementation assessed here is therefore the legacy S0–S7 implementation, **not a future rebased L1 candidate**. Mainline at entry was `0457732e1`. Work ran in the isolated `audit/concurrency-design-20260919` worktree; no implementation, charter, baseline, shared installation, or existing branch history was edited. [Evidence and reproduction](2026-09-19_concurrency-design-assessment-evidence/README.md).
+Reviewed by Codex, 2026-09-19. The retired landing charter was at `arc/concurrency-landing`, `38d7d2123ca1dd2a0769c19518b9410c7d4ea1f5`. Its only change over `feature/concurrency`, `086d8762d382eff375c101f5f0c64d3ffe9bccc7`, is the charter itself. The implementation assessed here is therefore the legacy S0–S7 implementation, **not a future rebased L1 candidate**. Mainline at entry was `0457732e1`. Work ran in the isolated `audit/concurrency-design-20260919` worktree; no implementation, charter, baseline, shared installation, or existing branch history was edited. [Evidence and reproduction](2026-09-19_concurrency-design-assessment-evidence/README.md).
 
 ## Assessment against the goals
 

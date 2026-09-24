@@ -1,5 +1,11 @@
 # Landing `feature/concurrency` — trust story and scoping note (2026-09-17)
 
+**Retired legacy-branch scoping note.** The rulings below are historical context,
+not an additional landing queue or completion contract for `arc/sc-prototype`.
+Use only the [SC execution roadmap](2026-09-21_charter-sc-prototype.md) for current
+scope, work order, validation and acceptance.
+
+
 **Status:** SCOPING NOTE, written by the orchestrator [AGENT] after the operator's rulings of 2026-09-16/17 (§0, verbatim). It fixes the trust story under which the concurrency Phase-0 branch (`feature/concurrency` @ `086d8762d`, slices S0–S7, pre-merge audit `2026-09-05_concurrency-premerge-audit.md` — on the branch `audit/concurrency-premerge` @ `c0a926707`, NOT on the feature branch — MERGE-WITH-FIXES, fixes in S7) is landed by THIS orchestrator, and it lists the landing slice's deliverables for the charter that follows. Sequencing [USER]: after the pristine-oracle instrument (WP-O) and the allocator/address-bound slice. Everything marked [AGENT] is a recommendation the operator has agreed to in conversation ("Great, I agree with all of this", 2026-09-17); the charter carries the rulings, this note carries the reasoning.
 
 ## 0. Rulings (verbatim)

@@ -2,6 +2,14 @@
 
 Lean 4 port of the Cerberus C semantics, generated from the same `.lem` source as the OCaml backend. The intended correspondence and its current failure/runtime limits are described in [VALIDATION.md](VALIDATION.md).
 
+## Active SC work
+
+The [SC execution roadmap](docs/2026-09-21_charter-sc-prototype.md) is the only
+active plan/status for `arc/sc-prototype`. Follow its September 24 pruning and
+validation cadence over older per-component instructions. Historical dated
+reviews and scratch plans are not execution queues. The operational contract,
+boundary register and effect inventory are supporting specifications.
+
 ## Architecture
 
 ```
@@ -395,8 +403,8 @@ upstream-facing reports (Cerberus, Lem, Lean) go in
 
 ## Status
 
-Current state, boundary list, and per-capability status live in the
-dated records — do not maintain status lists here. Start points:
+SC status lives only in the execution roadmap above. Other capabilities use
+their dated records; do not maintain duplicate status lists here. Start points:
 
 - Latest records: `docs/` (dated `*-record.md` / `*-results.md`). The
   arc index that lived in the container's `ROADMAP.md` is archived at

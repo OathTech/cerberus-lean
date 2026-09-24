@@ -1,5 +1,11 @@
 # Checked filesystem boundary inventory
 
+**Historical technical record.** Current work order, status and acceptance are
+owned solely by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+Old next-step, freeze, proof-count and campaign instructions below are retired.
+Unique source findings are retained only until their C1 extraction.
+
+
 [AGENT, 2026-09-23] This inventory supplements SC-D07 and SC-D09–14 in the
 [live register](2026-09-22_sc-boundary-register.md). The
 [repair record](2026-09-23_sc-filesystem-repair-work.md) and

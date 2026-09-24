@@ -1,5 +1,11 @@
 # SC lexical spawn and happens-before queries: validated component
 
+**Historical technical record.** Current work order, status and acceptance are
+owned solely by the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
+Old next-step, freeze, proof-count and campaign instructions below are retired.
+Unique source findings are retained only until their C1 extraction.
+
+
 **Current status:** all 39 full validation lanes and the mandatory 864-case
 three-engine report pass with unchanged observations/classifications. The final
 focused check covers 43 paired controls and 52 imported laws. This does not
