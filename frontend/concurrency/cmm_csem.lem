@@ -660,11 +660,11 @@ let {hol; isabelle; tex} statically_satisfied condition opsem (p : program) =
 
 
 val observable_filter : forall. set (candidate_execution) -> set (observable_execution)
-declare lean target_rep function observable_filter = `sorry`
+declare lean target_rep function observable_filter = `LemUnsupported.Cmm.observable_filter`
 let {hol; isabelle; tex} observable_filter X = {(Xo,Xw) | exists rl. (Xo,Xw,rl) IN X}
 
 val behaviour : forall. memory_model -> condition_t -> opsem_t -> program -> program_behaviours
-declare lean target_rep function behaviour = `sorry`
+declare lean target_rep function behaviour = `LemUnsupported.Cmm.behaviour`
 let {hol; isabelle; tex} behaviour M condition opsem (p : program) =
   let consistent_executions =
     { (Xo,Xw,rl) |
@@ -679,12 +679,12 @@ let {hol; isabelle; tex} behaviour M condition opsem (p : program) =
 
 
 val rf_observable_filter : forall. set (candidate_execution) -> set (rf_observable_execution)
-declare lean target_rep function rf_observable_filter = `sorry`
+declare lean target_rep function rf_observable_filter = `LemUnsupported.Cmm.rf_observable_filter`
 let {hol; isabelle; tex} rf_observable_filter X = {(Xo,Xw.rf) | exists rl. (Xo,Xw,rl) IN X}
 
 
 val rf_behaviour : forall. memory_model -> condition_t -> opsem_t -> program -> rf_program_behaviours
-declare lean target_rep function rf_behaviour = `sorry`
+declare lean target_rep function rf_behaviour = `LemUnsupported.Cmm.rf_behaviour`
 let {hol; isabelle; tex} rf_behaviour M condition opsem (p : program) =
   let consistent_executions =
     { (Xo,Xw,rl) |
@@ -1299,7 +1299,7 @@ let single_thread_memory_model =
 
 
 val single_thread_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function single_thread_behaviour = `sorry`
+declare lean target_rep function single_thread_behaviour = `LemUnsupported.Cmm.single_thread_behaviour`
 let {hol; isabelle; tex} single_thread_behaviour opsem (p : program) =
   behaviour single_thread_memory_model single_thread_condition opsem p
 
@@ -1495,7 +1495,7 @@ let locks_only_memory_model =
   |>
 
 val locks_only_behaviour : forall . opsem_t -> program -> program_behaviours
-declare lean target_rep function locks_only_behaviour = `sorry`
+declare lean target_rep function locks_only_behaviour = `LemUnsupported.Cmm.locks_only_behaviour`
 let {hol; isabelle; tex} locks_only_behaviour opsem (p : program) =
   behaviour locks_only_memory_model locks_only_condition opsem p
 
@@ -1597,7 +1597,7 @@ let relaxed_only_memory_model =
 
 
 val relaxed_only_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function relaxed_only_behaviour = `sorry`
+declare lean target_rep function relaxed_only_behaviour = `LemUnsupported.Cmm.relaxed_only_behaviour`
 let {hol; isabelle; tex} relaxed_only_behaviour opsem (p : program) =
   behaviour relaxed_only_memory_model relaxed_only_condition opsem p
 
@@ -1746,7 +1746,7 @@ let release_acquire_memory_model =
 
 
 val release_acquire_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function release_acquire_behaviour = `sorry`
+declare lean target_rep function release_acquire_behaviour = `LemUnsupported.Cmm.release_acquire_behaviour`
 let {hol; isabelle; tex} release_acquire_behaviour opsem (p : program) =
   behaviour release_acquire_memory_model release_acquire_condition opsem p
 
@@ -1865,7 +1865,7 @@ let release_acquire_relaxed_memory_model =
 
 
 val release_acquire_relaxed_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function release_acquire_relaxed_behaviour = `sorry`
+declare lean target_rep function release_acquire_relaxed_behaviour = `LemUnsupported.Cmm.release_acquire_relaxed_behaviour`
 let {hol; isabelle; tex} release_acquire_relaxed_behaviour opsem (p : program) =
   behaviour release_acquire_relaxed_memory_model release_acquire_relaxed_condition opsem p
 
@@ -2021,7 +2021,7 @@ let release_acquire_fenced_memory_model =
 
 
 val release_acquire_fenced_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function release_acquire_fenced_behaviour = `sorry`
+declare lean target_rep function release_acquire_fenced_behaviour = `LemUnsupported.Cmm.release_acquire_fenced_behaviour`
 let {hol; isabelle; tex} release_acquire_fenced_behaviour opsem (p : program) =
   behaviour release_acquire_fenced_memory_model release_acquire_fenced_condition opsem p
 
@@ -2110,7 +2110,7 @@ let sc_accesses_memory_model =
 
 
 val sc_accesses_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function sc_accesses_behaviour = `sorry`
+declare lean target_rep function sc_accesses_behaviour = `LemUnsupported.Cmm.sc_accesses_behaviour`
 let {hol; isabelle; tex} sc_accesses_behaviour opsem (p : program) =
   behaviour sc_accesses_memory_model sc_accesses_condition opsem p
 
@@ -2210,7 +2210,7 @@ let sc_fenced_memory_model =
 
 
 val sc_fenced_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function sc_fenced_behaviour = `sorry`
+declare lean target_rep function sc_fenced_behaviour = `LemUnsupported.Cmm.sc_fenced_behaviour`
 let {hol; isabelle; tex} sc_fenced_behaviour opsem (p : program) =
   behaviour sc_fenced_memory_model sc_fenced_condition opsem p
 
@@ -2377,7 +2377,7 @@ let with_consume_memory_model =
 
 
 val with_consume_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function with_consume_behaviour = `sorry`
+declare lean target_rep function with_consume_behaviour = `LemUnsupported.Cmm.with_consume_behaviour`
 let {hol; isabelle; tex} with_consume_behaviour opsem (p : program) =
   behaviour with_consume_memory_model with_consume_condition opsem p
 
@@ -2493,7 +2493,7 @@ let standard_memory_model =
   |>
 
 val standard_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function standard_behaviour = `sorry`
+declare lean target_rep function standard_behaviour = `LemUnsupported.Cmm.standard_behaviour`
 let {hol; isabelle; tex} standard_behaviour opsem (p : program) =
   behaviour standard_memory_model with_consume_condition opsem p
 
@@ -2543,13 +2543,13 @@ let release_acquire_SC_memory_model =
 
 
 val release_acquire_SC_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function release_acquire_SC_behaviour = `sorry`
+declare lean target_rep function release_acquire_SC_behaviour = `LemUnsupported.Cmm.release_acquire_SC_behaviour`
 let {hol; isabelle; tex} release_acquire_SC_behaviour opsem (p : program) =
   behaviour release_acquire_SC_memory_model release_acquire_SC_condition opsem p
 
 
 val release_acquire_SC_rf_behaviour : forall. opsem_t -> program -> rf_program_behaviours
-declare lean target_rep function release_acquire_SC_rf_behaviour = `sorry`
+declare lean target_rep function release_acquire_SC_rf_behaviour = `LemUnsupported.Cmm.release_acquire_SC_rf_behaviour`
 let {hol; isabelle; tex} release_acquire_SC_rf_behaviour opsem (p : program) =
   rf_behaviour release_acquire_SC_memory_model release_acquire_SC_condition opsem p
 
@@ -2595,7 +2595,7 @@ let SC_memory_model =
 
 
 val SC_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function SC_behaviour = `sorry`
+declare lean target_rep function SC_behaviour = `LemUnsupported.Cmm.SC_behaviour`
 let {hol; isabelle; tex} SC_behaviour opsem (p : program) =
   behaviour SC_memory_model SC_condition opsem p
 
@@ -2744,12 +2744,12 @@ let tot_memory_model =
 
 
 val tot_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function tot_behaviour = `sorry`
+declare lean target_rep function tot_behaviour = `LemUnsupported.Cmm.tot_behaviour`
 let {hol; isabelle; tex} tot_behaviour opsem (p : program) =
   behaviour tot_memory_model tot_condition opsem p
 
 val tot_rf_behaviour : forall. opsem_t -> program -> rf_program_behaviours
-declare lean target_rep function tot_rf_behaviour = `sorry`
+declare lean target_rep function tot_rf_behaviour = `LemUnsupported.Cmm.tot_rf_behaviour`
 let {hol; isabelle; tex} tot_rf_behaviour opsem (p : program) =
   rf_behaviour tot_memory_model tot_condition opsem p
 
@@ -3033,7 +3033,7 @@ let release_acquire_no_locks_memory_model =
 
 
 val release_acquire_no_locks_behaviour : forall. opsem_t -> program -> program_behaviours
-declare lean target_rep function release_acquire_no_locks_behaviour = `sorry`
+declare lean target_rep function release_acquire_no_locks_behaviour = `LemUnsupported.Cmm.release_acquire_no_locks_behaviour`
 let {hol; isabelle; tex} release_acquire_no_locks_behaviour opsem (p : program) =
   behaviour release_acquire_no_locks_memory_model release_acquire_no_locks_condition opsem p
 
@@ -3277,11 +3277,11 @@ type program_behaviours_fp =
   | Undefined_fp
 
 val observable_filter_fp : forall. set (candidate_execution_fp) -> set (observable_execution_fp)
-declare lean target_rep function observable_filter_fp = `sorry`
+declare lean target_rep function observable_filter_fp = `LemUnsupported.Cmm.observable_filter_fp`
 let {hol; isabelle; tex} observable_filter_fp X = {(Xo,Xw) | exists rl. (Xo,Xw,rl) IN X}
 
 val behaviour_fp : forall. memory_model_fp -> condition_t -> opsem_t -> program -> program_behaviours_fp
-declare lean target_rep function behaviour_fp = `sorry`
+declare lean target_rep function behaviour_fp = `LemUnsupported.Cmm.behaviour_fp`
 let {hol; isabelle; tex} behaviour_fp M condition opsem (p : program) =
   let consistent_executions_fp =
     { (Xo,Xw,rl) |
@@ -3415,6 +3415,6 @@ let overlap_memory_model =
   |>
 
 val overlap_behaviour: opsem_t -> program -> program_behaviours_fp
-declare lean target_rep function overlap_behaviour = `sorry`
+declare lean target_rep function overlap_behaviour = `LemUnsupported.Cmm.overlap_behaviour`
 let {hol; isabelle; tex} overlap_behaviour opsem p =
   behaviour_fp overlap_memory_model sc_fenced_condition opsem p

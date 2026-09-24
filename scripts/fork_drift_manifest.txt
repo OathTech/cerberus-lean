@@ -1,3 +1,10 @@
+# Public-readiness single re-pin, 2026-09-24: Lem 38f87d5 -> 9bb6c6b583c2eb4ecf6ca5b21a274dacc29e0fa4.
+# Generation comparison and gates: lean_frontend/docs/2026-09-24_public-readiness-remediation.md.
+# Public-readiness M1/M4, 2026-09-24 [AGENT; single reviewed source-content rows].
+# common.sh uses the caller's opam environment without requiring Git redirects;
+# cmm_csem.lem replaces all 23 excluded Lean sorry reps with unsupported markers.
+# scripts/common.sh: 008b5ade8b923f9d7ae0fe6fce837dee3e7a75ef2c414dde8791a78633545744 -> 0f02d01c0f3655223d7d9561f8629c464d9a144aa5fdb6fbcda9d8034e5468ae
+# frontend/concurrency/cmm_csem.lem: 01e3dac323ce0d07504e6787e80d847bcffab89621480bc3eef229bfe195a4fd -> e2ac087fffa4ae3cd1fad234184323b85ce5c6561c3f61e1255b2e478da9d4c7
 # match-pattern-arity CLOSURE round 3 — the guard's own finding, 2026-09-23 [USER 2026-09-23] "Yeah, we shoudl fix and file to the tray,
 # per our rule that unambiguous bugs get fixes" [AGENT; two NEW [files] + [source-content] rows + this NOTE, no --refresh]:
 # runtime/libcore/std.core:618-619 and runtime/libcore/std_inner_arg_temps.core:574-575 declared `builtin pwrite`/`builtin pread` with
@@ -390,7 +397,7 @@ merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
 #   were derived with (the layer-2 hashes are relative to it). Cross-checked
 #   against `lem -v` by the gate when lem is on PATH (P0 repair 2026-09-05;
 #   was a stale af5df71, audit F4 (c)). Refresh recipe rewrites it.
-lem-pin=38f87d5
+lem-pin=9bb6c6b5
 renumber=arc13
 [files]
 Makefile
@@ -490,7 +497,7 @@ util/cerb_fresh.ml
 100644 6940e7e73f0bd7d1fedfa9d83f9401125064171b6e9b26c62493cc667bcedc4d backend/lean_export/dune
 100644 a3e314407d7f252f3613639df3325589fd9c653a9bd7d2b3caa66f07e712e444 cerberus-lib.opam
 100644 efc81ffdefabd01716ec52b3e90258db0313364c5fedce611626b1ea1496cf5c cerberus.opam
-100644 01e3dac323ce0d07504e6787e80d847bcffab89621480bc3eef229bfe195a4fd frontend/concurrency/cmm_csem.lem
+100644 e2ac087fffa4ae3cd1fad234184323b85ce5c6561c3f61e1255b2e478da9d4c7 frontend/concurrency/cmm_csem.lem
 100644 d9fb59bfce8faf2038f3db9bcdc5c2fdb60776353f4b5bc664602fc2b42c4f24 frontend/concurrency/cmm_op.lem
 100644 08f030cb79b455238f90bd44e8c7a641d5b4b05084063af09d61329d145d54c6 frontend/model/ail/ailSyntax.lem
 100644 0b76860551c48f6403a0fa827a974c03f07b0a0b73d64c5008270b4c26634ea5 frontend/model/ail/ailTypesAux.lem
@@ -557,7 +564,7 @@ util/cerb_fresh.ml
 100644 cf6fbe0be7dae96f6ce2c8cf7d7013b89d350da563e5179be8a2bb298d7ee24a runtime/libcore/impls/i686-apple-darwin10-gcc-4.2.1.impl
 100644 6f78799f7d7ad93d2dcccd9487004e0e5f742f550f691825c1af878ee9278d11 runtime/libcore/std.core
 100644 7eb4628819de61b5ca997209df88f09545553606f8d8305e530b954093820850 runtime/libcore/std_inner_arg_temps.core
-100755 008b5ade8b923f9d7ae0fe6fce837dee3e7a75ef2c414dde8791a78633545744 scripts/common.sh
+100755 0f02d01c0f3655223d7d9561f8629c464d9a144aa5fdb6fbcda9d8034e5468ae scripts/common.sh
 100755 e46f9aac905e4afe0b3f673e725bb4428c0c2781bf51659875e658addd453cdb tools/check_driver_fresh.sh
 100755 e2d0b6b781462ce2d57f613185fc863d9fff7f6af889172e9bc813f4bf4e3c7c tools/check_handwritten_sync.sh
 100755 9a07e1a9188443cebef04bef184bbac1a876c996fad0caca90ea9b4ce3605292 tools/check_lem_sync.sh

@@ -49,13 +49,10 @@ export TERM=dumb
 # Shared with the Python decoder; includes the historical descendant banner.
 CAP_OOM_PATTERN=$(cat "$SCRIPT_DIR/cap_oom.regex") || { echo "Error: shared cap witness pattern missing" >&2; exit 2; }
 
-# Fail-fast env guard ([USER] env-trap tweak, arc-13 audit-fix batch):
-# every consumer of this file assumes the container env — the opam switch
-# putting lem/dune on PATH and the GIT_CONFIG_GLOBAL offline redirects.
-# A bare shell otherwise fails cryptically deep inside a lane
-# ("Compilation requires [lem]", git exit-128). Refuse up front instead.
-if [[ -z "${GIT_CONFIG_GLOBAL:-}" ]] || ! command -v lem >/dev/null 2>&1; then
-    echo "env not loaded: run via scripts/ce or source scripts/env.sh" >&2
+# Public builds need the fork Lem executable in the active opam environment.
+# Offline Git redirects are optional, never a prerequisite for a normal clone.
+if ! command -v lem >/dev/null 2>&1; then
+    echo "lem not found: follow lean_frontend/README.md and run this command with opam exec --switch=. --" >&2
     exit 2
 fi
 
