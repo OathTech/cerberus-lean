@@ -20,9 +20,11 @@ for build instructions, architecture, and development guide;
 [`lean_frontend/VALIDATION.md`](lean_frontend/VALIDATION.md) for the
 differential-validation trust story.
 
-## Active SC work
+## Frozen SC prototype
 
-For `arc/sc-prototype`, start with the [SC execution roadmap](lean_frontend/docs/2026-09-21_charter-sc-prototype.md).
-It owns scope, pruning, work order, validation cadence, status and resumption.
-Older concurrency charters, component notes and scratch plans are historical;
-do not restart their queues or add their old gates to the roadmap.
+`arc/sc-prototype` is frozen by the user's September 24 restart instruction.
+Start with the [independent review](lean_frontend/docs/2026-09-24_sc-independent-scope-review.md)
+and [branch inventory and migration handoff](lean_frontend/docs/2026-09-24_sc-branch-inventory.md).
+The user will start a new branch with a new agent and a new plan, migrating
+working pieces carefully. The former SC roadmap and older component/scratch
+plans are historical; do not resume their queues or inherit their gates.

@@ -2,13 +2,15 @@
 
 Lean 4 port of the Cerberus C semantics, generated from the same `.lem` source as the OCaml backend. The intended correspondence and its current failure/runtime limits are described in [VALIDATION.md](VALIDATION.md).
 
-## Active SC work
+## Frozen SC prototype
 
-The [SC execution roadmap](docs/2026-09-21_charter-sc-prototype.md) is the only
-active plan/status for `arc/sc-prototype`. Follow its September 24 pruning and
-validation cadence over older per-component instructions. Historical dated
-reviews and scratch plans are not execution queues. The operational contract,
-boundary register and effect inventory are supporting specifications.
+The user froze `arc/sc-prototype` on September 24 for a fresh branch, agent and
+plan with selective migration. Start with the
+[independent review](docs/2026-09-24_sc-independent-scope-review.md) and
+[branch inventory and migration handoff](docs/2026-09-24_sc-branch-inventory.md).
+The former roadmap, component notes and scratch plans are historical, not
+execution queues. The operational contract, boundary register and effect
+inventory retain source information, subject to the handoff's status corrections.
 
 ## Architecture
 

@@ -1,9 +1,17 @@
-# SC prototype: execution roadmap
+# SC prototype: frozen execution roadmap
 
-Established September 21; consolidated September 24, 2026 after the user's
-critical review and pruning instruction. **This is the single active SC plan,
-status and resumption point.** Older charters, component work logs, audit plans
-and scratch recipes do not supply additional work or acceptance requirements.
+**Frozen September 24, 2026 by the user's restart instruction.** The user asked
+for the independent review and a detailed branch report to be committed at this
+branch's tip, then a fresh branch and agent with a new plan and careful migration.
+Start with the [independent review](2026-09-24_sc-independent-scope-review.md) and
+[branch inventory and migration handoff](2026-09-24_sc-branch-inventory.md).
+
+This document was established September 21 and consolidated September 24.
+Its remaining sections preserve the earlier execution record, including stale
+status and priorities. They are **not an active plan or authorization to resume**
+implementation, old checkpoints, proof campaigns or pending agent-authored
+decision requests. The new handoff takes precedence; it does not approve a new
+implementation plan. Supporting specifications remain historical source material.
 
 ## Objective and authority
 
@@ -28,7 +36,7 @@ No merge, push, customer mutation or shared toolchain/dependency mutation is
 implied. Escalate only a concrete unresolved semantic choice or unavailable
 capability that prevents the next necessary action; continue independent work.
 
-## Current status and next action
+## Status at freeze (historical execution record)
 
 - Branch/worktree: `arc/sc-prototype`,
   `/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype`.

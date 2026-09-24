@@ -34,4 +34,6 @@ From this directory, with the project environment loaded:
 
 The toolchain and dependency revision match the provider. This example neither
 builds nor modifies the customer repository. Remaining interpretation and
-runtime obligations stay visible; see the SC charter for completion status.
+runtime obligations stay visible; see the
+[frozen branch handoff](../../docs/2026-09-24_sc-branch-inventory.md) for completion
+status and the limits of this example's claims.

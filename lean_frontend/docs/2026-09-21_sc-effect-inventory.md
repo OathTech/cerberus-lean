@@ -1,9 +1,10 @@
 # SC prototype: effect inventory at the implementation base
 
-This is a coverage/source specification, not a work queue. Use the
-[SC execution roadmap](2026-09-21_charter-sc-prototype.md) for current status and
-execution order. The original line references are from September 21; each row
-states an obligation, not a claim that its producer/checker is still unimplemented.
+This is a coverage/source specification from the frozen prototype, not a work
+queue. Use the [branch handoff](2026-09-24_sc-branch-inventory.md) for status,
+scope corrections and migration advice. The original line references are from
+September 21; each row states an obligation, not a claim that its producer/checker
+is still unimplemented or belongs in the successor milestone.
 
 
 The original source inventory is at `5407597d9eeba0259d65b728e86a860ad4614ab3`;

@@ -1,9 +1,10 @@
 # SC semantic boundaries and implementation obligations
 
-Live technical register supporting the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
-The roadmap owns work order, acceptance and current checkpoint status. This
-register owns individual G/P/D cases; evidence counts below describe their dated
-checks, not completion of the whole SC feature.
+Technical register from the now-frozen SC prototype. Start with the
+[branch handoff](2026-09-24_sc-branch-inventory.md) for current producer status,
+known holes and migration advice. This register retains individual G/P/D cases;
+older status text and evidence counts describe dated checks, not completion of
+the whole SC feature or the successor's work order.
 
 ## Fail-closed policy
 

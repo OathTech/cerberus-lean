@@ -1,9 +1,10 @@
 # SC prototype: operational contract and reference obligations
 
-Technical specification supporting the [SC execution roadmap](2026-09-21_charter-sc-prototype.md).
-The roadmap owns current work, checkpoints and validation cadence. This file
-owns semantic construction and reference obligations; it does not assert that
-the public SC path is complete.
+Technical specification from the now-frozen SC prototype. For current status,
+known design defects and migration advice, start with the
+[branch handoff](2026-09-24_sc-branch-inventory.md) and its independent review.
+This file retains the former semantic construction and reference obligations;
+it is not a successor plan or a claim that public SC is complete.
 
 ## Reference identity and scope
 
