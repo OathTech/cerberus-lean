@@ -34,7 +34,8 @@ capability that prevents the next necessary action; continue independent work.
   `/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype`.
 - Base: `5407597d9eeba0259d65b728e86a860ad4614ab3`.
   C1 pruning and consolidation commit: `0e6947988`; C2 scalar integration
-  checkpoint: `8a350e2a1`. C2 acceptance and C3/C4 remain in progress.
+  checkpoint: `8a350e2a1`; C3 metadata/array/view checkpoints: `0f437971a`,
+  `307ac0d3e`. C2 acceptance and C3/C4 remain in progress.
 - The actual scheduler, primitive observations, atomic operations, source-order
   evidence and failure-state repairs exist. **Public SC is unfinished:**
   the new `Driver.drive true` completion path constructs and checks a candidate,
@@ -91,14 +92,41 @@ capability that prevents the next necessary action; continue independent work.
   selected executions, recorded with commands/status/binary hashes in
   `.tmp/sc-prototype/c3-probes.json`; fifteen added classifier controls cover
   these cases and prevent wider overlapping views from certifying separate
-  locations. The whole-C provider API is the next independent integration;
-  it must retain the remaining interpretation obligations visibly.
+  locations. The whole-C provider API below retains the remaining
+  interpretation obligations visibly.
   The wider-view guard retains the lowering's unspecified whole-array store
   when it precedes element accesses; unordered controls remain refused and
   no initialized values are inferred from that store.
   Aggregate initialization, structure/union members, partial representation
   accesses, remaining typed views, allocator reuse and runtime guards remain
   unfinished. No full SC acceptance claim follows from this checkpoint.
+- **C4 provider API implemented, final acceptance still open:** `sc_program`
+  packages the actual whole-program driver continuation with its state;
+  `sc_program_entry` is used by both CLIs. `sc_program_start`,
+  `sc_program_node` and `sc_program_resume` preserve outer initialization/main/
+  finalization work and paused services. `CerbSCOperational.start`, `terminal`
+  and `outcomes` expose the same computation, typed results and caller bounds.
+  Semantic fuel is captured at construction; the outcome runner has a separate
+  explicit exploration-depth budget, chosen equal by the CLI. No successful-at-
+  some-fuel semantics or hidden fuel renewal is introduced.
+  The rewritten external consumer compiles against this API and proves its
+  actual-driver connection, retained fault assertion, selected continuation
+  identity and exhaustion case. Whole-program controls distinguish global
+  initialization from main completion, retained outside-lifetime UB, blocking
+  and exhaustion. Both builds, both SC suites, native controls and the consumer
+  pass. Fresh census remains 225 registered sites; reviewed fork pins pass.
+  Selected paired global-init/main, varargs, array and signed-view probes pass;
+  the global fixture also passes sequentially. Commands, statuses and complete
+  observations are in `.tmp/sc-prototype/c4-probes.json`. Final C4 coverage and
+  release validation remain outstanding; no full campaign was repeated.
+- **Next concrete integration:** finish C2's selected C families and C3's
+  representation/runtime adapter. Native selected SB, publication and four
+  CAS probes give allowed outcomes; the mixed example reaches its race
+  alternative. They are not complete sets or yet paired acceptance evidence.
+  The fence function needs the bundled C library; `--nolibc` leaves it
+  undefined, while the library-backed selected probe timed out at 15 seconds.
+  Resolve that actual path before granting fence-C support. Do not grow a
+  separate exploration or checking framework.
 - G06's chosen precise GCC preprocessor-observer experiment lacks the matching
   GCC 13.3 plugin SDK. A capability question is already pending; do not ask it
   again or bypass network controls. This blocks that experiment, not C1/C2.

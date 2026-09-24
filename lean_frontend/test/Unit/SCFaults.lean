@@ -46,7 +46,18 @@ private def controls (fuel : Nat) : List (String × Bool) := Id.run do
   let badReadShape := CerbSCOperational.node
     (sc_cas_read_representation : ndM (List CerbMem.AbsByte) step_kind driver_error
       (mem_constraint CerbMem.IntegerValue) driver_state) enabled
-  let publicEntry := CerbND.runND (drive f.tagDefs true f ["typed fault control"]) base
+  let globalSym := Symbol "sc-whole-program-control" 100 SD_None
+  let wholeFile := { program (pureExpr (intval 42)) with
+    globs := [(globalSym, GlobalDef (BTy_unit,signed_int) (pureExpr Vunit))] }
+  let initialized := CerbSCOperational.start fuel 2 0x10000 wholeFile
+    CerbFS.fs_initial_state none ["whole-program SC control"]
+  let publicEntry := CerbSCOperational.outcomes fuel initialized.1
+  let faultProgram := (CerbSCOperational.start fuel 2 0x10000
+    (program (storeExpr 20 200)) CerbFS.fs_initial_state none ["whole-program fault"]).1
+  let faultResults := CerbSCOperational.outcomes fuel faultProgram
+  let blockedProgram := (CerbSCOperational.start fuel 2 0x10000
+    (program (Expr [] (Ewait 99))) CerbFS.fs_initial_state none ["whole-program blocked"]).1
+  let blockedResults := CerbSCOperational.outcomes fuel blockedProgram
   return [
     ("all existing SC diagnostics retain their text and category", diagnosticCases.all fun (fault,message,category) => sc_fault_message fault == message && sc_fault_class fault == category),
     ("uninitialized step keeps state and exposes the protocol identity", match uninitialized.1 with
@@ -68,11 +79,28 @@ private def controls (fuel : Nat) : List (String × Bool) := Id.run do
     ("invalid direct CAS phase reports protocol failure without inventing a read", match badReadShape.1 with
       | NDkilled (Other (DErr_concurrency SC_fault_cas_read_shape)) => (memoryEffects badReadShape.2).isEmpty
       | _ => false),
-    ("public entry classifies the completed execution",
+    ("whole-program entry finishes global initialization and returns main's classified result",
       !publicEntry.isEmpty && publicEntry.all fun (outcome, _, s) => match outcome, s.sc_candidate with
-        | Active _, some result => sc_candidate_accepted result &&
+        | Active value, some result => sc_candidate_accepted result &&
+            value.dres_core_value == intval 42 && !value.dres_blocked &&
+            s.sc_global_bindings.any (fun b => b.sc_binding_symbol == globalSym && b.sc_binding_value == Vunit) &&
             (match s.sc_state0 with | some sc => !sc.sc_effects.isEmpty | none => false)
-        | _, _ => false)]
+        | _, _ => false),
+    ("whole-program operational fault retains initialization effects",
+      !faultResults.isEmpty && faultResults.all fun (outcome, _, s) => match outcome with
+        | Killed _ (Undef0 _ [UB009_outside_lifetime]) => match s.sc_state0 with
+          | some sc => !sc.sc_effects.isEmpty
+          | none => false
+        | _ => false),
+    ("whole-program blocking is distinct from main returning a value",
+      !blockedResults.isEmpty && blockedResults.all fun (outcome, _, _) => match outcome with
+        | Active value => value.dres_blocked && value.dres_core_value == Vunit
+        | _ => false),
+    ("zero exploration budget reports exhaustion without starting initialization",
+      match CerbSCOperational.outcomes 0 initialized.1 with
+        | [(Killed _ reason, [], after)] => reason == CerbND.fuelExhaustedKill &&
+            after.sc_state0.isNone && after.sc_global_bindings.isEmpty
+        | _ => false)]
 
 
 def runTests (args : List String) : IO UInt32 := do

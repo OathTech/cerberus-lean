@@ -2667,6 +2667,40 @@ let drive with_concurrency file args =
     end
   else drive_recorded false file args
 
+(* Whole-program SC configuration. The continuation is the actual public drive
+   computation: its binds retain global initialization, main and finalization;
+   sc_project closes over suspended services and filesystem ownership in every
+   branch. driver_state alone cannot reconstruct any of that paused work.
+   In Lean the caller's LemFuel is captured when this computation is built;
+   observing/resuming a node never reinitializes that fuel or the services. *)
+type sc_program = <|
+  sc_program_state: driver_state;
+  sc_program_continuation: driverM driver_result;
+|>
+(* Continuations have no usable executable equality or ordering; never compare
+   configurations to merge executions. The node exposes their actual work. *)
+
+let sc_program_entry state args = <|
+  sc_program_state= state;
+  sc_program_continuation= drive true state.core_file args |>
+
+let sc_program_start address_space_top file args fs_state origins =
+  let state = initial_driver_state address_space_top file fs_state in
+  sc_program_entry <| state with sc_origins= origins |> args
+
+(* A step view of the existing ND machine, not an alternate evaluator. Every
+   branch label, constraint, suspension and failure-time state is returned.
+   An NDactive here is the outer drive result, never an internal SC_halted. *)
+let sc_program_node program =
+  let ND.ND run = program.sc_program_continuation in
+  run program.sc_program_state
+
+(* Package an offered continuation with the post-state returned by its node.
+   Selection/constraints are represented by that original node; this function
+   does not select a branch or infer support from the chosen execution. *)
+let sc_program_resume state continuation = <|
+  sc_program_state= state; sc_program_continuation= continuation |>
+
 
 (* === Totality declares (arc 3 sweep, 2026-08-18, final batch): Lean-target only.
    find_can_advance: structural list recursion -> automatic.

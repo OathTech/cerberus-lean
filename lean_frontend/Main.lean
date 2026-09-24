@@ -1043,7 +1043,10 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
     -- non-batch; progArgs is the parsed --args list (empty without the
     -- flag, so the historical ["cmdname"] argv is byte-unchanged).
     let driverAction := match callFn with
-      | none => drive runFile.tagDefs concurrency runFile ("cmdname" :: progArgs)
+      | none =>
+        if concurrency then
+          (sc_program_entry runFile.tagDefs drSt ("cmdname" :: progArgs)).sc_program_continuation
+        else drive runFile.tagDefs false runFile ("cmdname" :: progArgs)
       | some (fname, argInts) =>
         CerbCall.driveCall runFile.tagDefs runFile fname
           (argInts.map CerbCall.intValue)

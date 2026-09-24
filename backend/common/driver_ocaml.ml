@@ -170,7 +170,11 @@ let batch_drive ?sc_origins (file: 'a Core.file) args fs_state conf =
   (* computing the value (or values if exhaustive) *)
   let initial_dr_st = Driver.initial_driver_state conf.address_space_top file fs_state in
   let initial_dr_st = { initial_dr_st with Driver.sc_origins=sc_origins } in
-  let values = Smt2.runND conf.exec_mode Impl_mem.cs_module (Driver.drive conf.concurrency file args) initial_dr_st in
+  let computation =
+    if conf.concurrency then
+      (Driver.sc_program_entry initial_dr_st args).Driver.sc_program_continuation
+    else Driver.drive false file args in
+  let values = Smt2.runND conf.exec_mode Impl_mem.cs_module computation initial_dr_st in
   List.mapi (fun i (res, z3_strs, nd_st) ->
     let result = begin match res with
       | ND.Active dres ->
@@ -213,7 +217,9 @@ let drive ?sc_origins file args fs_state conf : execution_result =
   let initial_dr_st = Driver.initial_driver_state conf.address_space_top file fs_state in
   let initial_dr_st = { initial_dr_st with Driver.sc_origins=sc_origins } in
   let values = Smt2.runND conf.exec_mode Impl_mem.cs_module
-      (Driver.drive conf.concurrency file args) initial_dr_st in
+      (if conf.concurrency then
+         (Driver.sc_program_entry initial_dr_st args).Driver.sc_program_continuation
+       else Driver.drive false file args) initial_dr_st in
   let n_actives = List.length (List.filter isActive values) in
   let n_execs   = List.length values                        in
   Cerb_debug.print_debug 2 [] (fun () ->

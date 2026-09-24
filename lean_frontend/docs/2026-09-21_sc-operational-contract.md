@@ -76,6 +76,28 @@ the additional composition below. No scalar test restriction narrows C3 scope.
 
 ## Machine and choices
 
+The whole-program provider entry is `Driver.sc_program_start`, with
+`CerbSCOperational.start` exposing semantic fuel, fresh supply and address
+space explicitly in Lean. Its `sc_program` contains the actual `drive true`
+computation and driver state. Both frontends use the same `sc_program_entry`.
+The computation retains initialization/main/finalization binds and the services
+closed over by `sc_project`; rebuilding it from driver state would lose work.
+
+`sc_program_node` returns the exact next ND action and post-state. All offered
+alternatives, constraints, labels, suspensions, empty choices and terminal
+causes remain inspectable. `sc_program_resume` packages an offered continuation
+with that post-state; it does not restart execution or select a policy.
+`CerbSCOperational.terminal` recognizes only the outer result/kill. Blocking is
+the original result flag, while typed refusals, UB and fuel exhaustion retain
+their original reasons and the full driver state with prefix findings.
+
+`CerbSCOperational.outcomes` uses the existing ND runner with an explicit
+exploration-depth budget. Semantic worker fuel was captured at initialization;
+the CLI uses the same number for these two bounds. No existential-fuel semantics,
+fuel-stability extension or whole-program safety theorem is asserted here.
+The external example documents consumption of this API. This interface does not
+close the interpretation/runtime obligations listed later in this contract.
+
 1. Reuse the current Core state, thread states/continuations, filesystem state,
    memory model, symbol/event supplies and explicit fuel/address-space inputs.
    Add concurrency information around these definitions, not a second evaluator

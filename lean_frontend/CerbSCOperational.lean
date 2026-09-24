@@ -1,11 +1,57 @@
 import Driver
 import Sc_order_auxiliary
 import CerbNDObserveProofs
+import CerbND
 
 /-! Laws for the actual SC draft operations. These give no axiomatic-Cmm or
 whole-program definedness claim. Caller-selected fuel remains explicit. -/
 namespace CerbSCOperational
 open Lem_Set Lem_Basic_classes
+
+/-- Initialize the actual whole-program SC computation over the linked Core
+file produced by the C pipeline. Fuel and address space are caller parameters;
+the returned supply is the real constructor's remaining fresh-name supply.
+Missing origin evidence is retained as `none`, with the driver's usual refusal.
+The computation includes global initialization, main and finalization. -/
+def start (fuel supply : Nat) (addressSpaceTop : Int)
+    (file : generic_file Unit core_run_annotation) (filesystem : CerbFS.FsState)
+    (origins : Option sc_link_origins) (args : List String) : sc_program × Nat :=
+  @sc_program_start ⟨fuel⟩ file.tagDefs supply addressSpaceTop file args filesystem origins
+
+/-- The existing bounded runner over that same configuration. `budget` bounds
+ND-tree depth; the semantic workers retain the fuel captured at initialization.
+The CLI chooses the same number for both bounds. No fuel is renewed at resume. -/
+def outcomes (budget : Nat) (program : sc_program) :=
+  CerbND.runNDFuel budget program.sc_program_continuation program.sc_program_state
+
+/-- Only a result of the outer computation is terminal. Blocking is the original
+`dres_blocked` flag. A kill keeps its exact typed UB/fault/unsupported cause or
+the distinguished fuel-exhaustion reason, together with all prefix findings.
+The raw `sc_program_node` also preserves empty choices and constraints. -/
+def terminal (program : sc_program) :
+    Option (nd_status driver_result driver_error driver_state × driver_state) :=
+  let (action, after) := sc_program_node program
+  match action with
+  | NDactive result => some (Active result, after)
+  | NDkilled reason => some (Killed after reason, after)
+  | _ => none
+
+/-- This is the actual CLI computation at the same parameters, not a separate
+transition system or an existential claim about sufficiently large fuel. -/
+theorem outcomes_entry [LemFuel] tags state args :
+    outcomes LemFuel.fuel (sc_program_entry tags state args) =
+      CerbND.runND (drive tags true state.core_file args) state := rfl
+
+/-- A suspended or selected computation is reused verbatim, retaining the
+services and outer initialization/main/finalization binds in its closure. -/
+theorem resumed_node state continuation :
+    sc_program_node (sc_program_resume state continuation) =
+      (match continuation with | ND run => run state) := rfl
+
+theorem terminal_failure program reason after
+    (observed : sc_program_node program = (NDkilled reason, after)) :
+    terminal program = some (Killed after reason, after) := by
+  simp only [terminal, observed]
 
 /-- Observe the next ND node, retaining its action and failure-time state. -/
 def node {α info err cs st : Type} (m : ndM α info err cs st) (s : st) :=
