@@ -231,11 +231,14 @@ remediator cites "opam 2.1.5 local help, 2026-09-24". `opam` invocation is
 barred by my charter; unverified by me. Everything else in the recipe is
 checked in R-E(i).
 
-### F10 — N — R-F could not be closed
+### F10 — N — R-F closed by the addendum (second commit)
 
-`test -f <cleanup>/.tmp/orch-ALL-DONE` → absent at every check. Gate
-lines are quoted from the record as claims only; a second commit will add
-the comparison if the marker appears.
+`test -f <cleanup>/.tmp/orch-ALL-DONE` → absent at every check while the
+findings above were formed; the marker appeared before the first commit
+and the comparison is in "R-F addendum" at the end of this record. Result:
+every claimed row-1 and six-lane verdict line agrees verbatim; the
+orchestrator's run used the same 8-character lem (F1 not exercised) and
+contains no generated-tree-vs-base comparison (F8 still open).
 
 ---
 
@@ -500,7 +503,7 @@ libc-exec: SUMMARY: match=12 diff=0 / ALL MATCH RECORDED BASELINE
 "/"-joined form above is my trimming of the same lines.) Note the row-1
 line `lem-pin 9bb6c6b5 = lem -v` documents that the remediator's lem
 printed 8 characters — the environment F1 depends on.
-Orchestrator comparison: **deferred** (marker absent; F10).
+Orchestrator comparison: see the addendum below (second commit).
 
 ## R-G — policy
 
@@ -553,3 +556,118 @@ nothing else that should hold the merge; F2 (quote the ruling) should
 ride along as docs-only. The generated-tree byte-identity and the six-lane
 verdicts are the orchestrator's to confirm; merge authority rests with the
 operator.
+
+---
+
+## R-F addendum — comparison with the orchestrator's gate log (second commit)
+
+[AGENT] Read after `<cleanup worktree>/.tmp/orch-ALL-DONE` appeared;
+source `<cleanup worktree>/.tmp/orch-gates.log` (5758 lines), read-only
+with an absolute path, nothing else in that tree touched. Verbatim lines,
+trimmed to the verdict-bearing ones:
+
+```text
+=== ORCH CERBERUS CLEANUP GATES 2026-09-24T21:23:08Z head=0a6d59eed status_lines=0 ===
+lem: Lem 9bb6c6b5 at /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-cleanup-public-readiness-20260924/_opam/bin/lem
+=== STEP A: prelude-src + dune --force + local install + cerberus.install 21:23:08 ===
+make: Nothing to be done for 'prelude-src'.
+=== PRELUDE_SRC EXIT=0 ===
+=== DUNE_BUILD EXIT=0 ===
+=== DUNE_INSTALL EXIT=0 ===
+=== CERBERUS_INSTALL EXIT=0 ===
+=== STEP B: lean-prelude-src + lean-native-obj + lake build (capped 32G) 21:23:40 ===
+[LEM] generating Lean files in [lean_frontend/generated] (log in [lean_frontend/lem.log])
+=== LEAN_PRELUDE_SRC EXIT=0 ===
+=== LEAN_NATIVE_OBJ EXIT=0 ===
+=== LAKE_BUILD EXIT=0 ===
+=== STEP C: row 1 (test_unit.sh) 21:24:12 ===
+Total: 15 passed, 0 failed
+check_exec_purity: CLEAN (11 modules)
+check_theorem_axioms: generated-tree census OK (219 files: 0 axioms, boundary-opaque population = the 10 registered rows exactly-once (incl. CerbFuel.fuelExhaustedLoc), 0 unsafeCast)
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+check_sorry_token: OK (321 files scanned comment-stripped — generated 219, hand-written+test 67, LemLib 35; 0 sorry tokens)
+check_fuel_forms: forms partition OK (62 MEASURED + 13 ABSORBING + 0 ambient-reachable + 6 ambient-unreachable = 81 fuel'd workers)
+check_exec_totality: CLEAN (22 generated modules + hand-written CerbND, 0 allowlisted)
+check_fork_drift: SELFTEST OK (14 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; unplanted gate green)
+check_fork_content: OK — 84 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 84 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 29 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 9bb6c6b5 = lem -v)
+=== ROW1 EXIT=0 ===
+=== STEP D1: lanes 21:28:31 ===
+=== scripts/test_exec.sh --check-baseline ===
+SUMMARY: total=113 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=5 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+=== EXIT=0 ===
+=== scripts/test_multi_tu.sh ===
+SUMMARY: total=2 match=2 fail=0
+=== EXIT=0 ===
+=== scripts/test_multi_tu.sh --failure-class-projection tests/multi_tu_tray ===
+SUMMARY: total=7 match=7 fail=0
+=== EXIT=0 ===
+=== scripts/test_address_space.sh ===
+=== EXIT=0 ===
+=== STEP D2: lanes 21:29:19 ===
+=== scripts/test_immaculate.sh ===
+=== EXIT=0 ===
+=== scripts/test_libc_exec.sh ===
+SUMMARY: match=12 diff=0
+ALL MATCH RECORDED BASELINE
+=== EXIT=0 ===
+=== scripts/test_bytes.sh ===
+SUMMARY: exec_match=9 neg_pinned=5 fail=0
+ALL AT COMMITTED EXPECTEDS
+=== EXIT=0 ===
+=== scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float ===
+SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+BASELINE OK
+=== EXIT=0 ===
+=== scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug ===
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+BASELINE OK
+=== EXIT=0 ===
+=== scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage ===
+SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+BASELINE OK
+=== EXIT=0 ===
+=== ALL DONE (cerberus gates) 2026-09-24T21:32:49Z ===
+```
+
+**Agreement (claim vs. orchestrator), line by line:** row 1 `Total: 15
+passed, 0 failed`, `check_exec_purity`, `check_theorem_axioms … OK`,
+`check_sorry_token`, `check_fuel_forms` partition, `check_exec_totality`,
+`check_fork_content`, `check_fork_drift … lem-pin 9bb6c6b5 = lem -v` —
+identical text. The six MUST lanes — minimal `113/90/18/5`, coverage
+`212/183/16/13`, debug `90/66/20/4`, float `93/93/0/0`, bytes `9/5/0`,
+libc-exec `12/0` — identical `SUMMARY` lines and identical closing
+verdicts (`BASELINE OK` ×4, `ALL AT COMMITTED EXPECTEDS`, `ALL MATCH
+RECORDED BASELINE`), every step `EXIT=0`. **No disagreement.** The
+orchestrator additionally ran `test_multi_tu.sh` (2/2), the
+`multi_tu_tray` failure-class projection (7/7), `test_address_space.sh` and
+`test_immaculate.sh`, all `EXIT=0` — beyond the record's MUST set.
+
+**What the log does and does not settle:**
+
+1. The orchestrator's `lem` is the remediator's owned-switch binary and
+   prints `Lem 9bb6c6b5` (line 2). **F1 is therefore not exercised** by
+   this run; it remains a prediction for the operator's `deps/lem-pinned`
+   route, where `git describe --always 9bb6c6b` yields `9bb6c6b`.
+2. `make: Nothing to be done for 'prelude-src'` — the OCaml generated tree
+   was not re-derived in this run, and the log contains no
+   generated-tree-vs-base comparison (grep for old_files/changed/identical
+   over the log: none). **F8 stays open** (orchestrator to confirm by a
+   separate diff against the `e9f9d049f`/`38f87d5` trees, e.g. the primary
+   checkout's).
+3. The Lean tree WAS regenerated under `9bb6c6b` (`[LEM] generating Lean
+   files …`, `LEAN_PRELUDE_SRC EXIT=0`), compiled (`LAKE_BUILD EXIT=0`,
+   `Cmm_csem` is a root), and row 1 passed on it with `0 sorry tokens` over
+   219 generated files. A rendered `LemUnsupported.Cmm.*` reference would
+   have failed either lem's generation-time refusal or Lean elaboration;
+   this is direct evidence, independent of F8, that the 23 markers never
+   surface — confirming R-C's "not P1".
+4. `head=0a6d59eed status_lines=0`: the gated tree was the reviewed head
+   with a clean status.
+
+**VERDICT update:** unchanged in substance. The six-lane and row-1 claims
+are now independently confirmed by the orchestrator's log; F1 (P1 in the
+operator's standard re-pin route) and F2 (P2, docs-only) still stand
+before merge; F8 still awaits a tree diff.
