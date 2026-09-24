@@ -1,5 +1,10 @@
 # cerberus-lean: the Cerberus C semantics in Lean 4
 
+**Documentation check, 2026-09-24:** implementation `abe505d3d856162c058653019b27388e8523ce47`;
+baseline inventories and cleanup gate measurements are in
+[the remediation record](docs/2026-09-24_public-readiness-remediation.md).
+Older dated measurements below remain historical evidence.
+
 This directory contains a Lean 4 port of the [Cerberus](https://www.cl.cam.ac.uk/~pes20/cerberus/)
 C semantics. Both targets are generated from shared Lem source, with
 handwritten runtime seams. The Lean pipeline imports the OCaml parser's
@@ -17,12 +22,13 @@ program-data parameters E-A, 2026-09-20, the enum's compatible type is
 program data — a reader parameter of the model). Zero added axiom
 declarations does not prove
 agreement between those declarations and their native implementations.
-See the [supported profile](docs/2026-09-06_supported-profile.md) and
+See the [supported profile](SUPPORTED.md) and
 [VALIDATION.md](VALIDATION.md) for measured scope and remaining release exits.
 The [validation-foundations delivery](docs/2026-09-06_validation-foundations-delivery.md)
-records the final gates, reporting findings, cold proof client and failure
-census. The [master plan](docs/2026-09-05_master-plan.md) recommends scoped
-SC integration next; it is a proposed arc, with landing discussed separately.
+is a historical record. Concurrency work is parked; the announcement concerns
+the sequential port and its stated limits. The operator reported customer
+acceptance on 2026-09-24; this is distinct from complete release certification
+or a general correspondence theorem (see SUPPORTED).
 
 **Provenance.** This port was developed primarily by AI agents
 (Claude, Anthropic) operating under the direction and review of a
@@ -60,24 +66,56 @@ typing, elaboration to Core, execution).
 
 ## Build and run one differential test
 
-From the repository root (`../scripts/env.sh`, one level above this
-repository in the working layout, sets up the opam switch if your
-shell lacks it):
+Measured platform: Linux x86_64; other platforms are unverified.
+Prerequisites: Git, Bash, GNU make/coreutils/findutils/diffutils, GNU time
+(default `/usr/bin/time`), a C toolchain, opam 2, Python 3, and elan with Lean 4.32.2 installed (the committed `lean-toolchain`). The
+measured OCaml toolchain is 5.4.0 with opam 2.1.5 and Dune 3.23.1; the
+package files constrain Dune to `>= 3.21.0 & < 3.24.0`. Use the fork of Lem
+at the **same revision as Lake's LemLib**; upstream `opam install lem` does
+not supply this backend. No parent checkout or Git URL redirects are
+required by the public recipe.
+
+If opam has not been initialized, run `opam init --bare --no-setup` once
+before the following commands.
 
 ```bash
-# OCaml side (the oracle + the C parser front-end)
+git clone --branch mdd/cerberus-lean https://github.com/OathTech/cerberus-lean.git
+cd cerberus-lean
+opam switch create . ocaml-base-compiler.5.4.0 --no-switch --no-install
+# Keep this revision equal to lean_frontend/lakefile.toml.
+opam pin add --switch=. lem git+https://github.com/OathTech/lem-lean.git#9bb6c6b583c2eb4ecf6ca5b21a274dacc29e0fa4 --yes
+opam install --switch=. --deps-only ./cerberus-lib.opam ./cerberus.opam --yes
+
 opam exec --switch=. -- make prelude-src
 opam exec --switch=. -- dune build backend/driver/main.exe cerberus-lib.install
-opam exec --switch=. -- dune install cerberus-lib
+opam exec --switch=. -- dune install --prefix "$PWD/_build/local-install" cerberus-lib
 opam exec --switch=. -- dune build cerberus.install
 
-# Lean side (always memory-capped — never run lake/lean uncapped)
-make lean-prelude-src
-cd lean_frontend && ../scripts/capped lake build
+# Generate the Lean model AND compile its native digest support before linking.
+opam exec --switch=. -- make lean-prelude-src
+CERB_MEM_MAX=32G opam exec --switch=. -- ./scripts/capped make lean-native-obj
+(cd lean_frontend && CERB_MEM_MAX=32G ../scripts/capped lake build CerberusLean cerberus-lean)
 
-# One end-to-end differential run
-cd .. && ./scripts/test_exec.sh tests/minimal/001-return-literal.c
+# Run one C program through both implementations (expected return: 42).
+LEAN_ABORT_ON_PANIC=1 CERB_MEM_MAX=32G opam exec --switch=. -- \
+  ./scripts/test_exec.sh tests/minimal/001-return-literal.c
 ```
+
+The local cold-source check used preinstalled dependencies and local Git
+mirrors; public URL/revision availability and fresh downloads are still
+**UNVERIFIED-OFFLINE**, with operator commands in the remediation record.
+`scripts/capped` tries Linux cgroup v2, then a systemd user service. If
+direct cgroup setup fails and `systemd-run` is absent, it warns and runs
+uncapped; if `systemd-run` exists but its user service is unavailable,
+the command fails. The limit is a ceiling,
+not a stated minimum RAM requirement. Rebuild `lean-native-obj` after native
+source changes. `LEAN_ABORT_ON_PANIC=1` stops reached native panics; it does
+not prevent erasure of unused pure failure expressions.
+
+Fork problems belong in [OathTech/cerberus-lean issues](https://github.com/OathTech/cerberus-lean/issues).
+Include the source and Lem pins, toolchain, small C input and exact command.
+Maintainers use the upstream tray for prepared upstream reports; newcomers
+do not need to edit that tray to report a problem.
 
 The full test surface — unit gates plus the per-corpus differential
 scripts ("lanes") and their pinned baselines — is catalogued in
@@ -110,17 +148,17 @@ the agent-facing operating manual with all build gotchas is
 
 ## The headline validation numbers
 
-Current differential coverage and dated measurements (see
+Committed baseline inventory and historical measurements (see
 [VALIDATION.md](VALIDATION.md) for comparison projections and run tiers,
-and the [repair record](docs/2026-09-06_validation-foundations-audit-repairs.md)
-for the candidate awaiting second review):
+and the [cleanup record](docs/2026-09-24_public-readiness-remediation.md)
+for the exact lanes rerun at the cleanup pins):
 
-- 106/106 upstream `tests/minimal` programs at the pinned baseline —
-  exactly 85 MATCH + 18 UB_MATCH + 3 CERB_SKIP (rows the oracle itself
+- 113 rows in `scripts/exec_baseline.txt` (derived 2026-09-24 at
+  `e9f9d049f`): 90 MATCH + 18 UB_MATCH + 5 CERB_SKIP (rows the oracle itself
   cannot run: recorded, never counted as agreement) — plus the
   coverage, debug, and float suites at their pinned baselines;
-- 213/213 programs of the CN test corpus (multi-TU, libc proxies);
-- 16/16 URIs through libxml2's `xmlParseURISafe` (5 translation
+- Historical measurement: 213/213 programs of the CN test corpus (multi-TU, libc proxies);
+- Historical measurement: 16/16 URIs through libxml2's `xmlParseURISafe` (5 translation
   units, libc-linked, byte-identical output) plus a 1,354-point
   libxml2 `chvalid` boundary battery;
 - a historical 1,669-program csmith classified baseline (not rerun by
@@ -131,7 +169,7 @@ for the candidate awaiting second review):
   Only the 1,359 MATCH/UB_MATCH rows are observation agreement;
   [the reporting record](docs/2026-09-06_ci-reporting-results.md) records
   classification movement and limitations;
-- ~2,000 rendered harness-program executions across the five
+- Historical measurement: ~2,000 rendered harness-program executions across the five
   spec-lab differential families;
 - per-function call-point differentials over the `tests/verify` and
   `corpus/` fixture sets.

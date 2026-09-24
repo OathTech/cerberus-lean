@@ -1,5 +1,10 @@
 # DESIGN — how cerberus-lean works
 
+**Documentation check, 2026-09-24:** implementation `abe505d3d856162c058653019b27388e8523ce47`;
+baseline inventories and cleanup gate measurements are in
+[the remediation record](docs/2026-09-24_public-readiness-remediation.md).
+Older dated measurements below remain historical evidence.
+
 This document explains the architecture for a newcomer. It states what
 each piece is and why the load-bearing choices were made. It is not a
 history; the dated records in `docs/` carry the how-we-got-here.
@@ -93,7 +98,7 @@ old effect-projection axiom — is DELETED, and lem refuses
 `declare {lean} effectful` outright. Zero `axiom` declarations exist
 in this repository OR in LemLib (gate-enforced recursively; see
 VALIDATION.md §3). The surviving pure-signature runtime seam — the
-per-TU digest read — remains an opaque declaration with an ambient native
+frontend per-TU digest read — remains an opaque declaration with an ambient native
 implementation on the declared `@[implemented_by]`/`@[extern]` boundary,
 machine-pinned in `scripts/unsafebaseio_allowlist.txt`. The enum registry
 LEFT that boundary on 2026-09-20 (program-data parameters E-A,
@@ -104,14 +109,18 @@ leading parameter — so the layout of an enum type is a function of the
 program the kernel can see. The default
 configuration switches became transparent definitions on 2026-09-05.
 Pinning the remaining boundary population does not prove agreement between
-its logical and native behavior.
+its logical and native behavior. The execution digest is explicit run-state data
+since D-S (2026-09-22): `core_run_state.sym_digest`, seeded from the last
+program TU by `initial_driver_state sup top digest file fs`. Frontend
+digest selection and native MD5 remain on the declared boundary.
 
 **Totality.** The checked execution slice contains no `partial`
 definitions. Structural and measured functions are total; remaining
 recursive workers use an explicit fuel parameter. That does not establish
 that every input completes, or that every exhaustion/failure is absorbing.
-Eight execution-dependent workers remain in the pending fuel register, and
-13 zero-case kill lemmas do not prove propagation through all successor
+The pending fuel register is empty. The measured inventory has 62 measured
+workers (12 under hypotheses), 13 zero-case kill lemmas and six workers
+outside the execution dependency closure. The 13 zero-case lemmas do not prove propagation through all successor
 cases. Pure failure/sentinel values and runtime overrides remain a separate
 correspondence obligation. Frontend totality is outside this execution-slice
 claim. See the [failure census](docs/2026-09-06_failure-census-and-correspondence.md).
@@ -154,8 +163,8 @@ literal inside `memory/concrete/impl_mem.ml` and a structure-field default in
 `CerbMem.lean` until the slice — is an explicit PARAMETER of the shared model:
 `Mem.initial_mem_state : integer -> mem_state` (`CerbMem.initialMemState top`;
 `MemState.lastAddress` has no default), threaded to the TWO places the model
-builds a memory state — the execution entry `initial_driver_state sup top file
-fs` (`initial_driver_state_given sup top file fs` for the const-expr mini-run)
+builds a memory state — the execution entry `initial_driver_state sup top digest file
+fs` (`initial_driver_state_given sup top digest file fs` for the const-expr mini-run)
 and the desugar state (`Cabs_to_ail.desugar sup top …` seeds
 `Cabs_to_ail_effect.state.address_space_top`, which the desugarer's
 integer-constant-expression mini-run reads to build ITS driver state,
@@ -231,15 +240,18 @@ defect.
 
 ## 7. Offline, pinning, reproducibility
 
-The project is designed to build with **no network**: toolchains
-preinstalled, opam packages installed, all Lake/git dependencies
-cloned locally and mirrored (`deps/mirrors/`), with git `insteadOf`
-redirects supplied per-invocation via `GIT_CONFIG_GLOBAL` (never
-installed globally — the machine is shared). The Lem tool is
-opam-pinned to a fixed commit of `lem-lean` (`deps/lem-pinned`); the
-Lake manifest pins the same commit, and the two pins are kept in
-lockstep — work lands only when branch heads, opam pin, and Lake pin
-agree.
+The [public build recipe](README.md) uses public Git URLs, a local opam
+switch and the pinned Lean toolchain. Its first run needs access to those
+dependencies. An offline build is possible with preinstalled toolchains
+and cached dependencies; local Git `insteadOf` redirects are an optional
+operator setup, not a repository prerequisite. The cleanup's offline
+substitutions are recorded separately from the public verification still
+owed (M9, 2026-09-24 remediation record).
+
+The fork Lem executable and Lake's LemLib must use the same immutable
+commit. Update the owned local opam pin, Lake revision/manifests and drift
+metadata together, regenerate both source trees, and re-run the gates.
+No container-specific `deps/` path is required by that contract.
 
 Two operational rules exist because they were each earned the hard
 way (records in `docs/`): every `lake`/`lean` invocation runs under a

@@ -4,12 +4,14 @@
 
 **This fork adds a Lean 4 port of the semantics** — generated from the
 same Lem model and differentially validated against the OCaml
-implementation across every corpus in the tree: an executable C
+implementation on the documented differential lanes: an executable C
 semantics living natively in Lean 4. See
 [lean_frontend/README.md](lean_frontend/README.md).
 The port was developed primarily by AI agents (Claude, Anthropic)
 working under the direction and review of Mike Dodds; the upstream
-Cerberus semantics is by the people listed below.
+Cerberus semantics is by the people listed below. The fork-specific build
+recipe and limits are in that frontend README (checked 2026-09-24 against
+`abe505d3d856162c058653019b27388e8523ce47`, with gates in its linked remediation record).
 
 
 Web interfaces, papers, and web page

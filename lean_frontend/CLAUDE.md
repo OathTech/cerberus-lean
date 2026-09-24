@@ -322,22 +322,18 @@ a binary built from the old copy.
 
 ## Lem backend interaction
 
-Lem is the OCaml tool `lem` from the lem-lean fork
-(`https://github.com/OathTech/lem-lean`, mainline `mdd/lean-backend`),
-opam-pinned in the LOCAL switch to the container worktree
-`deps/lem-pinned` (branch `cerberus-pin`; `opam pin list --switch=.`
-shows `git+file:///…/deps/lem-pinned#cerberus-pin`). The Lake dep
-`LemLib` is the same repo's `lean-lib/` at the rev in `lakefile.toml`;
-an arc closes only when opam pin = Lake pin = the lem-lean branch head
-(the two-repo pin dance, container CLAUDE.md).
+Lem is the OCaml tool from the lem-lean fork. The public installation
+recipe is [README.md](README.md), including an explicit local opam switch
+and the revision shared with Lake's LemLib. No parent `scripts/env.sh`,
+private Git redirects or container `deps/` worktree is a prerequisite.
+Checked 2026-09-24 against `abe505d3d856162c058653019b27388e8523ce47`; cleanup measurements:
+[remediation record](docs/2026-09-24_public-readiness-remediation.md).
 
-**Updating lem:** move the pin, then reinstall — `git -C
-../deps/lem-pinned reset --hard <lem-lean commit>`, then `make
-rebuild-lem` (= `opam upgrade --switch=. --no-depexts lem`; the path
-form because the switch is local, `--no-depexts` because system-package
-detection fails in the sandbox). Then regenerate both trees (`make
-prelude-src lean-prelude-src`): the lem-sync stamps hash sources and
-outputs, not the lem version.
+When updating Lem, install the chosen immutable revision into an owned
+local switch, update the Lake revision/manifests and fork-drift metadata,
+regenerate both trees (`make prelude-src lean-prelude-src`), and run the
+required ladder gates. Do not install into a shared switch from a worktree.
+The `lem-sync` stamps hash sources and outputs, not the Lem version.
 
 **Key Lem mechanisms:**
 - `declare lean target_rep function f = \`Lean.Name\`` — maps lem function to Lean

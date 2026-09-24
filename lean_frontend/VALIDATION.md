@@ -1,5 +1,13 @@
 # VALIDATION — why you should trust this semantics
 
+**Documentation check, 2026-09-24:** implementation `abe505d3d856162c058653019b27388e8523ce47`;
+baseline inventories and cleanup gate measurements are in
+[the remediation record](docs/2026-09-24_public-readiness-remediation.md).
+Older dated measurements below remain historical evidence. Original evidence
+archives removed from the tracked tree remain recoverable from history;
+[the dated inventory](docs/2026-09-24_evidence-archive-untracking.md) records
+identities and recovery instructions.
+
 An executable semantics is trusted for what it has been *checked*
 against, and this document is the honest inventory: the rule the port is
 held to, the exceptions and how each is tested, the register of
@@ -13,7 +21,7 @@ OCaml counterpart line-by-line; and (b) **empirical**: an industrialized
 differential-testing surface with pinned, fail-closed baselines. A green
 build is never the signal; the differential baselines are.
 
-The current [supported profile](docs/2026-09-06_supported-profile.md)
+The current [supported profile](SUPPORTED.md)
 separates shared-source, logical-definition, native-execution and consumer
 claims. Validation-foundations adds an independently compiled pristine
 oracle, a shared byte observation contract, an executable LADDER runner,
@@ -23,7 +31,9 @@ identifies the corrected 32/32 Tier A+B pass, C1/C4 reporting, cold build/proof
 and failure measurements. The original delivery and first audit remain dated
 history. The [fresh document review](docs/2026-09-06_validation-foundations-document-review.md)
 corrects a material fuel-correspondence overclaim and three minor issues;
-landing acceptance, C2/C3 and customer adoption remain outstanding.
+those were the remaining exits in that dated review. The operator reported
+customer acceptance on 2026-09-24 (SUPPORTED.md); the present cleanup does
+not infer fresh reporting/audit certification from that acceptance.
 Missing historical logs are
 explicitly inventoried; they are not evidence of a current pass. See
 [the observation contract](docs/2026-09-05_observation-contract.md)
@@ -135,12 +145,14 @@ cited `resource`/`shared-model-fix` row (never the fork side), stale rows
 RED, and a REGISTERED case always judged by its row: a registered case whose
 fork side times out, or a both-sides timeout on a registered case, is RED —
 the pin moved.
-Today the inventory is exactly 5 `shared-model-fix` rows (the three cross-TU
+The inventory at `e9f9d049f`, counted 2026-09-24, has 7 `shared-model-fix` rows (the three cross-TU
 struct-value cases of upstream-tray drafts 37/38/39, where the fork answers
 `Specified(7)` and pristine loops or rejects; and the two allocator
 exhausted-regime witnesses of draft 44, `minimal/112-…`/`113-…`, where
 pristine returns an overlapping, misaligned allocation and the fork kills out
-of memory — §3); `diagnostic-text` is a
+of memory — §3; plus the corresponding two `immaculate/nolibc/tray44-*`
+wrappers, separately registered). This is seven case rows, not seven
+distinct defects; `diagnostic-text` is a
 permitted class with zero rows — [USER 2026-09-17] ("(2) agree"): the lane's
 diagnostic projection normalises source positions inside OCaml backtrace
 frames — and, since the allocator-soundness slice's C1b (2026-09-17; the
@@ -607,7 +619,7 @@ lanes, with their recorded states:
 
 | Lane | Corpus | Bar |
 |---|---|---|
-| `test_exec.sh --check-baseline` | upstream `tests/minimal` | 111/111 at the pinned baseline (106 + the five byte-bridge rows 107–111, 2026-09-11) |
+| `test_exec.sh --check-baseline` | upstream `tests/minimal` | 113 baseline rows: 90 MATCH + 18 UB_MATCH + 5 CERB_SKIP (derived 2026-09-24 at `e9f9d049f`; exclusions are not agreements) |
 | `test_exec.sh` (coverage/debug/float baselines) | upstream suites | rc 0 at pinned baselines (recorded DIFFs unchanged) |
 | `test_bytes.sh` | `tests/bytes` | 9/9 at committed upstream `.exec` records + 5/5 reject pins (oracle-independent) |
 | `test_address_space.sh` (+ `--selftest`) | `tests/address_space` (6 programs × tops 64/32/8; LADDER Tier A row 12, address-space-bound part two C3/C4/C5, 2026-09-17/18) | both engines at TINY address-space tops (the fork's FORK-ONLY `--address-space-top N`, cerberus-lean's `--address-space-top N` — the parameter of §7 instantiated where the allocator's exhausted regime is reached by ordinary programs): 18/18 LEAN = FORK complete observations through the shared codec (any difference fatal — the S4 class) AND every fork observation = its pinned row in `tests/address_space/expectations.txt`, fail-closed both directions (an unterminated final row is read — audit F3); the corpus holds ONE genuine discriminator of the draft-44 defect, `window-char-int7@32` (the pre-fix ALLOCATION at address 2 executed by the old-body probe, the C observation `Specified(2)` derived from it; fixed: the kill), and `--selftest` rejects that case forged to its pre-fix observation, a missing/truncated file, phantom/duplicate/malformed rows with and without a final newline, accepts the valid file without its final newline, and checks both CLIs refuse `2^64`, `0x40`, `6_4` and `1_8446744073709551615`, and accept `64` and `2^64 − 1` |
@@ -719,7 +731,7 @@ theorem over the shipped pipeline `@drive ⟨fuel⟩` at the ambient
 |---|---|
 | sync gate (`tools/check_handwritten_sync.sh`) | every hand-written file byte-identical to its compiled `generated/` copy (the binary corresponds to the sources); copy set enumerated from `lean_frontend/handwritten_copy.manifest`, the same list the Makefile copies from; every `lean_frontend/*.lean` must be listed; empty set = FAIL. Also a precondition of `build_lean` and of the driver-freshness stamp's Lean record/check (2026-09-02 gap: a green stamp over a stale-copy binary) |
 | `check_exec_purity.sh` | the execution slice is free of unsanctioned IO/effects |
-| `check_theorem_axioms.sh` | **zero `axiom` declarations anywhere** — hand-written census, generated-tree census, and the recursive census of the consumed LemLib package copy (the effect-retirement end state: `runEffectful` is deleted, `declare {lean} effectful` is refused by lem itself); `runEffectful` token-banned (comment-stripped) across all three trees; the `@[implemented_by]`/`unsafe`/`unsafeBaseIO` seam population pinned to `scripts/unsafebaseio_allowlist.txt`'s PIN rows exactly, both directions (a new seam fails naming itself — this bans an axiom-free reintroduction of the effect projection); the boundary-OPAQUE POPULATION pinned exactly-once, both directions (12 registered rows since seam-hygiene H3, 2026-09-19 — the digest boundary, the enum registry, `bounded_integer`, and the pure atoms `CerbFuel.fuelExhaustedLoc`/`CerbFail.modelFailStopLoc`; history: 15 from 2026-09-05 when the 11 `CerbGlobal` config/switch opaques became plain `def`s (`docs/2026-09-05_cerbglobal-defs-record.md`), 16 with C-TF1's `modelFailStopLoc`, 12 when the CerbUtils timing/log trio and `CerbMem.beqMemValueSafe` became plain defs (`docs/2026-09-18_seam-hygiene-record.md` §5.4); an unregistered `opaque` fails naming itself); zero `unsafeCast`; exemplar + `driver2` cones free of `sorryAx`/`ofReduce*`/DAEMON; the FUEL arc's contract lemmas (the nine GENERATED `*_lemFuel_zero`, the `CerbND` runner leaves, the fuel-parametricity `rfl`s `@X ⟨n⟩ = X_lemFuel n`) and the exemplar theorems at the exact allowlist; the full exec-entry set (`driver2`, `drive`, `initial_driver_state`, `desugar`, `annotate_program`, `translate`, `link`, `convert_file`, `CerbCall.driveCall`) at the **exact** axiom allowlist `[propext, Classical.choice, Quot.sound]`; non-kernel decision procedures (`native_decide`/`bv_decide`) grep-banned. Source-scan legs are the primary evidence; the `#print axioms` probes are end-to-end spot checks (they underreport across `partial def` boundaries) |
+| `check_theorem_axioms.sh` | **zero `axiom` declarations anywhere** — hand-written census, generated-tree census, and the recursive census of the consumed LemLib package copy (the effect-retirement end state: `runEffectful` is deleted, `declare {lean} effectful` is refused by lem itself); `runEffectful` token-banned (comment-stripped) across all three trees; the `@[implemented_by]`/`unsafe`/`unsafeBaseIO` seam population pinned to `scripts/unsafebaseio_allowlist.txt`'s PIN rows exactly, both directions (a new seam fails naming itself — this bans an axiom-free reintroduction of the effect projection); the boundary-OPAQUE POPULATION pinned exactly-once, both directions (10 registered rows after enum-state retirement (derived 2026-09-24 at `e9f9d049f`) — the frontend digest boundary, `bounded_integer`, and the pure atoms `CerbFuel.fuelExhaustedLoc`/`CerbFail.modelFailStopLoc`; history: 15 from 2026-09-05 when the 11 `CerbGlobal` config/switch opaques became plain `def`s (`docs/2026-09-05_cerbglobal-defs-record.md`), 16 with C-TF1's `modelFailStopLoc`, 12 when the CerbUtils timing/log trio and `CerbMem.beqMemValueSafe` became plain defs (`docs/2026-09-18_seam-hygiene-record.md` §5.4); an unregistered `opaque` fails naming itself); zero `unsafeCast`; exemplar + `driver2` cones free of `sorryAx`/`ofReduce*`/DAEMON; the FUEL arc's contract lemmas (the nine GENERATED `*_lemFuel_zero`, the `CerbND` runner leaves, the fuel-parametricity `rfl`s `@X ⟨n⟩ = X_lemFuel n`) and the exemplar theorems at the exact allowlist; the full exec-entry set (`driver2`, `drive`, `initial_driver_state`, `desugar`, `annotate_program`, `translate`, `link`, `convert_file`, `CerbCall.driveCall`) at the **exact** axiom allowlist `[propext, Classical.choice, Quot.sound]`; non-kernel decision procedures (`native_decide`/`bv_decide`) grep-banned. Source-scan legs are the primary evidence; the `#print axioms` probes are end-to-end spot checks (they underreport across `partial def` boundaries) |
 | `check_sorry_token.sh` | zero `sorry` TOKENS in source text — comment- and string-stripped — over `generated/`, the hand-written seams + tests, and the consumed LemLib copy (the axiom gate probes `sorryAx` in cones only; the tree's last `sorry`, cmm_op.lem's target_rep, was closed by the FUEL arc). Empty scan set = FAIL |
 | `test_fuel_classifier.sh` | the one FUEL classifier (`scripts/fuel_classify.sh classify_fuel_outcome`) reads its fixture captures correctly: both fuel forms positive; a genuine `Error` kill, a PANIC without the marker, and program stdout carrying the words all negative (§7) |
 | `check_no_fuel_numerals.sh` | **a plant-tested SPEEDBUMP against fuel numerals in the Lean text a consumer reasons against** (fuel-parameter arc, 2026-09-04; [USER 2026-09-03] "any and all magic values that are hardcoded and can't be quantified over are definitionally bugs"): seams, `generated/`, `test/`, `speclab/`, `tests/**/*.lean` scanned comment-stripped for the enumerated idiomatic shapes F1–F6 (the deleted `lemDefaultFuel`/`driverFuel`/`ndDefaultFuel`; a global `instance : LemFuel`; a worker at a literal counter — bare, parenthesised, hex, or after a carried instance `f_lemFuel ⟨i⟩ 5`; `LemFuel := ⟨…⟩`/`LemFuel := { fuel := … }`/`LemFuel.mk N`/`LemFuel.mk (…)`; a single-component anonymous constructor led by a numeral `⟨N⟩`/`⟨(N : Nat)⟩`/`⟨0x…⟩`/`⟨10^8⟩`; a fuel-named constant defined as a numeral) — the ONE allowed site is Main.lean's `defaultFuel` (+ the `letI` that consumes it), allowlisted by exact line; vacuity-guarded; its `--selftest` plants 20 shapes red and the unplanted set green on every `test_unit.sh` run. What it does NOT guarantee (pre-merge audit M2): indirection through a non-fuel-named constant (`def budget := 100000000; @f ⟨budget⟩`) and arithmetic spellings not led by a numeral are not regex-closable — the selftest records that gap as a KNOWN GAP line; they are review discipline. The BACKSTOP is the typing, not the grep: every fuel'd function demands a `[LemFuel]` instance, no instance exists in library/generated/seam code, and a measured wrapper carries its sufficiency obligation — a numeral can only enter where a human writes an instance |
@@ -868,7 +880,7 @@ fixed semantic limit. General sufficient-fuel completion and observation
 agreement are not established; they require explicit domain, failure,
 state and runtime assumptions. Increasing fuel does not repair known
 non-fuel discrepancies, such as the libc UB-location loss in the
-[current CI record](docs/2026-09-06_ci-reporting-results.md).
+[2026-09-06 CI record](docs/2026-09-06_ci-reporting-results.md).
 Fuel STABILITY is delivered for the ND infrastructure only (2026-09-09,
 `CerbNDFuelProofs.lean`, record `docs/2026-09-08_nd-fuel-stability-record.md`):
 for the three runners `runNDFuel`/`runND1Fuel`/`runND1TraceFuel` and for
@@ -890,7 +902,7 @@ design DESIGN.md §4). The concrete allocator's initial cursor — upstream's
 `last_address = 0xFFFFFFFFFFFF` = 281474976710655 — is no longer a literal in
 `memory/concrete/impl_mem.ml`/`memory/vip/impl_mem.ml` or a field default in
 `CerbMem.lean`: `Mem.initial_mem_state : integer -> mem_state`
-(`CerbMem.initialMemState top`) takes it, `initial_driver_state sup top file fs`
+(`CerbMem.initialMemState top`) takes it, `initial_driver_state sup top digest file fs`
 and `Cabs_to_ail.desugar sup top …` (the desugar state carries it for the
 const-expr mini-run's own driver state) thread it, and each executable
 instantiates it ONCE at its entry: `cerberus-lean … --address-space-top N`
@@ -1045,15 +1057,16 @@ left the list 2026-09-05, see below):
   (program-data parameters E-A, `docs/2026-09-20_program-data-parameters-
   EA-DA-record.md`): the enum's compatible type is program data (the lem
   reader `enum_definitions`); no registry, no opaque, no `implemented_by`
-  remains in `CerberusImpl.lean`. The DIGEST seam stays on this list (its
-  D-A route is an open operator decision, record §3.1);
-- `CerbUtils` no-op timing/log refs + the `boundedIntegerImpl` stub —
-  permanent-declared (OCaml module-shape parity);
+  remains in `CerberusImpl.lean`. The FRONTEND digest seam stays on this
+  list; execution minting uses the explicit D-S run-state digest;
+- `CerbUtils.boundedIntegerImpl` stub — permanent-declared (OCaml
+  module-shape parity). The timing/log refs became transparent value
+  identities at seam-hygiene H3 (2026-09-19);
 - LemLib's `failwithIImpl`/`fuelExhaustedWithImpl` panic bindings
   (runtime behavior of the axiom-free failure/fuel constants).
 
 Separately from the runtime seams, the boundary-opaque census (the axiom
-gate's exactly-once population, 16 rows since 2026-09-08) carries two PURE
+gate's exactly-once population, 10 rows at `e9f9d049f`, derived 2026-09-24) carries two PURE
 value-carrying opaques with no native binding: `CerbFuel.fuelExhaustedLoc`
 (§7) and `CerbFail.modelFailStopLoc` (C-TF1: the kill location of the seven
 memory-model fail-stops; proofs are uniform in the atom, no inequality between
