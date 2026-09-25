@@ -42,11 +42,21 @@ was not edited (the `--selftest` run there writes only the temporary ref and thr
 objects, as designed); the old script was not executed (its ROOT resolution needs it in place;
 the negative control is reproduced by the equivalent git commands instead).
 
-## Findings (ranked; status after the second pass, range db5e1feb5..82862ca74)
+## Findings (ranked; status after the THIRD pass, range db5e1feb5..2e88f21c0)
 
-No P1, no P2 in either pass.
+No P1, no P2 in any pass.
 
-Open after the second pass (both from the 4th commit `a4d72a3fc`, both after-merge):
+Open after the third pass (after-merge):
+
+- **P3-5 — stale plant count in VALIDATION.md's gate-table row:** the row added by `a4d72a3fc`
+  says "5 plants"; after `2e88f21c0` the script's SELFTEST OK line, `lean_frontend/CLAUDE.md` and
+  `scripts/LADDER.md` all say 8. One-word fix.
+
+Resolved on-branch by the 6th commit `2e88f21c0` (verified in R-H): **P3-3** (every
+`lem-lean.git#<fragment>` must equal the full pin; probe A now FAILs; plant P6) and **P3-4**
+(the leg is named in LADDER.md row 1 and the CLAUDE.md gate list). New notes **N-9..N-11** in R-H.
+
+Status after the second pass (kept): open then, both from the 4th commit `a4d72a3fc`:
 
 - **P3-3 — `check_pin_sites.sh` README parser: a non-hex fragment is silently skipped.**
   `grep -o 'lem-lean\.git#[0-9a-f]*'` matches ZERO hex characters for `lem-lean.git#<branch>`, the
@@ -631,7 +641,7 @@ script and manifest. Container behaviour of row 1 changes in exactly two ways: t
 leg (green on this tree, and it would have been red on mainline for the README line) and S31's
 per-run loose objects (no shared ref any more).
 
-## VERDICT [AGENT] — five-commit range `db5e1feb5..82862ca74`
+## Five-commit VERDICT [AGENT] (range db5e1feb5..82862ca74, superseded by the six-commit verdict below)
 
 No P1, no P2. The gate fix (34cbdbcc6) is the single claimed token in `gate()`, validated on every
 path; plant S31 is non-vacuous and, after 82862ca74, creates no shared ref — re-verified by my own
@@ -645,5 +655,118 @@ cost; my judgement is that it mechanizes an already-normative cross-site pin inv
 genuinely trust-load-bearing, not gate cruft. It leaves two after-merge P3s of its own: the README
 parser skips a non-hex `lem-lean.git#<branch>` fragment when a valid pin also exists (probe A —
 a real if narrow fail-open; one-line grep fix plus a plant), and the leg is not yet named in
-LADDER.md row 1 or the CLAUDE.md gate list. From this reviewer's standpoint the five-commit range
-is ready for the operator's ff-only merge decision; merge authority rests with the operator.
+LADDER.md row 1 or the CLAUDE.md gate list.
+
+---
+
+# Third pass — commit `2e88f21c0` (P3-3/P3-4 closure)
+
+    $ git log --oneline db5e1feb5..2e88f21c0 | head -1
+    2e88f21c0 gate(check_pin_sites): every README pin fragment must equal the full pin (review P3-3, fail-closed); plants P6–P8; leg named in LADDER row 1 and the frontend CLAUDE.md gate list (P3-4)
+    $ git show 2e88f21c0 --stat
+     lean_frontend/CLAUDE.md    |  2 +-
+     scripts/LADDER.md          |  2 +-
+     scripts/check_pin_sites.sh | 21 ++++++++++++++-------
+    $ git diff --stat db5e1feb5 2e88f21c0 | tail -1
+     11 files changed, 317 insertions(+), 17 deletions(-)
+
+`82862ca74` is an ancestor of `2e88f21c0`; `mdd/cerberus-lean` is still `db5e1feb5`; the commit
+touches no SURFACE file and adds no `2>/dev/null`.
+
+## R-H — the README fragment parser, the three plants, the two doc mentions
+
+**The new parser** (`scripts/check_pin_sites.sh:54-59` at the head), verbatim:
+
+    readme_frags=$(grep -o 'lem-lean\.git#[^[:space:]"'"'"'`)]*' "$f" | sed 's/.*#//' | sort -u)
+    [[ -n "$readme_frags" ]] || { echo "check_pin_sites: FAIL — $f has no 'lem-lean.git#<hash>' pin command" >&2; rc=1; }
+    while read -r h; do
+        [[ -z "$h" && -z "$readme_frags" ]] && continue
+        [[ "$h" == "$pin" ]] || { echo "check_pin_sites: FAIL — $f pins lem-lean.git#$h ≠ lem-pin $pin (the README's own rule: equal to lean_frontend/lakefile.toml)" >&2; rc=1; }
+    done <<<"$readme_frags"
+
+The bracket expression, after bash's quote splicing, is `[^[:space:]"'`)]` — the fragment runs to
+the first whitespace, double quote, single quote, backtick or `)`; `*` still admits the empty run.
+Every fragment must then equal the full 40-hex pin (no hex filter any more).
+
+**The empty-fragment guard.** A bare `lem-lean.git#` (nothing after it) MUST fail: an empty
+fragment is not a pin (opam would take the default branch — a moving pin). It does, in both
+cases, and the guard is what makes the second one work:
+
+- Sole occurrence: `grep -o` matches `lem-lean.git#`, `sed` leaves an empty line, the command
+  substitution strips it, so `readme_frags` is "" → the `-n` check sets `rc=1` ("has no … pin
+  command"); the `while` then runs once with `h=""` and BOTH guard conjuncts hold → `continue`
+  (no second message). Probe F, verbatim:
+
+      93:lem-lean.git#
+      check_pin_sites: FAIL — …/f/lean_frontend/README.md has no 'lem-lean.git#<hash>' pin command
+      probe F rc=1
+
+- Beside a valid pin: `sort -u` yields an empty line and the pin; the LEADING newline survives
+  the substitution, so `readme_frags` is non-empty, the guard does NOT fire for `h=""`, and the
+  empty fragment is compared and fails. Probe G, verbatim:
+
+      check_pin_sites: FAIL — …/g/lean_frontend/README.md pins lem-lean.git# ≠ lem-pin c2a68e79b6369e19f099dfa48767319c1daf19b3 (the README's own rule: equal to lean_frontend/lakefile.toml)
+      probe G rc=1
+
+  (The message reads "pins lem-lean.git# ≠ …" — the empty fragment is visible as nothing after
+  the `#`; adequate.)
+
+**P3-3 closed.** My first-pass probe A rerun against the head's script (scratch README with the
+valid :93 line plus an appended `…lem-lean.git#mdd/lean-backend --yes`), verbatim:
+
+    check_pin_sites: FAIL — …/a/lean_frontend/README.md pins lem-lean.git#mdd/lean-backend ≠ lem-pin c2a68e79b6369e19f099dfa48767319c1daf19b3 (the README's own rule: equal to lean_frontend/lakefile.toml)
+    probe A rc=1
+
+Edge probes: a clone URL `…/lem-lean.git` WITHOUT `#` beside the valid pin → OK (ignored, as it
+should be — not a pin command; probe I rc 0); the valid pin inside a markdown link `(…#<pin>)` →
+OK (`)` excluded; probe J rc 0); the valid pin in double quotes → OK (probe K rc 0); the VALID
+pin in prose followed by a comma → FAIL "pins lem-lean.git#c2a68e79…, ≠ …" (probe H rc 1) —
+fail-closed false red on punctuation (N-11), acceptable for a check whose subject is an
+executable line.
+
+**The three plants (non-vacuity).** Each checks rc AND a message naming the planted value; a
+`printf`/`sed` that missed would leave the copy identical to P0 → rc 0 → `PLANT FAIL (wanted
+nonzero)`. P6 is probe A itself (rc 0 under the 5th-commit parser, so it discriminates the two
+versions); P7 appends a second pin command with `$stale`; P8 rewrites the first `"rev": "<pin>"`
+of `lean_frontend/lake-manifest.json` (LemLib is that manifest's only package) — closing the
+N-8 gaps for a second `lem-lean.git#` occurrence and for `rev` vs `inputRev`. My run (temporary
+untracked copy in my worktree's `scripts/`, removed after; `git status` clean), verbatim tail:
+
+      PLANT OK   [P6 a non-hex pin fragment beside the valid pin (review P3-3)] rc=1 -> check_pin_sites: FAIL — /tmp/tmp.n0O7iMBrHs/frag/lean_frontend/README.md pins lem-lean.git#mdd/lean-backend ≠ lem-pin c2a68e79b6369e19f099dfa48767319c1daf19
+      PLANT OK   [P7 a second pin command naming another commit] rc=1 -> check_pin_sites: FAIL — /tmp/tmp.n0O7iMBrHs/second/lean_frontend/README.md pins lem-lean.git#67ec5de70e02e280bb348a4ba826696b76116732 ≠ lem-pin c2a68e79b636
+      PLANT OK   [P8 one lake-manifest rev (not inputRev) differs] rc=1 -> check_pin_sites: FAIL — lean_frontend/lake-manifest.json LemLib rev/inputRev = 67ec5de70e02e280bb348a4ba826696b76116732 ≠ lem-pin c2a68e79b6369e19f099dfa487
+    check_pin_sites: SELFTEST OK (8 plants red with the declared message, unplanted copies green)
+    SELFTEST rc=0
+
+(P0–P5 all `PLANT OK` above them; 9 `PLANT OK` lines, 0 `PLANT FAIL`.) The leg on mainline with
+the head's script still FAILs on the README line (rc 1, same message as R-F (3)); on the fix
+head's site files OK (rc 0).
+
+**The two doc mentions.** `lean_frontend/CLAUDE.md:146` now lists "`check_pin_sites.sh`
+(2026-09-25 fresh-clone finding: the lem-lean pin is ONE value at the manifest `lem-pin`, the
+Lake rev, the three lake-manifests and the README's newcomer `opam pin` command; 8 plants,
+fail-closed)" before `check_fork_drift.sh`; `scripts/LADDER.md:43` row 1 now reads "fork-drift
+gate (`check_fork_drift.sh` + `check_pin_sites.sh` (one lem pin at every site: manifest, Lake rev,
+3 lake-manifests, README pin command; 8 plants) — oracle-surface manifest + hash-pinned
+generated-OCaml deltas)". Both accurate. N-10: the leg is nested inside the "fork-drift gate
+(…)" parenthetical, so the trailing "— oracle-surface manifest + …" now reads across both; a
+wording nit. **P3-5:** VALIDATION.md's row still says "5 plants" (`grep`: VALIDATION.md "5
+plants"; CLAUDE.md "8 plants"; LADDER.md "8 plants"; script "SELFTEST OK (8 plants"). N-9: the
+script's header line 9 still says "every `lem-lean.git#<hash>`" while the code now checks every
+fragment.
+
+## VERDICT [AGENT] — six-commit range `db5e1feb5..2e88f21c069bc07ae6997fcdc5dba15fd554c237`
+
+No P1, no P2. Everything found in the first two passes is now closed on the branch and
+re-verified here: the gate fix is the single validated token in `gate()`; S31 is non-vacuous and
+ref-free (my own 5th-commit selftest run: 31 plants, 0 failures); the row-1 pin-site leg reads
+the real site shapes, is fail-closed on missing files/fields/pins, and after `2e88f21c0` rejects
+every README fragment that is not the full pin — my probe A fails as it must, a bare
+`lem-lean.git#` fails both alone and beside a valid pin, URLs without `#` and the link/quote
+forms behave correctly — with eight non-vacuous plants (P1 the actual defect, P6 probe A, P8
+`rev` alone) green in my run, FAIL on mainline and OK on the fix head; the leg is named in
+LADDER.md row 1 and the CLAUDE.md gate list; the range is linear on the unmoved mainline, touches
+no oracle-surface file, adds no `2>/dev/null`, and every pin site agrees. One after-merge P3
+remains (VALIDATION.md's row says "5 plants" — should be 8) plus three wording notes. From this
+reviewer's standpoint the six-commit range is clean for the operator's ff-only merge; merge
+authority rests with the operator.
