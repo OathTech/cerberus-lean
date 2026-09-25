@@ -149,7 +149,7 @@ structure Allocation where
 /-- A passive concrete load/store receipt; shared shape from mem_common.lem. -/
 abbrev AccessReceipt := access_receipt PointerValue MemValue
 
-/-- mem_state — concrete memory plus an opt-in, drainable receipt buffer. -/
+/-- mem_state — memory/concrete/impl_mem.ml:484–504 (15 fields, including the fork's opt-in, drainable receipt buffer). -/
 structure MemState where
   nextAllocId : StorageInstanceId := 0
   nextIota : SymbolicStorageInstanceId := 0

@@ -8,14 +8,23 @@ earlier rebase, `2fef39d04f16882cb252396f3cbf8ace79e4d562`. Its [record](2026-09
 retains the original failing witnesses and fast-suite evidence.
 
 The governing master plan is `SC-CONCURRENCY.md` on `arc/sc-concurrency`,
-`533fab987`. This is its finite F1/F2 slice and only the F3 representation
+`533fab987`. [AGENT] This is its finite F1/F2 slice and only the F3 representation
 access used by the diagnostic. It introduces no SC interpreter, scheduler,
 suspension constructor, graph checker, race policy, atomicity policy or Iris
 integration. WP1 starts after independent acceptance and landing of WP0.
 
+[USER] The user requested independently validated, early landings, treating
+the failed prototype as a quarry; narrowed the MVP to coherent, correct SC
+semantics without Iris integration; and directed "proceed with WP0". That
+scope is recorded in the master plan and
+`lean_frontend/docs/2026-09-25_sc-semantics-mvp-scope.md` at `533fab987`.
+[AGENT] The implementation, receipt fields, hook placement, reuse of existing
+transport, diagnostic design and drain policy below are agent decisions under
+that direction, not individually prescribed user requirements.
+
 ## Integration contract
 
-The existing memory primitives remain the authority for values, bytes,
+[AGENT] The existing memory primitives remain the authority for values, bytes,
 allocation checks and failures. The paired scope remains mainline’s concrete
 memory model with the Lean default switch profile. Optional receipts are appended inside the
 paired OCaml/Lean concrete implementations:
@@ -26,7 +35,7 @@ paired OCaml/Lean concrete implementations:
   produces a receipt. The ordinary returned memory state includes the
   primitive's existing read-only/union bookkeeping.
 
-The shared `mem_common.lem` constructor contains source location, access
+[AGENT] The shared `mem_common.lem` constructor contains source location, access
 kind, requested C type, original pointer, resolved allocation ID when
 available, actual byte address, byte views, actual reconstructed/stored
 memory value, and the store's existing `is_locking` argument (`None` for a
@@ -38,21 +47,21 @@ has the byte list's length. It is not inferred from allocation size or from
 the returned type-sized footprint. No universal scalar value, C location
 equivalence, byte-source history, or previous-memory snapshot is introduced.
 
-`begin_observing`/`beginObserving` enables capture idempotently; enabling
+[AGENT] `begin_observing`/`beginObserving` enables capture idempotently; enabling
 again preserves pending receipts. `take_observations`/`takeObservations`
 returns execution order and empties the buffer while leaving it enabled.
 `stop_observing`/`stopObserving` discards the buffer and disables capture.
 The default is disabled. VIP, symbolic and CHERI explicitly decline enable
 and drain through `None`; an unsupported model is not an empty trace.
 
-The actual consumer is the paired `access_probe` / `memory-access-test`
+[AGENT] The actual consumer is the paired `access_probe` / `memory-access-test`
 diagnostic. It runs production primitives, uses the existing `liftND` to
 embed memory in an enclosing state, and drains the returned state. No ND
 implementation change or new adapter is needed. Constraints, ordered
 alternatives, original kill reasons and enclosing state are preserved;
 the diagnostic does not solve guards or admit executions.
 
-Receipts are primitive facts. They do not determine source sequencing, C
+[AGENT] Receipts are primitive facts. They do not determine source sequencing, C
 memory-location identity, one logical C action, or a scheduler step. They
 do not make helpers resumable. Only load/store producers are covered;
 allocation, lifetime, helper-specific and metadata observation extensions
@@ -79,12 +88,12 @@ transport is not advertised as a successful observation.
 These laws compare enabled and disabled execution of the current primitive.
 Historical equivalence additionally relies on the small reviewed hook diff
 and the sequential differential gates. The preceding trapping-load repair
-is deliberately outside this erasure baseline.
+is deliberately outside this erasure baseline [AGENT].
 
 Enabled capture costs one receipt plus a byte-list projection per primitive;
 disabled capture does not copy the byte list. Draining reverses the pending
 receipt list once. There is no scan of prior actions or old memory states.
-Storage is **drainable, not unconditionally capped**: it grows with work
+[AGENT] Storage is **drainable, not unconditionally capped**: it grows with work
 since the last drain. The streaming diagnostic drains every primitive and
 retains at most one pending receipt; the two-operation failure witness
 retains two. An unbounded monadic helper still needs a justified yielding
@@ -93,7 +102,7 @@ strategy in WP1/S1. This API supplies neither that bound nor preemption.
 ## Evidence and audit boundary
 
 `python3 scripts/test_memory_access.py` builds both consumers and is Tier A
-row 13. Its expected transcript is independently specified from the fixture
+row 13. [AGENT] Its expected transcript is independently specified from the fixture
 operations and LP64 representations, rather than recorded from an engine.
 It checks the entire stdout, requires empty stderr and a successful exit,
 and has controls for lost writes, failure state, pointer provenance, bytes,

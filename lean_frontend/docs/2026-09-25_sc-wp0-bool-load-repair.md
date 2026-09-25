@@ -1,18 +1,27 @@
 # Trapping `_Bool` loads retain the completed read state
 
-This is the independent sequential repair requested by SC plan re-review RR2.
+[AGENT] This is the independent sequential repair requested by the agent's
+SC plan re-review RR2; RR2 is review advice, not a user ruling.
 Base: `e9f9d049ffaaf005c392495b0f6418d21f4df29f` on `mdd/cerberus-lean`.
 The governing master plan is `SC-CONCURRENCY.md` on `arc/sc-concurrency`,
 commit `533fab987`. No donor runtime code was copied for this repair.
+
+[USER] The approved direction is a coherent, correct SC semantics MVP without
+Iris integration, with useful foundation pieces independently validated and
+landed; the user then directed "proceed with WP0". The master plan and
+`lean_frontend/docs/2026-09-25_sc-semantics-mvp-scope.md` at `533fab987`
+record that scope. [AGENT] Keeping this sequential correction separate from
+the passive-observer slice implements that direction; the user did not
+prescribe this particular repair or its fixtures.
 
 OCaml's actual `Concrete.load` fetches/reconstructs the bytes, updates
 `last_used`, and then rejects a trapping `_Bool` representation. Lean used
 the outer failure helper, which returned the pre-read state. It now returns
 the updated `lastUsed` on precisely this failure path. Successful loads and
-pointer-validation failures are unchanged. This is a sequential correction,
+pointer-validation failures are unchanged. [AGENT] This is a sequential correction,
 not part of the later observer-erasure baseline.
 
-The Lean regression calls `loadM` on allocation 7 at address 100, size 1,
+[AGENT] The Lean regression calls `loadM` on allocation 7 at address 100, size 1,
 with incoming `lastUsed = some 99`. Byte 2 and an unspecified byte both
 return the original trap reason with `lastUsed = some 7`; bytes 0 and 1
 succeed; a null pointer fails without updating `lastUsed`.
