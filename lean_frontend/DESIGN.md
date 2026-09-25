@@ -1,6 +1,6 @@
 # DESIGN — how cerberus-lean works
 
-**Documentation check, 2026-09-24:** implementation `abe505d3d856162c058653019b27388e8523ce47`;
+**Documentation check, 2026-09-25:** implementation `bb487dda7c56981e76d67f53ae16e874cfe5ed61`;
 baseline inventories and cleanup gate measurements are in
 [the remediation record](docs/2026-09-24_public-readiness-remediation.md).
 Older dated measurements below remain historical evidence.

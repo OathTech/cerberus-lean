@@ -5,7 +5,7 @@
 The badges above and the inherited workflows cover upstream OCaml/CHERI;
 they do not certify the fork's Lean backend. Fork checks are recorded in
 [the manual validation evidence](lean_frontend/VALIDATION.md)
-(checked 2026-09-25 at `4e875defb0cce250e841723c1be7ecb7c2240150`).
+(checked 2026-09-25 at `bb487dda7c56981e76d67f53ae16e874cfe5ed61`).
 
 **This fork adds a Lean 4 port of the semantics** — generated from the
 same Lem model and differentially validated against the OCaml
@@ -16,7 +16,7 @@ The port was developed primarily by AI agents (Claude, Anthropic)
 working under the direction and review of Mike Dodds; the upstream
 Cerberus semantics is by the people listed below. The fork-specific build
 recipe and limits are in that frontend README (checked 2026-09-25 against
-`4e875defb0cce250e841723c1be7ecb7c2240150`, with gates in its linked follow-up record).
+`bb487dda7c56981e76d67f53ae16e874cfe5ed61`, with gates in its linked follow-up record).
 
 
 Web interfaces, papers, and web page

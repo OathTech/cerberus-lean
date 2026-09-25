@@ -1,7 +1,7 @@
 # Cerberus Lean Frontend
 
 Current build/contract reconciliation: 2026-09-25, Cerberus
-`4e875defb0cce250e841723c1be7ecb7c2240150`, Lem
+`bb487dda7c56981e76d67f53ae16e874cfe5ed61`, Lem
 `67ec5de70e02e280bb348a4ba826696b76116732`; measured scope and remaining
 public-install checks: [follow-up record](docs/2026-09-25_public-readiness-followup.md).
 
@@ -313,7 +313,7 @@ Lem is the OCaml tool from the lem-lean fork. The public installation
 recipe is [README.md](README.md), including an explicit local opam switch
 and the revision shared with Lake's LemLib. No parent `scripts/env.sh`,
 private Git redirects or container `deps/` worktree is a prerequisite.
-Checked 2026-09-25 against `4e875defb0cce250e841723c1be7ecb7c2240150`; cleanup measurements:
+Checked 2026-09-25 against `bb487dda7c56981e76d67f53ae16e874cfe5ed61`; cleanup measurements:
 [follow-up record](docs/2026-09-25_public-readiness-followup.md).
 
 When updating Lem, install the chosen immutable revision into an owned

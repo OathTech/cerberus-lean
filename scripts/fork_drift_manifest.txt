@@ -1,3 +1,5 @@
+# public-readiness SWEEP, 2026-09-25 [AGENT; [USER 2026-09-25] "Great, go ahead with the whole merge and sweep as proposed"]: [meta] lem-pin 67ec5de7 -> c2a68e79
+# (lem-lean sweep: LemLib comment-only rationale for never_extract (T1), NOTICE line (T3), record addendum (T2), the two delta-review docs; NO generated-code change — both trees byte-identical). Single line + this NOTE, no --refresh.
 # Public-readiness follow-up single re-pin (2026-09-25): 6b20bfd02de924d078725efa96c6675115b8b17a -> 67ec5de70e02e280bb348a4ba826696b76116732.
 # All Lem implementation changes precede this pin; generation and gates are in
 # lean_frontend/docs/2026-09-25_public-readiness-followup.md.
@@ -413,7 +415,7 @@ merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
 #   was a stale af5df71, audit F4 (c)). Closure F1 (2026-09-24; base
 #   0a6d59eed): full 40-hex pin, checked by validated version prefix.
 #   Set the reviewed full pin before --refresh; refresh preserves it.
-lem-pin=67ec5de70e02e280bb348a4ba826696b76116732
+lem-pin=c2a68e79b6369e19f099dfa48767319c1daf19b3
 renumber=arc13
 [files]
 Makefile

@@ -1,7 +1,7 @@
 # The test ladder (arc-6 S4; decision [AGENT:S4], see the arc-6 decision log)
 
 Reader orientation (2026-09-25, inventory at
-`4e875defb0cce250e841723c1be7ecb7c2240150`): the
+`bb487dda7c56981e76d67f53ae16e874cfe5ed61`): the
 [frontend README](../lean_frontend/README.md#validation-levels-and-prerequisites)
 separates newcomer smoke, row 1 plus six small lanes, and the full ladder.
 The upstream Git/generated-tree prerequisites for row 1 are in

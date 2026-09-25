@@ -6,7 +6,7 @@ the semantics is the product here; a verification layer consumes it
 downstream.)
 
 Current-state reconciliation: 2026-09-25 at Cerberus
-`4e875defb0cce250e841723c1be7ecb7c2240150` and Lem
+`bb487dda7c56981e76d67f53ae16e874cfe5ed61` and Lem
 `67ec5de70e02e280bb348a4ba826696b76116732`. The September 5 master plan
 and subsequent delivery records are historical plans and evidence.
 The current supported product is [SUPPORTED.md](SUPPORTED.md).

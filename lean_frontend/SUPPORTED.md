@@ -1,6 +1,6 @@
 # Supported profile and announcement scope
 
-Checked 2026-09-25 against Cerberus `4e875defb0cce250e841723c1be7ecb7c2240150`
+Checked 2026-09-25 against Cerberus `bb487dda7c56981e76d67f53ae16e874cfe5ed61`
 and Lem `67ec5de70e02e280bb348a4ba826696b76116732`. The exact rerun set and
 remaining publication checks are in [the follow-up record](docs/2026-09-25_public-readiness-followup.md).
 Earlier baseline inventories at Cerberus `e9f9d049f` and MUST cleanup gates

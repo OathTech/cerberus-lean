@@ -252,7 +252,7 @@ gate() {
         # Rewrite the manifest from live state, preserving the section split
         # (a file changing category is itself reviewable in the manifest diff;
         # NEW differing files land in [expected-semantic] pending review).
-        [[ -n "$LEM_CMD" ]] || fail "--refresh needs lem on PATH to record [meta] lem-pin (source scripts/env.sh)"
+        [[ -n "$LEM_CMD" ]] || fail "--refresh needs lem on PATH to record [meta] lem-pin (run under `opam exec --switch=. --` with the fork lem installed)"
         local old_cosmetic f
         old_cosmetic=$(section expected-cosmetic | awk '{print $2}')
         {

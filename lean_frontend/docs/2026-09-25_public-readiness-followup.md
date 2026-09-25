@@ -450,3 +450,16 @@ Independent reviews of this range (Claude Fable, third pass): lem-lean `7b8af28`
 P3 G1–G3; A1 = GitHub "Issue creation is restricted in this repository" — operator action before announcing; G5 = the
 ISO-fix register's "filed upstream" criterion is unmet — operator decision). The P3s are closed by the sweep that follows
 this landing; the review documents are brought onto both mainlines by that sweep.
+
+## Sweep addendum (2026-09-25, orchestrator [AGENT])
+
+Review G3: the executed `cold-build.sh` above ran `dune install cerberus-lib` WITHOUT `--prefix` — a LOCAL test adaptation
+inside the remediator's owned copy of the switch (it installs into that owned copy, never the shared switch); the PUBLIC
+recipe in `lean_frontend/README.md` keeps `--prefix "$PWD/_build/local-install"`. Review G2/F11: the front pages cited
+`4e875defb…`, the pre-rebase SHOULD implementation commit; after the orchestrator's rebase the landed commit is
+`bb487dda7`, and every citation now names it. Review G1: `check_fork_drift.sh`'s `--refresh` help text no longer refers
+to the container's `scripts/env.sh`. Container consequence of S10 (orchestrator, not a repo change): the fork-drift gate
+now REQUIRES `CERB_UPSTREAM_TREE`; the container's `scripts/env.sh` exports it (first post-landing row 1 on the primary
+checkout was red for exactly this reason; rerun green). The lem pin moves once more, to the lem-lean sweep head
+`c2a68e79b6369e19f099dfa48767319c1daf19b3` (comment/notice/record changes + the delta-review documents; no generated
+code change).
