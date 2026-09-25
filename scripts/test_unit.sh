@@ -331,6 +331,22 @@ if ! env -u CERB_FORK_DRIFT_DEV_SKIP "$DRIFT_SH"; then
     exit 1
 fi
 
+# Pin-site agreement leg (public-readiness M9 fresh-clone test, 2026-09-25):
+# the lem-lean pin must be ONE value at every site that names it — the
+# fork-drift manifest's lem-pin, the Lake rev, the three lake-manifests and
+# the README's newcomer pin command (the sweep had moved every machine-read
+# site but not the README line; a literal newcomer then failed row 1).
+# Plant-tested (--selftest), fail-closed.
+PIN_SITES_SH="$(dirname "$PURITY_SH")/check_pin_sites.sh"
+if ! "$PIN_SITES_SH" --selftest; then
+    echo "test_unit: pin-site leg SELFTEST FAILED"
+    exit 1
+fi
+if ! "$PIN_SITES_SH"; then
+    echo "test_unit: pin-site agreement FAILED"
+    exit 1
+fi
+
 # Fixture-freeze gate (2026-08-31 semantics-first split; the manifest is
 # scripts/fixture_corpus.sha256): the lean_frontend/corpus
 # differential-fixture set must match its pinned manifest exactly.
