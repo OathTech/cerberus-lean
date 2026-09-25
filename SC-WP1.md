@@ -3,7 +3,9 @@
 [USER, 2026-09-25] The overseer will handle WP0 landing; prepare a new branch
 for the next work package. [AGENT] `arc/sc-wp1` starts at the audited WP0
 candidate `e1c1d2c3ae12385fc15590a1e9600c4fb6638808`. This entry note prepares
-the branch; no WP1 experiment or implementation has been performed.
+the branch. [USER, later 2026-09-25] Proceed with WP1 while WP0 landing is
+handled separately. [AGENT] WP1 investigation starts on the audited candidate;
+the merge is not a technical prerequisite for this work.
 
 The governing master plan remains `SC-CONCURRENCY.md` on
 `arc/sc-concurrency`; its snapshot when this branch was cut is
@@ -50,10 +52,15 @@ landing under the master plan's existing policy.
 
 ## Starting state
 
-WP0 landing remains with the overseer. Before implementation, verify its actual
-mainline landing and rebase this short branch onto the resulting current tip
-if needed. Do not infer a landing from this branch's existence or merge/push
-on the overseer's behalf. The two reviewed runtime commits remain unchanged.
+[AGENT] The [initial boundary experiment](lean_frontend/docs/2026-09-25_sc-wp1-boundary-investigation.md)
+now reproduces eager multi-reduction and memory effects through the actual
+driver. It is diagnostic evidence only; the WP1 exit obligations remain open.
+
+WP0 landing remains with the overseer. Work may proceed on its audited candidate
+now. Track the actual landing and reconcile this branch with the resulting
+mainline before WP1's own landing; repeat any evidence invalidated by changes
+to the prerequisite. Do not infer a landing from this branch's existence or
+merge/push on the overseer's behalf. The reviewed WP0 runtime remains unchanged.
 
 The standard worktree helper primed build artifacts from the primary checkout,
 which still preceded WP0 at branch creation. Those copies are not validation

@@ -1,0 +1,39 @@
+{
+  "scope": "Initial finite Lean diagnostic of existing production boundaries; not WP1 acceptance",
+  "base": "e1c1d2c3ae12385fc15590a1e9600c4fb6638808",
+  "branch": "arc/sc-wp1",
+  "generated_call_fuels": [
+    64,
+    128
+  ],
+  "probe_exit_status": 0,
+  "artifact_sha256": {
+    "lean_frontend/test/Unit/SCWP1Boundary.lean": "95dbf270b03f944e285945ed7152dde33c38da8474a4e91a3c8d5100f06fd831",
+    "frontend/model/driver.lem": "8862f4fbc2445ba81329ae1d874b8cfd7a9c7d188e47de4dfc5753e304c6df05",
+    "frontend/model/core_reduction.lem": "d909e2338157a6d9903abd9e608e87345aa9a68cf1611d07d8327b30fce8719a",
+    "frontend/model/nondeterminism.lem": "fc90e8eb740711176ddf98d9ebb929e6746604ea50375b08762646edb69e0493",
+    "lean_frontend/CerbMem.lean": "075f4ebc59c7d8d307e1a49eb1155eed444a3a3c4c7012a812dd7fe5521f4fd9",
+    "lean_frontend/generated/Driver.lean": "72d0d25f3438269a4ef245f8299e97643550947666503730d410abcceae29ddc",
+    "lean_frontend/generated/Core_reduction.lean": "f1ddf905735c267348a3b586b9253cc94aae08241bb00cc0db42df6ab6d29f1d",
+    "lean_frontend/generated/Nondeterminism.lean": "ffbefc4e90c2f2e645386a8ac6a319ccce277294118e9b0df11be01f1591d958",
+    "lean_frontend/generated/CerbMem.lean": "075f4ebc59c7d8d307e1a49eb1155eed444a3a3c4c7012a812dd7fe5521f4fd9",
+    "lean_frontend/.lake/build/lib/lean/Driver.olean": "2aec451a09ea4cef0c5eee0a0bb163dbb2274b7fa93fe6893a10a56fd3afa47f",
+    "lean_frontend/.lake/build/lib/lean/Core_reduction.olean": "f907af43a8f0da6851cafbe125f61a4ed968ca2f35c4848f2836dbc5e21d5113",
+    "lean_frontend/.lake/build/lib/lean/Nondeterminism.olean": "a312980fb3f684f0b5fa9adf78b842e0490602555be3fa85b62c23167e406ecc",
+    "lean_frontend/.lake/build/lib/lean/CerbMem.olean": "1ff24bc48f3f6294712796f3237b6f7106fab7a5b94dfdc028f4fb21a38d9733",
+    "lean_frontend/lem_sync.sha256": "16938ab2c157c72c0241bd84163ca548bccc49c717436ee736db39cc6af70a7c",
+    "ocaml_frontend/lem_sync.sha256": "e4de008ce91eee37671e074a6920dd19528f94a00dd930458a12d62812f9ac33",
+    "lean_frontend/lean-toolchain": "2bdc48adfa58d0017e538a0ad117c5d73d35deec879978f909406a80c8037273",
+    "lean_frontend/lake-manifest.json": "a6efbe72ff596b6ecf58c1a4716b2142da2a702c1cb158d2265a1358ae9377da"
+  },
+  "output_sha256": "eb96fdf9e5fc08d0266d40e0a45f8bd179a98a3f736c2b1493a606ff9285a2df",
+  "build_log_sha256": "eda80152532b5af63553c01802883c1734ba0047facf58ba8f426f46ce463ac6",
+  "generation_log_sha256": "ec0a05ee246523435b03689b797d88f2b9a8a87a682f94590a9af78656305650",
+  "lem_runtime_revision": "c2a68e79b6369e19f099dfa48767319c1daf19b3",
+  "limitations": [
+    "No SC transition implementation or scheduler budget",
+    "No native paired probe",
+    "No full ladder rerun for this initial experiment",
+    "No general theorem or WP1 completion claim"
+  ]
+}

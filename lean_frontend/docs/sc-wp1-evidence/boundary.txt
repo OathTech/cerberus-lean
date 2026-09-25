@@ -1,0 +1,13 @@
+cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
+generated-call fuel 64
+singleton: active; continuation already changed state to 7
+bounds 0: one discovery call executed 0 tau steps
+bounds 1: one discovery call executed 1 tau steps
+bounds 3: one discovery call executed 3 tau steps
+Core store: discovery executed write 0 -> 42; one receipt; returned program done
+generated-call fuel 128
+singleton: active; continuation already changed state to 7
+bounds 0: one discovery call executed 0 tau steps
+bounds 1: one discovery call executed 1 tau steps
+bounds 3: one discovery call executed 3 tau steps
+Core store: discovery executed write 0 -> 42; one receipt; returned program done
