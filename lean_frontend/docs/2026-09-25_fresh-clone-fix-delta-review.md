@@ -21,6 +21,14 @@ M9 exit". Merge authority rests with the operator; this record is input to that 
      scripts/check_fork_drift.sh                        |  30 ++++-
      7 files changed, 189 insertions(+), 13 deletions(-)
 
+**Second pass (same day, coordinator's scope additions):** the fix branch gained two more commits
+while the first pass was under way — `a4d72a3fc` (the row-1 pin-site agreement leg
+`scripts/check_pin_sites.sh`, its `test_unit.sh` wiring and a VALIDATION.md gate-table row) and
+`82862ca74` (this review's P3-1/P3-2 remediations + record notes N-1/N-2/N-4). Sections R-F and
+R-G below cover them; the findings list and the verdict are for the FIVE-commit range
+`db5e1feb5..82862ca74a2de6b189faf6a9cf22def2efad0c5b` (10 files, +308/−15). The first-pass
+sections R-A…R-E are left as written (they describe 088c6e9c5 and remain true of it).
+
 **What I did:** read the three commits hunk by hunk and the whole current
 `scripts/check_fork_drift.sh` + `scripts/check_fork_content.py`; read the record and traced its
 quoted lines to the three ephemeral logs in `.tmp/m9-fresh-20260925/`; in the fresh anonymous
@@ -34,9 +42,35 @@ was not edited (the `--selftest` run there writes only the temporary ref and thr
 objects, as designed); the old script was not executed (its ROOT resolution needs it in place;
 the negative control is reproduced by the equivalent git commands instead).
 
-## Findings (ranked)
+## Findings (ranked; status after the second pass, range db5e1feb5..82862ca74)
 
-No P1, no P2.
+No P1, no P2 in either pass.
+
+Open after the second pass (both from the 4th commit `a4d72a3fc`, both after-merge):
+
+- **P3-3 — `check_pin_sites.sh` README parser: a non-hex fragment is silently skipped.**
+  `grep -o 'lem-lean\.git#[0-9a-f]*'` matches ZERO hex characters for `lem-lean.git#<branch>`, the
+  `sed 's/.*#//'` leaves an empty hash, and `:56 [[ -z "$h" ]] && continue` drops it. With a valid
+  pin line also present, a second occurrence `…lem-lean.git#mdd/lean-backend` (a MOVING pin — worse
+  than a wrong hash) passes: probe A below, rc 0. The sole-occurrence case fails closed (P5). Fix
+  after merge: match any fragment (`lem-lean\.git#[^[:space:]"'\`)]*`) and require each to be the
+  full 40-hex pin, or require the count of `lem-lean.git#` occurrences to equal the count of
+  matched hashes; add the plant.
+- **P3-4 — the new leg is not named where row 1's legs are enumerated:** `scripts/LADDER.md:43`
+  (Tier A row 1's leg list names fork-drift, fixture-freeze, renumber plants, failure-reach …) and
+  `lean_frontend/CLAUDE.md:120-152` (the gate list with plant counts) do not mention
+  `check_pin_sites.sh`; only VALIDATION.md's gate table has its row. `grep -c check_pin_sites`:
+  CLAUDE.md 0, LADDER.md 0, VALIDATION.md 1, README.md 0.
+
+Resolved on-branch by the 5th commit `82862ca74` (verified in R-G): **P3-1** (S31 now passes the
+synthetic commit hash directly; no ref, one-line trap), **P3-2** (header :14, refresh template :267,
+manifest :401 name the pinned merge-base), **N-1** (the "20" parenthetical), **N-2/N-4** (the record
+now states that quotes are verbatim prefixes and that `OLD_GATE` is not a negative control).
+
+Standing notes: **N-3** (dangling objects — now stated in the S31 comment), **N-5** (pre-existing
+terse `merge-base` failure), plus new **N-6..N-8** (R-F/R-G).
+
+First-pass findings as originally written (kept for the record; status above):
 
 - **P3-1 — S31's temporary ref lives in the SHARED ref namespace.** From a worktree
   `refs/plant/advanced-upstream` resolves to the common dir
@@ -341,7 +375,7 @@ computation (`git diff b9aeedcb4 …`) gives 85 files and `cmp` against the mani
   side effect is S31's transient shared ref plus three loose objects per selftest run (P3-1,
   N-3); neither can turn a red green.
 
-## VERDICT [AGENT]
+## First-pass VERDICT [AGENT] (range db5e1feb5..088c6e9c5, superseded by the five-commit verdict below)
 
 The behavioural change is exactly the one claimed — one token in `gate()`, layer 1's diff base
 `"$UPSTREAM_REF"` → `"$live_mb"`, where `$live_mb` is computed and validated equal to the pinned
@@ -355,5 +389,261 @@ clone, and the "comments and records only" annotation is literally true. The rec
 trace to the logs and its negative control is the valid PART 3 red, not the mis-resolved
 `OLD_GATE` attempt. No P1/P2. Two P3s to take after merge — put S31's ref in the per-worktree
 namespace (or pass the SHA) to remove a false-red race between concurrent worktree selftests,
-and finish the header/refresh-template wording — plus the notes above. From this reviewer's
-standpoint the range is ready for the operator's ff-only merge decision.
+and finish the header/refresh-template wording — plus the notes above.
+
+---
+
+# Second pass — commits `a4d72a3fc` and `82862ca74`
+
+    $ git log --oneline db5e1feb5..82862ca74
+    82862ca74 fix(check_fork_drift selftest): S31 passes the synthetic commit hash directly (no shared ref — review P3-1); merge-base wording (P3-2); record notes N-1/N-4
+    a4d72a3fc gate(row 1): pin-site agreement leg — manifest lem-pin = Lake rev = three lake-manifests = README pin command (5 plants), wired after the fork-drift gate
+    088c6e9c5 docs: M9 fresh-clone newcomer test record — …
+    34cbdbcc6 fix(check_fork_drift): compare against the pinned merge-base, not the upstream ref; plant S31 (advanced upstream ref is not drift)
+    25ef8a26e docs: the README's opam pin for lem = the Lake LemLib rev (c2a68e79), …
+
+    $ git diff --stat db5e1feb5 82862ca74
+     lean_frontend/CLAUDE.md                            |   2 +-
+     lean_frontend/README.md                            |   8 +-
+     lean_frontend/SUPPORTED.md                         |   2 +-
+     lean_frontend/TODO.md                              |   2 +-
+     lean_frontend/VALIDATION.md                        |   9 +-
+     ...2026-09-25_public-readiness-fresh-clone-test.md | 153 +++++++++++++++++++++
+     scripts/check_fork_drift.sh                        |  29 +++-
+     scripts/check_pin_sites.sh                         | 100 ++++++++++++++
+     scripts/fork_drift_manifest.txt                    |   2 +-
+     scripts/test_unit.sh                               |  16 +++
+     10 files changed, 308 insertions(+), 15 deletions(-)
+
+What I did for this pass: read `check_pin_sites.sh` (100 lines) and the `test_unit.sh`/VALIDATION
+hunks; inspected the real pin sites at `a4d72a3fc` (lakefile `[[require]]` blocks, the three
+lake-manifests' LemLib entries, the README's `lem-lean.git#` occurrences, the manifest `lem-pin`);
+ran the leg read-only with `--root` against mainline (primary checkout), against my worktree
+(site files = fix head) and against the fresh clone; ran its `--selftest` from a temporary
+untracked copy in my worktree's `scripts/` (removed afterwards); probed its parsers on scratch
+copies of the six files (probes A–E). For the 5th commit: cumulative diff, greps, manifest
+non-comment equivalence, read-only raw-hash acceptance in the clone, and a full `--selftest` +
+gate of the 5th-commit script in my worktree (provisioned temporarily with a copy of the primary's
+gitignored `ocaml_frontend/generated` and `CERB_UPSTREAM_TREE` = the container's
+`deps/cerberus-upstream` tree; the two checked-out files were restored to my HEAD and the copy
+removed; `git status` clean). No builds; nothing outside my worktree modified except the
+selftest's by-design loose objects in the shared store.
+
+## R-F — the 4th commit: `scripts/check_pin_sites.sh` + row-1 wiring + VALIDATION row
+
+**(1) Do the parsers read the sites correctly, fail-closed?** Real site shapes at `a4d72a3fc`:
+
+    lean_frontend/lakefile.toml
+    67:[[require]]
+    68:name = "LemLib"
+    69:git = "https://github.com/OathTech/lem-lean"
+    70:rev = "c2a68e79b6369e19f099dfa48767319c1daf19b3"
+    71:subDir = "lean-lib"            (the ONLY [[require]] block in the file)
+    lake-manifests (name type rev inputRev url):
+    lean_frontend/lake-manifest.json                 LemLib git c2a68e79… c2a68e79… https://github.com/OathTech/lem-lean
+    lean_frontend/speclab/lake-manifest.json         LemLib git c2a68e79… c2a68e79… https://github.com/OathTech/lem-lean
+    tests/mem-scale-probes/micro/lake-manifest.json  LemLib git c2a68e79… c2a68e79… https://github.com/OathTech/lem-lean
+    lean_frontend/README.md:93   lem-lean.git#c2a68e79b6369e19f099dfa48767319c1daf19b3   (the only occurrence)
+    scripts/fork_drift_manifest.txt:418  lem-pin=c2a68e79b6369e19f099dfa48767319c1daf19b3
+
+- Manifest (:24-26): missing file → FAIL; `lem-pin` must be exactly one full 40-hex value — a
+  deleted line (P4) or a DUPLICATED line both fail (probe E, verbatim):
+
+      check_pin_sites: FAIL — manifest [meta] lem-pin is not one full 40-hex commit: 'c2a68e79b6369e19f099dfa48767319c1daf19b3
+      c2a68e79b6369e19f099dfa48767319c1daf19b3'
+
+- lakefile (:30-32): `awk '/^\[\[require\]\]/{r=1} r && /^name = "LemLib"/{n=1} r && n && /^rev = "/{…; exit}'`
+  — prints the first `rev = "` AFTER the `name = "LemLib"` line; on the real file that is :70.
+  Fail-closed but brittle (N-7): a legal TOML reordering with `rev` before `name` reads as
+  "no LemLib rev found" (probe D, rc 1); a missing lakefile fails with awk's error text embedded
+  (probe C, verbatim):
+
+      check_pin_sites: FAIL — /tmp/dr-pinprobe.IWh7uu/c/lean_frontend/lakefile.toml LemLib rev = awk: fatal: cannot open file `/tmp/dr-pinprobe.IWh7uu/c/lean_frontend/lakefile.toml' for reading: No such file or directory ≠ lem-pin c2a68e79b6369e19f099dfa48767319c1daf19b3
+
+  and because `r`/`n` are never reset, a LemLib block WITHOUT `rev` followed by another block WITH
+  one would attribute the later rev to LemLib (then almost surely ≠ pin → FAIL; today there is
+  exactly one `[[require]]`). Also format-sensitive (`name = ` with single spaces) — a reformat
+  fails loud, not silent.
+- lake-manifests (:34-49): explicit `-f` check; `python3 json.load`; every package named `LemLib`
+  contributes `rev` and `inputRev`, each defaulting to `<none>` (≠ pin → FAIL) when absent; no
+  LemLib package or unparsable JSON → empty → FAIL "no LemLib package". Closed.
+- README (:53-58): every `lem-lean.git#<hex>` must equal the pin; none → FAIL (P5); an
+  ABBREVIATED hash fails (probe B, verbatim):
+
+      check_pin_sites: FAIL — /tmp/dr-pinprobe.IWh7uu/b/lean_frontend/README.md pins lem-lean.git#c2a68e79 ≠ lem-pin c2a68e79b6369e19f099dfa48767319c1daf19b3 (the README's own rule: equal to lean_frontend/lakefile.toml)
+
+  but a NON-HEX fragment alongside a valid pin is skipped (P3-3; probe A, verbatim — the scratch
+  README has :93 `lem-lean.git#c2a68e79…` and an appended :237 `lem-lean.git#mdd/lean-backend`):
+
+      check_pin_sites: OK — lem-pin c2a68e79b6369e19f099dfa48767319c1daf19b3 at every site (lakefile rev, 3 lake-manifests rev+inputRev, README pin command)
+      probe A rc=0
+
+- `--root DIR` (:98-99): a nonexistent DIR → `cd` fails → `ROOT=""` → manifest missing → FAIL; a
+  missing argument → `set -u` abort (closed, ugly). `check` accumulates `rc` and reports EVERY
+  mismatch, not the first. No `2>/dev/null` anywhere in the commit (`git show a4d72a3fc | grep
+  '^+.*2>/dev/null'` → none; :30's `2>&1` captures, it does not discard).
+
+**(2) Are the 5 plants non-vacuous?** Each plant checks rc AND a message substring naming the
+planted value; a plant whose `sed` misses leaves the copy identical to the P0 control, so it would
+return rc 0 → `PLANT FAIL (wanted nonzero)` — premise failure is loud. P1 is the 2026-09-25 defect
+exactly (README → `67ec5de7…` against pin `c2a68e79…`; `stale` falls back to zeros if the pin
+itself were 67ec5de). My run (temporary untracked copy in my worktree; site files = fix head),
+verbatim:
+
+    check_pin_sites: SELFTEST — plants on scratch copies (loud plant banner; nothing in the tree is touched)
+      PLANT OK   [P0 unplanted copies] rc=0 -> check_pin_sites: OK — lem-pin c2a68e79b6369e19f099dfa48767319c1daf19b3 at every site (lakefile rev, 3 lake-manifests rev+inputRev, README pin command)
+      PLANT OK   [P1 README pin command names another commit (the 2026-09-25 fresh-clone defect)] rc=1 -> check_pin_sites: FAIL — /tmp/tmp.Vkor9OrOGK/readme/lean_frontend/README.md pins lem-lean.git#67ec5de70e02e280bb348a4ba826696b76116732 ≠ lem-pin c2a68e79b636
+      PLANT OK   [P2 lakefile LemLib rev differs] rc=1 -> check_pin_sites: FAIL — /tmp/tmp.Vkor9OrOGK/lakefile/lean_frontend/lakefile.toml LemLib rev = 67ec5de70e02e280bb348a4ba826696b76116732 ≠ lem-pin c2a68e79b63
+      PLANT OK   [P3 one lake-manifest inputRev differs] rc=1 -> check_pin_sites: FAIL — lean_frontend/speclab/lake-manifest.json LemLib rev/inputRev = 67ec5de70e02e280bb348a4ba826696b76116732 ≠ lem-pin c2a68e79b6369e19f0
+      PLANT OK   [P4 manifest lem-pin missing] rc=1 -> check_pin_sites: FAIL — manifest [meta] lem-pin is not one full 40-hex commit: ''
+      PLANT OK   [P5 README has no pin command at all] rc=1 -> check_pin_sites: FAIL — /tmp/tmp.Vkor9OrOGK/noreadme/lean_frontend/README.md has no 'lem-lean.git#<hash>' pin command
+    check_pin_sites: SELFTEST OK (5 plants red with the declared message, unplanted copies green)
+    SELFTEST rc=0
+
+Coverage gaps (N-8): no plant for a lake-manifest `rev` (as opposed to `inputRev`) mismatch —
+same loop, same comparison; none for a missing lake-manifest file or a manifest without a LemLib
+package (both closed by code); none for a second `lem-lean.git#` occurrence (which would have
+caught P3-3). GNU `sed -i` / `0,/re/` forms — Linux-only, like the other gates.
+
+**(3) FAILS on mainline, passes on the fix head.** The script extracted from `a4d72a3fc` to
+`/tmp` and run with `--root` (read-only):
+
+    $ bash /tmp/dr-check_pin_sites.sh --root /home/dev/projects/cerberus-lean-proj/cerberus-lean     # HEAD = db5e1feb5
+    check_pin_sites: FAIL — /home/dev/projects/cerberus-lean-proj/cerberus-lean/lean_frontend/README.md pins lem-lean.git#67ec5de70e02e280bb348a4ba826696b76116732 ≠ lem-pin c2a68e79b6369e19f099dfa48767319c1daf19b3 (the README's own rule: equal to lean_frontend/lakefile.toml)
+    rc=1
+    $ bash /tmp/dr-check_pin_sites.sh --root <my worktree>          # site files = the fix head's
+    check_pin_sites: OK — lem-pin c2a68e79b6369e19f099dfa48767319c1daf19b3 at every site (lakefile rev, 3 lake-manifests rev+inputRev, README pin command)
+    rc=0
+    $ bash /tmp/dr-check_pin_sites.sh --root .tmp/m9-fresh-20260925/cerberus-lean   # 34cbdbcc6
+    check_pin_sites: OK — lem-pin c2a68e79b6369e19f099dfa48767319c1daf19b3 at every site (lakefile rev, 3 lake-manifests rev+inputRev, README pin command)
+    rc=0
+
+(mainline README:93 = `lem-lean.git#67ec5de70e02e280bb348a4ba826696b76116732`, lakefile rev and
+manifest lem-pin = c2a68e79 — the exact defect.)
+
+**Wiring.** `scripts/test_unit.sh` (+16): directly after the fork-drift gate block,
+`PIN_SITES_SH="$(dirname "$PURITY_SH")/check_pin_sites.sh"` (`PURITY_SH` is `<scripts dir>/
+check_exec_purity.sh`, :10), then `--selftest` and the gate, each `exit 1` on failure. Sub-second.
+The 4th commit changes no manifested SURFACE file (`git diff --name-only 088c6e9c5 a4d72a3fc --
+<SURFACES>` → empty), so no fork-drift `--refresh` is due.
+
+**Docs.** VALIDATION.md gate table gains one row (accurate: sites, "fresh-clone finding 2026-09-25;
+5 plants"). LADDER.md row 1 and `lean_frontend/CLAUDE.md`'s gate list do not name it (P3-4).
+
+**(4) Policy judgement [AGENT] — trust-load-bearing, not cruft.** The property is already
+normative in the container practices ("lem-lean pins: `deps/lem-pinned` = opam pin = all cerberus
+Lake pins (Lake rev, three lake-manifests, `scripts/fork_drift_manifest.txt` `lem-pin` …)"; "An
+arc closes only when branch heads = opam pin = Lake pin"); the leg mechanizes its REPO-side half.
+It is load-bearing because the manifest `lem-pin` certifies which lem derived BOTH generated OCaml
+trees, the Lake rev / manifests decide which LemLib the generated Lean links against, and the
+README line decides which lem a newcomer's reproduction of row 1 uses — a disagreement at any
+site makes the "one lem" premise of the trust story false or unreproducible, which is exactly
+what happened on 2026-09-25 (a literal newcomer's row 1 red). It complements, not duplicates,
+`check_fork_drift.sh`'s lem-pin check (installed `lem -v` vs the manifest; this leg is the WRITTEN
+sites vs the manifest). It is cheap (no build, <1 s), plant-tested with the real defect as P1,
+fail-closed, and placed inside the existing row-1 caller rather than as a new row or tier — the
+two-tier rule's shape. Caveat: it should stay a one-value-agreement check; the README site is
+justified only because that line is an executable input carrying its own "Keep this revision
+equal to lean_frontend/lakefile.toml" rule, not a licence to lint prose. The container-side
+equalities (`deps/lem-pinned`, the opam pin) remain operator-checked (N-8).
+
+## R-G — the 5th commit: P3-1/P3-2 remediation + record notes
+
+Cumulative `git diff 088c6e9c5 82862ca74 -- scripts/check_fork_drift.sh`, the load-bearing hunks
+verbatim:
+
+    -PLANTDIR=$(mktemp -d)
+    -ADV_REF=refs/plant/advanced-upstream
+    -trap 'rm -rf "$PLANTDIR"; if git -C "$ROOT" show-ref --verify -q "$ADV_REF"; then git -C "$ROOT" update-ref -d "$ADV_REF"; fi' EXIT
+    +PLANTDIR=$(mktemp -d); trap 'rm -rf "$PLANTDIR"' EXIT
+    ...
+    -git -C "$ROOT" update-ref "$ADV_REF" "$adv_commit"
+    -plant "S31 upstream ref advanced past the pinned merge-base -> OK (not drift)" 0 "$OKMSG" C 0 "$PLANTDIR/m.c" "$ADV_REF" "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$PLANTDIR/lem-ok" 0
+    -git -C "$ROOT" update-ref -d "$ADV_REF"
+    +plant "S31 upstream ref advanced past the pinned merge-base -> OK (not drift)" 0 "$OKMSG" C 0 "$PLANTDIR/m.c" "$adv_commit" "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$PLANTDIR/lem-ok" 0
+    ...
+    -# Layer 1 (name-level, <1 s): the SET of files on `git diff upstream/master
+    +# Layer 1 (name-level, <1 s): the SET of files on `git diff <pinned merge-base>
+    ...
+    -            echo "# [files] = oracle-surface files allowed to differ from upstream/master"
+    +            echo "# [files] = oracle-surface files allowed to differ from the pinned merge-base (upstream/master only locates it)"
+
+- **No ref is created:** `git show 82862ca74:scripts/check_fork_drift.sh | grep -n -E
+  'ADV_REF|update-ref|refs/plant|show-ref'` → nothing. The trap is the original one line (:345).
+  `gate()` (:117-321) is untouched by this commit — the diff has no hunk inside it.
+- **S31 with a raw hash still reaches the path and is still non-vacuous.** The gate's three uses
+  of its ref argument all accept a SHA; read-only in the clone with an existing SHA
+  (`upstream/master` = b3e11ea33…):
+
+      $ git rev-parse --verify -q b3e11ea334e95359907d4abf9194f0e7fedc6c6a ; echo rc=$?
+      b3e11ea334e95359907d4abf9194f0e7fedc6c6a
+      rc=0
+      $ git merge-base b3e11ea334e95359907d4abf9194f0e7fedc6c6a HEAD ; echo rc=$?
+      b9aeedcb4dd438763b0eef7f95ac19e93875d7de
+      rc=0
+
+  The synthetic commit's parent is still `adv_mb` (the pinned merge-base) and its tree still
+  changes `frontend/model/cabs.lem`, so under the OLD diff base `git diff "$adv_commit"` would list
+  cabs.lem → 86 ≠ 85 → FAIL → PLANT FAIL; under the new base → OK. Unchanged reasoning, one less
+  moving part. N-6: `git rev-parse --verify -q` also accepts a syntactically valid but ABSENT
+  40-hex (`0123456789abcdef…` → rc 0); with a raw SHA the fail-closed catch is `git merge-base`
+  (`fatal: Not a valid commit name …` → `FAIL — git merge-base failed`). Production passes
+  `upstream/master`, so no exposure; S31's SHA exists by construction.
+- **My independent run of the 5th-commit script** (`--selftest`, then the gate; my worktree
+  provisioned as described above; `lem` deliberately not on PATH, so the unplanted line says
+  "not cross-checked" — the plants use the fake lem commands), verbatim:
+
+      SELFTEST rc=0
+      check_fork_drift: SELFTEST — plants on scratch copies of the manifest and fake prerequisites (loud plant banner; nothing in the tree is touched)
+        PLANT OK   [S31 upstream ref advanced past the pinned merge-base -> OK (not drift)] rc=0 -> check_fork_drift: OK — layer 1: 85 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 30 differing generated files, all ha
+        UNPLANTED:
+          check_fork_drift: OK — layer 1: 85 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 30 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin c2a68e79b6369e19f0
+      check_fork_drift: SELFTEST OK (31 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S31 advanced upstream ref (not drift); S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins;
+      PLANT OK count: 33  PLANT FAIL count: 0
+      check_fork_content: OK — 85 source files content/mode-pinned
+      check_fork_drift: OK — layer 1: 85 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 30 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin c2a68e79b6369e19f099dfa48767319c1daf19b3 (lem not on PATH: not cross-checked))
+      GATE rc=0
+
+  Afterwards: `git status --short --branch` → `## audit/fresh-clone-fix-20260925` (clean);
+  `git show-ref | grep refs/plant` → none.
+- **P3-2 wording:** head :14-15 "the SET of files on `git diff <pinned merge-base> --name-only`";
+  :267 the refresh template; `scripts/fork_drift_manifest.txt:401` "`# [files] = oracle-surface
+  files allowed to differ from the pinned merge-base (upstream/master only locates it;
+  2026-09-25);`". `grep -E 'git diff upstream/master|differ from upstream/master'` → none in either
+  file. The manifest change is comment-only: its non-comment lines before and after are 208 each
+  and `cmp` reports them identical, so the gate's parsed input is unchanged (confirmed by the
+  green gate above with the head's manifest checked out).
+- **Record edits:** the N-1 parenthetical ("20 of them in the fork's manifested `[files]` set (32
+  inside the gate's SURFACES — the 20 plus the 12 listed below; …") matches my measurement; the
+  new method-paragraph lines state that quoted lines are verbatim prefixes cut at a fixed width
+  (N-4) and that the `OLD_GATE` run is not a negative control, naming the PART 3 twelve-file red
+  as the control (N-2). Both accurate.
+
+## R-E addendum (five-commit range)
+
+`mdd/cerberus-lean` is still `db5e1feb5` = the range base; `db5e1feb5..82862ca74` is a linear
+five-commit chain (`a4d72a3fc` is an ancestor of `82862ca74`), so the merge remains ff-only
+without a rebase and the record's embedded hashes (`25ef8a26e`, `34cbdbcc6`) stay valid. The
+extension adds `scripts/check_pin_sites.sh` (new), `scripts/test_unit.sh` (+16) and a comment
+line in `scripts/fork_drift_manifest.txt`; none of these is a manifested SURFACE file (only
+`scripts/common.sh` is), so no `--refresh` is due — confirmed by the green gate with the head's
+script and manifest. Container behaviour of row 1 changes in exactly two ways: the new pin-site
+leg (green on this tree, and it would have been red on mainline for the README line) and S31's
+per-run loose objects (no shared ref any more).
+
+## VERDICT [AGENT] — five-commit range `db5e1feb5..82862ca74`
+
+No P1, no P2. The gate fix (34cbdbcc6) is the single claimed token in `gate()`, validated on every
+path; plant S31 is non-vacuous and, after 82862ca74, creates no shared ref — re-verified by my own
+run of the 5th-commit selftest (31 plants, 0 failures, S31 by raw hash) and gate (rc 0), on top of
+the fresh-clone runs of the first pass. The two P3s and three notes I raised are resolved on the
+branch exactly as described, with the manifest edit proven comment-only. The new row-1 leg
+(a4d72a3fc) reads the real site shapes correctly, is fail-closed on missing files/fields/pins,
+carries five non-vacuous plants with the actual 2026-09-25 defect as P1, fails on mainline and
+passes on the fix head and in the clone, and is wired behind the fork-drift gate with sub-second
+cost; my judgement is that it mechanizes an already-normative cross-site pin invariant that is
+genuinely trust-load-bearing, not gate cruft. It leaves two after-merge P3s of its own: the README
+parser skips a non-hex `lem-lean.git#<branch>` fragment when a valid pin also exists (probe A —
+a real if narrow fail-open; one-line grep fix plus a plant), and the leg is not yet named in
+LADDER.md row 1 or the CLAUDE.md gate list. From this reviewer's standpoint the five-commit range
+is ready for the operator's ff-only merge decision; merge authority rests with the operator.
