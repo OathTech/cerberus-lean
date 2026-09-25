@@ -166,3 +166,55 @@ who found the same README defect ("a row-1 leg asserting README pin = lakefile r
 recur at the next re-pin"). Landed: `mdd/cerberus-lean` db5e1feb5 -> this commit, ff-only; the primary checkout's row 1
 after landing is quoted in the orchestrator note. Then: the operator pushes; the final M9 exit is a literal rerun of the
 cerberus recipe from a brand-new anonymous clone against the pushed head.
+
+## Final M9 exit (2026-09-25, after the operator pushed 683dc186c) — GREEN end to end
+
+[USER 2026-09-25] "pushed". Brand-new directory, anonymous HTTPS clone of `mdd/cerberus-lean` (public head =
+`683dc186cd3a6683d3eaa3062f38f53ad339891d`; lem-lean public `mdd/lean-backend` = `c2a68e79…`), redirects and credentials
+disabled, no container environment. The public README's own lines in order (new local switch, `opam pin add … lem-lean.git#c2a68e79…`
+— now equal to the Lake rev — dependencies from the network, both builds, the one C program), then `VALIDATION.md`'s
+fork-drift provisioning block literally (`git fetch upstream master` → upstream/master = b3e11ea33, nine commits past the
+merge-base; clone at `merge-base=` b9aeedcb4; `make prelude-src` there; `CERB_UPSTREAM_TREE`), then row 1 and the README's
+six small lanes. Verbatim:
+
+    === SWITCH_CREATE EXIT=0 19:49:30 ===
+    === PIN_ADD EXIT=0 19:50:00 ===
+    === DEPS_INSTALL EXIT=0 19:50:29 ===
+    Lem c2a68e7
+    === LAKE_BUILD EXIT=0 19:54:13 ===
+    [1/1] MATCH 001-return-literal: VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+    === SMOKE EXIT=0 19:54:15 ===
+    upstream_pin=b9aeedcb4dd438763b0eef7f95ac19e93875d7de; upstream/master=b3e11ea33
+    === UPSTREAM_PRELUDE_SRC EXIT=0 19:54:42 ===
+    check_fork_drift: OK — layer 1: 85 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 30 differing generated files, all hash-pinned (merg
+    === FORK_DRIFT EXIT=0 ===
+    Total: 15 passed, 0 failed
+    check_failure_reach: OK (239 pure failure sites = the 239 register rows exactly (237 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, b
+    test_version: OK (untagged, exact annotated tag, dirty tag, post-tag, archive fallback)
+    test_exec_totality: OK (8 plants and 2 clean controls)
+    check_fork_drift: SELFTEST OK (31 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S31 advanced upstream ref (not drift); S11 copied-content
+    check_pin_sites: SELFTEST OK (8 plants red with the declared message, unplanted copies green)
+    check_pin_sites: OK — lem-pin c2a68e79b6369e19f099dfa48767319c1daf19b3 at every site (lakefile rev, 3 lake-manifests rev+inputRev, README pin command)
+    === ROW1 EXIT=0 19:58:36 ===
+
+The six small lanes, verbatim:
+
+    SUMMARY: total=113 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=5 cerb_floor=0 cerb_inconsistent=0
+    Baseline check: 0 regression(s), 0 improvement(s)
+    SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+    Baseline check: 0 regression(s), 0 improvement(s)
+    SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+    Baseline check: 0 regression(s), 0 improvement(s)
+    SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+    Baseline check: 0 regression(s), 0 improvement(s)
+    SUMMARY: exec_match=9 neg_pinned=5 fail=0
+    ALL AT COMMITTED EXPECTEDS
+    SUMMARY: match=12 diff=0
+    ALL MATCH RECORDED BASELINE
+
+Wall time 19:48:25 -> 20:01:11 UTC (derived: 12 min 46 s), one machine, warm opam download cache. Lake fetched LemLib
+from GitHub at `c2a68e79b6369e19f099dfa48767319c1daf19b3`. Every `Baseline check: 0 regression(s), 0 improvement(s)`.
+This closes M9 for the published heads: a newcomer following the public recipes gets a green smoke check, a green row 1
+(with upstream's current master fetched, the case that was red before 683dc186c) and green small lanes. Remaining
+operator items are unchanged: the GitHub issue-creation setting, the ISO-fix register's "filed upstream" criterion, the
+annotated prerelease tags and the announcement wording; cerberus-sl re-pins at the tag.
