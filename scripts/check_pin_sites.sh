@@ -6,7 +6,7 @@
 #   lean_frontend/lake-manifest.json                LemLib "rev" and "inputRev"
 #   lean_frontend/speclab/lake-manifest.json        LemLib "rev" and "inputRev"
 #   tests/mem-scale-probes/micro/lake-manifest.json LemLib "rev" and "inputRev"
-#   lean_frontend/README.md                         every `lem-lean.git#<hash>` (the newcomer's opam pin command)
+#   lean_frontend/README.md                         every `lem-lean.git#<fragment>` — each must be the full pin (the newcomer's opam pin command)
 #
 # Why (public-readiness M9 fresh-clone test, 2026-09-25): the sweep re-pinned the five machine-read sites but not the
 # README's pin command, so a newcomer installed lem 67ec5de against a c2a68e79 pin and row 1's fork-drift gate went
