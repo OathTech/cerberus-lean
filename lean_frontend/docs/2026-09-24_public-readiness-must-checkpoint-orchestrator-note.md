@@ -205,3 +205,31 @@ shared-switch re-pin — `git -C deps/lem-pinned reset --hard 6b20bfd` + `make r
 that moment (it changes every checkout's lem; no other worktree may regenerate until (4) lands); (3) re-gate
 `c13a105` against the switch's lem (row 1 at minimum; fork-drift must read the switch's `lem -v`); (4) cerberus-lean
 `mdd/cerberus-lean` e9f9d049f → c13a105, ff-only; then this note's docs branch ff. Landing notes quote the sign-offs.
+
+## 9. Landed (2026-09-25) — the MUST checkpoint on both mainlines; post-landing verification
+
+Executed on [USER 2026-09-25] "Go ahead with merge as planned" (details + verbatim step-2/step-3 lines in the cerberus
+closure record's "Landing" section): lem-lean `mdd/lean-backend` 38f87d5 -> 6b20bfd (ff); `deps/lem-pinned` -> 6b20bfd;
+`make rebuild-lem` -> `[LEM] installed Lem 6b20bfd`; re-gate of c13a105 under the switch's lem green; cerberus
+`mdd/cerberus-lean` e9f9d049f -> 3dd6d1f71 (ff: c13a105 + landing note) -> 27c7ff717 (this note, rebased and ff'd).
+
+Post-landing verification of the primary checkout at 27c7ff717 with the switch's lem (`Lem 6b20bfd`), generated trees
+WIPED and re-derived (03:14–03:26 UTC; tree clean before and after), verbatim:
+
+    check_lem_sync: OK (src b2a78090bb9617fa5067c54145df8d775669571e30f0c9629539031975dc6e16, gen b79e328e77aa6c784c2ef260b341c98c473a35bf1e1d1523b73680949ba41d9e)
+    check_lem_sync: lean OK (src b2a78090…, gen f4893e95ac3462defae87f737580b172f4e4e1cf35941d5be07edd82c8df808e)
+    === REGEN EXIT=0 === / === BUILD_CERBERUS EXIT=0 === / Build completed successfully (395 jobs). === BUILD_LEAN EXIT=0 ===
+    Total: 15 passed, 0 failed
+    check_fuel_forms: OK (81 fuel'd workers: 62 MEASURED …
+    check_failure_reach: OK (239 pure failure sites = the 239 register rows exactly …
+    check_fork_drift: OK — layer 1: 84 oracle-surface files = manifest … layer 2: 30 differing generated files, all hash-pinned (… lem-pin 6b20bfd02de924d078725efa96c6675115b8b17a matches lem -v 6b20bfd (hex prefix))
+    === ROW1 EXIT=0 ===
+    SUMMARY: total=113 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 … cerb_skip=5 …   Baseline check: 0 regression(s), 0 improvement(s)
+    SUMMARY: total=2 match=2 fail=0   SUMMARY: total=7 match=7 fail=0   test_address_space: OK (18 cases …)
+    OK: lane matches the committed baseline …   SUMMARY: match=12 diff=0   SUMMARY: exec_match=9 neg_pinned=5 fail=0
+    SUMMARY: total=93 match=93 … (float)   SUMMARY: total=90 match=66 ub_match=20 … (debug)   SUMMARY: total=212 match=183 ub_match=16 … (coverage) — each Baseline check: 0 regression(s), 0 improvement(s)
+    === ALL DONE (post-landing) 2026-09-25T03:26:11Z ===
+
+Pins: lem-lean mainline = deps/lem-pinned = switch lem (prefix) = Lake rev = 3 lake-manifests = fork-drift lem-pin =
+6b20bfd02de924d078725efa96c6675115b8b17a. Not pushed; no tag. Next: the SHOULD block review ([USER 2026-09-25] "the
+other agent has completed the SHOULD remediation. Review it as you did with the MUST").
