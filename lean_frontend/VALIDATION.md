@@ -1113,7 +1113,11 @@ opam exec --switch=. -- ./scripts/check_fork_drift.sh
 opam exec --switch=. -- ./scripts/test_unit.sh
 ```
 
-The generated-tree comparison is different from the pristine executable
+The gate compares the fork against the PINNED merge-base commit (`merge-base=` in
+`scripts/fork_drift_manifest.txt`), which `upstream/master` only serves to locate and
+validate; fetching a newer upstream master is therefore not drift (fresh-clone finding,
+2026-09-25: the gate previously diffed against the ref itself). The generated-tree
+comparison is different from the pristine executable
 manifest needed by LADDER Tier B row 10. That row documents
 `ensure_independent_oracle.py` and its independently built runtime.
 Neither `release.py` nor a green newcomer smoke check supplies all external

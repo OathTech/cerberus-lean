@@ -23,7 +23,9 @@
 #   and forces a manifest update whose commit states the justification.
 #   Also pins the merge-base: if upstream/master or the fork history moves
 #   so the merge-base leaves the manifested commit, the gate fails (the
-#   whole manifest is relative to it). [meta] lem-pin records the lem-lean
+#   whole manifest is relative to it). upstream/master only LOCATES the
+#   merge-base; every comparison is against the pinned merge-base commit,
+#   so upstream advancing past it is not drift (2026-09-25). [meta] lem-pin records the lem-lean
 #   commit BOTH generated trees were derived with; when `lem` is on PATH
 #   its `lem -v` must agree (a stale pin was the audit's F4 finding (c)).
 #
@@ -188,7 +190,11 @@ gate() {
 
     # --- layer 1: name-level (SET comparison, C-locale canonical) -----------
     local live_files manifest_raw manifest_files dups
-    live_files=$( { git -C "$ROOT" diff "$UPSTREAM_REF" --name-only -- "${SURFACES[@]}";
+    # The comparison base is the PINNED merge-base (validated equal to the live one above), never the
+    # upstream ref itself: upstream advancing past the merge-base is not fork drift (public-readiness M9
+    # fresh-clone finding, 2026-09-25 — a newcomer's `git fetch upstream master` made 12 upstream-only
+    # changes read as NEW DRIFT; the container's stale upstream/master had masked it).
+    live_files=$( { git -C "$ROOT" diff "$live_mb" --name-only -- "${SURFACES[@]}";
                    git -C "$ROOT" ls-files --others --exclude-standard -- "${SURFACES[@]}"; } | sort -u)
 
     if [[ $REFRESH -eq 0 ]]; then
@@ -336,7 +342,9 @@ esac
 # --------------------------------------------------------------------------
 echo "check_fork_drift: SELFTEST — plants on scratch copies of the manifest and fake prerequisites (loud plant banner; nothing in the tree is touched)"
 UP_TREE_REAL="$(resolve_upstream_tree)"
-PLANTDIR=$(mktemp -d); trap 'rm -rf "$PLANTDIR"' EXIT
+PLANTDIR=$(mktemp -d)
+ADV_REF=refs/plant/advanced-upstream
+trap 'rm -rf "$PLANTDIR"; if git -C "$ROOT" show-ref --verify -q "$ADV_REF"; then git -C "$ROOT" update-ref -d "$ADV_REF"; fi' EXIT
 fails=0
 # fake lem commands: one agreeing with the manifest's pin, one stale
 pinned_lem_real=$(awk '/^\[meta\]/{s=1;next} /^\[/{s=0} s && /^lem-pin=/{sub(/^lem-pin=/,""); print}' "$MANIFEST_DEFAULT")
@@ -405,6 +413,20 @@ rewrite_files "$MANIFEST_DEFAULT" "$PLANTDIR/files.dup" "$PLANTDIR/m.dup"
 plant "S5 duplicate [files] entry" nonzero "duplicate [files] entries" C 0 "$PLANTDIR/m.dup" "$UPSTREAM_REF_DEFAULT" "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$PLANTDIR/lem-ok" 0
 # S6 — missing upstream ref (a ref name that does not exist)
 plant "S6 missing upstream ref -> FAIL (not a skip)" nonzero "FAIL — missing upstream ref 'plant/no-such-ref'" C 0 "$PLANTDIR/m.c" plant/no-such-ref "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$PLANTDIR/lem-ok" 0
+# S31 — the upstream ref ADVANCED past the pinned merge-base (public-readiness M9 fresh-clone
+#   finding, 2026-09-25): a synthetic commit on top of the merge-base changing a surface file the
+#   fork does not touch, reached through a TEMPORARY ref (deleted below and by the EXIT trap). The
+#   gate compares against the pinned merge-base, so this must be OK, not drift.
+adv_mb=$(awk '/^\[meta\]/{s=1;next} /^\[/{s=0} s && /^merge-base=/{sub(/^merge-base=/,""); print}' "$MANIFEST_DEFAULT")
+adv_blob=$(printf 'plant S31: upstream advanced past the merge-base\n' | git -C "$ROOT" hash-object -w --stdin)
+adv_tree=$(GIT_INDEX_FILE="$PLANTDIR/adv.idx" git -C "$ROOT" read-tree "$adv_mb" \
+           && GIT_INDEX_FILE="$PLANTDIR/adv.idx" git -C "$ROOT" update-index --add --cacheinfo "100644,$adv_blob,frontend/model/cabs.lem" \
+           && GIT_INDEX_FILE="$PLANTDIR/adv.idx" git -C "$ROOT" write-tree)
+adv_commit=$(GIT_AUTHOR_NAME=plant GIT_AUTHOR_EMAIL=plant@localhost GIT_COMMITTER_NAME=plant GIT_COMMITTER_EMAIL=plant@localhost \
+             git -C "$ROOT" commit-tree "$adv_tree" -p "$adv_mb" -m "plant S31: upstream advanced past the merge-base")
+git -C "$ROOT" update-ref "$ADV_REF" "$adv_commit"
+plant "S31 upstream ref advanced past the pinned merge-base -> OK (not drift)" 0 "$OKMSG" C 0 "$PLANTDIR/m.c" "$ADV_REF" "$UP_TREE_REAL" "$FORK_TREE_DEFAULT" "$PLANTDIR/lem-ok" 0
+git -C "$ROOT" update-ref -d "$ADV_REF"
 # S7 — missing upstream generated tree
 plant "S7 missing upstream generated tree -> FAIL (not a skip)" nonzero "FAIL — layer 2 prerequisite missing" C 0 "$PLANTDIR/m.c" "$UPSTREAM_REF_DEFAULT" "$PLANTDIR/no-such-tree" "$FORK_TREE_DEFAULT" "$PLANTDIR/lem-ok" 0
 # S8 — the development opt-in on a missing ref: rc 0 WITH the loud banner
@@ -470,7 +492,7 @@ else
     echo "  PLANT FAIL [unplanted gate is not green]:"; sed 's/^/      /' <<<"$out"; fails=$((fails+1))
 fi
 if (( fails == 0 )); then
-    echo "check_fork_drift: SELFTEST OK (30 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; S15-S30 version forms, full-pin validation and refresh retention; unplanted gate green)"
+    echo "check_fork_drift: SELFTEST OK (31 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S31 advanced upstream ref (not drift); S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; S15-S30 version forms, full-pin validation and refresh retention; unplanted gate green)"
     exit 0
 else
     echo "check_fork_drift: SELFTEST FAILED ($fails)"; exit 1
