@@ -671,3 +671,223 @@ orchestrator additionally ran `test_multi_tu.sh` (2/2), the
 are now independently confirmed by the orchestrator's log; F1 (P1 in the
 operator's standard re-pin route) and F2 (P2, docs-only) still stand
 before merge; F8 still awaits a tree diff.
+
+---
+
+## Closure delta (second pass) — `0a6d59eed..c13a105`
+
+[AGENT — second pass, Claude Fable subagent, 2026-09-25 (UTC); same rules:
+no builds, read-only measurement from the audit worktree; the cleanup
+worktree's `.tmp/orch-gates-closure.log` read by absolute path only.]
+
+Range (verbatim `git log --oneline 0a6d59eed..c13a105`):
+
+```text
+c13a10541 MUST closure F2/F6: retain provenance and record final-pin gate results
+603c9b69b MUST closure F1/F3: validate full Lem pins and explain excluded CMM reps
+```
+
+`git diff --name-status 0a6d59eed c13a105`: `cmm_csem.lem`,
+`lean_frontend/README.md`, `SUPPORTED.md`, the untracking record (M),
+NEW `docs/2026-09-24_public-readiness-closure.md`, the three
+`lake-manifest.json`, `lakefile.toml`, `scripts/check_fork_drift.sh`,
+`scripts/fork_drift_manifest.txt` — nothing else. `c13a10541` touches only
+`SUPPORTED.md`, the untracking record and the new closure record, so
+`603c9b69b` is the implementation head the records cite.
+`git merge-base --is-ancestor e9f9d049f c13a105` → yes; `0a6d59eed` → yes.
+
+### (1) `check_fork_drift.sh` — F1 fix, verified against the spec
+
+Diff `0a6d59eed..c13a105` (+62/−x, four hunks in the gate and one in the
+self-test). Gate logic at `c13a105`:
+
+```bash
+[[ "$pinned_lem" =~ ^[0-9a-f]{40}$ ]] || fail "manifest [meta] lem-pin must be exactly one full 40-hex commit"
+…
+live_prefix=${live_lem%-dirty}
+if [[ "$live_prefix" =~ ^[0-9a-f]{7,40}$ ]]; then
+    :
+elif [[ "$live_prefix" =~ ^[^[:space:]]+-[0-9]+-g([0-9a-f]{7,40})$ ]]; then
+    live_prefix=${BASH_REMATCH[1]}
+else
+    fail "malformed lem version: '$live_lem' (need 7–40 hex digits or a hash-bearing git describe version)"
+fi
+if [[ "$pinned_lem" != "$live_prefix"* ]]; then
+    fail "lem-pin stale: manifest records lem-pin=$pinned_lem, '$LEM_CMD -v' says $live_lem — …"
+fi
+lem_note="lem-pin $pinned_lem matches lem -v $live_lem (hex prefix)"
+```
+
+Checked: manifest value must be exactly 40 hex (a duplicated `lem-pin=`
+line yields a two-line value and also fails this regex — S28); `lem -v`'s
+second word accepted as a 7–40 hex prefix, bare or as `<tag>-<n>-g<hash>`,
+one trailing `-dirty` stripped; REFUSED when not a prefix (stale), when the
+manifest is not 40-hex, and when unparseable. The prefix test is a glob
+against a value already validated as hex, so no metacharacter risk.
+
+**Behaviour changes beyond the comparison itself (all inside F1's remit,
+report them so "no other behaviour changed" is not over-read):**
+(i) the stale check now also applies under `--refresh` — the former
+`$REFRESH -eq 0 &&` guard is gone — and `--refresh` writes
+`lem-pin=$pinned_lem` (preserving the reviewed full pin) instead of
+`lem-pin=$live_lem`; the header recipe step 3 now says "set [meta] lem-pin
+to the reviewed full 40-hex commit, then run --refresh"; (ii) the 40-hex
+validation runs in gate mode too, so any manifest still carrying an
+abbreviated pin fails closed; (iii) the OK-note text changed from
+`lem-pin X = lem -v` to `lem-pin X matches lem -v Y (hex prefix)` — no
+consumer parses it (`git grep "= lem -v\|lem_note" c13a105 -- scripts tools
+lean_frontend/*.md scripts/LADDER.md` → only the script itself). Layers
+1–3 and the prerequisite handling have no hunks. `2>/dev/null` added: 0.
+
+**Self-test plants** (16 new, S15–S30, plus an S29 detail check; 30 total):
+admit — S15 seven hex, S16 eight hex, S17 `lean-backend-v0.1.0-alpha.1-12-g<9 hex>`,
+S18 `<7 hex>-dirty`, S19 `v0.1-0-g<40 hex>-dirty`, S29 `--refresh` with a
+7-hex lem (rc 0, "manifest REFRESHED") + detail "refresh preserved the full
+manifest pin"; refuse — S20 `2026-09-24` (non-hex), S21 bare tag, S22 six
+hex, S23 41 hex, S24 `v0.1-nope-g<7 hex>` (malformed describe), S25
+`v0.1-1-gdeadbee` (stale), S26 8-hex manifest pin, S27 `not-a-commit`
+manifest pin, S28 duplicated manifest pin, S30 `--refresh` with the stale
+fake (rc≠0, "lem-pin stale"); pre-existing S9 (`Lem deadbee` stale) and S10
+(missing line) retained; the `lem-ok` control (`:336`) prints the full
+40-hex pin, so bare-40-hex admit is exercised by every green control plant.
+[AGENT] Coverage judged complete against the spec. Unplanted shapes, none
+load-bearing: a bare 8+-hex value matching in the first 7 characters and
+differing later (`6b20bfd1…`) — refused by the prefix glob but not planted;
+upper-case hex — refused as malformed (fail-closed); lem's `LEMRELEASE`
+fallback when built without git (`lem -v` prints a date) — refused as
+malformed, i.e. a tarball-built lem cannot pass this gate (fail-closed;
+worth a line in the fork-drift help text, SHOULD block).
+
+**Exercised on the operator's route (orchestrator's closure run, verbatim
+from `.tmp/orch-gates-closure.log`, in progress at the time of writing):**
+
+```text
+=== ORCH CERBERUS CLOSURE GATES 2026-09-25T00:32:05Z head=c13a10541 status_lines=0 — lem on PATH = in-tree 6b20bfd (7-char describe) ===
+lem: Lem 6b20bfd at /home/dev/projects/cerberus-lean-proj/worktrees/lem-lean-cleanup-public-readiness-20260924/lem
+check_fork_drift: SELFTEST OK (30 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; S15-S30 version forms, full-pin validation and refresh retention; unplanted gate green)
+check_fork_drift: OK — layer 1: 84 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 30 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 6b20bfd02de924d078725efa96c6675115b8b17a matches lem -v 6b20bfd (hex prefix))
+=== ROW1 EXIT=0 ===
+```
+
+(`git -C lem-lean describe --always 6b20bfd` → `6b20bfd`, the same 7-char
+form.) **F1 CLOSED.**
+
+### (2) The closure re-pin
+
+All five sites at `c13a105` = `6b20bfd02de924d078725efa96c6675115b8b17a`:
+`lakefile.toml:70`, `lake-manifest.json:8,11`, `speclab/lake-manifest.json:15,18`,
+`tests/mem-scale-probes/micro/lake-manifest.json:15,18`,
+`fork_drift_manifest.txt:409` (full 40-hex). `9bb6c6b` survives only in the
+dated history NOTE (`manifest:8`) and dated records. Sorted-set diff of the
+manifest `0a6d59eed..c13a105` (derived): the `lem-pin=` line; the
+`cmm_csem.lem` `[source-content]` row `e2ac087f… → 53b16ced…`; ONE NEW
+`[expected-cosmetic]` row `e0a1740dc4f5a18b91e7d6cc7cde9d5f4189e74ab9ed2c2217fdc8c4dac9a185 cmm_csem.ml`
+(cosmetic rows 9 → 10, semantic 20 → 20, layer-2 count 29 → 30 — declared
+in the NOTE); seven header NOTE lines (`# Public-readiness closure F1/F3,
+2026-09-24 [AGENT; base 0a6d59eed].`, `# Final closure Lem pin: 6b20bfd0…`,
+the cosmetic-row explanation, `# No existing generated-diff pin is
+refreshed.`, the closure-record pointer); and three edited `[meta]` comment
+lines (`:406-408`: "Closure F1 (2026-09-24; base 0a6d59eed): full 40-hex
+pin, checked by validated version prefix. Set the reviewed full pin before
+--refresh; refresh preserves it."). Nothing else moved; header retained →
+no `--refresh`. Cumulatively vs `e9f9d049f` the only additional row is the
+first pass's `common.sh` hash. The orchestrator's expectation "lem-pin +
+NOTE + the two source-content rows" therefore needs one amendment: the
+propagated-comment cosmetic row is also present, legitimately.
+`lakefile.toml` gains a three-line dated comment naming the closure.
+
+### (3) The `cmm_csem.lem` comment
+
+```lem
+(* FORK F3 (2026-09-24; base 0a6d59eed): the 23 LemUnsupported.Cmm.* reps below
+   belong to {hol; isabelle; tex}-only definitions, which Lean never renders.
+   They provide no Lean implementation or concurrency support. *)
+```
+
+Replaces exactly three blank lines at `:659-661` (net zero lines; every
+later `.lem` line number is unchanged, which is why the generated Lean —
+which embeds source locations — can stay byte-identical). Accurate: 23 ✓,
+`{hol; isabelle; tex}`-only ✓ (verified for all 23 in the first pass),
+never rendered ✓, no Lean implementation / concurrency ✓. **Omits the
+refused-`sorry` rationale** (lem ≥ `9bb6c6b` refuses `sorry` reps at
+generation time, M4) and the namespace contract (a Lean reference to a
+`LemUnsupported.` name is refused at generation). **F3 substantially
+closed; N residue** — a reworded third line ("lem refuses `sorry` reps; any
+Lean reference is refused at generation") would fit without shifting lines.
+
+### (4) Records and front pages
+
+Untracking record: append-only "Closure addendum — provenance
+(2026-09-24)", tagged `[AGENT]`, quoting `[USER 2026-09-06]` — the excerpt
+(308 bytes, ending "…runs can be reconstructed.") is a byte-exact substring
+of `2026-09-05_master-plan.md:107` (checked by script); "the archives had
+already been pushed … already-pushed mainline and its history have not been
+rewritten" present. **F2 CLOSED.** `SUPPORTED.md:44-47`: "retired on
+2026-09-16. Source: [USER 2026-09-16] "cerberus-sl is our main upstream
+customer at the moment. I retired refined-cerberus (it got too messy)."" —
+byte-exact substring of the 2026-09-16 charter record. **F6 CLOSED.**
+Other `SUPPORTED.md` changes: header now "Checked 2026-09-24 against
+Cerberus `603c9b69b…` and Lem `6b20bfd0…`" + closure-record link — true
+(`c13a105` is docs-only over `603c9b69b`); "the closure also checks
+multi-TU, the multi-TU tray, address-space and immaculate lanes, as
+recorded above" — true per the closure record, though "above" means the
+linked record, not this page (wording, N). `lean_frontend/README.md`: only
+the `opam pin add …#6b20bfd0…` line changed; the closure record reports the
+full recipe re-run at that pin ("final-build exit 0", `Specified(42)` with
+MATCH) — orchestrator's log to confirm.
+
+**F11 — P3 (new) — five front pages still name `abe505d3d` as the
+implementation checked:** `README.md:14`, `lean_frontend/README.md:3`,
+`DESIGN.md:3`, `VALIDATION.md:3`, `CLAUDE.md:329`, while the README's own
+recipe now pins `6b20bfd0…` (changed by `603c9b69b`) and `SUPPORTED.md`
+cites `603c9b69b`. Historically true statements, but the README header now
+mis-describes the head its recipe belongs to. Fix: one-line edit each to
+`603c9b69b` (or "checked at abe505d3d; closure 603c9b69b"); docs-only.
+
+### (5) Generated trees and lem-lean delta
+
+The OCaml file that gained a comment is `ocaml_frontend/generated/cmm_csem.ml`
+(closure record: "Of 86 OCaml files, only `cmm_csem.ml` differs: the
+three-line FORK explanation replaces three blank lines"). Comment-only is
+forced by the source delta: the `.lem` change is a `(* … *)` comment in
+place of blank lines and lem's OCaml backend carries source comments into
+the `.ml`; the fork-drift layer 2 pins that file's diff-against-pristine
+hash (`e0a1740d…`), which the orchestrator's 7-char run just re-derived and
+matched ("30 differing generated files, all hash-pinned"). Neither tree is
+tracked, so byte-identity of the 219 Lean files vs `0a6d59eed` remains the
+remediator's derived claim pending the orchestrator's hash re-derivation
+(Lean regeneration + `LAKE_BUILD` + row 1 green in the closure log is the
+consistency evidence). lem-lean `9bb6c6b..6b20bfd` = `292db8b` (src
+`lean_backend.ml` +4: two further `sorry` refusals for inline backend
+types, plus three test fixtures) and `6b20bfd` (docs only, verified by
+`diff --stat`) — a strictly stronger refusal that cannot change output for
+a consumer with zero `sorry` reps, consistent with the 219-identical claim.
+
+### Policy re-check for the closure range
+
+Baselines/registers: only `fork_drift_manifest.txt`; `.lean/.ml/.c/.h`
+changed: none; `2>/dev/null` added in `scripts/ Makefile tools/`: 0; dated
+records: only the cleanup's own two 2026-09-24 records touched (one
+append-only, one new); `ci_lean.sh` unchanged (F4 stays SHOULD, as the
+closure record states).
+
+## VERDICT (second pass)
+
+[AGENT] The closure does what it says and closes the blocking finding: F1
+is fixed as specified (full 40-hex manifest pin, validated 7–40 hex prefix
+with describe/`-dirty` handling, fail-closed on malformed input, 16 new
+plants) and is confirmed on the operator's route by the orchestrator's run
+with a 7-character in-tree lem — `check_fork_drift: OK … lem-pin 6b20bfd0…
+matches lem -v 6b20bfd (hex prefix)`, `ROW1 EXIT=0`; F2 and F6 are closed
+with byte-exact quotes; F3 is closed up to a wording residue. The re-pin is
+consistent at all five sites; the only manifest movement beyond the pin and
+NOTE is the `cmm_csem.lem` content row and the declared cosmetic row for
+its propagated OCaml comment; no baseline, gate semantics outside F1, or
+dated record moved. Open: F11 (P3, stale `abe505d3d` cites on five front
+pages), F4/F5 (P3, SHOULD block), F8 (orchestrator's tree-hash
+re-derivation, in progress). **No P1 or P2 remains open** on `c13a105`.
+Merge order unchanged: lem-lean `6b20bfd` first (ff), the operator's
+`deps/lem-pinned` re-pin to `6b20bfd` + rebuild, then `c13a105` re-gated in
+that environment (the closure run is that environment's shape) and merged
+ff-only on explicit per-merge sign-off. Merge authority rests with the
+operator.
