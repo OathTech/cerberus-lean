@@ -1,8 +1,9 @@
 # VALIDATION — why you should trust this semantics
 
-**Documentation check, 2026-09-24:** implementation `abe505d3d856162c058653019b27388e8523ce47`;
-baseline inventories and cleanup gate measurements are in
-[the remediation record](docs/2026-09-24_public-readiness-remediation.md).
+**Documentation check, 2026-09-25:** implementation `4e875defb0cce250e841723c1be7ecb7c2240150`;
+Lem `67ec5de70e02e280bb348a4ba826696b76116732`. Current follow-up gates and remaining
+publication checks are in [the follow-up record](docs/2026-09-25_public-readiness-followup.md);
+earlier baseline inventories are in [the remediation record](docs/2026-09-24_public-readiness-remediation.md).
 Older dated measurements below remain historical evidence. Original evidence
 archives removed from the tracked tree remain recoverable from history;
 [the dated inventory](docs/2026-09-24_evidence-archive-untracking.md) records
@@ -61,7 +62,7 @@ The four aims, in priority order — [USER 2026-09-03], verbatim:
 
 For cerberus-lean: **Lean ≠ oracle (matched mode) on a program both run
 = bug.** The oracle's own deviations from ISO C are MIRRORED faithfully
-and filed upstream (`docs/upstream-tray/`) — the rule is Lean ≠ oracle,
+and recorded in the upstream tray (`docs/upstream-tray/INDEX.md`; drafts and filed reports are distinguished there) — the rule is Lean ≠ oracle,
 not Lean ≠ ISO. Every previously "declared", "documented-deliberate",
 "unobservable" or "temporal-boundary" divergence was re-classified on
 2026-09-03 into the classes of §1; the label is not a class, and this
@@ -236,10 +237,18 @@ have no execution content and are fixed as instruments.
 
 ## 2. The ISO-fix register (class (d))
 
+Submission status checked 2026-09-25 at `c13a1054133b49c954fe27ac4c1b4e33a418c51f`:
+several entries below have prepared reports, not filed issues. The
+[tray status table](docs/upstream-tray/INDEX.md#submission-status) records
+that distinction. The tests enforce registered behavior; they cannot enforce
+GitHub submission or upstream acceptance. Filing remains an operator action,
+so the presence of a register row does not establish every policy condition.
+
+
 The ONE licence for a deliberate Lean deviation TOWARD ISO C (criteria
 (i)–(vii) and the tightened (ii′) RATIFIED [USER 2026-09-03], charter
-§1.4/§7 Q2/Q3). Each entry: an unambiguous oracle bug against a cited ISO
-clause, a second independent oracle agreeing with Lean, filed upstream,
+§1.4/§7 Q2/Q3). The policy requires an unambiguous oracle bug against a cited ISO
+clause, a second independent oracle agreeing with Lean, upstream filing,
 pinned in the immaculate lane as a Lean-right/oracle-wrong pair that
 flips to MATCH — retiring the entry — when upstream fixes it,
 individually [USER]-ruled, soft cap ≤ 10, and a grep-able code marker
@@ -338,7 +347,7 @@ a bug today and what is a bug still open, in the class vocabulary.
   set is kernel-visible (`CerbGlobal.has_switch_*_eq`, by `rfl`) and greppable, and
   the Z2 record's formerly DECLARED row Z2-M-20 is closed; `using_concurrency` is `def … := false` with
   `using_concurrency_eq : using_concurrency () = false := rfl`, its
-  parameterisation (step 2) owned by the concurrency feature branch.
+  parameterisation remains separate work; the concurrency feature branch is parked.
   The oracle's `--switches=PNVI` CHANGES the answer (an integer→pointer
   UB043 becomes a value), so this is a feature we do not have, not a
   difference we hide.
@@ -346,10 +355,9 @@ a bug today and what is a bug still open, in the class vocabulary.
   the oracle's own mode is non-functional at `b9aeedcb4`" (`internal
   error: CONCURRENCY IS BROKEN`, `nondeterminism.ml:64` via `smt2.ml:38`).
   In matched mode atomics run sequentially and AGREE on both engines
-  (`elab_atomic_qualifier_seq.c`, 8 traces each). A concurrency line of
-  work exists on the branch `feature/concurrency` (a parametric model
-  selector with an SC instance first); until it lands and is validated,
-  the refusal is the contract.
+  (`elab_atomic_qualifier_seq.c`, 8 traces each). The operator declared the SC prototype failed on
+  2026-09-24 (ruling in TODO.md). It and `feature/concurrency` are parked
+  records, with no announcement dependency. The refusal is the contract.
 - *CerbFS*: an in-memory file-system model that SERVES exactly the
   operations it can answer as SibylFS does and REFUSES every other,
   loudly (`PANIC … CerbFS refusal (fail-closed fs-model boundary): <op>
@@ -424,7 +432,7 @@ task; current measurements are in the CI reporting record.
   code half of Z4.
 - *Oracle-suspect rows* (Lean == oracle ≠ ISO/gcc) are CORRECT under the
   rule and are NOT open bugs here: each is mirrored, pinned so a future
-  "fix" toward ISO trips the exec lane, and filed as a tray draft (INDEX
+  "fix" toward ISO trips the exec lane, and recorded as a tray draft (INDEX
   20–35). The gcc lane records them as `TRIAGED_*` today; the distinct
   `PINNED_TRAY_<n>` class (a confirmed shared-source oracle bug with a
   draft; the pin flips to AGREE on the upstream fix, any other movement
@@ -1077,3 +1085,40 @@ There is no other declared boundary. The debug no-op stubs (`CerbDebug`,
 is 0 in matched mode); `CerbFS` and concurrency are class (c) as stated
 in §3; the fuel bound is class (b)/fuel with its parameter. Known
 limitations with owners are in §3 and [TODO.md](TODO.md).
+
+
+## Provisioning the fork-drift oracle
+
+Public prerequisite recipe, documented 2026-09-25 against gate implementation
+`4e875defb0cce250e841723c1be7ecb7c2240150` (follow-up changes and
+executed commands are recorded in `docs/2026-09-25_public-readiness-followup.md`).
+Row 1 needs both the pinned upstream Git ref and an independently generated
+upstream OCaml tree. The gate no longer guesses a container-specific path.
+Use a new directory and the same installed fork Lem pin as the fork build:
+
+```bash
+# From this fork's repository root, after the README installation:
+fork_root=$PWD
+# Add this remote only if it does not already exist; verify its URL otherwise.
+git remote add upstream https://github.com/rems-project/cerberus.git
+git fetch upstream master:refs/remotes/upstream/master
+upstream_pin=$(sed -n 's/^merge-base=//p' scripts/fork_drift_manifest.txt)
+mkdir -p .validation-foundations
+upstream_source="$fork_root/.validation-foundations/fork-drift-upstream"
+git clone https://github.com/rems-project/cerberus.git "$upstream_source"
+git -C "$upstream_source" checkout --detach "$upstream_pin"
+opam exec --switch="$fork_root" -- make -C "$upstream_source" prelude-src
+export CERB_UPSTREAM_TREE="$upstream_source/ocaml_frontend/generated"
+opam exec --switch=. -- ./scripts/check_fork_drift.sh
+opam exec --switch=. -- ./scripts/test_unit.sh
+```
+
+The generated-tree comparison is different from the pristine executable
+manifest needed by LADDER Tier B row 10. That row documents
+`ensure_independent_oracle.py` and its independently built runtime.
+Neither `release.py` nor a green newcomer smoke check supplies all external
+corpora or oracle manifests. Use `CERB_UPSTREAM_TREE` for the explicit
+generated-tree path; absence is a gate failure. `CERB_FORK_DRIFT_DEV_SKIP=1`
+is a labelled development escape hatch and is explicitly unset by row 1.
+The totality gate enforces by default; `ENFORCE=0` is labelled report-only
+and row 1 overrides it to enforce. No custom global Git config is required.

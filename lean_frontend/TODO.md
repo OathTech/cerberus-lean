@@ -5,16 +5,18 @@ records. (Verification-layer work is out of scope for this branch —
 the semantics is the product here; a verification layer consumes it
 downstream.)
 
-The current work order is the [master plan](docs/2026-09-05_master-plan.md).
-The validation-foundations [delivery record](docs/2026-09-06_validation-foundations-delivery.md)
-closes its G1–G7 implementation/evidence goals. The next proposed arc is
-[scoped SC integration](docs/2026-09-06_concurrency-integration-charter.md);
-its adoption and landing require discussion. The current
-[failure census](docs/2026-09-06_failure-census-and-correspondence.md)
-supersedes older sampled counts. The legacy csmith run remains independently
-owned and hands off; this roadmap does not authorize operating it.
+Current-state reconciliation: 2026-09-25 at Cerberus
+`4e875defb0cce250e841723c1be7ecb7c2240150` and Lem
+`67ec5de70e02e280bb348a4ba826696b76116732`. The September 5 master plan
+and subsequent delivery records are historical plans and evidence.
+The current supported product is [SUPPORTED.md](SUPPORTED.md).
+Concurrency is excluded: [USER 2026-09-24] "FYI, I have concluded the concurrency branch prototype has failed, and I'm working on a remediation. But that dependency should be considered dead for now."
+The SC prototype and feature branches are parked records; no cleanup,
+announcement or current consumer depends on their integration. A replacement
+needs a separate charter. The separately owned legacy csmith run stays out
+of this work's scope.
 
-## Run digest as state (D-S, 2026-09-22)
+## Delivered program data: run digest and enum map
 
 - Runtime minting takes `core_run_state.sym_digest`, seeded explicitly by the
   driver entry from the last program Cabs TU (empty for an empty Cabs list).
@@ -23,20 +25,19 @@ owned and hands off; this roadmap does not authorize operating it.
   remains. The acceptance facts, validation evidence and combined
   E-A/D-S consumer re-pin note are in
   [the D-S record](docs/2026-09-22_run-digest-as-state-record.md).
-- cerberus-sl takes one re-pin after E-A and D-S land: carry `Program.digest`,
+- The E-A/D-S adoption instructions for cerberus-sl are: carry `Program.digest`,
   add the run-state invariant, and remove `MintDigestC` and its pin. The
   [independent review](docs/2026-09-22_run-digest-audit.md) found no implementation
   blocker; its documentation corrections and authorized landing are recorded
   [here](docs/2026-09-22_run-digest-review-fixes.md). The consumer's proof/corpus
-  checks remain a separate adoption step.
+  checks are downstream work; the operator reported acceptance on September 24
+  (SUPPORTED.md), without a new independently measured downstream pin.
 
 ## Queued larger work
 
-- **Concurrency (cmm) instantiation** — concurrency is currently
-  stubbed on mainline. The owned prototype has S0–S7 SC support and a
-  repaired litmus instrument; integration still requires mixed-size/SeqRMW
-  repairs or enforced restrictions, the provider agreement theorem, current
-  mainline rebase/compatibility gates, audit and an explicit landing discussion.
+- **Concurrency (cmm) replacement** — excluded from this release. The failed
+  SC prototype remains a parked record under the ruling above; a replacement
+  is separate work and has no promised integration schedule.
 - **A-road polish basket** — backend/semantics cleanups (pure-render
   emission split, remaining audit L-slice gaps, ott finish);
   itemized with prices in
@@ -225,7 +226,7 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   "Acyclic holds for every program the frontend ACCEPTS CORRECTLY" as a
   guarantee** (audit §3) — it is a CONJECTURE about the frontend with a known
   counterexample (F-A2), not a theorem; restate both as "conjectured frontend
-  invariant; consumers discharge `Acyclic` at their entry (refined-cerberus
+  invariant; consumers discharge `Acyclic` at their entry (cerberus-sl
   does, FUEL.md)". Docs/comment only.
 - **`CerbGlobal.lean:17` header comment "every read already returned these
   values"** is overbroad (audit §3; erratum in the cerbglobal record):
@@ -288,7 +289,7 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   Removing them is a Lean-only cascade (the declares are Lean-target lines;
   OCaml byte-identical by construction) that touches many generated heads —
   its own slice, with the generated-tree diff enumerated in a manifest for
-  refined-cerberus. Until then the binders are dead (nothing reads the
+  cerberus-sl. Until then the binders are dead (nothing reads the
   ambient fuel below them). S.
 - ~~**F-C4-1**~~ — RESOLVED 2026-09-10 by the lem body change (assumed-compatible list;
   see the C2 block's compatibility-trio entry and `docs/2026-09-10_are-compatible-assumed-set-record.md`).
@@ -299,8 +300,8 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   value crossing TUs) makes BOTH oracles recurse forever (rc=124 at 60 s)
   and the Lean driver fail loudly by NATIVE STACK OVERFLOW (rc=134, ~3 s —
   the recursion is not tail-recursive; the fuel is never reached; C4 audit
-  §5.1/F-A7).** The three ctype_aux rows stay PENDING (no frontend-guaranteed
-  hypothesis bounds them; by-value acyclicity does not). Reproduced by the
+  §5.1/F-A7).** At that historical checkpoint the three ctype_aux rows were PENDING.
+  They left the register on 2026-09-10; the current register is empty. Reproduced by the
   pre-merge audit (its `node_a.c`/`node_b.c`); the upstream-tray draft is
   WRITTEN (close-out D3, 2026-09-08: draft 37 + `tests/failure-probes/
   cross_tu_node/`; TRUE BUG: the standard's rule needs an "assumed compatible"
@@ -543,18 +544,11 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   :139-146). Class 0 (Lean emission only) but it changes every budget
   and consumer side condition in the call graph → next-lem-arc
   candidate, own design pass.
-- Backend `sorry` target_rep refusal (FUEL arc rider, design note §5):
-  lean_backend.ml:4044-4050 still renders a `target_rep … = \`sorry\``
-  as `(sorry : <type>)` while the file header (:84) claims the
-  sorry-emission paths are gone. Delete the special case and fail
-  closed ("Lean backend: target_rep `sorry` refused"). Class 0, next
-  lem arc (two-repo pin dance). FINDING recorded with it (arc record):
-  frontend/concurrency/cmm_csem.lem carries 23 further `declare lean
-  target_rep function … = \`sorry\`` declares (observable_filter,
-  behaviour, …, overlap_behaviour) that are UNREFERENCED in the Lean
-  build today (zero `sorry` tokens in the generated tree — gate
-  `check_sorry_token.sh`); a refusing backend must either see them
-  unreferenced or they must get real reps/`skip` before the pin moves.
+- **Backend `sorry` target representations — CLOSED** in the September 24
+  MUST cleanup and closure (Lem `6b20bfd02de924d078725efa96c6675115b8b17a`):
+  generation refuses bare `sorry`, including type representations. The
+  excluded CMM declarations use `LemUnsupported` markers; concurrency remains
+  outside the supported profile. See the two public-readiness closure records.
 - KNOWN HANG — FRONT-END stack-depth ceiling with a SILENT overflow
   (found 2026-09-01, arc/mem-scale P0; re-scoped R1 2026-09-02;
   profile `docs/2026-09-01_mem-scale-profile.md` §6.2-6.3): the Lean
@@ -660,7 +654,8 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   (`docs/2026-08-31_semantics-forward-assessment.md`): a stable,
   documented exec-facing module surface, consumer-facing lakefile
   targets that do not drag the test exes, version tags, a one-page API
-  doc. Customer #1 is `refined-cerberus` (pins this repo by path today).
+  doc. The current reasoning consumer is `cerberus-sl`;
+  `refined-cerberus` was retired on 2026-09-16 (SUPPORTED.md).
   Registered here 2026-09-02 so the item has a home in the backlog.
 - **Regeneration recipe: wipe the generated dir first (S)** — registered
   2026-09-02. `make lean-prelude-src` / `make prelude-src` regenerate
@@ -674,12 +669,6 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   stamp covers exactly the recipe's output. Companion: Lake's
   `.lake/build` keeps orphaned artifacts too (the 2026-09-02 prune record found
   pre-split ones) — a clean-build leg at boundaries.
-- **lem-side: refuse a target_rep spelled `sorry`** — lives in lem-lean's
-  register (`lem-lean/doc/lean-backend/TODO.md` item 2, S): the backend
-  still special-cases a user-written `sorry` rep; the one live consumer
-  use is `frontend/concurrency/cmm_csem.lem` `observable_filter`
-  (registered temporal boundary, mover = the concurrency arc above).
-  Cross-referenced here 2026-09-02; discharged in the next lem arc.
 - Speclab leak checks' oracle-differential leg: wire the new oracle
   `--batch-alloc-census` line (landed 2026-09-01,
   `docs/2026-09-01_s-basket.md`) into the speclab lanes.
@@ -705,20 +694,13 @@ S-basket slice — `docs/2026-09-01_s-basket.md`.)
   branches from the differential campaigns (several oracle-wrong
   findings pinned Lean-right), maintained operator-side and filed as
   network windows allow.
-- ~~**Kill the residual effect axiom**~~ — DONE (effect-retirement
-  arc, 2026-09-01 C2): `runEffectful` is deleted from LemLib, the
-  fresh-symbol supply is threaded explicitly (single stream), the
-  digest read is a kernel-checked opaque, and zero `axiom`
-  declarations exist anywhere (this repo + LemLib, recursively,
-  gate-enforced). Remaining temporal seam with a named mover (Q4
-  ruling, machine-pinned in `scripts/unsafebaseio_allowlist.txt`):
-  CerberusImpl's enum registry (mover: the arc's reader/supply
-  machinery, follow-up slice). The CerbGlobal config/switch refs LEFT
-  the allowlist 2026-09-05 (plain `def`s of the default configuration —
-  reasoning-artifact audit A step 1, `docs/2026-09-05_cerbglobal-defs-
-  record.md`); A step 2 (the configuration as a reader-lifted parameter
-  like `tagDefs`; `using_concurrency`'s half is `feature/concurrency`'s)
-  is a queued, chartered slice.
+- **Residual effect axiom — CLOSED.** `runEffectful` is deleted, fresh supply
+  is explicit, and the axiom census covers the consumed LemLib (VALIDATION).
+  D-S made the execution digest run-state data; the frontend/native digest
+  seam remains. E-A made enum definitions explicit readers, so the old enum
+  registry is no longer a pending temporal seam. Configuration parameterization
+  remains separate work; the parked concurrency branch is not its delivery plan.
+
 - **Pin the Lake dependency SET** (C2 audit follow-up, registered
   2026-09-01): no gate asserts the lake-manifest package set, so a
   future `require` would join the built surface outside every census
@@ -758,6 +740,6 @@ S-basket slice — `docs/2026-09-01_s-basket.md`.)
   vs argument); the trust base (axiom census 0, kernel-only ban, opaque
   boundary rows moved and why, ISO-fix register still 3, exception
   classes unchanged); the gates (added/changed/weakened, plant evidence);
-  the consumer surface (what refined-cerberus depends on, what became
+  the consumer surface (what cerberus-sl depends on, what became
   provisional). Output per surface: moved/unmoved · evidence · residual
   risk · named mover. Price M.

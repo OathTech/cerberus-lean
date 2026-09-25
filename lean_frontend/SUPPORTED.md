@@ -1,10 +1,11 @@
 # Supported profile and announcement scope
 
-Checked 2026-09-24 against Cerberus `603c9b69bd056cbffeca8a669bc3510a4349f882`
-and Lem `6b20bfd02de924d078725efa96c6675115b8b17a`. Baseline inventories
-at Cerberus `e9f9d049f`, cleanup changes and the exact rerun set are recorded in
-[the remediation record](docs/2026-09-24_public-readiness-remediation.md) and
-[the closure record](docs/2026-09-24_public-readiness-closure.md).
+Checked 2026-09-25 against Cerberus `4e875defb0cce250e841723c1be7ecb7c2240150`
+and Lem `67ec5de70e02e280bb348a4ba826696b76116732`. The exact rerun set and
+remaining publication checks are in [the follow-up record](docs/2026-09-25_public-readiness-followup.md).
+Earlier baseline inventories at Cerberus `e9f9d049f` and MUST cleanup gates
+remain in [the remediation record](docs/2026-09-24_public-readiness-remediation.md)
+and [the closure record](docs/2026-09-24_public-readiness-closure.md).
 This is the current profile; the dated September 6 profile is history.
 
 [AGENT] The announcement can describe an early executable Lean port of the
@@ -46,3 +47,21 @@ features. The successor reasoning project is `cerberus-sl`; the older
 "cerberus-sl is our main upstream customer at the moment. I retired refined-cerberus (it got too messy)."
 ([charter record](docs/2026-09-16_charter-allocator-soundness-address-bound.md),
 checked 2026-09-24 at `e9f9d049f`; closure F6).
+
+
+## Reproduce the supported demonstration
+
+The README builds the default **sequential**, concrete-memory LP64 pipeline
+and runs `tests/minimal/001-return-literal.c` (return 42). The small gate
+set is row 1 (`test_unit.sh`) plus minimal, coverage, debug, float, bytes
+and libc lanes; see the README's exact commands. The default observation
+projection is `full`; the multi-TU tray uses its documented
+`failure-class` projection. Neither an excluded case nor an exhausted run
+counts as semantic agreement. The follow-up record records the pins and
+actual rerun set; it does not promote the historical Tier B/C campaigns.
+
+For fork defects use [OathTech/cerberus-lean issues](https://github.com/OathTech/cerberus-lean/issues)
+with the C source, source/Lem pins, toolchain and command. Upstream drafts
+are maintained in the tray; only entries labelled Filed have recorded
+submission evidence. Release publication still requires the anonymous fetch
+and clean dependency-download checks in the follow-up record (M9).

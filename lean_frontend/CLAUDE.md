@@ -1,5 +1,10 @@
 # Cerberus Lean Frontend
 
+Current build/contract reconciliation: 2026-09-25, Cerberus
+`4e875defb0cce250e841723c1be7ecb7c2240150`, Lem
+`67ec5de70e02e280bb348a4ba826696b76116732`; measured scope and remaining
+public-install checks: [follow-up record](docs/2026-09-25_public-readiness-followup.md).
+
 Lean 4 port of the Cerberus C semantics, generated from the same `.lem` source as the OCaml backend. The intended correspondence and its current failure/runtime limits are described in [VALIDATION.md](VALIDATION.md).
 
 ## Architecture
@@ -43,76 +48,58 @@ Operational map:
   packages, delete the orphaned artifacts stranded in the other
   package's `.lake` tree (a stale-shadowed probe is a doctored
   instrument).
-- Lake deps: `LemLib` (lem-lean pin), resolved offline via
-  deps/gitconfig redirects.
+- Lake deps: `LemLib` at the immutable lem-lean revision in
+  `lakefile.toml` and the three committed Lake manifests. Public clones use
+  the GitHub URL; optional local redirects are development infrastructure.
 
 ## Build
 
+Use [README.md](README.md#build-and-run-one-differential-test) for the complete first-build recipe and
+local switch installation. Commands below run from the repository root,
+after that installation. Lean is pinned by `lean_frontend/lean-toolchain`
+(4.32.2); the opam Lem revision must match Lake's LemLib revision.
+
 ```bash
-# Prerequisites: Lean 4.32.2 (lean-toolchain; bumped from 4.29.0 in
-# arc-7 S0), local opam switch with lem pinned
-
-# Generate Lean from .lem files
-make lean-prelude-src
-
-# Build Lean executable — ALWAYS through scripts/capped (cgroup memory
-# cap; never run lake/lean uncapped — arc-7 D7 rule after an OOM
-# session kill; CERB_MEM_MAX overrides the 64G default)
-cd lean_frontend && ../scripts/capped lake build cerberus-lean
-
-# Build the speclab differential-lane package (the lane scripts build
-# it themselves; by hand:)
-cd lean_frontend/speclab && ../../scripts/capped lake build
-
-# Build OCaml driver (for --cabs-json). cerberus-lib.install must be
-# built explicitly: `dune install cerberus-lib` does NOT build it (fails
-# after a dune clean), and building it stages
-# _build/install/default/lib/cerberus-lib (std.core etc.) which every
-# --runtime=_build/install/default invocation needs.
-opam exec -- dune build backend/driver/main.exe cerberus-lib.install
-# Install the runtime files WORKTREE-LOCALLY — this is what
-# scripts/common.sh build_cerberus does (validation-foundations arc,
-# 2026-09-06): the prefix is this checkout's _build/local-install, never
-# the shared _opam switch. A worktree's _opam is a symlink to the
-# primary's switch, so a plain `dune install cerberus-lib` from one
-# worktree would silently rewrite the runtime every other checkout uses.
-# Engine invocations use --runtime=_build/install/default (staged by the
-# build above); the local prefix additionally checks the package's
-# install recipe in isolation.
-opam exec -- dune install --prefix "$PWD/_build/local-install" cerberus-lib
-# REQUIRED for libc-mode lanes (2026-08-22 hotfix,
-# docs/2026-08-22_libc-co-divergence-diagnosis.md): stage the `cerberus`
-# PACKAGE's install tree. Libc-mode oracle runs (no --nolibc) load
-# _build/install/default/lib/cerberus/runtime/libc/libc.co, which only
-# `cerberus`'s install stanzas create (as symlinks into _build/default —
-# always in sync once present). cerberus-lib stages headers only; after
-# a `dune clean`, omitting this step kills every libc-mode oracle run at
-# startup (Failure("file libc.co not found"), exit 125).
-# scripts/common.sh build_cerberus and libc_prep.sh --check now enforce it.
-# CAVEAT (plant-tested): dune trusts its incremental db over the
-# filesystem — deleting/altering anything under _build by hand is NOT
-# repaired by this command (or any incremental build); only `dune clean`
-# + this recipe recovers a tampered _build.
-opam exec -- dune build cerberus.install
-
-# Reinstall lem after moving its pin (the opam pin is the container's
-# deps/lem-pinned worktree of lem-lean, branch cerberus-pin):
-#   git -C ../deps/lem-pinned reset --hard <lem-lean commit>
-make rebuild-lem     # = opam upgrade --switch=. --no-depexts lem
+opam exec --switch=. -- make prelude-src lean-prelude-src
+opam exec --switch=. -- dune build backend/driver/main.exe cerberus-lib.install
+# Install worktree-locally, including when _opam is a shared symlink.
+opam exec --switch=. -- dune install --prefix "$PWD/_build/local-install" cerberus-lib
+# Stage the libc package used by libc-mode oracle lanes.
+opam exec --switch=. -- dune build cerberus.install
+CERB_MEM_MAX=32G opam exec --switch=. -- ./scripts/capped make lean-native-obj
+(cd lean_frontend && CERB_MEM_MAX=32G ../scripts/capped lake build CerberusLean cerberus-lean)
+# Separate package; the speclab lanes also build it themselves.
+(cd lean_frontend/speclab && CERB_MEM_MAX=32G ../../scripts/capped lake build)
 ```
+
+Every Lake/Lean invocation goes through `scripts/capped`; cap prerequisites
+and the loud uncapped fallback are described in the README. An owned
+switch is distinct from a development worktree whose `_opam` points to a
+shared switch: installing into the latter changes other checkouts' tools.
+Use the local install prefix above for the runtime; engine invocations use
+`--runtime=_build/install/default`, staged by the two Dune build commands.
+After a `dune clean`, rebuild both install targets. Manually tampering with
+`_build` can defeat Dune's incremental database; clean and rebuild a damaged
+owned build tree instead of trusting a cached executable.
+
+Lem updates use an owned switch and immutable public revision as described
+under [Lem backend interaction](#lem-backend-interaction). A container
+`deps/lem-pinned` checkout is not part of the public build procedure.
 
 ## Testing
 
 Tests are organized into three categories:
 
-### Unit tests (fast, hermetic, no OCaml)
+### Unit executables and row-1 gates
 
 Hand-written Lean tests under `lean_frontend/test/Unit/<Name>Test.lean`.
-Each is a `[[lean_exe]]` in `lakefile.toml` that exits 0 on pass.
+Each is a `[[lean_exe]]` in `lakefile.toml` that exits 0 on pass. The complete
+`test_unit.sh` also builds/checks the OCaml oracle and needs the explicit
+fork-drift prerequisites in [VALIDATION.md](VALIDATION.md#provisioning-the-fork-drift-oracle).
 
 ```bash
-./scripts/test_unit.sh                  # run all unit tests
-./scripts/test_unit.sh fresh-int-test   # run one specific test
+opam exec --switch=. -- ./scripts/test_unit.sh
+opam exec --switch=. -- ./scripts/test_unit.sh fresh-int-test
 ```
 
 Current unit tests:
@@ -122,7 +109,7 @@ Current unit tests:
 - `Unit.NDFuelStabilityTest` (imported by `totality-proof-test`) — kernel witnesses for ND completion, ordering, state, tracing, and independent budgets; `CerbNDFuelProofs` exports the six-worker stability contracts.
 - `fuel-exemplar-test` — the consumer-shaped ∀-fuel, ∀-address-space-top, ∀-digest theorem over the shipped pipeline `@drive ⟨fuel⟩` from `initial_driver_state _ top digest` (`exemplar_certified_shipped_forall (fuel) (top) (digest) (h : 8 ≤ top)`; the errno allocation + store discharged symbolically by `errnoAction_active` — address-space-bound part two C4, 2026-09-18) (test/Unit/FuelExemplar.lean)
 - `fuel-forms-tool` (not a pass/fail exe: the INSTRUMENT of `scripts/check_fuel_forms.sh`) — `test/Unit/FuelFormsTool.lean` imports the compiled environment at runtime and classifies every fuel'd worker MEASURED/ABSORBING/AMBIENT with its drive-cone reachability (C2; P0 2026-09-05: MEASURED checks the argument correspondence against the wrapper's own body in MetaM, ABSORBING = "kill at zero" checks the `_zero` lemma's left-hand side and cone); the gate `lake build`s the exec entries and every carrier module and compiles its scratch decoys from source BEFORE the tool imports anything (hotfix `fix/fuel-forms-carriers` 2026-09-20, F-1: a carrier's stale `.olean` had been imported as found), and its `--selftest` P24 plants a stale-valid `.olean` over an uncompilable source
-- `core-parser-test` — 280 tests for `CoreParser.lean`
+- `core-parser-test` — 292 checks for `CoreParser.lean` in the follow-up run (derived from its output)
 - `opaque-failure-test` — seam hygiene (2026-09-19): `#guard_msgs` on the two FAILING `rfl` probes of the seam failure leaves (a transparent leaf would turn the build RED), `failwithI` opaque in the environment, default arms reduce; every `CerbGlobal.has_switch … = false` by `rfl` and an arm reduces to its default; `oomKill`/`STD_`/timing identities by `rfl`; the structural `BEq MemValue` agrees with the retired impl on 23 pinned pairs (exit 1 on disagreement)
 - `run-digest-test` — D-S kernel acceptance equations for explicit minting, last-unit/empty rules, committed cabs-json digest shape, both entry constructors and mint preservation; old arity rejected by `#guard_msgs`.
 - `fresh-int-test` — verifies `fresh_int`/`Symbol.fresh` generate unique values (+ the native-obj fresh-counter floor probe)
@@ -172,7 +159,7 @@ battery cannot be vacuous).
 ### Fixture differentials
 
 ```bash
-./scripts/test_verify.sh   # tests/verify + corpus/ fixture
+opam exec --switch=. -- ./scripts/test_verify.sh   # tests/verify + corpus/ fixture
                            # differentials: pin provenance (oracle
                            # --pp=core re-derivation byte-equal /
                            # content-hash vs the pinned dumps) +
@@ -185,12 +172,12 @@ battery cannot be vacuous).
 
 ```bash
 # Cabs JSON bridge: C → OCaml → JSON → Lean (234 tests, 100%)
-./scripts/test_parse.sh              # tests/minimal (106 tests)
-./scripts/test_parse.sh tests/ci     # upstream CI (128 tests)
+opam exec --switch=. -- ./scripts/test_parse.sh              # tests/minimal (106 tests)
+opam exec --switch=. -- ./scripts/test_parse.sh tests/ci     # upstream CI (128 tests)
 
 # Core text parser integration: C → cerberus --pp core → Lean CoreParser
-./scripts/test_core.sh              # tests/minimal (106 tests)
-./scripts/test_core.sh tests/ci     # upstream CI (128 tests)
+opam exec --switch=. -- ./scripts/test_core.sh              # tests/minimal (106 tests)
+opam exec --switch=. -- ./scripts/test_core.sh tests/ci     # upstream CI (128 tests)
 ```
 
 ### Golden tests (full pipeline, per stage)
@@ -201,21 +188,21 @@ Golden fixtures live under `tests/fixtures/<name>/`:
 - (intermediate goldens for each stage as they come online)
 
 ```bash
-./scripts/test_golden.sh                     # run all fixtures
-./scripts/test_golden.sh 001-return-literal  # run one fixture
+opam exec --switch=. -- ./scripts/test_golden.sh                     # run all fixtures
+opam exec --switch=. -- ./scripts/test_golden.sh 001-return-literal  # run one fixture
 ```
 
 ### Self-test
 
 ```bash
-cd lean_frontend && .lake/build/bin/cerberus-lean  # sizeof, memory model
+(cd lean_frontend && .lake/build/bin/cerberus-lean)  # sizeof, memory model
 ```
 
 ### End-to-end pipeline test
 
 ```bash
-./scripts/cerberus --cabs-json test.c > test.json
-cd lean_frontend && .lake/build/bin/cerberus-lean ../test.json
+opam exec --switch=. -- ./scripts/cerberus --cabs-json test.c > test.json
+(cd lean_frontend && .lake/build/bin/cerberus-lean ../test.json)
 ```
 
 ## IMPORTANT: Hand-written files must be copied to `generated/`
@@ -326,8 +313,8 @@ Lem is the OCaml tool from the lem-lean fork. The public installation
 recipe is [README.md](README.md), including an explicit local opam switch
 and the revision shared with Lake's LemLib. No parent `scripts/env.sh`,
 private Git redirects or container `deps/` worktree is a prerequisite.
-Checked 2026-09-24 against `abe505d3d856162c058653019b27388e8523ce47`; cleanup measurements:
-[remediation record](docs/2026-09-24_public-readiness-remediation.md).
+Checked 2026-09-25 against `4e875defb0cce250e841723c1be7ecb7c2240150`; cleanup measurements:
+[follow-up record](docs/2026-09-25_public-readiness-followup.md).
 
 When updating Lem, install the chosen immutable revision into an owned
 local switch, update the Lake revision/manifests and fork-drift metadata,
@@ -379,11 +366,10 @@ The `lem-sync` stamps hash sources and outputs, not the Lem version.
   setAdd/setFromList are DELETED from LemLib (a finer BEq can no longer
   smuggle comparator-EQ duplicates past setEqualBy). Adversarial-key
   property tests: LemLibTest SetCoherence section
-- The backend's mutable state lives in ONE module (arc-14 B1; be:G3):
-  lean_backend.ml `St` — per-field lifetime classes ([file]/
-  [invocation]/[render]), St.reset_per_file, St.reset_invocation (the
-  reentrancy hook). Effect-free emission is the registered L-priced
-  residual
+- Most Lean rendering state lives in `lean_backend.ml`'s `St`, with
+  [file]/[invocation]/[render] lifetimes and reset hooks. Backend-common
+  callbacks and the current-module side channel remain outside `St`;
+  effect-free emission is still open. See Lem's pinned DESIGN.md.
 
 **Bug reports:** lem-backend defects are reported in the lem-lean repo
 (`doc/lean-backend/` dated records + `tests/comprehensive` reproducers);
@@ -392,23 +378,24 @@ upstream-facing reports (Cerberus, Lem, Lean) go in
 
 ## Status
 
-Current state, boundary list, and per-capability status live in the
-dated records — do not maintain status lists here. Start points:
+The current public scope is [SUPPORTED.md](SUPPORTED.md). Dated records
+retain historical measurements; they are not all current status. Start points:
 
 - Latest records: `docs/` (dated `*-record.md` / `*-results.md`). The
   arc index that lived in the container's `ROADMAP.md` is archived at
   `docs/2026-08-31_container-roadmap-archive.md`; forward options:
   `docs/2026-08-31_semantics-forward-assessment.md`; backlog: [TODO.md](TODO.md).
 - Trust story + gate list: [VALIDATION.md](VALIDATION.md).
-- Declared boundary: concurrency stubs (temporal, the cmm
-  instantiation is the mover) + CerbFS + the CerbDebug no-op stubs,
+- Declared boundary: concurrency stubs (the failed SC prototype and feature
+  branches are parked; no announcement dependency), CerbFS and the CerbDebug no-op stubs,
   and the axiom story is CLOSED (effect-retirement arc, 2026-09-01):
   ZERO axiom declarations anywhere — this repo AND LemLib,
   recursively, gate-enforced; `runEffectful` is deleted and lem
   refuses `declare {lean} effectful`; the surviving runtime seams are
   kernel-checked opaques machine-pinned in
-  `scripts/unsafebaseio_allowlist.txt` (Q4 classes). No sorried
-  target_reps outside that boundary; any new one is a finding.
+  `scripts/unsafebaseio_allowlist.txt` (Q4 classes). Bare `sorry`
+  target representations are refused by the backend, including in the
+  excluded CMM surface, which uses unsupported markers.
 - Known operational residuals (step-runner stack ceiling, oracle
   allocation-census gap, etc.): registered with prices in the latest
   results docs.

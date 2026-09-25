@@ -1,8 +1,9 @@
 # cerberus-lean: the Cerberus C semantics in Lean 4
 
-**Documentation check, 2026-09-24:** implementation `abe505d3d856162c058653019b27388e8523ce47`;
-baseline inventories and cleanup gate measurements are in
-[the remediation record](docs/2026-09-24_public-readiness-remediation.md).
+**Documentation check, 2026-09-25:** implementation `4e875defb0cce250e841723c1be7ecb7c2240150`;
+Lem `67ec5de70e02e280bb348a4ba826696b76116732`. Current follow-up gates and remaining
+publication checks are in [the follow-up record](docs/2026-09-25_public-readiness-followup.md);
+earlier baseline inventories are in [the remediation record](docs/2026-09-24_public-readiness-remediation.md).
 Older dated measurements below remain historical evidence.
 
 This directory contains a Lean 4 port of the [Cerberus](https://www.cl.cam.ac.uk/~pes20/cerberus/)
@@ -35,6 +36,12 @@ or a general correspondence theorem (see SUPPORTED).
 human operator (Mike Dodds). The upstream Cerberus semantics is by
 its own authors (see the top-level README); the dated records in
 `docs/` are the working history of the port.
+
+**Licensing.** The fork retains Cerberus's [LICENSE](../LICENSE) and its
+listed exceptions. The LemLib dependency includes translated OCaml AVL
+code with its own retained notices; consult Lem's [runtime NOTICE](https://github.com/OathTech/lem-lean/blob/67ec5de70e02e280bb348a4ba826696b76116732/lean-lib/NOTICE.md) and
+[LICENSE](https://github.com/OathTech/lem-lean/blob/67ec5de70e02e280bb348a4ba826696b76116732/LICENSE) at the pinned revision. Neither the complete dependency closure nor LemLib
+should be described as BSD-only.
 
 Who this is for:
 
@@ -103,8 +110,15 @@ LEAN_ABORT_ON_PANIC=1 CERB_MEM_MAX=32G opam exec --switch=. -- \
 
 The local cold-source check used preinstalled dependencies and local Git
 mirrors; public URL/revision availability and fresh downloads are still
-**UNVERIFIED-OFFLINE**, with operator commands in the remediation record.
-`scripts/capped` tries Linux cgroup v2, then a systemd user service. If
+**UNVERIFIED-OFFLINE** for Git transport/downloads, with current public web
+observations and operator commands in the
+[follow-up record](docs/2026-09-25_public-readiness-followup.md).
+`scripts/capped` tries Linux cgroup v2, then a systemd user service. It
+defaults to 64G unless `CERB_MEM_MAX` is set; the commands above request
+32G. Enforcing a cap needs cgroup v2 delegation or a working systemd user
+service. `CERB_MEM_MAX=none` explicitly opts out with a warning;
+`CERB_JOB_CGROUP=/delegated/path` requests an owned subtree and fails if
+that setup cannot be enforced. If
 direct cgroup setup fails and `systemd-run` is absent, it warns and runs
 uncapped; if `systemd-run` exists but its user service is unavailable,
 the command fails. The limit is a ceiling,
@@ -122,6 +136,46 @@ scripts ("lanes") and their pinned baselines — is catalogued in
 `scripts/LADDER.md` and summarized in [VALIDATION.md](VALIDATION.md);
 the agent-facing operating manual with all build gotchas is
 [CLAUDE.md](CLAUDE.md).
+
+## Validation levels and prerequisites
+
+The quickstart is a **smoke check**: one C program passes through the parser,
+Lean pipeline and OCaml oracle. The small differential gates are separate:
+
+```bash
+# Repository root; provision fork drift as described in VALIDATION.md first.
+opam exec --switch=. -- ./scripts/test_unit.sh
+opam exec --switch=. -- ./scripts/test_exec.sh --check-baseline
+opam exec --switch=. -- ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage
+opam exec --switch=. -- ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug
+opam exec --switch=. -- ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float
+opam exec --switch=. -- ./scripts/test_bytes.sh
+opam exec --switch=. -- ./scripts/test_libc_exec.sh
+```
+
+These are row 1 plus six fast lanes, not the entire release ladder.
+[`scripts/LADDER.md`](../scripts/LADDER.md) lists the other lanes,
+including multi-TU, address-space, independent upstream comparisons and
+externally supplied CN/libxml2 corpora. Inspect selections before a run:
+
+```bash
+python3 scripts/release.py --list
+# ALL Tier A rows and their prerequisites, beyond the small set above:
+opam exec --switch=. -- ./scripts/ci_lean.sh --mode fast
+# Tier A + Tier B, after provisioning every dependency in LADDER.md:
+opam exec --switch=. -- ./scripts/ci_lean.sh --mode full
+```
+
+Reporting campaigns require `--mode reporting` and explicit `--lane`
+selections; their classified failures are evidence, not a certification pass.
+The inherited GitHub workflows and root badges cover upstream OCaml/CHERI.
+No fork Lean certification workflow is wired up; dated manual gate
+records linked from VALIDATION and SUPPORTED are the measured evidence.
+A normal shell needs no `GIT_CONFIG_GLOBAL` setting or container env loader.
+`_build/default/backend/driver/main.exe --version` retains a commit hash at an exact annotated Git tag;
+source archives without Git metadata cannot attest that identity (opam may
+supply a release watermark). `bash scripts/test_version.sh` checks the
+production generator in an isolated scratch repository.
 
 ## What you can do with it
 

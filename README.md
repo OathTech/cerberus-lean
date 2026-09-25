@@ -2,6 +2,11 @@
 
 [![CI](https://github.com/rems-project/cerberus/actions/workflows/ci.yml/badge.svg)](https://github.com/rems-project/cerberus/actions/workflows/ci.yml) [![CI-CHERI](https://github.com/rems-project/cerberus/actions/workflows/ci-cheri.yml/badge.svg)](https://github.com/rems-project/cerberus/actions/workflows/ci-cheri.yml)
 
+The badges above and the inherited workflows cover upstream OCaml/CHERI;
+they do not certify the fork's Lean backend. Fork checks are recorded in
+[the manual validation evidence](lean_frontend/VALIDATION.md)
+(checked 2026-09-25 at `4e875defb0cce250e841723c1be7ecb7c2240150`).
+
 **This fork adds a Lean 4 port of the semantics** — generated from the
 same Lem model and differentially validated against the OCaml
 implementation on the documented differential lanes: an executable C
@@ -10,8 +15,8 @@ semantics living natively in Lean 4. See
 The port was developed primarily by AI agents (Claude, Anthropic)
 working under the direction and review of Mike Dodds; the upstream
 Cerberus semantics is by the people listed below. The fork-specific build
-recipe and limits are in that frontend README (checked 2026-09-24 against
-`abe505d3d856162c058653019b27388e8523ce47`, with gates in its linked remediation record).
+recipe and limits are in that frontend README (checked 2026-09-25 against
+`4e875defb0cce250e841723c1be7ecb7c2240150`, with gates in its linked follow-up record).
 
 
 Web interfaces, papers, and web page

@@ -2,12 +2,77 @@
 
 > Cerberus developers: start with [README.md](README.md), the reader's guide to this directory.
 
-Drafts of issue reports for `rems-project/cerberus`, from this project's
-recorded findings. All cited file:line references verified against
-upstream `master` @ `b9aeedcb4` (the merge base of our tree; every cited
-OCaml file is byte-identical to it). **Filing is the operator's call** —
-it needs a networked window and a GitHub account; nothing here has been
-submitted. Report 07 is drafted for the record by default (see below).
+Prepared reports for Cerberus and related upstream projects. Code references
+inside individual reports were checked at the pins and dates stated there;
+this index does not revalidate every historical file:line against today's
+upstream. Filing is the operator's call. Report 07 remains for the record by
+default.
+
+## Submission status
+
+Reconciled 2026-09-25 against committed records at Cerberus
+`c13a1054133b49c954fe27ac4c1b4e33a418c51f`; these are recorded submission
+states, not a fresh GitHub issue-status census. **Draft** = prepared with no
+recorded submission; **Sent** = transmitted without an issue/PR URL;
+**Filed** = recorded issue/PR URL; **Closed** = recorded upstream closure.
+A fork-side fix or a pushed PR branch does not mean Filed or Closed.
+
+Derived inventory: 49 report files, **48 Draft, 0 Sent, 1 Filed, 0 Closed**.
+Issue 1010 is recorded below but has no tray report, so is outside this count.
+Draft duplicate searches must be repeated before filing; the dated search
+notes below establish only what was checked then.
+
+| Report | Recorded state | Submission evidence |
+|---|---|---|
+| [01-float-mul-is-addition.md](01-float-mul-is-addition.md) | Filed | [Cerberus #1009](https://github.com/rems-project/cerberus/issues/1009), operator 2026-08-19 |
+| [02-pp-core-unparseable-forms.md](02-pp-core-unparseable-forms.md) | Draft | No submission recorded |
+| [03-pp-core-ambiguous-output.md](03-pp-core-ambiguous-output.md) | Draft | No submission recorded |
+| [04-null-pointer-arith-crash.md](04-null-pointer-arith-crash.md) | Draft | No submission recorded |
+| [05-va-arg-missing-type-check.md](05-va-arg-missing-type-check.md) | Draft | No submission recorded |
+| [06-funinfo-has-proto-question.md](06-funinfo-has-proto-question.md) | Draft | No submission recorded |
+| [07-symbol-identity-fragility.md](07-symbol-identity-fragility.md) | Draft | No submission recorded |
+| [08-desugar-nested-init-internal-error.md](08-desugar-nested-init-internal-error.md) | Draft | No submission recorded |
+| [09-address-constant-member-rejected.md](09-address-constant-member-rejected.md) | Draft | No submission recorded |
+| [10-decode-rejects-question-escape.md](10-decode-rejects-question-escape.md) | Draft | No submission recorded |
+| [11-escaped-char-octal-roundtrip-corruption.md](11-escaped-char-octal-roundtrip-corruption.md) | Draft | No submission recorded |
+| [12-bswap64-overflow-crash.md](12-bswap64-overflow-crash.md) | Draft | No submission recorded |
+| [13-memcmp-hugesize-overflow-crash.md](13-memcmp-hugesize-overflow-crash.md) | Draft | No submission recorded |
+| [14-ailname-proxy-shadows-user-functions.md](14-ailname-proxy-shadows-user-functions.md) | Draft | No submission recorded |
+| [15-bool-float-conversion-truncation.md](15-bool-float-conversion-truncation.md) | Draft | No submission recorded |
+| [16-snprintf-truncation-return-length.md](16-snprintf-truncation-return-length.md) | Draft | No submission recorded |
+| [17-diagnostic-embeds-symbol-id.md](17-diagnostic-embeds-symbol-id.md) | Draft | No submission recorded |
+| [18-monadic-list-combinators-non-tail.md](18-monadic-list-combinators-non-tail.md) | Draft | No submission recorded |
+| [19-dynamic-addrs-never-cleaned.md](19-dynamic-addrs-never-cleaned.md) | Draft | No submission recorded |
+| [20-size-t-integer-rank-uac.md](20-size-t-integer-rank-uac.md) | Draft | No submission recorded |
+| [21-provenance-lost-through-arithmetic-pvi.md](21-provenance-lost-through-arithmetic-pvi.md) | Draft | No submission recorded |
+| [22-ptrdiff-strips-array-layer.md](22-ptrdiff-strips-array-layer.md) | Draft | No submission recorded |
+| [23-string-literal-init-of-char-array-members.md](23-string-literal-init-of-char-array-members.md) | Draft | No submission recorded |
+| [24-stdio-buffer-not-flushed-at-exit.md](24-stdio-buffer-not-flushed-at-exit.md) | Draft | No submission recorded |
+| [25-atexit-not-run-on-main-return.md](25-atexit-not-run-on-main-return.md) | Draft | No submission recorded |
+| [26-printf-star-width-crash.md](26-printf-star-width-crash.md) | Draft | No submission recorded |
+| [27-printf-hex-int-argument-ub153b.md](27-printf-hex-int-argument-ub153b.md) | Draft | No submission recorded |
+| [28-conditional-in-static-initializer.md](28-conditional-in-static-initializer.md) | Draft | No submission recorded |
+| [29-string-literal-address-constant.md](29-string-literal-address-constant.md) | Draft | No submission recorded |
+| [30-strncmp-zero-length.md](30-strncmp-zero-length.md) | Draft | No submission recorded |
+| [31-calloc-overflow-check.md](31-calloc-overflow-check.md) | Draft | No submission recorded |
+| [32-float-evaluated-as-double.md](32-float-evaluated-as-double.md) | Draft | No submission recorded |
+| [33-unspecified-operand-exceptional-condition-question.md](33-unspecified-operand-exceptional-condition-question.md) | Draft | No submission recorded |
+| [34-aligned-alloc-zero-alignment-division-by-zero.md](34-aligned-alloc-zero-alignment-division-by-zero.md) | Draft | No submission recorded |
+| [35-pp-core-grammar-mismatches.md](35-pp-core-grammar-mismatches.md) | Draft | No submission recorded |
+| [36-mk-conv-int-bypasses-impl-def-signed-conversion.md](36-mk-conv-int-bypasses-impl-def-signed-conversion.md) | Draft | No submission recorded |
+| [37-are-compatible-cross-tu-recursive-struct-nontermination.md](37-are-compatible-cross-tu-recursive-struct-nontermination.md) | Draft | No submission recorded |
+| [38-pememberof-cross-tu-struct-value-tag-identity.md](38-pememberof-cross-tu-struct-value-tag-identity.md) | Draft | No submission recorded |
+| [39-are-compatible-array-bound-typo.md](39-are-compatible-array-bound-typo.md) | Draft | No submission recorded |
+| [40-float-literal-hex-subnormal-double-rounding-inherited.md](40-float-literal-hex-subnormal-double-rounding-inherited.md) | Draft | No submission recorded |
+| [41-struct-flexible-array-member-vs-sized-array-compatibility-question.md](41-struct-flexible-array-member-vs-sized-array-compatibility-question.md) | Draft | No submission recorded |
+| [42-unary-minus-floating-zero-sign-question.md](42-unary-minus-floating-zero-sign-question.md) | Draft | No submission recorded |
+| [43-many-many1-input-indexed-recursion-proposal.md](43-many-many1-input-indexed-recursion-proposal.md) | Draft | No submission recorded |
+| [44-concrete-allocator-euclidean-align-down-overlap-at-exhaustion.md](44-concrete-allocator-euclidean-align-down-overlap-at-exhaustion.md) | Draft | No submission recorded |
+| [45-core-match-pattern-truncating-zip-arity.md](45-core-match-pattern-truncating-zip-arity.md) | Draft | No submission recorded |
+| [lean4/01-stack-overflow-handler-deadlock.md](lean4/01-stack-overflow-handler-deadlock.md) | Draft | No submission recorded |
+| [lean4/02-nat-div-mod-literal-folding.md](lean4/02-nat-div-mod-literal-folding.md) | Draft | No submission recorded |
+| [lem/01-polymorphic-compare-on-set-values.md](lem/01-polymorphic-compare-on-set-values.md) | Draft | No submission recorded |
+| [ocaml/01-float-of-hex-double-rounding-subnormal.md](ocaml/01-float-of-hex-double-rounding-subnormal.md) | Draft | No submission recorded |
 
 Per operator directive [USER, 2026-08-19]: every report carries a
 concrete proposed remedy and a classification (TRUE BUG / INTENDED GAP /
