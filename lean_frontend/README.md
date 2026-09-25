@@ -1,7 +1,7 @@
 # cerberus-lean: the Cerberus C semantics in Lean 4
 
 **Documentation check, 2026-09-25:** implementation `bb487dda7c56981e76d67f53ae16e874cfe5ed61`;
-Lem `67ec5de70e02e280bb348a4ba826696b76116732`. Current follow-up gates and remaining
+Lem `67ec5de70e02e280bb348a4ba826696b76116732` (the pinned Lem mainline is `c2a68e79b6369e19f099dfa48767319c1daf19b3`, ahead of the checked revision by comments and records only). Current follow-up gates and remaining
 publication checks are in [the follow-up record](docs/2026-09-25_public-readiness-followup.md);
 earlier baseline inventories are in [the remediation record](docs/2026-09-24_public-readiness-remediation.md).
 Older dated measurements below remain historical evidence.
@@ -39,8 +39,8 @@ its own authors (see the top-level README); the dated records in
 
 **Licensing.** The fork retains Cerberus's [LICENSE](../LICENSE) and its
 listed exceptions. The LemLib dependency includes translated OCaml AVL
-code with its own retained notices; consult Lem's [runtime NOTICE](https://github.com/OathTech/lem-lean/blob/67ec5de70e02e280bb348a4ba826696b76116732/lean-lib/NOTICE.md) and
-[LICENSE](https://github.com/OathTech/lem-lean/blob/67ec5de70e02e280bb348a4ba826696b76116732/LICENSE) at the pinned revision. Neither the complete dependency closure nor LemLib
+code with its own retained notices; consult Lem's [runtime NOTICE](https://github.com/OathTech/lem-lean/blob/c2a68e79b6369e19f099dfa48767319c1daf19b3/lean-lib/NOTICE.md) and
+[LICENSE](https://github.com/OathTech/lem-lean/blob/c2a68e79b6369e19f099dfa48767319c1daf19b3/LICENSE) at the pinned revision. Neither the complete dependency closure nor LemLib
 should be described as BSD-only.
 
 Who this is for:
@@ -90,7 +90,7 @@ git clone --branch mdd/cerberus-lean https://github.com/OathTech/cerberus-lean.g
 cd cerberus-lean
 opam switch create . ocaml-base-compiler.5.4.0 --no-switch --no-install
 # Keep this revision equal to lean_frontend/lakefile.toml.
-opam pin add --switch=. lem git+https://github.com/OathTech/lem-lean.git#67ec5de70e02e280bb348a4ba826696b76116732 --yes
+opam pin add --switch=. lem git+https://github.com/OathTech/lem-lean.git#c2a68e79b6369e19f099dfa48767319c1daf19b3 --yes
 opam install --switch=. --deps-only ./cerberus-lib.opam ./cerberus.opam --yes
 
 opam exec --switch=. -- make prelude-src

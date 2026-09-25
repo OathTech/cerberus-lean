@@ -1,7 +1,7 @@
 # VALIDATION — why you should trust this semantics
 
 **Documentation check, 2026-09-25:** implementation `bb487dda7c56981e76d67f53ae16e874cfe5ed61`;
-Lem `67ec5de70e02e280bb348a4ba826696b76116732`. Current follow-up gates and remaining
+Lem `67ec5de70e02e280bb348a4ba826696b76116732` (the pinned Lem mainline is `c2a68e79b6369e19f099dfa48767319c1daf19b3`, ahead of the checked revision by comments and records only). Current follow-up gates and remaining
 publication checks are in [the follow-up record](docs/2026-09-25_public-readiness-followup.md);
 earlier baseline inventories are in [the remediation record](docs/2026-09-24_public-readiness-remediation.md).
 Older dated measurements below remain historical evidence. Original evidence

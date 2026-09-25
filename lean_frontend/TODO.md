@@ -7,7 +7,7 @@ downstream.)
 
 Current-state reconciliation: 2026-09-25 at Cerberus
 `bb487dda7c56981e76d67f53ae16e874cfe5ed61` and Lem
-`67ec5de70e02e280bb348a4ba826696b76116732`. The September 5 master plan
+`67ec5de70e02e280bb348a4ba826696b76116732` (the pinned Lem mainline is `c2a68e79b6369e19f099dfa48767319c1daf19b3`, ahead of the checked revision by comments and records only). The September 5 master plan
 and subsequent delivery records are historical plans and evidence.
 The current supported product is [SUPPORTED.md](SUPPORTED.md).
 Concurrency is excluded: [USER 2026-09-24] "FYI, I have concluded the concurrency branch prototype has failed, and I'm working on a remediation. But that dependency should be considered dead for now."

@@ -2,7 +2,7 @@
 
 Current build/contract reconciliation: 2026-09-25, Cerberus
 `bb487dda7c56981e76d67f53ae16e874cfe5ed61`, Lem
-`67ec5de70e02e280bb348a4ba826696b76116732`; measured scope and remaining
+`67ec5de70e02e280bb348a4ba826696b76116732` (the pinned Lem mainline is `c2a68e79b6369e19f099dfa48767319c1daf19b3`, ahead of the checked revision by comments and records only); measured scope and remaining
 public-install checks: [follow-up record](docs/2026-09-25_public-readiness-followup.md).
 
 Lean 4 port of the Cerberus C semantics, generated from the same `.lem` source as the OCaml backend. The intended correspondence and its current failure/runtime limits are described in [VALIDATION.md](VALIDATION.md).
