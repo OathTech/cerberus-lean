@@ -158,3 +158,50 @@ in mainline history; no action here.
   for more.
 - M10 history: the orchestrator recommends NO history rewrite (already-pushed mainline; consumer pins).
 - Tag names and the announcement wording (the review §E offers root fork notes and an announcement scope).
+
+## 8. Closure heads (2026-09-25) — verified, reviewed, ready for the merge asks
+
+Closure commits by the remediator: lem-lean `cleanup/public-readiness-20260924` → `6b20bfd02de924d078725efa96c6675115b8b17a`
+(292db8b: refuse inline backend TYPE `sorry` at the two `Typ_backend` render sites + two negative fixtures + the
+`process_val` let-rec rep restored; 6b20bfd: record appendices — 3→23 erratum, [USER] rulings quoted); cerberus-lean
+`cleanup/public-readiness-20260924` → `c13a1054133b49c954fe27ac4c1b4e33a418c51f` (603c9b69b: `check_fork_drift.sh`
+compares `lem -v` as a 7–40 hex PREFIX of a mandatory full-40-hex `lem-pin=`, `-dirty`/describe forms handled, plants
+S15–S30; re-pin to 6b20bfd at all five sites; `cmm_csem.lem` FORK comment; c13a10541: provenance + retirement-date fixes,
+closure record). Both fast-forward their mainlines; both worktrees clean.
+
+Orchestrator's independent gates on the closure heads (verbatim; logs `<worktree>/.tmp/orch-gates-closure.log`):
+
+- cerberus `c13a105`, generated trees WIPED and re-derived with an in-tree lem whose version string is the
+  SEVEN-character `Lem 6b20bfd` (the operator's route; PATH-first inside `opam exec`):
+  `check_lem_sync: lean OK (… gen f4893e95ac3462defae87f737580b172f4e4e1cf35941d5be07edd82c8df808e)` = mainline's Lean gen
+  hash (219 files identical); OCaml `gen b79e328e…` ≠ mainline: `diff -rq` against the primary's tree = exactly
+  `ocaml_frontend/generated/cmm_csem.ml`, three blank lines → the FORK comment (comment-only, confirmed);
+  `Total: 15 passed, 0 failed`; `check_failure_reach: OK (239 …`; `check_fork_drift: SELFTEST OK (30 plants …`;
+  `check_fork_drift: OK — layer 1: 84 oracle-surface files = manifest … layer 2: 30 differing generated files, all
+  hash-pinned … lem-pin 6b20bfd02de924d078725efa96c6675115b8b17a matches lem -v 6b20bfd (hex prefix)`; `ROW1 EXIT=0`;
+  ten lanes all `EXIT=0` (minimal 113 = 90/18/5 `Baseline check: 0 regression(s), 0 improvement(s)`; multi-TU 2/2 and
+  7/7; address space 18; immaculate at baseline; libc 12/12; bytes 9 + 5; float 93/93; debug 90; coverage 212).
+  The F1 fix is thereby exercised on the exact route the review predicted would fail.
+- lem-lean `6b20bfd` (in-tree `make`, `./lem -v` = `Lem 6b20bfd`): `nonlean-regress: OK (893 artifact rows, 216 exit
+  rows, 9 emitters, byte-identical to golden)`; comprehensive `Generation: 56 passed, 0 failed, 0 skipped`, `Build completed
+  successfully (173 jobs)`, 107 negative probes `OK (rejected as declared)` incl. `neg_inline_type_sorry.lem`,
+  `neg_inline_relation_type_sorry.lem` and the four `neg_target_rep_sorry*`; panic/supply/reader/fuel legs OK;
+  `LEAN_TARGET EXIT=0`; parity: 4 `FAIL` = the 4 registered XFAILs; `OK: 11 proofs modules scanned; no
+  sorry/admit/axiom/native_decide/bv_decide token`; `OK: 260 files scanned; no lemDefaultFuel …`; `FINAL_LEGS EXIT=0`.
+
+Reviewers' second passes (Claude Fable): lem-lean `0df91ca` on `audit/public-readiness-must-20260924` — "Merge-ready as
+is at 6b20bfd", no P1/P2/P3 (notes C1: an UNUSED parenthesised `TYR_subst` `sorry` type rep is refused only at a use
+site — emission-time fail-closed holds; C2 wording); cerberus `c3e2070b4` on `audit/public-readiness-must-20260924` —
+"No P1 or P2 remains open on c13a105"; F1/F2/F3/F6/F8 CLOSED; new F11 P3 (five front pages still cite `abe505d3d` as
+the checked implementation while the recipe pins `6b20bfd`) → SHOULD block with F4, F5. Both reviewers quote the
+orchestrator's closure logs and report no disagreement with any gate line.
+
+[USER 2026-09-25] (during this checkpoint): "I'm going to ask them to pick up the SHOULD-level work on new branches off
+the current final heads" — SHOULD branches start at 6b20bfd / c13a105 in NEW worktrees; their merges queue behind the
+two MUST merges.
+
+Merge asks (each a separate explicit yes): (1) lem-lean `mdd/lean-backend` 38f87d5 → 6b20bfd, ff-only; (2) the
+shared-switch re-pin — `git -C deps/lem-pinned reset --hard 6b20bfd` + `make rebuild-lem` — authorised separately at
+that moment (it changes every checkout's lem; no other worktree may regenerate until (4) lands); (3) re-gate
+`c13a105` against the switch's lem (row 1 at minimum; fork-drift must read the switch's `lem -v`); (4) cerberus-lean
+`mdd/cerberus-lean` e9f9d049f → c13a105, ff-only; then this note's docs branch ff. Landing notes quote the sign-offs.
