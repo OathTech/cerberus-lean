@@ -74,7 +74,7 @@
 #   touched; every expected verdict is checked by its message, not only
 #   by rc.
 #
-# Env: CERB_UPSTREAM_TREE overrides the upstream generated-tree path.
+# Env: CERB_UPSTREAM_TREE names the required upstream generated-tree path.
 #      CERB_FORK_DRIFT_DEV_SKIP=1 — the development opt-in described above.
 
 set -uo pipefail
@@ -90,7 +90,7 @@ SURFACES=(frontend backend/common backend/driver backend/lean_export
           ocaml_frontend memory util parsers sibylfs runtime
           cerberus.opam cerberus-lib.opam Makefile dune dune-project
           tools/check_lem_sync.sh tools/check_driver_fresh.sh
-          tools/check_handwritten_sync.sh scripts/common.sh)
+          tools/check_handwritten_sync.sh tools/gen_version.ml scripts/common.sh)
 FORK_TREE_DEFAULT="$ROOT/ocaml_frontend/generated"
 UPSTREAM_REF_DEFAULT=upstream/master
 
@@ -102,17 +102,10 @@ case "${1:-}" in
     *) echo "check_fork_drift: usage: $0 [--refresh | --selftest]" >&2; exit 2 ;;
 esac
 
-# resolve_upstream_tree: the pristine tree's path (CERB_UPSTREAM_TREE or the
-# container-relative candidates); empty when none exists
+# The independent generated tree is explicitly provisioned by the caller.
+# See lean_frontend/VALIDATION.md, "Provisioning the fork-drift oracle".
 resolve_upstream_tree() {
-    local c
-    if [[ -n "${CERB_UPSTREAM_TREE:-}" ]]; then echo "$CERB_UPSTREAM_TREE"; return; fi
-    for c in "$ROOT/../deps/cerberus-upstream/ocaml_frontend/generated" \
-             "$ROOT/../../../deps/cerberus-upstream/ocaml_frontend/generated" \
-             /home/dev/projects/cerberus-lean-proj/deps/cerberus-upstream/ocaml_frontend/generated; do
-        if [[ -d "$c" ]]; then echo "$c"; return; fi
-    done
-    echo ""
+    printf '%s\n' "${CERB_UPSTREAM_TREE:-}"
 }
 
 # gate <manifest> <upstream-ref> <upstream-tree> <fork-tree> <lem-cmd> <refresh 0/1>
@@ -137,9 +130,9 @@ gate() {
     # --- upstream ref (repo-level remote; visible from worktrees) -----------
     if ! git -C "$ROOT" rev-parse --verify -q "$UPSTREAM_REF" >/dev/null; then
         echo "check_fork_drift: no '$UPSTREAM_REF' ref in this checkout." >&2
-        echo "  The fork-drift gate needs the fetch-only local-mirror remote:" >&2
-        echo "    git remote add upstream /home/dev/projects/cerberus-lean-proj/deps/mirrors/cerberus.git" >&2
-        echo "    git remote set-url --push upstream no-push-fetch-only && git fetch upstream" >&2
+        echo "  The fork-drift gate needs an upstream ref fetched from the public repository:" >&2
+        echo "    git remote add upstream https://github.com/rems-project/cerberus.git" >&2
+        echo "    git fetch upstream master:refs/remotes/upstream/master" >&2
         if [[ "$dev_skip" == "1" ]]; then
             dev_skip_banner "missing upstream ref '$UPSTREAM_REF'; layers 1 and 2 NOT checked"
             exit 0
@@ -228,7 +221,7 @@ gate() {
 
     # --- layer 2: generated-tree content -------------------------------------
     local layer2_missing=""
-    [[ -n "$UP_TREE" && -d "$UP_TREE" ]] || layer2_missing="upstream pristine tree not found (deps/cerberus-upstream/ocaml_frontend/generated; CERB_UPSTREAM_TREE overrides)"
+    [[ -n "$UP_TREE" && -d "$UP_TREE" ]] || layer2_missing="upstream pristine tree not found (set CERB_UPSTREAM_TREE; see lean_frontend/VALIDATION.md provisioning instructions)"
     [[ -d "$FORK_TREE" ]] || layer2_missing="fork generated tree missing: $FORK_TREE (run 'make prelude-src')"
     if [[ -n "$layer2_missing" ]]; then
         if [[ $REFRESH -eq 1 ]]; then fail "--refresh needs both generated trees: $layer2_missing"; fi

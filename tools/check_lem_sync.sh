@@ -144,7 +144,7 @@ CERB_LEM_SYNC_STALE: ocaml_frontend/generated/ is not content-in-sync with
 the frontend .lem sources. A binary built from this tree is a WRONG oracle
 (the arc-13 single-supply backstop will floor every C compile). Remediate
 with a forced regeneration under the project switch, e.g.:
-    source scripts/env.sh   # or scripts/ce
+    # From the repository root, with the README local opam switch:
     opam exec --switch=. -- make clean-prelude-src prelude-src
 (plain `make prelude-src` may no-op on mtimes). Design + incident record:
 lean_frontend/docs/2026-08-22_arc13-hotfix-libc-floor.md.
@@ -160,8 +160,8 @@ the frontend .lem sources. A cerberus-lean built from this tree runs STALE
 semantics — differential lanes would compare the oracle against the wrong
 model (the semantics-first split's finding 6: a stale primed tree masked a
 real debug-lane movement). Remediate with a forced regeneration:
-    source scripts/env.sh   # or scripts/ce
-    make lean-prelude-src
+    # From the repository root, with the README local opam switch:
+    opam exec --switch=. -- make lean-prelude-src
 then rebuild (cd lean_frontend && ../scripts/capped lake build).
 EOF
   exit 1

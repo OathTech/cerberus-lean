@@ -83,7 +83,7 @@ git clone --branch mdd/cerberus-lean https://github.com/OathTech/cerberus-lean.g
 cd cerberus-lean
 opam switch create . ocaml-base-compiler.5.4.0 --no-switch --no-install
 # Keep this revision equal to lean_frontend/lakefile.toml.
-opam pin add --switch=. lem git+https://github.com/OathTech/lem-lean.git#6b20bfd02de924d078725efa96c6675115b8b17a --yes
+opam pin add --switch=. lem git+https://github.com/OathTech/lem-lean.git#67ec5de70e02e280bb348a4ba826696b76116732 --yes
 opam install --switch=. --deps-only ./cerberus-lib.opam ./cerberus.opam --yes
 
 opam exec --switch=. -- make prelude-src

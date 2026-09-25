@@ -155,11 +155,11 @@ CERB_DRIVER_STALE: a driver binary is not the product of this source tree.
 Running a differential lane against it would FABRICATE results (the
 parity-detective's §1 finding: primed worktree binaries silently lag
 their checkout). Remediate by rebuilding the stale side:
-    scripts/ce bash -c 'source scripts/env.sh; :'   # env, then:
+    # From the repository root, with the README local opam switch:
     oracle: opam exec --switch=. -- dune build backend/driver/main.exe \
               cerberus-lib.install && opam exec --switch=. -- dune install \
               cerberus-lib && opam exec --switch=. -- dune build cerberus.install
-    lean:   make lean-prelude-src && cd lean_frontend && ../scripts/capped lake build
+    lean:   opam exec --switch=. -- make lean-prelude-src && cd lean_frontend && ../scripts/capped lake build
             (lean-prelude-src is NOT optional: Lake compiles the generated/
             COPIES of the hand-written files — the 2026-09-02 fail-open)
 then re-record: tools/check_driver_fresh.sh --record-oracle / --record-lean

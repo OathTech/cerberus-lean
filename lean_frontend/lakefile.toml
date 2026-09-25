@@ -67,7 +67,7 @@ moreLeanArgs = ["-DautoImplicit=false"]
 [[require]]
 name = "LemLib"
 git = "https://github.com/OathTech/lem-lean"
-rev = "6b20bfd02de924d078725efa96c6675115b8b17a"
+rev = "67ec5de70e02e280bb348a4ba826696b76116732"
 subDir = "lean-lib"
 
 [[lean_lib]]

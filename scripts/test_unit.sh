@@ -269,7 +269,15 @@ fi
 
 # Totality gate (arc 3): the exec slice is partial-free (empty allowlist).
 # ENFORCING and fail-closed like the gates above.
+if ! bash "$(dirname "$PURITY_SH")/test_version.sh"; then
+    echo "test_unit: version identity tests FAILED"
+    exit 1
+fi
 TOTALITY_SH="$(dirname "$PURITY_SH")/check_exec_totality.sh"
+if ! python3 "$(dirname "$PURITY_SH")/test_exec_totality.py"; then
+    echo "test_unit: exec-totality admission tests FAILED"
+    exit 1
+fi
 if ! ENFORCE=1 "$TOTALITY_SH"; then
     echo "test_unit: exec-totality gate FAILED"
     exit 1

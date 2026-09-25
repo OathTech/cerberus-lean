@@ -9,9 +9,5 @@ for tool in python3 git opam lem dune lake timeout; do
         exit 2
     fi
 done
-if [[ -z "${GIT_CONFIG_GLOBAL:-}" ]]; then
-    echo "Lean CI prerequisite missing: project-scoped Git configuration (GIT_CONFIG_GLOBAL)" >&2
-    exit 2
-fi
 if [[ $# -eq 0 ]]; then set -- --mode full; fi
 exec python3 "$script_dir/release.py" "$@"

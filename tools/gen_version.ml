@@ -9,11 +9,10 @@ let run_cmd cmd =
   | _               -> None
 
 let git_version =
-  Option.map ((^) "git-") @@ run_cmd "git describe --dirty --always"
+  Option.map ((^) "git-") @@ run_cmd "git describe --long --dirty --always"
 
 let git_version_date =
-  Option.bind (run_cmd "git describe --always") (fun hash ->
-    run_cmd ("git show --no-patch --format=\"%ci\" " ^ hash))
+  run_cmd "git show --no-patch --format=\"%ci\" HEAD"
 
 let or_unknown = Option.value ~default:"unknown"
 

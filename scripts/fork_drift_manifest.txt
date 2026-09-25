@@ -1,3 +1,10 @@
+# Public-readiness follow-up single re-pin (2026-09-25): 6b20bfd02de924d078725efa96c6675115b8b17a -> 67ec5de70e02e280bb348a4ba826696b76116732.
+# All Lem implementation changes precede this pin; generation and gates are in
+# lean_frontend/docs/2026-09-25_public-readiness-followup.md.
+# Public-readiness S10/version (2026-09-25; base c13a1054133b49c954fe27ac4c1b4e33a418c51f):
+# three helper hashes change only public remediation instructions; the new
+# tools/gen_version.ml row retains hashes at tags and uses HEAD for the date.
+# No model source or generated-diff exception changes in this group.
 # Public-readiness closure F1/F3, 2026-09-24 [AGENT; base 0a6d59eed].
 # Final closure Lem pin: 6b20bfd02de924d078725efa96c6675115b8b17a.
 # cmm_csem.lem adds only the explanatory FORK comment. Its propagated OCaml
@@ -406,7 +413,7 @@ merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
 #   was a stale af5df71, audit F4 (c)). Closure F1 (2026-09-24; base
 #   0a6d59eed): full 40-hex pin, checked by validated version prefix.
 #   Set the reviewed full pin before --refresh; refresh preserves it.
-lem-pin=6b20bfd02de924d078725efa96c6675115b8b17a
+lem-pin=67ec5de70e02e280bb348a4ba826696b76116732
 renumber=arc13
 [files]
 Makefile
@@ -492,6 +499,7 @@ scripts/common.sh
 tools/check_driver_fresh.sh
 tools/check_handwritten_sync.sh
 tools/check_lem_sync.sh
+tools/gen_version.ml
 util/cerb_fresh.ml
 [source-content]
 100644 527b04f09e22919ad64ca2c4fa676f3d1c86b1714d5b109dd076ebe98c9e32f9 Makefile
@@ -574,9 +582,10 @@ util/cerb_fresh.ml
 100644 6f78799f7d7ad93d2dcccd9487004e0e5f742f550f691825c1af878ee9278d11 runtime/libcore/std.core
 100644 7eb4628819de61b5ca997209df88f09545553606f8d8305e530b954093820850 runtime/libcore/std_inner_arg_temps.core
 100755 0f02d01c0f3655223d7d9561f8629c464d9a144aa5fdb6fbcda9d8034e5468ae scripts/common.sh
-100755 e46f9aac905e4afe0b3f673e725bb4428c0c2781bf51659875e658addd453cdb tools/check_driver_fresh.sh
-100755 e2d0b6b781462ce2d57f613185fc863d9fff7f6af889172e9bc813f4bf4e3c7c tools/check_handwritten_sync.sh
-100755 9a07e1a9188443cebef04bef184bbac1a876c996fad0caca90ea9b4ce3605292 tools/check_lem_sync.sh
+100755 50ad201912960d4fffed4a1a9b53754df5f10a24e9a012bb000b746dd2a605f8 tools/check_driver_fresh.sh
+100755 98b24dd3dc65258ed8e10e019e5efb5c329501321f1b5b247190fc3163ad245c tools/check_handwritten_sync.sh
+100755 e05d28ddb60e82f04da68f36100337d4333cd34010c4b7e6ef8be999f8365ce5 tools/check_lem_sync.sh
+100644 792b3cf7a1990e7b81a700d1463817d8a878c4903b85ef0fea47a6ec82449c94 tools/gen_version.ml
 100644 ee912ae7803e9d42fbf5ef85fdac484586571d4f4b2eb17745431ca9c19aacf8 util/cerb_fresh.ml
 [expected-semantic]
 5a20bc6b1e3e4cd9af04c1316e4a2b8354ccfab68e2fea3561acfd7cdfb3a093 core_aux.ml

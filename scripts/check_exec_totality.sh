@@ -8,11 +8,11 @@
 # carry attributes (design note §10 failure mode, third occurrence).
 #
 # Modes:
-#   default    — report findings, always exit 0 (sweep-in-progress mode)
-#   ENFORCE=1  — exit 1 on any non-allowlisted finding OR any stale
+#   default / ENFORCE=1 — exit 1 on any non-allowlisted finding OR any stale
 #                allowlist entry (fail-closed in both directions)
+#   ENFORCE=0 — explicitly labelled report-only mode; scanner errors still fail.
 #
-# BOUNDARY HONESTY (arc-4 S5f, audit G3; amended arc-7 S2): the 11-module
+# BOUNDARY HONESTY (arc-4 S5f, audit G3; amended arc-7 S2): the 22-module
 # list below covers GENERATED modules; since arc-7 S2 the gate ALSO scans
 # the hand-written runner CerbND.lean (totalized by the operator's Q1
 # AMENDED ruling — partial runND/runND1 are gone and may not return: a
@@ -34,7 +34,13 @@ set -u
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 GEN="$SCRIPT_DIR/../lean_frontend/generated"
 ALLOW="$SCRIPT_DIR/exec_totality_allowlist.txt"
-ENFORCE="${ENFORCE:-0}"
+ENFORCE="${ENFORCE-1}"
+case "$ENFORCE" in
+  1) ;;
+  0) echo "check_exec_totality: REPORT ONLY (ENFORCE=0; findings do not fail this invocation)" ;;
+  *) echo "check_exec_totality: FAIL — ENFORCE must be 0 or 1" >&2; exit 2 ;;
+esac
+[[ -f "$ALLOW" ]] || { echo "check_exec_totality: FAIL — missing allowlist $ALLOW" >&2; exit 1; }
 
 # First 11 = same slice as check_exec_purity.sh (keep that prefix in
 # lockstep with the purity gate). Arc-7 S5a extends the TOTALITY gate
@@ -182,5 +188,5 @@ if [[ "$ENFORCE" == "1" ]]; then
   echo "check_exec_totality: FAIL (enforcing mode)"
   exit 1
 fi
-echo "check_exec_totality: reporting mode (sweep in progress)"
+echo "check_exec_totality: REPORT ONLY (ENFORCE=0)"
 exit 0

@@ -77,8 +77,8 @@ hand-written sources. Lake compiles from generated/, so a cerberus-lean
 built from this tree would NOT correspond to lean_frontend/*.lean (the
 2026-09-02 fail-open: a green freshness stamp over a stale-copy binary).
 Remediate by running the copy recipe, then rebuild:
-    source scripts/env.sh   # or scripts/ce
-    make lean-prelude-src
+    # From the repository root, with the README local opam switch:
+    opam exec --switch=. -- make lean-prelude-src
     cd lean_frontend && ../scripts/capped lake build
 Copy set: lean_frontend/handwritten_copy.manifest (the Makefile reads the
 same file). Record: lean_frontend/docs/2026-09-02_freshness-copy-gap.md.
