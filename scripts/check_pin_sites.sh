@@ -47,15 +47,16 @@ PY
             [[ "$r" == "$pin" ]] || { echo "check_pin_sites: FAIL — $f LemLib rev/inputRev = $r ≠ lem-pin $pin" >&2; rc=1; }
         done <<<"$revs"
     done
-    # README: every opam pin command's hash
+    # README: EVERY `lem-lean.git#<fragment>` must be exactly the full pin (review P3-3: a non-hex or
+    # partial fragment next to a valid pin must not slip through — fail-closed on any fragment ≠ pin).
     f="$root/lean_frontend/README.md"
-    local readme_hashes
-    readme_hashes=$(grep -o 'lem-lean\.git#[0-9a-f]*' "$f" | sed 's/.*#//' | sort -u)
-    [[ -n "$readme_hashes" ]] || { echo "check_pin_sites: FAIL — $f has no 'lem-lean.git#<hash>' pin command" >&2; rc=1; }
+    local readme_frags
+    readme_frags=$(grep -o 'lem-lean\.git#[^[:space:]"'"'"'`)]*' "$f" | sed 's/.*#//' | sort -u)
+    [[ -n "$readme_frags" ]] || { echo "check_pin_sites: FAIL — $f has no 'lem-lean.git#<hash>' pin command" >&2; rc=1; }
     while read -r h; do
-        [[ -z "$h" ]] && continue
+        [[ -z "$h" && -z "$readme_frags" ]] && continue
         [[ "$h" == "$pin" ]] || { echo "check_pin_sites: FAIL — $f pins lem-lean.git#$h ≠ lem-pin $pin (the README's own rule: equal to lean_frontend/lakefile.toml)" >&2; rc=1; }
-    done <<<"$readme_hashes"
+    done <<<"$readme_frags"
     (( rc == 0 )) && echo "check_pin_sites: OK — lem-pin $pin at every site (lakefile rev, 3 lake-manifests rev+inputRev, README pin command)"
     return $rc
 }
@@ -92,7 +93,13 @@ if [[ "${1:-}" == "--selftest" ]]; then
                       plant "P4 manifest lem-pin missing" nonzero "lem-pin is not one full 40-hex commit" "$S/nopin"
     mk "$S/noreadme"; sed -i 's/lem-lean\.git#[0-9a-f]*/lem-lean.git/' "$S/noreadme/lean_frontend/README.md"
                       plant "P5 README has no pin command at all" nonzero "has no 'lem-lean.git#<hash>' pin command" "$S/noreadme"
-    if (( fails == 0 )); then echo "check_pin_sites: SELFTEST OK (5 plants red with the declared message, unplanted copies green)"; exit 0
+    mk "$S/frag";     printf '\nopam pin add lem git+https://github.com/OathTech/lem-lean.git#mdd/lean-backend --yes\n' >> "$S/frag/lean_frontend/README.md"
+                      plant "P6 a non-hex pin fragment beside the valid pin (review P3-3)" nonzero "README.md pins lem-lean.git#mdd/lean-backend" "$S/frag"
+    mk "$S/second";   printf '\nopam pin add lem git+https://github.com/OathTech/lem-lean.git#%s --yes\n' "$stale" >> "$S/second/lean_frontend/README.md"
+                      plant "P7 a second pin command naming another commit" nonzero "README.md pins lem-lean.git#$stale" "$S/second"
+    mk "$S/rev";      sed -i "0,/\"rev\": \"$pin\"/s//\"rev\": \"$stale\"/" "$S/rev/lean_frontend/lake-manifest.json"
+                      plant "P8 one lake-manifest rev (not inputRev) differs" nonzero "lake-manifest.json LemLib rev/inputRev = $stale" "$S/rev"
+    if (( fails == 0 )); then echo "check_pin_sites: SELFTEST OK (8 plants red with the declared message, unplanted copies green)"; exit 0
     else echo "check_pin_sites: SELFTEST FAILED ($fails)"; exit 1; fi
 fi
 ROOT="$ROOT_DEFAULT"

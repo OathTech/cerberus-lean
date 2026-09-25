@@ -143,7 +143,7 @@ decoys), the lem-sync content-hash gate,
 `failwithI`/`panic!` site of the exec dependency closure = a sealed, reviewed row of
 `scripts/failure_reach_register.txt`, position and reach classes both directions,
 DISCARDABLE generated let-bindings RED; rebuilds the one-module reach instrument,
-~6 s; 5 plants), `check_fork_drift.sh` (arc-10 audit follow-up, [USER] mandate: the
+~6 s; 5 plants), `check_pin_sites.sh` (2026-09-25 fresh-clone finding: the lem-lean pin is ONE value at the manifest `lem-pin`, the Lake rev, the three lake-manifests and the README's newcomer `opam pin` command; 8 plants, fail-closed), `check_fork_drift.sh` (arc-10 audit follow-up, [USER] mandate: the
 oracle surface must equal the reviewed manifest
 `scripts/fork_drift_manifest.txt`, and the generated-OCaml
 fork-vs-upstream deltas must match their pinned hashes; loud SKIP
