@@ -891,3 +891,117 @@ Merge order unchanged: lem-lean `6b20bfd` first (ff), the operator's
 that environment (the closure run is that environment's shape) and merged
 ff-only on explicit per-merge sign-off. Merge authority rests with the
 operator.
+
+### Closure-run addendum — the orchestrator's `c13a105` gates completed
+
+[AGENT] `<cleanup worktree>/.tmp/orch-ALL-DONE` present; source
+`.tmp/orch-gates-closure.log` (5830 lines), read by absolute path only.
+Verbatim, trimmed to verdict-bearing lines:
+
+```text
+=== ORCH CERBERUS CLOSURE GATES 2026-09-25T00:32:05Z head=c13a10541 status_lines=0 — lem on PATH = in-tree 6b20bfd (7-char describe) ===
+=== STEP A 00:32:05 ===
+Makefile:11: *** "Compilation requires [dune].".  Stop.
+=== PRELUDE_SRC EXIT=2 ===
+=== STEP A (retry; PATH prepended INSIDE opam exec) 00:32:40 ===
+=== PRELUDE_SRC EXIT=0 ===
+=== STEP A2: WIPE both generated trees, re-derive with the 7-char lem 00:33:07 ===
+Lem 6b20bfd
+check_lem_sync: recorded ocaml_frontend/lem_sync.sha256 (src b2a78090bb9617fa5067c54145df8d775669571e30f0c9629539031975dc6e16, gen b79e328e77aa6c784c2ef260b341c98c473a35bf1e1d1523b73680949ba41d9e)
+=== PRELUDE_SRC EXIT=0 ===
+check_lem_sync: recorded lean_frontend/lem_sync.sha256 (src b2a78090bb9617fa5067c54145df8d775669571e30f0c9629539031975dc6e16, gen f4893e95ac3462defae87f737580b172f4e4e1cf35941d5be07edd82c8df808e)
+=== LEAN_PRELUDE_SRC EXIT=0 ===
+--- generated OCaml vs the primary checkout (mainline e9f9d049f) tree ---
+Files ocaml_frontend/generated/cmm_csem.ml and /home/dev/projects/cerberus-lean-proj/cerberus-lean/ocaml_frontend/generated/cmm_csem.ml differ
+--- diff ocaml_frontend/generated/cmm_csem.ml ---
+829,831c829,831
+< 
+< 
+< 
+---
+> (* FORK F3 (2026-09-24; base 0a6d59eed): the 23 LemUnsupported.Cmm.* reps below
+>    belong to {hol; isabelle; tex}-only definitions, which Lean never renders.
+>    They provide no Lean implementation or concurrency support. *)
+=== DUNE_BUILD EXIT=0 ===
+=== DUNE_INSTALL EXIT=0 ===
+=== CERBERUS_INSTALL EXIT=0 ===
+=== LEAN_NATIVE_OBJ EXIT=0 ===
+=== LAKE_BUILD EXIT=0 ===
+=== STEP C: row 1 with the 7-char lem on PATH 00:34:20 ===
+Total: 15 passed, 0 failed
+check_fork_drift: OK — layer 1: 84 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 30 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 6b20bfd02de924d078725efa96c6675115b8b17a matches lem -v 6b20bfd (hex prefix))
+=== ROW1 EXIT=0 ===
+=== scripts/test_exec.sh --check-baseline ===
+SUMMARY: total=113 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=5 cerb_floor=0 cerb_inconsistent=0
+BASELINE OK
+=== EXIT=0 ===
+=== scripts/test_multi_tu.sh ===
+SUMMARY: total=2 match=2 fail=0
+ALL PASSED
+=== EXIT=0 ===
+=== scripts/test_multi_tu.sh --failure-class-projection tests/multi_tu_tray ===
+SUMMARY: total=7 match=7 fail=0
+ALL PASSED
+=== EXIT=0 ===
+=== scripts/test_address_space.sh ===
+test_address_space: OK (18 cases: LEAN = FORK through the shared codec at tops 64 32 8; every fork observation = its pinned row in expectations.txt)
+=== EXIT=0 ===
+=== scripts/test_immaculate.sh ===
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip DIFF, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+=== EXIT=0 ===
+=== scripts/test_libc_exec.sh ===
+SUMMARY: match=12 diff=0
+ALL MATCH RECORDED BASELINE
+=== EXIT=0 ===
+=== scripts/test_bytes.sh ===
+SUMMARY: exec_match=9 neg_pinned=5 fail=0
+ALL AT COMMITTED EXPECTEDS
+=== EXIT=0 ===
+=== scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float ===
+SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+BASELINE OK
+=== EXIT=0 ===
+=== scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug ===
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+BASELINE OK
+=== EXIT=0 ===
+=== scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage ===
+SUMMARY: total=212 match=183 ub_match=16 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+BASELINE OK
+=== EXIT=0 ===
+=== ALL DONE (cerberus closure gates) 2026-09-25T00:42:40Z ===
+```
+
+**Comparison with the closure record's claims:** every row-1 line and every
+lane `SUMMARY`/closing verdict quoted in
+`docs/2026-09-24_public-readiness-closure.md` is reproduced verbatim by the
+orchestrator's run (minimal, coverage, debug, float, bytes, libc-exec,
+multi-tu, multi-tu-tray, address-space, immaculate); `ROW1 EXIT=0`; the
+fork-drift line carries the 7-character `lem -v 6b20bfd` — the operator's
+route. **No disagreement.** The first `STEP A` attempt died at
+`Makefile:11 … Compilation requires [dune]` (PATH order inside `opam exec`),
+an orchestrator-environment slip corrected by the retry, not a head defect.
+
+**F8 status.** The orchestrator WIPED both generated trees and re-derived
+them with the 7-char lem (`STEP A2`). OCaml vs the primary checkout's
+mainline (`e9f9d049f`, generated under `38f87d5`): exactly one `Files …
+differ` line in the whole log — `ocaml_frontend/generated/cmm_csem.ml`
+lines 829–831, three blank lines replaced by the three-line FORK comment —
+**comment-only, confirmed**; the corresponding manifest cosmetic row hashed
+and matched at layer 2 ("30 differing generated files, all hash-pinned").
+The log has no explicit Lean-tree-vs-base diff, but the Lean `lem_sync`
+generated-output stamp recorded here (`gen f4893e95ac3462defae87f737580b172f4e4e1cf35941d5be07edd82c8df808e`)
+is identical to the one recorded by the orchestrator's first run at
+`0a6d59eed` under lem `9bb6c6b5` (`.tmp/orch-gates.log` line 30, same
+`gen` value), while the `src` stamp moved (`a508392d… → b2a78090…`, the
+`.lem` comment) and the OCaml `gen` stamp moved (`77527ca7… → b79e328e…`,
+the one commented file) — exactly the pattern the remediator's "219 Lean
+files byte-identical; only `cmm_csem.ml` differs" claim predicts (derived
+by me from the two logs' stamp lines; the stamp's coverage is
+`tools/check_lem_sync.sh`'s). **F8 CLOSED for OCaml by direct diff;
+closed for Lean by stamp identity.**
+
+**Final status of the ledger on `c13a105`:** F1 CLOSED (confirmed on the
+7-char route), F2 CLOSED, F3 closed with an N wording residue, F6 CLOSED,
+F8 CLOSED, F10 CLOSED; open: F4, F5, F11 (all P3, SHOULD block), F7/F9 (N).
+**No P1 or P2 open.** Merge authority rests with the operator.
