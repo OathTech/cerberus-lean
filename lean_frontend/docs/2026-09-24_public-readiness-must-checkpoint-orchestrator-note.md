@@ -233,3 +233,46 @@ WIPED and re-derived (03:14–03:26 UTC; tree clean before and after), verbatim:
 Pins: lem-lean mainline = deps/lem-pinned = switch lem (prefix) = Lake rev = 3 lake-manifests = fork-drift lem-pin =
 6b20bfd02de924d078725efa96c6675115b8b17a. Not pushed; no tag. Next: the SHOULD block review ([USER 2026-09-25] "the
 other agent has completed the SHOULD remediation. Review it as you did with the MUST").
+
+## 10. SHOULD block landed; the sweep (2026-09-25) — orchestrator [AGENT]
+
+[USER 2026-09-25] verbatim: "Great, go ahead with the whole merge and sweep as proposed". Executed:
+
+SHOULD merges (details + verbatim step-2/step-3 lines in `2026-09-25_public-readiness-followup.md` "Landing"): lem-lean
+`mdd/lean-backend` 6b20bfd -> 67ec5de (ff); `deps/lem-pinned` -> 67ec5de; `make rebuild-lem` -> `Lem 67ec5de`; re-gate
+of the rebased cerberus SHOULD head `5d3079184` green; cerberus `mdd/cerberus-lean` 8de1cf443 -> d55940db0 (ff, landing
+note). Post-landing primary (wiped regeneration; switch lem `Lem 67ec5de`): REGEN/BUILD_CERBERUS/BUILD_LEAN EXIT=0; row 1
+first RED — `check_fork_drift: … layer 2 NOT CHECKED — upstream pristine tree not found (set CERB_UPSTREAM_TREE …)`:
+S10 removed the gate's absolute fallback to this container's `deps/cerberus-upstream/…/generated`, and the container's
+`scripts/env.sh` did not export the variable. Fix (container-scoped, not a repo change): `scripts/env.sh` now exports
+`CERB_UPSTREAM_TREE="$CERB_PROJ/deps/cerberus-upstream/ocaml_frontend/generated"`. Rerun: `Total: 15 passed, 0 failed`;
+`check_fork_drift: SELFTEST OK (30 plants …`; `check_fork_drift: OK — layer 1: 85 … layer 2: 30 …`; `ROW1 EXIT=0`;
+ten lanes `EXIT=0` (minimal 113 = 90/18/5; multi-TU 2/2, 7/7; address space 18; immaculate at baseline; libc 12/12;
+bytes 9 + 5; float 93/93; debug 90; coverage 212; every `Baseline check: 0 regression(s), 0 improvement(s)`).
+Every other container checkout picks the export up through `scripts/ce`.
+
+The sweep: lem-lean `cleanup/public-readiness-sweep-20260925` = 67ec5de + 2cc71d6 (review P3s T1–T3: the S13
+`never_extract` rationale in `LemLib.lean`, the NOTICE maintainer-confirmation line, the follow-up record's consumer
+consequence) + the four delta-review commits cherry-picked (`2026-09-24_public-readiness-must-delta-review.md`,
+`2026-09-25_public-readiness-should-delta-review.md`) = `c2a68e79b6369e19f099dfa48767319c1daf19b3`; ff'd to
+`mdd/lean-backend`; `deps/lem-pinned` -> c2a68e7; `make rebuild-lem` -> `Lem c2a68e7`. cerberus
+`cleanup/public-readiness-sweep-20260925` = d55940db0 + the sweep commit (review P3s G1–G3, F11: every front-page
+citation now names the LANDED implementation commit `bb487dda7` — the pre-rebase `4e875defb` is on no branch; the
+`--refresh` help text no longer names `scripts/env.sh`; the cold-build `dune install` deviation labelled; re-pin to
+c2a68e7 at the five sites; the cerberus-sl consumer note `2026-09-25_consumer-note-cerberus-sl-public-readiness.md`) +
+the five delta-review commits cherry-picked = `477a99fae`.
+
+Orchestrator's gates on `477a99fae` with an in-tree lem `Lem c2a68e7` PATH-first, both generated trees wiped and
+re-derived: byte-identical to the primary's (mainline) trees; LemLib consumed by Lake = `c2a68e79…`; DUNE_BUILD /
+DUNE_INSTALL / CERBERUS_INSTALL / LEAN_NATIVE_OBJ / LAKE_BUILD (395 jobs) EXIT=0; `Total: 15 passed, 0 failed`;
+`check_failure_reach: OK (239 …`; `check_fork_drift: OK — layer 1: 85 oracle-surface files = manifest … layer 2: 30
+differing generated files, all hash-pinned …`; `ROW1 EXIT=0`; ten lanes EXIT=0 with the same tallies as above.
+Reviews of the sweep: none beyond the P3s it closes (docs, comments, a help string, a re-pin); the operator's sign-off
+covers the sweep ("whole merge and sweep as proposed"). Landing: `mdd/cerberus-lean` d55940db0 -> this commit (ff).
+
+After this landing: pins = lem-lean mainline = deps/lem-pinned = switch lem (prefix) = Lake rev = 3 manifests =
+fork-drift lem-pin = c2a68e79b6369e19f099dfa48767319c1daf19b3. Retired worktrees: the two review scratch clones, the
+review worktree, the four cleanup worktrees (after this ff), the two audit worktrees, the orchestrator-note worktree.
+Branches kept as records. Operator items before announcing: M9 network checks with these pins (`ls-remote`, fresh public
+clone, `cat-file -e c2a68e79…`), GitHub "Issue creation is restricted" setting on both repos, the ISO-fix register's
+"filed upstream" criterion (file or re-adjudicate), tag names, announcement wording. No push, no tag by agents.
