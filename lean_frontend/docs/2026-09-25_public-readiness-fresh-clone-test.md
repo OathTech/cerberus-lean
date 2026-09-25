@@ -151,3 +151,18 @@ those land and are pushed, a newcomer's row 1 is red at the fork-drift gate. Ope
 "Issue creation is restricted" setting (no automated issue creation, per the operator), the ISO-fix register's
 "filed upstream" criterion, tags and wording. A final literal rerun from a brand-new clone after the push is the last
 exit of M9.
+
+## Landing (2026-09-25) — orchestrator [AGENT]
+
+[USER 2026-09-25] verbatim: "Great, agree on the reviewer, agree on the merge, agree on M9 exit". Independent delta review
+(Claude Fable, `2026-09-25_fresh-clone-fix-delta-review.md`, three passes on `audit/fresh-clone-fix-20260925`
+5fee06e69 / 1331e14b2 / fd3e0d22e, cherry-picked here): "No P1, no P2 … Clean for the operator's fast-forward" on the
+six-commit range db5e1feb5..2e88f21c0. Its P3-1 (the plant's shared temporary ref could race concurrent self-tests →
+the plant now passes the synthetic commit hash directly), P3-2 (stale "upstream/master" wording), P3-3 (the README
+parser skipped a non-hex fragment beside a valid pin → every fragment must equal the full pin; plants P6–P8), P3-4
+(the leg named in LADDER row 1 and the frontend CLAUDE.md gate list), P3-5 (VALIDATION's plant count) and N-1/N-2/N-4
+are closed on this branch; N-3/N-5..N-11 stand as notes. The pin-site leg was suggested independently by another agent
+who found the same README defect ("a row-1 leg asserting README pin = lakefile rev = manifests, so the class cannot
+recur at the next re-pin"). Landed: `mdd/cerberus-lean` db5e1feb5 -> this commit, ff-only; the primary checkout's row 1
+after landing is quoted in the orchestrator note. Then: the operator pushes; the final M9 exit is a literal rerun of the
+cerberus recipe from a brand-new anonymous clone against the pushed head.
