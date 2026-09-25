@@ -7,6 +7,9 @@ Method: brand-new directory outside every checkout, `GIT_CONFIG_GLOBAL=/dev/null
 GIT_TERMINAL_PROMPT=0`, `git -c credential.helper=` — no container env, no redirects, no credentials; every command is
 the PUBLIC README's own line, in its order; a NEW local opam switch per repository (authorised). Logs (ephemeral, in the
 container's `.tmp/m9-fresh-20260925/`): `lem-quickstart.log`, `cerberus-recipe.log`, `cerberus-fix-test.log`.
+Quoted lines are verbatim PREFIXES: long lines were cut at a fixed width and end without a marker (review N-4).
+The `OLD_GATE` run in `cerberus-fix-test.log` is NOT a negative control (the copied script resolved its root to the
+scratch directory and failed for "missing upstream ref"); the negative control is the twelve-file NEW DRIFT quoted below.
 
 ## Public state (anonymous `ls-remote`, verbatim)
 
@@ -19,7 +22,7 @@ Default branches are the fork branches. Fresh anonymous clones: lem-lean 13 MB, 
 The cerberus lakefile's LemLib pin `c2a68e79…` is PRESENT in the public lem-lean clone and an ancestor of its
 `mdd/lean-backend`. Public tags: cerberus-lean three `park/*` record tags; lem-lean none. Upstream: rems-project/lem
 `master` = fork `master` (3802cb0, zero behind); rems-project/cerberus `master` = b3e11ea33, 9 commits past the fork's
-merge-base b9aeedcb4, 34 files changed, 20 of them on the fork's oracle surface (an upstream-PR integration risk, not
+merge-base b9aeedcb4, 34 files changed, 20 of them in the fork's manifested `[files]` set (32 inside the gate's SURFACES — the 20 plus the 12 listed below; an upstream-PR integration risk, not
 an announcement blocker; every front page cites b9aeedcb4 as the reference correctly).
 
 ## lem-lean quickstart (`doc/lean-backend/README.md`, literal) — GREEN

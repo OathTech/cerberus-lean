@@ -398,7 +398,7 @@
 # forever on a self-referential struct defined in two translation units
 # moved; no --refresh. The oracle surface (layers 1-2) is untouched.
 # NOTE (arc-13 S1, the renumbering — D1 scheme R-B, upstream
-# [files] = oracle-surface files allowed to differ from upstream/master;
+# [files] = oracle-surface files allowed to differ from the pinned merge-base (upstream/master only locates it; 2026-09-25);
 # site now rewrites — no longer blank-line-only). util/cerb_fresh.ml
 # declares) was already manifested. Generated OCaml verified
 # reader_consumer/fuel-budget backend features; the pin bump alone was
