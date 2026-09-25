@@ -1,0 +1,5 @@
+PASS Bool 0
+PASS Bool 1
+PASS Bool 2
+PASS Bool unspecified
+PASS rejected pointer retains input state

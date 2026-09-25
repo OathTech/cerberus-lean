@@ -1,0 +1,46 @@
+FAIL [2] Bool trap retains completed read state
+FAIL [2] unspecified Bool trap retains completed read state
+PASS [2] valid Bool zero
+PASS [2] valid Bool one
+PASS [2] rejected Bool pointer has no completed read
+PASS [2] allocator zero alignment remains a refusal
+PASS [2] allocator ordinary alignment
+PASS [2] requested address
+PASS [2] ordinary allocation
+PASS [2] dead static allocation
+PASS [2] live static allocation
+PASS [2] dead dynamic allocation remains UB
+PASS [2] function pointer shift
+PASS [2] ordinary pointer shift
+PASS [2] unspecified memcmp byte
+PASS [2] memcmp retains load's updated state
+PASS [2] specified memcmp byte
+PASS [2] noninitial va_list
+PASS [2] initial va_list
+PASS [2] CHERI intrinsic
+PASS [2] ordinary model errors remain Other
+PASS [2] continuation cannot revive failure or overwrite its state
+PASS [2] UTF-8 and control bytes are escaped
+FAIL [17] Bool trap retains completed read state
+FAIL [17] unspecified Bool trap retains completed read state
+PASS [17] valid Bool zero
+PASS [17] valid Bool one
+PASS [17] rejected Bool pointer has no completed read
+PASS [17] allocator zero alignment remains a refusal
+PASS [17] allocator ordinary alignment
+PASS [17] requested address
+PASS [17] ordinary allocation
+PASS [17] dead static allocation
+PASS [17] live static allocation
+PASS [17] dead dynamic allocation remains UB
+PASS [17] function pointer shift
+PASS [17] ordinary pointer shift
+PASS [17] unspecified memcmp byte
+PASS [17] memcmp retains load's updated state
+PASS [17] specified memcmp byte
+PASS [17] noninitial va_list
+PASS [17] initial va_list
+PASS [17] CHERI intrinsic
+PASS [17] ordinary model errors remain Other
+PASS [17] continuation cannot revive failure or overwrite its state
+PASS [17] UTF-8 and control bytes are escaped

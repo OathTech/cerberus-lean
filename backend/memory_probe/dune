@@ -1,0 +1,3 @@
+(executable
+ (name memory_probe)
+ (libraries mem_concrete))

@@ -2445,7 +2445,11 @@ def loadM [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocatio
         | .MVinteger _ (.IV _ n) => n != 0 && n != 1
         | .MVunspecified _ => true
         | _ => false
-      if isTrap then fail_ (MerrTrapRepresentation LoadAccess)
+      -- do_load updates last_used BEFORE the trap check. A failed read
+      -- returns that completed-operation state (SC WP0 / review RR2).
+      if isTrap then
+        (NDkilled (failReason (MerrTrapRepresentation LoadAccess) loc),
+          { st with lastUsed := allocOpt })
       -- :1601-1606 SW_strict_reads → MerrReadUninit on an unspecified value.
       -- Refused set (Z-24): the default arm is the only reachable one; the set
       -- case is loud (seam-hygiene H2)

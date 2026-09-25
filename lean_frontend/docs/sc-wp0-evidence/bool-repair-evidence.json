@@ -1,0 +1,19 @@
+{
+  "base": "e9f9d049ffaaf005c392495b0f6418d21f4df29f",
+  "release_report": ".tmp/release/20260925T025751.740473Z/report.json",
+  "report_sha256": "cefb6f9a4810719e6b0c65d1f06d7f7d1aeadc5f180f1bc7474113298c405c7a",
+  "source_after": {
+    "branch": "arc/sc-wp0",
+    "diff_sha256": "3b80e6bb26133ad3eb5291f45d151c86de1eaa2ba1803ebab420f9fea8dda431",
+    "head": "e9f9d049ffaaf005c392495b0f6418d21f4df29f",
+    "status": "M lean_frontend/CerbMem.lean\n M lean_frontend/test/Unit/MonadicFailstop.lean\n?? backend/memory_probe/",
+    "untracked_sha256": {
+      "backend/memory_probe/dune": "08e7b75bba2e8ef976385387239b7c4c1ce288c4ae7b048b7f2820bc00c7ac51",
+      "backend/memory_probe/memory_probe.ml": "20686f0c942f6a184b48da61c9b4243f31d0acfc7f967fbb99809aa6954e69a5"
+    }
+  },
+  "artifacts": {
+    "_build/default/backend/memory_probe/memory_probe.exe": "3ea2f92e6c9854cb24ef66acde0116d071fe96aabb255711cb6ff05e7a27fd64",
+    "lean_frontend/.lake/build/bin/monadic-failstop-test": "7f0a6de0de9fb85ae115f8a0a95d52dfa2aaf895968efab28057d628d68368be"
+  }
+}

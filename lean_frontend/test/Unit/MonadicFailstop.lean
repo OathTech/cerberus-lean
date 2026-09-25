@@ -34,7 +34,27 @@ def checks (fuel : Nat) : List (String × Bool) := Id.run do
   let memcmpStop := memcmpM fmapEmpty tags ptr ptr (iv 1)
   let cmpMsg := "Concrete.memcmp: non-integer byte (impl_mem.ml:2658-2659 assert false)"
   let liveByte := writeBytesTo st 100 [{ prov := .Prov_none, copyOffset := none, value := some 42 }]
+  let boolTy := Ctype [] (.Basic (.Integer .Bool0))
+  let boolState (byte : Option UInt8) := writeBytesTo st 100
+    [{ prov := .Prov_none, copyOffset := none, value := byte }]
+  let boolLoad := loadM fmapEmpty tags loc boolTy ptr
+  let traps (s : MemState) := match step boolLoad s with
+    | (NDkilled reason, s') => reason == failReason (MerrTrapRepresentation LoadAccess) loc &&
+        s'.lastUsed == some 7
+    | _ => false
   return [
+    ("Bool trap retains completed read state", traps (boolState (some 2))),
+    ("unspecified Bool trap retains completed read state", traps (boolState none)),
+    ("valid Bool zero", match step boolLoad (boolState (some 0)) with
+      | (NDactive (_, .MVinteger _ (.IV _ n)), s') => n == 0 && s'.lastUsed == some 7
+      | _ => false),
+    ("valid Bool one", match step boolLoad (boolState (some 1)) with
+      | (NDactive (_, .MVinteger _ (.IV _ n)), s') => n == 1 && s'.lastUsed == some 7
+      | _ => false),
+    ("rejected Bool pointer has no completed read", match step
+        (loadM fmapEmpty tags loc boolTy (.PV .Prov_none (.PVnull boolTy))) st with
+      | (NDkilled _, s') => s'.lastUsed == some 99
+      | _ => false),
     ("allocator zero alignment remains a refusal", stops (allocator 0 0) st
       "CerbMem.allocator: alignment 0 has no meaning in the model (impl_mem.ml:1258 quomod raises Division_by_zero — an OCaml-execution artifact, not the referent); operator decision pending, zero-discrepancy Z2 record §10"),
     ("allocator ordinary alignment", active (allocator 1 1) st),
