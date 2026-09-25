@@ -1,0 +1,148 @@
+{
+  "status": "reported",
+  "source_unchanged": true,
+  "source_before": {
+    "branch": "arc/sc-wp0",
+    "diff_sha256": "cb28d2a71664e244bc9724399cd43d3bcc0097576bdb71c8fabea022cedd3c62",
+    "head": "917961adf00fbb4ae4ed4aac8a3e0ee889d3aa08",
+    "status": "M  backend/memory_probe/dune\nM  frontend/model/mem_common.lem\nM  lean_frontend/CerbMem.lean\nM  lean_frontend/lakefile.toml\nM  memory/cheri-coq/impl_mem.ml\nM  memory/concrete/impl_mem.ml\nM  memory/symbolic/impl_mem.ml\nM  memory/vip/impl_mem.ml\nM  ocaml_frontend/memory_model.ml\nM  scripts/LADDER.md\nM  scripts/fork_drift_manifest.txt\n?? backend/memory_probe/access_probe.ml\n?? lean_frontend/docs/2026-09-25_sc-wp0-passive-access.md\n?? lean_frontend/docs/sc-wp0-evidence/access-cost.json\n?? lean_frontend/docs/sc-wp0-evidence/access-full-validation-before-final-rebase.json\n?? lean_frontend/docs/sc-wp0-evidence/access-lean-17.txt\n?? lean_frontend/docs/sc-wp0-evidence/access-lean-64.txt\n?? lean_frontend/docs/sc-wp0-evidence/access-native.txt\n?? lean_frontend/docs/sc-wp0-evidence/access-proof-axioms.txt\n?? lean_frontend/docs/sc-wp0-evidence/access-three-engine-before-final-rebase.json\n?? lean_frontend/test/Unit/MemoryAccess.lean\n?? lean_frontend/test/Unit/MemoryAccessProofs.lean\n?? scripts/test_memory_access.py",
+    "untracked_sha256": {
+      "backend/memory_probe/access_probe.ml": "88744bb514dc06c5a7cbd7db73a95a9efa342923ca2f863a72c38058a922cbdc",
+      "lean_frontend/docs/2026-09-25_sc-wp0-passive-access.md": "3e2ecb594673ad975da13741445da1706dd79966af439e53357c9f62d5c08a87",
+      "lean_frontend/docs/sc-wp0-evidence/access-cost.json": "5d313abbdea98b43100c7d041751c7a4bca647b742416ca7a105883ad1135d5c",
+      "lean_frontend/docs/sc-wp0-evidence/access-full-validation-before-final-rebase.json": "b60d7fe49b68e912227027145e88110e706516646025b7a4709c1f866e100649",
+      "lean_frontend/docs/sc-wp0-evidence/access-lean-17.txt": "5f67fa629f6de94ef6a6d8a8e61a50dd687b16190833244c3f571acfc756bc98",
+      "lean_frontend/docs/sc-wp0-evidence/access-lean-64.txt": "dbf97f6958828420b1fe7f17ba57808e352a08aad655a9a2b8d994aa150cd9a6",
+      "lean_frontend/docs/sc-wp0-evidence/access-native.txt": "5f67fa629f6de94ef6a6d8a8e61a50dd687b16190833244c3f571acfc756bc98",
+      "lean_frontend/docs/sc-wp0-evidence/access-proof-axioms.txt": "5fee58dc42bfcb0ac1d6a6905cf73bbb547e55631249deaef692e09a923bc5e3",
+      "lean_frontend/docs/sc-wp0-evidence/access-three-engine-before-final-rebase.json": "d584823dad16ae0ebe38ba520a175eb74aea4e4311e796af1b3de8203520da47",
+      "lean_frontend/test/Unit/MemoryAccess.lean": "75653632559fa1cf66e1dc1fd7152d2d7aca3cdb08142ddb6112bc0adb4f82f9",
+      "lean_frontend/test/Unit/MemoryAccessProofs.lean": "409549e8c4f90380f2bc6f934aa85a90775fbcb3c37273168452b0283f2e92db",
+      "scripts/test_memory_access.py": "307747a649fd5c5e11e92b0c5045a459f926ad23e3cee7be2a53a85365544b47"
+    }
+  },
+  "source_after": {
+    "branch": "arc/sc-wp0",
+    "diff_sha256": "cb28d2a71664e244bc9724399cd43d3bcc0097576bdb71c8fabea022cedd3c62",
+    "head": "917961adf00fbb4ae4ed4aac8a3e0ee889d3aa08",
+    "status": "M  backend/memory_probe/dune\nM  frontend/model/mem_common.lem\nM  lean_frontend/CerbMem.lean\nM  lean_frontend/lakefile.toml\nM  memory/cheri-coq/impl_mem.ml\nM  memory/concrete/impl_mem.ml\nM  memory/symbolic/impl_mem.ml\nM  memory/vip/impl_mem.ml\nM  ocaml_frontend/memory_model.ml\nM  scripts/LADDER.md\nM  scripts/fork_drift_manifest.txt\n?? backend/memory_probe/access_probe.ml\n?? lean_frontend/docs/2026-09-25_sc-wp0-passive-access.md\n?? lean_frontend/docs/sc-wp0-evidence/access-cost.json\n?? lean_frontend/docs/sc-wp0-evidence/access-full-validation-before-final-rebase.json\n?? lean_frontend/docs/sc-wp0-evidence/access-lean-17.txt\n?? lean_frontend/docs/sc-wp0-evidence/access-lean-64.txt\n?? lean_frontend/docs/sc-wp0-evidence/access-native.txt\n?? lean_frontend/docs/sc-wp0-evidence/access-proof-axioms.txt\n?? lean_frontend/docs/sc-wp0-evidence/access-three-engine-before-final-rebase.json\n?? lean_frontend/test/Unit/MemoryAccess.lean\n?? lean_frontend/test/Unit/MemoryAccessProofs.lean\n?? scripts/test_memory_access.py",
+    "untracked_sha256": {
+      "backend/memory_probe/access_probe.ml": "88744bb514dc06c5a7cbd7db73a95a9efa342923ca2f863a72c38058a922cbdc",
+      "lean_frontend/docs/2026-09-25_sc-wp0-passive-access.md": "3e2ecb594673ad975da13741445da1706dd79966af439e53357c9f62d5c08a87",
+      "lean_frontend/docs/sc-wp0-evidence/access-cost.json": "5d313abbdea98b43100c7d041751c7a4bca647b742416ca7a105883ad1135d5c",
+      "lean_frontend/docs/sc-wp0-evidence/access-full-validation-before-final-rebase.json": "b60d7fe49b68e912227027145e88110e706516646025b7a4709c1f866e100649",
+      "lean_frontend/docs/sc-wp0-evidence/access-lean-17.txt": "5f67fa629f6de94ef6a6d8a8e61a50dd687b16190833244c3f571acfc756bc98",
+      "lean_frontend/docs/sc-wp0-evidence/access-lean-64.txt": "dbf97f6958828420b1fe7f17ba57808e352a08aad655a9a2b8d994aa150cd9a6",
+      "lean_frontend/docs/sc-wp0-evidence/access-native.txt": "5f67fa629f6de94ef6a6d8a8e61a50dd687b16190833244c3f571acfc756bc98",
+      "lean_frontend/docs/sc-wp0-evidence/access-proof-axioms.txt": "5fee58dc42bfcb0ac1d6a6905cf73bbb547e55631249deaef692e09a923bc5e3",
+      "lean_frontend/docs/sc-wp0-evidence/access-three-engine-before-final-rebase.json": "d584823dad16ae0ebe38ba520a175eb74aea4e4311e796af1b3de8203520da47",
+      "lean_frontend/test/Unit/MemoryAccess.lean": "75653632559fa1cf66e1dc1fd7152d2d7aca3cdb08142ddb6112bc0adb4f82f9",
+      "lean_frontend/test/Unit/MemoryAccessProofs.lean": "409549e8c4f90380f2bc6f934aa85a90775fbcb3c37273168452b0283f2e92db",
+      "scripts/test_memory_access.py": "307747a649fd5c5e11e92b0c5045a459f926ad23e3cee7be2a53a85365544b47"
+    }
+  },
+  "lanes": [
+    {
+      "cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/cerb-command-77e600cd1c5f45b1a28443844eba3a3e",
+      "command": [
+        "python3",
+        "scripts/test_upstream_oracle.py",
+        "--with-lean",
+        "--out",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp0/.tmp/release/20260925T052534.751528Z/C5/independent-oracle"
+      ],
+      "containment_cleaned": true,
+      "exit_status": 0,
+      "id": "C5",
+      "process_group": 2951277,
+      "required": false,
+      "seconds": 267.76,
+      "status": "reported",
+      "stderr": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp0/.tmp/release/20260925T052534.751528Z/C5/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp0/.tmp/release/20260925T052534.751528Z/C5/stdout",
+      "stdout_sha256": "6f56c0fd9d9206bd8287f6dfe0baaa30ec50a7639317b3cd5a7f2fc19880c4f6",
+      "summaries": [],
+      "tier": "C"
+    }
+  ],
+  "release_certification": "incomplete: reporting/adoption/audit exits require separate evidence",
+  "raw_report_path": ".tmp/release/20260925T052534.751528Z/report.json",
+  "raw_report_sha256": "e87d07564d4a05a18b5611593473b5ca87141ce8c764cfa4dcfe8e2875bfe265",
+  "comparison": {
+    "status": "passed",
+    "counts": {
+      "interface_agreement": 2,
+      "matching_failure": 28,
+      "reviewed_difference": 7,
+      "semantic_agreement": 835
+    },
+    "lean_counts": {
+      "lean_agreement": 830,
+      "lean_both_undecodable": 12,
+      "lean_difference": 28,
+      "lean_not_applicable": 2
+    },
+    "lean_differences": [
+      "minimal/073-exit.libc.c",
+      "minimal/074-abort.libc.c",
+      "minimal/097-null-ptr-arith.undef.c",
+      "coverage/builtin/builtin-006-exit.libc.c",
+      "coverage/expr/expr-007-bitfield-ops.c",
+      "coverage/io/io-004-puts.libc.unsupported.c",
+      "coverage/libc/libc-002-calloc.c",
+      "coverage/libc/libc-011-memset.c",
+      "coverage/libc/libc-012-strlen.c",
+      "coverage/mem/mem-007-zero-size-array.c",
+      "coverage/misc/misc-001-void-ptr-arith.c",
+      "coverage/union3/union3-004-union-copy.c",
+      "coverage/union3/union3-005-union-return.c",
+      "debug/libc-01-memset.libc.c",
+      "debug/libc-02-strlen.libc.c",
+      "debug/ub-static-reject.c",
+      "debug/valid-04-exit-before-oob.c",
+      "bytes/byte_is_not_char.c",
+      "bytes/no_add.c",
+      "bytes/no_shift_left.c",
+      "bytes/no_shift_right.c",
+      "bytes/only_unsigned_char.c",
+      "immaculate/nolibc/f3-raw-high-byte-char-const",
+      "immaculate/nolibc/f3-raw-high-byte-int",
+      "immaculate/nolibc/f3-raw-high-byte-uchar",
+      "immaculate/nolibc/g4-bswap64-overflow",
+      "immaculate/nolibc/g5-decode-multichar",
+      "immaculate/nolibc/g5-decode-question",
+      "immaculate/nolibc/offsetof-union-member",
+      "immaculate/nolibc/r5-hex-subnormal-double-rounding",
+      "immaculate/nolibc/zd-e2-ptr-string-literals",
+      "immaculate/nolibc/zd-z2fl03-nan-to-int",
+      "immaculate/nolibc/zd-z2m01-aligned-alloc-zero-nolibc",
+      "immaculate/nolibc/zd-z2m02-device-funptr-call",
+      "immaculate/libc/g2-memcmp-uninit",
+      "immaculate/libc/g5-escape-roundtrip",
+      "immaculate/libc/s4b-memcmp-hugesize",
+      "immaculate/libc/zd-z2f04-closedir",
+      "immaculate/libc/zd-z2m01-aligned-alloc-zero-zero",
+      "immaculate/libc/zd-z2m01-aligned-alloc-zero"
+    ],
+    "source_unchanged": true,
+    "fork_binary": {
+      "path": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp0/_build/default/backend/driver/main.exe",
+      "sha256": "0870acaf71f2af4ff436835159054a1f6fed9efcf1139c3a7b0fdea655b0b3fb"
+    },
+    "lean_binary": {
+      "path": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp0/lean_frontend/.lake/build/bin/cerberus-lean",
+      "sha256": "e66028766f19efd78167bdae9e423e33d0c1e255f41093521232f3c6e04c017d"
+    },
+    "upstream_build_manifest": {
+      "path": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp0/.validation-foundations/independent-oracle-v2/manifest.json",
+      "sha256": "5c589eef5153da11f7e0d8c0dc750a8509e6ebf95d3a4dadbd22f397f4fc84ba"
+    }
+  },
+  "comparison_report_sha256": "58854aa031d103bdba799da5317258d22d94c7ca60d726f07b1a3b40b982d5bd",
+  "historical_lean_difference_list_equal": {
+    "path": "lean_frontend/docs/2026-09-16_pristine-oracle-instrument-record.md",
+    "sha256": "6202cb0b1ec343227373d683527871dc9f76957f6ad95ad85c9779832f9996dd",
+    "section": "4. O2"
+  }
+}

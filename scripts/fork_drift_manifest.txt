@@ -7,6 +7,12 @@
 # three helper hashes change only public remediation instructions; the new
 # tools/gen_version.ml row retains hashes at tags and uses HEAD for the date.
 # No model source or generated-diff exception changes in this group.
+# SC WP0 passive-access slice, 2026-09-25: mem_common.lem adds diagnostic data
+# types only. Concrete load/store optionally append actual primitive receipts;
+# disabled by default. memory_model.ml exposes enable/stop/drain; VIP, symbolic
+# and CHERI explicitly decline observation. No admission checks or ND changes.
+# Source pins below changed only for these six files; generated mem_common.ml
+# adds those types, the sole new generated-OCaml delta. See the WP0 record.
 # Public-readiness closure F1/F3, 2026-09-24 [AGENT; base 0a6d59eed].
 # Final closure Lem pin: 6b20bfd02de924d078725efa96c6675115b8b17a.
 # cmm_csem.lem adds only the explanatory FORK comment. Its propagated OCaml
@@ -469,6 +475,7 @@ frontend/model/global.lem
 frontend/model/implementation.lem
 frontend/model/loc.lem
 frontend/model/mem.lem
+frontend/model/mem_common.lem
 frontend/model/mini_pipeline.lem
 frontend/model/monadic_parsing.lem
 frontend/model/nondeterminism.lem
@@ -504,6 +511,7 @@ tools/check_lem_sync.sh
 tools/gen_version.ml
 util/cerb_fresh.ml
 [source-content]
+100644 e95bbe82ea284a4f8808af235b51ea9d09ec46078d3571dc69f87bec5cb2dbb7 frontend/model/mem_common.lem
 100644 527b04f09e22919ad64ca2c4fa676f3d1c86b1714d5b109dd076ebe98c9e32f9 Makefile
 100644 f4901556a3001f3a4968c4a66205da6615e18b4618a21ac9852f27386ffe19d5 backend/common/ail_sym_hwm.ml
 100644 209f347376838c6f8ce02b84dab872ed5bda425122b56186d82cfa8db66fa851 backend/common/driver_ocaml.ml
@@ -568,13 +576,13 @@ util/cerb_fresh.ml
 100644 3393b3fecc9a230bfebba003b484c023d9680d8f66859468c0f7b763fe8952a1 frontend/model/translation_aux.lem
 100644 a47a4bc513224172703fc568d6e1e3236fe7cffea075828656cddb5701e7ee6b frontend/model/translation_effect.lem
 100644 9427c936dcfe2bb47a984c6d73db12bf1c7012bb85b0b63156b5edececf9bf7c frontend/model/utils.lem
-100644 3293b8888c276125e5e1158a2241fc272ec96d1526761c813777d638b5f62a2c memory/cheri-coq/impl_mem.ml
-100644 4ba6dc417a79e9af5875e7d3800bd70061929250e1c450185e7345e36df05ce0 memory/concrete/impl_mem.ml
-100644 8bcbe8da2e8bf7c9e32a3afc6d7dbea4c590bb116b7f05ad6a001ee3650c64f9 memory/symbolic/impl_mem.ml
-100644 ab57c73b0fc3fca8375a3868a0dbec017f6fe73bcb9b633db8e4bb37351fbbf0 memory/vip/impl_mem.ml
+100644 3ff58a232cfd98795a43f4b97098fbc7dc61ea8db550f6aff25e72669f631a23 memory/cheri-coq/impl_mem.ml
+100644 534d25dde092bcb28f830827c609f6c828a9167029f591eced8189efb96a9829 memory/concrete/impl_mem.ml
+100644 3ec2b3c557afccd02dfff60fa0cffc05e6aa68b53df0406a8ef375137a6c0c07 memory/symbolic/impl_mem.ml
+100644 b4333a24295fca1495dbcc2b6841e6ba8216c000e6234c067ee4dcc4546f489f memory/vip/impl_mem.ml
 100644 4ea44bb0710cf2a2ebe448974705289c36906d5a3b321c74da3cf6a92fda7859 ocaml_frontend/dune
 100644 577b096a2220d3cd3f06839af4ea9c353932484d4108b505fcc93752ee9bca02 ocaml_frontend/fork_renumber.ml
-100644 f6c74e4da7436bd7306a9ca874916e7aca24600ebeef857877faf92427944e9f ocaml_frontend/memory_model.ml
+100644 99236fced4e1bef6e8789245689c6af476700fca781c9aa53b6ef54075ab0def ocaml_frontend/memory_model.ml
 100644 356b1aab9f42c24d60f2e22d07c5fa603cc6014dbaec3d6588b7baf82b4b100e ocaml_frontend/ocaml_implementation.ml
 100644 1a977e1857f55709c1b1653d600929647041d66a67239923c0547191e5518174 ocaml_frontend/ocaml_implementation.mli
 100644 09bc6e40d5ae27a9ad6a6b9342410ade468c60a4e1064e3308dfaf6c50005e35 ocaml_frontend/rewriters/core_peval.ml
@@ -590,6 +598,7 @@ util/cerb_fresh.ml
 100644 792b3cf7a1990e7b81a700d1463817d8a878c4903b85ef0fea47a6ec82449c94 tools/gen_version.ml
 100644 ee912ae7803e9d42fbf5ef85fdac484586571d4f4b2eb17745431ca9c19aacf8 util/cerb_fresh.ml
 [expected-semantic]
+0471d6a212c273c515d525173d8003c7d10d559e5f91758820708ec69e52e6d5 mem_common.ml
 5a20bc6b1e3e4cd9af04c1316e4a2b8354ccfab68e2fea3561acfd7cdfb3a093 core_aux.ml
 ceca3526d3ddbd55345eee29f0c5b2626b56c516014cdd73fb3bf5db20f50ac2 cabs_to_ail_effect.ml
 0aefe2af044772ef6a5e4be8bfdfa6bb1ae52cddcaf15d7b771b0abe3d13922b cabs_to_ail.ml

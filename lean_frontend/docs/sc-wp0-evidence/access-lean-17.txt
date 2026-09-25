@@ -1,0 +1,52 @@
+node byte-write active 0 1
+access byte-write loc W 0 uc 0:65472 0 65472 none/-/42 i:42
+node same-write active 0 1
+access same-write loc W 0 uc 0:65472 0 65472 none/-/42 i:42
+node byte-read active 0 1
+access byte-read loc R - uc 0:65472 0 65472 none/-/42 i:42
+node int-write active 0 1
+access int-write loc W 0 int 0:65476 0 65476 none/-/4,none/-/3,none/-/2,none/-/1 i:16909060
+node int-read active 0 1
+access int-read loc R - int 0:65476 0 65476 none/-/4,none/-/3,none/-/2,none/-/1 i:16909060
+node byte-update active 0 1
+access byte-update loc W 0 uc 0:65477 0 65477 none/-/170 i:170
+node updated-int active 0 1
+access updated-int loc R - int 0:65476 0 65476 none/-/4,none/-/170,none/-/2,none/-/1 i:16951812
+node ptr-write active 0 1
+access ptr-write loc W 0 ptr 0:65480 0 65480 alloc:0/0/196,alloc:0/1/255,alloc:0/2/0,alloc:0/3/0,alloc:0/4/0,alloc:0/5/0,alloc:0/6/0,alloc:0/7/0 p:0:65476
+node ptr-read active 0 1
+access ptr-read loc R - ptr 0:65480 0 65480 alloc:0/0/196,alloc:0/1/255,alloc:0/2/0,alloc:0/3/0,alloc:0/4/0,alloc:0/5/0,alloc:0/6/0,alloc:0/7/0 p:0:65476
+node float-write active 0 1
+access float-write loc W 0 double 0:65488 0 65488 none/-/0,none/-/0,none/-/0,none/-/0,none/-/0,none/-/0,none/-/0,none/-/128 f:9223372036854775808
+node float-read active 0 1
+access float-read loc R - double 0:65488 0 65488 none/-/0,none/-/0,none/-/0,none/-/0,none/-/0,none/-/0,none/-/0,none/-/128 f:9223372036854775808
+node array-write active 0 1
+access array-write loc W 0 array 0:65496 0 65496 none/-/1,none/-/2,none/-/3,none/-/4 a:i:1,i:2,i:3,i:4
+node array-read active 0 1
+access array-read loc R - array 0:65496 0 65496 none/-/1,none/-/2,none/-/3,none/-/4 a:i:1,i:2,i:3,i:4
+node unspec-write active 0 1
+access unspec-write loc W 0 int 0:65476 0 65476 none/-/-,none/-/-,none/-/-,none/-/- unspec:int
+node unspec-read active 0 1
+access unspec-read loc R - int 0:65476 0 65476 none/-/-,none/-/-,none/-/-,none/-/- unspec:int
+node trap-byte active 0 1
+access trap-byte loc W 0 uc 0:65472 0 65472 none/-/2 i:2
+node trap-read trap 0 1
+access trap-read loc R - bool 0:65472 0 65472 none/-/2 b:2
+node unspec-bool-write active 0 1
+access unspec-bool-write loc W 0 bool 0:65472 0 65472 none/-/- unspec:bool
+node unspec-bool-read trap 0 1
+access unspec-bool-read loc R - bool 0:65472 0 65472 none/-/- unspec:bool
+node null-read null 0 0
+node null-write null 0 0
+node locking-write active 1 1
+access locking-write loc W 1 uc 1:65408 1 65408 none/-/7 i:7
+node readonly-write readonly 1 0
+node readonly-read active 1 1
+access readonly-read loc R - uc 1:65408 1 65408 none/-/7 i:7
+node before-failure after 0 1
+access before-failure loc R - uc 0:65496 0 65496 none/-/1 i:1
+node two-before-failure after 0 2
+access two-before-failure loc W 0 uc 0:65472 0 65472 none/-/9 i:9
+access two-before-failure loc R - uc 0:65496 0 65496 none/-/1 i:1
+transport active killed nd guard branch step
+stream on 0 0

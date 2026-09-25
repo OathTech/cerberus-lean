@@ -45,6 +45,14 @@ module type Memory = sig
   val return: 'a -> 'a memM
   val bind: 'a memM -> ('a -> 'b memM) -> 'b memM
   
+  (* Passive primitive diagnostics. None from begin/take means observation is
+     unsupported/disabled. begin is idempotent; take drains in execution order.
+     The consumer must drain at returned ND nodes. This does not add yields. *)
+  type access_receipt = (pointer_value, mem_value) Mem_common.access_receipt
+  val begin_observing: mem_state -> mem_state option
+  val stop_observing: mem_state -> mem_state
+  val take_observations: mem_state -> (access_receipt list * mem_state) option
+
   (* Memory actions *)
   val allocate_object:
        Mem_common.thread_id      (* the allocating thread *)

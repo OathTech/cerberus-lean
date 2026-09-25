@@ -146,7 +146,10 @@ structure Allocation where
   prefix_ : prefix0 := PrefOther ""
   deriving Inhabited
 
-/-- mem_state — impl_mem.ml:482-501 (14 fields) -/
+/-- A passive concrete load/store receipt; shared shape from mem_common.lem. -/
+abbrev AccessReceipt := access_receipt PointerValue MemValue
+
+/-- mem_state — concrete memory plus an opt-in, drainable receipt buffer. -/
 structure MemState where
   nextAllocId : StorageInstanceId := 0
   nextIota : SymbolicStorageInstanceId := 0
@@ -176,7 +179,39 @@ structure MemState where
   -- no batch-path consumer.
   lastUsed : Option StorageInstanceId := none
   requested : List (Address × Int) := []
+  observations : Option (List AccessReceipt) := none
   deriving Inhabited
+
+/-- Idempotent enabling preserves any undrained prefix. -/
+def beginObserving (st : MemState) : Option MemState :=
+  some (match st.observations with
+    | none => { st with observations := some [] }
+    | some _ => st)
+
+def stopObserving (st : MemState) : MemState := { st with observations := none }
+
+/-- Drain in execution order without disabling capture. No historical states. -/
+def takeObservations (st : MemState) : Option (List AccessReceipt × MemState) :=
+  st.observations.map fun xs => (xs.reverse, { st with observations := some [] })
+
+/-- Faithful diagnostic view; no scalarization or location equivalence. -/
+def viewByte (b : AbsByte) : representation_byte_view :=
+  let prov := match b.prov with
+    | .Prov_none => .Observed_no_provenance
+    | .Prov_some id => .Observed_allocation_provenance id
+    | .Prov_symbolic id => .Observed_symbolic_provenance id
+    | .Prov_device => .Observed_device_provenance
+  .Byte_view prov b.copyOffset (b.value.map fun v => Int.ofNat v.toNat)
+
+/-- Capture work is proportional to the operation's bytes and only occurs when
+    enabled. These receipts do not cause suspension or decide success. -/
+def recordAccess (loc : CerbLocation.Loc) (kind : access_kind) (ty : ctype)
+    (pv : PointerValue) (alloc : Option Int) (addr : Int)
+    (bytes : List AbsByte) (value : MemValue) (locking : Option Bool) (st : MemState) : MemState :=
+  match st.observations with
+  | none => st
+  | some xs =>
+    { st with observations := some (.Access_receipt loc kind ty pv alloc addr (bytes.map viewByte) value locking :: xs) }
 
 /-! ## Instances
 
@@ -2439,6 +2474,8 @@ def loadM [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocatio
       -- abst at the load address with last_used_union_members and
       -- funptrmap — impl_mem.ml:1560
       let mv := reconstructValue enumDefs tagDefs st.lastUsedUnionMembers st.funptrmap addr ty bytes
+      let loadedState := recordAccess loc LoadAccess ty pv allocOpt addr bytes mv none
+        { st with lastUsed := allocOpt }
       -- trap representation for _Bool — impl_mem.ml:1576-1591
       let isBool := match ty with | Ctype _ (.Basic (.Integer .Bool0)) => true | _ => false
       let isTrap := isBool && match mv with
@@ -2448,14 +2485,13 @@ def loadM [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocatio
       -- do_load updates last_used BEFORE the trap check. A failed read
       -- returns that completed-operation state (SC WP0 / review RR2).
       if isTrap then
-        (NDkilled (failReason (MerrTrapRepresentation LoadAccess) loc),
-          { st with lastUsed := allocOpt })
+        (NDkilled (failReason (MerrTrapRepresentation LoadAccess) loc), loadedState)
       -- :1601-1606 SW_strict_reads → MerrReadUninit on an unspecified value.
       -- Refused set (Z-24): the default arm is the only reachable one; the set
       -- case is loud (seam-hygiene H2)
       else if CerbGlobal.has_switch .strict_reads then
         (NDkilled (Other (MerrOther "loadM: SW_strict_reads is set but the strict-reads arm (impl_mem.ml:1601-1606) is not ported — switches are refused (Z-24)")), st)
-      else (NDactive (fp, mv), { st with lastUsed := allocOpt })
+      else (NDactive (fp, mv), loadedState)
     match pv with
     | .PV _ (.PVnull _) => fail_ (MerrAccess LoadAccess NullPtr)          -- impl_mem.ml:1605-1606
     | .PV _ (.PVfunction _) => fail_ (MerrAccess LoadAccess FunctionPtr)  -- impl_mem.ml:1607-1608
@@ -2516,7 +2552,9 @@ def storeM [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocati
           else st'
         | none => st'
       let fp : Footprint := .FP .W addr (sizeofCtype enumDefs tagDefs ty)
-      (NDactive fp, { st' with lastUsed := allocOpt.map Prod.fst })                 -- :1687 last_used
+      (NDactive fp, recordAccess loc StoreAccess ty pv (allocOpt.map Prod.fst)
+        addr bytes mv (some isLocking)
+        { st' with lastUsed := allocOpt.map Prod.fst })                 -- :1687 last_used
     -- ill-typed-store guard — impl_mem.ml:1673-1681: checked BEFORE the
     -- provenance/pointer-kind match (so it wins over NullPtr etc.);
     -- OCaml's diagnostic printfs (:1674-1680) are not mirrored, the

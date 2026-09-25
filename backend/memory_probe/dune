@@ -1,3 +1,9 @@
 (executable
  (name memory_probe)
+ (modules memory_probe)
+ (libraries mem_concrete))
+
+(executable
+ (name access_probe)
+ (modules access_probe)
  (libraries mem_concrete))

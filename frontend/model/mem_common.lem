@@ -18,6 +18,27 @@ type access_kind =
   | LoadAccess
   | StoreAccess
 
+(* SC WP0: passive facts about concrete primitive accesses, not C actions or
+   scheduler steps. The bytes are the actual fetched/written representation;
+   the touched range starts at the address and has the byte list's length.
+   No whole memory state or relation graph is retained. *)
+type observed_provenance =
+  | Observed_no_provenance
+  | Observed_allocation_provenance of integer
+  | Observed_symbolic_provenance of integer
+  | Observed_device_provenance
+
+type representation_byte_view =
+  | Byte_view of observed_provenance * maybe integer * maybe integer
+
+(* Byte_view: provenance, pointer-copy offset, specified byte (0..255).
+   Nothing is an unspecified byte, not the numeric value zero. *)
+(* Final field: Nothing for load; Just is_locking for store. This is the
+   existing read-only-marking argument, not a concurrency atomicity claim. *)
+type access_receipt 'ptr 'value =
+  | Access_receipt of Loc.t * access_kind * Ctype.ctype * 'ptr
+      * maybe integer * integer * list representation_byte_view * 'value * maybe bool
+
 type access_error =
   | NullPtr
   | FunctionPtr

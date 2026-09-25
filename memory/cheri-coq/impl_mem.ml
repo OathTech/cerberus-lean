@@ -1437,6 +1437,12 @@ module CHERIMorello : Memory = struct
   let serialise_mem_state dig (st: mem_state) : Cerb_json.json
     = `Assoc [] (* TODO: not implemented *)
 
+  (* SC WP0: passive access observation is unsupported by this model. *)
+  type access_receipt = (pointer_value, mem_value) Mem_common.access_receipt
+  let begin_observing (_: mem_state) : mem_state option = None
+  let stop_observing (st: mem_state) = st
+  let take_observations (_: mem_state) : (access_receipt list * mem_state) option = None
+
   (* fork addition (2026-09-01): census not wired for CHERI —
      reported loudly as unsupported by the driver. *)
   let alloc_census_opt (_: mem_state) : (int * int) option = None

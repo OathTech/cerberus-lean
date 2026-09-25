@@ -1455,6 +1455,12 @@ let serialise_mem_state dig (st: mem_state) : Cerb_json.json =
          ; ("last_used", Cerb_json.of_option (fun v -> `Int (Z.to_int v)) st.last_used); ]
   (* not_implemented "VIP.serialise_mem_state" *)
 
+(* SC WP0: passive access observation is unsupported by this model. *)
+type access_receipt = (pointer_value, mem_value) Mem_common.access_receipt
+let begin_observing (_: mem_state) : mem_state option = None
+let stop_observing (st: mem_state) = st
+let take_observations (_: mem_state) : (access_receipt list * mem_state) option = None
+
 (* fork addition (2026-09-01): census not wired for VIP — reported
    loudly as unsupported by the driver, never silently elided. *)
 let alloc_census_opt (_: mem_state) : (int * int) option = None

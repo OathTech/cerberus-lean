@@ -690,6 +690,12 @@ let serialise_mem_state _ (m:mem_state) =
   `Assoc [("kind", `String "symbolic");
           ("allocations", serialise_map serialise_storage allocs)]
 
+(* SC WP0: passive access observation is unsupported by this model. *)
+type access_receipt = (pointer_value, mem_value) Mem_common.access_receipt
+let begin_observing (_: mem_state) : mem_state option = None
+let stop_observing (st: mem_state) = st
+let take_observations (_: mem_state) : (access_receipt list * mem_state) option = None
+
 (* fork addition (2026-09-01): census not wired for the symbolic
    model — reported loudly as unsupported by the driver. *)
 let alloc_census_opt (_: mem_state) : (int * int) option = None

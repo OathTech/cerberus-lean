@@ -479,6 +479,8 @@ module Concrete : Memory = struct
             `NewTaint xs
   end
   
+  type access_receipt = (pointer_value, mem_value) Mem_common.access_receipt
+
   type mem_state = {
     next_alloc_id: storage_instance_id;
     next_iota: symbolic_storage_instance_id;
@@ -497,6 +499,7 @@ module Concrete : Memory = struct
     dynamic_addrs: address list;
     last_used: storage_instance_id option;
 
+    observations: access_receipt list option; (* newest first; opt-in *)
     requested: (address * Z.t) list; (* the addresses (and object sizes) that were allocated with cerb::with_address() *)
   }
   
@@ -519,9 +522,38 @@ module Concrete : Memory = struct
     dead_allocations= [];
     dynamic_addrs= [];
     last_used= None;
+    observations= None;
     requested= [];
   }
   
+  let begin_observing st = Some (match st.observations with
+    | Some _ -> st
+    | None -> { st with observations= Some [] })
+
+  let stop_observing st = { st with observations= None }
+
+  let take_observations st = match st.observations with
+    | None -> None
+    | Some xs -> Some (List.rev xs, { st with observations= Some [] })
+
+  let view_byte (b: AbsByte.t) =
+    let prov = match b.prov with
+      | Prov_none -> Observed_no_provenance
+      | Prov_some id -> Observed_allocation_provenance id
+      | Prov_symbolic id -> Observed_symbolic_provenance id
+      | Prov_device -> Observed_device_provenance in
+    Byte_view (prov, Option.map Z.of_int b.copy_offset,
+      Option.map (fun c -> Z.of_int (Char.code c)) b.value)
+
+  (* Construct/copy a receipt only when enabled. Neither capture nor draining
+     decides whether the primitive succeeds, or changes a memory value. *)
+  let record_access loc kind ty pv alloc addr bytes value locking st =
+    match st.observations with
+    | None -> st
+    | Some xs -> { st with observations= Some
+        (Access_receipt (loc, kind, ty, pv, alloc, addr,
+          List.map view_byte bytes, value, locking) :: xs) }
+
   (* TODO *)
   type footprint =
       (* base address, size *)
@@ -1572,7 +1604,9 @@ module Concrete : Memory = struct
       else
         return ()
       end >>= fun () ->
-      update (fun st -> { st with last_used= alloc_id_opt }) >>= fun () ->
+      update (fun st -> record_access loc LoadAccess ty (PV (prov, ptrval_))
+        alloc_id_opt addr bs mval None
+        { st with last_used= alloc_id_opt }) >>= fun () ->
       let fp = FP (`R, addr, (sizeof ty)) in
       begin match bs' with
         | [] ->
@@ -1692,6 +1726,8 @@ module Concrete : Memory = struct
         update begin fun st ->
           let (funptrmap, pre_bs) = repr st.funptrmap mval in
           let bs = List.mapi (fun i b -> (Z.add addr (Z.of_int i), b)) pre_bs in
+          record_access loc StoreAccess ty (PV (prov, ptrval_))
+            alloc_id_opt addr pre_bs mval (Some is_locking)
           { st with last_used= alloc_id_opt;
                     bytemap=
                       List.fold_left (fun acc (addr, b) ->
