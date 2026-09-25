@@ -418,3 +418,35 @@ excerpts above are the portable record. Log SHA-256 identities:
 | `followup-cerb-address-space-selftest.log` | `b15e49c978cd3d2ad0ceca00b1212af7aaec518a58c1868e7784ceb4265a2cea` |
 | `followup-cerb-address-space.log` | `0591835aff017886f6a63aee589c8479a05dd4f5bc31fdb31a92231248baa2e9` |
 | `followup-cerb-immaculate.log` | `af3930afae0cd398dac9e5b8ff295b2ec30ce4d12aa081b4281b2481e4d1f621` |
+
+## Landing (2026-09-25) — orchestrator [AGENT]
+
+[USER 2026-09-25] verbatim: "Great, go ahead with the whole merge and sweep as proposed" (the proposal: the four merge
+steps below plus a P3 docs sweep, a cerberus-sl consumer note, and retiring the finished worktrees). Executed back to back:
+
+1. lem-lean `mdd/lean-backend` ff-only `6b20bfd` -> `67ec5de` (3 commits: M8 notices/opam/install, S8/S11–S13/version,
+   S1–S5/S7–S8/M9 docs). No lem-side landing commit, so the lem mainline head equals every pin.
+2. Shared-switch re-pin: `deps/lem-pinned` `6b20bfd` -> `67ec5de`; `make rebuild-lem` -> `[LEM] installed Lem 67ec5de`;
+   the switch's `lem -v` = `Lem 67ec5de`. Another session's `release.py --mode full` was running at the time; the new lem
+   changes no generated code (both trees byte-identical to the previous mainline's under it, orchestrator-verified), so
+   an older cerberus head regenerating against it would only trip the fork-drift pin check.
+3. Re-gate of this branch's rebased head `5d3079184` against the SHARED switch's lem, verbatim: `Total: 15 passed, 0
+   failed`; `test_version: OK (untagged, exact annotated tag, dirty tag, post-tag, archive fallback)`;
+   `test_exec_totality: OK (8 plants and 2 clean controls)`; `check_failure_reach: OK (239 …`; `check_fork_drift: OK —
+   layer 1: 85 oracle-surface files = manifest … layer 2: 30 differing generated files, all hash-pinned (… lem-pin
+   67ec5de70e02e280bb348a4ba826696b76116732 matches lem -v 67ec5de (hex prefix))`; `ROW1 EXIT=0`.
+   Earlier the same day, at the pre-rebase head `57ed81ca7` with an in-tree lem built from `67ec5de` (PATH-first): both
+   generated trees wiped and re-derived — byte-identical to mainline's; dune --force / install --prefix / cerberus.install /
+   native-obj / lake (395 jobs) all EXIT=0; row 1 and all ten differential lanes green (minimal 113 = 90/18/5, coverage 212,
+   debug 90, float 93/93, bytes 9 + 5, libc 12/12, multi-TU 2/2 and 7/7, address space 18, immaculate at baseline; every
+   `Baseline check: 0 regression(s), 0 improvement(s)`).
+   The rebase `57ed81ca7` -> `5d3079184` onto mainline `8de1cf443` was performed by the orchestrator (the two range
+   commits content-identical by `git range-diff`; the only difference the two docs-only landing commits beneath).
+4. cerberus-lean `mdd/cerberus-lean` ff-only `8de1cf443` -> this commit (the rebased SHOULD head + this landing note).
+   Post-landing: primary checkout regenerated from wiped trees, rebuilt, row 1 + lanes (tails in the orchestrator note §10).
+
+Independent reviews of this range (Claude Fable, third pass): lem-lean `7b8af28` on `audit/public-readiness-must-20260924`
+("Merge-ready as is at 67ec5de"; P3 T1–T3), cerberus `a42564363` on `audit/public-readiness-must-20260924` ("No P1 or P2";
+P3 G1–G3; A1 = GitHub "Issue creation is restricted in this repository" — operator action before announcing; G5 = the
+ISO-fix register's "filed upstream" criterion is unmet — operator decision). The P3s are closed by the sweep that follows
+this landing; the review documents are brought onto both mainlines by that sweep.
