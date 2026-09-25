@@ -244,3 +244,30 @@ M8 maintainer licensing resolution and M9 public-remote/fresh-clone checks
 remain open; public availability is **UNVERIFIED-OFFLINE**. The M9 commands
 in the original readiness review must use the final Lem pin `6b20bfd02de924d078725efa96c6675115b8b17a`
 and the final reviewed Cerberus closure head supplied at handoff.
+
+## Landing (2026-09-25) — orchestrator [AGENT]
+
+[USER 2026-09-25] verbatim: "Go ahead with merge as planned" — the plan being the orchestrator note
+`2026-09-24_public-readiness-must-checkpoint-orchestrator-note.md` §8's five steps. Executed back to back:
+
+1. lem-lean `mdd/lean-backend` ff-only `38f87d5` -> `6b20bfd` (5 commits: the review document, M1/M4/M8, M3/M5/M11,
+   the two closure commits). No landing-note commit on the lem side so that the lem mainline head equals every pin.
+2. Shared-switch re-pin: `deps/lem-pinned` (`cerberus-pin`) `38f87d5` -> `6b20bfd` (clean tree; three untracked opam
+   stamps only), then `make rebuild-lem` from the primary checkout: `⊘ removed lem.2026-05-01` / `∗ installed lem.2026-05-01` /
+   `[LEM] installed Lem 6b20bfd`; `opam pin list`: `lem.2026-05-01 git git+file:///…/deps/lem-pinned#cerberus-pin`;
+   the switch's `lem -v` = `Lem 6b20bfd` (seven characters — the abbreviation the closure's prefix comparison exists for).
+   Executed while another session's `release.py --mode fast` battery was running in `worktrees/cerberus-lean-arc/sc-wp0`
+   (waited 9 min for it, then proceeded per the operator's go); that worktree regenerating before step 4 landed would have
+   failed loudly at `cmm_csem.lem` (the new lem refuses its `sorry` reps) — fail-closed, not silent.
+3. Re-gate of this head `c13a105` against the SHARED switch's lem (worktree generated trees derived with the same lem
+   commit; `lem: Lem 6b20bfd at …/cerberus-lean/_opam/bin/lem`), verbatim: `Total: 15 passed, 0 failed`;
+   `check_failure_reach: OK (239 …`; `check_lem_sync: OK (src b2a78090… gen b79e328e…)` / `lean OK (… gen f4893e95…)`;
+   `check_fork_drift: OK — layer 1: 84 oracle-surface files = manifest … layer 2: 30 differing generated files, all
+   hash-pinned (… lem-pin 6b20bfd02de924d078725efa96c6675115b8b17a matches lem -v 6b20bfd (hex prefix))`; `ROW1 EXIT=0`.
+4. cerberus-lean `mdd/cerberus-lean` ff-only `e9f9d049f` -> this commit (the closure head `c13a105` + this landing note).
+   Post-landing: primary checkout regenerated from wiped trees, rebuilt, row 1 + lanes (tails in the orchestrator note §9).
+5. The orchestrator note's docs branch rebased onto the new mainline and ff'd.
+
+Pins after landing: lem-lean mainline = `deps/lem-pinned` = opam `lem -v` (as prefix) = Lake `LemLib` rev = the three
+lake-manifests = `fork_drift_manifest.txt` `lem-pin` = `6b20bfd02de924d078725efa96c6675115b8b17a`. Not pushed; no tag.
+[USER 2026-09-25] "the other agent has completed the SHOULD remediation. Review it as you did with the MUST" — next.
