@@ -1,0 +1,4 @@
+production SeqRMW callback: sibling store completed; saved callback resurrected it; executing it produced a second receipt
+production SeqRMW callback: sibling store completed; saved callback resurrected it; executing it produced a second receipt
+production SeqRMW update: saved memory rejects a function pointer published by a real store; current-memory evaluation returns 1
+production SeqRMW update: saved memory rejects a function pointer published by a real store; current-memory evaluation returns 1

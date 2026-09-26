@@ -270,7 +270,7 @@ theorem loop_step_done {k : Nat} (fl : Nat) (eds : Fmap sym integerType) (tds : 
     (acc : Fmap thread_id (List core_step2))
     {dst : driver_state} {th : thread_state} {v : value}
     (hth : dst.core_state0.thread_states = [(0, (none, th))])
-    (hsteps : @step_ctx ⟨Nat.succ k⟩ eds tds dst.layout_state dst.core_file dst.core_extern 0
+    (hsteps : @step_contexts ⟨Nat.succ k⟩ eds tds dst.layout_state dst.core_file dst.core_extern 0
       (none, th) = [Step_done2 v]) :
     runOne (@drive_nonmemory_steps_aux2_lemFuel ⟨Nat.succ k⟩ (Nat.succ (Nat.succ fl))
         eds tds acc [0]) dst =
@@ -283,7 +283,7 @@ theorem loop_step_done {k : Nat} (fl : Nat) (eds : Fmap sym integerType) (tds : 
             dst.core_state0.thread_states with
           | some z => z
           | none => failwithI _;
-        @step_ctx ⟨Nat.succ k⟩ eds tds dst.layout_state dst.core_file dst.core_extern 0 th_info) = _
+        @step_contexts ⟨Nat.succ k⟩ eds tds dst.layout_state dst.core_file dst.core_extern 0 th_info) = _
     rw [hth]
     exact hsteps
   · dsimp only [find_can_advance, can_advance]

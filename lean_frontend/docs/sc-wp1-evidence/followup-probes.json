@@ -1,0 +1,56 @@
+{
+  "scope": "Standalone WP1 exploratory evidence added after the completed frozen regression run; same production implementation, no SC strategy acceptance. Not part of the A+B membership.",
+  "sources": {
+    "frontend/model/core_reduction.lem": "7138170222f138b60d9e519b596a7c8021dfb0428308040507d034ac3b1e5d2b",
+    "frontend/model/driver.lem": "15565f50210f7c1b2d6f514f1997237c58cc72c06f4fb93276d116580153ba78",
+    "lean_frontend/generated/Core_reduction.lean": "502f697a81f831c6e56984ec0978554fba30e99a779c870651623d38fb20ea25",
+    "lean_frontend/generated/Driver.lean": "c8310e2c1d0e27681dc0365249be789c976440ebe5933c3b7ecf91269303ba5c",
+    "lean_frontend/test/Unit/SCWP1Stepping.lean": "379a115006e68d9dfc549b80bf03849a2198a6872e5676d637b7ce3e1cba1c23",
+    "lean_frontend/CerbMem.lean": "075f4ebc59c7d8d307e1a49eb1155eed444a3a3c4c7012a812dd7fe5521f4fd9",
+    "frontend/concurrency/cmm_csem.lem": "53b16ced15ce07b825cd5e60859dffcba19d83812b70da5301041e71374ac81f"
+  },
+  "runs": {
+    "followup-source-order": {
+      "command": [
+        "../scripts/capped",
+        "../scripts/lean_probe.sh",
+        "docs/sc-wp1-evidence/followup-source-order.lean"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+      "returncode": 0,
+      "seconds": 0.8672335278242826,
+      "rows": 22,
+      "source_sha256": "27b8fcb8ca475fc32ea9363d48641801258387741ae44143c9266718308aa30a",
+      "stdout_sha256": "2225e3955c2849dd2f8f93b9bcd389278156f04d5ccfc651111881f4982bda0c",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "followup-rmw-expansion": {
+      "command": [
+        "../scripts/capped",
+        "../scripts/lean_probe.sh",
+        "docs/sc-wp1-evidence/followup-rmw-expansion.lean"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+      "returncode": 0,
+      "seconds": 0.7492105979472399,
+      "rows": 4,
+      "source_sha256": "fc9cda73f644150f6a8830557b7b86c634479ec38c3c7cfc2b8c47e25209ae38",
+      "stdout_sha256": "4fb68536a8b34c20652cc87ad3403234a63425b9d21f41305e37f83169cb1e47",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "followup-retention": {
+      "command": [
+        "../scripts/capped",
+        "../scripts/lean_probe.sh",
+        "docs/sc-wp1-evidence/followup-retention.lean"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+      "returncode": 0,
+      "seconds": 1.5286820370238274,
+      "rows": 6,
+      "source_sha256": "3ca7753b5e47fabf83508648ddb78de37962b75ca5d0da905246bc704ec43f45",
+      "stdout_sha256": "837452bff8fdf316f66a0b2995c40a5dc5cae8808b619a3fd6d2cb368eb0a708",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

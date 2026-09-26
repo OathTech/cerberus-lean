@@ -1,3 +1,8 @@
+# SC WP1 bounded stepping, 2026-09-26 [AGENT]: two source and two generated pins.
+# core_reduction factors per-context interpretation; driver factors the lifecycle
+# and adds an explicitly experimental stepper, unused by the sequential entry.
+# Existing leaf meanings/default strategy preserved; no graph admission. Record:
+# lean_frontend/docs/2026-09-26_sc-wp1-bounded-stepping.md. Other pins unchanged.
 # public-readiness SWEEP, 2026-09-25 [AGENT; [USER 2026-09-25] "Great, go ahead with the whole merge and sweep as proposed"]: [meta] lem-pin 67ec5de7 -> c2a68e79
 # (lem-lean sweep: LemLib comment-only rationale for never_extract (T1), NOTICE line (T3), record addendum (T2), the two delta-review docs; NO generated-code change — both trees byte-identical). Single line + this NOTE, no --refresh.
 # Public-readiness follow-up single re-pin (2026-09-25): 6b20bfd02de924d078725efa96c6675115b8b17a -> 67ec5de70e02e280bb348a4ba826696b76116732.
@@ -542,7 +547,7 @@ util/cerb_fresh.ml
 100644 dee01667c7056938400f1ce4befd199b8f2c5bcdef6ae34fa59ae8a80558af37 frontend/model/core_aux.lem
 100644 4ade27ce2e7431592228e81b1b33184e975d78710bfecc93910df867d5d3dd4b frontend/model/core_eval.lem
 100644 7821d8255a206e9f3f6c2ff9993b48917903fce4bd6bb185912a223edf9cc392 frontend/model/core_linking.lem
-100644 d909e2338157a6d9903abd9e608e87345aa9a68cf1611d07d8327b30fce8719a frontend/model/core_reduction.lem
+100644 7138170222f138b60d9e519b596a7c8021dfb0428308040507d034ac3b1e5d2b frontend/model/core_reduction.lem
 100644 0630b14d31c11aa34ff2765ac1810d80aeadc02d4497ba80af0eb348bfff1db2 frontend/model/core_rewrite.lem
 100644 5f48b77c80e37636b9baa20ab3ebe93f606740c5d7510fa4404109b875d29571 frontend/model/core_rewrite2.lem
 100644 6824c7754ca3790bb0da30cef02e0a97185bebeca4a37a960d253e6ed75757e1 frontend/model/core_run.lem
@@ -555,7 +560,7 @@ util/cerb_fresh.ml
 100644 ec3e5754b17377012a3df8055d4c0462812ce521818150c93d1c3ef16da60488 frontend/model/defacto_memory.lem
 100644 6b0b21a89f667513555fe8f3edaa26d67a9c0946df9ddcc7dde5ea75e322477a frontend/model/defacto_memory_aux.lem
 100644 c787451bc6aa2c5bf088d1acb0483b4c3be9fade6d889942cc91f5c4d93c03ae frontend/model/defacto_memory_types.lem
-100644 8862f4fbc2445ba81329ae1d874b8cfd7a9c7d188e47de4dfc5753e304c6df05 frontend/model/driver.lem
+100644 15565f50210f7c1b2d6f514f1997237c58cc72c06f4fb93276d116580153ba78 frontend/model/driver.lem
 100644 fef63c6ce9047d1a714882f93f5e5b8ea40bec483e9929cafdb9a8e8e0ab6062 frontend/model/float.lem
 100644 bea12923a5e3d19566b6d6b6acf08f0a69645b4a963141059416227d4b9f2751 frontend/model/formatted.lem
 100644 5079002023f7e22633acbd6b112f99213227475c4d19d3b1859ea388b322de80 frontend/model/fs.lem
@@ -602,13 +607,13 @@ util/cerb_fresh.ml
 5a20bc6b1e3e4cd9af04c1316e4a2b8354ccfab68e2fea3561acfd7cdfb3a093 core_aux.ml
 ceca3526d3ddbd55345eee29f0c5b2626b56c516014cdd73fb3bf5db20f50ac2 cabs_to_ail_effect.ml
 0aefe2af044772ef6a5e4be8bfdfa6bb1ae52cddcaf15d7b771b0abe3d13922b cabs_to_ail.ml
-bad2eba7e2838b9a7c224bbbd2b1569ecf9f93a09760630a57f751539ee37e47 core_reduction.ml
+f76425e20820468aad186a6369f1ce4528f4b662641e1dbaa7209a2b59b8160c core_reduction.ml
 b9f1e58c1d52cd0680a56e7dcd4e3d8e5d2eadbe1d1575f4ad0442d3efd2b3a5 core_run_aux.ml
 d9fb64b8e630459b702f48590327ba060b9883f2e8dcb8aee2a4b6973117977c core_run.ml
 0043fe1a21ec09cb8dd805b47fac4dce6dc094d9b61780adefb0828963cfc656 mini_pipeline.ml
 fa725f3e09e5ae317d685fda82c4be9dcfeca9a99ed47b1ebb4f2dd6a0a343b6 symbol.ml
 97763753365c911f580751d4a73bc0e6f3adb3ce96a5f8f98e374d285c4fc6d0 translation_effect.ml
-7f4a46468889d03e9b0ad984967babbd664174124e428526230cdffb67400e92 driver.ml
+82bc7996e052cac67ee7b83ca135b2059e83c06ef638cc57c4e9d1badc1affa4 driver.ml
 977ee22d68c7527e500476404f5803db39a2ef2072ef9e9e34e57435c68bfd7a ctype_aux.ml
 1b3c441a39dadde45c5de8f95cee4c1210dac4de976d8864fd1529d427a948d3 core_eval.ml
 99ed4459d0058f112a3ba616565e369e4eec8a5b6a9961ff3a69de4f03f67894 translation.ml

@@ -1,0 +1,12 @@
+lifecycle: zero budget passive; main entered; 3 tau steps; finalized 42; 4 choices unused
+singleton Core loop: incomplete at 1, 2, 7, 4096 steps; call fuel does not count loop iterations
+globals: suspended before main; environment retained; looping initializer incomplete at 100
+discovery: two contexts; unchosen faulty Erun untouched; selected store writes 42 once
+outcomes: UB, blocked, empty, invalid choice, done and incomplete distinguished
+SeqRMW: explicitly unsupported; no load/store performed
+internal error: Core_reduction ==> Erun outside of a proc
+Fatal error: exception Failure("internal error: Core_reduction ==> Erun outside of a proc")
+Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+Called from Cerb_frontend__Core_reduction.step_ctx.(fun) in file "ocaml_frontend/generated/core_reduction.ml", line 1508, characters 28-88
+Called from Cerb_frontend__Driver.experiment_step in file "ocaml_frontend/generated/driver.ml", line 2504, characters 18-107
+Called from Dune__exe__Sc_step_probe in file "backend/memory_probe/sc_step_probe.ml", line 119, characters 11-34

@@ -392,6 +392,8 @@ let json_of_step_kind step =
             ("debug", `String str)]
   | SK_done ->
     `Assoc [("kind", `String "done")]
+  | SK_core_boundary ->
+    `Assoc [("kind", `String "enter Core execution")]
   | SK_misc strs ->
     `Assoc [("kind", `String "action request");
             ("debug", `List (List.map (fun str -> `String str) strs))]

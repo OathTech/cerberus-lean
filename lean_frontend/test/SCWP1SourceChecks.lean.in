@@ -1,0 +1,69 @@
+/- This fragment is appended to the CURRENT Main.lean by
+   scripts/test_sc_wp1_source.py, then compiled and linked natively with its
+   existing artifacts. Main is an executable root, not an importable module.
+   The only edit to Main's text is renaming its command-line entry. -/
+
+namespace SCWP1Source
+
+def loadProgram (fuel : Nat) (jsonPath : String) : IO (file core_run_annotation × Nat × String) :=
+  letI : LemFuel := ⟨fuel⟩
+  do
+    let content ← IO.FS.readFile jsonPath
+    let .ok (digest, tunit) := CabsImport.parseJson content | throw (IO.userError "parse cabs")
+    let runtime := "../runtime/libcore"
+    let stdPath := runtime ++ "/std.core"
+    let .ok stdFile := CoreParser.parseLibraryFile stdPath (← IO.FS.readFile stdPath)
+      | throw (IO.userError "parse standard library")
+    let implPath := runtime ++ "/impls/gcc_4.9.0_x86_64-apple-darwin10.8.0.impl"
+    let .ok implFile := CoreParser.parseLibraryFile implPath (← IO.FS.readFile implPath)
+      | throw (IO.userError "parse implementation")
+    let (ailnames, std) := loadCoreStdlib stdFile
+    let impl := loadCoreImpl implFile
+    let _ ← (CerberusFresh.setDigestIO digest : BaseIO Unit)
+    let .ok (f, supply) ← frontendTU true 0 65536 (ailnames, std, impl) ailnames std impl tunit
+      | throw (IO.userError "frontend failed")
+    let .Result f := link [f] | throw (IO.userError "link failed")
+    return (convert_file f, supply, runDigest [(digest, tunit)])
+
+def check (fuel : Nat) (stem : String) : IO Unit :=
+  letI : LemFuel := ⟨fuel⟩
+  do
+    let (f, supply, digest) ← loadProgram fuel s!"../.tmp/sc-wp1/source-{stem}.json"
+    let st := (initial_driver_state supply 65536 digest f CerbFS.fs_initial_state).1
+    let st := { st with layout_state := { st.layout_state with observations := some [] } }
+    let cfg := experiment_start f.enumDefs f.tagDefs f ["cmdname"] st
+    let (out, unused) := experiment_run f.enumDefs f.tagDefs (List.replicate 4096 0) cfg
+    let expected := match stem with
+      | "return" | "global" => some "Specified(42)"
+      | "members" => some "Specified(3)"
+      | "comma" | "args" => some "Specified(1)"
+      | _ => none
+    match expected with
+    | some v =>
+      let .Exp_done r := out.experiment_phase0 | throw (IO.userError s!"{stem}: expected completion")
+      unless batchExitValue r.dres_core_value == v do throw (IO.userError s!"{stem}: wrong result")
+    | none =>
+      if stem == "loop" then
+        for budget in [1, 2, 7, 4096] do
+          let .Exp_incomplete partialCfg := experiment_bounded f.enumDefs f.tagDefs (List.replicate budget 0) cfg
+            | throw (IO.userError s!"loop: failed to yield at {budget}")
+          unless partialCfg.experiment_steps == budget && experiment_choice_count partialCfg == 1 &&
+              (partialCfg.experiment_state.layout_state.observations.getD []).length == 1 do
+            throw (IO.userError "loop: budget, choice or receipt mismatch")
+      else if stem == "rmw" then
+        unless (match out.experiment_phase0 with
+            | .Exp_unsupported msg => msg == "SeqRMW needs separate load/update/store phases"
+            | _ => false) && (out.experiment_state.layout_state.observations.getD []).length == 2 do
+          throw (IO.userError "rmw: missing refusal or hidden load/store")
+      else throw (IO.userError "unknown source fixture")
+    unless out.experiment_steps + unused.length == 4096 do throw (IO.userError "source budget accounting")
+    let state := match out.experiment_phase0 with
+      | .Exp_done r => s!"done {batchExitValue r.dres_core_value}"
+      | .Exp_unsupported s => s!"unsupported {s}"
+      | .Exp_killed (.Error0 _ s) => s!"error {s}"
+      | .Exp_killed _ => "killed"
+      | .Exp_core _ => "incomplete core"
+      | _ => "other"
+    IO.println s!"source {stem} fuel {fuel}: {state}; steps={out.experiment_steps}; unused={unused.length}; receipts={(out.experiment_state.layout_state.observations.getD []).length}"
+
+end SCWP1Source

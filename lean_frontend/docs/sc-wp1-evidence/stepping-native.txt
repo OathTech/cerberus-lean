@@ -1,0 +1,6 @@
+lifecycle: zero budget passive; main entered; 3 tau steps; finalized 42; 4 choices unused
+singleton Core loop: incomplete at 1, 2, 7, 4096 steps; call fuel does not count loop iterations
+globals: suspended before main; environment retained; looping initializer incomplete at 100
+discovery: two contexts; unchosen faulty Erun untouched; selected store writes 42 once
+outcomes: UB, blocked, empty, invalid choice, done and incomplete distinguished
+SeqRMW: explicitly unsupported; no load/store performed

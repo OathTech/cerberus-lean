@@ -1123,11 +1123,15 @@ let process_impl_proc full_eval_pexpr wrap_proc wrap_expr th_st iCst pes =
         error "Core_reduction.process_impl_proc ==> TODO"
   end
 
-val step_ctx:
+(* WP1: share the context interpreter through an immediate consumer. Keep
+   its body in step_ctx's lambda so legacy pure-failure backtraces retain
+   their original function frame. Consumers below select one context or map
+   over all structural contexts; neither duplicates the reduction rules. *)
+val step_ctx: forall 'a.
   Mem.mem_state -> Core.file core_run_annotation -> map Symbol.sym Symbol.sym ->
   Mem_common.thread_id -> (maybe Mem_common.thread_id * thread_state) ->
-  list core_step2
-let step_ctx mem_st file core_extern current_tid (parent_tid_opt, th_st) =
+  ((context * Core.expr core_run_annotation -> core_step2) -> 'a) -> 'a
+let step_ctx mem_st file core_extern current_tid (parent_tid_opt, th_st) use =
   let eval_pexpr pe =
     E.eval_pexpr2 th_st core_extern mem_st file pe >>= function
       | Left pe' ->
@@ -1137,7 +1141,7 @@ let step_ctx mem_st file core_extern current_tid (parent_tid_opt, th_st) =
     end in
   let full_eval_pexpr' pe =
     full_eval_pexpr th_st core_extern mem_st file pe in
-  List.map (function
+  use (function
     | (CTX, Expr e_annots (Epure (Pexpr _ _ (PEval cval)))) ->
         match th_st.stack with
           | Stack_empty ->
@@ -1533,7 +1537,15 @@ let step_ctx mem_st file core_extern current_tid (parent_tid_opt, th_st) =
                     Step_error2 str
               end
         end
-  end) (get_ctx th_st.arena)
+  end)
+
+let step_ctx_at mem_st file core_extern current_tid th_info selected =
+  step_ctx mem_st file core_extern current_tid th_info (fun interpret -> interpret selected)
+
+(* The original eager, ordered list interface. *)
+let step_contexts mem_st file core_extern current_tid th_info =
+  step_ctx mem_st file core_extern current_tid th_info (fun interpret ->
+    List.map interpret (get_ctx (snd th_info).arena))
 
 
 (* === Totality declares (arc 3 sweep, 2026-08-18, final batch): Lean-target only.

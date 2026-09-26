@@ -1,0 +1,14 @@
+source return fuel 256: done Specified(42); steps=7; unused=4089; receipts=1
+source loop fuel 256: incomplete core; steps=4096; unused=0; receipts=1
+source rmw fuel 256: unsupported SeqRMW needs separate load/update/store phases; steps=12; unused=4084; receipts=2
+source members fuel 256: done Specified(3); steps=36; unused=4060; receipts=4
+source comma fuel 256: done Specified(1); steps=33; unused=4063; receipts=4
+source global fuel 256: done Specified(42); steps=23; unused=4073; receipts=3
+source args fuel 256: done Specified(1); steps=11; unused=4085; receipts=6
+source return fuel 512: done Specified(42); steps=7; unused=4089; receipts=1
+source loop fuel 512: incomplete core; steps=4096; unused=0; receipts=1
+source rmw fuel 512: unsupported SeqRMW needs separate load/update/store phases; steps=12; unused=4084; receipts=2
+source members fuel 512: done Specified(3); steps=36; unused=4060; receipts=4
+source comma fuel 512: done Specified(1); steps=33; unused=4063; receipts=4
+source global fuel 512: done Specified(42); steps=23; unused=4073; receipts=3
+source args fuel 512: done Specified(1); steps=11; unused=4085; receipts=6

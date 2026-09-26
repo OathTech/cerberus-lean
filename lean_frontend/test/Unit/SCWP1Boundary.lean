@@ -40,10 +40,10 @@ def check [LemFuel] : IO Unit := do
   require (n == 7 && st == 7) "singleton continuation control"
   IO.println "singleton: active; continuation already changed state to 7"
 
-  -- This enters production step_ctx and the production driver, not a mock list of steps.
+  -- This enters production step_contexts and the production driver, not a mock list of steps.
   for count in [0, 1, 3] do
     let st := initial (bounds count)
-    let steps := step_ctx fmapEmpty fmapEmpty st.layout_state emptyFile fmapEmpty 0 (none, th (bounds count))
+    let steps := step_contexts fmapEmpty fmapEmpty st.layout_state emptyFile fmapEmpty 0 (none, th (bounds count))
     require (steps.length == 1) "expected exactly one Core choice"
     let (.NDactive choices, post) := runND (new_drive_core_threads fmapEmpty fmapEmpty ()) st
       | throw (IO.userError "production discovery did not complete")
@@ -59,7 +59,7 @@ def check [LemFuel] : IO Unit := do
     | throw (IO.userError "fixture initialization")
   let some mem := beginObserving mem | throw (IO.userError "fixture capture")
   let st := { initial (storeArena p) with layout_state := mem }
-  let steps := step_ctx fmapEmpty fmapEmpty mem emptyFile fmapEmpty 0 (none, th (storeArena p))
+  let steps := step_contexts fmapEmpty fmapEmpty mem emptyFile fmapEmpty 0 (none, th (storeArena p))
   let [request@(.Step_action_request2 _ _ _ _ _)] := steps
     | throw (IO.userError "Core store did not expose one request")
   require (can_advance request) "store was not eagerly eligible"

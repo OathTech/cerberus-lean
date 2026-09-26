@@ -97,6 +97,7 @@ type step_kind =
   | SK_tau of string
   | SK_eval of string
   | SK_done
+  | SK_core_boundary (* resumable lifecycle callback; experimental caller only *)
   | SK_misc of list string
 
 instance (Show step_kind)
@@ -112,6 +113,8 @@ instance (Show step_kind)
       "eval: " ^ str
     | SK_done ->
       "done"
+    | SK_core_boundary ->
+      "enter Core execution"
     | SK_misc ss ->
       "misc: " ^ String.concat "," ss
     end
@@ -615,7 +618,7 @@ let rec drive_core_thread2 tid =
     | (Core_reduction.Step_memop_request2 _ _ _ _ _ _ as step) -> 
         ( SK_memop_request
         , ND.return (Just step) )
-  end) (Core_reduction.step_ctx dr_st.layout_state dr_st.core_file dr_st.core_extern tid th_info)
+  end) (Core_reduction.step_contexts dr_st.layout_state dr_st.core_file dr_st.core_extern tid th_info)
 *)
 
 
@@ -1074,7 +1077,7 @@ let rec drive_nonmemory_steps_aux2 (acc: map Mem.thread_id (list Core_reduction.
             | Nothing ->
                 error ("Driver.drive_nonmemory_steps_aux2 => invalid tid: " ^ show tid)
           end in
-        Core_reduction.step_ctx dr_st.layout_state dr_st.core_file dr_st.core_extern tid th_info
+        Core_reduction.step_contexts dr_st.layout_state dr_st.core_file dr_st.core_extern tid th_info
       ) >>= fun steps ->
       match find_can_advance steps with
         | Nothing ->
@@ -1129,7 +1132,7 @@ let rec drive_nonmemory_steps_aux (acc: map Mem.thread_id (list Core_reduction.c
                 | Nothing ->
                     error "Driver.drive_nonmemory_steps_aux => invalid tid"
               end in
-            Core_reduction.step_ctx dr_st.layout_state dr_st.core_file dr_st.core_extern tid th_info
+            Core_reduction.step_contexts dr_st.layout_state dr_st.core_file dr_st.core_extern tid th_info
           )
       end >>= function
         | [] ->
@@ -1378,7 +1381,7 @@ let rec driver2 with_concurrency =
   (* TODO: hackish *)
   let _non_blocked_th_sts = List.filter (fun (tid, th_info) ->
     List.any (fun step -> step <> Core_reduction.Step_blocked2) $
-      Core_reduction.step_ctx post_core_dr_st.layout_state post_core_dr_st.core_file post_core_dr_st.core_extern tid th_info
+      Core_reduction.step_contexts post_core_dr_st.layout_state post_core_dr_st.core_file post_core_dr_st.core_extern tid th_info
   ) post_core_dr_st.core_state.Core_run.thread_states in
   
   begin if Global.current_execution_mode () = Just Global.Random then
@@ -1393,7 +1396,7 @@ let rec driver2 with_concurrency =
     ND.bindExhaustive (ND.pick (SK_misc ["driver 2"]) non_blocked_th_sts)
                       (fun (tid, th_info) ->
                        ND.pick (SK_misc ["driver 3"]) $
-                        Core_reduction.step_ctx post_core_dr_st.layout_state post_core_dr_st.core_file post_core_dr_st.core_extern tid th_info)
+                        Core_reduction.step_contexts post_core_dr_st.layout_state post_core_dr_st.core_file post_core_dr_st.core_extern tid th_info)
 *)
     ND.bindExhaustive
       (ND.pick (SK_misc ["driver 2"]) tid_steps)
@@ -1432,7 +1435,7 @@ let rec driver2 with_concurrency =
     end
     (*
     ND.pick (SK_misc ["driver 4"]) non_blocked_th_sts >>= fun (tid, th_info) ->
-    ND.pick (SK_misc ["driver 5"]) (Core_reduction.step_ctx post_core_dr_st.layout_state post_core_dr_st.core_file post_core_dr_st.core_extern tid th_info)
+    ND.pick (SK_misc ["driver 5"]) (Core_reduction.step_contexts post_core_dr_st.layout_state post_core_dr_st.core_file post_core_dr_st.core_extern tid th_info)
       >>= (process_core_step2 with_concurrency driver2)
     *)
     end
@@ -1568,8 +1571,10 @@ let driver_update_thread_state tid th_st =
 let inline update_thread_state = driver_update_thread_state
 
 
-val driver_globals: bool -> Core.file Core_run.core_run_annotation -> driverM Mem.thread_id
-let driver_globals with_concurrency file =
+(* WP1: retain the real global/main/finalization continuation while allowing
+   an experimental caller to suspend at entry to each Core body. *)
+val driver_globals_with: driverM unit -> Core.file Core_run.core_run_annotation -> driverM Mem.thread_id
+let driver_globals_with run_threads file =
   (* spawning a thread for the initialisation of globals, and later the execution of main *)
   spawn_thread Nothing <|
     (* NOTE: the pure(unit) is just a placeholder, the thread is given its actual state later *)
@@ -1614,7 +1619,7 @@ let driver_globals with_concurrency file =
     end >>= fun () ->
     
     (* evaluation of the initialisation *)
-    driver2 with_concurrency >>= fun () ->
+    run_threads >>= fun () ->
     
     get_thread_states >>= function
       | [(_, (_, th_st))] ->
@@ -1647,6 +1652,11 @@ let driver_globals with_concurrency file =
   ) glob_defs >>
   ND.return tid0
 
+
+
+val driver_globals: bool -> Core.file Core_run.core_run_annotation -> driverM Mem.thread_id
+let driver_globals with_concurrency file =
+  driver_globals_with (driver2 with_concurrency) file
 
 
 val pp_exeState: Cmm_op.symState -> string
@@ -1731,12 +1741,12 @@ let prepare_main_args loc callconv tid0 main_sym arg_strs argc_sym argv_sym =
 
 
 
-val drive: bool -> Core.file Core_run.core_run_annotation -> list string -> driverM driver_result
-let drive (with_concurrency: bool) file (arg_strs: list string) =
+val drive_with: driverM unit -> bool -> Core.file Core_run.core_run_annotation -> list string -> driverM driver_result
+let drive_with run_threads (with_concurrency: bool) file (arg_strs: list string) =
   (* Setting the read-only tag definitions (used by the memory model) *)
   (* first we execute the body of global definitions and remove their symbols
      from the rest of the program *)
-  driver_globals with_concurrency file >>= fun tid0 (*, post_globals_dr_st) *) ->
+  driver_globals_with run_threads file >>= fun tid0 (*, post_globals_dr_st) *) ->
   ND.get >>= fun post_globals_dr_st ->
   
   (* we need a startup function to have been declared *)
@@ -1889,7 +1899,7 @@ let drive (with_concurrency: bool) file (arg_strs: list string) =
           | _ ->
               error "ERROR (in Driver 2)"
         end >>
-        driver2 with_concurrency >>
+        run_threads >>
         
         if with_concurrency then
           error "CONCURRENCY IS BROKEN"
@@ -1897,6 +1907,217 @@ let drive (with_concurrency: bool) file (arg_strs: list string) =
           ND.get >>= fun dr_st' ->
           ND.return (finalize "drive (without concur)" dr_st')
 end
+
+
+val drive: bool -> Core.file Core_run.core_run_annotation -> list string -> driverM driver_result
+let drive with_concurrency file arg_strs =
+  drive_with (driver2 with_concurrency) with_concurrency file arg_strs
+
+
+(* === WP1 bounded-step feasibility experiment (not an SC execution mode).
+   Kept alongside the lifecycle it resumes. The public sequential entry above
+   does not call these definitions. See the dated WP1 bounded-stepping record.
+   A schedule entry pays for one Core reduction, one selected local ND
+   continuation, or one finite lifecycle segment. It is NOT Lem call fuel. === *)
+
+type experiment_reply =
+  | Exp_continue
+  | Exp_core_done
+  | Exp_refuse of string
+  | Exp_wait
+
+type experiment_phase =
+  | Exp_program of driverM driver_result
+  | Exp_program_choices of list (driverM driver_result)
+  | Exp_core of driverM driver_result
+  | Exp_effect_choices of list (driverM experiment_reply) * driverM driver_result
+  | Exp_done of driver_result
+  | Exp_killed of ND.kill_reason driver_error
+  | Exp_unsupported of string
+  | Exp_blocked
+  | Exp_empty
+  | Exp_bad_choice
+
+type experiment_config = <|
+  experiment_phase: experiment_phase;
+  experiment_state: driver_state;
+  experiment_steps: nat;
+|>
+
+(* Structural decomposition only: no memory, evaluator, supplies or driver
+   operations are parameters of this function. Indices are resolved afresh
+   in experiment_step; clients cannot supply a stale evaluated request. *)
+let experiment_contexts core_st =
+  List.concat (List.map (fun (tid, th_info) ->
+    List.map (fun ctx -> (tid, th_info, ctx))
+      (Core_reduction.get_ctx (snd th_info).Core_run.arena)
+  ) core_st.Core_run.thread_states)
+
+let experiment_runnable core_st =
+  List.filter (fun (_, _, (_, expr)) ->
+    match expr with
+      | Core.Expr _ (Core.Ewait _) -> false
+      | _ -> true
+    end
+  ) (experiment_contexts core_st)
+
+let experiment_choice_count cfg =
+  match cfg.experiment_phase with
+    | Exp_program _ -> 1
+    | Exp_program_choices ms -> List.length ms
+    | Exp_core _ -> List.length (experiment_runnable cfg.experiment_state.core_state)
+    | Exp_effect_choices ms _ -> List.length ms
+    | _ -> 0
+  end
+
+let experiment_terminal cfg =
+  match cfg.experiment_phase with
+    | Exp_program _ -> false
+    | Exp_program_choices _ -> false
+    | Exp_core _ -> false
+    | Exp_effect_choices _ _ -> false
+    | _ -> true
+  end
+
+let experiment_start file args dr_st = <|
+  experiment_phase= Exp_program (drive_with
+    (ND.mk_step SK_core_boundary [(SK_core_boundary, ND.return ())])
+    false file args);
+  experiment_state= dr_st;
+  experiment_steps= 0;
+|>
+
+(* Lookup is structural in the finite list; the schedule is also a finite
+   list, so neither uses or silently renews the generated call-fuel budget. *)
+let rec experiment_at xs (n: nat) =
+  match xs with
+    | [] -> Nothing
+    | x :: rest -> if n = 0 then Just x else experiment_at rest (n - 1)
+  end
+
+let experiment_program (ND.ND m) st =
+  let (act, st') = m st in
+  let phase = match act with
+    | ND.NDactive value -> Exp_done value
+    | ND.NDkilled why -> Exp_killed why
+    | ND.NDstep SK_core_boundary [(_, continuation)] -> Exp_core continuation
+    | ND.NDnd _ ms ->
+        if List.null ms then Exp_empty else Exp_program_choices (List.map snd ms)
+    | ND.NDstep _ _ -> Exp_unsupported "unexpected lifecycle step"
+    | ND.NDguard _ _ _ -> Exp_unsupported "lifecycle constraint guard"
+    | ND.NDbranch _ _ _ _ -> Exp_unsupported "lifecycle constraint branch"
+  end in (phase, st')
+
+let experiment_effect continuation (ND.ND m) st =
+  let (act, st') = m st in
+  let phase = match act with
+    | ND.NDactive Exp_continue -> Exp_core continuation
+    | ND.NDactive Exp_core_done -> Exp_program continuation
+    | ND.NDactive (Exp_refuse why) -> Exp_unsupported why
+    | ND.NDactive Exp_wait -> Exp_blocked
+    | ND.NDkilled why -> Exp_killed why
+    | ND.NDnd _ ms ->
+        if List.null ms then Exp_empty else Exp_effect_choices (List.map snd ms) continuation
+    | ND.NDstep _ _ -> Exp_unsupported "unexpected primitive step"
+    | ND.NDguard _ _ _ -> Exp_unsupported "primitive constraint guard"
+    | ND.NDbranch _ _ _ _ -> Exp_unsupported "primitive constraint branch"
+  end in (phase, st')
+
+(* Keep the unsupported surface explicit. In particular we must NOT reuse
+   the sequential SeqRMW handler, which executes load/update/store together.
+   Nor does this experiment claim atomic semantics by ignoring memory order. *)
+let experiment_request loc tid request =
+  match request with
+    | Core_reduction.SeqRMWRequest2 _ _ _ _ ->
+        ND.return (Exp_refuse "SeqRMW needs separate load/update/store phases")
+    | Core_reduction.LoadRequest2 mo _ _ _ ->
+        if mo <> Cmm_csem.NA then ND.return (Exp_refuse "atomic load policy pending")
+        else ND.bind (perform_action_request2 false loc tid request) (fun () -> ND.return Exp_continue)
+    | Core_reduction.StoreRequest2 mo _ _ _ _ _ ->
+        if mo <> Cmm_csem.NA then ND.return (Exp_refuse "atomic store policy pending")
+        else ND.bind (perform_action_request2 false loc tid request) (fun () -> ND.return Exp_continue)
+    | _ -> ND.bind (perform_action_request2 false loc tid request) (fun () -> ND.return Exp_continue)
+  end
+
+let experiment_core_step tid step =
+  match step with
+    | Core_reduction.Step_action_request2 _ loc request_tid unseq m ->
+        if unseq then ND.return (Exp_refuse "action unsequenced with C call")
+        else liftCore_run m >>= fun request -> experiment_request loc request_tid request
+    | Core_reduction.Step_tau2 _ _ _ ->
+        advance_step tid step >>= fun _ -> ND.return Exp_continue
+    | Core_reduction.Step_with_runstate2 _ _ ->
+        advance_step tid step >>= fun _ -> ND.return Exp_continue
+    | Core_reduction.Step_nd2 _ ->
+        advance_step tid step >>= fun _ -> ND.return Exp_continue
+    | Core_reduction.Step_ccall2 _ _ ->
+        process_core_step2 false (fun _ -> ND.return ()) step >>= fun () -> ND.return Exp_continue
+    | Core_reduction.Step_done2 _ ->
+        process_core_step2 false (fun _ -> ND.return ()) step >>= fun () -> ND.return Exp_core_done
+    | Core_reduction.Step_blocked2 -> ND.return Exp_wait
+    | Core_reduction.Step_error2 why -> ND.return (Exp_refuse why)
+    | Core_reduction.Step_memop_request2 _ _ _ _ _ _ -> ND.return (Exp_refuse "memop suspension pending")
+    | Core_reduction.Step_fs2 _ _ _ -> ND.return (Exp_refuse "external service suspension pending")
+    | Core_reduction.Step_spawn_threads2 _ _ -> ND.return (Exp_refuse "fork/source-order experiment pending")
+    | Core_reduction.Step_thread_done2 _ _ -> ND.return (Exp_refuse "join/source-order experiment pending")
+  end
+
+let experiment_step choice cfg =
+  if experiment_terminal cfg then cfg else
+  let st = cfg.experiment_state in
+  let (phase', st') = match cfg.experiment_phase with
+    | Exp_program m ->
+        if choice = 0 then experiment_program m st else (Exp_bad_choice, st)
+    | Exp_program_choices ms ->
+        match experiment_at ms choice with
+          | Nothing -> (if List.null ms then Exp_empty else Exp_bad_choice, st)
+          | Just m -> experiment_program m st
+        end
+    | Exp_effect_choices ms continuation ->
+        match experiment_at ms choice with
+          | Nothing -> (if List.null ms then Exp_empty else Exp_bad_choice, st)
+          | Just m -> experiment_effect continuation m st
+        end
+    | Exp_core continuation ->
+        let contexts = experiment_runnable st.core_state in
+        match experiment_at contexts choice with
+          | Nothing ->
+              (if List.null contexts then
+                 if List.null (experiment_contexts st.core_state) then Exp_empty else Exp_blocked
+               else Exp_bad_choice, st)
+          | Just (tid, th_info, ctx) ->
+              experiment_effect continuation
+                (experiment_core_step tid
+                  (Core_reduction.step_ctx_at st.layout_state st.core_file st.core_extern tid th_info ctx)) st
+        end
+    | _ -> (cfg.experiment_phase, st)
+  end in <|
+    experiment_phase= phase';
+    experiment_state= st';
+    experiment_steps= cfg.experiment_steps + 1;
+  |>
+
+(* Empty remaining schedule = explicit incomplete unless the retained phase
+   is terminal. Early termination returns UNUSED choices, never consumes a
+   fictitious global resource. A repeated-index schedule is a bounded runner. *)
+let rec experiment_run schedule cfg =
+  match schedule with
+    | [] -> (cfg, [])
+    | choice :: rest ->
+        if experiment_terminal cfg then (cfg, schedule)
+        else experiment_run rest (experiment_step choice cfg)
+  end
+
+type experiment_outcome =
+  | Exp_incomplete of experiment_config
+  | Exp_stopped of experiment_config * list nat
+
+let experiment_bounded schedule cfg =
+  let (cfg', unused) = experiment_run schedule cfg in
+  if experiment_terminal cfg' then Exp_stopped cfg' unused else Exp_incomplete cfg'
+
+declare {lean} termination_argument experiment_at = automatic
+declare {lean} termination_argument experiment_run = automatic
 
 
 (* === Totality declares (arc 3 sweep, 2026-08-18, final batch): Lean-target only.

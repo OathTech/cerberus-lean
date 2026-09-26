@@ -1,0 +1,4 @@
+candidate existing-Core expansion (memory-dependent=false): load, completed sibling, one deferred write; returned old value 0; one startup plus three access receipts
+candidate existing-Core expansion (memory-dependent=false): load, completed sibling, one deferred write; returned old value 0; one startup plus three access receipts
+candidate existing-Core expansion (memory-dependent=true): load, completed sibling, one deferred write; returned old value 0; one startup plus three access receipts
+candidate existing-Core expansion (memory-dependent=true): load, completed sibling, one deferred write; returned old value 0; one startup plus three access receipts

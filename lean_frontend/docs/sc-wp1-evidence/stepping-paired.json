@@ -1,0 +1,91 @@
+{
+  "scope": "WP1 bounded-stepping experiment; not SC acceptance",
+  "sources": {
+    "frontend/model/core_reduction.lem": "7138170222f138b60d9e519b596a7c8021dfb0428308040507d034ac3b1e5d2b",
+    "frontend/model/driver.lem": "15565f50210f7c1b2d6f514f1997237c58cc72c06f4fb93276d116580153ba78",
+    "backend/memory_probe/sc_step_probe.ml": "840adce9513e2281d879b2abca49f98c73e6c45afc39b583cbc9c87b61f7dddf",
+    "lean_frontend/test/Unit/SCWP1Stepping.lean": "379a115006e68d9dfc549b80bf03849a2198a6872e5676d637b7ce3e1cba1c23",
+    "lean_frontend/test/Unit/SCWP1SteppingProofs.lean": "ecd99694dd1e322721c5b454e4a9d17250c3da4392c69f396febf9f54b11b8f9",
+    "lean_frontend/test/Unit/SCWP1ContextProofs.lean": "e64f4e6cc5a32a2a7c70c3d8fcb88abf7d2604ebb4ea4a1fb2382331e316d00a",
+    "lean_frontend/test/Unit/SCWP1RMWContinuation.lean": "0ae3f301ee1df498d1f565bfa6e8e54a8ce13c4c94dc2364f0e0fe13a6a59a33",
+    "lean_frontend/generated/Core_reduction.lean": "502f697a81f831c6e56984ec0978554fba30e99a779c870651623d38fb20ea25",
+    "lean_frontend/test/SCWP1SelectedFault.lean": "7706e19f07cc1501116149498e6885d0eb577416d8aed8edf036fd0560c43175",
+    "scripts/test_sc_wp1.py": "ff6762e694d907933fe6d8572efbd304d5fe173e1daa5ff34638db8cbed099a9",
+    "lean_frontend/generated/Driver.lean": "c8310e2c1d0e27681dc0365249be789c976440ebe5933c3b7ecf91269303ba5c",
+    "ocaml_frontend/generated/driver.ml": "85ba87a29ef4a6e63b4e166f473409c807e19028ee7deec34e7137401b9b67e2"
+  },
+  "runs": {
+    "native-build": {
+      "command": [
+        "dune",
+        "build",
+        "--root",
+        ".",
+        "--force",
+        "backend/memory_probe/sc_step_probe.exe"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1",
+      "returncode": 0,
+      "elapsed_seconds": 0.17002523015253246,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "native": {
+      "command": [
+        "_build/default/backend/memory_probe/sc_step_probe.exe"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1",
+      "returncode": 0,
+      "elapsed_seconds": 0.01539743784815073,
+      "stdout_sha256": "40ed91c4cba1d0b7d177b48e4f806ba39250663b1a6c403532b0b5b9230ba57a",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "lean": {
+      "command": [
+        "../scripts/capped",
+        "../scripts/lean_probe.sh",
+        "test/Unit/SCWP1Stepping.lean"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+      "returncode": 0,
+      "elapsed_seconds": 2.112940127030015,
+      "stdout_sha256": "a485c1b78455107310cea9da6d21ef36da9a810b90ef82e54f9e6c8b1ac118b3",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "rmw-continuations": {
+      "command": [
+        "../scripts/capped",
+        "../scripts/lean_probe.sh",
+        "test/Unit/SCWP1RMWContinuation.lean"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+      "returncode": 0,
+      "elapsed_seconds": 0.8883141069673002,
+      "stdout_sha256": "69122cc9c2ff8a08ad2b85bf44413824cac428e04a6167221f258b444c4b2636",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "native-selected-fault": {
+      "command": [
+        "_build/default/backend/memory_probe/sc_step_probe.exe",
+        "selected-fault"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1",
+      "returncode": 2,
+      "elapsed_seconds": 0.01461770199239254,
+      "stdout_sha256": "40ed91c4cba1d0b7d177b48e4f806ba39250663b1a6c403532b0b5b9230ba57a",
+      "stderr_sha256": "b3922294a0914a870f6ab4eaa89b14d3cdc9cd98128a4fd8d4b5b715a5d76bd5"
+    },
+    "lean-selected-fault": {
+      "command": [
+        "../scripts/capped",
+        "../scripts/lean_probe.sh",
+        "test/SCWP1SelectedFault.lean"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+      "returncode": 134,
+      "elapsed_seconds": 1.8509621010161936,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "299a0b1e91e2079d233c1c9e3b21bad5f1d4788bd9227dc512e7974b350891e9"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+negative=false budget=128 ms=5 live-allocations=3 live-threads=1 inherited-trace=42 env-bindings=0 next-symbol=5
+negative=false budget=1024 ms=23 live-allocations=3 live-threads=1 inherited-trace=342 env-bindings=0 next-symbol=5
+negative=false budget=8192 ms=185 live-allocations=3 live-threads=1 inherited-trace=2730 env-bindings=0 next-symbol=5
+negative=true budget=128 ms=4 live-allocations=3 live-threads=1 inherited-trace=26 env-bindings=13 next-symbol=18
+negative=true budget=1024 ms=25 live-allocations=3 live-threads=1 inherited-trace=205 env-bindings=102 next-symbol=108
+negative=true budget=8192 ms=194 live-allocations=3 live-threads=1 inherited-trace=1638 env-bindings=819 next-symbol=824

@@ -54,7 +54,28 @@ landing under the master plan's existing policy.
 
 [AGENT] The [initial boundary experiment](lean_frontend/docs/2026-09-25_sc-wp1-boundary-investigation.md)
 now reproduces eager multi-reduction and memory effects through the actual
-driver. It is diagnostic evidence only; the WP1 exit obligations remain open.
+driver. The subsequent [bounded-stepping experiment](lean_frontend/docs/2026-09-26_sc-wp1-bounded-stepping.md)
+separates pure context discovery from selected interpretation and retains the
+production lifecycle continuation. It has paired Core-loop/startup witnesses
+and kernel schedule/budget/context-reconstruction laws, plus seven C fixtures
+through the Lean frontend. Two actual SeqRMW callback counterexamples reject
+naive suspension: a saved context resurrects completed sibling work, and a
+saved memory snapshot misses a subsequently stored function-pointer mapping.
+The slice passes the full 40-command A+B battery and mandatory three-engine
+report. [Follow-up probes](lean_frontend/docs/2026-09-26_sc-wp1-followup-measurements.md)
+compare nine finite Core source-order sets and expose delayed race detection
+and retained temporary bindings. A hand-built non-forwarding load/negative-store
+expansion survives both suspension counterexamples, but its C-call boundary,
+forwarding and general correspondence remain unestablished.
+
+Next, compare that expansion with an explicit pending-operation representation,
+preserving intra-expression alternatives and same-thread C-call indivisibility
+while allowing interthread load/store separation. Derive source completion
+frontiers from actual Core, then test their summaries and reclamation, including
+publication and thread churn. Build WP-C's precise domain/statements and
+substantive Core-to-reference lemma alongside this work. SeqRMW resumption,
+helper suspension, source-order summaries and correspondence remain open;
+the WP1 exit obligations are not yet satisfied.
 
 WP0 landing remains with the overseer. Work may proceed on its audited candidate
 now. Track the actual landing and reconcile this branch with the resulting

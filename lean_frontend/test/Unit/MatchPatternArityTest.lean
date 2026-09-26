@@ -391,7 +391,7 @@ def isIllformed : RouteOutcome → Bool
   | _ => false
 
 /-! `Core_reduction.one_step` is THE engine the driver steps with (`driver.lem` `drive_core_thread2 →
-Core_reduction.core_step2 → step_ctx → one_step`; the post-fix oracle backtrace on the audit's
+Core_reduction.core_step2 → step_contexts → one_step`; the post-fix oracle backtrace on the audit's
 `let-mismatch.core` names `Core_reduction.one_step`) — `Core_run.core_thread_step2` above is the
 second engine. Its let-forms bind a VALUE through `update_env` in a pure `TAU` step; after the
 closure round a non-fitting pattern yields `TAU_WITH_RUNSTATE` with the same `Illformed_program`
@@ -561,11 +561,11 @@ def isRunIllformed : RunOutcome → Bool
   | .illformed _ => true
   | _ => false
 def lookupSym (s : sym) (m : Fmap sym value) : Option value := fmapLookupBy (@Lem_Map.MapKeyType.mapKeyCompare sym _) s m
-/-- the driver's engine: `Core_reduction.step_ctx` on `run loop(pes)` inside `procSym` -/
+/-- the driver's engine: `Core_reduction.step_contexts` on `run loop(pes)` inside `procSym` -/
 def reductionErun (fuel : Nat) (pes : List pexpr) : RunOutcome :=
   letI := LemFuel.mk fuel
   let thSt : thread_state := { (default : thread_state) with arena := runArena pes, env := [emptyEnv], current_proc_opt := some procSym }
-  match step_ctx enumsEmpty tagsEmpty (CerbMem.initialMemState testAddressSpaceTop) (default : generic_file Unit core_run_annotation) fmapEmpty 0 (none, thSt) with
+  match step_contexts enumsEmpty tagsEmpty (CerbMem.initialMemState testAddressSpaceTop) (default : generic_file Unit core_run_annotation) fmapEmpty 0 (none, thSt) with
   | [Step_with_runstate2 (RSK_eval "Erun") m] =>
       match m runStR4 with
       | Exception (Illformed_program msg) => .illformed msg
@@ -608,9 +608,9 @@ def round3Checks (fuel : Nat) : List Check2 :=
   [ { name := "R3 typecheck_expr Eccall variadic int(int, ...): 1 fixed actual + the bundle (fit: every argument kept)", ok := keptE (ccallVarE 1) (tE3 (BTy_loaded OTy_integer) (ccallVarE 1)), got := classifyR3E (tE3 (BTy_loaded OTy_integer) (ccallVarE 1)), preFix := "Result with 2 arguments (unchanged)" },
     { name := "R3 typecheck_expr Eccall variadic: 0 fixed actuals + the bundle", ok := isArgArityE "ccall" (tE3 (BTy_loaded OTy_integer) (ccallVarE 0)), got := classifyR3E (tE3 (BTy_loaded OTy_integer) (ccallVarE 0)), preFix := "the bundle zipped against the fixed parameter (accepted — the defect)" },
     { name := "R3 typecheck_expr Eccall variadic: 2 fixed actuals + the bundle", ok := isArgArityE "ccall" (tE3 (BTy_loaded OTy_integer) (ccallVarE 2)), got := classifyR3E (tE3 (BTy_loaded OTy_integer) (ccallVarE 2)), preFix := "the surplus fixed actual DELETED (the defect)" },
-    { name := "R4 Core_reduction step_ctx: run loop(true, false, error(surplus)) — 3 actuals for 2 params", ok := isRunIllformed (reductionErun fuel [peT, peF, surplusErr]), got := reprRun (reductionErun fuel [peT, peF, surplusErr]), preFix := "bound the prefix; the erroring surplus never evaluated (oracle: run-fixed-error.core Specified(2))" },
-    { name := "R4 Core_reduction step_ctx: run loop(true) — 1 actual for 2 params (shortage)", ok := isRunIllformed (reductionErun fuel [peT]), got := reprRun (reductionErun fuel [peT]), preFix := "bound i only; j kept its OLD binding (oracle: run-short-stale.core Specified(11))" },
-    { name := "R4 Core_reduction step_ctx: run loop(true, false) — fit: arena = body, i := true, j := false", ok := (match reductionErun fuel [peT, peF] with | .bound true (some Vtrue) (some Vfalse) => true | _ => false), got := reprRun (reductionErun fuel [peT, peF]), preFix := "the same (unchanged; oracle: run loop(1,20) -> Specified(21))" },
+    { name := "R4 Core_reduction step_contexts: run loop(true, false, error(surplus)) — 3 actuals for 2 params", ok := isRunIllformed (reductionErun fuel [peT, peF, surplusErr]), got := reprRun (reductionErun fuel [peT, peF, surplusErr]), preFix := "bound the prefix; the erroring surplus never evaluated (oracle: run-fixed-error.core Specified(2))" },
+    { name := "R4 Core_reduction step_contexts: run loop(true) — 1 actual for 2 params (shortage)", ok := isRunIllformed (reductionErun fuel [peT]), got := reprRun (reductionErun fuel [peT]), preFix := "bound i only; j kept its OLD binding (oracle: run-short-stale.core Specified(11))" },
+    { name := "R4 Core_reduction step_contexts: run loop(true, false) — fit: arena = body, i := true, j := false", ok := (match reductionErun fuel [peT, peF] with | .bound true (some Vtrue) (some Vfalse) => true | _ => false), got := reprRun (reductionErun fuel [peT, peF]), preFix := "the same (unchanged; oracle: run loop(1,20) -> Specified(21))" },
     { name := "R4 Core_run core_thread_step2: run loop(true, false, error(surplus)) — 3 actuals for 2 params", ok := isRunIllformed (coreRunErun fuel [peT, peF, surplusErr]), got := reprRun (coreRunErun fuel [peT, peF, surplusErr]), preFix := "substituted the prefix; the surplus dropped" },
     { name := "R4 Core_run core_thread_step2: run loop(true) — shortage", ok := isRunIllformed (coreRunErun fuel [peT]), got := reprRun (coreRunErun fuel [peT]), preFix := "substituted i only; j left free in the body" },
     { name := "R4 Core_run core_thread_step2: run loop(true, false) — fit: body with both substituted", ok := (match coreRunErun fuel [peT, peF] with | .substituted (some pe) => pe == substitutedBody | _ => false), got := reprRun (coreRunErun fuel [peT, peF]), preFix := "the same (unchanged)" } ]

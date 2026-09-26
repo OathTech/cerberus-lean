@@ -7,3 +7,8 @@
  (name access_probe)
  (modules access_probe)
  (libraries mem_concrete))
+
+(executable
+ (name sc_step_probe)
+ (modules sc_step_probe)
+ (libraries mem_concrete))

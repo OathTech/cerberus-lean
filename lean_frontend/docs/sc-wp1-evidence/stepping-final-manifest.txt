@@ -1,0 +1,2 @@
+check_fork_content: OK — 86 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 86 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 31 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin c2a68e79b6369e19f099dfa48767319c1daf19b3 matches lem -v c2a68e7 (hex prefix))
