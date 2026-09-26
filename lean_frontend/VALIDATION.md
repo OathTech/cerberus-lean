@@ -237,12 +237,14 @@ have no execution content and are fixed as instruments.
 
 ## 2. The ISO-fix register (class (d))
 
-Submission status checked 2026-09-25 at `c13a1054133b49c954fe27ac4c1b4e33a418c51f`:
-several entries below have prepared reports, not filed issues. The
-[tray status table](docs/upstream-tray/INDEX.md#submission-status) records
-that distinction. The tests enforce registered behavior; they cannot enforce
-GitHub submission or upstream acceptance. Filing remains an operator action,
-so the presence of a register row does not establish every policy condition.
+Submission status (2026-09-26): the register's upstream reports 10, 11, 13 and 40 were
+communicated privately to the Cerberus maintainers by the operator — [USER 2026-09-26]
+"these have been filed privately in that I have notified the cerberus maintainers" — and
+are recorded as **Sent** (transmitted, no public issue URL) in the
+[tray status table](docs/upstream-tray/INDEX.md#submission-status); report 01 is **Filed**
+(#1009); report 19 (the DEFERRED row R4) stays Draft. That private notification is how the
+"filed upstream" criterion is met for these rows; the tests enforce registered behavior and
+cannot enforce submission or upstream acceptance, which remain operator actions.
 
 
 The ONE licence for a deliberate Lean deviation TOWARD ISO C (criteria
