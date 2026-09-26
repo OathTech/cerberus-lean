@@ -548,3 +548,132 @@ paragraph and the re-pin note before the ff-only merge (F1), and state the
 evidence head honestly (F2, trivially co-fixable). F3–F5 may follow the
 merge; F6–F12 are notes. Merge authority rests with the operator; nothing
 here is a sign-off.
+
+---
+
+## 13. Second pass — the closure commit `0e3f67cd2` (range `mdd/cerberus-lean..2d445ea2f`)
+
+[AGENT — same reviewer, 2026-09-26, brief second pass at the orchestrator's
+request.] Branch `review/sc-wp0-closure-20260926` @ `2d445ea2f` = rebased WP0
+`cbe9a93d8` + closure `0e3f67cd2` (9 files, +633/−4 including this review
+cherry-picked as `2d445ea2f`). No builds; git/grep/read only. The closure
+worktree was not touched; everything below is `git show` from my worktree.
+
+### 13.1 Erratum to §1 F1 / §5 of this review (my own tally, re-measured)
+
+My line "537 `{ … : MemState }` literals / `with <field>` updates .. 537 / 49"
+mis-characterised the 537: re-measured over cerberus-sl (`--include='*.lean'`,
+`.lake/` excluded):
+```
+brace forms `{ … : MemState }` ........................ 585
+  of which containing `:=` (typed struct literals) ...  0
+  of which binder-shaped `{σ : (CerbMem.)MemState}` .. 578
+untyped struct-literal lines `lastAddress :=` ........  11
+```
+They are overwhelmingly IMPLICIT BINDERS in theorem signatures, not struct
+literals. The conclusion is unchanged (binders and defaulted-field literals
+are both transparent to the new field); the noun was wrong. The closure
+section in `2026-09-25_sc-wp0-passive-access.md` inherited my phrasing
+("537 `{… : MemState}` literals are transparent") — S2 below.
+
+### 13.2 Findings on the closure commit
+
+- **S1 — P3 — the Python `timeout=60` now kills `capped`, not the executable.**
+  `scripts/test_memory_access.py:125-127` (closure): `subprocess.run([capped,
+  '/usr/bin/time', …, *command], …, timeout=60)`. On expiry Python SIGKILLs its
+  DIRECT child — the `capped` bash process — so `capped_cleanup`
+  (`scripts/capped:121-129`: OOM-witness read, migrate back, `rmdir`) never
+  runs: the per-run cgroup directory leaks and `/usr/bin/time` + the exe
+  continue as orphans inside it. Pre-closure the same timeout orphaned the exe
+  but leaked no cgroup; the closure adds that mode. The house pattern puts
+  `timeout` INSIDE the cap (`scripts/common.sh:398`, verbatim: `"${CAPPED_TEST[@]}"
+  timeout "${TIMEOUT_SECS}s" <cmd…>`). One-line fix: `[capped, 'timeout',
+  '--kill-after=5', '60', '/usr/bin/time', …]`, keeping Python's `timeout` as a
+  larger outer backstop (e.g. 90). Not a correctness issue for a passing run.
+- **S2 — P3 (wording) — "537 `{… : MemState}` literals"** in the new
+  "Consumer exposure" section: see §13.1 — write "585 brace forms, 578 of them
+  implicit binders `{σ : MemState}`, 0 typed struct literals, 11 untyped
+  `lastAddress :=` literals — all transparent". Conclusion stands.
+- **S3 — N — consumer note's "Your alpha pin (`cerberus-lean-v0.1.0-alpha.1`
+  = `cfc275d84`)".** The tag→commit is correct (`git rev-parse
+  'cerberus-lean-v0.1.0-alpha.1^{commit}'` → `cfc275d84`). But cerberus-sl's
+  COMMITTED pin is still `CERBERUS_LEAN_COMMIT="2b51d2a57"`
+  (`scripts/semantics-pin.env`, last changed `360c972`; `grep "alpha\.1\|cfc275d84"`
+  over the pin file and `docs/DECISIONS.md`: 0). The mainline message
+  `9bf8cdaa6` "cerberus-sl final pin = cerberus-lean-v0.1.0-alpha.1" describes
+  an intended re-pin the consumer tree I can read has not recorded. Suggest:
+  "your committed pin `2b51d2a57` and the alpha tag `cfc275d84` both predate
+  WP0". The substantive claim (neither contains WP0) is true either way.
+- **S4 — N — row 13 is now stricter than the other harnesses on cap-less hosts.**
+  `capped` writes its `CERB_MEM_MAX=none` opt-out line (`:66`), the
+  no-`systemd-run` fallback WARNINGs (`:144-145`) and the `rmdir` WARNING
+  (`:128`) to stderr; `validate()` requires empty stderr, so on a host without
+  cgroup delegation or `systemd-run`, or under the loud opt-out, row 13 FAILS
+  CLOSED where the shell harnesses run on with the banner. Acceptable —
+  arguably the right default — but worth one sentence in the script comment.
+- **S5 — N — cap value split.** The exes run under `CERB_MEM_MAX =
+  CERB_TEST_MEM_MAX or 4G` (overriding any caller `CERB_MEM_MAX`); the Lean
+  build at `:100` keeps the caller's (default 64G). Same split as
+  `common.sh` (`CAPPED_TEST` vs `build_lean`). Fine.
+
+### 13.3 The four questions
+
+1. **Capped invocation.** Correct. `capped` runs argv via `run_reporting_kills
+   "$@"` (`scripts/capped:36-38,130`), not `exec`, and prints NOTHING on a
+   clean cgroup-direct run; `/usr/bin/time` is inside the cap so `%M` is the
+   exe's (plus `time`'s own negligible RSS); the RSS path is absolute (`OUT =
+   ROOT/'.tmp/memory-access'`, `ROOT = Path(__file__).resolve().parent.parent`);
+   `command`, `validate()`, `expected()`, the report fields and the 8 controls
+   are untouched — nothing else assumes the old argv shape. A cap breach →
+   exit 137 + OOM banner on stderr → `validate()` false (rc ≠ 0 AND stderr
+   non-empty) → `SystemExit`. Fail-closed. Residual: S1.
+2. **`17 0 on`.** Valid: `main` (`test/Unit/MemoryAccess.lean:212-217`)
+   destructures exactly three args, `"17".toNat? = some 17`, `"0".toNat? =
+   some 0`, mode ∈ {on, off}. Non-vacuous: `runAll` (`:191-210`) runs
+   `MemoryAccess.scenarios (← setup)` — all 27 `run` scenarios with the
+   erasure (`stateEq`/`actionEq`) and drain checks plus the disabled-drain and
+   enabling-dropped-prefix controls — and `transport` (all six ND constructors
+   through `liftND`) UNCONDITIONALLY before the stream loop; `count = 0` only
+   empties the loop and prints `stream on 0 0`. It is byte-for-byte row 13's
+   `lean-17` spec (`specs = [('native', …, 0, 'on'), ('lean-17', lean, ['17'],
+   0, 'on'), …]`, `test_memory_access.py:112`), whose transcript is committed
+   (`sc-wp0-evidence/access-lean-17.txt`). A `require` failure throws
+   `IO.userError` → nonzero exit → row 1's `if "$bin" "${test_args[@]}"`
+   goes red. Row 1 checks exit status only; the transcript comparison is row
+   13's job — consistent with every other unit exe.
+3. **F1 paragraph + consumer note accuracy.** Five lemma names and lines
+   (`MemLoc.lean:26/35`, `UnseqReads.lean:151`, `HeapModel.lean:267/287`) —
+   equal to my measurements. Pin `2b51d2a57` — correct. "15th field" —
+   correct (15 total, §1 F8). "no `MemState.mk`/`.ext`/anonymous-constructor
+   sites" — correct (0/0/0). `disabled_recordAccess`/`load_erasure`/
+   `store_erasure` as the preservation witnesses — correct citations
+   (`MemoryAccessProofs.lean:11-12,19-29`). "nothing in the sequential
+   pipeline enables it" — verified: `git grep beginObserving|begin_observing`
+   at the closure head outside `CerbMem.lean`, `test/Unit`, `memory_probe`,
+   `impl_mem.ml`, `memory_model.ml` → 0. F2 sentence (head `917961adf`, dirty
+   tree, fifteen hashes) — equal to §8. Defects: S2 (my noun), S3 (alpha-pin
+   presumption).
+4. **Over-claims in CLAUDE.md / SUPPORTED.md / LADDER.** None found.
+   LADDER row 1 "16/16 exes": UNIT_TESTS at the closure head enumerates 16
+   (`effects-proof-test … match-pattern-arity-test, memory-access-test`;
+   the pre-closure "10/10" was already stale at mainline). CLAUDE.md bullet —
+   "over the production `loadM`/`storeM`, every arm, arbitrary state and fuel"
+   is exactly what §3 verified; Scripts row — "executables run under the
+   per-test cap" is true after F3. SUPPORTED.md Domain row — "opt-in,
+   disabled-by-default … passive diagnostic instrument, Tier A row 13 — not
+   SC execution" — accurate and appropriately hedged. Pre-existing, not WP0's:
+   LADDER row 1 says "280 parser tests" while CLAUDE.md says `core-parser-test`
+   has 292 checks.
+
+### 13.4 Updated VERDICT for `mdd/cerberus-lean..2d445ea2f`
+
+**Merge-ready as is.** The one P2 (F1) is closed by a record section that
+names the five falsified lemmas and the `σ.observations = none` remedy plus
+a consumer note; F2–F6 are closed as described and re-verified above. The
+closure adds no runtime behaviour (one comment in `CerbMem.lean`; the
+harness gains a cap). Remaining items are P3/N and may follow the merge: S1
+(`timeout` inside `capped`), S2 (the "literals" noun, here and in the record),
+S3 (alpha-pin wording), S4 (a comment). Gate verdicts (row 1 with 16 exes,
+row 13 capped, Tier A, the full ladder on `cbe9a93d8`) are the orchestrator's
+to record verbatim; nothing here is a sign-off — merge authority rests with
+the operator.
