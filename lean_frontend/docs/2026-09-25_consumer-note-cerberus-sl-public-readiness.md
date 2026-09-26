@@ -31,3 +31,11 @@ Author: the orchestrator [AGENT]. Addressed to cerberus-sl (`scripts/semantics-p
 Take ONE re-pin at the announcement tag rather than at this commit: the operator intends annotated prerelease tags
 (`cerberus-lean-v0.1.0-alpha.1`, `lean-backend-v0.1.0-alpha.1`) after the external M9 checks; the tagged commit will be
 this mainline or a docs-only descendant. Until then your `2b51d2a57` pin remains semantically current.
+
+## Final pin for the alpha (2026-09-26)
+
+The release is tagged: `cerberus-lean-v0.1.0-alpha.1` = `cfc275d84fbf1d48d9c85032c9a7934c97849a77` on
+`mdd/cerberus-lean`, consuming lem-lean `lean-backend-v0.1.0-alpha.1` = `c2a68e79b6369e19f099dfa48767319c1daf19b3`
+(LemLib and the lem tool at the same commit). Take your ONE re-pin at that cerberus commit; the tag object's peeled
+commit is the pin. Verified from anonymous clones on 2026-09-26 (`2026-09-25_public-readiness-fresh-clone-test.md`,
+"Alpha tags verified"). Docs-only commits may follow on `mdd/cerberus-lean`; they do not move the pin.

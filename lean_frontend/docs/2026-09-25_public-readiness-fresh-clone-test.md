@@ -218,3 +218,43 @@ This closes M9 for the published heads: a newcomer following the public recipes 
 (with upstream's current master fetched, the case that was red before 683dc186c) and green small lanes. Remaining
 operator items are unchanged: the GitHub issue-creation setting, the ISO-fix register's "filed upstream" criterion, the
 annotated prerelease tags and the announcement wording; cerberus-sl re-pins at the tag.
+
+## Alpha tags verified (2026-09-26) — orchestrator [AGENT]
+
+[USER 2026-09-26] "Done" (pushed `mdd/cerberus-lean` to cfc275d84 and created/pushed the two annotated tags). Anonymous
+checks (HTTPS, `GIT_CONFIG_GLOBAL=/dev/null`, no credentials), verbatim:
+
+    bb283555f3f74d8b4071104203829d58b9e9dc3b	refs/tags/lean-backend-v0.1.0-alpha.1
+    c2a68e79b6369e19f099dfa48767319c1daf19b3	refs/tags/lean-backend-v0.1.0-alpha.1^{}
+    482dd44d8a8ea0e13c03cd0d24774db13b4e37c0	refs/tags/cerberus-lean-v0.1.0-alpha.1
+    cfc275d84fbf1d48d9c85032c9a7934c97849a77	refs/tags/cerberus-lean-v0.1.0-alpha.1^{}
+
+Both are annotated tag objects (`cat-file -t` = `tag`, tagger Mike Dodds 2026-09-26). Fresh anonymous clones, `fetch origin
+tag`, `checkout --detach`: `git describe --long` = `lean-backend-v0.1.0-alpha.1-0-gc2a68e7` and
+`cerberus-lean-v0.1.0-alpha.1-0-gcfc275d84`. Rebuilt both tagged checkouts with their published README recipes (new local
+switches; lem pinned from GitHub at the Lake pin; dependencies from the network), verbatim:
+
+    === LEM MAKE EXIT=0 ===
+    === LEM LEAN_LIBS EXIT=0 ===
+    in-tree ./lem -v: Lem lean-backend-v0.1.0-alpha.1-0-gc2a68e7
+    installed lem -v: Lem lean-backend-v0.1.0-alpha.1-0-gc2a68e7
+    git rev-parse HEAD: c2a68e79b6369e19f099dfa48767319c1daf19b3
+    opam-pinned lem -v: Lem lean-backend-v0.1.0-alpha.1-0-gc2a68e7
+    main.exe --version: git-cerberus-lean-v0.1.0-alpha.1-0-gcfc275d84 
+    git rev-parse HEAD: cfc275d84fbf1d48d9c85032c9a7934c97849a77
+    === LAKE_BUILD EXIT=0 06:42:18 ===
+    LemLib consumed: c2a68e79b6369e19f099dfa48767319c1daf19b3
+    [1/1] MATCH 001-return-literal: VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+    === SMOKE EXIT=0 ===
+    check_fork_drift: OK — layer 1: 85 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 30 differing generated files, all hash-pinned (merg
+    === FORK_DRIFT (opam lem) EXIT=0 ===
+    lem on PATH: Lem lean-backend-v0.1.0-alpha.1-0-gc2a68e7
+    === FORK_DRIFT (tag-form lem -v) EXIT=0 ===
+    check_pin_sites: OK — lem-pin c2a68e79b6369e19f099dfa48767319c1daf19b3 at every site (lakefile rev, 3 lake-manifests rev+inputRev, README pin command)
+    === PIN_SITES EXIT=0 ===
+
+The version strings carry the tagged commits (`Lem lean-backend-v0.1.0-alpha.1-0-gc2a68e7`;
+`git-cerberus-lean-v0.1.0-alpha.1-0-gcfc275d84`), and the fork-drift gate accepts the tag-form `lem -v` against the full
+pin (the describe-string path, plant S17's real-world instance). This closes the tag exit of M9. cerberus-sl's final pin
+for this release is the tag `cerberus-lean-v0.1.0-alpha.1` = `cfc275d84fbf1d48d9c85032c9a7934c97849a77` (consumer note
+updated). Not verified here: GitHub issue creation for external users (the operator deferred the setting).
