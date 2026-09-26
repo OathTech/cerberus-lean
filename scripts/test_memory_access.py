@@ -122,8 +122,12 @@ def main():
         # Skeptical review F3 (2026-09-26): the executables run under the per-test resident-memory
         # cap like every other harness (scripts/common.sh CAPPED_TEST: CERB_TEST_MEM_MAX, default 4G;
         # a breach exits 137 and fails validate()). /usr/bin/time runs INSIDE the cap so %M is the exe's.
-        result = subprocess.run([str(ROOT / 'scripts' / 'capped'), '/usr/bin/time', '-f', '%M', '-o', str(rss_file), *command],
-                                cwd=ROOT, capture_output=True, timeout=60,
+        # timeout INSIDE the cap (review S1): a Python-level kill would SIGKILL `capped` itself and leak
+        # its cgroup with the executable orphaned inside; the outer Python timeout is only a backstop.
+        # On cap-less hosts or CERB_MEM_MAX=none `capped` warns on stderr, so this leg fails closed (S4).
+        result = subprocess.run([str(ROOT / 'scripts' / 'capped'), 'timeout', '--kill-after=5', '60',
+                                 '/usr/bin/time', '-f', '%M', '-o', str(rss_file), *command],
+                                cwd=ROOT, capture_output=True, timeout=120,
                                 env={**os.environ, 'LEAN_ABORT_ON_PANIC': '1',
                                      'CERB_MEM_MAX': os.environ.get('CERB_TEST_MEM_MAX', '4G')})
         elapsed = time.monotonic() - start

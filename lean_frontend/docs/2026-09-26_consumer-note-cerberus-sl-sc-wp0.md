@@ -1,7 +1,8 @@
 # Consumer note for cerberus-sl — SC WP0 lands after the alpha tag (2026-09-26)
 
-Author: the orchestrator [AGENT]. Your alpha pin (`cerberus-lean-v0.1.0-alpha.1` = `cfc275d84`) does NOT contain this
-change; it arrives at whatever pin you take after `mdd/cerberus-lean` moves past the WP0 landing.
+Author: the orchestrator [AGENT]. Your committed pin (`2b51d2a57` in `scripts/semantics-pin.env`) and the alpha tag
+(`cerberus-lean-v0.1.0-alpha.1` = `cfc275d84`) both predate this change; it arrives at whatever pin you take after
+`mdd/cerberus-lean` moves past the WP0 landing.
 
 ## What changes for you
 

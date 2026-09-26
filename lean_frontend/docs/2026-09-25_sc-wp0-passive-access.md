@@ -216,8 +216,9 @@ docs-only P2 (F1)". Closed here:
   `loadM`/`storeM` over an arbitrary `σ : MemState`. With receipts ENABLED (`σ.observations = some _`) five of its kernel
   lemmas become false, not merely rebuilt: `MemLoc.lean:26 loadM_loc_indep`, `:35 storeM_loc_indep` (a receipt carries
   `loc` into the SUCCESS state), `UnseqReads.lean:151 loadM_lastUsed_only`, `HeapModel.lean:267 storeM_active`,
-  `:287 loadM_active`. Structural-pattern risk is zero (no `MemState.mk`/`.ext`/anonymous-constructor sites; 537
-  `{… : MemState}` literals are transparent to the new defaulted field). Remedy on their side: the hypothesis
+  `:287 loadM_active`. Structural-pattern risk is zero (no `MemState.mk`/`.ext`/anonymous-constructor sites; the ~578 `{σ : MemState}`
+  forms are implicit BINDERS, not struct literals — review erratum S2 — and the 11 untyped `lastAddress :=` literals are
+  transparent to the new defaulted field). Remedy on their side: the hypothesis
   `σ.observations = none`, which every primitive preserves when capture is disabled (`disabled_recordAccess`,
   `load_erasure`/`store_erasure` in `Unit.MemoryAccessProofs`). Consumer note:
   `2026-09-26_consumer-note-cerberus-sl-sc-wp0.md`. Neither WP0 record nor the two prior audits had mentioned the consumer.
