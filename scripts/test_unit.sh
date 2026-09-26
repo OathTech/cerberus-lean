@@ -44,6 +44,9 @@ UNIT_TESTS=(
     # match-pattern-arity (2026-09-20, cerberus-sl item 7): match_pattern/typecheck_pattern fail
     # closed on tuple-arity mismatch — T1–T3 by rfl, T4 negative control, T5 typing pin (runtime)
     "match-pattern-arity-test"
+    # SC WP0 (2026-09-25/26): passive load/store receipts — erasure proofs + the primitive/ND
+    # diagnostic; also Tier A row 13's Lean consumer. Args: fuel, iteration count, capture mode.
+    "memory-access-test"
 )
 
 # ---------------------------------------------------------------------------
@@ -89,6 +92,8 @@ for test in "${TESTS[@]}"; do
     # The item-7 closure round's Elet/PElet runtime routes need an ambient LemFuel; the exe
     # takes it here (no fuel numeral in test/Unit/MatchPatternArityTest.lean).
     if [[ "$test" == match-pattern-arity-test ]]; then test_args=(17); fi
+    # WP0 diagnostic: the suite fuel, zero stream iterations, capture on (row 13 runs the full grid).
+    if [[ "$test" == memory-access-test ]]; then test_args=(17 0 on); fi
     if "$bin" "${test_args[@]}"; then
         echo "${GREEN}✓ $test PASSED${NC}"
         total_pass=$((total_pass + 1))

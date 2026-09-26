@@ -206,3 +206,39 @@ unit. Optional symbolic/CHERI compilation remains the dependency limitation
 described above. Full-tier completion does not constitute independent semantic
 acceptance or a public SC release. No mainline merge or push has been performed.
 Acceptance and landing close WP0; WP1 has not started.
+
+## Consumer exposure and skeptical-review closure (2026-09-26, orchestrator [AGENT])
+
+Skeptical review `2026-09-26_sc-wp0-skeptical-review.md` (Claude Fable, fresh reviewer): verdict "merge-ready after ONE
+docs-only P2 (F1)". Closed here:
+
+- **F1 (P2) — consumer exposure.** cerberus-sl (pin `2b51d2a57`) proves its memory lemmas by UNFOLDING the production
+  `loadM`/`storeM` over an arbitrary `σ : MemState`. With receipts ENABLED (`σ.observations = some _`) five of its kernel
+  lemmas become false, not merely rebuilt: `MemLoc.lean:26 loadM_loc_indep`, `:35 storeM_loc_indep` (a receipt carries
+  `loc` into the SUCCESS state), `UnseqReads.lean:151 loadM_lastUsed_only`, `HeapModel.lean:267 storeM_active`,
+  `:287 loadM_active`. Structural-pattern risk is zero (no `MemState.mk`/`.ext`/anonymous-constructor sites; 537
+  `{… : MemState}` literals are transparent to the new defaulted field). Remedy on their side: the hypothesis
+  `σ.observations = none`, which every primitive preserves when capture is disabled (`disabled_recordAccess`,
+  `load_erasure`/`store_erasure` in `Unit.MemoryAccessProofs`). Consumer note:
+  `2026-09-26_consumer-note-cerberus-sl-sc-wp0.md`. Neither WP0 record nor the two prior audits had mentioned the consumer.
+- **F2 (P3) — evidence heads.** The committed "final" reports (`access-full-validation.json`, `access-three-engine.json`,
+  `access-cost.json`) record `head = 917961adf` on a DIRTY tree; the reviewer verified all fifteen
+  `tested_changed_source_sha256` values equal the `4e86ea091` blobs, so the tested content is the reviewed content. The
+  "Final validation" section above names no head; this sentence does.
+- **F3 (P3) — cap.** `scripts/test_memory_access.py` now runs both executables under `scripts/capped` with the per-test
+  cap (`CERB_TEST_MEM_MAX`, default 4G; `/usr/bin/time` inside the cap), per `scripts/common.sh`'s `CAPPED_TEST`
+  convention. The build steps were already capped.
+- **F4 (P3) — wiring/docs.** `memory-access-test` joins row 1's executable list (`17 0 on`), so `Unit.MemoryAccessProofs`
+  compiles in row 1 and not only via row 13; `lean_frontend/CLAUDE.md` names the executable and the script;
+  `SUPPORTED.md`'s Domain row names the opt-in receipt buffer as a passive instrument, not SC execution.
+- **F5 (P3) — the lem ruling.** `mem_common.lem` gains three TYPES shared by both targets; the generated OCaml changes
+  only by those type definitions (the sole new layer-2 row, `mem_common.ml`). [USER 2026-09-04] "we don't change the lem
+  structure for ocaml" targets function/body restructuring for the Lean target's sake; a single-source data type both
+  implementations consume is the mirror-correct choice (a hand copy on either side would be the divergence), and the
+  OCaml output gained no behaviour. [AGENT] judged within the ruling's purpose; recorded here for the operator.
+- **F6 (N) — store-hook placement.** OCaml records inside its first `update` before the union/read-only bookkeeping;
+  Lean after. Same receipt content, equal final states; now a deliberate-divergence note in `CerbMem.lean`.
+- Notes F7–F12 (refused `strict_reads` arm returns `st`; MemState has 15 fields; fuel numerals 17/64 in the Python
+  harness under the CERB_TEST_FUEL precedent; symbolic/CHERI stubs type-correct by inspection but uncompiled; evidence is
+  184 KiB of JSON/txt, no archives; the 8 Python `assert` controls vanish under `-O`) stand as recorded.
+

@@ -2552,6 +2552,10 @@ def storeM [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocati
           else st'
         | none => st'
       let fp : Footprint := .FP .W addr (sizeofCtype enumDefs tagDefs ty)
+      -- Deliberate placement divergence (skeptical review F6, 2026-09-26): impl_mem.ml records the
+      -- store receipt inside its first `update`, BEFORE the union/read-only bookkeeping; here it is
+      -- appended AFTER. Same bytes, value, pointer and allocation on both sides; the bookkeeping
+      -- touches other fields, so the final states are equal (row 13 compares them).
       (NDactive fp, recordAccess loc StoreAccess ty pv (allocOpt.map Prod.fst)
         addr bytes mv (some isLocking)
         { st' with lastUsed := allocOpt.map Prod.fst })                 -- :1687 last_used

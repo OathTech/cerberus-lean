@@ -119,9 +119,13 @@ def main():
         command = [str(exe), *fuel, str(count), mode]
         rss_file = OUT/f'{index}.rss'
         start = time.monotonic()
-        result = subprocess.run(['/usr/bin/time', '-f', '%M', '-o', str(rss_file), *command],
+        # Skeptical review F3 (2026-09-26): the executables run under the per-test resident-memory
+        # cap like every other harness (scripts/common.sh CAPPED_TEST: CERB_TEST_MEM_MAX, default 4G;
+        # a breach exits 137 and fails validate()). /usr/bin/time runs INSIDE the cap so %M is the exe's.
+        result = subprocess.run([str(ROOT / 'scripts' / 'capped'), '/usr/bin/time', '-f', '%M', '-o', str(rss_file), *command],
                                 cwd=ROOT, capture_output=True, timeout=60,
-                                env={**os.environ, 'LEAN_ABORT_ON_PANIC': '1'})
+                                env={**os.environ, 'LEAN_ABORT_ON_PANIC': '1',
+                                     'CERB_MEM_MAX': os.environ.get('CERB_TEST_MEM_MAX', '4G')})
         elapsed = time.monotonic() - start
         (OUT/f'{index}.stdout').write_bytes(result.stdout)
         (OUT/f'{index}.stderr').write_bytes(result.stderr)
