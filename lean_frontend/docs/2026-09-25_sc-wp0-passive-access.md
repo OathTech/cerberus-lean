@@ -243,3 +243,42 @@ docs-only P2 (F1)". Closed here:
   harness under the CERB_TEST_FUEL precedent; symbolic/CHERI stubs type-correct by inspection but uncompiled; evidence is
   184 KiB of JSON/txt, no archives; the 8 Python `assert` controls vanish under `-O`) stand as recorded.
 
+
+## Landing (2026-09-27) — orchestrator [AGENT]
+
+[USER 2026-09-27] verbatim: "Great go ahead and merge." — after the operator defined the "uncontroversial" bar the
+candidate was reviewed against ([USER 2026-09-27]: "1. The sequential semantics is unaffected by this. 2. The design
+decisions seem consistent with the original upstream OCaml's design. 3. The semantic effect of this on the concurrency
+seems reasonable, if not fully validated yet. I would say that the other question of whether or not it breaks things for
+a downstream customer is secondary to the question of whether it's faithful and well-designed.") and the orchestrator's
+assessment against it (chat, 2026-09-27; summarised: (1) capture disabled by default, zero production callers, kernel
+erasure theorems, every lane at baseline; the `_Bool` repair moves the Lean model TOWARD the oracle on an unobservable
+failure path; (2) hooks at OCaml's own bookkeeping points, same receipt content both sides, shared type in
+`mem_common.lem`, option-returning signature members with `None` for unsupporting models, ND transport untouched; (3)
+receipts are primitive facts; two WP1 design points — drainable-but-unbounded storage, and the source location entering
+the state when enabled).
+
+Landed range: `mdd/cerberus-lean` 9bf8cdaa6 -> this commit, ff-only: the three WP0 commits rebased by the orchestrator
+from `arc/sc-wp0` @ e1c1d2c3a (content-identical by `git range-diff`; `d61dcb9c4`, `3cb7f7587`, `cbe9a93d8`), the
+two closure commits, the fresh skeptical review (two passes, `2026-09-26_sc-wp0-skeptical-review.md`) and this landing
+note. `arc/sc-wp0` remains the SC effort's record; `arc/sc-wp1` (based on e1c1d2c3a) must rebase onto this mainline.
+The lem pin is unchanged (`c2a68e79…`).
+
+Orchestrator's independent gates (rebased worktree `worktrees/cerberus-lean-review/sc-wp0-rebased-20260926`), verbatim:
+
+- Full ladder on the code head `cbe9a93d8` (frozen tree, 07:03–08:28 UTC, `release.py --mode full`):
+  `full: passed; 40/40 selected commands completed successfully.` / `Source unchanged: True. Complete tier selection: True.` /
+  `Independent oracle: passed; {'semantic_agreement': 835, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}` /
+  gcc oracle `SUMMARY: total=2014 compared=1929 agree=1917 …` `Baseline check: 0 regression(s), 0 improvement(s)` /
+  libxml2 `SUMMARY: total=4 match=4 fail=0 (points: 1354, 22 observations each)`.
+- Closure head `06648fa94` (regenerated from wiped trees; generated deltas = `mem_common.ml`, `Mem_common.lean`,
+  `Mem_common_auxiliary.lean`, the `CerbMem.lean` copy — exactly the expected ones): `Total: 16 passed, 0 failed`
+  (`✓ memory-access-test PASSED`; `PASS [2] Bool trap retains completed read state`); `check_fork_drift: OK — layer 1: 86
+  oracle-surface files = manifest … layer 2: 31 differing generated files, all hash-pinned …`; `check_failure_reach: OK
+  (239 …`; `check_theorem_axioms: OK …`; `check_sorry_token: OK (323 files … 0 sorry tokens)`; `check_pin_sites: OK …`;
+  row 13 `PASS memory access: 3 runs; primitive receipts, all ND constructors, erasure, draining; 8 instrument controls`;
+  ten Tier A lanes EXIT=0 (minimal 113 = 90/18/5; coverage 212; debug 90; float 93/93; bytes 9 + 5; libc 12/12;
+  multi-TU 2/2 and 7/7; address space 18; immaculate at baseline; every `Baseline check: 0 regression(s), 0 improvement(s)`).
+
+Post-landing: the primary checkout is regenerated from wiped trees, rebuilt and gated (tails in the orchestrator's landing
+message and memory). Consumer: `2026-09-26_consumer-note-cerberus-sl-sc-wp0.md`. Not pushed.
