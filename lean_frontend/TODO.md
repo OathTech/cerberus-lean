@@ -314,8 +314,10 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   table has a by-value self-edge, `CerbTagsWf.Acyclic` is false, both oracles
   hang, Lean gives the loud `CerbMem.memberAlign: fuel exhausted`. The
   hypothesis is honest and the register header says "for programs the
-  frontend accepts correctly"; the tray draft is owed by the Z4 code half. S
-  (draft) / operator decision (a frontend fix is a shared-semantics change).
+  frontend accepts correctly". Tray draft WRITTEN 2026-09-27: `docs/upstream-tray/47-alignas-incomplete-type-not-diagnosed.md`
+  (widened: a forward-declared struct or a non-character member crashes both oracles with `Not_found`).
+  Fork fix RULED [USER 2026-09-27]: "yes, 'constraint violation' - and this goes in the tray if it isn't
+  there already" — next-phase plan P2d-3.
 - **Stack overflow vs fuel (C4 audit F-A7), for the mem-scale/stack-ceiling
   backlog:** deep NON-tail recursion in a fuel'd worker dies on the 8 MB
   native stack (rc=134 `Stack overflow detected. Aborting.`) long before the

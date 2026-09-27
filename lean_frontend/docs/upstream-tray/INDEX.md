@@ -17,7 +17,7 @@ recorded submission; **Sent** = transmitted without an issue/PR URL;
 **Filed** = recorded issue/PR URL; **Closed** = recorded upstream closure.
 A fork-side fix or a pushed PR branch does not mean Filed or Closed.
 
-Derived inventory (2026-09-29): 51 report files, **46 Draft, 4 Sent, 1 Filed, 0 Closed** (the four Sent = the ISO-fix register's reports 10/11/13/40, communicated privately to the maintainers; report 19, the register's DEFERRED row R4, stays Draft).
+Derived inventory (2026-09-29): 52 report files, **47 Draft, 4 Sent, 1 Filed, 0 Closed** (the four Sent = the ISO-fix register's reports 10/11/13/40, communicated privately to the maintainers; report 19, the register's DEFERRED row R4, stays Draft).
 Issue 1010 is recorded below but has no tray report, so is outside this count.
 Draft duplicate searches must be repeated before filing; the dated search
 notes below establish only what was checked then.
@@ -70,6 +70,7 @@ notes below establish only what was checked then.
 | [44-concrete-allocator-euclidean-align-down-overlap-at-exhaustion.md](44-concrete-allocator-euclidean-align-down-overlap-at-exhaustion.md) | Draft | No submission recorded |
 | [45-core-match-pattern-truncating-zip-arity.md](45-core-match-pattern-truncating-zip-arity.md) | Draft | No submission recorded |
 | [46-function-pointer-number-is-a-fresh-supply-artefact.md](46-function-pointer-number-is-a-fresh-supply-artefact.md) | Draft | No submission recorded |
+| [47-alignas-incomplete-type-not-diagnosed.md](47-alignas-incomplete-type-not-diagnosed.md) | Draft | No submission recorded |
 | [lean4/01-stack-overflow-handler-deadlock.md](lean4/01-stack-overflow-handler-deadlock.md) | Draft | No submission recorded |
 | [lean4/02-nat-div-mod-literal-folding.md](lean4/02-nat-div-mod-literal-folding.md) | Draft | No submission recorded |
 | [lean4/03-float-tobits-canonicalizes-nan.md](lean4/03-float-tobits-canonicalizes-nan.md) | Draft | No submission recorded |
@@ -606,6 +607,25 @@ the flexible-array-member compatibility question, 42 = unary minus on a floating
     body, both guards; record `lean_frontend/docs/2026-09-20_match-pattern-arity-record.md`; kernel
     facts in `test/Unit/MatchPatternArityTest.lean`). Drafted by Claude (Fable 5.1) under operator
     direction; AI-provenance note per the tray's policy.
+
+46. **46-function-pointer-number-is-a-fresh-supply-artefact.md** — QUESTION / design, C-reachable
+    (added 2026-09-28 [AGENT]). A function pointer's integer value (`impl_mem.ml:2487-2488`), its stored bytes
+    (`:1203-1220`) and `%p` are the symbol's fresh-counter number, so they depend on how many `std.core` symbols
+    were drawn before the user TU (`core_parser.mly:184,220`). The fork registers the difference as named
+    deviation N1 (VALIDATION §2b). From the 2026-09-28 served-surface audit P1-1; drafted by Claude (Opus 5.5)
+    under operator direction; AI-provenance note per the tray's policy.
+
+47. **47-alignas-incomplete-type-not-diagnosed.md** — TRUE BUG / missed constraint diagnostic,
+    C-reachable (added 2026-09-27 [AGENT]). `_Alignas(type-name)` never checks §6.5.3.4#1 (via
+    §6.7.5#5): `desugar_alignment_specifier` (`cabs_to_ail.lem:2757-2761`) stores `AlignType ty`
+    unexamined, while the expression form `_Alignof` is diagnosed (`AlignofInvalidApplication`,
+    `genTyping.lem`). Pristine `b9aeedcb4`: `struct A { _Alignas(struct A) char c; }` does not
+    terminate (rc 124); a forward-declared struct or a non-character member crashes with
+    `Not_found` (rc 125); gcc rejects all three. Remedy: the completeness/function check at the
+    specifier, reusing `AlignofInvalidApplication`. Fork fix RULED [USER 2026-09-27] "yes,
+    'constraint violation' - and this goes in the tray if it isn't there already". From the C4
+    audit's F-A2; drafted by Claude (Opus 5.5) under operator direction; AI-provenance note per the
+    tray's policy.
 
 Amended 2026-09-05: draft 10 gains an addendum for the STRING-LITERAL
 form of `\?` (`"\?"` reaches the same decoder from translation.ml:3029;
