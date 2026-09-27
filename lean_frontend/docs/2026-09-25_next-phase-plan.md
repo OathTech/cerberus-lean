@@ -928,8 +928,16 @@ Phase 1; (4) contact the SC track's owner to agree the fence.
   alignment specifiers (C11 §6.2.7#1); incompatibility flows through the
   existing path; tray draft first, pristine-register row at landing.
   `aligned_alloc(0, n)` stays a loud "unsupported" refusal (§10.2 Q1). F-A2
-  (`_Alignas(struct A)` on a char member) remains HELD pending the operator's
-  word on "constraint violation" vs "unsupported" (§10.3).
+  RULED [USER 2026-09-27]: "yes, 'constraint violation' - and this goes in the
+  tray if it isn't there already". It was not in the tray; draft 46
+  (`docs/upstream-tray/46-alignas-incomplete-type-not-diagnosed.md`, branch
+  `docs/tray-46-alignas-incomplete`) records it, widened on re-run: every
+  `_Alignas(T)` with an incomplete `T` is accepted (self-referential char member
+  hangs both oracles; forward-declared struct or non-character member crashes
+  both with `Not_found`; gcc rejects all three). The fork fix — the §6.5.3.4#1
+  check at `desugar_alignment_specifier`, reusing `AlignofInvalidApplication` —
+  joins P2d-3 and also retires the Lean-vs-oracle failure-surface difference on
+  the non-character shape.
 - **Q2′ — release-branch publication of `generated/`.** [AGENT] reading of "this
   is fine": the orchestrator's recommended option — the mainline keeps
   `generated/` gitignored; a release line (tags `cerberus-lean-v*` on commits
