@@ -1,5 +1,11 @@
 # Next-phase plan — quality of life, defect fixes, extending usefulness (2026-09-25)
 
+> **READ §11 FIRST (2026-09-27).** §11 is the CURRENT sequence, status and
+> decision set; it supersedes the phase order of §3, the decision rows of §6
+> and the rulings table of §10 wherever they differ. §3 remains the item
+> catalogue (descriptions, sources, prices unless §11 re-prices them). Do not
+> brief a worker from a §3 or §6 row without checking §11.
+
 STATUS: PROPOSAL for operator discussion, prepared by the orchestrator [AGENT],
 revised once after an independent adversarial review (§7). Not a charter.
 Nothing below is ruled; every item that changes a ruling, a shared-model
@@ -852,3 +858,188 @@ representation) are sequenced after checking `SC-CONCURRENCY.md`'s next work
 packages, so the two tracks do not edit `CerbMem.lean` / `mem_common.lem` /
 `impl_mem.ml` in parallel. This is a scheduling question for the operator and
 the SC track's owner; everything not touching those files proceeds unaffected.
+
+## 11. Second review and the current sequence (2026-09-27)
+
+### 11.1 The second review
+
+Commissioned [USER 2026-09-27]: "okay, can you do a re-review of this?
+Subagent, look for things in the plan that would make it hard to execute and
+deliver, or things that would be at odds with project long-term goals". A fresh
+reviewer (general-purpose subagent, read-only) read the plan at `919e9ab41`, the
+container and global practices, twelve doctrine memories, the forward
+assessment, the reasoning-era postmortem and the SC master plan. Verdict,
+quoted: "The shape is careful and trust-safe, but it mostly polishes … The
+things that decide the long-term goals — Lean failing where the oracle succeeds
+(the aim-1 bugs), the scale ceilings, upstream re-convergence, and real-C
+coverage — are all conditional or deferred to Phases 3–4."
+
+Load-bearing premises re-verified by the orchestrator before disposition:
+`lean_frontend/lem_sync.sha256` is untracked and `tools/check_lem_sync.sh:45-50`
+excludes the Lem version and the Makefile sed patch-ups from its hash;
+`scripts/new-worktree.sh:78-84` `cp -a`s the primary's `lean_frontend/generated`
+over a new worktree; `scripts/common.sh:396-441` applies a second per-test cap
+`CERB_TEST_MEM_MAX` (default 4G) with the OOM classification read from the
+cgroup, used by nine lane scripts; C11 §6.2.7#1's alignment-specifier clause is
+quoted at `docs/2026-09-15_semantics-audit-repairs-premerge-audit.md:45`;
+`CerbGlobal.lean:44-54` assigns `using_concurrency`'s step 2 to the concurrency
+branch; the zero-discrepancy memory calls the run-loop rendering mandatory for
+the zero-init hang; `SC-CONCURRENCY.md` §3/§4 forbids a long-lived branch
+accumulating unaudited features; `arc/sc-wp1` (`af1342d32`) already edits
+`frontend/model/driver.lem` (+247) and `core_reduction.lem`, and SC S1 owns the
+run loop, initialization/finalization, output streaming, resource accounting
+and shared-Lem fork/wait repairs.
+
+| # | Sev | Finding | Disposition |
+|---|---|---|---|
+| E1 | MAJOR | §10.7's SC fence covers three memory files; the real overlap is configuration, outcome types, run loop, CLI, re-sync and the Lem pin. | APPLIED — §11.5 fence; the note to the SC track (11.6). |
+| E2 | MAJOR | "ONE consumer re-pin" either is unneeded (the consumer skips heads) or means a merge hold, which SC's plan forbids and which makes audit ranges huge. | APPLIED — slices merge ff-only when ready; the re-pin is a consumer-note cadence with a diff manifest that includes SC-track changes. |
+| E3 | MAJOR | Committing `generated/` doubles every seam diff, is not guarded by the untracked stamp, dirties worktrees via `new-worktree.sh`, still needs `md5.o`, and makes Lem re-pins 5 MB diffs. | APPLIED via the ruling in 11.2 (Q2 revised: a release branch/tag carries `generated/`). |
+| E4 | MAJOR | The body is stale against §10. | APPLIED — banner at the top; §11 is authoritative. |
+| E5 | MAJOR | CI scope misses `CERB_TEST_MEM_MAX`, OOM classification, fork-drift provisioning and the inherited workflows. | APPLIED — 11.4 CI item. |
+| E6 | MINOR | Consumer-dependent decisions lack a fallback. | APPLIED — default "not this cycle", logged [AGENT]. |
+| E7 | MINOR | P1c-1 needs a quiet-box window and a per-row bound. | APPLIED — cap each row at 10× its lane timeout; rows hitting it are recorded TIMEOUT-confirmed; the quiet-box window is an operator scheduling item. |
+| E8 | MINOR | Prices/classes: P1d-1 is M in an S slice; P1b-1 is harness work, not emission; P3-7 is M–L; P1d-5 is S only after a trial build. | APPLIED in 11.4. |
+| E9 | MINOR | Design notes need a named referent (postmortem §2). | APPLIED — each note names its canonical technique (11.4). |
+| E10 | NOTE | §10.3 decided shared-model shapes by default. | APPLIED — F-A2's bucket is HELD until the operator confirms; `_Alignas` is re-ruled (11.2). |
+| G1 | MAJOR | `_Alignas` is ISO-mandated, so "obviously wrong", not "unsupported". | RULED — 11.2 Q1′. |
+| G2 | MAJOR | Moving `defaultFuel`/`defaultAddressSpaceTop` into an importable `Pipeline` breaks the no-magic-values rule. | APPLIED — `Pipeline` takes fuel and top as parameters; the defaults stay in `Main`; the numerals allowlist does not move. |
+| G3 | MAJOR | Ordering inverts the four aims: aim-1 bugs (oracle succeeds, Lean fails) sit behind packaging. | RULED — 11.2 Q3′; 11.4 order. |
+| G4 | MAJOR | Upstreamability last while deltas accumulate. | APPLIED — fork-delta triage in Phase 1; every new OCaml-side delta classified upstreamable / fork-permanent at landing; re-sync at the next network window. |
+| G5 | MAJOR | Nothing moves toward larger real C. | APPLIED — real-C reach census in Phase 1 (P1f-2). |
+| G6 | MAJOR | Four fragments of one outcome-taxonomy question (kill reasons, "unsupported", JSON kill class, fuel message, SC's five outcomes). | APPLIED — one outcome-taxonomy note co-owned with SC and the consumer (P1f-4) before P2b-1 or the Q1 refusals are coded. |
+| G7 | MINOR | P2b-3's "consumer discharges by evaluation" rationale nears the out-of-policy ban. | APPLIED — the checker is a lane instrument only; the rationale dropped; P2b-6 (`WFfile`) moved to the Q12 explicit-yes list. |
+| G8 | MINOR | The plan adds docs/check sprawl. | APPLIED — prune first (history records into `docs/history/`), then one index; the doc `--check`s merge into ONE speedbump script. |
+| G9 | NOTE | Part of the stack ceiling is in the Lean runtime; a Lean-level trampoline may not fix it. | APPLIED — P3-2c must test that premise first. |
+
+### 11.2 Operator rulings, 2026-09-27 (second round, verbatim)
+
+[USER 2026-09-27]: "(1) agree, (2) how does the eventual 'requires' line in
+lean look? If it's still clean, this is fine. (3) agree, (4) agree, write a note
+for them in a worktree"
+
+The four questions put to the operator were: (1) move `_Alignas` to the
+bug-fix bucket; (2) publish `generated/` on a release branch only, or commit it
+on the mainline with three prerequisites; (3) reorder so oracle-mismatch and
+scale bugs precede packaging, with fork-delta triage and the real-C census in
+Phase 1; (4) contact the SC track's owner to agree the fence.
+
+- **Q1′ — `_Alignas` is a bug-fix.** `are_compatible_aux` compares member
+  alignment specifiers (C11 §6.2.7#1); incompatibility flows through the
+  existing path; tray draft first, pristine-register row at landing.
+  `aligned_alloc(0, n)` stays a loud "unsupported" refusal (§10.2 Q1). F-A2
+  (`_Alignas(struct A)` on a char member) remains HELD pending the operator's
+  word on "constraint violation" vs "unsupported" (§10.3).
+- **Q2′ — release-branch publication of `generated/`.** [AGENT] reading of "this
+  is fine": the orchestrator's recommended option — the mainline keeps
+  `generated/` gitignored; a release line (tags `cerberus-lean-v*` on commits
+  that add the generated tree) is what a Lean client requires. The client's
+  `lakefile.toml`, as shown to the operator:
+
+  ```toml
+  [[require]]
+  name = "CerberusLean"
+  git = "https://github.com/OathTech/cerberus-lean"
+  rev = "cerberus-lean-v0.2.0"
+  subDir = "lean_frontend"
+  ```
+
+  Prerequisite: P2a-2 (the package exports `md5.o`), or the client's link
+  fails. The release commit is produced by a script (regenerate, add, tag) and
+  checked by a regenerate-and-diff comparison against the tagged source.
+  E3's mainline costs do not arise; `new-worktree.sh` is unchanged.
+- **Q3′ — reorder.** 11.4.
+- **Q4′ — the SC note.** 11.6.
+
+### 11.3 Merge and re-pin cadence
+
+Slices merge ff-only to `mdd/cerberus-lean` as each is ready, on per-merge
+sign-off with its audit ask, exactly as today. The consumer re-pins at points
+the orchestrator names in a consumer note (a tag on the release line), each
+with a diff manifest covering everything since their last pin, SC-track
+landings included. Consumer-dependent items (P2b-1 shape (i), P2b-2, P2c-4)
+default to "not this cycle" [AGENT] if cerberus-sl has not answered when the
+relevant slice is briefed.
+
+### 11.4 The current sequence
+
+IDs refer to §3 unless new. Status: DONE / OPEN / HELD (awaiting a decision) /
+FENCED (sequenced against the SC track, 11.5).
+
+**Phase 0 — release (done).** P0-1 DONE (tags verified from anonymous clones,
+`9bf8cdaa6`). P0-2 half DONE (final pin = the tag); the Phase-1 consumer note
+remains. P0-3 OPEN (deletion list; operator executes). P0-4 = this record.
+
+**Phase 1 — fail-closed debt, diagnostics, and direction-setting documents.**
+
+| Slice | Items | Notes |
+|---|---|---|
+| 1a instruments | P1a-1 … P1a-12 | P1a-8 (derived counts) folds into the single doc speedbump of 1e. |
+| 1b CLI/bridge | P1b-1 (re-classed harness, M), P1b-2, P1b-3, P1b-4 | P1b-1/P1b-2 touch `Main.lean`: FENCED with SC's public-mode flags. |
+| 1c measurements + drafts | P1c-1 (per-row cap 10× lane timeout; quiet-box window scheduled by the operator), P1c-2 (+ the `_Alignas` draft now as a bug report), P1c-3, P1c-4 | — |
+| 1d lem-lean S | P1d-1 (M), P1d-2 … P1d-9; P1d-5 priced after a 4.32.2 trial build | Lem pin moves are FENCED (11.5 rule). |
+| 1e docs | prune first (history records to `docs/history/`), then P1e-1 index, P1e-2 … P1e-6; ONE `--check` speedbump script for counts/index/knobs | — |
+| **1f direction (NEW)** | **P1f-1** fork-delta triage (was P4-1, incl. the byte-identity write-up) · **P1f-2** real-C reach census: the pKVM buddy allocator case study, a handful of `deps/linux` `lib/` files and the libxml2 TUs through bridge → elaboration → single-trace run on both engines, report-only, refusals and ceilings ranked by cause · **P1f-3** the two design notes P3-2b (run-loop rendering; referent: defunctionalised interpretation of the monadic combinators inside `run`) and P3-2c (step-runner ceiling; referent: CPS/defunctionalisation to an abstract machine with a kernel-checked equivalence; FIRST test whether the ceiling is in the Lean runtime's `lean_apply_*` frames, which a Lean-level trampoline may not remove) · **P1f-4** outcome-taxonomy note co-owned with the SC track and cerberus-sl: normal / UB / unsupported / blocked / exhausted / fail-stop as typed outcomes a theorem can state; covers P2b-1, the Q1 refusals, the P2a-6 JSON kill class, P1d-6 | S each, M for P1f-2. P1f-3's run-loop note and P1f-4 are FENCED (SC S1 owns the run loop; SC constraint 5 owns the outcome split). |
+
+**Phase 2 — correspondence and scale bugs (aim 1; was Phase 3's core).**
+
+| ID | Item | Status |
+|---|---|---|
+| P2d-1 | union twin (bug-fix) | OPEN — dispatchable now |
+| P2d-3 | `_Alignas` compatibility (bug-fix, Q1′) | OPEN after its tray draft |
+| P3-3 | run-loop rendering, if P1f-3's note is approved | FENCED |
+| P3-4 | step-runner ceiling, if P1f-3's note yields a proven-equal design | FENCED — likely JOINT with SC S1 |
+| P3-5 | `mkListN_aux` measure | OPEN |
+| P3-7 | libc-body UB locations (re-priced M–L) | OPEN |
+| P2d-2 | `aligned_alloc(0, n)` loud refusal, shaped by P1f-4 | FENCED (touches `CerbMem`) |
+| P3-1, P3-2a | benchmark + profile (feed P3-6/P3-8) | OPEN |
+
+**Phase 3 — consumer usefulness (was Phase 2), interleaved with Phase 2 as
+slices become ready.** P2a-1 (Pipeline takes fuel/top as parameters; defaults
+stay in `Main`), P2a-2 (`md5.o` export — prerequisite of the release line),
+P2a-3 as Q2′ (release-line script + regenerate-and-diff check, M), P2a-4,
+P2a-5, P2a-6 (after P1f-4); P2b-1 shape (ii) (after P1f-4); P2b-2 FENCED
+(SC owns `using_concurrency`; the configuration record is designed with them)
+and consumer-gated; P2b-3 as a lane instrument only; P2b-5 as ruled (Q4). The
+generated-surface bundle P2c-1 … P2c-7 lands together as one lem pin dance,
+FENCED on the Lem pin (P2c-1 touches `CerbMem`); P2c-4 consumer-gated.
+
+**Phase 4 — upstream, coverage, instruments.** P4-2 re-sync at the next network
+window, preferably before SC S1 lands broadly (it rebases under the SC branches;
+coordinated through 11.5). P4-3 filing (operator). P4-4. P4-5 coverage work now
+ORDERED by P1f-2's census rather than by guess. P4-6 after Phase 3 (Q12). P4-7,
+P4-8 named deferrals. P4-9, P4-10 as before. P3-6 and P3-8 only on P3-2a's
+evidence.
+
+**CI (Q13, re-scoped per E5).** GitHub-hosted, both repositories. The workflow
+sets `CERB_MEM_MAX=none` AND `CERB_TEST_MEM_MAX=none` (both loud opt-outs; the
+caps stay in the scripts for this shared machine). Without cgroups a lane cannot
+witness an OOM kill, so in CI an exit 137 is reported as an unclassified kill
+and fails the job; the local cap remains the certifying run for OOM rows.
+Provisioning: the README recipe, `scripts/provision_fork_drift_oracle.sh`
+(P1a-10) for `CERB_UPSTREAM_TREE`, and a Lake cache. First step: measure the
+cold build's peak memory on a hosted runner. Whether to keep or disable the
+inherited upstream OCaml/CHERI workflows is an operator choice. Every push of
+the workflow needs explicit authorization at the time.
+
+### 11.5 The SC fence (proposal, pending agreement with the SC track)
+
+Surfaces both tracks touch, and the proposed owner of each change:
+
+| Surface | Plan items | SC packages | Proposed rule |
+|---|---|---|---|
+| `driver.lem`, `core_run*.lem`, `core_reduction.lem`, the run loop | P3-3, P3-4, P1f-3 | WP1 (already +247 lines in `driver.lem`), S1 | SC owns; the plan's scale work is a joint note, landing through S1's review or strictly after S1's landing |
+| Outcome / kill-reason types | P2b-1, P2d-2, P2a-6, P1d-6, P1f-4 | S1 exit ("Completion/UB/unsupported/blocked/exhausted are distinct") | one jointly owned note (P1f-4) before either codes |
+| `global.lem` / `CerbGlobal` configuration record | P2b-2 | S5 public mode; `using_concurrency` step 2 | SC designs the record's concurrency field; the plan lifts the rest after that design exists |
+| `CerbMem.lean`, `mem_common.lem`, `impl_mem.ml` | P2c-1, P2d-2, P2d-4, P3-6 | WP0 landed; S4 object/runtime | each side announces a slice here before starting; landings are sequential |
+| `Main.lean` CLI | P1b-1, P1b-2, P2a-1 | S5 public mode flags | the plan lands its CLI work first (it is small and SC's mode is S5); SC rebases |
+| The lem-lean pin | P1d, P2c | S1 shared-Lem repairs | one Lem pin dance at a time; whoever starts first holds it until its cerberus re-pin lands; the other rebases |
+| Upstream re-sync | P4-2 | all SC branches | scheduled jointly; not during an SC landing |
+
+### 11.6 The note to the SC track
+
+Written as `lean_frontend/docs/2026-09-27_note-to-sc-track-next-phase-coordination.md`
+on branch `docs/sc-coordination-20260927` (worktree
+`worktrees/cerberus-lean-docs/sc-coordination-20260927`), per [USER 2026-09-27]
+"write a note for them in a worktree". It carries 11.5 and asks for agreement or
+counter-proposal. Not merged; delivery to the SC track's owner is the operator's.
