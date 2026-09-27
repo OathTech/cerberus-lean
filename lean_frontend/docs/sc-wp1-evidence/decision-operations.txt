@@ -1,0 +1,16 @@
+fuel=64 pending update sees other thread's function-pointer metadata publication
+fuel=64 update failure retains completed read, without store
+fuel=128 pending update sees other thread's function-pointer metadata publication
+fuel=128 update failure retains completed read, without store
+fuel=64 forward=false: separate read/update/write; other thread intervenes; sibling exactly once; correct return
+fuel=128 forward=true: separate read/update/write; other thread intervenes; sibling exactly once; correct return
+fuel=64 actual inherited advance_step fork control: (22,11)
+fuel=64 corrected Core fork result: (11,22); children reclaimed
+fuel=128 actual inherited advance_step fork control: (22,11)
+fuel=128 corrected Core fork result: (11,22); children reclaimed
+fuel=64 actual Eccall (separate-threads=false): [cab, abc]
+fuel=64 actual Eccall (separate-threads=true): [abc, acb, cab]
+fuel=64 SeqRMW and C call: [abrmwrmw, rmwrmwab]
+fuel=128 actual Eccall (separate-threads=false): [cab, abc]
+fuel=128 actual Eccall (separate-threads=true): [abc, acb, cab]
+fuel=128 SeqRMW and C call: [abrmwrmw, rmwrmwab]

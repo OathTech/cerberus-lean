@@ -1,0 +1,11 @@
+test/Unit/SCWP1SourceProofs.lean:102:12: warning: This simp argument is unused:
+  h
+
+Hint: Omit it from the simp argument list.
+  simp [h,̵ ̵h̵r]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+'SCWP1SourceProofs.race_iff' depends on axioms: [propext, Classical.choice, Quot.sound]
+'SCWP1SourceProofs.unseq_success' depends on axioms: [propext, Classical.choice, Quot.sound]
+'SCWP1SourceProofs.unseq_pairwise' depends on axioms: [propext, Classical.choice, Quot.sound]
+'SCWP1SourceProofs.hoisting_excludes_prior' depends on axioms: [propext, Classical.choice, Quot.sound]

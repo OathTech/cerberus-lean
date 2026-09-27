@@ -1,0 +1,2 @@
+pinned cmm_csem finite scalar witness: 3 actions defined; wrong rf value, reversed SC order, missing atomic source order rejected; two racing writes consistent but undefined
+scope: finite graph diagnostic only; no reliance on program-level true stubs or imported bigthm

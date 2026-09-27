@@ -1,0 +1,2 @@
+'SCWP1DecisionProofs.run_append' depends on axioms: [propext, Classical.choice, Quot.sound]
+'SCWP1DecisionProofs.choices_core_discovery' depends on axioms: [propext, Classical.choice, Quot.sound]

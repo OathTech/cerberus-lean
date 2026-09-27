@@ -1,0 +1,4 @@
+fuel=64 source-order=[a, b]: first conflict at second completed write; 3 paid steps; errno+2 receipts; loop never selected
+fuel=64 source-order=[b, a]: first conflict at second completed write; 3 paid steps; errno+2 receipts; loop never selected
+fuel=128 source-order=[a, b]: first conflict at second completed write; 3 paid steps; errno+2 receipts; loop never selected
+fuel=128 source-order=[b, a]: first conflict at second completed write; 3 paid steps; errno+2 receipts; loop never selected

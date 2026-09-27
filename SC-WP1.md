@@ -18,10 +18,10 @@ git show arc/sc-concurrency:SC-CONCURRENCY.md
 git show arc/sc-concurrency:lean_frontend/docs/2026-09-24_sc-concurrency-design.md
 ```
 
-## Next package
+## WP1 entry contract (September 25)
 
-[AGENT] WP1 tests whether the proposed operational construction is viable
-before broad scheduler or atomic-operation implementation. Its existing
+[AGENT] The entry contract tests whether the proposed operational construction
+is viable before broad scheduler or atomic-operation implementation. Its
 acceptance obligations are:
 
 1. **Bounded stepping through actual Core.** A deterministic single-thread
@@ -43,49 +43,67 @@ acceptance obligations are:
    experiment's actual transition definitions. Report remaining obligations;
    bounded agreement and proposition statements are not general proofs.
 
-Compare direct Core-request interleaving, justified resumable helper services
-and the historical commitment approach. Direct interleaving is the leading
-proposal, not an accepted strategy. Freeze the decision only after the above
-evidence. The failed prototype remains a quarry. Iris integration is outside
+The entry contract compares direct Core-request interleaving, justified
+resumable helper services and the historical commitment approach. Direct
+interleaving was the leading proposal; the September 27 decision below
+resolves the choice after the required evidence. The failed prototype remains a quarry. Iris integration is outside
 the MVP. Useful independently auditable results may be proposed for early
 landing under the master plan's existing policy.
 
-## Starting state
+## Current decision and evidence
 
-[AGENT] The [initial boundary experiment](lean_frontend/docs/2026-09-25_sc-wp1-boundary-investigation.md)
-now reproduces eager multi-reduction and memory effects through the actual
-driver. The subsequent [bounded-stepping experiment](lean_frontend/docs/2026-09-26_sc-wp1-bounded-stepping.md)
-separates pure context discovery from selected interpretation and retains the
-production lifecycle continuation. It has paired Core-loop/startup witnesses
-and kernel schedule/budget/context-reconstruction laws, plus seven C fixtures
-through the Lean frontend. Two actual SeqRMW callback counterexamples reject
-naive suspension: a saved context resurrects completed sibling work, and a
-saved memory snapshot misses a subsequently stored function-pointer mapping.
-The slice passes the full 40-command A+B battery and mandatory three-engine
-report. [Follow-up probes](lean_frontend/docs/2026-09-26_sc-wp1-followup-measurements.md)
-compare nine finite Core source-order sets and expose delayed race detection
-and retained temporary bindings. A hand-built non-forwarding load/negative-store
-expansion survives both suspension counterexamples, but its C-call boundary,
-forwarding and general correspondence remain unestablished.
+[USER, 2026-09-27] Push through the end of WP1; WP0 has landed on main.
+[AGENT] WP1 is rebased onto the actual WP0 landing `5ecc0aa33`; the old
+bounded-stepping commit `171e06df5` is now `b52f9e660`. Historical evidence
+keeps its original identities.
 
-Next, compare that expansion with an explicit pending-operation representation,
-preserving intra-expression alternatives and same-thread C-call indivisibility
-while allowing interthread load/store separation. Derive source completion
-frontiers from actual Core, then test their summaries and reclamation, including
-publication and thread churn. Build WP-C's precise domain/statements and
-substantive Core-to-reference lemma alongside this work. SeqRMW resumption,
-helper suspension, source-order summaries and correspondence remain open;
-the WP1 exit obligations are not yet satisfied.
+The [execution decision and S1 entry contract](lean_frontend/docs/2026-09-27_sc-wp1-execution-decision.md)
+closes WP1 as a decision/evidence package, ready for independent review.
+It chooses selected bounded Core
+reductions over concrete memory, with owned pending primitives where a
+Core action must yield, source frontiers distinct from scheduler order,
+and incremental causal/access summaries. Axiomatic checking remains in
+the independent reference lane. The old branch remains a quarry; no Iris
+integration is part of the MVP.
 
-WP0 landing remains with the overseer. Work may proceed on its audited candidate
-now. Track the actual landing and reconcile this branch with the resulting
-mainline before WP1's own landing; repeat any evidence invalidated by changes
-to the prerequisite. Do not infer a landing from this branch's existence or
-merge/push on the overseer's behalf. The reviewed WP0 runtime remains unchanged.
+The earlier [boundary investigation](lean_frontend/docs/2026-09-25_sc-wp1-boundary-investigation.md),
+[bounded stepping](lean_frontend/docs/2026-09-26_sc-wp1-bounded-stepping.md)
+and [follow-up measurements](lean_frontend/docs/2026-09-26_sc-wp1-followup-measurements.md)
+remain evidence, including their failed alternatives. New checks cover
+pending SeqRMW, actual C-call intervals, fork/join inside modern call
+frames, read-dependent publication, the first race before a looping
+operand, and repeated source/thread churn. General kernel lemmas relate
+the actual unseq reduction and negative-hoisting exclusion operation to
+local relational contracts, and prove exact live-endpoint extension and
+retirement. The candidate adapter also has whole-state run-composition
+and structural-discovery laws.
 
-The standard worktree helper primed build artifacts from the primary checkout,
-which still preceded WP0 at branch creation. Those copies are not validation
-evidence for this branch: regenerate and rebuild before probes. Independent
-oracle provisioning was explicitly skipped for this branch-only setup; provision
-and validate it before any lane that requires it. Use the scoped workspace
-environment and repository memory caps; do not change the shared switch.
+The decision record distinguishes measured/proved facts from S1–S4's
+remaining implementation and correspondence obligations. In particular:
+
+- The dense causal matrix is an exact bounded-retention baseline, not the
+  selected representation for large programs. S2 must justify and measure
+  its efficient implementation against that interface.
+- Production trace streaming and sound lexical environment reclamation
+  are mandatory S1 scale work. The inherited negative-hoisting leak is
+  not fixed or hidden by the positive/churn measurements.
+- S1 must repair inherited positional fork-result reversal and missing
+  modern-stack wait substitution in shared Lem. The candidate adapters
+  demonstrate the intended behavior without changing the default driver.
+- WP-C's hardest open link is actual Core source/control-flow replay and
+  coverage, not merely total-ordering a supplied graph. The typed schemas
+  are statements, not proved end-to-end correspondence.
+
+Reproduce the decision experiments with `scripts/test_sc_wp1_decision.py`;
+rerun the earlier paired and C-source instruments with
+`scripts/test_sc_wp1.py` and `scripts/test_sc_wp1_source.py`. Follow the
+normal scoped environment, memory caps and panic-abort requirements.
+None of these standalone instruments is a new standing ladder gate.
+
+Validation passed: 40/40 full A+B commands, the focused experiments and
+local proof checks, and the 872-case three-engine report with its historical
+report-only differences preserved. Exact source identities and limits are
+in the decision record. No public SC
+mode, mainline merge or push is implied. The next work package is S1's
+actual internal transition API and the independently auditable fixes it
+requires; its source/projection and scale obligations accompany the code.

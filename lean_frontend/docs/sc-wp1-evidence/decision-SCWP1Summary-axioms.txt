@@ -1,0 +1,4 @@
+'SCWP1Summary.project_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'SCWP1Summary.extend_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'SCWP1Summary.extended_transitive' does not depend on any axioms
+'SCWP1Summary.dominated_read' does not depend on any axioms

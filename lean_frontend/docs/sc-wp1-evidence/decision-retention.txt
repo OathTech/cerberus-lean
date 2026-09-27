@@ -1,0 +1,7 @@
+fuel=64 fork=false rounds=16 effects=32 steps=99 peak-threads=1 next-tid=1 retained-roots=6 peak-roots=6 matrix-bools=36 root-refs=6 env-bindings=0 allocations=3 elapsed-ms=7
+fuel=64 fork=false rounds=1024 effects=2048 steps=6147 peak-threads=1 next-tid=1 retained-roots=6 peak-roots=6 matrix-bools=36 root-refs=6 env-bindings=0 allocations=3 elapsed-ms=335
+fuel=64 fork=false rounds=8192 effects=16384 steps=49155 peak-threads=1 next-tid=1 retained-roots=6 peak-roots=6 matrix-bools=36 root-refs=6 env-bindings=0 allocations=3 elapsed-ms=2716
+fuel=64 fork=true rounds=16 effects=32 steps=179 peak-threads=3 next-tid=33 retained-roots=6 peak-roots=6 matrix-bools=36 root-refs=6 env-bindings=0 allocations=3 elapsed-ms=8
+fuel=64 fork=true rounds=1024 effects=2048 steps=11267 peak-threads=3 next-tid=2049 retained-roots=6 peak-roots=6 matrix-bools=36 root-refs=6 env-bindings=0 allocations=3 elapsed-ms=472
+fuel=64 fork=true rounds=8192 effects=16384 steps=90115 peak-threads=3 next-tid=16385 retained-roots=6 peak-roots=6 matrix-bools=36 root-refs=6 env-bindings=0 allocations=3 elapsed-ms=3743
+fuel=128 fork=true rounds=16 effects=32 steps=179 peak-threads=3 next-tid=33 retained-roots=6 peak-roots=6 matrix-bools=36 root-refs=6 env-bindings=0 allocations=3 elapsed-ms=8
