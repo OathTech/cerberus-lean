@@ -738,3 +738,117 @@ It does not claim the release is certified, that any item is approved, that
 the prices are measurements, that the consumer will take the re-pins on any
 schedule, or that the reviewer's unverified figures are facts. Every gate tail
 that supports a claim in a later record is recorded verbatim there, not here.
+
+## 10. Addendum 2026-09-27 — mainline movement and the operator's rulings
+
+### 10.1 What moved (orchestrator [AGENT], measured 2026-09-27)
+
+This branch was rebased from `683dc186c` onto `mdd/cerberus-lean` @
+`5ecc0aa33` (docs-only, no conflict). lem-lean `mdd/lean-backend` is unchanged
+at `c2a68e7`. The upstream-tracking `master` is unchanged locally at
+`b9aeedcb4`; the box is offline, so upstream itself is UNVERIFIED.
+
+- **The release is done.** `cerberus-lean-v0.1.0-alpha.1` and
+  `lean-backend-v0.1.0-alpha.1` exist and were verified from anonymous clones
+  (`9bf8cdaa6`); cerberus-sl's final pin is the tag. P0-1 is closed and P0-2's
+  tag half is done.
+- **Q11 is resolved by the operator's action, not by this plan.** VALIDATION §2
+  (`cfc275d84`) records [USER 2026-09-26] "these have been filed privately in
+  that I have notified the cerberus maintainers" for reports 10/11/13/40 as
+  **Sent**, and states that this meets the register's "filed upstream"
+  criterion. The tray inventory is 44 Draft / 4 Sent / 1 Filed.
+- **SC WP0 landed on the mainline** (`5ecc0aa33`, [USER 2026-09-27] "Great go
+  ahead and merge."): opt-in passive memory-access receipts in `CerbMem.lean`,
+  `mem_common.lem` and the four OCaml memory models, a row-1
+  `memory-access-test`, and an independent sequential repair (`d61dcb9c4`:
+  trapping `_Bool` loads keep the completed read state, mirroring
+  `Concrete.load`). §0's exclusion of concurrency rested on the 2026-09-24
+  ruling; the SC track is now live under the operator's later MVP direction and
+  edits the same memory model as P2c-1, P2b-1(i)/P2d-4 and P3-6. The `_Bool`
+  half of P1c-4 is partly covered by the repair's `MonadicFailstop` witnesses.
+
+### 10.2 Rulings (verbatim, [USER 2026-09-27])
+
+| Q | Verbatim | Consequence for the plan |
+|---|---|---|
+| Q1 | "I think we should slice these as 'obviously wrong' vs. 'real semantic work' - it sounds like the union twin is a mistake, and can be fixed. The other two might be more like 'hard to decide, the model should return some 'shrug shoulders, unsupported' value" | P2d-1 (union twin) is RULED a bug-fix: dispatchable, same shape as the 2026-09-10 struct fix. P2d-2 (`aligned_alloc(0, n)`) and P2d-3 (`_Alignas`) become LOUD UNSUPPORTED refusals (class (c) missing feature), not a chosen semantics. See 10.3 for one sub-case that may belong in the other bucket. |
+| Q2 | "got it, so this is about whether a Lean client can use Cerberus as a library through lake? In that case, let's commit it." | P2a-3 option (a): commit `lean_frontend/generated/`. |
+| Q3 | "agree on both" | P2b-1: shape (ii), transparent kill-location defs, in the Phase 2 bundle; `MerrOutOfMemory` only if cerberus-sl ranks it first. P2b-2: Phase 2 if cerberus-sl confirms it will quantify over the configuration. |
+| Q4 | "agree" | P2b-5: mirror question first; ND choice only if `impl_mem.ml`'s draw is a semantic choice, else keep the boundary row and answer the consumer with the cite. |
+| Q5 | "agree" | P2c-4: in the Phase 2 bundle or never; ask cerberus-sl before deciding. |
+| Q6 | "agree, and we should figure out how to stay in sync in future" | P1d-5: align LemLib to 4.32.2; a sync mechanism is owed (10.4). |
+| Q7 / Q8 | "agree" | P3-2b and P3-2c commissioned as design notes; the step-runner route is proven-equal only. |
+| Q9 / Q10 | "agree" | P0-3 deletion list and P1e-3 evidence policy proceed (deletions remain operator-executed). |
+| Q12 | "I don't feel opinionated about these. As you recommend." | Adopted as recommended: P4-6 after Phase 2; P2b-4 and the determinism lemma only on a consumer request; P4-7/P4-8 after Phase 3, each with its own charter. |
+| Q13 | "the memory caps are only needed for this machine because it's used for many builds. We should just worry about the GH upstream. And maybe take the caps out of ci?" | Q13 becomes a GitHub-hosted CI item, scoped in 10.5. |
+| Q14 | "I don't have enough context ot decide this" | No ruling. Status quo holds (the projection stays on row 6b only); explained in 10.6 for a later decision. |
+
+### 10.3 Q1 — the "unsupported" bucket, as implemented [AGENT]
+
+- `aligned_alloc(0, n)`: today Lean returns `Undefined DUMMY(align_alloc)` for
+  `(0, 8)` and a loud refusal for `(0, 0)`; the oracle raises
+  `Division_by_zero`, a kind-2 host artifact. Both arms become one attributed
+  refusal. This is a Lean-side change within class (c); the `zd-z2m01-*` pins
+  are re-recorded in a dedicated instrument commit; tray 34 records the choice.
+- `_Alignas` member alignment in `are_compatible_aux`: refuse when two
+  cross-TU members differ ONLY in an alignment specifier, rather than silently
+  treating them as compatible. This moves both fork engines (a shared-model
+  change); the pristine register gains a row.
+- **Flagged for the operator [AGENT]: F-A2 may be "obviously wrong".**
+  `struct A { _Alignas(struct A) char c; }` violates an ISO constraint (C11
+  §6.5.3.4#1; gcc rejects), is accepted by the frontend, and then hangs both
+  oracles. Rejecting it at the frontend is a constraint check, arguably the
+  union-twin bucket rather than "unsupported". Either way the result is a loud
+  failure; the difference is only whether the message says "constraint
+  violation" or "unsupported". Recommendation: constraint violation. Proceeds
+  as "unsupported" unless the operator says otherwise.
+- Both remain behind the SC coordination point (10.7) because P2d-2 touches
+  `CerbMem`.
+
+### 10.4 Q6 — keeping the toolchains in sync (proposal [AGENT])
+
+Lake builds a dependency with the ROOT package's toolchain, so cerberus already
+compiles LemLib on 4.32.2; the drift is only that lem-lean's OWN tests run on
+4.28. Proposal: (1) lem-lean's `lean-lib/lean-toolchain` follows the largest
+consumer's toolchain; (2) a Lean bump is a step of the two-repo pin dance
+(lem first, then cerberus), recorded in both repos' pin notes; (3)
+`check_pin_sites.sh` gains one line comparing the two `lean-toolchain` files,
+as a speedbump at claim points, not a new gate.
+
+### 10.5 Q13 — GitHub CI (scoping [AGENT])
+
+- `scripts/capped` stays in the scripts: on this shared box it prevents OOM
+  kills across agents. In CI it is switched off by the existing loud opt-out
+  `CERB_MEM_MAX=none` in the workflow environment. Deleting the caps from the
+  scripts would break the local rule; the environment variable removes them
+  from CI only. This is necessary, not just tidier: on a hosted runner the
+  cgroup route is unavailable and a present-but-unusable `systemd-run` makes
+  `capped` FAIL (README cap notes).
+- Scope: the README recipe, row 1 and the six small lanes, on both
+  repositories (lem-lean: the comprehensive suite and `nonlean-regress`).
+- Unknown to measure first: whether a standard hosted runner's RAM fits the
+  cold Lean build. If not, a larger runner or a cached-`.lake` job.
+- Adding a workflow and pushing it is a public action: each push needs the
+  operator's explicit authorization at the time.
+
+### 10.6 Q14 — context for a later decision
+
+Two engines number symbols differently, so an error message that embeds a
+symbol id (`Symbol(123, …)`) differs between them even when the failure is the
+same. The `failure-class` projection rewrites `Symbol(<digits>, ` to
+`Symbol(_, ` inside Error/Undefined payloads only, and nothing else. It is used
+on exactly one lane today, the multi-TU tray (row 6b), where two rows would
+otherwise mismatch on numbering alone. The question is whether any other lane
+may use it. Widening it hides nothing but symbol numbers, yet every weakened
+comparison is less detection, and [USER 2026-08-31] holds that output depending
+on symbol numbering is itself a defect. No lane needs it now, so nothing is
+blocked. It comes back only if a lane hits the same problem.
+
+### 10.7 New coordination point with the SC track [AGENT]
+
+The plan does not do SC work. Its memory-model items (P2c-1 dead fuel binders,
+P2b-1(i)/P2d-4 `MerrOutOfMemory`, P2d-2 `aligned_alloc`, P3-6 byte
+representation) are sequenced after checking `SC-CONCURRENCY.md`'s next work
+packages, so the two tracks do not edit `CerbMem.lean` / `mem_common.lem` /
+`impl_mem.ml` in parallel. This is a scheduling question for the operator and
+the SC track's owner; everything not touching those files proceeds unaffected.
