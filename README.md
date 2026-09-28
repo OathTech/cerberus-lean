@@ -1,5 +1,12 @@
 # Cerberus C semantics
 
+> **Health warning — the Lean port in this fork is a research prototype.** Expect bugs.
+> It is tested differentially against the OCaml implementation, and testing samples behaviour: it does
+> not prove the two agree. Some parts are tested much less thoroughly than others; the
+> [contract](lean_frontend/CONTRACT.md) says which parts are supported, which are refused, and how
+> deeply each is tested. Do not rely on it for anything where a wrong answer matters without checking
+> the result independently. Bug reports are welcome.
+
 [![CI](https://github.com/rems-project/cerberus/actions/workflows/ci.yml/badge.svg)](https://github.com/rems-project/cerberus/actions/workflows/ci.yml) [![CI-CHERI](https://github.com/rems-project/cerberus/actions/workflows/ci-cheri.yml/badge.svg)](https://github.com/rems-project/cerberus/actions/workflows/ci-cheri.yml)
 
 The badges above and the inherited workflows cover upstream OCaml/CHERI;
