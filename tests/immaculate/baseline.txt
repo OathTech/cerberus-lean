@@ -121,6 +121,9 @@
 #   NAMED-DEVIATION REGISTER N1 (VALIDATION.md §2b; [USER 2026-09-28] "agree with (1). Named deviations are
 #   okay in cases we can't easily resolve the mismatch"). Pinned DIFF with the Lean value; the oracle serves
 #   502 and 0x283 today. A Lean value change, or the engines converging (MATCH), flips the row.
+# zd-any-bounded-int-crash (2026-09-28, contract D4, [USER] "Yeah, (1) is fine"): any_bounded_int is
+#   reachable by declaring the builtin and fails in BOTH engines (core_reduction.lem:1012-1013) — pinned
+#   MATCH | L=CRASH (record docs/2026-09-28_contract-enforcement-builtins-record.md).
 argv1-args MATCH | L=VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 argv2-args MATCH | L=VAL:{value: "Specified(97)", stdout: "", stderr: "", blocked: "false"}
 argv3-args MATCH | L=VAL:{value: "Specified(11)", stdout: "", stderr: "", blocked: "false"}
@@ -172,6 +175,7 @@ trap-bool-uninit MATCH | L=UB:{ub: "UB012_lvalue_read_trap_representation", stde
 trap-bool-write MATCH | L=UB:{ub: "UB012_lvalue_read_trap_representation", stderr: "", loc: "<6:10--6:11>"}
 tray44-allocator-exhausted-single-request MATCH | L=ERR:{msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
 tray44-allocator-exhausted-single-request-overlap MATCH | L=ERR:{msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
+zd-any-bounded-int-crash MATCH | L=CRASH
 zd-d1-float-inf-to-int-ub MATCH | L=UB:{ub: "UB017_out_of_range_floating_integer_conversion", stderr: "", loc: "<7:11--7:19>"}
 zd-d2-ptr-to-int-narrow-ub MATCH | L=UB:{ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "<8:11--8:17>"}
 zd-d4-copy-alloc-id MATCH | L=VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}

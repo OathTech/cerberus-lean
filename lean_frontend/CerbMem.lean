@@ -1217,7 +1217,10 @@ def reconstructValue_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : Ta
                 (bytes.take (sizeofCtype enumDefs ambient membTy)))
           | none => failwithI "CerbMem.reconstructValue: recorded union member not in UnionDef (OCaml: assert false)"
     | _ => failwithI "CerbMem.reconstructValue: Union tag not a UnionDef (OCaml: assert false)"
-  | _ => .MVunspecified ty
+  -- impl_mem.ml:978-983: Void, Array (_, None), Function, FunctionNoParams
+  -- "must have a known size" → assert false (served-surface audit P3; was a
+  -- silent MVunspecified)
+  | _ => failwithI "CerbMem.reconstructValue: type without a known size (OCaml: assert false, impl_mem.ml:978-983)"
 
 /-- Measured wrapper (C4): fuel-free, hypothesis `CerbTagsWf.Acyclic ambient`
     (its recursion is on the ctype being reconstructed, through member types
@@ -1331,7 +1334,10 @@ def reconstructValue_indexed_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambi
                 (bytes.take (sizeofCtype enumDefs ambient membTy)))
           | none => failwithI "CerbMem.reconstructValue: recorded union member not in UnionDef (OCaml: assert false)"
     | _ => failwithI "CerbMem.reconstructValue: Union tag not a UnionDef (OCaml: assert false)"
-  | _ => .MVunspecified ty
+  -- impl_mem.ml:978-983: Void, Array (_, None), Function, FunctionNoParams
+  -- "must have a known size" → assert false (served-surface audit P3; was a
+  -- silent MVunspecified)
+  | _ => failwithI "CerbMem.reconstructValue: type without a known size (OCaml: assert false, impl_mem.ml:978-983)"
 
 /-- C1 equality: the linear (consume-and-return-rest) reconstruction equals
     the index-slicing reference form at every fuel, on every input.

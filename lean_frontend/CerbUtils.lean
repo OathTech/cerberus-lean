@@ -38,32 +38,19 @@ def list_remove_assoc {α β : Type} [BEq α] (key : α) : List (α × β) → L
   | (k, v) :: rest => if k == key then rest else (k, v) :: list_remove_assoc key rest
 
 /-! ## Random bounded integer
-    Corresponds to: Cerb_any.bounded_integer in cerb_any.ml (linked into
-    core_run). OCaml draws Random.int64 in [lo, hi].
-
-    DECLARED (zero-discrepancy Z2-U-02; formerly the sem:S14 "divergence
-    envelope"): we return `lo` deterministically where the ORACLE draws
-    `Random.int64` from a `Random.self_init`-seeded PRNG
-    (util/cerb_any.ml:1-9) — the oracle's own value is NOT reproducible
-    run to run, so no matchable oracle value exists for this primitive; a
-    Lean value is chosen and stated. The call site is `any_bounded_int`
-    (core_run.lem:1063-1068, `<any.h>`), reached only by programs that use
-    it explicitly (none in the corpora). Call site: the Core `Ndollar`/`bounded`
-    nondeterminism primitive, reachable only for programs that invoke it
-    explicitly. In EXHAUSTIVE mode the oracle's differential story is that
-    the RNG draw is one of a range while we pin one endpoint — so a
-    single-trace differential over a bounded-integer program can diverge
-    in the CHOSEN VALUE (never in the set of reachable behaviors modelled
-    otherwise); the standing corpora do not exercise it. Mover, if it
-    becomes load-bearing: thread a real RNG through the ND fork the way
-    eqPtrval threads its msum. -/
-
-private unsafe def boundedIntegerImpl (lo hi : Int) : Int :=
-  unsafeBaseIO do
-    pure lo
-
-@[implemented_by boundedIntegerImpl]
-opaque bounded_integer : Int → Int → Int
+    Corresponds to: Cerb_any.bounded_integer in cerb_any.ml, called only from
+    the `any_bounded_int` arm of `Core_run.core_thread_step2`
+    (core_run.lem:1076-1086), a stepper the driver never runs. The live
+    stepper, `Core_reduction.core_step2`, fails `any_bounded_int` with
+    "TODO Core_reduction ==> any_bounded_int()" in BOTH engines
+    (core_reduction.lem:1012-1013; served-surface audit P3-1, measured:
+    oracle rc 125, Lean PANIC) — a mirrored failure. This seam used to
+    return `lo` where the oracle draws from a time-seeded PRNG
+    (util/cerb_any.ml:1-9); it now fails loudly so it can never become a
+    silent answer if the stepper changes (zero-discrepancy Z2-U-02,
+    reclassified 2026-09-28). -/
+def bounded_integer (_lo _hi : Int) : Int :=
+  failwithI "CerbUtils.bounded_integer: any_bounded_int is not modelled (the oracle draws from a time-seeded PRNG; its live stepper fails this builtin, core_reduction.lem:1012-1013)"
 
 /-! ## Character encoding
     Corresponds to: Decode.encode_character_constant in decode.ml:223-225:

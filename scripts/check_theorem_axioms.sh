@@ -207,7 +207,9 @@ fi
 # timing/log trio and CerbMem.beqMemValueSafe LEFT at seam-hygiene H3 2026-09-19,
 # 16 -> 12; the CerberusImpl enum pair LEFT at program-data parameters E-A
 # 2026-09-20 (the enum's compatible type is program data — a lem reader, no
-# registry), 12 -> 10 — the reviewed population is 10.)
+# registry), 12 -> 10; CerbUtils.bounded_integer LEFT at contract enforcement
+# 2026-09-28 (a plain def failing loudly, served-surface audit P3-1), 10 -> 9
+# — the reviewed population is 9.)
 OPAQUE_WANT=(
   # CerberusFresh — the digest boundary (VALIDATION.md §4), [seam]
   'CerberusFresh.lean:md5Hex' 'CerberusFresh.lean:digestIO' 'CerberusFresh.lean:setDigestIO'
@@ -218,10 +220,11 @@ OPAQUE_WANT=(
   # eleven config/switch opaques (never-written refs) became plain `def`s
   # of the default configuration; an opaque reappearing there fails
   # below as UNREGISTERED, by design.
-  # CerbUtils — the boundedIntegerImpl stub, permanent-declared, [seam]; the
-  # timing/log trio (begin_timing/end_timing/STD_) LEFT at seam-hygiene H3
-  # (2026-09-19): plain value identities, no opaque (fence extension (3))
-  'CerbUtils.lean:bounded_integer'
+  # CerbUtils — NO rows since 2026-09-28: the boundedIntegerImpl stub (which
+  # returned `lo`) LEFT at contract enforcement — `bounded_integer` is a plain
+  # def failing loudly (served-surface audit P3-1); the timing/log trio LEFT at
+  # seam-hygiene H3 (2026-09-19). An opaque reappearing there fails below as
+  # UNREGISTERED, by design.
   # CerberusImpl — NO rows since program-data parameters E-A (2026-09-20): the
   # enum registry (typeof_enum/register_enum opaques) is DELETED — the enum map
   # is the lem reader `enum_definitions`, `normalise_integerType` a plain def

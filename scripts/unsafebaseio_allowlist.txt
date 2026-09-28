@@ -36,7 +36,11 @@
 # `register_enum` the pure `true`). The temporal class's named mover ("reader/supply-machinery
 # follow-up slice") is this slice. 2 KEEP rows and 6 PIN rows left the pins (25 -> 19 PIN rows);
 # 2 opaques left OPAQUE_WANT (12 -> 10).
-lean_frontend/CerbUtils.lean	boundedIntegerImpl	permanent-declared	KEEP (deterministic stub `pure lo`; documented residual with named mover in-file — RNG threading iff load-bearing)
+# --- retired 2026-09-28 (contract enforcement, served-surface audit P3-1,
+# docs/2026-09-28_contract-enforcement-builtins-record.md) ---
+# lean_frontend/CerbUtils.lean boundedIntegerImpl — the `pure lo` stub is gone:
+# `bounded_integer` is a plain def failing loudly (the live stepper fails
+# any_bounded_int in both engines). 1 KEEP row and 3 PIN rows left the pins.
 # --- retired 2026-09-05 (reasoning-artifact audit instance A, step 1;
 # docs/2026-09-05_cerbglobal-defs-record.md) ---
 # lean_frontend/CerbGlobal.lean confRef / switchesRef / getConf /
@@ -107,8 +111,9 @@ lem-lean/lean-lib/LemLib.lean	runEffectful_impl	L2-delete	DELETE (the axiom scaf
 #   section above).
 # - CerberusImpl: NO rows since 2026-09-20 (program-data parameters E-A:
 #   the enum registry is program data; see the retired section above).
-# - CerbUtils boundedIntegerImpl stub (permanent-declared); the timing/log
-#   refs became value identities at seam-hygiene H3 (2026-09-19).
+# - CerbUtils: NO rows since 2026-09-28 (boundedIntegerImpl retired, see the
+#   retired section above); the timing/log refs became value identities at
+#   seam-hygiene H3 (2026-09-19).
 # - CerbMem: NO rows since seam-hygiene H3 (beqMemValueImpl -> the structural
 #   `beqMemValue`, kernel-transparent).
 # - test/Unit/FuelFormsTool.lean main (C4, 2026-09-05): the fuel-forms
@@ -135,6 +140,3 @@ PIN UNSAFEDECL lean_frontend/CerberusFresh.lean digest_impl 2
 PIN UNSAFEDECL lean_frontend/CerberusFresh.lean digestPure 2
 PIN UNSAFEDECL lean_frontend/CerberusFresh.lean forceIO_impl 2
 PIN UNSAFEDECL lean_frontend/CerberusFresh.lean forceThunkIO 2
-PIN IMPLBY lean_frontend/CerbUtils.lean boundedIntegerImpl 2
-PIN UNSAFEBASEIO lean_frontend/CerbUtils.lean boundedIntegerImpl 2
-PIN UNSAFEDECL lean_frontend/CerbUtils.lean boundedIntegerImpl 2
