@@ -108,6 +108,10 @@
 #   state — a loud, feature-attributed CerbFS refusal (class (c) missing feature: SibylFS path
 #   resolution) where the oracle answers. They pin the refusal: a return to a silent Lean value flips
 #   the row. zd-fs-path-plain-control is the served-path MATCH control.
+# 2026-09-28 (contract D2, [USER] "refuse FS for now, this seems safer"): the WHOLE filesystem refuses, so
+#   zd-f1-truncate-negative-length (was MATCH Specified(1)), zd-z2f01-lseek-whence (was MATCH Specified(9))
+#   and zd-fs-path-plain-control (was MATCH Specified(3)) are now pinned refusals, DIFF | L=CRASH, like the
+#   two pathleak rows (record docs/2026-09-28_cerbfs-refuse-all-record.md).
 argv1-args MATCH | L=VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 argv2-args MATCH | L=VAL:{value: "Specified(97)", stdout: "", stderr: "", blocked: "false"}
 argv3-args MATCH | L=VAL:{value: "Specified(11)", stdout: "", stderr: "", blocked: "false"}
@@ -169,8 +173,8 @@ zd-d7-free-interior-pointer MATCH | L=UB:{ub: "UB179a_non_matching_allocation_fr
 zd-da-align16 MATCH | L=VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
 zd-da-offset MATCH | L=VAL:{value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
 zd-e2-ptr-string-literals ORACLE_CRASH | L=VAL:{value: "Specified(0)", stdout: "98 65 66 4 83 52 3 10 9 92 34 39 63 0 4\n", stderr: "", blocked: "false"}
-zd-f1-truncate-negative-length MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
-zd-fs-path-plain-control MATCH | L=VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+zd-f1-truncate-negative-length DIFF | L=CRASH
+zd-fs-path-plain-control DIFF | L=CRASH
 zd-fs-path-subdir-create DIFF | L=CRASH
 zd-fs-pathleak-dot-slash DIFF | L=CRASH
 zd-z28-addr-layout-a MATCH | L=VAL:{value: "Specified(0)", stdout: "s1=281474976706032 c1=281474976706031 i1=281474976706024 p1=281474976706016\n", stderr: "", blocked: "false"}
@@ -179,7 +183,7 @@ zd-z28-pointer_from_integer_2g MATCH | L=VAL:{value: "Specified(0)", stdout: "j=
 zd-z28-provenance_equality_uintptr_t_global_yx MATCH | L=VAL:{value: "Specified(0)", stdout: "Addresses: p=fffffffff3a0 q=fffffffff3a0\n(p==q) = true\n", stderr: "", blocked: "false"}
 zd-z28-provenance_lost_escape_1 MATCH | L=VAL:{value: "Specified(0)", stdout: "Addresses: p=(@17, 0xfffffffff4cc)\n", stderr: "", blocked: "false"}
 zd-z2cp01-strtod-inf MATCH | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
-zd-z2f01-lseek-whence MATCH | L=VAL:{value: "Specified(9)", stdout: "", stderr: "", blocked: "false"}
+zd-z2f01-lseek-whence DIFF | L=CRASH
 zd-z2f04-closedir MATCH | L=CRASH
 zd-z2fl03-nan-to-int MATCH | L=CRASH
 zd-z2-free-funptr MATCH | L=ERR:{msg: "MerrOther "attempted to kill with a pointer lacking a provenance""}
