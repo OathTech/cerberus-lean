@@ -372,3 +372,14 @@ if ! "$RENUM_PLANTS_SH"; then
     echo "test_unit: renumber-instrument plant battery FAILED"
     exit 1
 fi
+
+# CLI refusal witnesses (contract enforcement, CONTRACT.md §4.1, 2026-09-28):
+# every CLI-refused area (--concurrency, --switches=…) must exit 2 with its
+# named refusal; a control run without the flag must not be refused. Plants:
+# a broken driver and a refuse-everything driver both fail it (record
+# docs/2026-09-28_test-depth-actions-record.md).
+CLI_REFUSALS_SH="$(dirname "$PURITY_SH")/check_cli_refusals.sh"
+if ! "$CLI_REFUSALS_SH"; then
+    echo "test_unit: CLI refusal witnesses FAILED"
+    exit 1
+fi

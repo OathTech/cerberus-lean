@@ -56,13 +56,13 @@ feature-attributed; each refusal has a witness), **OUT OF SCOPE** (not an input 
 | Concrete memory model | SUPPORTED | CerbMem mirror with cites; immaculate lane; allocator soundness theorem | the SC receipt buffer is disabled by default (WP0) |
 | Function pointers | SUPPORTED except their numeric value: converting one to an integer is REFUSED; its bytes and `%p` are named deviation N1 | `zd-funptr-*` rows; `ptr3-001` pinned UNSUPPORTED | none |
 | Integer/float/layout implementation choices | SUPPORTED (LP64) | CerberusImpl, CerbFloat, float/bytes lanes | other ABIs OUT OF SCOPE [DECIDE] |
-| libc (the oracle's libc.co, loaded) | functions written in C (`runtime/libc/src/*.c`): SUPPORTED — they run through the same Core semantics as user code; the 36 **builtins** of `runtime/libcore/std.core` (hand-implemented in each engine): one state each, §3.1 (D4) | libc_exec lane, libxml2 lanes | none |
+| libc (the oracle's libc.co, loaded) | functions written in C (`runtime/libc/src/*.c`): SUPPORTED — they run through the same Core semantics as user code — but thinly tested (§3.2); the 36 **builtins** of `runtime/libcore/std.core` (hand-implemented in each engine): one state each, §3.1 (D4) | libc_exec lane, libxml2 lanes | none |
 | Filesystem (CerbFS) | **REFUSED** (D2) — every filesystem operation, including `read` on any fd; `write`/`vprintf` on fds 1/2 are served (the driver routes them to the stdout/stderr records, never reaching CerbFS) | `zd-fs-*`, `zd-f1-truncate-negative-length`, `zd-z2f01-lseek-whence` pinned refusals | none |
-| Standard input / environment / argv | partially SUPPORTED | `--stdin` single-TU; argv lane | enumerate what is served [audit] |
+| Standard input / environment / argv | stdin REFUSED (every read reaches CerbFS, D2; the oracle models an empty stdin); `getenv` served by libc C code; argv SUPPORTED | `zd-fs-stdin-read` pinned refusal; argv lane (5 programs) | UTF-8 `--args` unmeasured |
 | Concurrency (threads, atomics, Epar, C11 model) | REFUSED at the CLI flag; default-mode atomics and `{-{ ||| }-}` SUPPORTED as the oracle's sequential reading | `refuseFlag`; served-surface audit: 15 default-mode probes agree, `statically_satisfied` has no generated caller | none |
 | Non-default memory models (symbolic, VIP, CHERI) and switches (PNVI, strict reads, …) | REFUSED at the CLI | `refuseFlag` | none |
 | Debug/pretty-print seams (CerbDebug, CerbPP) | OUT OF SCOPE for verdicts | no-op stubs; served-surface audit: no verdict path reads them | none |
-| `.core` text input (CoreParser) | SUPPORTED (as the oracle's `--pp core` output) | core-parser tests; verify lane | hand-written malformed Core: arity checks since item 7 |
+| Core text (CoreParser) | SUPPORTED for the runtime's own Core files (`std.core`, the implementation file, the libc dump), which every run parses; no mode executes user-written Core text (`--parse-core` and `--pp-core` are diagnostics) | core-parser tests (292 checks); verify lane | none |
 
 ### 3.1 The builtin boundary (D4)
 
@@ -81,10 +81,43 @@ engines, so a builtin added upstream fails closed until it is reviewed and liste
 | `any_bounded_int` | NOT SERVED by either engine: both fail it (`core_reduction.lem:1012-1013`) | `zd-any-bounded-int-crash` pinned MATCH / both crash |
 | `open`, `close`, `pread`, `pwrite`, `lseek`, `truncate`, `link`, `readlink`, `symlink`, `unlink`, `rename`, `rmdir`, `mkdir`, `stat`, `lstat`, `umask`, `chmod`, `chdir`, `chown`, `opendir`, `readdir`, `rewinddir`, `closedir` | REFUSED (D2) | `CerbFS` refusals; `zd-fs-*` rows |
 
+### 3.2 How deeply each part is tested
+
+SUPPORTED means "differentially tested, and any disagreement is a bug". It does not mean every part is tested equally.
+The measurement behind this section is `docs/2026-09-28_test-depth-map.md` (static counts of the gated lane programs
+that exercise each part; there is no coverage instrumentation, so the counts are proxies). The gating lanes hold 872
+programs that agree with the oracle: 795 compared exhaustively without libc, 45 single-trace without libc, and 32 with
+libc, all single-trace.
+
+**Deeply tested:** the C frontend and Core dynamics (generated from the same Lem source as the oracle), load/store and
+allocation, integer and floating-point arithmetic (also checked against gcc as a second oracle), the exhaustive runner
+and the batch output format. Every program exercises these.
+
+**Thinly tested — treat results here with extra suspicion.** These are served, and a disagreement is still a bug, but
+few or no gated programs exercise them, and most are hand-written Lean rather than shared generated code:
+
+| Part | Gated programs exercising it (measured) | Why it matters |
+|---|---|---|
+| libc breadth | 11 of the 188 libc functions are called directly by any libc-mode program; libc mode is only ever compared single-trace | most real programs call libc functions no test calls |
+| `printf("%f")` | 0 (13 unit cases on the hand-written printer) | `CerbFloat.formatFixed` is an independent reimplementation of glibc's `%f` |
+| printf width, precision, flags, `%c`, `%x` | 0 (`%x` once) | formatting is shared code, `%c` goes through hand-written escaping |
+| `realloc`, `memcpy`, `memcmp` | 4, 5, 1 | hand-written `CerbMem` routines |
+| `snprintf`/`vsnprintf`, `errno`, `exit` codes / `atexit` | 2, 1, probes only | return values and status codes |
+| argv | 5 | non-ASCII arguments unmeasured |
+| programs of several translation units | 8 | linking and cross-TU identity |
+| default-mode atomics and `{-{ ||| }-}` | 1 | shared code, lower risk |
+| `--first` mode | not checked to be one of the exhaustive results | outside the §1 promise (§2) |
+| non-batch CLI output | never compared (only `--batch` output is the compared interface) | human-readable format, exits 0 for every outcome, as the oracle's does |
+
+The **refused** parts (filesystem, stdin, concurrency and switch flags, function-pointer numbers) are pinned by
+witnesses and are not "thinly tested": they do not answer.
+
 ## 4. How the contract is enforced
 
-1. **Every REFUSED area has at least one witness in a lane that pins the refusal** (as the three `zd-fs-*` rows now do),
-   so a return to a silent answer turns a gate red.
+1. **Every REFUSED area has at least one witness in a lane that pins the refusal**, so a return to a silent answer turns
+   a gate red: the filesystem and stdin (`zd-fs-*`, `zd-f1-*`, `zd-z2f01-*` immaculate rows), function-pointer numbers
+   (`zd-funptr-int-*`), `any_bounded_int` (`zd-any-bounded-int-crash`) and the CLI flags (`scripts/check_cli_refusals.sh`,
+   row 1).
 2. **A served-surface audit (the lesson of pathleak).** Every hand-written seam that can answer where it has no model —
    default arms, stub bodies, `Inhabited` defaults, lookups keyed on unnormalised data — is enumerated and classified:
    mirrors the oracle (with a cite), refuses (with a witness), or is unreachable (with the reason). The failure-reach
