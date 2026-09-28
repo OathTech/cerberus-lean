@@ -360,12 +360,22 @@ def corpus(cn_root, stage):
             if path.name.endswith(('.syntax-only.c', '.exhaust.c')):
                 continue  # same explicit execution exclusions as test_exec.sh
             flags = ['--exec', '--batch']
+            # test_libc_exec.sh's EXHAUSTIVE rows (tests/libc_exec/exhaustive/,
+            # thin-surface tests slice 2026-09-28): oracle `--mode=exhaustive`,
+            # Lean without `--first` — mirrored here, since a default-mode
+            # (random) oracle run of a multi-execution row is not a function
+            # of the program.
+            libc_exh = folder == 'libc_exec' and path.parent.name == 'exhaustive'
             if folder != 'libc_exec':
                 flags += ['--nolibc', '--mode=exhaustive']
+            elif libc_exh:
+                flags += ['--mode=exhaustive']
             # Lean (O2): test_exec.sh:445-451 `--cabs-json <c>` -> `--batch <json>`;
             # test_bytes.sh:79-81/:88 bridges with `--nolibc --cabs-json`;
             # test_libc_exec.sh:97/:104-105 `--batch --first --libc … --libc-tu …`.
-            if folder == 'libc_exec':
+            if libc_exh:
+                lean = lean_recipe([rel(path)], ['--batch'], libc=True, capped=True)
+            elif folder == 'libc_exec':
                 lean = lean_recipe([rel(path)], ['--batch', '--first'], libc=True, capped=True)
             elif folder == 'bytes':
                 lean = lean_recipe([rel(path)], ['--batch'], bridge_flags=['--nolibc'])

@@ -30,6 +30,19 @@
 # a USER variadic wrapper (va_start → va_list-as-value → libc vsnprintf)
 # composing memop-varargs with the Formatted path in one trace.
 #
+# EXHAUSTIVE libc-mode rows (2026-09-28, thin-surface tests slice; before it
+# every libc-mode lane row was single-trace): tests/libc_exec/exhaustive/*.c
+# run with the oracle at `--mode=exhaustive` and Lean WITHOUT `--first`, and
+# the complete ordered verdict sequences are compared (the codec's `full`
+# tokens, as for every other row). Baseline rows are named
+# `exhaustive/<name>`. Each exhaustive row carries a built-in NON-VACUITY
+# PLANT, run on every lane pass: (a) the oracle's exhaustive observation must
+# hold >= 2 executions, and (b) the same program re-run on Lean WITH
+# `--first` must NOT compare equal to it. A row failing either is status
+# VACUOUS (never MATCH): an exhaustive row that a single-trace run would also
+# pass certifies nothing beyond the single-trace rows. (b) also witnesses
+# that the comparator distinguishes the two modes on this very row.
+#
 # Usage: ./scripts/test_libc_exec.sh [--record-baseline]
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
@@ -76,53 +89,98 @@ LIBC_ARGS=(--libc "$PROJECT_ROOT/tests/libc/libc.core")
 for j in "${LIBC_JSONS[@]}"; do LIBC_ARGS+=(--libc-tu "$j"); done
 echo "[prep] libc pin verified; 12 metadata TUs"
 
+# Row list: single-trace rows (tests/libc_exec/*.c) then exhaustive rows
+# (tests/libc_exec/exhaustive/*.c, header). An existing but EMPTY exhaustive
+# directory is a harness failure, never a silently skipped mode.
+declare -a ROWS=()
+for tu in "$PROJECT_ROOT"/tests/libc_exec/*.c; do ROWS+=("first|$tu"); done
+EXH_DIR="$PROJECT_ROOT/tests/libc_exec/exhaustive"
+if [[ -d "$EXH_DIR" ]]; then
+    compgen -G "$EXH_DIR/*.c" > /dev/null || fail "empty exhaustive corpus: $EXH_DIR"
+    for tu in "$EXH_DIR"/*.c; do ROWS+=("exhaustive|$tu"); done
+fi
+
 : > "$OUTPUT_DIR/baseline.new"
 pass=0; failcnt=0
-for tu in "$PROJECT_ROOT"/tests/libc_exec/*.c; do
-    name="$(basename "$tu" .c)"
+for row in "${ROWS[@]}"; do
+    mode="${row%%|*}"; tu="${row#*|}"
+    if [[ "$mode" == exhaustive ]]; then
+        name="exhaustive/$(basename "$tu" .c)"
+        ORACLE_MODE=(--mode=exhaustive); LEAN_MODE=()
+    else
+        name="$(basename "$tu" .c)"
+        ORACLE_MODE=(); LEAN_MODE=(--first)
+    fi
+    f="${name//\//__}"   # capture-file stem
     # OCaml side: WITH libc (no --nolibc)
     rc=0
     ( "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" \
         opam exec --switch="$PROJECT_ROOT" -- \
-        "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --exec --batch "$tu" \
-        > "$OUTPUT_DIR/$name.ocaml" 2> "$OUTPUT_DIR/$name.ocaml.err" ) || rc=$?
+        "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --exec --batch "${ORACLE_MODE[@]}" "$tu" \
+        > "$OUTPUT_DIR/$f.ocaml" 2> "$OUTPUT_DIR/$f.ocaml.err" ) || rc=$?
     ocaml_rc=$rc
-    printf '%s\n' "$ocaml_rc" > "$OUTPUT_DIR/$name.ocaml.status"
-    ocaml_line="$(cat "$OUTPUT_DIR/$name.ocaml")"
+    printf '%s\n' "$ocaml_rc" > "$OUTPUT_DIR/$f.ocaml.status"
+    ocaml_line="$(cat "$OUTPUT_DIR/$f.ocaml")"
     # cabs-json (same flags as the standing harnesses: no --nolibc — the
     # cpp side is identical between oracle and Lean, S0 survey §b)
     rc=0
     ( "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" \
         opam exec --switch="$PROJECT_ROOT" -- \
         "$CERBERUS_BIN" --runtime="$RUNTIME_DIR" --cabs-json "$tu" \
-        > "$OUTPUT_DIR/$name.json" 2> "$OUTPUT_DIR/$name.json.err" ) || rc=$?
-    printf '%s\n' "$rc" > "$OUTPUT_DIR/$name.json.status"
-    [[ $rc -eq 0 && -s "$OUTPUT_DIR/$name.json" ]] || fail "cabs-json failed for $name"
-    # Lean side: --libc mode
+        > "$OUTPUT_DIR/$f.json" 2> "$OUTPUT_DIR/$f.json.err" ) || rc=$?
+    printf '%s\n' "$rc" > "$OUTPUT_DIR/$f.json.status"
+    [[ $rc -eq 0 && -s "$OUTPUT_DIR/$f.json" ]] || fail "cabs-json failed for $name"
+    # Lean side: --libc mode (--first on single-trace rows only)
     rc=0
     ( "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" \
-        env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --batch --first \
-        "${LIBC_ARGS[@]}" "$OUTPUT_DIR/$name.json" \
-        > "$OUTPUT_DIR/$name.lean" 2> "$OUTPUT_DIR/$name.lean.err" ) || rc=$?
-    printf '%s\n' "$rc" > "$OUTPUT_DIR/$name.lean.status"
-    lean_line="$(cat "$OUTPUT_DIR/$name.lean")"
-    if is_cap_kill $rc "$OUTPUT_DIR/$name.lean.err" || is_cap_kill $ocaml_rc "$OUTPUT_DIR/$name.ocaml.err"; then
+        env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --batch "${LEAN_MODE[@]}" \
+        "${LIBC_ARGS[@]}" "$OUTPUT_DIR/$f.json" \
+        > "$OUTPUT_DIR/$f.lean" 2> "$OUTPUT_DIR/$f.lean.err" ) || rc=$?
+    printf '%s\n' "$rc" > "$OUTPUT_DIR/$f.lean.status"
+    lean_line="$(cat "$OUTPUT_DIR/$f.lean")"
+    if is_cap_kill $rc "$OUTPUT_DIR/$f.lean.err" || is_cap_kill $ocaml_rc "$OUTPUT_DIR/$f.ocaml.err"; then
         # memory-cap breach on either side (capped OOM-KILLED witness): its
         # own status, never MATCH
         status="KILL"
         failcnt=$((failcnt+1))
         killed_side=""
-        is_cap_kill $ocaml_rc "$OUTPUT_DIR/$name.ocaml.err" && killed_side="oracle: $(kill_label $ocaml_rc "$OUTPUT_DIR/$name.ocaml.err")"
-        is_cap_kill $rc "$OUTPUT_DIR/$name.lean.err" && killed_side="${killed_side:+$killed_side; }lean: $(kill_label $rc "$OUTPUT_DIR/$name.lean.err")"
+        is_cap_kill $ocaml_rc "$OUTPUT_DIR/$f.ocaml.err" && killed_side="oracle: $(kill_label $ocaml_rc "$OUTPUT_DIR/$f.ocaml.err")"
+        is_cap_kill $rc "$OUTPUT_DIR/$f.lean.err" && killed_side="${killed_side:+$killed_side; }lean: $(kill_label $rc "$OUTPUT_DIR/$f.lean.err")"
         echo "  KILL  $name: oracle exit $ocaml_rc, lean exit $rc — $killed_side"
-    elif otok=$(python3 "$OBSERVATION_CODEC" tokens --stdout "$OUTPUT_DIR/$name.ocaml" \
-                --stderr "$OUTPUT_DIR/$name.ocaml.err" --status "$ocaml_rc") && \
-         ltok=$(python3 "$OBSERVATION_CODEC" tokens --stdout "$OUTPUT_DIR/$name.lean" \
-                --stderr "$OUTPUT_DIR/$name.lean.err" --status "$rc") && \
+    elif otok=$(python3 "$OBSERVATION_CODEC" tokens --stdout "$OUTPUT_DIR/$f.ocaml" \
+                --stderr "$OUTPUT_DIR/$f.ocaml.err" --status "$ocaml_rc") && \
+         ltok=$(python3 "$OBSERVATION_CODEC" tokens --stdout "$OUTPUT_DIR/$f.lean" \
+                --stderr "$OUTPUT_DIR/$f.lean.err" --status "$rc") && \
          [[ "$otok" == "$ltok" ]]; then
         status="MATCH"
-        pass=$((pass+1))
-        echo "  MATCH $name: $(head -c 80 <<<"$ocaml_line")"
+        if [[ "$mode" == exhaustive ]]; then
+            # Non-vacuity plant (header): (a) >= 2 oracle executions; (b) a
+            # Lean --first run of the same program must NOT compare equal.
+            nexec=$(grep -c '' <<<"$otok")
+            prc=0
+            ( "${CAPPED_TEST[@]}" timeout "${TIMEOUT_SECS}s" \
+                env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" --batch --first \
+                "${LIBC_ARGS[@]}" "$OUTPUT_DIR/$f.json" \
+                > "$OUTPUT_DIR/$f.plant" 2> "$OUTPUT_DIR/$f.plant.err" ) || prc=$?
+            ptok=$(python3 "$OBSERVATION_CODEC" tokens --stdout "$OUTPUT_DIR/$f.plant" \
+                    --stderr "$OUTPUT_DIR/$f.plant.err" --status "$prc") \
+                || fail "exhaustive plant: Lean --first run of $name gave no complete observation (exit $prc)"
+            if [[ $nexec -lt 2 ]]; then
+                status="VACUOUS"
+                echo "  VACUOUS $name: oracle exhaustive observation has $nexec execution(s) (< 2)"
+            elif [[ "$ptok" == "$otok" ]]; then
+                status="VACUOUS"
+                echo "  VACUOUS $name: the Lean --first observation equals the exhaustive one"
+            else
+                echo "  PLANT $name: exhaustive $nexec verdicts; Lean --first $(grep -c '' <<<"$ptok") verdict(s) — differs, as required"
+            fi
+        fi
+        if [[ "$status" == MATCH ]]; then
+            pass=$((pass+1))
+            echo "  MATCH $name: $(head -c 80 <<<"$ocaml_line")"
+        else
+            failcnt=$((failcnt+1))
+        fi
     else
         status="DIFF"
         failcnt=$((failcnt+1))
