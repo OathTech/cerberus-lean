@@ -37,6 +37,13 @@ Matched (default-switch) mode of the oracle at the fork merge-base `b9aeedcb4`; 
 memory model; LP64; `--nolibc` and libc modes as exercised by the lanes; explicit `--fuel` and address-space parameters.
 Every non-default semantics switch is refused at the CLI today (`Main.lean` `refuseFlag`).
 
+**Exhaustive mode is the promise; `--first` is outside it.** In the default (exhaustive) mode Lean explores every
+nondeterministic branch, as the oracle's `--mode=exhaustive` does, and §1 applies to the whole verdict set. `--first`
+follows only the first branch (`CerbND.runND1Fuel`), where the oracle's `--mode=random` draws branches from a
+time-seeded generator: the two can serve different members of the same exhaustive set on a program whose result
+depends on evaluation order. `--first` is a harness convenience (the libc_exec and libxml2 lanes use it, and are sound
+only for programs whose result does not depend on the trace), not part of the §1 promise.
+
 ## 3. Feature areas and their states
 
 Three states only: **SUPPORTED** (differentially validated; any disagreement is a bug), **REFUSED** (loud,

@@ -6,11 +6,11 @@
   and closure-carrying thread_states, so the Lem Lean backend emitted
   sorry-fallback BEq/Ord/SetType/Eq0/Ord0 instances. The sorry BEq fired at
   runtime from driver2's blocked-thread filter
-  (`step_opt <> Just Step_blocked2`, driver.lem:1410, rendered as
+  (`step_opt <> Just Step_blocked2`, driver.lem:1414, rendered as
   `maybeEqualBy (fun x y => x == y) step_opt (some Step_blocked2)`) — the
   first crash for 77/105 tests/minimal files (S0 frontier,
   docs/2026-08-19_arc4-s0-frontier.md). A SECOND equality site exists at
-  driver.lem:1376 (`List.any (fun step -> step <> Step_blocked2)` in
+  driver.lem:1380 (`List.any (fun step -> step <> Step_blocked2)` in
   _non_blocked_th_sts): also inside Driver.lean's import closure, so it
   gets these instances too; like :1410 it only ever compares against the
   nullary Step_blocked2.

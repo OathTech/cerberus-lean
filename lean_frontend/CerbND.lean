@@ -14,7 +14,7 @@
   sole exec-cone caller is driver.lem:148 under a `PEconstrained`, which
   arises only from the `Nothing` arms of `Mem.eq_ival`/`lt_ival`/`le_ival`
   (core_eval.lem:352-378) — and the concrete model returns `Some` ALWAYS,
-  impl_mem.ml:2556-2562 ↔ `CerbMem.eqIval/ltIval/leIval` (the TRIPWIRE
+  impl_mem.ml:2600-2606 ↔ `CerbMem.eqIval/ltIval/leIval` (the TRIPWIRE
   theorems `CerbMem.eqIval_isSome`/`ltIval_isSome`/`leIval_isSome` fail
   the build if that ever changes); (2) `NDbranch` is produced only at
   nondeterminism.lem:422 (`msum`) with EMPTY constraints (:465 variant

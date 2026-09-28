@@ -1732,7 +1732,7 @@ def leIval (v1 v2 : IntegerValue) : Option Bool :=
   match v1, v2 with | .IV _ n1, .IV _ n2 => some (n1 ≤ n2)
 
 /-! TRIPWIRE (zero-discrepancy Z-59 / Z2-M-19, charter §2.7): the three
-    comparisons above are TOTAL `some`, mirroring impl_mem.ml:2556-2562
+    comparisons above are TOTAL `some`, mirroring impl_mem.ml:2600-2606
     (`Some (Z.equal …)` / `Some (Z.compare … = -1)` / `Some (cmp = -1 ||
     cmp = 0)`). This is the premise of CerbND's no-`NDguard` argument
     (CerbND.lean header): `PEconstrained` arises only from a `Nothing`
@@ -2036,7 +2036,7 @@ def stringFromIntegerValue : IntegerValue → String
     else
       toString n
 
-/-- Mirrors pp_pointer_value (impl_mem.ml:563-572); the ?is_verbose flag
+/-- Mirrors pp_pointer_value (impl_mem.ml:598-608); the ?is_verbose flag
     is unused in the OCaml body. -/
 def stringFromPointerValue : PointerValue → String
   | .PV prov base =>

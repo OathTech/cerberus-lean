@@ -72,7 +72,7 @@ def ppObjectValue : object_value → String
     -- a raw float so the unspec branch is unreachable → string_of_float
     CerbFloat.string_of_float fval
   | .OVpointer ptrval =>
-    -- Impl_mem.pp_pointer_value (impl_mem.ml:563-572)
+    -- Impl_mem.pp_pointer_value (impl_mem.ml:598-608)
     CerbMem.stringFromPointerValue ptrval
   | .OVarray lvals =>
     -- pp_core.ml:289-290 (P.nest is layout-only; plain text keeps one line)
