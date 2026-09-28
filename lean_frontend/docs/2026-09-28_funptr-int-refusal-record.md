@@ -38,8 +38,10 @@ A stored function pointer is the number's bytes (`impl_mem.ml:1168-1185`, mirror
 function pointer (tables, callbacks, `void*` round trips) goes through that representation,
 so refusing at the store would refuse all of them. `%p` prints a `void*` read back from those
 bytes through the pure printer, which has no memory state. A precise refusal of either channel
-needs a representation change. These two channels remain a served difference; their disposition
-(register as a deviation, or a representation change) is an OPEN operator decision.
+needs a representation change. These two channels remain a served difference, registered as
+named deviation N1 (`VALIDATION.md` §2b, new class (e); [USER 2026-09-28] "yes, re the decision,
+agree with (1). Named deviations are okay in cases we can't easily resolve the mismatch."), with
+witnesses `zd-funptr-bytes-deviation` and `zd-funptr-printf-deviation` and upstream-tray draft 46.
 
 ## Blast radius (measured)
 

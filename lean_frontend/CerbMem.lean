@@ -794,6 +794,10 @@ def memValueToBytes_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : Tag
           ((n : Int), (fileDig, name)) ::
             funptrmap.filter (fun (a, _) => a != (n : Int))  -- IntMap.add = replace-or-insert
         | _ => funptrmap
+      -- named-deviation register N1 (VALIDATION.md §2b): `n` is the symbol's
+      -- fresh-supply number, which the oracle numbers differently; its bytes
+      -- and `%p` are a registered difference (the integer cast is refused,
+      -- `intfromptr`).
       let rawBytes := intToBytes false n targetPtrSize   -- :1183 `bytes_of_int false`
       (funptrmap', rawBytes.map fun v =>
         { prov := prov, copyOffset := none, value := v })
@@ -907,6 +911,10 @@ def memValueToBytes_append_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambien
           ((n : Int), (fileDig, name)) ::
             funptrmap.filter (fun (a, _) => a != (n : Int))
         | _ => funptrmap
+      -- named-deviation register N1 (VALIDATION.md §2b): `n` is the symbol's
+      -- fresh-supply number, which the oracle numbers differently; its bytes
+      -- and `%p` are a registered difference (the integer cast is refused,
+      -- `intfromptr`).
       let rawBytes := intToBytes false n targetPtrSize   -- :1183 `bytes_of_int false`
       (funptrmap', rawBytes.map fun v =>
         { prov := prov, copyOffset := none, value := v })

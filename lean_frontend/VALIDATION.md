@@ -172,7 +172,7 @@ operator, never a row the slice writes itself.
 
 ## 1. The exception classes and their operational tests
 
-Exactly four classes are not bugs. Each has a test a lane or a reader can
+Exactly five classes are not bugs. Each has a test a lane or a reader can
 apply; anything that fails every test is a BUG-FIX row (mirror + tray).
 
 **(a) Failure-path MESSAGE TEXT** may differ; the failure-vs-success
@@ -226,6 +226,17 @@ meeting criteria (i)–(vii) (or admitted BY CLASS as a kind-2 artifact,
 immaculate pair, with the `-- ISO-fix register R<n>` code marker. Nothing
 else may deviate toward ISO.
 
+**(e) NAMED DEVIATIONS — the register (§2b).** [USER 2026-09-28],
+verbatim: "Named deviations are okay in cases we can't easily resolve the
+mismatch." *Test:* the difference is an enumerated register entry that
+states the mechanism, why neither mirroring nor a loud refusal is
+practical, the channels it covers, and a mover (or "none: upstream
+artefact"); it is individually [USER]-ruled, pinned by immaculate DIFF
+witnesses carrying the Lean value, and marked at the Lean site with
+`-- named-deviation register N<n>`. A difference that CAN be refused
+cheaply is refused under (c) instead; (e) is never a way to keep serving
+something that could be refused.
+
 Two further dispositions are not exceptions but are named here so no
 reader mistakes them for one: **kind-1 fail-stops** are mirrored
 (`panic!` with the OCaml text; the typed-failure pass — scheduled,
@@ -273,6 +284,12 @@ marker set are in bijection is owed (charter §1.4 (vii)); today the
 markers are `CerbDecode.lean` R1/R2 and `CerbFloat.lean` R5 (`grep "ISO-fix register R"`), R3's
 is owed with the code half of Z4.
 
+## 2b. The named-deviation register (class (e))
+
+| Id | Difference and mechanism | Why not mirrored or refused | Witnesses | Lean site | Mover | Status |
+|---|---|---|---|---|---|---|
+| **N1** | A function pointer's NUMBER, observed through the bytes of a stored function pointer or `%p` of `(void*)fp`. Both engines serve the function symbol's number (`impl_mem.ml:1168-1185`, `:1047`; mirrored in `CerbMem.memValueToBytes`/`reconstructValue`), but that number is a fresh-supply artefact: the oracle's Core parser draws one per `std.core` symbol before the user TU (`core_parser.mly:184,220`), `CoreParser.lean` mints hashes. nolibc: oracle = Lean + 483 on the probes | Mirroring would mean reproducing the oracle's draw count for `std.core` (a numbering dependency the §5 renumbering principle calls a defect). Refusing: every stored function pointer uses these bytes, and `%p` prints through the pure printer with no memory state, so a precise refusal needs a byte-representation change. The integer-cast route IS refused (class (c), `CerbMem.intfromptr`, `docs/2026-09-28_funptr-int-refusal-record.md`) | `zd-funptr-bytes-deviation` DIFF / L=`Specified(19)` (oracle 502); `zd-funptr-printf-deviation` DIFF / L=`(@empty, 0xa0)` (oracle `0x283`) | `CerbMem.memValueToBytes` `PVfunction` arm (marker `-- named-deviation register N1`) | none planned: upstream artefact, tray 46; a representation change could refuse it later | **ADMITTED** [USER 2026-09-28] ("yes, re the decision, agree with (1). Named deviations are okay in cases we can't easily resolve the mismatch.") |
+
 ## 3. Every known Lean-vs-oracle difference, by class
 
 The enumeration is the census — charter
@@ -283,6 +300,9 @@ cites its evidence. This section is the standing summary of what is NOT
 a bug today and what is a bug still open, in the class vocabulary.
 
 **(a) message text** — the members listed in §1(a). Nothing else.
+
+**(e) named deviations** — the §2b register (N1: a function pointer's
+number through its bytes or `%p`). Nothing else.
 
 **(b) resource — VIOLATIONS with named movers (bugs, not limits):**
 

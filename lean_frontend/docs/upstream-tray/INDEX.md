@@ -17,7 +17,7 @@ recorded submission; **Sent** = transmitted without an issue/PR URL;
 **Filed** = recorded issue/PR URL; **Closed** = recorded upstream closure.
 A fork-side fix or a pushed PR branch does not mean Filed or Closed.
 
-Derived inventory (2026-09-26): 49 report files, **44 Draft, 4 Sent, 1 Filed, 0 Closed** (the four Sent = the ISO-fix register's reports 10/11/13/40, communicated privately to the maintainers; report 19, the register's DEFERRED row R4, stays Draft).
+Derived inventory (2026-09-28): 50 report files, **45 Draft, 4 Sent, 1 Filed, 0 Closed** (the four Sent = the ISO-fix register's reports 10/11/13/40, communicated privately to the maintainers; report 19, the register's DEFERRED row R4, stays Draft).
 Issue 1010 is recorded below but has no tray report, so is outside this count.
 Draft duplicate searches must be repeated before filing; the dated search
 notes below establish only what was checked then.
@@ -69,6 +69,7 @@ notes below establish only what was checked then.
 | [43-many-many1-input-indexed-recursion-proposal.md](43-many-many1-input-indexed-recursion-proposal.md) | Draft | No submission recorded |
 | [44-concrete-allocator-euclidean-align-down-overlap-at-exhaustion.md](44-concrete-allocator-euclidean-align-down-overlap-at-exhaustion.md) | Draft | No submission recorded |
 | [45-core-match-pattern-truncating-zip-arity.md](45-core-match-pattern-truncating-zip-arity.md) | Draft | No submission recorded |
+| [46-function-pointer-number-is-a-fresh-supply-artefact.md](46-function-pointer-number-is-a-fresh-supply-artefact.md) | Draft | No submission recorded |
 | [lean4/01-stack-overflow-handler-deadlock.md](lean4/01-stack-overflow-handler-deadlock.md) | Draft | No submission recorded |
 | [lean4/02-nat-div-mod-literal-folding.md](lean4/02-nat-div-mod-literal-folding.md) | Draft | No submission recorded |
 | [lem/01-polymorphic-compare-on-set-values.md](lem/01-polymorphic-compare-on-set-values.md) | Draft | No submission recorded |
