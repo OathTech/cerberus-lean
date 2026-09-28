@@ -28,3 +28,18 @@ exercised this surface, so a served subset is only as trustworthy as adversarial
   pinned refusals like the two pathleak rows.
 - Tier A: row 1 16/16; minimal, multi-TU, tray, address space, libc (12/12 — no libc lane program uses files), bytes,
   float, debug, coverage all at baseline; row 13 PASS. Tier B: full ladder below.
+
+## Full-ladder gate (orchestrator, 2026-09-28)
+
+`scripts/release.py --mode full` on `835c230b1`, clean tree (0 tracked
+changes), run 07:16:34Z–08:47:16Z. Verdict lines, verbatim:
+
+```
+full: passed; 40/40 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+=== RELEASE EXIT=0 2026-09-28T08:47:16Z ===
+```
+
+The "incomplete" line is the standard release-certification caveat: the
+reporting, adoption and audit exits sit outside the ladder.
