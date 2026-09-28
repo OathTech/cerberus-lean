@@ -12,6 +12,9 @@ same Lem model and differentially validated against the OCaml
 implementation on the documented differential lanes: an executable C
 semantics living natively in Lean 4. See
 [lean_frontend/README.md](lean_frontend/README.md).
+**What the port promises, and what it refuses:** [lean_frontend/CONTRACT.md](lean_frontend/CONTRACT.md) —
+every execution ends with the oracle's verdict, a loud refusal naming the unsupported feature, a resource
+outcome, or a registered deviation; any other outcome is a defect.
 The port was developed primarily by AI agents (Claude, Anthropic)
 working under the direction and review of Mike Dodds; the upstream
 Cerberus semantics is by the people listed below. The fork-specific build
