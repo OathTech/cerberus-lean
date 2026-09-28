@@ -52,13 +52,16 @@ landing under the master plan's existing policy.
 
 ## Current decision and evidence
 
-[USER, 2026-09-27] Push through the end of WP1; WP0 has landed on main.
+[USER, 2026-09-27, paraphrased] Push through the end of WP1; WP0 has landed on main.
 [AGENT] WP1 is rebased onto the actual WP0 landing `5ecc0aa33`; the old
 bounded-stepping commit `171e06df5` is now `b52f9e660`. Historical evidence
 keeps its original identities.
 
 The [execution decision and S1 entry contract](lean_frontend/docs/2026-09-27_sc-wp1-execution-decision.md)
-closes WP1 as a decision/evidence package, ready for independent review.
+closes WP1 as a decision/evidence package. Independent review `1c7e52fad`
+accepts the decision and accepts package/plan with fixes; the
+[response](lean_frontend/docs/2026-09-28_sc-wp1-review-response.md) tracks the
+fixes and the remaining condition before experimental Lem factoring lands.
 It chooses selected bounded Core
 reductions over concrete memory, with owned pending primitives where a
 Core action must yield, source frontiers distinct from scheduler order,
@@ -87,9 +90,11 @@ remaining implementation and correspondence obligations. In particular:
 - Production trace streaming and sound lexical environment reclamation
   are mandatory S1 scale work. The inherited negative-hoisting leak is
   not fixed or hidden by the positive/churn measurements.
-- S1 must repair inherited positional fork-result reversal and missing
-  modern-stack wait substitution in shared Lem. The candidate adapters
-  demonstrate the intended behavior without changing the default driver.
+- S1 must resolve inherited positional fork-result order and upstream's
+  explicit modern-stack wait refusal. Shared-Lem changes require a tray
+  draft, proposed `shared-model-fix` register row and explicit [USER]
+  adjudication backed by C-par-block evidence. Candidate adapters demonstrate
+  proposed behavior without changing the default driver.
 - WP-C's hardest open link is actual Core source/control-flow replay and
   coverage, not merely total-ordering a supplied graph. The typed schemas
   are statements, not proved end-to-end correspondence.

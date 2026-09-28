@@ -12,6 +12,11 @@ The governing plan is `SC-CONCURRENCY.md` on `arc/sc-concurrency`.
 `SC-WP1.md` is this branch's entry point. The earlier September 25/26
 records remain historical evidence, including failed approaches.
 
+**September 28 review:** `1c7e52fad` on `review/sc-wp1-20260928` accepts
+the decision and accepts the package/plan with fixes. The
+[response](2026-09-28_sc-wp1-review-response.md) records those fixes and the
+remaining M2 condition before shared-Lem factoring can land.
+
 ## 1. The construction we will build
 
 **Use selected, bounded Core reductions over the existing concrete memory
@@ -284,16 +289,21 @@ The old branch remains a quarry for independently justified later pieces.
 
 ## 5. Next landing boundaries and anti-drift rules
 
-WP1 is a decision/evidence package. Its small default-driver factoring and
-diagnostic seeds can be reviewed on their own merits; this branch does not
+WP1 is a decision/evidence package. Its default-driver factoring and
+diagnostic seeds need independent landing review, including M2's ruling
+reconciliation or experimental-module isolation; this branch does not
 enable a user-facing concurrency mode. Before treating its experiments as
 production, cut S1 from the current mainline with only necessary accepted
 prerequisites. Prefer these early auditable slices:
 
-1. Shared-Lem fork-result order and modern-stack wait substitution repairs,
-   with positional/nested/call-frame witnesses and sequential regression
-   evidence. The WP1 Lean adapters are specifications/experiments to port,
-   not a reason to ship a permanent Lean-only semantics difference.
+1. Investigate positional fork-result order and upstream's explicit
+   `subst_wait_stack ==> Stack_cons2` refusal. Both are inherited behaviors,
+   reachable through the non-ISO C par-block extension. Before changing the
+   shared model, prepare positional/nested/call-frame and C-par-block
+   observability evidence, a tray draft and proposed `shared-model-fix`
+   register row, then obtain explicit [USER] adjudication of the deviation.
+   The WP1 Lean adapters are experiments, not a ruling or a reason to ship
+   a permanent Lean-only semantics difference.
 2. The actual selected-step/lifecycle API, with per-owner pending SeqRMW,
    explicit ND handling, actual child runtime/errno initialization,
    unsupported/failure outcomes, and step/run/resource laws. Include structural discovery and the first concrete consumer.

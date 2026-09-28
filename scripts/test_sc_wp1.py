@@ -24,9 +24,14 @@ SeqRMW: explicitly unsupported; no load/store performed
 
 
 def call(name, command, cwd=ROOT):
+    # Let timeout signal the probe group while capped stays alive to clean up.
+    # The outer timeout is only a backstop, beyond timeout's kill grace.
+    command = list(command)
+    at = 1 if Path(command[0]).name == 'capped' else 0
+    command[at:at] = ['timeout', '--kill-after=5', '170']
     start = time.monotonic()
     result = subprocess.run(command, cwd=cwd, env={**os.environ, 'LEAN_ABORT_ON_PANIC': '1',
-        'DUNE_CACHE': 'disabled'}, capture_output=True, timeout=180)
+        'DUNE_CACHE': 'disabled'}, capture_output=True, timeout=200)
     (OUT / f'{name}.stdout').write_bytes(result.stdout)
     (OUT / f'{name}.stderr').write_bytes(result.stderr)
     return result, {'command': command, 'cwd': str(cwd), 'returncode': result.returncode,
@@ -52,6 +57,12 @@ def main():
         ROOT / 'lean_frontend',
         ('production SeqRMW callback: sibling store completed; saved callback resurrected it; executing it produced a second receipt\n' * 2) +
         ('production SeqRMW update: saved memory rejects a function pointer published by a real store; current-memory evaluation returns 1\n' * 2)))
+    # The historical transcript also captured ce's banner, outside the probe.
+    banner, boundary = (ROOT / 'lean_frontend/docs/sc-wp1-evidence/boundary.txt').read_text().split('\n', 1)
+    if not banner.startswith('cerberus-lean-proj env: '):
+        raise RuntimeError('boundary transcript wrapper changed; inspect before updating')
+    positive.append(('boundary', lean + ['test/Unit/SCWP1Boundary.lean'],
+        ROOT / 'lean_frontend', boundary))
     for name, command, cwd, expected in positive:
         r, records[name] = call(name, command, cwd)
         if r.returncode or r.stderr or r.stdout != expected.encode():
@@ -60,12 +71,13 @@ def main():
         ('native-selected-fault', native + ['selected-fault'], ROOT),
         ('lean-selected-fault', lean + ['test/SCWP1SelectedFault.lean'], ROOT / 'lean_frontend')]:
         r, records[name] = call(name, command, cwd)
-        if r.returncode == 0 or b'Erun outside of a proc' not in r.stdout + r.stderr:
+        if r.returncode in (0, 124, 137, 143, -9, -15) or b'Erun outside of a proc' not in r.stdout + r.stderr:
             raise RuntimeError(name + ' failed to detect the selected fault; see ' + str(OUT))
     files = ['frontend/model/core_reduction.lem', 'frontend/model/driver.lem',
         'backend/memory_probe/sc_step_probe.ml',
         'lean_frontend/test/Unit/SCWP1Stepping.lean', 'lean_frontend/test/Unit/SCWP1SteppingProofs.lean',
         'lean_frontend/test/Unit/SCWP1ContextProofs.lean', 'lean_frontend/test/Unit/SCWP1RMWContinuation.lean',
+        'lean_frontend/test/Unit/SCWP1Boundary.lean', 'lean_frontend/docs/sc-wp1-evidence/boundary.txt',
         'lean_frontend/generated/Core_reduction.lean',
         'lean_frontend/test/SCWP1SelectedFault.lean', 'scripts/test_sc_wp1.py',
         'lean_frontend/generated/Driver.lean', 'ocaml_frontend/generated/driver.ml']
@@ -73,7 +85,7 @@ def main():
         'sources': {p: hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in files},
         'runs': records}
     (OUT / 'record.json').write_text(json.dumps(record, indent=2) + '\n')
-    print('WP1 stepping: native + Lean fuels 64/128 passed; both selected-fault controls detected; both SeqRMW suspension counterexamples reproduced')
+    print('WP1 stepping: native + Lean fuels 64/128 passed; both selected-fault controls detected; both SeqRMW suspension counterexamples and boundary diagnostic reproduced')
 
 
 if __name__ == '__main__':

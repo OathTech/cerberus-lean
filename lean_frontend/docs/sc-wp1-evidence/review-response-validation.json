@@ -1,0 +1,621 @@
+{
+  "scope": "WP1 review response: documentation and diagnostic harnesses only; targeted checks, not full landing certification",
+  "review_commit": "1c7e52fadaf2054838d88ce0ff78bc15d488e865",
+  "reviewed_wp1": "af1342d32da0f47844c3856057ed1dd38ec4a164",
+  "parent": "af1342d32da0f47844c3856057ed1dd38ec4a164",
+  "non_documentation_changes": [
+    "scripts/test_sc_wp1.py",
+    "scripts/test_sc_wp1_decision.py",
+    "scripts/test_sc_wp1_source.py"
+  ],
+  "test_scripts_sha256": {
+    "scripts/test_sc_wp1.py": "6ff2de0ef1ffdc3d7f4381434a5e1818d8e7f8875d88f93b4b3ee6dada848827",
+    "scripts/test_sc_wp1_decision.py": "cafeceedf6ae63974394ab10f4bc9b52a145b8cfed9e28050fcf6bda886bc7a0",
+    "scripts/test_sc_wp1_source.py": "7744c5b20a0040c373b0a225c447834787af4fb7e1027eafa710f2b18a7e8902"
+  },
+  "freshness_checks": [
+    "check_lem_sync.sh --check-lean: pass",
+    "check_handwritten_sync.sh: 49 files pass",
+    "check_fork_drift.sh: 86 source files and 31 differing generated files pass"
+  ],
+  "focused": {
+    "decision": {
+      "runs": {
+        "build": {
+          "command": [
+            "../scripts/capped",
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "lake",
+            "build",
+            "Unit.SCWP1Decision",
+            "Unit.SCWP1DecisionProofs",
+            "Unit.SCWP1Summary",
+            "Unit.SCWP1SummaryRuntime",
+            "Unit.SCWP1SourceProofs",
+            "Unit.SCWP1Contracts"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+          "returncode": 0,
+          "elapsed_seconds": 0.4405423349235207,
+          "stdout_sha256": "645ea798ad16158127cfd2ba08c445b6de930e9a37c3dc514297b06a3178d6f1",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "operations": {
+          "command": [
+            "../scripts/capped",
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "../scripts/lean_probe.sh",
+            "test/SCWP1DecisionChecks.lean"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+          "returncode": 0,
+          "elapsed_seconds": 0.9822836478706449,
+          "stdout_sha256": "b7ed7463f6b3b8b13707ffc53d5c58e8404150798d3e4ba933811df5fb8d3bb3",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "publication": {
+          "command": [
+            "../scripts/capped",
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "../scripts/lean_probe.sh",
+            "test/SCWP1PublicationChecks.lean"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+          "returncode": 0,
+          "elapsed_seconds": 1.096364060183987,
+          "stdout_sha256": "4668c9671957ed6df69f4db869e04393f031392c06f93b11ebaafbb86adb28e2",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "race-prefix": {
+          "command": [
+            "../scripts/capped",
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "../scripts/lean_probe.sh",
+            "test/SCWP1RacePrefixChecks.lean"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+          "returncode": 0,
+          "elapsed_seconds": 0.8714829820673913,
+          "stdout_sha256": "6b17b22f7889633f50c94139cdf7d9623db7bc35e01cf045c3aad3d1372ea1bf",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "retention": {
+          "command": [
+            "../scripts/capped",
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "../scripts/lean_probe.sh",
+            "test/SCWP1RetentionChecks.lean"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+          "returncode": 0,
+          "elapsed_seconds": 8.716626598965377,
+          "stdout_sha256": "7ce40dd9afa2ac18fc5c96f1549f8c516546f6fb2736df7888c6f5df2be3a5f6",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "reference": {
+          "command": [
+            "../scripts/capped",
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "../scripts/lean_probe.sh",
+            "test/SCWP1ReferenceChecks.lean"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+          "returncode": 0,
+          "elapsed_seconds": 0.7287791238632053,
+          "stdout_sha256": "4942cd1e8c0c7e6c81caeb739f32fb04b79d52f5bdb2bc8b969b0b9914693a73",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "source-orders": {
+          "command": [
+            "../scripts/capped",
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "../scripts/lean_probe.sh",
+            "docs/sc-wp1-evidence/followup-source-order.lean"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+          "returncode": 0,
+          "elapsed_seconds": 0.8713741321116686,
+          "stdout_sha256": "2225e3955c2849dd2f8f93b9bcd389278156f04d5ccfc651111881f4982bda0c",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "SCWP1Summary-axioms": {
+          "command": [
+            "../scripts/capped",
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "../scripts/lean_probe.sh",
+            "test/Unit/SCWP1Summary.lean"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+          "returncode": 0,
+          "elapsed_seconds": 0.7877127700485289,
+          "stdout_sha256": "b68f6e1070ae260b539caf655297c52781d61262dd44d72ef2ab2d17184f4cd1",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "SCWP1SourceProofs-axioms": {
+          "command": [
+            "../scripts/capped",
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "../scripts/lean_probe.sh",
+            "test/Unit/SCWP1SourceProofs.lean"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+          "returncode": 0,
+          "elapsed_seconds": 0.8083641431294382,
+          "stdout_sha256": "7772968184873958efc27832930214fbf17f5995bed1a54bde315354b225f6db",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "SCWP1DecisionProofs-axioms": {
+          "command": [
+            "../scripts/capped",
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "../scripts/lean_probe.sh",
+            "test/Unit/SCWP1DecisionProofs.lean"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+          "returncode": 0,
+          "elapsed_seconds": 0.7139659461099654,
+          "stdout_sha256": "fc0182aa6212cca93191b7888376df1e5af5c53862671f17daee245342310143",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "sources": {
+        "lean_frontend/test/Unit/SCWP1Decision.lean": "e6000565463bfa45a6faf2cfad3e394c4c4d90efb4a25bba48e9d44f30bc9adb",
+        "lean_frontend/test/Unit/SCWP1DecisionProofs.lean": "f323e61d1f50ab4885b4a3a090a202c7e11cbe4d06fc2517e604d08f5e8b865a",
+        "lean_frontend/test/Unit/SCWP1Summary.lean": "5c0867500d4e35804e4c3c5dbca65cbb61bcec46e1b38471a89f915b3b1217ce",
+        "lean_frontend/test/Unit/SCWP1SummaryRuntime.lean": "90525ae422cb6d42a5665b5b32e67f02a679fddd672b1cb3b5399234943e8370",
+        "lean_frontend/test/Unit/SCWP1SourceProofs.lean": "4d365ca4d1254317cd7f3685ed4994ca59d96bace0bfdc0ea9befd8515eaa61c",
+        "lean_frontend/test/Unit/SCWP1Contracts.lean": "1b45541a5385cda770ae2a28f7d9acc689315c7ce43246ae24e313c42b778d2d",
+        "lean_frontend/test/SCWP1DecisionChecks.lean": "2fd6f529b3d46fb4f29bc9d53590804f8127692bb8e9c88f0a7468ec36328ad3",
+        "lean_frontend/test/SCWP1PublicationChecks.lean": "7947ea5840b8209f7b658d64c23f7af8efb345333c72f07eaf991e0bd5d5dccc",
+        "lean_frontend/test/SCWP1RacePrefixChecks.lean": "70581472df181a04ef98b3fc5a320cc0bdd5bb7a9a36b66d6d69bf56ef1b1bbb",
+        "lean_frontend/test/SCWP1RetentionChecks.lean": "98a154c56ee0ea9e479f5d9ac761d5c4a3ec0ed8c5ad7b5001bd47164ea66c9b",
+        "lean_frontend/test/SCWP1ReferenceChecks.lean": "8fbfde91ba01b315ba1c9856007fd58910efdefdf076c32f44d8df03015f8e15",
+        "lean_frontend/docs/sc-wp1-evidence/followup-source-order.lean": "27b8fcb8ca475fc32ea9363d48641801258387741ae44143c9266718308aa30a",
+        "lean_frontend/docs/sc-wp1-evidence/decision-operations.txt": "b7ed7463f6b3b8b13707ffc53d5c58e8404150798d3e4ba933811df5fb8d3bb3",
+        "lean_frontend/docs/sc-wp1-evidence/decision-publication.txt": "4668c9671957ed6df69f4db869e04393f031392c06f93b11ebaafbb86adb28e2",
+        "lean_frontend/docs/sc-wp1-evidence/decision-race-prefix.txt": "6b17b22f7889633f50c94139cdf7d9623db7bc35e01cf045c3aad3d1372ea1bf",
+        "lean_frontend/docs/sc-wp1-evidence/decision-retention.txt": "28f5379fc9fa6ee288f38ac74c0280db5bb4f3883912d5d995c9f1f53af5e72d",
+        "lean_frontend/docs/sc-wp1-evidence/decision-reference.txt": "4942cd1e8c0c7e6c81caeb739f32fb04b79d52f5bdb2bc8b969b0b9914693a73",
+        "lean_frontend/docs/sc-wp1-evidence/decision-source-orders.txt": "2225e3955c2849dd2f8f93b9bcd389278156f04d5ccfc651111881f4982bda0c",
+        "frontend/model/core_reduction.lem": "7138170222f138b60d9e519b596a7c8021dfb0428308040507d034ac3b1e5d2b",
+        "frontend/model/driver.lem": "15565f50210f7c1b2d6f514f1997237c58cc72c06f4fb93276d116580153ba78",
+        "frontend/model/core_run.lem": "6824c7754ca3790bb0da30cef02e0a97185bebeca4a37a960d253e6ed75757e1",
+        "frontend/model/core_run_aux.lem": "32f4c87c8a09bc7e3f4b753fadd791b88ca558acbc34cfca6a3f0b49009ca6e7",
+        "frontend/concurrency/cmm_csem.lem": "53b16ced15ce07b825cd5e60859dffcba19d83812b70da5301041e71374ac81f",
+        "lean_frontend/CerbMem.lean": "53d6fc787c121a1995f722b8845544c5a9f364849173bc48f58b90f1116c4f9f",
+        "scripts/test_sc_wp1_decision.py": "cafeceedf6ae63974394ab10f4bc9b52a145b8cfed9e28050fcf6bda886bc7a0",
+        "lean_frontend/generated/Core_reduction.lean": "502f697a81f831c6e56984ec0978554fba30e99a779c870651623d38fb20ea25",
+        "lean_frontend/generated/Core_run.lean": "c2cda9b970258081361a62587944719b8eb9abd7014694c01eb5373240e22afd",
+        "lean_frontend/generated/Core_run_aux.lean": "f4eccb2720c29e00ca541340b7101174a4458e7e4064075ea5ecad984664cbc7",
+        "lean_frontend/generated/Driver.lean": "c8310e2c1d0e27681dc0365249be789c976440ebe5933c3b7ecf91269303ba5c",
+        "lean_frontend/generated/Cmm_csem.lean": "604cc2e8438aea5ee86a60298a42cd1ec8c6b7c128732966c03cfedb953421fb"
+      },
+      "artifacts": {
+        "lean_frontend/.lake/build/lib/lean/Unit/SCWP1Decision.olean": "a157e554d44e8ffc4c9165ad22a2376d7c177d98a9d80ccd9fd0a7409fbed710",
+        "lean_frontend/.lake/build/lib/lean/Unit/SCWP1DecisionProofs.olean": "55a6b664401d3d3d23e71c7937cbd505dcf7a259551dee5ddb16d34f62cb25c4",
+        "lean_frontend/.lake/build/lib/lean/Unit/SCWP1Summary.olean": "e74c7c36d19b71aec2060ef47edadc02c148fe0a448beb2af2d84dec476cee28",
+        "lean_frontend/.lake/build/lib/lean/Unit/SCWP1SummaryRuntime.olean": "c1a1223188446fc39eb1443aea217249008c48440355e32aff1180eb960d85b2",
+        "lean_frontend/.lake/build/lib/lean/Unit/SCWP1SourceProofs.olean": "506bcd33d34405a9646f86e827bbaa55fac4f013c3d2a42a0954605d7319d9c2",
+        "lean_frontend/.lake/build/lib/lean/Unit/SCWP1Contracts.olean": "929b90313e0f4fac97621622e49fdcf3a465a1b78184c88ce885a2d0d991e1a2",
+        "lean_frontend/.lake/build/lib/lean/Core_reduction.olean": "3758fcdbf22cb3835d86a44ff710c1aba09b9c5c9f0e9114da5aae1cf5d39462",
+        "lean_frontend/.lake/build/lib/lean/Core_run.olean": "5a0e5617e66bdd649322903406610ee91edbcac3c8eb59212c7ea008400e00be",
+        "lean_frontend/.lake/build/lib/lean/Core_run_aux.olean": "8ab8e29b1314478e7921e4db160238b59dd138b4ae8075dedd4d0564ab57b4a3",
+        "lean_frontend/.lake/build/lib/lean/Driver.olean": "44ba55506ba094f09ed11c26eed97652b83ed1eb514b9f6e5b22e238bf6d5e0e",
+        "lean_frontend/.lake/build/lib/lean/Cmm_csem.olean": "1db62e7e830ae7b557f3fc55b3b142e295d5d2d42d48670d9a32f58b42f32858",
+        "lean_frontend/.lake/build/lib/lean/CerbMem.olean": "003ba8ff39ba689d139690aa243c43eb0eea2af602230c9f797b3b2bf3a0d07c"
+      }
+    },
+    "paired-stepping": {
+      "runs": {
+        "native-build": {
+          "command": [
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "dune",
+            "build",
+            "--root",
+            ".",
+            "--force",
+            "backend/memory_probe/sc_step_probe.exe"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1",
+          "returncode": 0,
+          "elapsed_seconds": 0.17049201601184905,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "native": {
+          "command": [
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "_build/default/backend/memory_probe/sc_step_probe.exe"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1",
+          "returncode": 0,
+          "elapsed_seconds": 0.016385355964303017,
+          "stdout_sha256": "40ed91c4cba1d0b7d177b48e4f806ba39250663b1a6c403532b0b5b9230ba57a",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "lean": {
+          "command": [
+            "../scripts/capped",
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "../scripts/lean_probe.sh",
+            "test/Unit/SCWP1Stepping.lean"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+          "returncode": 0,
+          "elapsed_seconds": 1.5184064090717584,
+          "stdout_sha256": "a485c1b78455107310cea9da6d21ef36da9a810b90ef82e54f9e6c8b1ac118b3",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "rmw-continuations": {
+          "command": [
+            "../scripts/capped",
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "../scripts/lean_probe.sh",
+            "test/Unit/SCWP1RMWContinuation.lean"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+          "returncode": 0,
+          "elapsed_seconds": 0.8828474150504917,
+          "stdout_sha256": "69122cc9c2ff8a08ad2b85bf44413824cac428e04a6167221f258b444c4b2636",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "boundary": {
+          "command": [
+            "../scripts/capped",
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "../scripts/lean_probe.sh",
+            "test/Unit/SCWP1Boundary.lean"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+          "returncode": 0,
+          "elapsed_seconds": 1.0800418839789927,
+          "stdout_sha256": "4863b19ba707320d52ec8d756e6bc7c57ae56ea24fa7c70bbd18c30d9aa7dc05",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "native-selected-fault": {
+          "command": [
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "_build/default/backend/memory_probe/sc_step_probe.exe",
+            "selected-fault"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1",
+          "returncode": 2,
+          "elapsed_seconds": 0.016914509003981948,
+          "stdout_sha256": "40ed91c4cba1d0b7d177b48e4f806ba39250663b1a6c403532b0b5b9230ba57a",
+          "stderr_sha256": "b3922294a0914a870f6ab4eaa89b14d3cdc9cd98128a4fd8d4b5b715a5d76bd5"
+        },
+        "lean-selected-fault": {
+          "command": [
+            "../scripts/capped",
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "../scripts/lean_probe.sh",
+            "test/SCWP1SelectedFault.lean"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+          "returncode": 134,
+          "elapsed_seconds": 1.8380643180571496,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderr_sha256": "9061e8e03dbd4303869c47165e65a2855c6f1e93e4cfba82d7501842e40698bb"
+        }
+      },
+      "sources": {
+        "frontend/model/core_reduction.lem": "7138170222f138b60d9e519b596a7c8021dfb0428308040507d034ac3b1e5d2b",
+        "frontend/model/driver.lem": "15565f50210f7c1b2d6f514f1997237c58cc72c06f4fb93276d116580153ba78",
+        "backend/memory_probe/sc_step_probe.ml": "840adce9513e2281d879b2abca49f98c73e6c45afc39b583cbc9c87b61f7dddf",
+        "lean_frontend/test/Unit/SCWP1Stepping.lean": "379a115006e68d9dfc549b80bf03849a2198a6872e5676d637b7ce3e1cba1c23",
+        "lean_frontend/test/Unit/SCWP1SteppingProofs.lean": "ecd99694dd1e322721c5b454e4a9d17250c3da4392c69f396febf9f54b11b8f9",
+        "lean_frontend/test/Unit/SCWP1ContextProofs.lean": "e64f4e6cc5a32a2a7c70c3d8fcb88abf7d2604ebb4ea4a1fb2382331e316d00a",
+        "lean_frontend/test/Unit/SCWP1RMWContinuation.lean": "0ae3f301ee1df498d1f565bfa6e8e54a8ce13c4c94dc2364f0e0fe13a6a59a33",
+        "lean_frontend/test/Unit/SCWP1Boundary.lean": "25cfca1968c16aade96476dc547918e6a9e60304c52c408b8defb00c483e4e11",
+        "lean_frontend/docs/sc-wp1-evidence/boundary.txt": "eb96fdf9e5fc08d0266d40e0a45f8bd179a98a3f736c2b1493a606ff9285a2df",
+        "lean_frontend/generated/Core_reduction.lean": "502f697a81f831c6e56984ec0978554fba30e99a779c870651623d38fb20ea25",
+        "lean_frontend/test/SCWP1SelectedFault.lean": "7706e19f07cc1501116149498e6885d0eb577416d8aed8edf036fd0560c43175",
+        "scripts/test_sc_wp1.py": "6ff2de0ef1ffdc3d7f4381434a5e1818d8e7f8875d88f93b4b3ee6dada848827",
+        "lean_frontend/generated/Driver.lean": "c8310e2c1d0e27681dc0365249be789c976440ebe5933c3b7ecf91269303ba5c",
+        "ocaml_frontend/generated/driver.ml": "85ba87a29ef4a6e63b4e166f473409c807e19028ee7deec34e7137401b9b67e2"
+      }
+    },
+    "source-stepping": {
+      "runs": {
+        "native-build": {
+          "command": [
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "dune",
+            "build",
+            "--force",
+            "backend/driver/main.exe",
+            "cerberus.install",
+            "cerberus-lib.install"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1",
+          "returncode": 0,
+          "elapsed_seconds": 2.2163189090788364,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderr_sha256": "d657f285529983757f1d0ad719d5dbfb12c8cf24082b044e9b88145270f01a15"
+        },
+        "lean-build": {
+          "command": [
+            "../scripts/capped",
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "lake",
+            "build",
+            "CerberusLean",
+            "cerberus-lean"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+          "returncode": 0,
+          "elapsed_seconds": 0.44272748101502657,
+          "stdout_sha256": "27e00654a5f462722b114eea01670aa0815780961ff86c10a5686ba395e8b556",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "parse-return": {
+          "command": [
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "_build/default/backend/driver/main.exe",
+            "--cabs-json",
+            "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/.tmp/sc-wp1/source-return.c"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1",
+          "returncode": 0,
+          "elapsed_seconds": 0.034770483849570155,
+          "stdout_sha256": "c8bd65349ed7eec5780c332cc669c3609b25ccbfb4257c0f405da3fe537c27e9",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "parse-loop": {
+          "command": [
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "_build/default/backend/driver/main.exe",
+            "--cabs-json",
+            "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/.tmp/sc-wp1/source-loop.c"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1",
+          "returncode": 0,
+          "elapsed_seconds": 0.0318066340405494,
+          "stdout_sha256": "a7b838164f192344d7c3da4050a3f590d8f7120896215a36fdf6d2bbad82092f",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "parse-rmw": {
+          "command": [
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "_build/default/backend/driver/main.exe",
+            "--cabs-json",
+            "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/.tmp/sc-wp1/source-rmw.c"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1",
+          "returncode": 0,
+          "elapsed_seconds": 0.03404999594204128,
+          "stdout_sha256": "6e5109f3dcbbe0c470d27a26bdea18a2fce80fadaf8e606500fbf624adf2fa43",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "parse-members": {
+          "command": [
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "_build/default/backend/driver/main.exe",
+            "--cabs-json",
+            "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/.tmp/sc-wp1/source-members.c"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1",
+          "returncode": 0,
+          "elapsed_seconds": 0.034133671782910824,
+          "stdout_sha256": "edac26d24c94c26825e7e8f7de5b6ca933c493ea30abecf24a7749d13a23a1ee",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "parse-comma": {
+          "command": [
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "_build/default/backend/driver/main.exe",
+            "--cabs-json",
+            "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/.tmp/sc-wp1/source-comma.c"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1",
+          "returncode": 0,
+          "elapsed_seconds": 0.03155395505018532,
+          "stdout_sha256": "857e8a9bd0aa335fea00b59f17478b6bfff76a9f5f68a343b8dbe7fd8cda28a6",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "parse-global": {
+          "command": [
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "_build/default/backend/driver/main.exe",
+            "--cabs-json",
+            "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/.tmp/sc-wp1/source-global.c"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1",
+          "returncode": 0,
+          "elapsed_seconds": 0.032211915124207735,
+          "stdout_sha256": "6549dab1a0f4f0682a934b388b6c6b84341271d54b948242dbdc917a5a8ea662",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "parse-args": {
+          "command": [
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "_build/default/backend/driver/main.exe",
+            "--cabs-json",
+            "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/.tmp/sc-wp1/source-args.c"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1",
+          "returncode": 0,
+          "elapsed_seconds": 0.030168083030730486,
+          "stdout_sha256": "c369bd9572c7046370b7e79d62248a3f536dce3882ee29a27ba4b3e93050a43e",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "elaborate": {
+          "command": [
+            "../scripts/capped",
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "../scripts/lean_probe.sh",
+            ".tmp/sc-wp1/SourceStepping.lean",
+            "-c",
+            ".tmp/sc-wp1/source-stepping.c"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+          "returncode": 0,
+          "elapsed_seconds": 5.103927347110584,
+          "stdout_sha256": "f8d9c7e03a231318301918a27eb45b860461f5cd9915a78432efd5ffc7af0da6",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "compile": {
+          "command": [
+            "../scripts/capped",
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "lake",
+            "env",
+            "leanc",
+            "-O1",
+            "-c",
+            ".tmp/sc-wp1/source-stepping.c",
+            "-o",
+            ".tmp/sc-wp1/source-stepping.o"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+          "returncode": 0,
+          "elapsed_seconds": 19.39118380891159,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "link": {
+          "command": [
+            "../scripts/capped",
+            "timeout",
+            "--kill-after=5",
+            "170",
+            "lake",
+            "env",
+            "leanc",
+            "-o",
+            ".tmp/sc-wp1/source-stepping",
+            "@.tmp/sc-wp1/source-stepping.rsp"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+          "returncode": 0,
+          "elapsed_seconds": 0.9638222740031779,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "execute": {
+          "command": [
+            "../scripts/capped",
+            "timeout",
+            "--kill-after=5",
+            "170",
+            ".tmp/sc-wp1/source-stepping"
+          ],
+          "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/lean_frontend",
+          "returncode": 0,
+          "elapsed_seconds": 0.1887515871785581,
+          "stdout_sha256": "36fa2621337861ed60fcc9b9b46d6fba46639aae7aeb2396a897e8f488699601",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "sources": {
+        "frontend/model/core_reduction.lem": "7138170222f138b60d9e519b596a7c8021dfb0428308040507d034ac3b1e5d2b",
+        "frontend/model/driver.lem": "15565f50210f7c1b2d6f514f1997237c58cc72c06f4fb93276d116580153ba78",
+        "lean_frontend/Main.lean": "7163e47ad33488e49e9f72ac927fa5b0b349338e299bd5c2a2305615f03db148",
+        "lean_frontend/CerbMem.lean": "53d6fc787c121a1995f722b8845544c5a9f364849173bc48f58b90f1116c4f9f",
+        "lean_frontend/generated/Driver.lean": "c8310e2c1d0e27681dc0365249be789c976440ebe5933c3b7ecf91269303ba5c",
+        "lean_frontend/generated/Core_reduction.lean": "502f697a81f831c6e56984ec0978554fba30e99a779c870651623d38fb20ea25",
+        "lean_frontend/test/SCWP1SourceChecks.lean.in": "c193e4d4bd403ea9a41a1434af9c5d4de6dbaff83ca441d811272fe52b4cf758",
+        "scripts/test_sc_wp1_source.py": "7744c5b20a0040c373b0a225c447834787af4fb7e1027eafa710f2b18a7e8902"
+      }
+    }
+  },
+  "plants": {
+    "timeout-final": {
+      "command": [
+        "../scripts/capped",
+        "timeout",
+        "--kill-after=5",
+        "5",
+        "../scripts/lean_probe.sh",
+        ".tmp/sc-wp1-review/Timeout.lean"
+      ],
+      "returncode": 124,
+      "stdout": "",
+      "stderr": "Terminated\n",
+      "started_marker": "running",
+      "session_process_snapshots_after": [
+        ""
+      ],
+      "reap_wait_seconds": 0.018890665844082832,
+      "setup_files_leaked": []
+    },
+    "transcript-plant": {
+      "plant": "change print-only next-tid expectation 16385 to 16386; same line count",
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "Traceback (most recent call last):\n  File \"/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/scripts/test_sc_wp1_decision.py\", line 99, in <module>\n    main()\n  File \"/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/scripts/test_sc_wp1_decision.py\", line 67, in main\n    raise RuntimeError(f'{name}: unexpected diagnostic output; inspect {OUT}')\nRuntimeError: retention: unexpected diagnostic output; inspect /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/.tmp/sc-wp1/decision\n"
+    },
+    "negative-timeout": {
+      "plant": "selected-fault command prints expected error then times out",
+      "harness_rejection": "native-selected-fault failed to detect the selected fault; see /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-wp1/.tmp/sc-wp1/review-negative-timeout",
+      "command_stderr": "Erun outside of a proc\n"
+    }
+  },
+  "earlier_timeout_attempts": {
+    "stdout_marker_5_and_20_seconds": "Both returned 124, no remaining processes or setup files; assertion that stdout marker was visible failed. Replaced with file marker to witness evaluation start.",
+    "file_marker_immediate_process_check": "Marker witnessed running Lean, exit 124, setup removed; immediate check found one Z (defunct) process. Later ps showed it gone; final test allows bounded reaping wait and passed."
+  },
+  "limits": [
+    "No shared-model, handwritten seam or Lean semantic/proof probe changed from reviewed head.",
+    "No full A+B or three-engine rerun in this response.",
+    "No backend/web build.",
+    "M2 is open before landing the experimental shared-Lem factoring."
+  ]
+}

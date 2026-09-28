@@ -39,8 +39,12 @@ def main():
     records = {}
 
     def run(name, command, cwd=ROOT):
+        # Keep capped alive through timeout's process-group cleanup.
+        command = list(command)
+        at = 1 if Path(command[0]).name == 'capped' else 0
+        command[at:at] = ['timeout', '--kill-after=5', '170']
         start = time.monotonic()
-        r = subprocess.run(command, cwd=cwd, capture_output=True, timeout=180,
+        r = subprocess.run(command, cwd=cwd, capture_output=True, timeout=200,
             env={**os.environ, 'LEAN_ABORT_ON_PANIC': '1', 'DUNE_CACHE': 'disabled'})
         (OUT/f'{name}.stdout').write_bytes(r.stdout)
         (OUT/f'{name}.stderr').write_bytes(r.stderr)

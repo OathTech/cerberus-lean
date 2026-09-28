@@ -181,12 +181,24 @@ overseer still owns its merge; reconcile prerequisites before a WP1 landing.
 ## Reviewed bookkeeping changes
 
 The experiment is a separate section of the shared driver, generated on both
-targets; the native probe is a separate executable. The fork-drift gate requires
-the generated module set to match upstream, so this instrument stays with its
-driver integration rather than changing the gate for a new experimental module. The web step-kind renderer handles the
-new lifecycle marker even though the default driver never emits it.
+targets; the native probe is a separate executable. **Review correction,
+September 28 (M2):** keeping the upstream module set unchanged was the original
+placement rationale, but a gate constraint does not justify production
+structure. This placement remains experimental and needs the ruling
+reconciliation or isolation recorded in the
+[review response](2026-09-28_sc-wp1-review-response.md) before landing.
+The web step-kind renderer handles the new lifecycle marker even though the
+default driver never emits it.
 `fork_drift_manifest.txt` is deliberately refreshed for these exact source and
 generated deltas; a changed checksum is not correctness evidence.
+
+**Review correction, September 28 (S1):** factoring `driver2` into a reused
+ND value reduces its construction-time `ENTERING Driver.driver2` debug
+messages at OCaml debug levels 2 and above (one per drive instead of one per
+global/main invocation). The reviewer measured otherwise identical stdout
+and normalized stderr on two programs. This is an observable diagnostic
+change, not covered by the default-mode comparisons below; it must be
+explicitly accepted or preserved with a thunk in any production extraction.
 
 The failure census still contains 239 sites with the same reach classes.
 The context interpreter's unchanged failure leaves remain owned by `step_ctx`

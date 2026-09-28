@@ -16,6 +16,7 @@ import time
 ROOT = Path(__file__).resolve().parent.parent
 LF = ROOT / 'lean_frontend'
 OUT = ROOT / '.tmp/sc-wp1/decision'
+EVIDENCE = LF / 'docs/sc-wp1-evidence'
 PROBES = {
     'operations': ('test/SCWP1DecisionChecks.lean', 16),
     'publication': ('test/SCWP1PublicationChecks.lean', 4),
@@ -37,8 +38,11 @@ def main():
     runs = {}
 
     def call(name, command):
+        # Keep capped alive through timeout's process-group cleanup.
+        command = list(command)
+        command[1:1] = ['timeout', '--kill-after=5', '170']
         start = time.monotonic()
-        result = subprocess.run(command, cwd=LF, capture_output=True, timeout=180,
+        result = subprocess.run(command, cwd=LF, capture_output=True, timeout=200,
             env={**os.environ, 'LEAN_ABORT_ON_PANIC': '1', 'DUNE_CACHE': 'disabled'})
         (OUT / f'{name}.stdout').write_bytes(result.stdout)
         (OUT / f'{name}.stderr').write_bytes(result.stderr)
@@ -53,7 +57,13 @@ def main():
     call('build', ['../scripts/capped', 'lake', 'build'] + ['Unit.' + m for m in MODULES])
     for name, (source, lines) in PROBES.items():
         result = call(name, ['../scripts/capped', '../scripts/lean_probe.sh', source])
-        if result.stderr or len(result.stdout.decode().splitlines()) != lines:
+        expected = (EVIDENCE / f'decision-{name}.txt').read_bytes()
+        actual = result.stdout
+        if name == 'retention':
+            # Wall time varies; every semantic count and multiplicity is pinned.
+            actual = re.sub(rb'elapsed-ms=[0-9]+', b'elapsed-ms=<time>', actual)
+            expected = re.sub(rb'elapsed-ms=[0-9]+', b'elapsed-ms=<time>', expected)
+        if result.stderr or len(actual.splitlines()) != lines or actual != expected:
             raise RuntimeError(f'{name}: unexpected diagnostic output; inspect {OUT}')
     for name, expected_count in [('SCWP1Summary', 4), ('SCWP1SourceProofs', 4), ('SCWP1DecisionProofs', 2)]:
         result = call(name + '-axioms', ['../scripts/capped', '../scripts/lean_probe.sh',
@@ -67,6 +77,7 @@ def main():
             raise RuntimeError(f'{name}: axiom-cone transcript changed; inspect {OUT}')
     source_files = [LF / 'test/Unit' / (m + '.lean') for m in MODULES]
     source_files += [LF / p for p, _ in PROBES.values()]
+    source_files += [EVIDENCE / f'decision-{name}.txt' for name in PROBES]
     source_files += [ROOT / p for p in ['frontend/model/core_reduction.lem',
         'frontend/model/driver.lem', 'frontend/model/core_run.lem',
         'frontend/model/core_run_aux.lem', 'frontend/concurrency/cmm_csem.lem',
