@@ -197,6 +197,47 @@ expr-009-negative-shift.c UB_MATCH
 expr-010-large-shift.c UB_MATCH
 expr-011-sequence-point.c MATCH
 expr-012-logical-shortcircuit.c MATCH
+# 2026-09-28 thin-surface tests slice (branch tests/thin-surfaces-20260928; record
+#   lean_frontend/docs/2026-09-28_thin-surface-tests-record.md): 62 rows added — tests/coverage/fmt/
+#   (35: printf %f via CerbFloat.formatFixed, widths/precisions/flags, %c/%x/%o, length modifiers, the
+#   model's printf UB checks) and tests/coverage/mem4/ (27: realloc/memcpy/memcmp/free edge cases).
+#   Statuses as measured by `test_exec.sh tests/coverage/fmt` / `tests/coverage/mem4` (SUMMARY:
+#   total=35 match=21 ub_match=14; total=27 match=20 ub_match=7). Rows hand-inserted in sorted position.
+fmt-001-f-default-precision.c MATCH
+fmt-002-f-rounding-ties.c MATCH
+fmt-003-f-precision-zero.c MATCH
+fmt-004-f-large-precision.c MATCH
+fmt-005-f-negative-zero.c MATCH
+fmt-006-f-inf.c MATCH
+fmt-008-f-subnormal.c MATCH
+fmt-009-f-huge.c MATCH
+fmt-010-f-width-flags.c MATCH
+fmt-011-f-float-arg.c MATCH
+fmt-012-f-length-hh-ub.c UB_MATCH
+fmt-013-f-int-arg-ub.c UB_MATCH
+fmt-014-e-unserved-ub.c UB_MATCH
+fmt-015-g-unserved-ub.c UB_MATCH
+fmt-020-int-width-flags.c MATCH
+fmt-021-int-precision.c MATCH
+fmt-022-hex-octal.c MATCH
+fmt-023-integer-limits.c MATCH
+fmt-024-length-hh-h.c MATCH
+fmt-025-percent-and-char.c MATCH
+fmt-026-string-precision.c MATCH
+fmt-027-s-nonul.c MATCH
+fmt-028-s-nonul-overread-ub.c UB_MATCH
+fmt-029-s-unterminated-ub.c UB_MATCH
+fmt-030-return-value.c MATCH
+fmt-031-p-null-and-object.c MATCH
+fmt-032-plus-unsigned-ub.c UB_MATCH
+fmt-033-hash-d-ub.c UB_MATCH
+fmt-034-zero-s-ub.c UB_MATCH
+fmt-035-c-length-ub.c UB_MATCH
+fmt-036-d-wrong-type-ub.c UB_MATCH
+fmt-037-ld-wrong-type-ub.c UB_MATCH
+fmt-040-missing-arg-ub.c UB_MATCH
+fmt-042-unsigned-negative-precision.c MATCH
+fmt-043-j-intmax-ub.c UB_MATCH
 io-001-printf-basic.libc.c MATCH
 io-002-printf-int.libc.c MATCH
 io-003-printf-string.libc.c MATCH
@@ -234,6 +275,33 @@ mem3-005-struct-multi-ptr.c MATCH
 mem3-006-array-of-ptrs.c MATCH
 mem3-007-realloc-null.libc.c MATCH
 mem3-008-eff-member-shift.c MATCH
+mem4-001-realloc-grow-preserve.c MATCH
+mem4-002-realloc-shrink-preserve.c MATCH
+mem4-003-realloc-shrink-oob-ub.c UB_MATCH
+mem4-004-realloc-null.c MATCH
+mem4-005-realloc-size-zero.c MATCH
+mem4-006-realloc-old-pointer-dead-ub.c UB_MATCH
+mem4-007-realloc-pointer-content.c MATCH
+mem4-008-realloc-uninit-tail.c MATCH
+mem4-009-realloc-free-old-ub.c UB_MATCH
+mem4-010-realloc-chain.c MATCH
+mem4-020-memcpy-overlap.c MATCH
+mem4-021-memcpy-pointer-carrying.c MATCH
+mem4-022-memcpy-partial-int.c MATCH
+mem4-023-memcpy-zero-length.c MATCH
+mem4-024-memcpy-half-pointer.c MATCH
+mem4-025-memcpy-bytewise-pointer.c MATCH
+mem4-026-memcpy-oob-src-ub.c UB_MATCH
+mem4-027-memcpy-uninit-src.c MATCH
+mem4-030-memcmp-high-bytes.c MATCH
+mem4-031-memcmp-value.c MATCH
+mem4-032-memcmp-length-zero.c MATCH
+mem4-033-memcmp-pointer-bytes.c MATCH
+mem4-034-memcmp-oob-ub.c UB_MATCH
+mem4-040-free-null.c MATCH
+mem4-041-free-then-compare.c MATCH
+mem4-042-free-string-literal-ub.c UB_MATCH
+mem4-043-free-global-ub.c UB_MATCH
 misc-001-void-ptr-arith.c CERB_SKIP
 misc-002-offsetof.c MATCH
 misc-003-array-of-struct-shift.c MATCH
