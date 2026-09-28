@@ -1,0 +1,72 @@
+{
+  "tested_commit": "a7dc36e2fd278af983dc38054d671c5f4652a4db",
+  "run_started_utc": "2026-09-28T12:55:12Z",
+  "platform": "WSL Ubuntu, x86_64",
+  "modes": {
+    "ocaml": "--exec --batch --mode=random",
+    "lean": "--batch --first"
+  },
+  "libc": "Project libc, pin verified by scripts/libc_prep.sh",
+  "binary_sha256": {
+    "main.exe": "4400fe4d82ecb9932aa947f8e9b3fdd0501323e889bb7d107ac88ede26cc1cb9",
+    "cerberus-lean": "35f4529a5b7aae27a48483966ce93567dfc26271dc24a0a1dddade838f520807"
+  },
+  "cases": [
+    {
+      "source": "intra_object_overflow.c",
+      "source_sha256": "4935eb55d9afb22d8eb583d2ea597defea3b3ac6e1713585dbae9b8c86ef972f",
+      "ocaml": {
+        "exit": 0,
+        "stdout": "Defined {value: \"Specified(0)\", stdout: \"right=42\\n\", stderr: \"\", blocked: \"false\"}\n",
+        "stderr": "Time spent: 0.270218 seconds\n"
+      },
+      "lean": {
+        "exit": 0,
+        "stdout": "Defined {value: \"Specified(0)\", stdout: \"right=42\\n\", stderr: \"\", blocked: \"false\"}\n",
+        "stderr": ""
+      }
+    },
+    {
+      "source": "overlapping_memcpy.c",
+      "source_sha256": "0e67ab1691ae22558364f68f20d84981849277fe802985bc52f2d552dbdeb9e6",
+      "ocaml": {
+        "exit": 0,
+        "stdout": "Defined {value: \"Specified(0)\", stdout: \"value=a\\n\", stderr: \"\", blocked: \"false\"}\n",
+        "stderr": "Time spent: 0.280727 seconds\n"
+      },
+      "lean": {
+        "exit": 0,
+        "stdout": "Defined {value: \"Specified(0)\", stdout: \"value=a\\n\", stderr: \"\", blocked: \"false\"}\n",
+        "stderr": ""
+      }
+    },
+    {
+      "source": "uninitialized_heap_read.c",
+      "source_sha256": "df08e34486aa0de77bf8986ae1ab8a52c4625dbf70cdabfefea373cb8f29fe72",
+      "ocaml": {
+        "exit": 0,
+        "stdout": "Defined {value: \"Specified(0)\", stdout: \"value=UNSPEC\\n\", stderr: \"\", blocked: \"false\"}\n",
+        "stderr": "Time spent: 0.276924 seconds\n"
+      },
+      "lean": {
+        "exit": 0,
+        "stdout": "Defined {value: \"Specified(0)\", stdout: \"value=UNSPEC\\n\", stderr: \"\", blocked: \"false\"}\n",
+        "stderr": ""
+      }
+    },
+    {
+      "source": "uninitialized_stack_read.c",
+      "source_sha256": "5de1b99fa1d402974117d1adae94cf443048cfa9150f68ad06fcff164cd180f7",
+      "ocaml": {
+        "exit": 0,
+        "stdout": "Defined {value: \"Specified(0)\", stdout: \"value=UNSPEC\\n\", stderr: \"\", blocked: \"false\"}\n",
+        "stderr": "Time spent: 0.271199 seconds\n"
+      },
+      "lean": {
+        "exit": 0,
+        "stdout": "Defined {value: \"Specified(0)\", stdout: \"value=UNSPEC\\n\", stderr: \"\", blocked: \"false\"}\n",
+        "stderr": ""
+      }
+    }
+  ]
+}
