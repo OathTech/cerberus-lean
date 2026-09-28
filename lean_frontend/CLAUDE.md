@@ -113,6 +113,11 @@ Current unit tests:
 - `opaque-failure-test` — seam hygiene (2026-09-19): `#guard_msgs` on the two FAILING `rfl` probes of the seam failure leaves (a transparent leaf would turn the build RED), `failwithI` opaque in the environment, default arms reduce; every `CerbGlobal.has_switch … = false` by `rfl` and an arm reduces to its default; `oomKill`/`STD_`/timing identities by `rfl`; the structural `BEq MemValue` agrees with the retired impl on 23 pinned pairs (exit 1 on disagreement)
 - `run-digest-test` — D-S kernel acceptance equations for explicit minting, last-unit/empty rules, committed cabs-json digest shape, both entry constructors and mint preservation; old arity rejected by `#guard_msgs`.
 - `memory-access-test` — SC WP0 (2026-09-25): the passive load/store receipt diagnostic (production primitives, all six ND constructors, drain/re-enable controls) and, via `Unit.MemoryAccessProofs`, the kernel erasure theorems (observation disabled = observation erased, over the production `loadM`/`storeM`, every arm, arbitrary state and fuel). Args: fuel, iteration count, capture mode; row 1 runs `17 0 on`, Tier A row 13 (`scripts/test_memory_access.py`) the paired native/Lean grid.
+- `float-literal-test` — `CerbFloat.of_string` binary64 bit-pattern pins (semantics-audit repair D1).
+- `are-compatible-test` — `Ctype_aux.are_compatible`'s array-bound arm (semantics-audit repair D3).
+- `many-restatement-test` — equivalence theorems for the `many`/`many1` parser-combinator restatement (parser-progress measure).
+- `enum-data-test` — the enum's compatible type is program data: kernel pins of the design note §4 plus negative controls on the retired names.
+- `match-pattern-arity-test` — `match_pattern`/`typecheck_pattern` fail closed on tuple-arity mismatch: the consumer's acceptance facts by `rfl`, a negative control, the typing pin, and the argument-list checks of closure round 3.
 - `fresh-int-test` — verifies `fresh_int`/`Symbol.fresh` generate unique values (+ the native-obj fresh-counter floor probe)
 - `pp-test` — pretty-printer mirrors (ctype/value shapes + float formatting), plus byte/text batch escaping against an OCaml 5.4.0 all-byte transcript (`Unit.BatchEscapeTest`).
 
