@@ -77,6 +77,7 @@ import LemLib
   | fs_unlink  open fd on the path                  | the file persists until the last close   | REFUSED (was: removed) |
   | fs_rename  no open fd on either path            | renamed                                  | SERVED        |
   | fs_rename  open fd on either path               | the fd follows the file                  | REFUSED (was: fd kept the old path) |
+  | open/rename/truncate/unlink on a path that is not a plain name (`./f`, `d/f`, `f/`, `/f`, `.`, `..`, empty) | resolved through the directory tree / cwd | REFUSED (2026-09-28; was: a raw-string key — `./f` and `f` were different files) |
   | fs_mkdir, fs_rmdir, fs_chdir, fs_chmod, fs_chown | POSIX directory / permission semantics   | REFUSED (was: success-returning no-ops) |
   | fs_link, fs_readlink, fs_symlink                | POSIX link semantics                     | REFUSED (was: ENOSYS → errno + −1) |
   | fs_stat, fs_lstat                               | the real stat fields                     | REFUSED (was: zeroed fields except size — suite/fs/stat.c STDOUT_DIFF) |
@@ -216,9 +217,26 @@ private def countOf (n : Int) : Nat := n.natAbs
     answer, refused. -/
 private def isStdFd (fd : Int) : Bool := fdOf fd ≤ 2
 
+private def moverPaths := "SibylFS path resolution (fs_spec.lem: `.`/`..` components, repeated or trailing `/`, the current directory, directories)"
+
+/-- The only paths this model can answer exactly as SibylFS: a single, non-empty directory entry name —
+    no `/` at all, and not `.` or `..`. This model has no directories and no current-directory state, so
+    SibylFS's resolution of any other spelling (`./f`, `d/../f`, `f/`, `//f`, `/tmp/f`, the empty path)
+    cannot be reproduced: before 2026-09-28 such a path was used as a raw lookup key, so `./secret.txt`
+    and `secret.txt` named DIFFERENT files — a served wrong answer (external report "pathleak",
+    `docs/2026-09-28_cerbfs-path-hotfix-record.md`). -/
+private def plainName (path : String) : Bool :=
+  !path.isEmpty && !path.contains '/' && path != "." && path != ".."
+
+/-- The refusal message for a served path operation on a non-plain path (see `plainName`). -/
+private def pathRefusal (op path : String) : String :=
+  refusal s!"{op} of the path '{path}'"
+    "this model resolves only plain file names (no directories, no current-directory state); SibylFS resolves this spelling through the directory tree, so a raw-string lookup could name a different file" moverPaths
+
 -- FS operations return (new_state, Either error result)
 
 def fs_open (st : FsState) (path : String) (oflag : Int) (_ : Option Int) : FsState × (Sum FsError Nat) :=
+  if !plainName path then failwithI (pathRefusal "open" path) else
   let mkFd (st : FsState) : FsState × (Sum FsError Nat) :=
     let fd := st.nextFd
     let entry : FdEntry := { path := path }
@@ -394,6 +412,8 @@ def fs_pread (st : FsState) (fd : Int) (count off : Int) : FsState × (Sum FsErr
           "the minimal fs model can only serve whole-prefix (offset 0) or at-EOF reads; answering would return WRONG data" moverOffsets)
 
 def fs_rename (st : FsState) (oldP newP : String) : FsState × (Sum FsError Nat) :=
+  if !plainName oldP then failwithI (pathRefusal "rename (source)" oldP) else
+  if !plainName newP then failwithI (pathRefusal "rename (target)" newP) else
   if anyFdOn st oldP || anyFdOn st newP then
     failwithI (refusal s!"rename '{oldP}' → '{newP}' while an fd is open on one of them"
       "in POSIX the open fd follows the file; this model's fd entry kept the OLD path (later reads would answer ENOENT)" moverOffsets)
@@ -439,6 +459,7 @@ def fs_truncate (st : FsState) (path : String) (len : Int) : FsState × (Sum FsE
   -- returned 0 for a negative length (Lean Specified(2) vs the oracle's
   -- Specified(1) on tests/immaculate/libc/zd-f1-truncate-negative-length.c).
   if len < 0 then (st, .inl (.other "EINVAL")) else
+  if !plainName path then failwithI (pathRefusal "truncate" path) else
   match lookupFile st path with
   | none => (st, .inl .enoent)  -- ENOENT, as SibylFS (:4024; a directory path would be EISDIR :4025 — not distinguished, header)
   | some contents =>
@@ -453,6 +474,7 @@ def fs_truncate (st : FsState) (path : String) (len : Int) : FsState × (Sum FsE
       ({ st with files := files' }, .inr 0)
 
 def fs_unlink (st : FsState) (path : String) : FsState × (Sum FsError Nat) :=
+  if !plainName path then failwithI (pathRefusal "unlink" path) else
   if anyFdOn st path then
     failwithI (refusal s!"unlink '{path}' while an fd is open on it"
       "in POSIX the file persists until the last close (the open fd keeps reading it); this model removed it (later reads would answer ENOENT)" moverOffsets)
