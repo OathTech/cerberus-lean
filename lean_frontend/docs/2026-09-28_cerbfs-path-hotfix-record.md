@@ -47,3 +47,14 @@ After the fix the witness stops with `PANIC … CerbFS refusal (fail-closed fs-m
 Specified(2); before the fix Lean created a file named `sub/f`; now DIFF | L=CRASH), `zd-fs-path-plain-control`
 (plain names — create, write, reopen, read, unlink — MATCH Specified(3)). Failure-reach register: five new rows (one per new refusal site, class (c) REACHABLE, citing this report), resealed; 239 → 244 sites, no existing row or position class changed. No corpus program used a served non-plain path
 (grep: only `/dev/zero` opens without O_CREAT, already refused), so no other baseline moves.
+
+## Landing (2026-09-28)
+
+[USER 2026-09-28] verbatim: "Agreed on both, we can waive the audit, merge, and kick off the drafting" — the pre-merge
+audit (proposed: a short fresh review of the one commit) was WAIVED by the operator; merge and push authorised.
+`mdd/cerberus-lean` 5ecc0aa33 -> this commit, ff-only. Gates on the hotfix tree (orchestrator, verbatim):
+`Total: 16 passed, 0 failed`; `check_failure_reach: OK (244 pure failure sites = the 244 register rows exactly …`;
+`check_fork_drift: OK — layer 1: 86 … layer 2: 31 …`; immaculate `OK: lane matches the committed baseline …` with the three
+new rows; minimal `SUMMARY: total=113 match=90 ub_match=18 … cerb_skip=5 …` `Baseline check: 0 regression(s), 0 improvement(s)`;
+multi-TU 2/2 and 7/7; address space 18; libc 12/12; bytes 9 + 5; float 93/93; debug 90; coverage 212; row 13 PASS.
+The contract design pass the operator asked for (support what is well built, reject the rest) follows on its own branch.
