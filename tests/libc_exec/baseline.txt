@@ -37,5 +37,7 @@
 037-calloc-zeroed MATCH
 038-realloc-libc-mode MATCH
 039-strerror-assert MATCH
+040-atexit-order MATCH
+041-atexit-return MATCH
 exhaustive/001-unseq-order-libc MATCH
 exhaustive/002-errno-basic MATCH

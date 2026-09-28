@@ -333,3 +333,26 @@ All by hand, minimal insertions, never `--record-baseline`/`--write-baseline`:
 
 Scratch (`.tmp/thin/`, the plant copies, the observation and pristine-report directories of these runs) was deleted
 before the commit. Other files already in `.tmp/` were not touched.
+
+## Orchestrator addendum: dispositions (2026-09-28)
+
+Lanes re-verified independently on `7a25d679e` before acting (immaculate "OK: lane matches the committed baseline";
+coverage "Baseline check: 0 regression(s), 0 improvement(s)"; libc_exec "ALL MATCH RECORDED BASELINE"; multi-TU
+"ALL PASSED").
+
+- **D1 (`%f` of a NaN).** Mirroring was attempted and is impossible in Lean: `Float.toBits` canonicalizes every NaN
+  to `0x7ff8000000000000` (measured: `(Float.ofBits 0xfff8000000000000).toBits = 9221120237041090560`), so the sign
+  bit that decides "-nan" vs "nan" cannot be read. Since it can be refused cheaply and precisely, it is REFUSED
+  (`CerbFloat.formatFixed`, register row REACHABLE, witnesses `fmt-007*.unsupported.c`). `string_of_float` keeps
+  "nan" for every NaN; it feeds only the pretty-printers.
+- **D2 (`atexit` refused).** [USER 2026-09-28] "agree on atexit as you propose": the function-pointer-to-integer
+  refusal is withdrawn and the integer channel joins named deviation N1
+  (`docs/2026-09-28_funptr-int-refusal-record.md`, addendum). New libc_exec rows `040-atexit-order` (MATCH,
+  handlers in reverse order after `exit`) and `041-atexit-return` (MATCH: neither engine runs handlers when `main`
+  returns, although ISO C 5.1.2.2.3 says it should — a mirrored oracle behaviour, upstream candidate).
+- **D3/D4 (`strtok`, finite `strtod`).** Both engines fail with "unknown procedure"; only the symbol number in the
+  message differs: class (a), no action.
+- **D5 (`calloc` of a huge size).** The oracle does not finish within 300 s and Lean overflows its stack: class (b)
+  permits Lean failing where the oracle does not complete. No action.
+- **D6 (non-ASCII `--args`).** Both fail-stop, with different message text: class (a). Lean's U+FFFD replacement of
+  invalid bytes before the semantics is hidden today by the shared fail-stop; noted in CONTRACT §3.2 (argv row).

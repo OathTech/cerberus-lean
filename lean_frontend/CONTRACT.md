@@ -54,8 +54,8 @@ feature-attributed; each refusal has a witness), **OUT OF SCOPE** (not an input 
 | C frontend (parse → Cabs → Ail → Core) | SUPPORTED | shared OCaml parser; Lean desugar/typing/elaboration differentially tested (row 1 parser tests, all Tier A/B lanes) | frontend is `partial` (not kernel-evaluable) — a stated limit, not a discrepancy |
 | Core dynamics (driver, reduction, pure eval) | SUPPORTED | Tier A/B lanes, pristine 835/28/7/2, gcc oracle, csmith corpus | none known; this is where the report found nothing |
 | Concrete memory model | SUPPORTED | CerbMem mirror with cites; immaculate lane; allocator soundness theorem | the SC receipt buffer is disabled by default (WP0) |
-| Function pointers | SUPPORTED except their numeric value: converting one to an integer is REFUSED; its bytes and `%p` are named deviation N1 | `zd-funptr-*` rows; `ptr3-001` pinned UNSUPPORTED | none |
-| Integer/float/layout implementation choices | SUPPORTED (LP64) | CerberusImpl, CerbFloat, float/bytes lanes | other ABIs OUT OF SCOPE [DECIDE] |
+| Function pointers | SUPPORTED, including round trips through integers and `void*` (libc's `atexit` uses one); their numeric value — through an integer conversion, their bytes or `%p` — is named deviation N1 | `zd-funptr-*` rows, libc_exec `040`/`041` | none |
+| Integer/float/layout implementation choices | SUPPORTED (LP64); printing a NaN with `%f` REFUSED (its text depends on the NaN's sign bit, which Lean cannot read) | CerberusImpl, CerbFloat, float/bytes lanes | other ABIs OUT OF SCOPE [DECIDE] |
 | libc (the oracle's libc.co, loaded) | functions written in C (`runtime/libc/src/*.c`): SUPPORTED — they run through the same Core semantics as user code — but thinly tested (§3.2); the 36 **builtins** of `runtime/libcore/std.core` (hand-implemented in each engine): one state each, §3.1 (D4) | libc_exec lane, libxml2 lanes | none |
 | Filesystem (CerbFS) | **REFUSED** (D2) — every filesystem operation, including `read` on any fd; `write`/`vprintf` on fds 1/2 are served (the driver routes them to the stdout/stderr records, never reaching CerbFS) | `zd-fs-*`, `zd-f1-truncate-negative-length`, `zd-z2f01-lseek-whence` pinned refusals | none |
 | Standard input / environment / argv | stdin REFUSED (every read reaches CerbFS, D2; the oracle models an empty stdin); `getenv` served by libc C code; argv SUPPORTED | `zd-fs-stdin-read` pinned refusal; argv lane (5 programs) | UTF-8 `--args` unmeasured |
@@ -85,38 +85,38 @@ engines, so a builtin added upstream fails closed until it is reviewed and liste
 
 SUPPORTED means "differentially tested, and any disagreement is a bug". It does not mean every part is tested equally.
 The measurement behind this section is `docs/2026-09-28_test-depth-map.md` (static counts of the gated lane programs
-that exercise each part; there is no coverage instrumentation, so the counts are proxies). The gating lanes hold 872
-programs that agree with the oracle: 795 compared exhaustively without libc, 45 single-trace without libc, and 32 with
-libc, all single-trace.
+that exercise each part; there is no coverage instrumentation, so the counts are proxies), re-counted after the
+edge-case tests of `docs/2026-09-28_thin-surface-tests-record.md` and the four rows added with the fixes that followed
+them. The gating lanes now hold about 973 programs that agree with the oracle (derived: 969 measured plus those four).
 
 **Deeply tested:** the C frontend and Core dynamics (generated from the same Lem source as the oracle), load/store and
 allocation, integer and floating-point arithmetic (also checked against gcc as a second oracle), the exhaustive runner
 and the batch output format. Every program exercises these.
 
-**Thinly tested — treat results here with extra suspicion.** These are served, and a disagreement is still a bug, but
-few or no gated programs exercise them, and most are hand-written Lean rather than shared generated code:
+**Less deeply tested — treat results here with more suspicion.** These are served, and a disagreement is still a bug,
+but fewer gated programs exercise them, and most are hand-written Lean rather than shared generated code. Counts are
+gated agreement programs, before → after the 2026-09-28 edge-case tests:
 
-| Part | Gated programs exercising it (measured) | Why it matters |
-|---|---|---|
-| libc breadth | 11 of the 188 libc functions are called directly by any libc-mode program; libc mode is only ever compared single-trace | most real programs call libc functions no test calls |
-| `printf("%f")` | 0 (13 unit cases on the hand-written printer) | `CerbFloat.formatFixed` is an independent reimplementation of glibc's `%f` |
-| printf width, precision, flags, `%c`, `%x` | 0 (`%x` once) | formatting is shared code, `%c` goes through hand-written escaping |
-| `realloc`, `memcpy`, `memcmp` | 4, 5, 1 | hand-written `CerbMem` routines |
-| `snprintf`/`vsnprintf`, `errno`, `exit` codes / `atexit` | 2, 1, probes only | return values and status codes |
-| argv | 5 | non-ASCII arguments unmeasured |
-| programs of several translation units | 8 | linking and cross-TU identity |
-| default-mode atomics and `{-{ ||| }-}` | 1 | shared code, lower risk |
-| `--first` mode | not checked to be one of the exhaustive results | outside the §1 promise (§2) |
-| non-batch CLI output | never compared (only `--batch` output is the compared interface) | human-readable format, exits 0 for every outcome, as the oracle's does |
+| Part | Programs | Depth now | Why it matters |
+|---|---|---|---|
+| libc breadth | 11 → 61 of the 188 libc functions called directly; libc mode 32 single-trace → 59 single-trace + 2 exhaustive | THIN | most libc functions are still called by no test, and libc mode is mostly compared single-trace |
+| `printf("%f")` | 0 → 15 (derived) | MODERATE | `CerbFloat.formatFixed` is an independent reimplementation of glibc's `%f` |
+| printf width, precision, flags; `%c`/`%x`/`%X`/`%o` | 0 → 22; 0/1/0/0 → 6/8/2/3 | MODERATE | formatting is shared code, `%c` goes through hand-written escaping |
+| `realloc`, `memcpy`, `memcmp`, `memset` | 4/5/2/1 → 16/15/7/5 | MODERATE (`memcmp`, `memset` thin) | hand-written `CerbMem` routines |
+| `snprintf`/`vsnprintf`, `errno`, `exit`, `atexit` | 2/1/1/0 → 6/5/3/2 | THIN | return values and status codes |
+| argv | 5 | THIN | non-ASCII arguments fail in both engines (with different messages) |
+| programs of several translation units | 8 → 14 | MODERATE | linking and cross-TU identity |
+| default-mode atomics and `{-{ ||| }-}` | 1 | THIN | shared code, lower risk |
+| `--first` mode | not checked to be one of the exhaustive results | outside §1 | outside the §1 promise (§2) |
+| non-batch CLI output | never compared (only `--batch` output is the compared interface) | outside §1 | human-readable format, exits 0 for every outcome, as the oracle's does |
 
-The **refused** parts (filesystem, stdin, concurrency and switch flags, function-pointer numbers) are pinned by
+The **refused** parts (filesystem, stdin, concurrency and switch flags, `%f` of a NaN) are pinned by
 witnesses and are not "thinly tested": they do not answer.
 
 ## 4. How the contract is enforced
 
 1. **Every REFUSED area has at least one witness in a lane that pins the refusal**, so a return to a silent answer turns
-   a gate red: the filesystem and stdin (`zd-fs-*`, `zd-f1-*`, `zd-z2f01-*` immaculate rows), function-pointer numbers
-   (`zd-funptr-int-*`), `any_bounded_int` (`zd-any-bounded-int-crash`) and the CLI flags (`scripts/check_cli_refusals.sh`,
+   a gate red: the filesystem and stdin (`zd-fs-*`, `zd-f1-*`, `zd-z2f01-*` immaculate rows), `any_bounded_int` (`zd-any-bounded-int-crash`), `%f` of a NaN (`fmt-007*.unsupported.c`) and the CLI flags (`scripts/check_cli_refusals.sh`,
    row 1).
 2. **A served-surface audit (the lesson of pathleak).** Every hand-written seam that can answer where it has no model —
    default arms, stub bodies, `Inhabited` defaults, lookups keyed on unnormalised data — is enumerated and classified:
@@ -137,8 +137,9 @@ witnesses and are not "thinly tested": they do not answer.
   never CerbFS). Three immaculate rows moved from MATCH to pinned refusals; the full ladder passed
   (`docs/2026-09-28_cerbfs-refuse-all-record.md`).
 - **D3 — adopted** ([USER 2026-09-28] "D3 agree"): the served-surface audit (§4.2) ran
-  (`docs/2026-09-28_served-surface-audit.md`). Its P1 finding (function-pointer numbers) is enforced: the integer cast
-  refuses, the byte and `%p` channels are named deviation N1 ([USER 2026-09-28] "agree with (1)").
+  (`docs/2026-09-28_served-surface-audit.md`). Its P1 finding (function-pointer numbers) is named deviation N1 ([USER 2026-09-28] "agree with (1)"),
+  covering the integer conversion too after refusing it broke `atexit` ([USER 2026-09-28] "agree on atexit as you
+  propose").
 - **D4 — adopted, option 1** ([USER 2026-09-28] "Yeah, (1) is fine"): libc is supported by mechanism. Functions written
   in C inherit the core semantics' state; the 36 builtins are a named list with one state each (§3.1). `any_bounded_int`
   is listed as not served by either engine (the audit found it fails in both); its dead Lean seam, which returned `lo`,

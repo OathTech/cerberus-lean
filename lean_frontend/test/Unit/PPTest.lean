@@ -139,10 +139,12 @@ def testFloats : IO Bool := do
     ok := (← check s!"string_of_float {expected}" (CerbFloat.string_of_float f) expected) && ok
   for (p, f, expected) in ffCases do
     ok := (← check s!"%.{p}f {expected}" (format_string_of_float p f) expected) && ok
-  -- non-finite (glibc %f semantics; NaN-sign caveat documented in CerbFloat)
+  -- non-finite (glibc %f semantics). A NaN under %f is refused (formatFixed); string_of_float,
+  -- pretty-printer only, prints "nan" for every NaN (Float.toBits canonicalizes NaNs).
   ok := (← check "inf" (CerbFloat.string_of_float (1.0 / 0.0)) "inf") && ok
   ok := (← check "-inf" (CerbFloat.string_of_float (-1.0 / 0.0)) "-inf") && ok
   ok := (← check "nan" (CerbFloat.string_of_float (0.0 / 0.0)) "nan") && ok
+  ok := (← check "nan (sign-bit pattern)" (CerbFloat.string_of_float (Float.ofBits 0xfff8000000000000)) "nan") && ok
   ok := (← check "%f inf" (format_string_of_float 6 (1.0 / 0.0)) "inf") && ok
   if ok then IO.println "  ✓ PASS"
   return ok

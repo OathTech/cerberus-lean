@@ -340,11 +340,14 @@ private def scaledRound (m : Nat) (e : Int) (p : Int) : Nat :=
 /-- C printf `%.<prec>f` of a double, exactly (glibc: correctly rounded,
     half-even on the exact binary value). Mirror target:
     Decode.format_string_of_float (ocaml_frontend/decode.ml:228-232).
-    nan/inf: "nan"/"inf"/"-inf" like glibc %f, except that a negative
-    NaN's "-nan" is not reproduced (DELIBERATE: Lean gives no portable
-    NaN sign access; unobservable in the corpora). -/
+    inf: "inf"/"-inf" like glibc %f. A NaN is REFUSED (contract
+    enforcement, thin-surface tests D1, 2026-09-28): glibc and OCaml print
+    "-nan" or "nan" by the NaN's sign bit (measured: OCaml
+    `Printf.sprintf "%f" (infinity -. infinity)` = "-nan"), and Lean has no
+    portable access to it — `Float.toBits` canonicalizes every NaN to
+    0x7ff8000000000000 (measured) — so printing one would guess. -/
 def formatFixed (prec : Nat) (f : Float) : String :=
-  if f.isNaN then "nan"
+  if f.isNaN then failwithI "CerbFloat.formatFixed: refused — printing a NaN with %f is not supported: its text depends on the NaN's sign bit, which Lean cannot read (Float.toBits canonicalizes NaNs); CONTRACT.md §3"
   else if f.isInf then (if f < 0 then "-inf" else "inf")
   else
     let (sign, m, e) := decomposeFinite f
@@ -367,7 +370,9 @@ private def numDigits (n : Nat) : Nat := (toString n).length
     exact value); use `%e` style iff the decimal exponent X < -4 or
     X ≥ 12; strip trailing fraction zeros; exponent `e±dd` (≥ 2 digits);
     then valid_float_lexem appends "." iff the result is a plain integer
-    lexeme. NaN sign caveat as in formatFixed. -/
+    lexeme. A NaN prints "nan" whatever its sign (OCaml prints "-nan" for a
+    negative NaN; Lean cannot read the sign, see formatFixed). Used only by
+    the pretty-printers, which no verdict reads (served-surface audit). -/
 def string_of_float (f : Float) : String :=
   if f.isNaN then "nan"
   else if f.isInf then (if f < 0 then "-inf" else "inf")

@@ -56,3 +56,17 @@ and re-pinned UNSUPPORTED. Tier B corpora: measured by the full ladder at the en
   `DIFF | L=CRASH`.
 - `tests/immaculate/nolibc/zd-funptr-call-control.c`: stored, round-tripped, compared and called
   function pointers stay served, `MATCH` `Specified(312)`.
+
+## Addendum (later on 2026-09-28): the refusal is withdrawn, the integer channel joins N1
+
+The thin-surface edge-case tests (`docs/2026-09-28_thin-surface-tests-record.md` §3 D2) found that the refusal made
+every `atexit` call refuse in libc mode. The runtime libc stores each handler as an integer and converts it back to
+call it (`runtime/libc/src/stdlib.c:194-199`); the number is never observed, and both engines served the round trip
+correctly before the refusal (served-surface probe `p2_exit_atexit`, `Specified(7)`, `"main\nbye\n"` on both). The
+blast-radius measurement above missed it because no lane program called `atexit`, which is exactly the thin coverage
+the test-depth map later measured.
+
+Decision [USER 2026-09-28] "agree on atexit as you propose": revert the refusal and register the integer channel under
+named deviation N1 with the bytes and `%p`. `CerbMem.intfromptr` is back to the OCaml mirror with the N1 marker;
+`zd-funptr-int-direct` and `zd-funptr-int-voidptr` are pinned `DIFF | L=VAL:{Specified(47)}` (oracle 530);
+`ptr3-001` is back to `MATCH`; libc_exec rows `040-atexit-order` and `041-atexit-return` pin the served round trip.
