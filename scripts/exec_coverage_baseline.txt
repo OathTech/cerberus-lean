@@ -272,7 +272,12 @@ ptr2-012-funcptr-ne.c MATCH
 ptr2-013-funcptr-call.c MATCH
 ptr2-014-funcptr-array.c MATCH
 ptr2-015-funcptr-param.c MATCH
-ptr3-001-funcptr-to-int.libc.c MATCH
+# 2026-09-28 (contract enforcement, served-surface audit P1-1; [USER] "let's measure, then refuse if the blast
+#   radius isn't too big"): ptr3-001 casts a function pointer to an integer, which now REFUSES (the number is
+#   the symbol's fresh-supply number, not shared by the engines; the row only matched because it tested
+#   x != 0). Renamed *.unsupported.c per the lane convention, MATCH -> UNSUPPORTED; the only Tier A row the
+#   refusal moves (record docs/2026-09-28_funptr-int-refusal-record.md).
+ptr3-001-funcptr-to-int.libc.unsupported.c UNSUPPORTED
 ptr3-002-int-to-ptr-null.libc.c MATCH
 ptr3-003-int-to-ptr-roundtrip.libc.c MATCH
 ptr3-004-ptrdiff-array.c MATCH

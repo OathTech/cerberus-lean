@@ -2848,15 +2848,15 @@ def ptrfromint (_ : CerbLocation.Loc) (_ : integerType) (refTy : ctype)
       else memReturn (.PV .Prov_none (.PVconcrete none n))              -- :2170-2171
     | _ => memReturn (.PV prov (.PVconcrete none n))                     -- :2172-2173
 
-/-- intfromptr — impl_mem.ml:2439-2461.
-    For concrete pointer: validate address fits in target integer type,
-    fail with MerrIntFromPtr on overflow. -/
-def intfromptr (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc) (_ : ctype) (ity : integerType)
-    (pv : PointerValue) : memM IntegerValue :=
-  match pv with
-  | .PV prov (.PVnull _) => memReturn (.IV prov 0)
-  | .PV prov (.PVfunction (Symbol _ n _)) => memReturn (.IV prov n)
-  | .PV prov (.PVconcrete _ addr) =>
+/-- Refusal text for a function pointer's numeric identity (served-surface
+    audit P1-1; see `intfromptr`). -/
+def funptrIntRefusal : String :=
+  "cerberus-lean: refused — converting a function pointer to an integer is not supported: the number is the function symbol's fresh-supply number (impl_mem.ml:2487-2488), which this port does not reproduce (CONTRACT.md, served-surface audit P1-1)"
+
+/-- The PVconcrete arm of `intfromptr` (impl_mem.ml:2449-2461), split out
+    so the function-pointer check in `intfromptr` runs first. -/
+def intfromptrConcrete (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ity : integerType)
+    (prov : Provenance) (addr : Int) : memM IntegerValue :=
     -- :2454-2461 `has_switch (SW_PNVI AE) || has_switch (SW_PNVI AE_UDI)` →
     -- expose_allocation. Guarded by the coarser `is_PNVI ()` (the one PNVI
     -- predicate this port exposes; it is IMPLIED BY either disjunct — and also
@@ -2875,6 +2875,29 @@ def intfromptr (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc
       memFail MerrIntFromPtr loc
     else
       memReturn (.IV prov addr)
+
+/-- intfromptr — impl_mem.ml:2439-2461.
+    For concrete pointer: validate address fits in target integer type,
+    fail with MerrIntFromPtr on overflow.
+    DELIBERATE DIVERGENCE (contract enforcement, served-surface audit P1-1):
+    impl_mem.ml:2487-2488 returns a function pointer's symbol number, an
+    artefact of the fresh-symbol supply (the oracle's Core parser draws one
+    per std.core symbol before the user TU; CoreParser.lean mints hashes), so
+    the engines would serve different integers. Both routes to that number
+    are refused loudly: a `PVfunction`, and a concrete address the funptrmap
+    records as a function pointer (a void* round trip; caseFunsymOpt's test). -/
+def intfromptr (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc) (_ : ctype) (ity : integerType)
+    (pv : PointerValue) : memM IntegerValue :=
+  match pv with
+  | .PV prov (.PVnull _) => memReturn (.IV prov 0)
+  | .PV _ (.PVfunction _) => failStopMem funptrIntRefusal
+  | .PV prov (.PVconcrete _ addr) =>
+    ND fun st =>
+      if st.funptrmap.any (fun (a, _) => a == addr) then
+        (NDkilled (CerbFail.failStopKill funptrIntRefusal), st)
+      else
+        let (ND k) := intfromptrConcrete enumDefs tagDefs loc ity prov addr
+        k st
 
 /-! ### Effectful pointer shifts -/
 
