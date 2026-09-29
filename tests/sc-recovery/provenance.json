@@ -1,0 +1,170 @@
+[
+  {
+    "file": "tests/sc-recovery/ordinary-objects/ordered-byte-update.c",
+    "donor": "631382a9d23a709112f38add53357d4cbe6fc108",
+    "donor_path": "tests/sc/representation/ordered-byte-update.c",
+    "sha256": "4c651f8a12ea61df51fdeb03ce0f176d677b989da3d905b2216e768572843321",
+    "intent_to_validate": "selected result 1 on the pinned concrete target; SC must preserve ordered byte composition",
+    "status": "input recovered; donor expectations and correctness claims not adopted"
+  },
+  {
+    "file": "tests/sc-recovery/ordinary-objects/initialized-members.c",
+    "donor": "631382a9d23a709112f38add53357d4cbe6fc108",
+    "donor_path": "tests/sc/representation/initialized-members.c",
+    "sha256": "df63f1ee0bc385c8ca6c9d6038eb9554d7bbb0e73f7fbb688d3140a5b6459a28",
+    "intent_to_validate": "result 42; aggregate initialization followed by member reads",
+    "status": "input recovered; donor expectations and correctness claims not adopted"
+  },
+  {
+    "file": "tests/sc-recovery/ordinary-objects/whole-aggregate-copy.c",
+    "donor": "631382a9d23a709112f38add53357d4cbe6fc108",
+    "donor_path": "tests/sc/representation/whole-aggregate-copy.c",
+    "sha256": "fb6f1247e6feaeaebfcb202defb619fb88029998cc15aa546c9e8e1aee54295a",
+    "intent_to_validate": "result 0; whole-aggregate control",
+    "status": "input recovered; donor expectations and correctness claims not adopted"
+  },
+  {
+    "file": "tests/sc-recovery/locations/disjoint-array-elements.c",
+    "donor": "631382a9d23a709112f38add53357d4cbe6fc108",
+    "donor_path": "tests/sc/representation/disjoint-array-elements.c",
+    "sha256": "308d050f2cda5c162f89b83a18267dee5d5a414f2efd64bad46b5b14a298bcee",
+    "intent_to_validate": "no race between distinct scalar array elements",
+    "status": "input recovered; donor expectations and correctness claims not adopted"
+  },
+  {
+    "file": "tests/sc-recovery/locations/same-array-element-race.c",
+    "donor": "631382a9d23a709112f38add53357d4cbe6fc108",
+    "donor_path": "tests/sc/representation/same-array-element-race.c",
+    "sha256": "6d98b3d94acc92b699e94c6ec7041d007129b268428a29ff5f1dadb8c395ac40",
+    "intent_to_validate": "race witness for unordered writes to the same element",
+    "status": "input recovered; donor expectations and correctness claims not adopted"
+  },
+  {
+    "file": "tests/sc-recovery/locations/character-array-disjoint.c",
+    "donor": "631382a9d23a709112f38add53357d4cbe6fc108",
+    "donor_path": "tests/sc/boundaries/g02/character-array-disjoint.c",
+    "sha256": "ba9f9ddef5686a3ec5d8b632ff45532d8a3aaa6135c9c977d433c219cf0a24a1",
+    "intent_to_validate": "distinct character array elements must not conflict",
+    "status": "input recovered; donor expectations and correctness claims not adopted"
+  },
+  {
+    "file": "tests/sc-recovery/locations/separate-scalar-members.c",
+    "donor": "631382a9d23a709112f38add53357d4cbe6fc108",
+    "donor_path": "tests/sc/boundaries/g02/separate-scalar-members.c",
+    "sha256": "390102c71c2414e504da8420b8e8cf982c169dc65b20e06340b91c5ed6d4b5bd",
+    "intent_to_validate": "distinct scalar members must not conflict",
+    "status": "input recovered; donor expectations and correctness claims not adopted"
+  },
+  {
+    "file": "tests/sc-recovery/locations/whole-scalar-read-byte-write.c",
+    "donor": "631382a9d23a709112f38add53357d4cbe6fc108",
+    "donor_path": "tests/sc/boundaries/g02/whole-scalar-read-byte-write.c",
+    "sha256": "a5ce164ba9ef5406abe2a3ce0eb4ff2b4b9297579195de857190dc672cb56cbc",
+    "intent_to_validate": "overlap cannot be lost through base-address-only identity; resolve the representation domain explicitly",
+    "status": "input recovered; donor expectations and correctness claims not adopted"
+  },
+  {
+    "file": "tests/sc-recovery/prefix/race-before-loop.c",
+    "donor": "631382a9d23a709112f38add53357d4cbe6fc108",
+    "donor_path": "tests/sc/runtime/race-before-loop.c",
+    "sha256": "469a383a866402450863bd7f37af5483fb89cf09c198c53068f6c005c1203386",
+    "intent_to_validate": "report race on finite prefix without waiting for termination",
+    "status": "input recovered; donor expectations and correctness claims not adopted"
+  },
+  {
+    "file": "tests/sc-recovery/prefix/fault-before-loop.c",
+    "donor": "631382a9d23a709112f38add53357d4cbe6fc108",
+    "donor_path": "tests/sc/runtime/fault-before-loop.c",
+    "sha256": "f466157e1aeb41a9c09b252a70de84d35c34409f562558c7acd1926dc01d7e8f",
+    "intent_to_validate": "retain prior race witness; a diagnostic continuation must also retain later division fault",
+    "status": "input recovered; donor expectations and correctness claims not adopted"
+  },
+  {
+    "file": "tests/sc-recovery/lifecycle/global-init-main.c",
+    "donor": "631382a9d23a709112f38add53357d4cbe6fc108",
+    "donor_path": "tests/sc/runtime/global-init-main.c",
+    "sha256": "52feb3dae98db128e5e3daa7abc678aadd3771e5a496ecad87b0368cce43d636",
+    "intent_to_validate": "global initialization precedes main and child execution",
+    "status": "input recovered; donor expectations and correctness claims not adopted"
+  },
+  {
+    "file": "tests/sc-recovery/atomics/SB+sc_sc+sc_sc.c",
+    "donor": "631382a9d23a709112f38add53357d4cbe6fc108",
+    "donor_path": "tests/litmus/SB+sc_sc+sc_sc.c",
+    "sha256": "2ee8ac3f5fe37fcf6aad7b3defb13e6018029fb68c501fd8f19ed1d6783455bc",
+    "intent_to_validate": "complete SC outcome set excludes both loads observing zero",
+    "status": "input recovered; donor expectations and correctness claims not adopted"
+  },
+  {
+    "file": "tests/sc-recovery/atomics/MP+na_sc+sc_na.c",
+    "donor": "631382a9d23a709112f38add53357d4cbe6fc108",
+    "donor_path": "tests/litmus/MP+na_sc+sc_na.c",
+    "sha256": "59dec35155fd04bc83e62ed75799029d441d5a3e2600a06483568a571a139d99",
+    "intent_to_validate": "observing publication orders the payload; stale payload after observed publication is forbidden",
+    "status": "input recovered; donor expectations and correctness claims not adopted"
+  },
+  {
+    "file": "tests/sc-recovery/atomics/RMW-strong-equal.c",
+    "donor": "631382a9d23a709112f38add53357d4cbe6fc108",
+    "donor_path": "tests/litmus/RMW-strong-equal.c",
+    "sha256": "e23ff8133a30aca4aa66ca0631e3428b75919862a0828c533c2ee518581163fa",
+    "intent_to_validate": "strong CAS cannot fail spuriously",
+    "status": "input recovered; donor expectations and correctness claims not adopted"
+  },
+  {
+    "file": "tests/sc-recovery/atomics/RMW-weak-equal.c",
+    "donor": "631382a9d23a709112f38add53357d4cbe6fc108",
+    "donor_path": "tests/litmus/RMW-weak-equal.c",
+    "sha256": "985a98ba743f075d1c69924ede7f4d248fc4ca554ce5db05331a440cef16b79d",
+    "intent_to_validate": "weak CAS offers both success and permitted spurious failure",
+    "status": "input recovered; donor expectations and correctness claims not adopted"
+  },
+  {
+    "file": "tests/sc-recovery/atomics/RMW-strong-unequal.c",
+    "donor": "631382a9d23a709112f38add53357d4cbe6fc108",
+    "donor_path": "tests/litmus/RMW-strong-unequal.c",
+    "sha256": "476b7363c193769c0edb1b4ad9cc959244740b3aefeee5223a57e1504fb2f2e9",
+    "intent_to_validate": "unequal CAS fails and updates expected",
+    "status": "input recovered; donor expectations and correctness claims not adopted"
+  },
+  {
+    "file": "tests/sc-recovery/domain/fence+sc_sc.c",
+    "donor": "631382a9d23a709112f38add53357d4cbe6fc108",
+    "donor_path": "tests/litmus/fence+sc_sc.c",
+    "sha256": "e3d989166b12ee453c8be2d31232abdd8f705599fc032d403956f946935738ab",
+    "intent_to_validate": "valid relaxed accesses are unsupported by SC mode; do not strengthen them",
+    "status": "input recovered; donor expectations and correctness claims not adopted"
+  },
+  {
+    "file": "tests/sc-recovery/sequencing/ordinary-reads.c",
+    "donor": "631382a9d23a709112f38add53357d4cbe6fc108",
+    "donor_path": "tests/sc/boundaries/g07/ordinary-reads.c",
+    "sha256": "90c5004c5fe1a9eec9cb027161787837b7802f45e9d1aa0fb08ac840fd090ada",
+    "intent_to_validate": "read/read unsequenced ordinary evaluation is not a race",
+    "status": "input recovered; donor expectations and correctness claims not adopted"
+  },
+  {
+    "file": "tests/sc-recovery/sequencing/ordered-macro-reads.c",
+    "donor": "631382a9d23a709112f38add53357d4cbe6fc108",
+    "donor_path": "tests/sc/boundaries/g07/ordered-macro-reads.c",
+    "sha256": "dbaf48d98aeaa26d15520bd0e423bdb19449461b496c9d3387fe08da435342bc",
+    "intent_to_validate": "explicit sequencing positive control",
+    "status": "input recovered; donor expectations and correctness claims not adopted"
+  },
+  {
+    "file": "tests/sc-recovery/runtime/sequential-fputc.c",
+    "donor": "631382a9d23a709112f38add53357d4cbe6fc108",
+    "donor_path": "tests/sc/boundaries/g03/sequential-fputc.c",
+    "sha256": "d2d87f055772011fa0f719ace87b841360088c7f060c4d25e5c8f64a81841c54",
+    "intent_to_validate": "ordered stream calls must not be refused merely for being library calls",
+    "status": "input recovered; donor expectations and correctness claims not adopted"
+  },
+  {
+    "file": "tests/sc-recovery/runtime/parallel-fputc.c",
+    "donor": "631382a9d23a709112f38add53357d4cbe6fc108",
+    "donor_path": "tests/sc/boundaries/g03/parallel-fputc.c",
+    "sha256": "488237811a82b1d84d28305b64d6d9ab58a59f4729abf52b99e86745e9ab6cfd",
+    "intent_to_validate": "requires actual stream synchronization or a precise runtime gap",
+    "status": "input recovered; donor expectations and correctness claims not adopted"
+  }
+]

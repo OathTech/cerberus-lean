@@ -1,0 +1,162 @@
+{
+  "kind": "bounded diagnostic of existing native sequential binary; no fresh build or SC certification",
+  "source_worktree_head": "e9f9d049ffaaf005c392495b0f6418d21f4df29f",
+  "binary": "/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/default/backend/driver/main.exe",
+  "binary_sha256": "4740da2ab2a5f185a3ef36556b4f035f2fdc2c04ec47fabcccaf71bda407b678",
+  "fresh_build": false,
+  "timeout_seconds": 10,
+  "runs": [
+    {
+      "variant": "reuse",
+      "iterations": 1000,
+      "source": "int main(void) { int i=0, x=0, s=0; while (i < 1000) { x=i; s=x; i++; } return s==999; }\n",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-review/sc-concurrency-plan-20260925/.tmp/sc-plan-review/reuse-1000.c"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/cerberus-lean",
+      "status": 0,
+      "seconds": 0.1259,
+      "stdout": "Defined {value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "Time spent: 0.118552 seconds\n"
+    },
+    {
+      "variant": "churn",
+      "iterations": 1000,
+      "source": "int main(void) { int i=0, s=0; while (i < 1000) { int x=i; s=x; i++; } return s==999; }\n",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-review/sc-concurrency-plan-20260925/.tmp/sc-plan-review/churn-1000.c"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/cerberus-lean",
+      "status": 0,
+      "seconds": 0.1292,
+      "stdout": "Defined {value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "Time spent: 0.121441 seconds\n"
+    },
+    {
+      "variant": "reuse",
+      "iterations": 2000,
+      "source": "int main(void) { int i=0, x=0, s=0; while (i < 2000) { x=i; s=x; i++; } return s==1999; }\n",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-review/sc-concurrency-plan-20260925/.tmp/sc-plan-review/reuse-2000.c"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/cerberus-lean",
+      "status": 0,
+      "seconds": 0.2169,
+      "stdout": "Defined {value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "Time spent: 0.207801 seconds\n"
+    },
+    {
+      "variant": "churn",
+      "iterations": 2000,
+      "source": "int main(void) { int i=0, s=0; while (i < 2000) { int x=i; s=x; i++; } return s==1999; }\n",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-review/sc-concurrency-plan-20260925/.tmp/sc-plan-review/churn-2000.c"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/cerberus-lean",
+      "status": 0,
+      "seconds": 0.2541,
+      "stdout": "Defined {value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "Time spent: 0.246323 seconds\n"
+    },
+    {
+      "variant": "reuse",
+      "iterations": 4000,
+      "source": "int main(void) { int i=0, x=0, s=0; while (i < 4000) { x=i; s=x; i++; } return s==3999; }\n",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-review/sc-concurrency-plan-20260925/.tmp/sc-plan-review/reuse-4000.c"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/cerberus-lean",
+      "status": 0,
+      "seconds": 0.4229,
+      "stdout": "Defined {value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "Time spent: 0.414633 seconds\n"
+    },
+    {
+      "variant": "churn",
+      "iterations": 4000,
+      "source": "int main(void) { int i=0, s=0; while (i < 4000) { int x=i; s=x; i++; } return s==3999; }\n",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-review/sc-concurrency-plan-20260925/.tmp/sc-plan-review/churn-4000.c"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/cerberus-lean",
+      "status": 0,
+      "seconds": 0.5767,
+      "stdout": "Defined {value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "Time spent: 0.567831 seconds\n"
+    },
+    {
+      "variant": "reuse",
+      "iterations": 8000,
+      "source": "int main(void) { int i=0, x=0, s=0; while (i < 8000) { x=i; s=x; i++; } return s==7999; }\n",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-review/sc-concurrency-plan-20260925/.tmp/sc-plan-review/reuse-8000.c"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/cerberus-lean",
+      "status": 0,
+      "seconds": 0.7877,
+      "stdout": "Defined {value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "Time spent: 0.779068 seconds\n"
+    },
+    {
+      "variant": "churn",
+      "iterations": 8000,
+      "source": "int main(void) { int i=0, s=0; while (i < 8000) { int x=i; s=x; i++; } return s==7999; }\n",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-review/sc-concurrency-plan-20260925/.tmp/sc-plan-review/churn-8000.c"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/cerberus-lean",
+      "status": 0,
+      "seconds": 1.539,
+      "stdout": "Defined {value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "Time spent: 1.529768 seconds\n"
+    }
+  ]
+}

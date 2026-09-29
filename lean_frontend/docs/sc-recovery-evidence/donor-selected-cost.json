@@ -1,0 +1,163 @@
+{
+  "purpose": "Bounded selected-run diagnostic; no exact complexity exponent inferred",
+  "timeout_seconds": 10,
+  "engine_sha256": "1a8896ddd15a3646b374daa6e248f8611f2575d82ac246a3b94433f55f7e4fc4",
+  "runs": [
+    {
+      "iterations": 8,
+      "sc": false,
+      "source": "int main(void) { int x=0; for (int i=0; i<8; i++) x=x+1; return x; }\n",
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/_build/default/backend/driver/main.exe",
+        "--runtime=_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/.tmp/sc-recovery/loop-8.c"
+      ],
+      "status": 0,
+      "seconds": 0.033,
+      "stdout": "Defined {value: \"Specified(8)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "Time spent: 0.024718 seconds\n"
+    },
+    {
+      "iterations": 8,
+      "sc": true,
+      "source": "int main(void) { int x=0; for (int i=0; i<8; i++) x=x+1; return x; }\n",
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/_build/default/backend/driver/main.exe",
+        "--runtime=_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/.tmp/sc-recovery/loop-8.c"
+      ],
+      "status": 0,
+      "seconds": 0.188,
+      "stdout": "Defined {value: \"Specified(8)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "Time spent: 0.179653 seconds\n"
+    },
+    {
+      "iterations": 16,
+      "sc": false,
+      "source": "int main(void) { int x=0; for (int i=0; i<16; i++) x=x+1; return x; }\n",
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/_build/default/backend/driver/main.exe",
+        "--runtime=_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/.tmp/sc-recovery/loop-16.c"
+      ],
+      "status": 0,
+      "seconds": 0.031,
+      "stdout": "Defined {value: \"Specified(16)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "Time spent: 0.024127 seconds\n"
+    },
+    {
+      "iterations": 16,
+      "sc": true,
+      "source": "int main(void) { int x=0; for (int i=0; i<16; i++) x=x+1; return x; }\n",
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/_build/default/backend/driver/main.exe",
+        "--runtime=_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/.tmp/sc-recovery/loop-16.c"
+      ],
+      "status": 0,
+      "seconds": 1.439,
+      "stdout": "Defined {value: \"Specified(16)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "Time spent: 1.430266 seconds\n"
+    },
+    {
+      "iterations": 32,
+      "sc": false,
+      "source": "int main(void) { int x=0; for (int i=0; i<32; i++) x=x+1; return x; }\n",
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/_build/default/backend/driver/main.exe",
+        "--runtime=_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/.tmp/sc-recovery/loop-32.c"
+      ],
+      "status": 0,
+      "seconds": 0.034,
+      "stdout": "Defined {value: \"Specified(32)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "Time spent: 0.027189 seconds\n"
+    },
+    {
+      "iterations": 32,
+      "sc": true,
+      "source": "int main(void) { int x=0; for (int i=0; i<32; i++) x=x+1; return x; }\n",
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/_build/default/backend/driver/main.exe",
+        "--runtime=_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/.tmp/sc-recovery/loop-32.c"
+      ],
+      "status": 124,
+      "seconds": 10.007,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "iterations": 64,
+      "sc": false,
+      "source": "int main(void) { int x=0; for (int i=0; i<64; i++) x=x+1; return x; }\n",
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/_build/default/backend/driver/main.exe",
+        "--runtime=_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/.tmp/sc-recovery/loop-64.c"
+      ],
+      "status": 0,
+      "seconds": 0.038,
+      "stdout": "Defined {value: \"Specified(64)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "Time spent: 0.029289 seconds\n"
+    },
+    {
+      "iterations": 64,
+      "sc": true,
+      "source": "int main(void) { int x=0; for (int i=0; i<64; i++) x=x+1; return x; }\n",
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/_build/default/backend/driver/main.exe",
+        "--runtime=_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/.tmp/sc-recovery/loop-64.c"
+      ],
+      "status": 124,
+      "seconds": 10.007,
+      "stdout": "",
+      "stderr": ""
+    }
+  ]
+}

@@ -1,0 +1,127 @@
+{
+  "purpose": "Separate mainline and pristine sequential controls for recovered ordinary-object inputs",
+  "fresh_build": false,
+  "selected_only": true,
+  "runs": [
+    {
+      "engine": "mainline",
+      "case": "ordered-byte-update",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/tests/sc-recovery/ordinary-objects/ordered-byte-update.c"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/cerberus-lean",
+      "status": 0,
+      "seconds": 0.033,
+      "stdout": "Defined {value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "Time spent: 0.024614 seconds\n"
+    },
+    {
+      "engine": "mainline",
+      "case": "initialized-members",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/tests/sc-recovery/ordinary-objects/initialized-members.c"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/cerberus-lean",
+      "status": 0,
+      "seconds": 0.032,
+      "stdout": "Defined {value: \"Specified(42)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "Time spent: 0.024300 seconds\n"
+    },
+    {
+      "engine": "mainline",
+      "case": "whole-aggregate-copy",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/tests/sc-recovery/ordinary-objects/whole-aggregate-copy.c"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/cerberus-lean",
+      "status": 0,
+      "seconds": 0.035,
+      "stdout": "Defined {value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "Time spent: 0.026886 seconds\n"
+    },
+    {
+      "engine": "pristine",
+      "case": "ordered-byte-update",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/deps/cerberus-upstream/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/deps/cerberus-upstream/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/tests/sc-recovery/ordinary-objects/ordered-byte-update.c"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/deps/cerberus-upstream",
+      "status": 0,
+      "seconds": 0.035,
+      "stdout": "Defined {value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "Time spent: 0.026567 seconds\n"
+    },
+    {
+      "engine": "pristine",
+      "case": "initialized-members",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/deps/cerberus-upstream/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/deps/cerberus-upstream/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/tests/sc-recovery/ordinary-objects/initialized-members.c"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/deps/cerberus-upstream",
+      "status": 0,
+      "seconds": 0.034,
+      "stdout": "Defined {value: \"Specified(42)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "Time spent: 0.026670 seconds\n"
+    },
+    {
+      "engine": "pristine",
+      "case": "whole-aggregate-copy",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/deps/cerberus-upstream/_build/default/backend/driver/main.exe",
+        "--runtime=/home/dev/projects/cerberus-lean-proj/deps/cerberus-upstream/_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/tests/sc-recovery/ordinary-objects/whole-aggregate-copy.c"
+      ],
+      "cwd": "/home/dev/projects/cerberus-lean-proj/deps/cerberus-upstream",
+      "status": 0,
+      "seconds": 0.032,
+      "stdout": "Defined {value: \"Specified(0)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "Time spent: 0.024654 seconds\n"
+    }
+  ],
+  "binaries": {
+    "mainline": {
+      "head": "e9f9d049ffaaf005c392495b0f6418d21f4df29f",
+      "path": "/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/default/backend/driver/main.exe",
+      "sha256": "4740da2ab2a5f185a3ef36556b4f035f2fdc2c04ec47fabcccaf71bda407b678"
+    },
+    "pristine": {
+      "head": "b9aeedcb4dd438763b0eef7f95ac19e93875d7de",
+      "path": "/home/dev/projects/cerberus-lean-proj/deps/cerberus-upstream/_build/default/backend/driver/main.exe",
+      "sha256": "aee776eaa5f9bf4ebd172838e613d9344195fafdf0201ef080c7e0994fd87f69"
+    }
+  }
+}

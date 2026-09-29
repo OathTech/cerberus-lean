@@ -12,8 +12,11 @@ and subsequent delivery records are historical plans and evidence.
 The current supported product is [SUPPORTED.md](SUPPORTED.md).
 Concurrency is excluded: [USER 2026-09-24] "FYI, I have concluded the concurrency branch prototype has failed, and I'm working on a remediation. But that dependency should be considered dead for now."
 The SC prototype and feature branches are parked records; no cleanup,
-announcement or current consumer depends on their integration. A replacement
-needs a separate charter. The separately owned legacy csmith run stays out
+announcement or current consumer depends on their integration. The
+replacement is governed by the [SC concurrency master plan](../SC-CONCURRENCY.md)
+(live status, acceptance criteria and landing policy); the older
+[SC integration charter](docs/2026-09-06_concurrency-integration-charter.md)
+is superseded by it. The separately owned legacy csmith run stays out
 of this work's scope.
 
 ## Delivered program data: run digest and enum map
@@ -35,9 +38,10 @@ of this work's scope.
 
 ## Queued larger work
 
-- **Concurrency (cmm) replacement** — excluded from this release. The failed
-  SC prototype remains a parked record under the ruling above; a replacement
-  is separate work and has no promised integration schedule.
+- **SC concurrency** — excluded from this release; built from current mainline
+  under the [SC master plan](../SC-CONCURRENCY.md). The failed prototype is a
+  quarry, not a candidate awaiting integration. WP0 (passive memory receipts)
+  has landed; current status and later milestones live in the plan.
 - **A-road polish basket** — backend/semantics cleanups (pure-render
   emission split, remaining audit L-slice gaps, ott finish);
   itemized with prices in

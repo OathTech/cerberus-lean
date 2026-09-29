@@ -1,0 +1,23 @@
+{
+  "kind": "planning artifact verification; no new runtime implementation built",
+  "base": "e9f9d049ffaaf005c392495b0f6418d21f4df29f",
+  "donor_implementation": "631382a9d23a709112f38add53357d4cbe6fc108",
+  "donor_handoff": "4860f0ef0d20f2a2a4d8d96e6ecfc7b2c99ceed2",
+  "provenance_files_checked": 21,
+  "new_cases": 1,
+  "local_links_checked": true,
+  "new_input_parse": {
+    "argv": [
+      "/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/default/backend/driver/main.exe",
+      "--runtime=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_build/install/default",
+      "--cabs-json",
+      "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/tests/sc-recovery/prefix/member-before-race-loop.c"
+    ],
+    "cwd": "/home/dev/projects/cerberus-lean-proj/cerberus-lean",
+    "status": 0,
+    "seconds": 0.036,
+    "cabs_sha256": "93d66eb867461b2fdf5aafac14563b490d18626de1de19cb4f4cd64ecc6151a1",
+    "stderr": ""
+  },
+  "failures": []
+}

@@ -7,6 +7,11 @@ public-install checks: [follow-up record](docs/2026-09-25_public-readiness-follo
 
 Lean 4 port of the Cerberus C semantics, generated from the same `.lem` source as the OCaml backend. The intended correspondence and its current failure/runtime limits are described in [VALIDATION.md](VALIDATION.md).
 
+For concurrency work, begin with the governing
+[SC concurrency master plan](../SC-CONCURRENCY.md). Its current slice and
+acceptance criteria supersede prototype roadmaps; the linked technical design
+and quarry assessment supply detail. Keep current status in that plan.
+
 ## Architecture
 
 ```

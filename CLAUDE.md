@@ -2,6 +2,14 @@
 
 C semantics framework. See upstream: https://github.com/rems-project/cerberus
 
+## SC concurrency work
+
+Start with [SC-CONCURRENCY.md](SC-CONCURRENCY.md), the governing master plan
+for scope, current status, acceptance and incremental mainline landings. Read
+the relevant technical-design section before each slice and update the plan
+when a decision or accepted slice changes its state. Prototype handoffs and
+older concurrency charters are historical inputs, not current instructions.
+
 ## Branch roles
 
 - `mdd/cerberus-lean` — the mainline of this fork; all work lands here

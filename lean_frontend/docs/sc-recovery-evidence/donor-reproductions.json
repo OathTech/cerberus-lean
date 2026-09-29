@@ -1,0 +1,247 @@
+{
+  "purpose": "Reproduce donor failures, not validate new concurrency semantics",
+  "source_head": "631382a9d23a709112f38add53357d4cbe6fc108",
+  "fresh_build": false,
+  "selected_only": true,
+  "timeout_seconds": 15,
+  "binaries": {
+    "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/_build/default/backend/driver/main.exe": {
+      "sha256": "1a8896ddd15a3646b374daa6e248f8611f2575d82ac246a3b94433f55f7e4fc4"
+    },
+    "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/lean_frontend/.lake/build/bin/cerberus-lean": {
+      "sha256": "7dc98b1065f67f4c5464de18e2978e3cd2f2f7cc3f5067a65a8c2ef92cf6ad3f"
+    }
+  },
+  "runs": [
+    {
+      "case": "ordered-byte-update-cabs",
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/_build/default/backend/driver/main.exe",
+        "--runtime=_build/install/default",
+        "--cabs-json",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/tests/sc/representation/ordered-byte-update.c"
+      ],
+      "status": 0,
+      "seconds": 0.035,
+      "stdout": "[Cabs JSON saved in .tmp; sha256 ef65d3becb248f85bc71e46ac8aa8a917c9185eb05402db6b73a915c70aef0e7]",
+      "stderr": ""
+    },
+    {
+      "case": "ordered-byte-update-sequential-native",
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/_build/default/backend/driver/main.exe",
+        "--runtime=_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/tests/sc/representation/ordered-byte-update.c"
+      ],
+      "status": 0,
+      "seconds": 0.032,
+      "stdout": "Defined {value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "Time spent: 0.024681 seconds\n"
+    },
+    {
+      "case": "ordered-byte-update-sequential-lean",
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--first",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/.tmp/sc-recovery/ordered-byte-update.json"
+      ],
+      "status": 2,
+      "seconds": 0.078,
+      "stdout": "",
+      "stderr": "cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active\ncerberus-lean: refused \u2014 LEAN_ABORT_ON_PANIC is not set: a Lean panic! (this port's fail-stop mirror of every OCaml failwith/assert/uncaught exception) would print and then CONTINUE with a default value, converting a crash into a verdict; set LEAN_ABORT_ON_PANIC=1 (every harness does: scripts/common.sh run_cerberus_lean; see VALIDATION.md, zero-discrepancy Z2-FL-03)\n"
+    },
+    {
+      "case": "ordered-byte-update-sc-native",
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/_build/default/backend/driver/main.exe",
+        "--runtime=_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/tests/sc/representation/ordered-byte-update.c"
+      ],
+      "status": 1,
+      "seconds": 0.033,
+      "stdout": "Error {msg: \"Concurrency error: SC port gap: read source composition, subobject location interpretation, subobject location interpretation, subobject location interpretation\"}\n",
+      "stderr": "Time spent: 0.025507 seconds\n"
+    },
+    {
+      "case": "ordered-byte-update-sc-lean",
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--first",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/.tmp/sc-recovery/ordered-byte-update.json",
+        "--concurrency=sc"
+      ],
+      "status": 2,
+      "seconds": 0.087,
+      "stdout": "",
+      "stderr": "cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active\ncerberus-lean: refused \u2014 LEAN_ABORT_ON_PANIC is not set: a Lean panic! (this port's fail-stop mirror of every OCaml failwith/assert/uncaught exception) would print and then CONTINUE with a default value, converting a crash into a verdict; set LEAN_ABORT_ON_PANIC=1 (every harness does: scripts/common.sh run_cerberus_lean; see VALIDATION.md, zero-discrepancy Z2-FL-03)\n"
+    },
+    {
+      "case": "initialized-members-cabs",
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/_build/default/backend/driver/main.exe",
+        "--runtime=_build/install/default",
+        "--cabs-json",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/tests/sc/representation/initialized-members.c"
+      ],
+      "status": 0,
+      "seconds": 0.035,
+      "stdout": "[Cabs JSON saved in .tmp; sha256 24d2b46b76ef8d6bbd3ef57818154dc97857b0eaa57ba49b65d9d1cc9ebf507d]",
+      "stderr": ""
+    },
+    {
+      "case": "initialized-members-sequential-native",
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/_build/default/backend/driver/main.exe",
+        "--runtime=_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/tests/sc/representation/initialized-members.c"
+      ],
+      "status": 0,
+      "seconds": 0.032,
+      "stdout": "Defined {value: \"Specified(42)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "Time spent: 0.024918 seconds\n"
+    },
+    {
+      "case": "initialized-members-sequential-lean",
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--first",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/.tmp/sc-recovery/initialized-members.json"
+      ],
+      "status": 2,
+      "seconds": 0.078,
+      "stdout": "",
+      "stderr": "cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active\ncerberus-lean: refused \u2014 LEAN_ABORT_ON_PANIC is not set: a Lean panic! (this port's fail-stop mirror of every OCaml failwith/assert/uncaught exception) would print and then CONTINUE with a default value, converting a crash into a verdict; set LEAN_ABORT_ON_PANIC=1 (every harness does: scripts/common.sh run_cerberus_lean; see VALIDATION.md, zero-discrepancy Z2-FL-03)\n"
+    },
+    {
+      "case": "initialized-members-sc-native",
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/_build/default/backend/driver/main.exe",
+        "--runtime=_build/install/default",
+        "--nolibc",
+        "--exec",
+        "--batch",
+        "--mode=random",
+        "--concurrency=sc",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/tests/sc/representation/initialized-members.c"
+      ],
+      "status": 1,
+      "seconds": 0.033,
+      "stdout": "Error {msg: \"Concurrency error: SC port gap: read/write range composition, read/write range composition, subobject location interpretation, subobject location interpretation, subobject location interpretation\"}\n",
+      "stderr": "Time spent: 0.025540 seconds\n"
+    },
+    {
+      "case": "initialized-members-sc-lean",
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/scripts/capped",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--first",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/.tmp/sc-recovery/initialized-members.json",
+        "--concurrency=sc"
+      ],
+      "status": 2,
+      "seconds": 0.101,
+      "stdout": "",
+      "stderr": "cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active\ncerberus-lean: refused \u2014 LEAN_ABORT_ON_PANIC is not set: a Lean panic! (this port's fail-stop mirror of every OCaml failwith/assert/uncaught exception) would print and then CONTINUE with a default value, converting a crash into a verdict; set LEAN_ABORT_ON_PANIC=1 (every harness does: scripts/common.sh run_cerberus_lean; see VALIDATION.md, zero-discrepancy Z2-FL-03)\n"
+    },
+    {
+      "case": "ordered-byte-update-sequential-lean-corrected-env",
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/scripts/capped",
+        "env",
+        "LEAN_ABORT_ON_PANIC=1",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--first",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/.tmp/sc-recovery/ordered-byte-update.json"
+      ],
+      "status": 0,
+      "seconds": 0.081,
+      "stdout": "Defined {value: \"Specified(1)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active\n"
+    },
+    {
+      "case": "ordered-byte-update-sc-lean-corrected-env",
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/scripts/capped",
+        "env",
+        "LEAN_ABORT_ON_PANIC=1",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--first",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/.tmp/sc-recovery/ordered-byte-update.json",
+        "--concurrency=sc"
+      ],
+      "status": 1,
+      "seconds": 0.091,
+      "stdout": "Error {msg: \"Concurrency error: SC port gap: read source composition, subobject location interpretation, subobject location interpretation, subobject location interpretation\"}\n",
+      "stderr": "cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active\n"
+    },
+    {
+      "case": "initialized-members-sequential-lean-corrected-env",
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/scripts/capped",
+        "env",
+        "LEAN_ABORT_ON_PANIC=1",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--first",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/.tmp/sc-recovery/initialized-members.json"
+      ],
+      "status": 0,
+      "seconds": 0.089,
+      "stdout": "Defined {value: \"Specified(42)\", stdout: \"\", stderr: \"\", blocked: \"false\"}\n",
+      "stderr": "cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active\n"
+    },
+    {
+      "case": "initialized-members-sc-lean-corrected-env",
+      "cwd": "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype",
+      "argv": [
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/scripts/capped",
+        "env",
+        "LEAN_ABORT_ON_PANIC=1",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-prototype/lean_frontend/.lake/build/bin/cerberus-lean",
+        "--batch",
+        "--first",
+        "/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/sc-recovery-20260924/.tmp/sc-recovery/initialized-members.json",
+        "--concurrency=sc"
+      ],
+      "status": 1,
+      "seconds": 0.077,
+      "stdout": "Error {msg: \"Concurrency error: SC port gap: read/write range composition, read/write range composition, subobject location interpretation, subobject location interpretation, subobject location interpretation\"}\n",
+      "stderr": "cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active\n"
+    }
+  ]
+}

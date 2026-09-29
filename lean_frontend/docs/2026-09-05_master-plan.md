@@ -1,5 +1,11 @@
 # Master plan — cerberus-lean and lem-lean
 
+**SC direction superseded, 2026-09-24:** the
+[SC concurrency master plan](../../SC-CONCURRENCY.md) now governs concurrency
+scope, work order, evidence and landing policy. The concurrency proposal and
+prototype-integration assumptions below are historical; other project records
+and obligations are preserved.
+
 **Revision 10, 2026-09-16 [AGENT orchestrator-directed].** Requested [USER
 2026-09-16]: "Great, let's update the master plan based on the audit result and
 recent work". Since revision 9 the mainline moved `a3b5d169d` → `15907f32b`

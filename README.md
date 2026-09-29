@@ -28,6 +28,12 @@ Cerberus semantics is by the people listed below. The fork-specific build
 recipe and limits are in that frontend README (checked 2026-09-25 against
 `bb487dda7c56981e76d67f53ae16e874cfe5ed61`, with gates in its linked follow-up record).
 
+**SC concurrency development:** start with the
+[SC concurrency master plan](SC-CONCURRENCY.md). It governs the build,
+independent acceptance criteria and early mainline landings. The previous
+prototype is a quarry for separately validated machinery; it is not the
+implementation roadmap. Current implementation status is recorded in the plan.
+
 
 Web interfaces, papers, and web page
 ---

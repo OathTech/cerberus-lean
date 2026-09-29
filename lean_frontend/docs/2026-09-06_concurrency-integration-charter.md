@@ -1,5 +1,10 @@
 # Proposed next charter: scoped SC concurrency integration
 
+**Superseded, 2026-09-24:** use the
+[SC concurrency master plan](../../SC-CONCURRENCY.md). This document is a
+historical proposal; its candidate-integration approach and work order do not
+govern the new build.
+
 2026-09-06 [AGENT]. Proposal for the validation-foundations final discussion;
 not authorization to execute or land this work. It preserves the accepted
 provider agreement obligation and the user's requirement to discuss landing.
