@@ -114,8 +114,8 @@
 #   two pathleak rows (record docs/2026-09-28_cerbfs-refuse-all-record.md).
 # zd-funptr-* (2026-09-28, contract enforcement, served-surface audit P1-1; [USER] "let's measure, then refuse
 #   if the blast radius isn't too big"): converting a function pointer to an integer is REFUSED (the number is
-#   the symbol's fresh-supply number, which the engines do not share). int-direct/int-voidptr are the pinned
-#   refusals, DIFF | L=CRASH; call-control is the served MATCH control (record
+#   the symbol's fresh-supply number, which the engines do not share). int-direct/int-voidptr were the pinned
+#   refusals, DIFF | L=CRASH (SUPERSEDED the same day, see the note below: now N1 DIFF rows); call-control is the served MATCH control (record
 #   docs/2026-09-28_funptr-int-refusal-record.md).
 #   zd-funptr-bytes-deviation / zd-funptr-printf-deviation: the byte and %p channels of the same number,
 #   NAMED-DEVIATION REGISTER N1 (VALIDATION.md §2b; [USER 2026-09-28] "agree with (1). Named deviations are

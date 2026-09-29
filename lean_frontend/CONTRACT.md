@@ -1,11 +1,11 @@
-# The cerberus-lean contract — DRAFT for operator review (2026-09-28)
+# The cerberus-lean contract
 
-Status: **draft; operator decisions D1–D5 recorded in §5.** Author: the orchestrator [AGENT], on [USER 2026-09-28]: "Really the correct fix here is
-to much more explicitly define the contract that Cerberus Lean is trying to establish and then for the features that are
-well-built, make sure that they're supported. For the ones that are not very well-built, make sure that they're
-appropriately rejected." Occasion: the CerbFS path defect (`docs/2026-09-28_cerbfs-path-hotfix-record.md`), a SERVED wrong answer in a surface
-the project never tried to clone, with no discrepancy found in the core semantics. Items marked **[DECIDE]** are the
-operator's.
+Status: **adopted 2026-09-29**; the operator decisions are in §5. Author: the orchestrator [AGENT], on [USER 2026-09-28]:
+"Really the correct fix here is to much more explicitly define the contract that Cerberus Lean is trying to establish
+and then for the features that are well-built, make sure that they're supported. For the ones that are not very
+well-built, make sure that they're appropriately rejected." Occasion: the CerbFS path defect
+(`docs/2026-09-28_cerbfs-path-hotfix-record.md`), a SERVED wrong answer in a surface the project never tried to
+clone, with no discrepancy found in the core semantics.
 
 ## 1. What cerberus-lean promises
 
@@ -49,13 +49,13 @@ only for programs whose result does not depend on the trace), not part of the §
 Three states only: **SUPPORTED** (differentially validated; any disagreement is a bug), **REFUSED** (loud,
 feature-attributed; each refusal has a witness), **OUT OF SCOPE** (not an input the artifact accepts at all).
 
-| Area | State (proposed) | Evidence / refusal witness | Open questions |
+| Area | State | Evidence / refusal witness | Open questions |
 |---|---|---|---|
 | C frontend (parse → Cabs → Ail → Core) | SUPPORTED | shared OCaml parser; Lean desugar/typing/elaboration differentially tested (row 1 parser tests, all Tier A/B lanes) | frontend is `partial` (not kernel-evaluable) — a stated limit, not a discrepancy |
 | Core dynamics (driver, reduction, pure eval) | SUPPORTED | Tier A/B lanes, pristine 835/28/7/2, gcc oracle, csmith corpus | none known; this is where the report found nothing |
 | Concrete memory model | SUPPORTED | CerbMem mirror with cites; immaculate lane; allocator soundness theorem | the SC receipt buffer is disabled by default (WP0) |
 | Function pointers | SUPPORTED, including round trips through integers and `void*` (libc's `atexit` uses one); their numeric value — through an integer conversion, their bytes or `%p` — is named deviation N1 | `zd-funptr-*` rows, libc_exec `040`/`041` | none |
-| Integer/float/layout implementation choices | SUPPORTED (LP64); printing a NaN with `%f` REFUSED (its text depends on the NaN's sign bit, which Lean cannot read) | CerberusImpl, CerbFloat, float/bytes lanes | other ABIs OUT OF SCOPE [DECIDE] |
+| Integer/float/layout implementation choices | SUPPORTED (LP64); printing a NaN with `%f` REFUSED (its text depends on the NaN's sign bit, which Lean cannot read) | CerberusImpl, CerbFloat, float/bytes lanes | other ABIs OUT OF SCOPE (D6) |
 | libc (the oracle's libc.co, loaded) | functions written in C (`runtime/libc/src/*.c`): SUPPORTED — they run through the same Core semantics as user code — but thinly tested (§3.2); the 36 **builtins** of `runtime/libcore/std.core` (hand-implemented in each engine): one state each, §3.1 (D4) | libc_exec lane, libxml2 lanes | none |
 | Filesystem (CerbFS) | **REFUSED** (D2) — every filesystem operation, including `read` on any fd; `write`/`vprintf` on fds 1/2 are served (the driver routes them to the stdout/stderr records, never reaching CerbFS) | `zd-fs-*`, `zd-f1-truncate-negative-length`, `zd-z2f01-lseek-whence` pinned refusals | none |
 | Standard input / environment / argv | stdin REFUSED (every read reaches CerbFS, D2; the oracle models an empty stdin); `getenv` served by libc C code; argv SUPPORTED | `zd-fs-stdin-read` pinned refusal; argv lane (5 programs) | UTF-8 `--args` unmeasured |
@@ -87,7 +87,8 @@ SUPPORTED means "differentially tested, and any disagreement is a bug". It does 
 The measurement behind this section is `docs/2026-09-28_test-depth-map.md` (static counts of the gated lane programs
 that exercise each part; there is no coverage instrumentation, so the counts are proxies), re-counted after the
 edge-case tests of `docs/2026-09-28_thin-surface-tests-record.md` and the four rows added with the fixes that followed
-them. The gating lanes now hold about 973 programs that agree with the oracle (derived: 969 measured plus those four).
+them. The gating lanes hold 972 programs that agree with the oracle (measured by the map's census script on the
+range head; the two `%f`-of-a-NaN rows are refusal pins, not agreement).
 
 **Deeply tested:** the C frontend and Core dynamics (generated from the same Lem source as the oracle), load/store and
 allocation, integer and floating-point arithmetic (also checked against gcc as a second oracle), the exhaustive runner
@@ -99,11 +100,11 @@ gated agreement programs, before → after the 2026-09-28 edge-case tests:
 
 | Part | Programs | Depth now | Why it matters |
 |---|---|---|---|
-| libc breadth | 11 → 61 of the 188 libc functions called directly; libc mode 32 single-trace → 59 single-trace + 2 exhaustive | THIN | most libc functions are still called by no test, and libc mode is mostly compared single-trace |
-| `printf("%f")` | 0 → 15 (derived) | MODERATE | `CerbFloat.formatFixed` is an independent reimplementation of glibc's `%f` |
+| libc breadth | 11 → 62 of the 188 libc functions called directly; libc mode 32 single-trace → 61 single-trace + 2 exhaustive | THIN | most libc functions are still called by no test, and libc mode is mostly compared single-trace |
+| `printf("%f")` | 0 → 13 | MODERATE | `CerbFloat.formatFixed` is an independent reimplementation of glibc's `%f` |
 | printf width, precision, flags; `%c`/`%x`/`%X`/`%o` | 0 → 22; 0/1/0/0 → 6/8/2/3 | MODERATE | formatting is shared code, `%c` goes through hand-written escaping |
 | `realloc`, `memcpy`, `memcmp`, `memset` | 4/5/2/1 → 16/15/7/5 | MODERATE (`memcmp`, `memset` thin) | hand-written `CerbMem` routines |
-| `snprintf`/`vsnprintf`, `errno`, `exit`, `atexit` | 2/1/1/0 → 6/5/3/2 | THIN | return values and status codes |
+| `snprintf`/`vsnprintf`, `errno`, `exit`, `atexit` | 2/1/1/0 → 6/5/4/2 | THIN | return values and status codes |
 | argv | 5 | THIN | non-ASCII arguments fail in both engines (with different messages) |
 | programs of several translation units | 8 → 14 | MODERATE | linking and cross-TU identity |
 | default-mode atomics and `{-{ ||| }-}` | 1 | THIN | shared code, lower risk |
@@ -118,6 +119,9 @@ witnesses and are not "thinly tested": they do not answer.
 1. **Every REFUSED area has at least one witness in a lane that pins the refusal**, so a return to a silent answer turns
    a gate red: the filesystem and stdin (`zd-fs-*`, `zd-f1-*`, `zd-z2f01-*` immaculate rows), `any_bounded_int` (`zd-any-bounded-int-crash`), `%f` of a NaN (`fmt-007*.unsupported.c`) and the CLI flags (`scripts/check_cli_refusals.sh`,
    row 1).
+   Limit: the immaculate and coverage witnesses pin the crash CLASS (`L=CRASH`, `UNSUPPORTED`), not the refusal
+   message, under those lanes' coarse crash policy (VALIDATION §1(a)); the message is fixed in the refusing code, and
+   `check_cli_refusals.sh` asserts it for the CLI flags.
 2. **A served-surface audit (the lesson of pathleak).** Every hand-written seam that can answer where it has no model —
    default arms, stub bodies, `Inhabited` defaults, lookups keyed on unnormalised data — is enumerated and classified:
    mirrors the oracle (with a cite), refuses (with a witness), or is unreachable (with the reason). The failure-reach
@@ -146,3 +150,8 @@ witnesses and are not "thinly tested": they do not answer.
   now fails loudly (`docs/2026-09-28_contract-enforcement-builtins-record.md`).
 - **D5 — adopted, amended** ([USER 2026-09-28] "D5 - amended, yes, link from top level README.md"): this document is the
   public statement, linked from the top-level README.
+- **D6 — LP64 only** ([USER 2026-09-28] "Agreed re the ABI"): LP64 (the x86-64 Linux data model) is the one supported
+  ABI, the only one the lanes test; every other ABI is out of scope.
+- **Agent-called dispositions under these rulings** [AGENT 2026-09-28]: `%f` of a NaN is refused rather than
+  registered (it can be refused cheaply and precisely; Lean cannot read a NaN's sign), and the other disagreements that
+  record found (its D3–D6, a separate numbering from this section's) are dispositioned in `docs/2026-09-28_thin-surface-tests-record.md` (addendum).

@@ -1,7 +1,7 @@
 # Question: a function pointer's integer value is the symbol's fresh-counter number
 
 **Affected (for orientation):** `memory/concrete/impl_mem.ml:2487-2488` (`intfromptr` on
-`PVfunction` returns the symbol number), `:1168-1185` (a stored function pointer's bytes are
+`PVfunction` returns the symbol number), `:1203-1220` (a stored function pointer's bytes are
 that number), `:1047` (read-back); `parsers/core/core_parser.mly:184` and `:220` (one
 `Cerb_fresh.int()` per `std.core` symbol and label, drawn before the user TU). Checked against
 the fork's oracle at `mdd/cerberus-lean` 2026-09-28; not re-checked against upstream `master`.
@@ -33,5 +33,6 @@ similar program).
 Is the numeric value of a function pointer meant to be observable? Options we can see: treat
 the cast and the byte view as unspecified (the model would then fork or refuse), or draw
 function addresses from a dedicated, program-ordered supply so the value depends only on the
-program. Our port refuses the integer cast and registers the byte and `%p` channels as a
-named deviation (`VALIDATION.md` §2b, N1).
+program. Our port serves the same number and registers the integer, byte and `%p` channels as
+a named deviation (`VALIDATION.md` §2b, N1); refusing the integer cast was tried and withdrawn,
+because the runtime libc's `atexit` round-trips handlers through `uintptr_t`.

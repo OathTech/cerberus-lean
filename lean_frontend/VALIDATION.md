@@ -288,7 +288,7 @@ is owed with the code half of Z4.
 
 | Id | Difference and mechanism | Why not mirrored or refused | Witnesses | Lean site | Mover | Status |
 |---|---|---|---|---|---|---|
-| **N1** | A function pointer's NUMBER, observed through an integer conversion (`(intptr_t)&f`), the bytes of a stored function pointer, or `%p` of `(void*)fp`. Both engines serve the function symbol's number (`impl_mem.ml:1168-1185`, `:1047`; mirrored in `CerbMem.memValueToBytes`/`reconstructValue`), but that number is a fresh-supply artefact: the oracle's Core parser draws one per `std.core` symbol before the user TU (`core_parser.mly:184,220`), `CoreParser.lean` mints hashes. nolibc: oracle = Lean + 483 on the probes | Mirroring would mean reproducing the oracle's draw count for `std.core` (a numbering dependency the §5 renumbering principle calls a defect). Refusing: every stored function pointer uses these bytes, and `%p` prints through the pure printer with no memory state, so a precise refusal needs a byte-representation change. The integer conversion was refused for a few hours and broke libc's `atexit`, which round-trips a function pointer through `uintptr_t` (`runtime/libc/src/stdlib.c:194-199`); a round trip never observes the number, so refusing the conversion refuses correct programs (`docs/2026-09-28_funptr-int-refusal-record.md`) | `zd-funptr-int-direct` and `zd-funptr-int-voidptr` DIFF / L=`Specified(47)` (oracle 530); `zd-funptr-bytes-deviation` DIFF / L=`Specified(19)` (oracle 502); `zd-funptr-printf-deviation` DIFF / L=`(@empty, 0xa0)` (oracle `0x283`); the round trip is served and MATCHes (`zd-funptr-call-control`, libc_exec `040`/`041` atexit) | `CerbMem.intfromptr` `PVfunction` arm and `CerbMem.memValueToBytes` `PVfunction` arm (marker `-- named-deviation register N1`) | none planned: upstream artefact, tray 46; a representation change could refuse it later | **ADMITTED** [USER 2026-09-28] ("yes, re the decision, agree with (1). Named deviations are okay in cases we can't easily resolve the mismatch."); integer channel added [USER 2026-09-28] ("agree on atexit as you propose") |
+| **N1** | A function pointer's NUMBER, observed through an integer conversion (`(intptr_t)&f`), the bytes of a stored function pointer, or `%p` of `(void*)fp`. Both engines serve the function symbol's number (`impl_mem.ml:1203-1220`, `:1047`; mirrored in `CerbMem.memValueToBytes`/`reconstructValue`), but that number is a fresh-supply artefact: the oracle's Core parser draws one per `std.core` symbol before the user TU (`core_parser.mly:184,220`), `CoreParser.lean` mints hashes. nolibc: oracle = Lean + 483 on the probes | Mirroring would mean reproducing the oracle's draw count for `std.core` (a numbering dependency the §5 renumbering principle calls a defect). Refusing: every stored function pointer uses these bytes, and `%p` prints through the pure printer with no memory state, so a precise refusal needs a byte-representation change. The integer conversion was refused for a few hours and broke libc's `atexit`, which round-trips a function pointer through `uintptr_t` (`runtime/libc/src/stdlib.c:194-199`); a round trip never observes the number, so refusing the conversion refuses correct programs (`docs/2026-09-28_funptr-int-refusal-record.md`) | `zd-funptr-int-direct` and `zd-funptr-int-voidptr` DIFF / L=`Specified(47)` (oracle 530); `zd-funptr-bytes-deviation` DIFF / L=`Specified(19)` (oracle 502); `zd-funptr-printf-deviation` DIFF / L=`(@empty, 0xa0)` (oracle `0x283`); the round trip is served and MATCHes (`zd-funptr-call-control`, libc_exec `040`/`041` atexit) | `CerbMem.intfromptr` `PVfunction` arm and `CerbMem.memValueToBytes` `PVfunction` arm (marker `-- named-deviation register N1`) | none planned: upstream artefact, tray 46; a representation change could refuse it later | **ADMITTED** [USER 2026-09-28] ("yes, re the decision, agree with (1). Named deviations are okay in cases we can't easily resolve the mismatch."); integer channel added [USER 2026-09-28] ("agree on atexit as you propose") |
 
 ## 3. Every known Lean-vs-oracle difference, by class
 
@@ -380,17 +380,17 @@ number through an integer conversion, its bytes or `%p`). Nothing else.
   (`elab_atomic_qualifier_seq.c`, 8 traces each). The operator declared the SC prototype failed on
   2026-09-24 (ruling in TODO.md). It and `feature/concurrency` are parked
   records, with no announcement dependency. The refusal is the contract.
-- *CerbFS*: an in-memory file-system model that SERVES exactly the
-  operations it can answer as SibylFS does and REFUSES every other,
-  loudly (`PANIC … CerbFS refusal (fail-closed fs-model boundary): <op>
-  …`, exit 134): the op-by-op served/refused table for all 25 `fs_*`
-  entry points is the `CerbFS.lean` header and Z1 record §6 (refused:
-  missing-file open without `O_CREAT`, any `O_EXCL`, write/truncate/append
-  intent, reads/writes at non-prefix offsets, `lseek` past EOF or with an
-  invalid whence, `stat`/`lstat`, every directory op, the link trio, …).
-  No silently-divergent answer remains (Z-27 closed, Z1 `deb2338a8`;
-  Z2-F-01 `lseek` EINVAL mirrored). The real-fs mover is OPTIONAL
-  ([USER 2026-09-03] Q10).
+- *CerbFS*: REFUSED IN FULL since 2026-09-28 (contract D2, [USER
+  2026-09-28] "refuse FS for now, this seems safer";
+  `docs/2026-09-28_cerbfs-refuse-all-record.md`): every one of the 25
+  `fs_*` operations, including `read` on any fd (so C-level stdin),
+  fails loudly (`PANIC … CerbFS refusal (fail-closed fs-model boundary):
+  <op> …`, exit 134). `write`/`vprintf` on fds 1/2 never reach CerbFS
+  (the driver routes them to the stdout/stderr records). The served
+  subset it replaced had thin positive coverage and served a wrong answer
+  on path spellings (the external pathleak report,
+  `docs/2026-09-28_cerbfs-path-hotfix-record.md`). Mover: a
+  SibylFS-faithful filesystem model (TODO.md).
 - *`LEAN_ABORT_ON_PANIC` required* (Z2-FL-03): the driver refuses to
   start (exit 2) without it, because a Lean `panic!` — the fail-stop
   mirror of every OCaml failwith/assert/uncaught exception — would

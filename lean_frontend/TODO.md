@@ -639,17 +639,15 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   Remaining work
   is the registered semantic/completion obligations and remeasurement after
   relevant changes, not another run of this completed candidate measurement.
-- **CerbFS real-fs mover + served-pattern probe family (S)** —
-  registered 2026-09-02. `CerbFS` is a declared MODEL boundary
-  (VALIDATION.md §5: in-memory filesystem; fail-closed since trust-
-  basket item (b), `docs/2026-08-31_trust-basket.md` §2/§7 F1) whose
-  served-subset POSITIVE coverage is thin (trust-basket §7 F3: zero
-  corpus files exercise the served patterns). Two items: (i) a small
-  served-pattern probe family (read, rewind-reread, read-only reopen)
-  under `tests/parity-probes/` with recorded verdicts — S; (ii) the
-  boundary's mover — either real-fs backing behind the same seam or an
-  explicit refusal of every unserved op — S-M; the boundary stays
-  declared until then.
+- **CerbFS: a SibylFS-faithful filesystem model (M-L)** — registered
+  2026-09-02, rescoped 2026-09-28. Since contract D2 ([USER 2026-09-28]
+  "refuse FS for now, this seems safer") every CerbFS operation refuses
+  (`docs/2026-09-28_cerbfs-refuse-all-record.md`); the earlier served
+  subset had thin positive coverage and served a wrong answer on path
+  spellings (the pathleak report). The mover, if the filesystem becomes
+  worth supporting: a model that mirrors SibylFS (path resolution
+  included), with a probe family written from the contract, not from the
+  corpora. Until then the refusal is the contract.
 - **Clean Lake packaging (M)** — forward-assessment F4.1
   (`docs/2026-08-31_semantics-forward-assessment.md`): a stable,
   documented exec-facing module surface, consumer-facing lakefile

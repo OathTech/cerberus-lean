@@ -193,6 +193,15 @@ done
 
 echo ""
 echo "SUMMARY: match=$pass diff=$failcnt"
+# A VACUOUS row is never acceptable, recorded or not (pre-merge audit F8,
+# 2026-09-29: a VACUOUS status written into the baseline used to diff clean
+# and print ALL MATCH): an exhaustive row must actually exercise >= 2
+# executions and differ from --first, or it is not evidence.
+if grep -q ' VACUOUS$' "$OUTPUT_DIR/baseline.new" || grep -q ' VACUOUS$' "$BASELINE" 2>/dev/null; then
+    echo "FAILED: VACUOUS exhaustive row(s) — never admissible, recorded or current:"
+    grep ' VACUOUS$' "$OUTPUT_DIR/baseline.new" "$BASELINE" 2>/dev/null
+    exit 1
+fi
 if $RECORD_BASELINE; then
     mv "$OUTPUT_DIR/baseline.new" "$BASELINE"
     echo "BASELINE RECORDED: $BASELINE"

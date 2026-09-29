@@ -257,7 +257,7 @@ a binary built from the old copy.
 | `CerbFloat.lean` | IEEE 754 float operations; lawful total Ord Float (NaN reflexive, arc-14 F4) |
 | `CerbUtils.lean` | Timing/logging VALUE IDENTITIES (plain `def`s since seam-hygiene H3, 2026-09-19; no opaque, no `IO.Ref`), GCC builtins on Z/two's-complement semantics mirroring ocaml_gcc_builtins.ml per-line (arc-14 F2: ffs(-1)=1, ctz(0)/bswap asserts panic) |
 | `CerbPP.lean` | Pretty-printer placeholders |
-| `CerbFS.lean` | In-memory filesystem model |
+| `CerbFS.lean` | Filesystem seam: every operation REFUSES since contract D2 (2026-09-28); keeps the types and the initial state |
 | `CerbConcurrency.lean` | Concurrency stubs |
 | `CerbCtypeInstances.lean` | BEq (annotation-insensitive ctypeEqual) + lawful derived Ord for mutual ctype types (arc-14 F4; the old unlawful eq-else-lt order is gone) |
 | `CerbCabsInstances.lean` | BEq for Cabs enum types |
@@ -394,7 +394,7 @@ retain historical measurements; they are not all current status. Start points:
   `docs/2026-08-31_semantics-forward-assessment.md`; backlog: [TODO.md](TODO.md).
 - Trust story + gate list: [VALIDATION.md](VALIDATION.md).
 - Declared boundary: concurrency stubs (the failed SC prototype and feature
-  branches are parked; no announcement dependency), CerbFS and the CerbDebug no-op stubs,
+  branches are parked; no announcement dependency), CerbFS (refused in full since 2026-09-28) and the CerbDebug no-op stubs,
   and the axiom story is CLOSED (effect-retirement arc, 2026-09-01):
   ZERO axiom declarations anywhere — this repo AND LemLib,
   recursively, gate-enforced; `runEffectful` is deleted and lem
