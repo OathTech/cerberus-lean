@@ -639,6 +639,18 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   Remaining work
   is the registered semantic/completion obligations and remeasurement after
   relevant changes, not another run of this completed candidate measurement.
+- **Bit-level float representation (L)** — queued 2026-09-29 ([USER 2026-09-29] "Yes, let's queue as you
+  propose"); the mover of named deviation N2 (VALIDATION §2b). `CerbMem` stores floats through `Float.toBits`,
+  which canonicalizes NaNs, so a stored NaN loses its sign and payload. Proposal: represent C floating values as bit
+  patterns with IEEE arithmetic written in Lean, following x86 NaN rules (the oracle's platform), validated against
+  the oracle and the gcc lane, with the performance cost measured; floats would also become kernel-evaluable. A
+  design pass is scoped with the operator before any briefing.
+- **Discrepancy bug hunt (M)** — queued 2026-09-28 ([USER 2026-09-28] "We should fan out multiple agents on a
+  discrepancy bug hunt. Basically, go look for anything in Cerberus-lean that might result in bugs similar to the one
+  that was reported yesterday"): parallel hunters for pathleak-class defects (hand-written seams answering without a
+  faithful model, in places no lane exercises). Scope agreed with the operator before briefing; inputs: the
+  2026-09-28 served-surface audit, test-depth map and thin-surface tests record. Includes the `CerbMem` file-wide
+  `impl_mem.ml` line-cite drift found by the pre-merge audit.
 - **CerbFS: a SibylFS-faithful filesystem model (M-L)** — registered
   2026-09-02, rescoped 2026-09-28. Since contract D2 ([USER 2026-09-28]
   "refuse FS for now, this seems safer") every CerbFS operation refuses
