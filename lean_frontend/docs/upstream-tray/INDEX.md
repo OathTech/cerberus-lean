@@ -17,7 +17,7 @@ recorded submission; **Sent** = transmitted without an issue/PR URL;
 **Filed** = recorded issue/PR URL; **Closed** = recorded upstream closure.
 A fork-side fix or a pushed PR branch does not mean Filed or Closed.
 
-Derived inventory (2026-09-29): 52 report files, **47 Draft, 4 Sent, 1 Filed, 0 Closed** (the four Sent = the ISO-fix register's reports 10/11/13/40, communicated privately to the maintainers; report 19, the register's DEFERRED row R4, stays Draft).
+Derived inventory (2026-09-29): 53 report files, **48 Draft, 4 Sent, 1 Filed, 0 Closed** (the four Sent = the ISO-fix register's reports 10/11/13/40, communicated privately to the maintainers; report 19, the register's DEFERRED row R4, stays Draft).
 Issue 1010 is recorded below but has no tray report, so is outside this count.
 Draft duplicate searches must be repeated before filing; the dated search
 notes below establish only what was checked then.
@@ -71,6 +71,7 @@ notes below establish only what was checked then.
 | [45-core-match-pattern-truncating-zip-arity.md](45-core-match-pattern-truncating-zip-arity.md) | Draft | No submission recorded |
 | [46-function-pointer-number-is-a-fresh-supply-artefact.md](46-function-pointer-number-is-a-fresh-supply-artefact.md) | Draft | No submission recorded |
 | [47-alignas-incomplete-type-not-diagnosed.md](47-alignas-incomplete-type-not-diagnosed.md) | Draft | No submission recorded |
+| [48-funptrmap-keyed-by-number-conflates-libc-statics.md](48-funptrmap-keyed-by-number-conflates-libc-statics.md) | Draft | No submission recorded |
 | [lean4/01-stack-overflow-handler-deadlock.md](lean4/01-stack-overflow-handler-deadlock.md) | Draft | No submission recorded |
 | [lean4/02-nat-div-mod-literal-folding.md](lean4/02-nat-div-mod-literal-folding.md) | Draft | No submission recorded |
 | [lean4/03-float-tobits-canonicalizes-nan.md](lean4/03-float-tobits-canonicalizes-nan.md) | Draft | No submission recorded |
@@ -626,6 +627,13 @@ the flexible-array-member compatibility question, 42 = unary minus on a floating
     'constraint violation' - and this goes in the tray if it isn't there already". From the C4
     audit's F-A2; drafted by Claude (Opus 5.5) under operator direction; AI-provenance note per the
     tray's policy.
+
+48. **48-funptrmap-keyed-by-number-conflates-libc-statics.md** — TRUE BUG (latent upstream FIXME made concrete),
+    C-reachable in libc mode (added 2026-09-29 [AGENT]). `impl_mem.ml:1206` keys the function-pointer map by symbol
+    number alone; libc.co's numbers and the program's fresh numbers overlap, so a user function can replace a libc
+    static's entry (`__stdout_write`), turning `fputs` into a spurious UB041. The fork records the difference under
+    named deviation N1. From the 2026-09-29 discrepancy bug hunt (BUG-1); drafted by Claude (Opus 5.5) under operator
+    direction; AI-provenance note per the tray's policy.
 
 Amended 2026-09-05: draft 10 gains an addendum for the STRING-LITERAL
 form of `\?` (`"\?"` reaches the same decoder from translation.ml:3029;

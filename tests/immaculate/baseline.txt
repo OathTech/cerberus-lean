@@ -136,6 +136,8 @@
 # zd-r2-highbyte / zd-r2-crash-digit9 (2026-09-29, bug hunt K-1; [USER 2026-09-29] "Agree on everything"): ISO-fix
 #   register R2's widened scope — the escaped_char/octal round trip corrupts bytes >= 128 (200 -> 128) and crashes
 #   the oracle on a byte whose decimal escape contains a 9 (199). Lean-right; pinned like g5-escape-roundtrip.
+# zd-funptr-libc-conflate (2026-09-29, bug hunt BUG-1): N1's libc-mode identity consequence — the oracle's
+#   number-keyed funptrmap lets g take over __stdout_write (UB041); Lean serves Specified(1). Pinned DIFF; tray 48.
 # ts-* (2026-09-28, thin-surface tests slice; record docs/2026-09-28_thin-surface-tests-record.md): four
 #   both-crash pins (MATCH | L=CRASH) of printf/memcmp inputs the shared model does not serve: a '*' field
 #   width, a '*' precision, %s of a null pointer, and memcmp over never-written struct padding.
@@ -214,6 +216,7 @@ zd-funptr-bytes-deviation DIFF | L=VAL:{value: "Specified(19)", stdout: "", stde
 zd-funptr-call-control MATCH | L=VAL:{value: "Specified(312)", stdout: "", stderr: "", blocked: "false"}
 zd-funptr-int-direct DIFF | L=VAL:{value: "Specified(47)", stdout: "", stderr: "", blocked: "false"}
 zd-funptr-int-voidptr DIFF | L=VAL:{value: "Specified(47)", stdout: "", stderr: "", blocked: "false"}
+zd-funptr-libc-conflate DIFF | L=VAL:{value: "Specified(1)", stdout: "via fputs\n", stderr: "", blocked: "false"}
 zd-funptr-printf-deviation DIFF | L=VAL:{value: "Specified(1)", stdout: "(@empty, 0xa0)\n(@empty, 0xa0)\n", stderr: "", blocked: "false"}
 zd-nan-bytes-deviation DIFF | L=VAL:{value: "Specified(127)", stdout: "", stderr: "", blocked: "false"}
 zd-r2-crash-digit9 ORACLE_CRASH | L=VAL:{value: "Specified(199)", stdout: "", stderr: "", blocked: "false"}
