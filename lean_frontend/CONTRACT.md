@@ -55,7 +55,7 @@ feature-attributed; each refusal has a witness), **OUT OF SCOPE** (not an input 
 | Core dynamics (driver, reduction, pure eval) | SUPPORTED | Tier A/B lanes, pristine 835/28/7/2, gcc oracle, csmith corpus | none known; this is where the report found nothing |
 | Concrete memory model | SUPPORTED | CerbMem mirror with cites; immaculate lane; allocator soundness theorem | the SC receipt buffer is disabled by default (WP0) |
 | Function pointers | SUPPORTED, including round trips through integers and `void*` (libc's `atexit` uses one); their numeric value — through an integer conversion, their bytes or `%p` — is named deviation N1 | `zd-funptr-*` rows, libc_exec `040`/`041` | none |
-| Integer/float/layout implementation choices | SUPPORTED (LP64); printing a NaN with `%f` REFUSED (its text depends on the NaN's sign bit, which Lean cannot read) | CerberusImpl, CerbFloat, float/bytes lanes | other ABIs OUT OF SCOPE (D6) |
+| Integer/float/layout implementation choices | SUPPORTED (LP64); printing a NaN with `%f` REFUSED (its text depends on the NaN's sign bit, which Lean cannot read); a NaN's sign and payload bits in memory are named deviation N2 | CerberusImpl, CerbFloat, float/bytes lanes | other ABIs OUT OF SCOPE (D6) |
 | libc (the oracle's libc.co, loaded) | functions written in C (`runtime/libc/src/*.c`): SUPPORTED — they run through the same Core semantics as user code — but thinly tested (§3.2); the 36 **builtins** of `runtime/libcore/std.core` (hand-implemented in each engine): one state each, §3.1 (D4) | libc_exec lane, libxml2 lanes | none |
 | Filesystem (CerbFS) | **REFUSED** (D2) — every filesystem operation, including `read` on any fd; `write`/`vprintf` on fds 1/2 are served (the driver routes them to the stdout/stderr records, never reaching CerbFS) | `zd-fs-*`, `zd-f1-truncate-negative-length`, `zd-z2f01-lseek-whence` pinned refusals | none |
 | Standard input / environment / argv | stdin REFUSED (every read reaches CerbFS, D2; the oracle models an empty stdin); `getenv` served by libc C code; argv SUPPORTED | `zd-fs-stdin-read` pinned refusal; argv lane (5 programs) | UTF-8 `--args` unmeasured |
@@ -152,6 +152,9 @@ witnesses and are not "thinly tested": they do not answer.
   public statement, linked from the top-level README.
 - **D6 — LP64 only** ([USER 2026-09-28] "Agreed re the ABI"): LP64 (the x86-64 Linux data model) is the one supported
   ABI, the only one the lanes test; every other ABI is out of scope.
+- **D7 — a NaN's bits are named deviation N2** ([USER 2026-09-29] "agree on all 3", on the recommendation to register
+  the pre-merge audit's F2 rather than refuse storing NaNs): Lean's float store canonicalizes NaNs, so their bytes
+  differ from the oracle's (VALIDATION §2b).
 - **Agent-called dispositions under these rulings** [AGENT 2026-09-28]: `%f` of a NaN is refused rather than
   registered (it can be refused cheaply and precisely; Lean cannot read a NaN's sign), and the other disagreements that
   record found (its D3–D6, a separate numbering from this section's) are dispositioned in `docs/2026-09-28_thin-surface-tests-record.md` (addendum).

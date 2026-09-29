@@ -52,3 +52,7 @@ tests/immaculate/nolibc/zd-d5-device-range-load.c TRIAGED_UB gcc=139 lean={3} `i
 tests/immaculate/nolibc/zd-funptr-bytes-deviation.c TRIAGED_ADDR gcc=73 lean={19} observes the low two bytes of a stored int (*)(void): a function address number, layout-defined on both sides (N1)
 tests/immaculate/nolibc/zd-funptr-int-direct.c TRIAGED_ADDR gcc=41 lean={47} observes (intptr_t)&f & 0xfff: a function address number (N1)
 tests/immaculate/nolibc/zd-funptr-int-voidptr.c TRIAGED_ADDR gcc=41 lean={47} observes (uintptr_t)(void*)f & 0xfff through a stored void*: a function address number (N1)
+#
+# [AGENT 2026-09-29] named-deviation register N2 (VALIDATION.md §2b): Lean's Float.toBits canonicalizes NaNs, so a
+# stored NaN's bytes differ from gcc's and the oracle's (both 255 here). FLOAT class, by-file.
+tests/immaculate/nolibc/zd-nan-bytes-deviation.c TRIAGED_FLOAT gcc=255 lean={127} observes the top byte of a stored inf - inf: a NaN's sign bit, which Lean's float store canonicalizes (N2)

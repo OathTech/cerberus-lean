@@ -345,7 +345,8 @@ private def scaledRound (m : Nat) (e : Int) (p : Int) : Nat :=
     "-nan" or "nan" by the NaN's sign bit (measured: OCaml
     `Printf.sprintf "%f" (infinity -. infinity)` = "-nan"), and Lean has no
     portable access to it — `Float.toBits` canonicalizes every NaN to
-    0x7ff8000000000000 (measured) — so printing one would guess. -/
+    0x7ff8000000000000 (measured) — so printing one would guess. (A NaN's
+    stored bytes are already canonical: named deviation N2, VALIDATION §2b.) -/
 def formatFixed (prec : Nat) (f : Float) : String :=
   if f.isNaN then failwithI "CerbFloat.formatFixed: refused — printing a NaN with %f is not supported: its text depends on the NaN's sign bit, which Lean cannot read (Float.toBits canonicalizes NaNs); CONTRACT.md §3"
   else if f.isInf then (if f < 0 then "-inf" else "inf")

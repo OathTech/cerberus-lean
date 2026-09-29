@@ -1921,6 +1921,7 @@ tests/immaculate/nolibc/zd-funptr-call-control.c AGREE -
 tests/immaculate/nolibc/zd-funptr-int-direct.c TRIAGED_ADDR -
 tests/immaculate/nolibc/zd-funptr-int-voidptr.c TRIAGED_ADDR -
 tests/immaculate/nolibc/zd-funptr-printf-deviation.c SKIP_GCC_STDOUT -
+tests/immaculate/nolibc/zd-nan-bytes-deviation.c TRIAGED_FLOAT -
 tests/immaculate/nolibc/zd-z2m02-device-funptr-call.c SKIP_LEAN_CRASH -
 tests/minimal/001-return-literal.c AGREE -
 tests/minimal/002-return-zero.c AGREE O2_AGREE

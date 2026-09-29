@@ -773,6 +773,9 @@ def memValueToBytes_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : Tag
     -- :1153-1155 `bytes_of_int true 8 (Z.of_int64 (Int64.bits_of_float fval))`:
     -- the SIGNED int64 reading of the bit pattern (so the assert's range
     -- is [-2^63, 2^63-1]); the bytes are the same two's complement
+    -- named-deviation register N2 (VALIDATION.md §2b): Lean's Float.toBits
+    -- canonicalizes every NaN to 0x7ff8000000000000, so a stored NaN loses
+    -- the sign and payload that Int64.bits_of_float keeps (impl_mem.ml:1190).
     let bits : Int := fv.toBits.toInt64.toInt
     let rawBytes := intToBytes true bits sz
     (funptrmap, rawBytes.map fun v => { prov := .Prov_none, copyOffset := none, value := v })
@@ -895,6 +898,9 @@ def memValueToBytes_append_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambien
     -- :1153-1155 `bytes_of_int true 8 (Z.of_int64 (Int64.bits_of_float fval))`:
     -- the SIGNED int64 reading of the bit pattern (so the assert's range
     -- is [-2^63, 2^63-1]); the bytes are the same two's complement
+    -- named-deviation register N2 (VALIDATION.md §2b): Lean's Float.toBits
+    -- canonicalizes every NaN to 0x7ff8000000000000, so a stored NaN loses
+    -- the sign and payload that Int64.bits_of_float keeps (impl_mem.ml:1190).
     let bits : Int := fv.toBits.toInt64.toInt
     let rawBytes := intToBytes true bits sz
     (funptrmap, rawBytes.map fun v => { prov := .Prov_none, copyOffset := none, value := v })
