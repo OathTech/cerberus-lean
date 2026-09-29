@@ -299,9 +299,15 @@ The constraints it places on S1 onward, as amended by [USER 2026-09-29]:
    The earlier [USER 2026-09-04] brief constraint "we don't change the lem
    structure for ocaml" (recorded in
    [the typed-failure outcomes design](lean_frontend/docs/2026-09-05_typed-failure-outcomes-design.md)
-   §0) was the condition WP1's M2 finding cited; S1's review must state how
-   its shared-Lem change relates to it and obtain operator confirmation if
-   the reviewer judges it in scope. Fork-drift changes are refreshed
+   §0) was the condition WP1's M2 finding cited. Its scope is ruled
+   [USER 2026-09-29]: "this is specifically about features that the ocaml
+   upstream currently supports, i.e we don't bend the existing trust story.
+   But for SC we have to change things because there's no upstream
+   support". So S1 may add new shared-`.lem` SC semantics; it must not
+   change the behaviour of anything upstream already supports (sequential
+   execution stays byte-for-byte on the existing differential lanes, and any
+   refactor of existing definitions is behaviour-preserving and shown to
+   be). Fork-drift changes are refreshed
    deliberately in `scripts/fork_drift_manifest.txt` with a stated reason;
    code is never placed to avoid that gate.
 2. **Read-modify-write.** `SeqRMW` is a load, an update and a store; its two
@@ -485,8 +491,8 @@ dated evidence remains historical and should not be rewritten to match it.
 
 | Item | Current state | Evidence / next action |
 |---|---|---|
-| Mainline base | Observed 2026-09-29: `mdd/cerberus-lean` at `f6fc60d4b` (includes WP0 `5ecc0aa33`, the CerbFS hotfix and contract enforcement `fa03a68a1`); Lem `c2a68e79b6369e19f099dfa48767319c1daf19b3`. | WP1's validation was on its WP0-based tree and does not certify later mainline. New runtime slices start from then-current mainline and run its gates. |
-| Master plan / L0 | This revision (2026-09-29) applies the [USER 2026-09-29] rulings. Candidate `docs/sc-l0-20260929`. **Not landed.** | Next: propose the pre-merge audit to the operator, including a fresh full review of this plan and the WP1 decision record by a reviewer who authored neither; then per-merge sign-off. Earlier reviews: re-review of `a740c48ae`, WP1 review `1c7e52fad`. |
+| Mainline base | Observed 2026-09-29: `mdd/cerberus-lean` at `5ce3d589b` (includes WP0 `5ecc0aa33`, the CerbFS hotfix, contract enforcement `fa03a68a1` and L0); Lem `c2a68e79b6369e19f099dfa48767319c1daf19b3`. | WP1's validation was on its WP0-based tree and does not certify later mainline. New runtime slices start from then-current mainline and run its gates. |
+| Master plan / L0 | **Landed** on mainline at `d47e8f282` ([USER 2026-09-29] merge sign-off), after the fresh pre-merge audit (record `5ce3d589b`, `lean_frontend/docs/2026-09-29_sc-l0-pre-merge-audit.md`: ACCEPT-WITH-FIXES, no blocker; fixes in `d47e8f282`). | `arc/sc-concurrency` is now a parked record. Changes to this plan land as small documentation landings. |
 | Diagnostic seeds | 21 donor inputs with recorded hashes, one new input, and bounded donor/mainline/pristine observations. Land with L0. | [Inputs](tests/sc-recovery/README.md), [diagnostic evidence](lean_frontend/docs/sc-recovery-evidence/README.md). These remain diagnostic, not a passing SC suite. |
 | Sequential `_Bool` repair | **Landed** with WP0, as rebased commit `d61dcb9c4`, included in `5ecc0aa33`. | The original fix/audit records and the orchestrator's landing records preserve the old and rebased identities. |
 | WP0 / L1 | **Closed and landed** at `5ecc0aa33`. | Receipt implementation `3cb7f7587`, closure `0e3f67cd2` / `a997d49ce`, skeptical reviews `2d445ea2f` / `06648fa94`. Read the mainline WP0 records for consumer exposure, capped process checks and validation. |

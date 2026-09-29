@@ -149,4 +149,24 @@ are open to correction.
 | 5 | One fresh review, inside the pre-merge audit | No separate re-review of `186392a53`. The L0 pre-merge audit includes a fresh full review of the revised plan and the landed WP1 decision record by a reviewer who authored none of it. |
 | 6 | Lighter records, plain summary | The plan opens with a plain-language summary; house jargon is replaced or defined. Per-slice records are one short acceptance record per landing (the plan's §4 item 2 list), not record/response/re-response chains; evidence dumps stay on the slice branch unless a gate reads them. |
 
-Nothing is merged or pushed by this record.
+## 4. Follow-up ruling: scope of the 2026-09-04 brief constraint
+
+The L0 pre-merge audit (S3) noted that S1 must add shared-`.lem` code while
+the [USER 2026-09-04] brief constraint "we don't change the lem structure
+for ocaml" (typed-failure outcomes design §0) was the condition behind M2.
+[AGENT] asked whether that constraint was scoped to features upstream
+already supports. [USER 2026-09-29], verbatim:
+
+> yes, this is specifically about features that the ocaml upstream
+> currently supports, i.e we don't bend the existing trust story. But for SC
+> we have to change things because there's no upstream support
+
+Consequence [AGENT]: new SC semantics may live in shared `.lem`; behaviour
+of features upstream supports must not change, and refactors of existing
+definitions must be behaviour-preserving and shown to be (the existing
+differential lanes are the evidence). Recorded in SC-CONCURRENCY.md
+constraint 1.
+
+L0 landed on mainline at `d47e8f282` and the audit record at `5ce3d589b`
+([USER 2026-09-29] sign-off: "1: yes, 2: yes land it"). Nothing is pushed
+by this record.
