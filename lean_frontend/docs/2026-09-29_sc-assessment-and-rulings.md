@@ -170,3 +170,12 @@ constraint 1.
 L0 landed on mainline at `d47e8f282` and the audit record at `5ce3d589b`
 ([USER 2026-09-29] sign-off: "1: yes, 2: yes land it"). Nothing is pushed
 by this record.
+
+## 5. Correction: S1 does not wait for the bug hunt
+
+§3 row 3 recorded an [AGENT] reading that S1 work on shared surfaces would
+wait for the main-line track's bug hunt. That reading was wrong.
+[USER 2026-09-29], verbatim: "I think that's a misunderstanding, we don't
+need to wait for the bug-hunt. We can get going." S1 starts now; overlap is
+handled by the claims register and serialized landings. §3 is left as
+written, as the record of the misreading.

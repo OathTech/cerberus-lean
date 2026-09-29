@@ -4,8 +4,9 @@
 > with one amendment ("yeah, agree on (3) although we're doing some bug
 > hunting first on the main-line agent"): the paragraph below assuming the
 > first S1 work is a fork/wait divergence from upstream is superseded — S1
-> mirrors upstream and refuses loudly. The main-line track's bug hunt goes
-> first. The WP1 status lines below predate its independent review. Current
+> mirrors upstream and refuses loudly. (An [AGENT] note that the main-line
+> bug hunt goes first was a misreading, corrected [USER 2026-09-29]: "we
+> don't need to wait for the bug-hunt".) The WP1 status lines below predate its independent review. Current
 > state: [SC-CONCURRENCY.md](../../SC-CONCURRENCY.md) §6 and the
 > [assessment and rulings](2026-09-29_sc-assessment-and-rulings.md).
 
