@@ -133,6 +133,9 @@
 # zd-nan-bytes-deviation (2026-09-29, pre-merge audit F2; [USER 2026-09-29] "agree on all 3"): NAMED-DEVIATION
 #   REGISTER N2 — Lean's float store canonicalizes NaNs (Float.toBits), so the top byte of a stored inf - inf is
 #   127 on Lean, 255 on the oracle. Pinned DIFF with the Lean value.
+# zd-r2-highbyte / zd-r2-crash-digit9 (2026-09-29, bug hunt K-1; [USER 2026-09-29] "Agree on everything"): ISO-fix
+#   register R2's widened scope — the escaped_char/octal round trip corrupts bytes >= 128 (200 -> 128) and crashes
+#   the oracle on a byte whose decimal escape contains a 9 (199). Lean-right; pinned like g5-escape-roundtrip.
 # ts-* (2026-09-28, thin-surface tests slice; record docs/2026-09-28_thin-surface-tests-record.md): four
 #   both-crash pins (MATCH | L=CRASH) of printf/memcmp inputs the shared model does not serve: a '*' field
 #   width, a '*' precision, %s of a null pointer, and memcmp over never-written struct padding.
@@ -213,6 +216,8 @@ zd-funptr-int-direct DIFF | L=VAL:{value: "Specified(47)", stdout: "", stderr: "
 zd-funptr-int-voidptr DIFF | L=VAL:{value: "Specified(47)", stdout: "", stderr: "", blocked: "false"}
 zd-funptr-printf-deviation DIFF | L=VAL:{value: "Specified(1)", stdout: "(@empty, 0xa0)\n(@empty, 0xa0)\n", stderr: "", blocked: "false"}
 zd-nan-bytes-deviation DIFF | L=VAL:{value: "Specified(127)", stdout: "", stderr: "", blocked: "false"}
+zd-r2-crash-digit9 ORACLE_CRASH | L=VAL:{value: "Specified(199)", stdout: "", stderr: "", blocked: "false"}
+zd-r2-highbyte DIFF | L=VAL:{value: "Specified(200)", stdout: "", stderr: "", blocked: "false"}
 zd-z28-addr-layout-a MATCH | L=VAL:{value: "Specified(0)", stdout: "s1=281474976706032 c1=281474976706031 i1=281474976706024 p1=281474976706016\n", stderr: "", blocked: "false"}
 zd-z28-addr-layout-b MATCH | L=VAL:{value: "Specified(0)", stdout: "s1=281474976707776 c1=281474976707775 i1=281474976707768 p1=281474976707760\n", stderr: "", blocked: "false"}
 zd-z28-pointer_from_integer_2g MATCH | L=VAL:{value: "Specified(0)", stdout: "j=5 &j=(@70, 0xffffffffede8)\n", stderr: "", blocked: "false"}
