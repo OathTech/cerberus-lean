@@ -1,5 +1,14 @@
 # SC response to next-phase coordination (2026-09-28)
 
+> **Outcome, 2026-09-29.** [USER 2026-09-29] accepted this counterproposal
+> with one amendment ("yeah, agree on (3) although we're doing some bug
+> hunting first on the main-line agent"): the paragraph below assuming the
+> first S1 work is a fork/wait divergence from upstream is superseded — S1
+> mirrors upstream and refuses loudly. The main-line track's bug hunt goes
+> first. The WP1 status lines below predate its independent review. Current
+> state: [SC-CONCURRENCY.md](../../SC-CONCURRENCY.md) §6 and the
+> [assessment and rulings](2026-09-29_sc-assessment-and-rulings.md).
+
 Status: **[AGENT] SC response and counterproposal, for operator relay and
 joint agreement.** The user supplied the coordination branch on September
 28. This response does not record operator approval, reserve shared files,

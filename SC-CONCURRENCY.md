@@ -1,34 +1,125 @@
 # SC concurrency master plan
 
-Updated 2026-09-28: WP0 landed; WP1 completed its decision/evidence package
-at `af1342d32`. Independent review `1c7e52fad` accepts the decision, with
-package/plan fixes tracked below. Next-phase coordination agreement is pending. Working branch:
-`arc/sc-concurrency`. Mainline:
-`mdd/cerberus-lean`. **This is the governing plan for the SC build.** It owns
-the objective, work order, acceptance criteria, current status and landing
-policy. Detailed designs and slice records support it; they do not silently
-change it. No executable SC implementation has landed from this effort.
+Updated 2026-09-29. **This is the governing plan for the SC concurrency
+build**: objective, work order, acceptance criteria, current status and
+landing policy. Detailed designs and slice records support it; they do not
+silently change it. Status is in §6.
 
-[USER, 2026-09-24] Build a master plan for successful SC concurrency, treat the
-previous branch as a quarry for useful machinery, guard against drift during
-a long build, and seek early mainline landings whenever work can be audited
-cleanly. The earlier user direction remains: land necessary, independently
-validated foundations before choosing the execution strategy. The milestone
-and landing decomposition below is [AGENT] implementation planning under that
-direction; open design proposals are marked explicitly.
+## Summary (plain language)
+
+**Goal.** Add a sequentially consistent (SC) concurrency mode to the
+existing Cerberus semantics: threads take turns, one Core step at a time,
+over the existing C memory model, with data races detected as undefined
+behaviour. It is shared through Lem (so the OCaml oracle and the Lean port
+run the same definitions) and usable from Lean. Iris integration is
+separate, later work.
+
+**History.** Two earlier attempts (`feature/concurrency`, then
+`arc/sc-prototype`) failed; [USER 2026-09-24] ruled the prototype failed.
+Designs from them that are rejected here (§5): admitting executions by
+checking an accumulated execution graph at run time, restricting shared
+scalars to a single writer, and suppressing race findings after an
+interpretation gap. The old branches are a source of test cases and
+candidate code, re-checked piece by piece, never merged.
+
+**Where we are (2026-09-29).**
+
+- *Landed:* WP0, passive "receipts" recording what each existing memory
+  load/store did (mainline `5ecc0aa33`). No concurrency yet.
+- *Decided:* WP1 chose how to build execution (below) using Lean-only
+  experiments. Its decision record lands as a document; its experimental
+  code does not ([USER 2026-09-29], see the
+  [assessment and rulings](lean_frontend/docs/2026-09-29_sc-assessment-and-rulings.md)).
+- *Not started:* S1, the first real SC execution code.
+
+**How execution will work (the WP1 decision).** A scheduler repeatedly picks
+one runnable thread and runs one Core reduction step for it against the
+current shared memory. A read-modify-write (`SeqRMW`) is split into its
+read, update and write; other threads may run between them, but the thread
+that started it cannot interleave its own unrelated work there. Program
+order (what C sequences before what) is tracked separately from the order in
+which the scheduler happened to run things, and races are checked
+incrementally against a bounded summary of what is still relevant, not
+against the whole history.
+
+**What is next.** S1: one bounded step function in shared Lem, built fresh
+from mainline. It mirrors upstream's fork/join behaviour and refuses loudly
+where upstream refuses ([USER 2026-09-29]). S1 work touching shared driver,
+outcome or memory surfaces is sequenced after the main-line track's current
+bug hunt (§6).
+
+**Hardest open problems.** (1) Recovering C's sequenced-before order from
+Core, where memory effects do not always occur in source order (see
+*negative action* below), and building the inter-thread race check on it. (2) Proving
+that every execution the SC reference model allows is reachable by the
+scheduler, including when a read value changes later control flow.
+
+## Terms used in this plan
+
+- **Receipt**: WP0's record of one actual memory operation (arguments,
+  result, failure-time state), attached to the returned state.
+- **Pending operation**: a source operation, such as `SeqRMW`, that has
+  performed some of its memory accesses and is waiting to perform the rest;
+  its thread is **owned** by it until it completes or fails.
+- **Source order / sb**: C's sequenced-before relation between a thread's
+  actions; **hb** is happens-before, which adds synchronization.
+- **Negative action**: a Core memory action whose side effect is not
+  sequenced before the value it contributes (for example the store of an
+  assignment or postfix increment; `translation.lem` elaborates both as
+  `Paction Neg`). Core's reducer may perform it away from its written
+  position, recording exclusions so intra-thread races are still found; so
+  the order memory effects happen in is not source order.
+- **Frontier**: the set of already-completed actions that the next action in
+  a thread's source continuation is ordered after.
+- **Retained summary**: the bounded information kept about past actions
+  (frontiers, pending calls/joins, published snapshots, per-location last
+  write and unordered reads) that is still needed to detect a future race.
+- **Reference model**: the pinned axiomatic model `cmm_csem.lem`
+  (`SC_memory_model`), used offline for comparison and proofs, never as a
+  runtime admission check.
+- **Donor branches**: the failed branches, used as a source of candidate
+  code and tests (the "quarry" assessment).
+- **F1–F4**: WP0 foundation items in the technical design §6 — F1 observe
+  ND nodes without losing state, F2 passive load/store receipts, F3 faithful
+  representation access where F2 needs it, F4 later atomic-order validation.
+- **Receptiveness**: the executor can follow every read value the reference
+  model allows, including the different control flow a different value
+  causes; coverage proofs need it.
+- **M1 / M2**: the WP1 review's two main findings — M1, changing inherited
+  upstream fork/wait behaviour; M2, experiment code placed in shared Lem.
+  Both closed by the [USER 2026-09-29] rulings.
+- **V1**: the first internal end-to-end real-C SC lane (§2).
+- **WP-C**: the correspondence (proof) work that runs alongside S1–S4.
+
+## Directions and provenance
+
+[USER 2026-09-24, paraphrased; no verbatim quote recorded] Build a master
+plan for successful SC concurrency, treat the previous branch as a quarry
+for useful machinery, guard against drift during a long build, and seek
+early mainline landings whenever work can be audited cleanly; land
+necessary, independently validated foundations before choosing the
+execution strategy. The milestone and landing decomposition below is
+[AGENT] planning under that direction.
+
+[USER 2026-09-25], verbatim (from the
+[scope record](lean_frontend/docs/2026-09-25_sc-semantics-mvp-scope.md)):
+"we do not try to land an Iris integration, but instead focus on an MVP
+which just builds a coherent and correct SC model". This removes the
+external consumer demonstration and Iris adoption gates; it retains the
+semantic scope, correctness, scale and reference obligations below and does
+not adopt the first review's narrower C profile.
+
+[USER 2026-09-29] rulings (verbatim in the
+[assessment record](lean_frontend/docs/2026-09-29_sc-assessment-and-rulings.md)
+§2): WP1 lands as a decision record only and S1 starts fresh from mainline;
+S1 mirrors upstream's fork/join behaviour and refuses loudly; the
+coordination counterproposal is accepted with one amendment, after the
+main-line bug hunt; this plan lands on mainline; one fresh review inside
+the L0 pre-merge audit; lighter per-slice records.
 
 The [re-review](lean_frontend/docs/2026-09-25_sc-concurrency-plan-rereview.md)
-accepts the finite WP0, early feasibility experiments and explicit
-correspondence work adopted after the first review. Proceed to executable
-evidence at those boundaries; another broad planning pass is not required.
-
-**[USER, 2026-09-25, direction summarized] The MVP delivers a coherent and
-correct executable SC model. Iris integration is a separate task.** This
-removes the external consumer demonstration and Iris adoption gates; it
-retains the semantic scope, correctness, scale and reference obligations
-below. It does not adopt the first review's narrower C profile. The
-[scope record](lean_frontend/docs/2026-09-25_sc-semantics-mvp-scope.md) records
-this boundary, deferred work and the re-review's concrete follow-through.
+accepted the finite WP0, early feasibility experiments and explicit
+correspondence work; another broad planning pass is not required.
 
 ## 1. What we are building and where it fits
 
@@ -51,10 +142,11 @@ the old weak-memory commitment engine is not a prerequisite for SC.
 **[AGENT, WP1 decision] Build selected, bounded Core reductions over current
 concrete memory, with explicit owned pending primitives where a source
 operation must yield.** Track source sequencing separately from scheduler
-order, and use incremental causal/access summaries. The decision record on
-`arc/sc-wp1`, `lean_frontend/docs/2026-09-27_sc-wp1-execution-decision.md`,
-compares the alternatives and binds the S1–S4 obligations below. The
-experiments do not enable public SC support:
+order, and use incremental causal/access summaries. The
+[decision record](lean_frontend/docs/2026-09-27_sc-wp1-execution-decision.md)
+compares the alternatives and binds the S1–S4 obligations below (its
+experimental code stays on `arc/sc-wp1` `186392a53`; see its banner). No
+public SC support exists:
 
 ```mermaid
 flowchart TD
@@ -171,6 +263,14 @@ wrapper or theorem assuming the desired reference predicate is insufficient.
 Reuse the experiment's production definitions, keep its declared fragment
 bounded, and report the hardest unresolved obligation before feature expansion.
 
+*How WP1 met this (2026-09-29 assessment):* only locally. Its lemmas
+(`unseq_pairwise`, `hoisting_excludes_prior`) are genuine theorems about
+production Core definitions but concern Core's intra-thread unsequenced-race
+check, not inter-thread order or the reference model; the correspondence
+theorems exist as typed statements only. The link from Core source order to
+the reference `sb`, and a race monitor over it, are therefore S2's first
+proof obligation, not already-established ground.
+
 WP-C's obligations attach to the responsible S1–S4 changes and name which
 production definitions they concern, what is proved, what has only bounded
 evidence, and what remains open. V1 supplies an early concrete connection;
@@ -180,61 +280,65 @@ broad implementation. General correspondence is not left for final audit.
 
 ## WP1 decision: constraints on the next implementation
 
-The detailed decision/evidence record lives with the experiment on
-`arc/sc-wp1` at `af1342d32da0f47844c3856057ed1dd38ec4a164`. It chooses
-direct selected Core stepping plus narrowly justified
-pending operations. `SeqRMW` yields between read/update/store to other threads
-while owning its source continuation; its updater uses current memory. A
-same-thread C call remains outside the pair. Neither ownership nor scheduler
-selection invents source order. A child completion that would rewrite an
-owned parent's continuation waits until ownership ends. S1 carries primitive
-ND alternatives per owner and preserves the actual lifecycle.
+[AGENT, WP1 decision, 2026-09-27; accepted by independent review
+`1c7e52fad`] The full reasoning is the
+[decision record](lean_frontend/docs/2026-09-27_sc-wp1-execution-decision.md).
+The constraints it places on S1 onward, as amended by [USER 2026-09-29]:
 
-Source instrumentation has separate value-completion/all-effects frontiers,
-with weak/strong/negative/unseq/call and fork/join rules. Retained causal roots
-include immutable publications and per-location access summaries. Kernel
-extension/projection laws concern an abstract relation; the Core
-unseq/exclusion lemmas are local, Core-internal properties. Neither proves
-the connection from Core source order to the axiomatic reference;
-source-shaped observers and finite comparisons are not yet a general
-production monitor. Coverage through actual read-dependent Core
-control flow remains the hardest WP-C obligation. Reopen the design if its
-S1/S2 replay construction fails before broad S3 expansion.
+1. **One step function, in shared Lem.** Execution selects one Core
+   reduction of one thread at a time, using the existing Core reducer,
+   memory model, call frames, startup and finalization. S1 writes this once,
+   in `.lem`, so the OCaml oracle and the Lean port share it. WP1's Lean-only
+   adapter and its shared-Lem experiment block are **not** carried forward;
+   they are a specification of the behaviour S1 must produce, not code to
+   promote. No second evaluator.
+2. **Read-modify-write.** `SeqRMW` is a load, an update and a store; its two
+   accesses are not atomic with respect to other threads, which may run
+   between them. While it is pending it owns its thread: no other work of
+   that same thread (sibling operand, call) runs in between. The update is
+   evaluated against current shared memory, never a saved snapshot. A child
+   thread's completion that would rewrite an owned parent waits until the
+   ownership ends. Ownership must not invent a sequenced-before or
+   happens-before edge.
+3. **Nondeterministic choices.** Discovering what can run must not perform
+   any effect. S1 carries the primitive nondeterministic alternatives of each
+   pending operation (WP1's adapter refused them).
+4. **Fork/join mirrors upstream** ([USER 2026-09-29] "mirror and refuse seems
+   safest"). S1 keeps upstream's positional fork-result order and upstream's
+   `subst_wait_stack ==> Stack_cons2` refusal (reached only through
+   Cerberus's non-ISO C par-block extension). If an SC execution reaches that
+   refusal it reports a classified *unsupported* outcome, loudly; it is never
+   a silent result or UB. No shared-model divergence, tray draft or
+   `shared-model-fix` row is prepared. WP1's Lean-local fork/join repairs are
+   not adopted.
+5. **Source order is separate from scheduler order.** Track what each
+   thread's next action is sequenced after (value-completion and
+   all-effects frontiers, including Core's negative actions) and, separately,
+   synchronization. Retained race-check state is a bounded summary (§ Terms);
+   WP1's exact O(R²) matrix is a correctness baseline, and S2 must choose and
+   measure a sparse representation against it.
+6. **Scale work belongs to S1.** Unbounded retained diagnostic output and the
+   temporary-environment growth under negative hoisting (measured in WP1)
+   must be fixed in S1 by a streaming output policy and reclamation based on
+   what the current frame and continuations can still reach; no
+   numeric-symbol cutoff. Thread-churn measurements must be repeated with
+   real child runtime allocations (WP1's fixture used a null child errno).
+7. **Reference theorem domain.** The initial scalar theorem uses
+   `SC_memory_model` / `SC_condition`: atomic initialization before all
+   accesses and the reference's same-thread indeterminate-sequencing
+   condition; no single-writer restriction. Consistency is not definedness:
+   complete coverage requires `each_empty SC_memory_model.undefined X`, a
+   valid initial configuration and resources shown adequate for each
+   supported finite source path (never defined as "the run succeeded"), and
+   yields a completed run. First-conflict prefixes and whole-program UB
+   lifting are separate obligations. `SC_condition` excludes fences and
+   lifetimes: S3 uses the seq_cst-only restriction of
+   `sc_fenced_memory_model` and proves the no-fence agreement; S4 supplies
+   object/lifetime conservativity. Upstream's program-level `true` stubs and
+   `bigthm` are not used.
 
-S1 must resolve positional fork-result order and upstream's explicit
-`subst_wait_stack ==> Stack_cons2` refusal. Both behaviors are inherited
-from pristine upstream, and `Epar` is reachable through the non-ISO C par-block
-extension. Before implementing a shared-model change, prepare positional,
-nested/call-frame and C-par-block evidence, an upstream-tray draft and the
-proposed `scripts/upstream_oracle_differences.json` `shared-model-fix` row,
-and obtain an explicit [USER] adjudication of the deviation. ISO-C arguments
-alone do not decide an extension's semantics. The Lean-only WP1 adapters are
-experiments, not authorization for a production divergence.
-
-S1 must also address unbounded retained diagnostic output and
-temporary-environment growth under negative hoisting. The latter needs
-lexical support/continuation reasoning, not a numeric-symbol cutoff. The
-churn experiments stream output and measure semantic environments separately;
-there is no claim that the existing whole interpreter has bounded storage.
-Repeat churn with actual child runtime allocations and their lifetime policy;
-the candidate's null child errno does not measure that production cost.
-These are explicit dependencies of S1 scale acceptance, not hidden cleanup
-after public enablement. Land independently useful corrections early when
-their own contracts and evidence pass review.
-
-The initial scalar theorem uses `SC_memory_model` / `SC_condition` with
-atomic initialization before all accesses and the reference's actual
-same-thread indeterminate-sequencing condition. No single-writer restriction
-is introduced. Reference consistency and definedness are distinct: complete
-coverage requires `each_empty SC_memory_model.undefined X`, a valid initial
-configuration and source-justified adequate resources, and yields a completed
-run. First-conflict prefixes and whole-program UB lifting remain separate
-obligations. Resource adequacy must be shown to exist for each supported
-finite source path, never defined circularly from runtime success.
-`SC_condition` excludes fences and lifetimes: S3 uses the
-seq_cst-only restriction of `sc_fenced_memory_model` and proves the no-fence
-agreement; S4 supplies object/lifetime conservativity. No use of upstream
-program-level `true` stubs or automatic transfer of `bigthm` is permitted.
+Reopen the design if S1/S2 cannot replay read-dependent control flow
+(coverage) or cannot recover source order from Core, before broad S3 work.
 
 ## 3. Work packages and audit boundaries
 
@@ -246,8 +350,8 @@ throughout; S5 assembles established results rather than starting them.
 | Package | Deliverable and dependency | Exit / earliest landing boundary |
 |---|---|---|
 | **WP0 — necessary foundations** | Close after one paired load/store observation slice with its real diagnostic consumer: load results, same-value writes, returned failure state, ND alternatives and completed-operation prefixes. Reuse existing state transport where sufficient. | Disabled-observer erasure, bounded/drainable receipts, state/choice preservation and operation-proportional capture cost. F1 transport and minimal F2 land together; only F3 needed by this consumer belongs here. **Closed: WP0 accepted and landed at `5ecc0aa33`.** Helper/lifetime/metadata extensions and F4 do not hold WP0 open. |
-| **WP1 — execution feasibility and decision** | Decision/evidence package on `arc/sc-wp1`: selected Core steps plus owned pending primitives; exact source/retention contracts; typed WP-C schemas and general local production lemmas. Alternatives and remaining proof obligations are explicit. Complete at `af1342d32`; independent review `1c7e52fad` accepts the decision at feasibility scope, with package/plan fixes. | Independently derived source relations/first conflicts; a substantive summary invariant; repeated fixed-width source split/join and bounded-live-thread churn with coordinate/reference accounting; singleton-step yield, pure discovery and step/run agreement. Failures reopen design before broad S1/S3 extraction. Commit the decision only after these witnesses; no donor scheduler is adopted by default. |
-| **S1 — actual bounded transition API** | Implement the chosen thread/Core alternatives, program continuation, per-owner primitive continuations and observations, including actual child runtime/errno initialization. Resolve positional fork results and upstream's explicit modern-stack wait refusal through the evidence/tray/register/[USER] process above before shared-Lem implementation. Include initialization/finalization, explicit resource accounting, production output streaming and sound lexical temporary reclamation. Add other services with their first justified concurrent consumer. Depends on WP0/WP1. | Deterministic-loop budget control, effect-free choice discovery, step/run agreement for state/events/resources, `SeqRMW` non-atomicity, nested fork/join, blocking and selected-loop scale. Completion/UB/unsupported/blocked/exhausted are distinct. Internal until semantic acceptance; an observed ND node alone is not a thread step. |
+| **WP1 — execution feasibility and decision** | **Closed as a decision.** Lean-only experiments on `arc/sc-wp1` (`af1342d32`, review response `186392a53`) chose selected Core steps plus owned pending operations, stated source/retention contracts and typed WP-C statement schemas, and proved local Core lemmas. Independent review `1c7e52fad` accepted the decision at feasibility scope. | [USER 2026-09-29] The decision record, review and response land with L0 as documents; the experimental code, tests and evidence stay on `arc/sc-wp1` (M2 closed by not landing them). What the evidence does and does not establish: [assessment](lean_frontend/docs/2026-09-29_sc-assessment-and-rulings.md) §1. |
+| **S1 — actual bounded transition API** | Implement the chosen thread/Core alternatives, program continuation, per-owner primitive continuations and observations, including actual child runtime/errno initialization. One step function in shared Lem, cut from then-current mainline; no Lean-only adapter. Mirror upstream's positional fork results and its `Stack_cons2` wait refusal, reporting a classified unsupported outcome where SC execution reaches it ([USER 2026-09-29]). Include initialization/finalization, explicit resource accounting, production output streaming and sound lexical temporary reclamation. Add other services with their first justified concurrent consumer. Depends on WP0/WP1. | Deterministic-loop budget control, effect-free choice discovery, step/run agreement for state/events/resources, `SeqRMW` non-atomicity, nested fork/join, blocking and selected-loop scale. Completion/UB/unsupported/blocked/exhausted are distinct. Internal until semantic acceptance; an observed ND node alone is not a thread step. |
 | **S2 — source order and race semantics** | Implement and justify summaries for source sequencing, synchronization and conflicts over S1. Use the minimal SC access/fork/join rules; full atomic operation coverage follows in S3. | Independent relation comparison and summary/first-race arguments; unsequenced expressions, separate members, same-element races, publication and race-before-loop. Recheck scale with the monitor enabled. Land separable summary/monitor units with their actual consumers and precise contracts. |
 | **S3 — full atomic operations and C surface** | Minimal real-C load/store/initialization lowering accompanies S1/S2 for V1. After V1, extend to full order validation, RMW/CAS, fences and callable library coverage. Initialization's semantic/reference obligations are decided in WP1. | Keep V1 green through each family; complete bounded production/reference comparisons, a production mutation control, independent SB/MP/CAS expectations and a real linked callable fence. Land validated operation families separately. |
 | **S4 — object and runtime composition** | A cross-cutting track over WP0 and the relevant S1–S3 changes. Ordinary objects are exercised from the first handler; helpers, lifetime and precise library protection extend them. | Ordered byte/member/copy cases, helper interference and effects before failure, actual location/lifetime conflicts, ordered library calls and shared-service cases. Land each useful fix separately. Pull needed work forward whenever an earlier gate depends on it; do not postpone object correctness until after atomics. |
@@ -279,7 +383,7 @@ The expected landing sequence is:
 
 | Landing | When to propose it | What it claims |
 |---|---|---|
-| **L0: plan and diagnostic seeds** | After review of this master plan and its supporting records. This branch is the candidate. | Governing direction and reproducible failure evidence only; no new runtime support. |
+| **L0: plan, decision record and diagnostic seeds** | [USER 2026-09-29] "land on mainline seems reasonable". Candidate: branch `docs/sc-l0-20260929` (this plan, its supporting records, the WP1 decision record/review/response and the diagnostic seeds, cut from mainline). Lands after its pre-merge audit, which includes a fresh full review of this plan and the WP1 decision record, and per-merge sign-off. | Governing direction, the execution decision and reproducible failure evidence only; no new runtime support. |
 | **L1: first passive effect slice** | As soon as minimal load/store receipts plus any necessary existing-state transport pass their independent audit and sequential checks. | Useful observation of existing memory behavior. No scheduler or public SC. |
 | **L2…: subsequent semantic, receipt or sequential fixes** | WP0 has landed. Add helper/lifetime/metadata receipts with the first execution feature consuming them; independent sequential fixes can land when ready. F4 normally accompanies S3. | Exactly the new capability or corrected behavior, without future scaffolding; these are not prerequisites for closing WP0. |
 | **Execution decision and internal semantic slices** | WP1's decision can land as documentation. S1–S4 changes land when their stated contracts and dependency boundaries are independently checked. | Audited internal capabilities with real consumers and explicit remaining obligations. Experimental outcomes are not advertised as accepted C behaviors. |
@@ -288,12 +392,19 @@ The expected landing sequence is:
 For each landing:
 
 1. Build a short branch from the then-current `mdd/cerberus-lean`, containing
-   only that slice and already landed prerequisites. The long-lived
-   `arc/sc-concurrency` branch coordinates the plan and bounded experiments;
-   it must not become an alternate mainline accumulating unaudited features.
+   only that slice and already landed prerequisites. Once L0 lands this plan
+   lives on mainline and changes through small documentation landings;
+   `arc/sc-concurrency` becomes a parked record. No long-lived SC branch may
+   become an alternate mainline accumulating unaudited features.
    If two changes cannot be validated independently, make their smallest
    coherent combination the landing unit and state why.
-2. Prepare a concise dated acceptance record: problem/contract, exact
+2. Prepare **one** short dated acceptance record per landing ([USER
+   2026-09-29] agreed to lighter per-slice records; these details are
+   [AGENT]): review findings and their
+   dispositions go into that record or the review record, not a chain of
+   response documents; bulky evidence (JSON dumps, transcripts) stays on the
+   slice branch unless a gate reads it, cited by commit. Its contents:
+   problem/contract, exact
    base/head, dependencies, donor provenance if any, source of expected
    behavior, checks/proofs, a meaningful failure control, relevant cost,
    sequential effects, and remaining limits. Identify source and built
@@ -313,8 +424,8 @@ For each landing:
 5. If mainline moves, rebase the small candidate, inspect conflicts, rerun
    invalidated checks and renew readiness/sign-off as required. After
    landing, record the mainline commit here and reconcile any dependent work
-   already based on its audited candidate. [USER, 2026-09-25] WP1 may proceed
-   while the overseer handles WP0 landing; the landing sequence does not block
+   already based on its audited candidate. [USER, 2026-09-25, paraphrased] WP1 may proceed
+   while the orchestrator handles WP0 landing; the landing sequence does not block
    that investigation. Synchronize the coordination branch without reviving
    accepted or rejected donor patches. Functional Lem changes retain the existing
    Lem-first, re-pin, revalidate landing order.
@@ -355,43 +466,16 @@ dated evidence remains historical and should not be rewritten to match it.
 
 | Item | Current state | Evidence / next action |
 |---|---|---|
-| Mainline base | Observed September 28: local `mdd/cerberus-lean` at `d62f52121`, including WP0 (`5ecc0aa33`) and the CerbFS path hotfix; Lem remains `c2a68e79b6369e19f099dfa48767319c1daf19b3`. | WP1 was validated on its recorded WP0-based tree; that evidence does not certify the later mainline. New runtime slices start from the then-current mainline and run its applicable gates. |
-| Master plan / L0 | Independently re-reviewed at `a740c48ae`; WP1 update reviewed at `1c7e52fad`, with M1/S5 corrections incorporated here. Semantics-only MVP direction retained; no mainline landing of this coordination branch. | The September 27 decision/evidence record is on `arc/sc-wp1` at `af1342d32`; the review response is `186392a53`. Review of the original update is not independent re-review of these corrections or public feature acceptance. |
-| Diagnostic seeds | 21 donor inputs with recorded hashes, one new input, and bounded donor/mainline/pristine observations. | [Inputs](tests/sc-recovery/README.md), [diagnostic evidence](lean_frontend/docs/sc-recovery-evidence/README.md). These remain diagnostic, not a passing SC suite. |
-| Sequential `_Bool` repair | **Landed** with WP0, as rebased commit `d61dcb9c4`, included in `5ecc0aa33`. | The original fix/audit records and overseer's landing records preserve the old and rebased identities. |
-| WP0 / L1 | **Closed and landed** at `5ecc0aa33`, following the overseer's reconciliation and skeptical reviews. | Receipt implementation `3cb7f7587`, closure `0e3f67cd2` / `a997d49ce`, skeptical reviews `2d445ea2f` / `06648fa94`. Read the mainline WP0 records for consumer exposure, capped process checks and validation. Later receipt producers accompany actual execution consumers. |
-| WP1 / WP-C entry | [USER, paraphrased] Push to the end of WP1. [AGENT] Rebased on landed WP0; preceding experiment is now `b52f9e660`. **Decision/evidence complete at `af1342d32da0f47844c3856057ed1dd38ec4a164`; review `1c7e52fad` accepts the decision and accepts package/plan with fixes.** | `SC-WP1.md` and `lean_frontend/docs/2026-09-27_sc-wp1-execution-decision.md` on `arc/sc-wp1`. Full A+B: 40/40 commands; mandatory 872-case three-engine report passed its gate, with historical report-only differences preserved; focused experiments and ten axiom cones passed. Source/artifact identities and limits are recorded with the code. New evidence: pending SeqRMW/call boundaries, positional/nested fork, actual read-dependent publication, first-conflict prefix, 8192-round Core split/join and thread churn, exact retained-root invariants and general production unseq/exclusion lemmas. The record preserves the hard remaining source/control-flow coverage and object/scale obligations. No public SC mode or mainline landing. |
-| V1 / S1–S5 / WP-C proofs | Production implementation/release obligations remain. WP1 supplies local proof entry points and statement schemas, not full correspondence. | Keep the real-C publication/fork/join/budget lane through extensions. Full release still requires §2. |
+| Mainline base | Observed 2026-09-29: `mdd/cerberus-lean` at `f6fc60d4b` (includes WP0 `5ecc0aa33`, the CerbFS hotfix and contract enforcement `fa03a68a1`); Lem `c2a68e79b6369e19f099dfa48767319c1daf19b3`. | WP1's validation was on its WP0-based tree and does not certify later mainline. New runtime slices start from then-current mainline and run its gates. |
+| Master plan / L0 | This revision (2026-09-29) applies the [USER 2026-09-29] rulings. Candidate `docs/sc-l0-20260929`. **Not landed.** | Next: propose the pre-merge audit to the operator, including a fresh full review of this plan and the WP1 decision record by a reviewer who authored neither; then per-merge sign-off. Earlier reviews: re-review of `a740c48ae`, WP1 review `1c7e52fad`. |
+| Diagnostic seeds | 21 donor inputs with recorded hashes, one new input, and bounded donor/mainline/pristine observations. Land with L0. | [Inputs](tests/sc-recovery/README.md), [diagnostic evidence](lean_frontend/docs/sc-recovery-evidence/README.md). These remain diagnostic, not a passing SC suite. |
+| Sequential `_Bool` repair | **Landed** with WP0, as rebased commit `d61dcb9c4`, included in `5ecc0aa33`. | The original fix/audit records and the orchestrator's landing records preserve the old and rebased identities. |
+| WP0 / L1 | **Closed and landed** at `5ecc0aa33`. | Receipt implementation `3cb7f7587`, closure `0e3f67cd2` / `a997d49ce`, skeptical reviews `2d445ea2f` / `06648fa94`. Read the mainline WP0 records for consumer exposure, capped process checks and validation. |
+| WP1 | **Closed as a decision.** Decision `af1342d32`, review `1c7e52fad` (decision ACCEPT), response `186392a53`. M1 closed by [USER 2026-09-29] mirror-and-refuse; M2 closed by not landing the experimental code. | The [decision record](lean_frontend/docs/2026-09-27_sc-wp1-execution-decision.md), [review](lean_frontend/docs/2026-09-28_sc-wp1-independent-review.md) and [response](lean_frontend/docs/2026-09-28_sc-wp1-review-response.md) land with L0. `arc/sc-wp1` is a parked record: code, tests, evidence, and the earlier WP1 working records. |
+| Coordination with the next-phase track | **Agreed** [USER 2026-09-29]: the [counterproposal](lean_frontend/docs/2026-09-28_sc-next-phase-coordination-response.md) is accepted, minus its paragraph assuming S1 starts with a fork/wait divergence (superseded by mirror-and-refuse). "we're doing some bug hunting first on the main-line agent". | [AGENT reading] S1 work touching the driver/run loop, outcome types, `global.lem` or memory seams waits for that bug hunt to finish, or proceeds only under an announced claim that names non-overlapping functions. Record claims in the single shared register. |
+| S1 | **Not started.** | Next SC implementation slice once coordination allows: cut from then-current mainline; one shared-Lem step function per the WP1 constraints above; mirror upstream fork/join. |
+| V1 / S2–S5 / WP-C proofs | Not started. WP1 supplies local lemmas and statement schemas, not correspondence. | S2's first obligation is recovering source order (`sb`) from Core and the inter-thread race check on it (see §2 note). Full release still requires §2. |
 
-The independent WP1 review is committed on `review/sc-wp1-20260928` at
-`1c7e52fad`, `lean_frontend/docs/2026-09-28_sc-wp1-independent-review.md`.
-Its targeted re-runs support the feasibility decision; they do not replace a
-full landing validation. M1's upstream-change process and S5's proof-scope
-wording are incorporated here. The response on `arc/sc-wp1` at `186392a53`,
-`lean_frontend/docs/2026-09-28_sc-wp1-review-response.md`, records the harness
-fixes and remaining landing condition M2: experimental shared-Lem factoring
-requires a scoped reconciliation with the September 4 ruling and operator
-confirmation, or an independently reviewed isolation of the experiment. A
-manifest refresh or accepted feasibility decision is not that approval.
-
-The [September 28 coordination response](lean_frontend/docs/2026-09-28_sc-next-phase-coordination-response.md)
-answers the next-phase track's proposed shared-surface rules. It proposes joint
-transition/outcome/configuration contracts and serialization of overlapping
-slices, while preserving early independent landings. It accounts for the newer
-contract/refusal decisions. **[AGENT] Counterproposal pending joint agreement;
-no S1 implementation or Lem pin is reserved by it.** The SC completion
-requirements and semantics-only MVP scope are unchanged.
-
-The WP0 acceptance records and evidence now live on mainline at `5ecc0aa33`;
-read its landing and skeptical-review records for the final closure. The
-earlier candidate record is still available via
-`git show e1c1d2c3a:lean_frontend/docs/2026-09-25_sc-wp0-review-response.md`.
-That historical record gives both immutable audit identities, finding
-dispositions, the approved documentation delta and final fast-gate evidence, and links the original
-receipt/repair records. Those retain the diagnostic scope, tested source/binary
-identities, prior rebase evidence, cost limits and optional-backend build
-limitations. The observed native-binary replacement is accounted for by the
-other auditor's full-run rebuild; the historical evidence is not relabelled.
 No merge or push is authorized by this status update.
 
 Maintain one short current record for each active slice; do not start a second
@@ -423,6 +507,9 @@ the requirement, increasing fuel or importing more of the prototype.
 - [Proposed input corpus and provenance](tests/sc-recovery/README.md).
 - [Independent September 25 review](lean_frontend/docs/2026-09-25_sc-concurrency-plan-review.md) and [implementing response](lean_frontend/docs/2026-09-25_sc-concurrency-review-response.md).
 - [Independent re-review](lean_frontend/docs/2026-09-25_sc-concurrency-plan-rereview.md) and [semantics-only MVP scope decision](lean_frontend/docs/2026-09-25_sc-semantics-mvp-scope.md).
+- [WP1 execution decision](lean_frontend/docs/2026-09-27_sc-wp1-execution-decision.md), its [independent review](lean_frontend/docs/2026-09-28_sc-wp1-independent-review.md) and [response](lean_frontend/docs/2026-09-28_sc-wp1-review-response.md).
+- [Next-phase coordination response](lean_frontend/docs/2026-09-28_sc-next-phase-coordination-response.md) (accepted with one amendment, 2026-09-29).
+- [2026-09-29 assessment and rulings](lean_frontend/docs/2026-09-29_sc-assessment-and-rulings.md).
 
 This master plan supersedes the concurrency work order and candidate-integration
 assumptions in the September 5 general plan, September 6 concurrency charter,
