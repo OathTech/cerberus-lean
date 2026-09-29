@@ -5,7 +5,7 @@
 > documentation, and S1 starts fresh from mainline with a single stepper in
 > Lem. The code, tests, probes and `sc-wp1-evidence/` files this record cites
 > are **not on mainline**; they remain at `arc/sc-wp1` `186392a53` (read them
-> with `git show 186392a53:<path>`). Superseded by the same rulings: §5 item 1's plan to change the inherited fork-result order and `Stack_cons2` refusal — S1 now mirrors upstream and refuses loudly. The text below is unchanged from
+> with `git show 186392a53:<path>`). Superseded by the same rulings: §5 item 1's plan to investigate, and after [USER] adjudication change, the inherited fork-result order and `Stack_cons2` refusal — S1 now mirrors upstream and refuses loudly. The text below is unchanged from
 > `arc/sc-wp1` `186392a53` except that links to files not on mainline are shown as plain paths.
 > Current state and the 2026-09-29 rulings:
 > [SC-CONCURRENCY.md](../../SC-CONCURRENCY.md) and

@@ -26,8 +26,9 @@ candidate code, re-checked piece by piece, never merged.
 
 - *Landed:* WP0, passive "receipts" recording what each existing memory
   load/store did (mainline `5ecc0aa33`). No concurrency yet.
-- *Decided:* WP1 chose how to build execution (below) using Lean-only
-  experiments. Its decision record lands as a document; its experimental
+- *Decided:* WP1 chose how to build execution (below) using experiments
+  (a restricted stepper in shared Lem plus a Lean-only test adapter that
+  supplied the SC features). Its decision record lands as a document; its experimental
   code does not ([USER 2026-09-29], see the
   [assessment and rulings](lean_frontend/docs/2026-09-29_sc-assessment-and-rulings.md)).
 - *Not started:* S1, the first real SC execution code.
@@ -63,12 +64,14 @@ scheduler, including when a read value changes later control flow.
   its thread is **owned** by it until it completes or fails.
 - **Source order / sb**: C's sequenced-before relation between a thread's
   actions; **hb** is happens-before, which adds synchronization.
-- **Negative action**: a Core memory action whose side effect is not
-  sequenced before the value it contributes (for example the store of an
-  assignment or postfix increment; `translation.lem` elaborates both as
-  `Paction Neg`). Core's reducer may perform it away from its written
-  position, recording exclusions so intra-thread races are still found; so
-  the order memory effects happen in is not source order.
+- **Negative action**: a Core memory action of polarity `Neg`, which
+  `core.lem:152-154` defines as "only sequenced by letstrong" (a `Pos`
+  action is sequenced by both `letweak` and `letstrong`). Assignment and
+  postfix increment/decrement stores are elaborated this way
+  (`translation.lem:762`, `:2485`). Core's reducer may perform a negative
+  action away from its written position, recording exclusions so
+  intra-thread races are still found; so the order memory effects happen in
+  is not source order.
 - **Frontier**: the set of already-completed actions that the next action in
   a thread's source continuation is ordered after.
 - **Retained summary**: the bounded information kept about past actions
@@ -291,7 +294,16 @@ The constraints it places on S1 onward, as amended by [USER 2026-09-29]:
    in `.lem`, so the OCaml oracle and the Lean port share it. WP1's Lean-only
    adapter and its shared-Lem experiment block are **not** carried forward;
    they are a specification of the behaviour S1 must produce, not code to
-   promote. No second evaluator.
+   promote. No second evaluator. S1 is therefore a deliberate shared-`.lem`
+   change visible to the OCaml oracle, under [USER 2026-09-29] ruling (1).
+   The earlier [USER 2026-09-04] brief constraint "we don't change the lem
+   structure for ocaml" (recorded in
+   [the typed-failure outcomes design](lean_frontend/docs/2026-09-05_typed-failure-outcomes-design.md)
+   §0) was the condition WP1's M2 finding cited; S1's review must state how
+   its shared-Lem change relates to it and obtain operator confirmation if
+   the reviewer judges it in scope. Fork-drift changes are refreshed
+   deliberately in `scripts/fork_drift_manifest.txt` with a stated reason;
+   code is never placed to avoid that gate.
 2. **Read-modify-write.** `SeqRMW` is a load, an update and a store; its two
    accesses are not atomic with respect to other threads, which may run
    between them. While it is pending it owns its thread: no other work of
@@ -305,8 +317,9 @@ The constraints it places on S1 onward, as amended by [USER 2026-09-29]:
    pending operation (WP1's adapter refused them).
 4. **Fork/join mirrors upstream** ([USER 2026-09-29] "mirror and refuse seems
    safest"). S1 keeps upstream's positional fork-result order and upstream's
-   `subst_wait_stack ==> Stack_cons2` refusal (reached only through
-   Cerberus's non-ISO C par-block extension). If an SC execution reaches that
+   `subst_wait_stack ==> Stack_cons2` refusal (from C, reached only through
+   Cerberus's non-ISO par-block extension; Core text can also express
+   `par` directly). If an SC execution reaches that
    refusal it reports a classified *unsupported* outcome, loudly; it is never
    a silent result or UB. No shared-model divergence, tray draft or
    `shared-model-fix` row is prepared. WP1's Lean-local fork/join repairs are
@@ -314,7 +327,13 @@ The constraints it places on S1 onward, as amended by [USER 2026-09-29]:
 5. **Source order is separate from scheduler order.** Track what each
    thread's next action is sequenced after (value-completion and
    all-effects frontiers, including Core's negative actions) and, separately,
-   synchronization. Retained race-check state is a bounded summary (§ Terms);
+   synchronization. The frontier rules (decision record §1): weak
+   sequencing transfers the value frontier; strong sequencing transfers all
+   completed effects including negative ones; unsequenced operands share the
+   incoming frontier, not the preceding scheduler choice; calls and
+   fork/join carry their own local-order and synchronization endpoints; a
+   publication is an immutable snapshot that retiring its publisher does not
+   advance. Retained race-check state is a bounded summary (§ Terms);
    WP1's exact O(R²) matrix is a correctness baseline, and S2 must choose and
    measure a sparse representation against it.
 6. **Scale work belongs to S1.** Unbounded retained diagnostic output and the

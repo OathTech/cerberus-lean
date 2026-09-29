@@ -35,8 +35,10 @@ Findings, most significant first:
 1. **Delivered vs documented (measured, Opus).** WP0 is the only landing:
    about 135 lines of semantics against about 4.6k lines of records and
    evidence. WP1 is about 5.8k lines of documents and evidence, 2.1k of
-   tests/probes and about 500 of shared-Lem/OCaml changes, mostly
-   experimental.
+   tests/probes, and 372 added / 18 removed lines of shared-Lem/OCaml
+   changes over four files (253/18 in `driver.lem` and `core_reduction.lem`;
+   `git diff --numstat 5ecc0aa33 186392a53`, corrected by the L0 pre-merge
+   audit from the reviewer's "about 500"), mostly experimental.
 2. **WP1's feature evidence comes from a Lean-only test adapter (measured,
    Fable).** The shared-Lem experimental stepper (`driver.lem`,
    `experiment_*`) refuses SeqRMW, atomic accesses, thread spawn/finish and

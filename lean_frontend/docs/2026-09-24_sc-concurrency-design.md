@@ -1,5 +1,14 @@
 # SC concurrency: technical design and evidence requirements
 
+> **Superseded in part, 2026-09-29.** [USER 2026-09-29] ruled that S1 mirrors
+> upstream's positional fork-result order and `Stack_cons2` wait refusal and
+> refuses loudly ("mirror and refuse seems safest"). The fork/wait
+> "evidence/tray/register/[USER] process" prescribed below (the S1 row of the
+> slice table and the WP1-decision summary) no longer applies, and WP1's
+> experimental code does not land. Current constraints:
+> [SC-CONCURRENCY.md](../../SC-CONCURRENCY.md) and the
+> [assessment and rulings](2026-09-29_sc-assessment-and-rulings.md).
+
 Date: 2026-09-24; revised 2026-09-25 after independent review and
 2026-09-27 to connect the WP1 decision. Supporting
 technical design for the governing
