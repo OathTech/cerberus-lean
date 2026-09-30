@@ -396,3 +396,16 @@ if ! "$RUNTIME_RES_SH" --selftest; then
     echo "test_unit: runtime-resolution witnesses FAILED"
     exit 1
 fi
+
+# Non-UTF-8 Cabs JSON refusal witnesses (bug hunt 2026-09-29, BUG-6 and K-5;
+# record docs/2026-09-29_bug-hunt-fixes-record.md §S3): a raw byte >= 0x80 in
+# a file name (#line, real path, #include) or an attribute string makes the
+# oracle's cabs-json invalid UTF-8; the driver refuses (exit 2, attributed)
+# instead of dying with an uncaught exception; ASCII controls agree with the
+# oracle. --selftest: a pre-fix (uncaught exception) stub and a
+# refuse-everything stub must both fail.
+CABS_UTF8_SH="$(dirname "$PURITY_SH")/check_cabs_json_utf8.sh"
+if ! "$CABS_UTF8_SH" --selftest; then
+    echo "test_unit: non-UTF-8 Cabs JSON witnesses FAILED"
+    exit 1
+fi

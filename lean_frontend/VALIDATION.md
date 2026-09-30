@@ -338,19 +338,6 @@ and payload bits in memory). Nothing else.
   every classifying lane; `sia_csmith_477/769` at the lane bound) — the
   accepted class, with the parameter (§7).
 
-- *Non-UTF-8 bytes in a TEXT field of the Cabs JSON* (magic-comment text,
-  `EDecl_magic`, `cabs_json.ml:657`; attribute-argument strings, `:600/602` —
-  WHOLE strings, `c_parser.mly:1771-1775` concatenates the literal's fragments
-  before the exporter sees them, so they stay TEXT): the exporter's
-  `json_of_string` copies bytes ≥ 0x80 raw, the JSON is not UTF-8, and the
-  bridge REFUSES the file loudly (`IO.FS.readFile`: "containing non UTF-8
-  data") where the oracle proceeds — a fail-noisy class-(b) residual on
-  non-UTF-8 SOURCE TEXT, not on literals (string-literal fragments and
-  character-constant bodies are byte-carriers since the 2026-09-11 fix:
-  `docs/2026-09-11_semantics-audit-repairs-record.md` §D2; row added per its
-  charter §8 item 6). Mover: an encoder decision for the text fields, a
-  separate slice.
-
 **(c) missing features — loud, attributed refusals (not bugs):**
 
 - *Semantics switches* (`--switches=PVI|PNVI|strict_pointer_arith|CHERI…`):
@@ -425,6 +412,26 @@ and payload bits in memory). Nothing else.
   refusal makes the two agree on every served run. A cabs-json exported
   under a different runtime prefix refuses the same way (its `builtins.h`
   location). Witnesses: the same script.
+- *Non-UTF-8 bytes in the Cabs JSON* (bug hunt BUG-6 and K-5, refused since
+  2026-09-29, `docs/2026-09-29_bug-hunt-fixes-record.md` §S3; before that a
+  class-(b) residual that died with an uncaught exception, rc 1, and listed
+  only the text fields). The oracle's `--cabs-json` exporter copies the bytes
+  ≥ 0x80 of a FILE NAME (the real path, a `#line` or an `#include` name,
+  `cabs_json.ml:30` `Cerb_position.file`), of a `Loc_other` string (`:44`),
+  of attribute-argument strings (`:599`/`:601` — WHOLE strings,
+  `c_parser.mly:1771-1775` concatenates the literal's fragments before the
+  exporter sees them) and of magic-comment text (`EDecl_magic`, `:657`)
+  into the JSON raw, so the document is not UTF-8 while the oracle's own run
+  proceeds. Lean strings are Unicode scalar values, so the bridge cannot
+  carry them: `Main.decodeCabsJson` REFUSES (exit 2, `cerberus-lean: refused
+  — non-UTF-8 Cabs JSON: …`, naming the fields, the boundary and the first
+  invalid offset) — user TUs, `--stdin` and the libc metadata TUs alike.
+  String-literal fragments and character-constant bodies are byte-carriers
+  (since the 2026-09-11 fix, `docs/2026-09-11_semantics-audit-repairs-record.md`
+  §D2) and never reach it. Witnesses: `scripts/check_cabs_json_utf8.sh` (row
+  1: `#line` raw byte, `#line` octal escape, a real file name, an `#include`
+  name, an attribute string; ASCII controls agree with the oracle). Mover:
+  a byte-carrier encoding for the file-name, `Loc_other` and text fields.
 - *Accepted command line:* `--batch | --pp-core | --parse-core` (argv[0]),
   `--first`, `--stdin`, `--libc <core>`/`--libc-tu <json>`, `--call <f>`
   [`--call-args`], `--args <str>`, `--trace-nodes`, `--runtime <DIR>` / `--runtime=<DIR>`, `--fuel <N>`, `--address-space-top <N>`
@@ -801,6 +808,7 @@ theorem over the shipped pipeline `@drive ⟨fuel⟩` at the ambient
 | `check_failure_reach.sh` | **the failure-reach register gate** (fuel-pending close-out 2026-09-08 — option C of the pure-failure reachability census `docs/2026-09-07_pure-failure-reachability-census.md`; the TRIPWIRE the parked twin design `docs/2026-09-07_pure-failure-correspondence-design.md` names): rebuilds the one-module declaration-dependency instrument `tests/failure-probes/FailureReach.lean` (fresh scratch Lake package, ~6 s), takes the lexical census (`scripts/failure_census.py`) and requires every PURE `failwithI`/`panic!` site of the exec dependency closure (231) + every pure site with an unresolved kernel owner (2) to equal a row of `scripts/failure_reach_register.txt` — same position class (the census's token-level classifier `scripts/failure_position.py`), the census's reviewed reach class (166 UNREACHABLE-BY-INVARIANT / 48 REACHABLE / 17 UNKNOWN; the 2 unresolved rows UNKNOWN), sealed rows — both directions; RED naming the rows on a NEW site, a stale row, a moved position class, a DISCARDABLE generated let-binding (the F1 shape: a dead binding of a failure — today 0) or an unsealed class edit. Reach classes are reviewed claims (an invariant NAME with a cite, or a witness under `tests/failure-probes/reach/`), not theorems; the closure is a kernel constant-dependency closure, not a path. `--selftest` plants five cases on scratch copies (a new site in a generated exec-closure definition, a dead let, an unsealed class edit, a phantom row, an edited tally) |
 | `test_renumber_plants.sh` | the rebaseline-admission instrument (`check_renumber_only.py`) refuses what it must: committed adversarial pairs (string-content/comment-boundary holes + count/token/order plants) fail, positive controls admit with their declared class |
 | `check_runtime_resolution.sh --selftest` | the driver's runtime is the oracle's (`--runtime DIR` / `CERB_INSTALL_PREFIX`), never the working directory, and a missing runtime or a suffix-library-but-not-exact location refuses (bug hunt BUG-2/BUG-3, 2026-09-29; §3(c)); plants: a runtime-ignoring stub and a refuse-everything stub must fail it |
+| `check_cabs_json_utf8.sh --selftest` | a non-UTF-8 Cabs JSON (a raw byte ≥ 0x80 in a file name or attribute string) is refused with the attributed message instead of an uncaught exception, and ASCII controls agree with the oracle (bug hunt BUG-6/K-5, 2026-09-29; §3(c)); plants: a pre-fix uncaught-exception stub and a refuse-everything stub must fail it |
 
 Certification-integrity rules ride the gates: validation of
 build-rule-affecting changes is cache-disabled from re-derived

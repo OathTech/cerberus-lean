@@ -258,6 +258,62 @@ private def libcMapFromAssoc {α β : Type} (cmp : α → α → LemOrdering)
 
 /-! ## Helpers -/
 
+/-- Offset of the first byte that does not start a well-formed UTF-8
+    sequence (RFC 3629 shapes: no overlong 2-byte leads, no surrogates, at
+    most U+10FFFF), or `none`. Diagnostic only: the accept/refuse decision is
+    `String.fromUTF8?`'s. -/
+def firstInvalidUtf8 (b : ByteArray) : Option Nat := Id.run do
+  let mut i := 0
+  while i < b.size do
+    let c := b[i]!.toNat
+    let n :=
+      if c < 0x80 then 1
+      else if 0xC2 ≤ c && c ≤ 0xDF then 2
+      else if 0xE0 ≤ c && c ≤ 0xEF then 3
+      else if 0xF0 ≤ c && c ≤ 0xF4 then 4
+      else 0
+    if n == 0 || i + n > b.size then return some i
+    let c1 := b[i + 1]!.toNat
+    if n ≥ 2 && (c1 &&& 0xC0) != 0x80 then return some i
+    if n == 3 && ((c == 0xE0 && c1 < 0xA0) || (c == 0xED && c1 ≥ 0xA0)) then return some i
+    if n == 4 && ((c == 0xF0 && c1 < 0x90) || (c == 0xF4 && c1 ≥ 0x90)) then return some i
+    if n ≥ 3 && (b[i + 2]!.toNat &&& 0xC0) != 0x80 then return some i
+    if n == 4 && (b[i + 3]!.toNat &&& 0xC0) != 0x80 then return some i
+    i := i + n
+  return none
+
+/-- Bug-hunt BUG-6 and K-5 (2026-09-29; record
+    `docs/2026-09-29_bug-hunt-fixes-record.md` §S3): decode a Cabs JSON
+    document read as BYTES, and REFUSE (exit 2, attributed) when it is not
+    UTF-8. The oracle's `--cabs-json` exporter writes the bytes ≥ 0x80 of a
+    file name (the real path, a `#line` or an `#include` name,
+    `backend/lean_export/cabs_json.ml:30` `Cerb_position.file`), of a
+    `Loc_other` string (`:44`) and of the text fields (attribute-argument
+    strings `:599`/`:601`, magic comments `:657`) raw, so such a document is
+    not UTF-8, while the oracle's own run proceeds. Lean strings are
+    sequences of Unicode scalar values, so the bridge cannot carry those
+    bytes; `IO.FS.readFile` used to throw an uncaught exception here ("Tried
+    to read file … containing non UTF-8 data", rc 1), loud but not
+    attributed. String-literal fragments and character-constant bodies are
+    byte-carriers (one code point per byte, `json_of_bytes`) and never reach
+    this refusal. A class (c) refusal (VALIDATION §3(c)); mover: a
+    byte-carrier encoding for the file-name, `Loc_other` and text fields. -/
+def decodeCabsJson (label : String) (bytes : ByteArray) : IO String := do
+  match String.fromUTF8? bytes with
+  | some s => return s
+  | none =>
+    let (off, ctx) := match firstInvalidUtf8 bytes with
+      | some i =>
+        let lo := if i ≥ 40 then i - 40 else 0
+        (s!"{i}", CerbEscape.bytes (bytes.extract lo (min bytes.size (i + 40))))
+      | none => ("unknown", "")
+    IO.eprintln s!"cerberus-lean: refused — non-UTF-8 Cabs JSON: {label} is not valid UTF-8 (first invalid byte at offset {off}, context \"{ctx}\"). The oracle's --cabs-json exporter copies the bytes ≥ 0x80 of a file name (the real path, a #line or an #include name), of a Loc_other string and of attribute-argument or magic-comment text into the JSON raw (backend/lean_export/cabs_json.ml:30, :44, :599/:601, :657); this port's bridge cannot carry them, because Lean strings are sequences of Unicode scalar values (string-literal and character-constant bytes are byte-carriers and unaffected; see VALIDATION.md §3(c), bug hunt BUG-6/K-5)"
+    IO.Process.exit 2
+
+/-- Read a Cabs JSON file as bytes and decode it (`decodeCabsJson`). -/
+def readCabsJsonFile (path : String) : IO String := do
+  decodeCabsJson path (← IO.FS.readBinFile path)
+
 /-- Read all input files' contents. Multi-TU: one cabs-json per
     translation unit, in command-line order — mirroring the OCaml
     driver's `files` list (backend/driver/main.ml:153-156, the per-file
@@ -265,19 +321,22 @@ private def libcMapFromAssoc {α β : Type} (cmp : α → α → LemOrdering)
 def readInputs (args : List String) : IO (List String) := do
   match args with
   | ["--stdin"] => do
-    let mut buf := ""
+    -- read BYTES (bug-hunt BUG-6: a non-UTF-8 document is refused by
+    -- decodeCabsJson, not thrown by a text read)
+    let stdin ← IO.getStdin
+    let mut buf := ByteArray.empty
     let mut done_ := false
     while !done_ do
-      let line ← (← IO.getStdin).getLine
-      if line.isEmpty then done_ := true
-      else buf := buf ++ line
-    return [buf]
+      let chunk ← stdin.read 65536
+      if chunk.isEmpty then done_ := true
+      else buf := buf ++ chunk
+    return [← decodeCabsJson "<stdin>" buf]
   | [] => throw (IO.Error.userError "usage: cerberus-lean [--batch] [--stdin | FILE.json ...]")
   | files =>
     if files.contains "--stdin" then
       throw (IO.Error.userError "--stdin cannot be combined with file arguments")
     else
-      files.mapM (fun f => IO.FS.readFile ⟨f⟩)
+      files.mapM readCabsJsonFile
 
 def countDecls : List external_declaration → Nat × Nat × Nat
   | [] => (0, 0, 0)
@@ -719,7 +778,7 @@ def loadLibc [LemFuel] (runtime : String) (quiet : Bool) (supply0 : Nat) (addres
   let mut metaFiles : List (file Unit) := []
   let mut supply := supply0
   for j in libcTuJsons do
-    let content ← IO.FS.readFile ⟨j⟩
+    let content ← readCabsJsonFile j
     let (digest, tunit) ← match CabsImport.parseJsonWithFiles content with
       | .ok (d, t, files) => do
         refuseLibraryLocations runtime s!"the libc metadata TU {j}" files
