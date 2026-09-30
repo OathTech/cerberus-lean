@@ -182,3 +182,82 @@ test_multi_tu.sh       SUMMARY: total=8 match=8 fail=0 / ALL PASSED
 test_libc_exec.sh      SUMMARY: match=43 diff=0 / ALL MATCH RECORDED BASELINE
 test_verify.sh         test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
 ```
+
+## S4: BUG-4 (Invalid_format UB text)
+
+### What changed
+
+- The oracle prints the batch `Undefined` line with `Printf.bprintf buf "Undefined {ub: \"%s\", stderr:
+  \"%s\", loc: \"%s\"}"` (`backend/common/driver_ocaml.ml:134-138`): the `ub:` payload
+  (`Undefined.stringFromUndefined_behaviour ub`) raw, `stderr` through `String.escaped`, `loc` through
+  `simple_location`. For `Invalid_format[<format bytes>]` (`undefined.lem:1103`, the only constructor that
+  carries program data) the payload is the format string's BYTES.
+- Lean's model holds those bytes as byte-carrier Chars (one per C byte); `IO.println` UTF-8-encoded each
+  carrier ≥ 0x80 as two bytes. `Main.printUndefinedLine` now writes the payload as one byte per Char and
+  is used at all three batch `Undefined` sites (desugar-time UB, typing-time UB, run-time UB). Only the
+  `ub:` field changed: `stderr` was already the `String.escaped` mirror (`CerbEscape.byteChars`, measured
+  equal for bytes 1..255 by the numbers hunter) and `loc` is ASCII. A payload Char above U+00FF has no
+  OCaml counterpart: refused (exit 2), never re-encoded [AGENT].
+- `scripts/failure_reach_register.txt`: the two rows citing `Main.lean:1391-1425` (the `--parse-core`
+  branch) now cite `Main.lean:1573-1607`, where S2–S4's insertions moved it. Cites are not part of the
+  seal; no class changed.
+
+### Witnesses
+
+- Immaculate MATCH row `zd-invalid-format-utf8-payload` (`tests/immaculate/nolibc/`,
+  `printf("caf\xc3\xa9 %y", 1)`), hand-added in sorted position with a dated `#` note:
+  `zd-invalid-format-utf8-payload MATCH | L=UB:{ub: "Invalid_format[café %y]", stderr: "", loc: "<6:18--6:45>"}`.
+  The payload bytes were chosen to form valid UTF-8 so the baseline stays a text file. Before the fix Lean
+  printed `cafÃ©` (the bug hunt's `b1_ib04`: `c3 83 c2 a9`).
+- Hand run of the bug hunt's four witnesses (`b1_if1`, `b1_ib03`, `b1_ib04`, `b1_s02`), oracle
+  `--exec --batch --nolibc` vs Lean `--batch --first`, compared with `cmp`: all four byte-identical
+  (`ib04 SAME`, `if1 SAME`, `ib03 SAME`, `s02 SAME`); Lean's lines through `cat -v`:
+```
+Undefined {ub: "Invalid_format[cafM-CM-) %y]", stderr: "", loc: "<2:17--2:44>"}
+Undefined {ub: "Invalid_format[M-i"\	%e]", stderr: "", loc: "<2:25--2:52>"}
+Undefined {ub: "Invalid_format[M-^?%y]", stderr: "", loc: "<2:17--2:36>"}
+Undefined {ub: "Invalid_format[%dM-i%M-^@]", stderr: "", loc: "<2:80--2:95>"}
+```
+- The immaculate corpus is also an input of the Tier B upstream-oracle gate (`test_upstream_oracle.py`);
+  the new row adds one case there. Tier B was not run in this slice.
+
+## Tier A, once, after S4 (tree = S4 + the S5 comment correction)
+
+Each command rc 0 (wall times from the runner, derived):
+```
+1  ./scripts/test_unit.sh                                                   417s
+2  ./scripts/test_immaculate.sh                                             198s
+3  ./scripts/test_exec.sh --check-baseline                                   45s
+4  ./scripts/test_multi_tu.sh                                                 7s
+5  ./scripts/test_multi_tu.sh --failure-class-projection tests/multi_tu_tray  6s
+6  ./scripts/test_address_space.sh --selftest                                 8s
+7  ./scripts/test_address_space.sh                                            7s
+8  ./scripts/test_libc_exec.sh                                              176s
+9  ./scripts/test_bytes.sh                                                    5s
+10 ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float        30s
+11 ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug        28s
+12 ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage  82s
+13 python3 scripts/test_memory_access.py                                      2s
+```
+Verdict lines (verbatim):
+```
+Total: 16 passed, 0 failed
+check_failure_reach: OK (230 pure failure sites = the 230 register rows exactly (228 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=170 REACHABLE=39 UNKNOWN=21; every row sealed; tally line consistent …
+check_fork_drift: OK — layer 1: 86 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 31 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin c2a68e79b6369e19f099dfa48767319c1daf19b3 matches lem -v c2a68e7 (hex prefix))
+check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+check_cli_refusals: OK (3 refused flags pinned: --concurrency, --switches=PNVI_ae_udi, --switches=strict_pointer_arith; control not refused)
+check_runtime_resolution: OK (17 witnesses: --runtime/CERB_INSTALL_PREFIX resolution and priority, planted cwd std.core ignored, planted prefix used, 5 runtime refusals, 1 cross-runtime and 3 library-location refusals, 1 control agreeing with the oracle)
+check_cabs_json_utf8: OK (9 witnesses: 5 non-UTF-8 Cabs JSONs refused with the attributed message (#line raw byte, #line octal escape, real file name, #include name, attribute string); 4 ASCII controls agree with the oracle)
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip/zd-r2-highbyte DIFF and zd-r2-crash-digit9 ORACLE_CRASH, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+  MATCH          zd-invalid-format-utf8-payload  O[UB:{ub: "Invalid_format[café %y]", stderr: "", loc: "<6:18--6:45>"}] L[UB:{ub: "Invalid_format[café %y]", stderr: "", loc: "<6:18--6:45>"}]
+Baseline check: 0 regression(s), 0 improvement(s)        [rows 3, 10, 11, 12 each]
+BASELINE OK                                               [rows 3, 10, 11, 12 each]
+SUMMARY: total=8 match=8 fail=0                           [row 4]
+SUMMARY: total=7 match=7 fail=0                           [row 5]
+test_address_space: SELFTEST OK (14 plants — P1 the discriminator's derived pre-fix observation, P2 missing file, P3 truncated, P4 phantom row, P5-P7 phantom/duplicate/malformed rows without a final newline all REJECTED; P8 the valid file without a final newline ACCEPTED; P9/P10 the out-of-domain and non-decimal tops REFUSED o…
+test_address_space: OK (18 cases: LEAN = FORK through the shared codec at tops 64 32 8; every fork observation = its pinned row in expectations.txt)
+SUMMARY: match=43 diff=0 / ALL MATCH RECORDED BASELINE    [row 8]
+SUMMARY: exec_match=9 neg_pinned=5 fail=0                 [row 9]
+PASS memory access: 3 runs; primitive receipts, all ND constructors, erasure, draining; 8 instrument controls
+```
+(`…` = cut at 330 columns by the extraction; bracketed row tags added.)

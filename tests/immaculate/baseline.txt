@@ -138,6 +138,11 @@
 #   the oracle on a byte whose decimal escape contains a 9 (199). Lean-right; pinned like g5-escape-roundtrip.
 # zd-funptr-libc-conflate (2026-09-29, bug hunt BUG-1): N1's libc-mode identity consequence — the oracle's
 #   number-keyed funptrmap lets g take over __stdout_write (UB041); Lean serves Specified(1). Pinned DIFF; tray 48.
+# zd-invalid-format-utf8-payload (2026-09-30, bug hunt BUG-4; [USER 2026-09-29] "Agree on everything, yes on the
+#   fixes"): the Invalid_format payload is the format string's bytes, printed raw by the oracle (%s,
+#   driver_ocaml.ml:134-138); Lean UTF-8-encoded each byte-carrier Char >= 0x80 (c3 a9 -> c3 83 c2 a9). Fixed by
+#   Main.printUndefinedLine; the payload bytes here form valid UTF-8 ("caf\xc3\xa9"), so this file stays text.
+#   MATCH (record docs/2026-09-29_bug-hunt-fixes-record.md §S4).
 # ts-* (2026-09-28, thin-surface tests slice; record docs/2026-09-28_thin-surface-tests-record.md): four
 #   both-crash pins (MATCH | L=CRASH) of printf/memcmp inputs the shared model does not serve: a '*' field
 #   width, a '*' precision, %s of a null pointer, and memcmp over never-written struct padding.
@@ -218,6 +223,7 @@ zd-funptr-int-direct DIFF | L=VAL:{value: "Specified(47)", stdout: "", stderr: "
 zd-funptr-int-voidptr DIFF | L=VAL:{value: "Specified(47)", stdout: "", stderr: "", blocked: "false"}
 zd-funptr-libc-conflate DIFF | L=VAL:{value: "Specified(1)", stdout: "via fputs\n", stderr: "", blocked: "false"}
 zd-funptr-printf-deviation DIFF | L=VAL:{value: "Specified(1)", stdout: "(@empty, 0xa0)\n(@empty, 0xa0)\n", stderr: "", blocked: "false"}
+zd-invalid-format-utf8-payload MATCH | L=UB:{ub: "Invalid_format[café %y]", stderr: "", loc: "<6:18--6:45>"}
 zd-nan-bytes-deviation DIFF | L=VAL:{value: "Specified(127)", stdout: "", stderr: "", blocked: "false"}
 zd-r2-crash-digit9 ORACLE_CRASH | L=VAL:{value: "Specified(199)", stdout: "", stderr: "", blocked: "false"}
 zd-r2-highbyte DIFF | L=VAL:{value: "Specified(200)", stdout: "", stderr: "", blocked: "false"}

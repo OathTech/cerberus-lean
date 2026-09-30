@@ -619,6 +619,34 @@ def refuseLibraryLocations (runtime : String) (source : String) (files : Array S
       IO.eprintln s!"cerberus-lean: refused — library-location classification: {source} carries a source location in `{f}`, whose directory ends in one of {CerbLocation.libraryDirs} but is not one of this run's runtime library directories {exact}; the oracle classifies a location as library code by EXACT directory equality with its runtime (util/cerb_location.ml:512-523), this port's pure CerbLocation.isLibraryLocation by the directory suffix, so answering could serve a different UB location (see VALIDATION.md, bug hunt BUG-3)"
       IO.Process.exit 2
 
+/-- Bug-hunt BUG-4 (2026-09-29; record `docs/2026-09-29_bug-hunt-fixes-record.md`
+    §S4): print a batch `Undefined` line with the `ub:` payload as BYTES. The
+    oracle prints the field with `%s` and no escaping
+    (`backend/common/driver_ocaml.ml:134-138`, `Printf.bprintf buf "Undefined
+    {ub: \"%s\", stderr: \"%s\", loc: \"%s\"}"
+    (Undefined.stringFromUndefined_behaviour ub) (String.escaped stderr)
+    (Cerb_location.simple_location loc)`), so an `Invalid_format` payload — the
+    only UB constructor carrying program data (`undefined.lem:530`, rendered
+    `"Invalid_format[" ^ str ^ "]"` at `:1103` from the format string's bytes,
+    `formatted.lem:845/859/874`) — reaches stdout as the format's raw bytes. In
+    Lean those bytes are byte-carrier Chars (one per C byte, CabsImport
+    `getByteStr`); `IO.println` UTF-8-encoded each carrier ≥ 0x80 as two bytes.
+    Here every payload Char is written as the one byte it carries. The other
+    fields are unchanged: `stderr` is already the `String.escaped` mirror
+    (`CerbEscape.byteChars`, callers) and `loc` is the ASCII
+    `simple_location` mirror. A payload Char above U+00FF has no OCaml
+    counterpart (the producer's byte-domain invariant is broken): refused,
+    exit 2, never re-encoded. -/
+def printUndefinedLine (ub : String) (stderr : String) (loc : String) : IO Unit := do
+  let mut payload := ByteArray.empty
+  for c in ub.toList do
+    if c.toNat < 256 then payload := payload.push c.toNat.toUInt8
+    else
+      IO.eprintln s!"cerberus-lean: refused — batch UB payload: the undefined-behaviour text holds U+{(Nat.toDigits 16 c.toNat).asString}, outside the byte domain the oracle's byte string can hold (driver_ocaml.ml:134-138 prints the payload's bytes); the byte-carrier invariant of the model's strings is broken (see VALIDATION.md, bug hunt BUG-4)"
+      IO.Process.exit 2
+  let out ← IO.getStdout
+  out.write ("Undefined {ub: \"".toUTF8 ++ payload ++ s!"\", stderr: \"{stderr}\", loc: \"{loc}\"}\n".toUTF8)
+
 /-- Per-TU frontend: desugar → typecheck → translate, under the TU's own
     digest (set by the caller). Mirror of the OCaml per-file frontend
     (`c_frontend` pipeline.ml:180-247 + `c_frontend_and_elaboration`
@@ -688,7 +716,7 @@ def frontendTU [LemFuel] (quiet : Bool) (supply : Nat) (addressSpaceTop : Int)
         match cause with
         | .AIL_TYPING (.TError_UndefinedBehaviour ub) =>
           -- main.ml:173-177: `Undefined { ub; stderr= ""; loc }` through string_of_batch_output
-          IO.println s!"Undefined \{ub: \"{stringFromUndefined_behaviour ub}\", stderr: \"\", loc: \"{CerbLocation.simpleLocation loc}\"}"
+          printUndefinedLine (stringFromUndefined_behaviour ub) "" (CerbLocation.simpleLocation loc)
         | _ =>
           IO.println s!"Error \{msg: \"typechecking failed at {CerbLocation.stringFromLocation loc}\"}"
         return .error 1
@@ -720,7 +748,7 @@ def frontendTU [LemFuel] (quiet : Bool) (supply : Nat) (addressSpaceTop : Int)
       match cause with
       | .DESUGAR (.Desugar_UndefinedBehaviour ub) =>
         -- main.ml:166-170: `Undefined { ub; stderr= ""; loc }` through string_of_batch_output
-        IO.println s!"Undefined \{ub: \"{stringFromUndefined_behaviour ub}\", stderr: \"\", loc: \"{CerbLocation.simpleLocation loc}\"}"
+        printUndefinedLine (stringFromUndefined_behaviour ub) "" (CerbLocation.simpleLocation loc)
       | _ =>
         IO.println s!"Error \{msg: \"desugaring failed at {CerbLocation.stringFromLocation loc}\"}"
       return .error 1
@@ -1244,7 +1272,7 @@ def runPipeline [LemFuel] (runtime : String) (batch : Bool) (ppCore : Bool)
             IO.println "Error {msg: \"[empty UB, probably a cerberus BUG]\"}"
           | .Undef0 loc (ub :: _) =>
             -- OCaml batch_drive parity: first UB only; loc via simple_location (Z-03)
-            IO.println s!"Undefined \{ub: \"{stringFromUndefined_behaviour ub}\", stderr: \"{killedStderr}\", loc: \"{CerbLocation.simpleLocation loc}\"}"
+            printUndefinedLine (stringFromUndefined_behaviour ub) killedStderr (CerbLocation.simpleLocation loc)
           | .Error0 loc msg =>
             if loc == CerbFail.modelFailStopLoc then
               IO.println (CerbFail.batchRecord msg)
