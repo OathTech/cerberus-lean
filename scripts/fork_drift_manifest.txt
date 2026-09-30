@@ -1,3 +1,21 @@
+# SC S1a bounded step API, 2026-09-30 [AGENT; charter lean_frontend/docs/2026-09-29_sc-s1-charter.md
+# section 3.12, [USER 2026-09-30] "Agree on recommendations, go ahead"; record
+# lean_frontend/docs/2026-09-30_sc-s1a-acceptance.md; single rows + this NOTE, no --refresh]:
+# frontend/model/driver.lem [source-content] 8862f4fb... -> 6cd7333f... — (1) the two lifecycle
+# factorings of charter section 3.5 (driver_globals' and drive's bodies become `let inline`
+# driver_globals_with / drive_with; driver_globals and drive re-apply them with the thunk
+# `fun () -> driver2 with_concurrency` and, for drive, the globals stage `driver_globals
+# with_concurrency`, so every lifecycle line stays lexically inside its original function);
+# (2) the appended "SC concurrency S1a" section (sc_* types and functions, no change to any
+# existing definition). Layer 2: driver.ml [expected-semantic] 7f4a4646... -> 65af28c8...: the
+# fork-vs-upstream delta of the generated driver.ml grew by exactly (a) the two factored
+# definitions' hunks — `driver2 with_concurrency` at the two call sites reads
+# `(fun () -> driver2 with_concurrency) ()`, drive's globals call reads `(driver_globals
+# with_concurrency) file1`, the val-signature type abbreviations spell `Mem_common.thread_id` /
+# `Mem.mem_iv_constraint` where the inferred types spelt `int` / the expanded constraint type,
+# and lem drops the two definitions' interior comments on inlining — and (b) the appended SC
+# section; reviewed hunk by hunk against the pre-slice tree (record section "Preservation").
+# Nothing else in the oracle surface moves (backend/sc_probe/ is outside SURFACES).
 # public-readiness SWEEP, 2026-09-25 [AGENT; [USER 2026-09-25] "Great, go ahead with the whole merge and sweep as proposed"]: [meta] lem-pin 67ec5de7 -> c2a68e79
 # (lem-lean sweep: LemLib comment-only rationale for never_extract (T1), NOTICE line (T3), record addendum (T2), the two delta-review docs; NO generated-code change — both trees byte-identical). Single line + this NOTE, no --refresh.
 # Public-readiness follow-up single re-pin (2026-09-25): 6b20bfd02de924d078725efa96c6675115b8b17a -> 67ec5de70e02e280bb348a4ba826696b76116732.
@@ -555,7 +573,7 @@ util/cerb_fresh.ml
 100644 ec3e5754b17377012a3df8055d4c0462812ce521818150c93d1c3ef16da60488 frontend/model/defacto_memory.lem
 100644 6b0b21a89f667513555fe8f3edaa26d67a9c0946df9ddcc7dde5ea75e322477a frontend/model/defacto_memory_aux.lem
 100644 c787451bc6aa2c5bf088d1acb0483b4c3be9fade6d889942cc91f5c4d93c03ae frontend/model/defacto_memory_types.lem
-100644 8862f4fbc2445ba81329ae1d874b8cfd7a9c7d188e47de4dfc5753e304c6df05 frontend/model/driver.lem
+100644 6cd7333fbb10895c3b1a58dabdbef6ab1865366f41e144d36030f48c6269db09 frontend/model/driver.lem
 100644 fef63c6ce9047d1a714882f93f5e5b8ea40bec483e9929cafdb9a8e8e0ab6062 frontend/model/float.lem
 100644 bea12923a5e3d19566b6d6b6acf08f0a69645b4a963141059416227d4b9f2751 frontend/model/formatted.lem
 100644 5079002023f7e22633acbd6b112f99213227475c4d19d3b1859ea388b322de80 frontend/model/fs.lem
@@ -608,7 +626,7 @@ d9fb64b8e630459b702f48590327ba060b9883f2e8dcb8aee2a4b6973117977c core_run.ml
 0043fe1a21ec09cb8dd805b47fac4dce6dc094d9b61780adefb0828963cfc656 mini_pipeline.ml
 fa725f3e09e5ae317d685fda82c4be9dcfeca9a99ed47b1ebb4f2dd6a0a343b6 symbol.ml
 97763753365c911f580751d4a73bc0e6f3adb3ce96a5f8f98e374d285c4fc6d0 translation_effect.ml
-7f4a46468889d03e9b0ad984967babbd664174124e428526230cdffb67400e92 driver.ml
+65af28c8716fea8eaf6d17a25b028deb86f12baf88ba14a070ee283471ed3e41 driver.ml
 977ee22d68c7527e500476404f5803db39a2ef2072ef9e9e34e57435c68bfd7a ctype_aux.ml
 1b3c441a39dadde45c5de8f95cee4c1210dac4de976d8864fd1529d427a948d3 core_eval.ml
 99ed4459d0058f112a3ba616565e369e4eec8a5b6a9961ff3a69de4f03f67894 translation.ml

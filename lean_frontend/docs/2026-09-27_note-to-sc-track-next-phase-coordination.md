@@ -59,6 +59,7 @@ branch · expected landing. Append-only; strike when landed.
 | Date | Track | Surface | Branch | Expected |
 |---|---|---|---|---|
 | 2026-09-29 | SC | S1 bounded step API: new SC step/lifecycle definitions in `driver.lem` (and, as needed, `core_run.lem` / `core_reduction.lem` / `core_run_aux.lem`), added alongside the unchanged sequential `drive`; no change to upstream-supported behaviour | `arc/sc-s1-*` (sub-slices named in the S1 charter) | per sub-slice; charter first |
+| 2026-09-30 | SC | S1a (implemented, not landed): `driver.lem` appended SC section + the `let inline` factoring of `driver_globals`/`drive` (bodies unchanged; thunked `driver2`); `Main.lean` one INTERNAL flag `--sc-run --sc-budget N [--sc-first]` (after `--batch`; announced against the next-phase CLI work — whichever lands second rebases); `lakefile.toml`/`test_unit.sh` one exe `sc-step-test`; `check_theorem_axioms.sh` `ENTRIES` + `FuelFormsTool.entries` gain `sc_start sc_step sc_run sc_explore`; `fork_drift_manifest.txt` (driver.lem / driver.ml pins, NOTE); new `backend/sc_probe/`, `scripts/test_sc_step.py`, `tests/sc-step/`; `LADDER.md` rows A14/B13; `CONTRACT.md` §3 concurrency row INTERNAL note. `failure_reach_register.txt` unchanged (the lifecycle sites are monadic, not register rows). | `arc/sc-s1a` | landed after its pre-merge audit and sign-off |
 
 ## What we ask of you
 

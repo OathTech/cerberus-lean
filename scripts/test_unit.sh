@@ -47,6 +47,8 @@ UNIT_TESTS=(
     # SC WP0 (2026-09-25/26): passive load/store receipts — erasure proofs + the primitive/ND
     # diagnostic; also Tier A row 13's Lean consumer. Args: fuel, iteration count, capture mode.
     "memory-access-test"
+    # SC S1a (2026-09-30): kernel laws L1-L6 of the SC step API (compile-time proofs)
+    "sc-step-test"
 )
 
 # ---------------------------------------------------------------------------
@@ -182,6 +184,15 @@ fi
 EXEC_SH="$(dirname "$PURITY_SH")/test_exec.sh"
 if ! "$EXEC_SH" --selftest; then
     echo "test_unit: test_exec verdict-extractor SELFTEST FAILED"
+    exit 1
+fi
+
+# SC S1a step lane (2026-09-30, LADDER Tier A row 14 / Tier B row 13): its hermetic
+# comparison/row-E plants (incl. P5 lane vacuity) run here; the engine rows run as their
+# own ladder rows. Fail-closed.
+SC_STEP_PY="$(dirname "$PURITY_SH")/test_sc_step.py"
+if ! python3 "$SC_STEP_PY" --selftest; then
+    echo "test_unit: test_sc_step SELFTEST FAILED"
     exit 1
 fi
 

@@ -343,3 +343,11 @@ moreLinkArgs = ["native/md5.o"]
 name = "memory-access-test"
 srcDir = "test"
 root = "Unit.MemoryAccess"
+
+# SC S1a (2026-09-30): the kernel laws L1-L6 of the bounded SC step API
+# (test/Unit/SCStepProofs.lean, statements over the generated sc_* definitions),
+# compiled on every test_unit.sh run; main reports the compiled theorem set.
+[[lean_exe]]
+name = "sc-step-test"
+srcDir = "test"
+root = "Unit.SCStep"
