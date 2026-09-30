@@ -178,8 +178,10 @@ def getFilename : Loc → Option String
   | .point pos | .region pos _ _ | .regions ((pos, _) :: _) _ => some pos.file
 
 /-- OCaml `Filename.dirname` (Unix): strip trailing slashes, then drop the
-    last component; a bare name gives "."; a root-level name gives "/". -/
-private def dirname (p : String) : String :=
+    last component; a bare name gives "."; a root-level name gives "/".
+    Public since the bug-hunt fixes S2 (2026-09-29): `Main.lean`'s import-time
+    library-location check applies the oracle's EXACT test with it. -/
+def dirname (p : String) : String :=
   let trimmed := (p.dropRightWhile (· == '/'))
   if trimmed.isEmpty then (if p.isEmpty then "." else "/")
   else
@@ -188,28 +190,50 @@ private def dirname (p : String) : String :=
 
 /-- The three library directories of `util/cerb_location.ml:512-520`,
     runtime-relative: `Cerb_runtime.in_runtime "libc/include"`, `… "libcore"`,
-    `… "libcore/impls"` — the cerberus-lib RUNTIME tree
-    (`<prefix>/lib/cerberus-lib/runtime/…`, or `<sourceroot>/runtime/…`). -/
-private def libraryDirs : List String :=
+    `… "libcore/impls"`, where the runtime is `<prefix>/lib/cerberus-lib/runtime`
+    (`util/cerb_runtime.ml:47`; `Main.resolveRuntime` builds the same string).
+    Written here with the runtime's own last component, `runtime/`, so that
+    every EXACT library directory ends with one of them (see
+    `isLibraryLocation`). -/
+def libraryDirs : List String :=
   ["runtime/libc/include", "runtime/libcore", "runtime/libcore/impls"]
 
-/-- is_library_location — util/cerb_location.ml:512-520: the location is
-    "library" iff `Filename.dirname path` IS one of the three runtime-prefixed
-    directories above (an exact string test on the oracle). Behaviour-bearing
-    on every UB-location path: `core_eval.lem:602` and `core_run.lem:476`
-    substitute the enclosing C location for a library-located UB, and
-    `core_run.lem:781` refuses to overwrite a thread's `current_loc` with a
-    library location.
-    MIRROR WITH ONE DOCUMENTED RESIDUAL (zero-discrepancy Z-67, charter
-    §2.7): the Lean process has no `Cerb_runtime` — the runtime ROOT is not
-    plumbed — so the directory is tested to END WITH the runtime-relative
-    path (or equal it when relative, as for the `runtime/libcore/std.core`
-    Main.findRuntimeDir loads). The oracle's own paths always satisfy this
-    (the cpp step prefixes header locations with the same runtime tree the
-    `--cabs-json` bridge hands us); the residual is a USER file under a
-    directory literally named `runtime/libcore` (or the other two), which
-    Lean classifies library and the oracle does not. Mover: plumb the
-    runtime root from Main (the CerbGlobal parameter-plumbing slice).
+/-- The SUFFIX test `isLibraryLocation` applies to a file path: its
+    `Filename.dirname` equals one of `libraryDirs` or ends with `/` + one. -/
+def isLibraryPathSuffix (path : String) : Bool :=
+  let dir := dirname path
+  libraryDirs.any (fun d => dir == d || dir.endsWith ("/" ++ d))
+
+/-- is_library_location — util/cerb_location.ml:512-523: the location is
+    "library" iff `Filename.dirname path` IS one of the three runtime
+    directories `<runtime>/libc/include`, `<runtime>/libcore`,
+    `<runtime>/libcore/impls` (an exact string test on the oracle).
+    Behaviour-bearing on every UB-location path: `core_eval.lem:602` and
+    `core_run.lem:477` substitute the enclosing C location for a
+    library-located UB, and `core_run.lem:782` refuses to overwrite a
+    thread's `current_loc` with a library location.
+
+    This function is a pure `target_rep` called from generated code, and the
+    runtime root is a property of the driver invocation, so the function
+    tests the directory SUFFIX (`isLibraryPathSuffix`) instead of the exact
+    directory. The two tests agree on every input the driver ACCEPTS (bug
+    hunt BUG-3, `docs/2026-09-29_discrepancy-bug-hunt.md`; fixed 2026-09-29,
+    record `docs/2026-09-29_bug-hunt-fixes-record.md` §S2):
+    - exact ⇒ suffix: the runtime `Main.resolveRuntime` builds always ends in
+      `/runtime` (`<prefix>/lib/cerberus-lib/runtime`), so each exact
+      directory ends with `/` + a `libraryDirs` entry;
+    - suffix ⇒ exact on accepted inputs: `Main.lean` refuses the run
+      (`refuseLibraryLocations`, exit 2, attributed) when any file path of
+      the imported Cabs locations (user TUs and libc metadata TUs) passes
+      the suffix test and fails the exact one; the only other file-carrying
+      locations are the ones `CoreParser.parseLibraryFile` stamps on
+      `std.core` and the `.impl` file, whose paths `Main.runPipeline` builds
+      as `<runtime>/libcore/std.core` and `<runtime>/libcore/impls/….impl`
+      (exact by construction). The `--libc` dump's bodies carry no file
+      (`CoreParser.parseFile` erases their positions; recorded Z1-A1).
+    This replaces the earlier documented residual Z-67 (a user file under a
+    directory literally named `runtime/libcore` was library-classified by
+    Lean and not by the oracle; the witness now refuses).
     The previous implementation matched ANY path segment equal to
     `libcore`/`include`/`impls` — a user file under any `include/` directory
     was library-classified (wrong), and std.core itself was never classified
@@ -217,9 +241,7 @@ private def libraryDirs : List String :=
 def isLibraryLocation (loc : Loc) : Bool :=
   match getFilename loc with
   | none => false
-  | some path =>
-    let dir := dirname path
-    libraryDirs.any (fun d => dir == d || dir.endsWith ("/" ++ d))
+  | some path => isLibraryPathSuffix path
 
 /-! ## String conversion
     Corresponds to: cerb_location.ml:188-237 (location_to_string) and

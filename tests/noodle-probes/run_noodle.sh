@@ -63,7 +63,7 @@ for F in "${FILES[@]}"; do
     "${CAPPED[@]}" timeout "${TIMEOUT_SECS}s" "$CERB" --runtime="$RUNTIME" --cabs-json "$F" > "$json" 2>"$json.err" || json_ok=false
     lean_exit=0
     if $json_ok; then
-        lean_out=$( "${CAPPED[@]}" env LEAN_ABORT_ON_PANIC=1 timeout "${TIMEOUT_SECS}s" "$LEAN" --batch ${LEAN_ARGS[@]+"${LEAN_ARGS[@]}"} "$json" 2>&1 ) || lean_exit=$?
+        lean_out=$( "${CAPPED[@]}" env LEAN_ABORT_ON_PANIC=1 timeout "${TIMEOUT_SECS}s" "$LEAN" --batch --runtime="$RUNTIME" ${LEAN_ARGS[@]+"${LEAN_ARGS[@]}"} "$json" 2>&1 ) || lean_exit=$?
         lean_out=$(printf '%s\n' "$lean_out" | grep -v 'cerberus-lean-proj env:')
     else
         lean_out="(cabs-json failed: $(head -c 200 "$json.err" | tr '\n' ' '))"; lean_exit=98

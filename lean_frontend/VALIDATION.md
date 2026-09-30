@@ -403,9 +403,31 @@ and payload bits in memory). Nothing else.
   exits 1 where the oracle prints nothing and exits 0 — a DECLARED loud
   boundary (a silent success with no verdict is the fail-open shape the
   working practices ban; the oracle's behaviour is a tray candidate).
+- *Runtime resolution* (bug hunt BUG-2, fixed 2026-09-29,
+  `docs/2026-09-29_bug-hunt-fixes-record.md` §S2): `std.core` and the
+  `.impl` file come from `--runtime DIR` or `CERB_INSTALL_PREFIX`
+  (runtime = `DIR/lib/cerberus-lib/runtime`, the oracle's SPECIFIED and
+  ENV_VAR arms, `util/cerb_runtime.ml:38-56`); without either the driver
+  REFUSES (exit 2, `cerberus-lean: refused — runtime: …`). The oracle's
+  OPAM arm (`OPAM_SWITCH_PREFIX` or the build-tree source root) is
+  deliberately not mirrored: a shared switch's runtime can differ silently
+  from the checkout's. An empty value is refused (the oracle would resolve
+  it against the working directory). The working directory is never
+  searched (it used to be, first `runtime/libcore/std.core` found wins).
+  Witnesses: `scripts/check_runtime_resolution.sh` (row 1).
+- *Library-location classification outside the runtime* (bug hunt BUG-3,
+  fixed 2026-09-29, same record): a Cabs location whose directory ends in
+  `runtime/libcore`, `runtime/libcore/impls` or `runtime/libc/include`
+  but is not that directory of THIS run's runtime is REFUSED at import
+  (exit 2, `cerberus-lean: refused — library-location classification: …`).
+  The oracle tests exact equality (`util/cerb_location.ml:512-523`); the
+  port's pure `CerbLocation.isLibraryLocation` tests the suffix, and the
+  refusal makes the two agree on every served run. A cabs-json exported
+  under a different runtime prefix refuses the same way (its `builtins.h`
+  location). Witnesses: the same script.
 - *Accepted command line:* `--batch | --pp-core | --parse-core` (argv[0]),
   `--first`, `--stdin`, `--libc <core>`/`--libc-tu <json>`, `--call <f>`
-  [`--call-args`], `--args <str>`, `--trace-nodes`, `--fuel <N>`, `--address-space-top <N>`
+  [`--call-args`], `--args <str>`, `--trace-nodes`, `--runtime <DIR>` / `--runtime=<DIR>`, `--fuel <N>`, `--address-space-top <N>`
   (address-space-bound slice, 2026-09-17: the run's address-space top, a positive
   integer; absent = upstream's value; 0 or a non-numeral refused, exit 2 — §7); any
   other `--` token, or a known flag out of its canonical position, is
@@ -778,6 +800,7 @@ theorem over the shipped pipeline `@drive ⟨fuel⟩` at the ambient
 | `check_fixture_freeze.sh` | the `corpus/` differential-fixture set matches its hash manifest exactly (additions included) |
 | `check_failure_reach.sh` | **the failure-reach register gate** (fuel-pending close-out 2026-09-08 — option C of the pure-failure reachability census `docs/2026-09-07_pure-failure-reachability-census.md`; the TRIPWIRE the parked twin design `docs/2026-09-07_pure-failure-correspondence-design.md` names): rebuilds the one-module declaration-dependency instrument `tests/failure-probes/FailureReach.lean` (fresh scratch Lake package, ~6 s), takes the lexical census (`scripts/failure_census.py`) and requires every PURE `failwithI`/`panic!` site of the exec dependency closure (231) + every pure site with an unresolved kernel owner (2) to equal a row of `scripts/failure_reach_register.txt` — same position class (the census's token-level classifier `scripts/failure_position.py`), the census's reviewed reach class (166 UNREACHABLE-BY-INVARIANT / 48 REACHABLE / 17 UNKNOWN; the 2 unresolved rows UNKNOWN), sealed rows — both directions; RED naming the rows on a NEW site, a stale row, a moved position class, a DISCARDABLE generated let-binding (the F1 shape: a dead binding of a failure — today 0) or an unsealed class edit. Reach classes are reviewed claims (an invariant NAME with a cite, or a witness under `tests/failure-probes/reach/`), not theorems; the closure is a kernel constant-dependency closure, not a path. `--selftest` plants five cases on scratch copies (a new site in a generated exec-closure definition, a dead let, an unsealed class edit, a phantom row, an edited tally) |
 | `test_renumber_plants.sh` | the rebaseline-admission instrument (`check_renumber_only.py`) refuses what it must: committed adversarial pairs (string-content/comment-boundary holes + count/token/order plants) fail, positive controls admit with their declared class |
+| `check_runtime_resolution.sh --selftest` | the driver's runtime is the oracle's (`--runtime DIR` / `CERB_INSTALL_PREFIX`), never the working directory, and a missing runtime or a suffix-library-but-not-exact location refuses (bug hunt BUG-2/BUG-3, 2026-09-29; §3(c)); plants: a runtime-ignoring stub and a refuse-everything stub must fail it |
 
 Certification-integrity rules ride the gates: validation of
 build-rule-affecting changes is cache-disabled from re-derived

@@ -212,9 +212,21 @@ opam exec --switch=. -- ./scripts/test_golden.sh 001-return-literal  # run one f
 ### End-to-end pipeline test
 
 ```bash
-opam exec --switch=. -- ./scripts/cerberus --cabs-json test.c > test.json
-(cd lean_frontend && .lake/build/bin/cerberus-lean ../test.json)
+opam exec --switch=. -- _build/default/backend/driver/main.exe \
+    --runtime=_build/install/default --cabs-json test.c > test.json
+LEAN_ABORT_ON_PANIC=1 lean_frontend/.lake/build/bin/cerberus-lean \
+    --runtime=_build/install/default test.json
 ```
+
+The driver's runtime (`std.core`, the `.impl` file) is `--runtime DIR` or
+`CERB_INSTALL_PREFIX` (runtime = `DIR/lib/cerberus-lib/runtime`, the
+oracle's `util/cerb_runtime.ml` arms); without either it refuses (exit 2).
+It never searches the working directory, and the oracle's
+`OPAM_SWITCH_PREFIX` fallback is deliberately not mirrored (bug hunt BUG-2,
+`docs/2026-09-29_bug-hunt-fixes-record.md`). Give it the prefix the
+cabs-json was exported with: a location under another runtime's library
+directories is refused (BUG-3). `scripts/common.sh` exports
+`CERB_INSTALL_PREFIX` for every lane.
 
 ## IMPORTANT: Hand-written files must be copied to `generated/`
 
@@ -280,7 +292,7 @@ a binary built from the old copy.
 | `CerbCoreMeasure.lean` | The executable fuel MEASURE of the `get_ctx`/`get_ctx_unseq_aux` context-search block (`getCtxBound`: the block's call DEPTH, a structural definition over the Core AST — one unit per worker frame, the maximum over the possible children; fuel-measure-cost arc, landed 2026-09-08) with its `getCtxNext` specification and the `getCtxBound_pos`/`getCtxBound_child_lt` lemmas; imported by the generated `Core_reduction` via `declare {lean} extra_import` — the qualified-helper form lem's FM-free measure validator accepts (no macro, no `WellFounded.fix`) |
 | `CerbMeasureLemmas.lean` | The shared toolbox of those proofs: membership-relative congruences, the derived list helpers' member bounds, positivity, `unatomic_size_le`, the `size_lt` discharger and the bounded `to_congr` descent (C2) |
 | `CerbMem_lemMeasureProofs.lean` | The hand-written MEASURED seams' sufficiency theorems: `CerbMem.typeofMval/unqualifyAndUnatomic/memValueToBytes_measure_sufficient` and the six layout/reconstruct obligations under `CerbTagsWf.Acyclic`/`AcyclicPair` (rows 1–6 of `scripts/fuel_hypotheses.txt`), same shape and namespace rule as the generated ones — the fuel-forms gate classifies them by the same rule. A Lake root NOTHING imports: built by `build_lean` (every root, 2026-09-20) and by the fuel-forms gate itself (H1, every carrier it imports) — it did not compile from seam-hygiene H1 to 2026-09-20 while its stale `.olean` was imported (hotfix `fix/fuel-forms-carriers`, `docs/2026-09-20_fuel-forms-carriers-hotfix-record.md`). The reconstruct proof needs no equation about the opaque failure leaves: `reconstructValue_lemFuel`'s struct/union arms guard the tag lookup / select the union member BEFORE recursing (option (d)), so every leaf is a whole, fuel-independent result |
-| `Main.lean` | Driver: self-test, parse, desugar pipeline; `--fuel N` (the ONE fuel numeral: `defaultFuel` = 10^8, the harness default; the run's `[LemFuel]` instance is built once here); `--address-space-top N` (the ONE address-space numeral: `defaultAddressSpaceTop` = upstream's `0xFFFFFFFFFFFF`, passed to BOTH entry points — `desugar` for the const-expr mini-run and `initial_driver_state` for the run; address-space-bound slice 2026-09-17); D-S (2026-09-22): `runDigest tunits` (pure selector in `CabsImport.lean`) chooses the last program TU, empty without one; forwarded to `initial_driver_state sup top digest file fs` (digest is the second explicit parameter after top) and `CerbCall.driveCall` |
+| `Main.lean` | Driver: self-test, parse, desugar pipeline; `--runtime DIR` / `CERB_INSTALL_PREFIX` (the oracle's runtime arms, `resolveRuntime`; refuses without one — bug hunt BUG-2, 2026-09-29) and the import-time library-location refusal (`refuseLibraryLocations`, BUG-3); `--fuel N` (the ONE fuel numeral: `defaultFuel` = 10^8, the harness default; the run's `[LemFuel]` instance is built once here); `--address-space-top N` (the ONE address-space numeral: `defaultAddressSpaceTop` = upstream's `0xFFFFFFFFFFFF`, passed to BOTH entry points — `desugar` for the const-expr mini-run and `initial_driver_state` for the run; address-space-bound slice 2026-09-17); D-S (2026-09-22): `runDigest tunits` (pure selector in `CabsImport.lean`) chooses the last program TU, empty without one; forwarded to `initial_driver_state sup top digest file fs` (digest is the second explicit parameter after top) and `CerbCall.driveCall` |
 
 ### Lem modifications (in `frontend/model/`)
 

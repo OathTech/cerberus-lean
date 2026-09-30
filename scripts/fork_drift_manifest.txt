@@ -1,3 +1,7 @@
+# bug-hunt fixes S2, 2026-09-29 [AGENT; [USER 2026-09-29] "Agree on everything, yes on the fixes"; single row + this NOTE, no --refresh]:
+# scripts/common.sh exports CERB_INSTALL_PREFIX = the oracle's --runtime prefix, the Lean driver's runtime since BUG-2
+# (lean_frontend/docs/2026-09-29_bug-hunt-fixes-record.md §S2). No oracle source or generated-code change.
+# scripts/common.sh: 0f02d01c0f3655223d7d9561f8629c464d9a144aa5fdb6fbcda9d8034e5468ae -> 3ef7b1ae734b9ce5730fd0b09fa19e63a3cda03c10a88c46d44e06620df24ad0
 # public-readiness SWEEP, 2026-09-25 [AGENT; [USER 2026-09-25] "Great, go ahead with the whole merge and sweep as proposed"]: [meta] lem-pin 67ec5de7 -> c2a68e79
 # (lem-lean sweep: LemLib comment-only rationale for never_extract (T1), NOTICE line (T3), record addendum (T2), the two delta-review docs; NO generated-code change — both trees byte-identical). Single line + this NOTE, no --refresh.
 # Public-readiness follow-up single re-pin (2026-09-25): 6b20bfd02de924d078725efa96c6675115b8b17a -> 67ec5de70e02e280bb348a4ba826696b76116732.
@@ -591,7 +595,7 @@ util/cerb_fresh.ml
 100644 cf6fbe0be7dae96f6ce2c8cf7d7013b89d350da563e5179be8a2bb298d7ee24a runtime/libcore/impls/i686-apple-darwin10-gcc-4.2.1.impl
 100644 6f78799f7d7ad93d2dcccd9487004e0e5f742f550f691825c1af878ee9278d11 runtime/libcore/std.core
 100644 7eb4628819de61b5ca997209df88f09545553606f8d8305e530b954093820850 runtime/libcore/std_inner_arg_temps.core
-100755 0f02d01c0f3655223d7d9561f8629c464d9a144aa5fdb6fbcda9d8034e5468ae scripts/common.sh
+100755 3ef7b1ae734b9ce5730fd0b09fa19e63a3cda03c10a88c46d44e06620df24ad0 scripts/common.sh
 100755 50ad201912960d4fffed4a1a9b53754df5f10a24e9a012bb000b746dd2a605f8 tools/check_driver_fresh.sh
 100755 98b24dd3dc65258ed8e10e019e5efb5c329501321f1b5b247190fc3163ad245c tools/check_handwritten_sync.sh
 100755 e05d28ddb60e82f04da68f36100337d4333cd34010c4b7e6ef8be999f8365ce5 tools/check_lem_sync.sh

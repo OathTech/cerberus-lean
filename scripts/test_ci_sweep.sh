@@ -141,7 +141,9 @@ fi
 
 RUNTIME_DIR="$PROJECT_ROOT/_build/install/default"
 [[ -d "$RUNTIME_DIR" ]] || { echo "Error: runtime dir not found: $RUNTIME_DIR" >&2; exit 1; }
-[[ -f "$PROJECT_ROOT/runtime/libcore/std.core" ]] || { echo "Error: std.core not found" >&2; exit 1; }
+# the Lean side's runtime (bug-hunt BUG-2): common.sh's CERB_INSTALL_PREFIX = the oracle's --runtime
+[[ "${CERB_INSTALL_PREFIX:-}" == "$RUNTIME_DIR" && -f "$RUNTIME_DIR/lib/cerberus-lib/runtime/libcore/std.core" ]] \
+    || { echo "Error: Lean runtime CERB_INSTALL_PREFIX=${CERB_INSTALL_PREFIX:-<unset>} is not $RUNTIME_DIR, or its std.core is missing" >&2; exit 1; }
 
 mkdir -p "$OUT_DIR" || { echo "Error: cannot create $OUT_DIR" >&2; exit 1; }
 WORK_DIR=$(mktemp -d "$TMP_DIR/ci-sweep.XXXXXXXXXX") || { echo "Error: mktemp failed" >&2; exit 1; }

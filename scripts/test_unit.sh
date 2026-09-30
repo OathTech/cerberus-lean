@@ -383,3 +383,16 @@ if ! "$CLI_REFUSALS_SH"; then
     echo "test_unit: CLI refusal witnesses FAILED"
     exit 1
 fi
+
+# Runtime resolution + library-location witnesses (bug hunt 2026-09-29, BUG-2
+# and BUG-3; record docs/2026-09-29_bug-hunt-fixes-record.md §S2): the driver
+# loads std.core/.impl only from `--runtime DIR` or CERB_INSTALL_PREFIX (the
+# oracle's arms), never from the working directory; refuses otherwise; and
+# refuses a Cabs location whose directory is suffix-library but not
+# exact-library. --selftest first runs the witnesses against two plant
+# drivers (one ignores the runtime, one refuses everything); both must fail.
+RUNTIME_RES_SH="$(dirname "$PURITY_SH")/check_runtime_resolution.sh"
+if ! "$RUNTIME_RES_SH" --selftest; then
+    echo "test_unit: runtime-resolution witnesses FAILED"
+    exit 1
+fi

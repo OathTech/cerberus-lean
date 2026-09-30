@@ -96,7 +96,7 @@ for F in "${FILES[@]}"; do
         json=$(mktemp "$ROOT/.tmp/pd/dynaddr.XXXXXX.json")
         if "${CAPPED[@]}" timeout "${TIMEOUT_SECS}s" "$CERB" --runtime="$RUNTIME" --cabs-json "$F" > "$json" 2>"$json.err"; then
             for mode in "" "--first"; do
-                rc=0; out=$( "${CAPPED[@]}" env LEAN_ABORT_ON_PANIC=1 timeout "${TIMEOUT_SECS}s" "$LEAN" --batch $mode ${LEAN_LIBC[@]+"${LEAN_LIBC[@]}"} "$json" 2>&1 ) || rc=$?
+                rc=0; out=$( "${CAPPED[@]}" env LEAN_ABORT_ON_PANIC=1 timeout "${TIMEOUT_SECS}s" "$LEAN" --batch $mode --runtime="$RUNTIME" ${LEAN_LIBC[@]+"${LEAN_LIBC[@]}"} "$json" 2>&1 ) || rc=$?
                 echo "--- LEAN --batch${mode:+ $mode} exit=$rc"; printf '%s\n' "$out" | strip | head -6
             done
         else

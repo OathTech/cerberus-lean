@@ -121,7 +121,8 @@ RUNTIME_DIR="$PROJECT_ROOT/_build/install/default"
 OUTPUT_DIR=$(mktemp -d "$TMP_DIR/elab-test.XXXXXXXXXX") || { echo "HARNESS ERROR: mktemp failed" >&2; exit 1; }
 register_cleanup "$OUTPUT_DIR"
 
-# The Lean binary locates runtime/libcore relative to cwd
+# cwd no longer matters to the Lean driver (bug-hunt BUG-2, 2026-09-29): its
+# runtime is CERB_INSTALL_PREFIX, exported by common.sh = the oracle's --runtime
 cd "$PROJECT_ROOT" || { echo "HARNESS ERROR: cannot cd to $PROJECT_ROOT" >&2; exit 1; }
 
 declare -a TEST_FILES=()

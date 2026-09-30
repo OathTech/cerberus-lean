@@ -22,8 +22,10 @@ expect_refused() {  # $1=flag $2=feature substring
 expect_refused "--concurrency" "concurrency is not supported"
 expect_refused "--switches=PNVI_ae_udi" "semantics switches"
 expect_refused "--switches=strict_pointer_arith" "semantics switches"
-# control: no refused flag → not a refusal
-out=$(env LEAN_ABORT_ON_PANIC=1 "$BIN" --batch "$INPUT" 2>&1); rc=$?
+# control: no refused flag → not a refusal. The runtime is given explicitly
+# (the driver refuses without one since bug-hunt BUG-2, 2026-09-29), so the
+# control reaches the input read and fails there, unrefused.
+out=$(env LEAN_ABORT_ON_PANIC=1 "$BIN" --batch --runtime="$SCRIPT_DIR/../_build/install/default" "$INPUT" 2>&1); rc=$?
 if [[ "$out" == *"cerberus-lean: refused"* ]]; then
     echo "check_cli_refusals: FAIL — control refused without a refused flag (rc=$rc): ${out:0:200}"
     fails=$((fails + 1))

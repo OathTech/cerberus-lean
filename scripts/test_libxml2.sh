@@ -96,7 +96,8 @@ $RECORD_BASELINE || [[ -f "$BASELINE" ]] || fail "baseline not found: $BASELINE 
 mkdir -p "$OBSERVATION_RUN_DIR" || fail "cannot create raw evidence directory"
 OUTPUT_DIR=$(mktemp -d "$OBSERVATION_RUN_DIR/libxml2-test.XXXXXXXXXX") || fail "mktemp failed"
 
-# Lean binary locates runtime/libcore relative to cwd
+# cwd no longer matters to the Lean driver (bug-hunt BUG-2, 2026-09-29): its
+# runtime is CERB_INSTALL_PREFIX, exported by common.sh = the oracle's --runtime
 cd "$PROJECT_ROOT" || fail "cannot cd to $PROJECT_ROOT"
 
 echo ""

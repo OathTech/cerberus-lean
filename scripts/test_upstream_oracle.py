@@ -618,7 +618,8 @@ def run_lean(directory, case, fork_side, env, limit, libc_args):
         shutil.copyfile(record['capture'] + '.stdout', json_path)
         jsons.append(str(json_path))
     args = [*case.lean['args'], *(libc_args if case.lean.get('libc') else []), *jsons]
-    lean_env = {**env, 'LEAN_ABORT_ON_PANIC': '1'}
+    # the Lean driver's runtime = the fork bridge's --runtime above (bug-hunt BUG-2, 2026-09-29)
+    lean_env = {**env, 'LEAN_ABORT_ON_PANIC': '1', 'CERB_INSTALL_PREFIX': str(fork_side['runtime'])}
     record = capture(directory / 'lean', [LEAN_BIN, *args], lean_env, limit, wrapper)
     return {'status': None, 'reason': '', 'bridges': bridges, 'lean': record}
 

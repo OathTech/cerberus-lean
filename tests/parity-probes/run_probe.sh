@@ -66,7 +66,7 @@ observation_capture "$EVIDENCE/bridge" "${CAPPED[@]}" timeout "${TIMEOUT_SECS}s"
 lean_exit=0
 if $json_ok; then
     lean_out=$(observation_capture "$EVIDENCE/lean" "${CAPPED[@]}" env LEAN_ABORT_ON_PANIC=1 timeout "${TIMEOUT_SECS}s" \
-        "$LEAN" --batch ${LEAN_ARGS[@]+"${LEAN_ARGS[@]}"} "$json") || lean_exit=$?
+        "$LEAN" --batch --runtime="$RUNTIME" ${LEAN_ARGS[@]+"${LEAN_ARGS[@]}"} "$json") || lean_exit=$?
 else
     lean_out="(cabs-json failed)"; lean_exit=98
 fi

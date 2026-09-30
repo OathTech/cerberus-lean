@@ -473,17 +473,92 @@ def ppCoreSignature (coreFile : file Unit) : IO Unit := do
 
 /-! ## Pipeline -/
 
-def findRuntimeDir : IO String := do
-  -- Check common locations
-  let candidates := [
-    "runtime/libcore",        -- from project root
-    "../runtime/libcore",     -- from lean_frontend
-    "../../runtime/libcore"   -- from deeper
-  ]
-  for dir in candidates do
-    if ← System.FilePath.pathExists (dir ++ "/std.core") then
-      return dir
-  throw (IO.Error.userError "cannot find runtime/libcore/std.core — set working directory to project root")
+/-- OCaml `Filename.concat` (Unix, `stdlib/filename.ml`): `dir ^ file` when
+    `dir` is empty or ends with `/`, otherwise `dir ^ "/" ^ file`. The
+    oracle builds every runtime path with it (`util/cerb_runtime.ml:9`), and
+    the library-location test compares those paths as STRINGS
+    (`util/cerb_location.ml:512-523`), so the port builds them the same way. -/
+def filenameConcat (dir file : String) : String :=
+  if dir.isEmpty || dir.endsWith "/" then dir ++ file else dir ++ "/" ++ file
+
+/-- The runtime a `--runtime DIR` / `CERB_INSTALL_PREFIX` prefix denotes:
+    `util/cerb_runtime.ml:47` `prefix / "lib" / pkg / "runtime"` with
+    `pkg = "cerberus-lib"` (`:3`); `in_runtime` then appends the path
+    (`:76-84`; the source-root arm applies only to the OPAM fallback, `:44-49`,
+    which this port does not mirror — see `resolveRuntime`). -/
+def runtimeOfPrefix (pfx : String) : String :=
+  filenameConcat (filenameConcat (filenameConcat pfx "lib") "cerberus-lib") "runtime"
+
+/-- REFUSE (exit 2, attributed) — the runtime-resolution boundary. -/
+def refuseRuntime (what : String) : IO α := do
+  IO.eprintln s!"cerberus-lean: refused — runtime: {what} (see VALIDATION.md, bug hunt BUG-2)"
+  IO.Process.exit 2
+
+/-- The runtime root `resolveRuntime` selects (before its existence check). -/
+def resolveRuntimeRoot (cli : Option String) : IO String := do
+  match cli with
+  | some "" => refuseRuntime "--runtime was given an empty directory; the oracle would resolve `lib/cerberus-lib/runtime` against the working directory, which this port refuses to do"
+  | some d => return runtimeOfPrefix d
+  | none =>
+    match ← IO.getEnv "CERB_INSTALL_PREFIX" with
+    | some "" => refuseRuntime "CERB_INSTALL_PREFIX is set but empty; the oracle would resolve `lib/cerberus-lib/runtime` against the working directory, which this port refuses to do"
+    | some d => return runtimeOfPrefix d
+    | none =>
+      refuseRuntime "no runtime given: pass --runtime DIR (runtime = DIR/lib/cerberus-lib/runtime, as the oracle's --runtime) or set CERB_INSTALL_PREFIX; the oracle's OPAM_SWITCH_PREFIX fallback is deliberately NOT mirrored (a shared switch's runtime can differ silently from the checkout's), and the working directory is never searched"
+
+/-- Runtime resolution — mirror of `util/cerb_runtime.ml:38-56`
+    `detect_runtime`, bug-hunt BUG-2 (2026-09-29; record
+    `docs/2026-09-29_bug-hunt-fixes-record.md` §S2). The driver used to probe
+    `runtime/libcore`, `../runtime/libcore` and `../../runtime/libcore`
+    relative to the CURRENT DIRECTORY and load the first `std.core` found,
+    unpinned: a different `std.core` in the working directory was used
+    silently.
+    - `--runtime DIR` (the oracle's `-r` / `--runtime DIR`, `backend/driver/main.ml:436-438`,
+      stored in `Cerb_runtime.specified_runtime` at `:106`) has the highest
+      priority: the `SPECIFIED` arm, runtime = `DIR/lib/cerberus-lib/runtime`.
+    - otherwise the `CERB_INSTALL_PREFIX` environment variable: the `ENV_VAR`
+      arm, the same construction.
+    - DELIBERATE DIVERGENCE (bug-hunt fixes S2, [USER 2026-09-29] "Agree on
+      everything, yes on the fixes"): the oracle's last arm, `OPAM` — the
+      runtime of the switch in `OPAM_SWITCH_PREFIX`, or the build-tree source
+      root found through `PATH` (`:21-30`) — is NOT mirrored. The run is
+      REFUSED instead: a shared switch's runtime can differ silently from the
+      runtime the oracle of a given checkout uses, which is the BUG-2 shape
+      again.
+    - DELIBERATE DIVERGENCE (same ruling, fail-closed): an EMPTY value (either
+      source) is refused. The oracle would build the relative
+      `lib/cerberus-lib/runtime`, i.e. resolve the runtime against the
+      working directory, which is the lookup BUG-2 removed.
+    Every harness passes the oracle's runtime: `scripts/common.sh` exports
+    `CERB_INSTALL_PREFIX` = the prefix of its `--runtime=` oracle argument. -/
+def resolveRuntime (cli : Option String) : IO String := do
+  let rt ← resolveRuntimeRoot cli
+  -- pipeline.ml:36-37 (the oracle's own existence check at stdlib load):
+  -- checked here, before any input is read, so a wrong runtime is named as such
+  let stdCore := filenameConcat (filenameConcat rt "libcore") "std.core"
+  unless ← System.FilePath.pathExists stdCore do
+    refuseRuntime s!"couldn't find the Core standard library file (looked at: `{stdCore}'); the runtime was resolved from {if cli.isSome then "--runtime" else "CERB_INSTALL_PREFIX"} as DIR/lib/cerberus-lib/runtime"
+  return rt
+
+/-- The runtime's three library directories, exactly as the oracle's
+    `is_library_location` builds them (`util/cerb_location.ml:514-517`:
+    `Cerb_runtime.in_runtime "libc/include"`, `"libcore"`, `"libcore/impls"`). -/
+def runtimeLibraryDirs (runtime : String) : List String :=
+  ["libc/include", "libcore", "libcore/impls"].map (filenameConcat runtime)
+
+/-- Bug-hunt BUG-3 (2026-09-29): the import-time half of the library-location
+    mirror (see `CerbLocation.isLibraryLocation`). A file path of the imported
+    Cabs locations that passes the port's SUFFIX test but not the oracle's
+    EXACT test (`Filename.dirname path` ∈ `runtimeLibraryDirs runtime`) would
+    be library-classified by Lean only, and the UB location would differ: the
+    run is REFUSED (exit 2, attributed). Afterwards the suffix test equals the
+    exact test on every file the run can carry. -/
+def refuseLibraryLocations (runtime : String) (source : String) (files : Array String) : IO Unit := do
+  let exact := runtimeLibraryDirs runtime
+  for f in files do
+    if CerbLocation.isLibraryPathSuffix f && !exact.contains (CerbLocation.dirname f) then
+      IO.eprintln s!"cerberus-lean: refused — library-location classification: {source} carries a source location in `{f}`, whose directory ends in one of {CerbLocation.libraryDirs} but is not one of this run's runtime library directories {exact}; the oracle classifies a location as library code by EXACT directory equality with its runtime (util/cerb_location.ml:512-523), this port's pure CerbLocation.isLibraryLocation by the directory suffix, so answering could serve a different UB location (see VALIDATION.md, bug hunt BUG-3)"
+      IO.Process.exit 2
 
 /-- Per-TU frontend: desugar → typecheck → translate, under the TU's own
     digest (set by the caller). Mirror of the OCaml per-file frontend
@@ -612,7 +687,7 @@ def frontendTU [LemFuel] (quiet : Bool) (supply : Nat) (addressSpaceTop : Int)
 
 /-- Load and assemble the libc library Core file (see the module note at
     "C-libc loading" above). -/
-def loadLibc [LemFuel] (quiet : Bool) (supply0 : Nat) (addressSpaceTop : Int)
+def loadLibc [LemFuel] (runtime : String) (quiet : Bool) (supply0 : Nat) (addressSpaceTop : Int)
     (coreEvalStuff : Fmap String sym × fun_map Unit × impl)
     (ailnames : Fmap String sym) (stdFunMap : fun_map Unit) (coreImpl : impl)
     (libcCorePath : String) (libcTuJsons : List String) :
@@ -645,8 +720,10 @@ def loadLibc [LemFuel] (quiet : Bool) (supply0 : Nat) (addressSpaceTop : Int)
   let mut supply := supply0
   for j in libcTuJsons do
     let content ← IO.FS.readFile ⟨j⟩
-    let (digest, tunit) ← match CabsImport.parseJson content with
-      | .ok t => pure t
+    let (digest, tunit) ← match CabsImport.parseJsonWithFiles content with
+      | .ok (d, t, files) => do
+        refuseLibraryLocations runtime s!"the libc metadata TU {j}" files
+        pure (d, t)
       | .error e => return (← bail s!"cabs-json parse error in {j}: {e}")
     let _ ← (CerberusFresh.setDigestIO digest : BaseIO Unit)
     match ← frontendTU true supply addressSpaceTop coreEvalStuff ailnames stdFunMap coreImpl tunit with
@@ -881,7 +958,7 @@ def loadLibc [LemFuel] (quiet : Bool) (supply0 : Nat) (addressSpaceTop : Int)
     `ppCoreSignature`); the default human-readable mode is unchanged (and
     keeps its historical exit-code behavior: 0 even on semantic stage
     failures). -/
-def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
+def runPipeline [LemFuel] (runtime : String) (batch : Bool) (ppCore : Bool)
     (firstTrace : Bool)
     -- the address-space top (address-space-bound slice, 2026-09-17): ONE value for
     -- both entry points — the desugarer's const-expr mini-run (via frontendTU →
@@ -907,9 +984,15 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
   -- the prelude parse happens before any Cerb_fresh.set_digest)
   say "  loading core stdlib..."
   -- Z-01: the library file is stamped with its path so that
-  -- CerbLocation.isLibraryLocation holds for its nodes (pipeline.ml:29-34
-  -- loads `in_runtime "libcore" / std.core`; core_parser.mly:1571 regions)
-  let stdCorePath := runtimeDir ++ "/std.core"
+  -- CerbLocation.isLibraryLocation holds for its nodes (pipeline.ml:29-35
+  -- loads `Filename.concat (in_runtime "libcore") "std.core"`;
+  -- core_parser.mly:1571 regions). Bug-hunt BUG-2 (2026-09-29): the path is
+  -- built from the resolved runtime exactly as the oracle builds it, so the
+  -- stamp is also the oracle's string (the exact library test holds).
+  let stdCorePath := filenameConcat (filenameConcat runtime "libcore") "std.core"
+  -- pipeline.ml:36-37: the oracle reports a missing stdlib as an error
+  unless ← System.FilePath.pathExists stdCorePath do
+    refuseRuntime s!"couldn't find the Core standard library file (looked at: `{stdCorePath}'); the runtime was resolved from --runtime / CERB_INSTALL_PREFIX (DIR/lib/cerberus-lib/runtime)"
   let stdContent ← IO.FS.readFile stdCorePath
   let stdFile ← match CoreParser.parseLibraryFile stdCorePath stdContent with
     | .ok f => pure f
@@ -923,8 +1006,12 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
 
   -- Load implementation file
   say "  loading implementation..."
-  -- pipeline.ml:47 `impls/<impl>.impl` under the same runtime tree (Z-01)
-  let implPath := runtimeDir ++ "/impls/gcc_4.9.0_x86_64-apple-darwin10.8.0.impl"
+  -- pipeline.ml:47 `Filename.concat (core_stdlib_path ()) ("impls/" ^ impl_name ^ ".impl")`
+  -- under the same runtime tree (Z-01; BUG-2 as above)
+  let implPath := filenameConcat (filenameConcat runtime "libcore") "impls/gcc_4.9.0_x86_64-apple-darwin10.8.0.impl"
+  -- pipeline.ml:48-49: missing impl file is an error on the oracle too
+  unless ← System.FilePath.pathExists implPath do
+    refuseRuntime s!"couldn't find the implementation file (looked at: `{implPath}')"
   let implContent ← IO.FS.readFile implPath
   let implFile ← match CoreParser.parseLibraryFile implPath implContent with
     | .ok f => pure f
@@ -958,7 +1045,7 @@ def runPipeline [LemFuel] (runtimeDir : String) (batch : Bool) (ppCore : Bool)
   let mut supply : Nat := 0
   match libc with
   | some (libcCore, libcTus) =>
-    match ← loadLibc quiet supply addressSpaceTop coreEvalStuff ailnames stdFunMap coreImpl libcCore libcTus with
+    match ← loadLibc runtime quiet supply addressSpaceTop coreEvalStuff ailnames stdFunMap coreImpl libcCore libcTus with
     | .error code => return code
     | .ok (libcFile, supply') => coreFiles := [libcFile]; supply := supply'
   | none => pure ()
@@ -1215,7 +1302,7 @@ def refuseFlag (flag : String) : IO Unit := do
     else if flag == "--batch" || flag == "--pp-core" || flag == "--parse-core" || flag == "--first" then
       "known flag out of its canonical position (`--batch`, `--pp-core` or `--parse-core` must be argv[0]; `--first` must immediately follow `--batch`/`--pp-core`)"
     else
-      "unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>, --address-space-top <N>"
+      "unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>, --address-space-top <N>, --runtime <DIR>"
   IO.eprintln s!"cerberus-lean: refused — {flag}: {feature} (see VALIDATION.md, zero-discrepancy Z-24)"
   IO.Process.exit 2
 
@@ -1289,6 +1376,9 @@ def main (args : List String) : IO Unit := do
   -- (upstream's value); zero or a non-numeral is REFUSED (exit 2), exactly like
   -- --fuel — a silent fallback would be the fail-open shape the practices ban.
   let mut addressSpaceTopStr : Option String := none
+  -- --runtime DIR / --runtime=DIR (bug-hunt BUG-2, 2026-09-29): the oracle's
+  -- flag of the same name (backend/driver/main.ml:436-438); see resolveRuntime
+  let mut runtimeArg : Option String := none
   let mut restArgs : List String := []
   -- --parse-core consumes its file list itself (below); nothing to scan
   let mut pending := if parseCoreMode then [] else rest1
@@ -1303,12 +1393,15 @@ def main (args : List String) : IO Unit := do
     | "--trace-nodes" :: rest => traceNodes := true; pending := rest
     | "--fuel" :: v :: rest => fuelStr := some v; pending := rest
     | "--address-space-top" :: v :: rest => addressSpaceTopStr := some v; pending := rest
+    | "--runtime" :: v :: rest => runtimeArg := some v; pending := rest
     | ["--libc"] | ["--libc-tu"] | ["--call"] | ["--call-args"]
-    | ["--args"] | ["--fuel"] | ["--address-space-top"] =>
+    | ["--args"] | ["--fuel"] | ["--address-space-top"] | ["--runtime"] =>
       IO.eprintln "cerberus-lean: --libc/--libc-tu/--call/--call-args/\
-        --args/--fuel/--address-space-top require an argument"
+        --args/--fuel/--address-space-top/--runtime require an argument"
       IO.Process.exit 1
     | a :: rest =>
+      if a.startsWith "--runtime=" then
+        runtimeArg := some (a.drop "--runtime=".length).toString; pending := rest; continue
       -- Z-24: a `--` token here is not a file name (except `--stdin`)
       if a.startsWith "--" && a != "--stdin" then refuseFlag a
       restArgs := restArgs ++ [a]; pending := rest
@@ -1438,17 +1531,25 @@ def main (args : List String) : IO Unit := do
   -- placement is an artifact of the split and carries no symbol state
   -- (Cabs has no Symbol.sym). Per-TU digests are set inside
   -- runPipeline's frontend loop (pipeline.ml:181 mirror).
-  let runtimeDir ← findRuntimeDir
+  -- bug-hunt BUG-2: the runtime is resolved like the oracle's (resolveRuntime),
+  -- never searched for relative to the working directory
+  let runtimeDir ← resolveRuntime runtimeArg
   let contents ← readInputs restArgs
   let mut tunits : List (String × translation_unit) := []
+  let mut idx := 0
   for content in contents do
-    match CabsImport.parseJson content with
+    idx := idx + 1
+    match CabsImport.parseJsonWithFiles content with
     | .error e =>
       if batchMode then
         IO.println s!"Error \{msg: \"cabs-json parse error: {CerbEscape.text e}\"}"
       IO.eprintln s!"cerberus-lean: parse error: {e}"
       IO.Process.exit 1
-    | .ok (digest, tunit) => tunits := tunits ++ [(digest, tunit)]
+    | .ok (digest, tunit, files) =>
+      -- bug-hunt BUG-3: suffix-library ⇒ exact-library, or refuse
+      let name := restArgs.getD (idx - 1) "<input>"
+      refuseLibraryLocations runtimeDir s!"the input {name}" files
+      tunits := tunits ++ [(digest, tunit)]
   -- The ONE instantiation of the ambient fuel (fuel-parameter arc): every
   -- fuel'd function below `runPipeline` reads this instance; nothing else
   -- in the repository builds one (`scripts/check_no_fuel_numerals.sh`).

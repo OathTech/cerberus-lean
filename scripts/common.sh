@@ -322,6 +322,23 @@ run_cerberus() {
         "$CERBERUS_BIN" --runtime="$PROJECT_ROOT/_build/install/default" "$@"
 }
 
+# The Lean driver's RUNTIME (bug-hunt BUG-2, 2026-09-29; record
+# lean_frontend/docs/2026-09-29_bug-hunt-fixes-record.md §S2). The driver
+# resolves std.core and the .impl file like the oracle's util/cerb_runtime.ml:
+# `--runtime DIR`, else CERB_INSTALL_PREFIX, runtime = DIR/lib/cerberus-lib/
+# runtime — and REFUSES otherwise (no OPAM_SWITCH_PREFIX fallback, no
+# working-directory search; it used to load ./runtime/libcore/std.core,
+# unpinned). Exported HERE, once, as the same prefix every harness passes to
+# the oracle (`--runtime="$PROJECT_ROOT/_build/install/default"`, run_cerberus
+# below and each lane's RUNTIME_DIR), so every Lean invocation of a harness
+# that sources this file sees the oracle's runtime; a site that does not
+# source it gets the driver's exit-2 refusal, never a silent runtime. The
+# oracle itself is unaffected wherever it is given --runtime (its SPECIFIED
+# arm has priority over this ENV_VAR arm, cerb_runtime.ml:50-52); an oracle
+# call WITHOUT --runtime would now resolve this same prefix instead of the
+# shared switch's OPAM_SWITCH_PREFIX.
+export CERB_INSTALL_PREFIX="$PROJECT_ROOT/_build/install/default"
+
 # Run cerberus-lean. LEAN_ABORT_ON_PANIC: a Lean `panic!` PRINTS and
 # CONTINUES by default — a fuel-exhaustion sentinel would degrade to
 # soft-with-stderr and a harness comparing stdout could miss it (arc-3

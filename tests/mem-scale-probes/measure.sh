@@ -165,7 +165,7 @@ if want lean-first || want lean-exh; then
         printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$name" "$MODE" "cabs-json" "98" "NA" "NA" "NONE" "CABS-JSON-FAILED"
         exit 3
     fi
-    want lean-first && run_one lean-first env LEAN_ABORT_ON_PANIC=1 "$LEAN" --batch --first ${LEAN_ARGS[@]+"${LEAN_ARGS[@]}"} "$json"
-    want lean-exh   && run_one lean-exh   env LEAN_ABORT_ON_PANIC=1 "$LEAN" --batch ${LEAN_ARGS[@]+"${LEAN_ARGS[@]}"} "$json"
+    want lean-first && run_one lean-first env LEAN_ABORT_ON_PANIC=1 "$LEAN" --batch --first --runtime="$RUNTIME" ${LEAN_ARGS[@]+"${LEAN_ARGS[@]}"} "$json"
+    want lean-exh   && run_one lean-exh   env LEAN_ABORT_ON_PANIC=1 "$LEAN" --batch --runtime="$RUNTIME" ${LEAN_ARGS[@]+"${LEAN_ARGS[@]}"} "$json"
 fi
 exit 0   # the last `want … &&` must not set a spurious exit 1 when that engine is not requested

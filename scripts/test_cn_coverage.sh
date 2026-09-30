@@ -209,8 +209,10 @@ if [[ ! -d "$RUNTIME_DIR" ]]; then
     echo "Error: runtime dir not found: $RUNTIME_DIR (run dune install cerberus-lib)" >&2
     exit 1
 fi
-if [[ ! -f "$PROJECT_ROOT/runtime/libcore/std.core" ]]; then
-    echo "Error: $PROJECT_ROOT/runtime/libcore/std.core not found (Lean side needs it)" >&2
+# The Lean side's runtime (bug-hunt BUG-2): the prefix common.sh exports must be
+# the oracle's --runtime, and its std.core must exist (the driver refuses otherwise)
+if [[ "${CERB_INSTALL_PREFIX:-}" != "$RUNTIME_DIR" || ! -f "$RUNTIME_DIR/lib/cerberus-lib/runtime/libcore/std.core" ]]; then
+    echo "Error: Lean runtime CERB_INSTALL_PREFIX=${CERB_INSTALL_PREFIX:-<unset>} is not the oracle's $RUNTIME_DIR, or its std.core is missing" >&2
     exit 1
 fi
 
@@ -219,7 +221,8 @@ register_cleanup "$OUTPUT_DIR"
 STATUS_FILE="$OUTPUT_DIR/status.txt"
 : > "$STATUS_FILE" || { echo "Error: cannot write $STATUS_FILE" >&2; exit 1; }
 
-# Lean binary locates runtime/libcore relative to cwd
+# cwd no longer matters to the Lean driver (bug-hunt BUG-2, 2026-09-29): its
+# runtime is CERB_INSTALL_PREFIX, exported by common.sh = the oracle's --runtime
 cd "$PROJECT_ROOT" || { echo "Error: cannot cd to $PROJECT_ROOT" >&2; exit 1; }
 
 # ---------------------------------------------------------------------------

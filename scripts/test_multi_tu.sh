@@ -99,7 +99,8 @@ fi
 OUTPUT_DIR=$(mktemp -d "$TMP_DIR/multi-tu-test.XXXXXXXXXX") || { echo "Error: mktemp failed" >&2; exit 1; }
 register_cleanup "$OUTPUT_DIR"
 
-# Lean binary locates runtime/libcore relative to cwd
+# cwd no longer matters to the Lean driver (bug-hunt BUG-2, 2026-09-29): its
+# runtime is CERB_INSTALL_PREFIX, exported by common.sh = the oracle's --runtime
 cd "$PROJECT_ROOT" || { echo "Error: cannot cd to $PROJECT_ROOT" >&2; exit 1; }
 
 # Collect test dirs: either $CORPUS itself holds .c files (single test),

@@ -186,11 +186,18 @@ production generator in an isolated scratch repository.
 
 ## What you can do with it
 
-- **Batch execution with verdicts.** `cerberus-lean --batch <cabs-json>`
-  runs a program's `main` and reports the Cerberus verdict — a
-  `Defined` value (with stdout/stderr), a specific undefined-behaviour
-  code, or an error — exhaustively over the nondeterministic branch
-  structure or as a single trace (`--first`).
+- **Batch execution with verdicts.** `cerberus-lean --batch
+  --runtime=_build/install/default <cabs-json>` runs a program's `main`
+  and reports the Cerberus verdict — a `Defined` value (with
+  stdout/stderr), a specific undefined-behaviour code, or an error —
+  exhaustively over the nondeterministic branch structure or as a single
+  trace (`--first`). The runtime (`std.core`, the implementation file) is
+  the oracle's: `--runtime DIR` or the `CERB_INSTALL_PREFIX` environment
+  variable, runtime = `DIR/lib/cerberus-lib/runtime`, the same prefix the
+  cabs-json was exported with (`cerberus --runtime=DIR --cabs-json`). The
+  driver refuses to run without one; it never searches the working
+  directory and does not use the oracle's `OPAM_SWITCH_PREFIX` fallback.
+  The lanes export `CERB_INSTALL_PREFIX` from `scripts/common.sh`.
 - **Function-level execution.** `--call <f> [--call-args <ints>]`
   calls an individual function with injected arguments (the caller
   protocol mirrors elaborated call sites; `CerbCall.lean`, a port-side
