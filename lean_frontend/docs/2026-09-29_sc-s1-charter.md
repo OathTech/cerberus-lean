@@ -471,6 +471,12 @@ lem-lean pin move.
 
 ## 8. Open questions for the operator (each with the orchestrator's current recommendation)
 
+**Ruled [USER 2026-09-30]**, verbatim: "Agree on recommendations, go ahead". Q1–Q5 below are
+decided as recommended: Q1 factoring (with the §3.5 battery and gate-entry additions); Q2
+mirror strictly (null child errno kept; a child's `errno` builtin → `SC_unsupported`); Q3 the
+internal `--sc-run --sc-budget N` flag; Q4 Tier A if measured under ~4 min, libc row Tier B;
+Q5 `SK_misc` tag. S1a implementation is authorized to start.
+
 - **Q1 Lifecycle boundary mechanism.** `let inline` thunk factoring of `drive`/`driver_globals`
   under the §3.5 battery, versus an explicit `sc_lifecycle` restatement leaving both byte-identical.
   Recommendation: factoring — one Lem source text is the smaller divergence risk; caveat (review
