@@ -79,6 +79,37 @@ These are design checks for slice reviews, not new gates.
    RC11) can be substituted. A robustness meta-theorem relates two reference models
    and reuses the same projection from executions.
 
+## 3. How route B fits a program logic
+
+[USER 2026-09-30], verbatim: "The reason I like this notion is that it is quite
+compatible with a formal verification view of things. We embed the necessary
+condition as a metaproperty of our logic, and then for soundness show that the
+results translate to weak models. And it matches a lot of people's gut sense on weak
+memory, that the extremely weird behaviors are basically things that 'can't happen'
+ie. they are theory artifacts that real programs mostly don't see". [AGENT] analysis:
+
+- **Non-atomic plus `seq_cst` fragment: the metaproperty is race freedom, and
+  ownership already gives it.** A concurrent separation logic whose soundness proof
+  includes race freedom (Brookes' soundness of CSL) proves verified programs
+  race-free; DRF-SC then makes SC reasoning sound for C11. A consumer logic over this
+  SC semantics (cerberus-sl) carries the translation if its soundness theorem states
+  race freedom against our race-as-UB monitor. That monitor is what makes the
+  statement meaningful.
+- **Release/acquire and relaxed code: the logic enforces a robustness discipline**
+  (for example no triangular races) as a structural side condition. It is stronger
+  than ownership but mechanical, which suits boring specifications and automation.
+- **Where the intuition fails: deliberately non-robust idioms.** Kernel code uses
+  seqlocks (racy reads, then validation), RCU and lockless queues that depend on
+  relaxed ordering. The standard answer, and where Owens' triangular-race work
+  started (verifying spinlock implementations on x86-TSO), is to verify each such
+  primitive once against the weak model and expose it through an SC-style
+  specification (observational refinement). The rest of the program then reasons in
+  SC plus robustness.
+- **Resulting shape:** an SC-reasoning world with a robustness side condition, plus a
+  small, separately verified library of weak-memory primitives. For Linux targets
+  both the robustness condition and the primitive specifications are stated against
+  LKMM.
+
 Suggested order after the SC MVP [AGENT]: Route B for the release/acquire fragment
 first (a meta-theorem, no new executor), then an RC11-style views model if
 programs outside the robust fragment matter, and Promising only as a separate
