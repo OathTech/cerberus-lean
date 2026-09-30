@@ -92,14 +92,16 @@ inductive NumLit where
     Matches what OCaml's string_of_float produces: 0., 3.14, 1e-06, 1e+308, etc.
     (The OCaml Core grammar has NO float literal — core_lexer.mll:290-291 lexes
     digits only; floats reach this parser solely through the pp dump.)
-    OPEN DIFFERENCE (Z2-CP-02; bug hunt BUG-5): `string_of_float` is `%.12g` (pp_core.ml:282), so
+    NAMED DEVIATION N3 (VALIDATION.md §2b; Z2-CP-02, bug hunt BUG-5): `string_of_float` is `%.12g` (pp_core.ml:282), so
     the pinned dump is LOSSY for a double needing more than 12 significant digits. Measured (bug-hunt
     fixes record §S5): the ONE lossy literal is tests/libc/libc.core:60849 `1.84467440737e+19`, i.e.
     `0x1p64` (runtime/libc/src/internal.c:303), parsed back 9551872 below 2^64, so Lean's strtod sets
     ERANGE near DBL_MAX where the oracle does not. (This note used to blame FLT_MAX at `:41698`,
-    wrongly: `3.40282347e+38` is FLT_MAX's 9-digit source spelling and round-trips.) Mover: an exact
-    printer for the libc dump plus a gate that every float literal of the pin round-trips; routes
-    and costs in the record §S5, operator decision pending. -/
+    wrongly: `3.40282347e+38` is FLT_MAX's 9-digit source spelling and round-trips.) Registered, not
+    fixed ([USER 2026-09-30] option (3)): scripts/check_libc_float_literals.py pins every float
+    literal of the dump to a reviewed register. No special printing mode for the dump ([USER
+    2026-09-30]: no "magic mode" fixes); movers: a round-tripping Core printer everywhere, or
+    building libc from its C sources instead of a text dump (TODO.md). -/
 partial def lexNumLit : P NumLit := do
   let neg ← match ← peek? with
     | some '-' => skip; pure true

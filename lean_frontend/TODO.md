@@ -651,6 +651,14 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   patterns with IEEE arithmetic written in Lean, following x86 NaN rules (the oracle's platform), validated against
   the oracle and the gcc lane, with the performance cost measured; floats would also become kernel-evaluable. A
   design pass is scoped with the operator before any briefing.
+- **libc without a lossy text vehicle (M-L)** — queued 2026-09-30 ([USER 2026-09-30] "(1) or (2) might be work
+  for later"); the mover of named deviation N3 (VALIDATION §2b). Lean loads libc from `tests/libc/libc.core`, a text
+  dump printed with `%.12g`, which rounds `0x1p64` (N3) and carries no source locations (Z1-A1). Two routes, to be
+  scoped with the operator: (1) a round-tripping Core float printer everywhere (fixes N3 only; moves the Lean
+  printer mirror, pp-test transcripts and possibly the batch float rendering, which must stay the oracle's); (2)
+  build libc in Lean from `runtime/libc/src` through the validated front end and link it as the oracle does (fixes
+  N3 and Z1-A1, retires the dump pin; needs speed and oracle-equivalence measurement). No special printing mode for
+  the dump ([USER 2026-09-30], no "magic mode" fixes).
 - **Discrepancy bug hunt (M)** — queued 2026-09-28 ([USER 2026-09-28] "We should fan out multiple agents on a
   discrepancy bug hunt. Basically, go look for anything in Cerberus-lean that might result in bugs similar to the one
   that was reported yesterday"): parallel hunters for pathleak-class defects (hand-written seams answering without a

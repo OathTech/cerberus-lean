@@ -364,3 +364,15 @@ trap could remove the selftest scratch directory; seven `…selftest.*` director
 (`check_runtime_resolution: OK (17 witnesses: …)`, `check_cabs_json_utf8: OK (9 witnesses: …)`) and leave
 no directory behind; with `CERB_LEAN_BIN_OVERRIDE=/bin/false` both exit 1 (the final run's status
 propagates).
+
+## S5 decision (orchestrator addendum, 2026-09-30)
+
+[USER 2026-09-30] rejected option (A): "(A) means we have a special magic path that only gets used in this
+situation! That seems very fragile, really more a hack than a fix", and set the standing rule "we should not fix
+deviations with special 'magic mode' paths that work exclusively in one situation". Chosen: option (E), extended —
+"Right, I think (3) is the right answer for now, and (1) or (2) might be work for later." BUG-5 is registered as
+named deviation N3 (VALIDATION §2b) with the float-literal inventory check `scripts/check_libc_float_literals.py`
+(row 1; register `scripts/libc_float_literals.txt`, 24 literals, 1 LOSSY-N3; six plants). The ISO position
+(orchestrator's reading, [AGENT]): C11 §6.4.4.2#3 makes `0x1p64` exactly 2^64, so the oracle, running the compiled
+`libc.co`, is right and Lean's dump-loaded libc is wrong; the defect is the text vehicle, not upstream semantics.
+Queued movers (TODO.md): a round-tripping Core printer everywhere, or libc built from its C sources.

@@ -409,3 +409,15 @@ if ! "$CABS_UTF8_SH" --selftest; then
     echo "test_unit: non-UTF-8 Cabs JSON witnesses FAILED"
     exit 1
 fi
+
+# libc dump float-literal inventory (named deviation N3, VALIDATION.md §2b;
+# bug hunt BUG-5, [USER 2026-09-30] option (3)): the pinned libc.core's float
+# literals (printed with %.12g by the oracle's Core printer) must equal the
+# reviewed register scripts/libc_float_literals.txt, both directions; a
+# 12-significant-digit literal may not be registered EXACT-BY-SOURCE.
+# --selftest: six plants.
+LIBC_FLOAT_PY="$(dirname "$PURITY_SH")/check_libc_float_literals.py"
+if ! python3 "$LIBC_FLOAT_PY" --selftest || ! python3 "$LIBC_FLOAT_PY"; then
+    echo "test_unit: libc dump float-literal inventory FAILED"
+    exit 1
+fi

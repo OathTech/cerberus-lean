@@ -1,0 +1,29 @@
+# Reviewed float-literal register of tests/libc/libc.core (named deviation N3, VALIDATION.md §2b;
+# checked by scripts/check_libc_float_literals.py in row 1). Columns: line<TAB>literal<TAB>disposition<TAB>note.
+# EXACT-BY-SOURCE: fewer than 12 significant digits, so %.12g printed the double exactly (the census of the
+# 2026-09-29 bug hunt matched each to its C source constant). LOSSY-N3: rounded by %.12g; Lean parses a
+# different double. Re-pinning libc.core means re-reviewing this file. [AGENT 2026-09-30]
+41698	3.40282347e+38	EXACT-BY-SOURCE	
+53379	0.	EXACT-BY-SOURCE	
+54035	0.	EXACT-BY-SOURCE	
+54044	0.	EXACT-BY-SOURCE	
+54708	0.	EXACT-BY-SOURCE	
+54717	0.	EXACT-BY-SOURCE	
+59314	1000000000.	EXACT-BY-SOURCE	
+60246	0.25	EXACT-BY-SOURCE	
+60314	0.75	EXACT-BY-SOURCE	
+60469	0.5	EXACT-BY-SOURCE	
+60503	0.75	EXACT-BY-SOURCE	
+60700	1.	EXACT-BY-SOURCE	
+60849	1.84467440737e+19	LOSSY-N3	0x1p64 = 2^64 (runtime/libc/src/internal.c:303, decfloat); parsed back 9551872 below 2^64
+61015	0.5	EXACT-BY-SOURCE	
+61145	0.	EXACT-BY-SOURCE	
+62688	0.	EXACT-BY-SOURCE	
+62698	0.	EXACT-BY-SOURCE	
+62843	0.5	EXACT-BY-SOURCE	
+63365	0.	EXACT-BY-SOURCE	
+63970	0.	EXACT-BY-SOURCE	
+64212	0.	EXACT-BY-SOURCE	
+64221	0.	EXACT-BY-SOURCE	
+64294	0.5	EXACT-BY-SOURCE	
+64811	0.	EXACT-BY-SOURCE	
