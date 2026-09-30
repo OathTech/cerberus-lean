@@ -105,8 +105,11 @@ import Lean
 open Lean
 
 /-- The consumer's cone: `drive` and its cold start, the CerbND runners, the
-    `--call` entry. -/
-def entries : List Name := [`drive, `initial_driver_state, `CerbND.runND, `CerbND.runND1, `CerbND.runND1Trace, `CerbCall.driveCall]
+    `--call` entry, and (SC S1a, 2026-09-30, charter §3.12) the SC step API's
+    entries `sc_start`/`sc_step`/`sc_run`/`sc_explore` — `sc_start` carries the
+    inlined lifecycle copy, so its cone is walked like `drive`'s. -/
+def entries : List Name := [`drive, `initial_driver_state, `CerbND.runND, `CerbND.runND1, `CerbND.runND1Trace, `CerbCall.driveCall,
+  `sc_start, `sc_step, `sc_run, `sc_explore]
 /-- The front-end pipeline entries (check_theorem_axioms.sh's exec-entry set
     minus the drive cone): reported as a second column, informational. -/
 def frontEntries : List Name := [`desugar, `annotate_program, `translate, `link, `convert_file]
