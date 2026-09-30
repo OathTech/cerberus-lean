@@ -12,8 +12,12 @@ Release certification: incomplete: reporting/adoption/audit exits require separa
 === RELEASE EXIT=0 2026-09-30T03:15:23Z load=6.37 6.28 8.23 ===
 ```
 
-An SC-track subagent reported killing a `release.py` process around 02:40Z; this run's evidence shows no interruption
-(`report.json` `status = passed`, no `interrupted` marker, 40 PASSED lines), so the killed run was another one.
+Incident: an SC-track subagent sent SIGTERM (`kill`) to this run's processes (PIDs 1575305/1575307/1575349, the
+command writing `.tmp/fixes-full.log`) at about 02:45Z while cleaning up its own processes. Per the SC session's
+corrected report, the worker's `ps` 3 s later still showed all three alive; its first report ("terminated", a
+different run) was an inference it later withdrew. This run's own evidence shows no interruption: `report.json`
+`status = passed`, no `interrupted` marker, 40 PASSED lines, and release.py's per-lane exit-code checks all passed.
+[AGENT] judgement: the evidence stands; no re-run.
 
 ## Tier A + row 1 on the audit fixes (`ac819eea9`'s tree), 12/12 exit 0 — verbatim excerpts
 
