@@ -64,10 +64,13 @@ moreLeanArgs = ["-DautoImplicit=false"]
 # Closure F1/F3, 2026-09-24: one further pin after the Lem closure;
 # substituted-type sorry refusal and recursive-rep fixture restored.
 # Evidence: docs/2026-09-24_public-readiness-closure.md.
+# lem-lean arc/linksem re-pin, 2026-09-30 ([USER 2026-09-30] "Great, go ahead
+# with the merge & repin"): Lean-backend/LemLib fixes, LemLib on Lean 4.32.2;
+# generated OCaml byte-identical. Evidence: docs/2026-09-30_lem-repin-77ad4fa-record.md.
 [[require]]
 name = "LemLib"
 git = "https://github.com/OathTech/lem-lean"
-rev = "c2a68e79b6369e19f099dfa48767319c1daf19b3"
+rev = "77ad4facfc60814a4a3f5d09dc88168ca208b285"
 subDir = "lean-lib"
 
 [[lean_lib]]
