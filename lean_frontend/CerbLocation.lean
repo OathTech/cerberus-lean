@@ -231,9 +231,13 @@ def isLibraryPathSuffix (path : String) : Bool :=
       as `<runtime>/libcore/std.core` and `<runtime>/libcore/impls/….impl`
       (exact by construction). The `--libc` dump's bodies carry no file
       (`CoreParser.parseFile` erases their positions; recorded Z1-A1).
-    This replaces the earlier documented residual Z-67 (a user file under a
+    This retires the earlier documented residual Z-67 (a user file under a
     directory literally named `runtime/libcore` was library-classified by
-    Lean and not by the oracle; the witness now refuses).
+    Lean and not by the oracle; the witness now refuses) FOR THE DRIVER ONLY.
+    An in-process consumer that calls `CabsImport.parseJson` and this
+    function directly, without `Main.refuseLibraryLocations`, still has the
+    residual; it must apply the same check with its runtime root
+    (VALIDATION §3, in-process consumers; pre-merge audit L4).
     The previous implementation matched ANY path segment equal to
     `libcore`/`include`/`impls` — a user file under any `include/` directory
     was library-classified (wrong), and std.core itself was never classified

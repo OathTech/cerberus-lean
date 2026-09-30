@@ -336,7 +336,8 @@ printer change is NOT implemented. Implemented: the in-code note Z2-CP-02 is cor
 - `CoreParser.lean` Z2-CP-02 note: now names the measured lossy literal (`libc.core:60849`,
   `0x1p64`, `internal.c:303`), states the served consequence (Lean's `strtod` ERANGE near DBL_MAX),
   retracts the FLT_MAX claim, and points here for the routes. Same line count as before, so the
-  failure-reach register's `CoreParser.lean:NNNN` cites are not shifted. Comment-only; the binary's
+  failure-reach register's `CoreParser.lean:NNNN` cites were not shifted by this commit (the N3 commit
+  later lengthened the note by 2 lines; the cites were re-derived in the audit-fix commit, audit L1). Comment-only; the binary's
   behaviour is unchanged.
 - Not implemented: the printer, the re-pin, the round-trip gate. BUG-5 stays an open served difference
   until the operator picks a route.
@@ -376,3 +377,21 @@ named deviation N3 (VALIDATION §2b) with the float-literal inventory check `scr
 (orchestrator's reading, [AGENT]): C11 §6.4.4.2#3 makes `0x1p64` exactly 2^64, so the oracle, running the compiled
 `libc.co`, is right and Lean's dump-loaded libc is wrong; the defect is the text vehicle, not upstream semantics.
 Queued movers (TODO.md): a round-tripping Core printer everywhere, or libc built from its C sources.
+
+## The option list the N3 ruling answers (orchestrator addendum, 2026-09-30; pre-merge audit M2)
+
+The ruling quoted for N3/D8, [USER 2026-09-30] "Right, I think (3) is the right answer for now, and (1) or (2) might be
+work for later.", answered a numbered list the orchestrator gave in conversation (not the lettered (A)–(E) above). The
+list, as given (condensed faithfully [AGENT]):
+
+1. Make the Core pretty-printer round-trip floats everywhere (shortest exact decimal or hex floats); no special mode.
+   Fixes BUG-5, not Z1-A1; moves the Lean printer mirror, pp-test transcripts and possibly the batch float rendering.
+2. Stop ingesting libc through a text dump: build libc in Lean from `runtime/libc/src` through the validated front end
+   and link it as the oracle does. Fixes BUG-5 and Z1-A1; retires the dump pin; needs speed and equivalence measurement.
+3. In the meantime, register BUG-5 as a named deviation with a check that inventories every float literal in the
+   pinned dump.
+
+Mapping [AGENT]: (3) = option (E) above, extended with the inventory check (implemented as N3 with
+`scripts/check_libc_float_literals.py`); (1) and (2) = the two routes of the TODO.md item "libc without a lossy text
+vehicle". Option (A) (an opt-in exact printer for the dump only) was the one the operator rejected as a special-mode
+path.

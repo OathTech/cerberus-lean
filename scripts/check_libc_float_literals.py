@@ -51,12 +51,15 @@ def check(dump, reg):
     rows = load_register(reg)
     if not live:
         errs.append("the dump has no float literals at all (vacuous census — wrong file or broken regex)")
-    have = {(l, t) for l, t in live}
-    want = {(l, t) for l, t, _ in rows}
-    for l, t in sorted(have - want):
-        errs.append(f"unregistered literal {t!r} at line {l}")
-    for l, t in sorted(want - have):
-        errs.append(f"registered literal {t!r} at line {l} is not in the dump")
+    # MULTISETS, not sets (pre-merge audit L2): a second copy of a literal on a
+    # registered line, or a duplicated register row, must not pass.
+    from collections import Counter
+    have = Counter((l, t) for l, t in live)
+    want = Counter((l, t) for l, t, _ in rows)
+    for (l, t), n in sorted((have - want).items()):
+        errs.append(f"unregistered literal {t!r} at line {l} (x{n})")
+    for (l, t), n in sorted((want - have).items()):
+        errs.append(f"registered literal {t!r} at line {l} is not in the dump (x{n} missing)")
     for l, t, d in rows:
         if sig_digits(t) >= 12 and d == "EXACT-BY-SOURCE":
             errs.append(f"line {l} {t!r} has 12 significant digits (possibly rounded by %.12g) but is registered EXACT-BY-SOURCE")
@@ -88,8 +91,14 @@ def selftest():
         run("lossy row relabelled EXACT-BY-SOURCE", dump_lines, reg_text.replace("LOSSY-N3", "EXACT-BY-SOURCE"), True)
         run("empty dump", [""], reg_text, True)
         run("malformed register", dump_lines, reg_text + "x\ty\tMAYBE\n", True)
+        lossy_line = next(l for l in dump_lines if "1.84467440737e+19" in l)
+        idx = dump_lines.index(lossy_line)
+        dup = list(dump_lines); dup[idx] = lossy_line + " 1.84467440737e+19"
+        run("second copy on a registered line", dup, reg_text, True)
+        row = next(r for r in reg_text.split("\n") if "\tLOSSY-N3" in r and not r.startswith("#"))
+        run("duplicated register row", dump_lines, reg_text + row + "\n", True)
         if ok:
-            print("check_libc_float_literals: SELFTEST OK (6 plants: unplanted OK; added, dropped, relabelled-lossy, empty dump, malformed register all FAIL)")
+            print("check_libc_float_literals: SELFTEST OK (8 plants: unplanted OK; added, dropped, relabelled-lossy, empty dump, malformed register, second copy on a registered line, duplicated register row all FAIL)")
         return ok
     finally:
         shutil.rmtree(tmp)

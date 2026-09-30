@@ -30,5 +30,17 @@ if [[ "$out" == *"cerberus-lean: refused"* ]]; then
     echo "check_cli_refusals: FAIL — control refused without a refused flag (rc=$rc): ${out:0:200}"
     fails=$((fails + 1))
 fi
+# repeated single-valued options the oracle's command line rejects (bug-hunt
+# fixes pre-merge audit L3, 2026-09-30): exit 2 with the "cannot be repeated"
+# message, never silently the last value
+RT="$SCRIPT_DIR/../_build/install/default"
+for pair in "--runtime=$RT --runtime=$RT" "--args a --args b"; do
+    # shellcheck disable=SC2086
+    out=$(env LEAN_ABORT_ON_PANIC=1 CERB_INSTALL_PREFIX="$RT" "$BIN" --batch $pair "$INPUT" 2>&1); rc=$?
+    if [[ $rc -ne 2 || "$out" != *"cannot be repeated"* ]]; then
+        echo "check_cli_refusals: FAIL — repeated option ($pair): expected exit 2 + 'cannot be repeated'; got rc=$rc: ${out:0:200}"
+        fails=$((fails + 1))
+    fi
+done
 [[ $fails -eq 0 ]] || exit 1
-echo "check_cli_refusals: OK (3 refused flags pinned: --concurrency, --switches=PNVI_ae_udi, --switches=strict_pointer_arith; control not refused)"
+echo "check_cli_refusals: OK (3 refused flags pinned: --concurrency, --switches=PNVI_ae_udi, --switches=strict_pointer_arith; 2 repeated options refused: --runtime, --args; control not refused)"

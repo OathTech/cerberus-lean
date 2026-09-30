@@ -13,7 +13,7 @@ scripts/env.sh sourced and the driver binaries freshness-checked (tools/check_dr
     O=_build/default/backend/driver/main.exe; RT=_build/install/default
     CERB_MEM_MAX=4G scripts/capped timeout 60s opam exec --switch=. -- $O --runtime=$RT --exec --batch [--nolibc] [--args A] <file.c>
     CERB_MEM_MAX=4G scripts/capped timeout 60s opam exec --switch=. -- $O --runtime=$RT --cabs-json <file.c> > x.json
-    CERB_MEM_MAX=4G scripts/capped timeout 60s env LEAN_ABORT_ON_PANIC=1 lean_frontend/.lake/build/bin/cerberus-lean --batch --first [--args A] [--libc tests/libc/libc.core --libc-tu <12 jsons from scripts/libc_prep.sh --jsons>] x.json
+    CERB_MEM_MAX=4G scripts/capped timeout 60s env LEAN_ABORT_ON_PANIC=1 lean_frontend/.lake/build/bin/cerberus-lean --runtime=$RT --batch --first [--args A] [--libc tests/libc/libc.core --libc-tu <12 jsons from scripts/libc_prep.sh --jsons>] x.json
 
 (`scripts/test_exec.sh <file>` alone reports these as CERB_SKIP — the oracle crashes first and the Lean side
 is never sampled — so the two-engine recipe above is the one that shows both lines.)

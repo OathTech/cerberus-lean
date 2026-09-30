@@ -577,14 +577,15 @@ def resolveRuntimeRoot (cli : Option String) : IO String := do
       priority: the `SPECIFIED` arm, runtime = `DIR/lib/cerberus-lib/runtime`.
     - otherwise the `CERB_INSTALL_PREFIX` environment variable: the `ENV_VAR`
       arm, the same construction.
-    - DELIBERATE DIVERGENCE (bug-hunt fixes S2, [USER 2026-09-29] "Agree on
+    - DELIBERATE DIVERGENCE ([AGENT] choice in bug-hunt fixes S2, made under the
+      operator's authorization to fix BUG-2, [USER 2026-09-29] "Agree on
       everything, yes on the fixes"): the oracle's last arm, `OPAM` — the
       runtime of the switch in `OPAM_SWITCH_PREFIX`, or the build-tree source
       root found through `PATH` (`:21-30`) — is NOT mirrored. The run is
       REFUSED instead: a shared switch's runtime can differ silently from the
       runtime the oracle of a given checkout uses, which is the BUG-2 shape
       again.
-    - DELIBERATE DIVERGENCE (same ruling, fail-closed): an EMPTY value (either
+    - DELIBERATE DIVERGENCE ([AGENT], same authorization, fail-closed): an EMPTY value (either
       source) is refused. The oracle would build the relative
       `lib/cerberus-lib/runtime`, i.e. resolve the runtime against the
       working directory, which is the lookup BUG-2 removed.
@@ -1476,11 +1477,20 @@ def main (args : List String) : IO Unit := do
     | "--libc-tu" :: v :: rest => libcTus := libcTus ++ [v]; pending := rest
     | "--call" :: v :: rest => callName := some v; pending := rest
     | "--call-args" :: v :: rest => callArgsStr := some v; pending := rest
-    | "--args" :: v :: rest => progArgsStr := some v; pending := rest
+    | "--args" :: v :: rest =>
+      -- the oracle's cmdliner rejects a repeated option ("option --args cannot be
+      -- repeated", exit 124); taking the last value silently was a divergence
+      -- (bug-hunt fixes pre-merge audit L3)
+      if progArgsStr.isSome then
+        IO.eprintln "cerberus-lean: option --args cannot be repeated (as the oracle's command line)"
+        IO.Process.exit 2
+      progArgsStr := some v; pending := rest
     | "--trace-nodes" :: rest => traceNodes := true; pending := rest
     | "--fuel" :: v :: rest => fuelStr := some v; pending := rest
     | "--address-space-top" :: v :: rest => addressSpaceTopStr := some v; pending := rest
-    | "--runtime" :: v :: rest => runtimeArg := some v; pending := rest
+    | "--runtime" :: v :: rest =>
+      if runtimeArg.isSome then refuseRuntime "option --runtime cannot be repeated (the oracle's cmdliner rejects it, exit 124; pre-merge audit L3)"
+      runtimeArg := some v; pending := rest
     | ["--libc"] | ["--libc-tu"] | ["--call"] | ["--call-args"]
     | ["--args"] | ["--fuel"] | ["--address-space-top"] | ["--runtime"] =>
       IO.eprintln "cerberus-lean: --libc/--libc-tu/--call/--call-args/\
@@ -1488,6 +1498,7 @@ def main (args : List String) : IO Unit := do
       IO.Process.exit 1
     | a :: rest =>
       if a.startsWith "--runtime=" then
+        if runtimeArg.isSome then refuseRuntime "option --runtime cannot be repeated (the oracle's cmdliner rejects it, exit 124; pre-merge audit L3)"
         runtimeArg := some (a.drop "--runtime=".length).toString; pending := rest; continue
       -- Z-24: a `--` token here is not a file name (except `--stdin`)
       if a.startsWith "--" && a != "--stdin" then refuseFlag a
