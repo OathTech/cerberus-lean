@@ -25,7 +25,9 @@
 #   a DEAD `let _plant := (failwithI …)` planted into a generated definition ->
 #   RED DISCARDABLE; a register row's reach class edited without re-seal -> RED
 #   SEAL MISMATCH naming the row; a phantom (re-sealed) row -> RED STALE; the
-#   tally line edited -> RED; the unplanted register -> the OK line.
+#   tally line edited -> RED; a registered lem_if arm / lemSeq continuation with its head mis-shaped
+#   -> RED POSITION CLASS CHANGED (P6/P7, lem re-pin 2026-09-30); classifier witnesses C1-C7 on
+#   synthetic sources; the unplanted register -> the OK line.
 # --emit [SEED]: print a fresh register seeded from SEED (default: the current
 #   register; the first emission was seeded from the census evidence TSV
 #   sites231_classified.tsv) — new rows UNREVIEWED; review, then
@@ -156,6 +158,62 @@ PLANT_REG="$SCRATCH/reg.p4"; plant "P4 a phantom register row (re-sealed) -> sta
 sed 's/^# tally: sites=\([0-9]*\)/# tally: sites=0/' "$REGISTER" > "$SCRATCH/reg.p5"
 cmp -s "$REGISTER" "$SCRATCH/reg.p5" && { echo "  PLANT FAIL [P5 premise]: the sed did not alter the tally line (vacuous plant)"; fails=$((fails+1)); }
 PLANT_REG="$SCRATCH/reg.p5"; plant "P5 the tally line edited" "tally"
+# P6/P7 (lem re-pin 77ad4fa, 2026-09-30; record lean_frontend/docs/2026-09-30_lem-repin-77ad4fa-record.md):
+#   the classifier's lem_if (B13) and lemSeq (B15/B15b) shapes are LOAD-BEARING — mis-shape the real
+#   registered sites and the gate must go RED on the position class.
+restore_f() { cp "$LF/generated/$1" "$P/lean_frontend/generated/$1"; }
+PLANT_REG="$REGISTER"
+# P6: showNonNegativeWithBasis's failure is the `then` arm of a `lem_if` (register: TAIL); with EVERY
+#     `lem_if` of the file mis-shaped to `lem_iff` it must read OTHER-IF. (Every one, not just this
+#     site's: the classifier's then/else walk-back does not stop at declaration headers, so an earlier
+#     `lem_if` in the file would satisfy it — measured; the premise also asserts the file has no plain
+#     `if`, so the plant cannot be satisfied by one.)
+if python3 - "$SCRIPT_DIR" "$P/lean_frontend/generated/Formatted.lean" <<'PY'
+import re, sys; sys.path.insert(0, sys.argv[1]); import failure_census as fc
+p = sys.argv[2]; s = open(p).read()
+assert s.count('lem_if  natLtb  n (  0) then (failwithI  "showNonNegativeWithBasis expects') == 1, 'P6 premise: the lem_if arm of showNonNegativeWithBasis not found exactly once'
+assert not re.search(r'(?<![\w.])if\s', fc.strip_comments(s)), 'P6 premise: Formatted.lean has a plain `if` token (the plant would be satisfiable by it)'
+open(p, 'w').write(re.sub(r'\blem_if\b', 'lem_iff', s))
+PY
+then
+  plant "P6 the lem_if heads of Formatted.lean mis-shaped (lem_iff): a registered TAIL arm" "POSITION CLASS CHANGED" "showNonNegativeWithBasis" "live=OTHER-IF register=TAIL"
+else echo "  PLANT FAIL [P6 premise]: the plant could not be applied (see above)"; fails=$((fails+1)); fi
+restore_f Formatted.lean
+# P7: hack_lemFuel's failure sits in the continuation (second) lambda of `lemSeq` (register: TAIL); an
+#     unknown head `lemSeqX` in its place must read LAMBDA-BODY
+if python3 - "$P/lean_frontend/generated/Driver.lean" <<'PY'
+import sys; p = sys.argv[1]; s = open(p).read()
+old = '(lemSeq (fun _ =>  CerbDebug.print_debug_pure (  2)  ([] : List (domain))  (fun (u : Unit) =>  match u with |  () =>  "ENTERING Driver.hack" ))'
+assert s.count(old) == 1, 'P7 premise: the lemSeq head of hack_lemFuel not found exactly once'
+open(p, 'w').write(s.replace(old, '(lemSeqX' + old[len('(lemSeq'):]))
+PY
+then
+  plant "P7 the lemSeq head of a registered TAIL continuation mis-shaped (lemSeqX)" "POSITION CLASS CHANGED" "hack_lemFuel" "live=LAMBDA-BODY register=TAIL"
+else echo "  PLANT FAIL [P7 premise]: the plant could not be applied (see above)"; fails=$((fails+1)); fi
+restore_f Driver.lean
+# C1-C7: classifier witnesses on synthetic generated-shaped sources (positive shapes and controls)
+mkdir -p "$SCRATCH/syn/lean_frontend/generated"
+if out=$(python3 - "$SCRIPT_DIR" "$SCRATCH/syn" <<'PY'
+import sys; sys.path.insert(0, sys.argv[1]); import failure_position as fp
+from pathlib import Path
+cases = [  # (label, source, expected class of the single failwithI)
+  ('C1 lem_if then-arm', 'def  f  (c : Bool)  : Nat := \n  lem_if  c then (failwithI  "x" : Nat) else  0\n', 'TAIL'),
+  ('C2 lem_if else-arm', 'def  f  (c : Bool)  : Nat := \n  lem_if  c then  0 else (failwithI  "x" : Nat)\n', 'TAIL'),
+  ('C3 lem_if condition', 'def  f  (c : Bool)  : Nat := \n  lem_if (failwithI  "x" : Bool) then  0 else  1\n', 'SCRUTINEE'),
+  ('C4 lemSeq continuation', 'def  f  (n : Nat)  : Nat := \n  (lemSeq (fun _ =>  dbg  n) (fun _ =>  (failwithI  "x" : Nat)))\n', 'TAIL'),
+  ('C5 lemSeq continuation inside a lem_if arm', 'def  f  (c : Bool)  : Nat := \n  lem_if  c then (lemSeq (fun _ =>  dbg  0) (fun _ =>  (failwithI  "x" : Nat))) else  0\n', 'TAIL'),
+  ('C6 control: lemSeq DISCARDED side is not tail', 'def  f  (n : Nat)  : Nat := \n  (lemSeq (fun _ =>  (failwithI  "x" : Nat)) (fun _ =>  n))\n', 'LAMBDA-BODY'),
+  ('C7 control: another head is not lemSeq', 'def  f  (n : Nat)  : Nat := \n  (other (fun _ =>  dbg  n) (fun _ =>  (failwithI  "x" : Nat)))\n', 'LAMBDA-BODY'),
+]
+root = Path(sys.argv[2]); bad = 0
+for i, (label, src, want) in enumerate(cases):
+    rel = f'lean_frontend/generated/Syn{i}.lean'; (root / rel).write_text(src)
+    got = fp.Classifier(root).classify(rel, src.index('failwithI'))['cls']
+    ok = got == want; bad += not ok
+    print(f"  {'WITNESS OK  ' if ok else 'WITNESS FAIL'} [{label}] {got}" + ('' if ok else f' (wanted {want})'))
+sys.exit(1 if bad else 0)
+PY
+); then echo "$out"; else echo "  PLANT FAIL [classifier witnesses C1-C7]:"; sed 's/^/    /' <<<"$out"; fails=$((fails+1)); fi
 # unplanted: the real register against the real census
 echo "  UNPLANTED:"
 if out=$(python3 "$SCRIPT_DIR/check_failure_reach.py" --root "$ROOT" --census "$SCRATCH/census.json" --register "$REGISTER" 2>&1); then
@@ -164,7 +222,7 @@ else
   echo "  PLANT FAIL [unplanted register is not green]:"; sed 's/^/      /' <<<"$out"; fails=$((fails+1))
 fi
 if (( fails == 0 )); then
-  echo "check_failure_reach: SELFTEST OK (5 plants with the declared message — a new site in a generated exec-closure definition, a DISCARDABLE dead let-binding, an unsealed class edit, a phantom row, an edited tally — and the unplanted register green)"; exit 0
+  echo "check_failure_reach: SELFTEST OK (7 plants with the declared message — a new site in a generated exec-closure definition, a DISCARDABLE dead let-binding, an unsealed class edit, a phantom row, an edited tally, mis-shaped lem_if heads over a registered arm, a mis-shaped lemSeq continuation — 7 classifier witnesses (lem_if arms/condition, lemSeq continuation, controls) and the unplanted register green)"; exit 0
 else
   echo "check_failure_reach: SELFTEST FAILED ($fails)"; exit 1
 fi

@@ -55,7 +55,7 @@ IDENT = re.compile(r"^[A-Za-z_][\w'.!?]*$")
 HEADER = re.compile(r'(?m)^[ \t]*(?:(?:private|protected|noncomputable|partial|unsafe)[ \t]+)*'
                     r'(?:def|abbrev|opaque|instance|theorem)\b')
 CONTINUATION = (':=', '=>', 'then', 'else', '(', ',', '[', '<|', '$', 'do', '←', 'fun', 'λ', 'with', 'in',
-                ';', '|', 'if', 'match', 'return', 'pure', '&&', '||', '+', '-', '*', '/', '++', '==', '!=',
+                ';', '|', 'if', 'lem_if', 'match', 'return', 'pure', '&&', '||', '+', '-', '*', '/', '++', '==', '!=',
                 '<', '>', '≤', '≥', '::', '<$>', '>>=', '|>', '<;>')
 
 
@@ -140,9 +140,20 @@ class Classifier:
                     chain.append('let-body'); start = j; continue
                 chain.append(';?'); return result('OTHER;', prev, chain, start, end)
             if prev == '=>':
-                j, w = wb(toks, start-2, {'|', 'fun', 'λ', 'with', 'match', 'if', 'then', 'else', ':=', ';'})
+                j, w = wb(toks, start-2, {'|', 'fun', 'λ', 'with', 'match', 'if', 'lem_if', 'then', 'else', ':=', ';'})
                 if w in ('fun', 'λ'):
                     fp = toks[j-1][1] if j > 0 else '<BOF>'
+                    # lem re-pin 77ad4fa (2026-09-30, [AGENT]; docs/2026-09-30_lem-repin-77ad4fa-record.md),
+                    # B15/B15b: `lemSeq (fun _ => e1) (fun _ => e2)` is logically e2 (LemLib's
+                    # transparent `lemSeq a b := b ()`), so the SECOND lambda's body takes the
+                    # position of the whole lemSeq application; the discarded FIRST lambda stays a
+                    # LAMBDA-BODY. `lem_if` (B13: lem's Bool `if`) is handled exactly as `if`.
+                    # Plants P6/P7 + witnesses C1-C7 in check_failure_reach.sh --selftest.
+                    if fp == '(' and (j-1) in pairs and j >= 2 and toks[j-2][1] == ')' and (j-2) in pairs \
+                       and pairs[j-2] >= 1 and toks[pairs[j-2]-1][1] == 'lemSeq' \
+                       and j+2 < len(toks) and toks[j+1][1] == '_' and toks[j+2][1] == '=>':
+                        chain.append('lemSeq-continuation'); start, end = pairs[j-2]-1, pairs[j-1]
+                        continue
                     if fp == '(' and (j-1) in pairs:
                         chain.append('fun-body'); start, end = j-1, pairs[j-1]
                         prev2 = toks[start-1][1] if start > 0 else '<BOF>'
@@ -166,8 +177,8 @@ class Classifier:
                     chain.append(f'arm?{w2}'); return result('OTHER-ARM', prev, chain, start, end)
                 chain.append(f'=>?{w}'); return result('OTHER=>', prev, chain, start, end)
             if prev in ('then', 'else'):
-                j, w = wb(toks, start-2, {'if'})
-                if w == 'if':
+                j, w = wb(toks, start-2, {'if', 'lem_if'})
+                if w in ('if', 'lem_if'):
                     chain.append(f'{prev}-branch'); start = j; continue
                 chain.append(f'{prev}?'); return result('OTHER-IF', prev, chain, start, end)
             break
@@ -181,7 +192,7 @@ class Classifier:
                 cls = 'STRUCT-FIELD' if start >= 2 and toks[start-2][1] not in OPEN else 'OTHER:=('
             elif w == 'with': cls = 'STRUCT-FIELD'
             else: cls = 'OTHER:=' + w
-        elif prev in ('match', 'if'): cls = 'SCRUTINEE'
+        elif prev in ('match', 'if', 'lem_if'): cls = 'SCRUTINEE'
         elif prev == ';': cls = 'TAIL-LETBODY'
         elif prev in ('<BOF>', 'in'): cls = 'TAIL'
         elif prev == ',' or nxt == ',' or prev == '[': cls = 'TUPLE-OR-LIST'
