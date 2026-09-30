@@ -723,8 +723,11 @@ echo "check_theorem_axioms: driver2 cone sorryAx-free + ofReduce*-free + DAEMON-
 # each entry must produce exactly one probe line.
 # ---------------------------------------------------------------------------
 PROBE3=lean_frontend/.axiom-probe-entries.lean
+# SC S1a (2026-09-30, charter §3.12): the SC step API's entries join the exact
+# allowlist census (sc_start carries the inlined lifecycle copy).
 ENTRIES=(driver2 drive initial_driver_state desugar annotate_program
-         translate link convert_file CerbCall.driveCall)
+         translate link convert_file CerbCall.driveCall
+         sc_start sc_step sc_run sc_explore)
 {
   cat <<'EOF'
 import Driver

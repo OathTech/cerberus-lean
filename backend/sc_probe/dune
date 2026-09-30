@@ -1,0 +1,7 @@
+; SC S1a differential instrument (lean_frontend/docs/2026-09-29_sc-s1-charter.md §3.10):
+; the OCaml side of scripts/test_sc_step.py. Outside the fork-drift SURFACES like
+; backend/memory_probe/ (scripts/check_fork_drift.sh); the oracle binary is untouched.
+(executable
+ (name sc_run)
+ (modules sc_run)
+ (libraries str unix mem_concrete cerberus-lib.backend_common))

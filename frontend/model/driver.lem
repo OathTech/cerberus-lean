@@ -1568,8 +1568,16 @@ let driver_update_thread_state tid th_st =
 let inline update_thread_state = driver_update_thread_state
 
 
-val driver_globals: bool -> Core.file Core_run.core_run_annotation -> driverM Mem.thread_id
-let driver_globals with_concurrency file =
+(* SC S1a lifecycle boundary (lean_frontend/docs/2026-09-29_sc-s1-charter.md section 3.5;
+   acceptance record lean_frontend/docs/2026-09-30_sc-s1a-acceptance.md): the body of
+   driver_globals is `let inline`d. Lem substitutes it at each use (backend_common.ml
+   inline_exp), so the generated code keeps this text lexically inside `driver_globals`
+   - OCaml frame names and the -d 2 debug lines are unchanged - and inside the SC
+   entry `sc_driver_globals` below. `run_threads` is a THUNK applied at the original
+   call site (WP1 passed the action value `driver2 with_concurrency`, built once, and
+   the oracle lost its per-call `ENTERING Driver.driver2` lines at -d 2). *)
+val driver_globals_with: (unit -> driverM unit) -> Core.file Core_run.core_run_annotation -> driverM Mem.thread_id
+let inline driver_globals_with (run_threads: unit -> driverM unit) file =
   (* spawning a thread for the initialisation of globals, and later the execution of main *)
   spawn_thread Nothing <|
     (* NOTE: the pure(unit) is just a placeholder, the thread is given its actual state later *)
@@ -1614,8 +1622,8 @@ let driver_globals with_concurrency file =
     end >>= fun () ->
     
     (* evaluation of the initialisation *)
-    driver2 with_concurrency >>= fun () ->
-    
+    run_threads () >>= fun () ->
+
     get_thread_states >>= function
       | [(_, (_, th_st))] ->
           (* TODO: technically the arena should always be a value at this point *)
@@ -1646,6 +1654,10 @@ let driver_globals with_concurrency file =
     end
   ) glob_defs >>
   ND.return tid0
+
+val driver_globals: bool -> Core.file Core_run.core_run_annotation -> driverM Mem.thread_id
+let driver_globals with_concurrency file =
+  driver_globals_with (fun () -> driver2 with_concurrency) file
 
 
 
@@ -1731,12 +1743,16 @@ let prepare_main_args loc callconv tid0 main_sym arg_strs argc_sym argv_sym =
 
 
 
-val drive: bool -> Core.file Core_run.core_run_annotation -> list string -> driverM driver_result
-let drive (with_concurrency: bool) file (arg_strs: list string) =
+(* SC S1a lifecycle boundary (charter section 3.5): the body of drive is `let inline`d, as
+   driver_globals' above. `globals` is the globals stage (drive passes
+   `driver_globals with_concurrency`, so that stage's text stays inside
+   `driver_globals`); `run_threads` the thunk applied where `driver2` ran. *)
+val drive_with: (Core.file Core_run.core_run_annotation -> driverM Mem.thread_id) -> (unit -> driverM unit) -> bool -> Core.file Core_run.core_run_annotation -> list string -> driverM driver_result
+let inline drive_with (globals: Core.file Core_run.core_run_annotation -> driverM Mem.thread_id) (run_threads: unit -> driverM unit) (with_concurrency: bool) file (arg_strs: list string) =
   (* Setting the read-only tag definitions (used by the memory model) *)
   (* first we execute the body of global definitions and remove their symbols
      from the rest of the program *)
-  driver_globals with_concurrency file >>= fun tid0 (*, post_globals_dr_st) *) ->
+  globals file >>= fun tid0 (*, post_globals_dr_st) *) ->
   ND.get >>= fun post_globals_dr_st ->
   
   (* we need a startup function to have been declared *)
@@ -1889,14 +1905,18 @@ let drive (with_concurrency: bool) file (arg_strs: list string) =
           | _ ->
               error "ERROR (in Driver 2)"
         end >>
-        driver2 with_concurrency >>
-        
+        run_threads () >>
+
         if with_concurrency then
           error "CONCURRENCY IS BROKEN"
         else
           ND.get >>= fun dr_st' ->
           ND.return (finalize "drive (without concur)" dr_st')
 end
+
+val drive: bool -> Core.file Core_run.core_run_annotation -> list string -> driverM driver_result
+let drive (with_concurrency: bool) file (arg_strs: list string) =
+  drive_with (driver_globals with_concurrency) (fun () -> driver2 with_concurrency) with_concurrency file arg_strs
 
 
 (* === Totality declares (arc 3 sweep, 2026-08-18, final batch): Lean-target only.
@@ -1909,7 +1929,7 @@ end
    FUEL ARC (2026-09-03, docs/2026-09-02_fuel-arc-design.md section 1.2):
    the three ND-typed arms are the DISTINGUISHED kernel-transparent kill
    `NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg)`
-   (= CerbND.fuelExhaustedKill), unwrapped — see nondeterminism.lem. === *)
+   (= CerbND.fuelExhaustedKill), unwrapped - see nondeterminism.lem. === *)
 declare {lean} termination_argument find_can_advance = automatic
 declare {lean} fuel val print_eval_conv_aux = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
 declare {lean} fuel val drive_nonmemory_steps_aux2 = `fun _ => ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
@@ -1920,12 +1940,378 @@ declare {lean} fuel val hack = `fuelExhausted Vunit`
    is a step-until-value loop with no unconditional data measure (C2 record
    D-C2-4). Its only exec-path caller is finalize (:1473-1477), right after
    driver2, whose only exits are process_core_step2's two terminal arms
-   (:1331-1338, :1352-1356) — both prepare_exit (:1309-1316), which makes the
+   (:1331-1338, :1352-1356) - both prepare_exit (:1309-1316), which makes the
    arena mk_value_e cval; to_pure of that arena is its `PEval` pexpr, so hack's
    argument is a VALUE: step_eval_pexpr returns it unchanged (core_eval.lem
-   PEval arm) and valueFromPexpr accepts it (core_aux.lem:862-868) — ONE
+   PEval arm) and valueFromPexpr accepts it (core_aux.lem:862-868) - ONE
    iteration. Measure = the derived size (>= 1; a numeral is refused,
    FM-literal), hypothesis = the shape (lean_frontend/CerbCoreShape.lean).
    Proof in lean_frontend/Driver_lemMeasureProofs.lean; row in
    scripts/fuel_hypotheses.txt. *)
 declare {lean} fuel_measure val hack = `lemSize pexpr1` assuming `CerbCoreShape.IsValuePexpr pexpr1`
+
+
+(* ============================================================================================ *)
+(* SC concurrency S1a - the bounded SC step API over the sequential driver.
+   Charter: lean_frontend/docs/2026-09-29_sc-s1-charter.md section 3 (types section 3.2, functions section 3.3,
+   reused handlers section 3.4, lifecycle boundary section 3.5, effect-free discovery section 3.6); plan
+   SC-CONCURRENCY.md ("WP1 decision: constraints" 1-7). INTERNAL until S5: no public mode.
+
+   One transition = one of: running the real lifecycle continuation up to its next node
+   (`drive_with sc_driver_globals sc_boundary false ...`, the unchanged lifecycle text with the
+   Core bodies entered at an `NDstep` boundary), one Core reduction of the single thread
+   (exactly `drive`'s per-round decision: the FIRST `can_advance` step is `advance_step`ped,
+   else `drive`'s `ND.pick` over the saved steps is `process_core_step2`'d - section 3.1), or the
+   resolution of a node's chosen branch. Discovery (`sc_alternatives`) runs nothing:
+   alternatives are the branches of an already materialised node (section 3.6).
+
+   Every existing definition is reused UNCHANGED (section 3.4). This section adds no `error` site of
+   its own and no fuel'd worker. The closure-carrying types (sc_phase, sc_config,
+   sc_run_outcome) take the backend's derived BEq/Ord like every other closure-carrying
+   generated type (the residual instances of ndM are loud failwithI bodies): configurations
+   are never compared - charter section 3.2's `skip_instances` is not usable here because the
+   backend emits the variant/record `deriving` clause independently of that declare and the
+   clause then fails on the skipped payload type (finding for lem-lean, recorded in the
+   acceptance record). `sc_run_list`/`sc_explore_list` recurse structurally on a
+   `list unit` budget (the nat form `List.replicate n ()`, charter R2: the Lean backend's
+   structural analysis refuses `n+1` patterns - deps/lem-pinned tests/comprehensive/negative/
+   neg_structural_natpat.lem - so the list shape carries the budget; `sc_run`/`sc_explore`
+   keep the nat interface). *)
+
+(* ----- Types (section 3.2) ----- *)
+
+(* S1b adds `SC_thread of Mem.thread_id`. *)
+type sc_choice =
+  | SC_alt of nat        (* index into the current alternatives *)
+
+type sc_terminal =
+  | SC_done of driver_result                    (* finalize's result *)
+  | SC_killed of ND.kill_reason driver_error    (* Undef = UB; Error = fail-stop (incl. the Lean fuel kill); Other = driver error *)
+  | SC_unsupported of string                    (* classified SC refusal *)
+  | SC_blocked                                  (* S1b: no runnable thread *)
+
+(* Two choosing phases because nd_bind pushes the continuation INTO a node's branches
+   (nondeterminism.lem nd_bind): a node met while running the lifecycle has
+   `driverM driver_result` branches and no separate remainder; a node met while running a
+   Core step's `driverM unit` action has `driverM unit` branches plus the saved lifecycle
+   remainder. The bool of SC_core_choosing is the accounting fact "resolving this node
+   applies a Core handler" (true for drive's saved-step pick, whose branches each run
+   process_core_step2; false for a node met INSIDE an already-applied handler, e.g. the
+   concrete model's pointer-equality msum) - an observed node alone is not a reduction. *)
+type sc_phase =
+  | SC_lifecycle of driverM driver_result
+  | SC_lifecycle_choosing of list (step_kind * driverM driver_result)
+  | SC_core of driverM driver_result
+  | SC_core_choosing of bool * list (step_kind * driverM unit) * driverM driver_result
+  | SC_final of sc_terminal
+
+type sc_config = <|
+  sc_phase: sc_phase;
+  sc_state: driver_state;
+  sc_transitions: nat;        (* the budgeted unit *)
+  sc_core_reductions: nat;    (* advance_step / process_core_step2 applications *)
+  sc_choices: nat;            (* choosing-phase resolutions (indexes an explicit schedule) *)
+|>
+
+type sc_step_error =
+  | SC_bad_choice of nat * nat    (* index, number of alternatives *)
+  | SC_choice_required
+  | SC_terminal
+
+type sc_run_outcome =
+  | SC_stopped of sc_config          (* final configuration reached *)
+  | SC_exhausted of sc_config        (* budget spent, not final *)
+  | SC_needs_choice of sc_config     (* the policy declined at a choosing phase *)
+  | SC_run_error of sc_step_error * sc_config   (* API misuse: never a program outcome *)
+
+type sc_policy = sc_config -> list string -> maybe sc_choice
+
+(* ----- The lifecycle boundary (section 3.5, section 3.7) ----- *)
+
+val sc_boundary_kind: step_kind
+let sc_boundary_kind = SK_misc ["sc_core_boundary"]
+
+(* The node that marks "a Core body is about to run". NDstep has no other live producer
+   (mk_step's one caller in this file is commented out), so the lifecycle continuation
+   after this node is exactly the saved remainder. *)
+val sc_boundary: unit -> driverM unit
+let sc_boundary () =
+  ND.mk_step sc_boundary_kind [(sc_boundary_kind, ND.return ())]
+
+(* The globals stage with the boundary in place of driver2 (driver_globals_with is inline:
+   this is the one lifecycle text, lexically here for the SC path). *)
+val sc_driver_globals: Core.file Core_run.core_run_annotation -> driverM Mem.thread_id
+let sc_driver_globals file =
+  driver_globals_with sc_boundary file
+
+val sc_initial: sc_phase -> driver_state -> sc_config
+let sc_initial ph st =
+  <| sc_phase= ph; sc_state= st; sc_transitions= 0; sc_core_reductions= 0; sc_choices= 0 |>
+
+(* The starting configuration on the caller's initial_driver_state: the real `drive` text
+   (drive_with is inline) with the Core bodies entered at boundaries. Budget 0 performs no
+   lifecycle effect. *)
+val sc_start: Core.file Core_run.core_run_annotation -> list string -> driver_state -> sc_config
+let sc_start file arg_strs st =
+  sc_initial (SC_lifecycle (drive_with sc_driver_globals sc_boundary false file arg_strs)) st
+
+(* ----- The one local transition (section 3.3 sc_perform; L5 pins this text) ----- *)
+
+(* drive's per-round decision for one thread: the first can_advance step is advanced
+   (drive_nonmemory_steps_aux2); when none can, drive's saved-step pick (new_drive_core_threads)
+   is processed (driver2 -> process_core_step2) with a no-op continuation - this section
+   steps the next reduction itself. find_can_advance fail-stops on Step_error2 exactly as
+   drive (can_advance); `pick []` fail-stops at drive's site; `[x]` creates no node. *)
+val sc_perform: Mem.thread_id -> list Core_reduction.core_step2 -> driverM unit
+let sc_perform tid steps =
+  match find_can_advance steps with
+    | Just step ->
+        advance_step tid step >>= fun _ -> ND.return ()
+    | Nothing ->
+        ND.pick (SK_misc ["new_drive_core_threads"]) steps >>= process_core_step2 false (fun _ -> ND.return ())
+  end
+
+(* ----- The phase machine (section 3.3 sc_step) ----- *)
+
+val sc_final: sc_config -> bool
+let sc_final cfg =
+  match cfg.sc_phase with
+    | SC_final _ -> true
+    | _ -> false
+  end
+
+val sc_run_action: forall 'a. driverM 'a -> driver_state -> (ND.nd_action 'a step_kind driver_error Mem.mem_iv_constraint driver_state * driver_state)
+let sc_run_action m st =
+  match m with
+    | ND.ND f -> f st
+  end
+
+val sc_advance: sc_config -> driver_state -> sc_config
+let sc_advance cfg st' =
+  <| cfg with sc_state= st'; sc_transitions= cfg.sc_transitions + 1 |>
+
+(* A lifecycle action's result: completion is finalize's value; a kill keeps the killed state;
+   the boundary node hands the remainder to the Core phase; a choice node is a choosing phase;
+   NDguard/NDbranch are unreachable in the concrete model (CerbND.lean header). *)
+val sc_interpret_lifecycle: sc_config -> (ND.nd_action driver_result step_kind driver_error Mem.mem_iv_constraint driver_state * driver_state) -> sc_config
+let sc_interpret_lifecycle cfg (act, st') =
+  let cfg' = sc_advance cfg st' in
+  match act with
+    | ND.NDactive r ->
+        <| cfg' with sc_phase= SC_final (SC_done r) |>
+    | ND.NDkilled r ->
+        <| cfg' with sc_phase= SC_final (SC_killed r) |>
+    | ND.NDstep _ [(_, k')] ->
+        <| cfg' with sc_phase= SC_core k' |>
+    | ND.NDstep _ _ ->
+        <| cfg' with sc_phase= SC_final (SC_unsupported "sc: lifecycle NDstep node with other than one branch") |>
+    | ND.NDnd _ alts ->
+        <| cfg' with sc_phase= SC_lifecycle_choosing alts |>
+    | ND.NDguard _ _ _ ->
+        <| cfg' with sc_phase= SC_final (SC_unsupported "sc: NDguard (unreachable in the concrete model)") |>
+    | ND.NDbranch _ _ _ _ ->
+        <| cfg' with sc_phase= SC_final (SC_unsupported "sc: NDbranch (unreachable in the concrete model)") |>
+  end
+
+(* A Core action's result. `counts`: the action applied a Core handler (a reduction).
+   `is_exit`: the step was Step_done2 (production prepare_exit ran), so the saved lifecycle
+   remainder resumes - a global's value capture, main's startup or finalize. *)
+val sc_interpret_core: sc_config -> driverM driver_result -> bool -> bool -> (ND.nd_action unit step_kind driver_error Mem.mem_iv_constraint driver_state * driver_state) -> sc_config
+let sc_interpret_core cfg k counts is_exit (act, st') =
+  let cfg' = sc_advance cfg st' in
+  let cfg' = <| cfg' with sc_core_reductions= if counts then cfg'.sc_core_reductions + 1 else cfg'.sc_core_reductions |> in
+  match act with
+    | ND.NDactive () ->
+        <| cfg' with sc_phase= if is_exit then SC_lifecycle k else SC_core k |>
+    | ND.NDkilled r ->
+        <| cfg' with sc_phase= SC_final (SC_killed r) |>
+    | ND.NDnd _ alts ->
+        (* a node met inside the action: drive's saved-step pick (counts = false: the chosen
+           branch applies the handler) or a node inside an applied handler (counts = true). *)
+        <| cfg' with sc_phase= SC_core_choosing (not counts) alts k |>
+    | ND.NDstep _ _ ->
+        <| cfg' with sc_phase= SC_final (SC_unsupported "sc: NDstep node inside a Core step") |>
+    | ND.NDguard _ _ _ ->
+        <| cfg' with sc_phase= SC_final (SC_unsupported "sc: NDguard (unreachable in the concrete model)") |>
+    | ND.NDbranch _ _ _ _ ->
+        <| cfg' with sc_phase= SC_final (SC_unsupported "sc: NDbranch (unreachable in the concrete model)") |>
+  end
+
+val sc_refuse: sc_config -> string -> sc_config
+let sc_refuse cfg msg =
+  <| cfg with sc_phase= SC_final (SC_unsupported msg); sc_transitions= cfg.sc_transitions + 1 |>
+
+(* What the steps of the single thread mean for this transition: refused (fork/join is S1b -
+   refused BEFORE advance_step would spawn), or performed with its accounting facts. *)
+type sc_steps_class =
+  | SC_steps_refused of string
+  | SC_steps_perform of bool * bool   (* counts as a reduction, is the program exit *)
+
+val sc_classify_steps: list Core_reduction.core_step2 -> sc_steps_class
+let sc_classify_steps steps =
+  match find_can_advance steps with
+    | Just (Core_reduction.Step_spawn_threads2 _ _) ->
+        SC_steps_refused "sc: fork (Step_spawn_threads2, Core par): S1b"
+    | Just (Core_reduction.Step_thread_done2 _ _) ->
+        SC_steps_refused "sc: join (Step_thread_done2): S1b"
+    | Just _ ->
+        SC_steps_perform true false
+    | Nothing ->
+        match steps with
+          | [Core_reduction.Step_done2 _] ->
+              SC_steps_perform true true
+          | [_] ->
+              SC_steps_perform true false
+          | _ ->
+              (* [] fail-stops in drive's pick; x::xs materialises drive's pick node *)
+              SC_steps_perform false false
+        end
+  end
+
+(* One Core transition of the single thread: steps computed exactly as drive's round does
+   (drive_nonmemory_steps_aux2's ND.read of step_ctx - may fail-stop as drive does). *)
+val sc_core_transition: sc_config -> driverM driver_result -> sc_config
+let sc_core_transition cfg k =
+  match cfg.sc_state.core_state.Core_run.thread_states with
+    | [(tid, th_info)] ->
+        let steps = Core_reduction.step_ctx cfg.sc_state.layout_state cfg.sc_state.core_file cfg.sc_state.core_extern tid th_info in
+        match sc_classify_steps steps with
+          | SC_steps_refused msg ->
+              sc_refuse cfg msg
+          | SC_steps_perform counts is_exit ->
+              sc_interpret_core cfg k counts is_exit (sc_run_action (sc_perform tid steps) cfg.sc_state)
+        end
+    | _ ->
+        sc_refuse cfg "sc: more than one thread: S1b"
+  end
+
+val sc_alternatives: sc_config -> list string
+let sc_alternatives cfg =
+  match cfg.sc_phase with
+    | SC_lifecycle_choosing alts -> List.map (fun (info, _) -> show info) alts
+    | SC_core_choosing _ alts _ -> List.map (fun (info, _) -> show info) alts
+    | _ -> []
+  end
+
+val sc_chose: sc_config -> sc_config
+let sc_chose cfg =
+  <| cfg with sc_choices= cfg.sc_choices + 1 |>
+
+(* The step. Terminal configurations are absorbing (Left SC_terminal). A choice where none is
+   offered is SC_bad_choice against 0 alternatives; an out-of-range index against their
+   number; a missing choice at a choosing phase is SC_choice_required - all leave the
+   configuration unchanged. At a choosing phase exactly the chosen branch is applied, from
+   the stored state (L4). *)
+val sc_step: sc_config -> maybe sc_choice -> either sc_step_error sc_config
+let sc_step cfg choice_opt =
+  match cfg.sc_phase with
+    | SC_final _ ->
+        Left SC_terminal
+    | SC_lifecycle k ->
+        match choice_opt with
+          | Just (SC_alt i) -> Left (SC_bad_choice i 0)
+          | Nothing -> Right (sc_interpret_lifecycle cfg (sc_run_action k cfg.sc_state))
+        end
+    | SC_core k ->
+        match choice_opt with
+          | Just (SC_alt i) -> Left (SC_bad_choice i 0)
+          | Nothing -> Right (sc_core_transition cfg k)
+        end
+    | SC_lifecycle_choosing alts ->
+        match choice_opt with
+          | Nothing -> Left SC_choice_required
+          | Just (SC_alt i) ->
+              match List.index alts i with
+                | Nothing -> Left (SC_bad_choice i (List.length alts))
+                | Just (_, k) -> Right (sc_interpret_lifecycle (sc_chose cfg) (sc_run_action k cfg.sc_state))
+              end
+        end
+    | SC_core_choosing counts alts k ->
+        match choice_opt with
+          | Nothing -> Left SC_choice_required
+          | Just (SC_alt i) ->
+              match List.index alts i with
+                | Nothing -> Left (SC_bad_choice i (List.length alts))
+                | Just (_, m) -> Right (sc_interpret_core (sc_chose cfg) k counts false (sc_run_action m cfg.sc_state))
+              end
+        end
+  end
+
+(* ----- Runner, explorer, policies, events (section 3.3, section 3.8) ----- *)
+
+(* Budget as a list (structural recursion; see the section header). *)
+val sc_run_list: list unit -> sc_policy -> sc_config -> sc_run_outcome
+let rec sc_run_list budget pol cfg =
+  match budget with
+    | [] ->
+        if sc_final cfg then SC_stopped cfg else SC_exhausted cfg
+    | _ :: budget' ->
+        if sc_final cfg then
+          SC_stopped cfg
+        else
+          match sc_step cfg (pol cfg (sc_alternatives cfg)) with
+            | Left SC_choice_required -> SC_needs_choice cfg
+            | Left e -> SC_run_error e cfg
+            | Right cfg' -> sc_run_list budget' pol cfg'
+          end
+  end
+declare {lean} structural val sc_run_list
+
+val sc_run: nat -> sc_policy -> sc_config -> sc_run_outcome
+let sc_run n pol cfg =
+  sc_run_list (List.replicate n ()) pol cfg
+
+(* Exhaustive: at a choosing phase every alternative is followed and each branch's outcomes
+   are PREPENDED (R_last ++ ... ++ R_first), the order Smt2.runND's exhaustive NDnd case
+   accumulates in and CerbND.runNDFuel mirrors; elsewhere one step. *)
+val sc_explore_list: list unit -> sc_config -> list sc_run_outcome
+let rec sc_explore_list budget cfg =
+  match budget with
+    | [] ->
+        [if sc_final cfg then SC_stopped cfg else SC_exhausted cfg]
+    | _ :: budget' ->
+        if sc_final cfg then
+          [SC_stopped cfg]
+        else
+          match sc_alternatives cfg with
+            | [] ->
+                match sc_step cfg Nothing with
+                  | Left e -> [SC_run_error e cfg]
+                  | Right cfg' -> sc_explore_list budget' cfg'
+                end
+            | alts ->
+                List.foldl (fun acc i ->
+                  match sc_step cfg (Just (SC_alt i)) with
+                    | Left e -> SC_run_error e cfg :: acc
+                    | Right cfg' -> sc_explore_list budget' cfg' ++ acc
+                  end
+                ) [] (List.genlist (fun i -> i) (List.length alts))
+          end
+  end
+declare {lean} structural val sc_explore_list
+
+val sc_explore: nat -> sc_config -> list sc_run_outcome
+let sc_explore n cfg =
+  sc_explore_list (List.replicate n ()) cfg
+
+(* The trace entries added between two configurations (newest first), meaningful under
+   TraceGrows (L6: the earlier trace is a suffix of the later one). *)
+val sc_events: sc_config -> sc_config -> list Trace_event.trace_event
+let sc_events cfg cfg' =
+  let n = List.length cfg.sc_state.trace in
+  let n' = List.length cfg'.sc_state.trace in
+  if n <= n' then List.take (n' - n) cfg'.sc_state.trace else []
+
+val sc_policy_first: sc_policy
+let sc_policy_first cfg labels =
+  match labels with
+    | [] -> Nothing
+    | _ -> Just (SC_alt 0)
+  end
+
+val sc_policy_schedule: list sc_choice -> sc_policy
+let sc_policy_schedule sched cfg labels =
+  match labels with
+    | [] -> Nothing
+    | _ -> List.index sched cfg.sc_choices
+  end

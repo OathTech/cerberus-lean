@@ -515,3 +515,64 @@ Q5 `SK_misc` tag. S1a implementation is authorized to start.
 | S9 nested fork/join omitted | Accepted: in S1b's contract and evidence. |
 | NITs (`sc_perform` listed; no new kind mapping; killed state kept; P6 fixture) | All accepted (§3.3 uses `Show core_step2`/`pick`'s own labels; `SC_final` keeps the killed state; P6 needs ≥1 global). |
 | Closures acceptable for S1a; obligation to make the remainder data | Accepted as the §3.7 named obligation and R8. |
+
+## 10. Factual corrections found while implementing S1a (2026-09-30, [AGENT], appended by the S1a worker)
+
+The implementation record is `2026-09-30_sc-s1a-acceptance.md`; these are the places where §3's
+text was found wrong or unimplementable as written, with what was done and why. The charter's
+decisions above are otherwise unchanged.
+
+1. **§3.5 `:1739 → driver_globals_with run_threads file` would inline the globals stage into
+   `drive`.** `driver_globals_with` is `let inline`, so that call would substitute driver_globals'
+   body into `drive`'s and the OCaml frame names of the seven lifecycle sites would move from
+   `Driver.driver_globals` to `Driver.drive` — the very frame-name change the WP1 review measured
+   (backtraces compared raw by the pristine-oracle lane). Implemented instead: `drive_with` takes
+   the globals stage as a parameter (`globals file`) and `drive` passes `driver_globals
+   with_concurrency`; `sc_start` passes the new real function `sc_driver_globals file =
+   driver_globals_with sc_boundary file`. Every lifecycle line stays lexically inside its original
+   function; the SC copies live in `sc_driver_globals` and `sc_start`.
+2. **§3.3 `structural val` on the nat budget is refused by the backend** (lem-lean
+   `tests/comprehensive/negative/neg_structural_natpat.lem`: an `n + 1` pattern desugars to
+   arithmetic on the Lean target; R2 anticipated this). Implemented: `sc_run_list` / `sc_explore_list`
+   recurse structurally on a `list unit` budget and `sc_run n` / `sc_explore n` pass
+   `List.replicate n ()` (Lean `List.replicate`, definitional at `0` and `n+1`), so the `rfl` laws
+   hold exactly as stated. No backend change, no pin move.
+3. **§3.2 `declare {lean} skip_instances` on the closure-carrying types cannot be used**: the
+   backend emits the variant/record `deriving BEq, Ord` clause independently of that declare
+   (it checks only for syntactic function types), and the clause then fails on the skipped payload
+   type (`BEq sc_terminal`). Implemented: no `skip_instances`; the types take the derived
+   instances like every other closure-carrying generated type (ndM's residual instances are loud
+   `failwithI` bodies); configurations are never compared. Finding for lem-lean (recorded in the
+   acceptance record), not a pin move.
+4. **§3.2 `SC_core_choosing` carries one extra field** (`bool * list … * driverM driver_result`):
+   whether resolving the node applies a Core handler — `true` for `drive`'s saved-step pick
+   (`pick (x::xs)` materialises the node; the chosen branch runs `process_core_step2`), `false`
+   for a node met inside an already-applied handler (pointer equality). Without it the S1-row
+   rule "an observed ND node alone is not a reduction" cannot be accounted exactly. `sc_config`
+   carries a fifth counter `sc_choices` (choosing-phase resolutions) so `sc_policy_schedule` can
+   index an explicit schedule with the stated stateless policy type.
+5. **§3.3 the pick node's branch labels are the pick's `info`** (`SK_misc ["new_drive_core_threads"]`
+   for every branch, nondeterminism.lem `pick`), not `show` of the steps: the node holds closures.
+   `sc_alternatives` returns `show info` per branch (the existing labels); the `-d 2` debug line of
+   `new_drive_core_threads` is where the steps are shown.
+6. **§3.3 `sc_run`'s `Left SC_choice_required`** is the outcome `SC_needs_choice cfg` (the policy
+   declined at a choosing phase — not API misuse); the other `Left`s are `SC_run_error`.
+7. **§3.3 exit detection.** `FS_done` is never produced (`core_reduction.lem` builds only
+   `FS_oper`; C `exit` is `Step_done2` via the `exit` builtin), and `Step_done2` is always a singleton
+   step list (the arena is a value: one context). So "the step was the exit" is decided from the
+   step LIST before the action runs (`sc_classify_steps`): `[Step_done2 _]` with nothing advancing.
+8. **§3.12 register rows**: the failure-reach census classifies the seven lifecycle sites as
+   MONADIC (`failwithI … : ndM …`), not PURE, so neither `drive`'s originals nor the copies in
+   `sc_driver_globals`/`sc_start` are register rows; `check_failure_reach.sh` walks the `sc_*`
+   entries (FuelFormsTool.entries) and reports the register unchanged (230 rows).
+9. **§3.11 P6 needs a fixture with at least TWO globals**, not one: with the value form
+   `driver_globals_with (driver2 wc)` the action is built once per `driver_globals` application
+   and once per `drive` application, so a one-global program still prints two `ENTERING
+   Driver.driver2` lines (1 + 1) — the count moves only when ≥ 2 globals share the one value.
+   The battery uses `tests/minimal/081-unseq-diff-locations.c` (two globals).
+10. **§3.11 P3 as written ("`finalize` raises `BOOM finalize`") cannot go red in S1a**: on the
+    single startup thread `prepare_exit` (keep thread 0, empty stack, arena `:= mk_value_e
+    cval`) changes nothing `finalize` reads, so skipping it is unobservable until S1b's second
+    thread; the lifecycle plant that goes red in S1a is "the exit step does not hand control
+    back to the remainder" (the machine stays in `SC_core`: every program exhausts its budget).
+    Both variants were run (acceptance record §5).

@@ -464,6 +464,124 @@ def driverErrorBatchMsg : driver_error → String
   | .DErr_concurrency s => s!"Concurrency error: {s}"
   | .DErr_other s => s
 
+/-- Bug-hunt BUG-4 (2026-09-29; record `docs/2026-09-29_bug-hunt-fixes-record.md`
+    §S4): print a batch `Undefined` line with the `ub:` payload as BYTES. The
+    oracle prints the field with `%s` and no escaping
+    (`backend/common/driver_ocaml.ml:134-138`, `Printf.bprintf buf "Undefined
+    {ub: \"%s\", stderr: \"%s\", loc: \"%s\"}"
+    (Undefined.stringFromUndefined_behaviour ub) (String.escaped stderr)
+    (Cerb_location.simple_location loc)`), so an `Invalid_format` payload — the
+    only UB constructor carrying program data (`undefined.lem:530`, rendered
+    `"Invalid_format[" ^ str ^ "]"` at `:1103` from the format string's bytes,
+    `formatted.lem:845/859/874`) — reaches stdout as the format's raw bytes. In
+    Lean those bytes are byte-carrier Chars (one per C byte, CabsImport
+    `getByteStr`); `IO.println` UTF-8-encoded each carrier ≥ 0x80 as two bytes.
+    Here every payload Char is written as the one byte it carries. The other
+    fields are unchanged: `stderr` is already the `String.escaped` mirror
+    (`CerbEscape.byteChars`, callers) and `loc` is the ASCII
+    `simple_location` mirror. A payload Char above U+00FF has no OCaml
+    counterpart (the producer's byte-domain invariant is broken): refused,
+    exit 2, never re-encoded. -/
+def printUndefinedLine (ub : String) (stderr : String) (loc : String) : IO Unit := do
+  let mut payload := ByteArray.empty
+  for c in ub.toList do
+    if c.toNat < 256 then payload := payload.push c.toNat.toUInt8
+    else
+      IO.eprintln s!"cerberus-lean: refused — batch UB payload: the undefined-behaviour text holds U+{(Nat.toDigits 16 c.toNat).asString}, outside the byte domain the oracle's byte string can hold (driver_ocaml.ml:134-138 prints the payload's bytes); the byte-carrier invariant of the model's strings is broken (see VALIDATION.md, bug hunt BUG-4)"
+      IO.Process.exit 2
+  let out ← IO.getStdout
+  out.write ("Undefined {ub: \"".toUTF8 ++ payload ++ s!"\", stderr: \"{stderr}\", loc: \"{loc}\"}\n".toUTF8)
+
+/-- One execution's batch verdict line (the `--batch` printer's per-status arm,
+    factored so the SC lane prints completed SC outcomes through the SAME text;
+    byte-for-byte the oracle's batch_drive + string_of_batch_output mapping,
+    driver_ocaml.ml:162-181 / :106-140). -/
+def printBatchStatus (status : nd_status driver_result driver_error driver_state) : IO Unit := do
+  match status with
+  | .Active result =>
+    IO.println s!"Defined \{value: \"{batchExitValue result.dres_core_value}\", stdout: \"{batchEscape result.dres_stdout}\", stderr: \"{batchEscape result.dres_stderr}\", blocked: \"{if result.dres_blocked then "true" else "false"}\"}"
+  | .Killed st reason =>
+    -- batch_drive (driver_ocaml.ml:173-181): every Killed arm carries
+    -- `String.concat "" (Dlist.toList dr_st.core_state.io.stderr)` —
+    -- the KILLED state's accumulated stderr; the plain batch printer
+    -- renders it on the Undefined line only (:127 `String.escaped
+    -- stderr`; the Error line :138 prints msg alone). Zero-discrepancy
+    -- Z-72: this printed `stderr: ""` literally.
+    let killedStderr := batchEscape
+      (lemListFoldr String.append "" (toList st.core_state0.io.stderr))
+    match reason with
+    | .Undef0 _loc [] =>
+      -- OCaml batch_drive parity: empty UB list is an Error
+      IO.println "Error {msg: \"[empty UB, probably a cerberus BUG]\"}"
+    | .Undef0 loc (ub :: _) =>
+      -- OCaml batch_drive parity: first UB only; loc via simple_location (Z-03)
+      printUndefinedLine (stringFromUndefined_behaviour ub) killedStderr (CerbLocation.simpleLocation loc)
+    | .Error0 loc msg =>
+      if loc == CerbFail.modelFailStopLoc then
+        IO.println (CerbFail.batchRecord msg)
+      else IO.println s!"Error \{msg: \"{msg}\"}"
+    | .Other err =>
+      IO.println s!"Error \{msg: \"{driverErrorBatchMsg err}\"}"
+
+/-! ## `--sc-run --sc-budget N [--sc-first]` (SC S1a, INTERNAL — CONTRACT.md §3)
+
+The Lean engine of the SC S1a differential lane (scripts/test_sc_step.py; charter
+lean_frontend/docs/2026-09-29_sc-s1-charter.md §3.10, Q3 ruled [USER 2026-09-30]):
+after the same front end as `--batch`, the linked program is driven through the
+shared-Lem SC step API (`sc_start`/`sc_explore`/`sc_run`, generated Driver.lean)
+instead of `drive`; the budget is REQUIRED (no default numeral — a harness parameter
+the lane chooses). Completed SC outcomes print through `printBatchStatus`, the
+SC-specific ones as their own records — identically to the OCaml probe
+backend/sc_probe/sc_run.ml, which the lane compares against:
+  SCExhausted {transitions: N, core_reductions: M}   (+ the Lean-only
+  SCMemory {next_alloc_id: A, last_address: L, trace_events: T} line for the charter's row E and S1d's retained-size baseline)
+  SCUnsupported {msg: "…"}   SCBlocked {}   SCNeedsChoice {}   SCRunError {msg: "…"}
+Exit: the batch rule on Defined/Undefined/Error-only outputs; 3 whenever an
+SC-specific outcome is present (loud). Not an accepted C behaviour: `{-{ }-}`
+refuses (`SCUnsupported`) until S1b. -/
+
+/-- The verdict records of `sc_explore`/`sc_run` outcomes: `.inl status` prints as a
+    batch verdict, `.inr line` is an SC record (with the Lean-only memory line after
+    `SCExhausted`). Mirrors backend/sc_probe/sc_run.ml record_of_outcome. -/
+def scRecord (o : sc_run_outcome) :
+    Sum (nd_status driver_result driver_error driver_state) (List String) :=
+  match o with
+  | .SC_stopped cfg =>
+    match cfg.sc_phase0 with
+    | .SC_final (.SC_done dres) => .inl (.Active dres)
+    | .SC_final (.SC_killed reason) => .inl (.Killed cfg.sc_state reason)
+    | .SC_final (.SC_unsupported msg) => .inr [s!"SCUnsupported \{msg: \"{batchEscape msg}\"}"]
+    | .SC_final .SC_blocked => .inr ["SCBlocked {}"]
+    | _ => .inr ["SCRunError {msg: \"cerberus-lean: SC_stopped on a non-final configuration\"}"]
+  | .SC_exhausted cfg =>
+    .inr [s!"SCExhausted \{transitions: {cfg.sc_transitions}, core_reductions: {cfg.sc_core_reductions}}",
+          s!"SCMemory \{next_alloc_id: {cfg.sc_state.layout_state.nextAllocId}, last_address: {cfg.sc_state.layout_state.lastAddress}, trace_events: {cfg.sc_state.trace.length}}"]
+  | .SC_needs_choice _ => .inr ["SCNeedsChoice {}"]
+  | .SC_run_error e _ =>
+    let msg := match e with
+      | .SC_bad_choice i n => s!"SC_bad_choice {i} {n}"
+      | .SC_choice_required => "SC_choice_required"
+      | .SC_terminal => "SC_terminal"
+    .inr [s!"SCRunError \{msg: \"{msg}\"}"]
+
+/-- Print the SC outcomes (batch shape: `EXECUTION i:` headers when several) and
+    return the exit code. -/
+def printScOutcomes (outcomes : List sc_run_outcome) : IO UInt8 := do
+  let records := outcomes.map scRecord
+  let multiple := records.length > 1
+  let mut idx := 0
+  for r in records do
+    if multiple then IO.println s!"EXECUTION {idx}:"
+    match r with
+    | .inl status => printBatchStatus status
+    | .inr lines => for l in lines do IO.println l
+    idx := idx + 1
+  if records.any (fun r => match r with | .inr _ => true | .inl _ => false) then return 3
+  match records with
+  | [.inl (.Active _)] => return 0
+  | [.inl (.Killed _ _)] => return 1
+  | _ => return 0
+
 /-! ## Elaborated-Core signature dump (`--pp-core`, arc-4 S4)
 
 LIMITATION — SIGNATURE-LEVEL ONLY, deliberately. The Lean pipeline has no
@@ -620,33 +738,6 @@ def refuseLibraryLocations (runtime : String) (source : String) (files : Array S
       IO.eprintln s!"cerberus-lean: refused — library-location classification: {source} carries a source location in `{f}`, whose directory ends in one of {CerbLocation.libraryDirs} but is not one of this run's runtime library directories {exact}; the oracle classifies a location as library code by EXACT directory equality with its runtime (util/cerb_location.ml:512-523), this port's pure CerbLocation.isLibraryLocation by the directory suffix, so answering could serve a different UB location (see VALIDATION.md, bug hunt BUG-3)"
       IO.Process.exit 2
 
-/-- Bug-hunt BUG-4 (2026-09-29; record `docs/2026-09-29_bug-hunt-fixes-record.md`
-    §S4): print a batch `Undefined` line with the `ub:` payload as BYTES. The
-    oracle prints the field with `%s` and no escaping
-    (`backend/common/driver_ocaml.ml:134-138`, `Printf.bprintf buf "Undefined
-    {ub: \"%s\", stderr: \"%s\", loc: \"%s\"}"
-    (Undefined.stringFromUndefined_behaviour ub) (String.escaped stderr)
-    (Cerb_location.simple_location loc)`), so an `Invalid_format` payload — the
-    only UB constructor carrying program data (`undefined.lem:530`, rendered
-    `"Invalid_format[" ^ str ^ "]"` at `:1103` from the format string's bytes,
-    `formatted.lem:845/859/874`) — reaches stdout as the format's raw bytes. In
-    Lean those bytes are byte-carrier Chars (one per C byte, CabsImport
-    `getByteStr`); `IO.println` UTF-8-encoded each carrier ≥ 0x80 as two bytes.
-    Here every payload Char is written as the one byte it carries. The other
-    fields are unchanged: `stderr` is already the `String.escaped` mirror
-    (`CerbEscape.byteChars`, callers) and `loc` is the ASCII
-    `simple_location` mirror. A payload Char above U+00FF has no OCaml
-    counterpart (the producer's byte-domain invariant is broken): refused,
-    exit 2, never re-encoded. -/
-def printUndefinedLine (ub : String) (stderr : String) (loc : String) : IO Unit := do
-  let mut payload := ByteArray.empty
-  for c in ub.toList do
-    if c.toNat < 256 then payload := payload.push c.toNat.toUInt8
-    else
-      IO.eprintln s!"cerberus-lean: refused — batch UB payload: the undefined-behaviour text holds U+{(Nat.toDigits 16 c.toNat).asString}, outside the byte domain the oracle's byte string can hold (driver_ocaml.ml:134-138 prints the payload's bytes); the byte-carrier invariant of the model's strings is broken (see VALIDATION.md, bug hunt BUG-4)"
-      IO.Process.exit 2
-  let out ← IO.getStdout
-  out.write ("Undefined {ub: \"".toUTF8 ++ payload ++ s!"\", stderr: \"{stderr}\", loc: \"{loc}\"}\n".toUTF8)
 
 /-- Per-TU frontend: desugar → typecheck → translate, under the TU's own
     digest (set by the caller). Mirror of the OCaml per-file frontend
@@ -1048,6 +1139,8 @@ def loadLibc [LemFuel] [CerbGlobal.Switches] (runtime : String) (quiet : Bool) (
     failures). -/
 def runPipeline [LemFuel] [CerbGlobal.Switches] (runtime : String) (batch : Bool) (ppCore : Bool)
     (firstTrace : Bool)
+    -- `--sc-run --sc-budget N [--sc-first]` (SC S1a, INTERNAL): some (budget, first)
+    (scRun : Option (Nat × Bool))
     -- the address-space top (address-space-bound slice, 2026-09-17): ONE value for
     -- both entry points — the desugarer's const-expr mini-run (via frontendTU →
     -- desugar) and the execution driver (initial_driver_state) — from `--address-space-top`
@@ -1228,6 +1321,17 @@ def runPipeline [LemFuel] [CerbGlobal.Switches] (runtime : String) (batch : Bool
     -- argv — pipeline.ml:598,602: ("cmdname" :: args) both batch and
     -- non-batch; progArgs is the parsed --args list (empty without the
     -- flag, so the historical ["cmdname"] argv is byte-unchanged).
+    -- --sc-run (SC S1a, INTERNAL): the shared-Lem SC step API on the same linked
+    -- program and initial state; `sc_start` holds the real `drive` text with the
+    -- Core bodies entered at boundaries (driver.lem, section "SC concurrency S1a").
+    match scRun with
+    | some (budget, first) =>
+      let cfg0 := sc_start runFile.enumDefs runFile.tagDefs runFile ("cmdname" :: progArgs) drSt
+      let outcomes :=
+        if first then [sc_run runFile.enumDefs runFile.tagDefs budget sc_policy_first cfg0]
+        else sc_explore runFile.enumDefs runFile.tagDefs budget cfg0
+      return ← printScOutcomes outcomes
+    | none => pure ()
     let driverAction := match callFn with
       | none => drive runFile.enumDefs runFile.tagDefs false runFile ("cmdname" :: progArgs)
       | some (fname, argInts) =>
@@ -1255,31 +1359,7 @@ def runPipeline [LemFuel] [CerbGlobal.Switches] (runtime : String) (batch : Bool
       let mut idx := 0
       for (status, _trace, _finalSt) in execs do
         if multiple then IO.println s!"EXECUTION {idx}:"
-        match status with
-        | .Active result =>
-          IO.println s!"Defined \{value: \"{batchExitValue result.dres_core_value}\", stdout: \"{batchEscape result.dres_stdout}\", stderr: \"{batchEscape result.dres_stderr}\", blocked: \"{if result.dres_blocked then "true" else "false"}\"}"
-        | .Killed st reason =>
-          -- batch_drive (driver_ocaml.ml:173-181): every Killed arm carries
-          -- `String.concat "" (Dlist.toList dr_st.core_state.io.stderr)` —
-          -- the KILLED state's accumulated stderr; the plain batch printer
-          -- renders it on the Undefined line only (:127 `String.escaped
-          -- stderr`; the Error line :138 prints msg alone). Zero-discrepancy
-          -- Z-72: this printed `stderr: ""` literally.
-          let killedStderr := batchEscape
-            (lemListFoldr String.append "" (toList st.core_state0.io.stderr))
-          match reason with
-          | .Undef0 _loc [] =>
-            -- OCaml batch_drive parity: empty UB list is an Error
-            IO.println "Error {msg: \"[empty UB, probably a cerberus BUG]\"}"
-          | .Undef0 loc (ub :: _) =>
-            -- OCaml batch_drive parity: first UB only; loc via simple_location (Z-03)
-            printUndefinedLine (stringFromUndefined_behaviour ub) killedStderr (CerbLocation.simpleLocation loc)
-          | .Error0 loc msg =>
-            if loc == CerbFail.modelFailStopLoc then
-              IO.println (CerbFail.batchRecord msg)
-            else IO.println s!"Error \{msg: \"{msg}\"}"
-          | .Other err =>
-            IO.println s!"Error \{msg: \"{driverErrorBatchMsg err}\"}"
+        printBatchStatus status
         idx := idx + 1
       -- Exit code per OCaml main.ml runM: single Defined → 0,
       -- single Undefined/Error → 1, multiple executions → 0.
@@ -1390,7 +1470,7 @@ def refuseFlag (flag : String) : IO Unit := do
     else if flag == "--batch" || flag == "--pp-core" || flag == "--parse-core" || flag == "--first" then
       "known flag out of its canonical position (`--batch`, `--pp-core` or `--parse-core` must be argv[0]; `--first` must immediately follow `--batch`/`--pp-core`)"
     else
-      "unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>, --address-space-top <N>, --runtime <DIR> (and parses --switches <list>, refusing every value)"
+      "unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>, --address-space-top <N>, --runtime <DIR>, the INTERNAL --sc-run --sc-budget <N> [--sc-first] (after --batch) (and parses --switches <list>, refusing every value)"
   IO.eprintln s!"cerberus-lean: refused — {flag}: {feature} (see VALIDATION.md, zero-discrepancy Z-24)"
   IO.Process.exit 2
 
@@ -1530,12 +1610,25 @@ def main (args : List String) : IO Unit := do
   -- design §F.13). PARSED here, REFUSED below (every value, `refuseSwitches`); a
   -- repeated option is refused as cmdliner does. (flag text as given, value)
   let mut switchesArg : Option (String × String) := none
+  -- --sc-run --sc-budget <N> [--sc-first] (SC S1a, INTERNAL — CONTRACT.md §3; charter
+  -- §3.10/Q3 [USER 2026-09-30]): only after `--batch`; the budget is REQUIRED (no
+  -- default numeral) and a non-negative decimal; incompatible with --first, --call,
+  -- --trace-nodes. Anything else is REFUSED (exit 2), like --fuel.
+  let mut scRunFlag : Bool := false
+  let mut scFirst : Bool := false
+  let mut scBudgetStr : Option String := none
   let mut restArgs : List String := []
   -- --parse-core consumes its file list itself (below); nothing to scan
   let mut pending := if parseCoreMode then [] else rest1
   while true do
     match pending with
     | [] => break
+    | "--sc-run" :: rest => scRunFlag := true; pending := rest
+    | "--sc-first" :: rest => scFirst := true; pending := rest
+    | "--sc-budget" :: v :: rest => scBudgetStr := some v; pending := rest
+    | ["--sc-budget"] =>
+      IO.eprintln "cerberus-lean: --sc-budget requires an argument"
+      IO.Process.exit 1
     | "--libc" :: v :: rest => libcCore := some v; pending := rest
     | "--libc-tu" :: v :: rest => libcTus := libcTus ++ [v]; pending := rest
     | "--call" :: v :: rest => callName := some v; pending := rest
@@ -1616,6 +1709,30 @@ def main (args : List String) : IO Unit := do
       | none => do
         IO.eprintln s!"cerberus-lean: refused — --address-space-top {s}: not a decimal numeral (the address-space top is a decimal positive integer, 0 < top < 2^64; default {defaultAddressSpaceTop}; see VALIDATION.md, address-space top)"
         IO.Process.exit 2
+  let scRun : Option (Nat × Bool) ← match scRunFlag, scBudgetStr with
+    | false, none =>
+      if scFirst then do
+        IO.eprintln "cerberus-lean: refused — --sc-first without --sc-run"
+        IO.Process.exit 2
+      else pure none
+    | false, some _ => do
+      IO.eprintln "cerberus-lean: refused — --sc-budget without --sc-run"
+      IO.Process.exit 2
+    | true, none => do
+      IO.eprintln "cerberus-lean: refused — --sc-run requires --sc-budget <N> (the step budget is a required parameter of the SC run; no default numeral exists)"
+      IO.Process.exit 2
+    | true, some s =>
+      if !batchMode then do
+        IO.eprintln "cerberus-lean: refused — --sc-run is accepted only after --batch (INTERNAL SC S1a lane entry; CONTRACT.md §3)"
+        IO.Process.exit 2
+      else if firstTrace || traceNodes || callName.isSome then do
+        IO.eprintln "cerberus-lean: refused — --sc-run cannot be combined with --first, --trace-nodes or --call (the SC run has its own policy: --sc-first)"
+        IO.Process.exit 2
+      else match (if !s.isEmpty && s.all Char.isDigit then s.toNat? else none) with
+        | some n => pure (some (n, scFirst))
+        | none => do
+          IO.eprintln s!"cerberus-lean: refused — --sc-budget {s}: not a non-negative decimal numeral"
+          IO.Process.exit 2
   let callFn : Option (String × List Int) ← match callName, callArgsStr with
     | none, none => pure none
     | none, some _ => do
@@ -1733,6 +1850,6 @@ def main (args : List String) : IO Unit := do
   -- `CerbGlobal.Switches` exists in this repository
   -- (speedbump: `scripts/check_no_fuel_numerals.sh` rule W1).
   let code ← (letI : LemFuel := ⟨fuel⟩; letI : CerbGlobal.Switches := ⟨CerbGlobal.defaultSwitches⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace
-    addressSpaceTop callFn traceNodes libc progArgs tunits)
+    scRun addressSpaceTop callFn traceNodes libc progArgs tunits)
   if code != 0 then
     IO.Process.exit code
