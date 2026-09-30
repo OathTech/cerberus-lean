@@ -261,3 +261,97 @@ SUMMARY: exec_match=9 neg_pinned=5 fail=0                 [row 9]
 PASS memory access: 3 runs; primitive receipts, all ND constructors, erasure, draining; 8 instrument controls
 ```
 (`…` = cut at 330 columns by the extraction; bracketed row tags added.)
+
+## S5: BUG-5 (libc dump float precision) — STOPPED after measurement
+
+Per the brief: measure the blast radius first; if the change cascades into many pinned artifacts or needs
+a fork-drift re-pin, stop and report the options with their costs. It does need a fork-drift manifest
+change on every route that is exact by construction, and the global route cascades further, so the
+printer change is NOT implemented. Implemented: the in-code note Z2-CP-02 is corrected (below).
+
+### Measurement (all derived from reads of this tree, 2026-09-30)
+
+1. **The lossy literal.** Float-literal census of the pinned `tests/libc/libc.core` (89 609 lines): 23
+   literals on `Specified(…)` (`0.` ×9, `0.25`, `0.5` ×4, `0.75` ×2, `1000000000.`, `1.84467440737e+19`,
+   `3.40282347e+38`, `inf` ×4) plus 5 in pure expressions (`= 0.` ×4, `+ 1.`). Only
+   `1.84467440737e+19` (line 60849, `0x1p64` from `runtime/libc/src/internal.c:303`) has more than 12
+   significant digits in its true value: `float("1.84467440737e+19")` is 2^64 − 9 551 872 (Python). This
+   agrees with both hunters' census, which matched each literal to its C source constant (so the
+   exactness of the other literals is a source reading, not a measurement of the in-memory doubles). `3.40282347e+38` (line 41698, the constant the old Z2-CP-02 note
+   blamed) is FLT_MAX's 9-digit source spelling; %.12g reproduces it and it round-trips.
+2. **Where the oracle's printer reaches.** `string_of_float` (= `%.12g`) is the float case of
+   `Pp_core.pp_object_value` (`ocaml_frontend/pprinters/pp_core.ml:279-282`). Through `pp_value` it
+   prints every `--pp=core` dump AND the batch `value:` field (`driver_ocaml.ml:55-64`
+   `String_core.string_of_value`, reached for `OtherValue` results). The same `string_of_float` is used
+   by `pp_core_ast.ml:52` (`--ast=core`), `pp_defacto_memory.ml:143,264` and `pp_ocaml.ml:344`.
+3. **Pinned artifacts containing pp_core float literals.** A grep over every tracked
+   `.core/.sig/.txt/.expected/.out/.json` outside `lean_frontend/docs/` and `runtime/` finds ONE:
+   `tests/libc/libc.core` (23 `Specified(float)` matches). `tests/verify/*.core` and the `corpus/`
+   fixtures (fixture-freeze gate) contain none. The upstream-oracle comparison (Tier B row 10) and the
+   batch lanes would see a changed `value:` rendering only for float-valued results.
+4. **Fork-drift.** `pp_core.ml` is not in `scripts/fork_drift_manifest.txt` (it is identical to
+   upstream). ANY edit to it makes it a new oracle-surface file: +1 `[files]` row, +1 `[source-content]`
+   row and a NOTE (layer 2, the generated-OCaml deltas, is unaffected: `pp_core.ml` is not generated). A
+   new OCaml tool elsewhere (e.g. under `tools/`, like `tools/gen_version.ml`) is a new manifest row too.
+5. **Lean-side mirror.** `CerbFloat.string_of_float` (`CerbFloat.lean:368-377`) is the exact mirror of
+   `valid_float_lexem (format_float "%.12g" f)` and `CerbPP.lean:72-73` uses it for the same
+   `pp_object_value` case; `pp-test` (row 1) pins the float formatting against OCaml transcripts. A
+   GLOBAL printer change would force the Lean mirror, its transcripts and every rendering of a float
+   `value:` to change with it.
+6. **Parser side.** `CoreParser.lexNumLit` accepts `[0-9]+.[0-9]*([eE][+-]?[0-9]+)?` and
+   `[0-9]+[eE]…`; a `%.17g` decimal (e.g. `1.8446744073709552e+19`) parses with no grammar change, and
+   `CerbFloat.of_string` is correctly rounded (ISO-fix R5 work), so a 17-digit literal round-trips
+   exactly. A `%h` hex form would need a grammar extension.
+
+### Options (operator decision) and their costs
+
+- **(A) Opt-in exact printer used only by `libc_prep.sh`** [AGENT recommendation]: an env- or
+  flag-gated branch in `pp_core.ml`'s float case that prints the shortest decimal that round-trips
+  (`%.12g` when it does, else `%.17g`), off by default. Costs: fork-drift manifest +2 rows + NOTE
+  (`pp_core.ml`); `tests/libc/libc.core` + `.sha256` re-pin, where only line 60849 is expected to change (the census reads every other literal's source
+  constant as having ≤ 12 significant digits; the gate below would confirm it by measurement); no Lean mirror change (the default is untouched), no
+  CoreParser change; a new plant-tested gate in `libc_prep.sh --check`: regenerate the dump with and
+  without the flag, require them to differ only in float literals, and require every pinned literal L
+  to satisfy `%.12g(float(L))` = the default dump's literal and `float(L)` printed back = L.
+  Default oracle behaviour and every other pinned artifact unchanged.
+- **(B) Global exact printer in `pp_core.ml`**: fixes every Core dump. Costs: (A)'s manifest rows and
+  re-pin, plus the Lean mirror (`CerbFloat.string_of_float`/`CerbPP`), `pp-test` transcripts, the batch
+  `value:` rendering of float results on both engines, and a new fork-vs-upstream difference class for
+  the Tier B upstream-oracle gate (pristine prints `%.12g`). Widest.
+- **(C) Standalone OCaml reader of `libc.co`** (a `tools/` executable against cerberus-lib) that emits
+  the exact floats, substituted into the dump by `libc_prep.sh`. Costs: +manifest rows for the tool and
+  its dune stanza; a fragile correspondence between the tool's traversal order and the printed dump;
+  more code than (A) for the same result.
+- **(D) Reviewed override table in `libc_prep.sh`, no OCaml change**: substitute
+  `18446744073709551616.` at the one lossy site, with a gate that the regenerated dump's float-literal
+  census equals a reviewed register (value, line, source constant, disposition). Cheapest; no manifest
+  change except the script's own content if it is pinned (it is not). But exactness of the other 27
+  literals rests on a reviewed argument (their source spellings have ≤ 12 significant digits), not on a
+  measurement of the in-memory doubles.
+- **(E) Named deviation** (VALIDATION §2b) with the census gate of (D) and no substitution, until one of
+  the above lands.
+
+### Implemented in this branch
+
+- `CoreParser.lean` Z2-CP-02 note: now names the measured lossy literal (`libc.core:60849`,
+  `0x1p64`, `internal.c:303`), states the served consequence (Lean's `strtod` ERANGE near DBL_MAX),
+  retracts the FLT_MAX claim, and points here for the routes. Same line count as before, so the
+  failure-reach register's `CoreParser.lean:NNNN` cites are not shifted. Comment-only; the binary's
+  behaviour is unchanged.
+- Not implemented: the printer, the re-pin, the round-trip gate. BUG-5 stays an open served difference
+  until the operator picks a route.
+
+The comment correction was built and was in the tree for the Tier A run above (the binary's behaviour is
+unchanged by it).
+
+## Summary
+
+| Slice | Finding | State |
+|---|---|---|
+| S2 | BUG-2 runtime location; BUG-3 library-location test | done: oracle-mirrored `--runtime`/`CERB_INSTALL_PREFIX`, OPAM arm refused (deliberate divergence); suffix test = exact test on every served run (import-time refusal) |
+| S3 | BUG-6 non-UTF-8 file names; K-5 attribute strings | done: attributed exit-2 refusal (class (c)); mover named |
+| S4 | BUG-4 Invalid_format payload bytes | done: mirrored (payload printed as bytes) |
+| S5 | BUG-5 libc dump float precision | STOPPED after measurement: every exact route edits the fork surface (manifest rows); options (A)–(E) above for the operator; Z2-CP-02 note corrected |
+
+No new Lean-vs-oracle disagreement was found while doing these slices. Not run here: Tier B (in
+particular the upstream-oracle gate, which gains one immaculate case).
