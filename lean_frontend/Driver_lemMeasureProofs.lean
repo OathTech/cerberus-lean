@@ -66,7 +66,7 @@ theorem hack_value [LemFuel] (m : Nat) (hm : 1 ≤ m)
   cases m with
   | zero => omega
   | succ m =>
-    simp only [hack_lemFuel, CerbDebug.print_debug_pure, step_eval_pexpr,
+    simp only [hack_lemFuel, lemSeq, step_eval_pexpr,
       step_eval_pexpr_value _ (pexpr_lemSize_pos (Pexpr annots () (PEval cval))), valueFromPexpr]
 
 /-- THE OBLIGATION, exactly as Driver_auxiliary.lean states and delegates it:

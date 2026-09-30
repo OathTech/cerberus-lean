@@ -94,7 +94,7 @@ theorem add_to_asw_stable_aux (k : Nat) : ∀ (aids : Pset Nat) (e : generic_exp
             add_to_asw_lemFuel f aids' y = add_to_asw_lemFuel g aids' y :=
           fun aids' y hy => ih aids' y f g (by omega) (by omega) (by omega)
         obtain ⟨annot1, e_⟩ := e
-        cases e_ <;> simp (disch := size_lt) only [add_to_asw_lemFuel, key]
+        cases e_ <;> simp (disch := size_lt) only [add_to_asw_lemFuel, key, lemSeq]
         case Ecase pe pat_es =>
           split <;> try rfl
           to_congr; intro p hp; obtain ⟨x1, e⟩ := p
