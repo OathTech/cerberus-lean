@@ -205,6 +205,10 @@ paths; a predicate defined as runtime success would be circular. This does
 not establish program-level definedness, which quantifies over all
 consistent feasible executions. First-race prefixes have a separate law.
 
+Beyond SC (outside the MVP): the [weak-memory forward note](2026-09-30_sc-weak-memory-forward-note.md)
+records the operational and robustness-theorem routes and the design disciplines
+that keep them open.
+
 ## 5. Transition contract and remaining production obligations
 
 The WP1 decision adopts the following contract for S1–S4. Its bounded
