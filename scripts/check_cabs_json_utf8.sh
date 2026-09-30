@@ -47,7 +47,7 @@ if [[ "${1:-}" == "--selftest" ]]; then
         fi
         echo "$NAME: selftest plant '$plant' caught: $(grep -c 'FAIL —' "$ST/$plant.out") failing witness(es)"
     done
-    exec "$0"
+    "$0"; exit $?   # not exec: the EXIT trap must remove $ST
 fi
 
 [[ -x "$BIN" ]] || { echo "$NAME: FAIL — driver not built: $BIN"; exit 1; }

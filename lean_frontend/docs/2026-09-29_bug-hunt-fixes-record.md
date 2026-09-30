@@ -355,3 +355,12 @@ unchanged by it).
 
 No new Lean-vs-oracle disagreement was found while doing these slices. Not run here: Tier B (in
 particular the upstream-oracle gate, which gains one immaculate case).
+
+### Post-slice fix: selftest scratch cleanup
+
+Both new row-1 scripts ended `--selftest` with `exec "$0"`, which replaced the process before its EXIT
+trap could remove the selftest scratch directory; seven `…selftest.*` directories had accumulated under
+`.tmp/scripts/`. Now `"$0"; exit $?`. Verified: both `--selftest` runs print their OK line
+(`check_runtime_resolution: OK (17 witnesses: …)`, `check_cabs_json_utf8: OK (9 witnesses: …)`) and leave
+no directory behind; with `CERB_LEAN_BIN_OVERRIDE=/bin/false` both exit 1 (the final run's status
+propagates).
