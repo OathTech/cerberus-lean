@@ -59,6 +59,7 @@ branch · expected landing. Append-only; strike when landed.
 | Date | Track | Surface | Branch | Expected |
 |---|---|---|---|---|
 | 2026-09-29 | SC | S1 bounded step API: new SC step/lifecycle definitions in `driver.lem` (and, as needed, `core_run.lem` / `core_reduction.lem` / `core_run_aux.lem`), added alongside the unchanged sequential `drive`; no change to upstream-supported behaviour | `arc/sc-s1-*` (sub-slices named in the S1 charter) | per sub-slice; charter first |
+| 2026-09-30 | next-phase (bug-hunt fixes) | `Main.lean` runtime resolution (`--runtime`/`CERB_INSTALL_PREFIX`) and Cabs-import refusals (library-location, non-UTF-8), `CerbLocation.isLibraryLocation` docs, batch `ub:` byte printing, every harness passing the runtime to the Lean driver (`scripts/common.sh` + direct sites), new row-1 checks, VALIDATION/CONTRACT N1–N3; no `.lem` or SC-surface change | `arc/bug-hunt-fixes` | after the full ladder + pre-merge audit |
 
 ## What we ask of you
 
