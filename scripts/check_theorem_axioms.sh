@@ -299,7 +299,8 @@ echo "check_theorem_axioms: generated-tree census OK ($GEN_SCANNED files: 0 axio
 #       reintroduction of the effect projection via
 #       opaque + implemented_by + unsafeBaseIO (the L2 audit's
 #       accepted proposal). LemLib survivors: failwithIImpl +
-#       fuelExhaustedWithImpl; cerberus survivors: the Q4-classified
+#       fuelExhaustedWithImpl + lemSeqImpl (temporal, D1(a) 2026-09-30,
+#       mover lem-lean TODO 24); cerberus survivors: the Q4-classified
 #       allowlist (digest converted at C2 — zero unsafeBaseIO in
 #       CerberusFresh).
 #   (4) ban-surface assertion: the lem-lean tests/ scaffolds are

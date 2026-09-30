@@ -22,6 +22,19 @@
 # Line numbers are advisory (drift with edits); identifier is normative.
 #
 # --- survivors after C2 (the standing allowlist) ---
+lem-lean/lean-lib/LemLib.lean	lemSeqImpl	temporal(lem-lean TODO 24: failure-monad translation)	KEEP until the mover lands (it deletes lemSeqImpl)
+# lemSeqImpl (added 2026-09-30, lem re-pin 77ad4fa; record docs/2026-09-30_lem-repin-77ad4fa-record.md):
+#   the implemented_by body of the TRANSPARENT `def lemSeq (a : Unit → α) (b : Unit → β) : β := b ()`
+#   (B15/B15b: lem's `let _ = e1 in e2` and unused lets). The kernel and every proof see `b ()`; at run
+#   time lemSeqImpl forces `a ()` first (IO.mkRef under unsafeBaseIO), mirroring OCaml's strict `let`.
+#   Gap: a failure or non-termination in the discarded `a` is visible at run time, invisible to the logic.
+#   In Cerberus the discarded `a` is a print_debug_pure/warn call (the debug no-op twins) at 268 generated
+#   sites. Ruling, verbatim as relayed in lem-lean doc/lean-backend/2026-09-28_linksem-findings.md
+#   "Native seams: boundary rulings (2026-09-30)": D1 [USER 2026-09-30] "D1: agree" — D1(a): ACCEPTED onto
+#   the boundary list as TEMPORARY, not permanent. Mover: lem-lean doc/lean-backend/TODO.md item 24, the
+#   failure-monad translation (queued; design pass with the operator first), which deletes lemSeqImpl.
+#   Pinned below as IMPLBY + UNSAFEDECL + UNSAFEBASEIO rows (COUNT 1, the consumed LemLib copy).
+#   D1(b) [same ruling] REMOVED LemLib's @[extern] lemSetExitOnPanic seam at 77ad4fa: no row exists for it.
 # --- retired 2026-09-19 (seam-hygiene H3, docs/2026-09-18_seam-hygiene-record.md §5) ---
 # lean_frontend/CerbUtils.lean timingStackRef / logRef / STD_impl (+ begin_timing_impl,
 # end_timing_impl) — DELETED: `begin_timing`/`end_timing`/`STD_` are plain value
@@ -103,6 +116,9 @@ lem-lean/lean-lib/LemLib.lean	runEffectful_impl	L2-delete	DELETE (the axiom scaf
 # - lem-lean/lean-lib/LemLib.lean failwithIImpl/fuelExhaustedWithImpl:
 #   the L2 record's enumerated survivor pair (panic bindings of the
 #   axiom-free failure/fuel constants).
+# - lem-lean/lean-lib/LemLib.lean lemSeqImpl: temporal (D1(a), [USER
+#   2026-09-30] "D1: agree"; mover lem-lean TODO 24) — see the survivor row
+#   above for the gap it opens and why it is accepted.
 # - CerberusFresh: the digest boundary — kernel-checked opaque chain
 #   (digestPure/digest_impl/digest + forceThunkIO/forceIO_impl/forceIO)
 #   + the pure md5Hex extern + the BaseIO digestIO/setDigestIO externs
@@ -128,6 +144,9 @@ PIN IMPLBY lem-lean/lean-lib/LemLib.lean failwithIImpl 1
 PIN IMPLBY lem-lean/lean-lib/LemLib.lean fuelExhaustedWithImpl 1
 PIN UNSAFEDECL lem-lean/lean-lib/LemLib.lean failwithIImpl 1
 PIN UNSAFEDECL lem-lean/lean-lib/LemLib.lean fuelExhaustedWithImpl 1
+PIN IMPLBY lem-lean/lean-lib/LemLib.lean lemSeqImpl 1
+PIN UNSAFEBASEIO lem-lean/lean-lib/LemLib.lean lemSeqImpl 1
+PIN UNSAFEDECL lem-lean/lean-lib/LemLib.lean lemSeqImpl 1
 PIN UNSAFEDECL lean_frontend/test/Unit/FuelFormsTool.lean main 1
 PIN EXTERN lean_frontend/CerberusFresh.lean digestIO 2
 PIN EXTERN lean_frontend/CerberusFresh.lean digestPure 2

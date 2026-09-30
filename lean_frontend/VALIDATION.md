@@ -1141,7 +1141,20 @@ left the list 2026-09-05, see below):
   fails `any_bounded_int` in both engines). The timing/log refs became
   transparent value identities at seam-hygiene H3 (2026-09-19);
 - LemLib's `failwithIImpl`/`fuelExhaustedWithImpl` panic bindings
-  (runtime behavior of the axiom-free failure/fuel constants).
+  (runtime behavior of the axiom-free failure/fuel constants);
+- LemLib's `lemSeqImpl` — TEMPORARY (added 2026-09-30 with the lem re-pin to
+  `77ad4fa`, `docs/2026-09-30_lem-repin-77ad4fa-record.md`). It is the native
+  body of the TRANSPARENT `lemSeq a b := b ()` that lem emits for
+  `let _ = e1 in e2` and unused `let`s (B15/B15b): the kernel and every proof
+  see `b ()`; at run time `a ()` is forced first, mirroring OCaml's strict
+  `let`. A failure or non-termination in the discarded `a` is therefore
+  visible at run time and invisible to the logic. In Cerberus every such `a`
+  is a debug `print_debug_pure`/`warn` call (no-op twins, 268 generated
+  sites). Ruling D1 [USER 2026-09-30] "D1: agree" (D1(a): temporary, not
+  permanent; relayed in lem-lean `doc/lean-backend/2026-09-28_linksem-findings.md`
+  "Native seams"); named mover: lem-lean TODO item 24, the failure-monad
+  translation, which deletes it. (D1(b) removed LemLib's `@[extern]`
+  `lemSetExitOnPanic`; it never reached this list.)
 
 Separately from the runtime seams, the boundary-opaque census (the axiom
 gate's exactly-once population, 10 rows at `e9f9d049f`, derived 2026-09-24) carries two PURE
