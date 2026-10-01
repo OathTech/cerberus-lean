@@ -18,7 +18,8 @@ decisions are [AGENT] unless marked [USER].
 
 The lem pin moves from `c2a68e7` to `77ad4fa`. That range carries Lean-backend correctness fixes, LemLib changes and a
 LemLib toolchain move from Lean 4.28 to 4.32.2 (Cerberus's toolchain). The lem OCaml backend and the OCaml library are
-unchanged. The only OCaml-library difference is two comments in the generated `ocaml-lib/lem_word.ml`: the switch's
+unchanged, apart from the target-shared `src/initial_env.ml` (the fail-closed constants load), which does not change
+the generated OCaml (pre-merge audit F3). The only OCaml-library difference is two comments in the generated `ocaml-lib/lem_word.ml`: the switch's
 installed library was compared byte-for-byte against the branch build.
 
 Generation used lem built in the lem worktree at `77ad4fa`, which reports
@@ -96,8 +97,8 @@ All builds used the capped Lean build (32G). They were the OCaml oracle, the `ce
 2. **Native boundary: `lemSeqImpl` is TEMPORARY.** It is the `implemented_by` body of the transparent
    `lemSeq a b := b ()`: the kernel and proofs see `b ()`, while at run time `a ()` is forced first (`IO.mkRef` under
    `unsafeBaseIO`), mirroring OCaml's strict `let`. The gap: a failure or non-termination in the discarded `a` is visible
-   at run time and invisible to the logic. In Cerberus every such `a` is a debug `print_debug_pure`/`warn` call (a no-op
-   twin), at 268 sites.
+   at run time and invisible to the logic. In Cerberus there are 268 sites:
+   all but one are debug `print_debug_pure`/`warn` calls (no-op twins); the exception is `driver2`'s `_non_blocked_th_sts` (`Driver.lean:433`, `driver.lem:1379`), which runs `step_ctx` (four failure sites of UNKNOWN reach) on every driver iteration. Lean's compiler used to drop that work; it now runs as in OCaml (no lane moved; pre-merge audit F1).
    - Ruling: D1 [USER 2026-09-30] "D1: agree", i.e. D1(a) accepted onto the boundary list as temporary, not permanent.
    - Mover: lem-lean TODO item 24, the failure-monad translation, which deletes the seam.
    - `scripts/unsafebaseio_allowlist.txt` gains a survivor row `lemSeqImpl temporal(lem-lean TODO 24: failure-monad
@@ -182,3 +183,12 @@ The elab row is reporting-mode. `same=108 diff=5` equals the state recorded in `
 - **The seam's mover.** `lemSeqImpl` leaves the boundary list when lem-lean TODO 24 (the failure-monad translation)
   lands.
 - **Consumer.** The note for cerberus-sl is `2026-09-30_consumer-note-cerberus-sl-lem-repin-77ad4fa.md`.
+
+## Pre-merge audit dispositions (2026-10-01)
+
+Audit: `docs/2026-09-30_lem-repin-77ad4fa-pre-merge-audit.md` (MERGEABLE WITH FIXES). F1 (the "every discarded `a` is a
+debug no-op" claim was false for `driver2`'s `_non_blocked_th_sts`, which runs `step_ctx`) and F3 (`src/initial_env.ml`
+changed) are corrected in this record, VALIDATION §3, the allowlist comment and the cerberus-sl consumer note. F2
+(advisory, [AGENT] left as is to keep the re-pin tight): the classifier treats a failure placed directly inside a
+discarded `lemSeq` argument as an ordinary lambda body; there are no such sites today, and a new one still fails the
+failure-reach gate as unregistered.

@@ -24,7 +24,7 @@ lem-lean `doc/lean-backend/2026-09-28_linksem-findings.md`.
 3. **`lemSeq` is a new native seam, on the boundary list as TEMPORARY.** Its definition is
    `lemSeq (a : Unit → α) (b : Unit → β) : β := b ()`, and it is **transparent**: proofs see `b ()`. Its run-time body
    `lemSeqImpl` forces `a ()` first, mirroring OCaml's strict `let`. A failure or non-termination in `a` is invisible to
-   the logic. In Cerberus every such `a` is a debug `print_debug_pure`/`warn` no-op (268 sites). Its named mover is
+   the logic. In Cerberus, 268 sites: all but one are debug `print_debug_pure`/`warn` calls (no-op twins); the exception is `driver2`'s `_non_blocked_th_sts` (`Driver.lean:433`, `driver.lem:1379`), which runs `step_ctx` (four failure sites of UNKNOWN reach) on every driver iteration. Lean's compiler used to drop that work; it now runs as in OCaml (no lane moved; pre-merge audit F1). Its named mover is
    lem-lean TODO 24 (the failure-monad translation). See VALIDATION §3 and `scripts/unsafebaseio_allowlist.txt`.
 
 ## Generated-code shapes that proofs see

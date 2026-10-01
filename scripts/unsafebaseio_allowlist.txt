@@ -28,8 +28,9 @@ lem-lean/lean-lib/LemLib.lean	lemSeqImpl	temporal(lem-lean TODO 24: failure-mona
 #   (B15/B15b: lem's `let _ = e1 in e2` and unused lets). The kernel and every proof see `b ()`; at run
 #   time lemSeqImpl forces `a ()` first (IO.mkRef under unsafeBaseIO), mirroring OCaml's strict `let`.
 #   Gap: a failure or non-termination in the discarded `a` is visible at run time, invisible to the logic.
-#   In Cerberus the discarded `a` is a print_debug_pure/warn call (the debug no-op twins) at 268 generated
-#   sites. Ruling, verbatim as relayed in lem-lean doc/lean-backend/2026-09-28_linksem-findings.md
+#   In Cerberus, 268 generated sites: all but one discard a print_debug_pure/warn call (debug no-op twins); the
+#   exception is driver2's _non_blocked_th_sts (Driver.lean:433), which runs step_ctx (real work, 4 failure sites
+#   of UNKNOWN reach) on every iteration, now evaluated as in OCaml (pre-merge audit F1). Ruling, verbatim as relayed in lem-lean doc/lean-backend/2026-09-28_linksem-findings.md
 #   "Native seams: boundary rulings (2026-09-30)": D1 [USER 2026-09-30] "D1: agree" — D1(a): ACCEPTED onto
 #   the boundary list as TEMPORARY, not permanent. Mover: lem-lean doc/lean-backend/TODO.md item 24, the
 #   failure-monad translation (queued; design pass with the operator first), which deletes lemSeqImpl.

@@ -1148,9 +1148,8 @@ left the list 2026-09-05, see below):
   `let _ = e1 in e2` and unused `let`s (B15/B15b): the kernel and every proof
   see `b ()`; at run time `a ()` is forced first, mirroring OCaml's strict
   `let`. A failure or non-termination in the discarded `a` is therefore
-  visible at run time and invisible to the logic. In Cerberus every such `a`
-  is a debug `print_debug_pure`/`warn` call (no-op twins, 268 generated
-  sites). Ruling D1 [USER 2026-09-30] "D1: agree" (D1(a): temporary, not
+  visible at run time and invisible to the logic. Of Cerberus's 268 generated sites,
+  all but one are debug `print_debug_pure`/`warn` calls (no-op twins); the exception is `driver2`'s `_non_blocked_th_sts` (`Driver.lean:433`, `driver.lem:1379`), which runs `step_ctx` (four failure sites of UNKNOWN reach) on every driver iteration. Lean's compiler used to drop that work; it now runs as in OCaml (no lane moved; pre-merge audit F1). Ruling D1 [USER 2026-09-30] "D1: agree" (D1(a): temporary, not
   permanent; relayed in lem-lean `doc/lean-backend/2026-09-28_linksem-findings.md`
   "Native seams"); named mover: lem-lean TODO item 24, the failure-monad
   translation, which deletes it. (D1(b) removed LemLib's `@[extern]`
