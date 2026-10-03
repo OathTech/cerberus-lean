@@ -314,10 +314,11 @@ if $RECORD_BASELINE; then
         echo "# (record §5): zd-z2-free-funptr (Z-07 re-witness, MATCH), zd-z2m03-malloc-oom-msg (MATCH — Lean runs"
         echo "# it since Z2-M-04), zd-z2fl03-nan-to-int and zd-z2f04-closedir (both-crash MATCH | L=CRASH pairs)."
         echo "#"
-        echo "# total-arith sweep pins (2026-10-03, hand-inserted; docs/2026-10-03_total-arith-and-bookkeeping-record.md §2):"
+        echo "# total-arith sweep pins (2026-10-03, hand-inserted; docs/2026-10-03_total-arith-and-bookkeeping-record.md §2, §7):"
         echo "# zd-ta-alignas-huge-{sizeof,union-alignof,desugar} — a front-end-accepted _Alignas(2^62) read through Z.to_int"
-        echo "# (impl_mem.ml:248/:267, ocaml_implementation.ml:501): oracle Z.Overflow (exit 125), Lean the mirrored fail-stop"
-        echo "# (before: Specified(0), Specified(0), a desugaring-failure Error) -> both-crash MATCH | L=CRASH;"
+        echo "# (impl_mem.ml:248/:267, ocaml_implementation.ml:501): oracle Z.Overflow (exit 125). ISO-fix register R7 (the R3"
+        echo "# class; [USER 2026-10-03] F1 ruling \"Yes, I agree with this analysis. Go ahead\"): Lean computes upstream's unbounded"
+        echo "# answer -> ORACLE_CRASH | L=<value> (hand-re-pinned 2026-10-03 from a short-lived both-crash MATCH | L=CRASH pin);"
         echo "# zd-ta-alignas-2p61-control (2^61, inside OCaml's int range) MATCH on both."
         echo "#"
         echo "# zero-discrepancy Z3 pins (2026-09-05; charter row Z-28 / detective RC-2, record"
@@ -386,7 +387,7 @@ for name in "${!BASE[@]}"; do
 done
 
 if [[ $rc -eq 0 ]]; then
-    echo "OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip/zd-r2-highbyte DIFF and zd-r2-crash-digit9 ORACLE_CRASH, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL)."
+    echo "OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip/zd-r2-highbyte DIFF and zd-r2-crash-digit9 ORACLE_CRASH, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF, R7 zd-ta-alignas-huge-{sizeof,union-alignof,desugar} ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL)."
 else
     echo "" >&2
     echo "A deviation means either a regression OR a fix flipped a row." >&2

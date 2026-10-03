@@ -467,3 +467,136 @@ orchestrator's brief, which quotes the [USER 2026-10-03] and [USER
 2026-09-30] rules verbatim; the brief is not itself a [USER] ruling.
 Scratch probes and gate logs lived in the worktree's `.tmp/` and were
 deleted after this record was committed.
+
+## 7. Rework after the pre-merge audit — the alignment sites become ISO-fix register R7
+
+Audit: `docs/2026-10-03_total-arith-pre-merge-audit.md` (cherry-picked from
+`audit/total-arith-20261003` 583d11b1e). Operator rulings, verbatim as
+relayed by the orchestrator:
+
+- O-3 synthesis, [USER 2026-10-03] "(1) agree with this", on: where
+  upstream's OWN semantics defines the answer and only OCaml's machinery
+  crashes on the way (a host artifact), Lean computes that answer (the R3
+  treatment); where no answer is defined, or Lean's "answer" was garbage,
+  Lean makes a loud stop mirroring the crash.
+- R6, [USER 2026-10-03] "(2) yes this is the canonical 'obviously a mistake,
+  no semantic ambiguity, just fix'": floatMul stays real multiplication, R6
+  ADMITTED.
+- F1, [USER 2026-10-03] "Yes, I agree with this analysis. Go ahead", on the
+  orchestrator's recommendation: classify the alignment-overflow cases (S-1,
+  S-2) as R3-style; Lean COMPUTES the unbounded answer and the oracle's crash
+  is a registered host-artifact difference. The remainder/division-by-zero
+  stops STAY (no answer is defined).
+
+### 7.1 What changed
+
+- §2.1's S-1/S-2 code is reverted: `CerbMem.alignofMemberRead`,
+  `CerberusImpl.zToInt`, `ocamlMinInt`/`ocamlMaxInt` are deleted (`zToInt`
+  had no other caller, so audit F2's docstring finding is moot); the
+  alignof folds and `CerberusImpl.alignof_ty` read the unbounded `Nat`
+  again, now carrying `-- ISO-fix register R7` markers with the cites; the
+  measure proof's `hcong` is back to its original statement; the Z2-M-11
+  note records the reachable huge-`_Alignas` case as R7.
+- VALIDATION §2 gains **R7** (ADMITTED, rulings cited). Why a NEW row rather
+  than an extension of R3 [AGENT]: R3 is one site (memcmp) with its own tray
+  (13) and pin and retires when upstream fixes that site; the alignment
+  sites are three other lines in two files with their own pins and their own
+  ruling (F1). Only the class is shared, and the row says so.
+- Failure-reach register: the `CerberusImpl.zToInt` row is gone (stale
+  site); `--emit` showed only that removal; resealed (`sites=233 …
+  REACHABLE=40`).
+
+### 7.2 Value verification — each former Lean value is upstream's unbounded answer
+
+Probes, both engines, nolibc (`--exec --batch --nolibc` vs Lean `--batch
+--first`), on the restored build:
+
+```
+v1   struct s { char c; _Alignas(2^62) char x; };  return sizeof(struct s) == 0x8000000000000000UL;
+     ORACLE rc=125 Z.Overflow | LEAN rc=0 Specified(1)
+v1b  … return offsetof(struct s, x) == 0x4000000000000000UL;
+     ORACLE rc=0 Specified(1) | LEAN rc=0 Specified(1)
+v1c  unsigned long z = 0x8000000000000000UL; return (int)z;
+     ORACLE rc=0 Specified(0) | LEAN rc=0 Specified(0)
+v2   union u { char c; _Alignas(2^62) char x; };   return _Alignof(union u) == 0x4000000000000000UL;
+     ORACLE rc=125 Z.Overflow | LEAN rc=0 Specified(1)
+v2b  … return sizeof(union u) == 0x4000000000000000UL;
+     ORACLE rc=0 Specified(1) | LEAN rc=0 Specified(1)
+v2c  unsigned long z = 0x4000000000000000UL; return (int)z;
+     ORACLE rc=0 Specified(0) | LEAN rc=0 Specified(0)
+v3c  struct s { _Alignas(16) char x; }; _Alignas(8) struct s g;
+     ORACLE rc=1 v3c.c:2:22: error: constraint violation: alignment specifier less strict than the declaration type 'struct s'
+     LEAN   rc=1 Error {msg: "desugaring failed at v3c.c:2:22-23"}
+v3   struct s { _Alignas(2^62) char x; }; _Alignas(2^62) struct s g;
+     ORACLE rc=125 Z.Overflow (raised in Ocaml_implementation.alignof, ocaml_implementation.ml:496 fork = :483 upstream, via Cabs_to_ail.desugar_alignment_specifiers)
+     LEAN   rc=1 Error {msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
+v3b  as v3 with 0x1000:  return (int)(((unsigned long)&g) % 0x1000);
+     ORACLE rc=0 Specified(0) | LEAN rc=0 Specified(0)
+```
+
+Arithmetic (upstream's own layout rules, `impl_mem.ml:108-127` offsetsof,
+`:162-171` struct sizeof, `:228-271` alignof, all in unbounded `Z`):
+
+- **`zd-ta-alignas-huge-sizeof` → `Specified(0)`.** `c` at offset 0, size 1.
+  `x`: align 2^62, `1 mod 2^62 = 1`, pad `2^62 − 1`, offset 2^62 (v1b — the
+  oracle itself computes this, offsetsof keeps the `Z`); `maxoffset = 2^62 +
+  1`. Struct alignment = max(1, 2^62) = 2^62. `(2^62 + 1) mod 2^62 = 1`, so
+  sizeof = `2^62 + 1 + (2^62 − 1) = 2^63` (v1, Lean 1). `(int)` of a
+  `size_t` 2^63: the conversion wraps modulo 2^32 on both engines (v1c:
+  oracle and Lean 0 for the same value without any alignment): `2^63 mod
+  2^32 = 0`. So `Specified(0)` is the unbounded answer — not a garbage
+  wrap of a Lean-only value.
+- **`zd-ta-alignas-huge-union-alignof` → `Specified(0)`.** alignof(union) =
+  max(alignof char = 1, 2^62) = 2^62 (v2, Lean 1; v2b: the oracle's own
+  union sizeof, which keeps the `Z`, rounds the size 1 up to that same
+  2^62). `(int)` 2^62 = `2^62 mod 2^32` = 0 (v2c, both engines).
+- **`zd-ta-alignas-huge-desugar`.** The program CHANGED. The old program
+  (`_Alignas(8) struct s g;`) gave Lean `Error {msg: "desugaring failed at
+  <path>:8:22-23"}`; that IS the unbounded answer — declared alignment 2^62
+  > 8 is the §6.7.5 less-strict-alignment constraint violation, the oracle's
+  own class and location for the in-range analogue (v3c: oracle "constraint
+  violation: alignment specifier less strict…" at 2:22, Lean the desugaring
+  failure at 2:22-23) — but its token embeds the absolute path of the input
+  the lane passes, so it cannot be pinned portably in a lane run from any
+  worktree. The new program (`_Alignas(2^62) struct s g;`) reaches the same
+  overflowing read on the oracle (v3, same desugarer frame) and has a
+  path-free unbounded answer: alignment 2^62 is not less strict than 2^62 →
+  accepted; `g` has sizeof 2^62 (one byte rounded up to its alignment) and
+  alignment 2^62; the allocator's cursor starts at the default top `2^48 − 1`
+  < 2^62, so `z = top − 2^62 < 0` → the out-of-memory kill
+  (`impl_mem.ml:1252-1256`). The in-range analogue v3b agrees on both
+  engines.
+- Control `zd-ta-alignas-2p61-control` (2^61): MATCH `Specified(4)` on both
+  (sizeof = 2^62, `>> 60` = 4), before and after.
+
+No site kept a stop: every former Lean value is the unbounded answer.
+
+### 7.3 Pins (hand-edited)
+
+- `tests/immaculate/baseline.txt`: `zd-ta-alignas-huge-sizeof` and
+  `-union-alignof` `MATCH | L=CRASH` → `ORACLE_CRASH | L=VAL:{value:
+  "Specified(0)", stdout: "", stderr: "", blocked: "false"}`;
+  `-desugar` → `ORACLE_CRASH | L=ERR:{msg: "MerrOther "Concrete.allocator:
+  failed (out of memory)""}`. Header note and `--record` template replaced
+  together (dated, rulings cited); the lane's OK line now names R7.
+- Fixture header comments rewritten; the desugar fixture's program changed
+  as above.
+- `scripts/gcc_oracle_baseline.txt` (partial `--write-baseline` over
+  `tests/immaculate/nolibc`, rc 0, `gcc second-oracle lane OK`, 65 rows):
+  `-sizeof`/`-union-alignof` `SKIP_LEAN_CRASH` → `SKIP_GCC_COMPILE`;
+  `-desugar` → `SKIP_LEAN_FAIL`; dated header note.
+
+### 7.4 Gates (this step)
+
+```
+build: Build completed successfully (395 jobs).
+./scripts/test_unit.sh rc=0
+Done: 292 passed, 0 failed
+Total: 16 passed, 0 failed
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=172 REACHABLE=40 UNKNOWN=21; every row sealed; tally line consistent)
+./scripts/test_immaculate.sh rc=0
+  ORACLE_CRASH   zd-ta-alignas-huge-desugar  O[CRASH] L[ERR:{msg: "MerrOther "Concrete.allocator: failed (out of memory)""}]
+  ORACLE_CRASH   zd-ta-alignas-huge-sizeof  O[CRASH] L[VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}]
+  ORACLE_CRASH   zd-ta-alignas-huge-union-alignof  O[CRASH] L[VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}]
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip/zd-r2-highbyte DIFF and zd-r2-crash-digit9 ORACLE_CRASH, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF, R7 zd-ta-alignas-huge-{sizeof,union-alignof,desugar} ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+```

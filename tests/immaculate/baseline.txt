@@ -67,10 +67,11 @@
 # (record §5): zd-z2-free-funptr (Z-07 re-witness, MATCH), zd-z2m03-malloc-oom-msg (MATCH — Lean runs
 # it since Z2-M-04), zd-z2fl03-nan-to-int and zd-z2f04-closedir (both-crash MATCH | L=CRASH pairs).
 #
-# total-arith sweep pins (2026-10-03, hand-inserted; docs/2026-10-03_total-arith-and-bookkeeping-record.md §2):
+# total-arith sweep pins (2026-10-03, hand-inserted; docs/2026-10-03_total-arith-and-bookkeeping-record.md §2, §7):
 # zd-ta-alignas-huge-{sizeof,union-alignof,desugar} — a front-end-accepted _Alignas(2^62) read through Z.to_int
-# (impl_mem.ml:248/:267, ocaml_implementation.ml:501): oracle Z.Overflow (exit 125), Lean the mirrored fail-stop
-# (before: Specified(0), Specified(0), a desugaring-failure Error) -> both-crash MATCH | L=CRASH;
+# (impl_mem.ml:248/:267, ocaml_implementation.ml:501): oracle Z.Overflow (exit 125). ISO-fix register R7 (the R3
+# class; [USER 2026-10-03] F1 ruling "Yes, I agree with this analysis. Go ahead"): Lean computes upstream's unbounded
+# answer -> ORACLE_CRASH | L=<value> (hand-re-pinned 2026-10-03 from a short-lived both-crash MATCH | L=CRASH pin);
 # zd-ta-alignas-2p61-control (2^61, inside OCaml's int range) MATCH on both.
 #
 # zero-discrepancy Z3 pins (2026-09-05; charter row Z-28 / detective RC-2, record
@@ -236,9 +237,9 @@ zd-nan-bytes-deviation DIFF | L=VAL:{value: "Specified(127)", stdout: "", stderr
 zd-r2-crash-digit9 ORACLE_CRASH | L=VAL:{value: "Specified(199)", stdout: "", stderr: "", blocked: "false"}
 zd-r2-highbyte DIFF | L=VAL:{value: "Specified(200)", stdout: "", stderr: "", blocked: "false"}
 zd-ta-alignas-2p61-control MATCH | L=VAL:{value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}
-zd-ta-alignas-huge-desugar MATCH | L=CRASH
-zd-ta-alignas-huge-sizeof MATCH | L=CRASH
-zd-ta-alignas-huge-union-alignof MATCH | L=CRASH
+zd-ta-alignas-huge-desugar ORACLE_CRASH | L=ERR:{msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
+zd-ta-alignas-huge-sizeof ORACLE_CRASH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+zd-ta-alignas-huge-union-alignof ORACLE_CRASH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
 zd-z28-addr-layout-a MATCH | L=VAL:{value: "Specified(0)", stdout: "s1=281474976706032 c1=281474976706031 i1=281474976706024 p1=281474976706016\n", stderr: "", blocked: "false"}
 zd-z28-addr-layout-b MATCH | L=VAL:{value: "Specified(0)", stdout: "s1=281474976707776 c1=281474976707775 i1=281474976707768 p1=281474976707760\n", stderr: "", blocked: "false"}
 zd-z28-pointer_from_integer_2g MATCH | L=VAL:{value: "Specified(0)", stdout: "j=5 &j=(@70, 0xffffffffede8)\n", stderr: "", blocked: "false"}

@@ -21,6 +21,10 @@
 #   tests/immaculate/nolibc/zd-ta-alignas-*.c pins at their observed statuses (partial --write-baseline over
 #   tests/immaculate/nolibc): the three huge-_Alignas both-crash pins SKIP_LEAN_CRASH, the 2^61 control
 #   SKIP_GCC_COMPILE (gcc rejects the alignment). Record: lean_frontend/docs/2026-10-03_total-arith-and-bookkeeping-record.md §2.
+# 2026-10-03 (later, R7 re-pin; hand-edited from a partial --write-baseline over tests/immaculate/nolibc): Lean now computes
+#   the unbounded alignment (ISO-fix register R7), so zd-ta-alignas-huge-{sizeof,union-alignof} SKIP_LEAN_CRASH -> SKIP_GCC_COMPILE
+#   and zd-ta-alignas-huge-desugar (program changed: _Alignas(2^62) object, Lean's out-of-memory Error) -> SKIP_LEAN_FAIL.
+#   Record §7.
 csmith/sa_csmith_001.c AGREE O2_AGREE
 csmith/sa_csmith_002.c SKIP_LEAN_CRASH -
 csmith/sa_csmith_003.c SKIP_LEAN_CRASH -
@@ -1930,9 +1934,9 @@ tests/immaculate/nolibc/zd-funptr-int-voidptr.c TRIAGED_ADDR -
 tests/immaculate/nolibc/zd-funptr-printf-deviation.c SKIP_GCC_STDOUT -
 tests/immaculate/nolibc/zd-nan-bytes-deviation.c TRIAGED_FLOAT -
 tests/immaculate/nolibc/zd-ta-alignas-2p61-control.c SKIP_GCC_COMPILE -
-tests/immaculate/nolibc/zd-ta-alignas-huge-desugar.c SKIP_LEAN_CRASH -
-tests/immaculate/nolibc/zd-ta-alignas-huge-sizeof.c SKIP_LEAN_CRASH -
-tests/immaculate/nolibc/zd-ta-alignas-huge-union-alignof.c SKIP_LEAN_CRASH -
+tests/immaculate/nolibc/zd-ta-alignas-huge-desugar.c SKIP_LEAN_FAIL -
+tests/immaculate/nolibc/zd-ta-alignas-huge-sizeof.c SKIP_GCC_COMPILE -
+tests/immaculate/nolibc/zd-ta-alignas-huge-union-alignof.c SKIP_GCC_COMPILE -
 tests/immaculate/nolibc/zd-z2m02-device-funptr-call.c SKIP_LEAN_CRASH -
 tests/minimal/001-return-literal.c AGREE -
 tests/minimal/002-return-zero.c AGREE O2_AGREE

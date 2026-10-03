@@ -15,31 +15,6 @@ import Ctype
 
 namespace CerberusImpl
 
-/-! ## OCaml's native `int` — the `Z.to_int` mirror
-
-    zarith's `Z.to_int` raises `Z.Overflow` when its argument lies outside
-    OCaml's native `int` range — on the 64-bit hosts upstream builds for,
-    Stdlib `min_int`/`max_int` = `-2^62` / `2^62 - 1` (63-bit ints). The
-    bounds are forced by the OCaml the semantics mirrors, not chosen here.
-    Every mirrored `Z.to_int` that can see an unbounded `Z` goes through
-    `zToInt`, so the oracle's uncaught exception is a loud fail-stop on
-    this side too, never a silently computed value (total-arith sweep,
-    docs/2026-10-03_total-arith-and-bookkeeping-record.md §2; [USER
-    2026-10-03] "... fall back to loudly rejecting (either as unsupported,
-    or matching upstream)"). -/
-
-/-- OCaml Stdlib `min_int` on a 64-bit host (`-2^62`). -/
-def ocamlMinInt : Int := -(2 ^ 62)
-/-- OCaml Stdlib `max_int` on a 64-bit host (`2^62 - 1`). -/
-def ocamlMaxInt : Int := 2 ^ 62 - 1
-
-/-- `Z.to_int n` at the mirrored call site `site`: `n` itself when it is a
-    native OCaml int, else the fail-stop mirroring `Z.Overflow`. -/
-def zToInt (site : String) (n : Int) : Int :=
-  if n < ocamlMinInt || ocamlMaxInt < n then
-    failwithI s!"Z.to_int: Z.Overflow (outside OCaml's native int range [-2^62, 2^62-1]; mirrors the oracle's uncaught exception) at {site}"
-  else n
-
 /-! ## Target Configuration -/
 
 /-- Maximum alignment in bytes (LP64).
@@ -308,9 +283,11 @@ partial def alignof_ty (enumDefs : EnumDefs)
     members.foldl (fun acc_opt (align_opt, mty) =>
       let al_opt := match align_opt with
         | none => alignof_ty enumDefs _tagDefs tagDefs mty
-        -- ocaml_implementation.ml:483/:501 (upstream; fork :496/:514):
-        -- `Some (Z.to_int al_n)` — Z.Overflow on a huge _Alignas
-        | some (AlignInteger n) => some (zToInt "Ocaml_implementation.alignof (ocaml_implementation.ml:483/:501)" n).toNat
+        -- ISO-fix register R7 (VALIDATION.md §2; the R3 class): upstream
+        -- ocaml_implementation.ml:483/:501 is `Some (Z.to_int al_n)` (Z.Overflow
+        -- on a huge _Alignas); the Lem signature (implementation.lem:27,
+        -- `-> maybe nat`) is unbounded, so the unbounded value is kept here.
+        | some (AlignInteger n) => some n.toNat
         | some (AlignType al_ty) => alignof_ty enumDefs _tagDefs tagDefs al_ty
       match acc_opt, al_opt with
       | some acc, some al => some (max al acc)
