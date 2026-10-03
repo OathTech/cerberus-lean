@@ -1051,3 +1051,45 @@ on branch `docs/sc-coordination-20260927` (worktree
 `worktrees/cerberus-lean-docs/sc-coordination-20260927`), per [USER 2026-09-27]
 "write a note for them in a worktree". It carries 11.5 and asks for agreement or
 counter-proposal. Not merged; delivery to the SC track's owner is the operator's.
+
+## 12. Refresh 2026-10-03 — what this week closed, and the current order
+
+[AGENT] update; the order below was accepted [USER 2026-10-03]: "Let's do your recommended order". §11 stays the
+record of the 2026-09-27 sequence; where they differ, this section is current. Commits are on `mdd/cerberus-lean`
+unless marked lem-lean.
+
+### 12.1 Landed since §11 (2026-09-28 – 2026-10-01)
+
+| What | Where | Effect on this plan |
+|---|---|---|
+| The contract (`lean_frontend/CONTRACT.md`), enforced: filesystem and stdin refused, named-deviation class (e) with N1 (function-pointer numbers) and N2 (NaN bits), the 36-builtin table, test-depth section, health warnings | `fa03a68a1` | New standing frame for every slice: an answer is the oracle's, a loud refusal, a resource outcome, or a registered deviation |
+| Discrepancy bug hunt (7 hunters) and its fixes: runtime resolution mirrors the oracle (`--runtime` / `CERB_INSTALL_PREFIX`), exact library-location test, non-UTF-8 JSON refused, `ub:` bytes, N1 widened, N3 (libc dump float rounding), ISO-fix R2 widened | `5448b3e0d`, `55b04e7a4` | Touches the CLI items of 1b (`Main.lean` argument parsing changed); P1b-1/P1b-2 must rebase onto it |
+| `_Alignas` incomplete-type draft, renumbered tray 47 | `f6fc60d4b` | **Unblocks P2d-3** (it was "OPEN after its tray draft") |
+| lem re-pin to lem-lean `77ad4fa`: Lean-backend fixes found by porting linksem, LemLib on Lean 4.32.2, the temporary `lemSeqImpl` boundary seam (D1) | `f3d9cc419`; lem-lean `77ad4fa` | P1d-5 (the 4.32.2 move) is DONE; the lem pin moved once, under the 11.5 rule |
+| lem-lean: upstream-drift check; Coq naming collision fixed | lem-lean `98b83c5`, `6e2526e` | Feeds P1f-1 (fork-delta triage): lem's non-Lean output now matches pristine upstream in code, Cerberus's and linksem's OCaml byte-identical |
+
+### 12.2 New queued arcs (each needs a design pass scoped with the operator first)
+
+- **libc without a lossy text vehicle** (`lean_frontend/TODO.md`): build libc in Lean from its C sources instead of
+  parsing the `%.12g` Core text dump. It retires N3 and fixes Z1-A1. **It absorbs P3-7** (libc-body UB locations),
+  which was the same defect seen from the other side.
+- **Failure-monad translation in the lem Lean backend** (lem-lean TODO 24): retires the temporary `lemSeqImpl` seam
+  and the open discrepancy A5 (untaken-branch `let`).
+- **Bit-level float representation** (`lean_frontend/TODO.md`): retires N2.
+
+### 12.3 Current order
+
+1. This refresh.
+2. **P2d-3 `_Alignas`** (bug-fix, Q1′): compatibility of alignment specifiers in `are_compatible_aux` (C11 §6.2.7#1)
+   and the §6.5.3.4#1 check at `desugar_alignment_specifier` (tray 47). Shared-model change: fork-drift rows,
+   pristine-register row, both engines.
+3. **P2d-1 union twin** (bug-fix, Q1): `core_eval.lem` `PEmemberof(union)` and `core_aux.lem`'s union arm; draft 38
+   gains a union subsection; pristine-register row.
+4. **P1f-2 real-C reach census:** the pKVM buddy allocator case study, a handful of `deps/linux` `lib/` files and
+   libxml2; it orders the coverage work (P4-5).
+5. The three design passes of 12.2, libc first (two documented differences retired at once).
+
+Neither bug-fix touches the SC track's claimed surfaces (`driver.lem`, `core_run*.lem`, `core_reduction.lem`;
+checked against `arc/sc-s1a` 2026-10-03); shared bookkeeping files (fork-drift manifest, VALIDATION) follow the
+"later lander rebases" rule. Still open for the operator: the `mword` carve-outs LP5/OM1–OM3/OM5, and whether A5 is
+fixed before the failure-monad arc.
