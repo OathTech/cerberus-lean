@@ -499,8 +499,8 @@ theorem layout_stable_aux
           have hl : lookup tagDefs t = some (l, StructDef membrs flex) := lookup_of_entry heq
           rw [pot_struct ambient tagDefs R L an t _ hl] at hk hf hg
           have hcong : ∀ (acc : Nat) (memb : Member), memb ∈ membrs →
-              max (memberAlign_lemFuel f enumDefs ambient tagDefs memb.2.2.1 memb.2.2.2.2) acc =
-              max (memberAlign_lemFuel g enumDefs ambient tagDefs memb.2.2.1 memb.2.2.2.2) acc := by
+              max (alignofMemberRead memb.2.2.1 (memberAlign_lemFuel f enumDefs ambient tagDefs memb.2.2.1 memb.2.2.2.2)) acc =
+              max (alignofMemberRead memb.2.2.1 (memberAlign_lemFuel g enumDefs ambient tagDefs memb.2.2.1 memb.2.2.2.2)) acc := by
             intro acc memb hmemb
             have hm := mPot_le ambient tagDefs R L hR hLS hLU (Or.inl hl)
               (fun y hy => mem_memberTypes_of_struct membrs flex ⟨memb, hmemb, hy⟩)

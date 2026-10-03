@@ -462,6 +462,13 @@ we should fall back to loudly rejecting (either as unsupported, or matching
 upstream)". The Z2 record's §10.1 recommendation (a Core-level UB045 or a
 `std.core:385` guard) is withdrawn as invention under that rule
 ([record](docs/2026-10-03_total-arith-and-bookkeeping-record.md)).
+The same record's sweep (§2) found two more such sites, both reachable
+through a front-end-accepted `_Alignas(2^62)`: upstream reads member
+alignments through `Z.to_int` (`impl_mem.ml:248/:267`,
+`ocaml_implementation.ml:483/:501`), which raises `Z.Overflow` outside
+OCaml's native int range; Lean now fail-stops there too
+(`CerberusImpl.zToInt`; pins `zd-ta-alignas-*`). The sweep's unreachable
+sites and operator items are listed in the record.
 
 **Still open (bugs by the rule; each with its owner):**
 

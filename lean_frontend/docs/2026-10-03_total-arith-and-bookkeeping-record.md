@@ -151,3 +151,119 @@ PRE-EXISTING ledger gap (the fixture landed in `eccc83b58`, bug hunt BUG-4,
 with no ledger row; the lane reports such files as "new file (not in
 baseline, not fatal)"). Not this slice's movement; left for the operator
 (a finding, not re-pinned).
+
+## 2. The sweep — total arithmetic and defaults in the hand-written seams (task 2)
+
+**Method.** Two directions. (a) Every exception source in the OCaml the
+seams mirror — `memory/concrete/impl_mem.ml` (`Z.to_int`, `Z.div`/`rem`/
+`modulus`/`quomod`, `Z.pow`, `List.nth`/`hd`, `Pmap.find`/`IntMap.find`),
+`ocaml_frontend/ocaml_implementation.ml`, `decode.ml`,
+`ocaml_gcc_builtins.ml` — was listed and its Lean counterpart read. (b)
+Every executable hand-written seam (`lean_frontend/*.lean` minus the proof/
+measure modules) was grepped, comment-stripped, for `/`, `%`, `<<<`/`>>>`,
+`.toNat`/`toUInt*`/`natAbs`, `getD`/`headD`/`get!`/`[i]!`/`[i]?`, and
+`| none =>`/`| _ =>` value defaults; each hit was read. Probes are single
+programs on both engines (oracle `--exec --batch [--nolibc]`, Lean
+`--batch --first` on the oracle's `--cabs-json`, libc mode where noted).
+
+### 2.1 Fixed (reachable; plain mirror, loud fail-stop)
+
+`CerberusImpl.zToInt site n` is new: zarith's `Z.to_int` raises
+`Z.Overflow` outside OCaml's native int range, `[min_int, max_int] =
+[-2^62, 2^62-1]` on the 64-bit hosts upstream builds for; `zToInt` returns
+`n` inside the range and `failwithI`s outside it, naming the site. The
+bounds are `ocamlMinInt`/`ocamlMaxInt`, documented as forced by OCaml.
+
+| # | OCaml | Lean before | Fix | Witness (both engines) |
+|---|---|---|---|---|
+| S-1 | `impl_mem.ml:248` / `:267`: `Concrete.alignof`'s struct/union member folds read `AlignInteger al_n` through `Z.to_int al_n` (offsetsof `:115-122` and union sizeof `:179-186` keep the `Z`) | `al_n.toNat`, no failure | `CerbMem.alignofMemberRead` wraps the member alignment in alignof's two folds only (`zToInt`); `memberAlign` is unchanged for offsetsof/sizeof | `zd-ta-alignas-huge-sizeof` (`sizeof` of a struct with an `_Alignas(0x4000000000000000)` member): oracle `Z.Overflow` rc 125, Lean before `Specified(0)`; `zd-ta-alignas-huge-union-alignof` (`_Alignof` of such a union): oracle `Z.Overflow` rc 125, Lean before `Specified(0)` |
+| S-2 | `ocaml_implementation.ml:483` / `:501` (fork `:496`/`:514`): `Ocaml_implementation.alignof` (the desugarer's `alignof_ty`) reads `Some (Z.to_int al_n)` | `some n.toNat` | `CerberusImpl.alignof_ty`'s `AlignInteger` arm goes through `zToInt` | `zd-ta-alignas-huge-desugar` (`_Alignas(8) struct s g;` with a 2^62-aligned member): oracle `Z.Overflow` rc 125 raised from `Cabs_to_ail.desugar_alignment_specifiers`, Lean before `Error {msg: "desugaring failed at altyd2.c:2:22-23"}` |
+
+The front end ACCEPTS `_Alignas(2^62)` (a power of two; `cabs_to_ail.lem`
+`desugar_alignment_specifier` refuses only 0 → dropped, negatives and
+non-powers of two). Control `zd-ta-alignas-2p61-control` (`2^61`, inside
+the range): `Specified(4)` on both engines before and after. Post-fix, all
+three witnesses give on Lean (rc 134):
+
+```
+PANIC at _private.LemLib.0.failwithIImpl LemLib:239:2: Z.to_int: Z.Overflow (outside OCaml's native int range [-2^62, 2^62-1]; mirrors the oracle's uncaught exception) at Concrete alignof (impl_mem.ml:248/:267)
+PANIC at _private.LemLib.0.failwithIImpl LemLib:239:2: Z.to_int: Z.Overflow (outside OCaml's native int range [-2^62, 2^62-1]; mirrors the oracle's uncaught exception) at Ocaml_implementation.alignof (ocaml_implementation.ml:483/:501)
+```
+
+(the first for sizeof/union-alignof, the second for the desugar witness).
+Other controls, both engines equal before and after: `_Alignas(0)` member
+(dropped by §6.7.5#6) `Specified(11)`; `offsetof` past a 2^62-aligned
+member `Specified(0)` (offsetsof keeps the `Z`, no raise upstream either);
+`_Alignas(8) struct s *p` `Specified(0)`; `_Alignas(-8)` refused by the
+front end on both.
+
+The measure proof `CerbMem_lemMeasureProofs.lean` (fuel congruence of
+`alignofCtype_lemFuel`'s struct fold) restates its `hcong` with the
+wrapper; no other proof moved.
+
+### 2.2 Unreachable (with the reason)
+
+| # | Site (OCaml → Lean) | Why it cannot be reached |
+|---|---|---|
+| U-1 | layout `Z.modulus … align` (`impl_mem.ml:123`, `:169-171`, `:189-191`) raises on 0 → Lean `% 0` = identity | an alignment of 0 needs `_Alignas(0)` (dropped by the desugarer, probe: both `Specified(11)`), a member-less struct (UB061 on all engines, `tests/z2-probes/mem/empty_struct.c`) or a zero-length array (constraint violation on both); already declared Z2-M-11 |
+| U-2 | `Array (_, Some n)` `Z.mul n` with negative `n` (`:150-151`) → Lean `n.toNat * …` | array sizes are front-end non-negative (Z2-M-11) |
+| U-3 | `Concrete.allocator` `quomod … 0` (`:1252`) | already a fail-stop; its only C route (`aligned_alloc(0, 0)`) now stops earlier at `std.core:385`, as on the oracle (§1) |
+| U-4 | `Z.to_int` on object SIZES: abst `:950/:975/:996/:1064/:1074`, repr `:1144/:1149/:1155/:1217`, alloc `:1225/:1311/:1442/:1450`, load `:1559` | needs an object or an access of ≥ 2^62 bytes. At the default address-space top every such allocation is out of memory first (`struct big` local of 2^62 bytes: both `MerrOther "Concrete.allocator: failed (out of memory)"`) and every such access is out-of-bound first (`*p = *q` on a 2^62-byte struct type over an `int`: both `UB_CERB002a_out_of_bound_load`; `memcpy(a, b, 2^62)` in libc mode: both `UB_CERB002a_out_of_bound_load`). Non-default tops: §3 / operator list O-1 |
+| U-5 | `memcmp` `Z.to_int size_n` (`:2660-2661`) | REACHABLE but registered: ISO-fix register R3 (`s4b-memcmp-hugesize`); not changed (the owed code marker is task 4) |
+| U-6 | `IntExp` `Z.pow n1 (Z.to_int n2)` (`:2490`) | the shift elaboration's UB checks dominate: `1 << -1` both `UB051a_negative_shift`; `1ULL << 2^62` and `8ULL >> 64` both `UB51b_shift_too_large`; the negative-exponent arm is already a fail-stop |
+| U-7 | `Z.to_int` of a function-pointer address (`:1012`, `:1823`) | taken only after a successful `funptrmap` lookup: registered addresses are small |
+| U-8 | `Decode.encode_character_constant` `Z.to_int n` (`decode.ml:225`) | callers: `printf` `%c` (argument type-checked — a `unsigned long long` argument is `UB153b_illtyped_argument_for_format` on both), the char-array loader (char-range bytes), `step_fs_proc` (CerbFS refuses every operation) |
+| U-9 | `Ocaml_gcc_builtins.ctz` `Z.to_int64` (`:4`) | only `__builtin_ctz` (unsigned int argument) is wired; `__builtin_ctzl`/`ctzll` are unknown procedures on both engines (probe). bswap16/32/64 were already mirrored (g4 pins) |
+| U-10 | `diff_ptrval` `Z.div … (sizeof elem)` (`:1967`) | now mirrored anyway by `integerDiv_t` (§1); zero-size element types do not exist past the front end |
+| U-11 | `va_arg` `List.nth_opt` (`:2729`) | an option: already the mirrored kill |
+| U-12 | `Pmap.find` → `Not_found` (`:100`, `:173`, `:229`, `:255`, `:1078`); `IntMap.find iota` (`:879`) | every Lean tag-lookup arm already fail-stops (`CerbMem` offsetsof/sizeof/alignof/reconstruct); the iota map is PNVI-ae-udi only and `--switches` is refused |
+| U-13 | `Option.get` in `normalise_integerType_` (`ocaml_implementation.ml:40-44`) | already a fail-stop (Z2-I-03) |
+| U-14 | `Ocaml_implementation.alignof` `assert false`/`Not_found` for void, function and unknown tags → Lean `none` | declared Z2-I-04 (Ail typing rejects those first); the incomplete-type `_Alignas` case is upstream-tray 47, owned by the separate `fix/alignas-p2d3` work — not touched here |
+| U-15 | `decode.ml:16` `int_of_char n - int_of_char '0'` (no raise; garbage for a non-digit) → Lean `readDigit` default 0 | not an exception site; reachable only through `[[cerb::with_address("…")]]`, whose allocation Lean refuses ("TODO: cerb::with_address() is yet implemented") |
+| U-16 | Lean-only defaults with NO OCaml counterpart: `Main.lean` libc loader `(tagMap[n]?).getD s` (`:863`, `:970`), `restArgs.getD` (CLI name), the UTF-8 validator's `b[i]!` (bounds-checked), `CoreParser` line table `tbl[…]!` | port-side vehicles, nothing to mirror |
+
+### 2.3 For the operator (NOT changed)
+
+- **O-1** — with a NON-DEFAULT `--address-space-top` ≥ 2^62 an object of
+  ≥ 2^62 bytes can be allocated, and the fork oracle's `Z.to_int` on sizes
+  (U-4) would raise where Lean computes. §3 states that non-default values
+  are outside the mirroring promise; listed so the gap is visible, not
+  closed.
+- **O-2** — the pre-existing gcc-ledger gap of §1 (no row for
+  `zd-invalid-format-utf8-payload.c`).
+
+### 2.4 Pins and register
+
+- `tests/immaculate/baseline.txt`: four rows hand-inserted
+  (`zd-ta-alignas-huge-{desugar,sizeof,union-alignof}` `MATCH | L=CRASH`,
+  `zd-ta-alignas-2p61-control` `MATCH | L=VAL:{value: "Specified(4)", …}`),
+  header note + `--record` template together.
+- `scripts/gcc_oracle_baseline.txt`: four rows hand-inserted at the
+  statuses a partial `--write-baseline` over `tests/immaculate/nolibc`
+  observed (three `SKIP_LEAN_CRASH`, the control `SKIP_GCC_COMPILE`).
+- Failure-reach register: one new site, `CerberusImpl.zToInt` — position
+  TAIL, reach REACHABLE (witnesses above); resealed. Tally `sites=234 …
+  REACHABLE=41`.
+
+### 2.5 Gates (this step)
+
+```
+build: Build completed successfully (395 jobs).
+./scripts/test_unit.sh rc=0
+Done: 292 passed, 0 failed
+Total: 16 passed, 0 failed
+check_failure_reach: OK (234 pure failure sites = the 234 register rows exactly (232 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=172 REACHABLE=41 UNKNOWN=21; every row sealed; tally line consistent)
+./scripts/test_immaculate.sh rc=0
+  MATCH          zd-ta-alignas-2p61-control  O[VAL:{value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}] L[VAL:{value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}]
+  MATCH          zd-ta-alignas-huge-desugar  O[CRASH] L[CRASH]
+  MATCH          zd-ta-alignas-huge-sizeof  O[CRASH] L[CRASH]
+  MATCH          zd-ta-alignas-huge-union-alignof  O[CRASH] L[CRASH]
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip/zd-r2-highbyte DIFF and zd-r2-crash-digit9 ORACLE_CRASH, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+./scripts/test_exec.sh --check-baseline rc=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage rc=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+partial ./scripts/test_gcc_oracle.sh --write-baseline=<scratch> tests/immaculate/nolibc rc=0: gcc second-oracle lane OK (65 rows)
+```

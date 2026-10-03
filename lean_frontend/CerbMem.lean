@@ -357,8 +357,11 @@ def combineProv : Provenance → Provenance → Provenance
 
     DECLARED (zero-discrepancy Z2-M-11): the layout family computes on
     Nat where the OCaml computes on Z — `al_n.toNat` (memberAlign's
-    _Alignas arm, impl_mem.ml:118 `al_n`; :247/:268 `Z.to_int al_n` would
-    raise Overflow on a huge _Alignas), `lastOffset % align` /
+    _Alignas arm, impl_mem.ml:118 `al_n`; alignof's own folds read it
+    through `Z.to_int al_n`, :248/:267, which raises Overflow on a huge
+    _Alignas — that read is MIRRORED by `alignofMemberRead` below since
+    2026-10-03: the huge alignment is front-end-accepted, so it was
+    reachable), `lastOffset % align` /
     `maxOffset % align` / `maxSize % maxAlign` (:123/:169-171/:189-191
     `Z.modulus … 0` raises Division_by_zero where Lean's `% 0` is the
     identity), `n.toNat * sizeof` (:151 `Z.mul n`). Reachability of any
@@ -414,6 +417,22 @@ private abbrev EnumDefs := CerberusImpl.EnumDefs
     recursion — no fuel needed). C4 (2026-09-05): the five layout
     wrappers below the block are MEASURED (fuel-free) under the
     acyclicity hypothesis — see their header. -/
+
+/-- alignof's own member-alignment READ — impl_mem.ml:242-249 (struct) /
+    :261-268 (union): there the `AlignInteger al_n` arm is `Z.to_int al_n`
+    (:248/:267), which raises `Z.Overflow` for an alignment outside OCaml's
+    native int range (e.g. `_Alignas(0x4000000000000000)`, which the front
+    end accepts as a power of two), while offsetsof (:115-122) and union
+    sizeof (:179-186) keep the `Z` value and never raise. So the check sits
+    HERE, in alignofCtype's folds only, mirroring the oracle's crash as a
+    fail-stop (`CerberusImpl.zToInt`; total-arith sweep 2026-10-03, witnesses
+    tests/immaculate/nolibc/zd-ta-alignas-huge-*). For every other
+    alignment specifier the value is `memberAlign` unchanged. -/
+def alignofMemberRead (alignOpt : Option alignment) (memberAlign : Nat) : Nat :=
+  match alignOpt with
+  | some (AlignInteger al_n) =>
+    (CerberusImpl.zToInt "Concrete alignof (impl_mem.ml:248/:267)" al_n).toNat
+  | _ => memberAlign
 
 mutual
 
@@ -577,7 +596,7 @@ def alignofCtype_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDef
               alignofCtype_lemFuel lemFuel enumDefs ambient tagDefs (mkCtype (.Array0 elemTy none))
           membrs.foldl (init := init) fun acc memb =>
             let (_, (_, alignOpt, _, ty)) := memb
-            max (memberAlign_lemFuel lemFuel enumDefs ambient tagDefs alignOpt ty) acc  -- impl_mem.ml:242-251
+            max (alignofMemberRead alignOpt (memberAlign_lemFuel lemFuel enumDefs ambient tagDefs alignOpt ty)) acc  -- impl_mem.ml:242-251
         | _ => failwithI "CerbMem.alignofCtype: Struct tag not a StructDef (OCaml: assert false / Not_found)"
       | .Union0 tagSym =>                           -- impl_mem.ml:253-271
         -- GLOBAL read, deliberately: impl_mem.ml:255 is
@@ -587,7 +606,7 @@ def alignofCtype_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDef
         | some (_, (_, UnionDef membrs)) =>
           membrs.foldl (init := (0 : Nat)) fun acc memb =>
             let (_, (_, alignOpt, _, ty)) := memb
-            max (memberAlign_lemFuel lemFuel enumDefs ambient tagDefs alignOpt ty) acc
+            max (alignofMemberRead alignOpt (memberAlign_lemFuel lemFuel enumDefs ambient tagDefs alignOpt ty)) acc  -- impl_mem.ml:259-270
         | _ => failwithI "CerbMem.alignofCtype: Union tag not a UnionDef (OCaml: assert false / Not_found)"
       | .Byte => 1                                  -- impl_mem.ml:272-273
 
