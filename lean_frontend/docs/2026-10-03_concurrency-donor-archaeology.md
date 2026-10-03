@@ -124,12 +124,20 @@ Files are in `snapshots/cerberus-e8575cd81-2016/model/`.
   `add_to_asw_stack`). A race monitor would need this; it already existed.
 - **Oracle.** `src/tests.ml:75-105` lists 22 `.core` and 3 `.c` litmus tests
   with expected value sets *(re-checked)*. **Caution:** those expected sets are
-  **C11 weak-memory** outcomes for the `Cmm_op` mode. For example,
-  `SB+rel_acq+rel_acq` expects `[0;1;2;3]`. They are **not** SC expectations.
-  An SC lane must derive its own expected sets; for SB that is {1,2,3}, i.e.
-  all except 0, with the encoding of that test. Reuse the programs, not the
-  numbers. The datarace rows (expected `Undefined.Data_race`) carry over to SC
-  as written (I).
+  **C11** outcomes for the `Cmm_op` mode.
+  - Rows using release/acquire/relaxed orders are weak-memory sets (e.g.
+    `SB+rel_acq+rel_acq` → `[0;1;2;3]`). They lie outside the SC fragment,
+    which refuses them.
+  - Rows using only `seq_cst` and non-atomic accesses should coincide with SC.
+    These are `SB+Wsc_Rsc+Wsc_Rsc` → {1,2,3}, `LB+Rsc_Wsc+Rsc_Wsc`,
+    `IRIW+Wsc+Wsc+Rsc_Rsc+Rsc_Rsc`, `hb-mo-cycle+Wsc_Wsc_Rsc+Wsc_Wsc_Rsc` and
+    the `datarace+*na*` rows. That follows from DRF-SC for all-SC programs
+    (I); verify each row independently before relying on it.
+  - These programs bind `(a1, a2) = par(…)` and encode the result as
+    `a1 + 2*a2`. They therefore observe `par` result order, which master
+    reverses (§2.2).
+  - The files use 2016 Core syntax, and master no longer parses its own copies
+    (§3).
 
 ### 2.2 Path (c): master `driver2` (in our fork too)
 
@@ -160,6 +168,16 @@ Files are in `snapshots/cerberus-master-b3e11ea33/frontend/model/`.
   on our mainline: `mdd/cerberus-lean` `frontend/model/driver.lem:1023-1037`,
   `core_reduction.lem:1488-1489` (V, source). Behaviour on the Lean backend
   was **not measured**. Candidate for the upstream tray.
+  **It is a regression, not a design choice** (V): every pre-2019 driver also
+  cons-built the tid list, and then applied `List.reverse` before building
+  the waits. That held from 2015 at least through `0df8708ad`
+  `driver.lem:742` and the 2016 snapshot `driver.lem:407`. The `reverse` was
+  lost when `par` moved into `core_reduction` in `650da6dfb` (2019-11-13,
+  Memarian, "par() should work"). C-level `par` is unaffected: `AilSpar`
+  elaborates each thread to `unit` and discards the tuple
+  (`translation.lem` `A.AilSpar` arm, `mk_wseq_e` with an empty pattern).
+  Only hand-written Core that uses `par` results observes it, as do the 2016
+  litmus files.
 - **Other gaps.** `with_concurrency` → `error "TODO: perform_action_request2 ==>
   concurrency"` and `"CONCURRENCY IS BROKEN"`. UB005 exists in
   `undefined.lem`, but nothing on this path emits it.
@@ -400,8 +418,19 @@ GitHub forks, code search and the literature).
      does not depend on preemption granularity; only coverage does (Miri).
    - Unsequenced: Core already has footprint detection (UB035) in
      `core_reduction`; CH2O is the formal reference.
-   - With the unsequenced monitor in place, the race monitor may treat one
-     thread's accesses as clock-ordered.
+   - **Correction (2026-10-03, same day; the first version said the
+     opposite):** the unsequenced monitor does **not** let the race monitor
+     treat one thread's accesses as totally clock-ordered. 6.5p2 makes only
+     unsequenced conflicts on the *same* scalar UB. Unsequenced accesses to
+     *different* objects are legal and remain unordered by sb. For example,
+     in `unseq(store x, store-release flag)` the store to `x` is not
+     sb-before the release. A per-thread clock that follows execution order
+     would invent the edge store x → release, and would miss the race with
+     another thread that acquires `flag` and then reads `x`. This agrees with
+     `SC-CONCURRENCY.md` constraint 3 ("a single monotonically increasing
+     clock per C thread is not a sufficient design"). Miri can use one clock
+     per thread only because Rust has no unsequenced evaluation. See the annex
+     for the strand-indexed reading.
 2. **Monitor state lives in the ND state.** `unseq`/`nd` make a single thread's
    execution nondeterministic, so clocks must be per-branch state carried by
    the ND monad, not a global mutable cell as in Miri.
