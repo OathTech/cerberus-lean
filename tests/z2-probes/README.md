@@ -28,7 +28,9 @@ confirmed Lean≠oracle row is a `tests/immaculate` pin (RED before its fix,
 MATCH after — except the `aligned_alloc(0,·)` rows, which stay
 ORACLE_CRASH as PENDING rows under the [USER 2026-09-03] logical-semantics
 ruling: the oracle's `Division_by_zero` is an OCaml-execution artifact, not
-mirrored; the logical meaning is the record's decision §10.1) or a
+mirrored; the logical meaning is the record's decision §10.1 — SUPERSEDED
+2026-10-03: they are both-crash `MATCH | L=CRASH` pins, see
+`lean_frontend/docs/2026-10-03_total-arith-and-bookkeeping-record.md` §1) or a
 `tests/verify` call-point fixture (`z2_bool_param`,
 `z2_errno_order`); the agreeing nolibc probes are the standing exec rows
 `tests/coverage/z2/z2-0NN-*.c`, the agreeing libc probes `tests/libc_exec/

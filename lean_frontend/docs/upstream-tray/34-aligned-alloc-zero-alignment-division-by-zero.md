@@ -113,8 +113,8 @@ upstream's call; either is better than the exception.
 Found by the 2026-09-03 line-by-line audit of our Lean port's concrete
 memory model against `impl_mem.ml` (record
 `lean_frontend/docs/2026-09-04_zero-discrepancy-Z2-record.md` §2.1 and
-§10.1 — the total-remainder divergence and the pending decision are
-recorded there). Re-verified 2026-09-05 on the un-forked upstream binary
+§10.1 record the former total-remainder divergence; since 2026-10-03 the
+port mirrors the crash — `lean_frontend/docs/2026-10-03_total-arith-and-bookkeeping-record.md` §1). Re-verified 2026-09-05 on the un-forked upstream binary
 + runtime @ `b9aeedcb4` and the fork's oracle (lines above verbatim).
 Localisation and this draft by Claude (Fable 5.1) under operator
 direction; the filed issue carries an AI-provenance note per the tray's

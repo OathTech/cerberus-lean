@@ -1648,14 +1648,14 @@ def opIval (op : integer_operator) (v1 v2 : IntegerValue) : IntegerValue :=
     | .IntExp =>
       -- impl_mem.ml:2485-2490: Prov_none (shift elaboration forwards the
       -- LEFT operand's provenance elsewhere); `Z.pow n1 (Z.to_int n2)`. A
-      -- NEGATIVE exponent raises `Invalid_argument` in zarith (z.mli:636)
-      -- — a KIND-2 OCaml-execution artifact (host conversion + library
-      -- precondition), NOT mirrored (the logical-semantics referent
-      -- ruling); the model gives `^` no meaning at a negative exponent
-      -- either, so this is a loud refusal, not the fail-OPEN `.toNat`
-      -- clamp that stood here. Unreachable from C: the shift elaboration
-      -- guards negative counts (UB) before the `^` (std.core shift procs).
-      if n2 < 0 then failwithI "CerbMem.opIval IntExp: negative exponent has no meaning in the model (impl_mem.ml:2490 Z.pow raises Invalid_argument — an OCaml-execution artifact, not the referent); unreachable behind the shift guards"
+      -- NEGATIVE exponent raises `Invalid_argument` in zarith (z.mli:636).
+      -- The model gives `^` no meaning at a negative exponent, so under the
+      -- [USER 2026-10-03] synthesis ("(1) agree with this": no answer
+      -- defined → a loud stop mirroring the crash) this is a fail-stop, not
+      -- the fail-OPEN `.toNat` clamp that stood here. Unreachable from C: the
+      -- shift elaboration guards negative counts (UB) before the `^` (std.core
+      -- shift procs).
+      if n2 < 0 then failwithI "CerbMem.opIval IntExp: negative exponent has no meaning in the model (impl_mem.ml:2490 Z.pow raises Invalid_argument — mirrored as a fail-stop); unreachable behind the shift guards"
       else .IV Provenance.Prov_none (n1 ^ n2.toNat)
 
 /-- offsetof_ival — impl_mem.ml:2193-2201: offsetsof (WITHOUT

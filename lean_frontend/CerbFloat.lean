@@ -38,8 +38,10 @@ def floatLe (x y : Float) : Bool := x <= y
 
 def floatAdd (x y : Float) : Float := x + y
 def floatSub (x y : Float) : Float := x - y
-/-- ISO-fix register R6 — PROPOSED, awaiting the [USER] ruling (VALIDATION.md
-    §2; record docs/2026-10-03_total-arith-and-bookkeeping-record.md §4). The
+/-- ISO-fix register R6 — ADMITTED [USER 2026-10-03] "(2) yes this is the
+    canonical 'obviously a mistake, no semantic ambiguity, just fix'"
+    (VALIDATION.md §2; record docs/2026-10-03_total-arith-and-bookkeeping-record.md
+    §4, §8). The
     OCaml target of lem's `Float.floatMul` is `Cerb_floating.mul`, which
     upstream defines as `(+.)` — literally addition (util/cerb_floating.ml:5;
     add/sub/div on the neighbouring lines are correct: a copy-paste slip;
@@ -52,7 +54,7 @@ def floatSub (x y : Float) : Float := x - y
     and float.lem's `NumMult` instance, which no lem code in either cone
     applies. The concrete model's own op_fval (impl_mem.ml:2529-2537, mirrored
     by CerbMem.opFval) uses `*.` directly and is not affected. -/
--- ISO-fix register R6 (PROPOSED; not admitted until the [USER] ruling)
+-- ISO-fix register R6 (ADMITTED [USER 2026-10-03])
 def floatMul (x y : Float) : Float := x * y
 def floatDiv (x y : Float) : Float := x / y
 

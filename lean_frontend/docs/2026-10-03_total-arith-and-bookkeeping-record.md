@@ -246,6 +246,10 @@ wrapper; no other proof moved.
   the 2026-10-03 rule supersede the kind-2 paragraph; should R3 likewise
   become a fail-stop; should §0 be re-worded. A pointer note was added under
   VALIDATION §0; the ruling text itself is untouched.
+  **RESOLVED 2026-10-03** by the synthesis [USER 2026-10-03] "(1) agree with
+  this" and the F1 ruling — see §7 (alignment reads: computed, R7;
+  division/remainder by zero: stops stay). VALIDATION §0 now carries the
+  2026-10-03 rule and the synthesis next to the referent ruling.
 
 ### 2.4 Pins and register
 
@@ -600,3 +604,31 @@ check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly 
   ORACLE_CRASH   zd-ta-alignas-huge-union-alignof  O[CRASH] L[VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}]
 OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip/zd-r2-highbyte DIFF and zd-r2-crash-digit9 ORACLE_CRASH, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF, R7 zd-ta-alignas-huge-{sizeof,union-alignof,desugar} ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
 ```
+
+## 8. Addendum 2026-10-03 — R6 admitted; audit F2–F6 (supersedes §4's "PROPOSED" wording; §4 is left as history)
+
+- **R6 ADMITTED**: [USER 2026-10-03] "(2) yes this is the canonical
+  'obviously a mistake, no semantic ambiguity, just fix'". `CerbFloat.floatMul`
+  stays real multiplication; its docstring and marker, the VALIDATION §2 row
+  (label and status), the marker paragraph and the §3 "(d)" line (now
+  "(R1, R2, R3, R5, R6, R7)") say ADMITTED.
+- **F2** (`zToInt` docstring): moot — `zToInt` was deleted in §7 (no caller
+  left).
+- **F4**: the `IntExp` negative-exponent comment and message tail no longer
+  speak of a "KIND-2 … NOT mirrored … not the referent" artifact; they cite
+  the synthesis (no answer defined → stop). The message's first 60
+  characters (the failure-reach register key) are unchanged; the register
+  gate stays OK without a reseal. `tests/z2-probes/README.md` gains a
+  SUPERSEDED pointer at the stale "stay ORACLE_CRASH as PENDING rows"
+  sentence; tray draft 34's provenance paragraph says the port now mirrors
+  the crash.
+- **O-3**: marked RESOLVED in §2.3; VALIDATION §0's [AGENT] pointer note is
+  replaced by the 2026-10-03 rule (verbatim) and the synthesis (verbatim),
+  next to the 2026-09-03 referent ruling.
+- **F6**: the gcc ledger row `tests/immaculate/nolibc/zd-invalid-format-utf8-payload.c
+  SKIP_UB -` added at the measured status (partial run of §7.3:
+  `[56/65] SKIP_UB  tests/immaculate/nolibc/zd-invalid-format-utf8-payload.c:
+  (UB:{ub: "Invalid_format[caf\195\169 %y]", stderr: "", loc: "<6:18--6:45>"})`).
+- **F5** (the uneven guarding of unreachable sites: `integerDiv_t` has the
+  zero guard, the layout family's `% 0` does not): left as is, as directed;
+  both are unreachable (U-1, U-10).

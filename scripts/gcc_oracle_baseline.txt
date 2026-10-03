@@ -25,6 +25,8 @@
 #   the unbounded alignment (ISO-fix register R7), so zd-ta-alignas-huge-{sizeof,union-alignof} SKIP_LEAN_CRASH -> SKIP_GCC_COMPILE
 #   and zd-ta-alignas-huge-desugar (program changed: _Alignas(2^62) object, Lean's out-of-memory Error) -> SKIP_LEAN_FAIL.
 #   Record §7.
+# 2026-10-03 (pre-merge audit F6): the missing row for tests/immaculate/nolibc/zd-invalid-format-utf8-payload.c (landed in
+#   eccc83b58 without one) hand-inserted at the status the partial run measured: SKIP_UB (Lean's verdict is UB). Record §8.
 csmith/sa_csmith_001.c AGREE O2_AGREE
 csmith/sa_csmith_002.c SKIP_LEAN_CRASH -
 csmith/sa_csmith_003.c SKIP_LEAN_CRASH -
@@ -1932,6 +1934,7 @@ tests/immaculate/nolibc/zd-funptr-call-control.c AGREE -
 tests/immaculate/nolibc/zd-funptr-int-direct.c TRIAGED_ADDR -
 tests/immaculate/nolibc/zd-funptr-int-voidptr.c TRIAGED_ADDR -
 tests/immaculate/nolibc/zd-funptr-printf-deviation.c SKIP_GCC_STDOUT -
+tests/immaculate/nolibc/zd-invalid-format-utf8-payload.c SKIP_UB -
 tests/immaculate/nolibc/zd-nan-bytes-deviation.c TRIAGED_FLOAT -
 tests/immaculate/nolibc/zd-ta-alignas-2p61-control.c SKIP_GCC_COMPILE -
 tests/immaculate/nolibc/zd-ta-alignas-huge-desugar.c SKIP_LEAN_FAIL -
