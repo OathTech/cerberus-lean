@@ -695,6 +695,37 @@ by a cited re-record.
   (C6: 134 agree / 2 `matching_incomplete` / 106 `matching_failure`; shard
   1/34: 26 / 21 / 3).
 
+## 3b. Deviations the consumer relies on (cerberus-sl)
+
+The rule is [USER 2026-10-03]: "Generally, our rule is that we don't innovate wrt
+Cerberus-upstream, unless something is very very very obviously a bug. ... fall back to loudly
+rejecting (either as unsupported, or matching upstream)." That rule can prompt reverting
+deviations taken earlier. Some of those deviations are load-bearing for the consumer, cerberus-sl,
+which pins this repository by commit. The operator's framing is: "we shouldn't revert work that
+allows the iris reasoning to work properly" ([USER 2026-10-03]).
+
+cerberus-sl stated (orchestrator relay, 2026-10-03) that it relies on the five behaviours below.
+The names in the right-hand column are cerberus-sl's own (`CerberusIris/CerberusIris/…`).
+
+| Fork behaviour | Where it is recorded here | What cerberus-sl uses it for |
+|---|---|---|
+| `--address-space-top N`, the address-space top as a parameter of both engines (pristine has no such flag; §7, `docs/2026-09-17_address-space-bound-part-two-record.md`) | §7 "address-space top"; Tier A row 12 | `Interface.AdmittedTop` (the admitted tops `0 < top < 2^64`) and the theorems quantified over them |
+| The run digest as run-state data (`core_run_state.sym_digest`, seeded from the last program TU; D-S, `docs/2026-09-22_run-digest-as-state-record.md`) | §9 boundary list (the FRONTEND digest seam) | `AdequacyG.adequacy_wp_G`'s premise `rs.sym_digest = P.digest` |
+| The enum reader: an enum's compatible type is program data (`enum_definitions` / `file.enumDefs`; E-A, `docs/2026-09-20_program-data-parameters-EA-DA-record.md`; unit exe `enum-data-test`) | §9 boundary list ("`CerberusImpl`'s enum registry — LEFT the boundary") | the enum rows (enum layout and `Ivmin`/`Ivmax` read through the pinned reader, e.g. `BoolEnumExamples`) |
+| The fail-closed tuple-arity matcher (`match_pattern`/`typecheck_pattern` refuse a tuple-arity mismatch; `docs/2026-09-20_match-pattern-arity-record.md`; unit exe `match-pattern-arity-test`) | that record; upstream-tray draft 45 | `RoundThread.pick_complete` / `pcall_complete` |
+| The fuel-indexed ND runner and its exhaustion and out-of-memory outcomes (`CerbND.runNDFuel`, the kill `CerbND.fuelExhaustedKill`, the allocator's `MerrOther "Concrete.allocator: failed (out of memory)"`) | §7 | `CerbND.runNDFuel` / `fuelExhaustedKill` and `Interface.oomOutcome` |
+
+cerberus-sl does NOT rely on cross-TU `PEmemberof` struct compatibility (draft 38). That was
+confirmed before the 2026-10-03 revert (§3, `multi_tu_tray/node`).
+
+**Rule.** Before any retrospective revert of a fork deviation (a "mirror upstream" pass, a
+register clean-up, a re-pin that drops a fork change), check this list. If the deviation is on
+it, or might feed one of these names, ask cerberus-sl first (re-pin notes and consumer questions
+go to its repository, `scripts/semantics-pin.env`), and record its answer with the revert. This
+list is the consumer's statement as of 2026-10-03. It is not proof that nothing else is used. A
+deviation that is absent from it still gets the question whenever the consumer's proofs might
+touch it.
+
 ## 4. What is compared, against what
 
 **The oracle.** The OCaml Cerberus in this repository, built from the

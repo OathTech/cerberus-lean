@@ -471,3 +471,39 @@ Baseline check: 0 regression(s), 0 improvement(s)
 gcc second-oracle lane OK
 rc=0
 ```
+
+## 3. Task 3: the consumer-relied deviations note
+
+`VALIDATION.md` gains a new section, §3b "Deviations the consumer relies on (cerberus-sl)". It lists
+the five behaviours cerberus-sl stated it relies on (orchestrator relay, 2026-10-03), each with the
+fork record that introduced it and cerberus-sl's own names. The names were checked to exist in the
+cerberus-sl checkout at `12d247c` (read only):
+
+- `Interface.AdmittedTop` (`Interface.lean:195`);
+- `AdequacyG.adequacy_wp_G` (`AdequacyG.lean:1314`), with the `rs.sym_digest = P.digest` premise
+  (`:212`, `:346`);
+- `RoundThread.pick_complete` / `pcall_complete` (`RoundThread.lean:1373`, `:1339`);
+- `Interface.oomOutcome` (`Interface.lean:177`);
+- `CerbND.runNDFuel` / `CerbND.fuelExhaustedKill` (used in `BranchingPrefixExamples.lean:780-782`);
+- the enum rows (`BoolEnumExamples.lean`).
+
+The section states the rule: any retrospective revert checks this list and asks cerberus-sl first.
+Docs only. No code, baseline or register changed, so no gate can move. Nothing was rebuilt for
+this commit; the task 2 battery (§2.4) stands for the tree.
+
+## 4. The next-phase plan
+
+The plan does not live on mainline. It is on branch `docs/next-phase-plan-20260925` (worktree
+`worktrees/cerberus-lean-docs/next-phase-plan-20260925`). [AGENT] added §12.4 there as one docs
+commit, `32c26dcd7`, recording the rulings: P2d-1 dropped, P2d-3 cut to its completeness half,
+draft 38 reverted, and the §3b note. Neither branch is merged.
+
+## 5. Fences and housekeeping
+
+- No file of the SC track was touched (`driver.lem`, `core_run*.lem`, `core_reduction.lem`).
+- Nothing in cerberus-sl, the shared opam switch or `deps/lem-pinned` was touched.
+- No consumer-relied deviation (§3b) was touched.
+- Scratch lived under this worktree's `.tmp/d38/`. Those files were deleted at the end; the
+  `.tmp/` directory itself was left in place.
+- Wall time: every gate run was well under the one-hour tripwire. The longest was the gcc lane, at
+  about 28 minutes per run.
