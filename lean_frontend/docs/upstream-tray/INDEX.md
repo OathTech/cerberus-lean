@@ -13,9 +13,9 @@ default.
 Reconciled 2026-09-25 against committed records at Cerberus
 `c13a1054133b49c954fe27ac4c1b4e33a418c51f`; these are recorded submission
 states, not a fresh GitHub issue-status census. **Draft** = prepared with no
-recorded submission; **Sent** = transmitted without an issue/PR URL;
-**Filed** = recorded issue/PR URL; **Closed** = recorded upstream closure.
-A fork-side fix or a pushed PR branch does not mean Filed or Closed.
+recorded submission; **Sent** = transmitted without an issue URL;
+**Filed** = recorded issue URL; **Closed** = recorded upstream closure.
+A fork-side fix does not mean Filed or Closed. This tray holds issue reports only, not patches.
 
 Derived inventory (2026-09-29): 53 report files, **48 Draft, 4 Sent, 1 Filed, 0 Closed** (the four Sent = the ISO-fix register's reports 10/11/13/40, communicated privately to the maintainers; report 19, the register's DEFERRED row R4, stays Draft).
 Added since that count: report 49 (2026-10-03, Draft).
@@ -670,86 +670,10 @@ covers both entry points.
   `printf` format checking (26/27), the Core parser (35), and struct
   compatibility / `are_compatible` / multi-file linking (37).
 
-## Near-at-hand audit around the PR branches (2026-08-23)
-
-Each PR branch's code neighborhood was audited for adjacent defects
-that should roll into the same PR. Result: all three branches are
-complete as scoped; the audits are recorded in each branch's
-PR-DESCRIPTION.md. Specifics (probes run against the local
-deps/cerberus-upstream build @ b9aeedcb4):
-
-- ocaml_gcc_builtins.ml (bswap64 PR): `ctz` has the same `Z.to_int64`
-  opening but is UNREACHABLE with 64-bit args — only `__builtin_ctz`
-  (unsigned int, zero-guarded in the std.core proxy) maps to it; no
-  `__builtin_ctzl/ctzll` exists upstream. bswap16/32 args pre-bounded
-  (asserts intentional); generic_ffs pure-Z. No rollups.
-- decode.ml (char-escapes PR): all other C11 simple escapes have arms;
-  hex validator correct; `encode_character_constant`'s `Z.to_int` gets
-  only char-range values (callers checked: formatted.lem:375/:617,
-  core_run.lem:1017, core_reduction_aux.lem:49). No rollups.
-  NEW FIND: upstream OPEN issue #154 ('\xFF' should be -1, signed
-  char) appears ALREADY FIXED by the current wrapI — probe
-  `('\xFF' == -1)` returns Specified(42)=true at b9aeedcb4. Courtesy
-  note drafted into the PR description; #154 may be closable.
-- impl_mem.ml (memcmp draft 13, future PR): REFUTED the IntExp
-  suspicion — `Z.pow n1 (Z.to_int n2)` at :2490 ("TODO: fail properly
-  when y is too big?") is defended: shifts by 64 and by 2^62 both give
-  `Undefined {ub: "UB51b_shift_too_large"}` BEFORE IntExp evaluates
-  (verbatim probe outputs, 2026-08-23). The remaining Z.to_int sites
-  are sizeof-driven and carry upstream's own TODO comments (known
-  gap). memcmp stays the only C-value-controlled crash site → draft 13
-  remains a correctly-scoped standalone PR.
-
-## Standard-citation validation pass (2026-08-23, trust-surface grade)
-
-Every semantically relevant claim on the three PR branches was
-validated against primary evidence. Authority: Cerberus's own embedded
-N1570 text (`tools/n1570.json` — the copy the tool's UB machinery
-cites), cross-checked with gcc 's actual behavior and the GCC/Zarith
-documentation online. VERIFIED (evidence in parentheses):
-- `\?` accepted by the C lexer (c_lexer.mll:417); value 63 (gcc run:
-  exit 63); simple-escape grammar §6.4.4.4#1; representability #3-4.
-- Octal escapes: ≤3 digits + maximal munch (#1 grammar, #7); all 0344
-  boundary expectations pass under gcc -std=c11 -Wall; `'\377' ==
-  (char)0xff` matches #10's char-object-converted-to-int rule.
-- `%c` stores the int arg converted to unsigned char (§7.21.6.1#8);
-  0343 compiles AS WRITTEN under gcc (builtin declaration included)
-  and passes; `Char.escaped` decimal rendering confirmed empirically
-  ("\\127", "\\129"), 0o127=87 corruption arithmetic checked.
-- bswap64: GCC docs give `uint64_t __builtin_bswap64(uint64_t)`, NO
-  domain restriction (full-domain-legal claim exact); repro exit 8
-  under gcc; all 5 test vectors verified by independent computation;
-  Zarith `signed_extract`/`extract`/`to_int64` semantics verified
-  from docs AND empirically via the project switch (the fixed
-  pipeline reproduces every expected value). `__builtin_ctz(0)`
-  documented undefined by GCC — proxy undef verdict correct.
-- pp-roundtrip: no ISO citations; semantic-preservation evidence is
-  the differential lanes already in its PR description.
-DEFECTS FOUND AND FIXED (2 citations, char-escapes): "#4 lists the
-simple escapes" (the list is #1's grammar) and "octal-digit ...
-(§6.4.4.4#1)" (production is §6.4.4.1#1). Fixed in PR-DESCRIPTION.md,
-the decode.ml comment, and the 0342/0344 headers; the octal commit's
-message reworded in the same pass. Surgery (autosquash + reword)
-operator-approved and executed 2026-08-23 — final tree verified
-byte-identical at each step, trailers intact — and force-pushed
-(--force-with-lease) to OathTech. char-escapes head: da993e5a0.
-
 ## Provenance labeling policy ([USER 2026-08-23])
 
-The Cerberus team requires AI-derived code to be labeled as such. For
-everything filed from this tray:
-- ISSUE and PR bodies carry an explicit AI-provenance note (pattern:
-  the "Provenance" section now in each PR-DESCRIPTION.md; issue-side
-  precedent: #1009's "Bug detected by Claude Fable" line).
-- COMMITS carry `Co-Authored-By: Claude ... <noreply@anthropic.com>`
-  trailers. Status: ALL THREE branches conform. pp-roundtrip's 14 code
-  commits were rewritten 2026-08-23 with operator approval (never
-  pushed, so safe) to add generic `Claude` trailers — generic because
-  the authoring model session is not attestable; commits whose
-  authoring session is known use the specific model name.
-- The CODE ITSELF stays clean and idiomatic to the surrounding style —
-  no AI-generation residue in comments or structure. (Audited
-  2026-08-23: all three branches' diffs conform.)
+The Cerberus team requires AI-derived work to be labeled as such. Every issue filed from this tray carries an
+explicit AI-provenance note in its body (precedent: #1009's "Bug detected by Claude Fable" line).
 
 ## Filing checklist (operator; needs network + GitHub)
 

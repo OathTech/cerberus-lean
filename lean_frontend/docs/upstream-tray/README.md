@@ -63,8 +63,7 @@ when upstream fixes the defect the pair flips to agreement and the
 entry is retired.
 
 We are not asking you to adopt anything from the Lean port. Every
-report stands on an upstream-only reproducer, and the three patches we
-offer (section 5) are ordinary patches against your tree.
+report stands on an upstream-only reproducer.
 
 ## 3. How to read a draft
 
@@ -115,88 +114,51 @@ prog.core` (or `--pp=core prog.core`) to read a `.core` file back.
 
 Order follows INDEX.md's filing checklist (its ranking by value): the
 already-filed draft first, then true bugs, acknowledged gaps, and
-questions. "PR" names the branch on this repository that carries a fix
-(section 5).
+questions.
 
-| Draft | One-line summary | Class | Severity | PR |
-|---|---|---|---|---|
-| 01 | `Cerb_floating.mul` is defined as `(+.)` (defacto model float multiplication) | TRUE BUG | silent wrong value | — (filed: issue 1009) |
-| 10 | `'\?'` simple escape has no decoder arm; uncaught `Failure` | TRUE BUG | tool crash on legal input | char-escapes |
-| 11 | `escaped_char` decimal `\ddd` read back as octal: `%c` of 127 stores 87 | TRUE BUG | silent wrong value | char-escapes |
-| 12 | `__builtin_bswap64` raises `Z.Overflow` for arguments ≥ 2^63 | TRUE BUG | tool crash on legal input | bswap64 |
-| 13 | `memcmp` with a huge size raises `Z.Overflow` where a UB verdict belongs | TRUE BUG | tool crash (UB input) | — |
-| 14 | Core stdlib `ailname` proxies hijack a program's own `read`/`write`/`open`… | TRUE BUG | legal program refused / spurious UB | — |
-| 15 | float→`_Bool` truncates before the compare-to-zero test; non-finite crashes | TRUE BUG | silent wrong value; crash | — |
-| 16 | `snprintf` returns the truncated length, not the would-have-been length | TRUE BUG | silent wrong value | — |
-| 20 | `size_t` has no integer conversion rank: arithmetic with `int`-family operands is done at 32 bits | TRUE BUG | silent wrong value and control flow | — |
-| 23 | string literal initialising a `char`-array element/member rejected (`char a[2][3] = {"ab","cd"}`) | TRUE BUG | legal program rejected | — |
-| 22 | pointer difference over pointers to arrays divides by the inner element size | TRUE BUG | silent wrong value | — |
-| 24 | `FILE`-buffered stdout never flushed at termination (return from `main`, `exit()`) | TRUE BUG | silent lost output | — |
-| 25 | `atexit` handlers not run on return from `main` | TRUE BUG | silent missing side effects | — |
-| 27 | `%x`/`%X`/`%o` with an `int` argument reported as UB153b | TRUE BUG (over-strict) | false UB verdict | — |
-| 28 | `?:` in a static initialiser rejected as non-constant | TRUE BUG | legal program rejected | — |
-| 30 | `strncmp(s1, s2, 0)` compares one character | TRUE BUG | silent wrong value | — |
-| 26 | `printf("%*d", …)`: `*` width parsed, then uncaught `Failure("TODO: formatted.lem 6")` | TRUE BUG | tool crash on legal input | — |
-| 34 | `aligned_alloc(0, n)`: Core `rem_t` by zero → uncaught `Division_by_zero` | TRUE BUG | tool crash (invalid argument) | — |
-| 18 | non-tail monadic list combinators: stack depth ∝ aggregate size | TRUE BUG | robustness (resource) | — |
-| 08 | nested braced initializers desugar to `AilEinvalid`; uncaught internal error | TRUE BUG | tool crash on legal input | — |
-| 09 | `&arr[i].field` address constant rejected in a static initializer | TRUE BUG | legal program rejected | — |
-| 29 | `"hello" + 1` not accepted as an address constant in a static initializer | TRUE BUG | legal program rejected | — |
-| 31 | `calloc` has no `nmemb * size` overflow check (upstream evidence only; Lean agrees with the oracle since Z2) | TRUE BUG (minor) | wrong value on overflow | — |
-| 17 | unknown-procedure diagnostic embeds the raw fresh-symbol id | TRUE BUG (minor) | diagnostic quality | — |
-| 02 | `--pp core` prints bodyless `proc` decls the grammar rejects; `Cfunction(f)` re-parses as NULL | TRUE BUG (if round-trip is intended) | reload fails / silent wrong value | pp-roundtrip |
-| 03 | `--pp core` output re-parses to a different tree (`if` operands, `;`-sequences) | TRUE BUG (same condition) | silent wrong tree on reload | pp-roundtrip |
-| 35 | Core parser drops `seq_rmw`'s pointer operand (parser bug); printer spellings the grammar rejects (`Cfvfromint`, `wrapI_div`, `pcall(f, )`, `builtin …`, `PtrMemberShift[s, m]`) | TRUE BUG / TRUE BUG (same condition) | silent wrong tree on reload / reload fails | — |
-| 04 | `p + 1` on a null pointer: uncaught `Failure("TODO…")` instead of a UB verdict | INTENDED GAP | tool crash (UB input) | — |
-| 05 | `va_arg` performs no type-compatibility check (acknowledged TODO); the gap is observable | INTENDED GAP | missed UB verdict | — |
-| 32 | `float` represented/evaluated as `double` (`TODO:hack`, `sizeof(float) == 8`) while `<float.h>` says `FLT_MANT_DIG 24` | INTENDED GAP + inconsistency | no single-precision rounding; wrong `<float.h>` facts | — |
-| 21 | provenance dropped by every integer arithmetic operator under the default PVI model (`(int*)((uintptr_t)p + 4)` is UB043) | TRUE BUG vs intent / UNCLEAR | question (false UB on a PVI idiom) | — |
-| 33 | unspecified operand of signed `+` classified as `UB036_exceptional_condition` | UNCLEAR | question | — |
-| 06 | `funinfo.has_proto` differs between declaration and definition entries; its runtime uses look dead | UNCLEAR | question | — |
-| 07 | symbol identity rests on an implicit shared-counter invariant; equality ignores names | UNCLEAR | question (for the record) | — |
+| Draft | One-line summary | Class | Severity |
+|---|---|---|---|
+| 01 | `Cerb_floating.mul` is defined as `(+.)` (defacto model float multiplication; filed: issue 1009) | TRUE BUG | silent wrong value |
+| 10 | `'\?'` simple escape has no decoder arm; uncaught `Failure` | TRUE BUG | tool crash on legal input |
+| 11 | `escaped_char` decimal `\ddd` read back as octal: `%c` of 127 stores 87 | TRUE BUG | silent wrong value |
+| 12 | `__builtin_bswap64` raises `Z.Overflow` for arguments ≥ 2^63 | TRUE BUG | tool crash on legal input |
+| 13 | `memcmp` with a huge size raises `Z.Overflow` where a UB verdict belongs | TRUE BUG | tool crash (UB input) |
+| 14 | Core stdlib `ailname` proxies hijack a program's own `read`/`write`/`open`… | TRUE BUG | legal program refused / spurious UB |
+| 15 | float→`_Bool` truncates before the compare-to-zero test; non-finite crashes | TRUE BUG | silent wrong value; crash |
+| 16 | `snprintf` returns the truncated length, not the would-have-been length | TRUE BUG | silent wrong value |
+| 20 | `size_t` has no integer conversion rank: arithmetic with `int`-family operands is done at 32 bits | TRUE BUG | silent wrong value and control flow |
+| 23 | string literal initialising a `char`-array element/member rejected (`char a[2][3] = {"ab","cd"}`) | TRUE BUG | legal program rejected |
+| 22 | pointer difference over pointers to arrays divides by the inner element size | TRUE BUG | silent wrong value |
+| 24 | `FILE`-buffered stdout never flushed at termination (return from `main`, `exit()`) | TRUE BUG | silent lost output |
+| 25 | `atexit` handlers not run on return from `main` | TRUE BUG | silent missing side effects |
+| 27 | `%x`/`%X`/`%o` with an `int` argument reported as UB153b | TRUE BUG (over-strict) | false UB verdict |
+| 28 | `?:` in a static initialiser rejected as non-constant | TRUE BUG | legal program rejected |
+| 30 | `strncmp(s1, s2, 0)` compares one character | TRUE BUG | silent wrong value |
+| 26 | `printf("%*d", …)`: `*` width parsed, then uncaught `Failure("TODO: formatted.lem 6")` | TRUE BUG | tool crash on legal input |
+| 34 | `aligned_alloc(0, n)`: Core `rem_t` by zero → uncaught `Division_by_zero` | TRUE BUG | tool crash (invalid argument) |
+| 18 | non-tail monadic list combinators: stack depth ∝ aggregate size | TRUE BUG | robustness (resource) |
+| 08 | nested braced initializers desugar to `AilEinvalid`; uncaught internal error | TRUE BUG | tool crash on legal input |
+| 09 | `&arr[i].field` address constant rejected in a static initializer | TRUE BUG | legal program rejected |
+| 29 | `"hello" + 1` not accepted as an address constant in a static initializer | TRUE BUG | legal program rejected |
+| 31 | `calloc` has no `nmemb * size` overflow check (upstream evidence only; Lean agrees with the oracle since Z2) | TRUE BUG (minor) | wrong value on overflow |
+| 17 | unknown-procedure diagnostic embeds the raw fresh-symbol id | TRUE BUG (minor) | diagnostic quality |
+| 02 | `--pp core` prints bodyless `proc` decls the grammar rejects; `Cfunction(f)` re-parses as NULL | TRUE BUG (if round-trip is intended) | reload fails / silent wrong value |
+| 03 | `--pp core` output re-parses to a different tree (`if` operands, `;`-sequences) | TRUE BUG (same condition) | silent wrong tree on reload |
+| 35 | Core parser drops `seq_rmw`'s pointer operand (parser bug); printer spellings the grammar rejects (`Cfvfromint`, `wrapI_div`, `pcall(f, )`, `builtin …`, `PtrMemberShift[s, m]`) | TRUE BUG / TRUE BUG (same condition) | silent wrong tree on reload / reload fails |
+| 04 | `p + 1` on a null pointer: uncaught `Failure("TODO…")` instead of a UB verdict | INTENDED GAP | tool crash (UB input) |
+| 05 | `va_arg` performs no type-compatibility check (acknowledged TODO); the gap is observable | INTENDED GAP | missed UB verdict |
+| 32 | `float` represented/evaluated as `double` (`TODO:hack`, `sizeof(float) == 8`) while `<float.h>` says `FLT_MANT_DIG 24` | INTENDED GAP + inconsistency | no single-precision rounding; wrong `<float.h>` facts |
+| 21 | provenance dropped by every integer arithmetic operator under the default PVI model (`(int*)((uintptr_t)p + 4)` is UB043) | TRUE BUG vs intent / UNCLEAR | question (false UB on a PVI idiom) |
+| 33 | unspecified operand of signed `+` classified as `UB036_exceptional_condition` | UNCLEAR | question |
+| 06 | `funinfo.has_proto` differs between declaration and definition entries; its runtime uses look dead | UNCLEAR | question |
+| 07 | symbol identity rests on an implicit shared-counter invariant; equality ignores names | UNCLEAR | question (for the record) |
 
 Not for you: `lean4/01-stack-overflow-handler-deadlock.md` and
 `lean4/02-nat-div-mod-literal-folding.md` target Lean 4 (the runtime's
 stack-overflow handler; `Nat.div`/`Nat.mod` literal folding), and `lem/`
-targets Lem (section 6).
+targets Lem (section 5).
 
-## 5. The three patch branches
-
-Three fixes are prepared as branches on this repository
-(`github.com/OathTech/cerberus-lean`), each based directly on
-`b9aeedcb4` so it applies to your tree, and each carrying a
-`PR-DESCRIPTION.md` at its root (the intended PR text; to be dropped
-before merge):
-
-- **`upstream-pr/bswap64`** — one code commit: `__builtin_bswap64`
-  reinterprets its argument as a two's-complement int64 before the
-  conversion that used to raise, and reads the swapped result back
-  unsigned; adds `tests/ci/0345-builtin_bswap64.c`. Fixes draft 12.
-- **`upstream-pr/char-escapes`** — three code commits: the missing
-  `'\?'` arm; `escaped_char` emitting C octal escapes so the
-  encode/decode pair is an inverse; the octal validator no longer
-  accepting `'8'`. Adds `tests/ci/0342`–`0344`. Fixes drafts 10 and 11.
-  Its description also notes that open issue #154 (`'\xFF'` under
-  signed char) appears already fixed at `b9aeedcb4`.
-- **`upstream-pr/pp-roundtrip`** — fourteen code commits making
-  `--pp core` output round-trip through the Core parser (printer
-  parenthesisation and dialect fixes; grammar gaps closed; the
-  `Cfunction` and `seq_rmw` re-parse defects), plus
-  `tests/run-roundtrip.sh`. On the 113 ci tests that elaborate, its
-  fixpoint check goes from 59 passing / 54 failing on `b9aeedcb4` to
-  110 / 3; `run-ci.sh` stays at 188 passed. Fixes drafts 02 and 03 and
-  more; its description lists what remains.
-
-Each branch's code neighbourhood was audited (2026-08-23) for adjacent
-defects that should travel with the fix; all three are complete as
-scoped, and the audits are written up in the descriptions. Every
-standards claim on the three branches was checked against the N1570
-text Cerberus itself embeds and against gcc's behaviour; that pass
-found and corrected two mis-cited clause numbers in the char-escapes
-description and comments. Every commit carries a `Co-Authored-By:
-Claude … <noreply@anthropic.com>` trailer (section 7).
-
-## 6. For the Lem authors
+## 5. For the Lem authors
 
 If you also maintain Lem: the `lem/` subdirectory holds draft reports
 against `rems-project/lem`, in the same format (currently one, a
@@ -206,16 +168,14 @@ itself is a feature contribution, not a bug report; its landing page
 is `doc/lean-backend/README.md` in the `lem-lean` repository
 (`github.com/OathTech/lem-lean`, branch `mdd/lean-backend`).
 
-## 7. How this work was produced
+## 6. How this work was produced
 
 This port was developed primarily by AI agents (Claude, Anthropic)
 working under the direction and review of a human operator. The
 Cerberus team asked that AI-derived code be labelled as such, and
-everything here follows that: each issue and PR body carries an
-explicit provenance note, every commit on the patch branches carries
-a `Co-Authored-By: Claude …` trailer, and the code itself is written
-to the surrounding style with no generation residue (the policy is
-spelled out in INDEX.md, "Provenance labeling policy"). Each draft's
+everything here follows that: each issue body carries an explicit
+provenance note (the policy is spelled out in INDEX.md, "Provenance
+labeling policy"). Each draft's
 classification is proposed in the draft and reviewed by the operator,
 who decides what is filed. So far two issues have been filed:
 [#1009](https://github.com/rems-project/cerberus/issues/1009) (draft
@@ -223,7 +183,7 @@ who decides what is filed. So far two issues have been filed:
 expected result type, `core_typing.lem:1025`; no draft in this
 directory). Nothing else has been submitted.
 
-## 8. Caveats
+## 7. Caveats
 
 - **The pin is dated.** All citations and reproducer runs are against
   `b9aeedcb4` (2026-08-13). Please re-run a reproducer on current
@@ -245,7 +205,7 @@ directory). Nothing else has been submitted.
   so unmodified upstream has not been shown to misbehave — the draft
   is a design question, not a defect claim.
 
-## 9. Added 2026-09-05 (the drafts announced here earlier are done)
+## 8. Added 2026-09-05 (the drafts announced here earlier are done)
 
 The fifteen drafts announced in the previous version of this section are
 now in INDEX.md (its "Added 2026-09-05" block) and in the triage table
@@ -289,7 +249,7 @@ above. Pointers, one line each:
 Nothing further is in preparation from that audit pass; new drafts, if
 any, will again be announced in INDEX.md first.
 
-## 10. How to respond
+## 9. How to respond
 
 Issues or comments on this repository are welcome, as are replies on
 any issue we file upstream. The repository owner is the contact for
