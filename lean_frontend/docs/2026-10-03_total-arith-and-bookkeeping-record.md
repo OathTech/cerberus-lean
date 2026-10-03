@@ -267,3 +267,30 @@ Baseline check: 0 regression(s), 0 improvement(s)
 BASELINE OK
 partial ./scripts/test_gcc_oracle.sh --write-baseline=<scratch> tests/immaculate/nolibc rc=0: gcc second-oracle lane OK (65 rows)
 ```
+
+## 3. `--address-space-top` documentation (task 3)
+
+Docs only. `CONTRACT.md` §2 gains a paragraph and `VALIDATION.md` §7 (the
+"address-space top is a parameter too" block) a matching passage:
+
+- the parameter is a DELIBERATE lift of upstream's constant for proof use,
+  citing [USER 2026-10-03] verbatim ("we specifically want to lift the
+  address-space-top restriction for the sake of treating cerberus as a
+  proof artifact. ...");
+- its default mirrors upstream exactly (`impl_mem.ml` `last_address=
+  Z.of_int 0xFFFFFFFFFFFF; (* TODO: this is a random impl-def choice *)`,
+  verified in `deps/cerberus-upstream/memory/concrete/impl_mem.ml:508`), and
+  the §1 promise holds at that default only; non-default values are outside
+  the mirroring promise — pristine upstream has no such parameter, the fork's
+  flag is an instrument (LADDER A12), and tops ≥ 2^62 open the `Z.to_int`
+  gap of §2.3 O-1;
+- the fork's symbolic and CHERI models accept the value and ignore it
+  (`memory/symbolic/impl_mem.ml:571`, `memory/cheri-coq/impl_mem.ml:273`:
+  `initial_mem_state (_address_space_top: Z.t)`, verified by reading); they
+  are fork-oracle-only executables (`cerberus-cheri`; the symbolic driver is
+  commented out of `backend/driver/dune`), while cerberus-lean has the
+  concrete model alone and refuses any model-selecting flag as an unknown
+  flag (Z-24).
+
+Gate (docs-only step): `./scripts/test_unit.sh` rc=0 —
+`Done: 292 passed, 0 failed`, `Total: 16 passed, 0 failed`.

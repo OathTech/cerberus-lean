@@ -37,6 +37,21 @@ Matched (default-switch) mode of the oracle at the fork merge-base `b9aeedcb4`; 
 memory model; LP64; `--nolibc` and libc modes as exercised by the lanes; explicit `--fuel` and address-space parameters.
 Every non-default semantics switch is refused at the CLI today (`Main.lean` `refuseFlag`).
 
+**The address-space top: the default is the promise; other values are a proof-use parameter.** `--address-space-top N`
+is a DELIBERATE lift of upstream's constant for proof use — [USER 2026-10-03] "we specifically want to lift the
+address-space-top restriction for the sake of treating cerberus as a proof artifact. Agree on your recommendations with
+that framing (we shouldn't revert work that allows the iris reasoning to work properly)". Its default mirrors upstream
+exactly (`memory/concrete/impl_mem.ml` `last_address= Z.of_int 0xFFFFFFFFFFFF; (* TODO: this is a random impl-def
+choice *)`, `Main.lean` `defaultAddressSpaceTop`), and §1 is promised at that default only. A NON-DEFAULT value is
+outside the mirroring promise: pristine upstream has no such parameter, so there is nothing to mirror; the fork oracle's
+own fork-only flag is an instrument (the tiny-top lane, LADDER A12), not the referent; and at very large tops (≥ 2^62)
+objects become allocatable whose sizes OCaml's `Z.to_int` cannot represent, where the fork oracle would raise and Lean
+computes (`docs/2026-10-03_total-arith-and-bookkeeping-record.md` §2.3 O-1). The fork's other memory models accept the
+fork-only flag and IGNORE it (`memory/symbolic/impl_mem.ml` `initial_mem_state (_address_space_top: Z.t)`,
+`memory/cheri-coq/impl_mem.ml` likewise) — those models exist on the fork oracle only (separate executables:
+`cerberus-cheri`; the symbolic driver is commented out of `backend/driver/dune`); cerberus-lean has the concrete model
+alone, and any model-selecting flag is an unknown flag, refused (exit 2, zero-discrepancy Z-24).
+
 **Exhaustive mode is the promise; `--first` is outside it.** In the default (exhaustive) mode Lean explores every
 nondeterministic branch, as the oracle's `--mode=exhaustive` does, and §1 applies to the whole verdict set. `--first`
 follows only the first branch (`CerbND.runND1Fuel`), where the oracle's `--mode=random` draws branches from a

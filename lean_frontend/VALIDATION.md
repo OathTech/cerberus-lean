@@ -1015,7 +1015,23 @@ re-review R1; [AGENT orchestrator], mirror doctrine): the flag's argument is
 "nonempty ASCII decimal digits, `0 < value < 2^64`" on BOTH engines — Lean
 validates the digits BEFORE `String.toNat?` (which alone accepts `6_4`), the
 fork's converter is digit-only; `18446744073709551615` (= 2^64 − 1) is the
-last accepted value on both (LADDER A12 plants P12–P14). A consumer theorem quantifies
+last accepted value on both (LADDER A12 plants P12–P14). **Non-default values are
+outside the mirroring promise** (2026-10-03; CONTRACT §2): the parameter is a
+DELIBERATE lift for proof use — [USER 2026-10-03] "we specifically want to lift
+the address-space-top restriction for the sake of treating cerberus as a proof
+artifact. Agree on your recommendations with that framing (we shouldn't revert
+work that allows the iris reasoning to work properly)" — and only its default
+mirrors upstream (`impl_mem.ml` `last_address= Z.of_int 0xFFFFFFFFFFFF; (* TODO:
+this is a random impl-def choice *)`). The A12 lane's Lean = fork agreement at
+tiny tops is evidence about the fork's own extension, not upstream agreement;
+at tops ≥ 2^62 the fork oracle's `Z.to_int` on object sizes would raise where
+Lean computes (total-arith record §2.3 O-1). The fork's symbolic and CHERI
+memory models accept the fork-only flag and ignore it
+(`memory/symbolic/impl_mem.ml` and `memory/cheri-coq/impl_mem.ml`
+`initial_mem_state (_address_space_top: Z.t)`); those models are fork-oracle
+only (separate executables: `cerberus-cheri`; the symbolic driver is commented
+out of `backend/driver/dune`) — cerberus-lean has the concrete model alone, and
+any model-selecting flag is an unknown flag, refused (Z-24). A consumer theorem quantifies
 `∀ top` under that domain, alongside `∀ fuel`; the driver's SETUP needs
 `8 ≤ top` — its errno `int` (4 bytes, align 4) is the first object, and a
 smaller top kills out of memory BEFORE `main` runs (the consumer review's
