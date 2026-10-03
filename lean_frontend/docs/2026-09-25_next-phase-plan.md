@@ -1093,3 +1093,31 @@ Neither bug-fix touches the SC track's claimed surfaces (`driver.lem`, `core_run
 checked against `arc/sc-s1a` 2026-10-03); shared bookkeeping files (fork-drift manifest, VALIDATION) follow the
 "later lander rebases" rule. Still open for the operator: the `mword` carve-outs LP5/OM1–OM3/OM5, and whether A5 is
 fixed before the failure-monad arc.
+
+### 12.4 Amendment 2026-10-03 — mirror upstream; P2d-1 dropped, P2d-3 cut to its completeness half
+
+Rulings (verbatim, as relayed to the worker):
+
+- [USER 2026-10-03] "Generally, our rule is that we don't innovate wrt Cerberus-upstream, unless something is very very
+  very obviously a bug. We're poorly placed to resolve semantic discrepancies, so we don't. ... fall back to loudly
+  rejecting (either as unsupported, or matching upstream)."
+- [USER 2026-10-03] "We do not resolve Cerberus TODO cases unless the answer is extremely obvious or if there's a
+  similarly obvious bug, or for some reason we or some downstream customer need it with absolute priority".
+- [USER 2026-10-03] "Agree on your recommendations with that framing (we shouldn't revert work that allows the iris
+  reasoning to work properly)".
+
+Effect on 12.3, implemented on branch `fix/mirror-upstream-d38-alignas` (cerberus-lean; record
+`lean_frontend/docs/2026-10-03_mirror-upstream-d38-alignas-record.md`; not merged):
+
+- **Draft 38's consult REVERTED.** The `PEmemberof(struct)` guard is upstream's exact-tag test again. cerberus-sl
+  confirmed it does not rely on it. Drafts 37 and 39 stay.
+- **P2d-1 (union twin) DROPPED.** With the struct consult reverted, the union arm already mirrors upstream.
+- **P2d-3 cut to the completeness half.** Only the §6.5.3.4#1 check at `desugar_alignment_specifier` (tray 47) is
+  taken. The alignment-compatibility half in `are_compatible_aux` is NOT taken: `ctype_aux.lem` keeps upstream's
+  `TODO alignment`. The record branch `fix/alignas-p2d3` (`cf4af48f8`, `b1c7831e4`) stays a record.
+- New standing note in `VALIDATION.md` §3b: the deviations cerberus-sl relies on (`--address-space-top`, the run
+  digest as data, the enum reader, the fail-closed tuple-arity matcher, the fuel-indexed ND runner with its
+  exhaustion/OOM outcomes). Any retrospective revert checks that list and asks cerberus-sl first.
+
+The current order of 12.3 therefore reads: 1 done; 2 = the completeness half only (on the branch above); 3 dropped;
+4 and 5 unchanged.
