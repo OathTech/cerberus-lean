@@ -128,7 +128,41 @@ there already". Drafted by Claude (Opus 5.5) under operator direction; the filed
 carries an AI-provenance note per the tray's policy (`INDEX.md`, "Provenance labeling
 policy").
 
-## Fork status (2026-09-27) — not yet fixed in the fork
+## Fork status (2026-10-03) — FIXED in the fork (completeness check only)
+
+The proposed remedy is in the fork's `desugar_alignment_specifier` (`frontend/model/cabs_to_ail.lem`,
+the `AS_type` arm), on branch `fix/mirror-upstream-d38-alignas`. It applies the same check as
+genTyping's `AilEalignof`: first `AilTypesAux.is_function ty`, then `E.is_incomplete ty`. Either
+one raises `AlignofInvalidApplication qs ty` at the specifier's declarator location. The tag being
+defined is incomplete inside its own member list, as §6.7.2.3#4 requires: `register_tag_definition`
+runs only after the member list is desugared. The hunk is byte-identical to the one first written on
+the record branch `fix/alignas-p2d3` (`cf4af48f8`).
+
+That commit also changed `ctype_aux.lem` to compare member alignments in `are_compatible_aux`.
+That half was NOT taken. [USER 2026-10-03] agreed to "keep only the completeness check and mirror
+upstream on alignment compatibility", under the rulings "we don't innovate wrt Cerberus-upstream,
+unless something is very very very obviously a bug" and "We do not resolve Cerberus TODO cases
+unless the answer is extremely obvious". The fork's `are_compatible_aux` keeps upstream's
+`(*TODO alignment*)` placeholders. The ruling for this draft's fix itself is [USER 2026-09-27]: "yes,
+'constraint violation' - and this goes in the tray if it isn't there already".
+
+Run 2026-10-03 on the fixed fork, verbatim. The fork oracle used `--exec --batch --nolibc
+--mode=exhaustive`. The Lean port used `--batch` on the oracle's `--cabs-json`. Pristine is
+`b9aeedcb4`. gcc is `-std=c11 -O0 -w`. The fork's stderr also quotes the source line, a caret and
+the §6.5.3.4#1 text; the full outputs are in
+`lean_frontend/docs/2026-10-03_mirror-upstream-d38-alignas-record.md` §2.
+
+| Program (`tests/coverage/alignas/`) | fork oracle | Lean | pristine | gcc |
+|---|---|---|---|---|
+| `alignas-001-self-char.c` (`alignas_self.c`) | `…:6:36: error: constraint violation: invalid application of '_Alignof' to an incomplete type 'struct A'`, rc 1 | `Error {msg: "desugaring failed at …:6:36-37"}`, rc 1 | rc 124 | rejects |
+| `alignas-002-fwd-char.c` (`alignas_fwd.c`) | `…:6:38: error: constraint violation: … incomplete type 'struct Fwd'`, rc 1 | `Error {msg: "desugaring failed at …:6:38-39"}`, rc 1 | `Not_found`, rc 125 | rejects |
+| `alignas-003-self-int.c` (`alignas_int_self.c`) | `…:5:35: error: constraint violation: … incomplete type 'struct A'`, rc 1 | `Error {msg: "desugaring failed at …:5:35-36"}`, rc 1 | `Not_found`, rc 125 | rejects |
+| `alignas-004-complete-control.c` (`alignas_ok_control.c`) | `Defined {value: "Specified(4)", …}`, rc 0 | `Defined {value: "Specified(4)", …}`, rc 0 | `Specified(4)`, rc 0 | exit 4 |
+
+The three bad programs are rows of the pristine register (`scripts/upstream_oracle_differences.json`,
+class `shared-model-fix`) until upstream takes this fix.
+
+## Fork status (2026-09-27, historical) — not yet fixed in the fork
 
 The fork's OCaml oracle behaves as upstream on all four programs (rc 124 / 125 / 125 / 0,
 verbatim above). The Lean port fails loudly but differently: `alignas_self.c`

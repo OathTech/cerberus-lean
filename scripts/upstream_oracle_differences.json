@@ -93,6 +93,60 @@
         "stdout_sha256": "ce222125f809d9e97ee1a7685c64eadff5eb5ce469ee81642a4ea4e16571f966",
         "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       }
+    },
+    "coverage/alignas/alignas-001-self-char.c": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/47-alignas-incomplete-type-not-diagnosed.md",
+        "lean_frontend/docs/2026-10-03_mirror-upstream-d38-alignas-record.md"
+      ],
+      "rationale": "`struct A { _Alignas(struct A) char c; };` \u2014 the type form of _Alignas names the struct being defined, which is incomplete until its closing brace (C11 \u00a76.7.2.3#4). Pristine upstream b9aeedcb4 does not terminate (rc 124 at the mirrored 30 s bound, empty stdout/stderr): the character-member shortcut stores AlignType(struct A) unexamined and alignof(struct A) then recurses through its own member (draft 47). The fork answers `tests/coverage/alignas/alignas-001-self-char.c:6:36: error: constraint violation: invalid application of '_Alignof' to an incomplete type 'struct A'` rc 1. Class shared-model-fix (the completeness half of P2d-3 only, taken 2026-10-03 on branch fix/mirror-upstream-d38-alignas from record branch fix/alignas-p2d3 cf4af48f8; [USER 2026-09-27] F-A2 \"yes, 'constraint violation' - and this goes in the tray if it isn't there already\"): cabs_to_ail.lem desugar_alignment_specifier now applies C11 \u00a76.5.3.4#1 sentence 2 (via \u00a76.7.5#5) to the type form, reusing AlignofInvalidApplication, exactly as genTyping.lem's AilEalignof check. The fork's oracle prints the diagnostic on stderr with no batch verdict, exit 1; the Lean port refuses at the same location (`Error {msg: \"desugaring failed at <same loc>\"}` rc 1 in batch mode, cause DESUGAR ConstraintViolation; record three-engine table). gcc 13.3 rejects it. The tests/coverage row is CERB_SKIP in test_exec.sh (an oracle refusal without a batch verdict is a non-comparison there). The row retires when upstream fixes draft 47. A pristine-side timeout is admitted only through this cited class.",
+      "upstream": {
+        "status": 124,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "fork": {
+        "status": 1,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "ddcfc8c922c8520ddf9284fd8406784aa8a59b84936dbdd23d6e9e0ade318409"
+      }
+    },
+    "coverage/alignas/alignas-002-fwd-char.c": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/47-alignas-incomplete-type-not-diagnosed.md",
+        "lean_frontend/docs/2026-10-03_mirror-upstream-d38-alignas-record.md"
+      ],
+      "rationale": "`struct Fwd; struct A { _Alignas(struct Fwd) char c; };` \u2014 _Alignas of a forward-declared, never-completed struct. Pristine upstream b9aeedcb4: `cerberus: internal error, uncaught exception: Not_found` rc 125 (Pmap.find in Impl_mem.alignof; draft 47). The fork answers `tests/coverage/alignas/alignas-002-fwd-char.c:6:38: error: constraint violation: invalid application of '_Alignof' to an incomplete type 'struct Fwd'` rc 1. Class shared-model-fix (the completeness half of P2d-3 only, taken 2026-10-03 on branch fix/mirror-upstream-d38-alignas from record branch fix/alignas-p2d3 cf4af48f8; [USER 2026-09-27] F-A2 \"yes, 'constraint violation' - and this goes in the tray if it isn't there already\"): cabs_to_ail.lem desugar_alignment_specifier now applies C11 \u00a76.5.3.4#1 sentence 2 (via \u00a76.7.5#5) to the type form, reusing AlignofInvalidApplication, exactly as genTyping.lem's AilEalignof check. The fork's oracle prints the diagnostic on stderr with no batch verdict, exit 1; the Lean port refuses at the same location (`Error {msg: \"desugaring failed at <same loc>\"}` rc 1 in batch mode, cause DESUGAR ConstraintViolation; record three-engine table). gcc 13.3 rejects it. The tests/coverage row is CERB_SKIP in test_exec.sh (an oracle refusal without a batch verdict is a non-comparison there). The row retires when upstream fixes draft 47.",
+      "upstream": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "a99db77e94266dca11c5933b125ecb8ba55994f6ee45817b808e68f0699bfd64"
+      },
+      "fork": {
+        "status": 1,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "6220abb7692abc29ce7d0128369bbdb8837b7ed6f390cea28da30fb630da7070"
+      }
+    },
+    "coverage/alignas/alignas-003-self-int.c": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/47-alignas-incomplete-type-not-diagnosed.md",
+        "lean_frontend/docs/2026-10-03_mirror-upstream-d38-alignas-record.md"
+      ],
+      "rationale": "`struct A { _Alignas(struct A) int c; };` \u2014 the non-character form of alignas-001. Pristine upstream b9aeedcb4: `cerberus: internal error, uncaught exception: Not_found` rc 125 (Pmap.find in Ocaml_implementation.alignof; draft 47). The fork answers `tests/coverage/alignas/alignas-003-self-int.c:5:35: error: constraint violation: invalid application of '_Alignof' to an incomplete type 'struct A'` rc 1. Class shared-model-fix (the completeness half of P2d-3 only, taken 2026-10-03 on branch fix/mirror-upstream-d38-alignas from record branch fix/alignas-p2d3 cf4af48f8; [USER 2026-09-27] F-A2 \"yes, 'constraint violation' - and this goes in the tray if it isn't there already\"): cabs_to_ail.lem desugar_alignment_specifier now applies C11 \u00a76.5.3.4#1 sentence 2 (via \u00a76.7.5#5) to the type form, reusing AlignofInvalidApplication, exactly as genTyping.lem's AilEalignof check. The fork's oracle prints the diagnostic on stderr with no batch verdict, exit 1; the Lean port refuses at the same location (`Error {msg: \"desugaring failed at <same loc>\"}` rc 1 in batch mode, cause DESUGAR ConstraintViolation; record three-engine table). gcc 13.3 rejects it. The tests/coverage row is CERB_SKIP in test_exec.sh (an oracle refusal without a batch verdict is a non-comparison there). The row retires when upstream fixes draft 47.",
+      "upstream": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "a81fc0c4e5442e6ebf59a8efe2e84de3d5fb83345f21b3b3a8b02aeb95020cdd"
+      },
+      "fork": {
+        "status": 1,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "f52fb05c44f22ed004773d53301534753210a89bef5bd2c830408f5e41f43de6"
+      }
     }
   }
 }

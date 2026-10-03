@@ -631,7 +631,9 @@ the flexible-array-member compatibility question, 42 = unary minus on a floating
     specifier, reusing `AlignofInvalidApplication`. Fork fix RULED [USER 2026-09-27] "yes,
     'constraint violation' - and this goes in the tray if it isn't there already". From the C4
     audit's F-A2; drafted by Claude (Opus 5.5) under operator direction; AI-provenance note per the
-    tray's policy.
+    tray's policy. FIXED IN THE FORK 2026-10-03, completeness check only
+    (`fix/mirror-upstream-d38-alignas`; the `ctype_aux.lem` alignment-compatibility half of the record
+    branch `fix/alignas-p2d3` was NOT taken, [USER 2026-10-03]); "Fork status" has all engines' outputs.
 
 48. **48-funptrmap-keyed-by-number-conflates-libc-statics.md** — TRUE BUG (latent upstream FIXME made concrete),
     C-reachable in libc mode (added 2026-09-29 [AGENT]). `impl_mem.ml:1206` keys the function-pointer map by symbol

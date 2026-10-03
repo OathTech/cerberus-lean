@@ -116,7 +116,15 @@ resumption rulings and errata). Branch `arc/semantics-audit-repairs`.
   `CerbFloat.lean`).
 
 - **Pre-merge audit follow-ups (2026-09-15, `docs/2026-09-15_semantics-audit-repairs-premerge-audit.md`; F1/F2/F4/F5 fixed at landing):**
-  (a) F3 — `Ctype_aux.are_compatible_aux` ignores member ALIGNMENT specifiers
+  (a) F3 — WON'T FIX (mirror upstream), 2026-10-03: [USER 2026-10-03] agreed to "keep only the
+  completeness check and mirror upstream on alignment compatibility" ("We do not resolve Cerberus TODO
+  cases unless the answer is extremely obvious ..."). `are_compatible_aux` keeps upstream's
+  `(*TODO alignment*)` placeholders. The member-alignment comparison written on the record branch
+  `fix/alignas-p2d3` (`cf4af48f8`, and the refusal variant `b1c7831e4`) stays a record and is not
+  merged. With draft 38's consult reverted (same date), the gap is no longer observable through
+  `PEmemberof`: every cross-TU struct value is rejected by tag. It remains reachable only through the
+  store-side consult (`memValueFromValue`). History:
+  F3 — `Ctype_aux.are_compatible_aux` ignores member ALIGNMENT specifiers
   (`ctype_aux.lem:141` `(*TODO alignment*)`); C11 §6.2.7#1 requires equivalent
   alignment specifiers on corresponding members. Pre-existing upstream gap, newly
   observable through the `PEmemberof` consult (`_Alignas(16) int x` vs `int x`:
@@ -315,7 +323,12 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   WRITTEN (close-out D3, 2026-09-08: draft 37 + `tests/failure-probes/
   cross_tu_node/`; TRUE BUG: the standard's rule needs an "assumed compatible"
   set for recursive types). Operator decision (filing; a lem body change).
-- **F-A2 (C4 audit) — frontend GAP, upstream TRUE-BUG tray candidate:**
+- ~~**F-A2 (C4 audit)**~~ — RESOLVED 2026-10-03 (branch `fix/mirror-upstream-d38-alignas`, record
+  `docs/2026-10-03_mirror-upstream-d38-alignas-record.md` §2): `desugar_alignment_specifier` applies
+  §6.5.3.4#1 via §6.7.5#5 (`AlignofInvalidApplication`). Both fork engines refuse tray 47's three
+  reproducers at the oracle's location (`tests/coverage/alignas/`, three pristine-register rows). Only
+  this completeness half of P2d-3 was taken; see F3 above for the alignment-compatibility half. History:
+  **F-A2 (C4 audit) — frontend GAP, upstream TRUE-BUG tray candidate:**
   `_Alignas(type)` on a CHARACTER-typed member bypasses the completeness
   check (`ailTypesAux.lem:1291-1292` `Just LT` → `cabs_to_ail.lem:2882-2883`
   stores `AlignType al_ty` unexamined), so `struct A { _Alignas(struct A) char

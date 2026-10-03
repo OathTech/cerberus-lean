@@ -264,3 +264,210 @@ rc=0
 
 The gcc lane does not walk `tests/multi_tu_tray`, so draft 38's revert cannot move it. It moved
 nowhere.
+
+## 2. Task 2: the completeness half of P2d-3 only (tray 47)
+
+### 2.1 What was taken, and what was not
+
+The record branch `fix/alignas-p2d3` has two commits. `cf4af48f8` did both halves of P2d-3:
+the §6.5.3.4#1 check in `cabs_to_ail.lem`, and a member-alignment comparison in `ctype_aux.lem`
+`are_compatible_aux`. `b1c7831e4` is a later refusal variant of the `ctype_aux` half. Under
+[USER 2026-10-03] ("keep only the completeness check and mirror upstream on alignment
+compatibility"; "We do not resolve Cerberus TODO cases unless the answer is extremely obvious
+..."), this branch takes:
+
+- TAKEN: `cf4af48f8`'s `frontend/model/cabs_to_ail.lem` hunk, byte-identical. It was applied
+  with `git show cf4af48f8 -- frontend/model/cabs_to_ail.lem | git apply --index`. The file hash
+  is `d16c0201…`, the same as on the record branch.
+- TAKEN: its witnesses `tests/coverage/alignas/alignas-00{1,2,3,4}-*.c`, byte-identical
+  (`git checkout cf4af48f8 -- tests/coverage/alignas`).
+- TAKEN, ADAPTED: their three `shared-model-fix` register rows and four
+  `exec_coverage_baseline.txt` rows. The signatures are re-measured (§2.3) and equal the record
+  branch's. Citations point at this record, because the record-branch record is not on this
+  branch. Each rationale names the half that was taken.
+- NOT TAKEN: every `ctype_aux.lem` change (`member_alignment` / `equivalent_member_alignments` /
+  `identical_alignment_specifiers` / `member_alignment_specifiers_supported`), the
+  `tests/multi_tu_tray/align-*` cases, their register rows, the `are-compatible-test` alignment
+  pins, and anything from `b1c7831e4`. Check: `diff` against `deps/cerberus-upstream` shows no
+  alignment hunk in `ctype_aux.lem`. Both member-list comparisons still read
+  `(_, _(*TODO alignment*), qs1, ty1)` (fork `:141`, `:184`; upstream `:120`, `:162`). The
+  file's only differences from upstream are drafts 37 and 39 and the Lean-only declares.
+
+The diff (verbatim):
+
+```
+diff --git a/frontend/model/cabs_to_ail.lem b/frontend/model/cabs_to_ail.lem
+index 79ffe74d7..e696f8e9f 100644
+--- a/frontend/model/cabs_to_ail.lem
++++ b/frontend/model/cabs_to_ail.lem
+@@ -2778,8 +2778,25 @@ and desugar_enumerator (ident, e_opt) =
+ and desugar_alignment_specifier loc align_spec =
+   match align_spec with
+     | AS_type tyname ->
+-      desugar_type_name tyname >>= fun (_, ty) ->
+-      E.return (Just (Ctype.AlignType ty))
++      desugar_type_name tyname >>= fun (qs, ty) ->
++      (* STD §6.7.5#5: "The first form is equivalent to _Alignas(_Alignof(type-name))";
++         STD §6.5.3.4#1, sentence 2: "The _Alignof operator shall not be applied to a
++         function type or an incomplete type." The same check as AilEalignof's in
++         genTyping.lem, the same constraint constructor. A tag whose definition is being
++         desugared is not yet registered (register_tag_definition runs after its member
++         list), so it is incomplete here, as STD §6.7.2.3#4 requires.
++         Fork fix P2d-3 (2026-10-03, upstream-tray draft 47; [USER 2026-09-27]
++         "yes, 'constraint violation'"): without it the type was stored unexamined and
++         layout later hung or raised Not_found. *)
++      if AilTypesAux.is_function ty then
++        E.constraint_violation loc (AlignofInvalidApplication qs ty)
++      else
++        E.is_incomplete ty >>= function
++          | true ->
++              E.constraint_violation loc (AlignofInvalidApplication qs ty)
++          | false ->
++              E.return (Just (Ctype.AlignType ty))
++        end
+     | AS_expr e ->
+         let loc = Loc.locOf e in
+         desugar_expression e >>= fun d_e ->
+```
+
+This mirrors genTyping's `AilEalignof` (`genTyping.lem:1540-1547`): `AAux.is_function ty ||
+AAux.is_incomplete sigm ty` gives `E.constraint_violation … (AlignofInvalidApplication qs ty)`.
+Desugaring uses the effect's `E.is_incomplete`.
+
+Both trees were regenerated with lem `77ad4fa`: `make prelude-src` rc 0, `make
+lean-prelude-src` rc 0. Fork-drift edits are single rows plus the header note "task 2":
+
+- `[source-content]` `cabs_to_ail.lem` `2a59d024…` → `d16c0201…`;
+- `[expected-semantic]` `cabs_to_ail.ml` `0aefe2af…` → `18f2c651…`. The live hash reported by
+  the gate equals `cf4af48f8`'s pin.
+
+Layer 2 stays at 30. The gate says `check_fork_drift: OK — layer 1: 86 oracle-surface files =
+manifest …; layer 2: 30 differing generated files, all hash-pinned …`.
+
+### 2.2 Three engines plus gcc on the witnesses (verbatim, 2026-10-03)
+
+The engines and flags are as in §1.4, single TU. OCaml `Time spent` lines are omitted.
+Pristine's two OCaml backtraces are cut after their first five lines, marked `…`. The
+register binds their full diagnostic-projected hashes. Tray 47's own verbatim runs carry the
+complete text.
+
+```
+== tests/coverage/alignas/alignas-001-self-char.c
+fork: tests/coverage/alignas/alignas-001-self-char.c:6:36: error: constraint violation: invalid application of '_Alignof' to an incomplete type 'struct A'
+struct A { _Alignas(struct A) char c; };
+                                   ^ 
+§6.5.3.4#1, sentence 2: 
+1   The sizeof operator shall not be applied to an expression that has function type or an
+    incomplete type, to the parenthesized name of such a type, or to an expression that
+    designates a bit-field member. The _Alignof operator shall not be applied to a
+    function type or an incomplete type.
+ | rc=1
+pristine:  | rc=124
+lean: Error {msg: "desugaring failed at tests/coverage/alignas/alignas-001-self-char.c:6:36-37"} | rc=1
+gcc: REJECTS: tests/coverage/alignas/alignas-001-self-char.c:6:12: error: invalid application of ‘__alignof__’ to incomplete type ‘struct A’
+== tests/coverage/alignas/alignas-002-fwd-char.c
+fork: tests/coverage/alignas/alignas-002-fwd-char.c:6:38: error: constraint violation: invalid application of '_Alignof' to an incomplete type 'struct Fwd'
+(source line, caret and §6.5.3.4#1 text as above)
+ | rc=1
+pristine: cerberus: internal error, uncaught exception:
+          Not_found
+          Raised at Pmap.find in file "pmap.ml", line 81, characters 10-25
+          Called from Pmap.find in file "pmap.ml" (inlined), line 316, characters 15-31
+          Called from Cerb_frontend__Impl_mem.alignof in file "memory/concrete/impl_mem.ml", line 229, characters 20-45
+          … | rc=125
+lean: Error {msg: "desugaring failed at tests/coverage/alignas/alignas-002-fwd-char.c:6:38-39"} | rc=1
+gcc: REJECTS: tests/coverage/alignas/alignas-002-fwd-char.c:6:12: error: invalid application of ‘__alignof__’ to incomplete type ‘struct Fwd’
+== tests/coverage/alignas/alignas-003-self-int.c
+fork: tests/coverage/alignas/alignas-003-self-int.c:5:35: error: constraint violation: invalid application of '_Alignof' to an incomplete type 'struct A'
+(source line, caret and §6.5.3.4#1 text as above)
+ | rc=1
+pristine: cerberus: internal error, uncaught exception:
+          Not_found
+          Raised at Pmap.find in file "pmap.ml", line 81, characters 10-25
+          Called from Pmap.find in file "pmap.ml" (inlined), line 316, characters 15-31
+          Called from Cerb_frontend__Ocaml_implementation.alignof in file "ocaml_frontend/ocaml_implementation.ml", line 491, characters 19-46
+          … | rc=125
+lean: Error {msg: "desugaring failed at tests/coverage/alignas/alignas-003-self-int.c:5:35-36"} | rc=1
+gcc: REJECTS: tests/coverage/alignas/alignas-003-self-int.c:5:12: error: invalid application of ‘__alignof__’ to incomplete type ‘struct A’
+== tests/coverage/alignas/alignas-004-complete-control.c
+fork: Defined {value: "Specified(4)", stdout: "", stderr: "", blocked: "false"} | rc=0
+pristine: Defined {value: "Specified(4)", stdout: "", stderr: "", blocked: "false"} | rc=0
+lean: Defined {value: "Specified(4)", stdout: "", stderr: "", blocked: "false"} | rc=0
+gcc: exit 4
+```
+
+(The pristine stderr carries an ANSI colour escape around "uncaught exception"; it is dropped
+above.)
+
+### 2.3 Every moved or added row
+
+| Row | Before | After | Justification |
+|---|---|---|---|
+| `tests/coverage/alignas/alignas-00{1,2,3}`, exec coverage baseline | absent | `CERB_SKIP` ×3 (hand-inserted, dated header note) | New witnesses. The oracle refuses with a diagnostic and gives no batch verdict, so the lane does not compare; measured with `test_exec.sh tests/coverage/alignas`: `SUMMARY: total=4 match=1 … cerb_skip=3`. |
+| `alignas-004-complete-control.c`, exec coverage baseline | absent | `MATCH` | The control. |
+| Pristine register `coverage/alignas/alignas-001-self-char.c` | absent | `shared-model-fix`: upstream `124 / e3b0c442… / e3b0c442…`, fork `1 / e3b0c442… / ddcfc8c9…` | Draft 47. Pristine loops and the fork gives the ruled constraint violation. Measured by row 10 `--only coverage/alignas` (`.tmp/d38/uo-alignas2`, before the rows existed: `incomplete`). |
+| `…/alignas-002-fwd-char.c` | absent | upstream `125 / … / a99db77e…`, fork `1 / … / 6220abb7…` | Pristine raises `Not_found`. Measured as `difference` before the row. |
+| `…/alignas-003-self-int.c` | absent | upstream `125 / … / a81fc0c4…`, fork `1 / … / f52fb05c…` | Pristine raises `Not_found`. Measured as `difference` before the row. |
+| Row 10 counts | `952 / 37 / 5 / 2` (task 1) | `{'semantic_agreement': 953, 'matching_failure': 37, 'reviewed_difference': 8, 'interface_agreement': 2}`, 1000 rows | +4 cases: the control agrees, and the three registered rows are `reviewed_difference`. |
+| A3 coverage lane | `total=276 match=224 … cerb_skip=13` | `total=280 match=225 … cerb_skip=16` | The four new files, exactly as baselined. |
+
+Nothing else moved. A1 through A13 report 0 regressions and 0 improvements everywhere. The
+failure-reach register is unchanged at 233; the check is monadic and adds no pure failure site.
+The gcc lane is unchanged; it does not walk `tests/coverage`, and its `_Alignas` immaculate rows
+(`d3-s3-alignas-enum`, `zd-ta-alignas-*`) did not move. **No finding.**
+
+### 2.4 Gates for task 2 (verbatim tails)
+
+Builds, all rc 0:
+
+```
+prelude-src rc=0
+lean-prelude-src rc=0
+dune main+lib rc=0
+local install rc=0
+cerberus.install rc=0
+native-obj rc=0
+lean rc=0
+speclab rc=0
+✔ [395/395] Built «cerberus-lean»:exe (579ms)
+Build completed successfully (395 jobs).
+Build completed successfully (148 jobs).
+```
+
+Tier A (`release.py --mode fast`):
+
+```
+PASSED A1 (242.7s) PASSED A2 (28.9s) PASSED A3 (73.6s) PASSED A4 (25.9s) PASSED A4b (25.1s) PASSED A4c (3.3s) PASSED A5 (131.2s) PASSED A6 (6.4s) PASSED A6b (6.4s) PASSED A7 (21.3s) PASSED A8 (19.2s) PASSED A9 (33.8s) PASSED A10 (34.1s) PASSED A11 (104.0s) PASSED A12.1 (9.3s) PASSED A12.2 (8.3s) PASSED A13 (2.6s)
+fast: passed; 17/17 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+A1:  Total: 16 passed, 0 failed
+A1:  check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; …)
+A2:  Baseline check: 0 regression(s), 0 improvement(s)
+A3:  SUMMARY: total=280 match=225 ub_match=37 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=16 cerb_floor=0 cerb_inconsistent=0
+A3:  Baseline check: 0 regression(s), 0 improvement(s)
+A4:  Baseline check: 0 regression(s), 0 improvement(s)
+A4b: Baseline check: 0 regression(s), 0 improvement(s)
+A5:  SUMMARY: match=43 diff=0
+A6:  SUMMARY: total=8 match=8 fail=0
+A6b: SUMMARY: total=7 match=7 fail=0
+A10: GATE PASS: all lane expectations pinned-green + baseline unchanged (16/16)
+A11: BASELINE OK (213 entries, exact match)
+```
+
+Pristine-oracle gate and plants:
+
+```
+Independent oracle scope: tier-b; 1000 rows in 206.6s; source unchanged: True
+Independent oracle: passed; {'semantic_agreement': 953, 'matching_failure': 37, 'reviewed_difference': 8, 'interface_agreement': 2}; …/.tmp/d38/uo-t2/report.json
+3/3 plant_ok: plant/withheld-row:minimal/112-allocator-exhausted-single-request.c — minimal/112-allocator-exhausted-single-request.c: with its register row -> reviewed_difference; row withheld -> difference (completed semantic observations differ)
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}; …/.tmp/d38/uo-t2-plant/report.json
+```
+
+gcc lane:
+
+```
+SUMMARY: total=2030 compared=1934 agree=1918 agree_nd=0 triaged=16 disagree=0 o2_agree=197 skip_gcc_compile=4 skip_gcc_stdout=2 skip_lean_crash=18 skip_lean_fail=14 skip_lean_timeout=11 skip_ub=47 triaged_addr=14 triaged_float=1 triaged_ub=1
+Baseline check: 0 regression(s), 0 improvement(s)
+gcc second-oracle lane OK
+rc=0
+```

@@ -1,3 +1,11 @@
+# fix/mirror-upstream-d38-alignas task 2, 2026-10-03 [AGENT, executing [USER 2026-10-03] "Agree on your recommendations with that framing"
+# — recommendation: for `_Alignas`, keep only the completeness check and mirror upstream on alignment compatibility; F-A2 ruling
+# [USER 2026-09-27] "yes, 'constraint violation' - and this goes in the tray if it isn't there already"]: ONLY the cabs_to_ail.lem half of
+# P2d-3 (record branch fix/alignas-p2d3, cf4af48f8) is taken. [source-content] frontend/model/cabs_to_ail.lem 2a59d024… -> d16c0201…
+# (desugar_alignment_specifier: the C11 §6.5.3.4#1 check via §6.7.5#5, AlignofInvalidApplication; upstream-tray draft 47; byte-identical
+# to cf4af48f8's file). [expected-semantic] cabs_to_ail.ml 0aefe2af… -> 18f2c651… (= cf4af48f8's pin). ctype_aux.lem / ctype_aux.ml are
+# NOT moved: alignment compatibility stays upstream's `TODO alignment` placeholders. Single-row edits, no --refresh. Record:
+# lean_frontend/docs/2026-10-03_mirror-upstream-d38-alignas-record.md §2.
 # fix/mirror-upstream-d38-alignas task 1, 2026-10-03 [AGENT, executing [USER 2026-10-03] "Agree on your recommendations with that framing
 # (we shouldn't revert work that allows the iris reasoning to work properly)" — recommendation: revert draft 38's struct compatibility
 # check to upstream's loud exact-tag rejection; cerberus-sl confirmed it does not rely on it]: the D3 core_eval.lem hunk (dbe633ec5) is
@@ -548,7 +556,7 @@ util/cerb_fresh.ml
 100644 59d2cd240e91897161704a8bdd5fc91d3688aed8ddb1ddae1cd02724a85b135d frontend/model/any.lem
 100644 50aa5bac4e18b2d0e1e63da58fec61d6dd1b09105b423bc834a49801e8ac4279 frontend/model/boot.lem
 100644 a3bce9ed29041d602cdc128dba43f4422beeb230e1d28939f06b68e9408fe7ea frontend/model/builtins.lem
-100644 2a59d024b40b33e33a9e91b1a0756db824a2a417cfc1923248e91568cb5efbc3 frontend/model/cabs_to_ail.lem
+100644 d16c020134eec96ac6bd5e665840fe5a1ed452c1a60ad225464f4b6ed28c788b frontend/model/cabs_to_ail.lem
 100644 43205d9e9b60c2cb85194af37d99eeea19827f63e626902b6b7b8d0e3ec2ea19 frontend/model/cabs_to_ail_effect.lem
 100644 185b1d2afb9e0d3598c664a50d7106b8cc195add6049b358c0c92c8305e60dc2 frontend/model/cerb_attributes.lem
 100644 c4426c93453c70139f7693096cb2d3796dee1676344652c2c6271303a2d392ae frontend/model/cn.lem
@@ -615,7 +623,7 @@ util/cerb_fresh.ml
 0471d6a212c273c515d525173d8003c7d10d559e5f91758820708ec69e52e6d5 mem_common.ml
 5a20bc6b1e3e4cd9af04c1316e4a2b8354ccfab68e2fea3561acfd7cdfb3a093 core_aux.ml
 ceca3526d3ddbd55345eee29f0c5b2626b56c516014cdd73fb3bf5db20f50ac2 cabs_to_ail_effect.ml
-0aefe2af044772ef6a5e4be8bfdfa6bb1ae52cddcaf15d7b771b0abe3d13922b cabs_to_ail.ml
+18f2c651a024f90eaca27fcde22dade3019a3fa3004d3c3986d7588d3acc25c6 cabs_to_ail.ml
 bad2eba7e2838b9a7c224bbbd2b1569ecf9f93a09760630a57f751539ee37e47 core_reduction.ml
 b9f1e58c1d52cd0680a56e7dcd4e3d8e5d2eadbe1d1575f4ad0442d3efd2b3a5 core_run_aux.ml
 d9fb64b8e630459b702f48590327ba060b9883f2e8dcb8aee2a4b6973117977c core_run.ml

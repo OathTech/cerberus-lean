@@ -161,8 +161,9 @@ cited `resource`/`shared-model-fix` row (never the fork side), stale rows
 RED, and a REGISTERED case always judged by its row: a registered case whose
 fork side times out, or a both-sides timeout on a registered case, is RED —
 the pin moved.
-Since 2026-10-03 (draft 38's consult reverted, §3) the register has 5 `shared-model-fix`
-rows: `multi_tu_tray/node` (draft 37) and the four allocator rows below. The inventory at
+Since 2026-10-03 the register has 8 `shared-model-fix` rows. They are `multi_tu_tray/node` (draft 37;
+draft 38's consult was reverted, §3), the four allocator rows, and the three `_Alignas`
+completeness rows of draft 47 (§3). The inventory at
 `e9f9d049f`, counted 2026-09-24, had 7 `shared-model-fix` rows (the three cross-TU
 struct-value cases of upstream-tray drafts 37/38/39, where the fork answered
 `Specified(7)` and pristine loops or rejects; and the two allocator
@@ -618,6 +619,34 @@ by a cited re-record.
   (`scripts/fork_drift_manifest.txt`, header notes "allocator-soundness C1"/"C1c").
   The rows retire when upstream takes the fix. A tiny address-space bound (the
   charter's part two, C2/C3) widens the witness set; it does not create it.
+- **`shared-model-fix` — `_Alignas` completeness (3 rows, added 2026-10-03; branch
+  `fix/mirror-upstream-d38-alignas`; record
+  `docs/2026-10-03_mirror-upstream-d38-alignas-record.md` §2; citation upstream-tray
+  draft 47):** `desugar_alignment_specifier` (`cabs_to_ail.lem`) applies C11
+  §6.5.3.4#1 (via §6.7.5#5) to `_Alignas(type-name)`, reusing
+  `AlignofInvalidApplication`. The rulings are [USER 2026-09-27] F-A2 "yes,
+  'constraint violation' - and this goes in the tray if it isn't there already"
+  and [USER 2026-10-03], agreeing to "keep only the completeness check and mirror
+  upstream on alignment compatibility".
+  - `coverage/alignas/alignas-001-self-char.c`: pristine does not terminate
+    (rc 124). It is admitted only through this cited row.
+  - `alignas-002-fwd-char.c` and `-003-self-int.c`: pristine raises an uncaught
+    `Not_found` (rc 125).
+  - On all three, the fork prints the `AlignofInvalidApplication` constraint
+    diagnostic on stderr, rc 1. They are `CERB_SKIP` in
+    `scripts/exec_coverage_baseline.txt`, because the exec lane does not sample
+    Lean after an oracle refusal that has no batch verdict.
+  - Lean refuses at the same source location (`Error {msg: "desugaring failed at
+    <loc>"}`, rc 1). The record's three-engine table is the evidence for that; no
+    pinned lane row covers it.
+  - The control `alignas-004` agrees on every engine.
+
+  The alignment-COMPATIBILITY half that the record branch `fix/alignas-p2d3`
+  (`cf4af48f8`) also wrote was deliberately not taken. `ctype_aux.lem` keeps
+  upstream's `(*TODO alignment*)` placeholders. The `cabs_to_ail.lem` content pin
+  and the generated `cabs_to_ail.ml` delta pin moved
+  (`scripts/fork_drift_manifest.txt`, header note "task 2"). The rows retire when
+  upstream takes draft 47's fix.
 - **`diagnostic-text` (0 rows; a permitted class).** RESOLVED [USER
   2026-09-17] ("(2) agree", on the orchestrator's question — record §7): the
   lane's diagnostic projection — the one `matching_failure` and the

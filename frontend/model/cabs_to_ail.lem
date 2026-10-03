@@ -2778,8 +2778,25 @@ and desugar_enumerator (ident, e_opt) =
 and desugar_alignment_specifier loc align_spec =
   match align_spec with
     | AS_type tyname ->
-      desugar_type_name tyname >>= fun (_, ty) ->
-      E.return (Just (Ctype.AlignType ty))
+      desugar_type_name tyname >>= fun (qs, ty) ->
+      (* STD §6.7.5#5: "The first form is equivalent to _Alignas(_Alignof(type-name))";
+         STD §6.5.3.4#1, sentence 2: "The _Alignof operator shall not be applied to a
+         function type or an incomplete type." The same check as AilEalignof's in
+         genTyping.lem, the same constraint constructor. A tag whose definition is being
+         desugared is not yet registered (register_tag_definition runs after its member
+         list), so it is incomplete here, as STD §6.7.2.3#4 requires.
+         Fork fix P2d-3 (2026-10-03, upstream-tray draft 47; [USER 2026-09-27]
+         "yes, 'constraint violation'"): without it the type was stored unexamined and
+         layout later hung or raised Not_found. *)
+      if AilTypesAux.is_function ty then
+        E.constraint_violation loc (AlignofInvalidApplication qs ty)
+      else
+        E.is_incomplete ty >>= function
+          | true ->
+              E.constraint_violation loc (AlignofInvalidApplication qs ty)
+          | false ->
+              E.return (Just (Ctype.AlignType ty))
+        end
     | AS_expr e ->
         let loc = Loc.locOf e in
         desugar_expression e >>= fun d_e ->

@@ -105,6 +105,18 @@
 #   (da_control.c, da_bug.c, da_malloc0_nonnull.c) — UB_MATCH, UB_MATCH, MATCH as
 #   measured on fork oracle, upstream @ b9aeedcb4 and Lean (verbatim lines in the
 #   record). Rows hand-inserted: --write-baseline would drop this header.
+# 2026-10-03 fix/mirror-upstream-d38-alignas task 2 (the completeness half of P2d-3 only; [USER 2026-09-27] F-A2 "yes, 'constraint
+#   violation'"; [USER 2026-10-03] keep only the completeness check; record docs/2026-10-03_mirror-upstream-d38-alignas-record.md §2):
+#   four tests/coverage/alignas/ rows, upstream-tray draft 47's reproducers (taken from record branch fix/alignas-p2d3, cf4af48f8).
+#   001-003 are C11 §6.5.3.4#1 constraint violations that both fork engines now refuse at desugaring: the oracle prints the
+#   diagnostic on stderr (no batch verdict, exit 1), so this lane records CERB_SKIP and never samples Lean. The Lean refusal
+#   (`Error {msg: "desugaring failed at <the oracle's loc>"}`, exit 1) is evidenced in the record's three-engine table; the pristine
+#   difference is bound by the shared-model-fix rows of scripts/upstream_oracle_differences.json. 004 is the control: MATCH.
+#   Rows hand-inserted, as measured by `test_exec.sh tests/coverage/alignas`.
+alignas-001-self-char.c CERB_SKIP
+alignas-002-fwd-char.c CERB_SKIP
+alignas-003-self-int.c CERB_SKIP
+alignas-004-complete-control.c MATCH
 arith3-001-unsigned-div.c MATCH
 arith3-002-unsigned-mod.c MATCH
 arith3-003-unsigned-shl.c MATCH
