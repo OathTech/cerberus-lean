@@ -576,3 +576,42 @@ decisions above are otherwise unchanged.
     thread; the lifecycle plant that goes red in S1a is "the exit step does not hand control
     back to the remainder" (the machine stays in `SC_core`: every program exhausts its budget).
     Both variants were run (acceptance record §5).
+
+## 11. Inputs for S1b and S2 from the 2026-10-03 donor archaeology ([AGENT], orchestrator)
+
+Source: [donor archaeology](2026-10-03_concurrency-donor-archaeology.md) and its
+[SC-team annex](2026-10-03_concurrency-donor-archaeology-annex-sc-team.md) (landed `24d2512c7`).
+[USER 2026-10-03] agreed to fold these in ("Agree 1-5, go ahead"). The two S1b-relevant claims
+were re-checked by the orchestrator in source: today's `core_reduction.lem` `Epar` arm builds
+`mk_unseq_e (List.map mk_wait_e tids)` from the cons-built tid list, while the 2016 driver
+(`e8575cd81` `model/driver.lem:407`) applied `List.reverse`; and `can_advance`'s two memory-request
+arms carry `(* TODO: only correct if there is only ONE thread *)`.
+
+S1b amendments (they refine §4 S1b; the mirror-and-refuse ruling is unchanged):
+
+1. **`par` result order.** Still mirrored. Label it as a **known upstream regression** (`650da6dfb`,
+   2019-11-13, lost the `List.reverse`), not "upstream's positional convention"; it gets an
+   upstream-tray draft. C programs cannot observe it (`AilSpar` discards the tuple). Any `.core`
+   fixture binding non-unit `par` results must expect the reversed tuple, or must not bind them.
+2. **`drive ⊆ SC` is a sanity check only.** `drive` performs memory requests eagerly, so its
+   verdict set on `par` programs has one element. The evidence is the independently listed
+   interleavings. Add an anti-eagerness control: store-buffering with a store then a load in each
+   thread, whose SC set must contain more than one outcome.
+3. **Litmus corpus.** Re-express the 2016 suite
+   (`deps/concurrency-research/snapshots/cerberus-e8575cd81-2016/tests/concurrency/`, expected sets
+   in that snapshot's `src/tests.ml:75-105`) in current Core syntax. Rows using only `seq_cst` and
+   non-atomic accesses (SB, LB, IRIW, hb-mo-cycle, the `datarace+…` rows) are S1b/V1/S2 inputs;
+   expected SC sets are derived independently per row (DRF-SC reasoning, checked case by case),
+   not copied. Release/acquire/relaxed rows are refusal controls for S3.
+
+S2 inputs (no S1 action):
+
+4. **Race detection by source strand.** Miri's vector-clock predicates and thread
+   create/join rules (`donors/miri` `src/concurrency/data_race.rs`) carry over if clocks are
+   indexed by *source strand* (threads × open unsequenced branches: `unseq` forks strands, its
+   sequence point joins them), never by OS thread alone (plan constraint 3). Clock width is bounded
+   by reusing a joined strand's index once dominated, the design's retained-summary obligation.
+5. **Monitor state lives in `sc_config`.** Exploration branches inside one thread, so summaries
+   must be per configuration, not an interpreter-global or opaque side store.
+6. **Thread-pool ordering for later Iris work.** iris-lean appends forked threads; Cerberus
+   inserts into an association list. A later Iris presentation needs a stated correspondence.
