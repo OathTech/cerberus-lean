@@ -354,3 +354,116 @@ Done: 292 passed, 0 failed
 Total: 16 passed, 0 failed
 check_failure_reach: OK (234 pure failure sites = the 234 register rows exactly (232 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=172 REACHABLE=41 UNKNOWN=21; every row sealed; tally line consistent)
 ```
+
+## 5. Final battery — Tier A in full + immaculate + the upstream-oracle gate
+
+Run serially on head `19e706bd3` (the task-4 commit; this section is the
+only change after it), `CERB_MEM_MAX=32G`, every command from the repo root
+through `scripts/ce`; 2026-10-03T06:35:54Z → 06:53:47Z. Per-command status
+lines (verbatim from the runner's summary):
+
+```
+### ./scripts/test_unit.sh rc=0 (289s)
+### ./scripts/test_exec.sh --check-baseline rc=0 (37s)
+### ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage rc=0 (81s)
+### ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug rc=0 (30s)
+### ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float rc=0 (33s)
+### ./scripts/test_bytes.sh rc=0 (3s)
+### ./scripts/test_libc_exec.sh rc=0 (127s)
+### ./scripts/test_multi_tu.sh rc=0 (5s)
+### ./scripts/test_multi_tu.sh --failure-class-projection tests/multi_tu_tray rc=0 (4s)
+### ./scripts/test_parse.sh rc=0 (12s)
+### ./scripts/test_core.sh rc=0 (11s)
+### ./scripts/test_elab.sh rc=0 (22s)
+### ./scripts/test_libxml2_uri.sh rc=0 (25s)
+### ./scripts/test_cn_coverage.sh --check-baseline rc=0 (65s)
+### ./scripts/test_address_space.sh --selftest rc=0 (6s)
+### ./scripts/test_address_space.sh rc=0 (6s)
+### python3 scripts/test_memory_access.py rc=0 (3s)
+### ./scripts/test_immaculate.sh rc=0 (134s)
+### python3 scripts/test_upstream_oracle.py rc=0 (177s)
+### python3 scripts/test_upstream_oracle.py --plant rc=0 (3s)
+```
+
+Verdict lines (verbatim, from each log):
+
+```
+Done: 292 passed, 0 failed
+Total: 16 passed, 0 failed
+check_failure_reach: OK (234 pure failure sites = the 234 register rows exactly (232 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=172 REACHABLE=41 UNKNOWN=21; every row sealed; tally line consistent)
+check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+check_fork_drift: OK — layer 1: 86 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 31 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 77ad4facfc60814a4a3f5d09dc88168ca208b285 matches lem -v lean-backend-v0.1.0-alpha.1-20-g77ad4fa (hex prefix))
+check_pin_sites: OK — lem-pin 77ad4facfc60814a4a3f5d09dc88168ca208b285 at every site (lakefile rev, 3 lake-manifests rev+inputRev, README pin command)
+SUMMARY: total=113 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=5 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: total=276 match=224 ub_match=37 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: exec_match=9 neg_pinned=5 fail=0
+ALL AT COMMITTED EXPECTEDS
+SUMMARY: match=43 diff=0
+ALL MATCH RECORDED BASELINE
+SUMMARY: total=8 match=8 fail=0
+ALL PASSED
+SUMMARY: total=7 match=7 fail=0
+ALL PASSED
+Lean parse:     113 ok, 0 failed, 0 timeout (>60s; fatal), 0 lean failure(s) (crash / nonzero exit without a printed verdict; fatal)
+ALL PASSED
+Total:          113
+ALL PASSED
+SUMMARY: total=113 same=108 diff=5 ocaml_fail=0 lean_fail=0
+[lean+libc] EXACT MATCH with ORACLE_LIBC (16/16 URI corpus)
+GATE PASS: all lane expectations pinned-green + baseline unchanged (16/16)
+Agreement tally: 213/213 compared (213 run, 0 oracle-side unobservable)
+SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0
+BASELINE OK (213 entries, exact match)
+test_address_space: SELFTEST OK (14 plants — P1 the discriminator's derived pre-fix observation, P2 missing file, P3 truncated, P4 phantom row, P5-P7 phantom/duplicate/malformed rows without a final
+test_address_space: OK (18 cases: LEAN = FORK through the shared codec at tops 64 32 8; every fork observation = its pinned row in expectations.txt)
+PASS memory access: 3 runs; primitive receipts, all ND constructors, erasure, draining; 8 instrument controls
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip/zd-r2-highbyte DIFF and zd-r2-crash-digit9 ORACLE_CRASH, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+Independent oracle: passed; {'semantic_agreement': 950, 'matching_failure': 37, 'reviewed_difference': 7, 'interface_agreement': 2}; .tmp/upstream-oracle-vb3ong5z/report.json
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}; .tmp/upstream-oracle-nxhrt_hb/report.json
+```
+
+(The address-space SELFTEST line is cut at 200 characters here; the rest
+of it lists plants P12–P14.) The pristine-oracle gate classifies this
+branch's new and moved fixtures (verbatim):
+
+```
+920/996 semantic_agreement: immaculate/nolibc/zd-ta-alignas-2p61-control (pristine 0.0s, fork 0.0s)
+921/996 matching_failure: immaculate/nolibc/zd-ta-alignas-huge-desugar (pristine 0.0s, fork 0.0s)
+922/996 matching_failure: immaculate/nolibc/zd-ta-alignas-huge-sizeof (pristine 0.0s, fork 0.0s)
+923/996 matching_failure: immaculate/nolibc/zd-ta-alignas-huge-union-alignof (pristine 0.0s, fork 0.0s)
+926/996 matching_failure: immaculate/nolibc/zd-z2m01-aligned-alloc-zero-nolibc (pristine 0.0s, fork 0.0s)
+959/996 matching_failure: immaculate/libc/zd-z2m01-aligned-alloc-zero-zero (pristine 0.3s, fork 0.2s)
+960/996 matching_failure: immaculate/libc/zd-z2m01-aligned-alloc-zero (pristine 0.3s, fork 0.2s)
+```
+
+i.e. PRISTINE upstream fails on them exactly as the fork does — the crash
+being mirrored is upstream's own, not a fork artifact.
+
+No lane row moved beyond the witnesses named in §1/§2 (the immaculate and
+gcc-ledger movements are exactly the hand-edits recorded there).
+
+Not run here: the rest of Tier B (libxml2 chvalid, parse/core over
+`tests/ci`, verify, speclab, the full gcc lane, the plant batteries,
+`test_observation_lanes.py`, the chvalid pristine row). The full gcc lane is
+the one Tier B lane whose ledger this branch edits; its edits were checked
+by the partial runs of §1 and §2 only.
+
+## 6. Provenance
+
+All decisions in this record are [AGENT] (the worker on this branch) unless
+quoted as [USER]. The direction to mirror Z2-M-01, run the sweep, document
+`--address-space-top` and do the register bookkeeping came from the
+orchestrator's brief, which quotes the [USER 2026-10-03] and [USER
+2026-09-30] rules verbatim; the brief is not itself a [USER] ruling.
+Scratch probes and gate logs lived in the worktree's `.tmp/` and were
+deleted after this record was committed.
