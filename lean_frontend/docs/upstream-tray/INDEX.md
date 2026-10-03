@@ -18,6 +18,7 @@ recorded submission; **Sent** = transmitted without an issue/PR URL;
 A fork-side fix or a pushed PR branch does not mean Filed or Closed.
 
 Derived inventory (2026-09-29): 53 report files, **48 Draft, 4 Sent, 1 Filed, 0 Closed** (the four Sent = the ISO-fix register's reports 10/11/13/40, communicated privately to the maintainers; report 19, the register's DEFERRED row R4, stays Draft).
+Added since that count: report 49 (2026-10-03, Draft).
 Issue 1010 is recorded below but has no tray report, so is outside this count.
 Draft duplicate searches must be repeated before filing; the dated search
 notes below establish only what was checked then.
@@ -72,6 +73,7 @@ notes below establish only what was checked then.
 | [46-function-pointer-number-is-a-fresh-supply-artefact.md](46-function-pointer-number-is-a-fresh-supply-artefact.md) | Draft | No submission recorded |
 | [47-alignas-incomplete-type-not-diagnosed.md](47-alignas-incomplete-type-not-diagnosed.md) | Draft | No submission recorded |
 | [48-funptrmap-keyed-by-number-conflates-libc-statics.md](48-funptrmap-keyed-by-number-conflates-libc-statics.md) | Draft | No submission recorded |
+| [49-par-results-returned-in-reverse-thread-order.md](49-par-results-returned-in-reverse-thread-order.md) | Draft | No submission recorded |
 | [lean4/01-stack-overflow-handler-deadlock.md](lean4/01-stack-overflow-handler-deadlock.md) | Draft | No submission recorded |
 | [lean4/02-nat-div-mod-literal-folding.md](lean4/02-nat-div-mod-literal-folding.md) | Draft | No submission recorded |
 | [lean4/03-float-tobits-canonicalizes-nan.md](lean4/03-float-tobits-canonicalizes-nan.md) | Draft | No submission recorded |
