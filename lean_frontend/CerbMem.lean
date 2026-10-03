@@ -3033,6 +3033,13 @@ def memcmpM [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (pv1 pv2 : Point
         | _ =>
           -- impl_mem.ml:2658-2659: assert false (unspecified byte)
           failStopMem "Concrete.memcmp: non-integer byte (impl_mem.ml:2658-2659 assert false)"
+    -- ISO-fix register R3 (VALIDATION.md §2, ADMITTED BY CLASS — [USER 2026-09-03]
+    -- referent ruling, confirmed [USER 2026-09-05] "(2) agree"): upstream converts the
+    -- size with `Z.to_int size_n` (impl_mem.ml:2660-2661), which raises Z.Overflow for a
+    -- size outside OCaml's native int range BEFORE any byte is read; here the size feeds
+    -- the checked per-byte loads directly, so a huge size reaches the semantics' own
+    -- out-of-bound UB (pin tests/immaculate/libc/s4b-memcmp-hugesize: ORACLE_CRASH /
+    -- L=UB_CERB002a; tray 13).
     nd_bind (getBytes pv1 [] size_n.toNat) fun bytes1 =>
     nd_bind (getBytes pv2 [] size_n.toNat) fun bytes2 =>
     -- impl_mem.ml:2661-2664

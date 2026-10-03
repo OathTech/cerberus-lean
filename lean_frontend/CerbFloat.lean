@@ -38,18 +38,21 @@ def floatLe (x y : Float) : Bool := x <= y
 
 def floatAdd (x y : Float) : Float := x + y
 def floatSub (x y : Float) : Float := x - y
-/-- DOCUMENTED-DELIBERATE DIVERGENCE (upstream cerberus bug, recorded in
-    lembugs/2026-08-19_upstream-float-mul.md): the OCaml target of lem's
-    `Float.floatMul` is `Cerb_floating.mul`, which upstream defines as
-    `(+.)` — literally addition (util/cerb_floating.ml:5; add/sub/div on
-    the neighboring lines are correct, so this is a copy-paste slip).
-    We implement real multiplication. Consequence: the FIRST differential
-    test whose verdict flows through lem-level float multiplication
-    (e.g. the generated Defacto_memory op_fval, or any future lem code
-    using `*` on floats) will show the OCAML side wrong, not ours.
-    The concrete model's own op_fval (impl_mem.ml:2529-2537, mirrored by
-    CerbMem.opFval) uses `*.` directly and is NOT affected — which is
-    why today's corpus doesn't surface it. -/
+/-- ISO-fix register R6 — PROPOSED, awaiting the [USER] ruling (VALIDATION.md
+    §2; record docs/2026-10-03_total-arith-and-bookkeeping-record.md §4). The
+    OCaml target of lem's `Float.floatMul` is `Cerb_floating.mul`, which
+    upstream defines as `(+.)` — literally addition (util/cerb_floating.ml:5;
+    add/sub/div on the neighbouring lines are correct: a copy-paste slip;
+    filed upstream as #1009 — tray 01, docs/2026-08-19_upstream-float-mul.md). This
+    port multiplies. UNREACHABLE from execution and from the front end: in the
+    kernel constant-dependency closure of the exec entries and of the front-end
+    entries (tests/failure-probes/FailureReach.lean) `CerbFloat.floatMul` is
+    absent from both; its only users are the generated Defacto_memory
+    `impl_op_fval` (the defacto model, not the concrete model that executes)
+    and float.lem's `NumMult` instance, which no lem code in either cone
+    applies. The concrete model's own op_fval (impl_mem.ml:2529-2537, mirrored
+    by CerbMem.opFval) uses `*.` directly and is not affected. -/
+-- ISO-fix register R6 (PROPOSED; not admitted until the [USER] ruling)
 def floatMul (x y : Float) : Float := x * y
 def floatDiv (x y : Float) : Float := x / y
 

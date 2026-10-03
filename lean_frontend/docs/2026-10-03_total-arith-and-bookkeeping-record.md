@@ -231,6 +231,21 @@ wrapper; no other proof moved.
   closed.
 - **O-2** — the pre-existing gcc-ledger gap of §1 (no row for
   `zd-invalid-format-utf8-payload.c`).
+- **O-3** (added in step 4) — a RULE TENSION, raised rather than resolved.
+  VALIDATION §0's [USER 2026-09-03] referent ruling classes `Z.Overflow`
+  from a host-int conversion and `Division_by_zero` from a missing guard as
+  KIND-2 OCaml-execution artifacts that are NOT mirrored (Lean implements
+  the logical meaning), and R3 (memcmp's `Z.to_int size_n`) is admitted BY
+  CLASS on exactly that basis. This branch, as briefed under [USER
+  2026-10-03] ("... fall back to loudly rejecting (either as unsupported, or
+  matching upstream)"), mirrors the same two exception kinds as loud
+  fail-stops (§1, §2.1). Under the 2026-09-03 reading, Lean's former
+  `Specified(0)` for `sizeof` of a 2^62-aligned struct was arguably the
+  logical (unbounded-`Z`) answer. [AGENT] default taken: the fail-stop
+  (fail-closed, the brief's explicit instruction). Operator questions: does
+  the 2026-10-03 rule supersede the kind-2 paragraph; should R3 likewise
+  become a fail-stop; should §0 be re-worded. A pointer note was added under
+  VALIDATION §0; the ruling text itself is untouched.
 
 ### 2.4 Pins and register
 
@@ -294,3 +309,48 @@ Docs only. `CONTRACT.md` §2 gains a paragraph and `VALIDATION.md` §7 (the
 
 Gate (docs-only step): `./scripts/test_unit.sh` rc=0 —
 `Done: 292 passed, 0 failed`, `Total: 16 passed, 0 failed`.
+
+## 4. Register bookkeeping (task 4)
+
+- **`CerbFloat.floatMul` (upstream `Cerb_floating.mul = (+.)`, #1009).**
+  Reachability MEASURED, not just grepped: the failure-reach instrument
+  (`tests/failure-probes/FailureReach.lean`, built as a scratch package over
+  this tree) prints, for every constant, membership of the exec and the
+  front-end kernel dependency closures:
+
+  ```
+  FAILURE_REACH	CerbFloat.floatMul	false	false
+  FAILURE_REACH	CerbFloat.floatDiv	false	false
+  FAILURE_REACH	CerbFloat.floatAdd	false	false
+  FAILURE_REACH	CerbMem.opFval	true	false
+  FAILURE_REACH	instNumMultFloat_float	false	false
+  ```
+
+  Added to VALIDATION §2 as **R6 — PROPOSED [AGENT], NOT ADMITTED**, with
+  that reachability argument standing in for the (iv) pin a reachable entry
+  would carry (none can exist); code marker `-- ISO-fix register R6` at
+  `CerbFloat.floatMul`, whose docstring no longer uses the retired
+  "documented-deliberate divergence" label. [AGENT] reasoning: under [USER
+  2026-10-03] a fix is allowed when "something is very very very obviously a
+  bug" — `mul = (+.)` beside a correct `add`/`sub`/`div` is that — but every
+  register entry is individually [USER]-ruled, so the row waits for the
+  operator. The alternative is to mirror `(+.)` (no observable effect today
+  either way). Report item.
+- **R3 marker.** `-- ISO-fix register R3` now sits at `CerbMem.memcmpM`'s
+  size use (`getBytes … size_n.toNat`), with the upstream cite
+  (`impl_mem.ml:2660-2661` `Z.to_int size_n`) and the pin; VALIDATION's R3
+  row and the marker paragraph no longer say "owed".
+- **§3 summary line** "(d) — the register, §2 (R1, R2, R3)" → "(R1, R2, R3,
+  R5; R6 proposed, not admitted)".
+- **VALIDATION §0** gains a dated [AGENT] pointer note to operator item O-3
+  (§2.3); the ruling text is untouched.
+
+Gates (comment/doc-only code change; rebuilt from `make lean-prelude-src`):
+
+```
+build: Build completed successfully (395 jobs).
+./scripts/test_unit.sh rc=0
+Done: 292 passed, 0 failed
+Total: 16 passed, 0 failed
+check_failure_reach: OK (234 pure failure sites = the 234 register rows exactly (232 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=172 REACHABLE=41 UNKNOWN=21; every row sealed; tally line consistent)
+```
