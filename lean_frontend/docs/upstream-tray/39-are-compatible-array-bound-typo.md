@@ -193,3 +193,11 @@ fork-drift manifest pins the new generated hash. Pinned by the unit exe
 `are-compatible-test` (8 executable assertions) and the corpus `tests/multi_tu_tray/`
 (LADDER Tier A row 6b: `arr-1-2-return` rejected, `arr-2-2-return` and
 `arr-incomplete-ptr-return` `Specified(7)`).
+
+Update 2026-10-03: the fork KEEPS this one-token fix, but draft 38's consult is reverted
+([USER 2026-10-03] mirror-upstream ruling; record
+`lean_frontend/docs/2026-10-03_mirror-upstream-d38-alignas-record.md`). Member selection is
+again guarded by upstream's exact-tag test, so this typo is masked on the fork as on upstream:
+`arr-2-2-return` and `arr-incomplete-ptr-return` are rejected with `mismatched tags` on every
+engine, like `arr-1-2-return`. The fix stays observable through the store-side consult
+(`memValueFromValue`) and through the unit exe `are-compatible-test`.

@@ -161,8 +161,10 @@ cited `resource`/`shared-model-fix` row (never the fork side), stale rows
 RED, and a REGISTERED case always judged by its row: a registered case whose
 fork side times out, or a both-sides timeout on a registered case, is RED —
 the pin moved.
-The inventory at `e9f9d049f`, counted 2026-09-24, has 7 `shared-model-fix` rows (the three cross-TU
-struct-value cases of upstream-tray drafts 37/38/39, where the fork answers
+Since 2026-10-03 (draft 38's consult reverted, §3) the register has 5 `shared-model-fix`
+rows: `multi_tu_tray/node` (draft 37) and the four allocator rows below. The inventory at
+`e9f9d049f`, counted 2026-09-24, had 7 `shared-model-fix` rows (the three cross-TU
+struct-value cases of upstream-tray drafts 37/38/39, where the fork answered
 `Specified(7)` and pristine loops or rejects; and the two allocator
 exhausted-regime witnesses of draft 44, `minimal/112-…`/`113-…`, where
 pristine returns an overlapping, misaligned allocation and the fork kills out
@@ -549,20 +551,31 @@ its rows are below, added by the part-one pre-merge audit's finding M1). Every r
 sha256, stderr sha256 under the lane's diagnostic projection) and moves only
 by a cited re-record.
 
-- **`shared-model-fix` (3 rows; citations upstream-tray drafts 37/38/39,
+- **`shared-model-fix` (1 row; citations upstream-tray draft 37,
   `tests/multi_tu_tray/README.md`):** `multi_tu_tray/node` — pristine does
   not terminate (`Ctype_aux.are_compatible` recurses forever on a
   self-referential struct defined in two TUs, draft 37; rc 124 at the lane's
-  30 s bound — the ONLY pristine-side incomplete the register admits), the
-  fork answers `Defined {value: "Specified(7)", …}`; `multi_tu_tray/
-  arr-2-2-return` and `multi_tu_tray/arr-incomplete-ptr-return` — pristine
-  rejects the compatible cross-TU struct value at `PEmemberof(struct)`'s
-  exact-tag guard (`Error {msg: "ill-formed program: \`PEmemberof(struct)
-  ==> mismatched tags: …"}` rc 1, draft 38), the fork (`dbe633ec5`: the
-  compatibility consult + draft 39's one-token array-bound fix) answers
-  `Specified(7)` — ISO C11 §6.2.7#1's value, gcc's exit. The rows retire
-  (the cases move into `tests/multi_tu/`) when upstream fixes the drafts.
-  Row 6b pins fork OCaml == Lean on the same inputs.
+  30 s bound — the ONLY pristine-side incomplete the register admits). The
+  fork's `are_compatible` terminates (draft 37's assumed-compatible set), so
+  the fork reaches `PEmemberof(struct)`'s exact-tag guard, which is upstream's
+  text: `Error {msg: "ill-formed program: \`PEmemberof(struct) ==> mismatched
+  tags: Symbol(531, SD_Id("node")) vs Symbol(502, SD_Id("node"))'"}` rc 1, the
+  same rejection pristine gives every other cross-TU struct value in the tray.
+  The row retires (the case moves into `tests/multi_tu/`) when upstream fixes
+  draft 37. Row 6b pins fork OCaml == Lean on the same input.
+  History: from D3 (2026-09-15, `dbe633ec5`) until 2026-10-03 the fork also
+  carried draft 38's `are_compatible` consult at that guard. `node`,
+  `arr-2-2-return` and `arr-incomplete-ptr-return` then answered
+  `Specified(7)`, and the latter two had rows here (pristine rejected them at the
+  exact-tag guard). The consult was REVERTED on 2026-10-03 (branch
+  `fix/mirror-upstream-d38-alignas`, record
+  `docs/2026-10-03_mirror-upstream-d38-alignas-record.md`), under [USER 2026-10-03] "Generally, our rule
+  is that we don't innovate wrt Cerberus-upstream, unless something is very
+  very very obviously a bug. We're poorly placed to resolve semantic
+  discrepancies, so we don't. ... fall back to loudly rejecting (either as
+  unsupported, or matching upstream)." cerberus-sl confirmed it does not rely on
+  cross-TU `PEmemberof`. Those two cases now agree with pristine, so their rows
+  are gone. Draft 39's one-token array-bound fix stays.
 - **`shared-model-fix` — the allocator's EXHAUSTED regime (2 rows, added 2026-09-17
   by C1c; citations upstream-tray draft 44 +
   `docs/2026-09-16_allocator-soundness-address-bound-record.md`; TRUE BUG / model
@@ -730,7 +743,7 @@ lanes, with their recorded states:
 | `test_core.sh` | tests/minimal (+ tests/ci) | Core text parser vs oracle `--pp=core`, 111/111 minimal |
 | `test_elab.sh` | elaboration corpus | recorded same/diff state, rc 0 |
 | `test_multi_tu.sh` | `tests/multi_tu` | multi-TU linking differential, all entries |
-| `test_multi_tu.sh --failure-class-projection tests/multi_tu_tray` | `tests/multi_tu_tray` (7 cross-TU struct-value cases; LADDER Tier A row 6b, 2026-09-15) | the same differential under the LABELLED WEAKER projection `failure-class` — `Symbol(<digits>, ` elided in Error/Undefined payloads only (the engines number symbols differently); 7/7 MATCH; the ONLY row not on `full`; two rows are OBSERVED MODELLING-LIMIT pins (`tests/multi_tu_tray/README.md`) |
+| `test_multi_tu.sh --failure-class-projection tests/multi_tu_tray` | `tests/multi_tu_tray` (7 cross-TU struct-value cases; LADDER Tier A row 6b, 2026-09-15) | the same differential under the LABELLED WEAKER projection `failure-class` — `Symbol(<digits>, ` elided in Error/Undefined payloads only (the engines number symbols differently); 7/7 MATCH (since 2026-10-03, draft 38 reverted: five `mismatched tags` rejections + the two argument-shape `Specified(7)` rows); the ONLY row not on `full`; two rows are OBSERVED MODELLING-LIMIT pins (`tests/multi_tu_tray/README.md`) |
 | `test_libc_exec.sh` | `tests/libc_exec` | libc-linked execution at the committed baseline |
 | `test_libxml2_uri.sh` | 16 URIs, 5 TUs, libc | **16/16 byte-identical** lean+libc vs oracle+libc, pinned per-lane expectations |
 | `test_libxml2.sh` | libxml2 `chvalid` battery | 4 slices × 1,354 points, byte-equal verdicts (slow tier) |

@@ -72,19 +72,22 @@ resumption rulings and errata). Branch `arc/semantics-audit-repairs`.
   strings — whole strings, `c_parser.mly:1771-1775`) still copy raw bytes, so a
   non-UTF-8 byte in SOURCE TEXT makes the bridge REFUSE loudly where the oracle
   proceeds. Mover: a text-field encoder decision in a separate slice.
-- ~~**Finding 5 + draft 38 — cross-TU struct-value compatibility**~~ — RESOLVED
-  (D3, `dbe633ec5` + `83dc6ba00`): `ctype_aux.lem` array arm `(n1_opt, n2_opt)`;
-  `PEmemberof(struct)` consults `Ctype_aux.are_compatible` when the tags differ;
-  unit exe `are-compatible-test`; corpus `tests/multi_tu_tray/` (LADDER Tier A row
-  6b); fork-drift layer 2 = 23 (`core_eval.ml` added); trays 38 (fork status), 39.
-- **Union twin** (OPEN; charter §8 item 7): `core_eval.lem`'s `PEmemberof(union)`
-  arm and `memValueFromValue`'s union arm (`core_aux.lem:204-208`) keep EXACT tag
-  identity. Reproducer shape (not run in the slice — fence): `union U { int v;
-  double d; };` defined in two TUs, `union U mk(void)` in TU 1 setting `.v = 7`,
-  TU 2 `return mk().v;` → expected `ill-formed program: PEmemberof(union) ==>
-  mismatched tags` on both fork engines (draft 38's shape with `union`). Remedy
-  shape: the same `are_compatible` consult (the `Union/Union` arm of
-  `are_compatible_aux` exists) at both sites; its own charter.
+- **Finding 5 + draft 38 — cross-TU struct-value compatibility** — PARTLY REVERTED
+  2026-10-03 (branch `fix/mirror-upstream-d38-alignas`, record
+  `docs/2026-10-03_mirror-upstream-d38-alignas-record.md`; [USER 2026-10-03] "Generally, our rule
+  is that we don't innovate wrt Cerberus-upstream, unless something is very very very obviously a
+  bug. ... fall back to loudly rejecting (either as unsupported, or matching upstream)."; cerberus-sl
+  confirmed it does not rely on cross-TU `PEmemberof`). KEPT from D3 (`dbe633ec5` + `83dc6ba00`):
+  `ctype_aux.lem` array arm `(n1_opt, n2_opt)` (draft 39), unit exe `are-compatible-test`, corpus
+  `tests/multi_tu_tray/` (LADDER Tier A row 6b). REVERTED: the `PEmemberof(struct)`
+  `are_compatible` consult; `core_eval.lem` again carries upstream's exact-tag guard (byte-equal to
+  upstream at :940-958; fork-drift `core_eval.ml` row removed). Every cross-TU struct value
+  returned and member-selected is rejected loudly (`ill-formed program: … mismatched tags`), as
+  on pristine. Draft 38 stays an upstream report; fork status updated there.
+- ~~**Union twin**~~ — DROPPED 2026-10-03 (next-phase plan P2d-1 dropped under the same
+  [USER 2026-10-03] ruling): with the struct consult reverted, the union arm's exact-tag
+  identity (`core_eval.lem` `PEmemberof(union)`, `core_aux.lem:204-208`) already mirrors
+  upstream. No work.
 - **Failure-text symbol projection** — IMPLEMENTED for LADDER Tier A row 6b ONLY
   (`observations.py --projection failure-class`; `test_multi_tu.sh
   --failure-class-projection`; charter §8 item 2): `Symbol(<digits>, ` → `Symbol(_, `
@@ -157,7 +160,9 @@ resumption rulings and errata). Branch `arc/semantics-audit-repairs`.
   struct value that crossed the TU boundary (both fork engines: `ill-formed
   program … mismatched tags`, agreeing up to symbol numbering; upstream still
   rc=124) — tray draft 38 (`docs/upstream-tray/38-…tag-identity.md`); its fix is a
-  separate shared-model change (operator decision, same class as this one).
+  separate shared-model change (operator decision, same class as this one). Taken at D3
+  (2026-09-15), REVERTED 2026-10-03 (mirror-upstream ruling; see "Finding 5 + draft 38" above):
+  this residual is again the fork's behaviour, by decision.
 - ~~**`to_pure`/`to_pures`**~~ and ~~**`hack`**~~ — RESOLVED at the fuel-pending
   close-out (2026-09-08, `docs/2026-09-08_fuel-pending-closeout-record.md`, option C
   of the reachability census): MEASURED under the arena SHAPE hypothesis

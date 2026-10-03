@@ -86,7 +86,35 @@ First observed by the Codex agent executing that slice (its D1 stop, recorded th
 localised and drafted by Claude (Fable 5.1) under operator direction; the filed issue
 carries an AI-provenance note per the tray's policy. File together with 37.
 
-## Fork status (2026-09-15) — FIXED in the fork; the patch is the `.lem` diff
+## Fork status (2026-10-03) — REVERTED: the fork mirrors upstream's exact-tag guard
+
+[USER 2026-10-03] "Generally, our rule is that we don't innovate wrt Cerberus-upstream, unless
+something is very very very obviously a bug. We're poorly placed to resolve semantic
+discrepancies, so we don't. ... fall back to loudly rejecting (either as unsupported, or matching
+upstream)." and "Agree on your recommendations with that framing (we shouldn't revert work that
+allows the iris reasoning to work properly)", on the recommendation to revert this draft's
+compatibility consult to upstream's loud exact-tag rejection after checking with cerberus-sl.
+cerberus-sl answered (orchestrator relay, 2026-10-03) that it does NOT rely on `PEmemberof`
+cross-TU struct compatibility (single-TU only).
+
+Branch `fix/mirror-upstream-d38-alignas` restores upstream's text of the `PEmemberof(struct)` arm
+exactly (`frontend/model/core_eval.lem` lines 940-958 equal
+`deps/cerberus-upstream/frontend/model/core_eval.lem:940-958`; the file's content hash is the
+pre-D3 pin `e1fc98ed…`, and the regenerated `core_eval.ml` is byte-identical to the upstream
+generated tree). Drafts 37 (assumed-compatible set) and 39 (array-bound typo) stay in the fork.
+This draft is still an upstream report: the question is upstream's to decide, and the fork no
+longer pre-empts the answer. The union arm was never changed; the planned union twin (next-phase
+plan P2d-1) is dropped.
+
+Measured 2026-10-03 on the reverted fork (fork oracle, Lean, pristine `b9aeedcb4` =
+independent-oracle-v2, gcc; verbatim in
+`lean_frontend/docs/2026-10-03_mirror-upstream-d38-alignas-record.md`): the reproducer
+(`tests/multi_tu_tray/node`) is now rejected by both fork engines with `ill-formed program:
+\`PEmemberof(struct) ==> mismatched tags: …` rc 1 (pristine still rc 124, draft 37); the
+compatible twins `arr-2-2-return` and `arr-incomplete-ptr-return` give pristine's own rejection
+on every engine, so their pristine-register rows are gone.
+
+## Fork status (2026-09-15, historical — reverted 2026-10-03) — FIXED in the fork; the patch is the `.lem` diff
 
 [AGENT 2026-09-15] Landed on `arc/semantics-audit-repairs` at `dbe633ec5` (record
 `lean_frontend/docs/2026-09-11_semantics-audit-repairs-record.md` §D3; charter

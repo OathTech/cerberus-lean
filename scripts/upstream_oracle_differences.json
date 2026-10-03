@@ -5,59 +5,18 @@
       "class": "shared-model-fix",
       "citation": [
         "lean_frontend/docs/upstream-tray/37-are-compatible-cross-tu-recursive-struct-nontermination.md",
-        "lean_frontend/docs/upstream-tray/38-pememberof-cross-tu-struct-value-tag-identity.md",
         "tests/multi_tu_tray/README.md",
-        "lean_frontend/docs/2026-09-11_semantics-audit-repairs-record.md:1752"
+        "lean_frontend/docs/2026-10-03_mirror-upstream-d38-alignas-record.md"
       ],
-      "rationale": "Pristine upstream b9aeedcb4 does not terminate: `Ctype_aux.are_compatible` recurses forever on the self-referential `struct node` defined in two TUs (draft 37, TRUE BUG; rc 124 at the mirrored 30 s bound, empty stdout/stderr; 60 s in the draft's verbatim runs). The fork carries the assumed-compatible-list fix (record 2026-09-10, draft 37 \"Fork status\") and draft 38's PEmemberof compatibility consult, and answers `Defined {value: \"Specified(7)\", stdout: \"\", stderr: \"\", blocked: \"false\"}` rc 0 \u2014 the value ISO C11 \u00a76.2.7#1 gives and gcc exits with (7). Class shared-model-fix: the ONLY pristine-side incomplete this register admits; the row retires (the case moves into tests/multi_tu/) when upstream fixes drafts 37/38. LADDER Tier A row 6b pins fork OCaml == Lean on the same input.",
+      "rationale": "Pristine upstream b9aeedcb4 does not terminate: `Ctype_aux.are_compatible` recurses forever on the self-referential `struct node` defined in two TUs (draft 37, TRUE BUG; rc 124 at the mirrored 30 s bound, empty stdout/stderr; 60 s in the draft's verbatim runs). The fork carries ONLY the assumed-compatible-list fix (record 2026-09-10, draft 37 \"Fork status\"), so its are_compatible terminates and the PEmemberof(struct) guard \u2014 upstream's exact-tag text, restored 2026-10-03 when draft 38's compatibility consult was reverted ([USER 2026-10-03] mirror-upstream ruling) \u2014 rejects the cross-TU value loudly: verbatim `Error {msg: \"ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(531, SD_Id(\"node\")) vs Symbol(502, SD_Id(\"node\"))'\"}` rc 1. This is the answer pristine itself gives on every other cross-TU struct-value case of the tray (arr-1-2-return, arr-2-2-return, ...), i.e. what upstream would print once its non-termination is fixed; gcc exits 7. Class shared-model-fix (draft 37 alone): the ONLY pristine-side incomplete this register admits; the row retires when upstream fixes draft 37. LADDER Tier A row 6b pins fork OCaml == Lean on the same input (under its failure-class symbol projection).",
       "upstream": {
         "status": 124,
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       "fork": {
-        "status": 0,
-        "stdout_sha256": "aac62ecb735949971f5164c5eb81b3f0a550a69e76e2eb8a945c7117c37cf0c9",
-        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-      }
-    },
-    "multi_tu_tray/arr-2-2-return": {
-      "class": "shared-model-fix",
-      "citation": [
-        "lean_frontend/docs/upstream-tray/38-pememberof-cross-tu-struct-value-tag-identity.md",
-        "lean_frontend/docs/upstream-tray/39-are-compatible-array-bound-typo.md",
-        "tests/multi_tu_tray/README.md",
-        "lean_frontend/docs/2026-09-11_semantics-audit-repairs-record.md:1752"
-      ],
-      "rationale": "struct S { int a[2]; } defined in both TUs (compatible, equal bounds), value RETURNED across the TU boundary and `.a[0]` selected. Pristine upstream b9aeedcb4 rejects the compatible cross-TU struct value at the exact-tag guard of `PEmemberof(struct)` (core_eval.lem:945-946; draft 38, TRUE BUG/LIMITATION): verbatim `Error {msg: \"ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(558, SD_Id(\"S\")) vs Symbol(502, SD_Id(\"S\"))'\"}` rc 1. The fork (dbe633ec5: draft 38's compatibility consult + draft 39's one-token array-bound fix) answers `Defined {value: \"Specified(7)\", stdout: \"\", stderr: \"\", blocked: \"false\"}` rc 0 \u2014 the value ISO C11 \u00a76.2.7#1 gives and gcc exits with (7). Class shared-model-fix; both signatures pinned (the Error text embeds deterministic symbol numbers); the row retires when upstream fixes drafts 38/39. LADDER Tier A row 6b pins fork OCaml == Lean on the same input.",
-      "upstream": {
         "status": 1,
-        "stdout_sha256": "f23535f5c01223f26a1b55c5935eb2572ac226129d65f89cf5bcdbccaa937385",
-        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-      },
-      "fork": {
-        "status": 0,
-        "stdout_sha256": "aac62ecb735949971f5164c5eb81b3f0a550a69e76e2eb8a945c7117c37cf0c9",
-        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-      }
-    },
-    "multi_tu_tray/arr-incomplete-ptr-return": {
-      "class": "shared-model-fix",
-      "citation": [
-        "lean_frontend/docs/upstream-tray/38-pememberof-cross-tu-struct-value-tag-identity.md",
-        "lean_frontend/docs/upstream-tray/39-are-compatible-array-bound-typo.md",
-        "tests/multi_tu_tray/README.md",
-        "lean_frontend/docs/2026-09-11_semantics-audit-repairs-record.md:1752"
-      ],
-      "rationale": "member `int (*p)[]` vs `int (*p)[2]` (compatible by C11 \u00a76.7.6.1#2 + \u00a76.7.6.2#6), value RETURNED and `.n` selected. Pristine upstream b9aeedcb4 rejects the compatible cross-TU struct value at the exact-tag guard of `PEmemberof(struct)` (core_eval.lem:945-946; draft 38, TRUE BUG/LIMITATION): verbatim `Error {msg: \"ill-formed program: `PEmemberof(struct) ==> mismatched tags: Symbol(536, SD_Id(\"S\")) vs Symbol(502, SD_Id(\"S\"))'\"}` rc 1. The fork (dbe633ec5: draft 38's compatibility consult + draft 39's one-token array-bound fix) answers `Defined {value: \"Specified(7)\", stdout: \"\", stderr: \"\", blocked: \"false\"}` rc 0 \u2014 the value ISO C11 \u00a76.2.7#1 gives and gcc exits with (7). Class shared-model-fix; both signatures pinned (the Error text embeds deterministic symbol numbers); the row retires when upstream fixes drafts 38/39. LADDER Tier A row 6b pins fork OCaml == Lean on the same input.",
-      "upstream": {
-        "status": 1,
-        "stdout_sha256": "5f02936e56797c4da43e7021f7c6171a59780d59c1658651f2b1b164bf1c0206",
-        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-      },
-      "fork": {
-        "status": 0,
-        "stdout_sha256": "aac62ecb735949971f5164c5eb81b3f0a550a69e76e2eb8a945c7117c37cf0c9",
+        "stdout_sha256": "a5e73a6c54883a91e3dbb499a6d3451ea8a435083b12238152f2a0550ab3a9c4",
         "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       }
     },

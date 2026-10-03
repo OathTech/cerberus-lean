@@ -488,6 +488,9 @@ oracles re-run 2026-09-08, lines verbatim in the draft):
     Remedy: consult `Ctype_aux.are_compatible` at member selection (the check
     `memValueFromValue` already performs on store) or retag at the TU boundary.
     File together with 37. Reproducer: draft 37's `tests/failure-probes/cross_tu_node/`.
+    Fork status 2026-10-03: the fork's 2026-09-15 consult is REVERTED; the fork mirrors
+    upstream's exact-tag guard ([USER 2026-10-03] mirror-upstream ruling; record
+    `docs/2026-10-03_mirror-upstream-d38-alignas-record.md`). Still a report for upstream.
     FORK STATUS 2026-09-15: FIXED in the fork at `dbe633ec5` (semantics-audit repairs
     D3, record `lean_frontend/docs/2026-09-11_semantics-audit-repairs-record.md` §D3):
     `PEmemberof(struct)` consults `Ctype_aux.are_compatible` when the tags differ (the

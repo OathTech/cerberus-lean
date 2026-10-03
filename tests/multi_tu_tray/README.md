@@ -15,17 +15,26 @@ fork OCaml oracle against the Lean pipeline, exactly as `tests/multi_tu/`.
 ## Why a separate corpus root, and when the cases move
 
 Pristine upstream (`b9aeedcb4`) does not terminate on `node` (draft 37, fixed in the fork
-2026-09-10) and rejects every compatible cross-TU struct value at its exact-tag `PEmemberof`
-guard (draft 38, fixed in the fork here). Since WP-O (2026-09-16,
+2026-09-10) and rejects every cross-TU struct value at its exact-tag `PEmemberof` guard
+(draft 38). Since WP-O (2026-09-16,
 `lean_frontend/docs/2026-09-16_pristine-oracle-instrument-record.md`) the pristine-upstream
 lane (`scripts/test_upstream_oracle.py`, LADDER Tier B row 10) WALKS this tray too, with the
-same engine invocation as `tests/multi_tu/`: the fork's three deviations from pristine here
-are admitted ONLY through the three cited `shared-model-fix` rows of
-`scripts/upstream_oracle_differences.json` (`node` — the one pristine-side timeout the register
-admits; `arr-2-2-return` and `arr-incomplete-ptr-return` — pristine's exact-tag rejection vs
-the fork's `Specified(7)`), each binding both engines' signatures; the other four cases agree
-on all three engines. The cases move INTO `tests/multi_tu/` and the rows retire when upstream
-fixes the cited drafts (37/38/39).
+same engine invocation as `tests/multi_tu/`.
+
+**2026-10-03: draft 38's consult REVERTED.** The fork took draft 38's `are_compatible`
+consult at D3 (2026-09-15) and reverted it on 2026-10-03 (branch
+`fix/mirror-upstream-d38-alignas`, record
+`lean_frontend/docs/2026-10-03_mirror-upstream-d38-alignas-record.md`), under [USER 2026-10-03]
+"Generally, our rule is that we don't innovate wrt Cerberus-upstream, unless something is very
+very very obviously a bug. ... fall back to loudly rejecting (either as unsupported, or matching
+upstream)." The fork's `core_eval.lem` guard is upstream's text again. The fork's ONLY
+deviation from pristine here is `node`: pristine loops, while the fork (draft 37's
+assumed-compatible set, kept) terminates and rejects with `mismatched tags`. It is admitted only
+through the cited `shared-model-fix` row of `scripts/upstream_oracle_differences.json`, the one
+pristine-side timeout the register admits. The other six cases agree on fork and pristine.
+`node` moves INTO `tests/multi_tu/` and its row retires when upstream fixes draft 37. Draft
+39's one-token array-bound fix is also kept; the guard masks it on this tray (see draft 39's
+2026-10-03 update).
 
 ## The projection — row 6b only
 
@@ -44,10 +53,10 @@ keeps `full`, and applying it to an existing row is forbidden (charter §3).
 
 | case | shape (TU1 vs TU2) | classification | fork engines (both) |
 |---|---|---|---|
-| `node` | `struct node {int v; struct node *next;}` in both; value RETURNED by `ident`, `.v` selected (draft 38's positive reproducer) | positive, compatible | `Defined 7` |
-| `arr-2-2-return` | `int a[2]` in both; RETURNED, `.a[0]` | positive, compatible (equal bounds) | `Defined 7` |
-| `arr-incomplete-ptr-return` | member `int (*p)[]` vs `int (*p)[2]`; RETURNED, `.n` (§6.7.6.1#2 + §6.7.6.2#6 — decided by the repaired array arm) | positive, compatible | `Defined 7` |
-| `arr-1-2-return` | `int a[1]` vs `int a[2]`; RETURNED, `.a[0]` | **NEGATIVE, incompatible, rejected — the load-bearing pin of this slice's repair** (the typo said "compatible" here before D3) | `Error … mismatched tags` |
+| `node` | `struct node {int v; struct node *next;}` in both; value RETURNED by `ident`, `.v` selected (draft 38's positive reproducer) | compatible; rejected by upstream's exact-tag guard (since 2026-10-03; was `Defined 7` under draft 38's consult) | `Error … mismatched tags` |
+| `arr-2-2-return` | `int a[2]` in both; RETURNED, `.a[0]` | compatible (equal bounds); rejected by upstream's exact-tag guard (since 2026-10-03; was `Defined 7`) | `Error … mismatched tags` |
+| `arr-incomplete-ptr-return` | member `int (*p)[]` vs `int (*p)[2]`; RETURNED, `.n` (§6.7.6.1#2 + §6.7.6.2#6) | compatible; rejected by upstream's exact-tag guard (since 2026-10-03; was `Defined 7`) | `Error … mismatched tags` |
+| `arr-1-2-return` | `int a[1]` vs `int a[2]`; RETURNED, `.a[0]` | **NEGATIVE, incompatible, rejected** — by the exact-tag guard on every engine (from D3 until 2026-10-03 it was the load-bearing pin of the consult: rejected because `are_compatible` said false) | `Error … mismatched tags` |
 | `fam-vs-array-return` | `struct S {int n; int a[];}` vs `{int n; int a[2];}`; RETURNED, `.n` | rejected on all three engines — incompatibility by member COUNT (Cerberus keeps the flexible array member outside the member list `are_compatible_aux` compares); gcc runs it (7); the ISO question is upstream-tray draft 41 | `Error … mismatched tags` |
 | `arr-1-2-arg` | `int a[1]` vs `int a[2]`; value PASSED by value to `get`, `s.a[0]` read | **OBSERVED MODELLING LIMIT** (below) | `Defined 7` |
 | `arr-2-2-arg` | `int a[2]` in both; PASSED by value | **OBSERVED MODELLING LIMIT** (below) — the compatible twin; its MATCH pins the offset-0 read, not a consult | `Defined 7` |
@@ -77,7 +86,21 @@ accepts `arr-2-2-arg` — recorded in upstream-tray draft 39 as a related observ
 charter's original NEGATIVE expectation for the argument shape was WITHDRAWN as a charter
 erratum (§8); these two rows are pinned as what every engine does today.
 
-## Three-engine table — verbatim from the record (D3(b)/(c); scratch corpus `.tmp/d3/cases`, 2026-09-15, fork bin `e40ae8e3…`)
+## Three-engine table after the revert — 2026-10-03 (verbatim in `lean_frontend/docs/2026-10-03_mirror-upstream-d38-alignas-record.md`)
+
+`E(m,n)` and `D7` as below.
+
+| case | fork oracle | Lean | pristine | gcc |
+|---|---|---|---|---|
+| `arr-1-2-arg` | `D7` | `D7` | `D7` | 7 |
+| `arr-1-2-return` | `E(545,502)` | `E(63,19)` | `E(545,502)` | 7 |
+| `arr-2-2-arg` | `D7` | `D7` | `D7` | 7 |
+| `arr-2-2-return` | `E(558,502)` | `E(76,19)` | `E(558,502)` | 7 |
+| `arr-incomplete-ptr-return` | `E(536,502)` | `E(53,19)` | `E(536,502)` | 7 |
+| `fam-vs-array-return` | `E(533,502)` | `E(50,19)` | `E(533,502)` | 7 |
+| `node` (tag `node`) | `E(531,502)` | `E(48,19)` | rc=124 (30 s; draft 37) | 7 |
+
+## Three-engine table — HISTORICAL, under draft 38's consult (D3(b)/(c); scratch corpus `.tmp/d3/cases`, 2026-09-15, fork bin `e40ae8e3…`)
 
 `E(m,n)` abbreviates `Error {msg: "ill-formed program: \`PEmemberof(struct) ==> mismatched
 tags: Symbol(m, SD_Id("S")) vs Symbol(n, SD_Id("S"))'"}` rc 1 (for `node` the tag is
