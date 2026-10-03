@@ -14,6 +14,9 @@
 #   slice's source-stable full run (12 AGREE/-, d3-s4b-fdecl-enum-param.c AGREE/O2_AGREE); rows written by the lane itself
 #   (--write-baseline over tests/immaculate/nolibc, 49 rows, the 36 pre-existing ones byte-identical). Record:
 #   lean_frontend/docs/2026-09-20_program-data-parameters-EA-DA-record.md §10.6 (B7 tail).
+# 2026-10-03 total-arith Z2-M-01 (hand-edited): tests/immaculate/nolibc/zd-z2m01-aligned-alloc-zero-nolibc.c SKIP_UB -> SKIP_LEAN_CRASH
+#   (Lean now fail-stops on the zero divisor as the oracle does); observed by a partial --write-baseline run over
+#   tests/immaculate/nolibc. Record: lean_frontend/docs/2026-10-03_total-arith-and-bookkeeping-record.md §1.
 csmith/sa_csmith_001.c AGREE O2_AGREE
 csmith/sa_csmith_002.c SKIP_LEAN_CRASH -
 csmith/sa_csmith_003.c SKIP_LEAN_CRASH -
@@ -2039,4 +2042,4 @@ tests/minimal/113-allocator-exhausted-single-request-overlap.c SKIP_LEAN_FAIL -
 # 2026-09-03 zero-discrepancy Z2: 3 rows for the new tests/immaculate/nolibc/zd-z2*.c pins hand-inserted (classes as measured by the lane on the Z2 binary; record docs/2026-09-04_zero-discrepancy-Z2-record.md §5/§11)
 tests/immaculate/nolibc/zd-z2fl03-nan-to-int.c SKIP_LEAN_CRASH -
 tests/immaculate/nolibc/zd-z2i01-cerbty-int32-uac.c SKIP_GCC_COMPILE -
-tests/immaculate/nolibc/zd-z2m01-aligned-alloc-zero-nolibc.c SKIP_UB -
+tests/immaculate/nolibc/zd-z2m01-aligned-alloc-zero-nolibc.c SKIP_LEAN_CRASH -

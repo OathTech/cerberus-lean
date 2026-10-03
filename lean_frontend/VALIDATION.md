@@ -451,6 +451,18 @@ repair and the address-printing programs' agreement. The old committed
 sweep's STDOUT_DIFF rows are historical, not an outstanding Z3 implementation
 task; current measurements are in the CI reporting record.
 
+The `aligned_alloc(0, n)` row **Z2-M-01 is mirrored** (2026-10-03): upstream's
+`op_ival` `IntRem_t`/`IntRem_f` (`impl_mem.ml:2481-2484`) have no zero guard,
+so `std.core:385`'s `size rem_t align` raises `Division_by_zero` (uncaught,
+exit 125); Lean's `CerbMem.integerRem_t`/`integerRem_f`/`integerDiv_t` now
+fail-stop on a zero divisor in the same place (both-crash `MATCH | L=CRASH`,
+`zd-z2m01-*`), under [USER 2026-10-03] "we don't innovate wrt
+Cerberus-upstream, unless something is very very very obviously a bug ...
+we should fall back to loudly rejecting (either as unsupported, or matching
+upstream)". The Z2 record's §10.1 recommendation (a Core-level UB045 or a
+`std.core:385` guard) is withdrawn as invention under that rule
+([record](docs/2026-10-03_total-arith-and-bookkeeping-record.md)).
+
 **Still open (bugs by the rule; each with its owner):**
 
 - *libc-body UB locations* (Z1-A1): a UB raised INSIDE a libc C body
@@ -459,13 +471,6 @@ task; current measurements are in the CI reporting record.
   which has no locations). BUG-FIX with a named mover: a libc pin vehicle
   that carries locations. Surfaces as `UB_DIFF` rows in the sweep
   re-record.
-- *`aligned_alloc(0, n)`* (Z2-M-01): the oracle's `Division_by_zero` is a
-  KIND-2 artifact and is NOT mirrored; Lean's total remainder answers
-  `Undefined {ub: "DUMMY(align_alloc)"}` for `(0, 8)` and a loud refusal
-  for `(0, 0)` — neither principled. Pinned (`zd-z2m01-*`), tray 34
-  drafted; the logical meaning is an operator decision (Z2 record
-  §10.1: Core-level UB045 and/or the ISO 7.22.3.1 guard in `std.core:385`,
-  both shared-model changes).
 - *In-process consumers and the library-location check* (bug-hunt fixes
   pre-merge audit L4): the driver refuses, at import, any location whose
   path passes `CerbLocation.isLibraryLocation`'s suffix test but not the

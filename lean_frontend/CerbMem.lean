@@ -1573,37 +1573,43 @@ def concurReadIval (_ : integerType) (_ : sym) : IntegerValue :=
     Lean's Int `/`/`%` are ediv/emod — NOT these; use the explicit forms.
     Zero divisor (zero-discrepancy Z2-M-01): zarith raises
     `Division_by_zero` (z.mli:158-168; the Big_int_Z mod likewise) and
-    impl_mem.ml has NO guard on IntRem_t/IntRem_f (:2481-2484) — an
-    UNCAUGHT exception on the oracle (exit 125), REACHABLE FROM C through
-    `runtime/libcore/std.core:385` (aligned_alloc_proxy's `size rem_t
-    align` has no UB045 guard: `aligned_alloc(0, n)` crashes fork AND
-    upstream; the text that stood here, "unreachable behind Core's
-    division-by-zero UB guards", was FALSE). NOT MIRRORED: that crash is a
-    KIND-2 OCaml-execution artifact (a missing guard), and the referent is
-    the LOGICAL semantics ([USER 2026-09-03], docs/2026-09-03_logical-
-    semantics-referent-ruling.md) — Lean keeps the total `Int.tmod`/
-    `emod`/`tdiv` (x tmod 0 = x, x emod 0 = x, x tdiv 0 = 0) pending the
-    OPERATOR DECISION on the logical meaning of a Core `rem_t`/`rem_f`/
-    `div` by zero (docs/2026-09-04_zero-discrepancy-Z2-record.md §10 —
-    the candidates: Core-level UB045b as the elaborator gives C's `%`, or
-    ISO 7.22.3.1's NULL for an invalid alignment via a std.core guard);
-    the current answers (`DUMMY(align_alloc)` for `(0, n)`, the allocator's
-    alignment-0 refusal for `(0, 0)`) are PINNED as Lean-vs-oracle pairs
-    (tests/immaculate/{libc,nolibc}/zd-z2m01-*) so the row stays visible,
-    and the oracle crash is a tray candidate (Z4). IntDiv has the oracle's
-    own explicit zero guard (:2479-2480); diff_ptrval's divisor is
-    sizeof(elem) ≥ 1 for every complete type (:1961-1967). -/
+    impl_mem.ml has NO guard on IntRem_t/IntRem_f (upstream
+    deps/cerberus-upstream/memory/concrete/impl_mem.ml:2481-2484; fork
+    :2525-2528) — an UNCAUGHT exception on the oracle (exit 125), REACHABLE
+    FROM C through `runtime/libcore/std.core:385` (aligned_alloc_proxy's
+    `size rem_t align`: `aligned_alloc(0, n)` crashes fork AND upstream).
+    MIRRORED as a loud fail-stop (`failwithI`, the mechanism `opIval`'s
+    IntExp arm uses), 2026-10-03 under [USER 2026-10-03] "we don't innovate
+    wrt Cerberus-upstream, unless something is very very very obviously a
+    bug ... we should fall back to loudly rejecting (either as unsupported,
+    or matching upstream)". This supersedes the 2026-09-04 interim (total
+    `Int.tmod`/`emod`, x mod 0 = x, which answered `aligned_alloc(0, 8)` with
+    a `DUMMY(align_alloc)` UB upstream never chooses) and withdraws the Z2
+    record §10.1 recommendation (addendum there; record
+    docs/2026-10-03_total-arith-and-bookkeeping-record.md). Witnesses:
+    tests/immaculate/{libc,nolibc}/zd-z2m01-* — both-crash `MATCH | L=CRASH`.
+    IntDiv has the oracle's own explicit zero guard (:2479-2480, mirrored in
+    `opIval`); diff_ptrval's `Z.div` (:1967) divides by sizeof(elem) and
+    raises on 0 like the helper below. -/
 
-/-- Z.div — truncating quotient (zarith z.mli:155-162). Total here (see the
-    zero-divisor note above). -/
-def integerDiv_t (a b : Int) : Int := Int.tdiv a b
+/-- Z.div — truncating quotient (zarith z.mli:155-162). zarith raises
+    `Division_by_zero` on a zero divisor: mirrored as a fail-stop. -/
+def integerDiv_t (a b : Int) : Int :=
+  if b == 0 then failwithI "CerbMem.integerDiv_t: Division_by_zero (zarith Z.div raises; mirrors the oracle's uncaught exception, impl_mem.ml:1967 diff_ptrval)"
+  else Int.tdiv a b
 /-- Z.integerRem_t = Z.rem — truncating remainder, sign of dividend
-    (impl_mem.ml:11, zarith z.mli:164-168). Total here (zero-divisor note). -/
-def integerRem_t (a b : Int) : Int := Int.tmod a b
+    (impl_mem.ml:11, zarith z.mli:164-168). zarith raises
+    `Division_by_zero` on a zero divisor: mirrored as a fail-stop. -/
+def integerRem_t (a b : Int) : Int :=
+  if b == 0 then failwithI "CerbMem.integerRem_t: Division_by_zero (zarith Z.rem raises; mirrors the oracle's uncaught exception, impl_mem.ml:2481-2482 op_ival IntRem_t)"
+  else Int.tmod a b
 /-- Z.integerRem_f = Big_int_Z.mod_big_int — euclidean remainder,
     always non-negative (impl_mem.ml:12). Lean's Int.emod is exactly
-    euclidean remainder. Total here (zero-divisor note). -/
-def integerRem_f (a b : Int) : Int := Int.emod a b
+    euclidean remainder. `mod_big_int` raises `Division_by_zero` on a zero
+    divisor: mirrored as a fail-stop. -/
+def integerRem_f (a b : Int) : Int :=
+  if b == 0 then failwithI "CerbMem.integerRem_f: Division_by_zero (Big_int_Z.mod_big_int raises; mirrors the oracle's uncaught exception, impl_mem.ml:2483-2484 op_ival IntRem_f)"
+  else Int.emod a b
 
 /-- op_ival — impl_mem.ml:2464-2490 -/
 def opIval (op : integer_operator) (v1 v2 : IntegerValue) : IntegerValue :=
@@ -1625,8 +1631,10 @@ def opIval (op : integer_operator) (v1 v2 : IntegerValue) : IntegerValue :=
     | .IntDiv =>
       -- impl_mem.ml:2479-2480: explicit zero guard, then TRUNCATING Z.div
       .IV (combineProv prov1 prov2) (if n2 == 0 then 0 else integerDiv_t n1 n2)
-    | .IntRem_t => .IV (combineProv prov1 prov2) (integerRem_t n1 n2)  -- impl_mem.ml:2481-2482
-    | .IntRem_f => .IV (combineProv prov1 prov2) (integerRem_f n1 n2)  -- impl_mem.ml:2483-2484
+    -- impl_mem.ml:2481-2484 (upstream; fork :2525-2528): NO zero guard —
+    -- the helpers fail-stop on 0 as zarith raises (Z2-M-01, note above)
+    | .IntRem_t => .IV (combineProv prov1 prov2) (integerRem_t n1 n2)
+    | .IntRem_f => .IV (combineProv prov1 prov2) (integerRem_f n1 n2)
     | .IntExp =>
       -- impl_mem.ml:2485-2490: Prov_none (shift elaboration forwards the
       -- LEFT operand's provenance elsewhere); `Z.pow n1 (Z.to_int n2)`. A
@@ -2210,14 +2218,15 @@ def oomKill : kill_reason mem_error := Other (MerrOther "Concrete.allocator: fai
     address in `(0, align)` overlapping the live object at `last_address`
     and misaligned; draft 44 has the verbatim reproductions on both engines);
     then `(_, m) = quomod z align` (:1258) — Lean's Int `%` IS emod.
-    `align = 0` RAISES `Division_by_zero` there — a KIND-2 OCaml-execution
-    artifact (the logical-semantics referent ruling), NOT mirrored: the model
-    gives an alignment of 0 no meaning, so this is a loud PENDING-DECISION
-    refusal (docs/2026-09-04_zero-discrepancy-Z2-record.md §10, with
-    Z2-M-01), never the fail-OPEN `.max 1` clamp that stood here; it sits
-    where the OCaml's quomod sits — AFTER the `z < 0` kill. Reachable from C
-    only through `aligned_alloc(0, 0)` (std.core:385 `0 rem_t 0 = 0` passes
-    on the total `rem_t`); `z' = z - m` (:1259, a plain align-down: the
+    `align = 0` RAISES `Division_by_zero` there; Lean fail-stops at the same
+    point (a loud kill mirroring the oracle's uncaught exception, never the
+    fail-OPEN `.max 1` clamp that stood here; [USER 2026-10-03] "fall back to
+    loudly rejecting (either as unsupported, or matching upstream)",
+    docs/2026-10-03_total-arith-and-bookkeeping-record.md); it sits where the
+    OCaml's quomod sits — AFTER the `z < 0` kill. Its one former C route,
+    `aligned_alloc(0, 0)`, now stops earlier, at std.core:385's `0 rem_t 0`,
+    exactly as the oracle does (Z2-M-01, `integerRem_t`), so the arm is
+    defensive; `z' = z - m` (:1259, a plain align-down: the
     `q < zero` branch is dead and deleted); `z' ≤ 0` → the same out-of-memory
     fail (:1260-1261; text mirrored — zero-discrepancy Z2-M-03); else
     `next_alloc_id` bumped, `last_used = Some alloc_id`, `last_address = addr`
@@ -2241,7 +2250,7 @@ def allocator (sz align : Int) : memM (StorageInstanceId × Address) :=
     if z < 0 then                                                                -- :1255-1256 (draft 44 fix)
       (NDkilled oomKill, st)
     else if align == 0 then                                                      -- :1258 quomod → Division_by_zero
-      (NDkilled (CerbFail.failStopKill "CerbMem.allocator: alignment 0 has no meaning in the model (impl_mem.ml:1258 quomod raises Division_by_zero — an OCaml-execution artifact, not the referent); operator decision pending, zero-discrepancy Z2 record §10"), st)
+      (NDkilled (CerbFail.failStopKill "CerbMem.allocator: alignment 0 has no meaning in the model (impl_mem.ml:1258 quomod raises Division_by_zero — mirrored as a fail-stop; docs/2026-10-03_total-arith-and-bookkeeping-record.md)"), st)
     else
       let m := z % align                                                         -- :1258 (Euclidean remainder, m ≥ 0)
       let z' := z - m                                                            -- :1259 (align down)

@@ -79,12 +79,12 @@ only the alignment that is unchecked.
 
 Low frequency in real code (`aligned_alloc(0, …)` is a caller bug), but
 it is a tool crash on a program the model should judge, and the
-unguarded remainder is a latent crash for every Core producer. For our
-Lean port the crash has no logical meaning to mirror: its total
-remainder makes `8 rem_t 0` fail the size test and report the proxy's
-`DUMMY(align_alloc)` UB for `(0, 8)`, and `(0, 0)` reaches the allocator
-— a divergence we are holding open until the intended meaning is fixed
-here (we would rather mirror a defined answer than an exception).
+unguarded remainder is a latent crash for every Core producer. Our Lean
+port mirrors the crash (since 2026-10-03: its remainder helpers fail-stop
+on a zero divisor, so `aligned_alloc(0, n)` stops there too); it will
+follow whatever defined answer is chosen here. (Until 2026-10-03 its total
+remainder answered `DUMMY(align_alloc)` for `(0, 8)` — a value this code
+never chooses — and that interim divergence was withdrawn.)
 
 ## Proposed remedy
 

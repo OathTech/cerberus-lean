@@ -56,7 +56,7 @@ def checks (fuel : Nat) : List (String × Bool) := Id.run do
       | (NDkilled _, s') => s'.lastUsed == some 99
       | _ => false),
     ("allocator zero alignment remains a refusal", stops (allocator 0 0) st
-      "CerbMem.allocator: alignment 0 has no meaning in the model (impl_mem.ml:1258 quomod raises Division_by_zero — an OCaml-execution artifact, not the referent); operator decision pending, zero-discrepancy Z2 record §10"),
+      "CerbMem.allocator: alignment 0 has no meaning in the model (impl_mem.ml:1258 quomod raises Division_by_zero — mirrored as a fail-stop; docs/2026-10-03_total-arith-and-bookkeeping-record.md)"),
     ("allocator ordinary alignment", active (allocator 1 1) st),
     ("requested address", stops (allocateObject fmapEmpty tags 0 (PrefOther "test") (iv 1) unsigned_char (some 100) none) st
       "TODO: cerb::with_address() is yet implemented"),

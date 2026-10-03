@@ -427,8 +427,8 @@ and gcc disagrees — the defect is in the shared model, not in our port:
     both oracles. Remedy: validate `align` in the proxy (C17: NULL) AND
     make Core `rem_t`/`rem_f` by zero a UB verdict. Found by the 2026-09-03
     memory-model seam audit (`docs/2026-09-04_zero-discrepancy-Z2-record.md`
-    §2.1/§10.1; our port's total remainder diverges here and the divergence
-    is held open pending the meaning being fixed upstream).
+    §2.1/§10.1; since 2026-10-03 our port mirrors the crash —
+    `docs/2026-10-03_total-arith-and-bookkeeping-record.md`).
 35. **35-pp-core-grammar-mismatches.md** — item 1 TRUE BUG (parser:
     `core_parser.mly:767-774` drops `seq_rmw`'s second operand on
     symbolification — re-reading a dump of `x++` turns the pointer into a

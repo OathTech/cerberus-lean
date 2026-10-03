@@ -850,3 +850,38 @@ verify:    test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 co
 Pre-merge audit `2026-09-04_zero-discrepancy-Z2-audit-premerge.md`
 (MERGE-WITH-FIXES, 0 MAJOR → F1–F7 fixed in `08d4ffb1a`, §14). Merge ask
 goes to the operator on this head.
+
+
+## Addendum 2026-10-03 — §10.1 recommendation WITHDRAWN; Z2-M-01 mirrored [AGENT, worker on `fix/total-arith-and-bookkeeping`, at operator direction]
+
+This addendum does not rewrite anything above; the record stands as the
+history of what was measured and decided on 2026-09-03/04.
+
+The [AGENT] recommendation of §10.1 — "(a) **Core-level division by zero is
+UB045**" for the Core operators AND "the std.core:385 guard" for the
+alignment validity — is **withdrawn**. Both options are semantic
+inventions relative to upstream under the operator's standing rules:
+
+- [USER 2026-10-03] "Generally, our rule is that we don't innovate wrt
+  Cerberus-upstream, unless something is very very very obviously a bug.
+  We're poorly placed to resolve semantic discrepancies, so we don't. ...
+  we should fall back to loudly rejecting (either as unsupported, or
+  matching upstream)."
+- [USER 2026-10-03] "We do not resolve Cerberus TODO cases unless the
+  answer is extremely obvious or if there's a similarly obvious bug, or
+  for some reason we or some downstream customer need it with absolute
+  priority".
+
+Which defined answer `aligned_alloc(0, n)` should have (a UB code, C17's
+NULL, or a Core-level UB for `rem_t` by zero) is upstream's call; the
+tray draft 34 keeps proposing it to them. The port now MIRRORS the
+upstream crash instead: `CerbMem.integerRem_t`/`integerRem_f`/`integerDiv_t`
+fail-stop on a zero divisor (`failwithI`, the mechanism `opIval`'s `IntExp`
+arm uses) where zarith's `Z.rem`/`mod_big_int`/`Z.div` raise
+`Division_by_zero` (upstream `memory/concrete/impl_mem.ml:2481-2484`,
+unguarded; `:1967` for `diff_ptrval`'s `Z.div`). The pins
+`zd-z2m01-aligned-alloc-zero[-nolibc]` move from
+`ORACLE_CRASH | L=UB:{ub: "DUMMY(align_alloc)", …}` to `MATCH | L=CRASH`
+(hand-edited); `-zero-zero` stays `MATCH | L=CRASH`, now for the same cause
+on both engines. This supersedes the "KIND-2, not mirrored" reading of §2.1
+for this row. Record: `docs/2026-10-03_total-arith-and-bookkeeping-record.md`.
