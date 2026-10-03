@@ -632,3 +632,105 @@ OK: lane matches the committed baseline (MATCH except the ISO-fix register pins 
 - **F5** (the uneven guarding of unreachable sites: `integerDiv_t` has the
   zero guard, the layout family's `% 0` does not): left as is, as directed;
   both are unreachable (U-1, U-10).
+
+## 9. Final battery after the rework — Tier A in full + immaculate + the pristine-oracle gate + the full gcc lane
+
+Head `02f741717` (this section is the only change after it), serial,
+`CERB_MEM_MAX=32G`, through `scripts/ce`; 2026-10-03T15:05:56Z → 15:47:23Z.
+Per-command status lines (verbatim):
+
+```
+### ./scripts/test_unit.sh rc=0 (242s)
+### ./scripts/test_exec.sh --check-baseline rc=0 (36s)
+### ./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage rc=0 (74s)
+### ./scripts/test_exec.sh --check-baseline=scripts/exec_debug_baseline.txt tests/debug rc=0 (24s)
+### ./scripts/test_exec.sh --check-baseline=scripts/exec_float_baseline.txt tests/float rc=0 (25s)
+### ./scripts/test_bytes.sh rc=0 (3s)
+### ./scripts/test_libc_exec.sh rc=0 (107s)
+### ./scripts/test_multi_tu.sh rc=0 (4s)
+### ./scripts/test_multi_tu.sh --failure-class-projection tests/multi_tu_tray rc=0 (4s)
+### ./scripts/test_parse.sh rc=0 (11s)
+### ./scripts/test_core.sh rc=0 (9s)
+### ./scripts/test_elab.sh rc=0 (17s)
+### ./scripts/test_libxml2_uri.sh rc=0 (19s)
+### ./scripts/test_cn_coverage.sh --check-baseline rc=0 (60s)
+### ./scripts/test_address_space.sh --selftest rc=0 (5s)
+### ./scripts/test_address_space.sh rc=0 (5s)
+### python3 scripts/test_memory_access.py rc=0 (1s)
+### ./scripts/test_immaculate.sh rc=0 (111s)
+### python3 scripts/test_upstream_oracle.py rc=0 (168s)
+### python3 scripts/test_upstream_oracle.py --plant rc=0 (1s)
+### ./scripts/test_gcc_oracle.sh --check-baseline rc=0 (1561s)
+```
+
+Verdict lines (verbatim):
+
+```
+Done: 292 passed, 0 failed
+Total: 16 passed, 0 failed
+check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly (231 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=172 REACHABLE=40 UNKNOWN=21; every row sealed; tally line consistent)
+SUMMARY: total=113 match=90 ub_match=18 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=5 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: total=276 match=224 ub_match=37 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=13 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+SUMMARY: exec_match=9 neg_pinned=5 fail=0
+ALL AT COMMITTED EXPECTEDS
+SUMMARY: match=43 diff=0
+ALL MATCH RECORDED BASELINE
+SUMMARY: total=8 match=8 fail=0
+ALL PASSED
+SUMMARY: total=7 match=7 fail=0
+ALL PASSED
+Lean parse:     113 ok, 0 failed, 0 timeout (>60s; fatal), 0 lean failure(s) (crash / nonzero exit without a printed verdict; fatal)
+ALL PASSED
+Total:          113
+ALL PASSED
+SUMMARY: total=113 same=108 diff=5 ocaml_fail=0 lean_fail=0
+[lean+libc] EXACT MATCH with ORACLE_LIBC (16/16 URI corpus)
+GATE PASS: all lane expectations pinned-green + baseline unchanged (16/16)
+Agreement tally: 213/213 compared (213 run, 0 oracle-side unobservable)
+SUMMARY: total=213 match=207 ub_match=6 ub_diff=0 reject_match=0 diff=0 mismatch=0 reject_diff=0 lean_fail=0 lean_crash=0 fuel=0 lean_error=0 lean_timeout=0 oracle_fail=0 oracle_timeout=0 oracle_inconsistent=0
+BASELINE OK (213 entries, exact match)
+test_address_space: SELFTEST OK (14 plants — P1 the discriminator's derived pre-fix observation, P2 missing file, P3 t
+test_address_space: OK (18 cases: LEAN = FORK through the shared codec at tops 64 32 8; every fork observation = its pinned row in expectations.txt)
+PASS memory access: 3 runs; primitive receipts, all ND constructors, erasure, draining; 8 instrument controls
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip/zd-r2-highbyte DIFF and zd-r2-crash-digit9 ORACLE_CRASH, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF, R7 zd-ta-alignas-huge-{sizeof,union-alignof,desugar} ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).
+Independent oracle: passed; {'semantic_agreement': 950, 'matching_failure': 37, 'reviewed_difference': 7, 'interface_agreement': 2}; .tmp/upstream-oracle-9as9389y/report.json
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}; .tmp/upstream-oracle-pstbhr85/report.json
+SUMMARY: total=2030 compared=1934 agree=1918 agree_nd=0 triaged=16 disagree=0 o2_agree=197 skip_gcc_compile=4 skip_gcc_stdout=2 skip_lean_crash=18 skip_lean_fail=14 skip_lean_timeout=11 skip_ub=47 triaged_addr=14 triaged_float=1 triaged_ub=1
+Baseline check: 0 regression(s), 0 improvement(s)
+gcc second-oracle lane OK
+```
+
+(The address-space SELFTEST line is cut at 120 characters.) The full gcc
+lane printed no "new file (not in baseline)" line (count 0): the ledger now
+has a row for every corpus file, F6's gap included. This branch's fixtures
+in the pristine gate and the gcc lane (verbatim, gcc lines cut by the lane
+itself):
+
+```
+918/996 semantic_agreement: immaculate/nolibc/zd-invalid-format-utf8-payload (pristine 0.0s, fork 0.1s)
+920/996 semantic_agreement: immaculate/nolibc/zd-ta-alignas-2p61-control (pristine 0.0s, fork 0.0s)
+921/996 matching_failure: immaculate/nolibc/zd-ta-alignas-huge-desugar (pristine 0.0s, fork 0.0s)
+922/996 matching_failure: immaculate/nolibc/zd-ta-alignas-huge-sizeof (pristine 0.0s, fork 0.0s)
+923/996 matching_failure: immaculate/nolibc/zd-ta-alignas-huge-union-alignof (pristine 0.0s, fork 0.0s)
+926/996 matching_failure: immaculate/nolibc/zd-z2m01-aligned-alloc-zero-nolibc (pristine 0.0s, fork 0.0s)
+959/996 matching_failure: immaculate/libc/zd-z2m01-aligned-alloc-zero-zero (pristine 0.2s, fork 0.2s)
+960/996 matching_failure: immaculate/libc/zd-z2m01-aligned-alloc-zero (pristine 0.2s, fork 0.3s)
+[352/2030] SKIP_UB  tests/immaculate/nolibc/zd-invalid-format-utf8-payload.c: (UB:{ub: "Invalid_format[caf\195
+[354/2030] SKIP_GCC_COMPILE  tests/immaculate/nolibc/zd-ta-alignas-2p61-control.c: (/home/dev/projects/cerberu
+[355/2030] SKIP_LEAN_FAIL  tests/immaculate/nolibc/zd-ta-alignas-huge-desugar.c: msg: "MerrOther "
+[356/2030] SKIP_GCC_COMPILE  tests/immaculate/nolibc/zd-ta-alignas-huge-sizeof.c: (/home/dev/projects/cerberus
+[357/2030] SKIP_GCC_COMPILE  tests/immaculate/nolibc/zd-ta-alignas-huge-union-alignof.c: (/home/dev/projects/c
+[360/2030] SKIP_LEAN_CRASH  tests/immaculate/nolibc/zd-z2m01-aligned-alloc-zero-nolibc.c: (exit 134) PANIC at 
+```
+
+No lane row moved beyond the hand-edits recorded in §7.3 and §8.
