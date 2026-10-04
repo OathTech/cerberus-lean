@@ -87,12 +87,55 @@ ALLOWLIST=(initial_core_run_state)
 # Enforcing by default since S2 (arc-2 charter).
 ENFORCE="${CERB_PURITY_ENFORCE:-1}"
 
+# strip_comments <file>: the file with `--` line comments and nested `/- -/`
+# block comments removed and newlines kept, so grep's line numbers are the
+# file's. String and char literals are copied VERBATIM: a forbidden token in a
+# literal is still a finding; only comments are exempt. Added at the lem
+# re-pin to 4e70bb5 (2026-10-04, [AGENT]; docs/2026-10-04_lem-repin-4e70bb5-record.md):
+# lem now carries the .lem author's comments into the Lean output, and
+# core_run.lem's comment "upstream mints the Load val_sym via `Symbol.fresh ()`"
+# matched the bare-fresh pattern. An unterminated block comment or any
+# stripper failure fails the gate (fail-closed). Plant-tested (record §5).
+strip_comments() {
+  python3 -c '
+import sys
+src = open(sys.argv[1], encoding="utf-8").read()
+out = []; depth = 0; i = 0; n = len(src)
+while i < n:
+    two = src[i:i+2]
+    if depth > 0:
+        if two == "/-": depth += 1; i += 2; continue
+        if two == "-/": depth -= 1; i += 2; continue
+        if src[i] == "\n": out.append("\n")
+        i += 1; continue
+    if two == "/-": depth += 1; i += 2; continue
+    if two == "--":
+        j = src.find("\n", i); i = n if j == -1 else j; continue
+    c = src[i]
+    if c == "\"":
+        j = i + 1
+        while j < n and src[j] != "\"":
+            j += 2 if src[j] == "\\" else 1
+        out.append(src[i:j+1]); i = j + 1; continue
+    if c == "\x27" and i + 2 < n and (src[i+1] == "\\" or src[i+2] == "\x27"):
+        j = src.find("\x27", i + 3 if src[i+1] == "\\" else i + 2)
+        j = n - 1 if j == -1 else j
+        out.append(src[i:j+1]); i = j + 1; continue
+    out.append(c); i += 1
+if depth != 0:
+    sys.exit("unterminated block comment in " + sys.argv[1])
+sys.stdout.write("".join(out))
+' "$1"
+}
+
+stripped=$(mktemp)
 findings=0
 for m in "${EXEC_MODULES[@]}"; do
   f="$GEN/$m.lean"
   # missing module = finding, not skip (fail-closed; arc-3 audit note —
   # the totality gate already counts MISSING and the two must agree)
   [[ -f "$f" ]] || { echo "check_exec_purity: MISSING $f"; findings=$((findings+1)); continue; }
+  strip_comments "$f" > "$stripped" || { echo "check_exec_purity: FAIL — comment stripper failed on $f (fail-closed)"; rm -f "$stripped"; exit 1; }
   while IFS= read -r line; do
     allowed=0
     for a in "${ALLOWLIST[@]}"; do
@@ -102,8 +145,9 @@ for m in "${EXEC_MODULES[@]}"; do
       echo "PURITY: ${line:0:160}"
       findings=$((findings + 1))
     fi
-  done < <(grep -nE "$FORBIDDEN" "$f" | sed "s|^|$m.lean:|" || true)
+  done < <(grep -nE "$FORBIDDEN" "$stripped" | sed "s|^|$m.lean:|" || true)
 done
+rm -f "$stripped"
 
 if [[ $findings -eq 0 ]]; then
   echo "check_exec_purity: CLEAN (${#EXEC_MODULES[@]} modules)"

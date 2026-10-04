@@ -67,10 +67,15 @@ moreLeanArgs = ["-DautoImplicit=false"]
 # lem-lean arc/linksem re-pin, 2026-09-30 ([USER 2026-09-30] "Great, go ahead
 # with the merge & repin"): Lean-backend/LemLib fixes, LemLib on Lean 4.32.2;
 # generated OCaml byte-identical. Evidence: docs/2026-09-30_lem-repin-77ad4fa-record.md.
+# lem-lean re-pin to 4e70bb5, 2026-10-04 ([USER 2026-10-04] "merge it. Then take
+# a look at lem-lean, which has implemented a bunch of QoL improvements"): output
+# niceness (layout, comments, mutual records as structures), backend hardening A/C,
+# the BEq instance lattice; generated OCaml byte-identical.
+# Evidence: docs/2026-10-04_lem-repin-4e70bb5-record.md.
 [[require]]
 name = "LemLib"
 git = "https://github.com/OathTech/lem-lean"
-rev = "77ad4facfc60814a4a3f5d09dc88168ca208b285"
+rev = "4e70bb506d962355b7120260d4d176aa2850dcc3"
 subDir = "lean-lib"
 
 [[lean_lib]]

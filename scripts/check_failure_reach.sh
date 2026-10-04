@@ -118,18 +118,23 @@ plant() {
 restore() { cp "$LF/generated/Core_aux.lean" "$P/lean_frontend/generated/Core_aux.lean"; }
 PLANT_REG="$REGISTER"
 # P1: a NEW failwithI inside a generated exec-closure definition (valueFromPexpr's catch-all arm),
-#     same line count so the compiler ranges of the real reach log still apply
-ln=$(grep -n '^def  valueFromPexpr ' "$P/lean_frontend/generated/Core_aux.lean" | head -1 | cut -d: -f1)
-[[ -n "$ln" ]] || { echo "  PLANT FAIL [P1 premise]: no 'def  valueFromPexpr ' line in generated/Core_aux.lean"; fails=$((fails+1)); }
+#     same line count so the compiler ranges of the real reach log still apply. Since the lem re-pin
+#     to 4e70bb5 (2026-10-04, [AGENT]; docs/2026-10-04_lem-repin-4e70bb5-record.md) the generated
+#     definitions are laid out over several lines: the arm is the one `| _ => none` line within the
+#     definition (the next 8 lines), asserted; the head match is whitespace-robust.
+ln=$(grep -nE '^def +valueFromPexpr ' "$P/lean_frontend/generated/Core_aux.lean" | head -1 | cut -d: -f1)
+[[ -n "$ln" ]] || { echo "  PLANT FAIL [P1 premise]: no 'def valueFromPexpr ' line in generated/Core_aux.lean"; fails=$((fails+1)); }
 python3 - "$P/lean_frontend/generated/Core_aux.lean" "$ln" <<'PY'
-import sys; p, ln = sys.argv[1], int(sys.argv[2]); L = open(p).read().split('\n')
-old = '|  _ =>        none'; assert old in L[ln-1], L[ln-1][:200]
-L[ln-1] = L[ln-1].replace(old, '|  _ => (failwithI  "PLANT-NEW-SITE" : Option (value))', 1); open(p, 'w').write('\n'.join(L))
+import re, sys; p, ln = sys.argv[1], int(sys.argv[2]); L = open(p).read().split('\n')
+arm = [i for i in range(ln - 1, min(ln + 8, len(L))) if re.fullmatch(r'\s*\|\s*_\s*=>\s*none\s*', L[i])]
+assert len(arm) == 1, 'P1 premise: the catch-all arm `| _ => none` of valueFromPexpr not found exactly once'
+L[arm[0]] = re.sub(r'none\s*$', '(failwithI  "PLANT-NEW-SITE" : Option (value))', L[arm[0]]); open(p, 'w').write('\n'.join(L))
 PY
 plant "P1 a new failwithI planted into generated valueFromPexpr" "NEW pure exec-closure site" "PLANT-NEW-SITE" "valueFromPexpr"
 restore
 # P2: a DEAD let-binding of a failure in a generated definition (the F1 shape) -> DISCARDABLE
-ln=$(grep -n '^def  valueFromPexprs ' "$P/lean_frontend/generated/Core_aux.lean" | head -1 | cut -d: -f1)
+ln=$(grep -nE '^def +valueFromPexprs ' "$P/lean_frontend/generated/Core_aux.lean" | head -1 | cut -d: -f1)
+[[ -n "$ln" ]] || { echo "  PLANT FAIL [P2 premise]: no 'def valueFromPexprs ' line in generated/Core_aux.lean"; fails=$((fails+1)); }
 python3 - "$P/lean_frontend/generated/Core_aux.lean" "$ln" <<'PY'
 import sys; p, ln = sys.argv[1], int(sys.argv[2]); L = open(p).read().split('\n')
 assert L[ln-1].rstrip().endswith(':='), L[ln-1][-60:]
@@ -171,7 +176,7 @@ PLANT_REG="$REGISTER"
 if python3 - "$SCRIPT_DIR" "$P/lean_frontend/generated/Formatted.lean" <<'PY'
 import re, sys; sys.path.insert(0, sys.argv[1]); import failure_census as fc
 p = sys.argv[2]; s = open(p).read()
-assert s.count('lem_if  natLtb  n (  0) then (failwithI  "showNonNegativeWithBasis expects') == 1, 'P6 premise: the lem_if arm of showNonNegativeWithBasis not found exactly once'
+assert len(re.findall(r'lem_if\s+natLtb\s+n\s+(?:\(\s*0\)|0)\s+then\s+\(failwithI\s+"showNonNegativeWithBasis expects', s)) == 1, 'P6 premise: the lem_if arm of showNonNegativeWithBasis not found exactly once'
 assert not re.search(r'(?<![\w.])if\s', fc.strip_comments(s)), 'P6 premise: Formatted.lean has a plain `if` token (the plant would be satisfiable by it)'
 open(p, 'w').write(re.sub(r'\blem_if\b', 'lem_iff', s))
 PY
@@ -182,10 +187,11 @@ restore_f Formatted.lean
 # P7: hack_lemFuel's failure sits in the continuation (second) lambda of `lemSeq` (register: TAIL); an
 #     unknown head `lemSeqX` in its place must read LAMBDA-BODY
 if python3 - "$P/lean_frontend/generated/Driver.lean" <<'PY'
-import sys; p = sys.argv[1]; s = open(p).read()
-old = '(lemSeq (fun _ =>  CerbDebug.print_debug_pure (  2)  ([] : List (domain))  (fun (u : Unit) =>  match u with |  () =>  "ENTERING Driver.hack" ))'
-assert s.count(old) == 1, 'P7 premise: the lemSeq head of hack_lemFuel not found exactly once'
-open(p, 'w').write(s.replace(old, '(lemSeqX' + old[len('(lemSeq'):]))
+import re, sys; p = sys.argv[1]; s = open(p).read()
+# whitespace/parenthesis-robust since the lem re-pin to 4e70bb5 (multi-line layout, atoms unparenthesised)
+pat = r'\(lemSeq(?=\s+\(fun _ =>\s+CerbDebug\.print_debug_pure\s+(?:\(\s*2\)|2)\s+\(\[\] : List (?:\(domain\)|domain)\)\s+\(fun \(u : Unit\) =>\s+match u with\s*\|\s*\(\) =>\s+"ENTERING Driver\.hack")'
+assert len(re.findall(pat, s)) == 1, 'P7 premise: the lemSeq head of hack_lemFuel not found exactly once'
+open(p, 'w').write(re.sub(pat, '(lemSeqX', s))
 PY
 then
   plant "P7 the lemSeq head of a registered TAIL continuation mis-shaped (lemSeqX)" "POSITION CLASS CHANGED" "hack_lemFuel" "live=LAMBDA-BODY register=TAIL"

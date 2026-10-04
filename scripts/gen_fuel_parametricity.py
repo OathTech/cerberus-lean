@@ -5,7 +5,7 @@ generated tree (fuel-parameter arc C1; pre-merge audit M1: the list must not
 be a static snapshot with an uncommitted generator).
 
 For every AMBIENT fuel wrapper in lean_frontend/generated/ — a line
-`def f <binders> [LemFuel] : T := f_lemFuel LemFuel.fuel` in a generated
+`def f <binders> [LemFuel] : T := f_lemFuel LemFuel.fuel` (head possibly over several lines) in a generated
 (non-seam) module — emit `example <binders> (n : Nat) : @f <args> ⟨n⟩ =
 @f_lemFuel <args> [⟨n⟩] n := rfl`, `⟨n⟩ n` on the right when the worker
 itself carries `[LemFuel]` (it passes the ambient on). Binders are read from
@@ -40,11 +40,14 @@ def wrappers():
         if b in seams:
             continue
         t = open(f).read()
-        for m in re.finditer(r'^def\s+(\w+)\s+((?:\{[^}]*\}\s*|\[[^\]]*\]\s*)*):\s*(.*?)\s*:=\s*(\w+)_lemFuel LemFuel\.fuel\s*$', t, re.M):
+        # The type may span lines (lem's layout engine breaks long heads since the
+        # re-pin to 4e70bb5, 2026-10-04 [AGENT]; record docs/2026-10-04_lem-repin-4e70bb5-record.md);
+        # it may not contain `:=`, so a match never crosses into another definition.
+        for m in re.finditer(r'^def\s+(\w+)\s+((?:\{[^}]*\}\s*|\[[^\]]*\]\s*)*):\s*((?:(?!:=)[\s\S])*?)\s*:=\s*(\w+)_lemFuel LemFuel\.fuel[ \t]*$', t, re.M):
             name, binders = m.group(1), m.group(2)
             if m.group(4) != name:
                 sys.exit(f"gen_fuel_parametricity: {b}: wrapper {name} applies {m.group(4)}_lemFuel — unexpected shape")
-            w = re.search(r'^\s*def\s+' + re.escape(name) + r'_lemFuel\s+(.*?)\(lemFuel : Nat\)', t, re.M)
+            w = re.search(r'^\s*def\s+' + re.escape(name) + r'_lemFuel\s+((?:(?!:=)[\s\S])*?)\(lemFuel : Nat\)', t, re.M)
             if not w:
                 sys.exit(f"gen_fuel_parametricity: {b}: no worker head for {name}")
             rows.append((b[:-5], name, binders, '[LemFuel]' in w.group(1)))

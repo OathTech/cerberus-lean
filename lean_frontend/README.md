@@ -47,8 +47,8 @@ its own authors (see the top-level README); the dated records in
 
 **Licensing.** The fork retains Cerberus's [LICENSE](../LICENSE) and its
 listed exceptions. The LemLib dependency includes translated OCaml AVL
-code with its own retained notices; consult Lem's [runtime NOTICE](https://github.com/OathTech/lem-lean/blob/77ad4facfc60814a4a3f5d09dc88168ca208b285/lean-lib/NOTICE.md) and
-[LICENSE](https://github.com/OathTech/lem-lean/blob/77ad4facfc60814a4a3f5d09dc88168ca208b285/LICENSE) at the pinned revision. Neither the complete dependency closure nor LemLib
+code with its own retained notices; consult Lem's [runtime NOTICE](https://github.com/OathTech/lem-lean/blob/4e70bb506d962355b7120260d4d176aa2850dcc3/lean-lib/NOTICE.md) and
+[LICENSE](https://github.com/OathTech/lem-lean/blob/4e70bb506d962355b7120260d4d176aa2850dcc3/LICENSE) at the pinned revision. Neither the complete dependency closure nor LemLib
 should be described as BSD-only.
 
 Who this is for:
@@ -98,7 +98,7 @@ git clone --branch mdd/cerberus-lean https://github.com/OathTech/cerberus-lean.g
 cd cerberus-lean
 opam switch create . ocaml-base-compiler.5.4.0 --no-switch --no-install
 # Keep this revision equal to lean_frontend/lakefile.toml.
-opam pin add --switch=. lem git+https://github.com/OathTech/lem-lean.git#77ad4facfc60814a4a3f5d09dc88168ca208b285 --yes
+opam pin add --switch=. lem git+https://github.com/OathTech/lem-lean.git#4e70bb506d962355b7120260d4d176aa2850dcc3 --yes
 opam install --switch=. --deps-only ./cerberus-lib.opam ./cerberus.opam --yes
 
 opam exec --switch=. -- make prelude-src

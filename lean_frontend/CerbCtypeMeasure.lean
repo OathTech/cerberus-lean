@@ -337,14 +337,12 @@ theorem digest_compare_eq_zero_iff (x y : String) :
     simp [String.lt_irrefl]
 
 /-- The `Eq0 Nat` instance the symbol instance uses for the number (LemLib's
-    `instEq0Nat_1`, which bottoms out in `defaultCompare` on `Ord Nat`). -/
+    `instEq0Nat_1`, whose `isEqual` is core's `==` on `Nat` since the BEq
+    lattice moved the `[Eq0 a] : BEq a` bridge below core's instance,
+    lem-lean 2026-10-03; before that it bottomed out in `defaultCompare`). -/
 theorem natEq0_iff (n1 n2 : Nat) : Lem_Basic_classes.isEqual n1 n2 = true ↔ n1 = n2 := by
-  show (match defaultCompare n1 n2 with | LemOrdering.EQ => true | _ => false) = true ↔ n1 = n2
-  unfold defaultCompare
-  cases h : compare n1 n2 with
-  | lt => have := Nat.compare_eq_lt.mp h; simp; omega
-  | eq => simp [Nat.compare_eq_eq.mp h]
-  | gt => have := Nat.compare_eq_gt.mp h; simp; omega
+  show (n1 == n2) = true ↔ n1 = n2
+  exact beq_iff_eq
 
 /-- The model's `Eq0 sym` instance (symbol.lem `symbolEqual`) is digest equality and
     number equality; the description is ignored. -/
