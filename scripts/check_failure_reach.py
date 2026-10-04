@@ -63,8 +63,36 @@ REACH = ('UNREACHABLE-BY-INVARIANT', 'REACHABLE', 'UNKNOWN')
 DEFAULT_REGISTER = Path(__file__).resolve().parent / 'failure_reach_register.txt'
 
 
-def msg_key(following):
-    return re.sub(r'\s+', ' ', following.strip())[:60]
+MSG_WINDOW = 60
+
+
+def msg_key(following, window=MSG_WINDOW):
+    return re.sub(r'\s+', ' ', following.strip())[:window]
+
+
+def disambiguate_key_groups(sites):
+    """Key groups (fix/failure-reach-key-groups 2026-10-04, [USER 2026-10-04] "agree 1-4" /
+    "Great, do it as proposed" on the lem re-pin 4e70bb5 pre-merge audit's A3): sites whose
+    60-char key (file/owner/token/msg/scope) coincides are told apart INSIDE THE GROUP ONLY by
+    lengthening the message window to the minimum W > 60 at which every site's message differs,
+    so a register row's key names ONE site and swapping two rows' classes with their seals is a
+    SEAL MISMATCH (selftest P8). Single-site keys keep the 60-char window. Deterministic (W is a
+    function of the group's messages only). Fail-closed: a group whose sites agree even on the
+    full whitespace-collapsed window the census records (`following_source`, 240 source chars)
+    cannot be keyed one-to-one -> loud FAIL naming the group."""
+    groups = {}
+    for s in sites:
+        groups.setdefault((s['file'], s['definition'], s['token'], s['msg'], s['scope']), []).append(s)
+    for k, g in groups.items():
+        if len(g) < 2: continue
+        fulls = [msg_key(s['following'], None) for s in g]
+        if len(set(fulls)) < len(fulls):
+            raise SystemExit(f"check_failure_reach: FAIL — key group cannot be disambiguated even by the full "
+                             f"recorded message window (fail-closed): {k[0]} {k[1]} {k[2]} «{k[3]}» scope={k[4]} "
+                             f"×{len(g)} at lines {', '.join(str(s['line']) for s in g)}")
+        w = next(w for w in range(MSG_WINDOW + 1, max(map(len, fulls)) + 1) if len({f[:w] for f in fulls}) == len(fulls))
+        for s, f in zip(g, fulls): s['msg'] = f[:w]
+    return sites
 
 
 def seal_of(row):
@@ -91,8 +119,8 @@ def live_sites(root, census):
         out.append({'file': s['file'], 'definition': s['definition'], 'token': s['token'],
                     'msg': msg_key(s['following_source']), 'scope': scope, 'position': r['cls'],
                     'line': s['line'], 'discardable': bool(s['generated'] and dead), 'let_names': names,
-                    'lexical': s.get('lexical_definition', s['definition'])})
-    return out
+                    'lexical': s.get('lexical_definition', s['definition']), 'following': s['following_source']})
+    return disambiguate_key_groups(out)
 
 
 def read_register(path):
@@ -138,7 +166,9 @@ HEADER = """# failure_reach_register.txt — THE REGISTER of the pure failure si
 # constant-dependency closure, not a path — a listed site may be dead code.
 #
 # Columns (TAB-separated): file  definition(kernel owner)  token  msg(first 60 chars after the
-#   token, whitespace-collapsed — the KEY with file/definition/token, multiset)  scope(EXEC |
+#   token, whitespace-collapsed — the KEY with file/definition/token/scope, multiset; where two or
+#   more sites share that key, their msg window is lengthened to the minimum that tells them
+#   apart, 2026-10-04)  scope(EXEC |
 #   UNRESOLVED-OWNER)  position(live classifier)  position_reviewed(TAIL | NON-TAIL/<kind>)
 #   reach(UNREACHABLE-BY-INVARIANT | REACHABLE | UNKNOWN)  need/invariant/witness  cite  note  seal
 # The seal is sha256(file|definition|token|msg|scope|position|position_reviewed|reach)[:16]: editing a
@@ -178,7 +208,7 @@ def emit(root, census, seed):
         prev = None
         for pool in (exact, prefix):
             if not pool: continue
-            pool.sort(key=lambda e: (0 if e[4] in (s['line'], s['line'] - 1, None) else 1, -len(e[3])))
+            pool.sort(key=lambda e: (0 if e[5].get('msg') == s['msg'] else 1, 0 if e[4] in (s['line'], s['line'] - 1, None) else 1, -len(e[3])))
             prev = pool[0][5]; seeds.remove(pool[0]); break
         row = {c: s.get(c, '') for c in SEALED}
         if prev:
@@ -248,7 +278,7 @@ def check(root, census, register):
     c_reach = Counter(r['reach'] for r in rows); c_scope = Counter(r['scope'] for r in rows)
     print(f"check_failure_reach: OK ({len(sites)} pure failure sites = the {len(rows)} register rows exactly "
           f"({c_scope.get('EXEC', 0)} in the exec dependency closure + {c_scope.get('UNRESOLVED-OWNER', 0)} unresolved-owner; "
-          f"key = file/owner/token/message, both directions); position classes unchanged; {n_dead} DISCARDABLE; "
+          f"key = file/owner/token/message, shared keys lengthened, both directions); position classes unchanged; {n_dead} DISCARDABLE; "
           f"reach UNREACHABLE-BY-INVARIANT={c_reach.get('UNREACHABLE-BY-INVARIANT', 0)} REACHABLE={c_reach.get('REACHABLE', 0)} "
           f"UNKNOWN={c_reach.get('UNKNOWN', 0)}; every row sealed; tally line consistent)")
     return 0

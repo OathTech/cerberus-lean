@@ -26,8 +26,10 @@
 #   RED DISCARDABLE; a register row's reach class edited without re-seal -> RED
 #   SEAL MISMATCH naming the row; a phantom (re-sealed) row -> RED STALE; the
 #   tally line edited -> RED; a registered lem_if arm / lemSeq continuation with its head mis-shaped
-#   -> RED POSITION CLASS CHANGED (P6/P7, lem re-pin 2026-09-30); classifier witnesses C1-C7 on
-#   synthetic sources; the unplanted register -> the OK line.
+#   -> RED POSITION CLASS CHANGED (P6/P7, lem re-pin 2026-09-30); the two Formatted.convert rows'
+#   reach classes swapped together with their seals -> RED SEAL MISMATCH (P8, key groups 2026-10-04);
+#   classifier witnesses C1-C7 on synthetic sources; key-group witness K1 (an undisambiguable group
+#   -> loud FAIL); the unplanted register -> the OK line.
 # --emit [SEED]: print a fresh register seeded from SEED (default: the current
 #   register; the first emission was seeded from the census evidence TSV
 #   sites231_classified.tsv) — new rows UNREVIEWED; review, then
@@ -197,6 +199,42 @@ then
   plant "P7 the lemSeq head of a registered TAIL continuation mis-shaped (lemSeqX)" "POSITION CLASS CHANGED" "hack_lemFuel" "live=LAMBDA-BODY register=TAIL"
 else echo "  PLANT FAIL [P7 premise]: the plant could not be applied (see above)"; fails=$((fails+1)); fi
 restore_f Driver.lean
+# P8 (fix/failure-reach-key-groups 2026-10-04, [USER 2026-10-04] "agree 1-4" / "Great, do it as
+#     proposed" on the lem re-pin 4e70bb5 pre-merge audit's A3; record
+#     lean_frontend/docs/2026-10-04_failure-reach-key-groups-record.md): the two Formatted.convert
+#     `* prec` rows (REACHABLE for the :874 arm, UNREACHABLE-BY-INVARIANT for :1063) shared one
+#     60-char key, so swapping their reach classes TOGETHER WITH their seals passed every check. Key
+#     groups now carry a lengthened message window; the same swap must be RED SEAL MISMATCH.
+cp "$REGISTER" "$SCRATCH/reg.p8"
+if python3 - "$SCRATCH/reg.p8" <<'PY8'
+import sys; p = sys.argv[1]; L = open(p).read().split('\n')
+ix = [i for i, l in enumerate(L) if len(f := l.split('\t')) == 12 and f[0] == 'lean_frontend/generated/Formatted.lean'
+      and f[1] == 'convert' and f[3].startswith('"TODO: Formatted.convert, * prec"')]
+assert len(ix) == 2, f'P8 premise: {len(ix)} Formatted.convert `* prec` rows, expected 2'
+a, b = L[ix[0]].split('\t'), L[ix[1]].split('\t')
+assert a[7] != b[7], f'P8 premise: both rows have reach {a[7]} (the swap would be vacuous)'
+for c in (7, 11): a[c], b[c] = b[c], a[c]   # reach class and seal, together
+L[ix[0]], L[ix[1]] = '\t'.join(a), '\t'.join(b); open(p, 'w').write('\n'.join(L))
+PY8
+then
+  PLANT_REG="$SCRATCH/reg.p8"; plant "P8 the two Formatted.convert rows' reach classes swapped WITH their seals (audit A3)" "SEAL MISMATCH" "Formatted.convert, * prec"
+else echo "  PLANT FAIL [P8 premise]: the plant could not be applied (see above)"; fails=$((fails+1)); fi
+PLANT_REG="$REGISTER"
+# K1: a key group whose sites agree even on the full recorded message window cannot be keyed
+#     one-to-one -> loud FAIL naming the group (synthetic sites; the check's own function)
+if out=$(python3 - "$SCRIPT_DIR" <<'PYK' 2>&1
+import sys; sys.path.insert(0, sys.argv[1]); import check_failure_reach as c
+s = lambda line, fol: {'file': 'F.lean', 'definition': 'd', 'token': 'failwithI', 'scope': 'EXEC', 'line': line,
+                       'following': fol, 'msg': c.msg_key(fol)}
+ok = c.disambiguate_key_groups([s(1, '"x' * 40 + ' A'), s(2, '"x' * 40 + ' B'), s(3, '"solo"')])
+assert [x['msg'] for x in ok] == ['"x' * 40 + ' A', '"x' * 40 + ' B', '"solo"'], [x['msg'] for x in ok]
+try: c.disambiguate_key_groups([s(1, '"same" rest'), s(2, '"same"   rest')])
+except SystemExit as e: print(e); sys.exit(0)
+print('no FAIL raised'); sys.exit(1)
+PYK
+) && grep -qF 'key group cannot be disambiguated' <<<"$out" && grep -qF 'at lines 1, 2' <<<"$out"; then
+  echo "  WITNESS OK   [K1 an undisambiguable key group -> FAIL naming it; a disambiguable one keyed minimally, a single site unchanged] $(cut -c1-160 <<<"$out")"
+else echo "  PLANT FAIL [K1 key-group witness]:"; sed 's/^/    /' <<<"$out"; fails=$((fails+1)); fi
 # C1-C7: classifier witnesses on synthetic generated-shaped sources (positive shapes and controls)
 mkdir -p "$SCRATCH/syn/lean_frontend/generated"
 if out=$(python3 - "$SCRIPT_DIR" "$SCRATCH/syn" <<'PY'
@@ -228,7 +266,7 @@ else
   echo "  PLANT FAIL [unplanted register is not green]:"; sed 's/^/      /' <<<"$out"; fails=$((fails+1))
 fi
 if (( fails == 0 )); then
-  echo "check_failure_reach: SELFTEST OK (7 plants with the declared message — a new site in a generated exec-closure definition, a DISCARDABLE dead let-binding, an unsealed class edit, a phantom row, an edited tally, mis-shaped lem_if heads over a registered arm, a mis-shaped lemSeq continuation — 7 classifier witnesses (lem_if arms/condition, lemSeq continuation, controls) and the unplanted register green)"; exit 0
+  echo "check_failure_reach: SELFTEST OK (8 plants with the declared message — a new site in a generated exec-closure definition, a DISCARDABLE dead let-binding, an unsealed class edit, a phantom row, an edited tally, mis-shaped lem_if heads over a registered arm, a mis-shaped lemSeq continuation, a same-owner reach+seal swap (A3) — 7 classifier witnesses (lem_if arms/condition, lemSeq continuation, controls), the key-group witness K1 and the unplanted register green)"; exit 0
 else
   echo "check_failure_reach: SELFTEST FAILED ($fails)"; exit 1
 fi
