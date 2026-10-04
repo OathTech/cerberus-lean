@@ -106,6 +106,15 @@ check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly 
 
 (The PLANT/WITNESS lines are cut at the selftest's own 160/230-column display limit.)
 
-Not done: LADDER row 11 still says "plants five cases", which was already stale before
-this change (7 plants). VALIDATION's gate row was updated. LADDER was left for the next
-LADDER pass.
+LADDER row 11 (which still said "plants five cases", already stale before this change at
+7 plants) was corrected in the follow-up commit 44c81506b on this branch ([USER 2026-10-04]
+"approve (1) / (2)"), with the current reach counts 172/40/21; the VALIDATION gate row's
+counts were corrected to match in the audit-fix commit.
+
+Pre-merge audit (fresh read-only reviewer, range ae48126e5..44c81506b, 2026-10-04): no
+correctness or trust findings; all seven checks CONFIRMED-OK (12-row mapping re-derived from
+the generated sources; diff scope; key-lengthening logic incl. StopIteration and collision
+analysis; --emit seeding; P8/K1 non-vacuous; no fail-open). Documentation findings 1–2 (this
+paragraph; the VALIDATION counts) fixed. Informational, not fixed here [AGENT]: the
+need/cite/note columns are outside the seal (pre-existing; a text-only swap is not gated),
+and the TODO(2) need text cites the stale line :490 (now Formatted.lean:874).
