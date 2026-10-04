@@ -17,11 +17,26 @@ pin, or a pin whose function is gone, is RED). Measured wrappers
 (`f_lemFuel (t.lemSize x) …`) are not ambient and are not listed — their
 fuel-freedom is pinned by their sufficiency obligations instead.
 
+Shape cross-check (pre-merge audit A5 of the lem re-pin to 4e70bb5,
+2026-10-04 [AGENT]; docs/2026-10-04_lem-repin-4e70bb5-pre-merge-audit.md):
+the wrapper regex is literal about the right-hand side (`f_lemFuel LemFuel.fuel`,
+one space, at end of line) and about the head (`^def`), so a wrapper laid out
+differently was silently NOT counted (audit plants G2 RHS broken over lines,
+G3 double space, G6 `@[inline] def`). Every `LemFuel.fuel` token outside
+comments (failure_census.strip_comments; strings kept, so such a token in a
+string is counted too) of a non-seam generated module must lie inside the
+right-hand side of a counted wrapper, and every counted wrapper must hold one;
+otherwise FAIL naming file:line. Plant-tested by --selftest.
+
 Usage:
-  gen_fuel_parametricity.py --emit    print the Part 1 block (paste into the test)
-  gen_fuel_parametricity.py --check   compare the tree's wrapper set with the test's pins; exit 1 on drift
+  gen_fuel_parametricity.py --emit      print the Part 1 block (paste into the test)
+  gen_fuel_parametricity.py --check     compare the tree's wrapper set with the test's pins; exit 1 on drift
+  gen_fuel_parametricity.py --selftest  plants on scratch copies of the generated tree, then --check on the real one
 """
-import re, sys, os, glob
+import re, sys, os, glob, shutil, tempfile
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from failure_census import strip_comments
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 LF = os.path.join(ROOT, 'lean_frontend')
@@ -31,15 +46,23 @@ def seam_names():
     with open(os.path.join(LF, 'handwritten_copy.manifest')) as fh:
         return {l.strip() for l in fh if l.strip() and not l.startswith('#')}
 
-def wrappers():
+def wrappers(gen=os.path.join(LF, 'generated')):
     """(module, name, wrapper-binders, worker-carries-fuel) for every ambient wrapper."""
     rows = []
     seams = seam_names()
-    for f in sorted(glob.glob(os.path.join(LF, 'generated', '*.lean'))):
+    for f in sorted(glob.glob(os.path.join(gen, '*.lean'))):
         b = os.path.basename(f)
         if b in seams:
             continue
         t = open(f).read()
+        try:
+            clean = strip_comments(t)
+        except ValueError as e:
+            sys.exit(f"gen_fuel_parametricity: FAIL — {b}: comment stripper: {e} (fail-closed)")
+        # Shape cross-check (A5): the tolerant candidates are all `LemFuel.fuel`
+        # tokens outside comments; each must sit in a counted wrapper's RHS.
+        cands = [c.start() for c in re.finditer(r"(?<![\w.'])LemFuel\.fuel(?![\w'])", clean)]
+        spans = []
         # The type may span lines (lem's layout engine breaks long heads since the
         # re-pin to 4e70bb5, 2026-10-04 [AGENT]; record docs/2026-10-04_lem-repin-4e70bb5-record.md);
         # it may not contain `:=`, so a match never crosses into another definition.
@@ -51,6 +74,15 @@ def wrappers():
             if not w:
                 sys.exit(f"gen_fuel_parametricity: {b}: no worker head for {name}")
             rows.append((b[:-5], name, binders, '[LemFuel]' in w.group(1)))
+            spans.append((name, m.start(4), m.end()))
+        line = lambda k: t.count('\n', 0, k) + 1
+        stray = [k for k in cands if not any(a <= k < e for _, a, e in spans)]
+        empty = [(nm, a) for nm, a, e in spans if not any(a <= k < e for k in cands)]
+        if stray or empty:
+            msg = [f"{b}:{line(k)}: `LemFuel.fuel` outside the right-hand side of any counted wrapper (a wrapper in a shape the strict pattern does not read?)" for k in stray]
+            msg += [f"{b}:{line(a)}: counted wrapper {nm} has no `LemFuel.fuel` outside comments" for nm, a in empty]
+            sys.exit("gen_fuel_parametricity: FAIL — wrapper shape cross-check: tolerant candidates "
+                     f"({len(cands)}) != strictly counted wrappers ({len(spans)}) in {b}:\n  " + "\n  ".join(msg))
     if len(rows) < 10:
         sys.exit(f"gen_fuel_parametricity: only {len(rows)} wrappers found — is lean_frontend/generated regenerated? (vacuity guard)")
     return rows
@@ -87,24 +119,90 @@ def pinned():
     t = open(TEST).read()
     return set(re.findall(r'^example.*?:\s*@(\w+)(?:\s+[^⟨]*)?⟨n⟩\s*=\s*@\1_lemFuel\b', t, re.M))
 
+def check(gen=os.path.join(LF, 'generated')):
+    rows = wrappers(gen)
+    tree = {r[1] for r in rows}
+    pins = pinned()
+    missing = sorted(tree - pins); stale = sorted(pins - tree)
+    if missing or stale:
+        if missing:
+            print("gen_fuel_parametricity: FAIL — fuel'd wrapper(s) in the tree with NO parametricity pin in TotalityProofTest.lean: " + ', '.join(missing))
+        if stale:
+            print("gen_fuel_parametricity: FAIL — pin(s) in TotalityProofTest.lean with no wrapper in the tree: " + ', '.join(stale))
+        print("  regenerate Part 1: scripts/gen_fuel_parametricity.py --emit")
+        sys.exit(1)
+    print(f"gen_fuel_parametricity: OK ({len(tree)} ambient fuel wrappers in the generated tree = the {len(pins)} pins of TotalityProofTest.lean Part 1, both directions)")
+
+# (name, text appended to a scratch copy of Driver.lean, substring the FAIL must carry)
+PLANTS = [
+    ('G1 new multi-line wrapper (strict pattern)',
+     'def plantG1_lemFuel (lemFuel : Nat) : Nat := 0\ndef plantG1 [LemFuel] :\n    Nat :=\n  plantG1_lemFuel LemFuel.fuel\n',
+     "NO parametricity pin in TotalityProofTest.lean: plantG1"),
+    ('G2 RHS broken over lines',
+     'def plantG2_lemFuel (lemFuel : Nat) : Nat := 0\ndef plantG2 [LemFuel] : Nat :=\n  plantG2_lemFuel\n    LemFuel.fuel\n',
+     "outside the right-hand side of any counted wrapper"),
+    ('G3 double space in the RHS',
+     'def plantG3_lemFuel (lemFuel : Nat) : Nat := 0\ndef plantG3 [LemFuel] : Nat := plantG3_lemFuel  LemFuel.fuel\n',
+     "outside the right-hand side of any counted wrapper"),
+    ('G6 attribute before def',
+     'def plantG6_lemFuel (lemFuel : Nat) : Nat := 0\n@[inline] def plantG6 [LemFuel] : Nat := plantG6_lemFuel LemFuel.fuel\n',
+     "outside the right-hand side of any counted wrapper"),
+    ('G7 RHS in parentheses',
+     'def plantG7_lemFuel (lemFuel : Nat) : Nat := 0\ndef plantG7 [LemFuel] : Nat := plantG7_lemFuel (LemFuel.fuel)\n',
+     "outside the right-hand side of any counted wrapper"),
+    ('G8 counted wrapper inside a block comment',
+     'def plantG8_lemFuel (lemFuel : Nat) : Nat := 0\n/-\ndef plantG8 [LemFuel] : Nat := plantG8_lemFuel LemFuel.fuel\n-/\n',
+     "counted wrapper plantG8 has no `LemFuel.fuel` outside comments"),
+]
+
+def selftest():
+    import io, contextlib
+    gen = os.path.join(LF, 'generated')
+    drv = os.path.join(gen, 'Driver.lean')
+    if not os.path.isfile(drv):
+        sys.exit("gen_fuel_parametricity: SELFTEST FAILED — no generated/Driver.lean to plant on")
+    print("gen_fuel_parametricity: SELFTEST — planting on scratch copies of generated/Driver.lean (loud plant banner; nothing in the tree is touched)")
+    fail = 0
+    work = tempfile.mkdtemp(prefix='fuelparam-plant.')
+    try:
+        for name, text, needle in PLANTS + [('control: unplanted scratch copy', '', None)]:
+            sg = os.path.join(work, 'gen'); shutil.rmtree(sg, ignore_errors=True); os.mkdir(sg)
+            for f in glob.glob(os.path.join(gen, '*.lean')):
+                if os.path.basename(f) != 'Driver.lean':
+                    os.symlink(f, os.path.join(sg, os.path.basename(f)))
+            with open(drv) as src, open(os.path.join(sg, 'Driver.lean'), 'w') as dst:
+                dst.write(src.read() + '\n' + text)
+            buf = io.StringIO(); rc = 0
+            try:
+                with contextlib.redirect_stdout(buf):
+                    check(sg)
+            except SystemExit as e:
+                rc = 1; buf.write(str(e.code) if e.code not in (None, 1) else '')
+            out = buf.getvalue()
+            ok = (rc == 0 and 'OK (14 ' in out) if needle is None else (rc == 1 and needle in out)
+            first = next((l for l in out.splitlines() if (needle or 'OK') in l), out.splitlines()[0] if out else '')
+            print(f"  PLANT {'OK  ' if ok else 'FAIL'} [{name}] rc={rc} -> {first.strip()}")
+            if not ok:
+                print('    ' + out.replace('\n', '\n    '), file=sys.stderr); fail = 1
+    finally:
+        shutil.rmtree(work)
+    print("  REVERTED (real tree):")
+    try:
+        check()
+    except SystemExit:
+        fail = 1
+    if fail:
+        sys.exit("gen_fuel_parametricity: SELFTEST FAILED")
+    print(f"gen_fuel_parametricity: SELFTEST OK ({len(PLANTS)} plants with the declared FAIL, unplanted control OK, real tree OK)")
+
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else ''
-    rows = wrappers()
     if mode == '--emit':
-        print(emit(rows)); return
+        print(emit(wrappers())); return
     if mode == '--check':
-        tree = {r[1] for r in rows}
-        pins = pinned()
-        missing = sorted(tree - pins); stale = sorted(pins - tree)
-        if missing or stale:
-            if missing:
-                print("gen_fuel_parametricity: FAIL — fuel'd wrapper(s) in the tree with NO parametricity pin in TotalityProofTest.lean: " + ', '.join(missing))
-            if stale:
-                print("gen_fuel_parametricity: FAIL — pin(s) in TotalityProofTest.lean with no wrapper in the tree: " + ', '.join(stale))
-            print("  regenerate Part 1: scripts/gen_fuel_parametricity.py --emit")
-            sys.exit(1)
-        print(f"gen_fuel_parametricity: OK ({len(tree)} ambient fuel wrappers in the generated tree = the {len(pins)} pins of TotalityProofTest.lean Part 1, both directions)")
-        return
+        check(); return
+    if mode == '--selftest':
+        selftest(); return
     sys.exit(__doc__)
 
 if __name__ == '__main__':

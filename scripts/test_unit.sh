@@ -212,8 +212,14 @@ fi
 # 64 `∀ n, @f ⟨n⟩ = f_lemFuel n` examples of TotalityProofTest.lean Part 1,
 # both directions (a new fuel'd function without a pin is RED; regenerate
 # with scripts/gen_fuel_parametricity.py --emit). Fail-closed (vacuity
-# guard inside the script).
+# guard inside the script). Its --selftest (6 plants, incl. the lem-repin-4e70bb5
+# pre-merge audit's G2/G3/G6 wrapper shapes the strict pattern does not read,
+# caught by the tolerant `LemFuel.fuel` cross-check; 2026-10-04) runs first.
 GENPIN_PY="$(dirname "$PURITY_SH")/gen_fuel_parametricity.py"
+if ! python3 "$GENPIN_PY" --selftest; then
+    echo "test_unit: fuel-parametricity pin-set SELFTEST FAILED"
+    exit 1
+fi
 if ! python3 "$GENPIN_PY" --check; then
     echo "test_unit: fuel-parametricity pin-set check FAILED"
     exit 1
