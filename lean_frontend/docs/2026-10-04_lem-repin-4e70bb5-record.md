@@ -253,3 +253,15 @@ no Lean-vs-oracle disagreement to report.
 - **Not done here.** Cache-disabled OCaml validation (`DUNE_CACHE=disabled --force`) was not run: the generated OCaml
   is byte-identical and no build rule changed. Tier B rows other than B5/B7/B10 and the pre-merge audit are also
   outstanding.
+
+## Addendum: clean Tier A at `158ac1f5b`
+
+Tier A was rerun on the committed docs head `158ac1f5b` with nothing else in the tree, local lem `4e70bb5` first on
+`PATH` (`release.py --mode fast`, evidence `.tmp/release/repin-4e70bb5-tierA-3`). Verbatim:
+
+```
+fast: passed; 17/17 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+```
+
+Every row's summary lines equal those quoted in §7 (scripted comparison of the A2–A13 stdouts).
