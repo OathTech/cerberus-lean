@@ -39,7 +39,9 @@ check_fork_drift: OK — layer 1: 86 oracle-surface files = manifest (set, C-loc
 ## 2. Generated Lean: what changed, by cause
 
 All 170 lem-generated files of the 219 differ. The 49 hand-written copies are unchanged, except
-`CerbCtypeMeasure.lean` (§3). The text grows from 39,604 to 83,664 lines (3.63 to 4.17 MB) over the 170 files.
+`CerbCtypeMeasure.lean` (§3). The text grows from 39,603 to 83,663 lines (3.63 to 4.17 MB) over the 170 files
+(corrected from "39,604 to 83,664", an off-by-one in the original tally: pre-merge audit A4, §9; the new total was
+re-counted independently at the audit fix, the old one is the audit's count).
 `diff -r` counts 98,875 changed lines. These counts are derived (scripted tallies), not quoted.
 
 **Method.** An instrument (scratch, not committed) compares each pair of files as token streams, after:
@@ -58,7 +60,7 @@ with it. Result: **167 files equal under the normalisation; 3 residual (`AilSynt
 | Printer cleanup (S3-B) | redundant parentheses dropped; `open` lines merged; adjacent implicit binders merged; the garbled `Â` (lexer Latin-1 reading of `§`) 472 → 0 occurrences |
 | Comments kept (S1) | the `.lem` authors' comments carried into the output; the `/- removed value specification -/` placeholders 1,477 → 0; `/-` openers 5,236 → 4,960 |
 | Records in mutual/recursive blocks as `structure`s (S2) | the only token-level change: `AilSyntax.statement` and `Cabs.specifiers` become `structure`s (`^structure` 55 → 57, `^inductive` 295 → 293). Their hand-emitted `@[inline] def T.field` accessors become projections with the same names. Generated construction `statement.mk a b c d` becomes `{ loc := …, desug_info0 := …, attrs := …, node := … }` (`AilSyntax`), and the positional update in `AilSyntaxAux` becomes `{ stmt with desug_info0 := … }` |
-| BEq instance lattice | no generated-text change. LemLib's `[Eq0 a] : BEq a` bridge moved below core's `[DecidableEq a] : BEq a`, so `==` at base types now ELABORATES to core's instance. A probe against this build (`#synth BEq Nat` / `Int` / `String`) printed `instBEqOfDecidableEq` three times. lem-lean's census counts 675 Cerberus declarations changed, all explained by the switch |
+| BEq instance lattice | no generated-text change. LemLib's `[Eq0 a] : BEq a` bridge moved below core's `[DecidableEq a] : BEq a`, so `==` at base types now ELABORATES to core's instance. A probe against this build (`#synth BEq Nat` / `Int` / `String`) printed `instBEqOfDecidableEq` three times. lem-lean's census counts 675 Cerberus declarations changed, all explained by the switch. That census ran on cerberus `51a7402ce`'s tree, not re-run at this re-pin; `51a7402ce..9e63218bc` adds no instance/`Eq0`/`isEqual`/`BEq`/`DecidableEq` declaration (§9, A4) |
 | Backend hardening A/C | no Cerberus generated-text change (lem-lean record: neither consumer has a field in the affected classes). Package C deletes LemLib definitions; none is referenced in `lean_frontend/` (grep, 0 hits) |
 | Instance priorities | unchanged: `(priority := 500)` 1,044 → 1,044, `(priority := low)` 99 → 99 |
 
@@ -129,8 +131,10 @@ generalisation. Each was plant-tested on scratch copies, with the evidence below
      (`| none => 1`, REACHABLE) and 494 (`| none => /- STD §… -/ 6`, UNREACHABLE-BY-INVARIANT) map to new lines 874
      and 1063, which have the same arms.
    - Result: every column except `msg` and `seal` is unchanged as a multiset (scripted diff, empty), and the header
-     and tally line are identical. 154 of the 233 rows keep their message text exactly; the others differ by spacing
-     or parentheses only and were matched by the seed key.
+     and tally line are identical. 154 of the 233 rows keep their message text exactly. Of the 68 matched by the
+     seed's `loose` key, 60 differ by spacing or parentheses only; 8 differ beyond that in the trailing context
+     after the failure message (corrected per pre-merge audit A4; list in §9). The 40-character `loose` key
+     absorbed those differences, and each pair's review columns match, so the carry-over stands.
    - The live classifier reports every position class unchanged, so `scripts/failure_position.py` needed no change:
      no new shapes.
    - Not changed (finding F2): `need`/`cite` texts that quote generated LINE numbers (e.g. `Driver.lean:575`,
@@ -265,3 +269,73 @@ Source unchanged: True. Complete tier selection: True.
 ```
 
 Every row's summary lines equal those quoted in §7 (scripted comparison of the A2–A13 stdouts).
+
+## 9. Pre-merge audit follow-ups
+
+The pre-merge audit (`docs/2026-10-04_lem-repin-4e70bb5-pre-merge-audit.md`, verdict MERGEABLE WITH FIXES) was
+approved in scope by [USER 2026-10-04] "1 / 2 approved". A worker [AGENT] fixed it on branch
+`audit/lem-repin-4e70bb5`. No build ran: every script ran directly on a copy of the arc worktree's
+`lean_frontend/generated` at `31732f750`, which the audit showed byte-identical to a `4e70bb5` regeneration. Each
+plant ran on scratch copies. Decisions in this section are [AGENT].
+
+- **A1 (MEDIUM), A2 (LOW): `scripts/check_exec_purity.sh`.**
+  - `FORBIDDEN` is now matched over the whole comment-stripped text, so a line break inside an application no
+    longer hides it.
+  - Outside comments and literals, the stripper refuses, naming file, line and construct, any lexeme it does not
+    model: `r"`/`r#…"`, `!"` and `«`. An unterminated string literal is now a FAIL too.
+  - A new `--selftest` holds 17 plants, among them the audit's Q22, Q23, Q13, Q14, Q19 and Q17 and this record's
+    §4.1 P1–P5. `test_unit.sh` runs it before the gate.
+  - Measurement: none of the refused lexemes occurs in code in the 11 exec modules. Over all 219 generated files
+    they occur only in hand-written copies (`!"`, 11 files) and in `Ctype.lean:583` (`«`); both are outside the
+    gate's scope.
+- **A5 (LOW, pre-existing): `scripts/gen_fuel_parametricity.py`.**
+  - Every `LemFuel.fuel` token outside comments in a non-seam generated module must lie in the right-hand side of a
+    strictly counted wrapper, and every counted wrapper must hold one. Otherwise the check FAILs, naming file and
+    line.
+  - A new `--selftest` holds 6 plants: G1, the audit's G2/G3/G6, G7 `(LemFuel.fuel)`, and G8, a counted wrapper
+    inside a comment. `test_unit.sh` runs it before `--check`. Today's count is still 14.
+- **A3 (LOW): a register key collision, recorded and not changed.**
+  - Rows 245 and 246 of `scripts/failure_reach_register.txt` have the identical key `Formatted.lean` / `convert` /
+    `failwithI` / `"TODO: Formatted.convert, * prec" : Nat) /- TODO -/ | none =` / `EXEC`, and identical position
+    classes (`LET-BOUND`, `NON-TAIL/LET-BOUND`).
+  - The rows stand for two different source arms:
+    - Row 245 is `REACHABLE`. It is `Formatted.lean:874`, the top-level `let prec` arm (`| none => 1;`), witnessed
+      by `printf_star_prec.c` (`%.*d`).
+    - Row 246 is `UNREACHABLE-BY-INVARIANT`. It is `Formatted.lean:1063`, the `CS_f` arm
+      (`| none => /- STD §7.21.6.1#8 -/ 6;`), which `:874` dominates: `printf_star_prec_f.c` reports `:874`'s
+      message.
+  - Both lines were re-read in the tree at the fix. Before the re-pin, the 60-character windows differed
+    (`| none => 1 ; let a` / `| none => /- STD Â§`).
+  - The gate matches rows to sites as a multiset on that key. The seal covers each row's own columns but does not
+    bind it to a source line. Exchanging the two rows' `reach` together with their seals (and their `need`/`cite`/
+    `note`) therefore passes every check. **Such a swap is not detectable today.**
+  - The register has 6 key groups with 2 rows each (12 rows). This one is the only group whose rows differ in reach
+    class.
+  - **Proposal, for operator decision (not implemented):** within a key group of multiplicity > 1 only, extend
+    `msg_key`'s window past 60 characters until the members' windows differ. Here they would differ within the
+    `| none =` arm, at `> 1;` vs `> /- STD`.
+    - The seal formula and the columns stay the same.
+    - The extension is content-anchored, not an ordinal, so a reorder of the arms by lem does not silently
+      re-associate the claims.
+    - Cost: at most the 12 rows of the 6 groups get a longer `msg` and a recomputed seal (`--reseal`). This is a
+      review-visible register change, and every other row is byte-identical.
+    - A group whose members never become distinct (identical message and context) stays a multiset, and is safe
+      only while its rows' reviews are identical. Today that holds for 3 of the other 5 groups. The other two
+      (`decode_character_constant_aux`, `sizeof_ity`) share a reach class and differ in `need`/`note` text only.
+- **A4 (INFO): corrections**, applied in place above and in the consumer note.
+  - §2's line totals were off by one. They now read 39,603 → 83,663. 83,663 was re-counted at the fix (170
+    lem-generated files, `\n` count); 39,603 is the audit's count, because the `77ad4fa` tree is not at hand.
+  - §2's 675-declaration census ran on cerberus `51a7402ce`, not at this re-pin. The audit checked by grep that
+    `51a7402ce..9e63218bc` (6 `.lem`/`.lean` files) adds no instance/`Eq0`/`isEqual`/`BEq`/`DecidableEq`
+    declaration. The fix re-ran the grep: the one hit is a comment line in `CerbFloat.lean`
+    ("…`NumMult` instance…"), not a declaration.
+  - §4.4: 60 of the 68 seed-matched rows differ by spacing or parentheses only, after comparing the common
+    normalised prefix. The fix recomputed this, and the result equals the audit's. The 8 that differ beyond that
+    are `to_pure_lemFuel` (`to_pure Eexcluded`), `step_action` ×2, `process_impl_proc` ×3,
+    `is_signed_or_unsigned_aux` and `foldl2`. In each, only the context after the failure message's closing type
+    ascription differs (for example `…action_step) | All` → `…action_step) /- th`).
+  - Consumer note: "record §5" corrected to §4. The `sym` digest is not one of the `rfl` bridges. The `Eq0 String`
+    instance involved is cerberus's model instance (`Symbol.lean:81`,
+    `isEqual x y := CerberusFresh.digest_compare x y == (0 : Int)`), not LemLib's base `instEq0String`. Its agreement
+    with equality is the propositional theorem `CerbCtypeMeasure.digest_compare_eq_zero_iff`. The LemLib `rfl`
+    bridges (lem-lean `lean-lib/LemLibTheorems.lean:506-509`, read at the fix) cover the base instances only.

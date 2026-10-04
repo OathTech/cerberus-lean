@@ -28,12 +28,17 @@ both.
 ## 1. The BEq instance lattice: `==` at base types is core's (proofs WILL break)
 
 LemLib's `[Eq0 a] : BEq a` bridge now sits below core's `[DecidableEq a] : BEq a`. Generated `==` at `Nat`, `Int`,
-`String`, `Bool`, `Char`, `Unit` and the abbreviations of them (`aid`, `thread_id`, `allocation_id`, `sym`'s
-digest, …) now elaborates to **core's** `instBEqOfDecidableEq`, not `@instBEqOfEq0 T instEq0T`. The two are equal
-(`bridge_<T>_is_core`, by `rfl`), so behaviour is unchanged, but the TERMS differ: `show`/`change` to the old
+`String`, `Bool`, `Char`, `Unit` and the abbreviations of them (`aid`, `thread_id`, `allocation_id`, …) now
+elaborates to **core's** `instBEqOfDecidableEq`, not `@instBEqOfEq0 T instEq0T`. For LemLib's base instances the two
+are equal (`bridge_<T>_is_core`, by `rfl`), so behaviour is unchanged, but the TERMS differ. `sym`'s digest is the
+exception: its `Eq0 String` instance is cerberus's model instance (`Symbol.lean:81`,
+`isEqual x y := CerberusFresh.digest_compare x y == (0 : Int)`), and its agreement with equality is the
+propositional theorem `CerbCtypeMeasure.digest_compare_eq_zero_iff`, not an `rfl` bridge (corrected per the
+pre-merge audit A4, record §9). In both cases: `show`/`change` to the old
 comparator body no longer matches, and lemma statements that name the bridge stop matching syntactically
 (`rw`/`simp only` with them stop firing). lem-lean's census counts 675 changed Cerberus declarations, all explained
-by the instance switch.
+by the instance switch. That census ran on cerberus `51a7402ce`'s tree; `51a7402ce..9e63218bc` adds no instance or
+equality declaration (grep; record §9).
 
 cerberus-lean needed exactly one edit, lem-lean's drafted patch (verbatim):
 `CerbCtypeMeasure.natEq0_iff` now reads `show (n1 == n2) = true ↔ n1 = n2; exact beq_iff_eq`.
@@ -85,7 +90,7 @@ consequences for proofs:
 - **Inaccessible hygienic names may be renumbered** (`…._hyg.N` helpers in `Cabs` and elsewhere). Nothing accessible
   changes.
 - **Textual quotes of generated code** (comments, docs, tests that grep the generated files) go stale. cerberus-lean
-  had three such instruments (record §5). Line numbers in `generated/*.lean` all moved: re-derive any `File.lean:N`
+  had three such instruments (record §4). Line numbers in `generated/*.lean` all moved: re-derive any `File.lean:N`
   citation.
 
 ## 4. LemLib deletions (backend hardening, package C)
