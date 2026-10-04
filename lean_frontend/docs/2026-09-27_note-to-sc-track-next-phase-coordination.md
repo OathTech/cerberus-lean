@@ -60,6 +60,7 @@ branch · expected landing. Append-only; strike when landed.
 |---|---|---|---|---|
 | 2026-09-29 | SC | S1 bounded step API: new SC step/lifecycle definitions in `driver.lem` (and, as needed, `core_run.lem` / `core_reduction.lem` / `core_run_aux.lem`), added alongside the unchanged sequential `drive`; no change to upstream-supported behaviour | `arc/sc-s1-*` (sub-slices named in the S1 charter) | per sub-slice; charter first |
 | 2026-09-30 | next-phase (bug-hunt fixes) | `Main.lean` runtime resolution (`--runtime`/`CERB_INSTALL_PREFIX`) and Cabs-import refusals (library-location, non-UTF-8), `CerbLocation.isLibraryLocation` docs, batch `ub:` byte printing, every harness passing the runtime to the Lean driver (`scripts/common.sh` + direct sites), new row-1 checks, VALIDATION/CONTRACT N1–N3; no `.lem` or SC-surface change | `arc/bug-hunt-fixes` | after the full ladder + pre-merge audit |
+| 2026-10-04 | next-phase (lem re-pin) | the lem pin (Lake rev, manifests, fork-drift `lem-pin`, the shared switch, `deps/lem-pinned`) moves `77ad4fa` → `4e70bb5`; generated OCaml byte-identical; generated Lean re-laid-out (statement/specifiers as structures; BEq at base types is core's); `natEq0_iff` proof; purity / fuel-parametricity gate scripts | `arc/lem-repin-4e70bb5` | landing now (SC session notified before the switch moved) |
 
 ## What we ask of you
 
