@@ -556,7 +556,8 @@ by a cited re-record.
   `tests/multi_tu_tray/README.md`):** `multi_tu_tray/node` — pristine does
   not terminate (`Ctype_aux.are_compatible` recurses forever on a
   self-referential struct defined in two TUs, draft 37; rc 124 at the lane's
-  30 s bound — the ONLY pristine-side incomplete the register admits). The
+  30 s bound — one of the two pristine-side incompletes the register admits, with
+  `coverage/alignas/alignas-001`, where pristine also hangs (tray 47)). The
   fork's `are_compatible` terminates (draft 37's assumed-compatible set), so
   the fork reaches `PEmemberof(struct)`'s exact-tag guard, which is upstream's
   text: `Error {msg: "ill-formed program: \`PEmemberof(struct) ==> mismatched
