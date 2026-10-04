@@ -7,7 +7,7 @@ downstream.)
 
 Current-state reconciliation: 2026-09-25 at Cerberus
 `bb487dda7c56981e76d67f53ae16e874cfe5ed61` and Lem
-`67ec5de70e02e280bb348a4ba826696b76116732` (the Lem pin has since moved to `77ad4facfc60814a4a3f5d09dc88168ca208b285` by a functional re-pin, generated OCaml byte-identical: [re-pin record](docs/2026-09-30_lem-repin-77ad4fa-record.md)). The September 5 master plan
+`67ec5de70e02e280bb348a4ba826696b76116732` (the Lem pin has since moved to `4e70bb506d962355b7120260d4d176aa2850dcc3` by functional re-pins (via `77ad4fa`), generated OCaml byte-identical at each: [re-pin record](docs/2026-10-04_lem-repin-4e70bb5-record.md)). The September 5 master plan
 and subsequent delivery records are historical plans and evidence.
 The current supported product is [SUPPORTED.md](SUPPORTED.md).
 Concurrency is excluded: [USER 2026-09-24] "FYI, I have concluded the concurrency branch prototype has failed, and I'm working on a remediation. But that dependency should be considered dead for now."
