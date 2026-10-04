@@ -112,7 +112,14 @@ fi
 
 # Purity gate for the execution slice (arc 2; ENFORCING since S2).
 # Absolute path resolved up front (the test loop cd's around), and the
-# hook FAILS CLOSED: a missing or failing script fails the suite.
+# hook FAILS CLOSED: a missing or failing script fails the suite. Its
+# --selftest (17 plants on scratch copies, incl. the lem-repin-4e70bb5
+# pre-merge audit's Q22 split application and Q13/Q14/Q19 unmodelled-lexeme
+# refusals; 2026-10-04) runs first so a vacuous gate cannot read CLEAN.
+if ! "$PURITY_SH" --selftest; then
+    echo "test_unit: exec-purity gate SELFTEST FAILED"
+    exit 1
+fi
 if ! "$PURITY_SH"; then
     echo "test_unit: exec-purity gate FAILED"
     exit 1
