@@ -423,6 +423,20 @@ if ! "$CABS_UTF8_SH" --selftest; then
     exit 1
 fi
 
+# Inline-assembly refusal witnesses (2026-10-05, [USER 2026-10-05] "Re inline
+# asm, this should be a loud refusal"; record
+# docs/2026-10-05_asm-refusal-record.md): asm statements (basic, extended,
+# asm goto) are refused by the shared desugarer in BOTH engines with the
+# attributed message; asm labels on declarators are refused by the shared
+# parser (no Cabs JSON). Controls agree with the oracle. --selftest: a pre-fix
+# erasing stub (both engines), a Lean-only erasing stub and a
+# refuse-everything stub must all fail.
+ASM_REFUSAL_SH="$(dirname "$PURITY_SH")/check_asm_refusal.sh"
+if ! "$ASM_REFUSAL_SH" --selftest; then
+    echo "test_unit: inline-assembly refusal witnesses FAILED"
+    exit 1
+fi
+
 # libc dump float-literal inventory (named deviation N3, VALIDATION.md §2b;
 # bug hunt BUG-5, [USER 2026-09-30] option (3)): the pinned libc.core's float
 # literals (printed with %.12g by the oracle's Core printer) must equal the

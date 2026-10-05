@@ -67,6 +67,7 @@ feature-attributed; each refusal has a witness), **OUT OF SCOPE** (not an input 
 | Area | State | Evidence / refusal witness | Open questions |
 |---|---|---|---|
 | C frontend (parse → Cabs → Ail → Core) | SUPPORTED | shared OCaml parser; Lean desugar/typing/elaboration differentially tested (row 1 parser tests, all Tier A/B lanes) | frontend is `partial` (not kernel-evaluable) — a stated limit, not a discrepancy |
+| Inline assembly (GNU `asm`/`__asm__`: basic, extended, `asm goto`, asm labels on declarators) | **REFUSED** (D9) in both engines, where upstream silently erases it: an asm statement fails desugaring in the shared `.lem` (`feature not yet supported: inline assembly (asm statement) is unsupported`; Lean `--batch` reports `desugaring failed at` the asm location), an asm label on a declarator fails in the shared parser (`unimplemented keyword 'asm (inline assembly label on a declarator is unsupported)'`), so no Cabs reaches the Lean engine | `scripts/check_asm_refusal.sh` (row 1): 4 statement + 3 label witnesses, 2 controls, 3 plants | file-scope `asm(...)` is not in the grammar: a syntax error (loud, not attributed); `__asm` (no trailing underscores) is an ordinary identifier |
 | Core dynamics (driver, reduction, pure eval) | SUPPORTED | Tier A/B lanes, pristine 835/28/7/2, gcc oracle, csmith corpus | none known; this is where the report found nothing |
 | Concrete memory model | SUPPORTED | CerbMem mirror with cites; immaculate lane; allocator soundness theorem | the SC receipt buffer is disabled by default (WP0) |
 | Function pointers | SUPPORTED, including round trips through integers and `void*` (libc's `atexit` uses one); their numeric value — through an integer conversion, their bytes or `%p` — is named deviation N1 | `zd-funptr-*` rows, libc_exec `040`/`041` | none |
@@ -126,14 +127,14 @@ gated agreement programs, before → after the 2026-09-28 edge-case tests:
 | `--first` mode | not checked to be one of the exhaustive results | outside §1 | outside the §1 promise (§2) |
 | non-batch CLI output | never compared (only `--batch` output is the compared interface) | outside §1 | human-readable format, exits 0 for every outcome, as the oracle's does |
 
-The **refused** parts (filesystem, stdin, concurrency and switch flags, `%f` of a NaN) are pinned by
+The **refused** parts (filesystem, stdin, concurrency and switch flags, `%f` of a NaN, inline assembly) are pinned by
 witnesses and are not "thinly tested": they do not answer.
 
 ## 4. How the contract is enforced
 
 1. **Every REFUSED area has at least one witness in a lane that pins the refusal**, so a return to a silent answer turns
-   a gate red: the filesystem and stdin (`zd-fs-*`, `zd-f1-*`, `zd-z2f01-*` immaculate rows), `any_bounded_int` (`zd-any-bounded-int-crash`), `%f` of a NaN (`fmt-007*.unsupported.c`) and the CLI flags (`scripts/check_cli_refusals.sh`,
-   row 1).
+   a gate red: the filesystem and stdin (`zd-fs-*`, `zd-f1-*`, `zd-z2f01-*` immaculate rows), `any_bounded_int` (`zd-any-bounded-int-crash`), `%f` of a NaN (`fmt-007*.unsupported.c`) the CLI flags (`scripts/check_cli_refusals.sh`,
+   row 1) and inline assembly (`scripts/check_asm_refusal.sh`, row 1, which asserts the message too).
    Limit: the immaculate and coverage witnesses pin the crash CLASS (`L=CRASH`, `UNSUPPORTED`), not the refusal
    message, under those lanes' coarse crash policy (VALIDATION §1(a)); the message is fixed in the refusing code, and
    `check_cli_refusals.sh` asserts it for the CLI flags.
@@ -173,6 +174,12 @@ witnesses and are not "thinly tested": they do not answer.
 - **D8 — the libc dump's float rounding is named deviation N3** ([USER 2026-09-30] "Right, I think (3) is the right answer
   for now, and (1) or (2) might be work for later."), with a float-literal inventory check. Standing rule [USER 2026-09-30]:
   "we should not fix deviations with special 'magic mode' paths that work exclusively in one situation."
+- **D9 — inline assembly is refused** ([USER 2026-10-05] "Re inline asm, this should be a loud refusal"). Upstream erases
+  it (an asm statement desugars to a skip; an asm label is dropped by the parser), so a program whose meaning lives in its
+  asm ran as if the asm were absent (real-C census §4.5: both engines `Specified(1)` where gcc gives 5). The refusal is on
+  the general path of the shared model and parser, so the oracle and Lean refuse identically and no asm semantics is
+  invented; a deliberate fork-vs-pristine difference, manifested in the fork-drift gate. No gated lane row moved
+  (`docs/2026-10-05_asm-refusal-record.md`).
 - **Agent-called dispositions under these rulings** [AGENT 2026-09-28]: `%f` of a NaN is refused rather than
   registered (it can be refused cheaply and precisely; Lean cannot read a NaN's sign), and the other disagreements that
   record found (its D3–D6, a separate numbering from this section's) are dispositioned in `docs/2026-09-28_thin-surface-tests-record.md` (addendum).

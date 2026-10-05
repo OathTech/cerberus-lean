@@ -4109,9 +4109,15 @@ and desugar_statement_aux ctx (CabsStatement loc attrs stmt_) =
       | CabsSpar ss ->
           AilSpar <$> E.mapM self ss
       
-      | CabsSasm is_volatile is_inline xs (* list (list string) *) ->
-          (* TODO: erasing inline assembly for now *)
-          E.return AilSskip
+      | CabsSasm _ _ _ ->
+          (* FORK (asm refusal, 2026-10-05; [USER 2026-10-05] "Re inline asm, this
+             should be a loud refusal"): upstream ERASES inline assembly here
+             (`E.return AilSskip`, "TODO: erasing inline assembly for now"), so a
+             program whose meaning lives in its asm silently runs as if the asm
+             were absent. Both fork engines now refuse it, basic and extended
+             forms alike; no asm semantics is invented.
+             Record: lean_frontend/docs/2026-10-05_asm-refusal-record.md *)
+          E.fail loc (Errors.Desugar_NotYetSupported "inline assembly (asm statement) is unsupported")
       
       | CabsScaseGNU e1 e2 s ->
           let desugar_case_constant e =

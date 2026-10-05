@@ -402,6 +402,28 @@ Nothing else.
   on path spellings (the external pathleak report,
   `docs/2026-09-28_cerbfs-path-hotfix-record.md`). Mover: a
   SibylFS-faithful filesystem model (TODO.md).
+- *Inline assembly* (contract D9, 2026-10-05; [USER 2026-10-05] "Re inline
+  asm, this should be a loud refusal"; `docs/2026-10-05_asm-refusal-record.md`):
+  REFUSED in BOTH engines — a refusal, not an ISO fix (it invents no asm
+  semantics; §2 is untouched). Upstream erases inline assembly: an asm
+  statement desugars to a skip (`cabs_to_ail.lem`, "TODO: erasing inline
+  assembly for now") and an asm label on a declarator is dropped by the
+  parser (`c_parser.mly` `asm_register`), so a program whose meaning lives in
+  its asm ran as if it were absent (real-C census §4.5: `Specified(1)` on both
+  engines where gcc gives 5). Now an asm statement — basic, extended,
+  `asm goto`, reached or not — fails desugaring in the SHARED `.lem`
+  (`Desugar_NotYetSupported "inline assembly (asm statement) is
+  unsupported"`: oracle exit 1 with `feature not yet supported: …`; Lean
+  `--batch` exit 1 with `Error {msg: "desugaring failed at <asm loc>"}`, the
+  cause line naming the feature without `--batch`), and an asm label fails in
+  the SHARED parser (`unimplemented keyword 'asm (inline assembly label on a
+  declarator is unsupported)'`, exit 1, `--exec` and `--cabs-json` alike — no
+  Cabs reaches Lean). Not attributed, but already loud upstream: file-scope
+  `asm(...)` (not in the grammar — a syntax error) and `__asm(...)` (an
+  undeclared identifier). Witnesses: `scripts/check_asm_refusal.sh` (row 1).
+  No gated lane row moved; five Tier C scoreboard rows (`torture_not_std_compliant`)
+  move MATCH → reject when the scoreboard is next re-recorded. A deliberate
+  fork ≠ pristine difference (below; `scripts/fork_drift_manifest.txt`).
 - *`LEAN_ABORT_ON_PANIC` required* (Z2-FL-03): the driver refuses to
   start (exit 2) without it, because a Lean `panic!` — the fail-stop
   mirror of every OCaml failwith/assert/uncaught exception — would
@@ -648,6 +670,19 @@ by a cited re-record.
   and the generated `cabs_to_ail.ml` delta pin moved
   (`scripts/fork_drift_manifest.txt`, header note "task 2"). The rows retire when
   upstream takes draft 47's fix.
+- **Fork refusal — inline assembly (0 register rows; added 2026-10-05; contract
+  D9; record `docs/2026-10-05_asm-refusal-record.md`):** the fork REFUSES what
+  pristine ERASES (§3(c) above): `cabs_to_ail.lem`'s `CabsSasm` arm fails with
+  `Desugar_NotYetSupported` where upstream returns `AilSskip`, and
+  `c_parser.mly`'s `asm_register` action raises `Cparser_unimplemented_keyword`
+  where upstream drops the label. No program on row 10's walked corpora
+  contains inline assembly (grep over `tests/`, `runtime/`, `lean_frontend/`,
+  the CN corpus and the libxml2 TUs, record §2), so the register has no row;
+  the content pins (`cabs_to_ail.lem`, the NEW `parsers/c/c_parser.mly` row)
+  and the generated `cabs_to_ail.ml` delta pin moved
+  (`scripts/fork_drift_manifest.txt`, header note "fix/asm-refusal"). Upstream
+  disposition: none planned — the refusal is the fork's contract, not a fix
+  for upstream to take [AGENT].
 - **`diagnostic-text` (0 rows; a permitted class).** RESOLVED [USER
   2026-09-17] ("(2) agree", on the orchestrator's question — record §7): the
   lane's diagnostic projection — the one `matching_failure` and the
@@ -924,6 +959,7 @@ theorem over the shipped pipeline `@drive ⟨fuel⟩` at the ambient
 | `test_renumber_plants.sh` | the rebaseline-admission instrument (`check_renumber_only.py`) refuses what it must: committed adversarial pairs (string-content/comment-boundary holes + count/token/order plants) fail, positive controls admit with their declared class |
 | `check_runtime_resolution.sh --selftest` | the driver's runtime is the oracle's (`--runtime DIR` / `CERB_INSTALL_PREFIX`), never the working directory, and a missing runtime or a suffix-library-but-not-exact location refuses (bug hunt BUG-2/BUG-3, 2026-09-29; §3(c)); plants: a runtime-ignoring stub and a refuse-everything stub must fail it |
 | `check_cabs_json_utf8.sh --selftest` | a non-UTF-8 Cabs JSON (a raw byte ≥ 0x80 in a file name or attribute string) is refused with the attributed message instead of an uncaught exception, and ASCII controls agree with the oracle (bug hunt BUG-6/K-5, 2026-09-29; §3(c)); plants: a pre-fix uncaught-exception stub and a refuse-everything stub must fail it |
+| `check_asm_refusal.sh --selftest` | inline assembly is refused, never erased: 4 asm statements (basic, extended, `asm goto`, in a never-called function) are refused by the oracle and by Lean with the attributed desugar message at the asm location, 3 declarator asm labels are refused by the shared parser for `--exec` and `--cabs-json` (no Cabs JSON), and 2 controls (asm-free; asm only in a comment and a string) agree with the oracle (contract D9, 2026-10-05; §3(c)); plants: a pre-fix erasing oracle (strips the asm, both engines then run it), a Lean-only erasing stub and a refuse-everything pair must fail it |
 | `check_libc_float_literals.py --selftest` + check | every float literal of the pinned `tests/libc/libc.core` equals the reviewed register `scripts/libc_float_literals.txt`, as multisets, both directions; a 12-significant-digit literal may not be registered exact (named deviation N3); 8 plants |
 
 Certification-integrity rules ride the gates: validation of
