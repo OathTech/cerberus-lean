@@ -1,3 +1,8 @@
+# PNVI arc S1 re-point, 2026-10-05 [AGENT, executing the orchestrator's re-point brief]: amends the provisional-pin NOTE below —
+# [meta] lem-pin fc8fbefe -> 2d3a4927, still PROVISIONAL (lem-lean arc/pnvi-switches, the S0 review fix round F1-F7: generation-time
+# refusals, human-printer spacing, a test gate, docs; LemLib unchanged). lean_frontend/generated (221 files) and
+# ocaml_frontend/generated (86 files) regenerated with lem 2d3a492 are byte-identical (diff -r) to the fc8fbef trees; layer 2
+# unmoved. Single-row edit + this NOTE, no --refresh. Record: lean_frontend/docs/2026-10-05_pnvi-s1-switch-parameter-record.md §11.
 # PNVI arc S1 (the switch set as a parameter), 2026-10-05 [AGENT, executing the orchestrator's S1 brief under [USER 2026-10-05]
 # "Re PNVI - agree on your recs except for mirroring crashes / obviously wrong behavior. These should be refusals surely?" — option 3,
 # design lean_frontend/docs/2026-10-04_pnvi-ae-udi-design.md §B.3]: [meta] lem-pin 4e70bb50 -> fc8fbefe, a PROVISIONAL pin to the
@@ -467,7 +472,7 @@ merge-base=b9aeedcb4dd438763b0eef7f95ac19e93875d7de
 #   was a stale af5df71, audit F4 (c)). Closure F1 (2026-09-24; base
 #   0a6d59eed): full 40-hex pin, checked by validated version prefix.
 #   Set the reviewed full pin before --refresh; refresh preserves it.
-lem-pin=fc8fbefece6e9861920bc1ca335e662e9a80ecbb
+lem-pin=2d3a492758cb23dc4e417f2961983d25b36ce130
 renumber=arc13
 [files]
 Makefile

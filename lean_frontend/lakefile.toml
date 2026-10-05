@@ -77,10 +77,14 @@ moreLeanArgs = ["-DautoImplicit=false"]
 # readers); LemLib (lean-lib/) byte-identical to 4e70bb5; generated OCaml
 # byte-identical. The orchestrator re-points it if lem's commit changes after
 # review. Evidence: docs/2026-10-05_pnvi-s1-switch-parameter-record.md.
+# Re-pointed 2026-10-05 fc8fbef -> 2d3a492 (still PROVISIONAL; lem-lean S0 review
+# fix round F1-F7: generation-time refusals, printer spacing, test gate, docs);
+# LemLib (lean-lib/) unchanged; both generated trees byte-identical. Evidence:
+# docs/2026-10-05_pnvi-s1-switch-parameter-record.md §11.
 [[require]]
 name = "LemLib"
 git = "https://github.com/OathTech/lem-lean"
-rev = "fc8fbefece6e9861920bc1ca335e662e9a80ecbb"
+rev = "2d3a492758cb23dc4e417f2961983d25b36ce130"
 subDir = "lean-lib"
 
 [[lean_lib]]

@@ -557,3 +557,83 @@ are at baseline (§7).
 - No lane; no CONTRACT/VALIDATION rewrite of the "Semantics switches" text. That is S4.
 - No message to cerberus-sl.
 - No full ladder: the orchestrator runs Tier B.
+
+## 11. Re-point fc8fbef → 2d3a492 (2026-10-05, still PROVISIONAL)
+
+The orchestrator re-pointed the provisional pin after the lem-lean S0 review fix round.
+The work was done by an agent (Claude Opus 5.5) following the orchestrator's re-point brief.
+The new pin, `2d3a492758cb23dc4e417f2961983d25b36ce130`, is lem-lean `arc/pnvi-switches`, "Instance readers:
+review fixes F1-F7". It adds generation-time refusals (IR-body, IR-inline, IR-type free tyvars,
+IR-class last-component aliases), keeps source spacing in the human printers, and adds a test gate
+and docs. It is still UNMERGED.
+
+**The lem used.**
+- Built the same way as in §1: `git clone --no-hardlinks …/lem-lean .tmp/lem-2d3a492`,
+  `git checkout 2d3a492`, then root `make` under `scripts/ce`.
+- `lem -v`, verbatim: `Lem lean-backend-v0.1.0-alpha.1-65-g2d3a492` (not `-dirty`; the clone's
+  `git status --short` is empty).
+- The `.tmp/cel` wrapper now points at this clone (PATH + `LEMLIB`). `.tmp/lem-fc8fbef` is deleted.
+  The lem-lean worktree's binary, `deps/lem-pinned` and the shared opam switch were not used or touched.
+- `git diff --stat fc8fbef 2d3a492 -- lean-lib library` is empty, so LemLib and lem's library
+  are unchanged.
+
+**Pin sites**, all moved to `2d3a492758cb23dc4e417f2961983d25b36ce130`:
+- `lean_frontend/lakefile.toml`: the rev, plus a re-point comment;
+- the three lake-manifests, through capped `lake update LemLib` in each package (offline through
+  `deps/gitconfig`; only the rev/inputRev lines changed);
+- `scripts/fork_drift_manifest.txt` `[meta] lem-pin`, with a dated NOTE that amends the
+  provisional-pin NOTE (no `--refresh`);
+- `lean_frontend/README.md`: the opam pin command and the NOTICE/LICENSE links;
+- the "Lem pin has since moved" parentheticals of `README.md`, `CLAUDE.md`, `SUPPORTED.md`, `TODO.md`
+  and `VALIDATION.md`.
+
+```
+check_pin_sites: OK — lem-pin 2d3a492758cb23dc4e417f2961983d25b36ce130 at every site (lakefile rev, 3 lake-manifests rev+inputRev, README pin command)
+```
+
+**Byte-identity.** Before the re-point, both generated trees (made with lem `fc8fbef`) were copied
+aside. Both were then regenerated with lem `2d3a492` (`make clean-prelude-src && make prelude-src`;
+`make lean-prelude-src`). Verbatim, `diff -r` of each pre-copy against the regenerated tree printed
+nothing, and then:
+
+```
+LEAN_GENERATED_BYTE_IDENTICAL
+OCAML_GENERATED_BYTE_IDENTICAL
+```
+
+That covers 221 and 86 files respectively. The lem-sync generated hashes are unchanged:
+OCaml `gen c1bb429a…`, Lean `gen aa49e3bf…`.
+
+**Rebuild.**
+- OCaml, cache-disabled: `DUNE_CACHE=disabled dune build --force backend/driver/main.exe
+  cerberus-lib.install`, `dune install --prefix _build/local-install cerberus-lib`, and
+  `dune build --force cerberus.install`. rc 0.
+- Native objects: `scripts/capped make lean-native-obj`, rc 0 (capped this time).
+- Lean: `scripts/capped lake build` in `lean_frontend` (397 jobs) and in `speclab` (148 jobs). Both rc 0.
+
+**Row 1** (`scripts/test_unit.sh`, rc 0, 6:23 wall). Verbatim selected verdict lines:
+
+```
+Total: 16 passed, 0 failed
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+check_switches_instance: OK (367 files scanned: 293 production, 39 test, 35 LemLib; no instance of CerbGlobal.Switches; the one entry instance is Main.lean's letI; 109 generated [CerbGlobal.Switches] binders)
+check_lem_sync: OK (src 37a9392cf043669821430a08b4c43e58d7ff407a34de470fdffaee929b02e47c, gen c1bb429a5ccb2b91903f5d02b30141aa2c711c50c2d4d7543b42226e119580f3)
+check_lem_sync: lean OK (src 37a9392cf043669821430a08b4c43e58d7ff407a34de470fdffaee929b02e47c, gen aa49e3bfc257299082c3a01287d4b99c91a9164f32f251d02297c808315b77fd)
+check_fork_drift: OK — layer 1: 88 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 30 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 2d3a492758cb23dc4e417f2961983d25b36ce130 matches lem -v lean-backend-v0.1.0-alpha.1-65-g2d3a492 (hex prefix))
+check_pin_sites: OK — lem-pin 2d3a492758cb23dc4e417f2961983d25b36ce130 at every site (lakefile rev, 3 lake-manifests rev+inputRev, README pin command)
+check_cli_refusals: OK (23 refusals pinned: --concurrency, --iso, 20 --switches= values (every oracle switch-name class, an unknown name, an override, a mixed set, the empty value) and the --switches space form; 4 repeated options refused: --runtime, --args, --switches twice (=/= and space/=); control not refused)
+```
+
+**Tier A** (`python3 scripts/release.py --mode fast`, rc 0). This ran on the re-pointed tree
+before this section and the commit were written. Verbatim tail:
+
+```
+fast: passed; 17/17 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+Every row PASSED: A1 to A13, including A4b, A4c, A6b, A12.1 and A12.2. The lane verdict lines
+are identical to §7.1's. A9 is again `SUMMARY: total=113 same=108 diff=5 ocaml_fail=0 lean_fail=0`,
+with the same 5 DIFF rows (073, 074, 098, 112, 113). The evidence directory is scratch and was
+deleted at slice end.

@@ -1,7 +1,7 @@
 # Supported profile and announcement scope
 
 Checked 2026-09-25 against Cerberus `bb487dda7c56981e76d67f53ae16e874cfe5ed61`
-and Lem `67ec5de70e02e280bb348a4ba826696b76116732` (the Lem pin has since moved to `fc8fbefece6e9861920bc1ca335e662e9a80ecbb` by functional re-pins (via `77ad4fa`, `4e70bb5`; the last is PROVISIONAL — the unmerged lem-lean branch `arc/pnvi-switches`), generated OCaml byte-identical at each: [re-pin record](docs/2026-10-04_lem-repin-4e70bb5-record.md), [PNVI S1 record](docs/2026-10-05_pnvi-s1-switch-parameter-record.md)). The exact rerun set and
+and Lem `67ec5de70e02e280bb348a4ba826696b76116732` (the Lem pin has since moved to `2d3a492758cb23dc4e417f2961983d25b36ce130` by functional re-pins (via `77ad4fa`, `4e70bb5`; the last is PROVISIONAL — the unmerged lem-lean branch `arc/pnvi-switches`), generated OCaml byte-identical at each: [re-pin record](docs/2026-10-04_lem-repin-4e70bb5-record.md), [PNVI S1 record](docs/2026-10-05_pnvi-s1-switch-parameter-record.md)). The exact rerun set and
 remaining publication checks are in [the follow-up record](docs/2026-09-25_public-readiness-followup.md).
 Earlier baseline inventories at Cerberus `e9f9d049f` and MUST cleanup gates
 remain in [the remediation record](docs/2026-09-24_public-readiness-remediation.md)
