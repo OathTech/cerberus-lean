@@ -198,7 +198,15 @@ LEM_SRC = $(LEM_SRC_RENAMED) \
 # would trip the supply transform's G-lambda guard). It stays in
 # LEM_SRC for the OCaml target (upstream's sequentialisation pass,
 # untouched).
-LEM_SRC_LEAN = $(filter-out frontend/model/core_unstruct.lem,$(LEM_SRC))
+LEM_SRC_LEAN = $(filter-out frontend/model/core_unstruct.lem,$(LEM_SRC)) \
+               $(LEM_SRC_LEAN_ONLY)
+# Lean-ONLY lem modules (PNVI arc S1, 2026-10-05): the mirror image of the
+# Core_unstruct drop above. lean_switches.lem declares the switch set's
+# instance reader and its consumers; any lem `val` is emitted into the
+# generated OCaml as a comment, so it lives outside LEM_SRC to keep the
+# generated OCaml byte-identical (record
+# lean_frontend/docs/2026-10-05_pnvi-s1-switch-parameter-record.md §3).
+LEM_SRC_LEAN_ONLY = frontend/model/lean_switches.lem
 ####
 
 PRELUDE_SRC_DIR = ocaml_frontend/generated
@@ -341,7 +349,7 @@ rebuild-lem:
 	@echo "[LEM] installed $$(lem -v 2>&1)"
 
 .PHONY: lean-prelude-src
-lean-prelude-src: $(LEM_SRC)
+lean-prelude-src: $(LEM_SRC_LEAN)
 	@echo "[MKDIR] $(LEAN_SRC_DIR)"
 	$(Q)mkdir -p $(LEAN_SRC_DIR)
 	@# effect-retirement C1: the Core_unstruct pair leaves the Lean build

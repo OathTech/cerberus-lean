@@ -1,7 +1,7 @@
 # VALIDATION — why you should trust this semantics
 
 **Documentation check, 2026-09-25:** implementation `bb487dda7c56981e76d67f53ae16e874cfe5ed61`;
-Lem `67ec5de70e02e280bb348a4ba826696b76116732` (the Lem pin has since moved to `4e70bb506d962355b7120260d4d176aa2850dcc3` by functional re-pins (via `77ad4fa`), generated OCaml byte-identical at each: [re-pin record](docs/2026-10-04_lem-repin-4e70bb5-record.md)). Current follow-up gates and remaining
+Lem `67ec5de70e02e280bb348a4ba826696b76116732` (the Lem pin has since moved to `fc8fbefece6e9861920bc1ca335e662e9a80ecbb` by functional re-pins (via `77ad4fa`, `4e70bb5`; the last is PROVISIONAL — the unmerged lem-lean branch `arc/pnvi-switches`), generated OCaml byte-identical at each: [re-pin record](docs/2026-10-04_lem-repin-4e70bb5-record.md), [PNVI S1 record](docs/2026-10-05_pnvi-s1-switch-parameter-record.md)). Current follow-up gates and remaining
 publication checks are in [the follow-up record](docs/2026-09-25_public-readiness-followup.md);
 earlier baseline inventories are in [the remediation record](docs/2026-09-24_public-readiness-remediation.md).
 Older dated measurements below remain historical evidence. Original evidence
@@ -363,7 +363,7 @@ Nothing else.
 **(c) missing features — loud, attributed refusals (not bugs):**
 
 - *Semantics switches* (`--switches=PVI|PNVI|strict_pointer_arith|CHERI…`):
-  REFUSED (`Main.refuseFlag`, exit 2, attributed; [USER 2026-09-03] Q7
+  REFUSED (`Main.refuseSwitches` per element since PNVI arc S1 — `Main.refuseFlag` before; exit 2, attributed; [USER 2026-09-03] Q7
   "REFUSE now … plumbing … is not wanted"). Matched default-switch mode
   is the harness contract; since 2026-09-05 the `CerbGlobal`
   config/switch surface is eleven plain `def`s of the driver's DEFAULT
@@ -377,7 +377,9 @@ Nothing else.
   carries the four switches those arms test (`strict_pointer_equality`,
   `strict_pointer_relationals`, `pointer_arith PERMISSIVE|STRICT`,
   `zero_initialised`, mirroring `switches.ml`), so the specialisation to the empty
-  set is kernel-visible (`CerbGlobal.has_switch_*_eq`, by `rfl`) and greppable, and
+  set is kernel-visible (`CerbGlobal.has_switch_*_eq`, by `rfl`; since PNVI arc S1, 2026-10-05, the switch set is the
+  instance-implicit parameter `[CerbGlobal.Switches]` and the facts are `has_switch_*_default` at `⟨[]⟩`, the
+  instance `Main.lean` supplies — `docs/2026-10-05_pnvi-s1-switch-parameter-record.md`) and greppable, and
   the Z2 record's formerly DECLARED row Z2-M-20 is closed; `using_concurrency` is `def … := false` with
   `using_concurrency_eq : using_concurrency () = false := rfl`, its
   parameterisation remains separate work; the concurrency feature branch is parked.
@@ -947,6 +949,7 @@ theorem over the shipped pipeline `@drive ⟨fuel⟩` at the ambient
 | `check_sorry_token.sh` | zero `sorry` TOKENS in source text — comment- and string-stripped — over `generated/`, the hand-written seams + tests, and the consumed LemLib copy (the axiom gate probes `sorryAx` in cones only; the tree's last `sorry`, cmm_op.lem's target_rep, was closed by the FUEL arc). Empty scan set = FAIL |
 | `test_fuel_classifier.sh` | the one FUEL classifier (`scripts/fuel_classify.sh classify_fuel_outcome`) reads its fixture captures correctly: both fuel forms positive; a genuine `Error` kill, a PANIC without the marker, and program stdout carrying the words all negative (§7) |
 | `check_no_fuel_numerals.sh` | **a plant-tested SPEEDBUMP against fuel numerals in the Lean text a consumer reasons against** (fuel-parameter arc, 2026-09-04; [USER 2026-09-03] "any and all magic values that are hardcoded and can't be quantified over are definitionally bugs"): seams, `generated/`, `test/`, `speclab/`, `tests/**/*.lean` scanned comment-stripped for the enumerated idiomatic shapes F1–F6 (the deleted `lemDefaultFuel`/`driverFuel`/`ndDefaultFuel`; a global `instance : LemFuel`; a worker at a literal counter — bare, parenthesised, hex, or after a carried instance `f_lemFuel ⟨i⟩ 5`; `LemFuel := ⟨…⟩`/`LemFuel := { fuel := … }`/`LemFuel.mk N`/`LemFuel.mk (…)`; a single-component anonymous constructor led by a numeral `⟨N⟩`/`⟨(N : Nat)⟩`/`⟨0x…⟩`/`⟨10^8⟩`; a fuel-named constant defined as a numeral) — the ONE allowed site is Main.lean's `defaultFuel` (+ the `letI` that consumes it), allowlisted by exact line; vacuity-guarded; its `--selftest` plants 20 shapes red and the unplanted set green on every `test_unit.sh` run. What it does NOT guarantee (pre-merge audit M2): indirection through a non-fuel-named constant (`def budget := 100000000; @f ⟨budget⟩`) and arithmetic spellings not led by a numeral are not regex-closable — the selftest records that gap as a KNOWN GAP line; they are review discipline. The BACKSTOP is the typing, not the grep: every fuel'd function demands a `[LemFuel]` instance, no instance exists in library/generated/seam code, and a measured wrapper carries its sufficiency obligation — a numeral can only enter where a human writes an instance |
+| `check_switches_instance.sh` | **no hidden default switch set** (PNVI arc S1, 2026-10-05; design `docs/2026-10-04_pnvi-ae-udi-design.md` §B.3/§D.2 P5+P8; record `docs/2026-10-05_pnvi-s1-switch-parameter-record.md` §4): the switch set is the instance-implicit `[CerbGlobal.Switches]`; comment-stripped over this repository's seams, `generated/`, `test/`, `speclab/`, `tests/**/*.lean` and the consumed LemLib, an `instance` declaration of the class (S1, the head cut outside brackets), an instance attribute (S2), or a production value/local instance outside Main.lean's one allowlisted `letI` (S3) is RED; vacuity-guarded; `--selftest`: 7 plants RED, unplanted copy GREEN, and a consumer-style package under `.tmp/` with its own instance leaves the gate GREEN (the scope is THIS repository: a consumer's instance is the intended use). What it does NOT guarantee: tests may build explicit values (`letI`, a named `def`) — visible choices at the use, never resolved implicitly; the BACKSTOP is the typing (a lifted definition without an instance in scope does not elaborate) |
 | `gen_fuel_parametricity.py --check` | the generated tree's ambient fuel-wrapper SET equals the set pinned by `TotalityProofTest.lean` Part 1's `∀ n, @f ⟨n⟩ = f_lemFuel n` examples, both directions (a new fuel'd function without a pin is RED; `--emit` regenerates the list) — pre-merge audit M1 |
 | `check_lakefile_roots.sh` | every `generated/*.lean` — the `_auxiliary` obligation carriers and the `*_lemMeasureProofs` modules included — is a Lake root of the semantics library and every root exists, both directions (lem-lean fuel-measure record §6.4 item 8: an auxiliary module dropped from the roots would silently un-build its obligations); `--selftest` plants a dropped root, a phantom root and an unrooted module |
 | `check_exec_totality.sh` | zero `partial` definitions on the execution path (empty allowlist; fuel-totalized recursion with the distinguished fuel-exhaustion outcome, §7) |

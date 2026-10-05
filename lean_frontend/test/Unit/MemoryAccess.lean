@@ -111,9 +111,9 @@ def setup [LemFuel] : IO MemState := do
   return st
 
 def store [LemFuel] t offset v := storeM fmapEmpty (default : CerbTags.TagDefsMap) loc t false (ptr offset) v
-def load [LemFuel] t offset := loadM fmapEmpty (default : CerbTags.TagDefsMap) loc t (ptr offset)
+def load [LemFuel] [CerbGlobal.Switches] t offset := loadM fmapEmpty (default : CerbTags.TagDefsMap) loc t (ptr offset)
 
-def scenarios [LemFuel] (st : MemState) : IO MemState := do
+def scenarios [LemFuel] [CerbGlobal.Switches] (st : MemState) : IO MemState := do
   let st ← run "byte-write" (store uc 0 (bv 42)) st
   let st ← run "same-write" (store uc 0 (bv 42)) st
   let st ← run "byte-read" (load uc 0) st
@@ -151,7 +151,7 @@ def scenarios [LemFuel] (st : MemState) : IO MemState := do
 
 -- Structural observation retains even an unsatisfiable guard. This diagnostic
 -- does not solve constraints or claim these are admitted C executions.
-def transport [LemFuel] (st : MemState) : IO Unit := do
+def transport [LemFuel] [CerbGlobal.Switches] (st : MemState) : IO Unit := do
   let cs := MC_eq (iv 1) (iv 2)
   let child (n : Int) := nd_bind (store uc 0 (bv n)) (fun _ => memReturn n)
   let children := [("left", child 11), ("right", child 12)]
@@ -190,6 +190,7 @@ end MemoryAccess
 
 def runAll (fuel count : Nat) (enabled : Bool) : IO UInt32 :=
   letI := LemFuel.mk fuel
+  letI : CerbGlobal.Switches := ⟨CerbGlobal.defaultSwitches⟩  -- the default switch set (PNVI arc S1)
   do
     let initial ← MemoryAccess.scenarios (← MemoryAccess.setup)
     let mut st := initial

@@ -663,7 +663,7 @@ def printUndefinedLine (ub : String) (stderr : String) (loc : String) : IO Unit 
     TU's symbols with the wrong digest (see CerberusFresh.forceIO and
     test/Unit/FreshIntTest.lean testDigestGlobal). This is frontend-only:
     the run receives `runDigest tunits` as data and never reads the global. -/
-def frontendTU [LemFuel] (quiet : Bool) (supply : Nat) (addressSpaceTop : Int)
+def frontendTU [LemFuel] [CerbGlobal.Switches] (quiet : Bool) (supply : Nat) (addressSpaceTop : Int)
     (coreEvalStuff : Fmap String sym × fun_map Unit × impl)
     (ailnames : Fmap String sym) (stdFunMap : fun_map Unit) (coreImpl : impl)
     (tunit : translation_unit) : IO (Except UInt8 (file Unit × Nat)) := do
@@ -775,7 +775,7 @@ def frontendTU [LemFuel] (quiet : Bool) (supply : Nat) (addressSpaceTop : Int)
 
 /-- Load and assemble the libc library Core file (see the module note at
     "C-libc loading" above). -/
-def loadLibc [LemFuel] (runtime : String) (quiet : Bool) (supply0 : Nat) (addressSpaceTop : Int)
+def loadLibc [LemFuel] [CerbGlobal.Switches] (runtime : String) (quiet : Bool) (supply0 : Nat) (addressSpaceTop : Int)
     (coreEvalStuff : Fmap String sym × fun_map Unit × impl)
     (ailnames : Fmap String sym) (stdFunMap : fun_map Unit) (coreImpl : impl)
     (libcCorePath : String) (libcTuJsons : List String) :
@@ -1046,7 +1046,7 @@ def loadLibc [LemFuel] (runtime : String) (quiet : Bool) (supply0 : Nat) (addres
     `ppCoreSignature`); the default human-readable mode is unchanged (and
     keeps its historical exit-code behavior: 0 even on semantic stage
     failures). -/
-def runPipeline [LemFuel] (runtime : String) (batch : Bool) (ppCore : Bool)
+def runPipeline [LemFuel] [CerbGlobal.Switches] (runtime : String) (batch : Bool) (ppCore : Bool)
     (firstTrace : Bool)
     -- the address-space top (address-space-bound slice, 2026-09-17): ONE value for
     -- both entry points — the desugarer's const-expr mini-run (via frontendTU →
@@ -1383,15 +1383,73 @@ def addressSpaceLimit : Nat := match CerberusImpl.sizeof_pointer with
     e.g. `--batch x.json --first`). -/
 def refuseFlag (flag : String) : IO Unit := do
   let feature :=
-    if flag.startsWith "--switches" then
-      "semantics switches (PVI/PNVI/strict_pointer_arith/CHERI/…) are not supported by this port — matched (default-switch) mode is the harness contract and CerbGlobal's switch set is permanently empty; the oracle's `--switches=…` changes the answer (e.g. PNVI turns an integer→pointer UB043 into a value)"
+    if flag == "--iso" then
+      "the ISO switch set (switches.ml:144-151 `set_iso_switches`: strict_pointer_arith, strict_reads, zap_dead_pointers, strict_pointer_equality, strict_pointer_relationals, PNVI_ae_udi) is not supported — each of its switches is refused under --switches, and the oracle's rm_unspecs Core pass it enables (backend/common/pipeline.ml:579) has no Lean counterpart"
     else if flag == "--concurrency" then
       "concurrency is not supported by this port (the oracle's own --concurrency mode is non-functional at b9aeedcb4: `internal error: CONCURRENCY IS BROKEN`); matched mode runs atomics sequentially on both engines"
     else if flag == "--batch" || flag == "--pp-core" || flag == "--parse-core" || flag == "--first" then
       "known flag out of its canonical position (`--batch`, `--pp-core` or `--parse-core` must be argv[0]; `--first` must immediately follow `--batch`/`--pp-core`)"
     else
-      "unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>, --address-space-top <N>, --runtime <DIR>"
+      "unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>, --address-space-top <N>, --runtime <DIR> (and parses --switches <list>, refusing every value)"
   IO.eprintln s!"cerberus-lean: refused — {flag}: {feature} (see VALIDATION.md, zero-discrepancy Z-24)"
+  IO.Process.exit 2
+
+/-- The refusal reason for ONE `--switches` element (PNVI arc S1, 2026-10-05; design
+    docs/2026-10-04_pnvi-ae-udi-design.md §B.4.2, §D.3, §F.4, §F.13). The names are the
+    oracle's (`ocaml_frontend/switches.ml:60-102` `read_switch`); every one is REFUSED in
+    this slice, each with its own reason — the switch set is a parameter of the semantics
+    (`CerbGlobal.Switches`) but this binary runs only the default `⟨defaultSwitches⟩`.
+    The oracle is FAIL-OPEN on an unknown name (switches.ml:140-141: "failed to parse
+    switch '…' --> ignoring." and the default semantics runs); this port refuses
+    (exception class (c), §F.4). -/
+def switchRefusalReason (name : String) : String :=
+  match name with
+  | "PNVI_ae_udi" =>
+    "the PNVI-ae-udi provenance model (switches.ml:82-83, SW_PNVI `AE_UDI) is being ported (the PNVI arc: the switch set became a parameter of the semantics in slice S1; the ae-udi memory arms are not implemented yet), so the oracle's answer under it cannot be matched (e.g. it turns an integer→pointer UB043 into a value)"
+  | "PNVI" | "PNVI_ae" =>
+    "the PNVI-plain / PNVI-ae provenance variants (switches.ml:78-81) are not validated by any lane; only PNVI_ae_udi is in this port's scope"
+  | "strict_pointer_arith" | "permissive_pointer_arith" =>
+    "the pointer-arithmetic mode switch (switches.ml:62-65, SW_pointer_arith) is not supported: its impl_mem.ml arms are loud kills in CerbMem (seam-hygiene H2)"
+  | "strict_reads" =>
+    "strict reads (switches.ml:66-67) are not supported: CerbMem's arm is a loud kill, and the oracle's rm_unspecs Core pass (backend/common/pipeline.ml:579) has no Lean counterpart"
+  | "forbid_nullptr_free" | "zap_dead_pointers" | "strict_pointer_equality" | "strict_pointer_relationals" | "zero_initialised" =>
+    "this impl_mem.ml switch is not supported: its arm is a loud kill in CerbMem (seam-hygiene H2)"
+  | "inner_arg_temps" =>
+    "the inner-argument-temporaries elaboration (switches.ml:84-85) is not supported: it needs the alternative runtime std_inner_arg_temps.core (backend/common/pipeline.ml:34), which this port does not load"
+  | "permissive_printf" =>
+    "permissive printf (switches.ml:86-87) is not validated by any lane"
+  | "CHERI" =>
+    "CHERI is the memory model of the separate cerberus-cheri executable (backend/driver/main.ml:133-140); this port has the concrete model only, and CerbGlobal.is_CHERI is a build constant"
+  | "revoke_dead_pointers" | "cornucopia" | "at_magic_comments" | "magic_comment_char_dollar" | "copy_prop" =>
+    "this upstream switch (switches.ml:92-101) has no counterpart in this port's lem model"
+  | _ =>
+    "unknown switch name — the oracle prints `failed to parse switch '…' --> ignoring.` and runs the DEFAULT semantics (switches.ml:140-141, fail-open); this port refuses (design §G R20, R-PNVI-12)"
+
+/-- The override class of a switch name (switches.ml:104-132 `pred`): two names of one
+    class in one list make the oracle DROP the later one ("switch '…' would override a
+    previous switch --> ignoring.", switches.ml:136-139, fail-open). -/
+def switchClass (name : String) : String :=
+  match name with
+  | "strict_pointer_arith" | "permissive_pointer_arith" => "pointer_arith"
+  | "PNVI" | "PNVI_ae" | "PNVI_ae_udi" => "PNVI"
+  | "revoke_dead_pointers" | "cornucopia" => "revocation"
+  | other => other
+
+/-- REFUSE a `--switches` value (`flag` is the argv text: `--switches=V` or
+    `--switches V`): one line per element, each naming the element and its reason, then
+    exit 2. Every value is refused in this slice; an empty value too (cmdliner's
+    `opt (list string)`, backend/driver/main.ml:589-591). -/
+def refuseSwitches (flag value : String) : IO Unit := do
+  let names := value.splitOn ","
+  let mut seen : List String := []
+  for n in names do
+    let reason :=
+      if n.isEmpty then "an empty switch name"
+      else if seen.contains (switchClass n) then
+        s!"{switchRefusalReason n}; ALSO it would override a previous switch of the same class in this list (the oracle prints `switch '…' would override a previous switch --> ignoring.` and drops it, switches.ml:136-139, fail-open; design §G R20, R-PNVI-11)"
+      else switchRefusalReason n
+    IO.eprintln s!"cerberus-lean: refused — {flag}: semantics switches are not supported by this port yet — `{n}`: {reason} (see VALIDATION.md, zero-discrepancy Z-24)"
+    seen := seen ++ [switchClass n]
   IO.Process.exit 2
 
 def main (args : List String) : IO Unit := do
@@ -1467,6 +1525,11 @@ def main (args : List String) : IO Unit := do
   -- --runtime DIR / --runtime=DIR (bug-hunt BUG-2, 2026-09-29): the oracle's
   -- flag of the same name (backend/driver/main.ml:436-438); see resolveRuntime
   let mut runtimeArg : Option String := none
+  -- --switches <list> / --switches=<list> (PNVI arc S1, 2026-10-05): the oracle's
+  -- cmdliner option (backend/driver/main.ml:589-591, `opt (list string)`, both forms;
+  -- design §F.13). PARSED here, REFUSED below (every value, `refuseSwitches`); a
+  -- repeated option is refused as cmdliner does. (flag text as given, value)
+  let mut switchesArg : Option (String × String) := none
   let mut restArgs : List String := []
   -- --parse-core consumes its file list itself (below); nothing to scan
   let mut pending := if parseCoreMode then [] else rest1
@@ -1491,18 +1554,31 @@ def main (args : List String) : IO Unit := do
     | "--runtime" :: v :: rest =>
       if runtimeArg.isSome then refuseRuntime "option --runtime cannot be repeated (the oracle's cmdliner rejects it, exit 124; pre-merge audit L3)"
       runtimeArg := some v; pending := rest
+    | "--switches" :: v :: rest =>
+      if switchesArg.isSome then
+        IO.eprintln "cerberus-lean: option --switches cannot be repeated (as the oracle's command line)"
+        IO.Process.exit 2
+      switchesArg := some (s!"--switches {v}", v); pending := rest
     | ["--libc"] | ["--libc-tu"] | ["--call"] | ["--call-args"]
-    | ["--args"] | ["--fuel"] | ["--address-space-top"] | ["--runtime"] =>
+    | ["--args"] | ["--fuel"] | ["--address-space-top"] | ["--runtime"] | ["--switches"] =>
       IO.eprintln "cerberus-lean: --libc/--libc-tu/--call/--call-args/\
-        --args/--fuel/--address-space-top/--runtime require an argument"
+        --args/--fuel/--address-space-top/--runtime/--switches require an argument"
       IO.Process.exit 1
     | a :: rest =>
       if a.startsWith "--runtime=" then
         if runtimeArg.isSome then refuseRuntime "option --runtime cannot be repeated (the oracle's cmdliner rejects it, exit 124; pre-merge audit L3)"
         runtimeArg := some (a.drop "--runtime=".length).toString; pending := rest; continue
+      if a.startsWith "--switches=" then
+        if switchesArg.isSome then
+          IO.eprintln "cerberus-lean: option --switches cannot be repeated (as the oracle's command line)"
+          IO.Process.exit 2
+        switchesArg := some (a, (a.drop "--switches=".length).toString); pending := rest; continue
       -- Z-24: a `--` token here is not a file name (except `--stdin`)
       if a.startsWith "--" && a != "--stdin" then refuseFlag a
       restArgs := restArgs ++ [a]; pending := rest
+  -- --switches: every value is REFUSED in this slice (the run's switch set is
+  -- `CerbGlobal.defaultSwitches`, supplied below beside the fuel instance)
+  if let some (flag, value) := switchesArg then refuseSwitches flag value
   -- --args "ARG1 ARG2 ..." — the oracle's flag of the same name
   -- (backend/driver/main.ml:512-514): one string, split on whitespace
   -- runs (main.ml:111-113, Str.split "[ \t]+" — empty pieces dropped,
@@ -1651,7 +1727,12 @@ def main (args : List String) : IO Unit := do
   -- The ONE instantiation of the ambient fuel (fuel-parameter arc): every
   -- fuel'd function below `runPipeline` reads this instance; nothing else
   -- in the repository builds one (`scripts/check_no_fuel_numerals.sh`).
-  let code ← (letI : LemFuel := ⟨fuel⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace
+  -- Beside it, the ONE instance of the switch set (PNVI arc S1, 2026-10-05):
+  -- the default `⟨CerbGlobal.defaultSwitches⟩` (= `[]`, switches.ml:47-48) —
+  -- every `--switches` value is refused above; no other instance of
+  -- `CerbGlobal.Switches` exists in this repository
+  -- (`scripts/check_switches_instance.sh`).
+  let code ← (letI : LemFuel := ⟨fuel⟩; letI : CerbGlobal.Switches := ⟨CerbGlobal.defaultSwitches⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace
     addressSpaceTop callFn traceNodes libc progArgs tunits)
   if code != 0 then
     IO.Process.exit code

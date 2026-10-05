@@ -82,27 +82,41 @@ example : CerbMem.bytesToInt [{ value := none }] false = none := rfl
 /-! ## H2 — the switch-conditioned arms reduce to their defaults (seam-hygiene H2, 2026-09-19)
 
 `CerbMem` writes every switch-conditioned arm of impl_mem.ml as
-`if CerbGlobal.has_switch … then <loud kill> else <default>`; the switch set is the
-empty list (`CerbGlobal.switches = []`), so each test is `false` by `rfl` and each arm
-reduces to its default — the statement a consumer proves through. -/
+`if CerbGlobal.has_switch … then <loud kill> else <default>`. Since PNVI arc S1
+(2026-10-05) the switch set is the instance-implicit parameter `[CerbGlobal.Switches]`;
+AT THE DEFAULT INSTANCE `⟨[]⟩` (= `⟨CerbGlobal.defaultSwitches⟩`) each test is `false`
+by `rfl` and each arm reduces to its default — the statement a consumer proves through.
+The positive controls below show the reads see the parameter (a constant `false`
+would make the default pins vacuous). -/
 
-example : CerbGlobal.has_switch .strict_pointer_equality = false := rfl
-example : CerbGlobal.has_switch .strict_pointer_relationals = false := rfl
-example : CerbGlobal.has_switch (.pointer_arith .PERMISSIVE) = false := rfl
-example : CerbGlobal.has_switch (.pointer_arith .STRICT) = false := rfl
-example : CerbGlobal.has_switch .zero_initialised = false := rfl
-example : CerbGlobal.has_switch .strict_reads = false := rfl
-example : CerbGlobal.has_switch .forbid_nullptr_free = false := rfl
-example : CerbGlobal.has_switch .zap_dead_pointers = false := rfl
-example : CerbGlobal.is_PNVI () = false := rfl
-example : CerbGlobal.has_strict_pointer_arith () = false := rfl
+example : @CerbGlobal.has_switch ⟨[]⟩ .strict_pointer_equality = false := rfl
+example : @CerbGlobal.has_switch ⟨[]⟩ .strict_pointer_relationals = false := rfl
+example : @CerbGlobal.has_switch ⟨[]⟩ (.pointer_arith .PERMISSIVE) = false := rfl
+example : @CerbGlobal.has_switch ⟨[]⟩ (.pointer_arith .STRICT) = false := rfl
+example : @CerbGlobal.has_switch ⟨[]⟩ .zero_initialised = false := rfl
+example : @CerbGlobal.has_switch ⟨[]⟩ .strict_reads = false := rfl
+example : @CerbGlobal.has_switch ⟨[]⟩ .forbid_nullptr_free = false := rfl
+example : @CerbGlobal.has_switch ⟨[]⟩ .zap_dead_pointers = false := rfl
+example : @CerbGlobal.has_switch ⟨[]⟩ .inner_arg_temps = false := rfl
+example : @CerbGlobal.has_switch ⟨[]⟩ .permissive_printf = false := rfl
+example : @CerbGlobal.has_switch ⟨[]⟩ (.PNVI .AE_UDI) = false := rfl
+example : @CerbGlobal.is_PNVI ⟨[]⟩ () = false := rfl
+example : @CerbGlobal.has_strict_pointer_arith ⟨[]⟩ () = false := rfl
+example : @CerbGlobal.has_switch ⟨CerbGlobal.defaultSwitches⟩ .strict_reads = false := rfl
+-- positive controls: the reads are reads of the parameter
+example : @CerbGlobal.is_PNVI ⟨[.PNVI .AE_UDI]⟩ () = true := rfl
+example : @CerbGlobal.has_switch ⟨[.PNVI .AE_UDI]⟩ (.PNVI .AE_UDI) = true := rfl
+example : @CerbGlobal.has_switch ⟨[.PNVI .AE_UDI]⟩ (.PNVI .AE) = false := rfl
+example : @CerbGlobal.has_strict_pointer_arith ⟨[.pointer_arith .STRICT]⟩ () = true := rfl
+-- `is_CHERI` stays a build constant (design §B.4.1), whatever the switch set
+example : CerbGlobal.is_CHERI () = false := rfl
 -- the derived `Inhabited` default of `CerbSwitch` is still the first lem-subset constructor
--- (pre-merge audit M4: a first-placed new constructor had moved it)
+-- (pre-merge audit M4: a first-placed new constructor had moved it; PNVI arc S1 appended `PNVI`)
 example : (default : CerbGlobal.CerbSwitch) = .strict_reads := rfl
 
 -- hence an arm IS its default: gt_ptrval on two concrete pointers is the address comparison
 example (loc : CerbLocation.Loc) (a1 a2 : Int) :
-    CerbMem.gtPtrval loc (.PV .Prov_none (.PVconcrete none a1)) (.PV .Prov_none (.PVconcrete none a2))
+    @CerbMem.gtPtrval ⟨[]⟩ loc (.PV .Prov_none (.PVconcrete none a1)) (.PV .Prov_none (.PVconcrete none a2))
       = CerbMem.memReturn (decide (a1 > a2)) := rfl
 
 /-! ## H3 — named kills and hygiene (seam-hygiene H3, 2026-09-19) -/

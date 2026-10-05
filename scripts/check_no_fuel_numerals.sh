@@ -20,7 +20,8 @@
 # THE ALLOWED SITES — Main.lean, allowlisted by exact line content (the
 # harness defaults and the single fuel instantiation that consumes one):
 #   def defaultFuel : Nat := 100000000  -- FUEL-DEFAULT (the one allowed fuel numeral)
-#   let code ← (letI : LemFuel := ⟨fuel⟩; runPipeline …
+#   let code ← (letI : LemFuel := ⟨fuel⟩; letI : CerbGlobal.Switches := ⟨…⟩; runPipeline …
+#     (the switch-set instance joined the line in PNVI arc S1, 2026-10-05)
 #   def defaultAddressSpaceTop : Int := 0xFFFFFFFFFFFF  -- ADDRESS-SPACE-DEFAULT
 # Any other occurrence of the shapes below fails, naming file:line.
 #
@@ -83,7 +84,7 @@ MIN_FILES=150
 # Allowlist: exact (whitespace-trimmed) code lines permitted in Main.lean only.
 ALLOW_MAIN=(
   'def defaultFuel : Nat := 100000000'
-  'let code ← (letI : LemFuel := ⟨fuel⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace'
+  'let code ← (letI : LemFuel := ⟨fuel⟩; letI : CerbGlobal.Switches := ⟨CerbGlobal.defaultSwitches⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace'
   'def defaultAddressSpaceTop : Int := 0xFFFFFFFFFFFF'
 )
 

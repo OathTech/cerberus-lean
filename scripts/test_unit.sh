@@ -207,6 +207,23 @@ if ! "$NOFUEL_SH"; then
     exit 1
 fi
 
+# Switch-set instance gate (PNVI arc S1, 2026-10-05; design §B.3/§D.2 P5+P8): the switch
+# set is the instance-implicit `[CerbGlobal.Switches]`; NO instance declaration of it in this
+# repository (seams, generated, test, speclab, tests/, the consumed LemLib) and no production
+# value of it outside Main.lean's one `letI` — a global instance would be a hidden default.
+# Scoped to THIS repository (a consumer's own instance is the intended use). --selftest plants
+# first (instances in a seam/generated/test/speclab, an attribute, two production values: RED;
+# a consumer-style package under .tmp/ with its own instance: GREEN). Fail-closed.
+SWINST_SH="$(dirname "$PURITY_SH")/check_switches_instance.sh"
+if ! "$SWINST_SH" --selftest; then
+    echo "test_unit: switch-set instance gate SELFTEST FAILED"
+    exit 1
+fi
+if ! "$SWINST_SH"; then
+    echo "test_unit: switch-set instance gate FAILED"
+    exit 1
+fi
+
 # Fuel-parametricity pin set (fuel-parameter arc, pre-merge audit M1): the
 # generated tree's ambient fuel wrappers must equal the set pinned by the
 # 64 `∀ n, @f ⟨n⟩ = f_lemFuel n` examples of TotalityProofTest.lean Part 1,

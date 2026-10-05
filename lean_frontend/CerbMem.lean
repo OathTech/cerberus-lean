@@ -2282,7 +2282,7 @@ def allocator (sz align : Int) : memM (StorageInstanceId × Address) :=
     set is refused — Z-24 — so the default arm is the only reachable one).
     `init_opt = Some mval` (:1320-1345): readonly kind by prefix
     (`readonlyStatusForAlloc`), `repr` threading the funptrmap. -/
-def allocateObject [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (_ : Nat) (pref : prefix0) (alignIv : IntegerValue)
+def allocateObject [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : TagDefs) (_ : Nat) (pref : prefix0) (alignIv : IntegerValue)
     (ty : ctype) (reqAddrOpt : Option Int) (initOpt : Option MemValue) : memM PointerValue :=
   match alignIv with
   | .IV _ alignN =>
@@ -2348,7 +2348,7 @@ def allocateRegion [LemFuel] (_ : Nat) (_pref : prefix0) (alignIv sizeIv : Integ
     D6/D7; the arms and their ORDER mirror `kill loc is_dyn` exactly — the
     charter's Z-09/Z-11/Z-12 seam rows fall inside the same hunk) -/
 
-def killM (loc : CerbLocation.Loc) (isDynamic : Bool) (pv : PointerValue) : memM Unit :=
+def killM [CerbGlobal.Switches] (loc : CerbLocation.Loc) (isDynamic : Bool) (pv : PointerValue) : memM Unit :=
   ND fun st =>
     -- every `fail ~loc` routes through the fail mapping (impl_mem.ml:540-546):
     -- Free_non_matching/Free_dead_allocation → UB179a/UB179b, MerrOther and
@@ -2440,9 +2440,12 @@ def killM (loc : CerbLocation.Loc) (isDynamic : Bool) (pv : PointerValue) : memM
     `if CerbGlobal.has_switch … then <loud kill> else <the default arm>`:
     the switch set is REFUSED by this port (Z-24, VALIDATION.md §3 "(c)
     Semantics switches"), so on the matched default set (`Switches.set []`,
-    main.ml:129-143; `CerbGlobal.switches = []`, every `has_switch … = false`
-    and `is_PNVI () = false` by `rfl` — CerbGlobal.lean, and the eight
-    `has_switch_*_eq` lemmas) each guard reduces to its default arm — the
+    main.ml:129-143; since PNVI arc S1, 2026-10-05, every read is of the
+    instance-implicit parameter `[CerbGlobal.Switches]`, which each function
+    here binds after `[LemFuel]`, and the run's instance is Main.lean's
+    `⟨CerbGlobal.defaultSwitches⟩` = `⟨[]⟩`, at which every `has_switch … = false`
+    and `is_PNVI () = false` by `rfl` — CerbGlobal.lean's `has_switch_*_default`
+    lemmas) each guard reduces to its default arm — the
     only arm either engine executes — and a consumer's proof rewrites with
     the lemma instead of trusting a comment; the SET branch is a loud kill
     naming the un-ported OCaml arm (never reachable while the switch set is
@@ -2495,7 +2498,7 @@ def isAtomicMemberAccess [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (al
     | _ => false
   | none => false
 
-def loadM [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (pv : PointerValue) : memM (Footprint × MemValue) :=
+def loadM [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (pv : PointerValue) : memM (Footprint × MemValue) :=
   ND fun st =>
     let fail_ (err : mem_error) := (NDkilled (failReason err loc), st)
     -- do_load — impl_mem.ml:1556-1603 (`last_used= alloc_id_opt` :1567
@@ -2666,7 +2669,7 @@ def ptrAddr (pv : PointerValue) : Option Int :=
         equality)] (:1877-1880) — a real ND fork (NDnd), enumerated by
         both sides' exhaustive runners, so the trace-count doubling is
         oracle-matching by construction. -/
-def eqPtrval (_ : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
+def eqPtrval [CerbGlobal.Switches] (_ : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   match pv1, pv2 with
   | .PV _ (.PVnull _), .PV _ (.PVnull _) => memReturn true
   | .PV _ (.PVnull _), _ | _, .PV _ (.PVnull _) => memReturn false
@@ -2697,7 +2700,7 @@ def eqPtrval (_ : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
         [("using provenance", memReturn false),
          ("ignoring provenance", memReturn (addr1 == addr2))]
 
-def nePtrval [LemFuel] (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
+def nePtrval [LemFuel] [CerbGlobal.Switches] (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   nd_bind (eqPtrval loc pv1 pv2) (fun b => memReturn (!b))
 
 /-! Relational pointer operators — impl_mem.ml:1886-1955 (arc-14 S1 F1,
@@ -2711,7 +2714,7 @@ def nePtrval [LemFuel] (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM 
     mirrored arm-for-arm, including the exact error strings. -/
 
 /-- lt_ptrval — impl_mem.ml:1886-1902. -/
-def ltPtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
+def ltPtrval [CerbGlobal.Switches] (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   match pv1, pv2 with
   | .PV _ (.PVconcrete _ a1), .PV _ (.PVconcrete _ a2) =>
     -- :1897-1903 SW_strict_pointer_relationals: refused set (Z-24), set case loud (H2)
@@ -2723,7 +2726,7 @@ def ltPtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   | _, _ => memFail (MerrWIP "lt_ptrval") loc                 -- :1901-1902
 
 /-- gt_ptrval — impl_mem.ml:1904-1917. -/
-def gtPtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
+def gtPtrval [CerbGlobal.Switches] (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   match pv1, pv2 with
   | .PV _ (.PVconcrete _ a1), .PV _ (.PVconcrete _ a2) =>
     -- :1915-1921 SW_strict_pointer_relationals: refused set (Z-24), set case loud (H2)
@@ -2733,7 +2736,7 @@ def gtPtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   | _, _ => memFail (MerrWIP "gt_ptrval") loc                 -- :1916-1917
 
 /-- le_ptrval — impl_mem.ml:1919-1935. -/
-def lePtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
+def lePtrval [CerbGlobal.Switches] (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   match pv1, pv2 with
   | .PV _ (.PVconcrete _ a1), .PV _ (.PVconcrete _ a2) =>
     -- :1930-1938 SW_strict_pointer_relationals: refused set (Z-24), set case loud (H2)
@@ -2743,7 +2746,7 @@ def lePtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   | _, _ => memFail (MerrWIP "le_ptrval") loc                 -- :1934-1935
 
 /-- ge_ptrval — impl_mem.ml:1937-1953. -/
-def gePtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
+def gePtrval [CerbGlobal.Switches] (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   match pv1, pv2 with
   | .PV _ (.PVconcrete _ a1), .PV _ (.PVconcrete _ a2) =>
     -- :1947-1955 SW_strict_pointer_relationals: refused set (Z-24), set case loud (H2)
@@ -2764,7 +2767,7 @@ def gePtrval (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
     valid_postcond (impl_mem.ml:1961-1967): strip ONE Array layer off
     diff_ty, then TRUNCATING Z.div of the address difference by
     sizeof(elem). -/
-def diffPtrval [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc) (diffTy : ctype) (pv1 pv2 : PointerValue) : memM IntegerValue :=
+def diffPtrval [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc) (diffTy : ctype) (pv1 pv2 : PointerValue) : memM IntegerValue :=
   ND fun st =>
     let errorPostcond := (NDkilled (failReason MerrPtrdiff loc), st)
     -- :1978-1983 SW_pointer_arith PERMISSIVE → a provenance-blind subtraction.
@@ -2868,7 +2871,7 @@ private def wrapI (n : Int) (lo hi : Int) : Int :=
     concrete pointer even at 0, :2172-2173 — the charter's Z-09). The
     is_PNVI arm (:2146-2162, allocation finding) is refused, not ported:
     PNVI is a refused switch (Z-24). -/
-def ptrfromint (_ : CerbLocation.Loc) (_ : integerType) (refTy : ctype)
+def ptrfromint [CerbGlobal.Switches] (_ : CerbLocation.Loc) (_ : integerType) (refTy : ctype)
     (iv : IntegerValue) : memM PointerValue :=
   match iv with
   | .IV prov nRaw =>
@@ -2888,7 +2891,7 @@ def ptrfromint (_ : CerbLocation.Loc) (_ : integerType) (refTy : ctype)
 /-- intfromptr — impl_mem.ml:2439-2461.
     For concrete pointer: validate address fits in target integer type,
     fail with MerrIntFromPtr on overflow. -/
-def intfromptr (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc) (_ : ctype) (ity : integerType)
+def intfromptr [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc) (_ : ctype) (ity : integerType)
     (pv : PointerValue) : memM IntegerValue :=
   match pv with
   | .PV prov (.PVnull _) => memReturn (.IV prov 0)
@@ -2942,7 +2945,7 @@ def intfromptr (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc
     here `offset` is computed in the concrete arms only (a null pointer
     with a void element type fails UB046 instead of asserting — a corner
     inside the refused region, recorded). -/
-def effArrayShiftPtrval [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc) (pv : PointerValue) (elemTy : ctype) (iv : IntegerValue) : memM PointerValue :=
+def effArrayShiftPtrval [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc) (pv : PointerValue) (elemTy : ctype) (iv : IntegerValue) : memM PointerValue :=
   match pv, iv with
   | .PV _ (.PVnull _), _ => memFail MerrArrayShift loc                             -- :2247-2251
   | .PV _ (.PVfunction _), _ => failStopMem "Concrete.eff_array_shift_ptrval, PVfunction"  -- :2252-2253
@@ -2974,7 +2977,7 @@ def effMemberShiftPtrval [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (_ 
     Upstream's own TODOs (overlap-UB unimplemented) inherit unchanged.
     The loop recurses on a Nat countdown (structural; upstream counts up
     with `Z.lt i size_n`, same iteration space). -/
-def memcpyM [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc) (dst src : PointerValue) (sizeIv : IntegerValue) : memM PointerValue :=
+def memcpyM [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc) (dst src : PointerValue) (sizeIv : IntegerValue) : memM PointerValue :=
   match sizeIv with
   | .IV _ size_n =>
     let rec aux : Nat → Int → memM PointerValue
@@ -3009,7 +3012,7 @@ def memcpyM [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocat
     total rendering is kept and declared. (memcpy, :2637-2644 `Z.lt i
     size_n`, runs ZERO iterations on a negative size on both sides — no
     difference there.) -/
-def memcmpM [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (pv1 pv2 : PointerValue) (sizeIv : IntegerValue) : memM IntegerValue :=
+def memcmpM [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : TagDefs) (pv1 pv2 : PointerValue) (sizeIv : IntegerValue) : memM IntegerValue :=
   match sizeIv with
   | .IV _ size_n =>
     -- get_bytes — impl_mem.ml:2650-2659 (ptr' = ptr+1 uchar per step)
@@ -3043,7 +3046,7 @@ def memcmpM [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (pv1 pv2 : Point
     null → allocate_region (fresh)
     concrete + dynamic + live + base → allocate new, memcpy, kill old
     everything else → MerrWIP failure -/
-def reallocM [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc) (tid : Nat) (align : IntegerValue)
+def reallocM [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc) (tid : Nat) (align : IntegerValue)
     (ptr : PointerValue) (size : IntegerValue) : memM PointerValue :=
   match ptr with
   | .PV .Prov_none (.PVnull _) =>
@@ -3232,7 +3235,7 @@ def vaList (vaIdx : Int) : memM (List (ctype × PointerValue)) :=
     zero-discrepancy Z-05 (noodle D4): this used to return `pv` unchanged
     (`Specified(1)` vs the oracle's `Specified(2)` on
     tests/immaculate/libc/zd-d4-copy-alloc-id.c). -/
-def copyAllocId [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (iv : IntegerValue) (pv : PointerValue) : memM PointerValue :=
+def copyAllocId [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : TagDefs) (iv : IntegerValue) (pv : PointerValue) : memM PointerValue :=
   nd_bind (intfromptr enumDefs tagDefs (CerbLocation.other "copy_alloc_id") void (.Unsigned .Intptr_t) pv)
     (fun _ => ptrfromint (CerbLocation.other "copy_alloc_id") (.Unsigned .Intptr_t) void iv)
 /-- call_intrinsic — impl_mem.ml:2190-2191 `assert false (* CHERI only *)`

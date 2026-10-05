@@ -72,10 +72,15 @@ moreLeanArgs = ["-DautoImplicit=false"]
 # niceness (layout, comments, mutual records as structures), backend hardening A/C,
 # the BEq instance lattice; generated OCaml byte-identical.
 # Evidence: docs/2026-10-04_lem-repin-4e70bb5-record.md.
+# PNVI arc S1, 2026-10-05: PROVISIONAL pin to fc8fbef, the UNMERGED lem-lean
+# branch arc/pnvi-switches (the same-name branch pair; S0 instance-implicit
+# readers); LemLib (lean-lib/) byte-identical to 4e70bb5; generated OCaml
+# byte-identical. The orchestrator re-points it if lem's commit changes after
+# review. Evidence: docs/2026-10-05_pnvi-s1-switch-parameter-record.md.
 [[require]]
 name = "LemLib"
 git = "https://github.com/OathTech/lem-lean"
-rev = "4e70bb506d962355b7120260d4d176aa2850dcc3"
+rev = "fc8fbefece6e9861920bc1ca335e662e9a80ecbb"
 subDir = "lean-lib"
 
 [[lean_lib]]
@@ -134,6 +139,7 @@ roots = [
   "GenTyping", "GenTyping_auxiliary",
   "Global", "Global_auxiliary",
   "Implementation", "Implementation_auxiliary",
+  "Lean_switches", "Lean_switches_auxiliary",
   "IntegerImpl", "IntegerImpl_auxiliary",
   "IntegerType", "IntegerType_auxiliary",
   "Linux", "Linux_auxiliary",

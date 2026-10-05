@@ -367,18 +367,21 @@ theorem fuelExhaustedKill_ne_Other {err : Type} (e : err) :
 `@X ⟨n⟩ = X_lemFuel n` for EVERY `n`, by `rfl` (the wrapper is
 `X_lemFuel LemFuel.fuel` and `LemFuel.fuel ⟨n⟩` is `n` by projection).
 A worker that passes the ambient on to its callees (the driver family)
-carries the instance itself: `@X ⟨n⟩ = @X_lemFuel ⟨n⟩ n`. The statement
+carries the instance itself: `@X ⟨n⟩ = @X_lemFuel ⟨n⟩ n` (a driver-family
+worker that also reads the switch set binds `[CerbGlobal.Switches]` after
+`[LemFuel]` — PNVI arc S1 — so its statement quantifies over that instance
+too: `@X ⟨n⟩ sws = @X_lemFuel ⟨n⟩ sws n`). The statement
 that used to read `X = X_lemFuel CerbFuel.driverFuel` is the instance
 `n := 100000000` of these. -/
 
-theorem driver2_wrapper_defeq (n : Nat) :
-    @driver2 ⟨n⟩ = @driver2_lemFuel ⟨n⟩ n := rfl
+theorem driver2_wrapper_defeq (n : Nat) (sws : CerbGlobal.Switches) :
+    @driver2 ⟨n⟩ sws = @driver2_lemFuel ⟨n⟩ sws n := rfl
 
 theorem print_eval_conv_aux_wrapper_defeq (n : Nat) :
     @print_eval_conv_aux ⟨n⟩ = @print_eval_conv_aux_lemFuel ⟨n⟩ n := rfl
 
-theorem drive_nonmemory_steps_aux2_wrapper_defeq (n : Nat) :
-    @drive_nonmemory_steps_aux2 ⟨n⟩ = @drive_nonmemory_steps_aux2_lemFuel ⟨n⟩ n := rfl
+theorem drive_nonmemory_steps_aux2_wrapper_defeq (n : Nat) (sws : CerbGlobal.Switches) :
+    @drive_nonmemory_steps_aux2 ⟨n⟩ sws = @drive_nonmemory_steps_aux2_lemFuel ⟨n⟩ sws n := rfl
 
 /- `hack_wrapper_defeq` LEFT this list at the 2026-09-08 fuel-pending close-out:
    `hack` is MEASURED (`hack_lemFuel (lemSize pexpr1) …` under the hypothesis

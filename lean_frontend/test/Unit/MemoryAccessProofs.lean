@@ -15,8 +15,9 @@ def eraseNode (r : nd_action α String mem_error (mem_constraint IntegerValue) M
   (r.1, stopObserving r.2)
 
 -- These concern the actual primitives, for arbitrary memory, pointers, type
--- tables, values and caller-selected fuel; no receipt-derived state model.
-theorem load_erasure [LemFuel] (es ts l t p s) :
+-- tables, values and caller-selected fuel — and, for the load, an arbitrary switch
+-- set (PNVI arc S1: `loadM` reads `[CerbGlobal.Switches]`); no receipt-derived state model.
+theorem load_erasure [LemFuel] [CerbGlobal.Switches] (es ts l t p s) :
     eraseNode (step (loadM es ts l t p) s) =
       step (loadM es ts l t p) (stopObserving s) := by
   simp only [eraseNode, CerbFail.step, loadM, stopObserving, readBytesFrom]

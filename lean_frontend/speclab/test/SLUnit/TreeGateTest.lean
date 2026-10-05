@@ -52,7 +52,7 @@ def gateRunDigest : String := "900150983cd24fb0d6963f7d28e17f72"
 project (verdict, final allocation-map size). Effect-retirement C1:
 no ambient CerbTags set/reset — layouts reach CerbMem by value via the
 `drive` reader seed; supply-parameterized entry (seed 0). -/
-def runFileT [LemFuel] (f : file core_run_annotation) : IO (Sum (Int × Nat) String) := do
+def runFileT [LemFuel] [CerbGlobal.Switches] (f : file core_run_annotation) : IO (Sum (Int × Nat) String) := do
   return match CerbND.runND (drive f.enumDefs f.tagDefs false f ["cmdname"])
       ((initial_driver_state 0 gateAddressSpaceTop gateRunDigest f CerbFS.fs_initial_state).1) with
   | [(Active r, _, st)] =>
@@ -101,7 +101,7 @@ def applyParams24 : List Int → Option (generic_fun_map_decl Unit Unit)
   | _ => none
 
 /-- Check one exec point: verdict + leak observable. -/
-def checkRunT [LemFuel] (label : String) (f : file core_run_annotation)
+def checkRunT [LemFuel] [CerbGlobal.Switches] (label : String) (f : file core_run_annotation)
     (wantVerdict : Int) (wantAllocs : Nat) (note : String) :
     IO Nat := do
   match ← runFileT f with
@@ -124,7 +124,7 @@ def checkRunT [LemFuel] (label : String) (f : file core_run_annotation)
 
 /-- The gate body at the ambient fuel (`[LemFuel]`; fuel-parameter arc):
     `main` below instantiates it once from `--fuel N` (SLUnit.Fuel). -/
-def mainAt [LemFuel] : IO UInt32 := do
+def mainAt [LemFuel] [CerbGlobal.Switches] : IO UInt32 := do
   let mut failures := 0
   -- 1. drift gate
   let (a, b, d, c, rt, dp, sp, drp, bu) ← SpecLabEmitCore.readTreeInputs
@@ -193,4 +193,5 @@ def mainAt [LemFuel] : IO UInt32 := do
 /-- Entry: the fuel is the caller's parameter (`--fuel N`, required). -/
 def main (args : List String) : IO UInt32 := do
   let fuel ← SLUnit.fuelFromArgs args
-  @mainAt ⟨fuel⟩
+  -- the default switch set (PNVI arc S1): the gate runs the shipped default-mode pipeline
+  @mainAt ⟨fuel⟩ ⟨CerbGlobal.defaultSwitches⟩

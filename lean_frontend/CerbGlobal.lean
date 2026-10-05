@@ -43,13 +43,27 @@
     `has_strict_pointer_arith` (:159-160) are `List.exists`/`has_switch`
     over the same list.
 
-  STEP 2 (NOT this file's job; the named mover of the former allowlist
-  rows, `temporal(post-arc-parameter-plumbing-slice)`): the configuration
-  becomes a reader-lifted PARAMETER exactly as `tagDefs` is (`declare
-  {lean} reader val` on the `Global.*` reads in global.lem), so a theorem
-  quantifies over switch settings. `using_concurrency`'s step 2 belongs
-  to `feature/concurrency` (docs/2026-09-04_concurrency-scoping.md §4: "the
-  feature branch OWNS A-step-2 for `using_concurrency` only"). The
+  THE SWITCH SET IS A PARAMETER (PNVI arc S1, 2026-10-05; record
+  docs/2026-10-05_pnvi-s1-switch-parameter-record.md; design
+  docs/2026-10-04_pnvi-ae-udi-design.md §B.3, option 3, accepted
+  [USER 2026-10-05]): the switch set is the instance-implicit class
+  `Switches` below — the `[LemFuel]` shape. `has_switch`, `is_PNVI` and
+  `has_strict_pointer_arith` read `Switches.switches`; every definition
+  that (transitively) reads them binds `[CerbGlobal.Switches]` (lem's
+  instance reader, `frontend/model/lean_switches.lem`). NO instance of the
+  class exists in this repository's library, seams, generated tree, tests
+  or speclab (gate `scripts/check_switches_instance.sh`); `Main.lean`
+  supplies the one run instance, `⟨defaultSwitches⟩`, beside its
+  `LemFuel` instance. A theorem quantifies by binding `[Switches]`, or
+  states the default by `@f ⟨defaultSwitches⟩` / `@f ⟨[]⟩`, where every
+  test reduces by `rfl`. DELIBERATE DIVERGENCE OF MECHANISM: OCaml reads
+  the global `Switches.internal_ref`; this port reads the parameter — the
+  `tagDefs`/`enum_definitions` precedent
+  (docs/2026-09-18_program-data-parameters-design-note.md §1); the values
+  are the same list. `is_CHERI` stays a BUILD constant (design §B.4.1).
+  The rest of the configuration (`conf`) is still the plain default; its
+  step 2 is not this slice's (`using_concurrency`'s belongs to the
+  concurrency work, docs/2026-09-04_concurrency-scoping.md §4). The
   `CerbConf` structure below is kept as the value type that parameter
   will have.
 -/
@@ -84,6 +98,14 @@ inductive PointerArithMode where
   | STRICT
   deriving BEq, Inhabited, Repr
 
+/-- The payload of `SW_PNVI of [ `PLAIN | `AE | `AE_UDI ]` (switches.ml:20;
+    `--switches=PNVI` / `PNVI_ae` / `PNVI_ae_udi` read it at switches.ml:78-83). -/
+inductive PNVIVariant where
+  | PLAIN
+  | AE
+  | AE_UDI
+  deriving BEq, Inhabited, Repr
+
 inductive CerbSwitch where
   | strict_reads
   | forbid_nullptr_free
@@ -111,6 +133,12 @@ inductive CerbSwitch where
   | strict_pointer_relationals
   -- switches.ml:32 `SW_zero_initialised`
   | zero_initialised
+  -- switches.ml:20 `SW_PNVI of [ `PLAIN | `AE | `AE_UDI ]` (PNVI arc S1, 2026-10-05;
+  -- appended so the derived `Inhabited` default stays `.strict_reads`). Lean-only:
+  -- the lem subset (global.lem `cerb_switch`) does not gain it, because a new lem
+  -- constructor changes the generated OCaml `Lem_global.cerb_switch` declaration
+  -- (record §3, deviation D2); no lem code names it — `is_PNVI` is the only reader.
+  | PNVI (v : PNVIVariant)
   deriving BEq, Inhabited, Repr
 
 /-! ## Configuration
@@ -159,9 +187,23 @@ structure CerbConf where
     (cerb_global.ml:35-43 with no flag passed). -/
 def conf : CerbConf := {}
 
-/-- The switch set: `Switches.internal_ref = ref []` (switches.ml:47-48),
-    never written — `--switches`/`--iso` are refused (Z-24). -/
-def switches : List CerbSwitch := []
+/-- THE SWITCH SET, as an instance-implicit parameter (PNVI arc S1; design §B.3).
+    OCaml: the global `Switches.internal_ref` (switches.ml:47-48), read by
+    `get_switches` (:51-52). One field; lem's instance reader
+    `declare {lean} reader val switches = instance `CerbGlobal.Switches.switches``
+    (frontend/model/lean_switches.lem) emits this projection, and every lifted
+    definition binds `[CerbGlobal.Switches]`. There is deliberately NO instance in
+    this repository outside `Main.lean`'s `letI` (gate
+    `scripts/check_switches_instance.sh`). -/
+class Switches where
+  switches : List CerbSwitch
+
+/-- The default switch set: `Switches.internal_ref = ref []` (switches.ml:47-48) —
+    the value the oracle holds when no `--switches`/`--iso` is passed. FORCED by
+    OCaml, not a magic value. `Main.lean` runs every program at
+    `⟨defaultSwitches⟩` (it refuses every `--switches` value, Z-24). Renamed from
+    `CerbGlobal.switches` in PNVI arc S1. -/
+def defaultSwitches : List CerbSwitch := []
 
 /-! ## Config accessors (mirror cerb_global.ml:45-64) -/
 
@@ -186,33 +228,40 @@ def isAgnostic (_ : Unit) : Bool :=
 def isIgnoreBitfields (_ : Unit) : Bool :=
   conf.ignoreBitfields
 
-/-! ## Switch accessors (mirror switches.ml:54-55, 153-160) -/
+/-! ## Switch accessors (mirror switches.ml:54-55, 153-160) — read the parameter -/
 
-/-- `has_switch sw = List.mem sw !internal_ref` (switches.ml:54-55). -/
-def has_switch (sw : CerbSwitch) : Bool :=
-  switches.any (· == sw)
+/-- `has_switch sw = List.mem sw !internal_ref` (switches.ml:54-55), over the
+    parameter. -/
+def has_switch [Switches] (sw : CerbSwitch) : Bool :=
+  Switches.switches.any (· == sw)
 
 /-- `List.exists (function SW_CHERI -> true | _ -> false) !internal_ref`
-    (switches.ml:153-154). -/
-def is_CHERI (_ : Unit) : Bool :=
-  has_switch .cheri
+    (switches.ml:153-154). A BUILD CONSTANT here, not a read of the parameter
+    (design §B.4.1, accepted [USER 2026-10-05] §F.9): CHERI is a memory-MODEL
+    selection upstream (the separate `cerberus-cheri` executable injects "CHERI",
+    main.ml:130-136); this port has the concrete model alone, and `--switches=CHERI`
+    is refused at the CLI. Lifting it would put the binder on `sizeofCtype` and
+    every layout function for a value that is always `false` in this executable.
+    Deliberate divergence of mechanism, documented. -/
+def is_CHERI (_ : Unit) : Bool := false
 
 /-- `List.exists (function SW_PNVI _ -> true | _ -> false) !internal_ref`
-    (switches.ml:156-157) over the empty list; `SW_PNVI` is not in the lem
-    subset (`CerbSwitch`), so the test is written as its value. -/
-def is_PNVI (_ : Unit) : Bool := false
+    (switches.ml:156-157), over the parameter. -/
+def is_PNVI [Switches] (_ : Unit) : Bool :=
+  Switches.switches.any (fun | .PNVI _ => true | _ => false)
 
-/-- `has_switch (SW_pointer_arith `STRICT)` (switches.ml:159-160) — written
-    as its OCaml body since the switch has a constructor (seam-hygiene H2;
-    until then `SW_pointer_arith` was not in the lem subset and the test was
-    written as its value, `false`). -/
-def has_strict_pointer_arith (_ : Unit) : Bool :=
+/-- `has_switch (SW_pointer_arith `STRICT)` (switches.ml:159-160). -/
+def has_strict_pointer_arith [Switches] (_ : Unit) : Bool :=
   has_switch (.pointer_arith .STRICT)
 
 /-! ## The contract: what the kernel sees
-    Each read is its default by `rfl`; a consumer's proof through a switch
-    test rewrites with these (or unfolds) instead of `cases` on an opaque
-    `Bool` and proving the arm the binary can never take. -/
+    Each configuration read is its default by `rfl`. The switch reads are
+    stated AT THE DEFAULT INSTANCE `⟨defaultSwitches⟩` (= `⟨[]⟩`), where each
+    is `false` by `rfl` (`List.any [] p = false` is definitional); a consumer
+    declares its own local instance at `defaultSwitches` (or binds `[Switches]`
+    to quantify), and its proofs through a switch test rewrite with these. The
+    eight `has_switch_*_eq` lemmas of seam-hygiene H2 are replaced by these
+    instance-explicit forms (PNVI arc S1). -/
 
 theorem backend_name_eq : backend_name () = "Driver" := rfl
 theorem current_execution_mode_eq : current_execution_mode () = none := rfl
@@ -221,21 +270,29 @@ theorem isDefacto_eq : isDefacto () = false := rfl
 theorem isPermissive_eq : isPermissive () = false := rfl
 theorem isAgnostic_eq : isAgnostic () = false := rfl
 theorem isIgnoreBitfields_eq : isIgnoreBitfields () = false := rfl
-theorem has_switch_eq (sw : CerbSwitch) : has_switch sw = false := rfl
--- the eight switch-conditioned arms of impl_mem.ml (CerbMem.lean, seam-hygiene H2):
-theorem has_switch_strict_reads_eq : has_switch .strict_reads = false := rfl
-theorem has_switch_forbid_nullptr_free_eq : has_switch .forbid_nullptr_free = false := rfl
-theorem has_switch_zap_dead_pointers_eq : has_switch .zap_dead_pointers = false := rfl
-theorem has_switch_strict_pointer_equality_eq : has_switch .strict_pointer_equality = false := rfl
-theorem has_switch_strict_pointer_relationals_eq : has_switch .strict_pointer_relationals = false := rfl
-theorem has_switch_pointer_arith_permissive_eq : has_switch (.pointer_arith .PERMISSIVE) = false := rfl
-theorem has_switch_pointer_arith_strict_eq : has_switch (.pointer_arith .STRICT) = false := rfl
-theorem has_switch_zero_initialised_eq : has_switch .zero_initialised = false := rfl
+theorem defaultSwitches_eq : defaultSwitches = [] := rfl
+theorem has_switch_default (sw : CerbSwitch) : @has_switch ⟨defaultSwitches⟩ sw = false := rfl
+theorem has_switch_nil (sw : CerbSwitch) : @has_switch ⟨[]⟩ sw = false := rfl
+-- per switch, at the default (the arms of impl_mem.ml CerbMem tests, seam-hygiene H2,
+-- the two lem-model switches, and the PNVI family):
+theorem has_switch_strict_reads_default : @has_switch ⟨[]⟩ .strict_reads = false := rfl
+theorem has_switch_forbid_nullptr_free_default : @has_switch ⟨[]⟩ .forbid_nullptr_free = false := rfl
+theorem has_switch_zap_dead_pointers_default : @has_switch ⟨[]⟩ .zap_dead_pointers = false := rfl
+theorem has_switch_inner_arg_temps_default : @has_switch ⟨[]⟩ .inner_arg_temps = false := rfl
+theorem has_switch_permissive_printf_default : @has_switch ⟨[]⟩ .permissive_printf = false := rfl
+theorem has_switch_no_integer_provenance_default : @has_switch ⟨[]⟩ .no_integer_provenance = false := rfl
+theorem has_switch_cheri_default : @has_switch ⟨[]⟩ .cheri = false := rfl
+theorem has_switch_strict_pointer_equality_default : @has_switch ⟨[]⟩ .strict_pointer_equality = false := rfl
+theorem has_switch_strict_pointer_relationals_default : @has_switch ⟨[]⟩ .strict_pointer_relationals = false := rfl
+theorem has_switch_pointer_arith_permissive_default : @has_switch ⟨[]⟩ (.pointer_arith .PERMISSIVE) = false := rfl
+theorem has_switch_pointer_arith_strict_default : @has_switch ⟨[]⟩ (.pointer_arith .STRICT) = false := rfl
+theorem has_switch_zero_initialised_default : @has_switch ⟨[]⟩ .zero_initialised = false := rfl
+theorem has_switch_PNVI_default (v : PNVIVariant) : @has_switch ⟨[]⟩ (.PNVI v) = false := rfl
 -- the derived `Inhabited` default is the first constructor, `.strict_reads` — pinned so a
 -- constructor reorder cannot move it silently again (pre-merge audit M4)
 example : (default : CerbSwitch) = .strict_reads := rfl
 theorem is_CHERI_eq : is_CHERI () = false := rfl
-theorem is_PNVI_eq : is_PNVI () = false := rfl
-theorem has_strict_pointer_arith_eq : has_strict_pointer_arith () = false := rfl
+theorem is_PNVI_default : @is_PNVI ⟨[]⟩ () = false := rfl
+theorem has_strict_pointer_arith_default : @has_strict_pointer_arith ⟨[]⟩ () = false := rfl
 
 end CerbGlobal

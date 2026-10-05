@@ -1,0 +1,72 @@
+(* LEAN-ONLY lem module: the switch set as an instance-implicit parameter.
+   PNVI arc S1, 2026-10-05. Record:
+   lean_frontend/docs/2026-10-05_pnvi-s1-switch-parameter-record.md;
+   design: lean_frontend/docs/2026-10-04_pnvi-ae-udi-design.md §B.3
+   (option 3, accepted [USER 2026-10-05]).
+
+   This file is in the Lean generation list ONLY (Makefile LEM_SRC_LEAN), the
+   mirror image of core_unstruct.lem, which is in the OCaml list only. The
+   OCaml oracle never reads it; its switch reads stay the global
+   `Switches.*` target_reps of global.lem, unchanged.
+
+   WHY A SEPARATE FILE (record §3, deviation D1, MEASURED): every lem `val`
+   is emitted into the generated OCaml as a `(*val …*)` comment, and every
+   `let` with an OCaml target_rep as a `(*let …*)` comment. Putting the reader
+   `val switches` in global.lem would therefore change the generated
+   `lem_global.ml`, and the slice's invariant is a BYTE-IDENTICAL generated
+   OCaml tree (the fork-drift layer-2 pins must not move). `declare`
+   statements emit nothing, so the consumer declarations below may name
+   other modules' constants (`Global.has_switch`, `Mem.load`) without
+   touching those modules.
+
+   THE MECHANISM (lem-lean `doc/lean-backend/2026-10-05_instance-reader-record.md`):
+   `switches` is an instance reader — a read emits the projection
+   `CerbGlobal.Switches.switches` and every definition that transitively
+   reads it, or calls one of its consumers, binds `[CerbGlobal.Switches]`.
+   The consumers are the target_rep'd vals whose hand-written Lean bodies
+   bind `[CerbGlobal.Switches]` themselves (CerbGlobal.lean, CerbMem.lean);
+   their call sites are textually unchanged. No lem code reads `switches ()`
+   directly: every switch read in the shared model goes through `has_switch`,
+   `is_PNVI` or `has_strict_pointer_arith`. `is_CHERI` is NOT a consumer: it
+   stays a build constant (design §B.4.1).
+
+   OCaml counterpart of the reader: `Switches.get_switches` (switches.ml:51-52). *)
+
+open import Pervasives
+import Global Mem
+
+val switches : unit -> list Global.cerb_switch
+(* target coverage: the projection itself (what the instance reader emits at a
+   read) — it typechecks only where a `[CerbGlobal.Switches]` instance is in
+   scope, so it can never stand for a default *)
+declare lean target_rep function switches u = `CerbGlobal.Switches.switches`
+declare {lean} reader val switches = instance `CerbGlobal.Switches.switches`
+
+(* the three switch readers of the shared model (global.lem; switches.ml:54-55,
+   156-160) — hand-written over the parameter in CerbGlobal.lean *)
+declare {lean} reader_consumer val Global.has_switch = instance switches
+declare {lean} reader_consumer val Global.is_PNVI = instance switches
+declare {lean} reader_consumer val Global.has_strict_pointer_arith = instance switches
+
+(* the memory interface (mem.lem) vals whose CerbMem.lean bodies read the switch
+   set, directly (the seam-hygiene H2 arms and the two PNVI guards:
+   allocateObject, killM, loadM, eqPtrval, lt/gt/le/gePtrval, diffPtrval,
+   ptrfromint, intfromptr, effArrayShiftPtrval) or through one of those
+   (nePtrval, memcpyM, memcmpM, reallocM, copyAllocId) *)
+declare {lean} reader_consumer val Mem.allocate_object = instance switches
+declare {lean} reader_consumer val Mem.kill = instance switches
+declare {lean} reader_consumer val Mem.load = instance switches
+declare {lean} reader_consumer val Mem.eq_ptrval = instance switches
+declare {lean} reader_consumer val Mem.ne_ptrval = instance switches
+declare {lean} reader_consumer val Mem.lt_ptrval = instance switches
+declare {lean} reader_consumer val Mem.gt_ptrval = instance switches
+declare {lean} reader_consumer val Mem.le_ptrval = instance switches
+declare {lean} reader_consumer val Mem.ge_ptrval = instance switches
+declare {lean} reader_consumer val Mem.diff_ptrval = instance switches
+declare {lean} reader_consumer val Mem.ptrfromint = instance switches
+declare {lean} reader_consumer val Mem.intfromptr = instance switches
+declare {lean} reader_consumer val Mem.eff_array_shift_ptrval = instance switches
+declare {lean} reader_consumer val Mem.memcpy = instance switches
+declare {lean} reader_consumer val Mem.memcmp = instance switches
+declare {lean} reader_consumer val Mem.realloc = instance switches
+declare {lean} reader_consumer val Mem.copy_alloc_id = instance switches
