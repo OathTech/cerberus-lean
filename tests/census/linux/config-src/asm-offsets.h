@@ -1,0 +1,1 @@
+/* Census stub [AGENT]: Kbuild generates this by compiling arch/x86/kernel/asm-offsets.c (a kernel build step, out of scope). Empty: any C use of an offset macro surfaces as a later front-end error, not silently. */

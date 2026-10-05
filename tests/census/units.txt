@@ -1,0 +1,86 @@
+# Census units (P1f-2, 2026-10-04) [AGENT]. Format:
+#   name|libc-mode (nolibc|libc)|flag set (pkvm|linux|libxml2)|TU,TU,...|stages (all|elab)
+# TU path tokens: @T@ tests/census, @P@ pKVM case study, @L@ deps/linux, @X@ deps/libxml2,
+# @G@ the run-time-derived pKVM TU dir (<out>/.pkvm-derived; pkvm/derive_pool_init.py).
+# TU order is the link order on both engines.
+#
+# 1. pKVM buddy allocator (page_alloc.c + one driver each). Drivers that call
+#    census_pool_init link @G@/page_alloc_census.c = `#include` of the case
+#    study's page_alloc.c + the derived census_pool_init (GPL text: generated,
+#    never committed; pre-merge audit M2, 2026-10-05).
+pkvm-init|nolibc|pkvm|@T@/pkvm/pkvm_init.c,@P@/page_alloc.c|all
+pkvm-alloc|nolibc|pkvm|@T@/pkvm/pkvm_alloc.c,@G@/page_alloc_census.c|all
+pkvm-free|nolibc|pkvm|@T@/pkvm/pkvm_free.c,@G@/page_alloc_census.c|all
+pkvm-split-merge|nolibc|pkvm|@T@/pkvm/pkvm_split_merge.c,@G@/page_alloc_census.c|all
+# libc mode: page_alloc.c defines its own memset (void-returning) — records how
+# a freestanding definition of a libc name meets the loaded libc
+pkvm-alloc-libc|libc|pkvm|@T@/pkvm/pkvm_alloc.c,@G@/page_alloc_census.c|all
+# 2. Linux lib/ (x86_64 minimal config, linux/prep.sh; driver + file)
+linux-gcd|nolibc|linux|@T@/linux/drivers/drv_gcd.c,@L@/lib/math/gcd.c|all
+linux-lcm|nolibc|linux|@T@/linux/drivers/drv_lcm.c,@L@/lib/math/lcm.c,@L@/lib/math/gcd.c|all
+linux-int_sqrt|nolibc|linux|@T@/linux/drivers/drv_int_sqrt.c,@L@/lib/math/int_sqrt.c|all
+linux-bsearch|nolibc|linux|@T@/linux/drivers/drv_bsearch.c,@L@/lib/bsearch.c|all
+linux-ctype|nolibc|linux|@T@/linux/drivers/drv_ctype.c,@L@/lib/ctype.c|all
+linux-sort|nolibc|linux|@T@/linux/drivers/drv_sort.c,@L@/lib/sort.c|all
+linux-list_sort|nolibc|linux|@T@/linux/drivers/drv_list_sort.c,@L@/lib/list_sort.c|all
+linux-kstrtox|nolibc|linux|@T@/linux/drivers/drv_kstrtox.c,@L@/lib/kstrtox.c|all
+linux-hexdump|nolibc|linux|@T@/linux/drivers/drv_hexdump.c,@L@/lib/hexdump.c|all
+linux-string|nolibc|linux|@T@/linux/drivers/drv_string.c,@L@/lib/string.c|all
+# 3. libxml2: every top-level .c, front end + bridge + Lean elaboration only
+#    (pinned config, scripts/libxml2_prep.sh arguments; running is covered by
+#    the chvalid/URI lanes)
+libxml2-HTMLparser|nolibc|libxml2|@X@/HTMLparser.c|elab
+libxml2-HTMLtree|nolibc|libxml2|@X@/HTMLtree.c|elab
+libxml2-SAX2|nolibc|libxml2|@X@/SAX2.c|elab
+libxml2-buf|nolibc|libxml2|@X@/buf.c|elab
+libxml2-c14n|nolibc|libxml2|@X@/c14n.c|elab
+libxml2-catalog|nolibc|libxml2|@X@/catalog.c|elab
+libxml2-chvalid|nolibc|libxml2|@X@/chvalid.c|elab
+libxml2-debugXML|nolibc|libxml2|@X@/debugXML.c|elab
+libxml2-dict|nolibc|libxml2|@X@/dict.c|elab
+libxml2-encoding|nolibc|libxml2|@X@/encoding.c|elab
+libxml2-entities|nolibc|libxml2|@X@/entities.c|elab
+libxml2-error|nolibc|libxml2|@X@/error.c|elab
+libxml2-globals|nolibc|libxml2|@X@/globals.c|elab
+libxml2-hash|nolibc|libxml2|@X@/hash.c|elab
+libxml2-lintmain|nolibc|libxml2|@X@/lintmain.c|elab
+libxml2-list|nolibc|libxml2|@X@/list.c|elab
+libxml2-nanohttp|nolibc|libxml2|@X@/nanohttp.c|elab
+libxml2-parser|nolibc|libxml2|@X@/parser.c|elab
+libxml2-parserInternals|nolibc|libxml2|@X@/parserInternals.c|elab
+libxml2-pattern|nolibc|libxml2|@X@/pattern.c|elab
+libxml2-relaxng|nolibc|libxml2|@X@/relaxng.c|elab
+libxml2-runsuite|nolibc|libxml2|@X@/runsuite.c|elab
+libxml2-runtest|nolibc|libxml2|@X@/runtest.c|elab
+libxml2-runxmlconf|nolibc|libxml2|@X@/runxmlconf.c|elab
+libxml2-schematron|nolibc|libxml2|@X@/schematron.c|elab
+libxml2-shell|nolibc|libxml2|@X@/shell.c|elab
+libxml2-testModule|nolibc|libxml2|@X@/testModule.c|elab
+libxml2-testapi|nolibc|libxml2|@X@/testapi.c|elab
+libxml2-testcatalog|nolibc|libxml2|@X@/testcatalog.c|elab
+libxml2-testchar|nolibc|libxml2|@X@/testchar.c|elab
+libxml2-testdict|nolibc|libxml2|@X@/testdict.c|elab
+libxml2-testdso|nolibc|libxml2|@X@/testdso.c|elab
+libxml2-testlimits|nolibc|libxml2|@X@/testlimits.c|elab
+libxml2-testparser|nolibc|libxml2|@X@/testparser.c|elab
+libxml2-testrecurse|nolibc|libxml2|@X@/testrecurse.c|elab
+libxml2-threads|nolibc|libxml2|@X@/threads.c|elab
+libxml2-tree|nolibc|libxml2|@X@/tree.c|elab
+libxml2-uri|nolibc|libxml2|@X@/uri.c|elab
+libxml2-valid|nolibc|libxml2|@X@/valid.c|elab
+libxml2-xinclude|nolibc|libxml2|@X@/xinclude.c|elab
+libxml2-xlink|nolibc|libxml2|@X@/xlink.c|elab
+libxml2-xmlIO|nolibc|libxml2|@X@/xmlIO.c|elab
+libxml2-xmlcatalog|nolibc|libxml2|@X@/xmlcatalog.c|elab
+libxml2-xmllint|nolibc|libxml2|@X@/xmllint.c|elab
+libxml2-xmlmemory|nolibc|libxml2|@X@/xmlmemory.c|elab
+libxml2-xmlmodule|nolibc|libxml2|@X@/xmlmodule.c|elab
+libxml2-xmlreader|nolibc|libxml2|@X@/xmlreader.c|elab
+libxml2-xmlregexp|nolibc|libxml2|@X@/xmlregexp.c|elab
+libxml2-xmlsave|nolibc|libxml2|@X@/xmlsave.c|elab
+libxml2-xmlschemas|nolibc|libxml2|@X@/xmlschemas.c|elab
+libxml2-xmlschemastypes|nolibc|libxml2|@X@/xmlschemastypes.c|elab
+libxml2-xmlstring|nolibc|libxml2|@X@/xmlstring.c|elab
+libxml2-xmlwriter|nolibc|libxml2|@X@/xmlwriter.c|elab
+libxml2-xpath|nolibc|libxml2|@X@/xpath.c|elab
+libxml2-xpointer|nolibc|libxml2|@X@/xpointer.c|elab

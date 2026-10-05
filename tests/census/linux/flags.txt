@@ -1,0 +1,25 @@
+# One cerberus argument per line (blank and # lines ignored). @L@ = deps/linux,
+# @C@ = the derived config dir written by prep.sh. Every -D below is a macro
+# gcc 13 predefines for x86_64 that the oracle cpp drops with -undef [AGENT].
+-D__KERNEL__
+-D__GNUC__=13
+-D__GNUC_MINOR__=3
+-D__GNUC_PATCHLEVEL__=0
+-D__x86_64__=1
+-D__CHAR_BIT__=8
+-D__SIZEOF_LONG__=8
+-D__SIZEOF_POINTER__=8
+-D__SIZEOF_INT__=4
+-D__SIZEOF_LONG_LONG__=8
+-D__ORDER_LITTLE_ENDIAN__=1234
+-D__ORDER_BIG_ENDIAN__=4321
+-D__BYTE_ORDER__=__ORDER_LITTLE_ENDIAN__
+-I@C@
+-I@L@/arch/x86/include
+-I@C@/arch-generated
+-I@L@/include
+-I@L@/arch/x86/include/uapi
+-I@C@/uapi-generated
+-I@L@/include/uapi
+--include=@L@/include/linux/kconfig.h
+--include=@L@/include/linux/compiler_types.h
