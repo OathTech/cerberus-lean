@@ -1024,3 +1024,23 @@ main.exe --runtime=_build/install/default [-d 10] --nolibc --exec --batch [--swi
 
 The §G flagged-site list comes from `awk 'NR>=277 && NR<=2830' memory/concrete/impl_mem.ml | grep -n -E 'FIXME|HACK|TODO|assert false|failwith|Printf\.printf|print_endline|prerr_endline|Cerb_debug\.warn|print_debug'`
 (line numbers re-based), read against the function bodies quoted in §A.
+
+## H. Operator rulings on §F.14–§F.16 (2026-10-05)
+
+Asked by the orchestrator with the reasoning given in chat (the four-class line: refuse where upstream
+silently does something it is unsure of, mirror where the arm is defined and the TODO is a question).
+Verbatim [USER 2026-10-05]: "1 - agree. 2 - I think in the end we should make this consistent, but it's
+fairly minor. 3 - if we do (b) it should be a global policy. I don't think it necessarily needs to be a
+refusal, but it shouldn't be an uncontrolled crash. And for now (a) is fine"
+
+- **§F.15 (the (D) sites): accepted.** MIRROR `:2191`, `:2293`, `:2308`/`:2379`, `:2399`; REFUSE `:840-842`
+  (the silently dropped third `find_overlaping` candidate becomes a loud check).
+- **§F.14 (the (A)/(B)/(C)-shaped sites also on the default path): unchanged in this arc**, default mode
+  stays bit-identical. The operator's direction is that this should EVENTUALLY be made consistent ("fairly
+  minor") — queued as a separate small review after the PNVI arc, listing every default-path crash /
+  "this is wrong" arm and its proposed treatment; it moves the consumer only by its own recorded re-pin.
+- **§F.16 (refusal shape): (a) for this arc** — the `CerbFS` `failwithI`-with-`refused — ` prefix shape.
+  Option (b), a dedicated controlled outcome, would be a GLOBAL policy over every such stop (CerbFS, PNVI,
+  asm, …), not a PNVI-local mechanism; per the operator it need not be a "refusal" as such, but it must
+  not be an uncontrolled crash. Queued as its own design question, to be agreed with cerberus-sl (whose
+  adequacy statements name the run outcomes).
