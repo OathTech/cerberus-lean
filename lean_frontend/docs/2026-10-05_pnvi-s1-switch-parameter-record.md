@@ -371,8 +371,46 @@ Release certification: incomplete: reporting/adoption/audit exits require separa
 
 Every row PASSED: A1, A2, A3, A4, A4b, A4c, A5, A6, A6b, A7, A8, A9, A10, A11, A12.1,
 A12.2 and A13. "Source unchanged: False" is because documentation files (this record,
-`CLAUDE.md`, `VALIDATION.md`, `LADDER.md`) were edited while the run was in progress. The
-re-run on the committed tree follows.
+`CLAUDE.md`, `VALIDATION.md`, `LADDER.md`) were edited while the run was in progress.
+
+**Re-run on the committed tree** (`de759fb0b`, clean worktree, same lem). Verbatim tail,
+12:01 wall, rc 0:
+
+```
+fast: passed; 17/17 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+The lanes' own verdict lines, verbatim from the run's evidence directory (deleted at slice
+end; the orchestrator re-runs):
+
+```
+A2   Baseline check: 0 regression(s), 0 improvement(s)  /  BASELINE OK
+A3   Baseline check: 0 regression(s), 0 improvement(s)  /  BASELINE OK
+A4   Baseline check: 0 regression(s), 0 improvement(s)  /  BASELINE OK
+A4b  Baseline check: 0 regression(s), 0 improvement(s)  /  BASELINE OK
+A4c  SUMMARY: exec_match=9 neg_pinned=5 fail=0  /  ALL AT COMMITTED EXPECTEDS
+A5   SUMMARY: match=43 diff=0  /  ALL MATCH RECORDED BASELINE
+A6   SUMMARY: total=8 match=8 fail=0  /  ALL PASSED
+A6b  SUMMARY: total=7 match=7 fail=0  /  ALL PASSED
+A7   ALL PASSED
+A8   Success rate:   100% (of cerberus successes)  /  ALL PASSED
+A9   SUMMARY: total=113 same=108 diff=5 ocaml_fail=0 lean_fail=0
+A10  GATE PASS: all lane expectations pinned-green + baseline unchanged (16/16)
+A11  BASELINE OK (213 entries, exact match)
+A12.2 test_address_space: OK (18 cases: LEAN = FORK through the shared codec at tops 64 32 8; every fork observation = its pinned row in expectations.txt)
+A13  PASS memory access: 3 runs; primitive receipts, all ND constructors, erasure, draining; 8 instrument controls
+```
+
+(The two `/`-joined lines per row are the lane's last two output lines; the row labels are
+mine.)
+
+- A9 is the reporting-mode C→Core differential. `same=108 diff=5` is the recorded state:
+  `docs/2026-10-03_total-arith-and-bookkeeping-record.md:696` has the identical SUMMARY
+  line.
+- Its 5 DIFF rows are the recorded ones: 073, 074, 098, 112, 113.
+- So the default-mode Lean elaboration is unchanged against the unchanged oracle.
 
 ## 8. Deviations from the brief and the design
 
