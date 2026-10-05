@@ -133,7 +133,7 @@ witnesses and are not "thinly tested": they do not answer.
 ## 4. How the contract is enforced
 
 1. **Every REFUSED area has at least one witness in a lane that pins the refusal**, so a return to a silent answer turns
-   a gate red: the filesystem and stdin (`zd-fs-*`, `zd-f1-*`, `zd-z2f01-*` immaculate rows), `any_bounded_int` (`zd-any-bounded-int-crash`), `%f` of a NaN (`fmt-007*.unsupported.c`) the CLI flags (`scripts/check_cli_refusals.sh`,
+   a gate red: the filesystem and stdin (`zd-fs-*`, `zd-f1-*`, `zd-z2f01-*` immaculate rows), `any_bounded_int` (`zd-any-bounded-int-crash`), `%f` of a NaN (`fmt-007*.unsupported.c`), the CLI flags (`scripts/check_cli_refusals.sh`,
    row 1) and inline assembly (`scripts/check_asm_refusal.sh`, row 1, which asserts the message too).
    Limit: the immaculate and coverage witnesses pin the crash CLASS (`L=CRASH`, `UNSUPPORTED`), not the refusal
    message, under those lanes' coarse crash policy (VALIDATION §1(a)); the message is fixed in the refusing code, and

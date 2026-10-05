@@ -72,17 +72,33 @@ EOF
     printf '#!/usr/bin/env bash\necho "x.c:1:1: error: feature not yet supported: %s" >&2\necho "x.c:1:1: error: %s" >&2\nexit 1\n' "$STMT_MSG" "$LABEL_MSG" > "$ST/oracle-refuse-all"
     printf '#!/usr/bin/env bash\necho "Error {msg: \\"desugaring failed at x.c:1:1\\"}"\necho "    cause: DESUGAR NotYetSupported: %s"\nexit 1\n' "$STMT_MSG" > "$ST/lean-refuse-all"
     chmod +x "$ST"/oracle-erase "$ST"/lean-erase "$ST"/oracle-refuse-all "$ST"/lean-refuse-all
-    run_plant() {  # <label> <oracle> <lean>
-        if CERB_ORACLE_BIN_OVERRIDE="$2" CERB_LEAN_BIN_OVERRIDE="$3" "$0" > "$ST/$1.out" 2>&1; then
-            echo "$NAME: SELFTEST FAIL — plant '$1' PASSED the witnesses (vacuous check)"
-            cat "$ST/$1.out"
+    run_plant() {  # <label> <oracle> <lean> <expected failure count> [witness label that MUST be among the failures]...
+        local label="$1" o="$2" l="$3" want="$4" got req; shift 4
+        if CERB_ORACLE_BIN_OVERRIDE="$o" CERB_LEAN_BIN_OVERRIDE="$l" "$0" > "$ST/$label.out" 2>&1; then
+            echo "$NAME: SELFTEST FAIL — plant '$label' PASSED the witnesses (vacuous check)"
+            cat "$ST/$label.out"
             exit 1
         fi
-        echo "$NAME: selftest plant '$1' caught: $(grep -c 'FAIL —' "$ST/$1.out") failing witness(es)"
+        got=$(grep -c 'FAIL —' "$ST/$label.out")
+        if [[ "$got" != "$want" ]]; then
+            echo "$NAME: SELFTEST FAIL — plant '$label' caught $got failing witness(es), expected exactly $want"
+            cat "$ST/$label.out"
+            exit 1
+        fi
+        for req in "$@"; do  # audit LOW-1 (2026-10-05): the plant must fail THESE witnesses, not merely some
+            if ! grep -qF "FAIL — $req:" "$ST/$label.out"; then
+                echo "$NAME: SELFTEST FAIL — plant '$label' did not fail the witness '$req' (the plant does not exercise it)"
+                cat "$ST/$label.out"
+                exit 1
+            fi
+        done
+        echo "$NAME: selftest plant '$label' caught: $got failing witness(es) (= expected $want${*:+; incl. the required witnesses})"
     }
-    run_plant erase "$ST/oracle-erase" "$BIN"
-    run_plant lean-erase "$REAL_ORACLE" "$ST/lean-erase"
-    run_plant refuse-all "$ST/oracle-refuse-all" "$ST/lean-refuse-all"
+    # expected counts (audit LOW-2): erase = 4 statements x 3 checks + 3 labels x 2 checks;
+    # lean-erase = 4 statements x 2 Lean checks + 2 controls; refuse-all = 7 location mismatches x 2 + 2 controls
+    run_plant erase "$ST/oracle-erase" "$BIN" 18
+    run_plant lean-erase "$REAL_ORACLE" "$ST/lean-erase" 10 "asm-free control" "asm only in a comment and a string"
+    run_plant refuse-all "$ST/oracle-refuse-all" "$ST/lean-refuse-all" 16 "asm-free control" "asm only in a comment and a string"
     "$0"; exit $?   # not exec: the EXIT trap must remove $ST
 fi
 

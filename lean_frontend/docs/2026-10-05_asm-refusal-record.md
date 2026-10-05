@@ -29,16 +29,21 @@ keyword.
 
 | # | Form | Grammar | Upstream behaviour (pristine `b9aeedcb4`, measured) | Now |
 |---|---|---|---|---|
-| F1 | basic asm statement `asm("nop");` | `asm_statement`, first production (`c_parser.mly:1527-1537`) → `CabsSasm` | `cabs_to_ail.lem` `CabsSasm` arm: `E.return AilSskip` ("TODO: erasing inline assembly for now"). `Specified(1)` on the `basic.c` probe | REFUSED in the shared desugarer |
-| F2 | extended asm `__asm__ __volatile__ ("…" : outputs : inputs : clobbers)` | second production (`:1538-1548`) → `CabsSasm` (the operands are parsed and DISCARDED by the parser; only the template strings reach Cabs) | erased as F1. `Specified(1)` on the census shape (gcc 5) | REFUSED in the shared desugarer |
+| F1 | basic asm statement `asm("nop");` | `asm_statement`, first production (`c_parser.mly:1534-1544` after this commit; `:1527-1537` before) → `CabsSasm` | `cabs_to_ail.lem` `CabsSasm` arm: `E.return AilSskip` ("TODO: erasing inline assembly for now"). `Specified(1)` on the `basic.c` probe | REFUSED in the shared desugarer |
+| F2 | extended asm `__asm__ __volatile__ ("…" : outputs : inputs : clobbers)` | second production (`:1545-1555` after this commit) → `CabsSasm` (the operands are parsed and DISCARDED by the parser; only the template strings reach Cabs) | erased as F1. `Specified(1)` on the census shape (gcc 5) | REFUSED in the shared desugarer |
 | F3 | `asm goto ("…" : : : : label)` | second production, `asm_with_labels` → `CabsSasm` | erased as F1. `Specified(1)` (gcc 0) | REFUSED in the shared desugarer |
 | F4 | asm label on a declarator: `int y asm("sym") = 3;`, `int f(void) __asm__("sym");`, `register int r asm("eax") = 2;` | `init_declarator`'s `ioption(asm_register)` (`:893-899`); `asm_register` returned `()` — the label is DROPPED IN THE PARSER and never reaches Cabs | silently ignored. `Specified(3)`, `Specified(0)`, `Specified(2)` | REFUSED in the shared parser |
 | F5 | file-scope `asm(".globl foo");` | not in the grammar | syntax error: `unexpected token after ';' and before 'asm'` (exit 1) | unchanged: already loud, not attributed |
 | F6 | `__asm("nop")` | an ordinary identifier | `use of undeclared identifier '__asm'` (exit 1) | unchanged: already loud, not attributed |
 | F7 | a string with an encoding prefix inside `asm(…)` | `asm_statement`'s `failwith "encoding prefix found inside a __asm__ ()"` | the parser driver re-raises the `Failure`: uncaught, loud | unchanged: already loud, not attributed |
 
-Other places checked [AGENT]: `function_definition` takes no asm label (a label
-there is a syntax error). `CabsSasm` has one other consumer, `register_labels`
+Other places checked [AGENT]: an asm label written on a function DEFINITION
+(`int f(void) asm("g") { … }`) is also refused with the F4 message — the label is
+reduced before the `{` (pre-merge audit INFO-4 corrected this sentence, which
+said it was a syntax error). Also loud but NOT attributed, left unchanged (audit
+INFO-5): `asm volatile("" ::: "memory")` (`::` lexes as one token → parser
+syntax error, "state 109" — a very common real-code shape), and asm labels on
+struct members (state 501) and parameters (state 352), both syntax errors. `CabsSasm` has one other consumer, `register_labels`
 (`cabs_to_ail.lem`, returns `()`). It is untouched, because desugaring now fails
 at the statement itself. The Cabs JSON exporter carries `CabsSasm` unchanged.
 The Lean engine has no C parser: its only input is that JSON.
@@ -175,7 +180,13 @@ fail-closed:
   a string). Each must give the oracle `Defined … Specified(5)` and Lean
   byte-identical, exit 0.
 - **Plants (`--selftest`)**. Each must make the witnesses fail. They are checked
-  by count:
+  by count — each plant asserts its EXACT expected failure count, and the
+  `lean-erase` / `refuse-all` plants additionally assert that both CONTROL
+  witnesses are among the failures (pre-merge audit LOW-1/LOW-2: before the fix
+  the count was printed, not asserted, and `refuse-all` would have stayed
+  "caught" with a no-op `control()`; re-planted 2026-10-05: with `control()`
+  made a no-op the selftest now fails, `lean-erase caught 8 …, expected exactly
+  10`):
   - `erase` reproduces the pre-fix behaviour of BOTH engines. An oracle stub
     strips every asm form from the C file and runs the real oracle, so the real
     Lean engine runs the erased Cabs. It caught 18: 4×3 statement checks plus 3×2
@@ -257,3 +268,17 @@ The orchestrator runs the full ladder.
   is left unedited; this record is its follow-up.
 - Upstream tray: no draft. The refusal is the fork's contract, not a fix for
   upstream to take [AGENT].
+
+## Pre-merge audit (2026-10-05, fresh read-only reviewer) — dispositions [AGENT]
+
+No blocking findings; nothing fail-open; items 1–8 OK on substance, including the
+host-header check (every lane preprocesses `-nostdinc -undef` with only the runtime
+libc include dirs, so glibc's `__REDIRECT` `__asm__` labels never reach the parser).
+- LOW-1 / LOW-2 (plants not asserting count / controls): FIXED in the witness
+  script (exact counts; required control failures), re-planted as above.
+- LOW-3 (Lean `--batch` names the location, not the feature): NOT CHANGED — it is
+  the existing rendering for every desugar failure; the feature-attributed cause
+  is printed without `--batch` and the oracle names it; CONTRACT D9 and VALIDATION
+  §3(c) state this. A uniform attributed `--batch` refusal line belongs to the
+  queued global controlled-outcome question ([USER 2026-10-05] on refusal shape).
+- INFO-4, INFO-5, INFO-7: record corrected above. INFO-6: CONTRACT §4.1 wording fixed.
