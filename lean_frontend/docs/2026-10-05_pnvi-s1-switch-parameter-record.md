@@ -252,7 +252,8 @@ The audit found S1–S3 evadable: an alias (`abbrev MySw := CerbGlobal.Switches;
 MySw := ⟨[]⟩`), a `class … extends … Switches` with an instance, and a production `def x :
 CerbGlobal.Switches where …` (or a multi-line header) were all GREEN; and P8b passed
 trivially, because the gate never scanned `.tmp/` at all. The fix [AGENT, within the
-operator's 2026-10-06 approval of this round]:
+round the operator approved on 2026-10-06 — [USER 2026-10-06] "Yes, sounds good, go ahead",
+quoted in §12]:
 
 - **Whitelist, not blacklist (S7).** Every occurrence of the token `Switches` in the scanned
   text (comments stripped; strings kept) must sit in one of five positions: W1 an
@@ -279,17 +280,22 @@ operator's 2026-10-06 approval of this round]:
   GREEN; (ii) the gate's root/file list is asserted non-empty and to contain nothing under
   `.tmp/` and not the consumer file; (iii) the same file copied under `lean_frontend/test/`
   turns the copy RED with S1 — so (i) is not vacuous.
-- **Residual limit (stated honestly).** The gate reads text. It cannot see the class reached
-  without spelling the token `Switches`: a meta-level name assembled from strings
-  (`Name.mkStr … ("Swit" ++ "ches")`), a type recovered by elaboration from a signature
-  (`type_of% @CerbGlobal.has_switch` and projections of it), an untyped `instance := e`
-  whose `e` is not a collected name, or any of these outside the scan roots. Those are review
-  discipline. The backstop is the typing: a lifted definition with no instance in scope does
-  not elaborate, and the consumer statement form is `@f ⟨sw⟩`. One known false-positive
+- **Residual limit — REVISED by the delta audit's B-1 (2026-10-06, §4.1b); the current
+  statement is §4.1b's, which this bullet now repeats.** The gate reads text. It cannot see a
+  TYPED instance, or a value, whose class is stated without spelling the token `Switches` or
+  a collected alias name: a meta-level name assembled from strings (`Name.mkStr …
+  ("Swit" ++ "ches")`, or a command elaborated from a string), a type recovered by
+  elaboration from a signature (`instance : type_of% … := …` and projections of it), or any
+  of these outside the scan roots. (The L1 round also listed "an untyped `instance := e`
+  whose `e` is not a collected name"; since B-1 every untyped instance and every instance
+  attribute is RED in every root, S8, so that item is closed.) Those are review discipline.
+  The backstop is the typing: a lifted definition with no instance in scope does not
+  elaborate, and the consumer statement form is `@f ⟨sw⟩`. One known false-positive
   direction, accepted fail-closed: an instance that merely TAKES `[CerbGlobal.Switches]` as
   a binder in its head is RED under S1 (none exists).
 
-`check_switches_instance.sh --selftest`, verbatim (run on the final tree of this round):
+`check_switches_instance.sh --selftest`, verbatim (run on the final tree of the L1 round —
+SUPERSEDED by §4.1b's run, kept as the record of that round):
 
 ```
 check_switches_instance: SELFTEST — planting on scratch copies (loud plant banner; nothing in the tree is touched)
@@ -326,6 +332,116 @@ check_switches_instance: SELFTEST — planting on scratch copies (loud plant ban
   REVERTED (real tree):
 check_switches_instance: OK (367 files scanned: 293 production, 39 test, 35 LemLib; no instance/alias/extension of CerbGlobal.Switches, every use whitelisted; 1 test-side named value(s); the one entry instance is Main.lean's letI; 109 generated [CerbGlobal.Switches] binders)
 check_switches_instance: SELFTEST OK (23 plants RED with their labels, unplanted control GREEN, consumer-direction plant P8b (i)-(iii) OK, real tree GREEN)
+```
+
+### 4.1b The instance gate, second hardening (delta audit B-1, 2026-10-06)
+
+The delta audit of §4.1a reproduced three evasions on a scratch copy, each GREEN (rc 0):
+(i) a test-root instance with a blank line before its type (`instance plantI⏎⏎    :
+CerbGlobal.Switches := ⟨[]⟩`); (ii) a test-root instance head longer than the 400-character
+window; (iii) a test value defined INDENTED inside a namespace, made an instance from another
+file by `attribute [local instance] PX.plantV` or `instance := PX.plantV`. The cause: test
+roots allow W5, so S1 rested on `head_cut` alone (400-character window, cut at a blank line),
+and name collection only saw declarations at column 0. Before changing anything I re-ran each
+evasion against the pre-fix script (`cd97a049a`) on a scratch copy: all GREEN, confirming the
+finding; a `where`-clause value made an instance (`instance := plantH.plantW`) was GREEN too.
+The fix [AGENT, within the round the operator approved: [USER 2026-10-06] "Yes, do (1) as
+recommended" — §13]:
+
+- **Commands found by keyword (all rules).** A command starts at a line whose first token,
+  after ANY indentation and modifiers, is a command keyword or `@[`; the command enclosing an
+  offset is found by scanning BACK to the nearest such start. There is no fixed window and no
+  column-0 rule. Commands, `instance` keywords and attributes are searched in the text with
+  string CONTENTS blanked (no command lives in a string; the token scan for S7 still keeps
+  strings). Without the blanking, four `"… instance …"` strings in speclab were misread as
+  instances.
+- **S1 by two independent rules, in EVERY root.** (a) The head runs from the keyword to the
+  first `:=`/`where` outside brackets, with no length window and no blank-line cut; an
+  unterminated head runs on, which is fail-closed. If it names `Switches`, S1. (b) A W5 token
+  whose enclosing command's keyword is `instance`, and which is the command's own type (no
+  `:=`/`where`/local binder before it in the command), is S1. I checked each rule alone on
+  scratch copies, by disabling the other: each turns (i) and (ii) RED.
+- **Names collected at any indentation (S6, S2).** `def plantV : CerbGlobal.Switches := …`
+  inside `namespace PX` is now collected, and `PX.plantV` matches. S6/S2 segments run to the
+  next command start, with no 2000-character cap. An `@[instance]` alone on its line extends
+  to the end of the next command.
+- **S8: untyped instances and instance attributes are closed outright, in every root.** An
+  instance with no `:` outside brackets in its head (`instance := e`, `instance foo := e`)
+  and ANY instance attribute (`@[instance]`, `attribute [instance]`/`[local instance]`/
+  `[scoped instance]`) are RED whatever they name. These are the two ways to make a value an
+  instance without stating the class, so this closes the `where`-clause case and any value
+  whose name the collector misses. The real scan set has zero of either, measured 2026-10-06
+  over all 367 files, LemLib included. Decision [AGENT]: a legitimate future use (for example
+  LemLib adding `attribute [local instance]`) then needs an explicit, reviewed change to the
+  gate. That is loud friction, accepted as fail-closed.
+- **Residual limit (now stated as follows, in the script header, §4.1a and the VALIDATION.md
+  row).** The gate reads text. It cannot see a TYPED instance, or a value, whose class is
+  stated without spelling the token `Switches` or a collected alias name: a meta-level name
+  assembled from strings (`Name.mkStr … ("Swit" ++ "ches")`), a command elaborated from a
+  string (`run_cmd`/`elab`), or a type recovered by elaboration from a signature
+  (`instance : type_of% … := …` and projections of it). Nor can it see anything outside the
+  scan roots. Two consequences of finding commands by keyword: a command keyword missing from
+  the list merely extends the previous command, so S6 segments run longer (fail-closed); a
+  line inside a term that starts with a listed keyword (`open … in`) shortens an S6 segment,
+  which matters only for a typed instance whose type already escapes S1/S6 (the case above).
+  These are review discipline. The backstop is the typing: a lifted definition with no
+  instance in scope does not elaborate, and the consumer statement form is `@f ⟨sw⟩`.
+  Accepted false positive, fail-closed: an instance that merely TAKES `[CerbGlobal.Switches]`
+  as a head binder is RED under S1(a) (none exists).
+- **Plants.** 7 new, 30 in all. B-1(i), B-1(ii), B-1(iii) in both forms (attribute: S2+S8;
+  untyped instance: S6+S8), an indented typed instance inside a namespace (S1), and the
+  `where`-clause value as an untyped instance and as an attribute (S8). The 23 earlier plants
+  stay RED under their labels, and the real tree stays GREEN with the same summary line as
+  before (367 files, 1 test-side named value, 109 binders), so there are no new false
+  positives on the real tree. Gate time on the real tree: about 5.0 s, up from 3.7 s (derived,
+  one `time` run each).
+
+`check_switches_instance.sh --selftest`, verbatim (final script of this round):
+
+```
+check_switches_instance: SELFTEST — planting on scratch copies (loud plant banner; nothing in the tree is touched)
+  PLANT OK   [P5/P8a instance in a seam] ->   S1 lean_frontend/CerbND.lean:423: an instance declaration of the switch-set class (a hidden default)
+  PLANT OK   [P8a instance in generated/] ->   S1 lean_frontend/generated/Driver.lean:2871: an instance declaration of the switch-set class (a hidden default)
+  PLANT OK   [P8a instance in test/] ->   S1 lean_frontend/test/Unit/OpaqueFailureTest.lean:192: an instance declaration of the switch-set class (a hidden default)
+  PLANT OK   [P8a instance in speclab/] ->   S1 lean_frontend/speclab/test/SLUnit/CoreGateTest.lean:159: an instance declaration of the switch-set class (a hidden default)
+  PLANT OK   [S2 instance attribute] ->   S2 lean_frontend/CerbMem.lean:3259: an instance attribute in a file that names Switches
+  PLANT OK   [S3 production letI outside Main] ->   S3 lean_frontend/CerbCall.lean:322: a production value/local instance of the switch-set class outside Main.lean's entry: def plantSw4 := (letI : CerbGlobal.Switches := ⟨[]⟩; (0 : Nat))
+  PLANT OK   [S3 production named default] ->   S3 lean_frontend/generated/Translation.lean:6194: a production value/local instance of the switch-set class outside Main.lean's entry: def plantSw5 : CerbGlobal.Switches := ⟨CerbGlobal.defaultSwitches⟩
+  PLANT OK   [L1a abbrev alias + instance at the alias] ->   S4 lean_frontend/CerbND.lean:423: `abbrev MySw` — an alias of the switch-set class (its body names Switches)
+               +   S6 lean_frontend/CerbND.lean:424: an instance naming alias `MySw` (lean_frontend/CerbND.lean:423)
+  PLANT OK   [L1a @[reducible] def alias in test/ (aliases banned in tests too)] ->   S4 lean_frontend/test/Unit/OpaqueFailureTest.lean:192: `def MySw2` — an alias of the switch-set class (its body names Switches)
+  PLANT OK   [L1a guillemet-spelled alias] ->   S4 lean_frontend/CerbMem.lean:3259: `abbrev MySw3` — an alias of the switch-set class (its body names Switches)
+  PLANT OK   [L1a alias in one file, its instance in another (no Switches token there)] ->   S4 lean_frontend/CerbCall.lean:322: `abbrev MySw4` — an alias of the switch-set class (its body names Switches)
+               +   S6 lean_frontend/generated/Driver.lean:2871: an instance naming alias `MySw4` (lean_frontend/CerbCall.lean:322)
+  PLANT OK   [L1a notation alias] ->   S4 lean_frontend/CerbND.lean:423: `notation MySwN` — an alias of the switch-set class (its body names Switches)
+  PLANT OK   [L1b class extends Switches + instance] ->   S5 lean_frontend/CerbND.lean:423: `class MyCls extends … Switches` — an extension of the switch-set class
+               +   S6 lean_frontend/CerbND.lean:424: an instance naming class `MyCls` extending Switches (lean_frontend/CerbND.lean:423)
+  PLANT OK   [L1b structure extends Switches in test/] ->   S5 lean_frontend/test/Unit/OpaqueFailureTest.lean:192: `structure MyStr extends … Switches` — an extension of the switch-set class
+  PLANT OK   [L1c production def … where] ->   S3 lean_frontend/generated/Translation.lean:6194: a production value/local instance of the switch-set class outside Main.lean's entry: def plantSw6 : CerbGlobal.Switches where
+  PLANT OK   [L1c production multi-line abbrev header] ->   S3 lean_frontend/CerbCall.lean:323: a production value/local instance of the switch-set class outside Main.lean's entry: : CerbGlobal.Switches :=
+  PLANT OK   [L1c production value in speclab/SpecLab] ->   S3 lean_frontend/speclab/SpecLab/DivModHarness.lean:428: a production value/local instance of the switch-set class outside Main.lean's entry: def plantSw8 : CerbGlobal.Switches := ⟨[]⟩
+  PLANT OK   [S6 untyped instance of a (D4-allowed) test value] ->   S6 lean_frontend/test/Unit/TotalityProofTest.lean:122: an instance naming switch-set value `plantV` (lean_frontend/test/Unit/OpaqueFailureTest.lean:192)
+  PLANT OK   [S2 attribute on a test value from a file without the token] ->   S2 lean_frontend/test/Unit/AreCompatibleTest.lean:69: an instance attribute naming switch-set value `plantV2` (lean_frontend/test/Unit/OpaqueFailureTest.lean:192)
+  PLANT OK   [S7 ascription-typed untyped instance] ->   S7 lean_frontend/CerbND.lean:423: an unrecognised use of the switch-set class (not a binder/projection/typed value): … CerbND⏎⏎instance := (⟨[]⟩ : CerbGlobal.Switches)⏎…
+  PLANT OK   [S7 name literal in a macro body] ->   S7 lean_frontend/CerbND.lean:423: an unrecognised use of the switch-set class (not a binder/projection/typed value): …ontract⏎⏎end CerbND⏎⏎#eval ``CerbGlobal.Switches⏎…
+  PLANT OK   [S7 the token in a string] ->   S7 lean_frontend/test/Unit/OpaqueFailureTest.lean:192: an unrecognised use of the switch-set class (not a binder/projection/typed value): … return 0⏎⏎#eval IO.println "CerbGlobal.Switches"⏎…
+  PLANT OK   [S7 a second class Switches outside CerbGlobal.lean (W4 is CerbGlobal-only)] ->   S7 lean_frontend/CerbND.lean:423: an unrecognised use of the switch-set class (not a binder/projection/typed value): …fl⏎⏎end FuelContract⏎⏎end CerbND⏎⏎class Switches where⏎  switches : …
+  PLANT OK   [B-1(i) test instance with a blank line before its type] ->   S1 lean_frontend/test/Unit/OpaqueFailureTest.lean:192: an instance declaration of the switch-set class (a hidden default)
+  PLANT OK   [B-1(ii) test instance head longer than 400 characters] ->   S1 lean_frontend/test/Unit/OpaqueFailureTest.lean:192: an instance declaration of the switch-set class (a hidden default)
+  PLANT OK   [B-1(iii) indented test value in a namespace, local-instance attribute from another file] ->   S2 lean_frontend/test/Unit/AreCompatibleTest.lean:69: an instance attribute naming switch-set value `plantV` (lean_frontend/test/Unit/OpaqueFailureTest.lean:193)
+               +   S8 lean_frontend/test/Unit/AreCompatibleTest.lean:69: an instance ATTRIBUTE (`@[instance]`/`attribute [… instance …]`) — banned in every root
+  PLANT OK   [B-1(iii) indented test value in a namespace, untyped instance from another file] ->   S6 lean_frontend/test/Unit/TotalityProofTest.lean:122: an instance naming switch-set value `plantV` (lean_frontend/test/Unit/OpaqueFailureTest.lean:193)
+               +   S8 lean_frontend/test/Unit/TotalityProofTest.lean:122: an UNTYPED instance (`instance … := e`) — banned in every root (its class is not stated)
+  PLANT OK   [B-1 indented typed instance inside a namespace in test/] ->   S1 lean_frontend/test/Unit/OpaqueFailureTest.lean:193: an instance declaration of the switch-set class (a hidden default)
+  PLANT OK   [S8 untyped instance of a where-clause value (no collected name)] ->   S8 lean_frontend/test/Unit/TotalityProofTest.lean:122: an UNTYPED instance (`instance … := e`) — banned in every root (its class is not stated)
+  PLANT OK   [S8 instance attribute on a where-clause value (no collected name)] ->   S8 lean_frontend/test/Unit/AreCompatibleTest.lean:69: an instance ATTRIBUTE (`@[instance]`/`attribute [… instance …]`) — banned in every root
+  CONTROL OK [unplanted scratch copy] -> check_switches_instance: OK (367 files scanned: 293 production, 39 test, 35 LemLib; no instance/alias/extension of CerbGlobal.Switches, every use whitelisted; 1 test-side named value(s); the one entry instance is Main.lean's letI; 109 generated [CerbGlobal.Switches] binders)
+  PLANT OK   [P8b consumer direction] (i) out-of-root consumer package with its own instance: GREEN -> check_switches_instance: OK (367 files scanned: 293 production, 39 test, 35 LemLib; no instance/alias/extension of CerbGlobal.Switches, every use whitelisted; 1 test-side named value(s); the one entry instance is Main.lean's letI; 109 generated [CerbGlobal.Switches] binders)
+               (ii) root list excludes .tmp/: 8 roots, 367 files, none under .tmp/
+               (iii) same file under lean_frontend/test/: RED ->   S1 lean_frontend/test/ConsumerScoped/ConsumerPlant.lean:2: an instance declaration of the switch-set class (a hidden default)
+  REVERTED (real tree):
+check_switches_instance: OK (367 files scanned: 293 production, 39 test, 35 LemLib; no instance/alias/extension of CerbGlobal.Switches, every use whitelisted; 1 test-side named value(s); the one entry instance is Main.lean's letI; 109 generated [CerbGlobal.Switches] binders)
+check_switches_instance: SELFTEST OK (30 plants RED with their labels, unplanted control GREEN, consumer-direction plant P8b (i)-(iii) OK, real tree GREEN)
 ```
 
 ### 4.2 CLI refusals (`scripts/check_cli_refusals.sh`, row 1)
@@ -742,8 +858,9 @@ deleted at slice end.
 
 ## 12. Pre-merge audit fix round (2026-10-06)
 
-The operator approved this round on 2026-10-06 [USER]: fix L1–L4 and the S5 count now;
-defer L5 to slice S4. Worker: Claude Opus 5.5 (agent). Scripts and docs only — no Lean
+Approval: [USER 2026-10-06] "Yes, sounds good, go ahead". That was the operator's answer to the
+orchestrator's [AGENT] proposal to fix L1–L4 and the S5 count now (scripts and docs only,
+re-gated with row 1 + Tier A) and to defer L5 to slice S4. Worker: Claude Opus 5.5 (agent). Scripts and docs only — no Lean
 source, generated code or `.lem` changed, so row 1 + Tier A is the re-gate.
 
 | Finding | Disposition |
@@ -753,9 +870,9 @@ source, generated code or `.lem` changed, so row 1 + Tier A is the re-gate.
 | L3 "the last is PROVISIONAL" reads as `4e70bb5` | FIXED — `README.md`, `CLAUDE.md`, `SUPPORTED.md`, `TODO.md`, `VALIDATION.md` now read "(via `77ad4fa` and `4e70bb5`, both merged; the current pin `2d3a492` itself is PROVISIONAL — …)" |
 | L4 `gen_fuel_parametricity.py` | FIXED — selftest plant E1 for the fail-closed `emit()` branch ("worker binds [X] which its wrapper does not") + an emit-side control and `--emit` on the real tree; the module and `wrappers()` docstrings describe the worker-binder text and the in-order, by-class instance arguments (the stale boolean "worker-carries-fuel" wording is gone) |
 | S5 count | FIXED — §9: 25 sites in 6 CerberusIris files (`RoundThread.lean:41` has two); the 7th file is only `probes/capture_probe.lean:4 #check @frontendTU`. Re-verified read-only (`.lake` excluded) at cerberus-sl `94d38b1` and `e8b3692`, identical |
-| L5 CLI diagnostics and cites | DEFERRED to S4 (operator 2026-10-06) — below |
+| L5 CLI diagnostics and cites | DEFERRED to S4 (the [AGENT] proposal the operator answered "Yes, sounds good, go ahead", 2026-10-06) — below |
 
-**L5, deferred to slice S4 (operator 2026-10-06).** Three items:
+**L5, deferred to slice S4 (in the orchestrator's [AGENT] proposal approved by [USER 2026-10-06] "Yes, sounds good, go ahead").** Three items:
 
 1. the generic "unknown flag" text under `--parse-core`, or with `--switches` before `--batch`;
 2. a repeated unknown switch name labelled "override";
@@ -821,3 +938,61 @@ Source unchanged: True. Complete tier selection: True.
 Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
 rc=0
 ```
+
+
+## 13. Delta-audit fix round (2026-10-06)
+
+Approval: [USER 2026-10-06] "Yes, do (1) as recommended". Option (1) was the orchestrator's
+[AGENT] recommendation: fix B-1 and B-2, re-gate with row 1 + Tier A, then a quick delta
+review. Worker: Claude Opus 5.5 (agent). Scripts and docs only. No Lean source, generated
+code or `.lem` changed.
+
+| Finding | Disposition |
+|---|---|
+| B-1 (medium) the instance gate is evadable in test roots | FIXED — §4.1b (commands by keyword at any indentation; S1 by head with no window/blank-line cut AND by W5-in-`instance` in every root; names collected at any indentation; S8 bans untyped instances and instance attributes in every root; 7 new plants, 30 in all; residual limit restated in the header, §4.1a and the VALIDATION.md row) |
+| B-2 (provenance) §12 tagged a paraphrase [USER] | FIXED — §12 now quotes [USER 2026-10-06] "Yes, sounds good, go ahead" and labels the proposal it answered as the orchestrator's [AGENT] proposal; the two "(operator 2026-10-06)" attributions of the L5 deferral and §4.1a's "[AGENT, within the operator's 2026-10-06 approval]" now cite the same quote. I grepped this record for every other [USER] tag: the only one is §0's, and it is verbatim (it matches the design record §1.4, line 126) |
+
+
+Files changed: `scripts/check_switches_instance.sh` (logic, plants, header), this record (§4.1a
+residual bullet + approval cite, the new §4.1b, §12 provenance, §13), `lean_frontend/VALIDATION.md`
+(the gate's row: S1/S6/S8, 30 plants, the residual limit) and `lean_frontend/CLAUDE.md` (the
+gate's one-line summary: 30 plants, S8).
+
+**Gated tree.** Row 1 and Tier A both ran on commit `e43c0d59de0ed626cb5a6a623eb394f22a8a9316`,
+the fix-round commit before this record-only amend. The amend adds only this paragraph and the
+two blocks below to this record; no script, doc, lakefile or manifest byte differs. Both runs
+used this worktree's private lem `2d3a492` first on `PATH` (`.tmp/cel`), not the standard
+environment (L2: the standard-environment re-gate comes after the pin dance). The selftest in
+§4.1b ran on the same script bytes.
+
+Row 1 (`.tmp/cel ./scripts/test_unit.sh`, rc 0). Verbatim selected verdict lines (each
+distinct line once; the `rc=` line is the wrapper's):
+
+```
+Total: 16 passed, 0 failed
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+check_switches_instance: OK (367 files scanned: 293 production, 39 test, 35 LemLib; no instance/alias/extension of CerbGlobal.Switches, every use whitelisted; 1 test-side named value(s); the one entry instance is Main.lean's letI; 109 generated [CerbGlobal.Switches] binders)
+check_switches_instance: SELFTEST OK (30 plants RED with their labels, unplanted control GREEN, consumer-direction plant P8b (i)-(iii) OK, real tree GREEN)
+gen_fuel_parametricity: OK (14 ambient fuel wrappers in the generated tree = the 14 pins of TotalityProofTest.lean Part 1, both directions)
+gen_fuel_parametricity: SELFTEST OK (6 --check plants + 1 --emit plant with the declared FAIL, both unplanted controls OK, real tree OK)
+check_lem_sync: OK (src 37a9392cf043669821430a08b4c43e58d7ff407a34de470fdffaee929b02e47c, gen c1bb429a5ccb2b91903f5d02b30141aa2c711c50c2d4d7543b42226e119580f3)
+check_lem_sync: lean OK (src 37a9392cf043669821430a08b4c43e58d7ff407a34de470fdffaee929b02e47c, gen aa49e3bfc257299082c3a01287d4b99c91a9164f32f251d02297c808315b77fd)
+check_fork_drift: OK — layer 1: 88 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 30 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 2d3a492758cb23dc4e417f2961983d25b36ce130 matches lem -v lean-backend-v0.1.0-alpha.1-65-g2d3a492 (hex prefix))
+check_pin_sites: OK — lem-pin 2d3a492758cb23dc4e417f2961983d25b36ce130 at every site (lakefile rev, 3 lake-manifests rev+inputRev, README pin command)
+check_cli_refusals: OK (23 refusals pinned: --concurrency, --iso, 20 --switches= values (every oracle switch-name class, an unknown name, an override, a mixed set, the empty value) and the --switches space form; 4 repeated options refused: --runtime, --args, --switches twice (=/= and space/=); control not refused)
+rc=0
+```
+
+Tier A (`.tmp/cel python3 scripts/release.py --mode fast`, rc 0). Verbatim row verdicts (the 17
+per-row `PASSED` lines joined onto one line — the joining is mine) and tail:
+
+```
+PASSED A1 (675.4s) PASSED A2 (31.6s) PASSED A3 (74.6s) PASSED A4 (23.9s) PASSED A4b (25.7s) PASSED A4c (3.3s) PASSED A5 (105.5s) PASSED A6 (4.1s) PASSED A6b (3.8s) PASSED A7 (11.2s) PASSED A8 (9.6s) PASSED A9 (17.9s) PASSED A10 (18.7s) PASSED A11 (62.2s) PASSED A12.1 (5.6s) PASSED A12.2 (4.6s) PASSED A13 (1.5s)
+fast: passed; 17/17 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+rc=0
+```
+
+A9 is again `SUMMARY: total=113 same=108 diff=5 ocaml_fail=0 lean_fail=0` (from the run's A9
+stdout). The evidence directory is scratch and was deleted at the end of the slice.

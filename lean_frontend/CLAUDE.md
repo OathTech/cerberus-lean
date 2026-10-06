@@ -136,7 +136,7 @@ numeral in seams/generated/test/speclab except Main.lean's `--fuel`
 default; F1–F6 plant-tested by its --selftest), `check_switches_instance.sh`
 (PNVI arc S1: no `instance`, alias or `extends` of `CerbGlobal.Switches` anywhere in this
 repository, every use of the token in a whitelisted position, and no production value of it
-outside Main.lean's one `letI`; 23 plants + the consumer-direction plant P8b), `check_lakefile_roots.sh`
+outside Main.lean's one `letI`, no untyped instance or instance attribute at all; 30 plants + the consumer-direction plant P8b), `check_lakefile_roots.sh`
 (every generated module, `_auxiliary` obligation carriers included, is a
 Lake root; plant-tested), `check_fuel_forms.sh` (C2: the (A)/(B)/(C)
 fuel-forms gate — every fuel'd worker measured, absorbing (= kill at zero;

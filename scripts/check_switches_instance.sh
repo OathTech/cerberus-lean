@@ -2,7 +2,8 @@
 # check_switches_instance.sh — GATE: no hidden default switch set (PNVI arc S1, 2026-10-05;
 # design lean_frontend/docs/2026-10-04_pnvi-ae-udi-design.md §B.3 + §D.2 P5/P8; record
 # lean_frontend/docs/2026-10-05_pnvi-s1-switch-parameter-record.md §4; hardened by the
-# pre-merge audit's L1, 2026-10-06, record §4.1a).
+# pre-merge audit's L1, 2026-10-06, record §4.1a, and by the delta audit's B-1, 2026-10-06,
+# record §4.1b).
 #
 # THE PROPERTY: the switch set is the instance-implicit parameter `[CerbGlobal.Switches]`
 # (the `[LemFuel]` shape). It must never be supplied by an INSTANCE DECLARATION inside this
@@ -22,10 +23,20 @@
 #   is the intended way to state default-mode facts by `rfl`. The selftest's P8b plant tests
 #   that scoping rule for real (below).
 #
-# Forbidden (comment-stripped text; string literals are NOT stripped, so a name spelled in a
-# string is seen and, outside the whitelist, RED):
-#   S1  an `instance` declaration (any modifiers/name/priority/binders) whose head names
-#       `Switches` — `instance : CerbGlobal.Switches := …`, `scoped instance foo : Switches where …`
+# Forbidden (comment-stripped text; string literals are NOT stripped for the token scan, so a
+# name spelled in a string is seen and, outside the whitelist, RED; commands, `instance`
+# keywords and attributes are searched in the text with string CONTENTS blanked, since no
+# command lives in a string):
+#   COMMANDS are found by keyword, not by column or window: a command starts at a line whose
+#   first token after ANY indentation (and modifiers) is a command keyword or `@[`; the
+#   command enclosing an offset is found by scanning BACK to the nearest such start.
+#   S1  in EVERY root, an `instance` declaration of the class, by two independent rules:
+#       (a) its head — from the keyword to the first `:=`/`where` outside brackets, with NO
+#       length window and NO blank-line cut (an unterminated head runs on: fail-closed) —
+#       names `Switches`; (b) a W5 token (below) whose enclosing command's keyword is
+#       `instance` (any attributes/modifiers, any indentation, blank lines or length) and that
+#       is the command's own type (no `:=`/`where`/local binder before it in the command).
+#       `instance : CerbGlobal.Switches := …`, `scoped instance foo⏎⏎  : Switches where …`
 #   S2  an instance ATTRIBUTE (`@[… instance …]`, `attribute [… instance …]`) in a file that
 #       mentions `Switches`, or ANYWHERE naming an S4/S5 alias or a declared switch-set value
 #   S3  in PRODUCTION text: a value or local instance of the class — the token in a typed-value
@@ -41,7 +52,9 @@
 #       (`abbrev MySw := CerbGlobal.Switches`, `notation "S" => CerbGlobal.Switches`)
 #   S5  a `class`/`structure … extends … Switches`
 #   S6  an `instance` whose head or body names an S4/S5 alias or a declared switch-set value
-#       (`instance : MySw := ⟨[]⟩`, `instance := sw₀`) — the names are collected repo-wide
+#       (`instance : MySw := ⟨[]⟩`, `instance := PX.sw₀`) — the names are collected repo-wide,
+#       from declarations at ANY indentation (a `def` inside a namespace counts), and matched
+#       qualified or not; the instance's segment runs to the next command start (no cap)
 #   S7  ANY OTHER occurrence of the token `Switches`: every occurrence must sit in one of the
 #       whitelisted positions W1 `[(x :) (CerbGlobal.)Switches]` (instance-implicit binder),
 #       W2 `(x … : (CerbGlobal.)Switches)` (explicit binder), W3 `(CerbGlobal.)Switches.switches`
@@ -49,14 +62,27 @@
 #       typed-value position (S3 in production, allowed in tests); anything else — an
 #       `extends`/alias body not caught above, a type ascription `(v : Switches)`, `type_of%`,
 #       a `` ``CerbGlobal.Switches `` name literal, a string, `«Switches»` — is RED.
-# RESIDUAL LIMIT (stated, not closable textually): the gate reads text, so it cannot see the
-#   class reached WITHOUT spelling the token `Switches` — a name assembled from strings at
-#   meta-level (`Name.mkStr … ("Swit" ++ "ches")`), a type recovered by elaboration from a
-#   definition's signature (`type_of% @CerbGlobal.has_switch` and projections thereof), an
-#   untyped `instance := e` whose `e` is not a collected name (e.g. `instance := @id _ ⟨[]⟩`
-#   elaborated against nothing), or any of these in files outside the scan roots. Those are
-#   review discipline; the BACKSTOP is the typing (a lifted definition with no instance in
-#   scope does not elaborate) and the consumer-facing statement form `@f ⟨sw⟩`.
+#   S8  in EVERY root, whatever it names: an UNTYPED instance (no `:` outside brackets in its
+#       head: `instance := e`, `instance foo := e`) and ANY instance attribute (`@[instance]`,
+#       `attribute [instance]`/`[local instance]`/`[scoped instance]`). These are the two ways
+#       to make an instance of a value without stating the class, so they are closed outright
+#       rather than by name collection (a `where`-clause value `f.v`, a value with no
+#       collected name). Zero exist in the scan set (2026-10-06); a legitimate future use
+#       needs an explicit, reviewed change here [AGENT decision, delta audit B-1].
+# RESIDUAL LIMIT (stated, not closable textually): the gate reads text. It cannot see a TYPED
+#   instance, or a value, whose class is stated WITHOUT spelling the token `Switches` or a
+#   collected alias name — a name assembled from strings at meta-level (`Name.mkStr …
+#   ("Swit" ++ "ches")`, or a command elaborated from a string, `run_cmd`/`elab`), or a type
+#   recovered by elaboration from a definition's signature (`instance : type_of% … := …`
+#   and projections thereof) — nor anything in files outside the scan roots. Commands
+#   found by keyword: a command keyword the CMDKW list lacks merely extends the previous
+#   command (S6 segments run longer: fail-closed), and a line inside a term that starts with
+#   a listed keyword (`open … in`) shortens an S6 segment, which matters only for a typed
+#   instance whose type already escapes S1/S6 (the case above). Those are review discipline;
+#   the BACKSTOP is the typing (a lifted definition with no instance in scope does not
+#   elaborate) and the consumer-facing statement form `@f ⟨sw⟩`. Accepted false-positive
+#   direction (fail-closed): an instance that merely TAKES `[CerbGlobal.Switches]` as a
+#   binder in its head is RED under S1(a) (none exists).
 # Vacuity guards: ≥ MIN_FILES files scanned; the class `class Switches` present in
 #   CerbGlobal.lean (exactly one W4 occurrence in it and in its generated copy); Main.lean's allowlisted line present
 #   (hand-written AND generated copy); ≥ one `[CerbGlobal.Switches]` binder in the generated
@@ -116,8 +142,16 @@ rel = lambda p: os.path.relpath(p, root)
 INST = re.compile(r"(?<![\w.'])instance(?![\w'])")
 ATTR = re.compile(r"@\[[^\]]*(?<![\w.'])instance(?![\w'])[^\]]*\]|attribute\s*\[[^\]]*(?<![\w.'])instance(?![\w'])[^\]]*\]")
 SW = re.compile(r"(?<![\w'])Switches(?![\w'])")
-CMD = re.compile(r"(?m)^\S")
-DECL = re.compile(r"(?:@\[[^\]]*\]\s*)*(?:(?:private|protected|noncomputable|partial|unsafe|scoped|local)\s+)*"
+# a COMMAND START (B-1, 2026-10-06): a line whose first token, after ANY indentation and any
+# modifiers, is a command keyword or an attribute `@[` — found by keyword, never by column 0
+# (a declaration indented inside a namespace is a command) and never by a fixed window
+MODS = r"(?:(?:private|protected|noncomputable|partial|unsafe|scoped|local|nonrec)[ \t]+)*"
+CMDKW = (r"abbrev|def|theorem|lemma|opaque|example|instance|axiom|class|structure|inductive|"
+         r"attribute|notation|infix|infixl|infixr|prefix|postfix|macro|macro_rules|syntax|elab|elab_rules|"
+         r"declare_syntax_cat|namespace|section|end|open|export|variable|universe|set_option|mutual|"
+         r"deriving|initialize|builtin_initialize|import|run_cmd|run_elab|run_meta|#[a-z_]+")
+CMD = re.compile(r"(?m)^[ \t]*(?=@\[|" + MODS + r"(?:" + CMDKW + r")(?![\w']))")
+DECL = re.compile(r"(?:@\[[^\]]*\]\s*)*(?:(?:private|protected|noncomputable|partial|unsafe|scoped|local|nonrec)\s+)*"
                   r"(abbrev|def|opaque|notation|macro|syntax|macro_rules|elab|class|structure|theorem|example|instance|axiom)(?![\w'])\s*(?:\(priority\s*:=[^)]*\)\s*)?([^\s:(\[{⟨]*)")
 ALIAS_KW = {'abbrev', 'def', 'opaque', 'notation', 'macro', 'syntax', 'macro_rules', 'elab'}
 texts = {}
@@ -126,27 +160,54 @@ for f in files:
         texts[f] = strip_comments(open(f, encoding='utf-8').read())
     except ValueError as e:
         fail.append(f"{rel(f)}: comment stripper: {e} (fail-closed)")
+def blank_strings(t):  # string-literal CONTENTS -> spaces (same offsets, newlines kept): commands,
+    # instance keywords and attributes are searched in CODE only; the token scan (S7) keeps strings
+    out, i, n = list(t), 0, len(t)
+    while i < n:
+        c = t[i]
+        if c == "'" and (i == 0 or not (t[i-1].isalnum() or t[i-1] in "_'")) and (ch := re.match(r"'(?:\\.|[^'\\])'", t[i:i+8])):
+            i += len(ch[0]); continue
+        if c == '"':
+            i += 1
+            while i < n and t[i] != '"':
+                k = 2 if t[i] == '\\' else 1
+                for q in range(i, min(i + k, n)):
+                    if out[q] != '\n': out[q] = ' '
+                i += k
+        i += 1
+    return ''.join(out)
+code = {f: blank_strings(t) for f, t in texts.items()}
 def lineno(t, k): return t.count('\n', 0, k) + 1
-def command(t, k):  # the top-level command containing offset k: (start, header match or None)
+def command(f, k):  # the command containing offset k: (start, header match or None) — scan BACK to its keyword
     st = 0
-    for m in CMD.finditer(t, 0, k + 1):
-        st = m.start()
-    return st, DECL.match(t, st)
-def head_cut(t, k):  # an instance head from offset k: up to `:=`/`where` outside brackets or a blank line
-    rest = t[k:k + 400]
-    cut, depth, j = len(rest), 0, 0
-    while j < len(rest):
-        c = rest[j]
-        if c in '([{⟨': depth += 1
-        elif c in ')]}⟩': depth = max(0, depth - 1)
-        elif depth == 0 and (rest.startswith(':=', j) or rest.startswith('\n\n', j)
-                             or re.match(r"where(?![\w'])", rest[j:]) and (j == 0 or not (rest[j-1].isalnum() or rest[j-1] in "_'"))):
-            cut = j; break
+    for m in CMD.finditer(code[f], 0, k + 1):
+        if m.end() <= k: st = m.end()   # m.end() = the first non-blank of the command line
+    return st, DECL.match(texts[f], st)
+def cmd_end(f, k):  # the start of the next command after offset k (or the end of the text)
+    nxt = CMD.search(code[f], k)
+    return nxt.start() if nxt else len(code[f])
+def head_cut(t, k):  # an instance head from offset k: up to the first `:=`/`where` outside brackets — NO
+    # length window and NO blank-line cut (B-1): an unterminated head runs on (over-inclusive = fail-closed)
+    depth, j, n, typed = 0, k, len(t), False
+    while j < n:
+        c = t[j]
+        if c in '([{⟨⦃': depth += 1
+        elif c in ')]}⟩⦄': depth = max(0, depth - 1)
+        elif depth == 0:
+            if t.startswith(':=', j): break
+            if t.startswith('where', j) and not (t[j-1].isalnum() or t[j-1] in "_'.") and not re.match(r"where[\w']", t[j:j+6]): break
+            if c == ':': typed = True
         j += 1
-    return rest[:cut]
+    return t[k:j], typed
 def clean_name(n): return n.strip('"').strip('«»').split('.')[-1]
 names = {}  # collected alias / value names -> provenance
 binders = 0; allow_seen = []; w4 = []
+s1_seen = set()
+def s1(f, t, k):  # one S1 per instance keyword
+    key = (f, lineno(t, k))
+    if key not in s1_seen:
+        s1_seen.add(key)
+        fail.append(f"S1 {rel(f)}:{key[1]}: an instance declaration of the switch-set class (a hidden default)")
 # pass 1: classify every `Switches` token
 for f, t in texts.items():
     for m in SW.finditer(t):
@@ -160,14 +221,16 @@ for f, t in texts.items():
         if (os.path.basename(f) == 'CerbGlobal.lean' and f in prodset and re.search(r"(?:^|\n)class\s+$", core)
                 and core is pre and re.match(r"\s+where(?![\w'])", post)):
             w4.append(where); continue                                                                   # W4
-        st, dm = command(t, s)
+        st, dm = command(f, s)
         kw = dm.group(1) if dm else None
         nm = clean_name(dm.group(2)) if dm and dm.group(2) else ''
         if re.search(r"(?<![:=]):\s*$", core) and re.match(r"\s*(?::=|where(?![\w'])|\|)", post):          # W5
-            # a NAMED value only when the token is the declaration's own type (its header,
-            # before any `:=`/`where`/local binder) — a `letI` inside `def main` names nothing
-            if (kw in ('def', 'abbrev', 'opaque', 'theorem') and nm and not re.search(
-                    r":=|(?<![\w'])(?:where|let|letI|have|haveI|fun|do)(?![\w'])", t[st:s])):
+            # the token is the command's OWN type when no `:=`/`where`/local binder precedes it
+            # in the command — a `letI` inside `def main` names nothing
+            own = not re.search(r":=|(?<![\w'])(?:where|let|letI|have|haveI|fun|do)(?![\w'])", t[st:s])
+            if kw == 'instance' and own:   # B-1: an instance OF the class, in EVERY root
+                s1(f, t, dm.start(1))
+            if kw in ('def', 'abbrev', 'opaque', 'theorem') and nm and own:
                 names.setdefault(nm, f"switch-set value `{nm}` ({where})")
             if f in prodset:
                 ln = t[t.rfind('\n', 0, s) + 1: t.find('\n', s)].strip()
@@ -191,23 +254,33 @@ if names:
 else:
     NAMES = None
 for f, t in texts.items():
-    for m in INST.finditer(t):
-        head = head_cut(t, m.end())
+    c = code[f]
+    attrs = [(a.start(), a.end()) for a in ATTR.finditer(c)]
+    for m in INST.finditer(c):
+        if any(a <= m.start() < b for a, b in attrs): continue       # an attribute — S2/S8 below
+        if re.search(r"(?<![\w'])deriving\s+$", c[max(0, m.start() - 40):m.start()]):
+            continue   # `deriving instance C for T` derives C (any `Switches` there is S7)
+        head, typed = head_cut(c, m.end())
         if SW.search(head):
-            fail.append(f"S1 {rel(f)}:{lineno(t, m.start())}: an instance declaration of the switch-set class (a hidden default)")
+            s1(f, t, m.start())
+        if not typed:
+            fail.append(f"S8 {rel(f)}:{lineno(t, m.start())}: an UNTYPED instance (`instance … := e`) — banned in every root (its class is not stated)")
         if NAMES:
-            nxt = CMD.search(t, m.end())
-            seg = t[m.end(): nxt.start() if nxt else len(t)][:2000]
+            seg = t[m.end(): cmd_end(f, m.end())]
             for n in sorted(set(x.group(1) for x in NAMES.finditer(seg))):
                 fail.append(f"S6 {rel(f)}:{lineno(t, m.start())}: an instance naming {names[n]}")
-    for m in ATTR.finditer(t):
-        nxt = CMD.search(t, m.end())
-        seg = t[m.start(): nxt.start() if nxt else len(t)][:2000]
+    for a, b in attrs:
+        nx = cmd_end(f, b)
+        if not c[b:nx].strip():          # `@[instance]` alone on its line: the seg runs to the end of the NEXT command
+            nl = c.find('\n', nx)
+            nx = cmd_end(f, nl + 1) if nl >= 0 else len(c)
+        seg = t[a:nx]
+        fail.append(f"S8 {rel(f)}:{lineno(t, a)}: an instance ATTRIBUTE (`@[instance]`/`attribute [… instance …]`) — banned in every root")
         if SW.search(t):
-            fail.append(f"S2 {rel(f)}:{lineno(t, m.start())}: an instance attribute in a file that names Switches")
+            fail.append(f"S2 {rel(f)}:{lineno(t, a)}: an instance attribute in a file that names Switches")
         elif NAMES and NAMES.search(seg):
             n = NAMES.search(seg).group(1)
-            fail.append(f"S2 {rel(f)}:{lineno(t, m.start())}: an instance attribute naming {names[n]}")
+            fail.append(f"S2 {rel(f)}:{lineno(t, a)}: an instance attribute naming {names[n]}")
     if f.startswith(os.path.join(lf, 'generated') + os.sep):
         binders += t.count('[CerbGlobal.Switches]')
 cg = os.path.join(lf, 'CerbGlobal.lean')
@@ -295,6 +368,25 @@ instance : MyCls := ⟨⟨[]⟩⟩'
     plant "S7 the token in a string" S7:test/Unit/OpaqueFailureTest.lean test/Unit/OpaqueFailureTest.lean '#eval IO.println "CerbGlobal.Switches"'
     plant "S7 a second class Switches outside CerbGlobal.lean (W4 is CerbGlobal-only)" S7:CerbND.lean CerbND.lean 'class Switches where
   switches : List Nat'
+    # B-1 (delta audit 2026-10-06): evasions of the test-root instance check, each GREEN before the fix
+    plant "B-1(i) test instance with a blank line before its type" S1:test/Unit/OpaqueFailureTest.lean test/Unit/OpaqueFailureTest.lean 'instance plantI
+
+    : CerbGlobal.Switches := ⟨[]⟩'
+    local longhead="instance plantL" i; for i in $(seq 1 40); do longhead+=" (a$i : Nat)"; done
+    plant "B-1(ii) test instance head longer than 400 characters" S1:test/Unit/OpaqueFailureTest.lean test/Unit/OpaqueFailureTest.lean "$longhead : CerbGlobal.Switches := ⟨[]⟩"
+    plant "B-1(iii) indented test value in a namespace, local-instance attribute from another file" S2:test/Unit/AreCompatibleTest.lean,S8:test/Unit/AreCompatibleTest.lean test/Unit/OpaqueFailureTest.lean 'namespace PX
+  def plantV : CerbGlobal.Switches := ⟨[]⟩
+end PX' test/Unit/AreCompatibleTest.lean 'attribute [local instance] PX.plantV'
+    plant "B-1(iii) indented test value in a namespace, untyped instance from another file" S6:test/Unit/TotalityProofTest.lean,S8:test/Unit/TotalityProofTest.lean test/Unit/OpaqueFailureTest.lean 'namespace PX
+  def plantV : CerbGlobal.Switches := ⟨[]⟩
+end PX' test/Unit/TotalityProofTest.lean 'instance := PX.plantV'
+    plant "B-1 indented typed instance inside a namespace in test/" S1:test/Unit/OpaqueFailureTest.lean test/Unit/OpaqueFailureTest.lean 'namespace PY
+  instance plantJ : CerbGlobal.Switches := ⟨[]⟩
+end PY'
+    plant "S8 untyped instance of a where-clause value (no collected name)" S8:test/Unit/TotalityProofTest.lean test/Unit/OpaqueFailureTest.lean 'def plantH : Nat := 0
+where plantW : CerbGlobal.Switches := ⟨[]⟩' test/Unit/TotalityProofTest.lean 'instance := plantH.plantW'
+    plant "S8 instance attribute on a where-clause value (no collected name)" S8:test/Unit/AreCompatibleTest.lean test/Unit/OpaqueFailureTest.lean 'def plantH : Nat := 0
+where plantW : CerbGlobal.Switches := ⟨[]⟩' test/Unit/AreCompatibleTest.lean 'attribute [instance] plantH.plantW'
     mk; local out rc; out=$(gate "$work/r"); rc=$?
     if [[ $rc -eq 0 ]]; then echo "  CONTROL OK [unplanted scratch copy] -> $out"; else echo "  CONTROL FAIL [unplanted scratch copy] rc=$rc: $out"; fail=1; fi
     # P8b — the consumer direction (scoping rule), a REAL test on a scratch copy:
