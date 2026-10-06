@@ -6,9 +6,15 @@ be a static snapshot with an uncommitted generator).
 
 For every AMBIENT fuel wrapper in lean_frontend/generated/ — a line
 `def f <binders> [LemFuel] : T := f_lemFuel LemFuel.fuel` (head possibly over several lines) in a generated
-(non-seam) module — emit `example <binders> (n : Nat) : @f <args> ⟨n⟩ =
-@f_lemFuel <args> [⟨n⟩] n := rfl`, `⟨n⟩ n` on the right when the worker
-itself carries `[LemFuel]` (it passes the ambient on). Binders are read from
+(non-seam) module — emit `example <binders> (n : Nat) : @f <args> =
+@f_lemFuel <args> n := rfl`. The instance arguments follow each head's own
+instance binders IN BINDER ORDER (PNVI arc S1, 2026-10-05: a function that
+also reads the switch set binds `[LemFuel] [CerbGlobal.Switches]`): `⟨n⟩`
+stands at every `[LemFuel]` position — on the right only when the worker
+itself binds `[LemFuel]` (it passes the ambient on) — and every other class
+instance is a bound variable `iK` of the example, shared by the wrapper and
+its worker and matched BY CLASS. A worker that binds a class its wrapper does
+not is a FAIL (fail-closed; plant E1 of --selftest). Binders are read from
 the generated heads, so a drift in a wrapper's binders fails the test's
 build; THIS script's --check makes a drift in the wrapper SET fail
 test_unit.sh: the set of wrapper names in the tree must equal the set pinned
@@ -31,7 +37,8 @@ otherwise FAIL naming file:line. Plant-tested by --selftest.
 Usage:
   gen_fuel_parametricity.py --emit      print the Part 1 block (paste into the test)
   gen_fuel_parametricity.py --check     compare the tree's wrapper set with the test's pins; exit 1 on drift
-  gen_fuel_parametricity.py --selftest  plants on scratch copies of the generated tree, then --check on the real one
+  gen_fuel_parametricity.py --selftest  plants on scratch copies of the generated tree (G*: --check; E*: --emit),
+                                        then --check and --emit on the real one
 """
 import re, sys, os, glob, shutil, tempfile
 
@@ -47,7 +54,9 @@ def seam_names():
         return {l.strip() for l in fh if l.strip() and not l.startswith('#')}
 
 def wrappers(gen=os.path.join(LF, 'generated')):
-    """(module, name, wrapper-binders, worker-carries-fuel) for every ambient wrapper."""
+    """(module, name, wrapper-binders, worker-binders) for every ambient wrapper —
+    the binder texts of both heads (the worker's up to its `(lemFuel : Nat)`), from
+    which emit() reads the instance binders in order (PNVI arc S1)."""
     rows = []
     seams = seam_names()
     for f in sorted(glob.glob(os.path.join(gen, '*.lean'))):
@@ -176,6 +185,15 @@ PLANTS = [
      "counted wrapper plantG8 has no `LemFuel.fuel` outside comments"),
 ]
 
+# (name, text appended to a scratch copy of Driver.lean, substring the --emit FAIL must carry)
+# — the emit-side fail-closed branch (pre-merge audit L4, 2026-10-06)
+EMIT_PLANTS = [
+    ('E1 worker binds an instance class its wrapper does not',
+     'def plantE1_lemFuel [LemFuel] [CerbGlobal.Switches] (lemFuel : Nat) : Nat := 0\n'
+     'def plantE1 [LemFuel] : Nat := plantE1_lemFuel LemFuel.fuel\n',
+     "worker plantE1_lemFuel binds [CerbGlobal.Switches], which its wrapper does not (fail-closed)"),
+]
+
 def selftest():
     import io, contextlib
     gen = os.path.join(LF, 'generated')
@@ -205,16 +223,35 @@ def selftest():
             print(f"  PLANT {'OK  ' if ok else 'FAIL'} [{name}] rc={rc} -> {first.strip()}")
             if not ok:
                 print('    ' + out.replace('\n', '\n    '), file=sys.stderr); fail = 1
+        for name, text, needle in EMIT_PLANTS + [('emit control: unplanted scratch copy', '', None)]:
+            sg = os.path.join(work, 'gen'); shutil.rmtree(sg, ignore_errors=True); os.mkdir(sg)
+            for f in glob.glob(os.path.join(gen, '*.lean')):
+                if os.path.basename(f) != 'Driver.lean':
+                    os.symlink(f, os.path.join(sg, os.path.basename(f)))
+            with open(drv) as src, open(os.path.join(sg, 'Driver.lean'), 'w') as dst:
+                dst.write(src.read() + '\n' + text)
+            rc, out = 0, ''
+            try:
+                out = emit(wrappers(sg))
+            except SystemExit as e:
+                rc, out = 1, str(e.code)
+            ok = (rc == 0 and out.startswith('-- 14 ambient wrappers')) if needle is None else (rc == 1 and needle in out)
+            first = out.splitlines()[0] if out else ''
+            print(f"  PLANT {'OK  ' if ok else 'FAIL'} [{name}] rc={rc} -> {first.strip()}")
+            if not ok:
+                print('    ' + out.replace('\n', '\n    '), file=sys.stderr); fail = 1
     finally:
         shutil.rmtree(work)
     print("  REVERTED (real tree):")
     try:
         check()
+        n_emit = len(emit(wrappers()).splitlines()) - 1
+        print(f"gen_fuel_parametricity: --emit on the real tree OK ({n_emit} examples)")
     except SystemExit:
         fail = 1
     if fail:
         sys.exit("gen_fuel_parametricity: SELFTEST FAILED")
-    print(f"gen_fuel_parametricity: SELFTEST OK ({len(PLANTS)} plants with the declared FAIL, unplanted control OK, real tree OK)")
+    print(f"gen_fuel_parametricity: SELFTEST OK ({len(PLANTS)} --check plants + {len(EMIT_PLANTS)} --emit plant with the declared FAIL, both unplanted controls OK, real tree OK)")
 
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else ''

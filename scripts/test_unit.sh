@@ -212,8 +212,10 @@ fi
 # repository (seams, generated, test, speclab, tests/, the consumed LemLib) and no production
 # value of it outside Main.lean's one `letI` — a global instance would be a hidden default.
 # Scoped to THIS repository (a consumer's own instance is the intended use). --selftest plants
-# first (instances in a seam/generated/test/speclab, an attribute, two production values: RED;
-# a consumer-style package under .tmp/ with its own instance: GREEN). Fail-closed.
+# first (instances in a seam/generated/test/speclab, attributes, production values incl. `where`
+# and multi-line forms, aliases, `extends`, instances of aliases/values, unrecognised uses: 23
+# RED; P8b: a consumer-style package outside the roots GREEN, excluded from the root list, and
+# RED once placed under a root; pre-merge audit L1, 2026-10-06). Fail-closed.
 SWINST_SH="$(dirname "$PURITY_SH")/check_switches_instance.sh"
 if ! "$SWINST_SH" --selftest; then
     echo "test_unit: switch-set instance gate SELFTEST FAILED"

@@ -81,6 +81,10 @@ moreLeanArgs = ["-DautoImplicit=false"]
 # fix round F1-F7: generation-time refusals, printer spacing, test gate, docs);
 # LemLib (lean-lib/) unchanged; both generated trees byte-identical. Evidence:
 # docs/2026-10-05_pnvi-s1-switch-parameter-record.md §11.
+# MERGE ORDER (pre-merge audit L2, 2026-10-06): DO NOT MERGE this branch until
+# lem-lean `2d3a492` is on `mdd/lean-backend` and `deps/lem-pinned` plus the
+# shared opam lem are moved to it (the two-repo pin dance); a re-gate in the
+# standard environment must then be green.
 [[require]]
 name = "LemLib"
 git = "https://github.com/OathTech/lem-lean"

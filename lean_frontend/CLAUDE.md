@@ -2,7 +2,7 @@
 
 Current build/contract reconciliation: 2026-09-25, Cerberus
 `bb487dda7c56981e76d67f53ae16e874cfe5ed61`, Lem
-`67ec5de70e02e280bb348a4ba826696b76116732` (the Lem pin has since moved to `2d3a492758cb23dc4e417f2961983d25b36ce130` by functional re-pins (via `77ad4fa`, `4e70bb5`; the last is PROVISIONAL — the unmerged lem-lean branch `arc/pnvi-switches`), generated OCaml byte-identical at each: [re-pin record](docs/2026-10-04_lem-repin-4e70bb5-record.md), [PNVI S1 record](docs/2026-10-05_pnvi-s1-switch-parameter-record.md)); measured scope and remaining
+`67ec5de70e02e280bb348a4ba826696b76116732` (the Lem pin has since moved to `2d3a492758cb23dc4e417f2961983d25b36ce130` by functional re-pins (via `77ad4fa` and `4e70bb5`, both merged; the current pin `2d3a492` itself is PROVISIONAL — the head of the unmerged lem-lean branch `arc/pnvi-switches`, not yet on `mdd/lean-backend`), generated OCaml byte-identical at each: [re-pin record](docs/2026-10-04_lem-repin-4e70bb5-record.md), [PNVI S1 record](docs/2026-10-05_pnvi-s1-switch-parameter-record.md)); measured scope and remaining
 public-install checks: [follow-up record](docs/2026-09-25_public-readiness-followup.md).
 
 Lean 4 port of the Cerberus C semantics, generated from the same `.lem` source as the OCaml backend. The intended correspondence and its current failure/runtime limits are described in [VALIDATION.md](VALIDATION.md).
@@ -134,8 +134,9 @@ exemplar/driver2 axiom cones + the D14 non-kernel-proof-method ban),
 allowlist), `check_no_fuel_numerals.sh` (fuel-parameter arc: no fuel
 numeral in seams/generated/test/speclab except Main.lean's `--fuel`
 default; F1–F6 plant-tested by its --selftest), `check_switches_instance.sh`
-(PNVI arc S1: no `instance` of `CerbGlobal.Switches` anywhere in this repository and no
-production value of it outside Main.lean's one `letI`; 7 plants + the consumer-direction plant), `check_lakefile_roots.sh`
+(PNVI arc S1: no `instance`, alias or `extends` of `CerbGlobal.Switches` anywhere in this
+repository, every use of the token in a whitelisted position, and no production value of it
+outside Main.lean's one `letI`; 23 plants + the consumer-direction plant P8b), `check_lakefile_roots.sh`
 (every generated module, `_auxiliary` obligation carriers included, is a
 Lake root; plant-tested), `check_fuel_forms.sh` (C2: the (A)/(B)/(C)
 fuel-forms gate — every fuel'd worker measured, absorbing (= kill at zero;

@@ -3,6 +3,9 @@
 # refusals, human-printer spacing, a test gate, docs; LemLib unchanged). lean_frontend/generated (221 files) and
 # ocaml_frontend/generated (86 files) regenerated with lem 2d3a492 are byte-identical (diff -r) to the fc8fbef trees; layer 2
 # unmoved. Single-row edit + this NOTE, no --refresh. Record: lean_frontend/docs/2026-10-05_pnvi-s1-switch-parameter-record.md §11.
+# MERGE ORDER (pre-merge audit L2, 2026-10-06): DO NOT MERGE this branch until lem-lean `2d3a492` is on `mdd/lean-backend` and
+# `deps/lem-pinned` plus the shared opam lem are moved to it (the two-repo pin dance); a re-gate in the standard environment
+# must then be green. (Until then this lem-pin row matches only a worktree-private lem 2d3a492 first on PATH.)
 # PNVI arc S1 (the switch set as a parameter), 2026-10-05 [AGENT, executing the orchestrator's S1 brief under [USER 2026-10-05]
 # "Re PNVI - agree on your recs except for mirroring crashes / obviously wrong behavior. These should be refusals surely?" — option 3,
 # design lean_frontend/docs/2026-10-04_pnvi-ae-udi-design.md §B.3]: [meta] lem-pin 4e70bb50 -> fc8fbefe, a PROVISIONAL pin to the
