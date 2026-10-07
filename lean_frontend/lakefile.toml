@@ -345,6 +345,15 @@ srcDir = "test"
 root = "Unit.ReconstructLegacyTest"
 moreLinkArgs = ["native/md5.o"]
 
+# PNVI arc S3 (2026-10-07, docs/2026-10-07_pnvi-s3-arms-record.md): the PNVI-ae-udi
+# arms' runtime witnesses under <[.PNVI .AE_UDI]> with default-instance controls, and
+# the compile-time refusal pins (R-PNVI-nn). Takes the caller-selected fuel.
+[[lean_exe]]
+name = "pnvi-arms-test"
+srcDir = "test"
+root = "Unit.PnviArmsTest"
+moreLinkArgs = ["native/md5.o"]
+
 # program-data parameters E-A (2026-09-20): the enum's compatible type is program data — the
 # design note §4 kernel pins (normalise/sizeof/alignof at a registered enum by rfl given the map,
 # GCC's rule in lem, register_enum = true) + #guard_msgs that the retired registry names are gone

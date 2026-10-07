@@ -196,7 +196,9 @@ structure MemState where
   -- OCaml type, `IntMap` of `Single | Double` entries (was `List (Int × Int)`,
   -- "simplified"); a `Std.TreeMap Int`, the same representation as
   -- `allocations`/`bytemap` above (arc-6 S3), keyed by the iota. Written only
-  -- by `addIota`/`resolveIota`; empty at every reachable default-mode state.
+  -- by `addIota` (ptrfromint's PNVI arm), `resolveIota` and the collapses of
+  -- `diffPtrval`/`effArrayShiftPtrval` (PNVI arc S3); empty at every reachable
+  -- default-mode state.
   iotaMap : Std.TreeMap Int IotaEntry := Std.TreeMap.empty
   funptrmap : List (Int × (String × String)) := []
   varargs : List (Int × (Int × List (ctype × PointerValue))) := []
@@ -341,6 +343,18 @@ instance : Ord MemState where compare _ _ := .eq
 
 def mkCtype (ty_ : ctype_) : ctype := Ctype ([] : List annot) ty_
 
+/-- The one PNVI refusal message (PNVI arc; design record
+    docs/2026-10-04_pnvi-ae-udi-design.md §D.5, §G.1; the shape ruled in §H
+    for §F.16: "(a) is fine" — the `CerbFS` `failwithI`-with-a-fixed-prefix
+    shape, `CerbFS.lean` `fsRefusal`). `detail` names the `R-PNVI-nn` row,
+    the site, the impl_mem.ml line and upstream's text. [USER 2026-10-05]:
+    "agree on your recs except for mirroring crashes / obviously wrong
+    behavior. These should be refusals surely?" — an upstream crash or
+    self-declared-wrong arm on the PNVI path is refused here, never
+    mirrored. Every site is unreachable at the default switch set. -/
+def pnviRefusal (detail : String) : String :=
+  s!"PNVI_ae_udi refusal (unsupported upstream arm): {detail} — refused, not mirrored (upstream crashes, debug-print arms and self-declared-wrong arms on the PNVI path are loud refusals: design record docs/2026-10-04_pnvi-ae-udi-design.md §G/§H)"
+
 /-! ## combine_prov — impl_mem.ml:366-394 -/
 
 def combineProv : Provenance → Provenance → Provenance
@@ -354,9 +368,14 @@ def combineProv : Provenance → Provenance → Provenance
   | .Prov_device, .Prov_none => .Prov_device
   | .Prov_device, .Prov_some _ => .Prov_device
   | .Prov_device, .Prov_device => .Prov_device
-  -- PNVI-ae-udi only; concrete model doesn't use Prov_symbolic (impl_mem.ml:390-394)
-  | .Prov_symbolic _, _ => failwithI "Concrete.combine_prov: found a Prov_symbolic"
-  | _, .Prov_symbolic _ => failwithI "Concrete.combine_prov: found a Prov_symbolic"
+  -- impl_mem.ml:390-394 `(* PNVI-ae-udi *) (* TODO: this is improvised, need to
+  -- check with P *) | (Prov_symbolic _, _) | (_, Prov_symbolic _) -> failwith
+  -- "Concrete.combine_prov: found a Prov_symbolic"` — an upstream crash on the PNVI
+  -- path (the oracle hits it on 4 of its own 44 PNVI litmus files, design §C.2),
+  -- REFUSED (design §G.1 row R1, class (A), `R-PNVI-01`; PNVI arc S3). Unreachable
+  -- at the default switch set (nothing mints `Prov_symbolic` there)
+  | .Prov_symbolic _, _ => failwithI (pnviRefusal "R-PNVI-01: combine_prov, a Prov_symbolic provenance (first argument) — impl_mem.ml:390-394 `(* TODO: this is improvised, need to check with P *)` … `failwith \"Concrete.combine_prov: found a Prov_symbolic\"`")
+  | _, .Prov_symbolic _ => failwithI (pnviRefusal "R-PNVI-01: combine_prov, a Prov_symbolic provenance (second argument) — impl_mem.ml:390-394 `(* TODO: this is improvised, need to check with P *)` … `failwith \"Concrete.combine_prov: found a Prov_symbolic\"`")
 
 /-! ## Layout computation — impl_mem.ml:98-273 (offsetsof / sizeof / alignof)
 
@@ -768,18 +787,6 @@ def splitBytesProv (bytes : List AbsByte) : Provenance × Bool :=
       | none => false)
     (prov, validPtr)
 
-/-- The one PNVI refusal message (PNVI arc; design record
-    docs/2026-10-04_pnvi-ae-udi-design.md §D.5, §G.1; the shape ruled in §H
-    for §F.16: "(a) is fine" — the `CerbFS` `failwithI`-with-a-fixed-prefix
-    shape, `CerbFS.lean` `fsRefusal`). `detail` names the `R-PNVI-nn` row,
-    the site, the impl_mem.ml line and upstream's text. [USER 2026-10-05]:
-    "agree on your recs except for mirroring crashes / obviously wrong
-    behavior. These should be refusals surely?" — an upstream crash or
-    self-declared-wrong arm on the PNVI path is refused here, never
-    mirrored. Every site is unreachable at the default switch set. -/
-def pnviRefusal (detail : String) : String :=
-  s!"PNVI_ae_udi refusal (unsupported upstream arm): {detail} — refused, not mirrored (upstream crashes, debug-print arms and self-declared-wrong arms on the PNVI path are loud refusals: design record docs/2026-10-04_pnvi-ae-udi-design.md §G/§H)"
-
 /-- AbsByte.provs_of_bytes — impl_mem.ml:462-479 (PNVI-ae-udi): the
     allocation ids of the bytes' `Prov_some` provenances, in OCaml's order
     (a `fold_left` that conses, so the LAST byte's id comes first);
@@ -854,8 +861,8 @@ theorem is_PNVI_defaultSwitches : @CerbGlobal.is_PNVI ⟨CerbGlobal.defaultSwitc
       acc` — dropped silently upstream) is REFUSED (§G.1 row R4, `R-PNVI-03`;
       §H: the operator accepted the proposed refusal of `:840-842`).
     Called only under `is_PNVI` (abst's pointer arm here; ptrfromint's PNVI
-    arm in S3): at the default set the result is never consulted. PNVI arc S2
-    (2026-10-07). -/
+    arm, PNVI arc S3): at the default set the result is never consulted. PNVI
+    arc S2 (2026-10-07). -/
 def findOverlapping [CerbGlobal.Switches] (st : MemState) (addr : Address) : OverlapResult :=
   let (requireExposed, allowOnePast) : Bool × Bool :=
     match CerbGlobal.Switches.switches.find? (fun | .PNVI _ => true | _ => false) with
@@ -899,6 +906,10 @@ theorem findOverlapping_congr [CerbGlobal.Switches] {s t : MemState}
     findOverlapping s = findOverlapping t := by
   unfold findOverlapping
   rw [h1, h2]
+
+/-- The `last_used` instance of `findOverlapping_congr`, as a rewrite rule (PNVI arc S3). -/
+theorem findOverlapping_lastUsed [CerbGlobal.Switches] (s : MemState) (u : Option StorageInstanceId) :
+    findOverlapping { s with lastUsed := u } = findOverlapping s := rfl
 
 /-- An unspecified padding byte — OCaml's `padding_byte` / `AbsByte.v
     Prov_none None` (impl_mem.ml:1202; zero-discrepancy Z-23 re-cite). -/
@@ -1586,6 +1597,13 @@ def casePtrval {α : Type} [Inhabited α] (pv : PointerValue)
   | .PV _ (.PVfunction f) => onFun (some f)
   | .PV .Prov_none (.PVconcrete _ addr) => onConcrete none addr
   | .PV (.Prov_some i) (.PVconcrete _ addr) => onConcrete (some i) addr
+  | .PV (.Prov_symbolic _) (.PVconcrete _ _) =>
+    -- impl_mem.ml:1858 (THIS tree) `| _ -> failwith "case_ptrval"`, its
+    -- `Prov_symbolic` HALF: an upstream crash on the PNVI path, REFUSED (design §G.1
+    -- row R11, `R-PNVI-07`; PNVI arc S3). Unreachable at the default switch set
+    -- (nothing mints `Prov_symbolic` there); the `Prov_device` half below is on the
+    -- default path and is UNCHANGED (design §G.3, §H)
+    failwithI (pnviRefusal "R-PNVI-07: case_ptrval, Prov_symbolic concrete pointer — impl_mem.ml:1858 `| _ -> failwith \"case_ptrval\"` (the Prov_symbolic half; the Prov_device half stays the mirrored fail-stop)")
   | .PV _ (.PVconcrete _ _) =>
     -- impl_mem.ml:1814 `| _ -> failwith "case_ptrval"` (a Prov_device or
     -- Prov_symbolic concrete pointer): an UNCAUGHT exception on the oracle
@@ -1933,7 +1951,8 @@ def caseMemValue {α : Type} (mv : MemValue)
 /-- array_shift_ptrval (the PURE shift) — impl_mem.ml:2203-2221, arm for
     arm: `sz = if is_void ty then 1 else sizeof ty` (:2206, the GNU
     byte-granular extension), `offset = sz * ival` (:2207); a Prov_symbolic
-    provenance → failwith (:2209-2211); null → failwith (:2214-2217);
+    provenance → upstream's failwith (:2209-2211), REFUSED since PNVI arc S3
+    (`R-PNVI-06`, the arm's comment); null → failwith (:2214-2217);
     PVfunction → failwith (:2218-2219); concrete → the shifted address with
     the union-member tag KEPT (:2220-2221). The failwiths are fail-stops
     with the OCaml texts (Q4). -/
@@ -1945,7 +1964,13 @@ def arrayShiftPtrval [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (pv : P
       | _ => Int.ofNat (sizeofCtype enumDefs tagDefs elemTy)
     let offset := sz * ival
     match prov, base with
-    | .Prov_symbolic _, _ => failwithI "Concrete.array_shift_ptrval found a Prov_symbolic"
+    | .Prov_symbolic _, _ =>
+      -- impl_mem.ml:2254-2255 (THIS tree) `failwith "Concrete.array_shift_ptrval
+      -- found a Prov_symbolic"` — an upstream crash on the PNVI path, REFUSED (design
+      -- §G.1 row R8, class (A), `R-PNVI-06`; PNVI arc S3). The function is on the
+      -- default path; THIS arm is not (nothing mints `Prov_symbolic` at the default
+      -- switch set)
+      failwithI (pnviRefusal "R-PNVI-06: array_shift_ptrval (pure), Prov_symbolic pointer — impl_mem.ml:2254-2255 `failwith \"Concrete.array_shift_ptrval found a Prov_symbolic\"`")
     | _, .PVnull _ =>
       failwithI s!"CerbMem.arrayShiftPtrval: TODO(pure shift a null pointer should be undefined behaviour), offset:{offset}"
     | _, .PVfunction _ => failwithI "Concrete.array_shift_ptrval, PVfunction"
@@ -2249,50 +2274,55 @@ def memFail {a : Type} (err : mem_error)
     (loc : CerbLocation.Loc := CerbLocation.other "Concrete") : memM a :=
   kill (failReason err loc)
 
-/-! ### Exposure and iota — the PNVI provenance state (PNVI arc S2, 2026-10-07)
+/-! ### Exposure and iota — the PNVI provenance state (PNVI arc S2/S3, 2026-10-07)
 
-Mirrors of impl_mem.ml:877-942. Defined here, CALLED from S3 on (load's
-`expose_allocations`, intfromptr's `expose_allocation`, ptrfromint's
-`add_iota`, the `Prov_symbolic` arms' `resolve_iota`, eq/diff_ptrval's
-`lookup_iota`): nothing in the default-mode run reaches them in S2. -/
+Mirrors of impl_mem.ml:877-942, written as STATE functions (PNVI arc S3, deviation
+D-S3-1 of the S3 record): every caller is a hand-written `ND fun st => …` body, and
+four of them (`killM`, `ptrfromint`, `intfromptr`, `eqPtrval`) bind no `[LemFuel]`
+— a monadic form over the fuel'd `nd_bind` would add that binder to their
+signatures (and a lem `fuel_consumer` declaration, moving the generated Lean and the
+consumer's frozen terms) for no behavioural gain. Upstream's own functions only read
+or update the state; a precondition's own `fail` (its `get_allocation`) is the
+`.error` of an `Except`. Callers: load's `expose_allocations` (:1602-1606),
+intfromptr's `expose_allocation` (:2490-2498), ptrfromint's `add_iota` (:2202), the
+kill/load/store `Prov_symbolic` arms' `resolve_iota` (:1541, :1683, :1791), and the
+`lookup_iota`s of eq/diff/validForDeref/eff_array_shift (:1907, :2038, :2066, :2153,
+:2320). Every caller sits behind a `Prov_symbolic` pointer (never minted at the
+default switch set) or a PNVI switch test (`false` at `⟨[]⟩` by `rfl`). -/
 
 /-- expose_allocation — impl_mem.ml:877-886 (PNVI-ae): the allocation's taint
     becomes `Exposed`; an absent id is a no-op (`IntMap.update … None -> None`,
     = `Std.TreeMap.modify`). -/
-def exposeAllocation (allocId : StorageInstanceId) : memM Unit :=
-  nd_update fun st =>
-    { st with allocations := st.allocations.modify allocId fun alloc => { alloc with taint := .Exposed } }
+def exposeAllocation (allocId : StorageInstanceId) (st : MemState) : MemState :=
+  { st with allocations := st.allocations.modify allocId fun alloc => { alloc with taint := .Exposed } }
 
 /-- expose_allocations — impl_mem.ml:887-901 (PNVI-ae): `NoTaint` → nothing;
     `NewTaint xs` → each id exposed, in list order (absent ids skipped). -/
-def exposeAllocations : ProvTaint → memM Unit
-  | .NoTaint => memReturn ()
-  | .NewTaint xs =>
-    nd_update fun st =>
-      let expose (acc : Std.TreeMap Int Allocation) (allocId : StorageInstanceId) :=
-        acc.modify allocId fun alloc => { alloc with taint := .Exposed }
-      { st with allocations := xs.foldl expose st.allocations }
+def exposeAllocations : ProvTaint → MemState → MemState
+  | .NoTaint, st => st
+  | .NewTaint xs, st =>
+    let expose (acc : Std.TreeMap Int Allocation) (allocId : StorageInstanceId) :=
+      acc.modify allocId fun alloc => { alloc with taint := .Exposed }
+    { st with allocations := xs.foldl expose st.allocations }
 
 /-- add_iota — impl_mem.ml:903-909 (PNVI-ae-udi): a fresh iota (`next_iota`,
     then incremented) mapped to `Double (id1, id2)`. -/
-def addIota (allocIds : StorageInstanceId × StorageInstanceId) : memM SymbolicStorageInstanceId :=
-  ND fun st =>
-    let iota := st.nextIota
-    (NDactive iota,
-      { st with nextIota := st.nextIota + 1
-                iotaMap := st.iotaMap.insert iota (.Double allocIds.1 allocIds.2) })
+def addIota (allocIds : StorageInstanceId × StorageInstanceId) (st : MemState) :
+    SymbolicStorageInstanceId × MemState :=
+  let iota := st.nextIota
+  (iota, { st with nextIota := st.nextIota + 1
+                   iotaMap := st.iotaMap.insert iota (.Double allocIds.1 allocIds.2) })
 
 /-- lookup_iota — impl_mem.ml:911-914 (PNVI-ae-udi): `IntMap.find iota
     st.iota_map`. An iota absent from the map raises `Not_found` upstream (an
     uncaught exception); REFUSED here (design §G.1 row R5, `R-PNVI-04`).
     Unreachable by construction while every `Prov_symbolic` is minted by
-    `addIota`, which inserts its key. -/
-def lookupIota (iota : SymbolicStorageInstanceId) : memM IotaEntry :=
-  ND fun st =>
-    match st.iotaMap.get? iota with
-    | some entry => (NDactive entry, st)
-    | none =>
-      failwithI (pnviRefusal s!"R-PNVI-04: lookup_iota, iota {iota} absent from the iota map — impl_mem.ml:912-914 `IntMap.find iota st.iota_map` (raises Not_found)")
+    `addIota`, which inserts its key, and nothing removes a key. -/
+def lookupIota (st : MemState) (iota : SymbolicStorageInstanceId) : IotaEntry :=
+  match st.iotaMap.get? iota with
+  | some entry => entry
+  | none =>
+    failwithI (pnviRefusal s!"R-PNVI-04: lookup_iota, iota {iota} absent from the iota map — impl_mem.ml:912-914 `IntMap.find iota st.iota_map` (raises Not_found)")
 
 /-- The outcome of a `resolve_iota` precondition — impl_mem.ml:917-942
     `[ `OK | `FAIL of Cerb_location.t * mem_error ]` (built by the kill, load and
@@ -2301,30 +2331,62 @@ inductive IotaPrecond where
   | OK
   | FAIL (loc : CerbLocation.Loc) (err : mem_error)
 
+/-- A `resolve_iota` precondition: it reads the state and may itself `fail`
+    (upstream's `get_allocation ~loc z`, impl_mem.ml:704-710) — that failure is the
+    `.error` and aborts the whole resolution, as upstream's `fail` (a kill) does. -/
+abbrev IotaPrecondFn := StorageInstanceId → MemState → Except (kill_reason mem_error) IotaPrecond
+
 /-- resolve_iota — impl_mem.ml:916-942 (PNVI-ae-udi): `Single id` → `precond
     id` must hold (else its failure); `Double (id1, id2)` → `precond id1`, else
     `precond id2`, else the SECOND failure (the error the oracle reports); then
-    the iota is collapsed to `Single` of the chosen id. A `FAIL (loc, err)` is
-    `fail ~loc err` (`memFail`; `fail` is impl_mem.ml:575 in this tree — the
-    `:540-546` on `failReason`/`memFail` is the file's older numbering). -/
-def resolveIota [LemFuel] (precond : StorageInstanceId → memM IotaPrecond)
-    (iota : SymbolicStorageInstanceId) : memM StorageInstanceId :=
-  nd_bind
-    (nd_bind (lookupIota iota) fun
-      | .Single allocId =>
-        nd_bind (precond allocId) fun
-          | .OK => memReturn allocId
-          | .FAIL loc err => memFail err loc
-      | .Double allocId1 allocId2 =>
-        nd_bind (precond allocId1) fun
-          | .OK => memReturn allocId1
-          | .FAIL _ _ =>
-            nd_bind (precond allocId2) fun
-              | .OK => memReturn allocId2
-              | .FAIL loc err => memFail err loc)
-    fun allocId =>
-      nd_bind (nd_update fun (st : MemState) => { st with iotaMap := st.iotaMap.insert iota (.Single allocId) })
-        fun _ => memReturn allocId
+    the iota is collapsed to `Single` of the chosen id (`IntMap.add`). A
+    `FAIL (loc, err)` is `fail ~loc err` (`failReason`; `fail` is impl_mem.ml:575
+    in this tree). The preconditions run on the state BEFORE the collapse (they
+    only read it). -/
+def resolveIota (precond : IotaPrecondFn) (iota : SymbolicStorageInstanceId) (st : MemState) :
+    Except (kill_reason mem_error) (StorageInstanceId × MemState) :=
+  let chosen : Except (kill_reason mem_error) StorageInstanceId :=
+    match lookupIota st iota with
+    | .Single allocId =>
+      match precond allocId st with
+      | .error k => .error k
+      | .ok .OK => .ok allocId
+      | .ok (.FAIL loc err) => .error (failReason err loc)
+    | .Double allocId1 allocId2 =>
+      match precond allocId1 st with
+      | .error k => .error k
+      | .ok .OK => .ok allocId1
+      | .ok (.FAIL _ _) =>
+        match precond allocId2 st with
+        | .error k => .error k
+        | .ok .OK => .ok allocId2
+        | .ok (.FAIL loc err) => .error (failReason err loc)
+  match chosen with
+  | .error k => .error k
+  | .ok allocId => .ok (allocId, { st with iotaMap := st.iotaMap.insert iota (.Single allocId) })
+
+/-- get_allocation ~loc — impl_mem.ml:704-710, inside a precondition: the live
+    allocation record, or `fail ~loc (MerrOutsideLifetime …)`. -/
+def getAllocationE (loc : CerbLocation.Loc) (st : MemState) (allocId : StorageInstanceId) :
+    Except (kill_reason mem_error) Allocation :=
+  match st.allocations.get? allocId with
+  | some alloc => .ok alloc
+  | none => .error (failReason (MerrOutsideLifetime s!"Concrete.get_allocation, alloc_id={allocId}") loc)
+
+/-- `resolveIota` commutes with replacing `last_used`, for a precondition that does not
+    read it (every precondition of the kill/load/store arms: `hp` is `rfl` there) — a
+    consumer comparing a memory operation on `σ` and on `{ σ with lastUsed := u }` rewrites
+    the resolution instead of reducing it (PNVI arc S3; the S3 record's consumer note). -/
+theorem resolveIota_lastUsed (p : IotaPrecondFn) (u : Option StorageInstanceId)
+    (hp : ∀ z (s : MemState), p z { s with lastUsed := u } = p z s) (iota : SymbolicStorageInstanceId)
+    (s : MemState) :
+    resolveIota p iota { s with lastUsed := u } =
+      (match resolveIota p iota s with
+       | .error k => .error k
+       | .ok r => .ok (r.1, { r.2 with lastUsed := u })) := by
+  have hl : lookupIota { s with lastUsed := u } iota = lookupIota s iota := rfl
+  simp only [resolveIota, hl, hp]
+  split <;> simp_all
 
 def alignDown (addr align : Nat) : Nat := (addr / align) * align
 
@@ -2544,10 +2606,35 @@ def killM [CerbGlobal.Switches] (loc : CerbLocation.Loc) (isDynamic : Bool) (pv 
       fail_ (MerrOther "attempted to kill with a pointer lacking a provenance")  -- :1472-1473
     | .PV .Prov_device (.PVconcrete _ _) =>
       (NDactive (), st)                                                          -- :1474-1476 ("TODO: should that be an error ??")
-    | .PV (.Prov_symbolic _) _ =>
-      -- :1479-1513 PNVI-ae-udi arm: the concrete Lean model never mints
-      -- Prov_symbolic (PNVI is a refused switch, Z-24) — loud, never absorbed
-      (NDkilled (Other (MerrOther "killM: Prov_symbolic in concrete model")), st)
+    | .PV (.Prov_symbolic iota) (.PVconcrete _ addr) =>
+      -- impl_mem.ml:1518-1553 (PNVI-ae-udi; THIS tree's lines), in upstream's
+      -- order: the dynamic check `is_dynamic addr` (:1531-1539), then
+      -- `resolve_iota precondition iota` (:1541) with the precondition
+      -- :1520-1529 — dead → `Free_dead_allocation` WHATEVER `is_dyn` (unlike the
+      -- Prov_some arm's static `failwith`), else `get_allocation ~loc z`, then
+      -- `addr = alloc.base` or `Free_out_of_bound` — then the retirement
+      -- :1545-1549 and the zap switch :1550-1553 (refused set, loud exactly as in
+      -- the Prov_some arm below). Reached only through a `Prov_symbolic` pointer,
+      -- which nothing mints at the default switch set (ptrfromint's PNVI arm).
+      let precondition : IotaPrecondFn := fun z s =>
+        if s.deadAllocations.contains z then .ok (.FAIL loc (MerrUndefinedFree Free_dead_allocation))
+        else match getAllocationE loc s z with
+          | .error k => .error k
+          | .ok alloc =>
+            if addr == alloc.base then .ok .OK
+            else .ok (.FAIL loc (MerrUndefinedFree Free_out_of_bound))
+      if isDynamic && !st.dynamicAddrs.contains addr then
+        fail_ (MerrUndefinedFree Free_non_matching)                              -- :1534-1535
+      else match resolveIota precondition iota st with
+        | .error k => (NDkilled k, st)
+        | .ok (allocId, st1) =>
+          let st' := { st1 with
+            deadAllocations := allocId :: st1.deadAllocations
+            lastUsed := some allocId
+            allocations := st1.allocations.erase allocId }
+          if CerbGlobal.has_switch .zap_dead_pointers then
+            (NDkilled (Other (MerrOther "killM: SW_zap_dead_pointers is set but zap_pointers (impl_mem.ml:1447-1462) is not ported — switches are refused (Z-24)")), st)
+          else (NDactive (), st')
     | .PV (.Prov_some allocId) (.PVconcrete _ addr) =>
       -- :1515-1549 in THIS order: is_dynamic addr (the POINTER's address, not
       -- alloc.base) → is_dead → get_allocation → addr = alloc.base
@@ -2608,8 +2695,12 @@ def killM [CerbGlobal.Switches] (loc : CerbLocation.Loc) (isDynamic : Bool) (pv 
                              ? do_load/do_store : OutOfBoundPtr (:1611-1617,
                              :1718-1724) — zero-discrepancy Z-06 (noodle D5);
                              this file used to assert the ranges were empty
-    Not ported: Prov_symbolic iota resolution (PNVI-ae-udi; the concrete
-    Lean model never mints Prov_symbolic).
+      Prov_symbolic          → resolve_iota with the arm's precondition, then
+                             do_load/do_store on the resolved allocation
+                             (impl_mem.ml:1662-1684 / :1771-1804 in THIS tree;
+                             PNVI arc S3) — reached only through a pointer that
+                             ptrfromint's PNVI arm minted, never at the default
+                             switch set.
 
     PORTED IN THE EXPLICIT SHAPE (seam-hygiene H2, 2026-09-19,
     docs/2026-09-18_seam-hygiene-record.md §4; formerly DECLARED as
@@ -2636,11 +2727,14 @@ def killM [CerbGlobal.Switches] (loc : CerbLocation.Loc) (isDynamic : Bool) (pv 
     :2357-2358 Prov_none → effArrayShiftPtrval), `SW_forbid_nullptr_free`
     (kill :1474 → killM), `SW_zap_dead_pointers` (kill :1518/:1552 → killM),
     `SW_zero_initialised` (allocate_object :1318 → allocateObject),
-    `SW_strict_reads` (load :1601 → loadM), and the PNVI arms of ptrfromint
-    (`is_PNVI ()` :2154) and intfromptr (`SW_PNVI AE ∨ AE_UDI` :2454, guarded
-    by the coarser `is_PNVI ()`). The per-arm `:NNNN` comments elsewhere in
-    this file predate the part-one +8 line shift of impl_mem.ml. Not in this
-    shape (out of the eight): load's PNVI `expose_allocations` arm (:1570). -/
+    `SW_strict_reads` (load :1601 → loadM). The per-arm `:NNNN` comments
+    elsewhere in this file predate the part-one +8 line shift of impl_mem.ml.
+    PNVI arc S3 (2026-10-07): the PNVI tests are NOT loud kills any more —
+    they select the REAL arms, mirrored with this tree's impl_mem.ml lines:
+    ptrfromint's `is_PNVI ()` arm, intfromptr's and load's
+    `SW_PNVI AE ∨ AE_UDI` exposure arms, and the `is_PNVI ∧ ¬PERMISSIVE`
+    disjunct of eff_array_shift_ptrval's bounds guard (its `STRICT` disjunct
+    stays a loud kill); each is `false` at the default set by `rfl`. -/
 
 /-- device_ranges — impl_mem.ml:620-624, verbatim: two hard-coded ranges
     ("to match the Charon tests"; each 4 bytes). An integer in a range casts
@@ -2676,29 +2770,67 @@ def isAtomicMemberAccess [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (al
     | _ => false
   | none => false
 
+/-- load's PNVI exposure arm — impl_mem.ml:1602-1606 (THIS tree): `if has_switch
+    (SW_PNVI `AE) || has_switch (SW_PNVI `AE_UDI) then expose_allocations taint else
+    return ()`, as a state function (PNVI arc S3). -/
+def exposeOnLoad [CerbGlobal.Switches] (taint : ProvTaint) (st : MemState) : MemState :=
+  if CerbGlobal.has_switch (.PNVI .AE) || CerbGlobal.has_switch (.PNVI .AE_UDI) then
+    exposeAllocations taint st
+  else st
+
+/-- At the default switch set the exposure arm is the identity. -/
+theorem exposeOnLoad_default (taint : ProvTaint) (st : MemState) :
+    @exposeOnLoad ⟨CerbGlobal.defaultSwitches⟩ taint st = st := rfl
+
+/-- The same at any instance whose switch list is the default (a consumer's own instance,
+    `h := rfl`). -/
+theorem exposeOnLoad_of_default [inst : CerbGlobal.Switches]
+    (h : inst.switches = CerbGlobal.defaultSwitches) (taint : ProvTaint) (st : MemState) :
+    exposeOnLoad taint st = st := by
+  cases inst with
+  | mk sws =>
+    obtain rfl : sws = CerbGlobal.defaultSwitches := h
+    rfl
+
+/-- Exposure (allocations) and `last_used` touch disjoint fields: the order in which
+    `loadM` applies them is immaterial (upstream: expose, then `last_used`). -/
+theorem exposeOnLoad_lastUsed [CerbGlobal.Switches] (taint : ProvTaint) (st : MemState)
+    (u : Option StorageInstanceId) :
+    exposeOnLoad taint { st with lastUsed := u } = { exposeOnLoad taint st with lastUsed := u } := by
+  unfold exposeOnLoad
+  split <;> (try cases taint) <;> rfl
+
 def loadM [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (pv : PointerValue) : memM (Footprint × MemValue) :=
   ND fun st =>
     let fail_ (err : mem_error) := (NDkilled (failReason err loc), st)
-    -- do_load — impl_mem.ml:1556-1603 (`last_used= alloc_id_opt` :1567
-    -- mirrored — Z2-M-16). Switch-conditioned arms: the PNVI `expose_allocations`
-    -- arm (:1570 in this tree) is DECLARED (refused set, Z-24; not one of the
-    -- eight explicit arms); SW_strict_reads (:1601-1606) is the EXPLICIT
-    -- `if has_switch .strict_reads then <loud kill> else …` guard below
-    -- (seam-hygiene H2)
-    let doLoad (allocOpt : Option StorageInstanceId) (addr : Int) :=
+    -- do_load — impl_mem.ml:1596-1647 in THIS tree, run on the state it is
+    -- given (`get >>= fun st`, :1597): `st` itself on the Prov_device and
+    -- Prov_some arms, the post-`resolve_iota` state on the Prov_symbolic arm
+    -- (PNVI arc S3). Order, as upstream: fetch + abst (:1599-1600), then the
+    -- PNVI `expose_allocations taint` (:1602-1606), then the receipt and
+    -- `last_used= alloc_id_opt` (:1607-1609; Z2-M-16), then the _Bool trap check
+    -- (:1619-1631), then SW_strict_reads (:1634-1640, the EXPLICIT
+    -- `if has_switch .strict_reads then <loud kill> else …` guard, seam-hygiene H2)
+    let doLoad (st0 : MemState) (allocOpt : Option StorageInstanceId) (addr : Int) :=
       let size := sizeofCtype enumDefs tagDefs ty
-      let bytes := readBytesFrom st addr size
+      let bytes := readBytesFrom st0 addr size
       let fp : Footprint := .FP .R addr size
       -- abst at the load address with last_used_union_members and
       -- funptrmap — impl_mem.ml:1600 in THIS tree (the `:NNNN` cites of this
-      -- function's other comments are the older numbering, see the header)
-      -- (PNVI arc S2: the full `abst` — switch set, the `find_overlaping st`
-      -- closure — whose taint feeds `expose_allocations`
-      -- under `PNVI AE ∨ AE_UDI` (:1602-1606); that arm is S3 — the taint is
-      -- discarded here, as the default arm `return ()` does)
-      let mv := (reconstructValueAbst enumDefs tagDefs (findOverlapping st) st.lastUsedUnionMembers st.funptrmap addr ty bytes).2
+      -- function's other comments are the older numbering, see the header):
+      -- the full `abst` — switch set, the `find_overlaping st` closure, the taint
+      let r := reconstructValueAbst enumDefs tagDefs (findOverlapping st0) st0.lastUsedUnionMembers st0.funptrmap addr ty bytes
+      let mv := r.2
+      -- :1602-1606 `expose_allocations taint` under `PNVI AE ∨ AE_UDI`
+      -- (`exposeOnLoad`), BEFORE the receipt (F3 of the S2 review). Deliberate
+      -- placement divergence, proved equal: upstream exposes and THEN sets
+      -- `last_used`; here `last_used` is set first and the exposure applied to that
+      -- state — the two touch disjoint fields (`exposeOnLoad_lastUsed`), and the
+      -- exposure stays a single call on a variable-sourced update, so unfolding
+      -- `loadM` does not copy it into every field. At the default set
+      -- `exposeOnLoad t s = s` (`exposeOnLoad_default`, `rfl`): the pre-S3 state.
       let loadedState := recordAccess loc LoadAccess ty pv allocOpt addr bytes mv none
-        { st with lastUsed := allocOpt }
+        (exposeOnLoad r.1 { st0 with lastUsed := allocOpt })
       -- trap representation for _Bool — impl_mem.ml:1576-1591
       let isBool := match ty with | Ctype _ (.Basic (.Integer .Bool0)) => true | _ => false
       let isTrap := isBool && match mv with
@@ -2713,7 +2845,7 @@ def loadM [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : TagDe
       -- Refused set (Z-24): the default arm is the only reachable one; the set
       -- case is loud (seam-hygiene H2)
       else if CerbGlobal.has_switch .strict_reads then
-        (NDkilled (Other (MerrOther "loadM: SW_strict_reads is set but the strict-reads arm (impl_mem.ml:1601-1606) is not ported — switches are refused (Z-24)")), st)
+        (NDkilled (Other (MerrOther "loadM: SW_strict_reads is set but the strict-reads arm (impl_mem.ml:1601-1606) is not ported — switches are refused (Z-24)")), st0)
       else (NDactive (fp, mv), loadedState)
     match pv with
     | .PV _ (.PVnull _) => fail_ (MerrAccess LoadAccess NullPtr)          -- impl_mem.ml:1605-1606
@@ -2721,11 +2853,29 @@ def loadM [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : TagDe
     | .PV .Prov_none _ => fail_ (MerrAccess LoadAccess OutOfBoundPtr)     -- impl_mem.ml:1609-1610
     | .PV .Prov_device (.PVconcrete _ addr) =>
       -- impl_mem.ml:1611-1617: is_within_device → do_load None addr
-      if isWithinDevice enumDefs tagDefs ty addr then doLoad none addr
+      if isWithinDevice enumDefs tagDefs ty addr then doLoad st none addr
       else fail_ (MerrAccess LoadAccess OutOfBoundPtr)
-    | .PV (.Prov_symbolic _) _ =>
-      (NDkilled (kill_reason.Other
-        (MerrOther "loadM: Prov_symbolic in concrete model")), st)
+    | .PV (.Prov_symbolic iota) (.PVconcrete _ addr) =>
+      -- impl_mem.ml:1662-1684 (PNVI-ae-udi; THIS tree's lines): `resolve_iota
+      -- precondition iota >>= fun alloc_id -> do_load (Some alloc_id) addr`, the
+      -- precondition :1666-1682 being the Prov_some arm's checks in its order —
+      -- dead → DeadPtr; `is_within_bound ~loc z ty addr` (its `get_allocation`
+      -- may fail) → OutOfBoundPtr; `is_atomic_member_access` → AtomicMemberof.
+      -- Reached only through a `Prov_symbolic` pointer, which nothing mints at
+      -- the default switch set (ptrfromint's PNVI arm).
+      let precondition : IotaPrecondFn := fun z s =>
+        if s.deadAllocations.contains z then .ok (.FAIL loc (MerrAccess LoadAccess DeadPtr))
+        else match getAllocationE loc s z with
+          | .error k => .error k
+          | .ok alloc =>
+            if !isInBounds alloc addr (sizeofCtype enumDefs tagDefs ty) then
+              .ok (.FAIL loc (MerrAccess LoadAccess OutOfBoundPtr))
+            else if isAtomicMemberAccess enumDefs tagDefs alloc ty addr then
+              .ok (.FAIL loc (MerrAccess LoadAccess AtomicMemberof))
+            else .ok .OK
+      match resolveIota precondition iota st with
+      | .error k => (NDkilled k, st)
+      | .ok (allocId, st1) => doLoad st1 (some allocId) addr
     | .PV (.Prov_some allocId) (.PVconcrete _ addr) =>
       -- impl_mem.ml:1644-1664
       if st.deadAllocations.contains allocId then
@@ -2739,7 +2889,7 @@ def loadM [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : TagDe
             fail_ (MerrAccess LoadAccess OutOfBoundPtr)                   -- impl_mem.ml:1651-1656
           else if isAtomicMemberAccess enumDefs tagDefs alloc ty addr then
             fail_ (MerrAccess LoadAccess AtomicMemberof)                  -- impl_mem.ml:1658-1660
-          else doLoad (some allocId) addr
+          else doLoad st (some allocId) addr
 
 def storeM [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc) (ty : ctype) (isLocking : Bool) (pv : PointerValue) (mv : MemValue) : memM Footprint :=
   ND fun st =>
@@ -2755,10 +2905,13 @@ def storeM [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocati
     -- the pointer is PVconcrete (Some membr, _) (union member_shift,
     -- impl_mem.ml:1694-1701)
     -- `allocOpt` is the OCaml `alloc_id_opt`: None on the device path
-    -- (:1723 `do_store None addr`), so no is_locking readonly update there
-    let doStore (allocOpt : Option (Int × Allocation)) (unionMem : Option identifier) (addr : Int) :=
-      let (fpm, bytes) := memValueToBytes enumDefs tagDefs st.funptrmap mv
-      let st' := writeBytesTo { st with funptrmap := fpm } addr bytes
+    -- (:1723 `do_store None addr`), so no is_locking readonly update there.
+    -- `st0` is the state do_store runs on (`update begin fun st -> …`): `st` on
+    -- the Prov_device and Prov_some arms, the post-`resolve_iota` state on the
+    -- Prov_symbolic arm (PNVI arc S3)
+    let doStore (st0 : MemState) (allocOpt : Option (Int × Allocation)) (unionMem : Option identifier) (addr : Int) :=
+      let (fpm, bytes) := memValueToBytes enumDefs tagDefs st0.funptrmap mv
+      let st' := writeBytesTo { st0 with funptrmap := fpm } addr bytes
       let st' := match unionMem with
         | some membr => { st' with lastUsedUnionMembers :=
             (addr, membr) :: st'.lastUsedUnionMembers.filter (fun (a, _) => a != addr) }
@@ -2795,11 +2948,41 @@ def storeM [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocati
     | .PV .Prov_none _ => fail_ (MerrAccess StoreAccess OutOfBoundPtr)     -- impl_mem.ml:1716-1717
     | .PV .Prov_device (.PVconcrete unionMem addr) =>
       -- impl_mem.ml:1718-1724: is_within_device → do_store None addr
-      if isWithinDevice enumDefs tagDefs ty addr then doStore none unionMem addr
+      if isWithinDevice enumDefs tagDefs ty addr then doStore st none unionMem addr
       else fail_ (MerrAccess StoreAccess OutOfBoundPtr)
-    | .PV (.Prov_symbolic _) _ =>
-      (NDkilled (kill_reason.Other
-        (MerrOther "storeM: Prov_symbolic in concrete model")), st)
+    | .PV (.Prov_symbolic iota) (.PVconcrete unionMem addr) =>
+      -- impl_mem.ml:1771-1804 (PNVI-ae-udi; THIS tree's lines): `resolve_iota
+      -- precondition iota` (:1791), the precondition :1775-1789 being the Prov_some
+      -- arm's checks in its order — `is_within_bound ~loc z ty addr` (its
+      -- `get_allocation` may fail; NO dead check on the store path) →
+      -- OutOfBoundPtr; read-only → MerrWriteOnReadOnly kind; atomic member →
+      -- `MerrAccess (LoadAccess, AtomicMemberof)` (upstream's LoadAccess tag on a
+      -- store, :1787 — the same quirk as the Prov_some arm, mirrored); then
+      -- `do_store (Some alloc_id) addr` and the is_locking update (:1792-1802).
+      -- Reached only through a `Prov_symbolic` pointer, which nothing mints at
+      -- the default switch set (ptrfromint's PNVI arm).
+      let precondition : IotaPrecondFn := fun z s =>
+        match getAllocationE loc s z with
+        | .error k => .error k
+        | .ok alloc =>
+          if !isInBounds alloc addr (sizeofCtype enumDefs tagDefs ty) then
+            .ok (.FAIL loc (MerrAccess StoreAccess OutOfBoundPtr))
+          else match alloc.isReadonly with
+            | .IsReadOnly kind => .ok (.FAIL loc (MerrWriteOnReadOnly kind))
+            | .IsWritable =>
+              if isAtomicMemberAccess enumDefs tagDefs alloc ty addr then
+                .ok (.FAIL loc (MerrAccess LoadAccess AtomicMemberof))
+              else .ok .OK
+      match resolveIota precondition iota st with
+      | .error k => (NDkilled k, st)
+      | .ok (allocId, st1) =>
+        match st1.allocations.get? allocId with
+        | some alloc => doStore st1 (some (allocId, alloc)) unionMem addr
+        | none =>
+          -- unreachable: the precondition's `get_allocation` found `allocId` in
+          -- the same allocation map (`resolveIota` writes only `iotaMap`); loud,
+          -- never absorbed
+          (NDkilled (CerbFail.failStopKill s!"storeM: the allocation {allocId} resolved for a Prov_symbolic store is absent (unreachable: resolveIota's precondition found it in the same allocation map)"), st)
     | .PV (.Prov_some allocId) (.PVconcrete unionMem addr) =>
       -- impl_mem.ml:1762-1789: NO is_dead check on the store path — a
       -- dead allocation is caught by is_within_bound's get_allocation
@@ -2817,7 +3000,7 @@ def storeM [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocati
               -- NOTE: OCaml reports LoadAccess here (impl_mem.ml:1772-1774
               -- — looks like an upstream copy-paste; mirrored as-is)
               fail_ (MerrAccess LoadAccess AtomicMemberof)
-            else doStore (some (allocId, alloc)) unionMem addr
+            else doStore st (some (allocId, alloc)) unionMem addr
 
 /-! ### Pointer comparisons — impl_mem.ml:1830+ -/
 
@@ -2843,9 +3026,11 @@ def ptrAddr (pv : PointerValue) : Option Int :=
         cf. loadM / diffPtrval notes)
       - same-provenance: none/none → true, some/some → id equality,
         device/device → true, mixed → false (:1855-1861,1873); the
-        Prov_symbolic iota arms (:1863-1872, PNVI-ae-udi) are unreachable
-        here (the concrete Lean model never mints Prov_symbolic — cf.
-        diffPtrval) and fold into the mixed-→-false arm
+        (Prov_symbolic, Prov_symbolic) arm (impl_mem.ml:1905-1914 in THIS
+        tree, PNVI-ae-udi; PNVI arc S3): `lookup_iota` both; `Single a`,
+        `Single b` → `a = b`; otherwise false — reached only through
+        `Prov_symbolic` pointers, which nothing mints at the default switch
+        set; a symbolic/non-symbolic pair is the mixed → false arm
       - same-provenance true → addr equality                 (:1875-1876)
       - same-provenance false → msum "pointer equality"
         [("using provenance", false); ("ignoring provenance", addr
@@ -2874,14 +3059,26 @@ def eqPtrval [CerbGlobal.Switches] (_ : CerbLocation.Loc) (pv1 pv2 : PointerValu
     -- :1860-1861 SW_strict_pointer_equality → numeric equality only. The switch
     -- set is refused (Z-24), so the OCaml default arm is the only reachable one;
     -- the set case is loud (seam-hygiene H2, the zap_dead_pointers shape)
+    -- impl_mem.ml:1916-1923 (THIS tree): `true → addr eq`, `false → msum "pointer equality"`
+    let eqResult (same : Bool) : memM Bool :=
+      if same then
+        memReturn (addr1 == addr2)
+      else
+        msum "pointer equality"
+          [("using provenance", memReturn false),
+           ("ignoring provenance", memReturn (addr1 == addr2))]
     if CerbGlobal.has_switch .strict_pointer_equality then
       kill (Other (MerrOther "eqPtrval: SW_strict_pointer_equality is set but the strict-equality arm (impl_mem.ml:1860-1861) is not ported — switches are refused (Z-24)"))
-    else if sameProv then
-      memReturn (addr1 == addr2)
-    else
-      msum "pointer equality"
-        [("using provenance", memReturn false),
-         ("ignoring provenance", memReturn (addr1 == addr2))]
+    else match prov1, prov2 with
+      | .Prov_symbolic iota1, .Prov_symbolic iota2 =>
+        -- impl_mem.ml:1905-1914 (PNVI-ae-udi): `lookup_iota iota1`, then iota2
+        ND fun st =>
+          let sameIota : Bool := match lookupIota st iota1, lookupIota st iota2 with
+            | .Single allocId1, .Single allocId2 => allocId1 == allocId2
+            | _, _ => false
+          match eqResult sameIota with
+          | ND f => f st
+      | _, _ => eqResult sameProv
 
 def nePtrval [LemFuel] [CerbGlobal.Switches] (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) : memM Bool :=
   nd_bind (eqPtrval loc pv1 pv2) (fun b => memReturn (!b))
@@ -2940,19 +3137,42 @@ def gePtrval [CerbGlobal.Switches] (loc : CerbLocation.Loc) (pv1 pv2 : PointerVa
 
 /-- diff_ptrval — impl_mem.ml:1954-1984 (strict, non-PERMISSIVE path;
     the SW_pointer_arith PERMISSIVE branch at :1978-1983 in this tree is
-    guarded in the explicit loud-kill shape, seam-hygiene H2 — and the Prov_symbolic
-    iota arms at :1987-2058 are unreachable here: the concrete Lean
-    model never mints Prov_symbolic).
+    guarded in the explicit loud-kill shape, seam-hygiene H2).
     Valid only when BOTH pointers carry the SAME Prov_some allocation id
     and both addresses lie within [base, base+size] of that allocation
     (precond, impl_mem.ml:1955-1959); everything else fails MerrPtrdiff
     (→ UB048_disjoint_array_pointers_subtraction via the fail mapping).
     valid_postcond (impl_mem.ml:1961-1967): strip ONE Array layer off
     diff_ty, then TRUNCATING Z.div of the address difference by
-    sizeof(elem). -/
+    sizeof(elem). `precond`/`valid_postcond`/`error_postcond` are local
+    functions as upstream's are (:1999-2013 in THIS tree).
+    PNVI-ae-udi arms (PNVI arc S3; impl_mem.ml:2031-2105 in THIS tree, reached
+    only through `Prov_symbolic` pointers, which nothing mints at the default
+    switch set): (symbolic, Prov_some) and (Prov_some, symbolic) :2032-2060 —
+    `Single a` → `a = id'` and precond on `a`'s allocation; `Double (a, b)` →
+    `id' ∈ {a, b}` and precond on `id'`'s allocation, which collapses the iota to
+    `Single id'`; (symbolic, symbolic) :2063-2105 — the intersection of the two
+    entries: none → error; `Single i` → both iotas collapse to `i`, valid (NO
+    precond, as upstream); `Double` → `addr1 = addr2` gives zero, otherwise
+    upstream's `fail (MerrOther "in `diff_ptrval` invariant of PNVI-ae-udi
+    failed: …")` (:2104) — its own invariant failure, not a verdict about the
+    program — is REFUSED (design §G.1 row R12, class (A′), `R-PNVI-08`). -/
 def diffPtrval [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc) (diffTy : ctype) (pv1 pv2 : PointerValue) : memM IntegerValue :=
   ND fun st =>
+    let precond (alloc : Allocation) (addr1 addr2 : Int) : Bool :=  -- impl_mem.ml:1955-1959
+      alloc.base ≤ addr1 && addr1 ≤ alloc.base + alloc.size &&
+      alloc.base ≤ addr2 && addr2 ≤ alloc.base + alloc.size
+    let validPostcond (addr1 addr2 : Int) (st' : MemState) :=
+      let diffTy' := match diffTy with  -- impl_mem.ml:1962-1966
+        | Ctype _ (.Array0 elemTy _) => elemTy
+        | _ => diffTy
+      (NDactive (integerIval
+        (integerDiv_t (addr1 - addr2) (sizeofCtype enumDefs tagDefs diffTy' : Int))), st')
     let errorPostcond := (NDkilled (failReason MerrPtrdiff loc), st)
+    -- get_allocation ~loc — impl_mem.ml:669-675
+    let getAllocFail (allocId : StorageInstanceId) :=
+      (NDkilled (failReason (MerrOutsideLifetime
+        s!"Concrete.get_allocation, alloc_id={allocId}") loc), st)
     -- :1978-1983 SW_pointer_arith PERMISSIVE → a provenance-blind subtraction.
     -- Refused set (Z-24): the default arm is the only reachable one; the set
     -- case is loud (seam-hygiene H2)
@@ -2963,22 +3183,55 @@ def diffPtrval [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : 
       .PV (.Prov_some allocId2) (.PVconcrete _ addr2) =>
       if allocId1 == allocId2 then
         match st.allocations.get? allocId1 with
-        | none =>
-          -- get_allocation ~loc alloc_id1 — impl_mem.ml:669-675
-          (NDkilled (failReason (MerrOutsideLifetime
-            s!"Concrete.get_allocation, alloc_id={allocId1}") loc), st)
+        | none => getAllocFail allocId1
         | some alloc =>
-          let precond :=  -- impl_mem.ml:1955-1959
-            alloc.base ≤ addr1 && addr1 ≤ alloc.base + alloc.size &&
-            alloc.base ≤ addr2 && addr2 ≤ alloc.base + alloc.size
-          if precond then
-            let diffTy' := match diffTy with  -- impl_mem.ml:1962-1966
-              | Ctype _ (.Array0 elemTy _) => elemTy
-              | _ => diffTy
-            (NDactive (integerIval
-              (integerDiv_t (addr1 - addr2) (sizeofCtype enumDefs tagDefs diffTy' : Int))), st)
+          if precond alloc addr1 addr2 then validPostcond addr1 addr2 st
           else errorPostcond
       else errorPostcond
+    | .PV (.Prov_symbolic iota) (.PVconcrete _ addr1), .PV (.Prov_some allocId') (.PVconcrete _ addr2)
+    | .PV (.Prov_some allocId') (.PVconcrete _ addr1), .PV (.Prov_symbolic iota) (.PVconcrete _ addr2) =>
+      -- impl_mem.ml:2032-2060 (PNVI-ae-udi)
+      match lookupIota st iota with
+      | .Single allocId =>
+        if allocId == allocId' then
+          match st.allocations.get? allocId with
+          | none => getAllocFail allocId
+          | some alloc =>
+            if precond alloc addr1 addr2 then validPostcond addr1 addr2 st
+            else errorPostcond
+        else errorPostcond
+      | .Double allocId1 allocId2 =>
+        if allocId1 == allocId' || allocId2 == allocId' then
+          match st.allocations.get? allocId' with
+          | none => getAllocFail allocId'
+          | some alloc =>
+            if precond alloc addr1 addr2 then
+              validPostcond addr1 addr2 { st with iotaMap := st.iotaMap.insert iota (.Single allocId') }
+            else errorPostcond
+        else errorPostcond
+    | .PV (.Prov_symbolic iota1) (.PVconcrete _ addr1), .PV (.Prov_symbolic iota2) (.PVconcrete _ addr2) =>
+      -- impl_mem.ml:2063-2105 (PNVI-ae-udi): `lookup_iota iota1`, then iota2; the
+      -- intersection :2068-2088
+      let interIds : Option IotaEntry :=
+        match lookupIota st iota1, lookupIota st iota2 with
+        | .Single x, .Single y => if x == y then some (.Single x) else none
+        | .Single x, .Double y z | .Double y z, .Single x =>
+          if x == y || x == z then some (.Single x) else none
+        | .Double x1 x2, .Double y1 y2 =>
+          if x1 == y1 then
+            if x2 == y2 then some (.Double x1 x2) else some (.Single x1)
+          else if x2 == y2 then some (.Single x2)
+          else none
+      match interIds with
+      | none => errorPostcond
+      | some (.Single allocId') =>
+        -- :2093-2097 `IntMap.add iota1 (Single i) (IntMap.add iota2 (Single i) map)`
+        validPostcond addr1 addr2
+          { st with iotaMap := (st.iotaMap.insert iota2 (.Single allocId')).insert iota1 (.Single allocId') }
+      | some (.Double _ _) =>
+        if addr1 == addr2 then validPostcond addr1 addr2 st  -- :2100-2101 (zero)
+        else
+          failwithI (pnviRefusal "R-PNVI-08: diff_ptrval, (Prov_symbolic, Prov_symbolic), ambiguous intersection with addr1 <> addr2 — impl_mem.ml:2104 `fail ~loc (MerrOther \"in `diff_ptrval` invariant of PNVI-ae-udi failed: ambiguous iotas with addr1 <> addr2\")` (upstream's own invariant failure)")
     | _, _ => errorPostcond
 
 /-! ### Pointer validity -/
@@ -3015,7 +3268,11 @@ def isWellAlignedPtrval [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (ty 
     Null/function pointer → false.
     Prov_none → false.
     Prov_device → checks alignment.
-    Prov_some → checks !is_dead && well-aligned. -/
+    Prov_some → checks !is_dead && well-aligned (`do_test`, :2136-2141 in THIS tree).
+    Prov_symbolic (PNVI-ae-udi; impl_mem.ml:2152-2163, PNVI arc S3) →
+    `lookup_iota`: `Single a` → `do_test a`; `Double (a, b)` → `do_test a`,
+    and if false `do_test b`. Reached only through a `Prov_symbolic` pointer,
+    which nothing mints at the default switch set. -/
 def validForDerefPtrval [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (ty : ctype) (pv : PointerValue) : memM Bool :=
   ND fun st =>
     match pv with
@@ -3033,9 +3290,21 @@ def validForDerefPtrval [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (ty 
       else
         match isWellAlignedPtrval enumDefs tagDefs ty pv with
         | ND f => f st
-    | .PV (.Prov_symbolic _) _ =>
-      -- PNVI-ae-udi: concrete model shouldn't see this; fail loudly
-      (NDkilled (Other (MerrOther "validForDerefPtrval: Prov_symbolic in concrete model")), st)
+    | .PV (.Prov_symbolic iota) (.PVconcrete _ _) =>
+      -- impl_mem.ml:2152-2163 (PNVI-ae-udi)
+      let doTest (z : StorageInstanceId) : memM Bool :=     -- :2136-2141
+        ND fun s =>
+          if s.deadAllocations.contains z then (NDactive false, s)
+          else match isWellAlignedPtrval enumDefs tagDefs ty pv with
+            | ND f => f s
+      let test : memM Bool :=
+        match lookupIota st iota with
+        | .Single allocId => doTest allocId
+        | .Double allocId1 allocId2 =>
+          nd_bind (doTest allocId1) fun ok =>
+            if ok then memReturn true else doTest allocId2
+      match test with
+      | ND f => f st
 
 /-! ### Pointer casts -/
 
@@ -3052,8 +3321,14 @@ private def wrapI (n : Int) (lo hi : Int) : Int :=
     a `Prov_device` pointer (:2165-2167); NULL only for a provenance-less
     zero (:2168-2169; an integer CARRYING a provenance keeps it and yields a
     concrete pointer even at 0, :2172-2173 — the charter's Z-09). The
-    is_PNVI arm (:2146-2162, allocation finding) is refused, not ported:
-    PNVI is a refused switch (Z-24). -/
+    is_PNVI arm (impl_mem.ml:2190-2205 in THIS tree; PNVI arc S3): `n = 0` →
+    `PVnull`; else `find_overlaping st n` — `NoAlloc` → `Prov_none`,
+    `SingleAlloc id` → `Prov_some id`, `DoubleAlloc ids` → a fresh iota
+    (`add_iota`) → `Prov_symbolic iota` — and `PV (prov, PVconcrete (None, n))`.
+    The integer's own provenance is ignored and NO device range is consulted
+    under PNVI: upstream's `(* TODO: device memory? *)` (:2191) is MIRRORED, not
+    resolved (design §G.1 row R7, §F.15, accepted [USER 2026-10-05] in §H). At
+    the default switch set `is_PNVI () = false` by `rfl`: the PVI arm. -/
 def ptrfromint [CerbGlobal.Switches] (_ : CerbLocation.Loc) (_ : integerType) (refTy : ctype)
     (iv : IntegerValue) : memM PointerValue :=
   match iv with
@@ -3062,7 +3337,16 @@ def ptrfromint [CerbGlobal.Switches] (_ : CerbLocation.Loc) (_ : integerType) (r
     let hi : Int := (2 : Int) ^ (targetPtrSize * 8) - 1
     let n := wrapI nRaw 0 hi
     if CerbGlobal.is_PNVI () then
-      kill (Other (MerrOther "ptrfromint: the PNVI arm (impl_mem.ml:2146-2162) is not ported — --switches=PNVI is refused by this port (Z-24)"))
+      -- impl_mem.ml:2190-2205; `(* TODO: device memory? *)` (:2191) mirrored
+      if n == 0 then memReturn (.PV .Prov_none (.PVnull refTy))               -- :2192-2193
+      else ND fun st =>
+        match findOverlapping st n with                                         -- :2196
+        | .NoAlloc => (NDactive (.PV .Prov_none (.PVconcrete none n)), st)       -- :2197-2198
+        | .SingleAlloc allocId =>
+          (NDactive (.PV (.Prov_some allocId) (.PVconcrete none n)), st)        -- :2199-2200
+        | .DoubleAlloc allocId1 allocId2 =>                                      -- :2201-2203
+          let (iota, st') := addIota (allocId1, allocId2) st
+          (NDactive (.PV (.Prov_symbolic iota) (.PVconcrete none n)), st')
     else match prov with
     | .Prov_none =>
       if deviceRanges.any (fun (lo, hi) => lo ≤ n && n ≤ hi) then
@@ -3071,79 +3355,183 @@ def ptrfromint [CerbGlobal.Switches] (_ : CerbLocation.Loc) (_ : integerType) (r
       else memReturn (.PV .Prov_none (.PVconcrete none n))              -- :2170-2171
     | _ => memReturn (.PV prov (.PVconcrete none n))                     -- :2172-2173
 
-/-- intfromptr — impl_mem.ml:2439-2461.
+/-- intfromptr — impl_mem.ml:2439-2461 (older numbering; :2483-2505 in THIS tree).
     For concrete pointer: validate address fits in target integer type,
-    fail with MerrIntFromPtr on overflow. -/
+    fail with MerrIntFromPtr on overflow. Every result goes through `mk_ival`
+    (:2486, :2488, :2505 — `IV (Prov_none, n)` under any PNVI variant, `IV
+    (prov, n)` otherwise). PNVI arc S3: the `has_switch (SW_PNVI AE) ||
+    has_switch (SW_PNVI AE_UDI)` arm (:2490-2498) exposes the pointer's
+    allocation (`expose_allocation`, a `Prov_some` only) BEFORE the range check;
+    the exact upstream test (so `PNVI PLAIN` takes the no-exposure arm). At the
+    default switch set both tests are `false` by `rfl`: `mkIval prov n = IV prov n`
+    and no exposure. -/
 def intfromptr [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc) (_ : ctype) (ity : integerType)
     (pv : PointerValue) : memM IntegerValue :=
   match pv with
-  | .PV prov (.PVnull _) => memReturn (.IV prov 0)
+  | .PV prov (.PVnull _) => memReturn (mkIval prov 0)                        -- :2485-2486
   -- named-deviation register N1 (VALIDATION.md §2b): `n` is the symbol's
   -- fresh-supply number, which the oracle numbers differently. Served, not
   -- refused: libc's atexit round-trips a function pointer through uintptr_t
   -- (runtime/libc/src/stdlib.c:194-199) and must keep working.
-  | .PV prov (.PVfunction (Symbol _ n _)) => memReturn (.IV prov n)
+  | .PV prov (.PVfunction (Symbol _ n _)) => memReturn (mkIval prov n)      -- :2487-2488
   | .PV prov (.PVconcrete _ addr) =>
-    -- :2454-2461 `has_switch (SW_PNVI AE) || has_switch (SW_PNVI AE_UDI)` →
-    -- expose_allocation. Guarded by the coarser `is_PNVI ()` (the one PNVI
-    -- predicate this port exposes; it is IMPLIED BY either disjunct — and also
-    -- by `SW_PNVI PLAIN`, where the OCaml takes the default arm — so its `false`
-    -- (Z-24) refutes both) exactly as ptrfromint's arm is; the set case is loud
-    -- (seam-hygiene H2)
-    if CerbGlobal.is_PNVI () then
-      kill (Other (MerrOther "intfromptr: a PNVI switch is set but the expose_allocation arm (impl_mem.ml:2454-2461) is not ported — switches are refused (Z-24)"))
-    else
-    let (.IV _ ityMin) := minIval enumDefs tagDefs ity
-    let (.IV _ ityMax) := maxIval enumDefs tagDefs ity
-    if addr < ityMin || ityMax < addr then
-      -- impl_mem.ml:2459 `fail ~loc MerrIntFromPtr` — the C cast site; the
-      -- loc was dropped here (memFail's `other "Concrete"` default), so UB024
-      -- printed `other_location(Concrete)` (zero-discrepancy Z-02, noodle D2)
-      memFail MerrIntFromPtr loc
-    else
-      memReturn (.IV prov addr)
+    let rangeChecked : memM IntegerValue :=
+      let (.IV _ ityMin) := minIval enumDefs tagDefs ity
+      let (.IV _ ityMax) := maxIval enumDefs tagDefs ity
+      if addr < ityMin || ityMax < addr then
+        -- impl_mem.ml:2459 `fail ~loc MerrIntFromPtr` — the C cast site; the
+        -- loc was dropped here (memFail's `other "Concrete"` default), so UB024
+        -- printed `other_location(Concrete)` (zero-discrepancy Z-02, noodle D2)
+        memFail MerrIntFromPtr loc
+      else
+        memReturn (mkIval prov addr)                                         -- :2505
+    -- :2490-2498 (THIS tree) `if has_switch (SW_PNVI AE) || has_switch (SW_PNVI
+    -- AE_UDI) then (match prov with Prov_some id -> expose_allocation id | _ ->
+    -- return ()) else return ()`, before the range check (PNVI arc S3)
+    if CerbGlobal.has_switch (.PNVI .AE) || CerbGlobal.has_switch (.PNVI .AE_UDI) then
+      match prov with
+      | .Prov_some allocId =>
+        ND fun st =>
+          match rangeChecked with
+          | ND f => f (exposeAllocation allocId st)
+      | _ => rangeChecked
+    else rangeChecked
 
 /-! ### Effectful pointer shifts -/
 
-/-- eff_array_shift_ptrval — impl_mem.ml:2244-2356 (zero-discrepancy Z-17:
-    this used to delegate to the PURE `array_shift_ptrval`, whose null arm
-    panics where this one fails UB046, whose GNU void-byte arm this one
-    lacks — `sizeof void` is `assert false`, :134-135, so a void element
-    type panics in sizeofCtype here as it does there — and which keeps the
-    union-member tag this one DROPS).
+/-- eff_array_shift_ptrval — impl_mem.ml:2244-2356 (older numbering; :2288-2400
+    in THIS tree) (zero-discrepancy Z-17: this used to delegate to the PURE
+    `array_shift_ptrval`, whose null arm panics where this one fails UB046, whose
+    GNU void-byte arm this one lacks — `sizeof void` is `assert false`, :134-135,
+    so a void element type panics in sizeofCtype here as it does there — and
+    which keeps the union-member tag this one DROPS).
     `offset = sizeof ty * ival` (:2246); null → `fail ~loc MerrArrayShift`
-    = UB046 (:2247-2251); PVfunction → `failwith` (:2252-2253, fail-stop,
-    Q4); `Prov_symbolic` (:2256-2323) → never minted by this model (PNVI is
-    refused, Z-24) — loud; `Prov_some` (:2325-2337) → `PV (Prov_some id,
-    PVconcrete (None, addr + offset))`; `Prov_none` (:2338-2343) → likewise
-    with `Prov_none`; `Prov_device` (:2344-2346) → likewise. The
-    `SW_pointer_arith STRICT`/`is_PNVI` bounds arms (:2345-2354, :2357-2360 in
-    this tree) are switch-conditioned — guarded in the explicit loud-kill
-    shape, seam-hygiene H2; refused set, default arm only.
-    REACHABILITY: `PtrArrayShift` is emitted only under strict/PNVI/CHERI
-    (translation.lem:2112-2119), all refused — this port retires a dead
-    panic-vs-UB046 divergence rather than carrying it. Evaluation-order
-    note: the OCaml computes `offset` (hence `sizeof ty`) BEFORE matching
-    the pointer, so a void element type asserts even for a null pointer;
-    here `offset` is computed in the concrete arms only (a null pointer
-    with a void element type fails UB046 instead of asserting — a corner
-    inside the refused region, recorded). -/
+    = UB046 (:2247-2251; upstream's commented-out TODO-failwith is NOT live — the
+    live arm is mirrored, design §G.1 R14 / §H); PVfunction → `failwith`
+    (:2252-2253, fail-stop, Q4 — UNCHANGED by PNVI arc S3: this function is on
+    the DEFAULT path, `runtime/libcore/std.core:188/196/212/217` emit
+    `PtrArrayShift` in default mode, so design §G.1 row R13's "not on the default
+    path" premise does not hold; the site is left as it was and reported, S3
+    record); `Prov_some` (:2325-2337) → `PV (Prov_some id, PVconcrete (None,
+    addr + offset))`; `Prov_none` (:2338-2343) → likewise with `Prov_none`;
+    `Prov_device` (:2344-2346) → likewise.
+    The bounds arms are selected by `SW_pointer_arith STRICT || (is_PNVI () &&
+    not PERMISSIVE)` (:2309-2310 / :2381-2382 / :2393-2394 in THIS tree):
+    * the `STRICT` disjunct is a refused switch whose arms are not ported — the
+      explicit loud kill (seam-hygiene H2);
+    * the `is_PNVI ∧ ¬PERMISSIVE` disjunct is LIVE (PNVI arc S3): `Prov_some` →
+      `get_allocation ~loc` then `base ≤ shifted ∧ shifted + sizeof ty ≤ base +
+      size + sizeof ty` (one past allowed) else `fail ~loc MerrArrayShift`
+      (:2378-2390; upstream's `(* TODO: is it correct to use the "ty" as the
+      lvalue_ty? *)` MIRRORED, design §G.1 row R15, §H); `Prov_none` → `fail ~loc
+      (MerrOther "out-of-bound pointer arithmetic (Prov_none)")` (:2391-2395);
+      `Prov_device` → no guard (:2396-2400, `(* TODO: check *)` MIRRORED, R17).
+    * `Prov_symbolic` (:2301-2376, PNVI-ae-udi; reached only through a
+      `Prov_symbolic` pointer, never minted at the default set): `precond z` =
+      the same bounds check on `z`'s allocation under `is_PNVI ∧ ¬PERMISSIVE`,
+      else `true`; `Double (a, b)` with `ival ≠ 0`: precond a ∧ precond b →
+      PERMISSIVE ? no collapse : upstream's `Printf.printf "id1= …"` to STDOUT
+      then `fail (MerrOther "(PNVI-ae-uid) ambiguous non-zero array shift")`
+      (:2326-2334) — a debug print in a semantics arm, REFUSED (design §G.1 row
+      R16, class (B), `R-PNVI-10`; nothing is written to stdout); precond a only
+      → collapse to a; precond b only → collapse to b; neither → MerrArrayShift;
+      `ival = 0`: precond a ∨ precond b, else MerrArrayShift; `Single a`: precond
+      a, else MerrArrayShift; the result keeps `Prov_symbolic iota`.
+    At the default switch set `is_PNVI () = false` and `STRICT` is unset (`rfl`):
+    the guard is `false` and every concrete arm is the plain shift, as before S3.
+    Evaluation-order note: the OCaml computes `offset` (hence `sizeof ty`) BEFORE
+    matching the pointer, so a void element type asserts even for a null pointer;
+    here `offset` is computed in the concrete arms only (a null pointer with a
+    void element type fails UB046 instead of asserting — a corner recorded since
+    Z-17). -/
 def effArrayShiftPtrval [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc) (pv : PointerValue) (elemTy : ctype) (iv : IntegerValue) : memM PointerValue :=
   match pv, iv with
   | .PV _ (.PVnull _), _ => memFail MerrArrayShift loc                             -- :2247-2251
   | .PV _ (.PVfunction _), _ => failStopMem "Concrete.eff_array_shift_ptrval, PVfunction"  -- :2252-2253
-  | .PV (.Prov_symbolic _) _, _ =>
-    kill (kill_reason.Other (MerrOther "effArrayShiftPtrval: Prov_symbolic in concrete model"))
+  | .PV (.Prov_symbolic iota) (.PVconcrete _ addr), .IV _ ival =>
+    -- impl_mem.ml:2301-2376 (THIS tree), PNVI-ae-udi
+    let sz : Int := (sizeofCtype enumDefs tagDefs elemTy : Int)
+    let shiftedAddr := addr + sz * ival                                            -- :2306
+    if CerbGlobal.has_switch (.pointer_arith .STRICT) then
+      kill (Other (MerrOther "effArrayShiftPtrval: SW_pointer_arith STRICT is set but the strict bounds-checking arms (impl_mem.ml:2309-2310, 2381-2382, 2393-2394) are not ported — switches are refused (Z-24)"))
+    else ND fun st =>
+      -- precond z — :2307-2319 (the STRICT disjunct is the loud kill above)
+      let precond (z : StorageInstanceId) : Except (kill_reason mem_error) Bool :=
+        if CerbGlobal.is_PNVI () && !CerbGlobal.has_switch (.pointer_arith .PERMISSIVE) then
+          match getAllocationE loc st z with
+          | .error k => .error k
+          | .ok alloc => .ok (alloc.base ≤ shiftedAddr && shiftedAddr + sz ≤ alloc.base + alloc.size + sz)
+        else .ok true
+      let result (st' : MemState) := (NDactive (.PV (.Prov_symbolic iota) (.PVconcrete none shiftedAddr)), st')
+      let collapse (allocId : StorageInstanceId) :=
+        result { st with iotaMap := st.iotaMap.insert iota (.Single allocId) }     -- :2347-2350
+      let arrayShiftFail := (NDkilled (failReason MerrArrayShift loc), st)
+      match lookupIota st iota with                                                 -- :2320
+      | .Double allocId1 allocId2 =>
+        if ival != 0 then                                                           -- :2322-2353
+          match precond allocId1 with
+          | .error k => (NDkilled k, st)
+          | .ok true =>
+            match precond allocId2 with
+            | .error k => (NDkilled k, st)
+            | .ok true =>
+              if CerbGlobal.has_switch (.pointer_arith .PERMISSIVE) then result st   -- :2328-2329 `NoCollapse
+              else
+                failwithI (pnviRefusal s!"R-PNVI-10: eff_array_shift_ptrval, Prov_symbolic, Double, non-zero shift admitted by both allocations ({allocId1}, {allocId2}) — impl_mem.ml:2331-2334 `Printf.printf \"id1= %s, id2= %s ==> addr= %s\\n\" …; fail ~loc (MerrOther \"(PNVI-ae-uid) ambiguous non-zero array shift\")` (a debug print to stdout in a semantics arm)")
+            | .ok false => collapse allocId1                                         -- :2336-2337
+          | .ok false =>
+            match precond allocId2 with
+            | .error k => (NDkilled k, st)
+            | .ok true => collapse allocId2                                          -- :2341-2342
+            | .ok false => arrayShiftFail                                            -- :2343-2344
+        else                                                                        -- :2354-2366
+          match precond allocId1 with
+          | .error k => (NDkilled k, st)
+          | .ok true => result st
+          | .ok false =>
+            match precond allocId2 with
+            | .error k => (NDkilled k, st)
+            | .ok true => result st
+            | .ok false => arrayShiftFail
+      | .Single allocId =>                                                          -- :2367-2373
+        match precond allocId with
+        | .error k => (NDkilled k, st)
+        | .ok true => result st
+        | .ok false => arrayShiftFail
   | .PV prov (.PVconcrete _ addr), .IV _ ival =>
     let offset : Int := (sizeofCtype enumDefs tagDefs elemTy : Int) * ival               -- :2246
-    -- :2345-2346 (Prov_some) / :2357-2358 (Prov_none): `SW_pointer_arith STRICT ||
-    -- (is_PNVI () && not PERMISSIVE)` selects the bounds-checking arms; the
-    -- Prov_device arm (:2362-2364) has no guard. Refused set (Z-24): the default
-    -- arm is the only reachable one; the set case is loud (seam-hygiene H2)
+    -- :2381-2382 (Prov_some) / :2393-2394 (Prov_none) in THIS tree: `SW_pointer_arith
+    -- STRICT || (is_PNVI () && not PERMISSIVE)` selects the bounds-checking arms; the
+    -- Prov_device arm (:2396-2400) has no guard. `false` at the default set (`rfl`).
     if (match prov with | .Prov_device => false | _ => true) &&
        (CerbGlobal.has_switch (.pointer_arith .STRICT) ||
         (CerbGlobal.is_PNVI () && !CerbGlobal.has_switch (.pointer_arith .PERMISSIVE))) then
-      kill (Other (MerrOther "effArrayShiftPtrval: SW_pointer_arith STRICT (or a PNVI switch without PERMISSIVE) is set but the bounds-checking arms (impl_mem.ml:2345-2354, 2357-2360) are not ported — switches are refused (Z-24)"))
+      -- the STRICT disjunct: refused set (Z-24), its arms are not ported — loud
+      -- (seam-hygiene H2); the `is_PNVI ∧ ¬PERMISSIVE` disjunct: the live arms
+      if CerbGlobal.has_switch (.pointer_arith .STRICT) then
+        kill (Other (MerrOther "effArrayShiftPtrval: SW_pointer_arith STRICT is set but the strict bounds-checking arms (impl_mem.ml:2309-2310, 2381-2382, 2393-2394) are not ported — switches are refused (Z-24)"))
+      else
+        let shiftedAddr := addr + offset
+        match prov with
+        | .Prov_some allocId =>
+          -- :2378-2390 (THIS tree); `(* TODO: is it correct to use the "ty" as the
+          -- lvalue_ty? *)` (:2379) mirrored (design §G.1 R15, §H)
+          ND fun st =>
+            match getAllocationE loc st allocId with
+            | .error k => (NDkilled k, st)
+            | .ok alloc =>
+              let sz : Int := (sizeofCtype enumDefs tagDefs elemTy : Int)
+              if alloc.base ≤ shiftedAddr && shiftedAddr + sz ≤ alloc.base + alloc.size + sz then
+                (NDactive (.PV (.Prov_some allocId) (.PVconcrete none shiftedAddr)), st)
+              else (NDkilled (failReason MerrArrayShift loc), st)
+        | .Prov_none =>
+          memFail (MerrOther "out-of-bound pointer arithmetic (Prov_none)") loc        -- :2391-2395
+        | .Prov_device =>
+          -- unreachable: excluded by the guard above; :2396-2400's arm verbatim
+          memReturn (.PV .Prov_device (.PVconcrete none shiftedAddr))
+        | .Prov_symbolic _ =>
+          -- unreachable: matched by the Prov_symbolic arm above; loud, never absorbed
+          failStopMem "effArrayShiftPtrval: a Prov_symbolic pointer reached the Prov_some/Prov_none bounds arms (unreachable: the Prov_symbolic arm matches first)"
     else memReturn (.PV prov (.PVconcrete none (addr + offset)))                -- :2336/:2343/:2346
 
 def effMemberShiftPtrval [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (_ : CerbLocation.Loc) (pv : PointerValue) (tag : sym) (member : identifier) : memM PointerValue :=

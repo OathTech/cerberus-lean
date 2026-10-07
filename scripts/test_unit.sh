@@ -50,6 +50,9 @@ UNIT_TESTS=(
     # PNVI arc S2 (2026-10-07): the default-mode wrappers CerbMem.reconstructValue(_lemFuel) equal
     # the pre-S2 text (kernel); the retired C1 reference form; runtime controls of the PNVI helpers
     "reconstruct-legacy-test"
+    # PNVI arc S3 (2026-10-07): the PNVI-ae-udi arms' runtime witnesses (default-instance
+    # controls beside them) + the compile-time R-PNVI-nn refusal pins. Arg: fuel.
+    "pnvi-arms-test"
 )
 
 # ---------------------------------------------------------------------------
@@ -97,6 +100,8 @@ for test in "${TESTS[@]}"; do
     if [[ "$test" == match-pattern-arity-test ]]; then test_args=(17); fi
     # WP0 diagnostic: the suite fuel, zero stream iterations, capture on (row 13 runs the full grid).
     if [[ "$test" == memory-access-test ]]; then test_args=(17 0 on); fi
+    # PNVI arc S3: the suite fuel (no fuel numeral in test/Unit/PnviArmsTest.lean).
+    if [[ "$test" == pnvi-arms-test ]]; then test_args=(17); fi
     if "$bin" "${test_args[@]}"; then
         echo "${GREEN}✓ $test PASSED${NC}"
         total_pass=$((total_pass + 1))
