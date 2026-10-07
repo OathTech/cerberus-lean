@@ -1424,7 +1424,7 @@ def switchRefusalReason (name : String) : String :=
   | "revoke_dead_pointers" | "cornucopia" | "at_magic_comments" | "magic_comment_char_dollar" | "copy_prop" =>
     "this upstream switch (switches.ml:92-101) has no counterpart in this port's lem model"
   | _ =>
-    "unknown switch name — the oracle prints `failed to parse switch '…' --> ignoring.` and runs the DEFAULT semantics (switches.ml:140-141, fail-open); this port refuses (design §G R20, R-PNVI-12)"
+    "unknown switch name — the oracle prints `failed to parse switch '…' --> ignoring.` and runs on without it (switches.ml:140-141, fail-open: alone, that is the DEFAULT semantics); this port refuses (design §G R20, R-PNVI-12)"
 
 /-- The override class of a switch name (switches.ml:104-132 `pred`): two names of one
     class in one list make the oracle DROP the later one ("switch '…' would override a
