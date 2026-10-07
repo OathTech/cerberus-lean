@@ -121,7 +121,8 @@ LemLib (`lean-lib/`) is byte-identical between `4e70bb5` and `fc8fbef`
      (`[CerbGlobal.Switches]`; its proof is unchanged).
    - `TotalityProofTest` Part 1 was regenerated (§5).
 7. **Gates**:
-   - NEW `scripts/check_switches_instance.sh`, wired into row 1 (§4);
+   - NEW `scripts/check_switches_instance.sh`, wired into row 1 (§4) — superseded by §14
+     (withdrawn 2026-10-07, replaced by rule W1 of `scripts/check_no_fuel_numerals.sh`);
    - `scripts/gen_fuel_parametricity.py` emits instance binders in binder order (§5);
    - `scripts/check_cli_refusals.sh` pins 23 refusals and 4 repeated-option refusals (§4);
    - the failure-reach register's reason text for the three `Prov_symbolic` rows (§6).
@@ -180,7 +181,8 @@ module).**
 - Seam copies: `CerbMem` 18 (17 definitions + 1 doc line), `CerbCall` 3, `Main` 3,
   `CerbGlobal` 2, `CerbND` 1, `Lean_switches` 3 (comments).
 
-The instance gate's count is 109 (§4).
+The instance gate's count is 109 (§4). (Superseded by §14: that gate was withdrawn on
+2026-10-07; the count is historical.)
 
 **No inductive relation reaches a switch read.** lem would refuse that loudly, as an S0
 limitation; the generation ran clean.

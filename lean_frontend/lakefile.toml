@@ -335,6 +335,15 @@ srcDir = "test"
 root = "Unit.OpaqueFailureTest"
 moreLinkArgs = ["native/md5.o"]
 
+# PNVI arc S2 (2026-10-07): the default-mode compatibility wrappers `CerbMem.reconstructValue(_lemFuel)`
+# equal the pre-S2 text (a verbatim legacy copy, kernel equality); the mem-scale C1 index-slicing
+# reference form and its equalities, retired here from CerbMem.lean (design record §B.7)
+[[lean_exe]]
+name = "reconstruct-legacy-test"
+srcDir = "test"
+root = "Unit.ReconstructLegacyTest"
+moreLinkArgs = ["native/md5.o"]
+
 # program-data parameters E-A (2026-09-20): the enum's compatible type is program data — the
 # design note §4 kernel pins (normalise/sizeof/alignof at a registered enum by rfl given the map,
 # GCC's rule in lem, register_enum = true) + #guard_msgs that the retired registry names are gone

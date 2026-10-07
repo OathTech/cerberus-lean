@@ -871,12 +871,12 @@ theorem offsetsof_measure_sufficient (enumDefs : CerberusImpl.EnumDefs) (ambient
 
 end LayoutObligations
 
-/-! ### reconstructValue: recursion on the ctype being reconstructed, through
+/-! ### reconstructValue(Abst): recursion on the ctype being reconstructed, through
     member types read from the tag environment (impl_mem.ml:916-1096). The
     struct arm's member types come out of `offsetsof` — characterized below:
     every `(ident, ty, off)` it returns for a tag that RESOLVES has `ty` among
     the definition's `memberTypes`, so the potential descends by the same hop
-    inequality. Both arms of `reconstructValue_lemFuel` guard their tag lookup
+    inequality. Both arms of `reconstructValueAbst_lemFuel` guard their tag lookup
     and select the union member BEFORE any recursion (hotfix
     fix/fuel-forms-carriers option (d), 2026-09-20 — record
     docs/2026-09-20_fuel-forms-carriers-hotfix-record.md §3): every failure
@@ -942,13 +942,18 @@ theorem offsetsof_types (n : Nat) (enumDefs : CerberusImpl.EnumDefs) (ambient ta
     rw [← hx]
     exact mem_memberTypes_of_union membrs ⟨mb, hmb, mem_memberTypes1_ty mb⟩
 
-theorem reconstructValue_stable_aux (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap) (R : Entry → Nat)
+/-- PNVI arc S2 (2026-10-07): the recursion is `reconstructValueAbst_lemFuel`'s
+    (the full `abst` — switch set, `find_overlaping` closure, taint); the
+    closure and the instance are fixed through the induction (never recursed
+    on), the taint rides along in the pair. -/
+theorem reconstructValueAbst_stable_aux [CerbGlobal.Switches] (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap)
+    (findOverlapping : Address → OverlapResult) (R : Entry → Nat)
     (hR : Ranked (lookup ambient) (lookup ambient) R) (k : Nat) :
     ∀ (unionmap : List (Int × identifier)) (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte) (f g : Nat),
     pot ambient ambient R (entries ambient) ty ≤ k → pot ambient ambient R (entries ambient) ty ≤ f →
     pot ambient ambient R (entries ambient) ty ≤ g →
-    reconstructValue_lemFuel f enumDefs ambient unionmap funptrmap addr ty bytes =
-      reconstructValue_lemFuel g enumDefs ambient unionmap funptrmap addr ty bytes := by
+    reconstructValueAbst_lemFuel f enumDefs ambient findOverlapping unionmap funptrmap addr ty bytes =
+      reconstructValueAbst_lemFuel g enumDefs ambient findOverlapping unionmap funptrmap addr ty bytes := by
   have hLS : ∀ t v, lookup ambient t = some v → v ∈ entries ambient := fun _ _ h => lookup_mem_entries h
   induction k with
   | zero => intro _ _ _ ty _ f g hk _ _; have := pot_pos ambient ambient R (entries ambient) ty; omega
@@ -963,10 +968,11 @@ theorem reconstructValue_stable_aux (enumDefs : CerberusImpl.EnumDefs) (ambient 
     | succ g =>
     have key : ∀ (um : List (Int × identifier)) (fpm : Funptrmap) (ad : Int) (y : ctype) (bs : List AbsByte),
         pot ambient ambient R (entries ambient) y < pot ambient ambient R (entries ambient) ty →
-        reconstructValue_lemFuel f enumDefs ambient um fpm ad y bs = reconstructValue_lemFuel g enumDefs ambient um fpm ad y bs :=
+        reconstructValueAbst_lemFuel f enumDefs ambient findOverlapping um fpm ad y bs =
+          reconstructValueAbst_lemFuel g enumDefs ambient findOverlapping um fpm ad y bs :=
       fun um fpm ad y bs hy => ih um fpm ad y bs f g (by omega) (by omega) (by omega)
     obtain ⟨an, ty_⟩ := ty
-    cases ty_ <;> simp only [reconstructValue_lemFuel]
+    cases ty_ <;> simp only [reconstructValueAbst_lemFuel]
     case Basic bty => cases bty <;> rfl
     case Array0 c n =>
       cases n with
@@ -974,10 +980,10 @@ theorem reconstructValue_stable_aux (enumDefs : CerberusImpl.EnumDefs) (ambient 
       | some n =>
         simp only
         have hp := pot_array ambient ambient R (entries ambient) an c (some n)
-        congr 1
-        apply lmap_congr
-        intro eb _
-        exact key _ _ _ c eb (by omega)
+        have hF : (fun eb => reconstructValueAbst_lemFuel f enumDefs ambient findOverlapping unionmap funptrmap addr c eb) =
+            (fun eb => reconstructValueAbst_lemFuel g enumDefs ambient findOverlapping unionmap funptrmap addr c eb) :=
+          funext fun eb => key _ _ _ c eb (by omega)
+        rw [hF]
     case Atomic c =>
       have hp := pot_atomic ambient ambient R (entries ambient) an c
       exact key _ _ _ c bytes (by omega)
@@ -995,7 +1001,7 @@ theorem reconstructValue_stable_aux (enumDefs : CerberusImpl.EnumDefs) (ambient 
         to_congr
         all_goals
           intro acc memb hmemb
-          obtain ⟨revXs, prevEnd⟩ := acc
+          obtain ⟨taintAcc, revXs, prevEnd⟩ := acc
           obtain ⟨ident, membTy, off⟩ := memb
           dsimp only
           have hm : (ident, membTy, off) ∈ (offsetsof_lemFuel ((defsWeight ambient + defsWeight ambient + defsWeight ambient + 1) + 2) enumDefs ambient ambient t true).1 := by
@@ -1028,18 +1034,35 @@ theorem reconstructValue_stable_aux (enumDefs : CerberusImpl.EnumDefs) (ambient 
               rfl
       · rfl
 
-/-- THE OBLIGATION (the seam twin of the generated `assuming` shape). -/
+/-- THE OBLIGATION of the full reconstruction (PNVI arc S2; the seam twin of the
+    generated `assuming` shape; register row `CerbMem.reconstructValueAbst_lemFuel`
+    in scripts/fuel_hypotheses.txt). -/
+theorem reconstructValueAbst_measure_sufficient [CerbGlobal.Switches] (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap)
+    (findOverlapping : Address → OverlapResult) (unionmap : List (Int × identifier))
+    (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte)
+    (lemHyp : CerbTagsWf.Acyclic ambient) (lemFuel : Nat)
+    (lemMeasureLe : CerbTagsWf.envBound ambient ty ≤ lemFuel) :
+    reconstructValueAbst_lemFuel lemFuel enumDefs ambient findOverlapping unionmap funptrmap addr ty bytes =
+      reconstructValueAbst enumDefs ambient findOverlapping unionmap funptrmap addr ty bytes := by
+  obtain ⟨R, hR⟩ := lemHyp
+  have hW := W_le_defsWeight ambient R
+  have hp := pot_le ambient ambient R (entries ambient) _ hW ty
+  exact reconstructValueAbst_stable_aux enumDefs ambient findOverlapping R hR (pot ambient ambient R (entries ambient) ty) unionmap funptrmap addr ty bytes
+    lemFuel (envBound ambient ty) (Nat.le_refl _) (by unfold envBound at lemMeasureLe; omega) (by unfold envBound; omega)
+
+/-- THE OBLIGATION of the default-mode compatibility wrapper (statement
+    unchanged since the C4 slice): since PNVI arc S2 `reconstructValue_lemFuel` /
+    `reconstructValue` are the `.2` of the full reconstruction pinned at
+    `⟨CerbGlobal.defaultSwitches⟩` with the closure `noOverlapping`, so this is the
+    full obligation's second projection. -/
 theorem reconstructValue_measure_sufficient (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap) (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte)
     (lemHyp : CerbTagsWf.Acyclic ambient) (lemFuel : Nat)
     (lemMeasureLe : CerbTagsWf.envBound ambient ty ≤ lemFuel) :
     reconstructValue_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr ty bytes =
-      reconstructValue enumDefs ambient unionmap funptrmap addr ty bytes := by
-  obtain ⟨R, hR⟩ := lemHyp
-  have hW := W_le_defsWeight ambient R
-  have hp := pot_le ambient ambient R (entries ambient) _ hW ty
-  exact reconstructValue_stable_aux enumDefs ambient R hR (pot ambient ambient R (entries ambient) ty) unionmap funptrmap addr ty bytes
-    lemFuel (envBound ambient ty) (Nat.le_refl _) (by unfold envBound at lemMeasureLe; omega) (by unfold envBound; omega)
+      reconstructValue enumDefs ambient unionmap funptrmap addr ty bytes :=
+  congrArg Prod.snd (@reconstructValueAbst_measure_sufficient ⟨CerbGlobal.defaultSwitches⟩ enumDefs ambient
+    noOverlapping unionmap funptrmap addr ty bytes lemHyp lemFuel lemMeasureLe)
 
 end Reconstruct
 

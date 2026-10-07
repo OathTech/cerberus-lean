@@ -130,11 +130,40 @@ structure AbsByte where
   value : Option UInt8 := none
   deriving BEq, Inhabited, Repr
 
-/-- Taint status for PNVI-ae -/
+/-- Taint status for PNVI-ae — the allocation's exposure flag,
+    impl_mem.ml:409 `taint: [ `Unexposed | `Exposed ]`. -/
 inductive Taint where
   | Unexposed
   | Exposed
   deriving BEq, Inhabited
+
+/-- An iota-map entry — impl_mem.ml:490 `iota_map: [ `Single of
+    storage_instance_id | `Double of storage_instance_id * storage_instance_id ]
+    IntMap.t` (PNVI-ae-udi). `Double` is minted by `addIota` (:903-909), collapsed
+    to `Single` by `resolveIota` (:916-942). PNVI arc S2 (2026-10-07). -/
+inductive IotaEntry where
+  | Single (allocId : StorageInstanceId)
+  | Double (allocId1 allocId2 : StorageInstanceId)
+  deriving BEq, Inhabited, Repr
+
+/-- The provenance taint a reconstruction returns — the first component of
+    `abst`'s result, impl_mem.ml:951 `[`NoTaint | `NewTaint of
+    storage_instance_id list]` (produced by `AbsByte.provs_of_bytes`, :462-479;
+    consumed by `expose_allocations`, :887-901). NOT the allocation flag
+    `Taint` above (OCaml uses the word for both). PNVI arc S2 (2026-10-07). -/
+inductive ProvTaint where
+  | NoTaint
+  | NewTaint (allocIds : List StorageInstanceId)
+  deriving BEq, Inhabited, Repr
+
+/-- `find_overlaping`'s result — impl_mem.ml:796-798 `[ `NoAlloc | `SingleAlloc
+    of storage_instance_id | `DoubleAlloc of storage_instance_id *
+    storage_instance_id ]`. PNVI arc S2 (2026-10-07). -/
+inductive OverlapResult where
+  | NoAlloc
+  | SingleAlloc (allocId : StorageInstanceId)
+  | DoubleAlloc (allocId1 allocId2 : StorageInstanceId)
+  deriving BEq, Inhabited, Repr
 
 /-- allocation — impl_mem.ml:404-412 -/
 structure Allocation where
@@ -163,7 +192,12 @@ structure MemState where
   -- never enumerated (order-unobserved), keys unique -> results identical to
   -- the previous assoc list at O(log n)
   allocations : Std.TreeMap Int Allocation := Std.TreeMap.empty
-  iotaMap : List (Int × Int) := [] -- simplified from OCaml's polymorphic variant
+  -- iota_map — impl_mem.ml:490 (empty at :513). PNVI arc S2 (2026-10-07): the
+  -- OCaml type, `IntMap` of `Single | Double` entries (was `List (Int × Int)`,
+  -- "simplified"); a `Std.TreeMap Int`, the same representation as
+  -- `allocations`/`bytemap` above (arc-6 S3), keyed by the iota. Written only
+  -- by `addIota`/`resolveIota`; empty at every reachable default-mode state.
+  iotaMap : Std.TreeMap Int IotaEntry := Std.TreeMap.empty
   funptrmap : List (Int × (String × String)) := []
   varargs : List (Int × (Int × List (ctype × PointerValue))) := []
   nextVarargsId : Int := 0
@@ -712,23 +746,148 @@ def provFromIntegerBytes (bytes : List AbsByte) : Provenance :=
     impl_mem.ml:432-453: the provenance is the bytes' SHARED provenance
     (`VALID p1, p2 when p1 = p2` fold) — any two differing provenances
     (including Prov_none vs Prov_some) collapse to Prov_none. Returns the
-    ValidPtrProv status too (all copy_offsets consecutive from 0,
-    impl_mem.ml:443-447): OCaml consults it ONLY under is_PNVI ()
-    (impl_mem.ml:1021-1053), which this pipeline never enables (no SW_PNVI
-    switch is ever set; the differential OCaml side runs with default
-    switches), so the pointer arm of reconstructValue uses .1
-    unconditionally, mirroring the non-PNVI use site (impl_mem.ml:1052-1054).
+    ValidPtrProv status too: `ValidPtrProv` iff the provenances are all
+    equal (`VALID`) AND the copy_offsets are consecutive from 0 (`PtrBytes`)
+    — impl_mem.ml:443-453 (`VALID z, PtrBytes _ -> ValidPtrProv`; `VALID z, _`
+    and `INVALID, _` -> `NotValidPtrProv`). OCaml consults it ONLY under
+    is_PNVI () (the pointer arm of abst, impl_mem.ml:1057-1088), i.e. in
+    `reconstructValueAbst_lemFuel`'s `is_PNVI` branch; the default branch
+    uses .1 alone (impl_mem.ml:1087-1088 `else prov`).
+    PNVI arc S2 (2026-10-07): the status used to ignore the `INVALID` case
+    (consecutive offsets over differing provenances gave `true`); it had no
+    consumer then, so the fix moves nothing (`.1` and its text are unchanged).
     Empty byte list: OCaml failwith (impl_mem.ml:433-434) — mirrored. -/
 def splitBytesProv (bytes : List AbsByte) : Provenance × Bool :=
   match bytes with
   | [] => failwithI "Concrete.AbsByte.split_bytes: called on an empty list"
   | b :: _ =>
     let prov := if bytes.all (fun b' => b'.prov == b.prov) then b.prov else .Prov_none
-    let validPtr := (bytes.zipIdx.all fun (b', i) =>
+    let validPtr := bytes.all (fun b' => b'.prov == b.prov) && (bytes.zipIdx.all fun (b', i) =>
       match b'.copyOffset with
       | some off => off == (i : Int)
       | none => false)
     (prov, validPtr)
+
+/-- The one PNVI refusal message (PNVI arc; design record
+    docs/2026-10-04_pnvi-ae-udi-design.md §D.5, §G.1; the shape ruled in §H
+    for §F.16: "(a) is fine" — the `CerbFS` `failwithI`-with-a-fixed-prefix
+    shape, `CerbFS.lean` `fsRefusal`). `detail` names the `R-PNVI-nn` row,
+    the site, the impl_mem.ml line and upstream's text. [USER 2026-10-05]:
+    "agree on your recs except for mirroring crashes / obviously wrong
+    behavior. These should be refusals surely?" — an upstream crash or
+    self-declared-wrong arm on the PNVI path is refused here, never
+    mirrored. Every site is unreachable at the default switch set. -/
+def pnviRefusal (detail : String) : String :=
+  s!"PNVI_ae_udi refusal (unsupported upstream arm): {detail} — refused, not mirrored ([USER 2026-10-05]: upstream crashes and self-declared-wrong arms on the PNVI path are loud refusals; design record docs/2026-10-04_pnvi-ae-udi-design.md §G.1)"
+
+/-- AbsByte.provs_of_bytes — impl_mem.ml:462-479 (PNVI-ae-udi): the
+    allocation ids of the bytes' `Prov_some` provenances, in OCaml's order
+    (a `fold_left` that conses, so the LAST byte's id comes first);
+    `NoTaint` when there are none. Consumed only by `expose_allocations`
+    (impl_mem.ml:1602-1606, load, under `PNVI AE ∨ AE_UDI`).
+    The `Prov_symbolic iota -> acc (* TODO(iota) *)` arm (:470-471) is
+    REFUSED (design §G.1 row R2, `R-PNVI-01b`): it is shadowed — abst's
+    integer and byte arms run `pvi_split_bytes` (:986/:999) on the same bytes
+    first, whose `combine_prov` raises on a `Prov_symbolic` (:390-394, row
+    R1) — so the arm is reached only past an upstream crash. Unreachable at
+    the default switch set (no `Prov_symbolic` is ever minted there). -/
+def provsOfBytes (bytes : List AbsByte) : ProvTaint :=
+  let xs := bytes.foldl (fun (acc : List StorageInstanceId) b =>
+    match b.prov with
+    | .Prov_none => acc
+    | .Prov_some allocId => allocId :: acc
+    | .Prov_symbolic _ =>
+      failwithI (pnviRefusal "R-PNVI-01b: AbsByte.provs_of_bytes, Prov_symbolic byte — impl_mem.ml:470-471 `Prov_symbolic iota -> acc (* TODO(iota) *)`, reached only after combine_prov's `failwith \"Concrete.combine_prov: found a Prov_symbolic\"` (:390-394) on the same bytes")
+    | .Prov_device => acc) []
+  match xs with
+  | [] => .NoTaint
+  | _ => .NewTaint xs
+
+/-- merge_taint — impl_mem.ml:966-974 (local to abst). -/
+def mergeTaint : ProvTaint → ProvTaint → ProvTaint
+  | .NoTaint, .NoTaint => .NoTaint
+  | .NoTaint, .NewTaint xs => .NewTaint xs
+  | .NewTaint xs, .NoTaint => .NewTaint xs
+  | .NewTaint xs, .NewTaint ys => .NewTaint (xs ++ ys)
+
+/-- mk_ival — impl_mem.ml:670-677: under any PNVI variant an integer value
+    carries NO provenance (`IV (Prov_none, n)`); otherwise `IV (prov, n)`.
+    Reads the switch set (`is_PNVI`, impl_mem.ml:662-668). At the default set
+    it is `IV prov n` (`mkIval_default`). PNVI arc S2 (2026-10-07). -/
+def mkIval [CerbGlobal.Switches] (prov : Provenance) (n : Int) : IntegerValue :=
+  if CerbGlobal.is_PNVI () then .IV .Prov_none n else .IV prov n
+
+theorem mkIval_default (prov : Provenance) (n : Int) :
+    @mkIval ⟨[]⟩ prov n = .IV prov n := rfl
+
+/-- The same two facts at the default-pinned wrappers' instance
+    `⟨CerbGlobal.defaultSwitches⟩` (`reconstructValue(_lemFuel)`), stated for a
+    consumer's `simp only` sets (no `@[simp]`: the global simp set is unchanged). -/
+theorem mkIval_defaultSwitches (prov : Provenance) (n : Int) :
+    @mkIval ⟨CerbGlobal.defaultSwitches⟩ prov n = .IV prov n := rfl
+
+theorem is_PNVI_defaultSwitches : @CerbGlobal.is_PNVI ⟨CerbGlobal.defaultSwitches⟩ () = false := rfl
+
+/-- find_overlaping — impl_mem.ml:795-875: the live allocations whose range
+    contains `addr` (or, under AE_UDI, ends exactly at it), optionally only the
+    EXPOSED ones; the first two found, in ascending allocation-id order.
+    * The `(require_exposed, allow_one_past)` table, :799-813: the FIRST
+      `SW_PNVI _` of the switch list (`Switches.has_switch_pred`,
+      switches.ml:58-59 `List.find_opt`) — PLAIN `(false, false)`, AE
+      `(true, false)`, AE_UDI `(true, true)`; no PNVI switch `(false, false)`.
+      Its `Some _ -> assert false` arm (:810-811; the predicate admits only
+      `SW_PNVI`, so unreachable by construction) is REFUSED (design §G.1 row
+      R3, `R-PNVI-02`).
+    * The fold, :814-875 (:843-874 is a commented-out older body): `IntMap.fold` visits keys in INCREASING order (OCaml
+      `Map.S.fold`; `IntMap = Map.Make(Z)`, impl_mem.ml:93, `Z.compare`);
+      `Std.TreeMap.foldl` visits `toList`, which is strictly ascending under
+      `compare` on `Int` (`allocations_foldl_ascending` below) — the same
+      order, so the `DoubleAlloc (first, second)` pair is the same pair
+      (`resolveIota` tries `first` first, :928-937).
+    * Candidate test, :815-831: not dead (`List.mem alloc_id
+      st.dead_allocations`), `base ≤ addr < base + size`, then the exposure
+      requirement; ELSE (dead, or out of range) under `allow_one_past`:
+      `addr = base + size` and the exposure requirement (no dead check on this
+      branch — mirrored as written).
+    * A THIRD candidate (:839-842 `DoubleAlloc _, Some _ -> (* TODO: I guess
+      there is an invariant that the new_alloc is either of the DoubleAlloc *)
+      acc` — dropped silently upstream) is REFUSED (§G.1 row R4, `R-PNVI-03`;
+      §H: the operator accepted the proposed refusal of `:840-842`).
+    Called only under `is_PNVI` (abst's pointer arm here; ptrfromint's PNVI
+    arm in S3): at the default set the result is never consulted. PNVI arc S2
+    (2026-10-07). -/
+def findOverlapping [CerbGlobal.Switches] (st : MemState) (addr : Address) : OverlapResult :=
+  let (requireExposed, allowOnePast) : Bool × Bool :=
+    match CerbGlobal.Switches.switches.find? (fun | .PNVI _ => true | _ => false) with
+    | some (.PNVI .PLAIN) => (false, false)
+    | some (.PNVI .AE) => (true, false)
+    | some (.PNVI .AE_UDI) => (true, true)
+    | some _ =>
+      failwithI (pnviRefusal "R-PNVI-02: find_overlaping, a non-PNVI switch matched the SW_PNVI predicate — impl_mem.ml:810-811 `Some _ -> assert false`")
+    | none => (false, false)
+  st.allocations.foldl (init := OverlapResult.NoAlloc) fun acc allocId alloc =>
+    let notExposedButRequired := requireExposed && alloc.taint != .Exposed
+    let newOpt : Option StorageInstanceId :=
+      if !(st.deadAllocations.contains allocId) && alloc.base ≤ addr && addr < alloc.base + alloc.size then
+        if notExposedButRequired then none else some allocId      -- :816-822 (PNVI-ae, PNVI-ae-udi)
+      else if allowOnePast then
+        if addr == alloc.base + alloc.size && !notExposedButRequired then some allocId  -- :823-829 (PNVI-ae-udi)
+        else none
+      else none
+    match acc, newOpt with
+    | _, none => acc                                                  -- :833-834
+    | .NoAlloc, some allocId => .SingleAlloc allocId                  -- :835-836
+    | .SingleAlloc allocId1, some allocId2 => .DoubleAlloc allocId1 allocId2  -- :837-838
+    | .DoubleAlloc _ _, some _ =>
+      failwithI (pnviRefusal "R-PNVI-03: find_overlaping, a third candidate allocation — impl_mem.ml:839-842 `DoubleAlloc _, Some _ -> (* TODO: I guess there is an invariant that the new_alloc is either of the DoubleAlloc *) acc` (upstream drops it silently)")
+
+/-- The order argument for `findOverlapping` (OCaml `IntMap.fold` visits keys in
+    increasing order): `Std.TreeMap.foldl` over the allocations is the fold
+    over `toList`, and `toList` is strictly ascending in the allocation id. -/
+theorem allocations_foldl_ascending {δ : Type} (st : MemState) (f : δ → Int → Allocation → δ) (init : δ) :
+    st.allocations.foldl f init = st.allocations.toList.foldl (fun a b => f a b.1 b.2) init ∧
+      st.allocations.toList.Pairwise (fun (a b : Int × Allocation) => compare a.1 b.1 = Ordering.lt) :=
+  ⟨Std.TreeMap.foldl_eq_foldl_toList, Std.TreeMap.ordered_keys_toList⟩
 
 /-- An unspecified padding byte — OCaml's `padding_byte` / `AbsByte.v
     Prov_none None` (impl_mem.ml:1202; zero-discrepancy Z-23 re-cite). -/
@@ -1060,123 +1219,171 @@ theorem chunksOf_eq_range_map (e n : Nat) (l : List α) :
     simp only [chunksOf, ih, Nat.zero_mul, List.drop_zero, Function.comp_def, List.drop_drop,
       Nat.succ_mul, Nat.add_comm]
 
-/-- Reconstruct a MemValue from bytes — abst, impl_mem.ml:916-1095.
+/-- Reconstruct a MemValue from bytes — `abst`, impl_mem.ml:945-1128, with
+    OCaml's full interface (PNVI arc S2, 2026-10-07): the switch set (the
+    `is_PNVI` reads of `mk_ival`, :670-677, and of the pointer arm, :1057),
+    the `find_overlaping` CLOSURE (`abst find_overlaping …`, :951 — every
+    caller passes `find_overlaping st`, :1263/:1488/:1600; here `loadM` passes
+    `findOverlapping st`), and the provenance TAINT as the first component of
+    the result (`provs_of_bytes` at the integer/byte leaves, merged by
+    `mergeTaint` in the array/struct folds in OCaml's argument order —
+    `merge_taint taint taint_acc`, :1027/:1104, defined :967-975 — `NoTaint`
+    elsewhere).
     INVARIANT (differs from OCaml's consume-and-return-rest shape at the
     LEAVES): `bytes` is exactly the sizeof(ty) slice for this value; the
     array arm hands each element exactly its slice in one linear pass
     (C1, see the arm), the struct/union arms re-slice per member.
     `unionmap` is mem_state.last_used_union_members and
     `addr` the value's address — consulted ONLY by the Union arm
-    (impl_mem.ml:1080-1087); `funptrmap` is mem_state.funptrmap —
-    consulted ONLY by the Pointer-to-Function arm (impl_mem.ml:1004-1016)
+    (impl_mem.ml:1108-1128); `funptrmap` is mem_state.funptrmap —
+    consulted ONLY by the Pointer-to-Function arm (impl_mem.ml:1037-1050)
     — exactly as in OCaml's abst.
-    Not ported: taint tracking (PNVI) and is_zap. -/
-def reconstructValue_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
+    FAILURE LEAVES carry an explicit `NoTaint` beside the failing value
+    (`(.NoTaint, failwithI …)`): OCaml's exception aborts the whole `abst`;
+    the strict pair evaluates the failing component and aborts the same way
+    (the run requires LEAN_ABORT_ON_PANIC); the shape keeps the wrapper
+    `reconstructValue_lemFuel` (the `.2` projection) kernel-equal to the
+    pre-S2 text, whose leaves are the bare `failwithI` (`failwithI` is opaque —
+    a projection of a failing pair is not provably the failing component).
+    Not ported: is_zap (a refused switch's caller, :1488).
+    The DEFAULT-MODE consumer is the wrapper `reconstructValue(_lemFuel)` below,
+    pinned at `⟨CerbGlobal.defaultSwitches⟩`; production (`loadM`) calls THIS
+    function with the ambient instance. -/
+def reconstructValueAbst_lemFuel [CerbGlobal.Switches] (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
+    (findOverlapping : Address → OverlapResult)
     (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int)
-    (ty : ctype) (bytes : List AbsByte) : MemValue :=
+    (ty : ctype) (bytes : List AbsByte) : ProvTaint × MemValue :=
   match lemFuel with
-  | 0 => fuelExhaustedWith "CerbMem.reconstructValue: fuel exhausted" (.MVunspecified ty)
+  | 0 => (.NoTaint, fuelExhaustedWith "CerbMem.reconstructValue: fuel exhausted" (.MVunspecified ty))
   | lemFuel + 1 =>
   match ty with
   | Ctype _ (.Basic (.Integer ity)) =>
-    -- impl_mem.ml:949-960 (signedness via the implementation, as
+    -- impl_mem.ml:984-995 (signedness via the implementation, as
     -- AilTypesAux.is_signed_ity does there); provenance via the INTEGER
-    -- policy — pvi_split_bytes' combine_prov fold (impl_mem.ml:951,
-    -- :455-460). mk_ival (impl_mem.ml:637-644) is the non-PNVI branch:
-    -- IV (prov, n) as-is.
+    -- policy — pvi_split_bytes' combine_prov fold (:986, :455-460); the
+    -- taint is provs_of_bytes of the same bytes (:988, :462-479); the value
+    -- through mk_ival (:992, :670-677).
     let signed := CerberusImpl.is_signed_ity (CerberusImpl.resolveEnum enumDefs ity)
-    match bytesToInt bytes signed with
-    | some n => .MVinteger ity (.IV (provFromIntegerBytes bytes) n)
-    | none => .MVunspecified ty
+    let prov := provFromIntegerBytes bytes
+    (provsOfBytes bytes,
+      match bytesToInt bytes signed with
+      | some n => .MVinteger ity (mkIval prov n)
+      | none => .MVunspecified ty)
   | Ctype _ (.Basic (.Floating fty)) =>
-    -- impl_mem.ml:974-985
-    match bytesToInt bytes false with
-    | some n =>
-      let bits : UInt64 := n.toNat.toUInt64
-      .MVfloating fty (Float.ofBits bits)
-    | none => .MVunspecified ty
+    -- impl_mem.ml:1009-1020 ("we don't care about provenances for floats": NoTaint)
+    (.NoTaint,
+      match bytesToInt bytes false with
+      | some n =>
+        let bits : UInt64 := n.toNat.toUInt64
+        .MVfloating fty (Float.ofBits bits)
+      | none => .MVunspecified ty)
   | Ctype _ (.Pointer _ pointeeCty) =>
-    -- impl_mem.ml:995-1058. MVpointer stores the POINTEE type: every
-    -- OCaml arm builds `MVpointer (ref_ty, ...)` (impl_mem.ml:1007,
-    -- 1012, 1019, 1054) — matching `typeof` (impl_mem.ml:1123-1124:
-    -- MVpointer (ref_ty, _) → Pointer (no_qualifiers, ref_ty)) and our
-    -- own pointerMval/MVpointer.refTy. (Audit-2 C1: this previously
-    -- stored the full pointer type `ty` — one indirection too many.)
-    -- Provenance via the POINTER policy — AbsByte.split_bytes
-    -- (impl_mem.ml:998, :432-453); the ValidPtrProv component is
-    -- consulted only under is_PNVI (impl_mem.ml:1021-1053), never
-    -- enabled here — see splitBytesProv.
+    -- impl_mem.ml:1030-1093; the taint is `NoTaint (* PNVI-ae-udi *)`
+    -- (:1034), the first component OUTSIDE the match, as in OCaml (so the
+    -- unknown-function-pointer failure below is a bare leaf of the value). MVpointer stores the POINTEE type: every OCaml arm builds
+    -- `MVpointer (ref_ty, ...)` — matching `typeof` (MVpointer (ref_ty, _) →
+    -- Pointer (no_qualifiers, ref_ty)) and our own pointerMval/MVpointer.refTy.
+    -- (Audit-2 C1: this previously stored the full pointer type `ty` — one
+    -- indirection too many.) Provenance via the POINTER policy —
+    -- AbsByte.split_bytes (:1033, :432-453).
+    (.NoTaint,
     match bytesToInt bytes false with
     | some 0 =>
       -- both the Function and the object branch map 0 to PVnull
-      -- (impl_mem.ml:1005-1007, 1017-1019)
+      -- (impl_mem.ml:1040-1042, :1052-1054)
       .MVpointer pointeeCty (.PV .Prov_none (.PVnull pointeeCty))
     | some ptrAddr =>
-      let (prov, _validPtrProv) := splitBytesProv bytes
+      let (prov, validPtrProv) := splitBytesProv bytes
       match pointeeCty with
       | Ctype _ (.Function _ _ _) =>
-        -- impl_mem.ml:1004-1015: a pointer-to-function is rebuilt from
-        -- the funptrmap entry registered at store time (repr,
-        -- impl_mem.ml:1168-1185); the address IS the function symbol's
-        -- nat. Unknown address: OCaml failwith — panic. (OCaml's own
-        -- FIXME about same-id symbols across files applies unchanged.)
+        -- impl_mem.ml:1039-1050: a pointer-to-function is rebuilt from
+        -- the funptrmap entry registered at store time (repr); the address IS
+        -- the function symbol's nat. Unknown address: OCaml failwith — panic.
+        -- (OCaml's own FIXME about same-id symbols across files, :1044,
+        -- applies unchanged.)
         match funptrmap.find? (fun (a, _) => a == ptrAddr) with
         | some (_, (fileDig, name)) =>
           .MVpointer pointeeCty (.PV prov (.PVfunction (Symbol fileDig ptrAddr.toNat (SD_Id name))))
         | none => failwithI s!"CerbMem.reconstructValue: unknown function pointer: {ptrAddr}"
       | _ =>
+        -- impl_mem.ml:1051-1090: under is_PNVI (:1057), a pointer whose bytes are not
+        -- one whole-pointer copy (`NotValidPtrProv`) takes its provenance from
+        -- find_overlaping at its address (`NoAlloc → Prov_none`, `SingleAlloc →
+        -- Prov_some`); `ValidPtrProv → prov`; otherwise (`else prov`, :1087-1088)
+        -- the shared provenance. The `DoubleAlloc` arm (:1079-1082, `(* FIXME/
+        -- HACK(VICTOR): This is wrong, but when serialising the memory in the UI,
+        -- I get this failwith. *) Prov_some alloc_id1`) is REFUSED (design §G.1
+        -- row R6, class (C): upstream says "This is wrong"; `R-PNVI-05`). At the
+        -- default switch set `is_PNVI () = false` and `findOverlapping` is never
+        -- consulted (`reconstructValue_lemFuel_eq_legacy`, the test module).
+        let prov :=
+          if CerbGlobal.is_PNVI () then
+            if validPtrProv then prov
+            else match findOverlapping ptrAddr with
+              | .NoAlloc => .Prov_none
+              | .SingleAlloc allocId => .Prov_some allocId
+              | .DoubleAlloc _ _ =>
+                failwithI (pnviRefusal "R-PNVI-05: abst, pointer arm, NotValidPtrProv, DoubleAlloc — impl_mem.ml:1079-1082 `(* FIXME/HACK(VICTOR): This is wrong, but when serialising the memory in the UI, I get this failwith. *) Prov_some alloc_id1`")
+          else prov
         .MVpointer pointeeCty (.PV prov (.PVconcrete none ptrAddr.toNat))
     | none =>
-      -- impl_mem.ml:1056-1057 `MVunspecified (Ctype ([], Pointer (no_qualifiers,
+      -- impl_mem.ml:1091-1092 `MVunspecified (Ctype ([], Pointer (no_qualifiers,
       -- ref_ty)))`: the pointee QUALIFIERS are dropped (zero-discrepancy
       -- Z-19: this kept `ty` verbatim; the ctype text is a verdict value
       -- wherever an unspecified pointer is printed)
-      .MVunspecified (Ctype [] (.Pointer no_qualifiers pointeeCty))
+      .MVunspecified (Ctype [] (.Pointer no_qualifiers pointeeCty)))
   | Ctype _ (.Array0 elemCty (some n)) =>
-    -- impl_mem.ml:986-994; NOTE OCaml's `self elem_ty cs` does NOT
+    -- impl_mem.ml:1021-1028; NOTE OCaml's `self elem_ty cs` does NOT
     -- advance ~addr per element — every element sees the array's addr
     -- (mirrored: nested-union lookups use the array base address).
+    -- The taint: `aux` folds `merge_taint taint taint_acc` from `NoTaint`
+    -- over the elements in order (:1022-1028) — the foldl below.
     -- SHAPE (mem-scale C1, 2026-09-02): ONE consume-and-return-rest pass
     -- over the bytes (`chunksOf`: take elemSize, recurse on the rest),
-    -- which is the OCaml `aux`'s shape (impl_mem.ml:987-993: `self
-    -- elem_ty cs` returns the unconsumed suffix `cs'`), minus the OCaml's
-    -- per-call guard `if List.length bs < sizeof cty then failwith`
-    -- (impl_mem.ml:929-930) — DELIBERATELY NOT MIRRORED: that guard
-    -- re-walks the remaining list on every recursive call and is what
-    -- makes the oracle quadratic in the element count on aggregate
-    -- loads (upstream-tray item). The pre-C1 Lean text re-sliced from
-    -- the array's start per element (`bytes.drop (i*elemSize) |>.take
-    -- elemSize`), also quadratic; `reconstructValue_lemFuel_eq_indexed`
-    -- below is the kernel-checked equality with that reference form
-    -- (`reconstructValue_indexed_lemFuel`). Linear in |bytes|.
+    -- which is the OCaml `aux`'s shape (`self elem_ty cs` returns the
+    -- unconsumed suffix `cs'`), minus the OCaml's per-call guard `if
+    -- List.length bs < sizeof cty then failwith` (:964-965) — DELIBERATELY
+    -- NOT MIRRORED: that guard re-walks the remaining list on every
+    -- recursive call and is what makes the oracle quadratic in the element
+    -- count on aggregate loads (upstream-tray item). The pre-C1 Lean text
+    -- re-sliced from the array's start per element (`bytes.drop
+    -- (i*elemSize) |>.take elemSize`), also quadratic; the kernel-checked
+    -- equality with that reference form is `reconstructValueLegacy_lemFuel_eq_indexed`
+    -- (test/Unit/ReconstructLegacyTest.lean, retired there in PNVI arc S2).
+    -- Linear in |bytes|.
     -- Zero-discrepancy Z-18: no zero-sized-element short-circuit — OCaml's
-    -- `aux (Z.to_int n)` (:987-993) builds n elements whatever sizeof
-    -- elem_ty is; `chunksOf 0 n` yields n empty slices, the same shape.
+    -- `aux (Z.to_int n)` builds n elements whatever sizeof elem_ty is;
+    -- `chunksOf 0 n` yields n empty slices, the same shape.
     -- (A zero-sized element type is anyway rejected by the shared front
     -- end: tests/z2-probes/mem/empty_struct.c is UB061 on all engines.)
     let nNat := n.toNat
     let elemSize := sizeofCtype enumDefs ambient elemCty
-    .MVarray ((chunksOf elemSize nNat bytes).map fun elemBytes =>
-        reconstructValue_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr elemCty elemBytes)
+    let rs := (chunksOf elemSize nNat bytes).map fun elemBytes =>
+        reconstructValueAbst_lemFuel lemFuel enumDefs ambient findOverlapping unionmap funptrmap addr elemCty elemBytes
+    (rs.foldl (fun taintAcc r => mergeTaint r.1 taintAcc) .NoTaint, .MVarray (rs.map Prod.snd))
   | Ctype _ (.Atomic innerCty) =>
-    -- impl_mem.ml:1058-1060 (same repr as the non-atomic version)
-    reconstructValue_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr innerCty bytes
+    -- impl_mem.ml:1094-1096 (same repr as the non-atomic version)
+    reconstructValueAbst_lemFuel lemFuel enumDefs ambient findOverlapping unionmap funptrmap addr innerCty bytes
   | Ctype _ .Byte =>
-    -- impl_mem.ml:961-973 ("handled similarly to integers": provenance
-    -- via pvi_split_bytes' combine_prov fold, impl_mem.ml:964)
-    match bytesToInt (bytes.take 1) false with
-    | some n => .MVinteger .Char0 (.IV (provFromIntegerBytes (bytes.take 1)) n)
-    | none => .MVunspecified ty
+    -- impl_mem.ml:996-1008 ("handled similarly to integers": provenance
+    -- via pvi_split_bytes' combine_prov fold, :999; taint provs_of_bytes, :1001;
+    -- mk_ival, :1005)
+    let prov := provFromIntegerBytes (bytes.take 1)
+    (provsOfBytes (bytes.take 1),
+      match bytesToInt (bytes.take 1) false with
+      | some n => .MVinteger .Char0 (mkIval prov n)
+      | none => .MVunspecified ty)
   | Ctype _ (.Struct tagSym) =>
-    -- impl_mem.ml:1065-1075: member-wise reconstruct at the offsetsof
-    -- offsets (ignore_flexible=true), skipping inter-member padding.
+    -- impl_mem.ml:1097-1107: member-wise reconstruct at the offsetsof
+    -- offsets (ignore_flexible=true), skipping inter-member padding; the
+    -- taint folds `merge_taint taint taint_acc` from `NoTaint` (:1100-1105).
     -- NOTE OCaml's `self ~offset:pad` advances the member addr by the
     -- PADDING before the member only, not by the member offset
-    -- (impl_mem.ml:1069-1072) — mirrored quirk; addr is only consulted
-    -- by nested union lookups.
+    -- (:1102-1103) — mirrored quirk; addr is only consulted by nested union
+    -- lookups.
     -- An UNKNOWN tag is OCaml's `Pmap.find` Not_found inside `sizeof cty`
-    -- (:1067) / `offsetsof` (:1073): the exception escapes and nothing of
+    -- (:1099) / `offsetsof` (:1105): the exception escapes and nothing of
     -- the struct is computed — so the leaf is the WHOLE result here, and
     -- the fold runs only once the tag is known to resolve (hotfix
     -- fix/fuel-forms-carriers option (d), 2026-09-20 — record
@@ -1187,215 +1394,98 @@ def reconstructValue_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : Ta
     -- leaf is untouched; the message differs from the oracle's exception
     -- text (failure TEXT is an allowed discrepancy class).
     match CerbTagsWf.lookupEntry ambient tagSym with
-    | none => failwithI "CerbMem.reconstructValue: unknown struct tag (OCaml: Pmap.find Not_found in sizeof/offsetsof, impl_mem.ml:1067/1073)"
+    | none => (.NoTaint, failwithI "CerbMem.reconstructValue: unknown struct tag (OCaml: Pmap.find Not_found in sizeof/offsetsof, impl_mem.ml:1067/1073)")
     | some _ =>
       let (offs, _) := offsetsof enumDefs ambient ambient tagSym (ignoreFlexible := true)
-      let (revXs, _) := offs.foldl
-        (init := (([] : List (identifier × ctype × MemValue)), (0 : Nat)))
-        fun (acc : List (identifier × ctype × MemValue) × Nat) (memb : identifier × ctype × Nat) =>
-          let (revXs, prevEnd) := acc
+      let res := offs.foldl
+        (init := (ProvTaint.NoTaint, ([] : List (identifier × ctype × MemValue)), (0 : Nat)))
+        fun (acc : ProvTaint × List (identifier × ctype × MemValue) × Nat) (memb : identifier × ctype × Nat) =>
           let (ident, membTy, off) := memb
-          let pad := off - prevEnd
+          let pad := off - acc.2.2
           let membBytes := bytes.drop off |>.take (sizeofCtype enumDefs ambient membTy)
-          let mval := reconstructValue_lemFuel lemFuel enumDefs ambient unionmap funptrmap (addr + (pad : Int)) membTy membBytes
-          ((ident, membTy, mval) :: revXs, off + sizeofCtype enumDefs ambient membTy)
-      .MVstruct tagSym revXs.reverse
+          let r := reconstructValueAbst_lemFuel lemFuel enumDefs ambient findOverlapping unionmap funptrmap (addr + (pad : Int)) membTy membBytes
+          (mergeTaint r.1 acc.1, (ident, membTy, r.2) :: acc.2.1, off + sizeofCtype enumDefs ambient membTy)
+      (res.1, .MVstruct tagSym res.2.1.reverse)
   | Ctype _ (.Union0 tagSym) =>
-    -- impl_mem.ml:1076-1096: select the member recorded in
+    -- impl_mem.ml:1108-1128: select the member recorded in
     -- last_used_union_members at this address; default to the FIRST
-    -- declared member when absent (:1084-1086).
+    -- declared member when absent (:1116-1118); the taint is the member's
+    -- (:1125-1126). (`is_zap`, :1110-1112, is not ported.)
     match CerbTagsWf.lookupEntry ambient tagSym with
     | some (_, (_, UnionDef membrs)) =>
       match membrs with
-      | [] => failwithI "CerbMem.reconstructValue: empty UnionDef (OCaml: match failure)"
+      | [] => (.NoTaint, failwithI "CerbMem.reconstructValue: empty UnionDef (OCaml: match failure)")
       | (firstIdent, (_, _, _, firstTy)) :: _ =>
         -- ident comparison is by NAME (idEqual), as OCaml's
-        -- Eq Symbol.identifier instance does (:1088). A recorded identifier
-        -- that names no member is OCaml's `assert false` (:1089-1090): the
+        -- Eq Symbol.identifier instance does (:1120). A recorded identifier
+        -- that names no member is OCaml's `assert false` (:1121-1122): the
         -- exception escapes, no member is reconstructed — so the leaf is the
         -- WHOLE result (hotfix fix/fuel-forms-carriers option (d),
         -- 2026-09-20, record §3.5; the former shape recursed on the failure
         -- value's `.snd`). The member is selected BEFORE the recursion; the
-        -- recursive call is `self membr_ty bs1` (:1093), the result `MVunion`
-        -- (:1094).
+        -- recursive call is `self membr_ty bs1` (:1125), the result `MVunion`
+        -- (:1126).
         match unionmap.find? (fun (a, _) => a == addr) with
         | none =>
-          .MVunion tagSym firstIdent
-            (reconstructValue_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr firstTy
-              (bytes.take (sizeofCtype enumDefs ambient firstTy)))
+          let r := reconstructValueAbst_lemFuel lemFuel enumDefs ambient findOverlapping unionmap funptrmap addr firstTy
+              (bytes.take (sizeofCtype enumDefs ambient firstTy))
+          (r.1, .MVunion tagSym firstIdent r.2)
         | some (_, membr) =>
           match membrs.find? (fun (i, _) => idEqual i membr) with
           | some (membIdent, (_, _, _, membTy)) =>
-            .MVunion tagSym membIdent
-              (reconstructValue_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr membTy
-                (bytes.take (sizeofCtype enumDefs ambient membTy)))
-          | none => failwithI "CerbMem.reconstructValue: recorded union member not in UnionDef (OCaml: assert false)"
-    | _ => failwithI "CerbMem.reconstructValue: Union tag not a UnionDef (OCaml: assert false)"
+            let r := reconstructValueAbst_lemFuel lemFuel enumDefs ambient findOverlapping unionmap funptrmap addr membTy
+                (bytes.take (sizeofCtype enumDefs ambient membTy))
+            (r.1, .MVunion tagSym membIdent r.2)
+          | none => (.NoTaint, failwithI "CerbMem.reconstructValue: recorded union member not in UnionDef (OCaml: assert false)")
+    | _ => (.NoTaint, failwithI "CerbMem.reconstructValue: Union tag not a UnionDef (OCaml: assert false)")
   -- impl_mem.ml:978-983: Void, Array (_, None), Function, FunctionNoParams
   -- "must have a known size" → assert false (served-surface audit P3; was a
   -- silent MVunspecified)
-  | _ => failwithI "CerbMem.reconstructValue: type without a known size (OCaml: assert false, impl_mem.ml:978-983)"
+  | _ => (.NoTaint, failwithI "CerbMem.reconstructValue: type without a known size (OCaml: assert false, impl_mem.ml:978-983)")
+
+/-- Measured wrapper of the full reconstruction (fuel-free, hypothesis
+    `CerbTagsWf.Acyclic ambient`; obligation `reconstructValueAbst_measure_sufficient`
+    in CerbMem_lemMeasureProofs; register row `scripts/fuel_hypotheses.txt`). -/
+def reconstructValueAbst [CerbGlobal.Switches] (enumDefs : EnumDefs) (ambient : TagDefs)
+    (findOverlapping : Address → OverlapResult)
+    (unionmap : List (Int × identifier))
+    (funptrmap : Funptrmap) (addr : Int)
+    (ty : ctype) (bytes : List AbsByte) : ProvTaint × MemValue :=
+  reconstructValueAbst_lemFuel (CerbTagsWf.envBound ambient ty) enumDefs ambient findOverlapping unionmap funptrmap addr ty bytes
+
+/-- The closure the default-pinned wrappers pass for `find_overlaping`: no
+    allocation. At `⟨CerbGlobal.defaultSwitches⟩` the closure is never consulted
+    (the pointer arm reads it only under `is_PNVI ()`), so its value is
+    irrelevant there; it is NOT a model of `find_overlaping`. -/
+def noOverlapping : Address → OverlapResult := fun _ => .NoAlloc
+
+/-! ### The default-mode compatibility wrappers (PNVI arc S2, design §B.7)
+
+`reconstructValue_lemFuel` / `reconstructValue` keep their pre-S2 names and
+types for the consumer (cerberus-sl, statement §1.5 item 1 of the design
+record): each is `reconstructValueAbst(_lemFuel)` pinned EXPLICITLY at
+`⟨CerbGlobal.defaultSwitches⟩` (never the ambient instance — they are honestly
+the DEFAULT-mode reconstruction), with the closure fixed to `noOverlapping` and
+the taint discarded. Kernel-checked equal to the pre-S2 text:
+`reconstructValue_lemFuel_eq_legacy` (test/Unit/ReconstructLegacyTest.lean,
+compiled by row 1). NO production path calls these names (speedbump: rule W2 of
+`scripts/check_no_fuel_numerals.sh`); `loadM` calls `reconstructValueAbst`. -/
+
+/-- Default-mode reconstruction (compatibility wrapper; see above). -/
+def reconstructValue_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
+    (unionmap : List (Int × identifier))
+    (funptrmap : Funptrmap) (addr : Int)
+    (ty : ctype) (bytes : List AbsByte) : MemValue :=
+  (@reconstructValueAbst_lemFuel ⟨CerbGlobal.defaultSwitches⟩ lemFuel enumDefs ambient noOverlapping unionmap funptrmap addr ty bytes).2
 
 /-- Measured wrapper (C4): fuel-free, hypothesis `CerbTagsWf.Acyclic ambient`
     (its recursion is on the ctype being reconstructed, through member types
-    read from the tag environment); obligation in CerbMem_lemMeasureProofs. -/
+    read from the tag environment); obligation in CerbMem_lemMeasureProofs.
+    Default-mode compatibility wrapper since PNVI arc S2 (text unchanged). -/
 def reconstructValue (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int)
     (ty : ctype) (bytes : List AbsByte) : MemValue :=
   reconstructValue_lemFuel (CerbTagsWf.envBound ambient ty) enumDefs ambient unionmap funptrmap addr ty bytes
-
-/-! ### C1 reference form + equality theorem (mem-scale S1, 2026-09-02)
-
-`reconstructValue_indexed_lemFuel` is the PRE-C1 text of
-`reconstructValue_lemFuel` verbatim (name and recursive calls renamed; its
-struct/union arms restated identically with the linear form's — hotfix
-fix/fuel-forms-carriers option (d), 2026-09-20;
-the doc comments of the arms are in the live definition above): its
-array arm re-slices from the array's start per element,
-`bytes.drop (i * elemSize) |>.take elemSize` — the index-slicing form,
-Θ(n²·e). NOT executed by the driver; it exists so that the C1 shape
-change is a kernel-checked equality (`reconstructValue_lemFuel_eq_indexed`).
-Charter §1 carve-out [R1/F5]; consumer note: refined-cerberus unfolds
-`reconstructValue_lemFuel` at pointer/struct-typed nodes only
-(TreeRotExhibit.lean:148, ListRevExhibit.lean:260), arms C1 leaves
-textually intact. -/
-
-/-- Reference form (pre-C1): index-slicing array arm. -/
-def reconstructValue_indexed_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
-    (unionmap : List (Int × identifier))
-    (funptrmap : Funptrmap) (addr : Int)
-    (ty : ctype) (bytes : List AbsByte) : MemValue :=
-  match lemFuel with
-  | 0 => fuelExhaustedWith "CerbMem.reconstructValue: fuel exhausted" (.MVunspecified ty)
-  | lemFuel + 1 =>
-  match ty with
-  | Ctype _ (.Basic (.Integer ity)) =>
-    let signed := CerberusImpl.is_signed_ity (CerberusImpl.resolveEnum enumDefs ity)
-    match bytesToInt bytes signed with
-    | some n => .MVinteger ity (.IV (provFromIntegerBytes bytes) n)
-    | none => .MVunspecified ty
-  | Ctype _ (.Basic (.Floating fty)) =>
-    match bytesToInt bytes false with
-    | some n =>
-      let bits : UInt64 := n.toNat.toUInt64
-      .MVfloating fty (Float.ofBits bits)
-    | none => .MVunspecified ty
-  | Ctype _ (.Pointer _ pointeeCty) =>
-    match bytesToInt bytes false with
-    | some 0 =>
-      .MVpointer pointeeCty (.PV .Prov_none (.PVnull pointeeCty))
-    | some ptrAddr =>
-      let (prov, _validPtrProv) := splitBytesProv bytes
-      match pointeeCty with
-      | Ctype _ (.Function _ _ _) =>
-        match funptrmap.find? (fun (a, _) => a == ptrAddr) with
-        | some (_, (fileDig, name)) =>
-          .MVpointer pointeeCty (.PV prov (.PVfunction (Symbol fileDig ptrAddr.toNat (SD_Id name))))
-        | none => failwithI s!"CerbMem.reconstructValue: unknown function pointer: {ptrAddr}"
-      | _ =>
-        .MVpointer pointeeCty (.PV prov (.PVconcrete none ptrAddr.toNat))
-    | none =>
-      -- impl_mem.ml:1056-1057 `MVunspecified (Ctype ([], Pointer (no_qualifiers,
-      -- ref_ty)))`: the pointee QUALIFIERS are dropped (zero-discrepancy
-      -- Z-19: this kept `ty` verbatim; the ctype text is a verdict value
-      -- wherever an unspecified pointer is printed)
-      .MVunspecified (Ctype [] (.Pointer no_qualifiers pointeeCty))
-  | Ctype _ (.Array0 elemCty (some n)) =>
-    let nNat := n.toNat
-    let elemSize := sizeofCtype enumDefs ambient elemCty
-    let elems := List.range nNat |>.map fun i =>
-        let start := i * elemSize
-        let elemBytes := bytes.drop start |>.take elemSize
-        reconstructValue_indexed_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr elemCty elemBytes
-    .MVarray elems
-  | Ctype _ (.Atomic innerCty) =>
-    reconstructValue_indexed_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr innerCty bytes
-  | Ctype _ .Byte =>
-    match bytesToInt (bytes.take 1) false with
-    | some n => .MVinteger .Char0 (.IV (provFromIntegerBytes (bytes.take 1)) n)
-    | none => .MVunspecified ty
-  | Ctype _ (.Struct tagSym) =>
-    match CerbTagsWf.lookupEntry ambient tagSym with
-    | none => failwithI "CerbMem.reconstructValue: unknown struct tag (OCaml: Pmap.find Not_found in sizeof/offsetsof, impl_mem.ml:1067/1073)"
-    | some _ =>
-      let (offs, _) := offsetsof enumDefs ambient ambient tagSym (ignoreFlexible := true)
-      let (revXs, _) := offs.foldl
-        (init := (([] : List (identifier × ctype × MemValue)), (0 : Nat)))
-        fun (acc : List (identifier × ctype × MemValue) × Nat) (memb : identifier × ctype × Nat) =>
-          let (revXs, prevEnd) := acc
-          let (ident, membTy, off) := memb
-          let pad := off - prevEnd
-          let membBytes := bytes.drop off |>.take (sizeofCtype enumDefs ambient membTy)
-          let mval := reconstructValue_indexed_lemFuel lemFuel enumDefs ambient unionmap funptrmap (addr + (pad : Int)) membTy membBytes
-          ((ident, membTy, mval) :: revXs, off + sizeofCtype enumDefs ambient membTy)
-      .MVstruct tagSym revXs.reverse
-  | Ctype _ (.Union0 tagSym) =>
-    match CerbTagsWf.lookupEntry ambient tagSym with
-    | some (_, (_, UnionDef membrs)) =>
-      match membrs with
-      | [] => failwithI "CerbMem.reconstructValue: empty UnionDef (OCaml: match failure)"
-      | (firstIdent, (_, _, _, firstTy)) :: _ =>
-        match unionmap.find? (fun (a, _) => a == addr) with
-        | none =>
-          .MVunion tagSym firstIdent
-            (reconstructValue_indexed_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr firstTy
-              (bytes.take (sizeofCtype enumDefs ambient firstTy)))
-        | some (_, membr) =>
-          match membrs.find? (fun (i, _) => idEqual i membr) with
-          | some (membIdent, (_, _, _, membTy)) =>
-            .MVunion tagSym membIdent
-              (reconstructValue_indexed_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr membTy
-                (bytes.take (sizeofCtype enumDefs ambient membTy)))
-          | none => failwithI "CerbMem.reconstructValue: recorded union member not in UnionDef (OCaml: assert false)"
-    | _ => failwithI "CerbMem.reconstructValue: Union tag not a UnionDef (OCaml: assert false)"
-  -- impl_mem.ml:978-983: Void, Array (_, None), Function, FunctionNoParams
-  -- "must have a known size" → assert false (served-surface audit P3; was a
-  -- silent MVunspecified)
-  | _ => failwithI "CerbMem.reconstructValue: type without a known size (OCaml: assert false, impl_mem.ml:978-983)"
-
-/-- C1 equality: the linear (consume-and-return-rest) reconstruction equals
-    the index-slicing reference form at every fuel, on every input.
-    Induction on fuel; every arm but the array arm is textually identical
-    once the recursive calls are rewritten by the induction hypothesis;
-    the array arm is `chunksOf_eq_range_map` + `List.map_map`. -/
-theorem reconstructValue_lemFuel_eq_indexed :
-    ∀ (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))
-      (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte),
-      reconstructValue_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr ty bytes =
-        reconstructValue_indexed_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr ty bytes := by
-  intro lemFuel
-  induction lemFuel with
-  | zero => intros; rfl
-  | succ lemFuel ih =>
-    intro enumDefs ambient unionmap funptrmap addr ty bytes
-    have hf : reconstructValue_lemFuel lemFuel = reconstructValue_indexed_lemFuel lemFuel := by
-      funext e a u f ad t b; exact ih e a u f ad t b
-    unfold reconstructValue_lemFuel reconstructValue_indexed_lemFuel
-    rw [hf]
-    -- `panic!` expands to `panicWithPosWithDecl <module> <DECL NAME> <line>
-    -- <col> msg`, so the two definitions' panic sites differ textually;
-    -- every such term is definitionally `default`, and normalising both
-    -- sides to it makes the unchanged arms syntactically equal.
-    have hp : ∀ {α : Type} [Inhabited α] (m d : String) (l c : Nat) (msg : String),
-        (panicWithPosWithDecl m d l c msg : α) = default := fun _ _ _ _ _ => rfl
-    simp only [hp]
-    rcases ty with ⟨_, ty⟩
-    cases ty with
-    | Array0 elemCty n =>
-      cases n with
-      | none => rfl
-      | some n =>
-        dsimp only
-        rw [chunksOf_eq_range_map, List.map_map]
-        rfl
-    | Basic bt => cases bt <;> rfl   -- the outer match is stuck until the basic type is split
-    | _ => rfl
-
-theorem reconstructValue_eq_indexed (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))
-    (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte) :
-    reconstructValue enumDefs ambient unionmap funptrmap addr ty bytes =
-      reconstructValue_indexed_lemFuel (CerbTagsWf.envBound ambient ty) enumDefs ambient unionmap funptrmap addr ty bytes :=
-  reconstructValue_lemFuel_eq_indexed (CerbTagsWf.envBound ambient ty) enumDefs ambient unionmap funptrmap addr ty bytes
 
 /-! ## Memory-value typing — the store guard's helpers (audit-2 C3) -/
 
@@ -2148,6 +2238,82 @@ def memFail {a : Type} (err : mem_error)
     (loc : CerbLocation.Loc := CerbLocation.other "Concrete") : memM a :=
   kill (failReason err loc)
 
+/-! ### Exposure and iota — the PNVI provenance state (PNVI arc S2, 2026-10-07)
+
+Mirrors of impl_mem.ml:877-942. Defined here, CALLED from S3 on (load's
+`expose_allocations`, intfromptr's `expose_allocation`, ptrfromint's
+`add_iota`, the `Prov_symbolic` arms' `resolve_iota`, eq/diff_ptrval's
+`lookup_iota`): nothing in the default-mode run reaches them in S2. -/
+
+/-- expose_allocation — impl_mem.ml:877-886 (PNVI-ae): the allocation's taint
+    becomes `Exposed`; an absent id is a no-op (`IntMap.update … None -> None`,
+    = `Std.TreeMap.modify`). -/
+def exposeAllocation (allocId : StorageInstanceId) : memM Unit :=
+  nd_update fun st =>
+    { st with allocations := st.allocations.modify allocId fun alloc => { alloc with taint := .Exposed } }
+
+/-- expose_allocations — impl_mem.ml:887-901 (PNVI-ae): `NoTaint` → nothing;
+    `NewTaint xs` → each id exposed, in list order (absent ids skipped). -/
+def exposeAllocations : ProvTaint → memM Unit
+  | .NoTaint => memReturn ()
+  | .NewTaint xs =>
+    nd_update fun st =>
+      let expose (acc : Std.TreeMap Int Allocation) (allocId : StorageInstanceId) :=
+        acc.modify allocId fun alloc => { alloc with taint := .Exposed }
+      { st with allocations := xs.foldl expose st.allocations }
+
+/-- add_iota — impl_mem.ml:903-909 (PNVI-ae-udi): a fresh iota (`next_iota`,
+    then incremented) mapped to `Double (id1, id2)`. -/
+def addIota (allocIds : StorageInstanceId × StorageInstanceId) : memM SymbolicStorageInstanceId :=
+  ND fun st =>
+    let iota := st.nextIota
+    (NDactive iota,
+      { st with nextIota := st.nextIota + 1
+                iotaMap := st.iotaMap.insert iota (.Double allocIds.1 allocIds.2) })
+
+/-- lookup_iota — impl_mem.ml:911-914 (PNVI-ae-udi): `IntMap.find iota
+    st.iota_map`. An iota absent from the map raises `Not_found` upstream (an
+    uncaught exception); REFUSED here (design §G.1 row R5, `R-PNVI-04`).
+    Unreachable by construction while every `Prov_symbolic` is minted by
+    `addIota`, which inserts its key. -/
+def lookupIota (iota : SymbolicStorageInstanceId) : memM IotaEntry :=
+  ND fun st =>
+    match st.iotaMap.get? iota with
+    | some entry => (NDactive entry, st)
+    | none =>
+      failwithI (pnviRefusal s!"R-PNVI-04: lookup_iota, iota {iota} absent from the iota map — impl_mem.ml:912-914 `IntMap.find iota st.iota_map` (raises Not_found)")
+
+/-- The outcome of a `resolve_iota` precondition — impl_mem.ml:917-942
+    `[ `OK | `FAIL of Cerb_location.t * mem_error ]` (built by the kill, load and
+    store `Prov_symbolic` arms). -/
+inductive IotaPrecond where
+  | OK
+  | FAIL (loc : CerbLocation.Loc) (err : mem_error)
+
+/-- resolve_iota — impl_mem.ml:916-942 (PNVI-ae-udi): `Single id` → `precond
+    id` must hold (else its failure); `Double (id1, id2)` → `precond id1`, else
+    `precond id2`, else the SECOND failure (the error the oracle reports); then
+    the iota is collapsed to `Single` of the chosen id. A `FAIL (loc, err)` is
+    `fail ~loc err` (`memFail`, impl_mem.ml:540-546). -/
+def resolveIota [LemFuel] (precond : StorageInstanceId → memM IotaPrecond)
+    (iota : SymbolicStorageInstanceId) : memM StorageInstanceId :=
+  nd_bind
+    (nd_bind (lookupIota iota) fun
+      | .Single allocId =>
+        nd_bind (precond allocId) fun
+          | .OK => memReturn allocId
+          | .FAIL loc err => memFail err loc
+      | .Double allocId1 allocId2 =>
+        nd_bind (precond allocId1) fun
+          | .OK => memReturn allocId1
+          | .FAIL _ _ =>
+            nd_bind (precond allocId2) fun
+              | .OK => memReturn allocId2
+              | .FAIL loc err => memFail err loc)
+    fun allocId =>
+      nd_bind (nd_update fun (st : MemState) => { st with iotaMap := st.iotaMap.insert iota (.Single allocId) })
+        fun _ => memReturn allocId
+
 def alignDown (addr align : Nat) : Nat := (addr / align) * align
 
 /-! ### Bytemap operations -/
@@ -2513,7 +2679,11 @@ def loadM [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : TagDe
       let fp : Footprint := .FP .R addr size
       -- abst at the load address with last_used_union_members and
       -- funptrmap — impl_mem.ml:1560
-      let mv := reconstructValue enumDefs tagDefs st.lastUsedUnionMembers st.funptrmap addr ty bytes
+      -- (PNVI arc S2: the full `abst` — switch set, the `find_overlaping st`
+      -- closure, impl_mem.ml:1600 — whose taint feeds `expose_allocations`
+      -- under `PNVI AE ∨ AE_UDI` (:1602-1606); that arm is S3 — the taint is
+      -- discarded here, as the default arm `return ()` does)
+      let mv := (reconstructValueAbst enumDefs tagDefs (findOverlapping st) st.lastUsedUnionMembers st.funptrmap addr ty bytes).2
       let loadedState := recordAccess loc LoadAccess ty pv allocOpt addr bytes mv none
         { st with lastUsed := allocOpt }
       -- trap representation for _Bool — impl_mem.ml:1576-1591

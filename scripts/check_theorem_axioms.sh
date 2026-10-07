@@ -783,16 +783,29 @@ echo "check_theorem_axioms: C2 entry census OK (${#ENTRIES[@]} entries, every co
 # [propext, Classical.choice, Quot.sound]; sorryAx / ofReduce* / DAEMON
 # fatal as everywhere. Fail-closed: each name must produce exactly one
 # probe line (a renamed or deleted theorem fails here, not silently).
+# PNVI arc S2 (2026-10-07; record docs/2026-10-07_pnvi-s2-data-shapes-record.md):
+# the C1 reference form and its equalities are RETIRED from CerbMem.lean into
+# the row-1 test module Unit.ReconstructLegacyTest (design record §B.7), restated
+# over the verbatim pre-S2 copy and chained to the production wrapper; the
+# same module carries the S2 wrapper equalities (`…_eq_legacy`), pinned here
+# too. The module is built by test_unit.sh before this gate runs (as
+# Unit.FuelExemplar for the FUEL leg below).
 # ---------------------------------------------------------------------------
 PROBE4=lean_frontend/.axiom-probe-memscale.lean
 MEMSCALE_THMS=(CerbMem.chunksOf_eq_range_map
-               CerbMem.reconstructValue_lemFuel_eq_indexed
-               CerbMem.reconstructValue_eq_indexed
+               ReconstructLegacyTest.reconstructValueLegacy_lemFuel_eq_indexed
+               ReconstructLegacyTest.reconstructValue_lemFuel_eq_indexed
+               ReconstructLegacyTest.reconstructValue_eq_indexed
+               ReconstructLegacyTest.reconstructValueAbst_default_snd_eq_legacy
+               ReconstructLegacyTest.reconstructValue_lemFuel_eq_legacy
+               ReconstructLegacyTest.reconstructValue_eq_legacy
+               ReconstructLegacyTest.loadM_reconstruct_default
                CerbMem.foldl_append_eq_flatten_reverse
                CerbMem.memValueToBytes_lemFuel_eq_append
                CerbMem.memValueToBytes_eq_append)
 {
   echo "import CerbMem"
+  echo "import Unit.ReconstructLegacyTest"
   for name in "${MEMSCALE_THMS[@]}"; do
     echo "#print axioms $name"
   done
@@ -826,7 +839,7 @@ if [[ -n "$MEMSCALE_BAD" ]]; then
   echo "$MEMSCALE_BAD"
   exit 1
 fi
-echo "check_theorem_axioms: mem-scale S1 leg OK (${#MEMSCALE_THMS[@]} C1/C3 equality theorems, every cone ⊆ [propext, Classical.choice, Quot.sound])"
+echo "check_theorem_axioms: mem-scale S1 leg OK (${#MEMSCALE_THMS[@]} C1/C3 + PNVI-S2 wrapper equality theorems, every cone ⊆ [propext, Classical.choice, Quot.sound])"
 
 # ---------------------------------------------------------------------------
 # FUEL arc leg (2026-09-03; design docs/2026-09-02_fuel-arc-design.md §1.2,

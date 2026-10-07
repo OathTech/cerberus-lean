@@ -47,6 +47,9 @@ UNIT_TESTS=(
     # SC WP0 (2026-09-25/26): passive load/store receipts — erasure proofs + the primitive/ND
     # diagnostic; also Tier A row 13's Lean consumer. Args: fuel, iteration count, capture mode.
     "memory-access-test"
+    # PNVI arc S2 (2026-10-07): the default-mode wrappers CerbMem.reconstructValue(_lemFuel) equal
+    # the pre-S2 text (kernel); the retired C1 reference form; runtime controls of the PNVI helpers
+    "reconstruct-legacy-test"
 )
 
 # ---------------------------------------------------------------------------

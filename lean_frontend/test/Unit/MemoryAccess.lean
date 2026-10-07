@@ -70,7 +70,7 @@ def stateEq (a b : MemState) : Bool :=
   a.nextAllocId == b.nextAllocId && a.nextIota == b.nextIota && a.lastAddress == b.lastAddress &&
   (a.allocations.toList.length == b.allocations.toList.length &&
     (a.allocations.toList.zip b.allocations.toList).all (fun ((ka, va), (kb, vb)) => ka == kb && allocEq va vb)) &&
-  a.iotaMap == b.iotaMap && a.funptrmap == b.funptrmap && a.varargs == b.varargs &&
+  a.iotaMap.toList == b.iotaMap.toList && a.funptrmap == b.funptrmap && a.varargs == b.varargs &&
   a.nextVarargsId == b.nextVarargsId && a.bytemap.toList == b.bytemap.toList &&
   a.lastUsedUnionMembers == b.lastUsedUnionMembers && a.deadAllocations == b.deadAllocations &&
   a.dynamicAddrs == b.dynamicAddrs && a.lastUsed == b.lastUsed && a.requested == b.requested

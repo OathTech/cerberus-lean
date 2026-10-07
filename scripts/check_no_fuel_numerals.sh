@@ -75,8 +75,38 @@
 #   untyped instance or a raw-string desync all pass it, by design). The backstop is
 #   that Main.lean's LOCAL instance (`letI`) wins over any global one for every lane,
 #   plus review. A consumer's own instance (outside this repository) is the intended use.
+#   Known edges (PNVI arc S2, 2026-10-07): an instance with a `[CerbGlobal.Switches]`
+#   binder AFTER a binder with a colon (`instance foo (x : T) [CerbGlobal.Switches] : C`)
+#   trips W1 — an accepted false positive; the one-line `instance (priority := …) :
+#   Switches` form is NOT caught (`[^:]*` stops at the `:=`) — speedbump scope.
+# Default-reconstruct shape (PNVI arc S2, 2026-10-07; record
+# docs/2026-10-07_pnvi-s2-data-shapes-record.md; design record §B.7 condition (b)):
+#   W2  reconstructValue / reconstructValue_lemFuel   a mention (bare or `CerbMem.`-qualified)
+#                                            of the DEFAULT-PINNED compatibility wrappers in
+#                                            PRODUCTION Lean text — the hand-written seams
+#                                            (lean_frontend/*.lean) and the generated tree
+#                                            (lean_frontend/generated/*.lean), comments AND
+#                                            string literals stripped, the `*_lemMeasureProofs`
+#                                            proof carriers excluded — other than the wrappers'
+#                                            own two definition lines and the fuel-free
+#                                            wrapper's body line in CerbMem.lean (allowlisted by
+#                                            exact content, both copies). Production must call
+#                                            `reconstructValueAbst(_lemFuel)` with the AMBIENT
+#                                            switch set (as `loadM` does); the old names are
+#                                            pinned at `⟨CerbGlobal.defaultSwitches⟩` for the
+#                                            consumer and would silently run default-mode
+#                                            reconstruction under any other set.
+#   W2 SCOPE, plainly: a SPEEDBUMP (not a trust surface: in default mode the wrapper and
+#   the full function agree — kernel theorem `reconstructValueAbst_default_snd_eq_legacy`,
+#   test/Unit/ReconstructLegacyTest.lean — so a stray call changes no lane today; it
+#   matters only once a PNVI set is accepted, S4). It catches a plain textual call in the
+#   scanned production text; it is NOT adversarially robust — an alias (`abbrev`,
+#   `export`, `open … renaming`), a call from a test/speclab file, or a mention split by
+#   a raw string pass it, by design. Backstops: review, and the S3/S4 PNVI lane, where a
+#   default-pinned reconstruction would diverge from the oracle.
 # Vacuity guards: ≥ MIN_FILES files scanned, ≥ one `_lemFuel` worker seen the
-# `lastAddress` field seen and `class Switches` seen, else FAIL (not scanning real code is a failure, not a pass).
+# `lastAddress` field seen and `class Switches` seen, ≥ one W2-allowlisted wrapper
+# line seen, else FAIL (not scanning real code is a failure, not a pass).
 #
 # WHAT THIS GATE IS (pre-merge audit M2, 2026-09-04): a plant-tested
 # SPEEDBUMP over the enumerated idiomatic shapes above (bare/hex/ascribed/
@@ -90,7 +120,7 @@
 # seam code, and a measured wrapper carries its sufficiency obligation — a
 # numeral can only enter where a human writes an instance.
 #
-# --selftest: plant each shape (F1–F6, A1–A3, W1) into a scratch COPY of the scan set,
+# --selftest: plant each shape (F1–F6, A1–A3, W1, W2) into a scratch COPY of the scan set,
 # assert red with the right label, then assert the unplanted set is green
 # (loud plant banner; the test_unit.sh wiring runs the gate AND the selftest).
 set -u
@@ -103,6 +133,14 @@ ALLOW_MAIN=(
   'def defaultFuel : Nat := 100000000'
   'let code ← (letI : LemFuel := ⟨fuel⟩; letI : CerbGlobal.Switches := ⟨CerbGlobal.defaultSwitches⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace'
   'def defaultAddressSpaceTop : Int := 0xFFFFFFFFFFFF'
+)
+
+# W2 allowlist: exact (whitespace-trimmed) code lines permitted in CerbMem.lean only (the
+# hand-written file and its generated/ copy) — the default-pinned wrappers' own definitions.
+ALLOW_W2=(
+  'def reconstructValue_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)'
+  'def reconstructValue (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))'
+  'reconstructValue_lemFuel (CerbTagsWf.envBound ambient ty) enumDefs ambient unionmap funptrmap addr ty bytes'
 )
 
 scan_files() {  # <repo root>
@@ -168,14 +206,27 @@ run_gate() {  # <repo root>; prints verdict lines; returns 0/1
   # W1: an `instance` declaration whose same-line header names `Switches` (PNVI arc S1;
   # a plain-text speedbump, see the header's W1 SCOPE)
   report W1 '(^|[^A-Za-z0-9_.])instance\b[^:]*:[^=]*\bSwitches\b'
+  # W2: the default-pinned reconstruct wrappers named in production text (PNVI arc S2; a
+  # plain-text speedbump, see the header's W2 SCOPE). Rows of the seams and the generated
+  # tree only, proof carriers excluded, string literals blanked.
+  local w2rows; w2rows=$(echo "$rows" | grep -E '^[^:]*/lean_frontend/(generated/)?[^/:]+\.lean:' | grep -Ev '_lemMeasureProofs\.lean:' | perl -pe 's/"(?:[^"\\]|\\.)*"/""/g')
+  local w2allowed_re=''
+  for a in "${ALLOW_W2[@]}"; do
+    local esc2; esc2=$(printf '%s' "$a" | sed -e 's/[][\.*^$/|(){}+?]/\\&/g')
+    w2allowed_re+="${w2allowed_re:+|}^[^:]*/CerbMem\.lean:[0-9]+:[[:space:]]*${esc2}[[:space:]]*\$"
+  done
+  local w2allowed_hits; w2allowed_hits=$(echo "$w2rows" | grep -Ec "$w2allowed_re")
+  if [[ "$w2allowed_hits" -lt 1 ]]; then echo "check_no_fuel_numerals: FAIL (vacuous): no W2-allowlisted reconstructValue wrapper line seen (CerbMem.lean missing from the scan set, or the wrappers were rewritten — update ALLOW_W2)"; status=1; fi
+  local w2hits; w2hits=$(echo "$w2rows" | grep -Ev "$w2allowed_re" | grep -E "(^|[^A-Za-z0-9_'])reconstructValue(_lemFuel)?([^A-Za-z0-9_'!?]|\$)")
+  if [[ -n "$w2hits" ]]; then echo "check_no_fuel_numerals: FAIL (W2): forbidden shape found:"; echo "$w2hits" | head -20; status=1; fi
   if [[ $status -eq 0 ]]; then
-    echo "check_no_fuel_numerals: OK ($n files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6), no address-space-top literal (A1-A3), no switch-set instance declaration (W1); allowed Main.lean sites seen: $allowed_hits of $((2 * ${#ALLOW_MAIN[@]})) (hand-written + generated copy))"
+    echo "check_no_fuel_numerals: OK ($n files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6), no address-space-top literal (A1-A3), no switch-set instance declaration (W1), no production call of the default-pinned reconstructValue wrappers (W2); allowed Main.lean sites seen: $allowed_hits of $((2 * ${#ALLOW_MAIN[@]})) (hand-written + generated copy); W2 wrapper lines seen: $w2allowed_hits of $((2 * ${#ALLOW_W2[@]})))"
   fi
   return $status
 }
 
 if [[ "${1:-}" == "--selftest" ]]; then
-  echo "check_no_fuel_numerals: SELFTEST — planting F1-F6, A1-A3 and W1 into a scratch copy of the scan set (loud plant banner; nothing in the tree is touched)"
+  echo "check_no_fuel_numerals: SELFTEST — planting F1-F6, A1-A3, W1 and W2 into a scratch copy of the scan set (loud plant banner; nothing in the tree is touched)"
   W=$(mktemp -d "${TMPDIR:-/tmp}/nofuel-plant.XXXXXX") || exit 1
   trap 'rm -rf "$W"' EXIT
   R="$W/root"; LF="$R/lean_frontend"; mkdir -p "$LF/generated" "$LF/test/Unit" "$LF/speclab/test/SLUnit" "$R/tests/immaculate"
@@ -229,6 +280,10 @@ if [[ "${1:-}" == "--selftest" ]]; then
   plant "W1 switch-set instance in a seam"           W1 CerbND.lean 'instance : CerbGlobal.Switches := ⟨[]⟩'
   plant "W1 switch-set instance in the generated tree" W1 generated/Utils.lean 'instance plantSw : Switches where switches := []'
   plant "W1 local switch-set instance in a unit test" W1 test/Unit/FuelExemplar.lean 'local instance : CerbGlobal.Switches := sw₀'
+  # W2 (PNVI arc S2, 2026-10-07): a production call of the default-pinned wrapper — a
+  # loadM-shaped call in the seam, and a qualified worker call in the generated tree
+  plant "W2 default-pinned wrapper called in a seam"  W2 CerbMem.lean 'def plantLoad (st : MemState) := reconstructValue fmapEmpty default st.lastUsedUnionMembers st.funptrmap 0 plantTy []'
+  plant "W2 qualified old worker in the generated tree" W2 generated/Driver.lean 'def plantW2 := CerbMem.reconstructValue_lemFuel plantN fmapEmpty default [] [] 0 plantTy []'
   # E5 — indirection through a non-fuel-named constant — is NOT regex-closable
   # (no shape distinguishes `budget` from any other Nat); the selftest records
   # that the gate stays GREEN on it, so the limit is visible, never silent
@@ -239,7 +294,7 @@ if [[ "${1:-}" == "--selftest" ]]; then
   echo "  REVERTED (unplanted scratch copy):"
   out=$(run_gate "$R"); rc=$?; echo "  $out"
   if [[ $rc -ne 0 ]]; then echo "  PLANT FAIL [green baseline]: the unplanted scan set is not green" >&2; fail=1; fi
-  if [[ $fail -eq 0 ]]; then echo "check_no_fuel_numerals: SELFTEST OK (29 plants red with the declared label — F1-F6, A1-A3 and W1; E5 indirection a recorded known gap; unplanted set green)"; else echo "check_no_fuel_numerals: SELFTEST FAILED" >&2; fi
+  if [[ $fail -eq 0 ]]; then echo "check_no_fuel_numerals: SELFTEST OK (31 plants red with the declared label — F1-F6, A1-A3, W1 and W2; E5 indirection a recorded known gap; unplanted set green)"; else echo "check_no_fuel_numerals: SELFTEST FAILED" >&2; fi
   exit $fail
 fi
 
