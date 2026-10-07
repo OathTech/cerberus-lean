@@ -35,7 +35,15 @@ which is exactly why every unmodelled surface must refuse rather than guess.
 
 Matched (default-switch) mode of the oracle at the fork merge-base `b9aeedcb4`; sequential execution; the concrete
 memory model; LP64; `--nolibc` and libc modes as exercised by the lanes; explicit `--fuel` and address-space parameters.
-Every non-default semantics switch is refused at the CLI today (`Main.lean` `refuseSwitches`, every `--switches` value with a per-element reason; `--iso` by `refuseFlag`). The switch set is a parameter of the semantics (`[CerbGlobal.Switches]`, PNVI arc S1, 2026-10-05); this binary supplies only the default `[]`.
+**Semantics switches: PNVI_ae_udi supported, matched against the oracle under the same switch; every other switch
+refused.** The switch set is a parameter of the semantics (`[CerbGlobal.Switches]`, PNVI arc S1, 2026-10-05). The binary
+supplies the default `[]` unless `--switches=PNVI_ae_udi` is given (PNVI arc S4, 2026-10-07): then `[PNVI_ae_udi]`, and §1
+applies with the oracle run under the SAME switch (`scripts/test_pnvi.sh`, LADDER Tier A row 14). Every other
+`--switches` value — another switch name, plain `PNVI`/`PNVI_ae`, a mixed list, an override (R-PNVI-11), an unknown name
+(R-PNVI-12) — and `--iso` is refused at the CLI (`Main.lean` `judgeSwitches`/`refuseSwitches`, per element; `refuseFlag`),
+including where the oracle silently ignores the name. Inside the PNVI-ae-udi semantics, the upstream arms that crash,
+print debug output or call themselves wrong are refused (§3, the R-PNVI rows); the default set is unchanged by all of
+this.
 
 **The address-space top: the default is the promise; other values are a proof-use parameter.** `--address-space-top N`
 is a DELIBERATE lift of upstream's constant for proof use — [USER 2026-10-03] "we specifically want to lift the
@@ -76,7 +84,9 @@ feature-attributed; each refusal has a witness), **OUT OF SCOPE** (not an input 
 | Filesystem (CerbFS) | **REFUSED** (D2) — every filesystem operation, including `read` on any fd; `write`/`vprintf` on fds 1/2 are served (the driver routes them to the stdout/stderr records, never reaching CerbFS) | `zd-fs-*`, `zd-f1-truncate-negative-length`, `zd-z2f01-lseek-whence` pinned refusals | none |
 | Standard input / environment / argv | stdin REFUSED (every read reaches CerbFS, D2; the oracle models an empty stdin); `getenv` served by libc C code; argv SUPPORTED | `zd-fs-stdin-read` pinned refusal; argv lane (5 programs) | UTF-8 `--args` unmeasured |
 | Concurrency (threads, atomics, Epar, C11 model) | REFUSED at the CLI flag; default-mode atomics and `{-{ ||| }-}` SUPPORTED as the oracle's sequential reading | `refuseFlag`; served-surface audit: 15 default-mode probes agree, `statically_satisfied` has no generated caller | none |
-| Non-default memory models (symbolic, VIP, CHERI) and switches (PNVI, strict reads, …) | REFUSED at the CLI | `refuseSwitches` / `refuseFlag` (`check_cli_refusals.sh`) | none |
+| Semantics switch `PNVI_ae_udi` (`--switches=PNVI_ae_udi`) | SUPPORTED (2026-10-07), matched against the oracle under the same switch | `scripts/test_pnvi.sh` (Tier A row 14): upstream's 44 PNVI litmus files exhaustive, `tests/minimal` under the switch, the pKVM census drivers; `check_cli_refusals.sh` (acceptance + one agreement witness) | the pKVM allocator drivers are compared in `--first` only (their exhaustive sets exceed the 4G cap on the oracle: outside §1, §2); the refused arms below |
+| PNVI-ae-udi arms upstream itself leaves as crashes, debug prints or self-declared wrong code | **REFUSED** (class (c), [USER 2026-10-05]): `PNVI_ae_udi refusal (unsupported upstream arm): R-PNVI-nn: …`, exit 134. R-PNVI-01 `combine_prov` on a symbolic byte (impl_mem.ml:390-394; -01b `provs_of_bytes`, shadowed), -02 `find_overlaping`'s `assert false`, -03 its dropped third candidate, -04 `lookup_iota`'s `Not_found`, -05 `abst`'s "This is wrong" arm, -06 pure `array_shift_ptrval` on a symbolic pointer, -07 `case_ptrval` on a symbolic pointer, -08 `diff_ptrval`'s invariant failure, -10 the stdout-printing arm of `eff_array_shift_ptrval` | lane witnesses (`test_pnvi.sh`, each a registered `REFUSAL` row, never agreement): -01 by 4 upstream litmus files where the oracle crashes; -05 (`tests/pnvi_refusals/r05-…`, the oracle answers through the flagged arm), -06 (`r06-memcpy-symbolic-source.c`), -07 (`r07-call-through-symbolic-pointer.c`) where the oracle crashes; -01b, -02, -03, -04, -08, -10 by compile-time pins (`test/Unit/PnviArmsTest.lean`) — no C witness found (-03 UNKNOWN, the others unreachable by invariant: `scripts/failure_reach_register.txt`) | R-PNVI-09 (`eff_array_shift_ptrval`'s `PVfunction` arm) is a DEFAULT-path site and stays a mirrored fail-stop with the other default-path look-alikes (design §H.1), pending the queued default-path consistency review |
+| Non-default memory models (symbolic, VIP, CHERI), every other switch (plain PNVI, PNVI_ae, strict reads, strict pointer arithmetic, …) and `--iso` | REFUSED at the CLI | `judgeSwitches` / `refuseSwitches` / `refuseFlag` (`check_cli_refusals.sh`), incl. R-PNVI-11 (an override in one list) and R-PNVI-12 (an unknown name), where the oracle ignores the name and runs on | none |
 | Debug/pretty-print seams (CerbDebug, CerbPP) | OUT OF SCOPE for verdicts | no-op stubs; served-surface audit: no verdict path reads them | none |
 | Core text (CoreParser) | SUPPORTED for the runtime's own Core files (`std.core`, the implementation file, the libc dump), which every run parses; no mode executes user-written Core text (`--parse-core` and `--pp-core` are diagnostics) | core-parser tests (292 checks); verify lane | none |
 
@@ -127,14 +137,15 @@ gated agreement programs, before → after the 2026-09-28 edge-case tests:
 | `--first` mode | not checked to be one of the exhaustive results | outside §1 | outside the §1 promise (§2) |
 | non-batch CLI output | never compared (only `--batch` output is the compared interface) | outside §1 | human-readable format, exits 0 for every outcome, as the oracle's does |
 
-The **refused** parts (filesystem, stdin, concurrency and switch flags, `%f` of a NaN, inline assembly) are pinned by
+The **refused** parts (filesystem, stdin, concurrency and switch flags, the PNVI-ae-udi refusals, `%f` of a NaN, inline assembly) are pinned by
 witnesses and are not "thinly tested": they do not answer.
 
 ## 4. How the contract is enforced
 
 1. **Every REFUSED area has at least one witness in a lane that pins the refusal**, so a return to a silent answer turns
    a gate red: the filesystem and stdin (`zd-fs-*`, `zd-f1-*`, `zd-z2f01-*` immaculate rows), `any_bounded_int` (`zd-any-bounded-int-crash`), `%f` of a NaN (`fmt-007*.unsupported.c`), the CLI flags (`scripts/check_cli_refusals.sh`,
-   row 1) and inline assembly (`scripts/check_asm_refusal.sh`, row 1, which asserts the message too).
+   row 1), the PNVI-ae-udi refusals reachable from C (`scripts/test_pnvi.sh`'s `REFUSAL` rows, Tier A row 14, which
+   assert the refusal id and the oracle side) and inline assembly (`scripts/check_asm_refusal.sh`, row 1, which asserts the message too).
    Limit: the immaculate and coverage witnesses pin the crash CLASS (`L=CRASH`, `UNSUPPORTED`), not the refusal
    message, under those lanes' coarse crash policy (VALIDATION §1(a)); the message is fixed in the refusing code, and
    `check_cli_refusals.sh` asserts it for the CLI flags.

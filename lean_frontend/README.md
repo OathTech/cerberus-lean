@@ -31,7 +31,10 @@ agreement between those declarations and their native implementations.
 See the [supported profile](SUPPORTED.md) and
 [VALIDATION.md](VALIDATION.md) for measured scope and remaining release exits.
 The [validation-foundations delivery](docs/2026-09-06_validation-foundations-delivery.md)
-is a historical record. Concurrency is not part of the supported product; the
+is a historical record. One non-default semantics switch is supported:
+`--switches=PNVI_ae_udi` (2026-10-07), matched against the oracle under the same
+switch by `scripts/test_pnvi.sh`; every other switch is refused (CONTRACT §2).
+Concurrency is not part of the supported product; the
 announcement concerns the sequential port and its stated limits. The
 replacement SC build is governed by the
 [SC concurrency master plan](../SC-CONCURRENCY.md), which records its status;

@@ -362,10 +362,41 @@ Nothing else.
 
 **(c) missing features — loud, attributed refusals (not bugs):**
 
-- *Semantics switches* (`--switches=PVI|PNVI|strict_pointer_arith|CHERI…`):
-  REFUSED (`Main.refuseSwitches` per element since PNVI arc S1 — `Main.refuseFlag` before; exit 2, attributed; [USER 2026-09-03] Q7
-  "REFUSE now … plumbing … is not wanted"). Matched default-switch mode
-  is the harness contract; since 2026-09-05 the `CerbGlobal`
+- *Semantics switches* (`--switches=…`, `--iso`): since PNVI arc S4 (2026-10-07,
+  `docs/2026-10-07_pnvi-s4-lane-record.md`) exactly ONE non-default set is SUPPORTED —
+  `--switches=PNVI_ae_udi` (both cmdliner forms; a one-element list), matched against the
+  oracle under the SAME switch by `scripts/test_pnvi.sh` (§5, LADDER Tier A row 14; the
+  run's instance `⟨[.PNVI .AE_UDI]⟩`, one general path — the set only selects the arms).
+  Every other value is REFUSED, each element with its reason (`Main.judgeSwitches` /
+  `refuseSwitches`; exit 2, attributed; [USER 2026-09-03] Q7 "REFUSE now … plumbing … is
+  not wanted" for the rest): the other switch names, plain `PNVI`/`PNVI_ae` (unvalidated,
+  design §F.3), mixed lists, `--iso`, and the two places the ORACLE is fail-open
+  (design §C.5) — an override in one list (**R-PNVI-11**: the oracle prints "would override
+  a previous switch --> ignoring." and runs on) and an unknown name (**R-PNVI-12**: "failed
+  to parse switch … --> ignoring."); witnesses `scripts/check_cli_refusals.sh` (row 1).
+  **Refusals inside the PNVI-ae-udi semantics** — class (c), [USER 2026-10-05] "agree on your
+  recs except for mirroring crashes / obviously wrong behavior. These should be refusals
+  surely?": the upstream arms on the PNVI path that crash, print debug output or call
+  themselves wrong are `CerbMem.pnviRefusal` refusals (exit 134 under `LEAN_ABORT_ON_PANIC`,
+  message `PNVI_ae_udi refusal (unsupported upstream arm): R-PNVI-nn: …`, design §G, §H):
+  R-PNVI-01 (`combine_prov`'s `Prov_symbolic` arm, impl_mem.ml:390-394) and -01b
+  (`provs_of_bytes`, shadowed by -01), -02 (`find_overlaping`'s `assert false`), -03 (its
+  silently dropped third candidate), -04 (`lookup_iota`'s `Not_found`), -05 (`abst`'s "This is
+  wrong" `DoubleAlloc` arm), -06 (pure `array_shift_ptrval` on a symbolic pointer), -07
+  (`case_ptrval` on a symbolic pointer), -08 (`diff_ptrval`'s invariant failure), -10 (the
+  stdout `Printf.printf` arm of `eff_array_shift_ptrval`). **Fork ≠ Lean on these rows, by
+  design**: where the oracle crashes (-01, -06, -07 in the lane) or answers through the
+  flagged arm (-05), Lean refuses; the lane records each such row as `REFUSAL R-PNVI-nn
+  ORACLE_CRASH|ORACLE_VERDICT` with the oracle's side hash-pinned — a registered refusal,
+  never agreement, never "both crash alike". Witnessed in the lane: -01 (4 upstream litmus
+  files), -05, -06, -07 (`tests/pnvi_refusals/`); the others by compile-time pins
+  (`test/Unit/PnviArmsTest.lean`) and the failure-reach register's reviewed rows.
+  **Default path unchanged** (design §H, §H.1): the (A)/(B)/(C)-shaped upstream sites that are
+  ALSO on the default path stay exactly as before (mirrored fail-stops / kill-without-print),
+  including `eff_array_shift_ptrval`'s `PVfunction` arm — R-PNVI-09, reclassified a
+  default-path look-alike and NOT placed — pending the queued default-path consistency review;
+  the default set `[]` stays bit-identical (every default lane at its baseline).
+  Matched default-switch mode is the contract for every other input; since 2026-09-05 the `CerbGlobal`
   config/switch surface is eleven plain `def`s of the driver's DEFAULT
   configuration (kernel-transparent, `rfl` lemmas — no opaque boundary
   row remains; `docs/2026-09-05_cerbglobal-defs-record.md`), so every
@@ -383,9 +414,9 @@ Nothing else.
   the Z2 record's formerly DECLARED row Z2-M-20 is closed; `using_concurrency` is `def … := false` with
   `using_concurrency_eq : using_concurrency () = false := rfl`, its
   parameterisation remains separate work; the concurrency feature branch is parked.
-  The oracle's `--switches=PNVI` CHANGES the answer (an integer→pointer
-  UB043 becomes a value), so this is a feature we do not have, not a
-  difference we hide.
+  The oracle's switches CHANGE the answer (under `PNVI_ae_udi` an integer→pointer UB043
+  becomes a value), so each unsupported switch is a feature we do not have, not a
+  difference we hide; `PNVI_ae_udi` is the one we have, under its own lane.
 - *Concurrency* (`--concurrency`): REFUSED, attributed — "not supported;
   the oracle's own mode is non-functional at `b9aeedcb4`" (`internal
   error: CONCURRENCY IS BROKEN`, `nondeterminism.ml:64` via `smt2.ml:38`).
@@ -843,6 +874,7 @@ lanes, with their recorded states:
 | `test_multi_tu.sh` | `tests/multi_tu` | multi-TU linking differential, all entries |
 | `test_multi_tu.sh --failure-class-projection tests/multi_tu_tray` | `tests/multi_tu_tray` (7 cross-TU struct-value cases; LADDER Tier A row 6b, 2026-09-15) | the same differential under the LABELLED WEAKER projection `failure-class` — `Symbol(<digits>, ` elided in Error/Undefined payloads only (the engines number symbols differently); 7/7 MATCH (since 2026-10-03, draft 38 reverted: five `mismatched tags` rejections + the two argument-shape `Specified(7)` rows); the ONLY row not on `full`; two rows are OBSERVED MODELLING-LIMIT pins (`tests/multi_tu_tray/README.md`) |
 | `test_libc_exec.sh` | `tests/libc_exec` | libc-linked execution at the committed baseline |
+| `test_pnvi.sh` (+ `--selftest`) | **TRUST SURFACE** (PNVI arc S4, 2026-10-07, LADDER Tier A row 14): both engines at `--switches=PNVI_ae_udi` over upstream's PNVI litmus suite `tests/pnvi_testsuite` (44, libc mode, exhaustive), the refusal witnesses `tests/pnvi_refusals` (3), the census pKVM allocator drivers (`pkvm-alloc`/`-free`/`-split-merge` in `--first` vs the oracle's one random trace — OUTSIDE CONTRACT §1, their exhaustive sets breach the 4G cap on the oracle; `pkvm-init` exhaustive, its two-execution UB088 set pinned; `page_alloc_census.c` derived at run time, never committed) and `tests/minimal` (113, `--nolibc`) | 164 rows at `tests/pnvi_lane/baseline.txt`, fail-closed both directions with the oracle side hash-pinned per row: 152 AGREE, 3 AGREE-FIRST, 7 registered refusal rows (4 × `REFUSAL R-PNVI-01 ORACLE_CRASH`, `R-PNVI-05 ORACLE_VERDICT`, `R-PNVI-06 ORACLE_CRASH`, `R-PNVI-07 ORACLE_CRASH`), 2 BOTH_FAIL (class (a): `073-exit.libc`/`074-abort.libc`, both "ill-formed program", symbol number differs — as in default mode); any DIFF/INVALID row, a Lean resource failure where the oracle completes, an empty selection or a missing engine is RED. The oracle's default-mode answer is recorded per row (`default=same|changed`: litmus 27/17, minimal 111/2). `--selftest`: control green; plants RED — Lean ignoring the switch, Lean refusing everything, a refusal turned into an unnamed crash, a refusal mirrored as the oracle's crash text, the oracle ignoring the switch, a missing engine, an empty selection, and six doctored baselines (classifier `scripts/pnvi_lane.py`) |
 | `test_libxml2_uri.sh` | 16 URIs, 5 TUs, libc | **16/16 byte-identical** lean+libc vs oracle+libc, pinned per-lane expectations |
 | `test_libxml2.sh` | libxml2 `chvalid` battery | 4 slices × 1,354 points, byte-equal verdicts (slow tier) |
 | `test_cn_coverage.sh` | `deps/cn/tests/cn` | **213/213** at the exact-match baseline (multi-TU drivers, reject lane, manifest bijection) |
@@ -959,7 +991,7 @@ theorem over the shipped pipeline `@drive ⟨fuel⟩` at the ambient
 | `check_fork_drift.sh` | the fork's oracle-side surface equals a reviewed manifest, and generated-OCaml fork-vs-upstream deltas match pinned hashes |
 | `check_pin_sites.sh` | the lem-lean pin is ONE value at every site that names it — the manifest `lem-pin`, the Lake `LemLib` rev, the three lake-manifests (`rev` + `inputRev`) and the README's newcomer `opam pin` command (fresh-clone finding 2026-09-25; 8 plants) |
 | `check_fixture_freeze.sh` | the `corpus/` differential-fixture set matches its hash manifest exactly (additions included) |
-| `check_failure_reach.sh` | **the failure-reach register gate** (fuel-pending close-out 2026-09-08 — option C of the pure-failure reachability census `docs/2026-09-07_pure-failure-reachability-census.md`; the TRIPWIRE the parked twin design `docs/2026-09-07_pure-failure-correspondence-design.md` names): rebuilds the one-module declaration-dependency instrument `tests/failure-probes/FailureReach.lean` (fresh scratch Lake package, ~6 s), takes the lexical census (`scripts/failure_census.py`) and requires every PURE `failwithI`/`panic!` site of the exec dependency closure (237) + every pure site with an unresolved kernel owner (2) to equal a row of `scripts/failure_reach_register.txt` — same position class (the census's token-level classifier `scripts/failure_position.py`), the census's reviewed reach class (178 UNREACHABLE-BY-INVARIANT / 40 REACHABLE / 21 UNKNOWN over 239 rows, the 2 unresolved rows among the UNKNOWN; counts as of 2026-10-07, PNVI arc S3 — the gate's OK line is authoritative), sealed rows — both directions, matched on the key file/owner/token/message (the first 60 whitespace-collapsed chars after the token; inside a group of sites sharing that key the window is lengthened to the minimum that tells them apart, and a group identical even on the full recorded window is a loud FAIL — 2026-10-04, `docs/2026-10-04_failure-reach-key-groups-record.md`); RED naming the rows on a NEW site, a stale row, a moved position class, a DISCARDABLE generated let-binding (the F1 shape: a dead binding of a failure — today 0) or an unsealed class edit. Reach classes are reviewed claims (an invariant NAME with a cite, or a witness under `tests/failure-probes/reach/`), not theorems; the closure is a kernel constant-dependency closure, not a path. `--selftest` plants on scratch copies (a new site in a generated exec-closure definition, a dead let, an unsealed class edit, a phantom row, an edited tally, mis-shaped `lem_if`/`lemSeq` heads (P6/P7), and P8: two same-owner rows' reach classes swapped together with their seals — the pre-merge audit A3 hole, now RED SEAL MISMATCH) plus classifier witnesses C1-C7 and the key-group witness K1 |
+| `check_failure_reach.sh` | **the failure-reach register gate** (fuel-pending close-out 2026-09-08 — option C of the pure-failure reachability census `docs/2026-09-07_pure-failure-reachability-census.md`; the TRIPWIRE the parked twin design `docs/2026-09-07_pure-failure-correspondence-design.md` names): rebuilds the one-module declaration-dependency instrument `tests/failure-probes/FailureReach.lean` (fresh scratch Lake package, ~6 s), takes the lexical census (`scripts/failure_census.py`) and requires every PURE `failwithI`/`panic!` site of the exec dependency closure (237) + every pure site with an unresolved kernel owner (2) to equal a row of `scripts/failure_reach_register.txt` — same position class (the census's token-level classifier `scripts/failure_position.py`), the census's reviewed reach class (173 UNREACHABLE-BY-INVARIANT / 44 REACHABLE / 22 UNKNOWN over 239 rows, the 2 unresolved rows among the UNKNOWN; counts as of 2026-10-07, PNVI arc S4 — the PNVI refusal rows re-reviewed once the switch became accepted — the gate's OK line is authoritative), sealed rows — both directions, matched on the key file/owner/token/message (the first 60 whitespace-collapsed chars after the token; inside a group of sites sharing that key the window is lengthened to the minimum that tells them apart, and a group identical even on the full recorded window is a loud FAIL — 2026-10-04, `docs/2026-10-04_failure-reach-key-groups-record.md`); RED naming the rows on a NEW site, a stale row, a moved position class, a DISCARDABLE generated let-binding (the F1 shape: a dead binding of a failure — today 0) or an unsealed class edit. Reach classes are reviewed claims (an invariant NAME with a cite, or a witness under `tests/failure-probes/reach/`), not theorems; the closure is a kernel constant-dependency closure, not a path. `--selftest` plants on scratch copies (a new site in a generated exec-closure definition, a dead let, an unsealed class edit, a phantom row, an edited tally, mis-shaped `lem_if`/`lemSeq` heads (P6/P7), and P8: two same-owner rows' reach classes swapped together with their seals — the pre-merge audit A3 hole, now RED SEAL MISMATCH) plus classifier witnesses C1-C7 and the key-group witness K1 |
 | `test_renumber_plants.sh` | the rebaseline-admission instrument (`check_renumber_only.py`) refuses what it must: committed adversarial pairs (string-content/comment-boundary holes + count/token/order plants) fail, positive controls admit with their declared class |
 | `check_runtime_resolution.sh --selftest` | the driver's runtime is the oracle's (`--runtime DIR` / `CERB_INSTALL_PREFIX`), never the working directory, and a missing runtime or a suffix-library-but-not-exact location refuses (bug hunt BUG-2/BUG-3, 2026-09-29; §3(c)); plants: a runtime-ignoring stub and a refuse-everything stub must fail it |
 | `check_cabs_json_utf8.sh --selftest` | a non-UTF-8 Cabs JSON (a raw byte ≥ 0x80 in a file name or attribute string) is refused with the attributed message instead of an uncaught exception, and ASCII controls agree with the oracle (bug hunt BUG-6/K-5, 2026-09-29; §3(c)); plants: a pre-fix uncaught-exception stub and a refuse-everything stub must fail it |
