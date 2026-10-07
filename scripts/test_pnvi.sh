@@ -92,10 +92,11 @@ if [[ "$MODE" == selftest ]]; then
     ST=$(mktemp -d "$TMP_DIR/pnvi-selftest.XXXXXXXX") || die "mktemp failed"
     register_cleanup "$ST"
     # the selection: a UB043 -> Defined row (ptrfromint's PNVI arm + exposure), a UB046 row
-    # (the live bounds arm of eff_array_shift), an R-PNVI-01 refusal row (oracle crash), the
-    # R-PNVI-05 witness (oracle verdict), and pkvm-init (the switch-dependent elaboration:
-    # its exhaustive UB088 locations)
-    SEL='^(litmus/(pointer_from_int_disambiguation_1|cheri_03_ii|provenance_basic_using_uintptr_t_global_yx)|witness/r05-abst-double-alloc-union-punning|pkvm/pkvm-init)$'
+    # (the live bounds arm of eff_array_shift; elaborator-sensitive), an R-PNVI-01 refusal row
+    # (oracle crash), the R-PNVI-05 witness (oracle verdict), and pkvm-alloc (the run-time
+    # derivation of the GPL TU and the AGREE-FIRST class; its value changes with the switch).
+    # NOT pkvm-init: its exhaustive set is the same with and without the switch (S4 record §5.2)
+    SEL='^(litmus/(pointer_from_int_disambiguation_1|cheri_03_ii|provenance_basic_using_uintptr_t_global_yx)|witness/r05-abst-double-alloc-union-punning|pkvm/pkvm-alloc)$'
     stub() { # <file> <python body using REAL, args>
         printf "#!/usr/bin/env python3\nimport os, re, subprocess, sys\nREAL = '%s'\nargs = sys.argv[1:]\n%s\n" "$2" "$3" > "$1"
         chmod +x "$1"
