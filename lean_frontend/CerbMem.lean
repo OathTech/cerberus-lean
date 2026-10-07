@@ -2608,7 +2608,7 @@ def killM [CerbGlobal.Switches] (loc : CerbLocation.Loc) (isDynamic : Bool) (pv 
     match pv with
     | .PV _ (.PVnull _) =>
       -- :1465-1469 — NOT conditional on is_dyn: a null kill succeeds unless
-      -- SW_forbid_nullptr_free is set (the switch set is refused, Z-24)
+      -- SW_forbid_nullptr_free is set (that switch is refused, Z-24)
       if CerbGlobal.has_switch .forbid_nullptr_free then fail_ MerrFreeNullPtr
       else (NDactive (), st)
     | .PV _ (.PVfunction _) =>
@@ -2677,7 +2677,7 @@ def killM [CerbGlobal.Switches] (loc : CerbLocation.Loc) (isDynamic : Bool) (pv 
               lastUsed := some allocId                                             -- :1541
               allocations := st.allocations.erase allocId }
             -- :1543-1546 SW_zap_dead_pointers → zap_pointers (:1447-1462, not
-            -- ported): the switch set is refused (Z-24), so the OCaml default
+            -- ported): that switch is refused (Z-24), so the OCaml default
             -- arm `return ()` is the only reachable one; the set case is loud
             if CerbGlobal.has_switch .zap_dead_pointers then
               (NDkilled (Other (MerrOther "killM: SW_zap_dead_pointers is set but zap_pointers (impl_mem.ml:1447-1462) is not ported — switches are refused (Z-24)")), st)
@@ -2718,8 +2718,10 @@ def killM [CerbGlobal.Switches] (loc : CerbLocation.Loc) (isDynamic : Bool) (pv 
     zero-discrepancy Z2-M-20 — Z2 record 2026-09-04 row Z2-M-20) — every
     SWITCH-CONDITIONED arm of impl_mem.ml is written here as
     `if CerbGlobal.has_switch … then <loud kill> else <the default arm>`:
-    the switch set is REFUSED by this port (Z-24, VALIDATION.md §3 "(c)
-    Semantics switches"), so on the matched default set (`Switches.set []`,
+    every switch these arms read is REFUSED by this port (Z-24, VALIDATION.md §3
+    "(c) Semantics switches"; since PNVI arc S4, 2026-10-07, the one accepted set is
+    `[.PNVI .AE_UDI]`, under which each of these guards is still `false` except the
+    `is_PNVI` disjunct below, a real arm since S3), so on the matched default set (`Switches.set []`,
     main.ml:129-143; since PNVI arc S1, 2026-10-05, every read is of the
     instance-implicit parameter `[CerbGlobal.Switches]`, which each function
     here binds after `[LemFuel]`, and the run's instance is Main.lean's
@@ -2728,7 +2730,7 @@ def killM [CerbGlobal.Switches] (loc : CerbLocation.Loc) (isDynamic : Bool) (pv 
     lemmas) each guard reduces to its default arm — the
     only arm either engine executes — and a consumer's proof rewrites with
     the lemma instead of trusting a comment; the SET branch is a loud kill
-    naming the un-ported OCaml arm (never reachable while the switch set is
+    naming the un-ported OCaml arm (never reachable while those switches are
     refused; hermetic pin: test/Unit/OpaqueFailureTest.lean). The arms, at
     THIS tree's impl_mem.ml lines: `SW_strict_pointer_equality` (eq_ptrval
     :1860 → eqPtrval), `SW_strict_pointer_relationals` (lt/gt/le/ge_ptrval

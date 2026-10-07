@@ -134,7 +134,7 @@ MIN_FILES=150
 # Allowlist: exact (whitespace-trimmed) code lines permitted in Main.lean only.
 ALLOW_MAIN=(
   'def defaultFuel : Nat := 100000000'
-  'let code ← (letI : LemFuel := ⟨fuel⟩; letI : CerbGlobal.Switches := ⟨CerbGlobal.defaultSwitches⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace'
+  'let code ← (letI : LemFuel := ⟨fuel⟩; letI : CerbGlobal.Switches := ⟨switchSet⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace'
   'def defaultAddressSpaceTop : Int := 0xFFFFFFFFFFFF'
 )
 

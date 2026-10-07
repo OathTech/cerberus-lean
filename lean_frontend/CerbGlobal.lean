@@ -117,7 +117,7 @@ inductive CerbSwitch where
   -- provenance` as its OCaml target_rep (global.lem:81) — a constructor
   -- ABSENT from switches.ml:1-44 (a lem-side inconsistency, tray candidate);
   -- this Lean constructor is its target_rep (global.lem:82). No generated
-  -- module references it (grep), and the switch set is refused (Z-24) — a
+  -- module references it (grep), and no accepted switch set contains it (Z-24) — a
   -- dead constructor kept so the lem declaration stays resolvable.
   | no_integer_provenance
   | cheri
@@ -203,9 +203,10 @@ class Switches where
 
 /-- The default switch set: `Switches.internal_ref = ref []` (switches.ml:47-48) —
     the value the oracle holds when no `--switches`/`--iso` is passed. FORCED by
-    OCaml, not a magic value. `Main.lean` runs every program at
-    `⟨defaultSwitches⟩` (it refuses every `--switches` value, Z-24). Renamed from
-    `CerbGlobal.switches` in PNVI arc S1. -/
+    OCaml, not a magic value. `Main.lean` runs a program at `⟨defaultSwitches⟩`
+    unless `--switches=PNVI_ae_udi` is given (then `⟨[.PNVI .AE_UDI]⟩`, PNVI arc S4,
+    2026-10-07); every other `--switches` value is refused (`Main.judgeSwitches`).
+    Renamed from `CerbGlobal.switches` in PNVI arc S1. -/
 def defaultSwitches : List CerbSwitch := []
 
 /-! ## Config accessors (mirror cerb_global.ml:45-64) -/

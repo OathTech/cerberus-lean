@@ -1,0 +1,196 @@
+# tests/pnvi_lane/baseline.txt — the committed classified baseline of scripts/test_pnvi.sh,
+# the PNVI-ae-udi differential lane (PNVI arc S4, 2026-10-07; record
+# lean_frontend/docs/2026-10-07_pnvi-s4-lane-record.md). TRUST SURFACE: checked both
+# directions by scripts/pnvi_lane.py (row classes in its docstring); re-recorded ONLY by
+# `scripts/test_pnvi.sh --record-baseline` (refused over DIFF/INVALID rows) in a dedicated
+# instrument commit stating why.
+#
+# Format: <row> <class> oracle=<sha256[:12] of the oracle side under --switches=PNVI_ae_udi>
+#         default=<same|changed: the oracle's answer without the switch, compared>
+#
+# Non-agreement rows (each registered; NONE is agreement):
+#   REFUSAL R-PNVI-01 ORACLE_CRASH ×4 (litmus): Lean refuses at combine_prov's Prov_symbolic
+#     arm (impl_mem.ml:390-394) exactly where the oracle dies with
+#     Failure("Concrete.combine_prov: found a Prov_symbolic") — design §G.1 R1, class (A).
+#   REFUSAL R-PNVI-05 ORACLE_VERDICT (witness): the oracle runs abst's self-declared-wrong
+#     arm (impl_mem.ml:1079-1082 "FIXME/HACK(VICTOR): This is wrong"), Lean refuses — §G.1 R6, (C).
+#   REFUSAL R-PNVI-06 ORACLE_CRASH (witness): memcpy's pure array_shift_ptrval on a
+#     Prov_symbolic pointer (impl_mem.ml:2254-2255) — §G.1 R8, (A).
+#   REFUSAL R-PNVI-07 ORACLE_CRASH (witness): case_ptrval's wildcard on a Prov_symbolic
+#     concrete pointer (impl_mem.ml:1858) — §G.1 R11 (symbolic half), (A).
+#   AGREE-FIRST ×3 (pkvm-alloc/-free/-split-merge): oracle --mode=random one trace vs Lean
+#     --first, OUTSIDE CONTRACT §1 (design §F.8). Their exhaustive sets breach the 4G per-test
+#     cap on the oracle (MEASURED 2026-10-07, pkvm-alloc: `capped: OOM-KILLED (exit 137 —
+#     cgroup memory cap CERB_MEM_MAX=4G breached; memory.events oom_kill=1; NOT a pass)`,
+#     135.7 s wall, maxrss 4204300 kB); three repeated oracle random runs gave the same
+#     verdict each (the S4 record).
+#   BOTH_FAIL ×2 (minimal/073-exit.libc, 074-abort.libc, --nolibc): both engines answer
+#     `Error {msg: "ill-formed program: `calling an unknown procedure: Symbol(N, …)'"}`
+#     with different symbol numbers — VALIDATION §1(a) (tray 17); the same pair in default
+#     mode (scripts/exec_baseline.txt CERB_SKIP).
+# pkvm/pkvm-init is EXHAUSTIVE: its oracle hash pins the 2-execution set
+#   (UB088 at <715:2--715:17> and at <715:2--715:6>, design §C.3/§C.6).
+litmus/cheri_03_ii AGREE oracle=32faef2d53f2 default=changed
+litmus/pointer_arith_algebraic_properties_2_global AGREE oracle=807155052921 default=changed
+litmus/pointer_arith_algebraic_properties_3_global AGREE oracle=807155052921 default=changed
+litmus/pointer_copy_memcpy AGREE oracle=7021c1341a77 default=same
+litmus/pointer_copy_user_ctrlflow_bitwise AGREE oracle=7021c1341a77 default=changed
+litmus/pointer_copy_user_ctrlflow_bytewise AGREE oracle=17dc8c83538d default=changed
+litmus/pointer_copy_user_dataflow_direct_bytewise AGREE oracle=7021c1341a77 default=same
+litmus/pointer_from_int_disambiguation_1 AGREE oracle=424dff2db421 default=changed
+litmus/pointer_from_int_disambiguation_2 AGREE oracle=380b9a300250 default=same
+litmus/pointer_from_int_disambiguation_3 AGREE oracle=d67810f9230f default=changed
+litmus/pointer_from_integer_1i AGREE oracle=d3e255859172 default=same
+litmus/pointer_from_integer_1ie AGREE oracle=8b4444626a08 default=same
+litmus/pointer_from_integer_1ig AGREE oracle=a29f615d8ed0 default=same
+litmus/pointer_from_integer_1p AGREE oracle=2b6f4b9963a6 default=same
+litmus/pointer_from_integer_1pg AGREE oracle=7df8c6c19b13 default=same
+litmus/pointer_from_integer_2 AGREE oracle=ef1130a9e1c1 default=same
+litmus/pointer_from_integer_2g AGREE oracle=89d59452b533 default=same
+litmus/pointer_offset_from_int_subtraction_auto_xy AGREE oracle=f91d17b45573 default=changed
+litmus/pointer_offset_from_int_subtraction_auto_yx REFUSAL R-PNVI-01 ORACLE_CRASH oracle=b7bf4586ba59 default=changed
+litmus/pointer_offset_from_int_subtraction_global_xy AGREE oracle=6583aa6358ad default=changed
+litmus/pointer_offset_from_int_subtraction_global_yx REFUSAL R-PNVI-01 ORACLE_CRASH oracle=b7bf4586ba59 default=changed
+litmus/pointer_offset_from_ptr_subtraction_auto_xy AGREE oracle=950cd1041949 default=same
+litmus/pointer_offset_from_ptr_subtraction_auto_yx AGREE oracle=950cd1041949 default=same
+litmus/pointer_offset_from_ptr_subtraction_global_xy AGREE oracle=950cd1041949 default=same
+litmus/pointer_offset_from_ptr_subtraction_global_yx AGREE oracle=950cd1041949 default=same
+litmus/pointer_offset_xor_auto AGREE oracle=b185a8022347 default=changed
+litmus/pointer_offset_xor_global AGREE oracle=b185a8022347 default=changed
+litmus/provenance_basic_auto_yx AGREE oracle=604e64f6ef8a default=same
+litmus/provenance_basic_global_yx AGREE oracle=604e64f6ef8a default=same
+litmus/provenance_basic_using_uintptr_t_auto_yx REFUSAL R-PNVI-01 ORACLE_CRASH oracle=b7bf4586ba59 default=changed
+litmus/provenance_basic_using_uintptr_t_global_yx REFUSAL R-PNVI-01 ORACLE_CRASH oracle=b7bf4586ba59 default=changed
+litmus/provenance_equality_auto_yx AGREE oracle=32ac67ef29d2 default=same
+litmus/provenance_equality_global_fn_yx AGREE oracle=1e43e8dd406b default=same
+litmus/provenance_equality_global_yx AGREE oracle=dd5d68f57089 default=same
+litmus/provenance_equality_uintptr_t_auto_yx AGREE oracle=63bcb3c70e91 default=same
+litmus/provenance_equality_uintptr_t_global_yx AGREE oracle=a3a0774937c0 default=same
+litmus/provenance_lost_escape_1 AGREE oracle=f19d1a916381 default=same
+litmus/provenance_roundtrip_via_intptr_t AGREE oracle=7021c1341a77 default=same
+litmus/provenance_roundtrip_via_intptr_t_onepast AGREE oracle=1bccabc89001 default=same
+litmus/provenance_tag_bits_via_repr_byte_1 AGREE oracle=8090621aeb85 default=same
+litmus/provenance_tag_bits_via_uintptr_t_1 AGREE oracle=68a18897f6c5 default=same
+litmus/provenance_union_punning_2_auto_yx AGREE oracle=c2644cb9c9b5 default=changed
+litmus/provenance_union_punning_2_global_yx AGREE oracle=c2644cb9c9b5 default=changed
+litmus/provenance_union_punning_3_global AGREE oracle=d2bdbde488ac default=same
+minimal/001-return-literal AGREE oracle=59a41d0ff43c default=same
+minimal/002-return-zero AGREE oracle=069e16247d14 default=same
+minimal/003-arith-add AGREE oracle=e1169ab63b9b default=same
+minimal/004-arith-sub AGREE oracle=e1169ab63b9b default=same
+minimal/005-arith-mul AGREE oracle=c77709cae793 default=same
+minimal/006-arith-div AGREE oracle=e1169ab63b9b default=same
+minimal/007-local-var AGREE oracle=464c5f72ac8b default=same
+minimal/008-local-var-arith AGREE oracle=4ba9df2ccba2 default=same
+minimal/009-if-true AGREE oracle=2d38bc36310e default=same
+minimal/010-if-false AGREE oracle=468173116f30 default=same
+minimal/011-if-else AGREE oracle=69db3a6478c5 default=same
+minimal/012-compare-eq AGREE oracle=69db3a6478c5 default=same
+minimal/013-compare-lt AGREE oracle=69db3a6478c5 default=same
+minimal/014-while-simple AGREE oracle=464c5f72ac8b default=same
+minimal/015-while-sum AGREE oracle=4579d5030865 default=same
+minimal/016-func-simple AGREE oracle=4ba9df2ccba2 default=same
+minimal/017-func-recursive AGREE oracle=756e9f64754b default=same
+minimal/018-increment AGREE oracle=b9d63105596b default=same
+minimal/019-decrement AGREE oracle=8d74ccd3b2ab default=same
+minimal/020-global-var AGREE oracle=59a41d0ff43c default=same
+minimal/021-pointer-basic AGREE oracle=2d38bc36310e default=same
+minimal/022-pointer-write AGREE oracle=468173116f30 default=same
+minimal/023-array-read AGREE oracle=468173116f30 default=same
+minimal/024-array-write AGREE oracle=59a41d0ff43c default=same
+minimal/025-struct-basic AGREE oracle=0f140c82872a default=same
+minimal/026-ternary AGREE oracle=ecc8e82c5699 default=same
+minimal/027-for-loop AGREE oracle=4579d5030865 default=same
+minimal/028-break AGREE oracle=464c5f72ac8b default=same
+minimal/029-continue AGREE oracle=c77709cae793 default=same
+minimal/030-negative AGREE oracle=464c5f72ac8b default=same
+minimal/031-bitwise-and AGREE oracle=69db3a6478c5 default=same
+minimal/032-bitwise-or AGREE oracle=e1169ab63b9b default=same
+minimal/033-bitwise-xor AGREE oracle=df41d0d7e717 default=same
+minimal/034-bitwise-not AGREE oracle=07428715381a default=same
+minimal/035-shift-left AGREE oracle=386acde8a99a default=same
+minimal/036-shift-right AGREE oracle=8d74ccd3b2ab default=same
+minimal/037-logical-and AGREE oracle=069e16247d14 default=same
+minimal/038-logical-or AGREE oracle=069e16247d14 default=same
+minimal/039-compound-assign AGREE oracle=0f140c82872a default=same
+minimal/040-do-while AGREE oracle=464c5f72ac8b default=same
+minimal/041-switch AGREE oracle=468173116f30 default=same
+minimal/042-nested-loop AGREE oracle=b9d63105596b default=same
+minimal/043-comma AGREE oracle=468173116f30 default=same
+minimal/044-void-func AGREE oracle=df41d0d7e717 default=same
+minimal/045-ptr-arith AGREE oracle=468173116f30 default=same
+minimal/046-ptr-ptr AGREE oracle=59a41d0ff43c default=same
+minimal/047-cast AGREE oracle=42fb87020740 default=same
+minimal/048-pre-post-inc AGREE oracle=c77709cae793 default=same
+minimal/049-scope-shadow AGREE oracle=2d38bc36310e default=same
+minimal/050-modulo AGREE oracle=69db3a6478c5 default=same
+minimal/051-sizeof-type AGREE oracle=69db3a6478c5 default=same
+minimal/052-sizeof-expr AGREE oracle=69db3a6478c5 default=same
+minimal/053-static-local AGREE oracle=df41d0d7e717 default=same
+minimal/054-string-literal AGREE oracle=a4d6321cb801 default=same
+minimal/055-char-array-init AGREE oracle=b1a8464b9bb0 default=same
+minimal/056-func-ptr AGREE oracle=0f140c82872a default=same
+minimal/057-void-ptr AGREE oracle=59a41d0ff43c default=same
+minimal/058-struct-value AGREE oracle=59a41d0ff43c default=same
+minimal/059-union-basic AGREE oracle=e149a27aecd9 default=same
+minimal/060-switch-fallthrough AGREE oracle=0f140c82872a default=same
+minimal/061-goto AGREE oracle=69db3a6478c5 default=same
+minimal/062-multidim-array AGREE oracle=e1169ab63b9b default=same
+minimal/063-logical-not AGREE oracle=69db3a6478c5 default=same
+minimal/064-precedence-ptr AGREE oracle=0f140c82872a default=same
+minimal/065-typedef AGREE oracle=de2b3c837911 default=same
+minimal/066-cast-float AGREE oracle=e1169ab63b9b default=same
+minimal/067-if-int AGREE oracle=69db3a6478c5 default=same
+minimal/068-div-by-zero.undef AGREE oracle=8cf57bb38c4e default=same
+minimal/069-mod-by-zero.undef AGREE oracle=b7f1ac5395b4 default=same
+minimal/070-signed-overflow.undef AGREE oracle=3681f86113cd default=same
+minimal/071-null-deref.undef AGREE oracle=dc1e2669a725 default=same
+minimal/072-out-of-bounds.undef AGREE oracle=5e735df98c14 default=changed
+minimal/073-exit.libc BOTH_FAIL oracle=39fd687e5c3c default=same
+minimal/074-abort.libc BOTH_FAIL oracle=d75bc58e450c default=same
+minimal/075-main-argc-argv AGREE oracle=69db3a6478c5 default=same
+minimal/076-main-argv-access AGREE oracle=a3809c1516f9 default=same
+minimal/077-bool-trap.undef AGREE oracle=44d66035c1f6 default=same
+minimal/078-float-special AGREE oracle=4ba9df2ccba2 default=same
+minimal/079-unseq-simple AGREE oracle=e1169ab63b9b default=same
+minimal/080-unseq-reads-only AGREE oracle=00795103ddb9 default=same
+minimal/081-unseq-diff-locations AGREE oracle=e1169ab63b9b default=same
+minimal/082-unseq-race.undef AGREE oracle=5de46f1d1b60 default=same
+minimal/083-unseq-nested-assign.undef AGREE oracle=ef3e413699e4 default=same
+minimal/084-unseq-two-writes.undef AGREE oracle=c0bba7e2a261 default=same
+minimal/085-unseq-comma-seq AGREE oracle=069e16247d14 default=same
+minimal/086-unseq-comma-writes AGREE oracle=df41d0d7e717 default=same
+minimal/087-unseq-increment.undef AGREE oracle=c0b9548ae9a1 default=same
+minimal/088-unseq-postinc-read.undef AGREE oracle=38a42705e3ca default=same
+minimal/089-unseq-func-args.undef AGREE oracle=f32bdf9bd3a3 default=same
+minimal/090-unseq-func-args-ok AGREE oracle=e1169ab63b9b default=same
+minimal/091-unseq-nested-complex.undef AGREE oracle=086a3831b51a default=same
+minimal/092-unseq-comma-plus.undef AGREE oracle=5588dfec8afe default=same
+minimal/093-nd-choice AGREE oracle=59a41d0ff43c default=same
+minimal/094-bool-conversion AGREE oracle=8d74ccd3b2ab default=same
+minimal/095-unsigned-div-zero.undef AGREE oracle=44cdbd7313c5 default=same
+minimal/096-unsigned-mod-zero.undef AGREE oracle=8bdefb8a7db8 default=same
+minimal/097-null-ptr-arith.undef AGREE oracle=0a319c85b2ca default=changed
+minimal/098-cross-alloc-ptrdiff.undef AGREE oracle=67c9045ffd7c default=same
+minimal/099-negative-right-shift AGREE oracle=b9d63105596b default=same
+minimal/100-int-wrap-unsigned AGREE oracle=1870c54fa729 default=same
+minimal/101-signed-overflow.undef AGREE oracle=37371cee3a10 default=same
+minimal/102-bool-implicit-conv AGREE oracle=e1169ab63b9b default=same
+minimal/103-union-store-load AGREE oracle=59a41d0ff43c default=same
+minimal/104-unsigned-wrap-arith AGREE oracle=f0521fcc731c default=same
+minimal/105-bitwise-ops AGREE oracle=2a0a465ded7c default=same
+minimal/106-sizeof-struct-array AGREE oracle=9277afddc0b2 default=same
+minimal/107-sizeof-multibyte-literal AGREE oracle=e1169ab63b9b default=same
+minimal/108-sizeof-5byte-multibyte-literal AGREE oracle=b9d63105596b default=same
+minimal/109-escape-hex-all-bytes AGREE oracle=df41d0d7e717 default=same
+minimal/110-escape-octal-all-bytes AGREE oracle=d5db1c8cc7bf default=same
+minimal/111-escape-nul-inside-literal AGREE oracle=079b62d4d133 default=same
+minimal/112-allocator-exhausted-single-request AGREE oracle=156673500b74 default=same
+minimal/113-allocator-exhausted-single-request-overlap AGREE oracle=156673500b74 default=same
+pkvm/pkvm-alloc AGREE-FIRST oracle=3e6453ea29f3 default=changed
+pkvm/pkvm-free AGREE-FIRST oracle=069e16247d14 default=changed
+pkvm/pkvm-init AGREE oracle=753422caa9ab default=same
+pkvm/pkvm-split-merge AGREE-FIRST oracle=cfc818cfbaae default=changed
+witness/r05-abst-double-alloc-union-punning REFUSAL R-PNVI-05 ORACLE_VERDICT oracle=df41d0d7e717 default=changed
+witness/r06-memcpy-symbolic-source REFUSAL R-PNVI-06 ORACLE_CRASH oracle=41bada4747f5 default=changed
+witness/r07-call-through-symbolic-pointer REFUSAL R-PNVI-07 ORACLE_CRASH oracle=cba75a2ad565 default=changed

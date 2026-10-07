@@ -1390,24 +1390,25 @@ def refuseFlag (flag : String) : IO Unit := do
     else if flag == "--batch" || flag == "--pp-core" || flag == "--parse-core" || flag == "--first" then
       "known flag out of its canonical position (`--batch`, `--pp-core` or `--parse-core` must be argv[0]; `--first` must immediately follow `--batch`/`--pp-core`)"
     else
-      "unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>, --address-space-top <N>, --runtime <DIR> (and parses --switches <list>, refusing every value)"
+      "unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>, --address-space-top <N>, --runtime <DIR>, --switches PNVI_ae_udi (every other switch set is refused)"
   IO.eprintln s!"cerberus-lean: refused — {flag}: {feature} (see VALIDATION.md, zero-discrepancy Z-24)"
   IO.Process.exit 2
 
-/-- The refusal reason for ONE `--switches` element (PNVI arc S1, 2026-10-05; design
-    docs/2026-10-04_pnvi-ae-udi-design.md §B.4.2, §D.3, §F.4, §F.13). The names are the
-    oracle's (`ocaml_frontend/switches.ml:60-102` `read_switch`); every one is REFUSED in
-    this slice, each with its own reason — the switch set is a parameter of the semantics
-    (`CerbGlobal.Switches`) but this binary runs only the default `⟨defaultSwitches⟩`.
+/-- The refusal reason for ONE element of a REFUSED `--switches` value (PNVI arc S1,
+    2026-10-05; S4, 2026-10-07; design docs/2026-10-04_pnvi-ae-udi-design.md §B.4.2, §D.3,
+    §F.3, §F.4, §F.13). The names are the oracle's (`ocaml_frontend/switches.ml:60-102`
+    `read_switch`). Since S4 exactly ONE switch set is supported — `--switches=PNVI_ae_udi`
+    alone (`judgeSwitches`), validated against the oracle under the same switch by
+    `scripts/test_pnvi.sh`; every other value is refused, each element with its own reason.
     The oracle is FAIL-OPEN on an unknown name (switches.ml:140-141: "failed to parse
-    switch '…' --> ignoring." and the default semantics runs); this port refuses
+    switch '…' --> ignoring." and the run proceeds without it); this port refuses
     (exception class (c), §F.4). -/
 def switchRefusalReason (name : String) : String :=
   match name with
   | "PNVI_ae_udi" =>
-    "the PNVI-ae-udi provenance model (switches.ml:82-83, SW_PNVI `AE_UDI) is being ported (the PNVI arc: the switch set became a parameter of the semantics in slice S1; the ae-udi memory arms are not implemented yet), so the oracle's answer under it cannot be matched (e.g. it turns an integer→pointer UB043 into a value)"
+    "PNVI-ae-udi (switches.ml:82-83, SW_PNVI `AE_UDI) is supported only as the WHOLE switch set, `--switches=PNVI_ae_udi` (the set validated against the oracle by scripts/test_pnvi.sh); this list names other elements too, so the set is refused"
   | "PNVI" | "PNVI_ae" =>
-    "the PNVI-plain / PNVI-ae provenance variants (switches.ml:78-81) are not validated by any lane; only PNVI_ae_udi is in this port's scope"
+    "the PNVI-plain / PNVI-ae provenance variants (switches.ml:78-81) are not validated by any lane (their shared impl_mem.ml arms are mirrored, design §F.3, but only PNVI_ae_udi has a differential lane)"
   | "strict_pointer_arith" | "permissive_pointer_arith" =>
     "the pointer-arithmetic mode switch (switches.ml:62-65, SW_pointer_arith) is not supported: its impl_mem.ml arms are loud kills in CerbMem (seam-hygiene H2)"
   | "strict_reads" =>
@@ -1448,8 +1449,8 @@ def knownSwitch (name : String) : Bool :=
 
 /-- REFUSE a `--switches` value (`flag` is the argv text: `--switches=V` or
     `--switches V`): one line per element, each naming the element and its reason, then
-    exit 2. Every value is refused in this slice; an empty value too (cmdliner's
-    `opt (list string)`, backend/driver/main.ml:589-591). The override class is recorded
+    exit 2. Called for every value but the one supported set (`judgeSwitches`); an empty
+    value too (cmdliner's `opt (list string)`, backend/driver/main.ml:589-591). The override class is recorded
     only for a KNOWN name, as the oracle's `set` does (switches.ml:134-141: an unknown name
     is "failed to parse" every time, never "would override"). -/
 def refuseSwitches (flag value : String) : IO Unit := do
@@ -1461,22 +1462,40 @@ def refuseSwitches (flag value : String) : IO Unit := do
       else if knownSwitch n && seen.contains (switchClass n) then
         s!"{switchRefusalReason n}; ALSO it would override a previous switch of the same class in this list (the oracle prints `switch '…' would override a previous switch --> ignoring.` and drops it, switches.ml:136-139, fail-open; design §G R20, R-PNVI-11)"
       else switchRefusalReason n
-    IO.eprintln s!"cerberus-lean: refused — {flag}: semantics switches are not supported by this port yet — `{n}`: {reason} (see VALIDATION.md, zero-discrepancy Z-24)"
+    IO.eprintln s!"cerberus-lean: refused — {flag}: this semantics switch set is not supported (the one supported set is `--switches=PNVI_ae_udi`) — `{n}`: {reason} (see CONTRACT.md §2/§3 and VALIDATION.md, semantics switches)"
     if knownSwitch n then seen := seen ++ [switchClass n]
+  IO.Process.exit 2
+
+/-- Judge a `--switches` value (PNVI arc S4, 2026-10-07; design §D.3, §E S4, §F.3, §F.4):
+    the ONE supported set is `PNVI_ae_udi` alone — the `=` and space forms, a one-element
+    comma list — and becomes `[.PNVI .AE_UDI]`, the run's `CerbGlobal.Switches` (built in
+    `main`). Anything else is refused by `refuseSwitches`, each element with its reason:
+    another switch name, plain PNVI / PNVI_ae (§F.3), a mixed list, an override
+    (R-PNVI-11), an unknown name (R-PNVI-12), the empty value. The oracle accepts many of
+    these and ignores some silently (§C.5); the refusals are class (c). -/
+def judgeSwitches (flag value : String) : IO (List CerbGlobal.CerbSwitch) := do
+  if value == "PNVI_ae_udi" then return [.PNVI .AE_UDI]
+  refuseSwitches flag value
+  -- refuseSwitches exits 2; falling through would be an internal error (fail-closed)
+  IO.eprintln "cerberus-lean: internal error: refuseSwitches returned"
   IO.Process.exit 2
 
 /-- `--switches` given to `--parse-core` (S1 review L5 item 1): the value is judged by
     the switch parser itself (its own per-element refusal), never the generic
-    "unknown flag" text. `tok` is the `--switches…` token, `next?` the following argv word
-    (the value of the space form). -/
+    "unknown flag" text; the supported set is refused HERE because the Core text parser
+    runs no semantics, so a switch set would be silently ignored. `tok` is the
+    `--switches…` token, `next?` the following argv word (the value of the space form). -/
 def refuseSwitchesParseCore (tok : String) (next? : Option String) : IO Unit := do
-  if tok.startsWith "--switches=" then
-    refuseSwitches tok (tok.drop "--switches=".length).toString
-  else match next? with
-    | some v => refuseSwitches s!"--switches {v}" v
-    | none =>
-      IO.eprintln "cerberus-lean: --switches requires an argument"
-      IO.Process.exit 1
+  let (flag, value) ← if tok.startsWith "--switches=" then
+      pure (tok, (tok.drop "--switches=".length).toString)
+    else match next? with
+      | some v => pure (s!"--switches {v}", v)
+      | none => do
+        IO.eprintln "cerberus-lean: --switches requires an argument"
+        IO.Process.exit 1
+  let _ ← judgeSwitches flag value
+  IO.eprintln s!"cerberus-lean: refused — {flag}: --parse-core runs only the Core text parser, which reads no switch set; the switch would be silently ignored (see CONTRACT.md §2)"
+  IO.Process.exit 2
 
 def main (args : List String) : IO Unit := do
   -- Zero-discrepancy Z2-FL-03 (Z2 audit @ 9e86fe67c; fail-closed hygiene):
@@ -1553,8 +1572,9 @@ def main (args : List String) : IO Unit := do
   let mut runtimeArg : Option String := none
   -- --switches <list> / --switches=<list> (PNVI arc S1, 2026-10-05): the oracle's
   -- cmdliner option (backend/driver/main.ml:589-591, `opt (list string)`, both forms;
-  -- design §F.13). PARSED here, REFUSED below (every value, `refuseSwitches`); a
-  -- repeated option is refused as cmdliner does. (flag text as given, value)
+  -- design §F.13). PARSED here, JUDGED below (`judgeSwitches`: `PNVI_ae_udi` alone is
+  -- accepted, every other value refused); a repeated option is refused as cmdliner
+  -- does. (flag text as given, value)
   let mut switchesArg : Option (String × String) := none
   let mut restArgs : List String := []
   -- --parse-core consumes its file list itself (below); nothing to scan
@@ -1603,12 +1623,16 @@ def main (args : List String) : IO Unit := do
       -- value already scanned is judged FIRST, so `--switches=V --batch …` reports V's
       -- own verdict before the position refusal (S1 review L5 item 1)
       if a.startsWith "--" && a != "--stdin" then
-        if let some (flag, value) := switchesArg then refuseSwitches flag value
+        if let some (flag, value) := switchesArg then
+          let _ ← judgeSwitches flag value
         refuseFlag a
       restArgs := restArgs ++ [a]; pending := rest
-  -- --switches: every value is REFUSED in this slice (the run's switch set is
-  -- `CerbGlobal.defaultSwitches`, supplied below beside the fuel instance)
-  if let some (flag, value) := switchesArg then refuseSwitches flag value
+  -- --switches (PNVI arc S4): the run's switch set — `CerbGlobal.defaultSwitches` (= `[]`,
+  -- switches.ml:47-48) without the option, `[.PNVI .AE_UDI]` for `--switches=PNVI_ae_udi`;
+  -- every other value is refused here (`judgeSwitches`). Supplied below beside the fuel.
+  let switchSet : List CerbGlobal.CerbSwitch ← match switchesArg with
+    | none => pure CerbGlobal.defaultSwitches
+    | some (flag, value) => judgeSwitches flag value
   -- --args "ARG1 ARG2 ..." — the oracle's flag of the same name
   -- (backend/driver/main.ml:512-514): one string, split on whitespace
   -- runs (main.ml:111-113, Str.split "[ \t]+" — empty pieces dropped,
@@ -1763,12 +1787,13 @@ def main (args : List String) : IO Unit := do
   -- The ONE instantiation of the ambient fuel (fuel-parameter arc): every
   -- fuel'd function below `runPipeline` reads this instance; nothing else
   -- in the repository builds one (`scripts/check_no_fuel_numerals.sh`).
-  -- Beside it, the ONE instance of the switch set (PNVI arc S1, 2026-10-05):
-  -- the default `⟨CerbGlobal.defaultSwitches⟩` (= `[]`, switches.ml:47-48) —
-  -- every `--switches` value is refused above; no other instance of
-  -- `CerbGlobal.Switches` exists in this repository
+  -- Beside it, the ONE instance of the switch set (PNVI arc S1, 2026-10-05; S4,
+  -- 2026-10-07): `⟨switchSet⟩` — the default `CerbGlobal.defaultSwitches` (= `[]`,
+  -- switches.ml:47-48) unless `--switches=PNVI_ae_udi` was given (judged above); one
+  -- general path, the set only selects the arms (no PNVI-only entry point). No other
+  -- instance of `CerbGlobal.Switches` exists in this repository
   -- (speedbump: `scripts/check_no_fuel_numerals.sh` rule W1).
-  let code ← (letI : LemFuel := ⟨fuel⟩; letI : CerbGlobal.Switches := ⟨CerbGlobal.defaultSwitches⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace
+  let code ← (letI : LemFuel := ⟨fuel⟩; letI : CerbGlobal.Switches := ⟨switchSet⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace
     addressSpaceTop callFn traceNodes libc progArgs tunits)
   if code != 0 then
     IO.Process.exit code
