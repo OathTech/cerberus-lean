@@ -94,7 +94,7 @@ theorem sc_chose_state (cfg : sc_config) : (sc_chose cfg).sc_state = cfg.sc_stat
 theorem sc_chose_reductions (cfg : sc_config) : (sc_chose cfg).sc_core_reductions = cfg.sc_core_reductions := rfl
 
 section Readers
-variable [LemFuel] (e : Enums) (t : Tags)
+variable [LemFuel] [CerbGlobal.Switches] (e : Enums) (t : Tags)
 
 theorem sc_core_transition_transitions (cfg : sc_config) (k : DriverAction driver_result) :
     (sc_core_transition e t cfg k).sc_transitions = cfg.sc_transitions + 1 := by
@@ -406,7 +406,7 @@ theorem sc_events_append (c₀ c₁ c₂ : sc_config) (h₁ : TraceGrows c₀ c�
     nothing to the trace), so TraceGrows holds for the transition iff the action grew the
     trace at the stored state. -/
 section MachineTrace
-variable [LemFuel] (e : Enums) (t : Tags)
+variable [LemFuel] [CerbGlobal.Switches] (e : Enums) (t : Tags)
 
 theorem sc_step_state_from_action (cfg cfg' : sc_config) (c : Option sc_choice)
     (h : sc_step e t cfg c = .inr cfg') :
@@ -566,7 +566,7 @@ theorem HMonoD_bind {a b : Type} (d : Nat) :
         obtain ⟨⟨s, m'⟩, hm', rfl⟩ := hb
         exact ih fuel m' f (hm1.2 _ hm') hf
 
-theorem HMono_bind [LemFuel] {a b : Type} (m : DriverAction a) (f : a → DriverAction b)
+theorem HMono_bind [LemFuel] [CerbGlobal.Switches] {a b : Type} (m : DriverAction a) (f : a → DriverAction b)
     (hm : HMono m) (hf : ∀ x, HMono (f x)) : HMono (nd_bind m f) :=
   fun d => HMonoD_bind d LemFuel.fuel m f (hm d) hf
 
@@ -611,7 +611,7 @@ theorem HMonoD_liftND {a st1 info1 err1 : Type} (d : Nat)
           obtain ⟨⟨s, m'⟩, _, rfl⟩ := hb
           exact ih fuel m'
 
-theorem HMono_liftMem [LemFuel] {a : Type}
+theorem HMono_liftMem [LemFuel] [CerbGlobal.Switches] {a : Type}
     (m : ndM a String mem_error (mem_constraint CerbMem.IntegerValue) CerbMem.MemState) :
     HMono (liftMem m) := by
   intro d
@@ -621,7 +621,7 @@ theorem HMono_liftMem [LemFuel] {a : Type}
 
 /-- `liftCore_run` of ANY core_run action: `get`, then an update that keeps the trace,
     then a return or a kill — whatever the (possibly opaque) inner run produced. -/
-theorem HMono_liftCore_run [LemFuel] {a : Type}
+theorem HMono_liftCore_run [LemFuel] [CerbGlobal.Switches] {a : Type}
     (m : core_run_state → exceptM (t0 a × core_run_state) core_run_cause) :
     HMono (liftCore_run m) := by
   unfold liftCore_run
@@ -676,11 +676,11 @@ theorem HMono_sc_boundary : HMono (sc_boundary ()) :=
     subst hb
     exact HMono_return _)
 
-theorem HMono_get_thread_states [LemFuel] : HMono get_thread_states := by
+theorem HMono_get_thread_states [LemFuel] [CerbGlobal.Switches] : HMono get_thread_states := by
   unfold get_thread_states
   exact HMono_bind _ _ HMono_get (fun _ => HMono_return _)
 
-theorem HMono_spawn_thread [LemFuel] (p : Option thread_id) (th : thread_state) :
+theorem HMono_spawn_thread [LemFuel] [CerbGlobal.Switches] (p : Option thread_id) (th : thread_state) :
     HMono (driver_spawn_thread p th : DriverAction Nat) := by
   unfold driver_spawn_thread
   apply HMono_bind _ _ HMono_get
@@ -729,7 +729,7 @@ ARE fail-stops (`failwithI`, the register's monadic sites: `Step_error2`, `Step_
 no kernel equation and no next configuration at run time — they are excluded by
 hypothesis, never proved around. -/
 section Handlers
-variable [LemFuel] (e : Enums) (t : Tags)
+variable [LemFuel] [CerbGlobal.Switches] (e : Enums) (t : Tags)
 
 /-- Every action request handler arm (alloc/create/load/store/seq-RMW/kill: a memory
     operation through `liftMem`, then the trace cons of §3.8) is monotone. -/
