@@ -795,6 +795,9 @@ echo "check_theorem_axioms: C2 entry census OK (${#ENTRIES[@]} entries, every co
 # tree imports) are pinned here too. `lake env lean` below does NOT build; the seam
 # is compiled in row 1 because Unit.ReconstructLegacyTest imports it (so
 # `lake build reconstruct-legacy-test` in test_unit.sh rebuilds it when stale).
+# PNVI arc S5 (2026-10-07; docs/2026-10-07_consumer-note-cerberus-sl-pnvi-arc.md): the
+# seam's seventh theorem, `resolveIota_ok_of_shape` (the success transfer a consumer uses
+# for a Prov_symbolic arm's location independence), is pinned here too.
 # ---------------------------------------------------------------------------
 PROBE4=lean_frontend/.axiom-probe-memscale.lean
 MEMSCALE_THMS=(CerbMem.chunksOf_eq_range_map
@@ -813,7 +816,8 @@ MEMSCALE_THMS=(CerbMem.chunksOf_eq_range_map
                CerbMem.reconstructValueAbst_lemFuel_default_snd
                CerbMem.reconstructValueAbst_default_snd
                CerbMem.reconstructValueAbst_snd_of_default
-               CerbMem.loadM_reconstruct_eq_reconstructValue)
+               CerbMem.loadM_reconstruct_eq_reconstructValue
+               CerbMem.resolveIota_ok_of_shape)
 {
   echo "import CerbMem"
   echo "import CerbMemDefaultFacts"

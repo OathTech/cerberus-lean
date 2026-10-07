@@ -16,6 +16,10 @@
   definition here; kernel-only tactics, no option bumps. The equality with the
   pre-S2 TEXT stays in the test module (`reconstructValueAbst_default_snd_eq_legacy`,
   test/Unit/ReconstructLegacyTest.lean, row 1).
+  PNVI arc S5 (2026-10-07): also `resolveIota_ok_of_shape`, the success-transfer
+  lemma a consumer uses to compare a `Prov_symbolic` arm at two locations (the
+  location reaches only the preconditions' failure payloads); record
+  docs/2026-10-07_consumer-note-cerberus-sl-pnvi-arc.md.
 -/
 import CerbMem
 
@@ -125,5 +129,64 @@ theorem loadM_reconstruct_eq_reconstructValue [inst : CerbGlobal.Switches]
     (reconstructValueAbst enumDefs ambient (findOverlapping st) st.lastUsedUnionMembers st.funptrmap addr ty bytes).2 =
       reconstructValue enumDefs ambient st.lastUsedUnionMembers st.funptrmap addr ty bytes :=
   reconstructValueAbst_snd_of_default h _ enumDefs ambient _ _ addr ty bytes
+
+/-! ## `resolveIota` success transfer (PNVI arc S5, 2026-10-07)
+
+A `Prov_symbolic` arm of `killM`/`loadM`/`storeM` resolves its iota with a precondition
+whose `loc` reaches only FAILURE payloads (`.FAIL loc …`, `getAllocationE loc …`'s
+`.error`). A consumer comparing the arm at two locations (cerberus-sl's
+`MemLoc.killM_loc_indep`) needs: a successful resolution under one precondition is the
+same successful resolution under any precondition of the same SHAPE at that state
+(`.ok .OK` / `.ok (.FAIL _ _)` / `.error _`, read off as `(p z s).toOption.map
+(· matches .OK)` — `some true` / `some false` / `none`). The chosen id and the collapsed
+state depend only on that shape. Record: docs/2026-10-07_consumer-note-cerberus-sl-pnvi-arc.md. -/
+
+/-- A successful `resolveIota` under `p` is the same success under any `p'` that agrees
+    with `p` on the shape of every precondition result at the state `s`. -/
+theorem resolveIota_ok_of_shape (p p' : IotaPrecondFn) {s : MemState}
+    (hshape : ∀ z, (p z s).toOption.map (· matches .OK) = (p' z s).toOption.map (· matches .OK))
+    {iota : SymbolicStorageInstanceId} {r : StorageInstanceId × MemState}
+    (h : resolveIota p iota s = .ok r) : resolveIota p' iota s = .ok r := by
+  have hOK : ∀ z, p z s = .ok .OK → p' z s = .ok .OK := by
+    intro z hz
+    have := hshape z
+    rw [hz] at this
+    cases hq : p' z s with
+    | error k => rw [hq] at this; cases this
+    | ok q => rw [hq] at this; cases q with
+      | OK => rfl
+      | FAIL l e => cases this
+  have hFail : ∀ z l e, p z s = .ok (.FAIL l e) → ∃ l' e', p' z s = .ok (.FAIL l' e') := by
+    intro z l e hz
+    have := hshape z
+    rw [hz] at this
+    cases hq : p' z s with
+    | error k => rw [hq] at this; cases this
+    | ok q => rw [hq] at this; cases q with
+      | OK => cases this
+      | FAIL l' e' => exact ⟨l', e', rfl⟩
+  unfold resolveIota at h ⊢
+  cases hl : lookupIota s iota with
+  | Single a =>
+    simp only [hl] at h ⊢
+    cases ha : p a s with
+    | error k => simp [ha] at h
+    | ok q => cases q with
+      | OK => rw [hOK a ha]; simpa [ha] using h
+      | FAIL l e => simp [ha] at h
+  | Double a b =>
+    simp only [hl] at h ⊢
+    cases ha : p a s with
+    | error k => simp [ha] at h
+    | ok q => cases q with
+      | OK => rw [hOK a ha]; simpa [ha] using h
+      | FAIL l e =>
+        obtain ⟨l', e', ha'⟩ := hFail a l e ha
+        rw [ha']
+        cases hb : p b s with
+        | error k => simp [ha, hb] at h
+        | ok q => cases q with
+          | OK => rw [hOK b hb]; simpa [ha, hb] using h
+          | FAIL l e => simp [ha, hb] at h
 
 end CerbMem
