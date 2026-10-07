@@ -41,7 +41,7 @@ of this tree. Line numbers are this commit's.
 | `inductive OverlapResult` (`NoAlloc` / `SingleAlloc` / `DoubleAlloc`) | :162 | :796-798 | |
 | `MemState.iotaMap : Std.TreeMap Int IotaEntry := Std.TreeMap.empty` | :200 | :490, :513 | was `List (Int × Int) := []`; same representation as `allocations`/`bytemap` (arc-6 S3, `IntMap = Map.Make(Z)`, :93) [AGENT: the map type the rest of the state already uses for `IntMap`s; ordered keys, `get?`/`insert`/`modify` are the OCaml `find`/`add`/`update`] |
 | `splitBytesProv` (status component fixed) | :760 | :432-453 | `.2` = `ValidPtrProv` iff all provenances equal AND offsets consecutive from 0 (:449-453); the `INVALID` case used to give `true`; `.1` and its text unchanged (deviation D5) |
-| `pnviRefusal (detail)` | :780 | — | the one refusal message: prefix `PNVI_ae_udi refusal (unsupported upstream arm): `, then the row/site/upstream text, then `— refused, not mirrored ([USER 2026-10-05]: …; design record …§G.1)` |
+| `pnviRefusal (detail)` | :780 | — | the one refusal message: prefix `PNVI_ae_udi refusal (unsupported upstream arm): `, then the row/site/upstream text, then `— refused, not mirrored (… design record …§G/§H)` (review fix F6 removed a `[USER 2026-10-05]` tag that stood on a paraphrase) |
 | `provsOfBytes` | :794 | :462-479 | fold that conses (last byte's id first); `Prov_symbolic` arm refused (R-PNVI-01b, §2) |
 | `mergeTaint` | :807 | :967-975 | |
 | `mkIval [Switches]` | :817 | :670-677 | `is_PNVI` → `IV Prov_none n`, else `IV prov n` |
@@ -57,7 +57,7 @@ of this tree. Line numbers are this commit's.
 | `addIota` | :2267 | :903-909 | |
 | `lookupIota` | :2279 | :911-914 | missing iota refused (R-PNVI-04, §2) |
 | `inductive IotaPrecond` (`OK` / `FAIL loc err`) | :2289 | :917-942 | the precondition outcome |
-| `resolveIota [LemFuel] (precond : StorageInstanceId → memM IotaPrecond) (iota)` | :2298 | :916-942 | `Single` → precond; `Double` → first, else second, else the SECOND failure; then collapse to `Single`; `FAIL (loc, err)` = `memFail err loc` (:540-546) |
+| `resolveIota [LemFuel] (precond : StorageInstanceId → memM IotaPrecond) (iota)` | :2298 | :916-942 | `Single` → precond; `Double` → first, else second, else the SECOND failure; then collapse to `Single`; `FAIL (loc, err)` = `memFail err loc` (`fail`, :575; corrected from ":540-546" by review fix F5) |
 
 `CerbMem_lemMeasureProofs.lean`: `reconstructValueAbst_stable_aux` (:949) and
 `reconstructValueAbst_measure_sufficient` (:1040) — the old proof restated over the new
@@ -170,8 +170,10 @@ theorem loadM_reconstruct_default (st : MemState) (…) :
 ```
 
 - **What they say.** The first theorem holds for EVERY closure: at the default set the closure is
-  never consulted and the taint is discarded. The last one states exactly what `loadM`'s `doLoad`
-  computes at the default set, for every state.
+  never consulted and the taint is discarded. The last one is about the reconstruction SUBTERM
+  that `loadM`'s `doLoad` builds (`(reconstructValueAbst … (findOverlapping st) …).2`), at the
+  default set, for every state — not a statement about `loadM` itself (wording corrected by review
+  fix F2).
 - **Proof.**
   - Fuel induction, following the template of the retired `reconstructValue_lemFuel_eq_indexed`.
   - Scalar and pointer arms: `rfl`. The pointer arm's `if is_PNVI ()` reduces at the instance.
@@ -282,9 +284,10 @@ No refusal is exercised at runtime: each aborts the process. Their pins belong t
    - `DUNE_CACHE=disabled dune build --force cerberus.install`;
    - rc 0. The worktree's primed OCaml and Lean generated trees were stale (copied 2026-09-27).
      Both were regenerated with the shared lem before any gate.
-3. **Kernel:** the default-mode reconstruction equals the pre-S2 text (§3). `loadM`'s default-set
-   value is unchanged for every state (`loadM_reconstruct_default`). Every other `loadM` path is
-   textually unchanged.
+3. **Kernel:** the default-mode reconstruction equals the pre-S2 text (§3). The reconstruction
+   subterm of `loadM`'s `doLoad` has the pre-S2 value at the default set for every state
+   (`loadM_reconstruct_default` — a statement about that subterm, not about `loadM`; wording
+   corrected by review fix F2). Every other `loadM` path is textually unchanged.
 4. **Lanes:** Tier A on `842720565` (§6.2).
    - Every lane is at its committed baseline.
    - A9 (the C→Core reporting differential) shows the recorded `same=108 diff=5`, so the
@@ -422,27 +425,27 @@ A13  PASS memory access: 3 runs; primitive receipts, all ND constructors, erasur
   `INVALID` case).
   - It had no consumer before S2. The PNVI pointer arm is its first.
   - `.1` and its text are unchanged (the consumer's `splitBytesProv_ptrImage` states `.1`).
-- **D6 — `mkIval` is used in the reconstruction only.** `intfromptr`'s sites (`:2486/:2488/:2505`)
+- **D6 [AGENT] — `mkIval` is used in the reconstruction only.** `intfromptr`'s sites (`:2486/:2488/:2505`)
   get it in S3 together with their PNVI arm, which is still the loud kill.
-- **D7 — `resolveIota` takes `[LemFuel]`** (the ND `nd_bind` is fuel'd in this port). Its
+- **D7 [AGENT] — `resolveIota` takes `[LemFuel]`** (the ND `nd_bind` is fuel'd in this port). Its
   precondition is a `memM IotaPrecond`: upstream's preconditions can themselves `fail` (e.g.
   `get_allocation`).
-- **D8 — `lookupIota`'s refusal is a `failwithI` inside `ND fun st => …`.** This is shape (a) in a
+- **D8 [AGENT] — `lookupIota`'s refusal is a `failwithI` inside `ND fun st => …`.** This is shape (a) in a
   monadic context. Its register row comes with its first caller (S3).
-- **D9 — evaluation order in the integer/byte arms.**
+- **D9 [AGENT] — evaluation order in the integer/byte arms.**
   - OCaml evaluates `pvi_split_bytes` (R-PNVI-01's crash) before `provs_of_bytes` (R-PNVI-01b).
   - The Lean compiler may evaluate the pair's components in either order.
   - Both are refusals of the same family on the same bytes, so only the message could differ.
     This is not reachable before S3.
-- **D10 — the struct arm's fold reads its accumulator by projection** (`acc.1`, `acc.2.1`,
+- **D10 [AGENT] — the struct arm's fold reads its accumulator by projection** (`acc.1`, `acc.2.1`,
   `acc.2.2`) instead of destructuring. It is the same computation, chosen for the proofs.
-- **D11 — `reconstructValue_stable_aux` is replaced by `reconstructValueAbst_stable_aux`.**
+- **D11 [AGENT] — `reconstructValue_stable_aux` is replaced by `reconstructValueAbst_stable_aux`.**
   - The old lemma's proof unfolded the old recursive worker.
   - Consumer uses: 0.
-- **D12 — the C1 reference form is retired into the test module** (design recommendation).
+- **D12 [AGENT] — the C1 reference form is retired into the test module** (design recommendation).
   The axiom gate's mem-scale leg now imports `Unit.ReconstructLegacyTest`. The precedent is
   the FUEL leg's `Unit.FuelExemplar`; `test_unit.sh` builds the module before the gate.
-- **D13 — `lean_frontend/CLAUDE.md` and `VALIDATION.md` were updated** for the new unit test, the
+- **D13 [AGENT] — `lean_frontend/CLAUDE.md` and `VALIDATION.md` were updated** for the new unit test, the
   W2 row, the fuel census (63/13/5) and the register tally.
 
 ## 8. Consumer-visible changes for S5 (cerberus-sl)
@@ -508,3 +511,89 @@ A13  PASS memory access: 3 runs; primitive receipts, all ND constructors, erasur
 - `mkIval` at `intfromptr`.
 - The S4 lane, and the S5 scratch build of cerberus-sl.
 - The orchestrator's reviews and the full ladder (Tier B) at the arc's end.
+
+## 10. Review fixes (2026-10-07, after the orchestrator's S2 review; S3 worker)
+
+The S2 review found nothing blocking. Its six items, with dispositions (all [AGENT] unless quoted):
+
+- **F1 (consumer proofs equate the reconstruction to `reconstructValue`).** PRODUCTION lemmas in a
+  new theorem-only seam `lean_frontend/CerbMemDefaultFacts.lean` (a Lake root and a hand-written-copy
+  manifest entry; a consumer imports it beside `CerbMem`), kernel-checked when it builds (cones are the
+  standard three in the scratch probe that preceded them). They are not in `CerbMem.lean` because their
+  STATEMENTS name the default-pinned wrappers, which speedbump W2 keeps out of production text: the
+  first row-1 run with the lemmas in `CerbMem.lean` went RED on W2 (`check_no_fuel_numerals: FAIL (W2):
+  forbidden shape found:` — the theorem statements), so W2 now excludes this one file by name, as it
+  excludes the `*_lemMeasureProofs` carriers [AGENT]. `findOverlapping_congr` names no wrapper and
+  stays in `CerbMem.lean`.
+  - `reconstructValue_lemFuel_unfold` (the wrapper equation design §B.7 promised; `rfl`);
+  - `reconstructValueAbst_lemFuel_default_closure fo fo'` — at `⟨CerbGlobal.defaultSwitches⟩` the WHOLE
+    result (taint and value) is the same for any two closures (the test module's induction template);
+  - `reconstructValueAbst_lemFuel_default_snd fo`, `reconstructValueAbst_default_snd fo` — value
+    component = `reconstructValue_lemFuel` / `reconstructValue`, for every closure;
+  - `reconstructValueAbst_snd_of_default (h : inst.switches = CerbGlobal.defaultSwitches)` — the same at
+    ANY instance whose list is the default (a consumer's own instance, `h := rfl`);
+  - `loadM_reconstruct_eq_reconstructValue h st …` — the `loadM`-facing form: the exact subterm
+    `doLoad` builds, `(reconstructValueAbst … (findOverlapping st) st.lastUsedUnionMembers
+    st.funptrmap …).2`, rewritten to `reconstructValue …`;
+  - `findOverlapping_congr` — `findOverlapping` reads only `allocations` and `deadAllocations`, so
+    `findOverlapping_congr rfl rfl : findOverlapping { s with lastUsed := u } = findOverlapping s`.
+  The test pin (`reconstructValueAbst_default_snd_eq_legacy`, `loadM_reconstruct_default`) stays in
+  the test module.
+  **Measurement for S5** (read-only at cerberus-sl `7a2f9a2`; their tree was not built). Their four
+  `{σ with lastUsed := u}`-style proofs were COPIED into a scratch probe in this worktree's `.tmp/`
+  (consumer-style local instance at `defaultSwitches`, their `ndRun` restated) and elaborated against
+  this tree (S2 + these lemmas). The probe was deleted afterwards. Results (MEASURED):
+  - `UnseqReads.lean:167` `loadM_result_lastUsed`: FAILS with unsolved goals, NOT a whnf timeout (the
+    whole probe elaborated in about 11 s). Cause: the two sides now carry
+    `findOverlapping { σ with lastUsed := u }` and `findOverlapping σ`, so `split` cases the two
+    reconstructions separately. Adding `simp only [findOverlapping_congr (s := { σ with lastUsed := u })
+    (t := σ) rfl rfl]` after their `simp only`, plus the S1 fact `CerbGlobal.has_switch .strict_reads =
+    false := rfl` (their instance is a named constant that `simp_all` does not unfold — an S1 effect),
+    makes the copied proof elaborate. With the switch fact alone it still fails — so the closure is the
+    S2 cause.
+  - `UnseqReads.lean:154` `loadM_lastUsed_only` and `MemLoc.lean:27` `loadM_loc_indep`: FAIL, but for
+    a reason that predates S2 and is not PNVI: SC WP0's `recordAccess` (landed after their pin
+    `2b51d2a57`) puts `loc` and the receipt buffer into the result state.
+  - `ExecInv.lean:355` `loadM_fp_read`: elaborates unchanged.
+  - Prediction for S5: the whnf blow-up that `load_erasure` hit does NOT reproduce in these shapes;
+    the S2-specific edit is one `findOverlapping_congr` rewrite in `loadM_result_lastUsed`. S3 changes
+    `loadM` again (exposure); the S3 record re-measures.
+- **F2.** §3 and §6 item 3 now say that `loadM_reconstruct_default` is about the reconstruction
+  subterm of `doLoad`, not about `loadM`. (F1's `loadM_reconstruct_eq_reconstructValue` is likewise a
+  subterm statement, named for where the subterm occurs.)
+- **F3.** Implemented by S3 (load's `expose_allocations`, `docs/2026-10-07_pnvi-s3-arms-record.md`).
+- **F4.** `scripts/fuel_hypotheses.txt`: the header's invariant paragraph covers rows 1-7, and a
+  header note records that rows 6 (proof restated by S2) and 7 (new in S2) await the auditor's
+  signature at the arc-end pre-merge audit. The worker did not sign.
+- **F5.** Cites: `resolveIota`'s `fail` is `impl_mem.ml:575` (doc comment and §1 table); VALIDATION.md's
+  `check_failure_reach` row says 235 exec-closure sites (was 231); `loadM`'s reconstruction comment
+  cites `:1600` only; the two re-keyed register rows no longer carry the stale `CerbMem.lean:2428-2434` /
+  `CerbMem:1045:18` positions (they name the owner and the local `doLoad` instead). Only the `need`
+  column changed, which the seal does not cover; `check_failure_reach.py --reseal` was run and moved
+  no seal (diff: those two rows only).
+- **F6.** D6–D13 are tagged [AGENT] (§7). `pnviRefusal`'s runtime text no longer puts a
+  `[USER 2026-10-05]` tag on a paraphrase; it cites "design record … §G/§H".
+
+**Gate for these fixes** (row 1, `scripts/test_unit.sh` via `scripts/ce`, on the working tree that
+became the review-fix commit; Lean rebuilt capped first, `Build completed successfully (398 jobs).`).
+Verbatim selected lines (the `rc=0` line is the wrapper's):
+
+```
+check_handwritten_sync: OK (50 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+ReconstructLegacyTest: 18/18 runtime positive controls passed
+Total: 17 passed, 0 failed
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+check_sorry_token: OK (328 files scanned comment-stripped — generated 222, hand-written+test 71, LemLib 35; 0 sorry tokens)
+check_no_fuel_numerals: SELFTEST OK (31 plants red with the declared label — F1-F6, A1-A3, W1 and W2; E5 indirection a recorded known gap; unplanted set green)
+check_lakefile_roots: OK (221 roots = 221 generated modules + the exe root Main; 86 auxiliary modules listed as roots — names only; every carrier is built by check_fuel_forms.sh)
+check_failure_reach: OK (237 pure failure sites = the 237 register rows exactly (235 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, shared keys lengthened, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=176 REACHABLE=40 UNKNOWN=21; every row sealed; tally line consistent)
+check_lem_sync: OK (src 37a9392cf043669821430a08b4c43e58d7ff407a34de470fdffaee929b02e47c, gen c1bb429a5ccb2b91903f5d02b30141aa2c711c50c2d4d7543b42226e119580f3)
+check_fork_drift: OK — layer 1: 88 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 30 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 2d3a492758cb23dc4e417f2961983d25b36ce130 matches lem -v lean-backend-v0.1.0-alpha.1-65-g2d3a492 (hex prefix))
+check_cli_refusals: OK (23 refusals pinned: --concurrency, --iso, 20 --switches= values (every oracle switch-name class, an unknown name, an override, a mixed set, the empty value) and the --switches space form; 4 repeated options refused: --runtime, --args, --switches twice (=/= and space/=); control not refused)
+rc=0
+```
+
+The `check_no_fuel_numerals: OK (335 files …` line ends `W2 wrapper lines seen: 6 of 6`. These fixes
+change no executable definition: `CerbMem.lean` gains one theorem (`findOverlapping_congr`), comments
+and the `pnviRefusal` message text (reached only at a refusal); no lane can move, so Tier A was not run
+for this commit [AGENT; two-tier gating — the S3 commit runs Tier A].

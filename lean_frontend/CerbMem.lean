@@ -778,7 +778,7 @@ def splitBytesProv (bytes : List AbsByte) : Provenance × Bool :=
     self-declared-wrong arm on the PNVI path is refused here, never
     mirrored. Every site is unreachable at the default switch set. -/
 def pnviRefusal (detail : String) : String :=
-  s!"PNVI_ae_udi refusal (unsupported upstream arm): {detail} — refused, not mirrored ([USER 2026-10-05]: upstream crashes and self-declared-wrong arms on the PNVI path are loud refusals; design record docs/2026-10-04_pnvi-ae-udi-design.md §G.1)"
+  s!"PNVI_ae_udi refusal (unsupported upstream arm): {detail} — refused, not mirrored (upstream crashes, debug-print arms and self-declared-wrong arms on the PNVI path are loud refusals: design record docs/2026-10-04_pnvi-ae-udi-design.md §G/§H)"
 
 /-- AbsByte.provs_of_bytes — impl_mem.ml:462-479 (PNVI-ae-udi): the
     allocation ids of the bytes' `Prov_some` provenances, in OCaml's order
@@ -888,6 +888,17 @@ theorem allocations_foldl_ascending {δ : Type} (st : MemState) (f : δ → Int 
     st.allocations.foldl f init = st.allocations.toList.foldl (fun a b => f a b.1 b.2) init ∧
       st.allocations.toList.Pairwise (fun (a b : Int × Allocation) => compare a.1 b.1 = Ordering.lt) :=
   ⟨Std.TreeMap.foldl_eq_foldl_toList, Std.TreeMap.ordered_keys_toList⟩
+
+/-- `findOverlapping` reads only the allocations and the dead list (PNVI arc S2 review
+    fix F1): any record update of the other fields leaves the closure unchanged —
+    `findOverlapping_congr rfl rfl : findOverlapping { s with lastUsed := u } =
+    findOverlapping s` — so a proof that compares a memory operation on `s` and on an
+    updated `s` can rewrite the closure instead of reducing it. -/
+theorem findOverlapping_congr [CerbGlobal.Switches] {s t : MemState}
+    (h1 : s.allocations = t.allocations) (h2 : s.deadAllocations = t.deadAllocations) :
+    findOverlapping s = findOverlapping t := by
+  unfold findOverlapping
+  rw [h1, h2]
 
 /-- An unspecified padding byte — OCaml's `padding_byte` / `AbsByte.v
     Prov_none None` (impl_mem.ml:1202; zero-discrepancy Z-23 re-cite). -/
@@ -2294,7 +2305,8 @@ inductive IotaPrecond where
     id` must hold (else its failure); `Double (id1, id2)` → `precond id1`, else
     `precond id2`, else the SECOND failure (the error the oracle reports); then
     the iota is collapsed to `Single` of the chosen id. A `FAIL (loc, err)` is
-    `fail ~loc err` (`memFail`, impl_mem.ml:540-546). -/
+    `fail ~loc err` (`memFail`; `fail` is impl_mem.ml:575 in this tree — the
+    `:540-546` on `failReason`/`memFail` is the file's older numbering). -/
 def resolveIota [LemFuel] (precond : StorageInstanceId → memM IotaPrecond)
     (iota : SymbolicStorageInstanceId) : memM StorageInstanceId :=
   nd_bind
@@ -2678,9 +2690,10 @@ def loadM [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : TagDe
       let bytes := readBytesFrom st addr size
       let fp : Footprint := .FP .R addr size
       -- abst at the load address with last_used_union_members and
-      -- funptrmap — impl_mem.ml:1560
+      -- funptrmap — impl_mem.ml:1600 in THIS tree (the `:NNNN` cites of this
+      -- function's other comments are the older numbering, see the header)
       -- (PNVI arc S2: the full `abst` — switch set, the `find_overlaping st`
-      -- closure, impl_mem.ml:1600 — whose taint feeds `expose_allocations`
+      -- closure — whose taint feeds `expose_allocations`
       -- under `PNVI AE ∨ AE_UDI` (:1602-1606); that arm is S3 — the taint is
       -- discarded here, as the default arm `return ()` does)
       let mv := (reconstructValueAbst enumDefs tagDefs (findOverlapping st) st.lastUsedUnionMembers st.funptrmap addr ty bytes).2

@@ -20,7 +20,7 @@
 #   <worker>  <hypothesis (exact `hyp=` text)>  <invariant it rests on, with .lem:line cite>  <reviewer>
 # Lines starting with '#' and blank lines are ignored.
 #
-# THE INVARIANT (rows 1-6): the C frontend's tag environment is acyclic in the
+# THE INVARIANT (rows 1-7): the C frontend's tag environment is acyclic in the
 # by-value sense — cabs_to_ail.lem:1512 check_members (STD §6.7.2.1#3) refuses a
 # member of function or INCOMPLETE type; ail/ailTypesAux.lem:222 is_complete
 # makes a by-value Struct/Union member complete only when its tag is ALREADY in
@@ -57,6 +57,12 @@
 # three cite corrections F-A1/F-A2/F-A3 applied below). The operator's explicit
 # merge "yes" is the FINAL signature on this register ([USER] sign-off at
 # merge); a later change to any row re-opens review.
+# PENDING AUDITOR SIGNATURE (PNVI arc, 2026-10-07): row 6
+# (CerbMem.reconstructValue_lemFuel — its sufficiency proof was RESTATED by PNVI
+# arc S2 as the second projection of row 7's, so the 2026-09-05 signature covers
+# the earlier proof) and row 7 (CerbMem.reconstructValueAbst_lemFuel, new in S2)
+# await the auditor's signature at the PNVI arc's pre-merge audit. The worker
+# does not sign as auditor.
 CerbMem.sizeofCtype_lemFuel	CerbTagsWf.Acyclic ambient	by-value acyclic tag environment: cabs_to_ail.lem:1512 check_members + ail/ailTypesAux.lem:222 is_complete (definition order is a rank); except the _Alignas(type)-on-a-character-member class (audit F-A2: ISO §6.5.3.4#1 CV undiagnosed; the oracle hangs there)	[AGENT auditor 2026-09-05, audit e9730d1c8] SIGNED; [USER] sign-off at merge
 CerbMem.alignofCtype_lemFuel	CerbTagsWf.Acyclic ambient	by-value acyclic tag environment: cabs_to_ail.lem:1512 check_members + ail/ailTypesAux.lem:222 is_complete; FAM element: ailWf.lem:76-80 (ArrayDeclarationIncompleteType, StructMemberFlexibleArrayInArray) + genTyping.lem:2346-2349 (StructMemberFlexibleArray) (audit F-A3); except the _Alignas(type)-on-a-character-member class (audit F-A2: ISO §6.5.3.4#1 CV undiagnosed; the oracle hangs there)	[AGENT auditor 2026-09-05, audit e9730d1c8] SIGNED; [USER] sign-off at merge
 CerbMem.memberAlign_lemFuel	CerbTagsWf.Acyclic ambient	by-value acyclic tag environment: cabs_to_ail.lem:1512 check_members + ail/ailTypesAux.lem:222 is_complete; _Alignas(type): completeness-checked by alignof_ty on the non-agnostic path (cabs_to_ail.lem:2851-2871) — NOT on the character-member `Just LT` path (:2882-2883, ailTypesAux.lem:1291-1292; audit F-A2): guaranteed by ISO §6.5.3.4#1 on conforming inputs	[AGENT auditor 2026-09-05, audit e9730d1c8] SIGNED; [USER] sign-off at merge

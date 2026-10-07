@@ -87,7 +87,10 @@
 #                                            (lean_frontend/*.lean) and the generated tree
 #                                            (lean_frontend/generated/*.lean), comments AND
 #                                            string literals stripped, the `*_lemMeasureProofs`
-#                                            proof carriers excluded — other than the wrappers'
+#                                            proof carriers and the theorem-only seam
+#                                            `CerbMemDefaultFacts.lean` (kernel bridges whose
+#                                            STATEMENTS name the wrappers; PNVI arc S2 review
+#                                            fix F1) excluded — other than the wrappers'
 #                                            own two definition lines and the fuel-free
 #                                            wrapper's body line in CerbMem.lean (allowlisted by
 #                                            exact content, both copies). Production must call
@@ -209,7 +212,7 @@ run_gate() {  # <repo root>; prints verdict lines; returns 0/1
   # W2: the default-pinned reconstruct wrappers named in production text (PNVI arc S2; a
   # plain-text speedbump, see the header's W2 SCOPE). Rows of the seams and the generated
   # tree only, proof carriers excluded, string literals blanked.
-  local w2rows; w2rows=$(echo "$rows" | grep -E '^[^:]*/lean_frontend/(generated/)?[^/:]+\.lean:' | grep -Ev '_lemMeasureProofs\.lean:' | perl -pe 's/"(?:[^"\\]|\\.)*"/""/g')
+  local w2rows; w2rows=$(echo "$rows" | grep -E '^[^:]*/lean_frontend/(generated/)?[^/:]+\.lean:' | grep -Ev '(_lemMeasureProofs|/CerbMemDefaultFacts)\.lean:' | perl -pe 's/"(?:[^"\\]|\\.)*"/""/g')
   local w2allowed_re=''
   for a in "${ALLOW_W2[@]}"; do
     local esc2; esc2=$(printf '%s' "$a" | sed -e 's/[][\.*^$/|(){}+?]/\\&/g')
