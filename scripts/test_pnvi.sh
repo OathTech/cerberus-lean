@@ -211,7 +211,8 @@ fi
 [[ -d "$RT" ]] || die "runtime not staged: $RT"
 mkdir -p "$OBSERVATION_RUN_DIR" || die "cannot create the run directory"
 RUN=$(mktemp -d "$OBSERVATION_RUN_DIR/pnvi.XXXXXXXX") || die "mktemp failed"
-# The derived GPL-2.0-only TU (pkvm/, below) and the bridged Cabs JSON of it must never
+# The derived GPL-2.0-only TU (pkvm/, below) and the bridged Cabs JSON of it (the .json AND
+# common.sh's byte-identical <prefix>.bridgeN.stdout capture) must never
 # survive the run: removed on EVERY exit (common.sh register_cleanup, RED runs included —
 # their observation dir is otherwise kept as evidence) and before any --keep-run copy.
 register_cleanup "$RUN/pkvm-derived"
@@ -290,6 +291,7 @@ if [[ $pkvm_selected == 1 ]]; then
         for t in "$@"; do
             i=$((i+1))
             register_cleanup "$p.$i.json"
+            register_cleanup "$p.bridge$i.stdout"   # common.sh capture_cabs_json keeps the JSON bytes here too (delta review 2026-10-07)
             bridge "$p.bridge$i" "$p.$i.json" "${PFL[@]}" "$t" || { ok=0; break; }
             jsons+=("$p.$i.json")
         done
@@ -335,8 +337,11 @@ else
     python3 "$HERE/pnvi_lane.py" --manifest "$MANIFEST" --baseline "$BASELINE" ${ROWS_RE:+--select "$ROWS_RE"} || rc=1
 fi
 rm -rf "$RUN/pkvm-derived" || die "cannot remove the derived GPL TU $RUN/pkvm-derived"
-rm -f "$RUN"/pkvm__*.json || die "cannot remove the bridged pKVM JSON"
+rm -f "$RUN"/pkvm__*.json "$RUN"/pkvm__*.bridge*.stdout || die "cannot remove the bridged pKVM JSON (and its bridge stdout copy)"
 [[ ! -e "$RUN/pkvm-derived" ]] || die "the derived GPL TU survived: $RUN/pkvm-derived"
+if compgen -G "$RUN/pkvm__*.json" > /dev/null || compgen -G "$RUN/pkvm__*.bridge*.stdout" > /dev/null; then
+    die "a bridged pKVM Cabs JSON (or its bridge stdout copy) survived in $RUN"
+fi
 if [[ -n "$KEEP" ]]; then
     mkdir -p "$KEEP" && cp -r "$RUN"/. "$KEEP"/ || die "cannot keep the run in $KEEP"
     sed -i "s#$RUN/#$KEEP/#g" "$KEEP/manifest.tsv" || die "cannot re-point the kept manifest"

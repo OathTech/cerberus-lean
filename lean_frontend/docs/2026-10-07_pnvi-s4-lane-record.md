@@ -20,13 +20,13 @@ semantic arm changed (S3 wrote them), only the CLI and the evidence.
 
 ## 0. Rulings in force (verbatim) and governing documents
 
-- [USER 2026-10-03]: "we should fall back to loudly rejecting (either as unsupported, or matching upstream)".
+- [USER 2026-10-03]: "… we should fall back to loudly rejecting (either as unsupported, or matching upstream)".
 - [USER 2026-09-30]: "… we should not fix deviations with special 'magic mode' paths that work exclusively in
   one situation. …" (trimmed at both ends, marked `…`; the committed records — design record §1.1, CONTRACT
   §5 D8 — carry this span).
 - [USER 2026-10-05]: "Re PNVI - agree on your recs except for mirroring crashes / obviously wrong behavior.
   These should be refusals surely?"
-- [USER 2026-10-07]: "we don't want our gates to be adversarially robust unless they are trust surfaces".
+- [USER 2026-10-07]: "This sounds like a classic case of 'gate cruft' - we don't want our gates to be adversarially robust unless they are trust surfaces".
 - Design record `docs/2026-10-04_pnvi-ae-udi-design.md` §C, §D, §E S4, §F.4/§F.5/§F.6/§F.8/§F.12/§F.13, §G,
   §H, §H.1. S3 record `docs/2026-10-07_pnvi-s3-arms-record.md`. S1 record §14 (gate classes).
 
@@ -519,7 +519,7 @@ Nothing in default mode moved. No STOP.
   projection LADDER row 6b uses), so two Errors of different failure text are DIFF — narrower than §1(a)'s "only
   the text differs", the fail-closed reading; (2) CRASH/CRASH — both engines die with an internal failure and the
   oracle's crash is NOT one an R-PNVI id names. A crash on one side and a verdict (an `Error` included, a Lean
-  `ModelFailure` included) on the other is DIFF. The REFUSAL-CRASH rule: an oracle crash whose payload fully
+  `ModelFailure` included) on the other is DIFF — for the `ModelFailure` case this is a further [AGENT] narrowing: VALIDATION §1(a) (lines ~209-215) counts a Lean `ModelFailure` against an oracle uncaught exception as a both-fail pair; the lane does not (fail-closed). The REFUSAL-CRASH rule: an oracle crash whose payload fully
   matches an R-PNVI `ORACLE_SIDE` crash pattern (anchored, `fullmatch`) REQUIRES Lean `REFUSAL <that id>` —
   anything else is DIFF. BOTH_FAIL and RESOURCE rows pin a `lean=` hash of the Lean side (required there,
   forbidden elsewhere), so a Lean-side change that keeps the class is RED. The only members are the two
@@ -640,3 +640,17 @@ Source unchanged: True. Complete tier selection: True.
 Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
 rc=0
 ```
+
+## 13. Delta review of the fix round (2026-10-07) — orchestrator fixes [AGENT]
+
+Fresh read-only review of `a91d251ec..01e2ee40b`: F1 classifier fix holds (both original holes now DIFF; no new
+absorbing path). Findings fixed by the orchestrator in the follow-up commit:
+- **F6 not closed (medium):** `common.sh capture_cabs_json` keeps a byte-identical copy of each bridged Cabs JSON
+  as `<prefix>.bridgeN.stdout`, which survived in kept evidence dirs (16 copies after one selftest, incl. the Cabs
+  JSON of the derived `page_alloc_census.c`). Now registered for cleanup per bridge and removed at the end, with a
+  post-check that no `pkvm__*.json` / `pkvm__*.bridge*.stdout` survives (loud die). The §12 F6 statement above
+  ("the bridged JSONs are removed") was incomplete until this fix.
+- **D-S4-4 / docstring cited §1(a) for the `ModelFailure` rule**, which §1(a) actually contradicts: relabelled as an
+  [AGENT] fail-closed narrowing.
+- **Two [USER] quotes in §0 trimmed without an ellipsis:** fixed (ellipsis / full opening restored).
+- INFO (fail-closed, unchanged): a bare upstream `Not_found` from any site demands R-PNVI-04 (documented).
