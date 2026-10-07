@@ -13,13 +13,13 @@ differs between the two (§8).
 
 ## 0. Rulings in force (verbatim) and governing documents
 
-- [USER 2026-10-03], no innovation: "we should fall back to loudly rejecting (either as
+- [USER 2026-10-03], no innovation: "… we should fall back to loudly rejecting (either as
   unsupported, or matching upstream)".
-- [USER 2026-09-30], no magic modes: "we should not fix deviations with special 'magic
-  mode' paths that work exclusively in one situation".
-- [USER 2026-10-05]: "agree on your recs except for mirroring crashes / obviously wrong
+- [USER 2026-09-30], no magic modes: "… we should not fix deviations with special 'magic
+  mode' paths that work exclusively in one situation …".
+- [USER 2026-10-05]: "Re PNVI - agree on your recs except for mirroring crashes / obviously wrong
   behavior. These should be refusals surely?"
-- [USER 2026-10-07], on gates: "we don't want our gates to be adversarially robust unless
+- [USER 2026-10-07], on gates: "… we don't want our gates to be adversarially robust unless
   they are trust surfaces".
 - Design record `docs/2026-10-04_pnvi-ae-udi-design.md` §0, §A (§A.3), §B.0, §B.7, §E row
   S2, §G, §H (whose verbatim [USER 2026-10-05] answer accepts the §F.15 refusal of
@@ -33,6 +33,8 @@ The slice is an internals refactor with ZERO default-mode behaviour change (§6)
 
 All in `lean_frontend/CerbMem.lean` unless stated; OCaml = `memory/concrete/impl_mem.ml`
 of this tree. Line numbers are this commit's.
+
+**Superseded by S3 D-S3-1** (`docs/2026-10-07_pnvi-s3-arms-record.md` §9): the monadic iota-helper signatures below (`exposeAllocation(s)`, `addIota`, `lookupIota`, `resolveIota`) are now state functions; this table stays the S2 record (pointer added by arc-end audit F5).
 
 | Definition | Lean | OCaml | Note |
 |---|---|---|---|
@@ -220,7 +222,7 @@ module (production carries one implementation)").
 - **No false positives on the real tree.** The real tree passes, although it contains
   `reconstructValueAbst…` names and the failure strings `"CerbMem.reconstructValue: …"`.
 
-**Class: SPEEDBUMP, not a trust surface** [AGENT, under [USER 2026-10-07] "we don't want our
+**Class: SPEEDBUMP, not a trust surface** [AGENT, under [USER 2026-10-07] "… we don't want our
 gates to be adversarially robust unless they are trust surfaces"].
 - **Reason.** At the default set the two functions agree: kernel theorem
   `reconstructValueAbst_default_snd_eq_legacy`. So a stray call moves no lane today. It matters

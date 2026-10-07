@@ -1,5 +1,8 @@
 import CerbMem
 import CerbGlobal
+-- PNVI arc-end audit F3: compiles the theorem-only seam in row 1 (nothing else in the
+-- row-1 build imports it); its theorems' cones are pinned by check_theorem_axioms.sh.
+import CerbMemDefaultFacts
 
 /-! # ReconstructLegacyTest — the default-mode `reconstructValue` wrappers equal the pre-S2 text
 

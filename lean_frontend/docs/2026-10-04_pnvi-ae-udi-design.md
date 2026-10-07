@@ -97,13 +97,13 @@ signatures must not break without its agreement.
 - **[USER 2026-10-03], no innovation:** "Generally, our rule is that we don't innovate wrt Cerberus-upstream, unless
   something is very very very obviously a bug. We're poorly placed to resolve semantic discrepancies, so we don't. ...
   we should fall back to loudly rejecting (either as unsupported, or matching upstream)." Also: "We do not resolve
-  Cerberus TODO cases unless the answer is extremely obvious or if there's a similarly obvious bug". Applied: every arm
+  Cerberus TODO cases unless the answer is extremely obvious or if there's a similarly obvious bug …". Applied: every arm
   below mirrors `memory/concrete/impl_mem.ml` with a file:line cite; every upstream `TODO`-as-`failwith`, `failwith`,
   `assert false` or debug arm on the PNVI-ae-udi path stays a loud stop that mirrors upstream (§A.5). A `TODO`/`FIXME`
   *comment* attached to a *defined* arm is mirrored as the defined arm (making it a stop would be a divergence from
   upstream, which continues) and cited in-code (§A.5, §F.7).
-- **[USER 2026-09-30], no magic modes:** "we should not fix deviations with special 'magic mode' paths that work
-  exclusively in one situation". Applied: there is ONE switch-set parameter read by every site; no PNVI-only code path
+- **[USER 2026-09-30], no magic modes:** "… we should not fix deviations with special 'magic mode' paths that work
+  exclusively in one situation …". Applied: there is ONE switch-set parameter read by every site; no PNVI-only code path
   that bypasses the general one; the default is the general path instantiated at `[]`.
 - **[USER 2026-10-04], the design target** (relayed by the coordinator; supersedes the consumer's Q2 answer):
   "speaking as the user for both cerberus-lean and cerberus-sl, we will probably eventually want to reason under

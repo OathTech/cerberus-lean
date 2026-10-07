@@ -790,6 +790,11 @@ echo "check_theorem_axioms: C2 entry census OK (${#ENTRIES[@]} entries, every co
 # same module carries the S2 wrapper equalities (`…_eq_legacy`), pinned here
 # too. The module is built by test_unit.sh before this gate runs (as
 # Unit.FuelExemplar for the FUEL leg below).
+# PNVI arc-end audit F3 (2026-10-07): the six consumer-facing kernel bridges of the
+# theorem-only seam CerbMemDefaultFacts.lean (a Lake root nothing in the production
+# tree imports) are pinned here too. `lake env lean` below does NOT build; the seam
+# is compiled in row 1 because Unit.ReconstructLegacyTest imports it (so
+# `lake build reconstruct-legacy-test` in test_unit.sh rebuilds it when stale).
 # ---------------------------------------------------------------------------
 PROBE4=lean_frontend/.axiom-probe-memscale.lean
 MEMSCALE_THMS=(CerbMem.chunksOf_eq_range_map
@@ -802,9 +807,16 @@ MEMSCALE_THMS=(CerbMem.chunksOf_eq_range_map
                ReconstructLegacyTest.loadM_reconstruct_default
                CerbMem.foldl_append_eq_flatten_reverse
                CerbMem.memValueToBytes_lemFuel_eq_append
-               CerbMem.memValueToBytes_eq_append)
+               CerbMem.memValueToBytes_eq_append
+               CerbMem.reconstructValue_lemFuel_unfold
+               CerbMem.reconstructValueAbst_lemFuel_default_closure
+               CerbMem.reconstructValueAbst_lemFuel_default_snd
+               CerbMem.reconstructValueAbst_default_snd
+               CerbMem.reconstructValueAbst_snd_of_default
+               CerbMem.loadM_reconstruct_eq_reconstructValue)
 {
   echo "import CerbMem"
+  echo "import CerbMemDefaultFacts"
   echo "import Unit.ReconstructLegacyTest"
   for name in "${MEMSCALE_THMS[@]}"; do
     echo "#print axioms $name"
@@ -839,7 +851,7 @@ if [[ -n "$MEMSCALE_BAD" ]]; then
   echo "$MEMSCALE_BAD"
   exit 1
 fi
-echo "check_theorem_axioms: mem-scale S1 leg OK (${#MEMSCALE_THMS[@]} C1/C3 + PNVI-S2 wrapper equality theorems, every cone ⊆ [propext, Classical.choice, Quot.sound])"
+echo "check_theorem_axioms: mem-scale S1 leg OK (${#MEMSCALE_THMS[@]} C1/C3 + PNVI-S2 wrapper equality + CerbMemDefaultFacts bridge theorems, every cone ⊆ [propext, Classical.choice, Quot.sound])"
 
 # ---------------------------------------------------------------------------
 # FUEL arc leg (2026-09-03; design docs/2026-09-02_fuel-arc-design.md §1.2,

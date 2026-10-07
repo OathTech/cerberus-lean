@@ -173,6 +173,9 @@ externally supplied CN/libxml2 corpora. Inspect selections before a run:
 python3 scripts/release.py --list
 # ALL Tier A rows and their prerequisites, beyond the small set above:
 opam exec --switch=. -- ./scripts/ci_lean.sh --mode fast
+# (Tier A row 14, the PNVI lane, needs the GPL-licensed pKVM case study at
+# deps/CN-pKVM-buddy-allocator-case-study or $PKVM_CASE_STUDY, fetched separately;
+# without it the row fails closed, so a fresh clone cannot pass full Tier A.)
 # Tier A + Tier B, after provisioning every dependency in LADDER.md:
 opam exec --switch=. -- ./scripts/ci_lean.sh --mode full
 ```

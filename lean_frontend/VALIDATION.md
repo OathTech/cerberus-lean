@@ -374,8 +374,8 @@ Nothing else.
   (design §C.5) — an override in one list (**R-PNVI-11**: the oracle prints "would override
   a previous switch --> ignoring." and runs on) and an unknown name (**R-PNVI-12**: "failed
   to parse switch … --> ignoring."); witnesses `scripts/check_cli_refusals.sh` (row 1).
-  **Refusals inside the PNVI-ae-udi semantics** — class (c), [USER 2026-10-05] "agree on your
-  recs except for mirroring crashes / obviously wrong behavior. These should be refusals
+  **Refusals inside the PNVI-ae-udi semantics** — class (c), [USER 2026-10-05] "Re PNVI - agree on
+  your recs except for mirroring crashes / obviously wrong behavior. These should be refusals
   surely?": the upstream arms on the PNVI path that crash, print debug output or call
   themselves wrong are `CerbMem.pnviRefusal` refusals (exit 134 under `LEAN_ABORT_ON_PANIC`,
   message `PNVI_ae_udi refusal (unsupported upstream arm): R-PNVI-nn: …`, design §G, §H):

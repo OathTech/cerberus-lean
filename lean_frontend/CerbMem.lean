@@ -348,7 +348,7 @@ def mkCtype (ty_ : ctype_) : ctype := Ctype ([] : List annot) ty_
     for §F.16: "(a) is fine" — the `CerbFS` `failwithI`-with-a-fixed-prefix
     shape, `CerbFS.lean` `fsRefusal`). `detail` names the `R-PNVI-nn` row,
     the site, the impl_mem.ml line and upstream's text. [USER 2026-10-05]:
-    "agree on your recs except for mirroring crashes / obviously wrong
+    "Re PNVI - agree on your recs except for mirroring crashes / obviously wrong
     behavior. These should be refusals surely?" — an upstream crash or
     self-declared-wrong arm on the PNVI path is refused here, never
     mirrored. Every site is unreachable at the default switch set. -/

@@ -13,11 +13,11 @@ refusal: `--switches=PNVI_ae_udi` is still refused, so no lane can reach a new a
 
 ## 0. Rulings in force (verbatim) and governing documents
 
-- [USER 2026-10-03]: "we should fall back to loudly rejecting (either as unsupported, or matching
+- [USER 2026-10-03]: "… we should fall back to loudly rejecting (either as unsupported, or matching
   upstream)".
-- [USER 2026-09-30]: "we should not fix deviations with special 'magic mode' paths that work
-  exclusively in one situation".
-- [USER 2026-10-05]: "agree on your recs except for mirroring crashes / obviously wrong behavior.
+- [USER 2026-09-30]: "… we should not fix deviations with special 'magic mode' paths that work
+  exclusively in one situation …".
+- [USER 2026-10-05]: "Re PNVI - agree on your recs except for mirroring crashes / obviously wrong behavior.
   These should be refusals surely?"
 - [USER 2026-10-05], on §F.14–§F.16 (design record §H): "1 - agree. 2 - I think in the end we
   should make this consistent, but it's fairly minor. 3 - if we do (b) it should be a global
@@ -25,7 +25,7 @@ refusal: `--switches=PNVI_ae_udi` is still refused, so no lane can reach a new a
   crash. And for now (a) is fine". As recorded in §H: MIRROR the (D) sites `:2191`, `:2293`,
   `:2308`/`:2379`, `:2399`; REFUSE `:840-842`; default-path look-alikes UNCHANGED in this arc; the
   refusal shape is the `CerbFS` `failwithI`-with-prefix shape.
-- [USER 2026-10-07]: "we don't want our gates to be adversarially robust unless they are trust
+- [USER 2026-10-07]: "… we don't want our gates to be adversarially robust unless they are trust
   surfaces".
 - Design record `docs/2026-10-04_pnvi-ae-udi-design.md` §A.3, §C, §D, §E S3, §G (authoritative for
   every flagged site), §H. S2 record `docs/2026-10-07_pnvi-s2-data-shapes-record.md`. S1 record §14.
