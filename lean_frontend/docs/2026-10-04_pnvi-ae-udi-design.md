@@ -1044,3 +1044,14 @@ refusal, but it shouldn't be an uncontrolled crash. And for now (a) is fine"
   asm, …), not a PNVI-local mechanism; per the operator it need not be a "refusal" as such, but it must
   not be an uncontrolled crash. Queued as its own design question, to be agreed with cerberus-sl (whose
   adequacy statements name the run outcomes).
+
+### H.1 Addendum (2026-10-07): R-PNVI-09 reclassified as a default-path look-alike [AGENT]
+
+The S3 worker stopped on §G R13 / R-PNVI-09 (`eff_array_shift_ptrval`'s `PVfunction` arm,
+`impl_mem.ml:2296-2297`, `failwith "Concrete.eff_array_shift_ptrval, PVfunction"`): §G called it
+PNVI-path only, but it is on the DEFAULT path (std.core:188/196/212/217 emit `PtrArrayShift` in default
+mode; reachability from C unmeasured — the one route tried stops earlier on the oracle). It is therefore a
+§F.14 default-path look-alike, and the operator's §H ruling 2 already covers that category verbatim —
+"2 - I think in the end we should make this consistent, but it's fairly minor" — with the agreed
+treatment "unchanged in this arc". Applied by the orchestrator: the arm stays EXACTLY as it is (the
+existing mirror), and it joins the queued default-path consistency review. No new semantics decided.
