@@ -54,6 +54,22 @@ if [[ $rc -ne 2 || "$out" != *"cerberus-lean: refused — --switches PNVI_ae_udi
 fi
 # --iso (switches.ml:144-151 sets five refused switches + PNVI_ae_udi; design §F.12): refused
 expect_refused "--iso" "the ISO switch set"
+# S1 review L5 (deferred to PNVI arc S4 Part 1): a `--switches` value is judged by the switch
+# parser wherever it appears — under `--parse-core`, and before a misplaced mode flag — never
+# the generic "unknown flag" / position text; and a repeated UNKNOWN name is "failed to parse"
+# each time (switches.ml:140-141), never "would override" (only known names enter the list)
+expect_switch_verdict() {  # $1=label $2=required substring $3=forbidden substring; argv after
+    local label="$1" want="$2" forbid="$3" out rc; shift 3
+    out=$(env LEAN_ABORT_ON_PANIC=1 "$BIN" "$@" 2>&1); rc=$?
+    if [[ $rc -ne 2 || "$out" != *"$want"* || ( -n "$forbid" && "$out" == *"$forbid"* ) ]]; then
+        echo "check_cli_refusals: FAIL — $label: expected exit 2 with '$want'${forbid:+ and without '$forbid'}; got rc=$rc: ${out:0:200}"
+        fails=$((fails + 1))
+    fi
+}
+expect_switch_verdict "--parse-core --switches=bogus" "\`bogus\`: unknown switch name" "unknown flag" --parse-core --switches=bogus "$INPUT"
+expect_switch_verdict "--parse-core --switches bogus" "\`bogus\`: unknown switch name" "unknown flag" --parse-core --switches bogus "$INPUT"
+expect_switch_verdict "--switches=bogus before --batch" "\`bogus\`: unknown switch name" "canonical position" --switches=bogus --batch "$INPUT"
+expect_switch_verdict "--switches=bogus,bogus" "\`bogus\`: unknown switch name" "would override" --batch --switches=bogus,bogus "$INPUT"
 # control: no refused flag → not a refusal. The runtime is given explicitly
 # (the driver refuses without one since bug-hunt BUG-2, 2026-09-29), so the
 # control reaches the input read and fails there, unrefused.
@@ -75,4 +91,4 @@ for pair in "--runtime=$RT --runtime=$RT" "--args a --args b" "--switches=PNVI_a
     fi
 done
 [[ $fails -eq 0 ]] || exit 1
-echo "check_cli_refusals: OK (23 refusals pinned: --concurrency, --iso, 20 --switches= values (every oracle switch-name class, an unknown name, an override, a mixed set, the empty value) and the --switches space form; 4 repeated options refused: --runtime, --args, --switches twice (=/= and space/=); control not refused)"
+echo "check_cli_refusals: OK (23 refusals pinned: --concurrency, --iso, 20 --switches= values (every oracle switch-name class, an unknown name, an override, a mixed set, the empty value) and the --switches space form; 4 switch-placement verdicts (--parse-core =/space, before a misplaced --batch, a repeated unknown name not an override); 4 repeated options refused: --runtime, --args, --switches twice (=/= and space/=); control not refused)"

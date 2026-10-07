@@ -1419,7 +1419,7 @@ def switchRefusalReason (name : String) : String :=
   | "permissive_printf" =>
     "permissive printf (switches.ml:86-87) is not validated by any lane"
   | "CHERI" =>
-    "CHERI is the memory model of the separate cerberus-cheri executable (backend/driver/main.ml:133-140); this port has the concrete model only, and CerbGlobal.is_CHERI is a build constant"
+    "CHERI is the memory model of the separate cerberus-cheri executable (backend/driver/main.ml:134-137); this port has the concrete model only, and CerbGlobal.is_CHERI is a build constant"
   | "revoke_dead_pointers" | "cornucopia" | "at_magic_comments" | "magic_comment_char_dollar" | "copy_prop" =>
     "this upstream switch (switches.ml:92-101) has no counterpart in this port's lem model"
   | _ =>
@@ -1435,22 +1435,48 @@ def switchClass (name : String) : String :=
   | "revoke_dead_pointers" | "cornucopia" => "revocation"
   | other => other
 
+/-- The oracle's switch-name domain: the names `read_switch` maps to `Some _`
+    (switches.ml:61-102). Any other name is "failed to parse" there (:140-141) — it never
+    enters the list, so it can never be overridden nor override (PNVI arc S4 Part 1: a
+    repeated UNKNOWN name used to be labelled "override" here; S1 review L5 item 2). -/
+def knownSwitch (name : String) : Bool :=
+  name ∈ ["strict_pointer_arith", "permissive_pointer_arith", "strict_reads",
+    "forbid_nullptr_free", "zap_dead_pointers", "strict_pointer_equality",
+    "strict_pointer_relationals", "PNVI", "PNVI_ae", "PNVI_ae_udi", "inner_arg_temps",
+    "permissive_printf", "zero_initialised", "CHERI", "revoke_dead_pointers", "cornucopia",
+    "at_magic_comments", "magic_comment_char_dollar", "copy_prop"]
+
 /-- REFUSE a `--switches` value (`flag` is the argv text: `--switches=V` or
     `--switches V`): one line per element, each naming the element and its reason, then
     exit 2. Every value is refused in this slice; an empty value too (cmdliner's
-    `opt (list string)`, backend/driver/main.ml:589-591). -/
+    `opt (list string)`, backend/driver/main.ml:589-591). The override class is recorded
+    only for a KNOWN name, as the oracle's `set` does (switches.ml:134-141: an unknown name
+    is "failed to parse" every time, never "would override"). -/
 def refuseSwitches (flag value : String) : IO Unit := do
   let names := value.splitOn ","
   let mut seen : List String := []
   for n in names do
     let reason :=
       if n.isEmpty then "an empty switch name"
-      else if seen.contains (switchClass n) then
+      else if knownSwitch n && seen.contains (switchClass n) then
         s!"{switchRefusalReason n}; ALSO it would override a previous switch of the same class in this list (the oracle prints `switch '…' would override a previous switch --> ignoring.` and drops it, switches.ml:136-139, fail-open; design §G R20, R-PNVI-11)"
       else switchRefusalReason n
     IO.eprintln s!"cerberus-lean: refused — {flag}: semantics switches are not supported by this port yet — `{n}`: {reason} (see VALIDATION.md, zero-discrepancy Z-24)"
-    seen := seen ++ [switchClass n]
+    if knownSwitch n then seen := seen ++ [switchClass n]
   IO.Process.exit 2
+
+/-- `--switches` given to `--parse-core` (S1 review L5 item 1): the value is judged by
+    the switch parser itself (its own per-element refusal), never the generic
+    "unknown flag" text. `tok` is the `--switches…` token, `next?` the following argv word
+    (the value of the space form). -/
+def refuseSwitchesParseCore (tok : String) (next? : Option String) : IO Unit := do
+  if tok.startsWith "--switches=" then
+    refuseSwitches tok (tok.drop "--switches=".length).toString
+  else match next? with
+    | some v => refuseSwitches s!"--switches {v}" v
+    | none =>
+      IO.eprintln "cerberus-lean: --switches requires an argument"
+      IO.Process.exit 1
 
 def main (args : List String) : IO Unit := do
   -- Zero-discrepancy Z2-FL-03 (Z2 audit @ 9e86fe67c; fail-closed hygiene):
@@ -1573,8 +1599,12 @@ def main (args : List String) : IO Unit := do
           IO.eprintln "cerberus-lean: option --switches cannot be repeated (as the oracle's command line)"
           IO.Process.exit 2
         switchesArg := some (a, (a.drop "--switches=".length).toString); pending := rest; continue
-      -- Z-24: a `--` token here is not a file name (except `--stdin`)
-      if a.startsWith "--" && a != "--stdin" then refuseFlag a
+      -- Z-24: a `--` token here is not a file name (except `--stdin`). A `--switches`
+      -- value already scanned is judged FIRST, so `--switches=V --batch …` reports V's
+      -- own verdict before the position refusal (S1 review L5 item 1)
+      if a.startsWith "--" && a != "--stdin" then
+        if let some (flag, value) := switchesArg then refuseSwitches flag value
+        refuseFlag a
       restArgs := restArgs ++ [a]; pending := rest
   -- --switches: every value is REFUSED in this slice (the run's switch set is
   -- `CerbGlobal.defaultSwitches`, supplied below beside the fuel instance)
@@ -1662,8 +1692,14 @@ def main (args : List String) : IO Unit := do
     let files := args.drop 1
     -- audit F2 (Z-24 contract): this branch consumed every token as a file
     -- name; a `--` token here is refused like everywhere else
-    for a in files do
-      if a.startsWith "--" && a != "--stdin" then refuseFlag a
+    let mut rest := files
+    while true do
+      match rest with
+      | [] => break
+      | a :: more =>
+        if a == "--switches" || a.startsWith "--switches=" then refuseSwitchesParseCore a more.head?
+        if a.startsWith "--" && a != "--stdin" then refuseFlag a
+        rest := more
     let mut failures := 0
     for file in files do
       let input ← if file == "--stdin" then do

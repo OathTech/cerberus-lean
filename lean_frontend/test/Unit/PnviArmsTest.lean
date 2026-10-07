@@ -17,7 +17,9 @@ Two kinds of witness, both on small hand-built states:
   `diff_ptrval`'s collapse, load's expose-then-receipt — each with at least one control
   at the DEFAULT instance `⟨CerbGlobal.defaultSwitches⟩` showing the pre-S3 behaviour.
 * **Refusal pins** (compile time; the build is RED if one fails): each refusal reachable
-  by a closed term reduces, by `whnf`, to `failwithI (pnviRefusal d)` whose detail `d`
+  by a closed term reduces, by `whnf`, to `failwithI (pnviRefusal d)` (or, for the two
+  refusals ascribed at the memory monad, R-PNVI-08 and R-PNVI-10, to an `ND` elimination stuck on
+  that leaf) whose detail `d`
   starts with its `R-PNVI-nn:` id — a refusal turned back into a mirror or a bare crash
   fails here (design §D.2 P7). The pure ones are also kernel `rfl` facts of the shape
   `… = failwithI (pnviRefusal _)`. A refusal aborts the process, so none is run.
@@ -142,9 +144,16 @@ def checks (fuel : Nat) : List (String × Bool) := Id.run do
     -- load, Prov_symbolic (:1662-1684): resolve_iota narrows Double 0 1 to the in-bounds 1
     ("load through iota 0 at 108: resolves to 1 (0 is out of bounds), collapses, last_used 1",
       (match rl.1 with | NDactive _ => true | _ => false) && iotaIs rl.2 0 (.Single 1) && rl.2.lastUsed == some 1),
-    ("load through iota 0 at 116: both preconditions fail, the error is the SECOND (OutOfBoundPtr)",
-      match (step (ld swAEUDI intTy (sym 0 116)) stI).1 with
+    -- the two candidates fail with DIFFERENT kinds, so the reported error tells first from
+    -- second (S3 review: one error kind for both could not): 116 is outside both [100, 108)
+    -- and [108, 116); a dead candidate fails with DeadPtr (impl_mem.ml:1669), a live one
+    -- outside its bounds with OutOfBoundPtr (:1673)
+    ("load through iota 0 at 116, 0 dead (DeadPtr), 1 out of bounds (OutOfBoundPtr): the SECOND, OutOfBoundPtr, is reported",
+      match (step (ld swAEUDI intTy (sym 0 116)) { stI with deadAllocations := [0] }).1 with
       | NDkilled r => r == failReason (MerrAccess LoadAccess OutOfBoundPtr) tloc | _ => false),
+    ("load through iota 0 at 116, 0 out of bounds (OutOfBoundPtr), 1 dead (DeadPtr): the SECOND, DeadPtr, is reported",
+      match (step (ld swAEUDI intTy (sym 0 116)) { stI with deadAllocations := [1] }).1 with
+      | NDkilled r => r == failReason (MerrAccess LoadAccess DeadPtr) tloc | _ => false),
     -- kill, Prov_symbolic (:1518-1553)
     ("kill through iota 0 at 108: precondition 0 fails (addr ≠ base), 1 holds → 1 retired",
       (match rk.1 with | NDactive _ => true | _ => false) && rk.2.deadAllocations.contains 1
@@ -243,12 +252,26 @@ partial def leadingLit (e : Expr) : MetaM (Option String) := do
     else if e.isAppOfArity ``ToString.toString 3 then leadingLit (e.getArg! 2)
     else return none
 
-def refusalDetail? (e : Expr) : MetaM (Option String) := do
+/-- `some d` iff `e` reduces (`whnf`) to `failwithI (pnviRefusal d)`. -/
+def refusalLeaf? (e : Expr) : MetaM (Option String) := do
   let e ← whnf e
   unless e.isAppOfArity ``failwithI 3 do return none
   let msg ← instantiateMVars (e.getArg! 2)
   unless msg.isAppOfArity ``CerbMem.pnviRefusal 1 do return none
   leadingLit msg.appArg!
+
+/-- The refusal a term reduces to: either the leaf itself, or — for the refusals ascribed
+    at the memory monad (`CerbMem.pnviRefuseM`, R-PNVI-08 and R-PNVI-10; S4 Part 1) — an elimination
+    (a `match`/`casesOn` on `ND`) that is STUCK on such a leaf: its head is a matcher or a
+    `casesOn` and one of its arguments reduces to the leaf. Anything else is `none`. -/
+def refusalDetail? (e : Expr) : MetaM (Option String) := do
+  let e ← whnf e
+  if let some d ← refusalLeaf? e then return some d
+  let some head := e.getAppFn.constName? | return none
+  unless (← Lean.Meta.isMatcher head) || head.isStr && head.getString! == "casesOn" do return none
+  for a in e.getAppArgs do
+    if let some d ← refusalLeaf? a then return some d
+  return none
 
 /-- Fails the build unless `t` reduces to the refusal `id` (or, with `id = ""`, to a
     NON-refusal — the negative controls). -/

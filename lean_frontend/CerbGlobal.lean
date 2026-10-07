@@ -37,7 +37,7 @@
     `execMode` below for why this port's value is `none`.
   * `Switches.internal_ref = ref []` (switches.ml:47-48), written only by
     `Switches.set` / `set_iso_switches` from `--switches`/`--iso`
-    (main.ml:129-143; the CHERI build variant adds "CHERI" itself, :130-136
+    (main.ml:129-143; the CHERI build variant adds "CHERI" itself, :134-137
     — not this build). `has_switch sw = List.mem sw !internal_ref`
     (:54-55); `is_CHERI` (:153-154), `is_PNVI` (:156-157),
     `has_strict_pointer_arith` (:159-160) are `List.exists`/`has_switch`
@@ -242,7 +242,7 @@ def has_switch [Switches] (sw : CerbSwitch) : Bool :=
     (switches.ml:153-154). A BUILD CONSTANT here, not a read of the parameter
     (design §B.4.1, accepted [USER 2026-10-05] §F.9): CHERI is a memory-MODEL
     selection upstream (the separate `cerberus-cheri` executable injects "CHERI",
-    main.ml:130-136); this port has the concrete model alone, and `--switches=CHERI`
+    main.ml:134-137); this port has the concrete model alone, and `--switches=CHERI`
     is refused at the CLI. Lifting it would put the binder on `sizeofCtype` and
     every layout function for a value that is always `false` in this executable.
     Deliberate divergence of mechanism, documented. -/

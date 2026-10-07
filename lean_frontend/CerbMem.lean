@@ -2254,6 +2254,17 @@ abbrev memM (a : Type) := ndM a String mem_error (mem_constraint IntegerValue) M
 /-- An intentional model stop, distinct from modeled memory errors. -/
 def failStopMem {a : Type} (msg : String) : memM a := CerbFail.failStopND msg
 
+/-- A PNVI refusal (`pnviRefusal`) ascribed at the memory MONAD, for the refusals that sit
+    inside an `ND fun st => …` body (R-PNVI-08, R-PNVI-10; PNVI arc S4 Part 1, the S3
+    review's F1). The failure leaf's kernel default is the `Inhabited (memM a)` instance's,
+    `ND fun _ => (NDkilled default, default)` — a KILL — where a `failwithI` at the body's
+    pair type `nd_action … × MemState` would default to `(NDactive default, default)`, an
+    active result. So these sites are honestly monadic failure sites (the failure census's
+    `monadic_ascribed` group, `scripts/failure_census.py`), not pure ones. Use at a site as
+    `match pnviRefuseM d with | ND f => f st`. At run time the leaf aborts first, as every
+    refusal does (`LEAN_ABORT_ON_PANIC`). -/
+def pnviRefuseM {a : Type} (detail : String) : memM a := failwithI (pnviRefusal detail)
+
 def memReturn {a : Type} (x : a) : memM a := nd_return x
 
 /-- The concrete model's kill reason for a memory error — mirrors
@@ -3231,7 +3242,9 @@ def diffPtrval [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : 
       | some (.Double _ _) =>
         if addr1 == addr2 then validPostcond addr1 addr2 st  -- :2100-2101 (zero)
         else
-          failwithI (pnviRefusal "R-PNVI-08: diff_ptrval, (Prov_symbolic, Prov_symbolic), ambiguous intersection with addr1 <> addr2 — impl_mem.ml:2104 `fail ~loc (MerrOther \"in `diff_ptrval` invariant of PNVI-ae-udi failed: ambiguous iotas with addr1 <> addr2\")` (upstream's own invariant failure)")
+          -- ascribed at memM (pnviRefuseM): the leaf's kernel default is a kill, not an active pair
+          match (pnviRefuseM "R-PNVI-08: diff_ptrval, (Prov_symbolic, Prov_symbolic), ambiguous intersection with addr1 <> addr2 — impl_mem.ml:2104 `fail ~loc (MerrOther \"in `diff_ptrval` invariant of PNVI-ae-udi failed: ambiguous iotas with addr1 <> addr2\")` (upstream's own invariant failure)" : memM IntegerValue) with
+          | ND f => f st
     | _, _ => errorPostcond
 
 /-! ### Pointer validity -/
@@ -3477,7 +3490,9 @@ def effArrayShiftPtrval [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (t
             | .ok true =>
               if CerbGlobal.has_switch (.pointer_arith .PERMISSIVE) then result st   -- :2328-2329 `NoCollapse
               else
-                failwithI (pnviRefusal s!"R-PNVI-10: eff_array_shift_ptrval, Prov_symbolic, Double, non-zero shift admitted by both allocations ({allocId1}, {allocId2}) — impl_mem.ml:2331-2334 `Printf.printf \"id1= %s, id2= %s ==> addr= %s\\n\" …; fail ~loc (MerrOther \"(PNVI-ae-uid) ambiguous non-zero array shift\")` (a debug print to stdout in a semantics arm)")
+                -- ascribed at memM (pnviRefuseM): the leaf's kernel default is a kill, not an active pair
+                match (pnviRefuseM s!"R-PNVI-10: eff_array_shift_ptrval, Prov_symbolic, Double, non-zero shift admitted by both allocations ({allocId1}, {allocId2}) — impl_mem.ml:2331-2334 `Printf.printf \"id1= %s, id2= %s ==> addr= %s\\n\" …; fail ~loc (MerrOther \"(PNVI-ae-uid) ambiguous non-zero array shift\")` (a debug print to stdout in a semantics arm)" : memM PointerValue) with
+                | ND f => f st
             | .ok false => collapse allocId1                                         -- :2336-2337
           | .ok false =>
             match precond allocId2 with
