@@ -58,8 +58,25 @@
 #   A3  lastAddress := <numeral> /          a cursor literal in a MemState literal or a
 #       last_address= <numeral>              pasted OCaml record (tests choose a NAMED
 #                                            value, exactly as they do for fuel)
-# Vacuity guards: ≥ MIN_FILES files scanned, ≥ one `_lemFuel` worker seen and the
-# `lastAddress` field seen, else FAIL (not scanning real code is a failure, not a pass).
+# Switch-set shape (PNVI arc S1, 2026-10-05; proportionality revision 2026-10-07,
+# record docs/2026-10-05_pnvi-s1-switch-parameter-record.md §14):
+#   W1  instance … : … Switches              an `instance` declaration whose header (on
+#                                            its own line) names `Switches` —
+#                                            `instance : CerbGlobal.Switches := …`,
+#                                            `instance foo : Switches where …`; a global
+#                                            switch-set instance would be a hidden default
+#                                            (the same concern as F2 for `LemFuel`).
+#                                            Main.lean's `letI : CerbGlobal.Switches := …`
+#                                            is not an `instance` declaration and is
+#                                            allowlisted anyway.
+#   W1 SCOPE, plainly: a SPEEDBUMP against ACCIDENTAL default `CerbGlobal.Switches`
+#   instances in this repository's scanned Lean text — NOT adversarially robust (a
+#   header split across lines, an alias, an `extends`, an `instance` attribute, an
+#   untyped instance or a raw-string desync all pass it, by design). The backstop is
+#   that Main.lean's LOCAL instance (`letI`) wins over any global one for every lane,
+#   plus review. A consumer's own instance (outside this repository) is the intended use.
+# Vacuity guards: ≥ MIN_FILES files scanned, ≥ one `_lemFuel` worker seen the
+# `lastAddress` field seen and `class Switches` seen, else FAIL (not scanning real code is a failure, not a pass).
 #
 # WHAT THIS GATE IS (pre-merge audit M2, 2026-09-04): a plant-tested
 # SPEEDBUMP over the enumerated idiomatic shapes above (bare/hex/ascribed/
@@ -73,7 +90,7 @@
 # seam code, and a measured wrapper carries its sufficiency obligation — a
 # numeral can only enter where a human writes an instance.
 #
-# --selftest: plant each shape (F1–F6) into a scratch COPY of the scan set,
+# --selftest: plant each shape (F1–F6, A1–A3, W1) into a scratch COPY of the scan set,
 # assert red with the right label, then assert the unplanted set is green
 # (loud plant banner; the test_unit.sh wiring runs the gate AND the selftest).
 set -u
@@ -112,6 +129,7 @@ run_gate() {  # <repo root>; prints verdict lines; returns 0/1
   if [[ "$n" -lt "$MIN_FILES" ]]; then echo "check_no_fuel_numerals: FAIL (vacuous): only $n files to scan (< $MIN_FILES) — regenerate lean_frontend/generated first"; return 1; fi
   if ! echo "$files" | xargs grep -l '_lemFuel' > /dev/null 2>&1; then echo "check_no_fuel_numerals: FAIL (vacuous): no fuel worker (_lemFuel) in the scanned files"; return 1; fi
   if ! echo "$files" | xargs grep -l 'lastAddress' > /dev/null 2>&1; then echo "check_no_fuel_numerals: FAIL (vacuous): no MemState.lastAddress field in the scanned files (CerbMem.lean missing from the scan set)"; return 1; fi
+  if ! echo "$files" | xargs grep -l '^class Switches' > /dev/null 2>&1; then echo "check_no_fuel_numerals: FAIL (vacuous): no \`class Switches\` in the scanned files (CerbGlobal.lean missing from the scan set)"; return 1; fi
   rows=$(for f in $files; do strip_comments "$f"; done)
   # drop the allowlisted Main.lean lines (exact trimmed content, Main.lean only —
   # the hand-written file AND its generated/ copy)
@@ -124,7 +142,7 @@ run_gate() {  # <repo root>; prints verdict lines; returns 0/1
   local allowed_hits; allowed_hits=$(echo "$rows" | grep -Ec "$allowed_re")
   report() { # label pattern
     local hits; hits=$(echo "$filtered" | grep -E "$2")
-    if [[ -n "$hits" ]]; then echo "check_no_fuel_numerals: FAIL ($1): fuel numeral shape found:"; echo "$hits" | head -20; status=1; fi
+    if [[ -n "$hits" ]]; then echo "check_no_fuel_numerals: FAIL ($1): forbidden shape found:"; echo "$hits" | head -20; status=1; fi
   }
   report F1 'lemDefaultFuel|driverFuel|ndDefaultFuel'
   report F2 ':[[:space:]]*(@\[[^]]*\][[:space:]]*)?(scoped |local )?instance[^:]*:[[:space:]]*LemFuel\b'
@@ -147,14 +165,17 @@ run_gate() {  # <repo root>; prints verdict lines; returns 0/1
   report A1 '(^|[^0-9a-fA-Fx])0[xX][fF]{12}([^0-9a-fA-F]|$)'
   report A2 '(^|[^0-9])281474976710655([^0-9]|$)'
   report A3 '(lastAddress[[:space:]]*:=|last_address[[:space:]]*=)[[:space:]]*\(?[[:space:]]*(0[xX][0-9a-fA-F]+|[0-9]+)'
+  # W1: an `instance` declaration whose same-line header names `Switches` (PNVI arc S1;
+  # a plain-text speedbump, see the header's W1 SCOPE)
+  report W1 '(^|[^A-Za-z0-9_.])instance\b[^:]*:[^=]*\bSwitches\b'
   if [[ $status -eq 0 ]]; then
-    echo "check_no_fuel_numerals: OK ($n files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6), no address-space-top literal (A1-A3); allowed Main.lean sites seen: $allowed_hits of $((2 * ${#ALLOW_MAIN[@]})) (hand-written + generated copy))"
+    echo "check_no_fuel_numerals: OK ($n files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6), no address-space-top literal (A1-A3), no switch-set instance declaration (W1); allowed Main.lean sites seen: $allowed_hits of $((2 * ${#ALLOW_MAIN[@]})) (hand-written + generated copy))"
   fi
   return $status
 }
 
 if [[ "${1:-}" == "--selftest" ]]; then
-  echo "check_no_fuel_numerals: SELFTEST — planting F1-F6 and A1-A3 into a scratch copy of the scan set (loud plant banner; nothing in the tree is touched)"
+  echo "check_no_fuel_numerals: SELFTEST — planting F1-F6, A1-A3 and W1 into a scratch copy of the scan set (loud plant banner; nothing in the tree is touched)"
   W=$(mktemp -d "${TMPDIR:-/tmp}/nofuel-plant.XXXXXX") || exit 1
   trap 'rm -rf "$W"' EXIT
   R="$W/root"; LF="$R/lean_frontend"; mkdir -p "$LF/generated" "$LF/test/Unit" "$LF/speclab/test/SLUnit" "$R/tests/immaculate"
@@ -203,6 +224,11 @@ if [[ "${1:-}" == "--selftest" ]]; then
   plant "A2 the default in decimal in a unit test"  A2 test/Unit/MonadicFailstop.lean 'def plantTop3 := initialMemState 281474976710655'
   plant "A3 lastAddress literal in speclab"         A3 speclab/test/SLUnit/CoreGateTest.lean 'def plantSt : MemState := { lastAddress := 4096 }'
   plant "A3 last_address= literal in a probe"       A3 ../tests/immaculate/illtyped-store.lean 'def plantSt2 := last_address= 0x1000'
+  # W1 (PNVI arc S1; proportionality revision 2026-10-07): an accidental switch-set
+  # instance in a seam, in the generated tree and in a unit test
+  plant "W1 switch-set instance in a seam"           W1 CerbND.lean 'instance : CerbGlobal.Switches := ⟨[]⟩'
+  plant "W1 switch-set instance in the generated tree" W1 generated/Utils.lean 'instance plantSw : Switches where switches := []'
+  plant "W1 local switch-set instance in a unit test" W1 test/Unit/FuelExemplar.lean 'local instance : CerbGlobal.Switches := sw₀'
   # E5 — indirection through a non-fuel-named constant — is NOT regex-closable
   # (no shape distinguishes `budget` from any other Nat); the selftest records
   # that the gate stays GREEN on it, so the limit is visible, never silent
@@ -213,7 +239,7 @@ if [[ "${1:-}" == "--selftest" ]]; then
   echo "  REVERTED (unplanted scratch copy):"
   out=$(run_gate "$R"); rc=$?; echo "  $out"
   if [[ $rc -ne 0 ]]; then echo "  PLANT FAIL [green baseline]: the unplanted scan set is not green" >&2; fail=1; fi
-  if [[ $fail -eq 0 ]]; then echo "check_no_fuel_numerals: SELFTEST OK (26 plants red with the declared label — F1-F6 and A1-A3; E5 indirection a recorded known gap; unplanted set green)"; else echo "check_no_fuel_numerals: SELFTEST FAILED" >&2; fi
+  if [[ $fail -eq 0 ]]; then echo "check_no_fuel_numerals: SELFTEST OK (29 plants red with the declared label — F1-F6, A1-A3 and W1; E5 indirection a recorded known gap; unplanted set green)"; else echo "check_no_fuel_numerals: SELFTEST FAILED" >&2; fi
   exit $fail
 fi
 

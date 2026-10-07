@@ -196,6 +196,8 @@ limitation; the generation ran clean.
 
 ### 4.1 The instance gate `scripts/check_switches_instance.sh` (design §D.2 P5/P8)
 
+> **Superseded by §14 (proportionality revision, 2026-10-07):** this gate was withdrawn as gate cruft and replaced by rule W1 of `scripts/check_no_fuel_numerals.sh`; the text below is kept as the historical record.
+
 **Scope.** THIS repository only:
 
 - `lean_frontend/*.lean`, `generated/`, `test/`, `speclab/` and `tests/**/*.lean`
@@ -247,6 +249,8 @@ check_switches_instance: OK (367 files scanned: 293 production, 39 test, 35 LemL
   GREEN.
 
 ### 4.1a The instance gate hardened (pre-merge audit L1, 2026-10-06)
+
+> **Superseded by §14 (proportionality revision, 2026-10-07):** this gate was withdrawn as gate cruft and replaced by rule W1 of `scripts/check_no_fuel_numerals.sh`; the text below is kept as the historical record.
 
 The audit found S1–S3 evadable: an alias (`abbrev MySw := CerbGlobal.Switches; instance :
 MySw := ⟨[]⟩`), a `class … extends … Switches` with an instance, and a production `def x :
@@ -335,6 +339,8 @@ check_switches_instance: SELFTEST OK (23 plants RED with their labels, unplanted
 ```
 
 ### 4.1b The instance gate, second hardening (delta audit B-1, 2026-10-06)
+
+> **Superseded by §14 (proportionality revision, 2026-10-07):** this gate was withdrawn as gate cruft and replaced by rule W1 of `scripts/check_no_fuel_numerals.sh`; the text below is kept as the historical record.
 
 The delta audit of §4.1a reproduced three evasions on a scratch copy, each GREEN (rc 0):
 (i) a test-root instance with a blank line before its type (`instance plantI⏎⏎    :
@@ -996,3 +1002,111 @@ rc=0
 
 A9 is again `SUMMARY: total=113 same=108 diff=5 ocaml_fail=0 lean_fail=0` (from the run's A9
 stdout). The evidence directory is scratch and was deleted at the end of the slice.
+
+## 14. Proportionality revision (2026-10-07)
+
+Rulings, verbatim:
+
+- [USER 2026-10-07] "This sounds like a classic case of 'gate cruft' - we don't want our gates
+  to be adversarially robust unless they are trust surfaces. Can you revisit and figure out what
+  is actually proportionate?"
+- On the orchestrator's proposal: [USER 2026-10-07] "Great, go ahead as proposed".
+
+The proposal it approved was the orchestrator's [AGENT] assessment: "no `CerbGlobal.Switches`
+instance in our tree" is a discipline point, not a trust property. `Main` supplies the set with
+`letI`, and Lean prefers a local instance over any global one, so a stray library instance cannot
+change what any lane runs or validates. The only risk is an accidental instance that a consumer
+silently picks up because it forgot its own; cerberus-sl declares its own. The precedent is
+`scripts/check_no_fuel_numerals.sh`, which handles the identical `LemFuel` concern with the
+simple text pattern F2 and a couple of plants.
+
+Worker: Claude Opus 5.5 (agent). What changed:
+
+- **Withdrawn as gate cruft:** the elaborate instance gate `scripts/check_switches_instance.sh`
+  (rules S1–S8, 30 plants plus the consumer-direction plant P8b; §4.1, §4.1a, §4.1b) is
+  DELETED, together with its row-1 wiring in `scripts/test_unit.sh`, its LADDER.md row-1 mention
+  and its VALIDATION.md row.
+- **Replacement:** one plain-text rule, **W1**, in `scripts/check_no_fuel_numerals.sh`, over that
+  script's existing comment-stripped roots (seams, `generated/`, `test/`, `speclab/`,
+  `tests/**/*.lean`): an `instance` declaration whose same-line header names `Switches` is RED.
+  The pattern is `(^|[^A-Za-z0-9_.])instance\b[^:]*:[^=]*\bSwitches\b`. Main.lean's
+  `letI : CerbGlobal.Switches := …` is not an `instance` declaration, and its line is allowlisted
+  anyway. A cheap vacuity guard was added in that script's style: `class Switches` must be seen in
+  the scan set [AGENT]. Three plants were added to `--selftest`: an instance in a seam
+  (`CerbND.lean`), one in the generated tree (`generated/Utils.lean`, `where` form) and a
+  `local instance` in a unit test (`test/Unit/FuelExemplar.lean`). The selftest total is now 29.
+  The script's shared failure line now reads "forbidden shape found" instead of "fuel numeral
+  shape found", since W1 is not a fuel shape [AGENT].
+- **Scope, stated plainly** in the script header, the VALIDATION.md row, `lean_frontend/CLAUDE.md`
+  and `scripts/test_unit.sh`: W1 is a speedbump against accidental default `CerbGlobal.Switches`
+  instances. It is not adversarially robust. The backstop is that Main's local instance wins for
+  every lane, plus review.
+- **Doc comment** on `class Switches` (`lean_frontend/CerbGlobal.lean`): "Never declare an
+  instance of this class in this repository; the entry point (`Main`) supplies it with `letI`;
+  consumers declare their own." The comments in `CerbGlobal.lean`, `Main.lean` and
+  `test/Unit/FuelExemplar.lean` that cited the deleted script now cite rule W1. These are
+  comment-only Lean changes, copied to `generated/` by the hand-written copy manifest. The
+  handwritten-sync gate is green, and Lean was rebuilt, capped.
+- **Out of scope by design, not fixed.** The delta-review findings on §4.1b: F1 (a raw-string
+  desync of the comment stripper), F2 (a `_`-typed instance) and N1 (the residual mismatch
+  between the stated and the actual closure). Also the earlier L1 evasions: aliases and
+  `extends`. W1 does not catch any of these, by design. A speedbump targets accidents, not
+  evasion [AGENT, per the ruling above].
+- §4.1, §4.1a and §4.1b each carry a one-line pointer to this section. Their text is unchanged
+  history. §12/§13's dispositions of L1 and B-1 ("FIXED") stand as records of those rounds; this
+  section supersedes them.
+- Everything else from the earlier rounds is kept as it was: the DO-NOT-MERGE lines, the wording
+  fixes, the S5 count, the provenance fixes and the `gen_fuel_parametricity.py` E1 plant.
+
+**Gated tree.** The `--selftest`, row 1 and Tier A all ran on commit
+`8633917a06fc02288f5677341f910642ea4dc081`, the revision commit before this record-only amend
+(the selftest ran on the working tree just before that commit, with byte-identical script and
+Lean files). The amend adds only this paragraph and the three blocks below to this record; no
+script, Lean, doc, lakefile or manifest byte differs. Every run used this worktree's private lem
+`2d3a492` first on `PATH` (`.tmp/cel`), not the standard environment (L2: the
+standard-environment re-gate comes after the pin dance).
+
+`scripts/check_no_fuel_numerals.sh --selftest` (rc 0), verbatim tail (the `rc=` line is the wrapper's;
+row 1 below re-ran the same selftest on the commit itself, with the same verdict line):
+
+```
+  PLANT OK   [W1 local switch-set instance in a unit test] -> check_no_fuel_numerals: FAIL (W1): forbidden shape found:
+  KNOWN GAP  [M2 E5 indirection via a non-fuel-named constant] -> stays GREEN (not regex-closable; review discipline + the [LemFuel] typing backstop)
+  REVERTED (unplanted scratch copy):
+  check_no_fuel_numerals: OK (332 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6), no address-space-top literal (A1-A3), no switch-set instance declaration (W1); allowed Main.lean sites seen: 6 of 6 (hand-written + generated copy))
+check_no_fuel_numerals: SELFTEST OK (29 plants red with the declared label — F1-F6, A1-A3 and W1; E5 indirection a recorded known gap; unplanted set green)
+rc=0
+```
+
+Row 1 (`.tmp/cel ./scripts/test_unit.sh`, rc 0). Verbatim selected verdict lines (each
+distinct line once; the `rc=` line is the wrapper's). No `check_switches_instance` line appears:
+the gate is gone:
+
+```
+check_handwritten_sync: OK (49 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+Total: 16 passed, 0 failed
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+check_no_fuel_numerals: SELFTEST OK (29 plants red with the declared label — F1-F6, A1-A3 and W1; E5 indirection a recorded known gap; unplanted set green)
+check_no_fuel_numerals: OK (332 files scanned comment-stripped; no lemDefaultFuel/driverFuel/ndDefaultFuel, no LemFuel instance, no literal fuel (F1-F6), no address-space-top literal (A1-A3), no switch-set instance declaration (W1); allowed Main.lean sites seen: 6 of 6 (hand-written + generated copy))
+gen_fuel_parametricity: OK (14 ambient fuel wrappers in the generated tree = the 14 pins of TotalityProofTest.lean Part 1, both directions)
+gen_fuel_parametricity: SELFTEST OK (6 --check plants + 1 --emit plant with the declared FAIL, both unplanted controls OK, real tree OK)
+check_lem_sync: OK (src 37a9392cf043669821430a08b4c43e58d7ff407a34de470fdffaee929b02e47c, gen c1bb429a5ccb2b91903f5d02b30141aa2c711c50c2d4d7543b42226e119580f3)
+check_lem_sync: lean OK (src 37a9392cf043669821430a08b4c43e58d7ff407a34de470fdffaee929b02e47c, gen aa49e3bfc257299082c3a01287d4b99c91a9164f32f251d02297c808315b77fd)
+check_fork_drift: OK — layer 1: 88 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 30 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 2d3a492758cb23dc4e417f2961983d25b36ce130 matches lem -v lean-backend-v0.1.0-alpha.1-65-g2d3a492 (hex prefix))
+check_pin_sites: OK — lem-pin 2d3a492758cb23dc4e417f2961983d25b36ce130 at every site (lakefile rev, 3 lake-manifests rev+inputRev, README pin command)
+check_cli_refusals: OK (23 refusals pinned: --concurrency, --iso, 20 --switches= values (every oracle switch-name class, an unknown name, an override, a mixed set, the empty value) and the --switches space form; 4 repeated options refused: --runtime, --args, --switches twice (=/= and space/=); control not refused)
+rc=0
+```
+
+Tier A (`.tmp/cel python3 scripts/release.py --mode fast`, rc 0). Verbatim row verdicts (the 17
+per-row `PASSED` lines joined onto one line; the joining is mine) and tail:
+
+```
+PASSED A1 (358.1s) PASSED A2 (32.8s) PASSED A3 (75.1s) PASSED A4 (24.8s) PASSED A4b (25.6s) PASSED A4c (3.3s) PASSED A5 (108.2s) PASSED A6 (4.2s) PASSED A6b (3.8s) PASSED A7 (11.3s) PASSED A8 (9.9s) PASSED A9 (18.5s) PASSED A10 (19.2s) PASSED A11 (63.0s) PASSED A12.1 (5.2s) PASSED A12.2 (4.8s) PASSED A13 (1.6s)
+fast: passed; 17/17 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+rc=0
+```
+
+The evidence directory is scratch and was deleted at the end of the slice.

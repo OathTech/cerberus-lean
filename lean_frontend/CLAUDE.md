@@ -133,10 +133,9 @@ exemplar/driver2 axiom cones + the D14 non-kernel-proof-method ban),
 `check_exec_totality.sh` (22 generated modules + CerbND, empty
 allowlist), `check_no_fuel_numerals.sh` (fuel-parameter arc: no fuel
 numeral in seams/generated/test/speclab except Main.lean's `--fuel`
-default; F1–F6 plant-tested by its --selftest), `check_switches_instance.sh`
-(PNVI arc S1: no `instance`, alias or `extends` of `CerbGlobal.Switches` anywhere in this
-repository, every use of the token in a whitelisted position, and no production value of it
-outside Main.lean's one `letI`, no untyped instance or instance attribute at all; 30 plants + the consumer-direction plant P8b), `check_lakefile_roots.sh`
+default; F1–F6 plant-tested by its --selftest; its rule W1, PNVI arc S1: a
+speedbump against accidental default `CerbGlobal.Switches` instances — not adversarially
+robust; the backstop is that Main's local instance wins for every lane, plus review), `check_lakefile_roots.sh`
 (every generated module, `_auxiliary` obligation carriers included, is a
 Lake root; plant-tested), `check_fuel_forms.sh` (C2: the (A)/(B)/(C)
 fuel-forms gate — every fuel'd worker measured, absorbing (= kill at zero;
@@ -273,7 +272,7 @@ a binary built from the old copy.
 | `CerbTags.lean` | Mutable tag definitions state (struct/union defs) |
 | `CerbDebug.lean` | Debug level and output functions |
 | `CerbDecode.lean` | Integer/character constant decoding. Arc-14 F2: decode.ml's exhaustive fail-CLOSED table with C11 cites; `\?` -> 63 and hex escaped_char are documented Lean-right divergences (oracle-wrong: upstream tray 10/11) |
-| `CerbGlobal.lean` | The DEFAULT configuration as plain `def`s (execution mode `none`, every flag `false`), each with a `rfl` lemma — the values the oracle driver holds in matched mode, cited line by line; no process state since 2026-09-05 (`docs/2026-09-05_cerbglobal-defs-record.md`). The SWITCH SET is the instance-implicit parameter `class Switches` (PNVI arc S1, 2026-10-05, `docs/2026-10-05_pnvi-s1-switch-parameter-record.md`): `has_switch`/`is_PNVI`/`has_strict_pointer_arith` read `Switches.switches`, every reader binds `[CerbGlobal.Switches]` (lem instance reader, `frontend/model/lean_switches.lem`), `defaultSwitches = []` is the one value `Main.lean` supplies, NO instance exists in this repository (`scripts/check_switches_instance.sh`); `@has_switch ⟨[]⟩ sw = false` by `rfl` (`has_switch_*_default`); `is_CHERI` is a build constant `false`; `CerbSwitch` = the lem subset + the four H2 switches + `PNVI (v : PNVIVariant)` |
+| `CerbGlobal.lean` | The DEFAULT configuration as plain `def`s (execution mode `none`, every flag `false`), each with a `rfl` lemma — the values the oracle driver holds in matched mode, cited line by line; no process state since 2026-09-05 (`docs/2026-09-05_cerbglobal-defs-record.md`). The SWITCH SET is the instance-implicit parameter `class Switches` (PNVI arc S1, 2026-10-05, `docs/2026-10-05_pnvi-s1-switch-parameter-record.md`): `has_switch`/`is_PNVI`/`has_strict_pointer_arith` read `Switches.switches`, every reader binds `[CerbGlobal.Switches]` (lem instance reader, `frontend/model/lean_switches.lem`), `defaultSwitches = []` is the one value `Main.lean` supplies, NO instance is declared in this repository (speedbump: `scripts/check_no_fuel_numerals.sh` rule W1, not adversarially robust; Main's local instance wins); `@has_switch ⟨[]⟩ sw = false` by `rfl` (`has_switch_*_default`); `is_CHERI` is a build constant `false`; `CerbSwitch` = the lem subset + the four H2 switches + `PNVI (v : PNVIVariant)` |
 | `CerbFloat.lean` | IEEE 754 float operations; lawful total Ord Float (NaN reflexive, arc-14 F4) |
 | `CerbUtils.lean` | Timing/logging VALUE IDENTITIES (plain `def`s since seam-hygiene H3, 2026-09-19; no opaque, no `IO.Ref`), GCC builtins on Z/two's-complement semantics mirroring ocaml_gcc_builtins.ml per-line (arc-14 F2: ffs(-1)=1, ctz(0)/bswap asserts panic) |
 | `CerbPP.lean` | Pretty-printer placeholders |

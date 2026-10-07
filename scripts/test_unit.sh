@@ -194,9 +194,12 @@ fi
 
 # No-fuel-numerals gate (fuel-parameter arc, 2026-09-04): no fuel numeral
 # in the Lean text a consumer reasons against (seams, generated, tests,
-# speclab) except Main.lean's `--fuel` default; the gate's own plant
-# battery (--selftest: F1-F6 planted red, unplanted green) runs first so
-# a silently vacuous gate cannot pass. Fail-closed.
+# speclab) except Main.lean's `--fuel` default, and (W1, PNVI arc S1) no
+# `instance` declaration of `CerbGlobal.Switches` — a speedbump against an
+# accidental default switch set, not adversarially robust (Main.lean's local
+# `letI` wins for every lane). The gate's own plant battery (--selftest:
+# F1-F6, A1-A3, W1 planted red, unplanted green) runs first so a silently
+# vacuous gate cannot pass. Fail-closed.
 NOFUEL_SH="$(dirname "$PURITY_SH")/check_no_fuel_numerals.sh"
 if ! "$NOFUEL_SH" --selftest; then
     echo "test_unit: no-fuel-numerals gate SELFTEST FAILED"
@@ -204,25 +207,6 @@ if ! "$NOFUEL_SH" --selftest; then
 fi
 if ! "$NOFUEL_SH"; then
     echo "test_unit: no-fuel-numerals gate FAILED"
-    exit 1
-fi
-
-# Switch-set instance gate (PNVI arc S1, 2026-10-05; design §B.3/§D.2 P5+P8): the switch
-# set is the instance-implicit `[CerbGlobal.Switches]`; NO instance declaration of it in this
-# repository (seams, generated, test, speclab, tests/, the consumed LemLib) and no production
-# value of it outside Main.lean's one `letI` — a global instance would be a hidden default.
-# Scoped to THIS repository (a consumer's own instance is the intended use). --selftest plants
-# first (instances in a seam/generated/test/speclab, attributes, production values incl. `where`
-# and multi-line forms, aliases, `extends`, instances of aliases/values, unrecognised uses: 23
-# RED; P8b: a consumer-style package outside the roots GREEN, excluded from the root list, and
-# RED once placed under a root; pre-merge audit L1, 2026-10-06). Fail-closed.
-SWINST_SH="$(dirname "$PURITY_SH")/check_switches_instance.sh"
-if ! "$SWINST_SH" --selftest; then
-    echo "test_unit: switch-set instance gate SELFTEST FAILED"
-    exit 1
-fi
-if ! "$SWINST_SH"; then
-    echo "test_unit: switch-set instance gate FAILED"
     exit 1
 fi
 

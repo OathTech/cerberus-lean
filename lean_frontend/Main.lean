@@ -1731,7 +1731,7 @@ def main (args : List String) : IO Unit := do
   -- the default `⟨CerbGlobal.defaultSwitches⟩` (= `[]`, switches.ml:47-48) —
   -- every `--switches` value is refused above; no other instance of
   -- `CerbGlobal.Switches` exists in this repository
-  -- (`scripts/check_switches_instance.sh`).
+  -- (speedbump: `scripts/check_no_fuel_numerals.sh` rule W1).
   let code ← (letI : LemFuel := ⟨fuel⟩; letI : CerbGlobal.Switches := ⟨CerbGlobal.defaultSwitches⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace
     addressSpaceTop callFn traceNodes libc progArgs tunits)
   if code != 0 then

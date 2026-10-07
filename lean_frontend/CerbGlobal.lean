@@ -52,7 +52,7 @@
   that (transitively) reads them binds `[CerbGlobal.Switches]` (lem's
   instance reader, `frontend/model/lean_switches.lem`). NO instance of the
   class exists in this repository's library, seams, generated tree, tests
-  or speclab (gate `scripts/check_switches_instance.sh`); `Main.lean`
+  or speclab (speedbump: `scripts/check_no_fuel_numerals.sh` rule W1); `Main.lean`
   supplies the one run instance, `⟨defaultSwitches⟩`, beside its
   `LemFuel` instance. A theorem quantifies by binding `[Switches]`, or
   states the default by `@f ⟨defaultSwitches⟩` / `@f ⟨[]⟩`, where every
@@ -192,9 +192,12 @@ def conf : CerbConf := {}
     `get_switches` (:51-52). One field; lem's instance reader
     `declare {lean} reader val switches = instance `CerbGlobal.Switches.switches``
     (frontend/model/lean_switches.lem) emits this projection, and every lifted
-    definition binds `[CerbGlobal.Switches]`. There is deliberately NO instance in
-    this repository outside `Main.lean`'s `letI` (gate
-    `scripts/check_switches_instance.sh`). -/
+    definition binds `[CerbGlobal.Switches]`.
+
+    Never declare an instance of this class in this repository; the entry point
+    (`Main`) supplies it with `letI`; consumers declare their own. (Speedbump:
+    `scripts/check_no_fuel_numerals.sh` rule W1 — not adversarially robust; the
+    backstop is that Main's local instance wins for every lane, plus review.) -/
 class Switches where
   switches : List CerbSwitch
 
