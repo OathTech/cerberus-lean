@@ -26,7 +26,7 @@ refusal: `--switches=PNVI_ae_udi` is still refused, so no lane can reach a new a
   `:2308`/`:2379`, `:2399`; REFUSE `:840-842`; default-path look-alikes UNCHANGED in this arc; the
   refusal shape is the `CerbFS` `failwithI`-with-prefix shape.
 - [USER 2026-10-07]: "… we don't want our gates to be adversarially robust unless they are trust
-  surfaces".
+  surfaces …".
 - Design record `docs/2026-10-04_pnvi-ae-udi-design.md` §A.3, §C, §D, §E S3, §G (authoritative for
   every flagged site), §H. S2 record `docs/2026-10-07_pnvi-s2-data-shapes-record.md`. S1 record §14.
 

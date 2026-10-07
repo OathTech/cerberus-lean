@@ -368,8 +368,8 @@ Nothing else.
   oracle under the SAME switch by `scripts/test_pnvi.sh` (§5, LADDER Tier A row 14; the
   run's instance `⟨[.PNVI .AE_UDI]⟩`, one general path — the set only selects the arms).
   Every other value is REFUSED, each element with its reason (`Main.judgeSwitches` /
-  `refuseSwitches`; exit 2, attributed; [USER 2026-09-03] Q7 "REFUSE now … plumbing … is
-  not wanted" for the rest): the other switch names, plain `PNVI`/`PNVI_ae` (unvalidated,
+  `refuseSwitches`; exit 2, attributed; [AGENT] Q7 recommendation "REFUSE now … plumbing … is
+  not wanted", accepted [USER 2026-09-03] for the rest): the other switch names, plain `PNVI`/`PNVI_ae` (unvalidated,
   design §F.3), mixed lists, `--iso`, and the two places the ORACLE is fail-open
   (design §C.5) — an override in one list (**R-PNVI-11**: the oracle prints "would override
   a previous switch --> ignoring." and runs on) and an unknown name (**R-PNVI-12**: "failed

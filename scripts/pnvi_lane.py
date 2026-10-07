@@ -5,7 +5,7 @@ lean_frontend/docs/2026-10-04_pnvi-ae-udi-design.md §D.1, §D.2, §D.5;
 record lean_frontend/docs/2026-10-07_pnvi-s4-lane-record.md).
 
 TRUST SURFACE (classified per [USER 2026-10-07] "… we don't want our gates to be
-adversarially robust unless they are trust surfaces"): this lane is the validation
+adversarially robust unless they are trust surfaces …"): this lane is the validation
 evidence for the PNVI_ae_udi mode, so it is fail-closed both directions and
 plant-tested (test_pnvi.sh --selftest).
 

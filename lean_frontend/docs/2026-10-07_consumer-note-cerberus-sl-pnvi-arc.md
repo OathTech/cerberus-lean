@@ -141,7 +141,7 @@ One row per cerberus-sl file:
 | `ExecInv.lean` | `:352` `loadM_fp_read`: elaborates unchanged (S3 replica, MEASURED) | PREDICTED (no edit) |
 | `probes/2026-09-18_hidden_panic_default.lean` (repo root) | `:26` `has_switch_all … := rfl`: holds once the file sees a local instance | PREDICTED |
 
-Counts (derived from this table): 4 VERIFIED items (3 VERIFIED (prev), 1 VERIFIED (probe, this run)) and 16 PREDICTED
+Counts (derived from this table): 4 VERIFIED items (3 VERIFIED (prev), 1 VERIFIED (probe, this run)) and 15 PREDICTED
 rows, 3 of them marked unverified or no-edit. The `@`-explicit sites number 25 in 6 files (S1 record §9): PtrEqModel 4,
 PrimOutcome 7, PtrEqExamples 3, RoundThread 4, RunBuild 4, DriverLoop 3. The `reconstructValue` simp lines number
 11 (S2 record §8): `HeapModel.lean:314` (VERIFIED), `PtrRepr.lean` 2, `Repr.lean` 8. The other `@`-explicit
@@ -254,3 +254,12 @@ per-module errors.
 - One timeboxed attempt at `loadM_loc_indep` [AGENT]: add `(hobs : σ.observations = none)`, unfold `recordAccess`
   and `exposeOnLoad` in `simp_all`, and use the §4 helper step. It still left 10 failing branches, some without
   `resolveIota`. It was not pursued: the SC hypothesis threading is your decision (§3).
+
+## Addendum (2026-10-07): a fourth catch-up group, reported by cerberus-sl [consumer statement, their DECISIONS C3.389]
+
+cerberus-sl's own re-pin sizing found a cause group our scratch build never reached: the zero-divisor
+fail-stops of `d751c12ef` (the total-arith slice) change their frozen `integer{Div,Rem}_t_eq` statements, which
+gain a `b ≠ 0` hypothesis. Also from their sizing: pre-PNVI mainline `1806c5a23` is not primable by their setup
+script, so their step-1 target is mainline `47348c07e` (catch-up + the S1 switches binder) and step 2 this arc;
+they will absorb the SC WP0 access receipts as one heap-well-formedness clause (`σ.observations = none`). Their
+sizing note: `/home/dev/projects/cerberus-sl/.tmp/orch/2026-10-07_s9-repin-sizing.md` (their tree).

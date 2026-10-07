@@ -26,7 +26,7 @@ semantic arm changed (S3 wrote them), only the CLI and the evidence.
   §5 D8 — carry this span).
 - [USER 2026-10-05]: "Re PNVI - agree on your recs except for mirroring crashes / obviously wrong behavior.
   These should be refusals surely?"
-- [USER 2026-10-07]: "This sounds like a classic case of 'gate cruft' - we don't want our gates to be adversarially robust unless they are trust surfaces".
+- [USER 2026-10-07]: "This sounds like a classic case of 'gate cruft' - we don't want our gates to be adversarially robust unless they are trust surfaces …".
 - Design record `docs/2026-10-04_pnvi-ae-udi-design.md` §C, §D, §E S4, §F.4/§F.5/§F.6/§F.8/§F.12/§F.13, §G,
   §H, §H.1. S3 record `docs/2026-10-07_pnvi-s3-arms-record.md`. S1 record §14 (gate classes).
 

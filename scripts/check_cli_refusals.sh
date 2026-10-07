@@ -7,7 +7,7 @@
 # or exits 2 for another reason, cannot pass). Fail-closed.
 #
 # CLASS [AGENT, per [USER 2026-10-07] "… we don't want our gates to be adversarially robust
-# unless they are trust surfaces"]: a SPEEDBUMP — it pins the CLI's refusal TEXTS and the
+# unless they are trust surfaces …"]: a SPEEDBUMP — it pins the CLI's refusal TEXTS and the
 # acceptance of `--switches=PNVI_ae_udi` (PNVI arc S4) so an accidental change is loud. The
 # trust property behind the acceptance — agreement with the oracle under the switch — is
 # the lane's (scripts/test_pnvi.sh, a trust surface); the one-program agreement witness

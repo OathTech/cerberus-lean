@@ -6,7 +6,7 @@
 #
 # TRUST SURFACE. This lane is the validation evidence for `--switches=PNVI_ae_udi`
 # ([USER 2026-10-07]: "… we don't want our gates to be adversarially robust unless they are
-# trust surfaces" — this one is): BOTH engines run with `--switches=PNVI_ae_udi`, the
+# trust surfaces …" — this one is): BOTH engines run with `--switches=PNVI_ae_udi`, the
 # complete observations are compared through the shared codec (scripts/observations.py,
 # `full` projection: value, stdout, stderr, UB kind AND location), every row is classified
 # by scripts/pnvi_lane.py and checked against the committed baseline

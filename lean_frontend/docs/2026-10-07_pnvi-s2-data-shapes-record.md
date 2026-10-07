@@ -20,7 +20,7 @@ differs between the two (§8).
 - [USER 2026-10-05]: "Re PNVI - agree on your recs except for mirroring crashes / obviously wrong
   behavior. These should be refusals surely?"
 - [USER 2026-10-07], on gates: "… we don't want our gates to be adversarially robust unless
-  they are trust surfaces".
+  they are trust surfaces …".
 - Design record `docs/2026-10-04_pnvi-ae-udi-design.md` §0, §A (§A.3), §B.0, §B.7, §E row
   S2, §G, §H (whose verbatim [USER 2026-10-05] answer accepts the §F.15 refusal of
   `:840-842` and, for §F.16, "for now (a) is fine" — the `CerbFS` refusal shape).
@@ -223,7 +223,7 @@ module (production carries one implementation)").
   `reconstructValueAbst…` names and the failure strings `"CerbMem.reconstructValue: …"`.
 
 **Class: SPEEDBUMP, not a trust surface** [AGENT, under [USER 2026-10-07] "… we don't want our
-gates to be adversarially robust unless they are trust surfaces"].
+gates to be adversarially robust unless they are trust surfaces …"].
 - **Reason.** At the default set the two functions agree: kernel theorem
   `reconstructValueAbst_default_snd_eq_legacy`. So a stray call moves no lane today. It matters
   only once a PNVI set is accepted (S4).
