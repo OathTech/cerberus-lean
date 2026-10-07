@@ -14,7 +14,11 @@ OCaml and Lean number symbols differently, so an `Error` whose text quotes a
 symbol is a `full` MISMATCH even when the two engines agree; the projection
 elides the numbering and NOTHING else (Defined tokens untouched; any other
 payload byte still differs). Applying it to an existing lane row is forbidden
-(charter §3).
+(charter §3). ONE further consumer, which never grants agreement: the PNVI lane's
+classifier (scripts/pnvi_lane.py, S4 review F1, 2026-10-07) consults it only to
+decide whether two single-`Error` verdicts are the same failure for the non-
+agreement class BOTH_FAIL (VALIDATION §1(a)); its AGREE comparison and every
+hash stay on `full`.
 """
 
 from __future__ import annotations

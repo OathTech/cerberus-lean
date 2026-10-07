@@ -95,8 +95,10 @@ if [[ "$MODE" == selftest ]]; then
     # (the live bounds arm of eff_array_shift; elaborator-sensitive), an R-PNVI-01 refusal row
     # (oracle crash), the R-PNVI-05 witness (oracle verdict), and pkvm-alloc (the run-time
     # derivation of the GPL TU and the AGREE-FIRST class; its value changes with the switch).
-    # NOT pkvm-init: its exhaustive set is the same with and without the switch (S4 record §5.2)
-    SEL='^(litmus/(pointer_from_int_disambiguation_1|cheri_03_ii|provenance_basic_using_uintptr_t_global_yx)|witness/r05-abst-double-alloc-union-punning|pkvm/pkvm-alloc)$'
+    # NOT pkvm-init: its exhaustive set is the same with and without the switch (S4 record §5.2).
+    # minimal/073-exit.libc: a BOTH_FAIL row (Error/Error equal modulo symbol numbering) for the
+    # BOTH_FAIL plants (P8b, P8c).
+    SEL='^(litmus/(pointer_from_int_disambiguation_1|cheri_03_ii|provenance_basic_using_uintptr_t_global_yx)|witness/r05-abst-double-alloc-union-punning|pkvm/pkvm-alloc|minimal/073-exit\.libc)$'
     stub() { # <file> <python body using REAL, args>
         printf "#!/usr/bin/env python3\nimport os, re, subprocess, sys\nREAL = '%s'\nargs = sys.argv[1:]\n%s\n" "$2" "$3" > "$1"
         chmod +x "$1"
@@ -115,6 +117,25 @@ sys.exit(134 if p.returncode == -6 else p.returncode)'
     stub "$ST/lean-mirror" "$REAL_LEAN" 'p = subprocess.run([REAL] + args, capture_output=True)
 sys.stdout.buffer.write(p.stdout)
 sys.stderr.buffer.write(re.sub(rb"PNVI_ae_udi refusal \(unsupported upstream arm\): R-PNVI-01: [^\n]*", b"Concrete.combine_prov: found a Prov_symbolic", p.stderr))
+sys.exit(134 if p.returncode == -6 else p.returncode)'
+    # P8a (review F1 probe 1): the oracle's combine_prov CRASH against a Lean front-end Error
+    # (every PNVI refusal replaced by a single `Error` verdict, exit 1) — the REFUSAL-CRASH rule
+    stub "$ST/lean-error" "$REAL_LEAN" 'p = subprocess.run([REAL] + args, capture_output=True)
+if b"PNVI_ae_udi refusal (unsupported upstream arm): " in p.stderr:
+    sys.stdout.write("Error {msg: \"plant: a PNVI refusal reported as a front-end Error\"}\n"); sys.exit(1)
+sys.stdout.buffer.write(p.stdout); sys.stderr.buffer.write(p.stderr)
+sys.exit(134 if p.returncode == -6 else p.returncode)'
+    # P8b (review F1 probe 2): Error vs Error with a DIFFERENT failure class (the Lean Error
+    # text changed beyond symbol numbering)
+    stub "$ST/lean-errclass" "$REAL_LEAN" 'p = subprocess.run([REAL] + args, capture_output=True)
+sys.stdout.buffer.write(p.stdout.replace(b"calling an unknown procedure", b"plant: a different failure class"))
+sys.stderr.buffer.write(p.stderr)
+sys.exit(134 if p.returncode == -6 else p.returncode)'
+    # P8c: a Lean-side change on a BOTH_FAIL row that KEEPS the class (only the symbol number
+    # moves, so the pair is still equal under failure-class) — the pinned lean= hash
+    stub "$ST/lean-symnum" "$REAL_LEAN" 'p = subprocess.run([REAL] + args, capture_output=True)
+sys.stdout.buffer.write(re.sub(rb"Symbol\(([0-9]+), ", lambda m: b"Symbol(%d, " % (int(m.group(1)) + 1000), p.stdout))
+sys.stderr.buffer.write(p.stderr)
 sys.exit(134 if p.returncode == -6 else p.returncode)'
     # PO: the ORACLE ignores the flag (its answer moves away from the pinned hashes)
     stub "$ST/oracle-strip" "$REAL_ORACLE" 'os.execv(REAL, [REAL] + [a for a in args if not a.startswith("--switches")])'
@@ -137,10 +158,18 @@ sys.exit(134 if p.returncode == -6 else p.returncode)'
         CERB_LEAN_BIN_OVERRIDE="$ST/lean-strip" "$SELF" --rows "$SEL"
     expect "P6 Lean refuses everything" red 'lean refused at the CLI' \
         CERB_LEAN_BIN_OVERRIDE="$ST/lean-refuse" "$SELF" --rows "$SEL"
-    expect "P7a refusal turned into an unnamed crash" red 'provenance_basic_using_uintptr_t_global_yx: class BOTH_FAIL != baseline REFUSAL R-PNVI-01 ORACLE_CRASH' \
+    # P7a/P7b/P8a: the CLASSIFIER's verdict (DIFF by the REFUSAL-CRASH rule), not only the
+    # baseline's class pin
+    expect "P7a refusal turned into an unnamed crash" red 'provenance_basic_using_uintptr_t_global_yx: DIFF — the oracle crash names R-PNVI-01/R-PNVI-01b: Lean must refuse with it; lean: CRASH' \
         CERB_LEAN_BIN_OVERRIDE="$ST/lean-unnamed" "$SELF" --rows "$SEL"
-    expect "P7b refusal mirrored as the oracle's crash (both crash alike)" red 'provenance_basic_using_uintptr_t_global_yx: class BOTH_FAIL != baseline REFUSAL R-PNVI-01 ORACLE_CRASH' \
+    expect "P7b refusal mirrored as the oracle's crash (both crash alike)" red 'provenance_basic_using_uintptr_t_global_yx: DIFF — the oracle crash names R-PNVI-01/R-PNVI-01b: Lean must refuse with it; lean: CRASH' \
         CERB_LEAN_BIN_OVERRIDE="$ST/lean-mirror" "$SELF" --rows "$SEL"
+    expect "P8a oracle combine_prov CRASH vs Lean Error" red 'provenance_basic_using_uintptr_t_global_yx: DIFF — the oracle crash names R-PNVI-01/R-PNVI-01b: Lean must refuse with it; lean: OBS' \
+        CERB_LEAN_BIN_OVERRIDE="$ST/lean-error" "$SELF" --rows "$SEL"
+    expect "P8b Error vs Error with a different failure class" red 'minimal/073-exit\.libc: DIFF — both Error, failure class differs' \
+        CERB_LEAN_BIN_OVERRIDE="$ST/lean-errclass" "$SELF" --rows "$SEL"
+    expect "P8c a Lean-side change on a BOTH_FAIL row (class kept)" red 'minimal/073-exit\.libc: lean-side hash [0-9a-f]{12} != baseline' \
+        CERB_LEAN_BIN_OVERRIDE="$ST/lean-symnum" "$SELF" --rows "$SEL"
     expect "PO the oracle ignores the switch" red "oracle-side hash .* != baseline" \
         CERB_ORACLE_BIN_OVERRIDE="$ST/oracle-strip" "$SELF" --rows "$SEL"
     expect "missing Lean engine" red 'FAIL — (engines not built|Lean driver missing)' \
@@ -161,11 +190,12 @@ sys.exit(134 if p.returncode == -6 else p.returncode)'
         bplant "B4 an oracle hash changed" 'oracle-side hash' 's/^(litmus\/cheri_03_ii [A-Z-]+ oracle=)[0-9a-f]{12}/\1000000000000/'
         bplant "B5 the default-mode comparison flipped" 'default-mode comparison' 's/^(litmus\/cheri_03_ii .*) default=changed$/\1 default=same/'
         bplant "B6 a malformed row class" 'unknown row class' 's/^(litmus\/cheri_03_ii) AGREE /\1 MATCHISH /'
+        bplant "B7 the lean= hash removed from a BOTH_FAIL row" 'requires a lean= hash' 's/^(minimal\/073-exit\.libc BOTH_FAIL oracle=[0-9a-f]{12}) lean=[0-9a-f]{12}/\1/'
     else
         echo "  PLANT FAILED [baseline plants] the control run left no manifest at $M"; fails=$((fails+1))
     fi
     [[ $fails -eq 0 ]] || { echo "test_pnvi: SELFTEST FAILED ($fails)"; exit 1; }
-    echo "test_pnvi: SELFTEST OK (control green; 7 engine plants RED — P1 flag ignored, P6 refuse-everything, P7a unnamed crash, P7b mirrored crash, PO oracle ignores the switch, missing engine, empty selection; 6 baseline plants RED — deleted, phantom, relabelled refusal, oracle hash, default flag, malformed class)"
+    echo "test_pnvi: SELFTEST OK (control green; 10 engine plants RED — P1 flag ignored, P6 refuse-everything, P7a unnamed crash, P7b mirrored crash, P8a oracle crash vs Lean Error, P8b Error/Error failure class differs, P8c BOTH_FAIL Lean side moved, PO oracle ignores the switch, missing engine, empty selection; 7 baseline plants RED — deleted, phantom, relabelled refusal, oracle hash, default flag, malformed class, BOTH_FAIL lean hash missing)"
     exit 0
 fi
 
@@ -181,6 +211,10 @@ fi
 [[ -d "$RT" ]] || die "runtime not staged: $RT"
 mkdir -p "$OBSERVATION_RUN_DIR" || die "cannot create the run directory"
 RUN=$(mktemp -d "$OBSERVATION_RUN_DIR/pnvi.XXXXXXXX") || die "mktemp failed"
+# The derived GPL-2.0-only TU (pkvm/, below) and the bridged Cabs JSON of it must never
+# survive the run: removed on EVERY exit (common.sh register_cleanup, RED runs included —
+# their observation dir is otherwise kept as evidence) and before any --keep-run copy.
+register_cleanup "$RUN/pkvm-derived"
 MANIFEST="$RUN/manifest.tsv"; : > "$MANIFEST"
 cd "$PROJECT_ROOT" || die "cannot cd to $PROJECT_ROOT"
 selected() { [[ -z "$ROWS_RE" ]] || [[ "$1" =~ $ROWS_RE ]]; }
@@ -255,6 +289,7 @@ if [[ $pkvm_selected == 1 ]]; then
         cap "$p.default" "$TIMEOUT_SECS" "${ORACLE[@]}" --nolibc "${PFL[@]}" --exec --batch "${omode[@]}" "$@"
         for t in "$@"; do
             i=$((i+1))
+            register_cleanup "$p.$i.json"
             bridge "$p.bridge$i" "$p.$i.json" "${PFL[@]}" "$t" || { ok=0; break; }
             jsons+=("$p.$i.json")
         done
@@ -299,6 +334,9 @@ if [[ "$MODE" == record ]]; then
 else
     python3 "$HERE/pnvi_lane.py" --manifest "$MANIFEST" --baseline "$BASELINE" ${ROWS_RE:+--select "$ROWS_RE"} || rc=1
 fi
+rm -rf "$RUN/pkvm-derived" || die "cannot remove the derived GPL TU $RUN/pkvm-derived"
+rm -f "$RUN"/pkvm__*.json || die "cannot remove the bridged pKVM JSON"
+[[ ! -e "$RUN/pkvm-derived" ]] || die "the derived GPL TU survived: $RUN/pkvm-derived"
 if [[ -n "$KEEP" ]]; then
     mkdir -p "$KEEP" && cp -r "$RUN"/. "$KEEP"/ || die "cannot keep the run in $KEEP"
     sed -i "s#$RUN/#$KEEP/#g" "$KEEP/manifest.tsv" || die "cannot re-point the kept manifest"

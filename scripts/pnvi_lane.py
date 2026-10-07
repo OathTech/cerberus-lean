@@ -41,13 +41,42 @@ Row classes (the ONLY ones; anything else is DIFF):
     RESOURCE oracle:<kind>      the ORACLE exceeded the lane bound (direction rule,
                                 VALIDATION §1(b): the converse — Lean failing where the
                                 oracle completes — is a (b)-VIOLATION, i.e. DIFF)
-    BOTH_FAIL                   both engines fail (CRASH/front-end Error) with no PNVI
-                                refusal involved: class (a), never agreement
+    BOTH_FAIL                   VALIDATION §1(a), never agreement, EXACTLY two shapes:
+                                (1) Error/Error: each side is ONE `Error` verdict and the two
+                                    are EQUAL under the codec's `failure-class` projection
+                                    (scripts/observations.py: the `full` token with
+                                    `Symbol(<digits>, ` elided to `Symbol(_, ` and nothing
+                                    else) — the same failure, only the symbol numbering
+                                    differs (tray 17). Two Errors with different failure
+                                    text are DIFF (narrower than §1(a)'s "only the text
+                                    differs": fail-closed, [AGENT 2026-10-07] review F1).
+                                (2) CRASH/CRASH: both engines die with an internal failure
+                                    (oracle exit 125 uncaught exception / Lean exit 134 PANIC)
+                                    and the oracle's crash is NOT one an R-PNVI id names
+                                    (rule below).
+                                Anything else — a crash on one side and a verdict (Error
+                                included) on the other, a Lean `ModelFailure` — is DIFF
+                                (§1(a): "A crash on one side and a verdict on the other is
+                                NOT (a)").
+The REFUSAL-CRASH rule (both directions): an oracle CRASH whose decoded payload FULLY
+matches an ORACLE_SIDE 'crash' pattern REQUIRES Lean `REFUSAL <that id>` (anything else on
+the Lean side — an Error, a crash, a verdict, another id — is DIFF), and a Lean refusal with a
+'crash' id requires that oracle crash. The patterns are anchored (fullmatch), so an oracle
+crash merely CONTAINING the text does not qualify; a payload that matches (e.g. any
+`Not_found`, R-PNVI-04) but comes from another upstream site still demands the refusal — RED,
+never absorbed.
+LIMIT of the 'verdict' ids (R-PNVI-03/-05/-08/-10): the classifier checks only that the
+oracle ANSWERED (an OBS); it cannot check that the oracle took the flagged arm. That is
+covered by the per-row review of the registered row (design §G.1, the baseline header) plus
+the pinned oracle hash, which turns any later change of the oracle's answer RED.
 Every non-AGREE row must be in the committed baseline with the same class; the baseline
-also pins a hash of the ORACLE side (its tokens / crash message / resource kind) and, for
-rows with a default-mode oracle capture, whether the switch changed the oracle's answer
-(`default=same|changed`). Both directions, fail-closed: a missing row, an extra row, a
-changed class or hash, an empty selection, a DIFF or INVALID row is RED.
+also pins a hash of the ORACLE side (its tokens / crash message / resource kind), for
+BOTH_FAIL and RESOURCE rows a hash of the LEAN side too (`lean=`; required on exactly
+those classes and forbidden elsewhere — on AGREE the Lean side equals the oracle's, on a
+REFUSAL row the class names it), and, for rows with a default-mode oracle capture,
+whether the switch changed the oracle's answer (`default=same|changed`). Both directions,
+fail-closed: a missing row, an extra row, a changed class or hash, an empty selection, a
+DIFF or INVALID row is RED.
 """
 from __future__ import annotations
 
@@ -64,14 +93,15 @@ REFUSAL_PREFIX = 'PNVI_ae_udi refusal (unsupported upstream arm): '
 REFUSAL_ID = re.compile(r'(R-PNVI-[0-9]{2}b?): ')
 # The oracle side each refusal id pairs with (design §G.1, the refusal's own upstream arm).
 # 'crash': the oracle must die with exactly this uncaught failure (the codec's decoded
-# exception payload); 'verdict': the oracle runs through the flagged arm and answers.
+# exception payload, matched with fullmatch — anchored both ends); 'verdict': the oracle
+# runs through the flagged arm and answers (unverifiable here: module docstring, LIMIT).
 ORACLE_SIDE = {
     'R-PNVI-01': ('crash', re.compile(r'Concrete\.combine_prov: found a Prov_symbolic')),
     'R-PNVI-01b': ('crash', re.compile(r'Concrete\.combine_prov: found a Prov_symbolic')),
     'R-PNVI-02': ('crash', re.compile(r'File "memory/concrete/impl_mem\.ml", line [0-9]+, characters [0-9]+-[0-9]+: Assertion failed')),
-    'R-PNVI-04': ('crash', re.compile(r'Not_found')),
+    'R-PNVI-04': ('crash', re.compile(r'Not_found')),  # the bare exception (the codec's payload: its name)
     'R-PNVI-06': ('crash', re.compile(r'Concrete\.array_shift_ptrval found a Prov_symbolic')),
-    'R-PNVI-07': ('crash', re.compile(r'case_ptrval')),
+    'R-PNVI-07': ('crash', re.compile(r'case_ptrval')),  # Failure("case_ptrval"), impl_mem.ml:1858
     'R-PNVI-03': ('verdict', None),
     'R-PNVI-05': ('verdict', None),
     'R-PNVI-08': ('verdict', None),
@@ -103,7 +133,9 @@ def classify_side(prefix: str, lean: bool):
         return ('CLI_REFUSAL', stderr.split(b'\n')[0].decode('utf-8', 'replace')[:200])
     try:
         o = obs.parse(stdout, stderr, status, 'batch')
-        return ('OBS', tuple(o.tokens('full')))
+        # (OBS, full tokens, failure-class tokens): the comparison and every hash use the
+        # `full` tokens; the projection is consulted ONLY by the BOTH_FAIL Error/Error test
+        return ('OBS', tuple(o.tokens('full')), tuple(o.tokens('failure-class')))
     except obs.ProtocolError as batch_exc:
         batch_reason = str(batch_exc)
     # the internal-failure decoders: Lean's PANIC under the `litmus` policy; the oracle's
@@ -125,9 +157,16 @@ def classify_side(prefix: str, lean: bool):
     return ('INVALID', f'batch: {batch_reason}')
 
 
-def is_fe_error(side) -> bool:
-    """A single Error verdict (a front-end or driver failure reported as a verdict)."""
+def is_single_error(side) -> bool:
+    """Exactly one verdict and it is an `Error` (the codec's `ERR:` token)."""
     return side[0] == 'OBS' and len(side[1]) == 1 and side[1][0].startswith('ERR:')
+
+
+def named_crash_ids(o) -> list[str]:
+    """The R-PNVI ids whose ORACLE_SIDE crash pattern fully matches the oracle's crash."""
+    if o[0] != 'CRASH':
+        return []
+    return [rid for rid, (kind, pat) in ORACLE_SIDE.items() if kind == 'crash' and pat.fullmatch(o[1])]
 
 
 def classify_row(mode: str, o, l) -> tuple[str, str]:
@@ -142,13 +181,22 @@ def classify_row(mode: str, o, l) -> tuple[str, str]:
         return (f'RESOURCE oracle:{o[1]}', f'lean side {l[0]}')
     if l[0] == 'RESOURCE':
         return ('DIFF', f'(b)-VIOLATION: lean {l[1]} where the oracle completed ({o[0]})')
+    named = named_crash_ids(o)
+    if named:
+        # the REFUSAL-CRASH rule: an oracle crash an R-PNVI id names requires that refusal
+        if l[0] == 'REFUSAL' and l[1] in named:
+            return (f'REFUSAL {l[1]} ORACLE_CRASH', o[1])
+        return ('DIFF', f'the oracle crash names {"/".join(named)}: Lean must refuse with it; '
+                        f'lean: {l[0]} {str(l[1])[:120]}')
     if o[0] == 'OBS' and l[0] == 'OBS':
         if o[1] == l[1]:
             return ('AGREE-FIRST' if mode == 'first' else 'AGREE', '')
-        if is_fe_error(o) and is_fe_error(l):
-            # both engines answer with ONE Error verdict whose text differs (e.g. the
-            # ill-formed-program text embeds a symbol number, tray 17): VALIDATION §1(a)
-            return ('BOTH_FAIL', 'both Error, text differs: ' + l[1][0][:120])
+        if is_single_error(o) and is_single_error(l):
+            if o[2] == l[2]:
+                # ONE Error each, equal modulo symbol numbering (the ill-formed-program
+                # text embeds a symbol number, tray 17): VALIDATION §1(a)
+                return ('BOTH_FAIL', 'both Error, equal under failure-class: ' + l[1][0][:120])
+            return ('DIFF', 'both Error, failure class differs')
         return ('DIFF', 'observations differ')
     if l[0] == 'REFUSAL':
         rid = l[1]
@@ -156,23 +204,30 @@ def classify_row(mode: str, o, l) -> tuple[str, str]:
             return ('DIFF', f'unregistered refusal id {rid}')
         kind, pat = ORACLE_SIDE[rid]
         if kind == 'crash':
-            if o[0] == 'CRASH' and pat.search(o[1]):
+            if o[0] == 'CRASH' and pat.fullmatch(o[1]):
                 return (f'REFUSAL {rid} ORACLE_CRASH', o[1])
             return ('DIFF', f'{rid} must pair with the oracle crash /{pat.pattern}/; oracle: {o[0]} {str(o[1])[:120]}')
         if o[0] == 'OBS':
             return (f'REFUSAL {rid} ORACLE_VERDICT', '')
         return ('DIFF', f'{rid} must pair with an oracle verdict; oracle: {o[0]} {str(o[1])[:120]}')
-    if (o[0] == 'CRASH' or is_fe_error(o)) and (l[0] == 'CRASH' or is_fe_error(l)):
-        return ('BOTH_FAIL', f'oracle {o[0]} / lean {l[0]}')
-    return ('DIFF', f'oracle {o[0]} vs lean {l[0]}')
+    if o[0] == 'CRASH' and l[0] == 'CRASH':
+        # both tool crashes, the oracle's not an R-PNVI-named one (checked above)
+        return ('BOTH_FAIL', f'both CRASH: oracle {o[1][:60]!r} / lean {l[1][:60]!r}')
+    return ('DIFF', f'oracle {o[0]} vs lean {l[0]} (a crash against a verdict is NOT VALIDATION §1(a))')
 
 
-def oracle_hash(o) -> str:
-    if o[0] == 'OBS':
-        text = '\n'.join(o[1])
+def side_hash(side) -> str:
+    """sha256[:12] of one side: its `full` tokens, or `<KIND>:<payload>`."""
+    if side[0] == 'OBS':
+        text = '\n'.join(side[1])
     else:
-        text = f'{o[0]}:{o[1]}'
+        text = f'{side[0]}:{side[1]}'
     return hashlib.sha256(text.encode('utf-8', 'surrogateescape')).hexdigest()[:12]
+
+
+def pins_lean(cls: str) -> bool:
+    """The classes whose baseline row pins the Lean side's hash too."""
+    return cls == 'BOTH_FAIL' or cls.startswith('RESOURCE ')
 
 
 def load_manifest(path: Path):
@@ -192,14 +247,17 @@ def load_baseline(path: Path):
     for n, line in enumerate(path.read_text().splitlines(), 1):
         if not line.strip() or line.startswith('#'):
             continue
-        m = re.fullmatch(r'(\S+) (.+?) oracle=([0-9a-f]{12})(?: default=(same|changed))?', line)
+        m = re.fullmatch(r'(\S+) (.+?) oracle=([0-9a-f]{12})(?: lean=([0-9a-f]{12}))?(?: default=(same|changed))?', line)
         if not m:
             raise SystemExit(f'pnvi_lane: FAIL — malformed baseline line {n}: {line[:160]}')
         if not ROW_CLASS.match(m.group(2)):
             raise SystemExit(f'pnvi_lane: FAIL — baseline line {n}: unknown row class {m.group(2)!r}')
+        if pins_lean(m.group(2)) != (m.group(4) is not None):
+            raise SystemExit(f'pnvi_lane: FAIL — baseline line {n}: class {m.group(2)!r} '
+                             + ('requires a lean= hash' if pins_lean(m.group(2)) else 'must not carry a lean= hash'))
         if m.group(1) in base:
             raise SystemExit(f'pnvi_lane: FAIL — duplicate baseline row {m.group(1)}')
-        base[m.group(1)] = (m.group(2), m.group(3), m.group(4))
+        base[m.group(1)] = (m.group(2), m.group(3), m.group(4), m.group(5))
     if not base:
         raise SystemExit(f'pnvi_lane: FAIL — empty baseline {path}')
     return base
@@ -229,7 +287,7 @@ def main() -> int:
             default = 'same' if (d[0] == o[0] and d[1] == o[1]) else 'changed'
             sect = name.split('/')[0]
             changed.setdefault(sect, [0, 0])[0 if default == 'same' else 1] += 1
-        observed[name] = (cls, oracle_hash(o), default)
+        observed[name] = (cls, side_hash(o), side_hash(l) if pins_lean(cls) else None, default)
         key = cls.split(' ')[0] if cls.startswith(('REFUSAL', 'RESOURCE')) else cls
         counts[key] = counts.get(key, 0) + 1
         line = f'  {cls:<34} {name}' + (f'  [{why}]' if why and cls not in ('AGREE', 'AGREE-FIRST') else '') \
@@ -248,8 +306,9 @@ def main() -> int:
             return 1
         with args.write_baseline.open('w') as f:
             for name in sorted(observed):
-                cls, h, default = observed[name]
-                f.write(f'{name} {cls} oracle={h}' + (f' default={default}' if default else '') + '\n')
+                cls, h, lh, default = observed[name]
+                f.write(f'{name} {cls} oracle={h}' + (f' lean={lh}' if lh else '')
+                        + (f' default={default}' if default else '') + '\n')
         print(f'pnvi_lane: wrote {len(observed)} rows to {args.write_baseline} (header must be re-added by test_pnvi.sh)')
         return 0
     base = load_baseline(args.baseline)
@@ -263,12 +322,14 @@ def main() -> int:
     for name in sorted(set(observed) - set(expected)):
         red.append(f'{name}: row ran but is not in the baseline (unclassified)')
     for name in sorted(set(observed) & set(expected)):
-        cls, h, default = observed[name]
-        bcls, bh, bdefault = expected[name]
+        cls, h, lh, default = observed[name]
+        bcls, bh, blh, bdefault = expected[name]
         if cls != bcls:
             red.append(f'{name}: class {cls} != baseline {bcls}')
         if h != bh:
             red.append(f'{name}: oracle-side hash {h} != baseline {bh} (the oracle\'s answer moved)')
+        if cls == bcls and lh != blh:
+            red.append(f'{name}: lean-side hash {lh} != baseline {blh} (the Lean side of a {cls} row moved)')
         if default != bdefault:
             red.append(f'{name}: default-mode comparison {default} != baseline {bdefault}')
     tally = ' '.join(f'{k}={v}' for k, v in sorted(counts.items()))
@@ -279,7 +340,7 @@ def main() -> int:
         for r in red:
             print('  ' + r)
         return 1
-    print(f'pnvi_lane: BASELINE OK ({len(observed)} rows = the baseline' + (f' rows matching {args.select!r}' if sel else '') + ', classes and oracle hashes exact)')
+    print(f'pnvi_lane: BASELINE OK ({len(observed)} rows = the baseline' + (f' rows matching {args.select!r}' if sel else '') + ', classes, oracle hashes and BOTH_FAIL/RESOURCE lean hashes exact)')
     return 0
 
 

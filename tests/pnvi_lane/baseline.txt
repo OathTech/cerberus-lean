@@ -6,6 +6,7 @@
 # instrument commit stating why.
 #
 # Format: <row> <class> oracle=<sha256[:12] of the oracle side under --switches=PNVI_ae_udi>
+#         [lean=<sha256[:12] of the Lean side> — on BOTH_FAIL and RESOURCE rows only, required there]
 #         default=<same|changed: the oracle's answer without the switch, compared>
 #
 # Non-agreement rows (each registered; NONE is agreement):
@@ -26,8 +27,9 @@
 #     verdict each (the S4 record).
 #   BOTH_FAIL ×2 (minimal/073-exit.libc, 074-abort.libc, --nolibc): both engines answer
 #     `Error {msg: "ill-formed program: `calling an unknown procedure: Symbol(N, …)'"}`
-#     with different symbol numbers — VALIDATION §1(a) (tray 17); the same pair in default
-#     mode (scripts/exec_baseline.txt CERB_SKIP).
+#     with different symbol numbers, EQUAL under the codec's failure-class projection (the
+#     only Error/Error shape BOTH_FAIL admits) — VALIDATION §1(a) (tray 17); the same pair in
+#     default mode (scripts/exec_baseline.txt CERB_SKIP). Their Lean side is pinned (lean=).
 # pkvm/pkvm-init is EXHAUSTIVE: its oracle hash pins the 2-execution set
 #   (UB088 at <715:2--715:17> and at <715:2--715:6>, design §C.3/§C.6).
 litmus/cheri_03_ii AGREE oracle=32faef2d53f2 default=changed
@@ -146,8 +148,8 @@ minimal/069-mod-by-zero.undef AGREE oracle=b7f1ac5395b4 default=same
 minimal/070-signed-overflow.undef AGREE oracle=3681f86113cd default=same
 minimal/071-null-deref.undef AGREE oracle=dc1e2669a725 default=same
 minimal/072-out-of-bounds.undef AGREE oracle=5e735df98c14 default=changed
-minimal/073-exit.libc BOTH_FAIL oracle=39fd687e5c3c default=same
-minimal/074-abort.libc BOTH_FAIL oracle=d75bc58e450c default=same
+minimal/073-exit.libc BOTH_FAIL oracle=39fd687e5c3c lean=28d6c879bca1 default=same
+minimal/074-abort.libc BOTH_FAIL oracle=d75bc58e450c lean=18daf109f90c default=same
 minimal/075-main-argc-argv AGREE oracle=69db3a6478c5 default=same
 minimal/076-main-argv-access AGREE oracle=a3809c1516f9 default=same
 minimal/077-bool-trap.undef AGREE oracle=44d66035c1f6 default=same

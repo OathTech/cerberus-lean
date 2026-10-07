@@ -21,10 +21,11 @@ semantic arm changed (S3 wrote them), only the CLI and the evidence.
 ## 0. Rulings in force (verbatim) and governing documents
 
 - [USER 2026-10-03]: "we should fall back to loudly rejecting (either as unsupported, or matching upstream)".
-- [USER 2026-09-30]: "we should not fix deviations with special 'magic mode' paths that work exclusively in
-  one situation".
-- [USER 2026-10-05]: "agree on your recs except for mirroring crashes / obviously wrong behavior. These should
-  be refusals surely?"
+- [USER 2026-09-30]: "… we should not fix deviations with special 'magic mode' paths that work exclusively in
+  one situation. …" (trimmed at both ends, marked `…`; the committed records — design record §1.1, CONTRACT
+  §5 D8 — carry this span).
+- [USER 2026-10-05]: "Re PNVI - agree on your recs except for mirroring crashes / obviously wrong behavior.
+  These should be refusals surely?"
 - [USER 2026-10-07]: "we don't want our gates to be adversarially robust unless they are trust surfaces".
 - Design record `docs/2026-10-04_pnvi-ae-udi-design.md` §C, §D, §E S4, §F.4/§F.5/§F.6/§F.8/§F.12/§F.13, §G,
   §H, §H.1. S3 record `docs/2026-10-07_pnvi-s3-arms-record.md`. S1 record §14 (gate classes).
@@ -192,10 +193,10 @@ Row classes (the only ones):
 |---|---|---|
 | `AGREE` | identical token SEQUENCES, exhaustive | yes |
 | `AGREE-FIRST` | the same in first mode | yes, but OUTSIDE CONTRACT §1 (labelled) |
-| `REFUSAL R-PNVI-nn ORACLE_CRASH` | Lean refuses with that id where the oracle crashes with THAT id's upstream failure (a per-id table: -01 `Concrete.combine_prov: found a Prov_symbolic`, -06 `Concrete.array_shift_ptrval found a Prov_symbolic`, -07 `case_ptrval`, -02 the `assert false`, -04 `Not_found`) | NO — a registered refusal row |
+| `REFUSAL R-PNVI-nn ORACLE_CRASH` | Lean refuses with that id where the oracle crashes with THAT id's upstream failure (since the review round, §12: patterns anchored, and an oracle crash an id names REQUIRES that refusal) (a per-id table: -01 `Concrete.combine_prov: found a Prov_symbolic`, -06 `Concrete.array_shift_ptrval found a Prov_symbolic`, -07 `case_ptrval`, -02 the `assert false`, -04 `Not_found`) | NO — a registered refusal row |
 | `REFUSAL R-PNVI-nn ORACLE_VERDICT` | Lean refuses where the oracle runs through the flagged arm (allowed only for the ids whose upstream arm answers: -03, -05, -08, -10) | NO — a registered refusal row |
 | `RESOURCE oracle:<kind>` | the ORACLE exceeded the bound (VALIDATION §1(b) direction rule) | NO |
-| `BOTH_FAIL` | both engines fail with no PNVI refusal involved (class (a)) | NO |
+| `BOTH_FAIL` | (narrowed by the review round, §12) EXACTLY: one `Error` each, equal under the codec's `failure-class` projection; or a crash on both sides where the oracle's crash is not one an R-PNVI id names (class (a)); Lean side hash-pinned (`lean=`) | NO |
 
 Anything else is `DIFF` (including a refusal paired with the wrong oracle side, a Lean resource failure where
 the oracle completes — a (b)-VIOLATION — and a Lean CLI refusal) or `INVALID`; both are always RED and cannot
@@ -372,7 +373,10 @@ capped: OOM-KILLED (exit 137 — cgroup memory cap CERB_MEM_MAX=4G breached; mem
   stay UNREACHABLE-BY-INVARIANT with structural reasons. Resealed: `UNREACHABLE-BY-INVARIANT=173 REACHABLE=44
   UNKNOWN=22` (was 178/40/21).
 - **Upstream tray** (reports only, Draft; INDEX rows + the "added since" line): `50-switches-parser-fail-open.md`
-  (re-measured: `PNVI,PNVI_ae_udi` silently runs PLAIN PNVI; a typo runs PVI), `51-combine-prov-crash-on-pnvi-litmus.md`,
+  (re-measured: a typo runs PVI; `PNVI,PNVI_ae_udi` runs PLAIN PNVI — MEASURED by the review round on pristine
+  upstream `b9aeedcb4` with `tests/pnvi_testsuite/provenance_roundtrip_via_intptr_t_onepast.c`: `--switches=PNVI`
+  and the override give UB046, `PNVI_ae_udi` gives `Defined`; the first draft's reproducer printed
+  `Specified(7)` under both PNVI variants and could not show it), `51-combine-prov-crash-on-pnvi-litmus.md`,
   `52-debug-printf-in-eff-array-shift-pnvi-arm.md` (code-level; no reproducer found),
   `53-array-shift-ptrval-crash-on-symbolic-pointer-memcpy.md` (repro = witness `r06`). Upstream line numbers were
   re-read at `b9aeedcb4` (`git show b9aeedcb4:memory/concrete/impl_mem.ml`).
@@ -509,15 +513,27 @@ Nothing in default mode moved. No STOP.
   design §D.1 row 3) were not added.
 - **D-S4-3 [AGENT] — the baseline pins the ORACLE side too** (a hash per row) and the default-mode comparison.
   This goes beyond "Lean = oracle": an oracle that drifts, or that ignores the switch, is RED (plant PO).
-- **D-S4-4 [AGENT] — `BOTH_FAIL` admits two single-`Error` verdicts with different text** (class (a)): the only
-  members are the two default-lane `CERB_SKIP` rows; a new member must be baselined.
+- **D-S4-4 [AGENT] — `BOTH_FAIL` is exactly two shapes** (class (a), VALIDATION §1(a); narrowed by the S4 review
+  F1, 2026-10-07): (1) Error/Error — ONE `Error` verdict on each side, EQUAL under the codec's existing
+  `failure-class` projection (`scripts/observations.py`: `Symbol(<digits>, ` → `Symbol(_, `, nothing else; the
+  projection LADDER row 6b uses), so two Errors of different failure text are DIFF — narrower than §1(a)'s "only
+  the text differs", the fail-closed reading; (2) CRASH/CRASH — both engines die with an internal failure and the
+  oracle's crash is NOT one an R-PNVI id names. A crash on one side and a verdict (an `Error` included, a Lean
+  `ModelFailure` included) on the other is DIFF. The REFUSAL-CRASH rule: an oracle crash whose payload fully
+  matches an R-PNVI `ORACLE_SIDE` crash pattern (anchored, `fullmatch`) REQUIRES Lean `REFUSAL <that id>` —
+  anything else is DIFF. BOTH_FAIL and RESOURCE rows pin a `lean=` hash of the Lean side (required there,
+  forbidden elsewhere), so a Lean-side change that keeps the class is RED. The only members are the two
+  default-lane `CERB_SKIP` rows, `minimal/073-exit.libc` and `074-abort.libc` (both qualify under shape (1));
+  a new member must be baselined. The `verdict` ids (R-PNVI-03/-05/-08/-10): the classifier checks only that the
+  oracle answered, not that it took the flagged arm — the per-row review plus the oracle hash cover that.
+  Plants P8a/P8b/P8c/B7 (§12).
 - **D-S4-5 [AGENT] — the allocator drivers' exhaustive runs are not part of the lane** (resource limit recorded,
   not re-measured per pass; Lean exhaustive not attempted, §6).
 - **D-S4-6 [AGENT] — under `--parse-core` the accepted switch is refused**, not ignored (the parser mode reads no
   switch set; ignoring it would be a silent absorption).
 - **D-S4-7 [AGENT] — the register re-review is in S4** (design §D.4 put it with the lane); R-PNVI-03 moved to
   UNKNOWN, not to REACHABLE.
-- **D-S4-8 — P2 does not turn `pkvm-init` RED** (§5.2 finding); the design's expectation is superseded by the
+- **D-S4-8 [AGENT] — P2 does not turn `pkvm-init` RED** (§5.2 finding); the design's expectation is superseded by the
   measurement.
 - **D-S4-9 [AGENT] — R-PNVI-12 text fix as its own commit** (`e60432f28`), found while recording §2.2; Tier A ran
   after it.
@@ -533,3 +549,94 @@ Nothing in default mode moved. No STOP.
 - **Behaviour at the default instance: unchanged** (§9). Their corpus check and freeze reference run are S5's.
 - **New user-visible mode**: `--switches=PNVI_ae_udi`; facts under it (`@… ⟨[.PNVI .AE_UDI]⟩`) are what a future
   reasoning effort would bind (design §F.11).
+
+## 12. Review round (S4 review F1–F6, 2026-10-07)
+
+Scripts and docs only; no Lean semantics change.
+
+- **F1 (trust surface) — `BOTH_FAIL` narrowed to VALIDATION §1(a)** [AGENT, implementing the review's remedy].
+  `scripts/pnvi_lane.py`: (i) BOTH_FAIL is exactly Error/Error (one `Error` verdict per side, EQUAL under the
+  codec's existing `failure-class` projection — the one LADDER row 6b uses; `scripts/observations.py`'s docstring
+  and LADDER row 6b now name this second, non-agreement consumer) or CRASH/CRASH; a crash against any verdict is
+  DIFF; (ii) an oracle crash whose payload fully matches an R-PNVI `ORACLE_SIDE` crash pattern REQUIRES Lean
+  `REFUSAL <that id>`, anything else DIFF; (iii) BOTH_FAIL and RESOURCE rows pin a `lean=` hash (required on those
+  classes, forbidden elsewhere); (iv) plants P8a (the oracle's `combine_prov` crash vs a Lean `Error`), P8b
+  (Error/Error, different failure class), P8c (a Lean-side change on a BOTH_FAIL row that keeps the class), B7
+  (the `lean=` hash removed); P7a/P7b now assert the CLASSIFIER's DIFF, not only the baseline's class pin; the
+  selftest selection gains `minimal/073-exit.libc`. (v) The baseline was re-recorded with
+  `scripts/test_pnvi.sh --record-baseline` for the new column only: compared with the previous file, all 164 rows
+  keep class, oracle hash and `default=` (a derived comparison by script); the only change is `lean=` on the two
+  BOTH_FAIL rows, which both qualify under the narrowed rule:
+  ```
+  < minimal/073-exit.libc BOTH_FAIL oracle=39fd687e5c3c default=same
+  < minimal/074-abort.libc BOTH_FAIL oracle=d75bc58e450c default=same
+  ---
+  > minimal/073-exit.libc BOTH_FAIL oracle=39fd687e5c3c lean=28d6c879bca1 default=same
+  > minimal/074-abort.libc BOTH_FAIL oracle=d75bc58e450c lean=18daf109f90c default=same
+  ```
+  The re-record is in this one review-round commit, not a separate instrument commit (the round's brief asked for
+  one coherent commit). Scope: D-S4-4 (rewritten).
+- **F2** — CONTRACT's PNVI row and VALIDATION's PNVI paragraph no longer call R-PNVI-08/-10 "unreachable by
+  invariant": they are monadic sites (`pnviRefuseM`) outside the pure failure-reach census; their reach is UNREVIEWED.
+- **F3** — tray 50 gains a reproducer that tells plain PNVI from PNVI-ae-udi (upstream's
+  `provenance_roundtrip_via_intptr_t_onepast.c` on pristine upstream `b9aeedcb4`: `PNVI` and `PNVI,PNVI_ae_udi`
+  give UB046, `PNVI_ae_udi` gives `Defined`), so "runs plain PNVI" is now measured; its Impact sentence is
+  corrected (the old one claimed the shown verdicts differ in the override case, where they did not); §7 reworded.
+- **F4** — every `ORACLE_SIDE` crash pattern is matched with `fullmatch` (R-PNVI-04 `Not_found`, R-PNVI-07
+  `case_ptrval` included); the docstring states that for the `verdict` ids (-03/-05/-08/-10) the classifier cannot
+  check the oracle took the flagged arm, and that the per-row review plus the oracle hash cover it.
+- **F5** — §0's quotes: the 2026-10-05 quote restored in full (as in the design record); the 2026-09-30 quote's
+  trims marked with `…` (the committed records carry only that span). D-S4-8 tagged [AGENT].
+- **F6** — `test_pnvi.sh` removes `pkvm-derived/` (the derived GPL-2.0-only `page_alloc_census.c`) and the bridged
+  pKVM Cabs JSONs before any `--keep-run` copy, and registers them with common.sh's cleanup so RED runs (whose
+  observation directory is kept as evidence) do not keep them; after the selftest, the full lane and Tier A,
+  `find .tmp -name page_alloc_census.c` printed nothing.
+
+### 12.1 Gates
+
+Gated tree: `a91d251ec` plus this round's working-tree diff, all files except this §12 (written after the gates);
+`git diff a91d251ec -- . ':!lean_frontend/docs/2026-10-07_pnvi-s4-lane-record.md' | sha256sum` =
+`6b93a0aace8fb5bad4acf5020f7a596f4d305152f9cdfe718fa51c9fb2814e80`. The Lean build was unchanged (no Lean source
+touched; `build_lean` ran inside each lane run). The full lane and row 1 ran separately first, before two comment-only
+edits (the `observations.py` docstring, LADDER row 6b); Tier A ran on the final tree and includes row 1 (`A1`), the
+selftest (`A14.1`) and the lane (`A14.2`). Verbatim, Tier A's `A14.1` stdout (its CONTROL/PLANT lines each cut
+at 260 characters — the cut is mine; the final line whole):
+
+```
+  CONTROL OK [control: unplanted selection] -> SUMMARY: rows=6 AGREE=2 AGREE-FIRST=1 BOTH_FAIL=1 REFUSAL=2 | switch vs default (oracle): litmus:same=0,changed=3 minimal:same=1,changed=0 pkvm:same=0,changed=1 witness:same=0,changed=1
+  PLANT OK   [P1 Lean ignores the switch (flag stripped)] -> RED:   litmus/pointer_from_int_disambiguation_1: class DIFF != baseline AGREE
+  PLANT OK   [P6 Lean refuses everything] -> RED:   DIFF                               litmus/cheri_03_ii  [lean refused at the CLI: cerberus-lean: refused — plant: every input refused]  default=changed
+  PLANT OK   [P7a refusal turned into an unnamed crash] -> RED:   litmus/provenance_basic_using_uintptr_t_global_yx: DIFF — the oracle crash names R-PNVI-01/R-PNVI-01b: Lean must refuse with it; lean: CRASH combine_prov, a Prov_symbolic provenance (fir
+  PLANT OK   [P7b refusal mirrored as the oracle's crash (both crash alike)] -> RED:   litmus/provenance_basic_using_uintptr_t_global_yx: DIFF — the oracle crash names R-PNVI-01/R-PNVI-01b: Lean must refuse with it; lean: CRASH Concrete.combine_prov: found a P
+  PLANT OK   [P8a oracle combine_prov CRASH vs Lean Error] -> RED:   litmus/provenance_basic_using_uintptr_t_global_yx: DIFF — the oracle crash names R-PNVI-01/R-PNVI-01b: Lean must refuse with it; lean: OBS ('ERR:{msg: "plant: a PNVI refusal reported as 
+  PLANT OK   [P8b Error vs Error with a different failure class] -> RED:   minimal/073-exit.libc: DIFF — both Error, failure class differs
+  PLANT OK   [P8c a Lean-side change on a BOTH_FAIL row (class kept)] -> RED:   minimal/073-exit.libc: lean-side hash 804ab26db86c != baseline 28d6c879bca1 (the Lean side of a BOTH_FAIL row moved)
+  PLANT OK   [PO the oracle ignores the switch] -> RED:   litmus/cheri_03_ii: oracle-side hash ed5ba148c54c != baseline 32faef2d53f2 (the oracle's answer moved)
+  PLANT OK   [missing Lean engine] -> RED: test_pnvi: FAIL — Lean driver missing: /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/pnvi-ae-udi/.tmp/scripts/pnvi-selftest.rv4e05Kd/nonexistent
+  PLANT OK   [empty selection] -> RED: pnvi_lane: FAIL — empty selection (no rows ran)
+  PLANT OK   [B1 a selected row deleted from the baseline] -> RED:   litmus/cheri_03_ii: row ran but is not in the baseline (unclassified)
+  PLANT OK   [B2 a phantom selected row] -> RED:   litmus/cheri_03_iii: baseline row not run (missing)
+  PLANT OK   [B3 a refusal row relabelled as agreement] -> RED:   litmus/provenance_basic_using_uintptr_t_global_yx: class REFUSAL R-PNVI-01 ORACLE_CRASH != baseline AGREE
+  PLANT OK   [B4 an oracle hash changed] -> RED:   litmus/cheri_03_ii: oracle-side hash 32faef2d53f2 != baseline 000000000000 (the oracle's answer moved)
+  PLANT OK   [B5 the default-mode comparison flipped] -> RED:   litmus/cheri_03_ii: default-mode comparison changed != baseline same
+  PLANT OK   [B6 a malformed row class] -> RED: pnvi_lane: FAIL — baseline line 35: unknown row class 'MATCHISH'
+  PLANT OK   [B7 the lean= hash removed from a BOTH_FAIL row] -> RED: pnvi_lane: FAIL — baseline line 151: class 'BOTH_FAIL' requires a lean= hash
+test_pnvi: SELFTEST OK (control green; 10 engine plants RED — P1 flag ignored, P6 refuse-everything, P7a unnamed crash, P7b mirrored crash, P8a oracle crash vs Lean Error, P8b Error/Error failure class differs, P8c BOTH_FAIL Lean side moved, PO oracle ignores the switch, missing engine, empty selection; 7 baseline plants RED — deleted, phantom, relabelled refusal, oracle hash, default flag, malformed class, BOTH_FAIL lean hash missing)
+```
+
+Tier A `A14.2` (the full lane):
+
+```
+SUMMARY: rows=164 AGREE=152 AGREE-FIRST=3 BOTH_FAIL=2 REFUSAL=7 | switch vs default (oracle): litmus:same=27,changed=17 minimal:same=111,changed=2 pkvm:same=1,changed=3 witness:same=0,changed=3
+pnvi_lane: BASELINE OK (164 rows = the baseline, classes, oracle hashes and BOTH_FAIL/RESOURCE lean hashes exact)
+```
+
+Row 1 (`scripts/test_unit.sh` via `scripts/ce`, rc 0) and Tier A `A1`: `Total: 18 passed, 0 failed`. Tier A (`python3 scripts/release.py --mode fast` via `scripts/ce`), the 19 `PASSED` lines joined onto one line (the joining is mine) and the tail (`rc=0` is my wrapper's):
+
+```
+PASSED A1 (458.0s) PASSED A2 (29.0s) PASSED A3 (73.0s) PASSED A4 (23.4s) PASSED A4b (25.6s) PASSED A4c (3.3s) PASSED A5 (103.6s) PASSED A6 (4.0s) PASSED A6b (3.7s) PASSED A7 (10.6s) PASSED A8 (9.1s) PASSED A9 (17.2s) PASSED A10 (18.3s) PASSED A11 (59.2s) PASSED A12.1 (5.0s) PASSED A12.2 (4.7s) PASSED A13 (1.6s) PASSED A14.1 (108.1s) PASSED A14.2 (164.2s)
+fast: passed; 19/19 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+rc=0
+```
