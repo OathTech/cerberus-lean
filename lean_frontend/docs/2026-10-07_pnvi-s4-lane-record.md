@@ -654,3 +654,11 @@ absorbing path). Findings fixed by the orchestrator in the follow-up commit:
   [AGENT] fail-closed narrowing.
 - **Two [USER] quotes in §0 trimmed without an ellipsis:** fixed (ellipsis / full opening restored).
 - INFO (fail-closed, unchanged): a bare upstream `Not_found` from any site demands R-PNVI-04 (documented).
+
+## 14. Addendum (2026-10-08): the `arm/` section
+
+The arc-end audit's follow-up F4 added a fifth section, `arm/` (`tests/pnvi_arms/*.c`, 13 rows, libc mode,
+exhaustive, all `AGREE`): oracle-compared witnesses for the symbolic `kill`/`resolve_iota` paths, `eq_ptrval`
+symbolic/symbolic, both `diff_ptrval` symbolic arms and `eff_array_shift`'s `Prov_none` bounds arm. The lane is
+now 177 rows (165 AGREE); the 164 rows above are unchanged. Record:
+`docs/2026-10-08_pnvi-arm-witness-rows-record.md`.

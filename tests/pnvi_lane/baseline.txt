@@ -30,8 +30,25 @@
 #     with different symbol numbers, EQUAL under the codec's failure-class projection (the
 #     only Error/Error shape BOTH_FAIL admits) — VALIDATION §1(a) (tray 17); the same pair in
 #     default mode (scripts/exec_baseline.txt CERB_SKIP). Their Lean side is pinned (lean=).
+# arm/ (tests/pnvi_arms, 13 rows, added 2026-10-08 — the PNVI arc-end audit's follow-up F4,
+#   record lean_frontend/docs/2026-10-08_pnvi-arm-witness-rows-record.md): every row AGREE —
+#   exhaustive oracle-compared witnesses for the symbolic kill/resolve_iota paths, eq_ptrval
+#   and both diff_ptrval symbolic arms, and eff_array_shift's Prov_none bounds arm.
 # pkvm/pkvm-init is EXHAUSTIVE: its oracle hash pins the 2-execution set
 #   (UB088 at <715:2--715:17> and at <715:2--715:6>, design §C.3/§C.6).
+arm/a01-kill-symbolic-first-candidate AGREE oracle=181d22509af4 default=changed
+arm/a02-kill-symbolic-both-candidates-fail AGREE oracle=b56794acbf32 default=same
+arm/a03-kill-symbolic-collapsed-single AGREE oracle=9c28118899ea default=changed
+arm/a04-kill-symbolic-collapsed-single-fail AGREE oracle=b56794acbf32 default=same
+arm/a05-kill-symbolic-not-dynamic AGREE oracle=2d75d8dd6407 default=same
+arm/a06-eq-diff-symbolic-double-double AGREE oracle=1d436dcdfdc5 default=changed
+arm/a07-eq-diff-symbolic-single-collapse AGREE oracle=4678b3cb5087 default=changed
+arm/a08-eq-symbolic-single-double-fork AGREE oracle=56fba29670eb default=changed
+arm/a09-diff-mixed-symbolic-collapse AGREE oracle=eced1cf1d816 default=changed
+arm/a10-diff-mixed-symbolic-single-mismatch AGREE oracle=e2c9ede88799 default=same
+arm/a11-diff-symbolic-disjoint-singles AGREE oracle=96636f4edcc4 default=changed
+arm/a12-diff-symbolic-double-double-positional AGREE oracle=64d9c89c17cd default=same
+arm/a13-array-shift-prov-none AGREE oracle=7af5c2ff27e6 default=changed
 litmus/cheri_03_ii AGREE oracle=32faef2d53f2 default=changed
 litmus/pointer_arith_algebraic_properties_2_global AGREE oracle=807155052921 default=changed
 litmus/pointer_arith_algebraic_properties_3_global AGREE oracle=807155052921 default=changed

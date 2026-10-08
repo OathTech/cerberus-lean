@@ -20,6 +20,10 @@
 #   witness/  tests/pnvi_refusals/*.c: small programs that REACH a refusal (the CONTRACT
 #             §4.1 witness for each refusal reachable from C that the litmus suite misses),
 #             libc mode, exhaustive
+#   arm/      tests/pnvi_arms/*.c: small programs that drive a PNVI-ae-udi arm no litmus file
+#             reaches (the arc-end audit's F4: the symbolic kill/resolve_iota paths, eq_ptrval
+#             and both diff_ptrval symbolic arms, eff_array_shift's Prov_none bounds arm; record
+#             lean_frontend/docs/2026-10-08_pnvi-arm-witness-rows-record.md), libc mode, exhaustive
 #   pkvm/     the census pKVM buddy-allocator drivers (tests/census/pkvm/, the case study
 #             at deps/CN-pKVM-buddy-allocator-case-study, census flags, --nolibc):
 #             pkvm-alloc / pkvm-free / pkvm-split-merge in FIRST mode (oracle default
@@ -247,7 +251,7 @@ bridge() { # <prefix> <out.json> <flags...> -- <tu>
 }
 
 nrows=0
-# ---- litmus/ and witness/: libc mode, exhaustive ----------------------------------
+# ---- litmus/, witness/ and arm/: libc mode, exhaustive ----------------------------------
 libc_row() { # <section> <file.c>
     local sect="$1" tu="$2" name; name="$sect/$(basename "$tu" .c)"
     selected "$name" || return 0
@@ -269,6 +273,8 @@ n_litmus=$(ls tests/pnvi_testsuite/*.c | wc -l)
 for tu in tests/pnvi_testsuite/*.c; do libc_row litmus "$tu"; done
 compgen -G "tests/pnvi_refusals/*.c" > /dev/null || die "empty witness corpus tests/pnvi_refusals"
 for tu in tests/pnvi_refusals/*.c; do libc_row witness "$tu"; done
+compgen -G "tests/pnvi_arms/*.c" > /dev/null || die "empty arm-witness corpus tests/pnvi_arms"
+for tu in tests/pnvi_arms/*.c; do libc_row arm "$tu"; done
 
 # ---- pkvm/: the census drivers, --nolibc ------------------------------------------
 pkvm_selected=0
