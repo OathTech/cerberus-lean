@@ -183,6 +183,7 @@ roots = [
   "CerbMem",
   "CerbMemAllocatorProofs",
   "CerbMemDefaultFacts",
+  "CerbMemAccessFacts",
   "CerbFS",
   "CerbFuel",
   "CerbFail",

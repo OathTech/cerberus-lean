@@ -798,6 +798,13 @@ echo "check_theorem_axioms: C2 entry census OK (${#ENTRIES[@]} entries, every co
 # PNVI arc S5 (2026-10-07; docs/2026-10-07_consumer-note-cerberus-sl-pnvi-arc.md): the
 # seam's seventh theorem, `resolveIota_ok_of_shape` (the success transfer a consumer uses
 # for a Prov_symbolic arm's location independence), is pinned here too.
+# Memory-access-facts seam (2026-10-08; consumer ask (c), cerberus-sl DECISIONS C3.399;
+# record docs/2026-10-08_memory-access-facts-seam-record.md): the SC WP0 erasure facts,
+# moved from the row-1 test module into the theorem-only seam CerbMemAccessFacts.lean
+# (a Lake root nothing in the production tree imports), are pinned here, all 17
+# exported names: the two primitive erasure theorems, the helpers they use, and the
+# liftND returned-state lemma. Compiled in row 1 because Unit.MemoryAccessProofs
+# (memory-access-test) imports it.
 # ---------------------------------------------------------------------------
 PROBE4=lean_frontend/.axiom-probe-memscale.lean
 MEMSCALE_THMS=(CerbMem.chunksOf_eq_range_map
@@ -817,10 +824,28 @@ MEMSCALE_THMS=(CerbMem.chunksOf_eq_range_map
                CerbMem.reconstructValueAbst_default_snd
                CerbMem.reconstructValueAbst_snd_of_default
                CerbMem.loadM_reconstruct_eq_reconstructValue
-               CerbMem.resolveIota_ok_of_shape)
+               CerbMem.resolveIota_ok_of_shape
+               CerbMem.loadM_erasure
+               CerbMem.storeM_erasure
+               CerbMem.stopObserving_recordAccess
+               CerbMem.recordAccess_stopObserving
+               CerbMem.recordAccess_of_observations_none
+               CerbMem.stopObserving_lastUsed
+               CerbMem.stopObserving_observations
+               CerbMem.stopObserving_deadAllocations
+               CerbMem.stopObserving_allocations
+               CerbMem.stopObserving_bytemap
+               CerbMem.stopObserving_lastUsedUnionMembers
+               CerbMem.stopObserving_funptrmap
+               CerbMem.findOverlapping_stopObserving
+               CerbMem.stopObserving_exposeOnLoad
+               CerbMem.exposeOnLoad_observations
+               CerbMem.resolveIota_stopObserving
+               CerbMem.liftND_returned_state)
 {
   echo "import CerbMem"
   echo "import CerbMemDefaultFacts"
+  echo "import CerbMemAccessFacts"
   echo "import Unit.ReconstructLegacyTest"
   for name in "${MEMSCALE_THMS[@]}"; do
     echo "#print axioms $name"
@@ -855,7 +880,7 @@ if [[ -n "$MEMSCALE_BAD" ]]; then
   echo "$MEMSCALE_BAD"
   exit 1
 fi
-echo "check_theorem_axioms: mem-scale S1 leg OK (${#MEMSCALE_THMS[@]} C1/C3 + PNVI-S2 wrapper equality + CerbMemDefaultFacts bridge theorems, every cone ⊆ [propext, Classical.choice, Quot.sound])"
+echo "check_theorem_axioms: mem-scale S1 leg OK (${#MEMSCALE_THMS[@]} C1/C3 + PNVI-S2 wrapper equality + CerbMemDefaultFacts bridge + CerbMemAccessFacts erasure theorems, every cone ⊆ [propext, Classical.choice, Quot.sound])"
 
 # ---------------------------------------------------------------------------
 # FUEL arc leg (2026-09-03; design docs/2026-09-02_fuel-arc-design.md §1.2,

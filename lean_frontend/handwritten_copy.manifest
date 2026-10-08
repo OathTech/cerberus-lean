@@ -39,6 +39,7 @@ CerbLocation.lean
 CerbMem.lean
 CerbMemAllocatorProofs.lean
 CerbMemDefaultFacts.lean
+CerbMemAccessFacts.lean
 CerbND.lean
 CerbPP.lean
 CerbStepInstances.lean

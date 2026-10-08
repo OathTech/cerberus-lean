@@ -107,7 +107,8 @@ def main():
                           for p in [ROOT/'frontend/model/mem_common.lem', ROOT/'memory/concrete/impl_mem.ml',
                                     ROOT/'ocaml_frontend/memory_model.ml', ROOT/'lean_frontend/CerbMem.lean',
                                     ROOT/'backend/memory_probe/access_probe.ml', ROOT/'lean_frontend/test/Unit/MemoryAccess.lean',
-                                    ROOT/'lean_frontend/test/Unit/MemoryAccessProofs.lean', Path(__file__).resolve()]},
+                                    ROOT/'lean_frontend/test/Unit/MemoryAccessProofs.lean', ROOT/'lean_frontend/CerbMemAccessFacts.lean',
+                                    Path(__file__).resolve()]},
               'runs': [], 'controls': 8}
     specs = [('native', native, [], 0, 'on'), ('lean-17', lean, ['17'], 0, 'on'),
              ('lean-64', lean, ['64'], 1000, 'on')]
