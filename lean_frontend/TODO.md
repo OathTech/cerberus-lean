@@ -42,6 +42,28 @@ of this work's scope.
   under the [SC master plan](../SC-CONCURRENCY.md). The failed prototype is a
   quarry, not a candidate awaiting integration. WP0 (passive memory receipts)
   has landed; current status and later milestones live in the plan.
+- **The implementation as a parameter: `char` signedness first** — filed
+  2026-10-16 from the consumer cerberus-caesium's plan (its addendum of
+  2026-10-16, filing 1; [USER 2026-10-16] agreed to file it). C11 §6.2.5#15
+  makes `char` behave as either `signed char` or `unsigned char`, the choice
+  implementation-defined (J.3.4). Upstream Cerberus carries both choices:
+  `DefaultImpl` (x86-64 gcc) has `~char_is_signed:true` and `HafniumImpl`
+  (AArch64, the Hafnium hypervisor) `~char_is_signed:false`
+  (`ocaml_frontend/ocaml_implementation.ml:257` and `:357-378`); RefinedC's
+  frontend builds on `hafniumIntImpl`, so Caesium's `char` is unsigned and
+  `case '\377':` reads 255 there and -1 here. Neither engine is wrong; the
+  Lean seam hard-codes the default (`CerberusImpl.is_signed_ity`,
+  `lean_frontend/CerberusImpl.lean:112`, `Char0 => true`) and the oracle
+  driver never calls `Ocaml_implementation.set` except for Morello
+  (`backend/driver/main.ml:135`). The work: (i) make `char_is_signed` (or the
+  implementation record) a parameter of the semantics in the shape of the
+  switch set — an instance-implicit reader, every transitive reader binding
+  it; (ii) a fork driver flag selecting `HafniumImpl.impl` on the oracle, the
+  Morello line as precedent; (iii) a differential lane with both engines
+  under the Hafnium implementation. Price M: generated-code churn across the
+  exec cone and consumer proofs that unfold through the reader. Design pass
+  with the operator first; sequenced with the next functional re-pin, not a
+  re-pin for this alone (the consumer's own ask).
 - **A-road polish basket** — backend/semantics cleanups (pure-render
   emission split, remaining audit L-slice gaps, ott finish);
   itemized with prices in

@@ -941,6 +941,16 @@ Lane semantics worth knowing:
   §3.6/§9, `docs/2026-09-01_C1-adoption-record.md`,
   `docs/2026-09-01_C2-ratchet-record.md`.
 
+  A documented instance of that principle (2026-10-16, reported by the
+  consumer cerberus-caesium, its plan's addendum of 2026-10-16, filing 3):
+  the symbol numbers of UNNAMED tags (anonymous structs and unions) start
+  from 0 in the Lean pipeline, whose fresh supply is threaded explicitly
+  (DESIGN.md, Effects), and from the OCaml driver's global counter in the
+  oracle, so within one translation unit they differ by a constant. Same
+  term up to renaming; no verdict or lane depends on it; consumers that
+  compare printed tag names normalise the offset, as cerberus-caesium's
+  translation does. Not a defect on either side and not a fix candidate.
+
 **Per-test resource limits.** Execution lanes use `timeout` with
 lane-specific bounds. The seven larger-input harnesses listed in
 `scripts/LADDER.md`'s resource-cap convention additionally use a per-test
