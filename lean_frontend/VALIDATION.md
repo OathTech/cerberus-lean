@@ -493,10 +493,11 @@ Nothing else.
   class-(b) residual that died with an uncaught exception, rc 1, and listed
   only the text fields). The oracle's `--cabs-json` exporter copies the bytes
   ≥ 0x80 of a FILE NAME (the real path, a `#line` or an `#include` name,
-  `cabs_json.ml:30` `Cerb_position.file`), of a `Loc_other` string (`:44`),
-  of attribute-argument strings (`:599`/`:601` — WHOLE strings,
+  `cabs_json.ml:46` `Cerb_position.file`; the input path the lexer was given, `:49`
+  `lexing_file`), of a `Loc_other` string (`:62`),
+  of attribute-argument strings (`:618`/`:620` — WHOLE strings,
   `c_parser.mly:1771-1775` concatenates the literal's fragments before the
-  exporter sees them) and of magic-comment text (`EDecl_magic`, `:657`)
+  exporter sees them) and of magic-comment text (`EDecl_magic`, `:675`)
   into the JSON raw, so the document is not UTF-8 while the oracle's own run
   proceeds. Lean strings are Unicode scalar values, so the bridge cannot
   carry them: `Main.decodeCabsJson` REFUSES (exit 2, `cerberus-lean: refused

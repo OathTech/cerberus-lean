@@ -9,12 +9,52 @@ import LemLib
 
 namespace CerbLocation
 
-/-- Source position (file, line, column). All 1-based.
-    Corresponds to: Cerb_position.t -/
+/-- Source position. Corresponds to: `Cerb_position.t` (util/cerb_position.ml:7-11),
+    a record of the LEXING position `file : Lexing.position` — the position in
+    the preprocessed stream the C lexer read; its `pos_fname` is the input path
+    handed to the lexer (parsers/c/c_parser_driver.ml:155), constant across a
+    translation unit — and the SOURCE file and line after
+    cpp's `#line` mapping (`source_file`/`source_line`, set by
+    `Cerb_position.set_source` from the lexer's `LineMap`, parsers/c/c_lexer.mll:42-45).
+
+    - `file`/`line` are the SOURCE values (`Cerb_position.file`/`line`, :18-19);
+      `col` is `Cerb_position.column` (:23-25): `1 + pos_cnum - pos_bol` of the
+      lexing position, 1-based — one column for both views.
+    - `lexingFile`/`lexingLine` are the lexing position's `pos_fname`/`pos_lnum`
+      (`Cerb_position.to_file_lexing`, :27). Since 2026-10-16 (cerberus-caesium
+      filing 2; `docs/2026-10-16_consumer-note-cerberus-caesium-cabs-json-pp-position.md`)
+      the Cabs JSON exporter emits them beside the source triple
+      (`backend/lean_export/cabs_json.ml` `json_of_pos`: `{"file", "line", "col",
+      "lexing_file", "lexing_line"}`) and `CabsImport.jsonToPos` requires them.
+      Positions the Core parser stamps mirror `Cerb_position.from_lexing`
+      (parsers/core/core_lexer.mll:205, core_parser.mly:18): lexing = source.
+
+    Every printer in this file reads the source triple only, as the OCaml's do
+    (`location_to_string` cerb_location.ml:188-237, `simple_location` :476-491,
+    `get_filename`). The order `posLt` reads the source triple too, which is the
+    DECLARED divergence Z2-L-02 from the OCaml `pos_lt` (:109-114 compares the
+    lexing `pos_cnum` on equal source lines) — see `posLt`; closing it with the
+    lexing pair now carried is a possible follow-up, not done here. Adding the
+    lexing pair changes no printed text and no order.
+
+    Equality: the derived `BEq` compares all five fields. This MIRRORS the OCaml:
+    lem's `Loc.t` declares no `Eq` instance (frontend/model/loc.lem), so lem `=` on
+    a location is OCaml's structural `(=)` over the whole `Cerb_position.t`
+    record, lexing position included. For positions of one lexing run of a
+    preprocessed file the lexing (file, line) plus the column determine
+    `pos_bol`/`pos_cnum`, so two `Pos` are now equal iff the OCaml positions are.
+    (Before 2026-10-16 Lean identified positions that differ only in their
+    preprocessed line — one source line reached through two `#line` regions —
+    which the OCaml distinguishes.) The derived `Ord` compares in field order
+    (source triple, then the lexing pair); OCaml's `compare` orders by the lexing
+    position first — that field-order difference is part of the declared cosmetic
+    `Ord Loc` divergence below (no differential output enumerates a Loc-keyed set). -/
 structure Pos where
   file : String
   line : Nat
   col : Nat
+  lexingFile : String
+  lexingLine : Nat
   deriving BEq, Ord, Inhabited, Repr
 
 /-- Cursor within a location region.

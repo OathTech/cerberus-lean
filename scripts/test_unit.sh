@@ -41,6 +41,11 @@ UNIT_TESTS=(
     "enum-data-test"
     # D-S: run digest as state, kernel acceptance facts and old-arity rejection.
     "run-digest-test"
+    # Cabs JSON positions (2026-10-16): the lexing position beside the source position —
+    # five-field import fail-closed (missing/ill-typed field refused), printers and the
+    # library-location input read the source triple only, equality over all five, the
+    # committed fixture carries the fields.
+    "cabs-import-test"
     # match-pattern-arity (2026-09-20, cerberus-sl item 7): match_pattern/typecheck_pattern fail
     # closed on tuple-arity mismatch — T1–T3 by rfl, T4 negative control, T5 typing pin (runtime)
     "match-pattern-arity-test"

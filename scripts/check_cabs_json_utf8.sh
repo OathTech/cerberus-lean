@@ -4,9 +4,9 @@
 # lean_frontend/docs/2026-09-29_bug-hunt-fixes-record.md §S3).
 #
 # The oracle's --cabs-json exporter writes a byte >= 0x80 of a file name (the
-# real path, a #line or an #include name: backend/lean_export/cabs_json.ml:30),
-# of a Loc_other string (:44), or of a text field (attribute-argument strings,
-# :599/:601; magic comments, :657) into the JSON raw, so the document is not
+# real path, a #line or an #include name: backend/lean_export/cabs_json.ml:46, :49),
+# of a Loc_other string (:62), or of a text field (attribute-argument strings,
+# :618/:620; magic comments, :675) into the JSON raw, so the document is not
 # UTF-8. The Lean bridge cannot carry such bytes (Lean strings are Unicode
 # scalar values); it used to die with an uncaught exception ("Tried to read
 # file ... containing non UTF-8 data", rc 1). It now REFUSES: exit 2 and

@@ -13,7 +13,11 @@
   - Strings: JSON strings
   - Integers: JSON strings (arbitrary precision)
   - Bools: JSON bools
-  - Positions: {"file": S, "line": N, "col": N}  (1-indexed)
+  - Positions: {"file": S, "line": N, "col": N, "lexing_file": S, "lexing_line": N}
+    (1-indexed; "file"/"line" = the SOURCE file and line after cpp's `#line`
+    mapping, "col" the column; "lexing_file"/"lexing_line" = the position in the
+    preprocessed file the lexer read — `Cerb_position.to_file_lexing`'s
+    `pos_fname`/`pos_lnum`; all five REQUIRED, see `jsonToPos`)
   - Locations: tagged (Loc_unknown/Loc_other/Loc_point/Loc_region/Loc_regions)
   - Cursors: tagged (NoCursor/PointCursor/RegionCursor)
   - CN declarations: filtered out by OCaml serializer (never appear in JSON)
@@ -21,7 +25,7 @@
   Bridge notes (zero-discrepancy Z2-J-01/J-02, audit §2.15; the bridge is
   fork-side OCaml, backend/lean_export/cabs_json.ml — a fork-drift-manifest
   surface, not touched by the Lean slice):
-  - Z2-J-01: `json_of_external_declaration` (cabs_json.ml:621-633) maps the
+  - Z2-J-01: `json_of_external_declaration` (cabs_json.ml:669-681) maps the
     CN declaration constructors to `None` and `filter_map`s them away — a
     fail-OPEN shape on the OCaml side. UNREACHABLE in matched mode: plain
     cerberus's C parser emits `EDecl_magic` for `/*@ … @*/` blocks, never
@@ -143,16 +147,24 @@ def getList (f : Json → Except String α) (j : Json) : Except String (List α)
    Matches the lossless format from cabs_json.ml, which preserves filenames,
    cursor info, Loc_other strings, and region lists.
 
-   Positions: {"file": S, "line": N, "col": N}  (1-indexed)
+   Positions: {"file": S, "line": N, "col": N, "lexing_file": S, "lexing_line": N}  (1-indexed)
    Cursors:   "NoCursor" | {"tag": "PointCursor", ...} | {"tag": "RegionCursor", ...}
    Locations: "Loc_unknown" | {"tag": "Loc_other/Loc_point/Loc_region/Loc_regions", ...}
 -/
 
+/-- A position object (cabs_json.ml `json_of_pos`): the source triple and, since
+    2026-10-16, the lexing (preprocessed-file) position beside it. All five
+    fields are REQUIRED, fail-closed like the first three: the exporter and this
+    importer move under one pin, so a document without `lexing_file`/
+    `lexing_line` is a stale bridge artefact (exported by an older oracle) and is
+    refused — never defaulted from the source values. -/
 def jsonToPos (j : Json) : Except String CerbLocation.Pos := do
   let file ← getStr (← getField j "file")
   let line ← getNat (← getField j "line")
   let col ← getNat (← getField j "col")
-  .ok { file, line, col }
+  let lexingFile ← getStr (← getField j "lexing_file")
+  let lexingLine ← getNat (← getField j "lexing_line")
+  .ok { file, line, col, lexingFile, lexingLine }
 
 def jsonToCursor (j : Json) : Except String CerbLocation.Cursor := do
   match ← getTag j with
@@ -797,9 +809,13 @@ end
 /-! ## Entry point -/
 
 /-- Collect the `file` string of every position object
-    (`{"file": S, "line": N, "col": N}`, `cabs_json.ml` `json_of_pos`) in a
+    (`{"file": S, "line": N, "col": N, "lexing_file": S, "lexing_line": N}`,
+    `cabs_json.ml` `json_of_pos`; recognised by its first three keys) in a
     Cabs JSON document, cursors included. The input of
-    `Main.refuseLibraryLocations` (bug-hunt BUG-3, 2026-09-29). -/
+    `Main.refuseLibraryLocations` (bug-hunt BUG-3, 2026-09-29). The SOURCE file
+    only, deliberately: the oracle's `is_library_location` tests
+    `get_filename` = `Cerb_position.file`, the source file
+    (util/cerb_location.ml:512-523); the lexing file name is never consulted. -/
 partial def positionFiles (j : Json) (acc : Std.HashSet String) : Std.HashSet String :=
   match j with
   | .arr elems => elems.foldl (fun acc e => positionFiles e acc) acc

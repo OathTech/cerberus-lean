@@ -16,12 +16,16 @@
                   "begin": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 2,
-                    "col": 4
+                    "col": 4,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 6
                   },
                   "end": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 2,
-                    "col": 8
+                    "col": 8,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 6
                   },
                   "cursor": "NoCursor"
                 },
@@ -33,12 +37,16 @@
                   "begin": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 2,
-                    "col": 10
+                    "col": 10,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 6
                   },
                   "end": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 2,
-                    "col": 16
+                    "col": 16,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 6
                   },
                   "cursor": "NoCursor"
                 },
@@ -59,12 +67,16 @@
                 "begin": {
                   "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 2,
-                  "col": 20
+                  "col": 20,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 6
                 },
                 "end": {
                   "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 2,
-                  "col": 23
+                  "col": 23,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 6
                 },
                 "cursor": "NoCursor"
               },
@@ -83,12 +95,16 @@
               "begin": {
                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 2,
-                "col": 24
+                "col": 24,
+                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                "lexing_line": 6
               },
               "end": {
                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 2,
-                "col": 45
+                "col": 45,
+                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                "lexing_line": 6
               },
               "cursor": "NoCursor"
             },
@@ -106,12 +122,16 @@
                       "begin": {
                         "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 2,
-                        "col": 24
+                        "col": 24,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 6
                       },
                       "end": {
                         "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 2,
-                        "col": 37
+                        "col": 37,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 6
                       },
                       "cursor": "NoCursor"
                     },
@@ -134,12 +154,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 2,
-                                "col": 39
+                                "col": 39,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 6
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 2,
-                                "col": 42
+                                "col": 42,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 6
                               },
                               "cursor": "NoCursor"
                             },
@@ -162,12 +186,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 2,
-                                "col": 43
+                                "col": 43,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 6
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 2,
-                                "col": 44
+                                "col": 44,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 6
                               },
                               "cursor": "NoCursor"
                             },
@@ -201,12 +229,16 @@
                   "begin": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 3,
-                    "col": 4
+                    "col": 4,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 7
                   },
                   "end": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 3,
-                    "col": 8
+                    "col": 8,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 7
                   },
                   "cursor": "NoCursor"
                 },
@@ -218,12 +250,16 @@
                   "begin": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 3,
-                    "col": 10
+                    "col": 10,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 7
                   },
                   "end": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 3,
-                    "col": 16
+                    "col": 16,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 7
                   },
                   "cursor": "NoCursor"
                 },
@@ -244,12 +280,16 @@
                 "begin": {
                   "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 3,
-                  "col": 20
+                  "col": 20,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 7
                 },
                 "end": {
                   "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 3,
-                  "col": 23
+                  "col": 23,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 7
                 },
                 "cursor": "NoCursor"
               },
@@ -268,12 +308,16 @@
               "begin": {
                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 3,
-                "col": 24
+                "col": 24,
+                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                "lexing_line": 7
               },
               "end": {
                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 3,
-                "col": 47
+                "col": 47,
+                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                "lexing_line": 7
               },
               "cursor": "NoCursor"
             },
@@ -291,12 +335,16 @@
                       "begin": {
                         "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 3,
-                        "col": 24
+                        "col": 24,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 7
                       },
                       "end": {
                         "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 3,
-                        "col": 38
+                        "col": 38,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 7
                       },
                       "cursor": "NoCursor"
                     },
@@ -319,12 +367,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 3,
-                                "col": 40
+                                "col": 40,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 7
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 3,
-                                "col": 44
+                                "col": 44,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 7
                               },
                               "cursor": "NoCursor"
                             },
@@ -347,12 +399,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 3,
-                                "col": 45
+                                "col": 45,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 7
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 3,
-                                "col": 46
+                                "col": 46,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 7
                               },
                               "cursor": "NoCursor"
                             },
@@ -386,12 +442,16 @@
                   "begin": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 4,
-                    "col": 4
+                    "col": 4,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 8
                   },
                   "end": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 4,
-                    "col": 8
+                    "col": 8,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 8
                   },
                   "cursor": "NoCursor"
                 },
@@ -403,12 +463,16 @@
                   "begin": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 4,
-                    "col": 10
+                    "col": 10,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 8
                   },
                   "end": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 4,
-                    "col": 16
+                    "col": 16,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 8
                   },
                   "cursor": "NoCursor"
                 },
@@ -429,12 +493,16 @@
                 "begin": {
                   "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 4,
-                  "col": 20
+                  "col": 20,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 8
                 },
                 "end": {
                   "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 4,
-                  "col": 23
+                  "col": 23,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 8
                 },
                 "cursor": "NoCursor"
               },
@@ -453,12 +521,16 @@
               "begin": {
                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 4,
-                "col": 24
+                "col": 24,
+                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                "lexing_line": 8
               },
               "end": {
                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 4,
-                "col": 53
+                "col": 53,
+                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                "lexing_line": 8
               },
               "cursor": "NoCursor"
             },
@@ -476,12 +548,16 @@
                       "begin": {
                         "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 4,
-                        "col": 24
+                        "col": 24,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 8
                       },
                       "end": {
                         "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 4,
-                        "col": 39
+                        "col": 39,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 8
                       },
                       "cursor": "NoCursor"
                     },
@@ -504,12 +580,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 4,
-                                "col": 41
+                                "col": 41,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 8
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 4,
-                                "col": 45
+                                "col": 45,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 8
                               },
                               "cursor": "NoCursor"
                             },
@@ -522,12 +602,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 4,
-                                "col": 46
+                                "col": 46,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 8
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 4,
-                                "col": 50
+                                "col": 50,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 8
                               },
                               "cursor": "NoCursor"
                             },
@@ -550,12 +634,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 4,
-                                "col": 51
+                                "col": 51,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 8
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 4,
-                                "col": 52
+                                "col": 52,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 8
                               },
                               "cursor": "NoCursor"
                             },
@@ -589,12 +677,16 @@
                   "begin": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 5,
-                    "col": 4
+                    "col": 4,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 9
                   },
                   "end": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 5,
-                    "col": 8
+                    "col": 8,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 9
                   },
                   "cursor": "NoCursor"
                 },
@@ -606,12 +698,16 @@
                   "begin": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 5,
-                    "col": 10
+                    "col": 10,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 9
                   },
                   "end": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 5,
-                    "col": 16
+                    "col": 16,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 9
                   },
                   "cursor": "NoCursor"
                 },
@@ -632,12 +728,16 @@
                 "begin": {
                   "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 5,
-                  "col": 20
+                  "col": 20,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 9
                 },
                 "end": {
                   "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 5,
-                  "col": 23
+                  "col": 23,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 9
                 },
                 "cursor": "NoCursor"
               },
@@ -656,12 +756,16 @@
               "begin": {
                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 5,
-                "col": 24
+                "col": 24,
+                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                "lexing_line": 9
               },
               "end": {
                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 5,
-                "col": 54
+                "col": 54,
+                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                "lexing_line": 9
               },
               "cursor": "NoCursor"
             },
@@ -679,12 +783,16 @@
                       "begin": {
                         "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 5,
-                        "col": 24
+                        "col": 24,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 9
                       },
                       "end": {
                         "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 5,
-                        "col": 37
+                        "col": 37,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 9
                       },
                       "cursor": "NoCursor"
                     },
@@ -707,12 +815,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 5,
-                                "col": 39
+                                "col": 39,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 9
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 5,
-                                "col": 47
+                                "col": 47,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 9
                               },
                               "cursor": "NoCursor"
                             },
@@ -725,12 +837,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 5,
-                                "col": 48
+                                "col": 48,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 9
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 5,
-                                "col": 51
+                                "col": 51,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 9
                               },
                               "cursor": "NoCursor"
                             },
@@ -753,12 +869,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 5,
-                                "col": 52
+                                "col": 52,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 9
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 5,
-                                "col": 53
+                                "col": 53,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 9
                               },
                               "cursor": "NoCursor"
                             },
@@ -792,12 +912,16 @@
                   "begin": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 6,
-                    "col": 4
+                    "col": 4,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 10
                   },
                   "end": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 6,
-                    "col": 8
+                    "col": 8,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 10
                   },
                   "cursor": "NoCursor"
                 },
@@ -809,12 +933,16 @@
                   "begin": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 6,
-                    "col": 10
+                    "col": 10,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 10
                   },
                   "end": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 6,
-                    "col": 16
+                    "col": 16,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 10
                   },
                   "cursor": "NoCursor"
                 },
@@ -835,12 +963,16 @@
                 "begin": {
                   "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 6,
-                  "col": 20
+                  "col": 20,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 10
                 },
                 "end": {
                   "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 6,
-                  "col": 23
+                  "col": 23,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 10
                 },
                 "cursor": "NoCursor"
               },
@@ -859,12 +991,16 @@
               "begin": {
                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 6,
-                "col": 24
+                "col": 24,
+                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                "lexing_line": 10
               },
               "end": {
                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 6,
-                "col": 56
+                "col": 56,
+                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                "lexing_line": 10
               },
               "cursor": "NoCursor"
             },
@@ -882,12 +1018,16 @@
                       "begin": {
                         "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 6,
-                        "col": 24
+                        "col": 24,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 10
                       },
                       "end": {
                         "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 6,
-                        "col": 38
+                        "col": 38,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 10
                       },
                       "cursor": "NoCursor"
                     },
@@ -910,12 +1050,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 6,
-                                "col": 40
+                                "col": 40,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 10
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 6,
-                                "col": 48
+                                "col": 48,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 10
                               },
                               "cursor": "NoCursor"
                             },
@@ -928,12 +1072,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 6,
-                                "col": 49
+                                "col": 49,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 10
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 6,
-                                "col": 53
+                                "col": 53,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 10
                               },
                               "cursor": "NoCursor"
                             },
@@ -956,12 +1104,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 6,
-                                "col": 54
+                                "col": 54,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 10
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 6,
-                                "col": 55
+                                "col": 55,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 10
                               },
                               "cursor": "NoCursor"
                             },
@@ -995,12 +1147,16 @@
                   "begin": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 7,
-                    "col": 4
+                    "col": 4,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 11
                   },
                   "end": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 7,
-                    "col": 8
+                    "col": 8,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 11
                   },
                   "cursor": "NoCursor"
                 },
@@ -1012,12 +1168,16 @@
                   "begin": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 7,
-                    "col": 10
+                    "col": 10,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 11
                   },
                   "end": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 7,
-                    "col": 16
+                    "col": 16,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 11
                   },
                   "cursor": "NoCursor"
                 },
@@ -1038,12 +1198,16 @@
                 "begin": {
                   "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 7,
-                  "col": 20
+                  "col": 20,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 11
                 },
                 "end": {
                   "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 7,
-                  "col": 23
+                  "col": 23,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 11
                 },
                 "cursor": "NoCursor"
               },
@@ -1062,12 +1226,16 @@
               "begin": {
                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 7,
-                "col": 24
+                "col": 24,
+                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                "lexing_line": 11
               },
               "end": {
                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 7,
-                "col": 62
+                "col": 62,
+                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                "lexing_line": 11
               },
               "cursor": "NoCursor"
             },
@@ -1085,12 +1253,16 @@
                       "begin": {
                         "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 7,
-                        "col": 24
+                        "col": 24,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 11
                       },
                       "end": {
                         "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 7,
-                        "col": 39
+                        "col": 39,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 11
                       },
                       "cursor": "NoCursor"
                     },
@@ -1113,12 +1285,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 7,
-                                "col": 41
+                                "col": 41,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 11
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 7,
-                                "col": 49
+                                "col": 49,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 11
                               },
                               "cursor": "NoCursor"
                             },
@@ -1131,12 +1307,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 7,
-                                "col": 50
+                                "col": 50,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 11
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 7,
-                                "col": 54
+                                "col": 54,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 11
                               },
                               "cursor": "NoCursor"
                             },
@@ -1149,12 +1329,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 7,
-                                "col": 55
+                                "col": 55,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 11
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 7,
-                                "col": 59
+                                "col": 59,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 11
                               },
                               "cursor": "NoCursor"
                             },
@@ -1177,12 +1361,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 7,
-                                "col": 60
+                                "col": 60,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 11
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 7,
-                                "col": 61
+                                "col": 61,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 11
                               },
                               "cursor": "NoCursor"
                             },
@@ -1216,12 +1404,16 @@
                   "begin": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 8,
-                    "col": 4
+                    "col": 4,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 12
                   },
                   "end": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 8,
-                    "col": 8
+                    "col": 8,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 12
                   },
                   "cursor": "NoCursor"
                 },
@@ -1233,12 +1425,16 @@
                   "begin": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 8,
-                    "col": 10
+                    "col": 10,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 12
                   },
                   "end": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 8,
-                    "col": 16
+                    "col": 16,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 12
                   },
                   "cursor": "NoCursor"
                 },
@@ -1259,12 +1455,16 @@
                 "begin": {
                   "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 8,
-                  "col": 20
+                  "col": 20,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 12
                 },
                 "end": {
                   "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 8,
-                  "col": 37
+                  "col": 37,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 12
                 },
                 "cursor": "NoCursor"
               },
@@ -1276,7 +1476,9 @@
                     "pos": {
                       "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                       "line": 8,
-                      "col": 20
+                      "col": 20,
+                      "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                      "lexing_line": 12
                     }
                   },
                   "name": "__cerbty_uint16_t"
@@ -1296,12 +1498,16 @@
               "begin": {
                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 8,
-                "col": 38
+                "col": 38,
+                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                "lexing_line": 12
               },
               "end": {
                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 8,
-                "col": 77
+                "col": 77,
+                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                "lexing_line": 12
               },
               "cursor": "NoCursor"
             },
@@ -1319,12 +1525,16 @@
                       "begin": {
                         "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 8,
-                        "col": 38
+                        "col": 38,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 12
                       },
                       "end": {
                         "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 8,
-                        "col": 55
+                        "col": 55,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 12
                       },
                       "cursor": "NoCursor"
                     },
@@ -1347,12 +1557,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 8,
-                                "col": 57
+                                "col": 57,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 12
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 8,
-                                "col": 74
+                                "col": 74,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 12
                               },
                               "cursor": "NoCursor"
                             },
@@ -1364,7 +1578,9 @@
                                   "pos": {
                                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                     "line": 8,
-                                    "col": 57
+                                    "col": 57,
+                                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                    "lexing_line": 12
                                   }
                                 },
                                 "name": "__cerbty_uint16_t"
@@ -1388,12 +1604,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 8,
-                                "col": 75
+                                "col": 75,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 12
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 8,
-                                "col": 76
+                                "col": 76,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 12
                               },
                               "cursor": "NoCursor"
                             },
@@ -1427,12 +1647,16 @@
                   "begin": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 9,
-                    "col": 4
+                    "col": 4,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 13
                   },
                   "end": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 9,
-                    "col": 8
+                    "col": 8,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 13
                   },
                   "cursor": "NoCursor"
                 },
@@ -1444,12 +1668,16 @@
                   "begin": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 9,
-                    "col": 10
+                    "col": 10,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 13
                   },
                   "end": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 9,
-                    "col": 16
+                    "col": 16,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 13
                   },
                   "cursor": "NoCursor"
                 },
@@ -1470,12 +1698,16 @@
                 "begin": {
                   "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 9,
-                  "col": 20
+                  "col": 20,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 13
                 },
                 "end": {
                   "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 9,
-                  "col": 37
+                  "col": 37,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 13
                 },
                 "cursor": "NoCursor"
               },
@@ -1487,7 +1719,9 @@
                     "pos": {
                       "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                       "line": 9,
-                      "col": 20
+                      "col": 20,
+                      "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                      "lexing_line": 13
                     }
                   },
                   "name": "__cerbty_uint32_t"
@@ -1507,12 +1741,16 @@
               "begin": {
                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 9,
-                "col": 38
+                "col": 38,
+                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                "lexing_line": 13
               },
               "end": {
                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 9,
-                "col": 77
+                "col": 77,
+                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                "lexing_line": 13
               },
               "cursor": "NoCursor"
             },
@@ -1530,12 +1768,16 @@
                       "begin": {
                         "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 9,
-                        "col": 38
+                        "col": 38,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 13
                       },
                       "end": {
                         "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 9,
-                        "col": 55
+                        "col": 55,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 13
                       },
                       "cursor": "NoCursor"
                     },
@@ -1558,12 +1800,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 9,
-                                "col": 57
+                                "col": 57,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 13
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 9,
-                                "col": 74
+                                "col": 74,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 13
                               },
                               "cursor": "NoCursor"
                             },
@@ -1575,7 +1821,9 @@
                                   "pos": {
                                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                     "line": 9,
-                                    "col": 57
+                                    "col": 57,
+                                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                    "lexing_line": 13
                                   }
                                 },
                                 "name": "__cerbty_uint32_t"
@@ -1599,12 +1847,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 9,
-                                "col": 75
+                                "col": 75,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 13
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 9,
-                                "col": 76
+                                "col": 76,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 13
                               },
                               "cursor": "NoCursor"
                             },
@@ -1638,12 +1890,16 @@
                   "begin": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 10,
-                    "col": 4
+                    "col": 4,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 14
                   },
                   "end": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 10,
-                    "col": 8
+                    "col": 8,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 14
                   },
                   "cursor": "NoCursor"
                 },
@@ -1655,12 +1911,16 @@
                   "begin": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 10,
-                    "col": 10
+                    "col": 10,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 14
                   },
                   "end": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 10,
-                    "col": 16
+                    "col": 16,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 14
                   },
                   "cursor": "NoCursor"
                 },
@@ -1681,12 +1941,16 @@
                 "begin": {
                   "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 10,
-                  "col": 20
+                  "col": 20,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 14
                 },
                 "end": {
                   "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 10,
-                  "col": 37
+                  "col": 37,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 14
                 },
                 "cursor": "NoCursor"
               },
@@ -1698,7 +1962,9 @@
                     "pos": {
                       "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                       "line": 10,
-                      "col": 20
+                      "col": 20,
+                      "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                      "lexing_line": 14
                     }
                   },
                   "name": "__cerbty_uint64_t"
@@ -1718,12 +1984,16 @@
               "begin": {
                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 10,
-                "col": 38
+                "col": 38,
+                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                "lexing_line": 14
               },
               "end": {
                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 10,
-                "col": 77
+                "col": 77,
+                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                "lexing_line": 14
               },
               "cursor": "NoCursor"
             },
@@ -1741,12 +2011,16 @@
                       "begin": {
                         "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 10,
-                        "col": 38
+                        "col": 38,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 14
                       },
                       "end": {
                         "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 10,
-                        "col": 55
+                        "col": 55,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 14
                       },
                       "cursor": "NoCursor"
                     },
@@ -1769,12 +2043,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 10,
-                                "col": 57
+                                "col": 57,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 14
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 10,
-                                "col": 74
+                                "col": 74,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 14
                               },
                               "cursor": "NoCursor"
                             },
@@ -1786,7 +2064,9 @@
                                   "pos": {
                                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                     "line": 10,
-                                    "col": 57
+                                    "col": 57,
+                                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                    "lexing_line": 14
                                   }
                                 },
                                 "name": "__cerbty_uint64_t"
@@ -1810,12 +2090,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 10,
-                                "col": 75
+                                "col": 75,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 14
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 10,
-                                "col": 76
+                                "col": 76,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 14
                               },
                               "cursor": "NoCursor"
                             },
@@ -1849,12 +2133,16 @@
                   "begin": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 11,
-                    "col": 4
+                    "col": 4,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 15
                   },
                   "end": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 11,
-                    "col": 8
+                    "col": 8,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 15
                   },
                   "cursor": "NoCursor"
                 },
@@ -1866,12 +2154,16 @@
                   "begin": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 11,
-                    "col": 10
+                    "col": 10,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 15
                   },
                   "end": {
                     "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                     "line": 11,
-                    "col": 16
+                    "col": 16,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 15
                   },
                   "cursor": "NoCursor"
                 },
@@ -1892,12 +2184,16 @@
                 "begin": {
                   "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 11,
-                  "col": 20
+                  "col": 20,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 15
                 },
                 "end": {
                   "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                   "line": 11,
-                  "col": 24
+                  "col": 24,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 15
                 },
                 "cursor": "NoCursor"
               },
@@ -1916,12 +2212,16 @@
               "begin": {
                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 11,
-                "col": 25
+                "col": 25,
+                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                "lexing_line": 15
               },
               "end": {
                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                 "line": 11,
-                "col": 52
+                "col": 52,
+                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                "lexing_line": 15
               },
               "cursor": "NoCursor"
             },
@@ -1939,12 +2239,16 @@
                       "begin": {
                         "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 11,
-                        "col": 25
+                        "col": 25,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 15
                       },
                       "end": {
                         "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                         "line": 11,
-                        "col": 46
+                        "col": 46,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 15
                       },
                       "cursor": "NoCursor"
                     },
@@ -1967,12 +2271,16 @@
                               "begin": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 11,
-                                "col": 47
+                                "col": 47,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 15
                               },
                               "end": {
                                 "file": "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h",
                                 "line": 11,
-                                "col": 51
+                                "col": 51,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 15
                               },
                               "cursor": "NoCursor"
                             },
@@ -2004,12 +2312,16 @@
           "begin": {
             "file": "tests/fixtures/016-func-simple//source.c",
             "line": 2,
-            "col": 1
+            "col": 1,
+            "lexing_file": "tests/fixtures/016-func-simple//source.c",
+            "lexing_line": 21
           },
           "end": {
             "file": "tests/fixtures/016-func-simple//source.c",
             "line": 4,
-            "col": 2
+            "col": 2,
+            "lexing_file": "tests/fixtures/016-func-simple//source.c",
+            "lexing_line": 23
           },
           "cursor": "NoCursor"
         },
@@ -2025,12 +2337,16 @@
                 "begin": {
                   "file": "tests/fixtures/016-func-simple//source.c",
                   "line": 2,
-                  "col": 1
+                  "col": 1,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 21
                 },
                 "end": {
                   "file": "tests/fixtures/016-func-simple//source.c",
                   "line": 2,
-                  "col": 4
+                  "col": 4,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 21
                 },
                 "cursor": "NoCursor"
               },
@@ -2055,12 +2371,16 @@
                   "begin": {
                     "file": "tests/fixtures/016-func-simple//source.c",
                     "line": 2,
-                    "col": 5
+                    "col": 5,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 21
                   },
                   "end": {
                     "file": "tests/fixtures/016-func-simple//source.c",
                     "line": 2,
-                    "col": 8
+                    "col": 8,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 21
                   },
                   "cursor": "NoCursor"
                 },
@@ -2083,12 +2403,16 @@
                           "begin": {
                             "file": "tests/fixtures/016-func-simple//source.c",
                             "line": 2,
-                            "col": 9
+                            "col": 9,
+                            "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                            "lexing_line": 21
                           },
                           "end": {
                             "file": "tests/fixtures/016-func-simple//source.c",
                             "line": 2,
-                            "col": 12
+                            "col": 12,
+                            "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                            "lexing_line": 21
                           },
                           "cursor": "NoCursor"
                         },
@@ -2111,12 +2435,16 @@
                           "begin": {
                             "file": "tests/fixtures/016-func-simple//source.c",
                             "line": 2,
-                            "col": 13
+                            "col": 13,
+                            "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                            "lexing_line": 21
                           },
                           "end": {
                             "file": "tests/fixtures/016-func-simple//source.c",
                             "line": 2,
-                            "col": 14
+                            "col": 14,
+                            "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                            "lexing_line": 21
                           },
                           "cursor": "NoCursor"
                         },
@@ -2138,12 +2466,16 @@
                           "begin": {
                             "file": "tests/fixtures/016-func-simple//source.c",
                             "line": 2,
-                            "col": 16
+                            "col": 16,
+                            "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                            "lexing_line": 21
                           },
                           "end": {
                             "file": "tests/fixtures/016-func-simple//source.c",
                             "line": 2,
-                            "col": 19
+                            "col": 19,
+                            "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                            "lexing_line": 21
                           },
                           "cursor": "NoCursor"
                         },
@@ -2166,12 +2498,16 @@
                           "begin": {
                             "file": "tests/fixtures/016-func-simple//source.c",
                             "line": 2,
-                            "col": 20
+                            "col": 20,
+                            "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                            "lexing_line": 21
                           },
                           "end": {
                             "file": "tests/fixtures/016-func-simple//source.c",
                             "line": 2,
-                            "col": 21
+                            "col": 21,
+                            "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                            "lexing_line": 21
                           },
                           "cursor": "NoCursor"
                         },
@@ -2192,12 +2528,16 @@
             "begin": {
               "file": "tests/fixtures/016-func-simple//source.c",
               "line": 2,
-              "col": 23
+              "col": 23,
+              "lexing_file": "tests/fixtures/016-func-simple//source.c",
+              "lexing_line": 21
             },
             "end": {
               "file": "tests/fixtures/016-func-simple//source.c",
               "line": 4,
-              "col": 2
+              "col": 2,
+              "lexing_file": "tests/fixtures/016-func-simple//source.c",
+              "lexing_line": 23
             },
             "cursor": "NoCursor"
           },
@@ -2212,12 +2552,16 @@
                   "begin": {
                     "file": "tests/fixtures/016-func-simple//source.c",
                     "line": 3,
-                    "col": 3
+                    "col": 3,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 22
                   },
                   "end": {
                     "file": "tests/fixtures/016-func-simple//source.c",
                     "line": 3,
-                    "col": 16
+                    "col": 16,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 22
                   },
                   "cursor": "NoCursor"
                 },
@@ -2231,19 +2575,25 @@
                       "begin": {
                         "file": "tests/fixtures/016-func-simple//source.c",
                         "line": 3,
-                        "col": 10
+                        "col": 10,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 22
                       },
                       "end": {
                         "file": "tests/fixtures/016-func-simple//source.c",
                         "line": 3,
-                        "col": 15
+                        "col": 15,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 22
                       },
                       "cursor": {
                         "tag": "PointCursor",
                         "pos": {
                           "file": "tests/fixtures/016-func-simple//source.c",
                           "line": 3,
-                          "col": 12
+                          "col": 12,
+                          "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                          "lexing_line": 22
                         }
                       }
                     },
@@ -2257,12 +2607,16 @@
                           "begin": {
                             "file": "tests/fixtures/016-func-simple//source.c",
                             "line": 3,
-                            "col": 10
+                            "col": 10,
+                            "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                            "lexing_line": 22
                           },
                           "end": {
                             "file": "tests/fixtures/016-func-simple//source.c",
                             "line": 3,
-                            "col": 11
+                            "col": 11,
+                            "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                            "lexing_line": 22
                           },
                           "cursor": "NoCursor"
                         },
@@ -2274,7 +2628,9 @@
                               "pos": {
                                 "file": "tests/fixtures/016-func-simple//source.c",
                                 "line": 3,
-                                "col": 10
+                                "col": 10,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 22
                               }
                             },
                             "name": "a"
@@ -2288,12 +2644,16 @@
                           "begin": {
                             "file": "tests/fixtures/016-func-simple//source.c",
                             "line": 3,
-                            "col": 14
+                            "col": 14,
+                            "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                            "lexing_line": 22
                           },
                           "end": {
                             "file": "tests/fixtures/016-func-simple//source.c",
                             "line": 3,
-                            "col": 15
+                            "col": 15,
+                            "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                            "lexing_line": 22
                           },
                           "cursor": "NoCursor"
                         },
@@ -2305,7 +2665,9 @@
                               "pos": {
                                 "file": "tests/fixtures/016-func-simple//source.c",
                                 "line": 3,
-                                "col": 14
+                                "col": 14,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 22
                               }
                             },
                             "name": "b"
@@ -2330,12 +2692,16 @@
           "begin": {
             "file": "tests/fixtures/016-func-simple//source.c",
             "line": 6,
-            "col": 1
+            "col": 1,
+            "lexing_file": "tests/fixtures/016-func-simple//source.c",
+            "lexing_line": 25
           },
           "end": {
             "file": "tests/fixtures/016-func-simple//source.c",
             "line": 8,
-            "col": 2
+            "col": 2,
+            "lexing_file": "tests/fixtures/016-func-simple//source.c",
+            "lexing_line": 27
           },
           "cursor": "NoCursor"
         },
@@ -2351,12 +2717,16 @@
                 "begin": {
                   "file": "tests/fixtures/016-func-simple//source.c",
                   "line": 6,
-                  "col": 1
+                  "col": 1,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 25
                 },
                 "end": {
                   "file": "tests/fixtures/016-func-simple//source.c",
                   "line": 6,
-                  "col": 4
+                  "col": 4,
+                  "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                  "lexing_line": 25
                 },
                 "cursor": "NoCursor"
               },
@@ -2381,12 +2751,16 @@
                   "begin": {
                     "file": "tests/fixtures/016-func-simple//source.c",
                     "line": 6,
-                    "col": 5
+                    "col": 5,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 25
                   },
                   "end": {
                     "file": "tests/fixtures/016-func-simple//source.c",
                     "line": 6,
-                    "col": 9
+                    "col": 9,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 25
                   },
                   "cursor": "NoCursor"
                 },
@@ -2409,12 +2783,16 @@
                           "begin": {
                             "file": "tests/fixtures/016-func-simple//source.c",
                             "line": 6,
-                            "col": 10
+                            "col": 10,
+                            "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                            "lexing_line": 25
                           },
                           "end": {
                             "file": "tests/fixtures/016-func-simple//source.c",
                             "line": 6,
-                            "col": 14
+                            "col": 14,
+                            "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                            "lexing_line": 25
                           },
                           "cursor": "NoCursor"
                         },
@@ -2439,12 +2817,16 @@
             "begin": {
               "file": "tests/fixtures/016-func-simple//source.c",
               "line": 6,
-              "col": 16
+              "col": 16,
+              "lexing_file": "tests/fixtures/016-func-simple//source.c",
+              "lexing_line": 25
             },
             "end": {
               "file": "tests/fixtures/016-func-simple//source.c",
               "line": 8,
-              "col": 2
+              "col": 2,
+              "lexing_file": "tests/fixtures/016-func-simple//source.c",
+              "lexing_line": 27
             },
             "cursor": "NoCursor"
           },
@@ -2459,12 +2841,16 @@
                   "begin": {
                     "file": "tests/fixtures/016-func-simple//source.c",
                     "line": 7,
-                    "col": 3
+                    "col": 3,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 26
                   },
                   "end": {
                     "file": "tests/fixtures/016-func-simple//source.c",
                     "line": 7,
-                    "col": 20
+                    "col": 20,
+                    "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                    "lexing_line": 26
                   },
                   "cursor": "NoCursor"
                 },
@@ -2478,12 +2864,16 @@
                       "begin": {
                         "file": "tests/fixtures/016-func-simple//source.c",
                         "line": 7,
-                        "col": 10
+                        "col": 10,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 26
                       },
                       "end": {
                         "file": "tests/fixtures/016-func-simple//source.c",
                         "line": 7,
-                        "col": 19
+                        "col": 19,
+                        "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                        "lexing_line": 26
                       },
                       "cursor": "NoCursor"
                     },
@@ -2496,12 +2886,16 @@
                           "begin": {
                             "file": "tests/fixtures/016-func-simple//source.c",
                             "line": 7,
-                            "col": 10
+                            "col": 10,
+                            "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                            "lexing_line": 26
                           },
                           "end": {
                             "file": "tests/fixtures/016-func-simple//source.c",
                             "line": 7,
-                            "col": 13
+                            "col": 13,
+                            "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                            "lexing_line": 26
                           },
                           "cursor": "NoCursor"
                         },
@@ -2513,7 +2907,9 @@
                               "pos": {
                                 "file": "tests/fixtures/016-func-simple//source.c",
                                 "line": 7,
-                                "col": 10
+                                "col": 10,
+                                "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                                "lexing_line": 26
                               }
                             },
                             "name": "add"
@@ -2528,12 +2924,16 @@
                             "begin": {
                               "file": "tests/fixtures/016-func-simple//source.c",
                               "line": 7,
-                              "col": 14
+                              "col": 14,
+                              "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                              "lexing_line": 26
                             },
                             "end": {
                               "file": "tests/fixtures/016-func-simple//source.c",
                               "line": 7,
-                              "col": 15
+                              "col": 15,
+                              "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                              "lexing_line": 26
                             },
                             "cursor": "NoCursor"
                           },
@@ -2552,12 +2952,16 @@
                             "begin": {
                               "file": "tests/fixtures/016-func-simple//source.c",
                               "line": 7,
-                              "col": 17
+                              "col": 17,
+                              "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                              "lexing_line": 26
                             },
                             "end": {
                               "file": "tests/fixtures/016-func-simple//source.c",
                               "line": 7,
-                              "col": 18
+                              "col": 18,
+                              "lexing_file": "tests/fixtures/016-func-simple//source.c",
+                              "lexing_line": 26
                             },
                             "cursor": "NoCursor"
                           },

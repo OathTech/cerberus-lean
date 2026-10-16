@@ -19,17 +19,37 @@ let tag0 name = `String name  (* nullary constructor *)
    and the Loc_point/Loc_other distinction), this serializes the full location
    tree so the Lean parser can reconstruct it exactly.
 
-   Positions: {"file": S, "line": N, "col": N}  (1-indexed, matching Cerb_position accessors)
+   Positions: {"file": S, "line": N, "col": N, "lexing_file": S, "lexing_line": N}
+              (1-indexed; the source and the lexing position, see json_of_pos)
    Cursors:   "NoCursor" | {"tag": "PointCursor", ...} | {"tag": "RegionCursor", ...}
    Locations: "Loc_unknown" | {"tag": "Loc_other", ...} | {"tag": "Loc_point", ...}
             | {"tag": "Loc_region", ...} | {"tag": "Loc_regions", ...}
 *)
 
+(* A Cerb_position.t (util/cerb_position.ml:7-11) is the LEXING position in
+   the preprocessed stream the C lexer read (`file : Lexing.position`; its
+   pos_fname is the input path the driver handed the lexer,
+   parsers/c/c_parser_driver.ml:155, constant across the translation unit) together
+   with the SOURCE file and line after cpp's `#line` mapping (`source_file`,
+   `source_line`, set by Cerb_position.set_source from the lexer's LineMap,
+   parsers/c/c_lexer.mll:42-45). "file"/"line"/"col" are the SOURCE accessors
+   Cerb_position.file/line/column (util/cerb_position.ml:18-25) — the values
+   every location printer uses; "lexing_file"/"lexing_line" are the lexing
+   position's pos_fname/pos_lnum (Cerb_position.to_file_lexing, :27), exported
+   since 2026-10-16 for consumers that need the preprocessed-file position
+   (cerberus-caesium filing 2; record lean_frontend/docs/
+   2026-10-16_consumer-note-cerberus-caesium-cabs-json-pp-position.md). The
+   column is one value for both views (Cerb_position.column is computed from
+   the lexing position: 1 + pos_cnum - pos_bol). The Lean importer
+   (lean_frontend/CabsImport.lean jsonToPos) REQUIRES all five fields. *)
 let json_of_pos p =
+  let lexing = Cerb_position.to_file_lexing p in
   `Assoc [
     ("file", `String (Cerb_position.file p));
     ("line", `Int (Cerb_position.line p));
-    ("col", `Int (Cerb_position.column p))
+    ("col", `Int (Cerb_position.column p));
+    ("lexing_file", `String lexing.Lexing.pos_fname);
+    ("lexing_line", `Int lexing.Lexing.pos_lnum)
   ]
 
 let json_of_cursor = function

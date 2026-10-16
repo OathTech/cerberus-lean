@@ -370,6 +370,16 @@ srcDir = "test"
 root = "Unit.RunDigestTest"
 moreLinkArgs = ["native/md5.o"]
 
+# Cabs JSON position import (2026-10-16, cerberus-caesium filing 2): the position
+# object carries the lexing (preprocessed-file) position beside the source one —
+# all five fields imported fail-closed, printers/library-location input unchanged,
+# equality over all five (the OCaml structural-equality mirror), the committed
+# fixture current.
+[[lean_exe]]
+name = "cabs-import-test"
+srcDir = "test"
+root = "Unit.CabsImportTest"
+
 # match-pattern-arity (2026-09-20, cerberus-sl hidden-state note item 7): match_pattern
 # and typecheck_pattern fail CLOSED on a tuple-arity mismatch — T1–T3 the consumer's
 # acceptance facts by rfl (none on mismatch, select_case continues, bindings + order

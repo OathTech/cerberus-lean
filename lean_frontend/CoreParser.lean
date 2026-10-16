@@ -235,7 +235,8 @@ private def lastTokenEndByte : P Nat := fun it =>
     (library files) or erased back to `Loc.unknown` by `parseFile` (see
     the Z-01 section below). -/
 private def markerLoc (b e : Nat) : CerbLocation.Loc :=
-  .region { file := "", line := 0, col := b } { file := "", line := 0, col := e } .noCursor
+  .region { file := "", line := 0, col := b, lexingFile := "", lexingLine := 0 }
+          { file := "", line := 0, col := e, lexingFile := "", lexingLine := 0 } .noCursor
 
 /-- Construct a symbol from a parsed identifier string.
     Uses the string's hash as the number so distinct names get distinct
@@ -2524,19 +2525,25 @@ preserve — a separate, recorded gap: UB raised inside a libc body prints
 structure RelocCtx where
   lib : Option (String × (Nat → Nat × Nat))
 
+/-- Every Core-text position mirrors `Cerb_position.from_lexing` (the Core
+    lexer/parser build all of theirs with it: parsers/core/core_lexer.mll:205,
+    core_parser.mly:18, core_parser_driver.ml:19): the lexing file and line ARE
+    the source file and line (no `#line` mapping on Core text). -/
 private def libLoc (file : String) : CerbLocation.Loc :=
-  let p : CerbLocation.Pos := { file := file, line := 0, col := 0 }
+  let p : CerbLocation.Pos := { file := file, line := 0, col := 0, lexingFile := file, lexingLine := 0 }
   .region p p .noCursor
 
 private def relocLoc (ctx : RelocCtx) : CerbLocation.Loc → CerbLocation.Loc
   | .unknown => match ctx.lib with
     | some (file, _) => libLoc file
     | none => .unknown
-  | .region ⟨"", 0, b⟩ ⟨"", 0, e⟩ cur => match ctx.lib with
+  | .region ⟨"", 0, b, "", 0⟩ ⟨"", 0, e, "", 0⟩ cur => match ctx.lib with
     | some (file, resolve) =>
       let (l1, c1) := resolve b
       let (l2, c2) := resolve e
-      .region { file := file, line := l1, col := c1 } { file := file, line := l2, col := c2 } cur
+      -- `from_lexing` mirror (see `libLoc`): lexing (file, line) = source (file, line)
+      .region { file := file, line := l1, col := c1, lexingFile := file, lexingLine := l1 }
+              { file := file, line := l2, col := c2, lexingFile := file, lexingLine := l2 } cur
     | none => .unknown
   | l => l
 

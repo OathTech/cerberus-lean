@@ -1,3 +1,11 @@
+# feature/cabs-json-pp-position, 2026-10-16 [AGENT, executing the slice [USER 2026-10-16] approved — cerberus-caesium's filing 2]:
+# the Cabs JSON exporter carries the LEXING position (the preprocessed file and line the C lexer read) beside the SOURCE
+# position: json_of_pos gains "lexing_file"/"lexing_line" (Cerb_position.to_file_lexing's pos_fname/pos_lnum); "file"/
+# "line"/"col" unchanged. [source-content] backend/lean_export/cabs_json.ml 5f64fc9c… -> 564f7472… (the audit round
+# reworded its header comment; the row follows the bytes). Fork-only bridge code
+# consumed by the Lean engine alone: no .lem, parser or generated-OCaml change (layer 2 unmoved); the oracle's own runs never
+# read the exporter. Single-row edit + this NOTE, no --refresh. Record:
+# lean_frontend/docs/2026-10-16_consumer-note-cerberus-caesium-cabs-json-pp-position.md.
 # Quote scrub, 2026-10-16 [AGENT, executing the operator's 2026-10-16 ruling that the user's chat messages are never
 # quoted verbatim in files]: comment-only paraphrases in six pinned files — [source-content] rows for
 # frontend/model/{ail/ailTypesAux,cabs_to_ail,mem}.lem, parsers/c/c_parser.mly, runtime/libcore/{std,std_inner_arg_temps}.core
@@ -584,7 +592,7 @@ util/cerb_fresh.ml
 100644 6257177174ed0fe34a6f9d67fef5caeb935ceccb074612cbe13c93f516d444f8 backend/common/pipeline.mli
 100644 2a2d4d1b5ce9b61811f245ed00ce27a907a52de84174b67fa16548f5c2372ef0 backend/driver/dune
 100644 29958a993e8223fa713d9d6a0e73bec031d3e41beae73492b7b67113d15bdff4 backend/driver/main.ml
-100644 5f64fc9cadd7064237ef4f3403641a7870be35a06d5a0b07257c7ea6a72c44f3 backend/lean_export/cabs_json.ml
+100644 564f7472d25f650f7b235427f8fb8bd5a6e2b82dc0eae9fa2f897928dc7dc282 backend/lean_export/cabs_json.ml
 100644 6940e7e73f0bd7d1fedfa9d83f9401125064171b6e9b26c62493cc667bcedc4d backend/lean_export/dune
 100644 a3e314407d7f252f3613639df3325589fd9c653a9bd7d2b3caa66f07e712e444 cerberus-lib.opam
 100644 efc81ffdefabd01716ec52b3e90258db0313364c5fedce611626b1ea1496cf5c cerberus.opam

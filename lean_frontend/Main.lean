@@ -287,9 +287,10 @@ def firstInvalidUtf8 (b : ByteArray) : Option Nat := Id.run do
     document read as BYTES, and REFUSE (exit 2, attributed) when it is not
     UTF-8. The oracle's `--cabs-json` exporter writes the bytes ≥ 0x80 of a
     file name (the real path, a `#line` or an `#include` name,
-    `backend/lean_export/cabs_json.ml:30` `Cerb_position.file`), of a
-    `Loc_other` string (`:44`) and of the text fields (attribute-argument
-    strings `:599`/`:601`, magic comments `:657`) raw, so such a document is
+    `backend/lean_export/cabs_json.ml:46` `Cerb_position.file`; the
+    preprocessed file name `:49` `lexing_file` since 2026-10-16), of a
+    `Loc_other` string (`:62`) and of the text fields (attribute-argument
+    strings `:618`/`:620`, magic comments `:675`) raw, so such a document is
     not UTF-8, while the oracle's own run proceeds. Lean strings are
     sequences of Unicode scalar values, so the bridge cannot carry those
     bytes; `IO.FS.readFile` used to throw an uncaught exception here ("Tried
@@ -307,7 +308,7 @@ def decodeCabsJson (label : String) (bytes : ByteArray) : IO String := do
         let lo := if i ≥ 40 then i - 40 else 0
         (s!"{i}", CerbEscape.bytes (bytes.extract lo (min bytes.size (i + 40))))
       | none => ("unknown", "")
-    IO.eprintln s!"cerberus-lean: refused — non-UTF-8 Cabs JSON: {label} is not valid UTF-8 (first invalid byte at offset {off}, context \"{ctx}\"). The oracle's --cabs-json exporter copies the bytes ≥ 0x80 of a file name (the real path, a #line or an #include name), of a Loc_other string and of attribute-argument or magic-comment text into the JSON raw (backend/lean_export/cabs_json.ml:30, :44, :599/:601, :657); this port's bridge cannot carry them, because Lean strings are sequences of Unicode scalar values (string-literal and character-constant bytes are byte-carriers and unaffected; see VALIDATION.md §3(c), bug hunt BUG-6/K-5)"
+    IO.eprintln s!"cerberus-lean: refused — non-UTF-8 Cabs JSON: {label} is not valid UTF-8 (first invalid byte at offset {off}, context \"{ctx}\"). The oracle's --cabs-json exporter copies the bytes ≥ 0x80 of a file name (the real path, a #line or an #include name), of a Loc_other string and of attribute-argument or magic-comment text into the JSON raw (backend/lean_export/cabs_json.ml:46/:49, :62, :618/:620, :675); this port's bridge cannot carry them, because Lean strings are sequences of Unicode scalar values (string-literal and character-constant bytes are byte-carriers and unaffected; see VALIDATION.md §3(c), bug hunt BUG-6/K-5)"
     IO.Process.exit 2
 
 /-- Read a Cabs JSON file as bytes and decode it (`decodeCabsJson`). -/
