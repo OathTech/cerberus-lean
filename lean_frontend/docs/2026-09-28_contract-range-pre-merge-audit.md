@@ -1,7 +1,7 @@
 # Pre-merge audit: the contract-enforcement range `d62f52121..3d85f64b1` (2026-09-28)
 
-[AGENT: a fresh, skeptical pre-merge auditor (Claude subagent) with no prior context.] Scope approved by the operator, verbatim:
-[USER 2026-09-28] "Go ahead with the audit as scoped". Branch `audit/contract-range-20260928` at `3d85f64b1`.
+[AGENT: a fresh, skeptical pre-merge auditor (Claude subagent) with no prior context.] Scope approved by the operator:
+[USER 2026-09-28] approved the audit as scoped. Branch `audit/contract-range-20260928` at `3d85f64b1`.
 Read-only on the code. This file is the only change. No push.
 
 **Range.** `git rev-list --count d62f52121..3d85f64b1` = **18** commits, not the 24 the brief stated. `d62f52121` is
@@ -207,13 +207,13 @@ The `%f`-NaN refusal (commit `8108790ad`; thin-surface record, addendum D1) was 
 addendum's D3/D4 ("class (a), no action"), D5 ("class (b) permits …") and D6 dispositions. None is labelled [AGENT].
 D5 is a resource-direction ruling that the worker explicitly left as "the orchestrator's to apply".
 
-All [USER 2026-09-28] quotes across the range's commit messages and files are consistent, full or trimmed substrings
-of one wording each (derived: I extracted and grouped them):
-- "D2 refuse FS for now, this seems safer" (28 uses)
-- "agree on atexit as you propose"
-- "Yeah, (1) is fine"
-- "yes, re the decision, agree with (1). Named deviations are okay …"
-- "P1-1 - let's measure, then refuse if the blast radius isn't too big."
+All [USER 2026-09-28] citations across the range's commit messages and files are consistent, full or trimmed renderings
+of one ruling each (derived: I extracted and grouped them):
+- D2: refuse the filesystem for now as the safer course (28 uses)
+- the atexit proposal agreed as proposed
+- D4 option (1) accepted
+- (1) agreed; named deviations acceptable where the mismatch cannot easily be resolved
+- P1-1: measure first, then refuse if the blast radius is not too big
 - D1/D3/D5
 
 ### F11: LOW. CONTRACT still presents itself as a draft

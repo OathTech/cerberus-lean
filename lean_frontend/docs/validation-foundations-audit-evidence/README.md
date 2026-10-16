@@ -4,16 +4,13 @@
 > archives and large inventories listed below are NOT in the repository.
 > They were dropped at the landing replay (`arc/validation-foundations-land`
 > replays `arc/validation-foundations` commit by commit without them) under
-> the operator ruling [USER 2026-09-06], verbatim:
->
-> > "Agree on all points, and particularly on cleaning up the evidence
-> > archives. These should not be git committed, and will not be pushed. I
-> > don't actually hold strong value in such data which could be recreated,
-> > so I am fine dropping large files like this. The important thing is
-> > that runs can be reconstructed. Re ordering of concurrency, I think we
-> > should stabilize the core semantics before this, so we should revert to
-> > our previous ordering. Re master plan revisions dropping rulings - yes,
-> > this should be retained."
+> the operator ruling [USER 2026-09-06]: the operator agreed on all
+> points and particularly on cleaning up the evidence archives, which are
+> not to be git-committed or pushed, since recreatable data of this kind
+> has little value to them and what matters is that runs can be
+> reconstructed. The same ruling put concurrency after stabilising the
+> core semantics (reverting to the previous ordering) and confirmed that
+> rulings dropped by master-plan revisions should be retained.
 >
 > Drop rule: every `.tar.gz`/`.tar.zst` under `lean_frontend/docs/` and
 > every file there of 1 MiB (1,048,576 bytes) or more. Dropped from this

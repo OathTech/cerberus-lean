@@ -862,7 +862,7 @@ slice end; every load-bearing output is quoted verbatim above.
 
 ### Closing note (2026-09-01): the flagged reconciliation-(d) rows re-recorded
 
-[USER 2026-09-01] sanction, verbatim: "great, let's run the regen".
+[USER 2026-09-01] sanctioned running the regen.
 [AGENT] (baseline-regen worker, branch `fix/exec-regen` from mainline
 `bbdbacaff`; NO merge, NO push). The 19 exec-lane rows flagged above
 under reconciliation (d) are re-recorded in one dedicated baseline

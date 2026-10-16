@@ -2,7 +2,7 @@
 
 Branch `arc/pnvi-ae-udi`. Base: `64c6724f0` (S2 record), then `bdd94f57a` (the S2 review fixes,
 Part 1 of this slice; dispositions in `docs/2026-10-07_pnvi-s2-data-shapes-record.md` §10).
-Worker: Claude Opus 5.5 (agent). Every judgement that no operator quote covers is marked
+Worker: Claude Opus 5.5 (agent). Every judgement that no operator ruling covers is marked
 [AGENT]. Quoted gate output is verbatim; counts marked "derived" are mine. The lem used is the
 shared `2d3a492` (the pin); no `.lem` file changed in this slice.
 
@@ -11,22 +11,22 @@ refusal: `--switches=PNVI_ae_udi` is still refused, so no lane can reach a new a
 
 **Gated tree:** the working tree that became the S3 code commit `4e43ed295` (row 1 and Tier A both ran on it; no Lean, script, lakefile or register byte differs between that tree and the commit). This record is a docs-only commit on top.
 
-## 0. Rulings in force (verbatim) and governing documents
+## 0. Rulings in force and governing documents
 
-- [USER 2026-10-03]: "… we should fall back to loudly rejecting (either as unsupported, or matching
-  upstream)".
-- [USER 2026-09-30]: "… we should not fix deviations with special 'magic mode' paths that work
-  exclusively in one situation …".
-- [USER 2026-10-05]: "Re PNVI - agree on your recs except for mirroring crashes / obviously wrong behavior.
-  These should be refusals surely?"
-- [USER 2026-10-05], on §F.14–§F.16 (design record §H): "1 - agree. 2 - I think in the end we
-  should make this consistent, but it's fairly minor. 3 - if we do (b) it should be a global
-  policy. I don't think it necessarily needs to be a refusal, but it shouldn't be an uncontrolled
-  crash. And for now (a) is fine". As recorded in §H: MIRROR the (D) sites `:2191`, `:2293`,
+- [USER 2026-10-03]: fall back to loudly rejecting (either as unsupported, or matching
+  upstream).
+- [USER 2026-09-30]: deviations are not fixed with special magic-mode paths that work only in
+  one situation.
+- [USER 2026-10-05]: agreed with the PNVI recommendations except for mirroring crashes and
+  obviously wrong behaviour, which should be refusals.
+- [USER 2026-10-05], on §F.14–§F.16 (design record §H): item 1 agreed; item 2 should in the end
+  be made consistent, but is fairly minor; for item 3, if (b) is done it should be a global
+  policy, which need not be a refusal as such but must not be an uncontrolled crash, and (a) is
+  fine for now. As recorded in §H: MIRROR the (D) sites `:2191`, `:2293`,
   `:2308`/`:2379`, `:2399`; REFUSE `:840-842`; default-path look-alikes UNCHANGED in this arc; the
   refusal shape is the `CerbFS` `failwithI`-with-prefix shape.
-- [USER 2026-10-07]: "… we don't want our gates to be adversarially robust unless they are trust
-  surfaces …".
+- [USER 2026-10-07]: gates are not to be adversarially robust unless they are trust
+  surfaces.
 - Design record `docs/2026-10-04_pnvi-ae-udi-design.md` §A.3, §C, §D, §E S3, §G (authoritative for
   every flagged site), §H. S2 record `docs/2026-10-07_pnvi-s2-data-shapes-record.md`. S1 record §14.
 

@@ -123,8 +123,8 @@ Found by this project's C4 pre-merge audit (finding F-A2,
 `lean_frontend/docs/2026-09-05_fuel-parameter-C4-audit-premerge.md` §5.2, the
 `alignas_self.c` case, 2026-09-05); widened to the forward-declared and non-character
 shapes and re-run on all engines on 2026-09-27 by the orchestrator. Operator ruling
-[USER 2026-09-27]: "yes, 'constraint violation' - and this goes in the tray if it isn't
-there already". Drafted by Claude (Opus 5.5) under operator direction; the filed issue
+[USER 2026-09-27] confirmed the constraint-violation classification and that the report goes in
+the tray if not already there. Drafted by Claude (Opus 5.5) under operator direction; the filed issue
 carries an AI-provenance note per the tray's policy (`INDEX.md`, "Provenance labeling
 policy").
 
@@ -139,12 +139,12 @@ runs only after the member list is desugared. The hunk is byte-identical to the 
 the record branch `fix/alignas-p2d3` (`cf4af48f8`).
 
 That commit also changed `ctype_aux.lem` to compare member alignments in `are_compatible_aux`.
-That half was NOT taken. [USER 2026-10-03] agreed to "keep only the completeness check and mirror
-upstream on alignment compatibility", under the rulings "we don't innovate wrt Cerberus-upstream,
-unless something is very very very obviously a bug" and "We do not resolve Cerberus TODO cases
-unless the answer is extremely obvious". The fork's `are_compatible_aux` keeps upstream's
-`(*TODO alignment*)` placeholders. The ruling for this draft's fix itself is [USER 2026-09-27]: "yes,
-'constraint violation' - and this goes in the tray if it isn't there already".
+That half was NOT taken. [USER 2026-10-03] agreed to keep only the completeness check and mirror
+upstream on alignment compatibility, under the rulings that the fork does not innovate relative to
+Cerberus upstream unless something is very obviously a bug, and that Cerberus TODO cases are not
+resolved unless the answer is extremely obvious. The fork's `are_compatible_aux` keeps upstream's
+`(*TODO alignment*)` placeholders. The ruling for this draft's fix itself is [USER 2026-09-27]: the
+constraint-violation classification, and the report goes in the tray if not already there.
 
 Run 2026-10-03 on the fixed fork, verbatim. The fork oracle used `--exec --batch --nolibc
 --mode=exhaustive`. The Lean port used `--batch` on the oracle's `--cabs-json`. Pristine is

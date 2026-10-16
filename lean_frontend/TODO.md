@@ -10,7 +10,7 @@ Current-state reconciliation: 2026-09-25 at Cerberus
 `67ec5de70e02e280bb348a4ba826696b76116732` (the Lem pin has since moved to `2d3a492758cb23dc4e417f2961983d25b36ce130` by functional re-pins (via `77ad4fa` and `4e70bb5`, both merged; the current pin `2d3a492` itself is PROVISIONAL — the head of the unmerged lem-lean branch `arc/pnvi-switches`, not yet on `mdd/lean-backend`), generated OCaml byte-identical at each: [re-pin record](docs/2026-10-04_lem-repin-4e70bb5-record.md), [PNVI S1 record](docs/2026-10-05_pnvi-s1-switch-parameter-record.md)). The September 5 master plan
 and subsequent delivery records are historical plans and evidence.
 The current supported product is [SUPPORTED.md](SUPPORTED.md).
-Concurrency is excluded: [USER 2026-09-24] "FYI, I have concluded the concurrency branch prototype has failed, and I'm working on a remediation. But that dependency should be considered dead for now."
+Concurrency is excluded: [USER 2026-09-24] concluded that the concurrency branch prototype had failed, reported working on a remediation, and ruled that dependency dead for now.
 The SC prototype and feature branches are parked records; no cleanup,
 announcement or current consumer depends on their integration. The
 replacement is governed by the [SC concurrency master plan](../SC-CONCURRENCY.md)
@@ -74,9 +74,9 @@ resumption rulings and errata). Branch `arc/semantics-audit-repairs`.
   proceeds. Mover: a text-field encoder decision in a separate slice.
 - **Finding 5 + draft 38 — cross-TU struct-value compatibility** — PARTLY REVERTED
   2026-10-03 (branch `fix/mirror-upstream-d38-alignas`, record
-  `docs/2026-10-03_mirror-upstream-d38-alignas-record.md`; [USER 2026-10-03] "Generally, our rule
-  is that we don't innovate wrt Cerberus-upstream, unless something is very very very obviously a
-  bug. ... fall back to loudly rejecting (either as unsupported, or matching upstream)."; cerberus-sl
+  `docs/2026-10-03_mirror-upstream-d38-alignas-record.md`; [USER 2026-10-03] ruled the general
+  rule: no innovation relative to Cerberus-upstream unless something is very obviously a bug;
+  otherwise fall back to loudly rejecting, as unsupported or matching upstream; cerberus-sl
   confirmed it does not rely on cross-TU `PEmemberof`). KEPT from D3 (`dbe633ec5` + `83dc6ba00`):
   `ctype_aux.lem` array arm `(n1_opt, n2_opt)` (draft 39), unit exe `are-compatible-test`, corpus
   `tests/multi_tu_tray/` (LADDER Tier A row 6b). REVERTED: the `PEmemberof(struct)`
@@ -116,9 +116,9 @@ resumption rulings and errata). Branch `arc/semantics-audit-repairs`.
   `CerbFloat.lean`).
 
 - **Pre-merge audit follow-ups (2026-09-15, `docs/2026-09-15_semantics-audit-repairs-premerge-audit.md`; F1/F2/F4/F5 fixed at landing):**
-  (a) F3 — WON'T FIX (mirror upstream), 2026-10-03: [USER 2026-10-03] agreed to "keep only the
-  completeness check and mirror upstream on alignment compatibility" ("We do not resolve Cerberus TODO
-  cases unless the answer is extremely obvious ..."). `are_compatible_aux` keeps upstream's
+  (a) F3 — WON'T FIX (mirror upstream), 2026-10-03: [USER 2026-10-03] agreed to keep only the
+  completeness check and mirror upstream on alignment compatibility (Cerberus TODO cases are not
+  resolved unless the answer is extremely obvious). `are_compatible_aux` keeps upstream's
   `(*TODO alignment*)` placeholders. The member-alignment comparison written on the record branch
   `fix/alignas-p2d3` (`cf4af48f8`, and the refusal variant `b1c7831e4`) stays a record and is not
   merged. With draft 38's consult reverted (same date), the gap is no longer observable through
@@ -181,7 +181,7 @@ resumption rulings and errata). Branch `arc/semantics-audit-repairs`.
   `prepare_exit`'s definition (consumer-side; not done). Register 8 → 5.
 - ~~**`many`/`many1`**~~ — RESOLVED 2026-09-15 (parser-progress-measure slice,
   `docs/2026-09-11_parser-progress-measure-record.md`; [USER 2026-09-11] ruled for
-  the shared lem BODY change, "D3 agree. Go ahead"): `many`/`many1` are restated as
+  the shared lem BODY change, approving D3): `many`/`many1` are restated as
   input-indexed recursion — two mutually recursive RUN functions `many_run`/`many1_run`
   on the input (monadic_parsing.lem:119-132), extensionally the same parsers on every
   input for every `p` (D1 argument; kernel theorems relating the old and new workers,
@@ -271,9 +271,9 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
 ## Fuel-parameter arc — C3 follow-ups (record `docs/2026-09-05_fuel-parameter-C3-record.md` §7–§8)
 
 - **Eager `get_ctx` measure cost — resolved in the fuel-measure-cost worktree;
-  remaining performance bar re-scoped.** The operator's standing price is
-  "a price we pay, so long as it's truly <10% cpu … changing the trust
-  surface is a high bar" [USER 2026-09-05]. The full 1,669-row before/after
+  remaining performance bar re-scoped.** The operator's standing price
+  [USER 2026-09-05]: the cost is accepted so long as it is truly under 10% CPU,
+  and changing the trust surface is a high bar. The full 1,669-row before/after
   CPU instrument and pre-arc comparison are recorded in
   [the fuel-measure-cost record](docs/2026-09-07_fuel-measure-cost-record.md).
   Code `6ce040f06` replaces the full arena-size traversal with a proved
@@ -338,8 +338,8 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   hypothesis is honest and the register header says "for programs the
   frontend accepts correctly". Tray draft WRITTEN 2026-09-27: `docs/upstream-tray/47-alignas-incomplete-type-not-diagnosed.md`
   (widened: a forward-declared struct or a non-character member crashes both oracles with `Not_found`).
-  Fork fix RULED [USER 2026-09-27]: "yes, 'constraint violation' - and this goes in the tray if it isn't
-  there already" — next-phase plan P2d-3.
+  Fork fix RULED [USER 2026-09-27]: a constraint violation, and it goes in the tray if not there
+  already — next-phase plan P2d-3.
 - **Stack overflow vs fuel (C4 audit F-A7), for the mem-scale/stack-ceiling
   backlog:** deep NON-tail recursion in a fuel'd worker dies on the 8 MB
   native stack (rc=134 `Stack overflow detected. Aborting.`) long before the
@@ -390,7 +390,7 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
 - **`match_pattern`/`typecheck_pattern` fail CLOSED on tuple-arity mismatch — LANDED
   (2026-09-20, `fix/match-pattern-arity`, record
   `docs/2026-09-20_match-pattern-arity-record.md`; cerberus-sl hidden-state note item 7,
-  [USER 2026-09-20 via cerberus-sl] "we can ask for this immediately").** Both shared-model
+  [USER 2026-09-20 via cerberus-sl] asked for it immediately).** Both shared-model
   zips (`core_aux.lem` matcher, `core_typing.lem` typing rule) guard the arity like upstream's
   own `simpl_match_pattern` (`core_rewrite.lem:1287-1300`); kernel facts T1–T4 + typing pin T5
   in `test/Unit/MatchPatternArityTest.lean` (`match-pattern-arity-test`). Left: (i) upstream-tray
@@ -416,7 +416,7 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   shortage kept the parameter's OLD binding). Fitting inputs preserve every argument (pinned structurally). The guard's own
   finding: the shipped stdlib's `builtin pread`/`pwrite` declarations had THREE formals against four-argument
   call sites and four-value runtime arms (`std.core:618-619`, `std_inner_arg_temps.core:574-575`) — FIXED in both
-  files ([USER 2026-09-23] "unambiguous bugs get fixes"), tray 45 subsection. Left
+  files ([USER 2026-09-23] ruled that unambiguous bugs get fixes), tray 45 subsection. Left
   from the audit's inspection, reported without a live counterexample: `equalInferred`'s tuple zip
   (`core_typing_aux.lem`), `to_pure`'s `Ecase` and `Esave` traversals. (v) `Core_reduction` — THE engine the driver steps with — had its six let-form sites guarded
   too (the audit cited `core_run.lem`, the second engine); `update_env_aux`'s loud leaf is the backstop;
@@ -614,8 +614,8 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   `docs/2026-09-02_mem-scale-record.md` §S1'): the `.lem`
   accumulate-and-reverse rewrite was built and measured — it moved the
   onset (8 M elements now COMPLETE with the oracle's verdict; 10 M
-  still hang) — and then REVERTED per [USER 2026-09-02] ("revert S1'
-  I think - poor roi for a change to the trust surface"). Mechanism
+  still hang) — and then REVERTED per [USER 2026-09-02] (poor return on
+  investment for a change to the trust surface). Mechanism
   located first-hand: our emitted C is tail-shaped (`jmp lean_apply_*`),
   but the Lean 4.32.2 RUNTIME's `lean_apply_1/2` enter the closure by
   indirect CALL on 22 of 24 arity paths, so every per-element closure
@@ -648,7 +648,7 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   a 4 GB `-v` kills Lean at ~1.7 GB RSS while the oracle runs to
   3.1 GB — the detective's two "OOM" rows were this artefact (profile
   §2); the libxml2 lanes are biased against Lean today. RULED [USER
-  2026-09-02] ("Q2 agree"): superseded by per-test `scripts/capped`
+  2026-09-02] (Q2 agreed): superseded by per-test `scripts/capped`
   with `CERB_MEM_MAX=4G`; LADDER.md:73 text updated; migration of the
   seven harnesses + dedicated baseline-instrument commit = mem-scale
   S2 (charter §6.4); then re-run the class-(b) rows.
@@ -663,29 +663,29 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   Remaining work
   is the registered semantic/completion obligations and remeasurement after
   relevant changes, not another run of this completed candidate measurement.
-- **Bit-level float representation (L)** — queued 2026-09-29 ([USER 2026-09-29] "Yes, let's queue as you
-  propose"); the mover of named deviation N2 (VALIDATION §2b). `CerbMem` stores floats through `Float.toBits`,
+- **Bit-level float representation (L)** — queued 2026-09-29 ([USER 2026-09-29] agreed to queue it as
+  proposed); the mover of named deviation N2 (VALIDATION §2b). `CerbMem` stores floats through `Float.toBits`,
   which canonicalizes NaNs, so a stored NaN loses its sign and payload. Proposal: represent C floating values as bit
   patterns with IEEE arithmetic written in Lean, following x86 NaN rules (the oracle's platform), validated against
   the oracle and the gcc lane, with the performance cost measured; floats would also become kernel-evaluable. A
   design pass is scoped with the operator before any briefing.
-- **libc without a lossy text vehicle (M-L)** — queued 2026-09-30 ([USER 2026-09-30] "(1) or (2) might be work
-  for later"); the mover of named deviation N3 (VALIDATION §2b). Lean loads libc from `tests/libc/libc.core`, a text
+- **libc without a lossy text vehicle (M-L)** — queued 2026-09-30 ([USER 2026-09-30] left (1) or (2) as possible
+  later work); the mover of named deviation N3 (VALIDATION §2b). Lean loads libc from `tests/libc/libc.core`, a text
   dump printed with `%.12g`, which rounds `0x1p64` (N3) and carries no source locations (Z1-A1). Two routes, to be
   scoped with the operator: (1) a round-tripping Core float printer everywhere (fixes N3 only; moves the Lean
   printer mirror, pp-test transcripts and possibly the batch float rendering, which must stay the oracle's); (2)
   build libc in Lean from `runtime/libc/src` through the validated front end and link it as the oracle does (fixes
   N3 and Z1-A1, retires the dump pin; needs speed and oracle-equivalence measurement). No special printing mode for
-  the dump ([USER 2026-09-30], no "magic mode" fixes).
-- **Discrepancy bug hunt (M)** — queued 2026-09-28 ([USER 2026-09-28] "We should fan out multiple agents on a
-  discrepancy bug hunt. Basically, go look for anything in Cerberus-lean that might result in bugs similar to the one
-  that was reported yesterday"): parallel hunters for pathleak-class defects (hand-written seams answering without a
+  the dump ([USER 2026-09-30], no single-situation special-case fixes).
+- **Discrepancy bug hunt (M)** — queued 2026-09-28 ([USER 2026-09-28] directed a fan-out of multiple agents on a
+  discrepancy bug hunt, looking for anything in cerberus-lean that might produce bugs like the one reported the
+  day before): parallel hunters for pathleak-class defects (hand-written seams answering without a
   faithful model, in places no lane exercises). Scope agreed with the operator before briefing; inputs: the
   2026-09-28 served-surface audit, test-depth map and thin-surface tests record. Includes the `CerbMem` file-wide
   `impl_mem.ml` line-cite drift found by the pre-merge audit.
 - **CerbFS: a SibylFS-faithful filesystem model (M-L)** — registered
   2026-09-02, rescoped 2026-09-28. Since contract D2 ([USER 2026-09-28]
-  "refuse FS for now, this seems safer") every CerbFS operation refuses
+  chose refusal as the safer option) every CerbFS operation refuses
   (`docs/2026-09-28_cerbfs-refuse-all-record.md`); the earlier served
   subset had thin positive coverage and served a wrong answer on path
   spellings (the pathleak report). The mover, if the filesystem becomes
@@ -766,11 +766,10 @@ S-basket slice — `docs/2026-09-01_s-basket.md`.)
   cheap raw-string ban probe (`r#"` fails until the stripper learns
   the form).
 
-- **Whole-project trust-surface risk map** [USER 2026-09-05: "A good thing
-  to schedule at the end of this would be a whole-project risk map which
-  says whether there has been movement wrt the trust surface. We're doing
-  a lot of surgery, all reasonable, but we'll want to make sure we aren't
-  disturbing the core cerberus correctness properties."] — an
+- **Whole-project trust-surface risk map** [USER 2026-09-05 asked that a
+  whole-project risk map be scheduled at the end of this, stating whether
+  the trust surface has moved: the surgery under way is all reasonable, but
+  it must not disturb the core Cerberus correctness properties] — an
   INDEPENDENT pass (fresh auditor) after Z4 and the fuel close-out, BEFORE
   the fresh-noodler exit test; baseline = the 2026-08-31 semantics-first
   split. Surfaces: the oracle (`.lem` changes = Lean-only declares only;

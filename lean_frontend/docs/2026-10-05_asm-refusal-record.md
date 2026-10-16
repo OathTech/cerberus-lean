@@ -1,17 +1,17 @@
 # Inline assembly: a loud refusal — slice record (2026-10-05)
 
 Branch `fix/asm-refusal`, from mainline `mdd/cerberus-lean` = `1001f3f2b`.
-Worker: Claude Opus 5.5 (agent). Every judgement below that no operator quote
+Worker: Claude Opus 5.5 (agent). Every judgement below that no operator ruling
 covers is marked [AGENT].
 
-## 0. Ruling and standing rules (verbatim)
+## 0. Ruling and standing rules
 
-- [USER 2026-10-05]: "Re inline asm, this should be a loud refusal".
-- No innovation versus upstream, [USER 2026-10-03]: "we should fall back to
-  loudly rejecting (either as unsupported, or matching upstream)". A refusal
+- [USER 2026-10-05]: inline asm is to be a loud refusal.
+- No innovation versus upstream, [USER 2026-10-03]: fall back to loudly
+  rejecting (either as unsupported, or matching upstream). A refusal
   invents no semantics.
-- No magic modes, [USER 2026-09-30]: "we should not fix deviations with special
-  'magic mode' paths that work exclusively in one situation". The refusal sits
+- No magic modes, [USER 2026-09-30]: deviations are not fixed with special
+  magic-mode paths that work only in one situation. The refusal sits
   on the GENERAL path: the shared `.lem` desugarer and the shared C parser, which
   every program and both engines go through. There is no flag and no Lean-only
   arm.
@@ -148,7 +148,7 @@ both fork engines refuse identically.
 - `lean_frontend/CONTRACT.md`:
   - a new §3 row "Inline assembly — REFUSED (D9)" with its witness;
   - the refused-parts sentence and §4.1's witness list;
-  - a §5 decision **D9** carrying the [USER 2026-10-05] quote.
+  - a §5 decision **D9** carrying the [USER 2026-10-05] ruling.
 - `lean_frontend/VALIDATION.md`:
   - a §3(c) missing-feature bullet "*Inline assembly*", explicitly a refusal and
     NOT an ISO fix (§2's ISO-fix register is untouched);

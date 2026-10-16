@@ -12,7 +12,7 @@ lem-lean `doc/lean-backend/2026-09-28_linksem-findings.md`.
 
 ## LemLib API changes
 
-1. **`lemFailStop` and `lemSetExitOnPanic` are removed** (ruling D1(b) [USER 2026-09-30] "D1: agree"). Their
+1. **`lemFailStop` and `lemSetExitOnPanic` are removed** (ruling D1(b), [USER 2026-09-30] agreed). Their
    replacement is `lemRequireAbortOnPanic : IO Unit`, called first in `main`. It refuses to run (exit 2) unless
    `LEAN_ABORT_ON_PANIC=1`, which is the pattern of cerberus-lean's own driver. No cerberus-sl `.lean` file referenced
    the removed names when this note was written (grep).

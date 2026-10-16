@@ -8,7 +8,7 @@ commit `533fab987`. No donor runtime code was copied for this repair.
 
 [USER] The approved direction is a coherent, correct SC semantics MVP without
 Iris integration, with useful foundation pieces independently validated and
-landed; the user then directed "proceed with WP0". The master plan and
+landed; the user then directed that WP0 proceed. The master plan and
 `lean_frontend/docs/2026-09-25_sc-semantics-mvp-scope.md` at `533fab987`
 record that scope. [AGENT] Keeping this sequential correction separate from
 the passive-observer slice implements that direction; the user did not

@@ -1,15 +1,15 @@
 # PNVI arc S1: the switch set as an explicit ambient parameter — slice record (2026-10-05)
 
 Branch `arc/pnvi-switches`, from mainline `mdd/cerberus-lean` = `1806c5a23`.
-Worker: Claude Opus 5.5 (agent). Every judgement below that no operator quote
+Worker: Claude Opus 5.5 (agent). Every judgement below that no operator ruling
 covers is marked [AGENT]. Quoted gate output is verbatim; counts marked
 "derived" are mine.
 
 ## 0. Ruling, design and brief
 
-- [USER 2026-10-05], recorded verbatim in the design record §1.4: "Re PNVI - agree on
-  your recs except for mirroring crashes / obviously wrong behavior. These should be
-  refusals surely?" The coordinator read this as accepting design §F.1, option 3: the
+- [USER 2026-10-05], recorded in the design record §1.4: agreed with the recommendations
+  on PNVI except for mirroring crashes and obviously wrong behaviour, which should be
+  refusals. The coordinator read this as accepting design §F.1, option 3: the
   switch set is an instance-implicit `[CerbGlobal.Switches]`, with S0 in lem-lean.
 - Governing design: `lean_frontend/docs/2026-10-04_pnvi-ae-udi-design.md` (design worktree,
   commit `aa5df9201`): §0, §A (read-site inventory, §A.6), §B.0, §B.3, §B.4, §B.5, §B.7,
@@ -258,8 +258,7 @@ The audit found S1–S3 evadable: an alias (`abbrev MySw := CerbGlobal.Switches;
 MySw := ⟨[]⟩`), a `class … extends … Switches` with an instance, and a production `def x :
 CerbGlobal.Switches where …` (or a multi-line header) were all GREEN; and P8b passed
 trivially, because the gate never scanned `.tmp/` at all. The fix [AGENT, within the
-round the operator approved on 2026-10-06 — [USER 2026-10-06] "Yes, sounds good, go ahead",
-quoted in §12]:
+round the operator approved on 2026-10-06 — [USER 2026-10-06] approved, §12]:
 
 - **Whitelist, not blacklist (S7).** Every occurrence of the token `Switches` in the scanned
   text (comments stripped; strings kept) must sit in one of five positions: W1 an
@@ -353,8 +352,8 @@ roots allow W5, so S1 rested on `head_cut` alone (400-character window, cut at a
 and name collection only saw declarations at column 0. Before changing anything I re-ran each
 evasion against the pre-fix script (`cd97a049a`) on a scratch copy: all GREEN, confirming the
 finding; a `where`-clause value made an instance (`instance := plantH.plantW`) was GREEN too.
-The fix [AGENT, within the round the operator approved: [USER 2026-10-06] "Yes, do (1) as
-recommended" — §13]:
+The fix [AGENT, within the round the operator approved: [USER 2026-10-06] approved option (1)
+as recommended — §13]:
 
 - **Commands found by keyword (all rules).** A command starts at a line whose first token,
   after ANY indentation and modifiers, is a command keyword or `@[`; the command enclosing an
@@ -866,7 +865,7 @@ deleted at slice end.
 
 ## 12. Pre-merge audit fix round (2026-10-06)
 
-Approval: [USER 2026-10-06] "Yes, sounds good, go ahead". That was the operator's answer to the
+Approval: [USER 2026-10-06] approved. That was the operator's answer to the
 orchestrator's [AGENT] proposal to fix L1–L4 and the S5 count now (scripts and docs only,
 re-gated with row 1 + Tier A) and to defer L5 to slice S4. Worker: Claude Opus 5.5 (agent). Scripts and docs only — no Lean
 source, generated code or `.lem` changed, so row 1 + Tier A is the re-gate.
@@ -878,9 +877,9 @@ source, generated code or `.lem` changed, so row 1 + Tier A is the re-gate.
 | L3 "the last is PROVISIONAL" reads as `4e70bb5` | FIXED — `README.md`, `CLAUDE.md`, `SUPPORTED.md`, `TODO.md`, `VALIDATION.md` now read "(via `77ad4fa` and `4e70bb5`, both merged; the current pin `2d3a492` itself is PROVISIONAL — …)" |
 | L4 `gen_fuel_parametricity.py` | FIXED — selftest plant E1 for the fail-closed `emit()` branch ("worker binds [X] which its wrapper does not") + an emit-side control and `--emit` on the real tree; the module and `wrappers()` docstrings describe the worker-binder text and the in-order, by-class instance arguments (the stale boolean "worker-carries-fuel" wording is gone) |
 | S5 count | FIXED — §9: 25 sites in 6 CerberusIris files (`RoundThread.lean:41` has two); the 7th file is only `probes/capture_probe.lean:4 #check @frontendTU`. Re-verified read-only (`.lake` excluded) at cerberus-sl `94d38b1` and `e8b3692`, identical |
-| L5 CLI diagnostics and cites | DEFERRED to S4 (the [AGENT] proposal the operator answered "Yes, sounds good, go ahead", 2026-10-06) — below |
+| L5 CLI diagnostics and cites | DEFERRED to S4 (the [AGENT] proposal the operator approved, 2026-10-06) — below |
 
-**L5, deferred to slice S4 (in the orchestrator's [AGENT] proposal approved by [USER 2026-10-06] "Yes, sounds good, go ahead").** Three items:
+**L5, deferred to slice S4 (in the orchestrator's [AGENT] proposal approved by [USER 2026-10-06]).** Three items:
 
 1. the generic "unknown flag" text under `--parse-core`, or with `--switches` before `--batch`;
 2. a repeated unknown switch name labelled "override";
@@ -950,7 +949,7 @@ rc=0
 
 ## 13. Delta-audit fix round (2026-10-06)
 
-Approval: [USER 2026-10-06] "Yes, do (1) as recommended". Option (1) was the orchestrator's
+Approval: [USER 2026-10-06] approved option (1) as recommended. Option (1) was the orchestrator's
 [AGENT] recommendation: fix B-1 and B-2, re-gate with row 1 + Tier A, then a quick delta
 review. Worker: Claude Opus 5.5 (agent). Scripts and docs only. No Lean source, generated
 code or `.lem` changed.
@@ -958,7 +957,7 @@ code or `.lem` changed.
 | Finding | Disposition |
 |---|---|
 | B-1 (medium) the instance gate is evadable in test roots | FIXED — §4.1b (commands by keyword at any indentation; S1 by head with no window/blank-line cut AND by W5-in-`instance` in every root; names collected at any indentation; S8 bans untyped instances and instance attributes in every root; 7 new plants, 30 in all; residual limit restated in the header, §4.1a and the VALIDATION.md row) |
-| B-2 (provenance) §12 tagged a paraphrase [USER] | FIXED — §12 now quotes [USER 2026-10-06] "Yes, sounds good, go ahead" and labels the proposal it answered as the orchestrator's [AGENT] proposal; the two "(operator 2026-10-06)" attributions of the L5 deferral and §4.1a's "[AGENT, within the operator's 2026-10-06 approval]" now cite the same quote. I grepped this record for every other [USER] tag: the only one is §0's, and it is verbatim (it matches the design record §1.4, line 126) |
+| B-2 (provenance) §12 tagged a paraphrase [USER] | FIXED — §12 now records the [USER 2026-10-06] approval as the operator's answer and labels the proposal it answered as the orchestrator's [AGENT] proposal; the two "(operator 2026-10-06)" attributions of the L5 deferral and §4.1a's "[AGENT, within the operator's 2026-10-06 approval]" now cite the same approval. I grepped this record for every other [USER] tag: the only one is §0's, and it matches the design record §1.4 |
 
 
 Files changed: `scripts/check_switches_instance.sh` (logic, plants, header), this record (§4.1a
@@ -1007,12 +1006,12 @@ stdout). The evidence directory is scratch and was deleted at the end of the sli
 
 ## 14. Proportionality revision (2026-10-07)
 
-Rulings, verbatim:
+Rulings:
 
-- [USER 2026-10-07] "This sounds like a classic case of 'gate cruft' - we don't want our gates
-  to be adversarially robust unless they are trust surfaces. Can you revisit and figure out what
-  is actually proportionate?"
-- On the orchestrator's proposal: [USER 2026-10-07] "Great, go ahead as proposed".
+- [USER 2026-10-07] called this a classic case of gate cruft: gates are not to be adversarially
+  robust unless they are trust surfaces; asked for a revisit to find what is actually
+  proportionate.
+- On the orchestrator's proposal: [USER 2026-10-07] approved going ahead as proposed.
 
 The proposal it approved was the orchestrator's [AGENT] assessment: "no `CerbGlobal.Switches`
 instance in our tree" is a discipline point, not a trust property. `Main` supplies the set with

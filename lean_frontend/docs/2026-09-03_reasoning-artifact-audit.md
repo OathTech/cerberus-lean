@@ -5,10 +5,10 @@ Branch `audit/reasoning-artifact` off mainline `de2fbf1bd` (worktree
 audit: this document only; no product code, gate, baseline or build was
 touched; nothing merged or pushed.
 
-Question [USER 2026-09-03], verbatim: "Can you send a worker to go look
-for similar instances of 'execution focus' - I think this basically is a
-result of thinking of the semantics as an execution artifact, not a
-reasoning artifact. Where else might we have baked this in?"
+Question [USER 2026-09-03]: send a worker to look for further
+instances of execution focus — the user's view being that these stem
+from thinking of the semantics as an execution artifact rather than a
+reasoning artifact — and find where else that has been baked in.
 
 Every grading below is [AGENT] (this auditor). Quoted code and consumer
 text are verbatim; tallies marked DERIVED are grep-derived. Trees read:
@@ -595,8 +595,8 @@ to the three ruled instances.
   level is 0 too. Not an instance (and the model of what 2.A Step 1
   should look like).
 - **The process-stack ceiling** (`VALIDATION.md:338-354`, `TODO.md:39-66`,
-  the mem-scale S1' revert [USER 2026-09-02] "poor roi for a change to
-  the trust surface"): a property of the compiled binary's runtime, not
+  the mem-scale S1' revert [USER 2026-09-02]: a poor return for a
+  trust-surface change): a property of the compiled binary's runtime, not
   of the definitions; the kernel and an in-process consumer's `whnf` do
   not share it. The revert kept the model shape — correct under this
   lens.

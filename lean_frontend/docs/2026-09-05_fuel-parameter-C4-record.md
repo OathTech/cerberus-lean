@@ -78,9 +78,9 @@ lem-lean, `deps/`, the primary checkout and the other worktrees untouched.
 
 ## 1. Rulings in force
 
-[USER 2026-09-05] "agree, go ahead with option 1" — hypothesis-carrying
+[USER 2026-09-05] agreed to proceed with option 1 — hypothesis-carrying
 obligations, Lean-only (the lem `assuming` clause; the C2 record's D-C2-1).
-[USER 2026-09-04] "we don't change the lem structure for ocaml" — the OCaml
+[USER 2026-09-04] the lem structure is not changed for OCaml's sake — the OCaml
 generated tree is byte-identical at every step (§2.2, §4). [USER 2026-09-03]
 no magic values — every measure here is an expression over the parameters
 whose constants are hop counts derived in the proof (§2.4). [USER 2026-09-03]
@@ -618,7 +618,7 @@ lane's 30 s wall clock.)
 2. **F-C4-1's disposition**: (a) keep the trio pending (done), (b) a probe +
    upstream-tray draft for the oracle's non-termination, (c) a lem body change
    (an "assumed compatible" accumulator, the standard's own device) — NOT
-   Lean-only ("we don't change the lem structure for ocaml" — but here the
+   Lean-only (the lem structure is not changed for OCaml's sake — but here the
    OCaml would change behaviour too: it fixes a non-termination).
 3. **The dead `[LemFuel]` binders** of the ~20 `CerbMem` callers and mem.lem's
    `fuel_consumer` declares (TODO.md C4 block): its own slice, with a
@@ -665,7 +665,7 @@ direction); every gate below re-run with its exit code checked explicitly.
   `ailTypesAux.lem:1291-1292`); rows 1/2/4/5/6 carry the F-A2 exception
   clause. Reviewer field on all 7 rows: `[AGENT auditor 2026-09-05, audit
   e9730d1c8] SIGNED; [USER] sign-off at merge`; the header states that the
-  operator's explicit merge "yes" is the FINAL signature. The same
+  operator's explicit merge approval is the FINAL signature. The same
   corrections in `CerbTagsWf.lean`'s header, §2.3 above and the manifest.
 - **F-A2 — a frontend-invariant GAP (record + TODO, no code).** `struct A {
   _Alignas(struct A) char c; }` is an ISO §6.5.3.4#1 constraint violation
@@ -786,7 +786,7 @@ on `49e98d9cf` + the audit document cherry-picked: rebuild (lean stamp
 `--check-baseline`, `test_verify.sh`, `test_immaculate.sh`, speclab
 selftest + plant + the five gates, `test_fuel_plant.sh` — 13 lanes, 13 ×
 rc 0. Merge ask goes to the operator on this head; per the register's
-header, the operator's explicit merge "yes" is the register's FINAL
+header, the operator's explicit merge approval is the register's FINAL
 signature. Upstream findings owed to the tray (Z4 code half): F-A2
 (`_Alignas(struct A)` on a character member accepted; both oracles
 hang), F-C4-1 (`are_compatible` non-termination on a two-TU

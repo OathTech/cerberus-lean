@@ -1,14 +1,13 @@
 # The referent is the logical semantics — ruling (2026-09-03)
 
-[USER 2026-09-03], verbatim, refining the "No magic values" principle
-(`DESIGN.md` §4): "The only refinement I'd make is that ocaml limits that
-are hardcoded thanks to ocaml-level execution issues are also forbidden,
-the real thing is the logical semantics". Together with, the same day:
-"any instance of a value that can be quantified over by a context /
-theorem is fine. Defaults that are chosen eg. in test suites are fine.
-Any and all magic values that are hardcoded and can't be quantified over
-are definitionally bugs (unless they mirror lem or ISO-C design
-choices)".
+[USER 2026-09-03], refining the "No magic values" principle
+(`DESIGN.md` §4): the one refinement is that OCaml limits hardcoded
+because of OCaml-level execution issues are also forbidden — the real
+referent is the logical semantics. Together with, the same day: any
+value that a context or theorem can quantify over is fine, as are
+defaults chosen in e.g. test suites; any hardcoded magic value that
+cannot be quantified over is definitionally a bug, unless it mirrors a
+lem or ISO-C design choice.
 
 ## What it changes [AGENT reading, for the operator's confirmation]
 
@@ -60,5 +59,5 @@ Consequences [AGENT] put to the operator:
 
 ## Provenance
 
-[USER 2026-09-03]: the quoted rulings. [AGENT] (orchestrator): the two
+[USER 2026-09-03]: the rulings paraphrased above. [AGENT] (orchestrator): the two
 classes, the consequences list. Docs-only; nothing merged or pushed.

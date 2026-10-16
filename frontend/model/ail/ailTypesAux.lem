@@ -1331,8 +1331,8 @@ let rec agnostic_alignment_requirement_ord ((Ctype.Ctype _ ty1_) as ty1) ((Ctype
    across the mutual block (backend requirement). lemDefaultFuel (10^6)
    dominates any real ctype depth by orders of magnitude; exhaustion is
    LOUD (fuelExhausted panics — fail-closed, never a silent default).
-   Ruling [USER, V2 close 2026-08-28]: "make the model total in the
-   proper way", signed off as lem-side fuel. === *)
+   Ruling [USER, V2 close 2026-08-28]: the model is to be made total
+   properly; signed off as lem-side fuel. === *)
 declare {lean} fuel val are_compatible = `fuelExhausted false`
 declare {lean} fuel val are_compatible_params_aux = `fuelExhausted (fun _ => false)`
 declare {lean} fuel val are_compatible_params = `fuelExhausted false`

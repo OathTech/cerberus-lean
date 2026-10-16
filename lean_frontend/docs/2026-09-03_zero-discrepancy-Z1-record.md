@@ -18,8 +18,8 @@ THE RULE implemented ([USER 2026-09-03], charter §1.1): every Lean-vs-
 oracle EXECUTION discrepancy (verdict class, value, UB code, UB LOCATION,
 stdout/stderr bytes, trace set) on a program both engines run in matched
 mode is a bug — mirror the OCaml with a `file:line` cite. Exceptions only:
-(a) failure-path message TEXT; (b) resource limits ("Lean may fail where
-the oracle succeeds is a BUG; the converse is fine") + fuel; (c) missing
+(a) failure-path message TEXT; (b) resource limits (Lean failing where
+the oracle succeeds is a BUG; the converse is fine) + fuel; (c) missing
 features behind a LOUD, feature-ATTRIBUTED refusal; (d) the ISO-fix
 register. Rulings in force: Q4 (one-sided oracle crash → Lean fail-stop
 with the OCaml text), Q7 (refuse flags, do not plumb), Q8 = A (keep the
@@ -721,7 +721,7 @@ dbb19d69a noodle: record — correct the derived probe count (145 files, 11 dirs
 0c79cd97f noodle: shards 3-5 (ctl/lib/elab/out) — L3 stdio dropped at exit, L4 atexit on return, L5 %*d crash, L6 %x int arg UB, E3 ?: static init, 
 f3998e1ed noodle: shard 2 (ptr + mem probes) — U1 size_t UAC at 32 bits, P1 ptrdiff array scaling, P2 provenance lost through arithmetic, L1 strncmp
 42b86a135 noodle: shard 1 (int + float probes) + record skeleton — D1 UB loc lost for std.core-raised UBs, F1 float-as-double
-1d6638b0a zero-discrepancy: charter R3 — §7 asks ruled ([USER 2026-09-03] "Agree re lem. Agree re Q2-10 and R4")
+1d6638b0a zero-discrepancy: charter R3 — §7 asks ruled ([USER 2026-09-03] agreed re lem, Q2-10 and R4)
 62661d9eb zero-discrepancy: charter R2 — dynamic_addrs addendum (Z-76, Z-77, Z-10, R4)
 e6e5b5e3b zero-discrepancy: charter R1 — review amendments F1-F11, register, refusal, Q8-Q10
 d2d710659 zero-discrepancy: the census charter (docs/2026-09-03_zero-discrepancy-design.md)

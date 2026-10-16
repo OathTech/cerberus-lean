@@ -886,7 +886,7 @@ triggered; nothing re-baselined. Every lane that calls `build_lean` ran the opti
 
 ## 9. Landing (2026-09-20)
 
-[USER 2026-09-20], verbatim: *"Great, run the merges and regen"* — the
+[USER 2026-09-20]: approved running the merges and the regen — the
 sign-off for the three named merges of the orchestrator's merge ask,
 executed in order by the orchestrator in the primary checkouts, ff-only:
 **merge 1** lem-lean `mdd/lean-backend` `4307dc5` → `38f87d5`

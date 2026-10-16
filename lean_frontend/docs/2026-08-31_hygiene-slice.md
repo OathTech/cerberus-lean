@@ -2,10 +2,10 @@
 
 Docs-only slice on branch `chore/claude-md-hygiene` (base
 `d0c7de12f`, the semantics-first mainline), executing [USER
-2026-08-31, verbatim]: "CLAUDE.md shouldn't be a log of all decisions
-— we want it to be a clean working practices doc. And we want to
-avoid notes in the overall container (which isn't a repo, and is
-local only)." No code, no gates, no baselines touched. [AGENT]
+2026-08-31]: CLAUDE.md is to be a clean working-practices document
+rather than a log of every decision, and the container (not a repo,
+local only) is not to accumulate notes. No code, no gates, no
+baselines touched. [AGENT]
 hygiene-slice worker.
 
 ## 1. The container CLAUDE.md rewritten

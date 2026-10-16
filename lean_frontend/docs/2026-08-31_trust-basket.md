@@ -452,8 +452,7 @@ The §5 disposition ("baseline deliberately NOT regenerated [AGENT] …
 re-recording is an operator decision at merge") and the §7 line ("the
 item-(e) 4-row baseline-regeneration diff remains enumerated and
 UN-applied, awaiting operator sanction at the merge gate") are CLOSED:
-the regeneration was sanctioned [USER 2026-08-31] ("baseline regen
-approved") and APPLIED on mainline as `df63018e3` ("gcc lane:
+the regeneration was sanctioned [USER 2026-08-31] (approved the baseline regen) and APPLIED on mainline as `df63018e3` ("gcc lane:
 sanctioned baseline regeneration — the four adjudicated rows";
 `scripts/gcc_oracle_baseline.txt`, 4 insertions / 4 deletions — the
 exact enumerated set: 3× SKIP_ORACLE reclassified by the `--cabs-json`

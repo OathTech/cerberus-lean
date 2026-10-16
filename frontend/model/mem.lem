@@ -38,8 +38,8 @@ declare lean target_rep function overlapping = `CerbMem.overlapping`
 
 
 type mem_state
-(* address-space-bound slice (2026-09-17; [USER 2026-09-16] "the semantics should be
-   quantified over such bounds"): the initial memory state takes the address-space TOP
+(* address-space-bound slice (2026-09-17; [USER 2026-09-16] ruled that the semantics
+   be quantified over such bounds): the initial memory state takes the address-space TOP
    (the concrete/VIP allocator's initial cursor, formerly a literal inside each
    implementation) as an explicit parameter threaded from the driver's entry
    (driver.lem initial_driver_state*, and the desugar state for the const-expr

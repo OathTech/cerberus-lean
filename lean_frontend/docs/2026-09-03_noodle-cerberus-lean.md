@@ -1,11 +1,11 @@
 # Noodle report — semantic-discrepancy hunt over cerberus-lean (2026-09-03)
 
 Branch `noodle/semantics` @ base mainline `72164481a`. Charge [USER
-2026-09-03], verbatim: "poke and prod at everything that might be wrong
-about every surface, and expose subtle errors that we haven't spotted
-yet. Mostly the noodlers should focus on semantic discrepancies we might
-not have spotted. All of the known discrepancies are not of interest.
-We're strictly trying to shake out weirdness that needs fixing."
+2026-09-03]: poke and prod at everything that might be wrong on every
+surface and expose subtle errors not yet spotted; the noodlers were to
+focus on unspotted semantic discrepancies, with the known
+discrepancies of no interest — strictly a hunt for weirdness that
+needs fixing.
 Addendum [USER 2026-09-03]: every probe suite-ready, integration
 recommendation per probe (never integrated here).
 

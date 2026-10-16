@@ -4,8 +4,8 @@
 `arc/contract-enforcement` @ `f2efd8a9e`. No push, no merge. No change to `lean_frontend/*.lean`, the generated tree,
 or `CONTRACT.md`. The only harness changes are the exhaustive libc-mode rows (§5).
 
-**Why.** [USER 2026-09-28], verbatim: "Yes, definitely agree rolling in more tests, and sending off an agent to build
-more would be great if it meaningfully increases coverage of edge cases". The target list is CONTRACT §3.2's thinly
+**Why.** [USER 2026-09-28] agreed to rolling in more tests and to sending off an agent to build more, provided
+that meaningfully increases coverage of edge cases. The target list is CONTRACT §3.2's thinly
 tested parts, measured in `docs/2026-09-28_test-depth-map.md`.
 
 **Rule applied.** Only programs on which Lean and the oracle agree became lane rows. Every disagreement, and every
@@ -345,7 +345,7 @@ coverage "Baseline check: 0 regression(s), 0 improvement(s)"; libc_exec "ALL MAT
   bit that decides "-nan" vs "nan" cannot be read. Since it can be refused cheaply and precisely, it is REFUSED
   (`CerbFloat.formatFixed`, register row REACHABLE, witnesses `fmt-007*.unsupported.c`). `string_of_float` keeps
   "nan" for every NaN; it feeds only the pretty-printers.
-- **D2 (`atexit` refused).** [USER 2026-09-28] "agree on atexit as you propose": the function-pointer-to-integer
+- **D2 (`atexit` refused).** [USER 2026-09-28] agreed to the atexit proposal: the function-pointer-to-integer
   refusal is withdrawn and the integer channel joins named deviation N1
   (`docs/2026-09-28_funptr-int-refusal-record.md`, addendum). New libc_exec rows `040-atexit-order` (MATCH,
   handlers in reverse order after `exit`) and `041-atexit-return` (MATCH: neither engine runs handlers when `main`

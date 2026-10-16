@@ -18,7 +18,7 @@
 
 ## 1. Rulings and standing constraints
 
-- [USER 2026-09-19] delegation (implementation calls are the orchestrator's; consequential ones the operator's): the gate hardening and the mechanical repairs are implementation; the row-6 hypothesis is a register move → operator. [USER 2026-09-08] verbatim: *"we should \*NOT\* be building anything new out-of-policy"* — plants and repairs only. Working-practice rules that apply verbatim: "Gates are plant-tested (vacuity must be loud)"; "Certification integrity … verified-vs-loaded artifact gaps are findings"; "Fail-closed, fail-noisy. Everywhere."
+- [USER 2026-09-19] delegation (implementation calls are the orchestrator's; consequential ones the operator's): the gate hardening and the mechanical repairs are implementation; the row-6 hypothesis is a register move → operator. [USER 2026-09-08]: nothing new is to be built out of policy — plants and repairs only. Working-practice rules that apply verbatim: "Gates are plant-tested (vacuity must be loud)"; "Certification integrity … verified-vs-loaded artifact gaps are findings"; "Fail-closed, fail-noisy. Everywhere."
 - Standing constraints: NEVER modify machine-global state; NO `git push`; never commit on `mdd/cerberus-lean`/`master`; no merge/rebase; fail-closed/fail-noisy (no `2>/dev/null` on a build/gate step); [AGENT]/[USER] provenance; verbatim outputs, derived tallies labelled; every `lake`/`lean` through `scripts/capped`, gate scripts through `scripts/ce`; ONE heavy job; ~45-minute step tripwire (a full Lean rebuild excepted to ~1 h, wall time reported); never end the turn on a wait; a committed record ENDS the slice.
 
 ## 2. Deliverables

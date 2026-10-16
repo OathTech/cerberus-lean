@@ -36,10 +36,10 @@ notes below establish only what was checked then.
 | [07-symbol-identity-fragility.md](07-symbol-identity-fragility.md) | Draft | No submission recorded |
 | [08-desugar-nested-init-internal-error.md](08-desugar-nested-init-internal-error.md) | Draft | No submission recorded |
 | [09-address-constant-member-rejected.md](09-address-constant-member-rejected.md) | Draft | No submission recorded |
-| [10-decode-rejects-question-escape.md](10-decode-rejects-question-escape.md) | Sent | Communicated privately to the Cerberus maintainers by the operator, 2026-09-26 ([USER 2026-09-26] "these have been filed privately in that I have notified the cerberus maintainers"); no public issue URL |
-| [11-escaped-char-octal-roundtrip-corruption.md](11-escaped-char-octal-roundtrip-corruption.md) | Sent | Communicated privately to the Cerberus maintainers by the operator, 2026-09-26 ([USER 2026-09-26] "these have been filed privately in that I have notified the cerberus maintainers"); no public issue URL |
+| [10-decode-rejects-question-escape.md](10-decode-rejects-question-escape.md) | Sent | Communicated privately to the Cerberus maintainers by the operator, 2026-09-26 ([USER 2026-09-26] reported having notified the Cerberus maintainers privately); no public issue URL |
+| [11-escaped-char-octal-roundtrip-corruption.md](11-escaped-char-octal-roundtrip-corruption.md) | Sent | Communicated privately to the Cerberus maintainers by the operator, 2026-09-26 ([USER 2026-09-26] reported having notified the Cerberus maintainers privately); no public issue URL |
 | [12-bswap64-overflow-crash.md](12-bswap64-overflow-crash.md) | Draft | No submission recorded |
-| [13-memcmp-hugesize-overflow-crash.md](13-memcmp-hugesize-overflow-crash.md) | Sent | Communicated privately to the Cerberus maintainers by the operator, 2026-09-26 ([USER 2026-09-26] "these have been filed privately in that I have notified the cerberus maintainers"); no public issue URL |
+| [13-memcmp-hugesize-overflow-crash.md](13-memcmp-hugesize-overflow-crash.md) | Sent | Communicated privately to the Cerberus maintainers by the operator, 2026-09-26 ([USER 2026-09-26] reported having notified the Cerberus maintainers privately); no public issue URL |
 | [14-ailname-proxy-shadows-user-functions.md](14-ailname-proxy-shadows-user-functions.md) | Draft | No submission recorded |
 | [15-bool-float-conversion-truncation.md](15-bool-float-conversion-truncation.md) | Draft | No submission recorded |
 | [16-snprintf-truncation-return-length.md](16-snprintf-truncation-return-length.md) | Draft | No submission recorded |
@@ -66,7 +66,7 @@ notes below establish only what was checked then.
 | [37-are-compatible-cross-tu-recursive-struct-nontermination.md](37-are-compatible-cross-tu-recursive-struct-nontermination.md) | Draft | No submission recorded |
 | [38-pememberof-cross-tu-struct-value-tag-identity.md](38-pememberof-cross-tu-struct-value-tag-identity.md) | Draft | No submission recorded |
 | [39-are-compatible-array-bound-typo.md](39-are-compatible-array-bound-typo.md) | Draft | No submission recorded |
-| [40-float-literal-hex-subnormal-double-rounding-inherited.md](40-float-literal-hex-subnormal-double-rounding-inherited.md) | Sent | Communicated privately to the Cerberus maintainers by the operator, 2026-09-26 ([USER 2026-09-26] "these have been filed privately in that I have notified the cerberus maintainers"); no public issue URL |
+| [40-float-literal-hex-subnormal-double-rounding-inherited.md](40-float-literal-hex-subnormal-double-rounding-inherited.md) | Sent | Communicated privately to the Cerberus maintainers by the operator, 2026-09-26 ([USER 2026-09-26] reported having notified the Cerberus maintainers privately); no public issue URL |
 | [41-struct-flexible-array-member-vs-sized-array-compatibility-question.md](41-struct-flexible-array-member-vs-sized-array-compatibility-question.md) | Draft | No submission recorded |
 | [42-unary-minus-floating-zero-sign-question.md](42-unary-minus-floating-zero-sign-question.md) | Draft | No submission recorded |
 | [43-many-many1-input-indexed-recursion-proposal.md](43-many-many1-input-indexed-recursion-proposal.md) | Draft | No submission recorded |
@@ -407,7 +407,7 @@ and gcc disagrees — the defect is in the shared model, not in our port:
     first compare); musl's ancestor has the check.
 31. **31-calloc-overflow-check.md** — TRUE BUG (libc, minor). `calloc`
     has no `nmemb * size` overflow check (stdlib.c:125-134); C17 §7.22.3.2
-    requires NULL. **Hold LIFTED** [USER 2026-09-05 "(5) agree"]: the draft stands on the UPSTREAM evidence alone (ISO 7.22.3.2 overflow check absent); Lean now agrees with the oracle on the reproducer (Z2-M-04 lazy allocation), so the "Lean differs" framing is dropped — file as a plain TRUE BUG (minor). Previous note: the
+    requires NULL. **Hold LIFTED** ([USER 2026-09-05] agreed to item (5)): the draft stands on the UPSTREAM evidence alone (ISO 7.22.3.2 overflow check absent); Lean now agrees with the oracle on the reproducer (Z2-M-04 lazy allocation), so the "Lean differs" framing is dropped — file as a plain TRUE BUG (minor). Previous note: the
     upstream evidence is re-verified, but our own three-engine record for
     the probe moved since it was first taken (the Lean column: out of
     memory → agrees with the oracle), so the draft is held for the
@@ -600,7 +600,7 @@ the flexible-array-member compatibility question, 42 = unary minus on a floating
     Zarith arithmetic and on the Lean mirror (cursor 3, 4-byte object aligned 4 → address 2), and
     by the witness program on all three engines (pristine `Specified(6)`, fork = Lean out of memory).
     Remedy 1 (fail when `z < 0` before rounding; the `q < 0` branch becomes dead) in both models.
-    Fork fix RULED [USER 2026-09-16] ("unambiguously wrong … allowed to fix ahead of upstream"),
+    Fork fix RULED [USER 2026-09-16] (unambiguously wrong, so the fork may fix ahead of upstream),
     scheduled after the pristine-oracle instrument slice. Found by the cerberus-sl S2 agent
     (Claude, Anthropic), verified and drafted by Claude (Fable 5.1) under operator direction;
     file together with 34.
@@ -634,8 +634,8 @@ the flexible-array-member compatibility question, 42 = unary minus on a floating
     `genTyping.lem`). Pristine `b9aeedcb4`: `struct A { _Alignas(struct A) char c; }` does not
     terminate (rc 124); a forward-declared struct or a non-character member crashes with
     `Not_found` (rc 125); gcc rejects all three. Remedy: the completeness/function check at the
-    specifier, reusing `AlignofInvalidApplication`. Fork fix RULED [USER 2026-09-27] "yes,
-    'constraint violation' - and this goes in the tray if it isn't there already". From the C4
+    specifier, reusing `AlignofInvalidApplication`. Fork fix RULED [USER 2026-09-27] (constraint
+    violation; the report goes in the tray if not already there). From the C4
     audit's F-A2; drafted by Claude (Opus 5.5) under operator direction; AI-provenance note per the
     tray's policy. FIXED IN THE FORK 2026-10-03, completeness check only
     (`fix/mirror-upstream-d38-alignas`; the `ctype_aux.lem` alignment-compatibility half of the record

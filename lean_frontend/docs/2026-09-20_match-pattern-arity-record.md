@@ -4,7 +4,7 @@
 `worktrees/cerberus-lean-fix/match-pattern-arity`, base mainline `5407597d9`, charter `0c15a1c11` =
 `docs/2026-09-20_charter-match-pattern-arity.md`). Worker [AGENT Claude Fable]. Requested by the
 consumer and endorsed by the operator on the consumer's side ([USER 2026-09-20, cerberus-sl
-`docs/2026-09-20_run-digest-design-response.md` §4 Q5], verbatim: *"we can ask for this immediately"*;
+`docs/2026-09-20_run-digest-design-response.md` §4 Q5]: this can be asked for immediately;
 the consumer's contract is quoted in the charter §0 and in §7 below). Same category and discipline as the
 allocator fix (draft 44): a fail-open default in the shared model, unobservable on elaborator output,
 wrong as such; shared body (both targets compute it), upstream-tray draft, no register row because no
@@ -1545,7 +1545,7 @@ in the worktree; the four commits replayed with their messages:
     8d4901c65 closure round 2: subst_pattern declines on arity mismatch (Nothing) — one outcome kind across --rewrite/default; register row re-rationalised
     6f02b42de fix/match-pattern-arity CLOSURE round (pre-merge audit R1/R2/N1): typing's tuple-EXPRESSION arms fail closed; every tuple-binding path guards its arity (one loud leaf); both engines' let-forms report Illformed_program = the PElet route
     60e1d192f fix/match-pattern-arity: match_pattern and typecheck_pattern fail CLOSED on tuple-arity mismatch (cerberus-sl hidden-state note item 7; shared body, mirrors core_rewrite.lem:1287-1300) + kernel facts T1-T5 + tray draft 45
-    373a057ea docs(charter): match_pattern fails closed on tuple-arity mismatch (cerberus-sl hidden-state note item 7; [USER 2026-09-20 via cerberus-sl] "we can ask for this immediately") — …
+    373a057ea docs(charter): match_pattern fails closed on tuple-arity mismatch (cerberus-sl hidden-state note item 7; [USER 2026-09-20 via cerberus-sl] asked for it immediately) — …
 
 `git status` after the rebase: clean (empty).
 
@@ -1788,9 +1788,9 @@ Head after this commit: the record + evidence commit on top of `8d4901c65` (the 
 
 ## 15. CLOSURE ROUND 3 (2026-09-23) — argument-list arity (second-round audit R3/R4/N3 rolled into item 7)
 
-**Provenance.** [USER 2026-09-23] *"Yes, we will roll R3 / R4 into this as a closure. The digest fix landed on main"*;
-[USER via auditor, 2026-09-22] *"if we find defects which could reasonably get rolled into this, we can propose them as
-fixes"*; the audit `docs/2026-09-22_match-pattern-arity-rereview.md` (`3e8f7c4bd`, fast-forwarded onto the branch); the
+**Provenance.** [USER 2026-09-23]: R3 / R4 are rolled into this slice as a closure; the digest fix has landed on main;
+[USER via auditor, 2026-09-22]: defects found that could reasonably be rolled into this may be proposed as
+fixes; the audit `docs/2026-09-22_match-pattern-arity-rereview.md` (`3e8f7c4bd`, fast-forwarded onto the branch); the
 orchestrator's rulings = the charter's Addendum A3 (commit `ec02f452d`). Base: the branch rebased onto mainline
 `34ac493f9` (post-run-digest; §14's method — six commits replayed, two stops, pins recomputed from the combined source:
 `core_run.lem 1427069b…/73ba87a3… → f1842550…`, `core_run.ml … → 1553e2a8…`, both COMBINED values, D-S's run-state
@@ -2100,7 +2100,7 @@ are identical to §15.4.
  builtin close    (integer)                    : eff loaded pointer
 -builtin pwrite   (integer, [integer], integer): eff loaded pointer
 -builtin pread    (integer, pointer, integer)  : eff loaded pointer
-+-- FORK 2026-09-23 ([USER] "unambiguous bugs get fixes"; upstream-tray draft 45 "std.core pread/pwrite declaration arity"): the fourth formal is the offset the call sites below pass and both runtime arms consume (core_reduction_aux.lem:218-236, core_run.lem:1269-1287)
++-- FORK 2026-09-23 ([USER] ruling that unambiguous bugs get fixed; upstream-tray draft 45 "std.core pread/pwrite declaration arity"): the fourth formal is the offset the call sites below pass and both runtime arms consume (core_reduction_aux.lem:218-236, core_run.lem:1269-1287)
 +builtin pwrite   (integer, [integer], integer, integer): eff loaded pointer
 +builtin pread    (integer, pointer, integer, integer): eff loaded pointer
  builtin link     ([integer], [integer])       : eff loaded pointer
@@ -2110,7 +2110,7 @@ are identical to §15.4.
  builtin close    (integer)                    : eff loaded pointer
 -builtin pwrite   (integer, [integer], integer): eff loaded pointer
 -builtin pread    (integer, pointer, integer)  : eff loaded pointer
-+-- FORK 2026-09-23 ([USER] "unambiguous bugs get fixes"; upstream-tray draft 45 "std.core pread/pwrite declaration arity"): the fourth formal is the offset the call sites below pass and both runtime arms consume (core_reduction_aux.lem:218-236, core_run.lem:1269-1287)
++-- FORK 2026-09-23 ([USER] ruling that unambiguous bugs get fixed; upstream-tray draft 45 "std.core pread/pwrite declaration arity"): the fourth formal is the offset the call sites below pass and both runtime arms consume (core_reduction_aux.lem:218-236, core_run.lem:1269-1287)
 +builtin pwrite   (integer, [integer], integer, integer): eff loaded pointer
 +builtin pread    (integer, pointer, integer, integer): eff loaded pointer
  builtin link     ([integer], [integer])       : eff loaded pointer
@@ -2164,8 +2164,8 @@ expected NOT to move — verified by `libc_prep.sh --check` after the rebuild, a
 Pre-(A) observation (the round-3 fork binary; every `--typecheck-core` run of any Core program now fails at the stdlib line,
 because typing covers the stdlib too), verbatim in §15.4.
 
-**Ruling — option (A).** [USER 2026-09-23], verbatim: *"Yeah, we shoudl fix and file to the tray, per our rule that unambiguous
-bugs get fixes"*. Scope [AGENT orchestrator]: the fourth formal `integer` on `builtin pwrite`/`builtin pread` in BOTH stdlib
+**Ruling — option (A).** [USER 2026-09-23]: fix it and file it to the tray, per the rule that unambiguous
+bugs get fixes. Scope [AGENT orchestrator]: the fourth formal `integer` on `builtin pwrite`/`builtin pread` in BOTH stdlib
 files, one-line FORK comment, nothing else there; the fence widens by exactly those two files and their fork-drift rows.
 
 Applied under the ruling (both files, four formals, one-line FORK comment). The libc build BEFORE (`.tmp/mpa/r3/chain-b.log`) and AFTER (`.tmp/mpa/r3/chain-c.log`; `dune build cerberus.install` now passes, `libc.co`/`libc_inner_arg_temps.co` rebuilt at 01:35:16), verbatim:
@@ -2608,12 +2608,12 @@ receives. Nothing else changed between the two cuts.
 
 ## 16. LANDING (2026-09-23)
 
-[USER 2026-09-23] verbatim: "Go ahead with the merge" — after the merge ask that named the final head
+[USER 2026-09-23]: approved the merge — after the merge ask that named the final head
 `9b141aca1` (= the orchestrator-verified `e5532b346` + the three cherry-picked delta-review commits,
 `git diff --stat e5532b346 9b141aca1` = `lean_frontend/docs/2026-09-23_match-pattern-arity-round3-delta-review.md`
 alone, 616 insertions). Range landed: `mdd/cerberus-lean` `34ac493f9` -> this head, ff-only, 13 commits + this
 landing note (item 7 rounds 1–3, the `std.core`/`std_inner_arg_temps.core` `pread`/`pwrite` declaration fix under
-[USER 2026-09-23] "Yeah, we shoudl fix and file to the tray, per our rule that unambiguous bugs get fixes", the
+[USER 2026-09-23] ruling to fix and file to the tray, as unambiguous bugs get fixes, the
 second-round Codex audit, and the round-3 Fable delta review — final verdict, verbatim: "Merge-ready as is at
 `e5532b346`."). Pins unchanged: lem-pin `38f87d5` everywhere. No push.
 

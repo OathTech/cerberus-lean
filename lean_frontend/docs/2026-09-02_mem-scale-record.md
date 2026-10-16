@@ -493,8 +493,8 @@ completion gate failing" governs.
 
 ### Ruling and revert (appended after the stop)
 
-[USER 2026-09-02], verbatim as relayed by the orchestrator: "yeah,
-revert S1' I think - poor roi for a change to the trust surface".
+[USER 2026-09-02], as relayed by the orchestrator: revert S1' — a
+poor return on investment for a change to the trust surface.
 Rationale as relayed: the rewrite touches three model `.lem` files
 (oracle text moves in 3 generated modules) for an onset move from ~7 M
 to ~9 M elements, with the actual ceiling in the Lean runtime; the
@@ -793,7 +793,7 @@ tripwire's measurement-sweep carve-out, run in the background).
 |---|---|---|
 | S0 loudness | `4dcf1eb50` | DONE — HANG class in `test_exec.sh` / `test_ci_sweep.sh`, plant-tested; 10 M probe reads `HANG(cpu 3.29s of 400.12s wall)`; no committed row changed class; Lean runtime report drafted (`upstream-tray/lean4/01`) |
 | S1 C1+C3 | `41ef263fb` | DONE — linear array/struct arms, 6 kernel-checked equality theorems (cones ⊆ propext/Classical.choice/Quot.sound), gate leg added; exponents 2.0 → ~1.0; battery byte-at-baseline; consumer manifest delivered |
-| S1' C9 at source | `135997c1b` (revert + ceiling docs) | BUILT, MEASURED, REVERTED [USER 2026-09-02] "poor roi for a change to the trust surface": 8 M completes, 10 M still hangs — cause is the Lean runtime's `lean_apply_*` (CALL, not tail jump, 22/24 arity paths); ceiling registered LOUD in VALIDATION.md §5 + TODO.md with the lem-backend run-loop fallback candidate; tray draft 18 kept |
+| S1' C9 at source | `135997c1b` (revert + ceiling docs) | BUILT, MEASURED, REVERTED [USER 2026-09-02] (a poor return on investment for a trust-surface change): 8 M completes, 10 M still hangs — cause is the Lean runtime's `lean_apply_*` (CALL, not tail jump, 22/24 arity paths); ceiling registered LOUD in VALIDATION.md §5 + TODO.md with the lem-backend run-loop fallback candidate; tray draft 18 kept |
 | S2 C2 harness + baselines + parity | `e02d4105a`, `e866357c6`, `de574fbc8`, `cff5ccb8f` | DONE — 22 `ulimit -v` sites → per-test cgroup cap (4G RSS), KILL classes keyed on the cgroup OOM witness (two findings fixed: exit(137) ≠ cap kill; a vacuous plant leg), plant-tested; one moved committed row (stale `40_stdio` sweep row, attributed to CerbFS fail-closed `9152d2afe`), every gate baseline unmoved; parity MET 10/12 scorable rows, 2 UNMET attributed to the interpreter (C7), blockers C9 ×1 / C8 ×5 |
 
 Not merged, not pushed (operator-gated). Ephemeral scratch under

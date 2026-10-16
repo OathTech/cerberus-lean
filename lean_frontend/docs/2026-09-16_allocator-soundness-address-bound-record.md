@@ -11,8 +11,8 @@ three-engine report shows the two new witnesses `pristine ≠ fork = Lean` (§FU
 **C2 and C3 are NOT in this part**: the worker stopped at C2's design step (stop rules S3/S6 — the
 `initial_driver_state*` signature change ripples into a `.lem` body outside the fence, §C2), and
 the operator ruled that C1 lands first and C2/C3 are re-chartered separately as part two — [USER
-2026-09-17], verbatim: *"yes, agreed regarding landing C1 as-is and then working on C2/C3
-separately"* (given in reply to the orchestrator's proposal that (1) the diagnostic projection be
+2026-09-17] agreed to landing C1 as-is and then working on C2/C3
+separately (given in reply to the orchestrator's proposal that (1) the diagnostic projection be
 extended to normalise the position in OCaml's exception HEADER line — this record's §S1
 recommendation (ii); (2) C2 take route A with an extended fence; (3) C1 land first as part one
 with C2/C3 re-chartered as part two). This record was first committed as an INTERIM stop
@@ -37,15 +37,15 @@ The worktree at this record: `worktrees/cerberus-lean-arc/allocator-soundness-ad
 branch head = this record's commit on top of `7b51b0b43` (C1) on top of `6d9ba82f1`
 (the charter, rebased onto mainline `4a23d98aa`).
 
-## 0. Rulings (by pointer; verbatim texts in the charter §0)
+## 0. Rulings (by pointer; the texts are in the charter §0)
 
-- [USER 2026-09-16] fix ahead of upstream ("unambiguously wrong") — charter §0 bullet 1.
-- [USER 2026-09-16] the bound is quantified ("running on a tiny machine … the reasoning has to
-  quantify over the bound") — charter §0 bullet 2.
-- [USER 2026-09-16] one slice as proposed + "an ocaml flag is a good idea" — charter §0 bullet 3.
-- [USER 2026-09-03] no-magic-values, verbatim in `DESIGN.md` §4 — charter §0 bullet 4.
+- [USER 2026-09-16] fix ahead of upstream (the finding is in the category the fork may fix ahead of upstream) — charter §0 bullet 1.
+- [USER 2026-09-16] the bound is quantified (the semantics may run on a tiny machine; the reasoning
+  has to quantify over the bound) — charter §0 bullet 2.
+- [USER 2026-09-16] one slice as proposed + an OCaml flag endorsed — charter §0 bullet 3.
+- [USER 2026-09-03] no-magic-values, as recorded in `DESIGN.md` §4 — charter §0 bullet 4.
 - [USER 2026-09-08] nothing new out of policy (the theorem GENERAL, the four states a TEST) — §0 bullet 6.
-- [USER 2026-09-17] "(2) agree" — the row-10 diagnostic projection normalises positions inside
+- [USER 2026-09-17] agreed to item (2) — the row-10 diagnostic projection normalises positions inside
   OCaml backtrace FRAMES (`VALIDATION.md` §0/§3) — the ruling §S1 below sits next to.
 - Every decision below marked [AGENT] is the worker's, with its one-line reason.
 
@@ -300,7 +300,7 @@ normalise is the exception HEADER
 — OCaml's `Assert_failure` printer carries the `memcmp` assert's SOURCE LINE (`get_bytes`,
 `assert false`, tray 13's site), which C1's +5 net lines above it moved 2659 → 2664. Every other
 differing line is a backtrace FRAME position (`Raised at`/`Called from` … `line N, characters
-A-B`) the projection already normalises under [USER 2026-09-17] "(2) agree" — which is why the
+A-B`) the projection already normalises under the [USER 2026-09-17] agreement to item (2) — which is why the
 case was `matching_failure` at WP-O (fork and pristine had the SAME impl_mem.ml line numbers
 until now: the fork's only prior delta in that file was below, at `:2999-3003`). Same failure,
 same status, same stdout: a `diagnostic-text`-class difference, precisely the register's
@@ -325,8 +325,8 @@ MATCH | L=CRASH`), no text; no baseline, triage ledger or pin carries `Assert_fa
 `impl_mem.ml` line number (`grep` over `tests/`, `scripts/`, `lean_frontend/corpus`: empty).
 
 **RESOLUTION — C1b `f9843725d8c4746449bde65f0bbfe6166bfe4d6d` (2026-09-17).** Ruled by the operator —
-[USER 2026-09-17], verbatim: *"yes, agreed regarding landing C1 as-is and then working on C2/C3
-separately"* — on the orchestrator's three-part proposal, whose item (1) [AGENT orchestrator],
+[USER 2026-09-17] agreed to landing C1 as-is and then working on C2/C3
+separately — on the orchestrator's three-part proposal, whose item (1) [AGENT orchestrator],
 verbatim (audit M2 asked for the chain to be verifiable here): *"Extend the projection to normalise
 the position in the exception header, keeping the exception kind and file path compared. I recommend
 this. Every future edit above that line, including C2's, would otherwise re-trip the lane."* — i.e.
@@ -413,8 +413,8 @@ and — by `VALIDATION.md` §0's own doctrine ("a delta with no register row is 
 the corpora or a missing case") — a MISSING register case; the "UNOBSERVABLE … ~2^48" text in
 VALIDATION §3, the drift header, the `CerbMem.lean` docstring, this record and tray 44 was FALSE.
 
-**Ruling chain.** [USER 2026-09-17] *"yes, agreed regarding landing C1 as-is and then working on
-C2/C3 separately"* (the part-one landing); the orchestrator reproduced M1 and directed C1c as ONE
+**Ruling chain.** [USER 2026-09-17] agreed to landing C1 as-is and then working on
+C2/C3 separately (the part-one landing); the orchestrator reproduced M1 and directed C1c as ONE
 commit with the fence extended to exactly the files below, plus a supplement (the ISO citation and
 the idiom's history). Every C1c decision below is [AGENT worker] within that fence.
 
@@ -648,6 +648,6 @@ landing certifications (the "long builds of real content" case, not a grind).
 
 ## Landing — part one (2026-09-17)
 
-[USER 2026-09-17], verbatim: *"Go ahead and land it on main."* — in reply to the orchestrator's merge ask naming the branch head `4539c60e1` (11 commits over mainline `4a23d98aa`: C1 `7b51b0b43`, interim record `a2cf688c0`, C1b `f9843725d`, record `f5b1578dc`, C1c `b7fec4d63`, record `c58b7d70e`, the D1 correction `a0e33bf85`, the audit report `13613d9c9` and its §A delta `4539c60e1` — the audit branch's `c46b303ac`/`f8222307f` cherry-picked), the audit's verdicts (MERGE-WITH-FIXES → §A FIXES-ACCEPTED, MERGE once D1 fixed — fixed), and the re-gate at that head. Orchestrator re-gate, verbatim: `fast: passed; 14/14 selected commands completed successfully.` / `Source unchanged: True. Complete tier selection: True.` / `Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 5, 'interface_agreement': 2}`. The FULL battery (37/37, zero baseline movement) ran at the C1c head `b7fec4d63`; the commits above it are docs only.
+[USER 2026-09-17] approved landing it on main — in reply to the orchestrator's merge ask naming the branch head `4539c60e1` (11 commits over mainline `4a23d98aa`: C1 `7b51b0b43`, interim record `a2cf688c0`, C1b `f9843725d`, record `f5b1578dc`, C1c `b7fec4d63`, record `c58b7d70e`, the D1 correction `a0e33bf85`, the audit report `13613d9c9` and its §A delta `4539c60e1` — the audit branch's `c46b303ac`/`f8222307f` cherry-picked), the audit's verdicts (MERGE-WITH-FIXES → §A FIXES-ACCEPTED, MERGE once D1 fixed — fixed), and the re-gate at that head. Orchestrator re-gate, verbatim: `fast: passed; 14/14 selected commands completed successfully.` / `Source unchanged: True. Complete tier selection: True.` / `Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 5, 'interface_agreement': 2}`. The FULL battery (37/37, zero baseline movement) ran at the C1c head `b7fec4d63`; the commits above it are docs only.
 
-**For cerberus-sl (the re-pin target).** [USER 2026-09-17]: *"I have confirmation from cerberus-sl that 'part 1' is exactly what they need to close their proof gap."* The landing commit is the fast-forward head of `mdd/cerberus-lean` carrying this note; `CerbMem.allocator`'s type is unchanged; `import CerbMemAllocatorProofs` provides `CerbMem.allocator_active_sound` (an ACTIVE allocation is `align`-aligned, positive, ends at or below the cursor, and becomes the cursor — no hypothesis on `sz`/`align`) and `CerbMem.allocator_below_request_kills`. Part two (the address-space bound as a quantified entry parameter; consumer-confirmed modest blast radius) is chartered separately.
+**For cerberus-sl (the re-pin target).** [USER 2026-09-17] relayed cerberus-sl's confirmation that part 1 is exactly what they need to close their proof gap. The landing commit is the fast-forward head of `mdd/cerberus-lean` carrying this note; `CerbMem.allocator`'s type is unchanged; `import CerbMemAllocatorProofs` provides `CerbMem.allocator_active_sound` (an ACTIVE allocation is `align`-aligned, positive, ends at or below the cursor, and becomes the cursor — no hypothesis on `sz`/`align`) and `CerbMem.allocator_below_request_kills`. Part two (the address-space bound as a quantified entry parameter; consumer-confirmed modest blast radius) is chartered separately.

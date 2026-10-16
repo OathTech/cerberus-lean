@@ -2,8 +2,8 @@
 
 Range: `mdd/cerberus-lean` `55b04e7a4` → `arc/lem-repin-77ad4fa`. Author: the orchestrator [AGENT]. Pre-merge audit:
 `docs/2026-09-30_lem-repin-77ad4fa-pre-merge-audit.md` (MERGEABLE WITH FIXES; F1/F3 corrected, F2 noted, in the
-audit-fix commit). The shared switch's lem was upgraded to `77ad4fa` ([USER 2026-10-01] "cerberus-sl is in a planning
-phase, you're good to upgrade"); `deps/lem-pinned` = `77ad4fa`.
+audit-fix commit). The shared switch's lem was upgraded to `77ad4fa` ([USER 2026-10-01] cleared the upgrade, cerberus-sl
+being in a planning phase); `deps/lem-pinned` = `77ad4fa`.
 
 ## Full ladder on `ba2e859a9` (clean tree, switch lem `77ad4fa`), 2026-09-30T23:39:45Z–2026-10-01T01:39:38Z — verbatim
 

@@ -43,8 +43,8 @@ number 19, so this charter's planned drafts renumber to 20–33). Cites
 re-read in this worktree; quoted lines verbatim from that branch's
 `results.log`. New rows Z-76, Z-77; Z-10 amended; R4 added to §2.6.
 
-Revision R3 (2026-09-03): the §7 asks are RULED. [USER 2026-09-03],
-verbatim: "Agree re lem. Agree re Q2-10 and R4". Every Q2–Q10
+Revision R3 (2026-09-03): the §7 asks are RULED. [USER 2026-09-03]
+agreed on the lem point and on Q2–10 and R4. Every Q2–Q10
 RECOMMENDATION and the R4 DEFER recommendation is thereby adopted as the
 ruling; §7 is retitled and each recommendation stands as ruled.
 Consequences applied in this revision (annotations only; no row's
@@ -123,19 +123,18 @@ label (§2.4).
 
 ## 1. The rule and the exception classes
 
-### 1.1 The rule [USER 2026-09-03], verbatim
+### 1.1 The rule [USER 2026-09-03]
 
-> "All *execution* discrepancies are definitionally bugs (other
-> machinery intended to support proof is allowed but should have no
-> semantic / execution effect whatsoever and all legacy permission
-> revoked"
+All *execution* discrepancies are definitionally bugs; other machinery
+intended to support proof is allowed, but must have no semantic or
+execution effect whatsoever, and all legacy permission is revoked.
 
 For cerberus-lean: **Lean ≠ oracle (matched mode) on a program both
 run = bug.** The oracle's own deviations from ISO C are MIRRORED
 faithfully and filed upstream — the rule is Lean ≠ oracle, not Lean ≠
 ISO. Consequences the census applies mechanically:
 
-- "legacy permission revoked": every previously "declared",
+- legacy permission revoked: every previously "declared",
   "documented-deliberate", "unobservable" or "temporal-boundary"
   divergence is re-classified below; the label is not a class.
 - proof-support machinery (fuel wrappers, reader lifting, opaque
@@ -143,7 +142,7 @@ ISO. Consequences the census applies mechanically:
   the fuel design's own guarantee ("sufficient-fuel behaviour is
   unchanged", fuel design §2) is the template.
 
-### 1.2 The exception classes [USER 2026-09-03], verbatim where quoted
+### 1.2 The exception classes [USER 2026-09-03]
 
 **(a) Failure-path MESSAGE TEXT** may differ; the failure-vs-success
 classification must be identical. (A tool crash on both sides is
@@ -152,15 +151,13 @@ exception text; a crash on one side and a verdict on the other is NOT.)
 
 **(b) RESOURCE LIMITS** — Lean must not fail where the oracle succeeds;
 the converse is acceptable. FUEL exhaustion is accepted under (b):
+the user ruled fuel a reasonable exception, since the semantics can
+always be re-run with more fuel.
 
-> "fuel is a reasonable exception because we could always just run the
-> semantics with more fuel"
-
-**(c) MISSING FEATURES**:
-
-> "*missing features* are allowed deviations if they are cleanly
-> identified. CerbFS is kind of an obscure feature as is concurrency,
-> it's unclear if we'll support it"
+**(c) MISSING FEATURES**: missing features are allowed deviations if
+they are cleanly identified; the user noted that CerbFS is a fairly
+obscure feature, as is concurrency, and that it is unclear whether
+either will be supported.
 
 Operationalised: a LOUD, feature-attributed refusal where the oracle
 answers is allowed; a different answer, or a silent absorption (an
@@ -173,7 +170,7 @@ is loud but not attributed — §2.3).
 
 The orchestrator's [AGENT] interpretation — UB LOCATION is part of the
 semantics' own deterministic report (the oracle prints it), not runtime
-exception text — was put to the operator and **agreed ("(1) agree")**.
+exception text — was put to the operator and **agreed**.
 Recorded as [USER 2026-09-03]: **location discrepancies are BUG-FIX
 rows under §1.1, not exempt under (a)**; the lanes' loc-stripping
 (`test_exec.sh` `extract_verdict_seq` greps `ub:` only;
@@ -184,11 +181,9 @@ instrument commit). The hedge is removed from this document.
 
 ### 1.4 A fourth class — (d) ISO-CORRECTNESS FIXES, the register [USER 2026-09-03 / AGENT proposal]
 
-Operator ruling, verbatim:
-
-> "I think that a short listed set of fixes is in keeping for the
-> purpose of cerberus-lean but the bar for such a fix must be extremely
-> high."
+Operator ruling: a short, listed set of fixes is in keeping with the
+purpose of cerberus-lean, but the bar for such a fix must be extremely
+high.
 
 Design [AGENT], RATIFIED [USER 2026-09-03] (R3; §7 Q2 for (i)–(vii),
 Q3 for (ii′)): an explicit **ISO-fix register** in `VALIDATION.md` — a short, enumerated list of the places
@@ -309,7 +304,7 @@ reachability argument, and the seam audit (§3) verifies which.
 | Z-29 | **~8 M-element zero-init static hang** (VALIDATION.md §5 "Known, LOUD limits"; mem-scale record §S1'; `tests/mem-scale-probes/probes/a_zero_global_10000000.c`) | completes (10 M: ~76–246 s, 7.7 GB) | HANG (exit 124, CPU/wall < 0.1) — Lean-runtime `lean_apply_*` frames in the Ail typing monad's run loop + the runtime's overflow-handler deadlock (tray lean4/01) | **EXC(b) VIOLATION = BUG** — (b) says "Lean must not fail where the oracle succeeds"; loudness (HANG class, S0) is necessary, not sufficient. A named mover is mandatory: the lem-backend run-loop rendering (mem-scale record §S1' options; TODO.md), tail-position rendering of function-typed monads so the runtime does not stack a frame per element | lem-arc (lem-lean `mdd/lean-backend`), **L**; cross-ref TODO.md + tray 18 (upstream `.lem` shape) + tray lean4/01 |
 | Z-30 | **byte-list memory representation OOM** (detective RC-3; `tests/suite/parsing/array.c` `LEAN_CRASH exit 134: INTERNAL PANIC: out of memory`; `pr20621-1.c` LEAN_TIMEOUT = OOM-in-disguise; noodle R1 `mem/mem_malloc_4gb_lazy.c` and `mem_calloc_overflow.c` OOM-KILLED at 6G ON THE POST-MEM-SCALE BINARY) | answers immediately (lazy allocation) | OOM-KILLED / out-of-memory panic | **EXC(b) VIOLATION = BUG** with a named mover: the mem-scale arc's C1+C3 landed (record §S1) and the residual is measured by R1 on `72164481a`; the mover is the representation change (chunked/sparse bytes with a compact unspecified-region form — detective RC-3 fix direction; profile first) | `CerbMem.lean` byte path. **M**; the sweep rows re-measure in Z4's instrument re-run |
 | Z-31 | **exhaustive-mode wall-clock margins** (detective RC-4: `pr63209.c`, `pr69320-4.c` AGREE at 60–90 s; csmith baseline 8 `TIMEOUT` rows `sa_197/419/435, sia_072/161/169/976/996`; gcc lane 11 `SKIP_LEAN_TIMEOUT`; noodle `ptr_struct_assign.c` unsequenced form 67,650 traces oracle ~100 s / Lean > 60 s; `lib_strtol_edges.c` both-timeout) | completes within the lane bound | ~15–20× slower on recursion-heavy shapes; same verdicts when the bound is raised | **EXC(b) — tolerated ONLY PER ROW with measured completion at a larger bound** (R1 Q5): `pr63209.c`/`pr69320-4.c` have it (detective RC-4, AGREE at 60–90 s); the 8 csmith `TIMEOUT` rows and the 11 gcc-lane `SKIP_LEAN_TIMEOUT` rows do NOT — until each is shown to complete and agree at a larger bound it is a (b)-VIOLATION pending evidence, not a tolerated bound | Z4: one uncapped-timeout measurement per undemonstrated row (verdict equality, recorded per row); perf itself is "profile before optimizing", L |
-| Z-32 | **fuel exhaustion** (`sia_csmith_477.c`, `sia_csmith_769.c` `LEAN_CRASH` = `lem: fuel exhausted`; gcc lane `SKIP_LEAN_CRASH` same two; VALIDATION.md `lemDefaultFuel` = 10^6) | completes | exit 134 `lem: fuel exhausted` today; after the fuel arc a typed `Error {msg: "lem: fuel exhausted"}` / FUEL class | **EXC(b)/fuel** — accepted verbatim: "fuel is a reasonable exception because we could always just run the semantics with more fuel" | none; the fuel arc's harness FUEL class (fuel design §3) makes the rows self-describing |
+| Z-32 | **fuel exhaustion** (`sia_csmith_477.c`, `sia_csmith_769.c` `LEAN_CRASH` = `lem: fuel exhausted`; gcc lane `SKIP_LEAN_CRASH` same two; VALIDATION.md `lemDefaultFuel` = 10^6) | completes | exit 134 `lem: fuel exhausted` today; after the fuel arc a typed `Error {msg: "lem: fuel exhausted"}` / FUEL class | **EXC(b)/fuel** — accepted under the fuel ruling (§1.2(b): the semantics can always be re-run with more fuel) | none; the fuel arc's harness FUEL class (fuel design §3) makes the rows self-describing |
 
 ### 2.4 Lane baselines, sweeps and pins — every row whose class means "Lean differs"
 
@@ -612,14 +607,14 @@ a commit that cites its evidence.
 
 Only genuine ones. Q1 is recorded as ruled. Each of Q2–Q10 carries the
 R1 reviewer's RECOMMENDATION [AGENT, orchestrator review of `6a55dc74d`];
-[USER 2026-09-03] ruled on all of them at once — verbatim: "Agree re
-Q2-10 and R4" — so **every RECOMMENDATION below is the RULING**, with
+[USER 2026-09-03] ruled on all of them at once, agreeing on Q2–10 and
+R4, so **every RECOMMENDATION below is the RULING**, with
 [USER 2026-09-03] provenance, and the slices of §6 execute it as
 written. The per-item text is kept unchanged as the record of what was
 asked and recommended.
 
 - **Q1 (RULED — recorded).** UB location is behaviour: [USER
-  2026-09-03] "(1) agree". Applied throughout (Z-01/02/03/20, §4.1).
+  2026-09-03] agreed. Applied throughout (Z-01/02/03/20, §4.1).
 - **Q2 — ratify the class-(d) register criteria (i)–(vii) and rule
   R1/R2 individually ((v)).** RECOMMENDATION: ratify (i)–(vii); ADMIT
   R1 (`'\?'`/`"\?"` = 63; gcc exit 63 and `"a\?b"` bytes `97 63 98 0`;
@@ -690,8 +685,8 @@ asked and recommended.
 ## 8. Provenance
 
 [USER 2026-09-03]: the rule (§1.1), the exception classes (a)–(c)
-(§1.2), the fuel quote, the UB-location ruling ("(1) agree", §1.3), the
-class-(d) ruling quote (§1.4). [USER 2026-08-31 / 2026-09-02] rulings
+(§1.2), the fuel ruling, the UB-location ruling (§1.3), the
+class-(d) ruling (§1.4). [USER 2026-08-31 / 2026-09-02] rulings
 cited from `VALIDATION.md` and the trust-basket record where quoted.
 [AGENT, orchestrator review of `6a55dc74d`, applied as R1]: findings
 F1–F11, the register recommendations, the refusal-verdict corrections,

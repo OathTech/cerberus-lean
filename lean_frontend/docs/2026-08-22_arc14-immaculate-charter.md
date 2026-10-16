@@ -1,17 +1,17 @@
 # Arc 14 charter: the immaculate pass + the re-mark ("the professor's study")
 
 Date: 2026-08-22. Mode: long-cycle autonomous under the orchestrator/
-worker doctrine. BLESSED in advance by operator, 2026-08-22 ("happy to
-roll straight into 2 once the hotfix is done") — launches on the
+worker doctrine. BLESSED in advance by operator, 2026-08-22 (content
+to roll straight into this arc once the hotfix is done) — launches on the
 hotfix merge. Branch pair: `arc/immaculate` in BOTH repos (lem WILL
 change — full pin dance at close).
 
 ## Objective
 
 Remediate the grumpy-professor campaign's findings to the operator's
-standard ("immaculate, impeccable, exquisitely in keeping with PL
-theory and practice, indistinguishable from the pre-existing backend,
-aligned with upstream standards" — semantic fragility weighted over
+standard (flawless work, fully in keeping with PL theory and practice,
+indistinguishable from the pre-existing backend and aligned with
+upstream standards — semantic fragility weighted over
 style), closed by THE RE-MARK: fresh auditor instances, same persona
 and standard, the original registers in hand, grading the remediation
 — the arc's SUCCESS CONDITION, not a follow-up. Inputs: the two

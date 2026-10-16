@@ -151,7 +151,7 @@ B→target, every hunk:
 | B032 `tests/failure-probes/discarded_failures.lem` `@@ -0,0 +1,14 @@` | b (probe) | Standalone discarded-failure test body, OCaml-visible only when the probe instrument compiles it; outside oracle build inputs. |
 
 
-The relevant ruling is effect-retirement design §9/Q1a–Q4, especially [USER 2026-08-31]: “this seems like... the more principled way of doing it. We don't bake in some weird back-compat machinery, and we stay in sync with the oracle up to renaming (it seems like the oracle *should not* depend on naming, that seems like a defect in itself)”. C1 adoption record §10 records the expanded permutation-only adjudication with [USER 2026-09-01]: “yes, agree on the resume per your recommendation”. The later fuel ruling “we don't change the lem structure for ocaml” did not introduce further OCaml model-body changes relative to B.
+The relevant ruling is effect-retirement design §9/Q1a–Q4, especially [USER 2026-08-31]: the renaming route was judged the more principled one — no back-compat machinery is baked in, and the port stays in sync with the oracle up to renaming (the oracle's dependence on naming being itself a likely defect). C1 adoption record §10 records the expanded permutation-only adjudication with [USER 2026-09-01] agreeing to the resume as recommended. The later fuel ruling that the lem structure is not changed for OCaml's sake did not introduce further OCaml model-body changes relative to B.
 
 I ran the fork-drift check with no refresh or skip, before and after fresh OCaml generation. Verbatim:
 
@@ -362,12 +362,7 @@ Baseline movement was independently derived from both git diffs, without regener
 | immaculate/baseline | 57 | 55 | Per-row ledger: instrument observation widening; ISO R1 added string example; ruled Z1/Z2/Z3 mirror pins. A additionally predates the illtyped-store/offsetof-union instrument rows. |
 | libc_exec/baseline | 5 | 5 | Four probe rows bef08dcf4 and global-order row 22dcb6284. |
 
-R-C2 cites `2026-09-01_C2-ratchet-record.md:865`, [USER 2026-09-01]: “great, let's run the regen”. R-Z1/Z2/Z3 cite their corresponding change records and the zero-discrepancy design §1.1 ruling, quoted in current VALIDATION §0, [USER 2026-09-03]:
-
-> “All *execution* discrepancies are definitionally bugs (other
-> machinery intended to support proof is allowed but should have no
-> semantic / execution effect whatsoever and all legacy permission
-> revoked”
+R-C2 cites `2026-09-01_C2-ratchet-record.md:865`, [USER 2026-09-01] approving the regen run. R-Z1/Z2/Z3 cite their corresponding change records and the zero-discrepancy design §1.1 ruling, carried in current VALIDATION §0, [USER 2026-09-03]: every *execution* discrepancy is by definition a bug; other machinery intended to support proof is allowed but must have no semantic or execution effect whatsoever, and all legacy permission is revoked.
 
 The row ledger distinguishes this ruled mirror re-record from an instrument-only change. Some observation/pin edits are colocated with the mirrored source fix (e.g. 62cbc8116); they are not falsely described as source-free commits. The R1/R2/R3 statuses on the original g5/s4b rows already existed at the anchors: their later token-format expansion is an instrument movement, not a newly authorized ISO result. The new zd-e2 row is attributed to R1. The original S-basket additions at A are traceable to a19b55bde/83158fd50/3ca8c6783/57e6a1eb4; subsequent formatting edits have their own row-edit SHA.
 
@@ -406,24 +401,22 @@ BUG carrying a named mover, not a tolerated limit; loudness (`HANG`,
 `KILL`, `TIMEOUT` classes) is necessary, not sufficient. A wall-clock
 row is tolerated ONLY per row with measured completion at a larger bound
 (charter Q5). *Standing members:* §3 lists them with their movers.
-**(b)/fuel** — fuel exhaustion is accepted under (b), [USER 2026-09-03]
-verbatim: "fuel is a reasonable exception because we could always just
-run the semantics with more fuel"; the bound is a PARAMETER (`--fuel N`,
+**(b)/fuel** — fuel exhaustion is accepted under (b), [USER 2026-09-03]:
+fuel is a reasonable exception because the semantics can always be
+run with more fuel; the bound is a PARAMETER (`--fuel N`,
 §7), and a FUEL row is never counted as agreement.
 
-**(c) MISSING FEATURES** — [USER 2026-09-03], verbatim: "*missing
-features* are allowed deviations if they are cleanly identified. CerbFS
-is kind of an obscure feature as is concurrency, it's unclear if we'll
-support it". *Test:* the Lean side REFUSES — non-zero exit AND a message
+**(c) MISSING FEATURES** — [USER 2026-09-03]: missing features are
+allowed deviations if they are cleanly identified; CerbFS and concurrency
+are obscure features whose support is uncertain. *Test:* the Lean side REFUSES — non-zero exit AND a message
 that names the missing feature and the boundary (not a symptom: a
 file-not-found error for a flag is loud but not attributed) — where the
 oracle answers. A different answer, or a silent absorption (an errno, a
 default, a zero) is never (c). *Standing members:* §3.
 
-**(d) ISO-CORRECTNESS FIXES — the register (§2).** [USER 2026-09-03],
-verbatim: "I think that a short listed set of fixes is in keeping for
-the purpose of cerberus-lean but the bar for such a fix must be
-extremely high." *Test:* the deviation is an enumerated register entry
+**(d) ISO-CORRECTNESS FIXES — the register (§2).** [USER 2026-09-03]:
+a short, listed set of fixes is in keeping with the purpose of
+cerberus-lean, but the bar for such a fix must be extremely high. *Test:* the deviation is an enumerated register entry
 meeting criteria (i)–(vii) (or admitted BY CLASS as a kind-2 artifact,
 §0), individually [USER]-ruled, pinned as a Lean-right/oracle-wrong
 immaculate pair, with the `-- ISO-fix register R<n>` code marker. Nothing
@@ -470,7 +463,7 @@ VERDICT: MOVED-WITH-RULING · evidence: cold local builds; `python3 scripts/rele
 
 ## 3. Definitions that consumers reason about
 
-[AGENT auditor] The reasoning interface moved against both anchors. At A the supply/effect projection was still present; B already had explicit supply and tag-reader arguments. Since B the changed fuel interfaces, measured wrappers, runtime defaults and LemLib representation are real definition changes, even where the intended result is unchanged. Rulings: effect-retirement design §9; fuel-parameter C1 record §1 ([USER 2026-09-03/04], “Any and all magic values that are hardcoded and can't be quantified over are definitionally bugs (unless they mirror lem or ISO-C design choices)”); C4 record §1 ([USER 2026-09-05], “agree, go ahead with option 1”).
+[AGENT auditor] The reasoning interface moved against both anchors. At A the supply/effect projection was still present; B already had explicit supply and tag-reader arguments. Since B the changed fuel interfaces, measured wrappers, runtime defaults and LemLib representation are real definition changes, even where the intended result is unchanged. Rulings: effect-retirement design §9; fuel-parameter C1 record §1 ([USER 2026-09-03/04]: any hard-coded magic value that cannot be quantified over is by definition a bug, unless it mirrors a lem or ISO-C design choice); C4 record §1 ([USER 2026-09-05] agreed to proceed with option 1).
 
 | Surface | Independently inspected contract and evidence kind | Limit |
 |---|---|---|
@@ -572,10 +565,10 @@ Changes against the anchors, independently checked with source/pin diffs:
 
 | Movement | Evidence and ruling provenance |
 |---|---|
-| A→B: effect projection removed | A's Lake rev is `861ed814f178a40a28616326378ae2f38bf79b4a`; `git -C deps/lem-pinned grep … 861ed814 -- lean-lib` finds `LemLib.lean:54:axiom runEffectful {α : Type} : (Unit → BaseIO α) → α`. B's `045dcb0` and HEAD have no such declaration. CerbTags global/reader opaques and native tag/fresh projection plumbing disappear; digest converts to the remaining pinned opaque chain. C1/C2 source diffs and the effect-retirement design §9/Q4, [USER 2026-08-31]: “yeah, this all seems reasonable”; the record expressly says “axiom gone” plus classified survivors. |
+| A→B: effect projection removed | A's Lake rev is `861ed814f178a40a28616326378ae2f38bf79b4a`; `git -C deps/lem-pinned grep … 861ed814 -- lean-lib` finds `LemLib.lean:54:axiom runEffectful {α : Type} : (Unit → BaseIO α) → α`. B's `045dcb0` and HEAD have no such declaration. CerbTags global/reader opaques and native tag/fresh projection plumbing disappear; digest converts to the remaining pinned opaque chain. C1/C2 source diffs and the effect-retirement design §9/Q4, [USER 2026-08-31] accepted the design as reasonable; the record expressly says “axiom gone” plus classified survivors. |
 | B→HEAD: CerbGlobal leaves | 29 runtime pin identities leave (11 IMPLBY, 14 UNSAFEDECL, four UNSAFEBASEIO); eleven opaque entries leave. Source deletion and new definitions were read, not inferred from the allowlist. `2026-09-05_cerbglobal-defs-record.md` §9 records the [USER 2026-09-05] conditional overnight pre-sign and its two conditions; it does not reproduce a separate verbatim operator utterance, so none is invented here. Q4's temporal classification and the named follow-up are the earlier ruling context. |
 | B→HEAD: five EXTERN pins enter | `digestIO`, `digestPure`, `forceThunkIO`, `md5Hex`, `setDigestIO` were already present at B; their addition is expanded gate coverage/path-and-count pinning, not five new native bindings. They remain Q4's digest family. |
-| B→HEAD: FuelFormsTool.main enters | One unsafe instrument declaration enables imported pretty-printer extensions. C4 record lines 372–383 and its §1 hypothesis-carrying ruling: [USER 2026-09-05] “agree, go ahead with option 1”. No semantics module imports this tool. |
+| B→HEAD: FuelFormsTool.main enters | One unsafe instrument declaration enables imported pretty-printer extensions. C4 record lines 372–383 and its §1 hypothesis-carrying ruling: [USER 2026-09-05] agreed to proceed with option 1. No semantics module imports this tool. |
 | B→HEAD: fuel location opaque enters | Pure `CerbFuel.fuelExhaustedLoc` has a value witness and no unsafe/extern implementation; fuel-arc change manifest §1 and fuel design Option C ruling. Axiom-free does not mean runtime failure correspondence is proved. |
 
 Derived pin arithmetic is B **61 − 29 + 5 + 1 = 38**. The intermediate “66→37” comment describes a later checkpoint, not baseline B; the header's 37 is also not the current tooling-inclusive count.
@@ -588,7 +581,7 @@ The current ISO register contains exactly R1, R2 and R3; R4 is explicitly deferr
 | R2 | CerbDecode lines 175/184 (explanatory mention plus actual site) | `g5-escape-roundtrip`: DIFF, Lean value 127. |
 | R3 | **Absent from CerbMem** | `s4b-memcmp-hugesize`: ORACLE_CRASH, Lean UB_CERB002a. |
 
-[AGENT auditor] The missing R3 marker and missing register/marker bijection gate are real unfinished obligations, expressly acknowledged in VALIDATION §2. Admission is ruled by class and confirmed there with [USER 2026-09-05] “(2) agree”; R3 is ruled, but its current marker requirement remains unsatisfied. The aligned_alloc-zero pending kind-2 rows are separately disclosed in Z2/VALIDATION; a baseline pin is not an additional numbered ISO admission.
+[AGENT auditor] The missing R3 marker and missing register/marker bijection gate are real unfinished obligations, expressly acknowledged in VALIDATION §2. Admission is ruled by class and confirmed there with [USER 2026-09-05] agreeing to item (2); R3 is ruled, but its current marker requirement remains unsatisfied. The aligned_alloc-zero pending kind-2 rows are separately disclosed in Z2/VALIDATION; a baseline pin is not an additional numbered ISO admission.
 
 VERDICT: MOVED-WITH-RULING · evidence: direct `scripts/check_theorem_axioms.sh`, `scripts/check_sorry_token.sh`, purity/totality gates; independent scans/pin diffs; CerbDecode:102,184 and CerbMem marker grep · residual risk: Native/pure correspondence, partial frontend code and R3's missing marker remain outside what the green censuses establish. · mover: master plan steps 2–3 (Pure-failure CORRESPONDENCE design note / C-TF1 monadic seam slice) and step 5 F7 instances, C-Z4 (R3 marker/register gate).
 
@@ -610,7 +603,7 @@ VERDICT: MOVED-WITH-RULING · evidence: direct `scripts/check_theorem_axioms.sh`
 | Tier B adds GCC oracle B7 | Promotion from reporting, [USER 2026-09-02] as recorded in LADDER. Asymmetric ledger remains: regressions/DISAGREE fatal, improvements explicit at rc 0. |
 | Tier B adds hang/kill/fuel B8, actual-entry observation B9 and pristine-oracle real+plant B10 | New gates; real status and bytes are retained, resource failures are not agreement. |
 | Executable release/CI membership, ownership/timeouts/source identity | New orchestration; incomplete/subset results cannot certify full membership. |
-| Resource convention: VM ulimit→4 GiB per-test RSS cgroups | Ruled [USER 2026-09-02] “Q2 agree” (mem-scale design §0/Q2, LADDER). Meaning changes from address-space to RSS, tested with positive OOM witnesses. This audit uses 48 GiB for every Lean/Lake build or proof invocation. |
+| Resource convention: VM ulimit→4 GiB per-test RSS cgroups | Ruled [USER 2026-09-02], agreeing to Q2 (mem-scale design §0/Q2, LADDER). Meaning changes from address-space to RSS, tested with positive OOM witnesses. This audit uses 48 GiB for every Lean/Lake build or proof invocation. |
 | Reporting tables add CI sweep and named instruments, revise csmith accounting | Visibility, not new Tier A/B coverage. No whole legacy csmith sweep was dispatched. |
 | CN spec exporter/lane removed outside these two membership files | Ruled PARK in release-hygiene G5; the removed lane was not B's ladder membership. |
 

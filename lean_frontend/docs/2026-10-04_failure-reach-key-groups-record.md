@@ -5,7 +5,7 @@ change only; no semantics change.
 
 ## Authority
 
-[USER 2026-10-04] "agree 1-4" and "Great, do it as proposed", on the proposal from the
+[USER 2026-10-04] agreed to items 1-4 and approved doing it as proposed, on the proposal from the
 lem re-pin 4e70bb5 pre-merge audit's finding A3
 (`docs/2026-10-04_lem-repin-4e70bb5-pre-merge-audit.md`; re-pin record §9): inside
 multi-row key groups only, lengthen the message window until the rows' keys differ; seal
@@ -108,7 +108,7 @@ check_failure_reach: OK (233 pure failure sites = the 233 register rows exactly 
 
 LADDER row 11 (which still said "plants five cases", already stale before this change at
 7 plants) was corrected in the follow-up commit 44c81506b on this branch ([USER 2026-10-04]
-"approve (1) / (2)"), with the current reach counts 172/40/21; the VALIDATION gate row's
+approved items (1) and (2)), with the current reach counts 172/40/21; the VALIDATION gate row's
 counts were corrected to match in the audit-fix commit.
 
 Pre-merge audit (fresh read-only reviewer, range ae48126e5..44c81506b, 2026-10-04): no

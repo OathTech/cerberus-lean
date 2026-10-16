@@ -13,7 +13,7 @@ The documentation commit containing this record does not alter those code bytes.
 | Finding | Result at the implementation pin |
 |---|---|
 | F1 / M1 portability | The manifest stores a full 40-hex Lem commit. The gate validates and compares 7–40 hex prefixes from bare hashes or hash-bearing Git describe versions, after removing one trailing `-dirty`. Malformed, too short/long, wrong and duplicate pins fail. `--refresh` requires a matching version and preserves the full reviewed pin. Thirty self-test plants pass with expected verdicts and messages, including refresh retention. |
-| F2 / M10 | [Archive record](2026-09-24_evidence-archive-untracking.md) gains an append-only provenance addendum: derived inventory tagged [AGENT], verbatim [USER 2026-09-06] retention excerpt, and the already-pushed-history limitation. Original body and inventory remain intact. |
+| F2 / M10 | [Archive record](2026-09-24_evidence-archive-untracking.md) gains an append-only provenance addendum: derived inventory tagged [AGENT], the [USER 2026-09-06] retention ruling in summary, and the already-pushed-history limitation. Original body and inventory remain intact. |
 | F3 / M4 | An in-file FORK comment explains the 23 excluded CMM markers and absence of concurrency implementation. The comment occupies three pre-existing blank lines, preserving source diagnostic locations. |
 | F6 | [SUPPORTED.md](../SUPPORTED.md) cites the actual [USER 2026-09-16] retirement ruling for refined-cerberus. |
 | Closure re-pin | All five committed source sites agree: Lake requirement, three manifests, fork-drift metadata. The README install command also carries the new pin. One dependency revision move occurred after all Lem closure changes; the owned opam switch was updated once. |
@@ -247,7 +247,7 @@ and the final reviewed Cerberus closure head supplied at handoff.
 
 ## Landing (2026-09-25) — orchestrator [AGENT]
 
-[USER 2026-09-25] verbatim: "Go ahead with merge as planned" — the plan being the orchestrator note
+[USER 2026-09-25]: approved the merge as planned — the plan being the orchestrator note
 `2026-09-24_public-readiness-must-checkpoint-orchestrator-note.md` §8's five steps. Executed back to back:
 
 1. lem-lean `mdd/lean-backend` ff-only `38f87d5` -> `6b20bfd` (5 commits: the review document, M1/M4/M8, M3/M5/M11,
@@ -270,4 +270,4 @@ and the final reviewed Cerberus closure head supplied at handoff.
 
 Pins after landing: lem-lean mainline = `deps/lem-pinned` = opam `lem -v` (as prefix) = Lake `LemLib` rev = the three
 lake-manifests = `fork_drift_manifest.txt` `lem-pin` = `6b20bfd02de924d078725efa96c6675115b8b17a`. Not pushed; no tag.
-[USER 2026-09-25] "the other agent has completed the SHOULD remediation. Review it as you did with the MUST" — next.
+[USER 2026-09-25] reported the other agent's SHOULD remediation complete and asked for it to be reviewed as the MUST was — next.

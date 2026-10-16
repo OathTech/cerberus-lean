@@ -12,9 +12,9 @@ was pushed; nothing was merged; no mainline was touched.
 
 ## 0. Rulings (by pointer) and the reading applied
 
-- [USER 2026-09-16] ("… we're also changing it. There's some danger there!" / "add improving
-  the upstream oracle as a thing to do before we execute on further work" / "execute on WP-O as
-  proposed"), [USER 2026-09-11] (Fable subagents), [USER 2026-09-08] (nothing new out of policy —
+- [USER 2026-09-16] (the caution that the oracle is itself being changed, which carries danger;
+  the instruction to add improving the upstream oracle as a prerequisite before further work; the
+  go-ahead to execute WP-O as proposed), [USER 2026-09-11] (Fable subagents), [USER 2026-09-08] (nothing new out of policy —
   this slice adds NO semantics and NO proofs; it is an instrument), [USER 2026-09-03] (the four
   aims; the zero-execution-discrepancy rule): charter §0 verbatim. Standing constraints (no
   machine-global state, no push, no mainline commits, fail-closed/fail-noisy, provenance, capped
@@ -521,8 +521,8 @@ pair whose frames differ only in positions is a `matching_failure`; the 21 `diag
 are DELETED and the register becomes exactly the 3 `shared-model-fix` tray rows, the class kept
 with zero rows; (3) the reading conflict, moot given (2).
 
-**[USER 2026-09-17], verbatim:** *"(1) agree, (2) agree, (3) redundant per 2. Agree wiht the audit
-as proposed"*.
+**[USER 2026-09-17]:** agreed with (1) and (2), called (3) redundant given (2), and agreed with the
+audit as proposed.
 
 Applied at `9cbd9b86f` exactly as stated (nothing else changed): `compare()` — 137 on either side
 → `incomplete`; both 124 → `matching_incomplete` (a row is irrelevant; the loader still refuses
@@ -667,7 +667,7 @@ under the worktree's `.tmp/` (ephemeral) and summarised in the evidence dir.
 
 ## 9. Landing (2026-09-17)
 
-[USER 2026-09-17], verbatim: *"Great, go ahead and merge"* — in reply to the orchestrator's merge ask, which named (a) the rebased head `7f4d23ee0` (12 commits over `bb09cb745` = mainline `6da619f69` + the concurrency-scoping erratum), (b) the auditor's verdicts (MERGE-WITH-FIXES → delta FIXES-ACCEPTED, §A of the audit report), (c) the re-gate at the rebased head, and (d) the M1 reading of ruling (1) (a registered case is always judged by its row; `matching_incomplete` is for unregistered cases only) as the one point to confirm — no objection was raised; the reading stands as [AGENT] with the sign-off given in its presence.
+[USER 2026-09-17] approved the merge — in reply to the orchestrator's merge ask, which named (a) the rebased head `7f4d23ee0` (12 commits over `bb09cb745` = mainline `6da619f69` + the concurrency-scoping erratum), (b) the auditor's verdicts (MERGE-WITH-FIXES → delta FIXES-ACCEPTED, §A of the audit report), (c) the re-gate at the rebased head, and (d) the M1 reading of ruling (1) (a registered case is always judged by its row; `matching_incomplete` is for unregistered cases only) as the one point to confirm — no objection was raised; the reading stands as [AGENT] with the sign-off given in its presence.
 
 Orchestrator re-gate at `7f4d23ee0` (verbatim): `fast: passed; 14/14 selected commands completed successfully.` / `Source unchanged: True. Complete tier selection: True.` / `Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 3, 'interface_agreement': 2}` / `Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 43}`. The FULL battery (`release.py --mode full`, 37/37) ran at the pre-rebase fix commit `1abadc396`; the mainline delta between the two bases is docs-only (tray draft 44, the concurrency-landing scoping note, its erratum).
 

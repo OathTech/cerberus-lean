@@ -64,11 +64,11 @@ moreLeanArgs = ["-DautoImplicit=false"]
 # Closure F1/F3, 2026-09-24: one further pin after the Lem closure;
 # substituted-type sorry refusal and recursive-rep fixture restored.
 # Evidence: docs/2026-09-24_public-readiness-closure.md.
-# lem-lean arc/linksem re-pin, 2026-09-30 ([USER 2026-09-30] "Great, go ahead
-# with the merge & repin"): Lean-backend/LemLib fixes, LemLib on Lean 4.32.2;
+# lem-lean arc/linksem re-pin, 2026-09-30 ([USER 2026-09-30] approved the
+# merge and re-pin): Lean-backend/LemLib fixes, LemLib on Lean 4.32.2;
 # generated OCaml byte-identical. Evidence: docs/2026-09-30_lem-repin-77ad4fa-record.md.
-# lem-lean re-pin to 4e70bb5, 2026-10-04 ([USER 2026-10-04] "merge it. Then take
-# a look at lem-lean, which has implemented a bunch of QoL improvements"): output
+# lem-lean re-pin to 4e70bb5, 2026-10-04 ([USER 2026-10-04] approved the merge and
+# asked for a look at lem-lean's quality-of-life improvements next): output
 # niceness (layout, comments, mutual records as structures), backend hardening A/C,
 # the BEq instance lattice; generated OCaml byte-identical.
 # Evidence: docs/2026-10-04_lem-repin-4e70bb5-record.md.

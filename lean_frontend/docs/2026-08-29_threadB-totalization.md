@@ -4,8 +4,8 @@ STATUS: worker record (thread-B lem worker, operator-approved parallel
 lane; branch `lem-totalization`, worktree
 `worktrees/cerberus-lean-lem-totalization`, base `arc/segment-ladder` @
 `6aaed9152`). Provenance: [AGENT] build throughout; the totalization
-ruling is [USER] (V2 close, 2026-08-28: "We'll need to make the model
-total in the proper way", signed off as LEM-SIDE FUEL). Merges into the
+ruling is [USER] (V2 close, 2026-08-28: the model is to be made total
+in the proper way, signed off as LEM-SIDE FUEL). Merges into the
 arc branch later via the standard rebase+re-gate — NOT merged by this
 worker.
 

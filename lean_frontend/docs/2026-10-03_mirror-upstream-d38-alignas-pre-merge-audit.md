@@ -2,8 +2,8 @@
 
 Auditor: Claude (Opus 5.5), a fresh pre-merge auditor briefed by the orchestrator. Worktree
 `worktrees/cerberus-lean-audit/mirror-upstream-d38`, branch `audit/mirror-upstream-d38-alignas`.
-Scope approved by the operator, verbatim: [USER 2026-10-03] "Yes, go ahead with the audit as
-proposed". The range has 3 commits: `6bdb59006` (revert draft 38), `3bd1623d9` (`_Alignas`
+Scope approved by the operator: [USER 2026-10-03] approved the audit as
+proposed. The range has 3 commits: `6bdb59006` (revert draft 38), `3bd1623d9` (`_Alignas`
 completeness check), `958964423` (VALIDATION §3b). Slice record:
 `lean_frontend/docs/2026-10-03_mirror-upstream-d38-alignas-record.md`.
 

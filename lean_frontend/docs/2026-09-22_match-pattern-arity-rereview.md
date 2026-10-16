@@ -76,7 +76,7 @@ This is stronger than the record's current “surplus arguments dropped from the
 
 ## Proposed closure commit and acceptance checks
 
-[AGENT proposal; USER 2026-09-22: “if we find defects which could reasonably get rolled into this, we can propose them as fixes”]
+[AGENT proposal; USER 2026-09-22: defects that could reasonably be rolled into this slice may be proposed as fixes]
 
 1. Guard both `PEcall` typing arms and the `Eproc`, `Ememop`, `Erun` and fixed-arity `Eccall` arms before their zips. Reuse structured typing failures. For variadic `Eccall`, split the trailing variadic bundle, require exactly the fixed formal count in the prefix, zip that prefix, and typecheck the bundle separately. Do not apply a naive fixed-arity check to the complete variadic list.
 2. Guard the `Erun` argument list against the resolved continuation signature in **both** execution engines, before evaluation/substitution. Use the existing monadic ill-formed-program channel, consistently with the let-form repair. Checking only Core typing would not protect ordinary execution.

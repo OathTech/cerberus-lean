@@ -14,7 +14,7 @@ Landed on `mdd/cerberus-lean` by ff-only merges, each on the operator's explicit
 |---|---|---|---|
 | E-A — the enum map as program data (`Implementation.enum_definitions` reader; `A.sigma.enum_definitions`, Core `file.enumDefs`) | `df85e95b7` | 2026-09-22 | in your interim pin |
 | D-S — the run's minting digest as run-state data (`initial_driver_state top digest file fs`, `core_run_state.sym_digest`, `runDigest`) | `34ac493f9` | 2026-09-22/23 | = your interim pin (S3.5, C3.64) |
-| item 7 — `match_pattern` and every tuple-binding helper fail CLOSED on arity mismatch; Core typing and both engines' `Erun` guard argument-list arity; the shipped stdlib's `pread`/`pwrite` declarations fixed | `2b51d2a57` | 2026-09-23, [USER 2026-09-23] "Go ahead with the merge" | THIS re-pin (your "matcher discharge + `SelectAgreesC`'s deletion", C3.64) |
+| item 7 — `match_pattern` and every tuple-binding helper fail CLOSED on arity mismatch; Core typing and both engines' `Erun` guard argument-list arity; the shipped stdlib's `pread`/`pwrite` declarations fixed | `2b51d2a57` | 2026-09-23, [USER 2026-09-23] approved the merge | THIS re-pin (your "matcher discharge + `SelectAgreesC`'s deletion", C3.64) |
 
 LemLib is UNCHANGED: lem-lean `mdd/lean-backend` `38f87d5fa6b29ec90edfa457faba8a309e32c118` (= `deps/lem-pinned` = opam
 `lem -v` = `lean_frontend/lakefile.toml` rev = all four package manifests = `scripts/fork_drift_manifest.txt`
@@ -97,6 +97,6 @@ None of these blocks the re-pin. lem-lean DESIGN.md follow-up sentences (the `re
 as before.
 
 ---
-Landed on `mdd/cerberus-lean` by docs-only ff on [USER 2026-09-23] "Go ahead with both" (this note's ff + the
+Landed on `mdd/cerberus-lean` by docs-only ff on [USER 2026-09-23] approval of both (this note's ff + the
 worktree retirement); the operator waived a separate audit for this one-file note, which quotes committed records
 and the orchestrator's own verified gate tails (record §16).

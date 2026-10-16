@@ -13,7 +13,7 @@
 
 [AGENT — independent skeptical review, Claude Fable subagent, 2026-09-28.]
 Fresh reviewer: I authored none of the range. Charter (relayed by the
-orchestrator): [USER 2026-09-28] "WP1 + plan update", "Targeted re-runs".
+orchestrator): [USER 2026-09-28] chartered a review of WP1 plus the plan update, with targeted re-runs.
 
 **Heads reviewed.**
 - WP1 range `5ecc0aa33..af1342d32` on `arc/sc-wp1` = `73c1419ae`
@@ -151,7 +151,7 @@ bounded-stepping record's stated reason for co-locating the experiment in
 module set to match upstream, so this instrument stays with its driver
 integration rather than changing the gate for a new experimental module."
 That is gate avoidance offered as design rationale. The standing ruling
-[USER 2026-09-04] "we don't change the lem structure for ocaml"
+[USER 2026-09-04] against changing the lem structure for OCaml's sake
 (`docs/2026-09-05_typed-failure-outcomes-design.md:41`, "`.lem` bodies and
 the OCaml output are not touched") is cited by NONE of the four WP1
 records (`grep -i 'lem structure\|2026-09-04'` over `SC-WP1.md` and the
@@ -290,9 +290,10 @@ review brief (or the script) make `check_lem_sync.sh --check-lean` +
 
 ### N2 — NOTE — Three renderings of one [USER] instruction; one in quotation marks
 
-Decision record: `[USER, 2026-09-27] "Push forward to the end of WP1."`;
-`SC-WP1.md`: `[USER, 2026-09-27] Push through the end of WP1; WP0 has
-landed on main.`; plan: `[USER] Push to the end of WP1.` Record-integrity
+Decision record: the `[USER, 2026-09-27]` instruction to carry WP1 through to
+its end, in quotation marks; `SC-WP1.md`: an unquoted `[USER, 2026-09-27]`
+wording of it, adding that WP0 has landed on main; plan: a third, shorter
+unquoted `[USER]` wording. Record-integrity
 rule: quotes are verbatim. I cannot tell which is; mark the two paraphrases
 as paraphrases.
 

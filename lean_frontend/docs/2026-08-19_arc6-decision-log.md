@@ -9,8 +9,8 @@ failure. Worker-made calls are tagged [AGENT:worker-slice].
 
 **D1 [USER]** — Arc scope and charter blessed via goal launch; the
 prototype-libc prior-art study in S0(a) is an explicit operator
-directive ("we already support libc-loading in the prototype — look at
-that closely"), as is the GoLean verification framing recorded in the
+directive (the prototype already supports libc loading and was to be
+studied closely), as is the GoLean verification framing recorded in the
 charter's S3-adjacent note (operator correction, 2026-08-19).
 
 **D2 [AGENT]** — Lane: branch `arc/libc-load`, worktree
@@ -19,10 +19,10 @@ launch. No lem-lean worktree unless a backend need emerges (none
 expected; any lem change triggers the full pin dance per charter).
 
 **D3 [USER]** — Decision PRINCIPLE for the libc-ingestion path choice
-(operator, mid-S0): choose to MINIMIZE THE TCB. The operator's framing
-of the tension, near-verbatim: writing our own loading implementation
-adds new code; leaning on Cerberus grows the surface that cannot be
-reasoned about; a lot depends on what exactly Cerberus already offers.
+(operator, mid-S0): choose to MINIMIZE THE TCB. The operator framed
+the tension thus: a loading implementation of our own adds new code;
+leaning on Cerberus grows the surface that cannot be reasoned about;
+much depends on what exactly Cerberus already offers.
 Relayed to the S0 worker mid-flight with an [AGENT] analytical frame
 attached (recorded here so the provenance split is exact): the frame —
 that Lean-side linking via the GENERATED (lem-derived) Core_linking sits
@@ -35,8 +35,8 @@ carry a per-path TCB accounting; the unlinked-text-dump feasibility
 answer likely decides the path under this principle.
 
 **D4 [USER-initiated / AGENT-scoped]** — Parallel stream opened at the
-operator's suggestion ("could we run an iris-lean spike vs the draft
-semantics in parallel?"): spike/relsem worktree, SPIKE grade (design +
+operator's suggestion of running an iris-lean spike against the draft
+semantics in parallel: spike/relsem worktree, SPIKE grade (design +
 skeleton deliverable, reporting only, no merge bar this arc). [AGENT]
 scoping: iris-lean does not build offline (4.32.2 + Qq — network-window
 items), but Layer-2's relational semantics is BY ARCHITECTURE a
@@ -70,9 +70,8 @@ addresses it only if the Fmap fix exposes it as next-binding. Park
 clause retained. Slice order: S1 libc → S2 varargs → S3 perf
 (worktree-sequenced; S3 opens the lem-lean worktree).
 
-**D7 [USER]** — Doctrine (operator, near-verbatim): "we should not
-permit any internal trust gaps unless they are truly forced on us by
-immovable objects." Codified in container CLAUDE.md (no-internal-trust-
+**D7 [USER]** — Doctrine (operator): no internal trust gaps are
+permitted unless truly forced by immovable objects. Codified in container CLAUDE.md (no-internal-trust-
 gaps doctrine): in-Lean agreement is a theorem, not a test; kernel-
 opaque artifacts are eliminated or sit on the declared boundary list
 with an immovable-object justification; internal differentials are
@@ -87,9 +86,9 @@ builds offline — arc-7 prerequisite cleared). Arc-7 charter inputs
 queued: totalize CerbND (Layer-2 prereq), extend totality gate to
 CerbND, spike Q2-Q4 recommendations for operator review.
 
-**D8 [USER]** — Doctrine refinement (operator, near-verbatim): "some of
-these objects will eventually be moved (eg. we should design so we can
-eventually support concurrency)." Codified in container CLAUDE.md:
+**D8 [USER]** — Doctrine refinement (operator): some of these objects
+will eventually be moved, so the design must allow for that (e.g.
+eventual concurrency support). Codified in container CLAUDE.md:
 boundary entries now classified PERMANENT vs TEMPORAL; temporal entries
 require an expected MOVER and impose a FORWARD-DESIGN constraint
 (nothing built today may make the move harder). [AGENT] applications:
@@ -178,8 +177,8 @@ baseline is trusted as a scoreboard. Register promotion: finding 11
 top of next-arc queue. Prototype ci head-to-head: ours 4 (1 semantic)
 vs ~13 historical, base caveat recorded.
 
-**D14 [USER]** — Ban (operator, near-verbatim): "ban bv_decide and other
-non-kernel-checked proof methods completely", citing golean's policy in
+**D14 [USER]** — Ban (operator): bv_decide and the other
+non-kernel-checked proof methods are banned completely, citing golean's policy in
 action. [AGENT] verified golean's mechanism (deps/golean
 proofs/Audit.lean): in-build transitive-axiom audit, allowlist =
 classical trio, build-failing — catches sorryAx, ofReduceBool

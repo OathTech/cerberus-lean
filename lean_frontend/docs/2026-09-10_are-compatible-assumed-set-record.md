@@ -856,8 +856,8 @@ not reformatted. This is not an implementation whitespace defect.
 
 ## Orchestrator take-over (2026-09-10) — the slice finished by the orchestrator [AGENT]
 
-[USER 2026-09-10] ("I think it's better if you finish this up yourself given the level of
-uncertainty involved. Can you pick this up?") — the orchestrator (Claude) took the slice
+[USER 2026-09-10] (asked the orchestrator to finish the slice itself, given the level of
+uncertainty involved) — the orchestrator (Claude) took the slice
 over at Codex's second stop (`a91804f9e`) and executed D1's acceptance, D2, D3, D4 and
 D5 in this worktree. Codex's stop records above stand as written; nothing in them is
 edited. Every verdict line below is verbatim from the named log.
@@ -1281,8 +1281,8 @@ pristine-oracle lane report status: passed; rows: 723
 [USER 2026-09-11], on the orchestrator's minimal-landing proposal (merge now, re-pin the
 consumer, leave draft 38's fix / the refusal census / the failure-text projection in the
 backlog; audit scope = two reads — the lem diff against the standard's device and the D1
-correctness argument — "you can trim or waive"): "Great, let's land it as is, as you
-suggest". Taken as the per-merge sign-off. The audit ask was made and answered; the two
+correctness argument — "you can trim or waive"): approved landing as is, as
+suggested. Taken as the per-merge sign-off. The audit ask was made and answered; the two
 reads were performed by the orchestrator (the author of D2 — an author-side re-read, not
 an independent audit; recorded as such). Merge: ff-only onto `mdd/cerberus-lean` @
 `86daea264`. No push.

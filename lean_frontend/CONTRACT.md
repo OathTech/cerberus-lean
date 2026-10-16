@@ -1,9 +1,9 @@
 # The cerberus-lean contract
 
-Status: **adopted 2026-09-29**; the operator decisions are in §5. Author: the orchestrator [AGENT], on [USER 2026-09-28]:
-"Really the correct fix here is to much more explicitly define the contract that Cerberus Lean is trying to establish
-and then for the features that are well-built, make sure that they're supported. For the ones that are not very
-well-built, make sure that they're appropriately rejected." Occasion: the CerbFS path defect
+Status: **adopted 2026-09-29**; the operator decisions are in §5. Author: the orchestrator [AGENT], on the
+[USER 2026-09-28] direction that the correct fix is to define much more explicitly the contract cerberus-lean is
+trying to establish, then make sure the well-built features are supported and the poorly-built ones are
+appropriately rejected. Occasion: the CerbFS path defect
 (`docs/2026-09-28_cerbfs-path-hotfix-record.md`), a SERVED wrong answer in a surface the project never tried to
 clone, with no discrepancy found in the core semantics.
 
@@ -46,9 +46,9 @@ print debug output or call themselves wrong are refused (§3, the R-PNVI rows); 
 this.
 
 **The address-space top: the default is the promise; other values are a proof-use parameter.** `--address-space-top N`
-is a DELIBERATE lift of upstream's constant for proof use — [USER 2026-10-03] "we specifically want to lift the
-address-space-top restriction for the sake of treating cerberus as a proof artifact. Agree on your recommendations with
-that framing (we shouldn't revert work that allows the iris reasoning to work properly)". Its default mirrors upstream
+is a DELIBERATE lift of upstream's constant for proof use — [USER 2026-10-03] ruled that the address-space-top
+restriction is lifted specifically so that Cerberus can be treated as a proof artifact, accepted the recommendations
+under that framing, and ruled that work enabling the Iris reasoning is not reverted. Its default mirrors upstream
 exactly (`memory/concrete/impl_mem.ml` `last_address= Z.of_int 0xFFFFFFFFFFFF; (* TODO: this is a random impl-def
 choice *)`, `Main.lean` `defaultAddressSpaceTop`), and §1 is promised at that default only. A NON-DEFAULT value is
 outside the mirroring promise: pristine upstream has no such parameter, so there is nothing to mirror; the fork oracle's
@@ -162,30 +162,30 @@ witnesses and are not "thinly tested": they do not answer.
 
 ## 5. Decisions
 
-- **D1 — adopted** ([USER 2026-09-28] "D1 agree"): the outcome promise in §1 is the normative statement.
-- **D2 — refuse the filesystem for now** ([USER 2026-09-28] "D2 refuse FS for now, this seems safer"). Implemented:
+- **D1 — adopted** ([USER 2026-09-28] agreed): the outcome promise in §1 is the normative statement.
+- **D2 — refuse the filesystem for now** ([USER 2026-09-28] chose refusal as the safer option). Implemented:
   every CerbFS operation refuses with a feature-attributed message; `write` to fds 1/2 stays served (driver-routed,
   never CerbFS). Three immaculate rows moved from MATCH to pinned refusals; the full ladder passed
   (`docs/2026-09-28_cerbfs-refuse-all-record.md`).
-- **D3 — adopted** ([USER 2026-09-28] "D3 agree"): the served-surface audit (§4.2) ran
-  (`docs/2026-09-28_served-surface-audit.md`). Its P1 finding (function-pointer numbers) is named deviation N1 ([USER 2026-09-28] "agree with (1)"),
-  covering the integer conversion too after refusing it broke `atexit` ([USER 2026-09-28] "agree on atexit as you
-  propose").
-- **D4 — adopted, option 1** ([USER 2026-09-28] "Yeah, (1) is fine"): libc is supported by mechanism. Functions written
+- **D3 — adopted** ([USER 2026-09-28] agreed): the served-surface audit (§4.2) ran
+  (`docs/2026-09-28_served-surface-audit.md`). Its P1 finding (function-pointer numbers) is named deviation N1 ([USER 2026-09-28] agreed with option (1)),
+  covering the integer conversion too after refusing it broke `atexit` ([USER 2026-09-28] agreed to the proposed
+  `atexit` handling).
+- **D4 — adopted, option 1** ([USER 2026-09-28] accepted option (1)): libc is supported by mechanism. Functions written
   in C inherit the core semantics' state; the 36 builtins are a named list with one state each (§3.1). `any_bounded_int`
   is listed as not served by either engine (the audit found it fails in both); its dead Lean seam, which returned `lo`,
   now fails loudly (`docs/2026-09-28_contract-enforcement-builtins-record.md`).
-- **D5 — adopted, amended** ([USER 2026-09-28] "D5 - amended, yes, link from top level README.md"): this document is the
+- **D5 — adopted, amended** ([USER 2026-09-28] agreed, amended to link it from the top-level README.md): this document is the
   public statement, linked from the top-level README.
-- **D6 — LP64 only** ([USER 2026-09-28] "Agreed re the ABI"): LP64 (the x86-64 Linux data model) is the one supported
+- **D6 — LP64 only** ([USER 2026-09-28] agreed on the ABI): LP64 (the x86-64 Linux data model) is the one supported
   ABI, the only one the lanes test; every other ABI is out of scope.
-- **D7 — a NaN's bits are named deviation N2** ([USER 2026-09-29] "agree on all 3", on the recommendation to register
+- **D7 — a NaN's bits are named deviation N2** ([USER 2026-09-29] agreed on all three points, on the recommendation to register
   the pre-merge audit's F2 rather than refuse storing NaNs): Lean's float store canonicalizes NaNs, so their bytes
   differ from the oracle's (VALIDATION §2b).
-- **D8 — the libc dump's float rounding is named deviation N3** ([USER 2026-09-30] "Right, I think (3) is the right answer
-  for now, and (1) or (2) might be work for later."), with a float-literal inventory check. Standing rule [USER 2026-09-30]:
-  "we should not fix deviations with special 'magic mode' paths that work exclusively in one situation."
-- **D9 — inline assembly is refused** ([USER 2026-10-05] "Re inline asm, this should be a loud refusal"). Upstream erases
+- **D8 — the libc dump's float rounding is named deviation N3** ([USER 2026-09-30] chose option (3) for now, leaving
+  (1) or (2) as possible later work), with a float-literal inventory check. Standing rule [USER 2026-09-30]:
+  deviations are not fixed with special-case paths that work only in one situation.
+- **D9 — inline assembly is refused** ([USER 2026-10-05] ruled that inline asm is a loud refusal). Upstream erases
   it (an asm statement desugars to a skip; an asm label is dropped by the parser), so a program whose meaning lives in its
   asm ran as if the asm were absent (real-C census §4.5: both engines `Specified(1)` where gcc gives 5). The refusal is on
   the general path of the shared model and parser, so the oracle and Lean refuse identically and no asm semantics is

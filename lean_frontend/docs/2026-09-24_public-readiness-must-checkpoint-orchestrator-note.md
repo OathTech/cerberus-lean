@@ -6,9 +6,9 @@ below happens ff-only on the operator's explicit per-merge sign-off.
 
 ## 0. Provenance and scope
 
-- [USER 2026-09-24] "I think now our cerberus-sl customer is happy, we should do a cleanup round and
-  announce the lean backend publicly. I'm going to send off a codex agent to review the whole project and
-  check we are in good state for this." → the public-readiness REVIEW (Codex), lem-lean
+- [USER 2026-09-24] judged the cerberus-sl customer satisfied and called for a cleanup round followed by a
+  public announcement of the lean backend, with a Codex agent dispatched to review the whole project for
+  readiness → the public-readiness REVIEW (Codex), lem-lean
   `doc/lean-backend/2026-09-24_public-readiness-review.md` (commit 07b709e): 11 MUST (M1–M11), 8 SHOULD,
   verdict "not ready to announce from the current documentation and newcomer instructions; ready for a
   bounded cleanup round leading to an early alpha announcement". The orchestrator verified every citation
@@ -16,11 +16,11 @@ below happens ff-only on the operator's explicit per-merge sign-off.
   ledger by the remediator (M1 split into M1a MUST / M1b SHOULD; M4 fixed in code as well as text; S9 =
   `check_exec_totality.sh` ENFORCE default; S10 = fork-drift portable prerequisites; S11 = qualified
   core-name import case).
-- [USER 2026-09-24] "Must checkpoint achieved, can you send off reviewers, and prepare a report?" → this
-  note; two independent Claude Fable delta reviewers chartered (§3); the orchestrator's own gates (§2).
-- [USER 2026-09-24] "Can you write this up as a note. FYI, I have concluded the concurrency branch
-  prototype has failed, and I'm working on a remediation. But that dependency should be considered dead
-  for now." → §5.
+- [USER 2026-09-24] declared the MUST checkpoint achieved and asked for reviewers to be sent off and a report
+  prepared → this note; two independent Claude Fable delta reviewers chartered (§3); the orchestrator's own gates (§2).
+- [USER 2026-09-24] asked for this write-up as a note and reported having concluded that the concurrency
+  branch prototype has failed, with a remediation in progress, so that dependency is to be treated as dead
+  for now → §5.
 
 ## 1. The heads under review
 
@@ -122,8 +122,8 @@ worktree on an older cerberus head regenerating against the new switch lem would
 
 ## 5. Concurrency prototype — operator ruling
 
-[USER 2026-09-24] verbatim: "FYI, I have concluded the concurrency branch prototype has failed, and I'm working
-on a remediation. But that dependency should be considered dead for now."
+[USER 2026-09-24] ruled that the concurrency branch prototype has failed; a remediation is in progress on the
+operator's side, and the dependency is to be considered dead for now.
 
 Consequences [AGENT]: (i) the announcement's supported profile (`SUPPORTED.md`) already excludes concurrency;
 the SHOULD block must make sure no current-facing page presents `arc/sc-prototype` / `feature/concurrency` as
@@ -196,8 +196,8 @@ site — emission-time fail-closed holds; C2 wording); cerberus `c3e2070b4` on `
 the checked implementation while the recipe pins `6b20bfd`) → SHOULD block with F4, F5. Both reviewers quote the
 orchestrator's closure logs and report no disagreement with any gate line.
 
-[USER 2026-09-25] (during this checkpoint): "I'm going to ask them to pick up the SHOULD-level work on new branches off
-the current final heads" — SHOULD branches start at 6b20bfd / c13a105 in NEW worktrees; their merges queue behind the
+[USER 2026-09-25] (during this checkpoint) said the SHOULD-level work would be picked up on new branches off the
+current final heads — SHOULD branches start at 6b20bfd / c13a105 in NEW worktrees; their merges queue behind the
 two MUST merges.
 
 Merge asks (each a separate explicit yes): (1) lem-lean `mdd/lean-backend` 38f87d5 → 6b20bfd, ff-only; (2) the
@@ -208,7 +208,7 @@ that moment (it changes every checkout's lem; no other worktree may regenerate u
 
 ## 9. Landed (2026-09-25) — the MUST checkpoint on both mainlines; post-landing verification
 
-Executed on [USER 2026-09-25] "Go ahead with merge as planned" (details + verbatim step-2/step-3 lines in the cerberus
+Executed on the [USER 2026-09-25] go-ahead for the merge as planned (details + verbatim step-2/step-3 lines in the cerberus
 closure record's "Landing" section): lem-lean `mdd/lean-backend` 38f87d5 -> 6b20bfd (ff); `deps/lem-pinned` -> 6b20bfd;
 `make rebuild-lem` -> `[LEM] installed Lem 6b20bfd`; re-gate of c13a105 under the switch's lem green; cerberus
 `mdd/cerberus-lean` e9f9d049f -> 3dd6d1f71 (ff: c13a105 + landing note) -> 27c7ff717 (this note, rebased and ff'd).
@@ -231,12 +231,12 @@ WIPED and re-derived (03:14–03:26 UTC; tree clean before and after), verbatim:
     === ALL DONE (post-landing) 2026-09-25T03:26:11Z ===
 
 Pins: lem-lean mainline = deps/lem-pinned = switch lem (prefix) = Lake rev = 3 lake-manifests = fork-drift lem-pin =
-6b20bfd02de924d078725efa96c6675115b8b17a. Not pushed; no tag. Next: the SHOULD block review ([USER 2026-09-25] "the
-other agent has completed the SHOULD remediation. Review it as you did with the MUST").
+6b20bfd02de924d078725efa96c6675115b8b17a. Not pushed; no tag. Next: the SHOULD block review ([USER 2026-09-25] reported the
+other agent's SHOULD remediation complete and asked for it to be reviewed as the MUST block was).
 
 ## 10. SHOULD block landed; the sweep (2026-09-25) — orchestrator [AGENT]
 
-[USER 2026-09-25] verbatim: "Great, go ahead with the whole merge and sweep as proposed". Executed:
+[USER 2026-09-25] approved the whole merge and sweep as proposed. Executed:
 
 SHOULD merges (details + verbatim step-2/step-3 lines in `2026-09-25_public-readiness-followup.md` "Landing"): lem-lean
 `mdd/lean-backend` 6b20bfd -> 67ec5de (ff); `deps/lem-pinned` -> 67ec5de; `make rebuild-lem` -> `Lem 67ec5de`; re-gate
@@ -268,7 +268,7 @@ DUNE_INSTALL / CERBERUS_INSTALL / LEAN_NATIVE_OBJ / LAKE_BUILD (395 jobs) EXIT=0
 `check_failure_reach: OK (239 …`; `check_fork_drift: OK — layer 1: 85 oracle-surface files = manifest … layer 2: 30
 differing generated files, all hash-pinned …`; `ROW1 EXIT=0`; ten lanes EXIT=0 with the same tallies as above.
 Reviews of the sweep: none beyond the P3s it closes (docs, comments, a help string, a re-pin); the operator's sign-off
-covers the sweep ("whole merge and sweep as proposed"). Landing: `mdd/cerberus-lean` d55940db0 -> this commit (ff).
+covers the sweep (the merge-and-sweep approval above). Landing: `mdd/cerberus-lean` d55940db0 -> this commit (ff).
 
 After this landing: pins = lem-lean mainline = deps/lem-pinned = switch lem (prefix) = Lake rev = 3 manifests =
 fork-drift lem-pin = c2a68e79b6369e19f099dfa48767319c1daf19b3. Retired worktrees: the two review scratch clones, the

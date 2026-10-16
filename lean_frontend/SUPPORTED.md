@@ -13,7 +13,7 @@ sequential Cerberus semantics and a general experimental Lem Lean backend.
 It should name the limits below. It should not claim full C support,
 universal OCaml equivalence, stable APIs or complete release certification.
 
-[USER 2026-09-24]: “We have recently reached the point where our semantics for Cerberus in Lean were accepted by our upstream customer working on reasoning about Cerberus.” This records reported customer acceptance;
+[USER 2026-09-24]: the Lean Cerberus semantics have recently been accepted by the upstream customer working on reasoning about Cerberus. This records reported customer acceptance;
 it is not a new independent measurement of a downstream checkout.
 
 | Surface | Present evidence | Limit |
@@ -44,8 +44,8 @@ the multi-TU tray, address-space and immaculate lanes, as recorded above.
 Remaining work is tracked in [TODO.md](TODO.md). Concurrency prototypes
 and the archived reasoning effort are records, not offered product
 features. The successor reasoning project is `cerberus-sl`; the older
-`refined-cerberus` checkout was retired on 2026-09-16. Source: [USER 2026-09-16]
-"cerberus-sl is our main upstream customer at the moment. I retired refined-cerberus (it got too messy)."
+`refined-cerberus` checkout was retired on 2026-09-16. Source: [USER 2026-09-16],
+who named cerberus-sl as the main upstream customer at present and reported retiring refined-cerberus as too messy
 ([charter record](docs/2026-09-16_charter-allocator-soundness-address-bound.md),
 checked 2026-09-24 at `e9f9d049f`; closure F6).
 

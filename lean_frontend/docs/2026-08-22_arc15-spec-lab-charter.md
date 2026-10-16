@@ -1,15 +1,16 @@
 # Arc 15 — "the spec lab" (harness-template examples, experimental)
 
-STATUS: BLESSED 2026-08-22 ([USER]: "(1) agree, (2) no strong opinion,
-what do you think? (3) no, let's do it"). Decisions: D1 [USER] Lane B
+STATUS: BLESSED 2026-08-22 ([USER]: agreed on (1); no strong opinion
+on (2), deferring to the agent's view; on (3), declined the alternative
+and said to proceed). Decisions: D1 [USER] Lane B
 (T5 resumption) runs IN PARALLEL on the preserved workbench-v2
 worktree, branch arc/t5-landing; D2 [AGENT, delegated] fresh
 lean_frontend/speclab package (churn isolation from relsem + rehearses
 the example-repo split); D3 [USER] rung ladder as drafted. Charter
-origin [USER 2026-08-22]: "Let's charter an arc building some examples.
-We can be a bit experimental here, try some different spec styles, see
-what works. I think this is an area where we have the ingredients but
-I'm not sure exactly how they should fit together."
+origin [USER 2026-08-22]: an arc chartered to build some examples, with
+room to be experimental and try different spec styles to see what
+works — an area where the ingredients exist but how they should fit
+together is not yet clear.
 
 Grounding: notes/2026-08-22_harness-statement-template.md (the ratified
 template: model-∀ headline, compiled-const-array choice streams,
@@ -98,9 +99,10 @@ S5 — CN slate seed + close-out
 
 ## Proof-style exploration (bonus objective, [USER 2026-08-22])
 
-"Bonus if the lab explores some styles of proof and whether they might
-scale to the sorts of thing we'll encounter in Linux (speculatively,
-they don't need to do it)." Alongside the spec-style register, a
+As a bonus, the user asked the lab to explore some styles of proof and
+whether they might scale to the sorts of thing encountered in Linux —
+speculatively, with no obligation to carry the proofs out. Alongside
+the spec-style register, a
 PROOF-STYLE REGISTER: per rung, where affordable, discharge the same
 obligation in contending styles and grade each — speculatively —
 against a Linux-scaling rubric. No rung is obligated to achieve scale;

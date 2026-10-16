@@ -2,8 +2,8 @@
 
 Date: 2026-08-20. Mode: long-cycle autonomous under the orchestrator/
 worker doctrine, running as a PARALLEL STREAM alongside arc 9 (the
-workbench). BLESSED by operator via launch, 2026-08-20 ("Great,
-launch it"). Fully offline. Branch pair:
+workbench). BLESSED by operator via launch, 2026-08-20 (approved
+the launch). Fully offline. Branch pair:
 `arc/robustness` in BOTH repos (lem WILL change — full pin dance at
 close; merges SERIALIZE with arc 9 per the playbook: whichever stream
 closes second rebases on the moved mainline, re-gates, re-asks).
@@ -169,8 +169,8 @@ weakening; machine-global state.
 
 ## ADDENDUM (2026-08-20, applied at the S2 boundary; provenance in D3)
 
-- **[USER] S3b — dead-corpora wiring** ("may as well roll this into
-  arc-10"): (a) FLOAT — wire tests/float (69 files, copied arc-4,
+- **[USER] S3b — dead-corpora wiring** (rolled into arc-10 at the
+  operator's direction): (a) FLOAT — wire tests/float (69 files, copied arc-4,
   never wired) into a test_exec.sh lane + committed baseline;
   expected-failure classification against the upstream float-mul
   boundary entry (a differential there may indict the ORACLE —
@@ -178,10 +178,10 @@ weakening; machine-global state.
   tests/bytes (14 files) against their committed .exec/.elab
   expecteds as oracle-independent CerbMem probes. Both priced S
   (notes/2026-08-20_prototype-test-migration-survey.md).
-- **[USER] S4 opens with csmith CONFIGURATION EXPLORATION** — "making
-  csmith work properly was something we struggled with in the
-  prototype... try a few different configurations, try to figure out
-  how to make csmith cover as much as possible." The prototype's
+- **[USER] S4 opens with csmith CONFIGURATION EXPLORATION** — the
+  prototype struggled to make csmith work properly; the direction is to
+  try several configurations and work out how to make csmith cover as
+  much as possible. The prototype's
   setup is NOT final; the S0 V/NV lanes are provisional input. Sweep
   configs across feature axes, measure per-config oracle-runnable
   yield AND construct coverage reaching the Lean side, choose a lane

@@ -3,9 +3,9 @@
 [AGENT — fresh skeptical reviewer, Claude subagent, 2026-09-28]. Branch `audit/test-depth-20260928`, one commit, no
 push. Read-only measurement: no build, no lane run, no code/baseline/other-doc change.
 
-**Why this exists.** [USER 2026-09-28]: "we identify trust surfaces which are less well-tested than others, if any
-exist. That's the real miss wrt the bug, we knew that SybllFS wasn't a well-tested mirror, but that wasn't clearly
-documented". The CerbFS path defect (`docs/2026-09-28_cerbfs-path-hotfix-record.md`) was served by a surface that no
+**Why this exists.** [USER 2026-09-28]: asked that trust surfaces less well-tested than others be identified, if any
+exist — the real miss behind the bug being that SibylFS was known not to be a well-tested mirror without that being
+clearly documented. The CerbFS path defect (`docs/2026-09-28_cerbfs-path-hotfix-record.md`) was served by a surface that no
 lane exercised; nobody had written that down. This record writes it down for every other surface.
 
 **Tree measured.** `23ee2d23f` (head of `arc/contract-enforcement`: mainline `a7dc36e2f` + the D2 filesystem refusal

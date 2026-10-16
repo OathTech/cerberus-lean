@@ -394,7 +394,7 @@ Deviations from OCaml (hand-written latitude, documented):
   - runND returning zero executions emits `Error {msg: "cerberus-lean:
     runND returned no executions"}` + exit 1 where OCaml prints nothing and
     exits 0. DECLARED loud boundary — zero-discrepancy Z-73, RULED
-    [USER 2026-09-03] Q8 = A ("Agree re Q2-10"): keep the fail-closed
+    [USER 2026-09-03] Q8 = A (Q2-10 agreed as recommended): keep the fail-closed
     refusal (a silent exit 0 with no verdict is the fail-open shape the
     working practices ban); the oracle's silent success is an upstream
     question (tray candidate). The fuel arc's `runNDFuel` exhaustion leaf
@@ -578,8 +578,8 @@ def resolveRuntimeRoot (cli : Option String) : IO String := do
     - otherwise the `CERB_INSTALL_PREFIX` environment variable: the `ENV_VAR`
       arm, the same construction.
     - DELIBERATE DIVERGENCE ([AGENT] choice in bug-hunt fixes S2, made under the
-      operator's authorization to fix BUG-2, [USER 2026-09-29] "Agree on
-      everything, yes on the fixes"): the oracle's last arm, `OPAM` — the
+      operator's authorization to fix BUG-2, [USER 2026-09-29] agreed on
+      every point and approved the fixes): the oracle's last arm, `OPAM` — the
       runtime of the switch in `OPAM_SWITCH_PREFIX`, or the build-tree source
       root found through `PATH` (`:21-30`) — is NOT mirrored. The run is
       REFUSED instead: a shared switch's runtime can differ silently from the
@@ -1336,10 +1336,10 @@ def runPipeline [LemFuel] [CerbGlobal.Switches] (runtime : String) (batch : Bool
 /-- THE HARNESS DEFAULT FUEL (`--fuel N`, fuel-parameter arc 2026-09-04).
     Fuel is a PARAMETER of the semantics — the LemLib `[LemFuel]` instance
     every fuel'd function reads — instantiated exactly once, here, at the
-    executable's entry ([USER 2026-09-03]: fuel "is an execution parameter
-    that 'doesn't matter' … a parameter which can be chosen as 10^8 or any
-    other value when calling the interpreter"; "Defaults that are chosen
-    eg. in test suites are fine"). This is THE ONLY PLACE a fuel numeral
+    executable's entry ([USER 2026-09-03]: fuel is an execution parameter
+    whose value does not matter to the semantics — 10^8 or any other value
+    may be chosen when calling the interpreter — and defaults chosen in
+    test suites and the like are fine). This is THE ONLY PLACE a fuel numeral
     may live in this repository: no generated module, seam, test or
     speclab file may carry one (`scripts/check_no_fuel_numerals.sh`, which
     allowlists exactly the definition line below and the `letI` that
@@ -1352,8 +1352,8 @@ def defaultFuel : Nat := 100000000  -- FUEL-DEFAULT (the one allowed fuel numera
 
 /-- The default top of the address space — the concrete allocator's initial cursor
     (`CerbMem.initialMemState`, `MemState.lastAddress`), a PARAMETER of the semantics since
-    the address-space-bound slice (2026-09-17; [USER 2026-09-16] "the semantics should be
-    quantified over such bounds"). Upstream's value (`memory/concrete/impl_mem.ml:508` before
+    the address-space-bound slice (2026-09-17; [USER 2026-09-16] ruled that the semantics be
+    quantified over such bounds). Upstream's value (`memory/concrete/impl_mem.ml:508` before
     the slice; now `Driver_ocaml.address_space_top_default`), so matched mode is unchanged;
     overridable per run by `--address-space-top N`; the ONE address-space numeral the Lean
     text may carry (`scripts/check_no_fuel_numerals.sh`, the A-shapes). It enters the run at

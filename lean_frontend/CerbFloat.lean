@@ -38,8 +38,8 @@ def floatLe (x y : Float) : Bool := x <= y
 
 def floatAdd (x y : Float) : Float := x + y
 def floatSub (x y : Float) : Float := x - y
-/-- ISO-fix register R6 — ADMITTED [USER 2026-10-03] "(2) yes this is the
-    canonical 'obviously a mistake, no semantic ambiguity, just fix'"
+/-- ISO-fix register R6 — ADMITTED [USER 2026-10-03] as the canonical
+    unambiguous-mistake case: no semantic ambiguity, just fix it
     (VALIDATION.md §2; record docs/2026-10-03_total-arith-and-bookkeeping-record.md
     §4, §8). The
     OCaml target of lem's `Float.floatMul` is `Cerb_floating.mul`, which
@@ -145,8 +145,8 @@ private def signBits (neg : Bool) : UInt64 :=
 private def infBits (neg : Bool) : UInt64 :=
   signBits neg ||| (UInt64.ofNat binary64ExpFieldMax <<< UInt64.ofNat binary64FracBits)
 
--- ISO-fix register R5 (VALIDATION.md §2, [USER 2026-09-15] "agree on your
--- recommendation … keep the correctly rounded conversion"): this routine
+-- ISO-fix register R5 (VALIDATION.md §2, [USER 2026-09-15] accepted the
+-- recommendation to keep the correctly rounded conversion): this routine
 -- rounds ONCE, to the target precision, for every result including
 -- subnormals. The oracle's `caml_float_of_hex` (OCaml 5.4.0
 -- runtime/floats.c:355 `f = (double) (int64_t) m;` then :369 `f = ldexp(f,

@@ -22,8 +22,8 @@ blocks generate at this pin.
 
 ## 1. Rulings honoured
 
-- [USER 2026-09-19] delegation (implementation-focused calls); [USER 2026-09-04] *"we don't change the
-  lem structure for ocaml"* — the `are_compatible` blocks need the enum map on both targets, so the
+- [USER 2026-09-19] delegation (implementation-focused calls); [USER 2026-09-04] the lem structure is not
+  changed for OCaml's sake — the `are_compatible` blocks need the enum map on both targets, so the
   backend composed the mechanisms (Part A); no `.lem` reshaping. [USER 2026-09-08] nothing new out of
   policy — a guard deletion, tests, docs, pins.
 - Charter §0 standing constraints: `deps/lem-pinned` and `make rebuild-lem` were the ORCHESTRATOR's

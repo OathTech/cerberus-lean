@@ -2,8 +2,8 @@
 
 Range: `mdd/cerberus-lean` `9e63218bc` → `arc/lem-repin-4e70bb5`. Author: the orchestrator [AGENT]. Pre-merge audit:
 `docs/2026-10-04_lem-repin-4e70bb5-pre-merge-audit.md` (MERGEABLE WITH FIXES; A1/A2/A5 fixed with new selftests, A4
-corrected, A3 recorded; the A3 key-disambiguation proposal queued after landing, [USER 2026-10-04] "agree 1-4").
-The shared switch's lem and `deps/lem-pinned` were moved to `4e70bb5` ([USER 2026-10-04] "1 / 2 approved"), after
+corrected, A3 recorded; the A3 key-disambiguation proposal queued after landing, [USER 2026-10-04] agreed to items 1-4).
+The shared switch's lem and `deps/lem-pinned` were moved to `4e70bb5` ([USER 2026-10-04] approved items 1 and 2), after
 notifying the SC and cerberus-sl sessions; nothing was running on the switch.
 
 ## Full ladder on `31732f750` (clean tree, switch lem `4e70bb5`), 2026-10-04T18:43:10Z–20:33:23Z — verbatim

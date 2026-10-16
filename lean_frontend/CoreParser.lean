@@ -100,7 +100,7 @@ inductive NumLit where
     wrongly: `3.40282347e+38` is FLT_MAX's 9-digit source spelling and round-trips.) Registered, not
     fixed ([USER 2026-09-30] option (3)): scripts/check_libc_float_literals.py pins every float
     literal of the dump to a reviewed register. No special printing mode for the dump ([USER
-    2026-09-30]: no "magic mode" fixes); movers: a round-tripping Core printer everywhere, or
+    2026-09-30]: no special-case fixes that work only for the dump); movers: a round-tripping Core printer everywhere, or
     building libc from its C sources instead of a text dump (TODO.md). -/
 partial def lexNumLit : P NumLit := do
   let neg ← match ← peek? with

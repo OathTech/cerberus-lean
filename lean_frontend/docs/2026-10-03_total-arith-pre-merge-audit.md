@@ -3,9 +3,9 @@
 Range `621caf996..34fab1dd0` (5 commits) on `fix/total-arith-and-bookkeeping`;
 slice record `docs/2026-10-03_total-arith-and-bookkeeping-record.md`.
 Auditor: [AGENT] Claude, a fresh reviewer with no part in the slice, working on
-branch `audit/total-arith-20261003`. Scope, verbatim, [USER 2026-10-03] "(3) go
-ahead", on: "a fresh reviewer of the five commits for mirror fidelity, register
-correctness, and the sweep's unreachable claims".
+branch `audit/total-arith-20261003`. Scope: [USER 2026-10-03] approved item (3), a
+fresh reviewer of the five commits for mirror fidelity, register correctness,
+and the sweep's unreachable claims.
 
 Upstream cites are to `deps/cerberus-upstream` @ `b9aeedcb4` unless marked
 "fork". Probes ran with the slice worktree's built binaries: the oracle with
@@ -35,7 +35,7 @@ fail-closed side in either reading.
 ### F1 (MEDIUM, operator classification): the `Z.Overflow` stops have not been classified under the 2026-10-03 synthesis
 
 The slice was written before the synthesis ruling. Its §2.3 O-3 raised the
-tension as open. The ruling [USER 2026-10-03] "(1) agree" now gives the test.
+tension as open. The ruling [USER 2026-10-03] agreeing with item (1) now gives the test.
 Where upstream's own semantics defines the answer and only OCaml machinery
 crashes on the way, Lean computes it (R3). Otherwise Lean stops loudly.
 
@@ -92,8 +92,8 @@ to "the reachable ones (record §2.2 lists the rest and why)".
 
 ### F3 (LOW, must change with the ruling): R6 is still marked PROPOSED
 
-The operator has since ruled `floatMul` [USER 2026-10-03] "yes this is the
-canonical 'obviously a mistake, no semantic ambiguity, just fix'". These places
+The operator has since ruled `floatMul` [USER 2026-10-03] the canonical case
+of an obvious mistake with no semantic ambiguity, to be fixed. These places
 must change:
 
 - `lean_frontend/CerbFloat.lean:41`: "ISO-fix register R6 — PROPOSED, awaiting
@@ -103,7 +103,7 @@ must change:
 - `lean_frontend/VALIDATION.md:289`:
   - the row label "**R6** (PROPOSED)";
   - the status cell "**PROPOSED [AGENT] 2026-10-03, NOT ADMITTED** … the
-    alternative is to mirror `(+.)`" (record the verbatim ruling instead).
+    alternative is to mirror `(+.)`" (record the ruling instead).
 - `lean_frontend/VALIDATION.md:295`: "and the PROPOSED R6".
 - `lean_frontend/VALIDATION.md:455`: "(R1, R2, R3, R5; R6 proposed, not
   admitted)".
@@ -314,6 +314,6 @@ was reached.
 
 ## Provenance
 
-All findings and classifications here are [AGENT] (this auditor). The quoted
-rulings are [USER 2026-10-03] as given in the audit brief. Probe scratch lived
+All findings and classifications here are [AGENT] (this auditor). The
+rulings cited are [USER 2026-10-03] as given in the audit brief. Probe scratch lived
 in this worktree's `.tmp/` and was deleted before the commit.

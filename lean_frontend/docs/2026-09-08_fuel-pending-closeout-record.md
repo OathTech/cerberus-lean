@@ -9,9 +9,9 @@ lem-lean, `deps/` and refined-cerberus untouched; the fence (`CerbMem.lean`,
 quoted line is verbatim from this worktree's logs (`.tmp/closeout/`, ephemeral); tallies
 marked derived are derived. Decisions carry [USER]/[AGENT] provenance.
 
-## 0. The ruling, verbatim
+## 0. The ruling, paraphrased
 
-[USER 2026-09-07]: "create a branch and send a worker to do option C" — option C of the
+[USER 2026-09-07] directed that a branch be created and a worker sent to do option C — option C of the
 pure-failure reachability census (`docs/2026-09-07_pure-failure-reachability-census.md`
 §Q6: status quo + register; close the three always-on-path sentinels by the one-iteration
 measure; keep the F1 probe suite as a tripwire). The parked twin design
@@ -269,7 +269,7 @@ reads 15–37.
   values the logical property over oracle conformance.
 - **Register reviewer fields**: the three new `fuel_hypotheses.txt` rows carry `[AGENT
   worker 2026-09-08]; reviewer/operator sign-off pending` — the pre-merge audit signs them
-  (the C4 pattern); the operator's merge "yes" is the final signature.
+  (the C4 pattern); the operator's merge approval is the final signature.
 - **17 UNKNOWN sites** of the census stay UNKNOWN in the register (with their needs); the
   register is the place they move when a witness or an invariant arrives.
 

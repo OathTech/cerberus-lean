@@ -1,8 +1,8 @@
 # SC MVP scope: deliver the semantics; defer Iris integration
 
-Date: 2026-09-25. [USER] after the independent re-review:
-
-> we do not try to land an Iris integration, but instead focus on an MVP which just builds a coherent and correct SC model
+Date: 2026-09-25. [USER] after the independent re-review ruled that no Iris
+integration is attempted; the focus is an MVP that just builds a coherent and
+correct SC model.
 
 This direction adopts RR1 of the [re-review](2026-09-25_sc-concurrency-plan-rereview.md)
 at `8391bf19e894550e08b9a998cbd46f3c8afdc753`, which reviewed

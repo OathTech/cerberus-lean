@@ -5,8 +5,8 @@ the actual design pass after reading it. Branch `docs/stop-paths-inventory-20261
 Author: the inventory agent [AGENT]. No build, lake, dune, make, opam or release.py was run; the oracle was not
 executed. Every claim is tagged **[AGENT]** (this agent's reading or judgement) or **MEASURED** (a read-only
 command run in this pass, listed with its verbatim output in §8; cells that cite a register row, a baseline row or a
-grep count are MEASURED). The only [USER] quotes are the ones the brief supplied and the ones already in committed
-docs, quoted verbatim with their source. This worktree carries no `lean_frontend/generated/` tree, so generated-tree
+grep count are MEASURED). The only [USER] rulings cited are the ones the brief supplied and the ones already in committed
+docs, each with its source. This worktree carries no `lean_frontend/generated/` tree, so generated-tree
 sites are taken from the sealed register `scripts/failure_reach_register.txt` (the gate's own inventory), not from
 a grep of generated text.
 
@@ -46,32 +46,32 @@ a grep of generated text.
   the sites). §6.
 - **Open questions:** 12, each with a recommendation. §7.
 
-## 1. Rules this note respects (verbatim)
+## 1. Rules this note respects
 
-- **No innovation versus upstream**, [USER 2026-10-03] (as quoted in `docs/2026-10-04_pnvi-ae-udi-design.md` §1.1):
-  "Generally, our rule is that we don't innovate wrt Cerberus-upstream, unless something is very very very obviously a
-  bug. We're poorly placed to resolve semantic discrepancies, so we don't. ... we should fall back to loudly rejecting
-  (either as unsupported, or matching upstream)." Also: "We do not resolve Cerberus TODO cases unless the answer is
-  extremely obvious or if there's a similarly obvious bug …". Both sanctioned shapes — mirror the crash, or refuse
+- **No innovation versus upstream**, [USER 2026-10-03] (as recorded in `docs/2026-10-04_pnvi-ae-udi-design.md` §1.1):
+  the fork does not innovate with respect to Cerberus upstream unless something is very obviously a bug; it is
+  poorly placed to resolve semantic discrepancies, so it does not, and falls back to loudly rejecting (either as
+  unsupported, or matching upstream). Also: Cerberus TODO cases are not resolved unless the answer is extremely
+  obvious or there is a similarly obvious bug. Both sanctioned shapes — mirror the crash, or refuse
   as unsupported — appear in the inventory; this note never proposes a third behaviour for a defined arm.
-- **No magic modes**, [USER 2026-09-30] (same source §1.1): "… we should not fix deviations with special 'magic mode'
-  paths that work exclusively in one situation …". Applied: no option below proposes a stop that fires only under one
+- **No magic modes**, [USER 2026-09-30] (same source §1.1): deviations are not fixed with special magic-mode paths
+  that work only in one situation. Applied: no option below proposes a stop that fires only under one
   caller or one flag.
-- **The PNVI rulings this note is downstream of**, [USER 2026-10-05], design §1.4: "Re PNVI - agree on your recs
-  except for mirroring crashes / obviously wrong behavior. These should be refusals surely?"; and design §H, verbatim:
-  "1 - agree. 2 - I think in the end we should make this consistent, but it's fairly minor. 3 - if we do (b) it should
-  be a global policy. I don't think it necessarily needs to be a refusal, but it shouldn't be an uncontrolled crash.
-  And for now (a) is fine". (a) = the CerbFS shape (`failwithI "… refused — …"`, exit 134 under
+- **The PNVI rulings this note is downstream of**, [USER 2026-10-05], design §1.4: the recommendations accepted
+  except for mirroring crashes and obviously wrong behaviour, which should be refusals; and design §H: item 1
+  agreed; item 2 should in the end be made consistent, but is fairly minor; for item 3, if (b) is done it should be
+  a global policy, which need not be a refusal as such but must not be an uncontrolled crash, and (a) is fine for
+  now. (a) = the CerbFS shape (`failwithI "… refused — …"`, exit 134 under
   `LEAN_ABORT_ON_PANIC`); (b) = a dedicated controlled outcome.
 - **The consumer's relied-on items** (VALIDATION §3b, the consumer's statement of 2026-10-03; MEASURED in §5.4):
   the run outcomes `CerbND.runNDFuel`, `.Killed st CerbND.fuelExhaustedKill`, `Interface.oomOutcome = DErr_memory`;
   the address-space-top parameter; the run digest; the enum reader; the fail-closed arity matcher. None may change
   without cerberus-sl's agreement.
-- **Gates**, [USER 2026-10-07] (`docs/2026-10-05_pnvi-s1-switch-parameter-record.md` §14, verbatim): "This sounds
-  like a classic case of 'gate cruft' - we don't want our gates to be adversarially robust unless they are trust
-  surfaces. Can you revisit and figure out what is actually proportionate?" Applied: nothing below proposes a new
+- **Gates**, [USER 2026-10-07] (`docs/2026-10-05_pnvi-s1-switch-parameter-record.md` §14): a classic case of gate
+  cruft; gates are not to be adversarially robust unless they are trust surfaces; revisit for what is actually
+  proportionate. Applied: nothing below proposes a new
   gate; the one lane whose behaviour an option moves is a TRUST SURFACE (row 14, `test_pnvi.sh`) and is named.
-- **The contract**, CONTRACT §1 (adopted [USER 2026-09-28] "D1 agree"): an execution ends in exactly one of (1) the
+- **The contract**, CONTRACT §1 (adopted [USER 2026-09-28], D1 agreed): an execution ends in exactly one of (1) the
   oracle's verdict, (2) "A loud refusal — a nonzero exit and a message that names the unsupported feature and the
   boundary it belongs to", (3) a resource outcome, (4) a registered deviation. "There is no fifth outcome." Every
   kind in §4 is placed against this list.
@@ -83,13 +83,13 @@ chapter of an arc that has a design, a review, a prototype and a plan.
 
 | Date | Record | What it settled | Status today |
 |---|---|---|---|
-| 2026-09-03 | `docs/2026-09-03_typed-failure-outcomes-ruling.md` | [USER 2026-09-03] "we should structure this so that *consumers* of the semantics get the property we care about, i.e conformance to the ocaml oracle. This means we should fail-closed into the correct behavior." A failure site must denote a distinguished outcome, never a default value. Interim rule: mirror one-sided oracle crashes as a panic with the OCaml text. | ruling stands |
-| 2026-09-05 | `docs/2026-09-05_typed-failure-outcomes-design.md` R0/R1 | [USER 2026-09-05] "Decision 4: yes agree, this seems the lowest risk approach": MONADIC sites first through their monads' kill channel; PURE sites = hygiene + a sealed register + gate (interim). | R1 applied |
+| 2026-09-03 | `docs/2026-09-03_typed-failure-outcomes-ruling.md` | [USER 2026-09-03] ruled that the structure should give consumers of the semantics the property that matters, conformance to the OCaml oracle, hence fail-closed into the correct behaviour. A failure site must denote a distinguished outcome, never a default value. Interim rule: mirror one-sided oracle crashes as a panic with the OCaml text. | ruling stands |
+| 2026-09-05 | `docs/2026-09-05_typed-failure-outcomes-design.md` R0/R1 | [USER 2026-09-05] agreed with decision 4 as the lowest-risk approach: MONADIC sites first through their monads' kill channel; PURE sites = hygiene + a sealed register + gate (interim). | R1 applied |
 | 2026-09-07 | `docs/2026-09-07_pure-failure-reachability-census.md`, `…correspondence-design.md` | Census option C (status quo + register); the twin design PARKED with named flip conditions (a DISCARDABLE reachable site; a REACHABLE step-level site where the oracle succeeds; growth of the well-typed-reachable set beyond 4; a ruling valuing the logical property over oracle conformance). | parked; register = the tripwire |
 | 2026-09-08 | `docs/2026-09-08_monadic-failstop-record.md` (C-TF1) | Seven `memM` `panic!` arms → `CerbFail.failStopMem` = `kill (Error0 modelFailStopLoc msg)`; batch record `ModelFailure {msg}` exit 1; codec `MODEL_FAILURE` → CRASH class. | LANDED |
-| 2026-09-16 | `docs/2026-09-16_structural-outcome-constructors-design.md` (D2 R0) | B′ (constructors on the `Loc` mirror type) WITHDRAWN — [USER 2026-09-16] "I'm a bit wary of 'epicycles' … revisit the overall design and orientation wrt the oracle". | SUPERSEDED |
-| 2026-09-16 | `docs/2026-09-16_lean-only-outcomes-scoping-note.md` R0+R1, `…review-response.md`, `…implementation-plan.md` R0+R1, `…S0-checkpoint-record.md` | Recommendation **B**: `Stopped of interp_stop` on BOTH shared outcome types (`kill_reason`, `Undefined.t`), `interp_stop = Exhausted \| FailStop of string \| Unsupported of unsupported_feature * string`; "A third opaque atom would make three unprovably-distinct `Error0`s" (D2 R0 §1 item 3); the codec's `refusal(prefix)` / `model refused: ` text convention named as the thing to replace. [USER 2026-09-16] "Great, land the docs branch, and run the slice" → S0 prototype run (`arc/lean-only-outcomes-S0` @ `8f8c4dfe7`, unmerged by design). Plan R1: WP-O (pristine-oracle instrument, [USER 2026-09-16] "add … before we execute on further work") → WP0 (lem-lean `inhabited_exclude`) → S1-pre → WP1 → **WP2 refusals**. Consumer cost measured in S0: 12 constructor-match blocks + 1 literal + 18 alias uses (then refined-cerberus; cerberus-sl recounted in §5.4 below). | docs LANDED; WP-O/WP0/WP1/WP2 QUEUED, none executed (MEASURED: `interp_stop`, `Stopped`, `KillKind`, `CerbRefuse` absent from `lean_frontend/*.lean`, `frontend/model/*.lem`, `scripts/`); listed as queued item 2 in `docs/2026-09-19_concurrency-pause-note.md` §4 |
-| 2026-09-30 | memory `queued-failure-monad-arc` ([USER 2026-09-30] "D1: agree") | The lem Lean backend should eventually emit fallible functions in an error monad (effect analysis), replacing the temporary `lemSeq` seam — the only route by which PURE failure sites gain a typed outcome. | QUEUED; needs its own design pass |
+| 2026-09-16 | `docs/2026-09-16_structural-outcome-constructors-design.md` (D2 R0) | B′ (constructors on the `Loc` mirror type) WITHDRAWN — [USER 2026-09-16] expressed wariness of epicycles and asked for the overall design and orientation with respect to the oracle to be revisited. | SUPERSEDED |
+| 2026-09-16 | `docs/2026-09-16_lean-only-outcomes-scoping-note.md` R0+R1, `…review-response.md`, `…implementation-plan.md` R0+R1, `…S0-checkpoint-record.md` | Recommendation **B**: `Stopped of interp_stop` on BOTH shared outcome types (`kill_reason`, `Undefined.t`), `interp_stop = Exhausted \| FailStop of string \| Unsupported of unsupported_feature * string`; "A third opaque atom would make three unprovably-distinct `Error0`s" (D2 R0 §1 item 3); the codec's `refusal(prefix)` / `model refused: ` text convention named as the thing to replace. [USER 2026-09-16] approved landing the docs branch and running the slice → S0 prototype run (`arc/lean-only-outcomes-S0` @ `8f8c4dfe7`, unmerged by design). Plan R1: WP-O (pristine-oracle instrument, [USER 2026-09-16] directed that it be added before further work is executed) → WP0 (lem-lean `inhabited_exclude`) → S1-pre → WP1 → **WP2 refusals**. Consumer cost measured in S0: 12 constructor-match blocks + 1 literal + 18 alias uses (then refined-cerberus; cerberus-sl recounted in §5.4 below). | docs LANDED; WP-O/WP0/WP1/WP2 QUEUED, none executed (MEASURED: `interp_stop`, `Stopped`, `KillKind`, `CerbRefuse` absent from `lean_frontend/*.lean`, `frontend/model/*.lem`, `scripts/`); listed as queued item 2 in `docs/2026-09-19_concurrency-pause-note.md` §4 |
+| 2026-09-30 | memory `queued-failure-monad-arc` ([USER 2026-09-30] agreed to D1) | The lem Lean backend should eventually emit fallible functions in an error monad (effect analysis), replacing the temporary `lemSeq` seam — the only route by which PURE failure sites gain a typed outcome. | QUEUED; needs its own design pass |
 | 2026-10-05/07 | design §G/§H, S3/S4 records | PNVI-path (A)/(B)/(C) → refusals in shape (a) (`pnviRefusal`, `pnviRefuseM`); default path untouched; §H ruling 2 and 3 → this note's Q-A and Q-B. | LANDED (S4) |
 
 Consequence [AGENT]: the "dedicated controlled outcome" of §H ruling 3 already has a designed, reviewed and
@@ -233,7 +233,7 @@ should be 1 …)" — mirrored, `CerbMem.lean` in-code), `:1128-1131` (`typeof` 
 checking all the elements would be stupidly slow", mirrored at `CerbMem.lean:1518`), and the type-level `:307`
 (`(* TODO: hack hack hack ==> OCaml's float are 64bits *)` — Lean's `Float` is binary64 too; nothing to decide).
 Proposed treatment [AGENT]: MIRROR all ten, as §H ruled for the PNVI (D) sites and as [USER 2026-10-03] requires
-("We do not resolve Cerberus TODO cases unless the answer is extremely obvious").
+(TODO cases are not resolved unless the answer is extremely obvious).
 
 ### 3.7 The generated tree — (A) by construction (128 register rows; MEASURED tally)
 
@@ -288,18 +288,18 @@ model bug ×1 (tray candidate), harness boundary ×1, libc-boundary/unspecified-
 
 ### 3.10 Proposed classification and treatment, per class [AGENT] — proposals, not decisions
 
-Reading of §H ruling 2 ("make this consistent"): apply the §G.0 rule to the default path — (A) → a loud refusal
+Reading of §H ruling 2 (eventual consistency): apply the §G.0 rule to the default path — (A) → a loud refusal
 NAMED as such; (B) → refuse; (C) → refuse when reached; (D) → mirror — UNLESS doing so would (i) stop a SUPPORTED
 surface where the oracle answers (the §G R15 lesson: "a refusal here would stop pKVM"), or (ii) mislabel an upstream
-BUG as an unsupported feature (the no-innovation rule's "either as unsupported, or matching upstream" names two
-honest labels; "unsupported" for a bug is neither).
+BUG as an unsupported feature (the no-innovation rule names two honest labels, unsupported or matching upstream;
+"unsupported" for a bug is neither).
 
 | Class | Sites | Proposed treatment [AGENT] | Observable effect under shape (a) | Lane movement (MEASURED where stated) |
 |---|---|---|---|---|
 | (A) REACHABLE both-crash where the oracle's crash is a plausible model limit (`casePtrval` device, `arrayShift` null TODO-failwith, `integerRem_t`, `truncToInt`, `CerbDecode`, `memcmp` byte) | 6 | **REFUSE-TEXT**: keep the mechanism, replace the bare OCaml text with the shared refusal grammar carrying the OCaml text as detail (`kind = upstream-crash`) | exit code and class unchanged (134 / `ModelFailure` exit 1); message changes | immaculate `MATCH \| L=CRASH` rows compare the crash CLASS, not the text (codec `--policy immaculate`; VALIDATION §1(a) "the coarse crash policy") → no movement; `gcc_oracle` `SKIP_LEAN_CRASH` is a status token → no movement; `tests/pnvi_lane/baseline.txt` pins the LEAN-side hash on `BOTH_FAIL` rows ("Lean side hash-pinned too") — `tests/minimal` runs under the switch there, so `097-null-ptr-arith` MOVES (one re-baseline on the trust-surface lane, row 14) |
 | (A) REACHABLE both-crash where the register calls the oracle WRONG or the input LEGAL (`bswap64` tray 12; `offsetof-union-member` "model bug (upstream asymmetry, tray candidate)"; `funptr_reload` implementation-defined, no UB) | 3 | **REFUSE-TEXT with `kind = upstream-crash-believed-wrong(tray n)`** — never "unsupported"; each needs a tray draft if it has none | as above | as above |
 | (A) UNKNOWN / UNREVIEWED (`:1461`, `:1976`, `:1999`, `lookupEnum`; the 6 monadic incl. R-PNVI-09) | 10 | **REFUSE-TEXT**, same grammar; for the monadic six the message is the only change (they already are typed kills) | none observable (no witness) | none |
-| (A) UNREACHABLE-BY-INVARIANT | 59 | **REFUSE-TEXT for uniformity** (the operator's "consistent"), OR leave verbatim — a dead arm's text is unobservable; the register row's invariant is the truth either way | none | none; BUT every converted row's 60-char `msg` KEY changes → the register must be re-sealed (`check_failure_reach.py --reseal`), one commit, classes unchanged (§7 Q10) |
+| (A) UNREACHABLE-BY-INVARIANT | 59 | **REFUSE-TEXT for uniformity** (the operator's consistency direction), OR leave verbatim — a dead arm's text is unobservable; the register row's invariant is the truth either way | none | none; BUT every converted row's 60-char `msg` KEY changes → the register must be re-sealed (`check_failure_reach.py --reseal`), one commit, classes unchanged (§7 Q10) |
 | (B) `:1141` print-then-`assert false` | 1 | treat as (A): REFUSE-TEXT (the print is tool stdout; the crash is the behaviour) | none (UNKNOWN reach) | none |
 | (B) `:1716` print-then-`fail MerrOther` (= R16's shape) | 1 | **operator's reading needed (§7 Q4)**: REFUSE for strict consistency with R-PNVI-10, or KEEP the kill because it is the oracle's own verdict class and the print is tool noise; zero measured reach either way | if REFUSE: a kill becomes a panic/`Stopped`, class moves Error → refusal on an unreached arm | none |
 | (B) `:734` print-then-UB-verdict | 1 | **KEEP** (a correct verdict; Z2-M-17 measured identical) — propose the (B) rule be read as "print before a crash or an ambiguity kill", not "any print" | none | none |
@@ -326,7 +326,7 @@ Exit codes and streams from `Main.lean` (`:1240-1345`, `:1498-1520`, `:1384-1498
 | 6 | `%f`-of-NaN refusal | `CerbFloat.formatFixed` pure `failwithI` | **134** | stderr `PANIC at …: CerbFloat.formatFixed: refused — printing a NaN with %f …` | coverage lane `UNSUPPORTED` (2 rows; the `.unsupported.c` naming convention carries the expectation) | (2) | no |
 | 7 | Mirrored pure crash (OCaml text) | the 45 + 27 (A) pure sites of §3.1/§3.3, the 128 generated rows | **134** | stderr `PANIC at _private.LemLib.0.failwithIImpl …: <OCaml text or paraphrase>` | immaculate `MATCH \| L=CRASH` when the oracle crashes too (18 rows), codec accepts ONLY the LemLib panic origin (`LEMLIB_FAILWITHI_ORIGIN`; anything else `ProtocolError('unreviewed panic origin')`); `gcc_oracle` `SKIP_LEAN_CRASH` (18); `test_exec` `LEAN_CRASH`/`UNSUPPORTED` keyed on exit ≥128 + first `PANIC` line | (4)(a) when both crash; a BUG otherwise | no |
 | 8 | Typed model fail-stop (C-TF1) | the 7 monadic sites of §3.2 (`failStopKill`/`failStopMem`) | **1** | stdout `ModelFailure {msg: "<OCaml text>"}` (`CerbFail.batchRecord`; `Main` tests `loc == CerbFail.modelFailStopLoc` at runtime) | codec `MODEL_FAILURE` → immaculate `CRASH` token → `L=CRASH` (2 rows); "never semantic agreement" | (4)(a) | generically: `Error0` appears 7× (`liftKill`'s arm, `RoundStore`), `modelFailStopLoc` once in a probe, `failStopKill` 0× |
-| 9 | Fuel exhaustion | `CerbND.runNDFuel` leaf and the ND-typed absorbing workers (kill) / the pure `fuelExhausted(With)` sentinel (panic) | **1** (kill) / **134** (panic) | stdout `Error {msg: "lem: fuel exhausted"}` / stderr `lem: fuel exhausted` | `classify_fuel_outcome` → `FUEL:kill` / `FUEL:panic`, fatal in default mode, never agreement; codec `FUEL_RECORD` → `ProtocolError('fuel exhausted; exploration incomplete')` | (3) resource, [USER 2026-09-03] "fuel is a reasonable exception" | **YES** — `.Killed st CerbND.fuelExhaustedKill` (361 refs) |
+| 9 | Fuel exhaustion | `CerbND.runNDFuel` leaf and the ND-typed absorbing workers (kill) / the pure `fuelExhausted(With)` sentinel (panic) | **1** (kill) / **134** (panic) | stdout `Error {msg: "lem: fuel exhausted"}` / stderr `lem: fuel exhausted` | `classify_fuel_outcome` → `FUEL:kill` / `FUEL:panic`, fatal in default mode, never agreement; codec `FUEL_RECORD` → `ProtocolError('fuel exhausted; exploration incomplete')` | (3) resource, [USER 2026-09-03] accepted fuel as a reasonable exception | **YES** — `.Killed st CerbND.fuelExhaustedKill` (361 refs) |
 | 10 | Allocator out-of-memory kill | `CerbMem.oomKill = Other (MerrOther "Concrete.allocator: failed (out of memory)")` | **1** | stdout `Error {msg: "MerrOther \"Concrete.allocator: failed (out of memory)\""}` — a VERDICT line (mirrors upstream's own failure) | an `Error` verdict; immaculate `zd-ta-alignas-huge-desugar ORACLE_CRASH \| L=ERR:{…out of memory…}` (the oracle crashes on `Z.to_int` where Lean answers OOM) | (1) where both answer; a one-sided row otherwise (registered) | **YES** — `Interface.oomOutcome` (374 refs), `DErr_memory` (11) |
 | 11 | Lean-only config-dead switch kills | the 12 `CerbMem` H2 sites (§3.8) | **1** | stdout `Error {msg: "…: SW_… is set but … is not ported — switches are refused (Z-24)"}` | would be an ordinary `Error` verdict — unattributed; unreachable (CLI refuses) | (2) in intent, verdict-shaped on the wire [AGENT] | no |
 | 12 | Cgroup memory-cap kill | `scripts/capped` (64G default, `CERB_MEM_MAX`) | **137** | stderr `capped: OOM-KILLED …` (`cap_oom.regex`) | `is_cap_kill` → immaculate `KILL` token; `test_exec` oracle-side `CERB_SKIP`; a (b)-VIOLATION if the oracle completes | (3) | no |
@@ -370,7 +370,7 @@ absorb it". Of the 79 default-path (A) mirrors, 72 are pure. So:
   pure group by R1's own terms).
 - **Consumer impact:** none of the five relied-on items changes (MEASURED §5.4: nothing in cerberus-sl names a
   refusal, `fsRefusal`, `pnviRefusal`, `failStopMem` or `LEAN_ABORT_ON_PANIC`).
-- **Verdict [AGENT]:** the ruling ("for now (a) is fine"); fine as the MECHANISM; insufficient as a "global policy"
+- **Verdict [AGENT]:** the ruling ((a) is fine for now); fine as the MECHANISM; insufficient as a "global policy"
   because the policy today is four conventions, not one.
 
 ### 5.2 Option 2 — a typed controlled-outcome constructor in the ND/driver outcome type
@@ -381,7 +381,7 @@ Three sub-variants, which prior art has already ranked:
   {msg}` record). Cheapest mechanism; zero consumer signature change (`Error0` passes through `liftKill`
   unchanged). **REJECTED by the adopted doctrine** [AGENT reading]: D2 R0 §1 item 3 — "A third opaque atom would make
   three unprovably-distinct `Error0`s"; the scoping note's P2/P3/P5 (distinct by `noConfusion`, no reserved string, no
-  census + parametricity argument); [USER 2026-09-16] "I'm a bit wary of 'epicycles'". It would also label a
+  census + parametricity argument); [USER 2026-09-16]'s wariness of epicycles. It would also label a
   refusal with a runtime `BEq` on `Loc` that a crafted Cabs JSON `Loc_other` can forge (scoping note §1 item 4). Not
   recommended.
 - **2b — `Stopped of interp_stop` with `Unsupported of unsupported_feature * string`** = the queued plan R1
@@ -392,7 +392,7 @@ Three sub-variants, which prior art has already ranked:
   scripts/gates per the S0 wire addendum, a consumer migration (S0 measured 12 non-exhaustive match blocks + 1
   literal + 18 alias uses against refined-cerberus; cerberus-sl today: `liftKill`'s 3-arm match on `kill_reason`
   (`PrimOutcome.lean:355-358`) and every `rcases`/`match` on `nd_status`/`kill_reason` go non-exhaustive — 21 + 17
-  mentions, §5.4). Sequenced behind WP-O ([USER 2026-09-16] "add … before we execute on further work").
+  mentions, §5.4). Sequenced behind WP-O ([USER 2026-09-16]: WP-O before further work is executed).
   **This is the designed answer to §H ruling 3's "(b)"; it needs no new design here, only its slot.**
 - **2c — pure sites too** (the parked twin, or the lem failure-monad arc [USER 2026-09-30]). The only route to a
   single mechanism for ALL stops. Changes the TYPE of every fallible pure function (`sizeofCtype`,
@@ -412,7 +412,7 @@ Three sub-variants, which prior art has already ranked:
   token that `test_immaculate.sh`, `test_exec.sh`, `pnvi_lane.py` and the coverage lane consume (so `L=CRASH` splits
   into `L=CRASH` / `L=FAILSTOP` / `L=REFUSAL` — `TODO.md` item (c)'s renaming, now with a reason); the CLI's exit-2
   path adopts the same grammar and the 5 usage-error sites (kind 2) join it; `Main` cannot intercept a panic, so
-  exit 134 STAYS for pure sites (the ruling tolerates it: "for now (a) is fine").
+  exit 134 STAYS for pure sites (the ruling tolerates it: (a) is fine for now).
 - **Cost:** text edits at ~37 existing refusal sites + the Q-A conversions, one helper per channel, one codec
   function, three lane consumers, the immaculate re-record with label changes only (classes unchanged), the pnvi
   lane's `REFUSAL_PREFIX` moved onto the shared grammar (its `R-PNVI-nn` ids stay as the `detail`), the register
@@ -459,7 +459,7 @@ at pure refusals until 2c.
   through the helper. Converting Q-A sites first in today's three ad-hoc prefixes would touch ~79 strings twice.
   The Q-B MECHANISM (2b) can follow at any time without touching a Q-A site: it changes the helper's body.
 - **Should the sweep wait for 2b itself?** No [AGENT]: 2b is behind WP-O and WP0 (two repos, the pin dance); the
-  operator called Q-A "fairly minor"; under the helper the sweep is text-only and 2b-compatible by construction.
+  operator rated Q-A a minor item; under the helper the sweep is text-only and 2b-compatible by construction.
   Waiting would leave the default path inconsistent with the PNVI path for the whole WP-O/WP0 interval for no
   saving.
 - **What the sweep must NOT do** (both questions): convert a (C)/(D) defined arm that a supported surface takes
@@ -530,5 +530,5 @@ at `c4284b08f` (and read-only in `/home/dev/projects/cerberus-sl` at `6e360da`, 
 - C9 wire shapes: `Main.lean:1240-1345` (batch printer, exit policy `| [(.Active _, _, _)] => return 0 | [(.Killed _ _, _, _)] => return 1 | _ => return 0`), `:1512-1516` (`LEAN_ABORT_ON_PANIC` guard, exit 2), `grep -c 'cerberus-lean: refused' lean_frontend/Main.lean` → 12, `IO.Process.exit 1` sites `:1495, 1612, 1677, 1689, 1695`; `CerbFail.lean` (`failStopKill`, `failStopND`, `batchRecord "ModelFailure {msg: …}"`); `CerbND.lean:98-123`; `scripts/fuel_classify.sh` (`FUEL_KILL_BATCH_LINE='Error {msg: "lem: fuel exhausted"}'`, `FUEL_PANIC_LINE='lem: fuel exhausted'`); `scripts/observations.py:48-59, 68-86, 195-230, 282, 333, 376` (`MODEL_FAILURE`, `FATAL`, `FUEL_RECORD`, `CAP_OOM`, `LEAN_PANIC`, `LEMLIB_FAILWITHI_ORIGIN = b'_private.LemLib.0.failwithIImpl'`, `IMMACULATE_PANICS = set()`, `refusal(prefix)`, `--refusal-prefix 'model refused: '`); `grep -rn -F 'model refused' scripts tests lean_frontend` → `scripts/test_observation_lanes.py:70` plus three docs; `scripts/pnvi_lane.py:94-95, 134-135` (`REFUSAL_PREFIX`, `REFUSAL_ID`, `CLI_REFUSAL` on exit 2 + `cerberus-lean: refused — `); `scripts/test_exec.sh:37-38, 97-99, 604-664`; `scripts/test_immaculate.sh:95-120`; `scripts/common.sh:436-446` (`is_cap_kill`), `scripts/cap_oom.regex` = `^capped: (OOM-KILLED|OOM event recorded in cgroup)([ (]|$)`; `scripts/check_cli_refusals.sh:21-27`; `scripts/check_asm_refusal.sh:15-23`; `lem-lean/lean-lib/LemLib.lean:210-236` (`@[implemented_by failwithIImpl, never_extract] opaque failwithI {α} [Inhabited α] (msg : String) : α := default`).
 - C10 prior-art status: `grep -rn -E 'KillKind|CerbRefuse|Loc\.refusal|refusalKill|kindOf' lean_frontend/*.lean scripts/*.sh scripts/*.py` → none; `git branch -a | grep -i lean-only` → `arc/lean-only-outcomes-S0`, `docs/lean-only-outcomes-S0-record`, `docs/lean-only-outcomes-plan-review`, `docs/d2-structural-outcomes-response`; `git tag | grep park` → `park/effect-spike-content-landed`, `park/reasoning-era-20260831`, `park/spike-relsem-20260819` (no park tag for the outcomes arc); the records read: `docs/2026-09-03_typed-failure-outcomes-ruling.md`, `2026-09-05_typed-failure-outcomes-design.md` (§2.1, §2.5, §5, R1), `2026-09-07_pure-failure-correspondence-design.md` (§0-1), `2026-09-07_pure-failure-reachability-census.md` (Q3, §recommendation), `2026-09-08_monadic-failstop-record.md`, `2026-09-16_structural-outcome-constructors-design.md` (§0-2), `2026-09-16_lean-only-outcomes-scoping-note.md` (§0-4, §7, landing line), `2026-09-16_lean-only-outcomes-implementation-plan.md` (§1-3, R1.8-R1.10), `2026-09-16_lean-only-outcomes-S0-checkpoint-record.md` (§0), `2026-09-19_concurrency-pause-note.md` (§4 item 2), `2026-09-28_cerbfs-refuse-all-record.md`, `2026-10-04_pnvi-ae-udi-design.md` (§0, §1, §F, §G, §H), `2026-10-05_pnvi-s1-switch-parameter-record.md` (§14), `CONTRACT.md` (§1-5), `VALIDATION.md` (§1, §3 PNVI paragraph, §3b), `SUPPORTED.md`, `TODO.md:424-440`, `scripts/LADDER.md` rows 1 and 14.
 
-[USER] provenance: only the quotations in §1 and §2, each with its committed source. Everything else here is
+[USER] provenance: only the rulings cited in §1 and §2, each with its committed source. Everything else here is
 [AGENT] or MEASURED as marked. Nothing was decided; nothing was built, pushed or merged.

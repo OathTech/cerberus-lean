@@ -434,8 +434,8 @@ if ! "$CABS_UTF8_SH" --selftest; then
     exit 1
 fi
 
-# Inline-assembly refusal witnesses (2026-10-05, [USER 2026-10-05] "Re inline
-# asm, this should be a loud refusal"; record
+# Inline-assembly refusal witnesses (2026-10-05, [USER 2026-10-05] ruled that
+# inline asm is a loud refusal; record
 # docs/2026-10-05_asm-refusal-record.md): asm statements (basic, extended,
 # asm goto) are refused by the shared desugarer in BOTH engines with the
 # attributed message; asm labels on declarators are refused by the shared

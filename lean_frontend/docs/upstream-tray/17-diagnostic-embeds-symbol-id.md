@@ -2,8 +2,8 @@
 
 **Classification: TRUE BUG (minor, diagnostic-quality / reproducibility)**
 — under the standing project principle ([USER 2026-08-31], the
-effect-retirement Q1b ruling's companion: "the oracle *should not*
-depend on naming, that seems like a defect in itself"), any engine
+effect-retirement Q1b ruling's companion: the oracle should not
+depend on naming, which would itself be a defect), any engine
 output that depends on symbol NUMBERING beyond binding identity is a
 defect class. This is the one such site found by the arc's full-battery
 sweep (registered as finding C1-F2,

@@ -88,12 +88,12 @@ carries an AI-provenance note per the tray's policy. File together with 37.
 
 ## Fork status (2026-10-03) — REVERTED: the fork mirrors upstream's exact-tag guard
 
-[USER 2026-10-03] "Generally, our rule is that we don't innovate wrt Cerberus-upstream, unless
-something is very very very obviously a bug. We're poorly placed to resolve semantic
-discrepancies, so we don't. ... fall back to loudly rejecting (either as unsupported, or matching
-upstream)." and "Agree on your recommendations with that framing (we shouldn't revert work that
-allows the iris reasoning to work properly)", on the recommendation to revert this draft's
-compatibility consult to upstream's loud exact-tag rejection after checking with cerberus-sl.
+[USER 2026-10-03] restated the rule that the fork does not innovate relative to Cerberus upstream
+unless something is very obviously a bug, since the project is poorly placed to resolve semantic
+discrepancies, and that the fallback is to reject loudly (as unsupported, or matching upstream);
+on that framing the operator agreed to the recommendation to revert this draft's compatibility
+consult to upstream's loud exact-tag rejection after checking with cerberus-sl, with the proviso
+that work the iris reasoning depends on is not reverted.
 cerberus-sl answered (orchestrator relay, 2026-10-03) that it does NOT rely on `PEmemberof`
 cross-TU struct compatibility (single-TU only).
 

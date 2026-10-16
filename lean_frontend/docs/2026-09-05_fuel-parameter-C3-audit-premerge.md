@@ -636,9 +636,9 @@ No MAJOR.
 ## 11. Provenance
 
 [AGENT] (this auditor): every reading, derivation, probe, tally and grade
-above. [USER 2026-09-04] "we don't change the lem structure for ocaml",
+above. [USER 2026-09-04] the lem structure is not changed for OCaml,
 [USER 2026-09-03] no magic values / zero Lean-vs-OCaml discrepancies /
-"profile before optimizing", as relayed in the brief and the record §1,
+profile before optimizing, as relayed in the brief and the record §1,
 were the grading frame; no ruling was made or altered here. Nothing
 merged, nothing pushed; the worker's worktree was not edited — the three
 lanes and the probe ran there read-only on its built tree (`SKIP_BUILD=1`;

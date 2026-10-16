@@ -1,8 +1,8 @@
 # Delta review — the M9 fresh-clone fix range (2026-09-25)
 
 [AGENT — independent delta review, Claude Fable subagent, 2026-09-25]. Chartered by the
-orchestrator after [USER 2026-09-25] "Great, agree on the reviewer, agree on the merge, agree on
-M9 exit". Merge authority rests with the operator; this record is input to that decision.
+orchestrator after [USER 2026-09-25] agreed on the reviewer, the merge and the M9 exit.
+Merge authority rests with the operator; this record is input to that decision.
 
 **Range:** `db5e1feb5..088c6e9c5` on `audit/fresh-clone-fix-20260925` (= the orchestrator's
 `docs/public-readiness-pin-citation-fix`, both at `088c6e9c56d5ef7a6bee9264cb0b931229a884ca`):

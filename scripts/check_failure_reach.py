@@ -71,8 +71,8 @@ def msg_key(following, window=MSG_WINDOW):
 
 
 def disambiguate_key_groups(sites):
-    """Key groups (fix/failure-reach-key-groups 2026-10-04, [USER 2026-10-04] "agree 1-4" /
-    "Great, do it as proposed" on the lem re-pin 4e70bb5 pre-merge audit's A3): sites whose
+    """Key groups (fix/failure-reach-key-groups 2026-10-04, [USER 2026-10-04] agreed to items 1-4
+    and to proceeding as proposed on the lem re-pin 4e70bb5 pre-merge audit's A3): sites whose
     60-char key (file/owner/token/msg/scope) coincides are told apart INSIDE THE GROUP ONLY by
     lengthening the message window to the minimum W > 60 at which every site's message differs,
     so a register row's key names ONE site and swapping two rows' classes with their seals is a
@@ -151,7 +151,7 @@ def tally_line(rows):
 HEADER = """# failure_reach_register.txt — THE REGISTER of the pure failure sites (`failwithI`/`panic!`)
 # in the execution dependency closure (fuel-pending close-out 2026-09-08; option C of the
 # pure-failure reachability census, lean_frontend/docs/2026-09-07_pure-failure-reachability-census.md,
-# [USER 2026-09-07] "create a branch and send a worker to do option C"). It is the TRIPWIRE the
+# [USER 2026-09-07] directed a worker on a branch to do option C). It is the TRIPWIRE the
 # parked twin design (docs/2026-09-07_pure-failure-correspondence-design.md) names: a DISCARDABLE
 # site that is REACHABLE would flip that design from parked to live.
 #

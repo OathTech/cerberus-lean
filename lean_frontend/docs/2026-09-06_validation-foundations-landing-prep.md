@@ -6,16 +6,15 @@ verbatim; tallies marked *derived* were computed from the objects named.
 This record is the last commit on the candidate and is docs-only; every gate
 below ran on the commit named next to it.
 
-## 1. The ruling, verbatim [USER 2026-09-06]
+## 1. The ruling [USER 2026-09-06]
 
-> "Agree on all points, and particularly on cleaning up the evidence
-> archives. These should not be git committed, and will not be pushed. I
-> don't actually hold strong value in such data which could be recreated,
-> so I am fine dropping large files like this. The important thing is that
-> runs can be reconstructed. Re ordering of concurrency, I think we should
-> stabilize the core semantics before this, so we should revert to our
-> previous ordering. Re master plan revisions dropping rulings - yes, this
-> should be retained."
+The operator agreed on all points, and particularly on cleaning up the
+evidence archives: they are not to be git-committed and will not be pushed;
+data that could be recreated need not be kept, so dropping large files like
+these is fine, the important thing being that runs can be reconstructed. On
+the ordering of concurrency, the core semantics is stabilized first,
+reverting to the previous ordering. Rulings dropped by master-plan revisions
+must be retained.
 
 ## 2. What the candidate is
 
@@ -69,7 +68,7 @@ blob in that commit is ≥ 1,048,576 bytes. That is 31 files — 22 archives
 398,086,194 bytes. (The brief's "24-file drop set" is the ≥ 1 MiB subset:
 15 archives + the 9 JSON; the seven sub-MiB archives — 564,305 / 654,066 /
 659,838 / 806,150 / 316,706 / 266,601 / 76,653 bytes — fall under the
-archive rule and the operator's "should not be git committed", and the
+archive rule and the operator's ruling that they are not git-committed, and the
 brief itself names the 316,706-byte document-review tarball as dropped.)
 `audit-files.json` (1,045,192 bytes, just under 1 MiB) is kept.
 
@@ -200,9 +199,9 @@ notes there.
 ## 7. Documents (`0dae55102`)
 
 - `2026-09-05_master-plan.md` → Revision 9, 2026-09-06 [AGENT
-  orchestrator-directed]: new §0 "Operator rulings carried verbatim" (the
-  [USER 2026-09-05] audit rulings copied verbatim from the response §3, the
-  [USER 2026-09-06] ruling above, pointers to the rulings already verbatim
+  orchestrator-directed]: new §0 "Operator rulings carried with the plan" (the
+  [USER 2026-09-05] audit rulings from the response §3, the
+  [USER 2026-09-06] ruling above, pointers to the rulings already
   in §1); §3 "Priority order" replaced by the response §4 order, updated for
   what is done, with the concurrency charter at step 8 as a proposal;
   revision 8's factual sections kept; every "revision 3 superseded the

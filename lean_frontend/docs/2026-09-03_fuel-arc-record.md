@@ -7,11 +7,11 @@ Consumer manifest: `docs/2026-09-03_fuel-arc-change-manifest.md`. Worker:
 [AGENT] implementation worker; every decision below is [AGENT] unless
 marked, and every quoted output is verbatim (derived tallies are labelled).
 
-Rulings received during the slice (provenance verbatim, relayed by the
+Rulings received during the slice (provenance as relayed by the
 orchestrator):
 
-- [USER 2026-09-03] "fuel is a reasonable exception because we could
-  always just run the semantics with more fuel." Frame: all Lean-vs-
+- [USER 2026-09-03] ruled fuel a reasonable exception, since the
+  semantics can always be re-run with more fuel. Frame: all Lean-vs-
   oracle execution discrepancies are bugs, with exactly two accepted
   exception classes — (a) failure-path message text may differ (the
   failure-vs-success classification must match), (b) resource limits:

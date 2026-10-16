@@ -204,7 +204,7 @@ def load_register(path):
 # THE diagnostic projection — the one both `matching_failure` and the register's
 # stderr signature use. (1) backend/driver/main.ml's elapsed-time trailer is
 # instrumentation: its exact whole-line grammar is removed. (2) [USER 2026-09-17]
-# ("(2) agree"): inside OCaml backtrace FRAMES only — `Raised at` / `Raised by
+# (agreed, item 2): inside OCaml backtrace FRAMES only — `Raised at` / `Raised by
 # primitive operation at` / `Called from` / `Re-raised at` … `in file "…"[ (inlined)],
 # line N[-M], characters A-B` — the source positions are normalised to
 # `line N, characters A-B`: generated-code line numbers shift with every .lem
@@ -297,7 +297,7 @@ def compare(left, right, kind, exception=None):
             return 'reviewed_difference', exception['rationale']
         return 'difference', 'reviewed difference pin moved (stale or changed exception); review before changing it'
     # Unregistered cases from here on.
-    # [USER 2026-09-17] ("(1) agree"): BOTH engines exceeded the lane's own bound —
+    # [USER 2026-09-17] (agreed, item 1): BOTH engines exceeded the lane's own bound —
     # the REPORTED class `matching_incomplete`: counted, never agreement, not a
     # failure; no register row is ever written for it. Any ONE-sided timeout
     # stays `incomplete` and fatal exactly as before.

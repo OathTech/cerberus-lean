@@ -82,8 +82,8 @@
   soundness, grandfather containment, fold-v2 completeness plant)
   joined to the charter's mandatory four.
 - **D4 [USER 2026-08-21] — D2 RATIFIED; veto window CLOSED early by
-  the operator.** Verbatim: "yeah, this is fine - leave as is until we
-  fix it." The charter-bar amendment (the verified-sound cabs-json
+  the operator.** The operator accepted the state as is, to be left
+  until fixed. The charter-bar amendment (the verified-sound cabs-json
   export exemption + the grandfathered uri/libc surfaces + the lane
   re-greens) now carries operator authority. The grandfathered state's
   EXPIRY is the RENUMBERING arc — operator-ordered the same day as

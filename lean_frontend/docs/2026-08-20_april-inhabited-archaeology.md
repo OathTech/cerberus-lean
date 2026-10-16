@@ -1,10 +1,10 @@
 # April-2026 [Inhabited]-threading archaeology (read-only worker, 2026-08-20)
 
-Operator question: "we already tried this strategy in April — why didn't it
-work last time, and will it work this time?"
+Operator question: this strategy was already tried in April; why did it not
+work then, and will it work this time?
 
-[USER] Operator recollection (relayed mid-dig): "we built this, it didn't
-work *in cerberus*, then we had to roll it back." CONFIRMED by the record,
+[USER] Operator recollection (relayed mid-dig): it was built, did not
+work in cerberus, and had to be rolled back. CONFIRMED by the record,
 with one locational correction: the build-fail-rollback all happened in
 **lem-lean's tree** (where the cerberus port lived until 2026-04-04 — the
 first cerberus-lean frontend commit `6e151b259` says "Port 28 .lem files from

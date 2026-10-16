@@ -1,7 +1,7 @@
 # PNVI arc S4: the differential lane, the CLI acceptance, plants and docs — slice record (2026-10-07)
 
 Branch `arc/pnvi-ae-udi`. Base: `65db09a04` (S3 + the design's §H.1 addendum). Worker: Claude Opus 5.5
-(agent). Every judgement no operator quote covers is marked [AGENT]. Quoted gate and tool output is verbatim;
+(agent). Every judgement no operator ruling covers is marked [AGENT]. Quoted gate and tool output is verbatim;
 counts marked "derived" are mine. The lem used is the shared `2d3a492` (the pin); no `.lem` file changed.
 
 Commits (in order):
@@ -18,15 +18,14 @@ Commits (in order):
 S4 is the first slice where `PNVI_ae_udi` is user-visible. It is a spec addition (design §E row S4): no
 semantic arm changed (S3 wrote them), only the CLI and the evidence.
 
-## 0. Rulings in force (verbatim) and governing documents
+## 0. Rulings in force and governing documents
 
-- [USER 2026-10-03]: "… we should fall back to loudly rejecting (either as unsupported, or matching upstream)".
-- [USER 2026-09-30]: "… we should not fix deviations with special 'magic mode' paths that work exclusively in
-  one situation. …" (trimmed at both ends, marked `…`; the committed records — design record §1.1, CONTRACT
-  §5 D8 — carry this span).
-- [USER 2026-10-05]: "Re PNVI - agree on your recs except for mirroring crashes / obviously wrong behavior.
-  These should be refusals surely?"
-- [USER 2026-10-07]: "This sounds like a classic case of 'gate cruft' - we don't want our gates to be adversarially robust unless they are trust surfaces …".
+- [USER 2026-10-03]: fall back to loudly rejecting (either as unsupported, or matching upstream).
+- [USER 2026-09-30]: deviations are not fixed with special magic-mode paths that work only in one situation
+  (the committed records — design record §1.1, CONTRACT §5 D8 — carry this ruling).
+- [USER 2026-10-05]: agreed with the PNVI recommendations except for mirroring crashes and obviously wrong
+  behaviour, which should be refusals.
+- [USER 2026-10-07]: a classic case of gate cruft; gates are not to be adversarially robust unless they are trust surfaces.
 - Design record `docs/2026-10-04_pnvi-ae-udi-design.md` §C, §D, §E S4, §F.4/§F.5/§F.6/§F.8/§F.12/§F.13, §G,
   §H, §H.1. S3 record `docs/2026-10-07_pnvi-s3-arms-record.md`. S1 record §14 (gate classes).
 

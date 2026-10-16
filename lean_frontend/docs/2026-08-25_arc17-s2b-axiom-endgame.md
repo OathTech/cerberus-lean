@@ -2,7 +2,7 @@
 
 Worker record, 2026-08-25. Charter:
 `2026-08-24_arc17-automation-framework-charter.md`, slice S2b (the
-[USER 2026-08-24] "resolve the additional axiom uncertainty" slice),
+slice [USER 2026-08-24] asked for, to resolve the remaining axiom uncertainty),
 with the T4 completion folded in per the S2 handoff. Branch
 `automation-framework`; this slice's commits: `ef6624ac2` (the axiom
 deletions + census end state + boundary-opaque gate), `18926043c`

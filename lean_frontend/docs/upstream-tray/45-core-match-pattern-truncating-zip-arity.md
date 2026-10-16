@@ -184,10 +184,10 @@ direction; the filed issue carries an AI-provenance note per the tray's policy.
 
 ## Fork status (2026-09-20) — fix LANDED ahead of upstream (shared body)
 
-[USER 2026-09-16] on the allocator (draft 44), the same "unambiguously wrong" category, verbatim: *"I think
-this is in the 'unambiguously wrong' category where we are allowed to fix ahead of upstream"*; [USER
-2026-09-20, via cerberus-sl `docs/2026-09-20_run-digest-design-response.md` §4 Q5] *"we can ask for this
-immediately"*. Landed on branch `fix/match-pattern-arity` (record
+[USER 2026-09-16] on the allocator (draft 44) placed that defect in the unambiguously wrong category,
+where the fork is allowed to fix ahead of upstream; [USER
+2026-09-20, via cerberus-sl `docs/2026-09-20_run-digest-design-response.md` §4 Q5] ruled that this fix
+could be asked for immediately. Landed on branch `fix/match-pattern-arity` (record
 `lean_frontend/docs/2026-09-20_match-pattern-arity-record.md`, which carries the two lem hunks = the patch
 for upstream): both guards above in `core_aux.lem` and `core_typing.lem` (a fork comment at each site);
 the fuel-measure sufficiency proof of `match_pattern` re-established with its statement unchanged
@@ -347,6 +347,6 @@ runtime/libcore/std.core:686:7: error: this expression is of type 'argument list
 `builtin pwrite (integer, [integer], integer, integer): eff loaded pointer`, `builtin pread (integer, pointer, integer, integer): eff
 loaded pointer` — which matches the call sites and the runtime arms; nothing else changes.
 
-**Fork status:** FIXED ahead of upstream in both stdlib files ([USER 2026-09-23], verbatim: *"Yeah, we shoudl fix and file to
-the tray, per our rule that unambiguous bugs get fixes"*); the fork's `libc.co` now carries four-argument `pread`/`pwrite`
+**Fork status:** FIXED ahead of upstream in both stdlib files ([USER 2026-09-23] ruled that it be fixed and filed to
+the tray, under the rule that unambiguous bugs get fixes); the fork's `libc.co` now carries four-argument `pread`/`pwrite`
 calls; the `tests/libc/libc.core` dump pin (no stdlib text) is unchanged — record §15.2b.

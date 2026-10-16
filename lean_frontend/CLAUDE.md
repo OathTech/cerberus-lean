@@ -1,5 +1,11 @@
 # Cerberus Lean Frontend
 
+Records and commit messages never quote the operator's words verbatim
+([USER 2026-10-16]): a decision is paraphrased in the agent's own words with
+its `[USER date]` / `[AGENT date]` tag, or the words are omitted. Quotes
+present before that date were paraphrased on 2026-10-16; history was not
+rewritten.
+
 Current build/contract reconciliation: 2026-09-25, Cerberus
 `bb487dda7c56981e76d67f53ae16e874cfe5ed61`, Lem
 `67ec5de70e02e280bb348a4ba826696b76116732` (the Lem pin has since moved to `2d3a492758cb23dc4e417f2961983d25b36ce130` by functional re-pins (via `77ad4fa` and `4e70bb5`, both merged; the current pin `2d3a492` itself is PROVISIONAL — the head of the unmerged lem-lean branch `arc/pnvi-switches`, not yet on `mdd/lean-backend`), generated OCaml byte-identical at each: [re-pin record](docs/2026-10-04_lem-repin-4e70bb5-record.md), [PNVI S1 record](docs/2026-10-05_pnvi-s1-switch-parameter-record.md)); measured scope and remaining

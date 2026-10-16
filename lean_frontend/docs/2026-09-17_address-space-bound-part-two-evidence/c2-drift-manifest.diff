@@ -1,7 +1,7 @@
 # diff scripts/fork_drift_manifest.txt (C0 head -> C2)
 0a1,17
 > # address-space-bound part two C2, 2026-09-17 [AGENT]: the address-space TOP becomes a quantified entry parameter
-> # (route A; [USER 2026-09-16] "the semantics should be quantified over such bounds"; charter
+> # (route A; [USER 2026-09-16] ruled that the semantics should be quantified over such bounds; charter
 > # lean_frontend/docs/2026-09-17_charter-address-space-bound-part-two.md; fence extension granted 2026-09-17). GENUINE
 > # shared-model SIGNATURE change, identity at the default: mem.lem `initial_mem_state: integer -> mem_state`; driver.lem
 > # `initial_driver_state_with top …`/`initial_driver_state top …`/`initial_driver_state_given sup top …`;

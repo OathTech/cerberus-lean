@@ -3,11 +3,11 @@
 Branch `arc/lem-repin-77ad4fa` over mainline `55b04e7a4`. Worker [AGENT];
 decisions are [AGENT] unless marked [USER].
 
-- Authorization: [USER 2026-09-30] "Great, go ahead with the merge & repin" (lem-lean `arc/linksem` landed on
+- Authorization: [USER 2026-09-30] approved the merge and re-pin (lem-lean `arc/linksem` landed on
   `mdd/lean-backend` = `77ad4facfc60814a4a3f5d09dc88168ca208b285`, relayed by the orchestrator).
-- Rulings this re-pin depends on, as relayed verbatim in lem-lean `doc/lean-backend/2026-09-28_linksem-findings.md`
-  ("Native seams: boundary rulings (2026-09-30)"): D1 [USER 2026-09-30] "D1: agree"; D2 [USER 2026-09-30] "D2: okay,
-  agreed"; LP4/OM4 [USER 2026-09-30] "Yes, agree on 1-3. Go ahead".
+- Rulings this re-pin depends on, as relayed in lem-lean `doc/lean-backend/2026-09-28_linksem-findings.md`
+  ("Native seams: boundary rulings (2026-09-30)"): D1 [USER 2026-09-30] agreed; D2 [USER 2026-09-30]
+  agreed; LP4/OM4 [USER 2026-09-30] agreed to items 1-3 and approved going ahead.
 - The lem-side record, including what each fix does and why: lem-lean `doc/lean-backend/2026-09-28_linksem-findings.md`,
   `2026-09-30_library-parity-coverage.md`, `TODO.md` item 24. The findings file is named after linksem, the project where
   the bugs surfaced; it has no other bearing on Cerberus.
@@ -93,13 +93,13 @@ All builds used the capped Lean build (32G). They were the OCaml oracle, the `ce
    - the "pinned Lem mainline is c2a68e79 …" parentheticals in `README.md`, `CLAUDE.md`, `SUPPORTED.md`, `TODO.md`
      and `VALIDATION.md`, which now point here.
 
-   Ruling: [USER 2026-09-30] "Great, go ahead with the merge & repin".
+   Ruling: [USER 2026-09-30] approved the merge and re-pin.
 2. **Native boundary: `lemSeqImpl` is TEMPORARY.** It is the `implemented_by` body of the transparent
    `lemSeq a b := b ()`: the kernel and proofs see `b ()`, while at run time `a ()` is forced first (`IO.mkRef` under
    `unsafeBaseIO`), mirroring OCaml's strict `let`. The gap: a failure or non-termination in the discarded `a` is visible
    at run time and invisible to the logic. In Cerberus there are 268 sites:
    all but one are debug `print_debug_pure`/`warn` calls (no-op twins); the exception is `driver2`'s `_non_blocked_th_sts` (`Driver.lean:433`, `driver.lem:1379`), which runs `step_ctx` (four failure sites of UNKNOWN reach) on every driver iteration. Lean's compiler used to drop that work; it now runs as in OCaml (no lane moved; pre-merge audit F1).
-   - Ruling: D1 [USER 2026-09-30] "D1: agree", i.e. D1(a) accepted onto the boundary list as temporary, not permanent.
+   - Ruling: D1 [USER 2026-09-30] agreed, i.e. D1(a) accepted onto the boundary list as temporary, not permanent.
    - Mover: lem-lean TODO item 24, the failure-monad translation, which deletes the seam.
    - `scripts/unsafebaseio_allowlist.txt` gains a survivor row `lemSeqImpl temporal(lem-lean TODO 24: failure-monad
      translation)`, a Q4-class note, and three `PIN` rows (IMPLBY / UNSAFEBASEIO / UNSAFEDECL, COUNT 1). VALIDATION §3

@@ -79,7 +79,7 @@ WP0 on a same-name lem-lean/cerberus-lean worktree pair → lem-lean ff-merge on
 
 ## 8. Provenance
 
-[USER] rulings verbatim in the scoping note §0/R1 and the S0 charter §0 (2026-09-16: "epicycles … revisit the overall design"; "land the docs branch, and run the slice"). Facts: the S0 checkpoint record and its evidence (probes on the production model, both targets, pinned lem `f6542f8`, OCaml 5.4.0, Lean 4.32.2); the first review and its evidence; the scoping note R1's verifications. All recommendations are [AGENT].
+[USER] rulings as recorded in the scoping note §0/R1 and the S0 charter §0 (2026-09-16: the wariness of epicycles and the call to revisit the overall design; the approval to land the docs branch and run the slice). Facts: the S0 checkpoint record and its evidence (probes on the production model, both targets, pinned lem `f6542f8`, OCaml 5.4.0, Lean 4.32.2); the first review and its evidence; the scoping note R1's verifications. All recommendations are [AGENT].
 
 ---
 
@@ -137,7 +137,7 @@ ADD to the fence: `lean_frontend/test/Unit/NDFuelStabilityTest.lean` (restate `o
 
 ## R1.7 NEW — WP-O: the pristine-oracle instrument (FIRST)
 
-[USER 2026-09-16] verbatim: *"Thinking about the changes we're making, I wonder if there's some way to build the upstream cerberus as a separate oracle? right now we have the ocaml-cerberus as an oracle, but we're also changing it. There's some danger there!"* and, after the assessment below: *"let's add improving the upstream oracle as a thing to do before we execute on further work."*
+[USER 2026-09-16] asked, in view of the changes being made, whether the upstream Cerberus could be built as a separate oracle, since the OCaml Cerberus serving as the oracle is itself being changed, which carries some danger; and, after the assessment below, ruled that improving the upstream oracle is added as a task before further work is executed.
 
 **Facts** (orchestrator, 2026-09-16, primary `721b1c2c7`):
 
@@ -155,7 +155,7 @@ ADD to the fence: `lean_frontend/test/Unit/NDFuelStabilityTest.lean` (restate `o
 - **O4 Doctrine** (`VALIDATION.md` §0): pristine upstream is THE reference; fork OCaml is the shared model's mirror twin; the register is the only permitted list of fork≠pristine behaviours; a shared-model slice runs the three-way over the full corpora and may add register rows only with a citation.
 - Out of scope: moving the merge-base (a network-window decision, separate).
 
-Exit: O1–O4 landed; the widened row 10 GREEN with its new register rows; one Fable-subagent charter carrying the standing constraints verbatim (no push; ff-only on per-merge sign-off; the pre-merge audit ASK; capped Lean; [USER 2026-09-08] "nothing new out of policy").
+Exit: O1–O4 landed; the widened row 10 GREEN with its new register rows; one Fable-subagent charter carrying the standing constraints verbatim (no push; ff-only on per-merge sign-off; the pre-merge audit ASK; capped Lean; the [USER 2026-09-08] ban on anything new out of policy).
 
 ## R1.8 Sequencing (R8 amended)
 
@@ -172,7 +172,7 @@ WP-O → WP0 (R1.3 matrix; the two-repo pin dance) → **S1-pre**: the R2 shared
 | R6 | Unchanged — no legacy decoder |
 | R7 | Mirror `liftCore_run`; the consumer's exhaustion-only disjunct retained |
 | R8 | = R1.8, with WP-O FIRST |
-| **R9 (new)** | The WP-O charter — [USER 2026-09-16] "add … before we execute on further work"; the charter text itself needs the operator's word |
+| **R9 (new)** | The WP-O charter — [USER 2026-09-16] ruled it is added before further work is executed; the charter text itself needs the operator's word |
 
 ## R1.10 Open questions after R1
 
@@ -184,4 +184,4 @@ WP-O → WP0 (R1.3 matrix; the two-repo pin dance) → **S1-pre**: the R2 shared
 
 ## R1.11 Provenance
 
-[USER 2026-09-16] quotations verbatim (§R1.7). Facts: the cited files at the revisions named in §R1.0; the review's evidence rerun by the orchestrator (transcript ephemeral). All assessments and recommendations [AGENT].
+[USER 2026-09-16] rulings as recorded (§R1.7). Facts: the cited files at the revisions named in §R1.0; the review's evidence rerun by the orchestrator (transcript ephemeral). All assessments and recommendations [AGENT].

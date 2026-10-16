@@ -2,11 +2,11 @@
 
 **Status:** [USER 2026-09-19] decision, recorded by the orchestrator [AGENT]. This note is the shop-window pointer for everything concurrency-related in this repository until the work resumes.
 
-## 0. The decision (verbatim)
+## 0. The decision
 
-[USER 2026-09-19]: *"Hm, okay. I wonder whether we should pause on concurrency and just get sequential cerberus-lean to the best possible state. It sounds like this needs a rethink and redesign, and we have a backlog our customer needs"* — then, to the orchestrator's proposal (park both branches as the record; land Codex's assessment and this note as docs; record the decision; pick up the sequential backlog in the order of §4): *"Agreed, go ahead"*.
+[USER 2026-09-19]: wondered whether to pause on concurrency and just get sequential cerberus-lean to the best possible state, since the concurrency work seemed to need a rethink and redesign and the customer's backlog was waiting — then, to the orchestrator's proposal (park both branches as the record; land Codex's assessment and this note as docs; record the decision; pick up the sequential backlog in the order of §4): agreed and gave the go-ahead.
 
-Earlier rulings this pauses, not reverses: [USER 2026-09-04] the parametric model with an SC instance first ("the trick would be building it so that we *don't* commit to it as the long term path"); [USER 2026-09-16] "We will eventually need concurrency - the overall north star is the same, i.e Linux system code"; [USER 2026-09-17] the consumer will eventually use one model and "the model with concurrency is in some sense the 'real' model"; [USER 2026-09-17] "Great, I agree with all of this" to the landing scoping note (`2026-09-17_concurrency-landing-scoping-note.md`, erratum `bb09cb745`).
+Earlier rulings this pauses, not reverses: [USER 2026-09-04] the parametric model with an SC instance first (built so as not to commit to it as the long-term path); [USER 2026-09-16] concurrency will eventually be needed, the north star being unchanged, Linux system code; [USER 2026-09-17] the consumer will eventually use one model, and the model with concurrency is in some sense the real model; [USER 2026-09-17] agreement in full with the landing scoping note (`2026-09-17_concurrency-landing-scoping-note.md`, erratum `bb09cb745`).
 
 ## 1. Why (the assessment, verified)
 
@@ -47,4 +47,4 @@ Prerequisites that make Stage 1 simpler if they land first: the program-data par
 
 ## 5. Provenance
 
-[USER] quotations verbatim (§0). Facts: Codex's assessment and its evidence (as received); the orchestrator's reproductions 2026-09-19 (both engines, both models, four programs); `git` measurements at `a8d00feed`. Assessments [AGENT], agreed [USER 2026-09-19].
+[USER] rulings by paraphrase (§0). Facts: Codex's assessment and its evidence (as received); the orchestrator's reproductions 2026-09-19 (both engines, both models, four programs); `git` measurements at `a8d00feed`. Assessments [AGENT], agreed [USER 2026-09-19].

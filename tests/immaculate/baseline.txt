@@ -61,8 +61,8 @@
 # zd-z2m01-* (aligned_alloc(0,·): oracle Division_by_zero at std.core:385 rem_t) are both-crash
 # MATCH | L=CRASH since 2026-10-03 (hand-edited from ORACLE_CRASH | L=UB:DUMMY(align_alloc) on the two
 # (0, 8) rows): Lean's integerRem_t/integerRem_f fail-stop on a zero divisor as zarith raises, under
-# [USER 2026-10-03] "we don't innovate wrt Cerberus-upstream ... fall back to loudly rejecting (either as
-# unsupported, or matching upstream)" (docs/2026-10-03_total-arith-and-bookkeeping-record.md; supersedes
+# [USER 2026-10-03] rule that the fork does not innovate relative to Cerberus upstream and falls back to loudly
+# rejecting (as unsupported, or matching upstream) (docs/2026-10-03_total-arith-and-bookkeeping-record.md; supersedes
 # the 2026-09-03 KIND-2 pending reading and the Z2 record §10.1 recommendation). Z2 probe-integration pins
 # (record §5): zd-z2-free-funptr (Z-07 re-witness, MATCH), zd-z2m03-malloc-oom-msg (MATCH — Lean runs
 # it since Z2-M-04), zd-z2fl03-nan-to-int and zd-z2f04-closedir (both-crash MATCH | L=CRASH pairs).
@@ -70,7 +70,7 @@
 # total-arith sweep pins (2026-10-03, hand-inserted; docs/2026-10-03_total-arith-and-bookkeeping-record.md §2, §7):
 # zd-ta-alignas-huge-{sizeof,union-alignof,desugar} — a front-end-accepted _Alignas(2^62) read through Z.to_int
 # (impl_mem.ml:248/:267, ocaml_implementation.ml:501): oracle Z.Overflow (exit 125). ISO-fix register R7 (the R3
-# class; [USER 2026-10-03] F1 ruling "Yes, I agree with this analysis. Go ahead"): Lean computes upstream's unbounded
+# class; [USER 2026-10-03] F1 ruling agreeing with the analysis and approving the fix): Lean computes upstream's unbounded
 # answer -> ORACLE_CRASH | L=<value> (hand-re-pinned 2026-10-03 from a short-lived both-crash MATCH | L=CRASH pin);
 # zd-ta-alignas-2p61-control (2^61, inside OCaml's int range) MATCH on both.
 #
@@ -117,38 +117,38 @@
 #   state — a loud, feature-attributed CerbFS refusal (class (c) missing feature: SibylFS path
 #   resolution) where the oracle answers. They pin the refusal: a return to a silent Lean value flips
 #   the row. zd-fs-path-plain-control is the served-path MATCH control.
-# 2026-09-28 (contract D2, [USER] "refuse FS for now, this seems safer"): the WHOLE filesystem refuses, so
+# 2026-09-28 (contract D2, [USER] ruled to refuse the filesystem for now as the safer course): the WHOLE filesystem refuses, so
 #   zd-f1-truncate-negative-length (was MATCH Specified(1)), zd-z2f01-lseek-whence (was MATCH Specified(9))
 #   and zd-fs-path-plain-control (was MATCH Specified(3)) are now pinned refusals, DIFF | L=CRASH, like the
 #   two pathleak rows (record docs/2026-09-28_cerbfs-refuse-all-record.md).
-# zd-funptr-* (2026-09-28, contract enforcement, served-surface audit P1-1; [USER] "let's measure, then refuse
-#   if the blast radius isn't too big"): converting a function pointer to an integer is REFUSED (the number is
+# zd-funptr-* (2026-09-28, contract enforcement, served-surface audit P1-1; [USER] directed measuring first, then refusing
+#   if the blast radius is not too big): converting a function pointer to an integer is REFUSED (the number is
 #   the symbol's fresh-supply number, which the engines do not share). int-direct/int-voidptr were the pinned
 #   refusals, DIFF | L=CRASH (SUPERSEDED the same day, see the note below: now N1 DIFF rows); call-control is the served MATCH control (record
 #   docs/2026-09-28_funptr-int-refusal-record.md).
 #   zd-funptr-bytes-deviation / zd-funptr-printf-deviation: the byte and %p channels of the same number,
-#   NAMED-DEVIATION REGISTER N1 (VALIDATION.md §2b; [USER 2026-09-28] "agree with (1). Named deviations are
-#   okay in cases we can't easily resolve the mismatch"). Pinned DIFF with the Lean value; the oracle serves
+#   NAMED-DEVIATION REGISTER N1 (VALIDATION.md §2b; [USER 2026-09-28] agreed to option (1): named deviations are
+#   acceptable where the mismatch cannot easily be resolved). Pinned DIFF with the Lean value; the oracle serves
 #   502 and 0x283 today. A Lean value change, or the engines converging (MATCH), flips the row.
-# 2026-09-28, later ([USER] "agree on atexit as you propose"): the integer-cast refusal broke libc's atexit
+# 2026-09-28, later ([USER] agreed to the proposed atexit handling): the integer-cast refusal broke libc's atexit
 #   (stdlib.c:194-199 round-trips a function pointer through uintptr_t), so it was replaced by N1: int-direct
 #   and int-voidptr are now pinned DIFF with the Lean value (oracle 530), like the bytes/printf rows.
-# zd-any-bounded-int-crash (2026-09-28, contract D4, [USER] "Yeah, (1) is fine"): any_bounded_int is
+# zd-any-bounded-int-crash (2026-09-28, contract D4, [USER] approved option (1)): any_bounded_int is
 #   reachable by declaring the builtin and fails in BOTH engines (core_reduction.lem:1012-1013) — pinned
 #   MATCH | L=CRASH (record docs/2026-09-28_contract-enforcement-builtins-record.md).
 # zd-fs-stdin-read (2026-09-28, test-depth map): reading stdin reaches CerbFS.fs_read and refuses (D2); the
 #   oracle models an empty stdin (EOF, Specified(7), whatever the host feeds it). Pinned DIFF | L=CRASH
 #   (record docs/2026-09-28_test-depth-actions-record.md).
-# zd-nan-bytes-deviation (2026-09-29, pre-merge audit F2; [USER 2026-09-29] "agree on all 3"): NAMED-DEVIATION
+# zd-nan-bytes-deviation (2026-09-29, pre-merge audit F2; [USER 2026-09-29] agreed to all three): NAMED-DEVIATION
 #   REGISTER N2 — Lean's float store canonicalizes NaNs (Float.toBits), so the top byte of a stored inf - inf is
 #   127 on Lean, 255 on the oracle. Pinned DIFF with the Lean value.
-# zd-r2-highbyte / zd-r2-crash-digit9 (2026-09-29, bug hunt K-1; [USER 2026-09-29] "Agree on everything"): ISO-fix
+# zd-r2-highbyte / zd-r2-crash-digit9 (2026-09-29, bug hunt K-1; [USER 2026-09-29] agreed to everything): ISO-fix
 #   register R2's widened scope — the escaped_char/octal round trip corrupts bytes >= 128 (200 -> 128) and crashes
 #   the oracle on a byte whose decimal escape contains a 9 (199). Lean-right; pinned like g5-escape-roundtrip.
 # zd-funptr-libc-conflate (2026-09-29, bug hunt BUG-1): N1's libc-mode identity consequence — the oracle's
 #   number-keyed funptrmap lets g take over __stdout_write (UB041); Lean serves Specified(1). Pinned DIFF; tray 48.
-# zd-invalid-format-utf8-payload (2026-09-30, bug hunt BUG-4; [USER 2026-09-29] "Agree on everything, yes on the
-#   fixes"): the Invalid_format payload is the format string's bytes, printed raw by the oracle (%s,
+# zd-invalid-format-utf8-payload (2026-09-30, bug hunt BUG-4; [USER 2026-09-29] agreed to everything and approved the
+#   fixes): the Invalid_format payload is the format string's bytes, printed raw by the oracle (%s,
 #   driver_ocaml.ml:134-138); Lean UTF-8-encoded each byte-carrier Char >= 0x80 (c3 a9 -> c3 83 c2 a9). Fixed by
 #   Main.printUndefinedLine; the payload bytes here form valid UTF-8 ("caf\xc3\xa9"), so this file stays text.
 #   MATCH (record docs/2026-09-29_bug-hunt-fixes-record.md §S4).

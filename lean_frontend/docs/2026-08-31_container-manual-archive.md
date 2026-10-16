@@ -3,12 +3,12 @@
 **What this is.** The container folder's `CLAUDE.md` (the local set's
 operating manual, ~89KB at archive time), preserved verbatim at the
 CLAUDE.md-hygiene slice that followed the semantics-first separation
-([USER 2026-08-31]: "CLAUDE.md shouldn't be a log of all decisions —
-we want it to be a clean working practices doc. And we want to avoid
-notes in the overall container (which isn't a repo, and is local
-only)."). The container CLAUDE.md was rewritten as a working-practices
+([USER 2026-08-31] ruled that CLAUDE.md must be a clean working-practices
+document rather than a log of every decision, and that the container,
+which is not a repo and is local only, must not accumulate notes). The
+container CLAUDE.md was rewritten as a working-practices
 document; its entire historical content — the arc histories, the
-reasoning-era ACTIVE STATE block, and the verbatim operator rulings —
+reasoning-era ACTIVE STATE block, and the operator rulings —
 moved here wholesale. The reasoning-era rulings in the body below are
 HISTORICAL here: they live operatively on the park branch
 (`arc/segment-ladder`, tag `park/reasoning-era-20260831`) and in
@@ -17,7 +17,7 @@ HISTORICAL here: they live operatively on the park branch
 
 ## Rulings that remain operative for semantics work (extracted)
 
-Full verbatim text for each is in the archived body below (and the
+The full text for each is in the archived body below (and the
 container CLAUDE.md carries them as practices).
 
 - **No machine-global state** — never modify ~/.gitconfig, the opam
@@ -63,20 +63,20 @@ container CLAUDE.md carries them as practices).
 - **Record integrity** — quoted outputs are verbatim; derived tallies
   labeled; [AGENT]/[USER] provenance on decisions; a committed park
   record ends the slice.
-- **The honest-gaps principle** [USER 2026-08-27] — "we want to leave
-  real gaps as real, not leave them looking valid when they're not."
+- **The honest-gaps principle** [USER 2026-08-27] — real gaps stay
+  visibly real; nothing is left looking valid when it is not.
 
 ---
 
-## The archived manual, verbatim (container CLAUDE.md as of 2026-08-31)
+## The archived manual (container CLAUDE.md as of 2026-08-31; the operator's chat wording paraphrased 2026-10-16, otherwise as archived)
 
 ````````markdown
 # cerberus-lean-proj
 
 **THE SEPARATION [USER 2026-08-31, supersedes the reasoning-era
-active state below]**: "a clean separation of the reasoning work
-(completely failed in my view) and the cerberus-lean semantics (a
-smashing success)." THE REASONING EFFORT IS PARKED — branch
+active state below]**: the user called for a clean separation of the
+reasoning work (which they judged a failure) from the cerberus-lean
+semantics (which they judged a success). THE REASONING EFFORT IS PARKED — branch
 `arc/segment-ladder`, tag `park/reasoning-era-20260831`, carrying
 the complete decision record (all 38 design docs/reviews committed
 at 39f3a64a4) — never merged, preserved for any future attempt. THE
@@ -96,10 +96,10 @@ the park, t5-seal, core/semantics-first, mainline, 3 upstream-PR
 (network-window tray). PENDING [USER]: the prototype checkout's
 final form (rec: bare-mirror into deps/mirrors, delete the 1.2G
 checkout). POST-MERGE S SLICE, [USER 2026-08-31, the
-refined-cerberus practice adopted for the local set]: "CLAUDE.md
-shouldn't be a log of all decisions — we want it to be a clean
-working practices doc. And we want to avoid notes in the overall
-container (which isn't a repo, and is local only)." The slice:
+refined-cerberus practice adopted for the local set]: CLAUDE.md is
+to be a clean working-practices document, not a log of every
+decision, and the container (not a repo, local only) is not to
+accumulate notes. The slice:
 (1) EVERY CLAUDE.md in the local set pruned to a clean
 working-practices document — decision history and rulings move to
 COMMITTED repo docs (the rulings-ledger shape from restructuring
@@ -119,14 +119,13 @@ Everything needed to build lives inside this folder plus `~/.elan` toolchains.
 shell profiles, shared caches) — this machine runs several agents. All
 project mechanisms here are directory- or environment-scoped.
 
-NORTH STAR [USER 2026-08-22, verbatim]: "our purpose in all this work is
-to build a verification tool we can use to verify substantial parts of
-the Linux stack. We're primarily interested in containment and safety
-and large portions of Linux are written in C. This pushes us towards a
-very 'boring' spec style, because we simply can't read specs at scale
-and understand them if they are fancy, and it push us towards the most
-aggressive proof automation that has ever been implemented in a theorem
-prover. We want to verify vast and unprecedented things." This is the
+NORTH STAR [USER 2026-08-22]: the purpose of the work is a verification
+tool able to verify substantial parts of the Linux stack, with
+containment and safety as the primary interest; since much of Linux is
+C, this pushes towards a deliberately boring spec style (fancy specs
+cannot be read and understood at scale) and towards the most aggressive
+proof automation ever built in a theorem prover, the aim being to verify
+vast and unprecedented things. This is the
 load-bearing rationale for boring-specs-in-front, the automation
 investment, and the kernel-adjacent target slate (pKVM buddy, WireGuard
 are the point, not demos); prioritize what scales to vast C codebases.
@@ -166,8 +165,8 @@ model-∀ headlines over first-order inductive models with stream lemmas
 underneath (both codec laws); readback via observation channels
 (Form 1 expected-array + mismatch-index default; statements never
 mention memory); plant tests mandatory (vacuity must be loud); the
-leak conjunct as an outcome observable. STATEMENT-LEVEL ONLY — "boring
-executable specs in the front, Iris party in the back": proof-layer
+leak conjunct as an outcome observable. STATEMENT-LEVEL ONLY — boring
+executable specs at the front, the Iris machinery behind them: proof-layer
 reasoning is unrestricted (rep predicates, framing, callee contracts)
 and discharges through adequacy. THE ESCAPE HATCH IS GOVERNED:
 statement-level SL specs require a written-up, priced, per-instance
@@ -274,7 +273,7 @@ decisions go in dated files, never just chat.
   from Core's compiled shapes (elaboration is stereotyped; spec-lab
   measured vocabulary saturation) → derived proof rules per source
   construct incl. logical loop invariants; brick-wp (deps/) is
-  "literally this" for BRICK — primary donor, with Lithium. What
+  exactly this for BRICK — primary donor, with Lithium. What
   survives the pivot: law tables/context laws (semantic equations
   the soundness proof consumes), the R13/falsification record (cite
   the parked branch), engine bug knowledge. T5 remains parked at
@@ -347,8 +346,8 @@ decisions go in dated files, never just chat.
   (RESCOPED 2026-08-26, [USER]-ratified per the pKVM spike:
   lock-invariants M + schedule-streams face M + lem-generated C11
   model from upstream cmm_csem.lem M-L; weak-memory logic deferred
-  as its own future program — [USER] "PhD level work in itself";
-  choice streams = schedules; spec-lab findings feed its design),
+  as its own future program — [USER] rated it a doctoral-scale
+  effort on its own; choice streams = schedules; spec-lab findings feed its design),
   pKVM buddy target (PROMOTED — needs no cmm arc: segment layer +
   FnSpec + lock-contract idiom + 2 axiomatized asm lock primitives
   as temporal boundary entries), WireGuard ladder (demoted behind
@@ -428,8 +427,8 @@ decisions go in dated files, never just chat.
   state (fresh-symbol supply, tagDefs) modeled INSIDE the machine
   state via Lean-target-only threading (the arc-13 pattern; OCaml
   target stays ambient forever for upstream byte-identity), natural
-  vehicle the cmm arc or earlier; operator: "kill this sooner rather
-  than later"; end state = theorem cones EXACTLY the classical trio
+  vehicle the cmm arc or earlier; the operator wants it killed early
+  rather than late; end state = theorem cones EXACTLY the classical trio
   {propext, Classical.choice, Quot.sound}, no magic. SPIKE PROVED
   REACHABLE 2026-08-24 (branch effect-spike @ 7f4100a5c, parked
   per spike doctrine): T1ThreadedOutcomes — ∀-seed (STRONGER than
@@ -474,10 +473,10 @@ decisions go in dated files, never just chat.
   invalidity; the frame-preserving update at alloc is the per-step
   can't-happen certificate, "the environment establishes it";
   consistency metatheorem = RA validity, proved once in GenHeap).
-  CANDIDATE consequences — [USER 2026-08-24]: "memory allocation
-  is a subtle matter for separation logic due to the global
-  effects it hides. This is *one* way to deal with this, and we
-  should evaluate before executing" — DESIGN-EVALUATION GATE
+  CANDIDATE consequences — [USER 2026-08-24] cautioned that memory
+  allocation is subtle for separation logic because of the global
+  effects it hides, that this is only one way to handle it, and
+  that it must be evaluated before being executed — DESIGN-EVALUATION GATE
   before any of this executes (at the S4/part-2 charter): S2 may
   inherit alloc-freshness from GenHeap; the symbol supply may
   become a ghost resource (mono-counter/GhostMap shape); fresh
@@ -506,13 +505,12 @@ decisions go in dated files, never just chat.
   Enforcement: exact transitive axiom-set assertions (classical trio +
   declared boundary only), build-failing; ofReduce* always-fatal in
   every probed cone; tactic names grep-banned in proof files.
-- **Grind campaigns are BANNED (operator, 2026-08-24, verbatim):**
-  "you are banned from stupid grind campaigns. That is, any build
-  that requires more than 1hr is highly suspicious. Do not just run
-  the kernel against a bazillion terms. Your main skill is
-  iteration. Long grind campaigns are poison to iteration. Don't
-  do it, it's banned unless there is an extraordinarily strong
-  justification." Enforcement: any worker brief includes a
+- **Grind campaigns are BANNED (operator, 2026-08-24):** the
+  operator banned stupid grind campaigns: any build needing more
+  than 1hr is highly suspicious; the kernel is not to be run against
+  huge numbers of terms; iteration is the agent's main skill and
+  long grind campaigns poison it; the ban lifts only for an
+  extraordinarily strong justification. Enforcement: any worker brief includes a
   time-suspicion tripwire — a build/proof pass approaching ~1hr is
   a STOP-AND-REPORT event, not a thing to wait out; orchestrator
   scoping must decompose work into iterable slices; a >1hr campaign
@@ -520,13 +518,13 @@ decisions go in dated files, never just chat.
   (operator-visible), never retroactively. Measurement sweeps
   (differential corpora) may qualify for justification; kernel
   grind never has. Case study: the 10-hour seal-engine session.
-  [USER 2026-08-24, refinement]: "grinding on a proof is somewhat
-  reasonable IF THE REASONING IS COMPLEX. Do not just wait on a
-  shell script that is brute force elaborating a term. Be
-  suspicious of a subagent trying to force-grind a term. Building a
-  sophisticated proof may require a long time, that's fine." The
-  banned thing is precisely "dumbly throwing a bazillion terms at
-  the kernel" ([USER]: "pointless and stupid") — NOT long build-out:
+  [USER 2026-08-24, refinement]: grinding on a proof is somewhat
+  reasonable when the reasoning is genuinely complex; what is not
+  acceptable is waiting on a shell script brute-force elaborating a
+  term, and a subagent trying to force-grind a term is suspect;
+  building a sophisticated proof may legitimately take a long time.
+  The banned thing is precisely throwing bulk terms at the kernel
+  without thought ([USER] called that pointless) — NOT long build-out:
   long construction of a sophisticated proof, and legitimately long
   builds of real content, are fine. The tripwire is the PATTERN,
   with wall-clock as its symptom: volume of kernel checks hoping to
@@ -534,18 +532,18 @@ decisions go in dated files, never just chat.
   elaboration as a substitute for thought. Orchestrator suspicion
   heuristic: a worker feeding the kernel bulk terms is suspect; one
   building hard content — even slowly — is working. THIRD SPECIES
-  [USER 2026-08-25] — PROOF GRIND: "an agent takes a giant term and
-  then proves it grindingly tactic by tactic, where an automation
-  step would knock it out immediately." The landed-and-green manual
+  [USER 2026-08-25] — PROOF GRIND: an agent takes a giant term and
+  proves it grindingly, tactic by tactic, where one automation step
+  would discharge it at once. The landed-and-green manual
   wall is still grind: the long script CONCEALS the real finding
   (the missing automation step). Test: a long manual tactic run
   over a big goal means the deliverable is the missing tactic/law/
   minter — build THAT, then the short proof; the proof-size gate's
   40-manual-step bar is this rule's mechanical floor (keep tight,
   never raise). WHY [USER
-  2026-08-24]: "the aim here is verifying vast software. We can't
-  grind our way to success. We need powerful automation to help us
-  scale" — grind is O(program size) forever; automation is
+  2026-08-24]: the aim is verifying vast software, which cannot be
+  reached by grinding; powerful automation is what makes it
+  scale — grind is O(program size) forever; automation is
   proved-once-fires-everywhere. At the north star's scale the
   distinction is not efficiency, it is feasibility.
 - **Never run a Lean build uncapped (2026-08-20).** Every lake/lean
@@ -555,32 +553,30 @@ decisions go in dated files, never just chat.
   the Bool before asking the kernel; whole-driver-run rfl/decide is
   banned (compositional equation chains instead).
 - **Two-part-design intention (operator, 2026-08-21):** intended
-  end-state = repo split: "cerberus-lean the semantics" vs "the
-  verification layer" (relsem), plus per-target example repos (incl.
+  end-state = repo split: cerberus-lean the semantics vs the
+  verification layer (relsem), plus per-target example repos (incl.
   GPL'd ones). Standing FORWARD-DESIGN CONSTRAINT: no gratuitous
   coupling across that seam — semantics→verification dependency
   strictly one-way (gate-enforced), the consumed interface stays
   enumerable, gates riding the semantics build stay re-homeable.
   Violations are TEMPORAL-class defects (register + mover). The
   arc-11 package rehearsal banked the split's design data.
-- **Canon-first proof scaling (operator, 2026-08-24, verbatim):** "the
-  field of formal verification has tried to solve scalable proof over
-  many years. Our first tools should be the ones people have built up
-  over many years: abstraction, invariants, symbolic execution,
-  simulation / bisimulation, framing / separation, protocol calculi
-  etc. We should NOT be throwing energy into funny tricks if we
-  haven't exhausted these powerful core ideas. We may *eventually*
-  need new ideas which haven't been covered in the literature. But
-  for now, our first direction when scaling our proof engine should
-  be this, not funny hacks over the representation, or grinding."
+- **Canon-first proof scaling (operator, 2026-08-24):** the field
+  has worked on scalable proof for decades, so the first tools to
+  reach for are the established ones — abstraction, invariants,
+  symbolic execution, simulation/bisimulation, framing/separation,
+  protocol calculi and the like; energy is not to go into novel
+  tricks before those core ideas are exhausted. New ideas beyond the
+  literature may eventually be needed, but for now the proof engine
+  scales by the canon, not by representation hacks or grinding.
   Enforcement: any charter proposing proof-engine machinery NAMES the
   canonical lineage of each mechanism (or explicitly justifies
   novelty as post-exhaustion); representation-level tricks and grind
   plans are findings absent that justification. Case study: the
   seal-through-the-chase episode (parked unmerged, arc/t5-seal).
-  [USER 2026-08-24, clarifying ruling]: "we are building an
-  IRIS-BASED PROGRAM VERIFIER FOR C because that is what will scale.
-  Hacking things out one step at a time will not." Iris is the FIRST
+  [USER 2026-08-24, clarifying ruling]: the project is building an
+  IRIS-BASED PROGRAM VERIFIER FOR C because that is what scales;
+  hacking things out one step at a time does not. Iris is the FIRST
   port of call — its built-in machinery (WP calculus, invariants,
   framing, ghost state) and the ideas the community has encoded into
   it (mapped in our lit review: notes/2026-08-21_iris-litreview-
@@ -598,8 +594,8 @@ decisions go in dated files, never just chat.
   a standing audit lens: convergent-but-custom machinery is a
   refactor-to-Iris finding, not a keeper.)
   [USER 2026-08-24, refinement — the TRICK FILTER]: the problem is
-  never cleverness ("we will need every lever we can get to make
-  this scale") — the problem is STUPID tricks: (prong 1)
+  never cleverness (every available lever will be needed to make
+  this scale) — the problem is STUPID tricks: (prong 1)
   non-scalable GRINDING that wouldn't extend past the current
   example (instance enumeration in mechanism costume), or (prong 2)
   hacks WITHOUT INSIGHT into the abstraction being manipulated
@@ -609,22 +605,21 @@ decisions go in dated files, never just chat.
   gets it for free. Refines, not replaces, canon-first: canonical
   tools pass by construction; novel tricks must pass explicitly.
   WHY canon passes by construction (2026-08-24, relayed insight):
-  "Separation logic is a 'clever trick' partly because Reynolds and
-  O'Hearn struck gold, but partly because the community has spent 20
-  years poking at it and finding all the dumb problems. There's an
-  evolutionary process where some things work and some don't. And if
-  we come up with a new 'clever trick' we have to do that evolution
-  ourselves. Better for it to have been done for us over decades."
+  separation logic counts as a clever trick partly because Reynolds
+  and O'Hearn struck gold, but partly because the community spent
+  twenty years finding and fixing its dumb problems — an evolutionary
+  process a home-grown clever trick would have to repeat by itself,
+  which is why it is better to inherit one already run over decades.
   Canonical tools arrive PRE-DEBUGGED by decades of communal
   selection; a novel trick's price includes running that whole
   evolutionary process alone (the seal episode ran 18
   collision-iterations of private evolution and only reached
   "falsified"). Novelty must budget for its own evolution — which
   is why it comes after exhaustion, not before.
-- **Proof-scaling philosophy (operator, 2026-08-21):** "keep trust
-  surfaces very clean, but we're happy to do whatever clever tricks
-  make the proof scale *for kernel-certified steps*. No insane hacks
-  for specifications." Statements and the TCB are pristine; proof
+- **Proof-scaling philosophy (operator, 2026-08-21):** trust
+  surfaces stay very clean, but any clever trick that makes the proof
+  scale is welcome *for kernel-certified steps*; specifications get
+  no such hacks. Statements and the TCB are pristine; proof
   MACHINERY may be engineered aggressively so long as every step lands
   as an ordinary kernel-certified obligation and the meta-code stays
   reviewable. Refines, never relaxes, the non-kernel ban.
@@ -674,14 +669,12 @@ mirrors (network required):
   stopped at a kernel-witnessed diagnosis: unrestricted ∀-seed T4
   is FALSE (hash-collision capture; fix = seed-apartness + env
   algebra, M, part 2). Ambient T1-T4 stand until the purge. PART 2
-  NEXT — ORIENTATION RULING [USER 2026-08-24]: "CN feels like an
-  extension, not the main line. Our main line is building a
-  scalable proof automation framework inside Iris for theorem
-  proving use. Ultimately, we want to be able to verify libxml2 via
-  this framework. CN is a kind of nice convenience, but the core of
-  this is building a clean, well-structured automation / tactic
-  library using the powerful affordances offered by iris-lean and
-  ideas from our inspiration in other academic work." MAIN LINE:
+  NEXT — ORIENTATION RULING [USER 2026-08-24]: CN is an extension,
+  not the main line; the main line is a scalable proof-automation
+  framework inside Iris, with libxml2 as the eventual verification
+  target; CN is a convenience, while the core is a clean,
+  well-structured automation/tactic library built on iris-lean's
+  affordances and ideas from the academic inspirations. MAIN LINE:
   equation-supply frontier (fixture-independent per-construct
   laws), the ACL2Lean-shaped discharge engine, T4-apartness env
   algebra, T5-by-invariant, the purge, spec-lab family-∀ endpoints,
@@ -695,11 +688,11 @@ mirrors (network required):
   T4-apartness → S2b boundary-axiom endgame → S3 T5-by-invariant →
   S4 family-∀ → S5 purge → S6 libxml2 rung; the LITHIUM/CAESIUM
   PARITY GOAL as FLOOR-not-ceiling with the four-component ledger.
-  [USER 2026-08-25, parity refinement — REACH, NOT CLONE]: "we
-  should take care to not over-clone refinedc. The purpose is a bit
-  different, they want to support human devs, while our main aim is
-  to support AI-DRIVEN PROOF. So we should aim for similar reach,
-  but we don't have to clone their user-facing infra." Consequences:
+  [USER 2026-08-25, parity refinement — REACH, NOT CLONE]: the
+  project must not over-clone RefinedC; RefinedC serves human
+  developers whereas the aim here is AI-DRIVEN PROOF, so the target
+  is similar reach without cloning their user-facing
+  infrastructure. Consequences:
   parity is measured in REACH (what can be verified at what cost),
   never in interface; DE-SCOPED: human annotation-syntax ergonomics,
   IDE tooling, human-readable error engineering beyond honesty;
@@ -739,17 +732,17 @@ mirrors (network required):
   (adjudicated: landing first = proving twice). [USER 2026-08-26,
   design ruling — THE HOARE LAYER + THE PROOF-STYLE PROFESSOR
   TEST]: for simple programs the machine's reasoning and a human's
-  correctness argument should MOSTLY COINCIDE — "reasoning over
-  straight-line program sequences to join points" (Hoare style:
+  correctness argument should MOSTLY COINCIDE — reasoning over
+  straight-line program sequences up to join points (Hoare style:
   segment triples composed by the sequence rule, if = join,
   invariants only at loop heads). The "walks" are
   interpreter-structural and correctly SUSPECT as a user-facing
   idiom: rounds/walks are engine-room equation supply, consumed
   ONCE per derived SEGMENT RULE (the decompilation layer at
   C-statement granularity, one level above the Core-construct
-  laws), never in user proofs. THE TEST [USER]: "can the grumpy
-  professor understand our reasoning style, or is it just
-  uninterpretable 'term wrangling'" — a professor pass over PROOF
+  laws), never in user proofs. THE TEST [USER]: whether the grumpy
+  professor can understand the reasoning style, or whether it is
+  just uninterpretable term wrangling — a professor pass over PROOF
   TEXTS, same standard as the docs professor. Companion campaign
   [USER]: prove A BUNCH MORE SMALL PROGRAMS — breadth at low
   difficulty shakes out design-layer bugs (the spec-lab pattern
@@ -759,12 +752,12 @@ mirrors (network required):
   finding, not a proof to grind. SEQUENCING RATIFIED [USER
   2026-08-26]: Hoare layer + breadth campaign AFTER C4, BEFORE
   C3c/C5/C6 — gated on (1) a WHOLE-PROJECT DESIGN PASS first
-  ("avoid baroque machinery hanging around if it's not needed" —
+  (no baroque machinery is to linger where it is not needed —
   a baroqueness audit of everything built, delete-or-justify; and
   the reasoning layer designed COMPARATIVELY vs brick-wp /
   RefinedC-Lithium-Caesium / CN's judgment styles / full BRiCk
-  (deps/BRiCk, cloned 2026-08-26 [USER]: "the 'middle layer'
-  before automation is applied" — BedRock's C++ program logic,
+  (deps/BRiCk, cloned 2026-08-26 [USER]: the middle layer that
+  sits below the automation — BedRock's C++ program logic,
   exactly the layer we are choosing; tri-license
   BedRock-LGPL2.1+addendum/LLVM — IDEAS-ONLY usage, any code reuse
   needs a license read first, unlike the BSD donors) — triples vs
@@ -775,19 +768,19 @@ mirrors (network required):
   2026-08-26: design pass ran (notes/2026-08-26_reasoning-layer-
   design-pass.md) → operator conversation → DECISION SLATE RATIFIED
   [USER 2026-08-26]: single LONG-CYCLE charter, right-thing-now
-  ruling ("if we're confident, we should move towards the right
-  thing"; narrow slices only at genuine unknowns); SL segment
+  ruling (where confidence exists, move straight to the right
+  design; narrow slices only at genuine unknowns); SL segment
   triples at Core labels, types-later-maybe; invariants = ordinary
   proof content; C3c DEAD as a work item (T5 lands once, through
-  the layer); MIRROR-DONOR DISCIPLINE [USER, verbatim]: "match /
-  mirror BRiCk / refinedC in places it makes sense. Not
-  gratuitously be different" — mirror-OCaml extended to the proof
+  the layer); MIRROR-DONOR DISCIPLINE [USER]: match or mirror
+  BRiCk / RefinedC wherever that makes sense and never differ
+  gratuitously — mirror-OCaml extended to the proof
   layer, donor-correspondence table as audited deliverable; call
   rule = STANDARD SL FnSpec + frame (typed_function/wp_call
   mirror; SAW whole-state staging retired as stale pre-Iris
-  design); corpus = census-ramp-to-uri.c ("final exam trivial",
-  >20 programs ok) + difficulty-biased EDGE tier ([USER]: "Easy
-  cases should be easy, hard cases test the edges") + per-program
+  design); corpus = census-ramp-to-uri.c (the final exam should be
+  trivial; >20 programs acceptable) + difficulty-biased EDGE tier
+  ([USER]: easy cases must be easy, hard cases probe the edges) + per-program
   anti-grind budget (2 consecutive over-budget = campaign halt).
   CHARTER audited (Fable pragmatics pass SOUND-WITH-AMENDMENTS,
   F1-F9 folded — headliners: ∃-ROUND judgment from day one since
@@ -798,7 +791,7 @@ mirrors (network required):
   MERGE-SAFE zero-MAJOR (4 MINOR fix-forwards FF-1..4 registered
   in-charter, incl. lake-lean probe-recipe breakage on the
   C1-decomposed engine modules), C0-C4 ff-MERGED to mainline @
-  cfeb7af5e on [USER] sign-off ("land these first"). Long cycle
+  cfeb7af5e on [USER] sign-off to land these first. Long cycle
   runs on branch arc/segment-ladder (coherence worktree) @
   b8baec82f; charter = lean_frontend/docs/2026-08-26_arc18-
   segment-ladder-charter.md (R1 open-memory minting → R2 full
@@ -832,9 +825,9 @@ mirrors (network required):
   C11 model from upstream cmm_csem.lem (M-L), weak-memory program
   logic explicitly deferred; (c) lock-shaped ownership-transfer
   worked example added to the R6 breadth edge tier (charter edit
-  rides the R2-boundary commit). [USER 2026-08-26, verbatim]: "We
-  will eventually need to build a weak memory logic, but it's PhD
-  level work in itself" — classified as its own future PROGRAM
+  rides the R2-boundary commit). [USER 2026-08-26]: a weak-memory
+  logic will eventually be needed, but it is a doctoral-scale
+  effort on its own — classified as its own future PROGRAM
   (post-exhaustion, XL, Lean-ecosystem-gap-binding), never a rung
   of a near arc; (5) charter
   BLESSED (status flip + PENDING→RATIFIED tags committed at the R2
@@ -883,21 +876,21 @@ mirrors (network required):
   90s @ depth 2 — better-abstractions item: index the mint's
   anchor states) + width cap (2 scratch ranges, analytical); (4)
   family-∀ at the already-registered C4 symbolic-file frontier.
-  [USER 2026-08-27, CALIBRATION RULING]: "we don't need to make
-  every example just verify_fn; auto — that's probably impossible
-  for more complex functions. But it's great for simple ones! I'd
-  expect some working tactics, similar to brick_wp in complex
-  cases." — 2-step form = the SIMPLE-program gold standard, not a
+  [USER 2026-08-27, CALIBRATION RULING]: not every example needs
+  to be a bare `verify_fn; auto` — that is probably impossible for
+  more complex functions, though excellent for simple ones; complex
+  cases are expected to use working tactics in the brick-wp
+  style — 2-step form = the SIMPLE-program gold standard, not a
   universal bar; complex functions may use a legible
   working-tactic vocabulary (brick-wp lineage); professor
   standard judges structural coincidence + legibility, never
-  literal step-count. AND [USER]: calls — "We'll need to make the
-  model total in the proper way" — R6c totalization ENDORSED
+  literal step-count. AND [USER]: calls — the model has to be made
+  total in the proper way — R6c totalization ENDORSED
   (no-internal-trust-gaps standard move, model-proper, no hacks).
-  [USER 2026-08-27, ESCALATION-LADDER RULING]: "make sure you're
-  designing this so it fits with the broad Iris / refinedC / Brick
-  lineage. Powerful automation available, but breakouts to more
-  fine-grain tactics always possible" — standing design
+  [USER 2026-08-27, ESCALATION-LADDER RULING]: the design must fit
+  the broad Iris / RefinedC / BRiCk lineage — powerful automation
+  available, with breakouts to finer-grained tactics always
+  possible — standing design
   constraint: every automation level sits on named, individually
   applicable rules (brick-wp lemmas+thin-macros discipline);
   seg_auto ON TOP of working tactics ON TOP of registered laws; no
@@ -923,10 +916,10 @@ mirrors (network required):
   operator-visible]: improvements 2+3 = an in-arc slice BEFORE R8
   (the playbook must teach the honest idiom); improvement 1 stays
   arc-19-front; reconstruct-list rides R8. [USER 2026-08-27,
-  QUANTIFIED-INPUTS RULING — reshapes the arc]: "we'll want to
-  upgrade whichever of the programs we can to quantified inputs,
-  and delete the rest of the examples. Concrete inputs are a
-  degenerate kind of proof, uninteresting for us." Reading
+  QUANTIFIED-INPUTS RULING — reshapes the arc]: every program that
+  can be upgraded to quantified inputs is to be upgraded and the
+  remaining examples deleted, concrete inputs being a degenerate
+  and uninteresting kind of proof. Reading
   (operator-visible): the ruling targets PROOF-LAYER theorems —
   concrete-input standalone THEOREMS are degenerate (the
   professor's circularity finding is their symptom: on a
@@ -935,18 +928,17 @@ mirrors (network required):
   differential-oracle anchors + anti-vacuity SAMPLES derived as
   one-line corollaries of the proved families (the C4
   family→sample pattern, plant-test doctrine). [USER 2026-08-27,
-  THE CANONICAL PROPERTY — foundational, quote]: "We're
-  specifically interested in proofs established in the CN /
-  RefinedC / Floyd-Hoare / OHearn style… harness_f(init, args) {
-  set_up_memory(init) // precondition; return = f(args); final =
-  check_memory(init, return); return final }… forall init, args:
-  f_precondition(init, args) && cerb_semantics(harness_f, init,
-  args) ~~> result ==> result = some(final) && f_postcondition(
-  init, args, final). From this perspective we are NOT INTERESTED
-  AT ALL IN CONCRETE EXECUTION AT SPECIFIC VALUES. If we wanted
-  that, we would just run the interpreter… We also don't care
-  about enumerative techniques. We are doing FORMAL VERIFICATION
-  here, that's the point." Machinery mapping: pre = range/
+  THE CANONICAL PROPERTY — foundational]: the interest is
+  specifically in proofs in the CN / RefinedC / Floyd-Hoare /
+  O'Hearn style: a harness that sets up memory from an init
+  (the precondition), calls f on the args, and checks the final
+  memory against the init and the return; the property is, for all
+  init and args, that the precondition plus the Cerberus semantics
+  of the harness yielding a result implies the result is some
+  final value satisfying the postcondition. On that view concrete
+  execution at specific values is of no interest at all (the
+  interpreter already does that), nor are enumerative techniques;
+  the point is FORMAL VERIFICATION. Machinery mapping: pre = range/
   footprint hypotheses; set_up_memory = harness prologue; exec =
   CallHarnessAdequateThr (outcome-set, stronger than ~~>Some);
   check_memory = observation-channel readback (statements never
@@ -971,10 +963,10 @@ mirrors (network required):
   batch targets ∀-input statements (symbolic buffer contents,
   data-dependent trip counts); parks expected and honest.
   SUPERSEDING EVENT 2026-08-27: [USER] killed R6b mid-flight and
-  mandated a PROFESSOR WHOLE-PROJECT ASSESSMENT under the verbatim
-  aim "BUILD A VERIFICATION FRAMEWORK SIMILAR TO BRICK OR
-  REFINEDC… NOT executing code at specific inputs… NOT doing
-  enumeration. COMPLETELY FORBIDDEN as proof strategies."
+  mandated a PROFESSOR WHOLE-PROJECT ASSESSMENT against the stated
+  aim: a verification framework in the BRiCk / RefinedC mould, with
+  execution at specific inputs and enumeration completely forbidden
+  as proof strategies.
   Assessment (docs/2026-08-27_professor-whole-project-
   assessment.md + disposition record, committed @ 764c67ba4)
   headline: "a sound, kernel-certified, Iris-carried
@@ -1007,8 +999,8 @@ mirrors (network required):
   [USER 2026-08-27, the five steps — the new master sequence]:
   (1) target examples from CN and RefinedC, harnesses exercising
   them at ARBITRARY INPUT MEMORY via the const-embedding pattern;
-  (2) theorems over these that "clearly unambiguously and with no
-  doubt whatsoever" require ALL the complexities a program logic
+  (2) theorems over these that beyond any doubt require ALL the
+  complexities a program logic
   handles (memory, looping, calls, returns, arithmetic, pointers,
   …) — a TINY target corpus requiring all reasoning families real
   C needs; (3) AGGRESSIVE REVIEW of exactly this corpus: small
@@ -1024,9 +1016,9 @@ mirrors (network required):
   kill-list execution continues unaffected. License: corpus
   derivations from BSD sources (deps/cn tests BSD-2, refinedc
   BSD) with per-program attribution; GPL stays out. [USER
-  2026-08-27, ANTI-GATE-GRIND RULING]: "we don't want to end up
-  in 'gate grind' — mechanical gates can just pile up. Let's just
-  get the corpus figured out." Calibration: gates are reserved
+  2026-08-27, ANTI-GATE-GRIND RULING]: the project must not drift
+  into gate grind, where mechanical gates simply pile up; the
+  priority is getting the corpus settled. Calibration: gates are reserved
   for load-bearing TRUST properties (cones, statement TCB,
   fork-drift); discipline points get DOCUMENTATION notes and
   STRUCTURALLY-FORCING examples instead (inlining-not-legit = an
@@ -1057,8 +1049,8 @@ mirrors (network required):
   [USER]). Catechism carries the intended-design stack ([USER]:
   executable semantics ⇧ relational ⇧ Iris ⇩ target; statements
   anchor at layer 1, proofs travel down through adequacy).
-  CORPUS FROZEN 2026-08-27 @ 3b2352485+83b733c08 ([USER]: "the
-  corpus as proposed looks good") — 15 programs + gcd_rec
+  CORPUS FROZEN 2026-08-27 @ 3b2352485+83b733c08 ([USER] approved
+  the corpus as proposed) — 15 programs + gcd_rec
   confirmed, hash-manifest freeze riding check_proof_size
   (plant-tested both directions), catechism BLESSED in-repo.
   STEP-5 INFRA PLAN delivered (notes/2026-08-27_infrastructure-
@@ -1068,10 +1060,10 @@ mirrors (network required):
   anti-vacuity metatheorem; the counter stays the executable/
   differential face; the SL/alloc UNIFICATION stays gated at V5
   per the Caesium design evaluation). KILL-QUICK ADJUDICATION
-  RATIFIED [USER 2026-08-27]: "go ahead with the aggressive kill
-  plan… We want to leave real gaps as real, not leave them
-  looking valid when they're not" (THE HONEST-GAPS PRINCIPLE,
-  verbatim, standing): (1) T1–T5 WALK ENGINE ROOMS + WHOLE-RUN
+  RATIFIED [USER 2026-08-27]: the aggressive kill plan goes ahead;
+  real gaps are to stay visibly real rather than be left looking
+  valid when they are not (THE HONEST-GAPS PRINCIPLE,
+  standing): (1) T1–T5 WALK ENGINE ROOMS + WHOLE-RUN
   MINT MODE KILLED NOW — the repo temporarily has ZERO proved
   flagship theorems (statements stay honest-unproved; V2/V3
   re-prove; V1 keeps a minimal adequacy smoke); (2) iter_compose
@@ -1095,12 +1087,12 @@ mirrors (network required):
   (existentially-quantified auth env + lookup-level COHERENCE
   invariant; Fmap captured-closure obstruction documented);
   runtime cell-birth scoped to V2 (near P01's path, in that
-  brief). [USER 2026-08-28, THE LOCALITY-RETROFIT FRAMING]: "This
-  is actually where the real work lives for Cerberus —
-  retrofitting locality onto the real C model (rather than
-  RefinedC's easier semantics) is difficult… the refinedC proofs
-  definitionally must have solved some of these issues, so feel
-  free to take inspiration." Standing consequence: locality
+  brief). [USER 2026-08-28, THE LOCALITY-RETROFIT FRAMING]: this
+  is where the real work for Cerberus lives — retrofitting
+  locality onto the real C model, rather than RefinedC's easier
+  semantics, is hard; the RefinedC proofs must have solved some of
+  the same issues, so drawing inspiration from them is
+  encouraged. Standing consequence: locality
   obligations (per-primitive coherence preservation, the alloc
   global-freshness bridge, address observability) CITE Caesium
   counterparts (ghost_state.v heapGS/wf invariants, lifting
@@ -1155,12 +1147,12 @@ mirrors (network required):
   engine file collapses; then V3a). M1 in @ 73c8379c6: SegRun
   fused rules, T1 body = ONE chain @ ~6 ln/round vs V2's ~40,
   escalation ladder intact (link rules delegate to registered
-  rules). [USER 2026-08-28, OPERATING MODE]: "If you're making
-  progress, you can keep rolling — you only need to check in with
-  me if we're not making progress towards the end-state. Keep a
-  close eye on the results for signs of 'cargo cult iris' i.e
-  Iris in form but not substance in the various ways we've seen
-  before." STANDING AUTONOMY: slices chain without awaiting
+  rules). [USER 2026-08-28, OPERATING MODE]: while progress
+  towards the end-state continues the work may keep rolling
+  without check-ins, which are needed only when it stalls; the
+  results are to be watched closely for cargo-cult Iris, i.e.
+  Iris in form but not substance in the ways seen
+  before. STANDING AUTONOMY: slices chain without awaiting
   sign-off while progress toward 15/15-at-clause-(d) holds;
   check-in triggers = stalls, walls beyond price, design
   findings, cargo-cult signs. THE CARGO-CULT-IRIS WATCH
@@ -1193,19 +1185,18 @@ mirrors (network required):
   lemmas). Orchestrator batteries scoped for supply/docs-only
   deltas (full battery stands for build-rule/gate changes per
   certification-integrity). [USER 2026-08-28, THE SCALING-CREEP
-  RULING, verbatim, standing]: scaling is "EXACTLY the point
-  where previously a bunch of garbage forbidden hacks and
-  cheating has started to creep in… we're going to actually do
-  this properly." Performance work = the maximum-risk surface for
+  RULING, standing]: scaling is exactly the point at which
+  forbidden hacks and cheating have crept in before, and this
+  time it is to be done properly. Performance work = the maximum-risk surface for
   the forbidden classes; perf plans are DISCUSSED before
   dispatch and adversarially reviewed before execution. [USER
   2026-08-28, THE CLASSICAL-NAMING RULING]: every proposed
   optimization must be identified in CLASSIC PL TERMS
   (abstraction? memoization? sharing? reflection?) and its
-  legitimacy understood BEFORE imposing — "optimizations which
+  legitimacy understood BEFORE imposing — optimizations that
   couple to the representation structure without insight are
-  absolutely totally and completely forbidden, and making up your
-  own terms ('seal engine') is also forbidden." A mechanism that
+  entirely forbidden, and so is inventing house terms for them
+  (the seal engine being the example). A mechanism that
   cannot be named classically is presumptively a hack; house
   jargon for mechanisms is BANNED — textbook names only. (Seal-
   era classification: legitimate kernel = SHARING/let-abstraction,
@@ -1227,9 +1218,9 @@ mirrors (network required):
   triage, Lithium L1 corrected [A+D jointly kill CC1], opacity
   needs light enforcement, V3a-folding gets a probe-no-go ramp;
   mechanism C ADJUDICATED AUTHENTIC — the steering test passed
-  by construction). [USER 2026-08-28] SIGNED OFF: "extremely
-  reasonable. Let's do it. Be a bit careful of gate grind here,
-  we don't need to 'solve' adversarial optimization" —
+  by construction). [USER 2026-08-28] SIGNED OFF, finding the plan
+  reasonable, with the caution to avoid gate grind: adversarial
+  optimization does not need to be solved —
   enforcement stays LIGHT (opacity ban = one grep line riding an
   existing gate; exit definitions are measurement discipline,
   not new gates; no policing apparatus). PERF-0+1 COMPLETE
@@ -1263,27 +1254,27 @@ mirrors (network required):
   Executable runs are always consistent (draws small, hashes
   ~1e17; anti-vacuity proved); bad runs = mathematical points at
   adversarial seeds; static-static collisions = parse fail-stop.
-  EQUIVARIANCE REGISTERED [USER]: "seeds don't matter" (all
+  EQUIVARIANCE REGISTERED [USER]: seed-independence (all
   consistent runs observationally equivalent; the exercised run
   their canonical representative — CompCert renaming lineage;
   plausible since observation channels are symbol-free; the
-  ADDRESS analogue is measurably FALSE per PNVI) is "a theorem
-  that's true, but we haven't proved yet… we can prove it
-  later" — L-class simulation, OWNER = the cmm arc (its
+  ADDRESS analogue is measurably FALSE per PNVI) is a true but
+  as-yet-unproved theorem that can be proved
+  later — L-class simulation, OWNER = the cmm arc (its
   ND+filter formulation needs the representative-run argument
   anyway); side benefit when proved: oracle runs become evidence
   about the whole family. NOT on the corpus critical path.
   [USER 2026-08-29, Q2–Q6 RULED]: Q2 — alloc-ND design
-  evaluation is RESEARCH NOW ("this problem has been richly
-  explored in separation logic / iris, so we should draw on
-  that") — agent dispatched (SL/Iris allocation literature +
+  evaluation is RESEARCH NOW (the problem is richly explored in
+  the separation-logic / Iris literature, which is to be drawn
+  on) — agent dispatched (SL/Iris allocation literature +
   Caesium reference + the August subtleties list); Q3 professor
   cadence as recommended (sample post-arrays, full at 15/15);
   Q4 polish basket BINDING before any fourth program; Q5 P13
-  registration at heap-summit-open; Q6 EXTENDED — "build a
-  further corpus intended to exercise these features. Go
-  hunting, basically" + "exercise the existing features across
-  some more small examples, try to shake out bugs": CORPUS-2
+  registration at heap-summit-open; Q6 EXTENDED — a further
+  corpus built to exercise these features (a bug hunt), plus the
+  existing features exercised over more small examples to shake
+  out bugs: CORPUS-2
   authoring dispatched (the unowned-tail features, SAME pipeline
   as corpus-1: author → adversarial review → operator freeze;
   corpus additions need [USER] sign-off by the freeze rules) +
@@ -1304,12 +1295,11 @@ mirrors (network required):
   conservative for UAF, uncovered = reuse-observation-via-cast,
   tray remedy); (2) the "exhaustion unreachable ~2^60" framing
   STRUCK (reachable in few steps via large requests;
-  boot-anchoring licenses nothing); (3) [USER verbatim]: "There
-  isn't really a distinction in hoare logic between compositional
-  and non-compositional reasoning. Compositional is the only
-  thing you get. There's no magic 'boot context'" +
-  main-is-not-boot + "composition first, logic first, 'for any
-  context'": CONTRACTS ARE PRIMARY — FnSpec ∀-ambient-context =
+  boot-anchoring licenses nothing); (3) [USER]: Hoare logic has
+  no real distinction between compositional and non-compositional
+  reasoning — compositional is all there is, and there is no
+  magic boot context + main-is-not-boot + composition and the
+  logic come first, for any context: CONTRACTS ARE PRIMARY — FnSpec ∀-ambient-context =
   the verification artifact; harness theorems = DERIVED
   COROLLARIES at a stated init (the observable/differential
   face, legitimate as explicit scope only). DAMAGE ASSESSMENT
@@ -1332,25 +1322,22 @@ mirrors (network required):
   p24 + primacy reframing; freeze package to [USER] after the
   delta re-review. V3a
   [USER 2026-08-29, THE LOGIC-FIRST RULING — the top-level goal
-  restated, verbatim]: "there's a 'logic-first' design pass
-  needed which involves treating the rules of the logic as the
-  real first-class artifacts, and then ripping out any
-  specialization to the harnesses that has crept in. To say
-  again, the top level goal here is to design and prove *the
-  logic*." THE DELIVERABLE OF THE PROJECT = THE LOGIC: a named,
+  restated]: a logic-first design pass is needed that treats the
+  rules of the logic as the real first-class artifacts and rips
+  out any harness specialization that has crept in; the top-level
+  goal, restated, is to design and prove the logic
+  itself. THE DELIVERABLE OF THE PROJECT = THE LOGIC: a named,
   presentable program logic for Cerberus Core — judgment forms +
   the rule figure, every rule a ∀-context kernel theorem —
   with harness/corollary machinery strictly downstream
   APPLICATION, and crept harness-specialization ripped out.
-  [USER 2026-08-29, THE ANTI-INNOVATION RULING — verbatim,
-  standing, sharpens mirror-donor into a review criterion]: "if
-  we're doing something different from RefinedC / Brick, why? The
-  default should be do what they do. Don't invent stuff that's
-  unnecessary. Innovation is bad, innovate only when necessary,
-  by default do what previous logics have done, unless the needs
-  of Cerberus force a different choice. And even then, we should
-  ask is this a real cerberus constraint, or a BS constraint that
-  comes from some previous mis-design choice." Every divergence
+  [USER 2026-08-29, THE ANTI-INNOVATION RULING —
+  standing, sharpens mirror-donor into a review criterion]: any
+  departure from RefinedC / BRiCk needs a reason; the default is
+  to do what they and previous logics did, innovating only when
+  the needs of Cerberus force a different choice — and even then
+  asking whether the constraint is genuinely Cerberus's or an
+  artefact of an earlier mis-design. Every divergence
   is audited into three bins: UNNECESSARY INVENTION (adopt
   theirs) / REAL CERBERUS CONSTRAINT (forcing fact stated, about
   Cerberus not our machinery) / INHERITED PSEUDO-CONSTRAINT
@@ -1372,8 +1359,8 @@ mirrors (network required):
   binders immutable; substitution-everywhere was the missing
   menu option). [USER 2026-08-30, DN-1 RULED]:
   **SUBSTITUTION-EVERYWHERE in the logic, environment-as-
-  engine** — "Push the abstraction higher, don't lose any
-  reasoning, support a cleaner reasoning layer." Env cells/
+  engine** — push the abstraction higher without losing any
+  reasoning, in support of a cleaner reasoning layer. Env cells/
   births/ledger/coherence LEAVE the figure — they become the
   engine's proof technique inside the per-construct
   environment≈substitution correspondence lemmas (mechanism-C-
@@ -1387,9 +1374,9 @@ mirrors (network required):
   PNVI-switch additivity, contracts-promotion, the substitution
   exit ramp, weak-memory non-foreclosure — each with a
   revisable/foreclosed verdict). [USER 2026-08-30, FRESH-EYES
-  REVIEW RULING — process, standing]: "we should do a *fresh*
-  re-review… We shouldn't converge through implied agreement…
-  this is the core document for the whole effort" — v2 gets a
+  REVIEW RULING — process, standing]: the re-review must be a
+  fresh one, not convergence through implied agreement, because
+  this is the core document of the whole effort — v2 gets a
   NEW Fable-class reviewer (not the v1 reviewer, not the
   designer), FULL review not a delta pass; criteria: coherent
   with what Cerberus actually gives us / will work / sound / a
@@ -1400,8 +1387,8 @@ mirrors (network required):
   list ~12.4GB + restructuring 7.1–7.6) → the reframing-and-
   prune slice → ONE merge to main. Design-pass SCOPE UNDER
   OPERATOR DISCUSSION before any
-  commissioning — [USER 2026-08-29]: "don't commission the pass
-  before we've decided what to do in it" — the SECOND instance
+  commissioning — [USER 2026-08-29] ruled that the pass is not to
+  be commissioned before its content is decided — the SECOND instance
   of this orchestrator error (first: the perf plan); STANDING
   RULE hardened: design-level passes get their scope DECIDED
   WITH the operator before any agent is briefed; a brief is a
@@ -1413,10 +1400,10 @@ mirrors (network required):
   P11 (gcd variant) + the TIGHTENED PERF-2 exit (pre-registered
   never-seen program, zero generated per-round facts, structural
   bound) + birth-block fusion extension. [USER 2026-08-28, THE
-  JUDGE]: "The best judge of this is the adversarial professor
-  class audit. Get a subagent to role play as the PL expert, get
-  them to poke and prod. Not needed now, but use this as needed
-  to shake out 'form but not substance' bugs." — the ADVERSARIAL
+  JUDGE]: the best judge of this is an adversarial professor-class
+  audit — a subagent role-playing the PL expert, poking and
+  prodding; not needed immediately, but to be used as needed to
+  shake out form-without-substance bugs — the ADVERSARIAL
   PL-PROFESSOR AUDIT is the designated cargo-cult instrument,
   deployed AT ORCHESTRATOR DISCRETION (as-needed triggers: any
   watch-sign observed, a new abstraction layer landing,
@@ -1424,10 +1411,10 @@ mirrors (network required):
   run in this mode — fresh agent, PL-expert persona,
   poke-and-prod brief against the substance questions, findings
   not grades). [USER
-  2026-08-27, ANTI-BRUTE-FORCE BOUNDS RULING]: "we don't need to
-  cap at all, just make it some insanely large number that fits
-  in the type. In general, the code can be small but we SHOULD
-  NOT pick values that could be brute forced." Every corpus
+  2026-08-27, ANTI-BRUTE-FORCE BOUNDS RULING]: no cap is needed
+  at all — use a very large number that fits the type; the code
+  can be small, but values that could be brute-forced must never
+  be chosen. Every corpus
   precondition bound = the largest value the type admits; where
   overflow-safety forces tighter, DERIVE from the type limit and
   document (65535-scale, never 100-scale). The test for every

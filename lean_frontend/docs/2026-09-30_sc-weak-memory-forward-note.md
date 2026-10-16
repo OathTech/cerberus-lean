@@ -3,13 +3,13 @@
 Status: forward note, not a plan change. Weak memory stays outside the SC MVP
 ([SC-CONCURRENCY.md](../../SC-CONCURRENCY.md) §2). This note records which later
 routes the SC design should keep cheap, and the design disciplines that follow.
-Origin: operator–orchestrator discussion, 2026-09-30. [USER 2026-09-30], verbatim:
-"If we later want to extend this 'stepped' style of concurrency to weak memory, I
-suppose we can do it for some of the stronger models. But it will be hard for full
-C11 concurrency with weird causal loops and reordering", and "Another possible
-strategy here is the 'triangular-race freedom' idea, where we prove a theorem that
-says the program can't exhibit some property under SC, and therefore it can't
-exhibit any 'weird' behaviors". The analysis below is [AGENT].
+Origin: operator–orchestrator discussion, 2026-09-30. [USER 2026-09-30] observed
+that the stepped style of concurrency could probably be extended to some of the
+stronger weak-memory models, but that full C11 concurrency, with its causal loops
+and reordering, would be hard; and suggested a second strategy, the
+triangular-race-freedom idea: prove that the program cannot exhibit some property
+under SC, and conclude that it cannot exhibit any of the weird behaviours. The
+analysis below is [AGENT].
 
 **Citations are from memory and unverified** (no network in this session). Check
 each before relying on it in a design or proof record.
@@ -81,12 +81,12 @@ These are design checks for slice reviews, not new gates.
 
 ## 3. How route B fits a program logic
 
-[USER 2026-09-30], verbatim: "The reason I like this notion is that it is quite
-compatible with a formal verification view of things. We embed the necessary
-condition as a metaproperty of our logic, and then for soundness show that the
-results translate to weak models. And it matches a lot of people's gut sense on weak
-memory, that the extremely weird behaviors are basically things that 'can't happen'
-ie. they are theory artifacts that real programs mostly don't see". [AGENT] analysis:
+[USER 2026-09-30] gave the reason for favouring this notion: it is compatible with
+a formal-verification view, in which the necessary condition is embedded as a
+metaproperty of the logic and soundness shows that the results translate to weak
+models; and it matches many people's intuition about weak memory, that the
+extremely weird behaviours are theory artifacts that real programs mostly do not
+see. [AGENT] analysis:
 
 - **Non-atomic plus `seq_cst` fragment: the metaproperty is race freedom, and
   ownership already gives it.** A concurrent separation logic whose soundness proof

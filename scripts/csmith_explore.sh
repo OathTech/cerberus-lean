@@ -2,9 +2,9 @@
 # csmith_explore.sh — arc-10 S4 phase-1 instrument: per-configuration
 # ORACLE-ONLY yield + construct-coverage measurement for csmith flag sets.
 #
-# Motivation ([USER], charter ADDENDUM): "the prototype's setup is NOT
-# final... try a few different configurations... make csmith cover as
-# much as possible." This tool measures, for one csmith configuration
+# Motivation ([USER], charter ADDENDUM): the prototype's csmith setup is
+# not final; try several configurations and make csmith cover as much as
+# possible. This tool measures, for one csmith configuration
 # over a deterministic seed block:
 #   (i)  oracle-runnable YIELD — the fraction of generated programs the
 #        OCaml oracle can actually execute (same invocation as

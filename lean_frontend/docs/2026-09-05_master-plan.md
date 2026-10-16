@@ -7,14 +7,14 @@ prototype-integration assumptions below are historical; other project records
 and obligations are preserved.
 
 **Revision 10, 2026-09-16 [AGENT orchestrator-directed].** Requested [USER
-2026-09-16]: "Great, let's update the master plan based on the audit result and
-recent work". Since revision 9 the mainline moved `a3b5d169d` → `15907f32b`
+2026-09-16]: an update of the master plan based on the audit result and
+recent work. Since revision 9 the mainline moved `a3b5d169d` → `15907f32b`
 through eleven landings, each ff-only on a per-merge sign-off (§0 lists them),
 including the [whole-project semantics audit of 2026-09-11](2026-09-11_whole-project-semantics-audit.md)
 and its two repair slices ([record](2026-09-11_semantics-audit-repairs-record.md),
 [record](2026-09-11_parser-progress-measure-record.md)), both independently
 audited before landing. Changes in this revision: (1) §0 gains every [USER]
-ruling of 2026-09-07 → 2026-09-16, verbatim; (2) §1 gains a "state at revision
+ruling of 2026-09-07 → 2026-09-16; (2) §1 gains a "state at revision
 10" table beside the assessment table; (3) §3 gains a DONE list, a revision-10
 status table (the revision-9 table is retained beneath it), two new entries —
 the agreed structural-outcome-constructors design (D2) and the open
@@ -23,7 +23,8 @@ audit and its repairs, and addenda to 4.3/4.4; (5) §6 gains the consumer re-pin
 note and the tray filing state; (6) §7 gains the sixteen-finding crosswalk; (7)
 §8 gains the exit status. Nothing below is deleted. The §3 order is UNCHANGED:
 core semantics before scoped SC concurrency ([USER 2026-09-06]).
-Landed [USER 2026-09-16]: "Great, land Revision 10, then work on D2's design" —
+Landed [USER 2026-09-16]: approved landing Revision 10, with D2's design as the
+next work —
 the pre-merge audit ask was made (a subagent audit waived in favour of the
 operator's own read, as proposed); ff-only onto `mdd/cerberus-lean`, no push.
 
@@ -31,11 +32,11 @@ operator's own read, as proposed); ff-only onto `mdd/cerberus-lean`, no push.
 of the validation-foundations arc
 ([record](2026-09-06_validation-foundations-landing-prep.md)). Two changes,
 both operator-ruled [USER 2026-09-06]: (1) a new §0 "Operator rulings carried
-verbatim" collects every [USER] ruling this plan rests on, so that no revision
-can drop them again ("Re master plan revisions dropping rulings - yes, this
-should be retained"); (2) §3 "Priority order" is REPLACED by the response §4
+with the plan" collects every [USER] ruling this plan rests on, so that no revision
+can drop them again (the operator confirmed that rulings dropped by master-plan
+revisions must be retained); (2) §3 "Priority order" is REPLACED by the response §4
 order — this order IS the response §4 order, reconfirmed [USER 2026-09-06]
-("we should stabilize the core semantics before this, so we should revert to our previous ordering") — updated only for what is now done. Revision 8's factual state
+(the core semantics is stabilized before concurrency, reverting to the previous ordering) — updated only for what is now done. Revision 8's factual state
 sections (§1, §2, §4–§8) are kept as they were; nothing below is deleted; the
 concurrency integration charter stays a proposal, sequenced after the
 stable-profile claim (§3 step 8).
@@ -57,7 +58,7 @@ This revision preserves the adopted decision boundaries. Revisions 3–8 had
 superseded revision 2's sequencing (the order in
 [the audit response, section 4](2026-09-05_whole-project-audit-response.md));
 revision 9 withdraws that: the §3 order IS the response §4 order, reconfirmed
-[USER 2026-09-06] ("we should stabilize the core semantics before this, so we should revert to our previous ordering").
+[USER 2026-09-06] (the core semantics is stabilized before concurrency, reverting to the previous ordering).
 Historical evidence and [USER] rulings remain in those records. Agent
 recommendations below are not new operator rulings.
 
@@ -78,27 +79,24 @@ complete. The failure design, next charter and landing remain decisions for
 the end-of-charter discussion. The latest conditional landing authorization
 and the reason for holding the merge are recorded in the document review.
 
-## 0. Operator rulings carried verbatim
+## 0. Operator rulings carried with the plan
 
 Added in revision 9 so that the rulings this plan rests on travel with it
-([USER 2026-09-06]: "Re master plan revisions dropping rulings - yes, this
-should be retained"). Quotes are verbatim; interpretations are [AGENT] and
-live in the cited records.
+([USER 2026-09-06] confirmed that rulings dropped by master-plan revisions
+must be retained). Rulings are given in paraphrase; interpretations are
+[AGENT] and live in the cited records.
 
 **[USER 2026-09-05]** — the whole-project audit rulings, asked as four
-decisions plus two yes/no items, quoted from
+decisions plus two yes/no items, recorded in
 [the audit response §3](2026-09-05_whole-project-audit-response.md):
-
-> "(1) agree, the aim should be to provide the most faithful C
-> semantics, per the intent of the authors, (2) unsure, this feels like
-> it does touch the trust surface because it increases the gap between
-> 'obviously right' and what Lean does. Is there a route where we prove
-> the two are equivalent? (3) agree on the first, and the second depends
-> on how the refined-cerberus project evolves, (4) I think you're right,
-> the matrix may come later but for now we mostly inherit trust from
-> Cerberus-upstream
->
-> yes on the two other items"
+(1) agreed — the aim is to provide the most faithful C semantics, per the
+intent of the authors; (2) unsure — the proposal appears to touch the trust
+surface, since it widens the gap between the obviously-right form and what
+Lean does, and asked whether there is a route to proving the two equivalent;
+(3) agreed on the first part, the second depending on how the
+refined-cerberus project evolves; (4) agreed — the matrix may come later,
+trust being for now mostly inherited from upstream Cerberus; and yes to the
+two other items.
 
 Interpretation [AGENT], response §3 items 1–5: F1 is read kind-1 (the
 authors' intent is the referent); P2 pure-failure lifting is NOT authorized
@@ -109,9 +107,13 @@ release-profile statement yes, standards matrix later; land the audit and
 run the P0 instrument slice.
 
 **[USER 2026-09-06]** — the validation-foundations landing rulings (evidence
-archives, concurrency ordering, retained rulings):
-
-> "Agree on all points, and particularly on cleaning up the evidence archives. These should not be git committed, and will not be pushed. I don't actually hold strong value in such data which could be recreated, so I am fine dropping large files like this. The important thing is that runs can be reconstructed. Re ordering of concurrency, I think we should stabilize the core semantics before this, so we should revert to our previous ordering. Re master plan revisions dropping rulings - yes, this should be retained."
+archives, concurrency ordering, retained rulings): agreed on all points, and
+particularly on cleaning up the evidence archives, which are not to be
+git-committed and will not be pushed; data that could be recreated need not be
+kept, so dropping large files like these is fine, the important thing being
+that runs can be reconstructed; on the ordering of concurrency, the core
+semantics is stabilized first, reverting to the previous ordering; and rulings
+dropped by master-plan revisions must be retained.
 
 Consequences: the evidence archives are dropped from the repository with
 identities retained and runs reconstructible
@@ -119,45 +121,45 @@ identities retained and runs reconstructible
 the response §4 order again; this §0 exists.
 
 **[USER 2026-09-07 → 2026-09-16]** — the rulings of the eleven landings and
-the audit follow-through, verbatim (interpretations [AGENT] live in the cited
-records):
+the audit follow-through, in paraphrase (interpretations [AGENT] live in the
+cited records):
 
-- 2026-09-07, validation-foundations landing: "(1) codex is working in other
-  trees, this is safe, (2) agree, audit done, (3) go ahead and merge". Risk-map
-  baseline landing: "Great, merge it". Census + parked correspondence design:
-  "merge the two branches". Option C dispatch: "create a branch and send a
-  worker to do option C".
-- 2026-09-08, fuel-pending close-out: "if it's safe, you can land it".
-  Fuel-measure-cost: "add the review to the worktree with any required
-  improvements before merging". C-TF1 and (2026-09-09) ND fuel stability: "if
-  ready with small fixes, make the fixes and land it".
+- 2026-09-07, validation-foundations landing: confirmed that Codex was working
+  in other trees so the landing was safe, accepted the audit as done, and
+  approved the merge. Risk-map baseline landing: approved the merge. Census +
+  parked correspondence design: approved merging the two branches. Option C
+  dispatch: directed that a branch be created and a worker sent to do option C.
+- 2026-09-08, fuel-pending close-out: approved landing it if safe.
+  Fuel-measure-cost: directed that the review be added to the worktree, with
+  any required improvements, before merging. C-TF1 and (2026-09-09) ND fuel
+  stability: approved making the small fixes and landing, if ready.
 - 2026-09-10, the `are_compatible_aux` shared lem BODY change (the first
-  shared-model change since the split): "Agreed with all of this. It sounds
-  like this is actually a more regular design than the current lem? I.e we use
-  the same mechanism as elsewhere in the cerberus design? In that case, go
-  ahead with the charter, and I'll get codex to work on it". Its landing,
-  2026-09-11: "Great, let's land it as is, as you suggest".
+  shared-model change since the split): agreed with all of it, asked whether
+  this is in fact a more regular design than the current lem (the same
+  mechanism as used elsewhere in the Cerberus design), and on that basis
+  approved the charter, to be worked by Codex. Its landing, 2026-09-11:
+  approved landing it as is, as suggested.
 - 2026-09-11, on the orchestrator's review of the whole-project semantics audit
   and its four decisions (D1 the shared lem fix of the array-bound typo; D2
   structural outcome constructors replacing the two opaque location atoms; D3
   the route for the last two fuel-pending workers; D4 a checked semantic input
-  boundary as the shape of the stable-profile claim): "Let's charter the work
-  on next steps 2 and 3 above as one slice of work. D1: approved, D2: agree,
-  D3: explain the choice? D4: I don't know what this is asking". After the D3
+  boundary as the shape of the stable-profile claim): directed that next steps
+  2 and 3 be chartered as one slice of work; D1 approved; D2 agreed; D3, asked
+  for the choice to be explained; D4, asked what it was asking. After the D3
   explanation (shared lem body restatement over a backend hoist or permanent
-  register rows): "D3 agree. Go ahead". On execution: "in this case you should
-  launch them as claude fable class subagents. Can you do that? We want to keep
-  in control of this bit of the work". On sequencing: "Once this lands, you can
-  make a new worktree and charter the parser work".
+  register rows): agreed D3 and approved going ahead. On execution: directed
+  that the workers be launched as Claude Fable class subagents, so as to keep
+  control of this part of the work. On sequencing: once this lands, a new
+  worktree is made and the parser work chartered.
 - 2026-09-15, the row-106 ruling (a hexadecimal literal the OCaml runtime
-  rounds twice; C11 §6.4.4.2#3 requires correct rounding): "Great, agree on
-  your recommendation. Go ahead with the worker" — ISO-fix register **R5**
-  ADMITTED (VALIDATION §2). The repair slice's audit: "Great, launch the audit
-  as proposed." Its merge: "merge it".
-- 2026-09-16, the parser slice's audit: "Go ahead with the audit as proposed".
-  Its merge: "Great, merge it. Then update me on what's next". This revision:
-  "Great, let's update the master plan based on the audit result and recent
-  work".
+  rounds twice; C11 §6.4.4.2#3 requires correct rounding): agreed with the
+  recommendation and approved dispatching the worker — ISO-fix register **R5**
+  ADMITTED (VALIDATION §2). The repair slice's audit: approved launching the
+  audit as proposed. Its merge: approved.
+- 2026-09-16, the parser slice's audit: approved going ahead as proposed.
+  Its merge: approved, with an update on what is next requested. This
+  revision: requested the master-plan update based on the audit result and
+  recent work.
 
 Interpretation [AGENT], recorded in the charters and records cited in §3/§4.5:
 D1 and D3 are executed and landed; D2 is AGREED and not yet chartered (§3 step
@@ -165,9 +167,9 @@ D1 and D3 are executed and landed; D2 is AGREED and not yet chartered (§3 step
 a Claude Fable subagent in fresh context reading the charter as the worker,
 the orchestrator re-verifying every gate at the boundary, the unconditional
 pre-merge audit ask, ff-only merge on per-merge sign-off — is the operator's
-choice for "this bit of the work", not a standing rule for all slices.
+choice for this part of the work, not a standing rule for all slices.
 
-**[USER], earlier, already verbatim in this file:** the legacy-run
+**[USER], earlier, already in this file:** the legacy-run
 instruction and the execution instruction (§1); the gcc-oracle gate ruling
 [USER 2026-09-02] and the Q1b tolerance [USER 2026-08-31] live in
 `scripts/LADDER.md` / `scripts/fork_drift_manifest.txt` respectively.
@@ -206,9 +208,8 @@ covered the Cerberus unit suite/minimal baseline, Lem's nine non-Lean
 emitters, and the prototype's 30-row litmus lane. The litmus abnormal-exit
 hole was also reproduced. None certifies a future integration head.
 
-**Legacy-run instruction [USER], verbatim:**
-
-> "That csmith run is a legacy run in another agent, leave it alone until it completes"
+**Legacy-run instruction [USER]:** the csmith run is a legacy run belonging
+to another agent and is to be left alone until it completes.
 
 Do not monitor, interrupt, restart, duplicate, diagnose, rebaseline or clean
 up that run or its worktree while active. Its agent retains ownership.
@@ -243,7 +244,7 @@ evidence. Preserve the aims and exception classes in
 ## 3. Priority order
 
 This order IS the [audit response §4](2026-09-05_whole-project-audit-response.md)
-order, reconfirmed [USER 2026-09-06]: "we should stabilize the core semantics before this, so we should revert to our previous ordering". Revisions 3–8 had moved scoped SC
+order, reconfirmed [USER 2026-09-06]: the core semantics is stabilized before concurrency, reverting to the previous ordering. Revisions 3–8 had moved scoped SC
 concurrency ahead of the stability work; that reordering is withdrawn.
 Dependencies remain the actual blockers; owners name repositories; this
 table does not dispatch agents.
@@ -321,8 +322,9 @@ the fork content pins (`[source-content]`), the release runner
 foundations candidate LANDED — ff-merge `arc/validation-foundations-land`
 → `mdd/cerberus-lean` `a3b5d169d` on the orchestrator's full battery
 ([record §11](2026-09-06_validation-foundations-landing-prep.md)) and the
-operator's per-merge sign-off ([USER 2026-09-07]: "(1) codex is working in
-other trees, this is safe, (2) agree, audit done, (3) go ahead and merge").
+operator's per-merge sign-off ([USER 2026-09-07]: Codex was working in
+other trees so the landing was safe, the audit was accepted as done, and the
+merge approved).
 Next: step 1 (the risk-map baseline by an independent auditor). Open
 housekeeping: the Codex worktree's scratch and nested worktree
 registrations, and the fate of the archive-bearing branch

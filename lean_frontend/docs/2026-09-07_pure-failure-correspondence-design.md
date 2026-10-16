@@ -2,8 +2,8 @@
 
 **Status: PARKED design, 2026-09-07 [AGENT orchestrator] — pending the operator's
 reading of the reachability census.** Master plan revision 9, step 2. The operator
-asked ([USER 2026-09-07] "let's do the reachability census and try to understand
-whether this is worthwhile") before ruling on §8; the census
+asked ([USER 2026-09-07]) for the reachability census first, to understand
+whether this is worthwhile, before ruling on §8; the census
 (`2026-09-07_pure-failure-reachability-census.md`) measured, over the 231 pure
 sites of the execution closure: **DISCARDABLE positions: 0** (178 TAIL, 53
 NON-TAIL all used) — so the F1 discard class has no instance in this tree and
@@ -27,30 +27,30 @@ reproducer (`2026-09-05_whole-project-release-gate-audit.md` §3 F1), the
 risk-map baseline (`2026-09-07_risk-map-baseline.md` §3), and the lem fuel
 design (`lem-lean/doc/lean-backend/2026-09-03_fuel-parameter-design.md`).
 
-## 0. The rulings this design answers, verbatim
+## 0. The rulings this design answers
 
 - [USER 2026-09-05], on the audit's F1 (OCaml raises on a discarded `failwith`,
-  Lean drops it): "(1) agree, the aim should be to provide the most faithful C
-  semantics, per the intent of the authors". → A discarded deliberate failure
+  Lean drops it): agreed that the aim is to provide the most faithful C
+  semantics, per the intent of the authors. → A discarded deliberate failure
   IS a discrepancy (kind-1). The referent is the authors' intent.
-- [USER 2026-09-05], on the audit's proposed generator transform: "(2) unsure,
-  this feels like it does touch the trust surface because it increases the gap
-  between 'obviously right' and what Lean does. Is there a route where we prove
-  the two are equivalent?" → This document is that route.
-- [USER 2026-09-05], on the typed-failure scope (R1): "yes agree, this seems
-  the lowest risk approach" → monadic sites first, through their monads'
+- [USER 2026-09-05], on the audit's proposed generator transform: unsure — it
+  appears to touch the trust surface, since it widens the gap between the
+  obviously-right form and what Lean does; asked whether there is a route to
+  proving the two equivalent. → This document is that route.
+- [USER 2026-09-05], on the typed-failure scope (R1): agreed, as the
+  lowest-risk approach → monadic sites first, through their monads'
   existing channels; the pure group was left as hygiene + register. This
   design is the successor for the pure group; R1's monadic half is unchanged.
-- [USER 2026-09-04], the arc's design rule: "sticking to our principle that we
-  don't change the lem structure for ocaml is a very good design rule … we
-  have to do more work, but it's just bounded kernel checked work"; "we
-  maintain the lem structure, and we get additional properties we want
-  without any trust decrease". → No `.lem` body changes; a Lean-only
+- [USER 2026-09-04], the arc's design rule: keeping to the principle that the
+  lem structure is not changed for OCaml's sake is a good design rule — it
+  means more work, but bounded, kernel-checked work; the lem structure is
+  maintained and the additional wanted properties come without any trust
+  decrease. → No `.lem` body changes; a Lean-only
   generation mode; every added property is a kernel-checked theorem.
-- [USER 2026-09-03], no magic values: "any instance of a value that can be
-  quantified over by a context / theorem is fine … Any and all magic values
-  that are hardcoded and can't be quantified over are definitionally bugs
-  (unless they mirror lem or ISO-C design choices)". → Outcomes are VALUES a
+- [USER 2026-09-03], no magic values: a value that a context or theorem can
+  quantify over is fine; any hard-coded magic value that cannot be quantified
+  over is by definition a bug, unless it mirrors a lem or ISO-C design
+  choice. → Outcomes are VALUES a
   theorem can case on; nothing is chosen for them.
 
 ## 1. The problem, precisely
@@ -311,7 +311,7 @@ Only after both halves land does the cone-wide generation follow, then D-1.
 
 ## 9. Provenance
 
-Rulings quoted are [USER] with dates as recorded in the cited documents and
+Rulings cited are [USER] with dates as recorded in the cited documents and
 the 2026-09-05 conversation record (`2026-09-05_whole-project-audit-response.md`
 §3). Counts are the census's (cold-reproduced) or derived by the grep named
 inline. The design choices are [AGENT] proposals awaiting §8.

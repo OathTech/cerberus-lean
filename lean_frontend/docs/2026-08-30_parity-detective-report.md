@@ -1,10 +1,10 @@
 # Parity detective — the frontier classified (2026-08-30)
 
 Branch `probe/parity-detective` @ base mainline `a8f86112d`. Charge
-([USER], verbatim): "look into all the examples that don't pass and
-figure out what's happening, and whether there's something we could do
-about it. I'm not totally convinced we actually are at Oracle parity
-outside our testset - we probably should probe this carefully."
+([USER]): look into every example that does not pass, work out what is
+happening and whether anything can be done about it; the user was not
+convinced the port is actually at oracle parity outside the test set
+and wanted that probed carefully.
 
 Method: fresh full run of the `scripts/test_ci_sweep.sh` instrument
 (all 15 suites, 2,186 files) at this mainline, plus 52 hand-written

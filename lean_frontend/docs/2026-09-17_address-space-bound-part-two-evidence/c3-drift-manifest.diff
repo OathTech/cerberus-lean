@@ -9,7 +9,7 @@ index 9701dafab..17afbbf42 100644
 +# Pristine upstream has no such parameter; matched mode never passes it (row 10 lists it not_applicable); its tiny-top
 +# differential lane is scripts/test_address_space.sh (LADDER Tier A row 12). Single-row edit. Record: §C3.
  # address-space-bound part two C2, 2026-09-17 [AGENT]: the address-space TOP becomes a quantified entry parameter
- # (route A; [USER 2026-09-16] "the semantics should be quantified over such bounds"; charter
+ # (route A; [USER 2026-09-16] ruled that the semantics should be quantified over such bounds; charter
  # lean_frontend/docs/2026-09-17_charter-address-space-bound-part-two.md; fence extension granted 2026-09-17). GENUINE
 @@ -340,7 +344,7 @@ util/cerb_fresh.ml
  100644 ad215848e3c780115da1029301ea80a6442d55d8c01386dbbd21f71d723ed7b6 backend/common/pipeline.ml

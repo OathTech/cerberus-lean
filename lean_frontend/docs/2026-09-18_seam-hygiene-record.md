@@ -13,9 +13,9 @@ to HEAD (stamps recorded by `build_lean`/`build_cerberus`).
 
 ## 0. Rulings (by pointer) and the fence extensions
 
-Charter §0 verbatim quotes: [USER 2026-09-18] "Great, charter the planned slice"; [USER 2026-09-17]
-"Makes sense, Let's do the sequence as you propose…"; the consumer's principle (cerberus-sl C3.10);
-[USER 2026-09-08] "we should *NOT* be building anything new out-of-policy"; [USER 2026-09-11]
+Charter §0 rulings: [USER 2026-09-18] charter the planned slice; [USER 2026-09-17]
+the proposed sequence agreed; the consumer's principle (cerberus-sl C3.10);
+[USER 2026-09-08] nothing new built out of policy; [USER 2026-09-11]
 execution mode. All decisions below are [AGENT] (worker) unless marked; the orchestrator's are
 marked [AGENT orchestrator].
 
@@ -800,7 +800,7 @@ Source unchanged: True.` (audit report §2.7).
 
 ## 11. Landing (2026-09-19)
 
-[USER 2026-09-19], verbatim: *"Great, land this."* — the merge sign-off, given after the orchestrator's merge ask naming the range (9 commits over mainline `0457732e1`: charter `0eafc94a4`, interim stop record `db640b214`, H1 `fce1de9f8`, H2 `ee1eaf94d`, H3 `dde3b766b`, record `34b8e15a8`, H4 `cef347c6c`, record §10 `1f50cc418`, the audit report as received `f664ab2ff` — the audit branch's `05d208f45` cherry-picked), the audit chain (MERGE-WITH-FIXES, no MAJOR → H4), and the orchestrator's re-gate at `1f50cc418`, verbatim: `fast: passed; 16/16 selected commands completed successfully.` / `Source unchanged: True. Complete tier selection: True.` / immaculate `OK: lane matches the committed baseline (…)` / `Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}` / `Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}`. The FULL battery reference is the audit's clean run at `34b8e15a8` (`full: passed; 39/39 … Source unchanged: True.`); H4 is a constructor reorder + documentation ([AGENT orchestrator]: not re-run for it).
+[USER 2026-09-19]: approved landing — the merge sign-off, given after the orchestrator's merge ask naming the range (9 commits over mainline `0457732e1`: charter `0eafc94a4`, interim stop record `db640b214`, H1 `fce1de9f8`, H2 `ee1eaf94d`, H3 `dde3b766b`, record `34b8e15a8`, H4 `cef347c6c`, record §10 `1f50cc418`, the audit report as received `f664ab2ff` — the audit branch's `05d208f45` cherry-picked), the audit chain (MERGE-WITH-FIXES, no MAJOR → H4), and the orchestrator's re-gate at `1f50cc418`, verbatim: `fast: passed; 16/16 selected commands completed successfully.` / `Source unchanged: True. Complete tier selection: True.` / immaculate `OK: lane matches the committed baseline (…)` / `Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}` / `Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}`. The FULL battery reference is the audit's clean run at `34b8e15a8` (`full: passed; 39/39 … Source unchanged: True.`); H4 is a constructor reorder + documentation ([AGENT orchestrator]: not re-run for it).
 
 **For cerberus-sl** (their items 3, 4-interim, 5b, 7-partial): no seam default in the execution closure is kernel-visible any more (the two identities their probe and ours reproduced are no longer `rfl`-provable; `test/Unit/OpaqueFailureTest.lean`); `CerbMem.oomKill` names the allocator's kill and `allocator_below_request_kills` is stated with it; `CerbGlobal.has_switch_*_eq : has_switch .<s> = false := rfl` for the eight switches, so each explicit arm reduces to its default; the timing/log stubs are identities; `BEq MemValue` is structural. The one kept panic is the enum-registry seam (the program-data parameters arc retires it). No signature changed for the consumer.
 

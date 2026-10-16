@@ -21,7 +21,7 @@ Effort pricing: **S** = <½ worker-day, **M** = 1–2 worker-days,
 
 ## 1. Headline answers
 
-1. **The "big CI suite" runner the operator remembers is real, and it is
+1. **The big-CI-suite runner the operator remembers is real, and it is
    two distinct things** (§3): (a) the prototype's own
    `scripts/test_interp.sh` in whole-tree directory mode
    (`./scripts/test_interp.sh cerberus/tests --nolibc` — a documented
@@ -115,7 +115,7 @@ freebsd 2. Dispositions in §3 (runners) and §5 (specialist suites).
 
 ---
 
-## 3. The CI-runner section [USER tip: "a script that runs the big CI suite"]
+## 3. The CI-runner section [USER tip: a script running the big CI suite exists]
 
 ### 3.1 What exists — three layers
 
@@ -152,7 +152,7 @@ driven by the cerberus tree's `tests.sh` (`test_interp.sh:157-166`
 sources it and iterates `citests`, skipping `.syntax-only.c`/`.exhaust.c`).
 
 **(c) The cerberus driver runner:** `tests/run-ci.sh` (116 ln — the
-operator's "driver tests/run-ci.sh"). Mechanics (read at
+driver script the operator pointed at). Mechanics (read at
 `cerberus-lean/tests/run-ci.sh`, byte-identical to the prototype
 submodule copy): sources `tests.sh` (≈209 enabled `citests` + an 11-entry
 annotated `skip` array, `tests.sh:212-227`, with reasons like "REAL

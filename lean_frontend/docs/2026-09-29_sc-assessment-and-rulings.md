@@ -1,10 +1,10 @@
 # SC concurrency: state assessment and operator rulings (2026-09-29)
 
 [AGENT] Orchestrator record. The operator returned after a break and asked
-for "a close look at our current branch and make an assessment of the state
-wrt plans, overall credibility, etc." using Opus- and Fable-class reviewer
+for a close look at the current branch and an assessment of its state with
+respect to plans, overall credibility and so on, using Opus- and Fable-class reviewer
 agents. This record keeps the assessment, the questions put to the operator,
-the operator's answers verbatim and what they change. The master plan
+the operator's answers and what they change. The master plan
 [SC-CONCURRENCY.md](../../SC-CONCURRENCY.md) carries the resulting current
 state; this record is the dated evidence behind it.
 
@@ -114,11 +114,10 @@ The orchestrator's six questions, as put (quoted from the assessment):
 6. "Process weight: optionally direct lighter per-slice records and a
    plain-language summary at the top of the plan."
 
-[USER 2026-09-29], first answer, verbatim:
-
-> (1) agree, (2) agree, mirror and refuse seems safest (3) what's the
-> question here? (4) land on mainline seems reasonable, (5) what do you
-> recommend? (6) agree
+[USER 2026-09-29], first answer: agreed on (1); agreed on (2), judging
+mirror-and-refuse the safest; asked what the question was on (3); found
+landing on mainline reasonable for (4); asked for a recommendation on (5);
+agreed on (6).
 
 [AGENT] follow-up, as put: on (3), accept the counterproposal with one
 amendment — its "first S1 work" paragraph assumed a divergence from
@@ -128,10 +127,9 @@ review of the revised plan plus the WP1 decision record into the pre-merge
 audit of the L0 landing, since rulings (1), (2) and (6) require a real plan
 revision anyway.
 
-[USER 2026-09-29], second answer, verbatim:
-
-> yeah, agree on (3) although we're doing some bug hunting first on the
-> main-line agent. (5) agree. Go ahead
+[USER 2026-09-29], second answer: agreed on (3), noting that some bug
+hunting on the main-line agent comes first; agreed on (5); and gave the
+go-ahead.
 
 ## 3. What the rulings change
 
@@ -152,14 +150,13 @@ are open to correction.
 ## 4. Follow-up ruling: scope of the 2026-09-04 brief constraint
 
 The L0 pre-merge audit (S3) noted that S1 must add shared-`.lem` code while
-the [USER 2026-09-04] brief constraint "we don't change the lem structure
-for ocaml" (typed-failure outcomes design §0) was the condition behind M2.
+the [USER 2026-09-04] brief constraint against changing the lem structure
+for OCaml's sake (typed-failure outcomes design §0) was the condition behind M2.
 [AGENT] asked whether that constraint was scoped to features upstream
-already supports. [USER 2026-09-29], verbatim:
-
-> yes, this is specifically about features that the ocaml upstream
-> currently supports, i.e we don't bend the existing trust story. But for SC
-> we have to change things because there's no upstream support
+already supports. [USER 2026-09-29] confirmed it: the constraint is
+specifically about features the OCaml upstream currently supports, so the
+existing trust story is not bent; for SC, things have to change because
+there is no upstream support.
 
 Consequence [AGENT]: new SC semantics may live in shared `.lem`; behaviour
 of features upstream supports must not change, and refactors of existing
@@ -168,14 +165,14 @@ differential lanes are the evidence). Recorded in SC-CONCURRENCY.md
 constraint 1.
 
 L0 landed on mainline at `d47e8f282` and the audit record at `5ce3d589b`
-([USER 2026-09-29] sign-off: "1: yes, 2: yes land it"). Nothing is pushed
+([USER 2026-09-29] signed off on both points and on landing it). Nothing is pushed
 by this record.
 
 ## 5. Correction: S1 does not wait for the bug hunt
 
 §3 row 3 recorded an [AGENT] reading that S1 work on shared surfaces would
 wait for the main-line track's bug hunt. That reading was wrong.
-[USER 2026-09-29], verbatim: "I think that's a misunderstanding, we don't
-need to wait for the bug-hunt. We can get going." S1 starts now; overlap is
+[USER 2026-09-29] corrected it: there is no need to wait for the bug-hunt;
+work can get going. S1 starts now; overlap is
 handled by the claims register and serialized landings. §3 is left as
 written, as the record of the misreading.

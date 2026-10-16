@@ -246,7 +246,7 @@ fi
 #   Defined {value: "V", stdout: "O", stderr: "E", blocked: "B"} -> VAL:{value: "V", stdout: "O", stderr: "E", blocked: "B"}
 # The UB token is the WHOLE Undefined line since the zero-discrepancy arc
 # (2026-09-03, charter lean_frontend/docs/2026-09-03_zero-discrepancy-design.md
-# §1.3/§4.1; [USER 2026-09-03] "UB location is behaviour"): the ub code,
+# §1.3/§4.1; [USER 2026-09-03] ruled that the UB location is part of behaviour): the ub code,
 # the killed state's stderr AND the loc are compared byte-for-byte —
 # Lean renders all three exactly as the oracle (CerbLocation.simpleLocation
 # = Cerb_location.simple_location; Main.lean batch printer =

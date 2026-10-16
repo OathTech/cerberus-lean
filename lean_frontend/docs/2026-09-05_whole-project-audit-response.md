@@ -60,20 +60,16 @@ cosmetic); `hack` "monadic/partial".
   the auditor, not VALIDATION.md's four aims; both numberings are kept
   as written, this note is the crosswalk.
 
-## 3. Operator rulings [USER 2026-09-05], verbatim
+## 3. Operator rulings [USER 2026-09-05], paraphrased
 
-Asked as four decisions plus two yes/no items; answered:
-
-> "(1) agree, the aim should be to provide the most faithful C
-> semantics, per the intent of the authors, (2) unsure, this feels like
-> it does touch the trust surface because it increases the gap between
-> 'obviously right' and what Lean does. Is there a route where we prove
-> the two are equivalent? (3) agree on the first, and the second depends
-> on how the refined-cerberus project evolves, (4) I think you're right,
-> the matrix may come later but for now we mostly inherit trust from
-> Cerberus-upstream
->
-> yes on the two other items"
+Asked as four decisions plus two yes/no items; answered: (1) agreed, the
+aim being the most faithful C semantics per the intent of the authors;
+(2) unsure, since the transform seems to touch the trust surface by
+widening the gap between the obviously-right mirror and what Lean does,
+and asked whether the two could be proved equivalent; (3) agreed on the
+first point, the second depending on how the refined-cerberus project
+evolves; (4) agreed that the matrix can come later, trust being mostly
+inherited from upstream Cerberus for now; and yes to the two other items.
 
 Interpretation [AGENT]:
 

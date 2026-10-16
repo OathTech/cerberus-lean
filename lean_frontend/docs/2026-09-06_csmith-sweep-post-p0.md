@@ -6,8 +6,8 @@ battery in the detached script `.tmp/p0-reverify.sh` (ephemeral, deleted
 with this record's commit), on the `arc/p0-instruments` worktree at
 `8e5f198c5` — content-identical (patch byte-equal) to the merged
 `aa5fc06c4..0a62dd7f7` on `mdd/cerberus-lean`. Operator ruling [USER
-2026-09-05]: "let's land it as you propose, and keep the csmith gate
-running in the background" — the slice landed on the green battery; this
+2026-09-05]: approved landing as proposed, with the csmith gate kept
+running in the background — the slice landed on the green battery; this
 sweep is the post-merge check the ruling asked for. Every quoted line
 below is verbatim from the log; the battery script keeps each lane's last
 six lines, so shard 2's SUMMARY line was cut off and is NOT recorded.

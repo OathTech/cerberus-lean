@@ -25,20 +25,19 @@ is guarded (`Main.lean:1094-1110` refuses to start without
 `LEAN_ABORT_ON_PANIC`; Z2-FL-03), but the consumer calls `drive`
 in-process and never sees the flag.
 
-**The ruling** ([USER 2026-09-03], `docs/2026-09-03_typed-failure-outcomes-ruling.md`, verbatim):
-
-> "Re the judgement, yes, I think we should structure this so that
-> *consumers* of the semantics get the property we care about, i.e
-> conformance to the ocaml oracle. This means we should fail-closed into
-> the correct behavior. Understood re the design change, we should
-> schedule this (can it wait for the current set of fixes to land?)"
+**The ruling** ([USER 2026-09-03], `docs/2026-09-03_typed-failure-outcomes-ruling.md`):
+the structure should give *consumers* of the semantics the property that
+matters, conformance to the OCaml oracle, which means failing closed into
+the correct behaviour; the design change is understood and is to be
+scheduled, with the question of whether it can wait for the current set
+of fixes to land.
 
 Rulings in force that bound the design:
 
 - **Referent = the logical semantics** (`docs/2026-09-03_logical-semantics-referent-ruling.md`): KIND-1 fail-stops (a `failwith`/`assert`/lem `error` the MODEL writes deliberately) are mirrored; KIND-2 OCaml-execution artifacts (`Z.Overflow`, `Division_by_zero` from a missing guard, host-int conversions, polymorphic compare raising) are not — Lean implements the logical meaning, the case is logged and pinned.
 - **Interim rule Z1–Z3** (ruling doc): one-sided oracle crashes are mirrored as `panic!` carrying the OCaml text (Q4), never as a memory-monad `Error` — "a typed `Error` verdict is a different failure CLASS from a tool crash (charter §1.2(a)), so the correct typed outcome does not exist yet; inventing it per site is the design pass."
 - **Consumer requirement (A)/(B)/(C)** (refined-cerberus `docs/2026-09-04_review-of-fuel-parameter-design.md` §2): on the execution path an exhaustion must be ABSORBING (a typed outcome the monad's `bind` propagates), ABSENT, or unreachable — "an opaque-default exhaustion on the execution path is a silent fail-open under the project's own rule". The same sentence applies verbatim to every failure site; the fuel arc made it mechanical for fuel'd workers (`scripts/check_fuel_forms.sh`).
-- **Brief constraints** ([USER 2026-09-04], relayed): "we don't change the lem structure for ocaml" — Lean-only declares are fine, `.lem` bodies and the OCaml output are not touched; "stick to our brief" — no mirror model.
+- **Brief constraints** ([USER 2026-09-04], relayed): the lem structure is not changed for OCaml's sake — Lean-only declares are fine, `.lem` bodies and the OCaml output are not touched; stay within the brief — no mirror model.
 - **The template**: the fuel arc's Option C — an `opaque` atom with a value (`CerbFuel.fuelExhaustedLoc`, `CerbFuel.lean:54`), the kill `Error0 fuelExhaustedLoc msg` in the ND monad, `Result (Error fuelExhaustedLoc msg, st)` in the pexpr evaluator's state-exception monad, runner leaves that return the same kill (`CerbND.lean:98, :117-132`); soundness by parametricity in the opaque, no distinctness lemma (`docs/2026-09-02_fuel-arc-design.md` §1.3, options table §2).
 
 **What the pass must deliver** (the brief): every failure site on the
@@ -692,8 +691,8 @@ register carries it as INVARIANT/CONFIG with 2.C as the mover until then.
 cerberus half C1–C3 merged (`928aa1e76`); Z3 and Z4 have NOT run (no
 `*Z3*`/`*Z4*` record exists in `lean_frontend/docs/`; the ruling's
 sequencing was Z1 → Z2 fix phase → Z3 → Z4 → this pass). lem TODO row 18
-(declare consolidation, [USER 2026-09-04] "definitely worth doing before
-we get to stable") is scheduled after the cerberus fuel half — i.e. now
+(declare consolidation, [USER 2026-09-04] ruled it worth doing before
+the stable release) is scheduled after the cerberus fuel half — i.e. now
 — and before the upstream lem submission. The whole-project trust-surface
 risk map ([USER 2026-09-05], `TODO.md:356-372`) runs after Z4 and the
 fuel close-out, before the fresh-noodler exit test.
@@ -790,8 +789,8 @@ fuel close-out, before the fresh-noodler exit test.
    consumer's current practice made mechanical), or schedule the
    failure-lifting transform P1 (L; re-types most exec-cone signatures
    and every consumer export; correct by construction; shares
-   instrumentation with fuel monotonicity Route B)? The brief's "we don't
-   change the lem structure for ocaml" is satisfied by both (P1 is a
+   instrumentation with fuel monotonicity Route B)? The brief's rule that the lem
+   structure is not changed for OCaml's sake is satisfied by both (P1 is a
    Lean-only transform); the consumer's re-typing cost is P1's price.
    Note that the 36 `CerbFS` refusals become typed kills ONLY under P1
    (§1.1.c); under P3/P5 they stay opaque refusals.
@@ -824,10 +823,11 @@ fuel close-out, before the fresh-noodler exit test.
 
 ## 7. Provenance
 
-[USER 2026-09-03]: the typed-failure ruling (§0, verbatim), the
+[USER 2026-09-03]: the typed-failure ruling (§0), the
 logical-semantics referent ruling (kind 1 / kind 2), the exception
-classes, the no-magic-values general form. [USER 2026-09-04]: "we don't
-change the lem structure for ocaml", "stick to our brief" (relayed by the
+classes, the no-magic-values general form. [USER 2026-09-04]: the lem
+structure is not changed for OCaml's sake, and the work stays within the
+brief (relayed by the
 orchestrator in this brief), the declare-consolidation ruling (lem TODO
 18). [USER 2026-09-05]: the whole-project risk map (TODO.md:356-372).
 [USER 2026-09-02]: fuel-arc Option C (the opaque-atom template).
@@ -857,7 +857,7 @@ decision is in §6.
 [USER 2026-09-05], on the orchestrator's proposed split ("the monadic
 group's typed absorbing outcomes now, the pure group's register and gate
 as the interim with the large transform decided after the risk map"):
-"Decision 4: yes agree, this seems the lowest risk approach".
+agreed to decision 4 as the lowest-risk approach.
 
 Applied [AGENT]: (1) MONADIC group — the seven hand-written `memM` failure
 sites become the memory monad's error (the driver already turns it into

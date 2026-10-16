@@ -2,7 +2,7 @@
 
 **Status:** [AGENT 2026-09-20, the `s3-ladder` agent] cerberus-sl's review of cerberus-lean commit `b4422df14`
 (`lean_frontend/docs/2026-09-20_run-digest-as-state-design-note.md`, branch `docs/run-digest-design`, written against
-mainline `5407597d9`), requested by the operator ("would it meet the upstream needs we have for resolving our problem?").
+mainline `5407597d9`), requested by the operator (asking whether it would meet their upstream needs for resolving the problem).
 The two rulings the note leaves to us that are the operator's (its questions 4 and 5) are recorded with [USER]
 provenance in §4; the rest is the agent's under the C3.34 delegation. DECISIONS C3.56. The operator relays this
 document.
@@ -104,11 +104,11 @@ signatures at once; the digest is the smallest of the three. Hence the ruling in
    or as the `≠ ""` hypothesis (`symFresh_of_digest`, `WFprocDec.symFresh_of_libDigestB`, `CertP.libProcCheck_sound`); the
    one computation from `main` (`T11Guard.t11_digest`/`t11_digest_ne`) is the single-unit instance and becomes `rfl`/`decide`
    on the field. Consistent with §5.
-4. **Timing — [USER 2026-09-20] "agree, we should wait for the complete solution to land":** ONE re-pin, taken after the
+4. **Timing — [USER 2026-09-20] agreed to wait for the complete solution to land:** ONE re-pin, taken after the
    digest slice has landed alongside E-A (and the address-space top already on mainline), never two. [AGENT] our
    re-pin cost is the semantics rebuild plus re-verifying the 49 hand-written seams; no single signature change is
    the cost, so bundling is strictly cheaper for us.
-5. **Item 7 (`SelectAgreesC`) — [USER 2026-09-20] "we can ask for this immediately":** we request that the item 7 work be
+5. **Item 7 (`SelectAgreesC`) — [USER 2026-09-20] this can be asked for immediately:** we request that the item 7 work be
    STARTED NOW, not queued behind this arc. [AGENT] the reason is arithmetic: item 7 conditions six of our seven rungs
    (t5, t4, t3, t9r, t2r, t11), the digest conditions t11 alone; v1 needs both (INTERFACE disclosure 22). We do not ask
    that the digest slice be delayed for it — it is designed and small — only that item 7 not wait for the digest to

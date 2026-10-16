@@ -14,9 +14,9 @@ another gate-hardening campaign or declare customer release readiness.
 
 ## Authorization and independent scope
 
-[USER], the instruction initiating this review:
-
-> Great, run a tightly focused document review as you propose. If it results in no major findings, fix what it finds, then execute the merge
+[USER], the instruction initiating this review: run the tightly focused
+document review as proposed; if it yields no major findings, fix what it
+finds and then execute the merge.
 
 The agreed scope was material accuracy, scope/guarantee overclaims,
 consistency with the project doctrine, and coherent next priorities. The
@@ -106,9 +106,9 @@ It is 316,706 bytes; SHA-256:
 Every archived member was read back and checked against its original bytes.
 Publication after the run changes only this result paragraph and adds that
 archive. [Landing note, 2026-09-06 [AGENT]: the archive was dropped from the
-repository per [USER 2026-09-06] ("These should not be git committed, and
-will not be pushed ... The important thing is that runs can be
-reconstructed"); its identity line is retained in
+repository per [USER 2026-09-06] (evidence archives are not git-committed
+and will not be pushed; the important thing is that runs can be
+reconstructed); its identity line is retained in
 [validation-foundations-document-review-evidence.SHA256SUMS.dropped](validation-foundations-document-review-evidence.SHA256SUMS.dropped);
 reconstruction: `python3 scripts/release.py --mode fast --out <new dir>` at
 `d607409f9` (landed replay `741b0231a`), `CERB_MEM_MAX=32G`,

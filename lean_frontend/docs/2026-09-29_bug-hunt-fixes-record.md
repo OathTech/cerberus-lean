@@ -2,7 +2,7 @@
 
 Branch `arc/bug-hunt-fixes` (worktree `worktrees/cerberus-lean-audit/bug-hunt-20260929`), base `86a01dbf9`.
 Findings and options: [the bug-hunt record](2026-09-29_discrepancy-bug-hunt.md) (BUG-2..BUG-6, K-5).
-Authority: [USER 2026-09-29] "Agree on everything, yes on the fixes". Implementation choices below are
+Authority: [USER 2026-09-29] agreed on everything and approved the fixes. Implementation choices below are
 [AGENT] unless marked otherwise; the slice list and the refusal choices (BUG-2's `OPAM_SWITCH_PREFIX`,
 BUG-3's import-time refusal, BUG-6/K-5's refusal, BUG-5's stop-if-wide rule) are from the orchestrator's
 brief under that ruling. Gate lines are quoted verbatim from the runs; derived tallies are labelled.
@@ -368,10 +368,10 @@ propagates).
 
 ## S5 decision (orchestrator addendum, 2026-09-30)
 
-[USER 2026-09-30] rejected option (A): "(A) means we have a special magic path that only gets used in this
-situation! That seems very fragile, really more a hack than a fix", and set the standing rule "we should not fix
-deviations with special 'magic mode' paths that work exclusively in one situation". Chosen: option (E), extended —
-"Right, I think (3) is the right answer for now, and (1) or (2) might be work for later." BUG-5 is registered as
+[USER 2026-09-30] rejected option (A) as a special magic path used only in this situation — fragile, more a hack
+than a fix — and set the standing rule that deviations are not fixed with special "magic mode" paths that work
+exclusively in one situation. Chosen: option (E), extended — (3) judged the right answer for now, with (1) or (2)
+as possible later work. BUG-5 is registered as
 named deviation N3 (VALIDATION §2b) with the float-literal inventory check `scripts/check_libc_float_literals.py`
 (row 1; register `scripts/libc_float_literals.txt`, 24 literals, 1 LOSSY-N3; six plants). The ISO position
 (orchestrator's reading, [AGENT]): C11 §6.4.4.2#3 makes `0x1p64` exactly 2^64, so the oracle, running the compiled
@@ -380,8 +380,8 @@ Queued movers (TODO.md): a round-tripping Core printer everywhere, or libc built
 
 ## The option list the N3 ruling answers (orchestrator addendum, 2026-09-30; pre-merge audit M2)
 
-The ruling quoted for N3/D8, [USER 2026-09-30] "Right, I think (3) is the right answer for now, and (1) or (2) might be
-work for later.", answered a numbered list the orchestrator gave in conversation (not the lettered (A)–(E) above). The
+The ruling cited for N3/D8, [USER 2026-09-30] ((3) the right answer for now; (1) or (2) possible later work),
+answered a numbered list the orchestrator gave in conversation (not the lettered (A)–(E) above). The
 list, as given (condensed faithfully [AGENT]):
 
 1. Make the Core pretty-printer round-trip floats everywhere (shortest exact decimal or hex floats); no special mode.

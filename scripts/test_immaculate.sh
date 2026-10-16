@@ -47,7 +47,7 @@
 # Comparison is on the SEMANTIC VERDICT TOKEN (UB verdict / value / error /
 # crash). Since the zero-discrepancy arc (2026-09-03, charter
 # lean_frontend/docs/2026-09-03_zero-discrepancy-design.md §1.3/§4.1,
-# [USER 2026-09-03] "UB location is behaviour") the UB token is the WHOLE
+# [USER 2026-09-03] ruled that the UB location is part of behaviour) the UB token is the WHOLE
 # `Undefined {…}` payload — ub code, the killed state's stderr AND the
 # loc — byte-for-byte; a loc-rendering or stderr difference is a DIFF,
 # never normalised away. (Until then the token was the ub code alone,
@@ -308,8 +308,8 @@ if $RECORD_BASELINE; then
         echo "# zd-z2m01-* (aligned_alloc(0,·): oracle Division_by_zero at std.core:385 rem_t) are both-crash"
         echo "# MATCH | L=CRASH since 2026-10-03 (hand-edited from ORACLE_CRASH | L=UB:DUMMY(align_alloc) on the two"
         echo "# (0, 8) rows): Lean's integerRem_t/integerRem_f fail-stop on a zero divisor as zarith raises, under"
-        echo "# [USER 2026-10-03] \"we don't innovate wrt Cerberus-upstream ... fall back to loudly rejecting (either as"
-        echo "# unsupported, or matching upstream)\" (docs/2026-10-03_total-arith-and-bookkeeping-record.md; supersedes"
+        echo "# [USER 2026-10-03] rule that the fork does not innovate relative to Cerberus upstream and falls back to loudly"
+        echo "# rejecting (as unsupported, or matching upstream) (docs/2026-10-03_total-arith-and-bookkeeping-record.md; supersedes"
         echo "# the 2026-09-03 KIND-2 pending reading and the Z2 record §10.1 recommendation). Z2 probe-integration pins"
         echo "# (record §5): zd-z2-free-funptr (Z-07 re-witness, MATCH), zd-z2m03-malloc-oom-msg (MATCH — Lean runs"
         echo "# it since Z2-M-04), zd-z2fl03-nan-to-int and zd-z2f04-closedir (both-crash MATCH | L=CRASH pairs)."
@@ -317,7 +317,7 @@ if $RECORD_BASELINE; then
         echo "# total-arith sweep pins (2026-10-03, hand-inserted; docs/2026-10-03_total-arith-and-bookkeeping-record.md §2, §7):"
         echo "# zd-ta-alignas-huge-{sizeof,union-alignof,desugar} — a front-end-accepted _Alignas(2^62) read through Z.to_int"
         echo "# (impl_mem.ml:248/:267, ocaml_implementation.ml:501): oracle Z.Overflow (exit 125). ISO-fix register R7 (the R3"
-        echo "# class; [USER 2026-10-03] F1 ruling \"Yes, I agree with this analysis. Go ahead\"): Lean computes upstream's unbounded"
+        echo "# class; [USER 2026-10-03] F1 ruling agreeing with the analysis and approving the fix): Lean computes upstream's unbounded"
         echo "# answer -> ORACLE_CRASH | L=<value> (hand-re-pinned 2026-10-03 from a short-lived both-crash MATCH | L=CRASH pin);"
         echo "# zd-ta-alignas-2p61-control (2^61, inside OCaml's int range) MATCH on both."
         echo "#"

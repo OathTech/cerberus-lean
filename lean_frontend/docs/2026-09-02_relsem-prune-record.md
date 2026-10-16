@@ -9,10 +9,10 @@ Quoted outputs are verbatim; tallies marked "derived" are derived.
 
 ## 0. The ruling and its reading
 
-[USER 2026-09-02], verbatim: "the RelSem semantics is still sitting on
-main. It's a relic from the reasoning era, it should have been killed
-along with the other reasoning-era artifacts (i.e left on the branch).
-The only canonical semantics should be the cerberus opsem".
+[USER 2026-09-02]: the RelSem semantics was still sitting on main; it is
+a relic of the reasoning era that should have been killed along with
+the other reasoning-era artifacts (i.e. left on the branch), and the
+only canonical semantics is to be the Cerberus opsem.
 
 [AGENT] reading (orchestrator's, adopted here; operator-overridable):
 what dies is the RELATIONAL/REASONING framing and the `RelSem`

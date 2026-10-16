@@ -5,18 +5,16 @@ test, baseline and pin.** You deliver ONE record file (plus, optionally,
 small plain-text evidence files) on this branch. You touch nothing else.
 
 This charter was written by the orchestrator [AGENT] under the operator's
-ruling [USER 2026-09-05], verbatim:
-
-> "A good thing to schedule at the end of this would be a whole-project
-> risk map which says whether there has been movement wrt the trust
-> surface. We're doing a lot of surgery, all reasonable, but we'll want to
-> make sure we aren't disturbing the core cerberus correctness properties."
+ruling [USER 2026-09-05]: a whole-project risk map is to be scheduled at the
+end of this work, stating whether there has been movement with respect to
+the trust surface — much reasonable surgery is being done, and it must not
+disturb the core Cerberus correctness properties —
 
 and the master plan's step 1 (`lean_frontend/docs/2026-09-05_master-plan.md`
 §3, revision 9): "Risk-map BASELINE by an independent auditor — now …
 per trust surface: moved/unmoved · evidence · residual risk · mover.
-Repeated at step 7." [USER 2026-09-07]: "We can use codex as a separate
-risk auditor."
+Repeated at step 7." [USER 2026-09-07] ruled that Codex may serve as a
+separate risk auditor.
 
 ## 0. Anchors (fixed by the orchestrator; do not choose your own)
 

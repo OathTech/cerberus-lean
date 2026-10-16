@@ -21,9 +21,9 @@ register. "Unreachable today" is not a class: every divergence in the Lean
 text is either MIRRORED or DECLARED IN CODE with its reachability argument
 next to it. Q4 / the typed-failure INTERIM RULE: a one-sided oracle crash is
 mirrored as a `panic!` carrying the OCaml text, never as a typed `Error` —
-NARROWED mid-slice by [USER 2026-09-03] ("ocaml limits that are hardcoded
-thanks to ocaml-level execution issues are also forbidden, the real thing
-is the logical semantics", `docs/2026-09-03_logical-semantics-referent-ruling.md`,
+NARROWED mid-slice by [USER 2026-09-03] (OCaml limits hardcoded because of
+OCaml-level execution issues are also forbidden; the real referent is the
+logical semantics — `docs/2026-09-03_logical-semantics-referent-ruling.md`,
 branch `docs/no-magic-values`): KIND 1, a `failwith`/`assert` the MODEL
 writes deliberately → still mirrored (Q4); KIND 2, an OCaml-execution
 artifact (`Z.Overflow`/`Failure` from host-int conversions,
@@ -226,8 +226,8 @@ Reproducers: `int f(_Bool b) { return b; }` with `--call f --call-args 2`
 (wrapper `int main(void) { return f(2); }`); `int f(int x) { return (int)((long)&x & 0xffff); }`
 with `--call-args 1`. Oracle wrapper: `Specified(1)` / `Specified(65524)`;
 Lean before: UB012 trap / `Specified(65528)` (§1).
-Disposition ([USER] Z-60 rule "refuse loudly or convert exactly as the
-elaborated call site does"; the orchestrator's brief: "read translation.lem's
+Disposition ([USER] Z-60 rule: either a loud refusal or a conversion
+identical to the elaborated call site's; the orchestrator's brief: "read translation.lem's
 call-site elaboration"): `CerbCall.lean` is REWRITTEN to RENDER the
 elaborated call site — `mkCallSite` builds what `translate_call` emits for
 `f(<int literals>)` under `Normal_callconv` (translation.lem:940-975 the
@@ -862,15 +862,13 @@ UB045**" for the Core operators AND "the std.core:385 guard" for the
 alignment validity — is **withdrawn**. Both options are semantic
 inventions relative to upstream under the operator's standing rules:
 
-- [USER 2026-10-03] "Generally, our rule is that we don't innovate wrt
-  Cerberus-upstream, unless something is very very very obviously a bug.
-  We're poorly placed to resolve semantic discrepancies, so we don't. ...
-  we should fall back to loudly rejecting (either as unsupported, or
-  matching upstream)."
-- [USER 2026-10-03] "We do not resolve Cerberus TODO cases unless the
-  answer is extremely obvious or if there's a similarly obvious bug, or
-  for some reason we or some downstream customer need it with absolute
-  priority".
+- [USER 2026-10-03]: the general rule is not to innovate relative to
+  Cerberus upstream unless something is unmistakably a bug; the project
+  is poorly placed to resolve semantic discrepancies, so it does not,
+  falling back to loud rejection (as unsupported, or matching upstream).
+- [USER 2026-10-03]: Cerberus TODO cases are not resolved unless the
+  answer is extremely obvious, there is a similarly obvious bug, or the
+  project or a downstream customer needs it with absolute priority.
 
 Which defined answer `aligned_alloc(0, n)` should have (a UB code, C17's
 NULL, or a Core-level UB for `rem_t` by zero) is upstream's call; the

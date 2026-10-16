@@ -21,8 +21,8 @@ locally under `deps/concurrency-research/`, relative to the container root
 | `deps/concurrency-research/donors/` | Shallow clones of the non-Cerberus donors in §5: `miri`, `ch2o`, `iris`, `iris-lean`, `rmem`, `vst`, `ctrees`, `hitrees`, `c-semantics` (K), `genmc`, `nidhugg`, `c11tester`, and `ccc-code.tar.gz` (CASCompCert). The `*.clone.log` files record source URLs. |
 
 **Provenance.** [USER 2026-10-03]: the developer who described an
-"interleaving semantics concurrency model that made its way into Cerberus" was
-Vadim Zaliva ("He was quite certain"). Unless marked otherwise, all analysis is
+interleaving-semantics concurrency model that made its way into Cerberus was
+Vadim Zaliva, who was quite certain of it. Unless marked otherwise, all analysis is
 [AGENT]. **V** = verified in source, a commit, or a run. **I** = inference. Three
 research subagents produced the raw findings. The orchestrator independently
 re-checked the claims marked *(re-checked)*.

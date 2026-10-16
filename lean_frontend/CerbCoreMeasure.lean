@@ -4,9 +4,9 @@
   as a NAMED, ORDINARY DEFINITION over the generated Core types.
 
   THE MECHANISM (lem-lean `declare {lean} fuel_measure val f = `μ``,
-  src/lean_backend.ml:644-716; design [USER 2026-09-04] "we maintain the lem
-  structure, and we get additional properties we want without any trust
-  decrease"): the fuel WORKER `f_lemFuel` is generated exactly as before; the
+  src/lean_backend.ml:644-716; design [USER 2026-09-04]: keep the lem
+  structure and gain the wanted extra properties with no trust
+  decrease): the fuel WORKER `f_lemFuel` is generated exactly as before; the
   fuel-free WRAPPER instantiates the worker's counter from `μ`, a Lean
   expression over the function's own parameters — `def get_ctx g :=
   get_ctx_lemFuel (CerbCoreMeasure.getCtxBound (Sum.inl g)) g` — and the

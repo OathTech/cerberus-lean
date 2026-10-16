@@ -2,7 +2,7 @@
 
 Branch `arc/pnvi-ae-udi`, from mainline `mdd/cerberus-lean` = `47348c07e` plus the three
 design-record commits (`3a9ebfd8e`, `f463b2c69`, `bafe19351`). Worker: Claude Opus 5.5
-(agent). Every judgement that no operator quote covers is marked [AGENT]. Quoted gate
+(agent). Every judgement that no operator ruling covers is marked [AGENT]. Quoted gate
 output is verbatim; counts marked "derived" are mine. The lem used is the shared
 `2d3a492` (the pin; `lem -v` = `Lem lean-backend-v0.1.0-alpha.1-65-g2d3a492`); no private
 lem was built.
@@ -11,19 +11,19 @@ lem was built.
 separate docs-only commit on top of it; no Lean, script, lakefile or register byte
 differs between the two (§8).
 
-## 0. Rulings in force (verbatim) and governing documents
+## 0. Rulings in force and governing documents
 
-- [USER 2026-10-03], no innovation: "… we should fall back to loudly rejecting (either as
-  unsupported, or matching upstream)".
-- [USER 2026-09-30], no magic modes: "… we should not fix deviations with special 'magic
-  mode' paths that work exclusively in one situation …".
-- [USER 2026-10-05]: "Re PNVI - agree on your recs except for mirroring crashes / obviously wrong
-  behavior. These should be refusals surely?"
-- [USER 2026-10-07], on gates: "… we don't want our gates to be adversarially robust unless
-  they are trust surfaces …".
+- [USER 2026-10-03], no innovation: fall back to loudly rejecting (either as unsupported, or
+  matching upstream).
+- [USER 2026-09-30], no magic modes: deviations are not fixed with special magic-mode paths
+  that work only in one situation.
+- [USER 2026-10-05]: agreed with the PNVI recommendations except for mirroring crashes and
+  obviously wrong behaviour, which should be refusals.
+- [USER 2026-10-07], on gates: gates are not to be adversarially robust unless they are trust
+  surfaces.
 - Design record `docs/2026-10-04_pnvi-ae-udi-design.md` §0, §A (§A.3), §B.0, §B.7, §E row
-  S2, §G, §H (whose verbatim [USER 2026-10-05] answer accepts the §F.15 refusal of
-  `:840-842` and, for §F.16, "for now (a) is fine" — the `CerbFS` refusal shape).
+  S2, §G, §H (whose [USER 2026-10-05] answer accepts the §F.15 refusal of
+  `:840-842` and, for §F.16, option (a) for now — the `CerbFS` refusal shape).
 - S1 record `docs/2026-10-05_pnvi-s1-switch-parameter-record.md` (the `[CerbGlobal.Switches]`
   threading; §14, rule W1).
 
@@ -222,8 +222,8 @@ module (production carries one implementation)").
 - **No false positives on the real tree.** The real tree passes, although it contains
   `reconstructValueAbst…` names and the failure strings `"CerbMem.reconstructValue: …"`.
 
-**Class: SPEEDBUMP, not a trust surface** [AGENT, under [USER 2026-10-07] "… we don't want our
-gates to be adversarially robust unless they are trust surfaces …"].
+**Class: SPEEDBUMP, not a trust surface** [AGENT, under the [USER 2026-10-07] ruling that gates
+are not to be adversarially robust unless they are trust surfaces].
 - **Reason.** At the default set the two functions agree: kernel theorem
   `reconstructValueAbst_default_snd_eq_legacy`. So a stray call moves no lane today. It matters
   only once a PNVI set is accepted (S4).
@@ -516,7 +516,7 @@ A13  PASS memory access: 3 runs; primitive receipts, all ND constructors, erasur
 
 ## 10. Review fixes (2026-10-07, after the orchestrator's S2 review; S3 worker)
 
-The S2 review found nothing blocking. Its six items, with dispositions (all [AGENT] unless quoted):
+The S2 review found nothing blocking. Its six items, with dispositions (all [AGENT] unless marked):
 
 - **F1 (consumer proofs equate the reconstruction to `reconstructValue`).** PRODUCTION lemmas in a
   new theorem-only seam `lean_frontend/CerbMemDefaultFacts.lean` (a Lake root and a hand-written-copy

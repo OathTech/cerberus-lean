@@ -52,14 +52,13 @@ before this slice). Nothing merged, nothing pushed.
   own csmith test agrees with the oracle at the default and at 10^9.
 - Commits: §12.
 
-## 1. Rulings in force (verbatim, as relayed by the orchestrator)
+## 1. Rulings in force (as relayed by the orchestrator)
 
-[USER 2026-09-03/04]: fuel "is an execution parameter that 'doesn't
-matter' … a parameter which can be chosen as 10^8 or any other value
-when calling the interpreter"; "Any and all magic values that are
-hardcoded and can't be quantified over are definitionally bugs (unless
-they mirror lem or ISO-C design choices)"; "we don't change the lem
-structure for ocaml" — cerberus's `.lem` BODIES are not restructured
+[USER 2026-09-03/04]: fuel is an execution parameter that does not
+matter — one that can be chosen as 10^8 or any other value when calling
+the interpreter; any hardcoded magic value that cannot be quantified
+over is definitionally a bug (unless it mirrors a lem or ISO-C design
+choice); the lem structure is not changed for OCaml — cerberus's `.lem` BODIES are not restructured
 (Lean-only declares are fine); the semantics is a reasoning artifact for
 the consumer (refined-cerberus consumes `drive` in-process). Zero
 Lean-vs-oracle execution discrepancies is the standing rule; fuel
@@ -101,7 +100,7 @@ carry the same form):
 
 ```
 File "frontend/model/nondeterminism.lem", line 574, character 1 to line 574, character 43
-  Syntax error: the numeric fuel-budget form 'declare {lean} fuel val f = N' was removed (fuel-parameter arc, 2026-09-04): a per-declaration fuel literal is a magic value -- [USER 2026-09-03] "any and all magic values that are hardcoded and can't be quantified over are definitionally bugs"; fuel is a parameter of the generated code (the [LemFuel] instance), chosen by the caller at the entry point. Keep only the sentinel form: declare {lean} fuel val f = `sentinel`
+  Syntax error: the numeric fuel-budget form 'declare {lean} fuel val f = N' was removed (fuel-parameter arc, 2026-09-04): a per-declaration fuel literal is a magic value -- [USER 2026-09-03] (the ruling against hard-coded magic values; the message text is paraphrased here)
 make: *** [Makefile:352: lean-prelude-src] Error 1
 ```
 
@@ -302,7 +301,7 @@ All cites are the files as edited (`git diff` is the authoritative text).
 | 4 | `frontend/model/mem.lem` | `declare {lean} fuel_consumer val X` for the 19 reps whose `CerbMem` implementations now take `[LemFuel]`: `allocate_object`, `allocate_region`, `load`, `store`, `ne_ptrval`, `diff_ptrval`, `validForDeref_ptrval`, `isWellAligned_ptrval`, `array_shift_ptrval`, `member_shift_ptrval`, `eff_array_shift_ptrval`, `eff_member_shift_ptrval`, `memcpy`, `memcmp`, `realloc`, `copy_alloc_id`, `offsetof_ival`, `sizeof_ival`, `alignof_ival` (one explanatory comment before the first, swallowed by it on OCaml) — the set is exactly `join(CerbMem [LemFuel] defs, mem.lem lean target_reps)`; the first build without them failed closed at `generated/Translation.lean:509: failed to synthesize instance of type class LemFuel` (a generated caller of a rep); with them the fuel lifting added 57 binders (391 → 448 on the tree at that point, derived) | Lean-only declares; OCaml byte-identical (§2.2) |
 | 5 | `CerbCall.lean` | `allocErrno`, `callFinish`, `driveCall` take `[LemFuel]` | they use `nd_bind`/`driver2` |
 | 6 | `Main.lean` | `def defaultFuel : Nat := 100000000  -- FUEL-DEFAULT (the one allowed fuel numeral)` with its doc; `--fuel N` parsed in the positional scan (same class as `--libc`/`--call`; `["--fuel"]` → "require an argument", exit 1); `0` → `cerberus-lean: refused — --fuel 0: the fuel must be a positive integer (fuel 0 kills at the first bind: never a verdict; see VALIDATION.md, fuel)`, exit 2; non-numeral → `refused — --fuel abc: not a decimal numeral (…default 100000000…)`, exit 2; `refuseFlag`'s accepted-list text gains `--fuel <N>`; `runPipeline`, `frontendTU`, `loadLibc` take `[LemFuel]`; the ONE instantiation: `let code ← (letI : LemFuel := ⟨fuel⟩; runPipeline …)`. Measured on `tests/minimal/001-return-literal.c` (§4.5) | |
-| 7 | `speclab/` | `SpecLab/*Files.lean`: 20 `*File`/`*FileOf*` constructors (+ `junkFile`) take `[LemFuel]` (`convert_file [LemFuel]`); the five `SLUnit/*GateTest.lean`: `runFile*`/`checkRun*` take `[LemFuel]`, `main` → `mainAt [LemFuel]` + a new `main (args)` that REQUIRES `--fuel N` (NEW `SLUnit/Fuel.lean` `fuelFromArgs`: absent/0/non-numeral → exit 2); the five `test_speclab_*.sh` pass `--fuel "$CERB_TEST_FUEL"`; `scripts/common.sh` defines `CERB_TEST_FUEL="${CERB_TEST_FUEL:-100000000}"` (a test-suite choice, outside the scanned Lean text — [USER 2026-09-03] "Defaults that are chosen eg. in test suites are fine") | the gate binaries: `CoreGateTest: ALL PASSED` … `SeedGateTest: ALL PASSED` at `--fuel 100000000`; without: `gate test: refused — usage: <gate-test> --fuel <N> …`, rc 2 |
+| 7 | `speclab/` | `SpecLab/*Files.lean`: 20 `*File`/`*FileOf*` constructors (+ `junkFile`) take `[LemFuel]` (`convert_file [LemFuel]`); the five `SLUnit/*GateTest.lean`: `runFile*`/`checkRun*` take `[LemFuel]`, `main` → `mainAt [LemFuel]` + a new `main (args)` that REQUIRES `--fuel N` (NEW `SLUnit/Fuel.lean` `fuelFromArgs`: absent/0/non-numeral → exit 2); the five `test_speclab_*.sh` pass `--fuel "$CERB_TEST_FUEL"`; `scripts/common.sh` defines `CERB_TEST_FUEL="${CERB_TEST_FUEL:-100000000}"` (a test-suite choice, outside the scanned Lean text — [USER 2026-09-03] allowed defaults chosen in test suites) | the gate binaries: `CoreGateTest: ALL PASSED` … `SeedGateTest: ALL PASSED` at `--fuel 100000000`; without: `gate test: refused — usage: <gate-test> --fuel <N> …`, rc 2 |
 | 8 | `lakefile.toml` | pin (`742506d` in pass 1, `ecf75b4` in pass 2) + comment; the three `*_lemMeasureProofs` roots (row 9) | |
 | 9 | `frontend/model/{ctype,core,defacto_memory_aux}.lem` + `lean_frontend/{Ctype,Core,Defacto_memory_aux}_lemMeasureProofs.lean` (NEW, pass 2) | the three `fuel_measure` declares (§2.5) and their obligation proofs (§3.1); `handwritten_copy.manifest` lists the three proof modules; `lakefile.toml` roots gain them (the generated `*_auxiliary.lean` shells import them) | Lean-only; OCaml byte-identical |
 
@@ -685,8 +684,8 @@ fuel shape (`check_no_fuel_numerals` green on them: their numerals are
 - **D-C1-3 — `CERB_TEST_FUEL` (a shell constant, 10^8, scripts/common.sh)
   as the test suites' fuel** for the speclab gate binaries, the immaculate
   in-Lean probe and the micro instrument: a test-suite choice under the
-  ruling's own exception ("Defaults that are chosen eg. in test suites are
-  fine"), outside the scanned Lean text. Confirm, or name a different
+  ruling's own exception (defaults chosen in test suites are
+  fine), outside the scanned Lean text. Confirm, or name a different
   source.
 - **D-C1-4 — F-C1-2 for the upstream tray (Lean core):** a candidate
   report ("`Nat.div`/`Nat.mod` literal folding does not whnf its

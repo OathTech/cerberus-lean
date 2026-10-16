@@ -179,17 +179,17 @@ File together with 34 (the same allocator; `align = 0`).
 
 ## Fork status (2026-09-16) — fix RULED, scheduled; LANDED (C1, 2026-09-16)
 
-[USER 2026-09-16], verbatim: *"Yes, we should file it, and I think this is in the 'unambiguously
-wrong' category where we are allowed to fix ahead of upstream."* The fork will take remedy 1 in both
+[USER 2026-09-16]: agreed it should be filed and ruled it unambiguously wrong, the category the
+fork is allowed to fix ahead of upstream. The fork will take remedy 1 in both
 models and in the Lean mirror (`CerbMem.lean:2093-2107`), with a unit test pinning the four states
 above, the fork-drift manifest rows for the two OCaml files, and a `VALIDATION.md` §3 entry as a
 fork≠pristine deviation (then believed unobservable at the default bound — see the erratum) — a slice chartered after the
 pristine-oracle instrument (WP-O) lands, per the operator's sequencing.
 
-The same message carried the operator's direction on the bound itself, verbatim: *"Btw, I thought
-we had moved away from concrete bounds? The semantics should be quantified over such bounds so we
-could (in principle) be running on a tiny machine with a tiny amount of memory to allocate, and the
-reasoning has to quantify over the bound."* [AGENT] the address-space bound is today a literal in
+The same message carried the operator's direction on the bound itself: they had understood the
+project to have moved away from concrete bounds; the semantics should be quantified over such bounds,
+so that it could in principle run on a tiny machine with a tiny amount of memory to allocate, and the
+reasoning has to quantify over the bound. [AGENT] the address-space bound is today a literal in
 both engines (`impl_mem.ml:508`; `CerbMem.lean:153` `lastAddress : Address := 0xFFFFFFFFFFFF`),
 sheltered until now by the mirror exemption of the no-magic-values rule; with the bound a quantified
 parameter (matched mode instantiating it to upstream's value) the exhausted regime is reachable by

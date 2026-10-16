@@ -13,9 +13,9 @@ show`/`git diff`/`git range-diff`, per-file interdiffs, `sha256sum` of sources v
 checkout (`deps/cerberus-upstream` @ `b9aeedcb4`), sorted-set comparison of the fork-drift manifest, `python3` over the
 committed `report.json`, and a sha256 chain from the committed report to the worker's retained lane stdout files (plain
 file reads from outside that worktree). **What I did NOT do:** no build of any kind (no `lake`/`dune`/`make`/`lem`/`opam`),
-no process with the worker's worktree as cwd, no reading of its `_build`/`.lake`, per the operator's ruling, verbatim:
-[USER 2026-09-23] *"I think for this you can run the delta review in a fable subagent. It doesn't require the heavy
-rebuild again if nothing has changed."* Consequently, claims that need the built artefacts (the generated Lean/OCaml
+no process with the worker's worktree as cwd, no reading of its `_build`/`.lake`, per the operator's ruling, paraphrased:
+[USER 2026-09-23]: the delta review can run in a Fable subagent, since it does not require the heavy rebuild
+again if nothing has changed. Consequently, claims that need the built artefacts (the generated Lean/OCaml
 delta hashes, the typed-dump byte-identity pins, the libc.co contents) are marked UNVERIFIED-HERE and rest on the committed
 evidence plus the orchestrator's independent re-verification (its gate log had not printed `=== ALL DONE` by the time
 this document was written: `grep -c '=== ALL DONE' … → 0` at 04:20:52 UTC).
@@ -299,8 +299,8 @@ new `[files]` + `[source-content]` rows (R-E). UNVERIFIED-HERE: that the rebuilt
   `:1742` (`E.fail loc (CoreTyping_TODO "ccall to a variadic C procedure must at least have a list of pointers as last
   argument")` at `ec02f452d`), `core_reduction_aux.lem:218-236`, `core_run.lem:1269-1287`, `std.core:618-619`,
   `std_inner_arg_temps.core:574-575` (pre-change positions) — all exact.
-- **Rulings verbatim**: [USER 2026-09-23] *"Yes, we will roll R3 / R4 into this as a closure. The digest fix landed on
-  main"* and [USER 2026-09-23] *"Yeah, we shoudl fix and file to the tray, per our rule that unambiguous bugs get fixes"*
+- **Rulings**: the [USER 2026-09-23] ruling rolling R3 / R4 into this slice as a closure (the digest fix having landed on
+  main) and the [USER 2026-09-23] ruling to fix and file to the tray, per the rule that unambiguous bugs get fixes,
   appear identically in the charter Addendum A3, record §15 provenance/§15.2b, the tray, TODO.md and the manifest NOTE.
 - **N3 closed**: the §7 sentence ("a `.core` input with a mismatched arity now fails Core typing on both fork engines",
   old `:274-275`) is replaced by the exact enforced set (tuple patterns/expressions/`unseq`/`par`; the seven argument-list
@@ -389,14 +389,14 @@ one hit, the word "axioms" inside the test's final `IO.println` string. No new a
 ## R-H — Policy
 
 - Nothing new out of policy: no new gate, no new `lean_exe` (the existing exe is extended), no new `core_typing_cause`
-  constructor, no new pure failure leaf (register unchanged), no theorem, no numeral. [USER 2026-09-04] "we don't change
-  the lem structure for ocaml" — untouched (guards only). No changed scripts in the delta, hence no `2>/dev/null` question.
+  constructor, no new pure failure leaf (register unchanged), no theorem, no numeral. [USER 2026-09-04] the lem structure
+  is not changed for OCaml — untouched (guards only). No changed scripts in the delta, hence no `2>/dev/null` question.
 - Fence classification of every file in `a92e0ca0f..fda652269`: `frontend/model/{core_typing,core_run,core_reduction}.lem`,
   `Core_aux_lemMeasureProofs.lean` (comment), `MatchPatternArityTest.lean`, `TODO.md`, charter, record, tray 45,
   `fork_drift_manifest.txt`, the closure-evidence dir — INSIDE Addendum A3's fence; `runtime/libcore/{std,
   std_inner_arg_temps}.core` — inside the widened fence ([USER 2026-09-23] ruling); `2026-09-22_match-pattern-arity-rereview*`
   (`9795c8250`) — the auditor's own commit, fast-forwarded, not worker work; `lakefile.toml`/`test_unit.sh` — changed by the
-  REBASE only ("only for the rebase" is allowed; see F1 for the content).
+  REBASE only (changes made only for the rebase are allowed; see F1 for the content).
 
 ## R-I — Merge readiness
 

@@ -398,8 +398,8 @@ fi
 # ceiling (the registered-defect shape).
 TIME_BIN=/usr/bin/time
 # ---------------------------------------------------------------------------
-# Per-test memory cap (mem-scale S2, 2026-09-02; Q2 RULED [USER 2026-09-02]
-# "Q2 agree" — charter 2026-09-01_mem-scale-design.md §0/§6.4; LADDER.md
+# Per-test memory cap (mem-scale S2, 2026-09-02; Q2 RULED [USER 2026-09-02],
+# agreeing with the charter's Q2 — charter 2026-09-01_mem-scale-design.md §0/§6.4; LADDER.md
 # "Conventions"). SUPERSEDES the arc-5 operator directive `ulimit -v
 # 4000000`: `ulimit -v` limits VIRTUAL address space, and Lean's virtual
 # footprint is ~2-3.6x its RSS, so the old cap killed Lean at ~1.7 GB RSS
@@ -420,7 +420,7 @@ TEST_MEM_MAX="${CERB_TEST_MEM_MAX:-4G}"
 # in-process (the speclab *GateTest binaries: `--fuel N`, required by the
 # binary — fuel-parameter arc, 2026-09-04). Fuel is a caller's parameter
 # of the semantics; a test suite may choose its default ([USER 2026-09-03]
-# "Defaults that are chosen eg. in test suites are fine") and this shell
+# ruled that defaults chosen in test suites are fine) and this shell
 # constant is that choice, outside the Lean text the no-fuel-numerals gate
 # scans (scripts/check_no_fuel_numerals.sh). The differential lanes do
 # NOT pass it: the driver binary has its own `--fuel` default (Main.lean

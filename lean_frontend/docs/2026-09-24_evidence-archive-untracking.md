@@ -50,9 +50,7 @@ The inventory above is an agent-derived tally: 21 tracked archives totalling
 only their HEAD tracking entries; the local files and historical Git blobs
 remain. This addendum preserves the original inventory and record.
 
-[USER 2026-09-06], verbatim excerpt of the retention ruling:
-
-> Agree on all points, and particularly on cleaning up the evidence archives. These should not be git committed, and will not be pushed. I don't actually hold strong value in such data which could be recreated, so I am fine dropping large files like this. The important thing is that runs can be reconstructed.
+[USER 2026-09-06], the retention ruling in summary: agreed on all points, particularly on cleaning up the evidence archives, which are not to be git-committed and will not be pushed; data that can be recreated need not be kept, so dropping large files is fine; what matters is that runs can be reconstructed.
 
 Source: [master-plan ruling](2026-09-05_master-plan.md), present at
 `e9f9d049f`. The later operator verification reported that mainline equalled

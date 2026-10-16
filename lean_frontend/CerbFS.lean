@@ -4,13 +4,13 @@ import LemLib
   Corresponds to: sibylfs/src/ via the Sibylfs OCaml wrapper (`sibylfs/generated/sibylfs.ml` `run_*`;
   every op is one SibylFS `OS_*` transition of the formal POSIX model, `fs_spec.lem`).
 
-  [USER 2026-09-28], contract decision D2: "refuse FS for now, this seems safer". The earlier minimal
+  [USER 2026-09-28], contract decision D2: refuse the filesystem for now, as the safer option. The earlier minimal
   in-memory model SERVED a subset of operations it believed matched SibylFS; an external report showed
   one such answer was wrong (raw-string path keys: `./secret.txt` and `secret.txt` were different files —
   `docs/2026-09-28_cerbfs-path-hotfix-record.md`). A served subset is only as good as the adversarial
   testing behind it, and the upstream corpora never exercised this surface, so every filesystem
-  OPERATION now refuses: a class-(c) missing feature under the zero-discrepancy rule (VALIDATION §1:
-  "missing features are allowed deviations if they are cleanly identified" [USER 2026-09-03]). Record:
+  OPERATION now refuses: a class-(c) missing feature under the zero-discrepancy rule (VALIDATION §1,
+  the [USER 2026-09-03] rule that cleanly identified missing features are allowed deviations). Record:
   `docs/2026-09-28_cerbfs-refuse-all-record.md`; the served implementation is in git history (mainline
   a7dc36e2f and earlier).
 

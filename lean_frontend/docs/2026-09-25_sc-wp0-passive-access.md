@@ -15,7 +15,7 @@ integration. WP1 starts after independent acceptance and landing of WP0.
 
 [USER] The user requested independently validated, early landings, treating
 the failed prototype as a quarry; narrowed the MVP to coherent, correct SC
-semantics without Iris integration; and directed "proceed with WP0". That
+semantics without Iris integration; and directed that WP0 proceed. That
 scope is recorded in the master plan and
 `lean_frontend/docs/2026-09-25_sc-semantics-mvp-scope.md` at `533fab987`.
 [AGENT] The implementation, receipt fields, hook placement, reuse of existing
@@ -233,8 +233,8 @@ docs-only P2 (F1)". Closed here:
   compiles in row 1 and not only via row 13; `lean_frontend/CLAUDE.md` names the executable and the script;
   `SUPPORTED.md`'s Domain row names the opt-in receipt buffer as a passive instrument, not SC execution.
 - **F5 (P3) — the lem ruling.** `mem_common.lem` gains three TYPES shared by both targets; the generated OCaml changes
-  only by those type definitions (the sole new layer-2 row, `mem_common.ml`). [USER 2026-09-04] "we don't change the lem
-  structure for ocaml" targets function/body restructuring for the Lean target's sake; a single-source data type both
+  only by those type definitions (the sole new layer-2 row, `mem_common.ml`). The [USER 2026-09-04] ruling against changing the
+  lem structure for OCaml's sake targets function/body restructuring for the Lean target's sake; a single-source data type both
   implementations consume is the mirror-correct choice (a hand copy on either side would be the divergence), and the
   OCaml output gained no behaviour. [AGENT] judged within the ruling's purpose; recorded here for the operator.
 - **F6 (N) — store-hook placement.** OCaml records inside its first `update` before the union/read-only bookkeeping;
@@ -246,11 +246,11 @@ docs-only P2 (F1)". Closed here:
 
 ## Landing (2026-09-27) — orchestrator [AGENT]
 
-[USER 2026-09-27] verbatim: "Great go ahead and merge." — after the operator defined the "uncontroversial" bar the
-candidate was reviewed against ([USER 2026-09-27]: "1. The sequential semantics is unaffected by this. 2. The design
-decisions seem consistent with the original upstream OCaml's design. 3. The semantic effect of this on the concurrency
-seems reasonable, if not fully validated yet. I would say that the other question of whether or not it breaks things for
-a downstream customer is secondary to the question of whether it's faithful and well-designed.") and the orchestrator's
+[USER 2026-09-27] approved the merge — after the operator defined the "uncontroversial" bar the
+candidate was reviewed against ([USER 2026-09-27]: the sequential semantics is unaffected; the design decisions are
+consistent with the original upstream OCaml's design; the semantic effect on the concurrency is reasonable though not
+yet fully validated; and whether it breaks things for a downstream customer is secondary to whether it is faithful and
+well-designed) and the orchestrator's
 assessment against it (chat, 2026-09-27; summarised: (1) capture disabled by default, zero production callers, kernel
 erasure theorems, every lane at baseline; the `_Bool` repair moves the Lean model TOWARD the oracle on an unobservable
 failure path; (2) hooks at OCaml's own bookkeeping points, same receipt content both sides, shared type in

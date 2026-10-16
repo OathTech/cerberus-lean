@@ -8,7 +8,7 @@ F5=tests/immaculate/baseline.txt
 F6=tests/libc_exec/baseline.txt
 cerberus-lean-proj env: switch=/home/dev/projects/cerberus-lean-proj/cerberus-lean/_opam, git redirects active
 DERIVED row accounting: non-comment key=first whitespace token; old/current full payloads compared, A=7c66b39a4 B=ae1a5448c target=df1fdaf02.
-Attribution labels: I=instrument re-record (commit); R-C2=ruled re-record, C2-ratchet closing note line865 [USER 2026-09-01] great, let's run the regen; R-Z1/R-Z2/R-Z3=ruled mirror re-record, zero-discrepancy-design §1.1 [USER 2026-09-03] All *execution* discrepancies are definitionally bugs...; ISO-R1=VALIDATION §2 R1.
+Attribution labels: I=instrument re-record (commit); R-C2=ruled re-record, C2-ratchet closing note line865 [USER 2026-09-01] approved the regen; R-Z1/R-Z2/R-Z3=ruled mirror re-record, zero-discrepancy-design §1.1 [USER 2026-09-03] All *execution* discrepancies are definitionally bugs...; ISO-R1=VALIDATION §2 R1.
 Columns: anchor | file ID | key | class | commit | old | current. A/G rows abbreviated as anchor | G | class | commit | current (old=<absent>, key=current's first token).
 A | F0 | 0039-struct_imcomplete.undef.c | R-C2 | ddcfc9199 | 0039-struct_imcomplete.undef.c CERB_INCONSISTENT | 0039-struct_imcomplete.undef.c UB_MATCH
 A | F0 | 0069-const_expr.c | R-C2 | ddcfc9199 | 0069-const_expr.c CERB_INCONSISTENT | 0069-const_expr.c UB_MATCH

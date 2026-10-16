@@ -2,8 +2,8 @@
 # check_no_fuel_numerals.sh — GATE: no fuel numeral — and, since the address-space-
 # bound slice (2026-09-17), no ADDRESS-SPACE-TOP numeral — anywhere in the Lean text
 # a consumer reasons against (fuel-parameter arc, 2026-09-04; [USER 2026-09-03]
-# "Any and all magic values that are hardcoded and can't be quantified over
-# are definitionally bugs"; lean_frontend/DESIGN.md §4 "No magic values").
+# ruled that every hard-coded magic value that cannot be quantified over is
+# by definition a bug; lean_frontend/DESIGN.md §4 "No magic values").
 #
 # Scanned (comment-stripped): lean_frontend/*.lean (the hand-written seams,
 # Main.lean included), lean_frontend/generated/*.lean (the lem output + the

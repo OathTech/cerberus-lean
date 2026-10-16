@@ -254,7 +254,7 @@ included if the O6(v) clause is re-ruled to match the corrected class.
 
 ## 10. C1-F1 resolution ([USER 2026-09-01], relayed via the orchestrator) — slice RESUMED
 
-Ruling verbatim: "yes, agree on the resume per your recommendation" —
+Ruling: the user agreed to the resume per the recommendation —
 three connected pieces, all [USER 2026-09-01]:
 
 1. **Q1b's TOLERATED ruling RE-AFFIRMED over the enlarged movement

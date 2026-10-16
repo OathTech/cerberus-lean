@@ -4,7 +4,7 @@
   sentinels `Driver.hack`, `Core_aux.to_pure` and `Core_aux.to_pures`
   (fuel-pending close-out 2026-09-08 — option C of the pure-failure
   reachability census, docs/2026-09-07_pure-failure-reachability-census.md Q4/Q6,
-  [USER 2026-09-07] "create a branch and send a worker to do option C"; the
+  [USER 2026-09-07] dispatched option C to a worker on its own branch; the
   mechanism is lem-lean's `declare {lean} fuel_measure val f = `μ` assuming `H``,
   the C4 route, docs/2026-09-05_fuel-parameter-C4-record.md).
 

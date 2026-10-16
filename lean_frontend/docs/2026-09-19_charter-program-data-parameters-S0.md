@@ -2,12 +2,12 @@
 
 **Status:** CHARTER for one Claude Fable subagent worker, written by the orchestrator [AGENT]; branch `arc/program-data-parameters` in the primed worktree `worktrees/cerberus-lean-arc/program-data-parameters` (base: mainline `b7e45d55e`). This is the first slice of the arc designed in `2026-09-18_program-data-parameters-design-note.md` (§3 routes E-A and D-A; §8 the four decisions). S0 changes NO repository code: it is a PROBE of the lem-lean backend's multi-reader support at the pinned lem, an INVENTORY of the seams and call sites the arc will touch, and a source-level pinning of the multi-translation-unit digest behaviour. Its record ends the slice and is the input to the E-A/D-A charter.
 
-## 0. Rulings (verbatim) and standing constraints
+## 0. Rulings and standing constraints
 
-- [USER 2026-09-19]: *"I'm interested in making decisions that are consequential in some way but for the other kinds of decisions, which are really more implementation-focused, I think you can make the calls."* Then on Q2: *"yeah, I agree on Q2, let's roll it together"* — the digest reader (D-A) and the enum sibling map + reader (E-A) are ONE arc; one consumer re-pin.
-- [USER 2026-09-17]: *"Makes sense, Let's do the sequence as you propose. We should do this soon but it's not a blocker"*; [USER 2026-09-19]: the concurrency pause — *"just get sequential cerberus-lean to the best possible state … we have a backlog our customer needs"*.
+- [USER 2026-09-19]: the operator makes the consequential decisions; the implementation-focused ones the orchestrator can call. Then on Q2: agreed, roll it together — the digest reader (D-A) and the enum sibling map + reader (E-A) are ONE arc; one consumer re-pin.
+- [USER 2026-09-17]: agreed to the proposed sequence, to be done soon though not a blocker; [USER 2026-09-19]: the concurrency pause — get sequential cerberus-lean to the best possible state; the customer's backlog comes first.
 - The design note §8 [AGENT] decisions within that delegation: Q1 E-A (sibling map + reader; OCaml layout functions untouched); Q3 this probe first; Q4 the fork's OCaml keeps its registry and digest global.
-- [USER 2026-09-08] verbatim: *"we should \*NOT\* be building anything new out-of-policy"* — S0 builds nothing but probe files and a record.
+- [USER 2026-09-08]: nothing new is to be built out of policy — S0 builds nothing but probe files and a record.
 - Standing constraints: NEVER modify machine-global state (no opam changes — `_opam` is a symlink to the SHARED switch); NO `git push`, ever; never commit on `mdd/cerberus-lean`, `master`, or lem-lean's `mdd/lean-backend`/`master`; no merge/rebase; fail-closed/fail-noisy; [AGENT]/[USER] provenance; verbatim outputs; every `lake`/`lean` through `scripts/capped`; one heavy job; the ~45-minute stop; never end the turn on a wait.
 
 ## 1. Facts (verified by the orchestrator; cite, do not re-derive; errata to the record)

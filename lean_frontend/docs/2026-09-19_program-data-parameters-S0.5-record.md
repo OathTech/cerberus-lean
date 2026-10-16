@@ -40,16 +40,14 @@ Nothing merged, nothing pushed.
 
 ## 1. Rulings and the Q-B decision (restated, with its flag)
 
-- [USER 2026-09-19]: *"I'm interested in making decisions that are
-  consequential in some way but for the other kinds of decisions, which
-  are really more implementation-focused, I think you can make the
-  calls."* / *"yeah, I agree on Q2, let's roll it together"* — D-A and E-A
+- [USER 2026-09-19]: the operator makes the consequential decisions; the
+  implementation-focused ones the orchestrator can call / on Q2: agreed,
+  roll it together — D-A and E-A
   are one arc, one consumer re-pin; S0.5 is its backend prerequisite.
-- [USER 2026-09-04]: *"we don't change the lem structure for ocaml"* — no
+- [USER 2026-09-04]: the lem structure is not changed for OCaml — no
   `.lem` and no hand-written Lean changed here; the generated OCaml tree
   is byte-identical (§5).
-- [USER 2026-09-08]: *"we should \*NOT\* be building anything new
-  out-of-policy"* — a pin bump, one manifest row, this record.
+- [USER 2026-09-08]: nothing new is to be built out of policy — a pin bump, one manifest row, this record.
 - **Q-B [AGENT, orchestrator], flagged to the operator** (charter §0; S0
   record §5): N-ary positional seeding in the global sorted reader order.
   Cerberus consequence, for E-A/D-A (NOT here): `mini_pipeline.lem:70
@@ -447,7 +445,7 @@ its own.
 
 ## 12. Landing (2026-09-20)
 
-[USER 2026-09-20], verbatim: *"Go ahead with both merges"* — the sign-off
+[USER 2026-09-20]: approved both merges — the sign-off
 for the two named merges of the orchestrator's merge ask: **merge 1**
 lem-lean `mdd/lean-backend` `f6542f8` → `4307dc5` (ff-only, one commit, the
 pinned hash unchanged); **merge 2** cerberus `mdd/cerberus-lean`

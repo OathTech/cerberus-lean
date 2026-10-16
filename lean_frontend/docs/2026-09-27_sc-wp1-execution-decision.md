@@ -11,7 +11,7 @@
 > [SC-CONCURRENCY.md](../../SC-CONCURRENCY.md) and
 > [the 2026-09-29 assessment record](2026-09-29_sc-assessment-and-rulings.md).
 
-[USER, 2026-09-27] “Push forward to the end of WP1.” WP0 has landed on
+[USER, 2026-09-27] directed pushing forward to the end of WP1. WP0 has landed on
 main. [AGENT] This record closes the feasibility investigation with a
 specific construction for S1–S4, explicit limits on the experiments, and
 proof obligations attached to the changes that must discharge them. It is

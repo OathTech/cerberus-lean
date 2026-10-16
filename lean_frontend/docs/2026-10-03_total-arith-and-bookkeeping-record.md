@@ -6,23 +6,23 @@ direction (the orchestrator's brief). One commit per task; each section
 below names what changed, the witnesses, and the verbatim gate lines of
 that step.
 
-The standing rules that drive this record (verbatim, as briefed):
+The standing rules that drive this record (as briefed):
 
-- [USER 2026-10-03] "Generally, our rule is that we don't innovate wrt
-  Cerberus-upstream, unless something is very very very obviously a bug.
-  We're poorly placed to resolve semantic discrepancies, so we don't. ...
-  we should fall back to loudly rejecting (either as unsupported, or
-  matching upstream)."
-- [USER 2026-10-03] "We do not resolve Cerberus TODO cases unless the
-  answer is extremely obvious or if there's a similarly obvious bug, or for
-  some reason we or some downstream customer need it with absolute
-  priority".
-- [USER 2026-10-03] "we specifically want to lift the address-space-top
-  restriction for the sake of treating cerberus as a proof artifact. Agree
-  on your recommendations with that framing (we shouldn't revert work that
-  allows the iris reasoning to work properly)".
-- [USER 2026-09-30] "we should not fix deviations with special 'magic
-  mode' paths that work exclusively in one situation".
+- [USER 2026-10-03] stated the general rule: the fork does not innovate
+  with respect to Cerberus upstream unless something is very obviously a
+  bug; it is poorly placed to resolve semantic discrepancies, so it does
+  not, and falls back to loudly rejecting (either as unsupported, or
+  matching upstream).
+- [USER 2026-10-03] ruled that Cerberus TODO cases are not resolved unless
+  the answer is extremely obvious, there is a similarly obvious bug, or the
+  project or a downstream customer needs it with absolute priority.
+- [USER 2026-10-03] stated that the address-space-top restriction is
+  lifted specifically so that Cerberus can be treated as a proof artifact,
+  and agreed to the recommendations under that framing, with the condition
+  that work which allows the Iris reasoning to work properly is not
+  reverted.
+- [USER 2026-09-30] ruled that deviations are not fixed with special
+  magic-mode paths that work only in one situation.
 
 Upstream line numbers cite the un-forked tree
 `deps/cerberus-upstream/memory/concrete/impl_mem.ml` (merge-base
@@ -236,9 +236,9 @@ wrapper; no other proof moved.
   from a host-int conversion and `Division_by_zero` from a missing guard as
   KIND-2 OCaml-execution artifacts that are NOT mirrored (Lean implements
   the logical meaning), and R3 (memcmp's `Z.to_int size_n`) is admitted BY
-  CLASS on exactly that basis. This branch, as briefed under [USER
-  2026-10-03] ("... fall back to loudly rejecting (either as unsupported, or
-  matching upstream)"), mirrors the same two exception kinds as loud
+  CLASS on exactly that basis. This branch, as briefed under the [USER
+  2026-10-03] rule (fall back to loudly rejecting, either as unsupported or
+  matching upstream), mirrors the same two exception kinds as loud
   fail-stops (§1, §2.1). Under the 2026-09-03 reading, Lean's former
   `Specified(0)` for `sizeof` of a 2^62-aligned struct was arguably the
   logical (unbounded-`Z`) answer. [AGENT] default taken: the fail-stop
@@ -246,8 +246,8 @@ wrapper; no other proof moved.
   the 2026-10-03 rule supersede the kind-2 paragraph; should R3 likewise
   become a fail-stop; should §0 be re-worded. A pointer note was added under
   VALIDATION §0; the ruling text itself is untouched.
-  **RESOLVED 2026-10-03** by the synthesis [USER 2026-10-03] "(1) agree with
-  this" and the F1 ruling — see §7 (alignment reads: computed, R7;
+  **RESOLVED 2026-10-03** by the synthesis ([USER 2026-10-03] agreed with
+  item (1)) and the F1 ruling — see §7 (alignment reads: computed, R7;
   division/remainder by zero: stops stay). VALIDATION §0 now carries the
   2026-10-03 rule and the synthesis next to the referent ruling.
 
@@ -293,9 +293,8 @@ Docs only. `CONTRACT.md` §2 gains a paragraph and `VALIDATION.md` §7 (the
 "address-space top is a parameter too" block) a matching passage:
 
 - the parameter is a DELIBERATE lift of upstream's constant for proof use,
-  citing [USER 2026-10-03] verbatim ("we specifically want to lift the
-  address-space-top restriction for the sake of treating cerberus as a
-  proof artifact. ...");
+  citing the [USER 2026-10-03] ruling (the address-space-top restriction
+  is lifted for the sake of treating Cerberus as a proof artifact);
 - its default mirrors upstream exactly (`impl_mem.ml` `last_address=
   Z.of_int 0xFFFFFFFFFFFF; (* TODO: this is a random impl-def choice *)`,
   verified in `deps/cerberus-upstream/memory/concrete/impl_mem.ml:508`), and
@@ -335,8 +334,8 @@ Gate (docs-only step): `./scripts/test_unit.sh` rc=0 —
   would carry (none can exist); code marker `-- ISO-fix register R6` at
   `CerbFloat.floatMul`, whose docstring no longer uses the retired
   "documented-deliberate divergence" label. [AGENT] reasoning: under [USER
-  2026-10-03] a fix is allowed when "something is very very very obviously a
-  bug" — `mul = (+.)` beside a correct `add`/`sub`/`div` is that — but every
+  2026-10-03] a fix is allowed when something is very obviously a
+  bug — `mul = (+.)` beside a correct `add`/`sub`/`div` is that — but every
   register entry is individually [USER]-ruled, so the row waits for the
   operator. The alternative is to mirror `(+.)` (no observable effect today
   either way). Report item.
@@ -465,29 +464,29 @@ by the partial runs of §1 and §2 only.
 ## 6. Provenance
 
 All decisions in this record are [AGENT] (the worker on this branch) unless
-quoted as [USER]. The direction to mirror Z2-M-01, run the sweep, document
+marked [USER]. The direction to mirror Z2-M-01, run the sweep, document
 `--address-space-top` and do the register bookkeeping came from the
-orchestrator's brief, which quotes the [USER 2026-10-03] and [USER
-2026-09-30] rules verbatim; the brief is not itself a [USER] ruling.
+orchestrator's brief, which relays the [USER 2026-10-03] and [USER
+2026-09-30] rules; the brief is not itself a [USER] ruling.
 Scratch probes and gate logs lived in the worktree's `.tmp/` and were
 deleted after this record was committed.
 
 ## 7. Rework after the pre-merge audit — the alignment sites become ISO-fix register R7
 
 Audit: `docs/2026-10-03_total-arith-pre-merge-audit.md` (cherry-picked from
-`audit/total-arith-20261003` 583d11b1e). Operator rulings, verbatim as
+`audit/total-arith-20261003` 583d11b1e). Operator rulings, as
 relayed by the orchestrator:
 
-- O-3 synthesis, [USER 2026-10-03] "(1) agree with this", on: where
+- O-3 synthesis, [USER 2026-10-03] agreed (item 1), on: where
   upstream's OWN semantics defines the answer and only OCaml's machinery
   crashes on the way (a host artifact), Lean computes that answer (the R3
   treatment); where no answer is defined, or Lean's "answer" was garbage,
   Lean makes a loud stop mirroring the crash.
-- R6, [USER 2026-10-03] "(2) yes this is the canonical 'obviously a mistake,
-  no semantic ambiguity, just fix'": floatMul stays real multiplication, R6
-  ADMITTED.
-- F1, [USER 2026-10-03] "Yes, I agree with this analysis. Go ahead", on the
-  orchestrator's recommendation: classify the alignment-overflow cases (S-1,
+- R6, [USER 2026-10-03] ruled it the canonical case of an obvious mistake
+  with no semantic ambiguity, to be fixed (item 2): floatMul stays real
+  multiplication, R6 ADMITTED.
+- F1, [USER 2026-10-03] agreed with the analysis and approved going ahead,
+  on the orchestrator's recommendation: classify the alignment-overflow cases (S-1,
   S-2) as R3-style; Lean COMPUTES the unbounded answer and the oracle's crash
   is a registered host-artifact difference. The remainder/division-by-zero
   stops STAY (no answer is defined).
@@ -607,8 +606,8 @@ OK: lane matches the committed baseline (MATCH except the ISO-fix register pins 
 
 ## 8. Addendum 2026-10-03 — R6 admitted; audit F2–F6 (supersedes §4's "PROPOSED" wording; §4 is left as history)
 
-- **R6 ADMITTED**: [USER 2026-10-03] "(2) yes this is the canonical
-  'obviously a mistake, no semantic ambiguity, just fix'". `CerbFloat.floatMul`
+- **R6 ADMITTED**: [USER 2026-10-03] ruled it the canonical case of an
+  obvious mistake with no semantic ambiguity, to be fixed (item 2). `CerbFloat.floatMul`
   stays real multiplication; its docstring and marker, the VALIDATION §2 row
   (label and status), the marker paragraph and the §3 "(d)" line (now
   "(R1, R2, R3, R5, R6, R7)") say ADMITTED.

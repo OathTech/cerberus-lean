@@ -30,8 +30,8 @@ Nothing merged, nothing pushed.
   proofs — 38 generated measured wrappers with C1's three — plus THREE
   hand-written `CerbMem` seams (`typeofMval`, `unqualifyAndUnatomic`,
   `memValueToBytes`) measured by hand with the same-shape theorems. The
-  measured functions are fuel-FREE for their callers: for them "the fuel
-  simply doesn't matter, so it's no longer a parameter" [USER 2026-09-04].
+  measured functions are fuel-FREE for their callers: for them the fuel
+  no longer matters and so is no longer a parameter [USER 2026-09-04].
 - ABSORBING: the four (B) rows that still returned a VALUE at exhaustion
   (`full_eval_pexpr`, `eval_pexpr_aux2`, `eval_pexpr_aux_broken`: the
   undefined monad's `Result (Error fuelExhaustedLoc fuelExhaustedMsg)`;
@@ -64,13 +64,13 @@ Nothing merged, nothing pushed.
   (my shell chain masked the exit); each was repaired in the next commit
   (2b/n, 3b/n) with the slip stated in its message — F-C2-8.
 
-## 1. Rulings in force (verbatim, as relayed by the orchestrator)
+## 1. Rulings in force (as relayed by the orchestrator)
 
-[USER 2026-09-04]: "we don't change the lem structure for ocaml … we have to
-do more work, but it's just bounded kernel checked work"; "the fuel simply
-doesn't matter, so it's no longer a parameter" (measured pure functions);
-"Any and all magic values that are hardcoded and can't be quantified over
-are definitionally bugs"; each fuel'd call starts from the FULL ambient
+[USER 2026-09-04]: the lem structure is not changed for OCaml — more work
+on this side, but bounded, kernel-checked work; for measured pure
+functions the fuel no longer matters and so is no longer a parameter;
+any hardcoded magic value that cannot be quantified over is
+definitionally a bug; each fuel'd call starts from the FULL ambient
 (consumer requirement); no in-repo mirror models — ship theorems, not
 alternative definitions.
 

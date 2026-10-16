@@ -127,19 +127,19 @@ claim. See the [failure census](docs/2026-09-06_failure-census-and-correspondenc
 
 **No magic values.** [USER 2026-09-03]: a fuel budget, a bound, a
 default, or any "magical" choice among nondeterministic alternatives
-that upstream Cerberus does not fix "are absolutely completely
-forbidden and are definitionally bugs". Every such choice is a
+that upstream Cerberus does not fix is forbidden outright and is
+by definition a bug. Every such choice is a
 QUANTIFIED PARAMETER of the semantics, threaded from the entry point
 (`drive fuel …`), so a consumer's theorem can range over it; a numeral
 may live only in the binary's command-line default (`--fuel`), never in
-a definition. The general form [USER 2026-09-03], verbatim: "any instance of a
-value that can be quantified over by a context / theorem is fine.
-Defaults that are chosen eg. in test suites are fine. Any and all magic
-values that are hardcoded and can't be quantified over are definitionally
-bugs (unless they mirror lem or ISO-C design choices)" — for this
-repository the mirrored source is upstream Cerberus's OCaml. The aim, stated by the operator the same day: "to forbid values that
+a definition. The general form [USER 2026-09-03]: any value that a
+context or theorem can quantify over is fine, as are defaults chosen in
+test suites and the like; any hardcoded magic value that cannot be
+quantified over is by definition a bug, unless it mirrors a lem or ISO-C
+design choice — for this
+repository the mirrored source is upstream Cerberus's OCaml. The aim, stated by the operator the same day, is to forbid values that
 limit the semantics or limit the ways the customer can reason about the
-semantics". So a bound CHOSEN inside a definition is forbidden (it limits
+semantics. So a bound CHOSEN inside a definition is forbidden (it limits
 both), while structural recursion on a measure that IS the data (the AVL
 height stored in a node) is admissible — nothing is chosen, nothing is
 bounded, and a proof can unfold it; a caller-passed parameter or a
@@ -155,9 +155,9 @@ lem-lean `doc/lean-backend/2026-09-03_fuel-parameter-design.md` (R1–R3),
 `docs/2026-09-04_fuel-parameter-C1-record.md`.
 
 **The address-space top joins fuel** (address-space-bound slice, 2026-09-17;
-[USER 2026-09-16]: "the semantics should be quantified over such bounds so we
-could (in principle) be running on a tiny machine with a tiny amount of memory
-to allocate, and the reasoning has to quantify over the bound"). The concrete
+[USER 2026-09-16] ruled that the semantics be quantified over such bounds, so
+that in principle it could run on a tiny machine with a tiny amount of memory
+to allocate, with the reasoning quantifying over the bound). The concrete
 allocator's initial cursor — upstream's `last_address = 0xFFFFFFFFFFFF`, a
 literal inside `memory/concrete/impl_mem.ml` and a structure-field default in
 `CerbMem.lean` until the slice — is an explicit PARAMETER of the shared model:

@@ -11,10 +11,10 @@
   (`CerbND.fuelExhaustedKill`) and every lemma live in CerbND.lean.
 
   THE FUEL IS A PARAMETER, NOT A CONSTANT (fuel-parameter arc, 2026-09-04;
-  [USER 2026-09-03]: fuel "is an execution parameter that 'doesn't matter'
-  … a parameter which can be chosen as 10^8 or any other value when
-  calling the interpreter"; "Any and all magic values that are hardcoded
-  and can't be quantified over are definitionally bugs"). Every fuel'd
+  [USER 2026-09-03] ruled that fuel is an execution parameter of no
+  semantic weight, choosable as 10^8 or any other value when calling the
+  interpreter, and that every hard-coded magic value that cannot be
+  quantified over is by definition a bug). Every fuel'd
   generated function and everything reaching one takes the LemLib class
   `[LemFuel]` (lem-lean doc/lean-backend/2026-09-03_fuel-parameter-design.md
   R1); the executable instantiates it ONCE from `--fuel N` (Main.lean —

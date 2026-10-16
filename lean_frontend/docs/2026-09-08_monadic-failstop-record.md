@@ -3,7 +3,7 @@
 Base: `c24e78c66` on `mdd/cerberus-lean`; work branch `arc/monadic-failstop`.
 
 [USER] After the fuel work landed elsewhere, the user approved the proposed
-C-TF1 slice with “Great, go ahead and execute.” Scope follows the typed-failure
+C-TF1 slice for execution. Scope follows the typed-failure
 design's R1 (2026-09-05, decision 4) and the parked pure-twin design's explicit
 independence ruling (2026-09-07 §8).
 
@@ -209,8 +209,8 @@ the slice.
 ### Verdict
 
 **Accepted and landed with documentation fixes only.** The slice is exactly
-the R1 scope ruled [USER 2026-09-05] ("yes agree, this seems the lowest risk
-approach"): the seven hand-written `memM` fail-stop arms now denote the
+the R1 scope ruled [USER 2026-09-05] (agreed as the lowest-risk
+approach): the seven hand-written `memM` fail-stop arms now denote the
 memory monad's own kill, `NDkilled (Error0 CerbFail.modelFailStopLoc msg)`,
 where they denoted `panic!` (the `Inhabited` default in the logic); the
 messages, guards and success paths are unchanged; propagation is proved

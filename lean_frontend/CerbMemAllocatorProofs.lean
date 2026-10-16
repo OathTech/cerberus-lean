@@ -6,7 +6,7 @@ Hand-written proof seam beside its subject, `CerbMem.allocator` — the mirror o
 `memory/concrete/impl_mem.ml:1247-1270` `allocator` after remedy 1 of upstream-tray
 draft 44 (`docs/upstream-tray/44-concrete-allocator-euclidean-align-down-overlap-at-
 exhaustion.md`; charter `docs/2026-09-16_charter-allocator-soundness-address-bound.md`
-§2 C1(c); [USER 2026-09-16] "unambiguously wrong … allowed to fix ahead of upstream").
+§2 C1(c); [USER 2026-09-16] ruled it unambiguously wrong and allowed a fix ahead of upstream).
 
 One GENERAL statement over every state, size and alignment, proved from the Euclidean
 `Int` division facts (`Int.emod_nonneg`, `Int.emod_def`) and linear arithmetic —

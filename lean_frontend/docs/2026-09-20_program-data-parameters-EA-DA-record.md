@@ -21,8 +21,8 @@
   per-TU value, the run's value = the LAST program TU's digest, S0 record §3).
 - **D5 [AGENT orchestrator]** — reader order everywhere: `digest`, `enum_definitions`, `tagDefs`
   (sorted by name; S0 record §1.6 rule 1). The lem val is named `enum_definitions` exactly.
-- Rulings honoured: [USER 2026-09-19] delegation of implementation-focused calls + "roll it
-  together" (Q2); [USER 2026-09-04] "we don't change the lem structure for ocaml" (dead
+- Rulings honoured: [USER 2026-09-19] delegation of implementation-focused calls + rolling Q2
+  together; [USER 2026-09-04] the lem structure not changed for OCaml (dead
   parameters and shared bodies excepted); [USER 2026-09-08] nothing new out of policy.
 
 **Errata found by this worker (E-A1(a)) [AGENT worker 2026-09-20]:**
@@ -1109,7 +1109,7 @@ is the ONLY commit added on `0e1968ffb`; `.tmp/eada2/` deleted; `git status` cle
 
 ## 11. Landing (2026-09-22)
 
-[USER 2026-09-22], verbatim: *"Go ahead with the enum merge."* — the
+[USER 2026-09-22]: approved the enum merge — the
 sign-off for the orchestrator's merge ask: `mdd/cerberus-lean`
 `5407597d9` → the head of `arc/program-data-parameters` including this
 landing commit, ff-only, by the orchestrator in the primary checkout. The

@@ -1,7 +1,7 @@
 # First execution charter — validation foundations
 
-**Adopted for execution, 2026-09-05 [USER].** The operator instructed:
-"complete the goals in docs/2026-09-05_validation-foundations-charter.md"
+**Adopted for execution, 2026-09-05 [USER].** The operator instructed
+that the goals in this charter be completed,
 and authorized long-cycle work without review except at major decision
 boundaries. Landing remains subject to the discussion below.
 This charter implements the first work package in the

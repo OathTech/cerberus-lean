@@ -2,7 +2,7 @@
 
 > **Superseded in part, 2026-09-29.** [USER 2026-09-29] ruled that S1 mirrors
 > upstream's positional fork-result order and `Stack_cons2` wait refusal and
-> refuses loudly ("mirror and refuse seems safest"). The fork/wait
+> refuses loudly (mirroring and refusing judged the safest course). The fork/wait
 > "evidence/tray/register/[USER] process" prescribed below (the S1 row of the
 > slice table and the WP1-decision summary) no longer applies, and WP1's
 > experimental code does not land. Current constraints:

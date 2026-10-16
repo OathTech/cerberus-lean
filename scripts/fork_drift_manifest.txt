@@ -1,3 +1,11 @@
+# Quote scrub, 2026-10-16 [AGENT, executing the operator's 2026-10-16 ruling that the user's chat messages are never
+# quoted verbatim in files]: comment-only paraphrases in six pinned files — [source-content] rows for
+# frontend/model/{ail/ailTypesAux,cabs_to_ail,mem}.lem, parsers/c/c_parser.mly, runtime/libcore/{std,std_inner_arg_temps}.core
+# and scripts/common.sh (comment text only)
+# re-pinned to the new bytes (check_fork_content.py --emit). No code or data changed; lem emits .lem comments into the generated
+# OCaml, so the [expected-semantic] rows for cabs_to_ail.ml and mem.ml move too (the fork-vs-upstream deltas differ from the
+# previous pins only in those comment lines, verified by diff against the pre-edit generated tree). Single-row edits + this NOTE,
+# no --refresh.
 # PNVI arc S1 re-point, 2026-10-05 [AGENT, executing the orchestrator's re-point brief]: amends the provisional-pin NOTE below —
 # [meta] lem-pin fc8fbefe -> 2d3a4927, still PROVISIONAL (lem-lean arc/pnvi-switches, the S0 review fix round F1-F7: generation-time
 # refusals, human-printer spacing, a test gate, docs; LemLib unchanged). lean_frontend/generated (221 files) and
@@ -7,7 +15,7 @@
 # `deps/lem-pinned` plus the shared opam lem are moved to it (the two-repo pin dance); a re-gate in the standard environment
 # must then be green. (Until then this lem-pin row matches only a worktree-private lem 2d3a492 first on PATH.)
 # PNVI arc S1 (the switch set as a parameter), 2026-10-05 [AGENT, executing the orchestrator's S1 brief under [USER 2026-10-05]
-# "Re PNVI - agree on your recs except for mirroring crashes / obviously wrong behavior. These should be refusals surely?" — option 3,
+# agreeing to the PNVI recommendations except that crashes / obviously wrong behaviour are refused rather than mirrored — option 3,
 # design lean_frontend/docs/2026-10-04_pnvi-ae-udi-design.md §B.3]: [meta] lem-pin 4e70bb50 -> fc8fbefe, a PROVISIONAL pin to the
 # UNMERGED lem-lean branch arc/pnvi-switches (S0, instance-implicit readers; the same-name branch pair) — lem output for inputs that
 # use no new declaration is byte-identical to 4e70bb5's (lem-lean record doc/lean-backend/2026-10-05_instance-reader-record.md §5).
@@ -17,7 +25,7 @@
 # LEM_SRC_LEAN). The OCaml generation list and every .lem file it reads are unchanged: ocaml_frontend/generated (86 files)
 # byte-identical (diff -r against the pre-change tree, and against the opam lem 4e70bb5's output); layer 2 unmoved. Single-row edits +
 # this NOTE, no --refresh. Record: lean_frontend/docs/2026-10-05_pnvi-s1-switch-parameter-record.md.
-# fix/asm-refusal, 2026-10-05 [AGENT, executing [USER 2026-10-05] "Re inline asm, this should be a loud refusal"]: inline assembly
+# fix/asm-refusal, 2026-10-05 [AGENT, executing [USER 2026-10-05] ruling that inline asm is a loud refusal]: inline assembly
 # is REFUSED where upstream erases it. [source-content] frontend/model/cabs_to_ail.lem d16c0201… -> 2117fd83… (the CabsSasm arm of
 # desugar_statement_aux: `E.return AilSskip` -> E.fail loc (Desugar_NotYetSupported "inline assembly (asm statement) is unsupported"),
 # basic/extended/asm-goto alike). [expected-semantic] cabs_to_ail.ml 18f2c651… -> 406d97ee…. NEW [files] + [source-content] row
@@ -26,33 +34,33 @@
 # unsupported)"); action-only, the grammar and its error-message states are unchanged; the generated parser is outside layer 2.
 # Lane rows moved: none on any gated corpus; five Tier C scoreboard rows (no baseline) move MATCH -> reject. Single-row edits + this NOTE, no --refresh.
 # Record: lean_frontend/docs/2026-10-05_asm-refusal-record.md.
-# fix/mirror-upstream-d38-alignas task 2, 2026-10-03 [AGENT, executing [USER 2026-10-03] "Agree on your recommendations with that framing"
+# fix/mirror-upstream-d38-alignas task 2, 2026-10-03 [AGENT, executing [USER 2026-10-03] agreement to the recommendations under the mirror-upstream framing
 # — recommendation: for `_Alignas`, keep only the completeness check and mirror upstream on alignment compatibility; F-A2 ruling
-# [USER 2026-09-27] "yes, 'constraint violation' - and this goes in the tray if it isn't there already"]: ONLY the cabs_to_ail.lem half of
+# [USER 2026-09-27] constraint violation, and the report goes in the tray if not already there]: ONLY the cabs_to_ail.lem half of
 # P2d-3 (record branch fix/alignas-p2d3, cf4af48f8) is taken. [source-content] frontend/model/cabs_to_ail.lem 2a59d024… -> d16c0201…
 # (desugar_alignment_specifier: the C11 §6.5.3.4#1 check via §6.7.5#5, AlignofInvalidApplication; upstream-tray draft 47; byte-identical
 # to cf4af48f8's file). [expected-semantic] cabs_to_ail.ml 0aefe2af… -> 18f2c651… (= cf4af48f8's pin). ctype_aux.lem / ctype_aux.ml are
 # NOT moved: alignment compatibility stays upstream's `TODO alignment` placeholders. Single-row edits, no --refresh. Record:
 # lean_frontend/docs/2026-10-03_mirror-upstream-d38-alignas-record.md §2.
-# fix/mirror-upstream-d38-alignas task 1, 2026-10-03 [AGENT, executing [USER 2026-10-03] "Agree on your recommendations with that framing
-# (we shouldn't revert work that allows the iris reasoning to work properly)" — recommendation: revert draft 38's struct compatibility
+# fix/mirror-upstream-d38-alignas task 1, 2026-10-03 [AGENT, executing [USER 2026-10-03] agreement to the recommendations under the mirror-upstream framing,
+# with the proviso that work the iris reasoning depends on is not reverted — recommendation: revert draft 38's struct compatibility
 # check to upstream's loud exact-tag rejection; cerberus-sl confirmed it does not rely on it]: the D3 core_eval.lem hunk (dbe633ec5) is
 # REVERTED to upstream's text. [source-content] frontend/model/core_eval.lem 4ade27ce… -> e1fc98ed… (the pre-D3 pin, byte-identical; the file
 # still differs from upstream by its Lean-only fuel declares). [expected-semantic] core_eval.ml REMOVED: the regenerated file is
 # byte-identical to the upstream generated tree (layer 2 shrinks by one). Drafts 37/39 (ctype_aux) untouched. Single-row edits, no
 # --refresh. Record: lean_frontend/docs/2026-10-03_mirror-upstream-d38-alignas-record.md.
-# lem-lean re-pin to 4e70bb5, 2026-10-04 [AGENT; [USER 2026-10-04] "merge it. Then take a look at lem-lean, which has implemented a bunch
-# of QoL improvements"]: [meta] lem-pin 77ad4fac -> 4e70bb50 (Lean-backend/LemLib changes only; ocaml_frontend/generated (86 files) and
+# lem-lean re-pin to 4e70bb5, 2026-10-04 [AGENT; [USER 2026-10-04] approved the merge and asked for a look at lem-lean's quality-of-life
+# improvements next]: [meta] lem-pin 77ad4fac -> 4e70bb50 (Lean-backend/LemLib changes only; ocaml_frontend/generated (86 files) and
 # sibylfs/generated byte-identical between 77ad4fa and 4e70bb5 output, lean_frontend/docs/2026-10-04_lem-repin-4e70bb5-record.md).
 # Single line + this NOTE, no --refresh.
-# lem-lean arc/linksem re-pin, 2026-09-30 [AGENT; [USER 2026-09-30] "Great, go ahead with the merge & repin"]: [meta] lem-pin c2a68e79 -> 77ad4fac
+# lem-lean arc/linksem re-pin, 2026-09-30 [AGENT; [USER 2026-09-30] approved the merge and re-pin]: [meta] lem-pin c2a68e79 -> 77ad4fac
 # (Lean-backend/LemLib changes only; ocaml_frontend/generated and sibylfs/generated byte-identical between c2a68e7 and 77ad4fa output,
 # lean_frontend/docs/2026-09-30_lem-repin-77ad4fa-record.md). Single line + this NOTE, no --refresh.
-# bug-hunt fixes S2, 2026-09-29 [AGENT; [USER 2026-09-29] "Agree on everything, yes on the fixes"; single row + this NOTE, no --refresh]:
+# bug-hunt fixes S2, 2026-09-29 [AGENT; [USER 2026-09-29] agreed to all findings and approved the fixes; single row + this NOTE, no --refresh]:
 # scripts/common.sh exports CERB_INSTALL_PREFIX = the oracle's --runtime prefix, the Lean driver's runtime since BUG-2
 # (lean_frontend/docs/2026-09-29_bug-hunt-fixes-record.md §S2). No oracle source or generated-code change.
 # scripts/common.sh: 0f02d01c0f3655223d7d9561f8629c464d9a144aa5fdb6fbcda9d8034e5468ae -> 3ef7b1ae734b9ce5730fd0b09fa19e63a3cda03c10a88c46d44e06620df24ad0
-# public-readiness SWEEP, 2026-09-25 [AGENT; [USER 2026-09-25] "Great, go ahead with the whole merge and sweep as proposed"]: [meta] lem-pin 67ec5de7 -> c2a68e79
+# public-readiness SWEEP, 2026-09-25 [AGENT; [USER 2026-09-25] approved the whole merge and sweep as proposed]: [meta] lem-pin 67ec5de7 -> c2a68e79
 # (lem-lean sweep: LemLib comment-only rationale for never_extract (T1), NOTICE line (T3), record addendum (T2), the two delta-review docs; NO generated-code change — both trees byte-identical). Single line + this NOTE, no --refresh.
 # Public-readiness follow-up single re-pin (2026-09-25): 6b20bfd02de924d078725efa96c6675115b8b17a -> 67ec5de70e02e280bb348a4ba826696b76116732.
 # All Lem implementation changes precede this pin; generation and gates are in
@@ -81,8 +89,8 @@
 # cmm_csem.lem replaces all 23 excluded Lean sorry reps with unsupported markers.
 # scripts/common.sh: 008b5ade8b923f9d7ae0fe6fce837dee3e7a75ef2c414dde8791a78633545744 -> 0f02d01c0f3655223d7d9561f8629c464d9a144aa5fdb6fbcda9d8034e5468ae
 # frontend/concurrency/cmm_csem.lem: 01e3dac323ce0d07504e6787e80d847bcffab89621480bc3eef229bfe195a4fd -> e2ac087fffa4ae3cd1fad234184323b85ce5c6561c3f61e1255b2e478da9d4c7
-# match-pattern-arity CLOSURE round 3 — the guard's own finding, 2026-09-23 [USER 2026-09-23] "Yeah, we shoudl fix and file to the tray,
-# per our rule that unambiguous bugs get fixes" [AGENT; two NEW [files] + [source-content] rows + this NOTE, no --refresh]:
+# match-pattern-arity CLOSURE round 3 — the guard's own finding, 2026-09-23 [USER 2026-09-23] ruled that it be fixed and filed to the tray,
+# under the rule that unambiguous bugs get fixes [AGENT; two NEW [files] + [source-content] rows + this NOTE, no --refresh]:
 # runtime/libcore/std.core:618-619 and runtime/libcore/std_inner_arg_temps.core:574-575 declared `builtin pwrite`/`builtin pread` with
 # THREE formals while their proxies call them with FOUR (…, size, off) and both engines' runtime arms consume four
 # (core_reduction_aux.lem:218-236, core_run.lem:1269-1287); upstream's truncating Eproc typing deleted `off` when compiling the
@@ -91,7 +99,7 @@
 # runtime/libcore/std.core 6f78799f…, runtime/libcore/std_inner_arg_temps.core 7eb46288…. The tests/libc/libc.core dump pin has no stdlib text
 # (libc_prep.sh --check unchanged). Upstream-tray draft 45 "std.core pread/pwrite declaration arity"; record §15.2b.
 # match-pattern-arity CLOSURE round 3, 2026-09-23 [AGENT; charter Addendum A3 — the second-round audit's R3/R4 rolled in,
-# [USER 2026-09-23] "Yes, we will roll R3 / R4 into this as a closure"; single rows + this NOTE, no --refresh]: ARGUMENT-LIST arity.
+# [USER 2026-09-23] agreed to roll R3 / R4 into this as a closure; single rows + this NOTE, no --refresh]: ARGUMENT-LIST arity.
 # core_typing.lem: the seven argument-list zips guard the count before zipping, both directions — PEcall inference + checking,
 # Ememop, Eproc, Erun (MismatchExpected "<PEcall|memop()|proc|run>" (BTy_tuple bTys) "argument list of a different arity"),
 # Eccall fixed + the FIXED prefix of a variadic call (the bundle split first; the arm's own CoreTyping_TODO). core_reduction.lem
@@ -131,7 +139,7 @@
 # field + this branch's arity guards) the content and delta pins below are RECOMPUTED from the COMBINED regenerated source at each
 # replayed commit — never a side's hash. The four replayed commits keep their messages; their NOTEs follow, newest first.
 # match-pattern-arity, 2026-09-20 [AGENT; charter lean_frontend/docs/2026-09-20_charter-match-pattern-arity.md; single rows + this NOTE, no --refresh]:
-# cerberus-sl hidden-state note item 7 ([USER 2026-09-20 via cerberus-sl] "we can ask for this immediately"). Two SHARED-MODEL
+# cerberus-sl hidden-state note item 7 ([USER 2026-09-20 via cerberus-sl] ruled that this could be asked for immediately). Two SHARED-MODEL
 # guards mirroring upstream's own simpl_match_pattern (core_rewrite.lem:1287-1300): frontend/model/core_aux.lem match_pattern's
 # Ctuple arm returns Nothing when |pats'| <> |cvals'| (Lem's List.zip truncates — a pattern of arity 2 matched a value of arity 3,
 # binding the prefix); frontend/model/core_typing.lem typecheck_pattern's (Ctuple, BTy_tuple bTys, _) arm fails with the EXISTING
@@ -207,7 +215,7 @@
 # Pristine upstream has no such parameter; matched mode never passes it (row 10 lists it not_applicable); its tiny-top
 # differential lane is scripts/test_address_space.sh (LADDER Tier A row 12). Single-row edit. Record: §C3.
 # address-space-bound part two C2, 2026-09-17 [AGENT]: the address-space TOP becomes a quantified entry parameter
-# (route A; [USER 2026-09-16] "the semantics should be quantified over such bounds"; charter
+# (route A; [USER 2026-09-16] direction that the semantics be quantified over such bounds; charter
 # lean_frontend/docs/2026-09-17_charter-address-space-bound-part-two.md; fence extension granted 2026-09-17). GENUINE
 # shared-model SIGNATURE change, identity at the default: mem.lem `initial_mem_state: integer -> mem_state`; driver.lem
 # `initial_driver_state_with top …`/`initial_driver_state top …`/`initial_driver_state_given sup top …`;
@@ -232,7 +240,7 @@
 # line is corrected in place. Record: lean_frontend/docs/2026-09-16_allocator-soundness-address-bound-record.md §M1.
 # allocator-soundness C1, 2026-09-16 [AGENT]: two [source-content] pins moved — memory/concrete/impl_mem.ml
 # e55389c6… -> 97a5da4c… and memory/vip/impl_mem.ml 1491d4a2… -> 4bc49e63… — remedy 1 of upstream-tray draft 44
-# ([USER 2026-09-16] "unambiguously wrong … allowed to fix ahead of upstream"): `allocator` kills with the EXISTING
+# ([USER 2026-09-16] unambiguously wrong, so the fork may fix ahead of upstream): `allocator` kills with the EXISTING
 # out-of-memory error when the cursor is below the request (`z < 0`) BEFORE rounding, then aligns down with the
 # Euclidean remainder (`z' = z - m`); the truncating-division branch `if q < zero then neg m else m` — which with
 # `quomod = ediv_rem` ADDED m to a negative z and could return an address in (0, align) overlapping the live object
@@ -583,14 +591,14 @@ util/cerb_fresh.ml
 100644 53b16ced15ce07b825cd5e60859dffcba19d83812b70da5301041e71374ac81f frontend/concurrency/cmm_csem.lem
 100644 d9fb59bfce8faf2038f3db9bcdc5c2fdb60776353f4b5bc664602fc2b42c4f24 frontend/concurrency/cmm_op.lem
 100644 08f030cb79b455238f90bd44e8c7a641d5b4b05084063af09d61329d145d54c6 frontend/model/ail/ailSyntax.lem
-100644 0b76860551c48f6403a0fa827a974c03f07b0a0b73d64c5008270b4c26634ea5 frontend/model/ail/ailTypesAux.lem
+100644 e1ac560d167c0c0c196965b2e0eaf19e19be9173de5d83846a9b68e2d8adda73 frontend/model/ail/ailTypesAux.lem
 100644 cb5c28b31fb150925944814090d1fac7febe7d1d7c34c9dec586698258f18209 frontend/model/ail/ailWf.lem
 100644 41475eb3efef1a5ba528e344825a3274c20d7d9eb82b9a66f12d4b9f3dae634e frontend/model/ail/genTyping.lem
 100644 e52264c064f724e768f0b6a5c627f09eb0a3a0eeebc7d170eca43b5834a4958e frontend/model/annot.lem
 100644 59d2cd240e91897161704a8bdd5fc91d3688aed8ddb1ddae1cd02724a85b135d frontend/model/any.lem
 100644 50aa5bac4e18b2d0e1e63da58fec61d6dd1b09105b423bc834a49801e8ac4279 frontend/model/boot.lem
 100644 a3bce9ed29041d602cdc128dba43f4422beeb230e1d28939f06b68e9408fe7ea frontend/model/builtins.lem
-100644 2117fd830ce21db7c4a576b63f56cc5d6e9c7600722a600b296e1b2a1d4534cb frontend/model/cabs_to_ail.lem
+100644 39acb8c358e334d641ea6094c000ffacfd751cbf9521da9e28abc0fa0ba16a9e frontend/model/cabs_to_ail.lem
 100644 43205d9e9b60c2cb85194af37d99eeea19827f63e626902b6b7b8d0e3ec2ea19 frontend/model/cabs_to_ail_effect.lem
 100644 185b1d2afb9e0d3598c664a50d7106b8cc195add6049b358c0c92c8305e60dc2 frontend/model/cerb_attributes.lem
 100644 c4426c93453c70139f7693096cb2d3796dee1676344652c2c6271303a2d392ae frontend/model/cn.lem
@@ -619,7 +627,7 @@ util/cerb_fresh.ml
 100644 e330da78c27654f8c371e4cbe31ecd98c9305c06afc6daa65edfba7fad371e45 frontend/model/implementation.lem
 100644 286059eacaa23270ae1e22d7a970710449e72656a8d3e2772db2c625ee166e87 frontend/model/lean_switches.lem
 100644 ae79a26c1cfd62acdf18ca6479625de8db05e01f43bdc3dc829cc5a83f465111 frontend/model/loc.lem
-100644 e75c7bf7333be72f00f62818a620d9bb1491ca1f6a6a99273d6a45f8f5caf7ca frontend/model/mem.lem
+100644 448b2c7d0a6831788b1aa103e9934083dce709d5614b78eb6b5dea9f7ad081b4 frontend/model/mem.lem
 100644 fd4fd0a2087125b00025c0ba7bf98035abb6b9daa5a9d474ca5b81e89735344b frontend/model/mini_pipeline.lem
 100644 da04e3c262a6e776e977bac03e820d17a3c54065009ae7bd255bfadb900b9524 frontend/model/monadic_parsing.lem
 100644 fc90e8eb740711176ddf98d9ebb929e6746604ea50375b08762646edb69e0493 frontend/model/nondeterminism.lem
@@ -644,12 +652,12 @@ util/cerb_fresh.ml
 100644 1a977e1857f55709c1b1653d600929647041d66a67239923c0547191e5518174 ocaml_frontend/ocaml_implementation.mli
 100644 09bc6e40d5ae27a9ad6a6b9342410ade468c60a4e1064e3308dfaf6c50005e35 ocaml_frontend/rewriters/core_peval.ml
 100644 4d6d58a199fbbcc0ed7692fa0b631f74cc3c39e0dc53405dcd6fc4da3dc9b7b7 ocaml_frontend/rewriters/remove_unspecs.ml
-100644 dbc59122c3d8ced83c982252f918345b43efc2c6e4eb876d7769916fb7263373 parsers/c/c_parser.mly
+100644 ae429eaa6e70c4b6e8b4aae65c88d2741f774b72b095bd9e6e2e70cba81a546b parsers/c/c_parser.mly
 100644 d1d5f0a2ca4cc5a53e8b068d3bb9f219fe5eaec29457f25032352271ed240095 runtime/libc/dune
 100644 cf6fbe0be7dae96f6ce2c8cf7d7013b89d350da563e5179be8a2bb298d7ee24a runtime/libcore/impls/i686-apple-darwin10-gcc-4.2.1.impl
-100644 6f78799f7d7ad93d2dcccd9487004e0e5f742f550f691825c1af878ee9278d11 runtime/libcore/std.core
-100644 7eb4628819de61b5ca997209df88f09545553606f8d8305e530b954093820850 runtime/libcore/std_inner_arg_temps.core
-100755 3ef7b1ae734b9ce5730fd0b09fa19e63a3cda03c10a88c46d44e06620df24ad0 scripts/common.sh
+100644 46520a2380e463b59e12fe519b1592c467fb333d6e5647732c1e28c73cef5ed6 runtime/libcore/std.core
+100644 8f3aaa4e1241f0a1039ae66d773a65ec751bae67aaaa787a1cd4c6503790d697 runtime/libcore/std_inner_arg_temps.core
+100755 1ce6bec364c776eff05b934a640c8089ea283a45af9a2d2478771d563a9699bd scripts/common.sh
 100755 50ad201912960d4fffed4a1a9b53754df5f10a24e9a012bb000b746dd2a605f8 tools/check_driver_fresh.sh
 100755 98b24dd3dc65258ed8e10e019e5efb5c329501321f1b5b247190fc3163ad245c tools/check_handwritten_sync.sh
 100755 e05d28ddb60e82f04da68f36100337d4333cd34010c4b7e6ef8be999f8365ce5 tools/check_lem_sync.sh
@@ -659,7 +667,7 @@ util/cerb_fresh.ml
 0471d6a212c273c515d525173d8003c7d10d559e5f91758820708ec69e52e6d5 mem_common.ml
 5a20bc6b1e3e4cd9af04c1316e4a2b8354ccfab68e2fea3561acfd7cdfb3a093 core_aux.ml
 ceca3526d3ddbd55345eee29f0c5b2626b56c516014cdd73fb3bf5db20f50ac2 cabs_to_ail_effect.ml
-406d97ee4e07d58bba6c17afcbfd52676300a86cf5d714b565a5a188bbd479ed cabs_to_ail.ml
+0691b548bbb1bd2bb39b443e55efa8e27f93676337bb70f6b3c49e1106e23f91 cabs_to_ail.ml
 bad2eba7e2838b9a7c224bbbd2b1569ecf9f93a09760630a57f751539ee37e47 core_reduction.ml
 b9f1e58c1d52cd0680a56e7dcd4e3d8e5d2eadbe1d1575f4ad0442d3efd2b3a5 core_run_aux.ml
 d9fb64b8e630459b702f48590327ba060b9883f2e8dcb8aee2a4b6973117977c core_run.ml
@@ -686,4 +694,4 @@ e5b26939dde79f51654d4696010595af8178cb301e4e093973012ed00726eacd nondeterminism.
 98ce65a030e34b6f691e82d328aaf48e4cc2522ec4094aa145465810c658bdca pp.ml
 ab2dbee332b13d97f1752d5aecc0b8cbb95da5adf8c61cb3e5065dd0230ba2c1 std.ml
 c2008a0bb34b578d774f2816db605a7fa67a2e890eddd7f5052a02c521a336ff utils.ml
-1da4330c75ee0ee80b8afa8cbb6c42559a492fd761b4d5a12653ed1c7fd3babf mem.ml
+3133d1ce9bbe9acf7fc7fb8360032a11211ea0205f59e5a212c0d34c92af62a4 mem.ml

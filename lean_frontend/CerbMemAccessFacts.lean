@@ -1,7 +1,7 @@
 /-
   CerbMemAccessFacts — the SC WP0 load/store erasure facts as a citable library
   seam (2026-10-08; consumer ask (c), cerberus-sl DECISIONS C3.399; operator
-  [USER 2026-10-08] "Yes go ahead"; record
+  [USER 2026-10-08] approved; record
   docs/2026-10-08_memory-access-facts-seam-record.md).
 
   A THEOREM-ONLY seam a consumer imports beside `CerbMem`, on the

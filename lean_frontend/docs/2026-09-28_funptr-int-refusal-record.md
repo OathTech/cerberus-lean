@@ -1,7 +1,7 @@
 # Function-pointer-to-integer refusal (served-surface audit P1-1) — record
 
 Date: 2026-09-28. Branch: `arc/contract-enforcement`. Author: the orchestrator [AGENT].
-Decision: [USER 2026-09-28] "P1-1 - let's measure, then refuse if the blast radius isn't too big."
+Decision: [USER 2026-09-28] for P1-1: measure first, then refuse if the blast radius is not too big.
 
 ## Finding (from `docs/2026-09-28_served-surface-audit.md` §P1-1, re-measured)
 
@@ -39,8 +39,8 @@ function pointer (tables, callbacks, `void*` round trips) goes through that repr
 so refusing at the store would refuse all of them. `%p` prints a `void*` read back from those
 bytes through the pure printer, which has no memory state. A precise refusal of either channel
 needs a representation change. These two channels remain a served difference, registered as
-named deviation N1 (`VALIDATION.md` §2b, new class (e); [USER 2026-09-28] "yes, re the decision,
-agree with (1). Named deviations are okay in cases we can't easily resolve the mismatch."), with
+named deviation N1 (`VALIDATION.md` §2b, new class (e); [USER 2026-09-28] agreed with (1):
+named deviations are acceptable where the mismatch cannot easily be resolved), with
 witnesses `zd-funptr-bytes-deviation` and `zd-funptr-printf-deviation` and upstream-tray draft 46.
 
 ## Blast radius (measured)
@@ -66,7 +66,7 @@ correctly before the refusal (served-surface probe `p2_exit_atexit`, `Specified(
 blast-radius measurement above missed it because no lane program called `atexit`, which is exactly the thin coverage
 the test-depth map later measured.
 
-Decision [USER 2026-09-28] "agree on atexit as you propose": revert the refusal and register the integer channel under
+Decision [USER 2026-09-28] agreed to the atexit proposal: revert the refusal and register the integer channel under
 named deviation N1 with the bytes and `%p`. `CerbMem.intfromptr` is back to the OCaml mirror with the N1 marker;
 `zd-funptr-int-direct` and `zd-funptr-int-voidptr` are pinned `DIFF | L=VAL:{Specified(47)}` (oracle 530);
 `ptr3-001` is back to `MATCH`; libc_exec rows `040-atexit-order` and `041-atexit-return` pin the served round trip.

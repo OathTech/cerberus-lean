@@ -4,9 +4,9 @@ STATUS: assessment for operator discussion — not a charter. Commissioned
 [USER 2026-08-31] with six axes: (1) fidelity to real C, (2) fidelity to
 cerberus-upstream, (3) C feature coverage, (4) QoL for other projects,
 (5) closing threats to validity, (6) performance/scalability without
-trust cost. Goal state, verbatim: "an incredibly faithful, well tested,
-and carefully built core semantics that can easily be upstreamed if the
-cerberus team choose to do so."
+trust cost. Goal state, as the user framed it: a highly faithful,
+well-tested and carefully built core semantics that could easily be
+upstreamed should the Cerberus team choose to take it.
 
 Grounded against: `core/semantics-first` @ 7c66b39a4 (VALIDATION.md,
 TODO.md, the split record), `scripts/fork_drift_manifest.txt` (4 section
@@ -204,10 +204,10 @@ are already-registered queue items re-homed under their axis.
 
 ## Axis 6 — Performance/scalability (trust-free by construction)
 
-Operator framing, verbatim: "performance is also worth thinking about
-if there are untrusted things we can do to make the semantics more
-scalable. This is a nice thing about Lean — we can build optimizations
-that don't affect our trust story." Every item below is classified by
+Operator framing: performance is also worth considering where untrusted
+means can make the semantics more scalable — a nice property of Lean
+being that optimizations can be built without affecting the trust
+story. Every item below is classified by
 its trust-preservation pattern: **(a) equivalence-proved swap**
 (faster structure + kernel-checked equivalence lemma — strictly
 trust-free), **(b) executable-face swap** (`@[implemented_by]`/csimp:

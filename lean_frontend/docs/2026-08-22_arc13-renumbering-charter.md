@@ -1,7 +1,7 @@
 # Arc 13 charter: the symbol-id rebase + fixture re-pin ("clean numbering")
 
 Date: 2026-08-22. Mode: long-cycle autonomous under the orchestrator/
-worker doctrine. BLESSED by operator via launch, 2026-08-22 ("Launch the renumbering"). Branch:
+worker doctrine. BLESSED by operator via the launch instruction, 2026-08-22. Branch:
 `arc/renumbering` (cerberus-lean; lem NOT expected — any lem change =
 tripwire + replan). Preconditions MET: arcs 11+12 merged 2026-08-22;
 [USER 2026-08-21] parked-for-immediate ruling executes now.

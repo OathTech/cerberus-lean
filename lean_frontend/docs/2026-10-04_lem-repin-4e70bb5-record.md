@@ -2,9 +2,10 @@
 
 Branch `arc/lem-repin-4e70bb5` over mainline `9e63218bc`. Worker [AGENT]; decisions are [AGENT] unless marked [USER].
 
-- Authorization: [USER 2026-10-04] "merge it. Then take a look at lem-lean, which has implemented a bunch of QoL
-  improvements (see doc/lean-backend/2026-10-03_beq-lattice-cerberus-repin.patch for a draft patch for you)", relayed by
-  the orchestrator with the brief for this re-pin.
+- Authorization: [USER 2026-10-04] approved the merge and directed that lem-lean be looked at next, it having
+  implemented a set of quality-of-life improvements (with a draft patch at
+  `doc/lean-backend/2026-10-03_beq-lattice-cerberus-repin.patch`); relayed by the orchestrator with the brief for this
+  re-pin.
 - The lem pin moves from `77ad4facfc60814a4a3f5d09dc88168ca208b285` to `4e70bb506d962355b7120260d4d176aa2850dcc3`
   (lem-lean `mdd/lean-backend`; 43 commits). The lem-side records are lem-lean `doc/lean-backend/`
   `2026-10-03_output-niceness-arc-plan.md` (layout engine, comments kept, mutual/recursive records as `structure`s),
@@ -273,7 +274,7 @@ Every row's summary lines equal those quoted in §7 (scripted comparison of the 
 ## 9. Pre-merge audit follow-ups
 
 The pre-merge audit (`docs/2026-10-04_lem-repin-4e70bb5-pre-merge-audit.md`, verdict MERGEABLE WITH FIXES) was
-approved in scope by [USER 2026-10-04] "1 / 2 approved". A worker [AGENT] fixed it on branch
+approved in scope by [USER 2026-10-04] (items 1 and 2 approved). A worker [AGENT] fixed it on branch
 `audit/lem-repin-4e70bb5`. No build ran: every script ran directly on a copy of the arc worktree's
 `lean_frontend/generated` at `31732f750`, which the audit showed byte-identical to a `4e70bb5` regeneration. Each
 plant ran on scratch copies. Decisions in this section are [AGENT].

@@ -3,9 +3,9 @@
 **Status: MEASUREMENT RECORD [AGENT auditor, 2026-09-07], read-only.** Branch
 `audit/failure-reach` (worktree `worktrees/cerberus-lean-audit/failure-reach`) =
 mainline `mdd/cerberus-lean` @ `4d1088004`. Nothing here is a decision; §Q6 is a
-labelled [AGENT] judgement the operator asked for ("let's do the reachability census
-and try to understand whether this is worthwhile" — "this" = the pure-failure
-correspondence design, `docs/pure-failure-design:lean_frontend/docs/2026-09-07_pure-failure-correspondence-design.md`).
+labelled [AGENT] judgement the operator asked for (the reachability census first, to
+understand whether the pure-failure correspondence design is worthwhile —
+`docs/pure-failure-design:lean_frontend/docs/2026-09-07_pure-failure-correspondence-design.md`).
 No `.lem`, Lean, script, baseline or pin was edited; the new files are this record,
 its evidence directory (`2026-09-07_pure-failure-reachability-census-evidence/`,
 192 KB) and the witnesses under `tests/failure-probes/reach/` (not wired into any

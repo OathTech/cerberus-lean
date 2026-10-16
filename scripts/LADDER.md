@@ -130,7 +130,7 @@ a record, never a pass/fail for the tree.
   dedicated commit with justification (house rule since arc 4).
 * Per-invocation resource caps on libxml2-sized inputs: per-test
   `scripts/capped` with `CERB_MEM_MAX=4G` (cgroup RSS) + timeout —
-  [USER 2026-09-02] ("Q2 agree"), SUPERSEDING the arc-5 operator
+  [USER 2026-09-02] (agreed on Q2), SUPERSEDING the arc-5 operator
   directive `ulimit -v 4000000`. Why: `ulimit -v` limits VIRTUAL
   address space, and Lean's virtual footprint is ~2–3.6× its RSS, so
   the old cap killed Lean at ~1.7 GB RSS while the oracle ran to

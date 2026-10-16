@@ -13,13 +13,13 @@ semantics AS A MATHEMATICAL OBJECT, the failure site DENOTES the default
 value — the definition disagrees with the oracle exactly where the oracle
 crashes.
 
-## Ruling [USER 2026-09-03], verbatim
+## Ruling [USER 2026-09-03]
 
-> "Re the judgement, yes, I think we should structure this so that
-> *consumers* of the semantics get the property we care about, i.e
-> conformance to the ocaml oracle. This means we should fail-closed into
-> the correct behavior. Understood re the design change, we should
-> schedule this (can it wait for the current set of fixes to land?)"
+The user agreed with the judgement: the design should give *consumers*
+of the semantics the property that matters, conformance to the OCaml
+oracle, which means failing closed into the correct behaviour. They
+acknowledged the design change and asked that it be scheduled, asking
+whether it could wait for the current set of fixes to land.
 
 Reading [AGENT]: the property owed to consumers is oracle conformance of
 the DEFINITIONS, not of the binary under a harness flag. A failure site
@@ -84,7 +84,7 @@ PROVISIONAL per refined-cerberus's own rule.
 
 ## Provenance
 
-[USER 2026-09-03]: the ruling quoted above. [AGENT] (orchestrator): the
+[USER 2026-09-03]: the ruling paraphrased above. [AGENT] (orchestrator): the
 reading, the sequencing recommendation and its reasons, the interim rule,
 the scope sketch, the consumer note. [AGENT] (Z2 auditor, `9e86fe67c`):
 the finding and its probe. Docs-only; nothing merged or pushed.

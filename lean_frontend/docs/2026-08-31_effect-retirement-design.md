@@ -11,25 +11,24 @@ now the decision log). This document governs the combined
 lem-lean/cerberus-lean implementation arc. §1 is written to be
 consumable standalone by the refined-cerberus project.
 
-Operator-ratified constraints this note works under, verbatim
-provenance [USER 2026-08-31]:
+Operator-ratified constraints this note works under, provenance
+[USER 2026-08-31]:
 
 1. **Mechanism route**: fork-local lem BACKEND supply-lifting (state
    analog of the existing reader lifting) — NOT a rewrite of the
-   shared .lem model. "Not disturbing the OCaml *output* is a first
-   class objective, not quite a red line but certainly extremely
-   important."
+   shared .lem model. Leaving the OCaml *output* undisturbed is a
+   first-class objective: not quite a red line, but extremely
+   important.
 2. **CerbDebug**: debug output moves OUT of the semantics cone — the
    model returns values, the driver prints.
 3. **Arc shape**: combined lem arc — supply-lifting AND
    per-declaration fuel budgets ride the same lem-lean arc/pin dance
    (fuel budgets have their own design note; see §8.3).
 
-Project aims for the lem-lean side, [USER 2026-08-31] verbatim:
-"(1) minimal blast radius for non-Lean lem users, (2) obviously right
-output for Lean, (3) clean and understandable design, (4) built to be
-reviewed by the upstream lem team, and eventually upstreamed as a lem
-feature."
+Project aims for the lem-lean side, [USER 2026-08-31]: (1) minimal
+blast radius for non-Lean lem users, (2) obviously-right output for
+Lean, (3) a clean and understandable design, (4) built to be reviewed
+by the upstream lem team and eventually upstreamed as a lem feature.
 
 Companion input: the 2026-08-31 backend quality review (commissioned
 [USER 2026-08-31]; lem-lean
@@ -1724,8 +1723,8 @@ NONTRIVIAL and S0-F1 dissolved the staged option's premise —
 **FINAL at R3: TOLERATED**, with an accompanying operator principle
 (below). Q2: ratified, single-stream. Q3: ratified, reader_consumer
 rides the arc. Q4: ratified in the sharpened per-survivor form
-([USER 2026-08-31] verbatim on the sharpened package: "yeah, this
-all seems reasonable"). The question texts are kept as the record;
+([USER 2026-08-31] found the sharpened package reasonable). The
+question texts are kept as the record;
 each carries its ruling inline:
 
 - **Q1 (blocks L1/C1 scope; AMENDED in R1).** Two rulings in one,
@@ -1743,8 +1742,8 @@ each carries its ruling inline:
   with reasons).
   (Q1b) The movement site (§3.6, F4): `with_block_objects`' oracle
   draw-sequence movement is unavoidable under ANY monadification,
-  so — since the "not disturbing the OCaml output" ruling is
-  verbatim about output — the operator must choose its handling:
+  so — since the ruling against disturbing the OCaml output is
+  specifically about output — the operator must choose its handling:
   **(i) staged**: a dedicated pre-slice moves the alias minting to
   an explicitly-sequenced monadic position on BOTH targets first,
   with its own oracle rebaselining and adjudicated fixture-dump
@@ -1766,12 +1765,11 @@ each carries its ruling inline:
   **Q1b FINAL RULING (R3) [USER 2026-08-31]: TOLERATED** —
   superseding the escalation clause above (the S0 scan returned
   NONTRIVIAL, but S0-F1 showed staging-the-one-site no longer
-  yields an order-preserving m1; §3.6.1). Operator rationale,
-  verbatim: "this seems like... the more principled way of doing
-  it. We don't bake in some weird back-compat machinery, and we
-  stay in sync with the oracle up to renaming (it seems like the
-  oracle *should not* depend on naming, that seems like a defect in
-  itself)". **Accompanying operator PRINCIPLE (standing):**
+  yields an order-preserving m1; §3.6.1). Operator rationale: this
+  is the more principled way — no odd back-compat machinery gets
+  baked in, and the port stays in sync with the oracle up to
+  renaming (the oracle should not depend on naming; that it does
+  looks like a defect in itself). **Accompanying operator PRINCIPLE (standing):**
   oracle/engine output depending on symbol numbering beyond binding
   identity is itself a defect — any order-dependent-output site
   discovered (C1 gate item (a), §8.1) is registered as a finding
@@ -1831,8 +1829,8 @@ each carries its ruling inline:
   ever wanted, starts from an enumerated boundary), and the digest
   threading recorded as a possible later arc (§1.3 adjacency note).
   **RULING [USER 2026-08-31]: RATIFIED in the SHARPENED form**
-  (operator verbatim on the sharpened package: "yeah, this all seems
-  reasonable"): the bar is **axiom gone**, AND the ratchet
+  (the operator found the sharpened package reasonable): the bar
+  is **axiom gone**, AND the ratchet
   classifies every survivor explicitly — `digest` → kernel-checked
   opaque IN C2 (promoted from allowlist row to a C2 deliverable,
   §7.2/§8.1); CerbUtils no-op refs → permanent-declared; CerbGlobal

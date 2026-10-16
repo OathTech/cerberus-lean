@@ -1,8 +1,8 @@
 # Arc 8 charter: DAEMON elimination ("the consistent boundary")
 
 Date: 2026-08-20. Mode: long-cycle autonomous under the orchestrator/
-worker doctrine. BLESSED by operator via launch, 2026-08-20 ("Go ahead,
-launch it"). Fully offline. Branch
+worker doctrine. BLESSED by operator via launch, 2026-08-20 (approved
+the launch). Fully offline. Branch
 pair: `arc/daemon-elim` in BOTH repos (this is a lem-heavy arc — the
 full two-repo pin dance applies at every lem change and at close).
 
@@ -38,8 +38,8 @@ Key findings that gate this arc's design:
 
 ## Durability requirements (design constraints, not aspirations)
 
-[USER 2026-08-20] "If we solve this now, does it solve it for the rest
-of the project?" — the arc must make the answer YES for the soundness
+[USER 2026-08-20] asked whether solving this now solves it for the rest
+of the project — the arc must make the answer YES for the soundness
 class:
 1. **Mechanism, not patch.** The backend derivation + threading must be
    a general language-level pass covering future .lem code (incl. the

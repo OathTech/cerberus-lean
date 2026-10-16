@@ -24,10 +24,10 @@ same engine invocation as `tests/multi_tu/`.
 **2026-10-03: draft 38's consult REVERTED.** The fork took draft 38's `are_compatible`
 consult at D3 (2026-09-15) and reverted it on 2026-10-03 (branch
 `fix/mirror-upstream-d38-alignas`, record
-`lean_frontend/docs/2026-10-03_mirror-upstream-d38-alignas-record.md`), under [USER 2026-10-03]
-"Generally, our rule is that we don't innovate wrt Cerberus-upstream, unless something is very
-very very obviously a bug. ... fall back to loudly rejecting (either as unsupported, or matching
-upstream)." The fork's `core_eval.lem` guard is upstream's text again. The fork's ONLY
+`lean_frontend/docs/2026-10-03_mirror-upstream-d38-alignas-record.md`), under the [USER 2026-10-03]
+rule that the fork does not innovate relative to Cerberus upstream unless something is very
+obviously a bug, and otherwise falls back to loudly rejecting (as unsupported, or matching
+upstream). The fork's `core_eval.lem` guard is upstream's text again. The fork's ONLY
 deviation from pristine here is `node`: pristine loops, while the fork (draft 37's
 assumed-compatible set, kept) terminates and rejects with `mismatched tags`. It is admitted only
 through the cited `shared-model-fix` row of `scripts/upstream_oracle_differences.json`, the one

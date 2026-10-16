@@ -2,7 +2,7 @@
 
 **Order pointer, 2026-09-06 [AGENT orchestrator-directed]:** the work order is
 [master plan revision 9 §3](2026-09-05_master-plan.md) — the response §4
-order, reconfirmed [USER 2026-09-06] ("we should stabilize the core semantics before this, so we should revert to our previous ordering"): 1 risk-map baseline (independent
+order, reconfirmed [USER 2026-09-06] (the core semantics is stabilized first, so the previous ordering is restored): 1 risk-map baseline (independent
 auditor, baseline 2026-08-31) → 2 pure-failure correspondence design note →
 3 lem L1 ∥ cerberus C-TF1 → 4 C-Z4 remainder → 5 bytes (L4) + F7 instances +
 fuel residue → 6 consumer adoption exit → 7 risk map repeat → fresh-noodler
@@ -41,7 +41,7 @@ directions to monitor, record or clean up that run. Follow current ownership.
 
 Written by the outgoing orchestrator [AGENT] for the agent picking up the
 orchestrator role. Everything here is either measured on the box today or
-cites the committed record that carries it. Rulings are quoted verbatim
+cites the committed record that carries it. Rulings are paraphrased
 with [USER] provenance; sizes and sequencing are [AGENT].
 
 Read first, in this order: the container `CLAUDE.md` (working practices —
@@ -124,34 +124,34 @@ the concurrency audit; its worktree is gone, the branch is the record).
    `std.core` calls — latent upstream divergence relayed by
    refined-cerberus; not a Lean-vs-OCaml issue.
 
-Operator rulings of the day (verbatim, all [USER 2026-09-05]):
+Operator rulings of the day (paraphrased, all [USER 2026-09-05]):
 - On the audit's F1 (discarded pure `failwith`: OCaml raises, Lean drops
-  the unused let): "(1) agree, the aim should be to provide the most
-  faithful C semantics, per the intent of the authors" → KIND-1: it IS a
+  the unused let): agreed; the aim is the most faithful C semantics,
+  per the intent of the authors → KIND-1: it IS a
   discrepancy class; referent = the authors' intent.
 - On the audit's P2 (pure-failure lifting transform in the lem backend):
-  "(2) unsure, this feels like it does touch the trust surface because it
-  increases the gap between 'obviously right' and what Lean does. Is
-  there a route where we prove the two are equivalent?" → NOT authorized
+  unsure: it seems to touch the trust surface by widening the gap
+  between the obviously-right mirror and what Lean does; asked whether
+  the two could be proved equivalent → NOT authorized
   as a bare transform; the proposed route (response §4 item 4): the
   mirror stays the reference, a lifted `f_exc` twin behind a generated,
   kernel-checked per-function correspondence `f_exc xs = .ok v → f xs =
   v` (the fuel-sufficiency pattern); failure direction differential;
   design note reviewed WITH the operator before any dispatch; census
   first.
-- On F9: "(3) agree on the first [consumer re-pin + proofs through = a
-  release exit], and the second [C-source examples] depends on how the
-  refined-cerberus project evolves".
-- On F10: "(4) I think you're right, the matrix may come later but for
-  now we mostly inherit trust from Cerberus-upstream" → release-profile
+- On F9: agreed on the first point (consumer re-pin + proofs through =
+  a release exit); the second (C-source examples) depends on how the
+  refined-cerberus project evolves.
+- On F10: agreed that the matrix can come later, since for now trust is
+  mostly inherited from upstream Cerberus → release-profile
   statement yes; ISO coverage matrix later.
-- Landing: "let's land it as you propose, and keep the csmith gate
-  running in the background" (P0 landed on the green 26-lane gate; csmith
+- Landing: approved landing as proposed, with the csmith gate kept
+  running in the background (P0 landed on the green 26-lane gate; csmith
   post-merge).
 - Standing from earlier in the arc (see memory-grade records in
   `DESIGN.md` §4 and `2026-09-03_logical-semantics-referent-ruling.md`):
-  no magic values; the four aims (VALIDATION.md §0); "we don't change the
-  lem structure for ocaml"; zero Lean-vs-OCaml discrepancies with the
+  no magic values; the four aims (VALIDATION.md §0); the lem structure is
+  not changed for OCaml's sake; zero Lean-vs-OCaml discrepancies with the
   exception classes (a)–(d); `.lem` edits for Lean plumbing are against
   the rules (the concurrency F2 revert).
 
@@ -210,5 +210,5 @@ pending on upstream — the audit recommends preparing the upstream remedy).
   locale-dependent (`LC_ALL=C` everywhere in scripts that sort/comm).
 - **Pre-sign hygiene**: conditional landings are logged in memory with
   the exact condition and marked SPENT when used.
-- **Provenance**: every ruling quoted verbatim with [USER date]; agent
+- **Provenance**: every ruling paraphrased with [USER date]; agent
   choices marked [AGENT]. The user's pronouns are they/them.

@@ -155,8 +155,8 @@ artifact; nothing stale was served.
 
 What the worktree could not and did not certify is the **primary's**
 post-merge state: the primary's staging tree was destroyed by the
-certification wipe, and the record's operator follow-up ("the primary
-needs one `make clean-prelude-src prelude-src`") was incomplete — the
+certification wipe, and the record's operator follow-up (that the primary
+needed one `make clean-prelude-src prelude-src`) was incomplete — the
 primary also needed the `cerberus` package staged. The illusion, such as
 it was, is in the *transfer* of the green (worktree ⇒ primary), not in the
 worktree's own run.

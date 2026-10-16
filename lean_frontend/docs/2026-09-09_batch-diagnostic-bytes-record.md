@@ -262,8 +262,8 @@ work remain outside this completed slice.
 
 [AGENT 2026-09-10] Reviewed `arc/batch-diagnostic-bytes @ 7572c0c57`
 (base = mainline `679181d1b`, three commits, worktree clean) under the
-operator's instruction "review and either (1) do minor fixes and land, or
-(2) send back with a review for larger fixes". **Verdict: (1), with zero
+operator's instruction to review and either (1) do minor fixes and land, or
+(2) send it back with a review for larger fixes. **Verdict: (1), with zero
 code fixes required.** The slice is correct, in scope, and the design
 split it introduces (byte-carrier channels keep the per-Char printer;
 Unicode diagnostics escape their UTF-8 bytes) is the right one.

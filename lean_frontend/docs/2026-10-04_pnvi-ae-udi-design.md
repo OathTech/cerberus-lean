@@ -3,7 +3,7 @@
 **Status:** DESIGN PASS — one record, nothing implemented. Branch `design/pnvi-ae-udi-20261004` over mainline
 `ae48126e5`. Author: the design-pass agent [AGENT]. Every claim below is marked **[AGENT]** (this agent's reading or
 judgement) or **MEASURED** (a command run in this pass, output quoted verbatim). The only [USER] items are the four
-quotes in §1 (three from the brief, the 2026-10-05 ruling in §1.4); the consumer's positions are *consumer statements*
+rulings in §1 (three from the brief, the 2026-10-05 ruling in §1.4); the consumer's positions are *consumer statements*
 (§1.3, §1.5), not rulings. No build of any kind was run; the oracle probes used the census worktree's already-built
 binary (§C.0). Scratch lived under this worktree's `.tmp/` and was deleted before each commit.
 
@@ -92,22 +92,22 @@ signatures must not break without its agreement.
 
 ## 1. Rules and inputs this design obeys
 
-### 1.1 Rulings (verbatim, from the orchestrator's brief)
+### 1.1 Rulings (from the orchestrator's brief)
 
-- **[USER 2026-10-03], no innovation:** "Generally, our rule is that we don't innovate wrt Cerberus-upstream, unless
-  something is very very very obviously a bug. We're poorly placed to resolve semantic discrepancies, so we don't. ...
-  we should fall back to loudly rejecting (either as unsupported, or matching upstream)." Also: "We do not resolve
-  Cerberus TODO cases unless the answer is extremely obvious or if there's a similarly obvious bug …". Applied: every arm
+- **[USER 2026-10-03], no innovation:** the fork does not innovate with respect to Cerberus upstream unless something
+  is very obviously a bug; it is poorly placed to resolve semantic discrepancies, so it does not, and falls back to
+  loudly rejecting (either as unsupported, or matching upstream). Also: Cerberus TODO cases are not resolved unless
+  the answer is extremely obvious or there is a similarly obvious bug. Applied: every arm
   below mirrors `memory/concrete/impl_mem.ml` with a file:line cite; every upstream `TODO`-as-`failwith`, `failwith`,
   `assert false` or debug arm on the PNVI-ae-udi path stays a loud stop that mirrors upstream (§A.5). A `TODO`/`FIXME`
   *comment* attached to a *defined* arm is mirrored as the defined arm (making it a stop would be a divergence from
   upstream, which continues) and cited in-code (§A.5, §F.7).
-- **[USER 2026-09-30], no magic modes:** "… we should not fix deviations with special 'magic mode' paths that work
-  exclusively in one situation …". Applied: there is ONE switch-set parameter read by every site; no PNVI-only code path
+- **[USER 2026-09-30], no magic modes:** deviations are not fixed with special magic-mode paths that work only in
+  one situation. Applied: there is ONE switch-set parameter read by every site; no PNVI-only code path
   that bypasses the general one; the default is the general path instantiated at `[]`.
 - **[USER 2026-10-04], the design target** (relayed by the coordinator; supersedes the consumer's Q2 answer):
-  "speaking as the user for both cerberus-lean and cerberus-sl, we will probably eventually want to reason under
-  PNVI_ae_udi but it will be a little bit of time before we get to it". Applied: §B rates each option on stating and
+  speaking as the user for both cerberus-lean and cerberus-sl, reasoning under PNVI_ae_udi will probably be wanted
+  eventually, but not for a little while. Applied: §B rates each option on stating and
   proving facts under the switch (quantifying over the set, unfolding the ae-udi arms, stating facts about the
   iota/exposure state); §F.11 lists the reasoning needs this implementation would not provide.
 
@@ -121,10 +121,10 @@ artifact — prefer designs where a consumer quantifies over the switch choice, 
 deliberate divergence is documented in-code (the mechanism divergence "global on OCaml, parameter on Lean" is the
 `tagDefs`/`enum_definitions` precedent, `docs/2026-09-18_program-data-parameters-design-note.md` §1).
 
-### 1.4 Operator ruling on this record, verbatim ([USER 2026-10-05], relayed by the coordinator)
+### 1.4 Operator ruling on this record ([USER 2026-10-05], relayed by the coordinator)
 
-"Re PNVI - agree on your recs except for mirroring crashes / obviously wrong behavior. These should be refusals
-surely?"
+The operator agreed with the recommendations on PNVI except for mirroring crashes and obviously wrong behaviour,
+which should be refusals.
 
 Reading, as relayed: §F 1, 2, 3, 4, 8, 9, 10, 11, 12 and 13 are accepted as recommended — including OPTION 3 (the
 instance-implicit ambient parameter) with S0 in lem-lean. §F 5, 6 and 7 change: upstream crashes and obviously wrong
@@ -399,8 +399,8 @@ declares an instance) is NOT scanned and the gate stays green (§D.2 P8).
   one has the shortest list).
 - Mirror doctrine: OCaml untouched; generated OCaml byte-identical.
 - "Canon-first" check: this is a classic ambient/implicit parameter (a reader monad in the type class), the project's
-  own precedent for ambient configuration ([USER 2026-09-04] on the fuel measure: "we maintain the lem structure, and
-  we get additional properties we want without any trust decrease"); not a house trick.
+  own precedent for ambient configuration ([USER 2026-09-04] on the fuel measure: the lem structure is maintained and
+  the additional properties wanted come without any trust decrease); not a house trick.
 
 ### B.4 Two scoping decisions common to all options [AGENT]
 
@@ -911,8 +911,8 @@ with option 3 (the 2026-10-04 estimate was 17–26; the refusals, the wrapper an
 
 ### G.0 The rule applied
 
-[USER 2026-10-05]: "Re PNVI - agree on your recs except for mirroring crashes / obviously wrong behavior. These should
-be refusals surely?" Classes as relayed: **(A)** upstream crash / `failwith` / `assert` → REFUSE with a named
+[USER 2026-10-05] agreed with the recommendations except for mirroring crashes and obviously wrong behaviour, which
+should be refusals. Classes as relayed: **(A)** upstream crash / `failwith` / `assert` → REFUSE with a named
 "unsupported" message; **(B)** debug-print-then-kill → REFUSE; **(C)** a defined arm upstream itself says is wrong →
 REFUSE when reached; **(D)** a defined arm whose TODO is only uncertainty or a question → this agent's proposal (mirror
 or refuse) with the reason. A site that is ALSO reached in default mode is flagged, not decided (§G.3, §F.14): the
@@ -1029,19 +1029,19 @@ The §G flagged-site list comes from `awk 'NR>=277 && NR<=2830' memory/concrete/
 
 Asked by the orchestrator with the reasoning given in chat (the four-class line: refuse where upstream
 silently does something it is unsure of, mirror where the arm is defined and the TODO is a question).
-Verbatim [USER 2026-10-05]: "1 - agree. 2 - I think in the end we should make this consistent, but it's
-fairly minor. 3 - if we do (b) it should be a global policy. I don't think it necessarily needs to be a
-refusal, but it shouldn't be an uncontrolled crash. And for now (a) is fine"
+[USER 2026-10-05] ruled: item 1 agreed; item 2 should in the end be made consistent, but is fairly
+minor; for item 3, if (b) is done it should be a global policy, which need not be a refusal as such but
+must not be an uncontrolled crash, and (a) is fine for now.
 
 - **§F.15 (the (D) sites): accepted.** MIRROR `:2191`, `:2293`, `:2308`/`:2379`, `:2399`; REFUSE `:840-842`
   (the silently dropped third `find_overlaping` candidate becomes a loud check).
 - **§F.14 (the (A)/(B)/(C)-shaped sites also on the default path): unchanged in this arc**, default mode
-  stays bit-identical. The operator's direction is that this should EVENTUALLY be made consistent ("fairly
-  minor") — queued as a separate small review after the PNVI arc, listing every default-path crash /
+  stays bit-identical. The operator's direction is that this should EVENTUALLY be made consistent, as a
+  fairly minor item — queued as a separate small review after the PNVI arc, listing every default-path crash /
   "this is wrong" arm and its proposed treatment; it moves the consumer only by its own recorded re-pin.
 - **§F.16 (refusal shape): (a) for this arc** — the `CerbFS` `failwithI`-with-`refused — ` prefix shape.
   Option (b), a dedicated controlled outcome, would be a GLOBAL policy over every such stop (CerbFS, PNVI,
-  asm, …), not a PNVI-local mechanism; per the operator it need not be a "refusal" as such, but it must
+  asm, …), not a PNVI-local mechanism; per the operator it need not be a refusal as such, but it must
   not be an uncontrolled crash. Queued as its own design question, to be agreed with cerberus-sl (whose
   adequacy statements name the run outcomes).
 
@@ -1051,7 +1051,6 @@ The S3 worker stopped on §G R13 / R-PNVI-09 (`eff_array_shift_ptrval`'s `PVfunc
 `impl_mem.ml:2296-2297`, `failwith "Concrete.eff_array_shift_ptrval, PVfunction"`): §G called it
 PNVI-path only, but it is on the DEFAULT path (std.core:188/196/212/217 emit `PtrArrayShift` in default
 mode; reachability from C unmeasured — the one route tried stops earlier on the oracle). It is therefore a
-§F.14 default-path look-alike, and the operator's §H ruling 2 already covers that category verbatim —
-"2 - I think in the end we should make this consistent, but it's fairly minor" — with the agreed
-treatment "unchanged in this arc". Applied by the orchestrator: the arm stays EXACTLY as it is (the
+§F.14 default-path look-alike, and the operator's §H ruling 2 (eventual consistency, a fairly minor
+item) already covers that category, with the agreed treatment "unchanged in this arc". Applied by the orchestrator: the arm stays EXACTLY as it is (the
 existing mirror), and it joins the queued default-path consistency review. No new semantics decided.

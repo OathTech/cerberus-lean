@@ -6,10 +6,10 @@
 
 > **The Lean semantics at HEAD must cost no more than 10 % more CPU per program than it did before the fuel-parameter arc, and every csmith corpus row that completed under the lane's 15-second budget before the arc must complete under it again — with every sufficiency theorem still kernel-checked and zero baseline movement.**
 
-Rulings this rests on, verbatim:
+Rulings this rests on, paraphrased:
 
-- [USER 2026-09-05], on the first measured cost of an eager measure (quoted in `lean_frontend/TODO.md`, "Fuel-parameter arc — C3 follow-ups"): "a price we pay, so long as it's truly <10% cpu … changing the trust surface is a high bar".
-- [USER 2026-09-04], the design rule the measured wrappers implement (recorded in lem-lean `doc/lean-backend/2026-09-03_fuel-parameter-design.md` R2 and `2026-09-04_fuel-measure-record.md`): "we maintain the lem structure, and we get additional properties we want without any trust decrease". Consequence for you: the OBLIGATION STATEMENTS stay; only the measure expression `μ` may change, and only to another PROVEN-sufficient one.
+- [USER 2026-09-05], on the first measured cost of an eager measure (quoted in `lean_frontend/TODO.md`, "Fuel-parameter arc — C3 follow-ups"): a cost accepted so long as it truly stays under 10% CPU, while changing the trust surface is a high bar.
+- [USER 2026-09-04], the design rule the measured wrappers implement (recorded in lem-lean `doc/lean-backend/2026-09-03_fuel-parameter-design.md` R2 and `2026-09-04_fuel-measure-record.md`): the lem structure is maintained and the wanted additional properties are gained without any decrease in trust. Consequence for you: the OBLIGATION STATEMENTS stay; only the measure expression `μ` may change, and only to another PROVEN-sufficient one.
 - Standing: "Profile before optimizing" (`CLAUDE.md`, container, Working practices) — no remedy is adopted for speed alone; the mechanism is named in plain PL terms and measured first.
 
 ## 1. What is known (facts you may rely on; verify the ones you touch)

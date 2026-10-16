@@ -199,8 +199,8 @@ then
   plant "P7 the lemSeq head of a registered TAIL continuation mis-shaped (lemSeqX)" "POSITION CLASS CHANGED" "hack_lemFuel" "live=LAMBDA-BODY register=TAIL"
 else echo "  PLANT FAIL [P7 premise]: the plant could not be applied (see above)"; fails=$((fails+1)); fi
 restore_f Driver.lean
-# P8 (fix/failure-reach-key-groups 2026-10-04, [USER 2026-10-04] "agree 1-4" / "Great, do it as
-#     proposed" on the lem re-pin 4e70bb5 pre-merge audit's A3; record
+# P8 (fix/failure-reach-key-groups 2026-10-04, [USER 2026-10-04] agreed to items 1-4 and to
+#     proceeding as proposed on the lem re-pin 4e70bb5 pre-merge audit's A3; record
 #     lean_frontend/docs/2026-10-04_failure-reach-key-groups-record.md): the two Formatted.convert
 #     `* prec` rows (REACHABLE for the :874 arm, UNREACHABLE-BY-INVARIANT for :1063) shared one
 #     60-char key, so swapping their reach classes TOGETHER WITH their seals passed every check. Key

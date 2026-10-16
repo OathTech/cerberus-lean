@@ -1,10 +1,10 @@
 # Pre-merge audit: bug-hunt fixes, `4198f9194..1f72155d2` (2026-09-30)
 
 Auditor: a fresh Claude (Opus 5.5) agent with no prior context. Branch `audit/bug-hunt-fixes-20260930` at
-`1f72155d2`. Scope, verbatim: [USER 2026-09-30] "Go ahead with the audit in parallel with the ladder". The range is
+`1f72155d2`. Scope: [USER 2026-09-30] approved the audit, run in parallel with the ladder. The range is
 10 commits on `arc/bug-hunt-fixes`, proposed for a fast-forward of `mdd/cerberus-lean`. The operator rule applied
-throughout, verbatim: [USER 2026-09-30] "we should not fix deviations with special 'magic mode' paths that work
-exclusively in one situation".
+throughout: [USER 2026-09-30] ruled that deviations are not fixed with special "magic mode" paths that work
+exclusively in one situation.
 
 ## Verdict
 
@@ -28,10 +28,10 @@ merge or queued.
 
 ### M1 (MEDIUM, provenance): `resolveRuntime` attributes [AGENT] choices to the [USER] ruling
 
-`lean_frontend/Main.lean:580-590`, verbatim:
+`lean_frontend/Main.lean:580-590` (the [USER] quote paraphrased here):
 ```
-    - DELIBERATE DIVERGENCE (bug-hunt fixes S2, [USER 2026-09-29] "Agree on
-      everything, yes on the fixes"): the oracle's last arm, `OPAM` — ...
+    - DELIBERATE DIVERGENCE (bug-hunt fixes S2, [USER 2026-09-29] agreed on
+      everything and the fixes): the oracle's last arm, `OPAM` — ...
     - DELIBERATE DIVERGENCE (same ruling, fail-closed): an EMPTY value (either
       source) is refused.
 ```
@@ -42,8 +42,8 @@ list and the refusal choices (BUG-2's `OPAM_SWITCH_PREFIX`, ...) are from the or
 The bug hunt's BUG-2 options (`docs/2026-09-29_discrepancy-bug-hunt.md:177-180`, (a)–(c)) do not include refusing the
 OPAM arm, so the ruling did not pick it. The code therefore says [USER] where the record says [AGENT] (orchestrator).
 
-Fix: relabel both bullets. For example: "[AGENT] (orchestrator's brief under [USER 2026-09-29] "Agree on everything,
-yes on the fixes")" for the OPAM refusal, and "[AGENT]" for the empty-value refusal.
+Fix: relabel both bullets. For example: "[AGENT] (orchestrator's brief under the [USER 2026-09-29] approval of the
+fixes)" for the OPAM refusal, and "[AGENT]" for the empty-value refusal.
 
 ### M2 (MEDIUM, provenance): the N3 ruling's option numbers point to a list that is not recorded
 
@@ -53,7 +53,7 @@ The ruling is quoted identically in four places, and the quote itself is consist
 - the record (`2026-09-29_bug-hunt-fixes-record.md:373`);
 - TODO (`TODO.md:654`, a shortened form).
 
-It reads: "Right, I think (3) is the right answer for now, and (1) or (2) might be work for later."
+It records the operator choosing option (3) for now, with (1) or (2) as possible later work.
 
 The problem is the numbering. The record's own option list is labelled (A)–(E) (`:306-332`). No committed document
 defines options (1), (2) and (3); I grepped `docs/2026-09-29_*`, VALIDATION, CONTRACT and TODO. Three mappings are
@@ -155,12 +155,12 @@ The R2 row at `VALIDATION.md:277` widens the difference column and the pins. Two
 - the ruling cell still says only "**ADMITTED** [USER 2026-09-03]".
 
 The widening's gcc values (200, 199) appear only in the fixture comments (`tests/immaculate/libc/zd-r2-*.c`). Its
-ruling ("[USER 2026-09-29] "Agree on everything"") appears only in the `tests/immaculate/baseline.txt` comment. N1's
+ruling (the [USER 2026-09-29] agreement on everything) appears only in the `tests/immaculate/baseline.txt` comment. N1's
 widening, in the same range, did add its ruling to the ruling cell. The ISO-fix register carries the highest evidence
 bar in the project.
 
-Fix: add "gcc 200 / 199 (widened rows)" to the 2nd-oracle cell and "scope widened [USER 2026-09-29] ("Agree on
-everything, yes on the fixes")" to the ruling cell.
+Fix: add "gcc 200 / 199 (widened rows)" to the 2nd-oracle cell and "scope widened [USER 2026-09-29] (the agreement on everything and the
+fixes)" to the ruling cell.
 
 ### L7 (LOW, stale recipe): the failure-probes replay recipe now refuses
 
@@ -323,8 +323,8 @@ then the real check. All three are described in LADDER row 1. VALIDATION §6 lac
 - Tray 48 and the INDEX: the counts (53 files, 48 Draft) match the new draft.
 - The claims-register line matches the range. The diffstat shows no `.lem` change.
 - The fork-drift manifest re-pin hash equals `sha256sum scripts/common.sh`.
-- [USER] quotes are consistent across documents: "Agree on everything, yes on the fixes" appears in the record,
-  Main.lean, the manifest and N1, and a prefix form in the baseline; the (3)/(1)/(2) quote and the "magic mode" quote
+- [USER] citations are consistent across documents: the agree-on-everything ruling appears in the record,
+  Main.lean, the manifest and N1, and a prefix form in the baseline; the (3)/(1)/(2) ruling and the "magic mode" rule
   are identical wherever they appear. M1 and M2 are the provenance gaps.
 
 ## What I could not verify

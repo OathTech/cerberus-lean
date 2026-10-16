@@ -1,6 +1,6 @@
 # Public-readiness SHOULD follow-up — 2026-09-25
 
-[USER 2026-09-25]: “Great. Can you pick up the rest (SHOULD work, M8/M9, and hash-bearing version output at exact release tags) on new branches starting at the final heads here. The overseer agent is handling the landing”
+[USER 2026-09-25]: asked for the rest (the SHOULD work, M8/M9, and hash-bearing version output at exact release tags) to be picked up on new branches starting at the final heads, with the overseer agent handling the landing.
 
 [AGENT] Prepared by OpenAI Codex under operator direction; independent overseer review and landing are separate. This work starts at Cerberus `c13a1054133b49c954fe27ac4c1b4e33a418c51f`
 and Lem `6b20bfd02de924d078725efa96c6675115b8b17a`, on new same-named
@@ -421,7 +421,7 @@ excerpts above are the portable record. Log SHA-256 identities:
 
 ## Landing (2026-09-25) — orchestrator [AGENT]
 
-[USER 2026-09-25] verbatim: "Great, go ahead with the whole merge and sweep as proposed" (the proposal: the four merge
+[USER 2026-09-25] approved the whole merge and sweep as proposed (the proposal: the four merge
 steps below plus a P3 docs sweep, a cerberus-sl consumer note, and retiring the finished worktrees). Executed back to back:
 
 1. lem-lean `mdd/lean-backend` ff-only `6b20bfd` -> `67ec5de` (3 commits: M8 notices/opam/install, S8/S11–S13/version,

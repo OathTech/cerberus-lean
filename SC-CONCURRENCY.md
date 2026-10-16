@@ -104,15 +104,15 @@ necessary, independently validated foundations before choosing the
 execution strategy. The milestone and landing decomposition below is
 [AGENT] planning under that direction.
 
-[USER 2026-09-25], verbatim (from the
+[USER 2026-09-25] (recorded in the
 [scope record](lean_frontend/docs/2026-09-25_sc-semantics-mvp-scope.md)):
-"we do not try to land an Iris integration, but instead focus on an MVP
-which just builds a coherent and correct SC model". This removes the
+no Iris integration is attempted; the focus is an MVP that just builds a
+coherent and correct SC model. This removes the
 external consumer demonstration and Iris adoption gates; it retains the
 semantic scope, correctness, scale and reference obligations below and does
 not adopt the first review's narrower C profile.
 
-[USER 2026-09-29] rulings (verbatim in the
+[USER 2026-09-29] rulings (recorded in the
 [assessment record](lean_frontend/docs/2026-09-29_sc-assessment-and-rulings.md)
 §2): WP1 lands as a decision record only and S1 starts fresh from mainline;
 S1 mirrors upstream's fork/join behaviour and refuses loudly; the
@@ -296,14 +296,14 @@ The constraints it places on S1 onward, as amended by [USER 2026-09-29]:
    they are a specification of the behaviour S1 must produce, not code to
    promote. No second evaluator. S1 is therefore a deliberate shared-`.lem`
    change visible to the OCaml oracle, under [USER 2026-09-29] ruling (1).
-   The earlier [USER 2026-09-04] brief constraint "we don't change the lem
-   structure for ocaml" (recorded in
+   The earlier [USER 2026-09-04] brief constraint that the lem structure is
+   not changed for OCaml (recorded in
    [the typed-failure outcomes design](lean_frontend/docs/2026-09-05_typed-failure-outcomes-design.md)
    §0) was the condition WP1's M2 finding cited. Its scope is ruled
-   [USER 2026-09-29]: "this is specifically about features that the ocaml
-   upstream currently supports, i.e we don't bend the existing trust story.
-   But for SC we have to change things because there's no upstream
-   support". So S1 may add new shared-`.lem` SC semantics; it must not
+   [USER 2026-09-29]: it applies specifically to features the OCaml
+   upstream currently supports, so the existing trust story is not bent;
+   SC has no upstream support, so there things have to change.
+   So S1 may add new shared-`.lem` SC semantics; it must not
    change the behaviour of anything upstream already supports (sequential
    execution stays byte-for-byte on the existing differential lanes, and any
    refactor of existing definitions is behaviour-preserving and shown to
@@ -321,8 +321,8 @@ The constraints it places on S1 onward, as amended by [USER 2026-09-29]:
 3. **Nondeterministic choices.** Discovering what can run must not perform
    any effect. S1 carries the primitive nondeterministic alternatives of each
    pending operation (WP1's adapter refused them).
-4. **Fork/join mirrors upstream** ([USER 2026-09-29] "mirror and refuse seems
-   safest"). S1 keeps upstream's positional fork-result order and upstream's
+4. **Fork/join mirrors upstream** ([USER 2026-09-29] chose mirror-and-refuse
+   as the safest option). S1 keeps upstream's positional fork-result order and upstream's
    `subst_wait_stack ==> Stack_cons2` refusal (from C, reached only through
    Cerberus's non-ISO par-block extension; Core text can also express
    `par` directly). If an SC execution reaches that
@@ -408,7 +408,7 @@ The expected landing sequence is:
 
 | Landing | When to propose it | What it claims |
 |---|---|---|
-| **L0: plan, decision record and diagnostic seeds** | [USER 2026-09-29] "land on mainline seems reasonable". Candidate: branch `docs/sc-l0-20260929` (this plan, its supporting records, the WP1 decision record/review/response and the diagnostic seeds, cut from mainline). Lands after its pre-merge audit, which includes a fresh full review of this plan and the WP1 decision record, and per-merge sign-off. | Governing direction, the execution decision and reproducible failure evidence only; no new runtime support. |
+| **L0: plan, decision record and diagnostic seeds** | [USER 2026-09-29] agreed that landing on mainline is reasonable. Candidate: branch `docs/sc-l0-20260929` (this plan, its supporting records, the WP1 decision record/review/response and the diagnostic seeds, cut from mainline). Lands after its pre-merge audit, which includes a fresh full review of this plan and the WP1 decision record, and per-merge sign-off. | Governing direction, the execution decision and reproducible failure evidence only; no new runtime support. |
 | **L1: first passive effect slice** | As soon as minimal load/store receipts plus any necessary existing-state transport pass their independent audit and sequential checks. | Useful observation of existing memory behavior. No scheduler or public SC. |
 | **L2…: subsequent semantic, receipt or sequential fixes** | WP0 has landed. Add helper/lifetime/metadata receipts with the first execution feature consuming them; independent sequential fixes can land when ready. F4 normally accompanies S3. | Exactly the new capability or corrected behavior, without future scaffolding; these are not prerequisites for closing WP0. |
 | **Execution decision and internal semantic slices** | WP1's decision can land as documentation. S1–S4 changes land when their stated contracts and dependency boundaries are independently checked. | Audited internal capabilities with real consumers and explicit remaining obligations. Experimental outcomes are not advertised as accepted C behaviors. |
@@ -497,7 +497,7 @@ dated evidence remains historical and should not be rewritten to match it.
 | Sequential `_Bool` repair | **Landed** with WP0, as rebased commit `d61dcb9c4`, included in `5ecc0aa33`. | The original fix/audit records and the orchestrator's landing records preserve the old and rebased identities. |
 | WP0 / L1 | **Closed and landed** at `5ecc0aa33`. | Receipt implementation `3cb7f7587`, closure `0e3f67cd2` / `a997d49ce`, skeptical reviews `2d445ea2f` / `06648fa94`. Read the mainline WP0 records for consumer exposure, capped process checks and validation. |
 | WP1 | **Closed as a decision.** Decision `af1342d32`, review `1c7e52fad` (decision ACCEPT), response `186392a53`. M1 closed by [USER 2026-09-29] mirror-and-refuse; M2 closed by not landing the experimental code. | The [decision record](lean_frontend/docs/2026-09-27_sc-wp1-execution-decision.md), [review](lean_frontend/docs/2026-09-28_sc-wp1-independent-review.md) and [response](lean_frontend/docs/2026-09-28_sc-wp1-review-response.md) land with L0. `arc/sc-wp1` is a parked record: code, tests, evidence, and the earlier WP1 working records. |
-| Coordination with the next-phase track | **Agreed** [USER 2026-09-29]: the [counterproposal](lean_frontend/docs/2026-09-28_sc-next-phase-coordination-response.md) is accepted, minus its paragraph assuming S1 starts with a fork/wait divergence (superseded by mirror-and-refuse). | [USER 2026-09-29] "we don't need to wait for the bug-hunt. We can get going" (corrects an [AGENT] misreading that S1 should wait). Announce each slice on a shared surface in the claims register of the [incoming note](lean_frontend/docs/2026-09-27_note-to-sc-track-next-phase-coordination.md) before starting; overlapping landings are serialized, the later one rebases. |
+| Coordination with the next-phase track | **Agreed** [USER 2026-09-29]: the [counterproposal](lean_frontend/docs/2026-09-28_sc-next-phase-coordination-response.md) is accepted, minus its paragraph assuming S1 starts with a fork/wait divergence (superseded by mirror-and-refuse). | [USER 2026-09-29] ruled that S1 need not wait for the bug hunt and can start now (corrects an [AGENT] misreading that S1 should wait). Announce each slice on a shared surface in the claims register of the [incoming note](lean_frontend/docs/2026-09-27_note-to-sc-track-next-phase-coordination.md) before starting; overlapping landings are serialized, the later one rebases. |
 | S1 | **Starting 2026-09-29.** Claimed in the register. | Cut from then-current mainline; one shared-Lem step function per the WP1 constraints above; mirror upstream fork/join. Sub-slice charter first, then implementation. |
 | V1 / S2–S5 / WP-C proofs | Not started. WP1 supplies local lemmas and statement schemas, not correspondence. | S2's first obligation is recovering source order (`sb`) from Core and the inter-thread race check on it (see §2 note). Full release still requires §2. |
 

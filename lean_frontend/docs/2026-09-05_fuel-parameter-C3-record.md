@@ -5,7 +5,7 @@ from mainline `mdd/cerberus-lean` @ `a910f097c` (the merged C2). Charter (the
 orchestrator's brief): the Lake pin bump to lem-lean `d4ba548` (the
 tails-and-pmap-laws slice, lem-lean `doc/lean-backend/2026-09-05_tails-and-pmap-laws-record.md`)
 and the six point-free-tail `fuel_measure` rows it enables. Worker [AGENT];
-rulings quoted with [USER] provenance; every quoted output is verbatim from
+rulings cited with [USER] provenance; every quoted output is verbatim from
 this worktree (`.tmp/c3/` logs, ephemeral, deleted at slice end); tallies
 marked "derived" are derived. Nothing merged, nothing pushed; lem-lean,
 `deps/`, the primary checkout and the other worktrees untouched.
@@ -49,9 +49,9 @@ marked "derived" are derived. Nothing merged, nothing pushed; lem-lean,
 
 ## 1. Rulings in force
 
-[USER 2026-09-04] (lem fuel-measure record §1): "sticking to our principle
-that we don't change the lem structure for ocaml is a very good design
-rule" — the tails are NOT eta-expanded in the `.lem`; the Lean EMISSION is
+[USER 2026-09-04] (lem fuel-measure record §1) endorsed the principle
+that the lem structure is not changed for OCaml's sake as a good design
+rule — the tails are NOT eta-expanded in the `.lem`; the Lean EMISSION is
 (lem `d4ba548`). [USER 2026-09-03] no magic values: every measure here is an
 expression over the parameters. Zero Lean-vs-OCaml discrepancies: the OCaml
 generated tree is byte-identical at every step (§2.2, §4).
@@ -491,10 +491,10 @@ gcc second-oracle lane OK
    representation-coupled class the perf doctrine asks to justify before
    imposing.
 
-   **RULING [USER 2026-09-05]** (relayed by the coordinator, verbatim): "I
-   tend to feel like this is a price we pay, so long as it's truly <10% cpu.
-   We can record it for a future performance pass but changing the trust
-   surface is a high bar." **Disposition: ACCEPTED** — option (a); nothing
+   **RULING [USER 2026-09-05]** (relayed by the coordinator): the cost is
+   accepted as a price paid, provided it is truly under 10 % CPU; it may be
+   recorded for a future performance pass, but changing the trust surface
+   is a high bar. **Disposition: ACCEPTED** — option (a); nothing
    changed in this slice. Registered on the performance backlog (TODO.md,
    "Fuel-parameter arc — C3 follow-ups"): re-measure the cost on the WHOLE
    csmith lane as a Tier C instrument at the merged head (the one A/B
@@ -545,7 +545,7 @@ last line). Items and their disposition:
   REJECTED" premise predates the hoist; Lean's checker on the nested
   expr/list block is the risk), and memoized/cached sizes as its own option
   (e), not a clause of (b). The operator's ruling on F-C3-4 is recorded there
-  verbatim with its disposition (ACCEPTED, backlog row in TODO.md).
+  with its disposition (ACCEPTED, backlog row in TODO.md).
 - **M2** — the coordinator's own item (the B7 quiet-box re-run of the
   orchestrator's battery, whose first run moved `sia_csmith_477.c` into
   `SKIP_LEAN_TIMEOUT` under load 33); to be quoted in the boundary review,

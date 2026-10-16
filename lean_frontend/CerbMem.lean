@@ -345,11 +345,11 @@ def mkCtype (ty_ : ctype_) : ctype := Ctype ([] : List annot) ty_
 
 /-- The one PNVI refusal message (PNVI arc; design record
     docs/2026-10-04_pnvi-ae-udi-design.md §D.5, §G.1; the shape ruled in §H
-    for §F.16: "(a) is fine" — the `CerbFS` `failwithI`-with-a-fixed-prefix
+    for §F.16, option (a) — the `CerbFS` `failwithI`-with-a-fixed-prefix
     shape, `CerbFS.lean` `fsRefusal`). `detail` names the `R-PNVI-nn` row,
-    the site, the impl_mem.ml line and upstream's text. [USER 2026-10-05]:
-    "Re PNVI - agree on your recs except for mirroring crashes / obviously wrong
-    behavior. These should be refusals surely?" — an upstream crash or
+    the site, the impl_mem.ml line and upstream's text. [USER 2026-10-05]
+    accepted the PNVI recommendations except for mirroring crashes and
+    obviously wrong behaviour, which are to be refusals — an upstream crash or
     self-declared-wrong arm on the PNVI path is refused here, never
     mirrored. Every site is unreachable at the default switch set. -/
 def pnviRefusal (detail : String) : String :=
@@ -1708,10 +1708,10 @@ def concurReadIval (_ : integerType) (_ : sym) : IntegerValue :=
     FROM C through `runtime/libcore/std.core:385` (aligned_alloc_proxy's
     `size rem_t align`: `aligned_alloc(0, n)` crashes fork AND upstream).
     MIRRORED as a loud fail-stop (`failwithI`, the mechanism `opIval`'s
-    IntExp arm uses), 2026-10-03 under [USER 2026-10-03] "we don't innovate
-    wrt Cerberus-upstream, unless something is very very very obviously a
-    bug ... we should fall back to loudly rejecting (either as unsupported,
-    or matching upstream)". This supersedes the 2026-09-04 interim (total
+    IntExp arm uses), 2026-10-03 under the [USER 2026-10-03] rule: no
+    innovation relative to Cerberus-upstream unless something is very
+    obviously a bug; otherwise fall back to loudly rejecting (as unsupported,
+    or matching upstream). This supersedes the 2026-09-04 interim (total
     `Int.tmod`/`emod`, x mod 0 = x, which answered `aligned_alloc(0, 8)` with
     a `DUMMY(align_alloc)` UB upstream never chooses) and withdraws the Z2
     record §10.1 recommendation (addendum there; record
@@ -1769,7 +1769,7 @@ def opIval (op : integer_operator) (v1 v2 : IntegerValue) : IntegerValue :=
       -- LEFT operand's provenance elsewhere); `Z.pow n1 (Z.to_int n2)`. A
       -- NEGATIVE exponent raises `Invalid_argument` in zarith (z.mli:636).
       -- The model gives `^` no meaning at a negative exponent, so under the
-      -- [USER 2026-10-03] synthesis ("(1) agree with this": no answer
+      -- [USER 2026-10-03] synthesis (option (1) agreed: no answer
       -- defined → a loud stop mirroring the crash) this is a fail-stop, not
       -- the fail-OPEN `.toNat` clamp that stood here. Unreachable from C: the
       -- shift elaboration guards negative counts (UB) before the `^` (std.core
@@ -2027,8 +2027,8 @@ def overlapping (f1 f2 : Footprint) : Bool :=
 
 /-- The initial memory state at address-space top `addressSpaceTop` — impl_mem.ml:503-516
     `initial_mem_state`, whose `last_address` was the literal `0xFFFFFFFFFFFF` (:508, "a random
-    impl-def choice") until the address-space-bound slice (2026-09-17; [USER 2026-09-16] "the
-    semantics should be quantified over such bounds"): the top is a PARAMETER threaded from
+    impl-def choice") until the address-space-bound slice (2026-09-17; [USER 2026-09-16] ruled
+    that the semantics be quantified over such bounds): the top is a PARAMETER threaded from
     the driver's entry (`initial_driver_state`, and the desugar state for the const-expr
     mini-run), so a consumer theorem quantifies `∀ top`; matched mode instantiates upstream's
     value from `Main.lean` `defaultAddressSpaceTop` (`--address-space-top N`). Every other
@@ -2481,8 +2481,8 @@ def oomKill : kill_reason mem_error := Other (MerrOther "Concrete.allocator: fai
     then `(_, m) = quomod z align` (:1258) — Lean's Int `%` IS emod.
     `align = 0` RAISES `Division_by_zero` there; Lean fail-stops at the same
     point (a loud kill mirroring the oracle's uncaught exception, never the
-    fail-OPEN `.max 1` clamp that stood here; [USER 2026-10-03] "fall back to
-    loudly rejecting (either as unsupported, or matching upstream)",
+    fail-OPEN `.max 1` clamp that stood here; [USER 2026-10-03] ruled that such
+    cases fall back to loud rejection, as unsupported or matching upstream,
     docs/2026-10-03_total-arith-and-bookkeeping-record.md); it sits where the
     OCaml's quomod sits — AFTER the `z < 0` kill. Its one former C route,
     `aligned_alloc(0, 0)`, now stops earlier, at std.core:385's `0 rem_t 0`,
@@ -3616,7 +3616,7 @@ def memcmpM [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : Tag
           -- impl_mem.ml:2658-2659: assert false (unspecified byte)
           failStopMem "Concrete.memcmp: non-integer byte (impl_mem.ml:2658-2659 assert false)"
     -- ISO-fix register R3 (VALIDATION.md §2, ADMITTED BY CLASS — [USER 2026-09-03]
-    -- referent ruling, confirmed [USER 2026-09-05] "(2) agree"): upstream converts the
+    -- referent ruling, confirmed [USER 2026-09-05], option (2)): upstream converts the
     -- size with `Z.to_int size_n` (impl_mem.ml:2660-2661), which raises Z.Overflow for a
     -- size outside OCaml's native int range BEFORE any byte is read; here the size feeds
     -- the checked per-byte loads directly, so a huge size reaches the semantics' own

@@ -433,7 +433,7 @@ name-join, drift manifest gate, loud fuel exhaustion), the DAEMON execution,
 and the honest divergence prose in CerbND are, credit where due, exemplary —
 several of these practices deserve to flow UPSTREAM.
 
-But the operator asked for "no semantic ugliness," and the tail is ugly in
+But the operator asked that there be no semantic ugliness, and the tail is ugly in
 exactly the way that matters: six GRAVE findings where the artifact silently
 returns values on inputs where the oracle stops (or returns the WRONG value —
 ffs(-1), '\?', realloc's UB code), all in seams that predate the mirror

@@ -2,9 +2,9 @@
 
 STATUS: worker record; branch `fix/release-hygiene`, base mainline
 `90e341db2` (the post-RelSem-prune head). NOT merged, NOT pushed.
-Provenance: the item rulings are [USER 2026-09-02] ("The rest all look
-good as recommended"; "(7) this repo has now migrated to
-OathTech/lem-lean"); the readings, wordings and gate designs are
+Provenance: the item rulings are [USER 2026-09-02] (the remaining items
+approved as recommended; on (7), the note that the repo has migrated to
+OathTech/lem-lean); the readings, wordings and gate designs are
 [AGENT] (orchestrator brief + this worker), operator-overridable.
 Quoted outputs are verbatim; tallies marked derived are derived.
 
@@ -36,8 +36,8 @@ did is redone here).
 
 ## 1. G2 — the restored specs and their provenance
 
-Ruled [USER 2026-09-02] item 1 ("restore the four park-tag spec notes —
-YES"). Source: tag `park/reasoning-era-20260831`, path
+Ruled [USER 2026-09-02] item 1 (restore the four park-tag spec notes:
+approved). Source: tag `park/reasoning-era-20260831`, path
 `lean_frontend/docs/reasoning-era/<name>` (these were container-side
 notes at the time; the park commit `39f3a64a4` is their first commit
 anywhere — there is no earlier in-repo history to restore from).

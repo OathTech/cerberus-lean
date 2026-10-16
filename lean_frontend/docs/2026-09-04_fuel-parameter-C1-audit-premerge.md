@@ -215,8 +215,8 @@ structural, absorbing, or unreachable; `sizeofCtype`/`alignofCtype`/
 `fuelExhaustedWith` sentinel (loud at runtime — `Main.lean:1106` refuses
 to run without `LEAN_ABORT_ON_PANIC`, so no default value ever reaches a
 verdict; in the logic the arm is opaque). Scoped to C2 by the operator
-("go ahead with the merges as proposed, then work on this as you
-suggest"); manifest §3 says so. Not a C1 finding; recorded so the
+(who approved the merges as proposed and this as follow-up work);
+manifest §3 says so. Not a C1 finding; recorded so the
 consumer is not surprised at the re-pin.
 
 ## 2. `.lem` discipline and OCaml byte identity (scope item 1)

@@ -8,11 +8,12 @@
 
 From: the orchestrator of the next-phase (QoL / defect-fix / usefulness) plan [AGENT].
 To: the owner of the SC concurrency track (`SC-CONCURRENCY.md` on `arc/sc-concurrency`).
-Mandate: [USER 2026-09-27] "(4) agree, write a note for them in a worktree", on
-the question "May I contact the SC track's owner to agree the fence?".
+Mandate: [USER 2026-09-27] agreed to item (4) and directed that a note be written
+for the SC track in a worktree, answering the question "May I contact the SC
+track's owner to agree the fence?".
 
 Status: a PROPOSAL. Nothing here constrains the SC track until you agree or
-counter-propose; nothing in it is a user ruling beyond the mandate quoted above.
+counter-propose; nothing in it is a user ruling beyond the mandate stated above.
 
 ## Why you are getting this
 

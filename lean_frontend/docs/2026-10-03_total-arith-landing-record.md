@@ -2,9 +2,9 @@
 
 Range: `mdd/cerberus-lean` → `fix/total-arith-and-bookkeeping`. Author: the orchestrator [AGENT]. Pre-merge audit:
 `docs/2026-10-03_total-arith-pre-merge-audit.md` (MERGEABLE WITH FIXES), all findings dispositioned in the rework
-(`5b5fa0be0`, `02f741717`) under the operator's rulings: [USER 2026-10-03] "(1) agree with this" (the O-3 synthesis),
-"(2) yes this is the canonical 'obviously a mistake, no semantic ambiguity, just fix'" (R6), "Yes, I agree with this
-analysis. Go ahead" (F1: the alignment-overflow cases as R7, computed).
+(`5b5fa0be0`, `02f741717`) under the operator's rulings: [USER 2026-10-03] agreed with the O-3 synthesis (1), ruled R6 the
+canonical case of an obvious mistake with no semantic ambiguity, to be fixed (2), and agreed with the F1 analysis and
+approved going ahead (the alignment-overflow cases as R7, computed).
 
 ## Full ladder on the pre-rework head `34fab1dd0`, 2026-10-03T06:57:28Z–08:53:15Z — verbatim (superseded)
 

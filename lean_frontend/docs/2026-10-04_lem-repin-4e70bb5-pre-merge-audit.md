@@ -1,6 +1,6 @@
 # Pre-merge audit: lem re-pin to `4e70bb5` (`9e63218bc..31732f750`)
 
-- Scope, as approved: [USER 2026-10-04] "1 / 2 approved". The scope is tight: the 3 commits of `arc/lem-repin-4e70bb5`
+- Scope, as approved: [USER 2026-10-04] approved items 1 and 2. The scope is tight: the 3 commits of `arc/lem-repin-4e70bb5`
   (`111ae6df5`, `158ac1f5b`, `31732f750`), checked against the five points of the orchestrator's brief.
 - Auditor: a fresh agent [AGENT]. It had no part in the re-pin. Every judgement below is [AGENT].
 - Box discipline:

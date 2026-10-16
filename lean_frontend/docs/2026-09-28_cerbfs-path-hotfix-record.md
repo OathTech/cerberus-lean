@@ -11,12 +11,11 @@ cerberus-lean's frontend output, and a kernel-checked proof over `drive` at `cfc
 came with a proof that every execution of the witness exits 0 with empty stdout. The witness is in the tree verbatim
 (`tests/immaculate/libc/zd-fs-pathleak-dot-slash.c`) with this attribution.
 
-[USER 2026-09-28] on the report: "In one way I take this report as kind of positive because this problem is based on
-CerbFS, which is a feature that we haven't really tried to clone. The reporter wasn't able to find … any discrepancies in
-the core semantics. I wonder if what we should do now is obviously apply a hotfix on a branch and push it. Really the
-correct fix here is to much more explicitly define the contract that Cerberus Lean is trying to establish and then for
-the features that are well-built, make sure that they're supported. For the ones that are not very well-built, make sure
-that they're appropriately rejected." / "bug reports should be attributed with appropriate citations and thanks".
+[USER 2026-09-28] on the report: took it as in a way positive, since the problem lies in CerbFS, a feature never
+really attempted as a clone, and the reporter found no discrepancies in the core semantics; the immediate step is probably a
+hotfix on a branch, pushed, while the correct fix is to define much more explicitly the contract cerberus-lean is trying
+to establish, then make sure the well-built features are supported and the poorly built ones appropriately rejected.
+Also: bug reports are to be attributed with appropriate citations and thanks.
 
 ## The defect
 
@@ -50,7 +49,7 @@ Specified(2); before the fix Lean created a file named `sub/f`; now DIFF | L=CRA
 
 ## Landing (2026-09-28)
 
-[USER 2026-09-28] verbatim: "Agreed on both, we can waive the audit, merge, and kick off the drafting" — the pre-merge
+[USER 2026-09-28] agreed on both points, waived the audit, and authorised the merge and the start of the drafting — the pre-merge
 audit (proposed: a short fresh review of the one commit) was WAIVED by the operator; merge and push authorised.
 `mdd/cerberus-lean` 5ecc0aa33 -> this commit, ff-only. Gates on the hotfix tree (orchestrator, verbatim):
 `Total: 16 passed, 0 failed`; `check_failure_reach: OK (244 pure failure sites = the 244 register rows exactly …`;

@@ -37,8 +37,8 @@ the record found (`defacto_memory_aux.lem:469`) be classified.
 pass because `panic!`/`failwithI` sites DENOTE the `Inhabited` default in
 process. An opaque fuel-exhaustion payload is the same defect at the 67
 fuel'd points. The review's (A)/(B)/(C) is precisely that pass restricted
-to the fuel sites, and the operator's ruling there ("consumers get
-oracle conformance; fail-closed into the correct behavior") already
+to the fuel sites, and the operator's ruling there (consumers get
+oracle conformance, failing closed into the correct behaviour) already
 decides the direction. So the cerberus half of the fuel arc IS the first
 tranche of the typed-failure pass, and the two should not be scheduled
 separately.

@@ -1468,8 +1468,8 @@ jump_statement:
 (* GCC inline assembly extension *)
 asm_register:
 | ASM LPAREN string_literal RPAREN
-    (* FORK (asm refusal, 2026-10-05; [USER 2026-10-05] "Re inline asm, this
-       should be a loud refusal"): upstream DROPS an asm label on a declarator
+    (* FORK (asm refusal, 2026-10-05; [USER 2026-10-05] ruled that inline asm is
+       a loud refusal): upstream DROPS an asm label on a declarator
        (`int x asm("r1");`, `int f(void) asm("g");`) here, before Cabs, so it
        never reaches desugaring and no engine can see it. Refused at the only
        place it exists, the shared parser (the Lean engine reads the Cabs this

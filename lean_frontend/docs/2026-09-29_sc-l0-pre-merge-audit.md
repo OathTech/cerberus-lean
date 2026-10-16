@@ -2,8 +2,8 @@
 
 [AGENT — independent skeptical pre-merge auditor, Claude Fable 5.1 subagent,
 2026-09-29.] Fresh reviewer: I authored none of the range. Authorization,
-verbatim as relayed by the orchestrator: [USER 2026-09-29] "yes, go ahead with
-the audit as proposed". The proposal was a full review of the three-commit
+as relayed by the orchestrator: [USER 2026-09-29] approved the audit as
+proposed. The proposal was a full review of the three-commit
 docs range with checks (a)–(f) below plus a fresh full review of the revised
 plan and the landed WP1 decision record (ruling 5 of the 2026-09-29 rulings).
 Audit worktree: branch `audit/sc-l0-20260929` from `c1cb4f26a`. Nothing on
@@ -76,16 +76,16 @@ process. The coordination response, which had the same paragraph
 not. Fix: a two-line superseded note at the design's S1 row or a top banner
 pointing to ruling (2) (docs-only).
 
-**S3 — The plan no longer points at [USER 2026-09-04] "we don't change the lem
-structure for ocaml", while constraint 1 mandates shared-Lem S1 code.** Not a
+**S3 — The plan no longer points at the [USER 2026-09-04] constraint against changing
+the lem structure for OCaml's sake, while constraint 1 mandates shared-Lem S1 code.** Not a
 dropped obligation: the old plan attached that reconciliation only to WP1's
 experimental factoring (M2), and ruling (1) closes M2 by not landing it.
 But `1b15b5b9a` §6 was the plan's only pointer to the 2026-09-04 constraint
 (`lean_frontend/docs/2026-09-05_typed-failure-outcomes-design.md:41`,
-verbatim, truncated at the semicolon: "**Brief constraints** ([USER
-2026-09-04], relayed): "we don't change the lem structure for ocaml" —
+truncated at the semicolon: a **Brief constraints** entry ([USER
+2026-09-04], relayed) against changing the lem structure for OCaml's sake —
 Lean-only declares are fine, `.lem` bodies and the OCaml output are not
-touched" […]), and S1 will change `.lem`
+touched […]), and S1 will change `.lem`
 bodies and the OCaml output by design (architecture constraint 2, ruling 1
 "a single stepper in Lem"). M2's second lesson — the WP1 record's stated
 reason for co-locating experiment code in `driver.lem` was "The fork-drift
@@ -180,9 +180,9 @@ assessment's finding 6 listed only the plan's and `SC-WP1.md`'s instances.
 **N8 — Chat-sourced quotes I could not verify.** Assessment `:4-5` (the
 operator's request), `:97-113` (the six questions "as put", from the
 uncommitted assessment), `:88-93` (Fable's re-run result lines, from the
-uncommitted Fable report); the decision record's `[USER, 2026-09-27] "Push
-forward to the end of WP1."` and the review's `[USER 2026-09-28] "WP1 + plan
-update", "Targeted re-runs"` (both imported unchanged from their committed
+uncommitted Fable report); the decision record's `[USER, 2026-09-27]` instruction to carry WP1
+through to its end and the review's `[USER 2026-09-28]` charter (WP1 plus the
+plan update; targeted re-runs) (both imported unchanged from their committed
 sources). None is presented as more than it is.
 
 **N9 — Not re-measured.** Assessment `:70-71` "a 206-line `experiment_*`
@@ -257,11 +257,11 @@ the banners' one-line summaries are faithful (N3 aside).
 ### (c) [USER] quotes
 
 Assessment `:117-119` and `:131-132` are the operator's two 2026-09-29
-answers as given to me, verbatim, line-wrapped. Plan `:306`
-"mirror and refuse seems safest", `:386` "land on mainline seems reasonable",
-`:475` "we're doing some bug hunting first on the main-line agent",
-coordination banner `:4-6` "yeah, agree on (3) although we're doing some bug
-hunting first on the main-line agent": all exact substrings. Plan `:104-107`
+answers as given to me, line-wrapped. Plan `:306`
+(mirror-and-refuse the safest), `:386` (landing on mainline reasonable),
+`:475` (bug hunting first on the main-line agent),
+coordination banner `:4-6` (agreement on (3), with bug hunting first on the
+main-line agent): all exact substrings. Plan `:104-107`
 2026-09-25 quote = `2026-09-25_sc-semantics-mvp-scope.md:5` verbatim. Plan
 `:96` and `:427` — the two lines the assessment's finding 6 named at
 `1b15b5b9a:12-16` and `:316` (confirmed unlabelled there) — are now labelled

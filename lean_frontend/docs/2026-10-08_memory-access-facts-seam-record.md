@@ -1,7 +1,7 @@
 # The memory-access-facts seam: SC WP0 erasure lemmas as a citable library module — slice record (2026-10-08)
 
 Branch `seam/memory-access-facts`, from mainline `fd110ea30`. Worker: Claude Opus 5.5 (agent). Every
-judgement no operator quote covers is marked [AGENT]. Quoted gate output is verbatim; counts marked
+judgement no operator ruling covers is marked [AGENT]. Quoted gate output is verbatim; counts marked
 "derived" are mine. No `.lem`, generated code or semantics changed; the lem used is the pin `4e70bb5`.
 
 Commits: the seam (with this record), then the register signature transcription (§5) as a separate commit.
@@ -12,7 +12,7 @@ Commits: the seam (with this record), then the register signature transcription 
   as one heap-well-formedness clause, `quiet : σ.observations = none`, and want to cite our load/store erasure
   lemmas by name instead of re-deriving them. Queued in the landing note `fd110ea30` ("promote the load/store
   erasure lemmas to a citable library seam (their ask (c))").
-- Operator: [USER 2026-10-08] "Yes go ahead".
+- Operator: [USER 2026-10-08] approved.
 
 ## 1. What moved
 
@@ -198,6 +198,6 @@ Change, signature text only:
 - Row 7's reviewer field adds the same signature before `[USER] sign-off at merge`.
 
 That follows the register's convention (`[AGENT auditor <date>, audit <ref>] SIGNED; [USER] sign-off at
-merge`) and its procedure: the auditor signs, and the operator's merge "yes" is the final signature
-([USER 2026-10-07] "Go ahead and merge, agree re (2)", the same landing note). The worker transcribes; it
+merge`) and its procedure: the auditor signs, and the operator's merge approval is the final signature
+([USER 2026-10-07] approved the merge and agreed on item (2), the same landing note). The worker transcribes; it
 does not sign. No worker, hypothesis or invariant field changed; `check_fuel_forms.sh` is green (§4).

@@ -1,9 +1,9 @@
 # Test-depth map: first actions — record
 
 Date: 2026-09-28. Branch: `arc/contract-enforcement`. Author: the orchestrator [AGENT].
-Occasion: [USER 2026-09-28] "(B) that we identify trust surfaces which are less well-tested than others, if any
-exist. That's the real miss wrt the bug, we knew that SybllFS wasn't a well-tested mirror, but that wasn't clearly
-documented". Measurement: `docs/2026-09-28_test-depth-map.md` (fresh reviewer, static counts, no runs).
+Occasion: [USER 2026-09-28] asked (B) that trust surfaces less well-tested than others be identified, if any
+exist — the real miss behind the bug being that SibylFS was known not to be a well-tested mirror without that being
+clearly documented. Measurement: `docs/2026-09-28_test-depth-map.md` (fresh reviewer, static counts, no runs).
 
 ## Claims re-measured by the orchestrator before acting
 

@@ -37,7 +37,7 @@ reviewer judgments, not operator landing approval.
 
 The prior instruction is recorded in
 [the September 5 design](2026-09-05_typed-failure-outcomes-design.md), §0:
-[USER, September 4, relayed] “we don't change the lem structure for ocaml”.
+[USER, September 4, relayed] ruled against changing the lem structure for OCaml's sake.
 That design applies it to Lean typed-failure work: preserve Lem bodies and
 OCaml output while improving the Lean representation. WP1 instead investigates
 a target-symmetric bounded execution boundary for the later SC direction.

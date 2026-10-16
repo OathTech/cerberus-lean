@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # check_asm_refusal.sh — row-1 witnesses for the inline-assembly refusal
-# (2026-10-05; [USER 2026-10-05] "Re inline asm, this should be a loud
-# refusal"; record lean_frontend/docs/2026-10-05_asm-refusal-record.md).
+# (2026-10-05; [USER 2026-10-05] ruled that inline asm is a loud
+# refusal; record lean_frontend/docs/2026-10-05_asm-refusal-record.md).
 #
 # Upstream Cerberus erases inline assembly: an asm STATEMENT (basic, extended,
 # `asm goto`) desugars to a skip (frontend/model/cabs_to_ail.lem, upstream

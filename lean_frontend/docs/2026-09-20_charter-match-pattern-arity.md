@@ -1,12 +1,12 @@
 # Charter — `match_pattern` fails closed on tuple-arity mismatch (cerberus-sl hidden-state note item 7) (2026-09-20)
 
-**Status:** CHARTER for one Claude Fable subagent worker, written by the orchestrator [AGENT]; branch `fix/match-pattern-arity` in the primed worktree `worktrees/cerberus-lean-fix/match-pattern-arity` (base: mainline `5407597d9`). A small shared-model slice requested by the consumer and endorsed by the operator on the consumer's side ([USER 2026-09-20, cerberus-sl `docs/2026-09-20_run-digest-design-response.md` §4 Q5]: *"we can ask for this immediately"* — "we request that the item 7 work be STARTED NOW, not queued behind this arc"). It runs in parallel with the program-data-parameters arc; the files are disjoint from E-A's.
+**Status:** CHARTER for one Claude Fable subagent worker, written by the orchestrator [AGENT]; branch `fix/match-pattern-arity` in the primed worktree `worktrees/cerberus-lean-fix/match-pattern-arity` (base: mainline `5407597d9`). A small shared-model slice requested by the consumer and endorsed by the operator on the consumer's side ([USER 2026-09-20, cerberus-sl `docs/2026-09-20_run-digest-design-response.md` §4 Q5]: this can be asked for immediately — "we request that the item 7 work be STARTED NOW, not queued behind this arc"). It runs in parallel with the program-data-parameters arc; the files are disjoint from E-A's.
 
-## 0. Rulings (verbatim), the contract, standing constraints
+## 0. Rulings, the contract, standing constraints
 
 - The consumer's contract, verbatim (`cerberus-sl/docs/2026-09-18_hidden-state-upstream-note.md` item 7): *"on an arity mismatch `match_pattern` returns NO MATCH (`Nothing`), not an error, so that `select_case` CONTINUES to later arms (a wildcard arm after a mismatching tuple pattern is selected), and a successful match keeps the calculus's bindings and their order. Acceptance criterion: the selector equality `select_case subst_sym_expr v pats = selectCaseE v pats` for every `v` and `pats` (`core_run.lem`), or a primitive matcher equality from which it follows — and the same for the pure evaluator's `select_case subst_sym_pexpr`/`selectCaseP`. A structured-error semantics would NOT discharge the downstream statement."* The selector equality is THEIR theorem against THEIR calculus; what we deliver is the matcher's fail-closed arity behaviour with bindings and order unchanged, stated as kernel-checked facts they can consume (§2 T1–T3).
-- The category: a fail-open default in the shared model (Lem's truncating `zip`), unobservable on elaborator output, wrong as such — the same "unambiguously wrong" class the operator ruled fixable ahead of upstream for the allocator ([USER 2026-09-16]: *"I think this is in the 'unambiguously wrong' category where we are allowed to fix ahead of upstream"*), with the same discipline: shared body (both targets compute it), an upstream-tray draft, the pristine-oracle register only if a lane OBSERVES a difference (none should — §1).
-- Standing constraints: NEVER modify machine-global state; NO `git push`; never commit on `mdd/cerberus-lean`/`master`; no merge/rebase; fail-closed/fail-noisy (no `2>/dev/null` on a build/gate step); [AGENT]/[USER] provenance; verbatim outputs, derived tallies labelled; every `lake`/`lean` through `scripts/capped`, gate scripts through `scripts/ce`; ONE heavy job (the program-data-parameters worker may be running a Tier B battery in its own worktree — check `ps`/load before your heavy steps and wait if two heavy jobs would overlap); ~45-minute step tripwire (full rebuilds excepted to ~1 h, wall times reported); never end the turn on a wait; a committed record ENDS the slice. [USER 2026-09-08] verbatim: *"we should \*NOT\* be building anything new out-of-policy"* — the kernel facts below are the consumer's named acceptance facts, not new surface.
+- The category: a fail-open default in the shared model (Lem's truncating `zip`), unobservable on elaborator output, wrong as such — the same "unambiguously wrong" class the operator ruled fixable ahead of upstream for the allocator ([USER 2026-09-16]: ruled it in the unambiguously-wrong category, which the fork is allowed to fix ahead of upstream), with the same discipline: shared body (both targets compute it), an upstream-tray draft, the pristine-oracle register only if a lane OBSERVES a difference (none should — §1).
+- Standing constraints: NEVER modify machine-global state; NO `git push`; never commit on `mdd/cerberus-lean`/`master`; no merge/rebase; fail-closed/fail-noisy (no `2>/dev/null` on a build/gate step); [AGENT]/[USER] provenance; verbatim outputs, derived tallies labelled; every `lake`/`lean` through `scripts/capped`, gate scripts through `scripts/ce`; ONE heavy job (the program-data-parameters worker may be running a Tier B battery in its own worktree — check `ps`/load before your heavy steps and wait if two heavy jobs would overlap); ~45-minute step tripwire (full rebuilds excepted to ~1 h, wall times reported); never end the turn on a wait; a committed record ENDS the slice. [USER 2026-09-08]: nothing new is to be built out of policy — the kernel facts below are the consumer's named acceptance facts, not new surface.
 
 ## 1. Facts (verified by the orchestrator at `5407597d9`; cite, do not re-derive; errata to the record)
 
@@ -73,14 +73,14 @@ The report to the orchestrator: the head hash; the two lem hunks verbatim; T1–
 ## Addendum A3 — closure round 3 (2026-09-23): argument-list arity
 
 **Provenance.**
-- [USER 2026-09-23], verbatim: *"Yes, we will roll R3 / R4 into this as a closure. The digest fix landed on main"*.
-- [USER via auditor, 2026-09-22], verbatim: *"if we find defects which could reasonably get rolled into this, we can propose them as fixes"*.
+- [USER 2026-09-23]: R3 / R4 are rolled into this slice as a closure; the digest fix has landed on main.
+- [USER via auditor, 2026-09-22]: defects found that could reasonably be rolled into this may be proposed as fixes.
 - [AGENT 2026-09-23, orchestrator]: scope, fence, acceptance and stop conditions below; the second-round audit is
   `docs/2026-09-22_match-pattern-arity-rereview.md` (commit `3e8f7c4bd`, R3/R4/N3).
-- The standing ban, verbatim: [USER 2026-09-08] *"we should \*NOT\* be building anything new out-of-policy"* — no new
+- The standing ban: [USER 2026-09-08] nothing new is to be built out of policy — no new
   gates, no new `lean_exe` (extend `match-pattern-arity-test`), no general type-soundness theorem, no new
-  enumeration/literal/semantics-evaluation program proofs; [USER 2026-09-04] *"we don't change the lem structure for
-  ocaml"*.
+  enumeration/literal/semantics-evaluation program proofs; [USER 2026-09-04] the lem structure is not changed for
+  OCaml.
 
 **Scope (verified by the orchestrator from source at `b85f5bc83`).**
 - **R3** — the seven unchecked argument-list zips in `frontend/model/core_typing.lem`: `PEcall` inference `:766` and
@@ -144,7 +144,7 @@ corpus movement = STOP. Build coordination: no `lake`/`dune`/`make prelude-src`/
 mainline `34ac493f9` re-verification printed `=== ALL DONE`; one heavy job at a time; ~45 min per pass = stop and report.
 
 **Ruling on the guard's own finding (2026-09-23) — the shipped Core library's `pread`/`pwrite` declarations.** [USER
-2026-09-23], verbatim: *"Yeah, we shoudl fix and file to the tray, per our rule that unambiguous bugs get fixes"*. Scope
+2026-09-23]: fix it and file it to the tray, per the rule that unambiguous bugs get fixes. Scope
 [AGENT orchestrator], exactly: add the fourth formal `integer` to `builtin pwrite` and `builtin pread` in BOTH
 `runtime/libcore/std.core` (`:618-619`) and `runtime/libcore/std_inner_arg_temps.core` (`:574-575`), with a one-line FORK
 comment citing the call sites and both runtime arms (`core_reduction_aux.lem:218-236`, `core_run.lem:1269-1287`) and tray 45;

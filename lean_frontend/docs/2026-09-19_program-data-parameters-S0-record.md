@@ -31,14 +31,12 @@ cites (plus one addition, E9), the largest being the READER ORDER — it is `dig
 enum_definitions, tagDefs` (sorted by name), not "`tagDefs`,
 `enum_definitions`, `digest`" as the design note §3.2 wrote.
 
-## 0. Rulings honoured (verbatim, from the charter)
+## 0. Rulings honoured (from the charter)
 
-- [USER 2026-09-19]: *"I'm interested in making decisions that are
-  consequential in some way but for the other kinds of decisions, which
-  are really more implementation-focused, I think you can make the
-  calls."*; on Q2: *"yeah, I agree on Q2, let's roll it together"*.
-- [USER 2026-09-08]: *"we should \*NOT\* be building anything new
-  out-of-policy"* — S0 built probe files and this record only.
+- [USER 2026-09-19]: the operator makes the consequential decisions; the
+  implementation-focused ones the orchestrator can call; on Q2: agreed,
+  roll it together.
+- [USER 2026-09-08]: nothing new is to be built out of policy — S0 built probe files and this record only.
 - Charter §3 fence: record + evidence dir + `.tmp/` scratch. `git
   status` at the end of the slice: only the record and the evidence
   dir are new (§7).
@@ -358,7 +356,7 @@ dr_st`), DEAD on the OCaml target — the `evalConstantExpressionAux sup
 and its one caller, so `scripts/fork_drift_manifest.txt`'s hash pins
 are re-pinned in E-A. This is a lem-source change motivated by the Lean
 target — flagged for the operator in §5 Q-B under the [USER 2026-09-04]
-"we don't change the lem structure for ocaml" rule (the supply
+rule that the lem structure is not changed for OCaml (the supply
 threading was accepted under the same rule).
 
 **Rules the E-A/D-A charter must follow (SUPPORTED AS-IS part):**
@@ -697,8 +695,8 @@ zero-movement lanes.
   `.lem`, dead on the OCaml target (generated OCaml moves at one
   function + one caller; fork-drift manifest re-pin). Precedent: the
   supply threading of `evalConstantExpressionAux sup …`
-  (`mini_pipeline.lem:80-86`). Acceptable under [USER 2026-09-04] "we
-  don't change the lem structure for ocaml", or should the paired
+  (`mini_pipeline.lem:80-86`). Acceptable under [USER 2026-09-04] (the lem
+  structure is not changed for OCaml), or should the paired
   slice implement the partial-seed alternative (§1.6) so the `.lem`
   head stays `run_const_expr_driver tds dr_st`? [AGENT] recommendation:
   N-ary (smaller, one rule).

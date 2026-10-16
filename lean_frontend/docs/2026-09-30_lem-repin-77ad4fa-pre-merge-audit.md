@@ -1,9 +1,9 @@
 # Pre-merge audit: lem re-pin `c2a68e7` → `77ad4fa` (range `55b04e7a4..ba2e859a9`)
 
-Auditor: a fresh pre-merge auditor [AGENT], on branch `audit/lem-repin-77ad4fa`. Scope as approved,
-verbatim: [USER 2026-09-30] "Agree. Let's try to keep the repin tight". The four checks in the brief were
+Auditor: a fresh pre-merge auditor [AGENT], on branch `audit/lem-repin-77ad4fa`. Scope as approved:
+[USER 2026-09-30] agreed, asking that the re-pin be kept tight. The four checks in the brief were
 the oracle and pin sites, the gate changes, the proof edits and the records. Rulings under audit: D1
-[USER 2026-09-30] "D1: agree"; LP4/OM4 [USER 2026-09-30] "Yes, agree on 1-3. Go ahead".
+[USER 2026-09-30] agreed; LP4/OM4 [USER 2026-09-30] agreed to items 1-3 and approved going ahead.
 
 ## Verdict: MERGEABLE WITH FIXES
 
@@ -118,7 +118,7 @@ byte-identity measurement, which holds (below), so this is a wording fix: "no OC
 6. **Proofs.** Both edits add `lemSeq` to a `simp only` set. The Driver edit also drops `CerbDebug.print_debug_pure`,
    and `hack_lemFuel`'s only debug site is now a `lemSeq` head (`Driver.lean:480`). The generated proof copies are byte-equal to the sources.
 7. **Records.**
-   - The quotes of D1, D2 and LP4/OM4 match lem-lean `doc/lean-backend/2026-09-28_linksem-findings.md:536-537,577` verbatim.
+   - The rulings D1, D2 and LP4/OM4 as cited in the record match lem-lean `doc/lean-backend/2026-09-28_linksem-findings.md:536-537,577` (compared word for word at audit time).
    - SUPPORTED's "ten Lem parity XFAILs (two string, five ruled, three open: A5 twice and A1-R)" matches
      `tests/comprehensive/parity/expected_failures.txt` at `77ad4fa` (10 rows: 2 `fix`, 5 `ruled`, 3 `open`). The old "four" matches `c2a68e7`.
    - Derived tallies I re-counted match: `lem_if` 0 → 1146, `never_extract` 11 → 20, `lemFunctionalBeq` 0 → 65,

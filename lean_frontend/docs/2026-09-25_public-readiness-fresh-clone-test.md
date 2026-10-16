@@ -1,8 +1,9 @@
 # Public-readiness M9 — the fresh-clone newcomer test (2026-09-25)
 
 Orchestrator [AGENT], run OUTSIDE the sandbox with network, on the operator's instruction:
-[USER 2026-09-25] "Pushed, you can run the test (v. important!)" (after "Okay, you're running outside the sandbox, you
-should be able to do the M9 network checks. We won't do automated issue creation (re 1). For (4), this sounds fine").
+[USER 2026-09-25] reported the push done and asked for the test to be run, stressing its importance (having earlier
+confirmed that the M9 network checks could run from outside the sandbox, ruled out automated issue creation (re 1)
+and accepted the proposal for (4)).
 Method: brand-new directory outside every checkout, `GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
 GIT_TERMINAL_PROMPT=0`, `git -c credential.helper=` — no container env, no redirects, no credentials; every command is
 the PUBLIC README's own line, in its order; a NEW local opam switch per repository (authorised). Logs (ephemeral, in the
@@ -154,7 +155,7 @@ exit of M9.
 
 ## Landing (2026-09-25) — orchestrator [AGENT]
 
-[USER 2026-09-25] verbatim: "Great, agree on the reviewer, agree on the merge, agree on M9 exit". Independent delta review
+[USER 2026-09-25] agreed on the reviewer, the merge and the M9 exit. Independent delta review
 (Claude Fable, `2026-09-25_fresh-clone-fix-delta-review.md`, three passes on `audit/fresh-clone-fix-20260925`
 5fee06e69 / 1331e14b2 / fd3e0d22e, cherry-picked here): "No P1, no P2 … Clean for the operator's fast-forward" on the
 six-commit range db5e1feb5..2e88f21c0. Its P3-1 (the plant's shared temporary ref could race concurrent self-tests →
@@ -169,7 +170,7 @@ cerberus recipe from a brand-new anonymous clone against the pushed head.
 
 ## Final M9 exit (2026-09-25, after the operator pushed 683dc186c) — GREEN end to end
 
-[USER 2026-09-25] "pushed". Brand-new directory, anonymous HTTPS clone of `mdd/cerberus-lean` (public head =
+[USER 2026-09-25] reported the push done. Brand-new directory, anonymous HTTPS clone of `mdd/cerberus-lean` (public head =
 `683dc186cd3a6683d3eaa3062f38f53ad339891d`; lem-lean public `mdd/lean-backend` = `c2a68e79…`), redirects and credentials
 disabled, no container environment. The public README's own lines in order (new local switch, `opam pin add … lem-lean.git#c2a68e79…`
 — now equal to the Lake rev — dependencies from the network, both builds, the one C program), then `VALIDATION.md`'s
@@ -221,7 +222,7 @@ annotated prerelease tags and the announcement wording; cerberus-sl re-pins at t
 
 ## Alpha tags verified (2026-09-26) — orchestrator [AGENT]
 
-[USER 2026-09-26] "Done" (pushed `mdd/cerberus-lean` to cfc275d84 and created/pushed the two annotated tags). Anonymous
+[USER 2026-09-26] reported it done (pushed `mdd/cerberus-lean` to cfc275d84 and created/pushed the two annotated tags). Anonymous
 checks (HTTPS, `GIT_CONFIG_GLOBAL=/dev/null`, no credentials), verbatim:
 
     bb283555f3f74d8b4071104203829d58b9e9dc3b	refs/tags/lean-backend-v0.1.0-alpha.1

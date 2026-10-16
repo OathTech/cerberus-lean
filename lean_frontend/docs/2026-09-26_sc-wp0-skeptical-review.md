@@ -5,10 +5,10 @@ Chartered by the orchestrator as the NEW reviewer the house rule requires
 for core changes; the two earlier audits were read LAST (§10), after every
 finding below had been formed.
 
-Operator's framing, verbatim (relayed by the orchestrator): "We also have a
-W0 prototype of the concurrency support. Can you review this? This is
-intended to be uncontroversial changes which should be relatively easy to
-merge (but you should treat it skeptically)".
+Operator's framing (relayed by the orchestrator): a W0 prototype of the
+concurrency support is to be reviewed; it is intended as uncontroversial
+changes that should be relatively easy to merge, but the reviewer is to treat
+it skeptically.
 
 **Range reviewed:** `db5e1feb5..e1c1d2c3a` on `arc/sc-wp0` =
 `917961adf` (fix(memory): retain completed read state on trapping Bool
@@ -145,10 +145,10 @@ harnesses).
 `frontend/model/mem_common.lem` +21 adds `observed_provenance`,
 `representation_byte_view`, `access_receipt 'ptr 'value`, generated into
 BOTH targets; the generated-OCaml delta is a NEW fork-drift layer-2 row.
-The standing ruling, verbatim from `docs/2026-09-05_typed-failure-outcomes-design.md:41`:
-"[USER 2026-09-04] … 'we don't change the lem structure for ocaml' —
+The standing ruling, as recorded at `docs/2026-09-05_typed-failure-outcomes-design.md:41`:
+[USER 2026-09-04] ruled against changing the lem structure for OCaml's sake —
 Lean-only declares are fine, `.lem` bodies and the OCaml output are not
-touched". WP0 touches the OCaml output. My judgement: this is inside the
+touched. WP0 touches the OCaml output. My judgement: this is inside the
 ruling's purpose (it targeted Lean-motivated restructuring of shared
 functions; here no lem function or body changes, the type is consumed
 identically by the OCaml oracle and by Lean, and a single lem source is the
@@ -186,8 +186,8 @@ has 15 (`observations` placed before `requested`). The restored docstring
 ### F9 — N — Fuel numerals `17`/`64` in the Python harness
 
 Not scanned by `check_no_fuel_numerals.sh` (it scans `.lean` only, by
-design — `common.sh:401-410` "[USER 2026-09-03] 'Defaults that are chosen
-eg. in test suites are fine'"). Two distinct fuels producing identical
+design — `common.sh:401-410` cites the [USER 2026-09-03] ruling that defaults
+chosen e.g. in test suites are fine). Two distinct fuels producing identical
 transcripts is a small fuel-independence witness. Fine.
 
 ### F10 — N — Symbolic/CHERI stubs are type-correct by inspection; still uncompiled
@@ -407,22 +407,22 @@ the disclosed residual.
   (i)+(ii); had the trap-state check been folded into `monadic-failstop-test`
   (row 1, where it already lives) and the proofs into an existing exe, the
   row would be a discipline point. Reasonable either way; not a finding.
-- Surface growth vs [USER 2026-09-08] verbatim (`docs/2026-09-11_codex-charter-…:16`):
-  "we should *NOT* be building anything new out-of-policy" — that ban's
+- Surface growth vs [USER 2026-09-08] (`docs/2026-09-11_codex-charter-…:16`),
+  the ruling that nothing new is built out-of-policy — that ban's
   operative content is "no new enumeration/literal/semantics-evaluation
   program proofs or artefact surface". WP0 adds no program proofs; it adds
   two probe exes + one lean_exe + one harness under the LATER direction
-  `SC-CONCURRENCY.md:11-17` "[USER, 2026-09-24] … seek early mainline
-  landings whenever work can be audited cleanly … land necessary,
-  independently validated foundations" and `:24` "[USER, 2026-09-25 …]
-  The MVP delivers a coherent and correct executable SC model", plus the
-  records' "the user then directed 'proceed with WP0'" (`bool-load-repair.md:11`,
-  a relayed quote — I could not locate its verbatim source outside the WP0
+  `SC-CONCURRENCY.md:11-17` ([USER, 2026-09-24]: seek early mainline
+  landings whenever work can be audited cleanly; land necessary,
+  independently validated foundations) and `:24` ([USER, 2026-09-25]: the
+  MVP delivers a coherent and correct executable SC model), plus the
+  records' statement that the user then directed WP0 to proceed (`bool-load-repair.md:11`,
+  a relayed direction — I could not locate its source outside the WP0
   records; the plan's `:291` row says "proceed with minimal WP0" as the
   re-review's conclusion). The later, specific direction governs; the
   surface is the minimum the plan's WP0 row (`:180`) demands ("with its
   real diagnostic consumer"). Within policy, provided the operator's
-  "proceed with WP0" is as reported.
+  direction to proceed with WP0 is as reported.
 - `memory-access-test` in row 1? **No** (`test_unit.sh:15-40` UNIT_TESTS has
   no such entry; grep 0) — only row 13. F4.
 - `check_lakefile_roots.sh` / `check_no_fuel_numerals`: §3.
@@ -488,9 +488,9 @@ Every way the range is NOT purely additive/passive:
 
 Judgement: the RUNTIME change is small, disabled-by-default, kernel-proved
 erasable, and mirrored file:line; its own validation is unusually thorough
-for its size. "Uncontroversial" is nonetheless overstated on one axis — it
+for its size. The uncontroversial framing is nonetheless overstated on one axis — it
 changes the semantic surface the consumer proves against (F1) and nobody
-wrote that down. "Easy to merge" mechanically: yes (§10).
+wrote that down. Mechanically easy to merge: yes (§10).
 
 ## 10. R-I — Merge mechanics
 

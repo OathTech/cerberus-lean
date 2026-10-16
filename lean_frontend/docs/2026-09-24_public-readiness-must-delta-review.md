@@ -115,14 +115,15 @@ Grades: **P1** blocks merge; **P2** fix before merge; **P3** after merge;
   (whole file, 43 lines).
 - **How verified:** `grep -n "USER" …/2026-09-24_evidence-archive-untracking.md`
   → no output; the file has no `[AGENT]`/`[USER]` tag at all. The
-  ruling exists verbatim at `lean_frontend/docs/2026-09-05_master-plan.md:105-107`:
+  ruling exists at `lean_frontend/docs/2026-09-05_master-plan.md:105-107`:
 
   > **[USER 2026-09-06]** — the validation-foundations landing rulings (evidence
-  > archives, concurrency ordering, retained rulings):
-  >
-  > > "Agree on all points, and particularly on cleaning up the evidence archives. These should not be git committed, and will not be pushed. I don't actually hold strong value in such data which could be recreated, so I am fine dropping large files like this. The important thing is that runs can be reconstructed. …"
+  > archives, concurrency ordering, retained rulings): the operator agreed on all
+  > points, in particular on cleaning up the evidence archives, which are not to
+  > be committed or pushed; such reconstructible data is of little value and
+  > large files may be dropped, provided runs can be reconstructed.
 
-  and `.gitignore:79-87` already quotes it and ignores
+  and `.gitignore:79-87` already cites it and ignores
   `lean_frontend/docs/**/*.tar.gz|*.tar.zst|*.tar` — i.e. the 21 archives at
   the base were tracked against the standing rule, and after `d6618ecb9`
   the ignore rule prevents re-adding them (`.gitignore` unchanged in the
@@ -134,8 +135,9 @@ Grades: **P1** blocks merge; **P2** fix before merge; **P3** after merge;
   removal "under an agreed retention policy" — the policy is this ruling
   and the record should say so.
 - **One-line fix:** add a header line
-  `[AGENT] under [USER 2026-09-06] "… These should not be git committed, and will not be pushed. … The important thing is that runs can be reconstructed."`
-  (quote from `2026-09-05_master-plan.md:107`). Docs-only; no re-gate.
+  `[AGENT] under [USER 2026-09-06]` naming the retention ruling (evidence archives are
+  not committed or pushed; runs must stay reconstructible; cite
+  `2026-09-05_master-plan.md:107`). Docs-only; no re-gate.
 
 ### F3 — P3 — the 23 `LemUnsupported.Cmm.*` markers have no in-file explanation
 
@@ -200,7 +202,7 @@ Grades: **P1** blocks merge; **P2** fix before merge; **P3** after merge;
 
 `SUPPORTED.md:43` "(operator scope, 2026-09-24)". The dated ruling is
 `lean_frontend/docs/2026-09-16_charter-allocator-soundness-address-bound.md:28`
-`[USER 2026-09-16]: "cerberus-sl is our main upstream customer at the moment. I retired refined-cerberus (it got too messy)."`
+`[USER 2026-09-16]` (cerberus-sl named the main upstream customer; refined-cerberus retired as too messy).
 Cite that date.
 
 ### F7 — N — `lem-pin` convention changed silently from 7 to 8 characters
@@ -819,12 +821,12 @@ Lean reference is refused at generation") would fit without shifting lines.
 
 Untracking record: append-only "Closure addendum — provenance
 (2026-09-24)", tagged `[AGENT]`, quoting `[USER 2026-09-06]` — the excerpt
-(308 bytes, ending "…runs can be reconstructed.") is a byte-exact substring
+(308 bytes, closing on the runs-must-be-reconstructible condition) is a byte-exact substring
 of `2026-09-05_master-plan.md:107` (checked by script); "the archives had
 already been pushed … already-pushed mainline and its history have not been
-rewritten" present. **F2 CLOSED.** `SUPPORTED.md:44-47`: "retired on
-2026-09-16. Source: [USER 2026-09-16] "cerberus-sl is our main upstream
-customer at the moment. I retired refined-cerberus (it got too messy)."" —
+rewritten" present. **F2 CLOSED.** `SUPPORTED.md:44-47`: retired on
+2026-09-16, sourced to the [USER 2026-09-16] ruling (cerberus-sl the main
+upstream customer; refined-cerberus retired as too messy) —
 byte-exact substring of the 2026-09-16 charter record. **F6 CLOSED.**
 Other `SUPPORTED.md` changes: header now "Checked 2026-09-24 against
 Cerberus `603c9b69b…` and Lem `6b20bfd0…`" + closure-record link — true

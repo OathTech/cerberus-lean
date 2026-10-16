@@ -2,7 +2,8 @@
 
 **What this is.** The container-level `ROADMAP.md` (drafted 2026-08-18
 "with Mike"; its own header said "move into a repo if it should be
-versioned"), archived verbatim at the CLAUDE.md-hygiene slice — the
+versioned"), archived at the CLAUDE.md-hygiene slice (as it stood, with
+the operator's chat wording paraphrased 2026-10-16) — the
 container keeps no notes/chronicles. It is the arc index and original
 objective list for the Cerberus→Lean effort; the arc-by-arc history it
 indexes lives in the dated records in this directory and on the park
@@ -224,15 +225,14 @@ Consequences threaded through the phases:
   (specs-are-programs doctrine); A-road polish registered for later.
   Records: docs/2026-08-22_arc13-results.md +
   docs/2026-08-22_arc14-results.md.**
-- **[USER 2026-08-22] NORTH STAR (verbatim): "our purpose in all this
-  work is to build a verification tool we can use to verify
-  substantial parts of the Linux stack. We're primarily interested
-  in containment and safety and large portions of Linux are written
-  in C. This pushes us towards a very 'boring' spec style, because
-  we simply can't read specs at scale and understand them if they
-  are fancy, and it push us towards the most aggressive proof
-  automation that has ever been implemented in a theorem prover. We
-  want to verify vast and unprecedented things."** Design pressure
+- **[USER 2026-08-22] NORTH STAR: the purpose of the work is a
+  verification tool able to verify substantial parts of the Linux
+  stack, with containment and safety as the primary interest; since
+  much of Linux is C, this pushes towards a deliberately boring spec
+  style (fancy specs cannot be read and understood at scale) and
+  towards the most aggressive proof automation ever built in a
+  theorem prover, the aim being to verify vast and unprecedented
+  things.** Design pressure
   this exerts: spec readability over expressiveness (statement-level
   boring; Iris in the back), automation economics over one-off proof
   effort (the workbench bet), containment/safety properties as the

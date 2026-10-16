@@ -14,7 +14,7 @@
 `docs/upstream-tray/INDEX.md`, `scripts/LADDER.md`, NEW
 `docs/2026-09-25_public-readiness-followup.md`), so `4e875defb` is the
 implementation head the records cite. Context: the MUST heads LANDED
-([USER 2026-09-25] "Go ahead with merge as planned"); mainline
+([USER 2026-09-25] gave the go-ahead for the merge as planned); mainline
 `mdd/cerberus-lean` = `27c7ff717` = `c13a105` + `3dd6d1f71` (landing note,
 +27 lines to `docs/2026-09-24_public-readiness-closure.md`) + `d048e2651`/`27c7ff717`
 (orchestrator note, docs-only). Claims under test: the remediator's
@@ -289,9 +289,9 @@ inputs, "only entries labelled Filed have recorded submission evidence".
 the right commit is `4e875defb` (implementation head; `57ed81ca7` docs-only).
 
 **`TODO.md`:** header reconciled at `4e875defb`/`67ec5de`; the master plan
-labelled historical; `[USER 2026-09-24] "FYI, I have concluded the
-concurrency branch prototype has failed, and I'm working on a remediation.
-But that dependency should be considered dead for now."` quoted (operator
+labelled historical; the `[USER 2026-09-24]` ruling that the concurrency
+branch prototype has failed, with a remediation in progress and the
+dependency to be treated as dead for now, is cited (operator
 chat; consistent with the orchestrator's brief); "Delivered program data:
 run digest and enum map" section (D-S/E-A delivered; cerberus-sl adoption
 instructions retained); the `sorry` target_rep items → CLOSED (two entries

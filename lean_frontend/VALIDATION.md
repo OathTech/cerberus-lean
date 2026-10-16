@@ -42,23 +42,20 @@ for sequence/set projections and the printer's observational limits.
 
 ## 0. The aims and the rule
 
-The four aims, in priority order — [USER 2026-09-03], verbatim:
+The four aims, in priority order — [USER 2026-09-03]: (1) match
+cerberus-ocaml exactly wherever there is no STRONG evidence that it is
+incorrect with respect to ISO C; (2) where cerberus-ocaml appears clearly
+incorrect, do the correct thing and log it cleanly for an upstream fix;
+(3) design so that consumers (e.g. refined-cerberus) get the most useful
+version of the semantics; (4) within the remaining design latitude, fail
+closed, i.e. default to behaviour that is safe for the correctness of the
+executable semantics and for downstream customers.
 
-> "(1) match cerberus-ocaml exactly in cases where we do not have STRONG
-> evidence it is incorrect wrt ISO-C, (2) if cerberus-ocaml appears
-> clearly incorrect, do the correct thing and log it cleanly for an
-> upstream fix, (3) design so that consumers, eg. refined-cerberus get
-> the most useful version of the semantics, (4) within the remaining
-> design latitude, try to fail-closed i.e default to safe behavior wrt
-> correctness for executable semantics and downstream customers"
-
-**The rule** — [USER 2026-09-03], verbatim (charter
-`docs/2026-09-03_zero-discrepancy-design.md` §1.1):
-
-> "All *execution* discrepancies are definitionally bugs (other
-> machinery intended to support proof is allowed but should have no
-> semantic / execution effect whatsoever and all legacy permission
-> revoked"
+**The rule** — [USER 2026-09-03] (charter
+`docs/2026-09-03_zero-discrepancy-design.md` §1.1): every *execution*
+discrepancy is by definition a bug; machinery that supports proof is
+allowed but must have no semantic or execution effect whatsoever, and
+every legacy permission is revoked.
 
 For cerberus-lean: **Lean ≠ oracle (matched mode) on a program both run
 = bug.** The oracle's own deviations from ISO C are MIRRORED faithfully
@@ -68,10 +65,10 @@ not Lean ≠ ISO. Every previously "declared", "documented-deliberate",
 2026-09-03 into the classes of §1; the label is not a class, and this
 document no longer uses those words for anything but history.
 
-**The referent is the logical semantics** — [USER 2026-09-03], verbatim
-(`docs/2026-09-03_logical-semantics-referent-ruling.md`): "ocaml limits
-that are hardcoded thanks to ocaml-level execution issues are also
-forbidden, the real thing is the logical semantics". What the port
+**The referent is the logical semantics** — [USER 2026-09-03]
+(`docs/2026-09-03_logical-semantics-referent-ruling.md`): OCaml limits
+hardcoded because of OCaml-level execution issues are forbidden too; the
+real referent is the logical semantics. What the port
 mirrors is the lem model, the Core stdlib and ISO C where the model is
 silent — not the OCaml runtime's execution accidents (`Z.Overflow` from
 a host-int conversion, `Division_by_zero` from a missing guard,
@@ -84,12 +81,12 @@ and pinned (immaculate Lean-right/oracle-wrong pair), and it is admitted
 to the register (§2) BY CLASS.
 
 **The 2026-10-03 rule and its synthesis with the referent ruling** —
-[USER 2026-10-03], verbatim: "Generally, our rule is that we don't innovate
-wrt Cerberus-upstream, unless something is very very very obviously a bug.
-We're poorly placed to resolve semantic discrepancies, so we don't. ... we
-should fall back to loudly rejecting (either as unsupported, or matching
-upstream)." The two rulings are reconciled by the synthesis [USER
-2026-10-03] "(1) agree with this", on: where upstream's OWN semantics
+[USER 2026-10-03]: the general rule is no innovation relative to
+Cerberus-upstream unless something is very obviously a bug; the project is
+poorly placed to resolve semantic discrepancies, so it does not, and falls
+back to loudly rejecting (either as unsupported, or matching
+upstream). The two rulings are reconciled by the synthesis [USER
+2026-10-03] agreed to as option (1), on: where upstream's OWN semantics
 defines the answer and only OCaml's machinery crashes on the way (a host
 artifact), Lean computes that answer (the R3 treatment; R7 for the
 alignment reads); where no answer is defined, or Lean's "answer" was
@@ -98,7 +95,7 @@ garbage, Lean makes a loud stop mirroring the crash (`Division_by_zero` in
 `docs/2026-10-03_total-arith-and-bookkeeping-record.md` §7 (the former
 open item O-3 there is resolved).
 
-**UB location is behaviour** — [USER 2026-09-03] "(1) agree": the `loc`
+**UB location is behaviour** — [USER 2026-09-03], option (1) agreed: the `loc`
 field of an `Undefined` line (and the `stderr` bytes) are part of the
 verdict the semantics reports; every lane compares whole `Undefined
 {…}` lines since Z1 (`docs/2026-09-03_zero-discrepancy-Z1-record.md` §4).
@@ -132,9 +129,9 @@ program both engines run, a difference in the outcome class
 UB location, stdout/stderr bytes, or the trace set. **mirror** = make the
 Lean text compute what the OCaml text computes, with a `file:line` cite.
 
-**The reference doctrine** (WP-O, 2026-09-16 — [USER 2026-09-16]: *"right
-now we have the ocaml-cerberus as an oracle, but we're also changing it.
-There's some danger there!"*; record
+**The reference doctrine** (WP-O, 2026-09-16 — [USER 2026-09-16] flagged the
+danger that the OCaml Cerberus serves as the oracle while also being
+changed; record
 `docs/2026-09-16_pristine-oracle-instrument-record.md`). Pristine upstream
 `b9aeedcb4` is THE reference. The fork's OCaml is the shared model's
 **mirror twin**: it is built from the same `.lem` the Lean port is generated
@@ -172,13 +169,13 @@ pristine returns an overlapping, misaligned allocation and the fork kills out
 of memory — §3; plus the corresponding two `immaculate/nolibc/tray44-*`
 wrappers, separately registered). This is seven case rows, not seven
 distinct defects; `diagnostic-text` is a
-permitted class with zero rows — [USER 2026-09-17] ("(2) agree"): the lane's
+permitted class with zero rows — [USER 2026-09-17] (option (2) agreed): the lane's
 diagnostic projection normalises source positions inside OCaml backtrace
 frames — and, since the allocator-soundness slice's C1b (2026-09-17; the
-[USER 2026-09-17] ruling quoted in §3), the position in the exception HEADER
+[USER 2026-09-17] ruling recorded in §3), the position in the exception HEADER
 line `File "…", line N, characters A-B: <text>`, path and text compared raw —
 so a both-crash pair whose frames or header differ only there is a
-`matching_failure`, not a row; and [USER 2026-09-17] ("(1) agree"): a
+`matching_failure`, not a row; and [USER 2026-09-17] (option (1) agreed): a
 BOTH-sides timeout at the lane's own bound is the counted, non-failing
 `matching_incomplete` class, never a row (one-sided timeouts and signal kills
 stay fatal). A
@@ -222,31 +219,31 @@ BUG carrying a named mover, not a tolerated limit; loudness (`HANG`,
 row is tolerated ONLY per row with measured completion at a larger bound
 (charter Q5). *Standing members:* §3 lists them with their movers.
 **(b)/fuel** — fuel exhaustion is accepted under (b), [USER 2026-09-03]
-verbatim: "fuel is a reasonable exception because we could always just
-run the semantics with more fuel"; the bound is a PARAMETER (`--fuel N`,
+ruling that fuel is a reasonable exception because the semantics can
+always be re-run with more fuel; the bound is a PARAMETER (`--fuel N`,
 §7), and a FUEL row is never counted as agreement.
 
-**(c) MISSING FEATURES** — [USER 2026-09-03], verbatim: "*missing
-features* are allowed deviations if they are cleanly identified. CerbFS
-is kind of an obscure feature as is concurrency, it's unclear if we'll
-support it". *Test:* the Lean side REFUSES — non-zero exit AND a message
+**(c) MISSING FEATURES** — [USER 2026-09-03]: missing features are
+allowed deviations if they are cleanly identified; CerbFS, like
+concurrency, is an obscure feature whose support is uncertain.
+*Test:* the Lean side REFUSES — non-zero exit AND a message
 that names the missing feature and the boundary (not a symptom: a
 file-not-found error for a flag is loud but not attributed) — where the
 oracle answers. A different answer, or a silent absorption (an errno, a
 default, a zero) is never (c). *Standing members:* §3.
 
-**(d) ISO-CORRECTNESS FIXES — the register (§2).** [USER 2026-09-03],
-verbatim: "I think that a short listed set of fixes is in keeping for
-the purpose of cerberus-lean but the bar for such a fix must be
-extremely high." *Test:* the deviation is an enumerated register entry
+**(d) ISO-CORRECTNESS FIXES — the register (§2).** [USER 2026-09-03]:
+a short, listed set of fixes is in keeping with the purpose of
+cerberus-lean, but the bar for such a fix must be
+extremely high. *Test:* the deviation is an enumerated register entry
 meeting criteria (i)–(vii) (or admitted BY CLASS as a kind-2 artifact,
 §0), individually [USER]-ruled, pinned as a Lean-right/oracle-wrong
 immaculate pair, with the `-- ISO-fix register R<n>` code marker. Nothing
 else may deviate toward ISO.
 
-**(e) NAMED DEVIATIONS — the register (§2b).** [USER 2026-09-28],
-verbatim: "Named deviations are okay in cases we can't easily resolve the
-mismatch." *Test:* the difference is an enumerated register entry that
+**(e) NAMED DEVIATIONS — the register (§2b).** [USER 2026-09-28]:
+named deviations are acceptable where the mismatch cannot easily be
+resolved. *Test:* the difference is an enumerated register entry that
 states the mechanism, why neither mirroring nor a loud refusal is
 practical, the channels it covers, and a mover (or "none: upstream
 artefact"); it is individually [USER]-ruled, pinned by immaculate DIFF
@@ -268,7 +265,7 @@ have no execution content and are fixed as instruments.
 
 Submission status (2026-09-26): the register's upstream reports 10, 11, 13 and 40 were
 communicated privately to the Cerberus maintainers by the operator — [USER 2026-09-26]
-"these have been filed privately in that I have notified the cerberus maintainers" — and
+reported having notified the Cerberus maintainers, which is the private filing — and
 are recorded as **Sent** (transmitted, no public issue URL) in the
 [tray status table](docs/upstream-tray/INDEX.md#submission-status); report 01 is **Filed**
 (#1009); report 19 (the DEFERRED row R4) stays Draft. That private notification is how the
@@ -293,10 +290,10 @@ whatever a comment used to call it.
 |---|---|---|---|---|---|---|---|
 | **R1** | `'\?'` / `"\?"` make `decode_character_constant` FAILWITH (decode.ml has no `\?` arm; `translation.ml:3032` for the string-literal form): uncaught exception, exit 125 | C11 §6.4.4.4#1 (`\?` is a simple escape sequence), #4 (value = `'?'` = 63) | gcc exit 63; `"a\?b"` → bytes `97 63 98 0`; `ptr_string_literals.c` output = gcc byte-for-byte | 10 (+ string-literal addendum, noodle E2) | `g5-decode-question` ORACLE_CRASH / L=Specified(63); `zd-e2-ptr-string-literals` ORACLE_CRASH / L=Specified(0) + the gcc byte string | `CerbDecode.lean` `| "\\?" => 63` (marker `-- ISO-fix register R1`) | **ADMITTED** [USER 2026-09-03] |
 | **R2** | `%c`-stored char round-trips through `Decode.escaped_char` (= `Char.escaped`, decimal `\ddd`, decode.ml:221-222) then the OCTAL reader (decode.ml:184-197) inside `formatted.lem:769-771` `store_chars_in_array`: 127 is stored as 87. The same round trip corrupts every stored byte ≥ 128 and every control byte (200 → 128, 255 → 173), and CRASHES the oracle (uncaught `decode_character_constant` failure, rc 125) on any byte whose decimal escape contains a 9 (19, 29, …, 190–199, e.g. 0xC3 = 195, the usual UTF-8 lead byte) — scope widened 2026-09-29 from the bug hunt's K-1 (`docs/2026-09-29_discrepancy-bug-hunt.md`); same mechanism, same fix | C11 §7.21.6.1#8 (`%c`: the `int` argument converted to `unsigned char` is written) | gcc 127; widened rows gcc 200 / 199 (measured 2026-09-30, `gcc -O0`) | 11 | `g5-escape-roundtrip` DIFF / L=Specified(127); `zd-r2-highbyte` DIFF / L=Specified(200) (oracle 128); `zd-r2-crash-digit9` ORACLE_CRASH / L=Specified(199) | `CerbDecode.escaped_char` (hex `\xNN`, exact round-trip; marker `-- ISO-fix register R2`) | **ADMITTED** [USER 2026-09-03]; scope widened [USER 2026-09-29] ("Agree on everything, yes on the fixes") |
-| **R3** | `memcmp` with a huge size: uncaught `Z.Overflow` at `impl_mem.ml:2660` `Z.to_int` — a host-int conversion raised BEFORE the semantic path (a KIND-2 OCaml-execution artifact, §1(d)) | (ii′) shape: no ISO answer for a UB program; the semantics' own checked per-byte load yields `UB_CERB002a` | the class ruling stands in for (ii′)(3): the referent is the logical semantics, and a host-language exception is not part of it ([USER 2026-09-03], `docs/2026-09-03_logical-semantics-referent-ruling.md`); tray 13's Z-native remedy on a scratch oracle build remains the check to run when the draft is filed, not a condition of admission | 13 | `s4b-memcmp-hugesize` ORACLE_CRASH / L=UB_CERB002a (stays as recorded) | `CerbMem.lean` memcmp (line-mirror minus the conversion; marker `-- ISO-fix register R3` at the `getBytes` size use, added 2026-10-03) | **ADMITTED BY CLASS (kind 2)** — the referent ruling [USER 2026-09-03] as read by the orchestrator (`docs/2026-09-03_logical-semantics-referent-ruling.md`, consequences list), CONFIRMED by the operator [USER 2026-09-05: "(2) agree"]; supersedes the Z1 entry's "ADMITTED CONDITIONAL on Z4's (ii′)(3)" |
-| **R5** | `float_of_string` (`Impl_mem.str_fval`, `memory/concrete/impl_mem.ml:2523-2524`; the Lem-level `Cerb_floating.of_string`, `util/cerb_floating.ml:8-16`, reaches the same routine) → `caml_float_of_hex` (OCaml 5.4.0 `runtime/floats.c:355` `f = (double)(int64_t) m;`, `:369` `f = ldexp(f, exp);`) rounds TWICE for a subnormal result (the ≤64-bit mantissa → 53 bits → the subnormal's shorter precision): `0x8000000000000BFp-1082` reads as `0x1p-1023`, one quantum below the correctly rounded `0x1.0000000000002p-1023`. Scope: hexadecimal literals with more than 53 significant bits whose value is subnormal and whose 53-bit pre-rounding lands on a tie. The defect is the OCaml RUNTIME's, no Cerberus source involved (also R3's host-artifact class under the referent ruling [USER 2026-09-03]) | C11 §6.4.4.2#3, last sentence: "For hexadecimal floating constants when FLT_RADIX is a power of 2, the result is correctly rounded." (`tools/n1570.json`; the decimal/non-power-of-2 latitude in the same paragraph does not apply) | gcc exit 1 on the pin program (`return 0x8000000000000BFp-1082 == 0x1.0000000000002p-1023;`); Python 3 `float.fromhex` → equal, bits `0x0008000000000001` | `ocaml/01-float-of-hex-double-rounding-subnormal.md` (OCaml-target draft, TRUE BUG) + 40 (Cerberus-facing, INHERITED / minor) | `r5-hex-subnormal-double-rounding` DIFF / `L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}` (oracle `Specified(0)`); flips to MATCH and retires the entry when the OCaml runtime is fixed | `CerbFloat.lean` `roundToBinary64Bits` — the single exact rounding (marker `-- ISO-fix register R5`); the correctly rounded bits are also pinned in `test/Unit/FloatLiteralTest.lean` | **ADMITTED** [USER 2026-09-15] ("Great, agree on your recommendation. Go ahead with the worker" — on the orchestrator's recommendation to admit the row as R5 and keep the correctly rounded conversion; charter `docs/2026-09-11_codex-charter-semantics-audit-repairs.md` §6) |
-| **R6** | lem's `Float.floatMul` has the OCaml target `Cerb_floating.mul = (+.)` — ADDITION (`util/cerb_floating.ml:5`, a copy-paste slip next to the correct `add`/`sub`/`div`). UNREACHABLE: in the kernel constant-dependency closure of the exec entries and of the front-end entries (`tests/failure-probes/FailureReach.lean`, the failure-reach instrument; measured 2026-10-03: `FAILURE_REACH CerbFloat.floatMul false false`, while `CerbMem.opFval` is `true`) `CerbFloat.floatMul` is in neither; its only users are the generated `Defacto_memory.impl_op_fval` (the defacto model, not the executing concrete model, whose `op_fval` multiplies with `*.`, `impl_mem.ml:2529-2537`, mirrored by `CerbMem.opFval`) and float.lem's `NumMult` instance, which no lem code in either cone applies | C11 §6.5.5#4 (the result of `*` is the product) | gcc multiplies (any program) | 01 (Filed: Cerberus #1009, operator 2026-08-19) | none possible — no C program reaches the site, so criterion (iv)'s Lean-right/oracle-wrong pin cannot exist; the reachability claim above is what stands in for it | `CerbFloat.floatMul` (real multiplication; marker `-- ISO-fix register R6`) | **ADMITTED** [USER 2026-10-03] "(2) yes this is the canonical 'obviously a mistake, no semantic ambiguity, just fix'" (proposed by the worker 2026-10-03; record `docs/2026-10-03_total-arith-and-bookkeeping-record.md` §4, §8) |
-| **R7** | `_Alignas(N)` with `N` ≥ 2^62 (a power of two, front-end accepted): the member-alignment reads `Z.to_int al_n` in `Concrete.alignof` (`impl_mem.ml:248` struct, `:267` union) and in `Ocaml_implementation.alignof` (`ocaml_implementation.ml:483`/`:501`, the desugarer's `alignof_ty`) raise `Z.Overflow` (uncaught, exit 125, pristine AND fork) — a host-int conversion, the same KIND-2 class as R3: upstream's own Lem interface is unbounded (`implementation.lem:27` `alignof_ty … -> maybe nat`; `mem.lem:191` `alignof_ival` returns an `integer_value`), and `impl_mem.ml` itself marks this conversion class a known limitation (`:1063` "TODO: the Z.to_int on the sizeof() will raise Overflow on huge structs", likewise `:1143`, `:1216`, `:1558`, `:2810`) | (ii′) shape, as R3: upstream's own semantics defines the answer (the unbounded layout); C11 §6.7.5#3/#4 for the alignment rules it applies | the in-range analogues computed by the oracle itself: `offsetof` past a 2^62-aligned member = 2^62 and `sizeof` of the union = 2^62 on BOTH engines (offsetsof/union sizeof keep the `Z`); the 2^61 control `zd-ta-alignas-2p61-control` MATCH | none drafted yet | `zd-ta-alignas-huge-sizeof` ORACLE_CRASH / L=`Specified(0)` (sizeof = 2^63, `(int)` → 0); `zd-ta-alignas-huge-union-alignof` ORACLE_CRASH / L=`Specified(0)` (alignof = 2^62, `(int)` → 0); `zd-ta-alignas-huge-desugar` ORACLE_CRASH / L=`ERR:{msg: "MerrOther "Concrete.allocator: failed (out of memory)""}` — arithmetic in the record §7 | `CerbMem.alignofCtype_lemFuel` struct/union folds and `CerberusImpl.alignof_ty` (unbounded `Nat`; marker `-- ISO-fix register R7`) | **ADMITTED** — [USER 2026-10-03] on the pre-merge audit's F1 (`docs/2026-10-03_total-arith-pre-merge-audit.md`): "Yes, I agree with this analysis. Go ahead" (classify the alignment-overflow sites R3-style), under the synthesis [USER 2026-10-03] "(1) agree with this" (where upstream's own semantics defines the answer and only OCaml's machinery crashes on the way, Lean computes it). A separate row rather than an extension of R3: R3 is one site with its own tray (13) and pin, and each row retires on its own when upstream fixes its site; R7's sites, pins and ruling are different, only the class is shared |
+| **R3** | `memcmp` with a huge size: uncaught `Z.Overflow` at `impl_mem.ml:2660` `Z.to_int` — a host-int conversion raised BEFORE the semantic path (a KIND-2 OCaml-execution artifact, §1(d)) | (ii′) shape: no ISO answer for a UB program; the semantics' own checked per-byte load yields `UB_CERB002a` | the class ruling stands in for (ii′)(3): the referent is the logical semantics, and a host-language exception is not part of it ([USER 2026-09-03], `docs/2026-09-03_logical-semantics-referent-ruling.md`); tray 13's Z-native remedy on a scratch oracle build remains the check to run when the draft is filed, not a condition of admission | 13 | `s4b-memcmp-hugesize` ORACLE_CRASH / L=UB_CERB002a (stays as recorded) | `CerbMem.lean` memcmp (line-mirror minus the conversion; marker `-- ISO-fix register R3` at the `getBytes` size use, added 2026-10-03) | **ADMITTED BY CLASS (kind 2)** — the referent ruling [USER 2026-09-03] as read by the orchestrator (`docs/2026-09-03_logical-semantics-referent-ruling.md`, consequences list), CONFIRMED by the operator [USER 2026-09-05, option (2) agreed]; supersedes the Z1 entry's "ADMITTED CONDITIONAL on Z4's (ii′)(3)" |
+| **R5** | `float_of_string` (`Impl_mem.str_fval`, `memory/concrete/impl_mem.ml:2523-2524`; the Lem-level `Cerb_floating.of_string`, `util/cerb_floating.ml:8-16`, reaches the same routine) → `caml_float_of_hex` (OCaml 5.4.0 `runtime/floats.c:355` `f = (double)(int64_t) m;`, `:369` `f = ldexp(f, exp);`) rounds TWICE for a subnormal result (the ≤64-bit mantissa → 53 bits → the subnormal's shorter precision): `0x8000000000000BFp-1082` reads as `0x1p-1023`, one quantum below the correctly rounded `0x1.0000000000002p-1023`. Scope: hexadecimal literals with more than 53 significant bits whose value is subnormal and whose 53-bit pre-rounding lands on a tie. The defect is the OCaml RUNTIME's, no Cerberus source involved (also R3's host-artifact class under the referent ruling [USER 2026-09-03]) | C11 §6.4.4.2#3, last sentence: "For hexadecimal floating constants when FLT_RADIX is a power of 2, the result is correctly rounded." (`tools/n1570.json`; the decimal/non-power-of-2 latitude in the same paragraph does not apply) | gcc exit 1 on the pin program (`return 0x8000000000000BFp-1082 == 0x1.0000000000002p-1023;`); Python 3 `float.fromhex` → equal, bits `0x0008000000000001` | `ocaml/01-float-of-hex-double-rounding-subnormal.md` (OCaml-target draft, TRUE BUG) + 40 (Cerberus-facing, INHERITED / minor) | `r5-hex-subnormal-double-rounding` DIFF / `L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}` (oracle `Specified(0)`); flips to MATCH and retires the entry when the OCaml runtime is fixed | `CerbFloat.lean` `roundToBinary64Bits` — the single exact rounding (marker `-- ISO-fix register R5`); the correctly rounded bits are also pinned in `test/Unit/FloatLiteralTest.lean` | **ADMITTED** [USER 2026-09-15] (agreed to the orchestrator's recommendation to admit the row as R5 and keep the correctly rounded conversion, and dispatched the worker; charter `docs/2026-09-11_codex-charter-semantics-audit-repairs.md` §6) |
+| **R6** | lem's `Float.floatMul` has the OCaml target `Cerb_floating.mul = (+.)` — ADDITION (`util/cerb_floating.ml:5`, a copy-paste slip next to the correct `add`/`sub`/`div`). UNREACHABLE: in the kernel constant-dependency closure of the exec entries and of the front-end entries (`tests/failure-probes/FailureReach.lean`, the failure-reach instrument; measured 2026-10-03: `FAILURE_REACH CerbFloat.floatMul false false`, while `CerbMem.opFval` is `true`) `CerbFloat.floatMul` is in neither; its only users are the generated `Defacto_memory.impl_op_fval` (the defacto model, not the executing concrete model, whose `op_fval` multiplies with `*.`, `impl_mem.ml:2529-2537`, mirrored by `CerbMem.opFval`) and float.lem's `NumMult` instance, which no lem code in either cone applies | C11 §6.5.5#4 (the result of `*` is the product) | gcc multiplies (any program) | 01 (Filed: Cerberus #1009, operator 2026-08-19) | none possible — no C program reaches the site, so criterion (iv)'s Lean-right/oracle-wrong pin cannot exist; the reachability claim above is what stands in for it | `CerbFloat.floatMul` (real multiplication; marker `-- ISO-fix register R6`) | **ADMITTED** [USER 2026-10-03] as option (2), the canonical unambiguous-mistake case with no semantic ambiguity, to be simply fixed (proposed by the worker 2026-10-03; record `docs/2026-10-03_total-arith-and-bookkeeping-record.md` §4, §8) |
+| **R7** | `_Alignas(N)` with `N` ≥ 2^62 (a power of two, front-end accepted): the member-alignment reads `Z.to_int al_n` in `Concrete.alignof` (`impl_mem.ml:248` struct, `:267` union) and in `Ocaml_implementation.alignof` (`ocaml_implementation.ml:483`/`:501`, the desugarer's `alignof_ty`) raise `Z.Overflow` (uncaught, exit 125, pristine AND fork) — a host-int conversion, the same KIND-2 class as R3: upstream's own Lem interface is unbounded (`implementation.lem:27` `alignof_ty … -> maybe nat`; `mem.lem:191` `alignof_ival` returns an `integer_value`), and `impl_mem.ml` itself marks this conversion class a known limitation (`:1063` "TODO: the Z.to_int on the sizeof() will raise Overflow on huge structs", likewise `:1143`, `:1216`, `:1558`, `:2810`) | (ii′) shape, as R3: upstream's own semantics defines the answer (the unbounded layout); C11 §6.7.5#3/#4 for the alignment rules it applies | the in-range analogues computed by the oracle itself: `offsetof` past a 2^62-aligned member = 2^62 and `sizeof` of the union = 2^62 on BOTH engines (offsetsof/union sizeof keep the `Z`); the 2^61 control `zd-ta-alignas-2p61-control` MATCH | none drafted yet | `zd-ta-alignas-huge-sizeof` ORACLE_CRASH / L=`Specified(0)` (sizeof = 2^63, `(int)` → 0); `zd-ta-alignas-huge-union-alignof` ORACLE_CRASH / L=`Specified(0)` (alignof = 2^62, `(int)` → 0); `zd-ta-alignas-huge-desugar` ORACLE_CRASH / L=`ERR:{msg: "MerrOther "Concrete.allocator: failed (out of memory)""}` — arithmetic in the record §7 | `CerbMem.alignofCtype_lemFuel` struct/union folds and `CerberusImpl.alignof_ty` (unbounded `Nat`; marker `-- ISO-fix register R7`) | **ADMITTED** — [USER 2026-10-03] on the pre-merge audit's F1 (`docs/2026-10-03_total-arith-pre-merge-audit.md`) agreed with the analysis and approved it (classify the alignment-overflow sites R3-style), under the synthesis [USER 2026-10-03] agreed to as option (1) (where upstream's own semantics defines the answer and only OCaml's machinery crashes on the way, Lean computes it). A separate row rather than an extension of R3: R3 is one site with its own tray (13) and pin, and each row retires on its own when upstream fixes its site; R7's sites, pins and ruling are different, only the class is shared |
 
 R4 (`dynamic_addrs`, tray 19) is DEFERRED [USER 2026-09-03] — mirrored,
 not admitted (charter §2.6). The gate that asserts the register and the
@@ -308,9 +305,9 @@ markers are `CerbDecode.lean` R1/R2, `CerbMem.lean` R3 (memcmp, added
 
 | Id | Difference and mechanism | Why not mirrored or refused | Witnesses | Lean site | Mover | Status |
 |---|---|---|---|---|---|---|
-| **N1** | A function pointer's NUMBER, observed through an integer conversion (`(intptr_t)&f`), the bytes of a stored function pointer, or `%p` of `(void*)fp`. In libc mode the same numbering artefact also changes function IDENTITY on the oracle: its funptrmap is keyed by number alone (`impl_mem.ml:1206`, upstream FIXME `:1044`), and a user function can draw the number of a libc static and replace its entry, so the oracle calls the wrong function (a spurious UB041 in the witness) where Lean, numbering from one supply, is correct (bug hunt BUG-1, 2026-09-29; tray 48; witness `zd-funptr-libc-conflate` DIFF / L=`Specified(1)`). Both engines serve the function symbol's number (`impl_mem.ml:1203-1220`, `:1047`; mirrored in `CerbMem.memValueToBytes`/`reconstructValue`), but that number is a fresh-supply artefact: the oracle's Core parser draws one per `std.core` symbol before the user TU (`core_parser.mly:184,220`), `CoreParser.lean` mints hashes. nolibc: oracle = Lean + 483 on the probes | Mirroring would mean reproducing the oracle's draw count for `std.core` (a numbering dependency the §5 renumbering principle calls a defect). Refusing: every stored function pointer uses these bytes, and `%p` prints through the pure printer with no memory state, so a precise refusal needs a byte-representation change. The integer conversion was refused for a few hours and broke libc's `atexit`, which round-trips a function pointer through `uintptr_t` (`runtime/libc/src/stdlib.c:194-199`); a round trip never observes the number, so refusing the conversion refuses correct programs (`docs/2026-09-28_funptr-int-refusal-record.md`) | `zd-funptr-int-direct` and `zd-funptr-int-voidptr` DIFF / L=`Specified(47)` (oracle 530); `zd-funptr-bytes-deviation` DIFF / L=`Specified(19)` (oracle 502); `zd-funptr-printf-deviation` DIFF / L=`(@empty, 0xa0)` (oracle `0x283`); the round trip is served and MATCHes (`zd-funptr-call-control`, libc_exec `040`/`041` atexit) | `CerbMem.intfromptr` `PVfunction` arm and `CerbMem.memValueToBytes` `PVfunction` arm (marker `-- named-deviation register N1`) | none planned: upstream artefact, tray 46; a representation change could refuse it later | **ADMITTED** [USER 2026-09-28] ("yes, re the decision, agree with (1). Named deviations are okay in cases we can't easily resolve the mismatch."); integer channel added [USER 2026-09-28] ("agree on atexit as you propose"); libc-mode identity consequence added [USER 2026-09-29] ("Agree on everything, yes on the fixes") |
-| **N2** | A NaN's sign and payload bits in memory. Lean stores a float as `Float.toBits`, which canonicalizes every NaN to `0x7ff8000000000000` (measured; the disassembly of `lean_float_to_bits` in Lean 4.32.2 is `ucomisd; movq; movabs $0x7ff8000000000000; cmovnp`); the OCaml stores `Int64.bits_of_float` (`impl_mem.ml:1190`), which keeps them. Observed through the bytes of a stored NaN, union punning, `memcpy` of a double into an integer, and libc code that reads a double's bytes (e.g. a `signbit`) | Mirroring: Lean has no portable access to a NaN's bits (`Float.toBits`, `toString` and `toUInt64` all lose them). Refusing: every C variable lives in memory in this model, so refusing to store a NaN would refuse every program that merely computes one (e.g. to test `isnan`); the stored bytes carry no record that they came from a NaN, so no read-side refusal is precise. Printing a NaN with `%f` IS refused (it is precise; `CerbFloat.formatFixed`) | `zd-nan-bytes-deviation` DIFF / L=`Specified(127)` (oracle 255, gcc 255) | `CerbMem.memValueToBytes` `MVfloating` arm, both forms (marker `-- named-deviation register N2`) | a bit-level float representation (C floats as bit patterns with IEEE arithmetic in Lean, following x86 NaN rules; queued arc, TODO.md, [USER 2026-09-29] "Yes, let's queue as you propose"); a native float-bits seam was rejected (a new kernel-opaque boundary, host-CPU-dependent); upstream note `lean4/03` | **ADMITTED** [USER 2026-09-29] ("agree on all 3", on the orchestrator's recommendation to register the pre-merge audit's F2 as N2) |
-| **N3** | Float constants in the libc Lean loads. Lean loads libc from the pinned text dump `tests/libc/libc.core`, which the oracle's Core printer writes with `%.12g` (`pp_core.ml:279-282`); the oracle runs the compiled `libc.co`, whose doubles are exact. The one lossy literal is line 60849, `1.84467440737e+19` for `0x1p64` = 2^64 (`runtime/libc/src/internal.c:303`, decfloat), parsed back 9 551 872 below 2^64, so Lean's `strtod` sets `ERANGE` near `DBL_MAX` where the oracle does not. ISO C11 §6.4.4.2#3 requires `0x1p64` to be exactly 2^64: the oracle is right, Lean is wrong | Fixing it within the dump needs an exact printer; an opt-in printing mode used only for the dump was rejected ([USER 2026-09-30]: "we should not fix deviations with special 'magic mode' paths that work exclusively in one situation"); the principled fixes (a round-tripping Core printer everywhere, or building libc from its C sources, which also fixes Z1-A1's missing libc locations) are queued work. No precise refusal exists | the inventory check `scripts/check_libc_float_literals.py` (row 1): every float literal of the dump = the reviewed register `scripts/libc_float_literals.txt` (24 literals, 1 LOSSY-N3), as multisets, both directions; a 12-significant-digit literal may not be registered exact; 8 plants | `CoreParser.lean` float-literal note (marker `NAMED DEVIATION N3`) | a round-tripping Core printer, or libc built from its C sources (TODO.md) | **ADMITTED** [USER 2026-09-30] ("Right, I think (3) is the right answer for now, and (1) or (2) might be work for later.") |
+| **N1** | A function pointer's NUMBER, observed through an integer conversion (`(intptr_t)&f`), the bytes of a stored function pointer, or `%p` of `(void*)fp`. In libc mode the same numbering artefact also changes function IDENTITY on the oracle: its funptrmap is keyed by number alone (`impl_mem.ml:1206`, upstream FIXME `:1044`), and a user function can draw the number of a libc static and replace its entry, so the oracle calls the wrong function (a spurious UB041 in the witness) where Lean, numbering from one supply, is correct (bug hunt BUG-1, 2026-09-29; tray 48; witness `zd-funptr-libc-conflate` DIFF / L=`Specified(1)`). Both engines serve the function symbol's number (`impl_mem.ml:1203-1220`, `:1047`; mirrored in `CerbMem.memValueToBytes`/`reconstructValue`), but that number is a fresh-supply artefact: the oracle's Core parser draws one per `std.core` symbol before the user TU (`core_parser.mly:184,220`), `CoreParser.lean` mints hashes. nolibc: oracle = Lean + 483 on the probes | Mirroring would mean reproducing the oracle's draw count for `std.core` (a numbering dependency the §5 renumbering principle calls a defect). Refusing: every stored function pointer uses these bytes, and `%p` prints through the pure printer with no memory state, so a precise refusal needs a byte-representation change. The integer conversion was refused for a few hours and broke libc's `atexit`, which round-trips a function pointer through `uintptr_t` (`runtime/libc/src/stdlib.c:194-199`); a round trip never observes the number, so refusing the conversion refuses correct programs (`docs/2026-09-28_funptr-int-refusal-record.md`) | `zd-funptr-int-direct` and `zd-funptr-int-voidptr` DIFF / L=`Specified(47)` (oracle 530); `zd-funptr-bytes-deviation` DIFF / L=`Specified(19)` (oracle 502); `zd-funptr-printf-deviation` DIFF / L=`(@empty, 0xa0)` (oracle `0x283`); the round trip is served and MATCHes (`zd-funptr-call-control`, libc_exec `040`/`041` atexit) | `CerbMem.intfromptr` `PVfunction` arm and `CerbMem.memValueToBytes` `PVfunction` arm (marker `-- named-deviation register N1`) | none planned: upstream artefact, tray 46; a representation change could refuse it later | **ADMITTED** [USER 2026-09-28] (agreed with option (1); named deviations are acceptable where the mismatch cannot easily be resolved); integer channel added [USER 2026-09-28] (agreed to the proposed `atexit` handling); libc-mode identity consequence added [USER 2026-09-29] (agreed on every point and approved the fixes) |
+| **N2** | A NaN's sign and payload bits in memory. Lean stores a float as `Float.toBits`, which canonicalizes every NaN to `0x7ff8000000000000` (measured; the disassembly of `lean_float_to_bits` in Lean 4.32.2 is `ucomisd; movq; movabs $0x7ff8000000000000; cmovnp`); the OCaml stores `Int64.bits_of_float` (`impl_mem.ml:1190`), which keeps them. Observed through the bytes of a stored NaN, union punning, `memcpy` of a double into an integer, and libc code that reads a double's bytes (e.g. a `signbit`) | Mirroring: Lean has no portable access to a NaN's bits (`Float.toBits`, `toString` and `toUInt64` all lose them). Refusing: every C variable lives in memory in this model, so refusing to store a NaN would refuse every program that merely computes one (e.g. to test `isnan`); the stored bytes carry no record that they came from a NaN, so no read-side refusal is precise. Printing a NaN with `%f` IS refused (it is precise; `CerbFloat.formatFixed`) | `zd-nan-bytes-deviation` DIFF / L=`Specified(127)` (oracle 255, gcc 255) | `CerbMem.memValueToBytes` `MVfloating` arm, both forms (marker `-- named-deviation register N2`) | a bit-level float representation (C floats as bit patterns with IEEE arithmetic in Lean, following x86 NaN rules; queued arc, TODO.md, [USER 2026-09-29] agreed to queue it as proposed); a native float-bits seam was rejected (a new kernel-opaque boundary, host-CPU-dependent); upstream note `lean4/03` | **ADMITTED** [USER 2026-09-29] (agreed on all three points, on the orchestrator's recommendation to register the pre-merge audit's F2 as N2) |
+| **N3** | Float constants in the libc Lean loads. Lean loads libc from the pinned text dump `tests/libc/libc.core`, which the oracle's Core printer writes with `%.12g` (`pp_core.ml:279-282`); the oracle runs the compiled `libc.co`, whose doubles are exact. The one lossy literal is line 60849, `1.84467440737e+19` for `0x1p64` = 2^64 (`runtime/libc/src/internal.c:303`, decfloat), parsed back 9 551 872 below 2^64, so Lean's `strtod` sets `ERANGE` near `DBL_MAX` where the oracle does not. ISO C11 §6.4.4.2#3 requires `0x1p64` to be exactly 2^64: the oracle is right, Lean is wrong | Fixing it within the dump needs an exact printer; an opt-in printing mode used only for the dump was rejected ([USER 2026-09-30]: deviations are not fixed with special-case paths that work only in one situation); the principled fixes (a round-tripping Core printer everywhere, or building libc from its C sources, which also fixes Z1-A1's missing libc locations) are queued work. No precise refusal exists | the inventory check `scripts/check_libc_float_literals.py` (row 1): every float literal of the dump = the reviewed register `scripts/libc_float_literals.txt` (24 literals, 1 LOSSY-N3), as multisets, both directions; a 12-significant-digit literal may not be registered exact; 8 plants | `CoreParser.lean` float-literal note (marker `NAMED DEVIATION N3`) | a round-tripping Core printer, or libc built from its C sources (TODO.md) | **ADMITTED** [USER 2026-09-30] (chose option (3) for now, leaving (1) or (2) as possible later work) |
 
 ## 3. Every known Lean-vs-oracle difference, by class
 
@@ -374,9 +371,9 @@ Nothing else.
   (design §C.5) — an override in one list (**R-PNVI-11**: the oracle prints "would override
   a previous switch --> ignoring." and runs on) and an unknown name (**R-PNVI-12**: "failed
   to parse switch … --> ignoring."); witnesses `scripts/check_cli_refusals.sh` (row 1).
-  **Refusals inside the PNVI-ae-udi semantics** — class (c), [USER 2026-10-05] "Re PNVI - agree on
-  your recs except for mirroring crashes / obviously wrong behavior. These should be refusals
-  surely?": the upstream arms on the PNVI path that crash, print debug output or call
+  **Refusals inside the PNVI-ae-udi semantics** — class (c), [USER 2026-10-05] accepted the
+  PNVI recommendations except for mirroring crashes and obviously wrong behaviour, which are
+  to be refusals: the upstream arms on the PNVI path that crash, print debug output or call
   themselves wrong are `CerbMem.pnviRefusal` refusals (exit 134 under `LEAN_ABORT_ON_PANIC`,
   message `PNVI_ae_udi refusal (unsupported upstream arm): R-PNVI-nn: …`, design §G, §H):
   R-PNVI-01 (`combine_prov`'s `Prov_symbolic` arm, impl_mem.ml:390-394) and -01b
@@ -427,7 +424,7 @@ Nothing else.
   2026-09-24 (ruling in TODO.md). It and `feature/concurrency` are parked
   records, with no announcement dependency. The refusal is the contract.
 - *CerbFS*: REFUSED IN FULL since 2026-09-28 (contract D2, [USER
-  2026-09-28] "refuse FS for now, this seems safer";
+  2026-09-28] chose refusal as the safer option;
   `docs/2026-09-28_cerbfs-refuse-all-record.md`): every one of the 25
   `fs_*` operations, including `read` on any fd (so C-level stdin),
   fails loudly (`PANIC … CerbFS refusal (fail-closed fs-model boundary):
@@ -437,8 +434,8 @@ Nothing else.
   on path spellings (the external pathleak report,
   `docs/2026-09-28_cerbfs-path-hotfix-record.md`). Mover: a
   SibylFS-faithful filesystem model (TODO.md).
-- *Inline assembly* (contract D9, 2026-10-05; [USER 2026-10-05] "Re inline
-  asm, this should be a loud refusal"; `docs/2026-10-05_asm-refusal-record.md`):
+- *Inline assembly* (contract D9, 2026-10-05; [USER 2026-10-05] ruled that
+  inline asm is a loud refusal; `docs/2026-10-05_asm-refusal-record.md`):
   REFUSED in BOTH engines — a refusal, not an ISO fix (it invents no asm
   semantics; §2 is untouched). Upstream erases inline assembly: an asm
   statement desugars to a skip (`cabs_to_ail.lem`, "TODO: erasing inline
@@ -533,10 +530,10 @@ The `aligned_alloc(0, n)` row **Z2-M-01 is mirrored** (2026-10-03): upstream's
 so `std.core:385`'s `size rem_t align` raises `Division_by_zero` (uncaught,
 exit 125); Lean's `CerbMem.integerRem_t`/`integerRem_f`/`integerDiv_t` now
 fail-stop on a zero divisor in the same place (both-crash `MATCH | L=CRASH`,
-`zd-z2m01-*`), under [USER 2026-10-03] "we don't innovate wrt
-Cerberus-upstream, unless something is very very very obviously a bug ...
-we should fall back to loudly rejecting (either as unsupported, or matching
-upstream)". The Z2 record's §10.1 recommendation (a Core-level UB045 or a
+`zd-z2m01-*`), under the [USER 2026-10-03] rule (no innovation relative to
+Cerberus-upstream unless something is very obviously a bug; otherwise
+fall back to loudly rejecting, either as unsupported or matching
+upstream). The Z2 record's §10.1 recommendation (a Core-level UB045 or a
 `std.core:385` guard) is withdrawn as invention under that rule
 ([record](docs/2026-10-03_total-arith-and-bookkeeping-record.md)).
 The same record's sweep (§2) found two more crash sites, both reachable
@@ -628,18 +625,18 @@ by a cited re-record.
   `Specified(7)`, and the latter two had rows here (pristine rejected them at the
   exact-tag guard). The consult was REVERTED on 2026-10-03 (branch
   `fix/mirror-upstream-d38-alignas`, record
-  `docs/2026-10-03_mirror-upstream-d38-alignas-record.md`), under [USER 2026-10-03] "Generally, our rule
-  is that we don't innovate wrt Cerberus-upstream, unless something is very
-  very very obviously a bug. We're poorly placed to resolve semantic
-  discrepancies, so we don't. ... fall back to loudly rejecting (either as
-  unsupported, or matching upstream)." cerberus-sl confirmed it does not rely on
+  `docs/2026-10-03_mirror-upstream-d38-alignas-record.md`), under the [USER 2026-10-03] rule
+  (no innovation relative to Cerberus-upstream unless something is very
+  obviously a bug; the project is poorly placed to resolve semantic
+  discrepancies, so it does not, and falls back to loudly rejecting, either as
+  unsupported or matching upstream). cerberus-sl confirmed it does not rely on
   cross-TU `PEmemberof`. Those two cases now agree with pristine, so their rows
   are gone. Draft 39's one-token array-bound fix stays.
 - **`shared-model-fix` — the allocator's EXHAUSTED regime (2 rows, added 2026-09-17
   by C1c; citations upstream-tray draft 44 +
   `docs/2026-09-16_allocator-soundness-address-bound-record.md`; TRUE BUG / model
-  soundness; [USER 2026-09-16] *"unambiguously wrong … allowed to fix ahead of
-  upstream"*):** `minimal/112-allocator-exhausted-single-request` and
+  soundness; [USER 2026-09-16] ruled it unambiguously wrong and allowed a fix ahead
+  of upstream):** `minimal/112-allocator-exhausted-single-request` and
   `minimal/113-allocator-exhausted-single-request-overlap`. Pristine `b9aeedcb4`
   `memory/concrete/impl_mem.ml:1254` (VIP twin `:209`) aligns the new base with
   the truncating-division idiom `z - (if q < 0 then -m else m)` over the
@@ -682,10 +679,10 @@ by a cited re-record.
   `docs/2026-10-03_mirror-upstream-d38-alignas-record.md` §2; citation upstream-tray
   draft 47):** `desugar_alignment_specifier` (`cabs_to_ail.lem`) applies C11
   §6.5.3.4#1 (via §6.7.5#5) to `_Alignas(type-name)`, reusing
-  `AlignofInvalidApplication`. The rulings are [USER 2026-09-27] F-A2 "yes,
-  'constraint violation' - and this goes in the tray if it isn't there already"
-  and [USER 2026-10-03], agreeing to "keep only the completeness check and mirror
-  upstream on alignment compatibility".
+  `AlignofInvalidApplication`. The rulings are [USER 2026-09-27] F-A2 (a
+  constraint violation, and it goes in the tray if not there already)
+  and [USER 2026-10-03], agreeing to keep only the completeness check and mirror
+  upstream on alignment compatibility.
   - `coverage/alignas/alignas-001-self-char.c`: pristine does not terminate
     (rc 124). It is admitted only through this cited row.
   - `alignas-002-fwd-char.c` and `-003-self-int.c`: pristine raises an uncaught
@@ -719,14 +716,14 @@ by a cited re-record.
   disposition: none planned — the refusal is the fork's contract, not a fix
   for upstream to take [AGENT].
 - **`diagnostic-text` (0 rows; a permitted class).** RESOLVED [USER
-  2026-09-17] ("(2) agree", on the orchestrator's question — record §7): the
+  2026-09-17] (option (2) agreed, on the orchestrator's question — record §7): the
   lane's diagnostic projection — the one `matching_failure` and the
   register's stderr signature already used (the `Time spent` trailer removed)
   — additionally normalises `line N[-M], characters A-B` positions inside
   OCaml backtrace frames (`Raised at` / `Raised by primitive operation at` /
   `Called from` / `Re-raised at … in file "…"`) in BOTH engines' stderr, and —
-  allocator-soundness C1b, 2026-09-17; [USER 2026-09-17], verbatim: *"yes,
-  agreed regarding landing C1 as-is and then working on C2/C3 separately"*,
+  allocator-soundness C1b, 2026-09-17; [USER 2026-09-17] agreed to land C1
+  as-is and work on C2/C3 separately,
   given on the orchestrator's proposal that this projection be extended to the
   header (the proposal's text is quoted verbatim in record §S1,
   `docs/2026-09-16_allocator-soundness-address-bound-record.md`) — the same
@@ -751,7 +748,7 @@ by a cited re-record.
   (plant-tested: an exception-text, frame-function or non-frame-position
   difference stays `difference`).
 - **`matching_incomplete` — a REPORTED class, never a register row.** RESOLVED
-  [USER 2026-09-17] ("(1) agree"): when BOTH engines exceed the owning lane's
+  [USER 2026-09-17] (option (1) agreed): when BOTH engines exceed the owning lane's
   own bound (status 124 on both sides) the case is counted
   `matching_incomplete` — never agreement, not a failure; any ONE-sided
   timeout (either side) and any 137 stay `incomplete` and fatal exactly as
@@ -768,12 +765,12 @@ by a cited re-record.
 
 ## 3b. Deviations the consumer relies on (cerberus-sl)
 
-The rule is [USER 2026-10-03]: "Generally, our rule is that we don't innovate wrt
-Cerberus-upstream, unless something is very very very obviously a bug. ... fall back to loudly
-rejecting (either as unsupported, or matching upstream)." That rule can prompt reverting
+The rule is [USER 2026-10-03]: no innovation relative to Cerberus-upstream unless something is
+very obviously a bug; otherwise fall back to loudly rejecting (either as unsupported, or
+matching upstream). That rule can prompt reverting
 deviations taken earlier. Some of those deviations are load-bearing for the consumer, cerberus-sl,
-which pins this repository by commit. The operator's framing is: "we shouldn't revert work that
-allows the iris reasoning to work properly" ([USER 2026-10-03]).
+which pins this repository by commit. The operator's framing is that work enabling the Iris
+reasoning is not to be reverted ([USER 2026-10-03]).
 
 cerberus-sl stated (orchestrator relay, 2026-10-03) that it relies on the five behaviours below.
 The names in the right-hand column are cerberus-sl's own (`CerberusIris/CerberusIris/…`).
@@ -982,7 +979,7 @@ theorem over the shipped pipeline `@drive ⟨fuel⟩` at the ambient
 | `check_theorem_axioms.sh` | **zero `axiom` declarations anywhere** — hand-written census, generated-tree census, and the recursive census of the consumed LemLib package copy (the effect-retirement end state: `runEffectful` is deleted, `declare {lean} effectful` is refused by lem itself); `runEffectful` token-banned (comment-stripped) across all three trees; the `@[implemented_by]`/`unsafe`/`unsafeBaseIO` seam population pinned to `scripts/unsafebaseio_allowlist.txt`'s PIN rows exactly, both directions (a new seam fails naming itself — this bans an axiom-free reintroduction of the effect projection); the boundary-OPAQUE POPULATION pinned exactly-once, both directions (9 registered rows since `bounded_integer` left on 2026-09-28 (10 after enum-state retirement, derived 2026-09-24 at `e9f9d049f`) — the frontend digest boundary and the pure atoms `CerbFuel.fuelExhaustedLoc`/`CerbFail.modelFailStopLoc`; history: 15 from 2026-09-05 when the 11 `CerbGlobal` config/switch opaques became plain `def`s (`docs/2026-09-05_cerbglobal-defs-record.md`), 16 with C-TF1's `modelFailStopLoc`, 12 when the CerbUtils timing/log trio and `CerbMem.beqMemValueSafe` became plain defs (`docs/2026-09-18_seam-hygiene-record.md` §5.4); an unregistered `opaque` fails naming itself); zero `unsafeCast`; exemplar + `driver2` cones free of `sorryAx`/`ofReduce*`/DAEMON; the FUEL arc's contract lemmas (the nine GENERATED `*_lemFuel_zero`, the `CerbND` runner leaves, the fuel-parametricity `rfl`s `@X ⟨n⟩ = X_lemFuel n`) and the exemplar theorems at the exact allowlist; the full exec-entry set (`driver2`, `drive`, `initial_driver_state`, `desugar`, `annotate_program`, `translate`, `link`, `convert_file`, `CerbCall.driveCall`) at the **exact** axiom allowlist `[propext, Classical.choice, Quot.sound]`; non-kernel decision procedures (`native_decide`/`bv_decide`) grep-banned. Source-scan legs are the primary evidence; the `#print axioms` probes are end-to-end spot checks (they underreport across `partial def` boundaries) |
 | `check_sorry_token.sh` | zero `sorry` TOKENS in source text — comment- and string-stripped — over `generated/`, the hand-written seams + tests, and the consumed LemLib copy (the axiom gate probes `sorryAx` in cones only; the tree's last `sorry`, cmm_op.lem's target_rep, was closed by the FUEL arc). Empty scan set = FAIL |
 | `test_fuel_classifier.sh` | the one FUEL classifier (`scripts/fuel_classify.sh classify_fuel_outcome`) reads its fixture captures correctly: both fuel forms positive; a genuine `Error` kill, a PANIC without the marker, and program stdout carrying the words all negative (§7) |
-| `check_no_fuel_numerals.sh` | **a plant-tested SPEEDBUMP against fuel numerals in the Lean text a consumer reasons against** (fuel-parameter arc, 2026-09-04; [USER 2026-09-03] "any and all magic values that are hardcoded and can't be quantified over are definitionally bugs"): seams, `generated/`, `test/`, `speclab/`, `tests/**/*.lean` scanned comment-stripped for the enumerated idiomatic shapes F1–F6 (the deleted `lemDefaultFuel`/`driverFuel`/`ndDefaultFuel`; a global `instance : LemFuel`; a worker at a literal counter — bare, parenthesised, hex, or after a carried instance `f_lemFuel ⟨i⟩ 5`; `LemFuel := ⟨…⟩`/`LemFuel := { fuel := … }`/`LemFuel.mk N`/`LemFuel.mk (…)`; a single-component anonymous constructor led by a numeral `⟨N⟩`/`⟨(N : Nat)⟩`/`⟨0x…⟩`/`⟨10^8⟩`; a fuel-named constant defined as a numeral) — the ONE allowed site is Main.lean's `defaultFuel` (+ the `letI` that consumes it), allowlisted by exact line; vacuity-guarded; its `--selftest` plants 29 shapes red (F1–F6, A1–A3 and the switch-set rule W1, next row) and the unplanted set green on every `test_unit.sh` run. What it does NOT guarantee (pre-merge audit M2): indirection through a non-fuel-named constant (`def budget := 100000000; @f ⟨budget⟩`) and arithmetic spellings not led by a numeral are not regex-closable — the selftest records that gap as a KNOWN GAP line; they are review discipline. The BACKSTOP is the typing, not the grep: every fuel'd function demands a `[LemFuel]` instance, no instance exists in library/generated/seam code, and a measured wrapper carries its sufficiency obligation — a numeral can only enter where a human writes an instance |
+| `check_no_fuel_numerals.sh` | **a plant-tested SPEEDBUMP against fuel numerals in the Lean text a consumer reasons against** (fuel-parameter arc, 2026-09-04; [USER 2026-09-03]: any hardcoded magic value that cannot be quantified over is by definition a bug): seams, `generated/`, `test/`, `speclab/`, `tests/**/*.lean` scanned comment-stripped for the enumerated idiomatic shapes F1–F6 (the deleted `lemDefaultFuel`/`driverFuel`/`ndDefaultFuel`; a global `instance : LemFuel`; a worker at a literal counter — bare, parenthesised, hex, or after a carried instance `f_lemFuel ⟨i⟩ 5`; `LemFuel := ⟨…⟩`/`LemFuel := { fuel := … }`/`LemFuel.mk N`/`LemFuel.mk (…)`; a single-component anonymous constructor led by a numeral `⟨N⟩`/`⟨(N : Nat)⟩`/`⟨0x…⟩`/`⟨10^8⟩`; a fuel-named constant defined as a numeral) — the ONE allowed site is Main.lean's `defaultFuel` (+ the `letI` that consumes it), allowlisted by exact line; vacuity-guarded; its `--selftest` plants 29 shapes red (F1–F6, A1–A3 and the switch-set rule W1, next row) and the unplanted set green on every `test_unit.sh` run. What it does NOT guarantee (pre-merge audit M2): indirection through a non-fuel-named constant (`def budget := 100000000; @f ⟨budget⟩`) and arithmetic spellings not led by a numeral are not regex-closable — the selftest records that gap as a KNOWN GAP line; they are review discipline. The BACKSTOP is the typing, not the grep: every fuel'd function demands a `[LemFuel]` instance, no instance exists in library/generated/seam code, and a measured wrapper carries its sufficiency obligation — a numeral can only enter where a human writes an instance |
 | `check_no_fuel_numerals.sh` rule W1 | **a SPEEDBUMP against accidental default `CerbGlobal.Switches` instances** (PNVI arc S1, 2026-10-05; proportionality revision 2026-10-07, record `docs/2026-10-05_pnvi-s1-switch-parameter-record.md` §14): the switch set is the instance-implicit `[CerbGlobal.Switches]`; over the same comment-stripped roots as the fuel rules (seams, `generated/`, `test/`, `speclab/`, `tests/**/*.lean`) an `instance` declaration whose same-line header names `Switches` is RED (plain text pattern); Main.lean's `letI` is not an `instance` declaration; vacuity-guarded (`class Switches` must be seen); `--selftest` plants one in a seam, one in `generated/` and one in a unit test, each RED. What it does NOT guarantee: it is NOT adversarially robust — a header split across lines, an alias, an `extends`, an `instance` attribute, an untyped instance or a raw-string desync passes it, by design. The BACKSTOP is that Main.lean's LOCAL instance (`letI`) wins over any global one for every lane, plus review; a consumer's own instance (outside this repository) is the intended use |
 | `check_no_fuel_numerals.sh` rule W2 | **a SPEEDBUMP against production calls of the default-pinned `reconstructValue` wrappers** (PNVI arc S2, 2026-10-07, record `docs/2026-10-07_pnvi-s2-data-shapes-record.md`; design record §B.7 condition (b)): `CerbMem.reconstructValue(_lemFuel)` keep their pre-S2 names and types for the consumer but are pinned at `⟨CerbGlobal.defaultSwitches⟩` (closure fixed, taint dropped; kernel-equal to the pre-S2 text, `test/Unit/ReconstructLegacyTest.lean`); production calls `reconstructValueAbst` with the ambient set. Over the comment-AND-string-stripped seams and `generated/` (the `*_lemMeasureProofs` proof carriers and the theorem-only seam `CerbMemDefaultFacts.lean` excluded — the latter's kernel bridges, PNVI arc S2 review fix F1, NAME the wrappers in their statements), a mention of either old name other than the wrappers' own definition lines (exact-content allowlist, `CerbMem.lean` and its copy) is RED; vacuity-guarded (an allowlisted line must be seen); `--selftest` plants a seam call and a qualified generated-tree call, each RED. What it does NOT guarantee: not adversarially robust — an alias, a call from `test/`/`speclab/`, or a raw-string desync passes it. Not a trust surface: at the default set the two functions agree (kernel), so a stray call moves no lane today; the backstop once a PNVI set is accepted is the PNVI lane (S4) plus review |
 | `gen_fuel_parametricity.py --check` | the generated tree's ambient fuel-wrapper SET equals the set pinned by `TotalityProofTest.lean` Part 1's `∀ n, @f ⟨n⟩ = f_lemFuel n` examples, both directions (a new fuel'd function without a pin is RED; `--emit` regenerates the list) — pre-merge audit M1 |
@@ -1033,11 +1030,11 @@ non-numeral is refused, exit 2), and a theorem quantifies over it
 (`∀ n, @f ⟨n⟩ = f_lemFuel n` by rfl is the parametricity pin for every
 wrapper — `totality-proof-test`, `CerbND.*_wrapper_defeq`; the
 consumer's hypotheses become `∀ [LemFuel], potential e ≤ LemFuel.fuel →
-…`). This is the fuel-parameter arc ([USER 2026-09-03]: fuel "is an
-execution parameter that 'doesn't matter' … a parameter which can be
-chosen as 10^8 or any other value when calling the interpreter"; "Any
-and all magic values that are hardcoded and can't be quantified over
-are definitionally bugs"); the former constants `CerbFuel.driverFuel`
+…`). This is the fuel-parameter arc ([USER 2026-09-03]: fuel is an
+execution parameter whose value does not matter to the semantics, one
+that may be chosen as 10^8 or any other value when calling the interpreter;
+any hardcoded magic value that cannot be quantified over
+is by definition a bug); the former constants `CerbFuel.driverFuel`
 (10^8, the driver family), `CerbND.ndDefaultFuel` and LemLib's
 `lemDefaultFuel` (10^6, everything else) and the per-declaration numeric
 budget form are DELETED (lem-lean
@@ -1126,8 +1123,8 @@ DIFF/FAIL; `test_fuel_plant.sh` runs the real driver at `--fuel 1`
 unreachable inside any gate lane's timeout (15-30 s ⇒ ≤ 7×10^6 fuel per
 invocation); it is exercised only by `measure.sh` (600 s) and unbounded
 single probes. Why a fuel row is an accepted Lean-vs-oracle discrepancy
-at all — [USER 2026-09-03]: "fuel is a reasonable exception because we
-could always just run the semantics with more fuel." That ruling's
+at all — [USER 2026-09-03]: fuel is a reasonable exception because the
+semantics can always be re-run with more fuel. That ruling's
 frame is §0/§1 of this document: every Lean-vs-oracle execution
 discrepancy is a bug; fuel exhaustion is accepted under class (b) with
 the rationale that the bound is a PARAMETER of the port rather than a
@@ -1151,8 +1148,8 @@ depend on how each body consumes exhaustion (lem-lean fuel-parameter record
 Records: `docs/2026-09-02_fuel-arc-design.md`,
 `docs/2026-09-04_fuel-parameter-C1-record.md`.
 **The address-space top is a parameter too** (address-space-bound slice,
-2026-09-17; [USER 2026-09-16] *"the semantics should be quantified over such
-bounds"*; record `docs/2026-09-17_address-space-bound-part-two-record.md`,
+2026-09-17; [USER 2026-09-16] ruled that the semantics be quantified over such
+bounds; record `docs/2026-09-17_address-space-bound-part-two-record.md`,
 design DESIGN.md §4). The concrete allocator's initial cursor — upstream's
 `last_address = 0xFFFFFFFFFFFF` = 281474976710655 — is no longer a literal in
 `memory/concrete/impl_mem.ml`/`memory/vip/impl_mem.ml` or a field default in
@@ -1184,10 +1181,10 @@ validates the digits BEFORE `String.toNat?` (which alone accepts `6_4`), the
 fork's converter is digit-only; `18446744073709551615` (= 2^64 − 1) is the
 last accepted value on both (LADDER A12 plants P12–P14). **Non-default values are
 outside the mirroring promise** (2026-10-03; CONTRACT §2): the parameter is a
-DELIBERATE lift for proof use — [USER 2026-10-03] "we specifically want to lift
-the address-space-top restriction for the sake of treating cerberus as a proof
-artifact. Agree on your recommendations with that framing (we shouldn't revert
-work that allows the iris reasoning to work properly)" — and only its default
+DELIBERATE lift for proof use — [USER 2026-10-03] ruled that the
+address-space-top restriction is lifted specifically so that Cerberus can be
+treated as a proof artifact, accepted the recommendations under that framing,
+and ruled that work enabling the Iris reasoning is not reverted — and only its default
 mirrors upstream (`impl_mem.ml` `last_address= Z.of_int 0xFFFFFFFFFFFF; (* TODO:
 this is a random impl-def choice *)`). The A12 lane's Lean = fork agreement at
 tiny tops is evidence about the fork's own extension, not upstream agreement;
@@ -1344,7 +1341,7 @@ left the list 2026-09-05, see below):
   see `b ()`; at run time `a ()` is forced first, mirroring OCaml's strict
   `let`. A failure or non-termination in the discarded `a` is therefore
   visible at run time and invisible to the logic. Of Cerberus's 268 generated sites,
-  all but one are debug `print_debug_pure`/`warn` calls (no-op twins); the exception is `driver2`'s `_non_blocked_th_sts` (`Driver.lean:433`, `driver.lem:1379`), which runs `step_ctx` (four failure sites of UNKNOWN reach) on every driver iteration. Lean's compiler used to drop that work; it now runs as in OCaml (no lane moved; pre-merge audit F1). Ruling D1 [USER 2026-09-30] "D1: agree" (D1(a): temporary, not
+  all but one are debug `print_debug_pure`/`warn` calls (no-op twins); the exception is `driver2`'s `_non_blocked_th_sts` (`Driver.lean:433`, `driver.lem:1379`), which runs `step_ctx` (four failure sites of UNKNOWN reach) on every driver iteration. Lean's compiler used to drop that work; it now runs as in OCaml (no lane moved; pre-merge audit F1). Ruling D1 [USER 2026-09-30] agreed (D1(a): temporary, not
   permanent; relayed in lem-lean `doc/lean-backend/2026-09-28_linksem-findings.md`
   "Native seams"); named mover: lem-lean TODO item 24, the failure-monad
   translation, which deletes it. (D1(b) removed LemLib's `@[extern]`

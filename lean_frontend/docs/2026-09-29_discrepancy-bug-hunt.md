@@ -2,7 +2,7 @@
 
 Branch `audit/bug-hunt-20260929`, base `f6fc60d4b` (mainline `mdd/cerberus-lean`). Seven hunters ran in parallel: six had
 a set brief (area in §6), plus one free "noodler" with no brief, added at the operator's request ([USER 2026-09-29]
-"we might want an extra 'noodler' with no spicific brief, just go wherever seems interesting"). One consolidator
+asked for one extra free-roaming hunter with no specific brief). One consolidator
 [AGENT] deduplicated the findings, re-ran every one itself, and classified them against `CONTRACT.md` §1 and
 `VALIDATION.md` §1–§3. Nothing was built and no other tracked file was edited. **Choosing fixes is left to the
 operator.** This record lists options only.

@@ -1,7 +1,7 @@
 # Contract D4: the builtin boundary, and two silent fallbacks made loud — record
 
 Date: 2026-09-28. Branch: `arc/contract-enforcement`. Author: the orchestrator [AGENT].
-Decision: [USER 2026-09-28] "Yeah, (1) is fine" (D4 option 1: libc supported by mechanism, the 36 `std.core`
+Decision: [USER 2026-09-28] accepted option (1) (D4 option 1: libc supported by mechanism, the 36 `std.core`
 builtins a named list with one state each). Findings from `docs/2026-09-28_served-surface-audit.md` P3-1 and P3.
 
 ## The builtin table

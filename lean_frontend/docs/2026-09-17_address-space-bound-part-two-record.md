@@ -7,7 +7,7 @@
 REQUEST CHANGES: F1–F4 + two corrections) and the consumer review's DOMAIN requirement are applied in **C4**
 `dc035396af88355515e651859bcd1543c7ff30bc` — §"Audit fixes" (F1 is DONE: the exemplar theorem is `∀ fuel, ∀ top, 8 ≤ top → …`);
 the re-review (`0990c4560`: F1–F4 CLOSED, one P2 R1 + two doc corrections) is applied in **C5** `a31f88107af89cef5791ea4b05c00868be1f7076` —
-§"Re-review fixes" — under the operator's *"Fix all remaining issues, then land this"*. The slice first STOPPED at C2's design step (stop rules S2 +
+§"Re-review fixes" — under the operator's instruction to fix all remaining issues and then land it. The slice first STOPPED at C2's design step (stop rules S2 +
 S6: the chartered route A ripples into gate-compiled and exported sites outside the fence — the interim
 record `5d6d42f5c`, its §C2 ripple table); the orchestrator EXTENDED the fence to exactly the sites that
 table listed ("fence extension granted 2026-09-17", [AGENT orchestrator] within the [USER 2026-09-17]
@@ -21,11 +21,11 @@ This record is the LAST commit and ENDS the slice. Evidence directory:
 Charter: `docs/2026-09-17_charter-address-space-bound-part-two.md`; part one:
 `docs/2026-09-16_allocator-soundness-address-bound-record.md`.
 
-## 0. Rulings (by pointer; verbatim texts in the charters' §0)
+## 0. Rulings (by pointer; texts in the charters' §0)
 
 Part two §0: [USER 2026-09-17] the C1-lands-first / C2-C3-separately agreement (route A, extended
-fence); [USER 2026-09-17] the consumer confirmation ("part 1 is exactly what they need"; part two "modest
-blast radius" — the re-pin note lists signatures and stops); [USER 2026-09-17] the sequence (part two →
+fence); [USER 2026-09-17] the consumer confirmation (part 1 is exactly what they need; part two has a modest
+blast radius — the re-pin note lists signatures and stops); [USER 2026-09-17] the sequence (part two →
 enum registry → concurrency). Part one §0: [USER 2026-09-16] the bound is a quantified parameter whose
 matched-mode instance is upstream's value; the fork-only OCaml flag is wanted; [USER 2026-09-03] no magic
 values; [USER 2026-09-08] nothing new out of policy; the standing constraints. The fence extension and the
@@ -582,7 +582,7 @@ Per lane (id status seconds): A1 passed 300s / A2 passed 34s / A3 passed 54s / A
 ```
 Zero movement of any baseline row; row 10 exactly C0's verdict; the 18-case lane and its 11 plants green inside the certification.
 
-## Re-review fixes — C5 `a31f88107af89cef5791ea4b05c00868be1f7076` (Codex re-review `docs/2026-09-18_address-space-bound-part-two-audit-rereview.md`, `0990c4560`: F1–F4 CLOSED; one P2 (R1) + two documentation corrections; the operator: *"Fix all remaining issues, then land this"*)
+## Re-review fixes — C5 `a31f88107af89cef5791ea4b05c00868be1f7076` (Codex re-review `docs/2026-09-18_address-space-bound-part-two-audit-rereview.md`, `0990c4560`: F1–F4 CLOSED; one P2 (R1) + two documentation corrections; the operator: fix all remaining issues, then land)
 
 **R1 — the shared grammar.** Lean's parser used `String.toNat?` alone, which accepts single underscore
 separators between digits (`6_4` = 64), while the fork's C4 converter is digit-only — reproduced before the
@@ -628,7 +628,7 @@ The fourteen plant lines (`c5-lane-selftest.txt`, verbatim): PLANT OK   [P1 the 
 
 ## Landing — part two (2026-09-18)
 
-[USER 2026-09-18], verbatim: *"codex re-review landed, a minor finding. Fix all remaining issues, then land this"* — the merge sign-off, conditional on the re-review's remaining issues (R1 and the two documentation corrections), all applied in C5 `a31f88107` (record amendment `f0487b547`). The range landed: 12 commits over mainline `e64819de7` — charter `ea517c1f9`; C0 `bda7a3e1b`; interim record `5d6d42f5c`; C2 `24af7239b`; C3 `9a8caddc1`; record `88c5a827b`; the Codex audit as received `b7e190f04`; C4 `dc035396a`; record `2f4898cf7`; the Codex re-review as received `0990c4560`; C5 `a31f88107`; record `f0487b547`; plus this note. Audit chain: REQUEST CHANGES (F1–F4) → C4 → re-review: F1–F4 CLOSED, R1 → C5. E10 (the one OCaml numeral's home in `Driver_ocaml.address_space_top_default`, a library module so the unbuilt packages can reference it) is CONFIRMED [AGENT orchestrator], presented to the operator in the merge ask.
+[USER 2026-09-18]: noted that the Codex re-review had landed with a minor finding and instructed to fix all remaining issues and then land — the merge sign-off, conditional on the re-review's remaining issues (R1 and the two documentation corrections), all applied in C5 `a31f88107` (record amendment `f0487b547`). The range landed: 12 commits over mainline `e64819de7` — charter `ea517c1f9`; C0 `bda7a3e1b`; interim record `5d6d42f5c`; C2 `24af7239b`; C3 `9a8caddc1`; record `88c5a827b`; the Codex audit as received `b7e190f04`; C4 `dc035396a`; record `2f4898cf7`; the Codex re-review as received `0990c4560`; C5 `a31f88107`; record `f0487b547`; plus this note. Audit chain: REQUEST CHANGES (F1–F4) → C4 → re-review: F1–F4 CLOSED, R1 → C5. E10 (the one OCaml numeral's home in `Driver_ocaml.address_space_top_default`, a library module so the unbuilt packages can reference it) is CONFIRMED [AGENT orchestrator], presented to the operator in the merge ask.
 
 Orchestrator re-gate at `f0487b547`, verbatim: `fast: passed; 16/16 selected commands completed successfully.` / `Source unchanged: True. Complete tier selection: True.` / `test_address_space: OK (18 cases: LEAN = FORK through the shared codec at tops 64 32 8; every fork observation = its pinned row in expectations.txt)` / `Independent oracle: passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 7, 'interface_agreement': 2}` / `Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}`. The FULL battery (`release.py --mode full`, 39/39, zero baseline movement) ran at the C4 head `dc035396a`; C5 is a CLI-parse + documentation change ([AGENT orchestrator]: not re-run for it).
 

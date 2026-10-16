@@ -4,7 +4,7 @@ Branch `arc/p0-instruments` off mainline `9a7f7ad31`. Scope: the
 whole-project release-gate audit's F2, F3, F4
 (`docs/2026-09-05_whole-project-release-gate-audit.md`; evidence in
 `docs/2026-09-05_whole-project-audit-evidence/`). Approval: [USER
-2026-09-05] "yes on the two other items" covers exactly this slice; the
+2026-09-05] approved the two other items, which covers exactly this slice; the
 orchestrator independently re-measured all three premises TRUE before
 dispatch. No `.lem` edit, no semantics edit; instruments and their
 documentation only. Every quoted output below is verbatim; tallies marked

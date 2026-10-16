@@ -77,7 +77,7 @@ Regression with a provenance commit (`650da6dfb`). Core-level, not an ISO C ques
 Found by the 2026-10-03 concurrency donor archaeology of the cerberus-lean fork
 (`lean_frontend/docs/2026-10-03_concurrency-donor-archaeology.md` §2–3, annex A1); the reproducer
 was re-run and the cited sites re-read by the fork's orchestrator on 2026-10-03. Fork status: the
-fork **mirrors** this behaviour ([USER 2026-09-29] "mirror and refuse seems safest"); its SC slices
+fork **mirrors** this behaviour ([USER 2026-09-29] thought mirror-and-refuse seemed the safest course); its SC slices
 label it as this known upstream regression and their fixtures either expect the reversed tuple or
 do not bind `par` results. Duplicate search: none done (no network at drafting); repeat before
 filing.

@@ -1,7 +1,7 @@
 # Run-digest review corrections and landing — 2026-09-22
 
-[USER] “Run-digest review landed”, followed by “Great, then you can rebase off
-main and land ff”. [AGENT] This authorizes the review corrections and the
+[USER] reported the run-digest review as landed, then approved rebasing off
+main and landing ff. [AGENT] This authorizes the review corrections and the
 fast-forward onto `mdd/cerberus-lean`; it does not authorize a push.
 
 The independent [audit](2026-09-22_run-digest-audit.md) reviewed

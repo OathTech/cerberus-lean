@@ -12,9 +12,9 @@ the original frozen report. Landing was separately authorized after review.
 ## 0. Decisions, provenance and base
 
 [USER] requested the primed run-digest slice at `32dd36f31`, based on enum head
-`e2fc391f21fd659c74f4dfdecdf7cc9fd45a2009`, and subsequently authorized amendments:
-“If you find ways to improve the result you deliver wrt overall project goals
-(eg. if the plan omits important tasks) you can make these amendments”.
+`e2fc391f21fd659c74f4dfdecdf7cc9fd45a2009`, and subsequently authorized amendments
+wherever they improve the delivered result against the overall project goals
+(for example when the plan omits important tasks).
 
 The accepted design and response are committed in-tree:
 `2026-09-20_run-digest-as-state-design-note.md` (`ad25962b3`),

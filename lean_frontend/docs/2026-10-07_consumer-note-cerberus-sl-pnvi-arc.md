@@ -6,7 +6,7 @@
 
 From: the PNVI arc S5 worker [AGENT]. Range: branch `arc/pnvi-ae-udi` (S0–S4, review rounds and arc-end audit fixes,
 head `eacb95b7a`, plus this S5 commit) over mainline `1806c5a23`.
-Operator ruling for this slice, verbatim: [USER 2026-10-07] "yes, let's do (a)". Option (a) was the orchestrator's
+Operator ruling for this slice: [USER 2026-10-07] approved option (a). Option (a) was the orchestrator's
 [AGENT] recommendation: this labelled note and a `resolveIota` helper lemma land with the merge; the orchestrator
 sends you a heads-up; a VERIFIED S5 scratch build follows once your tree has caught up to pre-PNVI mainline.
 

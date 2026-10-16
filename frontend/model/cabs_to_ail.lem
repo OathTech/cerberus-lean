@@ -2786,7 +2786,7 @@ and desugar_alignment_specifier loc align_spec =
          desugared is not yet registered (register_tag_definition runs after its member
          list), so it is incomplete here, as STD §6.7.2.3#4 requires.
          Fork fix P2d-3 (2026-10-03, upstream-tray draft 47; [USER 2026-09-27]
-         "yes, 'constraint violation'"): without it the type was stored unexamined and
+         ruled it a constraint violation): without it the type was stored unexamined and
          layout later hung or raised Not_found. *)
       if AilTypesAux.is_function ty then
         E.constraint_violation loc (AlignofInvalidApplication qs ty)
@@ -4110,8 +4110,8 @@ and desugar_statement_aux ctx (CabsStatement loc attrs stmt_) =
           AilSpar <$> E.mapM self ss
       
       | CabsSasm _ _ _ ->
-          (* FORK (asm refusal, 2026-10-05; [USER 2026-10-05] "Re inline asm, this
-             should be a loud refusal"): upstream ERASES inline assembly here
+          (* FORK (asm refusal, 2026-10-05; [USER 2026-10-05] ruled that inline
+             asm is a loud refusal): upstream ERASES inline assembly here
              (`E.return AilSskip`, "TODO: erasing inline assembly for now"), so a
              program whose meaning lives in its asm silently runs as if the asm
              were absent. Both fork engines now refuse it, basic and extended

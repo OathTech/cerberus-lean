@@ -4,17 +4,17 @@ Branch `fix/mirror-upstream-d38-alignas`, from mainline `mdd/cerberus-lean` at `
 Worker: Claude (Opus 5.5), briefed by the orchestrator. Three tasks, one commit each. Not
 merged, not pushed.
 
-## 0. Rulings (verbatim, as relayed in the brief)
+## 0. Rulings (as relayed in the brief)
 
-- [USER 2026-10-03] "Generally, our rule is that we don't innovate wrt Cerberus-upstream, unless
-  something is very very very obviously a bug. We're poorly placed to resolve semantic
-  discrepancies, so we don't. ... fall back to loudly rejecting (either as unsupported, or
-  matching upstream)."
-- [USER 2026-10-03] "We do not resolve Cerberus TODO cases unless the answer is extremely obvious
-  or if there's a similarly obvious bug, or for some reason we or some downstream customer need it
-  with absolute priority".
-- [USER 2026-10-03] "Agree on your recommendations with that framing (we shouldn't revert work
-  that allows the iris reasoning to work properly)". The recommendations were:
+- [USER 2026-10-03] stated the general rule: the fork does not innovate with respect to Cerberus
+  upstream unless something is very obviously a bug; it is poorly placed to resolve semantic
+  discrepancies, so it does not, and falls back to loudly rejecting (either as unsupported, or
+  matching upstream).
+- [USER 2026-10-03] ruled that Cerberus TODO cases are not resolved unless the answer is extremely
+  obvious, there is a similarly obvious bug, or the project or a downstream customer needs it with
+  absolute priority.
+- [USER 2026-10-03] agreed to the recommendations under that framing, with the condition that work
+  which allows the Iris reasoning to work properly is not reverted. The recommendations were:
   - revert draft 38's struct compatibility check to upstream's loud exact-tag rejection, after
     checking with cerberus-sl;
   - drop the union twin (P2d-1);
@@ -272,9 +272,9 @@ nowhere.
 The record branch `fix/alignas-p2d3` has two commits. `cf4af48f8` did both halves of P2d-3:
 the §6.5.3.4#1 check in `cabs_to_ail.lem`, and a member-alignment comparison in `ctype_aux.lem`
 `are_compatible_aux`. `b1c7831e4` is a later refusal variant of the `ctype_aux` half. Under
-[USER 2026-10-03] ("keep only the completeness check and mirror upstream on alignment
-compatibility"; "We do not resolve Cerberus TODO cases unless the answer is extremely obvious
-..."), this branch takes:
+the [USER 2026-10-03] rulings (§0: keep only the completeness check and mirror upstream on
+alignment compatibility; TODO cases are not resolved unless the answer is extremely obvious),
+this branch takes:
 
 - TAKEN: `cf4af48f8`'s `frontend/model/cabs_to_ail.lem` hunk, byte-identical. It was applied
   with `git show cf4af48f8 -- frontend/model/cabs_to_ail.lem | git apply --index`. The file hash
@@ -314,7 +314,7 @@ index 79ffe74d7..e696f8e9f 100644
 +         desugared is not yet registered (register_tag_definition runs after its member
 +         list), so it is incomplete here, as STD §6.7.2.3#4 requires.
 +         Fork fix P2d-3 (2026-10-03, upstream-tray draft 47; [USER 2026-09-27]
-+         "yes, 'constraint violation'"): without it the type was stored unexamined and
++         ruled it a constraint violation): without it the type was stored unexamined and
 +         layout later hung or raised Not_found. *)
 +      if AilTypesAux.is_function ty then
 +        E.constraint_violation loc (AlignofInvalidApplication qs ty)

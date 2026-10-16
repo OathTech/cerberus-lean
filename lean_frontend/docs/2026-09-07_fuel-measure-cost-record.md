@@ -480,8 +480,8 @@ measurement artifacts. No D3 semantic edit has occurred.
 
 ### D3 acceptance clarification — resolved by the operator
 
-[USER 2026-09-08]: “"0 regression(s)" is the gate; the exact
-"0 improvement(s)" wording is withdrawn.” The operator directs that
+[USER 2026-09-08] ruled that `0 regression(s)` is the gate and withdrew the
+exact `0 improvement(s)` wording. The operator directs that
 improvements be reported, and that every baseline TIMEOUT row which becomes
 MATCH at 15 seconds on HEAD-after be re-recorded in a **dedicated instrument
 commit separate from the code change**. Its message must list each such row

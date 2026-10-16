@@ -5,10 +5,10 @@ Branch `census/real-c-20261004`, written over mainline `ae48126e5` and rebased o
 unless marked [USER]. The pre-merge audit of 2026-10-05 and its dispositions are in §9; the passages it corrected
 say so where they stand.
 
-- Authorization: [USER 2026-10-04] "Approved (this box runs unnetworked, do you need me to download things?)", on the
-  P1f-2 scope relayed by the orchestrator. The census is **report-only**: nothing in the semantics, the model, the
-  harnesses or the gated lanes was changed, and no finding was fixed or pinned. Standing rule [USER 2026-10-03]: "we
-  don't innovate wrt Cerberus-upstream ... fall back to loudly rejecting".
+- Authorization: [USER 2026-10-04] approved (noting that the box runs unnetworked and offering to download anything
+  needed), on the P1f-2 scope relayed by the orchestrator. The census is **report-only**: nothing in the semantics, the model, the
+  harnesses or the gated lanes was changed, and no finding was fixed or pinned. Standing rule [USER 2026-10-03]: no
+  innovation with respect to Cerberus upstream; fall back to loudly rejecting.
 - Plan entry: `docs/2026-09-25_next-phase-plan.md` (branch `docs/next-phase-plan-20260925`) §11 table, row "1f
   direction", P1f-2. Phase 4's P4-5 coverage work is to be ordered by this record.
 
@@ -31,7 +31,7 @@ each with a driver main, and all 55 libxml2 top-level TUs (as far as elaboration
 - **Inline asm is a silent no-op on both engines** (pre-merge audit M1; §4.5). The C parser accepts `asm(...)`
   statements, including the extended form, and the desugarer erases them to a skip (`cabs_to_ail.lem:4112-4114`). Lean
   is generated from the same `.lem`, so the two engines agree, and both drop the asm silently. CONTRACT, SUPPORTED and
-  VALIDATION do not register it. Operator ruling, [USER 2026-10-05]: "Re inline asm, this should be a loud refusal".
+  VALIDATION do not register it. Operator ruling, [USER 2026-10-05]: inline asm is to be a loud refusal.
   The refusal is a separate queued slice and is not done here.
 - **pKVM: the allocator reaches a run on both engines, which agree. In the declared configuration that run is UB.**
   The default (PVI) concrete model's `copy_alloc_id` does not copy the allocation ID. Every store through a computed
@@ -437,7 +437,7 @@ Because the engines agree, this is not a census disagreement. It is a contract d
 neither CONTRACT.md, SUPPORTED.md nor VALIDATION.md registers. No census row reached it. The pKVM case study has no
 asm, and the Linux TUs stop in the parser first.
 
-Operator ruling, [USER 2026-10-05]: "Re inline asm, this should be a loud refusal". The refusal is a **separate
+Operator ruling, [USER 2026-10-05]: inline asm is to be a loud refusal. The refusal is a **separate
 queued slice**, not done here, because this census is report-only and changes no engine. It is listed in §6, item 4.
 
 ## 5. Disagreements
@@ -473,8 +473,8 @@ Tags:
 4. **(b) GNU C in the Cerberus parser: the gate for every Linux TU, and the inline-asm refusal.** The syntax work is
    large and upstream-owned. Behind the first blockers the peel found more unsupported syntax (§4.2). Inline asm does
    not stop the front end: statements that parse are erased on both engines today (§4.5), so a kernel TU that got
-   past the syntax would run with its asm silently dropped. Per [USER 2026-10-05] "Re inline asm, this should be a
-   loud refusal", asm must refuse loudly. That refusal is a **separate queued slice**, not done here. Once it lands,
+   past the syntax would run with its asm silently dropped. Per [USER 2026-10-05], asm must refuse
+   loudly. That refusal is a **separate queued slice**, not done here. Once it lands,
    every asm-bearing kernel TU refuses, and every preprocessed Linux TU in this census has asm (§4.2). Recommendation
    [AGENT]: do not pursue raw kernel TUs. The realistic route to kernel code is the pKVM shape: a curated, CN-style C
    subset with the environment made explicit. That puts item 2 ahead of this item.
@@ -522,7 +522,7 @@ A fresh pre-merge audit; the orchestrator verified M1 and M2. Fixes by the fix w
 
 | Finding | Disposition |
 |---|---|
-| **M1** The record said inline asm has no Cerberus semantics and stops raw kernel TUs in the front end; it also listed `typeof` and statement expressions as blockers | FIXED (record). Corrected in §0, §3 rank 1, §4.2 and §6 item 4. New finding §4.5: inline asm is a silent no-op on both engines (parser `c_parser.mly:1527-1548`, erasure `cabs_to_ail.lem:4112-4114`, probe) and unregistered in CONTRACT, SUPPORTED and VALIDATION. Ruling recorded verbatim, [USER 2026-10-05] "Re inline asm, this should be a loud refusal"; the refusal is a separate queued slice, not done here. `typeof` and statement expressions removed from the blockers (`c_lexer.mll:91`, `c_parser.mly:509-513`, `cabs_to_ail.lem:2507`); the peel-round evidence stands |
+| **M1** The record said inline asm has no Cerberus semantics and stops raw kernel TUs in the front end; it also listed `typeof` and statement expressions as blockers | FIXED (record). Corrected in §0, §3 rank 1, §4.2 and §6 item 4. New finding §4.5: inline asm is a silent no-op on both engines (parser `c_parser.mly:1527-1548`, erasure `cabs_to_ail.lem:4112-4114`, probe) and unregistered in CONTRACT, SUPPORTED and VALIDATION. Ruling recorded, [USER 2026-10-05]: inline asm is a loud refusal; the refusal is a separate queued slice, not done here. `typeof` and statement expressions removed from the blockers (`c_lexer.mll:91`, `c_parser.mly:509-513`, `cabs_to_ail.lem:2507`); the peel-round evidence stands |
 | **M2** `pkvm_driver.h`'s `census_pool_init` was `hyp_pool_init`'s body copied from GPL-2.0-only `page_alloc.c` | FIXED. The body is removed from the repository; `pkvm_driver.h` keeps a prototype. `tests/census/pkvm/derive_pool_init.py` derives the function at run time (exact-match and sha256 checks, the one `get_order` → `max_order` substitution) into the census output directory only (§1.3). The rest of `tests/census/` was checked: the Linux drivers restate only prototypes, `struct list_head` and the ctype bit values, which the worker judges [AGENT] to be interface facts that are fine to keep (§1.3) |
 | **L1** "Oracle front end fails, Lean fails on a different TU" was filed as an oracle front-end failure | FIXED. It is now a `DISAGREEMENT(…)` row (`run_census.sh`). No census row is in this class |
 | **L2** `observation_capture`'s infrastructure rc 125 collides with the oracle's internal-error rc 125 | FIXED. The `.capture-error` marker is detected, the row is `INSTRUMENT-ERROR` and the run exits 1. Plant-tested (§1.2) |

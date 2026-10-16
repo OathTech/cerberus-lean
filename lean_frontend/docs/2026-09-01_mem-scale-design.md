@@ -28,14 +28,14 @@ abstraction function α : MemFast → MemSimple; per-operation theorems
 α (fastOp s) = simpleOp (α s); one bind-composition lemma through the
 ND monad; both instances run the full differential battery.
 
-[USER 2026-09-01] — ranking rule, verbatim as relayed by the
-orchestrator: "Generally we should order these by (performance) *
-(trust impact) i.e high performance, low impact on trust would be
-best. We should work very hard to keep our trust surface stable i.e
-'obviously right' wrt upstream Cerberus."
+[USER 2026-09-01] — ranking rule, as relayed by the orchestrator
+(paraphrased): order the candidates by performance gain times trust
+impact, preferring high performance with low impact on trust, and work
+hard to keep the trust surface stable, that is obviously right with
+respect to upstream Cerberus.
 
-[USER 2026-09-02], verbatim as relayed by the orchestrator: **"Q2
-agree, Q3 agree, park."** Rulings as logged by the orchestrator:
+[USER 2026-09-02], as relayed by the orchestrator: agreed on Q2 and
+Q3, and parked the rest. Rulings as logged by the orchestrator:
 - Q2 RULED [USER 2026-09-02]: the arc-5 `ulimit -v 4000000` operator
   directive (`scripts/LADDER.md:73`) is SUPERSEDED by per-test
   `scripts/capped` with `CERB_MEM_MAX=4G` across all seven harnesses;

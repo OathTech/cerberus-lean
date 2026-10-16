@@ -3,7 +3,7 @@
   2026-09-05): the HYPOTHESIS vocabulary of the hypothesis-carrying measured
   seams (lem-lean `declare {lean} fuel_measure val f = `μ` assuming `H``,
   doc/lean-backend/2026-09-05_measure-hypothesis-record.md; the C2 record's
-  D-C2-1, option 1 [USER 2026-09-05] "agree, go ahead with option 1").
+  D-C2-1, option 1 [USER 2026-09-05] approved option 1).
 
   The layout oracle of CerbMem.lean (sizeof / alignof / offsetsof /
   offsetsofMembers / memberAlign, impl_mem.ml:98-273) and the byte

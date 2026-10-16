@@ -468,8 +468,8 @@ charter's §6/§7 were read in full; where §7 and §0/§1 disagree, §7 was fol
 
 ## D1b — ISO-fix register R5 (the row-106 ruling) — DONE
 
-**The ruling, verbatim from the charter §6** — [USER 2026-09-15]: "Great, agree on your
-recommendation. Go ahead with the worker" — on the orchestrator's recommendation: *admit the
+**The ruling, from the charter §6** — [USER 2026-09-15] agreed with the
+recommendation and approved dispatching the worker — on the orchestrator's recommendation: *admit the
 row as ISO-fix register entry R5, keep the correctly rounded conversion; pin the row as a
 Lean-right / oracle-wrong pair in the immaculate lane; add the code marker; draft the upstream
 report against the OCaml runtime with a Cerberus-facing note; register the row in VALIDATION
@@ -490,7 +490,7 @@ floating constants when FLT_RADIX is a power of 2, the result is correctly round
    `str_fval` → `caml_float_of_hex` double rounding with the scope sentence; ISO clause quoted;
    2nd oracle gcc + Python; tray `ocaml/01` + 40; pin `r5-hex-subnormal-double-rounding` DIFF /
    `L=VAL:{value: "Specified(1)", …}`; Lean site `CerbFloat.lean` `roundToBinary64Bits` with the
-   marker; ruling `**ADMITTED** [USER 2026-09-15]` with the operator's words as quoted in the
+   marker; ruling `**ADMITTED** [USER 2026-09-15]` with the operator's ruling as recorded in the
    charter). The R4 paragraph is untouched. [AGENT] The paragraph's sentence "today the markers
    are `CerbDecode.lean` R1/R2" is now incomplete (R5's marker exists) — left as is per the
    charter's "leave the R4 paragraph as it is"; noted for the orchestrator.
@@ -1788,4 +1788,4 @@ direct: … exec_float_baseline.txt tests/float → rc=0, total=93 match=93 mism
 
 ### Landing (2026-09-15)
 
-Pre-merge audit: ASK made 2026-09-15 (scope: the full range, one independent reviewer; trim or waive the operator's); [USER 2026-09-15]: "Great, launch the audit as proposed." Audit delivered (`2026-09-15_semantics-audit-repairs-premerge-audit.md`, `85633891d`): MERGE-READY AFTER P2 FIXES; F1/F2/F4/F5 fixed and F3/F6 registered at `c032965af`, gates re-run green. The orchestrator's independent battery: all 36 LADDER rows PASSED (two runs, one head), direct unit + four exec lanes green, zero movement. Per-merge sign-off, [USER 2026-09-15], verbatim: "merge it". Merge: ff-only `mdd/cerberus-lean` `54f007187` → this branch's head, in the primary checkout. No push. Owed after landing: primary refresh; consumer re-pin note (no consumer-visible signature changed in this slice); drafts 39–42 + `ocaml/01` at the operator's filing window; then the parser slice `arc/parser-progress-measure` from the landed mainline.
+Pre-merge audit: ASK made 2026-09-15 (scope: the full range, one independent reviewer; trim or waive the operator's); [USER 2026-09-15] approved launching the audit as proposed. Audit delivered (`2026-09-15_semantics-audit-repairs-premerge-audit.md`, `85633891d`): MERGE-READY AFTER P2 FIXES; F1/F2/F4/F5 fixed and F3/F6 registered at `c032965af`, gates re-run green. The orchestrator's independent battery: all 36 LADDER rows PASSED (two runs, one head), direct unit + four exec lanes green, zero movement. Per-merge sign-off, [USER 2026-09-15]: approved the merge. Merge: ff-only `mdd/cerberus-lean` `54f007187` → this branch's head, in the primary checkout. No push. Owed after landing: primary refresh; consumer re-pin note (no consumer-visible signature changed in this slice); drafts 39–42 + `ocaml/01` at the operator's filing window; then the parser slice `arc/parser-progress-measure` from the landed mainline.

@@ -2,9 +2,9 @@
 
 Orchestrator [AGENT]. Branch `arc/contract-enforcement` off `mdd/cerberus-lean` a7dc36e2f. Part of enforcing the draft
 contract (`docs/contract-draft-20260928:lean_frontend/CONTRACT.md`), which lands only after the enforcement it describes
-([USER 2026-09-28] "We can't merge the contract doc, it's not correct yet!! We actually have to enforce it!").
+([USER 2026-09-28] ruled that the contract doc cannot be merged while it is not yet correct: it has to be enforced first).
 
-[USER 2026-09-28] decision D2: "refuse FS for now, this seems safer".
+[USER 2026-09-28] decision D2: refuse the filesystem for now, as the safer course.
 
 ## Change
 

@@ -25,21 +25,21 @@ genuine, legitimate, original Cerberus one").
 Rulings logged in this note:
 
 - [USER 2026-09-02] Option A (superseded in mechanism by C, same
-  constructor discipline): "Very good, A sounds reasonable, go ahead" —
+  constructor discipline): approved option A as reasonable —
   the existing `kill_reason` constructor `Error of Loc.t * string`,
   unwrapped; Option B (a new `kill_reason` constructor) REJECTED: it
   changes the shared `.lem` type and therefore the generated-OCaml text
   / fork-drift surface, for a constructor the oracle never uses.
-- [USER 2026-09-02] **OPTION C** (R2): "Yes, this seems reasonable. But
-  we'll want to do a 2nd design review before merge to make sure we
-  actually achieved this cleaner picture and it serves the
-  refined-cerberus project needs." C = the sentinel's distinguishing
+- [USER 2026-09-02] **OPTION C** (R2): approved as reasonable, with a
+  second design review required before merge to confirm the cleaner
+  picture was actually achieved and serves the refined-cerberus
+  project's needs. C = the sentinel's distinguishing
   atom is a kernel-checked OPAQUE constant (a pure `opaque … := v`, no
   `unsafe`/`implemented_by`/`extern`), not a reserved string. The second
   design review is a §6 deliverable.
-- [USER 2026-09-01] standing ordering rule: "order these by
-  (performance) * (trust impact) … keep our trust surface stable i.e
-  'obviously right' wrt upstream Cerberus".
+- [USER 2026-09-01] standing ordering rule: order candidates by
+  performance gain times trust impact, and keep the trust surface
+  stable, that is obviously right with respect to upstream Cerberus.
 - [AGENT 2026-09-02, orchestrator; operator-overridable — FLAGGED]: the
   per-declaration fuel BUDGET application (C1 manifest §8's deferred
   item) is BUNDLED into this arc (§4), as the SECOND of two commits
