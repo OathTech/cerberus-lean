@@ -21,6 +21,8 @@ Derived inventory (2026-09-29): 53 report files, **48 Draft, 4 Sent, 1 Filed, 0 
 Added since that count: report 49 (2026-10-03, Draft); reports 50–53 (2026-10-07, Draft, PNVI arc S4 —
 the `--switches` fail-open parser, the `combine_prov` crash on upstream's own PNVI litmus suite, the debug
 `Printf.printf` arm, `array_shift_ptrval`'s crash on a symbolic pointer via `memcpy`).
+Report 55 (2026-10-17, Draft): UB088 reported regardless of whether the caller uses the value (ISO §6.9.1#12),
+raised by the consumer cerberus-caesium; number 54 is held by the in-flight PNVI lane branch.
 Issue 1010 is recorded below but has no tray report, so is outside this count.
 Draft duplicate searches must be repeated before filing; the dated search
 notes below establish only what was checked then.
@@ -80,6 +82,7 @@ notes below establish only what was checked then.
 | [51-combine-prov-crash-on-pnvi-litmus.md](51-combine-prov-crash-on-pnvi-litmus.md) | Draft | No submission recorded |
 | [52-debug-printf-in-eff-array-shift-pnvi-arm.md](52-debug-printf-in-eff-array-shift-pnvi-arm.md) | Draft | No submission recorded |
 | [53-array-shift-ptrval-crash-on-symbolic-pointer-memcpy.md](53-array-shift-ptrval-crash-on-symbolic-pointer-memcpy.md) | Draft | No submission recorded |
+| [55-ub088-reported-regardless-of-use.md](55-ub088-reported-regardless-of-use.md) | Draft | No submission recorded |
 | [lean4/01-stack-overflow-handler-deadlock.md](lean4/01-stack-overflow-handler-deadlock.md) | Draft | No submission recorded |
 | [lean4/02-nat-div-mod-literal-folding.md](lean4/02-nat-div-mod-literal-folding.md) | Draft | No submission recorded |
 | [lean4/03-float-tobits-canonicalizes-nan.md](lean4/03-float-tobits-canonicalizes-nan.md) | Draft | No submission recorded |
