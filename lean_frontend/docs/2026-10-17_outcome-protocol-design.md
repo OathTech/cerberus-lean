@@ -404,3 +404,26 @@ of this pass ([USER 2026-10-17], the brief). Every recommendation above is [AGEN
   hand-written seams → 6 hits, all trailing `--` Lean comments outside the string (`CerbMem.lean:1414,2542,3247,3465,3495`, `Main.lean:1505`).
 
 Not run: any build, lane, driver or oracle; the stack-overflow text is the consumer's quotation, not a measurement.
+
+## 8. Review errata (orchestrator [AGENT], 2026-10-18) — amendments required before acceptance
+
+The independent review of the worker charters (`docs/2026-10-18_codex-charters-review.md`, findings 6–9) read this note and found
+three defects that the fresh review of this document must confirm and the accepted version must resolve:
+
+1. **§3 rule 1 is wrong about exit 137.** `scripts/observations.py:282-283` does NOT classify a bare status 137 as an OOM: `parse`
+   REJECTS such a capture (`ProtocolError`), and `scripts/LADDER.md:144-150` states that only the cgroup's positive OOM witness
+   (`capped`'s `memory.events oom_kill` counter / `CAP_OOM` on stderr) is a cap witness; a bare 137 is not. The classifier must
+   require cap evidence for `RESOURCE/cap` and leave an unexplained 137 RED (or introduce a separately ruled generic termination
+   class). The claimed equivalence "as `parse` today" is false. Acceptance cases must include a native exit 137 and a signal without
+   OOM.
+2. **§3 rule 7 contradicts §3.5's plant list.** Rule 7 makes an envelope inside an `Error {msg}` line RED; the plant list (`:284-286`)
+   makes the same capture a VERDICT. The plant list is right by the note's own principle (the Error channel never carries stops;
+   program data has no authority): the rule must say VERDICT, and the "every class forged in every other class's shape is rejected"
+   sentence must be restated per class, channel and data position, since several classes are deliberately admitted on one channel.
+3. **The consumer mapping at §3 (`:260-267`) over-promises for S1.** The hand-written pure mirrors (A1, A2, A6, A7, `truncToInt`) read
+   `SHARED_CRASH` until S3 by the note's own transitional rule (`:309-314`); the sentence that cerberus-caesium "gets its answer at S1"
+   must become a per-family table stating the slice at which each family's class is accurate (the S1–S2 charter carries that table).
+
+Not a defect, recorded for the charter's benefit: §4 (`:318-320`) correctly says the failure-reach register's `msg` keys AND seals
+move at S2/S3 (reach and position classes unchanged); the first draft of the S1–S2 charter had said "note column only" and was
+corrected (review finding 9).
