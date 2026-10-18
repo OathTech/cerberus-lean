@@ -222,6 +222,7 @@ roots = [
   "Core_aux_lemMeasureProofs",
   "Core_eval_lemMeasureProofs",
   "AilTypesAux_lemMeasureProofs",
+  "Translation_lemMeasureProofs",
   "Formatted_lemMeasureProofs",
   "Driver_lemMeasureProofs",
   "Monadic_parsing_lemMeasureProofs",

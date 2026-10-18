@@ -44,6 +44,8 @@ expect "panic: pure-worker sentinel, exit 134" FUEL:panic 134 \
 $'lem: fuel exhausted'
 expect "panic: marker among other stderr lines, exit 134" FUEL:panic 134 \
 $'(debug 0): constructValue_aux: is WRONG\nlem: fuel exhausted'
+expect "panic: recorded translation exhaustion, exit 134" FUEL:panic 134 \
+$'PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: lem: fuel exhausted'
 
 # --- the three mandated negatives -------------------------------------------
 expect "n1: genuine Error kill (assert)" "" 1 \
@@ -70,6 +72,14 @@ $'PANIC: lem: fuel exhausted'
 expect "near: loose words only" "" 134 \
 $'fuel exhausted'
 expect "near: empty capture, exit 0" "" 0 ""
+expect "near: translation envelope at exit 1" "" 1 \
+$'PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: lem: fuel exhausted'
+expect "near: translation envelope with a different error" "" 134 \
+$'PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: unknown tag'
+expect "near: translation envelope with a message suffix" "" 134 \
+$'PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: lem: fuel exhausted but not really'
+expect "n3c: translation envelope inside program stdout, then a crash" "" 134 \
+$'Defined {value: "Specified(0)", stdout: "PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: lem: fuel exhausted\\n", stderr: "", blocked: "false"}'
 
 echo "test_fuel_classifier: $n fixtures, $([[ $fail -eq 0 ]] && echo ALL OK || echo FAILURES)"
 exit $fail

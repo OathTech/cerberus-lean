@@ -118,12 +118,16 @@ digest selection and native MD5 remain on the declared boundary.
 definitions. Structural and measured functions are total; remaining
 recursive workers use an explicit fuel parameter. That does not establish
 that every input completes, or that every exhaustion/failure is absorbing.
-The pending fuel register is empty. The measured inventory has 62 measured
-workers (12 under hypotheses), 13 zero-case kill lemmas and six workers
-outside the execution dependency closure. The 13 zero-case lemmas do not prove propagation through all successor
-cases. Pure failure/sentinel values and runtime overrides remain a separate
-correspondence obligation. Frontend totality is outside this execution-slice
-claim. See the [failure census](docs/2026-09-06_failure-census-and-correspondence.md).
+The pending fuel register is empty; the current measured/ambient inventory
+is in VALIDATION.md §7. Zero-case kill lemmas do not prove propagation
+through all successor cases. Pure failure/sentinel values and runtime
+overrides remain a separate correspondence obligation. The translation
+module also has kernel equations for all six former partial workers:
+four structural helpers are measured without hypotheses; expression and
+statement elaboration use ambient fuel and record exhaustion for rejection
+by `runStateM_errors`. Whole-frontend totality remains outside this claim.
+See the [translation consumer note](docs/2026-10-18_consumer-note-cerberus-caesium-translation-fuel.md)
+and the [failure census](docs/2026-09-06_failure-census-and-correspondence.md).
 
 **No magic values.** [USER 2026-09-03]: a fuel budget, a bound, a
 default, or any "magical" choice among nondeterministic alternatives

@@ -19,12 +19,15 @@
 #             exhausted: LemLib's opaque `fuelExhausted` sentinel panics —
 #             the bare line `lem: fuel exhausted` on stderr, exit 134
 #             under LEAN_ABORT_ON_PANIC=1 (never a kill, never a verdict).
+#   * panic — translation exhaustion recorded in elab_state is rejected by
+#             runStateM_errors via failwithI. Lean prints its precise
+#             LemLib PANIC envelope with the same reserved message, exit 134.
 #
 # THE RULE: keyed on the EXACT printed message as a WHOLE LINE of the
 # merged stdout+stderr capture — never the loose `fuel exhausted` regex on
 # stdout. A test program's own output cannot forge it: program stdout is
 # embedded quote-ESCAPED inside the `Defined {…, stdout: "…"}` line, so a
-# whole-line match on the bare forms is unreachable from inside it (the
+# whole-line match on these forms is unreachable from inside it (the
 # third negative of the classifier selftest, scripts/test_fuel_classifier.sh).
 # A genuine `Error {msg: "assert() failure"}` / any other message is NOT
 # fuel (first negative); a PANIC without the exact marker is NOT fuel
@@ -47,6 +50,7 @@
 FUEL_KILL_BATCH_LINE='Error {msg: "lem: fuel exhausted"}'
 FUEL_KILL_HUMAN_LINE_RE='^ *result: Killed \(error: lem: fuel exhausted\)$'
 FUEL_PANIC_LINE='lem: fuel exhausted'
+FUEL_ELAB_PANIC_LINE_RE='^PANIC at _private\.LemLib\.[0-9]+\.failwithIImpl LemLib:[0-9]+:[0-9]+: lem: fuel exhausted$'
 classify_fuel_outcome() {
     local rc="$1" cap="${2:-}"
     if grep -qxF -- "$FUEL_KILL_BATCH_LINE" <<<"$cap" \
@@ -54,6 +58,9 @@ classify_fuel_outcome() {
         echo "FUEL:kill"; return 0
     fi
     if [[ "$rc" -ge 128 ]] && grep -qxF -- "$FUEL_PANIC_LINE" <<<"$cap"; then
+        echo "FUEL:panic"; return 0
+    fi
+    if [[ "$rc" -eq 134 ]] && grep -qE -- "$FUEL_ELAB_PANIC_LINE_RE" <<<"$cap"; then
         echo "FUEL:panic"; return 0
     fi
     echo ""

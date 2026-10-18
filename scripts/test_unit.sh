@@ -464,3 +464,9 @@ if ! python3 "$LIBC_FLOAT_PY" --selftest || ! python3 "$LIBC_FLOAT_PY"; then
     echo "test_unit: libc dump float-literal inventory FAILED"
     exit 1
 fi
+
+# The translation's ambient zero arms must reject dead code at the boundary.
+if ! bash "$PROJECT_ROOT/scripts/test_translation_fuel.sh"; then
+    echo "test_unit: translation-fuel witnesses FAILED"
+    exit 1
+fi

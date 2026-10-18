@@ -4590,3 +4590,22 @@ let translate sup (ailnames, stdlib_fun_map) callconv impl prog =
      C.loop_attributes= (snd prog).A.loop_attributes;
      C.visible_objects_env= st.E.visible_objects_types_markers_env;
   |>, st.E.fresh_supply)
+
+
+(* Lean-only translation totality: the structural workers use their input size.
+   Their zero arms are opaque failures; Translation_lemMeasureProofs derives
+   stability from strict subtree descent, without a well-formedness premise. *)
+declare {lean} fuel val translate_constant = `fuelExhausted (mk_specified_pe (mk_nullptr_pe void))`
+declare {lean} fuel_measure val translate_constant = `lemSize cst`
+declare {lean} fuel val collect_cases_ = `fuelExhausted (fun st => ((), st))`
+declare {lean} fuel_measure val collect_cases_ = `lemSize stmt`
+declare {lean} fuel val erase_loop_control_aux = `fuelExhausted (fun st => (stmt, st))`
+declare {lean} fuel_measure val erase_loop_control_aux = `lemSize stmt`
+declare {lean} fuel val collect_visibles_ = `fuelExhausted (fun st => ((), st))`
+declare {lean} fuel_measure val collect_visibles_ = `lemSize stmt`
+
+(* Elaboration uses a state monad, not an exception monad. Record exhaustion
+   so runStateM_errors refuses the entire translation even for dead code.
+   mk_skip_e is only a typed intermediate: the boundary cannot return it. *)
+declare {lean} fuel val translate_expression = `bind1 (record_error CerbFuel.fuelExhaustedMsg) (fun _ => return0 mk_skip_e)`
+declare {lean} fuel val translate_stmt = `bind1 (record_error CerbFuel.fuelExhaustedMsg) (fun _ => return0 mk_skip_e)`
