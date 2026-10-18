@@ -770,3 +770,310 @@ than a missing extraction decision.
 **Suggested fix:** describe it as the linked `file Unit`, immediately
 before `convert_file`, and keep the existing post-conversion quotation
 point.
+
+## Third pass — 2026-10-18, rev 3 and the corrected representation contract
+
+### Verdicts and review basis
+
+| Charter | Third-pass verdict | Reason |
+|---|---|---|
+| Translation fuel | **new finding** | S6's final-form table is fixed, but the required end-to-end exhaustion plant still excludes a successful measured implementation (R7). The commit/close-out checks are repaired; replay policy awaits its recorded dispatch disposition. |
+| Core quotation | **still open** | S1/original 3 is substantially repaired, but the contract loses the `Fmap.empty` constructor and omits whole-object checks; its comparator control also needs an absent alias query (R1, R2, R4). R3 identifies an additional value-equality problem under the new representation claim. |
+| Stack ceiling | **still open** | S2/original 5 is closed. S4's witness identities and mixed outcomes are addressed, but the numerical deadline still excludes finite default-budget witnesses in the selection and stop predicates (R5). |
+| Outcome protocol S1–S2 | **still open** | S5 is closed and the final battery is repaired. S3/original 13 retains a slice-boundary gap at S1 (R6). Design acceptance and fresh full review remain separate prerequisites. |
+| Failure-monad design | **closed** | Unchanged at the reviewed revision; the second-pass closure stands. |
+
+Judgements [AGENT 2026-10-18]. Reviewed the four cerberus charters at
+`3bc11b2e30f3a91ef1ebfda4d34dc1011b2d2bb1`; the Lem charter remains at
+`d6a8f0c7fcf7c42d3fcbd497069a9c246c4c6188`. The report before this append
+is `cd994f608d84296641e02bf1105ed8ad8997688b`. Source mainline remains
+`32ab44e4a76dc68d11baffc77f7aca95b4e71efc`, with functional Lem pin
+`2d3a492758cb23dc4e417f2961983d25b36ce130`.
+
+Read the binding project instructions, revised charters, previous findings
+and relevant source. The inspection included the pinned map library,
+construction/linking/conversion paths, existing stack records, consumer
+W5 record and the local Lean 4.32.2 source for floating-point equality.
+No builds, lanes, Lean executions, driver runs, consumer proof replays or
+new runtime measurements were performed. Generated-source citations refer
+to the existing primary generated tree, with the same freshness limitation
+as the earlier passes. The sole mutations are this requested append and
+its local commit; both earlier sections remain unchanged.
+
+### Disposition of S1–S7 and originals 3, 5, 13
+
+T, Q, S and O below denote the translation-fuel, core-quote, stack-ceiling
+and outcome-protocol-s1-s2 charters, respectively, under
+`lean_frontend/docs/2026-10-18_codex-charter-*.md`. All line numbers in
+this section refer to rev 3 unless a different source is named.
+
+| Finding | Disposition | Evidence and remaining action |
+|---|---|---|
+| S1 / original 3 | **still open** | Q:23–41,93–97,109–113 now fixes tree shape/heights, fully instantiated comparator terms, provenance paths and refusal on unknown provenance. R1, R2 and R4 identify remaining gaps; R3 addresses the stronger representation claim's leaf comparison. |
+| S2 / original 5 | **closed** | S:19–20,31–36,49–50 now distinguishes completed 100000-element controls at the same explicit budget from million-element default-budget resource witnesses. It no longer demands completion of the overflowing programs at a larger fuel. |
+| S3 / original 13 | **partly closed; still open at S1's boundary** | T:113–118, Q:118–120, S:112–115 and O:80–82 require Tier A per commit and full Tier B at close-out, independently rerun before landing. Those repairs are real. O:60 still closes the named S1 slice on Tier A alone (R6). Replay status is a proposed operator decision, discussed below, not an approved downgrade. |
+| S4 | **still open in part** | S:23–30 identifies W5 and preserves all its emitted leaves; missing consumer identities are now an explicit dispatch dependency with honest narrowing of the claim. S:47–54 requires the full per-mode table and rejects signals/panic-only classifications. The 60-second selection/stop predicates still name only diverging witnesses (R5). |
+| S5 | **closed** | S:111–115 and O:78–82 retain hand-written-copy synchronization and, for the outcome seam, manifest registration. Only `.lem` regeneration, oracle rebuilding and translation-specific manifest work are exempted. |
+| S6 | **closed as reported** | T:33–34,44–47 makes the final form conditional on whether the joint obligation closes. The record and pins must match. R7 is a separate interaction with the still-unconditional runtime plant. |
+| S7 | **closed** | Q:84 correctly identifies `coreFile` as linked and places quotation after conversion. |
+
+The positive-control repair is adequate when read with its stated goal:
+the 100000-element programs must complete with their oracle observations
+at the same explicit budget before and after. Two matching exhaustion
+results would not satisfy S:19 or the completing-control class at
+S:31–32. Record those completed observations and the actual budget; no
+new requirement for the million-element runs to complete is needed.
+
+The corrected comparator account is supported by the inspected sources.
+`generated/Symbol.lean:290–343,383–385` supplies the active description-
+insensitive instances, distinct from the derived instances at `:237–250`.
+Pinned `lean-lib/LemLib/Map.lean:49–63,101–105` threads the `MapKeyType`
+instance through `fromList`. The Nat-keyed maps are populated with
+`defaultCompare` in `generated/Cabs_to_ail_effect.lean:2136–2137` and
+`generated/Translation_effect.lean:301–303`. The libc paths at
+`Main.lean:246,993,1025` are correctly named. The union account needs the
+empty-left exception in R1.
+
+Preserving the original tree and cached heights is a justified choice
+for later map operations: pinned `LemLib.lean:1114–1135` branches on
+subtree heights, and `:1137–1145` documents traversal-dependent selection
+of the stored key on a comparator-equal collision. This is stronger than
+checking immediate lookups alone. These source observations support the
+correction's rationale; this review did not independently replay the
+consumer's claimed kernel probes.
+
+A worker can establish provenance for these restricted pipeline outputs
+by inspecting the construction paths and fixing their elaborated
+comparator terms. It need not discover the name of an arbitrary runtime
+closure or prove function equality by testing. Q:111–112 now provides the
+right stop if that construction argument cannot be made. The lookup sweep
+is supplementary evidence, not a replacement for provenance.
+
+### Replay policy: legitimate proposal, existing rule still binding
+
+**Location:**
+`lean_frontend/docs/2026-10-18_codex-charter-translation-fuel.md:115–118`,
+inherited by the other cerberus charters' common rules.
+
+It is legitimate to raise a standing-rule change to the operator, and
+rev 3 no longer silently declares replay nonblocking. Requiring the
+checker to run and its output to be recorded is also an improvement.
+However, the supplied standing instructions already make kernel replay
+a trust gate. A pending proposal does not suspend that rule, and this
+audit request does not approve the proposed change.
+
+At dispatch, the orchestrator must record an actual operator ruling if
+the rule is to change; otherwise replay remains a gate. A failed replay
+cannot be accepted merely because its output was quoted. I recommend
+stating that default explicitly beside T:117–118 and naming the modules
+and checker exit status in the eventual validation record. This is the
+appropriate treatment of a pending proposal, not a demand that the worker
+settle the policy. It does not by itself reopen the repaired per-commit
+or final Tier B requirements. The remaining validation defect is R6.
+
+### R1. [P1, S1/original 3 still open] Quoting every map as `Fmap.mk` loses a real constructor and changes union provenance
+
+**Location:**
+`lean_frontend/docs/2026-10-18_codex-charter-core-quote.md:23–25,34–41,55–56,86`.
+
+The required representation is not the representation of every `Fmap`.
+At the pin, `LemLib.lean:1192–1194` has two constructors: `.empty`, which
+has no comparator, and `.mk cmp tree`. In particular, `.empty` and
+`.mk cmp .Empty` are different states. `Fmap.rep` at `:1200–1202` erases
+that distinction, so a check limited to `Pmap` trees misses it; the
+lookup sweep is empty in both cases.
+
+This is an ordinary required input, not just a malformed-map plant:
+`Main.lean:1021,1028–1029` initializes three fields of the libc file with
+`fmapEmpty`, and `convert_file` preserves those fields
+(`generated/Core_run_aux.lean:944,951–952`). The charter's universal
+`.mk` instruction either changes those values or forces refusal of a
+required library round trip.
+
+The distinction also matters to the consumer's later-union concern.
+`fmapUnionBy` at pinned `LemLib.lean:1271–1274` uses the left comparator
+only when the left operand is `.mk`. With `.empty` on the left it takes
+the right operand's captured comparator. Changing `.empty` to `.mk c
+.Empty` fixes the result to `c` instead. Two empty binding spines and
+identical underlying empty trees therefore do not justify this change.
+The same distinction controls the comparator captured by insertion
+(`:1211–1213`). Q:34–35's unconditional left-comparator statement is false.
+
+**Suggested fix:** quote and compare the outer `Fmap` constructor as
+well as its tree. Emit `.empty` exactly when the original is `.empty`,
+and require no comparator term in that case. Preserve `.mk cmp .Empty`
+as such when it actually occurs. Document both union branches, using
+`.empty` rather than an empty binding list as the discriminator. Add an
+empty-versus-captured-empty negative control and correct the Fmap
+constructor citation to `LemLib.lean:1192–1194` (`:937–940` is `Pmap`).
+
+### R2. [P1, S1/original 3 still open] The replacement check no longer requires comparison of the complete Core file
+
+**Location:**
+`lean_frontend/docs/2026-10-18_codex-charter-core-quote.md:37–41,57–65,107–110`.
+
+All three enumerated comparisons are map-specific. They do not compare
+the non-map fields of `generic_file`, notably `main`,
+`calling_convention0` and `globs` (`generated/Core.lean:2491–2501`). A
+literal with unchanged maps but a dropped global initializer or changed
+entry symbol passes those three checks. Requiring one altered scalar
+negative control does not close this: that scalar can be inside a map
+value that the existing check does compare.
+
+The same completeness requirement applies recursively to structures
+inside values. For example `core_run_annotation` contains `Pset` fields
+(`generated/Core_run_aux.lean:53–57`), and the pinned Pset `BEq` compares
+only element spines (`LemLib.lean:928–929`). The permission to quote sets
+while preserving their representation needs a corresponding comparison;
+generic leaf `BEq` is not that check for a represented container.
+
+**Suggested fix:** make the first stage a comparison of the entire
+`file core_run_annotation`, covering every constructor and field. Its
+map/set cases must compare their representations recursively, including
+R1's outer map tag and all cached heights. Retaining whole-file generated
+`BEq` as an additional check is fine, but it cannot substitute for those
+container checks. Place the scalar negative control outside all maps
+(for example, change `main`) and add a changed global initializer control.
+Derive the field inventory from the already-required D0 type inventory.
+
+### R3. [P2, new] Generated value `BEq` can accept a changed floating-point representation
+
+**Location:**
+`lean_frontend/docs/2026-10-18_codex-charter-core-quote.md:17–25,37–40,67–69`.
+
+Even after the container checks are repaired, the stated key/value
+comparison is not generally representation equality. `CerbMem.lean:75`
+defines `FloatingValue` as `Float`; `generated/Core.lean:486–489` compares
+`OVfloating` leaves with Float `BEq`. The shipped Lean 4.32.2 source
+`Init/Data/Float.lean:133–144` specifies IEEE equality: positive and
+negative zero compare equal, while operations can distinguish them.
+
+Thus changing a supported floating leaf from positive to negative zero
+inside a map value can preserve the tree, comparator term and every
+BEq-based lookup-result comparison. The change is observable here:
+`CerbFloat.lean:325–330,382–388` reads the sign bit when printing zero,
+and the project has separate signed-zero examples at
+`test/Unit/PPTest.lean:106–107`. Floating values can enter translated Core
+through `generated/Translation.lean:236–238`.
+
+**Suggested fix:** specify representation-sensitive leaf comparison for
+supported floating values, with signed-zero controls, or explicitly
+refuse that leaf constructor within the charter's existing refusal
+policy when the required corpus permits it. Audit the admitted leaf
+types instead of assuming every generated `BEq` is faithful. If NaNs
+are supported, define their handling separately: this project's
+`CerbFloat.lean:348–354` records that this toolchain's `toBits`
+canonicalizes NaNs, so a blanket raw-bit-preservation claim would be
+unjustified. No new opaque/native seam is authorized by this suggestion.
+
+### R4. [P2, S1 still open] The comparator negative control asks the binding-key sweep to see a query it never makes
+
+**Location:**
+`lean_frontend/docs/2026-10-18_codex-charter-core-quote.md:39–41,63–65`.
+
+The specified sweep queries only keys stored in each map. That does not
+distinguish structural symbol comparison from the active comparison on
+the proposed description-only alias pair. For a singleton storing symbol
+`s`, both comparators find `s`. They differ when queried with `s'`, which
+has the same digest and number but another description. `s'` is absent
+from the stored keys: under the active comparator it is equal to `s`,
+so inserting it replaces the binding rather than creating a second key
+(`LemLib.lean:985–991`). The term check can reject the changed comparator,
+but the mandated sweep does not witness the claimed behaviour difference.
+
+Also, `defaultCompare` and the active `ordCompare` are different head
+names. Using those two naked constants does not exercise the same-head,
+different-instance defect the control is meant to catch.
+
+**Suggested fix:** use two fully instantiated applications of the same
+head (for example `mapKeyCompare` with two explicit instance values),
+and add the absent alias `s'` to the control's query list. Require the
+term comparison to reject the instance substitution and the behavioural
+control to expose its lookup difference. Keep stored-key sweeps as useful
+positive checks without claiming they identify a captured comparator.
+
+### R5. [P2, S4 still open] The numerical deadline still governs only the diverging subset
+
+**Location:**
+`lean_frontend/docs/2026-10-18_codex-charter-stack-ceiling.md:43–54,87–89,104–105`.
+
+The new table covers every named input and mode, which fixes the missing
+observations. The candidate-selection predicate at lines 44–45 and the
+no-feasible-default stop at lines 53–54 still quantify the 60-second
+bound only over diverging witnesses. The million-element finite programs
+must produce FUEL, but are not explicitly required to do so within that
+bound. A default yielding a normal fuel record at 80 seconds for one of
+those programs satisfies those local predicates if its harness timeout
+is longer. Recording that time does not satisfy the consumer's limit.
+
+The identity handling is otherwise a useful repair: obtain the remaining
+consumer inputs at dispatch or state the narrower claim, and preserve
+W5's mode-appropriate emitted leaves. The historical mixed-leaf result
+must not be converted into an expectation of three leaves in `--first`:
+`CerbND.lean:222–236` follows one branch in that mode.
+
+**Suggested fix:** use one explicit acceptance set for fuel selection,
+the per-mode table and the stop rule: all named default-budget resource
+witnesses, including the overflowing finite programs, must produce an
+admitted record within 60 seconds. Treat the smaller finite programs'
+same-explicit-budget completion checks separately. Freeze the exact
+input set before dispatch, deduplicate overlapping consumer/probe cases,
+and replace D0 and the file fence's stale references to four programs
+with that inventory. No fresh timing claim follows from this review.
+
+### R6. [P2, S3/original 13 still open] Full close-out checks do not cover the earlier named S1 slice exit
+
+**Location:**
+`lean_frontend/docs/2026-10-18_codex-charter-outcome-protocol-s1-s2.md:60–62,80–81`;
+the other charters' common boundary wording has the same limitation if
+used for an intermediate certified checkpoint.
+
+The broad earlier defect is mostly fixed: commits now require Tier A,
+final close-out names the full release runner, and the orchestrator has
+an independent Tier B obligation before landing. However, this charter
+explicitly contains S1 and S2 as slices and ends S1 at D3 with Tier A
+and its record. Tier B is assigned only to the later S2 close-out.
+
+`scripts/LADDER.md:66–70` requires Tier B at slice boundaries as well
+as close-out/pre-merge; container `CLAUDE.md:151–158` requires the full
+battery before checkpoint/audit claims and independent boundary checks.
+An S1 slice-exit claim after D3's stated checks therefore still exceeds
+the validation performed. This is separate from the pending replay
+policy; approving a replay-policy change would not waive the ladder.
+
+**Suggested fix:** assign full Tier B to the S1 slice exit and the
+corresponding independent boundary verification, and state that any
+earlier certified checkpoint/audit follows the standing full-battery
+rule. If a reduced S1 exit is intended, obtain a specific waiver rather
+than implying one through the final close-out wording. Routine work
+between those claim points need not acquire additional checks.
+
+### R7. [P2, new] The measured translation option still has an ambient-exhaustion acceptance test
+
+**Location:**
+`lean_frontend/docs/2026-10-18_codex-charter-translation-fuel.md:33–38,44–50,85–87`.
+
+The final-form table now correctly admits a measured pair, closing S6.
+But success item 3 and D2 still unconditionally require a low-fuel
+driver run to exhaust one of those workers in dead code, fail at the
+translation boundary, and cease failing when the recorded error is
+removed. A measured wrapper supplies its data-derived measure instead
+of the CLI fuel; lowering `--fuel` does not force its own exhaustion
+arm (`CerbND.lean:386–394` explains precisely this distinction).
+
+If the joint measure makes those arms unreachable on the admitted
+production inputs, a successful implementation cannot supply that
+end-to-end plant. Exhausting some other ambient frontend function would
+not test the repaired recorded-error path. It would allow the wrong
+witness to stand in for the promised one.
+
+**Suggested fix:** branch the test obligation on the final form. For
+ambient workers, keep the actual low-fuel dead-code driver witness. For
+measured workers, require the measure/sufficiency obligations and an
+ordinary production control, and test recorded-error propagation with
+a deliberately under-fuelled raw-worker call through
+`runStateM_errors` in a clearly identified unit probe. Where unreachability
+is claimed, prove or state its precise established conditions. Do not
+require the normal measured wrapper to exhaust or substitute an unrelated
+driver panic. The native failure boundary remains distinct from a typed
+error theorem, as in the prior passes.
