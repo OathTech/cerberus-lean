@@ -457,3 +457,316 @@ record-integrity rules take precedence over that historical format.
 This report is a static charter review. It claims neither that a proposed
 repair has been implemented nor that any current engine run passed or
 failed anew.
+
+## Second pass — 2026-10-18, rev 2 and the two consumer decisions
+
+### Verdicts and scope
+
+| Charter | Second-pass verdict | Disposition |
+|---|---|---|
+| Translation fuel | **still open** | Original finding 13 remains. New finding S6 makes the acceptance table contradict the permitted measured result. |
+| Core quotation | **still open** | Original findings 3 and 13 remain. The selected boundary instrument is legitimate, but its strengthened comparison still does not justify the lookup claim (S1). New factual correction S7. |
+| Stack ceiling | **still open** | Original findings 5 and 13 remain. The default-only mechanism cannot deliver the newly mandatory million-element completion controls (S2); acceptance coverage and regeneration also need repair (S4, S5). |
+| Outcome protocol S1–S2 | **still open** | Findings 6–9 are closed in the charter. Finding 13 remains, and S5 is new. The separate design acceptance and fresh-review gate remains binding. |
+| Failure-monad design | **closed** | Finding 15 is fixed by a meaningful runtime experiment and a reconstructible prototype. No new finding; ready as a bounded design pass. |
+
+These are independent judgements [AGENT 2026-10-18]. Of the original
+16 findings, **13 are closed and 3 remain open: 3, 5 and 13**. Closed means
+the charter now requires an adequate repair, not that the implementation
+or its tests have passed. New findings below are identified separately.
+
+Reviewed cerberus charters at
+`ee6cc316dcf7024f4f733adbcc76b092e5ac662c`, the Lem charter at
+`d6a8f0c7fcf7c42d3fcbd497069a9c246c4c6188`, and the outcome design including
+errata at `5d31318daa7ee2f58ee545c8a6765c1f25b5bdbb`. The prior report is
+`3a1555f829483ed961ae27e814ea587735c8a197`. Source mainline remains
+`32ab44e4a76dc68d11baffc77f7aca95b4e71efc`; Lem implementation claims below
+use the functional pin `2d3a492758cb23dc4e417f2961983d25b36ce130`.
+
+The standing instructions, original report and response note remain the
+basis of this review. Rechecked the revised requirements against the
+relevant source, historical stack measurements and consumer witness
+records. Generated-source references retain the first pass's limitation:
+inspection of the existing tree, checked against tracked source, without
+regeneration or a freshness claim. No build, lane, Lean invocation,
+driver run or new timing experiment was performed. The only changes are
+this appended section and its requested local commit. The first report
+is preserved unchanged.
+
+The consumer's two decisions are treated as settled scope, paraphrased
+here: quotation may remain a declared-boundary instrument; a reduced
+CLI fuel default is an acceptable operational remedy, with the
+structural repair left as a proposal. Neither decision authorizes a
+false lookup-equivalence claim, weaker standing gates, or a new
+requirement that the million-element programs finish. No additional
+operator quotation was identified in the five revised charters.
+
+### Disposition of every original finding
+
+In this table, T, Q, S and O denote respectively the translation-fuel,
+core-quote, stack-ceiling and outcome-protocol-s1-s2 files named in the
+first section, under `lean_frontend/docs/2026-10-18_codex-charter-*.md`.
+M denotes `doc/lean-backend/2026-10-18_codex-charter-failure-monad-design.md`
+in lem-lean. Line numbers are rev 2.
+
+| Original finding | Status | Evidence and remaining action |
+|---|---|---|
+| 1. Deferred error node | **closed** | T:33–39,47–49,85–87 require recording exhaustion in the translation state, a boundary failure, and a dead-code plant that fails without recording. `translation_effect.lem:250–264` supplies the existing mechanism. This is a runtime boundary guarantee, not a new typed-failure theorem. |
+| 2. Impossible all-ABSORBING fallback | **closed** | T:15–38 gives the actual return shapes, requires measured pure/state workers, and classifies error-recording `elabM` workers as ambient outside the execution closure. T:99–104 prevents an unproved pure worker being reported done. Reconcile the optional measured pair with item 2 as S6 requests. |
+| 3. Quotation relation | **still open** | Q:15–46 settles relation A and the boundary entry, but Q:29–33,43 asserts lookup/extensional agreement from insufficient checks. S1 gives the remaining counterexamples and a repair within A. |
+| 4. Wrong recursion layer | **closed** | S:29–32,42–45,61–62,76–78 explicitly distinguishes action production from outer traversal. The selected default change reaches the existing ambient budget; the structural proposal keeps the repository boundary. |
+| 5. Finite versus diverging acceptance | **still open** | S:21–26 correctly separates them, but S:36–38 now requires both million-element programs to finish at a larger explicit fuel. S2 explains why this is incompatible with the selected mechanism on the recorded premise. |
+| 6. Premature classification promise | **closed in the charter** | O:18–29 supplies a per-family transition table, and O:41,64–65 requires the consumer demonstration and disclosure. Design §8:423–425 requires the original overclaim to be corrected before acceptance. |
+| 7. Bare 137 attributed to OOM | **closed in the charter** | O:32–36 explicitly requires positive cap evidence, leaves unexplained 137 red, and adds native-137 and signal controls. Design §8:413–418 records the same correction. |
+| 8. Data envelope and admission contradictions | **closed in the charter** | O:33–36 makes program-data envelopes ordinary verdict data and predicates negative plants on the admission matrix. Design §8:419–422 requires the contradictory rule and blanket plant wording to be repaired. |
+| 9. Register mutation prohibited | **closed** | O:38–40,61–62 expressly permits affected message keys and seals, with a mapping and unchanged reach/position/invariant information. |
+| 10. False measured-wrapper equation | **closed** | T:51–55 requires the equation appropriate to each final form and limits zero-arm claims to what is established. |
+| 11. Resource wire contract and baseline scope | **closed** | S:49–50 chooses the existing fuel channel, S:72–74 inventories affected rows, and S:39–40 separates new measurements from history. The conditional new-resource file-fence tail at S:99–100 is now dead text and should be deleted for consistency. |
+| 12. Missing multi-TU round trip/extraction point | **closed** | Q:9–10,35–37,50–58 fixes the post-conversion object, adds a linked cross-TU case and the library quotation, and excludes derived run-state maps. |
+| 13. Reduced validation | **still open** | T:113–116, Q:111–113, S:95–97 and O:78–80 retain row-1-only commits and partial close-out batteries; T additionally demotes replay to a speedbump. S3 addresses all four. The specifically missing outcome B5 is fixed at O:40–41,62. |
+| 14. Imported translation manifest instruction | **closed** | Q:113, S:96–97 and O:79–80 explicitly exempt it. The cerberus dispatch paragraphs require the charter, and O:8–9 also the accepted design, on the dispatch base. Exempting all regeneration in S/O is a new defect, S5. |
+| 15. Vacuous/nonreproducible cost experiment | **closed** | M:25–31,63–68 requires effectful success and failure workloads, runtime-only repeated timings, source and rebuild commands, an explicit incomplete-cost result on failure, and honest handling of expected-failure repairs. |
+| 16. Incorrect references and counters | **closed for the listed defects** | T:69–75 fixes discovery of the proof carrier; Q:12–13,55 fixes the printer description and executable/command counts; S:61,68,105 fixes the driver body and mode flags. Q:80 introduces a separate inaccurate description, S7. |
+
+The outcome design's body has deliberately not yet been reconciled with
+its errata. O:3–6 requires that reconciliation, a fresh full review by a
+new reviewer, and operator acceptance before dispatch. Thus findings
+6–8 are closed as charter requirements, not an approval of the design at
+`5d31318da`. This second pass by the original reviewer does not substitute
+for that fresh full review.
+
+### S1. [P1, original 3 still open] Comparator names and binding spines are not sufficient to establish lookup agreement
+
+**Location:**
+`lean_frontend/docs/2026-10-18_codex-charter-core-quote.md:22–33,40–44,57–60,101–104`.
+
+Declaring the instrument as a boundary resolves the earlier choice of
+relation. It does not make the new assertion of extensional map
+equality true. There are two independent missing conditions.
+
+First, the name of a polymorphic constant is not the comparator
+function. At the pin, `LemLib/Map.lean:49–63` makes `mapKeyCompare` a
+projection from a `MapKeyType` instance; `:101–105` passes that instance
+through `fromList`. `LemLib/Basic_classes.lean:143–146` likewise gives
+`ordCompare` implicit equality and ordering instances. Distinct instance
+arguments can produce different lookup behaviour while the printed head
+name is unchanged. Even singleton maps can have identical binding
+spines but disagree on a query identified with the stored key by only
+one comparator. The required different-name negative control does not
+catch this.
+
+This is relevant to the actual inventory: `generated/Symbol.lean:237–250`
+defines structural instances, while `:277–286,290–343,383–385` supplies
+symbol comparisons that ignore descriptions. The table's parenthetical
+identification of `mapKeyCompare` with `defaultCompare` cannot be assumed
+merely from the name. The worker's existing verification requirement is
+useful, but must identify the fully instantiated function.
+
+Second, the captured comparator and the tree both determine lookup.
+Pinned `LemLib.lean:1216–1220` uses the captured comparator with
+`Pmap.find?`; `:994–1000` follows tree branches. Equality at `:1241–1242`
+compares only the inorder list produced by `:1176–1181`. The `Pmap`
+constructor at `:937–940` imposes no search-order invariant.
+
+A source-level counterexample, not an executed test: with ordinary
+ascending natural-number comparison, take one tree with root `(1,a)`
+and left child `(2,b)`, and a second with root `(2,b)` and right child
+`(1,a)`. Both inorder lists are `[(2,b),(1,a)]`; the same named comparator
+and equal scalar values pass the specified pair of comparisons. Lookup
+of 1 returns `a` in the first and misses in the second. These are not
+ordered search trees. That is the missing hypothesis, not a claim that
+the current frontend has produced these trees.
+
+Rebuilding only ordered trees under the same lawful comparator can make
+spine equality useful. The charter neither requires establishing that
+condition for the source and literal nor requires preserving the source
+tree. Its permission to canonicalize maps leaves this choice open.
+`fmapUnionBy` at the pin (`:1269–1274`) also ignores its explicit
+comparator argument and chooses a captured one; seeing a comparator
+name at a linking call is not evidence about the result's comparator or
+both inputs' ordering.
+
+**Suggested fix:** retain A, but define an adequate representation
+contract. Name monomorphic comparator constants with their types and
+all instance arguments fixed, or compare those full elaborated terms.
+Trace the captured comparator from construction, including empty/nonempty
+union cases and libc loading: `Main.lean:246,993,1025` uses
+`libcSymMapCmp`, and `Core_linking.lean:465–485` preserves a selected
+input comparator. The table must distinguish these construction paths.
+Do not compare a printer-supplied label against another copy of that label.
+
+For trees, either require and check preservation of the actual `Pmap`
+representation, or require orderedness/uniqueness and comparator laws
+that justify reconstruction on the admitted inputs. Refuse unsupported
+provenance or a failed invariant. Include a same-name/different-instance
+control and a same-spine/different-search-tree control. The existing
+`BEq` and name checks can remain, but cannot be advertised as sufficient
+by themselves. This need not become a general printer-correctness proof;
+the boundary declaration and the consumer's separately owned lemma stay.
+
+### S2. [P1, original 5 still open] The new positive controls require a structural repair from a default-only change
+
+**Location:**
+`lean_frontend/docs/2026-10-18_codex-charter-stack-ceiling.md:19,24–26,33–41,79–80`.
+
+Success item 2 makes completion of the two million-element finite stress
+programs mandatory at some explicit fuel. The known premise is that
+these very programs hit the native stack before exhausting a sufficiently
+large fuel: `TODO.md:530–548` records the million-element failures at
+`10^8`, and completion of the corresponding `100000` cases. The present
+charter chooses only a different CLI default. Supplying the old explicit
+fuel bypasses that change, and increasing it does not shorten the
+recursive continuation chain. Lowering it stops the run before completion.
+
+On that premise, this acceptance item cannot be met by D3. The worker
+must either stop unnecessarily, exceed the chosen repository/mechanism
+scope, or weaken the result. The new consumer decision permits default
+exhaustion and retains explicit fuel; it does not establish that arbitrary
+finite runs can be made stack-safe just by supplying more fuel. The
+unqualified preservation sentence at line 19 also conflicts with the
+accepted possibility of lower-default exhaustion for previously
+completing programs.
+
+**Suggested fix:** use the known-completing smaller finite programs as
+positive controls, comparing the same explicit fuel and oracle
+observation before and after. Keep the million-element cases as required
+default-budget resource witnesses, allowing complete matching observations
+if fresh evidence supports them. Record that explicit high budgets still
+expose the structural limit until the separate proposal is implemented.
+Express preservation at the same explicit budget, and inventory any
+default-budget row movement. Do not require million-element completion
+from this slice.
+
+### S3. [P2, original 13 still open] Renaming checks intermediate and boundary has not restored the required gates
+
+**Locations:**
+`lean_frontend/docs/2026-10-18_codex-charter-translation-fuel.md:113–116`;
+`lean_frontend/docs/2026-10-18_codex-charter-core-quote.md:93–97,111–113`;
+`lean_frontend/docs/2026-10-18_codex-charter-stack-ceiling.md:95–97`;
+`lean_frontend/docs/2026-10-18_codex-charter-outcome-protocol-s1-s2.md:58–62,78–80`.
+
+All four still permit commits on row 1 alone and prescribe only selected
+Tier B rows, or none, at final handoff. The orchestrator is assigned only
+an independent Tier A rerun. `scripts/LADDER.md:37,66–70,153–154`,
+`lean_frontend/VALIDATION.md:1231–1249` and container `CLAUDE.md:151–160`
+retain the wider commit, boundary and close-out obligations. There is no
+recorded waiver. Relabeling the same reduced checks does not close the
+finding. The outcome charter has correctly restored its particular B5.
+
+Translation additionally calls kernel replay a nonblocking speedbump.
+That contradicts the supplied Lean trust instructions, which designate
+kernel replay and axiom checking as trust-surface gates. This project's
+pinned Lean 4.32.2 has the replay checker; an unspecified conditional
+report is not the requested requirement.
+
+**Suggested fix:** state the applicable Tier A commit and full boundary
+obligations, with explicit worker/orchestrator ownership, or obtain and
+record a scoped waiver before dispatch. Name the shipped kernel replay
+and axiom checks as gates for proof-bearing deliverables. Extra checks
+can remain focused; do not present a selected subset as the complete
+standing certification.
+
+### S4. [P2, new] The 60-second criterion does not cover the programs whose reclassification is promised
+
+**Location:**
+`lean_frontend/docs/2026-10-18_codex-charter-stack-ceiling.md:5–11,21–41,46–47,72–80`.
+
+The decision and consumer note promise results for five consumer failures,
+but the characterisation identifies four programs and the timed acceptance
+at lines 33–35 applies only to the two diverging witnesses. The finite
+stress rows may consequently still run past 60 seconds at the new
+default while D3's named plant passes. The fifth consumer case is not
+identified. A generic replacement for the diverging callee can also
+erase its relevant nondeterministic behaviour.
+
+The consumer's actual W5 diverging callee is specified in
+`cerberus-caesium/scripts/check-w4-m0-witnesses.py:40–43`. Its recorded
+low-fuel runs contain both UB043 and fuel leaves
+(`docs/2026-10-17_W4-M0-witnesses.md:54–63`). A whole-run FUEL classification
+for incomplete exploration must not discard or relabel the UB leaf.
+The expected leaf counts embedded at script line 43 are themselves
+superseded by that record, so copying the old expectation would be wrong.
+
+The historical numbers do **not** prove that the lower-default decision
+is infeasible. `docs/2026-08-31_stack-ceiling-design.md:81–94` has small-loop
+completion around 4 seconds and deep-recursion completion around
+24–30 seconds near its `10^6` exhaustion edge. Its derived rates at
+`:194` suggest roughly 4–33 seconds of stepping for that budget. Those
+are useful starting points, not fresh timings for the specified programs,
+the whole frontend, both modes, or the current implementation.
+
+Nor do the records justify keeping all previously completing programs
+at the new default: the old approximately 55–61 fuel/loop-iteration
+estimate (`:109–112`) puts a 100000-iteration loop around 5.5–6.1 million
+fuel, while the old recursion rate at that budget suggests minutes.
+This is a derived cross-shape warning, not an impossibility proof or a
+measurement of W5, whose callee loops rather than recurses in C.
+
+**Suggested fix:** name every consumer failure whose reclassification
+will be claimed; obtain the missing identities before dispatch or narrow
+the claim explicitly. Require a table for each exact input in each mode
+at the selected default: full invocation, wall time including the
+pipeline, process status, outcome channel and all emitted leaves. A
+timeout, signal, panic-only FUEL label or missing result must fail the
+new no-signal record requirement. Preserve the W5 mixed outcomes.
+
+Use a bounded, stated fuel search and empirically justified safety margin;
+claim the largest validated candidate in that search, not a global maximum
+from a few samples. Keep a stop if the required table has no feasible
+default. With S2's finite controls fixed, the old records support trying
+the choice, not rejecting it in advance or declaring it already feasible.
+
+### S5. [P2, new] The regeneration exemption drops the mandatory hand-written-copy step
+
+**Locations:**
+`lean_frontend/docs/2026-10-18_codex-charter-stack-ceiling.md:95–100`;
+`lean_frontend/docs/2026-10-18_codex-charter-outcome-protocol-s1-s2.md:78–81`.
+
+Both exempt the translation charter's regeneration instruction because
+they change no `.lem` files. That instruction also includes the separate
+hand-written Lean copy step (T:111–112). These workers edit `Main.lean`
+and/or seams, whose compiled copies live in `generated/`.
+
+`lean_frontend/CLAUDE.md:248–269` requires synchronizing those copies;
+`Makefile:315–329,365–367` and
+`lean_frontend/handwritten_copy.manifest:34,39,43,58` show this includes
+Main, CerbFS, CerbMem and CerbND. Omitting the copy yields a stale build
+or a red sync gate. No `.lem` change is needed for this requirement to
+apply.
+
+**Suggested fix:** exempt only `.lem` regeneration/oracle rebuilding
+and translation-specific fork-drift re-pinning. Retain the prescribed
+hand-written synchronization before every affected Lean build, including
+manifest registration for the new outcome seam. Do not hand-edit the
+generated copies as a repair.
+
+### S6. [P3, new] Translation's mandatory final forms reject its expressly permitted measured pair
+
+**Location:**
+`lean_frontend/docs/2026-10-18_codex-charter-translation-fuel.md:23–24,44–46,85–87,96–97`.
+
+The table, D2 and flex section permit a joint measure for the two
+`elabM` workers. Success item 2 nevertheless mandates AMBIENT for those
+same workers. A successful joint proof therefore fails the literal
+acceptance condition. The error-recording explanation at line 33 has
+the same unconditional wording.
+
+**Suggested fix:** require each pair member to be MEASURED when its
+obligation closes, otherwise AMBIENT with the specified boundary failure
+and execution-closure check. Require the reported form table and pins to
+match that final choice. No gate change is needed.
+
+### S7. [P3, new] The quotation fact table describes linked Core as pre-link
+
+**Location:**
+`lean_frontend/docs/2026-10-18_codex-charter-core-quote.md:80`.
+
+At the cited `Main.lean:1203–1212`, `coreFile` is already the successful
+result of `link coreFiles` (`:1171,1192`). It is pre-conversion, not
+pre-link. The goal and multi-TU acceptance elsewhere now select the
+correct object, so this is a contradictory fact-table description rather
+than a missing extraction decision.
+
+**Suggested fix:** describe it as the linked `file Unit`, immediately
+before `convert_file`, and keep the existing post-conversion quotation
+point.
