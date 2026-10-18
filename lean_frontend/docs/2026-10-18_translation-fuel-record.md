@@ -2,7 +2,7 @@
 
 Branch `arc/translation-fuel`, base `b1c539c45`. All six translation workers
 have kernel equations: four MEASURED, two AMBIENT with fatal recorded
-exhaustion. The final full A+B run passed 42/42 commands; axiom audit and
+exhaustion. At `f12d9645a`, the full A+B run passed 42/42 commands; axiom audit and
 kernel replay passed. The charter slice is complete. Release certification
 and whole-frontend correctness are separate claims.
 
@@ -275,11 +275,94 @@ pristine-versus-fork libxml2 slices all reported semantic agreement.
   revised gate-scheduling instruction. D0's interrupted run is explicitly
   incomplete above; the final full run checks the existing baseline pins.
 - The reporting-classifier correction was necessary for the existing B8.3
-  contract. Its assertion and all previous classifier fixtures remain
-  unchanged; the five new fixtures cover the added envelope.
+  contract. At `f12d9645a`, its assertion and all previous classifier fixtures
+  were unchanged; the five new fixtures cover the added envelope.
 - Final record text was added after the full run. Implementation, tests,
-  manifests, dependency pins and baseline files did not change afterward.
+  manifests, dependency pins and baseline files did not change between that
+  run and `f12d9645a`.
 - Raw runs, probe files and OCaml snapshots are ephemeral and are removed
   after recording these conclusions. The commands above regenerate them.
   The assigned worktree is retained for the orchestrator's review. No merge
   or push is performed by this worker.
+
+## Orchestrator review follow-up
+
+[USER 2026-10-18] Resolve P2 (restore the real-driver execution-exhaustion
+witness) and P3 (cite this record in the translation manifest NOTE) in one
+follow-up commit, with Tier A passing before the commit. The orchestrator
+retains responsibility for landing.
+
+P2 is confirmed: fixture 001 at fuel 1 now fails during translation, so
+the original B8.3 real-driver row did not witness execution exhaustion.
+The row remains, with its comment corrected and its assertion narrowed to
+`FUEL:panic, exit 134`. A second real-driver row uses this finite loop:
+
+```c
+int main(void) { int i = 0; while (i < 100) { i = i + 1; } return 0; }
+```
+
+[AGENT 2026-10-18] Use fuel 128 for the loop's execution witness: translation
+already succeeds at 8, while execution still exhausts at 512 and completes
+at 100000. Thus 128 has margin above the measured sufficient translation
+budget and below the execution requirement. Fuel 1 lies below the
+translation requirement for fixture 001. Both selected budgets are caller
+parameters; no driver default changes. Keep a default-fuel MATCH control
+for each program, so the finite loop also has a successful oracle comparison.
+
+Measurements used the unchanged real driver from `f12d9645a`, with
+`LEAN_ABORT_ON_PANIC=1`, `scripts/capped timeout 30`, and
+`CERB_MEM_MAX=48G`. Export each fixture using
+`cerberus --runtime=_build/install/default --cabs-json <file.c>`; run
+`cerberus-lean <mode> --fuel <N> --runtime=_build/install/default <file.json>`.
+The probe printed the command parameters and exit status, then the relevant
+output lines verbatim (`--pp-core` returns after translation):
+
+```text
+001-return-literal: --pp-core --fuel 1, exit 134
+PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: lem: fuel exhausted
+execution-loop: --pp-core --fuel 8, exit 0
+proc main arity=0
+execution-loop: --pp-core --fuel 128, exit 0
+proc main arity=0
+execution-loop: --batch --fuel 128, exit 1
+Error {msg: "lem: fuel exhausted"}
+execution-loop: --batch --fuel 512, exit 1
+Error {msg: "lem: fuel exhausted"}
+execution-loop: --batch --fuel 100000, exit 0
+Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+```
+
+The new B8.3 row requires exactly `FUEL:kill, exit 1` and a nonzero lane
+exit; translation exhaustion cannot satisfy it. The finite loop is created
+in the plant's temporary directory and removed by its existing cleanup.
+P3 adds the record path to the dated `translation.lem` NOTE in
+`scripts/fork_drift_manifest.txt`; the source-content pin is unchanged.
+
+Focused check: `bash -n scripts/test_fuel_plant.sh` and
+`bash scripts/test_fuel_plant.sh` both exited 0. Selected plant output:
+
+```text
+PLANT OK   [exec/real driver at --fuel 1 -> translation FUEL:panic]: [1/1] FUEL 001-return-literal (FUEL:panic, exit 134): lem: fuel exhausted
+PLANT OK   [exec/real driver at the default fuel -> MATCH]: [1/1] MATCH 001-return-literal: VAL:{value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+PLANT OK   [exec/real loop at --fuel 128 -> execution FUEL:kill]: [1/1] FUEL execution-loop (FUEL:kill, exit 1): lem: fuel exhausted
+PLANT OK   [exec/real loop at the default fuel -> MATCH]: [1/1] MATCH execution-loop: VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+test_fuel_plant: ALL PLANTS OK (FUEL classification live in exec/gcc/ci_sweep/cn_coverage/measure; negatives not FUEL; real translation at --fuel 1 reads FUEL:panic, real execution at --fuel 128 reads FUEL:kill, both at the default MATCH; --fuel 0/non-numeral/out-of-position/missing refused)
+```
+
+Before the follow-up commit, `CERB_MEM_MAX=48G python3 scripts/release.py
+--mode fast` in the documented build environment passed from 23:23:53 to
+23:42:56 UTC on 2026-10-18 (19.0 minutes, derived). All 19 Tier A commands
+exited 0, with no artifact issues. The runner reported:
+
+```text
+PASSED A14.2 (172.1s)
+fast: passed; 19/19 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+This is the requested Tier A result plus the focused B8.3 result above;
+the earlier full A+B result belongs to `f12d9645a`. No semantics, proof,
+dependency pin or baseline file changes are part of this follow-up.
+Only this final gate-result text was added after the Tier A run; the tested
+script and manifest NOTE stayed unchanged through the commit.

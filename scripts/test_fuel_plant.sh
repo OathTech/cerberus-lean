@@ -149,36 +149,48 @@ check "measure/kill -> FUEL(kill) note"   $'\tlean-first\t1\t[0-9.]+\t[0-9]+\tER
 check "measure/panic -> FUEL(panic) note" $'\tlean-first\t134\t[0-9.]+\t[0-9]+\tNONE\t[^\t]*FUEL\\(panic\\);' "$WORK/measure_panic.log"
 check_not "measure/assert no FUEL" 'FUEL\(' "$WORK/measure_assert.log"
 
-# --- the REAL driver at a tiny fuel (fuel-parameter arc, 2026-09-04) -----------
+# --- the REAL driver at translation and execution fuel boundaries -----------
 #     The fuel is the caller's parameter (`--fuel N`, default Main.lean
-#     `defaultFuel`). A stub that runs the REAL binary with `--fuel 1`
+#     `defaultFuel`). Wrappers run the REAL binary with `--fuel N`
 #     prepended (through the same CERB_LEAN_BIN_OVERRIDE hook — banner on
 #     every use; the freshness check is skipped for stubs, so the real
-#     binary is asserted fresh first) must make the lane read FUEL:kill —
-#     the errno allocation's liftMem exhausts at fuel 1, before any
-#     verdict — and the same program at the default must read MATCH. Also
-#     the refusals: fuel 0 and a non-numeral exit 2 with the attributed
+#     binary is asserted fresh first). Fixture 001 at fuel 1 witnesses the
+#     recorded-error TRANSLATION boundary (FUEL:panic, exit 134). The loop
+#     below translates at fuel 8 but exhausts EXECUTION at fuel 128
+#     (FUEL:kill, exit 1); both programs must MATCH at the default fuel.
+#     Measurements: lean_frontend/docs/2026-10-18_translation-fuel-record.md.
+#     Also the refusals: fuel 0 and a non-numeral exit 2 with the attributed
 #     message; `--fuel` before the mode flag is refused as an unknown flag
 #     (the positional contract, Z-24).
 if [[ -z "${CERB_LEAN_BIN_OVERRIDE:-}" ]]; then
     "$PROJECT_ROOT/tools/check_driver_fresh.sh" --check-lean || { echo "PLANT FAIL [tiny-fuel]: the real Lean driver is not fresh" >&2; fail=1; }
     REAL_LEAN="$CERBERUS_LEAN_BIN"
-    cat > "$WORK/stub_fuel1" <<EOS
+    for fuel in 1 128; do
+        cat > "$WORK/stub_fuel$fuel" <<EOS
 #!/bin/sh
-# real driver, --fuel 1 spliced after the mode flag
+# real driver, --fuel $fuel spliced after the mode flag
 mode="\$1"; shift
-exec "$REAL_LEAN" "\$mode" --fuel 1 "\$@"
+exec "$REAL_LEAN" "\$mode" --fuel $fuel "\$@"
 EOS
-    chmod +x "$WORK/stub_fuel1"
+        chmod +x "$WORK/stub_fuel$fuel"
+    done
     log="$WORK/exec_fuel1.log"
     CERB_LEAN_BIN_OVERRIDE="$WORK/stub_fuel1" "$SCRIPT_DIR/test_exec.sh" "$MIN" > "$log" 2>&1; echo "rc=$?" >> "$log"
-    # (measured at C1: at fuel 1 the FRONT END's pure fuel'd workers exhaust first — the opaque
-    #  sentinel, FUEL:panic exit 134 — before any ND kill; both sub-kinds are the lane's FUEL class)
-    check "exec/real driver at --fuel 1 -> FUEL" '^\[1/1\] FUEL 001-return-literal \(FUEL:(kill|panic), exit (1|134)\): lem: fuel exhausted$' "$log"
+    check "exec/real driver at --fuel 1 -> translation FUEL:panic" '^\[1/1\] FUEL 001-return-literal \(FUEL:panic, exit 134\): lem: fuel exhausted$' "$log"
     expect_nonzero "exec/real driver at --fuel 1" "$(sed -n 's/^rc=//p' "$log")"
     log="$WORK/exec_default.log"
     "$SCRIPT_DIR/test_exec.sh" "$MIN" > "$log" 2>&1; echo "rc=$?" >> "$log"
     check "exec/real driver at the default fuel -> MATCH" '^\[1/1\] MATCH 001-return-literal' "$log"
+    cat > "$WORK/execution-loop.c" <<'EOS'
+int main(void) { int i = 0; while (i < 100) { i = i + 1; } return 0; }
+EOS
+    log="$WORK/exec_loop_fuel128.log"
+    CERB_LEAN_BIN_OVERRIDE="$WORK/stub_fuel128" "$SCRIPT_DIR/test_exec.sh" "$WORK/execution-loop.c" > "$log" 2>&1; echo "rc=$?" >> "$log"
+    check "exec/real loop at --fuel 128 -> execution FUEL:kill" '^\[1/1\] FUEL execution-loop \(FUEL:kill, exit 1\): lem: fuel exhausted$' "$log"
+    expect_nonzero "exec/real loop at --fuel 128" "$(sed -n 's/^rc=//p' "$log")"
+    log="$WORK/exec_loop_default.log"
+    "$SCRIPT_DIR/test_exec.sh" "$WORK/execution-loop.c" > "$log" 2>&1; echo "rc=$?" >> "$log"
+    check "exec/real loop at the default fuel -> MATCH" '^\[1/1\] MATCH execution-loop' "$log"
     # the refusals, on the real binary directly (LEAN_ABORT_ON_PANIC set as every harness does)
     json="$WORK/min.json"
     "$CERBERUS_BIN" --runtime="$PROJECT_ROOT/_build/install/default" --cabs-json "$MIN" > "$json" 2>/dev/null || { echo "PLANT FAIL [tiny-fuel]: cabs-json of $MIN failed" >&2; fail=1; }
@@ -198,5 +210,5 @@ else
 fi
 
 echo ""
-if [[ $fail -eq 0 ]]; then echo "test_fuel_plant: ALL PLANTS OK (FUEL classification live in exec/gcc/ci_sweep/cn_coverage/measure; negatives not FUEL; the real driver at --fuel 1 reads FUEL and at the default MATCH; --fuel 0/non-numeral/out-of-position/missing refused)"; else echo "test_fuel_plant: PLANT FAILURES" >&2; fi
+if [[ $fail -eq 0 ]]; then echo "test_fuel_plant: ALL PLANTS OK (FUEL classification live in exec/gcc/ci_sweep/cn_coverage/measure; negatives not FUEL; real translation at --fuel 1 reads FUEL:panic, real execution at --fuel 128 reads FUEL:kill, both at the default MATCH; --fuel 0/non-numeral/out-of-position/missing refused)"; else echo "test_fuel_plant: PLANT FAILURES" >&2; fi
 exit $fail
