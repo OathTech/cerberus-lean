@@ -1077,3 +1077,211 @@ is claimed, prove or state its precise established conditions. Do not
 require the normal measured wrapper to exhaust or substitute an unrelated
 driver panic. The native failure boundary remains distinct from a typed
 error theorem, as in the prior passes.
+
+## Fourth pass — 2026-10-18, Core quotation rev 4
+
+### Verdict and scope
+
+**Core quotation: still open, with narrow edits.** The substantial
+representation repairs are present. R2 and R4 are closed; R1's operative
+contract is repaired but its fact table retains the old error (F3).
+R3's signed-zero comparison defect is repaired. Two new interactions in
+the permitted floating-point choices need resolution (F1–F2). This is
+not a request to replace the chosen instrument with a correctness proof.
+
+Judgement [AGENT 2026-10-18]. Reviewed
+`lean_frontend/docs/2026-10-18_codex-charter-core-quote.md` at
+`e44c5a74fb3b04851cc249a7d017a72bfd08eba4`. Below, **Q** denotes that
+file and its rev 4 line numbers. The report before this append is
+`d59f58337fc70e8d6554713bb272b29ef2ba9bc7`; source mainline remains
+`32ab44e4a76dc68d11baffc77f7aca95b4e71efc` and the functional Lem pin
+remains `2d3a492758cb23dc4e417f2961983d25b36ce130`.
+
+Read the binding instructions, rev 4, the prior findings and the relevant
+construction, conversion, comparison and library-loading sources. The
+other charters were not re-reviewed; translation §4 was read only because
+Q inherits its rules. No disposition of R5–R7 follows from this pass.
+Kernel replay's policy question is **closed**: container
+`CLAUDE.md:206–211` now names it a trust gate, consistent with the inherited
+rule. No rule change is proposed here.
+
+Static inspection only: no builds, lanes, Lean executions or runtime
+probes. I also read the installed 4.32.2 Float declarations and disassembled
+the shipped `lean_float_to_bits` routine, without executing it. Generated
+citations refer to the existing primary generated tree, without a fresh
+regeneration claim. The only mutations are this requested report append
+and its local commit; the three earlier sections are preserved.
+
+### Disposition of R1–R4
+
+| Finding | Disposition | Evidence / action |
+|---|---|---|
+| R1: outer map constructor and union provenance | **Operative repair closed; text still open** | Q:23–29,38–41,47–49,76–77 preserve and compare `.empty` versus `.mk`, including `.mk cmp .Empty`, and require the bidirectional constructor control. The stale summary/citation in Q:102 and the ambiguous abbreviation in Q:40 still need F3's edit. |
+| R2: entire file and recursive containers | **Closed** | Q:44–54 requires every constructor and field recursively, expressly includes `Pset`, and rejects spine equality as the check. Q:74–75 puts controls in `main` and a global initializer. |
+| R3: Float equality loses representation | **Signed-zero defect closed; new findings F1–F2** | Q:50–54 requires representation-sensitive leaves and distinguishes NaNs; Q:77 adds the sign-flip control. The floating refusal option and NaN branch need the qualifications below. |
+| R4: comparator-instance control needs an absent alias query | **Closed** | Q:78–80 uses the same head with different explicit instances and queries an alias absent from the stored keys. Q:55 explicitly limits stored-key sweeps to supplementary evidence. |
+
+The whole-file requirement is sufficiently specific. A worker using the
+generated `BEq` with a few special cases would violate Q:44–50, even if
+the listed negative controls happened to pass. The D0 inventory must be
+followed through the recursive types; in particular a `ctype` is not an
+atomic structural leaf whose existing `BEq` can be trusted:
+`CerbCtypeInstances.lean:18–20,29–35` deliberately ignores annotations.
+The new wording already requires inspecting those fields. I do not ask
+for another exhaustive table or another gate to enforce that instruction.
+
+### F1. [P2, new] The blanket floating-leaf refusal option cannot satisfy the mandatory libc round trip
+
+**Location:**
+`lean_frontend/docs/2026-10-18_codex-charter-core-quote.md:57–59,68–85,123–124`.
+
+The flex section lets the worker choose to refuse floating leaves using
+a corpus count. But the separately required libc file already contains
+them, regardless of whether the small program fixtures do. For example,
+`tests/libc/libc.core:53379` contains a floating zero and `:53897` an
+infinity. The existing register `scripts/libc_float_literals.txt:6–29`
+lists 24 numeric float occurrences, in addition to the four infinity
+sites documented in `CoreParser.lean:1506–1525`.
+
+These become `OVfloating` values in the Lean input, not runtime-only
+results: `CoreParser.lean:1058,1524,1573` constructs them; renaming
+preserves them at `:2816`; `Core_run_aux.lean:749` preserves a `PEval`
+during conversion. `Main.lean:997–1025` carries the parsed library bodies
+into the required file. Refusing the float constructor therefore cannot
+be a successful completion of this charter. Counting only
+`tests/fixtures` and `lean_frontend/corpus` would give the worker a false
+choice. My earlier conditional suggestion to refuse floats applied only
+if the entire required input set permitted it; it does not here.
+
+The unconditional signed-zero negative control also needs an accepted
+floating domain. A refusal of both the original and mutated values is
+not evidence that the representation comparison detected the changed
+sign.
+
+**Suggested fix:** require representation-preserving quotation of the
+non-NaN floating leaves needed by the full acceptance set, explicitly
+including libc, and remove the blanket float-refusal option from this
+dispatch. Include signed zeros in the supported domain: unchanged +0
+and -0 examples must pass, and a sign-flipped, elaborating literal must
+fail the representation comparison. Keep refusal for unsupported
+cases, with counts over all required inputs, and resolve
+NaNs as in F2. This does not require changing any fixture or baseline.
+
+### F2. [P2, new] The optional NaN branch is incompatible with an unconditional generated-BEq acceptance check
+
+**Location:**
+`lean_frontend/docs/2026-10-18_codex-charter-core-quote.md:50–54,70–74,123–124`.
+
+Q:52 permits NaNs to be handled separately, but Q:54 also adds generated
+whole-file `BEq` to the mandatory round-trip check. That test is not a
+weaker equality on NaN-bearing values: an unchanged NaN fails it.
+`generated/Core.lean:489` compares floating leaves with Float `BEq`;
+the pinned toolchain's `Init/Data/Float.lean:133–144` specifies its
+non-reflexivity on NaN, and `include/lean/lean.h:3085` implements it as
+C floating equality. Thus an otherwise exact NaN round trip would be
+rejected by this additional condition.
+
+Nor does treating any pair of NaNs as equal preserve the chosen
+representation contract. `CerbFloat.lean:348–354`'s warning is accurate
+for the shipped binary. Read-only disassembly of `lean_float_to_bits`
+shows the unordered comparison selecting `0x7ff8000000000000`, losing
+both sign and payload. The installed declaration's general bit-conversion
+description is not sufficient evidence to override this implementation.
+No new native seam is licensed by the charter's inherited rules.
+
+**Suggested fix:** make named NaN refusal the specified behaviour for
+this dispatch, subject to checking that no required input needs one.
+Keep the generated-BEq positive check restricted to that supported
+domain, and test NaN refusal separately. If NaN support is retained as
+an option, first specify a feasible representation-preserving method
+and an explicit conditional treatment of the auxiliary `BEq` result;
+do not silently canonicalize NaNs, equate all NaNs, or claim that a
+false auxiliary result is a passed check. The non-NaN bits clause,
+including signed zero and infinity, is consistent with the inspected
+toolchain and needs no replacement.
+
+To reproduce the static binary inspection with the pinned toolchain
+selected, without running Lean:
+
+```sh
+objdump -d --disassemble=lean_float_to_bits \
+  "$(dirname "$(dirname "$(elan which lean)")")/lib/lean/libleanshared.so"
+```
+
+### F3. [P3, R1 cleanup still open] Old summaries contradict the repaired map contract and control list
+
+**Location:**
+`lean_frontend/docs/2026-10-18_codex-charter-core-quote.md:40,68–69,102,115,117`.
+
+The detailed rule at Q:38–39 correctly branches on the outer
+constructor, but Q:40 abbreviates this to non-empty left inputs.
+That is not the discriminator: `.mk cmp .Empty` is empty under
+`fmapIsEmpty` (`LemLib.lean:1204–1208`) and still contributes the left
+comparator at `:1273`. Q:102 repeats the unconditional left-comparator
+claim and still cites `:937–940` for `Fmap.mk`; those are the `Pmap`
+constructor lines, whereas `Fmap` is at `:1192–1194`.
+
+Q:68–69 and D1 also compress every map to a tree with a comparator,
+omitting the `.empty` alternative that the new leading rule requires.
+D3 still names four negative controls, although success item 2 now
+lists seven families, including both directions of the outer-tag swap.
+The detailed criteria prevent treating these abbreviations as permission
+to omit work, but a dispatch document should not send the worker back
+to the superseded requirements.
+
+**Suggested fix:** use `.mk` versus `.empty` consistently, include the
+both-empty union result, correct Q:102's constructor citation and union
+summary, and have the shortened deliverables refer to the full
+outer-constructor rule and all of success item 2's controls. Remove the
+stale numeric control count.
+
+### Provenance and control checks that passed this review
+
+The provenance task is derivable from the named paths. It does not
+require recovering a name from an arbitrary runtime closure. The
+worker's table still has to record each elaborated monomorphic term,
+its fixed instance arguments, and `.empty` as having no comparator.
+The following inspected paths support that task:
+
+| Value/path | Evidence and implication |
+|---|---|
+| Program `tagDefs`, `enumDefs`, `funs`, `funinfo` | `generated/Translation.lean:5643–5650,5663–5666,5828–5841,6178–6191` identifies the `fromList`, insertion and field-assembly paths. Resolve `fromList` through pinned `LemLib/Map.lean:61–63,101–105`, not the derived structural symbol instance. |
+| Core standard-library map and `impl0` | `Main.lean:45–72,1081–1108`: `std.core` declarations go through `fromList`; the implementation map captures `implementation_constant_compare`. These fields also enter the assembled libc file. |
+| Libc-specific maps | `Main.lean:246–257,993,1013–1029`: the three rebuilt symbol maps use the `libcSymMapCmp` alias of `symbol_compare`; `extern` is taken from the metadata file; three fields are `.empty`. The separate `stdlib` field comes from `std.core`, not the libc rebuild. |
+| External-name map | `generated/Translation.lean:6143–6154` maps the desugared external identifier map; `generated/Cabs_to_ail_effect.lean:3679–3709` constructs it; `generated/Core_linking.lean:33–77,457` identifies its subsequent linking and name-based comparator path. |
+| Nat-keyed maps | `generated/Cabs_to_ail_effect.lean:2136–2137` and `generated/Translation_effect.lean:301–303` supply `defaultCompare`, as the charter now says. |
+| Linking and conversion | `generated/Core_linking.lean:465–496` gives field-specific retention/union and the fold direction. `generated/Core_run_aux.lean:931–952` preserves fields or maps values; pinned `LemLib.lean:1232–1237` preserves the outer constructor and captured comparator during those maps. |
+| Derived `labeled` maps | `generated/Core_aux.lean:2577–2587,2637–2672,2824–2837` starts from `.empty`, inserts with the active symbol `ordCompare`, and traces both union branches. `generated/Driver.lean:2413,2422` installs the result at run initialization. These are provenance background for the consumer's derivation, not additional quoted fields under Q:58–59. |
+
+The libc round trip must use `convert_file libcFile` for the Lean value
+returned by `loadLibc`, alongside the actual post-link `runFile`.
+`Main.lean:83–109,1135–1139` explains the text-plus-metadata input path.
+It is not a quotation of the OCaml Marshal object itself. In particular,
+preserving this value does not repair the pre-existing libc float
+rounding deviation N3 (`VALIDATION.md:310`); changing that literal to
+the oracle's original value would violate this quotation contract.
+
+The non-float controls are constructible without changing generated
+types: `main`, global initializers and bindings are ordinary data;
+`Pmap.Node` permits a height mutation with the same spine; both empty
+map constructors are available. For the comparator control, two
+explicit `MapKeyType sym` dictionaries can project through the same
+`mapKeyCompare` head, one using the active symbol comparison and one
+the derived structural comparison. On a singleton storing `s`, an
+unstored description-only alias `s'` is found only by the former
+(`Symbol.lean:237–250,277–286,330–343`). Its term mismatch and lookup
+difference are separate observable failures. No execution of these
+controls is claimed here. Each mutated literal should elaborate, with
+an accepted unchanged control, so a syntax error or blanket refusal
+cannot stand in for the intended comparison failure.
+
+The boundary statement remains appropriately limited: this is a tested
+representation link for the admitted pipeline outputs with comparator
+provenance supplied by source inspection, not a kernel proof of printer
+correctness or a universal lookup theorem. The consumer retains the
+per-field lemma and option B remains the named boundary mover.
+
+No operator quotation was found in the revised charter. Static reading
+did encounter one in the historical pinned `LemLib.lean:835–837`; current
+Lem mainline already paraphrases that comment. This report does not copy
+the wording or propose rewriting pinned history.
