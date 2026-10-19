@@ -287,10 +287,11 @@ pristine-versus-fork libxml2 slices all reported semantic agreement.
 
 ## Orchestrator review follow-up
 
-[USER 2026-10-18] Resolve P2 (restore the real-driver execution-exhaustion
-witness) and P3 (cite this record in the translation manifest NOTE) in one
-follow-up commit, with Tier A passing before the commit. The orchestrator
-retains responsibility for landing.
+[AGENT 2026-10-18] Orchestrator review findings on `f12d9645a`, relayed to
+the worker by the operator: resolve P2 (restore the real-driver
+execution-exhaustion witness) and P3 (cite this record in the translation
+manifest NOTE) in one follow-up commit, with Tier A passing before the
+commit. The orchestrator retains responsibility for landing.
 
 P2 is confirmed: fixture 001 at fuel 1 now fails during translation, so
 the original B8.3 real-driver row did not witness execution exhaustion.
