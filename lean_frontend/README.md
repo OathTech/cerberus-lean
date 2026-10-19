@@ -200,11 +200,18 @@ production generator in an isolated scratch repository.
   exhaustively over the nondeterministic branch structure or as a single
   trace (`--first`). The runtime (`std.core`, the implementation file) is
   the oracle's: `--runtime DIR` or the `CERB_INSTALL_PREFIX` environment
-  variable, runtime = `DIR/lib/cerberus-lib/runtime`, the same prefix the
-  cabs-json was exported with (`cerberus --runtime=DIR --cabs-json`). The
+  variable, runtime = `DIR/lib/cerberus-lib/runtime`. Imported library
+  directories must resolve to that runtime; equivalent absolute/relative
+  spellings and symlinks are accepted, while foreign or missing directories
+  are refused. Source and lexing positions retain their original spelling. The
   driver refuses to run without one; it never searches the working
   directory and does not use the oracle's `OPAM_SWITCH_PREFIX` fallback.
   The lanes export `CERB_INSTALL_PREFIX` from `scripts/common.sh`.
+  For portable libc metadata, run `scripts/libc_prep.sh --jsons OUTDIR`:
+  it exports from the project root with `--runtime=_build/install/default`
+  and project-relative source/include paths. Consume those JSONs from the
+  project root; use that same runtime spelling when generating portable
+  quotation artifacts.
 - **Function-level execution.** `--call <f> [--call-args <ints>]`
   calls an individual function with injected arguments (the caller
   protocol mirrors elaborated call sites; `CerbCall.lean`, a port-side

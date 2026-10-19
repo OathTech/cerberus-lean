@@ -1,7 +1,8 @@
 # Core quotation for cerberus-caesium
 
-Status (2026-10-19): D2 driver quotation implemented with focused literal
-elaboration evidence. The independent whole-file round-trip test remains for D3. Base
+Status (2026-10-19): D2b path guard and canonical metadata export implemented;
+parked on the F7/F8 determinism findings. The independent whole-file round-trip
+test remains for D3. Base
 `e7e9bb427a514b6053865c303c4af512907da75b`; D0 checkpoint
 `fb8705c686d1de34f66426e3da4f1477d077632e`.
 
@@ -12,7 +13,7 @@ quotation instrument. It preserves the representation of the executed
 `file core_run_annotation`; the consumer owns the subsequent lookup lemma.
 It is not a proof of equality with the frontend's result.
 
-The driver value is `runFile := convert_file coreFile` at `Main.lean:1244`,
+The driver value is `runFile := convert_file coreFile` at `Main.lean:1252`,
 after the final link. A second quotation covers `convert_file libcFile`
 for the result of `loadLibc`, before the user link. The emitted module imports
 `Core_run_aux`, uses private typed subterm helpers,
@@ -30,10 +31,20 @@ export LEAN_ABORT_ON_PANIC=1 CERB_MEM_MAX=48G
 (cd lean_frontend && ../scripts/capped lake env lean ../.tmp/Fixture.lean)
 ```
 
-Create the output directory first. The runtime prefix must match the source
-locations in the Cabs JSON exactly; the committed fixture uses the relative
-prefix above. For a fresh libc or multi-TU invocation, generate metadata
-with the same runtime prefix as the driver. Supply `--libc tests/libc/libc.core`
+Create the output directory first. The runtime's library directories and
+imported library locations must resolve to the same directories. D2b accepts
+absolute/relative aliases and symlinks but preserves all stored positions.
+For portable libc metadata, run `scripts/libc_prep.sh --jsons OUTDIR`; it
+exports from the project root using `--runtime=_build/install/default` and
+relative source/include paths. Consume those JSONs from the project root and
+use `--runtime _build/install/default` for portable quotation artifacts.
+D2b's guard change alone does not make output independent of runtime spelling:
+parsed `std.core` and `.impl` positions still carry that spelling (record F7).
+The alternate-working-directory invocation refuses because relative stored
+locations have no explicit project origin (record F8). Implementation is
+parked under the operator's refusal stop rule, pending a path-origin and
+parser-construction policy. No cross-machine determinism claim is made.
+Supply `--libc tests/libc/libc.core`
 and one `--libc-tu META.json` per metadata TU, in `scripts/libc_prep.sh` order.
 Use `--quote-libc .tmp/Libc.lean` to quote that loader result after conversion,
 once. It can be combined with `--quote-core .tmp/Linked.lean` and multiple
@@ -175,3 +186,11 @@ source unchanged during the run; its exact summary is quoted in the record.
 F6 distinguishes the nine warnings visible in the baseline build from the
 337 warnings replayed when building the seam, and records separate ownership
 of the backend-emission backlog and test hygiene. No warning suppression was added.
+
+D2b's precommit Tier A passed all nineteen commands, exit 0, with source
+unchanged; the record quotes its summary and the failed determinism probes.
+The existing libc execution and libxml2 URI baselines remain unchanged.
+The operator placed the future libc round trip in a named Tier B row and
+requires the test executable to accept consumer-generated flag modules;
+fixture/corpus and multi-TU round trips remain in row 1. D3's portable hash
+pin and kernel-replay cost measurement remain outstanding at this park.

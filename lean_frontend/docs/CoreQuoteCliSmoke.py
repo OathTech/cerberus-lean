@@ -82,6 +82,8 @@ core = nan_prefix / "lib/cerberus-lib/runtime/libcore"
 if nan_prefix.exists():
     shutil.rmtree(nan_prefix)
 shutil.copytree(runtime / "lib/cerberus-lib/runtime/libcore", core)
+shutil.copytree(runtime / "lib/cerberus-lib/runtime/libc/include",
+                nan_prefix / "lib/cerberus-lib/runtime/libc/include")
 # Dune inputs are read-only; replace only our copied file with a fresh test input.
 (core / "std.core").unlink()
 (core / "std.core").write_text(

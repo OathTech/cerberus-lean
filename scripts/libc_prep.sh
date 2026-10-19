@@ -192,12 +192,15 @@ for tu in "${LIBC_TUS[@]}"; do
     src="$LIBC_SRC_DIR/src/$tu.c"
     [[ -f "$src" ]] || die "libc source missing: $src"
     out="$OUTDIR/libc_$tu.json"
-    # Same cpp surface as the oracle's libc build (runtime/libc/dune:132-141):
-    # --nolibc -I include -I include/posix; --cabs-json replaces the Core
-    # passes (elaboration happens Lean-side).
-    ( cd "$LIBC_SRC_DIR" && opam exec --switch="$PROJECT_ROOT" -- \
-        "$CERBERUS_BIN" --runtime="$PROJECT_ROOT/_build/install/default" \
-        --nolibc --cabs-json -I include -I include/posix "src/$tu.c" > "$out" ) \
+    # Canonical export convention [USER 2026-10-19]: run from the project
+    # root with a relative runtime prefix. cpp then emits portable header
+    # positions; do not rewrite source or lexing positions after export.
+    # The include directories are the same as runtime/libc/dune:146-153,
+    # now spelled relative to the project root; elaboration happens Lean-side.
+    ( cd "$PROJECT_ROOT" && opam exec --switch="$PROJECT_ROOT" -- \
+        "$CERBERUS_BIN" --runtime=_build/install/default \
+        --nolibc --cabs-json -I runtime/libc/include -I runtime/libc/include/posix \
+        "runtime/libc/src/$tu.c" > "$out" ) \
       || die "cabs-json failed for $tu.c"
     [[ -s "$out" ]] || die "cabs-json produced an empty file for $tu.c"
     echo "$out"

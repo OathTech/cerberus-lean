@@ -608,19 +608,27 @@ def resolveRuntime (cli : Option String) : IO String := do
 def runtimeLibraryDirs (runtime : String) : List String :=
   ["libc/include", "libcore", "libcore/impls"].map (filenameConcat runtime)
 
-/-- Bug-hunt BUG-3 (2026-09-29): the import-time half of the library-location
-    mirror (see `CerbLocation.isLibraryLocation`). A file path of the imported
-    Cabs locations that passes the port's SUFFIX test but not the oracle's
-    EXACT test (`Filename.dirname path` ∈ `runtimeLibraryDirs runtime`) would
-    be library-classified by Lean only, and the UB location would differ: the
-    run is REFUSED (exit 2, attributed). Afterwards the suffix test equals the
-    exact test on every file the run can carry. -/
+/-- The import-time guard for `CerbLocation.isLibraryLocation`'s suffix test.
+    Deliberate divergence [USER 2026-10-19]: retain the oracle's exact
+    directory-membership rule (`util/cerb_location.ml:512-523`), but compare
+    resolved directories rather than their literal spellings. Thus `./`,
+    absolute/relative aliases and symlinks to the same directory agree.
+    Relative paths resolve from the importing process's working directory;
+    stored source and lexing positions are never rewritten. A missing or
+    foreign directory is refused (exit 2), not accepted by suffix alone. -/
 def refuseLibraryLocations (runtime : String) (source : String) (files : Array String) : IO Unit := do
-  let exact := runtimeLibraryDirs runtime
+  let refuse {α : Type} (detail : String) : IO α := do
+    IO.eprintln s!"cerberus-lean: refused — library-location classification: {source}: {detail} (see VALIDATION.md, bug hunt BUG-3 and Core quotation D2b)"
+    IO.Process.exit 2
+  let exact ← try
+      (runtimeLibraryDirs runtime).mapM (fun path => do return (← IO.FS.realPath (.mk path)).toString)
+    catch e => refuse s!"cannot resolve this run's runtime library directories: {e}"
   for f in files do
-    if CerbLocation.isLibraryPathSuffix f && !exact.contains (CerbLocation.dirname f) then
-      IO.eprintln s!"cerberus-lean: refused — library-location classification: {source} carries a source location in `{f}`, whose directory ends in one of {CerbLocation.libraryDirs} but is not one of this run's runtime library directories {exact}; the oracle classifies a location as library code by EXACT directory equality with its runtime (util/cerb_location.ml:512-523), this port's pure CerbLocation.isLibraryLocation by the directory suffix, so answering could serve a different UB location (see VALIDATION.md, bug hunt BUG-3)"
-      IO.Process.exit 2
+    if CerbLocation.isLibraryPathSuffix f then
+      let directory ← try IO.FS.realPath (CerbLocation.dirname f)
+        catch e => refuse s!"cannot resolve the source directory of `{f}`: {e}"
+      unless exact.contains directory.toString do
+        refuse s!"source location `{f}` resolves to directory `{directory}`, outside this run's resolved runtime library directories {exact}; exact membership is required, not a matching suffix"
 
 /-- Bug-hunt BUG-4 (2026-09-29; record `docs/2026-09-29_bug-hunt-fixes-record.md`
     §S4): print a batch `Undefined` line with the `ub:` payload as BYTES. The

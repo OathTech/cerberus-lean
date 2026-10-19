@@ -743,3 +743,191 @@ outputs are removed after commit. Tier B remains the D4 close-out gate.
 [AGENT 2026-10-19] Park at the completed D2 handoff. D3 test wiring is
 not started while the libc round-trip placement decision is pending relay;
 the D3 whole-file relation, controls and census remain outstanding.
+
+
+## D2b — portable libc metadata and resolved directory guard (2026-10-19)
+
+[USER 2026-10-19] Extend this step's fence to the driver's library-directory
+guard, `scripts/libc_prep.sh`, consumer convention text in README/VALIDATION
+and this note, with `scripts/common.sh` only if a lane requires it. Compare
+resolved directories by exact membership; retain stored positions. Export
+libc metadata from the project root using the canonical relative runtime
+prefix. Existing libc-mode lanes must retain their baselines; a refusal or
+movement requires a committed park and operator approval before repair.
+
+[USER 2026-10-19] Place the libc round trip in a new named Tier B row.
+Fixture/corpus and multi-TU checks remain in row 1. The test executable
+must also check modules emitted by the flag for consumers at their pin.
+
+[AGENT 2026-10-19, relayed] D2 was independently accepted after both flags,
+elaboration and refusals were exercised. D3 must also pin and check the
+libc literal's SHA-256, reject absolute position
+paths, compare output across runtime spellings and working directories, and
+measure kernel replay of the elaborated libc literal for the consumer note.
+
+`Main.refuseLibraryLocations` resolves the three runtime directories and
+each suffix-matching imported directory with `IO.FS.realPath`. Resolution
+errors and foreign directories retain the attributed exit-2 refusal.
+This deliberately differs from the oracle's literal-directory test at
+`util/cerb_location.ml:512-523`; exact membership, rather than prefix or
+suffix membership, remains the criterion. No imported field is edited.
+The new code does not change file construction, map unions, provenance or
+conversion. The final quotation point moved to `Main.lean:1252`.
+
+The metadata exporter now runs from the project root with
+`--runtime=_build/install/default`, `-I runtime/libc/include`,
+`-I runtime/libc/include/posix` and `runtime/libc/src/<tu>.c`.
+Those are the same include directories as the build at
+`runtime/libc/dune:146-153`. The old metadata export was at
+`scripts/libc_prep.sh:198-200`; its `:82` runtime argument belongs to the
+dump regeneration, which remains unchanged. All twelve new JSONs have
+zero absolute source-position paths and zero absolute lexing-position
+paths. Their digest inputs and TU order are unchanged.
+
+Metadata consumers traced: `test_libc_exec.sh`, `test_libxml2_uri.sh`,
+`test_immaculate.sh`, `test_ci_sweep.sh`, `test_pnvi.sh`,
+`test_speclab_{divmod,list,tree}.sh`, and `test_upstream_oracle.py`.
+Their driver calls run from the project root; no lane or `common.sh` edit
+is needed to resolve the new metadata paths.
+
+Compile attempts found an unbound local-helper result type and a missing
+String-to-FilePath conversion. Both were corrected; a focused Lean check
+passed. The failed attempts are not gate evidence. The existing D2 NaN
+probe now copies the runtime header directory too, so its private runtime
+supplies all three directories required by the resolved-membership guard.
+
+
+**F7 — metadata is not the only path-bearing input to the libc literal.**
+With the same canonical metadata, both `--quote-libc` runs from the project
+root succeed, but absolute and relative runtime prefixes produce different
+source. The absolute-prefix output contains 282 emitted `Pos.mk` source
+paths for `std.core` and two for the `.impl` file with the machine's root
+prefix; the relative-prefix output has no absolute `Pos.mk` source path.
+These are occurrences in the shared literal source, not an expanded
+whole-value census. Removing only the root prefix from the absolute-prefix
+output makes the two sources byte-identical; this diagnostic comparison
+does not change either output. Sizes are 33,336,641 / 33,290,633 bytes.
+
+The construction sites are `Main.lean:1111,1116,1130,1135`: file lookup paths
+are also the arguments to `CoreParser.parseLibraryFile`. The parser's
+location resolution (`CoreParser.lean:2533,2545-2546,2716`) constructs both
+source and lexing paths from that argument. Thus a guard-only change cannot
+establish D3's runtime-spelling determinism. This is an additional input
+provenance finding, beyond the metadata-header positions identified in
+the relayed direction. The quoting seam correctly preserves these values.
+
+[AGENT 2026-10-19] Keep parser construction sites unchanged pending approval
+of a path-origin policy; the current guard-only fence does not settle them.
+An explicit source-root argument could anchor relative imported locations
+and provide relative labels when library positions are first constructed,
+without rewriting stored positions. This proposal is pending approval and
+is not implemented. D3 determinism and its SHA-256 pin remain open.
+
+
+### D2b focused checks and reproduction
+
+After the documented project environment setup, from the repository root:
+
+```sh
+export CERB_MEM_MAX=48G
+mkdir -p .tmp/core-quote-d2b
+./scripts/capped make lean-prelude-src
+(cd lean_frontend && ../scripts/capped lake build cerberus-lean)
+./scripts/capped scripts/libc_prep.sh --jsons "$PWD/.tmp/core-quote-d2b/libc-json" \
+  > .tmp/core-quote-d2b/libc-json-paths.txt
+./scripts/capped scripts/check_runtime_resolution.sh
+./scripts/capped scripts/test_libc_exec.sh
+./scripts/capped scripts/test_libxml2_uri.sh
+```
+
+Results: synchronized build exit 0; all 17 runtime-resolution witnesses
+pass; libc execution matches all 43 baseline cases; libxml2's four lanes
+retain their pinned expectations, including exact agreement on all 16
+libc URI cases. Both lane commands exit 0 with no baseline edits. Additional
+fixture controls using `./_build/./install/default` and a private symlink
+to the installed prefix both return the expected 42, exit 0. Foreign and
+missing runtime-directory witnesses still refuse as specified.
+
+The D2 CLI recipe was rerun with its temporary directory changed to
+`.tmp/core-quote-d2b`, using newly exported metadata and the same two user
+TUs. The complete probe exits 0: three literals elaborate, library-only
+source agrees, and all eight refusal/output controls pass. Fixture
+elaboration: 1.56 s / 824,732 KB. Linked two-TU+libc: 102.12 s /
+12,121,460 KB. Standalone libc: 107.72 s / 12,050,272 KB. All elaborations
+exit 0 at the pinned defaults under the 48G cap. No theorem was added;
+D3's requested literal kernel-replay measurement remains outstanding.
+
+F7's spelling comparison is reproduced using the same twelve paths:
+
+```bash
+export LEAN_ABORT_ON_PANIC=1
+mapfile -t metadata < .tmp/core-quote-d2b/libc-json-paths.txt
+libc_args=(--libc tests/libc/libc.core)
+for path in "${metadata[@]}"; do libc_args+=(--libc-tu "$path"); done
+./scripts/capped lean_frontend/.lake/build/bin/cerberus-lean \
+  --runtime "$PWD/_build/install/default" --fuel 1000000 \
+  --quote-libc .tmp/core-quote-d2b/Abs.lean "${libc_args[@]}"
+./scripts/capped lean_frontend/.lake/build/bin/cerberus-lean \
+  --runtime _build/install/default --fuel 1000000 \
+  --quote-libc .tmp/core-quote-d2b/Rel.lean "${libc_args[@]}"
+cmp .tmp/core-quote-d2b/Abs.lean .tmp/core-quote-d2b/Rel.lean
+```
+
+Both quotation commands exit 0; the byte comparison **fails**. This is
+not a D3 pass or a portable-literal SHA-256 pin. The absolute output's
+remaining path source is documented in F7 above.
+
+
+**F8 — the required alternate working directory refuses.**
+With the same canonical metadata and absolute paths to the metadata files,
+dump and output, invoking from `lean_frontend/` with
+`--runtime ../_build/install/default` exits **2**. Runtime lookup succeeds,
+but the stored `./_build/install/default/.../libc/include/builtins.h`
+directory resolves against `lean_frontend/`, where it does not exist.
+The refusal names that source directory and no output module is written.
+The required cross-working-directory determinism check therefore **fails**.
+
+Reproduction, after the metadata preparation above:
+
+```bash
+export LEAN_ABORT_ON_PANIC=1 CERB_MEM_MAX=48G
+quote_root="$PWD"
+mapfile -t metadata < .tmp/core-quote-d2b/libc-json-paths.txt
+libc_args=(--libc "$quote_root/tests/libc/libc.core")
+for path in "${metadata[@]}"; do libc_args+=(--libc-tu "$path"); done
+(cd lean_frontend && ../scripts/capped .lake/build/bin/cerberus-lean \
+  --runtime ../_build/install/default --fuel 1000000 \
+  --quote-libc "$quote_root/.tmp/core-quote-d2b/OtherCwd.lean" "${libc_args[@]}")
+```
+
+### Tier A and committed park
+
+The already-running precommit gate was allowed to finish after F8; no
+implementation change followed the refusal. Command:
+
+```sh
+CERB_MEM_MAX=48G python3 scripts/release.py --mode fast --out .tmp/core-quote-d2b/tier-a
+```
+
+Run: 2026-10-19 22:55:43–23:14:25 UTC, process exit **0**. All nineteen
+lane exit statuses were **0**. The exact summary was:
+
+```text
+fast: passed; 19/19 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+No existing lane row or baseline moved. Documentation of F8, gate status,
+and the placement ruling's attribution was finalized after the run; no
+implementation or probe changed. Temporary literals, metadata and logs
+are reconstructible and removed after this commit.
+
+**Park status:** the new F8 refusal triggers the operator's stop rule.
+The scoped D2b changes are committed with passing Tier A and explicit F7/F8
+failures, not a determinism claim. Proceeding requires approval of the
+source-origin/parser-construction policy outside the guard-only extension.
+D3 wiring, the independent whole-file comparison and controls, the portable
+SHA-256 pin and libc kernel-replay measurement are not implemented. The
+operator's Tier B placement and consumer-module requirement are recorded
+above for resumption. Tier B close-out and the D4 boundary entry remain open.

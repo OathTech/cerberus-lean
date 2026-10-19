@@ -532,11 +532,18 @@ Nothing else.
   `runtime/libcore`, `runtime/libcore/impls` or `runtime/libc/include`
   but is not that directory of THIS run's runtime is REFUSED at import
   (exit 2, `cerberus-lean: refused — library-location classification: …`).
-  The oracle tests exact equality (`util/cerb_location.ml:512-523`); the
-  port's pure `CerbLocation.isLibraryLocation` tests the suffix, and the
-  refusal makes the two agree on every served run. A cabs-json exported
-  under a different runtime prefix refuses the same way (its `builtins.h`
-  location). Witnesses: the same script.
+  The oracle tests literal directory equality (`util/cerb_location.ml:512-523`).
+  Deliberate divergence [USER 2026-10-19]: the import guard now compares
+  resolved directories, retaining exact membership in the same three runtime
+  directories. Equivalent absolute/relative spellings and symlinks agree;
+  missing and foreign directories refuse. The pure model still tests the
+  suffix; stored source and lexing positions are never rewritten. Relative
+  paths resolve against the importing process's working directory. Witnesses:
+  the same script; Core quotation D2b records the alias checks.
+  Portable libc metadata uses `scripts/libc_prep.sh --jsons OUTDIR`, whose
+  exporter runs from the project root with `--runtime=_build/install/default`
+  and relative source/include paths. Consume this metadata from the project
+  root, with the same runtime spelling for portable quotation artifacts.
 - *Non-UTF-8 bytes in the Cabs JSON* (bug hunt BUG-6 and K-5, refused since
   2026-09-29, `docs/2026-09-29_bug-hunt-fixes-record.md` §S3; before that a
   class-(b) residual that died with an uncaught exception, rc 1, and listed
@@ -607,8 +614,10 @@ operator items are listed in the record.
 - *In-process consumers and the library-location check* (bug-hunt fixes
   pre-merge audit L4): the driver refuses, at import, any location whose
   path passes `CerbLocation.isLibraryLocation`'s suffix test but not the
-  oracle's exact test against the runtime root, which makes the two tests
-  agree on every accepted input and retires Z-67 for the driver. A
+  exact membership test against the resolved runtime directories. D2b accepts
+  equivalent path spellings as a declared divergence from the oracle's
+  literal comparison; the suffix and resolved-directory tests agree on the
+  served import paths. A
   consumer calling `CabsImport.parseJson` and `isLibraryLocation` directly
   bypasses that check and keeps the Z-67 residual unless it applies the
   same check with its runtime root.
