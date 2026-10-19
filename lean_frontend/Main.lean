@@ -10,6 +10,7 @@ import Implementation
 import GenTyping
 import Translation
 import Core_run_aux
+import CerbQuote
 import Driver
 import CerbND
 import CerbEscape
@@ -1030,6 +1031,22 @@ def loadLibc [LemFuel] [CerbGlobal.Switches] (runtime : String) (quiet : Bool) (
   }, supply)
 
 
+/-- Publish a fully rendered module by same-directory rename. A failed write
+    leaves the destination untouched; scratch creation is exclusive. -/
+private def writeQuoteModule (output source : String) : IO (Except String Unit) := do
+  try
+    let scratch : System.FilePath := output ++ ".cerb-quote-" ++ toString (← IO.monoNanosNow)
+    IO.FS.createDir scratch
+    try
+      let temporary := scratch / "module.lean"
+      IO.FS.writeFile temporary source
+      IO.FS.rename temporary output
+    finally
+      IO.FS.removeDirAll scratch
+    return .ok ()
+  catch e =>
+    return .error s!"output {output}: {e}"
+
 /-- Run the pipeline over one or more translation units (multi-TU, arc-5
     S2). `tunits` carries (source digest, parsed Cabs) per TU in
     command-line order — the digest is the oracle's `Digest.file` the
@@ -1055,10 +1072,15 @@ def runPipeline [LemFuel] [CerbGlobal.Switches] (runtime : String) (batch : Bool
     (addressSpaceTop : Int)
     (callFn : Option (String × List Int)) (traceNodes : Bool)
     (libc : Option (String × List String))
+    (quoteCore quoteLibc : Option String)
     (progArgs : List String)
     (tunits : List (String × translation_unit)) : IO UInt8 := do
-  -- Progress chatter: human mode only (batch and pp-core keep stdout clean)
-  let quiet := batch || ppCore
+  -- Quotation stops at the prepared execution value, with machine-shaped errors.
+  let quoting := quoteCore.isSome || quoteLibc.isSome
+  let quiet := batch || ppCore || quoting
+  let quoteError (msg : String) : IO UInt8 := do
+    IO.println s!"Error \{msg: \"Core quotation failed: {CerbEscape.text msg}\"}"
+    return 1
   let say (s : String) : IO Unit := unless quiet do IO.println s
   -- Per-TU parse summary — kept ABOVE the stdlib load so single-TU chatter
   -- stays byte-identical to the pre-multi-TU driver
@@ -1126,6 +1148,8 @@ def runPipeline [LemFuel] [CerbGlobal.Switches] (runtime : String) (batch : Bool
   -- (main.ml:150-156) — so it ends up LAST in the reverse-consed list
   -- handed to Core_linking.link, mirroring the oracle's link order.
   let mut coreFiles : List (file Unit) := []
+  let mut origins : List CerbQuote.Provenance := []
+  let mut convertedLibc : Option (CerbQuote.Provenance × file core_run_annotation) := none
   -- Effect-retirement C1 (S1 ruling [USER 2026-08-31]): the ONE
   -- fresh-symbol stream, seeded here and threaded through every phase
   -- (per-TU desugar + const-expr mini-runs + elaboration) and into the
@@ -1136,7 +1160,12 @@ def runPipeline [LemFuel] [CerbGlobal.Switches] (runtime : String) (batch : Bool
   | some (libcCore, libcTus) =>
     match ← loadLibc runtime quiet supply addressSpaceTop coreEvalStuff ailnames stdFunMap coreImpl libcCore libcTus with
     | .error code => return code
-    | .ok (libcFile, supply') => coreFiles := [libcFile]; supply := supply'
+    | .ok (libcFile, supply') =>
+      let origin := CerbQuote.libcProvenance libcFile
+      coreFiles := [libcFile]
+      origins := [origin]
+      if quoteLibc.isSome then convertedLibc := some (origin, convert_file libcFile)
+      supply := supply'
   | none => pure ()
   for (digest, tunit) in tunits do
     -- Frontend-only per-TU digest; execution receives `runDigest tunits`.
@@ -1157,7 +1186,10 @@ def runPipeline [LemFuel] [CerbGlobal.Switches] (runtime : String) (batch : Bool
     let _ ← (CerberusFresh.setDigestIO digest : BaseIO Unit)
     match ← frontendTU quiet supply addressSpaceTop coreEvalStuff ailnames stdFunMap coreImpl tunit with
     | .error code => return code
-    | .ok (coreFile, supply') => coreFiles := coreFile :: coreFiles; supply := supply'
+    | .ok (coreFile, supply') =>
+      coreFiles := coreFile :: coreFiles
+      origins := CerbQuote.translatedProvenance coreFile :: origins
+      supply := supply'
 
   -- Link the translated Core files — main.ml:278-281:
   --   prelude >>= main >>= begin function
@@ -1210,6 +1242,30 @@ def runPipeline [LemFuel] [CerbGlobal.Switches] (runtime : String) (batch : Bool
     -- Step 4: Prepare for execution (mirrors driver_ocaml.ml)
     say "  preparing for execution..."
     let runFile := convert_file coreFile
+    if quoting then
+      -- Render all requested values before publishing any module. In particular,
+      -- a refusal in the final file cannot leave an earlier library output.
+      let mut modules : List (String × String) := []
+      if let some output := quoteLibc then
+        let some (origin, library) := convertedLibc
+          | return (← quoteError "libc: no converted library was loaded")
+        let source ← match CerbQuote.moduleSource origin library with
+          | .ok source => pure source
+          | .error e => return (← quoteError s!"libc: {e.message}")
+        modules := [(output, source)]
+      if let some output := quoteCore then
+        let origin ← match CerbQuote.linkedProvenance origins coreFile with
+          | .ok origin => pure origin
+          | .error e => return (← quoteError e.message)
+        let source ← match CerbQuote.moduleSource origin runFile with
+          | .ok source => pure source
+          | .error e => return (← quoteError e.message)
+        modules := modules ++ [(output, source)]
+      for (output, source) in modules do
+        match ← writeQuoteModule output source with
+        | .ok () => pure ()
+        | .error e => return (← quoteError e)
+      return 0
     -- C1: CerbMem's struct/union layout reads receive runFile.tagDefs by
     -- VALUE (reader_consumer, mem.lem) — no global set is needed or
     -- possible.
@@ -1391,7 +1447,7 @@ def refuseFlag (flag : String) : IO Unit := do
     else if flag == "--batch" || flag == "--pp-core" || flag == "--parse-core" || flag == "--first" then
       "known flag out of its canonical position (`--batch`, `--pp-core` or `--parse-core` must be argv[0]; `--first` must immediately follow `--batch`/`--pp-core`)"
     else
-      "unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>, --address-space-top <N>, --runtime <DIR>, --switches PNVI_ae_udi (every other switch set is refused)"
+      "unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --quote-core <out.lean>, --quote-libc <out.lean>, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>, --address-space-top <N>, --runtime <DIR>, --switches PNVI_ae_udi (every other switch set is refused)"
   IO.eprintln s!"cerberus-lean: refused — {flag}: {feature} (see VALIDATION.md, zero-discrepancy Z-24)"
   IO.Process.exit 2
 
@@ -1552,6 +1608,8 @@ def main (args : List String) : IO Unit := do
   -- the main-startup mode too).
   let mut libcCore : Option String := none
   let mut libcTus : List String := []
+  let mut quoteCore : Option String := none
+  let mut quoteLibc : Option String := none
   let mut callName : Option String := none
   let mut callArgsStr : Option String := none
   let mut progArgsStr : Option String := none
@@ -1583,6 +1641,19 @@ def main (args : List String) : IO Unit := do
   while true do
     match pending with
     | [] => break
+    | "--quote-core" :: v :: rest =>
+      if quoteCore.isSome || v.isEmpty || v.startsWith "--" then
+        IO.eprintln "cerberus-lean: refused — --quote-core requires one nonempty output path and cannot be repeated"
+        IO.Process.exit 2
+      quoteCore := some v; pending := rest
+    | "--quote-libc" :: v :: rest =>
+      if quoteLibc.isSome || v.isEmpty || v.startsWith "--" then
+        IO.eprintln "cerberus-lean: refused — --quote-libc requires one nonempty output path and cannot be repeated"
+        IO.Process.exit 2
+      quoteLibc := some v; pending := rest
+    | ["--quote-core"] | ["--quote-libc"] =>
+      IO.eprintln "cerberus-lean: --quote-core/--quote-libc require an output path"
+      IO.Process.exit 1
     | "--libc" :: v :: rest => libcCore := some v; pending := rest
     | "--libc-tu" :: v :: rest => libcTus := libcTus ++ [v]; pending := rest
     | "--call" :: v :: rest => callName := some v; pending := rest
@@ -1699,6 +1770,18 @@ def main (args : List String) : IO Unit := do
     | none, _ :: _ => do
       IO.eprintln "cerberus-lean: --libc-tu without --libc"
       IO.Process.exit 1
+  let quoting := quoteCore.isSome || quoteLibc.isSome
+  if quoting && (ppCoreMode || firstTrace || callName.isSome || callArgsStr.isSome ||
+      progArgsStr.isSome || traceNodes) then
+    IO.eprintln "cerberus-lean: refused — Core quotation cannot be combined with --pp-core, --first, --call, --call-args, --args or --trace-nodes"
+    IO.Process.exit 2
+  if quoteLibc.isSome && libc.isNone then
+    IO.eprintln "cerberus-lean: --quote-libc requires --libc and its --libc-tu metadata"
+    IO.Process.exit 1
+  if let (some program, some library) := (quoteCore, quoteLibc) then
+    if (System.FilePath.mk program).normalize == (System.FilePath.mk library).normalize then
+      IO.eprintln "cerberus-lean: refused — --quote-core and --quote-libc require distinct output paths"
+      IO.Process.exit 2
   -- Effect-retirement C1 (charter section 5): the debug-level global is
   -- DELETED — the model returns values, the driver prints; the former
   -- human-mode level-2 write here was already vestigial (its only
@@ -1754,8 +1837,9 @@ def main (args : List String) : IO Unit := do
       IO.Process.exit 1
     return
 
-  if (batchMode || ppCoreMode) && restArgs.isEmpty then
-    IO.eprintln "usage: cerberus-lean [--batch|--pp-core] [--first] FILE.json [FILE2.json ...]"
+  let libraryOnly := quoting && libc.isSome && restArgs.isEmpty
+  if (batchMode || ppCoreMode || quoting) && restArgs.isEmpty && !libraryOnly then
+    IO.eprintln "usage: cerberus-lean [--batch|--pp-core] [--first] [--quote-core OUT.lean] [--quote-libc LIB.lean --libc CORE --libc-tu META.json ...] FILE.json [FILE2.json ...]"
     IO.Process.exit 1
 
   -- Default: parse Cabs JSON (one per translation unit) and run pipeline.
@@ -1769,7 +1853,7 @@ def main (args : List String) : IO Unit := do
   -- bug-hunt BUG-2: the runtime is resolved like the oracle's (resolveRuntime),
   -- never searched for relative to the working directory
   let runtimeDir ← resolveRuntime runtimeArg
-  let contents ← readInputs restArgs
+  let contents ← if libraryOnly then pure [] else readInputs restArgs
   let mut tunits : List (String × translation_unit) := []
   let mut idx := 0
   for content in contents do
@@ -1795,6 +1879,6 @@ def main (args : List String) : IO Unit := do
   -- instance of `CerbGlobal.Switches` exists in this repository
   -- (speedbump: `scripts/check_no_fuel_numerals.sh` rule W1).
   let code ← (letI : LemFuel := ⟨fuel⟩; letI : CerbGlobal.Switches := ⟨switchSet⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace
-    addressSpaceTop callFn traceNodes libc progArgs tunits)
+    addressSpaceTop callFn traceNodes libc quoteCore quoteLibc progArgs tunits)
   if code != 0 then
     IO.Process.exit code

@@ -975,7 +975,7 @@ private structure Entry where
   key : NodeKey
   uses : Nat
   cost : Nat := 1
-  share : Bool := false
+  helper : Option (String × Nat) := none
   deriving Inhabited
 
 private structure Dag where
@@ -1000,7 +1000,7 @@ private partial def intern : Term → StateM Dag Nat
   | .list xs => do internKey (.list (← xs.mapM intern))
   | .typed ty t => do internKey (.typed ty (← intern t))
 
-private def shared (entry : Entry) : Bool := entry.share
+private def shared (entry : Entry) : Bool := entry.helper.isSome
 
 /-- Limit the work in each declaration without changing the represented value.
     Small subterms stay inline; larger repeated terms and large subterms become
@@ -1014,10 +1014,13 @@ private def planSharing (root : Nat) (entries : Array Entry) : Array Entry := Id
       | .app _ children | .list children =>
         1 + children.foldl (fun total child => total + result[child]!.cost) 0
       | .typed _ child => 1 + result[child]!.cost
-    let share := id != root && match entry.key with
-      | .typed _ _ => cost > 256 || (entry.uses > 1 && cost > 16)
-      | .atom _ | .app _ _ | .list _ => false
-    result := result.set! id { entry with cost := if share then 1 else cost, share := share }
+    let helper := match entry.key with
+      | .typed ty child =>
+        if id != root && (cost > 256 || (entry.uses > 1 && cost > 16)) then
+          some (ty, child)
+        else none
+      | .atom _ | .app _ _ | .list _ => none
+    result := result.set! id { entry with cost := if helper.isSome then 1 else cost, helper := helper }
   return result
 
 private def helperName (id : Nat) : String := "cq_" ++ toString id
@@ -1059,12 +1062,9 @@ def render (term : Term) : String := Id.run do
   let mut helpers : Array String := #[]
   for id in [:entries.size] do
     let entry := entries[id]!
-    if shared entry then
-      match entry.key with
-      | .typed ty child =>
-        let rhs := renderTasks entries [.term child] []
-        helpers := helpers.push ("private def " ++ helperName id ++ " : " ++ ty ++ " := " ++ rhs ++ "\n\n")
-      | .atom _ | .app _ _ | .list _ => unreachable!
+    if let some (ty, child) := entry.helper then
+      let rhs := renderTasks entries [.term child] []
+      helpers := helpers.push ("private def " ++ helperName id ++ " : " ++ ty ++ " := " ++ rhs ++ "\n\n")
   return String.join helpers.toList ++ "def quotedCore : file core_run_annotation :=\n" ++ body ++ "\n"
 
 /-- One self-contained module and one public file definition with private typed

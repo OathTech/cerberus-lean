@@ -345,15 +345,34 @@ values, and use generated whole-file `BEq` only as the auxiliary check.
 reported to the operator and left unchanged under the dependency fence.
 This record does not reproduce it.
 
-**F6 — the untouched baseline emits existing compiler warnings.**
+**F6 — the baseline and dependency builds emit existing compiler warnings.**
 Tier A's unit build reports unused `termination_by` clauses in
 `generated/Symbol.lean:451,485` and `generated/Ctype_aux.lean:443,450`,
 and missing reducibility attributes on class-valued definitions in
 `test/Unit/FuelExemplar.lean:132`, `ReconstructLegacyTest.lean:517-518`,
-and `PnviArmsTest.lean:42-43`. These nine diagnostics predate D0; the
-new inventory emits none. The standing warning-repair rule and this
-slice's file fence conflict for these files. Repairs need an operator
-scope ruling; no suppression or edit outside the fence was made.
+and `PnviArmsTest.lean:42-43`. These nine diagnostics were those visible in that
+Tier A build, not the complete dependency-warning inventory; they predate
+D0 and the new inventory emits none.
+
+[AGENT 2026-10-19, orchestrator ruling relayed by the operator] The seam
+build replays 337 warnings from the generated tree, including 229
+unreferenced pattern variables and 103 unused `termination_by` clauses;
+none originate in `CerbQuote`. The backend-emission backlog belongs to
+lem-lean work owned elsewhere; the five test-file class-valued definitions
+belong to the orchestrator's separate hygiene slice. No warning is suppressed
+or repaired outside this slice's fence.
+
+D2 independently reproduced that seam-only replay count with
+`capped lake build +CerbQuote` after synchronization (exit 0): 337 total,
+229 unreferenced variables, 103 unused termination clauses, and five
+deprecations in the copied handwritten dependencies `CerbLocation:225,228`
+(three), `CerbFloat:294` (one), `CerbCtypeMeasure:232` (one). These five
+are distinct from the baseline's five test-definition diagnostics. The
+broader `+CerbQuote cerberus-lean` build replays 849 existing warnings
+across its larger dependency closure, including 837 under `generated/`
+(which also contains handwritten copies); none are from `CerbQuote`.
+The changed driver lines introduce no warning. This expands the observation,
+not the worker's repair scope.
 
 ### Derived run-state maps (audited, outside the quoted file)
 
@@ -396,11 +415,11 @@ and elaboration measurements remain open.
 
 ## D1 — representation printer (2026-10-19)
 
-[USER 2026-10-19] The separate consumer-list reference in charter §5
+[AGENT 2026-10-19, orchestrator ruling relayed by the operator] The separate consumer-list reference in charter §5
 resolves to the complete requirement already in §0, including its correction.
 The existing nine warnings are outside this worker's repair scope: backend
-termination diagnostics and test hygiene have separate owners. F6 above is
-preserved unchanged.
+termination diagnostics and test hygiene have separate owners. D1 retained
+F6 without edits; D2 expands its warning-build scope.
 
 `CerbQuote.lean` supplies `moduleSource : Provenance → file core_run_annotation
 → Except Refusal String`, plus `quoteFile` and the producer-specific provenance
@@ -419,7 +438,9 @@ The six scalar and six container heads are also covered. All memory-value
 constructors are supported; there is no memory-value refusal. Recursive
 payload walkers and the syntax work-list use `partial def`: this instrument
 has exhaustive runtime coverage, not a kernel proof of termination or
-printer correctness. No theorem, axiom, native seam, `unsafe`, `sorry`,
+printer correctness. These instrument definitions are outside the model
+execution cone and will be named in the D4 boundary entry. No theorem, axiom,
+native seam, `unsafe`, `sorry`,
 `implemented_by` attribute, or kernel-check bypass was added in source.
 
 `Fmap.empty` and `Fmap.mk _ Pmap.Empty` remain distinct. The printer follows
@@ -565,3 +586,160 @@ No existing lane row moved. This paragraph records the gate result after
 completion; the temporary literal modules, native wrapper bundle and logs
 are reconstructible from the commands above and are removed after commit.
 D1 is ready for the D2 handoff. Tier B remains the D4 close-out gate.
+
+
+## D2 — driver quotation flags (2026-10-19)
+
+[AGENT 2026-10-19] Use `--quote-core OUT.lean` for the linked program and
+`--quote-libc LIB.lean` for the separately converted library. Both modes
+share execution's loading, frontend, linking and conversion path, and return
+after quotation, before driver initialization. Library-only quotation accepts
+no user TU when the library and all metadata TUs are supplied. Reject flags
+that request execution observations together with quotation.
+
+The code records `libcProvenance libcFile` on the successful `loadLibc` result
+(`Main.lean:1163-1167`) and `translatedProvenance coreFile` on each successful
+user `frontendTU` result (`1189-1192`). Origins and files are reverse-consed
+together. The final `link coreFiles` remains at `1203`; successful
+`coreFile` supplies `linkedProvenance origins coreFile` at `1257`.
+`runFile := convert_file coreFile` is now at `1244`, and its quotation at
+`1260` uses that provenance. The separate libc conversion is at `1167`,
+quoted once at `1252`. Both flags may be requested in the same invocation.
+
+These are current D2 locations; the D0/D1 locations above describe their
+respective committed trees. The unchanged metadata link is now at
+`Main.lean:822`. The library comparator alias is at `247`, the tag/funinfo
+rebuild at `994`, and the function rebuild at `1026`. Reinspection of
+`Core_linking.lean:444-496` and `Core_run_aux.lean:931-952` confirms the
+D0/D1 per-field construction and outer-constructor rules. No producer or
+union path was replaced. The second explicit `Main` conversion is the
+chartered standalone-library quotation; the mini-pipeline conversion in
+F1 remains a separate internal constant-expression evaluation. F1/F2 remain
+findings against the charter's original path table.
+
+[AGENT 2026-10-19] Render all requested modules before writing any output.
+Publish each complete source through an exclusively created sibling scratch
+directory and rename; remove that scratch directory afterwards. A named
+quotation refusal leaves all requested output paths untouched. Publication
+of two successful renders is per file: an IO failure on the second output
+can leave the first complete module, and is reported as an error.
+
+Quotation errors use the existing `Error {msg: ...}` stdout record, escaped
+with `CerbEscape.text`, and exit 1. NaN errors include the enclosing field
+and `Float.NaN`. Output errors name the destination and exit 1. Invalid
+flag combinations/repetitions use the existing attributed CLI refusal
+shape and exit 2; missing required arguments use exit 1. Successful quotation
+is silent and exits 0. `--batch` is compatible; `--pp-core`, `--first`,
+`--call`, `--call-args`, `--args` and `--trace-nodes` are incompatible.
+Both output paths must be distinct. Normal execution without either flag
+continues through the original driver path.
+
+The sharing plan now carries `Option (type text × child ID)` for helpers.
+Rendering consumes that typed child directly; the former `unreachable!` arm
+is absent. The seventeen partial instrument definitions (fifteen recursive
+payload walkers, `intern`, `renderTasks`) remain outside the model execution
+cone: they are called only on the quotation branch, which returns before
+`initial_driver_state` and `drive`. They will be named in D4's boundary
+entry; no termination or printer-correctness theorem is asserted here.
+No new theorem was added, so D2 introduces no new kernel-replay gate.
+
+### Focused reproduction
+
+`docs/CoreQuoteCliSmoke.py` is a development probe, with no ladder wiring.
+After the documented project environment setup, from the repository root:
+
+```sh
+export CERB_MEM_MAX=48G
+mkdir -p .tmp/core-quote-d2
+./scripts/capped make lean-prelude-src
+(cd lean_frontend && ../scripts/capped lake build +CerbQuote cerberus-lean)
+./scripts/capped scripts/libc_prep.sh --jsons "$PWD/.tmp/core-quote-d2/libc-json" \
+  > .tmp/core-quote-d2/libc-json-paths.txt
+source scripts/common.sh
+for n in 1 2; do
+  capture_cabs_json "$PWD/.tmp/core-quote-d2/tu$n.json" \
+    "$PWD/.tmp/core-quote-d2/tu$n-capture" ./scripts/capped "$CERBERUS_BIN" \
+    --runtime="$PWD/_build/install/default" --cabs-json "tests/multi_tu/basic/tu$n.c" || exit "$?"
+done
+python3 lean_frontend/docs/CoreQuoteCliSmoke.py
+```
+
+The probe uses the committed fixture's exact relative runtime prefix, and
+the freshly generated multi-TU/libc metadata's absolute runtime prefix.
+An initial attempt to use the absolute prefix with the committed fixture
+failed the existing library-location guard (exit 2); correcting the
+invocation fixed the setup. This failure was not counted as a passing run.
+The NaN controls use a private copy of `libcore`, add an unused floating
+function returning NaN, and adjust only the copied fixture's runtime-location
+prefix to match. Neither pinned input nor installed runtime is edited.
+
+The output literals import only `Core_run_aux`. Elaboration uses the normal
+pinned toolchain defaults under the 48G cap. The linked case is the existing
+`tests/multi_tu/basic` pair: one TU declares/calls the other's `helper`,
+with distinct same-named statics. It is linked with libc while the same
+invocation also emits the standalone converted libc. The library-only mode
+emits byte-identical source to that standalone output.
+
+The small D1 float/set/comparator probe and all six emitted assertion modules
+were rerun after the sharing-plan change, all exit 0. D3's independent
+whole-file comparison, mutation controls and complete input census remain
+open. Its test wiring awaits the relayed operator decision on libc row-1
+placement; no test executable or ladder row is added by D2.
+
+
+Focused results:
+
+| Check | Result |
+|---|---|
+| Synchronized seam + driver build | Exit 0; no warning from `CerbQuote` or changed driver lines |
+| CLI fixture output | 394,761 bytes; generation 0.08 s / 83,256 KB; elaboration 1.61 s / 824,488 KB; both exit 0 |
+| CLI linked two-TU + libc output | 34,028,318 bytes, 13,437 helpers; elaboration 101.36 s / 12,115,992 KB, exit 0 |
+| CLI standalone libc output from that invocation | 33,832,667 bytes, 13,318 helpers; elaboration 100.11 s / 12,053,664 KB, exit 0 |
+| Combined linked + libc generation | 4.89 s / 567,112 KB, exit 0 |
+| Library-only generation | 3.07 s / 558,660 KB, exit 0; source equals the standalone output above |
+| Five argument-refusal controls | Expected exits 1/1/2/2/2 and diagnostic text observed |
+| Output-path failure | Existing Error shape, exit 1; no module created |
+| NaN with absent / existing destination | Named `stdlib.Float.NaN`, exit 1 in both cases; absent stays absent, existing content unchanged |
+
+Memory figures are peak RSS from `/usr/bin/time`; all heavy commands were
+capped at 48G. No elaboration limit was raised. Both large literal
+elaborations were comfortably below the cap and the one-hour tripwire.
+
+The positive CLI checks completed before the first NaN setup attempt failed:
+Python's copy preserved Dune's mode 0444. Reusing that copy also failed when
+copying over its read-only files. `nono why --self --path ... --op write`
+reported ALLOWED; this was a local test-copy permission issue, not a
+confirmed sandbox denial. The probe now recreates its private runtime
+directory and replaces only its own copied `std.core`. The eight refusal
+and output controls were rerun successfully after this setup correction;
+previously passing large elaborations were not repeated. No machine-global
+permission or runtime file was changed. The full script above reproduces
+both groups; the focused rerun executes its shared definitions and the block
+starting `for label, args, code, marker in [...]`.
+
+
+### Tier A before the D2 commit and parked handoff
+
+Command, with the project environment and `CERB_MEM_MAX=48G`:
+
+```sh
+python3 scripts/release.py --mode fast --out .tmp/core-quote-d2/tier-a
+```
+
+Run: 2026-10-19 22:16:49–22:36:09 UTC, process exit **0**. All nineteen
+selected commands passed. The implementation, probe and documentation
+sources were fixed during the run; the runner reported:
+
+```text
+fast: passed; 19/19 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+No lane row or baseline moved. This gate-result paragraph and the consumer
+note's gate status were added after completion. Reconstructible `.tmp`
+outputs are removed after commit. Tier B remains the D4 close-out gate.
+
+[AGENT 2026-10-19] Park at the completed D2 handoff. D3 test wiring is
+not started while the libc round-trip placement decision is pending relay;
+the D3 whole-file relation, controls and census remain outstanding.

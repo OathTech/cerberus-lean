@@ -1,7 +1,7 @@
 # Core quotation for cerberus-caesium
 
-Status (2026-10-19): D1 printer implemented with focused elaboration evidence.
-The driver flag and whole-file round-trip test remain for D2/D3. Base
+Status (2026-10-19): D2 driver quotation implemented with focused literal
+elaboration evidence. The independent whole-file round-trip test remains for D3. Base
 `e7e9bb427a514b6053865c303c4af512907da75b`; D0 checkpoint
 `fb8705c686d1de34f66426e3da4f1477d077632e`.
 
@@ -12,13 +12,42 @@ quotation instrument. It preserves the representation of the executed
 `file core_run_annotation`; the consumer owns the subsequent lookup lemma.
 It is not a proof of equality with the frontend's result.
 
-The driver value is `runFile := convert_file coreFile` at `Main.lean:1212`,
+The driver value is `runFile := convert_file coreFile` at `Main.lean:1244`,
 after the final link. A second quotation covers `convert_file libcFile`
 for the result of `loadLibc`, before the user link. The emitted module imports
 `Core_run_aux`, uses private typed subterm helpers,
 and declares one public `def quotedCore : file core_run_annotation`. It imports
 no printer code and uses the pinned toolchain's default elaboration limits.
-The flag invocation remains for D2.
+
+From the repository root, after the normal build (including
+`make lean-prelude-src` before each capped Lake build):
+
+```sh
+export LEAN_ABORT_ON_PANIC=1 CERB_MEM_MAX=48G
+./scripts/capped lean_frontend/.lake/build/bin/cerberus-lean \
+  --runtime ./_build/install/default --fuel 1000000 \
+  --quote-core .tmp/Fixture.lean tests/fixtures/001-return-literal/cabs.json
+(cd lean_frontend && ../scripts/capped lake env lean ../.tmp/Fixture.lean)
+```
+
+Create the output directory first. The runtime prefix must match the source
+locations in the Cabs JSON exactly; the committed fixture uses the relative
+prefix above. For a fresh libc or multi-TU invocation, generate metadata
+with the same runtime prefix as the driver. Supply `--libc tests/libc/libc.core`
+and one `--libc-tu META.json` per metadata TU, in `scripts/libc_prep.sh` order.
+Use `--quote-libc .tmp/Libc.lean` to quote that loader result after conversion,
+once. It can be combined with `--quote-core .tmp/Linked.lean` and multiple
+user JSON inputs, or used alone with no user input. The record's D2 probe
+contains a complete preparation and invocation recipe.
+
+Quotation stops before execution. Success is silent with exit 0; named
+quotation failures use `Error {msg: ...}` and exit 1. All requested values
+are rendered before any output is published, so a refused value leaves
+every destination untouched. Each successful source is published by rename;
+an IO failure is an error and can leave an earlier complete output when
+two destinations were requested. `--batch` is accepted; execution-observation
+flags and `--pp-core` conflict with quotation and are refused. The two
+quotation flags require distinct output paths.
 
 Every record field, scalar, annotation, initializer, constructor and
 container payload belongs to the relation. `Fmap.empty` stays `.empty`;
@@ -105,7 +134,8 @@ The intended `VALIDATION.md` boundary entry is the Core quotation instrument:
 representation comparison and source-inspected comparator provenance are
 computed evidence, kernel-opaque as a link to the pipeline. The named
 boundary mover is the printer-correctness bridge (charter option B).
-That entry remains for D4.
+That entry remains for D4 and will name the instrument's partial definitions,
+which are outside the model execution cone.
 
 The printer covers all 75 model datatype heads / 638 constructors, six scalar
 types and six container types, including every memory-value constructor.
@@ -131,9 +161,17 @@ Required-input occurrence counts, the full NaN census, all round trips and
 all mutation controls remain for D3. The required population is ten committed
 Cabs JSON fixtures, sixteen corpus C files, a linked cross-TU declaration/reference
 example, and converted libc. No additional construct refusal is currently
-implemented. Full required-set acceptance is not claimed at D1.
+implemented. Full required-set acceptance is not claimed at D2.
 
-The D1 precommit Tier A run passed all nineteen commands (exit 0), with
+D2's actual flags also emitted and elaborated the committed first fixture,
+a libc-linked two-TU program and the standalone converted libc. The latter
+two elaborations took 101.36 / 100.11 seconds and about 12.1 / 12.1 GB peak
+RSS. Library-only output agrees with the separately emitted library. Named
+NaN refusals preserve destinations; argument and output-error controls pass.
+These are elaboration and CLI checks, not D3's independent round trip.
+
+The D2 precommit Tier A run passed all nineteen commands (exit 0), with
 source unchanged during the run; its exact summary is quoted in the record.
-The record retains F6 and the separate ownership of its nine existing compiler
-warnings. No warning suppression was added.
+F6 distinguishes the nine warnings visible in the baseline build from the
+337 warnings replayed when building the seam, and records separate ownership
+of the backend-emission backlog and test hygiene. No warning suppression was added.
