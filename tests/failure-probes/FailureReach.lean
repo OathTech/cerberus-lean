@@ -26,6 +26,10 @@ run_cmd do
     let kind := match ci with
       | .defnInfo _ => "definition"
       | .opaqueInfo _ => "opaque"
+      -- Failure leaves also occur in theorem statements (e.g. fuel zero
+      -- equations). Give those sites their compiler owner and dependency bits;
+      -- omitting the theorem makes the census report an unresolved exec site.
+      | .thmInfo _ => "theorem"
       | _ => "other"
     if kind == "other" then continue
     logInfo m!"FAILURE_REACH\t{n}\t{exec.contains n}\t{front.contains n}"

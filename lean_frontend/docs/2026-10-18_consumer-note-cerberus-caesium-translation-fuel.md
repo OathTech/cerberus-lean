@@ -1,12 +1,14 @@
 # Ail-to-Core translation fuel for cerberus-caesium (2026-10-18)
 
-Implementation on `arc/translation-fuel`, based on `b1c539c45`.
+Implementation on `arc/translation-fuel`, rebased from `b1c539c45` onto
+`049eb9a0a`; the 2026-10-19 correction below supersedes the recorded-error
+zero-arm design.
 Certification status and reproducible checks are in the
 [work record](2026-10-18_translation-fuel-record.md). No release or landing
 is implied by this branch note.
 
 The six former `partial def`s in generated `Translation.lean` now have
-kernel equations. The public `translate` entry and the OCaml translation
+kernel equations. The public `translate` signature and the OCaml translation
 are unchanged. Import `Translation_auxiliary` for the four generated
 sufficiency theorems; its proof carrier is `Translation_lemMeasureProofs`.
 
@@ -48,27 +50,35 @@ explicit argument is its counter. Its `[LemFuel]` instance supplies ambient
 fuel to other workers it calls. Recursive self calls decrease the explicit
 counter; do not identify that counter with every callee's budget.
 
-Both zero arms are
-`bind1 (record_error CerbFuel.fuelExhaustedMsg) (fun _ => return0 mk_skip_e)`.
-`elabM` remains a state monad: the intermediate Core placeholder is not an
-absorbing result. `translate` finishes through `runStateM_errors`, which
-rejects the accumulated error. Callers using the raw state computation must
-also check its errors; a raw `(Core, state)` pair is not an accepted
-translation. No sufficiency or exhaustion-unreachability claim is made for
-these two workers. The API's arbitrary callback and logical-operator
+Both zero arms are `failwithI CerbFuel.fuelExhaustedMsg`, an opaque refusal
+leaf at type `elabM (expr Unit)`. There is no data-level error channel or
+Core placeholder in these arms. The 2026-10-19 pre-merge audit found that
+the earlier recorded-error design was wrong: `Mini_pipeline` evaluates
+constant-expression translation with plain `runStateM`, discarding errors
+and executing the placeholder as a false UB036 verdict. Direct refusal
+does not rely on `runStateM_errors` or a caller inspecting the state.
+`elabM` remains a state monad; this is not a typed absorbing-monad result.
+The direct zero equations are pinned by `rfl`; their opaque right-hand side
+does not expose an accepted Core result to kernel reduction. No sufficiency
+or exhaustion-unreachability claim is made for these two workers. The API's
+arbitrary callback and logical-operator
 desugaring prevent the simple subtree-size argument used for the helpers.
 
 `bash scripts/test_translation_fuel.sh` exercises two uncalled functions:
 one with a deep expression, one with deeply nested statements. At CLI fuel
 128 both fail at the translation boundary; at 100000 both translate and run
 `main` to `Specified(0)`. A simple `main` succeeds at both budgets. The
-shell classifier recognizes the boundary's exact `failwithI` envelope as
+same script also puts a 192-deep expression in an enum constant, exercising
+`Mini_pipeline`. At fuel 128 both `--batch` and `--pp-core` must refuse with
+the envelope and exit 134; at default fuel the exec lane must MATCH the
+oracle's `Specified(192)`. The shell classifier recognizes the exact
+`failwithI` envelope as
 `FUEL:panic` (exit 134), with `lem: fuel exhausted` in its PANIC line. The
 exec lane reports fatal `FUEL`, never agreement. Unrelated panics and
 messages embedded in program output remain outside this classification.
 
 `Unit.TranslationFuelTest`, imported by the existing totality test, pins
-the four measured equations and the two raw zero-worker boundary failures.
+the four measured equations and the two direct raw zero-worker equations.
 This extends the available equations for translation; it does not prove a
 whole-frontend totality or C-to-Core correctness theorem, nor remove the
 frontend digest's existing declared native boundary.

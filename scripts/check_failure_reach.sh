@@ -258,6 +258,24 @@ for i, (label, src, want) in enumerate(cases):
 sys.exit(1 if bad else 0)
 PY
 ); then echo "$out"; else echo "  PLANT FAIL [classifier witnesses C1-C7]:"; sed 's/^/    /' <<<"$out"; fails=$((fails+1)); fi
+# R1: actual zero-equation theorem statements need compiler owners too.
+# Their workers' refusal sites must remain visible as frontend dependencies.
+if out=$(python3 - "$SCRATCH/census.json" <<'PYR' 2>&1
+import json, sys
+sites = json.load(open(sys.argv[1]))['sites']
+for worker in ('translate_expression_lemFuel', 'translate_stmt_lemFuel'):
+    for suffix, frontend in (('', True), ('_zero', False)):
+        name = worker + suffix
+        rows = [s for s in sites if s['file'] == 'lean_frontend/generated/Translation.lean'
+                and s['lexical_definition'] == name
+                and s['following_source'].startswith('CerbFuel.fuelExhaustedMsg')]
+        assert len(rows) == 1, (name, rows)
+        row = rows[0]
+        assert row['dependency_status'] == 'identified' and row['kernel_names'] == [name], row
+        assert row['exec_dependency'] is False and row['frontend_dependency'] is frontend, row
+print('  WITNESS OK   [R1 theorem statements have compiler owners; both worker refusal sites remain frontend dependencies]')
+PYR
+); then echo "$out"; else echo "  PLANT FAIL [R1 theorem/worker ownership]:"; sed 's/^/    /' <<<"$out"; fails=$((fails+1)); fi
 # unplanted: the real register against the real census
 echo "  UNPLANTED:"
 if out=$(python3 "$SCRIPT_DIR/check_failure_reach.py" --root "$ROOT" --census "$SCRATCH/census.json" --register "$REGISTER" 2>&1); then
@@ -266,7 +284,7 @@ else
   echo "  PLANT FAIL [unplanted register is not green]:"; sed 's/^/      /' <<<"$out"; fails=$((fails+1))
 fi
 if (( fails == 0 )); then
-  echo "check_failure_reach: SELFTEST OK (8 plants with the declared message — a new site in a generated exec-closure definition, a DISCARDABLE dead let-binding, an unsealed class edit, a phantom row, an edited tally, mis-shaped lem_if heads over a registered arm, a mis-shaped lemSeq continuation, a same-owner reach+seal swap (A3) — 7 classifier witnesses (lem_if arms/condition, lemSeq continuation, controls), the key-group witness K1 and the unplanted register green)"; exit 0
+  echo "check_failure_reach: SELFTEST OK (8 plants with the declared message — a new site in a generated exec-closure definition, a DISCARDABLE dead let-binding, an unsealed class edit, a phantom row, an edited tally, mis-shaped lem_if heads over a registered arm, a mis-shaped lemSeq continuation, a same-owner reach+seal swap (A3) — 7 classifier witnesses (lem_if arms/condition, lemSeq continuation, controls), the key-group witness K1, theorem/worker ownership R1 and the unplanted register green)"; exit 0
 else
   echo "check_failure_reach: SELFTEST FAILED ($fails)"; exit 1
 fi

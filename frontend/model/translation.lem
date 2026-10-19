@@ -4604,8 +4604,9 @@ declare {lean} fuel_measure val erase_loop_control_aux = `lemSize stmt`
 declare {lean} fuel val collect_visibles_ = `fuelExhausted (fun st => ((), st))`
 declare {lean} fuel_measure val collect_visibles_ = `lemSize stmt`
 
-(* Elaboration uses a state monad, not an exception monad. Record exhaustion
-   so runStateM_errors refuses the entire translation even for dead code.
-   mk_skip_e is only a typed intermediate: the boundary cannot return it. *)
-declare {lean} fuel val translate_expression = `bind1 (record_error CerbFuel.fuelExhaustedMsg) (fun _ => return0 mk_skip_e)`
-declare {lean} fuel val translate_stmt = `bind1 (record_error CerbFuel.fuelExhaustedMsg) (fun _ => return0 mk_skip_e)`
+(* Elaboration uses a state monad, not an exception monad. Mini_pipeline's
+   constant-expression run point (mini_pipeline.lem:157) uses plain runStateM,
+   not runStateM_errors: a recorded error would be discarded and its Core
+   placeholder executed. Refuse directly, independently of the run point. *)
+declare {lean} fuel val translate_expression = `failwithI CerbFuel.fuelExhaustedMsg`
+declare {lean} fuel val translate_stmt = `failwithI CerbFuel.fuelExhaustedMsg`

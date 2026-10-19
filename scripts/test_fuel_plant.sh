@@ -68,6 +68,7 @@ check_not() {   # <label> <forbidden-regex> <logfile>
     else echo "PLANT OK   [$1]: no /$2/"; fi
 }
 expect_nonzero() { [[ "$2" -ne 0 ]] || { echo "PLANT FAIL [$1]: lane exited 0 on a fuel-exhausted Lean run (must be fatal)" >&2; fail=1; }; }
+is_elab_fuel_panic() { [[ "$1" -eq 134 ]] && grep -qE "$FUEL_ELAB_PANIC_LINE_RE" "$2"; }
 
 export SKIP_BUILD=1
 MIN="$PROJECT_ROOT/tests/minimal/001-return-literal.c"
@@ -155,7 +156,9 @@ check_not "measure/assert no FUEL" 'FUEL\(' "$WORK/measure_assert.log"
 #     prepended (through the same CERB_LEAN_BIN_OVERRIDE hook — banner on
 #     every use; the freshness check is skipped for stubs, so the real
 #     binary is asserted fresh first). Fixture 001 at fuel 1 witnesses the
-#     recorded-error TRANSLATION boundary (FUEL:panic, exit 134). The loop
+#     direct TRANSLATION refusal (FUEL:panic, exit 134). Its raw stderr must
+#     carry the failwithIImpl envelope; the lane's fixed suffix is insufficient.
+#     The loop
 #     below translates at fuel 8 but exhausts EXECUTION at fuel 128
 #     (FUEL:kill, exit 1); both programs must MATCH at the default fuel.
 #     Measurements: lean_frontend/docs/2026-10-18_translation-fuel-record.md.
@@ -194,6 +197,26 @@ EOS
     # the refusals, on the real binary directly (LEAN_ABORT_ON_PANIC set as every harness does)
     json="$WORK/min.json"
     "$CERBERUS_BIN" --runtime="$PROJECT_ROOT/_build/install/default" --cabs-json "$MIN" > "$json" 2>/dev/null || { echo "PLANT FAIL [tiny-fuel]: cabs-json of $MIN failed" >&2; fail=1; }
+    log="$WORK/direct_fuel1"
+    LEAN_ABORT_ON_PANIC=1 "${CAPPED_TEST[@]}" timeout 30 "$REAL_LEAN" \
+        --batch --fuel 1 --runtime="$CERB_INSTALL_PREFIX" "$json" > "$log.out" 2> "$log.err"; rc=$?
+    if is_elab_fuel_panic "$rc" "$log.err"; then
+        echo "PLANT OK   [real --fuel 1 stderr: failwithIImpl envelope, exit 134]"
+        grep -E "$FUEL_ELAB_PANIC_LINE_RE" "$log.err"
+    else
+        echo "PLANT FAIL [real --fuel 1 stderr]: exit=$rc, expected failwithIImpl envelope" >&2
+        cat "$log.out" "$log.err" >&2; fail=1
+    fi
+    # The bare sentinel has the same lane class and suffix but must fail the
+    # very same raw-stderr predicate used for the real driver above.
+    "$WORK/stub_panic" > "$WORK/bare_panic.out" 2> "$WORK/bare_panic.err"; rc=$?
+    if [[ "$rc" -eq 134 ]] \
+        && [[ "$(classify_fuel_outcome "$rc" "$(cat "$WORK/bare_panic.err")")" == FUEL:panic ]] \
+        && ! is_elab_fuel_panic "$rc" "$WORK/bare_panic.err"; then
+        echo "PLANT OK   [negative: bare FUEL:panic exit 134 rejected by envelope predicate]"
+    else
+        echo "PLANT FAIL [negative: bare panic must not satisfy envelope predicate]" >&2; fail=1
+    fi
     for bad in 0 abc; do
         out=$(LEAN_ABORT_ON_PANIC=1 "$REAL_LEAN" --batch --fuel "$bad" "$json" 2>&1); rc=$?
         if [[ $rc -eq 2 ]] && grep -q "cerberus-lean: refused — --fuel $bad:" <<<"$out"; then echo "PLANT OK   [--fuel $bad refused, exit 2]: $(head -c 120 <<<"$out")"

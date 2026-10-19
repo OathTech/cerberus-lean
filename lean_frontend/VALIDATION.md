@@ -1090,14 +1090,21 @@ The Ail-to-Core translation extension (2026-10-18) adds four MEASURED
 workers (`translate_constant`, `collect_cases_`, `erase_loop_control_aux`,
 `collect_visibles_`), with unconditional structural sufficiency proofs in
 `Translation_lemMeasureProofs`, and two AMBIENT workers outside the execution
-closure (`translate_expression`, `translate_stmt`). The latter record an
-error on exhaustion; `runStateM_errors` rejects the entire translation,
-including exhaustion in uncalled functions. This is not an absorbing-monad
-claim. The shell classifier recognizes the exact boundary PANIC envelope
+closure (`translate_expression`, `translate_stmt`). Their zero arms directly
+refuse through the opaque leaf `failwithI CerbFuel.fuelExhaustedMsg`.
+The earlier recorded-error design was wrong: constant-expression translation
+in `Mini_pipeline` runs under plain `runStateM`, which discards errors and
+allowed the placeholder to execute as a false UB036 verdict. The direct
+refusal has no data-level error channel and requires no `runStateM_errors`
+boundary. This is not an absorbing-monad claim. The shell classifier
+recognizes the exact `failwithIImpl` PANIC envelope
 as FUEL:panic (exit 134), a fatal outcome. `scripts/test_translation_fuel.sh`, run
-by row 1, pins two dead-code failures and four successful controls;
+by row 1, pins two dead-code failures, constant-expression failures under
+both `--batch` and `--pp-core`, and five successful controls;
 `Unit.TranslationFuelTest` pins wrapper equations and the raw zero-worker
-boundary failures. See the [record](docs/2026-10-18_translation-fuel-record.md)
+direct refusal equations. The closure above is the gate's drive closure;
+both workers are reachable from the driver's frontend entry points.
+See the [record](docs/2026-10-18_translation-fuel-record.md)
 and [consumer note](docs/2026-10-18_consumer-note-cerberus-caesium-translation-fuel.md).
 Whole-frontend totality and correctness of lowering are not established.
 

@@ -124,8 +124,10 @@ through all successor cases. Pure failure/sentinel values and runtime
 overrides remain a separate correspondence obligation. The translation
 module also has kernel equations for all six former partial workers:
 four structural helpers are measured without hypotheses; expression and
-statement elaboration use ambient fuel and record exhaustion for rejection
-by `runStateM_errors`. Whole-frontend totality remains outside this claim.
+statement elaboration use ambient fuel with an opaque `failwithI` refusal
+at zero. This has no data-level error channel and does not depend on
+`runStateM_errors`: constant-expression translation in `Mini_pipeline`
+uses plain `runStateM`. Whole-frontend totality remains outside this claim.
 See the [translation consumer note](docs/2026-10-18_consumer-note-cerberus-caesium-translation-fuel.md)
 and the [failure census](docs/2026-09-06_failure-census-and-correspondence.md).
 

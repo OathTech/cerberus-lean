@@ -19,8 +19,8 @@
 #             exhausted: LemLib's opaque `fuelExhausted` sentinel panics —
 #             the bare line `lem: fuel exhausted` on stderr, exit 134
 #             under LEAN_ABORT_ON_PANIC=1 (never a kill, never a verdict).
-#   * panic — translation exhaustion recorded in elab_state is rejected by
-#             runStateM_errors via failwithI. Lean prints its precise
+#   * panic — translation exhaustion directly refuses via failwithI,
+#             including callers using plain runStateM. Lean prints its precise
 #             LemLib PANIC envelope with the same reserved message, exit 134.
 #
 # THE RULE: keyed on the EXACT printed message as a WHOLE LINE of the

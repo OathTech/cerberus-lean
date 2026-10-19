@@ -172,12 +172,19 @@ resumption rulings and errata). Branch `arc/semantics-audit-repairs`.
 
 - **Translation expression/statement measures (2026-10-18).** The four
   structural helpers are MEASURED; `translate_expression` and `translate_stmt`
-  retain AMBIENT fuel outside the execution dependency closure. A future
+  retain AMBIENT fuel outside the gate's drive dependency closure. A future
   joint measure needs to account for logical-operator desugaring and the
   statement-expression callback's use of its translator. No sufficiency
-  theorem is currently claimed for these two. Their zero arms record an
-  error and the translation boundary rejects it; see
+  theorem is currently claimed for these two. Their zero arms directly
+  refuse through opaque `failwithI`, including plain `runStateM` callers; see
   `docs/2026-10-18_translation-fuel-record.md` and the consumer note.
+- **Constant-expression mini-run execution fuel (2026-10-19).** Exhaustion
+  inside the mini-run reaches `mini_pipeline.lem:216`'s generic `error`
+  arm (`TODO error: the driver found less/more than one active execution`)
+  and is classified LEAN_CRASH rather than FUEL. This pre-existing execution
+  failure is separate from the translation zero-arm fix; give it an
+  attributed fuel refusal in a later slice. See
+  `docs/2026-10-19_translation-fuel-premerge-audit.md`.
 - ~~**Point-free `function` tails (6 PENDING rows; lem-lean TODO 17)**~~ —
   RESOLVED at C3 (2026-09-05, `docs/2026-09-05_fuel-parameter-C3-record.md`):
   lem d4ba548 hoists the scrutinee as `lemTail`; the six declares + proofs

@@ -646,8 +646,11 @@ util/cerb_fresh.ml
 100644 4996c0a1b774bbd205b8aede4cb715314af33087279477adab4fc7721335780c frontend/model/std.lem
 100644 788193cf8aacf36dcc1bf6e89c0f10b5cfc94c61ac349ad870900c7570037492 frontend/model/symbol.lem
 # NOTE 2026-10-18: Lean-only translation fuel/measure declares; OCaml byte-identical.
+# NOTE 2026-10-19: The two ambient zero arms now refuse directly via failwithI;
+# plain runStateM in Mini_pipeline bypasses recorded-error checks. Lean-only
+# declares/comment change; generated OCaml byte-identical. Single-row re-pin.
 # Record: lean_frontend/docs/2026-10-18_translation-fuel-record.md.
-100644 09475cc7bc170839fba90cbef126c49359bfe91eeddcc3490d47f0babe86d69c frontend/model/translation.lem
+100644 5d960f4e69f759c86ad811f2d776673340619cbd37f96da0fad8495fa2026466 frontend/model/translation.lem
 100644 3393b3fecc9a230bfebba003b484c023d9680d8f66859468c0f7b763fe8952a1 frontend/model/translation_aux.lem
 100644 a47a4bc513224172703fc568d6e1e3236fe7cffea075828656cddb5701e7ee6b frontend/model/translation_effect.lem
 100644 9427c936dcfe2bb47a984c6d73db12bf1c7012bb85b0b63156b5edececf9bf7c frontend/model/utils.lem

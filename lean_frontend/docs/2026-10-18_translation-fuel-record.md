@@ -1,10 +1,14 @@
 # Translation fuel — work record (2026-10-18)
 
-Branch `arc/translation-fuel`, base `b1c539c45`. All six translation workers
-have kernel equations: four MEASURED, two AMBIENT with fatal recorded
-exhaustion. At `f12d9645a`, the full A+B run passed 42/42 commands; axiom audit and
-kernel replay passed. The charter slice is complete. Release certification
-and whole-frontend correctness are separate claims.
+Branch `arc/translation-fuel`, originally based on `b1c539c45`, rebased onto
+`049eb9a0a` (hash map in the 2026-10-19 correction below). All six translation
+workers have kernel equations: four MEASURED, two AMBIENT. The current
+elaborator zero arms directly refuse through opaque `failwithI`; they have
+no data-level error channel. The earlier recorded-error design was wrong
+on the constant-expression path. Its green full A+B, axiom and kernel checks
+did not detect that defect and did not justify the former completion claim.
+Current correction and validation are recorded at the end of this document.
+Release certification and whole-frontend correctness are separate claims.
 
 ## Decisions
 
@@ -22,11 +26,12 @@ and whole-frontend correctness are separate claims.
   back (`:3216–3222`). A joint sufficiency theorem would need a weighted
   desugaring measure and a callback contract; neither follows from raw Ail
   size. The permitted ambient form retains kernel equations with explicit
-  fuel. Exhaustion records `CerbFuel.fuelExhaustedMsg`, preserving the
-  existing fuel message, before returning `mk_skip_e` internally. The boundary
-  uses `failwithI`; the final classifier recognizes its exact reserved-message
-  PANIC envelope at exit 134 as fatal FUEL:panic (the full-tier finding and
-  correction are recorded below).
+  fuel. The original zero arms recorded `CerbFuel.fuelExhaustedMsg` before
+  returning `mk_skip_e`; this was wrong for Mini_pipeline's plain `runStateM`
+  caller, which discarded the error and executed the placeholder. The
+  2026-10-19 ruling below supersedes those zero arms with direct refusal.
+  The classifier recognizes the exact reserved-message `failwithIImpl`
+  PANIC envelope at exit 134 as fatal FUEL:panic.
 
 ## Base
 
@@ -84,12 +89,12 @@ The generated Translation module contains zero `partial def` occurrences.
 The [consumer note](2026-10-18_consumer-note-cerberus-caesium-translation-fuel.md)
 states all six wrapper equations, with both instance arguments explicit for
 the ambient pair. `Unit.TranslationFuelTest` compiles the measured equations
-and raw zero-worker boundary equations; Part 1 of `TotalityProofTest` compiles
+and direct raw zero-worker refusal equations; Part 1 of `TotalityProofTest` compiles
 the ambient equations. The four sufficiency theorems are unconditional and
 proved by positive structural sizes and strict descent on every recursive
 call. No zero-arm unreachability is claimed for the ambient pair.
 
-### Focused validation
+### Focused validation (2026-10-18, before the correction)
 
 Reproduction commands (from the project root, with its documented build
 environment and `CERB_MEM_MAX=48G`):
@@ -104,7 +109,8 @@ bash scripts/check_fork_drift.sh
 (cd lean_frontend && ../scripts/capped lake env leanchecker Translation Translation_lemMeasureProofs Translation_auxiliary Unit.TranslationFuelTest Unit.TotalityProofTest)
 ```
 
-All exited 0 on the final implementation. Close-out kernel replay with Lean
+All exited 0 on the original recorded-error implementation. These checks did
+not cover the plain `runStateM` constant-expression path. Kernel replay with Lean
 4.32.2 checked the five modules named in the command and returned exit 0.
 The close-out axiom probe also returned exit 0. The fork-drift gate and
 OCaml comparison returned exit 0.
@@ -142,12 +148,12 @@ FUEL_FORMS_SUMMARY	workers=87	measured=67	measured_under_hyp=13	absorbing=13	amb
 
 check_fuel_forms: forms partition OK (67 MEASURED + 13 ABSORBING + 0 ambient-reachable + 7 ambient-unreachable = 87 fuel'd workers)
 
-### Exhaustion witnesses and regression plant
+### Exhaustion witnesses and regression plant (2026-10-18)
 
 `bash scripts/test_translation_fuel.sh` generates two small C witnesses with
 192 levels inside an uncalled function: expression nesting or statement
-nesting. Their `main` is the same simple successful control. The restored
-implementation reports:
+nesting. Their `main` is the same simple successful control. The original
+recorded-error implementation reported:
 
 ```text
 translation-fuel: control fuel=128 exit=0 Defined Specified(0)
@@ -163,8 +169,8 @@ translation-fuel: PASS (two dead-code exhaustion witnesses, four successful cont
 
 The low-fuel failures are the translation boundary's `failwithI`, not a
 frontend rejection or a later execution of the dead function. The separate
-kernel boundary equations prove the raw zero-worker result reaches that
-failure leaf. The shared shell classifier returns FUEL:panic for this exact
+kernel boundary equations covered only a fresh `runStateM_errors` run, not
+Mini_pipeline's plain `runStateM` run. The shared shell classifier returns FUEL:panic for this exact
 PANIC envelope at exit 134. The exec lane reports FUEL, a fatal outcome that
 is never agreement. The original classifier did not recognize this envelope;
 B8.3 caught that integration failure, as recorded below.
@@ -266,11 +272,13 @@ changed. B7 compared its full 2030-row baseline; B10's existing reviewed
 differences and matching failures retain their declared classes. B12's four
 pristine-versus-fork libxml2 slices all reported semantic agreement.
 
-## Completion and deviations
+## Original completion assessment and deviations (superseded 2026-10-19)
 
-- All six former partial workers have their required forms and consumer
-  equations. The two elaborators retain the charter-permitted AMBIENT form;
-  their future measure work is in TODO.md. No pure/state helper is parked.
+- All six former partial workers had the required forms and consumer
+  equations, but the recorded-error exhaustion contract was false on the
+  constant-expression path. The pre-merge audit invalidated the original
+  completion assessment. The two elaborators retain AMBIENT form; their
+  future measure work is in TODO.md. No pure/state helper is parked.
 - Development checks and commits were consolidated under the operator's
   revised gate-scheduling instruction. D0's interrupted run is explicitly
   incomplete above; the final full run checks the existing baseline pins.
@@ -285,7 +293,7 @@ pristine-versus-fork libxml2 slices all reported semantic agreement.
   The assigned worktree is retained for the orchestrator's review. No merge
   or push is performed by this worker.
 
-## Orchestrator review follow-up
+## Orchestrator review follow-up (2026-10-18)
 
 [AGENT 2026-10-18] Orchestrator review findings on `f12d9645a`, relayed to
 the worker by the operator: resolve P2 (restore the real-driver
@@ -367,3 +375,196 @@ the earlier full A+B result belongs to `f12d9645a`. No semantics, proof,
 dependency pin or baseline file changes are part of this follow-up.
 Only this final gate-result text was added after the Tier A run; the tested
 script and manifest NOTE stayed unchanged through the commit.
+
+## Correction after pre-merge audit (2026-10-19)
+
+The [pre-merge audit](2026-10-19_translation-fuel-premerge-audit.md), committed
+at `b69db5d87`, found a real semantic regression. `Mini_pipeline.toCore`
+calls `translate_expression`, then `mini_pipeline.lem:157` runs it with
+plain `runStateM`. The recorded error was discarded; the placeholder was
+executed and reported as UB036. `runStateM_errors` did not guard this run
+point. The earlier claim of refusal for every translation exhaustion, and
+the original commit message's general claim, were wrong. The historical
+logs above are retained as measurements of their stated cases, not evidence
+that the old implementation was mergeable.
+
+[USER 2026-10-19, operator ruling relayed by the orchestrator] Replace both
+elaborator zero arms with direct `failwithI CerbFuel.fuelExhaustedMsg`
+refusals. This explicitly overrides the charter's recorded-error payload
+requirement; leave Mini_pipeline and shared Lem bodies unchanged.
+[AGENT 2026-10-19, orchestrator direction relayed to the worker] Address the
+audit findings in one commit after Tier A, with raw panic-envelope coverage,
+the constant-expression witness and corrected consumer claims. Keep the
+mini-run's own execution-exhaustion classification as a TODO for another slice.
+
+The orchestrator rebased this branch from `b1c539c45` onto `049eb9a0a`:
+
+| Original commit | Rebased commit | Change |
+|---|---|---|
+| `f12d9645a` | `17eeb7708` | translation implementation and original full-tier record |
+| `89f3b9683` | `5c17dcb28` | first review's execution witness and manifest citation |
+
+`git diff --name-only` for each old/new pair lists only
+`lean_frontend/docs/2026-10-18_codex-charters-review.md`, the landing's review
+document. Each pair therefore has the same implementation tree, but the
+historical gate runs remain attributed to the original hashes.
+`aecdd8708` subsequently corrected the first review instruction's provenance;
+this correction starts from the clean audited head `b69db5d87`.
+
+Both zero arms now equal the opaque refusal leaf at `elabM (expr Unit)`;
+there is no Core placeholder or data-level error channel. The two
+`TranslationFuelTest.*_zero_boundary` theorems now pin these direct equations
+by `rfl`, without a state runner or clean-state assumption. The workers remain
+AMBIENT and reachable from frontend entry points; being outside the
+fuel-forms gate's drive closure is not a whole-binary unreachability claim.
+These kernel equations identify the opaque leaf; runtime refusal is checked
+by the driver witnesses. The existing LemLib leaf has an `implemented_by`
+override to private unsafe `failwithIImpl` (the native panic boundary), not
+a kernel theorem of a process exit. No new override or unsafe definition
+is added by this correction.
+
+Before changing the zero arms, the expanded `test_translation_fuel.sh`
+failed on the existing binary (exit 1). Its enum constant contains 192
+nested additions and `main` returns that constant. Selected output:
+
+```text
+translation-fuel: FAIL constant-expression mode=--batch fuel=128 exit=1 class=
+Undefined {ub: "UB036_exceptional_condition", stderr: "", loc: "<1:646--1:1039>"}
+translation-fuel: FAIL constant-expression mode=--pp-core fuel=128 exit=1 class=
+Undefined {ub: "UB036_exceptional_condition", stderr: "", loc: "<1:646--1:1039>"}
+[1/1] MATCH constant-expression: VAL:{value: "Specified(192)", stdout: "", stderr: "", blocked: "false"}
+translation-fuel: FAIL (see rejected witnesses above)
+```
+
+The test requires exit 134, `FUEL:panic`, the exact `failwithIImpl` envelope
+on stderr and empty stdout at fuel 128 under both modes. Its default-fuel
+control requires the exec lane's exact MATCH with `Specified(192)`.
+The existing dead-code witnesses remain. B8.3 now also runs the real binary
+directly on `min.json` at fuel 1 and checks stderr with
+`FUEL_ELAB_PANIC_LINE_RE`; the identical predicate must reject a bare
+sentinel at exit 134 even though the shared classifier calls it FUEL:panic.
+Thus the test no longer infers the envelope from the exec lane's fixed suffix.
+
+After the correction, the same translation test and B8.3 both exited 0.
+The two new refusal cases and default-fuel oracle control reported:
+
+```text
+translation-fuel: constant-expression mode=--batch fuel=128 exit=134 class=FUEL:panic
+PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: lem: fuel exhausted
+translation-fuel: constant-expression mode=--pp-core fuel=128 exit=134 class=FUEL:panic
+PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: lem: fuel exhausted
+[1/1] MATCH constant-expression: VAL:{value: "Specified(192)", stdout: "", stderr: "", blocked: "false"}
+translation-fuel: PASS (two dead-code witnesses, constant-expression refusal in batch and pp-core, five successful controls)
+```
+
+B8.3's raw-stderr check and its negative control reported:
+
+```text
+PLANT OK   [real --fuel 1 stderr: failwithIImpl envelope, exit 134]
+PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: lem: fuel exhausted
+PLANT OK   [negative: bare FUEL:panic exit 134 rejected by envelope predicate]
+```
+
+Reproduction (documented build environment, `CERB_MEM_MAX=48G`):
+
+```sh
+make prelude-src lean-prelude-src
+bash scripts/test_translation_fuel.sh
+bash scripts/test_fuel_plant.sh
+bash scripts/check_fuel_forms.sh
+bash scripts/check_fork_drift.sh
+(cd lean_frontend && ../scripts/capped lake build totality-proof-test)
+(cd lean_frontend && ../scripts/capped lake env leanchecker Translation Translation_lemMeasureProofs Translation_auxiliary Unit.TranslationFuelTest Unit.TotalityProofTest)
+```
+
+All commands exited 0. The two drivers were rebuilt after regeneration.
+`diff -rq` against the pre-correction generated OCaml snapshot exited 0 with
+no output: all 86 files are byte-identical (derived count). Mini_pipeline,
+all shared Lem bodies, dependency pins and baselines are unchanged. The
+single source-content manifest row for `translation.lem` was emitted with
+`check_fork_content.py --emit` and re-pinned to
+`5d960f4e69f759c86ad811f2d776673340619cbd37f96da0fad8495fa2026466`, with a
+dated NOTE citing this record. Fork-drift layer 2 remains unchanged.
+
+The fuel-forms gate passed; the pair remains AMBIENT and outside its drive
+closure. Fresh tool rows (trailing empty hypothesis columns omitted):
+
+```text
+FUEL_FORM	translate_expression_lemFuel	AMBIENT	no/front	zero=translate_expression_lemFuel_zero rhs-consts=[failwithI, elab_state, Prod, generic_expr, Unit, sym, Pi.instInhabited, instInhabitedProd, instInhabitedGeneric_expr, instInhabitedElab_state, CerbFuel.fuelExhaustedMsg]
+FUEL_FORM	translate_stmt_lemFuel	AMBIENT	no/front	zero=translate_stmt_lemFuel_zero rhs-consts=[failwithI, elabM, expr, Unit, Pi.instInhabited, elab_state, Prod, instInhabitedProd, instInhabitedGeneric_expr, sym, instInhabitedElab_state, CerbFuel.fuelExhaustedMsg]
+FUEL_FORMS_SUMMARY	workers=87	measured=67	measured_under_hyp=13	absorbing=13	ambient_reachable=0	ambient_unreachable=7	closure_size=10723
+check_fuel_forms: forms partition OK (67 MEASURED + 13 ABSORBING + 0 ambient-reachable + 7 ambient-unreachable = 87 fuel'd workers)
+```
+
+Lean 4.32.2 kernel replay of all five modules in the command above exited 0.
+The axiom probe described earlier was rerun over the same 25 named theorems
+(derived count): every cone is a subset of `propext`, `Classical.choice`,
+`Quot.sound`. In particular, the changed equations reported:
+
+```text
+'translate_expression_lemFuel_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'translate_stmt_lemFuel_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'TranslationFuelTest.statement_zero_boundary' depends on axioms: [propext, Classical.choice, Quot.sound]
+'TranslationFuelTest.expression_zero_boundary' depends on axioms: [propext, Classical.choice, Quot.sound]
+```
+
+The changed unit module compiled without warnings. The builds still replay
+inherited warnings in unchanged code; none was suppressed by this fix.
+
+The first Tier A attempt FAILED A1's failure-reach selftest. The census
+reported the `failwithI` occurrences in both generated zero-equation theorem
+statements as unresolved owners. Its Lean instrument emitted ranges for
+definitions and opaques only, omitting theorems. The existing fail-closed
+policy therefore required register rows for these unresolved sites:
+
+```text
+NEW pure exec-closure site (no register row — review it): lean_frontend/generated/Translation.lean:4467 <unresolved compiler declaration> failwithI «CerbFuel.fuelExhaustedMsg) := rfl structure collect_cases_st» position=OTHER scope=UNRESOLVED-OWNER
+NEW pure exec-closure site (no register row — review it): lean_frontend/generated/Translation.lean:5859 <unresolved compiler declaration> failwithI «CerbFuel.fuelExhaustedMsg) := rfl def translate_tag_definiti» position=OTHER scope=UNRESOLVED-OWNER
+FAILED A1 (427.4s)
+INCOMPLETE A3 (43.2s)
+fast: incomplete; 1/19 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+```
+
+A2 passed; the owned runner was stopped during A3 after the A1 failure.
+This run is not certification. Dirty worktrees were snapshotted to refs
+before further edits, without moving branches or their indexes.
+
+[AGENT 2026-10-19] Include theorem declarations in `FailureReach.lean`'s
+compiler range and dependency output. This repairs missing ownership
+evidence for the zero equations rather than adding register exceptions.
+The gate's register and rejection policy are unchanged. Add a focused
+selftest witness for the two actual theorem owners and their workers:
+the theorem sites are identified with neither dependency bit set; both
+worker refusal sites remain identified frontend dependencies. Existing
+plants must still reject new execution sites and discarded failures.
+
+`bash scripts/check_failure_reach.sh --selftest` then exited 0: all eight
+existing negative plants, seven classifier witnesses, the key-group witness
+and the new ownership witness passed. The register was not edited:
+
+```text
+WITNESS OK   [R1 theorem statements have compiler owners; both worker refusal sites remain frontend dependencies]
+check_failure_reach: OK (239 pure failure sites = the 239 register rows exactly (237 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, shared keys lengthened, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=173 REACHABLE=44 UNKNOWN=22; every row sealed; tally line consistent)
+```
+
+The final pre-commit `CERB_MEM_MAX=48G python3 scripts/release.py --mode fast`
+run, in the documented build environment, passed from 05:12:08 to 05:30:46
+UTC on 2026-10-19 (18.6 minutes, derived). All 19 selected commands exited 0;
+the report has no artifact issues. The runner reported:
+
+```text
+PASSED A1 (453.4s)
+PASSED A14.2 (161.8s)
+fast: passed; 19/19 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+The new constant-expression test and the corrected failure-reach selftest
+also passed within A1. Existing baseline rows are unchanged. This correction
+reports the requested Tier A result, focused B8.3, fuel-forms/fork-drift
+checks, axiom audit and kernel replay; the earlier full A+B runs are
+historical results on the pre-correction implementation, not a full-tier
+claim for this tree. Only this final result text was added after the green
+run; code, tests, manifests and baselines stayed unchanged through the commit.
