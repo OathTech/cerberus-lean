@@ -135,7 +135,7 @@ def exemplarFile : file core_run_annotation :=
     is applied to it positionally (`@drive ⟨n⟩ sw₀ …`), after the fuel instance (binder
     order `[LemFuel] [CerbGlobal.Switches]`). A plain `def`, not an `instance`: nothing
     resolves to it implicitly (`scripts/check_no_fuel_numerals.sh` rule W1). -/
-def sw₀ : CerbGlobal.Switches := ⟨CerbGlobal.defaultSwitches⟩
+abbrev sw₀ : CerbGlobal.Switches := ⟨CerbGlobal.defaultSwitches⟩
 
 /-- The shipped cold start: `(initial_driver_state sup top digest file fs).1` with the
     production filesystem state (Main.lean's `drSt`), at the ambient

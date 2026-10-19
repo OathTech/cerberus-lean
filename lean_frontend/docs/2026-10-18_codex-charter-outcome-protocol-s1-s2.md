@@ -90,4 +90,4 @@ S1 and S2, plus the records and notes of D5.
 `VALIDATION.md` §4 · `scripts/observations.py` (`parse` at `:278-286`: what 137 and 124 mean today) · `scripts/LADDER.md:144-150` (the
 OOM witness rule) · `scripts/pnvi_lane.py`, `check_cli_refusals.sh`, `check_runtime_resolution.sh` · `CerbMem.lean`, `CerbFS.lean`,
 `Main.lean` · `scripts/failure_reach_register.txt:18-26` (keys and seals) · `docs/2026-10-18_codex-charters-review.md` (findings 6–9) ·
-the consumer's ask: note 2 §A–§C and its agent's list, item 4.
+the consumer's ask: note 2 §A–§C and the consumer agent's list of 2026-10-18, item 4 (a chat relay, not a file; its substance is in §0).

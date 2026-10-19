@@ -38,9 +38,9 @@ set_option autoImplicit true
 /-- A named address-space top for the hand-built states (no literal cursor, rule A3). -/
 def testTop : Int := 65536
 
-def swDefault : CerbGlobal.Switches := ⟨CerbGlobal.defaultSwitches⟩
-def swPlain : CerbGlobal.Switches := ⟨[.PNVI .PLAIN]⟩
-def swAEUDI : CerbGlobal.Switches := ⟨[.PNVI .AE_UDI]⟩
+abbrev swDefault : CerbGlobal.Switches := ⟨CerbGlobal.defaultSwitches⟩
+abbrev swPlain : CerbGlobal.Switches := ⟨[.PNVI .PLAIN]⟩
+abbrev swAEUDI : CerbGlobal.Switches := ⟨[.PNVI .AE_UDI]⟩
 
 def intTy : ctype := Ctype [] (.Basic (.Integer (.Signed .Int_)))
 def ulongTy : ctype := Ctype [] (.Basic (.Integer (.Unsigned .Long)))

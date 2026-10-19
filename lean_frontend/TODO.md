@@ -70,6 +70,26 @@ of this work's scope.
   `docs/2026-08-31_semantics-forward-assessment.md` (the F-axes);
   deliberately parked behind the substantive track.
 
+- **Native link input is package-relative (consumer finding, cerberus-caesium,
+  2026-10-19).** Every `[[lean_exe]]` in `lean_frontend/lakefile.toml` carries
+  `moreLinkArgs = ["native/md5.o"]`, relative to the package. Lake links from
+  the workspace root, so a consumer that builds the driver as a Lake
+  dependency links from its own root and the path misses (the consumer keeps
+  a link workaround). A TOML lakefile cannot compute a path or declare an
+  `extern_lib`; the fix is a `lakefile.lean` with an `extern_lib` target for
+  `native/*.o`, which Lake then links into every dependent executable itself.
+  Gate: row 1 plus a dependency-flavour link smoke test in a scratch consumer
+  package. Price S–M. [AGENT 2026-10-19] filed; no change yet.
+- **Generated-tree compiler warnings are a lem-backend item.** Building the
+  generated tree replays 337 warnings in the `CerbQuote` seam's closure and
+  837 under `generated/` in the driver's closure (measured 2026-10-19 at
+  `e7e9bb427`): `Variable name … is not explicitly referenced` on pattern
+  variables and `unused termination_by, function is not recursive`. Both are
+  emission patterns of the Lean backend, fixed in lem-lean (its TODO 54) and
+  re-pinned here; nothing in this repository can fix them. The hand-written
+  class-valued test definitions and one unused simp argument were fixed on
+  2026-10-19 (`fix/hygiene-20261019`).
+
 ## Semantics-audit repairs (2026-09-11) — RESOLVED findings and the rows they leave
 
 Record `docs/2026-09-11_semantics-audit-repairs-record.md`; charter

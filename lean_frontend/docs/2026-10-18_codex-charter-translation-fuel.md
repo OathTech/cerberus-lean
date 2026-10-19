@@ -61,7 +61,7 @@ value sentinel such as `fuelExhausted`, `failwithI` or `panic`); AMBIENT is RED 
 6. A consumer note `docs/2026-10-18_consumer-note-cerberus-caesium-translation-fuel.md`.
 
 Rulings this rests on, paraphrased: [USER 2026-10-17] this work is needed by cerberus-caesium and is chartered (its note 2 §F; its
-agent's list, item 1). [USER 2026-09-03] no magic values: a fuel bound is a quantifiable parameter; an exhaustion value is never a
+the consumer agent's list of 2026-10-18, item 1; a chat relay, not a file, its substance in §0). [USER 2026-09-03] no magic values: a fuel bound is a quantifiable parameter; an exhaustion value is never a
 plausible default result. [USER 2026-09-04] the lem structure is not changed for OCaml's sake — only `declare {lean}` lines are
 added here. [USER 2026-09-08] nothing new out of policy: sufficiency proofs are derivations over the recursion's structure or they
 are not written. Standing: fail-closed and fail-noisy; never a Lean build uncapped; the grind tripwire; the operator's words are never

@@ -156,4 +156,4 @@ Container `CLAUDE.md` · `lean_frontend/CLAUDE.md` · `generated/Core.lean` · `
 lem-lean `lean-lib/LemLib.lean` (Fmap, Pmap, union) · `scripts/LADDER.md` · commit `424253fac` · `docs/2026-10-18_codex-charters-review.md`
 (findings 3, 12, 16; S1; R1–R4; the fourth pass's provenance-path table — the per-field construction paths a worker traces, with cites
 into `generated/Translation.lean`, `Main.lean`, `generated/Core_linking.lean`, `generated/Core_run_aux.lean`, `generated/Core_aux.lean`)
-· `scripts/libc_float_literals.txt` · the consumer's ask: note 2 §F (secondary) and its agent's list, item 2.
+· `scripts/libc_float_literals.txt` · the consumer's ask: note 2 §F (secondary) and the consumer agent's list of 2026-10-18, item 2 (a chat relay, not a file; its substance is in §0).

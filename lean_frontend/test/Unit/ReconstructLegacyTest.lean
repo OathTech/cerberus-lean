@@ -358,13 +358,10 @@ theorem reconstructValueLegacy_lemFuel_eq_indexed :
       funext e a u f ad t b; exact ih e a u f ad t b
     unfold reconstructValueLegacy_lemFuel reconstructValueLegacy_indexed_lemFuel
     rw [hf]
-    -- `panic!` expands to `panicWithPosWithDecl <module> <DECL NAME> <line>
-    -- <col> msg`, so the two definitions' panic sites differ textually;
-    -- every such term is definitionally `default`, and normalising both
-    -- sides to it makes the unchanged arms syntactically equal.
-    have hp : ∀ {α : Type} [Inhabited α] (m d : String) (l c : Nat) (msg : String),
-        (panicWithPosWithDecl m d l c msg : α) = default := fun _ _ _ _ _ => rfl
-    simp only [hp]
+    -- The two definitions' failure leaves are the same opaque `failwithI`
+    -- since seam hygiene (2026-09-19); no panic-site normalisation is needed
+    -- (the former `panicWithPosWithDecl = default` rewrite was unused).
+    simp only
     rcases ty with ⟨_, ty⟩
     cases ty with
     | Array0 elemCty n =>
@@ -512,10 +509,10 @@ are S3/S4's). -/
 /-- A named address-space top for the hand-built state (no literal cursor, rule A3). -/
 def testTop : Int := 65536
 
-def swDefault : CerbGlobal.Switches := ⟨CerbGlobal.defaultSwitches⟩
-def swPlain : CerbGlobal.Switches := ⟨[.PNVI .PLAIN]⟩
-def swAE : CerbGlobal.Switches := ⟨[.PNVI .AE]⟩
-def swAEUDI : CerbGlobal.Switches := ⟨[.PNVI .AE_UDI]⟩
+abbrev swDefault : CerbGlobal.Switches := ⟨CerbGlobal.defaultSwitches⟩
+abbrev swPlain : CerbGlobal.Switches := ⟨[.PNVI .PLAIN]⟩
+abbrev swAE : CerbGlobal.Switches := ⟨[.PNVI .AE]⟩
+abbrev swAEUDI : CerbGlobal.Switches := ⟨[.PNVI .AE_UDI]⟩
 
 /-- Two adjacent live allocations: id 0 = [100, 108) unexposed, id 1 = [108, 116) exposed. -/
 def st0 : MemState :=

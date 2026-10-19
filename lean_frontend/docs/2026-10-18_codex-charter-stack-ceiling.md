@@ -133,4 +133,4 @@ Container `CLAUDE.md` · `lean_frontend/CLAUDE.md` · `docs/2026-08-31_stack-cei
 `lean_frontend/CerbND.lean` · `generated/Driver.lean:1313-1338`, `generated/Nondeterminism.lean:338-351` · `frontend/model/driver.lem:1066-1095,
 :1914-1916` · `scripts/common.sh` (FUEL/KILL/HANG classes) · the plant scripts · `docs/upstream-tray/lean4/01-…` ·
 `docs/2026-10-17_outcome-protocol-design.md` §1 (resource forms) · `docs/2026-10-18_codex-charters-review.md` (findings 4, 5, 11) ·
-the consumer's ask: note 2 §B and its agent's list, item 4.
+the consumer's ask: note 2 §B and the consumer agent's list of 2026-10-18, item 4 (a chat relay, not a file; its substance is in §0).
