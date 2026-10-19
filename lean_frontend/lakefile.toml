@@ -180,6 +180,7 @@ roots = [
   "CerbFloat",
   "CerbUtils",
   "CerbPP",
+  "CerbQuote",
   "CerbMem",
   "CerbMemAllocatorProofs",
   "CerbMemDefaultFacts",

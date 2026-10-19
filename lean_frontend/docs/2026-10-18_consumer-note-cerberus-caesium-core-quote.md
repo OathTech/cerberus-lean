@@ -1,8 +1,9 @@
 # Core quotation for cerberus-caesium
 
-Status (2026-10-19): D0 audit only; the quotation flag, printer and round-trip
-test are not implemented at this checkpoint. Base
-`e7e9bb427a514b6053865c303c4af512907da75b`.
+Status (2026-10-19): D1 printer implemented with focused elaboration evidence.
+The driver flag and whole-file round-trip test remain for D2/D3. Base
+`e7e9bb427a514b6053865c303c4af512907da75b`; D0 checkpoint
+`fb8705c686d1de34f66426e3da4f1477d077632e`.
 
 ## Relation and intended extraction point
 
@@ -13,9 +14,11 @@ It is not a proof of equality with the frontend's result.
 
 The driver value is `runFile := convert_file coreFile` at `Main.lean:1212`,
 after the final link. A second quotation covers `convert_file libcFile`
-for the result of `loadLibc`, before the user link. The eventual module
-must elaborate under the project's pinned toolchain and imports. Its flag
-invocation and definition name will be documented when D2 lands.
+for the result of `loadLibc`, before the user link. The emitted module imports
+`Core_run_aux`, uses private typed subterm helpers,
+and declares one public `def quotedCore : file core_run_annotation`. It imports
+no printer code and uses the pinned toolchain's default elaboration limits.
+The flag invocation remains for D2.
 
 Every record field, scalar, annotation, initializer, constructor and
 container payload belongs to the relation. `Fmap.empty` stays `.empty`;
@@ -102,17 +105,35 @@ The intended `VALIDATION.md` boundary entry is the Core quotation instrument:
 representation comparison and source-inspected comparator provenance are
 computed evidence, kernel-opaque as a link to the pipeline. The named
 boundary mover is the printer-correctness bridge (charter option B).
-That entry is not yet installed at D0.
+That entry remains for D4.
 
-The type inventory is complete: 75 model datatype heads / 638 constructors,
-six scalar types and six container types. Required-input occurrence counts,
-NaN absence, any additional named refusals, all round trips and all mutation
-controls are still to be measured. D0 does not claim any input was quoted.
-The required population is ten committed Cabs JSON fixtures, sixteen corpus
-C files, a linked cross-TU declaration/reference example, and converted libc.
-The final invocation, module shape, refusal counts and test results remain
-for D1–D4.
+The printer covers all 75 model datatype heads / 638 constructors, six scalar
+types and six container types, including every memory-value constructor.
+Its data-domain refusal is `Float.NaN`, qualified with the enclosing file
+field; missing, inconsistent or inadmissible comparator provenance is also
+refused by name. The public API is
+`CerbQuote.moduleSource provenance file : Except CerbQuote.Refusal String`.
+Use `translatedProvenance` only for audited translated TUs and `libcProvenance`
+only for the library loader result. Retain the driver's reverse-consed list
+of origins and use `linkedProvenance` with the successful linked file before
+quoting its converted value. Arbitrary maps cannot be validated by inspecting
+comparator closures.
 
-The untouched-base Tier A run passed all nineteen commands (exit 0), with
-source unchanged. The record also identifies nine existing compiler
-warnings outside the slice's edit fence; no warning suppression was added.
+D1's focused probes successfully quoted and elaborated the first committed
+fixture and converted libc. The libc output is 33,832,667 bytes with 13,318
+private helpers; elaboration took 144.99 seconds and 12,055,992 KB peak RSS
+(exit 0, cap 48G). Five float cases and a set/comparator case have evaluated
+representation assertions. The record gives commands, failures that motivated
+the emission design, and final gate results. This evidence does not establish
+the complete whole-file relation.
+
+Required-input occurrence counts, the full NaN census, all round trips and
+all mutation controls remain for D3. The required population is ten committed
+Cabs JSON fixtures, sixteen corpus C files, a linked cross-TU declaration/reference
+example, and converted libc. No additional construct refusal is currently
+implemented. Full required-set acceptance is not claimed at D1.
+
+The D1 precommit Tier A run passed all nineteen commands (exit 0), with
+source unchanged during the run; its exact summary is quoted in the record.
+The record retains F6 and the separate ownership of its nine existing compiler
+warnings. No warning suppression was added.

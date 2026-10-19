@@ -7,7 +7,7 @@ Base: `e7e9bb427a514b6053865c303c4af512907da75b`, branch
 The governing document is `2026-10-18_codex-charter-core-quote.md`, revision 5.
 No production implementation or theorem is added by D0.
 
-[USER 2026-10-19] The dispatch requires the baseline, reachable-constructor
+[AGENT 2026-10-19, orchestrator dispatch relayed by the operator] The dispatch requires the baseline, reachable-constructor
 inventory and independent construction-path audit to be reported before D1.
 The worker must retain representation, establish comparator provenance on
 every producer path, and park at a charter stop condition.
@@ -119,8 +119,8 @@ There is no captured comparator in this Lean `Pset` representation
 
 Coverage obligations carried into D1/D3:
 
-- [ ] Every constructor reported by the inventory has a printing or named
-  refusal branch, recursively through every payload.
+- [x] Every constructor reported by the inventory has a printing or named
+  refusal branch, recursively through every payload (completed in D1).
 - [ ] The comparison visits the same complete type inventory independently;
   field omissions cannot be hidden by a map-only comparison.
 - [ ] `Fmap.empty` and `Fmap.mk _ Pmap.Empty` remain distinct in both
@@ -392,3 +392,176 @@ or Tier B. No new theorem was introduced, so there is no new module
 requiring kernel replay. D1 must implement the checklist and preserve
 per-field producer identity across the link fold; the D3 refusal census
 and elaboration measurements remain open.
+
+
+## D1 — representation printer (2026-10-19)
+
+[USER 2026-10-19] The separate consumer-list reference in charter §5
+resolves to the complete requirement already in §0, including its correction.
+The existing nine warnings are outside this worker's repair scope: backend
+termination diagnostics and test hygiene have separate owners. F6 above is
+preserved unchanged.
+
+`CerbQuote.lean` supplies `moduleSource : Provenance → file core_run_annotation
+→ Except Refusal String`, plus `quoteFile` and the producer-specific provenance
+helpers. It is registered in `handwritten_copy.manifest` and the library roots.
+There is no driver flag yet. The only output-module import is `Core_run_aux`;
+the public value is `quotedCore : file core_run_annotation`.
+
+[AGENT 2026-10-19] Emit fully instantiated, exhaustive constructor cases for
+the audited root. Use exact typed subterm sharing and separate private helper
+definitions to keep elaboration manageable without changing model values.
+
+Coverage audit: all **638 model constructors** have printing branches:
+637 explicitly named payload cases and the twelve-field `generic_file.mk`
+case. Each payload case uses every argument once in constructor order.
+The six scalar and six container heads are also covered. All memory-value
+constructors are supported; there is no memory-value refusal. Recursive
+payload walkers and the syntax work-list use `partial def`: this instrument
+has exhaustive runtime coverage, not a kernel proof of termination or
+printer correctness. No theorem, axiom, native seam, `unsafe`, `sorry`,
+`implemented_by` attribute, or kernel-check bypass was added in source.
+
+`Fmap.empty` and `Fmap.mk _ Pmap.Empty` remain distinct. The printer follows
+every `Pmap.Node` and `Pset.Node` field, including cached heights; it never
+reconstructs a container from bindings. All twelve file fields, all fourteen
+`annot` cases, the three annotation sets, ctype annotations, locations and
+complete symbols have explicit traversal. `Float.ofBits` carries non-NaN
+binary64 representations. A NaN is refused before calling `toBits`, with a
+name such as `funs.Float.NaN`, including when nested in a memory value.
+
+`translatedProvenance` and `libcProvenance` are restricted by contract to their
+D0-audited construction sites. `linkedProvenance` mirrors the reverse-consed
+input order and `link_aux next accumulated` fold; libc retains precedence
+when its outer map is `.mk`, even with an empty tree. The exact S/O/L/I/N/E
+terms are emitted without substituting extensionally similar comparators.
+Unexpected outer constructors, missing provenance and a comparator outside
+the field's admitted vocabulary produce named errors. These are construction
+records supplied by the caller, not closure introspection or a proof about
+arbitrary externally constructed files.
+
+The extern insertion fold differs from union: a right `.mk E .Empty` inserted
+into left `.empty` still yields `.empty`. The final successful linked file
+supplies that outer tag; its construction comparator remains E. This follows
+`Core_linking.link_extern:33-176`, `link_aux:452-485` and `link:486-496`;
+the inspected driver still reverse-conses libc first (`Main:1124-1171`).
+This is an implementation detail of the D0 provenance result, not an additional
+producer path or a revision of F1/F2.
+
+The emitter interns exact quotation syntax (constructor names, literal text,
+fully instantiated type text and child IDs), using no model equality.
+Formatting thresholds select repeated subterms and chunks for private typed
+helpers; the dependencies are acyclic and preserve each original constructor.
+No comparator is shared by comparing its behaviour. The output does not
+change Lean's default heartbeat or recursion limits.
+
+### Focused reproduction and results
+
+The small reproducible sources are `docs/CoreQuoteSmoke.lean` and
+`docs/CoreQuotePipelineProbe.lean`. They are development probes, not a
+replacement for D3's independent whole-file representation comparison or
+its complete required-input census. After the documented project setup,
+from the repository root:
+
+```sh
+export CERB_MEM_MAX=48G
+mkdir -p .tmp/core-quote-d1
+./scripts/capped make lean-prelude-src
+(cd lean_frontend && ../scripts/capped lake build +CerbQuote)
+(cd lean_frontend && ../scripts/capped lake env lean docs/CoreQuoteSmoke.lean)
+for quoted in .tmp/core-quote-d1/Float*.lean .tmp/core-quote-d1/SetsAndComparators.lean; do
+  (cd lean_frontend && ../scripts/capped lake env lean "../$quoted") || exit "$?"
+done
+```
+
+The probe emits five float modules (+0, -0, the smallest positive subnormal,
++infinity, -infinity) and one set/comparator module. Their evaluated assertions
+check the emitted float bits, escaped symbol digest and description, map outer
+constructors and height 91, and all three noncanonical set shapes/heights.
+Separate checks reject NaN and invalid provenance, check all six exact
+comparator spellings, and exercise libc-first and extern-insertion corner
+cases. The final run results are recorded below.
+
+The pipeline probe reuses the existing native digest wrapper; it introduces
+no new native source or production seam. After the normal driver/native build:
+
+```sh
+cc -shared lean_frontend/.lake/build/ir/CerberusFresh.c.o.export \
+  lean_frontend/native/md5.o -o .tmp/core-quote-d1/fresh-runtime.so
+./scripts/capped scripts/libc_prep.sh --jsons "$PWD/.tmp/core-quote-d1/libc-json" \
+  > .tmp/core-quote-d1/libc-json-paths.txt
+export CERB_QUOTE_FUEL=1000000 CERB_QUOTE_TOP=18446744073709551616
+for CERB_QUOTE_PROBE in fixture libc; do
+  export CERB_QUOTE_PROBE
+  (cd lean_frontend && ../scripts/capped lake env lean \
+    --load-dynlib=../.tmp/core-quote-d1/fresh-runtime.so \
+    docs/CoreQuotePipelineProbe.lean) || exit "$?"
+done
+for quoted in PipelineQuoted LibcQuoted; do
+  (cd lean_frontend && /usr/bin/time -f '%e seconds; %M KB peak RSS; exit %x' \
+    ../scripts/capped lake env lean "../.tmp/core-quote-d1/$quoted.lean") || exit "$?"
+done
+```
+
+The fixture is `001-return-literal`; the libc probe loads all twelve metadata
+TUs and the committed bodies (191 procedures, 68 globals). Both quote after
+`convert_file`. The literal imports neither `Main` nor `CerbQuote`. Passing
+elaboration is positive D1 evidence only; these probes do not compare the
+whole original and elaborated files.
+
+Development failures were not counted as passes. An initial pipeline probe
+loaded only `md5.o`, which lacked the compiled `CerberusFresh.setDigestIO`
+wrapper and crashed (exit 134) before quotation. The dirty worktree was
+snapshotted to a local ref before further edits; linking the existing wrapper
+object with the existing native object fixed the probe setup. Initial target,
+syntax and type errors were corrected before the passing runs.
+
+The first libc literal, a single 51,875,828-byte expression, failed the default
+200,000-heartbeat limit at `isDefEq` (82.41 s, 10,009,180 KB peak RSS, exit 1).
+Sharing through a single `where` declaration still failed at `whnf`
+(20,084,239 bytes; 67.79 s, 4,979,584 KB, exit 1). These failures motivated
+the private typed helper emission above; neither run approached the 48G cap
+or the one-hour tripwire. No limit was raised or warning suppressed.
+
+D2's flag, D3's complete representation comparison, mutation controls and
+required-input refusal census, and D4's boundary entry/Tier B remain open.
+No new theorem was declared, so D1 does not introduce a kernel-replay gate.
+
+
+Final focused results (all process exits 0):
+
+| Check | Result |
+|---|---|
+| Synchronize, then `capped lake build +CerbQuote` | Success; no diagnostic attributed to the new seam |
+| `docs/CoreQuoteSmoke.lean` | Six modules emitted; named refusals, six comparator terms and link rules passed |
+| All six emitted assertion modules | Elaboration and evaluated representation assertions passed |
+| Fixture generation / elaboration | 439,633 bytes; generation 2.91 s / 941,400 KB; elaboration 1.87 s / 824,432 KB |
+| Converted libc generation / elaboration | 33,832,667 bytes, 13,318 helpers; generation 38.61 s / 1,365,932 KB; elaboration 144.99 s / 12,055,992 KB |
+
+Memory figures are peak RSS from `/usr/bin/time`; every Lean invocation used
+`CERB_MEM_MAX=48G`. The successful libc traversal did not encounter a NaN;
+that is not the all-required-input census reserved for D3. Lake replayed
+existing dependency diagnostics; the seam and focused probes introduced none.
+
+### Tier A before the D1 commit
+
+Command (after `make lean-prelude-src`, with `CERB_MEM_MAX=48G`):
+
+```sh
+python3 scripts/release.py --mode fast --out .tmp/core-quote-d1/tier-a
+```
+
+Run: 2026-10-19 21:12:30–21:32:12 UTC. Process exit **0**; all nineteen
+lane exit statuses were **0**. The completed implementation and focused
+probe sources were fixed during the run. The runner reported:
+
+```text
+fast: passed; 19/19 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+No existing lane row moved. This paragraph records the gate result after
+completion; the temporary literal modules, native wrapper bundle and logs
+are reconstructible from the commands above and are removed after commit.
+D1 is ready for the D2 handoff. Tier B remains the D4 close-out gate.

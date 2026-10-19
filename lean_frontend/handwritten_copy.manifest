@@ -42,6 +42,7 @@ CerbMemDefaultFacts.lean
 CerbMemAccessFacts.lean
 CerbND.lean
 CerbPP.lean
+CerbQuote.lean
 CerbStepInstances.lean
 CerbTags.lean
 CerbTagsWf.lean
