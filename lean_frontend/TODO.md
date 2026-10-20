@@ -100,6 +100,48 @@ of this work's scope.
   the Core-quoting landing; its own charter then; lem-lean first (its TODO
   carries the backend side).
 
+## Upstream-uncertainty survey follow-ups (2026-10-20) — queued BEHIND the cerberus-caesium deliveries
+
+Record: [`docs/2026-10-20_upstream-uncertainty-survey-record.md`](docs/2026-10-20_upstream-uncertainty-survey-record.md)
+(the uncertainty-marker inventory of the shared model and the 247 probes; corpus `tests/parity-probes/uncertainty/`,
+not a gate). Every item below is queued behind the deliveries to cerberus-caesium (Core quoting, `inner_arg_temps`,
+the outcome protocol) and is not to be dispatched before them ([USER 2026-10-20]); the slice shapes are the record's §3.
+
+- **Anonymous struct/union members: refuse in the shared Lem** ([USER 2026-10-20]; record §2.1, slice 1; tray 60).
+  `desugar_struct_declaration` (cabs_to_ail.lem:2713-2719) splices an anonymous member's members into the containing
+  aggregate: wrong `sizeof`/offsets, no aliasing inside an anonymous union, every member after it initialised one
+  slot late, false UB081/UB036 (25 silent-wrong probes, both engines and pristine upstream agree). Refusal at that
+  arm (`Desugar_NotYetSupported`), both engines through the shared `.lem`; one gated row moves
+  (`tests/coverage/struct/struct-008-anon-struct.c`), witness script per the item-G shape; upstream report filed.
+- **Compound assignment with a side-effecting left operand: refuse** ([USER 2026-10-20]; record §2.2, slice 2; tray 61).
+  translation.lem:2510-2535 elaborates `e1 op= e2` with `e1` duplicated (its own TODO): `*g() += 3` calls `g` twice,
+  `a[i++] += 5` is a false UB035. A syntactic side-effect predicate on `e1` and a `record_error_at` refusal (the GNU
+  `?:` precedent at :2325); 0 gated rows move. The one-binding elaboration is proposed upstream and adopted on re-pin.
+- **`_Bool` from a fractional floating value: refuse — upstream fix exists, backport proposed, ruling pending**
+  (record §2.3; tray 15). std.core:78-91 applies the §6.3.1.2#1 test to the truncated integer (`_Bool b = 0.5` is 0;
+  11 probes). [USER 2026-10-20] ruled a refusal rather than an override because the reach is low; upstream commit
+  `3230aa494` (2026-09-30) fixes it (`conv_arith` `_Bool` arm; `loaded_ivfromfloat` tests the floating value; CI
+  `tests/ci/0343-subzero-floating-to-_Bool.c`), and the orchestrator has proposed backporting it as a fork-ahead
+  delta instead; whichever the operator rules, no gated row moves.
+- **Crashes on valid C become declared refusals** ([USER 2026-10-20]: a crash is an unspecified stop, a refusal a
+  specified one; the conversion changes no accepted program's answer; record §2.5, §2.7-§2.9, slice 3). Five arms:
+  (1) `wchar_t` with a negative value (`bytes_of_int` assertion from the unsigned-range/signed-alias contradiction at
+  impl_mem.ml:2449/:2479 vs ocaml_implementation.ml:167; tray 62); (2) statement expressions whose block contains an
+  assignment/`++`/`if` (`break_at_sseq, Cbound`, failure register row 183); (3) multi-character and UTF-8 character
+  constants (`decode_character_constant`, decode.ml:218; tray 63); (4) `NULL + 0` (impl_mem.ml:2277 `failwith`,
+  mirror `CerbMem.lean:1975`; tray 04) — **upstream fix exists (`f4a3a3d54`, 2026-09-30: the pure
+  `array_shift_ptrval` returns UB on a null pointer); backport proposed, ruling pending**; (5) the `printf` `%.*d`
+  (negative precision, tray 26) and `%n` arms (formatted.lem:453/:726). Each becomes an attributed refusal in both
+  engines with a witness; 0 gated rows move.
+- **Float profile documentation, no code** ([USER 2026-10-20]; record §2.4; tray 32). SUPPORTED.md and CONTRACT D6
+  state `sizeof(float) == sizeof(double) == sizeof(long double) == 8`, all binary64, `_Alignof(long double) == 8`;
+  tray 32 gains the `float.h` contradiction (`FLT_MANT_DIG 24` / `LDBL_MANT_DIG 64` against 53-bit values,
+  `FLT_EPSILON` absent). The shipped `runtime/libc/include/float.h` is NOT edited.
+- **Row-183 witness and the census correction** (record §2.8). `scripts/failure_reach_register.txt` row 183
+  (`break_at_sseq, Cbound`, reach UNKNOWN) gets the six C witnesses of `tests/parity-probes/uncertainty/P-statement-expressions/`;
+  `docs/2026-10-04_real-c-reach-census.md` (M1) is corrected from "statement expressions are supported" to "supported
+  unless the block contains an assignment, `++` or `if` statement".
+
 ## Semantics-audit repairs (2026-09-11) — RESOLVED findings and the rows they leave
 
 Record `docs/2026-09-11_semantics-audit-repairs-record.md`; charter

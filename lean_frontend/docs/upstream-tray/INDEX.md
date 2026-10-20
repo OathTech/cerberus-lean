@@ -35,6 +35,15 @@ initializer defects it does not record (a struct/union VALUE as a member initial
 compound literal in the initializer position rejected, elsewhere silently wrong; a designated union inside a struct dying
 on draft 08's `AilEinvalid` internal error) and an anonymous union member flattened into the enclosing struct's layout;
 since 2026-10-20 the fork REFUSES part (a) in both engines (contract D11, fork-ahead; the draft stays Draft).
+Reports 60–63 (2026-10-20, Draft, the upstream-uncertainty survey `docs/2026-10-20_upstream-uncertainty-survey-record.md`):
+anonymous struct/union members spliced into the containing aggregate (silent wrong layout/aliasing/initialisation),
+compound assignment elaborated with the left operand duplicated (a call in the lvalue runs twice; `a[i++] += v` is a
+false UB035), `wchar_t`'s unsigned range vs signed representation (an assertion on a negative value), and
+`decode_character_constant`'s crash on multi-character and non-ASCII constants. Numbering: 58 (Core quoting) and 59 (union
+initializers) precede these on the mainline; reconciled at the rebase of 2026-10-21. Two survey findings already have tray entries whose upstream
+status changed after our merge-base (upstream/master fetched 2026-10-20): report 15 (`_Bool` from a floating
+value) is fixed by upstream `3230aa494` and report 04 (the pure shift of a null pointer) by `f4a3a3d54`; a backport
+of each is proposed and the operator's ruling is pending — their tray files are unchanged here.
 Issue 1010 is recorded below but has no tray report, so is outside this count.
 Draft duplicate searches must be repeated before filing; the dated search
 notes below establish only what was checked then.
@@ -99,6 +108,10 @@ notes below establish only what was checked then.
 | [57-aligned-alloc-invalid-alignment-allocates.md](57-aligned-alloc-invalid-alignment-allocates.md) | Draft | No submission recorded; the fork REFUSES the case since 2026-10-20 (contract D10, fork-ahead, not a fix for upstream) |
 | [58-relative-runtime-library-location.md](58-relative-runtime-library-location.md) | Draft | No submission recorded |
 | [59-union-initializer-desugaring.md](59-union-initializer-desugaring.md) | Draft | No submission recorded; the fork REFUSES part (a) since 2026-10-20 (contract D11, fork-ahead, not a fix for upstream); parts (b) and (c) unchanged |
+| [60-anonymous-members-spliced-into-containing-aggregate.md](60-anonymous-members-spliced-into-containing-aggregate.md) | Draft | No submission recorded; the fork plans a shared-Lem REFUSAL ([USER 2026-10-20], queued) |
+| [61-compound-assignment-duplicates-left-operand.md](61-compound-assignment-duplicates-left-operand.md) | Draft | No submission recorded; the fork plans a REFUSAL of side-effecting left operands ([USER 2026-10-20], queued) and proposes the one-binding elaboration here |
+| [62-wchar-t-unsigned-range-signed-representation-crash.md](62-wchar-t-unsigned-range-signed-representation-crash.md) | Draft | No submission recorded; the fork plans a declared refusal in place of the crash ([USER 2026-10-20], queued) |
+| [63-character-decoding-crashes-on-multichar-and-utf8.md](63-character-decoding-crashes-on-multichar-and-utf8.md) | Draft | No submission recorded; the fork plans declared refusals in place of the crashes ([USER 2026-10-20], queued) |
 | [lean4/01-stack-overflow-handler-deadlock.md](lean4/01-stack-overflow-handler-deadlock.md) | Draft | No submission recorded |
 | [lean4/02-nat-div-mod-literal-folding.md](lean4/02-nat-div-mod-literal-folding.md) | Draft | No submission recorded |
 | [lean4/03-float-tobits-canonicalizes-nan.md](lean4/03-float-tobits-canonicalizes-nan.md) | Draft | No submission recorded |
