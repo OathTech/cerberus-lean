@@ -756,3 +756,177 @@ and the migration/adoption evidence remain scheduled for the later checkpoints.
 Scratch captures/build logs are ephemeral; the committed tests and commands
 above reproduce the evidence. No merge, push, dependency or machine-global
 change was made.
+
+## C — producer migration (parked at the adapter finding)
+
+**Status: PARKED under charter §3; C.2 requires a ruling.** [AGENT 2026-10-20]
+Stop production migration at the adapter/erasure incompatibility. The earlier
+register-scope park is resolved by C.1. The producer/test/reference edits remain
+uncommitted on the branch while the independent adapter finding awaits a ruling.
+B remains the latest completed checkpoint. This documentation-only park record
+does not certify C: the production build is RED, the full C axiom census and
+production kernel replay have not run, and Tier A failed as recorded in C.4.
+A passing Tier A remains required before a completed C checkpoint commit.
+
+### C.1 CerbTags register scope and reference check
+
+[AGENT 2026-10-20, orchestrator, relayed by the operator] The register continues
+to cover the execution dependency closure under its existing gate. A known site
+outside both execution and frontend closures belongs neither in a counted row
+nor in the register preamble. Retain and convert a still-referenced coverage
+stub, documenting it here; delete it only if the reference check finds no use.
+
+`CerbTags.tagDefsUnreachable` remains the Lean target representation of
+`tagDefs` in `frontend/model/ctype_aux.lem:35`; the adjacent reader declaration
+is at line 36. The reader transformation replaces applied model reads with the
+reader parameter, so the coverage declaration is still needed even though no
+applied reference survives in the generated model. Keep the definition and the
+conversion: old token `panic!` at B's `lean_frontend/CerbTags.lean:34`, new token
+`failwithI` at the candidate's line 35, with an INVARIANT envelope. No register
+row/preamble or gate modification is made for this site.
+
+Reference check, from the worktree root:
+
+```sh
+git grep -n tagDefsUnreachable -- ':!lean_frontend/docs' ':!lean_frontend/CLAUDE.md'
+grep -Rn tagDefsUnreachable lean_frontend/generated
+```
+
+Besides the target declaration and the definition/copied definition, the hits
+are explanatory comments in `frontend/model/implementation.lem:44`,
+`lean_frontend/CerberusImpl.lean:64` and their generated copies. No test or
+generated applied call was found. The fresh kernel dependency census identifies
+the owner and reports `exec_dependency: false`, `frontend_dependency: false`.
+The current 239-row register passes its unchanged checker. Reproduce the fresh
+dependency check with capped `scripts/check_failure_reach.sh`; the separate
+lexical census still includes this leaf in C's complete hand-written inventory.
+
+### C.2 New finding: whole-monad refusal loses the load erasure interface
+
+The twelve switch-only kills were migrated through B's `refuseM`, as specified
+by design §2.3 and charter §0. In particular, the candidate's
+`lean_frontend/CerbMem.lean:2880` applies the opaque refusal monad to `st0` in
+the `strict_reads` branch. The unchanged public theorem
+`CerbMem.loadM_erasure` (`CerbMemAccessFacts.lean:122`) quantifies over an
+arbitrary switch set. Its proof now fails; its restatement
+`MemoryAccessProofs.load_erasure:73` consequently cannot rebuild. The axiom
+census still names the seam theorem at `scripts/check_theorem_axioms.sh:832`.
+
+Reproduction from `lean_frontend`, after the required source-copy sync:
+
+```sh
+CERB_MEM_MAX=48G ../scripts/capped lake build +CerbMemAccessFacts
+```
+
+Exit **1**. Verbatim diagnostic and representative remaining goal:
+
+```text
+error: generated/CerbMemAccessFacts.lean:127:11: unsolved goals
+h✝ : CerbGlobal.has_switch CerbGlobal.CerbSwitch.strict_reads = true
+⊢ ((f✝ st1✝).fst, stopObserving (f✝ st1✝).snd) = f✝ (stopObserving st1✝)
+```
+
+Here `ND f✝` is the matched result of `refuseM`. Its definition is
+`failwithI (CerbStop.render (.refusal refusal)) : memM a`. The pinned LemLib
+exports no equation for that opaque application. In particular it supplies no
+observation-erasure law for `f✝`. Erasure is false for general monads: a monad
+that always writes `observations := some []` is a counterexample. A scratch
+kernel proof checks this counterexample; this is not a claim that the opaque
+constant itself is inconsistent or that a native run returned that state.
+
+[AGENT 2026-10-20, recommendation pending ruling] Preserve the public erasure
+statement and change only the new switch adapter's failure ascription to a
+kill reason inside a fixed killed node:
+
+```lean
+def refusalCandidate {a : Type} (r : CerbStop.Refusal) : CerbMem.memM a :=
+  ND fun s => (NDkilled (failwithI (CerbStop.render (.refusal r))), s)
+```
+
+This uses the same existing opaque failure atom and runtime panic frame, adds
+no ordinary Error/ModelFailure refusal and fixes the returned state to the
+input state. Its node is provably never active. The proposal changes the ruled
+whole-monad ascription, so charter §3 requires a ruling before production
+adoption. It leaves the existing PNVI adapter unchanged. If authorized, rerun
+the failure census/position classification for the adapter's newly pure leaf
+and apply the existing register scope and sealing rules; no gate exception is
+proposed. Restricting the public theorem to `strict_reads = false` is a distinct
+consumer-contract weakening and has not been adopted.
+
+The scratch candidate's erasure equation is proved by `rfl`, and exclusion of
+an active node by constructor disjointness. Each of those theorems and the
+arbitrary-monad counterexample reports only the standard three axioms. The
+scratch module was compiled through capped `lake env lean`, then replayed from
+`lean_frontend` with the following command: exit **0**, no replay diagnostics.
+This is probe evidence, not the required production-module replay.
+
+```sh
+CERB_MEM_MAX=48G ../scripts/capped lake env bash -c \
+  'LEAN_PATH="../.tmp/outcome-protocol-C:$LEAN_PATH" leanchecker RefusalErasureProbe'
+```
+
+The candidate was also compiled to native C and linked against the built
+provider objects. Two calls used a dynamic refusal item: one inspected only
+the ND constructor and discarded the reason; the other inspected the reason.
+Under `LEAN_ABORT_ON_PANIC=1`, `NO_COLOR=1`, `TERM=dumb`, with core files disabled
+in the probe process, both captures were passed to `decode_stop`:
+
+```text
+discard: exit=134 stdout=b'' stops=1 problems=0
+force: exit=134 stdout=b'' stops=1 problems=0
+```
+
+Both payloads were REFUSAL/switches with the chosen item. No candidate adapter
+has been installed in production. These probes establish the narrow proposed
+repair's equations and observed panic behavior; they do not complete C's tests.
+
+### C.3 Validation status at the adapter finding
+
+The focused producer build and reconstruction, monadic-failstop and PNVI-arm
+executables passed. The three migrated CLI witness scripts passed after fixing
+their separate-capture plumbing. The Python decoder suite passed 17 methods.
+The register check passed with 239 rows and unchanged reach counts. These are
+focused results, not a replacement for C's gates.
+
+The PNVI self-test's unplanted control failed when its build reached the
+`CerbMemAccessFacts` error above. The earlier temporary register-scope park
+interrupted the remaining self-test; its exit was **143**, not a pass. No
+semantic-verdict movement has been measured by the completed checks, but the
+failed control prevents a successful lane claim. Remaining witness runs,
+complete axiom census, production kernel replay and a passing Tier A await a
+resolution and a rebuilt candidate. D's two policy corrections and E's consumer
+delivery remain future work.
+
+### C.4 Gate before the park-record commit
+
+The full scheduled Tier A was run on the unchanged blocked candidate before
+this documentation-only commit:
+
+```sh
+CERB_MEM_MAX=48G scripts/capped python3 scripts/release.py --mode fast \
+  --out .tmp/outcome-protocol-C/tier-a-park
+```
+
+Exit **1**, elapsed approximately **4 minutes 57 seconds**. Verbatim summary:
+
+```text
+fast: failed; 0/19 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+Every selected command reported `CerbMemAccessFacts` as a failed required build
+target. A1 stopped at `memory-access-test`. The PNVI self-test's unplanted
+control failed; some negative plants rejected their bad drivers, but baseline
+plants could not obtain the control manifest. The suite ended
+`test_pnvi: SELFTEST FAILED (3)`. These results are failures, not baseline
+movements or successful differential comparisons. No acceptance rule, theorem
+quantifier or baseline was changed to turn them green.
+
+No producer, reference, axiom-census entry or register edit is included in this
+park commit. The in-progress source is also preserved by the local snapshot ref
+`refs/snapshots/outcome-protocol-C-20261020-1792521155` (created at the earlier
+interruption, including the new metadata module). The scratch probes and logs
+remain ephemeral. The finding reproduces from the candidate with the focused
+build above; no dependency, `.lem` source, pin, gate, baseline or machine-global
+state was changed to bypass it. No merge or push was performed.

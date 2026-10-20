@@ -3,7 +3,8 @@
 **Revision 3 — independent-review amendments, 2026-10-20.**
 Implementation clarifications, 2026-10-20: the mini-run loss below is also within
 the emitted-record limitation (checkpoint record A.6); §4.1 admits the observed
-Bash padding before the optional core-dump marker (checkpoint record B).
+Bash padding before the optional core-dump marker (checkpoint record B); §5
+records CerbTags' execution-register scope disposition (checkpoint record C.1).
 **Status: operative design for charter checkpoints A–E.** Implementation status
 is tracked in [the checkpoint record](2026-10-20_outcome-protocol-record.md).
 Author: [AGENT 2026-10-20].
@@ -468,8 +469,12 @@ standing ladder runs; they are not deadlines or a reduction of required checks.
 Checkpoint A measured **122 pure root-seam leaves**, including eleven outside
 the existing execution register. All join C's inventory; the checkpoint record
 A.4/A.6 supplies the reviewed per-site dispositions. C also converts CerbTags'
-transparent `panic!` to the existing `failwithI` seam and supplies its register
-row. This does not add an opaque atom or change any failure trigger.
+transparent `panic!` to the existing `failwithI` seam. Its target-coverage
+declaration remains referenced, but reader lifting leaves the definition outside
+both execution and frontend dependency closures. It receives no register row or
+preamble entry; the scope ruling and reference check are recorded in the
+checkpoint record C.1. This does not add an opaque atom or change any failure
+trigger.
 
 The implementation fence covers CerbStop and its tests, Lake roots/executable
 registration, `handwritten_copy.manifest`, affected hand-written seams and Main;
