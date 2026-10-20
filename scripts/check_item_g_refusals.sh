@@ -11,8 +11,12 @@
 #   engines answered Specified(7) on upstream-tray draft 56's witness. Now the
 #   memory model's copy REFUSES in both engines with ONE text (oracle: `failwith`
 #   at the head of `memcpy`; Lean: `failwithI` in CerbMem.memcpyM), when both
-#   pointers are concrete in the same allocation and [a1, a1+n), [a2, a2+n)
-#   intersect, n > 0:
+#   pointers are concrete in the same allocation, or both are device-memory
+#   pointers (ptrfromint mints Prov_device for an integer in device_ranges —
+#   the pre-merge audit's P2-1: both engines answered Specified(5)/(111) on
+#   such copies before the arm), and [a1, a1+n), [a2, a2+n) intersect, n > 0
+#   (a mixed allocation/device pair, reachable only under the fork-only
+#   --address-space-top, is a named residual: the record):
 #     Concrete.memcpy: refused - memcpy on overlapping objects (...)
 # G2 — an allocation with an invalid alignment (not a positive power of two;
 #   C17 7.22.3.1#2-3 requires aligned_alloc to fail by returning null). Upstream's
@@ -34,7 +38,8 @@
 # Controls (Lean = oracle, exit code and verdict line): non-overlapping copies
 # (adjacent halves of one object; two objects; a zero-length copy of a pointer
 # onto itself; realloc's copy, which is new <- old; an out-of-bounds but
-# non-overlapping copy, UB on both — the loop's own checks are unchanged);
+# non-overlapping copy, UB on both — the loop's own checks are unchanged; a
+# non-overlapping copy inside device memory);
 # aligned_alloc with a valid alignment; ONE allocation at EACH alignment the
 # lanes use (measured 2026-10-20: 1, 2, 4, 8, 16 — via aligned_alloc, malloc
 # (IvMaxAlignment = 8) and `create` of objects of each alignment); the unchanged
@@ -136,18 +141,18 @@ EOF
         done
         echo "$NAME: selftest plant '$label' caught: $got failing witness(es) (= expected $want${*:+; incl. the required witnesses})"
     }
-    # expected counts, derived: 7 witnesses (4 memcpy + 3 alignment), 9 controls (8 verdict controls, of
-    # which 2 are UB on both and exit 1, + 1 both-crash control).
-    #  answer:          each witness fails the oracle check and the Lean check (the text cross-check needs both texts)  = 7 x 2
-    #  lean-answer:     each witness fails the Lean check; every control fails (Lean = oracle)                           = 7 + 9
-    #  refuse-all:      the witnesses pass (one shape, identical texts); every control fails                             = 9
-    #  lean-no-abort:   each witness fails the Lean exit check; the 2 UB controls (exit 1) and the crash control fail    = 7 + 3
-    #  lean-other-text: each witness fails the text cross-check only; the controls pass                                  = 7
-    run_plant answer "$ST/oracle-answer" "$ST/lean-answer-witnesses" 14 "memcpy forward overlap (tray-56 witness)" "aligned_alloc(3, 9) (tray-57 witness)"
-    run_plant lean-answer "$REAL_ORACLE" "$ST/lean-answer" 16 "memcpy forward overlap (tray-56 witness)" "aligned_alloc(3, 9) (tray-57 witness)" "memcpy of adjacent halves of one object" "one allocation at each alignment the lanes use"
-    run_plant refuse-all "$ST/oracle-refuse-all" "$ST/lean-refuse-all" 9 "memcpy of adjacent halves of one object" "one allocation at each alignment the lanes use" "aligned_alloc(0, 8): the pre-existing zero-alignment crash is unchanged (draft 34)"
-    run_plant lean-no-abort "$REAL_ORACLE" "$ST/lean-no-abort" 10 "memcpy forward overlap (tray-56 witness)" "aligned_alloc(3, 9) (tray-57 witness)"
-    run_plant lean-other-text "$REAL_ORACLE" "$ST/lean-other-text" 7 "memcpy forward overlap (tray-56 witness)" "aligned_alloc(3, 9) (tray-57 witness)"
+    # expected counts, derived: 9 witnesses (4 memcpy + 2 device memcpy + 3 alignment), 10 controls (9 verdict
+    # controls, of which 2 are UB on both and exit 1, + 1 both-crash control).
+    #  answer:          each witness fails the oracle check and the Lean check (the text cross-check needs both texts)  = 9 x 2
+    #  lean-answer:     each witness fails the Lean check; every control fails (Lean = oracle)                           = 9 + 10
+    #  refuse-all:      the witnesses pass (one shape, identical texts); every control fails                             = 10
+    #  lean-no-abort:   each witness fails the Lean exit check; the 2 UB controls (exit 1) and the crash control fail    = 9 + 3
+    #  lean-other-text: each witness fails the text cross-check only; the controls pass                                  = 9
+    run_plant answer "$ST/oracle-answer" "$ST/lean-answer-witnesses" 18 "memcpy forward overlap (tray-56 witness)" "memcpy overlap in device memory (audit P2-1 probe, 0xABC)" "aligned_alloc(3, 9) (tray-57 witness)"
+    run_plant lean-answer "$REAL_ORACLE" "$ST/lean-answer" 19 "memcpy forward overlap (tray-56 witness)" "memcpy overlap in device memory (audit P2-1 probe, 0xABC)" "aligned_alloc(3, 9) (tray-57 witness)" "memcpy of adjacent halves of one object" "non-overlapping memcpy in device memory" "one allocation at each alignment the lanes use"
+    run_plant refuse-all "$ST/oracle-refuse-all" "$ST/lean-refuse-all" 10 "memcpy of adjacent halves of one object" "non-overlapping memcpy in device memory" "one allocation at each alignment the lanes use" "aligned_alloc(0, 8): the pre-existing zero-alignment crash is unchanged (draft 34)"
+    run_plant lean-no-abort "$REAL_ORACLE" "$ST/lean-no-abort" 12 "memcpy forward overlap (tray-56 witness)" "memcpy overlap in device memory (audit P2-1 probe, 0xABC)" "aligned_alloc(3, 9) (tray-57 witness)"
+    run_plant lean-other-text "$REAL_ORACLE" "$ST/lean-other-text" 9 "memcpy forward overlap (tray-56 witness)" "memcpy overlap in device memory (audit P2-1 probe, 0xABC)" "aligned_alloc(3, 9) (tray-57 witness)"
     "$0"; exit $?   # not exec: the EXIT trap must remove $ST
 fi
 
@@ -232,6 +237,11 @@ printf '%s\nint main(void) {\n  char b[8] = {1, 2, 3, 4, 5, 6, 7, 8};\n  memcpy(
 printf '%s\nint main(void) {\n  char a[8] = {1, 2, 3, 4, 5, 6, 7, 8};\n  memcpy(a + 1, a, 4);\n  return a[0] * 10000 + a[1] * 1000 + a[2] * 100 + a[3] * 10 + a[4];\n}\n' "$PROTO_MEM" > w_memcpy_bwd.c
 printf '%s\nint main(void) {\n  char b[8] = {1, 2, 3, 4, 5, 6, 7, 8};\n  memcpy(b, b, 4);\n  return b[3];\n}\n' "$PROTO_MEM" > w_memcpy_self.c
 printf '%s\n%s\nint main(void) {\n  char *p = malloc(8);\n  if (!p) return 99;\n  for (int i = 0; i < 8; i++) p[i] = (char)(i + 1);\n  memcpy(p + 2, p, 4);\n  int r = p[2] + p[5];\n  free(p);\n  return r;\n}\n' "$PROTO_MEM" "$PROTO_ALLOC" > w_memcpy_dyn.c
+# --- G1 device-memory witnesses (the pre-merge audit's P2-1 probes: `(char*)0xABC` and `(char*)0x40000000` are
+# Prov_device pointers — ptrfromint's device_ranges — which load/store serve; both engines answered
+# Specified(5) / Specified(111) before the arm)
+printf '%s\nint main(void) {\n  char *p = (char*)0xABC;\n  p[0] = 1; p[1] = 2; p[2] = 3;\n  memcpy(p, p + 1, 2);\n  return p[0] + p[1];\n}\n' "$PROTO_MEM" > w_memcpy_dev_abc.c
+printf '%s\nint main(void) {\n  char *p = (char*)0x40000000;\n  p[0] = 1; p[1] = 2; p[2] = 3; p[3] = 4;\n  memcpy(p + 1, p, 3);\n  return p[1] * 100 + p[2] * 10 + p[3];\n}\n' "$PROTO_MEM" > w_memcpy_dev_4000.c
 # --- G2 witnesses (draft 57's program first; an even non-power of two; a large one)
 printf '%s\nint main(void) {\n  char *p = aligned_alloc(3, 9); /* 3 is not a valid alignment */\n  if (p == 0) return 1;\n  p[0] = 42;\n  int r = p[0];\n  free(p);\n  return r;\n}\n' "$PROTO_ALLOC" > w_alloc_3.c
 printf '%s\nint main(void) {\n  char *p = aligned_alloc(6, 12);\n  if (p == 0) return 1;\n  p[0] = 7;\n  int r = p[0];\n  free(p);\n  return r;\n}\n' "$PROTO_ALLOC" > w_alloc_6.c
@@ -242,6 +252,7 @@ printf '%s\nint main(void) {\n  char a[8] = {0};\n  char b[8] = {1, 2, 3, 4, 5, 
 printf '%s\nint main(void) {\n  char b[8] = {1, 2, 3, 4, 5, 6, 7, 8};\n  memcpy(b, b, 0);              /* n = 0: nothing overlaps */\n  return b[1] + 20;             /* 22 */\n}\n' "$PROTO_MEM" > ctl_memcpy_zero_self.c
 printf '%s\nint main(void) {\n  char *p = malloc(4);\n  if (!p) return 99;\n  p[0] = 3; p[3] = 4;\n  p = realloc(p, 16);            /* the model copies new <- old: two allocations */\n  if (!p) return 98;\n  int r = p[0] * 10 + p[3];      /* 34 */\n  free(p);\n  return r;\n}\n' "$PROTO_ALLOC" > ctl_memcpy_realloc.c
 printf '%s\nint main(void) {\n  char a[8] = {0};\n  char b[8] = {1, 2, 3, 4, 5, 6, 7, 8};\n  memcpy(a, b + 6, 4);          /* source [6,10) leaves b: out of bounds, not overlapping */\n  return a[0];\n}\n' "$PROTO_MEM" > ctl_memcpy_oob.c
+printf '%s\nint main(void) {\n  char *p = (char*)0xABC;        /* device memory: [0xABC, 0xAC0) */\n  p[0] = 1; p[1] = 2; p[2] = 3; p[3] = 4;\n  memcpy(p, p + 2, 2);          /* [0,2) and [2,4): adjacent, not overlapping */\n  return p[0] * 10 + p[1];      /* 34 */\n}\n' "$PROTO_MEM" > ctl_memcpy_dev.c
 # --- G2 controls
 printf '%s\nint main(void) {\n  char *p = aligned_alloc(16, 32);\n  if (p == 0) return 1;\n  p[0] = 42;\n  int r = p[0];\n  free(p);\n  return r;\n}\n' "$PROTO_ALLOC" > ctl_alloc_16.c
 printf '%s\nint main(void) {\n  char c = 1; short s = 2; int i = 3; long l = 4; long double ld = 5;   /* create at alignof 1, 2, 4, 8, 16 */\n  char *p1 = aligned_alloc(1, 1); char *p2 = aligned_alloc(2, 2); char *p4 = aligned_alloc(4, 4);\n  char *p8 = aligned_alloc(8, 8); char *p16 = aligned_alloc(16, 16); char *pm = malloc(8);   /* malloc: IvMaxAlignment = 8 */\n  if (!p1 || !p2 || !p4 || !p8 || !p16 || !pm) return 99;\n  p1[0] = 1; p2[0] = 2; p4[0] = 4; p8[0] = 8; p16[0] = 16; pm[0] = 32;\n  int r = c + s + i + (int)l + (int)ld + p1[0] + p2[0] + p4[0] + p8[0] + p16[0] + pm[0];   /* 15 + 63 */\n  free(p1); free(p2); free(p4); free(p8); free(p16); free(pm);\n  return r;\n}\n' "$PROTO_ALLOC" > ctl_alignments.c
@@ -252,6 +263,8 @@ witness "memcpy forward overlap (tray-56 witness)" w_memcpy_fwd.c "$G1_HEAD" "$G
 witness "memcpy backward overlap (the retired coverage control mem4-020's shape)" w_memcpy_bwd.c "$G1_HEAD" "$G1_TAIL"
 witness "memcpy of an object onto itself" w_memcpy_self.c "$G1_HEAD" "$G1_TAIL"
 witness "memcpy overlap inside a malloc'd object" w_memcpy_dyn.c "$G1_HEAD" "$G1_TAIL"
+witness "memcpy overlap in device memory (audit P2-1 probe, 0xABC)" w_memcpy_dev_abc.c "$G1_HEAD" "$G1_TAIL"
+witness "memcpy backward overlap in device memory (audit P2-1 probe, 0x40000000)" w_memcpy_dev_4000.c "$G1_HEAD" "$G1_TAIL"
 witness "aligned_alloc(3, 9) (tray-57 witness)" w_alloc_3.c "$G2_HEAD" "$G2_TAIL"
 witness "aligned_alloc(6, 12) (even, not a power of two)" w_alloc_6.c "$G2_HEAD" "$G2_TAIL"
 witness "aligned_alloc(1000, 2000)" w_alloc_1000.c "$G2_HEAD" "$G2_TAIL"
@@ -260,10 +273,11 @@ control "memcpy between two objects" ctl_memcpy_two_objects.c 'Defined {value: "
 control "memcpy of length 0 of a pointer onto itself" ctl_memcpy_zero_self.c 'Defined {value: "Specified(22)", stdout: "", stderr: "", blocked: "false"}'
 control "realloc's copy (new <- old, two allocations)" ctl_memcpy_realloc.c 'Defined {value: "Specified(34)", stdout: "", stderr: "", blocked: "false"}'
 control "out-of-bounds, non-overlapping memcpy is the loop's own UB on both" ctl_memcpy_oob.c 'Undefined {ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<5:3--5:22>"}'
+control "non-overlapping memcpy in device memory" ctl_memcpy_dev.c 'Defined {value: "Specified(34)", stdout: "", stderr: "", blocked: "false"}'
 control "aligned_alloc(16, 32)" ctl_alloc_16.c 'Defined {value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}'
 control "one allocation at each alignment the lanes use" ctl_alignments.c 'Defined {value: "Specified(78)", stdout: "", stderr: "", blocked: "false"}'
 control "aligned_alloc(16, 8): the size clause's DUMMY UB is unchanged" ctl_alloc_bad_size.c 'Undefined {ub: "DUMMY(align_alloc)", stderr: "", loc: "<2:28--2:48>"}'
 crash_control "aligned_alloc(0, 8): the pre-existing zero-alignment crash is unchanged (draft 34)" ctl_alloc_zero.c "$ZERO_ORACLE" "$ZERO_LEAN"
 
 [[ $fails -eq 0 ]] || { echo "$NAME: $fails witness failure(s) over $n cases"; exit 1; }
-echo "$NAME: OK ($n cases: 4 overlapping memcpy programs and 3 invalid-alignment allocations refused by the oracle (uncaught Failure, exit 125) and by the Lean engine (abort, exit 134) with byte-identical texts; 8 controls agree with the oracle (5 non-overlapping copies incl. realloc and an out-of-bounds UB, aligned_alloc(16, 32), one allocation at each alignment the lanes use, the unchanged size-clause UB); the zero-alignment crash is unchanged on both)"
+echo "$NAME: OK ($n cases: 6 overlapping memcpy programs (4 in allocations, 2 in device memory) and 3 invalid-alignment allocations refused by the oracle (uncaught Failure, exit 125) and by the Lean engine (abort, exit 134) with byte-identical texts; 9 controls agree with the oracle (6 non-overlapping copies incl. realloc, an out-of-bounds UB and device memory, aligned_alloc(16, 32), one allocation at each alignment the lanes use, the unchanged size-clause UB); the zero-alignment crash is unchanged on both)"

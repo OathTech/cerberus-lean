@@ -2698,19 +2698,44 @@ VIP:type pointer_value =
        fork leaves it or REFUSES LOUDLY, never inventing a verdict; upstream-tray draft 56):
        where the TODO above (b9aeedcb4 :2636) leaves an overlapping copy to the byte loop,
        the fork refuses — no UB verdict is invented. The Lean engine's CerbMem.memcpyM fails
-       with the SAME text (mirror). Overlap = both pointers concrete in the SAME allocation
-       (`Prov_some id`, `PVconcrete` — the one shape `load`/`store` serve: `Prov_none`,
-       `PVnull`, `PVfunction` fail at the first byte, :1667/:1776, and a `Prov_symbolic`
-       argument dies in the pure `array_shift_ptrval` first, R-PNVI-06 — so every copy that
-       could complete is covered) with intersecting byte ranges [a1, a1+n) and [a2, a2+n),
-       n > 0. The ranges are the C-level objects, not clipped to the allocation: a copy that
-       is both overlapping and out of bounds is refused before the loop reports the bound.
-       Different allocations never overlap (the allocator never reuses an address). *)
+       with the SAME text (mirror). Refused, with intersecting byte ranges [a1, a1+n) and
+       [a2, a2+n), n > 0: (1) both pointers `Prov_some`/`PVconcrete` in the SAME allocation
+       (region "allocation ID"); (2) both `Prov_device`/`PVconcrete` (region "device memory":
+       `ptrfromint` mints it for an integer in `device_ranges`, :2226-2227, [0x40000000,
+       0x40000004) and [0xABC, 0xAC0); `load`/`store` serve it, :1669/:1778; the pure
+       `array_shift_ptrval` passes it through, :2414-2416 — the pre-merge audit's P2-1: its
+       probes `dev_overlap.c` (`0xABC` cast to `char *`, `memcpy(p, p + 1, 2)`) and
+       `dev_overlap2.c` (`0x40000000` cast to `char *`, `memcpy(p + 1, p, 3)`) answered
+       Specified(5)/Specified(111) on both engines before this arm). The remaining shapes cannot
+       complete a copy: a `Prov_none` concrete pointer fails at the first byte (:1667/:1776;
+       the audit's `none_overlap.c` -> UB_CERB002a_out_of_bound_load on both), a `Prov_symbolic`
+       argument dies in the pure `array_shift_ptrval` first (R-PNVI-06), `PVnull`/`PVfunction`
+       fail in `load` — EXCEPT one named residual: a `Prov_some`/`Prov_device` pair whose
+       addresses intersect, reachable only when an allocation lies inside a device range, i.e.
+       under the fork-only `--address-space-top` (outside CONTRACT §2's promise; `mixed.c`,
+       `memcpy(a + 4, d, 2)` with `a` at 0xAB8 and `d` = `0xABC` cast to `char *` under
+       `--address-space-top 2756`, answers Specified(56) on both engines). It is NOT refused
+       here, because the ranges are the C-level objects, not clipped to the allocation (memcpy
+       never consults the allocation's bounds, upstream's loop reports an out-of-bounds byte as
+       its own UB): without the bounds an allocation inside the device range cannot be told from
+       an out-of-bounds run from a neighbouring allocation into it — the same reason the
+       allocation case requires the SAME id (a source range running out of one object into its
+       neighbour is UB_CERB002a, not an overlap; the witness script's `ctl_memcpy_oob.c` pins
+       that, and caught a wider predicate). The refusal fires at application, before ANY access
+       check: an overlapping copy that is also out of bounds, or whose object is dead, is
+       refused rather than reported as that UB. Different allocations never overlap (the
+       allocator never reuses an address). *)
+    let overlap_refusal region a1 a2 =
+      failwith (Printf.sprintf "Concrete.memcpy: refused - memcpy on overlapping objects (%s: destination [%s, %s) and source [%s, %s), n = %s); C17 7.24.2.1#2 undefined behaviour; upstream copies byte-wise under impl_mem.ml memcpy 'TODO: if ptrval1 and ptrval2 overlap ==> UB' (b9aeedcb4 :2636) - the fork refuses rather than decides (item G1, 2026-10-20)"
+        region (Z.to_string a1) (Z.to_string (Z.add a1 size_n)) (Z.to_string a2) (Z.to_string (Z.add a2 size_n)) (Z.to_string size_n)) in
+    let intersects a1 a2 = Z.gt size_n Z.zero && Z.lt a1 (Z.add a2 size_n) && Z.lt a2 (Z.add a1 size_n) in
     begin match ptrval1, ptrval2 with
       | PV (Prov_some id1, PVconcrete (_, a1)), PV (Prov_some id2, PVconcrete (_, a2))
-        when Z.equal id1 id2 && Z.gt size_n Z.zero && Z.lt a1 (Z.add a2 size_n) && Z.lt a2 (Z.add a1 size_n) ->
-          failwith (Printf.sprintf "Concrete.memcpy: refused - memcpy on overlapping objects (allocation %s: destination [%s, %s) and source [%s, %s), n = %s); C17 7.24.2.1#2 undefined behaviour; upstream copies byte-wise under impl_mem.ml memcpy 'TODO: if ptrval1 and ptrval2 overlap ==> UB' (b9aeedcb4 :2636) - the fork refuses rather than decides (item G1, 2026-10-20)"
-            (Z.to_string id1) (Z.to_string a1) (Z.to_string (Z.add a1 size_n)) (Z.to_string a2) (Z.to_string (Z.add a2 size_n)) (Z.to_string size_n))
+        when Z.equal id1 id2 && intersects a1 a2 ->
+          overlap_refusal ("allocation " ^ Z.to_string id1) a1 a2
+      | PV (Prov_device, PVconcrete (_, a1)), PV (Prov_device, PVconcrete (_, a2))
+        when intersects a1 a2 ->
+          overlap_refusal "device memory" a1 a2
       | _ -> ()
     end;
     (* TODO: copy ptrval2 into ptrval1 *)

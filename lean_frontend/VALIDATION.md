@@ -464,9 +464,23 @@ Nothing else.
   (G1) `memcpy` on overlapping objects: upstream's `impl_mem.ml` `memcpy`
   carries `(* TODO: if ptrval1 and ptrval2 overlap ==> UB *)` (b9aeedcb4
   :2636) and copies byte-wise, so both engines gave `Specified(7)` on tray 56's
-  witness; now the memory model's copy dies when both pointers are concrete in
-  the same allocation with intersecting `[a1, a1+n)`/`[a2, a2+n)`, `n > 0`
-  (oracle `failwith`; Lean `CerbMem.memcpyM` `failwithI`):
+  witness; now the memory model's copy dies when both pointers are concrete
+  in the same allocation (`Prov_some`), or both are device-memory pointers
+  (`Prov_device`: the fixed `device_ranges` an integer cast reaches; the
+  pre-merge audit's P2-1 probes `(char*)0xABC`/`(char*)0x40000000` answered
+  `Specified(5)`/`Specified(111)` on both engines before the arm), with
+  intersecting `[a1, a1+n)`/`[a2, a2+n)`, `n > 0`; the remaining shapes
+  cannot complete a copy (`Prov_none` fails at the first byte,
+  `Prov_symbolic` dies in the pure `array_shift_ptrval`, `PVnull`/`PVfunction`
+  fail in `load`) — except one NAMED RESIDUAL, still served on both engines:
+  an allocation/device pair, reachable only when an allocation lies inside a
+  device range, i.e. under the fork-only `--address-space-top` (outside
+  CONTRACT §2's promise; `Specified(56)` on both at top 2756), not refused
+  because without the allocation's bounds, which `memcpy` never consults, it
+  cannot be told from an out-of-bounds run into device memory (record §2). It
+  fires before ANY access check (a dead or out-of-bounds overlapping copy is
+  refused, not reported as that UB) (oracle `failwith`; Lean
+  `CerbMem.memcpyM` `failwithI`):
   `Concrete.memcpy: refused - memcpy on overlapping objects (…) - the fork
   refuses rather than decides (item G1, 2026-10-20)`. (G2) an allocation with
   an alignment that is not a positive power of two: upstream's `std.core:385`

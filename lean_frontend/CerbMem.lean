@@ -3601,26 +3601,48 @@ def effMemberShiftPtrval [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (_ 
     ptrval2 overlap ==> UB *)` (b9aeedcb4 :2636) and copies byte-wise; C17 7.24.2.1#2
     leaves an overlapping copy undefined, and both engines answered `Specified(7)` on the
     draft's witness. The fork oracle now `failwith`s at the head of `memcpy`
-    (impl_mem.ml:2709-2715 in this tree) and `memcpyM` fails with the same text (mirror).
-    Overlap = both pointers concrete in the SAME allocation (`Prov_some id`, `PVconcrete`:
-    the one shape `load`/`store` serve — `Prov_none`, `PVnull` and `PVfunction` fail at the
-    first byte, impl_mem.ml:1667/:1776, and a `Prov_symbolic` argument dies in the pure
-    `array_shift_ptrval` first, R-PNVI-06 — so every copy that could complete is covered)
-    with intersecting byte ranges `[a1, a1+n)` and `[a2, a2+n)`, `n > 0`. The ranges are the
-    C-level objects, not clipped to the allocation, so a copy that is both overlapping and
-    out of bounds is refused before the loop would report the bound [AGENT 2026-10-20].
-    `memcpy(p, p, n)` overlaps (the same object). Different allocations never overlap (the
-    allocator never reuses an address); `realloc`'s copy is new ← old, two allocations.
-    Returns the allocation and the two bases for the message. -/
-def memcpyOverlap (dst src : PointerValue) (n : Int) : Option (StorageInstanceId × Address × Address) :=
+    (impl_mem.ml:2722-2734 in this tree) and `memcpyM` fails with the same text (mirror).
+    Refused, with intersecting byte ranges `[a1, a1+n)` and `[a2, a2+n)`, `n > 0`: (1) both
+    pointers `Prov_some`/`PVconcrete` in the SAME allocation (region `allocation ID`);
+    (2) both `Prov_device`/`PVconcrete` (region `device memory`: `ptrfromint` mints it for an
+    integer in `deviceRanges`, impl_mem.ml:2226-2227, `[0x40000000, 0x40000004)` and
+    `[0xABC, 0xAC0)`; `loadM`/`storeM` serve it, their `.Prov_device` arms, impl_mem.ml
+    :1669/:1778; the pure `arrayShiftPtrval` passes it through, :2414-2416 — the pre-merge
+    audit's P2-1: its probes `dev_overlap.c` (`(char*)0xABC`, `memcpy(p, p + 1, 2)`) and
+    `dev_overlap2.c` (`(char*)0x40000000`, `memcpy(p + 1, p, 3)`) answered
+    `Specified(5)`/`Specified(111)` on both engines before this arm). The remaining shapes
+    cannot complete a copy: a `Prov_none` concrete pointer fails at the first byte
+    (impl_mem.ml:1667/:1776; the audit's `none_overlap.c` → `UB_CERB002a_out_of_bound_load`
+    on both), a `Prov_symbolic` argument dies in the pure `arrayShiftPtrval` first
+    (R-PNVI-06), `PVnull`/`PVfunction` fail in `loadM` — EXCEPT one named residual: a
+    `Prov_some`/`Prov_device` pair whose addresses intersect, reachable only when an
+    allocation lies inside a device range, i.e. under the fork-only `--address-space-top`
+    (outside CONTRACT §2's promise; `mixed.c`, `memcpy(a + 4, d, 2)` with `a` at 0xAB8 and
+    `d = (char*)0xABC` under `--address-space-top 2756`, answers `Specified(56)` on both
+    engines). It is NOT refused, because the ranges are the C-level objects, not clipped to
+    the allocation (memcpy never consults the allocation's bounds; upstream's loop reports an
+    out-of-bounds byte as its own UB): without the bounds an allocation inside the device
+    range cannot be told from an out-of-bounds run from a neighbouring allocation into it —
+    the same reason the allocation case requires the SAME id (a source range running out of
+    one object into its neighbour is `UB_CERB002a`, not an overlap; the witness script's
+    `ctl_memcpy_oob.c` pins that, and caught a wider predicate) [AGENT 2026-10-20]. The
+    refusal fires at application, before ANY access check: an overlapping copy that is also
+    out of bounds, or whose object is dead, is refused rather than reported as that UB
+    [AGENT 2026-10-20]. `memcpy(p, p, n)` overlaps (the same object). Different allocations
+    never overlap (the allocator never reuses an address); `realloc`'s copy is new ← old,
+    two allocations. Returns the region's description for the message and the two bases. -/
+def memcpyOverlap (dst src : PointerValue) (n : Int) : Option (String × Address × Address) :=
+  let intersects (a1 a2 : Address) : Bool := n > 0 && a1 < a2 + n && a2 < a1 + n
   match dst, src with
   | .PV (.Prov_some id1) (.PVconcrete _ a1), .PV (.Prov_some id2) (.PVconcrete _ a2) =>
-    if id1 == id2 && n > 0 && a1 < a2 + n && a2 < a1 + n then some (id1, a1, a2) else none
+    if id1 == id2 && intersects a1 a2 then some (s!"allocation {id1}", a1, a2) else none
+  | .PV .Prov_device (.PVconcrete _ a1), .PV .Prov_device (.PVconcrete _ a2) =>
+    if intersects a1 a2 then some ("device memory", a1, a2) else none
   | _, _ => none
 
-/-- The refusal text, byte-identical to the fork oracle's `failwith` (impl_mem.ml:2712-2713). -/
-def memcpyOverlapRefusal (id a1 a2 n : Int) : String :=
-  s!"Concrete.memcpy: refused - memcpy on overlapping objects (allocation {id}: destination [{a1}, {a1 + n}) and source [{a2}, {a2 + n}), n = {n}); C17 7.24.2.1#2 undefined behaviour; upstream copies byte-wise under impl_mem.ml memcpy 'TODO: if ptrval1 and ptrval2 overlap ==> UB' (b9aeedcb4 :2636) - the fork refuses rather than decides (item G1, 2026-10-20)"
+/-- The refusal text, byte-identical to the fork oracle's `overlap_refusal` (impl_mem.ml:2722-2724 in this tree). -/
+def memcpyOverlapRefusal (region : String) (a1 a2 n : Int) : String :=
+  s!"Concrete.memcpy: refused - memcpy on overlapping objects ({region}: destination [{a1}, {a1 + n}) and source [{a2}, {a2 + n}), n = {n}); C17 7.24.2.1#2 undefined behaviour; upstream copies byte-wise under impl_mem.ml memcpy 'TODO: if ptrval1 and ptrval2 overlap ==> UB' (b9aeedcb4 :2636) - the fork refuses rather than decides (item G1, 2026-10-20)"
 
 /-- memcpy — impl_mem.ml:2635-2646 (arc-14 S1 F1, sem:G2: previously
     copied raw bytemap bytes, silently bypassing every access check).
@@ -3637,11 +3659,11 @@ def memcpyM [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : Tag
   match sizeIv with
   | .IV _ size_n =>
     match memcpyOverlap dst src size_n with
-    | some (id, a1, a2) =>
-      -- the fork's refusal (item G1, [USER 2026-10-20]), impl_mem.ml:2709-2715 in this
+    | some (region, a1, a2) =>
+      -- the fork's refusal (item G1, [USER 2026-10-20]), impl_mem.ml:2722-2734 in this
       -- tree: the same text; the loud fail-stop every refusal uses (LEAN_ABORT_ON_PANIC),
       -- ascribed at `memM` like `pnviRefuseM` (kernel default a kill, never an answer)
-      failwithI (memcpyOverlapRefusal id a1 a2 size_n)
+      failwithI (memcpyOverlapRefusal region a1 a2 size_n)
     | none =>
       let rec aux : Nat → Int → memM PointerValue
         | 0, _ => memReturn dst                                        -- :2643-2644

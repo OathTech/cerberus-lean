@@ -19,15 +19,31 @@ branch carries.
 
 Where upstream's `memory/concrete/impl_mem.ml` `memcpy` carries `(* TODO: if ptrval1 and ptrval2
 overlap ==> UB *)` (b9aeedcb4 :2636) and copies byte-wise (so both engines answered `Specified(7)`
-on draft 56's witness), the memory model's copy now REFUSES before any byte moves, when both
-pointers are concrete in the SAME allocation and the byte ranges `[a1, a1+n)` and `[a2, a2+n)`
-intersect with `n > 0` (`memcpy(p, p, n)` included; `n = 0` never overlaps; different allocations
-never overlap; `realloc`'s own copy is new ← old, two allocations, unaffected). The ranges are the
-C-level objects, not clipped to the allocation: a copy that is both overlapping and out of bounds
-is refused rather than reported as the loop's out-of-bound UB.
+on draft 56's witness), the memory model's copy now REFUSES before any byte moves, when the byte
+ranges `[a1, a1+n)` and `[a2, a2+n)` intersect with `n > 0` and either (a) both pointers are
+concrete in the SAME allocation (`Prov_some`; region text `allocation ID`) or (b) both are
+device-memory pointers (`Prov_device`, which an integer cast into the model's fixed
+`device_ranges` `[0x40000000, 0x40000004)` / `[0xABC, 0xAC0)` yields; region text `device
+memory` — the pre-merge audit found both engines answering `Specified(5)`/`Specified(111)` on
+`(char*)0xABC` / `(char*)0x40000000` overlaps before this arm). The remaining pointer shapes
+cannot complete a copy: a `Prov_none` concrete pointer fails at the first byte
+(`UB_CERB002a_out_of_bound_load`), a `Prov_symbolic` argument dies in the pure
+`array_shift_ptrval` (R-PNVI-06, draft 53), `PVnull`/`PVfunction` fail in `load` — with ONE named
+residual that both engines still serve: an allocation/device pair, reachable only when an
+allocation lies inside a device range, i.e. under the fork-only `--address-space-top` (outside
+CONTRACT §2's promise; `memcpy(a + 4, (char*)0xABC, 2)` with `a` at 0xAB8 under top 2756 answers
+`Specified(56)` on both). It is not refused because `memcpy` never consults the allocation's
+bounds, so an allocation inside device memory cannot be told from an out-of-bounds run into it
+(the same reason case (a) requires the same allocation: a source range running out of one object
+into its neighbour is the loop's out-of-bound UB, not an overlap). `memcpy(p, p, n)` is included;
+`n = 0` never overlaps; `realloc`'s own copy is new ← old, two allocations, unaffected. The ranges
+are the C-level objects, not clipped to the allocation, and the refusal fires at application,
+BEFORE ANY ACCESS CHECK: a copy that is also out of bounds, or whose object is dead (`free`d), is
+refused rather than reported as that UB — a use-after-free verdict is not reported on an
+overlapping copy.
 
-The text (one string on both engines; the numbers are the allocation id, the two bases, the two
-ends and `n`, identical on both engines because the allocators mirror each other):
+The text (one string on both engines; the region, the two bases, the two ends and `n` are
+identical on both engines because the allocators mirror each other):
 
 ```text
 Concrete.memcpy: refused - memcpy on overlapping objects (allocation 1: destination [281474976710640, 281474976710644) and source [281474976710641, 281474976710645), n = 4); C17 7.24.2.1#2 undefined behaviour; upstream copies byte-wise under impl_mem.ml memcpy 'TODO: if ptrval1 and ptrval2 overlap ==> UB' (b9aeedcb4 :2636) - the fork refuses rather than decides (item G1, 2026-10-20)
@@ -40,11 +56,14 @@ On the wire: the oracle dies on the uncaught exception —
 prints nothing else). Lean site: `CerbMem.memcpyOverlap` / `CerbMem.memcpyOverlapRefusal` /
 `CerbMem.memcpyM` (`lean_frontend/CerbMem.lean`); oracle site: `impl_mem.ml` `memcpy`.
 
-**Your harness's own overlap refusal becomes redundant at the next re-pin**: the engines refuse
-the overlap themselves, with the text above, before the copy. If the hook keeps running it will
-simply never be reached by an overlapping copy that the engine would have served. Non-overlapping
-copies are unchanged (see the witness script's controls: adjacent halves, two objects, length 0,
-realloc, out-of-bounds UB).
+**Your harness's own overlap refusal becomes redundant at the next re-pin** under the default
+address-space top: every overlapping copy the engines can complete there is refused by the
+engines themselves, with the text above, before the copy (cases (a) and (b); the other shapes
+fail or die before any byte moves). The one copy the engines still serve is the named residual
+above, under a non-default `--address-space-top` only. If the hook keeps running it will simply
+never be reached by an overlapping copy that the engine would have served. Non-overlapping copies
+are unchanged (see the witness script's controls: adjacent halves, two objects, length 0,
+realloc, out-of-bounds UB, device memory).
 
 ## G2 — an allocation with an invalid alignment
 
@@ -73,17 +92,35 @@ Concrete.allocator: refused - allocation with an invalid alignment 3 (not a posi
 
 Same wire shape as G1 (oracle `Failure`, exit 125; Lean abort, exit 134).
 
-## If you unfold `CerbMem.allocator` in proofs
+## If you unfold `CerbMem.allocator` in proofs (cerberus-sl: this breaks a theorem)
 
 `CerbMem.allocator` gains one arm, between the `align == 0` arm and the remainder:
 `else if alignmentRefused align then (NDkilled (CerbFail.failStopKill (failwithI …)), st)`. The
 arm is a KILL in the kernel (its `failwithI` is the kill's message, a `String`), so
 `CerbMem.allocator_active_sound` keeps its hypothesis-free statement and `allocator_below_request_kills`
-is unchanged. A proof that unfolds `allocator` on a literal alignment (your `Adequacy.lean`
-`ndRun (CerbMem.allocator 4 4) …` and `… (allocator (sizeof signed_int) 4) …` lemmas) meets the
-new `if`; `CerbMem.alignmentRefused 4` reduces to `false` by `decide`, by `rfl`, or inside `simp`
-with `CerbMem.alignmentRefused` in the simp set (our own `test/Unit/FuelExemplar.lean`
-`allocator_errno` needed exactly `simp [h1, CerbMem.alignmentRefused]` in place of `simp [h1]`).
+is unchanged.
+
+**A general statement over `allocator` becomes FALSE at the re-pin.** cerberus-sl's
+`CerberusIris/HeapModelAlloc.lean:59`
+
+```lean
+theorem allocator_cases (sz align : Int) (st : MemState) (hne : align ≠ 0) :
+    (∃ id a st', ndRun (CerbMem.allocator sz align) st = (.NDactive (id, a), st')) ∨
+    ndRun (CerbMem.allocator sz align) st = (.NDkilled oomKill, st)
+```
+
+no longer holds: for a refused alignment (e.g. `align = 3`, `sz` small) the result is the new kill
+`(.NDkilled (CerbFail.failStopKill (failwithI …)), st)`, neither disjunct. It needs either the
+hypothesis `CerbMem.alignmentRefused align = false` or a third disjunct for that kill; the
+`allocatorSound`/`allocator_cases` chain its header describes and `Adequacy.lean:336` depend on
+it (the pre-merge audit's P3-1 finding).
+
+The literal-alignment unfoldings are merely harder: `Adequacy.lean:339` (`errno_room_iff`) and
+`HeapModelAlloc.lean:45` (`allocator_active_shape`), both `simp only [ndRun, CerbMem.allocator]
+at h` + `split`, meet the new `if` and gain an arm; `CerbMem.alignmentRefused 4` reduces to
+`false` by `decide`, by `rfl`, or inside `simp` with `CerbMem.alignmentRefused` in the simp set
+(our own `test/Unit/FuelExemplar.lean` `allocator_errno` needed exactly
+`simp [h1, CerbMem.alignmentRefused]` in place of `simp [h1]`).
 The predicate is `align != 0 && !(align > 0 && (align.toNat &&& (align.toNat - 1)) == 0)` (the
 oracle's `Z.logand align (Z.pred align) = 0` on `align > 0`; this toolchain has no `Int.land`).
 
