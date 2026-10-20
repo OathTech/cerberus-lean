@@ -1,10 +1,12 @@
 # Core quotation for cerberus-caesium
 
-Status: D4 is complete. Tier A and full A+B pass under the canonical
-invocation convention below; the instrument boundary is declared.
-Close-out gate results are in [the record](2026-10-18_core-quote-record.md#d4--layout-declared-boundary-and-close-out). Base
-`e7e9bb427a514b6053865c303c4af512907da75b`; D0 checkpoint
-`fb8705c686d1de34f66426e3da4f1477d077632e`.
+Status: D5 is complete. Final Tier A passes 19/19 commands, and Tier B row 13
+passes both standalone and linked libc round trips and kernel replays.
+D5 addresses the pre-merge audit with linked-libc coverage and an explicit
+runtime divergence; D4's full A+B close-out remains the earlier full run.
+Gate results and the pre-rebase → committed history map are in
+[the record](2026-10-18_core-quote-record.md). Current base `2e1777b27`;
+committed D0 checkpoint `6d2543c9217296b239fcdb0c6a4a9d95c2228d31`.
 
 ## Relation and intended extraction point
 
@@ -13,7 +15,7 @@ quotation instrument. It preserves the representation of the executed
 `file core_run_annotation`; the consumer owns the subsequent lookup lemma.
 It is not a proof of equality with the frontend's result.
 
-The driver value is `runFile := convert_file coreFile` at `Main.lean:1252`,
+The driver value is `runFile := convert_file coreFile` at `Main.lean:1257`,
 after the final link. A second quotation covers `convert_file libcFile`
 for the result of `loadLibc`, before the user link. The emitted module imports
 `Core_run_aux`, uses private typed constructor helpers,
@@ -47,6 +49,14 @@ there. These are the convention's positive and negative cases, not promises of
 invariance under arbitrary runtime spelling or working directory. A refusal
 names the convention and writes no module.
 
+This guard deliberately differs from the oracle's literal directory check:
+with the canonical relative runtime, cpp's `./`-prefixed header positions are
+library locations on the port and non-library on the oracle. Served
+UB-location selection can differ; the absolute-spelling differential lanes
+agree. The quoted labels/value are unaffected. The fixture-001 witness and
+[upstream draft 58](upstream-tray/58-relative-runtime-library-location.md)
+measure and explain this class.
+
 Supply `--libc tests/libc/libc.core`
 and one `--libc-tu META.json` per metadata TU, in `scripts/libc_prep.sh` order.
 Use `--quote-libc .tmp/Libc.lean` to quote that loader result after conversion,
@@ -63,6 +73,9 @@ for path in "${metadata[@]}"; do libc_args+=(--libc-tu "$path"); done
 ./scripts/capped lean_frontend/.lake/build/bin/cerberus-lean \
   --runtime=_build/install/default --fuel 1000000 \
   --quote-libc .tmp/Libc.lean "${libc_args[@]}"
+./scripts/capped lean_frontend/.lake/build/bin/cerberus-lean \
+  --runtime=_build/install/default --fuel 1000000 "${libc_args[@]}" \
+  --quote-core .tmp/Linked.lean tests/fixtures/001-return-literal/cabs.json
 ```
 
 Quotation stops before execution. Success is silent with exit 0; named
@@ -72,7 +85,8 @@ every destination untouched. Each successful source is published by rename;
 an IO failure is an error and can leave an earlier complete output when
 two destinations were requested. `--batch` is accepted; execution-observation
 flags and `--pp-core` conflict with quotation and are refused. The two
-quotation flags require distinct output paths.
+quotation flags require distinct output paths. `--quote-core` with `--libc`
+but no user TU refuses with exit 2; use `--quote-libc` for the library alone.
 
 Every record field, scalar, annotation, initializer, constructor and
 container payload belongs to the relation. `Fmap.empty` stays `.empty`;
@@ -88,7 +102,7 @@ identify a comparator.
 
 ## Verified comparator provenance
 
-The complete construction audit, exact terms and current source locations
+The complete construction audit, exact terms and source locations verified at D0
 are in [the D0 record](2026-10-18_core-quote-record.md#verified-field-provenance).
 Its monomorphic comparator vocabulary is:
 
@@ -131,6 +145,11 @@ ignored. `link` folds with `link_aux next accumulated`; combined with
 the driver's reverse-consing, union provenance prefers the earliest
 original input having an outer `.mk`, with libc first when present.
 Conversion's value maps preserve the outer constructor and tree heights.
+For a linked library/user file, the independent syntax vector in table order
+is **L,S,S,I,L,E,L,N,N**. Libc's outer `.mk L` wins for tagDefs/funs/funinfo;
+its `.empty` enum/Nat fields yield the TU's S/N when present. The whole-file
+comparison checks every outer constructor; no comparator is demanded of
+`.empty`, and no equal-behaving comparator is substituted.
 
 Differences from the charter's provenance-path table are findings F1/F2
 in the record: the constant-expression mini-pipeline constructs and
@@ -145,7 +164,7 @@ Rewriting and sequentialising preserve map representations. This audit
 is not a guarantee about
 arbitrary `file` values supplied by other producers. Both actual driver
 link sites (libc metadata and final user link) were traced. Generated
-Translation citations have also drifted; the record gives current lines.
+Translation citations drifted from the charter; the record gives the D0-verified lines.
 No conflicting comparator ordering was found at the declared quotation
 point.
 
@@ -166,8 +185,9 @@ After the normal driver build, build the consumer-runnable test:
 
 The first test invocation runs all ten committed Cabs fixtures, all sixteen corpus
 inputs (including `p10alt_rsum_rec.c`), and `tests/multi_tu/basic`'s cross-TU
-`helper` declaration/reference. The second test invocation checks the separately converted
-libc. The ladder invokes these through `scripts/test_unit.sh` (row 1) and
+`helper` declaration/reference. The second test invocation checks both the
+separately converted libc and fixture 001 linked with its twelve metadata TUs.
+The ladder invokes these through `scripts/test_unit.sh` (row 1) and
 `scripts/test_unit.sh --core-quote-libc` (Tier B row 13), respectively.
 
 To witness a flag-generated module in a consumer checkout at the same pin,
@@ -178,16 +198,23 @@ run from that checkout's root:
   --module .tmp/Fixture.lean --input tests/fixtures/001-return-literal/cabs.json
 ./scripts/capped lean_frontend/.lake/build/bin/core-quote-test --fuel 1000000 \
   --libc --module .tmp/Libc.lean
+./scripts/capped lean_frontend/.lake/build/bin/core-quote-test --fuel 1000000 \
+  --libc --module .tmp/Linked.lean --input tests/fixtures/001-return-literal/cabs.json
 ```
 
 For a user-only quotation, repeat `--input` for linked TUs in driver argument
-order. The libc mode checks the separately converted library module.
+order. `--libc --module` without `--input` checks the separately converted
+library module; adding `--input` selects the linked mode, again in driver
+argument order. Both regenerate the same twelve metadata TUs. The committed
+hash applies only to the standalone library, not to a user-specific linked module.
 The test uses the default switches and address-space top and the supplied fuel;
 quote the module with those same settings. Libc mode regenerates its twelve
-canonical metadata TUs and checks the committed hash. The driver subprocess
-always runs with the project root as its cwd and the exact canonical runtime
+canonical metadata TUs; the standalone check verifies the committed hash.
+The driver subprocess always runs with the project root as its cwd and the exact canonical runtime
 spelling. The test needs the normal OCaml/Lean build and GNU `time` for the libc
-replay measurement. Scratch artifacts are removed on success; failures identify
+replay/elaboration measurements (probed as `gtime` or `time` on PATH;
+absence or a non-GNU implementation fails by name). Scratch artifacts are
+removed on success; failures identify
 the disposable diagnostic directory.
 
 The literal is elaborated independently, then imported into a checker module.
@@ -226,7 +253,10 @@ separately as a named refusal.
 The [Core quotation instrument boundary in VALIDATION §3](../VALIDATION.md#core-quotation-instrument-boundary)
 names the printer's seventeen partial definitions, the test's partial visitor,
 comparison/census and syntax traversal, its development generator and D0 inventory probe, native test
-plugin and shared digest compilation, and the Lake trace-schema dependency.
+plugin and shared digest compilation, the Lake trace-schema dependency, and
+the instrument-only exemption for its ten panic-class sharing-plan accesses
+(record F12). The recipes enable `LEAN_ABORT_ON_PANIC=1`; the relevant
+post-order/bounds invariants are source evidence, not a kernel proof.
 All are instrument code outside the model execution cone. Representation
 comparison and source-inspected comparator provenance are computed evidence,
 kernel-opaque as a connection to the pipeline. The named mover is the
@@ -309,7 +339,46 @@ is **exit 0; 2.05 seconds wall time; 825,348 KB peak RSS** (2026-10-20), against
 the same independently elaborated literal and imported environment described
 above. The [close-out record](2026-10-18_core-quote-record.md#d4-final-gates-and-close-out)
 quotes both release summaries and records the scoped F10 test-layout repair.
-A fresh pre-merge audit remains separate from these gate results.
+The independent pre-merge audit is recorded at `167f1360d`; D5 dispositions
+and fresh verification are in the record. D4's full-run results above remain
+historical measurements, not a claim that D5 reran every Tier B row.
+
+D5 adds the linked library/user population: fixture 001 with the twelve
+canonical metadata TUs, checked also through the external
+`--libc --module PATH --input JSON` interface. Its flag-written literal is
+33,187,748 bytes. The consumer check passed in **159.32 seconds, 14,891,192 KB
+peak RSS**, exit 0; elaboration alone was 146.41 seconds and comparison
+5.10 seconds. It exercises 234 distinct model constructors, 28 floating
+leaves, no NaNs or memory values, 15,652 positions and no absolute position
+paths. Both position filenames, the exact comparator vector and the full
+representation are checked.
+
+Its independent **`lake env leanchecker LinkedLiteral`** replay passed in
+**1.97 seconds, 825,744 KB peak RSS, exit 0** (GNU time, Lean 4.32.2,
+2026-10-20). Like libc replay, it loads no test plugin and is not `--fresh`
+replay of all transitive imports. This is the consumer's linked-literal replay
+measurement. The linked case belongs in Tier B row 13 beside libc because
+its elaboration cost is libc-sized; row 1's 27 user-only cases remain there.
+F11 in the record describes the initial test-alias lifetime failure and repair.
+The repaired complete Tier B row passes both cases in 297.79 seconds at
+14,895,476 KB peak RSS, exit 0; its fresh replay measurements are libc
+1.86 seconds / 825,628 KB and linked 1.88 seconds / 825,816 KB, both exit 0.
+The standalone SHA-256 remains unchanged. After resolving F12 with the
+permitted indexing exemption, the final-code row passed again in **321.41
+seconds, 14,894,212 KB peak RSS, exit 0**. Its fresh `LibcLiteral` replay was
+**1.94 seconds / 825,808 KB, exit 0**, and `LinkedLiteral` replay was
+**2.01 seconds / 826,336 KB, exit 0**, with the same no-plugin/imported-environment
+scope described above.
+
+The final D5 required population comprises 29 round trips: the 27 user-only
+cases plus standalone and linked libc. Together they exercise **248 distinct
+model constructors, 56 floating leaves and 8,540,800 positions**, with **zero
+NaNs, memory values, absolute position paths or required-input construct
+refusals**. They contain 100 `Fmap.empty`, 161 `Fmap.mk`, 7,292 `Pmap.Node`,
+7,453 `Pmap.Empty`, 66,207 empty Psets and no nonempty Psets; those unobserved
+constructors remain supported. Final Tier A passed all 19 commands on
+2026-10-20, with unchanged source and complete selection; its exact summary
+and the final-code Tier B measurements are in the D5 record.
 
 ## Regenerating and deliberately re-pinning libc
 
@@ -339,11 +408,15 @@ for path in "${metadata[@]}"; do libc_args+=(--libc-tu "$path"); done
   --runtime=_build/install/default --fuel 1000000 \
   --quote-core .tmp/core-quote-repin/Fixture.lean \
   tests/fixtures/001-return-literal/cabs.json
+./scripts/capped lean_frontend/.lake/build/bin/cerberus-lean \
+  --runtime=_build/install/default --fuel 1000000 "${libc_args[@]}" \
+  --quote-core .tmp/core-quote-repin/Linked.lean \
+  tests/fixtures/001-return-literal/cabs.json
 sha256sum .tmp/core-quote-repin/Libc.lean
 ```
 
 For regeneration at the existing pin, leave the committed hash untouched and
-run both consumer checks below. The libc check compares SHA-256 with the pin,
+run all three consumer checks below. The libc check compares SHA-256 with the pin,
 elaborates the external literal, compares its entire representation and
 comparator terms with a newly rebuilt original, counts position paths, tests
 root/alias determinism and wrong-cwd refusal, and measures kernel replay.
@@ -365,6 +438,9 @@ existing pin. Then require the complete checks before committing a changed pin:
   --input tests/fixtures/001-return-literal/cabs.json
 ./scripts/capped lean_frontend/.lake/build/bin/core-quote-test --fuel 1000000 \
   --libc --module .tmp/core-quote-repin/Libc.lean
+./scripts/capped lean_frontend/.lake/build/bin/core-quote-test --fuel 1000000 \
+  --libc --module .tmp/core-quote-repin/Linked.lean \
+  --input tests/fixtures/001-return-literal/cabs.json
 ./scripts/capped make lean-prelude-src
 ./scripts/capped python3 scripts/release.py --mode fast
 ./scripts/capped make lean-prelude-src
@@ -372,7 +448,8 @@ existing pin. Then require the complete checks before committing a changed pin:
 ```
 
 The libc test reports the `lake env leanchecker LibcLiteral` exit status, wall
-time and peak RSS; update the consumer replay measurement when adopting a new
+time and peak RSS; the linked check similarly replays `LinkedLiteral`.
+Update the consumer replay measurement when adopting a new
 pin. Review the candidate's byte change, full census and every refusal, retain
 the independently checked comparator provenance, and commit the pin with its
 justified source change and gate conclusions. An execution-lane baseline move

@@ -538,8 +538,16 @@ Nothing else.
   directories. Equivalent absolute/relative spellings and symlinks agree;
   missing and foreign directories refuse. The pure model still tests the
   suffix; stored source and lexing positions are never rewritten. Relative
-  paths resolve against the importing process's working directory. Witnesses:
-  the same script; Core quotation D2b records the alias checks.
+  paths resolve against the importing process's working directory. Under
+  `--runtime=_build/install/default`, cpp's `./_build/.../libc/include/*.h`
+  positions are non-library by the oracle's literal directory test but library
+  by the port's suffix test; the resolved guard accepts them. UB-location
+  selection on these served relative-spelling runs can differ. Differential
+  lanes use absolute spellings where both agree. The quoted literal is
+  unaffected: its stored labels are preserved. The fixture-001 witness in
+  `scripts/check_runtime_resolution.sh` prints both actual classifiers and
+  the execution verdicts; [upstream draft 58](docs/upstream-tray/58-relative-runtime-library-location.md)
+  describes the oracle's cpp-marker mismatch.
   Portable libc metadata uses `scripts/libc_prep.sh --jsons OUTDIR`, whose
   exporter runs from the project root with `--runtime=_build/install/default`
   and relative source/include paths. Consume this metadata from the project
@@ -616,11 +624,16 @@ operator items are listed in the record.
   path passes `CerbLocation.isLibraryLocation`'s suffix test but not the
   exact membership test against the resolved runtime directories. D2b accepts
   equivalent path spellings as a declared divergence from the oracle's
-  literal comparison; the suffix and resolved-directory tests agree on the
-  served import paths. A
-  consumer calling `CabsImport.parseJson` and `isLibraryLocation` directly
-  bypasses that check and keeps the Z-67 residual unless it applies the
-  same check with its runtime root.
+  literal comparison. The Z-67 retirement is conditional on matching literal
+  directory spellings, as in the differential lanes' absolute invocations.
+  With relative `--runtime=_build/install/default`, cpp's `./`-prefixed header
+  positions are non-library on the oracle and library on the port, even on
+  served driver runs; UB-location selection can differ. This does not change
+  the quoted literal. The fixture-001 witness above measures the divergence.
+  A consumer calling `CabsImport.parseJson` and `isLibraryLocation` directly
+  bypasses the guard and also keeps the foreign-directory Z-67 residual;
+  applying the resolved guard removes that class, not the relative-spelling
+  divergence.
 - *In-process consumers and kind-1 fail-stops*: no universal `drive`
   conformance theorem follows from avoiding known failure sites; byte,
   runtime-state and other obligations also remain. `failwithI` has an
@@ -855,6 +868,17 @@ cone**, including the printer invoked on the quotation-only driver branch:
   `q_mem_constraint`, `q_loaded_value`, `q_object_value`, `q_value`,
   `q_generic_pexpr`, `q_generic_pexpr_`, `q_generic_expr`, `q_generic_expr_`,
   `intern` and `renderTasks`. Runtime printing and sharing are computed evidence.
+  **Instrument-only indexing exemption:** the ten `!` indexing/update sites
+  in `internKey`, `planSharing`, `renderTasks` and `render` retain Lean's
+  panic-class access. Interned IDs index entries allocated before them;
+  child IDs precede parents, and planning/rendering enumerate array bounds.
+  Those invariants are source-level evidence, not a kernel proof. Panic is
+  kernel-transparent; the invocation recipes set `LEAN_ABORT_ON_PANIC=1` so
+  an invariant violation aborts native instrumentation. This exemption is
+  confined to the quotation instrument outside the exec cone. D5's attempted
+  `failwithI` wrappers were unresolved owners in the failure-reach probe's
+  declared import environment; the permitted exemption avoids changing that gate or
+  its register (record F12).
 - `test/Unit/CoreQuoteTest.lean` has 176 partial definitions: the independent
   datatype visitors `view0` through `view171`, `sameShape`, `census`,
   `expandHelpers` and `comparatorForm`. The latter two support the metaprogrammed
@@ -876,8 +900,10 @@ cone**, including the printer invoked on the quotation-only driver branch:
   the Python orchestration, source audit and emitted comparator selection are
   outside the kernel evidence. An unrecognized trace schema is an error.
 
-Literal elaboration and the named gate `lake env leanchecker LibcLiteral` load
-no test plugin. They check the emitted definitions against their imported Lean
+Literal elaboration and the named replay gates `lake env leanchecker LibcLiteral`
+and `lake env leanchecker LinkedLiteral` load no test plugin. Tier B requires
+GNU `time` (probed as `gtime` or `time` on PATH) for wall-time/peak-RSS measurement;
+its absence is a named prerequisite failure. They check the emitted definitions against their imported Lean
 environment; they do not establish the missing connection to frontend execution.
 **Named mover: the printer-correctness bridge (Core quotation charter option B).**
 The delivered instrument is option A. Coverage, refusals, canonical runtime

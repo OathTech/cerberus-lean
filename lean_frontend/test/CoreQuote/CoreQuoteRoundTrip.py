@@ -3,8 +3,8 @@
 The driver always runs from the repository root with the canonical relative
 runtime spelling. Scratch modules and census traces are disposable. A consumer
 can pass --module PATH with --input JSON (repeatable), or --libc --module PATH.
-The latter regenerates the canonical metadata, checks the pin, and replays the
-literal's kernel environment. No source positions or literal labels are edited.
+With --libc, --input selects a libc-linked user module; without --input it
+checks the standalone library and its pin. Both replay the literal environment. No source positions or literal labels are edited.
 """
 import argparse
 from collections import Counter
@@ -39,14 +39,26 @@ def main():
         parser.error("--input requires --module")
     if args.fixture and args.module:
         parser.error("--fixture and --module are separate selections")
-    if args.libc and (args.fixture or args.input):
-        parser.error("--libc uses exactly the twelve canonical metadata TUs")
+    if args.libc and args.fixture:
+        parser.error("--libc and --fixture are separate selections")
+    gnu_time = None
+    if args.libc:
+        for name in ("gtime", "time"):
+            candidate = shutil.which(name)
+            if candidate:
+                probe = subprocess.run([candidate, "--version"], capture_output=True, text=True)
+                if probe.returncode == 0 and "GNU" in probe.stdout and "time" in probe.stdout.lower():
+                    gnu_time = candidate
+                    break
+        if gnu_time is None:
+            parser.error("Core quote prerequisite: GNU time is required for Tier B resource measurements (install time or gtime)")
     (ROOT / ".tmp").mkdir(exist_ok=True)
     scratch = Path(tempfile.mkdtemp(prefix="core-quote-test-", dir=ROOT / ".tmp"))
     env = dict(os.environ, LEAN_ABORT_ON_PANIC="1")
     counts = Counter()
     completed = 0
     success = False
+    metadata = []
 
     def run(label, command, cwd=ROOT, expected=0, extra_env=None):
         start = time.monotonic()
@@ -62,14 +74,14 @@ def main():
         print(f"{label}: exit {result.returncode}, {time.monotonic() - start:.2f}s", flush=True)
         return result
 
-    def cli(label, output, inputs, cwd=ROOT, runtime=RUNTIME, expected=0):
+    def cli(label, output, inputs, cwd=ROOT, runtime=RUNTIME, expected=0, mode="tu"):
         command = [BIN / "cerberus-lean", f"--runtime={runtime}", "--fuel", args.fuel]
-        if args.libc:
-            command += ["--quote-libc", output, "--libc", ROOT / "tests/libc/libc.core"]
-            for path in inputs:
+        command += ["--quote-libc" if mode == "libc" else "--quote-core", output]
+        if mode in ("libc", "linked"):
+            command += ["--libc", ROOT / "tests/libc/libc.core"]
+            for path in metadata:
                 command += ["--libc-tu", path]
-        else:
-            command += ["--quote-core", output, *inputs]
+        command += inputs
         result = run(label, command, cwd, expected)
         if expected == 0 and (result.stdout or result.stderr):
             raise RuntimeError(f"{label}: successful quotation was not silent")
@@ -77,9 +89,15 @@ def main():
 
     def lean(label, path, *options, expected=0, plugin=True):
         native = native_args if plugin else []
-        return run(label, ["lake", "env", "lean", *native,
-                           f"--root={scratch}", *options, path], FRONTEND, expected,
-                   {"LEAN_PATH": str(scratch) + os.pathsep + lean_path})
+        command = ["lake", "env", "lean", *native, f"--root={scratch}", *options, path]
+        timing = scratch / f"{label}.time"
+        if gnu_time and not plugin:
+            command = [gnu_time, "-f", "%e seconds; %M KB peak RSS; exit %x", "-o", timing, *command]
+        result = run(label, command, FRONTEND, expected,
+                     {"LEAN_PATH": str(scratch) + os.pathsep + lean_path})
+        if gnu_time and not plugin:
+            print(f"{label} resources: " + timing.read_text().strip(), flush=True)
+        return result
 
     def check_source(label, source, tail, mode="tu", negative_syntax=False):
         # One checker import. The literal's actual def and helpers are intact.
@@ -91,25 +109,26 @@ def main():
             raise RuntimeError("comparator mutation did not fail at the syntax check")
         return result
 
-    def roundtrip(label, inputs, external=None):
+    def roundtrip(label, inputs, external=None, mode="tu"):
         nonlocal completed
+        started = time.monotonic()
         literal = scratch / f"{label}Literal.lean"
         if external:
             shutil.copyfile(external, literal)
         else:
-            cli(label + "-quote", literal, inputs)
+            cli(label + "-quote", literal, inputs, mode=mode)
         source = literal.read_text()
         if not source.startswith("import Core_run_aux\n") or source.count("\ndef quotedCore : file core_run_annotation :=") != 1:
             raise RuntimeError("expected a self-contained flag-generated quotedCore module")
-        mode = "libc" if args.libc else "tu"
         # Elaborate the literal alone, then import its .olean into the checker.
         # Thus kernel replay below measures the consumer literal, not test code.
         lean(label + "-elaborate", literal, "-o", literal.with_suffix(".olean"), plugin=False)
         inputs_term = "[" + ", ".join(json.dumps(str(p), ensure_ascii=False) for p in inputs) + "]"
+        metadata_term = "[" + ", ".join(json.dumps(str(p), ensure_ascii=False) for p in metadata) + "]"
         checker = scratch / f"{label}Check.lean"
         checker.write_text(f"import CoreQuoteCompare\nimport {label}Literal\n" +
             f'\ncheck_core_comparators quotedCore "{mode}"\n' +
-            f"#eval CoreQuoteTest.check {json.dumps(str(ROOT), ensure_ascii=False)} {json.dumps(mode)} {args.fuel} {inputs_term} quotedCore\n")
+            f"#eval CoreQuoteTest.check {json.dumps(str(ROOT), ensure_ascii=False)} {json.dumps(mode)} {args.fuel} {metadata_term} {inputs_term} quotedCore\n")
         result = lean(label + "-compare", checker)
         rows = [line.removeprefix("CORE_QUOTE_CENSUS ") for line in result.stdout.splitlines()
                 if line.startswith("CORE_QUOTE_CENSUS ")]
@@ -117,7 +136,35 @@ def main():
             raise RuntimeError(f"{label}: missing or duplicate whole-file census")
         counts.update(json.loads(rows[0]))
         completed += 1
+        print(f"{label} round trip: {time.monotonic() - started:.2f}s", flush=True)
         return literal
+
+    def replay(label):
+        timing = scratch / f"{label}-leanchecker.time"
+        run(label + "-kernel-replay", [gnu_time, "-f", "%e seconds; %M KB peak RSS; exit %x",
+                                      "-o", timing, "lake", "env", "leanchecker", label + "Literal"],
+            FRONTEND, extra_env={"LEAN_PATH": str(scratch) + os.pathsep + lean_path})
+        print(label + "Literal leanchecker: " + timing.read_text().strip(), flush=True)
+
+    def convention(literal, inputs, mode):
+        # Canonical spelling is unchanged under a different absolute alias.
+        alias = scratch / "root-alias"
+        if not alias.is_symlink():
+            alias.symlink_to(ROOT, target_is_directory=True)
+        alias_literal = scratch / f"{mode}Alias.lean"
+        try:
+            cli(mode + "-alias-quote", alias_literal, inputs, cwd=alias, mode=mode)
+            if literal.read_bytes() != alias_literal.read_bytes():
+                raise RuntimeError("canonical invocation through a project-root symlink changed literal bytes")
+        finally:
+            # leanchecker scans module search roots recursively. This alias is
+            # inside a root: leaving it for the next replay creates a cycle.
+            alias.unlink()
+        refused = scratch / f"{mode}Refused.lean"
+        result = cli(mode + "-wrong-cwd-refusal", refused, inputs, cwd=FRONTEND,
+                     runtime="../_build/install/default", expected=2, mode=mode)
+        if "Canonical Core quotation convention" not in result.stderr or refused.exists():
+            raise RuntimeError("wrong-cwd invocation must name the convention and write nothing")
 
     try:
         lean_path = run("lean-path", ["lake", "env", "printenv", "LEAN_PATH"], FRONTEND).stdout.strip()
@@ -156,20 +203,28 @@ def main():
         native_args += [f"--plugin={support}=initialize_CerberusLean_CoreQuoteCompare"]
         if args.libc:
             result = run("metadata", [ROOT / "scripts/libc_prep.sh", "--jsons", scratch / "metadata"])
-            inputs = [Path(line) for line in result.stdout.splitlines()]
-            if len(inputs) != 12 or not all(p.is_file() for p in inputs):
+            metadata = [Path(line) for line in result.stdout.splitlines()]
+            if len(metadata) != 12 or not all(p.is_file() for p in metadata):
                 raise RuntimeError("expected twelve canonical metadata JSONs")
-            literal = roundtrip("Libc", inputs, args.module)
-            digest = hashlib.sha256(literal.read_bytes()).hexdigest()
-            pin = (SUPPORT / "core-quote-libc.sha256").read_text().strip()
-            if digest != pin:
-                raise RuntimeError(f"libc literal SHA-256 drift: {digest}, pinned {pin}")
-            print(f"libc sha256: {digest}", flush=True)
-            timing = scratch / "leanchecker.time"
-            run("libc-kernel-replay", ["/usr/bin/time", "-f", "%e seconds; %M KB peak RSS; exit %x",
-                                      "-o", timing, "lake", "env", "leanchecker", "LibcLiteral"],
-                FRONTEND, extra_env={"LEAN_PATH": str(scratch) + os.pathsep + lean_path})
-            print("LibcLiteral leanchecker: " + timing.read_text().strip(), flush=True)
+            refused = scratch / "NoUserTU.lean"
+            result = cli("libc-no-user-refusal", refused, [], expected=2, mode="linked")
+            if "--quote-core with --libc requires a user TU" not in result.stderr or refused.exists():
+                raise RuntimeError("library-only --quote-core must refuse by name and write nothing")
+            if not args.input:
+                literal = roundtrip("Libc", [], args.module, mode="libc")
+                digest = hashlib.sha256(literal.read_bytes()).hexdigest()
+                pin = (SUPPORT / "core-quote-libc.sha256").read_text().strip()
+                if digest != pin:
+                    raise RuntimeError(f"libc literal SHA-256 drift: {digest}, pinned {pin}")
+                print(f"libc sha256: {digest}", flush=True)
+                replay("Libc")
+                convention(literal, [], "libc")
+            if not args.module or args.input:
+                inputs = ([p.resolve() for p in args.input] if args.module else
+                          [ROOT / "tests/fixtures/001-return-literal/cabs.json"])
+                literal = roundtrip("Linked", inputs, args.module, mode="linked")
+                replay("Linked")
+                convention(literal, inputs, "linked")
         elif args.module:
             inputs = [p.resolve() for p in args.input]
             literal = roundtrip("Consumer", inputs, args.module.resolve())
@@ -209,18 +264,8 @@ def main():
                 raise RuntimeError("same-head comparator mutation found no explicit instance")
             check_source("ComparatorMutation", source.replace(old, new, 1), "", negative_syntax=True)
 
-        # Canonical spelling is unchanged under a different absolute alias.
-        alias = scratch / "root-alias"
-        alias.symlink_to(ROOT, target_is_directory=True)
-        alias_literal = scratch / "Alias.lean"
-        cli("alias-quote", alias_literal, inputs, cwd=alias)
-        if literal.read_bytes() != alias_literal.read_bytes():
-            raise RuntimeError("canonical invocation through a project-root symlink changed literal bytes")
-        refused = scratch / "Refused.lean"
-        result = cli("wrong-cwd-refusal", refused, inputs, cwd=FRONTEND,
-                     runtime="../_build/install/default", expected=2)
-        if "Canonical Core quotation convention" not in result.stderr or refused.exists():
-            raise RuntimeError("wrong-cwd invocation must name the convention and write nothing")
+        if not args.libc:
+            convention(literal, inputs, "tu")
         if counts["NaN"] or counts["absolute-position"]:
             raise RuntimeError("required inputs contain a NaN or an absolute position path")
         (scratch / "census.json").write_text(json.dumps(counts, sort_keys=True, indent=2))

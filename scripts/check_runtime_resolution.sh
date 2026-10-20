@@ -9,8 +9,9 @@
 # searches the working directory and deliberately does not mirror the
 # oracle's OPAM_SWITCH_PREFIX fallback (Main.lean resolveRuntime). A Cabs
 # location whose directory passes the port's suffix library test but not the
-# oracle's exact test against the runtime is REFUSED (Main.lean
-# refuseLibraryLocations).
+# resolved-directory membership test against the runtime is REFUSED. The
+# oracle's literal test can differ on accepted aliases: the fixture-001
+# witness below pins that declared divergence (Core quotation D2b/D5).
 #
 # Each check runs the REAL oracle (cabs-json export, and the oracle's own
 # verdict where the check compares against it) and the Lean driver.
@@ -159,5 +160,64 @@ L4=$(oracle_line "$PREFIX" user/other/liblocub.c)
 [[ "$L4" == Undefined* ]] || { echo "$NAME: FAIL — oracle control verdict for liblocub.c: [$L4]"; exit 1; }
 lean "$W" -- --batch --runtime="$PREFIX" "$W/l4.json";               expect_line "control: the same file elsewhere agrees with the oracle" "$L4"
 
+# --- Accepted relative spelling: actual oracle/port classifiers disagree -----
+# The committed fixture has cpp's ./ prefix; the oracle's runtime key does not
+# (util/cerb_location.ml:512-523). Do not normalize the witness's stored label.
+HEADER=$(python3 - "$ROOT/tests/fixtures/001-return-literal/cabs.json" <<'PYLOC'
+import json, sys
+paths = []
+def visit(x):
+    if isinstance(x, dict):
+        if {"file", "line", "col"} <= x.keys() and x["file"].endswith("/builtins.h"):
+            paths.append(x["file"])
+        for v in x.values(): visit(v)
+    elif isinstance(x, list):
+        for v in x: visit(v)
+visit(json.load(open(sys.argv[1])))
+expected = "./_build/install/default/lib/cerberus-lib/runtime/libc/include/builtins.h"
+if len(paths) != 154 or set(paths) != {expected}:
+    raise SystemExit("fixture-001 library-location witness drift: expected 154 ./-prefixed positions")
+print(expected)
+PYLOC
+) || { echo "$NAME: FAIL — fixture-001 location inventory"; exit 1; }
+cat > "$W/location.ml" <<'OCAML'
+let () =
+  Cerb_runtime.specified_runtime := Some Sys.argv.(1);
+  let pos = Cerb_position.from_lexing { Lexing.dummy_pos with pos_fname = Sys.argv.(2) } in
+  Printf.printf "%b\n" (Cerb_location.is_library_location (Cerb_location.point pos))
+OCAML
+if ! ocamlfind ocamlopt -package unix,str,lem,pprint,yojson -linkpkg \
+    -I "$ROOT/_build/default/util/.cerb_util.objs/byte" \
+    -I "$ROOT/_build/default/util/.cerb_util.objs/native" -I "$ROOT/_build/default/util" \
+    "$ROOT/_build/default/util/cerb_util.cmxa" "$W/location.ml" -o "$W/location"; then
+    echo "$NAME: FAIL — cannot build actual oracle library-location probe"; exit 1
+fi
+cat > "$W/Location.lean" <<'LEAN'
+import CerbLocation
+def main (args : List String) : IO Unit := do
+  match args with
+  | [path] => IO.println (CerbLocation.isLibraryPathSuffix path)
+  | _ => throw (IO.userError "library-location probe requires one path")
+LEAN
+OCLASS=$(cd "$ROOT" && "$W/location" _build/install/default "$HEADER") \
+    || { echo "$NAME: FAIL — oracle library-location probe"; exit 1; }
+OCONTROL=$(cd "$ROOT" && "$W/location" _build/install/default "${HEADER#./}") \
+    || { echo "$NAME: FAIL — oracle library-location control"; exit 1; }
+LCLASS=$(cd "$ROOT/lean_frontend" && "$SCRIPT_DIR/capped" lake env lean --run "$W/Location.lean" "$HEADER") \
+    || { echo "$NAME: FAIL — port library-location probe"; exit 1; }
+n=$((n + 1))
+if [[ "$OCLASS" != false || "$LCLASS" != true || "$OCONTROL" != true ]]; then
+    fail "fixture-001 classification drift: oracle=$OCLASS port=$LCLASS oracle-no-dot-control=$OCONTROL"
+fi
+echo "$NAME: fixture-001 --runtime=_build/install/default: 154 ./-prefixed header positions; oracle library=$OCLASS; port library=$LCLASS; oracle without ./=$OCONTROL (declared divergence)"
+F001=$(oracle_line _build/install/default tests/fixtures/001-return-literal/source.c "$ROOT") \
+    || { echo "$NAME: FAIL — fixture-001 oracle execution failed"; exit 1; }
+[[ "$F001" == 'Defined {value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}' ]] \
+    || { echo "$NAME: FAIL — fixture-001 oracle execution verdict: [$F001]"; exit 1; }
+lean "$ROOT" -- --batch --runtime=_build/install/default tests/fixtures/001-return-literal/cabs.json
+expect_line "relative fixture-001 is served; execution agrees despite classification divergence" "$F001"
+[[ $RC -eq 0 ]] || fail "relative fixture-001 exit $RC, expected 0"
+echo "$NAME: fixture-001 execution: oracle=[$F001]; port=[$OUT]"
+
 [[ $fails -eq 0 ]] || { echo "$NAME: $fails of $n witnesses FAILED"; exit 1; }
-echo "$NAME: OK ($n witnesses: --runtime/CERB_INSTALL_PREFIX resolution and priority, planted cwd std.core ignored, planted prefix used, 5 runtime refusals, 1 cross-runtime and 3 library-location refusals, 1 control agreeing with the oracle)"
+echo "$NAME: OK ($n witnesses: --runtime/CERB_INSTALL_PREFIX resolution and priority, planted cwd std.core ignored, planted prefix used, 5 runtime refusals, 1 cross-runtime and 3 library-location refusals, 1 control agreeing with the oracle, relative fixture-001 classification divergence and execution control)"

@@ -36,7 +36,14 @@ brief under that ruling. Gate lines are quoted verbatim from the runs; derived t
   because the resolved runtime always ends in `/runtime`; suffix ⇒ exact by the refusal; the other
   file-carrying locations are the `std.core`/`.impl` stamps (exact by construction), and the `--libc`
   dump's bodies carry no file (`CoreParser.parseFile`, recorded Z1-A1). The docstring now states this;
-  the old residual "Z-67" is retired.
+  the old residual "Z-67" was retired under that literal guard. Core quotation
+  D2b later changed it to resolved membership ([USER 2026-10-19]); retirement
+  now requires consistent literal directory spellings. With relative
+  `--runtime=_build/install/default`, cpp's `./`-prefixed headers are non-library
+  on the oracle and library on the port, so served UB-location selection can
+  differ. Differential lanes use absolute spellings where both agree; quoted
+  literals are unaffected. D5's fixture-001 witness measures this class (see
+  `2026-10-18_core-quote-record.md`, D5, and upstream-tray draft 58).
 - A consequence worth naming [AGENT]: every oracle cabs-json carries the `-include`d
   `<runtime>/libc/include/builtins.h` location, so a cabs-json exported under a DIFFERENT runtime prefix
   than the Lean run's is refused by the same check. This is a second guard against engine/runtime

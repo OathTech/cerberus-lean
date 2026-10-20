@@ -8,7 +8,7 @@ open Lean
 /-- Independently rebuild the pre-execution value, using the public pipeline
     stages and the driver's reverse-consed link order. No printer operation
     participates in this computation or the representation comparison. -/
-def original [LemFuel] [CerbGlobal.Switches] (mode : String) (inputs : List String) :
+def original [LemFuel] [CerbGlobal.Switches] (mode : String) (metadata inputs : List String) :
     IO (file core_run_annotation) := do
   let runtime := "_build/install/default/lib/cerberus-lib/runtime"
   let stdPath := runtime ++ "/libcore/std.core"
@@ -17,14 +17,21 @@ def original [LemFuel] [CerbGlobal.Switches] (mode : String) (inputs : List Stri
   let implPath := runtime ++ "/libcore/impls/gcc_4.9.0_x86_64-apple-darwin10.8.0.impl"
   let implFile ← unwrap (CoreParser.parseLibraryFile implPath (← IO.FS.readFile implPath))
   let impl := loadCoreImpl implFile
-  if mode == "libc" then
-    let .ok (f, _) ← loadLibc runtime true 0 defaultAddressSpaceTop
-        (names, stdFuns, impl) names stdFuns impl "tests/libc/libc.core" inputs
-      | throw (IO.userError "Core quote test: loadLibc failed")
-    return convert_file f
-  require (mode == "tu") s!"unknown pipeline mode {mode}"
+  require (mode == "tu" || mode == "libc" || mode == "linked") s!"unknown pipeline mode {mode}"
   let mut files := []
   let mut supply := 0
+  if mode == "libc" || mode == "linked" then
+    let .ok (f, next) ← loadLibc runtime true supply defaultAddressSpaceTop
+        (names, stdFuns, impl) names stdFuns impl "tests/libc/libc.core" metadata
+      | throw (IO.userError "Core quote test: loadLibc failed")
+    if mode == "libc" then
+      require inputs.isEmpty "standalone libc mode takes no user TUs"
+      return convert_file f
+    require (!inputs.isEmpty) "linked mode requires a user TU"
+    -- Library first, then cons each translated TU: exactly Main.runPipeline's
+    -- order and supply threading, including the library's consumed supply.
+    files := [f]
+    supply := next
   for path in inputs do
     let (digest, tu, paths) ← unwrap (CabsImport.parseJsonWithFiles (← IO.FS.readFile path))
     refuseLibraryLocations runtime path paths
@@ -37,10 +44,10 @@ def original [LemFuel] [CerbGlobal.Switches] (mode : String) (inputs : List Stri
   let .Result linked := link files | throw (IO.userError "Core quote test: link failed")
   return convert_file linked
 
-def check (root mode : String) (fuel : Nat) (inputs : List String)
+def check (root mode : String) (fuel : Nat) (metadata inputs : List String)
     (quoted : file core_run_annotation) : IO Unit := do
   IO.Process.setCurrentDir root
-  let expected ← @original ⟨fuel⟩ ⟨CerbGlobal.defaultSwitches⟩ mode inputs
+  let expected ← @original ⟨fuel⟩ ⟨CerbGlobal.defaultSwitches⟩ mode metadata inputs
   let shape := view0 expected
   let counts := census shape
   require (counts.getD "NaN" 0 == 0) "required input contains Float.NaN"

@@ -23,6 +23,7 @@ the `--switches` fail-open parser, the `combine_prov` crash on upstream's own PN
 `Printf.printf` arm, `array_shift_ptrval`'s crash on a symbolic pointer via `memcpy`).
 Report 55 (2026-10-17, Draft): UB088 reported regardless of whether the caller uses the value (ISO §6.9.1#12),
 raised by the consumer cerberus-caesium; number 54 is held by the in-flight PNVI lane branch.
+Report 58 (2026-10-20, Draft): the oracle's literal library-location test rejects its own cpp `./` header spelling under a relative runtime.
 Reports 56–57 (2026-10-19, Draft): `memcpy` on overlapping objects copies silently (the memory model's TODO) and
 `aligned_alloc` with an invalid alignment allocates (the proxy checks only the size clause), cerberus-caesium's items
 G1/G2; since 2026-10-20 the fork REFUSES both cases in both engines (contract D10, a fork-ahead refusal noted in each
@@ -87,6 +88,7 @@ notes below establish only what was checked then.
 | [52-debug-printf-in-eff-array-shift-pnvi-arm.md](52-debug-printf-in-eff-array-shift-pnvi-arm.md) | Draft | No submission recorded |
 | [53-array-shift-ptrval-crash-on-symbolic-pointer-memcpy.md](53-array-shift-ptrval-crash-on-symbolic-pointer-memcpy.md) | Draft | No submission recorded |
 | [55-ub088-reported-regardless-of-use.md](55-ub088-reported-regardless-of-use.md) | Draft | No submission recorded |
+| [58-relative-runtime-library-location.md](58-relative-runtime-library-location.md) | Draft | No submission recorded |
 | [56-memcpy-overlap-copies-silently.md](56-memcpy-overlap-copies-silently.md) | Draft | No submission recorded; the fork REFUSES the case since 2026-10-20 (contract D10, fork-ahead, not a fix for upstream) |
 | [57-aligned-alloc-invalid-alignment-allocates.md](57-aligned-alloc-invalid-alignment-allocates.md) | Draft | No submission recorded; the fork REFUSES the case since 2026-10-20 (contract D10, fork-ahead, not a fix for upstream) |
 | [lean4/01-stack-overflow-handler-deadlock.md](lean4/01-stack-overflow-handler-deadlock.md) | Draft | No submission recorded |

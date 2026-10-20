@@ -217,13 +217,18 @@ production generator in an isolated scratch repository.
   produce different artifacts. Invocations from `lean_frontend/` using
   `../_build/...` cannot resolve the stored project-relative header labels and
   are refused with the convention named. No source-root option or label rewrite
-  participates in this convention.
+  participates in this convention. With relative runtime spelling, cpp's
+  `./`-prefixed header positions are library locations on the port but not on
+  the oracle's literal directory test; served UB-location selection can differ.
+  This declared divergence leaves quoted labels unchanged (VALIDATION §3).
 - **Core constructor literals for consumers.** `--quote-core OUT.lean` writes
   the converted, linked user file; `--quote-libc OUT.lean` writes the separately
   converted library once. Use the canonical convention above. The generated
   module declares `quotedCore : file core_run_annotation`; NaNs and inadmissible
   comparator provenance are refused by name. The independent `core-quote-test`
-  executable accepts these modules with `--module`. Its runner, support and libc
+  executable accepts these modules with `--module`; combine `--libc` and
+  repeated `--input` for a libc-linked module. `--quote-core --libc` requires
+  at least one user TU. Its runner, support and libc
   SHA-256 pin live in `test/CoreQuote/`; earlier development probes live in
   `test/CoreQuote/probes/`. The [consumer note](docs/2026-10-18_consumer-note-cerberus-caesium-core-quote.md)
   gives generation, round-trip, replay and re-pin commands. This is a computed

@@ -60,7 +60,7 @@ UNIT_TESTS=(
     # controls beside them) + the compile-time R-PNVI-nn refusal pins. Arg: fuel.
     "pnvi-arms-test"
     # Core quotation: whole-file fixture/corpus/multi-TU round trips and mutations.
-    # The standalone libc round trip has its own Tier B row.
+    # The standalone and user-linked libc round trips have their own Tier B row.
     "core-quote-test"
 )
 

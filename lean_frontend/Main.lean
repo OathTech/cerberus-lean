@@ -615,7 +615,12 @@ def runtimeLibraryDirs (runtime : String) : List String :=
     absolute/relative aliases and symlinks to the same directory agree.
     Relative paths resolve from the importing process's working directory;
     stored source and lexing positions are never rewritten. A missing or
-    foreign directory is refused (exit 2), not accepted by suffix alone. -/
+    foreign directory is refused (exit 2), not accepted by suffix alone.
+    With --runtime=_build/install/default, cpp's ./_build/... header paths
+    pass this guard and the port's suffix test, but fail the oracle's literal
+    membership test: served UB-location selection can therefore differ.
+    Quotation preserves the labels and is unaffected; differential lanes use
+    absolute spellings where the classifiers agree (upstream-tray draft 58). -/
 def refuseLibraryLocations (runtime : String) (source : String) (files : Array String) : IO Unit := do
   let refuse {α : Type} (detail : String) : IO α := do
     IO.eprintln s!"cerberus-lean: refused — library-location classification: {source}: {detail}. Canonical Core quotation convention: export metadata and run with --runtime=_build/install/default from the project root, or a directory with that fixed relative runtime link; preserve all stored labels (see VALIDATION.md, bug hunt BUG-3 and Core quotation D2b)"
@@ -1845,6 +1850,9 @@ def main (args : List String) : IO Unit := do
       IO.Process.exit 1
     return
 
+  if quoteCore.isSome && libc.isSome && restArgs.isEmpty then
+    IO.eprintln "cerberus-lean: refused — Core quotation: --quote-core with --libc requires a user TU; use --quote-libc for the standalone library"
+    IO.Process.exit 2
   let libraryOnly := quoting && libc.isSome && restArgs.isEmpty
   if (batchMode || ppCoreMode || quoting) && restArgs.isEmpty && !libraryOnly then
     IO.eprintln "usage: cerberus-lean [--batch|--pp-core] [--first] [--quote-core OUT.lean] [--quote-libc LIB.lean --libc CORE --libc-tu META.json ...] FILE.json [FILE2.json ...]"

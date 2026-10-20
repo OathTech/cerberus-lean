@@ -1161,13 +1161,18 @@ private partial def comparatorForm (e : Expr) : MetaM Expr := do
   | _ => pure e
 
 def checkComparatorSyntax (value : Expr) (mode : String) : TermElabM Unit := do
-  unless mode == "tu" || mode == "libc" do
+  unless mode == "tu" || mode == "libc" || mode == "linked" do
     throwError "Core quote comparator check: unknown pipeline mode {mode}"
   let value ← expandHelpers value
   unless value.isAppOfArity ``generic_file.mk 14 do
     throwError "Core quote comparator check: expected generic_file.mk"
   let fields := value.getAppArgs.extract 2 14
-  let codes := if mode == "libc" then #["L", "S", "S", "I", "L", "E", "L", "N", "N"]
+  -- The canonical library has .mk L tagDefs/funs/funinfo. Outer .mk wins
+  -- even for an empty tree. Libc is last in the list, hence the final left operand
+  -- of link_aux. Its enumDefs is .empty: translated .mk S wins there. Shared
+  -- stdlib/impl retain S/I; link_extern rebuilds E; populated Nat maps retain N.
+  -- Linked vector by field (not comparator reduction): L,S,S,I,L,E,L,N,N.
+  let codes := if mode == "libc" || mode == "linked" then #["L", "S", "S", "I", "L", "E", "L", "N", "N"]
     else #["S", "S", "S", "I", "O", "E", "O", "N", "N"]
   for (index, code) in (#[2, 3, 4, 5, 7, 8, 9, 10, 11].zip codes) do
     let some field := fields[index]? | throwError "missing file field {index}"

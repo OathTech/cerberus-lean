@@ -1,5 +1,27 @@
 # Core quotation record
 
+## Committed history after the 2026-10-20 rebase
+
+The D0–D4 entries below retain the identities at which their measurements were
+made. The orchestrator rebased this series before the pre-merge audit; these
+are the corresponding commits now on `feature/core-quote`, verified against
+both commit chains (pre-rebase hash → committed hash):
+
+| Step | Pre-rebase hash | Committed hash |
+|---|---|---|
+| Base | `e7e9bb427a514b6053865c303c4af512907da75b` | `2e1777b27775519499aeee469106c5ef56ef4fbb` |
+| D0 | `fb8705c686d1de34f66426e3da4f1477d077632e` | `6d2543c9217296b239fcdb0c6a4a9d95c2228d31` |
+| D1 | `a81a93a2e3de6e4668147baf1ca612ed8ed29893` | `f67295d4fce6ddaaf2547570fd4fd22e91abce4e` |
+| D2 | `d14ad75ce045d1face55a8837da1563314c402f7` | `7b9158a927c5f987c27aeee98f73f92aa58f741e` |
+| D2b | `74a9388441baf20ab204de614babd9c6f1526042` | `d5d1cb389ff184e33153e074604ea92a43ece1c4` |
+| D3 | `b7240f9a463656c9df1ff75ddad6000833d1872f` | `b844467cae89dcdf8335c0322a23a66169f5ecde` |
+| D4 | `65ba8618b9d6f6924fa43f7cfc49e5acf79edb64` | `e557782f2b1dcb5e92457a8e92a2959ef013b6c9` |
+
+`88bf20f5f8acabaa72142653e22a7ec2e0f13359`, cited below, was an ephemeral
+crash-recovery snapshot, not a series commit. Its ref was deleted at D4 as
+recorded; it has no rebased-series counterpart. The pre-merge audit itself is
+`167f1360d6269a33822e1394c77808eb463d05d0`.
+
 ## D0 — construction and representation audit (2026-10-19)
 
 Base: `e7e9bb427a514b6053865c303c4af512907da75b`, branch
@@ -1333,3 +1355,282 @@ D0–D4 are complete at this worker boundary, including D2b's canonical-conventi
 extension. The declared instrument boundary remains, with the printer-correctness
 bridge (option B) as its named mover. A fresh pre-merge audit is still required;
 this gate result does not claim release certification. No merge or push was made.
+
+## D5 — pre-merge audit fixes (2026-10-20)
+
+[AGENT 2026-10-20, orchestrator direction relayed by the operator] Address
+pre-merge audit P2-1, P2-2, P3-1/2/3 and the library-only quotation note in
+one D5 commit, with Tier A before commit and the verification in its message.
+The resolved guard remains under the existing [USER 2026-10-19] convention.
+
+### P2-1 — measured relative-runtime divergence
+
+The guard's resolved directory membership is retained. VALIDATION's guard
+and Z-67 entries, the Z-67 source comment and original retirement record now
+state its scope: with relative `--runtime=_build/install/default`, cpp's
+`./_build/...` header positions fail the oracle's literal membership test but
+pass the port's suffix classifier and resolved guard. Served UB-location
+selection can differ. The differential lanes use absolute spellings where
+both agree. Quotation still preserves the stored labels; its value and libc
+pin are unaffected. Draft 58 and its INDEX row describe the oracle issue and
+propose resolved exact membership without rewriting positions.
+
+The new fixture-001 witness calls the built oracle `cerb_util` classifier and
+the built Lean suffix classifier on the fixture's actual header spelling.
+It checks the unprefixed spelling as an oracle-positive control and runs
+both complete drivers on fixture 001 at the relative runtime. The program
+has no UB: its equal execution result is a control, not evidence of equal
+classification or equal UB-location selection.
+
+### P2-2 — linked library/user round trip
+
+`CoreQuoteCompare.original` now has an independent `linked` mode: load the
+library first, carry its returned supply into every user frontend call,
+cons each TU onto the library list, then call `link` and `convert_file`.
+Metadata and user inputs are separate arguments. No printer operation builds
+the expected value. `--libc --module PATH --input JSON ...` checks an external
+linked module with the canonical metadata; repeated inputs retain driver
+argument order. `--libc` without `--module` runs both the standalone library
+and fixture 001 linked to it. Standalone `--libc --module PATH` still checks
+the pinned library literal.
+
+Re-traced the library's construction, all nine map fields through
+`link_aux` and its reverse-cons fold, and every conversion field. The linked
+syntax vector in field order is **L,S,S,I,L,E,L,N,N**:
+`tagDefs, enumDefs, stdlib, impl0, funs, extern, funinfo, loop_attributes1,
+visible_objects_env0`. The canonical library's tagDefs/funs/funinfo have outer `.mk L` and are the
+final left union operands; an outer `.mk` would still win with an empty tree.
+`libcMapFromAssoc` starts at `.empty`, so an empty association list would
+remain `.empty`; the canonical metadata/dump supplies entries for all three. Its enum/Nat
+fields are `.empty`, so TU S/N wins when present; stdlib/impl are shared S/I;
+extern is rebuilt by E insertion. The test skips only a literal `.empty`,
+whose outer constructor the whole-file comparison independently checks.
+S/O/L remain distinct syntax, never reduced into interchangeable comparators.
+This agrees with the verified D0 table; no additional producer or union-path
+difference was found. The rebase changes none of the audited construction
+sources (`Main`, `CoreParser`, translation/effects, linking/conversion, or the
+unused typing/rewrite/sequentialise producers); both original run points and
+F1/F2 remain as recorded. Relevant checked sites: `Core_linking.lean:444-496`
+(`safe_map_union`, every `link_aux` field, fold); `Core_run_aux.lean:931-952`
+(`convert_file`); `LemLib.lean:1271-1274` (outer-constructor union).
+Current driver anchors are `Main.lean:46,61` (shared stdlib/impl), `:256`
+(libc insertion fold), `:793` (loadLibc), `:1163-1205` (library-first supply
+and reverse-cons origin/file accumulation), and `:1257` (conversion).
+
+### P3 and driver refusal
+
+The rebase table above preserves historical measurement identities and maps
+D0–D4 to the committed series; the consumer note uses the new base and D0.
+Tier B probes GNU `time` on PATH (`gtime`, then `time`) before doing work and
+fails with a named prerequisite message if neither is GNU. LADDER row 13
+and the boundary entry declare this dependency.
+
+The printer retains its ten panic-class indexing/update sites under the
+explicit instrument-only exemption in VALIDATION §3, beside the partial
+definitions. The allocation/post-order/bounds invariants, native abort setting
+and kernel-transparent panic are stated there. This is the P3 alternative
+chosen after F12; no theorem or failure-reach gate/register change was added.
+
+`--quote-core` with `--libc` and no user TU now refuses with exit 2 and names
+`--quote-libc` as the standalone operation. The Tier B test checks the refusal
+and absence of output before loading the large literals.
+
+### F11 — linked replay exposed the test alias lifetime
+
+The first expanded Tier B row failed (exit 1): standalone libc and linked
+fixture 001 both elaborated and passed representation/comparator/auxiliary
+BEq comparison, but `leanchecker LinkedLiteral` raised a too-many-symbolic-links
+exception. Libc's preceding cwd control had left `root-alias` beneath the
+scratch module search root; replay recursively followed it back into that
+root. This is a test orchestration failure, not a passing replay or a changed
+execution baseline. The failed row took 334.90 s, 14,889,816 KB peak RSS.
+
+Before editing or rebuilding, the dirty source tree including untracked draft
+58 was preserved at `refs/snapshots/core-quote-d5-checker-symlink-20261020`,
+commit `f3492ddbc4a2a7dbf9d357dd901143c8894d05aa`; branches and the normal
+index were unchanged. [AGENT 2026-10-20] Scope the alias to its byte-comparison
+control and unlink it in `finally`, including failures, before any subsequent
+kernel replay. Re-run the expanded row and consumer interface; do not weaken
+replay, move the literal pin or keep recovery artifacts after successful repair.
+Removing the failed run's alias made replay of the same elaborated
+`LinkedLiteral` succeed immediately (exit 0); no literal or environment
+artifact was rebuilt for that diagnostic.
+
+### F12 — the attempted failure wrappers lack census owners
+
+The first D5 Tier A run **failed A1** after 657.2 s. The failure-reach
+self-test reported both proposed quotation `failwithI` sites as
+`UNRESOLVED-OWNER`, not as established non-exec sites. Its environment
+(`tests/failure-probes/FailureReach.lean`) does not import `CerbQuote`; its
+compiler-range ownership rule therefore cannot identify those declarations.
+Making the helpers public would not supply the missing module environment.
+The earlier focused build had also caught a namespace typo in those helpers
+(`LemLib.failwithI` instead of `failwithI`), corrected before this failed gate.
+
+Stopped the owned release runner after A1 failed. By termination A2 had
+passed and A3 was interrupted. Before editing or rebuilding, preserved all dirty sources and untracked draft 58 at
+`refs/snapshots/core-quote-d5-tier-a-20261020`, commit
+`5d8e736c52f6f1b6d605924300c3d20d8cc5d3cb`, without changing a branch or the
+normal index. This was an interrupted, failed partial run, not Tier A success.
+Its report retained unchanged source and complete selection:
+
+```text
+fast: incomplete; 1/19 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+[AGENT 2026-10-20] Use P3's expressly permitted indexing exemption rather
+than expand the failure-reach tool's import surface outside the D5 fence.
+Restore the accepted printer's original access code; document all ten sites
+and their source-level invariants beside its partial definitions, including
+native abort and kernel transparency. The trust-surface gate and register
+remain intact. Rebuild, run the focused failure-reach check and the expanded
+Tier B row, then repeat all of Tier A on the final implementation. The recovery
+refs are disposable once those checks complete and the fix is committed.
+
+### D5 verification
+
+The focused build (`make lean-prelude-src`, then capped
+`lake build cerberus-lean core-quote-test`) passed, 530 jobs. No warning in
+CerbQuote or the Core quotation test files; the existing out-of-scope warning
+ownership remains as in F6, without suppression. The runtime witness/selftest
+passed all 19 witnesses, catching both stub plants. Its measured divergence:
+
+```text
+check_runtime_resolution: fixture-001 --runtime=_build/install/default: 154 ./-prefixed header positions; oracle library=false; port library=true; oracle without ./=true (declared divergence)
+```
+
+Both actual drivers returned the same complete `Defined` line with
+`Specified(42)` for this fixture. Missing-tool and non-GNU-version plants
+both gave exit 2 with `Core quote prerequisite: GNU time is required`.
+
+The focused first-fixture round trip and all mutation/local controls passed,
+including the same-head/different-instance comparator rejection, NaN refusal,
+and canonical cwd controls. The separately converted libc round trip passed
+with the unchanged SHA-256
+`30bdb3f5db037b5a63a3deaa24cba27f289bd7841770d1e1ebff43699dcbfe06`.
+
+The external linked-module invocation passed:
+
+```sh
+./scripts/capped lean_frontend/.lake/build/bin/core-quote-test --fuel 1000000 \
+  --libc --module .tmp/core-quote-d5/Linked.lean \
+  --input tests/fixtures/001-return-literal/cabs.json
+```
+
+The input was the unmodified 33,187,748-byte flag-written module, copied from
+the first row's disposable scratch before its removal. It passed independent
+elaboration, whole-file representation, exact comparator syntax, auxiliary
+BEq, both-position-path census, alias byte comparison and wrong-cwd refusal.
+Whole consumer command: **159.32 s, 14,891,192 KB peak RSS, exit 0**;
+elaboration alone: 146.41 s at the same peak; comparison: 5.10 s. Its census
+is 234 distinct model constructors, 28 floating leaves, 0 NaNs, 0 memory
+values, 15,652 positions and 0 absolute position paths.
+
+```text
+LinkedLiteral leanchecker: 1.97 seconds; 825744 KB peak RSS; exit 0
+```
+
+[AGENT 2026-10-20] Keep the linked round trip beside standalone libc in Tier B
+row 13: the measured elaboration cost is libc-sized. Row 1 retains the fixture,
+corpus and user-only multi-TU checks. The cost is a speedbump measurement, not
+a new resource gate. The GNU-time dependency and both replay module names
+are declared in LADDER and VALIDATION. No theorem, axiom, native_decide,
+unsafe declaration, extern seam or resource-limit increase was added.
+
+The replacement `scripts/test_unit.sh --core-quote-libc` run passed, exit 0,
+**297.79 s, 14,895,476 KB peak RSS**. Both standalone and linked literals
+passed alias determinism and the convention-naming exit-2/no-output refusal.
+The two-case census is 234 distinct model constructors, 56 floating leaves,
+0 NaNs, 0 memory values, 31,238 positions and 0 absolute position paths.
+Named replay gates, against independently elaborated literals with no plugin:
+
+```text
+LibcLiteral leanchecker: 1.86 seconds; 825628 KB peak RSS; exit 0
+LinkedLiteral leanchecker: 1.88 seconds; 825816 KB peak RSS; exit 0
+CORE_QUOTE_TOTAL inputs=2; model constructors=234; floating=56; NaN=0; memory-values=0; positions=31238; absolute-paths=0
+Core quote round trip: PASS (whole-file representation, comparator syntax, auxiliary BEq)
+Total: 1 passed, 0 failed
+```
+
+The replacement row's libc elaboration took 138.27 s and its linked
+elaboration 130.04 s. The external consumer measurement above is retained
+as the consumer-shaped cost; ordinary run-to-run timing variation changes
+neither gate outcomes nor the committed pin. F11's failed scratch directory
+was removed after its diagnostic replay; the recovery ref is removed at D5
+close-out once its preservation purpose has been served.
+
+The successful measurements above precede the F12 indexing-exemption
+resolution; final-code results follow below.
+
+After restoring the accepted indexing implementation, the focused build passed
+(530 jobs), and `scripts/check_failure_reach.sh --selftest` passed: eight
+plants, seven classifier witnesses, K1/R1 ownership witnesses, and the actual
+register check (239 sites exactly, 0 DISCARDABLE, no position-class change).
+No gate, register or allowlist was changed to obtain this result.
+
+Final-code Tier B row 13 (`scripts/test_unit.sh --core-quote-libc`) passed:
+**321.41 s, 14,894,212 KB peak RSS, exit 0**. Standalone and linked modules
+both passed whole-file/comparator/auxiliary checks, the absolute-position
+census, alias byte equality and the convention-naming exit-2/no-output
+control; the libc-only program refusal also passed. The libc pin is unchanged.
+Final-code named kernel gates, with no test plugin:
+
+```text
+LibcLiteral leanchecker: 1.94 seconds; 825808 KB peak RSS; exit 0
+LinkedLiteral leanchecker: 2.01 seconds; 826336 KB peak RSS; exit 0
+CORE_QUOTE_TOTAL inputs=2; model constructors=234; floating=56; NaN=0; memory-values=0; positions=31238; absolute-paths=0
+Core quote round trip: PASS (whole-file representation, comparator syntax, auxiliary BEq)
+Total: 1 passed, 0 failed
+```
+
+### Final D5 gate and close-out
+
+Final Tier A ran 2026-10-20 **07:29:52–07:53:17 UTC**, process exit 0:
+
+```sh
+python3 scripts/release.py --mode fast --out .tmp/core-quote-d5/fast-final
+```
+
+The shell-local environment set `CERB_MEM_MAX=48G` and
+`LEAN_ABORT_ON_PANIC=1`; `make lean-prelude-src` preceded the capped runner.
+All nineteen lane exit statuses were 0, containment was cleaned for every
+lane, the source was unchanged, selection was complete, and the report had
+no artifact issues. Exact release summary:
+
+```text
+fast: passed; 19/19 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+Row 1 passed 20/20 executables and all its trust checks, including the unchanged
+239-row failure-reach register and the new runtime-classification witness.
+All 27 fixture/corpus/user-only multi-TU comparisons passed. The libc execution
+lane retained all 43 baseline cases; libxml2 URI retained all 16 cases and
+lane expectations. No execution baseline, literal hash pin, generated type,
+comparator construction, parser or stored position label changed.
+
+The final required population is 29 round trips (27 user-only, standalone
+libc, linked libc + fixture 001): **248 distinct model constructors, 56
+floating leaves, 0 NaNs, 0 memory values, 8,540,800 positions, 0 absolute
+position paths**. Containers: 100 `Fmap.empty`, 161 `Fmap.mk`, 7,292
+`Pmap.Node`, 7,453 `Pmap.Empty`, 66,207 `Pset.Empty`, 0 `Pset.Node`,
+15,449,289 `List.cons`, 23,833,703 `List.nil`. Unobserved memory values and
+nonempty Psets remain supported by the complete visitor/printer inventory.
+Required-input construct refusals: 0; the separate NaN control still refuses
+by name. The external linked-module check and final-code Tier B row/replays
+are quoted above. D4's full A+B run remains historical; D5 ran the requested
+complete Tier A and the changed Tier B row, not a new full A+B campaign.
+
+Both D5 recovery refs were removed with their expected object IDs after the
+repairs and final checks served their preservation purpose:
+`refs/snapshots/core-quote-d5-checker-symlink-20261020` and
+`refs/snapshots/core-quote-d5-tier-a-20261020`. The D3 recovery ref requested
+removed at D4 remains absent. Disposable D5 literals, traces, build/gate logs,
+probe binaries and owned scratch directories are removed at close-out; the
+conclusions and reproduction commands are retained here. The active worktree
+and its build remain available for the fresh audit. After the gates, only
+result/coverage/close-out documentation and disposable artifacts changed.
+The single D5 commit records the verified checks; no merge or push was made.

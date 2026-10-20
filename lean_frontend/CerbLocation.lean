@@ -256,7 +256,7 @@ def isLibraryPathSuffix (path : String) : Bool :=
     This function is a pure `target_rep` called from generated code, and the
     runtime root is a property of the driver invocation, so the function
     tests the directory SUFFIX (`isLibraryPathSuffix`) instead of the exact
-    directory. The two tests agree on every input the driver ACCEPTS (bug
+    directory. The original guard made the tests agree on accepted inputs (bug
     hunt BUG-3, `docs/2026-09-29_discrepancy-bug-hunt.md`; fixed 2026-09-29,
     record `docs/2026-09-29_bug-hunt-fixes-record.md` §S2):
     - exact ⇒ suffix: the runtime `Main.resolveRuntime` builds always ends in
@@ -271,7 +271,16 @@ def isLibraryPathSuffix (path : String) : Bool :=
       as `<runtime>/libcore/std.core` and `<runtime>/libcore/impls/….impl`
       (exact by construction). The `--libc` dump's bodies carry no file
       (`CoreParser.parseFile` erases their positions; recorded Z1-A1).
-    This retires the earlier documented residual Z-67 (a user file under a
+    Core quotation D2b subsequently changed the guard to RESOLVED membership
+    ([USER 2026-10-19], Main.refuseLibraryLocations). Thus the retirement below
+    is conditional on literal spellings agreeing, as in the lanes' absolute
+    runtime invocations. Under --runtime=_build/install/default, cpp's
+    ./_build/... header positions pass the port's suffix/resolved tests but
+    fail the oracle's literal test (util/cerb_location.ml:512-523): served
+    UB-location selection can differ. Quotation preserves the labels unchanged.
+    scripts/check_runtime_resolution.sh measures fixture 001's disagreement;
+    upstream-tray draft 58 records the oracle issue.
+    The original guard retired the earlier residual Z-67 (a user file under a
     directory literally named `runtime/libcore` was library-classified by
     Lean and not by the oracle; the witness now refuses) FOR THE DRIVER ONLY.
     An in-process consumer that calls `CabsImport.parseJson` and this
