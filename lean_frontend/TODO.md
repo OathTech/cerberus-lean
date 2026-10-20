@@ -221,6 +221,26 @@ the outcome protocol; [USER 2026-10-20]); all three have landed, so the queue is
   `docs/2026-10-04_real-c-reach-census.md` (M1) is corrected from "statement expressions are supported" to "supported
   unless the block contains an assignment, `++` or `if` statement".
 
+- **Cerberus merge-base bump b9aeedcb4 (2026-08-13) → upstream/master.** Scoped
+  2026-10-20 (`docs/2026-10-20_merge-base-bump-scoping-record.md`): 46 upstream
+  commits (16 semantic fixes incl. the closures of tray 01/04/15/33/41, 12
+  refactors, 3 removals, the CN parser split); 34 files conflict with the fork
+  in a dry-run merge, concentrated where the fork's supply/top/digest/reader
+  threading meets upstream's elaboration environment, Tags removal and
+  `Config`. [USER 2026-10-20] decided to do the bump as a staged arc after the
+  cerberus-caesium deliveries (Core quoting, inner_arg_temps, the outcome
+  protocol). [AGENT 2026-10-20, scoping] recommends stage 1 to `c3ff8c53f`
+  (2026-09-30; 11 conflicted files, 11 of the 16 fixes, ~10–12 worker-days +
+  audit) and stage 2 to the tip (~15–19 worker-days + audit), each a true
+  merge on its arc branch landed ff-only; cherry-picking the fixes alone costs
+  about the same with no base movement. Blockers before the first build: the
+  new upstream opam dependency `monomorphic 2.1.0` (operator, network). The
+  record's §10 lists ten operator questions (merge commits on the arc branch,
+  the tagDefs-reader retirement, `Config` as the run-parameter carrier, the
+  stage cuts, consumer timing, the new `branching_on_unspec_is_nd` switch).
+  Meanwhile the `inner_arg_temps` slice backports f10329b44 (and, pending a
+  ruling, 3230aa494), both zero-conflict.
+
 ## Semantics-audit repairs (2026-09-11) — RESOLVED findings and the rows they leave
 
 Record `docs/2026-09-11_semantics-audit-repairs-record.md`; charter
