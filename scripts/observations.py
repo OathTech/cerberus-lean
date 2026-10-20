@@ -354,6 +354,411 @@ def parse(stdout: bytes, stderr: bytes = b'', status: int | None = None,
     return obs
 
 
+# Outcome protocol v1 (design-v2 §2). This additive API does not change any
+# legacy lane policy. Host resource evidence and ordinary comparison stay with
+# the caller. Positions below are one-based lines and zero-based byte offsets.
+STOP_PREFIX = b'cerberus-lean stop '
+STOP_RESERVED = b'cerberus-lean stop'
+STOP_BOUNDARIES = frozenset((
+    'fs', 'pnvi', 'switches', 'concurrency', 'float-format', 'cli', 'runtime',
+    'library-location', 'cabs-json-utf8', 'batch-ub-payload', 'abort-flag',
+    'fuel-arg', 'address-space-arg'))
+STOP_PANIC = re.compile(rb'PANIC at _private\.LemLib\.0\.failwithIImpl '
+                        rb'LemLib:[1-9][0-9]*:[1-9][0-9]*: (.*)')
+STOP_ABORT_WRAPPER = re.compile(
+    rb'(?:[^\r\n]*/)?scripts/capped: line [0-9]+: +[0-9]+ '
+    rb'Aborted(?: +\(core dumped\))? +"\$@"')
+CORE_DUMP = b'timeout: the monitored command dumped core'
+FUEL_PAYLOAD = b'lem: fuel exhausted'
+
+
+@dataclass(frozen=True)
+class Upstream:
+    repository: str
+    revision: str
+    path: str
+    # Canonical PosText, kept as text to avoid machine-size / digit-count limits.
+    first: str
+    last: str
+    text: str
+
+
+@dataclass(frozen=True)
+class Tray:
+    state: str
+    number: str | None = None
+    url: str | None = None
+
+
+@dataclass(frozen=True)
+class Refusal:
+    boundary: str
+    item: str | None
+    detail: str
+    mover: str
+    upstream: Upstream | None
+    see: str | None
+
+    @property
+    def kind(self) -> str:
+        return 'REFUSAL'
+
+
+@dataclass(frozen=True)
+class UpstreamCrash:
+    site: str
+    detail: str
+    upstream: Upstream
+    tray: Tray
+    see: str | None
+
+    @property
+    def kind(self) -> str:
+        return 'UPSTREAM_CRASH'
+
+
+@dataclass(frozen=True)
+class Invariant:
+    site: str
+    detail: str
+    see: str
+
+    @property
+    def kind(self) -> str:
+        return 'INVARIANT'
+
+
+Stop = Refusal | UpstreamCrash | Invariant
+
+
+def _stop_text(value, nonempty=False) -> str:
+    if not isinstance(value, str) or (nonempty and not value):
+        raise ProtocolError('expected ' + ('nonempty ' if nonempty else '') + 'string')
+    return value
+
+
+def _stop_optional(value, parse):
+    return None if value is None else parse(value)
+
+
+def _stop_positive(value) -> str:
+    value = _stop_text(value)
+    if not re.fullmatch(r'[1-9][0-9]*', value):
+        raise ProtocolError('expected canonical positive decimal string')
+    return value
+
+
+def _stop_upstream(value) -> Upstream:
+    if not isinstance(value, list) or len(value) != 6:
+        raise ProtocolError('expected six-field upstream tuple')
+    repo, revision, path, first, last, text = map(_stop_text, value)
+    if repo not in ('cerberus', 'lem'):
+        raise ProtocolError('unknown upstream repository')
+    if not re.fullmatch(r'[0-9a-f]{40}', revision):
+        raise ProtocolError('invalid full revision')
+    if any(part in ('', '.', '..') for part in path.split('/')):
+        raise ProtocolError('invalid repository-relative path')
+    _stop_positive(first)
+    _stop_positive(last)
+    if (len(first), first) > (len(last), last):
+        raise ProtocolError('invalid source line range')
+    return Upstream(repo, revision, path, first, last, text)
+
+
+def _stop_https(url: str) -> bool:
+    return (url.startswith('https://') and bool(re.split(r'[/\?#]', url[8:])[0])
+            and all(ord(c) > 32 and ord(c) != 127 and c != '\\' for c in url))
+
+
+def _stop_tray(value) -> Tray:
+    if value == ['none'] or value == ['pending']:
+        return Tray(value[0])
+    if isinstance(value, list) and len(value) == 2:
+        state, data = value
+        if state == 'draft':
+            return Tray(state, number=_stop_positive(data))
+        if state == 'filed' and _stop_https(_stop_text(data)):
+            return Tray(state, url=data)
+    raise ProtocolError('unknown tray, invalid HTTPS URL or tuple shape')
+
+
+def _stop_escapes(body: str) -> None:
+    """Validate escape tokens before the stock parser can normalize them."""
+    i = 0
+    while i < len(body):
+        c = body[i]
+        if c in '\r\n':
+            raise ProtocolError('raw line break in stop JSON')
+        if c == '\\':
+            i += 1
+            if i == len(body):
+                raise ProtocolError('truncated JSON escape')
+            if body[i] == 'u':
+                digits = body[i + 1:i + 5]
+                if not re.fullmatch(r'00[01][0-9a-fA-F]', digits):
+                    raise ProtocolError('wire Unicode escape must encode U+0000–U+001F')
+                i += 4
+            elif body[i] not in '"\\/bfnrt':
+                raise ProtocolError('invalid JSON escape')
+        i += 1
+
+
+def parse_stop(payload: bytes) -> Stop | None:
+    """None means absent; a malformed reserved envelope raises ProtocolError.
+
+    Call only at a stop position, never on a program-data or ordinary Error field.
+    The capture decoder below retains errors instead of raising away a collection.
+    """
+    if not payload.startswith(STOP_RESERVED):
+        return None
+    if not payload.startswith(STOP_PREFIX):
+        raise ProtocolError('invalid reserved-prefix suffix')
+    try:
+        body = payload[len(STOP_PREFIX):].decode('utf-8', errors='strict')
+        _stop_escapes(body)
+        value = json.loads(body)
+    except (UnicodeError, ValueError, RecursionError) as error:
+        raise ProtocolError(f'malformed stop JSON: {error}') from error
+    if not isinstance(value, list) or len(value) < 2 or value[0] != '1':
+        raise ProtocolError('unknown version or non-array stop')
+    required = lambda v: _stop_text(v, nonempty=True)
+    if value[1] == 'REFUSAL' and len(value) == 8:
+        _, _, boundary, item, detail, mover, upstream, see = value
+        boundary = _stop_text(boundary)
+        if boundary not in STOP_BOUNDARIES:
+            raise ProtocolError('unknown boundary')
+        return Refusal(boundary, _stop_optional(item, _stop_text), required(detail),
+                       required(mover), _stop_optional(upstream, _stop_upstream),
+                       _stop_optional(see, required))
+    if value[1] == 'UPSTREAM_CRASH' and len(value) == 7:
+        _, _, site, detail, upstream, tray, see = value
+        return UpstreamCrash(required(site), required(detail), _stop_upstream(upstream),
+                             _stop_tray(tray), _stop_optional(see, required))
+    if value[1] == 'INVARIANT' and len(value) == 5:
+        return Invariant(*map(required, value[2:]))
+    raise ProtocolError('unknown constructor or tuple shape')
+
+
+@dataclass(frozen=True)
+class SourcePosition:
+    line: int
+    offset: int
+
+
+@dataclass(frozen=True)
+class StopOccurrence:
+    channel: str
+    execution: int | None
+    position: SourcePosition
+    stop: Stop
+
+
+@dataclass(frozen=True)
+class LegacyPanic:
+    payload: bytes
+    position: SourcePosition
+    # Deliberately no upstream/shared classification.
+
+
+@dataclass(frozen=True)
+class FuelOccurrence:
+    form: str
+    execution: int | None
+    position: SourcePosition
+
+
+@dataclass(frozen=True)
+class StopProblem:
+    channel: str
+    position: SourcePosition
+    reason: str
+
+
+@dataclass
+class StopDecode:
+    stops: list[StopOccurrence]
+    legacy_panics: list[LegacyPanic]
+    fuel: list[FuelOccurrence]
+    problems: list[StopProblem]
+
+
+def _stop_lines(data: bytes):
+    offset = 0
+    chunks = data.split(b'\n')
+    for number, line in enumerate(chunks, 1):
+        complete = number < len(chunks)
+        if complete or line:
+            yield line, SourcePosition(number, offset), complete
+        offset += len(line) + 1
+
+
+def decode_stop(stdout: bytes, stderr: bytes, status: int) -> StopDecode:
+    """Decode every complete emitted stop, retaining metadata beside problems.
+
+    This is not a completion or comparison predicate. Inspect every collection,
+    then use the existing ordinary-observation checks. No host cause is inferred.
+    Order is stdout record order, then stderr record order; no chronology between
+    separate streams can be reconstructed. Original captures remain with callers.
+    """
+    result = StopDecode([], [], [], [])
+
+    def problem(channel, position, reason):
+        result.problems.append(StopProblem(channel, position, reason))
+
+    def envelope(payload, channel, execution, position):
+        try:
+            stop = parse_stop(payload)
+        except ProtocolError as error:
+            problem(channel, position, str(error))
+            return None
+        if stop is None:
+            problem(channel, position, 'missing stop envelope')
+        else:
+            result.stops.append(StopOccurrence(channel, execution, position, stop))
+        return stop
+
+    origin = SourcePosition(1, 0)
+    headers = records = 0
+    pending = False
+    current = None
+    first_kind = None
+    for line, position, complete in _stop_lines(stdout):
+        if not complete:
+            problem('stdout', position, 'truncated record (missing LF)')
+            continue
+        if b'\x00' in line or b'\x1b' in line or b'\r' in line:
+            problem('stdout', position, 'raw NUL, ANSI or CR in framing')
+        if not line:
+            problem('stdout', position, 'empty line outside batch framing')
+            continue
+        header = HEADER.fullmatch(line)
+        if header:
+            if pending or records != headers or header[1] != str(headers).encode('ascii'):
+                problem('stdout', position, 'invalid/missing execution framing')
+            # Preserve even a wrong explicit index; do not use int(text)'s
+            # interpreter-specific digit-count limit as a protocol rule.
+            current = 0
+            for digit in header[1]:
+                current = current * 10 + digit - ord('0')
+            headers += 1
+            pending = True
+            continue
+        if (headers and not pending) or (not headers and records):
+            problem('stdout', position, 'record without its execution header')
+        execution = current if headers else 0
+        d, u, e = DEFINED.fullmatch(line), UNDEFINED.fullmatch(line), ERROR.fullmatch(line)
+        f = MODEL_FAILURE.fullmatch(line)
+        kind = None
+        try:
+            if d:
+                unescape(d[2]); unescape(d[3])
+                kind = 'Defined'
+            elif u:
+                unescape(u[2])
+                kind = 'Undefined'
+            elif e:
+                kind = 'Error'
+                if e[1] == FUEL_PAYLOAD:
+                    result.fuel.append(FuelOccurrence('kill', execution, position))
+            elif f:
+                kind = 'ModelFailure'
+                stop = envelope(unescape(f[1]), 'model-failure', execution, position)
+                if isinstance(stop, Refusal):
+                    problem('model-failure', position, 'REFUSAL is not a typed-kill class')
+            else:
+                problem('stdout', position, 'unknown or malformed batch record')
+        except ProtocolError as error:
+            problem('stdout', position, str(error))
+        if kind:
+            first_kind = first_kind or kind
+            records += 1
+        pending = False
+    if stdout:
+        if not records or pending or (headers and (headers != records or headers < 2)):
+            problem('stdout', origin, 'empty/truncated or invalid batch framing')
+        if not headers and records != 1:
+            problem('stdout', origin, 'missing multi-execution framing')
+        expected = int(records == 1 and first_kind != 'Defined')
+        if type(status) is not int or status != expected:
+            problem('stdout', origin, f'exit {status} inconsistent with batch; expected {expected}')
+
+    lines = list(_stop_lines(stderr))
+    if lines:
+        for line, position, complete in lines:
+            if not complete:
+                problem('stderr', position, 'truncated diagnostic (missing LF)')
+            if any(c in line for c in (b'\x00', b'\x1b', b'\r')):
+                problem('stderr', position, 'raw NUL, ANSI or CR in framing')
+        head = lines[0][0]
+        panic = STOP_PANIC.fullmatch(head)
+        bare_fuel = head == FUEL_PAYLOAD
+        if panic or bare_fuel:
+            initial_problems = len(result.problems)
+            if stdout:
+                problem('panic', origin, 'panic requires empty stdout')
+            if type(status) is not int or status != 134:
+                problem('panic', origin, 'panic requires exit 134')
+            payload = panic[1] if panic else FUEL_PAYLOAD
+            encoded = payload.startswith(STOP_RESERVED)
+            is_fuel = payload == FUEL_PAYLOAD
+            # Preserve a complete encoded first-line occurrence even with a bad
+            # tail or status. A truncated first line never supplies an occurrence.
+            if encoded and lines[0][2]:
+                envelope(payload, 'panic', None, origin)
+            remaining = lines[1:]
+            continuation = []
+            if not encoded and not is_fuel:
+                while remaining and remaining[0][0] != b'backtrace:':
+                    continuation.append(remaining.pop(0)[0])
+                for line in continuation:
+                    if (line.startswith(STOP_RESERVED) or FATAL.match(line) or
+                            FUEL_RECORD.fullmatch(line) or MODEL_FAILURE.fullmatch(line)):
+                        problem('panic', origin, 'additional fatal/stop/fuel frame inside legacy payload')
+            if remaining and remaining[0][0] == b'backtrace:':
+                remaining.pop(0)
+                frames = 0
+                while remaining and remaining[0][2] and LEAN_FRAME.fullmatch(remaining[0][0]):
+                    remaining.pop(0)
+                    frames += 1
+                if not frames:
+                    problem('panic', origin, 'empty or malformed backtrace')
+            if remaining and remaining[0][0] == CORE_DUMP:
+                remaining.pop(0)
+            if remaining and STOP_ABORT_WRAPPER.fullmatch(remaining[0][0]):
+                remaining.pop(0)
+            for _, position, _ in remaining:
+                problem('panic', position, 'unexpected diagnostic after panic frame')
+            valid_frame = (all(complete and not any(c in line for c in (b'\x00', b'\x1b', b'\r'))
+                               for line, _, complete in lines)
+                           and len(result.problems) == initial_problems)
+            if valid_frame:
+                if is_fuel:
+                    result.fuel.append(FuelOccurrence('translation-panic' if panic else 'bare-panic',
+                                                      None, origin))
+                elif not encoded:
+                    result.legacy_panics.append(LegacyPanic(b'\n'.join([payload] + continuation), origin))
+        else:
+            cli_stops = []
+            for line, position, complete in lines:
+                if not complete:
+                    continue
+                if line.startswith(STOP_RESERVED):
+                    stop = envelope(line, 'cli', None, position)
+                    if stop:
+                        cli_stops.append(stop)
+                else:
+                    problem('stderr', position, 'unrecognized diagnostic or unreviewed panic origin')
+            if cli_stops:
+                if stdout or type(status) is not int or status != 2:
+                    problem('cli', origin, 'CLI stops require empty stdout and exit 2')
+                if not (all(isinstance(s, Refusal) for s in cli_stops) or
+                        (len(cli_stops) == 1 and isinstance(cli_stops[0], Invariant))):
+                    problem('cli', origin, 'CLI requires refusals only or one invariant')
+    if not stdout and not stderr:
+        problem('capture', origin, 'unrecognized/truncated capture')
+    return result
+
+
 def load_capture(prefix: str, policy: str = 'batch') -> Observation:
     path = Path(prefix)
     if Path(str(path) + '.capture-error').exists():

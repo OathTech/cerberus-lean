@@ -19,6 +19,7 @@ import Symbol
 import Mem_common
 import Nondeterminism
 import CerbFail
+import CerbStop
 import CerbTags
 import CerberusImpl
 import CerbFloat
@@ -2253,6 +2254,15 @@ abbrev memM (a : Type) := ndM a String mem_error (mem_constraint IntegerValue) M
 
 /-- An intentional model stop, distinct from modeled memory errors. -/
 def failStopMem {a : Type} (msg : String) : memM a := CerbFail.failStopND msg
+
+/-- Attributed typed kill: a refusal cannot enter this adapter. -/
+def stopMem {a : Type} (stop : CerbStop.Failure) : memM a :=
+  failStopMem (CerbStop.render stop.toStop)
+
+/-- Structured refusal at the existing monadic panic boundary. Pure producers
+keep their own visible `failwithI (CerbStop.render ...)` leaf. -/
+def refuseM {a : Type} (refusal : CerbStop.Refusal) : memM a :=
+  failwithI (CerbStop.render (.refusal refusal))
 
 /-- A PNVI refusal (`pnviRefusal`) ascribed at the memory MONAD, for the refusals that sit
     inside an `ND fun st => …` body (R-PNVI-08, R-PNVI-10; PNVI arc S4 Part 1, the S3

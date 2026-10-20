@@ -189,7 +189,7 @@ roots = [
   "CerbFuel",
   "CerbFail",
   "CerbFailProofs",
-  "CerbNDFuelProofs", "CerbEscape",
+  "CerbNDFuelProofs", "CerbEscape", "CerbStop",
   "CerbConcurrency",
   "CerbCtypeInstances",
   "CerbStepInstances",
@@ -304,6 +304,12 @@ supportInterpreter = true
 name = "monadic-failstop-test"
 srcDir = "test"
 root = "Unit.MonadicFailstop"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "stop-test"
+srcDir = "test"
+root = "Unit.StopTest"
 moreLinkArgs = ["native/md5.o"]
 
 # allocator soundness (upstream-tray draft 44, remedy 1 landed 2026-09-16): the

@@ -25,6 +25,7 @@ UNIT_TESTS=(
     # main reports success; its cone is probed by check_theorem_axioms.sh
     "fuel-exemplar-test"
     "monadic-failstop-test"
+    "stop-test"
     # allocator soundness (upstream-tray draft 44, 2026-09-16): the four draft-44
     # states on the actual CerbMem.allocator; its import compiles the kernel theorem
     "allocator-soundness-test"
@@ -195,6 +196,10 @@ if ! "$(dirname "$PURITY_SH")/test_gcc_capture.sh"; then
 fi
 if ! python3 "$(dirname "$PURITY_SH")/test_observations.py"; then
     echo "test_unit: observation codec/capture plants FAILED"
+    exit 1
+fi
+if ! python3 "$PROJECT_ROOT/scripts/test_stops.py" --lean-bin "$PROJECT_ROOT/lean_frontend/.lake/build/bin/stop-test"; then
+    echo "test_unit: outcome protocol codec/adapter tests FAILED"
     exit 1
 fi
 if ! python3 "$(dirname "$PURITY_SH")/test_capture_prerequisites.py"; then

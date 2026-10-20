@@ -1,4 +1,4 @@
-# Codex charter — the outcome protocol, checkpoints A–E (design v2 revision 3; cerberus-caesium note 2 §A–§C) (2026-10-18; rev 5 of 2026-10-20 replaces the S1–S2 form)
+# Codex charter — the outcome protocol, checkpoints A–E (design v2 revision 3; cerberus-caesium note 2 §A–§C) (2026-10-18; rev 6 of 2026-10-20, checkpoint-A dispositions)
 
 **Status: DISPATCH-READY on the operator's go.** The design is
 `docs/2026-10-20_outcome-protocol-design-v2.md` at revision 3 (commit `a2622309b` on
@@ -26,6 +26,10 @@ validation apparatus beyond that; v2 §9 lists the deferred work with the findin
 item addressed and why deferral is sound.
 
 **Rulings (paraphrased, tagged):**
+- [AGENT 2026-10-20, orchestrator disposition relayed by the operator] The
+  checkpoint-A dispositions are recorded in the outcome-protocol record A.6.
+  This revision corrects the Q7 summary below and includes `scripts/test_unit.sh`
+  in the fence; the implementation proceeds under those dispositions.
 - [USER 2026-10-20] v1 is withdrawn as the fact table; v2 (revision 3) is the design.
   Delivery is operational now: the ModelFailure sentinel collision and the pure-abort
   runtime boundary are stated limits (v2 §1.2); the structural-outcome arc stays their
@@ -48,7 +52,8 @@ item addressed and why deferral is sound.
   semantic kill; usage errors deferred; switch kills through the existing memM panic
   with a structured refusal; the thirteen wire boundaries; the Q-A sweep annotates all
   hand-written mirror/guard sites and keeps the print-then-kill and defined arms;
-  `.unsupported.c` requires an admitted REFUSAL; no new speedbump; stack deferred;
+  the `.unsupported.c` admitted-REFUSAL requirement is deferred per v2 §9;
+  no new speedbump; stack deferred;
   trays cited/drafted with explicit state; CLI invariant exit 2; collections with
   invariants RED; no capture scope change; B–D delivered together).
 - [USER 2026-10-18] gate scheduling: focused checks while developing; Tier A at every
@@ -151,6 +156,7 @@ hand-written sites), `test/Unit/MonadicFailstop.lean`, `test/Unit/ReconstructLeg
 and the statements it depends on, `PnviArmsTest.lean`, the three CLI witness scripts and
 stubs, `scripts/test_fuel_plant.sh`, `scripts/observations.py` and its tests,
 `scripts/pnvi_lane.py`, `scripts/test_immaculate.sh`, `test_observation_lanes.py`,
+`scripts/test_unit.sh` (unit and codec-test registration),
 `scripts/failure_reach_register.txt`, `scripts/check_theorem_axioms.sh`'s entries,
 `CONTRACT.md`, `VALIDATION.md`, `LADDER.md`, records and notes.
 

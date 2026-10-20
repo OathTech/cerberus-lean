@@ -70,6 +70,7 @@ Formatted_lemMeasureProofs.lean
 Driver_lemMeasureProofs.lean
 Monadic_parsing_lemMeasureProofs.lean
 CerbFail.lean
+CerbStop.lean
 CerbFailProofs.lean
 CerbNDFuelProofs.lean
 Translation_lemMeasureProofs.lean

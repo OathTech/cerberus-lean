@@ -7,12 +7,14 @@ Design: revision 3 of `2026-10-20_outcome-protocol-design-v2.md`.
 
 ## A — baseline, inventory and fence
 
-**Status: PARKED before B, under charter §3.** A records the baseline,
+**Status at the A commit: PARKED before B, under charter §3.** A records the baseline,
 measurements, current contracts and proposed per-site dispositions below. The
 charter/design Q7 conflict needs a ruling; the newly identified non-mirror guards
 and inventory/fence omissions need an explicit disposition. No implementation
 has begun. [AGENT 2026-10-20] Do not start B on an inferred resolution or turn
 an unconfirmed upstream attribution into a new production envelope.
+
+The park ended with the dispositions in A.6; checkpoint B is authorized.
 
 This checkpoint changes documentation only. No producer, classifier, reference,
 theorem, baseline, register seal, dependency or pin has been changed. The charter,
@@ -610,3 +612,147 @@ No proof-work estimate or source scan in A establishes a new correctness
 theorem. Sentinel collision, pure-abort behavior, legacy generated failures,
 and the emitted-record limitation remain stated limits owned by the named
 structural-outcome work.
+
+### A.6 Accepted dispositions and continuation
+
+[AGENT 2026-10-20, orchestrator disposition relayed by the operator] Checkpoint A
+is accepted; the seven findings are settled as follows. These replace the
+pending recommendations in A.1 without erasing the original measurements.
+
+| Finding | Disposition for implementation |
+|---|---|
+| 1 | Correct the orchestrator's Q7 summary error: the `.unsupported.c` admitted-REFUSAL policy stays deferred under v2 §9. |
+| 2 | Include all eleven additional pure sites in C, for the measured 122 pure root-seam leaves. |
+| 3 | Classify `CerberusImpl.normalise_aliases`'s enum guard (A-base line 180) as INVARIANT. |
+| 4 | Reconstruct upstream citations at the immutable pinned revision; preserve historical reference strings in their historical instance. |
+| 5 | State the constant-expression mini-run's metadata loss alongside the pure-abort limit in v2 §1.2. No `.lem` change; lost attribution is not inferred. |
+| 6 | Add `scripts/test_unit.sh` to the charter fence for test registration. |
+| 7 | Use INVARIANT for the seven coarse step-equality guards and the ordering guard (A-base line 204); spawn-threads' function-first comparison remains UPSTREAM_CRASH. |
+
+The same relayed disposition includes C's seam hygiene for `CerbTags` (A-base
+line 34): replace the transparent panic with the existing `failwithI` boundary
+and supply its register row. No failure condition or opaque atom is added.
+
+## B — structured codec, adapters and capture decoder
+
+**Status: B complete; focused checks and Tier A passed.** No production producer or
+lane has switched formats. C remains the producer migration; D remains the two
+lane corrections. The register and all existing theorem/census entries are
+unchanged in B.
+
+[AGENT 2026-10-20] Metadata validity is carried by Lean values: nonempty text,
+revision/path/line constraints and tray constraints are checked before a Stop
+can be built. `CerbStop.Failure` excludes refusals from the typed-kill adapter.
+The core owns JSON encoding/decoding and the CLI adapters; `CerbMem.stopMem`
+and `CerbMem.refuseM` connect it to the existing kill/panic mechanisms. Pure
+producers will retain their visible `failwithI` application in C. No opaque
+atom, axiom, new resource class, or fallback class was added.
+
+`scripts/observations.py` now exports `parse_stop` and `decode_stop` alongside
+the unchanged legacy comparison APIs. `parse_stop` returns None for absence
+and raises ProtocolError for a malformed reserved envelope. `decode_stop`
+returns `StopDecode(stops, legacy_panics, fuel, problems)` and retains earlier
+metadata beside later problems. Its dataclasses preserve all constructor fields,
+channel, execution index and source position (one-based line, zero-based byte
+offset). Unheaded batch executions have index 0. Collection order is stdout
+record order followed by stderr record order; separate streams supply no shared
+chronology. Legacy payloads remain bytes and receive no upstream attribution.
+
+No stop scan examines ordinary Error contents or escaped program streams.
+Fuel is recognized only in its three specified positions. Missing LF,
+malformed/duplicate/missing execution framing, wrong channels/statuses, invalid
+escapes and unexpected tails are problems. Complete stops survive those problems;
+their presence does not validate the capture. Host banners and exit statuses
+do not manufacture resource evidence in this API.
+
+### B.1 Wrapper-spacing finding and ruling
+
+The first native conformance run failed two subtests (`pure` and `refuse-m`),
+exit 1. Both actual adapters emitted a valid envelope and exited 134, but Bash
+placed padding between `Aborted` and `(core dumped)` in the final wrapper line.
+The design's original regex allowed exactly one space there. The pure probe's
+verbatim suffix was:
+
+```text
+/home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/outcome-protocol/scripts/capped: line 36: 180302 Aborted                 (core dumped) "$@"
+```
+
+The monadic probe had the same spacing (PID 180773). The diagnostic is emitted
+by Bash around `run_reporting_kills` (`scripts/capped:36–38`), not a new banner
+written by the wrapper. Implementation paused under charter §3 and the mismatch
+was raised before changing the rule.
+
+[USER 2026-10-20] Permit one or more spaces before the optional core-dump marker
+and resume B. Keep the existing terminal position, path alternatives, ordering
+and cardinality restrictions. This changes neither panic origin nor resource
+attribution. V2 §4.1 and the new decoder now use that narrow amendment; the
+legacy `ABORT_WRAPPER` and its callers are unchanged. The focused suite includes
+the padded spelling and rejects tabs, duplicated suffixes and reversed ordering.
+
+### B.2 Focused checks and reproduction
+
+Use the charter environment, sync with `make lean-prelude-src`, and wrap every
+build/probe in `CERB_MEM_MAX=48G scripts/capped` (`../scripts/capped` from the
+Lean package). No dependency, `.lem` source or pin changed.
+
+| Check | Result |
+|---|---|
+| From `lean_frontend`: `lake build stop-test` | Exit 0. |
+| Native `.lake/build/bin/stop-test` | Exit 0: `stop-test: round-trips, absence/malformed and typed adapters passed`. |
+| `python3 scripts/test_stops.py` | Exit 0, 16 Python test methods. |
+| `python3 scripts/test_observations.py` | Exit 0, all 25 existing test methods. |
+| `python3 scripts/test_stops.py --lean-bin lean_frontend/.lake/build/bin/stop-test` | Exit 0, 19 methods after the ruled spacing amendment. Shared corpus: 123 cases (23 valid, 3 absent, 97 malformed), all agree between Lean and Python. |
+| From `lean_frontend`: `lake env leanchecker CerbStop Unit.StopTest CerbMem CerbFailProofs` | Exit 0, no diagnostics. |
+
+The native conformance suite captures both CLI adapters (exit 2), the typed
+adapter's ModelFailure (exit 1), the visible pure `failwithI` application and
+the monadic refusal (both exit 134). It sets `LEAN_ABORT_ON_PANIC=1`, `NO_COLOR=1`
+and `TERM=dumb` and suppresses core-file creation only in its own child process.
+The tests preserve control characters, Unicode, literal escaped backslashes,
+optional empty items, full upstream/tray metadata, duplicate occurrences and
+execution indices. Negative cases cover unknown schemas, objects/duplicate
+fields, invalid Unicode escapes, injection through data, mixed fuel/stops,
+legacy ambiguity, malformed tails and wrong channels/statuses.
+
+Lake's dependency rebuild replays existing generated/dependency warnings;
+neither new module (`CerbStop`, `Unit.StopTest`) emits a warning. No warning
+was suppressed. No existing proof statement changed, no axiom-census entry was
+dropped, and no runtime round-trip test is represented as a general kernel
+theorem about the JSON parsers or the unsafe abort boundary.
+
+Both registration points include the tests: Lake defines `stop-test`, and
+`scripts/test_unit.sh` builds/runs it and the Python conformance suite in Tier A.
+This closes the registration omission identified in A without adding a new
+lane or changing capture infrastructure.
+
+### B.3 Checkpoint gate
+
+After the focused checks and the authorized suffix fix, the complete command
+`CERB_MEM_MAX=48G scripts/capped python3 scripts/release.py --mode fast
+--out .tmp/outcome-protocol-B/tier-a` exited **0**. Verbatim final summary:
+
+```text
+fast: passed; 19/19 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+A1 included the new native and cross-language tests and the existing axiom
+census. The latter retained all seven reconstruction entries and reported:
+
+```text
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+```
+
+The live failure-reach check still reports 239 sealed rows, 237 in the exec
+dependency closure plus two unresolved owners, unchanged position classes,
+zero DISCARDABLE, and reach counts 173 UNREACHABLE-BY-INVARIANT / 44 REACHABLE /
+22 UNKNOWN. The root lexical census is 122 pure and two monadic leaves; the
+second monadic leaf is the new, not-yet-called refusal adapter. No register row
+or baseline was modified. The final PNVI baseline matched all 164 rows.
+
+This is B's checkpoint gate, not completion of the consumer delivery. Tier B
+and the migration/adoption evidence remain scheduled for the later checkpoints.
+Scratch captures/build logs are ephemeral; the committed tests and commands
+above reproduce the evidence. No merge, push, dependency or machine-global
+change was made.

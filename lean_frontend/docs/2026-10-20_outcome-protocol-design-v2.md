@@ -1,7 +1,11 @@
 # Outcome protocol v2 — operational reporting
 
 **Revision 3 — independent-review amendments, 2026-10-20.**
-**Status: proposed design for fresh independent review; no implementation.**
+Implementation clarifications, 2026-10-20: the mini-run loss below is also within
+the emitted-record limitation (checkpoint record A.6); §4.1 admits the observed
+Bash padding before the optional core-dump marker (checkpoint record B).
+**Status: operative design for charter checkpoints A–E.** Implementation status
+is tracked in [the checkpoint record](2026-10-20_outcome-protocol-record.md).
 Author: [AGENT 2026-10-20].
 Initial source/probe base: `e7e9bb427a514b6053865c303c4af512907da75b`, with only the
 design/review/plan documentation added, at branch head `aeac9e722` before this note.
@@ -23,9 +27,9 @@ not as an alternative specification in this file.
 This document defines the proposed contract without requiring v1 or its errata.
 The [independent review](2026-10-19_outcome-protocol-design-review.md) remains the
 record of the twelve findings; §7 disposes of each. The
-[old S1–S2 charter](2026-10-18_codex-charter-outcome-protocol-s1-s2.md) must be
-replaced before implementation dispatch: its file fence, partial delivery,
-unchanged-baseline promise and shared-crash fallback do not describe v2.
+[current charter](2026-10-18_codex-charter-outcome-protocol-s1-s2.md) replaces
+the earlier S1–S2 dispatch with checkpoints A–E and records the operative
+rulings. Its historical file name does not select the withdrawn v1 scope.
 
 ## 1. Scope, guarantees and limits
 
@@ -95,6 +99,15 @@ stop. The decoder cannot recover those un-emitted causes. Reporting every cause
 encountered during evaluation requires execution/producer changes in the named
 structural-outcome arc, not a stronger decoder claim or an added streaming runner
 in this mission. Checkpoint E includes a concrete mixed pure/typed witness.
+
+There is also a consumer before the final batch printer: constant-expression
+evaluation runs `Mini_pipeline.run_const_expr_driver`, then
+`evalConstantExpressionAux` consumes its results. Its catch-all replaces a typed
+Error0 (except its special range-error case) with a generated legacy failure
+(`frontend/model/mini_pipeline.lem:199–218`, checked at checkpoint A's base).
+That loses attributed metadata before emission; no decoder can reconstruct it.
+The resulting envelope-less panic remains legacy/origin-unattributed. Repairing
+that `.lem` path is outside this mission and belongs with the structural mover.
 
 The named mover is the
 [structural-outcome arc](2026-09-16_lean-only-outcomes-implementation-plan.md):
@@ -320,13 +333,16 @@ suffix after an otherwise complete frame: at most one timeout core-dump line,
 then at most one line matching this pattern (full-line match):
 
 ```text
-(?:[^\r\n]*/)?scripts/capped: line [0-9]+: +[0-9]+ Aborted(?: \(core dumped\))? +"\$@"
+(?:[^\r\n]*/)?scripts/capped: line [0-9]+: +[0-9]+ Aborted(?: +\(core dumped\))? +"\$@"
 ```
 
-This extends today's `ABORT_WRAPPER` only with the exact root-relative
+This extends today's `ABORT_WRAPPER` with the exact root-relative
 `scripts/capped` spelling emitted by §8.3's recipe. Absolute/prefixed paths
 retain the existing alternative. The suffix remains terminal, in the stated
 order and cardinality; the extra spelling does not admit arbitrary diagnostics.
+The optional core-dump marker also permits Bash's space padding after `Aborted`,
+as measured by B's native adapter probes. No tabs, arbitrary tail, new wrapper
+path, or extra suffix occurrence is admitted by that spacing amendment.
 
 Never strip arbitrary matching lines from payloads or treat a suffix as OOM or
 timeout evidence. Direct driver captures without wrapper suffixes are also
@@ -448,6 +464,12 @@ standing ladder runs; they are not deadlines or a reduction of required checks.
 | C | **Full producer migration:** nine typed kills; existing pure/monadic and driver refusals; remaining hand-written pure mirrors/guards; twelve config-dead switch refusals. One envelope per switch element, then one exit. Update immediate tests/pins and PNVI/CLI witnesses, including the three fuel CLI assertions; migrate `test/Unit/ReconstructLegacyTest.lean` and its dependent theorems under A's ruled reference contract; reseal the affected hand-written register keys. | 2–4 days; source citations and existing pins dominate |
 | D | The two PNVI/immaculate corrections of §4.3, their focused plants, and only the baseline/diagnostic adjustments those changes actually require. No all-lane adoption. | 0.5–1 day |
 | E | Demonstrate the actual `differential.py` capture shapes and the mixed pure/typed program below against the candidate and supply the patch recipe; complete standing checks and present the candidate for fresh review. | 1 day, plus independent review |
+
+Checkpoint A measured **122 pure root-seam leaves**, including eleven outside
+the existing execution register. All join C's inventory; the checkpoint record
+A.4/A.6 supplies the reviewed per-site dispositions. C also converts CerbTags'
+transparent `panic!` to the existing `failwithI` seam and supplies its register
+row. This does not add an opaque atom or change any failure trigger.
 
 The implementation fence covers CerbStop and its tests, Lake roots/executable
 registration, `handwritten_copy.manifest`, affected hand-written seams and Main;
