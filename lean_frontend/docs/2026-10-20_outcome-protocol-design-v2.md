@@ -1,8 +1,9 @@
 # Outcome protocol v2 — operational reporting
 
-**Status: proposed replacement design, awaiting independent review and the remaining
-dispatch rulings. No implementation is included.** Author: [AGENT 2026-10-20].
-Source/probe base: `e7e9bb427a514b6053865c303c4af512907da75b`, with only the
+**Revision 2 — scope amendment, 2026-10-20.**
+**Status: proposed design for fresh independent review; no implementation.**
+Author: [AGENT 2026-10-20].
+Initial source/probe base: `e7e9bb427a514b6053865c303c4af512907da75b`, with only the
 design/review/plan documentation added, at branch head `aeac9e722` before this note.
 
 [USER 2026-10-20] The accepted review supersedes v1 as an assessment of the design.
@@ -10,9 +11,15 @@ The next delivery is operational reporting with the existing sentinel and pure
 abort limitations disclosed; the structural-outcome work remains their mover.
 V1 is retained as history, not as the specification for dispatch.
 
+[USER 2026-10-20, scope] Delivery is limited to preserving the upstream
+correctness claim and supplying cerberus-caesium with every attributed stop in
+a batch. Broader changes to the validation infrastructure are outside this
+mission. The in-process/sentinel limits and structural mover above still apply.
+
 All proposed interface and policy choices below are **[AGENT 2026-10-20]**.
-They instantiate §§1–4 of the
-[revised mission plan](2026-10-19_outcome-protocol-revised-mission-plan.md).
+The [mission plan](2026-10-19_outcome-protocol-revised-mission-plan.md) is an input;
+this revision narrows its delivery scope. Earlier v2 text is retained in git,
+not as an alternative specification in this file.
 This document defines the proposed contract without requiring v1 or its errata.
 The [independent review](2026-10-19_outcome-protocol-design-review.md) remains the
 record of the twelve findings; §7 disposes of each. The
@@ -35,12 +42,12 @@ make a defect into an allowed fifth outcome.
 | `REFUSAL` | An attributed unsupported boundary and its mover. A refused run is incomplete and never semantic agreement. |
 | `UPSTREAM_CRASH` | A hand-written producer declares a mirrored upstream failure and supplies its source citation. Eligibility for a registered failure comparison still requires the lane's reviewed policy and oracle evidence. |
 | `INVARIANT` | A port invariant failed. This is a defect requiring investigation, including when the oracle also crashes. |
-| `RESOURCE` | Fuel, a witnessed cgroup OOM kill, a witnessed deadline, or the admitted runtime stack failure. Incomplete, never a C behaviour or agreement. |
+| `RESOURCE` | Existing fuel/declared-limit outcomes remain incomplete, never a C behaviour or agreement. This mission decodes the fuel forms; new host and stack classification is deferred (§9). |
 | Legacy panic, origin unattributed | A validated LemLib panic without an outcome envelope. Neither an upstream attribution nor a diagnosis of a semantics defect. |
 | Protocol/supervision problem | Classification cannot establish the required observation. RED; not a permitted semantic outcome. |
 
 Only the three uppercase stop constructors in §2 can be emitted by the new Lean
-builder. RESOURCE is derived from the specified evidence, never from a claimed
+builder. RESOURCE is derived from the existing resource evidence, never from a claimed
 class inside a message. There is no `SHARED_CRASH` fallback. In particular, the
 128 generated register rows remain unmigrated; an envelope-less panic does not
 identify which of them, or which external caller of LemLib, produced it.
@@ -53,10 +60,11 @@ OOM, another stop, or malformed later output.
 ### 1.2 The operational claim
 
 The new stop encoding separates fields and escapes input-derived text on every
-stop channel. Host evidence is captured outside engine text. Classification
-checks the entire capture and does not inspect escaped program stdout/stderr or
-ordinary Error payloads for stop markers. These are operational properties of
-the producer, capture interface and decoder, to be tested on the candidate.
+stop channel. The Python decoder checks the supplied capture for every stop
+and exact fuel frame, without inspecting escaped program stdout/stderr or
+ordinary Error payloads for stop markers. It uses the existing stdout/stderr/
+status inputs and makes no new claim to authenticate host diagnostics. These
+are properties of the producer and decoder, to be tested on the candidate.
 
 Attribution assumes the pinned driver and dependencies, the declared switches
 and runtime, and the documented OCaml Cabs bridge. It is not a theorem about
@@ -85,10 +93,11 @@ change. That dependency remains explicit within the structural work.
 
 ### 1.3 Fixed scope constraints
 
-[USER 2026-10-20, task constraints] This delivery must preserve the Lem sources
-and pinned dependency and must not introduce another opaque sentinel.
-No new failure leaf is proposed. Existing kill types and pure/monadic mechanisms stay. Allocator
-OOM remains the ordinary semantic kill named by `Interface.oomOutcome`; it is
+[AGENT 2026-10-19, orchestrator constraints relayed by the operator]
+This delivery must preserve the `.lem` sources and Lem pin and must not
+introduce a new opaque atom. No new failure leaf is proposed. Existing kill
+types and pure/monadic mechanisms stay. Allocator OOM remains the ordinary
+semantic kill named by `Interface.oomOutcome`; it is
 not host RESOURCE. Ordinary Error, the inherited asm rejection, the fuel value,
 address-space parameter, run digest, enum reader and arity-matcher contracts are
 not redefined. Different ordinary verdicts remain differential findings.
@@ -110,7 +119,8 @@ object already lost them (§8.1). Rejecting duplicates after Lean object parsing
 would be an unenforceable promise. Arrays avoid that problem without a new JSON
 object parser.
 
-These rules apply to the stop, host metadata and machine-report schemas below:
+These rules freeze the stop envelope schema. The Python result is an object
+API, not another wire protocol:
 
 - Only arrays, strings and `null` occur. Objects, JSON numbers and booleans are
   rejected at every depth. Every tuple has exactly the stated length. Extra or
@@ -138,11 +148,9 @@ These rules apply to the stop, host metadata and machine-report schemas below:
   envelope fallback, or trusted class carrying `_malformed` is permitted.
 
 `Text` below is a Unicode string, possibly empty; `Nonempty` excludes empty.
-`B64` is canonical padded RFC 4648 base64 using the standard alphabet, with no
-whitespace, for arbitrary bytes. Empty bytes encode as the empty string. Decode
-and re-encode to check canonical spelling. No replacement decoding of legacy
-bytes. All dynamically supplied fields go through the JSON serializer, never
-string interpolation into JSON syntax.
+Legacy diagnostics remain Python bytes; they need no new serialization here.
+Do not replacement-decode them before classification. All dynamically supplied
+stop fields go through the JSON serializer, never interpolation into JSON syntax.
 
 ### 2.2 Constructor fields
 
@@ -231,451 +239,363 @@ If that arc needs structured origin in its Lem type it must charter that type
 change; v2 does not invent it or promise unchanged String-only signatures. The
 legacy fuel/sentinel decoders retire when WP1 replaces them, per that arc's rule.
 
-## 3. Capture ownership and host evidence
+## 3. Existing capture and resource boundary
 
-### 3.1 Proposed `scripts/capped` interface
+Use the current capture shapes: separate stdout/stderr bytes and the original
+process status, either in memory or in the existing `.stdout`, `.stderr`,
+`.status` files. Do not add capture files, a Host tuple, a new capped mode or a
+new timeout convention. `scripts/capped`, `common.sh` and the capture runner are
+outside the implementation file fence.
 
-The new interface, **not present in this tree yet**, is:
+Restate the existing LADDER/observation-codec rule: **bare exit 137 is RED;
+a positive owned-cgroup `memory.events` `oom_kill` counter is the OOM witness**.
+The counter is read before the group is removed. A positive counter can accompany
+parent exit 0 or 1; zero is not a breach and unavailable is not zero. These are
+existing distinctions, not a new interface. §8.2 records the actual wrapper
+probes. A banner-shaped string supplied by a program is not a kernel counter.
 
-```text
-CERB_MEM_MAX=<bound> scripts/capped --capture-prefix <prefix> --timeout-seconds <N|none> -- <command> <args...>
-```
+`decode_stop` does not infer a host resource cause from 137, 124 or a cap banner.
+The caller retains its existing resource handling and original capture. A host
+failure cannot make an admitted INVARIANT disappear. This does not certify every
+existing caller's resource classifier: §8.4 records a pre-existing PNVI divergence
+from the bare-137 rule. New resource-policy work is not smuggled into this mission.
+Unknown termination stays a failure, not an attributed stop or agreement.
 
-`prefix` is resolved to an absolute path by the wrapper at invocation. The caller
-allocates it inside its existing unique observation run directory. In this mode,
-the bound must be explicitly set to a finite positive size (normalized to bytes)
-or the explicitly declared `none`; `max`/`infinity` and an absent setting are
-configuration errors. This does not authorize an uncapped run contrary to a
-lane's or operator's declared bound. N is positive integer seconds. The ordinary
-`scripts/capped <command>...` interface remains compatible for builds.
+The exact fuel value remains reserved until WP1. Decode it only at these frame
+positions, after identifying the record/frame that owns the bytes:
 
-The wrapper owns these files for one invocation:
-
-| File | Contents / owner |
+| Fuel form | Position and normal status |
 |---|---|
-| `<prefix>.stdout`, `.stderr` | Engine stdout and engine stderr only, byte-for-byte. |
-| `<prefix>.host.stderr` | Wrapper, shell signal and deadline-supervisor diagnostics; engine stderr is redirected separately before execution. |
-| `<prefix>.status` | Runner's original shell status, decimal plus LF, including 128+signal convention; never rewritten into a protocol success code. |
-| `<prefix>.host.json` | Final Host tuple below, written to a temporary file and renamed after finalization. |
-| `<prefix>.command` | The exact argv in the existing shell-escaped diagnostic format; never evaluated to rerun a command. |
-| `<prefix>.capture-error` | In-progress/failure marker, removed only after the capture files and final metadata are complete. |
+| Kill | The entire batch Error message is `lem: fuel exhausted`; preserve its execution index. Existing single/multiple framing gives status 1/0. |
+| Bare panic | First stderr line exactly `lem: fuel exhausted`, followed only by the admitted optional trace and wrapper suffix (§4.1); empty stdout; status 134. |
+| Translation panic | Exact LemLib panic origin/header of §4.1, payload exactly `lem: fuel exhausted`, then the admitted trace/suffix; empty stdout; status 134. |
 
-Reservation is exclusive; any pre-existing member (including temporary metadata)
-is a reused-prefix failure preserving the old capture. A mkdir lock/reservation
-inside the fresh run directory suffices; no persistent registry or cryptographic
-token service is required. The classifier checks the absolute prefix in Host
-against its requested capture and checks `.status` against Host. Missing,
-truncated, stale or contradictory required files are capture problems. An OOM
-that kills the wrapper may prevent final metadata: that is **unexplained or
-incomplete supervision**, never an invented cap witness.
+Do not use `FUEL_RECORD.search(stdout + stderr)` to implement this decoder.
+Fuel-looking lines inside a refusal detail, a legacy panic's continuation or an
+ordinary non-fuel Error are data or malformed framing, not an independent fuel
+cause. Decode the outer record before considering its payload. An exact fuel
+Error and a ModelFailure in the same batch retain both causes. Human-mode fuel
+summaries are not admitted as batch records. The measurements in §8.3 include
+both panic forms and the stack form; stack classification itself is deferred.
 
-`scripts/observations.sh` gains the explicit adapter
-`observation_capture_protocol <prefix> <N|none> <command> [args...]`, invoking
-the above mode. Callers stop surrounding it with another `capped`/`timeout` or
-merging wrapper stderr into engine stderr. The existing `observation_capture`
-remains for dedicated non-batch/bridge decoders until their call sites are
-explicitly migrated; argv inspection must not guess which wrapper was used.
-Bridge captures need the same host evidence but keep their JSON-transport decoder.
+## 4. Python stop decoder over the existing channels
 
-### 3.2 Frozen Host tuple and finalization
+### 4.1 Admission and framing
 
-```text
-Host = ["cerberus-capture","1",prefix,status,cap,deadline,timing,issues]
-Cap = [backend,requested_bytes,configured_bytes,oom_kills,populated,cleanup]
-Deadline = [seconds,expired,kill_after_seconds]
-Timing = null | [cpu_ns,wall_ns]
-```
+The decoder belongs in `scripts/observations.py`, using existing record/escape
+helpers where they apply. It is an additive API for stop metadata, not a
+replacement for observation comparison or a new validation runner. Preserve the
+usual `NO_COLOR=1`, `TERM=dumb` invocation settings. Raw ANSI/NUL in framing is
+an error, never silently normalized; encoded bytes in data remain data.
 
-Prefix is Nonempty; status is NatText in 0–255. Backend is `cgroup-direct`,
-`systemd-scope`, `uncapped` or `not-started`. Requested bytes is PosText or null
-(explicit no-cap request); configured bytes is PosText or null (not read).
-This is the group's `memory.max`, not a claim to have measured every ancestor's
-effective limit. `oom_kills` is NatText or null (unavailable); populated is `"0"`,
-`"1"` or null, from `cgroup.events`. Cleanup is `removed`, `busy`, `failed` or
-`not-applicable`. Direct captures require the actual limit to equal the requested
-limit. A finite request fulfilled by `uncapped` is a supervision problem.
-
-Deadline seconds is PosText or null. Expired is `"yes"`, `"no"` or `"unknown"`.
-No deadline is `[null,"no",null]`. The bounded profile uses kill-after `"5"`;
-an actual deadline therefore records `[N,expired,"5"]`. Timing is optional,
-trusted nonnegative integer CPU/wall nanoseconds, never sampled from engine text.
-Both timing elements use NatText; zero wall time leaves the subtype unspecified.
-Issues is an ordered list of Nonempty wrapper diagnostics; every entry becomes
-a supervision problem, not an ignorable warning. Null means unknown/not
-applicable as specified, never a measured zero.
-
-For a clean direct capture, requested/configured bytes are equal and nonnull,
-oom_kills is nonnull, populated is `"0"`, cleanup is `removed`, and issues is
-empty. An uncapped capture has all four Cap measurements null and cleanup
-`not-applicable`; it can be valid only when no cap was requested and the caller's
-profile permits that. Systemd captures have a finite request, unavailable
-measurements and a witness-unavailable issue under the current backend.
-`not-started` has unavailable measurements, cleanup `not-applicable` and a
-setup issue. Other inconsistent combinations are schema/supervision problems.
-
-In direct mode, the wrapper must:
-
-1. Establish its owned group, verify the requested memory limit and zero swap,
-   and run the command with engine and supervisor streams separated.
-2. Wait for the immediate command, preserve its status, move the wrapper back
-   to its original group, then read `cgroup.events` before removal.
-3. If populated is zero, read `memory.max`, `memory.swap.max` and
-   `memory.events`' **hierarchical `oom_kill`** counter, then remove the group.
-   This avoids declaring a final zero while descendants can still run. If busy,
-   retain any positive evidence but record `busy` and a supervision problem;
-   do not kill unrelated processes or claim completion. Removal/read failure is
-   also loud. The wrapper must not report `removed` when removal failed.
-4. Write the final metadata and status. Return the command's status; metadata
-   write/finalization failure returns 125 with the capture-error marker retained.
-   The raw command status, if observed, remains in `.status` and Host.
-
-The probes (§8.2) establish that these files are readable on the current direct
-backend both before and after wrapper migration, before removal. The current
-wrapper already reads `oom_kill`, but publishes it only in human banners. It
-does **not** implement this sidecar or finalization protocol today.
-
-A positive counter in an owned, configured direct group is the operational
-RESOURCE/cap witness, even when the parent exits 0 or 1. It reports an OOM kill
-in that group; it is not a proof about which limit in the host hierarchy caused
-the kernel decision. A checked zero means no recorded OOM kill. Neither a bare
-137 nor banner-shaped bytes supply that witness. A positive count survives a
-later cleanup problem, but the latter still prevents accepting the capture.
-
-The current systemd fallback does not expose a readable counter to this wrapper;
-record null and a supervision issue, not zero. A missing cap backend in protocol
-mode fails before launching the engine. Ordinary wrapper mode retains its
-documented loud fallback. Public hosts can run the supported interface or an
-explicitly permitted uncapped profile; no machine-specific paths or privileges
-are added. This is capture ownership against program-data confusion, not
-protection against another host process with the same privileges.
-
-### 3.3 Deadlines and resource engine frames
-
-Use GNU timeout's existing supervision with a wrapper-owned diagnostic stream:
-`LC_ALL=C timeout --verbose --signal=TERM --kill-after=5s Ns ...`. The executed
-child redirects its own stderr to `.stderr`; timeout's stderr goes to
-`.host.stderr`. The finalizer admits its exact TERM/KILL deadline notification
-for this invocation to set expired=yes. It does not set expired from the
-command's status. Unexpected supervisor output or inability to determine expiry
-sets unknown and an issue. A native exit 124 with no expiry is unexplained
-termination. A timeout implementation lacking the required convention is a
-setup error, not a silent change of evidence. The implementation must probe this
-separation with native-exit-124 and sleeping-child controls before adoption.
-The local convention probe (§8.2) used the fixed child entry `bash` and admitted
-exactly `timeout: sending signal TERM to command 'bash'` (or KILL), plus LF.
-The capture implementation fixes that entry name and admits no engine-supplied
-command label as a second notification. It may preserve the separately recognized
-`timeout: the monitored command dumped core` notice without treating it as expiry.
-
-Timeout/hang subdivision is diagnostic only: when trusted timing exists, CPU/wall
-< 0.1 means hang, otherwise timeout; without timing retain timeout and no subtype.
-Neither label permits comparison. A confirmed OOM and confirmed deadline can
-both be retained. Engine fuel/stack are decoded separately, by whole frames:
-
-| Form | Required engine evidence and status absent a witnessed interruption |
-|---|---|
-| Fuel kill | A complete batch `Error {msg: "lem: fuel exhausted"}` record; normal single/multiple execution framing and status 1/0. |
-| Bare fuel panic | First engine stderr line exactly `lem: fuel exhausted`, then the admitted optional backtrace (§4.1), with no other payload; empty stdout; status 134. |
-| Translation fuel panic | Exact LemLib origin below, payload exactly `lem: fuel exhausted`, admitted trace; empty stdout; status 134. |
-| Stack | Entire engine stderr `\nStack overflow detected. Aborting.\n`; empty stdout; status 134. |
-
-The timeout core-dump notice and shell `Aborted` line seen in current captures
-belong to `.host.stderr` in the new capture mode. They do not become part of a
-program diagnostic, and neither is by itself resource evidence. Existing
-merged legacy captures cannot acquire new trusted host evidence by stripping
-banner-like lines out of their stderr.
-
-The exact fuel Error is a reserved legacy value until WP1, with the same
-sentinel/text limitations as §1.2. Other Error messages containing envelopes or
-fuel words remain verdict data. Human-mode fuel lines are decoded only by their
-explicit legacy interface, not admitted as batch output. Stack classification
-ships here; repairing stack consumption remains the stack-ceiling mission.
-
-## 4. Whole-run classification and consumer API
-
-### 4.1 Channel admission
-
-Set `NO_COLOR=1`, `TERM=dumb` for engine invocations. Raw ANSI escape or NUL in
-protocol framing is an encoding problem, not normalized away. Encoded control
-bytes in data fields remain data. Positive host evidence is collected independently
-of engine parsing; it does not bypass that parsing.
-
-| Channel | Engine stdout / engine stderr | Status and allowed stop classes |
+| Channel | Existing capture shape | Stops admitted |
 |---|---|---|
-| CLI | Empty / a nonempty list of envelope lines, each validated | 2; all REFUSAL, or exactly one INVARIANT. |
-| Panic | Empty / one exact LemLib panic frame and its trace | 134; REFUSAL, UPSTREAM_CRASH or INVARIANT. An absent envelope gives legacy/unattributed, not SHARED_CRASH. |
-| ModelFailure | Batch records / ordinary diagnostic text subject to the exclusions below | 1 for a single ModelFailure, 0 for framed multiple executions; only UPSTREAM_CRASH or INVARIANT in each ModelFailure. |
-| Verdict/fuel kill | Batch records / ordinary diagnostic text subject to the exclusions below | Existing single Defined=0, single other=1, multiple=0 convention. Exact fuel is a resource cause; ordinary records are data. |
-| Bare fuel/stack | The exact whole engine frame in §3.3 | 134; RESOURCE only. |
-| Host interruption | May leave a partial engine stream | Positive cap/deadline metadata; status alone never supplies the cause. |
+| CLI | Empty stdout; one or more envelope lines on stderr; exit 2 | A nonempty list of REFUSALs, or one INVARIANT. |
+| Panic | Empty stdout; exact LemLib panic frame on stderr; exit 134 | REFUSAL, UPSTREAM_CRASH or INVARIANT. A validated frame without an envelope is legacy/unattributed. |
+| ModelFailure | `ModelFailure {msg: "<outer-escaped envelope>"}` in stdout; single exit 1 or framed multiple executions exit 0 | UPSTREAM_CRASH or INVARIANT, one decoded occurrence for every such execution. |
+| Ordinary batch record | Existing Defined/Undefined/Error shape and exit convention | No stop recognition inside program-data fields or ordinary Error messages. Exact fuel is handled as in §3. |
 
-Panic header is exactly `PANIC at _private.LemLib.0.failwithIImpl
-LemLib:<line>:<column>: <payload>` on **one line**, with positive decimal source
-coordinates. The mangled origin is pinned to the current LemLib; another origin
-is RED until reviewed. A new encoded payload is exactly one physical line.
-Its suffix is either empty (header-only fixture) or `backtrace:` followed by one
-or more frames matching the existing full-line expression
-`[^\r\n]+\([^()\r\n]*\) \[0x[0-9a-fA-F]+\]`, each LF-terminated.
-There are no arbitrary continuation lines or wrapper lines in a v2 encoded
-panic. For a legacy panic, the payload starts on the header line and may continue
-up to a line exactly `backtrace:`. If that delimiter occurs, all following lines
-must be one or more complete frames of the expression above; a second delimiter
-or trailing material is invalid. If it does not occur, all continuation lines
-are payload. Remove only the printer's final LF, not payload blank lines.
-Continuation lines starting with `PANIC at `, `cerberus-lean stop`, `capped:`,
-`internal error: ` or `Fatal error: exception `, or equal to a bare fuel/stack
-marker, make that legacy capture ambiguous and invalid. They cannot be harvested
-as additional trusted causes. The raw legacy payload is retained as bytes.
+The exact panic header is `PANIC at _private.LemLib.0.failwithIImpl
+LemLib:<line>:<column>: <payload>` on **one line**, with positive decimal
+coordinates. Another origin is an error until reviewed. New encoded payloads
+occupy one physical line. A trace, when present, is `backtrace:` followed by one
+or more complete frames matching
+`[^\r\n]+\([^()\r\n]*\) \[0x[0-9a-fA-F]+\]`.
 
-Batch framing retains the present grammar: one unheaded record, or contiguous
-`EXECUTION 0:`, `EXECUTION 1:`, … with one record per header and at least two
-executions; the existing optional header exit annotation remains permitted.
-No missing, duplicate or skipped header, missing record or extra record is ignored.
-ModelFailure outer escapes are validated before decoding. Ordinary Error and
-program-data fields are not scanned after decoding for envelope prefixes.
-The existing ordinary batch grammar remains its admission boundary; arbitrary
-legacy unescaped diagnostic bytes do not gain a new authenticity guarantee.
-
-Nonempty ordinary stderr is preserved, but a raw reserved stop line, fatal
-frame, bare resource marker, ANSI framing or malformed stop beside a verdict is
-RED. A raw cap banner on engine stderr is never a cap witness; it is unexpected
-wrapper-shaped diagnostic material. The complete stdout/stderr pair is checked
-before completed-observation comparison. Calling today's `parse` or
-`failure_message` and returning early is insufficient.
-
-### 4.2 Algorithm, partial observations and report schema
-
-1. Validate capture ownership, files and Host; retain any independently obtained
-   positive resource evidence and all problems. Never infer a missing counter.
-2. Parse every complete engine record and diagnostic frame. In stop positions,
-   distinguish absent envelope from malformed reserved prefix. Decode all
-   constructors, fields, classes and channels; collect every cause, with its
-   execution index when present. An ordinary Error payload is never a stop position.
-3. Check the whole capture's framing, status and channel compatibility. A
-   confirmed host interruption may override the normal final status and leave
-   a terminal partial record; retain that prefix as raw evidence, mark incomplete,
-   and never synthesize its missing fields. Only an EOF truncation consistent
-   with that interruption is excused. A complete malformed record, wrong channel
-   or invalid escape preceding EOF is still a problem. A normal exit with a
-   truncated record is invalid. No resource removes a prior invariant/problem.
-4. Complete means: valid capture, ordinary completed batch only, no causes or
-   problems, and matching status. Any problem makes the report invalid; otherwise
-   any stop/resource/legacy panic makes it incomplete. Only complete can produce
-   the existing comparable `Observation`. No projection can bypass this check.
-
-Python `classify_capture(prefix) -> RunReport` returns all evidence. Classification
-is separate from lane disposition. Lean `CerbStop.parse` only decodes a stop
-payload; it does not classify a process or prove producer identity.
-
-The machine CLI is `python3 scripts/observations.py classify --capture <prefix>`.
-It prints one JSON report line, carrying the same information as RunReport:
+Current captures may append `timeout: the monitored command dumped core` and
+the shell's capped `Aborted` diagnostic. Admit these only as a terminal wrapper
+suffix after an otherwise complete frame: at most one timeout core-dump line,
+then at most one line matching the current `ABORT_WRAPPER` pattern:
 
 ```text
-Report = ["cerberus-outcome","1",completion,status,records,causes,problems,raw]
-Record = [index,kind,fields]
-Cause = [kind,channel,index,payload]
-Problem = [code,channel,index,detail]
-Raw = [stdout_b64,stderr_b64,host_stderr_b64,host_json_b64]
+[^\r\n]*/scripts/capped: line [0-9]+: +[0-9]+ Aborted(?: \(core dumped\))? +"\$@"
 ```
 
-Completion is `complete`, `incomplete` or `invalid`; status is NatText 0–255 or
-null if unobserved. Record index is NatText (unheaded singleton is `"0"`). Kind
-and fields are exactly: Defined → `[value_b64,stdout_b64,stderr_b64,blocked]`,
-Undefined → `[ub_b64,stderr_b64,loc_b64]`, Error → `[msg_b64]`, ModelFailure →
-`[msg_b64]`. Blocked is `"true"` or `"false"`. These are the codec's existing
-field bytes, not newly normalized semantic values. The exact fuel Error remains
-in records and also produces a cause. A decoded ModelFailure likewise remains
-in records; its Stop is in causes. CLI/panic stops have no batch Record.
+Never strip arbitrary matching lines from payloads or treat a suffix as OOM or
+timeout evidence. Direct driver captures without wrapper suffixes are also
+admitted. The Caesium demonstration must include its actual `cap timeout` suffix
+shapes; any necessary additional suffix fixture is narrow and source-checked,
+not a permissive diagnostic-tail regex. Unsupported trailing material is an
+error while previously decoded metadata remains available.
 
-Cause kind is `stop`, `legacy-panic`, or `resource`. Channel is `cli`, `panic`,
-`model-failure`, `fuel-kill`, `fuel-panic`, `stack`, or `host`; index is NatText
-for a batch record and otherwise null. Payload is respectively Stop, B64 legacy
-message, or one of `["fuel","kill"]`, `["fuel","bare-panic"]`,
-`["fuel","translation-panic"]`, `["stack"]`, `["cap",Cap]`,
-`["timeout",Deadline,Timing,subtype]`. Subtype is `hang`, `timeout` or null.
-These kind/channel combinations must match §4.1; RESOURCE/SHARED_CRASH written
-inside a Stop tuple is a schema error, not a fallback.
+For a legacy panic, payload may continue up to a line exactly `backtrace:`.
+After that delimiter only the complete trace and admitted suffix may occur;
+without it the continuations are payload. Remove only the printer's final LF.
+An additional fatal/stop/fuel frame inside those continuations makes the capture
+ambiguous: report the problem, do not reclassify that payload as a resource or
+another trusted stop. A reserved `cerberus-lean stop` prefix with an invalid
+version, constructor or field is malformed, not a legacy panic.
 
-Problem code is `capture`, `encoding`, `schema`, `channel`, `framing`, `status`,
-`origin`, `supervision` or `unexplained-termination`. Channel is any Cause channel
-or `stdout`, `stderr`, `capture`; index is NatText or null; detail is Nonempty.
-Raw fields are B64 or null if the corresponding file is missing. Complete
-reports require all four. Nonconforming metadata is preserved raw rather than
-replaced with invented parsed values. Causes are decoded evidence, not permission
-to ignore accompanying problems. Record order is execution order; causes are
-ordered batch-index first, then stderr order, then cap and deadline; duplicates
-remain. Problems are ordered by the validation phases above and source order.
-No total temporal order between independent stdout/stderr/host events is claimed.
+Batch framing remains one unheaded record, or contiguous `EXECUTION 0:`,
+`EXECUTION 1:`, … with one record per header and at least two executions. Keep
+the existing optional header exit annotation. Decode every ModelFailure's outer
+escape layer before parsing its envelope. Missing/duplicate headers, extra
+records, bad escapes and malformed trailing data are errors. Preserve complete
+stop occurrences even when a later record is malformed or truncated; never
+claim completion from that prefix. A stop-looking ordinary Error remains data.
 
-CLI exit 0 means a valid complete/incomplete report was emitted, **not agreement**;
-exit 2 means invalid report, capture/usage/I/O error. Emit the invalid report when
-a capture can be described; human error explanations go to stderr. An INVARIANT
-can occur in an otherwise valid incomplete report: lanes must inspect its causes.
-They must never use classifier exit 0 as the test verdict. Human summaries are
-separate renderings; they do not replace the lossless API.
+Check stderr as well as stdout before declaring the stop decode clean. A raw
+stop beside an otherwise valid verdict is a channel error, not an ignored line.
+Do not delegate to today's `parse`/`failure_message` and return early before
+checking the rest. This requirement is local to the new API; it does not charter
+a rewrite of all existing classifiers or a new global completion protocol.
 
-### 4.3 Lane policy
+### 4.2 Object API and absent versus malformed
 
-| Report content | Required disposition |
-|---|---|
-| Complete ordinary verdicts | Existing byte/UB/allowed projection comparison, unchanged. Ordinary Error/Error BOTH_FAIL rules stay specific to ordinary errors. |
-| Any INVARIANT, or any protocol/supervision problem | RED. No expected-crash pin or oracle crash absorbs it. |
-| REFUSAL only | Incomplete. A named registered refusal policy may accept the expected boundary/item; `.unsupported.c` alone cannot. |
-| UPSTREAM_CRASH only | Incomplete. A reviewed crash policy may account for the cited mirrored failure; it never counts as semantic agreement. |
-| Legacy panic only | Incomplete, origin unattributed. Existing reviewed coarse negative-test crash pins may remain with that explicit limitation; no automatic shared-model attribution or new expected crash. |
-| RESOURCE | Incomplete. Apply only the lane's explicit resource direction rule; never project it to an ordinary crash or verdict. Lean resource against a completing oracle is RED where that is the existing rule. |
-| Mixed non-defect causes | All remain visible; default RED unless the lane explicitly registers that entire allowed combination. A single accepted member does not admit the collection. |
+The proposed public Python entry point is:
 
-PNVI must not map INVARIANT to CRASH/BOTH_FAIL. Immaculate must not accept every
-STOP against an oracle CRASH: resource is not a matching crash. Existing pins
-and hashes move only deliberately, with row-level explanations; zero label/status
-movement is not promised. Unexpected semantic verdict movement stops the slice
-for investigation. Oracle decoding retains its separate OCaml grammar; a Lean
-envelope is not a new syntax for the oracle to emit.
+```python
+decode_stop(stdout: bytes, stderr: bytes, status: int) -> StopDecode
+```
 
-Acceptance applies to the entire cause collection, including multiple members
-of the same class. Matching one expected refusal or one upstream citation never
-licenses additional unchecked items. Preserve order and multiplicity in the
-report even where a documented lane policy compares a set of expected items.
+`StopDecode` carries ordinary Python objects with these required contents:
+
+- `stops`: every decoded stop occurrence in order, with its channel, execution
+  index (None for CLI/panic), source position and the complete structured Stop.
+  The Stop exposes all §2 metadata, including upstream source text, mover, tray
+  and see. There is no summary class selected from the collection.
+- `legacy_panics`: validated envelope-less panic payloads as bytes, explicitly
+  origin-unattributed. They are neither SHARED_CRASH nor an ordinary Error.
+- `fuel`: every exact fuel occurrence with its form and execution index where
+  applicable. No occurrence is inferred from a substring or from host status.
+- `problems`: every admission/schema/framing problem with its channel/position
+  and explanation. Retain successfully decoded occurrences alongside problems;
+  do not raise away the whole result on the first bad record.
+
+These are API requirements, not a second JSON schema. Dataclass/type layout can
+follow the existing Python module's conventions. Keep original capture bytes
+with the caller; no replacement decoding or truncation before this call. No new
+machine CLI or capture format is required.
+
+Envelope recognition has three distinct results at each eligible position:
+**absent**, **present and valid**, and **malformed reserved envelope**. An ordinary
+verdict with no eligible envelope is a clean absence, not a stop. An absent
+payload envelope on an otherwise valid panic produces legacy/unattributed;
+an absent envelope on ModelFailure is a missing-envelope problem. A malformed
+reserved prefix always produces a problem and must not take the absent branch.
+The Lean `DecodeError` likewise distinguishes absent from malformed input.
+A capture with no admitted ordinary record or failure frame produces an
+unrecognized/truncated-capture problem, not clean absence. A status inconsistent
+with the decoded channel is a separate problem; it does not erase decoded stops.
+
+An occurrence decoded before a whole-capture problem is retained as diagnostic
+metadata; its presence does not validate the capture. A caller must inspect
+problems and all cause collections. It must not use `stops == []` as a completion
+predicate: legacy panic, fuel, malformed output and unknown termination are
+also incomplete/failing cases. Only when the new decoder has no causes/problems
+may the caller continue to its existing ordinary verdict and status checks.
+Those checks still establish completion and comparison, not `decode_stop` alone.
+
+Inspect all complete records before applying resource/status early returns.
+Thus a fully decoded INVARIANT remains a defect even if the process later dies
+or a resource is also observed. A partial trailing record is an explicit problem,
+not a fabricated stop; host-cause attribution remains the caller's existing
+responsibility. No policy for accepting new mixed resource/crash baselines is
+introduced here.
+
+### 4.3 Exactly the retained lane corrections
+
+Only `scripts/pnvi_lane.py` and the classifier in
+`scripts/test_immaculate.sh` receive stop-policy changes:
+
+1. Inspect the decoded stop collection before oracle matching and resource/crash
+   early returns. Any INVARIANT is RED, even against an oracle crash/resource,
+   another stop, or malformed later output. Never project it to CRASH/BOTH_FAIL
+   or accept it through a baseline pin; INVARIANT must fail the lane.
+2. Envelope-less validated panic is legacy/unattributed, never SHARED_CRASH.
+   Existing coarse negative-test crash pins may keep their historical spelling;
+   that spelling makes no producer-origin or semantic-agreement claim.
+
+The hooks needed for these two corrections read the new structured payloads;
+within PNVI, retaining its existing refusal witnesses means reading the same
+R-PNVI item from the new refusal field instead of the old textual prefix. This
+is producer-format compatibility, not a new lane policy or a common-entry
+migration. Preserve existing oracle-side patterns and registered refusal rules.
+No other lane is rerouted, no resource direction rule is redesigned, and no
+new `.unsupported.c` policy or general mixed-cause baseline system is added.
+Test pins and witnesses broken by the producer changes are updated in C.
 
 ## 5. Delivery, consumers and required checks
 
-One implementation branch, coherent internal commits, one complete first
-consumer-facing landing. A–E are work checkpoints, not new trust gates:
+One branch, coherent internal commits, one complete first consumer delivery.
+A–E are work checkpoints, not additional trust gates. Do not advertise an accurate hand-written-mirror mapping before C finishes.
+The estimates below are **[AGENT]** planning ranges in focused engineering days
+for one worker with the prepared build. They exclude review queueing and elapsed
+standing ladder runs; they are not deadlines or a reduction of required checks.
 
-| Checkpoint | Deliverable |
-|---|---|
-| A | Review v2, settle §6, reconcile the charter/file fence and inventory dispositions. Probe the new capture separation and timeout convention before relying on them. |
-| B | Structured builder/codec, full RunReport classifier and capture metadata; positive and negative plants. No production lane claims based on partial adoption. |
-| C | Nine typed kills; existing pure/monadic refusals and driver admissions; the remaining hand-written pure mirrors/guards and twelve config-dead switch kills. Update their immediate tests/wrappers in the same commits. |
-| D | All declared lane callers use the common classification entry and §4.3 policy. Reseal register keys, deliberately update affected baselines and complete the standing ladder obligations. |
-| E | Consumer-shaped demonstrations, honest limits table, independent review, and a tested candidate for the operator's landing decision. |
+| Checkpoint | Deliverable | Effort estimate |
+|---|---|---|
+| A | Review this scope, settle remaining §6 choices, amend the charter/file fence and confirm Q-A dispositions. No capture-infrastructure design step. | 0.5 day |
+| B | Structured Lean stop/codec/adapters and Python `decode_stop`; focused shape, escaping, absent/malformed and collection tests. | 1–2 days |
+| C | **Full producer migration:** nine typed kills; existing pure/monadic and driver refusals; remaining hand-written pure mirrors/guards; twelve config-dead switch refusals. One envelope per switch element, then one exit. Update immediate tests/pins and PNVI/CLI witnesses; reseal the affected hand-written register keys. | 2–4 days; source citations and existing pins dominate |
+| D | The two PNVI/immaculate corrections of §4.3, their focused plants, and only the baseline/diagnostic adjustments those changes actually require. No all-lane adoption. | 0.5–1 day |
+| E | Demonstrate the actual `differential.py` capture shapes against the candidate and supply the patch recipe below; complete standing checks and present the candidate for fresh review. | 1 day, plus independent review |
 
-The file fence must include CerbStop and tests, Lake roots/executable registration,
-`handwritten_copy.manifest`, affected seams and Main, `MonadicFailstop.lean`'s
-seven old message pins, `PnviArmsTest.lean`, the three CLI witness scripts and
-stubs, `capped`, `observations.py`/`.sh`, `common.sh`, fuel/cap/hang/failstop plants,
-`test_observation_lanes.py`, `pnvi_lane.py`, exec/immaculate and the other actual
-direct classification callers. Existing shell fuel/cap interfaces become
-adapters to the common report; merged-text helpers remain only explicitly named
-legacy/test interfaces, not competing production acceptance rules.
+The implementation fence covers CerbStop and its tests, Lake roots/executable
+registration, `handwritten_copy.manifest`, affected hand-written seams and Main;
+`observations.py` and its tests; the two classifier hooks above and their tests;
+producer-dependent test pins, PNVI/CLI witness scripts/stubs, register keys/seals
+and the necessary documentation. It does not include changes to `capped`,
+`common.sh`, `observations.sh` capture plumbing or wholesale lane call sites.
+A small internal parsing helper may be shared to implement `decode_stop`; that
+is not permission to refactor existing comparison or resource policy.
 
-Do not assume the old five-site usage census is complete. At this source base,
-Main has seven explicit exit-1 admission branches: missing parse-core switch
-argument (1496), missing option argument (1613), call-args without call (1678),
-bad call integer (1690), libc without a metadata TU (1696), libc-TU without libc
-(1701), and batch/pp-core without input (1759). The empty-input exception in
-`readInputs` (335) must reach the same attributed usage handling, not remain an
-uncaught exception. Repeated-option exit-2 paths also need envelopes. Parser
-failures and actual semantic Error exits are not usage branches. Migrating these
-usage branches to exit 2 is an explicit behavior change. Switch refusals retain
-one envelope per rejected element, including empty/duplicate elements, then one
-exit; test both `--switches=x` and `--switches x`.
+C includes all seven exact message pins in `test/Unit/MonadicFailstop.lean`,
+`test/Unit/PnviArmsTest.lean` (both under `lean_frontend/`), and the three CLI
+witness scripts and their stubs: `scripts/check_cli_refusals.sh`,
+`scripts/check_runtime_resolution.sh`, and `scripts/check_cabs_json_utf8.sh`.
+Update the
+actual positive ModelFailure observation-lane plant to a valid new envelope,
+and keep the envelope-less case as a distinct decoder negative. Other existing
+producer-dependent expectations must be audited and updated, not left failing
+because they were omitted from a file list. No lane acceptance rule is relaxed
+for a new producer message. Keep a missed compatibility dependency visible as
+a scope finding rather than silently widening the apparatus work.
 
-The live register has 239 rows: 111 hand-written and 128 generated. Migrate/reseal
-the 35 existing-refusal keys and remaining 76 hand-written keys with old-to-new
-mappings; a site count is not a key count. Recompute position/reach evidence if
-the rewrite changes it; no automatic preservation promise. Keep the optional
-message-convention report a cheap speedbump. Generated copies are synchronized
-by the normal build procedure, not edited manually. A `common.sh` edit requires
-the documented reviewed source-content row update in `fork_drift_manifest.txt`,
-not a blanket refresh or an oracle semantic change.
+Switch tests cover empty/duplicate elements and both `--switches=x` and
+`--switches x`, checking every emitted envelope. Existing declared exit-2
+refusals are migrated; CLI INVARIANT remains exit 2. The separate exit-1 usage
+paths keep their current behavior (§9), so they are not falsely described as
+new attributed refusals. Parser errors and ordinary semantic Error stay separate.
 
-Tests must include JSON/control/Unicode round trips and the nested escaping;
-object/duplicate/unknown-version/arity rejection; diagnostic marker injection;
-every class/channel mismatch; multiple ModelFailures and CLI refusals; a good
-record followed by malformed output; terminal truncation under a real resource
-interruption; INVARIANT plus resource; native 137/SIGKILL without OOM; descendant
-OOM at parent 0/1; forged engine banners; missing/stale metadata; native 124 vs
-actual timeout; all fuel forms and measured stack framing. Update the actual
-positive ModelFailure observation-lane plant to a valid envelope and keep the
-old envelope-less one as a separate negative. Use these test families, not an
-exhaustive string × channel × status matrix or a new certification runner.
+The measured register has 239 rows: 111 hand-written and 128 generated.
+Reseal the 35 existing-refusal keys and the remaining 76 hand-written keys with
+old-to-new mappings; counts of keys and sites need not coincide. Recompute
+position/reach evidence where a rewrite changes it. Synchronize generated copies
+through the normal build procedure; do not edit them by hand. The existing
+register checks remain. A new convention speedbump is deferred, and there is no
+`common.sh` source-content manifest movement budgeted in this scope.
 
-The existing Tier A/B schedule in `scripts/LADDER.md` remains the validation
-schedule for implementation. Changed proof declarations require the standing
-axiom and kernel-replay checks. All Lake/Lean work uses `scripts/capped`; this
-design's Lean probes used `CERB_MEM_MAX=32G`. No build or release certification
-was run for this document. Scratch belongs under `.tmp/`; commit conclusions
-and reproduction commands, not raw dumps.
+Focused tests cover the frozen JSON and outer escape layers; forbidden objects,
+versions, fields and shapes; injected delimiters/control/fuel text; allowed and
+wrong channels; multiple ModelFailures and switch refusals; good stops on both
+sides of a malformed record, and truncated output; absent versus malformed; and
+INVARIANT retained beside fuel or a later abnormal status. Exact fuel-frame tests include marker
+text embedded in another diagnostic. The two lane plants must make INVARIANT
+RED regardless of oracle output. No new host-sidecar, timing, supervisor or
+exhaustive all-lane plant battery is required by this mission.
 
-At the first complete delivery, consumer-visible families are:
+The existing Tier A/B schedule in `scripts/LADDER.md` remains the implementation
+validation schedule. Changed proof declarations require the standing axiom and
+kernel-replay checks. Every Lake/Lean invocation uses `scripts/capped`; the
+recorded Lean probes used `CERB_MEM_MAX=32G`. This amendment is documentation
+only: no build or release certification is claimed. Keep scratch under `.tmp/`
+and commit conclusions/reproduction recipes rather than raw dumps.
 
-| Family | First complete delivery |
-|---|---|
-| CerbFS/PNVI/formatFixed and driver refusals | REFUSAL with boundary/item/mover. |
-| Hand-written pure upstream mirrors and mirrored typed kills | UPSTREAM_CRASH with source/tray metadata. |
-| Annotated port guards | INVARIANT; always a defect. |
-| Generated/shared-model panics | Validated legacy panic, origin unattributed; audited examples may be described separately, not inferred from absence. |
-| Fuel, stack, owned host interruption | RESOURCE from §3 evidence. |
+### Consumer demonstration and patch recipe
 
-Consumer source facts below are pinned to the accepted review's checks:
-cerberus-caesium `32d88b8b3fd30aba8cd5b26bc009b3a0e5115f45` and cerberus-sl
-`68832d914227a29c37df381d3e83ad274147e24c`. Recheck their actual heads and caller
-inventory when demonstrating the implementation candidate.
-Cerberus-caesium's binary-driver consumer there is `scripts/differential.py`;
-`check-caesium-exec.sh` is a stepper harness and does not prove that decoder's
-adoption. Demonstrate the report on each family plus mixed causes and supply the
-consumer patch recipe. External consumer changes require their own authorized
-task; do not claim adoption from the existence of a provider function.
-Cerberus-sl must see diagnostic parsing separately from semantic interpretation;
-recheck its fuel/OOM aliases and three-arm kill lift without claiming a sentinel
-disjointness theorem. Intermediate B/C commits are incomplete foundations, not
-an accurate replacement mapping for all the consumer's families.
+The actual integration target is cerberus-caesium's `scripts/differential.py`,
+not the stepper harness `check-caesium-exec.sh`. The read-only source check in
+§8.4 locates `run`, `parse_driver`, `run_driver` and `driver_summary` at consumer
+revision `75a6dd32e403df6597af7c0abb659c21d1214a89`. Its current runner returns
+`(rc, out, err, secs)` from `cap timeout`, with stdout/stderr separate but already
+text-decoded using replacement. Its batch invocation is `--batch`, optionally
+`--first`, followed by runtime and Cabs arguments. There is no proposed sidecar
+available to this consumer, and none is necessary for decoding the stop fields.
+
+Prepare and demonstrate this patch recipe against that interface:
+
+1. For the **driver call**, retain raw stdout/stderr bytes through decoding
+   instead of `text=True, errors="replace"`. Keep the existing runner/cap/timeout
+   arrangement and elapsed-seconds field. A driver-only raw-result option or a
+   small driver capture adapter is sufficient; do not refactor unrelated phases.
+2. Import `decode_stop` from the explicitly selected provider checkout/module
+   that matches the candidate driver; do not find an arbitrary global module or
+   implement another regex classifier. Call it on the complete capture before
+   `head(err, 500)`, `bad[:5]`, or any resource/crash return.
+3. Keep the returned stop occurrences with all metadata and indexes in the
+   consumer's own result objects. Remove the conversion of ModelFailure into
+   ordinary Error with a textual prefix. Preserve ordinary verdict records using
+   the existing observation grammar. The consumer may serialize its own records;
+   no new provider Report schema or CLI is needed.
+4. Derive the consumer's fuel flag from exact decoded fuel occurrences, including
+   translation panic; remove the merged-output line search for this driver path.
+   Preserve legacy/unattributed and problems separately from the three stop tags.
+5. Have `driver_summary` carry **every** decoded cause before handling rc 124/137,
+   fuel or crash. A fully decoded INVARIANT marks a defect; a refusal/upstream
+   stop makes the batch incomplete, never an ordinary C Error/verdict. Unknown
+   137 remains unexplained, not asserted OOM. No early summary branch may drop
+   later or mixed stop metadata. Keep stderr truncation as display only.
+
+The demonstration consumes candidate-driver outputs through the consumer's
+capture shape: one CLI refusal at exit 2; multiple rejected switch elements;
+one panic refusal/upstream/invariant at 134; single ModelFailure at 1; framed
+multiple ModelFailures at 0 with distinct classes; verdict plus stop; stop plus
+exact fuel; malformed reserved envelope following a valid stop; and a validated
+legacy panic with no envelope. Include the real wrapper suffixes, both fuel
+panic forms and the already measured diagnostic-injection cases. Fixture-built
+mixed batches are identified as fixtures, not claimed C end-to-end executions.
+Assert exact metadata and occurrence counts, not just a nonempty stop list.
+
+Deliver the candidate results and patch recipe, with the remaining legacy and
+sentinel limits. This design task does not change the external consumer, and
+provider delivery must not claim external adoption until that separate work is
+authorized and done. Cerberus-sl's existing fuel/OOM aliases and kill lift remain
+compatibility constraints of §1; no additional consumer migration arc is added.
+
+At the first complete delivery, existing declared refusals expose REFUSAL;
+hand-written mirrors expose UPSTREAM_CRASH with source/tray metadata; annotated
+guards expose INVARIANT; generated envelope-less panics remain legacy/unattributed.
+The unmigrated usage errors, host supervision and stack reporting are expressly
+outside that three-class promise, not temporarily relabeled as shared failures.
 
 ## 6. Questions for dispatch, with recommendations
 
-The operational-versus-structural ordering is already settled in the ruling at
-the start of this note. The table restates every original §6 question in the
-revised context; recommendations are not additional operator rulings.
+The operational scope and its two goals are settled. These **[AGENT]**
+recommendations restate the original questions without reopening deferred work
+as an implementation prerequisite.
 
 | ID / question | Recommendation |
 |---|---|
-| Q1 — Names and attribution | **[AGENT]** Keep REFUSAL, UPSTREAM_CRASH and INVARIANT as emitted stop tags; RESOURCE is evidence-derived. Report envelope-less panic as legacy/unattributed. Do not equate it with a diagnosed semantics failure or SHARED_CRASH. A future attributed shared producer needs an explicit schema revision. |
-| Q2 — Allocator OOM | **[AGENT]** Preserve the semantic Error/Other kill and consumer alias. Keep it distinct from cgroup OOM evidence. |
-| Q3 — Usage errors | **[AGENT]** Migrate all enumerated admission paths, including the additional live paths in §5, to attributed exit-2 refusals. Disclose the exit change; keep parser/semantic errors separate. |
-| Q4 — Config-dead switch kills | **[AGENT]** Use the existing memM panic mechanism with a structured switches refusal. State the abort-setting requirement for library callers; Main's deadness argument does not cover arbitrary Switches instances. |
-| Q5 — Thirteen boundaries | **[AGENT]** Adopt §2's wire enumeration; do not silently enlarge the queued semantic Unsupported enumeration. Charter its mapping at WP2. |
-| Q6 — Q-A sweep and disputed arms | **[AGENT]** Annotate all hand-written mirror/guard sites before first complete delivery, including unreachable ones. Retain the print-then-kill and defined arms under the mirror policy unless separately ruled; settle their inventory dispositions before C. |
-| Q7 — Unsupported fixtures | **[AGENT]** Require an actual admitted REFUSAL and the expected boundary/item. A suffix cannot excuse a mirror, invariant or resource failure. |
-| Q8 — Register convention check | **[AGENT]** Add a small nonblocking lexical report on the registered hand-written population, with one negative control. It is not producer authentication or a census of all host/driver failures. |
-| Q9 — Stack | **[AGENT]** Ship the measured stack classifier in this mission; leave recursion repair to the stack-ceiling work. A bare 134 or stack-shaped substring is insufficient. |
-| Q10 — Trays | **[AGENT]** Cite existing reports, update existing drafts such as bswap64's draft 12 as needed, and draft missing offsetof-union-member/funptr_reload reports. Use explicit none/pending/draft/filed state. Filing is separately authorized. |
-| Q11 — CLI invariant exit | **[AGENT]** Retain exit 2. The constructor and whole capture distinguish the class; another status would not authenticate it. |
-| Q12 — Run aggregation and lane dispositions | **[AGENT]** Adopt §§4.2–4.3. Preserve every cause, make invariants/problems RED, and require explicit policy for mixtures. Never use first match or a coarse CRASH projection as the stop decision. |
-| Q13 — Capture scope and portability | **[AGENT]** Include §3's sidecar and stream-separation changes in the charter, with explicit unavailable-evidence behavior. The old text banner cannot be the machine witness. Preserve the ordinary build-wrapper interface. |
-| Q14 — Delivery boundary | **[AGENT]** Deliver B–D together to consumers, with all hand-written migrations, explicit legacy limits and the real integration target. Replace the S1–S2-only charter before dispatch. |
+| Q1 — Names and attribution | **[AGENT]** Keep the three emitted tags and legacy/unattributed for envelope-less panic. No SHARED_CRASH inference or semantics-origin proof. |
+| Q2 — Allocator OOM | **[AGENT]** Keep the existing semantic kill/consumer alias, distinct from host OOM. |
+| Q3 — Usage errors | **[AGENT]** Preserve current exit-1 behavior in this delivery; defer attributed 1→2 conversion and its additional admission paths (§9). |
+| Q4 — Config-dead switch kills | **[AGENT]** Migrate all twelve through the existing memM panic mechanism with structured switches refusals. Keep the library abort-setting limit explicit. |
+| Q5 — Thirteen boundaries | **[AGENT]** Keep §2's wire vocabulary; do not silently enlarge the future low-level Unsupported enumeration. WP2 owns that mapping. |
+| Q6 — Q-A dispositions | **[AGENT]** Complete all hand-written mirror/guard annotation, including unreachable sites. Keep the print-then-kill and defined arms unless separately ruled; settle those inventory dispositions before C. |
+| Q7 — Unsupported fixtures | **[AGENT]** A filename is not evidence of REFUSAL. Defer the proposed new exec-lane acceptance rule; do not claim it was installed by this mission. New consumer attribution comes from the decoded class. |
+| Q8 — Register convention report | **[AGENT]** Keep the required reseals and existing register checks; defer adding a new lexical speedbump. |
+| Q9 — Stack | **[AGENT]** Retain the measurement in §8; defer the new RESOURCE/stack classifier. No bare-134 or stack-substring shortcut enters `decode_stop`. |
+| Q10 — Trays | **[AGENT]** Carry accurate existing none/pending/draft/filed metadata, including bswap64's draft 12. Preparing additional reports is separable from the two goals; no filing or broad tray campaign is required for delivery. |
+| Q11 — CLI invariant exit | **[AGENT]** Keep exit 2, with the class in the validated envelope. |
+| Q12 — Collections and lane behavior | **[AGENT]** Return all causes through §4.2's Python objects; apply only the two §4.3 lane corrections. No scalar-stop or first-match summary. |
+| Q13 — Host/capture redesign | **[AGENT]** Defer it as ruled; restate today's positive-counter/bare-137 rule without claiming authenticated legacy stderr (§3/§9). |
+| Q14 — Delivery boundary | **[AGENT]** Finish producer checkpoint C and demonstrate the consumer interface before claiming complete delivery. Replace the old S1–S2-only charter accordingly. |
 
-The frozen schema is the proposed answer for this review; implementers must not
-choose object/array shape, optional fields or unknown-version policy afresh.
-Any change after review is a design amendment with updated fixtures. No standing
-working-practice rule is amended by this document.
+The stop JSON schema stays frozen. The worker does not choose duplicate/optional/
+unknown-version behavior again. No broader runner/schema decision is needed to
+implement the Python object API. This document changes no standing practice.
 
-## 7. Resolution of the twelve review findings
+## 7. Disposition of the twelve review findings
 
-| Finding | Where v2 settles it |
+“Deferred” below is an acknowledged residual with a reason in §9, not a claim
+that the corresponding apparatus was repaired.
+
+| Finding | Resolution in this scope / explicit residual |
 |---|---|
-| 1 — Ambiguous fields and injected resource markers | §§2.1–2.2 freeze an injective positional schema and escaping; §3 separates host evidence; §§4.1–4.2 forbid searches inside payloads and validate all channels. §5 requires diagnostic-interpolation controls. |
-| 2 — Forgeable ModelFailure attribution | §1.2 states the concrete sentinel collision and restricts the claim under the adopted operational ruling. Structural outcomes remain the named mover; no new opaque atom or authenticity claim is introduced. |
-| 3 — Exit 137 is not OOM | §§3.1–3.2 require an owned positive counter, including descendant OOM at parent success; zero/unavailable are distinct. Native 137 is tested in §8.2. |
-| 4 — First-match rules bypass malformed/channel checks | §§4.1–4.2 require complete capture admission, distinguish malformed from absent, reject forbidden constructors/boundaries and retain Error payloads as data. No early successful verdict return. |
-| 5 — More than one ModelFailure/cause | §4.2 defines indexed record/cause collections and complete/incomplete/invalid; §4.3 defines mixtures. No scalar Stop wins. |
-| 6 — Coarse lane projections conceal invariant/resource | §4.3 explicitly forbids those PNVI/immaculate projections and requires reviewed row movement. |
-| 7 — Missing migration work | §5 budgets the seven MonadicFailstop pins, PNVI/CLI witnesses and both positive/new-envelope and negative/old-envelope observation plants, alongside capture/caller changes. |
-| 8 — Multi-line CLI and usage exit contradiction | §§2.3/4.1 specify nonempty collections and one terminating exit; §5 lists the live usage paths and the deliberate 1→2 change. |
-| 9 — Stale fuel/stack forms and competing delivery | §3.3 specifies translation panic, leading stack LF and separate wrapper diagnostics; §5/Q9 place stack classification here. §8.3 remeasures both. |
-| 10 — Premature or false consumer attribution | §§1.1/5 remove the shared fallback, name the real Caesium decoder and require a complete first delivery. The family table includes refusals and generated legacy panics accurately. |
-| 11 — Lossy classifier CLI | §4.2 freezes a lossless machine report with full Stop metadata, raw bytes, all causes/problems and explicit CLI status semantics. |
-| 12 — String-only adapters cannot support WP2 | §2.3 carries structured Boundary/origin metadata to adapters and names the later Lem mapping/type work, without claiming a body-only signature-preserving conversion. |
+| 1 — Ambiguous fields and diagnostic marker injection | §§2.1–2.2 retain injective encoding and escaped dynamic fields; §§3–4 decode markers only in their owning frames. New producers cannot inject another envelope/fuel record through detail. General host-banner provenance is deferred (§9), not certified by the decoder. |
+| 2 — Forgeable ModelFailure attribution | §1.2 retains the concrete sentinel limit under the operational ruling and names the structural mover. No new atom or authenticity theorem. |
+| 3 — Exit 137 is not OOM | §3 restates today's rule: bare 137 RED, positive owned `oom_kill` counter the witness, including descendant OOM at parent success. §8.2 retains the probes; no sidecar is needed to state or obey that distinction. |
+| 4 — First-match/channel bypass | §4 decodes all supplied stop positions, distinguishes absent/malformed, validates class/channel/fields, and preserves errors alongside earlier stops. Ordinary Error payloads remain data. This is a local decoder contract, not a wholesale classifier rewrite. |
+| 5 — Multiple ModelFailures/causes | §4.2 returns every indexed occurrence; §5 requires consumer summaries to retain the entire collection. No new Report wire schema is needed. |
+| 6 — Invariant/resource hidden by coarse projections | §4.3 makes INVARIANT RED in PNVI and immaculate before any oracle/resource early return. No new generic STOP→CRASH projection is introduced. Wider resource/mixed-cause lane-policy redesign is deferred (§9). |
+| 7 — Missing migration work | C explicitly includes all seven MonadicFailstop message pins, PNVI/CLI witnesses, observation-plant positive/negative cases and register reseals. Those remain required despite the smaller apparatus scope. |
+| 8 — Multi-line CLI and usage exits | §§2.3/4.1 preserve one envelope per switch element and one exit after the collection. §5 retains current usage exits; the separate 1→2 change is deferred (§9), removing the contradictory unchanged-exit promise. |
+| 9 — Fuel/stack facts and delivery overlap | §3 retains exact kill, bare-panic-with-trace and translation-panic forms; §8.3 retains measured stack framing. New stack classification is explicitly deferred, with no competing delivery promise (§9). |
+| 10 — Premature or false consumer attribution | §5 keeps full producer C before complete delivery, gives the actual consumer patch recipe and lists remaining limits. Generated legacy panics are never automatically SHARED_CRASH. |
+| 11 — Classifier CLI loses metadata | §4.2's Python objects retain all fields and occurrences; §5 uses that API before truncation. The consumer does not depend on the lossy proposed CLI. A new machine CLI is deferred (§9). |
+| 12 — String-only adapters cannot support WP2 | §2.3 keeps structured Boundary/origin values through adapters and names future mapping/type work without claiming unchanged String-only signatures. |
 
-V1 §8's three corrections are subsumed respectively by findings 3, 4 and 10.
-That confirms their substance without treating the errata as the new specification.
+V1's three errata remain reflected in findings 3, 4 and 10. Neither v1 nor an
+older v2 revision is an alternative fact table for this mission.
 
 ## 8. Measurements and reproducible probes
 
 These probes used the existing build; no production source was modified. Raw
 captures and scratch sources were removed after this record was written. They
-do not certify the proposed codec or sidecar, which are not implemented.
+do not certify an implemented codec. Host/timeout probes below remain useful
+measurements of existing mechanisms; their proposed interface work is deferred
+in §9, not a prerequisite for this narrower delivery.
 
 ### 8.1 JSON duplicate keys and Unicode
 
@@ -884,3 +804,60 @@ To reproduce, JSON-quote these input strings in the Lean loop of §8.1 and pass
 them directly to Python's loads. This verifies the selected spelling through
 the stock parsers; schema admission and the escape-token guard still require
 their implementation tests. No implementation, ladder, merge or push is claimed.
+
+### 8.4 Consumer and classifier source checks for revision 2
+
+Read-only checks used cerberus-caesium HEAD
+`75a6dd32e403df6597af7c0abb659c21d1214a89`; `scripts/differential.py` and
+`scripts/env.sh` had no local modifications. No consumer files were changed.
+Reproduce by reading these definitions at that commit:
+
+- `run:148–159`: exported `cap` around `timeout`; separate captured stdout/stderr;
+  `text=True, errors="replace"`; returns rc, output, diagnostics and seconds.
+- `parse_driver:529–552`: iterates batch records but converts ModelFailure to
+  Error plus a textual prefix. Execution headers are discarded there.
+- `run_driver:555–561`: parses before returning only five bad lines and 500
+  diagnostic characters; searches merged text for fuel and misses the translation
+  PANIC payload form. These truncations must follow stop decoding, not precede it.
+- `driver_summary:716–752`: returns early for 124, 137, fuel and other abnormal
+  statuses. Stop collections must be attached before those branches.
+- `scripts/env.sh:65`: cap invokes an available `capped` or the command directly;
+  its implementation is not this provider's proposed sidecar interface.
+
+At the provider base, `observations.parse` rejects bare 137 and LADDER specifies
+positive OOM evidence. `pnvi_lane.classify_side`, however, currently has
+`obs.CAP_OOM.search(stderr) or status == 137` in its KILL branch. That existing
+resource-policy divergence is not evidence for a new 137→OOM rule. It remains
+explicitly outside this amendment's two lane corrections; the decoder never
+uses it as a witness. No claim that every legacy resource classifier already
+obeys the normative rule is made.
+
+## 9. Deferred (not needed by the two goals)
+
+The scope ruling defers the following work. Deferral preserves the two-goal
+claim because the consumer receives every explicit stop through the existing
+channels, with no new positive host-origin or completion claim. Unexplained or
+malformed observations remain failures. Existing limitations are stated, not
+renamed as successful classification.
+
+| Deferred work | Finding(s) addressed | Why deferral is sound for this delivery |
+|---|---|---|
+| The capture sidecar and Host tuple; new capped capture mode, stream separation, finalization/ownership rules and portability policy | 1 (host-banner provenance), 3, 6 | Stop-class metadata is already carried by the existing producer channels. `decode_stop` does not derive host causes from diagnostic banners. Today's positive-counter/bare-137 rule remains; no new guarantee that legacy stderr authenticates a host event is offered. §8.2's probes remain facts, not an interface dependency. |
+| A new timeout notification convention and timing/hang subtype | 3, 6, 9 | The three stop tags and their collections do not require new deadline evidence or timing. Existing resource handling stays outside the stop decoder; resource/status returns must preserve already decoded stops. No status alone is newly promoted to trusted resource evidence. |
+| The Report JSON schema, lossless machine CLI and new completion/projection API | 4, 5, 11 | The in-process Python API preserves every stop and all metadata, alongside problems and raw captures held by the caller. Consumer code uses that API directly, then its existing ordinary-observation checks. There is no lossy provider CLI in the integration path. |
+| Usage-error exit 1→2 and expansion into new attributed admission paths | 8 | Existing declared refusals migrate, and per-element switch envelopes fix the actual collection defect at the existing exit 2. Plain usage failures retain their behavior and are not promised a new REFUSAL tag. No semantic verdict is changed by postponing admission unification. |
+| Rerouting every lane through one classifier; new resource-direction/mixed-cause policies, `.unsupported.c` policy and a global baseline re-record | 6, 7, 10 | C supplies metadata; only the two named lane corrections are needed here to prevent invariants being accepted as crashes and to avoid invented shared attribution. Consumer integration retains all causes independently. Existing failure policies are neither broadened nor certified by this deferral; the PNVI resource-rule divergence is recorded in §8.4. |
+| New RESOURCE/stack classification | 9 | Stack is not one of the three emitted stop classes. Keeping an unclassified stack abort failing does not fabricate a verdict or an upstream attribution. The measured full frame remains in §8.3 for a later classifier task. |
+| New message-convention speedbump and a general tray-drafting campaign | 7, 10, 12 (future maintenance) | Existing register gates, required reseals, producer tests and source review cover this migration. Existing attribution/tray metadata must be accurate, but neither an extra check nor preparing every future report is necessary to expose the metadata to the consumer. |
+
+The usage scope deferred above includes Main's explicit exit-1 branches at
+1496, 1613, 1678, 1690, 1696, 1701 and 1759, plus empty-input handling in
+`readInputs:335`. These source locations were measured in the first v2 pass;
+they are not a five-site budget. Keeping this inventory does not schedule the
+conversion in checkpoint C.
+
+The structural-outcome and pure-failure arcs remain the already named movers
+for §1's accepted limits (finding 2 and the later part of finding 12). They are
+not covert additions to this reporting mission. Any later deferred task gets
+its own scope and review; it must not be folded into producer migration merely
+because the earlier v2 draft described it.
