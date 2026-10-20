@@ -1,3 +1,4 @@
+import CerbStopSites
 /-
   Hand-written Lean implementations for Cerberus implementation-defined behaviour.
   Corresponds to: ocaml_frontend/ocaml_implementation.ml (DefaultImpl module).
@@ -62,7 +63,7 @@ abbrev EnumDefs := Fmap sym integerType
     applied call site; if it ever runs, that is a reader-lifting defect — fail loudly
     (the CerbTags.tagDefsUnreachable shape; `failwithI`, seam hygiene 2026-09-19). -/
 def enumDefinitionsUnreachable (_ : Unit) : EnumDefs :=
-  failwithI "CerberusImpl.enumDefinitionsUnreachable: applied enum_definitions () site survived reader lifting"
+  failwithI (CerbStop.render (.invariant (CerbStopSites.enumReader "CerberusImpl.enumDefinitionsUnreachable: applied enum_definitions () site survived reader lifting")))
 
 /-- The named lookup — `Ocaml_implementation.typeof_enum` (ocaml_implementation.ml:
     144-150) over the map instead of the registry: the registered compatible type,
@@ -75,7 +76,7 @@ def lookupEnum (enumDefs : EnumDefs) (tag_sym : sym) : integerType :=
   -- `Symbol.symbol_compare` parity of the OCaml registry (ocaml_implementation.ml:145)
   match (fmapElements enumDefs).find? (fun (k, _) => symbolEquality k tag_sym) with
   | some (_, ity) => ity
-  | none => failwithI s!"Ocaml_implementation.typeof_enum: '{show_symbol tag_sym}' was not registered"
+  | none => failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.enumMissing s!"Ocaml_implementation.typeof_enum: '{show_symbol tag_sym}' was not registered")))
 
 /-- Resolve an `Enum` through the map and leave every other type as it is — the
     `match ity with Enum tag_sym -> typeof_enum tag_sym | _ -> ity` step the OCaml
@@ -113,7 +114,7 @@ def is_signed_ity (ity : integerType) : Bool :=
   | .Bool0 => false
   | .Signed _ => true
   | .Unsigned _ => false
-  | .Enum0 _ => failwithI "assert false: Common.is_signed_ity reached an un-normalised Enum (ocaml_implementation.ml:95-96; the callers resolve it first)"
+  | .Enum0 _ => failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.signedEnum "assert false: Common.is_signed_ity reached an un-normalised Enum (ocaml_implementation.ml:95-96; the callers resolve it first)")))
   | .Size_t => false    -- STD §7.19#2
   | .Wchar_t => true
   | .Wint_t => true
@@ -162,7 +163,7 @@ def aux_ibty : integerBaseType → integerBaseType
     -- aliased" assertion, kind 1) but the missing entry is a width the
     -- implementation never defined (kind 2 shape); either reading gives no
     -- meaning to `__cerbty_int128_t` on DefaultImpl — a loud fail-stop
-    | none => failwithI s!"DefaultImpl.type_alias_map has no alias for an N-family width of {n} (ocaml_implementation.ml:39-44, :155-160: Option.get raises on the oracle); zero-discrepancy Z2-I-03"
+    | none => failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.aliasMissing s!"DefaultImpl.type_alias_map has no alias for an N-family width of {n} (ocaml_implementation.ml:39-44, :155-160: Option.get raises on the oracle); zero-discrepancy Z2-I-03")))
   | .Intmax_t => .Long     -- :45-46, :162
   | .Intptr_t => .Long     -- :47-48, :163
   | ibty => ibty           -- :49-50
@@ -177,7 +178,7 @@ def aux_ibty : integerBaseType → integerBaseType
 def normalise_aliases : integerType → integerType
   | .Signed ibty => .Signed (aux_ibty ibty)      -- :52-53
   | .Unsigned ibty => .Unsigned (aux_ibty ibty)  -- :54-55
-  | .Enum0 _ => failwithI "CerberusImpl.normalise_aliases: an un-normalised Enum reached a type-only layout rep (Implementation.normalise_integerType / CerbMem resolveEnum normalise first — unreachable by construction)"
+  | .Enum0 _ => failwithI (CerbStop.render (.invariant (CerbStopSites.normaliseEnum "CerberusImpl.normalise_aliases: an un-normalised Enum reached a type-only layout rep (Implementation.normalise_integerType / CerbMem resolveEnum normalise first — unreachable by construction)")))
   | .Wchar_t => .Signed .Int_                    -- :58-59, :164 (TODO: check — upstream's own note)
   | .Wint_t => .Signed .Int_                     -- :60-61, :165
   | .Size_t => .Unsigned .Long                   -- :62-63, :166
@@ -221,9 +222,9 @@ def sizeof_ity (ity : integerType) : Option Nat :=
       | .Int_ => 4
       | .Long | .LongLong => 8
       | .IntN_t _ | .Int_leastN_t _ | .Int_fastN_t _ | .Intmax_t | .Intptr_t =>
-        failwithI "assert false: DefaultImpl.sizeof_ity reached an un-normalised base type (ocaml_implementation.ml:188-193)")
+        failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.sizeofBase "assert false: DefaultImpl.sizeof_ity reached an un-normalised base type (ocaml_implementation.ml:188-193)"))))
   | .Enum0 _ | .Wchar_t | .Wint_t | .Size_t | .Ptrdiff_t =>
-    failwithI "assert false: DefaultImpl.sizeof_ity reached an un-normalised type (ocaml_implementation.ml:195-200)"
+    failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.sizeofType "assert false: DefaultImpl.sizeof_ity reached an un-normalised type (ocaml_implementation.ml:195-200)")))
   | .Ptraddr_t => some 8                                                 -- :201
 
 /-- Precision (number of value bits) of an integer type.

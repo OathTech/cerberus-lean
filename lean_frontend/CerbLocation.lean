@@ -1,3 +1,4 @@
+import CerbStopSites
 import LemLib
 /-
   Source location tracking.
@@ -171,7 +172,7 @@ private def posLt (p1 p2 : Pos) : Bool :=
     `CabsImport.jsonToLoc` rejects an empty `Loc_regions` list). -/
 private def outerBbox (xs : List (Pos × Pos)) : Pos × Pos :=
   match xs with
-  | [] => failwithI "Cerb_location.outer_bbox: [] (cerb_location.ml:109-110 assert false)"
+  | [] => failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.outerBboxEmpty "Cerb_location.outer_bbox: [] (cerb_location.ml:109-110 assert false)")))
   | (b0, e0) :: rest =>
     rest.foldl (fun (bAcc, eAcc) (b, e) =>
       ((if posLt b bAcc then b else bAcc), (if posLt e eAcc then eAcc else e))
@@ -321,7 +322,7 @@ def simpleLocation : Loc → String
   | .point pos => s!"{pos.line}:{pos.col}"
   | .region s e _ => s!"<{s.line}:{s.col}--{e.line}:{e.col}>"
   | .regions ((s, e) :: _) _ => s!"<{s.line}:{s.col}--{e.line}:{e.col}>"
-  | .regions [] _ => failwithI "CerbLocation.simpleLocation: hd"
+  | .regions [] _ => failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.simpleLocationEmpty "CerbLocation.simpleLocation: hd")))
 
 private def stringOfPos (pos : Pos) : String :=
   s!"{pos.file}:{pos.line}:{pos.col}"

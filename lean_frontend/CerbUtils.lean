@@ -1,3 +1,4 @@
+import CerbStopSites
 import LemLib
 /-
   Utility functions for Cerberus Lean port.
@@ -50,7 +51,7 @@ def list_remove_assoc {α β : Type} [BEq α] (key : α) : List (α × β) → L
     silent answer if the stepper changes (zero-discrepancy Z2-U-02,
     reclassified 2026-09-28). -/
 def bounded_integer (_lo _hi : Int) : Int :=
-  failwithI "CerbUtils.bounded_integer: any_bounded_int is not modelled (the oracle draws from a time-seeded PRNG; its live stepper fails this builtin, core_reduction.lem:1012-1013)"
+  failwithI (CerbStop.render (.invariant (CerbStopSites.boundedInteger "CerbUtils.bounded_integer: any_bounded_int is not modelled (the oracle draws from a time-seeded PRNG; its live stepper fails this builtin, core_reduction.lem:1012-1013)")))
 
 /-! ## Character encoding
     Corresponds to: Decode.encode_character_constant in decode.ml:223-225:
@@ -104,7 +105,7 @@ def gcc_builtin_generic_ffs (n : Int) : Int :=
     exactly trailing_zeros). -/
 def gcc_builtin_ctz (n : Int) : Int :=
   if n == 0 then
-    failwithI "Ocaml_gcc_builtins.ctz: zero argument (ocaml_gcc_builtins.ml:5 assert)"
+    failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.ctzZero "Ocaml_gcc_builtins.ctz: zero argument (ocaml_gcc_builtins.ml:5 assert)")))
   else Int.ofNat (trailingZerosZ n)
 
 /-- bswap16 — ocaml_gcc_builtins.ml:13-18:
@@ -114,7 +115,7 @@ def gcc_builtin_ctz (n : Int) : Int :=
     wrap). Swap per :16-17. -/
 def gcc_builtin_bswap16 (n : Int) : Int :=
   if n < 0 || n > 0xFFFF then
-    failwithI "Ocaml_gcc_builtins.bswap16: out of range (ocaml_gcc_builtins.ml:15 assert)"
+    failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.bswap16Range "Ocaml_gcc_builtins.bswap16: out of range (ocaml_gcc_builtins.ml:15 assert)")))
   else
     let v := n.toNat
     Int.ofNat (((v &&& 0xFF) <<< 8) ||| ((v >>> 8) &&& 0xFF))
@@ -123,7 +124,7 @@ def gcc_builtin_bswap16 (n : Int) : Int :=
     [0, 0xFFFFFFFF]; swap per :24-26. -/
 def gcc_builtin_bswap32 (n : Int) : Int :=
   if n < 0 || n > 0xFFFFFFFF then
-    failwithI "Ocaml_gcc_builtins.bswap32: out of range (ocaml_gcc_builtins.ml:22 assert)"
+    failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.bswap32Range "Ocaml_gcc_builtins.bswap32: out of range (ocaml_gcc_builtins.ml:22 assert)")))
   else
     let v := n.toNat
     let b0 := v &&& 0xFF
@@ -140,7 +141,7 @@ def gcc_builtin_bswap32 (n : Int) : Int :=
     clamp + always-unsigned result). -/
 def gcc_builtin_bswap64 (n : Int) : Int :=
   if n < -(2 ^ 63) || n ≥ 2 ^ 63 then
-    failwithI "Ocaml_gcc_builtins.bswap64: Z.to_int64 overflow (ocaml_gcc_builtins.ml:30)"
+    failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.bswap64Overflow "Ocaml_gcc_builtins.bswap64: Z.to_int64 overflow (ocaml_gcc_builtins.ml:30)")))
   else
     let v := (Int.emod n (2 ^ 64)).toNat  -- the int64 bit pattern (euclidean mod)
     let b0 := v &&& 0xFF

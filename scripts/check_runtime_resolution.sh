@@ -47,7 +47,8 @@ if [[ "${1:-}" == "--selftest" ]]; then
     printf '#!/usr/bin/env bash\necho %q\nexit 1\n' \
         'Undefined {ub: "UB017_out_of_range_floating_integer_conversion", stderr: "", loc: "<3:11--3:17>"}' > "$ST/ignore-runtime"
     # (b) refuses everything
-    printf '#!/usr/bin/env bash\necho "cerberus-lean: refused — runtime: plant" >&2\nexit 2\n' > "$ST/refuse-all"
+    printf '#!/usr/bin/env bash\nprintf "%%s\\n" %q >&2\nexit 2\n' \
+        'cerberus-lean stop ["1","REFUSAL","runtime",null,"plant","plant mover",null,"plant"]' > "$ST/refuse-all"
     chmod +x "$ST/ignore-runtime" "$ST/refuse-all"
     for plant in ignore-runtime refuse-all; do
         if CERB_LEAN_BIN_OVERRIDE="$ST/$plant" "$0" > "$ST/$plant.out" 2>&1; then
@@ -67,6 +68,17 @@ mkdir -p "$ROOT/.tmp/scripts" || { echo "$NAME: FAIL — cannot create $ROOT/.tm
 W=$(mktemp -d "$ROOT/.tmp/scripts/$NAME.XXXXXX") || { echo "$NAME: FAIL — mktemp"; exit 1; }
 trap 'rm -rf "$W"' EXIT
 
+check_refusal() {  # boundary, JSON item list (or null), required and forbidden detail
+    python3 - "$SCRIPT_DIR" "$W/stdout" "$W/stderr" "$RC" "$@" <<'PY'
+import json, sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+from test_stops import assert_cli_refusals
+assert_cli_refusals(Path(sys.argv[2]).read_bytes(), Path(sys.argv[3]).read_bytes(),
+                    int(sys.argv[4]), sys.argv[5] or None, json.loads(sys.argv[6]),
+                    sys.argv[7], sys.argv[8] if len(sys.argv) > 8 else '')
+PY
+}
 fails=0; n=0
 fail() { echo "$NAME: FAIL — $*"; fails=$((fails + 1)); }
 
@@ -85,8 +97,9 @@ lean() {
     local envs=()
     while [[ "$1" != "--" ]]; do envs+=("$1"); shift; done
     shift
-    OUT=$(cd "$cwd" && env -u CERB_INSTALL_PREFIX -u OPAM_SWITCH_PREFIX LEAN_ABORT_ON_PANIC=1 \
-        ${envs[@]+"${envs[@]}"} "$BIN" "$@" 2>&1); RC=$?
+    (cd "$cwd" && env -u CERB_INSTALL_PREFIX -u OPAM_SWITCH_PREFIX LEAN_ABORT_ON_PANIC=1 \
+        ${envs[@]+"${envs[@]}"} "$BIN" "$@") > "$W/stdout" 2> "$W/stderr"; RC=$?
+    OUT=$(cat "$W/stdout" "$W/stderr")
 }
 expect_line() {  # <label> <expected-line>
     n=$((n + 1))
@@ -94,7 +107,9 @@ expect_line() {  # <label> <expected-line>
 }
 expect_refusal() {  # <label> <refusal-prefix> <substring>
     n=$((n + 1))
-    if [[ $RC -ne 2 || "$OUT" != *"cerberus-lean: refused — $2"* || "$OUT" != *"$3"* ]]; then
+    local boundary=runtime
+    [[ "$2" == "library-location classification:" ]] && boundary=library-location
+    if ! check_refusal "$boundary" null "$3"; then
         fail "$1: expected exit 2 + 'refused — $2' naming '$3'; got rc=$RC: ${OUT:0:300}"
     fi
 }

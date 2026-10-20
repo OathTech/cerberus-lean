@@ -1,3 +1,4 @@
+import CerbStopSites
 import LemLib
 /-
   Floating-point operations for Cerberus.
@@ -305,7 +306,7 @@ def of_string (s : String) : Float :=
       (parseDecimal cs).map fun (m, e10, nd) => scaledToBits neg m 10 e10 nd
   match bits with
   | some b => Float.ofBits b
-  | none => failwithI s!"CerbFloat.of_string: {s} (OCaml Cerb_floating.of_string raises Failure)"
+  | none => failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.floatParse s!"CerbFloat.of_string: {s} (OCaml Cerb_floating.of_string raises Failure)")))
 
 /-! ## Exact decimal formatting (arc-10 S3, pp-placeholder text class)
 
@@ -353,7 +354,10 @@ private def scaledRound (m : Nat) (e : Int) (p : Int) : Nat :=
     0x7ff8000000000000 (measured) — so printing one would guess. (A NaN's
     stored bytes are already canonical: named deviation N2, VALIDATION §2b.) -/
 def formatFixed (prec : Nat) (f : Float) : String :=
-  if f.isNaN then failwithI "CerbFloat.formatFixed: refused — printing a NaN with %f is not supported: its text depends on the NaN's sign bit, which Lean cannot read (Float.toBits canonicalizes NaNs); CONTRACT.md §3"
+  if f.isNaN then failwithI (CerbStop.render (.refusal (CerbStopSites.refusal .floatFormat (some "%f")
+      "CerbFloat.formatFixed: refused — printing a NaN with %f is not supported: its text depends on the NaN's sign bit, which Lean cannot read (Float.toBits canonicalizes NaNs); CONTRACT.md §3"
+      ⟨"preservation of the NaN sign bit through the floating-point runtime", by decide⟩
+      ⟨"CONTRACT.md §3", by decide⟩)))
   else if f.isInf then (if f < 0 then "-inf" else "inf")
   else
     let (sign, m, e) := decomposeFinite f
@@ -435,7 +439,7 @@ def truncToInt (f : Float) : Int :=
   let expBits := ((bits >>> 52) &&& 0x7FF).toNat
   let mantBits := (bits &&& 0xFFFFFFFFFFFFF).toNat
   if expBits == 0x7FF then
-    failwithI "CerbFloat.truncToInt: nan/inf (OCaml Z.of_float raises Z.Overflow)"
+    failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.floatToInt "CerbFloat.truncToInt: nan/inf (OCaml Z.of_float raises Z.Overflow)")))
   else
     let mant := if expBits == 0 then mantBits else mantBits + (1 <<< 52)
     -- unbiased exponent minus mantissa width: value = mant · 2^(expBits−1075)

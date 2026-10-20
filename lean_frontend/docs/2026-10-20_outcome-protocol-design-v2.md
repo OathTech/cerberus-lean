@@ -247,6 +247,11 @@ that re-rendering arbitrary accepted JSON preserves its whitespace is needed.
   it, then calls today's `failStopMem`. It cannot accept a refusal by accident.
 - `refuseM` accepts a structured refusal and uses the existing memM panic
   mechanism. It does not put a refusal string inside an ordinary Error kill.
+  **Amendment, 2026-10-20 (checkpoint record C.5):** its implementation is
+  `ND fun s => (NDkilled (failwithI (CerbStop.render (.refusal r))), s)`.
+  The fixed killed node retains the input state; the opaque reason aborts at
+  node construction. This preserves the public all-switch load-erasure theorem
+  without assuming an erasure equation for an opaque whole-monad value.
 - CLI rendering and exit are separate: build a **nonempty list** of refusals,
   print every envelope, then exit once with 2. Invariant CLI output is one
   invariant envelope, also exit 2. No fall-through default value is introduced.

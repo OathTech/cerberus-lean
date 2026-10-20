@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # check_cli_refusals.sh — contract enforcement witness (CONTRACT.md §4.1,
 # 2026-09-28): every CLI-refused area has a pinned refusal. Each flag below
-# must make the Lean driver exit 2 with `cerberus-lean: refused — <flag>:`
-# and its named feature (Main.lean refuseFlag). Control: the same argv
+# must make the Lean driver exit 2 with structured REFUSAL records
+# and their boundary, items and named feature (Main.lean refuseFlag). Control: the same argv
 # without the flag must NOT be refused (so a driver that refuses everything,
 # or exits 2 for another reason, cannot pass). Fail-closed.
 #
 # CLASS [AGENT, per [USER 2026-10-07] ruling that gates need not be adversarially robust
-# unless they are trust surfaces]: a SPEEDBUMP — it pins the CLI's refusal TEXTS and the
+# unless they are trust surfaces]: a SPEEDBUMP — it pins the CLI's refusal metadata and details and the
 # acceptance of `--switches=PNVI_ae_udi` (PNVI arc S4) so an accidental change is loud. The
 # trust property behind the acceptance — agreement with the oracle under the switch — is
 # the lane's (scripts/test_pnvi.sh, a trust surface); the one-program agreement witness
@@ -17,11 +17,40 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BIN="${CERB_LEAN_BIN_OVERRIDE:-$SCRIPT_DIR/../lean_frontend/.lake/build/bin/cerberus-lean}"
 [[ -x "$BIN" ]] || { echo "check_cli_refusals: FAIL — driver not built: $BIN"; exit 1; }
 INPUT=/nonexistent/cli-refusal-probe.json   # never read: flags are refused first
+mkdir -p "$SCRIPT_DIR/../.tmp"
+W=$(mktemp -d "$SCRIPT_DIR/../.tmp/cli-refusals.XXXXXXXX") || exit 1
+trap 'rm -rf "$W"' EXIT
+capture() {
+    env LEAN_ABORT_ON_PANIC=1 "$BIN" "$@" > "$W/stdout" 2> "$W/stderr"; rc=$?
+    out=$(cat "$W/stdout" "$W/stderr")
+}
+check_refusal() {  # boundary, JSON item list (or null), required and forbidden detail
+    python3 - "$SCRIPT_DIR" "$W/stdout" "$W/stderr" "$rc" "$@" <<'PY'
+import json, sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+from test_stops import assert_cli_refusals
+assert_cli_refusals(Path(sys.argv[2]).read_bytes(), Path(sys.argv[3]).read_bytes(),
+                    int(sys.argv[4]), sys.argv[5] or None, json.loads(sys.argv[6]),
+                    sys.argv[7], sys.argv[8] if len(sys.argv) > 8 else '')
+PY
+}
+check_flag_refusal() {  # flag, required detail
+    local boundary=cli items
+    case "$1" in
+        --switches=*) boundary=switches
+            items=$(python3 -c 'import json,sys; print(json.dumps(sys.argv[1].split("=",1)[1].split(",")))' "$1") ;;
+        --iso) boundary=switches; items='["--iso"]' ;;
+        --concurrency) boundary=concurrency; items='["--concurrency"]' ;;
+        *) items=$(python3 -c 'import json,sys; print(json.dumps([sys.argv[1]]))' "$1") ;;
+    esac
+    check_refusal "$boundary" "$items" "$2"
+}
 fails=0
 expect_refused() {  # $1=flag $2=feature substring
     local out rc
-    out=$(env LEAN_ABORT_ON_PANIC=1 "$BIN" --batch "$1" "$INPUT" 2>&1); rc=$?
-    if [[ $rc -ne 2 || "$out" != *"cerberus-lean: refused — $1:"* || "$out" != *"$2"* ]]; then
+    capture --batch "$1" "$INPUT"
+    if ! check_flag_refusal "$1" "$2"; then
         echo "check_cli_refusals: FAIL — $1: expected exit 2 + refusal naming '$2'; got rc=$rc: ${out:0:200}"
         fails=$((fails + 1))
     fi
@@ -38,11 +67,11 @@ expect_refused "--switches=PNVI" "\`PNVI\`: the PNVI-plain / PNVI-ae provenance 
 expect_refused "--switches=PNVI_ae" "\`PNVI_ae\`: the PNVI-plain / PNVI-ae provenance variants"
 expect_refused "--switches=permissive_pointer_arith" "the pointer-arithmetic mode switch"
 expect_refused "--switches=strict_reads" "rm_unspecs Core pass"
-expect_refused "--switches=forbid_nullptr_free" "its arm is a loud kill in CerbMem"
-expect_refused "--switches=zap_dead_pointers" "its arm is a loud kill in CerbMem"
-expect_refused "--switches=strict_pointer_equality" "its arm is a loud kill in CerbMem"
-expect_refused "--switches=strict_pointer_relationals" "its arm is a loud kill in CerbMem"
-expect_refused "--switches=zero_initialised" "its arm is a loud kill in CerbMem"
+expect_refused "--switches=forbid_nullptr_free" "its arm is a structured refusal in CerbMem"
+expect_refused "--switches=zap_dead_pointers" "its arm is a structured refusal in CerbMem"
+expect_refused "--switches=strict_pointer_equality" "its arm is a structured refusal in CerbMem"
+expect_refused "--switches=strict_pointer_relationals" "its arm is a structured refusal in CerbMem"
+expect_refused "--switches=zero_initialised" "its arm is a structured refusal in CerbMem"
 expect_refused "--switches=inner_arg_temps" "std_inner_arg_temps.core"
 expect_refused "--switches=permissive_printf" "permissive printf"
 expect_refused "--switches=CHERI" "cerberus-cheri executable"
@@ -56,8 +85,8 @@ expect_refused "--switches=PNVI_ae_udi,bogus" "R-PNVI-12"
 expect_refused "--switches=PNVI_ae_udi," "an empty switch name"
 expect_refused "--switches=" "an empty switch name"
 # the space form (`--switches V`, two argv words): the refusal names the flag as given
-out=$(env LEAN_ABORT_ON_PANIC=1 "$BIN" --batch --switches strict_reads "$INPUT" 2>&1); rc=$?
-if [[ $rc -ne 2 || "$out" != *"cerberus-lean: refused — --switches strict_reads:"* || "$out" != *"semantics switch set is not supported"* ]]; then
+capture --batch --switches strict_reads "$INPUT"
+if ! check_refusal switches '["strict_reads"]' "semantics switch set is not supported"; then
     echo "check_cli_refusals: FAIL — --switches strict_reads (space form): expected exit 2 + refusal; got rc=$rc: ${out:0:200}"
     fails=$((fails + 1))
 fi
@@ -67,7 +96,7 @@ fi
 for form in "--switches=PNVI_ae_udi" "--switches PNVI_ae_udi"; do
     # shellcheck disable=SC2086
     out=$(env LEAN_ABORT_ON_PANIC=1 "$BIN" --batch --runtime="$SCRIPT_DIR/../_build/install/default" $form "$INPUT" 2>&1); rc=$?
-    if [[ "$out" == *"cerberus-lean: refused"* || "$out" != *"cli-refusal-probe.json"* ]]; then
+    if [[ "$out" == *"cerberus-lean stop"* || "$out" != *"cli-refusal-probe.json"* ]]; then
         echo "check_cli_refusals: FAIL — $form must be ACCEPTED (reach the input read); got rc=$rc: ${out:0:200}"
         fails=$((fails + 1))
     fi
@@ -80,24 +109,24 @@ expect_refused "--iso" "the ISO switch set"
 # the generic "unknown flag" / position text; and a repeated UNKNOWN name is "failed to parse"
 # each time (switches.ml:140-141), never "would override" (only known names enter the list)
 expect_switch_verdict() {  # $1=label $2=required substring $3=forbidden substring; argv after
-    local label="$1" want="$2" forbid="$3" out rc; shift 3
-    out=$(env LEAN_ABORT_ON_PANIC=1 "$BIN" "$@" 2>&1); rc=$?
-    if [[ $rc -ne 2 || "$out" != *"$want"* || ( -n "$forbid" && "$out" == *"$forbid"* ) ]]; then
+    local label="$1" want="$2" forbid="$3" boundary="$4" items="$5" out rc; shift 5
+    capture "$@"
+    if ! check_refusal "$boundary" "$items" "$want" "$forbid"; then
         echo "check_cli_refusals: FAIL — $label: expected exit 2 with '$want'${forbid:+ and without '$forbid'}; got rc=$rc: ${out:0:200}"
         fails=$((fails + 1))
     fi
 }
-expect_switch_verdict "--parse-core --switches=bogus" "\`bogus\`: unknown switch name" "unknown flag" --parse-core --switches=bogus "$INPUT"
-expect_switch_verdict "--parse-core --switches bogus" "\`bogus\`: unknown switch name" "unknown flag" --parse-core --switches bogus "$INPUT"
-expect_switch_verdict "--switches=bogus before --batch" "\`bogus\`: unknown switch name" "canonical position" --switches=bogus --batch "$INPUT"
-expect_switch_verdict "--switches=bogus,bogus" "\`bogus\`: unknown switch name" "would override" --batch --switches=bogus,bogus "$INPUT"
-expect_switch_verdict "--parse-core --switches=PNVI_ae_udi" "reads no switch set" "unknown flag" --parse-core --switches=PNVI_ae_udi "$INPUT"
-expect_switch_verdict "--switches=PNVI_ae_udi before --batch" "canonical position" "semantics switch set" --switches=PNVI_ae_udi --batch "$INPUT"
+expect_switch_verdict "--parse-core --switches=bogus" "\`bogus\`: unknown switch name" "unknown flag" switches '["bogus"]' --parse-core --switches=bogus "$INPUT"
+expect_switch_verdict "--parse-core --switches bogus" "\`bogus\`: unknown switch name" "unknown flag" switches '["bogus"]' --parse-core --switches bogus "$INPUT"
+expect_switch_verdict "--switches=bogus before --batch" "\`bogus\`: unknown switch name" "canonical position" switches '["bogus"]' --switches=bogus --batch "$INPUT"
+expect_switch_verdict "--switches=bogus,bogus" "\`bogus\`: unknown switch name" "would override" switches '["bogus","bogus"]' --batch --switches=bogus,bogus "$INPUT"
+expect_switch_verdict "--parse-core --switches=PNVI_ae_udi" "reads no switch set" "unknown flag" switches '["PNVI_ae_udi"]' --parse-core --switches=PNVI_ae_udi "$INPUT"
+expect_switch_verdict "--switches=PNVI_ae_udi before --batch" "canonical position" "semantics switch set" cli '["--batch"]' --switches=PNVI_ae_udi --batch "$INPUT"
 # control: no refused flag → not a refusal. The runtime is given explicitly
 # (the driver refuses without one since bug-hunt BUG-2, 2026-09-29), so the
 # control reaches the input read and fails there, unrefused.
 out=$(env LEAN_ABORT_ON_PANIC=1 "$BIN" --batch --runtime="$SCRIPT_DIR/../_build/install/default" "$INPUT" 2>&1); rc=$?
-if [[ "$out" == *"cerberus-lean: refused"* ]]; then
+if [[ "$out" == *"cerberus-lean stop"* ]]; then
     echo "check_cli_refusals: FAIL — control refused without a refused flag (rc=$rc): ${out:0:200}"
     fails=$((fails + 1))
 fi
@@ -107,8 +136,8 @@ fi
 RT="$SCRIPT_DIR/../_build/install/default"
 for pair in "--runtime=$RT --runtime=$RT" "--args a --args b" "--switches=PNVI_ae_udi --switches=PNVI_ae_udi" "--switches PNVI_ae_udi --switches=strict_reads"; do
     # shellcheck disable=SC2086
-    out=$(env LEAN_ABORT_ON_PANIC=1 CERB_INSTALL_PREFIX="$RT" "$BIN" --batch $pair "$INPUT" 2>&1); rc=$?
-    if [[ $rc -ne 2 || "$out" != *"cannot be repeated"* ]]; then
+    CERB_INSTALL_PREFIX="$RT" capture --batch $pair "$INPUT"
+    if ! check_refusal "" null "cannot be repeated"; then
         echo "check_cli_refusals: FAIL — repeated option ($pair): expected exit 2 + 'cannot be repeated'; got rc=$rc: ${out:0:200}"
         fails=$((fails + 1))
     fi
@@ -123,8 +152,6 @@ RT="$SCRIPT_DIR/../_build/install/default"
 if [[ ! -x "$ORACLE" ]]; then
     echo "check_cli_refusals: FAIL — oracle not built (agreement witness): $ORACLE"; fails=$((fails + 1))
 else
-    W=$(mktemp -d "$SCRIPT_DIR/../.tmp/cli-refusals.XXXXXXXX") || { echo "check_cli_refusals: FAIL — mktemp"; exit 1; }
-    trap 'rm -rf "$W"' EXIT
     cat > "$W/w.c" <<'CEOF'
 #include <stdint.h>
 int x = 7;

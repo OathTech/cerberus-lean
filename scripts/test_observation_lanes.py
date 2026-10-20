@@ -21,7 +21,7 @@ LEGACY_LANES = ('bytes', 'libc_exec', 'libxml2_uri', 'immaculate', 'speclab',
                 'speclab_divmod', 'speclab_bytearr', 'speclab_list', 'speclab_tree', 'speclab_seed')
 LANES = ('exec', 'multi_tu', 'cn_coverage', 'ci_sweep', 'gcc_oracle', 'verify', *LEGACY_LANES)
 STUB = r'''#!/usr/bin/env python3
-import os, pathlib, subprocess, sys
+import json, os, pathlib, subprocess, sys
 side = pathlib.Path(sys.argv[0]).name
 kind = os.environ[side.upper() + '_PLANT_KIND']
 real = os.environ['REAL_' + side.upper()]
@@ -60,7 +60,11 @@ elif kind == 'crash_fuel':
 elif kind == 'crash_garbage':
     out = b'corrupted transport bytes\n'
 elif kind in ('crash_model', 'crash_model_suffix'):
-    out, err, rc = b'ModelFailure {msg: "Concrete.memcmp: non-integer byte"}\n', b'', 1
+    stop = ['1', 'UPSTREAM_CRASH', 'CerbMem.memcmpByte', 'non-integer byte',
+            ['cerberus', 'b9aeedcb4dd438763b0eef7f95ac19e93875d7de',
+             'memory/concrete/impl_mem.ml', '2658', '2659', 'assert false'], ['none'], None]
+    payload = 'cerberus-lean stop ' + json.dumps(stop, separators=(',', ':'))
+    out, err, rc = ('ModelFailure {msg: ' + json.dumps(payload) + '}\n').encode(), b'', 1
     if kind == 'crash_model_suffix':
         out += b'garbage after complete-looking record\n'
 elif kind == 'crash_other':

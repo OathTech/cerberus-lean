@@ -1,3 +1,4 @@
+import CerbStopSites
 import LemLib
 /-
   Filesystem model for Cerberus: REFUSED IN FULL (2026-09-28).
@@ -20,8 +21,7 @@ import LemLib
   `write` on fd 0 to its own error.
 
   Refusal mechanism [deliberate]: `failwithI` (the house fail-stop leaf), not an FsError — an FsError
-  becomes errno + -1 through driver.lem store_error and a C program can absorb it. Every message starts
-  with `CerbFS refusal (fail-closed fs-model boundary):` and names the operation and its arguments.
+  becomes errno + -1 through driver.lem store_error and a C program can absorb it. Every message is a structured REFUSAL at boundary `fs`, naming the operation and its arguments.
   Witnesses: the immaculate lane's `zd-f1-truncate-negative-length`, `zd-z2f01-lseek-whence`,
   `zd-fs-*` rows (pinned refusals).
   This is a leaf module.
@@ -60,7 +60,7 @@ inductive FsError where
   | other : String → FsError
   deriving Inhabited, BEq
 
-/-- `panic!` needs an inhabitant at the refusal sites below; the
+/-- `failwithI` needs an inhabitant at the refusal sites below; the
     default is an enosys error (never observed: the driver refuses to run
     without LEAN_ABORT_ON_PANIC, so the panic aborts first). -/
 instance (α : Type) : Inhabited (Sum FsError α) := ⟨Sum.inl .enosys⟩
@@ -103,58 +103,61 @@ def fs_initial_state : FsState := default
 def string_of_fs_state (_ : FsState) : String := "<fs_state>"
 
 /-- The one refusal message of this module: `op` and its arguments, attributed to this boundary. -/
-private def fsRefusal (op : String) : String :=
-  s!"CerbFS refusal (fail-closed fs-model boundary): {op} — the filesystem is not modelled by this port ([USER 2026-09-28] contract D2: refused in full); answering would differ from, or merely guess at, the oracle's SibylFS (CerbFS.lean header; mover: a SibylFS-faithful filesystem model)"
+private def fsRefusal (op detail : String) : CerbStop.Refusal :=
+  CerbStopSites.refusal .fs (some op)
+    s!"{detail} — the filesystem is not modelled by this port; answering would differ from, or merely guess at, the oracle's SibylFS"
+    ⟨"a SibylFS-faithful filesystem model", by decide⟩
+    ⟨"CerbFS.lean; docs/2026-09-28_cerbfs-refuse-all-record.md", by decide⟩
 
 def fs_mkdir (_ : FsState) (path : String) (mode : Int) : FsState × (Sum FsError Nat) :=
-  failwithI (fsRefusal s!"mkdir '{path}' mode {mode}")
+  failwithI (CerbStop.render (.refusal (fsRefusal "mkdir" s!"mkdir '{path}' mode {mode}")))
 def fs_open (_ : FsState) (path : String) (oflag : Int) (mode : Option Int) : FsState × (Sum FsError Nat) :=
-  failwithI (fsRefusal s!"open '{path}' oflag {oflag} mode {repr mode}")
+  failwithI (CerbStop.render (.refusal (fsRefusal "open" s!"open '{path}' oflag {oflag} mode {repr mode}")))
 def fs_close (_ : FsState) (fd : Int) : FsState × (Sum FsError Nat) :=
-  failwithI (fsRefusal s!"close fd {fd}")
+  failwithI (CerbStop.render (.refusal (fsRefusal "close" s!"close fd {fd}")))
 def fs_write (_ : FsState) (fd : Int) (data : List Char) (count : Int) : FsState × (Sum FsError Nat) :=
-  failwithI (fsRefusal s!"write fd {fd} count {count} ({data.length}-byte buffer)")
+  failwithI (CerbStop.render (.refusal (fsRefusal "write" s!"write fd {fd} count {count} ({data.length}-byte buffer)")))
 def fs_read (_ : FsState) (fd : Int) (count : Int) : FsState × (Sum FsError (List Char)) :=
-  failwithI (fsRefusal s!"read fd {fd} count {count}")
+  failwithI (CerbStop.render (.refusal (fsRefusal "read" s!"read fd {fd} count {count}")))
 def fs_pwrite (_ : FsState) (fd : Int) (data : List Char) (count offset : Int) : FsState × (Sum FsError Nat) :=
-  failwithI (fsRefusal s!"pwrite fd {fd} count {count} offset {offset} ({data.length}-byte buffer)")
+  failwithI (CerbStop.render (.refusal (fsRefusal "pwrite" s!"pwrite fd {fd} count {count} offset {offset} ({data.length}-byte buffer)")))
 def fs_pread (_ : FsState) (fd : Int) (count off : Int) : FsState × (Sum FsError (List Char)) :=
-  failwithI (fsRefusal s!"pread fd {fd} count {count} offset {off}")
+  failwithI (CerbStop.render (.refusal (fsRefusal "pread" s!"pread fd {fd} count {count} offset {off}")))
 def fs_rename (_ : FsState) (oldP newP : String) : FsState × (Sum FsError Nat) :=
-  failwithI (fsRefusal s!"rename '{oldP}' -> '{newP}'")
+  failwithI (CerbStop.render (.refusal (fsRefusal "rename" s!"rename '{oldP}' -> '{newP}'")))
 def fs_umask (_ : FsState) (mask : Int) : FsState × (Sum FsError Nat) :=
-  failwithI (fsRefusal s!"umask {mask}")
+  failwithI (CerbStop.render (.refusal (fsRefusal "umask" s!"umask {mask}")))
 def fs_chmod (_ : FsState) (path : String) (mode : Int) : FsState × (Sum FsError Nat) :=
-  failwithI (fsRefusal s!"chmod '{path}' mode {mode}")
+  failwithI (CerbStop.render (.refusal (fsRefusal "chmod" s!"chmod '{path}' mode {mode}")))
 def fs_chdir (_ : FsState) (dir : String) : FsState × (Sum FsError Nat) :=
-  failwithI (fsRefusal s!"chdir '{dir}'")
+  failwithI (CerbStop.render (.refusal (fsRefusal "chdir" s!"chdir '{dir}'")))
 def fs_chown (_ : FsState) (path : String) (uid gid : Int) : FsState × (Sum FsError Nat) :=
-  failwithI (fsRefusal s!"chown '{path}' uid {uid} gid {gid}")
+  failwithI (CerbStop.render (.refusal (fsRefusal "chown" s!"chown '{path}' uid {uid} gid {gid}")))
 def fs_link (_ : FsState) (oldP newP : String) : FsState × (Sum FsError Nat) :=
-  failwithI (fsRefusal s!"link '{oldP}' -> '{newP}'")
+  failwithI (CerbStop.render (.refusal (fsRefusal "link" s!"link '{oldP}' -> '{newP}'")))
 def fs_readlink (_ : FsState) (path : String) : FsState × (Sum FsError (List Char)) :=
-  failwithI (fsRefusal s!"readlink '{path}'")
+  failwithI (CerbStop.render (.refusal (fsRefusal "readlink" s!"readlink '{path}'")))
 def fs_symlink (_ : FsState) (target lpath : String) : FsState × (Sum FsError Nat) :=
-  failwithI (fsRefusal s!"symlink '{target}' <- '{lpath}'")
+  failwithI (CerbStop.render (.refusal (fsRefusal "symlink" s!"symlink '{target}' <- '{lpath}'")))
 def fs_rmdir (_ : FsState) (path : String) : FsState × (Sum FsError Nat) :=
-  failwithI (fsRefusal s!"rmdir '{path}'")
+  failwithI (CerbStop.render (.refusal (fsRefusal "rmdir" s!"rmdir '{path}'")))
 def fs_truncate (_ : FsState) (path : String) (len : Int) : FsState × (Sum FsError Nat) :=
-  failwithI (fsRefusal s!"truncate '{path}' to {len}")
+  failwithI (CerbStop.render (.refusal (fsRefusal "truncate" s!"truncate '{path}' to {len}")))
 def fs_unlink (_ : FsState) (path : String) : FsState × (Sum FsError Nat) :=
-  failwithI (fsRefusal s!"unlink '{path}'")
+  failwithI (CerbStop.render (.refusal (fsRefusal "unlink" s!"unlink '{path}'")))
 def fs_lseek (_ : FsState) (fd offset whence : Int) : FsState × (Sum FsError Nat) :=
-  failwithI (fsRefusal s!"lseek fd {fd} offset {offset} whence {whence}")
+  failwithI (CerbStop.render (.refusal (fsRefusal "lseek" s!"lseek fd {fd} offset {offset} whence {whence}")))
 def fs_stat (_ : FsState) (path : String) : FsState × (Sum FsError FsStat) :=
-  failwithI (fsRefusal s!"stat '{path}'")
+  failwithI (CerbStop.render (.refusal (fsRefusal "stat" s!"stat '{path}'")))
 def fs_lstat (_ : FsState) (path : String) : FsState × (Sum FsError FsStat) :=
-  failwithI (fsRefusal s!"lstat '{path}'")
+  failwithI (CerbStop.render (.refusal (fsRefusal "lstat" s!"lstat '{path}'")))
 def fs_opendir (_ : FsState) (path : String) : FsState × (Sum FsError Nat) :=
-  failwithI (fsRefusal s!"opendir '{path}'")
+  failwithI (CerbStop.render (.refusal (fsRefusal "opendir" s!"opendir '{path}'")))
 def fs_readdir (_ : FsState) (dir : Int) : FsState × (Sum FsError (List Char)) :=
-  failwithI (fsRefusal s!"readdir {dir}")
+  failwithI (CerbStop.render (.refusal (fsRefusal "readdir" s!"readdir {dir}")))
 def fs_rewinddir (_ : FsState) (dir : Int) : FsState :=
-  failwithI (fsRefusal s!"rewinddir {dir}")
+  failwithI (CerbStop.render (.refusal (fsRefusal "rewinddir" s!"rewinddir {dir}")))
 def fs_closedir (_ : FsState) (dir : Int) : FsState × (Sum FsError Nat) :=
-  failwithI (fsRefusal s!"closedir {dir}")
+  failwithI (CerbStop.render (.refusal (fsRefusal "closedir" s!"closedir {dir}")))
 
 end CerbFS

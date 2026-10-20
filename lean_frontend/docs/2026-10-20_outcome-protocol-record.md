@@ -757,9 +757,13 @@ Scratch captures/build logs are ephemeral; the committed tests and commands
 above reproduce the evidence. No merge, push, dependency or machine-global
 change was made.
 
-## C — producer migration (parked at the adapter finding)
+## C — producer migration
 
-**Status: PARKED under charter §3; C.2 requires a ruling.** [AGENT 2026-10-20]
+**Current status: COMPLETE.** C.5 resolves the adapter ruling; C.7 records the
+production proof checks; C.8 records the passing complete Tier A. The earlier
+park results below remain historical failures, not successful validation.
+
+**Status at the park-record commit: PARKED under charter §3; C.2 required a ruling.** [AGENT 2026-10-20]
 Stop production migration at the adapter/erasure incompatibility. The earlier
 register-scope park is resolved by C.1. The producer/test/reference edits remain
 uncommitted on the branch while the independent adapter finding awaits a ruling.
@@ -797,7 +801,7 @@ are explanatory comments in `frontend/model/implementation.lem:44`,
 `lean_frontend/CerberusImpl.lean:64` and their generated copies. No test or
 generated applied call was found. The fresh kernel dependency census identifies
 the owner and reports `exec_dependency: false`, `frontend_dependency: false`.
-The current 239-row register passes its unchanged checker. Reproduce the fresh
+At this scope check, the 239-row register passed its unchanged checker. Reproduce the fresh
 dependency check with capped `scripts/check_failure_reach.sh`; the separate
 lexical census still includes this leaf in C's complete hand-written inventory.
 
@@ -930,3 +934,297 @@ interruption, including the new metadata module). The scratch probes and logs
 remain ephemeral. The finding reproduces from the candidate with the focused
 build above; no dependency, `.lem` source, pin, gate, baseline or machine-global
 state was changed to bypass it. No merge or push was performed.
+
+
+### C.5 Ruled adapter and fresh register classification
+
+[AGENT 2026-10-20, orchestrator, relayed by the operator] Resolve C.2 with a
+fixed killed node whose opaque refusal reason is rendered before construction;
+return the input memory state. Keep the public all-switch load-erasure statement.
+An arbitrary opaque monad admits no general observation-erasure equation, whereas
+this fixed node/state pair commutes with erasure by reflexivity. The existing
+runtime abort remains at node construction. Design v2 §2.3 records the dated
+amendment. Charter success item 1 does not prescribe a whole-monad ascription,
+so that item requires no wording change.
+
+[AGENT 2026-10-20] Put the pure leaf in the monomorphic helper
+`CerbMem.refusalKill : CerbStop.Refusal → kill_reason mem_error` and use it in
+`refuseM`. Unfolding the helper gives the ruled adapter exactly. The existing
+hand-written census uses the enclosing declaration's result type; putting the
+leaf directly inside the `memM` declaration would retain a monadic census
+classification. This layout exposes the actual pure reason without changing the
+census, position classifier, register scope or gate. `loadM_erasure` keeps its
+statement and adds `refuseM` to its initial unfold. Unused simp arguments in the
+touched proof module are removed without changing any theorem statement.
+
+The source comparison also corrects an analogy used during the ruling. At
+`3ac3ff336:lean_frontend/CerbMem.lean`, `pnviRefuseM` (line 2266) is still an
+opaque whole-monad application. The item G allocator refusal (line 2553) has a
+fixed killed node/state pair but ascribes its opaque failure to the String
+inside `failStopKill`. The new adapter has the latter's fixed node/state shape,
+with failure at the `kill_reason` type. It does not have the existing PNVI
+adapter's ascription. No newer mainline producer was imported into this
+checkpoint's dispatched base.
+
+Before rebuilding, the dirty tracked and untracked source was preserved without
+moving the branch or its index at
+`refs/snapshots/outcome-protocol-C-resume-20261020-1792522883`
+(`c2147e31d3c461d3e69d4185d49bbc7523915deb`). The generated copies were then
+synchronized with capped `make lean-prelude-src` before the capped Lake build.
+The complete producer/proof build succeeded (312 jobs); the old failed builds
+in C.2–C.4 remain failed historical evidence.
+
+The fresh dependency census finds `CerbMem.refusalKill` in the execution closure;
+its pure leaf is TAIL. Its new row is UNREACHABLE-BY-INVARIANT under the admitted
+driver switch sets: each of the twelve callers requires a switch outside both
+`defaultSwitches = []` and the admitted singleton PNVI-ae-udi set. The ordinary
+register check initially rejected the missing row, then passed after adding and
+sealing it under the unchanged rules. The separate reference check in C.1 still
+keeps `tagDefsUnreachable` outside the register, with no preamble entry.
+
+### C.6 Producer coverage and migration map
+
+The 122 original pure leaves are migrated: 71 UPSTREAM_CRASH, 35 REFUSAL and
+16 INVARIANT. The new adapter adds one pure REFUSAL leaf, for 123 current pure
+leaves (71/36/16); the existing monadic PNVI helper also renders its refusal.
+The A dispositions are retained, including the seven coarse step-equality
+guards, the enum guard, alias-normalisation guard, parser-fuel guard, driver
+implementation guard, function-map guard and the transparent Tags stub. The
+Tags stub now uses `failwithI`, as recorded in C.1. All pure failures keep that
+visible head; no new opaque atom or alternate failure mechanism was added.
+
+`CerbStopSites` centralises the nonempty metadata, including 76 cited source
+ranges across the six pinned upstream files. Every excerpt was compared to
+`git show b9aeedcb4dd438763b0eef7f95ac19e93875d7de:<path>` at its declared
+range; all 76 matched. Historical explanatory strings are retained even when
+an old embedded line reference differs from the reconstructed citation.
+The bswap64 tray remains explicitly a draft. No inferred upstream origin is
+used for the annotated invariant guards.
+
+The nine typed sites keep their killed-node and failure-time state shapes:
+allocator alignment, requested-address allocation, dead-static kill,
+resolved-store absence, function-pointer shift, impossible symbolic shift,
+memcmp byte, va-list index and intrinsic call. Their structured Failure input
+admits only UPSTREAM_CRASH or INVARIANT. The twelve switch-only arms use the
+fixed-node refusal adapter. Driver refusal collection emits one envelope per
+switch element (including repeated or empty elements), then exits once with
+2. Existing usage errors keep exit 1. The batch UB preflight refuses before
+printing partial result records.
+
+The immediate tests migrate with the producers: all seven `MonadicFailstop`
+pins, `PnviArmsTest`, the CLI/runtime/Cabs-UTF8 witnesses and their negative
+stubs, the three fuel CLI assertions, the observation-lane structured-crash
+positive plant and the envelope-less negative controls. The existing
+address-space detail-substring checks survive because their explanations stay.
+PNVI refusal recognition and its self-test stubs decode the new producer
+format; this is format compatibility at the existing classification point.
+D's invariant precedence and unattributed-panic policy corrections remain for D.
+
+The [register migration map](2026-10-20_outcome-protocol-register-migration.tsv)
+pairs the 111 affected existing hand-written rows by owner, old/new source line
+and old/new seal against B (`bd545c706`). Their full old/new keys are recoverable
+from that revision and this commit using the seals. Their recomputed position
+and reach classes are unchanged. It also records the newly added adapter row;
+all 128 generated rows are unchanged. The eleven original pure leaves outside
+register scope remain in the lexical inventory without invented register rows.
+The current check reports:
+
+```text
+240 pure failure sites = the 240 register rows exactly
+238 in the exec dependency closure + 2 unresolved-owner
+position classes unchanged; 0 DISCARDABLE
+reach UNREACHABLE-BY-INVARIANT=174 REACHABLE=44 UNKNOWN=22
+```
+
+The full checker output additionally confirms every row's seal and the tally
+line. Reproduce with capped `scripts/check_failure_reach.sh`; it rebuilds the
+dependency instrument and reruns the source census.
+
+### C.7 Reconstruction and consumer-facing proof contracts
+
+The ruled diagnostic parameter is implemented in both the linear and indexed
+references. `historicalDiagnostics` recovers the old frozen reference bodies;
+`productionDiagnostics` uses the renderer at the production sites. The
+reference-to-reference equations quantify over diagnostics. Each of the six
+production compatibility equations retains its prior input quantifiers and
+uses the production diagnostic instance. No failure arm is removed by a new
+precondition. The two frozen bodies were compared to B after normalising only
+comments, whitespace and their recursive names; both matched.
+
+The test header, theorem descriptions, production reconstruction comments,
+CLAUDE's current test catalogue and VALIDATION's W2 description name this changed
+claim. The catalogue correction changes no standing working practice. The
+[cerberus-sl handoff](2026-10-20_consumer-note-cerberus-sl-outcome-protocol.md)
+explains the explicit reference argument, the historical/production distinction
+and the remaining emitted-record limits. It makes no consumer adoption claim.
+`CerbMemDefaultFacts` retains its public statements; `CerbMemAccessFacts` and
+`MemoryAccessProofs` retain their all-switch erasure statements. The seven
+existing reconstruction axiom-census entries remain and the two historical
+recovery theorems are added.
+
+
+The final memory-access rebuild exits **0** (257 jobs), with no remaining
+`CerbMemAccessFacts` warnings. No linter option or resource limit was raised to
+repair the proof. The new metadata and reconstruction test also build without
+warnings. Existing warnings in generated/dependency code remain outside this
+producer/proof repair; no warning was suppressed by this checkpoint.
+
+Production kernel replay, from `lean_frontend` with `CERB_MEM_MAX=48G`, was:
+
+```sh
+../scripts/capped lake env leanchecker \
+  CerbStopSites CerbDecode CerbFS CerbFloat CerbFunMapInstances CerbLocation \
+  CerbMem CerbMemAccessFacts CerbStepInstances CerbTags CerbUtils CerberusImpl \
+  CoreParser CerbMemDefaultFacts CerbFailProofs Unit.MemoryAccessProofs
+for module in Main Unit.ReconstructLegacyTest Unit.PnviArmsTest Unit.MonadicFailstop; do
+  ../scripts/capped lake env leanchecker "$module" || exit "$?"
+done
+```
+
+**Exit 0 for each of the five invocations**, covering all 20 named modules;
+`leanchecker` emitted no diagnostics. The executable modules are replayed
+separately because importing several executable roots into one Lean environment
+collides at their global `main` declarations. An initial supplementary scratch
+axiom probe failed on that collision; it was corrected without changing any
+production source or theorem.
+
+A supplementary `#print axioms` probe imports `CerbMemAccessFacts`,
+`CerbMemDefaultFacts`, `Unit.MemoryAccessProofs`, `Unit.ReconstructLegacyTest`
+and `CerbStopSites`. It prints every named theorem in the four proof modules
+and `CerbStopSites.appendText`: **53 declarations, exit 0**, exact name set
+checked, only the standard three axioms (or none). Long axiom lists wrap across
+lines; the result check parses complete lists, not a count of output lines.
+Representative verbatim output:
+
+```text
+'CerbMem.loadM_erasure' depends on axioms: [propext, Classical.choice, Quot.sound]
+'MemoryAccessProofs.load_erasure' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ReconstructLegacyTest.historical_linear_recovers' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ReconstructLegacyTest.historical_indexed_recovers' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ReconstructLegacyTest.reconstructValue_lemFuel_eq_legacy' depends on axioms: [propext, Classical.choice, Quot.sound]
+```
+
+### C.8 Final focused results and checkpoint gate
+
+The final production adapter was compiled in a native scratch probe, using
+`CerbMem.refuseM` rather than the C.2 candidate. One call observes just the ND
+constructor and discards the reason; the other inspects the reason. Both use a
+dynamic refusal item, `LEAN_ABORT_ON_PANIC=1`, `NO_COLOR=1`, `TERM=dumb`, and
+process-local disabled core dumps. The separate capped captures decoded as:
+
+```text
+discard: exit=134 stdout=b'' stops=1 problems=0
+force: exit=134 stdout=b'' stops=1 problems=0
+```
+
+Both decoded stops are REFUSAL/switches, with the corresponding dynamic item.
+The production adapter's erasure equation also compiles by `rfl` in the scratch
+module and prints only the standard three axioms. Its separate capped
+`lake env leanchecker ProductionRefusalProbe` replay (with the scratch directory
+added to `LEAN_PATH`) also exits **0**, without diagnostics. This native evidence checks
+the operational abort; it does not turn a native-panic property into a theorem.
+A minimal native reproduction uses this `main` after `import CerbFailProofs`:
+
+```lean
+def main (args : List String) : IO UInt32 := do
+  let item := args.headD "probe"
+  let m := CerbMem.refuseM (a := Unit) (CerbMem.switchRefusal item "production adapter probe")
+  match args with
+  | ["discard"] =>
+    match (CerbFail.step m (CerbMem.initialMemState 65536)).1 with
+    | .NDkilled _ => IO.println "RETURNED A KILL WITHOUT FORCING ITS REASON"
+    | _ => IO.println "RETURNED A NON-KILL"
+  | _ =>
+    match (CerbFail.step m (CerbMem.initialMemState 65536)).1 with
+    | .NDkilled (.Error0 _ msg) => IO.println msg
+    | .NDkilled (.Undef0 _ _) => IO.println "RETURNED UNDEFINED"
+    | .NDkilled (.Other _) => IO.println "RETURNED OTHER"
+    | _ => IO.println "RETURNED A NON-KILL"
+  pure 1
+```
+
+Compile under capped `lake env lean -c` and `lake env leanc`. For linking, copy
+`.lake/build/bin/monadic-failstop-test.rsp` into `.tmp/` and replace its first
+object (the test entry module) with this probe's object, retaining the existing
+provider/native/runtime objects. Run the resulting executable through
+`scripts/capped` with arguments `discard` and `force`, then use `decode_stop`
+on the original separate stdout/stderr bytes and exit status. No probe artifact
+is part of the committed source.
+
+The focused checks also passed: reconstruction **18/18** runtime controls;
+monadic failstop **23 checks** at each of fuels 2 and 17; PNVI arms **37/37**
+runtime checks with their compile-time pins; the Python/Lean codec suite
+**20 tests**; all fuel plants, including the three migrated CLI assertions;
+and the selected real-lane plant suite:
+
+```sh
+CERB_MEM_MAX=48G scripts/capped python3 scripts/test_observation_lanes.py \
+  --lane exec --lane multi_tu --lane immaculate \
+  --out .tmp/outcome-protocol-C/observation-lanes-final
+```
+
+Exit **0**; verbatim final line:
+
+```text
+observation lane plants: 25/25 passed
+```
+
+
+The complete scheduled Tier A then ran on the final source:
+
+```sh
+CERB_MEM_MAX=48G scripts/capped python3 scripts/release.py --mode fast \
+  --out .tmp/outcome-protocol-C/tier-a-final
+```
+
+Exit **0**, elapsed **31 minutes 3 seconds**. Verbatim summary:
+
+```text
+fast: passed; 19/19 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+A1 includes the full `scripts/check_theorem_axioms.sh` gate, exit **0**. Its
+seven existing reconstruction entries are retained and the two historical
+recovery entries are included. Verbatim census summaries:
+
+```text
+check_theorem_axioms: hand-written axiom census OK (0 axioms — the arc-17 S2b end state)
+check_theorem_axioms: generated-tree census OK (226 files: 0 axioms, boundary-opaque population = the 9 registered rows exactly-once (incl. CerbFuel.fuelExhaustedLoc), 0 unsafeCast)
+check_theorem_axioms: C2 ratchet OK (432 files scanned recursively: 0 axioms, 0 runEffectful, seam population = the 19 pinned path-qualified counted rows exactly incl. the extern class; lem tests/ scaffolds asserted outside the surface)
+check_theorem_axioms: mem-scale S1 leg OK (37 C1/C3 + PNVI-S2 wrapper equality + CerbMemDefaultFacts bridge + CerbMemAccessFacts erasure theorems, every cone ⊆ [propext, Classical.choice, Quot.sound])
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+```
+
+The existing registered runtime opaque/extern boundaries remain; this is not a
+claim that the provider has none. No opaque atom, axiom, `sorry`, non-kernel
+proof method, `unsafe` declaration or kernel-check bypass was introduced.
+
+A1 also rebuilt the failure-reach instrument and passed all register plants and
+the final unplanted census. Verbatim final check:
+
+```text
+check_failure_reach: OK (240 pure failure sites = the 240 register rows exactly (238 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, shared keys lengthened, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=174 REACHABLE=44 UNKNOWN=22; every row sealed; tally line consistent)
+```
+
+The three immediate witness scripts passed in A1: the CLI's 24 refusal cases,
+placement/repetition cases and real PNVI agreement control; runtime resolution's
+17 witnesses and both negative stubs; Cabs UTF-8's 9 witnesses and both negative
+stubs. A12 passed both the address-space self-test and the unplanted lane,
+confirming that the retained detail substrings still satisfy its checks. A13's
+paired memory-access grid passed. The PNVI self-test passed its real control,
+10 engine plants and 7 baseline plants. The final full lane reported:
+
+```text
+SUMMARY: rows=164 AGREE=152 AGREE-FIRST=3 BOTH_FAIL=2 REFUSAL=7 | switch vs default (oracle): litmus:same=27,changed=17 minimal:same=111,changed=2 pkvm:same=1,changed=3 witness:same=0,changed=3
+pnvi_lane: BASELINE OK (164 rows = the baseline, classes, oracle hashes and BOTH_FAIL/RESOURCE lean hashes exact)
+```
+
+No semantic verdict or committed baseline moved. No `.lem`, dependency, Lem
+pin, register gate or machine-global state was changed. C completes producer
+migration and its immediate proof/witness work; D's two classifier corrections
+and E's complete consumer demonstration/Tier B remain outstanding. This is not
+an external consumer-adoption or complete release claim. No merge or push was
+performed. Scratch captures and probe artifacts are ephemeral; the source,
+conclusions, reproduction commands and migration map are the committed result.

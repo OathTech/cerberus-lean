@@ -17,7 +17,7 @@ Two kinds of witness, both on small hand-built states:
   `diff_ptrval`'s collapse, load's expose-then-receipt — each with at least one control
   at the DEFAULT instance `⟨CerbGlobal.defaultSwitches⟩` showing the pre-S3 behaviour.
 * **Refusal pins** (compile time; the build is RED if one fails): each refusal reachable
-  by a closed term reduces, by `whnf`, to `failwithI (pnviRefusal d)` (or, for the two
+  by a closed term reduces, by `whnf`, to `failwithI (CerbStop.render (.refusal (pnviRefusal d)))` (or, for the two
   refusals ascribed at the memory monad, R-PNVI-08 and R-PNVI-10, to an `ND` elimination stuck on
   that leaf) whose detail `d`
   starts with its `R-PNVI-nn:` id — a refusal turned back into a mirror or a bare crash
@@ -235,7 +235,7 @@ def checks (fuel : Nat) : List (String × Bool) := Id.run do
 
 /-! ## Refusal pins (compile time)
 
-`refusalId e` = `some id` iff `whnf e` is `failwithI (pnviRefusal d)` and `d`'s leading
+`refusalId e` = `some id` iff `whnf e` is `failwithI (CerbStop.render (.refusal (pnviRefusal d)))` and `d`'s leading
 literal starts with `id ++ ":"` (an interpolated `d` contributes its first literal). -/
 
 section Pins
@@ -252,13 +252,17 @@ partial def leadingLit (e : Expr) : MetaM (Option String) := do
     else if e.isAppOfArity ``ToString.toString 3 then leadingLit (e.getArg! 2)
     else return none
 
-/-- `some d` iff `e` reduces (`whnf`) to `failwithI (pnviRefusal d)`. -/
+/-- `some d` iff `e` reduces (`whnf`) to `failwithI (CerbStop.render (.refusal (pnviRefusal d)))`. -/
 def refusalLeaf? (e : Expr) : MetaM (Option String) := do
   let e ← whnf e
   unless e.isAppOfArity ``failwithI 3 do return none
   let msg ← instantiateMVars (e.getArg! 2)
-  unless msg.isAppOfArity ``CerbMem.pnviRefusal 1 do return none
-  leadingLit msg.appArg!
+  unless msg.isAppOfArity ``CerbStop.render 1 do return none
+  let stop := msg.appArg!
+  unless stop.isAppOfArity ``CerbStop.Stop.refusal 1 do return none
+  let refusal := stop.appArg!
+  unless refusal.isAppOfArity ``CerbMem.pnviRefusal 1 do return none
+  leadingLit refusal.appArg!
 
 /-- The refusal a term reduces to: either the leaf itself, or — for the refusals ascribed
     at the memory monad (`CerbMem.pnviRefuseM`, R-PNVI-08 and R-PNVI-10; S4 Part 1) — an elimination
@@ -287,7 +291,7 @@ def pin (id : String) (t : Term) : CommandElabM Unit := do
   | "", some d => throwError "PnviArmsTest: a negative control reduced to a PNVI refusal: {d}"
   | _, some d =>
     unless d.startsWith (id ++ ":") do throwError "PnviArmsTest: expected refusal {id}, got detail {d}"
-  | _, none => throwError "PnviArmsTest: {id} — the term does not reduce to `failwithI (pnviRefusal …)` (a mirror or a bare crash?)"
+  | _, none => throwError "PnviArmsTest: {id} — the term does not reduce to `failwithI (CerbStop.render (.refusal (pnviRefusal …)))` (a mirror or a bare crash?)"
 
 /-- The provenance of a reconstructed pointer (for `R-PNVI-05`, whose refusal is the provenance). -/
 def ptrProv : MemValue → Provenance
@@ -322,10 +326,10 @@ run_cmd pin "" (← `(casePtrval (α := Nat) (.PV .Prov_device (.PVconcrete none
 end Pins
 
 -- kernel facts of the refusal SHAPE (the pure sites)
-example : ∃ d, combineProv (.Prov_symbolic 0) .Prov_none = failwithI (pnviRefusal d) := ⟨_, rfl⟩
-example : ∃ d, combineProv .Prov_none (.Prov_symbolic 0) = failwithI (pnviRefusal d) := ⟨_, rfl⟩
-example : ∃ d, lookupIota stE 5 = failwithI (pnviRefusal d) := ⟨_, rfl⟩
-example : ∃ d, casePtrval (α := Nat) (sym 0 108) (fun _ => 0) (fun _ => 1) (fun _ _ => 2) = failwithI (pnviRefusal d) := ⟨_, rfl⟩
+example : ∃ d, combineProv (.Prov_symbolic 0) .Prov_none = failwithI (CerbStop.render (.refusal (pnviRefusal d))) := ⟨_, rfl⟩
+example : ∃ d, combineProv .Prov_none (.Prov_symbolic 0) = failwithI (CerbStop.render (.refusal (pnviRefusal d))) := ⟨_, rfl⟩
+example : ∃ d, lookupIota stE 5 = failwithI (CerbStop.render (.refusal (pnviRefusal d))) := ⟨_, rfl⟩
+example : ∃ d, casePtrval (α := Nat) (sym 0 108) (fun _ => 0) (fun _ => 1) (fun _ _ => 2) = failwithI (CerbStop.render (.refusal (pnviRefusal d))) := ⟨_, rfl⟩
 
 end PnviArmsTest
 

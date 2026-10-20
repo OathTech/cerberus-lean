@@ -1,3 +1,4 @@
+import CerbStopSites
 /-
   Core text parser for Cerberus .core and .impl files.
   Uses Lean's Std.Internal.Parsec.String combinator library.
@@ -2413,7 +2414,7 @@ private def scanToQuote : List Char → List Char
     exhaustion arm is a loud panic, not a silent pass. -/
 private def scanStep (fuel : Nat) (st : ScanSt) (l : List Char) : ScanSt :=
   match fuel with
-  | 0 => failwithI "CoreParser.scanHashCollisions: fuel exhausted (unreachable: fuel = input length + 1)"
+  | 0 => failwithI (CerbStop.render (.invariant (CerbStopSites.scanHashFuel "CoreParser.scanHashCollisions: fuel exhausted (unreachable: fuel = input length + 1)")))
   | fuel + 1 =>
     match l with
     | [] => st

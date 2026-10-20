@@ -217,13 +217,26 @@ EOS
     else
         echo "PLANT FAIL [negative: bare panic must not satisfy envelope predicate]" >&2; fail=1
     fi
+check_refusal() {  # boundary, JSON item list (or null), required and forbidden detail
+    python3 - "$SCRIPT_DIR" "$WORK/cli.stdout" "$WORK/cli.stderr" "$rc" "$@" <<'PY'
+import json, sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+from test_stops import assert_cli_refusals
+assert_cli_refusals(Path(sys.argv[2]).read_bytes(), Path(sys.argv[3]).read_bytes(),
+                    int(sys.argv[4]), sys.argv[5] or None, json.loads(sys.argv[6]),
+                    sys.argv[7], sys.argv[8] if len(sys.argv) > 8 else '')
+PY
+}
     for bad in 0 abc; do
-        out=$(LEAN_ABORT_ON_PANIC=1 "$REAL_LEAN" --batch --fuel "$bad" "$json" 2>&1); rc=$?
-        if [[ $rc -eq 2 ]] && grep -q "cerberus-lean: refused — --fuel $bad:" <<<"$out"; then echo "PLANT OK   [--fuel $bad refused, exit 2]: $(head -c 120 <<<"$out")"
+        LEAN_ABORT_ON_PANIC=1 "$REAL_LEAN" --batch --fuel "$bad" "$json" > "$WORK/cli.stdout" 2> "$WORK/cli.stderr"; rc=$?
+        out=$(cat "$WORK/cli.stdout" "$WORK/cli.stderr")
+        if check_refusal fuel-arg "[\"$bad\"]" "--fuel $bad:"; then echo "PLANT OK   [--fuel $bad refused, exit 2]: $(head -c 120 <<<"$out")"
         else echo "PLANT FAIL [--fuel $bad]: rc=$rc out=$(head -c 200 <<<"$out")" >&2; fail=1; fi
     done
-    out=$(LEAN_ABORT_ON_PANIC=1 "$REAL_LEAN" --fuel 5 --batch "$json" 2>&1); rc=$?
-    if [[ $rc -eq 2 ]] && grep -q "refused — --batch: known flag out of its canonical position" <<<"$out"; then echo "PLANT OK   [--fuel before the mode flag refused (positional contract)]"
+    LEAN_ABORT_ON_PANIC=1 "$REAL_LEAN" --fuel 5 --batch "$json" > "$WORK/cli.stdout" 2> "$WORK/cli.stderr"; rc=$?
+    out=$(cat "$WORK/cli.stdout" "$WORK/cli.stderr")
+    if check_refusal cli '["--batch"]' "known flag out of its canonical position"; then echo "PLANT OK   [--fuel before the mode flag refused (positional contract)]"
     else echo "PLANT FAIL [--fuel out of position]: rc=$rc out=$(head -c 200 <<<"$out")" >&2; fail=1; fi
     out=$(LEAN_ABORT_ON_PANIC=1 "$REAL_LEAN" --batch "$json" --fuel 2>&1); rc=$?
     if [[ $rc -eq 1 ]] && grep -q "require an argument" <<<"$out"; then echo "PLANT OK   [--fuel without an argument refused]"

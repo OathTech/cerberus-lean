@@ -4,36 +4,25 @@ import CerbGlobal
 -- row-1 build imports it); its theorems' cones are pinned by check_theorem_axioms.sh.
 import CerbMemDefaultFacts
 
-/-! # ReconstructLegacyTest — the default-mode `reconstructValue` wrappers equal the pre-S2 text
+/-! # Reconstruction compatibility at an explicit diagnostic contract
 
-PNVI arc S2 (2026-10-07; design record `docs/2026-10-04_pnvi-ae-udi-design.md` §B.7,
-slice record `docs/2026-10-07_pnvi-s2-data-shapes-record.md`). `CerbMem.reconstructValue_lemFuel`
-and `CerbMem.reconstructValue` keep their names and types for the consumer (cerberus-sl,
-statement §1.5 item 1) but are now the second projection of the full reconstruction
-`CerbMem.reconstructValueAbst_lemFuel`, pinned at `⟨CerbGlobal.defaultSwitches⟩` with the
-closure `noOverlapping`. Condition (c) of §B.7: "proved equal to today's value", kernel-checked.
+[USER 2026-10-20] Both reference algorithms are parameterised over their six
+direct failure messages. `historicalDiagnostics` recovers the old strings;
+`productionDiagnostics` renders the outcome protocol. The production equations
+below use the latter, retaining every fuel, environment, address, byte-list and
+closure quantifier. They no longer claim equality to the old diagnostic text.
 
-  * `reconstructValueLegacy_lemFuel` / `reconstructValueLegacy` below are the pre-S2
-    `CerbMem.reconstructValue_lemFuel` / `CerbMem.reconstructValue` VERBATIM (at mainline
-    `47348c07e`; names and recursive calls renamed, nothing else) — a named reference for
-    "today's value". NOT executed by anything.
-  * `reconstructValueAbst_default_snd_eq_legacy`: for EVERY `find_overlaping` closure, the
-    full reconstruction at the default switch set has the legacy value as its second
-    component (the closure is never consulted, the taint is discarded) — fuel induction,
-    the `reconstructValue_lemFuel_eq_indexed` template.
-  * `reconstructValue_lemFuel_eq_legacy` / `reconstructValue_eq_legacy`: the wrappers equal
-    the legacy text (instances of the above at `noOverlapping`).
-  * `loadM_reconstruct_default`: the reconstruction `loadM` runs — the full one with the
-    ambient instance and `findOverlapping st` — has the legacy value at the default set,
-    for every state.
-  * The mem-scale C1 reference form (`reconstructValue_indexed_lemFuel` and its two
-    equalities, mem-scale S1 2026-09-02) is RETIRED here from `CerbMem.lean` (design §B.7,
-    "retire into the test module (production carries one implementation)"): restated over
-    the legacy copy, and chained to the production wrapper by
-    `reconstructValue_lemFuel_eq_indexed` / `reconstructValue_eq_indexed` below — the C1
-    equality stays kernel-checked (row 1; `scripts/check_theorem_axioms.sh` mem-scale leg).
+The reference-to-reference equations hold for EVERY diagnostic parameter. The
+historical instance freezes the six direct messages, not transitive layout or
+decoding helpers called by the references. Success computations and fuel leaves
+are unchanged. The indexed reference retains its pre-C1 array slicing; the
+linear reference retains its pre-S2 recursion. Neither is a driver implementation.
 
-The `#print axioms` lines are informational; the axiom gate pins the cones. -/
+The axiom census retains the seven existing theorem entries. Kernel replay checks
+this module and its proof dependencies. Consumer handoff: the production wrapper
+equals the parameterised reference at `productionDiagnostics`; no all-input
+equality to the historical strings is claimed or silently retained.
+-/
 
 namespace ReconstructLegacyTest
 
@@ -41,10 +30,37 @@ open CerbMem CerberusImpl
 
 set_option autoImplicit false
 
-/-- `CerbMem`'s private abbreviation, restated so the legacy text below is verbatim. -/
+/-- The tag environment used by both reference algorithms. -/
 abbrev TagDefs := CerbTags.TagDefsMap
 
-/-! ## The pre-S2 text, verbatim (renamed) -/
+/-! ## The pre-S2 algorithms with explicit direct diagnostics -/
+
+/-- Only direct diagnostics vary; the algorithms, inputs and fuel remain fixed. -/
+structure ReconstructionDiagnostics where
+  unknownFunction : Int → String
+  unknownStruct : String
+  emptyUnion : String
+  missingMember : String
+  wrongUnion : String
+  unsized : String
+
+/-- The six direct pre-protocol messages, including their historical wording. -/
+def historicalDiagnostics : ReconstructionDiagnostics where
+  unknownFunction := fun ptrAddr => s!"CerbMem.reconstructValue: unknown function pointer: {ptrAddr}"
+  unknownStruct := "CerbMem.reconstructValue: unknown struct tag (OCaml: Pmap.find Not_found in sizeof/offsetsof, impl_mem.ml:1067/1073)"
+  emptyUnion := "CerbMem.reconstructValue: empty UnionDef (OCaml: match failure)"
+  missingMember := "CerbMem.reconstructValue: recorded union member not in UnionDef (OCaml: assert false)"
+  wrongUnion := "CerbMem.reconstructValue: Union tag not a UnionDef (OCaml: assert false)"
+  unsized := "CerbMem.reconstructValue: type without a known size (OCaml: assert false, impl_mem.ml:978-983)"
+
+/-- The current production renderer at the same six failure sites. -/
+def productionDiagnostics : ReconstructionDiagnostics where
+  unknownFunction := fun ptrAddr => (CerbStop.render (.upstreamCrash (CerbStopSites.reconstructUnknownFunction s!"CerbMem.reconstructValue: unknown function pointer: {ptrAddr}")))
+  unknownStruct := (CerbStop.render (.upstreamCrash (CerbStopSites.reconstructUnknownStruct "CerbMem.reconstructValue: unknown struct tag (OCaml: Pmap.find Not_found in sizeof/offsetsof, impl_mem.ml:1067/1073)")))
+  emptyUnion := (CerbStop.render (.upstreamCrash (CerbStopSites.reconstructEmptyUnion "CerbMem.reconstructValue: empty UnionDef (OCaml: match failure)")))
+  missingMember := (CerbStop.render (.upstreamCrash (CerbStopSites.reconstructMissingMember "CerbMem.reconstructValue: recorded union member not in UnionDef (OCaml: assert false)")))
+  wrongUnion := (CerbStop.render (.upstreamCrash (CerbStopSites.reconstructWrongUnion "CerbMem.reconstructValue: Union tag not a UnionDef (OCaml: assert false)")))
+  unsized := (CerbStop.render (.upstreamCrash (CerbStopSites.reconstructUnsized "CerbMem.reconstructValue: type without a known size (OCaml: assert false, impl_mem.ml:978-983)")))
 
 /-- Reconstruct a MemValue from bytes — abst, impl_mem.ml:916-1095.
     INVARIANT (differs from OCaml's consume-and-return-rest shape at the
@@ -57,7 +73,7 @@ abbrev TagDefs := CerbTags.TagDefsMap
     consulted ONLY by the Pointer-to-Function arm (impl_mem.ml:1004-1016)
     — exactly as in OCaml's abst.
     Not ported: taint tracking (PNVI) and is_zap. -/
-def reconstructValueLegacy_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
+def reconstructValueLegacy_lemFuel (diagnostics : ReconstructionDiagnostics) (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
     (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int)
     (ty : ctype) (bytes : List AbsByte) : MemValue :=
@@ -110,7 +126,7 @@ def reconstructValueLegacy_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambien
         match funptrmap.find? (fun (a, _) => a == ptrAddr) with
         | some (_, (fileDig, name)) =>
           .MVpointer pointeeCty (.PV prov (.PVfunction (Symbol fileDig ptrAddr.toNat (SD_Id name))))
-        | none => failwithI s!"CerbMem.reconstructValue: unknown function pointer: {ptrAddr}"
+        | none => failwithI (diagnostics.unknownFunction ptrAddr)
       | _ =>
         .MVpointer pointeeCty (.PV prov (.PVconcrete none ptrAddr.toNat))
     | none =>
@@ -144,10 +160,10 @@ def reconstructValueLegacy_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambien
     let nNat := n.toNat
     let elemSize := sizeofCtype enumDefs ambient elemCty
     .MVarray ((chunksOf elemSize nNat bytes).map fun elemBytes =>
-        reconstructValueLegacy_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr elemCty elemBytes)
+        reconstructValueLegacy_lemFuel diagnostics lemFuel enumDefs ambient unionmap funptrmap addr elemCty elemBytes)
   | Ctype _ (.Atomic innerCty) =>
     -- impl_mem.ml:1058-1060 (same repr as the non-atomic version)
-    reconstructValueLegacy_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr innerCty bytes
+    reconstructValueLegacy_lemFuel diagnostics lemFuel enumDefs ambient unionmap funptrmap addr innerCty bytes
   | Ctype _ .Byte =>
     -- impl_mem.ml:961-973 ("handled similarly to integers": provenance
     -- via pvi_split_bytes' combine_prov fold, impl_mem.ml:964)
@@ -173,7 +189,7 @@ def reconstructValueLegacy_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambien
     -- leaf is untouched; the message differs from the oracle's exception
     -- text (failure TEXT is an allowed discrepancy class).
     match CerbTagsWf.lookupEntry ambient tagSym with
-    | none => failwithI "CerbMem.reconstructValue: unknown struct tag (OCaml: Pmap.find Not_found in sizeof/offsetsof, impl_mem.ml:1067/1073)"
+    | none => failwithI (diagnostics.unknownStruct)
     | some _ =>
       let (offs, _) := offsetsof enumDefs ambient ambient tagSym (ignoreFlexible := true)
       let (revXs, _) := offs.foldl
@@ -183,7 +199,7 @@ def reconstructValueLegacy_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambien
           let (ident, membTy, off) := memb
           let pad := off - prevEnd
           let membBytes := bytes.drop off |>.take (sizeofCtype enumDefs ambient membTy)
-          let mval := reconstructValueLegacy_lemFuel lemFuel enumDefs ambient unionmap funptrmap (addr + (pad : Int)) membTy membBytes
+          let mval := reconstructValueLegacy_lemFuel diagnostics lemFuel enumDefs ambient unionmap funptrmap (addr + (pad : Int)) membTy membBytes
           ((ident, membTy, mval) :: revXs, off + sizeofCtype enumDefs ambient membTy)
       .MVstruct tagSym revXs.reverse
   | Ctype _ (.Union0 tagSym) =>
@@ -193,7 +209,7 @@ def reconstructValueLegacy_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambien
     match CerbTagsWf.lookupEntry ambient tagSym with
     | some (_, (_, UnionDef membrs)) =>
       match membrs with
-      | [] => failwithI "CerbMem.reconstructValue: empty UnionDef (OCaml: match failure)"
+      | [] => failwithI (diagnostics.emptyUnion)
       | (firstIdent, (_, _, _, firstTy)) :: _ =>
         -- ident comparison is by NAME (idEqual), as OCaml's
         -- Eq Symbol.identifier instance does (:1088). A recorded identifier
@@ -207,47 +223,186 @@ def reconstructValueLegacy_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambien
         match unionmap.find? (fun (a, _) => a == addr) with
         | none =>
           .MVunion tagSym firstIdent
-            (reconstructValueLegacy_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr firstTy
+            (reconstructValueLegacy_lemFuel diagnostics lemFuel enumDefs ambient unionmap funptrmap addr firstTy
               (bytes.take (sizeofCtype enumDefs ambient firstTy)))
         | some (_, membr) =>
           match membrs.find? (fun (i, _) => idEqual i membr) with
           | some (membIdent, (_, _, _, membTy)) =>
             .MVunion tagSym membIdent
-              (reconstructValueLegacy_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr membTy
+              (reconstructValueLegacy_lemFuel diagnostics lemFuel enumDefs ambient unionmap funptrmap addr membTy
                 (bytes.take (sizeofCtype enumDefs ambient membTy)))
-          | none => failwithI "CerbMem.reconstructValue: recorded union member not in UnionDef (OCaml: assert false)"
-    | _ => failwithI "CerbMem.reconstructValue: Union tag not a UnionDef (OCaml: assert false)"
+          | none => failwithI (diagnostics.missingMember)
+    | _ => failwithI (diagnostics.wrongUnion)
   -- impl_mem.ml:978-983: Void, Array (_, None), Function, FunctionNoParams
   -- "must have a known size" → assert false (served-surface audit P3; was a
   -- silent MVunspecified)
-  | _ => failwithI "CerbMem.reconstructValue: type without a known size (OCaml: assert false, impl_mem.ml:978-983)"
+  | _ => failwithI (diagnostics.unsized)
 
 /-- Measured wrapper (C4): fuel-free, hypothesis `CerbTagsWf.Acyclic ambient`
     (its recursion is on the ctype being reconstructed, through member types
     read from the tag environment); obligation in CerbMem_lemMeasureProofs. -/
-def reconstructValueLegacy (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))
+def reconstructValueLegacy (diagnostics : ReconstructionDiagnostics) (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int)
     (ty : ctype) (bytes : List AbsByte) : MemValue :=
-  reconstructValueLegacy_lemFuel (CerbTagsWf.envBound ambient ty) enumDefs ambient unionmap funptrmap addr ty bytes
+  reconstructValueLegacy_lemFuel diagnostics (CerbTagsWf.envBound ambient ty) enumDefs ambient unionmap funptrmap addr ty bytes
 
 /-! ### C1 reference form + equality theorem (mem-scale S1, 2026-09-02)
 
-`reconstructValueLegacy_indexed_lemFuel` is the PRE-C1 text of
-`reconstructValueLegacy_lemFuel` verbatim (name and recursive calls renamed; its
+`reconstructValueLegacy_indexed_lemFuel` retains the PRE-C1 algorithm of
+`reconstructValueLegacy_lemFuel`, with the same diagnostic parameter; its
 struct/union arms restated identically with the linear form's — hotfix
 fix/fuel-forms-carriers option (d), 2026-09-20;
-the doc comments of the arms are in the live definition above): its
+the doc comments of the arms are in the linear definition above. Its
 array arm re-slices from the array's start per element,
 `bytes.drop (i * elemSize) |>.take elemSize` — the index-slicing form,
 Θ(n²·e). NOT executed by the driver; it exists so that the C1 shape
 change is a kernel-checked equality (`reconstructValueLegacy_lemFuel_eq_indexed`).
 Charter §1 carve-out [R1/F5]; consumer note: refined-cerberus unfolds
 `reconstructValueLegacy_lemFuel` at pointer/struct-typed nodes only
-(TreeRotExhibit.lean:148, ListRevExhibit.lean:260), arms C1 leaves
-textually intact. -/
+(TreeRotExhibit.lean:148, ListRevExhibit.lean:260), success arms C1 preserves. Consumers must now select the diagnostic instance explicitly. -/
 
 /-- Reference form (pre-C1): index-slicing array arm. -/
-def reconstructValueLegacy_indexed_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
+def reconstructValueLegacy_indexed_lemFuel (diagnostics : ReconstructionDiagnostics) (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
+    (unionmap : List (Int × identifier))
+    (funptrmap : Funptrmap) (addr : Int)
+    (ty : ctype) (bytes : List AbsByte) : MemValue :=
+  match lemFuel with
+  | 0 => fuelExhaustedWith "CerbMem.reconstructValue: fuel exhausted" (.MVunspecified ty)
+  | lemFuel + 1 =>
+  match ty with
+  | Ctype _ (.Basic (.Integer ity)) =>
+    let signed := CerberusImpl.is_signed_ity (CerberusImpl.resolveEnum enumDefs ity)
+    match bytesToInt bytes signed with
+    | some n => .MVinteger ity (.IV (provFromIntegerBytes bytes) n)
+    | none => .MVunspecified ty
+  | Ctype _ (.Basic (.Floating fty)) =>
+    match bytesToInt bytes false with
+    | some n =>
+      let bits : UInt64 := n.toNat.toUInt64
+      .MVfloating fty (Float.ofBits bits)
+    | none => .MVunspecified ty
+  | Ctype _ (.Pointer _ pointeeCty) =>
+    match bytesToInt bytes false with
+    | some 0 =>
+      .MVpointer pointeeCty (.PV .Prov_none (.PVnull pointeeCty))
+    | some ptrAddr =>
+      let (prov, _validPtrProv) := splitBytesProv bytes
+      match pointeeCty with
+      | Ctype _ (.Function _ _ _) =>
+        match funptrmap.find? (fun (a, _) => a == ptrAddr) with
+        | some (_, (fileDig, name)) =>
+          .MVpointer pointeeCty (.PV prov (.PVfunction (Symbol fileDig ptrAddr.toNat (SD_Id name))))
+        | none => failwithI (diagnostics.unknownFunction ptrAddr)
+      | _ =>
+        .MVpointer pointeeCty (.PV prov (.PVconcrete none ptrAddr.toNat))
+    | none =>
+      -- impl_mem.ml:1056-1057 `MVunspecified (Ctype ([], Pointer (no_qualifiers,
+      -- ref_ty)))`: the pointee QUALIFIERS are dropped (zero-discrepancy
+      -- Z-19: this kept `ty` verbatim; the ctype text is a verdict value
+      -- wherever an unspecified pointer is printed)
+      .MVunspecified (Ctype [] (.Pointer no_qualifiers pointeeCty))
+  | Ctype _ (.Array0 elemCty (some n)) =>
+    let nNat := n.toNat
+    let elemSize := sizeofCtype enumDefs ambient elemCty
+    let elems := List.range nNat |>.map fun i =>
+        let start := i * elemSize
+        let elemBytes := bytes.drop start |>.take elemSize
+        reconstructValueLegacy_indexed_lemFuel diagnostics lemFuel enumDefs ambient unionmap funptrmap addr elemCty elemBytes
+    .MVarray elems
+  | Ctype _ (.Atomic innerCty) =>
+    reconstructValueLegacy_indexed_lemFuel diagnostics lemFuel enumDefs ambient unionmap funptrmap addr innerCty bytes
+  | Ctype _ .Byte =>
+    match bytesToInt (bytes.take 1) false with
+    | some n => .MVinteger .Char0 (.IV (provFromIntegerBytes (bytes.take 1)) n)
+    | none => .MVunspecified ty
+  | Ctype _ (.Struct tagSym) =>
+    match CerbTagsWf.lookupEntry ambient tagSym with
+    | none => failwithI (diagnostics.unknownStruct)
+    | some _ =>
+      let (offs, _) := offsetsof enumDefs ambient ambient tagSym (ignoreFlexible := true)
+      let (revXs, _) := offs.foldl
+        (init := (([] : List (identifier × ctype × MemValue)), (0 : Nat)))
+        fun (acc : List (identifier × ctype × MemValue) × Nat) (memb : identifier × ctype × Nat) =>
+          let (revXs, prevEnd) := acc
+          let (ident, membTy, off) := memb
+          let pad := off - prevEnd
+          let membBytes := bytes.drop off |>.take (sizeofCtype enumDefs ambient membTy)
+          let mval := reconstructValueLegacy_indexed_lemFuel diagnostics lemFuel enumDefs ambient unionmap funptrmap (addr + (pad : Int)) membTy membBytes
+          ((ident, membTy, mval) :: revXs, off + sizeofCtype enumDefs ambient membTy)
+      .MVstruct tagSym revXs.reverse
+  | Ctype _ (.Union0 tagSym) =>
+    match CerbTagsWf.lookupEntry ambient tagSym with
+    | some (_, (_, UnionDef membrs)) =>
+      match membrs with
+      | [] => failwithI (diagnostics.emptyUnion)
+      | (firstIdent, (_, _, _, firstTy)) :: _ =>
+        match unionmap.find? (fun (a, _) => a == addr) with
+        | none =>
+          .MVunion tagSym firstIdent
+            (reconstructValueLegacy_indexed_lemFuel diagnostics lemFuel enumDefs ambient unionmap funptrmap addr firstTy
+              (bytes.take (sizeofCtype enumDefs ambient firstTy)))
+        | some (_, membr) =>
+          match membrs.find? (fun (i, _) => idEqual i membr) with
+          | some (membIdent, (_, _, _, membTy)) =>
+            .MVunion tagSym membIdent
+              (reconstructValueLegacy_indexed_lemFuel diagnostics lemFuel enumDefs ambient unionmap funptrmap addr membTy
+                (bytes.take (sizeofCtype enumDefs ambient membTy)))
+          | none => failwithI (diagnostics.missingMember)
+    | _ => failwithI (diagnostics.wrongUnion)
+  -- impl_mem.ml:978-983: Void, Array (_, None), Function, FunctionNoParams
+  -- "must have a known size" → assert false (served-surface audit P3; was a
+  -- silent MVunspecified)
+  | _ => failwithI (diagnostics.unsized)
+
+/-- C1 equality: the linear (consume-and-return-rest) reconstruction equals
+    the index-slicing reference form at every fuel, on every input.
+    Induction on fuel; every arm but the array arm is textually identical
+    once the recursive calls are rewritten by the induction hypothesis;
+    the array arm is `chunksOf_eq_range_map` + `List.map_map`. -/
+theorem reconstructValueLegacy_lemFuel_eq_indexed (diagnostics : ReconstructionDiagnostics) :
+    ∀ (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))
+      (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte),
+      reconstructValueLegacy_lemFuel diagnostics lemFuel enumDefs ambient unionmap funptrmap addr ty bytes =
+        reconstructValueLegacy_indexed_lemFuel diagnostics lemFuel enumDefs ambient unionmap funptrmap addr ty bytes := by
+  intro lemFuel
+  induction lemFuel with
+  | zero => intros; rfl
+  | succ lemFuel ih =>
+    intro enumDefs ambient unionmap funptrmap addr ty bytes
+    have hf : reconstructValueLegacy_lemFuel diagnostics lemFuel = reconstructValueLegacy_indexed_lemFuel diagnostics lemFuel := by
+      funext e a u f ad t b; exact ih e a u f ad t b
+    unfold reconstructValueLegacy_lemFuel reconstructValueLegacy_indexed_lemFuel
+    rw [hf]
+    -- The two definitions' failure leaves are the same opaque `failwithI`
+    -- since seam hygiene (2026-09-19); no panic-site normalisation is needed
+    -- (the former `panicWithPosWithDecl = default` rewrite was unused).
+    simp only
+    rcases ty with ⟨_, ty⟩
+    cases ty with
+    | Array0 elemCty n =>
+      cases n with
+      | none => rfl
+      | some n =>
+        dsimp only
+        rw [chunksOf_eq_range_map, List.map_map]
+        rfl
+    | Basic bt => cases bt <;> rfl   -- the outer match is stuck until the basic type is split
+    | _ => rfl
+
+theorem reconstructValueLegacy_eq_indexed (diagnostics : ReconstructionDiagnostics) (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))
+    (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte) :
+    reconstructValueLegacy diagnostics enumDefs ambient unionmap funptrmap addr ty bytes =
+      reconstructValueLegacy_indexed_lemFuel diagnostics (CerbTagsWf.envBound ambient ty) enumDefs ambient unionmap funptrmap addr ty bytes :=
+  reconstructValueLegacy_lemFuel_eq_indexed diagnostics (CerbTagsWf.envBound ambient ty) enumDefs ambient unionmap funptrmap addr ty bytes
+
+
+/-! ## Recovery of the previous direct-diagnostic references
+
+These private specification bodies are the pre-protocol definitions (names and
+recursive calls renamed). The new equations make historical recovery explicit,
+rather than treating a renamed historical instance as its own proof. -/
+
+private def reconstructValueFrozen_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
     (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int)
     (ty : ctype) (bytes : List AbsByte) : MemValue :=
@@ -281,21 +436,14 @@ def reconstructValueLegacy_indexed_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs)
       | _ =>
         .MVpointer pointeeCty (.PV prov (.PVconcrete none ptrAddr.toNat))
     | none =>
-      -- impl_mem.ml:1056-1057 `MVunspecified (Ctype ([], Pointer (no_qualifiers,
-      -- ref_ty)))`: the pointee QUALIFIERS are dropped (zero-discrepancy
-      -- Z-19: this kept `ty` verbatim; the ctype text is a verdict value
-      -- wherever an unspecified pointer is printed)
       .MVunspecified (Ctype [] (.Pointer no_qualifiers pointeeCty))
   | Ctype _ (.Array0 elemCty (some n)) =>
     let nNat := n.toNat
     let elemSize := sizeofCtype enumDefs ambient elemCty
-    let elems := List.range nNat |>.map fun i =>
-        let start := i * elemSize
-        let elemBytes := bytes.drop start |>.take elemSize
-        reconstructValueLegacy_indexed_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr elemCty elemBytes
-    .MVarray elems
+    .MVarray ((chunksOf elemSize nNat bytes).map fun elemBytes =>
+        reconstructValueFrozen_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr elemCty elemBytes)
   | Ctype _ (.Atomic innerCty) =>
-    reconstructValueLegacy_indexed_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr innerCty bytes
+    reconstructValueFrozen_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr innerCty bytes
   | Ctype _ .Byte =>
     match bytesToInt (bytes.take 1) false with
     | some n => .MVinteger .Char0 (.IV (provFromIntegerBytes (bytes.take 1)) n)
@@ -312,7 +460,7 @@ def reconstructValueLegacy_indexed_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs)
           let (ident, membTy, off) := memb
           let pad := off - prevEnd
           let membBytes := bytes.drop off |>.take (sizeofCtype enumDefs ambient membTy)
-          let mval := reconstructValueLegacy_indexed_lemFuel lemFuel enumDefs ambient unionmap funptrmap (addr + (pad : Int)) membTy membBytes
+          let mval := reconstructValueFrozen_lemFuel lemFuel enumDefs ambient unionmap funptrmap (addr + (pad : Int)) membTy membBytes
           ((ident, membTy, mval) :: revXs, off + sizeofCtype enumDefs ambient membTy)
       .MVstruct tagSym revXs.reverse
   | Ctype _ (.Union0 tagSym) =>
@@ -324,62 +472,145 @@ def reconstructValueLegacy_indexed_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs)
         match unionmap.find? (fun (a, _) => a == addr) with
         | none =>
           .MVunion tagSym firstIdent
-            (reconstructValueLegacy_indexed_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr firstTy
+            (reconstructValueFrozen_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr firstTy
               (bytes.take (sizeofCtype enumDefs ambient firstTy)))
         | some (_, membr) =>
           match membrs.find? (fun (i, _) => idEqual i membr) with
           | some (membIdent, (_, _, _, membTy)) =>
             .MVunion tagSym membIdent
-              (reconstructValueLegacy_indexed_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr membTy
+              (reconstructValueFrozen_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr membTy
                 (bytes.take (sizeofCtype enumDefs ambient membTy)))
           | none => failwithI "CerbMem.reconstructValue: recorded union member not in UnionDef (OCaml: assert false)"
     | _ => failwithI "CerbMem.reconstructValue: Union tag not a UnionDef (OCaml: assert false)"
-  -- impl_mem.ml:978-983: Void, Array (_, None), Function, FunctionNoParams
-  -- "must have a known size" → assert false (served-surface audit P3; was a
-  -- silent MVunspecified)
   | _ => failwithI "CerbMem.reconstructValue: type without a known size (OCaml: assert false, impl_mem.ml:978-983)"
 
-/-- C1 equality: the linear (consume-and-return-rest) reconstruction equals
-    the index-slicing reference form at every fuel, on every input.
-    Induction on fuel; every arm but the array arm is textually identical
-    once the recursive calls are rewritten by the induction hypothesis;
-    the array arm is `chunksOf_eq_range_map` + `List.map_map`. -/
-theorem reconstructValueLegacy_lemFuel_eq_indexed :
-    ∀ (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))
-      (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte),
-      reconstructValueLegacy_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr ty bytes =
-        reconstructValueLegacy_indexed_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr ty bytes := by
-  intro lemFuel
-  induction lemFuel with
+/-- Instantiating the direct messages recovers the previously frozen body,
+at every input and fuel. Shared callees are not frozen by this statement. -/
+theorem historical_linear_recovers :
+    ∀ (n : Nat) (e : EnumDefs) (a : TagDefs) (u : List (Int × identifier))
+      (f : Funptrmap) (ad : Int) (t : ctype) (bs : List AbsByte),
+      reconstructValueLegacy_lemFuel historicalDiagnostics n e a u f ad t bs =
+        reconstructValueFrozen_lemFuel n e a u f ad t bs := by
+  intro n
+  induction n with
   | zero => intros; rfl
-  | succ lemFuel ih =>
-    intro enumDefs ambient unionmap funptrmap addr ty bytes
-    have hf : reconstructValueLegacy_lemFuel lemFuel = reconstructValueLegacy_indexed_lemFuel lemFuel := by
-      funext e a u f ad t b; exact ih e a u f ad t b
-    unfold reconstructValueLegacy_lemFuel reconstructValueLegacy_indexed_lemFuel
+  | succ n ih =>
+    intros
+    have hf : reconstructValueLegacy_lemFuel historicalDiagnostics n = reconstructValueFrozen_lemFuel n := by
+      funext e a u f ad t bs
+      exact ih e a u f ad t bs
+    unfold reconstructValueLegacy_lemFuel reconstructValueFrozen_lemFuel
     rw [hf]
-    -- The two definitions' failure leaves are the same opaque `failwithI`
-    -- since seam hygiene (2026-09-19); no panic-site normalisation is needed
-    -- (the former `panicWithPosWithDecl = default` rewrite was unused).
-    simp only
-    rcases ty with ⟨_, ty⟩
-    cases ty with
-    | Array0 elemCty n =>
-      cases n with
-      | none => rfl
-      | some n =>
-        dsimp only
-        rw [chunksOf_eq_range_map, List.map_map]
-        rfl
-    | Basic bt => cases bt <;> rfl   -- the outer match is stuck until the basic type is split
-    | _ => rfl
+    rfl
 
-theorem reconstructValueLegacy_eq_indexed (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))
-    (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte) :
-    reconstructValueLegacy enumDefs ambient unionmap funptrmap addr ty bytes =
-      reconstructValueLegacy_indexed_lemFuel (CerbTagsWf.envBound ambient ty) enumDefs ambient unionmap funptrmap addr ty bytes :=
-  reconstructValueLegacy_lemFuel_eq_indexed (CerbTagsWf.envBound ambient ty) enumDefs ambient unionmap funptrmap addr ty bytes
+private def reconstructValueFrozen_indexed_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
+    (unionmap : List (Int × identifier))
+    (funptrmap : Funptrmap) (addr : Int)
+    (ty : ctype) (bytes : List AbsByte) : MemValue :=
+  match lemFuel with
+  | 0 => fuelExhaustedWith "CerbMem.reconstructValue: fuel exhausted" (.MVunspecified ty)
+  | lemFuel + 1 =>
+  match ty with
+  | Ctype _ (.Basic (.Integer ity)) =>
+    let signed := CerberusImpl.is_signed_ity (CerberusImpl.resolveEnum enumDefs ity)
+    match bytesToInt bytes signed with
+    | some n => .MVinteger ity (.IV (provFromIntegerBytes bytes) n)
+    | none => .MVunspecified ty
+  | Ctype _ (.Basic (.Floating fty)) =>
+    match bytesToInt bytes false with
+    | some n =>
+      let bits : UInt64 := n.toNat.toUInt64
+      .MVfloating fty (Float.ofBits bits)
+    | none => .MVunspecified ty
+  | Ctype _ (.Pointer _ pointeeCty) =>
+    match bytesToInt bytes false with
+    | some 0 =>
+      .MVpointer pointeeCty (.PV .Prov_none (.PVnull pointeeCty))
+    | some ptrAddr =>
+      let (prov, _validPtrProv) := splitBytesProv bytes
+      match pointeeCty with
+      | Ctype _ (.Function _ _ _) =>
+        match funptrmap.find? (fun (a, _) => a == ptrAddr) with
+        | some (_, (fileDig, name)) =>
+          .MVpointer pointeeCty (.PV prov (.PVfunction (Symbol fileDig ptrAddr.toNat (SD_Id name))))
+        | none => failwithI s!"CerbMem.reconstructValue: unknown function pointer: {ptrAddr}"
+      | _ =>
+        .MVpointer pointeeCty (.PV prov (.PVconcrete none ptrAddr.toNat))
+    | none =>
+      .MVunspecified (Ctype [] (.Pointer no_qualifiers pointeeCty))
+  | Ctype _ (.Array0 elemCty (some n)) =>
+    let nNat := n.toNat
+    let elemSize := sizeofCtype enumDefs ambient elemCty
+    let elems := List.range nNat |>.map fun i =>
+        let start := i * elemSize
+        let elemBytes := bytes.drop start |>.take elemSize
+        reconstructValueFrozen_indexed_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr elemCty elemBytes
+    .MVarray elems
+  | Ctype _ (.Atomic innerCty) =>
+    reconstructValueFrozen_indexed_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr innerCty bytes
+  | Ctype _ .Byte =>
+    match bytesToInt (bytes.take 1) false with
+    | some n => .MVinteger .Char0 (.IV (provFromIntegerBytes (bytes.take 1)) n)
+    | none => .MVunspecified ty
+  | Ctype _ (.Struct tagSym) =>
+    match CerbTagsWf.lookupEntry ambient tagSym with
+    | none => failwithI "CerbMem.reconstructValue: unknown struct tag (OCaml: Pmap.find Not_found in sizeof/offsetsof, impl_mem.ml:1067/1073)"
+    | some _ =>
+      let (offs, _) := offsetsof enumDefs ambient ambient tagSym (ignoreFlexible := true)
+      let (revXs, _) := offs.foldl
+        (init := (([] : List (identifier × ctype × MemValue)), (0 : Nat)))
+        fun (acc : List (identifier × ctype × MemValue) × Nat) (memb : identifier × ctype × Nat) =>
+          let (revXs, prevEnd) := acc
+          let (ident, membTy, off) := memb
+          let pad := off - prevEnd
+          let membBytes := bytes.drop off |>.take (sizeofCtype enumDefs ambient membTy)
+          let mval := reconstructValueFrozen_indexed_lemFuel lemFuel enumDefs ambient unionmap funptrmap (addr + (pad : Int)) membTy membBytes
+          ((ident, membTy, mval) :: revXs, off + sizeofCtype enumDefs ambient membTy)
+      .MVstruct tagSym revXs.reverse
+  | Ctype _ (.Union0 tagSym) =>
+    match CerbTagsWf.lookupEntry ambient tagSym with
+    | some (_, (_, UnionDef membrs)) =>
+      match membrs with
+      | [] => failwithI "CerbMem.reconstructValue: empty UnionDef (OCaml: match failure)"
+      | (firstIdent, (_, _, _, firstTy)) :: _ =>
+        match unionmap.find? (fun (a, _) => a == addr) with
+        | none =>
+          .MVunion tagSym firstIdent
+            (reconstructValueFrozen_indexed_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr firstTy
+              (bytes.take (sizeofCtype enumDefs ambient firstTy)))
+        | some (_, membr) =>
+          match membrs.find? (fun (i, _) => idEqual i membr) with
+          | some (membIdent, (_, _, _, membTy)) =>
+            .MVunion tagSym membIdent
+              (reconstructValueFrozen_indexed_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr membTy
+                (bytes.take (sizeofCtype enumDefs ambient membTy)))
+          | none => failwithI "CerbMem.reconstructValue: recorded union member not in UnionDef (OCaml: assert false)"
+    | _ => failwithI "CerbMem.reconstructValue: Union tag not a UnionDef (OCaml: assert false)"
+  | _ => failwithI "CerbMem.reconstructValue: type without a known size (OCaml: assert false, impl_mem.ml:978-983)"
 
+/-- Instantiating the direct messages recovers the previously frozen body,
+at every input and fuel. Shared callees are not frozen by this statement. -/
+theorem historical_indexed_recovers :
+    ∀ (n : Nat) (e : EnumDefs) (a : TagDefs) (u : List (Int × identifier))
+      (f : Funptrmap) (ad : Int) (t : ctype) (bs : List AbsByte),
+      reconstructValueLegacy_indexed_lemFuel historicalDiagnostics n e a u f ad t bs =
+        reconstructValueFrozen_indexed_lemFuel n e a u f ad t bs := by
+  intro n
+  induction n with
+  | zero => intros; rfl
+  | succ n ih =>
+    intros
+    have hf : reconstructValueLegacy_indexed_lemFuel historicalDiagnostics n = reconstructValueFrozen_indexed_lemFuel n := by
+      funext e a u f ad t bs
+      exact ih e a u f ad t bs
+    unfold reconstructValueLegacy_indexed_lemFuel reconstructValueFrozen_indexed_lemFuel
+    rw [hf]
+    rfl
+
+/-- Historical direct-diagnostic instances of the two algorithms. They still
+call today's shared layout/decoding helpers; those helpers are not frozen here. -/
+abbrev reconstructValueHistorical_lemFuel := reconstructValueLegacy_lemFuel historicalDiagnostics
+abbrev reconstructValueHistorical_indexed_lemFuel := reconstructValueLegacy_indexed_lemFuel historicalDiagnostics
 
 /-! ## The equalities (PNVI arc S2) -/
 
@@ -394,12 +625,12 @@ theorem foldl_snd_eq {α β γ : Type} {F : γ × β → α → γ × β} {G : �
     exact foldl_snd_eq h l _ _
 
 /-- The full reconstruction at the DEFAULT switch set, whatever the `find_overlaping`
-    closure, has the legacy value as its second component. -/
+    closure, has the reference value at productionDiagnostics as its second component. -/
 theorem reconstructValueAbst_default_snd_eq_legacy (fo : Address → OverlapResult) :
     ∀ (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))
       (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte),
       (@reconstructValueAbst_lemFuel ⟨CerbGlobal.defaultSwitches⟩ lemFuel enumDefs ambient fo unionmap funptrmap addr ty bytes).2 =
-        reconstructValueLegacy_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr ty bytes := by
+        reconstructValueLegacy_lemFuel productionDiagnostics lemFuel enumDefs ambient unionmap funptrmap addr ty bytes := by
   intro lemFuel
   induction lemFuel with
   | zero => intros; rfl
@@ -462,37 +693,37 @@ theorem reconstructValueAbst_default_snd_eq_legacy (fo : Address → OverlapResu
 theorem reconstructValue_lemFuel_eq_legacy (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs)
     (unionmap : List (Int × identifier)) (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte) :
     CerbMem.reconstructValue_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr ty bytes =
-      reconstructValueLegacy_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr ty bytes :=
+      reconstructValueLegacy_lemFuel productionDiagnostics lemFuel enumDefs ambient unionmap funptrmap addr ty bytes :=
   reconstructValueAbst_default_snd_eq_legacy noOverlapping lemFuel enumDefs ambient unionmap funptrmap addr ty bytes
 
 theorem reconstructValue_eq_legacy (enumDefs : EnumDefs) (ambient : TagDefs)
     (unionmap : List (Int × identifier)) (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte) :
     CerbMem.reconstructValue enumDefs ambient unionmap funptrmap addr ty bytes =
-      reconstructValueLegacy enumDefs ambient unionmap funptrmap addr ty bytes :=
+      reconstructValueLegacy productionDiagnostics enumDefs ambient unionmap funptrmap addr ty bytes :=
   reconstructValue_lemFuel_eq_legacy _ enumDefs ambient unionmap funptrmap addr ty bytes
 
 /-- What `loadM` runs (`(reconstructValueAbst … (findOverlapping st) …).2`, CerbMem.lean
-    `loadM`/`doLoad`), at the default switch set: the legacy value, for every state. -/
+    `loadM`/`doLoad`), at the default switch set: the reference value at the production renderer, for every state. -/
 theorem loadM_reconstruct_default (st : MemState) (enumDefs : EnumDefs) (ambient : TagDefs)
     (addr : Int) (ty : ctype) (bytes : List AbsByte) :
     (@reconstructValueAbst ⟨CerbGlobal.defaultSwitches⟩ enumDefs ambient (@findOverlapping ⟨CerbGlobal.defaultSwitches⟩ st)
         st.lastUsedUnionMembers st.funptrmap addr ty bytes).2 =
-      reconstructValueLegacy enumDefs ambient st.lastUsedUnionMembers st.funptrmap addr ty bytes :=
+      reconstructValueLegacy productionDiagnostics enumDefs ambient st.lastUsedUnionMembers st.funptrmap addr ty bytes :=
   reconstructValueAbst_default_snd_eq_legacy _ _ enumDefs ambient _ _ addr ty bytes
 
-/-- The C1 equalities, chained to the PRODUCTION wrapper (their pre-S2 statements, verbatim). -/
+/-- The C1 equalities, chained to the production wrapper at productionDiagnostics, with every original quantifier. -/
 theorem reconstructValue_lemFuel_eq_indexed :
     ∀ (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))
       (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte),
       CerbMem.reconstructValue_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr ty bytes =
-        reconstructValueLegacy_indexed_lemFuel lemFuel enumDefs ambient unionmap funptrmap addr ty bytes :=
+        reconstructValueLegacy_indexed_lemFuel productionDiagnostics lemFuel enumDefs ambient unionmap funptrmap addr ty bytes :=
   fun n e a u f ad t b => (reconstructValue_lemFuel_eq_legacy n e a u f ad t b).trans
-    (reconstructValueLegacy_lemFuel_eq_indexed n e a u f ad t b)
+    (reconstructValueLegacy_lemFuel_eq_indexed productionDiagnostics n e a u f ad t b)
 
 theorem reconstructValue_eq_indexed (enumDefs : EnumDefs) (ambient : TagDefs) (unionmap : List (Int × identifier))
     (funptrmap : Funptrmap) (addr : Int) (ty : ctype) (bytes : List AbsByte) :
     CerbMem.reconstructValue enumDefs ambient unionmap funptrmap addr ty bytes =
-      reconstructValueLegacy_indexed_lemFuel (CerbTagsWf.envBound ambient ty) enumDefs ambient unionmap funptrmap addr ty bytes :=
+      reconstructValueLegacy_indexed_lemFuel productionDiagnostics (CerbTagsWf.envBound ambient ty) enumDefs ambient unionmap funptrmap addr ty bytes :=
   reconstructValue_lemFuel_eq_indexed (CerbTagsWf.envBound ambient ty) enumDefs ambient unionmap funptrmap addr ty bytes
 
 #print axioms reconstructValueAbst_default_snd_eq_legacy
@@ -579,6 +810,6 @@ def main : IO UInt32 := do
   for (name, ok) in ReconstructLegacyTest.checks do
     if ok then IO.println s!"  ok   {name}" else
       IO.println s!"  FAIL {name}"; failed := failed + 1
-  IO.println "ReconstructLegacyTest: CerbMem.reconstructValue(_lemFuel) = the pre-S2 text (reconstructValueLegacy_lemFuel) and = the C1 index-slicing form; the full reconstruction at the default switch set ignores the find_overlaping closure and its value is the legacy one — kernel-checked at compile time"
+  IO.println "ReconstructLegacyTest: production reconstruction equals the parameterised linear and indexed references at productionDiagnostics, with all original quantifiers; historicalDiagnostics recovers the old direct messages; closure independence retained — kernel-checked at compile time"
   IO.println s!"ReconstructLegacyTest: {ReconstructLegacyTest.checks.length - failed}/{ReconstructLegacyTest.checks.length} runtime positive controls passed"
   return (if failed == 0 then 0 else 1)

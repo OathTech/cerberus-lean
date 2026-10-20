@@ -1,3 +1,4 @@
+import CerbStopSites
 /-
   CerbFunMapInstances.lean — hand-written SetType instance for
   `generic_fun_map_decl` (arc-7 S2, 2026-08-19; mechanism = the arc-4
@@ -81,9 +82,9 @@ instance {bty : Type} {a : Type} :
     else
       -- Same constructor: OCaml would compare fields structurally; no
       -- call site can reach this (value leg unreachable — file header).
-      (failwithI "SetType generic_fun_map_decl: same-constructor compare \
+      (failwithI (CerbStop.render (.invariant (CerbStopSites.funMapCompare "SetType generic_fun_map_decl: same-constructor compare \
                   (phantom instance requirement reached — see \
-                  CerbFunMapInstances.lean)" : LemOrdering)
+                  CerbFunMapInstances.lean)"))) : LemOrdering)
 
 /-! DECLARED (zero-discrepancy Z2-Q-02, audit "not settled" item): the one
     generated consumer that folds a fun map WITHOUT importing this module —

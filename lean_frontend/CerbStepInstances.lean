@@ -1,3 +1,4 @@
+import CerbStopSites
 /-
   CerbStepInstances.lean — hand-written instances for
   Core_reduction.core_step2 (arc 4 / S1a, 2026-08-19).
@@ -152,21 +153,21 @@ private def beqCoreStep2 : core_step2 → core_step2 → Bool
   | .Step_done2 v1, .Step_done2 v2 => beqCoreValue v1 v2
   -- Panic arms: OCaml (=) raises Invalid_argument on the closures these carry.
   | .Step_ccall2 _ _, .Step_ccall2 _ _ =>
-      (failwithI "BEq core_step2: functional value (Step_ccall2)" : Bool)
+      (failwithI (CerbStop.render (.invariant (CerbStopSites.stepCcallEquality "BEq core_step2: functional value (Step_ccall2)"))) : Bool)
   | .Step_with_runstate2 _ _, .Step_with_runstate2 _ _ =>
-      (failwithI "BEq core_step2: functional value (Step_with_runstate2)" : Bool)
+      (failwithI (CerbStop.render (.invariant (CerbStopSites.stepRunstateEquality "BEq core_step2: functional value (Step_with_runstate2)"))) : Bool)
   | .Step_tau2 _ _ _, .Step_tau2 _ _ _ =>
-      (failwithI "BEq core_step2: functional value (Step_tau2)" : Bool)
+      (failwithI (CerbStop.render (.invariant (CerbStopSites.stepTauEquality "BEq core_step2: functional value (Step_tau2)"))) : Bool)
   | .Step_action_request2 _ _ _ _ _, .Step_action_request2 _ _ _ _ _ =>
-      (failwithI "BEq core_step2: functional value (Step_action_request2)" : Bool)
+      (failwithI (CerbStop.render (.invariant (CerbStopSites.stepActionEquality "BEq core_step2: functional value (Step_action_request2)"))) : Bool)
   | .Step_memop_request2 _ _ _ _ _ _, .Step_memop_request2 _ _ _ _ _ _ =>
-      (failwithI "BEq core_step2: functional value (Step_memop_request2)" : Bool)
+      (failwithI (CerbStop.render (.invariant (CerbStopSites.stepMemopEquality "BEq core_step2: functional value (Step_memop_request2)"))) : Bool)
   | .Step_spawn_threads2 _ _, .Step_spawn_threads2 _ _ =>
-      (failwithI "BEq core_step2: functional value (Step_spawn_threads2)" : Bool)
+      (failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.stepSpawnEquality "BEq core_step2: functional value (Step_spawn_threads2)"))) : Bool)
   | .Step_fs2 _ _ _, .Step_fs2 _ _ _ =>
-      (failwithI "BEq core_step2: functional value (Step_fs2)" : Bool)
+      (failwithI (CerbStop.render (.invariant (CerbStopSites.stepFsEquality "BEq core_step2: functional value (Step_fs2)"))) : Bool)
   | .Step_nd2 _, .Step_nd2 _ =>
-      (failwithI "BEq core_step2: functional value (Step_nd2)" : Bool)
+      (failwithI (CerbStop.render (.invariant (CerbStopSites.stepNdEquality "BEq core_step2: functional value (Step_nd2)"))) : Bool)
   | _, _ => false
 
 /- OCaml polymorphic `compare` parity. OCaml orders the sole immediate
@@ -201,7 +202,7 @@ private def compareCoreStep2 (x y : core_step2) : Ordering :=
     match compare (blockTag x) (blockTag y) with
     | .lt => .lt
     | .gt => .gt
-    | .eq => (failwithI "Ord core_step2: same-constructor compare on non-comparable payloads" : Ordering)
+    | .eq => (failwithI (CerbStop.render (.invariant (CerbStopSites.stepOrdering "Ord core_step2: same-constructor compare on non-comparable payloads"))) : Ordering)
 
 instance : BEq core_step2 where
   beq := beqCoreStep2

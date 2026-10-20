@@ -1,3 +1,4 @@
+import CerbStopSites
 /-
   Tag definitions — the TYPE only.
   Corresponds to: ocaml_frontend/tags.ml (the oracle keeps its mutable
@@ -31,6 +32,6 @@ abbrev TagDefsMap := Fmap sym (CerbLocation.Loc × tag_definition)
     emitted at an applied call site; if it ever runs, that is a
     reader-lifting defect — panic loudly. -/
 def tagDefsUnreachable (_ : Unit) : TagDefsMap :=
-  panic! "CerbTags.tagDefsUnreachable: applied tagDefs () site survived reader lifting"
+  failwithI (CerbStop.render (.invariant (CerbStopSites.tagReader "CerbTags.tagDefsUnreachable: applied tagDefs () site survived reader lifting")))
 
 end CerbTags

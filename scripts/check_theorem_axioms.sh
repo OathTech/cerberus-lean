@@ -786,10 +786,13 @@ echo "check_theorem_axioms: C2 entry census OK (${#ENTRIES[@]} entries, every co
 # PNVI arc S2 (2026-10-07; record docs/2026-10-07_pnvi-s2-data-shapes-record.md):
 # the C1 reference form and its equalities are RETIRED from CerbMem.lean into
 # the row-1 test module Unit.ReconstructLegacyTest (design record §B.7), restated
-# over the verbatim pre-S2 copy and chained to the production wrapper; the
+# over the pre-S2 algorithm and chained to the production wrapper; the
 # same module carries the S2 wrapper equalities (`…_eq_legacy`), pinned here
 # too. The module is built by test_unit.sh before this gate runs (as
 # Unit.FuelExemplar for the FUEL leg below).
+# Outcome protocol C: these references now take direct diagnostics explicitly;
+# the historical instance recovers the old bodies, and the production equations
+# use productionDiagnostics. Existing checked theorem entries are retained.
 # PNVI arc-end audit F3 (2026-10-07): the six consumer-facing kernel bridges of the
 # theorem-only seam CerbMemDefaultFacts.lean (a Lake root nothing in the production
 # tree imports) are pinned here too. `lake env lean` below does NOT build; the seam
@@ -807,7 +810,11 @@ echo "check_theorem_axioms: C2 entry census OK (${#ENTRIES[@]} entries, every co
 # (memory-access-test) imports it.
 # ---------------------------------------------------------------------------
 PROBE4=lean_frontend/.axiom-probe-memscale.lean
+# Outcome protocol: reference-to-reference equality quantifies over diagnostics;
+# production equations instantiate productionDiagnostics. All seven entries stay.
 MEMSCALE_THMS=(CerbMem.chunksOf_eq_range_map
+               ReconstructLegacyTest.historical_linear_recovers
+               ReconstructLegacyTest.historical_indexed_recovers
                ReconstructLegacyTest.reconstructValueLegacy_lemFuel_eq_indexed
                ReconstructLegacyTest.reconstructValue_lemFuel_eq_indexed
                ReconstructLegacyTest.reconstructValue_eq_indexed

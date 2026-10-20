@@ -189,7 +189,7 @@ roots = [
   "CerbFuel",
   "CerbFail",
   "CerbFailProofs",
-  "CerbNDFuelProofs", "CerbEscape", "CerbStop",
+  "CerbNDFuelProofs", "CerbEscape", "CerbStop", "CerbStopSites",
   "CerbConcurrency",
   "CerbCtypeInstances",
   "CerbStepInstances",

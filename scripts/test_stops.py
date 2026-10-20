@@ -45,6 +45,22 @@ def multi(*records):
     return b''.join(b'EXECUTION %d:\n' % i + r for i, r in enumerate(records))
 
 
+def assert_cli_refusals(stdout, stderr, status, boundary=None, items=None,
+                        contains='', excludes=''):
+    """Witness helper, not a machine CLI: check original, separate captures."""
+    decoded = obs.decode_stop(stdout, stderr, status)
+    assert status == 2 and not stdout, (status, stdout)
+    assert not (decoded.problems or decoded.legacy_panics or decoded.fuel), decoded
+    stops = [entry.stop for entry in decoded.stops]
+    assert stops and all(isinstance(stop, obs.Refusal) for stop in stops), decoded
+    if boundary is not None:
+        assert all(stop.boundary == boundary for stop in stops), stops
+    if items is not None:
+        assert [stop.item for stop in stops] == items, stops
+    assert any(contains in stop.detail for stop in stops), stops
+    assert not excludes or all(excludes not in stop.detail for stop in stops), stops
+
+
 def schema_cases():
     """Shared inputs, independent expected admission (not decoder-generated)."""
     good = [REF, CRASH, INV]
@@ -178,6 +194,13 @@ class CaptureTests(unittest.TestCase):
         self.assertEqual(result.fuel, [obs.FuelOccurrence('kill', 2,
             obs.SourcePosition(6, len(multi(OK, model(wire(INV)))) + len(b'EXECUTION 2:\n')))])
         self.assertEqual(self.clean(model(wire(CRASH)), b'', 1).stops[0].execution, 0)
+
+    def test_envelope_less_model_failure_is_not_attributed(self):
+        # The old observation-lane positive plant remains a decoder negative:
+        # its sentinel is not evidence of which producer class stopped the run.
+        result = obs.decode_stop(model(b'Concrete.memcmp: non-integer byte'), b'', 1)
+        self.assertFalse(result.stops)
+        self.assertTrue(result.problems)
 
     def test_program_data_and_ordinary_error_have_no_authority(self):
         injected = b'\n'.join((wire(INV), wire(REF), FUEL, PANIC + wire(INV),

@@ -10,7 +10,7 @@
 # UTF-8. The Lean bridge cannot carry such bytes (Lean strings are Unicode
 # scalar values); it used to die with an uncaught exception ("Tried to read
 # file ... containing non UTF-8 data", rc 1). It now REFUSES: exit 2 and
-# `cerberus-lean: refused — non-UTF-8 Cabs JSON: …` naming the feature and the
+# a decoded REFUSAL at boundary cabs-json-utf8, naming the feature and the
 # boundary (Main.lean readCabsJson). String-literal and character-constant
 # bytes are byte-carriers (scripts/test_cabs_bytes_probe.py) and unaffected.
 #
@@ -37,7 +37,8 @@ if [[ "${1:-}" == "--selftest" ]]; then
     # (a) the pre-fix behaviour: uncaught exception, rc 1, on every input
     printf '#!/usr/bin/env bash\necho "uncaught exception: Tried to read file (plant) containing non UTF-8 data." >&2\nexit 1\n' > "$ST/uncaught"
     # (b) refuses everything, in the right words
-    printf '#!/usr/bin/env bash\necho "cerberus-lean: refused — non-UTF-8 Cabs JSON: plant" >&2\nexit 2\n' > "$ST/refuse-all"
+    printf '#!/usr/bin/env bash\nprintf "%%s\\n" %q >&2\nexit 2\n' \
+        'cerberus-lean stop ["1","REFUSAL","cabs-json-utf8",null,"plant","plant mover",null,"plant"]' > "$ST/refuse-all"
     chmod +x "$ST/uncaught" "$ST/refuse-all"
     for plant in uncaught refuse-all; do
         if CERB_LEAN_BIN_OVERRIDE="$ST/$plant" "$0" > "$ST/$plant.out" 2>&1; then
@@ -58,6 +59,17 @@ W=$(mktemp -d "$ROOT/.tmp/scripts/$NAME.XXXXXX") || { echo "$NAME: FAIL — mkte
 trap 'rm -rf "$W"' EXIT
 cd "$W" || { echo "$NAME: FAIL — cd $W"; exit 1; }
 
+check_refusal() {  # boundary, JSON item list (or null), required and forbidden detail
+    python3 - "$SCRIPT_DIR" "$W/stdout" "$W/stderr" "$RC" "$@" <<'PY'
+import json, sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+from test_stops import assert_cli_refusals
+assert_cli_refusals(Path(sys.argv[2]).read_bytes(), Path(sys.argv[3]).read_bytes(),
+                    int(sys.argv[4]), sys.argv[5] or None, json.loads(sys.argv[6]),
+                    sys.argv[7], sys.argv[8] if len(sys.argv) > 8 else '')
+PY
+}
 fails=0; n=0
 fail() { echo "$NAME: FAIL — $*"; fails=$((fails + 1)); }
 E=$'\xe9'   # the raw byte 0xE9 (Latin-1 e-acute), never valid UTF-8 on its own
@@ -70,7 +82,8 @@ oracle_line() {  # <c-file> -> first verdict line
     "$ORACLE" --runtime="$PREFIX" --exec --batch --nolibc "$1" 2>/dev/null | grep -aE '^(Defined|Undefined|Error) ' | head -1
 }
 lean() {  # <json> -> OUT, RC
-    OUT=$(env LEAN_ABORT_ON_PANIC=1 "$BIN" --batch --runtime="$PREFIX" "$1" 2>&1); RC=$?
+    env LEAN_ABORT_ON_PANIC=1 "$BIN" --batch --runtime="$PREFIX" "$1" > "$W/stdout" 2> "$W/stderr"; RC=$?
+    OUT=$(cat "$W/stdout" "$W/stderr")
 }
 witness() {  # <label> <c-file>: the JSON must be non-UTF-8, the oracle must answer, Lean must refuse
     local label="$1" c="$2" j="$W/w$n.json" o
@@ -82,7 +95,7 @@ witness() {  # <label> <c-file>: the JSON must be non-UTF-8, the oracle must ans
     o=$(oracle_line "$c")
     [[ "$o" == Defined* || "$o" == Undefined* ]] || { fail "$label: the oracle gives no verdict ([$o]); not a witness"; return; }
     lean "$j"
-    if [[ $RC -ne 2 || "$OUT" != *"cerberus-lean: refused — non-UTF-8 Cabs JSON:"* || "$OUT" != *"Unicode scalar values"* ]]; then
+    if ! check_refusal cabs-json-utf8 null "Unicode scalar values"; then
         fail "$label: expected exit 2 + the attributed non-UTF-8 refusal; got rc=$RC: ${OUT:0:300}"
     fi
 }

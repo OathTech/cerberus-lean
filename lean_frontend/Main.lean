@@ -1,3 +1,4 @@
+import CerbStopSites
 import CerberusImpl
 import CerbMem
 import CerbCtypeInstances
@@ -68,7 +69,7 @@ def loadCoreImpl (implFile : CoreParser.CoreFile) : impl :=
       -- audit F2), so the error arm is unreachable here
       let ic := match CoreParser.pImplConstant name with
         | .ok ic => ic
-        | .error e => failwithI s!"Main.loadCoreImpl: {e}"
+        | .error e => failwithI (CerbStop.render (.invariant (CerbStopSites.coreImplKey s!"Main.loadCoreImpl: {e}")))
       fmapAddBy implementation_constant_compare ic d acc)
     fmapEmpty
 
@@ -283,6 +284,11 @@ def firstInvalidUtf8 (b : ByteArray) : Option Nat := Id.run do
     i := i + n
   return none
 
+/-- Driver admission failures use stderr and exit 2 before batch records. -/
+def driverRefusal (boundary : CerbStop.Boundary) (item : Option String) (detail : String)
+    (mover : CerbStop.NonemptyText) : CerbStop.Refusal :=
+  CerbStopSites.refusal boundary item detail mover ⟨"CONTRACT.md §2/§3; VALIDATION.md", by decide⟩
+
 /-- Bug-hunt BUG-6 and K-5 (2026-09-29; record
     `docs/2026-09-29_bug-hunt-fixes-record.md` §S3): decode a Cabs JSON
     document read as BYTES, and REFUSE (exit 2, attributed) when it is not
@@ -309,8 +315,9 @@ def decodeCabsJson (label : String) (bytes : ByteArray) : IO String := do
         let lo := if i ≥ 40 then i - 40 else 0
         (s!"{i}", CerbEscape.bytes (bytes.extract lo (min bytes.size (i + 40))))
       | none => ("unknown", "")
-    IO.eprintln s!"cerberus-lean: refused — non-UTF-8 Cabs JSON: {label} is not valid UTF-8 (first invalid byte at offset {off}, context \"{ctx}\"). The oracle's --cabs-json exporter copies the bytes ≥ 0x80 of a file name (the real path, a #line or an #include name), of a Loc_other string and of attribute-argument or magic-comment text into the JSON raw (backend/lean_export/cabs_json.ml:46/:49, :62, :618/:620, :675); this port's bridge cannot carry them, because Lean strings are sequences of Unicode scalar values (string-literal and character-constant bytes are byte-carriers and unaffected; see VALIDATION.md §3(c), bug hunt BUG-6/K-5)"
-    IO.Process.exit 2
+    CerbStop.exitRefusals (driverRefusal .cabsJsonUtf8 (some label)
+      s!"cerberus-lean: refused — non-UTF-8 Cabs JSON: {label} is not valid UTF-8 (first invalid byte at offset {off}, context \"{ctx}\"). The oracle's --cabs-json exporter copies the bytes ≥ 0x80 of a file name (the real path, a #line or an #include name), of a Loc_other string and of attribute-argument or magic-comment text into the JSON raw (backend/lean_export/cabs_json.ml:46/:49, :62, :618/:620, :675); this port's bridge cannot carry them, because Lean strings are sequences of Unicode scalar values (string-literal and character-constant bytes are byte-carriers and unaffected; see VALIDATION.md §3(c), bug hunt BUG-6/K-5)"
+      ⟨"a lossless byte-carrying Cabs JSON bridge", by decide⟩)
 
 /-- Read a Cabs JSON file as bytes and decode it (`decodeCabsJson`). -/
 def readCabsJsonFile (path : String) : IO String := do
@@ -552,8 +559,9 @@ def runtimeOfPrefix (pfx : String) : String :=
 
 /-- REFUSE (exit 2, attributed) — the runtime-resolution boundary. -/
 def refuseRuntime (what : String) : IO α := do
-  IO.eprintln s!"cerberus-lean: refused — runtime: {what} (see VALIDATION.md, bug hunt BUG-2)"
-  IO.Process.exit 2
+  CerbStop.exitRefusals (driverRefusal .runtime none
+    s!"cerberus-lean: refused — runtime: {what} (see VALIDATION.md, bug hunt BUG-2)"
+    ⟨"provisioning the configured runtime library", by decide⟩)
 
 /-- The runtime root `resolveRuntime` selects (before its existence check). -/
 def resolveRuntimeRoot (cli : Option String) : IO String := do
@@ -632,8 +640,9 @@ def runtimeLibraryDirs (runtime : String) : List String :=
     absolute spellings where the classifiers agree (upstream-tray draft 58). -/
 def refuseLibraryLocations (runtime : String) (source : String) (files : Array String) : IO Unit := do
   let refuse {α : Type} (detail : String) : IO α := do
-    IO.eprintln s!"cerberus-lean: refused — library-location classification: {source}: {detail}. Canonical Core quotation convention: export metadata and run with --runtime=_build/install/default from the project root, or a directory with that fixed relative runtime link; preserve all stored labels (see VALIDATION.md, bug hunt BUG-3 and Core quotation D2b)"
-    IO.Process.exit 2
+    CerbStop.exitRefusals (driverRefusal .libraryLocation (some source)
+      s!"cerberus-lean: refused — library-location classification: {source}: {detail}. Canonical Core quotation convention: export metadata and run with --runtime=_build/install/default from the project root, or a directory with that fixed relative runtime link; preserve all stored labels (see VALIDATION.md, bug hunt BUG-3 and Core quotation D2b)"
+      ⟨"exact resolved runtime-directory classification through the location seam", by decide⟩)
   let exact ← try
       (runtimeLibraryDirs runtime).mapM (fun path => do return (← IO.FS.realPath (.mk path)).toString)
     catch e => refuse s!"cannot resolve this run's runtime library directories: {e}"
@@ -662,13 +671,16 @@ def refuseLibraryLocations (runtime : String) (source : String) (files : Array S
     `simple_location` mirror. A payload Char above U+00FF has no OCaml
     counterpart (the producer's byte-domain invariant is broken): refused,
     exit 2, never re-encoded. -/
-def printUndefinedLine (ub : String) (stderr : String) (loc : String) : IO Unit := do
-  let mut payload := ByteArray.empty
+def validateUndefinedPayload (ub : String) : IO Unit := do
   for c in ub.toList do
-    if c.toNat < 256 then payload := payload.push c.toNat.toUInt8
-    else
-      IO.eprintln s!"cerberus-lean: refused — batch UB payload: the undefined-behaviour text holds U+{(Nat.toDigits 16 c.toNat).asString}, outside the byte domain the oracle's byte string can hold (driver_ocaml.ml:134-138 prints the payload's bytes); the byte-carrier invariant of the model's strings is broken (see VALIDATION.md, bug hunt BUG-4)"
-      IO.Process.exit 2
+    if c.toNat ≥ 256 then
+      CerbStop.exitRefusals (driverRefusal .batchUbPayload none
+        s!"cerberus-lean: refused — batch UB payload: the undefined-behaviour text holds U+{(Nat.toDigits 16 c.toNat).asString}, outside the byte domain the oracle's byte string can hold (driver_ocaml.ml:134-138 prints the payload's bytes); the byte-carrier invariant of the model's strings is broken (see VALIDATION.md, bug hunt BUG-4)"
+        ⟨"preservation of the UB payload byte-carrier invariant", by decide⟩)
+
+def printUndefinedLine (ub : String) (stderr : String) (loc : String) : IO Unit := do
+  validateUndefinedPayload ub
+  let payload := ub.toList.foldl (fun bytes c => bytes.push c.toNat.toUInt8) ByteArray.empty
   let out ← IO.getStdout
   out.write ("Undefined {ub: \"".toUTF8 ++ payload ++ s!"\", stderr: \"{stderr}\", loc: \"{loc}\"}\n".toUTF8)
 
@@ -1324,6 +1336,14 @@ def runPipeline [LemFuel] [CerbGlobal.Switches] (runtime : String) (batch : Bool
       else
         ([], if firstTrace then CerbND.runND1 driverAction drSt
              else CerbND.runND driverAction drSt)
+    -- Admission is atomic with respect to final batch output: a later bad UB
+    -- payload cannot leave earlier Defined/ModelFailure records on stdout.
+    if batch then
+      for (status, _, _) in execs do
+        match status with
+        | .Killed _ (.Undef0 _ (ub :: _)) =>
+          validateUndefinedPayload (stringFromUndefined_behaviour ub)
+        | _ => pure ()
     for l in nodeLabels do
       IO.println s!"NODE {l}"
     if batch then
@@ -1470,8 +1490,9 @@ def refuseFlag (flag : String) : IO Unit := do
       "known flag out of its canonical position (`--batch`, `--pp-core` or `--parse-core` must be argv[0]; `--first` must immediately follow `--batch`/`--pp-core`)"
     else
       "unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --quote-core <out.lean>, --quote-libc <out.lean>, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>, --address-space-top <N>, --runtime <DIR>, --switches PNVI_ae_udi (every other switch set is refused)"
-  IO.eprintln s!"cerberus-lean: refused — {flag}: {feature} (see VALIDATION.md, zero-discrepancy Z-24)"
-  IO.Process.exit 2
+  CerbStop.exitRefusals (driverRefusal (if flag == "--concurrency" then .concurrency else if flag == "--iso" then .switches else .cli) (some flag)
+    s!"cerberus-lean: refused — {flag}: {feature} (see VALIDATION.md, zero-discrepancy Z-24)"
+    ⟨"implementation and validation of the requested command-line feature", by decide⟩)
 
 /-- The refusal reason for ONE element of a REFUSED `--switches` value (PNVI arc S1,
     2026-10-05; S4, 2026-10-07; design docs/2026-10-04_pnvi-ae-udi-design.md §B.4.2, §D.3,
@@ -1493,7 +1514,7 @@ def switchRefusalReason (name : String) : String :=
   | "strict_reads" =>
     "strict reads (switches.ml:66-67) are not supported: CerbMem's arm is a loud kill, and the oracle's rm_unspecs Core pass (backend/common/pipeline.ml:579) has no Lean counterpart"
   | "forbid_nullptr_free" | "zap_dead_pointers" | "strict_pointer_equality" | "strict_pointer_relationals" | "zero_initialised" =>
-    "this impl_mem.ml switch is not supported: its arm is a loud kill in CerbMem (seam-hygiene H2)"
+    "this impl_mem.ml switch is not supported: its arm is a structured refusal in CerbMem (seam-hygiene H2)"
   | "inner_arg_temps" =>
     "the inner-argument-temporaries elaboration (switches.ml:84-85) is not supported: it needs the alternative runtime std_inner_arg_temps.core (backend/common/pipeline.ml:34), which this port does not load"
   | "permissive_printf" =>
@@ -1541,7 +1562,9 @@ def refuseSwitches (flag value : String) : IO Unit := do
       else if knownSwitch n && seen.contains (switchClass n) then
         s!"{switchRefusalReason n}; ALSO it would override a previous switch of the same class in this list (the oracle prints `switch '…' would override a previous switch --> ignoring.` and drops it, switches.ml:136-139, fail-open; design §G R20, R-PNVI-11)"
       else switchRefusalReason n
-    IO.eprintln s!"cerberus-lean: refused — {flag}: this semantics switch set is not supported (the one supported set is `--switches=PNVI_ae_udi`) — `{n}`: {reason} (see CONTRACT.md §2/§3 and VALIDATION.md, semantics switches)"
+    IO.eprintln (CerbStop.render (.refusal (driverRefusal .switches (some n)
+      s!"cerberus-lean: refused — {flag}: this semantics switch set is not supported (the one supported set is `--switches=PNVI_ae_udi`) — `{n}`: {reason} (see CONTRACT.md §2/§3 and VALIDATION.md, semantics switches)"
+      ⟨"implementation and validation of this complete switch set", by decide⟩)))
     if knownSwitch n then seen := seen ++ [switchClass n]
   IO.Process.exit 2
 
@@ -1556,8 +1579,9 @@ def judgeSwitches (flag value : String) : IO (List CerbGlobal.CerbSwitch) := do
   if value == "PNVI_ae_udi" then return [.PNVI .AE_UDI]
   refuseSwitches flag value
   -- refuseSwitches exits 2; falling through would be an internal error (fail-closed)
-  IO.eprintln "cerberus-lean: internal error: refuseSwitches returned"
-  IO.Process.exit 2
+  CerbStop.exitInvariant (CerbStopSites.invariant ⟨"Main.judgeSwitches", by decide⟩
+    "refuseSwitches returned"
+    ⟨"Main.refuseSwitches must terminate after emitting every refused element", by decide⟩)
 
 /-- `--switches` given to `--parse-core` (S1 review L5 item 1): the value is judged by
     the switch parser itself (its own per-element refusal), never the generic
@@ -1573,8 +1597,9 @@ def refuseSwitchesParseCore (tok : String) (next? : Option String) : IO Unit := 
         IO.eprintln "cerberus-lean: --switches requires an argument"
         IO.Process.exit 1
   let _ ← judgeSwitches flag value
-  IO.eprintln s!"cerberus-lean: refused — {flag}: --parse-core runs only the Core text parser, which reads no switch set; the switch would be silently ignored (see CONTRACT.md §2)"
-  IO.Process.exit 2
+  CerbStop.exitRefusals (driverRefusal .switches (some value)
+    s!"cerberus-lean: refused — {flag}: --parse-core runs only the Core text parser, which reads no switch set; the switch would be silently ignored (see CONTRACT.md §2)"
+    ⟨"a semantics execution mode which consumes the switch set", by decide⟩)
 
 def main (args : List String) : IO Unit := do
   -- Zero-discrepancy Z2-FL-03 (Z2 audit @ 9e86fe67c; fail-closed hygiene):
@@ -1591,8 +1616,9 @@ def main (args : List String) : IO Unit := do
   match ← IO.getEnv "LEAN_ABORT_ON_PANIC" with
   | some _ => pure ()
   | none =>
-    IO.eprintln "cerberus-lean: refused — LEAN_ABORT_ON_PANIC is not set: a Lean panic! (this port's fail-stop mirror of every OCaml failwith/assert/uncaught exception) would print and then CONTINUE with a default value, converting a crash into a verdict; set LEAN_ABORT_ON_PANIC=1 (every harness does: scripts/common.sh run_cerberus_lean; see VALIDATION.md, zero-discrepancy Z2-FL-03)"
-    IO.Process.exit 2
+    CerbStop.exitRefusals (driverRefusal .abortFlag (some "LEAN_ABORT_ON_PANIC")
+      "cerberus-lean: refused — LEAN_ABORT_ON_PANIC is not set: a Lean panic! (this port's fail-stop mirror of every OCaml failwith/assert/uncaught exception) would print and then CONTINUE with a default value, converting a crash into a verdict; set LEAN_ABORT_ON_PANIC=1 (every harness does: scripts/common.sh run_cerberus_lean; see VALIDATION.md, zero-discrepancy Z2-FL-03)"
+      ⟨"setting LEAN_ABORT_ON_PANIC in the launching environment", by decide⟩)
   -- CLI ORDER CONTRACT (sem:N7, arc-14 S1 F6; zero-discrepancy Z-24): this
   -- is a POSITIONAL flag parser (not cmdliner like the oracle). The
   -- contract: `--batch` or `--pp-core` must be argv[0]; `--first` must
@@ -1685,8 +1711,9 @@ def main (args : List String) : IO Unit := do
       -- repeated", exit 124); taking the last value silently was a divergence
       -- (bug-hunt fixes pre-merge audit L3)
       if progArgsStr.isSome then
-        IO.eprintln "cerberus-lean: option --args cannot be repeated (as the oracle's command line)"
-        IO.Process.exit 2
+        CerbStop.exitRefusals (driverRefusal .cli (some "--args")
+          "cerberus-lean: option --args cannot be repeated (as the oracle's command line)"
+          ⟨"a single command-line occurrence matching upstream admission", by decide⟩)
       progArgsStr := some v; pending := rest
     | "--trace-nodes" :: rest => traceNodes := true; pending := rest
     | "--fuel" :: v :: rest => fuelStr := some v; pending := rest
@@ -1696,8 +1723,9 @@ def main (args : List String) : IO Unit := do
       runtimeArg := some v; pending := rest
     | "--switches" :: v :: rest =>
       if switchesArg.isSome then
-        IO.eprintln "cerberus-lean: option --switches cannot be repeated (as the oracle's command line)"
-        IO.Process.exit 2
+        CerbStop.exitRefusals (driverRefusal .cli (some "--switches")
+          "cerberus-lean: option --switches cannot be repeated (as the oracle's command line)"
+          ⟨"a single command-line occurrence matching upstream admission", by decide⟩)
       switchesArg := some (s!"--switches {v}", v); pending := rest
     | ["--libc"] | ["--libc-tu"] | ["--call"] | ["--call-args"]
     | ["--args"] | ["--fuel"] | ["--address-space-top"] | ["--runtime"] | ["--switches"] =>
@@ -1710,8 +1738,9 @@ def main (args : List String) : IO Unit := do
         runtimeArg := some (a.drop "--runtime=".length).toString; pending := rest; continue
       if a.startsWith "--switches=" then
         if switchesArg.isSome then
-          IO.eprintln "cerberus-lean: option --switches cannot be repeated (as the oracle's command line)"
-          IO.Process.exit 2
+          CerbStop.exitRefusals (driverRefusal .cli (some "--switches")
+            "cerberus-lean: option --switches cannot be repeated (as the oracle's command line)"
+            ⟨"a single command-line occurrence matching upstream admission", by decide⟩)
         switchesArg := some (a, (a.drop "--switches=".length).toString); pending := rest; continue
       -- Z-24: a `--` token here is not a file name (except `--stdin`). A `--switches`
       -- value already scanned is judged FIRST, so `--switches=V --batch …` reports V's
@@ -1741,12 +1770,14 @@ def main (args : List String) : IO Unit := do
     | some s => match s.toNat? with
       | some n =>
         if n == 0 then do
-          IO.eprintln s!"cerberus-lean: refused — --fuel {s}: the fuel must be a positive integer (fuel 0 kills at the first bind: never a verdict; see VALIDATION.md, fuel)"
-          IO.Process.exit 2
+          CerbStop.exitRefusals (driverRefusal .fuelArg (some s)
+            s!"cerberus-lean: refused — --fuel {s}: the fuel must be a positive integer (fuel 0 kills at the first bind: never a verdict; see VALIDATION.md, fuel)"
+            ⟨"a positive decimal fuel argument", by decide⟩)
         else pure n
       | none => do
-        IO.eprintln s!"cerberus-lean: refused — --fuel {s}: not a decimal numeral (the fuel is a positive integer; default {defaultFuel}; see VALIDATION.md, fuel)"
-        IO.Process.exit 2
+        CerbStop.exitRefusals (driverRefusal .fuelArg (some s)
+          s!"cerberus-lean: refused — --fuel {s}: not a decimal numeral (the fuel is a positive integer; default {defaultFuel}; see VALIDATION.md, fuel)"
+          ⟨"a positive decimal fuel argument", by decide⟩)
   -- The SHARED GRAMMAR (C5, re-review R1; [AGENT orchestrator], mirror doctrine): "nonempty ASCII
   -- decimal digits, 0 < value < 2^64" on BOTH engines. `String.toNat?` alone also accepts single
   -- underscore separators (`6_4` = 64), which the fork's digit-only converter refuses — so the
@@ -1758,12 +1789,14 @@ def main (args : List String) : IO Unit := do
         -- the DOMAIN 0 < top < 2^64 (addressSpaceLimit; the fork oracle's converter refuses with the
         -- SAME sentence — mirror doctrine; only its exit code is cmdliner's)
         if n == 0 || n ≥ addressSpaceLimit then do
-          IO.eprintln s!"cerberus-lean: refused — --address-space-top {s}: the address-space top must fit an LP64 pointer: 0 < top < 2^64 (CerberusImpl.sizeof_pointer = some 8; the allocator's initial cursor; default {defaultAddressSpaceTop}; see VALIDATION.md, address-space top)"
-          IO.Process.exit 2
+          CerbStop.exitRefusals (driverRefusal .addressSpaceArg (some s)
+            s!"cerberus-lean: refused — --address-space-top {s}: the address-space top must fit an LP64 pointer: 0 < top < 2^64 (CerberusImpl.sizeof_pointer = some 8; the allocator's initial cursor; default {defaultAddressSpaceTop}; see VALIDATION.md, address-space top)"
+            ⟨"an address-space-top argument in the LP64 pointer domain", by decide⟩)
         else pure (n : Int)
       | none => do
-        IO.eprintln s!"cerberus-lean: refused — --address-space-top {s}: not a decimal numeral (the address-space top is a decimal positive integer, 0 < top < 2^64; default {defaultAddressSpaceTop}; see VALIDATION.md, address-space top)"
-        IO.Process.exit 2
+        CerbStop.exitRefusals (driverRefusal .addressSpaceArg (some s)
+          s!"cerberus-lean: refused — --address-space-top {s}: not a decimal numeral (the address-space top is a decimal positive integer, 0 < top < 2^64; default {defaultAddressSpaceTop}; see VALIDATION.md, address-space top)"
+          ⟨"an address-space-top argument in the LP64 pointer domain", by decide⟩)
   let callFn : Option (String × List Int) ← match callName, callArgsStr with
     | none, none => pure none
     | none, some _ => do

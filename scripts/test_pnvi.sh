@@ -107,21 +107,21 @@ if [[ "$MODE" == selftest ]]; then
     # `--switches` argument stripped before the real driver runs; design §D.2 P1)
     stub "$ST/lean-strip" "$REAL_LEAN" 'os.execv(REAL, [REAL] + [a for a in args if not a.startswith("--switches")])'
     # P6: a driver that refuses everything (the refuse-all control; §D.2 P6)
-    stub "$ST/lean-refuse" "$REAL_LEAN" 'sys.stderr.write("cerberus-lean: refused — plant: every input refused\n"); sys.exit(2)'
+    stub "$ST/lean-refuse" "$REAL_LEAN" 'sys.stderr.write("cerberus-lean stop [\"1\",\"REFUSAL\",\"cli\",null,\"plant: every input refused\",\"plant mover\",null,\"plant\"]\n"); sys.exit(2)'
     # P7a: a refusal turned into an unnamed crash (the R-PNVI id and prefix removed)
     stub "$ST/lean-unnamed" "$REAL_LEAN" 'p = subprocess.run([REAL] + args, capture_output=True)
 sys.stdout.buffer.write(p.stdout)
-sys.stderr.buffer.write(re.sub(rb"PNVI_ae_udi refusal \(unsupported upstream arm\): R-PNVI-[0-9]+b?: ", b"", p.stderr))
+sys.stderr.buffer.write(re.sub(rb"cerberus-lean stop \[\"1\",\"REFUSAL\",\"pnvi\",[^\n]*", b"plant: legacy unattributed panic", p.stderr))
 sys.exit(134 if p.returncode == -6 else p.returncode)'
     # P7b: a refusal turned into a MIRROR of the oracle's crash text ("both crash alike")
     stub "$ST/lean-mirror" "$REAL_LEAN" 'p = subprocess.run([REAL] + args, capture_output=True)
 sys.stdout.buffer.write(p.stdout)
-sys.stderr.buffer.write(re.sub(rb"PNVI_ae_udi refusal \(unsupported upstream arm\): R-PNVI-01: [^\n]*", b"Concrete.combine_prov: found a Prov_symbolic", p.stderr))
+sys.stderr.buffer.write(re.sub(rb"cerberus-lean stop \[\"1\",\"REFUSAL\",\"pnvi\",\"R-PNVI-01\",[^\n]*", b"Concrete.combine_prov: found a Prov_symbolic", p.stderr))
 sys.exit(134 if p.returncode == -6 else p.returncode)'
     # P8a (review F1 probe 1): the oracle's combine_prov CRASH against a Lean front-end Error
     # (every PNVI refusal replaced by a single `Error` verdict, exit 1) — the REFUSAL-CRASH rule
     stub "$ST/lean-error" "$REAL_LEAN" 'p = subprocess.run([REAL] + args, capture_output=True)
-if b"PNVI_ae_udi refusal (unsupported upstream arm): " in p.stderr:
+if b"cerberus-lean stop [\"1\",\"REFUSAL\",\"pnvi\"," in p.stderr:
     sys.stdout.write("Error {msg: \"plant: a PNVI refusal reported as a front-end Error\"}\n"); sys.exit(1)
 sys.stdout.buffer.write(p.stdout); sys.stderr.buffer.write(p.stderr)
 sys.exit(134 if p.returncode == -6 else p.returncode)'
