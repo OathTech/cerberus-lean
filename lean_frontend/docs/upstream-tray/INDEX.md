@@ -88,9 +88,9 @@ notes below establish only what was checked then.
 | [52-debug-printf-in-eff-array-shift-pnvi-arm.md](52-debug-printf-in-eff-array-shift-pnvi-arm.md) | Draft | No submission recorded |
 | [53-array-shift-ptrval-crash-on-symbolic-pointer-memcpy.md](53-array-shift-ptrval-crash-on-symbolic-pointer-memcpy.md) | Draft | No submission recorded |
 | [55-ub088-reported-regardless-of-use.md](55-ub088-reported-regardless-of-use.md) | Draft | No submission recorded |
-| [58-relative-runtime-library-location.md](58-relative-runtime-library-location.md) | Draft | No submission recorded |
 | [56-memcpy-overlap-copies-silently.md](56-memcpy-overlap-copies-silently.md) | Draft | No submission recorded; the fork REFUSES the case since 2026-10-20 (contract D10, fork-ahead, not a fix for upstream) |
 | [57-aligned-alloc-invalid-alignment-allocates.md](57-aligned-alloc-invalid-alignment-allocates.md) | Draft | No submission recorded; the fork REFUSES the case since 2026-10-20 (contract D10, fork-ahead, not a fix for upstream) |
+| [58-relative-runtime-library-location.md](58-relative-runtime-library-location.md) | Draft | No submission recorded |
 | [lean4/01-stack-overflow-handler-deadlock.md](lean4/01-stack-overflow-handler-deadlock.md) | Draft | No submission recorded |
 | [lean4/02-nat-div-mod-literal-folding.md](lean4/02-nat-div-mod-literal-folding.md) | Draft | No submission recorded |
 | [lean4/03-float-tobits-canonicalizes-nan.md](lean4/03-float-tobits-canonicalizes-nan.md) | Draft | No submission recorded |
