@@ -90,6 +90,16 @@ of this work's scope.
   class-valued test definitions and one unused simp argument were fixed on
   2026-10-19 (`fix/hygiene-20261019`).
 
+- **Lean toolchain bump 4.32.2 → 4.35.0.** Scoped 2026-10-20
+  (`docs/2026-10-20_lean-4.35-scoping-record.md`): moderate; the toolchain is
+  installed on the box; seven removed-`String` sites, five `split` repairs, one
+  test `rfl`, one LemLib `omega` proof, two emitter keywords; the risk is
+  `CerbMemAccessFacts.lean` (two theorems with unsolved goals; trust surface)
+  and the float lanes. Buys `lake check` / `--paranoid`, whose sandbox needs an
+  operator-side `bwrap` decision on this box. [USER 2026-10-20] scheduled after
+  the Core-quoting landing; its own charter then; lem-lean first (its TODO
+  carries the backend side).
+
 ## Semantics-audit repairs (2026-09-11) — RESOLVED findings and the rows they leave
 
 Record `docs/2026-09-11_semantics-audit-repairs-record.md`; charter
