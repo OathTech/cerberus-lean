@@ -5,6 +5,7 @@ No production lane policy is changed. Tests explicitly distinguish diagnostic
 metadata retained from an invalid capture from an admitted, clean capture.
 """
 import argparse
+import ast
 import copy
 import json
 import os
@@ -12,6 +13,7 @@ from pathlib import Path
 import resource
 import subprocess
 import sys
+import time
 import unittest
 
 import observations as obs
@@ -31,6 +33,11 @@ PANIC = b'PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: '
 TRACE = b'backtrace:\n/lib/runtime.so(lean_panic+0x2) [0xAa01]\n'
 WRAPPER = b'scripts/capped: line 36: 123 Aborted                 "$@"\n'
 CORE_WRAPPER = b'scripts/capped: line 36: 123 Aborted                 (core dumped) "$@"\n'
+INSTALLED_WRAPPER = (
+    b'/opt/tools/capped: line 147: 123 Aborted                 '
+    b'( { echo "$BASHPID" > "$cg/cgroup.procs"; } 2> /dev/null || '
+    b'{ echo "$prog: could not move into $cg: refusing to run uncapped" 1>&2; exit 4; }; '
+    b'exec env CAPPED_STATE=1 CAPPED_MEM_MAX="$MEM" "$0" "$@" )\n')
 
 
 def wire(value):
@@ -227,7 +234,9 @@ class CaptureTests(unittest.TestCase):
     def test_panic_trace_suffix_grammar(self):
         for value in (REF, CRASH, INV):
             for tail in (b'', TRACE, WRAPPER, b'/owned/' + WRAPPER, CORE_WRAPPER,
-                         b'/owned/' + CORE_WRAPPER,
+                         b'/owned/' + CORE_WRAPPER, INSTALLED_WRAPPER,
+                         INSTALLED_WRAPPER.replace(b'Aborted ', b'Aborted (core dumped) '),
+                         TRACE + obs.CORE_DUMP + b'\n' + INSTALLED_WRAPPER,
                          obs.CORE_DUMP + b'\n' + WRAPPER,
                          TRACE + obs.CORE_DUMP + b'\n' + WRAPPER):
                 with self.subTest(value=value[1], tail=tail):
@@ -237,7 +246,14 @@ class CaptureTests(unittest.TestCase):
                      WRAPPER + obs.CORE_DUMP + b'\n', b'backtrace:\n', b'backtrace:\ngarbage\n',
                      TRACE + b'garbage\n', b'lookalike-capped: line 1: 2 Aborted "$@"\n',
                      CORE_WRAPPER.replace(b'Aborted                 ', b'Aborted\t'),
-                     CORE_WRAPPER + CORE_WRAPPER):
+                     CORE_WRAPPER + CORE_WRAPPER, INSTALLED_WRAPPER * 2,
+                     INSTALLED_WRAPPER + WRAPPER, WRAPPER + INSTALLED_WRAPPER,
+                     INSTALLED_WRAPPER + obs.CORE_DUMP + b'\n',
+                     INSTALLED_WRAPPER.replace(b'"$0"', b'"other"'),
+                     INSTALLED_WRAPPER.replace(b'exit 4;', b'exit 0;'),
+                     INSTALLED_WRAPPER.replace(b'Aborted ', b'Aborted\t'),
+                     INSTALLED_WRAPPER.replace(b'capped:', b'other:'),
+                     INSTALLED_WRAPPER.rstrip(b'\n') + b' extra\n'):
             result = obs.decode_stop(b'', PANIC + wire(INV) + b'\n' + tail, 134)
             self.assertTrue(result.problems, tail)
             self.assertEqual(len(result.stops), 1, tail)
@@ -245,7 +261,7 @@ class CaptureTests(unittest.TestCase):
     def test_exact_fuel_frames(self):
         self.assertEqual(self.clean(FUEL, b'', 1).fuel[0].form, 'kill')
         for header, form in ((b'', 'bare-panic'), (PANIC, 'translation-panic')):
-            for tail in (b'', TRACE, TRACE + WRAPPER):
+            for tail in (b'', TRACE, TRACE + WRAPPER, TRACE + INSTALLED_WRAPPER):
                 result = self.clean(b'', header + obs.FUEL_PAYLOAD + b'\n' + tail, 134)
                 self.assertEqual(result.fuel[0].form, form)
                 self.assertFalse(result.stops or result.legacy_panics)
@@ -374,10 +390,153 @@ class LeanConformanceTests(unittest.TestCase):
                 self.assertEqual([o.stop.kind for o in result.stops], kinds)
 
 
+def consumer_demo(consumer, outdir):
+    """Read-only demonstration of the raw-byte patch to Caesium's actual run().
+
+    Native adapter/driver outputs and explicitly labelled fixtures travel through
+    its cap/timeout capture shape. No consumer file is imported for side effects
+    or modified, and no adoption is implied. Run under the provider's capped.
+    """
+    outdir.mkdir(parents=True, exist_ok=True)
+    path = consumer / 'scripts/differential.py'
+    tree = ast.parse(path.read_text())
+    fn = copy.deepcopy(next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'run'))
+    calls = [n for n in ast.walk(fn) if isinstance(n, ast.Call) and
+             isinstance(n.func, ast.Attribute) and isinstance(n.func.value, ast.Name) and
+             n.func.value.id == 'subprocess' and n.func.attr == 'run']
+    assert len(calls) == 1, 'review the changed consumer runner'
+    call = calls[0]
+    keywords = {k.arg: k.value for k in call.keywords}
+    assert ast.literal_eval(keywords['text']) is True
+    assert ast.literal_eval(keywords['errors']) == 'replace'
+    # The sole prototype patch: keep this driver's streams as raw bytes.
+    call.keywords = [k for k in call.keywords if k.arg not in ('text', 'errors')]
+    ns = dict(os=os, subprocess=subprocess, time=time, Path=Path)
+    exec(compile(ast.Module(body=[fn], type_ignores=[]), str(path), 'exec'), ns)
+    cap = next(line for line in (consumer/'scripts/env.sh').read_text().splitlines()
+               if line.startswith('cap() {'))
+    assert cap == 'cap() { if command -v capped >/dev/null 2>&1; then capped "$@"; else "$@"; fi; }', cap
+    env = {'BASH_FUNC_cap%%': '() ' + cap.partition('() ')[2], 'NO_COLOR': '1', 'TERM': 'dumb'}
+    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+    rows = []
+
+    def capture(name, cmd, status, kinds=(), fuel=(), legacy=0, problems=False, expected=None, cwd=ROOT):
+        rc, stdout, stderr, seconds = ns['run'](list(map(str, cmd)), cwd, 45, '48G', env)
+        assert isinstance(stdout, bytes) and isinstance(stderr, bytes)
+        for ext, data in (('stdout', stdout), ('stderr', stderr), ('status', str(rc).encode())):
+            (outdir/f'{name}.{ext}').write_bytes(data)
+        decoded = obs.decode_stop(stdout, stderr, rc)
+        assert rc == status, (name, rc, stderr)
+        assert [o.stop.kind for o in decoded.stops] == list(kinds), (name, decoded)
+        assert [o.form for o in decoded.fuel] == list(fuel), (name, decoded)
+        assert len(decoded.legacy_panics) == legacy and bool(decoded.problems) == problems, (name, decoded)
+        if expected is not None:
+            assert [o.stop for o in decoded.stops] == expected, (name, decoded)
+        rows.append((name, rc, len(decoded.stops), len(decoded.fuel), len(decoded.legacy_panics), len(decoded.problems)))
+        print(f'{name}: exit={rc} stops={len(decoded.stops)} fuel={len(decoded.fuel)} legacy={len(decoded.legacy_panics)} problems={len(decoded.problems)}', flush=True)
+        return decoded, stdout, stderr
+
+    driver = ROOT/'lean_frontend/.lake/build/bin/cerberus-lean'
+    stop_test = ROOT/'lean_frontend/.lake/build/bin/stop-test'
+    runtime = ROOT/'_build/install/default'
+    for mode, status, values in [('refuse', 2, [REF, REF]), ('invariant-cli', 2, [INV]),
+                                  ('typed', 1, [CRASH]), ('pure', 134, [CRASH]), ('refuse-m', 134, [REF])]:
+        capture('adapter-' + mode, [stop_test, mode], status, [v[1] for v in values],
+                expected=[obs.parse_stop(wire(v)) for v in values])
+    decoded, _, _ = capture('driver-cli', [driver, '--fuel', '0'], 2, ['REFUSAL'])
+    assert decoded.stops[0].stop.boundary == 'fuel-arg' and decoded.stops[0].stop.item == '0'
+    decoded, _, _ = capture('driver-switches', [driver, '--switches=bogus,also-bogus'], 2, ['REFUSAL'] * 2)
+    assert [(o.stop.boundary, o.stop.item) for o in decoded.stops] == [('switches', 'bogus'), ('switches', 'also-bogus')]
+
+    probe = outdir/'Panic.lean'
+    probe.write_text('''import LemLib
+def main (args : List String) : IO Unit := do
+  match args with
+  | ["fuel"] => IO.println (fuelExhaustedWith "lem: fuel exhausted" (0 : Nat))
+  | [payload] => IO.println (failwithI payload : String)
+  | _ => throw (IO.userError "one payload required")
+''')
+    lean_cmd = [ROOT/'scripts/capped', 'lake', 'env', 'lean', '--run', probe]
+    capture('adapter-pure-invariant', [*lean_cmd, wire(INV).decode()], 134, ['INVARIANT'],
+            expected=[obs.parse_stop(wire(INV))], cwd=ROOT/'lean_frontend')
+    capture('adapter-bare-fuel', [*lean_cmd, 'fuel'], 134, fuel=['bare-panic'], cwd=ROOT/'lean_frontend')
+
+    mixed = '''int memcmp(const void *, const void *, unsigned long);
+int open(const char *, int, ...);
+int a;
+int f(void) { a = 1; return 0; }
+int g(void) {
+  int x, y;
+  if (a) return memcmp(&x, &y, sizeof x);
+  return open("x", 0);
+}
+int main(void) { return g() + f(); }
+'''
+    programs = {'mixed': mixed,
+                'translation': 'int unused(void) { return ' + '1 + (' * 192 + '0' + ')' * 192 + '; }\nint main(void) { return 0; }\n',
+                'fuel-kill': 'int main(void) { while (1) {} }\n',
+                'legacy': (ROOT/'tests/immaculate/nolibc/zd-any-bounded-int-crash.c').read_text()}
+    for name, source in programs.items():
+        cfile, jsonfile = outdir/f'{name}.c', outdir/f'{name}.json'
+        cfile.write_text(source)
+        bridge = subprocess.run([str(ROOT/'scripts/capped'), str(ROOT/'_build/default/backend/driver/main.exe'),
+                                 '--runtime', str(runtime), '--cabs-json', str(cfile)], capture_output=True)
+        assert bridge.returncode == 0, bridge.stderr
+        jsonfile.write_bytes(bridge.stdout)
+    def driver_cmd(name, *flags):
+        return [driver, '--batch', *flags, '--runtime', runtime, outdir/f'{name}.json']
+    d, out, _ = capture('mixed-first', driver_cmd('mixed', '--first'), 1, ['UPSTREAM_CRASH'])
+    assert out.count(b'ModelFailure {') == 1
+    stop = d.stops[0].stop
+    assert stop.site == 'CerbMem.memcmpByte' and stop.upstream == obs.Upstream(
+        'cerberus', UP[1], UP[2], '2658', '2659', '| _ ->\n                assert false in')
+    assert stop.tray == obs.Tray('none') and stop.see is None
+    d, out, _ = capture('mixed-exhaustive', driver_cmd('mixed'), 134, ['REFUSAL'])
+    assert out == b'' and not out.count(b'ModelFailure {')
+    stop = d.stops[0].stop
+    assert (stop.boundary, stop.item, stop.mover, stop.upstream, stop.see) == (
+        'fs', 'open', 'a SibylFS-faithful filesystem model', None,
+        'CerbFS.lean; docs/2026-09-28_cerbfs-refuse-all-record.md')
+    capture('driver-translation-fuel', driver_cmd('translation', '--first', '--fuel', '128'), 134, fuel=['translation-panic'])
+    capture('driver-fuel-kill', driver_cmd('fuel-kill', '--first', '--fuel', '128'), 1, fuel=['kill'])
+    capture('driver-legacy', driver_cmd('legacy', '--first'), 134, legacy=1)
+
+    # These are transport fixtures, not claims of C end-to-end executions.
+    fixtures = [
+        ('mixed-emitted', multi(model(wire(CRASH)), model(wire(INV)), model(wire(CRASH))), b'', 0, [CRASH, INV, CRASH], [], False),
+        ('verdict-stop', multi(OK, model(wire(INV))), b'', 0, [INV], [], False),
+        ('stop-fuel', multi(model(wire(CRASH)), FUEL), b'', 0, [CRASH], ['kill'], False),
+        ('malformed-later', multi(model(wire(INV)), model(b'cerberus-lean stop ["2"]')), b'', 0, [INV], [], True),
+        ('cross-channel-causes', model(wire(INV)), wire(REF) + b'\n', 1, [INV, REF], [], True),
+    ]
+    injected = copy.deepcopy(INV)
+    injected[3] = '\n'.join([wire(REF).decode(), FUEL.decode(), (PANIC + wire(CRASH)).decode()])
+    fixtures.append(('detail-injection', model(wire(injected)), b'', 1, [injected], [], False))
+    escaped = obs.escape(wire(INV) + b'\n' + FUEL + PANIC + wire(REF)).encode('ascii')
+    fixtures.append(('program-data', OK.replace(b'stdout: ""', b'stdout: "' + escaped + b'"'), b'', 0, [], [], False))
+    fixtures.append(('ordinary-error', b'Error {msg: "' + wire(INV) + b'"}\n', b'', 1, [], [], False))
+    for name, stdout, stderr, status, values, fuels, problems in fixtures:
+        # Real separate-stream capture through exactly the same runner/cap shape.
+        script = 'import sys; sys.stdout.buffer.write(' + repr(stdout) + '); sys.stderr.buffer.write(' + repr(stderr) + '); sys.exit(' + str(status) + ')'
+        d, _, _ = capture('fixture-' + name, [sys.executable, '-c', script], status,
+                          [v[1] for v in values], fuels, problems=problems,
+                          expected=[obs.parse_stop(wire(v)) for v in values])
+        if name == 'mixed-emitted':
+            assert [o.execution for o in d.stops] == [0, 1, 2]
+    print(f'CONSUMER DEMO: {len(rows)} captures passed; emitted records only; no external adoption', flush=True)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--lean-bin', type=Path)
+    parser.add_argument('--consumer-demo', type=Path, help='read-only Caesium checkout; prototype raw-byte capture')
+    parser.add_argument('--out', type=Path, help='consumer demo scratch directory (under .tmp)')
     args = parser.parse_args()
+    if args.consumer_demo:
+        if not args.out or not args.out.resolve().is_relative_to(ROOT/'.tmp'):
+            parser.error('--consumer-demo requires --out under this worktree .tmp')
+        consumer_demo(args.consumer_demo.resolve(), args.out.resolve())
+        sys.exit(0)
     LEAN_BIN = args.lean_bin.resolve() if args.lean_bin else None
     if LEAN_BIN and not LEAN_BIN.is_file():
         parser.error('--lean-bin does not exist; build stop-test first')

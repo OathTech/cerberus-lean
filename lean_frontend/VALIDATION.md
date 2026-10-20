@@ -1032,6 +1032,28 @@ native exit membership, call-point pins project a single value/UB, and
 legacy printer/reference checks retain their documented narrower purpose.
 An acknowledged baseline difference or refusal is not observation agreement.
 
+**Attributed stops.** `scripts/observations.py` exposes
+`decode_stop(stdout: bytes, stderr: bytes, status: int) -> StopDecode`.
+It retains every complete emitted occurrence, with all constructor metadata,
+channel, execution index and source position, alongside exact fuel occurrences,
+validated legacy/unattributed panics and protocol problems. Empty `stops` is
+not evidence of completion. Decode before truncation or status/resource returns;
+ordinary program output and ordinary Error messages confer no stop authority.
+The [first-delivery note](docs/2026-10-20_consumer-note-cerberus-caesium-outcome-protocol.md)
+contains the family table, concrete consumer recipe and loss-before-emission
+limits. The sentinel and pure-failure boundaries remain operational limits,
+with structural outcomes as their named mover.
+
+Only PNVI and immaculate add stop-policy corrections in this delivery: an
+emitted INVARIANT is unconditionally RED, including against oracle crash/resource
+or malformed later output. Their historical CRASH/BOTH_FAIL negative pins do
+not identify upstream origin; a validated envelope-less panic is explicitly
+legacy, origin unattributed. Other lane policies are unchanged. The normative
+resource rule stays: bare 137 is unexplained/RED; a positive owned `oom_kill`
+counter is the OOM witness, even when the parent exits successfully. The existing
+PNVI `status == 137` resource shortcut is a documented deferred divergence, not
+certified by this decoder or amended into that normative rule (design v2 §§8.4/9).
+
 **Pristine upstream, the reference (§0).** The independently compiled
 pristine engine (`b9aeedcb4` + upstream Lem `3802cb0`; kept standing by
 `scripts/ensure_independent_oracle.py`, which reuses the lane's own

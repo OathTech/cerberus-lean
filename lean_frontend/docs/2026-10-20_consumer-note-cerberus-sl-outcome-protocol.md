@@ -1,10 +1,16 @@
 # cerberus-sl: outcome-protocol producer and reconstruction contracts
 
-Author: [AGENT 2026-10-20]. Provider branch `arc/outcome-protocol`, checkpoint C.
+Author: [AGENT 2026-10-20]. Provider branch `arc/outcome-protocol`, checkpoints A–E.
 This describes the provider candidate. It does not claim a consumer re-pin or a
 build of cerberus-sl. The [checkpoint record](2026-10-20_outcome-protocol-record.md)
-supplies the checked commands and results; the complete protocol delivery still
-includes checkpoints D and E.
+supplies the checked commands and results. The companion
+[Caesium handoff](2026-10-20_consumer-note-cerberus-caesium-outcome-protocol.md)
+contains the first-delivery family table and the byte-stream decoder recipe.
+
+Provider close-out is pending: Tier A passed, while the full Tier B invocation
+was interrupted at the aggregate timing tripwire with 31/42 commands passed.
+The record distinguishes this incomplete gate from the completed proofs and
+compatibility probes below.
 
 ## Reconstruction references now take their direct diagnostics explicitly
 
@@ -83,3 +89,43 @@ The seven existing reconstruction census entries remain, with the two historical
 recovery theorems added. Checkpoint C records the full axiom census and kernel
 replay over the changed modules and dependencies. Runtime controls are separate
 evidence and do not replace those kernel checks.
+
+
+## Fuel, allocator OOM and the kill lift rechecked
+
+Read-only check at cerberus-sl HEAD
+`68832d914227a29c37df381d3e83ad274147e24c`, clean tree:
+`CerberusIris/CerberusIris/Interface.lean:177` defines `oomOutcome` as a
+Killed driver result whose reason is Other/DErr_memory/MerrOther with the
+allocator message. `PrimOutcome.lean:355–361` defines `liftKill`, preserving
+Undef0 and Error0 unchanged and mapping Other through DErr_memory, and states
+`liftKill_fuel` by reflexivity. The adequacy uses in `RunBuild.lean:744–745`
+still name `CerbND.fuelExhaustedKill` and `Interface.oomOutcome` separately.
+
+Provider `CerbFuel.lean`, `CerbND.lean`, `CerbFail.lean` and the source of
+Nondeterminism are byte-unchanged from this mission's base. `CerbMem.oomKill`
+retains the same constructor and message (current line 2492). The generated
+`Nondeterminism.liftAction_lemFuel` preserves Error0's location and string
+(current lines 535–540), so the outcome envelope passes through the same lift.
+Allocator OOM remains an ordinary semantic kill, not host-resource exhaustion.
+
+A scratch probe imports `Driver`, `CerbND` and `CerbFail`, copies the two
+consumer definitions `liftKill` and `oomOutcome` above into `OutcomeSlProbe`,
+and checks these three equations, without any consumer re-pin:
+
+```lean
+theorem fuel : liftKill CerbND.fuelExhaustedKill = CerbND.fuelExhaustedKill := rfl
+theorem oom {st : Type} (s : st) :
+    (nd_status.Killed s (liftKill CerbMem.oomKill) : nd_status driver_result driver_error st) = oomOutcome s := rfl
+theorem model (msg : String) :
+    liftKill (CerbFail.failStopKill msg) = CerbFail.failStopKill msg := rfl
+```
+
+The parameter `msg` is arbitrary, so the third equation includes every rendered
+stop without interpreting its class. This proves preservation by the copied
+consumer lift, not authentication of the sentinel or an external build result.
+The provider's actual generated lift was independently read as described above.
+All three `#print axioms` results are empty; local kernel replay exited **0**.
+The record gives the capped compile/replay commands. The initial compile lacked
+Lean's explicit scratch root and failed before elaboration; only the corrected
+compile and replay are evidence.

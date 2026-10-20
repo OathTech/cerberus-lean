@@ -93,10 +93,26 @@ cd "$PROJECT_ROOT" || fail "cannot cd to $PROJECT_ROOT"
 # Defined   {value: "VAL", stdout: "S", stderr: "E", blocked: "B"} -> VAL:{value: "VAL", stdout: "S", stderr: "E", blocked: "B"}
 # Error     {msg: "MSG"}       -> ERR:{msg: "MSG"}
 # empty / uncaught exception / panic (with nonzero/crash exit) -> CRASH
-verdict() {   # <stdout-file> <rc> <stderr-file>
+verdict() {   # <stdout-file> <rc> <stderr-file> [lean]
     local outf="$1" rc="$2" errf="$3" line
     printf '%s\n' "$rc" > "$outf.status"
     line=$(cat "$outf")
+    if [[ "${4:-}" == lean ]]; then
+        local stop_kind
+        stop_kind=$(python3 - "$OBSERVATION_CODEC" "$outf" "$errf" "$rc" <<'PY_STOP'
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(sys.argv[1]).parent))
+import observations as obs
+decoded = obs.decode_stop(Path(sys.argv[2]).read_bytes(), Path(sys.argv[3]).read_bytes(), int(sys.argv[4]))
+if any(isinstance(entry.stop, obs.Invariant) for entry in decoded.stops):
+    print('INVARIANT')
+if decoded.legacy_panics:
+    print('immaculate: legacy, origin unattributed (coarse CRASH pin only)', file=sys.stderr)
+PY_STOP
+        ) || { echo "INVALID"; return; }
+        if [[ "$stop_kind" == INVARIANT ]]; then echo "INVARIANT"; return; fi
+    fi
     if is_cap_kill "$rc" "$errf"; then
         # memory-cap breach (exit 137 + capped's OOM-KILLED witness on
         # stderr): its own token, so it can never read as a verdict
@@ -136,7 +152,8 @@ verdict() {   # <stdout-file> <rc> <stderr-file>
 # Classify oracle-token vs lean-token into a lane status.
 classify() {
     local o="$1" l="$2"
-    if [[ "$o" == "INVALID" || "$l" == "INVALID" ]]; then echo "INVALID"
+    if [[ "$l" == "INVARIANT" ]]; then echo "INVARIANT"
+    elif [[ "$o" == "INVALID" || "$l" == "INVALID" ]]; then echo "INVALID"
     elif [[ "$o" == "KILL" || "$l" == "KILL" ]]; then echo "KILL"
     elif [[ "$o" == "$l" ]]; then echo "MATCH"
     elif [[ "$o" == "CRASH" ]]; then echo "ORACLE_CRASH"
@@ -172,7 +189,7 @@ run_c_case() {  # $1=name $2=cfile $3=libc(0/1) [$4=--args string]
         env LEAN_ABORT_ON_PANIC=1 "$CERBERUS_LEAN_BIN" "${largs[@]}" \
         "$OUTPUT_DIR/$name.json" \
         > "$OUTPUT_DIR/$name.l" 2>"$OUTPUT_DIR/$name.lerr" ) || lrc=$?
-    local ltok; ltok="$(verdict "$OUTPUT_DIR/$name.l" "$lrc" "$OUTPUT_DIR/$name.lerr")"
+    local ltok; ltok="$(verdict "$OUTPUT_DIR/$name.l" "$lrc" "$OUTPUT_DIR/$name.lerr" lean)"
     local status; status="$(classify "$otok" "$ltok")"
     # The Lean token is PART of the recorded state (F2 lane hardening):
     # on ORACLE_CRASH rows the status alone cannot see a Lean-side value
@@ -181,6 +198,8 @@ run_c_case() {  # $1=name $2=cfile $3=libc(0/1) [$4=--args string]
     CUR["$name"]="$status | L=$ltok"
     printf "  %-14s %-20s  O[%s] L[%s]\n" "$status" "$name" "$otok" "$ltok"
     echo "$name $status | L=$ltok" >> "$OUTPUT_DIR/baseline.new"
+    # An invariant cannot be accepted or recorded as a negative-test baseline.
+    [[ "$status" != INVARIANT ]] || fail "INVARIANT in $name (oracle $otok)"
 }
 
 echo ""

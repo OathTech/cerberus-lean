@@ -15,6 +15,10 @@ import subprocess
 import sys
 import tempfile
 
+import observations as obs
+import pnvi_lane
+from test_stops import INV, CRASH, OK, FUEL, PANIC, TRACE, wire, model, multi
+
 
 ROOT = Path(__file__).resolve().parent.parent
 LEGACY_LANES = ('bytes', 'libc_exec', 'libxml2_uri', 'immaculate', 'speclab',
@@ -69,6 +73,12 @@ elif kind in ('crash_model', 'crash_model_suffix'):
         out += b'garbage after complete-looking record\n'
 elif kind == 'crash_other':
     out, err, rc = b'', b'PANIC at Other.unreviewed Other:10:3: unrelated panic\n', 134
+elif kind == 'crash_invariant':
+    payload = 'cerberus-lean stop ' + json.dumps(
+        ['1', 'INVARIANT', 'plant.guard', 'guard failed', 'plant contract'], separators=(',', ':'))
+    out, err, rc = ('ModelFailure {msg: ' + json.dumps(payload) + '}\n').encode(), b'', 1
+elif kind == 'crash_legacy':
+    out, err, rc = b'', b'PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: old failure\n', 134
 elif kind in ('refusal', 'different_refusal'):
     word = b'one' if kind == 'refusal' else b'two'
     out = b'Error {msg: "model refused: ' + word + b'"}\n'
@@ -81,13 +91,86 @@ sys.exit(rc if rc >= 0 else 128 - rc)
 '''
 
 
+def stop_policy_plants(outdir):
+    """Exercise the actual Python and shell classification functions cheaply.
+
+    The full immaculate entry-point plants below additionally check that the
+    unconditional invariant veto prevents baseline acceptance.
+    """
+    outdir.mkdir(parents=True, exist_ok=True)
+    source = (ROOT / 'scripts/test_immaculate.sh').read_text()
+    functions = source[source.index('verdict() {'):source.index(': > "$OUTPUT_DIR/baseline.new"')]
+    common = (ROOT / 'scripts/common.sh').read_text()
+    start = common.index('is_cap_kill() {')
+    cap_function = common[start:common.index('\n}\n', start) + 3]
+    harness = outdir / 'immaculate-functions.sh'
+    harness.write_text('set -euo pipefail\nsource "$1/scripts/observations.sh"\n'
+                       'CAP_OOM_PATTERN=$(cat "$1/scripts/cap_oom.regex")\n' + cap_function + '\n' + functions +
+                       '\nl=$(verdict "$2.stdout" "$3" "$2.stderr" lean)\n'
+                       'classify "$4" "$l"\n')
+    prefix = outdir / 'capture'
+    cases = [
+        ('typed', model(wire(INV)), b'', 1),
+        ('panic', b'', PANIC + wire(INV) + b'\n' + TRACE, 134),
+        ('cli', b'', wire(INV) + b'\n', 2),
+        ('mixed', multi(model(wire(CRASH)), model(wire(INV)), FUEL), b'', 0),
+        ('bad-tail', model(wire(INV)) + b'truncated', b'', 1),
+        ('timeout', model(wire(INV)), b'', 124),
+        ('bare137', model(wire(INV)), b'', 137),
+        ('oom', model(wire(INV)), b'capped: OOM-KILLED (memory.events oom_kill=1; command exit 0)\n', 0),
+    ]
+    count = 0
+    for name, stdout, stderr, status in cases:
+        prefix.with_suffix('.stdout').write_bytes(stdout)
+        prefix.with_suffix('.stderr').write_bytes(stderr)
+        prefix.with_suffix('.status').write_text(str(status))
+        lean = pnvi_lane.classify_side(str(prefix), True)
+        for oracle, token in [(('OBS', ('VAL:0',), ('VAL:0',)), 'VAL:0'),
+                              (('CRASH', 'unrelated'), 'CRASH'),
+                              (('RESOURCE', 'KILL'), 'KILL'),
+                              (('RESOURCE', 'TIMEOUT'), 'INVALID'),
+                              (('INVALID', 'bad oracle'), 'INVALID')]:
+            cls, why = pnvi_lane.classify_row('exhaustive', oracle, lean)
+            assert cls == 'INVALID', (name, oracle, lean, cls, why)
+            assert lean[1].startswith('INVARIANT:') and 'INVARIANT:' in why, (lean, why)
+            p = subprocess.run(['bash', str(harness), str(ROOT), str(prefix), str(status), token],
+                               capture_output=True, env=dict(os.environ, OBSERVATION_CODEC=str(ROOT/'scripts/observations.py')))
+            assert p.returncode == 0 and p.stdout == b'INVARIANT\n' and not p.stderr, (name, p)
+            count += 1
+    # Exercise the imported OOM helper and the ordinary path too: a missing
+    # helper must not silently turn a shell error into a passing negative test.
+    for stdout, stderr, status, oracle, expected in (
+            (OK, b'', 0, 'VAL:' + OK.decode().split(' ', 1)[1].strip(), b'MATCH\n'),
+            (b'', b'capped: OOM-KILLED (memory.events oom_kill=1; command exit 0)\n', 0, 'CRASH', b'KILL\n')):
+        prefix.with_suffix('.stdout').write_bytes(stdout)
+        prefix.with_suffix('.stderr').write_bytes(stderr)
+        p = subprocess.run(['bash', str(harness), str(ROOT), str(prefix), str(status), oracle], capture_output=True)
+        assert p.returncode == 0 and p.stdout == expected and not p.stderr, p
+    # A recognized panic remains a coarse crash, explicitly without an origin.
+    prefix.with_suffix('.stdout').write_bytes(b'')
+    prefix.with_suffix('.stderr').write_bytes(PANIC + b'old failure\n' + TRACE)
+    prefix.with_suffix('.status').write_text('134')
+    decoded = obs.decode_stop(b'', prefix.with_suffix('.stderr').read_bytes(), 134)
+    assert not decoded.stops and not decoded.problems and len(decoded.legacy_panics) == 1
+    assert pnvi_lane.classify_side(str(prefix), True) == ('CRASH', 'old failure')
+    p = subprocess.run(['bash', str(harness), str(ROOT), str(prefix), '134', 'CRASH'], capture_output=True)
+    assert p.returncode == 0 and p.stdout == b'MATCH\n' and p.stderr == (
+        b'immaculate: legacy, origin unattributed (coarse CRASH pin only)\n'), p
+    print(f'STOP POLICY: {count} invariant/oracle pairs RED in both classifiers; ordinary/OOM/legacy controls passed', flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--lane', choices=LANES, action='append')
     parser.add_argument('--out', help='retain logs, raw captures and JSON report here')
+    parser.add_argument('--plant', action='append', help='run only these named plants in selected lanes')
+    parser.add_argument('--stop-policy-only', action='store_true', help='focused PNVI/immaculate stop-policy plants')
     args = parser.parse_args()
     outdir = Path(args.out).resolve() if args.out else Path(tempfile.mkdtemp(prefix='observation-lanes-', dir=ROOT / '.tmp'))
     outdir.mkdir(parents=True, exist_ok=True)
+    if args.stop_policy_only:
+        stop_policy_plants(outdir)
+        return 0
     oracle, lean = outdir / 'oracle', outdir / 'lean'
     for path in (oracle, lean):
         path.write_text(STUB)
@@ -112,6 +195,7 @@ def main():
                CERB_LEAN_BIN_OVERRIDE=str(lean),
                REAL_ORACLE=str(ROOT / '_build/default/backend/driver/main.exe'),
                REAL_LEAN=str(ROOT / 'lean_frontend/.lake/build/bin/cerberus-lean'))
+    stop_policy_plants(outdir / 'policy')
     results = []
     print(f'PLANT MODE: real lane entry points, explicit engine overrides; evidence {outdir}', flush=True)
     for lane in args.lane or LANES:
@@ -139,6 +223,13 @@ def main():
             # engines (Cmdliner styles the crash envelope from TERM/NO_COLOR);
             # the harness pin in common.sh must win over an interactive shell.
             variants.append(('ambient-term', 'good', 'good'))
+            variants.extend([('crash-invariant', 'good', 'crash_invariant'),
+                             ('crash-legacy', 'good', 'crash_legacy')])
+        if args.plant:
+            missing = set(args.plant) - {v[0] for v in variants}
+            if missing:
+                parser.error(f'unknown plants for {lane}: {sorted(missing)}')
+            variants = [v for v in variants if v[0] in args.plant]
         for name, okind, lkind in variants:
             case_dir = outdir / f'{lane}.{name}'
             case_dir.mkdir(exist_ok=True)
@@ -178,7 +269,7 @@ def main():
             (case_dir / 'stdout').write_bytes(result.stdout)
             (case_dir / 'stderr').write_bytes(result.stderr)
             text = (result.stdout + result.stderr).decode('utf8', errors='replace')
-            expected_accept = name in ('control', 'refusal-control', 'native-exit137', 'ub-control', 'ambient-term', 'crash-model')
+            expected_accept = name in ('control', 'refusal-control', 'native-exit137', 'ub-control', 'ambient-term', 'crash-model', 'crash-legacy')
             if lane == 'gcc_oracle' and name == 'bytes':
                 # This lane deliberately compares integer exits. Demonstrate
                 # that the richer bytes survive, rather than pretend it is a
@@ -227,8 +318,12 @@ def main():
                 valid = valid and any(word in text for word in ('OBSERVATION ERROR', 'KILL', 'killed'))
             elif lane == 'bytes' and name == 'oracle-exit2':
                 valid = valid and 'cabs-json production failed' in text
+            elif name == 'crash-invariant':
+                valid = valid and 'FAIL: INVARIANT in g2-memcmp-uninit (oracle CRASH)' in text
             else:
                 valid = valid and 'OBSERVATION ERROR' in text
+            if name == 'crash-legacy':
+                valid = valid and 'legacy, origin unattributed' in text and 'SHARED_CRASH' not in text
             if lane == 'gcc_oracle' and name == 'bytes':
                 captures = list((case_dir / 'raw').rglob('*.lean.stdout'))
                 valid = valid and len(captures) == 1 and b'\\000\\128\\255' in captures[0].read_bytes()

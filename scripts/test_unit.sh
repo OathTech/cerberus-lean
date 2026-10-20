@@ -55,7 +55,8 @@ UNIT_TESTS=(
     # diagnostic; also Tier A row 13's Lean consumer. Args: fuel, iteration count, capture mode.
     "memory-access-test"
     # PNVI arc S2 (2026-10-07): the default-mode wrappers CerbMem.reconstructValue(_lemFuel) equal
-    # the pre-S2 text (kernel); the retired C1 reference form; runtime controls of the PNVI helpers
+    # the parameterised references at productionDiagnostics (kernel); separate historical
+    # instances recover the old bodies; runtime controls of the PNVI helpers
     "reconstruct-legacy-test"
     # PNVI arc S3 (2026-10-07): the PNVI-ae-udi arms' runtime witnesses (default-instance
     # controls beside them) + the compile-time R-PNVI-nn refusal pins. Arg: fuel.

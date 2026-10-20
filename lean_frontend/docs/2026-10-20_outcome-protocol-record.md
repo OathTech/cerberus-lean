@@ -5,6 +5,11 @@ Author: [AGENT 2026-10-20]. Checkpoint A against
 Charter: revision 5 of `2026-10-18_codex-charter-outcome-protocol-s1-s2.md`.
 Design: revision 3 of `2026-10-20_outcome-protocol-design-v2.md`.
 
+**Current status: D implemented; E demonstrations complete; close-out PARKED.**
+Tier A passed on the final code. The full run was interrupted at the aggregate
+one-hour tripwire with 31/42 commands passed, so Tier B is not certified. The
+timing interpretation requires a ruling; see the final section of this record.
+
 ## A — baseline, inventory and fence
 
 **Status at the A commit: PARKED before B, under charter §3.** A records the baseline,
@@ -1228,3 +1233,320 @@ and E's complete consumer demonstration/Tier B remain outstanding. This is not
 an external consumer-adoption or complete release claim. No merge or push was
 performed. Scratch captures and probe artifacts are ephemeral; the source,
 conclusions, reproduction commands and migration map are the committed result.
+
+
+## D — two lane corrections
+
+[AGENT 2026-10-20] Keep the existing coarse negative-test CRASH pins and their
+hashes; emit an explicit legacy/origin-unattributed diagnostic when the new
+parser recognizes an envelope-less panic. Those pins do not establish a shared
+origin or semantic agreement. No other lane's comparison or resource policy is
+changed.
+
+`pnvi_lane.classify_side` inspects every decoded stop before its resource exits;
+an invariant becomes INVALID even with fuel, a bad tail or host-failure status.
+`classify_row` retains that invariant explanation before inspecting the oracle.
+The immaculate classifier similarly inspects Lean captures before its OOM/crash
+projection. An invariant exits the lane before either baseline comparison or
+baseline recording, independently of the oracle token. The ordinary Error and
+verdict comparisons, PNVI refusal registration and resource direction rules stay
+as before.
+
+Focused reproduction (from the prepared provider root):
+
+```sh
+python3 scripts/test_observation_lanes.py --stop-policy-only \
+  --out .tmp/outcome-protocol-DE/policy
+CERB_MEM_MAX=48G scripts/capped python3 scripts/test_observation_lanes.py \
+  --lane immaculate --plant crash-invariant --plant crash-legacy \
+  --plant crash-model --out .tmp/outcome-protocol-DE/lane-plants
+```
+
+The first command exited **0**, with the actual Python and shell classifier
+functions tested on eight capture shapes against five oracle outcomes. Verbatim:
+
+```text
+STOP POLICY: 40 invariant/oracle pairs RED in both classifiers; legacy origin unattributed
+```
+
+The shapes are typed, panic, CLI, mixed upstream/invariant/fuel, malformed tail,
+status 124, bare 137 and positive OOM diagnostic. The oracle cases include a
+verdict, crash, resource and invalid capture. The real-lane plants additionally
+exercise the unconditional invariant veto against the existing oracle-crash row
+`g2-memcmp-uninit`, and the structured-upstream and legacy controls. The existing
+plant runner can select named plants to avoid rerunning unrelated full pipelines
+during development; its default still runs the complete suite, including the
+focused classifier matrix. No new release gate is introduced.
+
+## E — consumer handoff and close-out
+
+Read-only consumer checks found clean trees at:
+
+- cerberus-caesium `7d23b26413b50d406a6e0963f81775cb04045da0`;
+- cerberus-sl `68832d914227a29c37df381d3e83ad274147e24c`.
+
+Caesium's `scripts/differential.py` still has `run` at 148, `parse_driver` at
+547, `run_driver` at 573 and `driver_summary` at 735. Its capture is separate
+stdout/stderr with replacement decoding, then ModelFailure-to-Error conversion,
+five-line/500-character truncation and resource/crash summary early returns.
+The provider patch recipe must still decode raw bytes first. Neither consumer
+was modified or re-pinned; no adoption is claimed.
+
+**Finding E.1 — the installed cap wrapper has a second terminal suffix shape.**
+Design v2 §4.1 freezes the provider's `scripts/capped` suffix. Caesium's exported
+`cap` function (`scripts/env.sh:65`) selects the installed wrapper when present.
+On this host it is `/usr/local/bin/capped`; its `cgroup_direct` function runs a
+subshell at lines 161–165, rather than the provider wrapper's direct `"$@"`.
+Bash prints that entire subshell as the abort diagnostic. This is distinct from
+the spacing amendment already made in B.
+
+A read-only extraction of the consumer's actual `run` function invoked the
+candidate `stop-test pure` through that exported cap function and `timeout 45`.
+The result was exit **134**, empty stdout, one retained UPSTREAM_CRASH, and:
+
+```text
+StopProblem(channel='panic', position=SourcePosition(line=12, offset=1346), reason='unexpected diagnostic after panic frame')
+```
+
+The terminal diagnostic in that probe was:
+
+```text
+/usr/local/bin/capped: line 147: 62164 Aborted                 ( { echo "$BASHPID" > "$cg/cgroup.procs"; } 2> /dev/null || { echo "$prog: could not move into $cg: refusing to run uncapped" 1>&2; exit 4; }; exec env CAPPED_STATE=1 CAPPED_MEM_MAX="$MEM" "$0" "$@" )
+```
+
+The preceding line was `timeout: the monitored command dumped core`. This
+wrapper path/command has not been admitted by the decoder. Metadata survives
+beside the problem; that does not turn the capture into a clean decode.
+
+[AGENT 2026-10-20] Recommend one additional terminal alternative for this
+source-checked wrapper form, with the subshell text matched literally, only the
+wrapper prefix/line/PID and Bash padding variable, and the existing ordering and
+one-suffix cardinality retained. Reject any changed command or appended material.
+This requires a design ruling under charter §3; it is not a general shell-banner
+parser or a host-origin guarantee. The ruling was subsequently supplied as recorded below.
+
+The design's mixed pure/typed C program was also remeasured through this actual
+consumer runner (fresh Cabs, default fuel). First-trace mode returned **1**, one
+ModelFailure and one clean UPSTREAM_CRASH at `CerbMem.memcmpByte`, with the pinned
+upstream `memory/concrete/impl_mem.ml:2658–2659` citation. Exhaustive mode returned
+**134**, empty stdout, **zero emitted ModelFailures**, and one REFUSAL with
+boundary `fs`, item `open`, mover `a SibylFS-faithful filesystem model`; it has
+the same terminal-suffix problem. This is the stated loss **before emission**:
+the decoder cannot recover the typed branch discarded by the later pure abort.
+It does not claim that the typed branch was never evaluated.
+
+
+### E.1 Wrapper disposition
+
+[USER 2026-10-20] Admit the narrow installed-wrapper terminal alternative and
+continue D/E, preserving suffix ordering/cardinality and rejecting altered
+commands. The design's dated §4.1 amendment states the exact accepted language;
+`STOP_INSTALLED_ABORT_WRAPPER` implements it with a regex-escaped literal command.
+It does not change the schema, host-resource policy or other lane parsers.
+
+The installed wrapper read for this check had SHA-256
+`c4a2cc978c1112ea70799d5bb88b76b2af8584792596d25e8024574da62a8f41`.
+The decoder tests cover both real wrapper forms, optional core-dump spelling,
+changed command/exit, a wrong basename, tabs, duplicate/mixed suffixes, reversed
+timeout order and appended garbage. Earlier metadata remains available on each
+malformed tail; only the exact authorized form becomes clean.
+
+### E.2 Consumer demonstration
+
+The read-only prototype extracts Caesium's current `run` function with Python's
+AST and removes only `text=True, errors="replace"` from its subprocess call.
+It uses the actual exported `cap` function and its timeout arrangement, keeps the
+four-result tuple, and sends the complete byte streams to `decode_stop` before
+any consumer parsing or truncation. No consumer source file is executed for
+setup side effects or edited. The reproducible provider test is:
+
+```sh
+CERB_MEM_MAX=48G scripts/capped python3 scripts/test_stops.py \
+  --consumer-demo /path/to/cerberus-caesium \
+  --out .tmp/outcome-protocol-DE/consumer
+```
+
+Exit **0**; verbatim summary:
+
+```text
+CONSUMER DEMO: 22 captures passed; emitted records only; no external adoption
+```
+
+There are fourteen native adapter/driver captures and eight explicitly labelled
+transport fixtures. They cover all three stop constructors on their admitted
+channels, two switch refusals in one invocation, both panic fuel frames, the
+exact fuel kill, a real generated legacy panic, the mixed pure/typed C witness,
+three emitted typed causes with execution indexes `[0, 1, 2]`, verdict/stop and
+stop/fuel batches, a valid stop followed by a malformed reserved envelope,
+invalid cross-channel causes retained beside a problem, and detail/program-data/
+ordinary-Error injections. REFUSAL is not an admitted ModelFailure class; the
+clean mixed batch therefore combines UPSTREAM_CRASH and INVARIANT, while the
+cross-channel fixture deliberately remains invalid. Tests assert complete
+metadata equality for adapter and fixture envelopes, pinned source/tray fields
+for the actual memcmp producer, and filesystem boundary/item/mover/see fields.
+
+Verbatim mixed-program results after the suffix amendment:
+
+```text
+mixed-first: exit=1 stops=1 fuel=0 legacy=0 problems=0
+mixed-exhaustive: exit=134 stops=1 fuel=0 legacy=0 problems=0
+```
+
+The first stdout has exactly one ModelFailure; exhaustive stdout is empty,
+with **zero emitted ModelFailures**. The complete emitted cause collection is
+therefore one upstream stop versus one refusal, respectively, not a recovered
+list of every explored cause. This limitation is repeated in the handoff.
+
+The first-delivery family table and the actionable patch recipe are in
+[the Caesium handoff](2026-10-20_consumer-note-cerberus-caesium-outcome-protocol.md).
+The companion [SL note](2026-10-20_consumer-note-cerberus-sl-outcome-protocol.md)
+retains the changed reconstruction contract and the unchanged fuel/OOM/kill
+interfaces. Neither note claims an external build or adoption.
+
+
+### E.3 SL compatibility and proof boundary
+
+The consumer's current definitions were re-read at the pinned HEAD above;
+[its handoff](2026-10-20_consumer-note-cerberus-sl-outcome-protocol.md) records
+the source locations, unchanged aliases and the three scratch probe statements.
+No production Lean source or proof module changes in D/E. The existing C kernel
+replays remain the evidence for the migrated proof modules; the complete axiom
+census runs again in the scheduled Tier A/B checks.
+
+The initial scratch compile omitted `--root`, failed before elaboration, and
+left no olean for the attempted replay (both exit 1). The corrected commands,
+from `lean_frontend`, were:
+
+```sh
+CERB_MEM_MAX=48G ../scripts/capped lake env lean \
+  --root=../.tmp/outcome-protocol-DE \
+  -o ../.tmp/outcome-protocol-DE/OutcomeSlProbe.olean \
+  ../.tmp/outcome-protocol-DE/OutcomeSlProbe.lean
+CERB_MEM_MAX=48G ../scripts/capped lake env bash -c \
+  'export LEAN_PATH="$1:$LEAN_PATH"; exec leanchecker OutcomeSlProbe' \
+  _ "$PWD/../.tmp/outcome-protocol-DE"
+```
+
+Compile exit **0**, kernel replay exit **0**. Verbatim census:
+
+```text
+'OutcomeSlProbe.fuel' does not depend on any axioms
+'OutcomeSlProbe.oom' does not depend on any axioms
+'OutcomeSlProbe.model' does not depend on any axioms
+```
+
+The existing unit selector comment still described equality to pre-S2 text;
+that stale description is corrected to productionDiagnostics plus separate
+historical recovery. No theorem statement or census entry is changed here.
+The LADDER unit row now names the twentieth executable (`stop-test`) and codec
+suite, and the register row records C's measured 240 rows. Membership is unchanged.
+
+### D/E focused validation and final gates
+
+The real immaculate plants exited **0**. Verbatim output:
+
+```text
+PLANT OK   immaculate: crash-model
+PLANT OK   immaculate: crash-invariant
+PLANT OK   immaculate: crash-legacy
+observation lane plants: 3/3 passed
+```
+
+These deliberately altered streams are plant outcomes, not moved semantic
+verdicts. No committed baseline has been edited. The final scheduled runs below
+check both full lane baselines and the unchanged source snapshot.
+
+
+The initial extracted-function harness had a test defect: it omitted
+`is_cap_kill`, so its legacy control printed a shell command-not-found error
+and still reported success. That was an invalid legacy control, not a clean
+pass. The invariant matrix returned before that helper, and the real lane
+plants used the actual helper. The harness now extracts the production helper
+and its shared regex too, requires empty stderr on invariant/ordinary/OOM
+controls, and requires exactly the expected legacy diagnostic on the legacy
+control. The corrected focused run exited **0**, verbatim:
+
+```text
+STOP POLICY: 40 invariant/oracle pairs RED in both classifiers; ordinary/OOM/legacy controls passed
+```
+
+Tier A preflight command:
+
+```sh
+CERB_MEM_MAX=48G scripts/capped python3 scripts/release.py --mode fast \
+  --out .tmp/outcome-protocol-DE/tier-a
+```
+
+Exit **0**; verbatim summary:
+
+```text
+fast: passed; 19/19 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+The 164-row PNVI baseline is unchanged: 152 AGREE, 3 AGREE-FIRST, 2 BOTH_FAIL
+and 7 REFUSAL, with all class/oracle/Lean hashes exact. Every other Tier A
+baseline also passed without a re-record. The only subsequent code edit before
+Tier B is the focused test-harness repair above; the full run repeats Tier A
+and runs the corrected plant suite on the final source.
+
+### D/E tripwire park — full gate incomplete
+
+[AGENT 2026-10-20] Apply charter §3's one-hour tripwire to the aggregate
+invocation while its intended scope is unresolved. The requested full runner
+selects A and B together; its own timeout is per command. Recommend applying
+the tripwire to each ladder command, retaining a stop when any one command
+approaches one hour, so the required aggregate certification can finish. That
+clarification was requested before dispatch and remained unanswered at the
+stop point; no broader timing authorization is inferred.
+
+The exact full command was:
+
+```sh
+CERB_MEM_MAX=48G scripts/capped python3 scripts/release.py --mode full \
+  --out .tmp/outcome-protocol-DE/tier-b
+```
+
+It ran from 21:37:09 to 22:32:11 UTC on 2026-10-20 (55 minutes 2 seconds).
+The verified owned runner received SIGINT at the tripwire. Exit **1**;
+verbatim summary:
+
+```text
+full: incomplete; 31/42 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+All nineteen A commands passed again on the final code, followed by B1–B5 and
+all seven B6 commands. PNVI's 164 rows and immaculate's complete baseline were
+unchanged; no baseline file was edited and no semantic verdict movement was
+observed in the completed checks. Lake replayed the already documented
+generated/dependency warnings; none was suppressed. No D/E production proof
+module changed, and no additional production kernel-replay claim is made.
+
+B7 was interrupted after 762.250 seconds, with 868 of 2030 GCC cases printed.
+That prefix is not a passed GCC baseline check. The runner marked B7
+`incomplete`, reason `runner interrupted by signal 2`; its owned command was
+killed during cleanup (exit status -9). `containment_cleaned` was true, the
+command cgroup was absent afterward, and `artifact_issues` was empty. B8.1–B8.4,
+B9, B10.1–B10.2, B11.1–B11.2 and B12 were not reached. The longest completed
+command was B1 at 684.034 seconds; no individual command approached an hour.
+
+The corrected focused policy plants and three real immaculate plants passed
+as quoted above, but they do not substitute for the unreached full B9 suite.
+Likewise A1's register gate does not complete the separate B11 selection.
+
+After interruption, all twelve modified files and the new Caesium handoff
+were preserved in a temporary snapshot before any park edits. This commit
+preserves the implementation, the approved wrapper amendment and both consumer
+handoffs. The temporary D/E snapshot and reconstructible D/E scratch outputs
+are removed once that source is committed. The two C snapshot refs remain
+until actual close-out:
+
+- `refs/snapshots/outcome-protocol-C-20261020-1792521155`
+- `refs/snapshots/outcome-protocol-C-resume-20261020-1792522883`
+
+Remaining work is the timing ruling, a complete full run on the final code,
+its quoted result, deletion of those C refs, and the close-out commit before
+the fresh pre-merge review. No external adoption, merge or push is claimed.

@@ -1,6 +1,8 @@
 # Outcome protocol v2 — operational reporting
 
 **Revision 3 — independent-review amendments, 2026-10-20.**
+Dated delivery amendment, 2026-10-20: §4.1 also admits the source-checked installed
+cap wrapper suffix, as ruled and measured in checkpoint record E.1.
 Implementation clarifications, 2026-10-20: the mini-run loss below is also within
 the emitted-record limitation (checkpoint record A.6); §4.1 admits the observed
 Bash padding before the optional core-dump marker (checkpoint record B); §5
@@ -349,6 +351,21 @@ order and cardinality; the extra spelling does not admit arbitrary diagnostics.
 The optional core-dump marker also permits Bash's space padding after `Aborted`,
 as measured by B's native adapter probes. No tabs, arbitrary tail, new wrapper
 path, or extra suffix occurrence is admitted by that spacing amendment.
+
+**Delivery amendment, 2026-10-20 (checkpoint record E.1).** The terminal
+wrapper position also admits the installed `capped` form used by Caesium.
+Its prefix is `(?:[^\r\n]*/)?capped: line [0-9]+: +[0-9]+ `, followed by
+`Aborted(?: +\(core dumped\))? +`, then this **literal** command text:
+
+```text
+( { echo "$BASHPID" > "$cg/cgroup.procs"; } 2> /dev/null || { echo "$prog: could not move into $cg: refusing to run uncapped" 1>&2; exit 4; }; exec env CAPPED_STATE=1 CAPPED_MEM_MAX="$MEM" "$0" "$@" )
+```
+
+The path prefix may vary with installation; no machine path is hard-coded.
+The two wrapper spellings are alternatives for the same single terminal slot,
+not two successive suffixes. Timeout-line ordering and cardinality are unchanged.
+Changed commands, tabs in the padding, extra suffixes and trailing material are
+errors. This is diagnostic framing, not authentication or OOM evidence.
 
 Never strip arbitrary matching lines from payloads or treat a suffix as OOM or
 timeout evidence. Direct driver captures without wrapper suffixes are also

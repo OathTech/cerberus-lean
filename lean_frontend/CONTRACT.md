@@ -25,6 +25,24 @@ There is no fifth outcome. **A different answer, or a silent absorption (a defau
 where the oracle answers, is a defect by definition** — wherever in the tree it occurs, supported area or not. The
 pathleak bug was a fifth outcome.
 
+The outcome protocol reports stop metadata within these four outcomes; it does
+not add another permitted result. Declared refusals expose `REFUSAL`, migrated
+hand-written mirrors expose `UPSTREAM_CRASH` with pinned upstream attribution,
+and port guards expose `INVARIANT` (a defect, even when the oracle crashes).
+Generated envelope-less panics remain legacy, origin unattributed. Exit codes
+alone do not establish these classes or prove shared origin. The first-delivery
+[family table and consumer API](docs/2026-10-20_consumer-note-cerberus-caesium-outcome-protocol.md)
+state the precise scope.
+
+Collection completeness covers complete **emitted** records only. A pure abort
+can discard earlier typed stops during exhaustive exploration before printing;
+the constant-expression mini-run can also replace typed metadata with a legacy
+panic. ModelFailure's location sentinel is not an authenticated origin tag.
+These stated limits remain with the named
+[structural-outcome arc](docs/2026-09-16_lean-only-outcomes-implementation-plan.md),
+including the queued pure-failure work; this diagnostic protocol does not repair
+them or prove correspondence.
+
 What the contract does NOT promise: ISO C conformance beyond the oracle's; agreement outside the declared configuration;
 correctness of the oracle itself (the upstream tray records where we believe it is wrong); a proof of correspondence.
 The evidence is differential testing on documented corpora plus kernel-checked local properties of the Lean artifact

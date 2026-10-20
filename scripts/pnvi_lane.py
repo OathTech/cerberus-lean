@@ -20,7 +20,7 @@ Each SIDE is decoded with the shared codec (scripts/observations.py) into one of
     REFUSAL <id>        Lean only: exit 134 under LEAN_ABORT_ON_PANIC, LemLib's failure
                         leaf, a decoded REFUSAL with boundary pnvi and item R-PNVI-nn
                         (CerbMem.pnviRefusal, outcome protocol)
-    CRASH <message>     an internal failure (oracle exit 125 uncaught exception / Lean
+    CRASH <message>     a coarse negative-test pin, never SHARED_CRASH attribution; an internal failure (oracle exit 125 uncaught exception / Lean
                         exit 134 PANIC) that is not a PNVI refusal (the codec's `litmus`
                         policy)
     CLI_REFUSAL <line>  Lean only: exit 2 with decoded CLI REFUSAL records
@@ -123,6 +123,15 @@ def classify_side(prefix: str, lean: bool):
         status = int(read(prefix, '.status').decode().strip())
     except (OSError, ValueError) as exc:
         return ('INVALID', f'unreadable capture: {exc}')
+    decoded = obs.decode_stop(stdout, stderr, status) if lean else None
+    # A complete emitted invariant remains a defect beside a resource or a
+    # malformed tail, regardless of the oracle. Do this before every early exit.
+    if decoded is not None:
+        invariants = [entry.stop for entry in decoded.stops if isinstance(entry.stop, obs.Invariant)]
+        if invariants:
+            return ('INVALID', 'INVARIANT: ' + '; '.join(stop.site for stop in invariants))
+        if decoded.legacy_panics:
+            print('pnvi_lane: legacy, origin unattributed (coarse CRASH pin only)', file=sys.stderr)
     if obs.CAP_OOM.search(stderr) or status == 137:
         return ('RESOURCE', 'KILL')
     if status == 124:
@@ -132,7 +141,6 @@ def classify_side(prefix: str, lean: bool):
     if lean:
         # Producer-format compatibility. Refusal attribution comes from the
         # structured field, never a search in a program/ordinary Error payload.
-        decoded = obs.decode_stop(stdout, stderr, status)
         if decoded.stops:
             if decoded.problems:
                 return ('INVALID', 'stop protocol: ' + str(decoded.problems))
@@ -179,6 +187,8 @@ def named_crash_ids(o) -> list[str]:
 
 def classify_row(mode: str, o, l) -> tuple[str, str]:
     """(class, explanation). class 'DIFF' / 'INVALID' are always RED."""
+    if l[0] == 'INVALID' and l[1].startswith('INVARIANT:'):
+        return ('INVALID', 'lean: ' + l[1])
     if o[0] == 'INVALID':
         return ('INVALID', 'oracle: ' + o[1])
     if l[0] == 'INVALID':

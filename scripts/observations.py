@@ -368,6 +368,16 @@ STOP_PANIC = re.compile(rb'PANIC at _private\.LemLib\.0\.failwithIImpl '
 STOP_ABORT_WRAPPER = re.compile(
     rb'(?:[^\r\n]*/)?scripts/capped: line [0-9]+: +[0-9]+ '
     rb'Aborted(?: +\(core dumped\))? +"\$@"')
+# The installed cap wrapper used by Caesium runs this literal subshell.
+# Source-checked terminal alternative, design-v2 §4.1 amendment (E.1).
+# Match the command exactly; this is not a general Bash diagnostic parser.
+STOP_CAPPED_SUBSHELL = (
+    b'( { echo "$BASHPID" > "$cg/cgroup.procs"; } 2> /dev/null || '
+    b'{ echo "$prog: could not move into $cg: refusing to run uncapped" 1>&2; exit 4; }; '
+    b'exec env CAPPED_STATE=1 CAPPED_MEM_MAX="$MEM" "$0" "$@" )')
+STOP_INSTALLED_ABORT_WRAPPER = re.compile(
+    rb'(?:[^\r\n]*/)?capped: line [0-9]+: +[0-9]+ '
+    rb'Aborted(?: +\(core dumped\))? +' + re.escape(STOP_CAPPED_SUBSHELL))
 CORE_DUMP = b'timeout: the monitored command dumped core'
 FUEL_PAYLOAD = b'lem: fuel exhausted'
 
@@ -724,7 +734,8 @@ def decode_stop(stdout: bytes, stderr: bytes, status: int) -> StopDecode:
                     problem('panic', origin, 'empty or malformed backtrace')
             if remaining and remaining[0][0] == CORE_DUMP:
                 remaining.pop(0)
-            if remaining and STOP_ABORT_WRAPPER.fullmatch(remaining[0][0]):
+            if remaining and (STOP_ABORT_WRAPPER.fullmatch(remaining[0][0]) or
+                              STOP_INSTALLED_ABORT_WRAPPER.fullmatch(remaining[0][0])):
                 remaining.pop(0)
             for _, position, _ in remaining:
                 problem('panic', position, 'unexpected diagnostic after panic frame')
