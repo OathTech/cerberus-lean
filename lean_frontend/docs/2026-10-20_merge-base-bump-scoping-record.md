@@ -1,5 +1,11 @@
 # Merge-base bump scoping record — b9aeedcb4 → upstream/master 68bdc84bf
 
+> **Status: PARKED** ([USER 2026-10-20]). The bump is a staged arc to run after the
+> cerberus-caesium deliveries (Core quoting, inner_arg_temps, the outcome protocol).
+> This record and its §10 questions stay open on branch `docs/bump-scoping`; none of
+> the questions needs an answer before the arc is chartered. The branch is a record
+> until then; the arc's charter re-opens it.
+
 [AGENT 2026-10-20] Read-only scoping, no build, no commit. Every judgement
 below is the scoping agent's; the operator has decided only that the bump
 is a staged arc after the current consumer deliveries. Machine outputs are

@@ -240,6 +240,8 @@ the outcome protocol; [USER 2026-10-20]); all three have landed, so the queue is
   stage cuts, consumer timing, the new `branching_on_unspec_is_nd` switch).
   Meanwhile the `inner_arg_temps` slice backports f10329b44 (and, pending a
   ruling, 3230aa494), both zero-conflict.
+  PARKED [USER 2026-10-20] on branch `docs/bump-scoping` with the questions open;
+  nothing to resolve before the arc is chartered.
 
 ## Semantics-audit repairs (2026-09-11) — RESOLVED findings and the rows they leave
 
