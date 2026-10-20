@@ -47,7 +47,7 @@ The inventory can be regenerated from `lean_frontend/`, after the documented
 project build, with:
 
 ```sh
-CERB_MEM_MAX=48G ../scripts/capped lake env lean docs/CoreQuoteInventory.lean
+CERB_MEM_MAX=48G ../scripts/capped lake env lean test/CoreQuote/probes/CoreQuoteInventory.lean
 ```
 
 It inspects elaborated constructor types, recursively instantiates their
@@ -478,8 +478,8 @@ change Lean's default heartbeat or recursion limits.
 
 ### Focused reproduction and results
 
-The small reproducible sources are `docs/CoreQuoteSmoke.lean` and
-`docs/CoreQuotePipelineProbe.lean`. They are development probes, not a
+The small reproducible sources are `test/CoreQuote/probes/CoreQuoteSmoke.lean` and
+`test/CoreQuote/probes/CoreQuotePipelineProbe.lean`. They are development probes, not a
 replacement for D3's independent whole-file representation comparison or
 its complete required-input census. After the documented project setup,
 from the repository root:
@@ -489,7 +489,7 @@ export CERB_MEM_MAX=48G
 mkdir -p .tmp/core-quote-d1
 ./scripts/capped make lean-prelude-src
 (cd lean_frontend && ../scripts/capped lake build +CerbQuote)
-(cd lean_frontend && ../scripts/capped lake env lean docs/CoreQuoteSmoke.lean)
+(cd lean_frontend && ../scripts/capped lake env lean test/CoreQuote/probes/CoreQuoteSmoke.lean)
 for quoted in .tmp/core-quote-d1/Float*.lean .tmp/core-quote-d1/SetsAndComparators.lean; do
   (cd lean_frontend && ../scripts/capped lake env lean "../$quoted") || exit "$?"
 done
@@ -516,7 +516,7 @@ for CERB_QUOTE_PROBE in fixture libc; do
   export CERB_QUOTE_PROBE
   (cd lean_frontend && ../scripts/capped lake env lean \
     --load-dynlib=../.tmp/core-quote-d1/fresh-runtime.so \
-    docs/CoreQuotePipelineProbe.lean) || exit "$?"
+    test/CoreQuote/probes/CoreQuotePipelineProbe.lean) || exit "$?"
 done
 for quoted in PipelineQuoted LibcQuoted; do
   (cd lean_frontend && /usr/bin/time -f '%e seconds; %M KB peak RSS; exit %x' \
@@ -554,7 +554,7 @@ Final focused results (all process exits 0):
 | Check | Result |
 |---|---|
 | Synchronize, then `capped lake build +CerbQuote` | Success; no diagnostic attributed to the new seam |
-| `docs/CoreQuoteSmoke.lean` | Six modules emitted; named refusals, six comparator terms and link rules passed |
+| `test/CoreQuote/probes/CoreQuoteSmoke.lean` | Six modules emitted; named refusals, six comparator terms and link rules passed |
 | All six emitted assertion modules | Elaboration and evaluated representation assertions passed |
 | Fixture generation / elaboration | 439,633 bytes; generation 2.91 s / 941,400 KB; elaboration 1.87 s / 824,432 KB |
 | Converted libc generation / elaboration | 33,832,667 bytes, 13,318 helpers; generation 38.61 s / 1,365,932 KB; elaboration 144.99 s / 12,055,992 KB |
@@ -645,7 +645,7 @@ No new theorem was added, so D2 introduces no new kernel-replay gate.
 
 ### Focused reproduction
 
-`docs/CoreQuoteCliSmoke.py` is a development probe, with no ladder wiring.
+`test/CoreQuote/probes/CoreQuoteCliSmoke.py` is a development probe, with no ladder wiring.
 After the documented project environment setup, from the repository root:
 
 ```sh
@@ -661,7 +661,7 @@ for n in 1 2; do
     "$PWD/.tmp/core-quote-d2/tu$n-capture" ./scripts/capped "$CERBERUS_BIN" \
     --runtime="$PWD/_build/install/default" --cabs-json "tests/multi_tu/basic/tu$n.c" || exit "$?"
 done
-python3 lean_frontend/docs/CoreQuoteCliSmoke.py
+python3 lean_frontend/test/CoreQuote/probes/CoreQuoteCliSmoke.py
 ```
 
 The probe uses the committed fixture's exact relative runtime prefix, and
@@ -1166,3 +1166,170 @@ Disposable literals, metadata, census output and logs are removed after the
 commit. D3 is complete at this worker boundary. D4's explicit instrument boundary
 entry and complete Tier B close-out remain open; this is not a full release or
 printer-correctness theorem claim.
+
+
+## D4 — Layout, declared boundary and close-out
+
+[AGENT 2026-10-20, orchestrator close-out direction relayed by the operator]
+Move the runnable quotation support and hash pin into the test
+tree, retain earlier probes under its `probes/` directory, and make all record
+and note citations follow the move. Document every opaque instrument component,
+carry the measured ladder costs as speedbump notes, and retire the D3 recovery
+snapshot once close-out succeeds. Tier A and the complete Tier B remain required
+before the D4 commit; merge and push are outside this task.
+
+[AGENT 2026-10-20] Keep the module names and committed libc hash unchanged while
+moving the Lake source directories. The Python runner derives the repository
+root from its new location and reads the pin beside itself. The Lean launcher
+uses that new runner path. D0–D2 probes retain their historical behavior and
+remain outside the ladder.
+
+`VALIDATION.md` §3 now names all seventeen printer partial definitions, the
+172 datatype visitors plus four partial comparison/census/syntax functions,
+the partial development generator and D0 inventory probe, native `CoreQuoteSupport` plugin and
+`--plugin`/`--load-dynlib` loading, test-time shared compilation of `native/md5.c`,
+and the required Lake trace schema `2025-09-10`. These are instrument code outside
+the exec cone. The named mover is the printer-correctness bridge (charter option
+B); this slice delivers option A, not that proof. README, CLAUDE, the ladder and
+the consumer note describe the final locations and convention. The consumer
+note includes regeneration at a fixed pin and the separately authorized re-pin
+recipe, including external-module checks, replay and both release tiers.
+
+Tier A row 1 records the D3 quotation check's measured 203 seconds. Tier B row
+13 records its 158 seconds and 14.9 GB; these cost observations are speedbumps,
+not new resource gates. F6's warning ownership is unchanged. No theorem or
+new native implementation is added by D4.
+
+### D4 focused checks
+
+After `make lean-prelude-src`, capped `lake build core-quote-test` exits 0
+(529 jobs). The relocated launcher passes `core-quote-test --fuel 1000000
+--fixture`, including whole-file comparison, mutation controls, byte identity
+through the root alias and the convention-naming exit-2 refusal with no output.
+The moved `test/CoreQuote/CoreQuoteVisitor.lean` regenerates the committed
+visitor block byte-for-byte: 638 model constructors, 172 instantiated types,
+75 model and six container heads. The relocated D0 inventory probe also exits 0.
+Python syntax checks and `git diff --check` pass. All citations to the former
+documentation-space code and pin locations have been replaced; module names
+are unchanged. The documented partial-definition counts were recounted from
+the final sources. No quotation/checker warning is introduced.
+
+### F10 — Relocation exposed a forbidden local fuel instance
+
+The first D4 Tier A run failed: row 1's no-fuel-numerals selftest found
+`CoreQuoteCompare.original`'s `letI : LemFuel := ⟨fuel⟩` after its move into the
+scanned test tree. Its former documentation-space location was outside that
+scanner. The gate's F4 rule rejects that local-instance shape even when the
+payload is the externally supplied variable; the documented permitted form is
+an explicit application with a variable-fed instance. The quotation tests had
+passed. Every other selected command, including all execution-baseline lanes,
+passed; no baseline moved.
+
+[AGENT 2026-10-20] Give `original` explicit fuel and switch instance parameters,
+then apply it at the comparison entry with the supplied fuel and the same
+default switches. This preserves its computation, exposes its inputs in the
+signature and follows the existing gate's documented form. No gate, allowlist,
+execution code or pin is changed. This is a test-integration repair within D4's
+moved support file.
+
+Initial run: `python3 scripts/release.py --mode fast --out
+.tmp/core-quote-d4/tier-a`, exit **1**; **2026-10-20 02:08:19–02:35:20 UTC**.
+Exact failed summary:
+
+```text
+fast: failed; 18/19 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+The repaired support passes the direct no-fuel-numerals gate (351 scanned files),
+a fresh handwritten-copy synchronization, the 529-job capped build and the
+focused fixture's whole-file/comparator/BEq, mutation and convention checks.
+All exit 0. The final full tiers below run after this repair.
+
+### D4 final gates and close-out
+
+A fresh `make lean-prelude-src` preceded each release invocation. Both ran
+sequentially under the 48G cap with `LEAN_ABORT_ON_PANIC=1`, from the project
+root after F10's repair:
+
+```sh
+CERB_MEM_MAX=48G ./scripts/capped python3 scripts/release.py --mode fast \
+  --out .tmp/core-quote-d4/tier-a-final
+CERB_MEM_MAX=48G ./scripts/capped python3 scripts/release.py --mode full \
+  --out .tmp/core-quote-d4/tier-b
+```
+
+**Tier A:** 2026-10-20 **02:38:26–03:01:08 UTC**, process exit **0**;
+all nineteen selected commands exit **0**. Verbatim summary:
+
+```text
+fast: passed; 19/19 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+**Full A+B (Tier B close-out):** 2026-10-20 **03:01:41–05:14:00 UTC**,
+process exit **0**; all forty-three selected commands exit **0**. Verbatim summary:
+
+```text
+full: passed; 43/43 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+Both runs report complete selection, unchanged source, clean process containment
+and no artifact-inventory issues. Row 1 passes all twenty executables, including
+all 27 required fixture/corpus/multi-TU round trips and controls. Existing lane
+baselines remain unchanged: libc execution has 43 matches and zero differences;
+libxml2 URI has all sixteen pinned expectations; the four libxml2 battery slices
+match; the GCC lane reports zero regressions and zero improvements; both
+pristine-oracle rows and their register plants pass. No baseline or pin was edited.
+The full run includes the existing expected refusals, differences and timeout
+classes; passing those pinned rows is not a claim of semantic agreement for them.
+
+The final libc quotation row takes 168.825 seconds. Independent literal
+elaboration exits 0 in 151.32 seconds and comparison exits 0 in 5.18 seconds.
+The relocated pin is byte-identical to D3 and the regenerated literal matches
+`30bdb3f5db037b5a63a3deaa24cba27f289bd7841770d1e1ebff43699dcbfe06`.
+The census is unchanged: 224 distinct model constructors, 28 floating leaves,
+zero NaNs or memory values, 15,586 positions and zero absolute position paths.
+The alias output is byte-identical. The wrong-cwd control exits 2, names the
+canonical convention and writes nothing. The final row summary is:
+
+```text
+Core quote round trip: PASS (whole-file representation, comparator syntax, auxiliary BEq)
+Total: 1 passed, 0 failed
+```
+
+**Named kernel-replay gate:** `lake env leanchecker LibcLiteral`, module
+**`LibcLiteral`**, process exit **0**. Verbatim GNU `time` measurement from the row:
+
+```text
+LibcLiteral leanchecker: 2.05 seconds; 825348 KB peak RSS; exit 0
+```
+
+The independently elaborated literal and its imported environment are replayed
+without the test plugin; this is not `--fresh` replay of transitive imports.
+No theorem, axiom, unsafe declaration, new extern, implemented-by replacement,
+warning suppression or kernel-check bypass was added in D4.
+
+Final read-only documentation verification confirms all nine moved files,
+seven syntactically valid shell recipe blocks, the current extraction cite
+`Main.lean:1252`, and the complete partial-definition inventory. The latter also
+names the unwired D0 probe's `inventory` traversal beside the development visitor's
+`collect` in `VALIDATION.md` §3. Only gate-result reporting, this boundary-census
+report and the consumer status were finalized after the full run; no executable,
+test implementation, dependency, baseline or hash pin changed afterward.
+
+The recovery ref `refs/snapshots/core-quote-d3-checker-crash-20261020`, formerly
+`88bf20f5f8acabaa72142653e22a7ec2e0f13359`, was deleted with an expected-value
+guard and its absence verified. Its recovery purpose is served: D3 is committed
+and accepted, and the relocated instrument now passes complete close-out gates.
+Disposable D4 logs, literals and generated inventories are removed after their
+conclusions are recorded; the active worktree and build remain for the audit.
+
+D0–D4 are complete at this worker boundary, including D2b's canonical-convention
+extension. The declared instrument boundary remains, with the printer-correctness
+bridge (option B) as its named mover. A fresh pre-merge audit is still required;
+this gate result does not claim release certification. No merge or push was made.

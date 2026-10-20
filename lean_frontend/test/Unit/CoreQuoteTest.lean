@@ -41,7 +41,7 @@ partial def census (s : Shape) (counts : Std.HashMap String Nat := {}) : Std.Has
   | .node k children => children.foldl (fun acc child => census child acc)
       (counts.insert k (counts.getD k 0 + 1))
 
--- BEGIN DATATYPE VISITOR (docs/CoreQuoteVisitor.lean)
+-- BEGIN DATATYPE VISITOR (test/CoreQuote/CoreQuoteVisitor.lean)
 mutual
 partial def view0 (x : generic_file Unit core_run_annotation) : Shape :=
   match x with

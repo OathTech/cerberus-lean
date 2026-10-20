@@ -8,10 +8,8 @@ open Lean
 /-- Independently rebuild the pre-execution value, using the public pipeline
     stages and the driver's reverse-consed link order. No printer operation
     participates in this computation or the representation comparison. -/
-def original (fuel : Nat) (mode : String) (inputs : List String) : IO (file core_run_annotation) :=
-  letI : LemFuel := ⟨fuel⟩
-  letI : CerbGlobal.Switches := ⟨CerbGlobal.defaultSwitches⟩
-  do
+def original [LemFuel] [CerbGlobal.Switches] (mode : String) (inputs : List String) :
+    IO (file core_run_annotation) := do
   let runtime := "_build/install/default/lib/cerberus-lib/runtime"
   let stdPath := runtime ++ "/libcore/std.core"
   let library ← unwrap (CoreParser.parseLibraryFile stdPath (← IO.FS.readFile stdPath))
@@ -42,7 +40,7 @@ def original (fuel : Nat) (mode : String) (inputs : List String) : IO (file core
 def check (root mode : String) (fuel : Nat) (inputs : List String)
     (quoted : file core_run_annotation) : IO Unit := do
   IO.Process.setCurrentDir root
-  let expected ← original fuel mode inputs
+  let expected ← @original ⟨fuel⟩ ⟨CerbGlobal.defaultSwitches⟩ mode inputs
   let shape := view0 expected
   let counts := census shape
   require (counts.getD "NaN" 0 == 0) "required input contains Float.NaN"

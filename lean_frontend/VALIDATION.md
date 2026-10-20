@@ -840,6 +840,51 @@ by a cited re-record.
   (C6: 134 agree / 2 `matching_incomplete` / 106 `matching_failure`; shard
   1/34: 26 / 21 / 3).
 
+### Core quotation instrument boundary
+
+`--quote-core` and `--quote-libc` emit constructor literals for the converted
+Core file. The round-trip checks establish computed whole-file representation
+agreement on the required inputs and separately inspect elaborated comparator
+terms against construction provenance. They do not prove that the literal equals
+the frontend's output. All the following are **instrument code outside the exec
+cone**, including the printer invoked on the quotation-only driver branch:
+
+- `CerbQuote.lean` has seventeen kernel-opaque `partial def`s:
+  `q_ctype`, `q_ctype_`, `q_CerbMem_MemValue`, `q_core_object_type`,
+  `q_core_base_type`, `q_generic_pattern`, `q_generic_pattern_`,
+  `q_mem_constraint`, `q_loaded_value`, `q_object_value`, `q_value`,
+  `q_generic_pexpr`, `q_generic_pexpr_`, `q_generic_expr`, `q_generic_expr_`,
+  `intern` and `renderTasks`. Runtime printing and sharing are computed evidence.
+- `test/Unit/CoreQuoteTest.lean` has 176 partial definitions: the independent
+  datatype visitors `view0` through `view171`, `sameShape`, `census`,
+  `expandHelpers` and `comparatorForm`. The latter two support the metaprogrammed
+  comparator-syntax check. The development generator
+  `test/CoreQuote/CoreQuoteVisitor.lean` has the partial traversal `collect`;
+  the unwired D0 probe `test/CoreQuote/probes/CoreQuoteInventory.lean` has the
+  partial traversal `inventory`. These development inventories are computed
+  evidence too. Neither native comparison, its census, generated auxiliary BEq nor these
+  metaprogram checks constitutes a kernel proof of the round-trip relation.
+- The `CoreQuoteSupport` Lake library compiles `test/CoreQuote/CoreQuoteCompare.lean`
+  and its pipeline dependencies into `libCoreQuoteCompare.so`. The Python runner
+  `test/CoreQuote/CoreQuoteRoundTrip.py` loads this test plugin with `--plugin`
+  and its dependencies with `--load-dynlib`; those native computations are part
+  of the instrument. At test time it compiles the existing `native/md5.c` with
+  `lake env leanc -shared -fPIC -DLEAN_EXPORTING` to expose the frontend digest
+  symbols to the plugin. This reuses the existing digest implementation.
+- The runner reads Lake's shared-library dependency traces, requiring the schema
+  version `"2025-09-10"`. That toolchain-specific dependency-loading convention,
+  the Python orchestration, source audit and emitted comparator selection are
+  outside the kernel evidence. An unrecognized trace schema is an error.
+
+Literal elaboration and the named gate `lake env leanchecker LibcLiteral` load
+no test plugin. They check the emitted definitions against their imported Lean
+environment; they do not establish the missing connection to frontend execution.
+**Named mover: the printer-correctness bridge (Core quotation charter option B).**
+The delivered instrument is option A. Coverage, refusals, canonical runtime
+convention, replay measurements and the complete re-pin recipe are in the
+[consumer note](docs/2026-10-18_consumer-note-cerberus-caesium-core-quote.md);
+Tier A row 1 and Tier B row 13 are the round-trip gates.
+
 ## 3b. Deviations the consumer relies on (cerberus-sl)
 
 The rule is [USER 2026-10-03]: no innovation relative to Cerberus-upstream unless something is
@@ -1464,7 +1509,9 @@ value-carrying opaques with no native binding: `CerbFuel.fuelExhaustedLoc`
 memory-model fail-stops; proofs are uniform in the atom, no inequality between
 the two atoms is claimed — a transparent `def` alternative is a TODO item).
 
-There is no other declared boundary. The debug no-op stubs (`CerbDebug`,
+The separate [Core quotation instrument boundary](#core-quotation-instrument-boundary)
+in §3 covers the printer and test machinery outside the exec cone. There is no
+other declared boundary. The debug no-op stubs (`CerbDebug`,
 `CerbUtils`) are off every differential path (the oracle's debug level
 is 0 in matched mode); `CerbFS` and concurrency are class (c) as stated
 in §3; the fuel bound is class (b)/fuel with its parameter. Known

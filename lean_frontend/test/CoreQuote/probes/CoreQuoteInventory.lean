@@ -4,7 +4,7 @@ import Main
 open Lean Meta Elab Command
 
 /- Development inventory for the Core quotation seam. Run from lean_frontend:
-   CERB_MEM_MAX=48G ../scripts/capped lake env lean docs/CoreQuoteInventory.lean
+   CERB_MEM_MAX=48G ../scripts/capped lake env lean test/CoreQuote/probes/CoreQuoteInventory.lean
    This reports type declarations and elaborated instances; it adds no theorem,
    no correctness gate, and no production instance. -/
 

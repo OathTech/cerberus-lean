@@ -3,7 +3,7 @@ import Core_run_aux
 
 /- Development generator for the independent test visitor. It reads elaborated
    datatype declarations, never CerbQuote or its output. Run from lean_frontend:
-   ../scripts/capped lake env lean docs/CoreQuoteVisitor.lean > ../.tmp/visitor.txt
+   ../scripts/capped lake env lean test/CoreQuote/CoreQuoteVisitor.lean > ../.tmp/visitor.txt
    Replace the marked block in test/Unit/CoreQuoteTest.lean with its output.
    Fmap's function field is deliberately left to the separate syntax check.
    All other constructor arguments are visited, including both Pos filenames. -/
@@ -42,7 +42,7 @@ run_cmd liftTermElabM do
   let types ← seen.get
   let mut heads : Array Name := #[]
   let mut ctors := 0
-  IO.println "-- BEGIN DATATYPE VISITOR (docs/CoreQuoteVisitor.lean)\nmutual"
+  IO.println "-- BEGIN DATATYPE VISITOR (test/CoreQuote/CoreQuoteVisitor.lean)\nmutual"
   for i in [:types.size] do
     let some ty := types[i]? | throwError "missing visitor type {i}"
     let .const n _ := ty.getAppFn | throwError "unnamed visitor type {ty}"

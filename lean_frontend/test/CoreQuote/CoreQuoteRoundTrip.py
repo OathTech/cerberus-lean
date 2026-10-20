@@ -18,11 +18,11 @@ import tempfile
 import time
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 FRONTEND = ROOT / "lean_frontend"
 BIN = FRONTEND / ".lake/build/bin"
 RUNTIME = "_build/install/default"
-DOCS = FRONTEND / "docs"
+SUPPORT = Path(__file__).resolve().parent
 
 
 def main():
@@ -161,7 +161,7 @@ def main():
                 raise RuntimeError("expected twelve canonical metadata JSONs")
             literal = roundtrip("Libc", inputs, args.module)
             digest = hashlib.sha256(literal.read_bytes()).hexdigest()
-            pin = (DOCS / "core-quote-libc.sha256").read_text().strip()
+            pin = (SUPPORT / "core-quote-libc.sha256").read_text().strip()
             if digest != pin:
                 raise RuntimeError(f"libc literal SHA-256 drift: {digest}, pinned {pin}")
             print(f"libc sha256: {digest}", flush=True)

@@ -218,6 +218,16 @@ production generator in an isolated scratch repository.
   `../_build/...` cannot resolve the stored project-relative header labels and
   are refused with the convention named. No source-root option or label rewrite
   participates in this convention.
+- **Core constructor literals for consumers.** `--quote-core OUT.lean` writes
+  the converted, linked user file; `--quote-libc OUT.lean` writes the separately
+  converted library once. Use the canonical convention above. The generated
+  module declares `quotedCore : file core_run_annotation`; NaNs and inadmissible
+  comparator provenance are refused by name. The independent `core-quote-test`
+  executable accepts these modules with `--module`. Its runner, support and libc
+  SHA-256 pin live in `test/CoreQuote/`; earlier development probes live in
+  `test/CoreQuote/probes/`. The [consumer note](docs/2026-10-18_consumer-note-cerberus-caesium-core-quote.md)
+  gives generation, round-trip, replay and re-pin commands. This is a computed
+  quotation instrument with a [declared boundary](VALIDATION.md#core-quotation-instrument-boundary).
 - **Function-level execution.** `--call <f> [--call-args <ints>]`
   calls an individual function with injected arguments (the caller
   protocol mirrors elaborated call sites; `CerbCall.lean`, a port-side

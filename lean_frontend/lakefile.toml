@@ -406,7 +406,7 @@ root = "Unit.MemoryAccess"
 
 [[lean_exe]]
 name = "core-quote-test"
-srcDir = "docs"
+srcDir = "test/CoreQuote"
 root = "CoreQuoteRunner"
 moreLinkArgs = ["native/md5.o"]
 needs = ["CoreQuoteSupport:shared"]
@@ -423,6 +423,6 @@ roots = ["Unit.CoreQuoteTest"]
 # Literal elaboration and kernel replay do not load the test plugin.
 [[lean_lib]]
 name = "CoreQuoteSupport"
-srcDir = "docs"
+srcDir = "test/CoreQuote"
 roots = ["CoreQuoteCompare"]
 libName = "CoreQuoteCompare"

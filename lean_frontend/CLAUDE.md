@@ -104,7 +104,12 @@ Tests are organized into three categories:
 ### Unit executables and row-1 gates
 
 Hand-written Lean tests under `lean_frontend/test/Unit/<Name>Test.lean`.
-Each is a `[[lean_exe]]` in `lakefile.toml` that exits 0 on pass. The complete
+Each has a `[[lean_exe]]` in `lakefile.toml` that exits 0 on pass. The Core
+quotation executable uses a separate launcher, comparison support, visitor
+generator, Python orchestration and libc hash pin in `test/CoreQuote/`;
+`test/CoreQuote/probes/` contains the unwired D0–D2 development probes.
+Its partial printer/checker and native plugin are instrument code outside the
+exec cone, enumerated in [VALIDATION §3](VALIDATION.md#core-quotation-instrument-boundary). The complete
 `test_unit.sh` also builds/checks the OCaml oracle and needs the explicit
 fork-drift prerequisites in [VALIDATION.md](VALIDATION.md#provisioning-the-fork-drift-oracle).
 

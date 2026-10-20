@@ -9,6 +9,6 @@ def main (args : List String) : IO UInt32 := do
   | _ =>
     let cwd ← IO.currentDir
     let root := if (← (cwd / "lean_frontend/lakefile.toml").pathExists) then cwd else cwd.parent.getD cwd
-    let script := (root / "lean_frontend/docs/CoreQuoteRoundTrip.py").toString
+    let script := (root / "lean_frontend/test/CoreQuote/CoreQuoteRoundTrip.py").toString
     let child ← IO.Process.spawn { cmd := "python3", args := (#[script] ++ args.toArray), cwd := some root }
     child.wait
