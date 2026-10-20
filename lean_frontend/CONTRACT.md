@@ -76,6 +76,7 @@ feature-attributed; each refusal has a witness), **OUT OF SCOPE** (not an input 
 |---|---|---|---|
 | C frontend (parse → Cabs → Ail → Core) | SUPPORTED | shared OCaml parser; Lean desugar/typing/elaboration differentially tested (row 1 parser tests, all Tier A/B lanes) | frontend is `partial` (not kernel-evaluable) — a stated limit, not a discrepancy |
 | Inline assembly (GNU `asm`/`__asm__`: basic, extended, `asm goto`, asm labels on declarators) | **REFUSED** (D9) in both engines, where upstream silently erases it: an asm statement fails desugaring in the shared `.lem` (`feature not yet supported: inline assembly (asm statement) is unsupported`; Lean `--batch` reports `desugaring failed at` the asm location), an asm label on a declarator fails in the shared parser (`unimplemented keyword 'asm (inline assembly label on a declarator is unsupported)'`), so no Cabs reaches the Lean engine | `scripts/check_asm_refusal.sh` (row 1): 4 statement + 3 label witnesses, 2 controls, 3 plants | file-scope `asm(...)` is not in the grammar: a syntax error (loud, not attributed); `__asm` (no trailing underscores) is an ordinary identifier |
+| Two upstream TODOs of the concrete memory model, item G (cerberus-caesium's note 2): `memcpy` on overlapping objects (C17 7.24.2.1#2 undefined; upstream's `impl_mem.ml` `memcpy` carries `(* TODO: if ptrval1 and ptrval2 overlap ==> UB *)` and copies byte-wise, tray 56) and an allocation with an invalid alignment (not a positive power of two; C17 7.22.3.1#2-3; upstream's `std.core:385` `aligned_alloc_proxy` checks only `size rem_t align = 0` and the allocator rounds to any alignment, tray 57) | **REFUSED** (D10) in both engines, where upstream answers a defined value: the memory model's `memcpy` (oracle `failwith`, Lean `CerbMem.memcpyM` `failwithI`) and its `allocator` (oracle `failwith`, Lean `CerbMem.allocator`) die with ONE text — `Concrete.memcpy: refused - memcpy on overlapping objects (…)` / `Concrete.allocator: refused - allocation with an invalid alignment N (…)`, each naming the clause, upstream's TODO/line and that the fork refuses rather than decides; oracle uncaught `Failure`, exit 125; Lean abort under `LEAN_ABORT_ON_PANIC=1`, exit 134 | `scripts/check_item_g_refusals.sh` (row 1): 4 overlapping-memcpy + 3 invalid-alignment witnesses with the two engines' texts compared byte for byte, 8 controls (incl. one allocation at each alignment the lanes use) + the unchanged zero-alignment crash, 5 plants | alignment zero stays the pre-existing `Division_by_zero` crash (tray 34, out of scope); the outcome-protocol work will move both texts into its envelope |
 | Core dynamics (driver, reduction, pure eval) | SUPPORTED | Tier A/B lanes, pristine 835/28/7/2, gcc oracle, csmith corpus | none known; this is where the report found nothing |
 | Concrete memory model | SUPPORTED | CerbMem mirror with cites; immaculate lane; allocator soundness theorem | the SC receipt buffer is disabled by default (WP0) |
 | Function pointers | SUPPORTED, including round trips through integers and `void*` (libc's `atexit` uses one); their numeric value — through an integer conversion, their bytes or `%p` — is named deviation N1 | `zd-funptr-*` rows, libc_exec `040`/`041` | none |
@@ -137,7 +138,7 @@ gated agreement programs, before → after the 2026-09-28 edge-case tests:
 | `--first` mode | not checked to be one of the exhaustive results | outside §1 | outside the §1 promise (§2) |
 | non-batch CLI output | never compared (only `--batch` output is the compared interface) | outside §1 | human-readable format, exits 0 for every outcome, as the oracle's does |
 
-The **refused** parts (filesystem, stdin, concurrency and switch flags, the PNVI-ae-udi refusals, `%f` of a NaN, inline assembly) are pinned by
+The **refused** parts (filesystem, stdin, concurrency and switch flags, the PNVI-ae-udi refusals, `%f` of a NaN, inline assembly, the item-G memory-model TODOs) are pinned by
 witnesses and are not "thinly tested": they do not answer.
 
 ## 4. How the contract is enforced
@@ -145,7 +146,8 @@ witnesses and are not "thinly tested": they do not answer.
 1. **Every REFUSED area has at least one witness in a lane that pins the refusal**, so a return to a silent answer turns
    a gate red: the filesystem and stdin (`zd-fs-*`, `zd-f1-*`, `zd-z2f01-*` immaculate rows), `any_bounded_int` (`zd-any-bounded-int-crash`), `%f` of a NaN (`fmt-007*.unsupported.c`), the CLI flags (`scripts/check_cli_refusals.sh`,
    row 1), the PNVI-ae-udi refusals reachable from C (`scripts/test_pnvi.sh`'s `REFUSAL` rows, Tier A row 14, which
-   assert the refusal id and the oracle side) and inline assembly (`scripts/check_asm_refusal.sh`, row 1, which asserts the message too).
+   assert the refusal id and the oracle side), inline assembly (`scripts/check_asm_refusal.sh`, row 1, which asserts the message too) and the
+   item-G memory-model refusals (`scripts/check_item_g_refusals.sh`, row 1, which asserts the message on both engines and their equality).
    Limit: the immaculate and coverage witnesses pin the crash CLASS (`L=CRASH`, `UNSUPPORTED`), not the refusal
    message, under those lanes' coarse crash policy (VALIDATION §1(a)); the message is fixed in the refusing code, and
    `check_cli_refusals.sh` asserts it for the CLI flags.
@@ -191,6 +193,17 @@ witnesses and are not "thinly tested": they do not answer.
   the general path of the shared model and parser, so the oracle and Lean refuse identically and no asm semantics is
   invented; a deliberate fork-vs-pristine difference, manifested in the fork-drift gate. No gated lane row moved
   (`docs/2026-10-05_asm-refusal-record.md`).
+- **D10 — the item-G memory-model TODOs are refused** ([USER 2026-10-20] ruled that where upstream Cerberus left a case
+  deliberately to a TODO, the fork either leaves it as-is or REFUSES LOUDLY — the run dies with a declared unsupported
+  outcome — and never invents a verdict (no UB verdict, no error verdict) in its place, nor answers silently wrong). Two
+  cases from cerberus-caesium's note 2 (upstream-tray drafts 56/57): an overlapping `memcpy` (both engines answered
+  `Specified(7)` on the draft's witness) and an allocation with an invalid alignment (`aligned_alloc(3, 9)` allocated at
+  "alignment 3"). Both refusals sit in the concrete memory model of BOTH engines — `memcpy` and the `allocator`, not the
+  shared `std.core` (Core text expresses only verdicts) — with byte-identical texts; alignment zero (tray 34's
+  pre-existing crash) is unchanged. Two gated lane rows were literally these cases
+  (`tests/coverage/mem4/mem4-020-memcpy-overlap.c`, `tests/libc_exec/009-aligned-alloc-3.c`), each a deliberate control
+  of the superseded stance; [USER 2026-10-20] ruled them retired from the lanes with their baseline rows, the witness
+  script carrying their purpose (`docs/2026-10-20_item-g-refusals-record.md`).
 - **Agent-called dispositions under these rulings** [AGENT 2026-09-28]: `%f` of a NaN is refused rather than
   registered (it can be refused cheaply and precisely; Lean cannot read a NaN's sign), and the other disagreements that
   record found (its D3–D6, a separate numbering from this section's) are dispositioned in `docs/2026-09-28_thin-surface-tests-record.md` (addendum).

@@ -49,3 +49,12 @@ through the same `PV` values it already shifts.
 Filed from cerberus-caesium's note 2, item G1 (2026-10-17): its harness
 hook refuses the overlap and is stuck on this difference. Draft 53 is a
 separate `memcpy` report (a crash on a symbolic pointer).
+
+Fork-ahead refusal (2026-10-20, not a fix for upstream): under the ruling that
+where upstream left a case to a TODO the fork leaves it or refuses loudly
+([USER 2026-10-20]), the fork's `memcpy` now `failwith`s on an overlapping copy
+(both pointers concrete in one allocation, intersecting ranges, `n > 0`) and the
+Lean port's `CerbMem.memcpyM` fails with the same text; no UB verdict is
+invented (contract D10, `scripts/check_item_g_refusals.sh`, record
+`docs/2026-10-20_item-g-refusals-record.md`). The report above describes
+upstream as it stands.

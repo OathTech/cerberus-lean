@@ -1289,6 +1289,22 @@ module Concrete : Memory = struct
          ADDED m when z < 0 and could succeed in (0, align) over the live object at last_address; kill BEFORE rounding. *)
       if z < zero then
         fail (MerrOther "Concrete.allocator: failed (out of memory)")
+      (* fork refusal (item G2; [USER 2026-10-20]: where upstream left a case to a TODO, the
+         fork leaves it or REFUSES LOUDLY, never inventing a verdict; upstream-tray draft 57):
+         an alignment that is not a positive power of two. Upstream's only check is
+         std.core:385's `size rem_t align = 0` (aligned_alloc_proxy), then this quomod
+         (b9aeedcb4 :1253) rounds the cursor down to a multiple of ANY align. Checked here,
+         in the allocator, not in the shared std.core (Core text expresses only verdicts). The
+         Lean engine's CerbMem.allocator fails with the SAME text (mirror). Alignment ZERO is
+         deliberately excluded: it is the pre-existing Division_by_zero crash (draft 34), reached
+         at std.core:385's `rem_t` before this point and at the quomod below — unchanged. Sits
+         AFTER the out-of-memory kill, where the alignment is consumed, so `aligned_alloc(3, N)`
+         with N above the cursor still kills out-of-memory first, as before. Measured 2026-10-20
+         over every exec-type lane: the alignments reaching here are 1, 2, 4, 8, 16 and (one
+         row, tests/libc_exec/009-aligned-alloc-3.c) 3; `_Alignas(3)` never reaches it (a
+         front-end constraint violation, §6.7.5#3). *)
+      else if not (equal align zero) && not (gt align zero && equal (logand align (pred align)) zero) then
+        failwith (Printf.sprintf "Concrete.allocator: refused - allocation with an invalid alignment %s (not a positive power of two; size %s); C17 7.22.3.1#2-3 requires aligned_alloc to fail by returning a null pointer (C11: undefined behaviour); upstream allocates under runtime/libcore/std.core:385 aligned_alloc_proxy, whose only check is 'size rem_t align = 0', and impl_mem.ml allocator's quomod (b9aeedcb4 :1253) - the fork refuses rather than decides (item G2, 2026-10-20)" (Z.to_string align) (Z.to_string sz))
       else
         let (_, m) = quomod z align in
         let z' = sub z m in
@@ -2678,6 +2694,25 @@ VIP:type pointer_value =
   (* TODO check *)
   let memcpy loc ptrval1 ptrval2 (IV (_, size_n)) =
     (* TODO: if ptrval1 and ptrval2 overlap ==> UB *)
+    (* fork refusal (item G1; [USER 2026-10-20]: where upstream left a case to a TODO, the
+       fork leaves it or REFUSES LOUDLY, never inventing a verdict; upstream-tray draft 56):
+       where the TODO above (b9aeedcb4 :2636) leaves an overlapping copy to the byte loop,
+       the fork refuses — no UB verdict is invented. The Lean engine's CerbMem.memcpyM fails
+       with the SAME text (mirror). Overlap = both pointers concrete in the SAME allocation
+       (`Prov_some id`, `PVconcrete` — the one shape `load`/`store` serve: `Prov_none`,
+       `PVnull`, `PVfunction` fail at the first byte, :1667/:1776, and a `Prov_symbolic`
+       argument dies in the pure `array_shift_ptrval` first, R-PNVI-06 — so every copy that
+       could complete is covered) with intersecting byte ranges [a1, a1+n) and [a2, a2+n),
+       n > 0. The ranges are the C-level objects, not clipped to the allocation: a copy that
+       is both overlapping and out of bounds is refused before the loop reports the bound.
+       Different allocations never overlap (the allocator never reuses an address). *)
+    begin match ptrval1, ptrval2 with
+      | PV (Prov_some id1, PVconcrete (_, a1)), PV (Prov_some id2, PVconcrete (_, a2))
+        when Z.equal id1 id2 && Z.gt size_n Z.zero && Z.lt a1 (Z.add a2 size_n) && Z.lt a2 (Z.add a1 size_n) ->
+          failwith (Printf.sprintf "Concrete.memcpy: refused - memcpy on overlapping objects (allocation %s: destination [%s, %s) and source [%s, %s), n = %s); C17 7.24.2.1#2 undefined behaviour; upstream copies byte-wise under impl_mem.ml memcpy 'TODO: if ptrval1 and ptrval2 overlap ==> UB' (b9aeedcb4 :2636) - the fork refuses rather than decides (item G1, 2026-10-20)"
+            (Z.to_string id1) (Z.to_string a1) (Z.to_string (Z.add a1 size_n)) (Z.to_string a2) (Z.to_string (Z.add a2 size_n)) (Z.to_string size_n))
+      | _ -> ()
+    end;
     (* TODO: copy ptrval2 into ptrval1 *)
     let rec aux i =
       if Z.lt i size_n then

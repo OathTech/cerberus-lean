@@ -55,3 +55,14 @@ existing `rem_t` check, which draft 34's zero-alignment guard would share.
 Filed from cerberus-caesium's note 2, item G2 (2026-10-17), with its
 reading corrected here: C17 returns null rather than leaving the call
 undefined.
+
+Fork-ahead refusal (2026-10-20, not a fix for upstream): under the ruling that
+where upstream left a case to a TODO the fork leaves it or refuses loudly
+([USER 2026-10-20]), the fork's allocator (`impl_mem.ml` `allocator`, after its
+out-of-memory kill and before the quomod — not the shared `std.core`) now
+`failwith`s on an alignment that is not a positive power of two, and the Lean
+port's `CerbMem.allocator` fails with the same text; neither a null return nor
+a UB verdict is invented, and alignment zero (draft 34) is unchanged (contract
+D10, `scripts/check_item_g_refusals.sh`, record
+`docs/2026-10-20_item-g-refusals-record.md`). The report above describes
+upstream as it stands.

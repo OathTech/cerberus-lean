@@ -2463,6 +2463,31 @@ def readonlyStatusForAlloc (pref : prefix0) (initOpt : Option MemValue) : Readon
     (CerbMemAllocatorProofs.lean) is stated with it. -/
 def oomKill : kill_reason mem_error := Other (MerrOther "Concrete.allocator: failed (out of memory)")
 
+/-- The fork's alignment refusal for the allocator (item G2; [USER 2026-10-20]: where
+    upstream left a case to a TODO, the fork leaves it or REFUSES LOUDLY, never inventing
+    a verdict; upstream-tray draft 57): an alignment that is not a positive power of two.
+    Upstream's only check is std.core:385's `size rem_t align = 0` (`aligned_alloc_proxy`);
+    the allocator's remainder (b9aeedcb4 :1253) then rounds the cursor down to a multiple of
+    ANY align, so `aligned_alloc(3, 9)` allocated at "alignment 3". The test is the oracle's
+    `not (equal align zero) && not (gt align zero && equal (logand align (pred align)) zero)`
+    (impl_mem.ml:1306 in this tree), written on `Int.toNat` because this toolchain has no
+    `Int.land`; for `align > 0` the two agree. Alignment ZERO is deliberately excluded: it
+    is the pre-existing `Division_by_zero` crash (draft 34, `aligned_alloc(0, n)` dies at
+    std.core:385's `rem_t`, `integerRem_t`; the arm in `allocator` mirrors the quomod) and
+    its behaviour is unchanged. A negative alignment is refused (`size_t` never produces
+    one; a hand-written Core `alloc` could). Measured 2026-10-20 over every exec-type lane
+    (record `docs/2026-10-20_item-g-refusals-record.md`): the alignments reaching the
+    allocator are 1, 2, 4, 8, 16, and 3 on exactly one row
+    (tests/libc_exec/009-aligned-alloc-3.c); `_Alignas(3)` never reaches it (a front-end
+    constraint violation, §6.7.5#3). Reduces by `decide`/`rfl`/`simp [alignmentRefused]` on
+    a literal. -/
+def alignmentRefused (align : Int) : Bool :=
+  align != 0 && !(align > 0 && (align.toNat &&& (align.toNat - 1)) == 0)
+
+/-- The refusal text, byte-identical to the fork oracle's `failwith` (impl_mem.ml:1307). -/
+def alignmentRefusal (align sz : Int) : String :=
+  s!"Concrete.allocator: refused - allocation with an invalid alignment {align} (not a positive power of two; size {sz}); C17 7.22.3.1#2-3 requires aligned_alloc to fail by returning a null pointer (C11: undefined behaviour); upstream allocates under runtime/libcore/std.core:385 aligned_alloc_proxy, whose only check is 'size rem_t align = 0', and impl_mem.ml allocator's quomod (b9aeedcb4 :1253) - the fork refuses rather than decides (item G2, 2026-10-20)"
+
 /-- allocator — impl_mem.ml:1247-1270, the arithmetic verbatim on Z (Int),
     AFTER remedy 1 of upstream-tray draft 44 (fork fix, 2026-09-16 — the
     fork deviates from pristine `b9aeedcb4` here, OBSERVABLY at upstream's
@@ -2503,7 +2528,11 @@ def oomKill : kill_reason mem_error := Other (MerrOther "Concrete.allocator: fai
     states, with the pre-fix values as the negative control).
     Zero-discrepancy Z-13 / Z2-M-05: the two callers used to clamp
     size and align with `.max 1` and map a negative size to 0 through
-    `.toNat` — silent normalisations the OCaml has nowhere; both gone. -/
+    `.toNat` — silent normalisations the OCaml has nowhere; both gone.
+    Fork refusal (item G2, 2026-10-20; `alignmentRefused` below): an alignment
+    that is not a positive power of two is REFUSED after the `z < 0` kill and
+    before the remainder, where the oracle's `failwith` now sits
+    (impl_mem.ml:1292-1308 in this tree). -/
 def allocator (sz align : Int) : memM (StorageInstanceId × Address) :=
   ND fun st =>
     let allocId := st.nextAllocId
@@ -2512,6 +2541,16 @@ def allocator (sz align : Int) : memM (StorageInstanceId × Address) :=
       (NDkilled oomKill, st)
     else if align == 0 then                                                      -- :1258 quomod → Division_by_zero
       (NDkilled (CerbFail.failStopKill "CerbMem.allocator: alignment 0 has no meaning in the model (impl_mem.ml:1258 quomod raises Division_by_zero — mirrored as a fail-stop; docs/2026-10-03_total-arith-and-bookkeeping-record.md)"), st)
+    else if alignmentRefused align then                                          -- fork refusal (item G2), impl_mem.ml:1306-1307 in this tree
+      -- The leaf is the loud fail-stop every refusal uses (`failwithI`: under
+      -- LEAN_ABORT_ON_PANIC the process aborts with the text, as the oracle's
+      -- uncaught `Failure` does). It is carried as the MESSAGE of a kill, not as
+      -- the arm's value, so that the KERNEL sees a kill here exactly as in the
+      -- arm above: `allocator_active_sound` keeps its hypothesis-free statement
+      -- ("a refusal arm is never active"), where a `failwithI` at the pair type
+      -- would be an opaque value the theorem could say nothing about. Without
+      -- the abort the arm is still a kill (an empty message), never an answer.
+      (NDkilled (CerbFail.failStopKill (failwithI (alignmentRefusal align sz))), st)
     else
       let m := z % align                                                         -- :1258 (Euclidean remainder, m ≥ 0)
       let z' := z - m                                                            -- :1259 (align down)
@@ -3556,28 +3595,64 @@ def effMemberShiftPtrval [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (_ 
 
 /-! ### Memory operations -/
 
+/-- The fork's overlap refusal for `memcpy` (item G1; [USER 2026-10-20]: where upstream
+    left a case to a TODO, the fork leaves it or REFUSES LOUDLY, never inventing a verdict;
+    upstream-tray draft 56). `impl_mem.ml` `memcpy` opens with `(* TODO: if ptrval1 and
+    ptrval2 overlap ==> UB *)` (b9aeedcb4 :2636) and copies byte-wise; C17 7.24.2.1#2
+    leaves an overlapping copy undefined, and both engines answered `Specified(7)` on the
+    draft's witness. The fork oracle now `failwith`s at the head of `memcpy`
+    (impl_mem.ml:2709-2715 in this tree) and `memcpyM` fails with the same text (mirror).
+    Overlap = both pointers concrete in the SAME allocation (`Prov_some id`, `PVconcrete`:
+    the one shape `load`/`store` serve — `Prov_none`, `PVnull` and `PVfunction` fail at the
+    first byte, impl_mem.ml:1667/:1776, and a `Prov_symbolic` argument dies in the pure
+    `array_shift_ptrval` first, R-PNVI-06 — so every copy that could complete is covered)
+    with intersecting byte ranges `[a1, a1+n)` and `[a2, a2+n)`, `n > 0`. The ranges are the
+    C-level objects, not clipped to the allocation, so a copy that is both overlapping and
+    out of bounds is refused before the loop would report the bound [AGENT 2026-10-20].
+    `memcpy(p, p, n)` overlaps (the same object). Different allocations never overlap (the
+    allocator never reuses an address); `realloc`'s copy is new ← old, two allocations.
+    Returns the allocation and the two bases for the message. -/
+def memcpyOverlap (dst src : PointerValue) (n : Int) : Option (StorageInstanceId × Address × Address) :=
+  match dst, src with
+  | .PV (.Prov_some id1) (.PVconcrete _ a1), .PV (.Prov_some id2) (.PVconcrete _ a2) =>
+    if id1 == id2 && n > 0 && a1 < a2 + n && a2 < a1 + n then some (id1, a1, a2) else none
+  | _, _ => none
+
+/-- The refusal text, byte-identical to the fork oracle's `failwith` (impl_mem.ml:2712-2713). -/
+def memcpyOverlapRefusal (id a1 a2 n : Int) : String :=
+  s!"Concrete.memcpy: refused - memcpy on overlapping objects (allocation {id}: destination [{a1}, {a1 + n}) and source [{a2}, {a2 + n}), n = {n}); C17 7.24.2.1#2 undefined behaviour; upstream copies byte-wise under impl_mem.ml memcpy 'TODO: if ptrval1 and ptrval2 overlap ==> UB' (b9aeedcb4 :2636) - the fork refuses rather than decides (item G1, 2026-10-20)"
+
 /-- memcpy — impl_mem.ml:2635-2646 (arc-14 S1 F1, sem:G2: previously
     copied raw bytemap bytes, silently bypassing every access check).
     Mirrored as upstream writes it: a per-byte loop of CHECKED
     `load`/`store` of `unsigned char` at `array_shift_ptrval` offsets, so
     OOB source/destination, dead or read-only destination, and atomicity
     violations kill exactly as the oracle's load/store machinery does.
-    Upstream's own TODOs (overlap-UB unimplemented) inherit unchanged.
+    Upstream's overlap TODO is now the fork's REFUSAL (`memcpyOverlap`,
+    item G1, 2026-10-20): checked first, before any byte moves,
+    as the oracle's `failwith` is raised when `memcpy` is applied.
     The loop recurses on a Nat countdown (structural; upstream counts up
     with `Z.lt i size_n`, same iteration space). -/
 def memcpyM [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc) (dst src : PointerValue) (sizeIv : IntegerValue) : memM PointerValue :=
   match sizeIv with
   | .IV _ size_n =>
-    let rec aux : Nat → Int → memM PointerValue
-      | 0, _ => memReturn dst                                        -- :2643-2644
-      | k + 1, i =>
-        -- :2640-2642: load uchar (src+i) >>= store uchar (dst+i)
-        nd_bind (loadM enumDefs tagDefs loc unsigned_char
-            (arrayShiftPtrval enumDefs tagDefs src unsigned_char (.IV .Prov_none i))) fun lr =>
-        nd_bind (storeM enumDefs tagDefs loc unsigned_char false
-            (arrayShiftPtrval enumDefs tagDefs dst unsigned_char (.IV .Prov_none i)) lr.2) fun _ =>
-        aux k (i + 1)
-    aux size_n.toNat 0
+    match memcpyOverlap dst src size_n with
+    | some (id, a1, a2) =>
+      -- the fork's refusal (item G1, [USER 2026-10-20]), impl_mem.ml:2709-2715 in this
+      -- tree: the same text; the loud fail-stop every refusal uses (LEAN_ABORT_ON_PANIC),
+      -- ascribed at `memM` like `pnviRefuseM` (kernel default a kill, never an answer)
+      failwithI (memcpyOverlapRefusal id a1 a2 size_n)
+    | none =>
+      let rec aux : Nat → Int → memM PointerValue
+        | 0, _ => memReturn dst                                        -- :2643-2644
+        | k + 1, i =>
+          -- :2640-2642: load uchar (src+i) >>= store uchar (dst+i)
+          nd_bind (loadM enumDefs tagDefs loc unsigned_char
+              (arrayShiftPtrval enumDefs tagDefs src unsigned_char (.IV .Prov_none i))) fun lr =>
+          nd_bind (storeM enumDefs tagDefs loc unsigned_char false
+              (arrayShiftPtrval enumDefs tagDefs dst unsigned_char (.IV .Prov_none i)) lr.2) fun _ =>
+          aux k (i + 1)
+      aux size_n.toNat 0
 
 /-- memcmp — impl_mem.ml:2649-2665 (arc-14 S1 F1, sem:G2: previously read
     raw bytemap bytes with unspecified bytes silently comparing equal).

@@ -212,7 +212,9 @@ expr-012-logical-shortcircuit.c MATCH
 # 2026-09-28 thin-surface tests slice (branch tests/thin-surfaces-20260928; record
 #   lean_frontend/docs/2026-09-28_thin-surface-tests-record.md): 62 rows added — tests/coverage/fmt/
 #   (35: printf %f via CerbFloat.formatFixed, widths/precisions/flags, %c/%x/%o, length modifiers, the
-#   model's printf UB checks) and tests/coverage/mem4/ (27: realloc/memcpy/memcmp/free edge cases).
+#   model's printf UB checks) and tests/coverage/mem4/ (27: realloc/memcpy/memcmp/free edge cases; 26 since
+#   mem4-020-memcpy-overlap was retired 2026-10-20 — item G, [USER 2026-10-20]: a control of the superseded
+#   stance, its purpose carried by scripts/check_item_g_refusals.sh).
 #   Statuses as measured by `test_exec.sh tests/coverage/fmt` / `tests/coverage/mem4` (SUMMARY:
 #   total=35 match=21 ub_match=14; total=27 match=20 ub_match=7). Rows hand-inserted in sorted position.
 #   fmt-007 / fmt-007b (NaN sign under %f, disagreement D1 of that record): Lean cannot read a NaN's sign
@@ -301,7 +303,6 @@ mem4-007-realloc-pointer-content.c MATCH
 mem4-008-realloc-uninit-tail.c MATCH
 mem4-009-realloc-free-old-ub.c UB_MATCH
 mem4-010-realloc-chain.c MATCH
-mem4-020-memcpy-overlap.c MATCH
 mem4-021-memcpy-pointer-carrying.c MATCH
 mem4-022-memcpy-partial-int.c MATCH
 mem4-023-memcpy-zero-length.c MATCH

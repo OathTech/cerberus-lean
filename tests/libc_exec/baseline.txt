@@ -6,7 +6,6 @@
 006-strlen-snprintf MATCH
 007-va-user-vsnprintf MATCH
 008-aligned-alloc-bad-size MATCH
-009-aligned-alloc-3 MATCH
 010-int32-printf MATCH
 011-decimal-sweep MATCH
 012-global-alloc-order MATCH

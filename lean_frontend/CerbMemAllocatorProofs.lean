@@ -42,7 +42,9 @@ theorem allocator_below_request_kills (st : MemState) (sz align : Int)
     disjoint from everything at or above the cursor, for `sz ≥ 0`; the statement
     itself needs no such hypothesis), and the new cursor is `a`.
     No hypothesis on `sz` or `align` is needed: `align = 0` is the refusal arm
-    (never active), and for `align ≠ 0` the Euclidean remainder is non-negative, so
+    (never active), the fork's alignment refusal (item G2, 2026-10-20) is a kill
+    carrying its `failwithI` as the message (never active, by construction — see
+    `allocator`), and for `align ≠ 0` the Euclidean remainder is non-negative, so
     the align-down step only lowers the base — the charter's
     `0 < align → 0 ≤ sz → …` form is this statement weakened. `id`/`a` are the
     `StorageInstanceId`/`Address` components, both abbrevs of `Int`; the relations
@@ -55,23 +57,25 @@ theorem allocator_active_sound (st st' : MemState) (sz align id a : Int)
   · simp at h                       -- z < 0: the out-of-memory kill, never active
   · split at h
     · simp at h                     -- align == 0: the refusal, never active
-    · rename_i hz hne
-      split at h
-      · simp at h                   -- z' ≤ 0: the out-of-memory kill, never active
-      · rename_i hz'
-        simp only [Prod.mk.injEq, nd_action.NDactive.injEq] at h
-        obtain ⟨⟨_, ha⟩, hst⟩ := h
-        subst ha
-        subst hst
-        have hne' : align ≠ 0 := fun heq => by simp [heq] at hne
-        have hm := Int.emod_nonneg (st.lastAddress - sz) hne'
-        have hdef := Int.emod_def (st.lastAddress - sz) align
-        -- `hz'` is stated at the abbrev `Address`; omega reads relations at `Int`
-        -- only, so restate it there, then name the two non-linear terms so the
-        -- remaining facts are linear in atoms
-        have hpos := Int.not_le.mp hz'
-        generalize (st.lastAddress - sz) % align = M at hpos hm hdef ⊢
-        generalize (st.lastAddress - sz) / align = Q at hdef ⊢
-        refine ⟨⟨Q, ?_⟩, ?_, ?_, rfl⟩ <;> omega
+    · split at h
+      · simp at h                   -- alignmentRefused: the fork's refusal (item G2), a kill, never active
+      · rename_i hz hne hal
+        split at h
+        · simp at h                 -- z' ≤ 0: the out-of-memory kill, never active
+        · rename_i hz'
+          simp only [Prod.mk.injEq, nd_action.NDactive.injEq] at h
+          obtain ⟨⟨_, ha⟩, hst⟩ := h
+          subst ha
+          subst hst
+          have hne' : align ≠ 0 := fun heq => by simp [heq] at hne
+          have hm := Int.emod_nonneg (st.lastAddress - sz) hne'
+          have hdef := Int.emod_def (st.lastAddress - sz) align
+          -- `hz'` is stated at the abbrev `Address`; omega reads relations at `Int`
+          -- only, so restate it there, then name the two non-linear terms so the
+          -- remaining facts are linear in atoms
+          have hpos := Int.not_le.mp hz'
+          generalize (st.lastAddress - sz) % align = M at hpos hm hdef ⊢
+          generalize (st.lastAddress - sz) / align = Q at hdef ⊢
+          refine ⟨⟨Q, ?_⟩, ?_, ?_, rfl⟩ <;> omega
 
 end CerbMem

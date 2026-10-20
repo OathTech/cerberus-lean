@@ -453,6 +453,23 @@ if ! "$ASM_REFUSAL_SH" --selftest; then
     exit 1
 fi
 
+# Item-G refusal witnesses (2026-10-20, [USER 2026-10-20] ruled that where
+# upstream left a case to a TODO the fork leaves it or refuses loudly, never
+# inventing a verdict; record docs/2026-10-20_item-g-refusals-record.md): an
+# overlapping memcpy (tray 56) and an allocation with an invalid alignment
+# (tray 57) are refused by the concrete memory model in BOTH engines with
+# byte-identical texts (oracle uncaught Failure, exit 125; Lean abort, exit
+# 134); controls (non-overlapping copies incl. realloc, one allocation at each
+# alignment the lanes use, the unchanged size-clause UB and zero-alignment
+# crash) agree with the oracle. --selftest: a pre-fix answering pair, a
+# Lean-only answering stub, a refuse-everything pair, a message-without-abort
+# stub and an altered-text stub must all fail.
+ITEM_G_SH="$(dirname "$PURITY_SH")/check_item_g_refusals.sh"
+if ! "$ITEM_G_SH" --selftest; then
+    echo "test_unit: item-G refusal witnesses FAILED"
+    exit 1
+fi
+
 # libc dump float-literal inventory (named deviation N3, VALIDATION.md §2b;
 # bug hunt BUG-5, [USER 2026-09-30] option (3)): the pinned libc.core's float
 # literals (printed with %.12g by the oracle's Core printer) must equal the

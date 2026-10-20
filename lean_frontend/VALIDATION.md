@@ -456,6 +456,41 @@ Nothing else.
   No gated lane row moved; five Tier C scoreboard rows (`torture_not_std_compliant`)
   move MATCH → reject when the scoreboard is next re-recorded. A deliberate
   fork ≠ pristine difference (below; `scripts/fork_drift_manifest.txt`).
+- *Item G: two upstream TODOs of the concrete memory model* (contract D10,
+  2026-10-20; [USER 2026-10-20] ruled that where upstream left a case to a TODO
+  the fork leaves it or refuses loudly, never inventing a verdict;
+  `docs/2026-10-20_item-g-refusals-record.md`): REFUSED in BOTH engines — a
+  refusal, not an ISO fix (no UB verdict is invented; §2 is untouched).
+  (G1) `memcpy` on overlapping objects: upstream's `impl_mem.ml` `memcpy`
+  carries `(* TODO: if ptrval1 and ptrval2 overlap ==> UB *)` (b9aeedcb4
+  :2636) and copies byte-wise, so both engines gave `Specified(7)` on tray 56's
+  witness; now the memory model's copy dies when both pointers are concrete in
+  the same allocation with intersecting `[a1, a1+n)`/`[a2, a2+n)`, `n > 0`
+  (oracle `failwith`; Lean `CerbMem.memcpyM` `failwithI`):
+  `Concrete.memcpy: refused - memcpy on overlapping objects (…) - the fork
+  refuses rather than decides (item G1, 2026-10-20)`. (G2) an allocation with
+  an alignment that is not a positive power of two: upstream's `std.core:385`
+  `aligned_alloc_proxy` checks only `size rem_t align = 0` and the allocator
+  rounds to any alignment, so `aligned_alloc(3, 9)` allocated (tray 57); now
+  the ALLOCATOR of both memory models dies, after its out-of-memory kill and
+  before the remainder (oracle `failwith`; Lean `CerbMem.allocator`, the leaf
+  carried as the message of a kill so `allocator_active_sound` keeps its
+  hypothesis-free statement): `Concrete.allocator: refused - allocation with an
+  invalid alignment N (…) - the fork refuses rather than decides (item G2,
+  2026-10-20)`. Alignment zero is OUT OF SCOPE and unchanged (tray 34's
+  `Division_by_zero` at `std.core:385`'s `rem_t`). Shape: oracle uncaught
+  `Failure`, exit 125; Lean abort under `LEAN_ABORT_ON_PANIC=1`, exit 134, the
+  texts byte-identical. Measured 2026-10-20 over every exec-type lane: the
+  alignments reaching the allocator are 1, 2, 4, 8, 16 and — on exactly one
+  row — 3; `_Alignas(3)` is a front-end constraint violation and never reaches
+  it. Witnesses: `scripts/check_item_g_refusals.sh` (row 1). Two gated lane
+  rows were literally these cases — `tests/coverage/mem4/mem4-020-memcpy-overlap.c`
+  (Tier A row 3, "the observable is what each engine reports") and
+  `tests/libc_exec/009-aligned-alloc-3.c` (row 5, the Z2 alignment-arithmetic
+  control) — each a deliberate control of the superseded stance; both are
+  RETIRED with their baseline rows ([USER 2026-10-20]: the witness script
+  carries their purpose — the refusals, and the valid-alignment arithmetic
+  controls). A deliberate fork ≠ pristine difference (below).
 - *`LEAN_ABORT_ON_PANIC` required* (Z2-FL-03): the driver refuses to
   start (exit 2) without it, because a Lean `panic!` — the fail-stop
   mirror of every OCaml failwith/assert/uncaught exception — would
@@ -716,6 +751,24 @@ by a cited re-record.
   (`scripts/fork_drift_manifest.txt`, header note "fix/asm-refusal"). Upstream
   disposition: none planned — the refusal is the fork's contract, not a fix
   for upstream to take [AGENT].
+- **Fork refusal — item G, the memory model's overlap and alignment TODOs
+  (0 register rows; 2 corpus controls retired; added 2026-10-20; contract D10;
+  record `docs/2026-10-20_item-g-refusals-record.md`):** the fork REFUSES what
+  pristine ANSWERS (§3(c) above): `impl_mem.ml` `memcpy` `failwith`s on an
+  overlapping copy where upstream's TODO copies byte-wise, and `allocator`
+  `failwith`s on an alignment that is not a positive power of two where
+  upstream rounds to it. Row 10's walked corpora contained exactly one program
+  of each (`tests/coverage/mem4/mem4-020-memcpy-overlap.c`,
+  `tests/libc_exec/009-aligned-alloc-3.c`; the lane measurement of record §3),
+  both deliberate controls of the superseded stance; both are RETIRED with
+  this slice ([USER 2026-10-20], their purpose carried by
+  `scripts/check_item_g_refusals.sh`), so the walked corpora hold no such
+  program and the register has no row — as for inline assembly above (the
+  pristine lane is Tier B, run by the orchestrator; not run in the slice).
+  The content pin for `memory/concrete/impl_mem.ml` moved
+  (`scripts/fork_drift_manifest.txt`, header note "fix/item-g-refusals"); no
+  generated-OCaml delta moved. Upstream disposition: drafts 56/57 stay Draft —
+  they report the TODOs; the refusal is the fork's contract [AGENT].
 - **`diagnostic-text` (0 rows; a permitted class).** RESOLVED [USER
   2026-09-17] (option (2) agreed, on the orchestrator's question — record §7): the
   lane's diagnostic projection — the one `matching_failure` and the
@@ -1006,6 +1059,7 @@ theorem over the shipped pipeline `@drive ⟨fuel⟩` at the ambient
 | `check_runtime_resolution.sh --selftest` | the driver's runtime is the oracle's (`--runtime DIR` / `CERB_INSTALL_PREFIX`), never the working directory, and a missing runtime or a suffix-library-but-not-exact location refuses (bug hunt BUG-2/BUG-3, 2026-09-29; §3(c)); plants: a runtime-ignoring stub and a refuse-everything stub must fail it |
 | `check_cabs_json_utf8.sh --selftest` | a non-UTF-8 Cabs JSON (a raw byte ≥ 0x80 in a file name or attribute string) is refused with the attributed message instead of an uncaught exception, and ASCII controls agree with the oracle (bug hunt BUG-6/K-5, 2026-09-29; §3(c)); plants: a pre-fix uncaught-exception stub and a refuse-everything stub must fail it |
 | `check_asm_refusal.sh --selftest` | inline assembly is refused, never erased: 4 asm statements (basic, extended, `asm goto`, in a never-called function) are refused by the oracle and by Lean with the attributed desugar message at the asm location, 3 declarator asm labels are refused by the shared parser for `--exec` and `--cabs-json` (no Cabs JSON), and 2 controls (asm-free; asm only in a comment and a string) agree with the oracle (contract D9, 2026-10-05; §3(c)); plants: a pre-fix erasing oracle (strips the asm, both engines then run it), a Lean-only erasing stub and a refuse-everything pair must fail it |
+| `check_item_g_refusals.sh --selftest` | the two item-G memory-model TODOs are refused, never answered: 4 overlapping `memcpy` programs (tray 56's witness, the retired coverage control mem4-020's backward shape, an object onto itself, inside a malloc'd object) and 3 invalid-alignment allocations (`aligned_alloc(3, 9)`, `(6, 12)`, `(1000, 2000)`) are refused by the oracle (uncaught `Failure`, exit 125) and by Lean (abort, exit 134) with byte-identical texts; 8 controls agree with the oracle (adjacent halves, two objects, length 0, realloc's copy, an out-of-bounds non-overlapping copy that is UB on both, `aligned_alloc(16, 32)`, one allocation at each alignment the lanes use — 1, 2, 4, 8, 16 — and the unchanged size-clause UB) and the zero-alignment crash is unchanged on both (contract D10, 2026-10-20; §3(c)); plants: a pre-fix answering pair, a Lean-only answering stub, a refuse-everything pair, a message-without-abort stub and an altered-text stub must all fail it |
 | `check_libc_float_literals.py --selftest` + check | every float literal of the pinned `tests/libc/libc.core` equals the reviewed register `scripts/libc_float_literals.txt`, as multisets, both directions; a 12-significant-digit literal may not be registered exact (named deviation N3); 8 plants |
 
 Certification-integrity rules ride the gates: validation of
