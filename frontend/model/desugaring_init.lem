@@ -306,6 +306,27 @@ let rec go_top_of_block pos =
   end
 
 
+(* FORK (item U, 2026-10-20): the text of the union-designator refusal. ASCII only, assembled
+   from the same pieces on both engines (the member names as the C source spells them, the
+   union's tag name from its symbol description), so the oracle's Failure(...) and the Lean
+   PANIC line carry it byte-identically (scripts/check_union_init_refusals.sh compares them). *)
+let union_designator_refusal tag_sym first_ident ident =
+  let (Symbol.Identifier _ first_str) = first_ident in
+  let (Symbol.Identifier _ memb_str) = ident in
+  let tag_str =
+    match Symbol.symbol_description tag_sym with
+      | Symbol.SD_Id str -> "union " ^ str
+      | Symbol.SD_unnamed_tag _ -> "an unnamed union"
+      | _ -> "a union"
+    end in
+  "Desugaring_init.moveTo_aux: refused - union initializer designating a member other than the first ("
+  ^ tag_str ^ ": designator ." ^ memb_str ^ ", first member " ^ first_str ^ "); "
+  ^ "C17 6.7.9#17-19 (a designator selects the member to initialize, in list order; subobjects not initialized explicitly are initialized implicitly); "
+  ^ "upstream's desugaring_init.lem constructValue_aux builds every braced union initializer as the FIRST member whatever the designators say "
+  ^ "('TODO: this is only correct if the first member was the one initialised' b9aeedcb4 :576; "
+  ^ "'constructValue_aux: is WRONG for union ==> always assigning the first member' :592) "
+  ^ "- the fork refuses rather than decides (item U, 2026-10-20)"
+
 let rec moveTo_aux tagDefs funcs is_top (ty_acc, cursor_acc) desigs =
   let moveTo_aux = moveTo_aux tagDefs funcs false in
   match desigs with
@@ -359,8 +380,22 @@ let rec moveTo_aux tagDefs funcs is_top (ty_acc, cursor_acc) desigs =
           | Ctype _ (Union tag_sym) ->
               match find_union_member tagDefs ident tag_sym with
                 | Just new_ty ->
-                    let elem' = <| is_block= is_top; is_overflowing= false; kind= Init_union tag_sym ident |> in
-                    moveTo_aux (new_ty, elem' :: cursor_acc) desigs'
+                    (* FORK REFUSAL (item U, 2026-10-20; [USER 2026-10-20]: where upstream left a
+                       case to a TODO, the fork leaves it or REFUSES LOUDLY, never answering
+                       silently wrong). constructValue_aux (below) builds EVERY braced union
+                       initializer as the FIRST member, whatever the designators say - the
+                       init-map key Elem_union carries no member identity - so a designator
+                       naming any other member is silently wrong (C17 6.7.9#17-19). This arm
+                       is the one place the designated member is decidable. `error` is
+                       Cerb_debug.error in the generated OCaml and failwithI in the generated
+                       Lean: one text on both engines. Record:
+                       lean_frontend/docs/2026-10-20_union-init-refusal-record.md *)
+                    let ((first_ident, _), _) = lookup_union_members tagDefs tag_sym in
+                    if ident <> first_ident then
+                      error (union_designator_refusal tag_sym first_ident ident)
+                    else
+                      let elem' = <| is_block= is_top; is_overflowing= false; kind= Init_union tag_sym ident |> in
+                      moveTo_aux (new_ty, elem' :: cursor_acc) desigs'
                 | Nothing ->
                     E.constraint_violation loc (Constraint.IllegalMemberDesignator ident ty_acc)
               end

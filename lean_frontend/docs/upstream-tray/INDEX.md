@@ -28,6 +28,13 @@ Reports 56–57 (2026-10-19, Draft): `memcpy` on overlapping objects copies sile
 `aligned_alloc` with an invalid alignment allocates (the proxy checks only the size clause), cerberus-caesium's items
 G1/G2; since 2026-10-20 the fork REFUSES both cases in both engines (contract D10, a fork-ahead refusal noted in each
 draft's Origin; the drafts stay Draft — they report upstream's TODOs, not the refusal).
+Report 59 (2026-10-20, Draft; the orchestrator assigned this number, 58 is not in this tray): union initializers — the
+desugarer (`desugaring_init.lem`) builds every braced union initializer as the FIRST member whatever the designators say
+(its own TODO and level-0 "is WRONG for union" print; 12 silent-wrong rows against gcc 13), plus three neighbouring
+initializer defects it does not record (a struct/union VALUE as a member initializer rejected; a designated union
+compound literal in the initializer position rejected, elsewhere silently wrong; a designated union inside a struct dying
+on draft 08's `AilEinvalid` internal error) and an anonymous union member flattened into the enclosing struct's layout;
+since 2026-10-20 the fork REFUSES part (a) in both engines (contract D11, fork-ahead; the draft stays Draft).
 Issue 1010 is recorded below but has no tray report, so is outside this count.
 Draft duplicate searches must be repeated before filing; the dated search
 notes below establish only what was checked then.
@@ -91,6 +98,7 @@ notes below establish only what was checked then.
 | [56-memcpy-overlap-copies-silently.md](56-memcpy-overlap-copies-silently.md) | Draft | No submission recorded; the fork REFUSES the case since 2026-10-20 (contract D10, fork-ahead, not a fix for upstream) |
 | [57-aligned-alloc-invalid-alignment-allocates.md](57-aligned-alloc-invalid-alignment-allocates.md) | Draft | No submission recorded; the fork REFUSES the case since 2026-10-20 (contract D10, fork-ahead, not a fix for upstream) |
 | [58-relative-runtime-library-location.md](58-relative-runtime-library-location.md) | Draft | No submission recorded |
+| [59-union-initializer-desugaring.md](59-union-initializer-desugaring.md) | Draft | No submission recorded; the fork REFUSES part (a) since 2026-10-20 (contract D11, fork-ahead, not a fix for upstream); parts (b) and (c) unchanged |
 | [lean4/01-stack-overflow-handler-deadlock.md](lean4/01-stack-overflow-handler-deadlock.md) | Draft | No submission recorded |
 | [lean4/02-nat-div-mod-literal-folding.md](lean4/02-nat-div-mod-literal-folding.md) | Draft | No submission recorded |
 | [lean4/03-float-tobits-canonicalizes-nan.md](lean4/03-float-tobits-canonicalizes-nan.md) | Draft | No submission recorded |

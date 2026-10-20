@@ -505,6 +505,52 @@ Nothing else.
   RETIRED with their baseline rows ([USER 2026-10-20]: the witness script
   carries their purpose — the refusals, and the valid-alignment arithmetic
   controls). A deliberate fork ≠ pristine difference (below).
+- *Union initializers designating a non-first member, item U* (contract D11,
+  2026-10-20; [USER 2026-10-20] ruled, under the same rule as item G, that union
+  initializers are refused rather than fixed and that no initialization
+  semantics is claimed obvious; `docs/2026-10-20_union-init-refusal-record.md`):
+  REFUSED in BOTH engines — a refusal, not an ISO fix (§2 is untouched). The
+  LIVE initializer desugarer is `frontend/model/desugaring_init.lem` (called
+  from `cabs_to_ail.lem:3527-3528`; `cabs_to_ail.lem`'s own `constructValue`
+  is dead code), whose `constructValue_aux` builds EVERY braced union
+  initializer as the FIRST member whatever the designators say (upstream's
+  `TODO: this is only correct if the first member was the one initialised`,
+  b9aeedcb4 :576, and its level-0 print `constructValue_aux: is WRONG for
+  union ==> always assigning the first member`, :592; the init-map key
+  `Elem_union` has no member identity), so `union U { int i; unsigned char
+  c[4]; } u = { .c = {1,2,3,4} }` gave `u.c[0]*100 + u.c[3]` = 0 on both engines
+  (gcc 104) — twelve such rows in tray 59 (a). Now `moveTo_aux`'s Union arm —
+  the one place the designated member is decidable — `error`s when a member
+  designator on a union names a non-first member (any depth, any storage
+  class, arrays of unions, nested unions, compound literals, a union inside a
+  struct): oracle `Cerb_debug.error` (`internal error: <text>` + uncaught
+  `Failure`, exit 125), Lean `failwithI` (abort, exit 134), one text by
+  generation: `Desugaring_init.moveTo_aux: refused - union initializer
+  designating a member other than the first (union U: designator .c, first
+  member i); C17 6.7.9#17-19 (…); upstream's desugaring_init.lem
+  constructValue_aux builds every braced union initializer as the FIRST member
+  whatever the designators say (…) - the fork refuses rather than decides
+  (item U, 2026-10-20)`. Unchanged and agreeing with the oracle: positional and
+  first-member-designated forms (incl. `{ 9, .a = 2 }` → 2, so the one predicate
+  covers mixed lists: a mixed list is silently wrong only when it names a
+  non-first member), `{ 0 }` on a smaller first member (Unspecified on both), the
+  anonymous-union-in-struct path (members spliced into the enclosing struct),
+  a union inside a struct positional or first-designated. Measured 2026-10-20
+  over every union-containing program of `tests/` (39 outside csmith, 1285
+  csmith, Tier B), `lean_frontend/corpus`, the CN, libxml2 and pKVM sources
+  and the libc (libc.co rebuilt under the new desugarer; the 12 metadata TUs
+  regenerated): exactly ONE gated program refuses —
+  `tests/coverage/union3/union3-003-union-init.c` (Tier A row 3, `{ .c = 'A' }`
+  with `c` the second member, right before only by representation overlap) —
+  REPORTED under the slice's STOP rule and then RETIRED with its baseline row
+  ([USER 2026-10-20], the item-G precedent for a control of the superseded
+  stance: the project tolerates no silently wrong answer, and a MATCH on a
+  wrong answer is not evidence; the witness script carries its shape). Witnesses: `scripts/check_union_init_refusals.sh` (row
+  1). Not refused, reported (tray 59 (b)/(c)): a struct/union VALUE as a member
+  initializer and a designated union compound literal in the initializer
+  position are constraint violations on both engines; the anonymous-union
+  layout (`sizeof` 12, no aliasing). A deliberate fork ≠ pristine difference
+  (below).
 - *`LEAN_ABORT_ON_PANIC` required* (Z2-FL-03): the driver refuses to
   start (exit 2) without it, because a Lean `panic!` — the fail-stop
   mirror of every OCaml failwith/assert/uncaught exception — would
@@ -817,6 +863,24 @@ by a cited re-record.
   (`scripts/fork_drift_manifest.txt`, header note "fix/item-g-refusals"); no
   generated-OCaml delta moved. Upstream disposition: drafts 56/57 stay Draft —
   they report the TODOs; the refusal is the fork's contract [AGENT].
+- **Fork refusal — union initializers designating a non-first member, item U
+  (0 register rows; 1 corpus control retired; added 2026-10-20; contract D11; record `docs/2026-10-20_union-init-refusal-record.md`):**
+  the fork REFUSES what pristine ANSWERS WRONGLY (§3(c) above):
+  `desugaring_init.lem`'s `moveTo_aux` Union arm `error`s on a member designator
+  naming a non-first member where upstream's `constructValue_aux` builds the
+  first member whatever the designators say. Row 10's walked corpora contain
+  exactly one such program, `tests/coverage/union3/union3-003-union-init.c`
+  (the slice measurement, record §3), RETIRED with its baseline row ([USER
+  2026-10-20], as the item-G controls were: a MATCH on an answer right only by
+  representation overlap is not evidence; `scripts/check_union_init_refusals.sh`
+  carries its shape), so the walked corpora hold no such program and the
+  register has no row. The file was byte-identical to upstream before, so the manifest
+  gains a `[files]` + `[source-content]` row for `frontend/model/desugaring_init.lem`
+  and an `[expected-semantic]` row for the generated `desugaring_init.ml`
+  (`scripts/fork_drift_manifest.txt`, header note "fix/union-init-refusal");
+  `cabs_to_ail.lem`/`cabs_to_ail.ml` unchanged. Upstream disposition: draft 59
+  stays Draft — it reports the TODO and the three neighbouring defects; the
+  refusal is the fork's contract [AGENT].
 - **`diagnostic-text` (0 rows; a permitted class).** RESOLVED [USER
   2026-09-17] (option (2) agreed, on the orchestrator's question — record §7): the
   lane's diagnostic projection — the one `matching_failure` and the
@@ -1166,6 +1230,7 @@ theorem over the shipped pipeline `@drive ⟨fuel⟩` at the ambient
 | `check_cabs_json_utf8.sh --selftest` | a non-UTF-8 Cabs JSON (a raw byte ≥ 0x80 in a file name or attribute string) is refused with the attributed message instead of an uncaught exception, and ASCII controls agree with the oracle (bug hunt BUG-6/K-5, 2026-09-29; §3(c)); plants: a pre-fix uncaught-exception stub and a refuse-everything stub must fail it |
 | `check_asm_refusal.sh --selftest` | inline assembly is refused, never erased: 4 asm statements (basic, extended, `asm goto`, in a never-called function) are refused by the oracle and by Lean with the attributed desugar message at the asm location, 3 declarator asm labels are refused by the shared parser for `--exec` and `--cabs-json` (no Cabs JSON), and 2 controls (asm-free; asm only in a comment and a string) agree with the oracle (contract D9, 2026-10-05; §3(c)); plants: a pre-fix erasing oracle (strips the asm, both engines then run it), a Lean-only erasing stub and a refuse-everything pair must fail it |
 | `check_item_g_refusals.sh --selftest` | the two item-G memory-model TODOs are refused, never answered: 4 overlapping `memcpy` programs (tray 56's witness, the retired coverage control mem4-020's backward shape, an object onto itself, inside a malloc'd object) and 3 invalid-alignment allocations (`aligned_alloc(3, 9)`, `(6, 12)`, `(1000, 2000)`) are refused by the oracle (uncaught `Failure`, exit 125) and by Lean (abort, exit 134) with byte-identical texts; 8 controls agree with the oracle (adjacent halves, two objects, length 0, realloc's copy, an out-of-bounds non-overlapping copy that is UB on both, `aligned_alloc(16, 32)`, one allocation at each alignment the lanes use — 1, 2, 4, 8, 16 — and the unchanged size-clause UB) and the zero-alignment crash is unchanged on both (contract D10, 2026-10-20; §3(c)); plants: a pre-fix answering pair, a Lean-only answering stub, a refuse-everything pair, a message-without-abort stub and an altered-text stub must all fail it |
+| `check_union_init_refusals.sh --selftest` | a braced union initializer designating a member other than the first is refused, never answered: 14 programs (the tray-59 witness `{ .c = {1,2,3,4} }`, static and automatic designated elements, a designated struct member, mixed positional/designated lists, a nested union, an array of unions, a string literal, a scalar second member, the retired coverage control union3-003's shape `{ .c = 'A' }`, a compound literal, a union inside a struct) are refused by the oracle (uncaught `Failure`, exit 125) and by Lean (abort, exit 134) with byte-identical texts; 12 controls agree with the oracle (positional and first-member designated forms incl. `{ 9, .a = 2 }`, a first member that is an array or a partially designated struct, `{ 0 }` read as Unspecified, the anonymous-union-in-struct path, a union inside a struct positional or first-designated, member assignment) and the struct-from-struct-variable rejection is unchanged on both (contract D11, 2026-10-20; §3(c)); plants: a pre-fix answering pair, a Lean-only answering stub, a refuse-everything pair, a message-without-abort stub and an altered-text stub must all fail it |
 | `check_libc_float_literals.py --selftest` + check | every float literal of the pinned `tests/libc/libc.core` equals the reviewed register `scripts/libc_float_literals.txt`, as multisets, both directions; a 12-significant-digit literal may not be registered exact (named deviation N3); 8 plants |
 
 Certification-integrity rules ride the gates: validation of

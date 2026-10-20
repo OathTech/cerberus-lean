@@ -493,6 +493,25 @@ if ! "$ITEM_G_SH" --selftest; then
     exit 1
 fi
 
+# Union-initializer refusal witnesses (item U, 2026-10-20, [USER 2026-10-20]:
+# where upstream left a case to a TODO the fork leaves it or refuses loudly,
+# never answering silently wrong; for union initializers, refuse rather than
+# fix; record docs/2026-10-20_union-init-refusal-record.md): a braced union
+# initializer whose member designator names a member other than the first is
+# refused by the SHARED initializer desugarer (desugaring_init.lem moveTo_aux)
+# in BOTH engines with byte-identical texts (oracle uncaught Failure, exit
+# 125; Lean abort, exit 134); controls (positional and first-member forms, the
+# anonymous-union-in-struct path, a union inside a struct, assignment) agree
+# with the oracle; the struct-from-struct-variable rejection is unchanged.
+# --selftest: a pre-fix answering pair, a Lean-only answering stub, a
+# refuse-everything pair, a message-without-abort stub and an altered-text
+# stub must all fail.
+UNION_INIT_SH="$(dirname "$PURITY_SH")/check_union_init_refusals.sh"
+if ! "$UNION_INIT_SH" --selftest; then
+    echo "test_unit: union-initializer refusal witnesses FAILED"
+    exit 1
+fi
+
 # libc dump float-literal inventory (named deviation N3, VALIDATION.md §2b;
 # bug hunt BUG-5, [USER 2026-09-30] option (3)): the pinned libc.core's float
 # literals (printed with %.12g by the oracle's Core printer) must equal the
