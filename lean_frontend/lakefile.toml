@@ -236,6 +236,12 @@ moreLinkArgs = ["native/md5.o"]
 
 # Test library: tests live under lean_frontend/test/ and import from
 # the main CerberusLean lib. Each test exe has root "Unit.<Name>Test".
+# Make the existing driver module an explicit library dependency for the
+# independently compiled quotation test pipeline; the driver entry is unchanged.
+[[lean_lib]]
+name = "CoreQuoteDriver"
+roots = ["Main"]
+
 [[lean_lib]]
 name = "CerberusLeanTest"
 srcDir = "test"
@@ -397,3 +403,26 @@ moreLinkArgs = ["native/md5.o"]
 name = "memory-access-test"
 srcDir = "test"
 root = "Unit.MemoryAccess"
+
+[[lean_exe]]
+name = "core-quote-test"
+srcDir = "docs"
+root = "CoreQuoteRunner"
+moreLinkArgs = ["native/md5.o"]
+needs = ["CoreQuoteSupport:shared"]
+
+# This importable checker has no main. Give it its own native library instead
+# of linking the suite's many independent executable entry points together.
+[[lean_lib]]
+name = "CoreQuoteChecks"
+srcDir = "test"
+roots = ["Unit.CoreQuoteTest"]
+
+# Native test support for the same pipeline stages the driver executes. Loading
+# this library avoids interpreting million-element frontend traversals in #eval.
+# Literal elaboration and kernel replay do not load the test plugin.
+[[lean_lib]]
+name = "CoreQuoteSupport"
+srcDir = "docs"
+roots = ["CoreQuoteCompare"]
+libName = "CoreQuoteCompare"

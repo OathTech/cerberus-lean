@@ -618,7 +618,7 @@ def runtimeLibraryDirs (runtime : String) : List String :=
     foreign directory is refused (exit 2), not accepted by suffix alone. -/
 def refuseLibraryLocations (runtime : String) (source : String) (files : Array String) : IO Unit := do
   let refuse {α : Type} (detail : String) : IO α := do
-    IO.eprintln s!"cerberus-lean: refused — library-location classification: {source}: {detail} (see VALIDATION.md, bug hunt BUG-3 and Core quotation D2b)"
+    IO.eprintln s!"cerberus-lean: refused — library-location classification: {source}: {detail}. Canonical Core quotation convention: export metadata and run with --runtime=_build/install/default from the project root, or a directory with that fixed relative runtime link; preserve all stored labels (see VALIDATION.md, bug hunt BUG-3 and Core quotation D2b)"
     IO.Process.exit 2
   let exact ← try
       (runtimeLibraryDirs runtime).mapM (fun path => do return (← IO.FS.realPath (.mk path)).toString)

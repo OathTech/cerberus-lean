@@ -2,9 +2,10 @@
 # Run all Lean unit tests under lean_frontend/test/Unit/.
 # Each test is a [[lean_exe]] in lakefile.toml that exits 0 on pass.
 #
-# Usage: ./scripts/test_unit.sh [test-name]
+# Usage: ./scripts/test_unit.sh [test-name | --core-quote-libc]
 #   With no args, runs all tests.
 #   With a name, runs just that test (e.g. fresh-int-test).
+#   --core-quote-libc runs the separate Tier B quotation case.
 
 # Resolved before any cd (used by the exec-purity gate at the end).
 PURITY_SH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/check_exec_purity.sh"
@@ -58,6 +59,9 @@ UNIT_TESTS=(
     # PNVI arc S3 (2026-10-07): the PNVI-ae-udi arms' runtime witnesses (default-instance
     # controls beside them) + the compile-time R-PNVI-nn refusal pins. Arg: fuel.
     "pnvi-arms-test"
+    # Core quotation: whole-file fixture/corpus/multi-TU round trips and mutations.
+    # The standalone libc round trip has its own Tier B row.
+    "core-quote-test"
 )
 
 # ---------------------------------------------------------------------------
@@ -82,7 +86,15 @@ fi
 
 cd "$PROJECT_ROOT/lean_frontend"
 
-if [[ $# -gt 0 ]]; then
+core_quote_libc=0
+if [[ "${1:-}" == --core-quote-libc ]]; then
+    if [[ $# -ne 1 ]]; then
+        echo "test_unit: --core-quote-libc takes no further arguments" >&2
+        exit 2
+    fi
+    TESTS=("core-quote-test")
+    core_quote_libc=1
+elif [[ $# -gt 0 ]]; then
     TESTS=("$@")
 else
     TESTS=("${UNIT_TESTS[@]}")
@@ -107,6 +119,10 @@ for test in "${TESTS[@]}"; do
     if [[ "$test" == memory-access-test ]]; then test_args=(17 0 on); fi
     # PNVI arc S3: the suite fuel (no fuel numeral in test/Unit/PnviArmsTest.lean).
     if [[ "$test" == pnvi-arms-test ]]; then test_args=(17); fi
+    if [[ "$test" == core-quote-test ]]; then
+        test_args=(--fuel 1000000)
+        if [[ "$core_quote_libc" == 1 ]]; then test_args+=(--libc); fi
+    fi
     if "$bin" "${test_args[@]}"; then
         echo "${GREEN}✓ $test PASSED${NC}"
         total_pass=$((total_pass + 1))
@@ -121,6 +137,13 @@ echo "=========================================="
 echo "Total: $total_pass passed, $total_fail failed"
 if [[ $total_fail -gt 0 ]]; then
     exit 1
+fi
+
+# The standalone Tier B row owns just the libc quotation check. The ordinary
+# row-1 invocation below still runs every shared gate; do not duplicate that
+# full battery when the ladder reaches the separate libc row.
+if [[ "$core_quote_libc" == 1 ]]; then
+    exit 0
 fi
 
 # Purity gate for the execution slice (arc 2; ENFORCING since S2).

@@ -931,3 +931,238 @@ D3 wiring, the independent whole-file comparison and controls, the portable
 SHA-256 pin and libc kernel-replay measurement are not implemented. The
 operator's Tier B placement and consumer-module requirement are recorded
 above for resumption. Tier B close-out and the D4 boundary entry remain open.
+
+
+## D3 resumption: canonical invocation convention
+
+[AGENT 2026-10-19, orchestrator] D2b is accepted. The earlier determinism
+requirement is replaced by a convention-bound claim: metadata export and the
+Lean run use `_build/install/default` as the runtime prefix, from a directory
+where the stored relative paths resolve. No source-root parameter, parser change
+or position-label rewrite is part of this slice. F7 explains the relative-label
+requirement; F8 becomes the required negative control. The previous park is
+released on that basis.
+
+The revised controls require no absolute position paths in fixture or libc
+literals, a committed libc SHA-256 checked by the test, identical output through
+a project-root symlink alias, and an output-free convention-naming refusal from
+`lean_frontend/` with `../_build/...`. The required-input census, independent
+whole-file comparison, mutation controls and consumer-module interface remain
+in scope. The earlier operator ruling still places libc in its own Tier B row.
+
+[AGENT 2026-10-20] Generate the test's constructor visitor from Lean's datatype
+declarations, independently of the printer. Compare the resulting constructor
+and scalar trees exactly; inspect elaborated Fmap comparator expressions
+separately, without identifying constants by computation. This covers all 638
+model constructors, including annotations, container tags, cached heights and
+floating bits. The visitor traverses 172 instantiated types. Fmap's function
+argument alone belongs to the syntax check. A separate original-value census
+visits every required input, including the converted libc file.
+
+
+### F9 — required corpus array exceeded the default elaboration budget
+
+The first complete D3 run passed all ten committed Cabs fixtures and the first
+three corpus files, then failed while elaborating `p04_arr_sum.c`. Its
+`static int buf[ARENA]` has 1,048,576 entries. The quotation's global initializer
+contains `generic_pexpr_.PEctor ctor.Carray`; its list was emitted as one
+9,437,292-character expression with 1,048,576 references to the same quoted
+integer expression. The module was 10,056,898 bytes. Lean rejected it at the
+default 200,000-heartbeat limit (`isDefEq`), exit 1. A measured reproduction took
+20.52 seconds and 2,743,876 KB peak RSS. This is a failed required-input check,
+not a round-trip success. Neither the 48G cap nor the one-hour stop tripwire
+was approached; no elaboration limit was changed.
+
+[AGENT 2026-10-20] Keep short-list emission unchanged. For long lists, carry the
+element type and split literal `List.cons` chains into typed blocks, retaining
+all elements in order and terminating in the original nil. This addresses the
+observed elaboration failure without a list builder, representation change or
+limit increase. The independent test views lists as their length and ordered
+elements, a lossless flat representation, to avoid recursion proportional to
+the million-element list; its census still counts every cons and terminating
+nil. Maps and sets keep their recursive representation checks unchanged.
+
+
+The first typed-cons-block candidate elaborated the array literal successfully
+in 162.49 seconds. Its complete consumer check then failed with exit 134:
+Lean's interpreter exceeded its recursion stack in `ailErr_mapM`/`bind3`, while
+rebuilding the original through `frontendTU`, before representation comparison.
+The measured failed invocation took 175.49 seconds and peaked at 22,530,612 KB.
+Before further edits, tracked and untracked source state was preserved without
+changing the branch in `refs/snapshots/core-quote-d3-checker-crash-20261020`,
+commit `88bf20f5f8acabaa72142653e22a7ec2e0f13359`. This was an unverified
+recovery snapshot, not a deliverable or a passing gate.
+
+[AGENT 2026-10-20] Share identical long-list constructor blocks as private typed
+functions of their tail, and share the resulting closed tails as before. Each
+function body contains only the original `List.cons` applications and fixed
+quoted elements; the final tail is nil. This avoids repeating a million
+constructor applications in source while preserving their denoted list exactly.
+There is no append/from-list/replicate builder in the emitted module, no map or
+set reconstruction, and no changed limits. Add a varied 257-element list and
+its reversed-order negative control to check block boundaries and ordering.
+
+[AGENT 2026-10-20] Compile `CoreQuoteCompare` and its ordinary pipeline imports
+as a test support library, and load it only for the comparison/control stage.
+This lets the original-value computation use compiled Lean, as the driver does,
+instead of the interpreter's deep monadic call stack. Literal elaboration and
+`leanchecker` run without this plugin. It adds no native source, extern,
+implemented-by replacement, axiom or theorem, and does not change the model or
+its pipeline. No stack limit was increased.
+
+
+The final F9 focused consumer-mode run passes: the array literal is 712,296
+bytes, elaboration is 3.04 seconds (exit 0), and independent comparison is
+3.15 seconds (exit 0). The entire check, including symlink quotation and the
+wrong-cwd negative control, takes 9.51 seconds and peaks at 3,232,528 KB, exit 0.
+The census sees all 1,048,576 initializer entries. The varied long-list controls
+also pass. No limit was raised. The test support uses Lake's recorded library
+dependencies and the existing `native/md5.c` implementation compiled with shared
+library visibility; the driver's object hides those symbols. It introduces no
+new native implementation. Initial test-command parsing, plugin initialization
+and library-loading errors were development failures, corrected before this
+passing run.
+
+
+### D3 required population and consumer check
+
+The independent visitor covers the original D0 inventory: 638 model
+constructors, 75 model heads, six container heads and 172 instantiated types.
+The checker preserves every payload and constructor tag, comparing lists by a
+lossless flat sequence, maps/sets by their original trees and cached heights,
+and non-NaN floats by bits. A separate elaborated-expression check retains the
+fully instantiated S/O/L/I/N/E terms. It expands generated matchers and normalizes
+binder names only; comparator constants and instance dictionaries are never
+identified by computation. Generated whole-file BEq is an additional required
+check. The original is rebuilt from public pipeline stages, independently of
+the printer, using the driver's default switches, supply, link order and final
+conversion.
+
+The test executable accepts flag-generated modules: `--module PATH --input JSON`
+(repeated inputs in driver order) for user TUs, or `--libc --module PATH` for
+standalone converted libc. Its driver subprocesses always use the project root
+and `_build/install/default`. The consumer note supplies full commands. The
+27 user cases are row 1's twentieth executable; converted libc is the new named
+Tier B row 13. Existing lane membership and baselines are unchanged.
+
+Focused reproduction after `make lean-prelude-src` and a capped
+`lake build core-quote-test`, from the project root:
+
+```sh
+export LEAN_ABORT_ON_PANIC=1 CERB_MEM_MAX=48G
+./scripts/capped lean_frontend/.lake/build/bin/core-quote-test --fuel 1000000
+./scripts/capped lean_frontend/.lake/build/bin/core-quote-test --fuel 1000000 \
+  --libc --module .tmp/core-quote-d3/LibcCanonical.lean
+```
+
+The second command uses the canonical `--quote-libc` output, prepared using the
+consumer note's twelve-metadata-TU recipe. Both commands exit **0**. The first
+checks all ten committed Cabs fixtures, all sixteen corpus C files (including
+`p10alt_rsum_rec.c`) and the linked `tests/multi_tu/basic` helper reference.
+It takes 202.94 seconds and 10,498,784 KB peak RSS, including controls. Libc
+elaboration takes 145.48 seconds and comparison 4.66 seconds. Its complete
+consumer-mode check takes 158.25 seconds and 14,880,132 KB peak RSS. The earlier
+array consumer-mode check also passes, so both external-module modes are exercised.
+
+| Required population | Distinct model constructors | Floating leaves | NaNs | Memory values | Pos.mk | Absolute position paths |
+|---|---:|---:|---:|---:|---:|---:|
+| Fixtures/corpus/multi-TU (27) | 214 | 0 | 0 | 0 | 8,509,562 | 0 |
+| Converted libc (1) | 224 | 28 | 0 | 0 | 15,586 | 0 |
+| Combined (28) | 248 | 28 | 0 | 0 | 8,525,148 | 0 |
+
+Combined container counts: `Fmap.empty` 97; `Fmap.mk` 155;
+`Pmap.Empty` 5,861; `Pmap.Node` 5,706; `Pset.Empty` 40,734;
+`Pset.Node` 0; `List.cons` 15,140,824; `List.nil` 23,530,266.
+No required input is refused. Nonempty sets and memory values remain implemented
+although absent from this population. NaN is the only data-domain refusal;
+the separate negative control requires `globs.Float.NaN` by name.
+
+All required negative controls observe rejection: main, global initializer,
+map binding, cached height with the same inorder spine, both empty/mk-empty
+directions, signed zero, and the same comparator head with a different explicit
+instance. The height, outer-constructor and zero-sign controls also demonstrate
+that the weaker BEq accepts their mutation. Positive signed-zero and infinity
+controls pass, as do the added long-list/order controls. The absent alias key
+is found under the active symbol comparator and missed under the structural
+instance. The source-command comparator mutation exits 1 with the named mismatch.
+
+Both fixture and libc root-alias controls are byte-identical; both wrong-cwd
+controls exit 2, name the canonical convention and write nothing. Source and
+lexing position filenames are both included in the structural path census.
+The libc literal is 33,169,038 bytes and its initial committed D3 SHA-256 is
+`30bdb3f5db037b5a63a3deaa24cba27f289bd7841770d1e1ebff43699dcbfe06`.
+F9's typed-list-block formatting changes D2b's historical experimental hash
+`bab902b2a79f5cf836d7a7fcf6996feb5c185042f3905ec899bc2231c819ff3b`;
+that experiment was not a committed pin. No execution baseline was changed.
+The test checks the new pin and never updates it automatically.
+
+**Named kernel-replay gate:** `lake env leanchecker LibcLiteral`, with the
+scratch module directory on `LEAN_PATH`, independently elaborated and without
+the test plugin. GNU `time` reports **1.91 seconds wall time; 824,888 KB peak
+RSS; exit 0** (Lean 4.32.2, 2026-10-20). This replays the literal declarations
+against their imported environment, not a fresh replay of all dependencies.
+The consumer note carries the same measurement for replay-tier selection.
+No theorem, axiom, unsafe declaration, new extern, implemented-by replacement,
+warning suppression or kernel-check bypass was added. The test's partial visitor,
+comparison/census and syntax functions, and the printer's partial definitions,
+remain instrument code outside the exec cone; D4 will name them at the boundary.
+
+
+[AGENT 2026-10-20] The new `--core-quote-libc` selection returns after its
+successful executable check. Its initial focused invocation also reran the
+unit runner's general gates and passed, but that duplicates row 1's existing
+battery. Keep all shared gates on the ordinary row-1 path; the separate Tier B
+row owns the libc round trip, pin, convention controls and literal replay only.
+No pre-existing selection or gate changes behavior.
+
+The final independent visitor regeneration is byte-identical to the committed
+source block: 638 model constructors and 172 instantiated types. The final
+529-job build passes; no warning originates in the quotation or checker modules.
+The broader dependency warning backlog remains under F6's existing disposition.
+
+
+Final named Tier B row verification, after a fresh `make lean-prelude-src`:
+`./scripts/test_unit.sh --core-quote-libc`, **exit 0**, 159.15 seconds wall time,
+14,872,440 KB peak RSS. Its final summary is:
+
+```text
+Core quote round trip: PASS (whole-file representation, comparator syntax, auxiliary BEq)
+Total: 1 passed, 0 failed
+```
+
+This run regenerates and checks the pinned libc literal itself. Its elaboration
+is 142.67 seconds, comparison 4.82 seconds, and the separately measured
+`lake env leanchecker LibcLiteral` is **exit 0; 1.94 seconds wall time;
+825,068 KB peak RSS**. The consumer note uses this final row's measurement.
+The alias comparison passes; the wrong-cwd invocation exits 2 and writes
+nothing. The final census agrees with the external-module run above. This
+verifies the new row, not the complete Tier B close-out reserved for D4.
+
+
+### D3 Tier A and handoff
+
+After the final handwritten-copy synchronization, command:
+
+```sh
+CERB_MEM_MAX=48G ./scripts/capped python3 scripts/release.py --mode fast \
+  --out .tmp/core-quote-d3/tier-a
+```
+
+Run: **2026-10-20 01:01:15–01:23:54 UTC**, process exit **0**.
+Every one of the nineteen selected commands has exit status **0**. Exact summary:
+
+```text
+fast: passed; 19/19 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+Row 1 reports **20 passed, 0 failed**, including all 27 user-input round trips
+and their controls. The existing libc lane reports **43 matches, 0 differences**;
+libxml2 URI and every other existing lane retain their baselines. There are no
+artifact-inventory issues. Only this gate-result entry and the consumer note's
+status were finalized after the run; no implementation or test changed.
+Disposable literals, metadata, census output and logs are removed after the
+commit. D3 is complete at this worker boundary. D4's explicit instrument boundary
+entry and complete Tier B close-out remain open; this is not a full release or
+printer-correctness theorem claim.

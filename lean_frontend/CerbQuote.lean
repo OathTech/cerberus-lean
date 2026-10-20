@@ -21,6 +21,7 @@ inductive Term where
   | atom : String → Term
   | app : String → List Term → Term
   | list : List Term → Term
+  | consList : String → List Term → Term → Term
   | typed : String → Term → Term
   deriving Inhabited
 
@@ -46,8 +47,21 @@ def quoteFloat (f : Float) : Result :=
   else
     .ok (node "Float.ofBits" [.atom (toString f.toBits.toNat)])
 
-private def qList {α : Type} (q : α → Result) (xs : List α) : Result :=
-  return .list (← xs.mapM q)
+private def qList {α : Type} (elementType : String) (q : α → Result) (xs : List α) : Result := do
+  let values ← xs.mapM q
+  if values.length ≤ 256 then return .list values
+  -- Large array initializers can contain a million elements. Keep literal
+  -- List.cons/List.nil representation, but bound each elaboration unit. The
+  -- block constructor also keeps the intermediate quotation's depth bounded
+  -- by the number of blocks rather than the number of elements.
+  let values := values.toArray
+  let mut blocks : List (List Term) := []
+  for first in [:values.size:128] do
+    blocks := (values.extract first (first + 128)).toList :: blocks
+  let mut tail := Term.list []
+  for block in blocks do
+    tail := .typed ("(List " ++ elementType ++ ")") (.consList elementType block tail)
+  return tail
 private def qOption {α : Type} (q : α → Result) : Option α → Result
   | none => return node "Option.none" []
   | some x => return node "Option.some" [← q x]
@@ -154,7 +168,7 @@ private def q_CerbLocation_Loc : (CerbLocation.Loc) → Result
   | CerbLocation.Loc.other x0 => return typedNode "(CerbLocation.Loc)" "CerbLocation.Loc.other" [← qString x0]
   | CerbLocation.Loc.point x0 => return typedNode "(CerbLocation.Loc)" "CerbLocation.Loc.point" [← q_CerbLocation_Pos x0]
   | CerbLocation.Loc.region x0 x1 x2 => return typedNode "(CerbLocation.Loc)" "CerbLocation.Loc.region" [← q_CerbLocation_Pos x0, ← q_CerbLocation_Pos x1, ← q_CerbLocation_Cursor x2]
-  | CerbLocation.Loc.regions x0 x1 => return typedNode "(CerbLocation.Loc)" "CerbLocation.Loc.regions" [← (qList (qProd q_CerbLocation_Pos q_CerbLocation_Pos)) x0, ← q_CerbLocation_Cursor x1]
+  | CerbLocation.Loc.regions x0 x1 => return typedNode "(CerbLocation.Loc)" "CerbLocation.Loc.regions" [← (qList "(Prod (CerbLocation.Pos) (CerbLocation.Pos))" (qProd q_CerbLocation_Pos q_CerbLocation_Pos)) x0, ← q_CerbLocation_Cursor x1]
 
 private def q_CerbMem_FootprintAccess : (CerbMem.FootprintAccess) → Result
   | CerbMem.FootprintAccess.W => return typedNode "(CerbMem.FootprintAccess)" "CerbMem.FootprintAccess.W" []
@@ -176,10 +190,10 @@ private def q_identifier : (identifier) → Result
   | identifier.Identifier x0 x1 => return typedNode "(identifier)" "identifier.Identifier" [← q_CerbLocation_Loc x0, ← qString x1]
 
 private def q_attribute0 : (attribute0) → Result
-  | attribute0.mk x0 x1 x2 => return typedNode "(attribute0)" "attribute0.mk" [← (qOption q_identifier) x0, ← q_identifier x1, ← (qList (qProd q_CerbLocation_Loc (qProd qString (qList (qProd q_CerbLocation_Loc qString))))) x2]
+  | attribute0.mk x0 x1 x2 => return typedNode "(attribute0)" "attribute0.mk" [← (qOption q_identifier) x0, ← q_identifier x1, ← (qList "(Prod (CerbLocation.Loc) (Prod String (List (Prod (CerbLocation.Loc) String))))" (qProd q_CerbLocation_Loc (qProd qString (qList "(Prod (CerbLocation.Loc) String)" (qProd q_CerbLocation_Loc qString))))) x2]
 
 private def q_attributes : (attributes) → Result
-  | attributes.Attrs x0 => return typedNode "(attributes)" "attributes.Attrs" [← (qList q_attribute0) x0]
+  | attributes.Attrs x0 => return typedNode "(attributes)" "attributes.Attrs" [← (qList "(attribute0)" q_attribute0) x0]
 
 private def q_bmc_annot : (bmc_annot) → Result
   | bmc_annot.Abmc_id x0 => return typedNode "(bmc_annot)" "bmc_annot.Abmc_id" [← qNat x0]
@@ -271,13 +285,13 @@ private def q_qualifiers : (qualifiers) → Result
 
 mutual
 private partial def q_ctype : (ctype) → Result
-  | ctype.Ctype x0 x1 => return typedNode "(ctype)" "ctype.Ctype" [← (qList q_annot) x0, ← q_ctype_ x1]
+  | ctype.Ctype x0 x1 => return typedNode "(ctype)" "ctype.Ctype" [← (qList "(annot)" q_annot) x0, ← q_ctype_ x1]
 
 private partial def q_ctype_ : (ctype_) → Result
   | ctype_.Void0 => return typedNode "(ctype_)" "ctype_.Void0" []
   | ctype_.Basic x0 => return typedNode "(ctype_)" "ctype_.Basic" [← q_basicType x0]
   | ctype_.Array0 x0 x1 => return typedNode "(ctype_)" "ctype_.Array0" [← q_ctype x0, ← (qOption qInt) x1]
-  | ctype_.Function x0 x1 x2 => return typedNode "(ctype_)" "ctype_.Function" [← (qProd q_qualifiers q_ctype) x0, ← (qList (qProd q_qualifiers (qProd q_ctype qBool))) x1, ← qBool x2]
+  | ctype_.Function x0 x1 x2 => return typedNode "(ctype_)" "ctype_.Function" [← (qProd q_qualifiers q_ctype) x0, ← (qList "(Prod (qualifiers) (Prod (ctype) Bool))" (qProd q_qualifiers (qProd q_ctype qBool))) x1, ← qBool x2]
   | ctype_.FunctionNoParams x0 => return typedNode "(ctype_)" "ctype_.FunctionNoParams" [← (qProd q_qualifiers q_ctype) x0]
   | ctype_.Pointer x0 x1 => return typedNode "(ctype_)" "ctype_.Pointer" [← q_qualifiers x0, ← q_ctype x1]
   | ctype_.Atomic x0 => return typedNode "(ctype_)" "ctype_.Atomic" [← q_ctype x0]
@@ -300,8 +314,8 @@ private partial def q_CerbMem_MemValue : (CerbMem.MemValue) → Result
   | CerbMem.MemValue.MVinteger x0 x1 => return typedNode "(CerbMem.MemValue)" "CerbMem.MemValue.MVinteger" [← q_integerType x0, ← q_CerbMem_IntegerValue x1]
   | CerbMem.MemValue.MVfloating x0 x1 => return typedNode "(CerbMem.MemValue)" "CerbMem.MemValue.MVfloating" [← q_floatingType x0, ← quoteFloat x1]
   | CerbMem.MemValue.MVpointer x0 x1 => return typedNode "(CerbMem.MemValue)" "CerbMem.MemValue.MVpointer" [← q_ctype x0, ← q_CerbMem_PointerValue x1]
-  | CerbMem.MemValue.MVarray x0 => return typedNode "(CerbMem.MemValue)" "CerbMem.MemValue.MVarray" [← (qList q_CerbMem_MemValue) x0]
-  | CerbMem.MemValue.MVstruct x0 x1 => return typedNode "(CerbMem.MemValue)" "CerbMem.MemValue.MVstruct" [← q_sym x0, ← (qList (qProd q_identifier (qProd q_ctype q_CerbMem_MemValue))) x1]
+  | CerbMem.MemValue.MVarray x0 => return typedNode "(CerbMem.MemValue)" "CerbMem.MemValue.MVarray" [← (qList "(CerbMem.MemValue)" q_CerbMem_MemValue) x0]
+  | CerbMem.MemValue.MVstruct x0 x1 => return typedNode "(CerbMem.MemValue)" "CerbMem.MemValue.MVstruct" [← q_sym x0, ← (qList "(Prod (identifier) (Prod (ctype) (CerbMem.MemValue)))" (qProd q_identifier (qProd q_ctype q_CerbMem_MemValue))) x1]
   | CerbMem.MemValue.MVunion x0 x1 x2 => return typedNode "(CerbMem.MemValue)" "CerbMem.MemValue.MVunion" [← q_sym x0, ← q_identifier x1, ← q_CerbMem_MemValue x2]
 
 private def q_alignment : (alignment) → Result
@@ -365,7 +379,7 @@ private partial def q_core_base_type : (core_base_type) → Result
   | core_base_type.BTy_boolean => return typedNode "(core_base_type)" "core_base_type.BTy_boolean" []
   | core_base_type.BTy_ctype => return typedNode "(core_base_type)" "core_base_type.BTy_ctype" []
   | core_base_type.BTy_list x0 => return typedNode "(core_base_type)" "core_base_type.BTy_list" [← q_core_base_type x0]
-  | core_base_type.BTy_tuple x0 => return typedNode "(core_base_type)" "core_base_type.BTy_tuple" [← (qList q_core_base_type) x0]
+  | core_base_type.BTy_tuple x0 => return typedNode "(core_base_type)" "core_base_type.BTy_tuple" [← (qList "(core_base_type)" q_core_base_type) x0]
   | core_base_type.BTy_object x0 => return typedNode "(core_base_type)" "core_base_type.BTy_object" [← q_core_object_type x0]
   | core_base_type.BTy_loaded x0 => return typedNode "(core_base_type)" "core_base_type.BTy_loaded" [← q_core_object_type x0]
   | core_base_type.BTy_storable => return typedNode "(core_base_type)" "core_base_type.BTy_storable" []
@@ -406,8 +420,8 @@ private def q_derivecap_op : (derivecap_op) → Result
   | derivecap_op.DCbinary x0 => return typedNode "(derivecap_op)" "derivecap_op.DCbinary" [← q_binaryOperator x0]
 
 private def q_dyn_annotation : (dyn_annotation) → Result
-  | dyn_annotation.DA_neg x0 x1 x2 => return typedNode "(dyn_annotation)" "dyn_annotation.DA_neg" [← qNat x0, ← (qList qNat) x1, ← q_CerbMem_Footprint x2]
-  | dyn_annotation.DA_pos x0 x1 => return typedNode "(dyn_annotation)" "dyn_annotation.DA_pos" [← (qList qNat) x0, ← q_CerbMem_Footprint x1]
+  | dyn_annotation.DA_neg x0 x1 x2 => return typedNode "(dyn_annotation)" "dyn_annotation.DA_neg" [← qNat x0, ← (qList "Nat" qNat) x1, ← q_CerbMem_Footprint x2]
+  | dyn_annotation.DA_pos x0 x1 => return typedNode "(dyn_annotation)" "dyn_annotation.DA_pos" [← (qList "Nat" qNat) x0, ← q_CerbMem_Footprint x1]
 
 private def q_flexible_array_member : (flexible_array_member) → Result
   | flexible_array_member.FlexibleArrayMember x0 x1 x2 x3 => return typedNode "(flexible_array_member)" "flexible_array_member.FlexibleArrayMember" [← q_attributes x0, ← q_identifier x1, ← q_qualifiers x2, ← q_ctype x3]
@@ -448,11 +462,11 @@ private def q_generic_name : (generic_name (sym)) → Result
 
 mutual
 private partial def q_generic_pattern : (generic_pattern (sym)) → Result
-  | generic_pattern.Pattern x0 x1 => return typedNode "(generic_pattern (sym))" "generic_pattern.Pattern" [← (qList q_annot) x0, ← q_generic_pattern_ x1]
+  | generic_pattern.Pattern x0 x1 => return typedNode "(generic_pattern (sym))" "generic_pattern.Pattern" [← (qList "(annot)" q_annot) x0, ← q_generic_pattern_ x1]
 
 private partial def q_generic_pattern_ : (generic_pattern_ (sym)) → Result
   | generic_pattern_.CaseBase x0 => return typedNode "(generic_pattern_ (sym))" "generic_pattern_.CaseBase" [← (qProd (qOption q_sym) q_core_base_type) x0]
-  | generic_pattern_.CaseCtor x0 x1 => return typedNode "(generic_pattern_ (sym))" "generic_pattern_.CaseCtor" [← q_ctor x0, ← (qList q_generic_pattern) x1]
+  | generic_pattern_.CaseCtor x0 x1 => return typedNode "(generic_pattern_ (sym))" "generic_pattern_.CaseCtor" [← q_ctor x0, ← (qList "(generic_pattern (sym))" q_generic_pattern) x1]
 
 end
 
@@ -472,7 +486,7 @@ private partial def q_mem_constraint : (mem_constraint (CerbMem.IntegerValue)) �
   | mem_constraint.MC_lt x0 x1 => return typedNode "(mem_constraint (CerbMem.IntegerValue))" "mem_constraint.MC_lt" [← q_CerbMem_IntegerValue x0, ← q_CerbMem_IntegerValue x1]
   | mem_constraint.MC_in_device x0 => return typedNode "(mem_constraint (CerbMem.IntegerValue))" "mem_constraint.MC_in_device" [← q_CerbMem_IntegerValue x0]
   | mem_constraint.MC_or x0 x1 => return typedNode "(mem_constraint (CerbMem.IntegerValue))" "mem_constraint.MC_or" [← q_mem_constraint x0, ← q_mem_constraint x1]
-  | mem_constraint.MC_conj x0 => return typedNode "(mem_constraint (CerbMem.IntegerValue))" "mem_constraint.MC_conj" [← (qList q_mem_constraint) x0]
+  | mem_constraint.MC_conj x0 => return typedNode "(mem_constraint (CerbMem.IntegerValue))" "mem_constraint.MC_conj" [← (qList "(mem_constraint (CerbMem.IntegerValue))" q_mem_constraint) x0]
   | mem_constraint.MC_not x0 => return typedNode "(mem_constraint (CerbMem.IntegerValue))" "mem_constraint.MC_not" [← q_mem_constraint x0]
 
 private def q_pure_memop : (pure_memop) → Result
@@ -746,8 +760,8 @@ private partial def q_object_value : (object_value) → Result
   | object_value.OVinteger x0 => return typedNode "(object_value)" "object_value.OVinteger" [← q_CerbMem_IntegerValue x0]
   | object_value.OVfloating x0 => return typedNode "(object_value)" "object_value.OVfloating" [← quoteFloat x0]
   | object_value.OVpointer x0 => return typedNode "(object_value)" "object_value.OVpointer" [← q_CerbMem_PointerValue x0]
-  | object_value.OVarray x0 => return typedNode "(object_value)" "object_value.OVarray" [← (qList q_loaded_value) x0]
-  | object_value.OVstruct x0 x1 => return typedNode "(object_value)" "object_value.OVstruct" [← q_sym x0, ← (qList (qProd q_identifier (qProd q_ctype q_CerbMem_MemValue))) x1]
+  | object_value.OVarray x0 => return typedNode "(object_value)" "object_value.OVarray" [← (qList "(loaded_value)" q_loaded_value) x0]
+  | object_value.OVstruct x0 x1 => return typedNode "(object_value)" "object_value.OVstruct" [← q_sym x0, ← (qList "(Prod (identifier) (Prod (ctype) (CerbMem.MemValue)))" (qProd q_identifier (qProd q_ctype q_CerbMem_MemValue))) x1]
   | object_value.OVunion x0 x1 x2 => return typedNode "(object_value)" "object_value.OVunion" [← q_sym x0, ← q_identifier x1, ← q_CerbMem_MemValue x2]
 
 end
@@ -759,35 +773,35 @@ private partial def q_value : (value) → Result
   | value.Vtrue => return typedNode "(value)" "value.Vtrue" []
   | value.Vfalse => return typedNode "(value)" "value.Vfalse" []
   | value.Vctype x0 => return typedNode "(value)" "value.Vctype" [← q_ctype x0]
-  | value.Vlist x0 x1 => return typedNode "(value)" "value.Vlist" [← q_core_base_type x0, ← (qList q_value) x1]
-  | value.Vtuple x0 => return typedNode "(value)" "value.Vtuple" [← (qList q_value) x0]
+  | value.Vlist x0 x1 => return typedNode "(value)" "value.Vlist" [← q_core_base_type x0, ← (qList "(value)" q_value) x1]
+  | value.Vtuple x0 => return typedNode "(value)" "value.Vtuple" [← (qList "(value)" q_value) x0]
 
 mutual
 private partial def q_generic_pexpr : (generic_pexpr (PUnit) (sym)) → Result
-  | generic_pexpr.Pexpr x0 x1 x2 => return typedNode "(generic_pexpr (PUnit) (sym))" "generic_pexpr.Pexpr" [← (qList q_annot) x0, ← qUnit x1, ← q_generic_pexpr_ x2]
+  | generic_pexpr.Pexpr x0 x1 x2 => return typedNode "(generic_pexpr (PUnit) (sym))" "generic_pexpr.Pexpr" [← (qList "(annot)" q_annot) x0, ← qUnit x1, ← q_generic_pexpr_ x2]
 
 private partial def q_generic_pexpr_ : (generic_pexpr_ (PUnit) (sym)) → Result
   | generic_pexpr_.PEsym x0 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEsym" [← q_sym x0]
   | generic_pexpr_.PEimpl x0 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEimpl" [← q_implementation_constant x0]
   | generic_pexpr_.PEval x0 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEval" [← q_value x0]
-  | generic_pexpr_.PEconstrained x0 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEconstrained" [← (qList (qProd q_mem_constraint q_generic_pexpr)) x0]
+  | generic_pexpr_.PEconstrained x0 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEconstrained" [← (qList "(Prod (mem_constraint (CerbMem.IntegerValue)) (generic_pexpr (PUnit) (sym)))" (qProd q_mem_constraint q_generic_pexpr)) x0]
   | generic_pexpr_.PEundef x0 x1 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEundef" [← q_CerbLocation_Loc x0, ← q_undefined_behaviour x1]
   | generic_pexpr_.PEerror x0 x1 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEerror" [← qString x0, ← q_generic_pexpr x1]
-  | generic_pexpr_.PEctor x0 x1 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEctor" [← q_ctor x0, ← (qList q_generic_pexpr) x1]
-  | generic_pexpr_.PEcase x0 x1 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEcase" [← q_generic_pexpr x0, ← (qList (qProd q_generic_pattern q_generic_pexpr)) x1]
+  | generic_pexpr_.PEctor x0 x1 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEctor" [← q_ctor x0, ← (qList "(generic_pexpr (PUnit) (sym))" q_generic_pexpr) x1]
+  | generic_pexpr_.PEcase x0 x1 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEcase" [← q_generic_pexpr x0, ← (qList "(Prod (generic_pattern (sym)) (generic_pexpr (PUnit) (sym)))" (qProd q_generic_pattern q_generic_pexpr)) x1]
   | generic_pexpr_.PEarray_shift x0 x1 x2 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEarray_shift" [← q_generic_pexpr x0, ← q_ctype x1, ← q_generic_pexpr x2]
   | generic_pexpr_.PEmember_shift x0 x1 x2 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEmember_shift" [← q_generic_pexpr x0, ← q_sym x1, ← q_identifier x2]
-  | generic_pexpr_.PEmemop x0 x1 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEmemop" [← q_pure_memop x0, ← (qList q_generic_pexpr) x1]
+  | generic_pexpr_.PEmemop x0 x1 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEmemop" [← q_pure_memop x0, ← (qList "(generic_pexpr (PUnit) (sym))" q_generic_pexpr) x1]
   | generic_pexpr_.PEnot x0 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEnot" [← q_generic_pexpr x0]
   | generic_pexpr_.PEop x0 x1 x2 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEop" [← q_binop x0, ← q_generic_pexpr x1, ← q_generic_pexpr x2]
   | generic_pexpr_.PEconv_int x0 x1 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEconv_int" [← q_integerType x0, ← q_generic_pexpr x1]
   | generic_pexpr_.PEwrapI x0 x1 x2 x3 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEwrapI" [← q_integerType x0, ← q_iop x1, ← q_generic_pexpr x2, ← q_generic_pexpr x3]
   | generic_pexpr_.PEcatch_exceptional_condition x0 x1 x2 x3 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEcatch_exceptional_condition" [← q_integerType x0, ← q_iop x1, ← q_generic_pexpr x2, ← q_generic_pexpr x3]
-  | generic_pexpr_.PEstruct x0 x1 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEstruct" [← q_sym x0, ← (qList (qProd q_identifier q_generic_pexpr)) x1]
+  | generic_pexpr_.PEstruct x0 x1 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEstruct" [← q_sym x0, ← (qList "(Prod (identifier) (generic_pexpr (PUnit) (sym)))" (qProd q_identifier q_generic_pexpr)) x1]
   | generic_pexpr_.PEunion x0 x1 x2 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEunion" [← q_sym x0, ← q_identifier x1, ← q_generic_pexpr x2]
   | generic_pexpr_.PEcfunction x0 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEcfunction" [← q_generic_pexpr x0]
   | generic_pexpr_.PEmemberof x0 x1 x2 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEmemberof" [← q_sym x0, ← q_identifier x1, ← q_generic_pexpr x2]
-  | generic_pexpr_.PEcall x0 x1 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEcall" [← q_generic_name x0, ← (qList q_generic_pexpr) x1]
+  | generic_pexpr_.PEcall x0 x1 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEcall" [← q_generic_name x0, ← (qList "(generic_pexpr (PUnit) (sym))" q_generic_pexpr) x1]
   | generic_pexpr_.PElet x0 x1 x2 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PElet" [← q_generic_pattern x0, ← q_generic_pexpr x1, ← q_generic_pexpr x2]
   | generic_pexpr_.PEif x0 x1 x2 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEif" [← q_generic_pexpr x0, ← q_generic_pexpr x1, ← q_generic_pexpr x2]
   | generic_pexpr_.PEis_scalar x0 => return typedNode "(generic_pexpr_ (PUnit) (sym))" "generic_pexpr_.PEis_scalar" [← q_generic_pexpr x0]
@@ -825,7 +839,7 @@ private def q_memory_order : (memory_order) → Result
   | memory_order.Acq_rel => return typedNode "(memory_order)" "memory_order.Acq_rel" []
 
 private def q_prefix0 : (prefix0) → Result
-  | prefix0.PrefSource x0 x1 => return typedNode "(prefix0)" "prefix0.PrefSource" [← q_CerbLocation_Loc x0, ← (qList q_sym) x1]
+  | prefix0.PrefSource x0 x1 => return typedNode "(prefix0)" "prefix0.PrefSource" [← q_CerbLocation_Loc x0, ← (qList "(sym)" q_sym) x1]
   | prefix0.PrefFunArg x0 x1 x2 => return typedNode "(prefix0)" "prefix0.PrefFunArg" [← q_CerbLocation_Loc x0, ← qString x1, ← qInt x2]
   | prefix0.PrefStringLiteral x0 x1 => return typedNode "(prefix0)" "prefix0.PrefStringLiteral" [← q_CerbLocation_Loc x0, ← qString x1]
   | prefix0.PrefCompoundLiteral x0 x1 => return typedNode "(prefix0)" "prefix0.PrefCompoundLiteral" [← q_CerbLocation_Loc x0, ← qString x1]
@@ -875,7 +889,7 @@ private def q_generic_memop : (generic_memop (sym)) → Result
   | generic_memop.Va_arg => return typedNode "(generic_memop (sym))" "generic_memop.Va_arg" []
   | generic_memop.Va_end => return typedNode "(generic_memop (sym))" "generic_memop.Va_end" []
   | generic_memop.Copy_alloc_id => return typedNode "(generic_memop (sym))" "generic_memop.Copy_alloc_id" []
-  | generic_memop.CHERI_intrinsic x0 x1 => return typedNode "(generic_memop (sym))" "generic_memop.CHERI_intrinsic" [← qString x0, ← (qProd q_ctype (qList q_ctype)) x1]
+  | generic_memop.CHERI_intrinsic x0 x1 => return typedNode "(generic_memop (sym))" "generic_memop.CHERI_intrinsic" [← qString x0, ← (qProd q_ctype (qList "(ctype)" q_ctype)) x1]
 
 private def q_polarity : (polarity) → Result
   | polarity.Pos => return typedNode "(polarity)" "polarity.Pos" []
@@ -890,36 +904,36 @@ private def q_pass_by_value_or_pointer : (pass_by_value_or_pointer) → Result
 
 mutual
 private partial def q_generic_expr : (generic_expr (core_run_annotation) (PUnit) (sym)) → Result
-  | generic_expr.Expr x0 x1 => return typedNode "(generic_expr (core_run_annotation) (PUnit) (sym))" "generic_expr.Expr" [← (qList q_annot) x0, ← q_generic_expr_ x1]
+  | generic_expr.Expr x0 x1 => return typedNode "(generic_expr (core_run_annotation) (PUnit) (sym))" "generic_expr.Expr" [← (qList "(annot)" q_annot) x0, ← q_generic_expr_ x1]
 
 private partial def q_generic_expr_ : (generic_expr_ (core_run_annotation) (PUnit) (sym)) → Result
   | generic_expr_.Epure x0 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Epure" [← q_generic_pexpr x0]
-  | generic_expr_.Ememop x0 x1 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Ememop" [← q_generic_memop x0, ← (qList q_generic_pexpr) x1]
+  | generic_expr_.Ememop x0 x1 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Ememop" [← q_generic_memop x0, ← (qList "(generic_pexpr (PUnit) (sym))" q_generic_pexpr) x1]
   | generic_expr_.Eaction x0 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Eaction" [← q_generic_paction x0]
-  | generic_expr_.Ecase x0 x1 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Ecase" [← q_generic_pexpr x0, ← (qList (qProd q_generic_pattern q_generic_expr)) x1]
+  | generic_expr_.Ecase x0 x1 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Ecase" [← q_generic_pexpr x0, ← (qList "(Prod (generic_pattern (sym)) (generic_expr (core_run_annotation) (PUnit) (sym)))" (qProd q_generic_pattern q_generic_expr)) x1]
   | generic_expr_.Elet x0 x1 x2 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Elet" [← q_generic_pattern x0, ← q_generic_pexpr x1, ← q_generic_expr x2]
   | generic_expr_.Eif x0 x1 x2 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Eif" [← q_generic_pexpr x0, ← q_generic_expr x1, ← q_generic_expr x2]
-  | generic_expr_.Eccall x0 x1 x2 x3 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Eccall" [← q_core_run_annotation x0, ← q_generic_pexpr x1, ← q_generic_pexpr x2, ← (qList q_generic_pexpr) x3]
-  | generic_expr_.Eproc x0 x1 x2 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Eproc" [← q_core_run_annotation x0, ← q_generic_name x1, ← (qList q_generic_pexpr) x2]
-  | generic_expr_.Eunseq x0 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Eunseq" [← (qList q_generic_expr) x0]
+  | generic_expr_.Eccall x0 x1 x2 x3 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Eccall" [← q_core_run_annotation x0, ← q_generic_pexpr x1, ← q_generic_pexpr x2, ← (qList "(generic_pexpr (PUnit) (sym))" q_generic_pexpr) x3]
+  | generic_expr_.Eproc x0 x1 x2 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Eproc" [← q_core_run_annotation x0, ← q_generic_name x1, ← (qList "(generic_pexpr (PUnit) (sym))" q_generic_pexpr) x2]
+  | generic_expr_.Eunseq x0 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Eunseq" [← (qList "(generic_expr (core_run_annotation) (PUnit) (sym))" q_generic_expr) x0]
   | generic_expr_.Ewseq x0 x1 x2 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Ewseq" [← q_generic_pattern x0, ← q_generic_expr x1, ← q_generic_expr x2]
   | generic_expr_.Esseq x0 x1 x2 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Esseq" [← q_generic_pattern x0, ← q_generic_expr x1, ← q_generic_expr x2]
   | generic_expr_.Ebound x0 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Ebound" [← q_generic_expr x0]
-  | generic_expr_.End x0 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.End" [← (qList q_generic_expr) x0]
-  | generic_expr_.Esave x0 x1 x2 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Esave" [← (qProd q_sym q_core_base_type) x0, ← (qList (qProd q_sym (qProd (qProd q_core_base_type (qOption (qProd q_ctype q_pass_by_value_or_pointer))) q_generic_pexpr))) x1, ← q_generic_expr x2]
-  | generic_expr_.Erun x0 x1 x2 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Erun" [← q_core_run_annotation x0, ← q_sym x1, ← (qList q_generic_pexpr) x2]
-  | generic_expr_.Epar x0 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Epar" [← (qList q_generic_expr) x0]
+  | generic_expr_.End x0 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.End" [← (qList "(generic_expr (core_run_annotation) (PUnit) (sym))" q_generic_expr) x0]
+  | generic_expr_.Esave x0 x1 x2 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Esave" [← (qProd q_sym q_core_base_type) x0, ← (qList "(Prod (sym) (Prod (Prod (core_base_type) (Option (Prod (ctype) (pass_by_value_or_pointer)))) (generic_pexpr (PUnit) (sym))))" (qProd q_sym (qProd (qProd q_core_base_type (qOption (qProd q_ctype q_pass_by_value_or_pointer))) q_generic_pexpr))) x1, ← q_generic_expr x2]
+  | generic_expr_.Erun x0 x1 x2 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Erun" [← q_core_run_annotation x0, ← q_sym x1, ← (qList "(generic_pexpr (PUnit) (sym))" q_generic_pexpr) x2]
+  | generic_expr_.Epar x0 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Epar" [← (qList "(generic_expr (core_run_annotation) (PUnit) (sym))" q_generic_expr) x0]
   | generic_expr_.Ewait x0 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Ewait" [← qNat x0]
-  | generic_expr_.Eannot x0 x1 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Eannot" [← (qList q_dyn_annotation) x0, ← q_generic_expr x1]
+  | generic_expr_.Eannot x0 x1 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Eannot" [← (qList "(dyn_annotation)" q_dyn_annotation) x0, ← q_generic_expr x1]
   | generic_expr_.Eexcluded x0 x1 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Eexcluded" [← qNat x0, ← q_generic_action x1]
 
 end
 
 private def q_generic_fun_map_decl : (generic_fun_map_decl (PUnit) (core_run_annotation)) → Result
-  | generic_fun_map_decl.Fun x0 x1 x2 => return typedNode "(generic_fun_map_decl (PUnit) (core_run_annotation))" "generic_fun_map_decl.Fun" [← q_core_base_type x0, ← (qList (qProd q_sym q_core_base_type)) x1, ← q_generic_pexpr x2]
-  | generic_fun_map_decl.Proc x0 x1 x2 x3 x4 => return typedNode "(generic_fun_map_decl (PUnit) (core_run_annotation))" "generic_fun_map_decl.Proc" [← q_CerbLocation_Loc x0, ← (qOption qNat) x1, ← q_core_base_type x2, ← (qList (qProd q_sym q_core_base_type)) x3, ← q_generic_expr x4]
-  | generic_fun_map_decl.ProcDecl x0 x1 x2 => return typedNode "(generic_fun_map_decl (PUnit) (core_run_annotation))" "generic_fun_map_decl.ProcDecl" [← q_CerbLocation_Loc x0, ← q_core_base_type x1, ← (qList q_core_base_type) x2]
-  | generic_fun_map_decl.BuiltinDecl x0 x1 x2 => return typedNode "(generic_fun_map_decl (PUnit) (core_run_annotation))" "generic_fun_map_decl.BuiltinDecl" [← q_CerbLocation_Loc x0, ← q_core_base_type x1, ← (qList q_core_base_type) x2]
+  | generic_fun_map_decl.Fun x0 x1 x2 => return typedNode "(generic_fun_map_decl (PUnit) (core_run_annotation))" "generic_fun_map_decl.Fun" [← q_core_base_type x0, ← (qList "(Prod (sym) (core_base_type))" (qProd q_sym q_core_base_type)) x1, ← q_generic_pexpr x2]
+  | generic_fun_map_decl.Proc x0 x1 x2 x3 x4 => return typedNode "(generic_fun_map_decl (PUnit) (core_run_annotation))" "generic_fun_map_decl.Proc" [← q_CerbLocation_Loc x0, ← (qOption qNat) x1, ← q_core_base_type x2, ← (qList "(Prod (sym) (core_base_type))" (qProd q_sym q_core_base_type)) x3, ← q_generic_expr x4]
+  | generic_fun_map_decl.ProcDecl x0 x1 x2 => return typedNode "(generic_fun_map_decl (PUnit) (core_run_annotation))" "generic_fun_map_decl.ProcDecl" [← q_CerbLocation_Loc x0, ← q_core_base_type x1, ← (qList "(core_base_type)" q_core_base_type) x2]
+  | generic_fun_map_decl.BuiltinDecl x0 x1 x2 => return typedNode "(generic_fun_map_decl (PUnit) (core_run_annotation))" "generic_fun_map_decl.BuiltinDecl" [← q_CerbLocation_Loc x0, ← q_core_base_type x1, ← (qList "(core_base_type)" q_core_base_type) x2]
 
 private def q_generic_globs : (generic_globs (core_run_annotation) (PUnit)) → Result
   | generic_globs.GlobalDef x0 x1 => return typedNode "(generic_globs (core_run_annotation) (PUnit))" "generic_globs.GlobalDef" [← (qProd q_core_base_type q_ctype) x0, ← q_generic_expr x1]
@@ -927,7 +941,7 @@ private def q_generic_globs : (generic_globs (core_run_annotation) (PUnit)) → 
 
 private def q_generic_impl_decl : (generic_impl_decl (PUnit)) → Result
   | generic_impl_decl.Def x0 x1 => return typedNode "(generic_impl_decl (PUnit))" "generic_impl_decl.Def" [← q_core_base_type x0, ← q_generic_pexpr x1]
-  | generic_impl_decl.IFun x0 x1 x2 => return typedNode "(generic_impl_decl (PUnit))" "generic_impl_decl.IFun" [← q_core_base_type x0, ← (qList (qProd q_sym q_core_base_type)) x1, ← q_generic_pexpr x2]
+  | generic_impl_decl.IFun x0 x1 x2 => return typedNode "(generic_impl_decl (PUnit))" "generic_impl_decl.IFun" [← q_core_base_type x0, ← (qList "(Prod (sym) (core_base_type))" (qProd q_sym q_core_base_type)) x1, ← q_generic_pexpr x2]
 
 private def q_linking_kind : (linking_kind) → Result
   | linking_kind.LK_none => return typedNode "(linking_kind)" "linking_kind.LK_none" []
@@ -938,8 +952,8 @@ private def q_loop_attribute : (loop_attribute) → Result
   | loop_attribute.mk x0 x1 x2 x3 => return typedNode "(loop_attribute)" "loop_attribute.mk" [← qNat x0, ← q_attributes x1, ← q_CerbLocation_Loc x2, ← q_CerbLocation_Loc x3]
 
 private def q_tag_definition : (tag_definition) → Result
-  | tag_definition.StructDef x0 x1 => return typedNode "(tag_definition)" "tag_definition.StructDef" [← (qList (qProd q_identifier (qProd q_attributes (qProd (qOption q_alignment) (qProd q_qualifiers q_ctype))))) x0, ← (qOption q_flexible_array_member) x1]
-  | tag_definition.UnionDef x0 => return typedNode "(tag_definition)" "tag_definition.UnionDef" [← (qList (qProd q_identifier (qProd q_attributes (qProd (qOption q_alignment) (qProd q_qualifiers q_ctype))))) x0]
+  | tag_definition.StructDef x0 x1 => return typedNode "(tag_definition)" "tag_definition.StructDef" [← (qList "(Prod (identifier) (Prod (attributes) (Prod (Option (alignment)) (Prod (qualifiers) (ctype)))))" (qProd q_identifier (qProd q_attributes (qProd (qOption q_alignment) (qProd q_qualifiers q_ctype))))) x0, ← (qOption q_flexible_array_member) x1]
+  | tag_definition.UnionDef x0 => return typedNode "(tag_definition)" "tag_definition.UnionDef" [← (qList "(Prod (identifier) (Prod (attributes) (Prod (Option (alignment)) (Prod (qualifiers) (ctype)))))" (qProd q_identifier (qProd q_attributes (qProd (qOption q_alignment) (qProd q_qualifiers q_ctype))))) x0]
 
 private def inField (field : String) (r : Result) : Result :=
   r.mapError fun e => { e with construct := field ++ "." ++ e.construct }
@@ -954,12 +968,12 @@ def quoteFile (p : Provenance) : file core_run_annotation → Result
     let enumDefs ← inField "enumDefs" (qFmap "(sym)" "(integerType)" [.S] p.enumDefs q_sym q_integerType enumDefs)
     let stdlib ← inField "stdlib" (qFmap "(sym)" "(generic_fun_map_decl (PUnit) (core_run_annotation))" [.S] p.stdlib q_sym q_generic_fun_map_decl stdlib)
     let impl0 ← inField "impl0" (qFmap "(implementation_constant)" "(generic_impl_decl (PUnit))" [.I] p.impl0 q_implementation_constant q_generic_impl_decl impl0)
-    let globs ← inField "globs" ((qList (qProd q_sym q_generic_globs)) globs)
+    let globs ← inField "globs" ((qList "(Prod (sym) (generic_globs (core_run_annotation) (PUnit)))" (qProd q_sym q_generic_globs)) globs)
     let funs ← inField "funs" (qFmap "(sym)" "(generic_fun_map_decl (PUnit) (core_run_annotation))" [.O, .L] p.funs q_sym q_generic_fun_map_decl funs)
-    let extern ← inField "extern" (qFmap "(identifier)" "(Prod (List (sym)) (linking_kind))" [.E] p.extern q_identifier (qProd (qList q_sym) q_linking_kind) extern)
-    let funinfo ← inField "funinfo" (qFmap "(sym)" "(Prod (CerbLocation.Loc) (Prod (attributes) (Prod (ctype) (Prod (List (Prod (Option (sym)) (ctype))) (Prod (Bool) (Bool))))))" [.O, .L] p.funinfo q_sym (qProd q_CerbLocation_Loc (qProd q_attributes (qProd q_ctype (qProd (qList (qProd (qOption q_sym) q_ctype)) (qProd qBool qBool))))) funinfo)
+    let extern ← inField "extern" (qFmap "(identifier)" "(Prod (List (sym)) (linking_kind))" [.E] p.extern q_identifier (qProd (qList "(sym)" q_sym) q_linking_kind) extern)
+    let funinfo ← inField "funinfo" (qFmap "(sym)" "(Prod (CerbLocation.Loc) (Prod (attributes) (Prod (ctype) (Prod (List (Prod (Option (sym)) (ctype))) (Prod (Bool) (Bool))))))" [.O, .L] p.funinfo q_sym (qProd q_CerbLocation_Loc (qProd q_attributes (qProd q_ctype (qProd (qList "(Prod (Option (sym)) (ctype))" (qProd (qOption q_sym) q_ctype)) (qProd qBool qBool))))) funinfo)
     let loop_attributes1 ← inField "loop_attributes1" (qFmap "(Nat)" "(loop_attribute)" [.N] p.loop_attributes qNat q_loop_attribute loop_attributes1)
-    let visible_objects_env0 ← inField "visible_objects_env0" (qFmap "(Nat)" "(List (Prod (sym) (ctype)))" [.N] p.visible_objects_env qNat (qList (qProd q_sym q_ctype)) visible_objects_env0)
+    let visible_objects_env0 ← inField "visible_objects_env0" (qFmap "(Nat)" "(List (Prod (sym) (ctype)))" [.N] p.visible_objects_env qNat (qList "(Prod (sym) (ctype))" (qProd q_sym q_ctype)) visible_objects_env0)
     return typedNode "(generic_file (PUnit) (core_run_annotation))" "generic_file.mk" [main, calling_convention0, tagDefs, enumDefs, stdlib, impl0, globs, funs, extern, funinfo, loop_attributes1, visible_objects_env0]
 
 /-- Keys compare exact quotation syntax, with children already interned. They never
@@ -968,6 +982,8 @@ private inductive NodeKey where
   | atom : String → NodeKey
   | app : String → List Nat → NodeKey
   | list : List Nat → NodeKey
+  | listBody : String → List Nat → NodeKey
+  | apply : Nat → Nat → NodeKey
   | typed : String → Nat → NodeKey
   deriving BEq, Hashable, Inhabited
 
@@ -998,6 +1014,10 @@ private partial def intern : Term → StateM Dag Nat
   | .atom s => internKey (.atom s)
   | .app head args => do internKey (.app head (← args.mapM intern))
   | .list xs => do internKey (.list (← xs.mapM intern))
+  | .consList ty xs tail => do
+    let body ← internKey (.listBody ty (← xs.mapM intern))
+    let block ← internKey (.typed ("(List " ++ ty ++ ") → (List " ++ ty ++ ")") body)
+    internKey (.apply block (← intern tail))
   | .typed ty t => do internKey (.typed ty (← intern t))
 
 private def shared (entry : Entry) : Bool := entry.helper.isSome
@@ -1013,13 +1033,16 @@ private def planSharing (root : Nat) (entries : Array Entry) : Array Entry := Id
       | .atom _ => 1
       | .app _ children | .list children =>
         1 + children.foldl (fun total child => total + result[child]!.cost) 0
+      | .listBody _ children =>
+        1 + children.length + children.foldl (fun total child => total + result[child]!.cost) 0
+      | .apply fn arg => 1 + result[fn]!.cost + result[arg]!.cost
       | .typed _ child => 1 + result[child]!.cost
     let helper := match entry.key with
       | .typed ty child =>
         if id != root && (cost > 256 || (entry.uses > 1 && cost > 16)) then
           some (ty, child)
         else none
-      | .atom _ | .app _ _ | .list _ => none
+      | .atom _ | .app _ _ | .list _ | .listBody _ _ | .apply _ _ => none
     result := result.set! id { entry with cost := if helper.isSome then 1 else cost, helper := helper }
   return result
 
@@ -1050,6 +1073,13 @@ private partial def renderTasks (entries : Array Entry)
       renderTasks entries (.text "(" :: .text head :: (inside ++ .text ")" :: rest)) chunks
     | .list xs =>
       renderTasks entries (.text "[" :: (separated ", " xs ++ .text "]" :: rest)) chunks
+    | .listBody ty xs =>
+      let opening := xs.flatMap fun x => [.text "(_root_.List.cons ", .term x, .text " "]
+      let closing := String.ofList (List.replicate xs.length ')') ++ ")"
+      renderTasks entries (.text ("(fun (cq_tail : List " ++ ty ++ ") => ") ::
+        (opening ++ .text "cq_tail" :: .text closing :: rest)) chunks
+    | .apply fn arg =>
+      renderTasks entries (.text "(" :: .term fn :: .text " " :: .term arg :: .text ")" :: rest) chunks
 
 /-- Helpers share exact closed syntax, and split large subterms into separate
     elaboration units. They retain every constructor and field, including map

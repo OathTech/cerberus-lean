@@ -209,9 +209,15 @@ production generator in an isolated scratch repository.
   The lanes export `CERB_INSTALL_PREFIX` from `scripts/common.sh`.
   For portable libc metadata, run `scripts/libc_prep.sh --jsons OUTDIR`:
   it exports from the project root with `--runtime=_build/install/default`
-  and project-relative source/include paths. Consume those JSONs from the
-  project root; use that same runtime spelling when generating portable
-  quotation artifacts.
+  and project-relative source/include paths. The **canonical Core quotation
+  convention** requires that exact runtime spelling for both metadata export
+  and the Lean run, from the project root (or a consumer directory holding a
+  fixed relative runtime link at that location). A symlink alias of the project
+  root is also valid. Labels are preserved verbatim: absolute runtime spellings
+  produce different artifacts. Invocations from `lean_frontend/` using
+  `../_build/...` cannot resolve the stored project-relative header labels and
+  are refused with the convention named. No source-root option or label rewrite
+  participates in this convention.
 - **Function-level execution.** `--call <f> [--call-args <ints>]`
   calls an individual function with injected arguments (the caller
   protocol mirrors elaborated call sites; `CerbCall.lean`, a port-side

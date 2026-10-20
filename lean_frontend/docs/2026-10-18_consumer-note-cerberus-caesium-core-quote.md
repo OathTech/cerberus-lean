@@ -1,8 +1,7 @@
 # Core quotation for cerberus-caesium
 
-Status (2026-10-19): D2b path guard and canonical metadata export implemented;
-parked on the F7/F8 determinism findings. The independent whole-file round-trip
-test remains for D3. Base
+Status: D3 whole-file checks and precommit Tier A pass under the canonical
+invocation convention below. D4 boundary/close-out work remains open. Base
 `e7e9bb427a514b6053865c303c4af512907da75b`; D0 checkpoint
 `fb8705c686d1de34f66426e3da4f1477d077632e`.
 
@@ -16,7 +15,7 @@ It is not a proof of equality with the frontend's result.
 The driver value is `runFile := convert_file coreFile` at `Main.lean:1252`,
 after the final link. A second quotation covers `convert_file libcFile`
 for the result of `loadLibc`, before the user link. The emitted module imports
-`Core_run_aux`, uses private typed subterm helpers,
+`Core_run_aux`, uses private typed constructor helpers,
 and declares one public `def quotedCore : file core_run_annotation`. It imports
 no printer code and uses the pinned toolchain's default elaboration limits.
 
@@ -26,30 +25,44 @@ From the repository root, after the normal build (including
 ```sh
 export LEAN_ABORT_ON_PANIC=1 CERB_MEM_MAX=48G
 ./scripts/capped lean_frontend/.lake/build/bin/cerberus-lean \
-  --runtime ./_build/install/default --fuel 1000000 \
+  --runtime=_build/install/default --fuel 1000000 \
   --quote-core .tmp/Fixture.lean tests/fixtures/001-return-literal/cabs.json
 (cd lean_frontend && ../scripts/capped lake env lean ../.tmp/Fixture.lean)
 ```
 
-Create the output directory first. The runtime's library directories and
-imported library locations must resolve to the same directories. D2b accepts
-absolute/relative aliases and symlinks but preserves all stored positions.
-For portable libc metadata, run `scripts/libc_prep.sh --jsons OUTDIR`; it
-exports from the project root using `--runtime=_build/install/default` and
-relative source/include paths. Consume those JSONs from the project root and
-use `--runtime _build/install/default` for portable quotation artifacts.
-D2b's guard change alone does not make output independent of runtime spelling:
-parsed `std.core` and `.impl` positions still carry that spelling (record F7).
-The alternate-working-directory invocation refuses because relative stored
-locations have no explicit project origin (record F8). Implementation is
-parked under the operator's refusal stop rule, pending a path-origin and
-parser-construction policy. No cross-machine determinism claim is made.
+Create the output directory first. The **canonical Core quotation convention**
+is to export metadata and invoke the Lean driver with exactly
+`--runtime=_build/install/default`, from the project root. Consumers may use a
+directory containing a fixed relative runtime link at that location, as
+cerberus-caesium does. The stored relative header paths must resolve there.
+`scripts/libc_prep.sh --jsons OUTDIR` produces metadata under this convention.
+A symlink alias of the project root preserves the same literal bytes.
+
+The path guard compares resolved directories for exact membership; stored source
+and lexing labels are never rewritten. F7 records why absolute runtime spelling
+changes the artifact. F8 records why running from `lean_frontend/` with
+`../_build/...` refuses: the metadata's relative header paths do not resolve
+there. These are the convention's positive and negative cases, not promises of
+invariance under arbitrary runtime spelling or working directory. A refusal
+names the convention and writes no module.
+
 Supply `--libc tests/libc/libc.core`
 and one `--libc-tu META.json` per metadata TU, in `scripts/libc_prep.sh` order.
 Use `--quote-libc .tmp/Libc.lean` to quote that loader result after conversion,
 once. It can be combined with `--quote-core .tmp/Linked.lean` and multiple
-user JSON inputs, or used alone with no user input. The record's D2 probe
-contains a complete preparation and invocation recipe.
+user JSON inputs, or used alone with no user input. A standalone Bash recipe,
+from the project root, is:
+
+```bash
+mkdir -p .tmp/core-quote
+scripts/libc_prep.sh --jsons .tmp/core-quote/metadata > .tmp/core-quote/metadata-paths
+mapfile -t metadata < .tmp/core-quote/metadata-paths
+libc_args=(--libc tests/libc/libc.core)
+for path in "${metadata[@]}"; do libc_args+=(--libc-tu "$path"); done
+./scripts/capped lean_frontend/.lake/build/bin/cerberus-lean \
+  --runtime=_build/install/default --fuel 1000000 \
+  --quote-libc .tmp/Libc.lean "${libc_args[@]}"
+```
 
 Quotation stops before execution. Success is silent with exit 0; named
 quotation failures use `Error {msg: ...}` and exit 1. All requested values
@@ -139,7 +152,75 @@ The derived `labeled` and `core_extern` maps are outside the file quotation.
 Their constructors were audited separately: both create maps with `O`;
 `collect_saves` also follows the two outer-constructor union branches.
 
-## Boundary and outstanding acceptance
+## Reproducing the round trip
+
+After the normal driver build, build the consumer-runnable test:
+
+```sh
+./scripts/capped make lean-prelude-src
+(cd lean_frontend && ../scripts/capped lake build core-quote-test)
+./scripts/capped lean_frontend/.lake/build/bin/core-quote-test --fuel 1000000
+./scripts/capped lean_frontend/.lake/build/bin/core-quote-test --fuel 1000000 --libc
+```
+
+The first command runs all ten committed Cabs fixtures, all sixteen corpus
+inputs (including `p10alt_rsum_rec.c`), and `tests/multi_tu/basic`'s cross-TU
+`helper` declaration/reference. The second checks the separately converted
+libc. The ladder invokes these through `scripts/test_unit.sh` (row 1) and
+`scripts/test_unit.sh --core-quote-libc` (Tier B row 13), respectively.
+
+To witness a flag-generated module in a consumer checkout at the same pin,
+run from that checkout's root:
+
+```sh
+./scripts/capped lean_frontend/.lake/build/bin/core-quote-test --fuel 1000000 \
+  --module .tmp/Fixture.lean --input tests/fixtures/001-return-literal/cabs.json
+./scripts/capped lean_frontend/.lake/build/bin/core-quote-test --fuel 1000000 \
+  --libc --module .tmp/Libc.lean
+```
+
+For a user-only quotation, repeat `--input` for linked TUs in driver argument
+order. The libc mode checks the separately converted library module.
+The test uses the default switches and address-space top and the supplied fuel;
+quote the module with those same settings. Libc mode regenerates its twelve
+canonical metadata TUs and checks the committed hash. The driver subprocess
+always runs with the project root as its cwd and the exact canonical runtime
+spelling. The test needs the normal OCaml/Lean build and GNU `time` for the libc
+replay measurement. Scratch artifacts are removed on success; failures identify
+the disposable diagnostic directory.
+
+The literal is elaborated independently, then imported into a checker module.
+`CoreQuoteCompare.lean` rebuilds the original from public pipeline stages, ending
+with `convert_file`. It is compiled as test support so large frontend traversals
+use native Lean rather than the interpreter stack. The test plugin is loaded
+only for comparisons and controls; independent literal elaboration and kernel
+replay do not load it. The test visitor is generated by `CoreQuoteVisitor.lean`
+from the datatype declarations, without importing or reading the printer. It
+compares tagged constructor/scalar trees: all fields, outer Fmap constructors,
+Pmap/Pset shape and cached heights, ctype annotations and floating bits. Lists
+use a flat, length-and-order-preserving view to handle million-element array
+initializers without recursive cons frames; the census counts their cons/nil
+constructors. Long quoted lists themselves use typed literal-cons blocks, sharing identical
+blocks as functions of their tail and sharing closed tails. The output uses
+constructor applications, with no append/from-list/replicate builder. No
+printer text or printer `Term` is used as equality. The additional generated
+whole-file `BEq` must also succeed, on the NaN-free domain only.
+
+The comparator check inspects elaborated expressions using a separate S/O/L/I/N/E
+specification. It expands only quotation helpers to expose file/map constructors.
+For comparator expressions it expands elaborator-registered matchers, erases
+metadata and alpha-renames binders, since those names vary with module elaboration.
+It retains every comparator constant and explicit dictionary argument, without
+reducing S/O/L or identifying them by their behavior. The same-head/different-instance
+mutation fails this check; an absent symbol alias is found by the active comparator
+and missed by the structural comparator. The remaining controls change main, a
+global initializer, a map binding, a cached height with identical inorder bindings,
+both empty/mk-empty directions, and a zero's sign. Unchanged signed zeros and
+both infinities pass. A varied 257-element list passes and its reversed-order
+mutation fails, exercising the long-list block boundaries. NaN is tested
+separately as a named refusal.
+
+## Boundary and coverage
 
 The intended `VALIDATION.md` boundary entry is the Core quotation instrument:
 representation comparison and source-inspected comparator provenance are
@@ -160,37 +241,64 @@ of origins and use `linkedProvenance` with the successful linked file before
 quoting its converted value. Arbitrary maps cannot be validated by inspecting
 comparator closures.
 
-D1's focused probes successfully quoted and elaborated the first committed
-fixture and converted libc. The libc output is 33,832,667 bytes with 13,318
-private helpers; elaboration took 144.99 seconds and 12,055,992 KB peak RSS
-(exit 0, cap 48G). Five float cases and a set/comparator case have evaluated
-representation assertions. The record gives commands, failures that motivated
-the emission design, and final gate results. This evidence does not establish
-the complete whole-file relation.
+The D3 round trips cover ten committed Cabs JSON fixtures, all sixteen corpus
+C files, one linked cross-TU declaration/reference case, and converted libc.
+The fixture/corpus/multi-TU population exercises 214 distinct model constructors
+and 8,509,562 positions; it contains no floating leaves, NaNs, memory values or
+absolute position paths. All 27 comparisons pass. The complete run, including
+mutations and cwd controls, took 202.94 seconds and 10,498,784 KB peak RSS,
+exit 0, under the 48G cap. These are measurements, not resource limits.
 
-Required-input occurrence counts, the full NaN census, all round trips and
-all mutation controls remain for D3. The required population is ten committed
-Cabs JSON fixtures, sixteen corpus C files, a linked cross-TU declaration/reference
-example, and converted libc. No additional construct refusal is currently
-implemented. Full required-set acceptance is not claimed at D2.
+F9 in the record documents the required million-element array's initial
+elaboration failure and the typed-cons-block repair. No generated type,
+parser, label, comparator construction, execution baseline or elaboration limit
+changed. The required-input round trips validate the repaired renderer; D1/D2's
+earlier elaboration-only evidence is retained in the record.
 
-D2's actual flags also emitted and elaborated the committed first fixture,
-a libc-linked two-TU program and the standalone converted libc. The latter
-two elaborations took 101.36 / 100.11 seconds and about 12.1 / 12.1 GB peak
-RSS. Library-only output agrees with the separately emitted library. Named
-NaN refusals preserve destinations; argument and output-error controls pass.
-These are elaboration and CLI checks, not D3's independent round trip.
-
-The D2 precommit Tier A run passed all nineteen commands (exit 0), with
-source unchanged during the run; its exact summary is quoted in the record.
 F6 distinguishes the nine warnings visible in the baseline build from the
 337 warnings replayed when building the seam, and records separate ownership
 of the backend-emission backlog and test hygiene. No warning suppression was added.
 
-D2b's precommit Tier A passed all nineteen commands, exit 0, with source
-unchanged; the record quotes its summary and the failed determinism probes.
-The existing libc execution and libxml2 URI baselines remain unchanged.
-The operator placed the future libc round trip in a named Tier B row and
-requires the test executable to accept consumer-generated flag modules;
-fixture/corpus and multi-TU round trips remain in row 1. D3's portable hash
-pin and kernel-replay cost measurement remain outstanding at this park.
+The standalone libc check also passes, using a module written by `--quote-libc`
+and supplied through the consumer `--module` interface. Its literal is
+33,169,038 bytes. Elaboration took 145.48 seconds, independent comparison
+4.66 seconds, and the complete consumer check 158.25 seconds with 14,880,132 KB
+peak RSS, exit 0. No limits were increased.
+
+| Required population | Distinct model constructors | Floating leaves | NaNs | Memory values | Positions | Absolute position paths |
+|---|---:|---:|---:|---:|---:|---:|
+| 10 fixtures + 16 corpus + linked multi-TU | 214 | 0 | 0 | 0 | 8,509,562 | 0 |
+| Converted libc | 224 | 28 | 0 | 0 | 15,586 | 0 |
+| Combined | 248 | 28 | 0 | 0 | 8,525,148 | 0 |
+
+The combined census sees 97 `Fmap.empty`, 155 `Fmap.mk`, 5,706 `Pmap.Node`
+and 5,861 `Pmap.Empty` occurrences. All 40,734 observed Psets are `Pset.Empty`;
+nonempty Psets and memory values are supported but absent from the required
+population. The constructor visitor covers those unobserved constructors too.
+There is no additional construct refusal beyond NaN; required-input refusals: 0.
+The NaN negative control separately observes `globs.Float.NaN`.
+
+The initial D3 pin in `core-quote-libc.sha256` is:
+
+```text
+30bdb3f5db037b5a63a3deaa24cba27f289bd7841770d1e1ebff43699dcbfe06
+```
+
+The test checks that hash, exact bytes through a symlink alias of the project
+root, and the convention-naming exit-2 refusal from `lean_frontend/`, with no
+output. Both position filenames are inspected structurally. F9's renderer repair
+changes the bytes from D2b's historical experiment; this is the first committed
+D3 pin, not a changed execution baseline.
+
+**Kernel-replay measurement:** `lake env leanchecker LibcLiteral` on the
+independently elaborated module, Lean 4.32.2, **exit 0; 1.94 seconds wall time;
+825,068 KB peak RSS** (GNU `time`, 2026-10-20). The Tier B row reproduces and
+prints this measurement. It replays the literal's declarations against its
+imported environment; it is not `--fresh` replay of all transitive imports.
+Neither elaboration nor replay loads the comparison plugin. This measurement
+is available for the consumer's replay-tier decision; it is not a resource cap.
+
+D3's precommit Tier A passed all nineteen commands, exit 0, with source
+unchanged and complete tier selection. Row 1 reports 20/20 executables passing.
+The exact summary and final named libc-row result are in the record.
+D4's boundary entry and complete Tier B close-out remain outstanding.
