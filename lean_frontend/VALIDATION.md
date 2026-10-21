@@ -538,16 +538,25 @@ Nothing else.
   directories. Equivalent absolute/relative spellings and symlinks agree;
   missing and foreign directories refuse. The pure model still tests the
   suffix; stored source and lexing positions are never rewritten. Relative
-  paths resolve against the importing process's working directory. Under
-  `--runtime=_build/install/default`, cpp's `./_build/.../libc/include/*.h`
-  positions are non-library by the oracle's literal directory test but library
-  by the port's suffix test; the resolved guard accepts them. UB-location
-  selection on these served relative-spelling runs can differ. Differential
+  paths resolve against the importing process's working directory. The
+  admitted divergence class is any label whose directory resolves to a
+  runtime library directory but differs literally from the oracle's key
+  `<runtime-as-given>/lib/cerberus-lib/runtime/<dir>`, in both directions:
+  an absolute or `./` label under a relative `--runtime`, a relative or `./`
+  label under an absolute one, a `#line` alias, a symlinked spelling, for
+  `libcore` as much as `libc/include`. Such a label is non-library by the
+  oracle's literal test but library by the port's suffix test, and the
+  resolved guard accepts it. Every canonical export carries the instance:
+  cpp's `./_build/.../libc/include/*.h` positions under
+  `--runtime=_build/install/default`. On such served inputs the UB location
+  differs: the `#line` plant in `scripts/check_runtime_resolution.sh` is
+  reported at `<2:10--2:15>` by the oracle and `<11:10--11:23>` by the port,
+  and at `<11:10--11:23>` by both under the unprefixed spelling. Differential
   lanes use absolute spellings where both agree. The quoted literal is
   unaffected: its stored labels are preserved. The fixture-001 witness in
-  `scripts/check_runtime_resolution.sh` prints both actual classifiers and
-  the execution verdicts; [upstream draft 58](docs/upstream-tray/58-relative-runtime-library-location.md)
-  describes the oracle's cpp-marker mismatch.
+  the same script prints both actual classifiers and the execution verdicts
+  (that program has no UB); [upstream draft 58](docs/upstream-tray/58-relative-runtime-library-location.md)
+  describes the oracle's literal-key mismatch.
   Portable libc metadata uses `scripts/libc_prep.sh --jsons OUTDIR`, whose
   exporter runs from the project root with `--runtime=_build/install/default`
   and relative source/include paths. Consume this metadata from the project
@@ -626,14 +635,17 @@ operator items are listed in the record.
   equivalent path spellings as a declared divergence from the oracle's
   literal comparison. The Z-67 retirement is conditional on matching literal
   directory spellings, as in the differential lanes' absolute invocations.
-  With relative `--runtime=_build/install/default`, cpp's `./`-prefixed header
-  positions are non-library on the oracle and library on the port, even on
-  served driver runs; UB-location selection can differ. This does not change
-  the quoted literal. The fixture-001 witness above measures the divergence.
-  A consumer calling `CabsImport.parseJson` and `isLibraryLocation` directly
-  bypasses the guard and also keeps the foreign-directory Z-67 residual;
-  applying the resolved guard removes that class, not the relative-spelling
-  divergence.
+  Any label that resolves to a runtime library directory but differs
+  literally from the oracle's `<runtime-as-given>/<dir>` key, in either
+  direction (cpp's `./`-prefixed header positions under the canonical
+  relative runtime being the instance every export carries), is non-library
+  on the oracle and library on the port, even on served driver runs, and the
+  served UB location differs (the `#line` plant pin above: oracle
+  `<2:10--2:15>`, port `<11:10--11:23>`). This does not change the quoted
+  literal. A consumer calling `CabsImport.parseJson` and `isLibraryLocation`
+  directly bypasses the guard and also keeps the foreign-directory Z-67
+  residual; applying the resolved guard removes that class, not the
+  literal-spelling divergence.
 - *In-process consumers and kind-1 fail-stops*: no universal `drive`
   conformance theorem follows from avoiding known failure sites; byte,
   runtime-state and other obligations also remain. `failwithI` has an

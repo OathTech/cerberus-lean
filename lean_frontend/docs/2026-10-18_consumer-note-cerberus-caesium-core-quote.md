@@ -49,11 +49,19 @@ there. These are the convention's positive and negative cases, not promises of
 invariance under arbitrary runtime spelling or working directory. A refusal
 names the convention and writes no module.
 
-This guard deliberately differs from the oracle's literal directory check:
-with the canonical relative runtime, cpp's `./`-prefixed header positions are
-library locations on the port and non-library on the oracle. Served
-UB-location selection can differ; the absolute-spelling differential lanes
-agree. The quoted labels/value are unaffected. The fixture-001 witness and
+This guard deliberately differs from the oracle's literal directory check.
+The admitted class is any label spelling that resolves to a runtime library
+directory but differs literally from the oracle's `<runtime-as-given>/<dir>`
+key, in both directions: an absolute or `./` label under the relative
+runtime, a relative or `./` label under an absolute one, a `#line` alias.
+With the canonical relative runtime every export carries the instance: cpp's
+`./`-prefixed header positions are library locations on the port and
+non-library on the oracle. On such inputs the served UB location differs
+(the `#line` plant pinned in `scripts/check_runtime_resolution.sh`: oracle
+`<2:10--2:15>`, port `<11:10--11:23>`; the unprefixed spelling agrees); the
+absolute-spelling differential lanes agree. The quoted labels/value are
+unaffected, so a consumer executing the quoted file inherits the port's
+classification. The fixture-001 witness, the plant pin and
 [upstream draft 58](upstream-tray/58-relative-runtime-library-location.md)
 measure and explain this class.
 

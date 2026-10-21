@@ -1,10 +1,13 @@
-# Relative runtime spelling misclassifies cpp's own header positions
+# Literal library-directory test misclassifies aliased spellings of the runtime, including cpp's own `./` header positions
 
 **State:** Draft; no submission or duplicate search recorded.
-**Classification:** TRUE BUG. The classifier compares directory strings even
-when the preprocessor identifies the same runtime header by a `./`-prefixed
-path. Classification can therefore depend on spelling rather than which
-library supplied the code.
+**Classification:** TRUE BUG. The classifier compares directory strings
+literally against the runtime argument as given, so any spelling that
+denotes a runtime library directory but differs from that key is classified
+as not library: cpp's `./`-prefixed header path under a relative `--runtime`,
+an absolute path under a relative `--runtime`, a relative path under an
+absolute one. Classification can therefore depend on spelling rather than
+which library supplied the code, and the reported UB location moves with it.
 
 Checked on `feature/core-quote` at `167f1360d` plus the D5 witness,
 2026-10-20. The oracle implementation is `util/cerb_location.ml:512-523`:
@@ -39,12 +42,22 @@ not a UB-location difference.
 
 ## Consequence and proposed remedy
 
-Library classification participates in UB-location selection. In the port,
-`generated/Core_eval.lean:672` and `generated/Core_reduction.lean:1804,1822`
-consume it. A header location under relative runtime spelling can select a
+Library classification participates in UB-location selection
+(`frontend/model/core_eval.lem:602`, `core_run.lem:477,782`; in the port,
+`generated/Core_eval.lean:672` and `generated/Core_reduction.lean:1804,1822`).
+A library location whose spelling differs literally from the key selects a
 different reported UB location even though it denotes the same library file.
-The differential lanes' absolute spellings agree, so they do not detect this
-class. Core quotation preserves all stored labels; the literal is unaffected.
+Observed with an eight-line `#line` plant (`scripts/check_runtime_resolution.sh`,
+both engines at `--runtime=_build/install/default` from the repository root):
+a signed-overflow UB inside a function placed by
+`#line 1 "./_build/install/default/lib/cerberus-lib/runtime/libc/include/plant.h"`
+is reported by the oracle at the function body, `loc: "<2:10--2:15>"`, and by
+the Lean port at the call site, `loc: "<11:10--11:23>"`; with the unprefixed
+`_build/...` spelling both report `<11:10--11:23>`. An absolute spelling of
+the same directory under the relative runtime, and the `libcore` directory,
+behave like the `./` case. The differential lanes' absolute spellings agree,
+so they do not detect this class. Core quotation preserves all stored labels;
+the literal is unaffected.
 
 Compare resolved directory identities for exact membership in the three
 runtime library directories, with an explicit failure for paths that cannot

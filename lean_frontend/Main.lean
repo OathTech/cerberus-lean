@@ -616,9 +616,18 @@ def runtimeLibraryDirs (runtime : String) : List String :=
     Relative paths resolve from the importing process's working directory;
     stored source and lexing positions are never rewritten. A missing or
     foreign directory is refused (exit 2), not accepted by suffix alone.
-    With --runtime=_build/install/default, cpp's ./_build/... header paths
-    pass this guard and the port's suffix test, but fail the oracle's literal
-    membership test: served UB-location selection can therefore differ.
+    Admitted divergence class: any label whose directory resolves to one of
+    this run's library directories but differs literally from the oracle's
+    key `<runtime-as-given>/lib/cerberus-lib/runtime/<dir>` passes this guard
+    and the port's suffix test while failing the oracle's literal test, in
+    both directions: an absolute or `./` label under a relative --runtime, a
+    relative or `./` label under an absolute one, a `#line` alias, a symlinked
+    spelling; `libcore` as much as `libc/include`. The instance every
+    canonical export carries is cpp's ./_build/... header position under
+    --runtime=_build/install/default. On such inputs the served UB location
+    differs: `scripts/check_runtime_resolution.sh` pins a `#line` plant on
+    which the oracle reports `<2:10--2:15>` and the port `<11:10--11:23>`
+    (the unprefixed spelling agrees on `<11:10--11:23>`).
     Quotation preserves the labels and is unaffected; differential lanes use
     absolute spellings where the classifiers agree (upstream-tray draft 58). -/
 def refuseLibraryLocations (runtime : String) (source : String) (files : Array String) : IO Unit := do

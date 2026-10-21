@@ -217,10 +217,16 @@ production generator in an isolated scratch repository.
   produce different artifacts. Invocations from `lean_frontend/` using
   `../_build/...` cannot resolve the stored project-relative header labels and
   are refused with the convention named. No source-root option or label rewrite
-  participates in this convention. With relative runtime spelling, cpp's
-  `./`-prefixed header positions are library locations on the port but not on
-  the oracle's literal directory test; served UB-location selection can differ.
-  This declared divergence leaves quoted labels unchanged (VALIDATION §3).
+  participates in this convention. The port classifies a label by directory
+  suffix, the oracle by literal equality with `<runtime-as-given>/<dir>`, so
+  any spelling that resolves to a runtime library directory but differs
+  literally from that key (an absolute or `./` label under a relative runtime,
+  a relative or `./` label under an absolute one, a `#line` alias) is library
+  on the port and not on the oracle, in both directions; every canonical
+  export carries the `./`-prefixed instance. On such inputs the served UB
+  location differs (`scripts/check_runtime_resolution.sh` pins a plant:
+  oracle `<2:10--2:15>`, port `<11:10--11:23>`). This declared divergence
+  leaves quoted labels unchanged (VALIDATION §3).
 - **Core constructor literals for consumers.** `--quote-core OUT.lean` writes
   the converted, linked user file; `--quote-libc OUT.lean` writes the separately
   converted library once. Use the canonical convention above. The generated

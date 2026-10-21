@@ -12,6 +12,12 @@
 # resolved-directory membership test against the runtime is REFUSED. The
 # oracle's literal test can differ on accepted aliases: the fixture-001
 # witness below pins that declared divergence (Core quotation D2b/D5).
+# A `#line` plant then pins the SERVED consequence: a UB inside a function
+# placed at the ./-prefixed runtime header directory is reported at the
+# function body by the oracle (`<2:10--2:15>`) and at the call site by the
+# port (`<11:10--11:23>`); the unprefixed spelling agrees on the call site.
+# The pin goes red if either engine's rule moves. The selftest plants below
+# (ignore-runtime, refuse-all) cover it: neither stub prints that line.
 #
 # Each check runs the REAL oracle (cabs-json export, and the oracle's own
 # verdict where the check compares against it) and the Lean driver.
@@ -219,5 +225,34 @@ expect_line "relative fixture-001 is served; execution agrees despite classifica
 [[ $RC -eq 0 ]] || fail "relative fixture-001 exit $RC, expected 0"
 echo "$NAME: fixture-001 execution: oracle=[$F001]; port=[$OUT]"
 
+# --- Served divergence pin: a #line plant at the ./-prefixed runtime header --
+# dot: the spelling cpp emits under --runtime=_build/install/default; the
+# oracle says not-library and reports the UB inside the function, the port
+# says library and substitutes the call site (core_eval.lem:602). nodot: the
+# oracle's literal key; both substitute the call site. Both engines run from
+# the repository root at the relative runtime, as the fixture-001 case above.
+plant() {  # <name> <library-directory-spelling>
+    printf '#line 1 "%s/plant.h"\nint f(int x) {\n  return x + 1;\n}\n#line 10 "%s.c"\nint main(void) {\n  return f(2147483647);\n}\n' "$2" "$1" > "$W/$1.c"
+    cabs _build/install/default "$W/$1.c" "$W/$1.json" "$ROOT"
+}
+plant dot   ./_build/install/default/lib/cerberus-lib/runtime/libc/include
+plant nodot _build/install/default/lib/cerberus-lib/runtime/libc/include
+BODY='Undefined {ub: "UB036_exceptional_condition", stderr: "", loc: "<2:10--2:15>"}'
+SITE='Undefined {ub: "UB036_exceptional_condition", stderr: "", loc: "<11:10--11:23>"}'
+ODOT=$(oracle_line _build/install/default "$W/dot.c" "$ROOT")
+ONODOT=$(oracle_line _build/install/default "$W/nodot.c" "$ROOT")
+n=$((n + 1))
+[[ "$ODOT" == "$BODY" ]] || fail "served-divergence pin: oracle verdict for the ./ plant moved: expected exactly [$BODY]; got [$ODOT]"
+n=$((n + 1))
+[[ "$ONODOT" == "$SITE" ]] || fail "served-divergence pin control: oracle verdict for the unprefixed plant moved: expected exactly [$SITE]; got [$ONODOT]"
+lean "$ROOT" -- --batch --runtime=_build/install/default "$W/dot.json"
+expect_line "served-divergence pin: ./ plant is served; the port reports the call site where the oracle reports the body" "$SITE"
+[[ $RC -eq 1 ]] || fail "served-divergence pin: ./ plant exit $RC, expected 1"
+PDOT=$OUT
+lean "$ROOT" -- --batch --runtime=_build/install/default "$W/nodot.json"
+expect_line "served-divergence pin control: unprefixed plant agrees with the oracle" "$SITE"
+[[ $RC -eq 1 ]] || fail "served-divergence pin control: unprefixed plant exit $RC, expected 1"
+echo "$NAME: served-divergence pin: ./ plant oracle=[$ODOT] port=[$PDOT]; unprefixed plant oracle=[$ONODOT] port=[$OUT]"
+
 [[ $fails -eq 0 ]] || { echo "$NAME: $fails of $n witnesses FAILED"; exit 1; }
-echo "$NAME: OK ($n witnesses: --runtime/CERB_INSTALL_PREFIX resolution and priority, planted cwd std.core ignored, planted prefix used, 5 runtime refusals, 1 cross-runtime and 3 library-location refusals, 1 control agreeing with the oracle, relative fixture-001 classification divergence and execution control)"
+echo "$NAME: OK ($n witnesses: --runtime/CERB_INSTALL_PREFIX resolution and priority, planted cwd std.core ignored, planted prefix used, 5 runtime refusals, 1 cross-runtime and 3 library-location refusals, 1 control agreeing with the oracle, relative fixture-001 classification divergence and execution control, served UB-location divergence pin with its unprefixed control)"

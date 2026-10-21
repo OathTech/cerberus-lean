@@ -274,12 +274,21 @@ def isLibraryPathSuffix (path : String) : Bool :=
     Core quotation D2b subsequently changed the guard to RESOLVED membership
     ([USER 2026-10-19], Main.refuseLibraryLocations). Thus the retirement below
     is conditional on literal spellings agreeing, as in the lanes' absolute
-    runtime invocations. Under --runtime=_build/install/default, cpp's
-    ./_build/... header positions pass the port's suffix/resolved tests but
-    fail the oracle's literal test (util/cerb_location.ml:512-523): served
-    UB-location selection can differ. Quotation preserves the labels unchanged.
-    scripts/check_runtime_resolution.sh measures fixture 001's disagreement;
-    upstream-tray draft 58 records the oracle issue.
+    runtime invocations. The admitted class is any label whose directory
+    resolves to a runtime library directory but differs literally from the
+    oracle's key `<runtime-as-given>/lib/cerberus-lib/runtime/<dir>`
+    (util/cerb_location.ml:512-523), in both directions: an absolute or `./`
+    label under a relative --runtime, a relative or `./` label under an
+    absolute one, a `#line` alias or a symlinked spelling, for `libcore` as
+    much as `libc/include`. Every canonical export carries the instance: cpp's
+    ./_build/... header positions under --runtime=_build/install/default.
+    On such inputs this function says library and the oracle says not, so the
+    served UB location differs (the three sites above):
+    scripts/check_runtime_resolution.sh pins fixture 001's classifier
+    disagreement and a `#line` plant on which the oracle reports
+    `<2:10--2:15>` and the port `<11:10--11:23>`; the unprefixed spelling
+    agrees. Quotation preserves the labels unchanged; upstream-tray draft 58
+    records the oracle issue.
     The original guard retired the earlier residual Z-67 (a user file under a
     directory literally named `runtime/libcore` was library-classified by
     Lean and not by the oracle; the witness now refuses) FOR THE DRIVER ONLY.
