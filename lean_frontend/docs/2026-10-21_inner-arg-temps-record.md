@@ -3,6 +3,10 @@
 Worktree branch: `feature/inner-arg-temps`. Starting implementation:
 `e32c16709`; dispatch charter: `a8b20cbb6`.
 
+Status: **PARKED after I2**, 2026-10-21. The recursive-main refusal premise
+failed in the first I3 probes. See the [park record](2026-10-21_inner-arg-temps-park.md)
+for the counterexample, active source path and reproduction commands.
+
 ## I0 — upstream PR 1020
 
 [AGENT 2026-10-21, relayed by the operator] Adopt upstream
@@ -360,3 +364,17 @@ Normal libc remains 42 MATCH; multi-TU remains 8 and 7 MATCH; CN remains
 207 MATCH plus 6 UB_MATCH. A9 remains 108 SAME / 5 known DIFF. PNVI retains
 all 164 rows, classes and hashes (152 AGREE, 3 AGREE-FIRST, 2 BOTH_FAIL,
 7 REFUSAL). No existing baseline moved. This is the green I2 boundary.
+
+## I3 — stopped at the premise check
+
+The new main-with-arguments witness returns `Specified(0)` on both engines
+in both modes with `--args "ab cd"`. The switched oracle's Core has
+`proc main (argc: loaded integer, argv: loaded pointer)`, confirming that
+the mode applies to main despite the translation comment.
+
+The bounded recursive-main witness instead returns `Specified(7)` on both
+engines in both modes. It does not reach the charter's expected refusal.
+The active reduction path bypasses the cited guard. No lane, refusal
+baseline, selftest or fuzzing round was added; I4 and the close-out battery
+were not started. I1b and `3230aa494` remain pending. The park record gives
+the evidence and the scope decision needed before resumption.
