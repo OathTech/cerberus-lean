@@ -5,7 +5,7 @@
 # Usage: ./scripts/test_unit.sh [test-name | --core-quote-libc]
 #   With no args, runs all tests.
 #   With a name, runs just that test (e.g. fresh-int-test).
-#   --core-quote-libc runs the separate Tier B quotation case.
+#   --core-quote-libc runs the separate Tier B quotation cases in both conventions.
 
 # Resolved before any cd (used by the exec-purity gate at the end).
 PURITY_SH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/check_exec_purity.sh"
@@ -131,6 +131,15 @@ for test in "${TESTS[@]}"; do
     else
         echo "${RED}✗ $test FAILED${NC}"
         total_fail=$((total_fail + 1))
+    fi
+    if [[ "$core_quote_libc" == 1 ]]; then
+        if "$bin" "${test_args[@]}" --switches=inner_arg_temps; then
+            echo "${GREEN}✓ $test (inner_arg_temps) PASSED${NC}"
+            total_pass=$((total_pass + 1))
+        else
+            echo "${RED}✗ $test (inner_arg_temps) FAILED${NC}"
+            total_fail=$((total_fail + 1))
+        fi
     fi
 done
 

@@ -263,3 +263,100 @@ zero improvements. Normal libc retains all 42 rows; multi-TU retains 8 and
 at 108 SAME / 5 DIFF, the previously recorded five signature differences.
 No existing baseline moved. This is the green I1 boundary; variant-libc
 pairing and the new differential lane are the next checkpoints.
+
+## I2 — paired libc inputs and quotations
+
+`libc_prep.sh --record` records both convention variants; `--check` verifies
+both committed texts against their content hashes and regenerated oracle
+dumps, then verifies the actual lane-loaded staged objects against their
+build-tree counterparts. `--jsons` performs the same checks and exports one
+shared set of twelve parse-only Cabs TUs. The metadata export convention is
+unchanged. The staged objects are in package `cerberus`, as selected by
+`backend/driver/main.ml:54-77`; the std variants are in `cerberus-lib`.
+
+Content pins:
+
+- Normal dump, unchanged: `d93b99cd55dae4b23071262a24d235c69489c8e41011554194126ecc81555a0a`
+  (4,188,542 bytes).
+- `libc_inner_arg_temps.core`: `564da8b27b56fb56e70ebc1a71a2c686beb0c63be01ed5f5216b2bd4867a2240`
+  (4,038,187 bytes).
+- Normal quotation, unchanged from I1:
+  `992646e25801b13b66ea9bfa915dda1f788a72a19b5951904d36f88a9a83b279`.
+- Switched quotation (`core-quote-libc-inner-arg-temps.sha256`):
+  `ab7cb26e7e38987d871e956d1db05d66f06f58311ca0b776407c81eb47d4bee0`.
+
+[AGENT 2026-10-21] Recover the dump's lost convention from all fixed
+procedure parameters before the stitch: raw `pointer` for Normal and
+`loaded T` for Inner_arg, matching `translation.lem:4335-4340`. Definitions
+may have the model's final variadic carrier `[(ctype,pointer)]`, shared by
+both modes (`translation.lem:4476-4491`); it is not a fixed parameter.
+Declarations have only fixed parameters. A dump without any fixed procedure
+parameter is refused because its convention cannot be established. The
+comparison uses the linked metadata's actual `calling_convention0`; it
+cannot overwrite that tag onto bodies from the other mode. This supplies
+the missing input distinction checked by the oracle's
+`IncompatibleCallingConvention` at `core_linking.lem:286-287`.
+
+Both mismatched pairs were tested against the built driver: Normal dump
+with the switch, and variant dump without it. In `--batch` and
+`--quote-libc`, each exits 2, names `IncompatibleCallingConvention` on
+stderr, emits no verdict stdout and writes no quotation. Both matched pairs
+run fixture 001 to exactly `Specified(42)`. The switched upstream pointer
+conversion witness now runs on both engines in libc single-trace mode:
+
+```text
+Defined {value: "Specified(0)", stdout: "0 0 1 1 1 9 1 0\n", stderr: "", blocked: "false"}
+```
+
+The quotation test now accepts `--switches=inner_arg_temps`, checks the exact
+header, rebuilds its expected value under that explicit switch set and loads
+the matching std and libc inputs. Tier B row 13 runs Normal and Inner_arg
+standalone and linked quotations, with distinct pins. The release inventory
+also requires the two staged variant artifacts.
+
+Focused command: `CERB_MEM_MAX=32G ./scripts/capped scripts/test_unit.sh
+--core-quote-libc`, exit 0. Both modes passed standalone and fixture-001-linked
+whole-file comparison, comparator-term checks, constructor census, exact
+header, canonical alias determinism and wrong-cwd refusal. Both standalone
+hashes matched their pins. All four literal environments passed
+`lake env leanchecker` (exit 0). No proof module changed.
+
+| Mode / literal | Elaboration wall seconds | Peak RSS, KB | Replay seconds |
+|---|---:|---:|---:|
+| Normal / standalone | 132.40 | 14,882,132 | 1.91 |
+| Normal / linked | 147.37 | 14,887,076 | 1.97 |
+| Inner_arg / standalone | 172.24 | 14,260,564 | 1.91 |
+| Inner_arg / linked | 136.95 | 14,268,888 | 1.83 |
+
+The four quote/elaborate/compare round trips total 621.50 seconds; replay
+and invocation controls are additional. These are cost measurements, not
+limits. The two censuses each found 56 floating literals, zero NaNs, zero
+memory values and zero absolute position paths.
+
+```text
+Core quote round trip: PASS (whole-file representation, comparator syntax, auxiliary BEq)
+✓ core-quote-test PASSED
+Core quote round trip: PASS (whole-file representation, comparator syntax, auxiliary BEq)
+✓ core-quote-test (inner_arg_temps) PASSED
+Total: 2 passed, 0 failed
+```
+
+The dump-level float census also found the same multiset of 24 literals in
+both variants. N3 remains: the switched dump contains the existing lossy
+`1.84467440737e+19` at line 59507. No float literal was added or changed.
+
+I2 checkpoint: `DUNE_CACHE=disabled CERB_MEM_MAX=32G python3
+scripts/release.py --mode fast`, exit 0:
+
+```text
+PASSED A14.2 (171.7s)
+fast: passed; 19/19 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+The four exec baselines each report zero regressions and zero improvements.
+Normal libc remains 42 MATCH; multi-TU remains 8 and 7 MATCH; CN remains
+207 MATCH plus 6 UB_MATCH. A9 remains 108 SAME / 5 known DIFF. PNVI retains
+all 164 rows, classes and hashes (152 AGREE, 3 AGREE-FIRST, 2 BOTH_FAIL,
+7 REFUSAL). No existing baseline moved. This is the green I2 boundary.

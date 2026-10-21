@@ -810,6 +810,44 @@ def frontendTU [LemFuel] [CerbGlobal.Switches] (quiet : Bool) (supply : Nat) (ad
       | _ => IO.println s!"    cause: (other)"
       return .error 0
 
+/-- Recover the calling-convention distinction that the stock Core text dump
+    omits. Translation.lem:4335-4340 gives every fixed C parameter either a raw
+    pointer (Normal) or a loaded value (Inner_arg). Its variadic tail at
+    :4476-4491 is a final list of (ctype, pointer) pairs in BOTH modes.
+    Require a fixed parameter somewhere: an empty/parameterless dump cannot
+    establish the pairing. This check precedes the symbol/metadata stitch;
+    the oracle checks its retained tag in core_linking.lem:286-287. -/
+def checkLibcCallingConvention (mode : calling_convention) (parsed : CoreParser.CoreFile) :
+    Except String Unit := do
+  let mut hasFixedParameter := false
+  let modeName := match mode with
+    | Normal_callconv => "Normal_callconv"
+    | Inner_arg_callconv => "Inner_arg_callconv"
+  for (s, decl) in parsed.procs do
+    let params ← match decl with
+      | Proc _ _ _ params _ =>
+        let types := params.map Prod.snd
+        -- Only definitions have the extra variadic carrier, and only at the end.
+        match types.reverse with
+        | BTy_list (BTy_tuple [BTy_ctype, BTy_object OTy_pointer]) :: fixed =>
+          if fixed.isEmpty then
+            throw s!"procedure {libcSymName s} has a variadic carrier without a fixed parameter"
+          else pure fixed.reverse
+        | _ => pure types
+      | ProcDecl _ _ params => pure params
+      | Fun _ _ _ | BuiltinDecl _ _ _ =>
+        throw s!"non-procedure {libcSymName s} in the dump's procedure list"
+    for ty in params do
+      let paramMatches := match mode, ty with
+        | Normal_callconv, BTy_object OTy_pointer => true
+        | Inner_arg_callconv, BTy_loaded _ => true
+        | _, _ => false
+      unless paramMatches do
+        throw s!"procedure {libcSymName s} has a fixed parameter incompatible with {modeName}"
+      hasFixedParameter := true
+  unless hasFixedParameter do
+    throw "the dump has no fixed procedure parameter establishing its calling convention"
+
 /-- Load and assemble the libc library Core file (see the module note at
     "C-libc loading" above). -/
 def loadLibc [LemFuel] [CerbGlobal.Switches] (runtime : String) (quiet : Bool) (supply0 : Nat) (addressSpaceTop : Int)
@@ -857,6 +895,13 @@ def loadLibc [LemFuel] [CerbGlobal.Switches] (runtime : String) (quiet : Bool) (
   let metaFile ← match link metaFiles with
     | .Result f => pure f
     | .Exception (_, _) => return (← bail "linking the libc metadata TUs failed")
+  -- Do not silently install the metadata's convention over bodies from the
+  -- other mode. The text dump has lost the tag that the oracle linker checks.
+  match checkLibcCallingConvention metaFile.calling_convention0 parsed with
+  | .error reason =>
+    IO.eprintln s!"cerberus-lean: refused — --libc: IncompatibleCallingConvention: {reason}; dump {libcCorePath} cannot be stitched to these metadata TUs (core_linking.lem:286-287)"
+    return .error 2
+  | .ok () => pure ()
   -- 3. THE STITCH (module note): rename the dump onto the metadata
   --    symbols — tags by name, functions by name, globals by position —
   --    every join fail-closed.

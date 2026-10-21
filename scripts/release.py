@@ -140,7 +140,9 @@ REQUIRED_ARTIFACTS = ['lean_frontend/lean-toolchain', 'lean_frontend/lakefile.to
              'lean_frontend/.lake/build/bin/cerberus-lean',
              '_build/install/default/lib/cerberus-lib/META',
              '_build/install/default/lib/cerberus-lib/runtime/libcore/std.core',
+             '_build/install/default/lib/cerberus-lib/runtime/libcore/std_inner_arg_temps.core',
              '_build/install/default/lib/cerberus/runtime/libc/libc.co',
+             '_build/install/default/lib/cerberus/runtime/libc/libc_inner_arg_temps.co',
              'lean_frontend/native/md5.o']
 ARTIFACT_TREES = ['_build/install/default/lib/cerberus-lib',
                   '_build/install/default/lib/cerberus/runtime', 'lean_frontend/native']

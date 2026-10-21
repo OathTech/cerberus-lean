@@ -29,6 +29,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fuel", type=int, required=True)
     parser.add_argument("--libc", action="store_true")
+    parser.add_argument("--switches", choices=["inner_arg_temps"],
+                        help="match the driver's complete non-default elaboration switch set")
     parser.add_argument("--module", type=Path)
     parser.add_argument("--input", type=Path, action="append", default=[])
     parser.add_argument("--fixture", action="store_true", help="focused first-fixture development check")
@@ -59,6 +61,9 @@ def main():
     completed = 0
     success = False
     metadata = []
+    switches_term = "[.inner_arg_temps]" if args.switches else "[]"
+    switch_report = "-- cerberus-lean switches: " + ("[inner_arg_temps]" if args.switches else "[]")
+    libc_name = "libc_inner_arg_temps" if args.switches else "libc"
 
     def run(label, command, cwd=ROOT, expected=0, extra_env=None):
         start = time.monotonic()
@@ -76,9 +81,11 @@ def main():
 
     def cli(label, output, inputs, cwd=ROOT, runtime=RUNTIME, expected=0, mode="tu"):
         command = [BIN / "cerberus-lean", f"--runtime={runtime}", "--fuel", args.fuel]
+        if args.switches:
+            command += [f"--switches={args.switches}"]
         command += ["--quote-libc" if mode == "libc" else "--quote-core", output]
         if mode in ("libc", "linked"):
-            command += ["--libc", ROOT / "tests/libc/libc.core"]
+            command += ["--libc", ROOT / "tests/libc" / (libc_name + ".core")]
             for path in metadata:
                 command += ["--libc-tu", path]
         command += inputs
@@ -120,6 +127,8 @@ def main():
         source = literal.read_text()
         if not source.startswith("import Core_run_aux\n") or source.count("\ndef quotedCore : file core_run_annotation :=") != 1:
             raise RuntimeError("expected a self-contained flag-generated quotedCore module")
+        if source.splitlines()[2] != switch_report:
+            raise RuntimeError(f"{label}: quotation header does not report the selected switch set")
         # Elaborate the literal alone, then import its .olean into the checker.
         # Thus kernel replay below measures the consumer literal, not test code.
         lean(label + "-elaborate", literal, "-o", literal.with_suffix(".olean"), plugin=False)
@@ -128,7 +137,7 @@ def main():
         checker = scratch / f"{label}Check.lean"
         checker.write_text(f"import CoreQuoteCompare\nimport {label}Literal\n" +
             f'\ncheck_core_comparators quotedCore "{mode}"\n' +
-            f"#eval CoreQuoteTest.check {json.dumps(str(ROOT), ensure_ascii=False)} {json.dumps(mode)} {args.fuel} {metadata_term} {inputs_term} quotedCore\n")
+            f"#eval CoreQuoteTest.check {json.dumps(str(ROOT), ensure_ascii=False)} {json.dumps(mode)} {switches_term} {args.fuel} {metadata_term} {inputs_term} quotedCore\n")
         result = lean(label + "-compare", checker)
         rows = [line.removeprefix("CORE_QUOTE_CENSUS ") for line in result.stdout.splitlines()
                 if line.startswith("CORE_QUOTE_CENSUS ")]
@@ -213,7 +222,8 @@ def main():
             if not args.input:
                 literal = roundtrip("Libc", [], args.module, mode="libc")
                 digest = hashlib.sha256(literal.read_bytes()).hexdigest()
-                pin = (SUPPORT / "core-quote-libc.sha256").read_text().strip()
+                pin_name = "core-quote-libc-inner-arg-temps.sha256" if args.switches else "core-quote-libc.sha256"
+                pin = (SUPPORT / pin_name).read_text().strip()
                 if digest != pin:
                     raise RuntimeError(f"libc literal SHA-256 drift: {digest}, pinned {pin}")
                 print(f"libc sha256: {digest}", flush=True)
