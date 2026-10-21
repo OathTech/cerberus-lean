@@ -2,8 +2,12 @@
 
 2026-10-21, branch `feature/inner-arg-temps`. This implements ruling A in
 the [charter amendment](2026-10-21_codex-charter-inner-arg-temps.md).
-The recursive-main [park](2026-10-21_inner-arg-temps-park.md) remains in
-force for I3/I4. Approved I1b work is deferred to quotation hygiene.
+At this checkpoint the recursive-main [park](2026-10-21_inner-arg-temps-park.md)
+still held. Its later [resolution](2026-10-21_inner-arg-temps-record.md#park-resolution)
+resumed I3/I4 and witnesses recursive execution. I3 subsequently reached
+a separate [libc transport park](2026-10-21_inner-arg-temps-libc-park.md);
+the switched-libc results below are historical, before containment.
+Approved I1b work remains deferred to quotation hygiene.
 
 [AGENT 2026-10-21] Append I0b after the existing validated I0–I2 and park
 commits, preserving their history. The new ruling arrived after those
@@ -203,6 +207,6 @@ known DIFF rows: 073, 074, 098, 112 and 113. These known differences are
 not new agreement claims. The parser, Core parser, byte, libxml2 URI,
 address-space and memory-access checks also pass.
 
-The full close-out battery remains part of the unfinished slice, after
-the recursive-main ruling and remaining I3/I4 work. Nothing is pushed or
+At this checkpoint the full close-out battery awaited the recursive-main
+ruling and remaining I3/I4 work; the later disposition resumes that work. Nothing is pushed or
 filed externally by this checkpoint.

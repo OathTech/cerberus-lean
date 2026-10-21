@@ -1868,6 +1868,14 @@ def main (args : List String) : IO Unit := do
   if switchSet.contains .inner_arg_temps && callFn.isSome then
     IO.eprintln "cerberus-lean: refused — --call: inner_arg_temps is unsupported by CerbCall, whose injected call site implements only Normal_callconv (see CerbCall.lean and SUPPORTED.md)"
     IO.Process.exit 2
+  -- The stock pp merges SD_FunArgValue and SD_ObjectAddress spellings
+  -- (pp_symbol.ml:20-24); CoreParser interns both by name. The variant
+  -- libc dump therefore loses value/address identity, even though its
+  -- parameter types and quotation round trips pass. Refuse this transport
+  -- until a lossless representation is validated (upstream tray 65).
+  if switchSet.contains .inner_arg_temps && libcCore.isSome then
+    IO.eprintln "cerberus-lean: refused — --libc: R-IAT-LIBC-SYMBOL-LOSS: inner_arg_temps Core text merges parameter values with their local object addresses (pp_symbol.ml:20-24; CoreParser.internSym); execution and quotation require a lossless libc transport (see SUPPORTED.md and upstream tray 65)"
+    IO.Process.exit 2
   let libc : Option (String × List String) ← match libcCore, libcTus with
     | some c, tus =>
       if tus.isEmpty then do

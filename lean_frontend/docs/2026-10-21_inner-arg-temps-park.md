@@ -1,5 +1,12 @@
 # Park: recursive main does not take the expected refusal
 
+**Resolved, 2026-10-21:** the [park disposition](2026-10-21_inner-arg-temps-record.md#park-resolution)
+resumes the slice. The guard is dead on the active driver path; recursive
+main executes and is witnessed by the provisional lane. A separate
+[libc transport park](2026-10-21_inner-arg-temps-libc-park.md) now blocks
+the slice; it does not reopen this recursive-main question. The original
+diagnosis follows.
+
 2026-10-21, branch `feature/inner-arg-temps`, implementation at `df141854f`.
 I0 (`56ac1e5ae`), I1 (`c717da401`) and I2 (`df141854f`) each passed their
 complete Tier A boundary. I2 also passed all four libc quotation comparisons
@@ -78,15 +85,10 @@ For the argument witness, use `main-args.c` / its exported JSON and add
 `--args "ab cd"` before the input on both execution commands. Remove the
 scratch reproduction directory when done.
 
-## Pending ruling and uncompleted work
+## Original park boundary (subsequently resolved)
 
-The orchestrator needs to resolve whether the slice should validate the
-active model's recursive-main behavior, or whether a separately authorized
-shared-model refusal is required. Neither direction has been selected.
-The I3 lane, baseline, plants and fuzzing round, and I4 documentation,
-consumer note, tray report and full close-out battery remain unfinished.
-The later [charter amendment](2026-10-21_codex-charter-inner-arg-temps.md)
-authorizes upstream `3230aa494` as the separate
-[I0b backport](2026-10-21_inner-arg-temps-i0b-record.md) and defers approved
-I1b work to the quotation-hygiene slice. Those rulings do not settle the
-recursive-main finding. Nothing has been pushed or filed externally.
+At the park boundary, I3/I4 and the close-out battery were unfinished.
+The subsequent disposition accepts the active model's recursive-main
+execution and resumes that work. The separate I0b backport is committed;
+I1b is approved and deferred to quotation hygiene. See the linked
+resolution for current scope. Nothing has been pushed or filed externally.

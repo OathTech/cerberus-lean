@@ -3,13 +3,32 @@
 Worktree branch: `feature/inner-arg-temps`. Starting implementation:
 `e32c16709`; dispatch charter: `a8b20cbb6`.
 
-Status: **PARKED after I2**, 2026-10-21. The recursive-main refusal premise
-failed in the first I3 probes. See the [park record](2026-10-21_inner-arg-temps-park.md)
-for the counterexample, active source path and reproduction commands.
-The later rulings authorize the separate
-[I0b backport](2026-10-21_inner-arg-temps-i0b-record.md), now validated by
-complete Tier A and both-mode libc quotation checks, and defer approved
-I1b work to quotation hygiene. They do not resolve that park condition.
+Status: **PARKED again during I3**, 2026-10-21. The recursive-main park is
+resolved, but the [libc transport park](2026-10-21_inner-arg-temps-libc-park.md)
+blocks completion. I0–I2 and [I0b](2026-10-21_inner-arg-temps-i0b-record.md)
+passed their recorded checks; I3 disproves the assumption that the I2
+variant text dump preserves the binary library. Switched libc execution
+and quotation are now refused. I1b remains approved and deferred to
+quotation hygiene.
+
+## Park resolution
+
+[AGENT 2026-10-21, relayed by the operator] Resume the slice using the
+active driver's behavior as the model. Its Eccall reduction calls
+`Core_run.call_proc` directly, bypassing the separate recursive-main
+switch guard. Recursion into main executes; no fork refusal is added.
+The lane checks bounded recursive-main programs with and without argc/argv
+on both engines in both modes, requires engine and cross-mode agreement,
+and records GCC results. A disagreement is a finding requiring a loud
+fork refusal and a tray report, never a baselined difference. Tray 64
+reports the dead guard. The consumer note must correct the orchestrator's
+earlier refusal claim, which came from reading the guard without tracing
+the active reduction path. I1b remains outside this slice.
+
+The [park record](2026-10-21_inner-arg-temps-park.md) preserves the
+counterexample and path diagnosis. A committed park ends branch work
+until disposition; the later, explicitly named I0b authorization was the
+accepted exception here, not a general permission to continue after parks.
 
 ## I0 — upstream PR 1020
 
@@ -162,7 +181,8 @@ observation lane plants: 9/9 passed
 Two CLI speedbumps previously merged stdout and stderr before comparing
 verdicts. Their captures are now separate: they compare exactly the same
 stdout bytes and check the switch diagnostic independently. The served
-library-location divergence pin remains unchanged; I1b is still pending.
+library-location divergence pin remains unchanged; I1b was pending at this
+checkpoint and is now approved but deferred to quotation hygiene.
 
 Focused validation: the capped build passed (536 jobs), the kernel-pin
 executable passed, CLI refusal/acceptance witnesses and all 23 runtime
@@ -370,16 +390,48 @@ Normal libc remains 42 MATCH; multi-TU remains 8 and 7 MATCH; CN remains
 all 164 rows, classes and hashes (152 AGREE, 3 AGREE-FIRST, 2 BOTH_FAIL,
 7 REFUSAL). No existing baseline moved. This is the green I2 boundary.
 
-## I3 — stopped at the premise check
+## I3 — resumed after the premise check
 
-The new main-with-arguments witness returns `Specified(0)` on both engines
-in both modes with `--args "ab cd"`. The switched oracle's Core has
+The original park found that bounded recursion into main executes on both
+engines in both modes. The disposition above accepts that behavior.
+The argument witness `main-args.c` returns `Specified(0)` with
+`--args "ab cd"`; the switched oracle's Core has
 `proc main (argc: loaded integer, argv: loaded pointer)`, confirming that
 the mode applies to main despite the translation comment.
 
-The bounded recursive-main witness instead returns `Specified(7)` on both
-engines in both modes. It does not reach the charter's expected refusal.
-The active reduction path bypasses the cited guard. No lane, refusal
-baseline, selftest or fuzzing round was added; I4 and the close-out battery
-were not started. I1b and `3230aa494` remain pending. The park record gives
-the evidence and the scope decision needed before resumption.
+The two recursive witnesses were checked exhaustively on both engines in
+both modes, including the complete verdict, stdout, stderr and blocked
+field. Each engine invocation exits 0. GCC 13.3.0, `-std=c11 -Wall -Wextra
+-O0`, produces the program exit values shown below (no compiler warnings):
+
+| Witness | Normal oracle / Lean | inner oracle / Lean | GCC exit |
+|---|---|---|---|
+| `recursive-main.c` | `Specified(7)` / `Specified(7)` | `Specified(7)` / `Specified(7)` | 7 |
+| `recursive-main-args.c`, arguments `ab cd` | `Specified(42)` / `Specified(42)` | `Specified(42)` / `Specified(42)` | 42 |
+
+The second witness makes two nested recursive calls, passing shortened
+argc/argv pairs and then checking the outer frame's original values after
+return. Both witnesses have empty stdout and stderr and `blocked: "false"`.
+The provisional lane ran these witnesses successfully before containment;
+all twelve engine/mode runs were repeated successfully after the CLI refusal
+was added. This does not complete I3 or register a release lane.
+
+## Second park — libc symbol loss
+
+[AGENT 2026-10-21] Stop under the charter's false-premise rule. The matched
+execution sweep found 36 real libc discrepancies: 32 Lean crashes and four
+different complete verdicts. The ordinary Core printer erases the distinction
+between loaded parameters and their local object addresses; name interning
+cannot reconstruct it. Refuse the affected Lean CLI transport loudly for
+execution and quotation, preserve the failing evidence's conclusions and
+reproduction commands, and await disposition. Do not adopt a difference
+baseline, repair the printer speculatively, or proceed with fuzzing/I4.
+
+The [second park record](2026-10-21_inner-arg-temps-libc-park.md) contains
+the classification, concrete wrong answers, containment checks and limits.
+Draft [64](upstream-tray/64-recursive-main-guard-bypassed.md) reports the
+dead recursive-main guard; draft
+[65](upstream-tray/65-inner-arg-temps-core-symbol-loss.md) reports the
+lossy text transport. Neither has been submitted externally. The
+[consumer note](2026-10-21_consumer-note-cerberus-caesium-inner-arg-temps.md)
+corrects the earlier recursive-main claim and marks delivery blocked.

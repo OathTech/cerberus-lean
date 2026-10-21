@@ -2,8 +2,9 @@
 
 Branch `feature/inner-arg-temps`, worktree `worktrees/cerberus-lean-feature/inner-arg-temps`,
 based on mainline `e32c16709` (Core quoting landed 2026-10-21). Worker: Codex #1.
-Status: ACTIVE from dispatch. Items marked PENDING an operator ruling are not
-started until the ruling arrives; everything else proceeds in checkpoint order.
+Status: **PARKED again during I3**, 2026-10-21: the variant libc text loses
+parameter/address symbol identity. See the [second park](2026-10-21_inner-arg-temps-libc-park.md).
+The recursive-main park is resolved; I1b remains approved and deferred.
 
 ## Amendment — 2026-10-21
 
@@ -25,12 +26,29 @@ same worker receives that follow-up charter at this slice's close; I1b
 remains below as approved work deferred to that slice, not work to perform
 here.
 
-I0–I2 and the park record were already committed when these rulings arrived.
-The new I0b authorization permits that backport; it does not resolve the
-recursive-main premise failure in
-[the park record](2026-10-21_inner-arg-temps-park.md). The remaining lane and
-close-out work stays parked pending that separate ruling. Other charter
-requirements remain in force.
+I0–I2 and the park record preceded the I0b ruling; I0b is committed as
+`08fb2d156`. The subsequent park disposition resumes I3/I4. Upstream's
+recursive-main guard is dead on the driver's active reduction path:
+recursion into main executes, and the lane must witness that behavior.
+The [slice record](2026-10-21_inner-arg-temps-record.md#park-resolution)
+records the disposition and its provenance. No recursive-main refusal is added.
+
+Both recursive-main witnesses (with and without arguments) must agree
+across both engines and both modes, with GCC results recorded alongside.
+Any disagreement is a finding, never a baselined difference. Draft tray
+64 reports the bypassed guard; the consumer note explicitly corrects the
+orchestrator's earlier claim of refusal. I1b remains deferred.
+
+A committed park stops branch work until an explicit park disposition.
+The separate I0b authorization was the accepted exception for this park;
+a new ruling by itself does not authorize working past a future park.
+
+The second park records the newly disproved transport premise below.
+The existing dump mechanism preserves neither the distinction between
+loaded parameters and local object addresses nor their execution results.
+Until a lossless transport is authorized and validated, the Lean CLI refuses
+`inner_arg_temps` with `--libc`, including quotation. I3 is not complete;
+no new baseline is adopted. The earlier recursive-main disposition stands.
 
 ## Why
 
@@ -56,7 +74,7 @@ The model carries the mode end to end; nothing semantic is written in this slice
 | Where | What | Status |
 |---|---|---|
 | `frontend/model/translation.lem:4330-4344, 4412-4486` | callee-allocated parameter temporaries: params are `loaded T` values; prelude `create`s (`PrefFunArg`) + stores, epilogue kills (`with_block_objects`) | in generated `Translation.lean` (11 sites) |
-| `frontend/model/core_run.lem:967-980` | call sites pass values (`ty`, not `pointer ty`); recursive call to `main` is `Step_error "recursive calls to main() are not supported by the switch 'inner_arg_temps'"` (upstream `(* TODO *)`) | generated `Core_run.lean` (3 sites); the Lean driver turns `Step_error2` into `failwithI` (generated `Driver.lean:1218`) |
+| `frontend/model/core_run.lem:967-980` | call sites pass values (`ty`, not `pointer ty`); a separate recursive-main guard returns `Step_error` | that guard is bypassed by the active `core_reduction.lem` Eccall → `Core_run.call_proc` path; recursion executes |
 | `frontend/model/driver.lem:1725-1728` | `Inner_arg_callconv`: argc/argv handed to `main` as values | generated |
 | `frontend/model/mini_pipeline.lem:152` | const-expr mini-run picks the convention from the switch | generated |
 | `lean_frontend/CerbGlobal.lean:113, 285` | `CerbSwitch.inner_arg_temps`; `has_switch_inner_arg_temps_default` | present |
@@ -83,6 +101,14 @@ variant libc dump pretty-prints with or without the switch to the same text
 (87,260 lines; the Normal dump is 89,609), so the second pin uses the existing
 mechanism.
 
+**I3 correction:** identical printed dumps do not establish preservation
+of the binary library's symbol identities. The printer drops the numbers
+that distinguish `SD_FunArgValue` from `SD_ObjectAddress` of the same name.
+I2's calling-convention check and literal quotation comparisons missed this
+loss; the matched-mode execution sweep exposes crashes and wrong answers.
+This premise is false, so the slice is parked rather than changing the
+transport or accepting those discrepancies under this charter.
+
 ## Upstream context (relayed by the operator, 2026-10-20; paraphrased)
 
 - The Cerberus team recommends this mode for program logics (CN requires it) and
@@ -104,8 +130,7 @@ mechanism.
   `--switches=inner_arg_temps` (matched mode, a measurement sweep: document
   size, seeds and time; the grind tripwire applies, >1 h needs written
   justification), PLUS a cross-mode comparison on the ORACLE alone (the same
-  program at Normal and at inner_arg_temps must agree except for the declared
-  recursive-main refusal); every discrepancy is documented in the record and,
+  program at Normal and at inner_arg_temps must agree); every discrepancy is documented in the record and,
   where upstream does not know it, drafted for the tray. Discrepancies are
   findings, never silently baselined.
 
@@ -116,10 +141,11 @@ mechanism.
   differential witness (a `main(int argc, char **argv)` program under the switch,
   both engines). Report the comment/code mismatch in the upstream tray (report
   only). Do NOT "fix" the comment's reading into the fork.
-- The recursive-`main` `Step_error` is an upstream TODO: it stays a loud,
-  declared-unsupported stop (a REFUSAL-class outcome under the outcome protocol
-  if that has landed by then; otherwise a register row + documented refusal).
-  Never a semantic outcome. Witness it in the lane.
+- Upstream's recursive-main guard in `core_run.lem:967-970` is dead on
+  the driver's active `core_reduction.lem:1386-1405` path. Recursion into
+  main executes. Pin two bounded witnesses, including argc/argv recursion,
+  in both modes on both engines, with GCC results in the record. Report
+  the dead guard in tray draft 64; do not change the shared model.
 
 ## Deliverables (checkpoints; commit each on green focused checks, Tier A at
 ## each boundary; the full battery at close-out)
@@ -200,7 +226,7 @@ Do not implement this section in the inner_arg_temps slice.
 - `scripts/test_inner_arg_temps.sh` modelled on `scripts/test_pnvi.sh`: BOTH
   engines at `--switches=inner_arg_temps`; corpora: `tests/minimal`, the
   fixtures (`tests/fixtures`, `corpus/`), `tests/libc_exec` with the variant
-  dump, the main-with-args witness, the recursive-main refusal witness, the
+  dump, the main-with-args witness, both recursive-main execution witnesses, the
   dump/mode-mismatch plant; a committed baseline; `--selftest` plants (incl.
   the switch-stripped stub pattern of test_pnvi.sh:107/141 so a lane that
   silently drops the switch is RED).
@@ -215,7 +241,8 @@ Do not implement this section in the inner_arg_temps slice.
   finding, the refusal classes, the kernel pins.
 - Consumer note `lean_frontend/docs/<date>_consumer-note-cerberus-caesium-inner-arg-temps.md`:
   the flag, the header line, the variant pin hash, the lane, the limits
-  (`--call` refused; recursive main refused; PNVI combination refused).
+  (`--call` refused; recursive main executes because the driver bypasses the
+  upstream guard, witnessed in the lane; PNVI combination refused).
 - Upstream tray draft: the translation.lem:4331 comment/code mismatch.
 
 ## Non-goals
