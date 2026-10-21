@@ -1245,14 +1245,14 @@ def checkControl (name : String) (quoted : file core_run_annotation) : IO Unit :
 
 def emitControl (name path : String) : IO Unit := do
   let (_, f, _) ← unwrap (control name)
-  let source ← match CerbQuote.moduleSource (CerbQuote.translatedProvenance f) f with
+  let source ← match CerbQuote.moduleSource [] (CerbQuote.translatedProvenance f) f with
     | .ok s => pure s
     | .error e => throw (IO.userError e.message)
   IO.FS.writeFile path source
 
 def localControls : IO Unit := do
   let f := sample (Float.ofBits 0x7ff8000000000001).toBits
-  match CerbQuote.moduleSource (CerbQuote.translatedProvenance f) f with
+  match CerbQuote.moduleSource [] (CerbQuote.translatedProvenance f) f with
   | .ok _ => throw (IO.userError "NaN was not refused")
   | .error e => require (e.construct == "globs.Float.NaN") "NaN refusal does not name the construct"
   let alias : sym := .Symbol "quote-control" 7 (.SD_Id "absent-alias")

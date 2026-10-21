@@ -29,6 +29,15 @@ def multi(*rows):
 
 
 class ObservationTests(unittest.TestCase):
+    def test_switch_report_on_stderr_preserves_every_verdict_token(self):
+        for record, status in [(OK, 0), (UB, 1), (ERR, 1), (multi(OK, UB), 0)]:
+            original = parse(record, status=status).tokens('full')
+            for switches in (b'[]', b'[PNVI_ae_udi]', b'[inner_arg_temps]'):
+                report = b'cerberus-lean switches: ' + switches + b'\n'
+                self.assertEqual(parse(record, report, status).tokens('full'), original)
+                with self.assertRaises(ProtocolError):
+                    parse(report + record, status=status)
+
     def test_model_failure_is_explicit_and_never_semantic_agreement(self):
         msg = bytes(range(256)) + ' — §10'.encode()
         record = ('ModelFailure {msg: "' + escape(msg) + '"}\n').encode('ascii')

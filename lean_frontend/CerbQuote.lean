@@ -3,6 +3,7 @@
    docs/2026-10-18_core-quote-record.md, not from inspecting closures.
    This is an instrument on the declared boundary, not a correctness proof. -/
 import Core_run_aux
+import CerbDriverConfig
 import Std.Data.HashMap
 
 namespace CerbQuote
@@ -1099,8 +1100,9 @@ def render (term : Term) : String := Id.run do
 
 /-- One self-contained module and one public file definition with private typed
     subterms. The public name is fixed, not caller-supplied source text. -/
-def moduleSource (p : Provenance) (f : file core_run_annotation) : Except Refusal String := do
+def moduleSource (switches : List CerbGlobal.CerbSwitch) (p : Provenance)
+    (f : file core_run_annotation) : Except Refusal String := do
   let term ← quoteFile p f
-  return "import Core_run_aux\n\n" ++ render term
+  return "import Core_run_aux\n\n-- " ++ CerbDriverConfig.switchReport switches ++ "\n" ++ render term
 
 end CerbQuote

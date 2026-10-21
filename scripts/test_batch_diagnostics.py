@@ -68,7 +68,7 @@ def main():
         message = lines[0][len(marker):]
         assert str(path).encode('utf-8') in message, message
         batch = run(binary, ['--batch', *options], value)
-        assert not batch.stderr, batch.stderr
+        assert batch.stderr == b'cerberus-lean switches: []\n', batch.stderr
         check_record(batch.stdout, b'libc load failed: ' + message)
         count += 1
     print(f'batch diagnostic producers: {count}/{count} passed')

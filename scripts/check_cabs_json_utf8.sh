@@ -105,7 +105,8 @@ control() {  # <label> <c-file>: valid UTF-8 JSON, Lean agrees with the oracle's
     cabs "$c" "$j"
     o=$(oracle_line "$c")
     lean "$j"
-    [[ -n "$o" && "$OUT" == "$o" ]] || fail "$label: expected Lean = oracle [$o]; got rc=$RC: ${OUT:0:300}"
+    [[ $RC -eq 0 && -n "$o" && "$OUT" == "$o" && "$ERR" == 'cerberus-lean switches: []' ]] \
+        || fail "$label: expected Lean = oracle [$o] and the default switch report on stderr; got rc=$RC: ${OUT:0:300}; stderr: ${ERR:0:300}"
 }
 
 # BUG-6 (file names) and K-5 (attribute strings), each with an ASCII control

@@ -52,7 +52,7 @@ for name in control expression statement; do
             echo "translation-fuel: $name fuel=$fuel exit=$rc class=$classification (translation boundary)"
             grep -E '^PANIC at .*: lem: fuel exhausted$' "$WORK/$name.$fuel.err"
         else
-            if [[ "$rc" != 0 ]] || [[ -s "$WORK/$name.$fuel.err" ]] \
+            if [[ "$rc" != 0 ]] || [[ "$(<"$WORK/$name.$fuel.err")" != 'cerberus-lean switches: []' ]] \
                 || ! grep -qxF 'Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}' "$WORK/$name.$fuel.out"; then
                 echo "translation-fuel: FAIL $name fuel=$fuel exit=$rc (expected successful control)" >&2
                 echo "$capture" >&2

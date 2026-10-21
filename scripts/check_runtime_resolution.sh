@@ -91,7 +91,7 @@ oracle_line() {  # <prefix> <c-file> [cwd] -> first verdict line
     ( cd "${3:-$W}" && env -u CERB_INSTALL_PREFIX "$ORACLE" --runtime="$1" --exec --batch --nolibc "$2" 2>/dev/null ) \
         | grep -E '^(Defined|Undefined|Error) ' | head -1
 }
-# lean <cwd> <env-assignments...> -- <driver args...>  -> sets OUT, RC
+# lean <cwd> <env-assignments...> -- <driver args...> -> sets OUT, ERR, RC
 lean() {
     local cwd="$1"; shift
     local envs=()
@@ -104,6 +104,7 @@ lean() {
 expect_line() {  # <label> <expected-line>
     n=$((n + 1))
     if [[ "$OUT" != "$2" ]]; then fail "$1: expected exactly [$2]; got rc=$RC: ${OUT:0:300}"; fi
+    if [[ "$ERR" != 'cerberus-lean switches: []' ]]; then fail "$1: expected the default switch report on stderr; got: ${ERR:0:300}"; fi
 }
 expect_refusal() {  # <label> <refusal-prefix> <substring>
     n=$((n + 1))

@@ -1,5 +1,6 @@
 import CerbMem
 import CerbGlobal
+import CerbDriverConfig
 import CerbUtils
 import CerbMemAllocatorProofs
 import Lean.Elab.Command
@@ -107,6 +108,16 @@ example : @CerbGlobal.has_switch ⟨CerbGlobal.defaultSwitches⟩ .strict_reads 
 example : @CerbGlobal.is_PNVI ⟨[.PNVI .AE_UDI]⟩ () = true := rfl
 example : @CerbGlobal.has_switch ⟨[.PNVI .AE_UDI]⟩ (.PNVI .AE_UDI) = true := rfl
 example : @CerbGlobal.has_switch ⟨[.PNVI .AE_UDI]⟩ (.PNVI .AE) = false := rfl
+-- inner_arg_temps: the actual selectors used by Main, at both conventions.
+example : @CerbGlobal.has_switch ⟨[.inner_arg_temps]⟩ .inner_arg_temps = true := rfl
+example : @CerbDriverConfig.callingConvention ⟨[]⟩ = Normal_callconv := rfl
+example : @CerbDriverConfig.callingConvention ⟨[.inner_arg_temps]⟩ = Inner_arg_callconv := rfl
+example : @CerbDriverConfig.callingConvention ⟨[.PNVI .AE_UDI]⟩ = Normal_callconv := rfl
+example : @CerbDriverConfig.stdCoreName ⟨[]⟩ = "std.core" := rfl
+example : @CerbDriverConfig.stdCoreName ⟨[.inner_arg_temps]⟩ = "std_inner_arg_temps.core" := rfl
+example : CerbDriverConfig.switchReport [] = "cerberus-lean switches: []" := rfl
+example : CerbDriverConfig.switchReport [.inner_arg_temps] =
+    "cerberus-lean switches: [inner_arg_temps]" := rfl
 example : @CerbGlobal.has_strict_pointer_arith ⟨[.pointer_arith .STRICT]⟩ () = true := rfl
 -- `is_CHERI` stays a build constant (design §B.4.1), whatever the switch set
 example : CerbGlobal.is_CHERI () = false := rfl

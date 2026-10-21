@@ -37,7 +37,7 @@ def run (fuel : Nat) (top : Int) (mode : String) : IO Unit := do
         | throw (IO.userError "loadLibc failed")
       pure (libc, CerbQuote.libcProvenance libc, "LibcQuoted.lean")
     | _ => throw (IO.userError "CERB_QUOTE_PROBE must be fixture or libc")
-  let source ← match CerbQuote.moduleSource provenance (convert_file f) with
+  let source ← match CerbQuote.moduleSource [] provenance (convert_file f) with
     | .ok s => pure s
     | .error e => throw (IO.userError e.message)
   IO.FS.writeFile (".tmp/core-quote-d1/" ++ output) source

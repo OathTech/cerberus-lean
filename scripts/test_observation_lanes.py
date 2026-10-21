@@ -45,7 +45,12 @@ if os.environ.get('PLANT_REAL_EXEC') == '1':
     if os.environ.get('PLANT_ONLY_CRASH') == '1' and side == 'lean' and not any(
             pathlib.Path(a).name == 'g2-memcmp-uninit.json' for a in args):
         kind = 'good'
-if kind == 'bytes':
+if kind == 'switch_report':
+    # The production driver reports only after execution returns. A panic's
+    # envelope must remain intact; completed batch records ignore stderr.
+    if rc in (0, 1) and out.startswith((b'Defined {', b'Undefined {', b'Error {', b'ModelFailure {', b'EXECUTION ')):
+        err += b'cerberus-lean switches: [inner_arg_temps]\n'
+elif kind == 'bytes':
     out = out.replace(b'stdout: "', b'stdout: "\\000\\128\\255')
 elif kind == 'exit2':
     rc = 2
@@ -235,7 +240,9 @@ def main():
     results = []
     print(f'PLANT MODE: real lane entry points, explicit engine overrides; evidence {outdir}', flush=True)
     for lane in args.lane or LANES:
-        variants = [('control', 'good', 'good'), ('bytes', 'good', 'bytes'),
+        # The existing positive control also plants the run-report diagnostic:
+        # each actual lane must ignore it without changing any verdict token.
+        variants = [('control', 'good', 'switch_report'), ('bytes', 'good', 'bytes'),
                     ('lean-exit2', 'good', 'exit2'),
                     ('descendant-oom', 'good', 'descendant_oom')]
         if lane != 'gcc_oracle':

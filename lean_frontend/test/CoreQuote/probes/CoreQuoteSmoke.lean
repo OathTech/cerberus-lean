@@ -25,7 +25,7 @@ def require (b : Bool) (label : String) : IO Unit :=
 #eval do
   for bits in [0, 0x8000000000000000, 1, 0x7ff0000000000000, 0xfff0000000000000] do
     let f := floatingFile (Float.ofBits bits)
-    let src ← match moduleSource (translatedProvenance f) f with
+    let src ← match moduleSource [] (translatedProvenance f) f with
       | .ok s => pure s
       | .error e => throw (IO.userError e.message)
     IO.FS.writeFile s!"../.tmp/core-quote-d1/Float{bits.toNat}.lean" (src ++
@@ -38,7 +38,7 @@ def require (b : Bool) (label : String) : IO Unit :=
       "    | _, _ => throw (IO.userError \"symbol fields changed\")\n" ++
       "  | _, _ => throw (IO.userError \"representation changed\")\n")
   let nanFile := floatingFile (Float.ofBits 0x7ff8000000000001)
-  match moduleSource (translatedProvenance nanFile) nanFile with
+  match moduleSource [] (translatedProvenance nanFile) nanFile with
   | .error e => require (e.construct == "funs.Float.NaN") "wrong NaN refusal"
   | .ok _ => throw (IO.userError "NaN accepted")
   let f := floatingFile 0
@@ -76,7 +76,7 @@ def require (b : Bool) (label : String) : IO Unit :=
     funs := .mk cmpO (.Node .Empty symbol
       (.Proc .unknown none .BTy_unit [] (.Expr [] (.Eproc annotation (.Sym symbol) []))) .Empty 91)}
   let provenance := {translatedProvenance mixed with tagDefs := some .L}
-  let source ← match moduleSource provenance mixed with
+  let source ← match moduleSource [] provenance mixed with
     | .ok src => pure src
     | .error e => throw (IO.userError e.message)
   for c in [Comparator.S, .O, .L, .I, .N, .E] do

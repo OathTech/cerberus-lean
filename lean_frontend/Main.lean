@@ -601,11 +601,11 @@ def resolveRuntimeRoot (cli : Option String) : IO String := do
       working directory, which is the lookup BUG-2 removed.
     Every harness passes the oracle's runtime: `scripts/common.sh` exports
     `CERB_INSTALL_PREFIX` = the prefix of its `--runtime=` oracle argument. -/
-def resolveRuntime (cli : Option String) : IO String := do
+def resolveRuntime [CerbGlobal.Switches] (cli : Option String) : IO String := do
   let rt ← resolveRuntimeRoot cli
   -- pipeline.ml:36-37 (the oracle's own existence check at stdlib load):
   -- checked here, before any input is read, so a wrong runtime is named as such
-  let stdCore := filenameConcat (filenameConcat rt "libcore") "std.core"
+  let stdCore := filenameConcat (filenameConcat rt "libcore") CerbDriverConfig.stdCoreName
   unless ← System.FilePath.pathExists stdCore do
     refuseRuntime s!"couldn't find the Core standard library file (looked at: `{stdCore}'); the runtime was resolved from {if cli.isSome then "--runtime" else "CERB_INSTALL_PREFIX"} as DIR/lib/cerberus-lib/runtime"
   return rt
@@ -771,7 +771,8 @@ def frontendTU [LemFuel] [CerbGlobal.Switches] (quiet : Bool) (supply : Nat) (ad
       -- the empty table, which IS the oracle's reset-then-elaborate state
       -- (documented divergence from the driver-level bookkeeping, mirror
       -- doctrine; the value-passing replaces the write scaffold).
-      let callconv := Normal_callconv
+      -- Mirror backend/common/pipeline.ml:271, including main (translation.lem).
+      let callconv := CerbDriverConfig.callingConvention
       let (coreFile, supplyAfterTranslate) ← (CerberusFresh.forceIO (fun () =>
         translate enumDefs fmapEmpty supplyAfterDesugar (ailnames, stdFunMap) callconv coreImpl typedProg) : BaseIO _)
       say s!"  translation succeeded!"
@@ -794,7 +795,7 @@ def frontendTU [LemFuel] [CerbGlobal.Switches] (quiet : Bool) (supply : Nat) (ad
       IO.println s!"    at: {CerbLocation.stringFromLocation loc}"
       -- Print cause details
       match cause with
-      | .DESUGAR (.Desugar_ConstraintViolation v) => IO.println s!"    cause: DESUGAR ConstraintViolation"
+      | .DESUGAR (.Desugar_ConstraintViolation _) => IO.println s!"    cause: DESUGAR ConstraintViolation"
       | .DESUGAR (.Desugar_UndefinedBehaviour ub) =>
         IO.println s!"    cause: DESUGAR UndefinedBehaviour: {stringFromUndefined_behaviour ub}"
       | .DESUGAR (.Desugar_MiscViolation _) => IO.println s!"    cause: DESUGAR MiscViolation"
@@ -1134,17 +1135,17 @@ def runPipeline [LemFuel] [CerbGlobal.Switches] (runtime : String) (batch : Bool
   -- core_parser.mly:1571 regions). Bug-hunt BUG-2 (2026-09-29): the path is
   -- built from the resolved runtime exactly as the oracle builds it, so the
   -- stamp is also the oracle's string (the exact library test holds).
-  let stdCorePath := filenameConcat (filenameConcat runtime "libcore") "std.core"
+  -- Mirror backend/common/pipeline.ml:34; the existence check uses this same selector.
+  let stdCorePath := filenameConcat (filenameConcat runtime "libcore") CerbDriverConfig.stdCoreName
   -- pipeline.ml:36-37: the oracle reports a missing stdlib as an error
   unless ← System.FilePath.pathExists stdCorePath do
     refuseRuntime s!"couldn't find the Core standard library file (looked at: `{stdCorePath}'); the runtime was resolved from --runtime / CERB_INSTALL_PREFIX (DIR/lib/cerberus-lib/runtime)"
   let stdContent ← IO.FS.readFile stdCorePath
   let stdFile ← match CoreParser.parseLibraryFile stdCorePath stdContent with
     | .ok f => pure f
-    | .error e => throw (IO.Error.userError s!"failed to parse std.core: {e}")
+    | .error e => throw (IO.Error.userError s!"failed to parse {CerbDriverConfig.stdCoreName}: {e}")
   let allStdDecls := stdFile.funs ++ stdFile.procs ++ stdFile.builtins
   say s!"    raw: {stdFile.funs.length} fun, {stdFile.procs.length} proc, {stdFile.builtins.length} builtin = {allStdDecls.length} total"
-  let allStd := stdFile.funs ++ stdFile.procs ++ stdFile.builtins
   let (ailnames, stdFunMap) := loadCoreStdlib stdFile
   say s!"    ailnames: {List.length (fmapElements ailnames)} entries"
   say s!"    stdlib funs: {List.length (fmapElements stdFunMap)} entries"
@@ -1283,7 +1284,7 @@ def runPipeline [LemFuel] [CerbGlobal.Switches] (runtime : String) (batch : Bool
       if let some output := quoteLibc then
         let some (origin, library) := convertedLibc
           | return (← quoteError "libc: no converted library was loaded")
-        let source ← match CerbQuote.moduleSource origin library with
+        let source ← match CerbQuote.moduleSource CerbGlobal.Switches.switches origin library with
           | .ok source => pure source
           | .error e => return (← quoteError s!"libc: {e.message}")
         modules := [(output, source)]
@@ -1291,7 +1292,7 @@ def runPipeline [LemFuel] [CerbGlobal.Switches] (runtime : String) (batch : Bool
         let origin ← match CerbQuote.linkedProvenance origins coreFile with
           | .ok origin => pure origin
           | .error e => return (← quoteError e.message)
-        let source ← match CerbQuote.moduleSource origin runFile with
+        let source ← match CerbQuote.moduleSource CerbGlobal.Switches.switches origin runFile with
           | .ok source => pure source
           | .error e => return (← quoteError e.message)
         modules := modules ++ [(output, source)]
@@ -1397,7 +1398,7 @@ def runPipeline [LemFuel] [CerbGlobal.Switches] (runtime : String) (batch : Bool
             match eval_integer_value ival with
             | some n => IO.println s!"  return value: {n}"
             | none => IO.println s!"  return value: (could not evaluate)"
-          | v => IO.println s!"  return value: (non-integer)"
+          | _ => IO.println s!"  return value: (non-integer)"
         | .Killed _st reason =>
           match reason with
           | .Undef0 loc ubs =>
@@ -1489,7 +1490,7 @@ def refuseFlag (flag : String) : IO Unit := do
     else if flag == "--batch" || flag == "--pp-core" || flag == "--parse-core" || flag == "--first" then
       "known flag out of its canonical position (`--batch`, `--pp-core` or `--parse-core` must be argv[0]; `--first` must immediately follow `--batch`/`--pp-core`)"
     else
-      "unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --quote-core <out.lean>, --quote-libc <out.lean>, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>, --address-space-top <N>, --runtime <DIR>, --switches PNVI_ae_udi (every other switch set is refused)"
+      "unknown flag; this port accepts only --batch | --pp-core | --parse-core (argv[0]), --first, --stdin, --quote-core <out.lean>, --quote-libc <out.lean>, --libc <core> --libc-tu <json>, --call <f> [--call-args <ints>], --args <str>, --trace-nodes, --fuel <N>, --address-space-top <N>, --runtime <DIR>, --switches PNVI_ae_udi | inner_arg_temps (each alone; every other switch set is refused)"
   CerbStop.exitRefusals (driverRefusal (if flag == "--concurrency" then .concurrency else if flag == "--iso" then .switches else .cli) (some flag)
     s!"cerberus-lean: refused — {flag}: {feature} (see VALIDATION.md, zero-discrepancy Z-24)"
     ⟨"implementation and validation of the requested command-line feature", by decide⟩)
@@ -1497,9 +1498,9 @@ def refuseFlag (flag : String) : IO Unit := do
 /-- The refusal reason for ONE element of a REFUSED `--switches` value (PNVI arc S1,
     2026-10-05; S4, 2026-10-07; design docs/2026-10-04_pnvi-ae-udi-design.md §B.4.2, §D.3,
     §F.3, §F.4, §F.13). The names are the oracle's (`ocaml_frontend/switches.ml:60-102`
-    `read_switch`). Since S4 exactly ONE switch set is supported — `--switches=PNVI_ae_udi`
-    alone (`judgeSwitches`), validated against the oracle under the same switch by
-    `scripts/test_pnvi.sh`; every other value is refused, each element with its own reason.
+    `read_switch`). Two non-default whole sets are supported: `PNVI_ae_udi` alone
+    and `inner_arg_temps` alone (`judgeSwitches`). Mixed sets and every other value
+    are refused, each element with its own reason.
     The oracle is FAIL-OPEN on an unknown name (switches.ml:140-141: "failed to parse
     switch '…' --> ignoring." and the run proceeds without it); this port refuses
     (exception class (c), §F.4). -/
@@ -1516,7 +1517,7 @@ def switchRefusalReason (name : String) : String :=
   | "forbid_nullptr_free" | "zap_dead_pointers" | "strict_pointer_equality" | "strict_pointer_relationals" | "zero_initialised" =>
     "this impl_mem.ml switch is not supported: its arm is a structured refusal in CerbMem (seam-hygiene H2)"
   | "inner_arg_temps" =>
-    "the inner-argument-temporaries elaboration (switches.ml:84-85) is not supported: it needs the alternative runtime std_inner_arg_temps.core (backend/common/pipeline.ml:34), which this port does not load"
+    "inner_arg_temps (switches.ml:84-85) is supported only as the WHOLE switch set, `--switches=inner_arg_temps`; combinations, including PNVI_ae_udi, are not validated and are refused"
   | "permissive_printf" =>
     "permissive printf (switches.ml:86-87) is not validated by any lane"
   | "CHERI" =>
@@ -1549,7 +1550,7 @@ def knownSwitch (name : String) : Bool :=
 
 /-- REFUSE a `--switches` value (`flag` is the argv text: `--switches=V` or
     `--switches V`): one line per element, each naming the element and its reason, then
-    exit 2. Called for every value but the one supported set (`judgeSwitches`); an empty
+    exit 2. Called for every value but the supported whole sets (`judgeSwitches`); an empty
     value too (cmdliner's `opt (list string)`, backend/driver/main.ml:589-591). The override class is recorded
     only for a KNOWN name, as the oracle's `set` does (switches.ml:134-141: an unknown name
     is "failed to parse" every time, never "would override"). -/
@@ -1563,20 +1564,22 @@ def refuseSwitches (flag value : String) : IO Unit := do
         s!"{switchRefusalReason n}; ALSO it would override a previous switch of the same class in this list (the oracle prints `switch '…' would override a previous switch --> ignoring.` and drops it, switches.ml:136-139, fail-open; design §G R20, R-PNVI-11)"
       else switchRefusalReason n
     IO.eprintln (CerbStop.render (.refusal (driverRefusal .switches (some n)
-      s!"cerberus-lean: refused — {flag}: this semantics switch set is not supported (the one supported set is `--switches=PNVI_ae_udi`) — `{n}`: {reason} (see CONTRACT.md §2/§3 and VALIDATION.md, semantics switches)"
+      s!"cerberus-lean: refused — {flag}: this semantics switch set is not supported (supported whole sets are `--switches=PNVI_ae_udi` and `--switches=inner_arg_temps`) — `{n}`: {reason} (see CONTRACT.md §2/§3 and VALIDATION.md, semantics switches)"
       ⟨"implementation and validation of this complete switch set", by decide⟩)))
     if knownSwitch n then seen := seen ++ [switchClass n]
   IO.Process.exit 2
 
 /-- Judge a `--switches` value (PNVI arc S4, 2026-10-07; design §D.3, §E S4, §F.3, §F.4):
-    the ONE supported set is `PNVI_ae_udi` alone — the `=` and space forms, a one-element
-    comma list — and becomes `[.PNVI .AE_UDI]`, the run's `CerbGlobal.Switches` (built in
-    `main`). Anything else is refused by `refuseSwitches`, each element with its reason:
+    the supported non-default sets are `PNVI_ae_udi` alone and `inner_arg_temps` alone,
+    in either the `=` or space form. They become `[.PNVI .AE_UDI]` and
+    `[.inner_arg_temps]`, respectively, in the run's `CerbGlobal.Switches`.
+    Anything else is refused by `refuseSwitches`, each element with its reason:
     another switch name, plain PNVI / PNVI_ae (§F.3), a mixed list, an override
     (R-PNVI-11), an unknown name (R-PNVI-12), the empty value. The oracle accepts many of
     these and ignores some silently (§C.5); the refusals are class (c). -/
 def judgeSwitches (flag value : String) : IO (List CerbGlobal.CerbSwitch) := do
   if value == "PNVI_ae_udi" then return [.PNVI .AE_UDI]
+  if value == "inner_arg_temps" then return [.inner_arg_temps]
   refuseSwitches flag value
   -- refuseSwitches exits 2; falling through would be an internal error (fail-closed)
   CerbStop.exitInvariant (CerbStopSites.invariant ⟨"Main.judgeSwitches", by decide⟩
@@ -1753,7 +1756,7 @@ def main (args : List String) : IO Unit := do
         refuseFlag a
       restArgs := restArgs ++ [a]; pending := rest
   -- --switches (PNVI arc S4): the run's switch set — `CerbGlobal.defaultSwitches` (= `[]`,
-  -- switches.ml:47-48) without the option, `[.PNVI .AE_UDI]` for `--switches=PNVI_ae_udi`;
+  -- switches.ml:47-48) without the option, or one supported whole set from judgeSwitches;
   -- every other value is refused here (`judgeSwitches`). Supplied below beside the fuel.
   let switchSet : List CerbGlobal.CerbSwitch ← match switchesArg with
     | none => pure CerbGlobal.defaultSwitches
@@ -1811,12 +1814,15 @@ def main (args : List String) : IO Unit := do
         | some s => s.splitOn ","
       let mut vals : List Int := []
       for p in parts do
-        match p.trim.toInt? with
+        match p.trimAscii.toString.toInt? with
         | some v => vals := vals ++ [v]
         | none => do
           IO.eprintln s!"cerberus-lean: --call-args: not an integer: {p}"
           IO.Process.exit 1
       pure (some (n, vals))
+  if switchSet.contains .inner_arg_temps && callFn.isSome then
+    IO.eprintln "cerberus-lean: refused — --call: inner_arg_temps is unsupported by CerbCall, whose injected call site implements only Normal_callconv (see CerbCall.lean and SUPPORTED.md)"
+    IO.Process.exit 2
   let libc : Option (String × List String) ← match libcCore, libcTus with
     | some c, tus =>
       if tus.isEmpty then do
@@ -1883,8 +1889,8 @@ def main (args : List String) : IO Unit := do
       | .ok cf =>
         let total := cf.funs.length + cf.procs.length + cf.impls.length +
                      cf.tagDefs.length + cf.globs.length + cf.builtins.length
-        if total == 0 && input.trim.length > 0 then
-          IO.eprintln s!"{label}: ERROR: parser returned .ok but 0 declarations from {input.trim.length} non-whitespace chars"
+        if total == 0 && input.trimAscii.toString.length > 0 then
+          IO.eprintln s!"{label}: ERROR: parser returned .ok but 0 declarations from {input.trimAscii.toString.length} non-whitespace chars"
           IO.eprintln s!"{label}: first 120 chars of input: {input.take 120}"
           failures := failures + 1
         else
@@ -1915,7 +1921,7 @@ def main (args : List String) : IO Unit := do
   -- runPipeline's frontend loop (pipeline.ml:181 mirror).
   -- bug-hunt BUG-2: the runtime is resolved like the oracle's (resolveRuntime),
   -- never searched for relative to the working directory
-  let runtimeDir ← resolveRuntime runtimeArg
+  let runtimeDir ← @resolveRuntime ⟨switchSet⟩ runtimeArg
   let contents ← if libraryOnly then pure [] else readInputs restArgs
   let mut tunits : List (String × translation_unit) := []
   let mut idx := 0
@@ -1937,11 +1943,16 @@ def main (args : List String) : IO Unit := do
   -- in the repository builds one (`scripts/check_no_fuel_numerals.sh`).
   -- Beside it, the ONE instance of the switch set (PNVI arc S1, 2026-10-05; S4,
   -- 2026-10-07): `⟨switchSet⟩` — the default `CerbGlobal.defaultSwitches` (= `[]`,
-  -- switches.ml:47-48) unless `--switches=PNVI_ae_udi` was given (judged above); one
+  -- switches.ml:47-48) unless a supported whole switch set was given (judged above); one
   -- general path, the set only selects the arms (no PNVI-only entry point). No other
   -- instance of `CerbGlobal.Switches` exists in this repository
   -- (speedbump: `scripts/check_no_fuel_numerals.sh` rule W1).
   let code ← (letI : LemFuel := ⟨fuel⟩; letI : CerbGlobal.Switches := ⟨switchSet⟩; runPipeline runtimeDir batchMode ppCoreMode firstTrace
     addressSpaceTop callFn traceNodes libc quoteCore quoteLibc progArgs tunits)
+  -- Report completed runs on stderr: batch stdout contains only verdict tokens.
+  -- Emit after execution so a panic's diagnostic envelope remains intact. Quotation
+  -- stays silent and carries the same report in its module header instead.
+  if !quoting && !ppCoreMode then
+    IO.eprintln (CerbDriverConfig.switchReport switchSet)
   if code != 0 then
     IO.Process.exit code

@@ -117,8 +117,9 @@ fail() { echo "$NAME: FAIL — $*"; fails=$((fails + 1)); }
 oracle_exec() {  # <c-file> -> OOUT (stdout+stderr), ORC
     OOUT=$("$ORACLE" --runtime="$PREFIX" --exec --batch --nolibc "$1" 2>&1); ORC=$?
 }
-lean_batch() {  # <json> -> LOUT, LRC
-    LOUT=$(env LEAN_ABORT_ON_PANIC=1 "$BIN" --batch --runtime="$PREFIX" "$1" 2>&1); LRC=$?
+lean_batch() {  # <json> -> LOUT (verdict stdout), LERR (diagnostics), LRC
+    LOUT=$(env LEAN_ABORT_ON_PANIC=1 "$BIN" --batch --runtime="$PREFIX" "$1" 2>"$W/lean.stderr"); LRC=$?
+    LERR=$(<"$W/lean.stderr")
 }
 lean_verbose() {  # <json> -> VOUT
     VOUT=$(env LEAN_ABORT_ON_PANIC=1 "$BIN" --runtime="$PREFIX" "$1" 2>&1)
@@ -166,7 +167,8 @@ control() {  # <label> <c-file> <expected oracle verdict line>
     [[ "$o" == "$want" ]] || { fail "$label: oracle: expected [$want]; got [$o]"; return; }
     cabs_ok "$c" "$j" || { fail "$label: oracle --cabs-json failed: $(head -c 300 "$j.err")"; return; }
     lean_batch "$j"
-    [[ $LRC -eq 0 && "$LOUT" == "$o" ]] || fail "$label: expected Lean = oracle [$o]; got rc=$LRC: ${LOUT:0:300}"
+    [[ $LRC -eq 0 && "$LOUT" == "$o" && "$LERR" == 'cerberus-lean switches: []' ]] \
+        || fail "$label: expected Lean = oracle [$o] and the default switch report on stderr; got rc=$LRC: ${LOUT:0:300}; stderr: ${LERR:0:300}"
 }
 
 # the census §4.5 witness shape (gcc: 5; pre-fix both engines: Specified(1))
