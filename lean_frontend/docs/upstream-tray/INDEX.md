@@ -8,6 +8,10 @@ this index does not revalidate every historical file:line against today's
 upstream. Filing is the operator's call. Report 07 remains for the record by
 default.
 
+Upstream backports (not new filings): [PR 1020, pointer-to-_Bool arguments
+under inner_arg_temps](backport-pr1020-inner-arg-temps.md), adopted in the
+2026-10-21 mode slice; checkpoint status is in the linked slice record.
+
 ## Submission status
 
 Reconciled 2026-09-25 against committed records at Cerberus

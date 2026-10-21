@@ -1,3 +1,10 @@
+# NOTE inner_arg_temps I0, 2026-10-21 [AGENT, relayed by the operator]: backport upstream
+# f10329b44287ab79ed5017ff68431d5c5953ebd7 (PR 1020). translation.lem shares the existing
+# argument-conversion helper between calling conventions, avoiding a second conversion of
+# pointer arguments already elaborated to _Bool. Both engines are regenerated from this
+# shared model. Only its [source-content] and translation.ml [expected-semantic] rows move;
+# single-row edits, no --refresh. Witness: tests/ci/0344-ptr-to-_Bool-param.c.
+# Record: lean_frontend/docs/2026-10-21_inner-arg-temps-record.md.
 # fix/union-init-refusal, 2026-10-20 [AGENT, executing [USER 2026-10-20] ruling that where upstream left a case to a TODO the fork
 # leaves it or REFUSES LOUDLY, never answering silently wrong; for union initializers specifically: refuse rather than fix
 # ("refuse until it hurts")]: the SHARED initializer desugarer refuses a braced union initializer whose member designator names a
@@ -683,7 +690,7 @@ util/cerb_fresh.ml
 # plain runStateM in Mini_pipeline bypasses recorded-error checks. Lean-only
 # declares/comment change; generated OCaml byte-identical. Single-row re-pin.
 # Record: lean_frontend/docs/2026-10-18_translation-fuel-record.md.
-100644 5d960f4e69f759c86ad811f2d776673340619cbd37f96da0fad8495fa2026466 frontend/model/translation.lem
+100644 e99043b7e282fdaff5b2df2fa25ef5f5b116a8fe23796eacb617908cf7fa5a75 frontend/model/translation.lem
 100644 3393b3fecc9a230bfebba003b484c023d9680d8f66859468c0f7b763fe8952a1 frontend/model/translation_aux.lem
 100644 a47a4bc513224172703fc568d6e1e3236fe7cffea075828656cddb5701e7ee6b frontend/model/translation_effect.lem
 100644 9427c936dcfe2bb47a984c6d73db12bf1c7012bb85b0b63156b5edececf9bf7c frontend/model/utils.lem
@@ -723,7 +730,7 @@ fa725f3e09e5ae317d685fda82c4be9dcfeca9a99ed47b1ebb4f2dd6a0a343b6 symbol.ml
 97763753365c911f580751d4a73bc0e6f3adb3ce96a5f8f98e374d285c4fc6d0 translation_effect.ml
 7f4a46468889d03e9b0ad984967babbd664174124e428526230cdffb67400e92 driver.ml
 977ee22d68c7527e500476404f5803db39a2ef2072ef9e9e34e57435c68bfd7a ctype_aux.ml
-99ed4459d0058f112a3ba616565e369e4eec8a5b6a9961ff3a69de4f03f67894 translation.ml
+32d184cce426a27eb4efbd43a29816ca3a2f516b03fbf5452f5afc251dce328d translation.ml
 6cc50123c4727ca848299fc38a7f62c889acd6e5f5c1ce5a5c732b52e9abd05c monadic_parsing.ml
 0151eee4e5d4dda205ec022437cd3807d5fdde8eec365c1ea36205b7693b1c2a ailSyntax.ml
 efe1a293fdf87eb7a264b3d5a2705d9f9421115f9137772c0b6a539a5049b8fb core.ml
