@@ -28,7 +28,7 @@ Reports 56–57 (2026-10-19, Draft): `memcpy` on overlapping objects copies sile
 `aligned_alloc` with an invalid alignment allocates (the proxy checks only the size clause), cerberus-caesium's items
 G1/G2; since 2026-10-20 the fork REFUSES both cases in both engines (contract D10, a fork-ahead refusal noted in each
 draft's Origin; the drafts stay Draft — they report upstream's TODOs, not the refusal).
-Report 59 (2026-10-20, Draft; the orchestrator assigned this number, 58 is not in this tray): union initializers — the
+Report 59 (2026-10-20, Draft; the orchestrator assigned this number): union initializers — the
 desugarer (`desugaring_init.lem`) builds every braced union initializer as the FIRST member whatever the designators say
 (its own TODO and level-0 "is WRONG for union" print; 12 silent-wrong rows against gcc 13), plus three neighbouring
 initializer defects it does not record (a struct/union VALUE as a member initializer rejected; a designated union

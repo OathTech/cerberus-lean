@@ -157,6 +157,26 @@ non-first member inside the inner braces. Cross-reference: draft 08
 the remedy there (report `AilInvalid_desugaring_init_failed` as a diagnostic
 instead of `failwith`) would turn this death into a located diagnostic too.
 
+**(b4) A string literal initializing a union's FIRST-member char array is
+rejected** (the pre-merge reviewer's probe p12, 2026-10-21): gcc 98; both
+engines and pristine `b9aeedcb4` reject, exit 1.
+
+```c
+union U { char s[4]; int i; }; int main(void){ union U u = { "abc" }; return u.s[1]; }
+```
+
+```text
+p12_string_first_member.c:1:52: error: constraint violation: initializing 'char' with an expression with a non arithmetic type 'char*'
+```
+
+(Lean: `Error {msg: "typechecking failed at …"}`.) The desugarer's union
+arm enters the first member positionally (`go_down_aux`, `:104-106`) and
+then treats the literal as the scalar leaf's initializer — (b1)'s descent
+again, now on a string literal; the brace-less string form that
+`wip_desugar_initializer_` special-cases for a plain char array
+(`cabs_to_ail.lem:3446-3450`) is not reached through a union. A noisy
+neighbour of (b1), not a silent one.
+
 ### (c) Found while measuring: an anonymous union member is flattened into the enclosing struct
 
 `desugar_struct_declaration` (`cabs_to_ail.lem:2713-2720`, "STD §6.7.2.1#13")
@@ -176,7 +196,9 @@ gcc: 801 (exit status 33); pristine upstream and the Lean port: `Specified(1200)
 Not an initializer defect (the initializer above is desugared correctly for
 the flattened struct — that is why the anonymous-union control in (a) is
 right); reported here because the measurement surfaced it and no other draft
-carries it. Not changed in the fork.
+carries it. Not changed in the fork by this slice; since 2026-10-20 it is
+the subject of tray draft 60 (`60-anonymous-members-spliced-into-containing-aggregate.md`)
+and the upstream-uncertainty survey record (`docs/2026-10-20_upstream-uncertainty-survey-record.md`, branch `docs/uncertainty-survey`, §2.1 cluster A), a separate queued slice.
 
 ## Expected
 
@@ -214,4 +236,4 @@ a union other than the first (every row of table (a) and (b2)'s rvalue
 forms, and (b3)'s program, which refuses before the internal error);
 contract D11, `scripts/check_union_init_refusals.sh`, record
 `lean_frontend/docs/2026-10-20_union-init-refusal-record.md`. (b1), (b2)'s
-initializer form and (c) are unchanged in the fork.
+initializer form, (b4) and (c) are unchanged in the fork.

@@ -75,7 +75,10 @@ struct or union VALUE as a member initializer (`struct S s = { .t = x, .t.l = 5 
 with an expression with a non arithmetic type …`; Lean `Error {msg: "typechecking failed at
 …"}`, exit 1) where gcc accepts; an anonymous union member is flattened into the enclosing
 struct's LAYOUT (`sizeof(struct S)` 12 where gcc has 8; `s.i` and `s.c` do not alias) — found
-while measuring, outside this refusal's scope.
+while measuring, outside this refusal's scope: anonymous union members are NOT reached by the
+refusal (`struct S { union { int i; unsigned char c[4]; }; } s = { .c = {1,2,3,4} }` still
+answers silently wrong on both engines), a known class that remains until the queued
+anonymous-members slice lands (the upstream-uncertainty survey record (`docs/2026-10-20_upstream-uncertainty-survey-record.md`, branch `docs/uncertainty-survey`, §2.1 cluster A; tray 60)).
 
 ## If your harness runs union-initializing programs
 

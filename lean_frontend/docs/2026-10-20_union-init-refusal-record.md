@@ -128,8 +128,18 @@ exactly when it contains such a designator (§1 rows 5-7); a mixed list whose de
 name the first member is handled correctly — `{ 9, .a = 2 }` → 2 and `{ .a = 1, .a = 2 }` → 2 on
 both engines, as gcc (the later initializer overrides, #19), and `{ .a = 1, 2 }` is an excess
 element the cursor marks overflowing, as gcc warns. So the one predicate covers the mixing
-clause without refusing a form the desugarer handles correctly (the brief's measurement rule);
-`ctl_positional_then_first.c` is the control.
+clause; `ctl_positional_then_first.c` is the control. The first version of this sentence claimed
+the predicate refuses no form the desugarer handles correctly; the pre-merge review (P3-2) found
+one it does: an ANONYMOUS STRUCT inside a union — `union U { struct { int a; int b; }; char c; }
+u = { .b = 2 }; return u.b;` — gcc 2, pristine `b9aeedcb4` `Specified(2)` (right by aliasing: the
+spliced `a`, `b` and `c` all sit at offset 0), the fork refuses with `(union U: designator .b,
+first member a)`. "First member a" is upstream's spliced member list (`desugar_struct_declaration`
+splices an anonymous member's members into the containing aggregate, `cabs_to_ail.lem:2713-2720`);
+in C the first member is the anonymous struct and `.b` designates inside it. The outcome is SAFE —
+a refusal, never a wrong answer — and the anonymous-members class as a whole (silently wrong in
+the struct case below) is the queued separate slice of the upstream-uncertainty survey record (`docs/2026-10-20_upstream-uncertainty-survey-record.md`, branch `docs/uncertainty-survey`, §2.1 cluster A; tray 60). If the text is ever revised (the
+outcome-protocol migration), it should say "first member in upstream's member list" [AGENT
+2026-10-21].
 
 What the predicate deliberately does NOT catch, by measurement:
 
@@ -224,8 +234,7 @@ cabs-jsons (rc 0); a libc-mode program (`printf("hi\n"); return 3;`) answers `Sp
 - Found while measuring, not in the brief: the anonymous-union flattening gives `sizeof(struct
   S)` = 12 (gcc 8) and no `i`/`c` aliasing (`Specified(1200)` on both engines where gcc gives
   801). Reported as tray 59 (c); not refused (no ruling, and not an initializer defect). It is
-  now the first item of a separate queued slice (the orchestrator's survey record of that slice,
-  not on this branch), so it is not proposed again here.
+  now the first item of a separate queued slice — the upstream-uncertainty survey record (`docs/2026-10-20_upstream-uncertainty-survey-record.md`, branch `docs/uncertainty-survey`, §2.1 cluster A; tray 60) — so it is not proposed again here.
 
 **STOP (the brief's rule): a corpus program would start refusing — `union3-003-union-init.c`.**
 Its second declaration `union U u2 = { .c = 'A' }` names the second member; the engines
@@ -298,8 +307,16 @@ check_union_init_refusals: OK (27 cases: 14 union initializers designating a mem
 
 - **Failure-reach register (`scripts/failure_reach_register.txt`): no new row.** The new
   `failwithI` site is in the generated `Desugaring_init.moveTo_aux`, a frontend (desugar-time)
-  declaration outside the exec dependency closure — the module has no register row and the
-  census's pure-site count did not move. Gate + selftest on the changed tree, verbatim:
+  declaration. By the register's own scope definition it is outside the closure: the closure is
+  the `exec_dependency` of the DRIVE cone (`entries`, `lean_frontend/test/Unit/FuelFormsTool.lean:109`),
+  while `desugar` sits in the informational `frontEntries` column (`:112`) — so
+  `check_failure_reach.py:113` never counts a frontend site, and the precedent is consistent
+  (63 `failwithI` sites in `generated/Cabs_to_ail.lean` and 8 in `generated/Desugaring_init.lean`,
+  the new one included, with 0 register rows for either). The evidence that this site is not a
+  NEW exec-closure site is the gate's own "NEW pure exec-closure site" check
+  (`check_failure_reach.py:259`) staying green on the changed tree, quoted below; the pre-merge
+  review (P3-4) corrected the first version's appeal to the pure-site count, which that check's
+  scope makes vacuous for a frontend site. Gate + selftest on the changed tree, verbatim:
   `check_failure_reach: OK (239 pure failure sites = the 239 register rows exactly (237 in the
   exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, shared keys
   lengthened, both directions); position classes unchanged; 0 DISCARDABLE; reach
@@ -362,7 +379,7 @@ section of this record).
 - The snapshot ref `refs/wip/union-init-refusal-stop` taken at the STOP was deleted after the
   slice commit landed on the branch.
 - Tray 59 (b1)/(b2-initializer) stay as upstream has them (no ruling); (c) is the first item of
-  a separate queued slice (the orchestrator's survey record), not proposed here.
+  a separate queued slice (the upstream-uncertainty survey record (`docs/2026-10-20_upstream-uncertainty-survey-record.md`, branch `docs/uncertainty-survey`, §2.1 cluster A; tray 60)), not proposed here.
 - The texts are pre-envelope; the outcome-protocol landing's register migration turns this
   stop into a `CerbStop` REFUSAL (§0).
 - The level-0 `is WRONG for union` print of the oracle is unchanged (it is upstream's; it no
@@ -461,3 +478,45 @@ cap; the oracle tree and binary are unchanged (no `.lem`/OCaml moved). Last line
 - Tier A row 3's command, `./scripts/test_exec.sh --check-baseline=scripts/exec_coverage_baseline.txt tests/coverage` (rc 0): `SUMMARY: total=278 match=223 ub_match=37 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=16 cerb_floor=0 cerb_inconsistent=0` / `BASELINE OK`
 
 Not run after the rebase: Tier A and Tier B — the orchestrator runs both at the boundary.
+
+## 10. Pre-merge audit (2026-10-21, fresh read-only reviewer; `docs/2026-10-21_union-init-premerge-review.md`) — dispositions [AGENT 2026-10-21, orchestrator rulings applied by the worker]
+
+Verdict MERGEABLE WITH FIXES, documentation only; the code change is untouched by the fix commit
+(the slice commit's full battery stands for it). Dispositions, one by one:
+
+- **P2-1** (SUPPORTED.md overclaims by omitting the anonymous-union carve-out): FIXED — the Domain
+  row now says plainly that anonymous union members are outside the refusal (upstream splices
+  them into the containing aggregate), that `struct S { union { int i; unsigned char c[4]; }; }
+  s = { .c = {1,2,3,4} }` still answers silently wrong on both engines, and that the class
+  remains until the queued anonymous-members slice lands (survey §2.1 cluster A, tray 60).
+- **P3-2** (the §2.3 claim "refuses no form the desugarer handles correctly" is false for an
+  anonymous struct inside a union): FIXED in §2.3 — the case is stated with its gcc/pristine
+  values, classified SAFE (a refusal, never a wrong answer), the "first member a" wording
+  explained as upstream's spliced list, and the class pointed at the queued slice.
+- **P3-3** (stale INDEX parenthetical): FIXED — exactly "(2026-10-20, Draft; the orchestrator
+  assigned this number)".
+- **P3-4** (the register evidence sentence proved nothing): FIXED in §5 — the classification by
+  the register's scope definition (drive-cone `exec_dependency`, `FuelFormsTool.lean:109`;
+  `desugar` in `frontEntries`, `:112`), the precedent (63 unregistered sites in
+  `Cabs_to_ail.lean`, 8 in `Desugaring_init.lean`) and the green NEW-exec-site check
+  (`check_failure_reach.py:259`) replace the pure-site-count appeal.
+- **P3-5** (the STOP crossing ratified after the fact): nothing for the worker; the landing note
+  keeps it visible.
+- **P3-6** (manifest row out of byte order; p12 not filed): FIXED — the `[source-content]` row for
+  `desugaring_init.lem` now sits after `defacto_memory_types.lem` (content unchanged; §9.2 quotes
+  the gate and its selftest); tray 59 gains (b4), the reviewer's p12 (a string literal into a
+  union's first-member char array: both engines and pristine reject where gcc accepts), with the
+  probe text.
+- The review file is committed beside this record (same name).
+
+### 9.2 Verification of the audit-fix commit (2026-10-21; documentation only — the code and the slice commit's full battery are untouched)
+
+On the fix tree, through `scripts/ce`; last lines verbatim:
+
+- `tools/check_handwritten_sync.sh` (rc 0): `check_handwritten_sync: OK (53 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)`
+- `scripts/check_fork_drift.sh` (rc 0): `check_fork_drift: OK — layer 1: 89 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 31 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin 2d3a492758cb23dc4e417f2961983d25b36ce130 matches lem -v lean-backend-v0.1.0-alpha.1-65-g2d3a492 (hex prefix))`
+- `scripts/check_fork_drift.sh --selftest` (rc 0): `check_fork_drift: SELFTEST OK (31 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S31 advanced upstream ref (not drift); S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; S15-S30 version forms, full-pin validation and refresh retention; unplanted gate green)`
+- `scripts/check_union_init_refusals.sh` (rc 0): `check_union_init_refusals: OK (27 cases: 14 union initializers designating a member other than the first (static/automatic storage, a struct member, mixed positional/designated lists, a nested union, an array of unions, a string literal, a scalar second member, the retired coverage control union3-003's shape, a compound literal, a union inside a struct) refused by the oracle (uncaught Failure, exit 125) and by the Lean engine (abort, exit 134) with byte-identical texts; 12 controls agree with the oracle (positional and first-member designated forms incl. mixing with the first member only, { 0 } read as Unspecified, the anonymous-union-in-struct path, a union inside a struct positional or first-designated, member assignment); the struct-from-struct-variable rejection is unchanged on both)`
+- Row 1, `./scripts/test_unit.sh` (rc 0): `Total: 20 passed, 0 failed`; its gate lines include `check_theorem_axioms: hand-written axiom census OK (0 axioms — the arc-17 S2b end state)`, `check_failure_reach: OK (239 pure failure sites = the 239 register rows exactly (237 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, shared keys lengthened, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=173 REACHABLE=44 UNKNOWN=22; every row sealed; tally line consistent)` and the fork-drift, fixture-freeze (`check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)`), item-G and union-initializer witness lines above.
+
+Not run here: Tier A and Tier B — the slice commit's full battery (43/43, source unchanged, run by the orchestrator) stands for the code, which this commit does not touch.
