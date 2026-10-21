@@ -1,5 +1,9 @@
 # exec differential baseline — written by test_exec.sh --write-baseline
 # format: <file.c> <STATUS>   (see test_exec.sh header for the taxonomy)
+# 2026-10-21 inner_arg_temps I0b: adopt upstream 3230aa494's 0343 witness.
+#   The exhaustive nolibc oracle reaches the 30 s CPU timeout (CERB_SKIP,
+#   never agreement); both engines/modes pass the libc single-trace check.
+#   Existing rows unchanged. Record: lean_frontend/docs/2026-10-21_inner-arg-temps-i0b-record.md.
 # 2026-10-21 inner_arg_temps I0: adopt upstream PR 1020's 0344 witness.
 #   The exhaustive nolibc oracle reaches the 30 s CPU timeout (CERB_SKIP,
 #   never agreement); the libc single-trace witness is checked separately.
@@ -287,4 +291,5 @@
 0339-invalid-string-character.error.c CERB_SKIP
 0340-shl_promotion_to_signed.undef.c UB_MATCH
 0341-misaligned_pointer_implicit_conversion.undef.c MATCH
+0343-subzero-floating-to-_Bool.c CERB_SKIP
 0344-ptr-to-_Bool-param.c CERB_SKIP

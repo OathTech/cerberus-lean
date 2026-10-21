@@ -206,6 +206,7 @@ citests=(
   0338-cast-pointer-to-_Bool.c
   0339-invalid-string-character.error.c
   0340-shl_promotion_to_signed.undef.c
+  0343-subzero-floating-to-_Bool.c
   0344-ptr-to-_Bool-param.c
 )
 

@@ -6,13 +6,18 @@ Worktree branch: `feature/inner-arg-temps`. Starting implementation:
 Status: **PARKED after I2**, 2026-10-21. The recursive-main refusal premise
 failed in the first I3 probes. See the [park record](2026-10-21_inner-arg-temps-park.md)
 for the counterexample, active source path and reproduction commands.
+The later rulings authorize the separate
+[I0b backport](2026-10-21_inner-arg-temps-i0b-record.md), now validated by
+complete Tier A and both-mode libc quotation checks, and defer approved
+I1b work to quotation hygiene. They do not resolve that park condition.
 
 ## I0 — upstream PR 1020
 
 [AGENT 2026-10-21, relayed by the operator] Adopt upstream
 `f10329b44287ab79ed5017ff68431d5c5953ebd7` before enabling the Lean
 driver's mode. The fork retains the defect; upstream's witness demonstrates
-it. The separate floating-to-`_Bool` backport and I1b await operator rulings.
+it. At this checkpoint, the separate floating-to-`_Bool` backport and I1b
+awaited operator rulings; the later charter amendment resolves those items.
 
 The shared `translation.lem` change is upstream's unmodified hunk. It factors
 the Normal convention's argument conversion into a helper and uses that

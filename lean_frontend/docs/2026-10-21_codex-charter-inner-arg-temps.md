@@ -5,6 +5,33 @@ based on mainline `e32c16709` (Core quoting landed 2026-10-21). Worker: Codex #1
 Status: ACTIVE from dispatch. Items marked PENDING an operator ruling are not
 started until the ruling arrives; everything else proceeds in checkpoint order.
 
+## Amendment — 2026-10-21
+
+[USER 2026-10-21] Include upstream `3230aa494` as checkpoint I0b after
+the PR 1020 backport, I0 (`56ac1e5ae`). Adopt the fractional-float-to-`_Bool`
+fix in `translation_aux.lem` and both runtime variants, its upstream CI
+witness, and the corresponding source/runtime/generated-delta pins. Change
+the Normal libc dump pin only if regeneration shifts symbol numbering,
+with that diff accounted for. Mark tray report 15 as fixed upstream and
+backported after validation.
+
+[USER 2026-10-21] Approve mirroring the resolved-path library-location rule
+into the OCaml oracle and refusing quotation with non-canonical runtime
+spellings.
+
+[AGENT 2026-10-21, relayed by the operator] Move quotation hygiene out of
+this slice to protect delivery of the consumer's elaboration mode. The
+same worker receives that follow-up charter at this slice's close; I1b
+remains below as approved work deferred to that slice, not work to perform
+here.
+
+I0–I2 and the park record were already committed when these rulings arrived.
+The new I0b authorization permits that backport; it does not resolve the
+recursive-main premise failure in
+[the park record](2026-10-21_inner-arg-temps-park.md). The remaining lane and
+close-out work stays parked pending that separate ruling. Other charter
+requirements remain in force.
+
 ## Why
 
 cerberus-caesium (consumer; its certificate generator targets Cerberus's
@@ -104,15 +131,17 @@ mechanism.
   passes in Normal mode; `git apply --check` of f10329b44's translation.lem hunk
   against mainline succeeds. Backport it, adopt the witness into tests/ci (+ the
   lane baselines), cite the commit.
-- PENDING an operator ruling (orchestrator's proposal, 2026-10-20): backport in the
-  SAME slice upstream's 3230aa494 (`_Bool` from a fractional floating value:
-  translation_aux.lem conv_arith + loaded_ivfromfloat in BOTH std.core variants,
-  witness tests/ci/0343-subzero-floating-to-_Bool.c; applies cleanly), since it
-  edits std_inner_arg_temps.core, which this slice pins. If ruled otherwise, that
-  item is a refusal in the survey's slice C instead. A std.core edit may shift the
-  libc dump's symbol numbering: re-pin tests/libc/libc.core with the diff explained.
 - A merge-base bump is being scoped separately; these two backports are expected
   to merge trivially into it (identical content).
+
+### I0b — fractional floating values converted to _Bool
+
+Approved by the amendment above. Backport `3230aa494`:
+`translation_aux.lem`'s `conv_arith` and `loaded_ivfromfloat` in BOTH std
+variants; adopt `tests/ci/0343-subzero-floating-to-_Bool.c` and its expected
+output. Re-pin the affected manifest rows and mark tray 15 as fixed upstream,
+backported. If the std change shifts libc dump symbol numbering, explain
+the diff before re-pinning the Normal dump.
 
 ### I1 — the switch set and the two driver arms
 - `judgeSwitches`: `inner_arg_temps` alone is a second supported WHOLE set
@@ -136,13 +165,16 @@ mechanism.
 
 ### I1b — quotation hygiene carried over from the Core-quoting D5 re-review
 (READY WITH NOTES, 2026-10-20; review file committed with the Core-quoting landing)
-- PENDING operator ruling (reviewer's question, orchestrator recommends YES): mirror
+Status: ruled yes; deferred to the quotation-hygiene slice (amendment above).
+Do not implement this section in the inner_arg_temps slice.
+
+- Approved, deferred: mirror
   the resolved-path library-location rule into the fork's OCaml oracle
   (`util/cerb_location.ml`, the remedy tray 58 already drafts) so both engines
   agree and the served-UB-location divergence class disappears; fork-drift
   `[source-content]` re-pin + dated NOTE; the D5 witness pair becomes an
   agreement check. Under the standing rule an override is mirrored in both engines.
-- PENDING operator ruling (review P3-1, orchestrator recommends YES): under
+- Approved, deferred (review P3-1): under
   `--quote-core`/`--quote-libc` the driver REFUSES (loud, attributed, exit 2)
   when the runtime spelling is not the canonical relative form or when any
   emitted source label would be non-portable (absolute/machine-specific);

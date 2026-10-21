@@ -11,6 +11,9 @@ default.
 Upstream backports (not new filings): [PR 1020, pointer-to-_Bool arguments
 under inner_arg_temps](backport-pr1020-inner-arg-temps.md), adopted in the
 2026-10-21 mode slice; checkpoint status is in the linked slice record.
+Report [15](15-bool-float-conversion-truncation.md) is fixed upstream by
+`3230aa494` and backported in I0b of that slice. This records the fix's
+disposition, not an external submission or issue closure.
 
 ## Submission status
 
@@ -68,7 +71,7 @@ notes below establish only what was checked then.
 | [12-bswap64-overflow-crash.md](12-bswap64-overflow-crash.md) | Draft | No submission recorded |
 | [13-memcmp-hugesize-overflow-crash.md](13-memcmp-hugesize-overflow-crash.md) | Sent | Communicated privately to the Cerberus maintainers by the operator, 2026-09-26 ([USER 2026-09-26] reported having notified the Cerberus maintainers privately); no public issue URL |
 | [14-ailname-proxy-shadows-user-functions.md](14-ailname-proxy-shadows-user-functions.md) | Draft | No submission recorded |
-| [15-bool-float-conversion-truncation.md](15-bool-float-conversion-truncation.md) | Draft | No submission recorded |
+| [15-bool-float-conversion-truncation.md](15-bool-float-conversion-truncation.md) | Fixed upstream; backported | Upstream `3230aa494`; inner_arg_temps I0b. No submission recorded |
 | [16-snprintf-truncation-return-length.md](16-snprintf-truncation-return-length.md) | Draft | No submission recorded |
 | [17-diagnostic-embeds-symbol-id.md](17-diagnostic-embeds-symbol-id.md) | Draft | No submission recorded |
 | [18-monadic-list-combinators-non-tail.md](18-monadic-list-combinators-non-tail.md) | Draft | No submission recorded |
@@ -241,7 +244,8 @@ gcc second-oracle lane — `lean_frontend/docs/2026-08-30_parity-detective-repor
 deps/cerberus-upstream binary + runtime @ b9aeedcb4 on this date; NOT
 covered by the 2026-08-23 duplicate search — search at filing time):
 
-15. **15-bool-float-conversion-truncation.md** — TRUE BUG. Floating→
+15. **15-bool-float-conversion-truncation.md** — TRUE BUG, fixed upstream
+    by `3230aa494` and backported in I0b (2026-10-21). Original finding: floating→
     `_Bool` conversion truncates BEFORE the §6.3.1.2#1
     compare-to-zero test (std.core:83 guards on the truncated `n`,
     not the floating value): `_Bool b = 0.5` yields 0 where every

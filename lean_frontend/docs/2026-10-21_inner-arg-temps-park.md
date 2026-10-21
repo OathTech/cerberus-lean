@@ -85,5 +85,8 @@ active model's recursive-main behavior, or whether a separately authorized
 shared-model refusal is required. Neither direction has been selected.
 The I3 lane, baseline, plants and fuzzing round, and I4 documentation,
 consumer note, tray report and full close-out battery remain unfinished.
-I1b and upstream `3230aa494` remain pending their existing rulings. Nothing
-has been pushed or filed externally.
+The later [charter amendment](2026-10-21_codex-charter-inner-arg-temps.md)
+authorizes upstream `3230aa494` as the separate
+[I0b backport](2026-10-21_inner-arg-temps-i0b-record.md) and defers approved
+I1b work to the quotation-hygiene slice. Those rulings do not settle the
+recursive-main finding. Nothing has been pushed or filed externally.

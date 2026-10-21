@@ -1,5 +1,15 @@
 # Floating→`_Bool` conversion truncates before the compare-to-zero test (`_Bool b = 0.5` yields 0; non-finite crashes the tool)
 
+**Status, 2026-10-21: fixed upstream, backported.** Upstream
+`3230aa494c4c18e1b2fea9fd9f0d53dd20f0a324` fixes `conv_arith` and
+`loaded_ivfromfloat` in both std variants. The inner_arg_temps I0b backport
+adopts those changes and upstream CI witness 0343. Both reproducers below
+now return `Specified(42)` on both engines in both modes; the upstream
+witness also produces its expected output. See the
+[backport record](../2026-10-21_inner-arg-temps-i0b-record.md) for scope,
+pins and validation. No external submission is recorded. The diagnosis
+below describes the pre-backport implementation.
+
 **Affected:** `runtime/libcore/std.core:79-92` (`loaded_ivfromfloat`;
 checked against `master` @ `b9aeedcb4`; our checkout's
 `runtime/libcore/std.core` is byte-identical to it — diff-verified
