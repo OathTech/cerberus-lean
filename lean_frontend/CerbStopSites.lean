@@ -234,7 +234,7 @@ def bytefromint (detail : String) : UpstreamCrash :=
 
 def intfrombyte (detail : String) : UpstreamCrash :=
   mirror ⟨"CerbMem.intfrombyte", by decide⟩ detail
-    (memSource 2778 2780 (by decide) "let intfrombyte (IV (_, intval) as ival) =\n    assert (Z.(leq (of_int 0) intval && leq intval (of_int 255)));")
+    (memSource 2779 2780 (by decide) "let intfrombyte (IV (_, intval) as ival) =\n    assert (Z.(leq (of_int 0) intval && leq intval (of_int 255)));")
 
 def deriveCap (detail : String) : UpstreamCrash :=
   mirror ⟨"CerbMem.deriveCap", by decide⟩ detail
@@ -338,7 +338,7 @@ def floatToInt (detail : String) : UpstreamCrash :=
 
 def stepSpawnEquality (detail : String) : UpstreamCrash :=
   mirror ⟨"CerbStepInstances.stepSpawnEquality", by decide⟩ detail
-    (stepSource 110 128 (by decide) "type core_step2 =\n  | Step_ccall2 of Mem_common.thread_id * core_runM thread_state\n  | Step_with_runstate2 of runstate_step_kind * core_runM thread_state\n  | Step_tau2 of string * Core_run.core_tau_step_kind * thread_state\n  \n  | Step_action_request2 of string * Loc.t * (* set Cmm.aid * set Cmm.aid * set Cmm.aid * *)\n                            Mem_common.thread_id *\n                            bool * (* is_unseq_with_ccall *)\n                            core_runM (action_request2 thread_state)\n  \n  | Step_blocked2\n  | Step_error2 of string\n  | Step_thread_done2 of Mem_common.thread_id * Core.value\n  | Step_done2 of Core.value\n  | Step_memop_request2 of Loc.t * Mem_common.memop * list Core.value * Mem_common.thread_id * bool(* is_unseq_with_ccall *) * (Core.value -> thread_state)\n  | Step_spawn_threads2 of (list Mem_common.thread_id -> thread_state) * list thread_state (* initial states for the children *)\n  | Step_fs2 of Mem_common.thread_id * thread_state * core_runM fs_oper_or_done\n  | Step_nd2 of list thread_state")
+    (stepSource 110 127 (by decide) "type core_step2 =\n  | Step_ccall2 of Mem_common.thread_id * core_runM thread_state\n  | Step_with_runstate2 of runstate_step_kind * core_runM thread_state\n  | Step_tau2 of string * Core_run.core_tau_step_kind * thread_state\n  \n  | Step_action_request2 of string * Loc.t * (* set Cmm.aid * set Cmm.aid * set Cmm.aid * *)\n                            Mem_common.thread_id *\n                            bool * (* is_unseq_with_ccall *)\n                            core_runM (action_request2 thread_state)\n  \n  | Step_blocked2\n  | Step_error2 of string\n  | Step_thread_done2 of Mem_common.thread_id * Core.value\n  | Step_done2 of Core.value\n  | Step_memop_request2 of Loc.t * Mem_common.memop * list Core.value * Mem_common.thread_id * bool(* is_unseq_with_ccall *) * (Core.value -> thread_state)\n  | Step_spawn_threads2 of (list Mem_common.thread_id -> thread_state) * list thread_state (* initial states for the children *)\n  | Step_fs2 of Mem_common.thread_id * thread_state * core_runM fs_oper_or_done\n  | Step_nd2 of list thread_state")
 
 def cheriPointerHash (detail : String) : Invariant :=
   invariant ⟨"CerbMem.cheriPointerHash", by decide⟩ detail ⟨"The concrete build has no CHERI pointer-hash implementation.", by decide⟩

@@ -94,11 +94,10 @@ cd "$PROJECT_ROOT" || fail "cannot cd to $PROJECT_ROOT"
 # Error     {msg: "MSG"}       -> ERR:{msg: "MSG"}
 # empty / uncaught exception / panic (with nonzero/crash exit) -> CRASH
 verdict() {   # <stdout-file> <rc> <stderr-file> [lean]
-    local outf="$1" rc="$2" errf="$3" line
+    local outf="$1" rc="$2" errf="$3" line stop_kind=""
     printf '%s\n' "$rc" > "$outf.status"
     line=$(cat "$outf")
     if [[ "${4:-}" == lean ]]; then
-        local stop_kind
         stop_kind=$(python3 - "$OBSERVATION_CODEC" "$outf" "$errf" "$rc" <<'PY_STOP'
 import sys
 from pathlib import Path
@@ -107,6 +106,8 @@ import observations as obs
 decoded = obs.decode_stop(Path(sys.argv[2]).read_bytes(), Path(sys.argv[3]).read_bytes(), int(sys.argv[4]))
 if any(isinstance(entry.stop, obs.Invariant) for entry in decoded.stops):
     print('INVARIANT')
+elif decoded.problems:
+    print('INVALID: stop protocol: ' + '; '.join(problem.reason for problem in decoded.problems))
 if decoded.legacy_panics:
     print('immaculate: legacy, origin unattributed (coarse CRASH pin only)', file=sys.stderr)
 PY_STOP
@@ -117,6 +118,12 @@ PY_STOP
         # memory-cap breach (exit 137 + capped's OOM-KILLED witness on
         # stderr): its own token, so it can never read as a verdict
         echo "KILL"; return
+    fi
+    # Preserve witnessed OOM precedence, but never turn a protocol problem
+    # into a coarse CRASH pin when no resource early return applies.
+    if [[ "$stop_kind" == INVALID:* ]]; then
+        printf 'OBSERVATION ERROR: immaculate %s\n' "$stop_kind" >&2
+        echo "INVALID"; return
     fi
     # Historical negative pins classify deliberate engine failures coarsely.
     # MATCH | L=CRASH means that failure class was observed on both sides;

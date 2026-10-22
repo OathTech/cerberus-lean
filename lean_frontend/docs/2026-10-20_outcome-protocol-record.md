@@ -5,12 +5,14 @@ Author: [AGENT 2026-10-20]. Checkpoint A against
 Charter: revision 5 of `2026-10-18_codex-charter-outcome-protocol-s1-s2.md`.
 Design: revision 3 of `2026-10-20_outcome-protocol-design-v2.md`.
 
-**Current status: D/E closed out; candidate ready for fresh pre-merge review.**
-The five mission commits have been rebased linearly onto `4d46906c9`. Tier A
-passed 19/19 and the full gate passed 43/43, each with unchanged source and
-complete selection. The earlier 31/42 run remains incomplete historical
-evidence; its interrupted B7 was unrun. The new sweep ran B7 to completion.
-The close-out dated 2026-10-22 below records the results and remaining limits.
+**Current status: pre-merge review fixes recorded; fix-commit re-gate follows.**
+D/E closed out at `fb5b4d4a1` after a linear rebase onto `4d46906c9`, with Tier A
+19/19 and the full gate 43/43, each with unchanged source and complete selection.
+Those are the base candidate's results, not evidence for the fixes below. The
+fresh review and its four dispositions are recorded at the end; the focused
+re-gate runs on the new commit and its exact results accompany the commit report.
+The earlier 31/42 run remains incomplete historical evidence; its interrupted
+B7 was unrun. The completed base-candidate sweep ran B7 afresh.
 
 ## A — baseline, inventory and fence
 
@@ -1003,8 +1005,14 @@ visible head; no new opaque atom or alternate failure mechanism was added.
 `CerbStopSites` centralises the nonempty metadata, including 76 cited source
 ranges across the six pinned upstream files. Every excerpt was compared to
 `git show b9aeedcb4dd438763b0eef7f95ac19e93875d7de:<path>` at its declared
-range; all 76 matched. Historical explanatory strings are retained even when
-an old embedded line reference differs from the reconstructed citation.
+range. The original claim that all 76 matched exactly was too strong: the
+pre-merge review measured **74/76 exact modulo indentation** at `fb5b4d4a1`.
+The other two excerpts were contained in their ranges with one extra blank line:
+`intfrombyte` cited 2778–2780 instead of 2779–2780, and `stepSpawnEquality`
+cited 110–128 instead of 110–127. The review fix narrows those ranges; a fresh
+comparison against the pinned files gives **76/76 exact modulo indentation**.
+Historical explanatory strings are retained even when an old embedded line
+reference differs from the reconstructed citation.
 The bswap64 tray remains explicitly a draft. No inferred upstream origin is
 used for the annotated invariant guards.
 
@@ -1236,6 +1244,32 @@ an external consumer-adoption or complete release claim. No merge or push was
 performed. Scratch captures and probe artifacts are ephemeral; the source,
 conclusions, reproduction commands and migration map are the committed result.
 
+
+### C.9 Missing migration-commit body, supplied after review
+
+[AGENT 2026-10-22] Commit `5f8fd8d7e` has only its subject. The following is
+the body it should have carried, reconstructed from C.6–C.8's recorded checks
+for use in the landing note. It records the C-time evidence, not a new run;
+no commit is amended or history rewritten.
+
+```text
+Migrate the nine typed kills, all 122 inventoried pure leaves and the existing
+pure/monadic/driver refusals to structured stops. Use the ruled fixed killed-node
+adapter for the twelve switch-only refusals, preserving the public erasure
+contracts. Switch rejection emits one envelope per element before one exit.
+Update the immediate pins, CLI/PNVI witnesses and register key/seal map together.
+
+Parameterise both reconstruction references over their diagnostics; prove
+historical recovery separately and restate production equality at the renderer.
+Retain the existing axiom-census entries and add both historical-recovery names.
+
+Verified: Tier A 19/19, exit 0, unchanged source and complete selection;
+kernel replay of 20 modules in five invocations, all exit 0; supplementary
+axiom probes of 53 declarations, only the standard three or empty cones;
+full retained axiom census and failure-reach gate, 240 exact sealed rows;
+25/25 selected observation plants; the CLI/runtime/Cabs-UTF8 witnesses;
+PNVI self-test and 164-row baseline, with no semantic verdict or baseline move.
+```
 
 ## D — two lane corrections
 
@@ -2061,3 +2095,77 @@ agent's reconstructible integration scratch under
 `.tmp/outcome-protocol-integration/` is then deleted; commands and conclusions
 remain here. The worktree and built artifacts stay available for the fresh
 reviewer.
+
+
+## Pre-merge review corrections — 2026-10-22
+
+[AGENT 2026-10-22, orchestrator disposition relayed by the operator] Apply the
+three fixes from the [fresh pre-merge review](2026-10-22_outcome-protocol-premerge-review.md)
+and supply the missing checkpoint-C commit body in this record. Keep the gated
+history intact, add one fix commit above `fb5b4d4a1`, then validate that commit.
+The unaffected full-battery rows retain the base candidate's evidence; the
+changed classifier instruments require the focused re-gate below.
+
+| Finding | Disposition |
+|---|---|
+| P2-1 | Both Lean-side classifiers now make non-empty `decode_stop.problems` INVALID after their retained resource early returns, independently of `decoded.stops`. A decoded INVARIANT still wins first. Malformed reserved panic, malformed reserved ModelFailure and envelope-less ModelFailure each have RED plants against five oracle classes. The immaculate hook emits the protocol reason when it selects INVALID. The policy matrix also keeps resource-precedence, ordinary-output and legacy-panic controls. Design §4.2 states the caller rule. |
+| P3-1 | `test_pnvi.sh --selftest` has a `lean-invariant` stub on `litmus/provenance_basic_using_uintptr_t_global_yx`, a pinned oracle-crash row. It uses the real lane entry point and requires nonzero exit with that row named as INVALID and the INVARIANT site in the explanation. Other rows use the real engine. |
+| P3-2 | `intfrombyte` now cites 2779–2780 and `stepSpawnEquality` 110–127. The pinned-source comparison reproduced 74/76 exact ranges on the reviewed candidate and 76/76 after narrowing, modulo indentation. C.6 corrects the original overclaim; the excerpt text and classification do not change. |
+| P3-3 | C.9 supplies the absent body for `5f8fd8d7e`, including its actual verification. No gated commit was amended. |
+
+The review file is copied unchanged into `docs/` in this fix commit. Its probes
+remain review scratch, not committed evidence dumps. No decoder schema,
+producer semantics, baseline, resource convention or other lane is changed.
+The two citation bounds change diagnostic metadata and their `by decide`
+refinements; they require a refreshed generated copy/build. Public theorem
+statements, reference contracts and census entries are retained.
+
+[AGENT 2026-10-22] The queued orchestrator battery uses this same worktree at
+`fb5b4d4a1`. Prepare the fix under ignored `.tmp/` while it runs; do not change
+tracked source, HEAD or generated build inputs until its log records completion.
+Start the fix's heavy checks only after `release rc=` is present and `uptime`
+shows load below 6. Run one heavy command at a time.
+
+The queued battery completed at 06:39:15 UTC on 2026-10-22 with `release rc=0`,
+43/43 commands, unchanged source and complete selection. The worktree remained
+clean at `fb5b4d4a1` until then. At application, `uptime` reported a one-minute
+load of 1.48; each prepared source hash matched the reviewed tree. The review
+copy is byte-identical to the supplied file.
+
+Before the fix commit, the focused policy command exited 0 with this output:
+
+```text
+STOP POLICY: 40 invariant/oracle and 15 malformed/oracle pairs RED in both classifiers; ordinary/resource/legacy controls passed
+```
+
+The existing Python codec suite (18 tests) and observation suite (25 tests)
+also exited 0. These focused results do not replace the post-commit re-gate.
+
+`release.py --list` identifies row 14 as **A14.1** (`test_pnvi.sh --selftest`)
+and **A14.2** (`test_pnvi.sh`), so `--lane A14` selects both. The affected
+full-mode selection is four commands, not a new full 43-command sweep.
+`test_immaculate.sh` has no `--selftest` option; its entry-point self-test is
+`test_observation_lanes.py --lane immaculate` (also included in B9).
+
+After the commit, from the prepared repository root, with all commands under
+`scripts/capped`, `CERB_MEM_MAX=48G`, and `TMPDIR` under this worktree's `.tmp`:
+
+```sh
+python3 scripts/release.py --mode fast \
+  --out .tmp/outcome-protocol-review-fix/tier-a
+python3 scripts/release.py --mode full --lane A14 --lane B5 --lane B9 \
+  --out .tmp/outcome-protocol-review-fix/affected
+scripts/test_pnvi.sh --selftest
+python3 scripts/test_observation_lanes.py --lane immaculate \
+  --out .tmp/outcome-protocol-review-fix/immaculate-selftest
+```
+
+The cheap policy matrix and codec tests precede the gates. After Tier A rebuilds
+the changed metadata module, replay `CerbStopSites` with capped
+`lake env leanchecker` from `lean_frontend`; Tier A retains the full axiom census.
+The fix commit is the object validated, so its record specifies these commands
+without claiming their later results. The completion report must quote both
+runner summaries and the self-test/replay exits. A subset's
+`Complete tier selection: False` is expected and must not be described as a
+complete full-mode pass. Stop on any real semantic verdict movement; do not
+re-pin a baseline to accept it. No merge, push or external adoption.

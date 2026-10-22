@@ -109,7 +109,7 @@ def stop_policy_plants(outdir):
                        '\nl=$(verdict "$2.stdout" "$3" "$2.stderr" lean)\n'
                        'classify "$4" "$l"\n')
     prefix = outdir / 'capture'
-    cases = [
+    invariant_cases = [
         ('typed', model(wire(INV)), b'', 1),
         ('panic', b'', PANIC + wire(INV) + b'\n' + TRACE, 134),
         ('cli', b'', wire(INV) + b'\n', 2),
@@ -119,8 +119,18 @@ def stop_policy_plants(outdir):
         ('bare137', model(wire(INV)), b'', 137),
         ('oom', model(wire(INV)), b'capped: OOM-KILLED (memory.events oom_kill=1; command exit 0)\n', 0),
     ]
-    count = 0
-    for name, stdout, stderr, status in cases:
+    problem_cases = [
+        ('malformed-reserved-panic', b'', PANIC + wire(['2', *INV[1:]]) + b'\n' + TRACE, 134),
+        ('malformed-reserved-model', model(b'cerberus-lean stop [broken'), b'', 1),
+        ('envelope-less-model', model(b'old message'), b'', 1),
+    ]
+    counts = {'INVARIANT': 0, 'INVALID': 0}
+    cases = [(*case, 'INVARIANT') for case in invariant_cases]
+    cases += [(*case, 'INVALID') for case in problem_cases]
+    for name, stdout, stderr, status, expected in cases:
+        if expected == 'INVALID':
+            decoded = obs.decode_stop(stdout, stderr, status)
+            assert decoded.problems and not decoded.stops, (name, decoded)
         prefix.with_suffix('.stdout').write_bytes(stdout)
         prefix.with_suffix('.stderr').write_bytes(stderr)
         prefix.with_suffix('.status').write_text(str(status))
@@ -132,11 +142,37 @@ def stop_policy_plants(outdir):
                               (('INVALID', 'bad oracle'), 'INVALID')]:
             cls, why = pnvi_lane.classify_row('exhaustive', oracle, lean)
             assert cls == 'INVALID', (name, oracle, lean, cls, why)
-            assert lean[1].startswith('INVARIANT:') and 'INVARIANT:' in why, (lean, why)
+            assert lean[0] == 'INVALID', (name, lean)
+            if expected == 'INVARIANT':
+                assert lean[1].startswith('INVARIANT:') and 'INVARIANT:' in why, (lean, why)
+            else:
+                assert lean[1].startswith('stop protocol: '), (name, lean)
             p = subprocess.run(['bash', str(harness), str(ROOT), str(prefix), str(status), token],
                                capture_output=True, env=dict(os.environ, OBSERVATION_CODEC=str(ROOT/'scripts/observations.py')))
-            assert p.returncode == 0 and p.stdout == b'INVARIANT\n' and not p.stderr, (name, p)
-            count += 1
+            assert p.returncode == 0 and p.stdout == (expected + '\n').encode(), (name, p)
+            if expected == 'INVARIANT':
+                assert not p.stderr, (name, p)
+            else:
+                assert p.stderr.startswith(b'OBSERVATION ERROR: immaculate INVALID: stop protocol: '), (name, p)
+            counts[expected] += 1
+    # These pre-existing resource exits remain ahead of protocol problems.
+    oom = b'capped: OOM-KILLED (memory.events oom_kill=1; command exit 0)\n'
+    for name, stdout, stderr, status, pnvi_expected, shell_expected in (
+            ('oom-problem', model(b'old message'), oom, 0, ('RESOURCE', 'KILL'), b'KILL\n'),
+            ('bare137-problem', model(b'old message'), b'', 137, ('RESOURCE', 'KILL'), b'INVALID\n'),
+            ('timeout-problem', model(b'old message'), b'', 124, ('RESOURCE', 'TIMEOUT'), b'INVALID\n'),
+            ('fuel-tail-problem', FUEL + b'bad tail\n', b'', 1, ('RESOURCE', 'FUEL'), b'INVALID\n')):
+        assert obs.decode_stop(stdout, stderr, status).problems, name
+        prefix.with_suffix('.stdout').write_bytes(stdout)
+        prefix.with_suffix('.stderr').write_bytes(stderr)
+        prefix.with_suffix('.status').write_text(str(status))
+        assert pnvi_lane.classify_side(str(prefix), True) == pnvi_expected, name
+        p = subprocess.run(['bash', str(harness), str(ROOT), str(prefix), str(status), 'CRASH'], capture_output=True)
+        assert p.returncode == 0 and p.stdout == shell_expected, (name, p)
+        if shell_expected == b'KILL\n':
+            assert not p.stderr, (name, p)
+        else:
+            assert p.stderr.startswith(b'OBSERVATION ERROR: immaculate INVALID: stop protocol: '), (name, p)
     # Exercise the imported OOM helper and the ordinary path too: a missing
     # helper must not silently turn a shell error into a passing negative test.
     for stdout, stderr, status, oracle, expected in (
@@ -156,7 +192,7 @@ def stop_policy_plants(outdir):
     p = subprocess.run(['bash', str(harness), str(ROOT), str(prefix), '134', 'CRASH'], capture_output=True)
     assert p.returncode == 0 and p.stdout == b'MATCH\n' and p.stderr == (
         b'immaculate: legacy, origin unattributed (coarse CRASH pin only)\n'), p
-    print(f'STOP POLICY: {count} invariant/oracle pairs RED in both classifiers; ordinary/OOM/legacy controls passed', flush=True)
+    print(f"STOP POLICY: {counts['INVARIANT']} invariant/oracle and {counts['INVALID']} malformed/oracle pairs RED in both classifiers; ordinary/resource/legacy controls passed", flush=True)
 
 
 def main():

@@ -141,9 +141,11 @@ def classify_side(prefix: str, lean: bool):
     if lean:
         # Producer-format compatibility. Refusal attribution comes from the
         # structured field, never a search in a program/ordinary Error payload.
+        # Malformed/missing envelopes must not fall through as absent, even
+        # when no stop decoded. Keep the resource early returns above intact.
+        if decoded.problems:
+            return ('INVALID', 'stop protocol: ' + str(decoded.problems))
         if decoded.stops:
-            if decoded.problems:
-                return ('INVALID', 'stop protocol: ' + str(decoded.problems))
             stops = [entry.stop for entry in decoded.stops]
             if status == 2 and all(isinstance(stop, obs.Refusal) for stop in stops):
                 return ('CLI_REFUSAL', '; '.join(stop.detail for stop in stops)[:200])

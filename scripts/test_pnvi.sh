@@ -137,6 +137,14 @@ sys.exit(134 if p.returncode == -6 else p.returncode)'
 sys.stdout.buffer.write(re.sub(rb"Symbol\(([0-9]+), ", lambda m: b"Symbol(%d, " % (int(m.group(1)) + 1000), p.stdout))
 sys.stderr.buffer.write(p.stderr)
 sys.exit(134 if p.returncode == -6 else p.returncode)'
+    # P9: an invariant on a pinned oracle-crash row must be RED in the real
+    # lane loop, regardless of the baseline's refusal/crash classification.
+    stub "$ST/lean-invariant" "$REAL_LEAN" 'if any(os.path.basename(a) == "litmus__provenance_basic_using_uintptr_t_global_yx.json" for a in args):
+    import json
+    payload = "cerberus-lean stop " + json.dumps(["1", "INVARIANT", "plant.pnvi", "guard failed", "plant contract"], separators=(",", ":"))
+    print("ModelFailure {msg: " + json.dumps(payload) + "}")
+    sys.exit(1)
+os.execv(REAL, [REAL] + args)'
     # PO: the ORACLE ignores the flag (its answer moves away from the pinned hashes)
     stub "$ST/oracle-strip" "$REAL_ORACLE" 'os.execv(REAL, [REAL] + [a for a in args if not a.startswith("--switches")])'
     fails=0
@@ -170,6 +178,8 @@ sys.exit(134 if p.returncode == -6 else p.returncode)'
         CERB_LEAN_BIN_OVERRIDE="$ST/lean-errclass" "$SELF" --rows "$SEL"
     expect "P8c a Lean-side change on a BOTH_FAIL row (class kept)" red 'minimal/073-exit\.libc: lean-side hash [0-9a-f]{12} != baseline' \
         CERB_LEAN_BIN_OVERRIDE="$ST/lean-symnum" "$SELF" --rows "$SEL"
+    expect "P9 invariant on a pinned oracle-crash row" red 'litmus/provenance_basic_using_uintptr_t_global_yx: INVALID — lean: INVARIANT: plant\.pnvi' \
+        CERB_LEAN_BIN_OVERRIDE="$ST/lean-invariant" "$SELF" --rows "$SEL"
     expect "PO the oracle ignores the switch" red "oracle-side hash .* != baseline" \
         CERB_ORACLE_BIN_OVERRIDE="$ST/oracle-strip" "$SELF" --rows "$SEL"
     expect "missing Lean engine" red 'FAIL — (engines not built|Lean driver missing)' \
@@ -195,7 +205,7 @@ sys.exit(134 if p.returncode == -6 else p.returncode)'
         echo "  PLANT FAILED [baseline plants] the control run left no manifest at $M"; fails=$((fails+1))
     fi
     [[ $fails -eq 0 ]] || { echo "test_pnvi: SELFTEST FAILED ($fails)"; exit 1; }
-    echo "test_pnvi: SELFTEST OK (control green; 10 engine plants RED — P1 flag ignored, P6 refuse-everything, P7a unnamed crash, P7b mirrored crash, P8a oracle crash vs Lean Error, P8b Error/Error failure class differs, P8c BOTH_FAIL Lean side moved, PO oracle ignores the switch, missing engine, empty selection; 7 baseline plants RED — deleted, phantom, relabelled refusal, oracle hash, default flag, malformed class, BOTH_FAIL lean hash missing)"
+    echo "test_pnvi: SELFTEST OK (control green; 11 engine plants RED — P1 flag ignored, P6 refuse-everything, P7a unnamed crash, P7b mirrored crash, P8a oracle crash vs Lean Error, P8b Error/Error failure class differs, P8c BOTH_FAIL Lean side moved, P9 invariant on a pinned oracle-crash row, PO oracle ignores the switch, missing engine, empty selection; 7 baseline plants RED — deleted, phantom, relabelled refusal, oracle hash, default flag, malformed class, BOTH_FAIL lean hash missing)"
     exit 0
 fi
 

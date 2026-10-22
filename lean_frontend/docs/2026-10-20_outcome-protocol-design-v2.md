@@ -443,6 +443,16 @@ also incomplete/failing cases. Only when the new decoder has no causes/problems
 may the caller continue to its existing ordinary verdict and status checks.
 Those checks still establish completion and comparison, not `decode_stop` alone.
 
+[AGENT 2026-10-22, pre-merge review amendment] In the two corrected lane
+callers, non-empty `problems` means INVALID (RED) after the retained resource
+early returns, whether or not any stop decoded. This covers a malformed
+reserved envelope in a panic or ModelFailure and an envelope-less ModelFailure;
+none may fall through to the old codec's coarse CRASH token or match a crash
+pin. A fully decoded INVARIANT still takes precedence over every resource
+return. PNVI's existing OOM/137, 124 and fuel returns, and immaculate's witnessed
+OOM return, retain their existing precedence over problems; this amendment
+does not change the deferred resource policies.
+
 Inspect all complete records before applying resource/status early returns.
 Thus a fully decoded INVARIANT remains a defect even if the process later dies
 or a resource is also observed. A partial trailing record is an explicit problem,
