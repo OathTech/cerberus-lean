@@ -35,7 +35,7 @@ Defined {value: "Specified(7)", stdout: "", stderr: "", blocked: "false"}
 makes two nested calls with shortened argc/argv pairs and checks the
 outer frame after return. It gives `Specified(42)`. Both witnesses
 agree across both engines and both calling conventions; GCC exits 7
-and 42 respectively. Reproduction details and provisional lane checks are in the
+and 42 respectively. Reproduction details and the lane witnesses are in the
 [slice record](../2026-10-21_inner-arg-temps-record.md#park-resolution).
 
 The witness establishes that the driver bypasses this guard. It does
@@ -45,7 +45,8 @@ decide whether to remove/clarify the guard or reconcile the two reduction
 paths. The fork follows the active driver behavior and adds no refusal.
 
 Classification: misleading dead guard on the active driver path; report only.
-The separate libc transport park prevents completion of the new release lane.
+Release-lane validation is recorded in the
+[completion record](../2026-10-22_inner-arg-temps-completion-record.md).
 AI provenance: discovered and checked by Codex while implementing the
 2026-10-21 inner_arg_temps slice. No external duplicate search or submission
 has been performed for this draft.

@@ -2,13 +2,14 @@
 
 Branch `feature/inner-arg-temps`, worktree `worktrees/cerberus-lean-feature/inner-arg-temps`,
 based on mainline `e32c16709` (Core quoting landed 2026-10-21). Worker: Codex #1.
-Status: **PARKED, 2026-10-22**. The authorized tray-65 printer repair
-preserves Normal output and makes all 42 switched libc pairs equal, but
-`039-strerror-assert` is an existing Error/Error row, hence `BOTH_FAIL`.
-The required all-42-agreement premise is false; see the
-[repair/park record](2026-10-22_inner-arg-temps-transport-record.md).
-Production containment remains. No baseline is adopted; further work
-requires a park disposition. I1b remains approved and deferred.
+Status: **PARKED on exhaustive cross-mode multiplicity (2026-10-22)**.
+The accepted row-039 disposition remains in force, but the production sweep
+finds four switched observations versus eighty Normal observations on
+exhaustive libc row 001. Engines agree exactly within each mode; complete
+cross-mode sequences differ. The [completion/park record](2026-10-22_inner-arg-temps-completion-record.md#new-acceptance-finding-and-park)
+records the finding. No baseline or new release row is adopted. Switched
+libc execution and quotation are contained again; the per-dump detector
+remains. I1b stays approved and deferred.
 
 ## Amendment — 2026-10-21
 
@@ -47,12 +48,15 @@ A committed park stops branch work until an explicit park disposition.
 The separate I0b authorization was the accepted exception for this park;
 a new ruling by itself does not authorize working past a future park.
 
-The second park records the newly disproved transport premise below.
-The existing dump mechanism preserves neither the distinction between
-loaded parameters and local object addresses nor their execution results.
-Until a lossless transport is authorized and validated, the Lean CLI refuses
-`inner_arg_temps` with `--libc`, including quotation. I3 is not complete;
-no new baseline is adopted. The earlier recursive-main disposition stands.
+The second park disproved the original text-transport premise: loaded
+parameters and local object addresses collapsed to the same printed name.
+It temporarily contained switched libc execution and quotation. The
+[transport record](2026-10-22_inner-arg-temps-transport-record.md) records
+the authorized printer repair and the subsequent acceptance-criterion
+park. The row-039 disposition resolves that park and requires four-way complete
+libc observations. The subsequent full production sweep exposes the
+separate exhaustive multiplicity conflict recorded above. The earlier
+recursive-main disposition stands.
 
 ## Why
 

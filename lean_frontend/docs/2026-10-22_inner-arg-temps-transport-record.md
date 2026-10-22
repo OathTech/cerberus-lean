@@ -1,11 +1,10 @@
 # Park: repaired transport reaches an existing libc Error — 2026-10-22
 
 Branch `feature/inner-arg-temps`, resumed from park `ebbfa2145`.
-**PARKED:** the required 42 agreement rows include an intentional Error row.
-The scratch repaired candidate gives 41 agreement rows and one `BOTH_FAIL`.
-The production CLI retains its blanket containment; no baseline is adopted.
-A new orchestrator disposition is required before further branch work after
-this park commit.
+**Dispositioned, 2026-10-22:** the registered `strerror` Error is accepted
+under complete-observation equality, while retaining its `BOTH_FAIL`
+classification. The [completion record](2026-10-22_inner-arg-temps-completion-record.md#transport-park-resolution)
+records the ruling and resumed validation. The historical park follows.
 
 ## Park disposition
 

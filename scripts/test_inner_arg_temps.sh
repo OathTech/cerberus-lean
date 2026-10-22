@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# PROVISIONAL: all-42-agreement premise is false (strerror BOTH_FAIL); no baseline/release row.
-# Switched libc now refuses, so the complete lane and its plants remain red.
+# PROVISIONAL: the cross-mode exhaustive sequence premise is parked.
+# No baseline or release row is adopted; switched libc remains contained.
 # Matched inner_arg_temps lane. --gate runs the plants then the whole lane.
 # --selftest, --rows REGEX, --observe and --record-baseline are focused tools;
 # only --gate / an unselected baseline check certify the complete population.

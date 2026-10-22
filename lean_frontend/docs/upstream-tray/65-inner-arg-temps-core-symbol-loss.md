@@ -41,8 +41,10 @@ symbols. `tests/libc_exec/001-exit.c` crashes there instead of returning 42;
 execution sweep found 36 libc discrepancies. The oracle uses its binary
 library and is not shown to have an execution defect. Full results and
 commands are in the [park record](../2026-10-21_inner-arg-temps-libc-park.md).
-The fork now refuses this library import, including quotations, until a
-lossless transport has been validated.
+The fork initially contained this failure by refusing the switched library
+import and quotations. The repair retains a per-dump refusal for parameter rebinding. A new
+exhaustive cross-mode multiplicity finding parks acceptance and restores
+blanket containment; see the completion record below.
 
 Classification: a correctness bug if this pretty-printer is intended as
 a machine-consumable serialization; otherwise a representation/documentation
@@ -53,7 +55,8 @@ Proposed remedy: provide an explicitly lossless machine format that retains
 symbol identity, or an unambiguous printer mode with unique symbols and a
 corresponding reader. Numeric suffixes available at debug level above 4
 are not yet a validated replacement: syntax, linkage, metadata identity
-and round trips must all be checked. The fork remedy below is implemented; delivery is parked on an acceptance-premise conflict.
+and round trips must all be checked. The fork remedy below is implemented; the existing assert Error is accepted
+as equal complete observations, with its non-agreement classification retained.
 
 Related local reports: [03](03-pp-core-ambiguous-output.md) covers expression
 association, [07](07-symbol-identity-fragility.md) covers fresh-counter
@@ -82,5 +85,5 @@ remedy remains queued as separate work; this fork change repairs the
 argument-value collision without changing Normal output.
 
 Execution acceptance, quotation pins and containment status are tracked in
-the [repair record](../2026-10-22_inner-arg-temps-transport-record.md).
+the [completion record](../2026-10-22_inner-arg-temps-completion-record.md).
 This remains an upstream report draft; no submission has been made.

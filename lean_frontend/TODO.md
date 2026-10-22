@@ -38,6 +38,12 @@ of this work's scope.
 
 ## Queued larger work
 
+- **Quotation hygiene follow-up** — mirror resolved-path library-location
+  classification into the fork OCaml oracle and refuse quotation through
+  non-canonical runtime spellings. These ruled-yes I1b changes are explicitly
+  deferred from inner_arg_temps; see its charter amendment. Keep the Normal
+  runtime-location divergence pin until that separate slice validates the change.
+
 - **Preserve all Core symbol identities in library transport** — number every
   named symbol (for example `i_123`) and join globals through metadata, or use
   a binary/JSON transport. This is a separate slice: it changes the Normal

@@ -360,11 +360,14 @@ Nothing else.
 **(c) missing features — loud, attributed refusals (not bugs):**
 
 - *Semantics switches* (`--switches=…`, `--iso`): since PNVI arc S4 (2026-10-07,
-  `docs/2026-10-07_pnvi-s4-lane-record.md`) exactly ONE non-default set is SUPPORTED —
-  `--switches=PNVI_ae_udi` (both cmdliner forms; a one-element list), matched against the
-  oracle under the SAME switch by `scripts/test_pnvi.sh` (§5, LADDER Tier A row 14; the
-  run's instance `⟨[.PNVI .AE_UDI]⟩`, one general path — the set only selects the arms).
-  Every other value is REFUSED, each element with its reason (`Main.judgeSwitches` /
+  `docs/2026-10-07_pnvi-s4-lane-record.md`) `--switches=PNVI_ae_udi` is supported
+  as a whole set, matched against the oracle by `scripts/test_pnvi.sh`
+  (LADDER Tier A row 14; instance `⟨[.PNVI .AE_UDI]⟩`). The second supported
+  whole set is `--switches=inner_arg_temps` (instance `⟨[.inner_arg_temps]⟩`),
+  with matched runtime/calling convention, separate libc pins and the row-15
+  lane described below. Normal remains the default. Both cmdliner forms are
+  accepted. `--call` under inner_arg_temps is a named refusal because its
+  injected call site implements Normal only. Every other value is REFUSED, each element with its reason (`Main.judgeSwitches` /
   `refuseSwitches`; exit 2, attributed; [AGENT] Q7 recommendation "REFUSE now … plumbing … is
   not wanted", accepted [USER 2026-09-03] for the rest): the other switch names, plain `PNVI`/`PNVI_ae` (unvalidated,
   design §F.3), mixed lists, `--iso`, and the two places the ORACLE is fail-open
@@ -1017,6 +1020,51 @@ go to its repository, `scripts/semantics-pin.env`), and record its answer with t
 list is the consumer's statement as of 2026-10-03. It is not proof that nothing else is used. A
 deviation that is absent from it still gets the question whenever the consumer's proofs might
 touch it.
+
+### The inner_arg_temps differential lane
+
+**Provisional, parked:** the production sweep fails complete cross-mode
+sequence equality on exhaustive libc row 001 (four switched observations,
+eighty Normal observations, engine agreement within each mode). No baseline
+or release row is adopted. The [park record](docs/2026-10-22_inner-arg-temps-completion-record.md)
+contains the measured result; no comparison is weakened to accept it.
+
+`scripts/test_inner_arg_temps.sh --gate` is the proposed Tier A row 15.
+It runs its selftest then every row in `tests/minimal`, the ten fixtures, the sixteen corpus inputs, all
+42 libc execution inputs, three main/argc/argv witnesses and upstream
+backport witnesses 0343/0344. The oracle and Lean use the switch together;
+the libc rows pair the oracle binary variant with the repaired text variant.
+All 42 libc rows additionally run in Normal mode on both engines and require
+equal complete token sequences four ways. Row 039's existing assert Error
+is `BOTH_FAIL`, with `tests/libc_exec/baseline.txt:38` included in its
+proposed baseline entry; equal failures are not execution agreement.
+
+Ordinary inputs are exhaustive without libc. Top-level libc rows and the
+two upstream expected-output witnesses are single-trace `AGREE-FIRST`,
+outside CONTRACT §1; both libc/exhaustive rows must have at least two
+complete observations. The three main witnesses require their expected
+Defined observation on all four engine/mode combinations. Recursion into
+main executes because the active upstream Eccall path bypasses its separate
+guard; the lane checks bounded examples, not arbitrary recursion.
+
+The shared observation codec compares full ordered verdict tokens, without
+changing their payloads. Its proposed baseline pins both engine hashes
+and the row class; no baseline is adopted while acceptance fails.
+`BOTH_FAIL` and `RESOURCE` require the same Normal-mode failure/resource
+status and pin those full-token hashes too. Only for classifying Error
+failures does the existing failure-class projection ignore numeric Symbol
+IDs; that never turns a failure into agreement. A new discrepancy, missing
+row, extra row or changed hash fails. Default limits are 4G per subprocess,
+30 seconds per ordinary run, 300 seconds for libc. Csmith is a separate
+seeded measurement (`--fuzz COUNT`), comparing the switched engines and the
+oracle across modes; it does not silently adopt discrepancy rows.
+
+The selftest (not yet validated as a whole) strips each engine's switch
+and requires its convention probe to fail, mutates Normal-only main/libc results, plants both dump/mode
+mismatches and both parameter rebindings, creates a real printer collision,
+and corrupts the baseline and outcome pairs. The completion record gives
+measured counts and timing; these checks establish the stated finite lane,
+not a universal correspondence theorem.
 
 ### Core text parameter-identity speedbumps (inner_arg_temps repair)
 

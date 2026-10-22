@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 """Matched-mode inner_arg_temps instrument, modelled on test_pnvi.sh.
 
-PROVISIONAL: I3 is parked on the all-42-agreement acceptance premise:
-the repaired libc candidate has 41 agreements and the existing strerror
-assert Error (BOTH_FAIL). No baseline or release row has been adopted;
---selftest and --fuzz have not been validated in full. The CLI containment
-refusal intentionally prevents this lane from certifying I3.
+PROVISIONAL: the full production sweep fails the required cross-mode
+complete-sequence equality on exhaustive/001 (4 switched vs 80 Normal
+observations). No baseline is adopted; see the 2026-10-22 completion record.
 
 The shared observation codec owns framing, exits and full verdict tokens.
 AGREE is exhaustive; AGREE-FIRST is a single trace, outside CONTRACT §1.
@@ -14,10 +12,11 @@ and RESOURCE (oracle bound exceeded) are never agreement. Both sides are
 hash-pinned on every row; missing/extra/changed rows fail closed. DIFF and
 INVALID cannot be recorded. No semantic token is normalized by this lane.
 
-Only the three main witnesses run all four engine/mode combinations in
-the gate. They must produce their expected complete Defined observation,
-with byte-identical cross-mode tokens; failures cannot become baseline rows.
-Fuzzing additionally compares the oracle across modes on every sample.
+The three main witnesses and every tests/libc_exec row run all four
+engine/mode combinations. Witnesses require their complete expected Defined
+observation. Libc requires identical complete tokens across modes and
+engines; its registered strerror Error remains BOTH_FAIL, not execution
+agreement. Fuzzing compares the oracle across modes on every sample.
 
 The mode probes inspect actual Core conventions, independently of verdicts
 (which ought to agree across modes). The dump/mode plants test both directions.
@@ -240,7 +239,9 @@ class Runner:
     def row(self, row, cross=False):
         js = self.bridge(row)
         sides = {}
-        for switched in ([True, False] if row.expected is not None or cross else [True]):
+        libc_cross = row.name.startswith('libc/')
+        four_way = row.expected is not None or libc_cross
+        for switched in ([True, False] if four_way or cross else [True]):
             suffix = 'inner' if switched else 'normal'
             sw = [SW] if switched else []
             ocmd = [self.oracle, RT, *([] if row.libc else ['--nolibc']), '--exec', '--batch',
@@ -249,7 +250,7 @@ class Runner:
                     *(self.libc_args(switched) if row.libc else []), *row.args, js]
             for engine, cmd in [('oracle', ocmd), ('lean', lcmd)]:
                 # Fuzz cross-mode leg needs only the Normal oracle; witnesses need all four.
-                if cross and not switched and row.expected is None and engine == 'lean':
+                if cross and not switched and not four_way and engine == 'lean':
                     continue
                 p = self.capture(f'{row.name}.{suffix}.{engine}', cmd, 300 if row.libc else 30)
                 sides[suffix, engine] = classify_side(p, engine == 'lean')
@@ -287,6 +288,9 @@ class Runner:
             token = f'VAL:{{value: "Specified({row.expected})", stdout: "", stderr: "", blocked: "false"}}'
             require(all(s[0] == 'OBS' and s[1] == (token,) for s in sides.values()),
                     f'{row.name}: four-way witness disagreement: {sides}')
+        if libc_cross:
+            require(all(s[0] == 'OBS' and s[1] == oracle[1] for s in sides.values()),
+                    f'{row.name}: four-way libc complete-observation disagreement: {sides}')
         if cross:
             normal = sides['normal', 'oracle']
             require(normal[0] == oracle[0] == 'OBS' and normal[1] == oracle[1],
@@ -300,10 +304,14 @@ class Runner:
             expected = observations.parse(expected_text, b'', 0, 'batch')
             require(cls == 'AGREE-FIRST' and parsed.tokens('full') == expected.tokens('full'),
                     f'{row.name}: upstream expected verdict differs')
-        print(f'  {cls:25} {row.name}' + (' cross-mode=AGREE' if cross or row.expected is not None else ''), flush=True)
+        print(f'  {cls:25} {row.name}' + (' cross-mode=SAME_COMPLETE' if libc_cross else
+              ' cross-mode=AGREE' if cross or row.expected is not None else ''), flush=True)
         return {'class': cls, 'mode': row.mode, 'oracle': side_hash(oracle), 'lean': side_hash(lean),
                 **({'normal_status': normal_status} if normal_status is not None else {}),
-                **({'cross_mode': 'AGREE'} if row.expected is not None or cross else {})}
+                **({'cross_mode': 'SAME_COMPLETE'} if libc_cross else
+                   {'cross_mode': 'AGREE'} if row.expected is not None or cross else {}),
+                **({'normal_baseline': 'tests/libc_exec/baseline.txt:38 (039-strerror-assert MATCH)'}
+                   if row.name == 'libc/039-strerror-assert' else {})}
 
     def run(self, rows, cross=False):
         require(rows, 'empty selection')
@@ -326,7 +334,7 @@ class Runner:
 
 
 def selftest(args):
-    selection = re.compile(r'^witness/|^libc/002-puts$')
+    selection = re.compile(r'^witness/|^libc/(002-puts|039-strerror-assert)$')
     rows = [r for r in population() if selection.search(r.name)]
     control = Runner(args.oracle, args.lean, args.out / 'control')
     actual = control.run(rows)
@@ -356,18 +364,20 @@ def selftest(args):
     stub.write_text('#!/usr/bin/env python3\nimport subprocess,sys\nreal=' + repr(str(args.lean)) +
                     '\np=subprocess.run([real]+sys.argv[1:],capture_output=True)\n'
                     'out=p.stdout\nif "--switches=inner_arg_temps" not in sys.argv:\n'
-                    '    out=out.replace(b"Specified(42)",b"Specified(43)")\n'
+                    '    out=out.replace(b"Specified(42)",b"Specified(43)").replace(b"Specified(7)",b"Specified(8)")\n'
                     'sys.stdout.buffer.write(out)\nsys.stderr.buffer.write(p.stderr)\n'
                     'sys.exit(p.returncode if p.returncode>=0 else 128-p.returncode)\n')
     stub.chmod(0o755)
     runner = Runner(args.oracle, stub, args.out / 'normal-lean-change')
-    try:
-        runner.row(next(r for r in rows if r.name == 'witness/recursive-main-args'))
-    except Failure as exc:
-        require('four-way witness disagreement' in str(exc), f'wrong cross-mode failure: {exc}')
-        print('PLANT OK (Normal-only Lean result changed -> four-way witness disagreement)', flush=True)
-    else:
-        raise Failure('Normal-only Lean change was accepted')
+    for name, message in [('witness/recursive-main-args', 'four-way witness disagreement'),
+                          ('libc/002-puts', 'four-way libc complete-observation disagreement')]:
+        try:
+            runner.row(next(r for r in rows if r.name == name))
+        except Failure as exc:
+            require(message in str(exc), f'wrong cross-mode failure: {exc}')
+            print(f'PLANT OK (Normal-only Lean result changed -> {message})', flush=True)
+        else:
+            raise Failure(f'Normal-only Lean change was accepted: {name}')
     # Exercise the real baseline comparator with captured controls, no reruns.
     for kind in ['deleted', 'phantom', 'hash', 'class', 'cross-mode']:
         mutated = json.loads(json.dumps(actual)); key = next(iter(mutated))
@@ -393,7 +403,7 @@ def selftest(args):
             pass
         else:
             raise Failure(f'bad outcome pair accepted: {o} / {l}')
-    print('SELFTEST OK (control; both stripped-switch stubs; Normal-only witness mutation; both dump/mode plants; both binder plants; printer collision; five baseline plants; outcome failures)', flush=True)
+    print('SELFTEST OK (control; both stripped-switch stubs; Normal-only main/libc mutations; both dump/mode plants; both binder plants; printer collision; five baseline plants; outcome failures)', flush=True)
 
 
 def fuzz(args):

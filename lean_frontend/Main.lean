@@ -22,6 +22,16 @@ import CerbCall
 
 set_option autoImplicit true
 
+/-! The driver accepts Normal (the default), PNVI_ae_udi alone, or
+inner_arg_temps alone. The selected set supplies both stdlib selection and
+translation/calling convention; the latter mode takes loaded argument
+values and allocates parameter objects in the callee, including main.
+Run reports go to stderr; quotations carry the same set in their header.
+Libc dumps must match the convention and pass the parameter-binder check.
+`--call` and mixed switch sets are refused under inner_arg_temps. The active
+upstream driver permits recursion into main (tray 64). See SUPPORTED.md
+and the matched-mode lane, scripts/test_inner_arg_temps.sh. -/
+
 /-! ## Core stdlib loading -/
 
 /-- Convert a CoreParser.CoreFile from std.core into the tuple the
@@ -1874,12 +1884,12 @@ def main (args : List String) : IO Unit := do
   if switchSet.contains .inner_arg_temps && callFn.isSome then
     IO.eprintln "cerberus-lean: refused — --call: inner_arg_temps is unsupported by CerbCall, whose injected call site implements only Normal_callconv (see CerbCall.lean and SUPPORTED.md)"
     IO.Process.exit 2
-  -- Tray 65's fork printer repair separates argument values and addresses.
-  -- Acceptance is parked: the repaired candidate reaches strerror's existing
-  -- Error, so the required 42 agreement rows cannot be claimed. Keep the
-  -- blanket containment until disposition; the loader detector also remains.
+  -- The repaired engines agree within each mode, but the exhaustive libc
+  -- witness has 4 observations under the switch and 80 in Normal mode.
+  -- Park on the required complete cross-mode sequence equality; keep the
+  -- per-dump detector too. See the 2026-10-22 completion/park record.
   if switchSet.contains .inner_arg_temps && libcCore.isSome then
-    IO.eprintln "cerberus-lean: refused — --libc: R-IAT-LIBC-SYMBOL-LOSS: inner_arg_temps libc transport repair has not passed its acceptance criterion; execution and quotation remain contained (see SUPPORTED.md and upstream tray 65)"
+    IO.eprintln "cerberus-lean: refused — --libc: R-IAT-LIBC-SYMBOL-LOSS: repaired inner_arg_temps transport is parked on exhaustive cross-mode observation multiplicity; execution and quotation remain contained (see SUPPORTED.md and the 2026-10-22 completion record)"
     IO.Process.exit 2
   let libc : Option (String × List String) ← match libcCore, libcTus with
     | some c, tus =>
