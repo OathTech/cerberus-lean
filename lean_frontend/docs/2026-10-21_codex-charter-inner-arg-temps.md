@@ -2,9 +2,13 @@
 
 Branch `feature/inner-arg-temps`, worktree `worktrees/cerberus-lean-feature/inner-arg-temps`,
 based on mainline `e32c16709` (Core quoting landed 2026-10-21). Worker: Codex #1.
-Status: **PARKED again during I3**, 2026-10-21: the variant libc text loses
-parameter/address symbol identity. See the [second park](2026-10-21_inner-arg-temps-libc-park.md).
-The recursive-main park is resolved; I1b remains approved and deferred.
+Status: **PARKED, 2026-10-22**. The authorized tray-65 printer repair
+preserves Normal output and makes all 42 switched libc pairs equal, but
+`039-strerror-assert` is an existing Error/Error row, hence `BOTH_FAIL`.
+The required all-42-agreement premise is false; see the
+[repair/park record](2026-10-22_inner-arg-temps-transport-record.md).
+Production containment remains. No baseline is adopted; further work
+requires a park disposition. I1b remains approved and deferred.
 
 ## Amendment — 2026-10-21
 
@@ -106,8 +110,9 @@ of the binary library's symbol identities. The printer drops the numbers
 that distinguish `SD_FunArgValue` from `SD_ObjectAddress` of the same name.
 I2's calling-convention check and literal quotation comparisons missed this
 loss; the matched-mode execution sweep exposes crashes and wrong answers.
-This premise is false, so the slice is parked rather than changing the
-transport or accepting those discrepancies under this charter.
+This premise is false and caused the second park. The 2026-10-22
+disposition above authorizes a printer repair and requires matched-mode
+execution evidence before lifting containment; discrepancies remain findings.
 
 ## Upstream context (relayed by the operator, 2026-10-20; paraphrased)
 

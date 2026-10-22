@@ -82,6 +82,25 @@ def assertSomeDecls (name : String) (input : String) : TestM Unit :=
 
 /-! ## Tests -/
 
+def testParameterBinders : TestM Unit := do
+  IO.println "=== Libc parameter binder check (tray 65) ==="
+  let check (source : String) : Except String (Option (String × String)) := do
+    let file ← CoreParser.parseFile source
+    match CoreParser.checkParameterBinders file with
+    | .ok () => return none
+    | .error (Symbol _ _ (SD_Id proc), Symbol _ _ (SD_Id name)) => return some (proc, name)
+    | .error _ => throw "unexpected non-name symbol in parsed binder diagnostic"
+  assertEq "separate parameter value and object" (check
+    "proc p (x_fav12: loaded integer): eff unit := let strong x: pointer = create(Ivalignof('signed int'), 'signed int') in store('signed int', x, x_fav12)") none
+  assertEq "lost value/address distinction" (check
+    "proc p (x: loaded integer): eff unit := let strong x: pointer = create(Ivalignof('signed int'), 'signed int') in store('signed int', x, x)") (some ("p", "x"))
+  assertEq "Normal pointer parameter rebound in nested case" (check
+    "proc p (x: pointer): eff unit := bound(case Specified(0) of | Specified(x: integer) => pure(Unit) end)") (some ("p", "x"))
+  assertEq "saved continuation parameter rebound" (check
+    "proc p (x: loaded integer): eff loaded integer := save ret: loaded integer (x: loaded integer := Specified(0)) in pure(x)") (some ("p", "x"))
+  assertEq "parameter names checked per procedure" (check
+    "proc p (x: pointer): eff unit := pure(Unit)\nproc q (y: pointer): eff unit := let strong x: pointer = create(Ivalignof('signed int'), 'signed int') in pure(Unit)") none
+
 def testLexer : TestM Unit := do
   IO.println "=== Lexer ==="
 
@@ -952,6 +971,7 @@ def runTests : CoreParserTest.TestM Unit := do
   CoreParserTest.testFullPrograms
   CoreParserTest.testDeclarations
   CoreParserTest.testLibcProductions
+  CoreParserTest.testParameterBinders
   CoreParserTest.testFiles
 
 def main : IO Unit := do

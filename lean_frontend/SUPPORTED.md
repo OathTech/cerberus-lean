@@ -33,12 +33,15 @@ entry-specific hypotheses and use the current definitions, not infer a
 universal theorem from a green differential baseline.
 
 The `inner_arg_temps` branch also accepts that switch as a whole set, but
-its delivery is **parked**: the ordinary libc Core text merges loaded
-parameters with their local object addresses. The Lean CLI refuses this
-switch with `--libc` (execution and quotation) as
-`R-IAT-LIBC-SYMBOL-LOSS`, exit 2; `--call` is also unsupported under this
-switch. The matched-mode lane is provisional and has no adopted baseline.
-See the [park record](docs/2026-10-21_inner-arg-temps-libc-park.md).
+its delivery is **parked**. The fork printer repair separates loaded
+parameters from their local object addresses and preserves Normal output.
+A scratch candidate's 42 libc pairs match, but one is the existing
+`strerror` assert Error, classified `BOTH_FAIL`; the required all-agreement
+acceptance criterion is not met. The production CLI keeps its blanket
+`R-IAT-LIBC-SYMBOL-LOSS` refusal for switched `--libc` execution and quotation,
+exit 2. `--call` remains unsupported under the switch. The new lane has no
+adopted baseline. See the
+[repair/park record](docs/2026-10-22_inner-arg-temps-transport-record.md).
 For execution without the libc import, upstream's recursive-main guard is
 dead on the active driver path: recursion into main executes. Bounded
 witnesses with and without argc/argv agree on both engines in both modes

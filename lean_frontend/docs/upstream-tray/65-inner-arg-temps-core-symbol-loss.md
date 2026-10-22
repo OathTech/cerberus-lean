@@ -53,10 +53,34 @@ Proposed remedy: provide an explicitly lossless machine format that retains
 symbol identity, or an unambiguous printer mode with unique symbols and a
 corresponding reader. Numeric suffixes available at debug level above 4
 are not yet a validated replacement: syntax, linkage, metadata identity
-and round trips must all be checked. The fork has not implemented a repair.
+and round trips must all be checked. The fork remedy below is implemented; delivery is parked on an acceptance-premise conflict.
 
 Related local reports: [03](03-pp-core-ambiguous-output.md) covers expression
 association, [07](07-symbol-identity-fragility.md) covers fresh-counter
 invariants, and [48](48-funptrmap-keyed-by-number-conflates-libc-statics.md)
 covers function-map keys. This finding is the loss of two already-distinct
 symbols when printing callee-allocated parameter temporaries.
+
+## Remedy as implemented in the fork (2026-10-22)
+
+`to_string_pretty` spells `SD_FunArgValue str` as `str_fav<number>`.
+The `pp_core` procedure path checks a pair of name sets as it constructs
+its document: a value spelling colliding with any bare `SD_Id` or
+`SD_ObjectAddress` spelling stops through `Cerb_debug.error`, naming the
+procedure and name. Either insertion order is checked. A C identifier can
+therefore not silently masquerade as a numbered argument. The original
+Normal dump hash and all 52 Normal program/fixture Core captures stay
+unchanged. Both libc variants regenerate without a collision. An
+intentional collision fails; its Normal-mode control prints successfully.
+
+The Lean loader separately rejects a body binder whose printed name is a
+formal parameter name, for both modes and quotations. This recognizes the
+original lossy shape, at the cost of conservatively refusing some legal
+block-local shadowing. These checks do not prove transport fidelity or
+implement general scope analysis. The full-numbering/structured-transport
+remedy remains queued as separate work; this fork change repairs the
+argument-value collision without changing Normal output.
+
+Execution acceptance, quotation pins and containment status are tracked in
+the [repair record](../2026-10-22_inner-arg-temps-transport-record.md).
+This remains an upstream report draft; no submission has been made.

@@ -1,13 +1,22 @@
-# inner_arg_temps consumer status — parked, 2026-10-21
+# inner_arg_temps consumer status — parked, updated 2026-10-22
 
 The slice is not ready for adoption. The driver accepts the whole switch
 set `--switches=inner_arg_temps` and selects the matching runtime and
-calling convention, but imported libc execution and quotation are now
-refused with `R-IAT-LIBC-SYMBOL-LOSS` (exit 2). The variant Core text loses
-parameter/address symbol identity and produced both crashes and wrong
-answers. I2's successful literal quotation checks did not establish that
-the text preserves the original binary library. See the
-[park record](2026-10-21_inner-arg-temps-libc-park.md).
+calling convention, but production imported-libc execution and quotation
+remain refused with `R-IAT-LIBC-SYMBOL-LOSS` (exit 2).
+
+The fork printer repair separates argument values from object addresses,
+with a collision refusal and an independent loader check. Normal output
+is unchanged. The repaired scratch candidate gives matching observations
+on all 42 libc rows, but `strerror` intentionally returns an assert Error
+on both engines in both modes: 41 agreement rows and one `BOTH_FAIL`.
+That fails the required all-42-agreement acceptance criterion, so containment
+stays pending a new disposition. See the
+[repair/park record](2026-10-22_inner-arg-temps-transport-record.md).
+I2's earlier green was a faithful quotation of a corrupted parse, not
+transport evidence. The revised variant dump pin is
+`56986871ff4cf05959213c5c20936b0914d14bd925b5bf7223cce25be72536ac`;
+its quotation pin and production delivery remain pending.
 
 Correction to the earlier recursive-main guidance: upstream's guard is
 dead on the active driver path. The Eccall reduction directly invokes

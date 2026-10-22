@@ -3940,11 +3940,11 @@ glob a_14229: pointer [ail_ctype = 'char[14]'] :=
   Specified(0))))
 
 -- Fun map
-proc difftime (time1: loaded integer, time0: loaded integer): eff loaded floating :=
+proc difftime (time1_fav21649: loaded integer, time0_fav21650: loaded integer): eff loaded floating :=
   let strong time1: pointer = create(Ivalignof('signed long'), 'signed long') in
-  store('signed long', time1, time1) ;
+  store('signed long', time1, time1_fav21649) ;
   let strong time0: pointer = create(Ivalignof('signed long'), 'signed long') in
-  store('signed long', time0, time0) ;
+  store('signed long', time0, time0_fav21650) ;
   let strong a_21659: loaded integer =
     bound(
       let weak a_21654: loaded integer = load('signed long', time1) in
@@ -3967,22 +3967,22 @@ proc difftime (time1: loaded integer, time0: loaded integer): eff loaded floatin
   save ret_21651: loaded floating (a_21660: loaded floating:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_21660)
 
-proc time (timer: loaded pointer): eff loaded integer :=
+proc time (timer_fav21645: loaded pointer): eff loaded integer :=
   let strong timer: pointer =
     create(Ivalignof('signed long*'), 'signed long*') in
-  store('signed long*', timer, timer) ;
+  store('signed long*', timer, timer_fav21645) ;
   kill('signed long*', timer) ;
   run ret_21646(conv_loaded_int('signed long', Specified(0))) ;
   kill('signed long*', timer) ;
   save ret_21646: loaded integer (a_21648: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_21648)
 
-proc clock_gettime (clk: loaded integer, ts: loaded pointer): eff loaded integer :=
+proc clock_gettime (clk_fav21626: loaded integer, ts_fav21627: loaded pointer): eff loaded integer :=
   let strong clk: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', clk, clk) ;
+  store('signed int', clk, clk_fav21626) ;
   let strong ts: pointer =
     create(Ivalignof('struct timespec*'), 'struct timespec*') in
-  store('struct timespec*', ts, ts) ;
+  store('struct timespec*', ts, ts_fav21627) ;
   let strong _: loaded integer =
     bound(
       let weak a_21629: pointer =
@@ -4023,9 +4023,9 @@ proc clock_gettime (clk: loaded integer, ts: loaded pointer): eff loaded integer
   save ret_21628: loaded integer (a_21644: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_21644)
 
-proc remove (path: loaded pointer): eff loaded integer :=
+proc remove (path_fav11058: loaded pointer): eff loaded integer :=
   let strong path: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', path, path) ;
+  store('const char*', path, path_fav11058) ;
   let strong r: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong a_11060: loaded integer =
     bound(
@@ -4537,9 +4537,9 @@ proc tmpfile (): eff loaded pointer :=
   save ret_10838: loaded pointer (a_11057: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_11057)
 
-proc tmpnam (buf: loaded pointer): eff loaded pointer :=
+proc tmpnam (buf_fav10640: loaded pointer): eff loaded pointer :=
   let strong buf: pointer = create(Ivalignof('char*'), 'char*') in
-  store('char*', buf, buf) ;
+  store('char*', buf, buf_fav10640) ;
   let strong s: pointer = create(Ivalignof('char[14]'), 'char[14]') in
   let strong try: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong r: pointer = create(Ivalignof('signed int'), 'signed int') in
@@ -4902,10 +4902,10 @@ proc tmpnam (buf: loaded pointer): eff loaded pointer :=
   save ret_10641: loaded pointer (a_10837: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_10837)
 
-proc fclose (f: loaded pointer): eff loaded integer :=
+proc fclose (f_fav10446: loaded pointer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav10446) ;
   let strong r: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong head: pointer =
     create(Ivalignof('struct _IO_FILE**'), 'struct _IO_FILE**') in
@@ -5312,10 +5312,10 @@ proc fclose (f: loaded pointer): eff loaded integer :=
   save ret_10447: loaded integer (a_10639: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_10639)
 
-proc fflush (f: loaded pointer): eff loaded integer :=
+proc fflush (f_fav10118: loaded pointer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav10118) ;
   let strong a_10123: loaded integer =
     bound(
       let weak a_10125: loaded integer =
@@ -6011,12 +6011,12 @@ proc fflush (f: loaded pointer): eff loaded integer :=
   save ret_10119: loaded integer (a_10445: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_10445)
 
-proc fopen (filename: loaded pointer, mode: loaded pointer): eff loaded pointer :=
+proc fopen (filename_fav9932: loaded pointer, mode_fav9933: loaded pointer): eff loaded pointer :=
   let strong filename: pointer =
     create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', filename, filename) ;
+  store('const char*', filename, filename_fav9932) ;
   let strong mode: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', mode, mode) ;
+  store('const char*', mode, mode_fav9933) ;
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
   let strong fd: pointer = create(Ivalignof('signed int'), 'signed int') in
@@ -6425,15 +6425,16 @@ proc fopen (filename: loaded pointer, mode: loaded pointer): eff loaded pointer 
   save ret_9934: loaded pointer (a_10117: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_10117)
 
-proc freopen (filename: loaded pointer, mode: loaded pointer, f: loaded pointer): eff loaded pointer :=
+proc freopen (filename_fav9552: loaded pointer, mode_fav9553: loaded pointer,
+f_fav9554: loaded pointer): eff loaded pointer :=
   let strong filename: pointer =
     create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', filename, filename) ;
+  store('const char*', filename, filename_fav9552) ;
   let strong mode: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', mode, mode) ;
+  store('const char*', mode, mode_fav9553) ;
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav9554) ;
   let strong fl: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong f2: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
@@ -7223,12 +7224,12 @@ proc freopen (filename: loaded pointer, mode: loaded pointer, f: loaded pointer)
   save ret_9555: loaded pointer (a_9931: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_9931)
 
-proc setbuf (f: loaded pointer, buf: loaded pointer): eff unit :=
+proc setbuf (f_fav9502: loaded pointer, buf_fav9503: loaded pointer): eff unit :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav9502) ;
   let strong buf: pointer = create(Ivalignof('char*'), 'char*') in
-  store('char*', buf, buf) ;
+  store('char*', buf, buf_fav9503) ;
   let strong _: loaded integer =
     bound(
       let strong (a_9506: loaded pointer,
@@ -7307,17 +7308,17 @@ proc setbuf (f: loaded pointer, buf: loaded pointer): eff unit :=
   kill('char*', buf) ;
   save ret_9504: unit (a_9551: unit:= Unit) in  pure(a_9551)
 
-proc setvbuf (f: loaded pointer, buf: loaded pointer, type: loaded integer,
-size: loaded integer): eff loaded integer :=
+proc setvbuf (f_fav9341: loaded pointer, buf_fav9342: loaded pointer,
+type_fav9343: loaded integer, size_fav9344: loaded integer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav9341) ;
   let strong buf: pointer = create(Ivalignof('char*'), 'char*') in
-  store('char*', buf, buf) ;
+  store('char*', buf, buf_fav9342) ;
   let strong type: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', type, type) ;
+  store('signed int', type, type_fav9343) ;
   let strong size: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', size, size) ;
+  store('size_t', size, size_fav9344) ;
   let strong _: loaded integer =
     bound(
       let weak a_9346: pointer =
@@ -7727,12 +7728,13 @@ size: loaded integer): eff loaded integer :=
   save ret_9345: loaded integer (a_9501: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_9501)
 
-proc fprintf (f: loaded pointer, fmt: loaded pointer, a_9301: [(ctype,pointer)]): eff loaded integer :=
+proc fprintf (f_fav9298: loaded pointer, fmt_fav9299: loaded pointer,
+a_9301: [(ctype,pointer)]): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav9298) ;
   let strong fmt: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', fmt, fmt) ;
+  store('const char*', fmt, fmt_fav9299) ;
   let strong ret: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong ap: pointer = create(Ivalignof('signed int'), 'signed int') in
   store('signed int', ret, Unspecified('signed int')) ;
@@ -7809,12 +7811,13 @@ proc fprintf (f: loaded pointer, fmt: loaded pointer, a_9301: [(ctype,pointer)])
   save ret_9300: loaded integer (a_9340: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_9340)
 
-proc fscanf (f: loaded pointer, fmt: loaded pointer, a_9258: [(ctype,pointer)]): eff loaded integer :=
+proc fscanf (f_fav9255: loaded pointer, fmt_fav9256: loaded pointer,
+a_9258: [(ctype,pointer)]): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav9255) ;
   let strong fmt: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', fmt, fmt) ;
+  store('const char*', fmt, fmt_fav9256) ;
   let strong ret: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong ap: pointer = create(Ivalignof('signed int'), 'signed int') in
   store('signed int', ret, Unspecified('signed int')) ;
@@ -7891,9 +7894,9 @@ proc fscanf (f: loaded pointer, fmt: loaded pointer, a_9258: [(ctype,pointer)]):
   save ret_9257: loaded integer (a_9297: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_9297)
 
-proc printf (fmt: loaded pointer, a_9215: [(ctype,pointer)]): eff loaded integer :=
+proc printf (fmt_fav9213: loaded pointer, a_9215: [(ctype,pointer)]): eff loaded integer :=
   let strong fmt: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', fmt, fmt) ;
+  store('const char*', fmt, fmt_fav9213) ;
   let strong ret: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong ap: pointer = create(Ivalignof('signed int'), 'signed int') in
   store('signed int', ret, Unspecified('signed int')) ;
@@ -7969,9 +7972,9 @@ proc printf (fmt: loaded pointer, a_9215: [(ctype,pointer)]): eff loaded integer
   save ret_9214: loaded integer (a_9254: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_9254)
 
-proc scanf (fmt: loaded pointer, a_9180: [(ctype,pointer)]): eff loaded integer :=
+proc scanf (fmt_fav9178: loaded pointer, a_9180: [(ctype,pointer)]): eff loaded integer :=
   let strong fmt: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', fmt, fmt) ;
+  store('const char*', fmt, fmt_fav9178) ;
   let strong ret: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong ap: pointer = create(Ivalignof('signed int'), 'signed int') in
   store('signed int', ret, Unspecified('signed int')) ;
@@ -8039,14 +8042,14 @@ proc scanf (fmt: loaded pointer, a_9180: [(ctype,pointer)]): eff loaded integer 
   save ret_9179: loaded integer (a_9212: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_9212)
 
-proc snprintf (s: loaded pointer, n: loaded integer, fmt: loaded pointer,
-a_9131: [(ctype,pointer)]): eff loaded integer :=
+proc snprintf (s_fav9127: loaded pointer, n_fav9128: loaded integer,
+fmt_fav9129: loaded pointer, a_9131: [(ctype,pointer)]): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('char*'), 'char*') in
-  store('char*', s, s) ;
+  store('char*', s, s_fav9127) ;
   let strong n: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', n, n) ;
+  store('size_t', n, n_fav9128) ;
   let strong fmt: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', fmt, fmt) ;
+  store('const char*', fmt, fmt_fav9129) ;
   let strong ret: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong ap: pointer = create(Ivalignof('signed int'), 'signed int') in
   store('signed int', ret, Unspecified('signed int')) ;
@@ -8131,11 +8134,12 @@ a_9131: [(ctype,pointer)]): eff loaded integer :=
   save ret_9130: loaded integer (a_9177: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_9177)
 
-proc sprintf (s: loaded pointer, fmt: loaded pointer, a_9087: [(ctype,pointer)]): eff loaded integer :=
+proc sprintf (s_fav9084: loaded pointer, fmt_fav9085: loaded pointer,
+a_9087: [(ctype,pointer)]): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('char*'), 'char*') in
-  store('char*', s, s) ;
+  store('char*', s, s_fav9084) ;
   let strong fmt: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', fmt, fmt) ;
+  store('const char*', fmt, fmt_fav9085) ;
   let strong ret: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong ap: pointer = create(Ivalignof('signed int'), 'signed int') in
   store('signed int', ret, Unspecified('signed int')) ;
@@ -8211,11 +8215,12 @@ proc sprintf (s: loaded pointer, fmt: loaded pointer, a_9087: [(ctype,pointer)])
   save ret_9086: loaded integer (a_9126: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_9126)
 
-proc sscanf (s: loaded pointer, fmt: loaded pointer, a_9044: [(ctype,pointer)]): eff loaded integer :=
+proc sscanf (s_fav9041: loaded pointer, fmt_fav9042: loaded pointer,
+a_9044: [(ctype,pointer)]): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav9041) ;
   let strong fmt: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', fmt, fmt) ;
+  store('const char*', fmt, fmt_fav9042) ;
   let strong ret: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong ap: pointer = create(Ivalignof('signed int'), 'signed int') in
   store('signed int', ret, Unspecified('signed int')) ;
@@ -8292,14 +8297,15 @@ proc sscanf (s: loaded pointer, fmt: loaded pointer, a_9044: [(ctype,pointer)]):
   save ret_9043: loaded integer (a_9083: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_9083)
 
-proc vfprintf (f: loaded pointer, fmt: loaded pointer, ap: loaded integer): eff loaded integer :=
+proc vfprintf (f_fav8992: loaded pointer, fmt_fav8993: loaded pointer,
+ap_fav8994: loaded integer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav8992) ;
   let strong fmt: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', fmt, fmt) ;
+  store('const char*', fmt, fmt_fav8993) ;
   let strong ap: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', ap, ap) ;
+  store('signed int', ap, ap_fav8994) ;
   let strong fd: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong a_8996: loaded integer =
     bound(
@@ -8370,16 +8376,16 @@ proc vfprintf (f: loaded pointer, fmt: loaded pointer, ap: loaded integer): eff 
   save ret_8995: loaded integer (a_9040: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_9040)
 
-proc vsnprintf (s: loaded pointer, n: loaded integer, fmt: loaded pointer,
-ap: loaded integer): eff loaded integer :=
+proc vsnprintf (s_fav8950: loaded pointer, n_fav8951: loaded integer,
+fmt_fav8952: loaded pointer, ap_fav8953: loaded integer): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('char*'), 'char*') in
-  store('char*', s, s) ;
+  store('char*', s, s_fav8950) ;
   let strong n: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', n, n) ;
+  store('size_t', n, n_fav8951) ;
   let strong fmt: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', fmt, fmt) ;
+  store('const char*', fmt, fmt_fav8952) ;
   let strong ap: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', ap, ap) ;
+  store('signed int', ap, ap_fav8953) ;
   let strong a_8990: loaded integer =
     bound(
       let strong (a_8956: loaded pointer,
@@ -8433,13 +8439,14 @@ ap: loaded integer): eff loaded integer :=
   save ret_8954: loaded integer (a_8991: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_8991)
 
-proc vsprintf (s: loaded pointer, fmt: loaded pointer, ap: loaded integer): eff loaded integer :=
+proc vsprintf (s_fav8910: loaded pointer, fmt_fav8911: loaded pointer,
+ap_fav8912: loaded integer): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('char*'), 'char*') in
-  store('char*', s, s) ;
+  store('char*', s, s_fav8910) ;
   let strong fmt: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', fmt, fmt) ;
+  store('const char*', fmt, fmt_fav8911) ;
   let strong ap: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', ap, ap) ;
+  store('signed int', ap, ap_fav8912) ;
   let strong a_8948: loaded integer =
     bound(
       let strong (a_8915: loaded pointer,
@@ -8491,13 +8498,14 @@ proc vsprintf (s: loaded pointer, fmt: loaded pointer, ap: loaded integer): eff 
   save ret_8913: loaded integer (a_8949: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_8949)
 
-proc vsscanf (s: loaded pointer, fmt: loaded pointer, ap: loaded integer): eff loaded integer :=
+proc vsscanf (s_fav8836: loaded pointer, fmt_fav8837: loaded pointer,
+ap_fav8838: loaded integer): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav8836) ;
   let strong fmt: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', fmt, fmt) ;
+  store('const char*', fmt, fmt_fav8837) ;
   let strong ap: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', ap, ap) ;
+  store('signed int', ap, ap_fav8838) ;
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE'), 'struct _IO_FILE') in
   let strong a_8840: loaded struct _IO_FILE_1666 =
@@ -8612,10 +8620,10 @@ proc vsscanf (s: loaded pointer, fmt: loaded pointer, ap: loaded integer): eff l
   save ret_8839: loaded integer (a_8909: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_8909)
 
-proc fgetc (f: loaded pointer): eff loaded integer :=
+proc fgetc (f_fav8818: loaded pointer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav8818) ;
   let strong a_8834: loaded integer =
     bound(
       let strong (a_8821: loaded pointer,
@@ -8644,14 +8652,15 @@ proc fgetc (f: loaded pointer): eff loaded integer :=
   save ret_8819: loaded integer (a_8835: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_8835)
 
-proc fgets (s: loaded pointer, n: loaded integer, f: loaded pointer): eff loaded pointer :=
+proc fgets (s_fav8330: loaded pointer, n_fav8331: loaded integer,
+f_fav8332: loaded pointer): eff loaded pointer :=
   let strong s: pointer = create(Ivalignof('char*'), 'char*') in
-  store('char*', s, s) ;
+  store('char*', s, s_fav8330) ;
   let strong n: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', n, n) ;
+  store('signed int', n, n_fav8331) ;
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav8332) ;
   let strong p: pointer = create(Ivalignof('char*'), 'char*') in
   let strong z: pointer =
     create(Ivalignof('unsigned char*'), 'unsigned char*') in
@@ -9859,12 +9868,12 @@ proc fgets (s: loaded pointer, n: loaded integer, f: loaded pointer): eff loaded
   save ret_8333: loaded pointer (a_8817: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_8817)
 
-proc fputc (c: loaded integer, f: loaded pointer): eff loaded integer :=
+proc fputc (c_fav8304: loaded integer, f_fav8305: loaded pointer): eff loaded integer :=
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav8304) ;
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav8305) ;
   let strong a_8328: loaded integer =
     bound(
       let strong (a_8308: loaded pointer,
@@ -9901,12 +9910,12 @@ proc fputc (c: loaded integer, f: loaded pointer): eff loaded integer :=
   save ret_8306: loaded integer (a_8329: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_8329)
 
-proc fputs (s: loaded pointer, f: loaded pointer): eff loaded integer :=
+proc fputs (s_fav8239: loaded pointer, f_fav8240: loaded pointer): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav8239) ;
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav8240) ;
   let strong l: pointer = create(Ivalignof('size_t'), 'size_t') in
   let strong a_8242: loaded integer =
     bound(
@@ -10005,10 +10014,10 @@ proc fputs (s: loaded pointer, f: loaded pointer): eff loaded integer :=
   save ret_8241: loaded integer (a_8303: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_8303)
 
-proc getc (f: loaded pointer): eff loaded integer :=
+proc getc (f_fav8221: loaded pointer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav8221) ;
   let strong a_8237: loaded integer =
     bound(
       let strong (a_8224: loaded pointer,
@@ -10064,12 +10073,12 @@ proc getchar (): eff loaded integer :=
   save ret_8204: loaded integer (a_8220: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_8220)
 
-proc putc (c: loaded integer, f: loaded pointer): eff loaded integer :=
+proc putc (c_fav8178: loaded integer, f_fav8179: loaded pointer): eff loaded integer :=
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav8178) ;
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav8179) ;
   let strong a_8202: loaded integer =
     bound(
       let strong (a_8182: loaded pointer,
@@ -10106,9 +10115,9 @@ proc putc (c: loaded integer, f: loaded pointer): eff loaded integer :=
   save ret_8180: loaded integer (a_8203: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_8203)
 
-proc putchar (c: loaded integer): eff loaded integer :=
+proc putchar (c_fav8153: loaded integer): eff loaded integer :=
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav8153) ;
   let strong a_8176: loaded integer =
     bound(
       let strong (a_8156: loaded pointer,
@@ -10143,9 +10152,9 @@ proc putchar (c: loaded integer): eff loaded integer :=
   save ret_8154: loaded integer (a_8177: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_8177)
 
-proc puts (s: loaded pointer): eff loaded integer :=
+proc puts (s_fav7996: loaded pointer): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav7996) ;
   let strong r: pointer = create(Ivalignof('signed int'), 'signed int') in
   store('signed int', r, Unspecified('signed int')) ;
   let strong _: loaded integer =
@@ -10542,12 +10551,12 @@ proc puts (s: loaded pointer): eff loaded integer :=
   save ret_7997: loaded integer (a_8152: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_8152)
 
-proc ungetc (c: loaded integer, f: loaded pointer): eff loaded integer :=
+proc ungetc (c_fav7837: loaded integer, f_fav7838: loaded pointer): eff loaded integer :=
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav7837) ;
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav7838) ;
   let strong a_7841: loaded integer =
     bound(
       let weak a_7843: loaded integer =
@@ -10933,17 +10942,17 @@ proc ungetc (c: loaded integer, f: loaded pointer): eff loaded integer :=
   save ret_7839: loaded integer (a_7995: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_7995)
 
-proc fread (destv: loaded pointer, size: loaded integer, nmemb: loaded integer,
-f: loaded pointer): eff loaded integer :=
+proc fread (destv_fav7508: loaded pointer, size_fav7509: loaded integer,
+nmemb_fav7510: loaded integer, f_fav7511: loaded pointer): eff loaded integer :=
   let strong destv: pointer = create(Ivalignof('void*'), 'void*') in
-  store('void*', destv, destv) ;
+  store('void*', destv, destv_fav7508) ;
   let strong size: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', size, size) ;
+  store('size_t', size, size_fav7509) ;
   let strong nmemb: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', nmemb, nmemb) ;
+  store('size_t', nmemb, nmemb_fav7510) ;
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav7511) ;
   let strong dest: pointer =
     create(Ivalignof('unsigned char*'), 'unsigned char*') in
   let strong len: pointer = create(Ivalignof('size_t'), 'size_t') in
@@ -11666,17 +11675,17 @@ f: loaded pointer): eff loaded integer :=
   save ret_7512: loaded integer (a_7836: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_7836)
 
-proc fwrite (src: loaded pointer, size: loaded integer, nmemb: loaded integer,
-f: loaded pointer): eff loaded integer :=
+proc fwrite (src_fav7422: loaded pointer, size_fav7423: loaded integer,
+nmemb_fav7424: loaded integer, f_fav7425: loaded pointer): eff loaded integer :=
   let strong src: pointer = create(Ivalignof('const void*'), 'const void*') in
-  store('const void*', src, src) ;
+  store('const void*', src, src_fav7422) ;
   let strong size: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', size, size) ;
+  store('size_t', size, size_fav7423) ;
   let strong nmemb: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', nmemb, nmemb) ;
+  store('size_t', nmemb, nmemb_fav7424) ;
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav7425) ;
   let strong k: pointer = create(Ivalignof('size_t'), 'size_t') in
   let strong l: pointer = create(Ivalignof('size_t'), 'size_t') in
   store('size_t', k, Unspecified('size_t')) ;
@@ -11870,13 +11879,13 @@ f: loaded pointer): eff loaded integer :=
   save ret_7426: loaded integer (a_7507: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_7507)
 
-proc fgetpos (f: loaded pointer, pos: loaded pointer): eff loaded integer :=
+proc fgetpos (f_fav7375: loaded pointer, pos_fav7376: loaded pointer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav7375) ;
   let strong pos: pointer =
     create(Ivalignof('signed long long*'), 'signed long long*') in
-  store('signed long long*', pos, pos) ;
+  store('signed long long*', pos, pos_fav7376) ;
   let strong off: pointer =
     create(Ivalignof('signed long long'), 'signed long long') in
   let strong a_7378: loaded integer =
@@ -12005,14 +12014,15 @@ proc fgetpos (f: loaded pointer, pos: loaded pointer): eff loaded integer :=
   save ret_7377: loaded integer (a_7421: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_7421)
 
-proc fseek (f: loaded pointer, off: loaded integer, whence: loaded integer): eff loaded integer :=
+proc fseek (f_fav7341: loaded pointer, off_fav7342: loaded integer,
+whence_fav7343: loaded integer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav7341) ;
   let strong off: pointer = create(Ivalignof('signed long'), 'signed long') in
-  store('signed long', off, off) ;
+  store('signed long', off, off_fav7342) ;
   let strong whence: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', whence, whence) ;
+  store('signed int', whence, whence_fav7343) ;
   let strong a_7373: loaded integer =
     bound(
       let strong (a_7346: loaded pointer,
@@ -12058,13 +12068,13 @@ proc fseek (f: loaded pointer, off: loaded integer, whence: loaded integer): eff
   save ret_7344: loaded integer (a_7374: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_7374)
 
-proc fsetpos (f: loaded pointer, pos: loaded pointer): eff loaded integer :=
+proc fsetpos (f_fav7302: loaded pointer, pos_fav7303: loaded pointer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav7302) ;
   let strong pos: pointer =
     create(Ivalignof('const signed long long*'), 'const signed long long*') in
-  store('const signed long long*', pos, pos) ;
+  store('const signed long long*', pos, pos_fav7303) ;
   let strong a_7339: loaded integer =
     bound(
       let strong (a_7306: loaded pointer,
@@ -12139,10 +12149,10 @@ proc fsetpos (f: loaded pointer, pos: loaded pointer): eff loaded integer :=
   save ret_7304: loaded integer (a_7340: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_7340)
 
-proc ftell (f: loaded pointer): eff loaded integer :=
+proc ftell (f_fav7257: loaded pointer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav7257) ;
   let strong pos: pointer =
     create(Ivalignof('signed long long'), 'signed long long') in
   let strong a_7259: loaded integer =
@@ -12266,10 +12276,10 @@ proc ftell (f: loaded pointer): eff loaded integer :=
   save ret_7258: loaded integer (a_7301: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_7301)
 
-proc rewind (f: loaded pointer): eff unit :=
+proc rewind (f_fav7209: loaded pointer): eff unit :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav7209) ;
   let strong _: loaded integer =
     bound(
       let strong (a_7212: loaded pointer,
@@ -12352,10 +12362,10 @@ proc rewind (f: loaded pointer): eff unit :=
   kill('struct _IO_FILE*', f) ;
   save ret_7210: unit (a_7256: unit:= Unit) in  pure(a_7256)
 
-proc clearerr (f: loaded pointer): eff unit :=
+proc clearerr (f_fav7183: loaded pointer): eff unit :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav7183) ;
   let strong _: loaded integer =
     bound(
       let weak a_7185: pointer =
@@ -12413,10 +12423,10 @@ proc clearerr (f: loaded pointer): eff unit :=
   kill('struct _IO_FILE*', f) ;
   save ret_7184: unit (a_7208: unit:= Unit) in  pure(a_7208)
 
-proc feof (f: loaded pointer): eff loaded integer :=
+proc feof (f_fav7157: loaded pointer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav7157) ;
   let strong ret: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong a_7159: loaded integer =
     bound(
@@ -12479,10 +12489,10 @@ proc feof (f: loaded pointer): eff loaded integer :=
   save ret_7158: loaded integer (a_7182: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_7182)
 
-proc ferror (f: loaded pointer): eff loaded integer :=
+proc ferror (f_fav7131: loaded pointer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav7131) ;
   let strong ret: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong a_7133: loaded integer =
     bound(
@@ -12545,9 +12555,9 @@ proc ferror (f: loaded pointer): eff loaded integer :=
   save ret_7132: loaded integer (a_7156: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_7156)
 
-proc perror (msg: loaded pointer): eff unit :=
+proc perror (msg_fav6890: loaded pointer): eff unit :=
   let strong msg: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', msg, msg) ;
+  store('const char*', msg, msg_fav6890) ;
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
   let strong errstr: pointer = create(Ivalignof('char*'), 'char*') in
@@ -12960,11 +12970,11 @@ proc perror (msg: loaded pointer): eff unit :=
   kill('char*', msg) ;
   save ret_6891: unit (a_7130: unit:= Unit) in  pure(a_7130)
 
-proc fdopen (fd: loaded integer, mode: loaded pointer): eff loaded pointer :=
+proc fdopen (fd_fav6484: loaded integer, mode_fav6485: loaded pointer): eff loaded pointer :=
   let strong fd: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', fd, fd) ;
+  store('signed int', fd, fd_fav6484) ;
   let strong mode: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', mode, mode) ;
+  store('const char*', mode, mode_fav6485) ;
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
   store('struct _IO_FILE*', f, Unspecified('struct _IO_FILE*')) ;
@@ -13844,10 +13854,10 @@ proc fdopen (fd: loaded integer, mode: loaded pointer): eff loaded pointer :=
   save ret_6486: loaded pointer (a_6889: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_6889)
 
-proc fileno (f: loaded pointer): eff loaded integer :=
+proc fileno (f_fav6447: loaded pointer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav6447) ;
   let strong fd: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong a_6449: loaded integer =
     bound(
@@ -13959,10 +13969,10 @@ proc fileno (f: loaded pointer): eff loaded integer :=
   save ret_6448: loaded integer (a_6483: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_6483)
 
-proc __stdio_close (f: loaded pointer): eff loaded integer :=
+proc __stdio_close (f_fav6424: loaded pointer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav6424) ;
   let strong a_6445: loaded integer =
     bound(
       let strong (a_6427: loaded pointer,
@@ -14000,16 +14010,16 @@ proc __stdio_close (f: loaded pointer): eff loaded integer :=
   save ret_6425: loaded integer (a_6446: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_6446)
 
-proc __stdio_seek (f: loaded pointer, off: loaded integer,
-whence: loaded integer): eff loaded integer :=
+proc __stdio_seek (f_fav6385: loaded pointer, off_fav6386: loaded integer,
+whence_fav6387: loaded integer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav6385) ;
   let strong off: pointer =
     create(Ivalignof('signed long long'), 'signed long long') in
-  store('signed long long', off, off) ;
+  store('signed long long', off, off_fav6386) ;
   let strong whence: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', whence, whence) ;
+  store('signed int', whence, whence_fav6387) ;
   let strong a_6422: loaded integer =
     bound(
       let strong (a_6390: loaded pointer,
@@ -14064,15 +14074,16 @@ whence: loaded integer): eff loaded integer :=
   save ret_6388: loaded integer (a_6423: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_6423)
 
-proc __stdio_read (f: loaded pointer, buf: loaded pointer, len: loaded integer): eff loaded integer :=
+proc __stdio_read (f_fav6060: loaded pointer, buf_fav6061: loaded pointer,
+len_fav6062: loaded integer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav6060) ;
   let strong buf: pointer =
     create(Ivalignof('unsigned char*'), 'unsigned char*') in
-  store('unsigned char*', buf, buf) ;
+  store('unsigned char*', buf, buf_fav6061) ;
   let strong len: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', len, len) ;
+  store('size_t', len, len_fav6062) ;
   let strong iov: pointer =
     create(Ivalignof('struct iovec[2]'), 'struct iovec[2]') in
   let strong cnt: pointer = create(Ivalignof('signed long'), 'signed long') in
@@ -14808,15 +14819,16 @@ proc __stdio_read (f: loaded pointer, buf: loaded pointer, len: loaded integer):
   save ret_6063: loaded integer (a_6384: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_6384)
 
-proc __stdio_write (f: loaded pointer, buf: loaded pointer, len: loaded integer): eff loaded integer :=
+proc __stdio_write (f_fav5676: loaded pointer, buf_fav5677: loaded pointer,
+len_fav5678: loaded integer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav5676) ;
   let strong buf: pointer =
     create(Ivalignof('const unsigned char*'), 'const unsigned char*') in
-  store('const unsigned char*', buf, buf) ;
+  store('const unsigned char*', buf, buf_fav5677) ;
   let strong len: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', len, len) ;
+  store('size_t', len, len_fav5678) ;
   let strong iovs: pointer =
     create(Ivalignof('struct iovec[2]'), 'struct iovec[2]') in
   let strong iov: pointer =
@@ -15758,15 +15770,16 @@ proc __stdio_write (f: loaded pointer, buf: loaded pointer, len: loaded integer)
   save ret_5679: loaded integer (a_6059: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_6059)
 
-proc __stdout_write (f: loaded pointer, buf: loaded pointer, len: loaded integer): eff loaded integer :=
+proc __stdout_write (f_fav5603: loaded pointer, buf_fav5604: loaded pointer,
+len_fav5605: loaded integer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav5603) ;
   let strong buf: pointer =
     create(Ivalignof('const unsigned char*'), 'const unsigned char*') in
-  store('const unsigned char*', buf, buf) ;
+  store('const unsigned char*', buf, buf_fav5604) ;
   let strong len: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', len, len) ;
+  store('size_t', len, len_fav5605) ;
   let strong _: loaded pointer =
     bound(
       let weak a_5607: pointer =
@@ -15915,10 +15928,10 @@ proc __stdout_write (f: loaded pointer, buf: loaded pointer, len: loaded integer
   save ret_5606: loaded integer (a_5675: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_5675)
 
-proc __shgetc (f: loaded pointer): eff loaded integer :=
+proc __shgetc (f_fav5251: loaded pointer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav5251) ;
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong cnt: pointer =
     create(Ivalignof('signed long long'), 'signed long long') in
@@ -16744,13 +16757,13 @@ proc __shgetc (f: loaded pointer): eff loaded integer :=
   save ret_5252: loaded integer (a_5602: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_5602)
 
-proc __shlim (f: loaded pointer, lim: loaded integer): eff unit :=
+proc __shlim (f_fav5132: loaded pointer, lim_fav5133: loaded integer): eff unit :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav5132) ;
   let strong lim: pointer =
     create(Ivalignof('signed long long'), 'signed long long') in
-  store('signed long long', lim, lim) ;
+  store('signed long long', lim, lim_fav5133) ;
   let strong _: loaded integer =
     bound(
       let weak a_5135: pointer =
@@ -17011,9 +17024,9 @@ proc __shlim (f: loaded pointer, lim: loaded integer): eff unit :=
   kill('signed long_long', lim) ;
   save ret_5134: unit (a_5250: unit:= Unit) in  pure(a_5250)
 
-proc __randname (template: loaded pointer): eff loaded pointer :=
+proc __randname (template_fav4840: loaded pointer): eff loaded pointer :=
   let strong template: pointer = create(Ivalignof('char*'), 'char*') in
-  store('char*', template, template) ;
+  store('char*', template, template_fav4840) ;
   let strong i: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong ts: pointer =
     create(Ivalignof('struct timespec'), 'struct timespec') in
@@ -17328,10 +17341,10 @@ proc __randname (template: loaded pointer): eff loaded pointer :=
   save ret_4841: loaded pointer (a_4964: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_4964)
 
-proc __uflow (f: loaded pointer): eff loaded integer :=
+proc __uflow (f_fav4748: loaded pointer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav4748) ;
   let strong c: pointer = create(Ivalignof('unsigned char'), 'unsigned char') in
   store('unsigned char', c, Unspecified('unsigned ichar')) ;
   let strong a_4751: loaded integer =
@@ -17540,13 +17553,14 @@ proc __uflow (f: loaded pointer): eff loaded integer :=
   save ret_4749: loaded integer (a_4839: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_4839)
 
-proc __strtoxd (s: loaded pointer, p: loaded pointer, prec: loaded integer): eff loaded floating :=
+proc __strtoxd (s_fav4599: loaded pointer, p_fav4600: loaded pointer,
+prec_fav4601: loaded integer): eff loaded floating :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav4599) ;
   let strong p: pointer = create(Ivalignof('char**'), 'char**') in
-  store('char**', p, p) ;
+  store('char**', p, p_fav4600) ;
   let strong prec: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', prec, prec) ;
+  store('signed int', prec, prec_fav4601) ;
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE'), 'struct _IO_FILE') in
   let strong y: pointer = create(Ivalignof('long double'), 'long double') in
@@ -17839,17 +17853,17 @@ proc __strtoxd (s: loaded pointer, p: loaded pointer, prec: loaded integer): eff
   save ret_4602: loaded floating (a_4747: loaded floating:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_4747)
 
-proc __strtox (s: loaded pointer, p: loaded pointer, base: loaded integer,
-lim: loaded integer): eff loaded integer :=
+proc __strtox (s_fav4454: loaded pointer, p_fav4455: loaded pointer,
+base_fav4456: loaded integer, lim_fav4457: loaded integer): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav4454) ;
   let strong p: pointer = create(Ivalignof('char**'), 'char**') in
-  store('char**', p, p) ;
+  store('char**', p, p_fav4455) ;
   let strong base: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', base, base) ;
+  store('signed int', base, base_fav4456) ;
   let strong lim: pointer =
     create(Ivalignof('unsigned long long'), 'unsigned long long') in
-  store('unsigned long long', lim, lim) ;
+  store('unsigned long long', lim, lim_fav4457) ;
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE'), 'struct _IO_FILE') in
   let strong y: pointer =
@@ -18112,9 +18126,9 @@ lim: loaded integer): eff loaded integer :=
   save ret_4458: loaded integer (a_4598: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_4598)
 
-proc __fmodeflags (mode: loaded pointer): eff loaded integer :=
+proc __fmodeflags (mode_fav4258: loaded pointer): eff loaded integer :=
   let strong mode: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', mode, mode) ;
+  store('const char*', mode, mode_fav4258) ;
   let strong flags: pointer = create(Ivalignof('signed int'), 'signed int') in
   store('signed int', flags, Unspecified('signed int')) ;
   let strong a_4261: loaded integer =
@@ -18611,10 +18625,10 @@ proc __fmodeflags (mode: loaded pointer): eff loaded integer :=
   save ret_4259: loaded integer (a_4453: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_4453)
 
-proc __ofl_add (f: loaded pointer): eff loaded pointer :=
+proc __ofl_add (f_fav4209: loaded pointer): eff loaded pointer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav4209) ;
   let strong head: pointer =
     create(Ivalignof('struct _IO_FILE**'), 'struct _IO_FILE**') in
   store('struct _IO_FILE**', head, Specified(ofl_head)) ;
@@ -18746,10 +18760,10 @@ proc __ofl_add (f: loaded pointer): eff loaded pointer :=
   save ret_4210: loaded pointer (a_4257: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_4257)
 
-proc __towrite (f: loaded pointer): eff loaded integer :=
+proc __towrite (f_fav4081: loaded pointer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav4081) ;
   let strong _: loaded integer =
     bound(
       let weak a_4083: pointer =
@@ -19012,15 +19026,16 @@ proc __towrite (f: loaded pointer): eff loaded integer :=
 
 proc __builtin_unspec_byte_to_zero (loaded integer)
 
-proc __fwritex (s: loaded pointer, l: loaded integer, f: loaded pointer): eff loaded integer :=
+proc __fwritex (s_fav3729: loaded pointer, l_fav3730: loaded integer,
+f_fav3731: loaded pointer): eff loaded integer :=
   let strong s: pointer =
     create(Ivalignof('const unsigned char*'), 'const unsigned char*') in
-  store('const unsigned char*', s, s) ;
+  store('const unsigned char*', s, s_fav3729) ;
   let strong l: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', l, l) ;
+  store('size_t', l, l_fav3730) ;
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav3731) ;
   let strong i: pointer = create(Ivalignof('size_t'), 'size_t') in
   store('size_t', i, conv_loaded_int('size_t', Specified(0))) ;
   let strong a_3737: loaded integer =
@@ -19783,10 +19798,10 @@ proc __fwritex (s: loaded pointer, l: loaded integer, f: loaded pointer): eff lo
   save ret_3732: loaded integer (a_4080: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_4080)
 
-proc __toread (f: loaded pointer): eff loaded integer :=
+proc __toread (f_fav3529: loaded pointer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav3529) ;
   let strong _: loaded integer =
     bound(
       let weak a_3531: pointer =
@@ -20192,10 +20207,10 @@ proc __toread (f: loaded pointer): eff loaded integer :=
   save ret_3530: loaded integer (a_3728: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_3728)
 
-proc locking_getc (f: loaded pointer): eff loaded integer :=
+proc locking_getc (f_fav3471: loaded pointer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav3471) ;
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong a_3473: loaded integer =
     bound(
@@ -20315,10 +20330,10 @@ proc locking_getc (f: loaded pointer): eff loaded integer :=
   save ret_3472: loaded integer (a_3528: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_3528)
 
-proc do_getc (f: loaded pointer): eff loaded integer :=
+proc do_getc (f_fav3359: loaded pointer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav3359) ;
   let strong l: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong a_3361: loaded integer =
     bound(
@@ -20571,12 +20586,12 @@ proc do_getc (f: loaded pointer): eff loaded integer :=
   save ret_3360: loaded integer (a_3470: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_3470)
 
-proc __overflow (f: loaded pointer, _c: loaded integer): eff loaded integer :=
+proc __overflow (f_fav3178: loaded pointer, _c_fav3179: loaded integer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav3178) ;
   let strong _c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', _c, _c) ;
+  store('signed int', _c, _c_fav3179) ;
   let strong c: pointer = create(Ivalignof('unsigned char'), 'unsigned char') in
   let strong a_3181: loaded integer = bound(load('signed int', _c)) in
   store('unsigned char', c, conv_loaded_int('unsigned char', a_3181)) ;
@@ -21010,12 +21025,12 @@ proc __overflow (f: loaded pointer, _c: loaded integer): eff loaded integer :=
   save ret_3180: loaded integer (a_3358: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_3358)
 
-proc locking_putc (c: loaded integer, f: loaded pointer): eff loaded integer :=
+proc locking_putc (c_fav3069: loaded integer, f_fav3070: loaded pointer): eff loaded integer :=
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav3069) ;
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav3070) ;
   let strong _: loaded integer =
     bound(
       let weak a_3072: pointer = pure(c) in
@@ -21245,12 +21260,12 @@ proc locking_putc (c: loaded integer, f: loaded pointer): eff loaded integer :=
   save ret_3071: loaded integer (a_3177: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_3177)
 
-proc do_putc (c: loaded integer, f: loaded pointer): eff loaded integer :=
+proc do_putc (c_fav2900: loaded integer, f_fav2901: loaded pointer): eff loaded integer :=
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav2900) ;
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav2901) ;
   let strong l: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong a_2903: loaded integer =
     bound(
@@ -21615,16 +21630,16 @@ proc do_putc (c: loaded integer, f: loaded pointer): eff loaded integer :=
   save ret_2902: loaded integer (a_3068: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_3068)
 
-proc __fseeko_unlocked (f: loaded pointer, off: loaded integer,
-whence: loaded integer): eff loaded integer :=
+proc __fseeko_unlocked (f_fav2651: loaded pointer, off_fav2652: loaded integer,
+whence_fav2653: loaded integer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav2651) ;
   let strong off: pointer =
     create(Ivalignof('signed long long'), 'signed long long') in
-  store('signed long long', off, off) ;
+  store('signed long long', off, off_fav2652) ;
   let strong whence: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', whence, whence) ;
+  store('signed int', whence, whence_fav2653) ;
   let strong a_2656: loaded integer =
     bound(
       let weak a_2658: loaded integer =
@@ -22154,15 +22169,16 @@ whence: loaded integer): eff loaded integer :=
   save ret_2654: loaded integer (a_2899: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_2899)
 
-proc __fseeko (f: loaded pointer, off: loaded integer, whence: loaded integer): eff loaded integer :=
+proc __fseeko (f_fav2614: loaded pointer, off_fav2615: loaded integer,
+whence_fav2616: loaded integer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav2614) ;
   let strong off: pointer =
     create(Ivalignof('signed long long'), 'signed long long') in
-  store('signed long long', off, off) ;
+  store('signed long long', off, off_fav2615) ;
   let strong whence: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', whence, whence) ;
+  store('signed int', whence, whence_fav2616) ;
   let strong result: pointer = create(Ivalignof('signed int'), 'signed int') in
   store('signed int', result, Unspecified('signed int')) ;
   let strong _: loaded integer =
@@ -22218,15 +22234,16 @@ proc __fseeko (f: loaded pointer, off: loaded integer, whence: loaded integer): 
   save ret_2617: loaded integer (a_2650: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_2650)
 
-proc __string_read (f: loaded pointer, buf: loaded pointer, len: loaded integer): eff loaded integer :=
+proc __string_read (f_fav2455: loaded pointer, buf_fav2456: loaded pointer,
+len_fav2457: loaded integer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav2455) ;
   let strong buf: pointer =
     create(Ivalignof('unsigned char*'), 'unsigned char*') in
-  store('unsigned char*', buf, buf) ;
+  store('unsigned char*', buf, buf_fav2456) ;
   let strong len: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', len, len) ;
+  store('size_t', len, len_fav2457) ;
   let strong src: pointer = create(Ivalignof('char*'), 'char*') in
   let strong k: pointer = create(Ivalignof('size_t'), 'size_t') in
   let strong end: pointer = create(Ivalignof('char*'), 'char*') in
@@ -22510,15 +22527,16 @@ proc __string_read (f: loaded pointer, buf: loaded pointer, len: loaded integer)
   save ret_2458: loaded integer (a_2613: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_2613)
 
-proc do_read (f: loaded pointer, buf: loaded pointer, len: loaded integer): eff loaded integer :=
+proc do_read (f_fav2421: loaded pointer, buf_fav2422: loaded pointer,
+len_fav2423: loaded integer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav2421) ;
   let strong buf: pointer =
     create(Ivalignof('unsigned char*'), 'unsigned char*') in
-  store('unsigned char*', buf, buf) ;
+  store('unsigned char*', buf, buf_fav2422) ;
   let strong len: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', len, len) ;
+  store('size_t', len, len_fav2423) ;
   let strong a_2453: loaded integer =
     bound(
       let strong (a_2426: loaded pointer,
@@ -22563,10 +22581,10 @@ proc do_read (f: loaded pointer, buf: loaded pointer, len: loaded integer): eff 
   save ret_2424: loaded integer (a_2454: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_2454)
 
-proc __ftello_unlocked (f: loaded pointer): eff loaded integer :=
+proc __ftello_unlocked (f_fav2238: loaded pointer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav2238) ;
   let strong pos: pointer =
     create(Ivalignof('signed long long'), 'signed long long') in
   let strong a_2240: loaded integer =
@@ -22976,10 +22994,10 @@ proc __ftello_unlocked (f: loaded pointer): eff loaded integer :=
   save ret_2239: loaded integer (a_2420: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_2420)
 
-proc __ftello (f: loaded pointer): eff loaded integer :=
+proc __ftello (f_fav2217: loaded pointer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav2217) ;
   let strong pos: pointer =
     create(Ivalignof('signed long long'), 'signed long long') in
   store('signed long long', pos, Unspecified('signed long_long')) ;
@@ -23025,14 +23043,15 @@ proc __builtin_vprintf (loaded integer, loaded pointer, loaded integer)
 proc __builtin_vsnprintf (loaded pointer, loaded integer, loaded pointer,
 loaded integer)
 
-proc readv (fd: loaded integer, vec: loaded pointer, count: loaded integer): eff loaded integer :=
+proc readv (fd_fav23883: loaded integer, vec_fav23884: loaded pointer,
+count_fav23885: loaded integer): eff loaded integer :=
   let strong fd: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', fd, fd) ;
+  store('signed int', fd, fd_fav23883) ;
   let strong vec: pointer =
     create(Ivalignof('const struct iovec*'), 'const struct iovec*') in
-  store('const struct iovec*', vec, vec) ;
+  store('const struct iovec*', vec, vec_fav23884) ;
   let strong count: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', count, count) ;
+  store('signed int', count, count_fav23885) ;
   let strong res: pointer = create(Ivalignof('signed int'), 'signed int') in
   store('signed int', res, conv_loaded_int('signed int', Specified(0))) ;
   let strong i: pointer = create(Ivalignof('signed int'), 'signed int') in
@@ -23226,14 +23245,15 @@ proc readv (fd: loaded integer, vec: loaded pointer, count: loaded integer): eff
   save ret_23886: loaded integer (a_23970: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_23970)
 
-proc writev (fd: loaded integer, vec: loaded pointer, count: loaded integer): eff loaded integer :=
+proc writev (fd_fav23795: loaded integer, vec_fav23796: loaded pointer,
+count_fav23797: loaded integer): eff loaded integer :=
   let strong fd: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', fd, fd) ;
+  store('signed int', fd, fd_fav23795) ;
   let strong vec: pointer =
     create(Ivalignof('const struct iovec*'), 'const struct iovec*') in
-  store('const struct iovec*', vec, vec) ;
+  store('const struct iovec*', vec, vec_fav23796) ;
   let strong count: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', count, count) ;
+  store('signed int', count, count_fav23797) ;
   let strong res: pointer = create(Ivalignof('signed int'), 'signed int') in
   store('signed int', res, conv_loaded_int('signed int', Specified(0))) ;
   let strong i: pointer = create(Ivalignof('signed int'), 'signed int') in
@@ -23428,12 +23448,12 @@ proc writev (fd: loaded integer, vec: loaded pointer, count: loaded integer): ef
   save ret_23798: loaded integer (a_23882: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_23882)
 
-proc fchmod (fd: loaded integer, mode: loaded integer): eff loaded integer :=
+proc fchmod (fd_fav23521: loaded integer, mode_fav23522: loaded integer): eff loaded integer :=
   let strong fd: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', fd, fd) ;
+  store('signed int', fd, fd_fav23521) ;
   let strong mode: pointer =
     create(Ivalignof('unsigned short'), 'unsigned short') in
-  store('unsigned short', mode, mode) ;
+  store('unsigned short', mode, mode_fav23522) ;
   let strong buf: pointer = create(Ivalignof('char[27]'), 'char[27]') in
   store('char[27]', buf, Unspecified('char[27]')) ;
   bound(
@@ -23503,11 +23523,11 @@ proc fchmod (fd: loaded integer, mode: loaded integer): eff loaded integer :=
   save ret_23523: loaded integer (a_23569: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_23569)
 
-proc fstat (fd: loaded integer, st: loaded pointer): eff loaded integer :=
+proc fstat (fd_fav23472: loaded integer, st_fav23473: loaded pointer): eff loaded integer :=
   let strong fd: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', fd, fd) ;
+  store('signed int', fd, fd_fav23472) ;
   let strong st: pointer = create(Ivalignof('struct stat*'), 'struct stat*') in
-  store('struct stat*', st, st) ;
+  store('struct stat*', st, st_fav23473) ;
   let strong buf: pointer = create(Ivalignof('char[27]'), 'char[27]') in
   store('char[27]', buf, Unspecified('char[27]')) ;
   bound(
@@ -23578,17 +23598,17 @@ proc fstat (fd: loaded integer, st: loaded pointer): eff loaded integer :=
   save ret_23474: loaded integer (a_23520: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_23520)
 
-proc utimensat (fd: loaded integer, path: loaded pointer, times: loaded pointer,
-flags: loaded integer): eff loaded integer :=
+proc utimensat (fd_fav23465: loaded integer, path_fav23466: loaded pointer,
+times_fav23467: loaded pointer, flags_fav23468: loaded integer): eff loaded integer :=
   let strong fd: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', fd, fd) ;
+  store('signed int', fd, fd_fav23465) ;
   let strong path: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', path, path) ;
+  store('const char*', path, path_fav23466) ;
   let strong times: pointer =
     create(Ivalignof('const struct timespec*'), 'const struct timespec*') in
-  store('const struct timespec*', times, times) ;
+  store('const struct timespec*', times, times_fav23467) ;
   let strong flags: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', flags, flags) ;
+  store('signed int', flags, flags_fav23468) ;
   kill('signed int', fd) ;
   kill('char*', path) ;
   kill('struct timespec*', times) ;
@@ -23601,11 +23621,11 @@ flags: loaded integer): eff loaded integer :=
   save ret_23469: loaded integer (a_23471: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_23471)
 
-proc __procfdname (buf: loaded pointer, fd: loaded integer): eff unit :=
+proc __procfdname (buf_fav23286: loaded pointer, fd_fav23287: loaded integer): eff unit :=
   let strong buf: pointer = create(Ivalignof('char*'), 'char*') in
-  store('char*', buf, buf) ;
+  store('char*', buf, buf_fav23286) ;
   let strong fd: pointer = create(Ivalignof('unsigned int'), 'unsigned int') in
-  store('unsigned int', fd, fd) ;
+  store('unsigned int', fd, fd_fav23287) ;
   let strong i: pointer = create(Ivalignof('unsigned int'), 'unsigned int') in
   let strong j: pointer = create(Ivalignof('unsigned int'), 'unsigned int') in
   store('unsigned int', i, Unspecified('unsigned int')) ;
@@ -24125,9 +24145,9 @@ proc __procfdname (buf: loaded pointer, fd: loaded integer): eff unit :=
   kill('unsigned int', fd) ;
   save ret_23288: unit (a_23464: unit:= Unit) in  pure(a_23464)
 
-proc isblank (c: loaded integer): eff loaded integer :=
+proc isblank (c_fav1292: loaded integer): eff loaded integer :=
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav1292) ;
   let strong a_1325: loaded integer =
     bound(
       let strong a_1310: loaded integer =
@@ -24218,9 +24238,9 @@ proc isblank (c: loaded integer): eff loaded integer :=
   save ret_1293: loaded integer (a_1326: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_1326)
 
-proc iscntrl (c: loaded integer): eff loaded integer :=
+proc iscntrl (c_fav1254: loaded integer): eff loaded integer :=
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav1254) ;
   let strong a_1290: loaded integer =
     bound(
       let strong a_1275: loaded integer =
@@ -24313,9 +24333,9 @@ proc iscntrl (c: loaded integer): eff loaded integer :=
   save ret_1255: loaded integer (a_1291: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_1291)
 
-proc isdigit (c: loaded integer): eff loaded integer :=
+proc isdigit (c_fav1236: loaded integer): eff loaded integer :=
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav1236) ;
   let strong a_1252: loaded integer =
     bound(
       let weak a_1247: loaded integer =
@@ -24352,9 +24372,9 @@ proc isdigit (c: loaded integer): eff loaded integer :=
   save ret_1237: loaded integer (a_1253: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_1253)
 
-proc isgraph (c: loaded integer): eff loaded integer :=
+proc isgraph (c_fav1218: loaded integer): eff loaded integer :=
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav1218) ;
   let strong a_1234: loaded integer =
     bound(
       let weak a_1229: loaded integer =
@@ -24391,9 +24411,9 @@ proc isgraph (c: loaded integer): eff loaded integer :=
   save ret_1219: loaded integer (a_1235: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_1235)
 
-proc isprint (c: loaded integer): eff loaded integer :=
+proc isprint (c_fav1200: loaded integer): eff loaded integer :=
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav1200) ;
   let strong a_1216: loaded integer =
     bound(
       let weak a_1211: loaded integer =
@@ -24430,9 +24450,9 @@ proc isprint (c: loaded integer): eff loaded integer :=
   save ret_1201: loaded integer (a_1217: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_1217)
 
-proc isspace (c: loaded integer): eff loaded integer :=
+proc isspace (c_fav1065: loaded integer): eff loaded integer :=
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav1065) ;
   let strong a_1198: loaded integer =
     bound(
       let strong a_1183: loaded integer =
@@ -24835,9 +24855,9 @@ proc isspace (c: loaded integer): eff loaded integer :=
   save ret_1066: loaded integer (a_1199: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_1199)
 
-proc islower (c: loaded integer): eff loaded integer :=
+proc islower (c_fav920: loaded integer): eff loaded integer :=
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav920) ;
   let strong a_923: loaded integer =
     bound(
       let weak a_925: loaded integer =
@@ -25170,9 +25190,9 @@ proc islower (c: loaded integer): eff loaded integer :=
   save ret_921: loaded integer (a_1064: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_1064)
 
-proc isupper (c: loaded integer): eff loaded integer :=
+proc isupper (c_fav775: loaded integer): eff loaded integer :=
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav775) ;
   let strong a_778: loaded integer =
     bound(
       let weak a_780: loaded integer =
@@ -25504,9 +25524,9 @@ proc isupper (c: loaded integer): eff loaded integer :=
   save ret_776: loaded integer (a_919: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_919)
 
-proc isalpha (c: loaded integer): eff loaded integer :=
+proc isalpha (c_fav724: loaded integer): eff loaded integer :=
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav724) ;
   let strong a_773: loaded integer =
     bound(
       let strong a_750: loaded integer =
@@ -25606,9 +25626,9 @@ proc isalpha (c: loaded integer): eff loaded integer :=
   save ret_725: loaded integer (a_774: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_774)
 
-proc isalnum (c: loaded integer): eff loaded integer :=
+proc isalnum (c_fav673: loaded integer): eff loaded integer :=
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav673) ;
   let strong a_722: loaded integer =
     bound(
       let strong a_699: loaded integer =
@@ -25708,9 +25728,9 @@ proc isalnum (c: loaded integer): eff loaded integer :=
   save ret_674: loaded integer (a_723: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_723)
 
-proc ispunct (c: loaded integer): eff loaded integer :=
+proc ispunct (c_fav599: loaded integer): eff loaded integer :=
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav599) ;
   let strong a_602: loaded integer =
     bound(
       let weak a_604: loaded integer =
@@ -25859,9 +25879,9 @@ proc ispunct (c: loaded integer): eff loaded integer :=
   save ret_600: loaded integer (a_672: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_672)
 
-proc isxdigit (c: loaded integer): eff loaded integer :=
+proc isxdigit (c_fav544: loaded integer): eff loaded integer :=
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav544) ;
   let strong a_597: loaded integer =
     bound(
       let strong a_570: loaded integer =
@@ -25983,9 +26003,9 @@ proc isxdigit (c: loaded integer): eff loaded integer :=
   save ret_545: loaded integer (a_598: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_598)
 
-proc tolower (c: loaded integer): eff loaded integer :=
+proc tolower (c_fav511: loaded integer): eff loaded integer :=
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav511) ;
   let strong a_514: loaded integer =
     bound(
       let weak a_516: loaded integer =
@@ -26054,9 +26074,9 @@ proc tolower (c: loaded integer): eff loaded integer :=
   save ret_512: loaded integer (a_543: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_543)
 
-proc toupper (c: loaded integer): eff loaded integer :=
+proc toupper (c_fav478: loaded integer): eff loaded integer :=
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav478) ;
   let strong a_481: loaded integer =
     bound(
       let weak a_483: loaded integer =
@@ -26125,13 +26145,14 @@ proc toupper (c: loaded integer): eff loaded integer :=
   save ret_479: loaded integer (a_510: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_510)
 
-proc memmove (dest: loaded pointer, src: loaded pointer, n: loaded integer): eff loaded pointer :=
+proc memmove (dest_fav21332: loaded pointer, src_fav21333: loaded pointer,
+n_fav21334: loaded integer): eff loaded pointer :=
   let strong dest: pointer = create(Ivalignof('void*'), 'void*') in
-  store('void*', dest, dest) ;
+  store('void*', dest, dest_fav21332) ;
   let strong src: pointer = create(Ivalignof('const void*'), 'const void*') in
-  store('const void*', src, src) ;
+  store('const void*', src, src_fav21333) ;
   let strong n: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', n, n) ;
+  store('size_t', n, n_fav21334) ;
   let strong d: pointer = create(Ivalignof('char*'), 'char*') in
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
   let strong a_21340: loaded pointer = bound(load('void*', dest)) in
@@ -26578,11 +26599,11 @@ proc memmove (dest: loaded pointer, src: loaded pointer, n: loaded integer): eff
   save ret_21335: loaded pointer (a_21511: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_21511)
 
-proc strcpy (s1: loaded pointer, s2: loaded pointer): eff loaded pointer :=
+proc strcpy (s1_fav21298: loaded pointer, s2_fav21299: loaded pointer): eff loaded pointer :=
   let strong s1: pointer = create(Ivalignof('char*'), 'char*') in
-  store('char*', s1, s1) ;
+  store('char*', s1, s1_fav21298) ;
   let strong s2: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s2, s2) ;
+  store('const char*', s2, s2_fav21299) ;
   let strong res: pointer = create(Ivalignof('char*'), 'char*') in
   let strong a_21303: loaded pointer = bound(load('char*', s1)) in
   store('char*', res, a_21303) ;
@@ -26678,13 +26699,14 @@ proc strcpy (s1: loaded pointer, s2: loaded pointer): eff loaded pointer :=
   save ret_21300: loaded pointer (a_21331: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_21331)
 
-proc strncpy (s1: loaded pointer, s2: loaded pointer, n: loaded integer): eff loaded pointer :=
+proc strncpy (s1_fav21179: loaded pointer, s2_fav21180: loaded pointer,
+n_fav21181: loaded integer): eff loaded pointer :=
   let strong s1: pointer = create(Ivalignof('char*'), 'char*') in
-  store('char*', s1, s1) ;
+  store('char*', s1, s1_fav21179) ;
   let strong s2: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s2, s2) ;
+  store('const char*', s2, s2_fav21180) ;
   let strong n: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', n, n) ;
+  store('size_t', n, n_fav21181) ;
   let strong res: pointer = create(Ivalignof('char*'), 'char*') in
   let strong a_21187: loaded pointer = bound(load('char*', s1)) in
   store('char*', res, a_21187) ;
@@ -27056,11 +27078,11 @@ proc strncpy (s1: loaded pointer, s2: loaded pointer, n: loaded integer): eff lo
   save ret_21182: loaded pointer (a_21297: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_21297)
 
-proc strcat (dest: loaded pointer, src: loaded pointer): eff loaded pointer :=
+proc strcat (dest_fav21133: loaded pointer, src_fav21134: loaded pointer): eff loaded pointer :=
   let strong dest: pointer = create(Ivalignof('char*'), 'char*') in
-  store('char*', dest, dest) ;
+  store('char*', dest, dest_fav21133) ;
   let strong src: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', src, src) ;
+  store('const char*', src, src_fav21134) ;
   let strong _: loaded pointer =
     bound(
       let strong (a_21137: loaded pointer,
@@ -27124,13 +27146,14 @@ proc strcat (dest: loaded pointer, src: loaded pointer): eff loaded pointer :=
   save ret_21135: loaded pointer (a_21178: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_21178)
 
-proc strncat (d: loaded pointer, s: loaded pointer, n: loaded integer): eff loaded pointer :=
+proc strncat (d_fav21040: loaded pointer, s_fav21041: loaded pointer,
+n_fav21042: loaded integer): eff loaded pointer :=
   let strong d: pointer = create(Ivalignof('char*'), 'char*') in
-  store('char*', d, d) ;
+  store('char*', d, d_fav21040) ;
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav21041) ;
   let strong n: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', n, n) ;
+  store('size_t', n, n_fav21042) ;
   let strong a: pointer = create(Ivalignof('char*'), 'char*') in
   let strong a_21046: loaded pointer = bound(load('char*', d)) in
   store('char*', a, a_21046) ;
@@ -27374,11 +27397,11 @@ proc strncat (d: loaded pointer, s: loaded pointer, n: loaded integer): eff load
   save ret_21043: loaded pointer (a_21132: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_21132)
 
-proc strcmp (s1: loaded pointer, s2: loaded pointer): eff loaded integer :=
+proc strcmp (s1_fav20958: loaded pointer, s2_fav20959: loaded pointer): eff loaded integer :=
   let strong s1: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s1, s1) ;
+  store('const char*', s1, s1_fav20958) ;
   let strong s2: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s2, s2) ;
+  store('const char*', s2, s2_fav20959) ;
   save while_20963: unit (s1: pointer:= s1, s2: pointer:= s2) in
     let strong a_20965: loaded integer =
       bound(
@@ -27628,11 +27651,11 @@ proc strcmp (s1: loaded pointer, s2: loaded pointer): eff loaded integer :=
   save ret_20960: loaded integer (a_21039: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_21039)
 
-proc strcoll (l: loaded pointer, r: loaded pointer): eff loaded integer :=
+proc strcoll (l_fav20932: loaded pointer, r_fav20933: loaded pointer): eff loaded integer :=
   let strong l: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', l, l) ;
+  store('const char*', l, l_fav20932) ;
   let strong r: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', r, r) ;
+  store('const char*', r, r_fav20933) ;
   let strong a_20956: loaded integer =
     bound(
       let strong (a_20936: loaded pointer,
@@ -27668,13 +27691,14 @@ proc strcoll (l: loaded pointer, r: loaded pointer): eff loaded integer :=
   save ret_20934: loaded integer (a_20957: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_20957)
 
-proc strncmp (s1: loaded pointer, s2: loaded pointer, n: loaded integer): eff loaded integer :=
+proc strncmp (s1_fav20823: loaded pointer, s2_fav20824: loaded pointer,
+n_fav20825: loaded integer): eff loaded integer :=
   let strong s1: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s1, s1) ;
+  store('const char*', s1, s1_fav20823) ;
   let strong s2: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s2, s2) ;
+  store('const char*', s2, s2_fav20824) ;
   let strong n: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', n, n) ;
+  store('size_t', n, n_fav20825) ;
   save while_20829: unit (s1: pointer:= s1, s2: pointer:= s2, n: pointer:= n) in
     let strong a_20831: loaded integer =
       bound(
@@ -28012,13 +28036,14 @@ proc strncmp (s1: loaded pointer, s2: loaded pointer, n: loaded integer): eff lo
   save ret_20826: loaded integer (a_20931: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_20931)
 
-proc strxfrm (dest: loaded pointer, src: loaded pointer, n: loaded integer): eff loaded integer :=
+proc strxfrm (dest_fav20765: loaded pointer, src_fav20766: loaded pointer,
+n_fav20767: loaded integer): eff loaded integer :=
   let strong dest: pointer = create(Ivalignof('char*'), 'char*') in
-  store('char*', dest, dest) ;
+  store('char*', dest, dest_fav20765) ;
   let strong src: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', src, src) ;
+  store('const char*', src, src_fav20766) ;
   let strong n: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', n, n) ;
+  store('size_t', n, n_fav20767) ;
   let strong l: pointer = create(Ivalignof('size_t'), 'size_t') in
   let strong a_20769: loaded integer =
     bound(
@@ -28124,13 +28149,14 @@ proc strxfrm (dest: loaded pointer, src: loaded pointer, n: loaded integer): eff
   save ret_20768: loaded integer (a_20822: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_20822)
 
-proc memchr (src: loaded pointer, c: loaded integer, n: loaded integer): eff loaded pointer :=
+proc memchr (src_fav20691: loaded pointer, c_fav20692: loaded integer,
+n_fav20693: loaded integer): eff loaded pointer :=
   let strong src: pointer = create(Ivalignof('const void*'), 'const void*') in
-  store('const void*', src, src) ;
+  store('const void*', src, src_fav20691) ;
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav20692) ;
   let strong n: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', n, n) ;
+  store('size_t', n, n_fav20693) ;
   let strong s: pointer =
     create(Ivalignof('const unsigned char*'), 'const unsigned char*') in
   let strong a_20697: loaded pointer = bound(load('const void*', src)) in
@@ -28327,11 +28353,11 @@ proc memchr (src: loaded pointer, c: loaded integer, n: loaded integer): eff loa
   save ret_20694: loaded pointer (a_20764: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_20764)
 
-proc strchr (s: loaded pointer, n: loaded integer): eff loaded pointer :=
+proc strchr (s_fav20590: loaded pointer, n_fav20591: loaded integer): eff loaded pointer :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav20590) ;
   let strong n: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', n, n) ;
+  store('signed int', n, n_fav20591) ;
   let strong c: pointer = create(Ivalignof('char'), 'char') in
   let strong a_20595: loaded integer =
     bound(
@@ -28626,11 +28652,11 @@ proc strchr (s: loaded pointer, n: loaded integer): eff loaded pointer :=
   save ret_20592: loaded pointer (a_20690: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_20690)
 
-proc strcspn (s: loaded pointer, c: loaded pointer): eff loaded integer :=
+proc strcspn (s_fav20238: loaded pointer, c_fav20239: loaded pointer): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav20238) ;
   let strong c: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', c, c) ;
+  store('const char*', c, c_fav20239) ;
   let strong a: pointer = create(Ivalignof('const char*'), 'const char*') in
   let strong byteset: pointer = create(Ivalignof('size_t[4]'), 'size_t[4]') in
   let strong a_20245: loaded pointer = bound(load('const char*', s)) in
@@ -29615,11 +29641,11 @@ proc strcspn (s: loaded pointer, c: loaded pointer): eff loaded integer :=
   save ret_20240: loaded integer (a_20589: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_20589)
 
-proc strpbrk (s: loaded pointer, b: loaded pointer): eff loaded pointer :=
+proc strpbrk (s_fav20185: loaded pointer, b_fav20186: loaded pointer): eff loaded pointer :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav20185) ;
   let strong b: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', b, b) ;
+  store('const char*', b, b_fav20186) ;
   let strong _: loaded pointer =
     bound(
       let weak a_20188: pointer = pure(s) in
@@ -29724,11 +29750,11 @@ proc strpbrk (s: loaded pointer, b: loaded pointer): eff loaded pointer :=
   save ret_20187: loaded pointer (a_20237: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_20237)
 
-proc strrchr (s: loaded pointer, n: loaded integer): eff loaded pointer :=
+proc strrchr (s_fav20070: loaded pointer, n_fav20071: loaded integer): eff loaded pointer :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav20070) ;
   let strong n: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', n, n) ;
+  store('signed int', n, n_fav20071) ;
   let strong c: pointer = create(Ivalignof('char'), 'char') in
   let strong p: pointer = create(Ivalignof('char*'), 'char*') in
   let strong a_20077: loaded integer =
@@ -30059,11 +30085,11 @@ proc strrchr (s: loaded pointer, n: loaded integer): eff loaded pointer :=
   save ret_20072: loaded pointer (a_20184: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_20184)
 
-proc strspn (s: loaded pointer, c: loaded pointer): eff loaded integer :=
+proc strspn (s_fav19719: loaded pointer, c_fav19720: loaded pointer): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav19719) ;
   let strong c: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', c, c) ;
+  store('const char*', c, c_fav19720) ;
   let strong a: pointer = create(Ivalignof('const char*'), 'const char*') in
   let strong byteset: pointer = create(Ivalignof('size_t[4]'), 'size_t[4]') in
   let strong a_19728: loaded pointer = bound(load('const char*', s)) in
@@ -31203,11 +31229,11 @@ proc strspn (s: loaded pointer, c: loaded pointer): eff loaded integer :=
   save ret_19721: loaded integer (a_20069: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_20069)
 
-proc strstr (h: loaded pointer, n: loaded pointer): eff loaded pointer :=
+proc strstr (h_fav19359: loaded pointer, n_fav19360: loaded pointer): eff loaded pointer :=
   let strong h: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', h, h) ;
+  store('const char*', h, h_fav19359) ;
   let strong n: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', n, n) ;
+  store('const char*', n, n_fav19360) ;
   let strong a_19363: loaded integer =
     bound(
       let weak a_19365: loaded integer =
@@ -32030,13 +32056,14 @@ proc strstr (h: loaded pointer, n: loaded pointer): eff loaded pointer :=
   save ret_19361: loaded pointer (a_19718: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_19718)
 
-proc memset (s: loaded pointer, c: loaded integer, n: loaded integer): eff loaded pointer :=
+proc memset (s_fav19324: loaded pointer, c_fav19325: loaded integer,
+n_fav19326: loaded integer): eff loaded pointer :=
   let strong s: pointer = create(Ivalignof('void*'), 'void*') in
-  store('void*', s, s) ;
+  store('void*', s, s_fav19324) ;
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav19325) ;
   let strong n: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', n, n) ;
+  store('size_t', n, n_fav19326) ;
   let strong p: pointer =
     create(Ivalignof('unsigned char*'), 'unsigned char*') in
   let strong a_19330: loaded pointer = bound(load('void*', s)) in
@@ -32127,9 +32154,9 @@ proc memset (s: loaded pointer, c: loaded integer, n: loaded integer): eff loade
   save ret_19327: loaded pointer (a_19358: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_19358)
 
-proc strerror (errnum: loaded integer): eff loaded pointer :=
+proc strerror (errnum_fav19285: loaded integer): eff loaded pointer :=
   let strong errnum: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', errnum, errnum) ;
+  store('signed int', errnum, errnum_fav19285) ;
   bound(
     let strong a_19300: loaded integer =
       let weak a_19290: loaded integer =
@@ -32215,9 +32242,9 @@ proc strerror (errnum: loaded integer): eff loaded pointer :=
   save ret_19286: loaded pointer (a_19323: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_19323)
 
-proc strlen (s: loaded pointer): eff loaded integer :=
+proc strlen (s_fav19257: loaded pointer): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav19257) ;
   let strong len: pointer = create(Ivalignof('size_t'), 'size_t') in
   store('size_t', len, conv_loaded_int('size_t', Specified(0))) ;
   save while_19262: unit (len: pointer:= len, s: pointer:= s) in
@@ -32294,9 +32321,9 @@ proc strlen (s: loaded pointer): eff loaded integer :=
   save ret_19258: loaded integer (a_19284: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_19284)
 
-proc strdup (s: loaded pointer): eff loaded pointer :=
+proc strdup (s_fav19189: loaded pointer): eff loaded pointer :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav19189) ;
   let strong len: pointer = create(Ivalignof('size_t'), 'size_t') in
   let strong sc: pointer = create(Ivalignof('char*'), 'char*') in
   let strong a_19191: loaded integer =
@@ -32409,11 +32436,11 @@ proc strdup (s: loaded pointer): eff loaded pointer :=
   save ret_19190: loaded pointer (a_19256: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_19256)
 
-proc strchrnul (s: loaded pointer, c: loaded integer): eff loaded pointer :=
+proc strchrnul (s_fav19084: loaded pointer, c_fav19085: loaded integer): eff loaded pointer :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav19084) ;
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav19085) ;
   let strong _: loaded integer =
     bound(
       let weak a_19089: pointer = pure(c) in
@@ -32699,13 +32726,13 @@ proc strchrnul (s: loaded pointer, c: loaded integer): eff loaded pointer :=
   save ret_19086: loaded pointer (a_19188: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_19188)
 
-proc twobyte_strstr (h: loaded pointer, n: loaded pointer): eff loaded pointer :=
+proc twobyte_strstr (h_fav18920: loaded pointer, n_fav18921: loaded pointer): eff loaded pointer :=
   let strong h: pointer =
     create(Ivalignof('const unsigned char*'), 'const unsigned char*') in
-  store('const unsigned char*', h, h) ;
+  store('const unsigned char*', h, h_fav18920) ;
   let strong n: pointer =
     create(Ivalignof('const unsigned char*'), 'const unsigned char*') in
-  store('const unsigned char*', n, n) ;
+  store('const unsigned char*', n, n_fav18921) ;
   let strong nw: pointer =
     create(Ivalignof('unsigned short'), 'unsigned short') in
   let strong hw: pointer =
@@ -33190,13 +33217,13 @@ proc twobyte_strstr (h: loaded pointer, n: loaded pointer): eff loaded pointer :
   save ret_18922: loaded pointer (a_19083: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_19083)
 
-proc threebyte_strstr (h: loaded pointer, n: loaded pointer): eff loaded pointer :=
+proc threebyte_strstr (h_fav18695: loaded pointer, n_fav18696: loaded pointer): eff loaded pointer :=
   let strong h: pointer =
     create(Ivalignof('const unsigned char*'), 'const unsigned char*') in
-  store('const unsigned char*', h, h) ;
+  store('const unsigned char*', h, h_fav18695) ;
   let strong n: pointer =
     create(Ivalignof('const unsigned char*'), 'const unsigned char*') in
-  store('const unsigned char*', n, n) ;
+  store('const unsigned char*', n, n_fav18696) ;
   let strong nw: pointer = create(Ivalignof('unsigned int'), 'unsigned int') in
   let strong hw: pointer = create(Ivalignof('unsigned int'), 'unsigned int') in
   let strong a_18700: loaded integer =
@@ -33873,13 +33900,13 @@ proc threebyte_strstr (h: loaded pointer, n: loaded pointer): eff loaded pointer
   save ret_18697: loaded pointer (a_18919: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_18919)
 
-proc fourbyte_strstr (h: loaded pointer, n: loaded pointer): eff loaded pointer :=
+proc fourbyte_strstr (h_fav18442: loaded pointer, n_fav18443: loaded pointer): eff loaded pointer :=
   let strong h: pointer =
     create(Ivalignof('const unsigned char*'), 'const unsigned char*') in
-  store('const unsigned char*', h, h) ;
+  store('const unsigned char*', h, h_fav18442) ;
   let strong n: pointer =
     create(Ivalignof('const unsigned char*'), 'const unsigned char*') in
-  store('const unsigned char*', n, n) ;
+  store('const unsigned char*', n, n_fav18443) ;
   let strong nw: pointer = create(Ivalignof('unsigned int'), 'unsigned int') in
   let strong hw: pointer = create(Ivalignof('unsigned int'), 'unsigned int') in
   let strong a_18447: loaded integer =
@@ -34628,13 +34655,13 @@ proc fourbyte_strstr (h: loaded pointer, n: loaded pointer): eff loaded pointer 
   save ret_18444: loaded pointer (a_18694: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_18694)
 
-proc twoway_strstr (h: loaded pointer, n: loaded pointer): eff loaded pointer :=
+proc twoway_strstr (h_fav17160: loaded pointer, n_fav17161: loaded pointer): eff loaded pointer :=
   let strong h: pointer =
     create(Ivalignof('const unsigned char*'), 'const unsigned char*') in
-  store('const unsigned char*', h, h) ;
+  store('const unsigned char*', h, h_fav17160) ;
   let strong n: pointer =
     create(Ivalignof('const unsigned char*'), 'const unsigned char*') in
-  store('const unsigned char*', n, n) ;
+  store('const unsigned char*', n, n_fav17161) ;
   let strong z: pointer =
     create(Ivalignof('const unsigned char*'), 'const unsigned char*') in
   let strong l: pointer = create(Ivalignof('size_t'), 'size_t') in
@@ -38231,9 +38258,9 @@ proc twoway_strstr (h: loaded pointer, n: loaded pointer): eff loaded pointer :=
   save ret_17162: loaded pointer (a_18441: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_18441)
 
-proc __sigdefault (sig: loaded integer): eff unit :=
+proc __sigdefault (sig_fav38934: loaded integer): eff unit :=
   let strong sig: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', sig, sig) ;
+  store('signed int', sig, sig_fav38934) ;
   let strong a_38937: loaded integer =
     bound(
       let weak a_38939: loaded integer =
@@ -38453,15 +38480,15 @@ proc __sigdefault (sig: loaded integer): eff unit :=
   kill('signed int', sig) ;
   save ret_38935: unit (a_39035: unit:= Unit) in  pure(a_39035)
 
-proc __sigignore (sig: loaded integer): eff unit :=
+proc __sigignore (sig_fav38931: loaded integer): eff unit :=
   let strong sig: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', sig, sig) ;
+  store('signed int', sig, sig_fav38931) ;
   kill('signed int', sig) ;
   save ret_38932: unit (a_38933: unit:= Unit) in  pure(a_38933)
 
-proc __sigerror (sig: loaded integer): eff unit :=
+proc __sigerror (sig_fav38829: loaded integer): eff unit :=
   let strong sig: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', sig, sig) ;
+  store('signed int', sig, sig_fav38829) ;
   let strong a_38832: loaded integer =
     bound(
       let weak a_38834: loaded integer =
@@ -38681,12 +38708,12 @@ proc __sigerror (sig: loaded integer): eff unit :=
   kill('signed int', sig) ;
   save ret_38830: unit (a_38930: unit:= Unit) in  pure(a_38930)
 
-proc signal (sig: loaded integer, func: loaded pointer): eff loaded pointer :=
+proc signal (sig_fav38769: loaded integer, func_fav38770: loaded pointer): eff loaded pointer :=
   let strong sig: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', sig, sig) ;
+  store('signed int', sig, sig_fav38769) ;
   let strong func: pointer =
     create(Ivalignof('void (*) (signed int)'), 'void (*) (signed int)') in
-  store('void (*) (signed int)', func, func) ;
+  store('void (*) (signed int)', func, func_fav38770) ;
   let strong a_38773: loaded integer =
     bound(
       let weak a_38775: loaded integer =
@@ -38846,9 +38873,9 @@ proc signal (sig: loaded integer, func: loaded pointer): eff loaded pointer :=
   save ret_38771: loaded pointer (a_38828: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_38828)
 
-proc raise (sig: loaded integer): eff loaded integer :=
+proc raise (sig_fav38699: loaded integer): eff loaded integer :=
   let strong sig: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', sig, sig) ;
+  store('signed int', sig, sig_fav38699) ;
   let strong a_38702: loaded integer =
     bound(
       let weak a_38704: loaded integer =
@@ -39015,14 +39042,15 @@ proc raise (sig: loaded integer): eff loaded integer :=
   save ret_38700: loaded integer (a_38768: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_38768)
 
-proc __floatscan (f: loaded pointer, prec: loaded integer, pok: loaded integer): eff loaded floating :=
+proc __floatscan (f_fav33107: loaded pointer, prec_fav33108: loaded integer,
+pok_fav33109: loaded integer): eff loaded floating :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav33107) ;
   let strong prec: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', prec, prec) ;
+  store('signed int', prec, prec_fav33108) ;
   let strong pok: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', pok, pok) ;
+  store('signed int', pok, pok_fav33109) ;
   let strong sign: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong i: pointer = create(Ivalignof('size_t'), 'size_t') in
   let strong bits: pointer = create(Ivalignof('signed int'), 'signed int') in
@@ -42685,19 +42713,19 @@ proc __floatscan (f: loaded pointer, prec: loaded integer, pok: loaded integer):
   save ret_33110: loaded floating (a_34518: loaded floating:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_34518)
 
-proc __intscan (f: loaded pointer, base: loaded integer, pok: loaded integer,
-lim: loaded integer): eff loaded integer :=
+proc __intscan (f_fav31160: loaded pointer, base_fav31161: loaded integer,
+pok_fav31162: loaded integer, lim_fav31163: loaded integer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav31160) ;
   let strong base: pointer =
     create(Ivalignof('unsigned int'), 'unsigned int') in
-  store('unsigned int', base, base) ;
+  store('unsigned int', base, base_fav31161) ;
   let strong pok: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', pok, pok) ;
+  store('signed int', pok, pok_fav31162) ;
   let strong lim: pointer =
     create(Ivalignof('unsigned long long'), 'unsigned long long') in
-  store('unsigned long long', lim, lim) ;
+  store('unsigned long long', lim, lim_fav31163) ;
   let strong val: pointer =
     create(Ivalignof('const unsigned char*'), 'const unsigned char*') in
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
@@ -47972,12 +48000,12 @@ lim: loaded integer): eff loaded integer :=
   save ret_31164: loaded integer (a_33106: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_33106)
 
-proc scanexp (f: loaded pointer, pok: loaded integer): eff loaded integer :=
+proc scanexp (f_fav30498: loaded pointer, pok_fav30499: loaded integer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav30498) ;
   let strong pok: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', pok, pok) ;
+  store('signed int', pok, pok_fav30499) ;
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong x: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong y: pointer =
@@ -49634,21 +49662,22 @@ proc scanexp (f: loaded pointer, pok: loaded integer): eff loaded integer :=
   save ret_30500: loaded integer (a_31159: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_31159)
 
-proc decfloat (f: loaded pointer, c: loaded integer, bits: loaded integer,
-emin: loaded integer, sign: loaded integer, pok: loaded integer): eff loaded floating :=
+proc decfloat (f_fav26783: loaded pointer, c_fav26784: loaded integer,
+bits_fav26785: loaded integer, emin_fav26786: loaded integer,
+sign_fav26787: loaded integer, pok_fav26788: loaded integer): eff loaded floating :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav26783) ;
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav26784) ;
   let strong bits: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', bits, bits) ;
+  store('signed int', bits, bits_fav26785) ;
   let strong emin: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', emin, emin) ;
+  store('signed int', emin, emin_fav26786) ;
   let strong sign: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', sign, sign) ;
+  store('signed int', sign, sign_fav26787) ;
   let strong pok: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', pok, pok) ;
+  store('signed int', pok, pok_fav26788) ;
   let strong x: pointer =
     create(Ivalignof('unsigned int[2048]'), 'unsigned int[2048]') in
   let strong i: pointer = create(Ivalignof('signed int'), 'signed int') in
@@ -59980,19 +60009,20 @@ emin: loaded integer, sign: loaded integer, pok: loaded integer): eff loaded flo
   save ret_26789: loaded floating (a_30497: loaded floating:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_30497)
 
-proc hexfloat (f: loaded pointer, bits: loaded integer, emin: loaded integer,
-sign: loaded integer, pok: loaded integer): eff loaded floating :=
+proc hexfloat (f_fav25322: loaded pointer, bits_fav25323: loaded integer,
+emin_fav25324: loaded integer, sign_fav25325: loaded integer,
+pok_fav25326: loaded integer): eff loaded floating :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav25322) ;
   let strong bits: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', bits, bits) ;
+  store('signed int', bits, bits_fav25323) ;
   let strong emin: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', emin, emin) ;
+  store('signed int', emin, emin_fav25324) ;
   let strong sign: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', sign, sign) ;
+  store('signed int', sign, sign_fav25325) ;
   let strong pok: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', pok, pok) ;
+  store('signed int', pok, pok_fav25326) ;
   let strong x: pointer = create(Ivalignof('unsigned int'), 'unsigned int') in
   let strong y: pointer = create(Ivalignof('long double'), 'long double') in
   let strong scale: pointer = create(Ivalignof('long double'), 'long double') in
@@ -63745,13 +63775,14 @@ sign: loaded integer, pok: loaded integer): eff loaded floating :=
   save ret_25327: loaded floating (a_26767: loaded floating:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_26767)
 
-proc fchown (fd: loaded integer, uid: loaded integer, gid: loaded integer): eff loaded integer :=
+proc fchown (fd_fav23047: loaded integer, uid_fav23048: loaded integer,
+gid_fav23049: loaded integer): eff loaded integer :=
   let strong fd: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', fd, fd) ;
+  store('signed int', fd, fd_fav23047) ;
   let strong uid: pointer = create(Ivalignof('unsigned int'), 'unsigned int') in
-  store('unsigned int', uid, uid) ;
+  store('unsigned int', uid, uid_fav23048) ;
   let strong gid: pointer = create(Ivalignof('unsigned int'), 'unsigned int') in
-  store('unsigned int', gid, gid) ;
+  store('unsigned int', gid, gid_fav23049) ;
   let strong buf: pointer = create(Ivalignof('char[27]'), 'char[27]') in
   store('char[27]', buf, Unspecified('char[27]')) ;
   bound(
@@ -63830,14 +63861,15 @@ proc fchown (fd: loaded integer, uid: loaded integer, gid: loaded integer): eff 
   save ret_23050: loaded integer (a_23103: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_23103)
 
-proc getopt (nargc: loaded integer, nargv: loaded pointer, ostr: loaded pointer): eff loaded integer :=
+proc getopt (nargc_fav22479: loaded integer, nargv_fav22480: loaded pointer,
+ostr_fav22481: loaded pointer): eff loaded integer :=
   let strong nargc: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', nargc, nargc) ;
+  store('signed int', nargc, nargc_fav22479) ;
   let strong nargv: pointer =
     create(Ivalignof('char*const *'), 'char*const *') in
-  store('char*const *', nargv, nargv) ;
+  store('char*const *', nargv, nargv_fav22480) ;
   let strong ostr: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', ostr, ostr) ;
+  store('const char*', ostr, ostr_fav22481) ;
   let strong oli: pointer = create(Ivalignof('char*'), 'char*') in
   store('char*', oli, Unspecified('char*')) ;
   let strong a_22484: loaded integer =
@@ -65330,20 +65362,20 @@ proc getopt (nargc: loaded integer, nargv: loaded pointer, ostr: loaded pointer)
   save ret_22482: loaded integer (a_23046: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_23046)
 
-proc isatty (fd: loaded integer): eff loaded integer :=
+proc isatty (fd_fav22475: loaded integer): eff loaded integer :=
   let strong fd: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', fd, fd) ;
+  store('signed int', fd, fd_fav22475) ;
   kill('signed int', fd) ;
   run ret_22476(conv_loaded_int('signed int', Specified(0))) ;
   kill('signed int', fd) ;
   save ret_22476: loaded integer (a_22478: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_22478)
 
-proc __procfdname (buf: loaded pointer, fd: loaded integer): eff unit :=
+proc __procfdname (buf_fav22288: loaded pointer, fd_fav22289: loaded integer): eff unit :=
   let strong buf: pointer = create(Ivalignof('char*'), 'char*') in
-  store('char*', buf, buf) ;
+  store('char*', buf, buf_fav22288) ;
   let strong fd: pointer = create(Ivalignof('unsigned int'), 'unsigned int') in
-  store('unsigned int', fd, fd) ;
+  store('unsigned int', fd, fd_fav22289) ;
   let strong i: pointer = create(Ivalignof('unsigned int'), 'unsigned int') in
   let strong j: pointer = create(Ivalignof('unsigned int'), 'unsigned int') in
   store('unsigned int', i, Unspecified('unsigned int')) ;
@@ -65863,9 +65895,9 @@ proc __procfdname (buf: loaded pointer, fd: loaded integer): eff unit :=
   kill('unsigned int', fd) ;
   save ret_22290: unit (a_22466: unit:= Unit) in  pure(a_22466)
 
-proc atoi (s: loaded pointer): eff loaded integer :=
+proc atoi (s_fav16573: loaded pointer): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav16573) ;
   let strong n: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong neg: pointer = create(Ivalignof('signed int'), 'signed int') in
   store('signed int', n, conv_loaded_int('signed int', Specified(0))) ;
@@ -66183,9 +66215,9 @@ proc atoi (s: loaded pointer): eff loaded integer :=
   save ret_16574: loaded integer (a_16696: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_16696)
 
-proc atol (s: loaded pointer): eff loaded integer :=
+proc atol (s_fav16449: loaded pointer): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav16449) ;
   let strong n: pointer = create(Ivalignof('signed long'), 'signed long') in
   let strong neg: pointer = create(Ivalignof('signed int'), 'signed int') in
   store('signed long', n, conv_loaded_int('signed long', Specified(0))) ;
@@ -66503,9 +66535,9 @@ proc atol (s: loaded pointer): eff loaded integer :=
   save ret_16450: loaded integer (a_16572: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_16572)
 
-proc atoll (s: loaded pointer): eff loaded integer :=
+proc atoll (s_fav16325: loaded pointer): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav16325) ;
   let strong n: pointer =
     create(Ivalignof('signed long long'), 'signed long long') in
   let strong neg: pointer = create(Ivalignof('signed int'), 'signed int') in
@@ -66826,9 +66858,9 @@ proc atoll (s: loaded pointer): eff loaded integer :=
   save ret_16326: loaded integer (a_16448: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_16448)
 
-proc atof (s: loaded pointer): eff loaded floating :=
+proc atof (s_fav16301: loaded pointer): eff loaded floating :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav16301) ;
   let strong a_16323: loaded floating =
     bound(
       let strong (a_16304: loaded pointer,
@@ -66862,11 +66894,11 @@ proc atof (s: loaded pointer): eff loaded floating :=
   save ret_16302: loaded floating (a_16324: loaded floating:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_16324)
 
-proc strtod (s: loaded pointer, p: loaded pointer): eff loaded floating :=
+proc strtod (s_fav16269: loaded pointer, p_fav16270: loaded pointer): eff loaded floating :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav16269) ;
   let strong p: pointer = create(Ivalignof('char**'), 'char**') in
-  store('char**', p, p) ;
+  store('char**', p, p_fav16270) ;
   let strong a_16299: loaded floating =
     bound(
       let strong (a_16273: loaded pointer,
@@ -66909,11 +66941,11 @@ proc strtod (s: loaded pointer, p: loaded pointer): eff loaded floating :=
   save ret_16271: loaded floating (a_16300: loaded floating:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_16300)
 
-proc strtof (s: loaded pointer, p: loaded pointer): eff loaded floating :=
+proc strtof (s_fav16237: loaded pointer, p_fav16238: loaded pointer): eff loaded floating :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav16237) ;
   let strong p: pointer = create(Ivalignof('char**'), 'char**') in
-  store('char**', p, p) ;
+  store('char**', p, p_fav16238) ;
   let strong a_16267: loaded floating =
     bound(
       let strong (a_16241: loaded pointer,
@@ -66956,11 +66988,11 @@ proc strtof (s: loaded pointer, p: loaded pointer): eff loaded floating :=
   save ret_16239: loaded floating (a_16268: loaded floating:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_16268)
 
-proc strtold (s: loaded pointer, p: loaded pointer): eff loaded floating :=
+proc strtold (s_fav16205: loaded pointer, p_fav16206: loaded pointer): eff loaded floating :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav16205) ;
   let strong p: pointer = create(Ivalignof('char**'), 'char**') in
-  store('char**', p, p) ;
+  store('char**', p, p_fav16206) ;
   let strong a_16235: loaded floating =
     bound(
       let strong (a_16209: loaded pointer,
@@ -67003,13 +67035,14 @@ proc strtold (s: loaded pointer, p: loaded pointer): eff loaded floating :=
   save ret_16207: loaded floating (a_16236: loaded floating:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_16236)
 
-proc strtol (s: loaded pointer, p: loaded pointer, base: loaded integer): eff loaded integer :=
+proc strtol (s_fav16160: loaded pointer, p_fav16161: loaded pointer,
+base_fav16162: loaded integer): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav16160) ;
   let strong p: pointer = create(Ivalignof('char**'), 'char**') in
-  store('char**', p, p) ;
+  store('char**', p, p_fav16161) ;
   let strong base: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', base, base) ;
+  store('signed int', base, base_fav16162) ;
   let strong a_16203: loaded integer =
     bound(
       let strong (a_16165: loaded pointer,
@@ -67069,13 +67102,14 @@ proc strtol (s: loaded pointer, p: loaded pointer, base: loaded integer): eff lo
   save ret_16163: loaded integer (a_16204: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_16204)
 
-proc strtoll (s: loaded pointer, p: loaded pointer, base: loaded integer): eff loaded integer :=
+proc strtoll (s_fav16120: loaded pointer, p_fav16121: loaded pointer,
+base_fav16122: loaded integer): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav16120) ;
   let strong p: pointer = create(Ivalignof('char**'), 'char**') in
-  store('char**', p, p) ;
+  store('char**', p, p_fav16121) ;
   let strong base: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', base, base) ;
+  store('signed int', base, base_fav16122) ;
   let strong a_16158: loaded integer =
     bound(
       let strong (a_16125: loaded pointer,
@@ -67128,13 +67162,14 @@ proc strtoll (s: loaded pointer, p: loaded pointer, base: loaded integer): eff l
   save ret_16123: loaded integer (a_16159: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_16159)
 
-proc strtoul (s: loaded pointer, p: loaded pointer, base: loaded integer): eff loaded integer :=
+proc strtoul (s_fav16080: loaded pointer, p_fav16081: loaded pointer,
+base_fav16082: loaded integer): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav16080) ;
   let strong p: pointer = create(Ivalignof('char**'), 'char**') in
-  store('char**', p, p) ;
+  store('char**', p, p_fav16081) ;
   let strong base: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', base, base) ;
+  store('signed int', base, base_fav16082) ;
   let strong a_16118: loaded integer =
     bound(
       let strong (a_16085: loaded pointer,
@@ -67187,13 +67222,14 @@ proc strtoul (s: loaded pointer, p: loaded pointer, base: loaded integer): eff l
   save ret_16083: loaded integer (a_16119: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_16119)
 
-proc strtoull (s: loaded pointer, p: loaded pointer, base: loaded integer): eff loaded integer :=
+proc strtoull (s_fav16040: loaded pointer, p_fav16041: loaded pointer,
+base_fav16042: loaded integer): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav16040) ;
   let strong p: pointer = create(Ivalignof('char**'), 'char**') in
-  store('char**', p, p) ;
+  store('char**', p, p_fav16041) ;
   let strong base: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', base, base) ;
+  store('signed int', base, base_fav16042) ;
   let strong a_16078: loaded integer =
     bound(
       let strong (a_16045: loaded pointer,
@@ -67335,10 +67371,10 @@ proc rand (): eff loaded integer :=
   save ret_16008: loaded integer (a_16039: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_16039)
 
-proc srand (seed: loaded integer): eff unit :=
+proc srand (seed_fav16002: loaded integer): eff unit :=
   let strong seed: pointer =
     create(Ivalignof('unsigned int'), 'unsigned int') in
-  store('unsigned int', seed, seed) ;
+  store('unsigned int', seed, seed_fav16002) ;
   let strong _: loaded integer =
     bound(
       let weak a_16004: pointer = pure(__seed) in
@@ -67351,11 +67387,11 @@ proc srand (seed: loaded integer): eff unit :=
   kill('unsigned int', seed) ;
   save ret_16003: unit (a_16007: unit:= Unit) in  pure(a_16007)
 
-proc calloc (nmemb: loaded integer, size: loaded integer): eff loaded pointer :=
+proc calloc (nmemb_fav15920: loaded integer, size_fav15921: loaded integer): eff loaded pointer :=
   let strong nmemb: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', nmemb, nmemb) ;
+  store('size_t', nmemb, nmemb_fav15920) ;
   let strong size: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', size, size) ;
+  store('size_t', size, size_fav15921) ;
   let strong ret: pointer =
     create(Ivalignof('unsigned char*'), 'unsigned char*') in
   store('unsigned char*', ret, Unspecified('unsigned ichar*')) ;
@@ -67612,10 +67648,10 @@ proc abort (): eff unit :=
   save ret_15892: unit (a_15919: unit:= undef(<<UB071_noreturn>>)) in
     pure(a_15919)
 
-proc atexit (func: loaded pointer): eff loaded integer :=
+proc atexit (func_fav15856: loaded pointer): eff loaded integer :=
   let strong func: pointer =
     create(Ivalignof('void (*) (void)'), 'void (*) (void)') in
-  store('void (*) (void)', func, func) ;
+  store('void (*) (void)', func, func_fav15856) ;
   let strong a_15890: loaded integer =
     bound(
       let strong (a_15859: loaded pointer,
@@ -67674,10 +67710,10 @@ proc atexit (func: loaded pointer): eff loaded integer :=
   save ret_15857: loaded integer (a_15891: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_15891)
 
-proc at_quick_exit (func: loaded pointer): eff loaded integer :=
+proc at_quick_exit (func_fav15816: loaded pointer): eff loaded integer :=
   let strong func: pointer =
     create(Ivalignof('void (*) (void)'), 'void (*) (void)') in
-  store('void (*) (void)', func, func) ;
+  store('void (*) (void)', func, func_fav15816) ;
   let strong r: pointer = create(Ivalignof('signed int'), 'signed int') in
   store('signed int', r, conv_loaded_int('signed int', Specified(0))) ;
   let strong a_15820: loaded integer =
@@ -67787,9 +67823,9 @@ proc at_quick_exit (func: loaded pointer): eff loaded integer :=
   save ret_15817: loaded integer (a_15855: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_15855)
 
-proc exit (code: loaded integer): eff unit :=
+proc exit (code_fav15796: loaded integer): eff unit :=
   let strong code: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', code, code) ;
+  store('signed int', code, code_fav15796) ;
   bound(
     let (a_15799: ctype, a_15800: [ctype], _: boolean, _: boolean) =
       cfunction(Specified(Cfunction(__funcs_on_exit))) in
@@ -67825,9 +67861,9 @@ proc exit (code: loaded integer): eff unit :=
   save ret_15797: unit (a_15815: unit:= undef(<<UB071_noreturn>>)) in
     pure(a_15815)
 
-proc _Exit (ec: loaded integer): eff unit :=
+proc _Exit (ec_fav15779: loaded integer): eff unit :=
   let strong ec: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', ec, ec) ;
+  store('signed int', ec, ec_fav15779) ;
   bound(
     let strong (a_15782: loaded pointer,
     (a_15783: ctype, a_15784: [ctype], a_15785: boolean, a_15786: boolean)) =
@@ -67853,9 +67889,9 @@ proc _Exit (ec: loaded integer): eff unit :=
   save ret_15780: unit (a_15795: unit:= undef(<<UB071_noreturn>>)) in
     pure(a_15795)
 
-proc quick_exit (code: loaded integer): eff unit :=
+proc quick_exit (code_fav15759: loaded integer): eff unit :=
   let strong code: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', code, code) ;
+  store('signed int', code, code_fav15759) ;
   bound(
     let (a_15762: ctype, a_15763: [ctype], _: boolean, _: boolean) =
       cfunction(Specified(Cfunction(__funcs_on_quick_exit))) in
@@ -67891,9 +67927,9 @@ proc quick_exit (code: loaded integer): eff unit :=
   save ret_15760: unit (a_15778: unit:= undef(<<UB071_noreturn>>)) in
     pure(a_15778)
 
-proc getenv (name: loaded pointer): eff loaded pointer :=
+proc getenv (name_fav15544: loaded pointer): eff loaded pointer :=
   let strong name: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', name, name) ;
+  store('const char*', name, name_fav15544) ;
   let strong l: pointer = create(Ivalignof('size_t'), 'size_t') in
   let strong a_15548: loaded integer =
     bound(
@@ -68458,29 +68494,30 @@ proc getenv (name: loaded pointer): eff loaded pointer :=
   save ret_15545: loaded pointer (a_15758: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_15758)
 
-proc system (string: loaded pointer): eff loaded integer :=
+proc system (string_fav15540: loaded pointer): eff loaded integer :=
   let strong string: pointer =
     create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', string, string) ;
+  store('const char*', string, string_fav15540) ;
   kill('char*', string) ;
   run ret_15541(conv_loaded_int('signed int', Specified(0))) ;
   kill('char*', string) ;
   save ret_15541: loaded integer (a_15543: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_15543)
 
-proc bsearch (key: loaded pointer, base: loaded pointer, nel: loaded integer,
-width: loaded integer, cmp: loaded pointer): eff loaded pointer :=
+proc bsearch (key_fav15397: loaded pointer, base_fav15398: loaded pointer,
+nel_fav15399: loaded integer, width_fav15400: loaded integer,
+cmp_fav15401: loaded pointer): eff loaded pointer :=
   let strong key: pointer = create(Ivalignof('const void*'), 'const void*') in
-  store('const void*', key, key) ;
+  store('const void*', key, key_fav15397) ;
   let strong base: pointer = create(Ivalignof('const void*'), 'const void*') in
-  store('const void*', base, base) ;
+  store('const void*', base, base_fav15398) ;
   let strong nel: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', nel, nel) ;
+  store('size_t', nel, nel_fav15399) ;
   let strong width: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', width, width) ;
+  store('size_t', width, width_fav15400) ;
   let strong cmp: pointer =
     create(Ivalignof('signed int (*) (const void*, const void*)'), 'signed int (*) (const void*, const void*)') in
-  store('signed int (*) (const void*, const void*)', cmp, cmp) ;
+  store('signed int (*) (const void*, const void*)', cmp, cmp_fav15401) ;
   let strong try: pointer = create(Ivalignof('void*'), 'void*') in
   let strong sign: pointer = create(Ivalignof('signed int'), 'signed int') in
   store('void*', try, Unspecified('void*')) ;
@@ -68917,17 +68954,17 @@ width: loaded integer, cmp: loaded pointer): eff loaded pointer :=
   save ret_15402: loaded pointer (a_15539: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_15539)
 
-proc qsort (base: loaded pointer, nel: loaded integer, width: loaded integer,
-cmp: loaded pointer): eff unit :=
+proc qsort (base_fav14397: loaded pointer, nel_fav14398: loaded integer,
+width_fav14399: loaded integer, cmp_fav14400: loaded pointer): eff unit :=
   let strong base: pointer = create(Ivalignof('void*'), 'void*') in
-  store('void*', base, base) ;
+  store('void*', base, base_fav14397) ;
   let strong nel: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', nel, nel) ;
+  store('size_t', nel, nel_fav14398) ;
   let strong width: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', width, width) ;
+  store('size_t', width, width_fav14399) ;
   let strong cmp: pointer =
     create(Ivalignof('signed int (*) (const void*, const void*)'), 'signed int (*) (const void*, const void*)') in
-  store('signed int (*) (const void*, const void*)', cmp, cmp) ;
+  store('signed int (*) (const void*, const void*)', cmp, cmp_fav14400) ;
   let strong lp: pointer = create(Ivalignof('size_t[96]'), 'size_t[96]') in
   let strong i: pointer = create(Ivalignof('size_t'), 'size_t') in
   let strong size: pointer = create(Ivalignof('size_t'), 'size_t') in
@@ -70894,9 +70931,9 @@ cmp: loaded pointer): eff unit :=
   kill('signed int (void*, void*)*', cmp) ;
   save ret_14401: unit (a_15396: unit:= Unit) in  pure(a_15396)
 
-proc abs (a: loaded integer): eff loaded integer :=
+proc abs (a_fav14374: loaded integer): eff loaded integer :=
   let strong a: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', a, a) ;
+  store('signed int', a, a_fav14374) ;
   let strong a_14395: loaded integer =
     bound(
       let strong a_14387: loaded integer =
@@ -70956,9 +70993,9 @@ proc abs (a: loaded integer): eff loaded integer :=
   save ret_14375: loaded integer (a_14396: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_14396)
 
-proc labs (a: loaded integer): eff loaded integer :=
+proc labs (a_fav14351: loaded integer): eff loaded integer :=
   let strong a: pointer = create(Ivalignof('signed long'), 'signed long') in
-  store('signed long', a, a) ;
+  store('signed long', a, a_fav14351) ;
   let strong a_14372: loaded integer =
     bound(
       let strong a_14364: loaded integer =
@@ -71018,10 +71055,10 @@ proc labs (a: loaded integer): eff loaded integer :=
   save ret_14352: loaded integer (a_14373: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_14373)
 
-proc llabs (a: loaded integer): eff loaded integer :=
+proc llabs (a_fav14328: loaded integer): eff loaded integer :=
   let strong a: pointer =
     create(Ivalignof('signed long long'), 'signed long long') in
-  store('signed long long', a, a) ;
+  store('signed long long', a, a_fav14328) ;
   let strong a_14349: loaded integer =
     bound(
       let strong a_14341: loaded integer =
@@ -71083,11 +71120,11 @@ proc llabs (a: loaded integer): eff loaded integer :=
   save ret_14329: loaded integer (a_14350: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_14350)
 
-proc div (num: loaded integer, den: loaded integer): eff loaded struct div_11427 :=
+proc div (num_fav14302: loaded integer, den_fav14303: loaded integer): eff loaded struct div_11427 :=
   let strong num: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', num, num) ;
+  store('signed int', num, num_fav14302) ;
   let strong den: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', den, den) ;
+  store('signed int', den, den_fav14303) ;
   let strong a_14305: pointer = create(Ivalignof('struct div'), 'struct div') in
   let strong a_14326: loaded struct div_11427 =
     bound(
@@ -71158,11 +71195,11 @@ proc div (num: loaded integer, den: loaded integer): eff loaded struct div_11427
   save ret_14304: loaded struct div_11427 (a_14327: loaded struct div_11427:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_14327)
 
-proc ldiv (num: loaded integer, den: loaded integer): eff loaded struct ldiv_11429 :=
+proc ldiv (num_fav14276: loaded integer, den_fav14277: loaded integer): eff loaded struct ldiv_11429 :=
   let strong num: pointer = create(Ivalignof('signed long'), 'signed long') in
-  store('signed long', num, num) ;
+  store('signed long', num, num_fav14276) ;
   let strong den: pointer = create(Ivalignof('signed long'), 'signed long') in
-  store('signed long', den, den) ;
+  store('signed long', den, den_fav14277) ;
   let strong a_14279: pointer =
     create(Ivalignof('struct ldiv'), 'struct ldiv') in
   let strong a_14300: loaded struct ldiv_11429 =
@@ -71234,13 +71271,13 @@ proc ldiv (num: loaded integer, den: loaded integer): eff loaded struct ldiv_114
   save ret_14278: loaded struct ldiv_11429 (a_14301: loaded struct ldiv_11429:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_14301)
 
-proc lldiv (num: loaded integer, den: loaded integer): eff loaded struct lldiv_11431 :=
+proc lldiv (num_fav14250: loaded integer, den_fav14251: loaded integer): eff loaded struct lldiv_11431 :=
   let strong num: pointer =
     create(Ivalignof('signed long long'), 'signed long long') in
-  store('signed long long', num, num) ;
+  store('signed long long', num, num_fav14250) ;
   let strong den: pointer =
     create(Ivalignof('signed long long'), 'signed long long') in
-  store('signed long long', den, den) ;
+  store('signed long long', den, den_fav14251) ;
   let strong a_14253: pointer =
     create(Ivalignof('struct lldiv'), 'struct lldiv') in
   let strong a_14274: loaded struct lldiv_11431 =
@@ -71314,11 +71351,11 @@ proc lldiv (num: loaded integer, den: loaded integer): eff loaded struct lldiv_1
   save ret_14252: loaded struct lldiv_11431 (a_14275: loaded struct lldiv_11431:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_14275)
 
-proc mblen (s: loaded pointer, n: loaded integer): eff loaded integer :=
+proc mblen (s_fav14210: loaded pointer, n_fav14211: loaded integer): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav14210) ;
   let strong n: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', n, n) ;
+  store('size_t', n, n_fav14211) ;
   bound(
     let strong a_14226: loaded integer =
       let weak a_14216: loaded integer =
@@ -71403,13 +71440,14 @@ proc mblen (s: loaded pointer, n: loaded integer): eff loaded integer :=
   save ret_14212: loaded integer (a_14249: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_14249)
 
-proc mbtowc (pwc: loaded pointer, s: loaded pointer, n: loaded integer): eff loaded integer :=
+proc mbtowc (pwc_fav14169: loaded pointer, s_fav14170: loaded pointer,
+n_fav14171: loaded integer): eff loaded integer :=
   let strong pwc: pointer = create(Ivalignof('wchar_t*'), 'wchar_t*') in
-  store('wchar_t*', pwc, pwc) ;
+  store('wchar_t*', pwc, pwc_fav14169) ;
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav14170) ;
   let strong n: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', n, n) ;
+  store('size_t', n, n_fav14171) ;
   bound(
     let strong a_14186: loaded integer =
       let weak a_14176: loaded integer =
@@ -71495,11 +71533,11 @@ proc mbtowc (pwc: loaded pointer, s: loaded pointer, n: loaded integer): eff loa
   save ret_14172: loaded integer (a_14209: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_14209)
 
-proc wctomb (s: loaded pointer, wchar: loaded integer): eff loaded integer :=
+proc wctomb (s_fav14129: loaded pointer, wchar_fav14130: loaded integer): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('char*'), 'char*') in
-  store('char*', s, s) ;
+  store('char*', s, s_fav14129) ;
   let strong wchar: pointer = create(Ivalignof('wchar_t'), 'wchar_t') in
-  store('wchar_t', wchar, wchar) ;
+  store('wchar_t', wchar, wchar_fav14130) ;
   bound(
     let strong a_14145: loaded integer =
       let weak a_14135: loaded integer =
@@ -71584,13 +71622,14 @@ proc wctomb (s: loaded pointer, wchar: loaded integer): eff loaded integer :=
   save ret_14131: loaded integer (a_14168: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_14168)
 
-proc mbstowcs (pwcs: loaded pointer, s: loaded pointer, n: loaded integer): eff loaded integer :=
+proc mbstowcs (pwcs_fav14088: loaded pointer, s_fav14089: loaded pointer,
+n_fav14090: loaded integer): eff loaded integer :=
   let strong pwcs: pointer = create(Ivalignof('wchar_t*'), 'wchar_t*') in
-  store('wchar_t*', pwcs, pwcs) ;
+  store('wchar_t*', pwcs, pwcs_fav14088) ;
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav14089) ;
   let strong n: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', n, n) ;
+  store('size_t', n, n_fav14090) ;
   bound(
     let strong a_14105: loaded integer =
       let weak a_14095: loaded integer =
@@ -71676,14 +71715,15 @@ proc mbstowcs (pwcs: loaded pointer, s: loaded pointer, n: loaded integer): eff 
   save ret_14091: loaded integer (a_14128: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_14128)
 
-proc wcstombs (s: loaded pointer, pwcs: loaded pointer, n: loaded integer): eff loaded integer :=
+proc wcstombs (s_fav14047: loaded pointer, pwcs_fav14048: loaded pointer,
+n_fav14049: loaded integer): eff loaded integer :=
   let strong s: pointer = create(Ivalignof('char*'), 'char*') in
-  store('char*', s, s) ;
+  store('char*', s, s_fav14047) ;
   let strong pwcs: pointer =
     create(Ivalignof('const wchar_t*'), 'const wchar_t*') in
-  store('const wchar_t*', pwcs, pwcs) ;
+  store('const wchar_t*', pwcs, pwcs_fav14048) ;
   let strong n: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', n, n) ;
+  store('size_t', n, n_fav14049) ;
   bound(
     let strong a_14064: loaded integer =
       let weak a_14054: loaded integer =
@@ -71996,15 +72036,15 @@ proc __funcs_on_exit (): eff unit :=
   kill('void*', arg) ;
   save ret_13945: unit (a_14038: unit:= Unit) in  pure(a_14038)
 
-proc __cxa_atexit (func: loaded pointer, arg: loaded pointer,
-dso: loaded pointer): eff loaded integer :=
+proc __cxa_atexit (func_fav13821: loaded pointer, arg_fav13822: loaded pointer,
+dso_fav13823: loaded pointer): eff loaded integer :=
   let strong func: pointer =
     create(Ivalignof('void (*) (void*)'), 'void (*) (void*)') in
-  store('void (*) (void*)', func, func) ;
+  store('void (*) (void*)', func, func_fav13821) ;
   let strong arg: pointer = create(Ivalignof('void*'), 'void*') in
-  store('void*', arg, arg) ;
+  store('void*', arg, arg_fav13822) ;
   let strong dso: pointer = create(Ivalignof('void*'), 'void*') in
-  store('void*', dso, dso) ;
+  store('void*', dso, dso_fav13823) ;
   let strong a_13826: loaded integer =
     bound(
       let weak a_13828: loaded integer =
@@ -72300,9 +72340,9 @@ dso: loaded pointer): eff loaded integer :=
   save ret_13824: loaded integer (a_13944: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_13944)
 
-proc call (p: loaded pointer): eff unit :=
+proc call (p_fav13808: loaded pointer): eff unit :=
   let strong p: pointer = create(Ivalignof('void*'), 'void*') in
-  store('void*', p, p) ;
+  store('void*', p, p_fav13808) ;
   bound(
     let strong a_13810: loaded pointer =
       let weak a_13815: loaded pointer = load('void*', p) in
@@ -72451,11 +72491,11 @@ proc __funcs_on_quick_exit (): eff unit :=
 
 proc __builtin_exit (loaded integer)
 
-proc __strchrnul (s: loaded pointer, c: loaded integer): eff loaded pointer :=
+proc __strchrnul (s_fav13653: loaded pointer, c_fav13654: loaded integer): eff loaded pointer :=
   let strong s: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', s, s) ;
+  store('const char*', s, s_fav13653) ;
   let strong c: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', c, c) ;
+  store('signed int', c, c_fav13654) ;
   let strong _: loaded integer =
     bound(
       let weak a_13658: pointer = pure(c) in
@@ -72741,9 +72781,9 @@ proc __strchrnul (s: loaded pointer, c: loaded integer): eff loaded pointer :=
   save ret_13655: loaded pointer (a_13757: loaded pointer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_13757)
 
-proc a_ctz_32 (x: loaded integer): eff loaded integer :=
+proc a_ctz_32 (x_fav13619: loaded integer): eff loaded integer :=
   let strong x: pointer = create(Ivalignof('unsigned int'), 'unsigned int') in
-  store('unsigned int', x, x) ;
+  store('unsigned int', x, x_fav13619) ;
   let strong a_13651: loaded integer =
     bound(
       let weak a_13624: loaded pointer =
@@ -72832,10 +72872,10 @@ proc a_ctz_32 (x: loaded integer): eff loaded integer :=
   save ret_13620: loaded integer (a_13652: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_13652)
 
-proc a_ctz_64 (x: loaded integer): eff loaded integer :=
+proc a_ctz_64 (x_fav13478: loaded integer): eff loaded integer :=
   let strong x: pointer =
     create(Ivalignof('unsigned long long'), 'unsigned long long') in
-  store('unsigned long long', x, x) ;
+  store('unsigned long long', x, x_fav13478) ;
   let strong a_13481: loaded integer =
     bound(
       let weak a_13483: loaded integer =
@@ -73111,9 +73151,9 @@ proc a_ctz_64 (x: loaded integer): eff loaded integer :=
   save ret_13479: loaded integer (a_13584: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_13584)
 
-proc a_ctz_l (x: loaded integer): eff loaded integer :=
+proc a_ctz_l (x_fav13366: loaded integer): eff loaded integer :=
   let strong x: pointer = create(Ivalignof('unsigned long'), 'unsigned long') in
-  store('unsigned long', x, x) ;
+  store('unsigned long', x, x_fav13366) ;
   let strong a_13410: loaded integer =
     bound(
       let strong a_13378: loaded integer =
@@ -73207,9 +73247,9 @@ proc a_ctz_l (x: loaded integer): eff loaded integer :=
   save ret_13367: loaded integer (a_13411: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_13411)
 
-proc pntz (p: loaded pointer): eff loaded integer :=
+proc pntz (p_fav13253: loaded pointer): eff loaded integer :=
   let strong p: pointer = create(Ivalignof('size_t*'), 'size_t*') in
-  store('size_t*', p, p) ;
+  store('size_t*', p, p_fav13253) ;
   let strong r: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong a_13255: loaded integer =
     bound(
@@ -73520,14 +73560,15 @@ proc pntz (p: loaded pointer): eff loaded integer :=
   save ret_13254: loaded integer (a_13365: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_13365)
 
-proc cycle (width: loaded integer, ar: loaded pointer, n: loaded integer): eff unit :=
+proc cycle (width_fav13029: loaded integer, ar_fav13030: loaded pointer,
+n_fav13031: loaded integer): eff unit :=
   let strong width: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', width, width) ;
+  store('size_t', width, width_fav13029) ;
   let strong ar: pointer =
     create(Ivalignof('unsigned char**'), 'unsigned char**') in
-  store('unsigned char**', ar, ar) ;
+  store('unsigned char**', ar, ar_fav13030) ;
   let strong n: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', n, n) ;
+  store('signed int', n, n_fav13031) ;
   let strong tmp: pointer =
     create(Ivalignof('unsigned char[256]'), 'unsigned char[256]') in
   let strong l: pointer = create(Ivalignof('size_t'), 'size_t') in
@@ -74062,11 +74103,11 @@ proc cycle (width: loaded integer, ar: loaded pointer, n: loaded integer): eff u
   kill('signed int', n) ;
   save ret_13032: unit (a_13252: unit:= Unit) in  pure(a_13252)
 
-proc shl (p: loaded pointer, n: loaded integer): eff unit :=
+proc shl (p_fav12851: loaded pointer, n_fav12852: loaded integer): eff unit :=
   let strong p: pointer = create(Ivalignof('size_t*'), 'size_t*') in
-  store('size_t*', p, p) ;
+  store('size_t*', p, p_fav12851) ;
   let strong n: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', n, n) ;
+  store('signed int', n, n_fav12852) ;
   let strong a_12855: loaded integer =
     bound(
       let weak a_12857: loaded integer =
@@ -74556,11 +74597,11 @@ proc shl (p: loaded pointer, n: loaded integer): eff unit :=
   kill('signed int', n) ;
   save ret_12853: unit (a_13028: unit:= Unit) in  pure(a_13028)
 
-proc shr (p: loaded pointer, n: loaded integer): eff unit :=
+proc shr (p_fav12674: loaded pointer, n_fav12675: loaded integer): eff unit :=
   let strong p: pointer = create(Ivalignof('size_t*'), 'size_t*') in
-  store('size_t*', p, p) ;
+  store('size_t*', p, p_fav12674) ;
   let strong n: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', n, n) ;
+  store('signed int', n, n_fav12675) ;
   let strong a_12678: loaded integer =
     bound(
       let weak a_12680: loaded integer =
@@ -75051,20 +75092,21 @@ proc shr (p: loaded pointer, n: loaded integer): eff unit :=
   kill('signed int', n) ;
   save ret_12676: unit (a_12850: unit:= Unit) in  pure(a_12850)
 
-proc sift (head: loaded pointer, width: loaded integer, cmp: loaded pointer,
-pshift: loaded integer, lp: loaded pointer): eff unit :=
+proc sift (head_fav12375: loaded pointer, width_fav12376: loaded integer,
+cmp_fav12377: loaded pointer, pshift_fav12378: loaded integer,
+lp_fav12379: loaded pointer): eff unit :=
   let strong head: pointer =
     create(Ivalignof('unsigned char*'), 'unsigned char*') in
-  store('unsigned char*', head, head) ;
+  store('unsigned char*', head, head_fav12375) ;
   let strong width: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', width, width) ;
+  store('size_t', width, width_fav12376) ;
   let strong cmp: pointer =
     create(Ivalignof('signed int (*) (const void*, const void*)'), 'signed int (*) (const void*, const void*)') in
-  store('signed int (*) (const void*, const void*)', cmp, cmp) ;
+  store('signed int (*) (const void*, const void*)', cmp, cmp_fav12377) ;
   let strong pshift: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', pshift, pshift) ;
+  store('signed int', pshift, pshift_fav12378) ;
   let strong lp: pointer = create(Ivalignof('size_t*'), 'size_t*') in
-  store('size_t*', lp, lp) ;
+  store('size_t*', lp, lp_fav12379) ;
   let strong rt: pointer =
     create(Ivalignof('unsigned char*'), 'unsigned char*') in
   let strong lf: pointer =
@@ -75712,25 +75754,26 @@ pshift: loaded integer, lp: loaded pointer): eff unit :=
   kill('size_t*', lp) ;
   save ret_12380: unit (a_12673: unit:= Unit) in  pure(a_12673)
 
-proc trinkle (head: loaded pointer, width: loaded integer, cmp: loaded pointer,
-pp: loaded pointer, pshift: loaded integer, trusty: loaded integer,
-lp: loaded pointer): eff unit :=
+proc trinkle (head_fav11866: loaded pointer, width_fav11867: loaded integer,
+cmp_fav11868: loaded pointer, pp_fav11869: loaded pointer,
+pshift_fav11870: loaded integer, trusty_fav11871: loaded integer,
+lp_fav11872: loaded pointer): eff unit :=
   let strong head: pointer =
     create(Ivalignof('unsigned char*'), 'unsigned char*') in
-  store('unsigned char*', head, head) ;
+  store('unsigned char*', head, head_fav11866) ;
   let strong width: pointer = create(Ivalignof('size_t'), 'size_t') in
-  store('size_t', width, width) ;
+  store('size_t', width, width_fav11867) ;
   let strong cmp: pointer =
     create(Ivalignof('signed int (*) (const void*, const void*)'), 'signed int (*) (const void*, const void*)') in
-  store('signed int (*) (const void*, const void*)', cmp, cmp) ;
+  store('signed int (*) (const void*, const void*)', cmp, cmp_fav11868) ;
   let strong pp: pointer = create(Ivalignof('size_t*'), 'size_t*') in
-  store('size_t*', pp, pp) ;
+  store('size_t*', pp, pp_fav11869) ;
   let strong pshift: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', pshift, pshift) ;
+  store('signed int', pshift, pshift_fav11870) ;
   let strong trusty: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', trusty, trusty) ;
+  store('signed int', trusty, trusty_fav11871) ;
   let strong lp: pointer = create(Ivalignof('size_t*'), 'size_t*') in
-  store('size_t*', lp, lp) ;
+  store('size_t*', lp, lp_fav11872) ;
   let strong stepson: pointer =
     create(Ivalignof('unsigned char*'), 'unsigned char*') in
   let strong rt: pointer =
@@ -76855,12 +76898,12 @@ lp: loaded pointer): eff unit :=
   kill('size_t*', lp) ;
   save ret_11873: unit (a_12374: unit:= Unit) in  pure(a_12374)
 
-proc utime (path: loaded pointer, times: loaded pointer): eff loaded integer :=
+proc utime (path_fav21799: loaded pointer, times_fav21800: loaded pointer): eff loaded integer :=
   let strong path: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', path, path) ;
+  store('const char*', path, path_fav21799) ;
   let strong times: pointer =
     create(Ivalignof('const struct utimbuf*'), 'const struct utimbuf*') in
-  store('const struct utimbuf*', times, times) ;
+  store('const struct utimbuf*', times, times_fav21800) ;
   let strong a_21803: loaded integer =
     bound(
       let weak a_21806: loaded pointer = load('const struct utimbuf*', times) in
@@ -77089,14 +77132,15 @@ proc utime (path: loaded pointer, times: loaded pointer): eff loaded integer :=
   save ret_21801: loaded integer (a_21919: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_21919)
 
-proc vfscanf (f: loaded pointer, fmt: loaded pointer, ap: loaded integer): eff loaded integer :=
+proc vfscanf (f_fav35302: loaded pointer, fmt_fav35303: loaded pointer,
+ap_fav35304: loaded integer): eff loaded integer :=
   let strong f: pointer =
     create(Ivalignof('struct _IO_FILE*'), 'struct _IO_FILE*') in
-  store('struct _IO_FILE*', f, f) ;
+  store('struct _IO_FILE*', f, f_fav35302) ;
   let strong fmt: pointer = create(Ivalignof('const char*'), 'const char*') in
-  store('const char*', fmt, fmt) ;
+  store('const char*', fmt, fmt_fav35303) ;
   let strong ap: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', ap, ap) ;
+  store('signed int', ap, ap_fav35304) ;
   let strong width: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong size: pointer = create(Ivalignof('signed int'), 'signed int') in
   let strong alloc: pointer = create(Ivalignof('signed int'), 'signed int') in
@@ -86829,14 +86873,15 @@ proc vfscanf (f: loaded pointer, fmt: loaded pointer, ap: loaded integer): eff l
   save ret_35305: loaded integer (a_38467: loaded integer:= undef(<<UB088_reached_end_of_function>>)) in
     pure(a_38467)
 
-proc store_int (dest: loaded pointer, size: loaded integer, i: loaded integer): eff unit :=
+proc store_int (dest_fav35223: loaded pointer, size_fav35224: loaded integer,
+i_fav35225: loaded integer): eff unit :=
   let strong dest: pointer = create(Ivalignof('void*'), 'void*') in
-  store('void*', dest, dest) ;
+  store('void*', dest, dest_fav35223) ;
   let strong size: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', size, size) ;
+  store('signed int', size, size_fav35224) ;
   let strong i: pointer =
     create(Ivalignof('unsigned long long'), 'unsigned long long') in
-  store('unsigned long long', i, i) ;
+  store('unsigned long long', i, i_fav35225) ;
   let strong a_35230: loaded integer =
     bound(
       let weak a_35232: loaded integer =
@@ -87107,11 +87152,11 @@ proc store_int (dest: loaded pointer, size: loaded integer, i: loaded integer): 
   kill('unsigned long_long', i) ;
   save ret_35226: unit (a_35301: unit:= Unit) in  pure(a_35301)
 
-proc arg_n (ap: loaded integer, n: loaded integer): eff loaded pointer :=
+proc arg_n (ap_fav35175: loaded integer, n_fav35176: loaded integer): eff loaded pointer :=
   let strong ap: pointer = create(Ivalignof('signed int'), 'signed int') in
-  store('signed int', ap, ap) ;
+  store('signed int', ap, ap_fav35175) ;
   let strong n: pointer = create(Ivalignof('unsigned int'), 'unsigned int') in
-  store('unsigned int', n, n) ;
+  store('unsigned int', n, n_fav35176) ;
   let strong p: pointer = create(Ivalignof('void*'), 'void*') in
   let strong i: pointer = create(Ivalignof('unsigned int'), 'unsigned int') in
   let strong ap2: pointer = create(Ivalignof('signed int'), 'signed int') in

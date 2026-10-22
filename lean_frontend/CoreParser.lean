@@ -197,8 +197,8 @@ end Lexer
 private partial def colOfAux (s : String) (p : _root_.String.Pos.Raw) (n : Nat) : Nat :=
   if p.byteIdx == 0 then n
   else
-    let p' := s.prev p
-    if s.get p' == '\n' then n else colOfAux s p' (n + 1)
+    let p' := String.Pos.Raw.prev s p
+    if String.Pos.Raw.get s p' == '\n' then n else colOfAux s p' (n + 1)
 
 /-- Current column (whitespace/comments already consumed by the previous
     token's trailing lexWs, so this is the next token's column). The
@@ -223,8 +223,8 @@ private def backOverWs (s : String) (p : _root_.String.Pos.Raw) (fuel : Nat) : N
   | fuel + 1 =>
     if p.byteIdx == 0 then 0
     else
-      let p' := s.prev p
-      let c := s.get p'
+      let p' := String.Pos.Raw.prev s p
+      let c := String.Pos.Raw.get s p'
       if c == ' ' || c == '\t' || c == '\n' || c == '\r' then backOverWs s p' fuel else p.byteIdx
 
 private def lastTokenEndByte : P Nat := fun it =>
@@ -821,7 +821,7 @@ private def stripRawSymSuffix (s : String) : String :=
   let digits := cs.takeWhile (·.isDigit)
   if digits.isEmpty then s
   else match cs.drop digits.length with
-    | '_' :: rest => if rest.isEmpty then s else String.mk rest.reverse
+    | '_' :: rest => if rest.isEmpty then s else String.ofList rest.reverse
     | _ => s
 
 /-- Does `input` mention the anonymous tag `anon` as a WHOLE token, i.e. an
@@ -829,7 +829,7 @@ private def stripRawSymSuffix (s : String) : String :=
     not be found inside `__cerbty_unnamed_tag_50` — pre-merge audit F7)? -/
 private def mentionsAnonymousTag (input anon : String) : Bool :=
   ((input.splitOn anon).drop 1).any fun rest =>
-    rest.isEmpty || !(rest.get 0).isDigit
+    rest.isEmpty || !(String.Pos.Raw.get rest 0).isDigit
 
 /-- The OTy tag resolution of Z2-CP-13 (doc above `anonymousTagDigits`). -/
 private def resolveOTyTag (tag : String) : P sym := fun it =>
@@ -1305,7 +1305,7 @@ partial def pPexprAtom (minPrec : Nat := 0) : P PE := do
       | some ub => return (mkPE (PEundef undefLoc ub))
       | none =>
         if ubStr.startsWith "DUMMY(" && ubStr.endsWith ")" then
-          return (mkPE (PEundef undefLoc (DUMMY ((ubStr.drop 6).dropRight 1).toString)))
+          return (mkPE (PEundef undefLoc (DUMMY ((ubStr.drop 6).dropEnd 1).toString)))
         else
           fail s!"invalid ub name: <<{ubStr}>>"
     | some "error" =>
@@ -2302,12 +2302,94 @@ structure CoreFile where
   builtins : List (sym × generic_fun_map_decl Unit Unit) := []
   ailnames : List (String × sym) := []
 
+/-! The libc loader's parameter-shadowing speedbump (upstream tray 65).
+The parser interns names file-wide. A binder reusing a procedure parameter
+therefore conflates the two even when the printer's original symbols were
+distinct. Check the parsed tree, including pure subexpressions and action
+binders, before stitching metadata. This detects the observed printer loss;
+it is not a proof of text transport fidelity or a general scope checker. -/
+
+private def checkParameterBinder (params : List sym) (s : sym) : Except sym Unit :=
+  if params.contains s then .error s else .ok ()
+
+private partial def checkParameterPat (params : List sym) : Pat → Except sym Unit
+  | Pattern _ (CaseBase (none, _)) => pure ()
+  | Pattern _ (CaseBase (some s, _)) => checkParameterBinder params s
+  | Pattern _ (CaseCtor _ pats) => pats.forM (checkParameterPat params)
+
+private partial def checkParameterPE (params : List sym) : PE → Except sym Unit
+  | Pexpr _ _ pe => do
+    let go := checkParameterPE params
+    match pe with
+    | PEsym _ | PEimpl _ | PEval _ | PEundef _ _ => pure ()
+    | PEconstrained xs => xs.forM fun (_, e) => go e
+    | PEerror _ e | PEmember_shift e _ _ | PEnot e | PEconv_int _ e
+    | PEunion _ _ e | PEcfunction e | PEmemberof _ _ e | PEis_scalar e
+    | PEis_integer e | PEis_signed e | PEis_unsigned e | PEbmc_assume e => go e
+    | PEctor _ es | PEmemop _ es | PEcall _ es => es.forM go
+    | PEcase e alts =>
+      go e
+      alts.forM fun (pat, rhs) => do checkParameterPat params pat; go rhs
+    | PEarray_shift a _ b | PEop _ a b | PEwrapI _ _ a b
+    | PEcatch_exceptional_condition _ _ a b | PEare_compatible a b => do go a; go b
+    | PEstruct _ fields => fields.forM fun (_, e) => go e
+    | PElet pat a b => do checkParameterPat params pat; go a; go b
+    | PEif a b c => do go a; go b; go c
+
+private def checkParameterAct (params : List sym) (act : Act) : Except sym Unit := do
+  let go := checkParameterPE params
+  match act with
+  | Create a b _ | Alloc0 a b _ | Load0 a b _ | LinuxLoad a b _ => do go a; go b
+  | CreateReadOnly a b c _ | Store0 _ a b c _ | LinuxStore a b c _
+  | LinuxRMW a b c _ => do go a; go b; go c
+  | Kill _ a => go a
+  | SeqRMW _ a b s c => do checkParameterBinder params s; go a; go b; go c
+  | RMW0 a b c d _ _ | CompareExchangeStrong a b c d _ _
+  | CompareExchangeWeak a b c d _ _ => do go a; go b; go c; go d
+  | Fence0 _ | LinuxFence _ => pure ()
+
+private partial def checkParameterE (params : List sym) : Expr' → Except sym Unit
+  | Expr _ e => do
+    let go := checkParameterE params
+    let pe := checkParameterPE params
+    match e with
+    | Epure a => pe a
+    | Ememop _ es | Eproc _ _ es | Erun _ _ es => es.forM pe
+    | Eaction (Paction _ (Action _ _ act)) | Eexcluded _ (Action _ _ act) =>
+      checkParameterAct params act
+    | Ecase a alts =>
+      pe a
+      alts.forM fun (pat, rhs) => do checkParameterPat params pat; go rhs
+    | Elet pat a b => do checkParameterPat params pat; pe a; go b
+    | Eif a b c => do pe a; go b; go c
+    | Eccall _ a b es => do pe a; pe b; es.forM pe
+    | Eunseq es | End es | Epar es => es.forM go
+    | Ewseq pat a b | Esseq pat a b => do checkParameterPat params pat; go a; go b
+    | Ebound a | Eannot _ a => go a
+    | Esave (s, _) bindings body =>
+      checkParameterBinder params s
+      bindings.forM fun (s', (_, rhs)) => do checkParameterBinder params s'; pe rhs
+      go body
+    | Ewait _ => pure ()
+
+/-- Reject a body binder with the same interned name as a procedure parameter.
+    The error identifies the procedure and the conflicting binder. Every
+    procedure body is checked regardless of the selected calling convention. -/
+def checkParameterBinders (file : CoreFile) : Except (sym × sym) Unit := do
+  for (name, decl) in file.procs do
+    match decl with
+    | Proc _ _ _ params body =>
+      match checkParameterE (params.map Prod.fst) body with
+      | .ok () => pure ()
+      | .error binder => throw (name, binder)
+    | ProcDecl _ _ _ | Fun _ _ _ | BuiltinDecl _ _ _ => pure ()
+
 /-- Recursive declaration loop — errors propagate immediately (no while-loop swallowing). -/
 private partial def pCoreFileGo (result : CoreFile) : P CoreFile := do
   lexWs
   match ← peek? with
   | none => return result  -- EOF
-  | some c =>
+  | some _ =>
     let decl ← pDeclaration
     let result := match decl with
       | Decl.funDecl s d => { result with funs := result.funs ++ [(s, d)] }
@@ -2371,11 +2453,15 @@ scoping, arity, duplicate or startup checks — the OCaml parser's scoped
 182-227, :236, :330, :364-496) refuse malformed text this parser accepts,
 and two nested binders of the SAME name (`Esseq(Esseq(pat,e1,body), rest)` vs
 `Esseq(pat,e1,Esseq(body,rest))` print identically) would be conflated. The
-inputs are the shipped std.core/impl and the pp dump, where the elaborator's
-fresh symbols are unique per proc (probed on the dump: no repeated
-`create`/`alloc`/`create_readonly` binder within a proc, none shadowing a
-parameter or glob). A malformed hand-written file is a fail-open
-acceptance, not an execution discrepancy on a program both engines run.
+inputs are the shipped std.core/impl and the pp dump. Upstream tray 65
+exposed a violation under inner_arg_temps: parameter values and addresses
+printed alike. The fork printer now numbers SD_FunArgValue names and
+rejects their collisions with bare names within a proc. The libc loader
+also rejects any body binder reusing a formal parameter name, in either
+mode. These checks are speedbumps, not general scope analysis: distinct
+live symbols must still have distinct printed names. Full symbol numbering
+or structured transport remains queued in TODO.md. Malformed hand-written
+text outside these checks remains a declared parser boundary.
 SCOPE (the second-preimage boundary, stated precisely): the tripwire
 quantifies over ONE parseFile input — it rules out silent conflation
 WITHIN each scanned file. A hash second preimage split ACROSS parseFile
@@ -2426,7 +2512,7 @@ private def scanStep (fuel : Nat) (st : ScanSt) (l : List Char) : ScanSt :=
       scanStep fuel st (scanToQuote rest)               -- string literal
     | c :: rest =>
       if isIdentStart c then
-        let tok : String := (c :: rest.takeWhile isIdentCont).asString
+        let tok : String := String.ofList (c :: rest.takeWhile isIdentCont)
         let rest' := rest.dropWhile isIdentCont
         -- R1 (arc-14 re-mark, professor A): the parser ALSO interns
         -- SUFFIX-STRIPPED names (mkSym (stripRawSymSuffix tag) on

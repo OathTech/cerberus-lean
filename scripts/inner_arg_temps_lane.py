@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Matched-mode inner_arg_temps instrument, modelled on test_pnvi.sh.
 
-PROVISIONAL: I3 is parked on libc symbol loss. No baseline or release row
-has been adopted; --selftest and --fuzz have not been validated. The CLI
-containment refusal intentionally prevents this lane from certifying I3.
+PROVISIONAL: I3 is parked on the all-42-agreement acceptance premise:
+the repaired libc candidate has 41 agreements and the existing strerror
+assert Error (BOTH_FAIL). No baseline or release row has been adopted;
+--selftest and --fuzz have not been validated in full. The CLI containment
+refusal intentionally prevents this lane from certifying I3.
 
 The shared observation codec owns framing, exits and full verdict tokens.
 AGREE is exhaustive; AGREE-FIRST is a single trace, outside CONTRACT §1.
@@ -163,7 +165,7 @@ class Runner:
         p = self.capture('mode.oracle', [self.oracle, RT, '--nolibc', SW, '--pp=core', row.source])
         core = Path(p + '.stdout').read_text()
         require(Path(p + '.status').read_text().strip() == '0' and
-                re.search(r'proc main\s*\(argc: loaded integer, argv: loaded pointer\)', core),
+                re.search(r'proc main\s*\(argc_fav[0-9]+: loaded integer, argv_fav[0-9]+: loaded pointer\)', core),
                 'oracle switch/convention probe failed (flag stripped or wrong calling convention)')
         js = self.bridge(Row('mode', row.source))
         quote = self.out / 'mode.lean'
@@ -189,6 +191,52 @@ class Runner:
                     f'dump/mode mismatch did not refuse cleanly: switched={switched}')
         print('DUMP PLANTS OK (both incompatible dump/mode pairings refused, exit 2, no verdict)', flush=True)
 
+    def transport_plants(self):
+        """Exercise both fail-closed checks with real printer/loader inputs."""
+        row = Row('binder-plant', Path('tests/fixtures/001-return-literal/source.c'))
+        js = self.bridge(row)
+        for switched in [False, True]:
+            args = self.libc_args(switched)
+            source = Path(args[1]).read_text()
+            header = re.search(r'^proc exit \(([A-Za-z_][A-Za-z0-9_]*):[^\n]*\n', source, re.M)
+            require(header is not None, 'binder plant: missing exit parameter')
+            parameter = header[1]
+            # Corrupt just the first typed body binder after exit's header.
+            body = re.search(r'\b([A-Za-z_][A-Za-z0-9_]*):', source[header.end():])
+            require(body is not None and body[1] != parameter, 'binder plant: missing distinct body binder')
+            start, end = header.end() + body.start(1), header.end() + body.end(1)
+            planted = self.out / f'binder-plant-{switched}.core'
+            planted.write_text(source[:start] + parameter + source[end:])
+            args[1] = str(planted)
+            p = self.capture(f'binder-plant.{switched}',
+                             [self.lean, '--batch', RT, *([SW] if switched else []), *args, js], 300)
+            error = Path(p + '.stderr').read_text()
+            require(Path(p + '.status').read_text().strip() == '2' and
+                    f'R-IAT-LIBC-SYMBOL-LOSS: procedure exit binds parameter name {parameter} again' in error and
+                    not Path(p + '.stdout').read_bytes(),
+                    f'parameter-rebinding plant did not refuse cleanly: switched={switched}')
+        print('PLANT OK (Normal and switched dump lines rebind a parameter -> named loader refusal)', flush=True)
+
+        # Discover the actual fresh ID; a hard-coded suffix would silently stop
+        # testing the collision when unrelated elaboration changes minting.
+        source = self.out / 'printer-collision.c'
+        control = 'int f(int x) { int x_fav0 = 1; return x + x_fav0; }\nint main(void) { return f(2); }\n'
+        source.write_text(control)
+        def pp(label, switched):
+            return self.capture(label, [self.oracle, RT, '--nolibc', *([SW] if switched else []), '--pp=core', source])
+        p = pp('printer-control', True)
+        require(Path(p + '.status').read_text().strip() == '0', 'printer positive control failed')
+        parameter = re.search(r'proc f\s*\((x_fav[0-9]+): loaded integer', Path(p + '.stdout').read_text())
+        require(parameter is not None and parameter[1] != 'x_fav0', 'printer control: no distinct numbered parameter')
+        source.write_text(control.replace('x_fav0', parameter[1]))
+        p = pp('printer-collision', True)
+        require(Path(p + '.status').read_text().strip() == '125' and
+                f'Core printer symbol collision in procedure f: {parameter[1]}' in Path(p + '.stderr').read_text(),
+                'printer collision plant did not stop with its named error')
+        p = pp('printer-normal', False)
+        require(Path(p + '.status').read_text().strip() == '0', 'Normal printer control failed')
+        print('PLANT OK (measured argument spelling used as a bare local -> printer collision; Normal control passes)', flush=True)
+
     def row(self, row, cross=False):
         js = self.bridge(row)
         sides = {}
@@ -211,6 +259,27 @@ class Runner:
                             f'{row.name}: missing/duplicate Lean switch report')
         oracle, lean = sides['inner', 'oracle'], sides['inner', 'lean']
         cls = classify(row.mode, oracle, lean)
+        normal_status = None
+        if cls == 'BOTH_FAIL' or cls.startswith('RESOURCE'):
+            # A new switched failure must not acquire a baseline merely because
+            # both engines fail. Re-run both Normal controls at the same limits.
+            for engine, cmd in [('oracle', [self.oracle, RT, *([] if row.libc else ['--nolibc']),
+                                            '--exec', '--batch', *(['--mode=exhaustive'] if row.mode == 'exhaustive' else []),
+                                            *row.args, row.source]),
+                                ('lean', [self.lean, '--batch', *(['--first'] if row.mode == 'first' else []),
+                                          RT, *(self.libc_args(False) if row.libc else []), *row.args, js])]:
+                if ('normal', engine) not in sides:
+                    p = self.capture(f'{row.name}.normal.{engine}', cmd, 300 if row.libc else 30)
+                    sides['normal', engine] = classify_side(p, engine == 'lean')
+                normal, inner = sides['normal', engine], sides['inner', engine]
+                # The existing failure-class contract permits only Symbol's
+                # numeric ID to differ in an Error. Both complete token streams
+                # remain separately hash-pinned; no error text is rewritten.
+                same = (normal[2] == inner[2] if is_single_error(normal) and is_single_error(inner)
+                        else normal == inner)
+                require(same, f'{row.name}: failure differs from Normal on {engine}: {normal} / {inner}')
+            normal_status = {'class': classify(row.mode, sides['normal', 'oracle'], sides['normal', 'lean']),
+                             'oracle': side_hash(sides['normal', 'oracle']), 'lean': side_hash(sides['normal', 'lean'])}
         if row.libc and row.mode == 'exhaustive':
             require(cls == 'AGREE' and len(oracle[1]) >= 2,
                     f'{row.name}: exhaustive libc control has fewer than two complete observations')
@@ -233,6 +302,7 @@ class Runner:
                     f'{row.name}: upstream expected verdict differs')
         print(f'  {cls:25} {row.name}' + (' cross-mode=AGREE' if cross or row.expected is not None else ''), flush=True)
         return {'class': cls, 'mode': row.mode, 'oracle': side_hash(oracle), 'lean': side_hash(lean),
+                **({'normal_status': normal_status} if normal_status is not None else {}),
                 **({'cross_mode': 'AGREE'} if row.expected is not None or cross else {})}
 
     def run(self, rows, cross=False):
@@ -262,6 +332,7 @@ def selftest(args):
     actual = control.run(rows)
     check_baseline(actual, args.baseline, selection)
     print('SELFTEST CONTROL OK', flush=True)
+    control.transport_plants()
     # Real engine wrappers like test_pnvi.sh: strip the actual command-line
     # switch, not the instrument's expected result. Each convention probe must fail.
     for engine in ['oracle', 'lean']:
@@ -322,7 +393,7 @@ def selftest(args):
             pass
         else:
             raise Failure(f'bad outcome pair accepted: {o} / {l}')
-    print('SELFTEST OK (control; both stripped-switch stubs; Normal-only witness mutation; both dump/mode plants; five baseline plants; outcome failures)', flush=True)
+    print('SELFTEST OK (control; both stripped-switch stubs; Normal-only witness mutation; both dump/mode plants; both binder plants; printer collision; five baseline plants; outcome failures)', flush=True)
 
 
 def fuzz(args):

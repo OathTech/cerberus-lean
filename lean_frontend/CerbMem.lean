@@ -2072,8 +2072,9 @@ def ppSymbol : sym → String
       if CerbDebug.get_level () > 4 then name ++ "{" ++ toString n ++ "}"
       else name
     match sd with
-    | .SD_Id str | .SD_ObjectAddress str | .SD_FunArgValue str =>
+    | .SD_Id str | .SD_ObjectAddress str =>
       maybeAddNumber str
+    | .SD_FunArgValue str => str ++ "_fav" ++ toString n -- fork pp_symbol remedy, tray 65
     | .SD_unnamed_tag _ => "__cerbty_unnamed_tag_" ++ toString n  -- is_human=false arm (pp_symbol.ml:25-29)
     | .SD_CN_Id str => str
     | _ => "a_" ++ toString n  -- SD_None / SD_Return / SD_FunArg (pp_symbol.ml:33-34)

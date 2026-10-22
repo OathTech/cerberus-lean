@@ -1018,6 +1018,37 @@ list is the consumer's statement as of 2026-10-03. It is not proof that nothing 
 deviation that is absent from it still gets the question whenever the consumer's proofs might
 touch it.
 
+### Core text parameter-identity speedbumps (inner_arg_temps repair)
+
+The fork printer gives `SD_FunArgValue` a numbered `name_fav<number>`
+spelling. While printing each procedure it rejects any collision between
+that spelling and a bare `SD_Id`/`SD_ObjectAddress` name, in either insertion
+order, through `Cerb_debug.error` naming the procedure and name. Both
+current libc dumps regenerate without that error; the Normal dump and all
+42 libc-execution/ten fixture Core outputs are byte-identical to their
+pre-repair captures. Hashes and commands are in the
+[transport record](docs/2026-10-22_inner-arg-temps-transport-record.md).
+
+On every libc load, including Normal mode and quotation, the Lean loader
+rejects a procedure body binder that reuses a formal parameter name:
+`R-IAT-LIBC-SYMBOL-LOSS`, exit 2, naming both procedure and name, before
+metadata stitching. This catches the shape of tray 65's lossy old dump.
+The lane's selftest plants a corrupted binder line in each dump and a C
+local whose name matches the measured argument-value spelling in the
+printer. The parser tests also cover nested case and continuation binders.
+These are speedbumps against printer regressions, **not a proof of transport
+fidelity**. A valid C block-local shadow of a parameter can be over-refused;
+that conservative result is accepted. No general scope analysis is done.
+
+Transport still assumes different symbols live together have different
+printed names within a procedure: unnamed symbols are numbered `a_<n>`,
+C names are unique within their scopes, and argument values now have their
+own numbered spelling. The checks guard the two demonstrated ways this
+assumption can fail, not arbitrary scope reuse. The principled queued fix
+is numbering every named symbol with metadata joins, or structured
+transport; see [TODO](TODO.md#queued-larger-work) and
+[tray 65](docs/upstream-tray/65-inner-arg-temps-core-symbol-loss.md).
+
 ## 4. What is compared, against what
 
 **The oracle.** The OCaml Cerberus in this repository, built from the

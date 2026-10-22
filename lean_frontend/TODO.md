@@ -38,6 +38,15 @@ of this work's scope.
 
 ## Queued larger work
 
+- **Preserve all Core symbol identities in library transport** — number every
+  named symbol (for example `i_123`) and join globals through metadata, or use
+  a binary/JSON transport. This is a separate slice: it changes the Normal
+  dump pin and the name join. The tray-65 fork remedy distinguishes argument
+  values and refuses collisions with bare names; the loader rejects body
+  binders that reuse parameter names. Neither check establishes general
+  scope/liveness fidelity, and the loader can refuse legal block-local
+  shadowing. See [tray 65](docs/upstream-tray/65-inner-arg-temps-core-symbol-loss.md)
+  and the [transport record](docs/2026-10-22_inner-arg-temps-transport-record.md).
 - **SC concurrency** — excluded from this release; built from current mainline
   under the [SC master plan](../SC-CONCURRENCY.md). The failed prototype is a
   quarry, not a candidate awaiting integration. WP0 (passive memory receipts)

@@ -120,7 +120,8 @@ notes below establish only what was checked then.
 | [62-wchar-t-unsigned-range-signed-representation-crash.md](62-wchar-t-unsigned-range-signed-representation-crash.md) | Draft | No submission recorded; the fork plans a declared refusal in place of the crash ([USER 2026-10-20], queued) |
 | [63-character-decoding-crashes-on-multichar-and-utf8.md](63-character-decoding-crashes-on-multichar-and-utf8.md) | Draft | No submission recorded; the fork plans declared refusals in place of the crashes ([USER 2026-10-20], queued) |
 | [64-recursive-main-guard-bypassed.md](64-recursive-main-guard-bypassed.md) | Draft | Report only; active driver bypasses guard; no submission recorded |
-| [65-inner-arg-temps-core-symbol-loss.md](65-inner-arg-temps-core-symbol-loss.md) | Draft | Lossy printer output; Lean libc import refused; no submission recorded |
+| [65-inner-arg-temps-core-symbol-loss.md](65-inner-arg-temps-core-symbol-loss.md) | Draft | Fork remedy implemented; acceptance parked on existing strerror Error; production import refused; no submission recorded |
+| [66-main-inner-arg-temps-comment.md](66-main-inner-arg-temps-comment.md) | Draft | Report only; main uses the switch despite the exclusion comment; no submission recorded |
 | [lean4/01-stack-overflow-handler-deadlock.md](lean4/01-stack-overflow-handler-deadlock.md) | Draft | No submission recorded |
 | [lean4/02-nat-div-mod-literal-folding.md](lean4/02-nat-div-mod-literal-folding.md) | Draft | No submission recorded |
 | [lean4/03-float-tobits-canonicalizes-nan.md](lean4/03-float-tobits-canonicalizes-nan.md) | Draft | No submission recorded |

@@ -184,10 +184,10 @@ Documented divergences from the oracle's in-memory libc file:
 private def libcSymEq : sym → sym → Bool
   | Symbol d1 n1 _, Symbol d2 n2 _ => d1 == d2 && n1 == n2
 
-/-- The name `--pp core` prints for a symbol (Pp_symbol.to_string_pretty,
-    pp_symbol.ml:20-24: SD_Id, SD_ObjectAddress, SD_FunArgValue) — the name
-    the dump's interning joins on; `none` for unnamed symbols (which print
-    as `a_<n>` and are never name-joined). -/
+/-- Source name used to join metadata globals and tags with the dump.
+    Local SD_FunArgValue parameters now print with a numbered _fav suffix
+    (upstream tray 65); they are not metadata globals and are not joined here.
+    Unnamed symbols print as `a_<n>` and are never name-joined. -/
 private def libcSymNameOpt : sym → Option String
   | Symbol _ _ (SD_Id s) | Symbol _ _ (SD_ObjectAddress s) | Symbol _ _ (SD_FunArgValue s) => some s
   | _ => none
@@ -504,7 +504,8 @@ as a next-arc item in the S4b scoreboard doc). -/
 def ppSymbolPretty : sym → String
   | Symbol _ n sd =>
     match sd with
-    | .SD_Id str | .SD_ObjectAddress str | .SD_FunArgValue str => str
+    | .SD_Id str | .SD_ObjectAddress str => str
+    | .SD_FunArgValue str => s!"{str}_fav{n}" -- fork pp_symbol remedy, tray 65
     | .SD_unnamed_tag _ => s!"__cerbty_unnamed_tag_{n}"
     | .SD_CN_Id str => str
     | _ => s!"a_{n}"
@@ -869,6 +870,11 @@ def loadLibc [LemFuel] [CerbGlobal.Switches] (runtime : String) (quiet : Bool) (
   let parsed ← match CoreParser.parseFile dumpContent with
     | .ok f => pure f
     | .error e => return (← bail s!"parsing {libcCorePath}: {e}")
+  match CoreParser.checkParameterBinders parsed with
+  | .error (proc, binder) =>
+    IO.eprintln s!"cerberus-lean: refused — --libc: R-IAT-LIBC-SYMBOL-LOSS: procedure {libcSymName proc} binds parameter name {libcSymName binder} again; the Core dump may have lost symbol identity (upstream tray 65)"
+    return .error 2
+  | .ok () => pure ()
   say s!"    {parsed.procs.length} proc, {parsed.funs.length} fun, {parsed.globs.length} glob"
   -- 2. Frontend the 12 metadata TUs (same order as runtime/libc/dune's
   --    libc.co link; reverse-consed accumulator exactly as the OCaml
@@ -1868,13 +1874,12 @@ def main (args : List String) : IO Unit := do
   if switchSet.contains .inner_arg_temps && callFn.isSome then
     IO.eprintln "cerberus-lean: refused — --call: inner_arg_temps is unsupported by CerbCall, whose injected call site implements only Normal_callconv (see CerbCall.lean and SUPPORTED.md)"
     IO.Process.exit 2
-  -- The stock pp merges SD_FunArgValue and SD_ObjectAddress spellings
-  -- (pp_symbol.ml:20-24); CoreParser interns both by name. The variant
-  -- libc dump therefore loses value/address identity, even though its
-  -- parameter types and quotation round trips pass. Refuse this transport
-  -- until a lossless representation is validated (upstream tray 65).
+  -- Tray 65's fork printer repair separates argument values and addresses.
+  -- Acceptance is parked: the repaired candidate reaches strerror's existing
+  -- Error, so the required 42 agreement rows cannot be claimed. Keep the
+  -- blanket containment until disposition; the loader detector also remains.
   if switchSet.contains .inner_arg_temps && libcCore.isSome then
-    IO.eprintln "cerberus-lean: refused — --libc: R-IAT-LIBC-SYMBOL-LOSS: inner_arg_temps Core text merges parameter values with their local object addresses (pp_symbol.ml:20-24; CoreParser.internSym); execution and quotation require a lossless libc transport (see SUPPORTED.md and upstream tray 65)"
+    IO.eprintln "cerberus-lean: refused — --libc: R-IAT-LIBC-SYMBOL-LOSS: inner_arg_temps libc transport repair has not passed its acceptance criterion; execution and quotation remain contained (see SUPPORTED.md and upstream tray 65)"
     IO.Process.exit 2
   let libc : Option (String × List String) ← match libcCore, libcTus with
     | some c, tus =>

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PROVISIONAL: I3 parked on libc symbol loss; no baseline/release row exists.
+# PROVISIONAL: all-42-agreement premise is false (strerror BOTH_FAIL); no baseline/release row.
 # Switched libc now refuses, so the complete lane and its plants remain red.
 # Matched inner_arg_temps lane. --gate runs the plants then the whole lane.
 # --selftest, --rows REGEX, --observe and --record-baseline are focused tools;

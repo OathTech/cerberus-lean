@@ -1,7 +1,10 @@
 # Park: inner_arg_temps libc text loses symbol identity
 
 2026-10-21, branch `feature/inner-arg-temps`, after I0b `08fb2d156`.
-**PARKED during I3; delivery incomplete.** The earlier recursive-main
+**Dispositioned, 2026-10-22:** the [transport repair](2026-10-22_inner-arg-temps-transport-record.md)
+resumes I3 with a printer fix and two collision checks; the blanket
+containment remains until the acceptance tests pass. The original park
+diagnosis follows. The earlier recursive-main
 park is resolved. This is a distinct false premise in the I2 libc transport.
 The [slice record](2026-10-21_inner-arg-temps-record.md#second-park--libc-symbol-loss)
 records the decision and provenance. No discrepancy baseline is adopted.
