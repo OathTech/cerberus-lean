@@ -86,3 +86,12 @@ Any program whose braced initializer names a non-first union member now dies in 
 of both engines with the text above (exit 125 / 134) instead of a verdict. The texts are
 pre-envelope, as the item-G ones are; the outcome-protocol design pass will move them into its
 envelope. The witness script matches them as substrings by its `HEAD`/`TAIL` constants.
+
+
+Integration clarification [AGENT 2026-10-21]: the outcome-protocol first delivery
+keeps these incoming texts envelope-less. Its generic decoder reports their
+validated panic frames as legacy, origin unattributed; the refusal semantics
+remain as documented above. The
+[protocol migration map](2026-10-20_outcome-protocol-register-migration.tsv)
+names the follow-up under structural-outcome WP2. Earlier expectations of
+immediate envelope migration in this note are superseded by that explicit gap.

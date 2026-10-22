@@ -5,10 +5,12 @@ Author: [AGENT 2026-10-20]. Checkpoint A against
 Charter: revision 5 of `2026-10-18_codex-charter-outcome-protocol-s1-s2.md`.
 Design: revision 3 of `2026-10-20_outcome-protocol-design-v2.md`.
 
-**Current status: D implemented; E demonstrations complete; close-out PARKED.**
-Tier A passed on the final code. The full run was interrupted at the aggregate
-one-hour tripwire with 31/42 commands passed, so Tier B is not certified. The
-timing interpretation requires a ruling; see the final section of this record.
+**Current status: D/E closed out; candidate ready for fresh pre-merge review.**
+The five mission commits have been rebased linearly onto `4d46906c9`. Tier A
+passed 19/19 and the full gate passed 43/43, each with unchanged source and
+complete selection. The earlier 31/42 run remains incomplete historical
+evidence; its interrupted B7 was unrun. The new sweep ran B7 to completion.
+The close-out dated 2026-10-22 below records the results and remaining limits.
 
 ## A — baseline, inventory and fence
 
@@ -1501,6 +1503,17 @@ approaches one hour, so the required aggregate certification can finish. That
 clarification was requested before dispatch and remained unanswered at the
 stop point; no broader timing authorization is inferred.
 
+[AGENT 2026-10-20, relayed by the operator] The orchestrator clarified the
+previously unspecified scope: the approximately one-hour tripwire applies to
+one build/proof pass, measured per ladder command. The full validation sweep
+normally takes longer overall and requires no exceptional time authorization.
+The interrupted B7 counts as unrun for certification, never as a passed row.
+
+[USER 2026-10-20] Await integration dispatch before rebasing or running the
+next full battery. Prepare the incoming changes read-only, retain the C
+snapshot refs until close-out, then rebase without merge commits and validate
+the integrated tree. There is no permission to push.
+
 The exact full command was:
 
 ```sh
@@ -1547,6 +1560,504 @@ until actual close-out:
 - `refs/snapshots/outcome-protocol-C-20261020-1792521155`
 - `refs/snapshots/outcome-protocol-C-resume-20261020-1792522883`
 
-Remaining work is the timing ruling, a complete full run on the final code,
-its quoted result, deletion of those C refs, and the close-out commit before
-the fresh pre-merge review. No external adoption, merge or push is claimed.
+Remaining work is integration dispatch, the rebase and focused checks, Tier A,
+a complete full run on the integrated code with its quoted result, deletion
+of those C refs recorded in the close-out commit message, and the close-out
+commit before the fresh pre-merge review. No external adoption, merge or push
+is claimed.
+
+### Integration preparation — read-only comparison, before dispatch
+
+Prepared at outcome-protocol HEAD `9d8e12d984c4bccfce04d7dd6f995c9ec609c3c4`.
+The compared immutable revisions are base
+`c55e95ee278215446afeb9a74b62b6fd4833bea2`, item-G mainline
+`3ac3ff3366ff0c8614f107d46bb169fe76997630`, and `feature/core-quote` at
+`f69504b2a9ab03842ba5ab7ebcd8c27c76d6abc3` (nine commits above item G).
+These are preparation inputs, not a claim that the quotation branch has
+landed. Re-resolve the authorized mainline at dispatch.
+
+The requested comparison was run for both incoming revisions:
+
+```sh
+git diff c55e95ee2..3ac3ff336 -- lean_frontend/CerbMem.lean \
+  lean_frontend/Main.lean scripts/failure_reach_register.txt \
+  scripts/test_unit.sh scripts/LADDER.md lean_frontend/VALIDATION.md
+git diff c55e95ee2..feature/core-quote -- lean_frontend/CerbMem.lean \
+  lean_frontend/Main.lean scripts/failure_reach_register.txt \
+  scripts/test_unit.sh scripts/LADDER.md lean_frontend/VALIDATION.md
+```
+
+The full changed-path sets, adjacent proof/witness changes, and exact source
+definitions were also inspected. No rebase, source implementation edit,
+regeneration, Lean invocation or validation battery was performed during this
+preparation. Only this record is edited, to travel with the next validated
+integration commit.
+
+#### Tree findings and the item-G disposition
+
+1. **The two incoming leaves have different shapes.** At item-G mainline,
+   `CerbMem.lean:2553` has
+   `NDkilled (CerbFail.failStopKill (failwithI (alignmentRefusal align sz)))`.
+   At `:3666`, `memcpyM` instead has the whole-monad application
+   `failwithI (memcpyOverlapRefusal region a1 a2 size_n)`. The quotation branch
+   does not change either body. Preparation must not assume two fixed killed
+   nodes, or infer an erasure law for the whole-monad value.
+2. **Item G added no failure-register rows.** The register blob is identical
+   at the base and both incoming refs:
+   `046c43e57144db2263886bd886b0fba5c41d2a0b`. Neither owner has a row. A read-only
+   probe fed each Git blob to the existing `failure_census.census` using an
+   in-memory `Path.read_text` substitute. Its verbatim result was:
+
+   ```text
+   3ac3ff336 CerbMem.allocator 2553 monadic_ascribed failwithI
+   3ac3ff336 CerbMem.memcpyM 3666 monadic_ascribed failwithI
+   feature/core-quote CerbMem.allocator 2553 monadic_ascribed failwithI
+   feature/core-quote CerbMem.memcpyM 3666 monadic_ascribed failwithI
+   ```
+
+   The lexical census uses a hand-written declaration's `memM` return type
+   (`scripts/failure_census.py:105`), including for the nested allocator leaf.
+   This explains the bucket; it is not a proof of the inner leaf's type or
+   reachability. Do not invent two incoming rows or alter the gate. Recompute
+   the actual census, position and reach classes after integration; the TSV
+   must describe measured key/seal changes, not an assumed row increment.
+3. **The frozen boundary vocabulary has no memory-model category.** Design
+   v2 §2 and `CerbStop.Boundary` admit thirteen values. `runtime` describes
+   runtime-library provisioning, `address-space-arg` the CLI bound, and `cli`
+   argument admission; none honestly describes these two semantic-operation
+   refusals. Inventing a boundary or repurposing one would change the schema.
+
+[AGENT 2026-10-20] Use the permitted unmigrated disposition for both new item-G
+leaves at this integration. Preserve their predicates, priority, abort channel
+and historical diagnostics; do not label them UPSTREAM_CRASH or assign a false
+REFUSAL boundary. Register their protocol status in the inventory below and
+carry the limit into the integrated family table and consumer handoff. Named
+mover: **memory-model refusal metadata extension**, under the
+[structural-outcome plan's WP2](2026-09-16_lean-only-outcomes-implementation-plan.md),
+which must settle the boundary vocabulary, both producers, their exact-text
+witnesses and consumer decoding together. This choice follows the schema
+inspection and supersedes the initial working suggestion to migrate them
+immediately. It does not alter item G's declared refusal semantics.
+
+| Site and checked source | Interaction with this branch | Prepared resolution / protocol status |
+|---|---|---|
+| `allocator` alignment-zero arm, incoming `CerbMem.lean:2543`, ours `:2542` | Existing typed kill migrated through `CerbStopSites.allocatorAlignment` | Retain its UPSTREAM_CRASH envelope and incoming ordering: OOM, zero alignment, invalid nonzero alignment, ordinary allocation. The new refusal must not replace the zero-alignment crash. |
+| New `allocator` invalid-alignment leaf, incoming `:2553`; text helper `alignmentRefusal:2488` | Absent from C's 122-leaf inventory; incoming fixed killed node has an opaque String message | **UNMIGRATED**, named mover above. A validated emitted frame yields legacy/unattributed metadata through `decode_stop`, not a REFUSAL object. Preserve the hypothesis-free allocator theorem. |
+| New `memcpyM` overlap leaf, incoming `:3666`; predicate `memcpyOverlap:3634`, text helper `memcpyOverlapRefusal:3644` | Absent from C's inventory; incoming whole-monad failure, not our `refuseM` adapter | **UNMIGRATED**, same mover. Preserve allocation/device cases, ordering before accesses, and the documented mixed-provenance residual. Do not rewrite this incoming value's proof contract by analogy with C.2. |
+| `integerRem_t`, ours `CerbMem.lean:1739–1740`, `CerbStopSites.integerRemTrunc` | Not edited by item G, but its unchanged zero-alignment witness now consumes our structured panic | Keep UPSTREAM_CRASH. The witness's original detail substring survives the envelope; check it with the actual integrated driver. |
+
+The two unmigrated sites remain declared refusals in CONTRACT D10 but are
+**not distinguishable as REFUSAL by the generic wire API** at this delivery.
+Their text must not become a decoder heuristic. The consumer handoff must
+name this gap, rather than claim all hand-written stops have attribution.
+At integration, qualify the incoming CONTRACT D10/consumer-note promise of
+envelope migration with this explicit follow-up; it is not completed here.
+The dedicated `check_item_g_refusals.sh` still compares the old texts and exits
+125/134. Its actual final inventory is nine refusal programs (six memcpy,
+three alignment), nine verdict controls and one crash control; several incoming
+summary descriptions still say four memcpy/eight controls. Align the touched
+descriptions with the script, without weakening its five negative plants.
+
+#### Prepared resolutions beyond the two new leaves
+
+[AGENT 2026-10-20] Integrate both branches' behavior explicitly; do not resolve
+overlapping files by taking one side wholesale. The following is the proposed
+resolution and focused verification inventory, awaiting dispatch.
+
+| Surface | Resolution and check |
+|---|---|
+| `Main.refuseLibraryLocations` | Keep the incoming resolved-directory guard and all three failure paths (runtime directory resolution, source directory resolution, foreign resolved directory). Route its local refusal helper through the existing library-location envelope, preserving exit 2, the source item, explanation and canonical quotation convention. Preserve the documented relative-runtime divergence and fixture-001 witness; do not restore the older literal comparison. |
+| `Main.refuseFlag`, `judgeSwitches`, pipeline | Keep quotation flags/options and early quotation return, plus our per-element switch envelopes, invariant fallback and batch UB prevalidation on execution paths. Include both `CerbQuote` and `CerbStopSites` imports. |
+| New quotation CLI refusals | Incoming `Main.lean:1659,1664,1789,1796,1854` are five new exit-2 admission refusals. Use the existing `cli` boundary with the responsible option and quotation-specific mover; retain explanatory substrings. Missing path/libc usage errors remain exit 1. Printer `Except` errors remain quotation `Error` records, outside the semantic-stop guarantee. Exercise duplicates, incompatible modes, identical output paths and missing user TU; assert no output file is published on refusal. |
+| Runtime and quotation witnesses | Combine our separate stdout/stderr capture and decoder assertions in `check_runtime_resolution.sh` with the incoming classifier-divergence/execution controls. Recheck the quotation runner's wrong-cwd and no-user-TU controls (`test/CoreQuote/CoreQuoteRoundTrip.py:163–167,209–212`); their explanation checks survive envelope rendering. The historical CLI smoke probe is unwired and does not replace current focused checks. |
+| Item-G proofs and all C proof modules | Preserve incoming `CerbMemAllocatorProofs.allocator_active_sound` and `Unit.FuelExemplar.allocator_errno` repairs. Rebuild the affected dependency cones, retain the reconstruction diagnostic parameter contract and all census entries, then replay changed proof modules plus the C proof set; quote exits and axiom results. No reduction in public statements. |
+| Lake/copy/unit registration | Union `CerbQuote` and its support libraries/executable with `CerbStop`, `CerbStopSites` and `stop-test`; retain both manifest entries and both test registrations. Row 1 should describe 21 unit executables, subject to the merged executable list. Keep the Python codec suite in ordinary row 1 and the quotation-only Tier B mode's early return. |
+| Ladder and validation documents | Preserve item-G witnesses and baseline retirements, quotation instrument limits and row B13, and D's two lane corrections/CONTRACT §1 outcome vocabulary. The existing parser reports 19 A commands and **43 full commands** on the quotation branch, versus 42 on item-G mainline. Re-enumerate the final table; never use the old count as a selection limit. |
+| Failure register and migration TSV | Preserve the C key/seal mappings as history and reconcile final line/owner/key mappings against fresh census and dependency results. The two new monadic buckets do not justify fabricated pure rows. If a new pure helper becomes necessary later, classify and seal it through the existing rules. No preamble or gate exception. |
+| Tray INDEX and source citations | Keep incoming drafts 56/57 dispositions and draft 58 in order. No row 59 exists in the inspected refs, and this branch has no INDEX delta from the base. Recheck at dispatch instead of pre-resolving a nonexistent 58/59 collision. Pinned upstream citations stay at their immutable revision; recompute moving fork/source line references that are touched. |
+| Baselines and fork inputs | Item G already retires `mem4-020-memcpy-overlap.c` from the coverage baseline and `009-aligned-alloc-3` from libc's baseline, with witnesses replacing those controls. Carry those incoming, explained removals and its fork-drift pin; do not restore stale rows or call the inherited removals an outcome-protocol verdict movement. Any additional movement stops integration. |
+
+The changed-path intersection is five files against item-G mainline and eleven
+against quotation. Besides the anticipated sites, it includes `CONTRACT.md`,
+`CerbLocation.lean` (guard documentation), `CLAUDE.md` (both existing practice
+descriptions), the copy manifest, Lake registration and the runtime witness
+script. Incoming allocator/FuelExemplar proof changes require checks even though
+they do not textually conflict. README/SUPPORTED, quotation tests and its native
+instrument boundary must survive the rebase unchanged except for explicitly
+required stop-interface compatibility.
+
+At dispatch, preserve this pending record before the rebase, resolve the actual
+landing tip, and use linear history. After focused integration checks and proof
+gates, run Tier A, then the complete `release.py --mode full` selection on the
+final source under `scripts/capped`. The per-command tripwire applies; total
+sweep time does not trigger it. Treat old B7 as unrun. Quote the new complete
+result, recheck consumer heads/capture demonstrations on that tree, remove the
+two C refs with expected-value checks, and name those deletions in the close-out
+commit message. No merge commit, push, or external-adoption claim is authorized.
+
+
+## Integration and close-out — 2026-10-21
+
+### Dispatch and resolution audit
+
+[AGENT 2026-10-21, orchestrator direction relayed by the operator] Integrate
+onto mainline `4d46906c97c7493343f9cbb7c992b8d5abb8244a` with linear history,
+retaining the quotation, D10/D11 refusal, survey and landing changes. Keep the
+three incoming refusal sites unmigrated with named movers; complete focused
+checks, Tier A and all 43 commands of the full gate before close-out. The
+per-command timing clarification in the preceding park section applies.
+
+The old mission tip was `9d8e12d984c4bccfce04d7dd6f995c9ec609c3c4`, based
+on `c55e95ee278215446afeb9a74b62b6fd4833bea2`. Before rebasing, an isolated
+index captured the pending preparation record and all tracked/untracked work
+in `refs/snapshots/outcome-protocol-integration-20261021`. The two C snapshot
+refs were retained. The five replayed commits ended at `71bc1e4a5`, with no
+merge commit. A per-file comparison of the two mission diffs, removing only
+hunk coordinates and blob-index lines, printed:
+
+```text
+RESOLUTION_DIFF lean_frontend/Main.lean
+RESOLUTION_DIFF scripts/LADDER.md
+INCOMING_IDENTICAL frontend/model/desugaring_init.lem True
+INCOMING_IDENTICAL scripts/fork_drift_manifest.txt True
+INCOMING_IDENTICAL lean_frontend/TODO.md True
+INCOMING_IDENTICAL lean_frontend/SUPPORTED.md True
+MERGES none
+```
+
+Reproduce with `git diff --unified=0 c55e95ee2..9d8e12d98 -- <file>` against
+`git diff --unified=0 4d46906c9..71bc1e4a5 -- <file>`, for the old mission's
+changed-path list, excluding `index ` and `@@` lines. The Main difference is
+the incoming resolved-directory helper: its three refusal paths now use the
+existing library-location envelope, retaining the realpath checks, source item,
+explanation and canonical quotation convention. The other Main change merely
+retains the quotation flags in the help text. LADDER row 1 unions both sets of
+registrations and witnesses (21 executables), with the production-reference
+claim retained. CerbMem's manual conflict resolution preserves OOM → zero
+alignment → invalid nonzero alignment → ordinary allocation; its mission
+patch is byte-identical after hunk-coordinate removal. Incoming allocator and
+FuelExemplar proof repairs survive intact.
+
+The post-rebase compatibility changes are separate from that resolution-only
+audit: five incoming quotation admission paths acquire the existing `.cli`
+REFUSAL envelope, retaining their predicates, explanations, exit 2 and no-output
+behavior. Missing-argument usage errors remain exit 1. No quotation semantics,
+printer error, wire boundary, opaque atom, shared Lem source or pin changes.
+
+[AGENT 2026-10-21] Keep the raw D10/D11 diagnostic bodies. The frozen schema
+has no honest memory-model boundary for D10, and D11's producer is in shared
+Lem outside this mission's edit scope. The protocol migration map explicitly
+lists both D10 leaves and `Desugaring_init.moveTo_aux`'s union `error` as
+UNMIGRATED, with **memory-model refusal metadata extension** and
+**shared-desugarer refusal mapping** respectively under structural-outcome WP2.
+Those entries are protocol inventory, not rows or exceptions in the execution
+failure register. The generic API treats validated frames as legacy/unattributed;
+`parse_stop` returns absence for the raw text. No heuristic promotes a declared
+refusal's prose to INVARIANT, REFUSAL or upstream attribution.
+
+The actual quotation landing includes tray rows 58–63. They are retained;
+no new tray row is added and reserved 64 is untouched. The incoming manifest
+is retained byte-for-byte, including the shared union source rows and NOTE.
+The TODO survey and supported-surface description are retained. Both generated
+trees are rebuilt from the existing pinned toolchain; Dune stages the runtime
+inside this worktree, never into the shared opam switch.
+
+### Inherited baseline changes
+
+No mission baseline row differs from `4d46906c9`. The three upstream-base
+retirements are carried with their original purpose and replacement witnesses:
+
+| Retired row | Reason and retained check |
+|---|---|
+| coverage `mem4-020-memcpy-overlap.c MATCH` | D10 now refuses overlapping copies; its backward-copy shape is in `check_item_g_refusals.sh`. |
+| libc `009-aligned-alloc-3 MATCH` | D10 refuses non-power-of-two alignment; the same invalid alignment and valid arithmetic controls are in that witness script. |
+| coverage `union3-003-union-init.c MATCH` | D11 refuses a second-member designator; the union witness script carries this shape and unchanged first-member controls. |
+
+These are incoming mainline dispositions, not newly accepted semantic movements.
+The item-G witness inventory is six memcpy and three alignment refusals, nine
+verdict controls and one zero-alignment crash control, with all five plants.
+Touched LADDER/CONTRACT/VALIDATION summaries now match those actual calls.
+
+### Focused validation and consumer recheck
+
+The consumer heads were rechecked read-only: Caesium
+`ea75d1f8e15e930e446dac827bc715d32bf51a5e` and SL
+`68832d914227a29c37df381d3e83ad274147e24c`, both clean. Caesium advanced from
+the earlier demonstration head, but `scripts/differential.py` and
+`scripts/env.sh` are byte-unchanged between those heads. Its cited capture and
+summary definitions retain their line positions. SL's `oomOutcome`, `liftKill`
+and fuel/adequacy uses are unchanged at the previously cited locations.
+No consumer file is edited and no adoption or external build is claimed.
+
+The added Python unmigrated-text test initially omitted the backtrace separator
+while expecting a separately stripped wrapper; the decoder correctly retained
+that line in the legacy continuation. The test now supplies the real backtrace
+shape. The corrected pure-Python run passed all 18 tests. This changes no decoder
+rule and makes no attribution claim from a raw refusal string.
+
+
+Both `make prelude-src lean-prelude-src` and the worktree-local OCaml/Lean
+build exited **0** under `scripts/capped`, `CERB_MEM_MAX=48G`. The build
+finished with `Build completed successfully (406 jobs).` The focused seven
+native executables passed: stop, MonadicFailstop, MemoryAccess, reconstruction,
+PnviArms, allocator soundness and FuelExemplar. The actual kernel replay was:
+
+```sh
+# from lean_frontend, with CERB_MEM_MAX=48G
+../scripts/capped lake env leanchecker \
+  CerbStop CerbStopSites CerbDecode CerbFS CerbFloat CerbFunMapInstances \
+  CerbLocation CerbMem CerbMemAccessFacts CerbStepInstances CerbTags CerbUtils \
+  CerberusImpl CoreParser CerbMemDefaultFacts CerbFailProofs \
+  CerbMemAllocatorProofs Unit.MemoryAccessProofs
+for module in Main Unit.ReconstructLegacyTest Unit.PnviArmsTest \
+    Unit.MonadicFailstop Unit.FuelExemplar Unit.StopTest Unit.AllocatorSoundnessTest; do
+  ../scripts/capped lake env leanchecker "$module" || exit "$?"
+done
+```
+
+**Exit 0 for the shared invocation and for each of the seven separate
+executable-module invocations** (25 modules total); no replay diagnostics.
+The separate environments avoid executable `main` collisions. This includes
+the incoming allocator/FuelExemplar proof repairs as well as C's proof set.
+A supplementary `#print axioms` probe checked all 55 public theorems in
+`CerbMemAccessFacts`, `CerbMemDefaultFacts`, `Unit.MemoryAccessProofs`,
+`Unit.ReconstructLegacyTest`, `CerbMemAllocatorProofs` and
+`CerbStopSites.appendText`, plus a separate FuelExemplar probe. Exact printed
+name sets and complete wrapped axiom lists were checked. Both probes exited 0;
+all cones are empty or subsets of the standard three. Representative output:
+
+```text
+'CerbMem.loadM_erasure' depends on axioms: [propext, Classical.choice, Quot.sound]
+'MemoryAccessProofs.load_erasure' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ReconstructLegacyTest.historical_linear_recovers' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ReconstructLegacyTest.historical_indexed_recovers' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CerbMem.allocator_active_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FuelExemplar.allocator_errno' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FuelExemplar.exemplar_certified_shipped_forall' depends on axioms: [propext, Classical.choice, Quot.sound]
+```
+
+No census entry was removed. No proof statement was weakened at integration.
+The provider retains its registered opaque/extern runtime boundary; these
+checks do not prove native abort or shared-origin attribution. Existing
+compiler deprecation warnings in generated/dependency and inherited source
+remain visible; this integration added no suppression.
+
+The SL scratch probe described in E.3 was reconstructed from the current
+consumer definitions and compiled with an explicit scratch root. Compile and
+`lake env leanchecker OutcomeSlProbe` each exited **0**, with the same three
+verbatim empty-axiom results as E.3. The generated `liftAction_lemFuel` still
+preserves Error0's location/string and lifts Other through the supplied error
+map (`Nondeterminism.lean:535–540`); `oomKill` remains at `CerbMem.lean:2492`.
+
+Focused codec and policy commands, each under the cap, exited 0:
+
+```text
+Ran 21 tests in 2.473s
+
+OK
+STOP POLICY: 40 invariant/oracle pairs RED in both classifiers; ordinary/OOM/legacy controls passed
+```
+
+The first command was `python3 scripts/test_stops.py --lean-bin
+lean_frontend/.lake/build/bin/stop-test`; the second was
+`python3 scripts/test_observation_lanes.py --stop-policy-only`. Native outputs
+were decoded independently by Python, including the frozen schema negatives.
+
+
+The real immaculate entry-point plants (`--lane immaculate --plant crash-model
+--plant crash-invariant --plant crash-legacy`) passed **3/3**, exit 0. Runtime
+resolution (`check_runtime_resolution.sh --selftest`) passed **23 witnesses**,
+including the relative-runtime classification/execution controls and served
+UB-location divergence pin. Item G (`check_item_g_refusals.sh --selftest`) passed
+**19 cases and five plants**; union initializers
+(`check_union_init_refusals.sh --selftest`) passed **27 cases and five plants**.
+Both preserved the existing raw diagnostic text, oracle 125 / Lean 134, and
+all unchanged controls. No newly observed semantic verdict movement.
+
+The rebuilt register gate exited **0**, without any register or gate edit:
+
+```text
+check_failure_reach: instrument built + census taken in 7 s (FAILURE_REACH rows 26754, FAILURE_RANGE rows 11779; counts: {"generated:monadic_ascribed":264,"generated:pure_or_unresolved":545,"handwritten:monadic_ascribed":3,"handwritten:pure_or_unresolved":123})
+check_failure_reach: OK (240 pure failure sites = the 240 register rows exactly (238 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, shared keys lengthened, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=174 REACHABLE=44 UNKNOWN=22; every row sealed; tally line consistent)
+```
+
+All 112 sealed destinations in C's migration TSV were matched to the new
+census by full register key and seal. The only destination line shift is
+Main's unresolved pure guard, 71 → 72 (incoming import); that column is
+updated. Old columns retain C's provenance. All destination seals, positions
+and reviewed reach classes are unchanged, so no reseal is necessary.
+
+The additional D10 leaves are measured at `CerbMem.allocator:2581` and
+`CerbMem.memcpyM:3694`, both in the census's `monadic_ascribed` bucket and
+execution closure. As noted in preparation, allocator's nested String leaf
+inherits that lexical bucket from its `memM` declaration; this is not a type
+proof. The D11 shared source is `desugaring_init.lem:395`, generated as
+`Desugaring_init.lean:658`, owner `moveTo_aux`, a state-to-`exceptM` ascription.
+Its census bucket is also `monadic_ascribed`; both dependency bits are false.
+`moveTo_aux` is a generated `partial def` (`:559`), so these kernel-closure
+bits are not a compiled call graph or an unreachability claim (the instrument
+explicitly states this limitation). The real consumer capture below executes
+that refusal. No pure register row, preamble exception or class heuristic is
+added for any of the three sites.
+
+The refreshed Caesium demonstration passed **36 captures**, exit **0**:
+28 actual runner captures (including nine quotation refusal cases, two retained
+usage errors and the three incoming raw refusals), plus eight labelled transport
+fixtures. All five quotation admission paths emit the expected CLI boundary/item,
+exit 2 with empty stdout, and publish no output. Usage errors still exit 1 and
+are unrecognized diagnostics, without fabricated stop attribution. Selected
+verbatim results:
+
+```text
+mixed-first: exit=1 stops=1 fuel=0 legacy=0 problems=0
+mixed-exhaustive: exit=134 stops=1 fuel=0 legacy=0 problems=0
+driver-union-refusal: exit=134 stops=0 fuel=0 legacy=1 problems=0
+driver-alignment-refusal: exit=134 stops=0 fuel=0 legacy=1 problems=0
+driver-overlap-refusal: exit=134 stops=0 fuel=0 legacy=1 problems=0
+fixture-mixed-emitted: exit=0 stops=3 fuel=0 legacy=0 problems=0
+CONSUMER DEMO: 36 captures passed; emitted records only; no external adoption
+```
+
+The mixed exhaustive run's stdout is asserted empty, with **zero emitted
+ModelFailures**, while the first-mode run emits exactly one. This is loss
+before emission, not decoder loss. Every raw D10/D11 payload is also passed to
+`parse_stop`, which returns absence; the validated frame yields one legacy
+panic, no INVARIANT/REFUSAL object, no guessed upstream origin. The mixed emitted
+fixture retains all three causes and execution indices. No consumer adoption
+is claimed.
+
+### Release gates on the integrated source
+
+The ladder parser reports **19 Tier A commands and 43 full commands**.
+At the pre-gate load check, `uptime` reported:
+
+```text
+ 22:34:42 up 12 days, 22:48,  ? user,  load average: 6.39, 3.57, 2.26
+```
+
+The gates ran one at a time, with `CERB_MEM_MAX=48G`, `TMPDIR` under this worktree's
+`.tmp`, and the established local toolchain environment. No overrides or
+subset selection. Both commands below use `scripts/capped`; the full command's
+normal per-lane timeout remains 3600 seconds. The earlier aggregate timing
+interruption remains an incomplete historical run; it supplies no pass for B7.
+
+
+### Completed close-out — 2026-10-22
+
+[AGENT 2026-10-22] D/E is complete as a provider candidate for the fresh
+pre-merge review. No merge, push, consumer re-pin or external adoption has
+occurred. The protocol's stated limits and named structural-outcome mover
+remain; a green release sweep does not prove upstream attribution or recover
+stops lost before emission.
+
+After loading the documented local toolchain environment, the executed gates
+were (from the repository root):
+
+```sh
+export CERB_MEM_MAX=48G TMPDIR="$PWD/.tmp" LEAN_ABORT_ON_PANIC=1
+scripts/capped python3 scripts/release.py --mode fast \
+  --out .tmp/outcome-protocol-integration/tier-a
+scripts/capped python3 scripts/release.py --mode full \
+  --out .tmp/outcome-protocol-integration/tier-full
+```
+
+Each process exited **0**. Tier A ran on 2026-10-21 from 22:37:43 to 23:04:41
+UTC. Immediately before the full sweep, `uptime` reported:
+
+```text
+ 23:05:51 up 12 days, 23:19,  ? user,  load average: 2.98, 5.05, 6.24
+```
+
+The full sweep ran from 2026-10-21 23:05:51 to 2026-10-22 01:16:43 UTC
+(2 h 10 m 51 s). Its longest individual command was B9, **2451.014 seconds**;
+no ladder command crossed the one-hour tripwire clarified in the park section.
+Only one of this agent's heavy commands ran at a time. Neither gate used a
+subset or an override. Both reports have `artifact_issues: []`,
+`source_unchanged: true`, `selection_complete: true`; all selected commands
+have exit status 0. Verbatim summaries:
+
+```text
+fast: passed; 19/19 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+```text
+full: passed; 43/43 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+The release-certification line is the runner's separate reporting/adoption/audit
+status, not a failed selected command. This record supplies the provider
+report; external adoption is not claimed and the independent pre-merge review
+is still outstanding. The earlier 31/42 run and its unrun B7 remain historical
+incomplete evidence, not inputs to these pass counts.
+
+The full gate's A1 ran the retained axiom census without removing any entry.
+Verbatim output:
+
+```text
+check_theorem_axioms: hand-written axiom census OK (0 axioms — the arc-17 S2b end state)
+check_theorem_axioms: generated-tree census OK (227 files: 0 axioms, boundary-opaque population = the 9 registered rows exactly-once (incl. CerbFuel.fuelExhaustedLoc), 0 unsafeCast)
+check_theorem_axioms: C2 ratchet OK (441 files scanned recursively: 0 axioms, 0 runEffectful, seam population = the 19 pinned path-qualified counted rows exactly incl. the extern class; lem tests/ scaffolds asserted outside the surface)
+check_theorem_axioms: D14 grep-ban OK (no native_decide/bv_decide in 1 tree(s) + 55 hand-written seam files + LemLibTest.lean)
+check_theorem_axioms: driver2 cone sorryAx-free + ofReduce*-free + DAEMON-free (arc-8 S3 bar)
+check_theorem_axioms: C2 entry census OK (9 entries, every cone ⊆ [propext, Classical.choice, Quot.sound])
+check_theorem_axioms: mem-scale S1 leg OK (37 C1/C3 + PNVI-S2 wrapper equality + CerbMemDefaultFacts bridge + CerbMemAccessFacts erasure theorems, every cone ⊆ [propext, Classical.choice, Quot.sound])
+check_theorem_axioms: FUEL arc leg OK (63 contract lemmas — generated _zero, runner leaves/parametricity, ∀-fuel exemplar, measured obligations, fail-stop propagation, and six-worker ND stability, every cone ⊆ [propext, Classical.choice, Quot.sound])
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+```
+
+The 25-module replay and supplementary theorem probes above preceded these
+gates and all exited 0. B13 additionally elaborated and compared both libc and
+linked quotations, checked the aliases/refusals, and replayed both generated
+literal modules. Selected verbatim B13 output:
+
+```text
+Libc-kernel-replay: exit 0, 1.85s
+LibcLiteral leanchecker: 1.80 seconds; 825032 KB peak RSS; exit 0
+Linked-kernel-replay: exit 0, 1.84s
+LinkedLiteral leanchecker: 1.80 seconds; 824804 KB peak RSS; exit 0
+Core quote round trip: PASS (whole-file representation, comparator syntax, auxiliary BEq)
+Total: 1 passed, 0 failed
+```
+
+B9 completed `observation lane plants: 95/95 passed`, including the structured
+upstream crash, INVARIANT and envelope-less legacy plants. B7 was freshly run
+to completion (1533.6 seconds), with this verbatim summary:
+
+```text
+SUMMARY: total=2030 compared=1934 agree=1918 agree_nd=0 triaged=16 disagree=0 o2_agree=197 skip_gcc_compile=4 skip_gcc_stdout=2 skip_lean_crash=18 skip_lean_fail=14 skip_lean_timeout=11 skip_ub=47 triaged_addr=14 triaged_float=1 triaged_ub=1
+Baseline check: 0 regression(s), 0 improvement(s)
+gcc second-oracle lane OK
+```
+
+Those skip counts, including 11 Lean timeouts, remain explicit exclusions;
+they are not semantic agreements. B10.1 independently compared 997 rows:
+950 semantic agreements, 37 matching failures, eight reviewed differences and
+two interface agreements. B12 compared all four libxml2 character-validation
+slices with semantic agreement. No new semantic verdict movement or baseline
+edit was accepted.
+
+The final audit preserves the incoming shared union source, fork-drift
+manifest, survey TODO, SUPPORTED text and tray index, as well as every
+baseline. No `.lem`, dependency, Lem pin or register-gate exception was
+introduced. The rebase-only patch comparison remains the one recorded above;
+post-rebase quotation admission compatibility edits are separately described
+and were included in both gates. After the full runner finished, only these
+close-out descriptions and the two handoff statuses changed. `git diff --check`
+passed.
+
+The two C preservation refs are removed at close-out, with their exact names
+also recorded in the close-out commit message:
+
+- `refs/snapshots/outcome-protocol-C-20261020-1792521155`
+- `refs/snapshots/outcome-protocol-C-resume-20261020-1792522883`
+
+Their producer work is in the linear history. The additional pre-rebase
+integration snapshot is removed after this close-out is committed. This
+agent's reconstructible integration scratch under
+`.tmp/outcome-protocol-integration/` is then deleted; commands and conclusions
+remain here. The worktree and built artifacts stay available for the fresh
+reviewer.

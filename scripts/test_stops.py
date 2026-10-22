@@ -282,6 +282,16 @@ class CaptureTests(unittest.TestCase):
             self.assertTrue(result.problems)
             self.assertFalse(result.fuel or result.stops or result.legacy_panics)
 
+    def test_unmigrated_refusal_text_is_unattributed(self):
+        # Declared fork refusals are not wire attribution without an envelope.
+        for payload in (b'Concrete.memcpy: refused - memcpy on overlapping objects',
+                        b'Concrete.allocator: refused - allocation with an invalid alignment 3',
+                        b'Desugaring_init.moveTo_aux: refused - union initializer designating a member other than the first'):
+            self.assertIsNone(obs.parse_stop(payload))
+            result = self.clean(b'', PANIC + payload + b'\n' + TRACE + WRAPPER, 134)
+            self.assertFalse(result.stops or result.fuel)
+            self.assertEqual([p.payload for p in result.legacy_panics], [payload])
+
     def test_absent_model_and_malformed_panic_never_become_legacy(self):
         self.assertTrue(obs.decode_stop(model(b'old message'), b'', 1).problems)
         for payload in (b'cerberus-lean stop', wire(['2', *INV[1:]])):
@@ -448,6 +458,29 @@ def consumer_demo(consumer, outdir):
     decoded, _, _ = capture('driver-switches', [driver, '--switches=bogus,also-bogus'], 2, ['REFUSAL'] * 2)
     assert [(o.stop.boundary, o.stop.item) for o in decoded.stops] == [('switches', 'bogus'), ('switches', 'also-bogus')]
 
+    # Incoming quotation admission paths retain their predicates, exit 2 and
+    # no-output contract, now with the existing CLI refusal metadata.
+    quoted = outdir/'Refused.lean'
+    assert not quoted.exists(), 'use a fresh demonstration directory'
+    libc_args = ['--libc', 'tests/libc/libc.core', '--libc-tu',
+                 'tests/fixtures/001-return-literal/cabs.json']
+    quote_cases = []
+    for flag in ('--quote-core', '--quote-libc'):
+        for name, args in [('repeated', [flag, quoted, flag, quoted]),
+                           ('empty', [flag, '']), ('flag-path', [flag, '--invalid'])]:
+            quote_cases.append((flag[2:] + '-' + name, args, flag))
+    quote_cases.extend([
+        ('quote-mode', ['--batch', '--first', '--quote-core', quoted], 'Core quotation'),
+        ('quote-identical', ['--quote-core', quoted, '--quote-libc', quoted, *libc_args], '--quote-core/--quote-libc'),
+        ('quote-no-user-tu', ['--quote-core', quoted, *libc_args], '--quote-core')])
+    for name, args, item in quote_cases:
+        d, stdout, _ = capture(name, [driver, *args], 2, ['REFUSAL'])
+        assert stdout == b'' and not quoted.exists(), name
+        assert (d.stops[0].stop.boundary, d.stops[0].stop.item) == ('cli', item), d
+    for flag in ('--quote-core', '--quote-libc'):
+        capture(flag[2:] + '-usage', [driver, flag], 1, problems=True)
+        assert not quoted.exists()
+
     probe = outdir/'Panic.lean'
     probe.write_text('''import LemLib
 def main (args : List String) : IO Unit := do
@@ -475,7 +508,10 @@ int main(void) { return g() + f(); }
     programs = {'mixed': mixed,
                 'translation': 'int unused(void) { return ' + '1 + (' * 192 + '0' + ')' * 192 + '; }\nint main(void) { return 0; }\n',
                 'fuel-kill': 'int main(void) { while (1) {} }\n',
-                'legacy': (ROOT/'tests/immaculate/nolibc/zd-any-bounded-int-crash.c').read_text()}
+                'legacy': (ROOT/'tests/immaculate/nolibc/zd-any-bounded-int-crash.c').read_text(),
+                'union-refusal': 'union U { int i; unsigned char c[4]; }; int main(void) { union U u = { .c = {1,2,3,4} }; return u.c[0]; }\n',
+                'alignment-refusal': 'void *aligned_alloc(unsigned long, unsigned long); int main(void) { return aligned_alloc(3, 9) == 0; }\n',
+                'overlap-refusal': 'void *memcpy(void *, const void *, unsigned long); int main(void) { char a[4] = {1,2,3,4}; memcpy(a+1, a, 2); return a[1]; }\n'}
     for name, source in programs.items():
         cfile, jsonfile = outdir/f'{name}.c', outdir/f'{name}.json'
         cfile.write_text(source)
@@ -500,6 +536,12 @@ int main(void) { return g() + f(); }
     capture('driver-translation-fuel', driver_cmd('translation', '--first', '--fuel', '128'), 134, fuel=['translation-panic'])
     capture('driver-fuel-kill', driver_cmd('fuel-kill', '--first', '--fuel', '128'), 1, fuel=['kill'])
     capture('driver-legacy', driver_cmd('legacy', '--first'), 134, legacy=1)
+    for name, prefix in [('union-refusal', b'Desugaring_init.moveTo_aux: refused - '),
+                         ('alignment-refusal', b'Concrete.allocator: refused - '),
+                         ('overlap-refusal', b'Concrete.memcpy: refused - ')]:
+        d, _, _ = capture('driver-' + name, driver_cmd(name, '--first'), 134, legacy=1)
+        assert d.legacy_panics[0].payload.startswith(prefix), d
+        assert obs.parse_stop(d.legacy_panics[0].payload) is None
 
     # These are transport fixtures, not claims of C end-to-end executions.
     fixtures = [

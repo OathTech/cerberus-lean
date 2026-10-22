@@ -7,10 +7,14 @@ supplies the checked commands and results. The companion
 [Caesium handoff](2026-10-20_consumer-note-cerberus-caesium-outcome-protocol.md)
 contains the first-delivery family table and the byte-stream decoder recipe.
 
-Provider close-out is pending: Tier A passed, while the full Tier B invocation
-was interrupted at the aggregate timing tripwire with 31/42 commands passed.
-The record distinguishes this incomplete gate from the completed proofs and
-compatibility probes below.
+Integration close-out [AGENT 2026-10-22]: rebased onto `4d46906c9`; compatibility
+probes, Tier A 19/19 and the full gate 43/43 passed on the integrated source.
+Both gates confirmed unchanged source and complete selection. Fresh pre-merge
+review remains outstanding; no consumer re-pin or external build is claimed.
+The former 31/42 run remains incomplete historical evidence; its interrupted
+B7 was unrun, whereas the new sweep completed it. The timing tripwire applies
+per command. The two incoming D10 memory refusals and shared D11 union refusal
+remain envelope-less, with named movers in the companion handoff.
 
 ## Reconstruction references now take their direct diagnostics explicitly
 

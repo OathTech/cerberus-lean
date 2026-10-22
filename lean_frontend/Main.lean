@@ -1691,13 +1691,15 @@ def main (args : List String) : IO Unit := do
     | [] => break
     | "--quote-core" :: v :: rest =>
       if quoteCore.isSome || v.isEmpty || v.startsWith "--" then
-        IO.eprintln "cerberus-lean: refused — --quote-core requires one nonempty output path and cannot be repeated"
-        IO.Process.exit 2
+        CerbStop.exitRefusals (driverRefusal .cli (some "--quote-core")
+          "cerberus-lean: refused — --quote-core requires one nonempty output path and cannot be repeated"
+          ⟨"Core quotation admission for this option combination", by decide⟩)
       quoteCore := some v; pending := rest
     | "--quote-libc" :: v :: rest =>
       if quoteLibc.isSome || v.isEmpty || v.startsWith "--" then
-        IO.eprintln "cerberus-lean: refused — --quote-libc requires one nonempty output path and cannot be repeated"
-        IO.Process.exit 2
+        CerbStop.exitRefusals (driverRefusal .cli (some "--quote-libc")
+          "cerberus-lean: refused — --quote-libc requires one nonempty output path and cannot be repeated"
+          ⟨"Core quotation admission for this option combination", by decide⟩)
       quoteLibc := some v; pending := rest
     | ["--quote-core"] | ["--quote-libc"] =>
       IO.eprintln "cerberus-lean: --quote-core/--quote-libc require an output path"
@@ -1828,15 +1830,17 @@ def main (args : List String) : IO Unit := do
   let quoting := quoteCore.isSome || quoteLibc.isSome
   if quoting && (ppCoreMode || firstTrace || callName.isSome || callArgsStr.isSome ||
       progArgsStr.isSome || traceNodes) then
-    IO.eprintln "cerberus-lean: refused — Core quotation cannot be combined with --pp-core, --first, --call, --call-args, --args or --trace-nodes"
-    IO.Process.exit 2
+    CerbStop.exitRefusals (driverRefusal .cli (some "Core quotation")
+      "cerberus-lean: refused — Core quotation cannot be combined with --pp-core, --first, --call, --call-args, --args or --trace-nodes"
+      ⟨"Core quotation admission for this option combination", by decide⟩)
   if quoteLibc.isSome && libc.isNone then
     IO.eprintln "cerberus-lean: --quote-libc requires --libc and its --libc-tu metadata"
     IO.Process.exit 1
   if let (some program, some library) := (quoteCore, quoteLibc) then
     if (System.FilePath.mk program).normalize == (System.FilePath.mk library).normalize then
-      IO.eprintln "cerberus-lean: refused — --quote-core and --quote-libc require distinct output paths"
-      IO.Process.exit 2
+      CerbStop.exitRefusals (driverRefusal .cli (some "--quote-core/--quote-libc")
+        "cerberus-lean: refused — --quote-core and --quote-libc require distinct output paths"
+        ⟨"Core quotation admission for this option combination", by decide⟩)
   -- Effect-retirement C1 (charter section 5): the debug-level global is
   -- DELETED — the model returns values, the driver prints; the former
   -- human-mode level-2 write here was already vestigial (its only
@@ -1893,8 +1897,9 @@ def main (args : List String) : IO Unit := do
     return
 
   if quoteCore.isSome && libc.isSome && restArgs.isEmpty then
-    IO.eprintln "cerberus-lean: refused — Core quotation: --quote-core with --libc requires a user TU; use --quote-libc for the standalone library"
-    IO.Process.exit 2
+    CerbStop.exitRefusals (driverRefusal .cli (some "--quote-core")
+      "cerberus-lean: refused — Core quotation: --quote-core with --libc requires a user TU; use --quote-libc for the standalone library"
+      ⟨"Core quotation admission for this option combination", by decide⟩)
   let libraryOnly := quoting && libc.isSome && restArgs.isEmpty
   if (batchMode || ppCoreMode || quoting) && restArgs.isEmpty && !libraryOnly then
     IO.eprintln "usage: cerberus-lean [--batch|--pp-core] [--first] [--quote-core OUT.lean] [--quote-libc LIB.lean --libc CORE --libc-tu META.json ...] FILE.json [FILE2.json ...]"

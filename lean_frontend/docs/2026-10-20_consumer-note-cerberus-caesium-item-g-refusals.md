@@ -129,3 +129,12 @@ oracle's `Z.logand align (Z.pred align) = 0` on `align > 0`; this toolchain has 
 The outcome-protocol design pass (response note, "the common thread") will move both texts into
 its envelope; the texts above are the pre-envelope form, matched as substrings by the witness
 script's `*_HEAD`/`*_TAIL` constants.
+
+
+Integration clarification [AGENT 2026-10-21]: the outcome-protocol first delivery
+keeps these incoming texts envelope-less. Its generic decoder reports their
+validated panic frames as legacy, origin unattributed; the refusal semantics
+remain as documented above. The
+[protocol migration map](2026-10-20_outcome-protocol-register-migration.tsv)
+names the follow-up under structural-outcome WP2. Earlier expectations of
+immediate envelope migration in this note are superseded by that explicit gap.

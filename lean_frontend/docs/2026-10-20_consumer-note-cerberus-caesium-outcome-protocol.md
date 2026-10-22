@@ -9,9 +9,12 @@ installed-wrapper amendment. The earlier
 [note-2 response](2026-10-17_consumer-note-cerberus-caesium-response-note-2.md)
 is historical; this note supplies the delivered interface.
 
-Provider validation is currently parked at the aggregate timing tripwire:
-Tier A passed, but Tier B is incomplete (31/42 commands). The capture
-demonstrations below passed; provider close-out remains pending in the record.
+Integration close-out [AGENT 2026-10-22]: rebased onto `4d46906c9`; focused
+checks, Tier A 19/19 and the full gate 43/43 passed on the integrated source.
+Both gates confirmed unchanged source and complete selection. Fresh pre-merge
+review remains outstanding; no external adoption is claimed. The earlier
+31/42 run remains incomplete historical evidence; its interrupted B7 was unrun.
+The new sweep ran B7 to completion. The timing tripwire applies per command.
 
 ## What the first delivery exposes
 
@@ -29,6 +32,7 @@ deviation; the protocol does not create a fifth permitted result.
 | Hand-written pure guards (16 inventoried leaves, including the reader-lifted CerbTags stub outside both closures) | Exact LemLib panic, exit 134 | INVARIANT: site, detail, required see; a defect regardless of the oracle |
 | Nine typed kills: seven mirrors, two port guards | ModelFailure with a second outer escape layer; single record exit 1, framed multiple executions exit 0 | UPSTREAM_CRASH or INVARIANT, same metadata; every complete occurrence and execution index retained |
 | Driver guard | One INVARIANT stderr envelope; empty stdout; exit 2 | A defect, not a refusal merely because the exit is 2 |
+| Incoming D10 memory-model refusals (invalid alignment and overlapping memcpy) and D11 shared union-initializer refusal | Validated panic frame, exit 134; oracle exit 125 | **Unmigrated:** legacy, origin unattributed. Declared refusal semantics do not supply generic wire attribution; no message-text heuristic |
 | Generated envelope-less LemLib failures | Validated panic frame, exit 134 | Legacy, origin unattributed; never inferred SHARED_CRASH |
 | Exact ND fuel kill, bare fuel panic, translation fuel panic | Exact Error record at its record position, or exact panic frame | Fuel occurrences with form and execution index; no search within program data or arbitrary diagnostic text |
 | Ordinary Defined/Undefined/Error | Existing batch records and exit convention | Ordinary observations; stop-looking data or Error messages have no stop authority |
@@ -39,12 +43,18 @@ The original 122 pure leaves comprise 71 mirrors, 35 refusals and 16 guards.
 The fixed-node refusal adapter adds one pure refusal leaf. The execution-scoped
 register has 240 rows after migration, including 128 unchanged generated rows;
 that register is not the complete producer inventory. Historical coarse crash
-pins in validation lanes make no shared-origin claim.
+pins in validation lanes make no shared-origin claim. The incoming two memory
+leaves and one shared-desugarer site are outside C's original inventory. The
+[migration map](2026-10-20_outcome-protocol-register-migration.tsv) names their
+follow-ups: memory-model refusal metadata extension and shared-desugarer refusal
+mapping under structural-outcome WP2. Neither adds a boundary or changes a Lem
+source in this delivery. The five incoming quotation admission paths use the
+existing CLI REFUSAL boundary, preserve exit 2 and publish no output on refusal.
 
 ## The actual consumer interface and patch recipe
 
 Read-only check: cerberus-caesium HEAD
-`7d23b26413b50d406a6e0963f81775cb04045da0`, clean tree. At that revision,
+`ea75d1f8e15e930e446dac827bc715d32bf51a5e`, clean tree. At that revision,
 `scripts/differential.py` defines `run:148`, `parse_driver:547`,
 `run_driver:573`, `driver_summary:735` and `summarise_runs:774`.
 `scripts/env.sh:65` exports the `cap` function. Recheck those definitions when
@@ -108,7 +118,11 @@ CERB_MEM_MAX=48G scripts/capped python3 scripts/test_stops.py \
 
 The demonstration patches only the raw-result option in an in-memory copy of
 the current consumer `run` AST, then uses its actual cap/timeout capture shape.
-All **22 captures passed**. Native adapter and driver captures cover the table's
+All **36 captures passed** on the integrated tree. The 28 real runner captures
+include nine quotation admission refusals (all five producer paths, no output
+file), two retained exit-1 usage errors, and the three raw D10/D11 refusals.
+Those three decode as legacy/unattributed, with no fabricated stop class.
+Native adapter and driver captures cover the table's
 classes/channels, multiple switch refusals, all three exact fuel forms and a
 real generated legacy panic. Eight separately labelled fixtures cover mixed and
 repeated typed causes, verdict/stop and stop/fuel batches, a malformed later

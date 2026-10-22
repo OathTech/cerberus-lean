@@ -1,4 +1,11 @@
 # Outcome protocol C: register key/seal migration from bd545c706; see checkpoint record C.6.
+# Integration destination lines recomputed from the 2026-10-21 census; old lines/seals retain C provenance; all destination seals and reach/position classes unchanged.
+# Integration 2026-10-21: UNMIGRATED inventory below is protocol status, not register rows or inferred attribution.
+# UNMIGRATED lean_frontend/CerbMem.lean CerbMem.allocator invalid-nonzero-alignment failwithI: memory-model refusal metadata extension (structural-outcome WP2).
+# UNMIGRATED lean_frontend/CerbMem.lean CerbMem.memcpyM overlap failwithI: memory-model refusal metadata extension (structural-outcome WP2).
+# UNMIGRATED frontend/model/desugaring_init.lem moveTo_aux Union-arm error: shared-desugarer refusal mapping (structural-outcome WP2; requires a separately authorized shared-source/effect change).
+# All three preserve incoming predicates, historical text and exits; validated panics decode as legacy/unattributed, never INVARIANT.
+# No new wire boundary, register-scope exception, .lem edit or Lem re-pin in this delivery.
 file	owner	old_line	new_line	old_seal	new_seal	reach
 lean_frontend/CerbDecode.lean	CerbDecode.decode_integer_constant	41	42	3cce7fa14c8bba78	1f275e1de321a9c9	UNREACHABLE-BY-INVARIANT
 lean_frontend/CerbDecode.lean	_private.CerbDecode.0.CerbDecode.decode_character_constant_aux	121	122	3d9afa4ad5fccaa8	26d20c34efdeabd0	REACHABLE
@@ -110,5 +117,5 @@ lean_frontend/CerberusImpl.lean	CerberusImpl.normalise_aliases	180	181	54f1e462d
 lean_frontend/CerberusImpl.lean	CerberusImpl.sizeof_ity	224	225	e1c8238018ad46d2	6c07ba2bb170c70e	UNREACHABLE-BY-INVARIANT
 lean_frontend/CerberusImpl.lean	CerberusImpl.sizeof_ity	226	227	864c91c153c292b4	90215ad3be9c7f7c	UNREACHABLE-BY-INVARIANT
 lean_frontend/CoreParser.lean	<unresolved compiler declaration>	2416	2417	79a84d7604ced5ea	6e64ee905f564158	UNKNOWN
-lean_frontend/Main.lean	<unresolved compiler declaration>	70	71	7a2d327a3637e2d5	3c11933f70f835ae	UNKNOWN
+lean_frontend/Main.lean	<unresolved compiler declaration>	70	72	7a2d327a3637e2d5	3c11933f70f835ae	UNKNOWN
 lean_frontend/CerbMem.lean	CerbMem.refusalKill	-	2277	-	d9c42d3d10c50e95	UNREACHABLE-BY-INVARIANT
