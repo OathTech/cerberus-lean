@@ -1406,10 +1406,12 @@ def refuseFlag (flag : String) : IO Unit := do
 def switchRefusalReason (name : String) : String :=
   match name with
   | "PNVI_ae_udi" =>
-    "PNVI-ae-udi (switches.ml:82-83, SW_PNVI `AE_UDI) is supported only as the WHOLE switch set, `--switches=PNVI_ae_udi` (the set validated against the oracle by scripts/test_pnvi.sh); this list names other elements too, so the set is refused"
+    "PNVI-ae-udi (switches.ml:82-83, SW_PNVI `AE_UDI) is supported alone or with permissive_pointer_arith; this list is not a supported combination"
   | "PNVI" | "PNVI_ae" =>
     "the PNVI-plain / PNVI-ae provenance variants (switches.ml:78-81) are not validated by any lane (their shared impl_mem.ml arms are mirrored, design §F.3, but only PNVI_ae_udi has a differential lane)"
-  | "strict_pointer_arith" | "permissive_pointer_arith" =>
+  | "permissive_pointer_arith" =>
+    "the permissive pointer-arithmetic mode is supported only together with PNVI_ae_udi"
+  | "strict_pointer_arith" =>
     "the pointer-arithmetic mode switch (switches.ml:62-65, SW_pointer_arith) is not supported: its impl_mem.ml arms are loud kills in CerbMem (seam-hygiene H2)"
   | "strict_reads" =>
     "strict reads (switches.ml:66-67) are not supported: CerbMem's arm is a loud kill, and the oracle's rm_unspecs Core pass (backend/common/pipeline.ml:579) has no Lean counterpart"
@@ -1462,19 +1464,18 @@ def refuseSwitches (flag value : String) : IO Unit := do
       else if knownSwitch n && seen.contains (switchClass n) then
         s!"{switchRefusalReason n}; ALSO it would override a previous switch of the same class in this list (the oracle prints `switch '…' would override a previous switch --> ignoring.` and drops it, switches.ml:136-139, fail-open; design §G R20, R-PNVI-11)"
       else switchRefusalReason n
-    IO.eprintln s!"cerberus-lean: refused — {flag}: this semantics switch set is not supported (the one supported set is `--switches=PNVI_ae_udi`) — `{n}`: {reason} (see CONTRACT.md §2/§3 and VALIDATION.md, semantics switches)"
+    IO.eprintln s!"cerberus-lean: refused — {flag}: this semantics switch set is not supported (supported sets: `PNVI_ae_udi`, optionally with `permissive_pointer_arith`) — `{n}`: {reason} (see CONTRACT.md §2/§3 and VALIDATION.md, semantics switches)"
     if knownSwitch n then seen := seen ++ [switchClass n]
   IO.Process.exit 2
 
-/-- Judge a `--switches` value (PNVI arc S4, 2026-10-07; design §D.3, §E S4, §F.3, §F.4):
-    the ONE supported set is `PNVI_ae_udi` alone — the `=` and space forms, a one-element
-    comma list — and becomes `[.PNVI .AE_UDI]`, the run's `CerbGlobal.Switches` (built in
-    `main`). Anything else is refused by `refuseSwitches`, each element with its reason:
-    another switch name, plain PNVI / PNVI_ae (§F.3), a mixed list, an override
-    (R-PNVI-11), an unknown name (R-PNVI-12), the empty value. The oracle accepts many of
-    these and ignores some silently (§C.5); the refusals are class (c). -/
+/-- Accept PNVI-ae-udi alone or with permissive pointer arithmetic, in either
+    order. Other combinations, duplicates and unknown names still fail closed.
+    Focused arithmetic evidence: scripts/test_permissive_pointer_arith.py. -/
 def judgeSwitches (flag value : String) : IO (List CerbGlobal.CerbSwitch) := do
   if value == "PNVI_ae_udi" then return [.PNVI .AE_UDI]
+  if value == "PNVI_ae_udi,permissive_pointer_arith" ||
+     value == "permissive_pointer_arith,PNVI_ae_udi" then
+    return [.PNVI .AE_UDI, .pointer_arith .PERMISSIVE]
   refuseSwitches flag value
   -- refuseSwitches exits 2; falling through would be an internal error (fail-closed)
   IO.eprintln "cerberus-lean: internal error: refuseSwitches returned"

@@ -2731,7 +2731,8 @@ def killM [CerbGlobal.Switches] (loc : CerbLocation.Loc) (isDynamic : Bool) (pv 
     only arm either engine executes — and a consumer's proof rewrites with
     the lemma instead of trusting a comment; the SET branch is a loud kill
     naming the un-ported OCaml arm (never reachable while those switches are
-    refused; hermetic pin: test/Unit/OpaqueFailureTest.lean). The arms, at
+    refused; hermetic pin: test/Unit/OpaqueFailureTest.lean). Permissive pointer
+    arithmetic is now ported and selectable with PNVI-ae-udi. The arms, at
     THIS tree's impl_mem.ml lines: `SW_strict_pointer_equality` (eq_ptrval
     :1860 → eqPtrval), `SW_strict_pointer_relationals` (lt/gt/le/ge_ptrval
     :1897/:1915/:1930/:1947 → lt/gt/le/gePtrval), `SW_pointer_arith
@@ -3148,10 +3149,9 @@ def gePtrval [CerbGlobal.Switches] (loc : CerbLocation.Loc) (pv1 pv2 : PointerVa
     else memReturn (a1 ≥ a2)                                  -- :1948-1950 (non-strict)
   | _, _ => memFail (MerrWIP "ge_ptrval") loc                 -- :1952-1953
 
-/-- diff_ptrval — impl_mem.ml:1954-1984 (strict, non-PERMISSIVE path;
-    the SW_pointer_arith PERMISSIVE branch at :1978-1983 in this tree is
-    guarded in the explicit loud-kill shape, seam-hygiene H2).
-    Valid only when BOTH pointers carry the SAME Prov_some allocation id
+/-- diff_ptrval — permissive mode mirrors impl_mem.ml:2014-2019: subtract
+    concrete addresses regardless of provenance, rejecting null/function pointers.
+    Without that option, valid only when BOTH pointers carry the SAME Prov_some allocation id
     and both addresses lie within [base, base+size] of that allocation
     (precond, impl_mem.ml:1955-1959); everything else fails MerrPtrdiff
     (→ UB048_disjoint_array_pointers_subtraction via the fail mapping).
@@ -3186,11 +3186,13 @@ def diffPtrval [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : 
     let getAllocFail (allocId : StorageInstanceId) :=
       (NDkilled (failReason (MerrOutsideLifetime
         s!"Concrete.get_allocation, alloc_id={allocId}") loc), st)
-    -- :1978-1983 SW_pointer_arith PERMISSIVE → a provenance-blind subtraction.
-    -- Refused set (Z-24): the default arm is the only reachable one; the set
-    -- case is loud (seam-hygiene H2)
+    -- impl_mem.ml:2014-2019: permissive subtraction accepts concrete addresses
+    -- independently of provenance; null/function pointers still fail.
     if CerbGlobal.has_switch (.pointer_arith .PERMISSIVE) then
-      (NDkilled (Other (MerrOther "diffPtrval: SW_pointer_arith PERMISSIVE is set but the permissive arm (impl_mem.ml:1978-1983) is not ported — switches are refused (Z-24)")), st)
+      match pv1, pv2 with
+      | .PV _ (.PVconcrete _ addr1), .PV _ (.PVconcrete _ addr2) =>
+        validPostcond addr1 addr2 st
+      | _, _ => errorPostcond
     else match pv1, pv2 with
     | .PV (.Prov_some allocId1) (.PVconcrete _ addr1),
       .PV (.Prov_some allocId2) (.PVconcrete _ addr2) =>
