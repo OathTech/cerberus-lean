@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# PROVISIONAL: the cross-mode exhaustive sequence premise is parked.
-# No baseline or release row is adopted; switched libc remains contained.
 # Matched inner_arg_temps lane. --gate runs the plants then the whole lane.
 # --selftest, --rows REGEX, --observe and --record-baseline are focused tools;
 # only --gate / an unselected baseline check certify the complete population.

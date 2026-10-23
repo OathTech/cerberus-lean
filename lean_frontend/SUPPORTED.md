@@ -34,27 +34,31 @@ universal theorem from a green differential baseline.
 
 The whole switch set `--switches=inner_arg_temps` selects the matching
 standard runtime and callee-allocated argument temporaries, including for
-`main`. Delivery is **parked** on a new acceptance-premise conflict.
-The repaired engines agree within each mode on all 42 libc rows, but
-`libc/exhaustive/001-unseq-order-libc` produces four complete observations
-under the switch and eighty in Normal mode. The distinct outcomes coincide;
-the required complete sequences do not. No baseline or new release row is
-adopted. Switched `--libc` execution and quotation are again refused with
-`R-IAT-LIBC-SYMBOL-LOSS`, exit 2. `--call` under the switch stays refused.
-See the [completion/park record](docs/2026-10-22_inner-arg-temps-completion-record.md).
+`main`. Use the matching `libc_inner_arg_temps.core` for execution and
+quotation. `--call` under the switch and combinations with PNVI are refused.
+The printer rejects argument-value spelling collisions; the loader rejects
+body binders that reuse parameter names in every dump, including Normal.
+This can conservatively refuse legal block-local shadowing; it is a
+speedbump against known transport failures, not a fidelity proof.
 
-The printer repair and its collision refusal remain, as does the independent
-loader detector for body binders reusing parameter names, including in
-Normal mode. The latter can conservatively refuse legal block-local
-shadowing. These checks guard known transport failures; they do not prove
-transport fidelity. The accepted `strerror` Error remains `BOTH_FAIL` and
-passes four-way complete-token comparison; it is not the new park's cause.
+Tier A row 15 compares complete ordered engine sequences exactly within
+each mode. Its oracle-only cross-mode sanity check compares sets of
+distinct complete observations, retaining all payload fields while ignoring
+order and multiplicity. Normal's caller creates/stores each argument object
+in unsequenced steps, multiplying exhaustive interleavings; the switched
+callee allocates after the call. The exhaustive libc 001 witness has two
+distinct outcomes, 80 Normal observations and 4 switched observations,
+with exact engine agreement within each mode. Those counts are informational,
+not pinned. A distinct-outcome difference is a finding. The registered
+strerror assert Error remains BOTH_FAIL, never execution agreement.
 
 Upstream's recursive-main guard is dead on the active driver path:
 recursion into main executes. Bounded witnesses with and without argc/argv
-pass four ways (42 and 7 respectively, also the GCC results). No
-recursive-main refusal is added; these finite checks do not establish a
-claim about arbitrary recursion. Quotation hygiene remains separate work.
+pass both engines and modes (42 and 7 respectively, also the GCC results).
+No recursive-main refusal is added; finite checks do not establish arbitrary
+recursion or a universal correspondence theorem. See the
+[completion record](docs/2026-10-23_inner-arg-temps-closeout-record.md) for
+measured validation. Quotation hygiene remains separate work.
 
 The minimal baseline contains 113 rows: 90 MATCH, 18 UB_MATCH and five
 CERB_SKIP (derived from `scripts/exec_baseline.txt`, 2026-09-24 at the

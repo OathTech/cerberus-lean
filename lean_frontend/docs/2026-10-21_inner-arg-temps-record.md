@@ -3,16 +3,10 @@
 Worktree branch: `feature/inner-arg-temps`. Starting implementation:
 `e32c16709`; dispatch charter: `a8b20cbb6`.
 
-Status: **PARKED on exhaustive cross-mode multiplicity (2026-10-22)**. The
-[completion record](2026-10-22_inner-arg-temps-completion-record.md) records
-the accepted row-039 disposition and the new 4-versus-80 observation
-finding from the resumed I3 sweep. No baseline or release row is adopted;
-switched libc remains contained. The prior
-[transport repair/park record](2026-10-22_inner-arg-temps-transport-record.md)
-preserves its measurements. I0–I2 and
-[I0b](2026-10-21_inner-arg-temps-i0b-record.md) retain their recorded checks,
-but I2 was a faithful quotation of a corrupted parse, not transport
-evidence. I1b remains approved and deferred.
+Status: **Dispositioned, 2026-10-23**. Cross-mode observation multiplicity
+is admissible; the oracle sanity comparison now uses distinct complete
+observation sets. The historical park follows. Current validation is in
+the [completion record](2026-10-23_inner-arg-temps-closeout-record.md).
 
 ## Park resolution
 

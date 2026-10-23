@@ -1,9 +1,10 @@
 # Park: exhaustive cross-mode observation multiplicity
 
 2026-10-22, branch `feature/inner-arg-temps`, resumed from `9c391406c`.
-Status: **PARKED**. The full production sweep disproves the required
-complete-sequence equality across modes. No I3 baseline or release row is
-adopted. Switched libc execution and quotation are contained again.
+Status: **Dispositioned, 2026-10-23**. Cross-mode observation multiplicity
+is admissible; the oracle sanity comparison now uses distinct complete
+observation sets. The historical park follows. Current validation is in
+the [completion record](2026-10-23_inner-arg-temps-closeout-record.md).
 
 ## Transport park resolution
 

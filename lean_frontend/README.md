@@ -227,19 +227,19 @@ production generator in an isolated scratch repository.
   location differs (`scripts/check_runtime_resolution.sh` pins a plant:
   oracle `<2:10--2:15>`, port `<11:10--11:23>`). This declared divergence
   leaves quoted labels unchanged (VALIDATION §3).
-- **Callee-allocated argument temporaries (parked delivery).**
-  `--switches=inner_arg_temps` selects that whole set, the matching std
-  runtime and `Inner_arg_callconv`; the default remains Normal. `--call`
-  and combinations with PNVI are refused. Switched `--libc` execution and
-  quotation remain contained (`R-IAT-LIBC-SYMBOL-LOSS`) pending disposition
-  of an exhaustive cross-mode multiplicity finding: four observations
-  under the switch versus eighty in Normal, with exact engine agreement
-  within each mode. The provisional lane has no adopted baseline or release
-  row. Recursion into main executes because the active driver bypasses its
-  separate guard; bounded witnesses with and without argc/argv pass in
-  both modes on both engines. Reports use stderr and quotation headers,
-  outside compared verdict tokens. See the
-  [consumer note](docs/2026-10-21_consumer-note-cerberus-caesium-inner-arg-temps.md).
+- **Callee-allocated argument temporaries.** `--switches=inner_arg_temps`
+  selects that whole set, the matching std runtime and `Inner_arg_callconv`;
+  the default remains Normal. Use `tests/libc/libc_inner_arg_temps.core`
+  and the twelve metadata JSONs from `scripts/libc_prep.sh --jsons OUTDIR`.
+  `--quote-core` and `--quote-libc` use the same flag. Run reports go to stderr
+  and quotation headers report the switch set, outside compared verdict
+  tokens. Dump/mode mismatches and parameter-rebinding dumps refuse loudly.
+  `--call` under the switch and combinations with PNVI are refused. Recursion
+  into main executes because the active driver bypasses its separate guard.
+  Tier A row 15 compares matched engines exactly; the oracle cross-mode
+  sanity instrument compares distinct complete observation sets. See the
+  [consumer note](docs/2026-10-21_consumer-note-cerberus-caesium-inner-arg-temps.md)
+  for pins, validation and limits.
 - **Core constructor literals for consumers.** `--quote-core OUT.lean` writes
   the converted, linked user file; `--quote-libc OUT.lean` writes the separately
   converted library once. Use the canonical convention above. The generated

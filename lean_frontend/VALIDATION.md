@@ -1023,48 +1023,52 @@ touch it.
 
 ### The inner_arg_temps differential lane
 
-**Provisional, parked:** the production sweep fails complete cross-mode
-sequence equality on exhaustive libc row 001 (four switched observations,
-eighty Normal observations, engine agreement within each mode). No baseline
-or release row is adopted. The [park record](docs/2026-10-22_inner-arg-temps-completion-record.md)
-contains the measured result; no comparison is weakened to accept it.
+`scripts/test_inner_arg_temps.sh --gate` is Tier A row 15. The trust surface
+is exact comparison of complete ordered observation sequences between
+engines within each mode, plus the dump compatibility/parameter-binder
+refusals. It runs its selftest, all 113 minimal inputs, ten fixtures,
+sixteen corpus inputs, 42 libc inputs, three main/argc/argv witnesses and
+upstream backport witnesses 0343/0344 (186 rows). Libc and main witnesses
+run both engines in both modes; ordinary inputs run matched switched engines.
 
-`scripts/test_inner_arg_temps.sh --gate` is the proposed Tier A row 15.
-It runs its selftest then every row in `tests/minimal`, the ten fixtures, the sixteen corpus inputs, all
-42 libc execution inputs, three main/argc/argv witnesses and upstream
-backport witnesses 0343/0344. The oracle and Lean use the switch together;
-the libc rows pair the oracle binary variant with the repaired text variant.
-All 42 libc rows additionally run in Normal mode on both engines and require
-equal complete token sequences four ways. Row 039's existing assert Error
-is `BOTH_FAIL`, with `tests/libc_exec/baseline.txt:38` included in its
-proposed baseline entry; equal failures are not execution agreement.
+The oracle-only cross-mode check is a separate sanity instrument: it
+compares the SET of distinct complete observations (value, stdout, stderr,
+blocked, and complete Error/UB payloads where present), ignoring order and
+multiplicity only. A changed set fails loudly as a finding. Normal calls
+create/store an object per argument in the caller, adding unsequenced
+steps and exhaustive interleavings; inner_arg_temps allocates in the callee
+after the call. `libc/exhaustive/001-unseq-order-libc` witnesses two distinct
+outcomes with 80 Normal observations and 4 switched observations, engines
+agreeing within each mode. Counts are informational, not pinned: unrelated
+elaboration changes can alter path enumeration. This sanity check is not
+a new trust-surface claim.
 
-Ordinary inputs are exhaustive without libc. Top-level libc rows and the
-two upstream expected-output witnesses are single-trace `AGREE-FIRST`,
-outside CONTRACT §1; both libc/exhaustive rows must have at least two
-complete observations. The three main witnesses require their expected
-Defined observation on all four engine/mode combinations. Recursion into
-main executes because the active upstream Eccall path bypasses its separate
-guard; the lane checks bounded examples, not arbitrary recursion.
+Baseline hashes pin sorted distinct full tokens, never values alone or
+execution counts. The run-time engine comparison still checks the entire
+ordered sequence before baseline lookup. Class, row membership and both
+engine hashes must match the baseline. The registered strerror assert is
+`BOTH_FAIL`, citing `tests/libc_exec/baseline.txt:38`, never execution
+agreement. Other BOTH_FAIL/RESOURCE rows require matching Normal failure
+controls; their full failure/status hashes remain pinned. Only Error
+failure classification uses the existing narrow Symbol-number projection.
 
-The shared observation codec compares full ordered verdict tokens, without
-changing their payloads. Its proposed baseline pins both engine hashes
-and the row class; no baseline is adopted while acceptance fails.
-`BOTH_FAIL` and `RESOURCE` require the same Normal-mode failure/resource
-status and pin those full-token hashes too. Only for classifying Error
-failures does the existing failure-class projection ignore numeric Symbol
-IDs; that never turns a failure into agreement. A new discrepancy, missing
-row, extra row or changed hash fails. Default limits are 4G per subprocess,
-30 seconds per ordinary run, 300 seconds for libc. Csmith is a separate
-seeded measurement (`--fuzz COUNT`), comparing the switched engines and the
-oracle across modes; it does not silently adopt discrepancy rows.
+Ordinary inputs are exhaustive without libc. Top-level libc and upstream
+witnesses use single-trace AGREE-FIRST (outside CONTRACT §1); the two
+exhaustive libc controls require multiple complete observations. Bounded
+main witnesses return 0 (argc/argv), 7 (recursion) and 42 (recursion with
+argc/argv). Upstream's separate recursive-main guard is bypassed by the
+active driver path, so recursion executes. These are finite checks, not
+a universal correspondence or termination theorem. Default limits are
+4G per subprocess, 30 seconds ordinary and 300 seconds libc.
 
-The selftest (not yet validated as a whole) strips each engine's switch
-and requires its convention probe to fail, mutates Normal-only main/libc results, plants both dump/mode
-mismatches and both parameter rebindings, creates a real printer collision,
-and corrupts the baseline and outcome pairs. The completion record gives
-measured counts and timing; these checks establish the stated finite lane,
-not a universal correspondence theorem.
+Selftests strip each engine's switch; mutate Normal Lean results; plant
+both dump/mode mismatches and parameter rebindings; create a printer
+collision; and corrupt baselines/outcomes. Sequence/set controls accept
+cross-mode duplication/reordering but reject within-mode sequence changes
+and changes to each observation field. Csmith (`--fuzz COUNT`) is a seeded
+single-trace measurement with exact switched-engine comparison and the
+same oracle cross-mode set rule. Measurements and commands are in the
+[completion record](docs/2026-10-23_inner-arg-temps-closeout-record.md).
 
 ### Core text parameter-identity speedbumps (inner_arg_temps repair)
 

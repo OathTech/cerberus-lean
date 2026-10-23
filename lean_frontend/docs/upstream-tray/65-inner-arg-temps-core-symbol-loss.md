@@ -42,9 +42,9 @@ execution sweep found 36 libc discrepancies. The oracle uses its binary
 library and is not shown to have an execution defect. Full results and
 commands are in the [park record](../2026-10-21_inner-arg-temps-libc-park.md).
 The fork initially contained this failure by refusing the switched library
-import and quotations. The repair retains a per-dump refusal for parameter rebinding. A new
-exhaustive cross-mode multiplicity finding parks acceptance and restores
-blanket containment; see the completion record below.
+import and quotations. The repair retains a per-dump refusal for parameter rebinding. The 2026-10-23 disposition accepts cross-mode multiplicity differences
+while preserving exact per-mode engine agreement; blanket containment is
+lifted for the repaired path. See the completion record below.
 
 Classification: a correctness bug if this pretty-printer is intended as
 a machine-consumable serialization; otherwise a representation/documentation
@@ -85,5 +85,5 @@ remedy remains queued as separate work; this fork change repairs the
 argument-value collision without changing Normal output.
 
 Execution acceptance, quotation pins and containment status are tracked in
-the [completion record](../2026-10-22_inner-arg-temps-completion-record.md).
+the [completion record](../2026-10-23_inner-arg-temps-closeout-record.md).
 This remains an upstream report draft; no submission has been made.

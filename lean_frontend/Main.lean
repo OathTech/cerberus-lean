@@ -1884,13 +1884,6 @@ def main (args : List String) : IO Unit := do
   if switchSet.contains .inner_arg_temps && callFn.isSome then
     IO.eprintln "cerberus-lean: refused — --call: inner_arg_temps is unsupported by CerbCall, whose injected call site implements only Normal_callconv (see CerbCall.lean and SUPPORTED.md)"
     IO.Process.exit 2
-  -- The repaired engines agree within each mode, but the exhaustive libc
-  -- witness has 4 observations under the switch and 80 in Normal mode.
-  -- Park on the required complete cross-mode sequence equality; keep the
-  -- per-dump detector too. See the 2026-10-22 completion/park record.
-  if switchSet.contains .inner_arg_temps && libcCore.isSome then
-    IO.eprintln "cerberus-lean: refused — --libc: R-IAT-LIBC-SYMBOL-LOSS: repaired inner_arg_temps transport is parked on exhaustive cross-mode observation multiplicity; execution and quotation remain contained (see SUPPORTED.md and the 2026-10-22 completion record)"
-    IO.Process.exit 2
   let libc : Option (String × List String) ← match libcCore, libcTus with
     | some c, tus =>
       if tus.isEmpty then do

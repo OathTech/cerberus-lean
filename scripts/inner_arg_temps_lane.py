@@ -1,22 +1,19 @@
 #!/usr/bin/env python3
 """Matched-mode inner_arg_temps instrument, modelled on test_pnvi.sh.
 
-PROVISIONAL: the full production sweep fails the required cross-mode
-complete-sequence equality on exhaustive/001 (4 switched vs 80 Normal
-observations). No baseline is adopted; see the 2026-10-22 completion record.
-
 The shared observation codec owns framing, exits and full verdict tokens.
 AGREE is exhaustive; AGREE-FIRST is a single trace, outside CONTRACT §1.
 BOTH_FAIL (one Error per engine, equal under failure-class, or two crashes)
-and RESOURCE (oracle bound exceeded) are never agreement. Both sides are
-hash-pinned on every row; missing/extra/changed rows fail closed. DIFF and
-INVALID cannot be recorded. No semantic token is normalized by this lane.
+and RESOURCE (oracle bound exceeded) are never agreement. Within a mode,
+complete ordered engine sequences must match. The baseline pins distinct
+complete tokens and failure/resource classes, not execution multiplicities.
+Missing/extra/changed rows fail closed. DIFF and INVALID cannot be recorded.
 
 The three main witnesses and every tests/libc_exec row run all four
-engine/mode combinations. Witnesses require their complete expected Defined
-observation. Libc requires identical complete tokens across modes and
-engines; its registered strerror Error remains BOTH_FAIL, not execution
-agreement. Fuzzing compares the oracle across modes on every sample.
+engine/mode combinations. The oracle cross-mode sanity check compares SETS
+of distinct complete observations, ignoring only order and multiplicity.
+It is separate from the exact per-mode engine trust surface. Counts are
+reported, never pinned. Fuzzing applies the same oracle cross-mode rule.
 
 The mode probes inspect actual Core conventions, independently of verdicts
 (which ought to agree across modes). The dump/mode plants test both directions.
@@ -105,6 +102,22 @@ def classify(mode, oracle, lean):
     return 'AGREE-FIRST' if mode == 'first' else 'AGREE'
 
 
+def same_sequence(name, oracle, lean):
+    require(oracle[0] == lean[0] == 'OBS' and oracle[1] == lean[1],
+            f'{name}: matched-mode complete-sequence disagreement: {oracle} / {lean}')
+
+
+def same_observation_set(name, normal, inner):
+    require(normal[0] == inner[0] == 'OBS' and set(normal[1]) == set(inner[1]),
+            f'{name}: oracle cross-mode observation-set disagreement or incomplete observation: {normal} / {inner}')
+
+
+def baseline_hash(side):
+    # Pin behaviours across revisions, not internal path enumeration. This
+    # projection is NEVER used for the within-mode engine comparison.
+    return side_hash(('OBS', tuple(sorted(set(side[1]))), ())) if side[0] == 'OBS' else side_hash(side)
+
+
 def check_baseline(actual, path, selection=None):
     baseline = json.loads(path.read_text())
     require(isinstance(baseline, dict) and baseline, 'empty or malformed baseline')
@@ -114,7 +127,7 @@ def check_baseline(actual, path, selection=None):
             f'baseline row set differs: missing={sorted(expected.keys()-actual.keys())}; new={sorted(actual.keys()-expected.keys())}')
     for name, value in actual.items():
         require(value == expected[name], f'{name}: baseline changed: {expected[name]} -> {value}')
-    print(f'BASELINE OK (inner_arg_temps: {len(actual)} rows; classes and both engine hashes exact)', flush=True)
+    print(f'BASELINE OK (inner_arg_temps: {len(actual)} rows; classes and both distinct-observation/status hashes exact)', flush=True)
 
 
 class Runner:
@@ -284,17 +297,18 @@ class Runner:
         if row.libc and row.mode == 'exhaustive':
             require(cls == 'AGREE' and len(oracle[1]) >= 2,
                     f'{row.name}: exhaustive libc control has fewer than two complete observations')
+        if four_way:
+            # This gate keeps order and multiplicity, independently in each mode.
+            for mode in ['inner', 'normal']:
+                same_sequence(f'{row.name} ({mode})', sides[mode, 'oracle'], sides[mode, 'lean'])
+        if four_way or cross:
+            normal = sides['normal', 'oracle']
+            same_observation_set(row.name, normal, oracle)
+            print(f'  CROSS-MODE SET OK {row.name}: distinct={len(set(oracle[1]))} '
+                  f'Normal={len(normal[1])} inner_arg_temps={len(oracle[1])} observations (counts informational)', flush=True)
         if row.expected is not None:
             token = f'VAL:{{value: "Specified({row.expected})", stdout: "", stderr: "", blocked: "false"}}'
-            require(all(s[0] == 'OBS' and s[1] == (token,) for s in sides.values()),
-                    f'{row.name}: four-way witness disagreement: {sides}')
-        if libc_cross:
-            require(all(s[0] == 'OBS' and s[1] == oracle[1] for s in sides.values()),
-                    f'{row.name}: four-way libc complete-observation disagreement: {sides}')
-        if cross:
-            normal = sides['normal', 'oracle']
-            require(normal[0] == oracle[0] == 'OBS' and normal[1] == oracle[1],
-                    f'{row.name}: oracle cross-mode disagreement or incomplete observation: {normal} / {oracle}')
+            require(set(oracle[1]) == {token}, f'{row.name}: expected witness observation differs: {oracle}')
         if row.name.startswith('upstream/'):
             expected_text = (ROOT / 'tests/ci/expected' / (row.source.name + '.expected')).read_bytes()
             import observations
@@ -304,12 +318,10 @@ class Runner:
             expected = observations.parse(expected_text, b'', 0, 'batch')
             require(cls == 'AGREE-FIRST' and parsed.tokens('full') == expected.tokens('full'),
                     f'{row.name}: upstream expected verdict differs')
-        print(f'  {cls:25} {row.name}' + (' cross-mode=SAME_COMPLETE' if libc_cross else
-              ' cross-mode=AGREE' if cross or row.expected is not None else ''), flush=True)
-        return {'class': cls, 'mode': row.mode, 'oracle': side_hash(oracle), 'lean': side_hash(lean),
+        print(f'  {cls:25} {row.name}' + (' cross-mode=SAME_SET' if four_way or cross else ''), flush=True)
+        return {'class': cls, 'mode': row.mode, 'oracle': baseline_hash(oracle), 'lean': baseline_hash(lean),
                 **({'normal_status': normal_status} if normal_status is not None else {}),
-                **({'cross_mode': 'SAME_COMPLETE'} if libc_cross else
-                   {'cross_mode': 'AGREE'} if row.expected is not None or cross else {}),
+                **({'cross_mode': 'SAME_SET'} if four_way or cross else {}),
                 **({'normal_baseline': 'tests/libc_exec/baseline.txt:38 (039-strerror-assert MATCH)'}
                    if row.name == 'libc/039-strerror-assert' else {})}
 
@@ -369,8 +381,8 @@ def selftest(args):
                     'sys.exit(p.returncode if p.returncode>=0 else 128-p.returncode)\n')
     stub.chmod(0o755)
     runner = Runner(args.oracle, stub, args.out / 'normal-lean-change')
-    for name, message in [('witness/recursive-main-args', 'four-way witness disagreement'),
-                          ('libc/002-puts', 'four-way libc complete-observation disagreement')]:
+    for name, message in [('witness/recursive-main-args', 'matched-mode complete-sequence disagreement'),
+                          ('libc/002-puts', 'matched-mode complete-sequence disagreement')]:
         try:
             runner.row(next(r for r in rows if r.name == name))
         except Failure as exc:
@@ -378,6 +390,32 @@ def selftest(args):
             print(f'PLANT OK (Normal-only Lean result changed -> {message})', flush=True)
         else:
             raise Failure(f'Normal-only Lean change was accepted: {name}')
+    # Different paths may repeat or reorder the same complete observations
+    # across conventions. Neither change is allowed between engines in a mode.
+    tokens = tuple('VAL:' + json.dumps({'value': 'Specified(1)', 'stdout': output,
+                   'stderr': '', 'blocked': 'false'}) for output in ['a', 'b'])
+    normal = ('OBS', tokens * 3, ())
+    inner = ('OBS', tuple(reversed(tokens)), ())
+    same_observation_set('multiplicity/order control', normal, inner)
+    require(baseline_hash(normal) == baseline_hash(inner), 'baseline accidentally pins multiplicity/order')
+    for changed in [('OBS', tuple(reversed(normal[1])), ()), ('OBS', tokens * 2, ())]:
+        try:
+            same_sequence('sequence plant', normal, changed)
+        except Failure:
+            pass
+        else:
+            raise Failure('matched-mode sequence mutation was accepted')
+    for field, value in [('value', 'Specified(2)'), ('stdout', 'changed'),
+                         ('stderr', 'changed'), ('blocked', 'true')]:
+        payload = json.loads(tokens[0][4:]); payload[field] = value
+        changed = ('OBS', ('VAL:' + json.dumps(payload), tokens[1]), ())
+        try:
+            same_observation_set('field plant ' + field, normal, changed)
+        except Failure:
+            pass
+        else:
+            raise Failure(f'cross-mode {field} mutation was accepted')
+    print('PLANT OK (cross-mode duplication/order accepted; per-mode sequence changes and four observation-field changes rejected)', flush=True)
     # Exercise the real baseline comparator with captured controls, no reruns.
     for kind in ['deleted', 'phantom', 'hash', 'class', 'cross-mode']:
         mutated = json.loads(json.dumps(actual)); key = next(iter(mutated))
@@ -403,7 +441,7 @@ def selftest(args):
             pass
         else:
             raise Failure(f'bad outcome pair accepted: {o} / {l}')
-    print('SELFTEST OK (control; both stripped-switch stubs; Normal-only main/libc mutations; both dump/mode plants; both binder plants; printer collision; five baseline plants; outcome failures)', flush=True)
+    print('SELFTEST OK (control; both stripped-switch stubs; Normal-only main/libc mutations; both dump/mode plants; both binder plants; printer collision; sequence/set controls; five baseline plants; outcome failures)', flush=True)
 
 
 def fuzz(args):

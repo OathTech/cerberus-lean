@@ -2,14 +2,24 @@
 
 Branch `feature/inner-arg-temps`, worktree `worktrees/cerberus-lean-feature/inner-arg-temps`,
 based on mainline `e32c16709` (Core quoting landed 2026-10-21). Worker: Codex #1.
-Status: **PARKED on exhaustive cross-mode multiplicity (2026-10-22)**.
-The accepted row-039 disposition remains in force, but the production sweep
-finds four switched observations versus eighty Normal observations on
-exhaustive libc row 001. Engines agree exactly within each mode; complete
-cross-mode sequences differ. The [completion/park record](2026-10-22_inner-arg-temps-completion-record.md#new-acceptance-finding-and-park)
-records the finding. No baseline or new release row is adopted. Switched
-libc execution and quotation are contained again; the per-dump detector
-remains. I1b stays approved and deferred.
+Status: **ACTIVE after the 2026-10-23 multiplicity disposition**. Matched
+engine sequences remain exact within each mode. The oracle cross-mode
+sanity check compares sets of distinct complete observations, ignoring
+order and multiplicity. The [completion record](2026-10-23_inner-arg-temps-closeout-record.md#multiplicity-park-disposition)
+records the correction and validation. Blanket containment is lifted for
+the repaired transport; the per-dump detector remains. I1b stays deferred.
+
+## Amendment — 2026-10-23
+
+The disposition linked above supersedes the earlier cross-mode sequence
+premise. Argument allocation in the caller adds unsequenced interleavings
+in Normal mode; callee allocation under the switch yields fewer paths.
+The exhaustive libc witness has two distinct outcomes, 80 Normal
+observations and 4 switched observations, with exact engine agreement
+within each mode. Counts are informational and are not pinned. Keep exact
+per-mode engine comparisons as gates; oracle cross-mode set equality is
+a sanity instrument. Finish the lane, selftest, fuzzing and full battery
+under this corrected contract.
 
 ## Amendment — 2026-10-21
 
@@ -54,8 +64,8 @@ It temporarily contained switched libc execution and quotation. The
 [transport record](2026-10-22_inner-arg-temps-transport-record.md) records
 the authorized printer repair and the subsequent acceptance-criterion
 park. The row-039 disposition resolves that park and requires four-way complete
-libc observations. The subsequent full production sweep exposes the
-separate exhaustive multiplicity conflict recorded above. The earlier
+libc observations. The subsequent full production sweep exposed the separate exhaustive
+multiplicity conflict, resolved by the 2026-10-23 amendment. The earlier
 recursive-main disposition stands.
 
 ## Why
