@@ -1,5 +1,12 @@
 # inner_arg_temps consumer note — updated 2026-10-23
 
+Current delivery status: **parked, not closed out**. I3 passed Tier A at
+`a74922afe`. The full battery found a Normal-mode backtrace change from
+the floating-to-`_Bool` backport: an existing NaN-to-integer failure gains
+two evaluator frames. The independent-oracle comparison correctly reports
+that difference. See the [park record](2026-10-23_inner-arg-temps-oracle-park.md);
+the comparison rules and existing baselines remain unchanged.
+
 Use `--switches=inner_arg_temps` as the whole switch set. The driver selects
 `std_inner_arg_temps.core` and callee-allocated argument temporaries,
 including for main. Execution and quotation use

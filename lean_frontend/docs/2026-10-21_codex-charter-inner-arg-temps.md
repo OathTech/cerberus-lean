@@ -2,7 +2,10 @@
 
 Branch `feature/inner-arg-temps`, worktree `worktrees/cerberus-lean-feature/inner-arg-temps`,
 based on mainline `e32c16709` (Core quoting landed 2026-10-21). Worker: Codex #1.
-Status: **ACTIVE after the 2026-10-23 multiplicity disposition**. Matched
+Status: **PARKED after the 2026-10-23 full-battery B10.1 failure**. The
+[park record](2026-10-23_inner-arg-temps-oracle-park.md) identifies a Normal
+diagnostic change caused by I0b; no comparison rule or existing baseline
+has been changed. Branch work awaits disposition. Matched
 engine sequences remain exact within each mode. The oracle cross-mode
 sanity check compares sets of distinct complete observations, ignoring
 order and multiplicity. The [completion record](2026-10-23_inner-arg-temps-closeout-record.md#multiplicity-park-disposition)

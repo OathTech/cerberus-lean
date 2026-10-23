@@ -1,7 +1,10 @@
 # inner_arg_temps completion — 2026-10-23
 
 Branch `feature/inner-arg-temps`, resumed from `5662ee63e`.
-Status: I3 checkpoint validated; I4 full-battery close-out pending.
+Status: **PARKED**. I3 is committed at `a74922afef98e88dcba903f3953c65f9a31d82c0`
+after Tier A passed. The full battery failed B10.1 on a Normal diagnostic
+change and was stopped; see the [park record](2026-10-23_inner-arg-temps-oracle-park.md).
+I4 close-out is incomplete.
 
 ## Multiplicity park disposition
 
@@ -62,15 +65,16 @@ corruptions and invalid outcome pairs. Fuzzing uses the same oracle set
 rule and exact switched-engine sequence comparison.
 
 I2's original green was a faithful quotation of a corrupted parse, not
-transport evidence. The repaired dump and forthcoming quotation validation
+transport evidence. The repaired dump and the quotation validation below
 are separate evidence. The Normal output hashes and printer manifest
 re-pins remain as recorded in the
 [transport record](2026-10-22_inner-arg-temps-transport-record.md).
 
 ## Validation results
 
-Completed measurements are below. The Tier A checkpoint is green; the full 44-command battery remains
-pending.
+Completed measurements are below. The Tier A checkpoint is green. The
+44-command full battery did not pass: B10.1 failed, B12 was interrupted and
+B13 was not dispatched. Its summaries and diagnosis are in the park record.
 
 ### Production population
 
@@ -274,4 +278,5 @@ The routine A1 oracle rebuild records binary SHA-256
 with the same source digest shown above; the Lean binary/source digests are
 unchanged. Both pre/post artifact inventories were accepted by the release
 runner. The focused B13 measurement used the earlier binary recorded above.
-Full-battery certification remains pending until all 44 commands finish.
+The subsequent full battery failed as described in the park record;
+this Tier A result and focused B13 result do not establish close-out.
