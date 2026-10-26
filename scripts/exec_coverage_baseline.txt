@@ -96,7 +96,11 @@
 #   ptr2       n=15  MATCH=15
 #   ptr3       n=8   CERB_SKIP=2 MATCH=4 MISMATCH=1 UB_MATCH=1
 #   store2     n=5   MATCH=5
-#   struct     n=10  MATCH=10
+#   struct     n=10  MATCH=10   (n=9 MATCH=9 since struct-008-anon-struct was retired 2026-10-26 — anonymous members,
+#                survey cluster A / tray 60, charter docs/2026-10-26_worker-charter-anonymous-members-refusal.md under the
+#                [USER 2026-10-20] item-G/union3-003 precedent: an anonymous struct member accessed by name happened to
+#                answer 12 while upstream splices it flat; a MATCH on a case the fork now refuses is not evidence; its
+#                shape is carried by scripts/check_anonymous_members_refusal.sh)
 #   union3     n=7   CERB_SKIP=2 MATCH=5   (n=6 MATCH=4 since union3-003-union-init was retired 2026-10-20 — item U,
 #                [USER 2026-10-20]: `{ .c = 'A' }` names the second member, a MATCH on an answer right only by
 #                representation overlap is not evidence; its shape is carried by scripts/check_union_init_refusals.sh)
@@ -382,7 +386,6 @@ struct-004-union-type-pun.c MATCH
 struct-005-struct-copy.c MATCH
 struct-006-struct-return.c MATCH
 struct-007-struct-param.c MATCH
-struct-008-anon-struct.c MATCH
 struct-009-init-partial.c MATCH
 struct-010-union-in-struct.c MATCH
 union3-001-basic-store-load.c MATCH

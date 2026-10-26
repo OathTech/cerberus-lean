@@ -515,15 +515,36 @@ fi
 # initializer whose member designator names a member other than the first is
 # refused by the SHARED initializer desugarer (desugaring_init.lem moveTo_aux)
 # in BOTH engines with byte-identical texts (oracle uncaught Failure, exit
-# 125; Lean abort, exit 134); controls (positional and first-member forms, the
-# anonymous-union-in-struct path, a union inside a struct, assignment) agree
-# with the oracle; the struct-from-struct-variable rejection is unchanged.
+# 125; Lean abort, exit 134); controls (positional and first-member forms, a
+# union inside a struct, assignment) agree with the oracle (the anonymous-union
+# control was retired 2026-10-26: that class is refused by D12 below); the
+# struct-from-struct-variable rejection is unchanged.
 # --selftest: a pre-fix answering pair, a Lean-only answering stub, a
 # refuse-everything pair, a message-without-abort stub and an altered-text
 # stub must all fail.
 UNION_INIT_SH="$(dirname "$PURITY_SH")/check_union_init_refusals.sh"
 if ! "$UNION_INIT_SH" --selftest; then
     echo "test_unit: union-initializer refusal witnesses FAILED"
+    exit 1
+fi
+
+# Anonymous-member refusal witnesses (upstream-uncertainty survey cluster A, tray
+# 60; [USER 2026-10-20]: anonymous struct/union members are refused in the shared
+# Lem and reported upstream — upstream's desugar_struct_declaration splices an
+# anonymous member's members flat into the containing aggregate, so sizeof/offsets,
+# the aliasing of an anonymous union's members and brace-elided initializers go
+# silently wrong; record docs/2026-10-26_anonymous-members-refusal-record.md): a
+# struct-declaration with no declarator whose type is a tagless struct/union is
+# refused by the SHARED desugarer (cabs_to_ail.lem desugar_struct_declaration) in
+# BOTH engines with byte-identical texts naming the member's kind (oracle uncaught
+# Failure, exit 125; Lean abort, exit 134); the same shapes with NAMED members
+# agree with the oracle; the tagged-no-declarator / typedef'd-tagged / `int;`
+# constraint violations are unchanged. --selftest: a pre-fix answering pair, a
+# Lean-only answering stub, a refuse-everything pair, a message-without-abort stub
+# and an altered-text stub must all fail.
+ANON_MEMBERS_SH="$(dirname "$PURITY_SH")/check_anonymous_members_refusal.sh"
+if ! "$ANON_MEMBERS_SH" --selftest; then
+    echo "test_unit: anonymous-member refusal witnesses FAILED"
     exit 1
 fi
 

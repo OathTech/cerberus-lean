@@ -31,12 +31,15 @@
 # designated initializers (incl. twice-designated, a first member that is an array
 # or a partially designated struct, a static first-member designator, an array of
 # unions designated at the first member), `{ 0 }` with a smaller first member (reads
-# the larger member as Unspecified, both engines — a strict ISO reading, kept), an
-# ANONYMOUS union member inside a struct designated by its member name (`.c`
-# resolves through the enclosing struct, whose member list the anonymous union's
-# members are spliced into — a different desugaring path, unaffected), a union
+# the larger member as Unspecified, both engines — a strict ISO reading, kept), a union
 # inside a struct initialised positionally or with a first-member designator,
 # and member ASSIGNMENT after declaration (the refusal is about initializers).
+# RETIRED control (2026-10-26, the anonymous-members refusal, survey cluster A /
+# tray 60): an ANONYMOUS union member inside a struct designated by its member name
+# (`.c` resolved through the enclosing struct, into whose member list upstream
+# spliced the anonymous union's members) answered Specified(74) on both engines; the
+# shared desugarer now REFUSES every anonymous member at its declaration, so that
+# shape is a witness of scripts/check_anonymous_members_refusal.sh instead.
 # One GAP control pins an already-noisy upstream behaviour as unchanged on both
 # engines: `.t = x` with x a struct variable is a constraint violation on the
 # oracle and a typechecking failure on Lean (tray draft 59 §b). Fail-closed.
@@ -134,15 +137,16 @@ EOF
         done
         echo "$NAME: selftest plant '$label' caught: $got failing witness(es) (= expected $want${*:+; incl. the required witnesses})"
     }
-    # expected counts, derived: 14 witnesses, 12 verdict controls (all exit 0), 1 gap control (exit 1 on both).
+    # expected counts, derived: 14 witnesses, 11 verdict controls (all exit 0; 12 until the anonymous-union control was
+    # retired 2026-10-26), 1 gap control (exit 1 on both).
     #  answer:          each witness fails the oracle check and the Lean check (the text cross-check needs both texts)  = 14 x 2
-    #  lean-answer:     each witness fails the Lean check; every control fails (Lean = oracle; the gap control's exit) = 14 + 13
-    #  refuse-all:      the witnesses pass (one shape, identical texts); every control fails                             = 13
+    #  lean-answer:     each witness fails the Lean check; every control fails (Lean = oracle; the gap control's exit) = 14 + 12
+    #  refuse-all:      the witnesses pass (one shape, identical texts); every control fails                             = 12
     #  lean-no-abort:   each witness fails the Lean exit check; the gap control (Lean exit 1) fails                      = 14 + 1
     #  lean-other-text: each witness fails the text cross-check only; the controls pass                                  = 14
     run_plant answer "$ST/oracle-answer" "$ST/lean-answer-witnesses" 28 "designated second member, array (tray-59 witness; gcc 104)" "designated scalar second member (right by representation overlap; gcc 5)" "designated union member inside a struct (pristine: invalid node)"
-    run_plant lean-answer "$REAL_ORACLE" "$ST/lean-answer" 27 "designated second member, array (tray-59 witness; gcc 104)" "anonymous union member inside a struct, designated through the struct" "positional initializer" "GAP control (unchanged): struct member initialised from a struct variable"
-    run_plant refuse-all "$ST/oracle-refuse-all" "$ST/lean-refuse-all" 13 "anonymous union member inside a struct, designated through the struct" "positional initializer" "{ 0 } with a smaller first member reads the larger member as Unspecified" "GAP control (unchanged): struct member initialised from a struct variable"
+    run_plant lean-answer "$REAL_ORACLE" "$ST/lean-answer" 26 "designated second member, array (tray-59 witness; gcc 104)" "union inside a struct, positional" "positional initializer" "GAP control (unchanged): struct member initialised from a struct variable"
+    run_plant refuse-all "$ST/oracle-refuse-all" "$ST/lean-refuse-all" 12 "union inside a struct, positional" "positional initializer" "{ 0 } with a smaller first member reads the larger member as Unspecified" "GAP control (unchanged): struct member initialised from a struct variable"
     run_plant lean-no-abort "$REAL_ORACLE" "$ST/lean-no-abort" 15 "designated second member, array (tray-59 witness; gcc 104)" "designated scalar second member (right by representation overlap; gcc 5)"
     run_plant lean-other-text "$REAL_ORACLE" "$ST/lean-other-text" 14 "designated second member, array (tray-59 witness; gcc 104)" "designated scalar second member (right by representation overlap; gcc 5)"
     "$0"; exit $?   # not exec: the EXIT trap must remove $ST
@@ -246,7 +250,6 @@ printf 'union V { unsigned char c[4]; int i; };\nint main(void) { union V v = { 
 printf 'union U { int i; unsigned char c[4]; };\nunion U u = { .i = 258 };\nint main(void) { return u.i; }\n' > ctl_first_designated_static.c
 printf 'union U { int i; char c[4]; };\nint main(void) { union U a[2] = { [1] = { .i = 9 }, [0] = { 1 } }; return a[0].i*10 + a[1].i; }\n' > ctl_array_first.c
 printf 'union U { char c; int i; };\nint main(void) { union U u = { 0 }; return u.i; }\n' > ctl_zero_smaller_first.c
-printf 'struct S { int k; union { int i; unsigned char c[4]; }; };\nint main(void) { struct S s = { .c = {1,2,3,4}, .k = 7 }; return s.k*10 + s.c[3]; }\n' > ctl_anonymous.c
 printf 'union U { int i; unsigned char c[4]; };\nstruct S { union U u; int k; };\nint main(void) { struct S s = { { 1, 2, 3, 4 }, 7 }; return s.k*10 + s.u.i; }\n' > ctl_in_struct_positional.c
 printf 'union U { int i; unsigned char c[4]; };\nstruct S { union U u; int k; };\nint main(void) { struct S s = { .u = { .i = 1 }, .k = 7 }; return s.k*10 + s.u.i; }\n' > ctl_in_struct_first.c
 printf 'union U { int i; unsigned char c[4]; };\nint main(void) { union U u; u.c[1] = 7; u.c[0] = 0; return u.c[1]*10 + u.c[0]; }\n' > ctl_assign_not_init.c
@@ -275,11 +278,10 @@ control "first member an array, designated" ctl_first_is_array.c 'Defined {value
 control "first member designated, static storage" ctl_first_designated_static.c 'Defined {value: "Specified(258)", stdout: "", stderr: "", blocked: "false"}'
 control "array of unions, elements designated at the first member or positional" ctl_array_first.c 'Defined {value: "Specified(19)", stdout: "", stderr: "", blocked: "false"}'
 control "{ 0 } with a smaller first member reads the larger member as Unspecified" ctl_zero_smaller_first.c "Defined {value: \"Unspecified('signed int')\", stdout: \"\", stderr: \"\", blocked: \"false\"}"
-control "anonymous union member inside a struct, designated through the struct" ctl_anonymous.c 'Defined {value: "Specified(74)", stdout: "", stderr: "", blocked: "false"}'
 control "union inside a struct, positional" ctl_in_struct_positional.c 'Defined {value: "Specified(71)", stdout: "", stderr: "", blocked: "false"}'
 control "union inside a struct, first member designated" ctl_in_struct_first.c 'Defined {value: "Specified(71)", stdout: "", stderr: "", blocked: "false"}'
 control "member assignment after declaration (not an initializer)" ctl_assign_not_init.c 'Defined {value: "Specified(70)", stdout: "", stderr: "", blocked: "false"}'
 gap_control "GAP control (unchanged): struct member initialised from a struct variable" gap_struct_from_struct_value.c "$GAP_ORACLE" "$GAP_LEAN"
 
 [[ $fails -eq 0 ]] || { echo "$NAME: $fails witness failure(s) over $n cases"; exit 1; }
-echo "$NAME: OK ($n cases: 14 union initializers designating a member other than the first (static/automatic storage, a struct member, mixed positional/designated lists, a nested union, an array of unions, a string literal, a scalar second member, the retired coverage control union3-003's shape, a compound literal, a union inside a struct) refused by the oracle (uncaught Failure, exit 125) and by the Lean engine (abort, exit 134) with byte-identical texts; 12 controls agree with the oracle (positional and first-member designated forms incl. mixing with the first member only, { 0 } read as Unspecified, the anonymous-union-in-struct path, a union inside a struct positional or first-designated, member assignment); the struct-from-struct-variable rejection is unchanged on both)"
+echo "$NAME: OK ($n cases: 14 union initializers designating a member other than the first (static/automatic storage, a struct member, mixed positional/designated lists, a nested union, an array of unions, a string literal, a scalar second member, the retired coverage control union3-003's shape, a compound literal, a union inside a struct) refused by the oracle (uncaught Failure, exit 125) and by the Lean engine (abort, exit 134) with byte-identical texts; 11 controls agree with the oracle (positional and first-member designated forms incl. mixing with the first member only, { 0 } read as Unspecified, a union inside a struct positional or first-designated, member assignment; the anonymous-union control was retired 2026-10-26, that class now refused); the struct-from-struct-variable rejection is unchanged on both)"
