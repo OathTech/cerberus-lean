@@ -50,6 +50,18 @@ output is unchanged. I2's original green was a faithful quotation of a
 corrupted parse, not transport evidence. See
 [VALIDATION](../VALIDATION.md#core-text-parameter-identity-speedbumps-inner_arg_temps-repair).
 
+Stop classes (outcome protocol, landed 2026-10-22, after this slice was based):
+the `--call`-under-`inner_arg_temps` refusal is a REFUSAL envelope (boundary
+`cli`, item `--call`) like the other driver refusals. The two libc refusals of
+this slice — `R-IAT-LIBC-SYMBOL-LOSS` (a parameter name rebound in a proc of the
+dump) and the dump/mode calling-convention mismatch — are plain stderr texts
+with exit 2 and NO envelope, because the protocol's frozen boundary vocabulary
+has no `libc` boundary (the same gap that keeps the item-G refusals legacy).
+Treat them as legacy/unattributed by their text prefixes
+`cerberus-lean: refused — --libc:`; named mover: the quotation-hygiene slice
+adds the boundary and converts both (TODO.md). [AGENT 2026-10-26, orchestrator,
+post-rebase adaptation]
+
 Correction to the earlier recursive-main guidance: upstream's guard is
 dead on the active driver path. Eccall reduction invokes Core_run.call_proc
 directly, so recursion into main executes. Bounded witnesses with and

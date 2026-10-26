@@ -854,6 +854,14 @@ canonicity consolidation, the printf/Monadic_parsing totalization
 tail, and the Lean-side lem-sync freshness stamp all closed in the
 S-basket slice — `docs/2026-09-01_s-basket.md`.)
 
+- **Stop vocabulary: a `libc` boundary for the inner_arg_temps libc refusals.**
+  `Main.lean`'s `R-IAT-LIBC-SYMBOL-LOSS` detector refusal and the dump/mode
+  calling-convention mismatch refusal are plain stderr texts with exit 2, not
+  REFUSAL envelopes, because `CerbStop.Boundary` (frozen by design v2) has no
+  `libc` boundary; the item-G refusals are legacy for the same reason. Mover:
+  the quotation-hygiene slice (rulings B and C of 2026-10-21) adds the boundary
+  (a design-v2 amendment) and converts these two plus item G. [AGENT 2026-10-26]
+
 ## Needs maintainer action or network access
 
 - **Upstream filing tray** — drafted bug reports and prepared PR

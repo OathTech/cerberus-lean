@@ -1882,8 +1882,11 @@ def main (args : List String) : IO Unit := do
           IO.Process.exit 1
       pure (some (n, vals))
   if switchSet.contains .inner_arg_temps && callFn.isSome then
-    IO.eprintln "cerberus-lean: refused — --call: inner_arg_temps is unsupported by CerbCall, whose injected call site implements only Normal_callconv (see CerbCall.lean and SUPPORTED.md)"
-    IO.Process.exit 2
+    -- Outcome protocol (landed 2026-10-22): a declared driver refusal is a REFUSAL
+    -- envelope, boundary `cli`, like `refuseFlag`'s (post-rebase adaptation, 2026-10-26).
+    CerbStop.exitRefusals (driverRefusal .cli (some "--call")
+      "cerberus-lean: refused — --call: inner_arg_temps is unsupported by CerbCall, whose injected call site implements only Normal_callconv (see CerbCall.lean and SUPPORTED.md)"
+      ⟨"a CerbCall call site for the inner_arg_temps calling convention", by decide⟩)
   let libc : Option (String × List String) ← match libcCore, libcTus with
     | some c, tus =>
       if tus.isEmpty then do
