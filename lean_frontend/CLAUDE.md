@@ -68,7 +68,7 @@ Operational map:
 Use [README.md](README.md#build-and-run-one-differential-test) for the complete first-build recipe and
 local switch installation. Commands below run from the repository root,
 after that installation. Lean is pinned by `lean_frontend/lean-toolchain`
-(4.32.2); the opam Lem revision must match Lake's LemLib revision.
+(4.35.0 since the 2026-10-25 toolchain move); the opam Lem revision must match Lake's LemLib revision.
 
 ```bash
 opam exec --switch=. -- make prelude-src lean-prelude-src

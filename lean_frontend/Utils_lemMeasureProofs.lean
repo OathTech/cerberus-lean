@@ -39,10 +39,10 @@ theorem mkListN_aux_stable_aux (k : Nat) : ∀ (n i : Int) (acc : List Int) (f g
       cases g with
       | zero => omega
       | succ g =>
-        simp only [mkListN_aux_lemFuel, intLtb]
+        simp only [mkListN_aux_lemFuel]
         split
         · rename_i h
-          have h' := of_decide_eq_true h
+          have h' : i < n := of_decide_eq_true h
           exact ih n (i + 1) (i :: acc) f g (by omega) (by omega) (by omega)
         · rfl
 
@@ -66,10 +66,10 @@ theorem mkListFromTo_aux_stable_aux (k : Nat) : ∀ (i max2 : Int) (acc : List I
       cases g with
       | zero => omega
       | succ g =>
-        simp only [mkListFromTo_aux_lemFuel, intLteb]
+        simp only [mkListFromTo_aux_lemFuel]
         split
         · rename_i h
-          have h' := of_decide_eq_true h
+          have h' : i ≤ max2 := of_decide_eq_true h
           exact ih (i + 1) max2 (i :: acc) f g (by omega) (by omega) (by omega)
         · rfl
 
@@ -93,10 +93,10 @@ theorem replicate_list__stable_aux {a : Type} (k : Nat) : ∀ (x : a) (n : Nat) 
       cases g with
       | zero => omega
       | succ g =>
-        simp only [replicate_list__lemFuel, natGtb]
+        simp only [replicate_list__lemFuel]
         split
         · rename_i h
-          have h' := of_decide_eq_true h
+          have h' : n > 0 := of_decide_eq_true h
           exact ih x (n - 1) (x :: acc) f g (by omega) (by omega) (by omega)
         · rfl
 

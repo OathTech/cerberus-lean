@@ -292,7 +292,7 @@ private def parseHex (cs : List Char) : Option (Nat × Int × Nat) := do
     Malformed input: OCaml raises `Failure` — mirrored with `panic!`. -/
 def of_string (s : String) : Float :=
   let s' := if s.endsWith "f" || s.endsWith "F" || s.endsWith "l" || s.endsWith "L"
-    then s.dropRight 1
+    then (s.dropEnd 1).copy
     else s
   let cs := s'.toList
   let (neg, cs) := match cs with

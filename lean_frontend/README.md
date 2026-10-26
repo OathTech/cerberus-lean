@@ -86,7 +86,7 @@ typing, elaboration to Core, execution).
 
 Measured platform: Linux x86_64; other platforms are unverified.
 Prerequisites: Git, Bash, GNU make/coreutils/findutils/diffutils, GNU time
-(default `/usr/bin/time`), a C toolchain, opam 2, Python 3, and elan with Lean 4.32.2 installed (the committed `lean-toolchain`). The
+(default `/usr/bin/time`), a C toolchain, opam 2, Python 3, and elan with Lean 4.35.0 installed (the committed `lean-toolchain`). The
 measured OCaml toolchain is 5.4.0 with opam 2.1.5 and Dune 3.23.1; the
 package files constrain Dune to `>= 3.21.0 & < 3.24.0`. Use the fork of Lem
 at the **same revision as Lake's LemLib**; upstream `opam install lem` does
@@ -101,7 +101,7 @@ git clone --branch mdd/cerberus-lean https://github.com/OathTech/cerberus-lean.g
 cd cerberus-lean
 opam switch create . ocaml-base-compiler.5.4.0 --no-switch --no-install
 # Keep this revision equal to lean_frontend/lakefile.toml.
-opam pin add --switch=. lem git+https://github.com/OathTech/lem-lean.git#2d3a492758cb23dc4e417f2961983d25b36ce130 --yes
+opam pin add --switch=. lem git+https://github.com/OathTech/lem-lean.git#e6d8db5680962f49060257d6c2bcb13c284b910f --yes
 opam install --switch=. --deps-only ./cerberus-lib.opam ./cerberus.opam --yes
 
 opam exec --switch=. -- make prelude-src

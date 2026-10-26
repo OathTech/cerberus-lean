@@ -209,14 +209,14 @@ theorem getarr_model_forall_iff_stream_forall
   · intro hm s hs
     have h10 : s.length = 10 := hs
     have : getarrExpectedOfStream s = getarrExpected s := by
-      unfold getarrExpectedOfStream; rw [if_pos h10]
+      unfold getarrExpectedOfStream; rw [ite_eq_left h10]
     rw [this]
     exact hm s hs
   · intro hs bs hbs
     have h10 : bs.length = 10 := hbs
     have := hs bs hbs
     unfold getarrExpectedOfStream at this
-    rwa [if_pos h10] at this
+    rwa [ite_eq_left h10] at this
 
 /-! ## Plant models (pure-side predicted red verdicts) -/
 
@@ -282,7 +282,7 @@ theorem verdictOf_eq_zero_iff (out expected : List UInt8) :
     DivMod.verdictOf out expected = 0 ↔ out = expected := by
   unfold DivMod.verdictOf
   by_cases hlen : out.length = expected.length
-  · rw [if_neg (by omega)]
+  · rw [ite_eq_right (by omega)]
     have key : ∀ (xs ys : List UInt8) (i : Nat), xs.length = ys.length →
         (DivMod.verdictOf.firstDiff xs ys i = 0 ↔ xs = ys) := by
       intro xs
@@ -299,17 +299,17 @@ theorem verdictOf_eq_zero_iff (out expected : List UInt8) :
         | cons y ys' =>
           simp only [DivMod.verdictOf.firstDiff]
           by_cases hxy : x = y
-          · rw [if_neg (by simp [hxy])]
+          · rw [ite_eq_right (by simp [hxy])]
             have := ih ys' (i + 1) (by simpa using hl)
             simpa [hxy] using this
-          · rw [if_pos (by simpa using hxy)]
+          · rw [ite_eq_left (by simpa using hxy)]
             constructor
             · intro h; omega
             · intro h
               cases h
               exact absurd rfl hxy
     exact key out expected 0 hlen
-  · rw [if_pos (by omega)]
+  · rw [ite_eq_left (by omega)]
     constructor
     · intro h; omega
     · intro h

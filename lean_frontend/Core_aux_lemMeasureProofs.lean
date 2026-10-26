@@ -158,7 +158,7 @@ theorem loadedValueFromMemValue_stable_aux (k : Nat) : ∀ (e : CerbMem.MemValue
         have key : ∀ (y : CerbMem.MemValue), CerbMem.memValueSize y < CerbMem.memValueSize e →
             loadedValueFromMemValue_lemFuel f y = loadedValueFromMemValue_lemFuel g y :=
           fun y hy => ih y f g (by omega) (by omega) (by omega)
-        cases e <;> simp (disch := size_lt) only [loadedValueFromMemValue_lemFuel, CerbMem.caseMemValue, key]
+        cases e <;> simp (disch := size_lt) only [loadedValueFromMemValue_lemFuel, CerbMem.caseMemValue]
         case MVarray vals =>
           rw [lmap_congr vals _ _ (fun v hv => key v (by have := memValue_mem_lt_list v _ hv; size_lt))]
 

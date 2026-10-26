@@ -229,7 +229,7 @@ theorem filter_sublist_of_imp {α : Type} (P Q : α → Bool) (l : List α)
     cases hq : Q x with
     | true =>
       rw [List.filter_cons_of_pos hq, List.filter_cons_of_pos (h x hq)]
-      exact ih.cons₂ x
+      exact ih.cons_cons x
     | false =>
       rw [List.filter_cons_of_neg (by simp [hq])]
       cases hp : P x with
@@ -366,7 +366,7 @@ theorem symEq_iff (a b : sym) :
     have hc : (CerberusFresh.digest_compare d1 d1 == (0 : Int) && (n1 == n1)) = true := by
       rw [Bool.and_eq_true]
       exact ⟨(digest_compare_eq_zero_iff d1 d1).mpr rfl, (natEq0_iff n1 n1).mpr rfl⟩
-    rw [if_pos hc]
+    rw [ite_eq_left hc]
 
 theorem symEq_refl (a : sym) : Lem_Basic_classes.isEqual a a = true :=
   (symEq_iff a a).mpr ⟨rfl, rfl⟩

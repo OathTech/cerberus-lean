@@ -132,7 +132,8 @@ theorem loadM_erasure [LemFuel] [CerbGlobal.Switches] (es ts l t p s) :
       | simp_all only [stopObserving_recordAccess, stopObserving_exposeOnLoad, stopObserving_lastUsed,
           stopObserving_observations, exposeOnLoad_observations, recordAccess_of_observations_none,
           stopObserving_deadAllocations, stopObserving_allocations, stopObserving_bytemap,
-          stopObserving_lastUsedUnionMembers, stopObserving_funptrmap, findOverlapping_stopObserving]
+          stopObserving_lastUsedUnionMembers, stopObserving_funptrmap, findOverlapping_stopObserving,
+          not_true_eq_false, Bool.false_eq_true]
       | split
       | rfl)
   all_goals (simp only [stopObserving_deadAllocations, stopObserving_allocations, stopObserving_bytemap,
@@ -141,7 +142,7 @@ theorem loadM_erasure [LemFuel] [CerbGlobal.Switches] (es ts l t p s) :
     | simp_all only [stopObserving_recordAccess, stopObserving_exposeOnLoad, stopObserving_lastUsed,
         stopObserving_observations, exposeOnLoad_observations, recordAccess_of_observations_none,
         stopObserving_deadAllocations, stopObserving_allocations, stopObserving_bytemap,
-        stopObserving_lastUsedUnionMembers, stopObserving_funptrmap]
+        stopObserving_lastUsedUnionMembers, stopObserving_funptrmap, not_true_eq_false, Bool.false_eq_true]
     | split
     | rfl)
 

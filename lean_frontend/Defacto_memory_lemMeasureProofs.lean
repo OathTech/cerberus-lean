@@ -54,7 +54,7 @@ theorem has_concurRead_stable_aux (k : Nat) : ∀ (e : integer_value_base) (f g 
           apply lany_congr; intro iv hiv
           exact key iv (by have := ival_mem_lt_aux2 iv _ hiv; size_lt)
         case IVbitwise ity bw =>
-          cases bw <;> simp (disch := size_lt) only [has_concurRead_lemFuel, key]
+          cases bw <;> simp (disch := size_lt) only [key]
 
 /-- THE OBLIGATION, exactly as the generated auxiliary module states and delegates it. -/
 theorem has_concurRead_measure_sufficient (ival_ : integer_value_base) (lemFuel : Nat)
@@ -75,7 +75,7 @@ theorem find_array_index_stable_aux (k : Nat) : ∀ (size i : Nat) (ival_ : inte
       cases g with
       | zero => omega
       | succ g =>
-        simp only [find_array_index_lemFuel, natGteb]
+        simp only [find_array_index_lemFuel]
         split
         · rfl
         · rename_i h
@@ -139,7 +139,7 @@ theorem memcmp_load_aux_stable_aux [LemFuel] (k : Nat) :
       cases g with
       | zero => omega
       | succ g =>
-        simp only [memcmp_load_aux_lemFuel, intGteb]
+        simp only [memcmp_load_aux_lemFuel]
         split
         · rfl
         · rename_i h

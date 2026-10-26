@@ -278,12 +278,12 @@ theorem decodeTreeF_mono (f : Nat) : ∀ (f' : Nat), f ≤ f' →
     | b :: r =>
       simp only [decodeTreeF] at h ⊢
       split at h
-      next hb0 => rw [if_pos hb0]; exact h
+      next hb0 => rw [ite_eq_left hb0]; exact h
       next hb0 =>
-        rw [if_neg hb0]
+        rw [ite_eq_right hb0]
         split at h
         next hb1 =>
-          rw [if_pos hb1]
+          rw [ite_eq_left hb1]
           split at h
           next => cases h
           next v s1 hd =>
@@ -316,11 +316,11 @@ theorem decodeTreeF_encode (t : Tree) (hv : t.valsOk = true) :
     have hfl : treeFuel l ≤ fn := by unfold treeFuel at hf; omega
     have hfr : treeFuel r ≤ fn := by unfold treeFuel at hf; omega
     simp only [encodeTree, List.cons_append, List.append_assoc, decodeTreeF,
-      if_true]
+      ite_true]
     simp only
       [DivMod.decode_encode_i32le v hvr (encodeTree l ++ (encodeTree r ++ rest)),
       ihl hvl' fn hfl (encodeTree r ++ rest), ihr hvr' fn hfr rest]
-    rw [if_neg (by decide)]
+    rw [ite_eq_right (by decide)]
 
 /-- decode ∘ encode = id at the tree layer (self-fuel form). -/
 theorem decode_encode_tree (t : Tree) (hv : t.valsOk = true)

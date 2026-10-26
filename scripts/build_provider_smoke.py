@@ -54,7 +54,7 @@ def main():
     cerb, lem = out / 'cerberus', out / 'lem'
     report = {'schema': 1, 'status': 'incomplete', 'sources': {}, 'commands': [],
               'policy': 'new detached worktrees; no priming; own compiler/runtime; DUNE_CACHE=disabled; capped Lean',
-              'preconditions': ['project OCaml environment', 'installed Lean 4.32.2 and 4.28.0',
+              'preconditions': ['project OCaml environment', 'installed Lean 4.35.0 and 4.28.0',
                                 'local Git source objects', 'one heavy job at a time']}
     save(out, report)
     env = dict(os.environ, DUNE_CACHE='disabled', CERB_MEM_MAX='32G')

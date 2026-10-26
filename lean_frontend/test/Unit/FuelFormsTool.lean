@@ -118,7 +118,7 @@ def isWorker (n : Name) : Bool :=
 
 def baseName (n : Name) : Name :=
   match n with
-  | .str p s => .str p (s.dropRight "_lemFuel".length)
+  | .str p s => .str p (s.dropEnd "_lemFuel".length).copy
   | _ => n
 
 /-- The mutual block a structurally/well-founded-recursive definition belongs

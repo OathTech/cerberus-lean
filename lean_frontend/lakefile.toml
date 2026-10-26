@@ -85,10 +85,17 @@ moreLeanArgs = ["-DautoImplicit=false"]
 # lem-lean `2d3a492` is on `mdd/lean-backend` and `deps/lem-pinned` plus the
 # shared opam lem are moved to it (the two-repo pin dance); a re-gate in the
 # standard environment must then be green.
+# Lean 4.35 move, 2026-10-25 ([USER 2026-10-20] the toolchain moves 4.32.2 ->
+# 4.35.0, lem-lean first; [USER 2026-10-22] approved landing the lem-lean half):
+# re-pin to the merged mdd/lean-backend head e6d8db5 (LemLib on Lean 4.35.0: the
+# `toList_bal` proof repair, two deprecation swaps; the emitter's one output
+# change, `@[noinline]` on synthesized tuple-let RHS defs, has no site in this
+# tree). The pin's lean-toolchain propagates here through `lake update LemLib`.
+# Evidence: docs/2026-10-25_lean-4.35-cerberus-record.md.
 [[require]]
 name = "LemLib"
 git = "https://github.com/OathTech/lem-lean"
-rev = "2d3a492758cb23dc4e417f2961983d25b36ce130"
+rev = "e6d8db5680962f49060257d6c2bcb13c284b910f"
 subDir = "lean-lib"
 
 [[lean_lib]]

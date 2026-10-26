@@ -111,7 +111,7 @@ def getByteStr (j : Json) : Except String String := do
   match s.toList.find? (fun c => c.toNat ≥ 256) with
   | none => .ok s
   | some c =>
-    err "getByteStr" s!"byte-carrier violation: code point U+{(Nat.toDigits 16 c.toNat).asString} (≥ 256) in a string-literal fragment or character constant; cabs_json.ml json_of_bytes emits one code point ≤ 0xFF per source byte"
+    err "getByteStr" s!"byte-carrier violation: code point U+{String.ofList (Nat.toDigits 16 c.toNat)} (≥ 256) in a string-literal fragment or character constant; cabs_json.ml json_of_bytes emits one code point ≤ 0xFF per source byte"
 
 def getNat (j : Json) : Except String Nat :=
   match j with

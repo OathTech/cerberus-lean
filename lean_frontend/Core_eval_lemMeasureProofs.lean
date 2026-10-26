@@ -112,7 +112,7 @@ theorem pull_constrained_stable_aux (k : Nat) : ∀ (n : Nat) (e : generic_pexpr
         case PEif pe1 pe2 pe3 =>
           congr 1
           exact hph _ _ [pe1, pe2, pe3] (fun q hq => by
-            simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hq
+            simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
             rcases hq with rfl | rfl | rfl <;> size_lt)
 
 /-- THE OBLIGATION, exactly as Core_eval_auxiliary.lean states and delegates it. -/

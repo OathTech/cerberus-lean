@@ -223,10 +223,10 @@ def getFilename : Loc → Option String
     Public since the bug-hunt fixes S2 (2026-09-29): `Main.lean`'s import-time
     library-location check applies the oracle's EXACT test with it. -/
 def dirname (p : String) : String :=
-  let trimmed := (p.dropRightWhile (· == '/'))
+  let trimmed := (p.dropEndWhile (· == '/')).copy
   if trimmed.isEmpty then (if p.isEmpty then "." else "/")
   else
-    let dir := (trimmed.dropRightWhile (· != '/')).dropRightWhile (· == '/')
+    let dir := ((trimmed.dropEndWhile (· != '/')).dropEndWhile (· == '/')).copy
     if !trimmed.contains '/' then "." else if dir.isEmpty then "/" else dir
 
 /-- The three library directories of `util/cerb_location.ml:512-520`,

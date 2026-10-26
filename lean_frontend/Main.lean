@@ -686,7 +686,7 @@ def validateUndefinedPayload (ub : String) : IO Unit := do
   for c in ub.toList do
     if c.toNat ≥ 256 then
       CerbStop.exitRefusals (driverRefusal .batchUbPayload none
-        s!"cerberus-lean: refused — batch UB payload: the undefined-behaviour text holds U+{(Nat.toDigits 16 c.toNat).asString}, outside the byte domain the oracle's byte string can hold (driver_ocaml.ml:134-138 prints the payload's bytes); the byte-carrier invariant of the model's strings is broken (see VALIDATION.md, bug hunt BUG-4)"
+        s!"cerberus-lean: refused — batch UB payload: the undefined-behaviour text holds U+{String.ofList (Nat.toDigits 16 c.toNat)}, outside the byte domain the oracle's byte string can hold (driver_ocaml.ml:134-138 prints the payload's bytes); the byte-carrier invariant of the model's strings is broken (see VALIDATION.md, bug hunt BUG-4)"
         ⟨"preservation of the UB payload byte-carrier invariant", by decide⟩)
 
 def printUndefinedLine (ub : String) (stderr : String) (loc : String) : IO Unit := do

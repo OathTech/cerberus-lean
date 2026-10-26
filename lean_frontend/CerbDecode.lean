@@ -191,7 +191,7 @@ def escaped_char (c : Char) : String :=
   | '\'' => "\\'"
   | '\"' => "\\\""
   | c => if c.toNat < 32 || c.toNat > 126
-    then s!"\\x{Nat.toDigits 16 c.toNat |>.asString}"
+    then s!"\\x{String.ofList (Nat.toDigits 16 c.toNat)}"
     else c.toString
 
 end CerbDecode

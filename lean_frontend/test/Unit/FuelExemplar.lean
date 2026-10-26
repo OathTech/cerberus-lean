@@ -359,7 +359,7 @@ theorem driver2_done {k : Nat} (fl : Nat)
     -- exists to prove (it used to be a `cases` on an opaque read, both
     -- arms discharged).
     rw [CerbGlobal.current_execution_mode_eq]
-    rw [if_neg (fun h => Bool.noConfusion h)]
+    rw [ite_eq_right (fun h => Bool.noConfusion h)]
     refine (runOne_bind_active (z := ()) (s' := dstF) (by rfl)).trans ?_
     refine (runOne_bind_active (z := ((0 : Nat), some (Step_done2 v)))
       (s' := dstF) (by rfl)).trans ?_
@@ -477,7 +477,7 @@ theorem storeM_errno_active (k : Nat) (top : Int) :
   have hatomic : @CerbMem.isAtomicMemberAccess ⟨Nat.succ k⟩ fmapEmpty fmapEmpty (errnoAlloc top) signed_int (errnoAddr top) = false := rfl
   unfold CerbMem.storeM
   simp only [runOne, errnoPtr, hcompat, hget]
-  simp only [hsz, hbounds, hro, hatomic, Bool.not_true, Bool.false_eq_true, if_false]
+  simp only [hsz, hbounds, hro, hatomic, Bool.not_true, Bool.false_eq_true, ite_false]
 
 /-- The memory state after drive's whole errno action at top `top`. -/
 def σstore [LemFuel] (top : Int) : CerbMem.MemState :=
@@ -581,8 +581,12 @@ theorem drive_after_setup (k : Nat) (top : Int) (digest : String) (h : 8 ≤ top
   refine (runOne_bind_active (z := ()) (s' := dstD) ?_).trans ?_
   · refine (runOne_bind_active (z := ()) (s' := @S₁ ⟨Nat.succ (Nat.succ k)⟩ sw₀ top digest) rfl).trans ?_
     exact hdrv2
-  · refine (runOne_bind_active (z := dstD) (s' := dstD) rfl).trans ?_
-    rfl
+  · -- the dead `if using_concurrency` arm is rewritten away first (as at the scheduler-mode
+    -- test above): 4.35.0's `refine` no longer unifies the bind lemma through the `ite`
+    rw [ite_eq_right (fun h => Bool.noConfusion h)]
+    refine (runOne_bind_active (z := dstD) (s' := dstD) ?_).trans ?_
+    · rfl
+    · rfl
 
 /-- The round on `S₁` at ANY ambient fuel ≥ 2: PROGRAM-DONE in one round
     (consumer shape `driver2_done`); the successor state is explicit. -/
