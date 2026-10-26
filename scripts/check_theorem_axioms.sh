@@ -584,12 +584,23 @@ echo "check_theorem_axioms: C2 ratchet OK ($RATCHET_NSCANNED files scanned recur
 #     and 4.35.0 at the Lean 4.35 move, 2026-10-26: `#print axioms` of a
 #     `by native_decide` theorem lists exactly that name and never
 #     `Lean.ofReduceBool`); the pre-4.31 form `Lean.ofReduceBool` /
-#     `Lean.ofReduceNat` is still matched. Plant-tested at the move: with
-#     a `native_decide` theorem referenced from `nd_bind` (generated copy,
-#     outside the grep leg's surface) the exemplar probe printed
-#     `'nd_bind' depends on axioms: [d14_plant_cone._native.native_decide.ax_1_1]`
-#     and the ofReduce-only pattern let it PASS — a vacuous leg on every
-#     toolchain since 4.31, closed by the widened pattern below.
+#     `Lean.ofReduceNat` is still matched. `bv_decide`'s axiom has the same
+#     per-declaration shape, `<decl>._native.bv_decide.ax_<n>_<m>` (measured
+#     on both toolchains by the 2026-10-26 pre-merge review), and is caught
+#     by the `\._native\.` alternative of the pattern. Plant-tested at the
+#     move: with a `native_decide` theorem referenced from `nd_bind`
+#     (generated copy, outside the grep leg's surface) the exemplar probe
+#     printed `'nd_bind' depends on axioms:
+#     [d14_plant_cone._native.native_decide.ax_1_1]` and the ofReduce-only
+#     pattern let it PASS — a vacuous leg on every toolchain since 4.31,
+#     closed by the widened pattern below. Because a name pattern can go
+#     vacuous again on the next rename (review P2-1), both cone legs ALSO
+#     parse every `depends on axioms: [...]` list and fail on any member
+#     outside {propext, Classical.choice, Quot.sound} — the C2 entry
+#     census's mechanism — so an axiom of ANY name fails the gate; the
+#     greps stay as the loud named messages. Plant-tested with an axiom
+#     added by a metaprogram under an arbitrary name (no `axiom` keyword
+#     for the census legs, no `_native`/`ofReduce` for the patterns).
 # ---------------------------------------------------------------------------
 D14_ROOT="$(pwd)"
 D14_SCAN_PATHS=()
@@ -686,6 +697,26 @@ if grep -qE 'ofReduce(Bool|Nat)|native_decide|\._native\.' <<<"$OUT"; then
   echo "check_theorem_axioms: FAIL — a native_decide axiom (…._native.native_decide.ax_* or ofReduceBool/ofReduceNat) in an exemplar cone (D14 non-kernel proof-method ban)"
   exit 1
 fi
+# Name-independent D14 leg (pre-merge review 2026-10-26 P2-1): the exact
+# allowlist parse of the C2 entry census, applied to the exemplar cones.
+EXEMPLAR_BAD=$(python3 - <<PYEOF
+import re, sys
+out = """$OUT"""
+ok = {"propext", "Classical.choice", "Quot.sound"}
+bad = []
+for m in re.finditer(r"'([^']+)' depends on axioms: \[([^\]]*)\]", out):
+    entry, axs = m.group(1), [a.strip() for a in m.group(2).split(',') if a.strip()]
+    for a in axs:
+        if a not in ok:
+            bad.append(f"{entry}: {a}")
+print("\n".join(bad))
+PYEOF
+)
+if [[ -n "$EXEMPLAR_BAD" ]]; then
+  echo "check_theorem_axioms: FAIL — exemplar cone: axiom outside the exact allowlist [propext, Classical.choice, Quot.sound] (the name-independent D14 leg, pre-merge review 2026-10-26 P2-1):"
+  echo "$EXEMPLAR_BAD"
+  exit 1
+fi
 
 # driver2 kernel-cone probe (arc 4, success condition 2): the execution
 # driver's cone must be sorryAx-FREE and — since arc-8 S3 — DAEMON-FREE
@@ -715,12 +746,31 @@ if grep -qE 'ofReduce(Bool|Nat)|native_decide|\._native\.' <<<"$OUT2"; then
   echo "check_theorem_axioms: FAIL — a native_decide axiom (…._native.native_decide.ax_* or ofReduceBool/ofReduceNat) in driver2's kernel cone (D14 non-kernel proof-method ban)"
   exit 1
 fi
+# Name-independent D14 leg for driver2's cone (review P2-1), same parse.
+DRIVER2_BAD=$(python3 - <<PYEOF
+import re, sys
+out = """$OUT2"""
+ok = {"propext", "Classical.choice", "Quot.sound"}
+bad = []
+for m in re.finditer(r"'([^']+)' depends on axioms: \[([^\]]*)\]", out):
+    entry, axs = m.group(1), [a.strip() for a in m.group(2).split(',') if a.strip()]
+    for a in axs:
+        if a not in ok:
+            bad.append(f"{entry}: {a}")
+print("\n".join(bad))
+PYEOF
+)
+if [[ -n "$DRIVER2_BAD" ]]; then
+  echo "check_theorem_axioms: FAIL — driver2's kernel cone: axiom outside the exact allowlist [propext, Classical.choice, Quot.sound] (the name-independent D14 leg, pre-merge review 2026-10-26 P2-1):"
+  echo "$DRIVER2_BAD"
+  exit 1
+fi
 # DAEMON leg, driver2 cone (arc-8 S3): forbidden like every other cone.
 if grep -q "DAEMON" <<<"$OUT2"; then
   echo "check_theorem_axioms: FAIL — DAEMON in driver2's kernel cone (the DAEMON axiom family was DELETED in arc-8; the arc-3 D9 allowance is removed)"
   exit 1
 fi
-echo "check_theorem_axioms: driver2 cone sorryAx-free + native_decide-axiom-free (ofReduce*/…_native…) + DAEMON-free (arc-8 S3 bar)"
+echo "check_theorem_axioms: driver2 cone sorryAx-free + native_decide-axiom-free (ofReduce*/…_native…) + DAEMON-free + ⊆ [propext, Classical.choice, Quot.sound] (arc-8 S3 bar; review P2-1 parse)"
 
 # ---------------------------------------------------------------------------
 # C2 ratchet leg (5): exec-entry EXACT axiom census (charter sections

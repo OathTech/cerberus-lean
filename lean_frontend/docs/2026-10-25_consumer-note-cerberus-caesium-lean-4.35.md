@@ -56,7 +56,8 @@ cerberus-lean (each with the repair that worked, record §1.2):
    `dropRight`/`dropRightWhile`/`trim` → `dropEnd`/`dropEndWhile`/`trimAscii`,
    all returning `String.Slice` (`.copy` or `.toString` back to `String`;
    `.isEmpty`/`.toInt?` exist on slices; `String.Slice.length` is deprecated —
-   use `.copy.length` or `.isEmpty`); `String.drop` returns a slice too;
+   either `.toString.length` (the landed text in cerberus-lean's `Main.lean`) or
+   `.copy.length`/`.isEmpty` works); `String.drop` returns a slice too;
    `Slice.dropRight` → `Slice.dropEnd`. Behaviour of the replacements on the
    whitespace and separator classes checked equal (record §1.2 (a)).
 2. **`split` on a `lem_if`/`decide` guard after `simp only [worker, intLtb]`**: the
