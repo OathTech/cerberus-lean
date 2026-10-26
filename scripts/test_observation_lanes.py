@@ -25,7 +25,7 @@ LEGACY_LANES = ('bytes', 'libc_exec', 'libxml2_uri', 'immaculate', 'speclab',
                 'speclab_divmod', 'speclab_bytearr', 'speclab_list', 'speclab_tree', 'speclab_seed')
 LANES = ('exec', 'multi_tu', 'cn_coverage', 'ci_sweep', 'gcc_oracle', 'verify', *LEGACY_LANES)
 STUB = r'''#!/usr/bin/env python3
-import json, os, pathlib, subprocess, sys
+import json, os, pathlib, re, subprocess, sys
 side = pathlib.Path(sys.argv[0]).name
 kind = os.environ[side.upper() + '_PLANT_KIND']
 real = os.environ['REAL_' + side.upper()]
@@ -46,10 +46,14 @@ if os.environ.get('PLANT_REAL_EXEC') == '1':
             pathlib.Path(a).name == 'g2-memcmp-uninit.json' for a in args):
         kind = 'good'
 if kind == 'switch_report':
-    # The production driver reports only after execution returns. A panic's
-    # envelope must remain intact; completed batch records ignore stderr.
+    # The production driver reports its switch set once, after execution
+    # returns (a panic's envelope stays intact). The plant REPLACES that one
+    # line with a switched-mode report: the lanes must tolerate exactly one
+    # report of any supported set without changing a verdict token, and the
+    # decoder treats a second report as a problem (duplicate), so the plant
+    # must not append (post-rebase fix, 2026-10-26).
     if rc in (0, 1) and out.startswith((b'Defined {', b'Undefined {', b'Error {', b'ModelFailure {', b'EXECUTION ')):
-        err += b'cerberus-lean switches: [inner_arg_temps]\n'
+        err = re.sub(rb'cerberus-lean switches: \[[^\]\n]*\]\n', b'', err) + b'cerberus-lean switches: [inner_arg_temps]\n'
 elif kind == 'bytes':
     out = out.replace(b'stdout: "', b'stdout: "\\000\\128\\255')
 elif kind == 'exit2':

@@ -40,6 +40,19 @@ import time
 # table or row classifier. Unexpected REFUSAL/CLI_REFUSAL are failures here.
 from pnvi_lane import classify_side, is_single_error, side_hash
 
+
+def same_failure(normal, inner):
+    """Cross-mode equality of two FAILED side outcomes. Resource outcomes compare by
+    CLASS only: whether the bound hit first is the memory cap (KILL) or the wall-clock
+    limit (TIMEOUT) depends on box load, so the kind is informational (it stays in the
+    per-row evidence). An Error pair compares by its failure-class token (only Symbol's
+    numeric id may differ); everything else must be identical."""
+    if normal[0] == 'RESOURCE' and inner[0] == 'RESOURCE':
+        return True
+    if is_single_error(normal) and is_single_error(inner):
+        return normal[2] == inner[2]
+    return normal == inner
+
 ROOT = Path(__file__).resolve().parent.parent
 SW = '--switches=inner_arg_temps'
 RT = '--runtime=_build/install/default'
@@ -277,6 +290,7 @@ class Runner:
         if cls == 'BOTH_FAIL' or cls.startswith('RESOURCE'):
             # A new switched failure must not acquire a baseline merely because
             # both engines fail. Re-run both Normal controls at the same limits.
+            # (The cross-mode comparison of two failures is `same_failure`.)
             for engine, cmd in [('oracle', [self.oracle, RT, *([] if row.libc else ['--nolibc']),
                                             '--exec', '--batch', *(['--mode=exhaustive'] if row.mode == 'exhaustive' else []),
                                             *row.args, row.source]),
@@ -289,9 +303,8 @@ class Runner:
                 # The existing failure-class contract permits only Symbol's
                 # numeric ID to differ in an Error. Both complete token streams
                 # remain separately hash-pinned; no error text is rewritten.
-                same = (normal[2] == inner[2] if is_single_error(normal) and is_single_error(inner)
-                        else normal == inner)
-                require(same, f'{row.name}: failure differs from Normal on {engine}: {normal} / {inner}')
+                require(same_failure(normal, inner),
+                        f'{row.name}: failure differs from Normal on {engine}: {normal} / {inner}')
             normal_status = {'class': classify(row.mode, sides['normal', 'oracle'], sides['normal', 'lean']),
                              'oracle': side_hash(sides['normal', 'oracle']), 'lean': side_hash(sides['normal', 'lean'])}
         if row.libc and row.mode == 'exhaustive':
@@ -431,6 +444,10 @@ def selftest(args):
             print(f'PLANT OK (baseline {kind} rejected)', flush=True)
         else:
             raise Failure(f'baseline {kind} plant accepted')
+    require(same_failure(('RESOURCE', 'KILL'), ('RESOURCE', 'TIMEOUT')),
+            'cross-mode: two resource outcomes of different kinds must compare equal by class')
+    require(not same_failure(('RESOURCE', 'KILL'), ('OBS', ('VAL:one',), ())),
+            'cross-mode: a resource outcome must not equal an observation')
     for o, l in [(('OBS', ('VAL:one',), ()), ('OBS', ('VAL:two',), ())),
                  (('OBS', ('VAL:one',), ()), ('RESOURCE', 'TIMEOUT')),
                  (('INVALID', 'truncated'), ('INVALID', 'truncated')),
