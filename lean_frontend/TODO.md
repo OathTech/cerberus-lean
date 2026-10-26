@@ -113,7 +113,37 @@ of this work's scope.
   and the float lanes. Buys `lake check` / `--paranoid`, whose sandbox needs an
   operator-side `bwrap` decision on this box. [USER 2026-10-20] scheduled after
   the Core-quoting landing; its own charter then; lem-lean first (its TODO
-  carries the backend side).
+  carries the backend side). IN PROGRESS on `arc/lean-4.35` (charter
+  `docs/2026-10-25_worker-charter-lean-4.35-plan-b.md`, record
+  `docs/2026-10-25_lean-4.35-cerberus-record.md`): the worktree-local pin dance,
+  the code repairs (removed `String` functions, five `split` sites,
+  `CerbMemAccessFacts.loadM_erasure` proof-only, the `FuelExemplar` `rfl`, 15
+  deprecation sites, three new unused-simp-argument warnings), the 128-field
+  witness, the inlining-class census and the D14 gate repair are committed; the
+  shared-switch steps, the regeneration and the full battery follow the go.
+
+- **`tests/mem-scale-probes/micro` (the `memscale-micro` Tier C reporting
+  instrument) has not built since 2026-09-20** — found at the Lean 4.35 move
+  (record `docs/2026-10-25_lean-4.35-cerberus-record.md` §1.2 (h)): five
+  `Application type mismatch` errors (`Micro.lean:85,90,95,115,116`:
+  `memValueToBytes tagDefs` / `reconstructValue tagDefs`, whose first argument has
+  been `CerbMem.EnumDefs` since `3ad477462`, program-data parameters E-A; the file
+  was last changed 2026-09-17). No lane or gate builds it, so nothing noticed.
+  Fix shape: thread an `EnumDefs` through the five call sites and re-derive the
+  measurement; or retire the instrument with its `results/`. Needs a ruling; not
+  the move's change. [AGENT 2026-10-26]
+
+- **The ≥128-field record refusal in lem's Lean backend (lem-lean TODO 55) after
+  Lean 4.35.0.** The move's witness (record §2.1): on 4.35.0 a 128-, 129- and
+  255-field structure allocates and runs (4.32.2 segfaults at 128, exit 139), and
+  256 fields do not elaborate on either toolchain (`constructor … has too many
+  fields`), so the toolchain's own bound is 255. The refusal lives in lem's
+  emitter (`lean_max_constructor_fields = 127`), an emitter change the move's
+  charter reserves to lem-lean while its P4 asked for the lift; RESOLVED as KEEP
+  in the move [AGENT 2026-10-26, within the operator's 2026-10-22 ruling, relayed
+  by the orchestrator]. Proposed lem-lean follow-up, its own slice under a ruling:
+  re-derive the bound to 255 with a message stating the 4.35.0 facts and move the
+  two negative probes to 256.
 
 ## Upstream-uncertainty survey follow-ups (2026-10-20) — queued BEHIND the cerberus-caesium deliveries
 
