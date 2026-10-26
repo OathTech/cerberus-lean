@@ -1194,6 +1194,18 @@ single-trace measurement with exact switched-engine comparison and the
 same oracle cross-mode set rule. Measurements and commands are in the
 [completion record](docs/2026-10-23_inner-arg-temps-closeout-record.md).
 
+Since quotation hygiene Q5 (2026-10-26; the inner_arg_temps review's P2-4) the
+same fuzz logic also runs over the committed 1669-file csmith corpus as a
+Tier C reporting row, `test_inner_arg_temps.sh --csmith-corpus [--shard K/M]`
+(`scripts/inner_arg_temps_lane.py --csmith-corpus`: `test_csmith_corpus.sh`'s
+materialisation, single-trace, 30 s and 4G per run; the switched engine pair
+on complete sequences, the oracle's Normal-vs-switched distinct-observation
+SETS; both-fail rows re-checked against Normal). It has NO baseline: a
+disagreement fails the run and is a finding, never re-baselined. The first
+sweep's sizes, times and classes are in
+`docs/2026-10-26_quotation-hygiene-record.md` Q5. It is a measurement of the
+mode over a fixed population, not part of the row-15 trust surface.
+
 ### Core text parameter-identity speedbumps (inner_arg_temps repair)
 
 The fork printer gives `SD_FunArgValue` a numbered `name_fav<number>`

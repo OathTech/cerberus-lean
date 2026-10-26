@@ -910,12 +910,12 @@ S-basket slice — `docs/2026-09-01_s-basket.md`.)
   linked runtime procs the transport does not carry); row 1 via `test_unit.sh`,
   three plants. A speedbump on the printed spelling, not transport fidelity; the
   principled fix stays the queued transport item above. [AGENT 2026-10-26]
-- **inner_arg_temps fuzzing over the in-tree csmith corpus.** The slice's fuzzing
-  round was 32 fresh seeds of which 26 failed the frontend, leaving six switched
-  comparisons (review P2-4; the record states it plainly). Run the lane's `--fuzz`
-  logic over `tests/csmith/*` (1669 files that pass the frontend) under the switch
-  as a Tier C row: engine agreement within the mode, cross-mode set equality on
-  the oracle; discrepancies are findings. [AGENT 2026-10-26]
+- **inner_arg_temps fuzzing over the in-tree csmith corpus.** DONE 2026-10-26
+  (quotation hygiene Q5): Tier C row `test_inner_arg_temps.sh --csmith-corpus
+  [--shard K/M]` runs the lane's fuzz logic over the 1669 committed files; the
+  first sweep's sizes, times and classes are in
+  `docs/2026-10-26_quotation-hygiene-record.md` Q5. Discrepancies are findings,
+  never a baseline. [AGENT 2026-10-26]
 
 ## Needs maintainer action or network access
 

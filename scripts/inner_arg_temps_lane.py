@@ -101,11 +101,24 @@ def population():
     return rows
 
 
-def classify(mode, oracle, lean):
-    require(oracle[0] != 'INVALID' and lean[0] != 'INVALID', f'INVALID: oracle={oracle}; lean={lean}')
+def classify(mode, oracle, lean, report_only=False):
+    """The row class. In the GATE (row 15) an INVALID capture on either side and a Lean
+    resource outcome where the oracle completed FAIL the row. In report-only mode (the
+    Tier C csmith-corpus sweep, quotation hygiene Q5; no baseline) they are REPORTED by
+    class instead -- `INVALID oracle` (the oracle's capture is not a batch observation:
+    the corpus lane's oracle-side CERB_SKIP shape) and `RESOURCE lean:<kind>` (Lean past
+    the bound where the oracle completed: a resource difference, VALIDATION class (b)) --
+    never agreement, never a baseline; a Lean INVALID capture still fails (a protocol
+    problem on the port is a defect regardless of the oracle)."""
+    require(lean[0] != 'INVALID', f'INVALID: oracle={oracle}; lean={lean}')
+    if oracle[0] == 'INVALID':
+        require(report_only, f'INVALID: oracle={oracle}; lean={lean}')
+        return 'INVALID oracle'
     if oracle[0] == 'RESOURCE':
         return 'RESOURCE oracle:' + oracle[1]
-    require(lean[0] != 'RESOURCE', f'Lean {lean[1]} where oracle completed: {oracle[0]}')
+    if lean[0] == 'RESOURCE':
+        require(report_only, f'Lean {lean[1]} where oracle completed: {oracle[0]}')
+        return 'RESOURCE lean:' + lean[1]
     if is_single_error(oracle) and is_single_error(lean) and oracle[2] == lean[2]:
         return 'BOTH_FAIL'
     if oracle[0] == lean[0] == 'CRASH':
@@ -123,6 +136,21 @@ def same_sequence(name, oracle, lean):
 def same_observation_set(name, normal, inner):
     require(normal[0] == inner[0] == 'OBS' and set(normal[1]) == set(inner[1]),
             f'{name}: oracle cross-mode observation-set disagreement or incomplete observation: {normal} / {inner}')
+
+
+def cross_mode(name, normal, inner):
+    """The oracle's cross-mode rule: two complete observation sequences compare as SETS
+    (`same_observation_set`); two FAILED outcomes compare by `same_failure` (resource by
+    class, Error by failure-class token, crash by message) and are reported SAME_FAILURE,
+    never agreement; one side complete and the other failed is a disagreement. (Quotation
+    hygiene Q5, 2026-10-26: the csmith corpus holds rows the oracle fails identically in
+    both modes before execution; the set rule alone called those disagreements.)"""
+    if normal[0] == inner[0] == 'OBS':
+        same_observation_set(name, normal, inner)
+        return 'SAME_SET'
+    require(normal[0] != 'OBS' and inner[0] != 'OBS' and same_failure(normal, inner),
+            f'{name}: oracle cross-mode disagreement (complete in one mode, failed in the other, or different failures): {normal} / {inner}')
+    return 'SAME_FAILURE'
 
 
 def baseline_hash(side):
@@ -144,8 +172,9 @@ def check_baseline(actual, path, selection=None):
 
 
 class Runner:
-    def __init__(self, oracle, lean, out):
+    def __init__(self, oracle, lean, out, report_only=False):
         self.oracle, self.lean, self.out = str(oracle), str(lean), Path(out)
+        self.report_only = report_only   # the Tier C csmith-corpus sweep only; see classify
         self.out.mkdir(parents=True, exist_ok=True)
         self.env = dict(os.environ, CERB_MEM_MAX=os.environ.get('CERB_TEST_MEM_MAX', '4G'),
                         LEAN_ABORT_ON_PANIC='1', NO_COLOR='1', TERM='dumb')
@@ -285,9 +314,17 @@ class Runner:
                     require(Path(p + '.stderr').read_bytes().splitlines().count(report) == 1,
                             f'{row.name}: missing/duplicate Lean switch report')
         oracle, lean = sides['inner', 'oracle'], sides['inner', 'lean']
-        cls = classify(row.mode, oracle, lean)
+        cls = classify(row.mode, oracle, lean, self.report_only)
         normal_status = None
-        if cls == 'BOTH_FAIL' or cls.startswith('RESOURCE'):
+        if cls.startswith('RESOURCE lean:'):
+            # Report-only: the oracle completed (its cross-mode set check runs below); the
+            # Lean Normal control must fail the same way (a switched-only slowdown would differ).
+            p = self.capture(f'{row.name}.normal.lean', [self.lean, '--batch', *(['--first'] if row.mode == 'first' else []),
+                             RT, *(self.libc_args(False) if row.libc else []), *row.args, js], 300 if row.libc else 30)
+            sides['normal', 'lean'] = classify_side(p, True)
+            require(same_failure(sides['normal', 'lean'], lean),
+                    f'{row.name}: Lean resource outcome differs from Normal: {sides["normal", "lean"]} / {lean}')
+        if cls == 'BOTH_FAIL' or cls.startswith('RESOURCE oracle'):
             # A new switched failure must not acquire a baseline merely because
             # both engines fail. Re-run both Normal controls at the same limits.
             # (The cross-mode comparison of two failures is `same_failure`.)
@@ -314,11 +351,16 @@ class Runner:
             # This gate keeps order and multiplicity, independently in each mode.
             for mode in ['inner', 'normal']:
                 same_sequence(f'{row.name} ({mode})', sides[mode, 'oracle'], sides[mode, 'lean'])
-        if four_way or cross:
+        cross_kind = None
+        if (four_way or cross) and cls != 'INVALID oracle':
             normal = sides['normal', 'oracle']
-            same_observation_set(row.name, normal, oracle)
-            print(f'  CROSS-MODE SET OK {row.name}: distinct={len(set(oracle[1]))} '
-                  f'Normal={len(normal[1])} inner_arg_temps={len(oracle[1])} observations (counts informational)', flush=True)
+            cross_kind = cross_mode(row.name, normal, oracle)
+            if cross_kind == 'SAME_SET':
+                print(f'  CROSS-MODE SET OK {row.name}: distinct={len(set(oracle[1]))} '
+                      f'Normal={len(normal[1])} inner_arg_temps={len(oracle[1])} observations (counts informational)', flush=True)
+            else:
+                print(f'  CROSS-MODE SAME-FAILURE {row.name}: {normal[0]} in both modes (never agreement): '
+                      f'{str(normal[1])[:100]}', flush=True)
         if row.expected is not None:
             token = f'VAL:{{value: "Specified({row.expected})", stdout: "", stderr: "", blocked: "false"}}'
             require(set(oracle[1]) == {token}, f'{row.name}: expected witness observation differs: {oracle}')
@@ -331,10 +373,10 @@ class Runner:
             expected = observations.parse(expected_text, b'', 0, 'batch')
             require(cls == 'AGREE-FIRST' and parsed.tokens('full') == expected.tokens('full'),
                     f'{row.name}: upstream expected verdict differs')
-        print(f'  {cls:25} {row.name}' + (' cross-mode=SAME_SET' if four_way or cross else ''), flush=True)
+        print(f'  {cls:25} {row.name}' + (f' cross-mode={cross_kind}' if cross_kind else ''), flush=True)
         return {'class': cls, 'mode': row.mode, 'oracle': baseline_hash(oracle), 'lean': baseline_hash(lean),
                 **({'normal_status': normal_status} if normal_status is not None else {}),
-                **({'cross_mode': 'SAME_SET'} if four_way or cross else {}),
+                **({'cross_mode': cross_kind} if cross_kind else {}),
                 **({'normal_baseline': 'tests/libc_exec/baseline.txt:38 (039-strerror-assert MATCH)'}
                    if row.name == 'libc/039-strerror-assert' else {})}
 
@@ -496,6 +538,53 @@ def fuzz(args):
           f'{time.monotonic()-started:.2f}s including generation', flush=True)
 
 
+def csmith_corpus(args):
+    """Tier C reporting row (quotation hygiene Q5, 2026-10-26; inner_arg_temps review
+    P2-4): the fuzz logic over the committed 1669-file csmith corpus instead of fresh
+    seeds. Materialised like scripts/test_csmith_corpus.sh (prefixed copies, the
+    csmith_cerberus.h shim), single-trace, every row the switched engine pair plus the
+    oracle cross-mode set check; no baseline, no silent skip; a disagreement fails the
+    row and the run (a FINDING, never a baseline). --shard K/M slices the staged names
+    in codepoint order (deterministic, locale-independent)."""
+    runner = Runner(args.oracle, args.lean, args.out / 'csmith-corpus', report_only=True)
+    staged = runner.out / 'staged'
+    staged.mkdir()
+    for name in ['csmith_cerberus.h', 'safe_math.h']:
+        shutil.copyfile(ROOT / 'tests/csmith' / name, staged / name)
+    rows = []
+    for sub, prefix in [('small_int_arith', 'sia'), ('small_arrays', 'sa'), ('small_mix', 'smx')]:
+        sources = sorted((ROOT / 'tests/csmith' / sub).glob('*.c'))
+        require(sources, f'empty csmith corpus: tests/csmith/{sub}')
+        for f in sources:
+            source = f.read_text()
+            require(source.count('#include "csmith.h"') == 1, f'{f}: missing/duplicate csmith header')
+            target = staged / f'{prefix}_{f.name}'
+            target.write_text(source.replace('#include "csmith.h"', '#define CSMITH_MINIMAL\n#include "csmith_cerberus.h"'))
+            rows.append(Row(f'csmith/{target.stem}', target, 'first'))
+    rows.sort(key=lambda r: r.name)
+    total = len(rows)
+    require(total == 1669, f'csmith corpus size changed: {total} files (expected 1669; review before reporting)')
+    if args.shard:
+        m = re.fullmatch(r'([1-9][0-9]*)/([1-9][0-9]*)', args.shard)
+        require(m and int(m[1]) <= int(m[2]), f'bad --shard {args.shard!r} (K/M, 1 <= K <= M)')
+        k, n = int(m[1]), int(m[2])
+        per = (total + n - 1) // n
+        rows = rows[(k - 1) * per:k * per]
+    require(rows, 'empty csmith shard')
+    print(f'CSMITH CORPUS PLAN: files={len(rows)} of {total} shard={args.shard or "all"}; single-trace; '
+          f'switched engine pair and cross-mode oracle; no baseline', flush=True)
+    started = time.monotonic()
+    results = runner.run(rows, cross=True)
+    classes = Counter(r['class'] for r in results.values())
+    cross = Counter(r.get('cross_mode') or 'none' for r in results.values())   # INVALID-oracle rows have no cross-mode leg
+    reported = sorted(n for n, r in results.items() if r['class'].startswith(('RESOURCE lean:', 'INVALID oracle')))
+    print(f'CSMITH CORPUS PASS: {len(rows)} files; no row failed: every switched engine pair matched within '
+          f'its class and every oracle cross-mode pair was SAME_SET or SAME_FAILURE (BOTH_FAIL, RESOURCE and '
+          f'INVALID-oracle rows are never agreement); classes ' + ' '.join(f'{k}={v}' for k, v in sorted(classes.items())) +
+          '; cross-mode ' + ' '.join(f'{k}={v}' for k, v in sorted(cross.items())) +
+          (f'; report-only rows: {reported}' if reported else '') + f'; {time.monotonic()-started:.2f}s', flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--oracle', type=Path, required=True)
@@ -508,13 +597,20 @@ def main():
     modes.add_argument('--observe', action='store_true')
     modes.add_argument('--record-baseline', action='store_true')
     modes.add_argument('--fuzz', type=int, metavar='COUNT', help='Csmith single-trace measurement, no baseline')
+    modes.add_argument('--csmith-corpus', action='store_true',
+                       help='Tier C: the fuzz logic over the committed tests/csmith corpus, no baseline')
+    parser.add_argument('--shard', metavar='K/M', help='slice of the csmith corpus (with --csmith-corpus only)')
     parser.add_argument('--seed-start', type=int, default=2026102100)
     parser.add_argument('--rows')
     args = parser.parse_args()
+    require(args.shard is None or args.csmith_corpus, '--shard applies to --csmith-corpus only')
     for engine in [args.oracle, args.lean]:
         require(engine.is_file() and os.access(engine, os.X_OK), f'missing engine: {engine}')
-    require(not (args.rows and (args.gate or args.selftest or args.record_baseline or args.fuzz is not None)), 'selection cannot certify or record the whole gate')
+    require(not (args.rows and (args.gate or args.selftest or args.record_baseline or args.fuzz is not None or args.csmith_corpus)), 'selection cannot certify or record the whole gate')
     args.out.mkdir(parents=True, exist_ok=True)
+    if args.csmith_corpus:
+        csmith_corpus(args)
+        return
     if args.fuzz is not None:
         fuzz(args)
         return

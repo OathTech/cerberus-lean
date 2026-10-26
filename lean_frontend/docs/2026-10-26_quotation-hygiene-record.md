@@ -479,3 +479,121 @@ files. The register's provenance paragraph is the file's header.)
 
 
 Tier A: stacked after the anonymous-members slice's full battery (scheduling note 2); see Q6.
+
+Checkpoint commit: `6e04adad8`.
+
+## Q5 — the csmith-corpus Tier C row for inner_arg_temps (review P2-4)
+
+**What** (`scripts/inner_arg_temps_lane.py --csmith-corpus [--shard K/M]`, through
+`scripts/test_inner_arg_temps.sh`; LADDER Tier C row; VALIDATION lane section; TODO): the
+lane's fuzz logic over the committed 1669-file csmith corpus — `test_csmith_corpus.sh`'s
+materialisation (prefixed copies `sia_`/`sa_`/`smx_` with the `csmith_cerberus.h` shim),
+rows single-trace (`--first`), 30 s and 4G per run — every row the switched engine pair on
+complete sequences (`same_sequence`) and the oracle's Normal-vs-switched distinct-observation
+SET check; both-fail rows re-checked against Normal (`same_failure`). No baseline: a
+disagreement fails the row and the run and is a FINDING, never re-baselined. `--shard K/M`
+slices the staged names in codepoint order. The corpus size is asserted (1669).
+
+**Wall-time justification, written before the run** ([AGENT 2026-10-26], grind tripwire): a
+25-file prefixed sample (12 `small_int_arith`, 12 `small_arrays`, 1 `small_mix`, every 40th
+file) of the four runs per file (bridge, oracle switched, Lean switched single-trace, oracle
+Normal) took 20.9 s on this box at load ~12 — 3.8 s bridge, 4.4 s oracle switched, 8.1 s Lean,
+4.6 s oracle Normal; all 100 runs exit 0 — i.e. ~0.84 s per file. Extrapolated: 1669 × ~1 s
+≈ 28 min, plus the lane's fixed overhead (libc metadata export, two dump plants, two mode
+probes: ~1-2 min) and the Normal re-runs both-fail rows trigger (the corpus lane records
+499 oracle-side `CERB_SKIP` rows: ~500 extra oracle+Lean Normal runs, ~5 min): 35-45 min
+sequential, near the one-hour tripwire, so the sweep runs as TWO shards (`--shard 1/2`,
+`--shard 2/2`), each ~20 min, run one after the other under the box rule. This is a
+measurement sweep over a differential corpus (the practice's named exception), not a grind.
+
+**Two lane refinements found by the sweep** ([AGENT 2026-10-26], both scoped so the row-15
+gate is unchanged):
+- `cross_mode` (replaces the bare set rule on the cross-mode leg): two complete observation
+  sequences compare as SETS as before; two FAILED oracle outcomes compare by `same_failure`
+  (resource by class, Error by failure-class token, crash by message) and are reported
+  `SAME_FAILURE`, never agreement; complete-in-one-mode/failed-in-the-other is a
+  disagreement. The corpus holds rows the oracle fails identically in both modes before
+  execution (`Translation called on Ail program with an invalid node`, the corpus lane's
+  `CERB_SKIP` class); the set rule alone called those disagreements (the 1/400 smoke shard:
+  3 of 5 rows). Gate rows (`four_way`) pin `cross_mode` in the baseline, so a gate row
+  changing from `SAME_SET` to `SAME_FAILURE` is a baseline mismatch, red.
+- Report-only classification in `--csmith-corpus` mode (`Runner(report_only=True)`,
+  `classify(…, report_only)`): a Lean resource outcome where the oracle completed is
+  `RESOURCE lean:<kind>` (the Lean Normal control must fail the same way — a switched-only
+  slowdown would differ), and an oracle capture that is not a batch observation is
+  `INVALID oracle`; both reported by name in the pass line, never agreement, never a
+  baseline, and the run does not fail on them. In the gate both still FAIL the row
+  (`report_only=False`), and a Lean INVALID capture fails everywhere (a protocol problem on
+  the port is a defect regardless of the oracle).
+
+**First full run** (before the second refinement; shard 1 at load ~19.8, shard 2 at ~10;
+verbatim `SUMMARY`/`FAIL` lines, evidence 19 G + 11 G of bridge captures, deleted):
+
+```text
+=== shard 1/2 start 21:18:42 load=19.75 … exit=1 end 21:49:59
+SUMMARY: inner_arg_temps rows=835 AGREE-FIRST=824 BOTH_FAIL=3 RESOURCE oracle:TIMEOUT=6 failures=2
+inner_arg_temps: FAIL — failed rows: ['csmith/sa_csmith_70', 'csmith/sia_csmith_1058']
+=== shard 2/2 start 21:49:59 load=9.95 … exit=1 end 22:03:40
+SUMMARY: inner_arg_temps rows=834 AGREE-FIRST=830 RESOURCE oracle:TIMEOUT=1 failures=3
+inner_arg_temps: FAIL — failed rows: ['csmith/sia_csmith_306', 'csmith/sia_csmith_865', 'csmith/smx_csmith_6']
+```
+
+The five failed rows, each `CERB_SKIP` in `scripts/exec_csmith_corpus_baseline.txt` (at that
+lane's 15 s bound the ORACLE does not finish them; "Lean not reached"), examined:
+- `sa_csmith_70`, `sia_csmith_1058`, `sia_csmith_306`: "Lean TIMEOUT where oracle completed"
+  — the oracle finished in 23.8 / 18.3 s (switched; Normal 25.6 / 18.5 s) and Lean's
+  single-trace run exceeded 30 s; re-run by hand at load ~15: Lean 124 at 30.1 s on all
+  three. A resource difference (VALIDATION class (b): never agreement, not a semantic
+  finding; both engines are near or over the corpus lane's budget on these rows), not a
+  discrepancy of the mode. Reported as `RESOURCE lean:TIMEOUT` by the refinement.
+- `sia_csmith_865`: the oracle's SWITCHED run timed out at 30 s where its Normal run
+  completed (`Specified(248)`) — a load artefact: re-run by hand, 20.0 s, `Specified(248)`.
+- `smx_csmith_6`: oracle exit 1, empty stdout, in BOTH modes the diagnostic
+  `smx_csmith_6.c:191:16: error: constraint violation: incompatible pointer types assigning
+  to 'signed int*' from 'unsigned int*'` on stderr (outside the batch grammar, hence an
+  undecodable capture, `INVALID`); Lean `Error {msg: "typechecking failed at …:191:16-21
+  (cursor: 191:14)"}`, exit 1 — the same constraint violation reported by both engines in
+  their own formats (the corpus lane's oracle-side `CERB_SKIP`, the gcc lane's
+  `SKIP_LEAN_FAIL`). Reported as `INVALID oracle` by the refinement; not a switch finding.
+
+No row disagreed on a served verdict in either mode: every row where both engines completed
+within the mode AGREED on the complete single-trace observation (824 + 830 = 1654 rows), and
+every oracle cross-mode pair that completed in both modes had the SAME observation set.
+
+**Second full run** (the final figures; after the refinements; verbatim):
+
+```text
+=== shard 1/2 start 22:08:27 load=16.15
+CSMITH CORPUS PLAN: files=835 of 1669 shard=1/2; single-trace; switched engine pair and cross-mode oracle; no baseline
+  RESOURCE lean:TIMEOUT     csmith/sa_csmith_70 cross-mode=SAME_SET
+  RESOURCE lean:TIMEOUT     csmith/sia_csmith_1058 cross-mode=SAME_SET
+SUMMARY: inner_arg_temps rows=835 AGREE-FIRST=824 BOTH_FAIL=3 RESOURCE lean:TIMEOUT=2 RESOURCE oracle:TIMEOUT=6 failures=0
+CSMITH CORPUS PASS: 835 files; no row failed: every switched engine pair matched within its class and every oracle cross-mode pair was SAME_SET or SAME_FAILURE (BOTH_FAIL, RESOURCE and INVALID-oracle rows are never agreement); classes AGREE-FIRST=824 BOTH_FAIL=3 RESOURCE lean:TIMEOUT=2 RESOURCE oracle:TIMEOUT=6; cross-mode SAME_FAILURE=9 SAME_SET=826; report-only rows: ['csmith/sa_csmith_70', 'csmith/sia_csmith_1058']; 1746.83s
+=== shard 1/2 exit=0 end 22:37:37 load=19.06
+(shard 2 first attempt: SUMMARY as below, then a TypeError in the pass line — an INVALID-oracle row has no cross-mode key and sorted() compared None with str; fixed, shard 2 re-run on the fixed script, evidence of the attempt (11 G) deleted after cross-checking its results.json: the same classes)
+=== shard 2/2 rerun start 22:52:03 load=8.43
+=== shard 2/2 rerun exit=0 end 23:05:05 load=6.93
+CSMITH CORPUS PLAN: files=834 of 1669 shard=2/2; single-trace; switched engine pair and cross-mode oracle; no baseline
+  RESOURCE lean:TIMEOUT     csmith/sia_csmith_306 cross-mode=SAME_SET
+  RESOURCE lean:TIMEOUT     csmith/sia_csmith_865 cross-mode=SAME_SET
+  INVALID oracle            csmith/smx_csmith_6
+SUMMARY: inner_arg_temps rows=834 AGREE-FIRST=830 INVALID oracle=1 RESOURCE lean:TIMEOUT=2 RESOURCE oracle:TIMEOUT=1 failures=0
+CSMITH CORPUS PASS: 834 files; no row failed: every switched engine pair matched within its class and every oracle cross-mode pair was SAME_SET or SAME_FAILURE (BOTH_FAIL, RESOURCE and INVALID-oracle rows are never agreement); classes AGREE-FIRST=830 INVALID oracle=1 RESOURCE lean:TIMEOUT=2 RESOURCE oracle:TIMEOUT=1; cross-mode SAME_FAILURE=1 SAME_SET=832 none=1; report-only rows: ['csmith/sia_csmith_306', 'csmith/sia_csmith_865', 'csmith/smx_csmith_6']; 779.09s
+```
+
+**Figures, derived** (both shards of the second run; 1669 files, every file ran): AGREE-FIRST
+1654 (824 + 830: both engines completed the switched single trace and agreed on the complete
+observation), BOTH_FAIL 3 (oracle `Translation called on Ail program with an invalid node`
+in both modes, Lean a legacy panic; the corpus lane's `CERB_SKIP` class), RESOURCE
+oracle:TIMEOUT 7 (the oracle past 30 s in both modes; Lean not compared), RESOURCE
+lean:TIMEOUT 4 (`sa_csmith_70`, `sia_csmith_1058`, `sia_csmith_306`, `sia_csmith_865`: the
+oracle completed in 18-25 s, Lean past 30 s, in both modes), INVALID oracle 1
+(`smx_csmith_6`). Oracle cross-mode: SAME_SET 1658, SAME_FAILURE 10, no leg 1. Zero
+disagreements. Wall time: shard 1 1746.8 s at load 16-19, shard 2 779.1 s at load 7-8 (the
+first full run: 31 + 14 min) — within the justification above; no shard approached an hour.
+Discrepancy findings: NONE (the five report-only rows are resource/format classes, examined
+above, and pre-existing `CERB_SKIP` rows of the corpus lane, so no tray draft). Disk:
+each sweep's bridge captures are ~16 MB per file; the lane deletes its evidence on success and
+I deleted the two retained failure runs (30 G and 11 G) after reading them.
+
+Tier A: stacked after the anonymous-members slice's full battery (scheduling note 2); see Q6.
