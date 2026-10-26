@@ -81,6 +81,15 @@ satisfies both conditions (the fixed relative runtime link at
 with `--batch` is unaffected. The re-review's P3-1 observation that non-portable
 literals were emitted silently no longer holds.
 
+Update [AGENT 2026-10-26] (quotation hygiene Q6; the re-review's P3-2): the linked
+population now includes a second, richer two-TU case
+(`test/CoreQuote/inputs/linked/tu{1,2}.c`: an enum definition in each TU, a cross-TU
+extern object, statics with initializers, a loop), libc-linked in Tier B row 13
+(`LinkedRich`, with its own `leanchecker` replay) and user-only in row 1 (`MultiRich`),
+so the comparator positions for `enumDefs`, visible objects and loop attributes carry
+TU-side values rather than `.empty` on both sides; the fixture-001 figures quoted in
+the sections above are the historical D5 population.
+
 Supply `--libc tests/libc/libc.core`
 and one `--libc-tu META.json` per metadata TU, in `scripts/libc_prep.sh` order.
 Use `--quote-libc .tmp/Libc.lean` to quote that loader result after conversion,

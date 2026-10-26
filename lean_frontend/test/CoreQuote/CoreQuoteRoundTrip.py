@@ -175,6 +175,21 @@ def main():
         if "Canonical Core quotation convention" not in result.stderr or refused.exists():
             raise RuntimeError("wrong-cwd invocation must name the convention and write nothing")
 
+    def export(path, label):
+        # Canonical export: from the project root, relative runtime, project-relative source.
+        result = run(label + "-export", [ROOT / "_build/default/backend/driver/main.exe",
+            f"--runtime={RUNTIME}", "--nolibc", "--cabs-json", path.relative_to(ROOT)])
+        target = scratch / f"{label}.json"
+        target.write_text(result.stdout)
+        return target
+
+    def rich_inputs():
+        # Quotation hygiene Q6 (2026-10-26; Core-quoting re-review P3-2): a linked two-TU
+        # case carrying an enum definition, a cross-TU extern, statics with initializers
+        # and a loop, so the comparator positions for enumDefs, visible objects and loop
+        # attributes are populated on the TU side (they are .empty in fixture 001).
+        return [export(SUPPORT / f"inputs/linked/tu{i}.c", f"Rich{i}") for i in (1, 2)]
+
     try:
         lean_path = run("lean-path", ["lake", "env", "printenv", "LEAN_PATH"], FRONTEND).stdout.strip()
         # Lake's Unix plugin artifacts leave import-library symbols unresolved.
@@ -235,6 +250,11 @@ def main():
                 literal = roundtrip("Linked", inputs, args.module, mode="linked")
                 replay("Linked")
                 convention(literal, inputs, "linked")
+            if not args.module:
+                # Q6: the enum/extern/static/loop pair, libc-linked (the review's +150 s)
+                rich = rich_inputs()
+                roundtrip("LinkedRich", rich, mode="linked")
+                replay("LinkedRich")
         elif args.module:
             inputs = [p.resolve() for p in args.input]
             literal = roundtrip("Consumer", inputs, args.module.resolve())
@@ -249,16 +269,12 @@ def main():
             # Keep the first fixture for the cwd controls.
             literal = scratch / "Fixture0Literal.lean"
             if not args.fixture:
-                def export(path, label):
-                    result = run(label + "-export", [ROOT / "_build/default/backend/driver/main.exe",
-                        f"--runtime={RUNTIME}", "--nolibc", "--cabs-json", path.relative_to(ROOT)])
-                    target = scratch / f"{label}.json"
-                    target.write_text(result.stdout)
-                    return target
                 for i, path in enumerate(corpus):
                     roundtrip(f"Corpus{i}", [export(path, f"Corpus{i}")])
                 multi = [export(ROOT / f"tests/multi_tu/basic/tu{i}.c", f"Multi{i}") for i in (1, 2)]
                 roundtrip("Multi", multi)
+                # Q6: the same pair as a user-only (unlinked-libc) multi-TU round trip
+                roundtrip("MultiRich", rich_inputs())
             run("local-controls", [BIN / "core-quote-test", "--local-controls"])
             controls = ["main", "global", "binding", "height", "empty-to-mk", "mk-to-empty", "zero-sign",
                         "positive-zero", "negative-zero", "infinity", "negative-infinity", "long-list", "long-list-order"]

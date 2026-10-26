@@ -597,3 +597,70 @@ each sweep's bridge captures are ~16 MB per file; the lane deletes its evidence 
 I deleted the two retained failure runs (30 G and 11 G) after reading them.
 
 Tier A: stacked after the anonymous-members slice's full battery (scheduling note 2); see Q6.
+
+Checkpoint commit: `61e300f99`.
+
+## Q6 — a richer linked quotation population (Core-quoting re-review P3-2)
+
+**What** (`lean_frontend/test/CoreQuote/inputs/linked/tu1.c`, `tu2.c`;
+`test/CoreQuote/CoreQuoteRoundTrip.py`; LADDER row 1; the caesium Core-quotation consumer
+note): a two-TU case carrying an enum definition in each TU (`colour`, `shape`), a cross-TU
+extern object (`shared_counter`), statics with initializers (`local_init`, `table`) and a
+`for` loop, so the libc-linked comparator positions for `enumDefs`, visible objects and loop
+attributes carry TU-side values where fixture 001 left them `.empty` on both sides. It joins
+row 1 as the user-only multi-TU round trip `MultiRich` (beside `Multi`,
+`tests/multi_tu/basic`) and Tier B row 13 as the libc-linked `LinkedRich` round trip with its
+own `leanchecker LinkedRichLiteral` replay. Both engines answer `Specified(32)` on the pair
+(oracle linked, Lean exhaustive: 8 traces, all 32) — a sanity check, not the test's claim;
+the round trip compares the quoted file with a rebuilt original.
+
+Verbatim (row 1's `core-quote-test`; Tier B row 13's `--core-quote-libc`):
+
+```text
+core-quote-test --fuel 1000000 (row 1; exit 0; 28 inputs, up from 27):
+Rich1-export: exit 0, 0.06s
+Rich2-export: exit 0, 0.06s
+MultiRich-quote: exit 0, 0.08s
+MultiRich-elaborate: exit 0, 2.17s
+MultiRich-compare: exit 0, 1.10s
+MultiRich round trip: 3.36s
+CORE_QUOTE_TOTAL inputs=28; model constructors=216; floating=0; NaN=0; memory-values=0; positions=8514122; absolute-paths=0
+Core quote round trip: PASS (whole-file representation, comparator syntax, auxiliary BEq)
+core-quote-test --fuel 1000000 --libc [--switches=inner_arg_temps] (Tier B row 13; both exit 0; the LinkedRich round trip costs ~130 s per mode, the review's estimate):
+=== --libc 
+libc sha256: c165410918073f7c01762238e12ff4ec6d527141ec06bc81c7c5508d41fd4873
+LinkedLiteral leanchecker: 1.92 seconds; 838948 KB peak RSS; exit 0
+Rich1-export: exit 0, 0.05s
+Rich2-export: exit 0, 0.06s
+LinkedRich-quote: exit 0, 3.07s
+LinkedRich-elaborate: exit 0, 127.11s
+LinkedRich-elaborate resources: 127.05 seconds; 14423404 KB peak RSS; exit 0
+LinkedRich-compare: exit 0, 4.82s
+LinkedRich round trip: 135.08s
+LinkedRich-kernel-replay: exit 0, 1.99s
+LinkedRichLiteral leanchecker: 1.94 seconds; 839100 KB peak RSS; exit 0
+CORE_QUOTE_TOTAL inputs=3; model constructors=245; floating=84; NaN=0; memory-values=0; positions=47364; absolute-paths=0
+Core quote round trip: PASS (whole-file representation, comparator syntax, auxiliary BEq)
+exit=0
+=== --libc --switches=inner_arg_temps
+libc sha256: 6f2514217b637cedd4109b7c9698942a63b07e59f126ef257cabcf1fe10db0ca
+LinkedLiteral leanchecker: 1.87 seconds; 837852 KB peak RSS; exit 0
+Rich1-export: exit 0, 0.06s
+Rich2-export: exit 0, 0.06s
+LinkedRich-quote: exit 0, 2.46s
+LinkedRich-elaborate: exit 0, 119.62s
+LinkedRich-elaborate resources: 119.59 seconds; 13913512 KB peak RSS; exit 0
+LinkedRich-compare: exit 0, 4.51s
+LinkedRich round trip: 126.66s
+LinkedRich-kernel-replay: exit 0, 1.89s
+LinkedRichLiteral leanchecker: 1.86 seconds; 838412 KB peak RSS; exit 0
+CORE_QUOTE_TOTAL inputs=3; model constructors=245; floating=84; NaN=0; memory-values=0; positions=44454; absolute-paths=0
+Core quote round trip: PASS (whole-file representation, comparator syntax, auxiliary BEq)
+exit=0
+```
+
+Tier A — the STACKED run covering Q4, Q5 and Q6 on this tree (scheduling note 2), verbatim:
+
+```text
+TIERA_Q6_PLACEHOLDER
+```
