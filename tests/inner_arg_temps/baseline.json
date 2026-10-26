@@ -163,7 +163,7 @@
   "minimal/094-bool-conversion": {"class": "AGREE", "lean": "8d74ccd3b2ab", "mode": "exhaustive", "oracle": "8d74ccd3b2ab"},
   "minimal/095-unsigned-div-zero.undef": {"class": "AGREE", "lean": "44cdbd7313c5", "mode": "exhaustive", "oracle": "44cdbd7313c5"},
   "minimal/096-unsigned-mod-zero.undef": {"class": "AGREE", "lean": "8bdefb8a7db8", "mode": "exhaustive", "oracle": "8bdefb8a7db8"},
-  "minimal/097-null-ptr-arith.undef": {"class": "BOTH_FAIL", "lean": "92c3e70004fd", "mode": "exhaustive", "normal_status": {"class": "BOTH_FAIL", "lean": "92c3e70004fd", "oracle": "37a96bce2405"}, "oracle": "37a96bce2405"},
+  "minimal/097-null-ptr-arith.undef": {"class": "BOTH_FAIL", "lean": "8ed9a0170fd9", "mode": "exhaustive", "normal_status": {"class": "BOTH_FAIL", "lean": "8ed9a0170fd9", "oracle": "37a96bce2405"}, "oracle": "37a96bce2405"},
   "minimal/098-cross-alloc-ptrdiff.undef": {"class": "AGREE", "lean": "67c9045ffd7c", "mode": "exhaustive", "oracle": "67c9045ffd7c"},
   "minimal/099-negative-right-shift": {"class": "AGREE", "lean": "b9d63105596b", "mode": "exhaustive", "oracle": "b9d63105596b"},
   "minimal/100-int-wrap-unsigned": {"class": "AGREE", "lean": "1870c54fa729", "mode": "exhaustive", "oracle": "1870c54fa729"},
