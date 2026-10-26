@@ -577,9 +577,19 @@ echo "check_theorem_axioms: C2 ratchet OK ($RATCHET_NSCANNED files scanned recur
 #     live; formerly lean_frontend/relsemcore/**, removed 2026-09-02),
 #     and the LemLib package's lean-lib/LemLibTest.lean (the copy the
 #     build actually compiles). Mandatory paths missing = FAIL, not skip.
-#   * axiom leg (with the cone probes below): Lean.ofReduceBool /
-#     Lean.ofReduceNat — the axioms those tactics introduce — are
-#     ALWAYS-FATAL in every probed cone, alongside sorryAx.
+#   * axiom leg (with the cone probes below): the axioms those tactics
+#     introduce are ALWAYS-FATAL in every probed cone, alongside sorryAx.
+#     Since Lean 4.31 `native_decide` introduces a PER-DECLARATION axiom
+#     named `<decl>._native.native_decide.ax_<n>_<m>` (measured on 4.32.2
+#     and 4.35.0 at the Lean 4.35 move, 2026-10-26: `#print axioms` of a
+#     `by native_decide` theorem lists exactly that name and never
+#     `Lean.ofReduceBool`); the pre-4.31 form `Lean.ofReduceBool` /
+#     `Lean.ofReduceNat` is still matched. Plant-tested at the move: with
+#     a `native_decide` theorem referenced from `nd_bind` (generated copy,
+#     outside the grep leg's surface) the exemplar probe printed
+#     `'nd_bind' depends on axioms: [d14_plant_cone._native.native_decide.ax_1_1]`
+#     and the ofReduce-only pattern let it PASS — a vacuous leg on every
+#     toolchain since 4.31, closed by the widened pattern below.
 # ---------------------------------------------------------------------------
 D14_ROOT="$(pwd)"
 D14_SCAN_PATHS=()
@@ -667,12 +677,13 @@ if grep -q "sorryAx" <<<"$OUT"; then
   echo "check_theorem_axioms: FAIL — sorryAx in an exemplar cone"
   exit 1
 fi
-# D14 axiom leg: Lean.ofReduceBool / Lean.ofReduceNat (native_decide's
-# axioms) are always fatal in every probed cone. Matched on the bare
-# names so both qualified ('Lean.ofReduceBool') and unqualified probe
+# D14 axiom leg: native_decide's axioms — the per-declaration
+# `<decl>._native.native_decide.ax_<n>_<m>` of Lean ≥ 4.31 and the older
+# Lean.ofReduceBool / Lean.ofReduceNat — are always fatal in every probed
+# cone. Matched on the bare names so both qualified and unqualified probe
 # spellings are caught.
-if grep -qE 'ofReduce(Bool|Nat)' <<<"$OUT"; then
-  echo "check_theorem_axioms: FAIL — ofReduceBool/ofReduceNat in an exemplar cone (D14 non-kernel proof-method ban)"
+if grep -qE 'ofReduce(Bool|Nat)|native_decide|\._native\.' <<<"$OUT"; then
+  echo "check_theorem_axioms: FAIL — a native_decide axiom (…._native.native_decide.ax_* or ofReduceBool/ofReduceNat) in an exemplar cone (D14 non-kernel proof-method ban)"
   exit 1
 fi
 
@@ -700,8 +711,8 @@ if grep -q "sorryAx" <<<"$OUT2"; then
   exit 1
 fi
 # D14 axiom leg, driver2 cone: same always-fatal ban as the exemplar set.
-if grep -qE 'ofReduce(Bool|Nat)' <<<"$OUT2"; then
-  echo "check_theorem_axioms: FAIL — ofReduceBool/ofReduceNat in driver2's kernel cone (D14 non-kernel proof-method ban)"
+if grep -qE 'ofReduce(Bool|Nat)|native_decide|\._native\.' <<<"$OUT2"; then
+  echo "check_theorem_axioms: FAIL — a native_decide axiom (…._native.native_decide.ax_* or ofReduceBool/ofReduceNat) in driver2's kernel cone (D14 non-kernel proof-method ban)"
   exit 1
 fi
 # DAEMON leg, driver2 cone (arc-8 S3): forbidden like every other cone.
@@ -709,7 +720,7 @@ if grep -q "DAEMON" <<<"$OUT2"; then
   echo "check_theorem_axioms: FAIL — DAEMON in driver2's kernel cone (the DAEMON axiom family was DELETED in arc-8; the arc-3 D9 allowance is removed)"
   exit 1
 fi
-echo "check_theorem_axioms: driver2 cone sorryAx-free + ofReduce*-free + DAEMON-free (arc-8 S3 bar)"
+echo "check_theorem_axioms: driver2 cone sorryAx-free + native_decide-axiom-free (ofReduce*/…_native…) + DAEMON-free (arc-8 S3 bar)"
 
 # ---------------------------------------------------------------------------
 # C2 ratchet leg (5): exec-entry EXACT axiom census (charter sections
