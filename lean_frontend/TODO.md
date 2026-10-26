@@ -156,12 +156,15 @@ Record: [`docs/2026-10-20_upstream-uncertainty-survey-record.md`](docs/2026-10-2
 not a gate). Every item below is queued behind the deliveries to cerberus-caesium (Core quoting, `inner_arg_temps`,
 the outcome protocol) and is not to be dispatched before them ([USER 2026-10-20]); the slice shapes are the record's §3.
 
-- **Anonymous struct/union members: refuse in the shared Lem** ([USER 2026-10-20]; record §2.1, slice 1; tray 60).
-  `desugar_struct_declaration` (cabs_to_ail.lem:2713-2719) splices an anonymous member's members into the containing
-  aggregate: wrong `sizeof`/offsets, no aliasing inside an anonymous union, every member after it initialised one
-  slot late, false UB081/UB036 (25 silent-wrong probes, both engines and pristine upstream agree). Refusal at that
-  arm (`Desugar_NotYetSupported`), both engines through the shared `.lem`; one gated row moves
-  (`tests/coverage/struct/struct-008-anon-struct.c`), witness script per the item-G shape; upstream report filed.
+- **Anonymous struct/union members: refuse in the shared Lem** ([USER 2026-10-20]; record §2.1, slice 1; tray 60) —
+  **DONE 2026-10-26** (branch `fix/anonymous-members-refusal`, contract D12, record
+  `docs/2026-10-26_anonymous-members-refusal-record.md`): `desugar_struct_declaration`'s splice arm `error`s (the D11
+  shape rather than `Desugar_NotYetSupported`, which the port's batch record renders unattributed — record §2), both
+  engines by generation; `tests/coverage/struct/struct-008-anon-struct.c` retired with its baseline row, the
+  union-initializer script's anonymous-union control retired, `scripts/check_anonymous_members_refusal.sh` in row 1.
+  Still pending from it: the ci-sweep scoreboard rows `gcc-torture/breakdown/success/anon-1.c` (MATCH → both-crash)
+  and `suite/desugaring/13-non_anonymous_empty_sdecltors.error.c` (CERB_REJECT → crash class; its first line is an
+  anonymous member) move at the next deliberate re-record of `tests/ci_sweep/results/`.
 - **Compound assignment with a side-effecting left operand: refuse** ([USER 2026-10-20]; record §2.2, slice 2; tray 61).
   translation.lem:2510-2535 elaborates `e1 op= e2` with `e1` duplicated (its own TODO): `*g() += 3` calls `g` twice,
   `a[i++] += 5` is a false UB035. A syntactic side-effect predicate on `e1` and a `record_error_at` refusal (the GNU

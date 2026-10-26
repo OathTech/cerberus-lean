@@ -81,3 +81,10 @@ cluster A), which probed the `this may be WRONG ==> anonymous` sites. Classifica
 layout and values on both engines and on pristine upstream). Fork plan ([USER 2026-10-20]): refuse anonymous
 members in the shared desugaring (both engines, no semantics invented), queued behind the cerberus-caesium
 deliveries; the report above describes upstream as it stands.
+
+**Fork-ahead refusal (2026-10-26).** The fork REFUSES since 2026-10-26: `desugar_struct_declaration`'s
+`E.return membrs` arm is a Lem `error` in the fork (both engines by generation, one text naming the member's kind,
+C17 6.7.2.1#13, the splice site above and that the fork refuses rather than decides; contract D12; witnesses
+`scripts/check_anonymous_members_refusal.sh`; record `lean_frontend/docs/2026-10-26_anonymous-members-refusal-record.md`).
+This is a refusal, not a fix for upstream: the report stands as written, and the "Expected" section is what the
+fork would adopt on re-pin.

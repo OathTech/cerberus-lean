@@ -4,7 +4,8 @@
 # UNMIGRATED lean_frontend/CerbMem.lean CerbMem.allocator invalid-nonzero-alignment failwithI: memory-model refusal metadata extension (structural-outcome WP2).
 # UNMIGRATED lean_frontend/CerbMem.lean CerbMem.memcpyM overlap failwithI: memory-model refusal metadata extension (structural-outcome WP2).
 # UNMIGRATED frontend/model/desugaring_init.lem moveTo_aux Union-arm error: shared-desugarer refusal mapping (structural-outcome WP2; requires a separately authorized shared-source/effect change).
-# All three preserve incoming predicates, historical text and exits; validated panics decode as legacy/unattributed, never INVARIANT.
+# UNMIGRATED frontend/model/cabs_to_ail.lem desugar_struct_declaration anonymous-member error (added 2026-10-26, contract D12): shared-desugarer refusal mapping, the same mover as the moveTo_aux line above (structural-outcome WP2).
+# All four preserve incoming predicates, historical text and exits; validated panics decode as legacy/unattributed, never INVARIANT.
 # No new wire boundary, register-scope exception, .lem edit or Lem re-pin in this delivery.
 file	owner	old_line	new_line	old_seal	new_seal	reach
 lean_frontend/CerbDecode.lean	CerbDecode.decode_integer_constant	41	42	3cce7fa14c8bba78	1f275e1de321a9c9	UNREACHABLE-BY-INVARIANT

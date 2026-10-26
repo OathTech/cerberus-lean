@@ -545,9 +545,10 @@ Nothing else.
   (item U, 2026-10-20)`. Unchanged and agreeing with the oracle: positional and
   first-member-designated forms (incl. `{ 9, .a = 2 }` → 2, so the one predicate
   covers mixed lists: a mixed list is silently wrong only when it names a
-  non-first member), `{ 0 }` on a smaller first member (Unspecified on both), the
-  anonymous-union-in-struct path (members spliced into the enclosing struct),
-  a union inside a struct positional or first-designated. Measured 2026-10-20
+  non-first member), `{ 0 }` on a smaller first member (Unspecified on both),
+  a union inside a struct positional or first-designated; the anonymous-union-in-struct
+  path, which this refusal never reached (members spliced into the enclosing struct),
+  is refused by D12 since 2026-10-26 (its control retired from the script). Measured 2026-10-20
   over every union-containing program of `tests/` (39 outside csmith, 1285
   csmith, Tier B), `lean_frontend/corpus`, the CN, libxml2 and pKVM sources
   and the libc (libc.co rebuilt under the new desugarer; the 12 metadata TUs
@@ -558,11 +559,56 @@ Nothing else.
   ([USER 2026-10-20], the item-G precedent for a control of the superseded
   stance: the project tolerates no silently wrong answer, and a MATCH on a
   wrong answer is not evidence; the witness script carries its shape). Witnesses: `scripts/check_union_init_refusals.sh` (row
-  1). Not refused, reported (tray 59 (b)/(c)): a struct/union VALUE as a member
+  1). Not refused, reported (tray 59 (b)): a struct/union VALUE as a member
   initializer and a designated union compound literal in the initializer
   position are constraint violations on both engines; the anonymous-union
-  layout (`sizeof` 12, no aliasing). A deliberate fork ≠ pristine difference
-  (below).
+  layout (59 (c), `sizeof` 12, no aliasing) is D12's class. A deliberate fork ≠
+  pristine difference (below).
+- *Anonymous struct/union members, the upstream-uncertainty survey's cluster A*
+  (contract D12, 2026-10-26; [USER 2026-10-20] ruled in the survey
+  (`docs/2026-10-20_upstream-uncertainty-survey-record.md` §0/§2.1) that they are
+  refused in the shared Lem and reported upstream, tray 60; [USER 2026-10-26]
+  dispatched the slice; `docs/2026-10-26_anonymous-members-refusal-record.md`):
+  REFUSED in BOTH engines — a refusal, not an implementation (§2 is untouched).
+  Upstream's `desugar_struct_declaration` (`frontend/model/cabs_to_ail.lem`;
+  pristine b9aeedcb4 :2697) handles a struct-declaration with NO declarator whose
+  type specifier is a tagless struct/union (C17 6.7.2.1#13) by returning the
+  anonymous member's member list, splicing it flat into the containing aggregate
+  (`struct S { union { int b; char c; }; int d; }` desugars to `struct S { int b;
+  char c; int d; }`, under upstream's own `this may be WRONG ==> anonymous
+  Struct/Union` prints), so the member loses its own storage: `sizeof` 8 where gcc
+  has 4, no aliasing between `b` and `c`, brace-elided initializers one slot late
+  (`{1, 2, 3}` puts the 3 into `c` and leaves `d` 0), false UB081/UB036/pointer-
+  equality verdicts — 25 silent-wrong probes, both engines and pristine agreeing;
+  designated initializers naming the members were the one shape that answered
+  right, by name lookup alone. Now that arm `error`s at the member's DECLARATION
+  (whether or not the type is used; nested members at the innermost; a typedef'd
+  tagless specifier used bare, block scope, compound literals, `_Alignas` all
+  refuse): oracle `Cerb_debug.error` (`internal error: <text>` + uncaught
+  `Failure`, exit 125), Lean `failwithI` (abort, exit 134), one text by
+  generation naming the member's kind: `Cabs_to_ail.desugar_struct_declaration:
+  refused - anonymous union member (a struct-declaration with no declarator whose
+  type specifier is a tagless union; C17 6.7.2.1#13); upstream splices its members
+  into the containing aggregate's member list (…) - the fork refuses rather than
+  decides (survey cluster A, tray 60, 2026-10-26)`. Unchanged and agreeing with
+  the oracle: the same shapes with NAMED members (`union { … } u;` elided, braced,
+  sizeof, aliased; a named struct inside a struct; a tagless type WITH a
+  declarator; a tagless file-scope object); a TAGGED struct without a declarator,
+  a typedef'd tagged specifier and `int;` stay the 6.7.2.1#2 constraint violation.
+  Measured 2026-10-26 on the new oracle over every corpus the lanes walk (5567
+  non-csmith files incl. the libc, CN and pKVM sources; 1669 csmith): exactly ONE
+  gated program refuses — `tests/coverage/struct/struct-008-anon-struct.c` (Tier A
+  row 3, MATCH 12: an anonymous struct accessed by name) — RETIRED with its
+  baseline row per the charter under the item-G/union3-003 precedent (a MATCH on a
+  case the fork now refuses is not evidence; the witness script carries its
+  shape); the union-initializer script's anonymous-union control (D11's named
+  carve-out) retired likewise, its shape a witness here. Two ci-sweep scoreboard
+  rows (no baseline) change class at their next deliberate re-record:
+  `gcc-torture/breakdown/success/anon-1.c` (MATCH → both engines refuse) and
+  `suite/desugaring/13-non_anonymous_empty_sdecltors.error.c` (its first line is an
+  anonymous member; CERB_REJECT → the refusal). Witnesses:
+  `scripts/check_anonymous_members_refusal.sh` (row 1), every witness pinning its
+  whole text. A deliberate fork ≠ pristine difference (below).
 - *`LEAN_ABORT_ON_PANIC` required* (Z2-FL-03): the driver refuses to
   start (exit 2) without it, because a Lean `panic!` — the fail-stop
   mirror of every OCaml failwith/assert/uncaught exception — would
@@ -893,6 +939,27 @@ by a cited re-record.
   `cabs_to_ail.lem`/`cabs_to_ail.ml` unchanged. Upstream disposition: draft 59
   stays Draft — it reports the TODO and the three neighbouring defects; the
   refusal is the fork's contract [AGENT].
+- **Fork refusal — anonymous struct/union members, survey cluster A
+  (0 register rows; 1 corpus control retired; added 2026-10-26; contract D12; record `docs/2026-10-26_anonymous-members-refusal-record.md`):**
+  the fork REFUSES what pristine ANSWERS WRONGLY (§3(c) above):
+  `cabs_to_ail.lem`'s `desugar_struct_declaration` `error`s on a struct-declaration
+  with no declarator whose type is a tagless struct/union where upstream splices
+  the anonymous member's members into the containing aggregate. Row 10's walked
+  corpora contain exactly one such program, `tests/coverage/struct/struct-008-anon-struct.c`
+  (the slice measurement, record §3), RETIRED with its baseline row (the
+  item-G/union3-003 precedent: a MATCH on a case the fork now refuses is not
+  evidence; `scripts/check_anonymous_members_refusal.sh` carries its shape), so
+  the walked corpora hold no such program and the register has no row. The
+  `[source-content]` pin for `frontend/model/cabs_to_ail.lem` and the
+  `[expected-semantic]` pin for the generated `cabs_to_ail.ml` moved
+  (`scripts/fork_drift_manifest.txt`, header note "fix/anonymous-members-refusal");
+  the fork-vs-upstream delta of that file grew by the helper
+  `anonymous_member_refusal` and the arm. The ci-sweep scoreboard (Tier C, no
+  baseline) holds two such programs (`gcc-torture/breakdown/success/anon-1.c`,
+  `suite/desugaring/13-non_anonymous_empty_sdecltors.error.c`), which move at its
+  next deliberate re-record. Upstream disposition: draft 60 stays Draft — it
+  reports the splice and asks for the feature; the refusal is the fork's contract
+  [AGENT].
 - **`diagnostic-text` (1 row).** The inner_arg_temps I0b backport adds two
   evaluator frames to `immaculate/nolibc/zd-z2fl03-nan-to-int` while retaining
   exit 125, empty stdout and `Z.Overflow`. Its exact signature pair is
@@ -1141,7 +1208,7 @@ The [first-delivery note](docs/2026-10-20_consumer-note-cerberus-caesium-outcome
 contains the family table, concrete consumer recipe and loss-before-emission
 limits. The sentinel and pure-failure boundaries remain operational limits,
 with structural outcomes as their named mover. The incoming D10 overlap/alignment
-refusals and D11 union-initializer refusal retain their raw diagnostic texts;
+refusals, D11 union-initializer refusal and D12 anonymous-member refusal retain their raw diagnostic texts;
 `decode_stop` reports validated frames as legacy/unattributed, not INVARIANT or
 REFUSAL. The migration map names the memory-model metadata extension and shared
 desugarer mapping under WP2; semantic refusal status alone is not wire attribution.
@@ -1354,7 +1421,8 @@ theorem over the shipped pipeline `@drive ⟨fuel⟩` at the ambient
 | `check_cabs_json_utf8.sh --selftest` | a non-UTF-8 Cabs JSON (a raw byte ≥ 0x80 in a file name or attribute string) is refused with the attributed message instead of an uncaught exception, and ASCII controls agree with the oracle (bug hunt BUG-6/K-5, 2026-09-29; §3(c)); plants: a pre-fix uncaught-exception stub and a refuse-everything stub must fail it |
 | `check_asm_refusal.sh --selftest` | inline assembly is refused, never erased: 4 asm statements (basic, extended, `asm goto`, in a never-called function) are refused by the oracle and by Lean with the attributed desugar message at the asm location, 3 declarator asm labels are refused by the shared parser for `--exec` and `--cabs-json` (no Cabs JSON), and 2 controls (asm-free; asm only in a comment and a string) agree with the oracle (contract D9, 2026-10-05; §3(c)); plants: a pre-fix erasing oracle (strips the asm, both engines then run it), a Lean-only erasing stub and a refuse-everything pair must fail it |
 | `check_item_g_refusals.sh --selftest` | the two item-G memory-model TODOs are refused, never answered: 6 overlapping `memcpy` programs (tray 56's witness, the retired coverage control mem4-020's backward shape, an object onto itself, inside a malloc'd object, and two device-memory overlaps) and 3 invalid-alignment allocations (`aligned_alloc(3, 9)`, `(6, 12)`, `(1000, 2000)`) are refused by the oracle (uncaught `Failure`, exit 125) and by Lean (abort, exit 134) with byte-identical texts; 9 controls agree with the oracle (adjacent device ranges, adjacent halves, two objects, length 0, realloc's copy, an out-of-bounds non-overlapping copy that is UB on both, `aligned_alloc(16, 32)`, one allocation at each alignment the lanes use — 1, 2, 4, 8, 16 — and the unchanged size-clause UB) and the zero-alignment crash is unchanged on both (contract D10, 2026-10-20; §3(c)); plants: a pre-fix answering pair, a Lean-only answering stub, a refuse-everything pair, a message-without-abort stub and an altered-text stub must all fail it |
-| `check_union_init_refusals.sh --selftest` | a braced union initializer designating a member other than the first is refused, never answered: 14 programs (the tray-59 witness `{ .c = {1,2,3,4} }`, static and automatic designated elements, a designated struct member, mixed positional/designated lists, a nested union, an array of unions, a string literal, a scalar second member, the retired coverage control union3-003's shape `{ .c = 'A' }`, a compound literal, a union inside a struct) are refused by the oracle (uncaught `Failure`, exit 125) and by Lean (abort, exit 134) with byte-identical texts; 12 controls agree with the oracle (positional and first-member designated forms incl. `{ 9, .a = 2 }`, a first member that is an array or a partially designated struct, `{ 0 }` read as Unspecified, the anonymous-union-in-struct path, a union inside a struct positional or first-designated, member assignment) and the struct-from-struct-variable rejection is unchanged on both (contract D11, 2026-10-20; §3(c)); plants: a pre-fix answering pair, a Lean-only answering stub, a refuse-everything pair, a message-without-abort stub and an altered-text stub must all fail it |
+| `check_union_init_refusals.sh --selftest` | a braced union initializer designating a member other than the first is refused, never answered: 14 programs (the tray-59 witness `{ .c = {1,2,3,4} }`, static and automatic designated elements, a designated struct member, mixed positional/designated lists, a nested union, an array of unions, a string literal, a scalar second member, the retired coverage control union3-003's shape `{ .c = 'A' }`, a compound literal, a union inside a struct) are refused by the oracle (uncaught `Failure`, exit 125) and by Lean (abort, exit 134) with byte-identical texts; 11 controls agree with the oracle (positional and first-member designated forms incl. `{ 9, .a = 2 }`, a first member that is an array or a partially designated struct, `{ 0 }` read as Unspecified, a union inside a struct positional or first-designated, member assignment; the anonymous-union-in-struct control was retired 2026-10-26 — that class is refused by D12) and the struct-from-struct-variable rejection is unchanged on both (contract D11, 2026-10-20; §3(c)); plants: a pre-fix answering pair, a Lean-only answering stub, a refuse-everything pair, a message-without-abort stub and an altered-text stub must all fail it |
+| `check_anonymous_members_refusal.sh --selftest` | an anonymous struct/union member is refused at its declaration, never spliced: 29 programs (the survey's brace-elision, anonymous-first, array, sizeof/offsetof/aliasing/copy, anonymous-struct-in-union, padding and false-UB shapes; the designated, anonymous-struct-sizeof, retired coverage control struct-008, retired union-initializer control and parity-probe shapes that answered right by name lookup alone; nested members, a typedef'd tagless specifier, block scope, a compound literal in the initializer position, `_Alignas`, an unused type, sizeof only) are refused by the oracle (uncaught `Failure`, exit 125) and by Lean (abort, exit 134), each witness pinning its WHOLE text including the member's kind word (`w_s_*` struct, `w_u_*` union) and the two texts compared byte for byte; 10 controls with NAMED members agree with the oracle (a named union elided/braced/sizeof/aliased, a named single-member union, a named struct inside a struct, a union with named members only, a plain union, a tagless type with a declarator, a tagless file-scope object); 3 gap controls (a tagged struct with no declarator, a typedef'd tagged specifier, `int;`) stay the 6.7.2.1#2 constraint violation on both (contract D12, 2026-10-26; §3(c)); plants: a pre-fix answering pair (`Specified(12)`, the retired control's value), a Lean-only answering stub, a refuse-everything pair (its text's kind word read from the file name), a message-without-abort stub and an altered-text stub must all fail it, each with its derived count (58/42/13/32/29) |
 | `check_libc_float_literals.py --selftest` + check | every float literal of the pinned `tests/libc/libc.core` equals the reviewed register `scripts/libc_float_literals.txt`, as multisets, both directions; a 12-significant-digit literal may not be registered exact (named deviation N3); 8 plants |
 
 Certification-integrity rules ride the gates: validation of
