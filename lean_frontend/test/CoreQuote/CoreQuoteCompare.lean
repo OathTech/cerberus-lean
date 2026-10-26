@@ -23,7 +23,8 @@ def original [LemFuel] [CerbGlobal.Switches] (mode : String) (metadata inputs : 
   if mode == "libc" || mode == "linked" then
     let dump := if CerbGlobal.has_switch .inner_arg_temps then
         "tests/libc/libc_inner_arg_temps.core" else "tests/libc/libc.core"
-    let .ok (f, next) ← loadLibc runtime true supply defaultAddressSpaceTop
+    -- quiet; portable labels enforced as the quoting driver enforces them (Q2)
+    let .ok (f, next) ← loadLibc runtime true true supply defaultAddressSpaceTop
         (names, stdFuns, impl) names stdFuns impl dump metadata
       | throw (IO.userError "Core quote test: loadLibc failed")
     if mode == "libc" then
@@ -36,6 +37,7 @@ def original [LemFuel] [CerbGlobal.Switches] (mode : String) (metadata inputs : 
     supply := next
   for path in inputs do
     let (digest, tu, paths) ← unwrap (CabsImport.parseJsonWithFiles (← IO.FS.readFile path))
+    refuseNonPortableLabels path paths   -- the quoting driver's admission (Q2)
     refuseLibraryLocations runtime path paths
     let _ ← (CerberusFresh.setDigestIO digest : BaseIO Unit)
     let .ok (f, next) ← frontendTU true supply defaultAddressSpaceTop

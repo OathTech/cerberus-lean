@@ -23,6 +23,13 @@
 # substitution). A plant whose engines disagree is RED; so is any engine
 # moving its rule. The selftest plants below (ignore-runtime, refuse-all)
 # cover it: neither stub prints that line.
+# Quotation hygiene Q2 (2026-10-26; [USER 2026-10-21] ruling C): with
+# --quote-core/--quote-libc the driver REFUSES (boundary runtime, item
+# --runtime, exit 2, no module) a runtime not given as the canonical relative
+# spelling `--runtime=_build/install/default` (an absolute spelling; the
+# runtime from CERB_INSTALL_PREFIX alone) and an input carrying a non-portable
+# (absolute) label, naming the offending spelling or label; the canonical case
+# is the control (exit 0, silent, module written).
 #
 # Each check runs the REAL oracle (cabs-json export, and the oracle's own
 # verdict where the check compares against it) and the Lean driver.
@@ -111,12 +118,12 @@ expect_line() {  # <label> <expected-line>
     if [[ "$OUT" != "$2" ]]; then fail "$1: expected exactly [$2]; got rc=$RC: ${OUT:0:300}"; fi
     if [[ "$ERR" != 'cerberus-lean switches: []' ]]; then fail "$1: expected the default switch report on stderr; got: ${ERR:0:300}"; fi
 }
-expect_refusal() {  # <label> <refusal-prefix> <substring>
+expect_refusal() {  # <label> <refusal-prefix> <substring> [items-json]
     n=$((n + 1))
     local boundary=runtime
     [[ "$2" == "library-location classification:" ]] && boundary=library-location
-    if ! check_refusal "$boundary" null "$3"; then
-        fail "$1: expected exit 2 + 'refused — $2' naming '$3'; got rc=$RC: ${OUT:0:300}"
+    if ! check_refusal "$boundary" "${4:-null}" "$3"; then
+        fail "$1: expected exit 2 + 'refused — $2' naming '$3'${4:+ with items $4}; got rc=$RC: ${OUT:0:300} ${ERR:0:300}"
     fi
 }
 
@@ -277,5 +284,25 @@ for name in dot nodot abs core; do
     echo "$NAME: served agreement pin ($name): oracle=[$O] port=[$OUT]"
 done
 
+# --- Quotation hygiene Q2: non-canonical quotation invocations refuse ---------
+Q="$W/quote"; mkdir -p "$Q"
+lean "$ROOT" -- --quote-core "$Q/AbsRuntime.lean" --runtime="$PREFIX" tests/fixtures/001-return-literal/cabs.json
+expect_refusal "quotation under an absolute --runtime" "runtime:" "the given spelling is \`$PREFIX\`" '["--runtime"]'
+[[ ! -e "$Q/AbsRuntime.lean" ]] || fail "quotation under an absolute --runtime wrote a module"
+lean "$ROOT" CERB_INSTALL_PREFIX="$PREFIX" -- --quote-core "$Q/EnvRuntime.lean" tests/fixtures/001-return-literal/cabs.json
+expect_refusal "quotation with the runtime from CERB_INSTALL_PREFIX only" "runtime:" "the runtime came from CERB_INSTALL_PREFIX=\`$PREFIX\`, not from --runtime" '["--runtime"]'
+[[ ! -e "$Q/EnvRuntime.lean" ]] || fail "quotation under CERB_INSTALL_PREFIX wrote a module"
+# ub2.json was exported under the absolute prefix from an absolute source path: its
+# labels are absolute; the sorted label list names the source file first
+lean "$ROOT" -- --quote-core "$Q/AbsLabel.lean" --runtime=_build/install/default "$W/ub2.json"
+expect_refusal "quotation of an input carrying an absolute label" "runtime:" "carries the label \`$W/ub2.c\` (an absolute path)" '["--runtime"]'
+[[ ! -e "$Q/AbsLabel.lean" ]] || fail "quotation of an absolute-label input wrote a module"
+lean "$ROOT" -- --quote-core "$Q/Canonical.lean" --runtime=_build/install/default tests/fixtures/001-return-literal/cabs.json
+n=$((n + 1))
+if [[ $RC -ne 0 || -n "$OUT" || -n "$ERR" || ! -s "$Q/Canonical.lean" || "$(head -1 "$Q/Canonical.lean")" != "import Core_run_aux" ]]; then
+    fail "canonical quotation control: expected exit 0, silent, a module starting with 'import Core_run_aux'; got rc=$RC: ${OUT:0:200} ${ERR:0:300}"
+fi
+echo "$NAME: quotation hygiene: absolute --runtime, CERB_INSTALL_PREFIX-only and absolute-label quotations refused (runtime/--runtime); canonical control written ($(wc -c < "$Q/Canonical.lean" 2>/dev/null || echo 0) bytes)"
+
 [[ $fails -eq 0 ]] || { echo "$NAME: $fails of $n witnesses FAILED"; exit 1; }
-echo "$NAME: OK ($n witnesses: --runtime/CERB_INSTALL_PREFIX resolution and priority, planted cwd std.core ignored, planted prefix used, 5 runtime refusals, 1 cross-runtime and 3 library-location refusals, 1 control agreeing with the oracle, relative fixture-001 classifier agreement (both engines: suffix AND resolved membership) and execution control, 4 served UB-location agreement pins (./, unprefixed, absolute, libcore))"
+echo "$NAME: OK ($n witnesses: --runtime/CERB_INSTALL_PREFIX resolution and priority, planted cwd std.core ignored, planted prefix used, 5 runtime refusals, 1 cross-runtime and 3 library-location refusals, 1 control agreeing with the oracle, relative fixture-001 classifier agreement (both engines: suffix AND resolved membership) and execution control, 4 served UB-location agreement pins (./, unprefixed, absolute, libcore), 3 quotation-convention refusals (absolute --runtime, CERB_INSTALL_PREFIX only, absolute label) and the canonical quotation control)"

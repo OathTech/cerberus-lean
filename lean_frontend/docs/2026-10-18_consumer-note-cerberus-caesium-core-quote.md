@@ -65,6 +65,22 @@ call site `<11:10--11:23>` by both engines. A consumer executing the quoted
 file inherits a classification both engines share. The quoted labels/value
 are unchanged by this.
 
+Update [AGENT 2026-10-26] (quotation hygiene Q2; [USER 2026-10-21] ruling C): the
+convention is now ENFORCED when quoting. `--quote-core`/`--quote-libc` REFUSE — a
+REFUSAL envelope on stderr, boundary `runtime`, item `--runtime`, exit 2, empty
+stdout, no module written — unless the runtime is given on the command line as
+exactly `--runtime=_build/install/default` (an absolute spelling, or the runtime
+taken from `CERB_INSTALL_PREFIX`, is refused naming that spelling) AND every
+source/lexing label of every input (your TUs and the libc metadata TUs) is
+portable: relative and under the project root. An input exported under an
+absolute runtime carries absolute labels and is refused naming the first such
+label; re-export it from the project root with the canonical spelling
+(`scripts/libc_prep.sh --jsons` for the metadata). Your recipe above already
+satisfies both conditions (the fixed relative runtime link at
+`_build/install/default` in your directory is the canonical spelling). Execution
+with `--batch` is unaffected. The re-review's P3-1 observation that non-portable
+literals were emitted silently no longer holds.
+
 Supply `--libc tests/libc/libc.core`
 and one `--libc-tu META.json` per metadata TU, in `scripts/libc_prep.sh` order.
 Use `--quote-libc .tmp/Libc.lean` to quote that loader result after conversion,

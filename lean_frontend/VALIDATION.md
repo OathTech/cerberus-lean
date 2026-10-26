@@ -667,6 +667,24 @@ Nothing else.
   exporter runs from the project root with `--runtime=_build/install/default`
   and relative source/include paths. Consume this metadata from the project
   root, with the same runtime spelling for portable quotation artifacts.
+- *Non-canonical quotation invocations* (quotation hygiene Q2, 2026-10-26;
+  [USER 2026-10-21] ruling C of the Core-quoting D5 re-review): with
+  `--quote-core` or `--quote-libc` the driver REFUSES (boundary `runtime`,
+  item `--runtime`, exit 2, empty stdout, no module written) unless the
+  runtime was given on the command line as exactly
+  `--runtime=_build/install/default` (not an absolute or other alias, not
+  `CERB_INSTALL_PREFIX` alone) AND every source and lexing label of every
+  input — user TUs and libc metadata TUs — is portable: relative and under
+  the project root (no leading `/`, no `..` component). The refusal names the
+  offending spelling or the first offending label (`Main.refuseQuotationRuntime`,
+  `Main.refuseNonPortableLabels`). Before this a quotation under an absolute
+  runtime, or of an input exported under one, succeeded silently with
+  machine-specific absolute labels in the literal (the re-review's P3-1: a
+  faithful quotation, a non-portable artifact, a fail-open seam). Execution
+  (`--batch`) is unaffected: it accepts every spelling, under the mirrored
+  classification rule above. Witnesses: `scripts/check_runtime_resolution.sh`
+  (an absolute `--runtime`, `CERB_INSTALL_PREFIX` only, an absolute-label
+  input, the canonical control).
 - *Non-UTF-8 bytes in the Cabs JSON* (bug hunt BUG-6 and K-5, refused since
   2026-09-29, `docs/2026-09-29_bug-hunt-fixes-record.md` §S3; before that a
   class-(b) residual that died with an uncaught exception, rc 1, and listed

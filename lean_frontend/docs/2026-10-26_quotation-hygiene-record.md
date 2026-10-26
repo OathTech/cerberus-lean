@@ -154,3 +154,119 @@ fast: passed; 20/20 selected commands completed successfully.
 Source unchanged: True. Complete tier selection: True.
 Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
 ```
+
+Checkpoint commit: `1a521248b`.
+
+## Q2 — quotation under non-canonical runtime spellings is refused (ruling C)
+
+**What stood** (the re-review's P3-1): the driver documented the canonical Core quotation
+convention (`--runtime=_build/install/default` from the project root) but did not enforce
+it: a quotation under an absolute `--runtime`, or of an input exported under one, succeeded
+with exit 0 and wrote a literal carrying machine-specific absolute labels (86 and 568 in the
+re-review's probes) — a faithful quotation, a non-portable artifact, produced silently. The
+only check was `core-quote-test`'s absolute-position census, which a consumer running only
+the driver never sees.
+
+**The change** (`lean_frontend/Main.lean`: `canonicalRuntimeSpelling`,
+`refuseQuotationRuntime`, `portableLabel`, `refuseNonPortableLabels`; `loadLibc` gains the
+`portableLabels : Bool` parameter, passed `quoting`; `main` calls `refuseQuotationRuntime
+runtimeArg` right after `resolveRuntime` when quoting, and `refuseNonPortableLabels` before
+`refuseLibraryLocations` for every user TU when quoting; `loadLibc` does the same for every
+metadata TU). With `--quote-core` or `--quote-libc` the driver REFUSES — a REFUSAL envelope
+through `CerbStop.exitRefusals`, boundary `runtime`, item `--runtime`, exit 2, empty stdout,
+no module written — unless (a) the runtime was given on the command line as exactly
+`_build/install/default` and (b) every source/lexing label of every input is portable:
+relative and under the project root (no leading `/`, no `..` component). The refusal names
+the offending spelling (`the given spelling is `…``; `the runtime came from
+CERB_INSTALL_PREFIX=`…`, not from --runtime`) or the first offending label (the label array
+is sorted, so "first" is deterministic). [AGENT 2026-10-26] decisions: the item is
+`--runtime` for both halves, as the charter states — the labels an input carries are the
+runtime spelling its export ran under; the runtime-spelling check runs before any input is
+read, so the round trip's wrong-cwd control (`../_build/install/default` from
+`lean_frontend/`) now meets this refusal, whose detail names the convention as the
+library-location refusal's did; `./`-prefixed labels (cpp's canonical spelling) and
+`<built-in>`-style names are portable; execution (`--batch`) is unaffected and accepts every
+spelling under Q1's mirrored classification.
+
+**Witnesses** (`scripts/check_runtime_resolution.sh`, after the agreement pins; the refusal
+helper now also checks the item list): an absolute `--runtime` with `--quote-core`; the
+runtime from `CERB_INSTALL_PREFIX` only; an input exported under the absolute prefix from an
+absolute source path (its labels absolute; the refusal names `…/ub2.c`); each must leave no
+module; the canonical control (fixture 001 under `--runtime=_build/install/default` from the
+root) must exit 0, silent, with a module beginning `import Core_run_aux`. VALIDATION §3
+gains the "Non-canonical quotation invocations" bullet; README's convention bullet and the
+caesium Core-quotation consumer note state the rule (a dated update paragraph; the
+consumer's recipe already satisfies it).
+
+The test rebuild `test/CoreQuote/CoreQuoteCompare.lean` (`original`, the comparator's
+pipeline mirror) takes the new `loadLibc` parameter as `true` and applies
+`refuseNonPortableLabels` per user TU, i.e. the quoting driver's admission — its inputs are
+canonical exports, and a consumer's `--module --input` pair was admitted by the driver under
+the same rule (the first run after the Main change failed to BUILD that module on the old
+arity: `Some required targets logged failures: - CoreQuoteCompare`; fixed, re-run).
+`scripts/test_stops.py --lean-bin … stop-test`: `Ran 25 tests … OK`.
+
+Verbatim (the witness with its plants — the two plant counts grew from 30/40 to 34/41 with
+the four new witnesses; the Core quotation round trip, row 1's `core-quote-test`, whose
+wrong-cwd control now meets the Q2 refusal):
+
+```text
+check_runtime_resolution: selftest plant 'ignore-runtime' caught: 34 failing witness(es)
+check_runtime_resolution: selftest plant 'refuse-all' caught: 41 failing witness(es)
+check_runtime_resolution: quotation hygiene: absolute --runtime, CERB_INSTALL_PREFIX-only and absolute-label quotations refused (runtime/--runtime); canonical control written (393889 bytes)
+check_runtime_resolution: OK (31 witnesses: --runtime/CERB_INSTALL_PREFIX resolution and priority, planted cwd std.core ignored, planted prefix used, 5 runtime refusals, 1 cross-runtime and 3 library-location refusals, 1 control agreeing with the oracle, relative fixture-001 classifier agreement (both engines: suffix AND resolved membership) and execution control, 4 served UB-location agreement pins (./, unprefixed, absolute, libcore), 3 quotation-convention refusals (absolute --runtime, CERB_INSTALL_PREFIX only, absolute label) and the canonical quotation control)
+=== core-quote-test ===
+tu-alias-quote: exit 0, 0.08s
+tu-wrong-cwd-refusal: exit 2, 0.03s
+CORE_QUOTE_TOTAL inputs=27; model constructors=214; floating=0; NaN=0; memory-values=0; positions=8509616; absolute-paths=0
+Core quote round trip: PASS (whole-file representation, comparator syntax, auxiliary BEq)
+✓ core-quote-test PASSED
+```
+
+Tier A. Box rule as applied from this run on: the 1-minute load threshold is 12 (the load
+on this box is partly external — cerberus-caesium's Lean and Rocq jobs — so a threshold of 8
+can stall indefinitely); the other half stands: no other `release.py` on the box
+[AGENT 2026-10-26, orchestrator; relayed by the coordinator]. Before that amendment the
+first Q2 launch had gone out at load 12.69 without the gate check — above both thresholds;
+it was stopped by PID (`release.py` 3599449, cwd verified as this worktree, no child left)
+after about a minute and its evidence directory deleted; the run below is the gated re-run
+(the waiter re-checks every two minutes). Noted here because it started above 8. Verbatim:
+
+```text
+launching at load=8.45 19:19:42
+PASSED A1 (846.7s)
+PASSED A2 (31.5s)
+PASSED A3 (78.2s)
+PASSED A4 (25.0s)
+PASSED A4b (28.3s)
+PASSED A4c (3.3s)
+PASSED A5 (110.9s)
+PASSED A6 (5.1s)
+PASSED A6b (3.9s)
+PASSED A7 (16.1s)
+PASSED A8 (12.3s)
+PASSED A9 (17.6s)
+PASSED A10 (19.2s)
+PASSED A11 (62.4s)
+PASSED A12.1 (5.0s)
+PASSED A12.2 (4.8s)
+PASSED A13 (1.6s)
+PASSED A14.1 (121.1s)
+PASSED A14.2 (163.2s)
+PASSED A15 (408.7s)
+fast: passed; 20/20 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+(Launched at load 8.45, above 8 and below 12 — noted per the amendment; evidence
+`.tmp/release/20261026T191942.154047Z`, deleted after reading. The stale threshold-8 waiter
+wrote one interleaved `waiting: load=8.33 others=1` line before it was stopped by PID.)
+
+Scheduling [AGENT 2026-10-26, orchestrator; relayed by the coordinator]: the
+anonymous-members slice's runner has been queued behind this slice's; after the Q2 commit
+no Tier A of this slice is launched until that worktree's runner has run and finished (no
+`release.py` on the box AND a fresh evidence directory under its `.tmp/release/` newer than
+the Q2 commit, or at least 30 minutes after the Q2 commit before polling for a free runner);
+the Q3 edits and focused checks proceed meanwhile; the rest of the box rule stands.
+

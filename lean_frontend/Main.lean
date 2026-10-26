@@ -663,6 +663,58 @@ def refuseLibraryLocations (runtime : String) (source : String) (files : Array S
       unless exact.contains directory.toString do
         refuse s!"source location `{f}` resolves to directory `{directory}`, outside this run's resolved runtime library directories {exact}; exact membership is required, not a matching suffix"
 
+/-- The canonical relative runtime spelling of the Core quotation convention
+    (README "canonical Core quotation convention"; `scripts/libc_prep.sh --jsons`
+    exports under it): `--runtime=_build/install/default`, from the project root
+    or a consumer directory carrying that fixed relative runtime link. -/
+def canonicalRuntimeSpelling : String := "_build/install/default"
+
+/-- Quotation hygiene Q2 ([USER 2026-10-21] ruling C of the Core-quoting D5 re-review,
+    `docs/2026-10-20_core-quote-d5-rereview.md` P3-1; record
+    `docs/2026-10-26_quotation-hygiene-record.md`): with `--quote-core` or `--quote-libc`
+    the driver REFUSES (boundary `runtime`, item `--runtime`, exit 2, empty stdout, no
+    module written) unless the runtime was given on the command line in exactly the
+    canonical spelling `canonicalRuntimeSpelling` — not an absolute or other alias, and
+    not through `CERB_INSTALL_PREFIX` — AND every source label of the inputs is portable
+    (`refuseNonPortableLabels`). Before this a quotation under an absolute runtime, or of
+    an input exported under one, succeeded with exit 0 and emitted machine-specific
+    absolute labels into the literal (the re-review's probes: 86 and 568 of them) — a
+    faithful quotation, but a non-portable artifact produced silently, a fail-open seam
+    by the project's standard. The item is `--runtime` for both halves: the labels an
+    input carries are the runtime spelling its export ran under. The refusal names the
+    offending spelling. Witnesses: `scripts/check_runtime_resolution.sh` (an absolute
+    `--runtime`, `CERB_INSTALL_PREFIX` alone, an input with an absolute label, the
+    canonical control). -/
+def refuseQuotationRuntime (cli : Option String) : IO Unit := do
+  let refuse (what : String) : IO Unit :=
+    CerbStop.exitRefusals (driverRefusal .runtime (some "--runtime")
+      s!"cerberus-lean: refused — runtime: Core quotation (--quote-core/--quote-libc) requires the canonical relative runtime spelling --runtime={canonicalRuntimeSpelling} on the command line, from the project root or a directory carrying that fixed relative runtime link, so that every emitted label is portable; {what}. Canonical Core quotation convention (README; VALIDATION.md §3; quotation hygiene Q2)"
+      ⟨"a quotation convention whose labels do not depend on the invocation's runtime spelling", by decide⟩)
+  match cli with
+  | some s => unless s == canonicalRuntimeSpelling do refuse s!"the given spelling is `{s}`"
+  | none =>
+    let env := (← IO.getEnv "CERB_INSTALL_PREFIX").getD ""
+    refuse s!"the runtime came from CERB_INSTALL_PREFIX=`{env}`, not from --runtime"
+
+/-- A label is portable iff it is relative and stays under the project root: no leading
+    `/` and no `..` component (cpp's `./`-prefixed spellings and `<built-in>`-style names
+    are relative and pass). `some why` names the defect. -/
+def portableLabel (f : String) : Option String :=
+  if f.startsWith "/" then some "an absolute path"
+  else if (f.splitOn "/").contains ".." then some "escapes the project root through a `..` component"
+  else none
+
+/-- The label half of `refuseQuotationRuntime`: every source and lexing file name of the
+    imported Cabs positions of `source` (a user TU or a libc metadata TU) must be
+    portable, else REFUSE naming the first offending label (the array is sorted, so
+    "first" is deterministic). Called only when quoting. -/
+def refuseNonPortableLabels (source : String) (files : Array String) : IO Unit := do
+  for f in files do
+    if let some why := portableLabel f then
+      CerbStop.exitRefusals (driverRefusal .runtime (some "--runtime")
+        s!"cerberus-lean: refused — runtime: Core quotation (--quote-core/--quote-libc) requires portable source labels, but {source} carries the label `{f}` ({why}); export the input from the project root with --runtime={canonicalRuntimeSpelling} (scripts/libc_prep.sh --jsons for the libc metadata) so that cpp emits project-relative labels. Canonical Core quotation convention (README; VALIDATION.md §3; quotation hygiene Q2)"
+        ⟨"a quotation convention whose labels do not depend on the export's runtime spelling", by decide⟩)
+
 /-- Bug-hunt BUG-4 (2026-09-29; record `docs/2026-09-29_bug-hunt-fixes-record.md`
     §S4): print a batch `Undefined` line with the `ub:` payload as BYTES. The
     oracle prints the field with `%s` and no escaping
@@ -860,7 +912,7 @@ def checkLibcCallingConvention (mode : calling_convention) (parsed : CoreParser.
 
 /-- Load and assemble the libc library Core file (see the module note at
     "C-libc loading" above). -/
-def loadLibc [LemFuel] [CerbGlobal.Switches] (runtime : String) (quiet : Bool) (supply0 : Nat) (addressSpaceTop : Int)
+def loadLibc [LemFuel] [CerbGlobal.Switches] (runtime : String) (quiet portableLabels : Bool) (supply0 : Nat) (addressSpaceTop : Int)
     (coreEvalStuff : Fmap String sym × fun_map Unit × impl)
     (ailnames : Fmap String sym) (stdFunMap : fun_map Unit) (coreImpl : impl)
     (libcCorePath : String) (libcTuJsons : List String) :
@@ -903,6 +955,8 @@ def loadLibc [LemFuel] [CerbGlobal.Switches] (runtime : String) (quiet : Bool) (
     let content ← readCabsJsonFile j
     let (digest, tunit) ← match CabsImport.parseJsonWithFiles content with
       | .ok (d, t, files) => do
+        -- quotation hygiene Q2: when quoting, every metadata label must be portable
+        if portableLabels then refuseNonPortableLabels s!"the libc metadata TU {j}" files
         refuseLibraryLocations runtime s!"the libc metadata TU {j}" files
         pure (d, t)
       | .error e => return (← bail s!"cabs-json parse error in {j}: {e}")
@@ -1257,7 +1311,7 @@ def runPipeline [LemFuel] [CerbGlobal.Switches] (runtime : String) (batch : Bool
   let mut supply : Nat := 0
   match libc with
   | some (libcCore, libcTus) =>
-    match ← loadLibc runtime quiet supply addressSpaceTop coreEvalStuff ailnames stdFunMap coreImpl libcCore libcTus with
+    match ← loadLibc runtime quiet quoting supply addressSpaceTop coreEvalStuff ailnames stdFunMap coreImpl libcCore libcTus with
     | .error code => return code
     | .ok (libcFile, supply') =>
       let origin := CerbQuote.libcProvenance libcFile
@@ -1989,6 +2043,9 @@ def main (args : List String) : IO Unit := do
   -- bug-hunt BUG-2: the runtime is resolved like the oracle's (resolveRuntime),
   -- never searched for relative to the working directory
   let runtimeDir ← @resolveRuntime ⟨switchSet⟩ runtimeArg
+  -- quotation hygiene Q2 ([USER 2026-10-21] ruling C): a quotation under a
+  -- non-canonical runtime spelling is refused before any input is read
+  if quoting then refuseQuotationRuntime runtimeArg
   let contents ← if libraryOnly then pure [] else readInputs restArgs
   let mut tunits : List (String × translation_unit) := []
   let mut idx := 0
@@ -2003,6 +2060,8 @@ def main (args : List String) : IO Unit := do
     | .ok (digest, tunit, files) =>
       -- bug-hunt BUG-3: suffix-library ⇒ exact-library, or refuse
       let name := restArgs.getD (idx - 1) "<input>"
+      -- quotation hygiene Q2: when quoting, every label must be portable
+      if quoting then refuseNonPortableLabels s!"the input {name}" files
       refuseLibraryLocations runtimeDir s!"the input {name}" files
       tunits := tunits ++ [(digest, tunit)]
   -- The ONE instantiation of the ambient fuel (fuel-parameter arc): every
