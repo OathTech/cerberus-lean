@@ -1,9 +1,16 @@
-/* Z2 probe (CerbFloat.lean:102-130 parseDecimal via Float.ofScientific —
-   Lean 4.32 OfScientific.lean:36-54 truncating (m<<<k)/5^e then a 64-bit
-   truncation before the 53-bit rounding — vs impl_mem.ml:2523-2524
-   float_of_string = strtod, correctly rounded). 200 literals (seed 2026,
-   17 significant digits, exponents -300..300 + 40 near-halfway shapes),
-   each printed as its IEEE bit pattern. libc mode. Generated. */
+/* Z2 probe (2026-09-03): 200 decimal literals (seed 2026, 17 significant
+   digits, exponents -300..300 + 40 near-halfway shapes), each printed as its
+   IEEE bit pattern, vs impl_mem.ml:2523-2524 float_of_string = strtod
+   (correctly rounded). The reader claim it was written for — Lean 4.32's
+   Float.ofScientific (OfScientific.lean:36-54) truncating (m<<<k)/5^e and
+   again to 64 bits before the 53-bit rounding — is VERSION-BOUND and no
+   longer on the model's path: CerbFloat.of_string has not called
+   Float.ofScientific since 2026-09-11 (exact Nat arithmetic; see its
+   header), and Float.ofScientific itself agrees with a correctly-rounded
+   reference on all 200 of these literals on both Lean 4.32.2 and 4.35.0
+   (measured 2026-10-26 at the 4.35 move,
+   lean_frontend/docs/2026-10-25_lean-4.35-cerberus-record.md). libc mode.
+   Generated. */
 #include <stdio.h>
 int main(void) {
   union { double d; unsigned long long u; } u;
