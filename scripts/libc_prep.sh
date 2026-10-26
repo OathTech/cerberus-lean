@@ -14,7 +14,13 @@
 # in VALIDATION.md; no label or literal rewriting participates in preparation.
 #
 # Usage:
-#   --check            verify BOTH pins and BOTH staged objects
+#   --check            verify BOTH pins and BOTH staged objects, then the per-proc
+#                      bare-name census of both transports against the reviewed
+#                      register tests/libc/bare_name_census.tsv (quotation hygiene
+#                      Q4, 2026-10-26: a SPEEDBUMP on the printed spelling of the
+#                      -d5 dump, not transport fidelity; scripts/libc_bare_name_census.py)
+#   --selftest         --check, then three doctored registers (a row deleted, a
+#                      phantom row, a changed count) must each FAIL the census
 #   --record           deliberately regenerate BOTH pins and their hashes
 #   --jsons <outdir>   verify BOTH pins, then print the twelve shared metadata
 #                      JSON paths, one per line in libc's link order
@@ -34,24 +40,30 @@ require_cerberus
 [[ -x "$CERBERUS_BIN" ]] || die "cerberus not built: $CERBERUS_BIN"
 MODE="${1:---check}"
 case "$MODE" in
-  --check|--record|--jsons|--tus) ;;
-  *) die "usage: libc_prep.sh --check | --record | --jsons <outdir> | --tus" ;;
+  --check|--selftest|--record|--jsons|--tus) ;;
+  *) die "usage: libc_prep.sh --check | --selftest | --record | --jsons <outdir> | --tus" ;;
 esac
+CENSUS_REGISTER="$PROJECT_ROOT/tests/libc/bare_name_census.tsv"
+CENSUS_PY="$PROJECT_ROOT/scripts/libc_bare_name_census.py"
 if [[ "$MODE" == --tus ]]; then
     printf '%s\n' "${LIBC_TUS[@]}"
     exit 0
 fi
 
-regen_dump() { # <variant> <out>
-    local variant="$1" out="$2" switches=()
+regen_dump() { # <variant> <out> [-d5]
+    local variant="$1" out="$2" switches=() debug=()
     if [[ "$variant" == libc_inner_arg_temps ]]; then
         switches=(--switches=inner_arg_temps)
     fi
+    # -d5 spells every symbol name{number}; its debug chatter and printer warnings go to
+    # stderr, kept in a log shown only on failure (the dump file itself is what is read)
+    local errlog=/dev/stderr
+    if [[ "${3:-}" == -d5 ]]; then debug=(-d5); errlog="$out.stderr"; register_cleanup "$errlog"; fi
     ( cd "$PROJECT_ROOT" && opam exec --switch="$PROJECT_ROOT" -- \
         "$CERBERUS_BIN" --runtime="$PROJECT_ROOT/_build/install/default" \
-        "${switches[@]}" --nolibc --pp=core --pp_core_out="$out" \
-        "$PROJECT_ROOT/_build/default/runtime/libc/$variant.co" ) \
-      || die "$variant dump regeneration failed (cerberus rc=$?)"
+        "${switches[@]}" --nolibc "${debug[@]}" --pp=core --pp_core_out="$out" \
+        "$PROJECT_ROOT/_build/default/runtime/libc/$variant.co" 2>> "$errlog" ) \
+      || { [[ "$errlog" != /dev/stderr ]] && tail -20 "$errlog" >&2; die "$variant dump regeneration failed (cerberus rc=$?)"; }
     [[ -s "$out" ]] || die "$variant dump regeneration produced an empty file"
 }
 
@@ -89,13 +101,37 @@ for variant in "${LIBC_VARIANTS[@]}"; do
         echo "  The oracle object or its pin moved; review before re-pinning." >&2
         exit 1
     fi
-    if [[ "$MODE" == --check ]]; then
+    if [[ "$MODE" == --check || "$MODE" == --selftest ]]; then
         echo "libc_prep: OK ($variant: pin + regenerated dump == $pinned_sha, $(wc -c < "$pin") bytes)"
         echo "libc_prep: OK ($variant: lane-loaded staging byte-matches build-tree object)"
         echo "libc_prep: $variant.co version (informational): $(head -1 "$co")"
+        # The bare-name census speedbump (Q4): the -d5 dump of the same object, scoped to
+        # the procs the pinned text transports, against the reviewed register.
+        [[ -f "$CENSUS_REGISTER" ]] || die "census register missing: $CENSUS_REGISTER"
+        d5="$(mktemp "$TMP_DIR/${variant}_d5.XXXXXXXXXX.core")" || die "mktemp failed"
+        register_cleanup "$d5"
+        regen_dump "$variant" "$d5" -d5
+        python3 -I "$CENSUS_PY" "$variant" "$d5" "$pin" "$CENSUS_REGISTER" \
+            || die "$variant: bare-name census differs from the reviewed register (review tests/libc/bare_name_census.tsv; a new shared bare name inside a transported proc is the shape the name join cannot distinguish)"
+        if [[ "$MODE" == --selftest ]]; then
+            plant_reg="$(mktemp "$TMP_DIR/census_plant.XXXXXXXXXX.tsv")" || die "mktemp failed"
+            register_cleanup "$plant_reg"
+            for plant in deleted phantom count; do
+                case "$plant" in
+                  deleted) grep -v $'^'"$variant"$'\tdecfloat\tcarry\t' "$CENSUS_REGISTER" > "$plant_reg" ;;
+                  phantom) { cat "$CENSUS_REGISTER"; printf '%s\tphantom_proc\tx\t2\n' "$variant"; } > "$plant_reg" ;;
+                  count)   sed $'s/^'"$variant"$'\tdecfloat\tcarry\t3$/'"$variant"$'\tdecfloat\tcarry\t2/' "$CENSUS_REGISTER" > "$plant_reg" ;;
+                esac
+                cmp -s "$plant_reg" "$CENSUS_REGISTER" && die "census selftest: plant '$plant' did not alter the register (the row it edits is missing)"
+                if python3 -I "$CENSUS_PY" "$variant" "$d5" "$pin" "$plant_reg" > /dev/null 2>&1; then
+                    die "census selftest: plant '$plant' PASSED the census ($variant) — vacuous check"
+                fi
+                echo "libc_prep: census selftest plant '$plant' caught ($variant)"
+            done
+        fi
     fi
 done
-if [[ "$MODE" == --check || "$MODE" == --record ]]; then exit 0; fi
+if [[ "$MODE" == --check || "$MODE" == --selftest || "$MODE" == --record ]]; then exit 0; fi
 
 # --- --jsons: generate the 12 metadata cabs-jsons ---------------------------
 OUTDIR="${2:-}"

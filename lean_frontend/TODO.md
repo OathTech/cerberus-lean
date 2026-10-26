@@ -902,16 +902,14 @@ S-basket slice — `docs/2026-09-01_s-basket.md`.)
   (the item-G refusals, migrated from legacy panics to REFUSAL envelopes with
   the oracle's texts as `detail`). The union-initializer refusal (D11) stays
   legacy with its WP2 mover. [AGENT 2026-10-26]
-- **Libc text transport: a per-proc bare-name census as a speedbump.** The
-  inner_arg_temps review (P2-3) printed both `.co` libraries at `-d5` and found
-  distinct symbols sharing a bare name inside 7 procs of the variant dump and 10
-  of the Normal dump (pre-existing; none a parameter rebinding; not shown live
-  together; the 42-row libc lane is green in both modes). The printer fix and the
-  two detectors close the parameter-rebinding shape only; fail-closed transport
-  is NOT established. Cheap speedbump: add the `-d5` census to
-  `scripts/libc_prep.sh --check` for both variants, pinning the reviewed list and
-  failing on a new entry. The principled fix (numbering every named symbol, or a
-  binary/JSON library transport) is the queued transport item. [AGENT 2026-10-26]
+- **Libc text transport: a per-proc bare-name census as a speedbump.** DONE
+  2026-10-26 (quotation hygiene Q4): `scripts/libc_prep.sh --check` runs
+  `scripts/libc_bare_name_census.py` on the `-d5` dump of each variant, scoped to
+  the procs the pinned text transports, against `tests/libc/bare_name_census.tsv`
+  (six rows per variant; the review's 7/10 counts included std.core's and other
+  linked runtime procs the transport does not carry); row 1 via `test_unit.sh`,
+  three plants. A speedbump on the printed spelling, not transport fidelity; the
+  principled fix stays the queued transport item above. [AGENT 2026-10-26]
 - **inner_arg_temps fuzzing over the in-tree csmith corpus.** The slice's fuzzing
   round was 32 fresh seeds of which 26 failed the frontend, leaving six switched
   comparisons (review P2-4; the record states it plainly). Run the lane's `--fuzz`

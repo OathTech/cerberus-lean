@@ -1224,7 +1224,19 @@ Transport still assumes different symbols live together have different
 printed names within a procedure: unnamed symbols are numbered `a_<n>`,
 C names are unique within their scopes, and argument values now have their
 own numbered spelling. The checks guard the two demonstrated ways this
-assumption can fail, not arbitrary scope reuse. The principled queued fix
+assumption can fail, not arbitrary scope reuse. Since quotation hygiene Q4
+(2026-10-26; the inner_arg_temps review's P2-3) a third SPEEDBUMP — not
+transport fidelity — is `scripts/libc_prep.sh --check` (row 1 through
+`test_unit.sh`, with `--selftest` plants): it prints each `.co` at `-d5`
+(every symbol `name{number}`), keeps the procs the pinned text transports
+and compares, per proc, the bare names that map to more than one symbol
+number against the reviewed register `tests/libc/bare_name_census.tsv`
+(`scripts/libc_bare_name_census.py`; six rows per variant: `decfloat`'s
+block-local `carry`/`tmp`, the `div`/`ldiv`/`lldiv` function-vs-struct-tag
+pairs, `vfscanf`'s block-local `tmp`; none a parameter rebinding, none shown
+live together). A new, vanished or recounted row fails loudly. The census
+is of the printed spelling; the principled fix stays the queued transport
+item. The principled queued fix
 is numbering every named symbol with metadata joins, or structured
 transport; see [TODO](TODO.md#queued-larger-work) and
 [tray 65](docs/upstream-tray/65-inner-arg-temps-core-symbol-loss.md).

@@ -1,0 +1,29 @@
+# tests/libc/bare_name_census.tsv — the reviewed per-proc bare-name census of both
+# libc text transports (quotation hygiene Q4, 2026-10-26; inner_arg_temps review P2-3).
+# Columns: variant TAB proc TAB bare name TAB number of distinct symbol numbers that
+# bare name maps to inside that proc, as printed by the oracle at -d5 and scoped to the
+# procs the pinned text carries. Checked by scripts/libc_prep.sh --check (row 1 via
+# test_unit.sh); a new/vanished row or a changed count fails. Review notes [AGENT 2026-10-26]:
+#   decfloat carry/tmp   : three block-local declarations each of `carry` and `tmp` in
+#                          separate blocks of the same function (the libc source); never
+#                          parameters, so the loader's rebinding detector is silent.
+#   div/ldiv/lldiv       : the function `div{n}` and the struct tag `struct div{m}`
+#                          (different C namespaces) share the bare name inside the proc.
+#   vfscanf tmp          : two block-local `tmp` declarations in separate blocks.
+#   Not listed (outside the transport): std.core's rev_listFromStr_aux /
+#   rev_listFromArray_aux (`shifted`), the *_proxy/*_procy `dir_ptr` pairs and
+#   unspec_to_zero_proxy, which the -d5 dump prints from the linked runtime libraries
+#   but the pinned text does not carry; the review's counts (7 variant / 10 Normal)
+#   included some of these. The two variants have the same six rows each.
+libc	decfloat	carry	3
+libc	decfloat	tmp	3
+libc	div	div	2
+libc	ldiv	ldiv	2
+libc	lldiv	lldiv	2
+libc	vfscanf	tmp	2
+libc_inner_arg_temps	decfloat	carry	3
+libc_inner_arg_temps	decfloat	tmp	3
+libc_inner_arg_temps	div	div	2
+libc_inner_arg_temps	ldiv	ldiv	2
+libc_inner_arg_temps	lldiv	lldiv	2
+libc_inner_arg_temps	vfscanf	tmp	2

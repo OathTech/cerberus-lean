@@ -382,5 +382,100 @@ Tier A (launched only after the anonymous-members slice's runner, per the schedu
 verbatim:
 
 ```text
-TIERA_Q3_PLACEHOLDER
+launching at load=7.82 20:34:01
+PASSED A1 (844.7s)
+PASSED A2 (42.4s)
+PASSED A3 (98.6s)
+PASSED A4 (37.9s)
+PASSED A4b (38.2s)
+PASSED A4c (3.5s)
+PASSED A5 (112.2s)
+PASSED A6 (4.2s)
+PASSED A6b (3.9s)
+PASSED A7 (10.6s)
+PASSED A8 (8.9s)
+PASSED A9 (17.6s)
+PASSED A10 (26.8s)
+PASSED A11 (72.2s)
+PASSED A12.1 (9.3s)
+PASSED A12.2 (6.0s)
+PASSED A13 (2.2s)
+PASSED A14.1 (172.2s)
+PASSED A14.2 (298.2s)
+PASSED A15 (625.5s)
+fast: passed; 20/20 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
 ```
+
+(Evidence `.tmp/release/20261026T203401.092565Z`, deleted after reading; launched at load
+7.82 once the anonymous-members slice's Tier A had finished, per the scheduling note; the
+tree is exactly commit `ec136207e` — no working-tree edit between the commit and the run.)
+
+Scheduling note 2 [AGENT 2026-10-26, orchestrator; relayed by the coordinator]: the
+anonymous-members slice is at its final gate (its full battery, about two hours); after this
+Tier A and its commit, this slice yields the runner until that battery has run — before the
+next Tier A: no `release.py` on the box AND a `--mode full` evidence directory newer than this
+Tier A's start (20:34:01) under that worktree's `.tmp/release/` (or its log showing
+`release rc=`), polled every five minutes — doing the Q4–Q6 edits and focused checks
+meanwhile and stacking the Tier As afterwards. Applied as: Q4, Q5 and Q6 are each committed
+on green focused checks with "Tier A stacked" stated in the message; ONE Tier A then runs on
+the Q6 tree (recorded under Q6 as covering Q4–Q6), followed by the close-out full battery.
+
+
+Checkpoint commit: `ec136207e` (Tier A lines above were run on that exact tree and added here at the Q4 commit).
+
+## Q4 — the bare-name census speedbump (inner_arg_temps review P2-3)
+
+**What** (`scripts/libc_bare_name_census.py`, `tests/libc/bare_name_census.tsv`,
+`scripts/libc_prep.sh --check`/`--selftest`, `scripts/test_unit.sh` row 1): for each libc
+transport (`libc`, `libc_inner_arg_temps`) `libc_prep.sh --check` now also prints the `.co`
+at `-d5` (every symbol spelled `name{number}`), keeps the procs/funs whose names the pinned
+text `tests/libc/<variant>.core` transports, and lists per proc every bare name that maps to
+more than one symbol number; the set must equal the reviewed register (variant, proc, name,
+count): a new row, a vanished row or a changed count fails loudly. `--selftest` plants three
+doctored registers (a row deleted, a phantom row, a count changed), each of which must fail
+the census, then runs the real check; `test_unit.sh` runs `--selftest` (row 1). A SPEEDBUMP
+on the printed spelling, not transport fidelity (VALIDATION, the parameter-identity section);
+the principled fix stays the queued transport item.
+
+**The register, derived from the measurement** ([AGENT 2026-10-26]): six rows per variant,
+the same six — `decfloat` `carry` (3) and `tmp` (3): block-local declarations in separate
+blocks of one function; `div`/`ldiv`/`lldiv` (2 each): the function and the struct tag
+`struct div` (different C namespaces) sharing the bare name inside the proc; `vfscanf` `tmp`
+(2): two block-local declarations. None is a parameter rebinding (the loader's detector is
+silent, correctly) and none was shown live together. The review's counts (7 procs in the
+variant dump, 10 in Normal) included procs the `-d5` dump prints from the LINKED RUNTIME
+LIBRARIES but the pinned text does not carry: std.core's `rev_listFromStr_aux` /
+`rev_listFromArray_aux` (`shifted`), the `closedir_procy` / `readdir_proxy` /
+`rewinddir_procy` `dir_ptr` pairs and `unspec_to_zero_proxy` (`n`, `ty`); both engines parse
+std.core from its own text, so those are outside the transport the census guards and are
+excluded by scoping to the pinned text's proc names (191 procs, 0 funs, per variant). The
+unscoped census (every printed proc) gives 11 Normal / 8 variant proc occurrences, the
+reviewer's 10 / 7 plus `unspec_to_zero_proxy`.
+
+Verbatim (`libc_prep.sh --selftest`):
+
+```text
+libc_prep: OK (libc: pin + regenerated dump == d93b99cd55dae4b23071262a24d235c69489c8e41011554194126ecc81555a0a, 4188542 bytes)
+libc_prep: OK (libc: lane-loaded staging byte-matches build-tree object)
+libc_prep: libc.co version (informational): ocaml:5.4.0+cerb:git-cerberus-lean-v0.1.0-alpha.1-245-gec136207e+mem:concrete
+libc_prep: census OK (libc: 191 transported procs/funs; 6 shared bare names in 5 procs = the register; a speedbump on the printed spelling, not transport fidelity)
+libc_prep: census selftest plant 'deleted' caught (libc)
+libc_prep: census selftest plant 'phantom' caught (libc)
+libc_prep: census selftest plant 'count' caught (libc)
+libc_prep: OK (libc_inner_arg_temps: pin + regenerated dump == 56986871ff4cf05959213c5c20936b0914d14bd925b5bf7223cce25be72536ac, 4044363 bytes)
+libc_prep: OK (libc_inner_arg_temps: lane-loaded staging byte-matches build-tree object)
+libc_prep: libc_inner_arg_temps.co version (informational): ocaml:5.4.0+cerb:git-cerberus-lean-v0.1.0-alpha.1-245-gec136207e+mem:concrete
+libc_prep: census OK (libc_inner_arg_temps: 191 transported procs/funs; 6 shared bare names in 5 procs = the register; a speedbump on the printed spelling, not transport fidelity)
+libc_prep: census selftest plant 'deleted' caught (libc_inner_arg_temps)
+libc_prep: census selftest plant 'phantom' caught (libc_inner_arg_temps)
+libc_prep: census selftest plant 'count' caught (libc_inner_arg_temps)
+```
+
+(`libc_prep.sh --selftest` exit 0; the `-d5` dump's debug chatter and `Pp_core` warnings go to
+a per-dump stderr log shown only on failure; `libc_prep.sh --jsons` unchanged: 12 metadata
+files. The register's provenance paragraph is the file's header.)
+
+
+Tier A: stacked after the anonymous-members slice's full battery (scheduling note 2); see Q6.
