@@ -50,17 +50,19 @@ output is unchanged. I2's original green was a faithful quotation of a
 corrupted parse, not transport evidence. See
 [VALIDATION](../VALIDATION.md#core-text-parameter-identity-speedbumps-inner_arg_temps-repair).
 
-Stop classes (outcome protocol, landed 2026-10-22, after this slice was based):
-the `--call`-under-`inner_arg_temps` refusal is a REFUSAL envelope (boundary
-`cli`, item `--call`) like the other driver refusals. The two libc refusals of
-this slice — `R-IAT-LIBC-SYMBOL-LOSS` (a parameter name rebound in a proc of the
-dump) and the dump/mode calling-convention mismatch — are plain stderr texts
-with exit 2 and NO envelope, because the protocol's frozen boundary vocabulary
-has no `libc` boundary (the same gap that keeps the item-G refusals legacy).
-Treat them as legacy/unattributed by their text prefixes
-`cerberus-lean: refused — --libc:`; named mover: the quotation-hygiene slice
-adds the boundary and converts both (TODO.md). [AGENT 2026-10-26, orchestrator,
-post-rebase adaptation]
+Stop classes (outcome protocol, landed 2026-10-22, after this slice was based;
+post-rebase adaptation [AGENT 2026-10-26, orchestrator]): every driver refusal
+this slice adds is a REFUSAL envelope. The `--call`-under-`inner_arg_temps`
+refusal has boundary `cli`, item `--call`; the two libc refusals —
+`R-IAT-LIBC-SYMBOL-LOSS` (a parameter name rebound in a proc of the dump) and
+the dump/mode calling-convention mismatch — have boundary `cli`, item `--libc`,
+because the protocol's frozen boundary vocabulary has no `libc` boundary (a
+dedicated boundary is a queued design question, TODO.md). All three exit 2 with
+empty stdout; their detail texts are stable and carry the prefixes above. The
+completed-run report `cerberus-lean switches: [...]` is one informational stderr
+line printed only after a completed run (never after a panic, never before a
+stop); `decode_stop` admits exactly one well-formed line and retains it as
+`switch_report`, and treats a malformed or duplicate one as a problem.
 
 Correction to the earlier recursive-main guidance: upstream's guard is
 dead on the active driver path. Eccall reduction invokes Core_run.call_proc

@@ -359,6 +359,12 @@ def parse(stdout: bytes, stderr: bytes = b'', status: int | None = None,
 # the caller. Positions below are one-based lines and zero-based byte offsets.
 STOP_PREFIX = b'cerberus-lean stop '
 STOP_RESERVED = b'cerberus-lean stop'
+# The driver's informational switch-set report (CerbDriverConfig.switchReport),
+# printed on stderr after a COMPLETED run (never after a panic, never before a
+# CLI stop): exactly one well-formed line is admitted and retained; a malformed
+# or duplicate one is a problem (inner_arg_temps post-rebase adaptation, 2026-10-26).
+SWITCH_REPORT_PREFIX = b'cerberus-lean switches:'
+SWITCH_REPORT = re.compile(rb'cerberus-lean switches: \[(?:[A-Za-z_][A-Za-z0-9_]*(?:,[A-Za-z_][A-Za-z0-9_]*)*)?\]')
 STOP_BOUNDARIES = frozenset((
     'fs', 'pnvi', 'switches', 'concurrency', 'float-format', 'cli', 'runtime',
     'library-location', 'cabs-json-utf8', 'batch-ub-payload', 'abort-flag',
@@ -590,6 +596,7 @@ class StopDecode:
     legacy_panics: list[LegacyPanic]
     fuel: list[FuelOccurrence]
     problems: list[StopProblem]
+    switch_report: bytes | None = None
 
 
 def _stop_lines(data: bytes):
@@ -752,6 +759,14 @@ def decode_stop(stdout: bytes, stderr: bytes, status: int) -> StopDecode:
             cli_stops = []
             for line, position, complete in lines:
                 if not complete:
+                    continue
+                if line.startswith(SWITCH_REPORT_PREFIX):
+                    if not SWITCH_REPORT.fullmatch(line):
+                        problem('stderr', position, 'malformed switch report')
+                    elif result.switch_report is not None:
+                        problem('stderr', position, 'duplicate switch report')
+                    else:
+                        result.switch_report = line
                     continue
                 if line.startswith(STOP_RESERVED):
                     stop = envelope(line, 'cli', None, position)

@@ -1,5 +1,8 @@
 # inner_arg_temps completion — 2026-10-23
 
+(This file is the I3 COMPLETION record, despite its file name; the slice's close-out is
+`2026-10-25_inner-arg-temps-closeout-record.md`. Header added at the pre-merge review, P3-1.)
+
 Branch `feature/inner-arg-temps`, resumed from `5662ee63e`.
 Status: **I3/I4 complete on the feature branch**. The
 [2026-10-25 close-out record](2026-10-25_inner-arg-temps-closeout-record.md)

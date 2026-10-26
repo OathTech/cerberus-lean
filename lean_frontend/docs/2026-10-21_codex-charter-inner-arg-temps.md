@@ -2,7 +2,11 @@
 
 Branch `feature/inner-arg-temps`, worktree `worktrees/cerberus-lean-feature/inner-arg-temps`,
 based on mainline `e32c16709` (Core quoting landed 2026-10-21). Worker: Codex #1.
-Status: **COMPLETE on the feature branch**, full battery passed 2026-10-26.
+Status: **COMPLETE on the feature branch at `c1ec77ddc`** (full battery 44/44 on its
+pre-rebase base `e32c16709`, 2026-10-26); rebased by the orchestrator onto mainline
+`1bb518576` on 2026-10-26 with a post-rebase adaptation and the pre-merge review's
+fixes (close-out record, "Post-rebase" section); re-validation is the orchestrator's
+full battery on the landed tip, quoted in the landing note.
 The [close-out record](2026-10-25_inner-arg-temps-closeout-record.md) records
 the authorization for one exact diagnostic signature pair and the 44/44
 full-battery result. The frame comparison remains unchanged. Matched

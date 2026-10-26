@@ -1,5 +1,9 @@
 # Park: exhaustive cross-mode observation multiplicity
 
+(This file is the MULTIPLICITY PARK record, despite its file name; the I3 completion
+record is `2026-10-23_inner-arg-temps-closeout-record.md` and the close-out is
+`2026-10-25_inner-arg-temps-closeout-record.md`. Header added at the pre-merge review, P3-1.)
+
 2026-10-22, branch `feature/inner-arg-temps`, resumed from `9c391406c`.
 Status: **Dispositioned, 2026-10-23**. Cross-mode observation multiplicity
 is admissible; the oracle sanity comparison now uses distinct complete

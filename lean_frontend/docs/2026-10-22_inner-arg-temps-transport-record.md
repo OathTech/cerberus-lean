@@ -1,5 +1,8 @@
 # Park: repaired transport reaches an existing libc Error — 2026-10-22
 
+(This file is the strerror ACCEPTANCE-CRITERION PARK record of the transport repair,
+the fourth of the slice's five park events. Header added at the pre-merge review, P3-1.)
+
 Branch `feature/inner-arg-temps`, resumed from park `ebbfa2145`.
 **Dispositioned, 2026-10-22:** the registered `strerror` Error is accepted
 under complete-observation equality, while retaining its `BOTH_FAIL`

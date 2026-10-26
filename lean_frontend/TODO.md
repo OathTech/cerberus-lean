@@ -854,13 +854,29 @@ canonicity consolidation, the printf/Monadic_parsing totalization
 tail, and the Lean-side lem-sync freshness stamp all closed in the
 S-basket slice — `docs/2026-09-01_s-basket.md`.)
 
-- **Stop vocabulary: a `libc` boundary for the inner_arg_temps libc refusals.**
-  `Main.lean`'s `R-IAT-LIBC-SYMBOL-LOSS` detector refusal and the dump/mode
-  calling-convention mismatch refusal are plain stderr texts with exit 2, not
-  REFUSAL envelopes, because `CerbStop.Boundary` (frozen by design v2) has no
-  `libc` boundary; the item-G refusals are legacy for the same reason. Mover:
-  the quotation-hygiene slice (rulings B and C of 2026-10-21) adds the boundary
-  (a design-v2 amendment) and converts these two plus item G. [AGENT 2026-10-26]
+- **Stop vocabulary: a dedicated `libc` boundary?** The inner_arg_temps libc
+  refusals (`R-IAT-LIBC-SYMBOL-LOSS`, the dump/mode calling-convention mismatch)
+  are REFUSAL envelopes under boundary `cli`, item `--libc`, because
+  `CerbStop.Boundary` (frozen by design v2) has no `libc` boundary; the item-G
+  refusals are legacy panics for a related reason. Whether a `libc` boundary is
+  added (a design-v2 amendment) is decided in the quotation-hygiene slice
+  (rulings B and C of 2026-10-21). [AGENT 2026-10-26]
+- **Libc text transport: a per-proc bare-name census as a speedbump.** The
+  inner_arg_temps review (P2-3) printed both `.co` libraries at `-d5` and found
+  distinct symbols sharing a bare name inside 7 procs of the variant dump and 10
+  of the Normal dump (pre-existing; none a parameter rebinding; not shown live
+  together; the 42-row libc lane is green in both modes). The printer fix and the
+  two detectors close the parameter-rebinding shape only; fail-closed transport
+  is NOT established. Cheap speedbump: add the `-d5` census to
+  `scripts/libc_prep.sh --check` for both variants, pinning the reviewed list and
+  failing on a new entry. The principled fix (numbering every named symbol, or a
+  binary/JSON library transport) is the queued transport item. [AGENT 2026-10-26]
+- **inner_arg_temps fuzzing over the in-tree csmith corpus.** The slice's fuzzing
+  round was 32 fresh seeds of which 26 failed the frontend, leaving six switched
+  comparisons (review P2-4; the record states it plainly). Run the lane's `--fuzz`
+  logic over `tests/csmith/*` (1669 files that pass the frontend) under the switch
+  as a Tier C row: engine agreement within the mode, cross-mode set equality on
+  the oracle; discrepancies are findings. [AGENT 2026-10-26]
 
 ## Needs maintainer action or network access
 

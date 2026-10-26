@@ -171,6 +171,37 @@ class SchemaTests(unittest.TestCase):
         self.assertEqual(obs.parse_stop(wire(v)).tray.number, '1' * 5000)
 
 
+class SwitchReportTests(unittest.TestCase):
+    """The driver's informational switch-set report on stderr (post-rebase adaptation of
+    the inner_arg_temps slice, 2026-10-26): one well-formed line is admitted and retained,
+    everything else stays a problem."""
+    VERDICT = b'Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}\n'
+
+    def test_well_formed_report_is_admitted_and_retained(self):
+        for line in (b'cerberus-lean switches: []', b'cerberus-lean switches: [inner_arg_temps]',
+                     b'cerberus-lean switches: [PNVI_ae_udi]'):
+            result = obs.decode_stop(self.VERDICT, line + b'\n', 0)
+            self.assertEqual(result.problems, [], (line, result.problems))
+            self.assertFalse(result.stops or result.fuel or result.legacy_panics)
+            self.assertEqual(result.switch_report, line)
+
+    def test_malformed_report_is_a_problem(self):
+        for line in (b'cerberus-lean switches: [inner arg]', b'cerberus-lean switches: [',
+                     b'cerberus-lean switches:[]', b'cerberus-lean switches: [a,]'):
+            result = obs.decode_stop(self.VERDICT, line + b'\n', 0)
+            self.assertTrue(result.problems, line)
+            self.assertIsNone(result.switch_report)
+
+    def test_duplicate_report_is_a_problem(self):
+        err = b'cerberus-lean switches: []\ncerberus-lean switches: []\n'
+        result = obs.decode_stop(self.VERDICT, err, 0)
+        self.assertTrue(result.problems)
+
+    def test_other_stderr_text_is_still_a_problem(self):
+        result = obs.decode_stop(self.VERDICT, b'cerberus-lean: something else\n', 0)
+        self.assertTrue(result.problems)
+
+
 class CaptureTests(unittest.TestCase):
     def clean(self, out, err, rc):
         result = obs.decode_stop(out, err, rc)
@@ -583,7 +614,7 @@ if __name__ == '__main__':
     if LEAN_BIN and not LEAN_BIN.is_file():
         parser.error('--lean-bin does not exist; build stop-test first')
     suite = unittest.TestSuite()
-    for cls in (SchemaTests, CaptureTests) + ((LeanConformanceTests,) if LEAN_BIN else ()):
+    for cls in (SchemaTests, CaptureTests, SwitchReportTests) + ((LeanConformanceTests,) if LEAN_BIN else ()):
         suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(cls))
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     sys.exit(not result.wasSuccessful())

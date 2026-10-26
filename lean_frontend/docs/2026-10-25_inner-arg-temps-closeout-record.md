@@ -193,3 +193,33 @@ I1b remains approved and deferred to the quotation-hygiene slice. No
 semantic implementation change was made during this final registration
 and close-out. Raw captures are removed after recording these conclusions.
 No merge or push.
+
+
+## Post-rebase (orchestrator, 2026-10-26)
+
+[AGENT 2026-10-26, orchestrator] The branch (tip `c1ec77ddc`, base `e32c16709`,
+full battery 44/44 there) was rebased onto mainline `1bb518576` (the
+union-initializer refusal, the survey docs and the outcome protocol landed since
+the base) by the orchestrator, per the operator's landing instruction. The
+slice's own diff changed only at the resolutions in `Main.lean` (the protocol's
+envelope structure kept, the switch texts carried in), `scripts/LADDER.md` row 1,
+`scripts/check_cabs_json_utf8.sh` and `scripts/check_runtime_resolution.sh`; the
+file set is unchanged (pre-rebase tip preserved at
+`refs/snapshots/inner-arg-temps-prerebase-20261026` until landing).
+
+Fresh pre-merge review of the rebased tip `b2ae427d6`
+(`2026-10-26_inner-arg-temps-premerge-review.md`): NOT MERGEABLE as it stood,
+MERGEABLE WITH FIXES — both blocking findings were rebase-integration defects
+of the orchestrator's, fixed in the following commit: P1-1 the completed-run
+switch report on stderr was an "unrecognized diagnostic" to the landed
+`decode_stop`, so every completed Lean run classified INVALID in the stop-aware
+lanes (fix: the decoder admits exactly one well-formed report line and retains
+it as `switch_report`, with plants); P1-2 the two witness scripts kept the
+mainline's merged capture while the slice's assertions read `$ERR` (fix: the
+capture is split). Dispositions of the rest: P2-1 this section and the charter's
+status line; P2-2 the two libc refusals are REFUSAL envelopes (boundary `cli`,
+item `--libc`) so no raw text precedes the report; P2-3 and P2-4 queued in
+TODO.md (the `-d5` bare-name census speedbump; the csmith-corpus fuzz row) —
+fail-closed transport is NOT claimed; P3-1 header lines added to the misnamed
+records; P3-2 the stale "ONE instance" comment corrected. Re-validation: the
+orchestrator's full battery on the landed tip is quoted in the landing note.

@@ -83,7 +83,7 @@ oracle_line() {  # <c-file> -> first verdict line
 }
 lean() {  # <json> -> OUT, RC
     env LEAN_ABORT_ON_PANIC=1 "$BIN" --batch --runtime="$PREFIX" "$1" > "$W/stdout" 2> "$W/stderr"; RC=$?
-    OUT=$(cat "$W/stdout" "$W/stderr")
+    OUT=$(<"$W/stdout"); ERR=$(<"$W/stderr")
 }
 witness() {  # <label> <c-file>: the JSON must be non-UTF-8, the oracle must answer, Lean must refuse
     local label="$1" c="$2" j="$W/w$n.json" o

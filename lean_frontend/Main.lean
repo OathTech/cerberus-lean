@@ -882,8 +882,11 @@ def loadLibc [LemFuel] [CerbGlobal.Switches] (runtime : String) (quiet : Bool) (
     | .error e => return (← bail s!"parsing {libcCorePath}: {e}")
   match CoreParser.checkParameterBinders parsed with
   | .error (proc, binder) =>
-    IO.eprintln s!"cerberus-lean: refused — --libc: R-IAT-LIBC-SYMBOL-LOSS: procedure {libcSymName proc} binds parameter name {libcSymName binder} again; the Core dump may have lost symbol identity (upstream tray 65)"
-    return .error 2
+    -- Outcome protocol: a declared driver refusal is a REFUSAL envelope. No `libc`
+    -- boundary exists in the frozen vocabulary (TODO.md); boundary `cli`, item `--libc`.
+    CerbStop.exitRefusals (driverRefusal .cli (some "--libc")
+      s!"cerberus-lean: refused — --libc: R-IAT-LIBC-SYMBOL-LOSS: procedure {libcSymName proc} binds parameter name {libcSymName binder} again; the Core dump may have lost symbol identity (upstream tray 65)"
+      ⟨"a lossless library transport (a numbered-symbol printer or a binary/JSON library format)", by decide⟩)
   | .ok () => pure ()
   say s!"    {parsed.procs.length} proc, {parsed.funs.length} fun, {parsed.globs.length} glob"
   -- 2. Frontend the 12 metadata TUs (same order as runtime/libc/dune's
@@ -915,8 +918,9 @@ def loadLibc [LemFuel] [CerbGlobal.Switches] (runtime : String) (quiet : Bool) (
   -- other mode. The text dump has lost the tag that the oracle linker checks.
   match checkLibcCallingConvention metaFile.calling_convention0 parsed with
   | .error reason =>
-    IO.eprintln s!"cerberus-lean: refused — --libc: IncompatibleCallingConvention: {reason}; dump {libcCorePath} cannot be stitched to these metadata TUs (core_linking.lem:286-287)"
-    return .error 2
+    CerbStop.exitRefusals (driverRefusal .cli (some "--libc")
+      s!"cerberus-lean: refused — --libc: IncompatibleCallingConvention: {reason}; dump {libcCorePath} cannot be stitched to these metadata TUs (core_linking.lem:286-287)"
+      ⟨"a library dump of the run's calling convention", by decide⟩)
   | .ok () => pure ()
   -- 3. THE STITCH (module note): rename the dump onto the metadata
   --    symbols — tags by name, functions by name, globals by position —
@@ -2005,8 +2009,8 @@ def main (args : List String) : IO Unit := do
   -- The ONE instantiation of the ambient fuel (fuel-parameter arc): every
   -- fuel'd function below `runPipeline` reads this instance; nothing else
   -- in the repository builds one (`scripts/check_no_fuel_numerals.sh`).
-  -- Beside it, the ONE instance of the switch set (PNVI arc S1, 2026-10-05; S4,
-  -- 2026-10-07): `⟨switchSet⟩` — the default `CerbGlobal.defaultSwitches` (= `[]`,
+  -- Beside it, the run's instance of the switch set — one of the supported whole sets
+  -- (PNVI arc S1, 2026-10-05; S4, 2026-10-07; inner_arg_temps 2026-10-21): `⟨switchSet⟩` — the default `CerbGlobal.defaultSwitches` (= `[]`,
   -- switches.ml:47-48) unless a supported whole switch set was given (judged above); one
   -- general path, the set only selects the arms (no PNVI-only entry point). No other
   -- instance of `CerbGlobal.Switches` exists in this repository

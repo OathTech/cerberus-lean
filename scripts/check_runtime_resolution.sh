@@ -99,7 +99,7 @@ lean() {
     shift
     (cd "$cwd" && env -u CERB_INSTALL_PREFIX -u OPAM_SWITCH_PREFIX LEAN_ABORT_ON_PANIC=1 \
         ${envs[@]+"${envs[@]}"} "$BIN" "$@") > "$W/stdout" 2> "$W/stderr"; RC=$?
-    OUT=$(cat "$W/stdout" "$W/stderr")
+    OUT=$(<"$W/stdout"); ERR=$(<"$W/stderr")
 }
 expect_line() {  # <label> <expected-line>
     n=$((n + 1))
