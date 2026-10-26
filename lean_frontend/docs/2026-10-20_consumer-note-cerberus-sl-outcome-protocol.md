@@ -14,7 +14,14 @@ review remains outstanding; no consumer re-pin or external build is claimed.
 The former 31/42 run remains incomplete historical evidence; its interrupted
 B7 was unrun, whereas the new sweep completed it. The timing tripwire applies
 per command. The two incoming D10 memory refusals and shared D11 union refusal
-remain envelope-less, with named movers in the companion handoff.
+remain envelope-less, with named movers in the companion handoff. (Update
+[AGENT 2026-10-26], quotation hygiene Q3: the two D10 leaves now render a REFUSAL
+envelope of boundary `memory` — `CerbMem.allocator`'s arm is still
+`NDkilled (CerbFail.failStopKill (failwithI …))` and `memcpyM`'s leaf still a
+whole-monad `failwithI` at `memM`; only the String differs, so every statement
+over them, `allocator_active_sound` and `allocator_below_request_kills` included,
+is unchanged; kernel replay in `docs/2026-10-26_quotation-hygiene-record.md`.
+The D11 site stays envelope-less.)
 
 ## Reconstruction references now take their direct diagnostics explicitly
 

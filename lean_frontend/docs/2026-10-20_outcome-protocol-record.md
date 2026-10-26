@@ -1680,6 +1680,9 @@ immediately. It does not alter item G's declared refusal semantics.
 | New `memcpyM` overlap leaf, incoming `:3666`; predicate `memcpyOverlap:3634`, text helper `memcpyOverlapRefusal:3644` | Absent from C's inventory; incoming whole-monad failure, not our `refuseM` adapter | **UNMIGRATED**, same mover. Preserve allocation/device cases, ordering before accesses, and the documented mixed-provenance residual. Do not rewrite this incoming value's proof contract by analogy with C.2. |
 | `integerRem_t`, ours `CerbMem.lean:1739–1740`, `CerbStopSites.integerRemTrunc` | Not edited by item G, but its unchanged zero-alignment witness now consumes our structured panic | Keep UPSTREAM_CRASH. The witness's original detail substring survives the envelope; check it with the actual integrated driver. |
 
+(Superseded 2026-10-26: quotation hygiene Q3 migrated both leaves under the design-v2
+§10 amendment's `memory` boundary and the libc loader refusals under `libc`; record
+`2026-10-26_quotation-hygiene-record.md`. The paragraph below describes this delivery.)
 The two unmigrated sites remain declared refusals in CONTRACT D10 but are
 **not distinguishable as REFUSAL by the generic wire API** at this delivery.
 Their text must not become a decoder heuristic. The consumer handoff must

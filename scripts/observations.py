@@ -365,10 +365,14 @@ STOP_RESERVED = b'cerberus-lean stop'
 # or duplicate one is a problem (inner_arg_temps post-rebase adaptation, 2026-10-26).
 SWITCH_REPORT_PREFIX = b'cerberus-lean switches:'
 SWITCH_REPORT = re.compile(rb'cerberus-lean switches: \[(?:[A-Za-z_][A-Za-z0-9_]*(?:,[A-Za-z_][A-Za-z0-9_]*)*)?\]')
+# Design-v2 §2.2's thirteen literals plus the §10 amendment of 2026-10-26 (quotation
+# hygiene Q3; [AGENT, proposed; ratified at landing]): `libc` (library-transport refusals
+# of the Lean loader, CLI channel) and `memory` (declared refusals of the concrete memory
+# model where upstream left a TODO, CONTRACT D10, panic channel). Version "1" unchanged.
 STOP_BOUNDARIES = frozenset((
     'fs', 'pnvi', 'switches', 'concurrency', 'float-format', 'cli', 'runtime',
     'library-location', 'cabs-json-utf8', 'batch-ub-payload', 'abort-flag',
-    'fuel-arg', 'address-space-arg'))
+    'fuel-arg', 'address-space-arg', 'libc', 'memory'))
 STOP_PANIC = re.compile(rb'PANIC at _private\.LemLib\.0\.failwithIImpl '
                         rb'LemLib:[1-9][0-9]*:[1-9][0-9]*: (.*)')
 STOP_ABORT_WRAPPER = re.compile(

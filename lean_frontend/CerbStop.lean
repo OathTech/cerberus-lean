@@ -22,9 +22,15 @@ def nonempty (s : String) : Except DecodeError NonemptyText :=
   if h : s.isEmpty = false then .ok ⟨s, h⟩
   else .error (.malformed "empty required text")
 
+/-- The wire vocabulary of design v2 §2.2 (thirteen literals) plus the §10 amendment of
+2026-10-26 ([AGENT, proposed; ratified at landing]): `libc` (library-transport refusals of
+the Lean loader) and `memory` (declared refusals of the concrete memory model where
+upstream left a TODO, CONTRACT D10). The version stays "1": an unknown member is a
+protocol error on every decoder, so an older decoder rejects these envelopes as malformed. -/
 inductive Boundary where
   | fs | pnvi | switches | concurrency | floatFormat | cli | runtime
   | libraryLocation | cabsJsonUtf8 | batchUbPayload | abortFlag | fuelArg | addressSpaceArg
+  | libc | memory
   deriving Repr, BEq
 
 def Boundary.text : Boundary → String
@@ -33,6 +39,7 @@ def Boundary.text : Boundary → String
   | .cli => "cli" | .runtime => "runtime" | .libraryLocation => "library-location"
   | .cabsJsonUtf8 => "cabs-json-utf8" | .batchUbPayload => "batch-ub-payload"
   | .abortFlag => "abort-flag" | .fuelArg => "fuel-arg" | .addressSpaceArg => "address-space-arg"
+  | .libc => "libc" | .memory => "memory"
 
 def Boundary.parse : String → Except DecodeError Boundary
   | "fs" => .ok .fs | "pnvi" => .ok .pnvi | "switches" => .ok .switches
@@ -41,6 +48,7 @@ def Boundary.parse : String → Except DecodeError Boundary
   | "cabs-json-utf8" => .ok .cabsJsonUtf8 | "batch-ub-payload" => .ok .batchUbPayload
   | "abort-flag" => .ok .abortFlag | "fuel-arg" => .ok .fuelArg
   | "address-space-arg" => .ok .addressSpaceArg
+  | "libc" => .ok .libc | "memory" => .ok .memory
   | _ => .error (.malformed "unknown boundary")
 
 inductive Repository where

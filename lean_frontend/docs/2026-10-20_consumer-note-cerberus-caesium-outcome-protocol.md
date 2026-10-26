@@ -32,7 +32,9 @@ deviation; the protocol does not create a fifth permitted result.
 | Hand-written pure guards (16 inventoried leaves, including the reader-lifted CerbTags stub outside both closures) | Exact LemLib panic, exit 134 | INVARIANT: site, detail, required see; a defect regardless of the oracle |
 | Nine typed kills: seven mirrors, two port guards | ModelFailure with a second outer escape layer; single record exit 1, framed multiple executions exit 0 | UPSTREAM_CRASH or INVARIANT, same metadata; every complete occurrence and execution index retained |
 | Driver guard | One INVARIANT stderr envelope; empty stdout; exit 2 | A defect, not a refusal merely because the exit is 2 |
-| Incoming D10 memory-model refusals (invalid alignment and overlapping memcpy) and D11 shared union-initializer refusal | Validated panic frame, exit 134; oracle exit 125 | **Unmigrated:** legacy, origin unattributed. Declared refusal semantics do not supply generic wire attribution; no message-text heuristic |
+| D10 memory-model refusals (invalid alignment and overlapping memcpy) — since 2026-10-26, quotation hygiene Q3 | Exact LemLib panic carrying one REFUSAL envelope, exit 134; oracle `Failure`, exit 125 | REFUSAL: boundary `memory`, item `Concrete.allocator` / `Concrete.memcpy`, detail `Refused: ` + the oracle's text, upstream TODO citation, see D10 (design-v2 §10 amendment; before it: unmigrated, legacy) |
+| D11 shared union-initializer refusal | Validated panic frame, exit 134; oracle exit 125 | **Unmigrated:** legacy, origin unattributed. Declared refusal semantics do not supply generic wire attribution; no message-text heuristic |
+| Libc transport refusals (`R-IAT-LIBC-SYMBOL-LOSS`, `IncompatibleCallingConvention`) — since 2026-10-26 | One stderr envelope; empty stdout; exit 2 | REFUSAL: boundary `libc`, item the refusal's code (was `cli`/`--libc` as a stopgap) |
 | Generated envelope-less LemLib failures | Validated panic frame, exit 134 | Legacy, origin unattributed; never inferred SHARED_CRASH |
 | Exact ND fuel kill, bare fuel panic, translation fuel panic | Exact Error record at its record position, or exact panic frame | Fuel occurrences with form and execution index; no search within program data or arbitrary diagnostic text |
 | Ordinary Defined/Undefined/Error | Existing batch records and exit convention | Ordinary observations; stop-looking data or Error messages have no stop authority |
@@ -48,7 +50,9 @@ leaves and one shared-desugarer site are outside C's original inventory. The
 [migration map](2026-10-20_outcome-protocol-register-migration.tsv) names their
 follow-ups: memory-model refusal metadata extension and shared-desugarer refusal
 mapping under structural-outcome WP2. Neither adds a boundary or changes a Lem
-source in this delivery. The five incoming quotation admission paths use the
+source in this delivery. (Update [AGENT 2026-10-26]: the memory-model extension
+is done — design-v2 §10 adds boundaries `memory` and `libc`, the two memory
+leaves are migrated, the shared-desugarer site is not; see the table.) The five incoming quotation admission paths use the
 existing CLI REFUSAL boundary, preserve exit 2 and publish no output on refusal.
 
 ## The actual consumer interface and patch recipe

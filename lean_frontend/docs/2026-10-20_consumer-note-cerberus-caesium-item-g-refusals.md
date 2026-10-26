@@ -131,7 +131,19 @@ its envelope; the texts above are the pre-envelope form, matched as substrings b
 script's `*_HEAD`/`*_TAIL` constants.
 
 
-Integration clarification [AGENT 2026-10-21]: the outcome-protocol first delivery
+Update [AGENT 2026-10-26] (quotation hygiene Q3, `docs/2026-10-26_quotation-hygiene-record.md`):
+the migration below has happened. The Lean engine's two refusals are now outcome-protocol
+REFUSAL envelopes on the panic channel (exit 134 unchanged): boundary `memory`, item
+`Concrete.memcpy` / `Concrete.allocator`, `detail` = `Refused: ` + the exact text quoted
+above, `mover` upstream's decision on the TODO, `upstream` the TODO citation
+(`impl_mem.ml:2636` / `:1253` at `b9aeedcb4`), `see` `CONTRACT.md D10; docs/2026-10-20_item-g-refusals-record.md`.
+`decode_stop` returns them as `Refusal` objects; match on `boundary == 'memory'` and the
+item, never on the text. The oracle's `Failure` texts and exit 125 are unchanged, as are the
+kernel faces of both leaves (your `allocator_cases` note below still applies unchanged).
+The design-v2 amendment is §10 of `docs/2026-10-20_outcome-protocol-design-v2.md`
+(proposed by the worker; ratified at landing).
+
+Integration clarification [AGENT 2026-10-21] (superseded by the update above): the outcome-protocol first delivery
 keeps these incoming texts envelope-less. Its generic decoder reports their
 validated panic frames as legacy, origin unattributed; the refusal semantics
 remain as documented above. The

@@ -270,3 +270,117 @@ no Tier A of this slice is launched until that worktree's runner has run and fin
 the Q2 commit, or at least 30 minutes after the Q2 commit before polling for a free runner);
 the Q3 edits and focused checks proceed meanwhile; the rest of the box rule stands.
 
+
+Checkpoint commit: `5cd761172`.
+
+## Q3 — the stop-vocabulary amendment: boundaries `libc` and `memory`
+
+**The amendment** is §10 of `docs/2026-10-20_outcome-protocol-design-v2.md`, dated
+2026-10-26, marked **proposed by the worker [AGENT 2026-10-26]; the operator ratifies at
+landing**; its text is reproduced verbatim in the close-out section of this record. In one
+sentence: §2.2's thirteen boundary literals gain `libc` (library-transport refusals of the
+Lean loader, CLI channel, item the refusal's code) and `memory` (declared refusals of the
+concrete memory model where upstream left a TODO, D10; panic channel; item the operation;
+`detail` = `Refused: ` + the oracle's exact text; `upstream` the TODO citation); the wire
+version stays `"1"` because an unknown member is already a protocol error on every decoder
+(an older decoder reports the new envelopes malformed, never misreads them); the
+union-initializer refusal (D11) stays legacy with its WP2 mover; lane policy is unchanged.
+
+**Implementation.**
+- `CerbStop.lean`: `Boundary` gains `libc | memory`, `Boundary.text`/`parse` the two names.
+- `CerbStopSites.lean`: `memoryRefusal (detail) (upstream) : Refusal` (boundary `memory`,
+  item `detail.takeWhile (· != ':')` — the `pnviRefusal` rule — mover "upstream's decision on
+  the TODO, mirrored in both engines", `see` D10 + the item-G record, `upstream` the given
+  citation) and the two citations `memcpyOverlapTodo` (`impl_mem.ml:2636`, the TODO comment)
+  and `allocatorAlignmentTodo` (`:1253`, the `quomod`). [AGENT] the first version's mover
+  literal was ~120 characters and its `by decide` nonemptiness proof hit `maxRecDepth`
+  (kernel evaluation of `String.isEmpty` recurses per character); shortened, no option bump.
+- `CerbMem.lean`: `allocator`'s arm is `NDkilled (CerbFail.failStopKill (failwithI
+  (CerbStop.render (.refusal (CerbStopSites.memoryRefusal (alignmentRefusal align sz)
+  allocatorAlignmentTodo)))))` — the SAME node shape and opaque face, only the String
+  differs; `memcpyM`'s leaf `failwithI (CerbStop.render (.refusal (memoryRefusal
+  (memcpyOverlapRefusal …) memcpyOverlapTodo)))`, the same whole-monad `failwithI` at `memM`.
+  `alignmentRefusal`/`memcpyOverlapRefusal` (the oracle-identical texts) are unchanged.
+  TRUST SURFACE: `CerbMemAllocatorProofs` (`allocator_active_sound`,
+  `allocator_below_request_kills`), `CerbMemAccessFacts` and `Unit.MemoryAccessProofs` keep
+  every statement and proof (no edit; the arm's `simp at h` closes on a kill whatever its
+  message); `test/Unit/FuelExemplar.lean`'s `allocator_errno` unchanged.
+- `Main.lean`: `loadLibc`'s two refusals are `driverRefusal .libc (some
+  "R-IAT-LIBC-SYMBOL-LOSS")` and `.libc (some "IncompatibleCallingConvention")` (were
+  `.cli (some "--libc")`); detail texts unchanged.
+- `scripts/observations.py`: `STOP_BOUNDARIES` gains the two names. `scripts/test_stops.py`:
+  `test_memory_and_libc_boundaries_decode` (a `memory` refusal panic decodes as REFUSAL with
+  boundary/item, its detail after `Refused: ` is the oracle's text; a `libc` CLI refusal
+  decodes; three misspelt boundaries are malformed); the schema corpus already generates one
+  valid refusal per `STOP_BOUNDARIES` member and drives the Lean parser over it, so the two
+  sides cannot diverge; the bare-text test (`test_unmigrated_refusal_text_is_unattributed`)
+  stands: an envelope-less text is still unattributed.
+- `scripts/test_observation_lanes.py --stop-policy-only`: a `memory` refusal panic →
+  `pnvi_lane.classify_side` `('INVALID', 'unregistered PNVI refusal metadata …')` and
+  `classify_row` INVALID against both an observation and an oracle crash (RED in the PNVI
+  and inner_arg_temps lanes, never agreement); immaculate's shell verdict → `CRASH` with no
+  stderr note (coarse pin only; `MATCH` against an oracle `CRASH` token, `DIFF` against a
+  value) — lane policy unchanged, as the amendment states.
+- `scripts/check_item_g_refusals.sh`: the Lean side now captures stdout/stderr separately
+  and decodes the capture with the shared codec (`lean_refusal_text`): exactly one REFUSAL
+  of boundary `memory` with the expected item, no problem, no legacy panic; the detail after
+  `Refused: ` must start with the pinned head and end with the pinned tail, and is compared
+  byte for byte with the oracle's `Failure` text (the `*_HEAD`/`*_TAIL` pins are unchanged:
+  they are the oracle's text, which did not move). The `refuse-all` plant's Lean stub now
+  emits the envelope form, exactly one frame per run (the alignment envelope for `w_alloc_*`
+  inputs, the overlap envelope otherwise — a second PANIC frame is a protocol problem to the
+  codec, which the first stub version tripped over). The `lean-other-text` plant alters the
+  text inside the envelope and is still caught by the byte comparison; `lean-no-abort` by
+  the exit check. [AGENT] why the pinned texts moved to the envelope form: the witness's job
+  is "one text on both engines"; with the Lean text inside a JSON envelope the comparison
+  must decode, not substring-match, or an envelope that merely CONTAINS the text in another
+  field would pass.
+- `docs/2026-10-20_outcome-protocol-register-migration.tsv` header: the two CerbMem lines
+  are MIGRATED (boundary `memory`; `monadic_ascribed`, no register row), the D11 line stays
+  UNMIGRATED. CONTRACT §1 (one unmigrated D11 site), §3 item-G row, D10. VALIDATION §3(c)
+  item-G passage, the gate-table row, the libc-refusal paragraph. LADDER row 1. TODO.md's
+  "dedicated `libc` boundary" entry closed. Consumer notes: caesium item-G (a dated update
+  paragraph; the 10-21 clarification marked superseded), caesium outcome-protocol (family
+  table rows for D10, D11 and libc; the migration paragraph), cerberus-sl outcome-protocol
+  (the two leaves' kernel faces unchanged), caesium inner_arg_temps (boundary `libc`, items
+  the codes). The protocol record's integration paragraph carries a dated superseded note.
+- `scripts/failure_reach_register.txt`: no change — both leaves sit in `memM`-typed
+  declarations (`monadic_ascribed`), outside the pure-site register, as the item-G record
+  found; the gate re-run below confirms the pure census unchanged.
+
+**Focused checks** (verbatim; the first Q3 rebuild had failed on the `maxRecDepth` literal
+and my build chain masked `lake`'s status behind `tail` — every check run against that
+stale tree was discarded and the chain re-run with `pipefail`):
+
+```text
+scripts/test_stops.py --lean-bin lean_frontend/.lake/build/bin/stop-test: Ran 26 tests in 2.606s / OK
+check_item_g_refusals: selftest plant 'answer' caught: 18 failing witness(es) (= expected 18; incl. the required witnesses)
+check_item_g_refusals: selftest plant 'lean-answer' caught: 19 failing witness(es) (= expected 19; incl. the required witnesses)
+check_item_g_refusals: selftest plant 'refuse-all' caught: 10 failing witness(es) (= expected 10; incl. the required witnesses)
+check_item_g_refusals: selftest plant 'lean-no-abort' caught: 12 failing witness(es) (= expected 12; incl. the required witnesses)
+check_item_g_refusals: selftest plant 'lean-other-text' caught: 9 failing witness(es) (= expected 9; incl. the required witnesses)
+check_item_g_refusals: OK (19 cases: 6 overlapping memcpy programs (4 in allocations, 2 in device memory) and 3 invalid-alignment allocations refused by the oracle (uncaught Failure, exit 125) and by the Lean engine (abort, exit 134, one REFUSAL envelope of boundary memory) with byte-identical texts; 9 controls agree with the oracle (6 non-overlapping copies incl. realloc, an out-of-bounds UB and device memory, aligned_alloc(16, 32), one allocation at each alignment the lanes use, the unchanged size-clause UB); the zero-alignment crash is unchanged on both)
+check_failure_reach: OK (240 pure failure sites = the 240 register rows exactly (238 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, shared keys lengthened, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=174 REACHABLE=44 UNKNOWN=22; every row sealed; tally line consistent)
+check_cli_refusals: OK (unsupported switch sets, mixtures, duplicates, unknown names, placement and repeated options refused; PNVI_ae_udi and inner_arg_temps accepted alone in both forms and agree with their matched-mode oracle witnesses; --call refused under inner_arg_temps; completed runs report the complete switch set on stderr without changing verdict stdout; default control not refused)
+test_observation_lanes.py --stop-policy-only: STOP POLICY: memory-boundary refusal panic -> PNVI/inner_arg_temps INVALID (unregistered), immaculate coarse CRASH with no legacy note
+test_observation_lanes.py --stop-policy-only: STOP POLICY: 40 invariant/oracle and 15 malformed/oracle pairs RED in both classifiers; ordinary/resource/legacy controls passed
+lake build CerberusLean cerberus-lean stop-test memory-access-test allocator-soundness-test: Build completed successfully (422 jobs).
+```
+
+**Kernel replay** (`lake env leanchecker <module>` from `lean_frontend`, under `capped`):
+
+```text
+leanchecker CerbStop: exit=0 diagnostics-lines=0
+leanchecker CerbStopSites: exit=0 diagnostics-lines=0
+leanchecker CerbMem: exit=0 diagnostics-lines=0
+leanchecker CerbMemAccessFacts: exit=0 diagnostics-lines=0
+leanchecker CerbMemAllocatorProofs: exit=0 diagnostics-lines=0
+leanchecker Unit.MemoryAccessProofs: exit=0 diagnostics-lines=0
+```
+
+Tier A (launched only after the anonymous-members slice's runner, per the scheduling note),
+verbatim:
+
+```text
+TIERA_Q3_PLACEHOLDER
+```

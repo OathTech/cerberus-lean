@@ -895,13 +895,13 @@ canonicity consolidation, the printf/Monadic_parsing totalization
 tail, and the Lean-side lem-sync freshness stamp all closed in the
 S-basket slice — `docs/2026-09-01_s-basket.md`.)
 
-- **Stop vocabulary: a dedicated `libc` boundary?** The inner_arg_temps libc
-  refusals (`R-IAT-LIBC-SYMBOL-LOSS`, the dump/mode calling-convention mismatch)
-  are REFUSAL envelopes under boundary `cli`, item `--libc`, because
-  `CerbStop.Boundary` (frozen by design v2) has no `libc` boundary; the item-G
-  refusals are legacy panics for a related reason. Whether a `libc` boundary is
-  added (a design-v2 amendment) is decided in the quotation-hygiene slice
-  (rulings B and C of 2026-10-21). [AGENT 2026-10-26]
+- **Stop vocabulary: a dedicated `libc` boundary?** DONE 2026-10-26 in the
+  quotation-hygiene slice (Q3, `docs/2026-10-26_quotation-hygiene-record.md`): the
+  design-v2 §10 amendment (proposed by the worker, ratified at landing) adds
+  boundaries `libc` (the two loader refusals, items their codes) and `memory`
+  (the item-G refusals, migrated from legacy panics to REFUSAL envelopes with
+  the oracle's texts as `detail`). The union-initializer refusal (D11) stays
+  legacy with its WP2 mover. [AGENT 2026-10-26]
 - **Libc text transport: a per-proc bare-name census as a speedbump.** The
   inner_arg_temps review (P2-3) printed both `.co` libraries at `-d5` and found
   distinct symbols sharing a bare name inside 7 procs of the variant dump and 10

@@ -31,10 +31,14 @@
 #   crash at std.core:385's rem_t) and must be UNCHANGED.
 # Shape on each engine: the oracle dies on the uncaught exception (`cerberus:
 # internal error, uncaught exception: Failure("<text>")`, exit 125); the Lean
-# engine aborts under LEAN_ABORT_ON_PANIC=1 (exit 134) with a PANIC line carrying
-# the SAME text; the two texts are compared byte for byte (the allocation id,
-# addresses and size inside them are the same on both engines, whose allocators
-# mirror each other).
+# engine aborts under LEAN_ABORT_ON_PANIC=1 (exit 134) with a PANIC line whose
+# payload is, since quotation hygiene Q3 (2026-10-26; design-v2 §10 amendment),
+# the outcome protocol's REFUSAL envelope — boundary `memory`, item the
+# operation (`Concrete.memcpy` / `Concrete.allocator`), detail `Refused: ` +
+# the SAME text — decoded here with the shared codec (scripts/observations.py);
+# the oracle's text and the envelope's detail after `Refused: ` are compared
+# byte for byte (the allocation id, addresses and size inside them are the same
+# on both engines, whose allocators mirror each other).
 # Controls (Lean = oracle, exit code and verdict line): non-overlapping copies
 # (adjacent halves of one object; two objects; a zero-length copy of a pointer
 # onto itself; realloc's copy, which is new <- old; an out-of-bounds but
@@ -109,9 +113,18 @@ echo 'cerberus: internal error, uncaught exception:' >&2
 printf '          Failure("%s")\n' "\$PLANT_G1" "\$PLANT_G2" >&2
 exit 125
 EOF
+    # the Lean stub emits the envelope form the real engine emits (boundary memory)
+    envelope() { python3 -c 'import json, sys; t = sys.argv[1]; print("cerberus-lean stop " + json.dumps(["1", "REFUSAL", "memory", t.split(":", 1)[0], "Refused: " + t, "plant mover", None, "CONTRACT.md D10"], ensure_ascii=False, separators=(",", ":")))' "$1"; }
+    PLANT_G1_ENV="$(envelope "$PLANT_G1")"; PLANT_G2_ENV="$(envelope "$PLANT_G2")"; export PLANT_G1_ENV PLANT_G2_ENV
+    # exactly ONE frame per run, as the real engine emits (a second PANIC frame is a
+    # protocol problem to the codec): the alignment envelope for w_alloc_* inputs,
+    # the overlap envelope otherwise (the controls fail either way)
     cat > "$ST/lean-refuse-all" <<EOF
 #!/usr/bin/env bash
-printf 'PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: %s\n' "\$PLANT_G1" "\$PLANT_G2" >&2
+last="\${@: -1}"
+env_=\$PLANT_G1_ENV
+if [[ "\$(basename "\$last")" == w_alloc_* ]]; then env_=\$PLANT_G2_ENV; fi
+printf 'PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: %s\n' "\$env_" >&2
 exit 134
 EOF
     # (d) lean-no-abort: the real Lean's output, exit 0
@@ -171,8 +184,26 @@ fail() { echo "$NAME: FAIL — $*"; fails=$((fails + 1)); }
 oracle_exec() {  # <c-file> -> OOUT (stdout+stderr), ORC
     OOUT=$("$ORACLE" --runtime="$PREFIX" --exec --batch --nolibc "$1" 2>&1); ORC=$?
 }
-lean_batch() {  # <json> -> LOUT (stdout+stderr), LRC
-    LOUT=$(env LEAN_ABORT_ON_PANIC=1 "$BIN" --batch --runtime="$PREFIX" "$1" 2>&1); LRC=$?
+lean_batch() {  # <json> -> LOUT (stdout+stderr), LERR (stderr only), LRC
+    env LEAN_ABORT_ON_PANIC=1 "$BIN" --batch --runtime="$PREFIX" "$1" > "$W/lean.stdout" 2> "$W/lean.stderr"; LRC=$?
+    LOUT=$(cat "$W/lean.stdout" "$W/lean.stderr"); LERR=$(<"$W/lean.stderr")
+}
+lean_refusal_text() {  # <item>: decode the Lean capture with the shared codec; print the detail after
+                       # `Refused: ` iff exactly one REFUSAL of boundary memory with that item was emitted
+    python3 - "$SCRIPT_DIR" "$W/lean.stdout" "$W/lean.stderr" "$LRC" "$1" <<'PYDECODE'
+import sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+import observations as obs
+d = obs.decode_stop(Path(sys.argv[2]).read_bytes(), Path(sys.argv[3]).read_bytes(), int(sys.argv[4]))
+stops = [e.stop for e in d.stops]
+if d.problems or d.legacy_panics or len(stops) != 1 or not isinstance(stops[0], obs.Refusal):
+    raise SystemExit(1)
+s = stops[0]
+if s.boundary != 'memory' or s.item != sys.argv[5] or not s.detail.startswith('Refused: '):
+    raise SystemExit(1)
+print(s.detail[len('Refused: '):], end='')
+PYDECODE
 }
 cabs_ok() {  # <c-file> <json>: the export must succeed
     "$ORACLE" --runtime="$PREFIX" --cabs-json "$1" > "$2" 2> "$2.err" && [[ -s "$2" ]]
@@ -198,10 +229,12 @@ witness() {  # <label> <c-file> <head> <tail>: refused on BOTH engines with one 
         fail "$label: oracle --cabs-json failed: $(head -c 300 "$j.err")"; return
     fi
     lean_batch "$j"
-    if [[ $LRC -eq 134 && "$LOUT" == *"PANIC"* && "$LOUT" == *"$head"* && "$LOUT" == *"$tail"* ]]; then
-        lmsg=$(text_from "$head" "$LOUT")
+    if [[ $LRC -eq 134 && "$LERR" == *"PANIC"* ]] && lmsg=$(lean_refusal_text "${head%%:*}") \
+        && [[ "$lmsg" == "$head"* && "$lmsg" == *"$tail" ]]; then
+        :
     else
-        fail "$label: Lean: expected exit 134 (abort under LEAN_ABORT_ON_PANIC=1) + a PANIC line carrying '$head…$tail'; got rc=$LRC: ${LOUT:0:400}"
+        lmsg=
+        fail "$label: Lean: expected exit 134 (abort under LEAN_ABORT_ON_PANIC=1) + a PANIC line carrying one REFUSAL envelope (boundary memory, item ${head%%:*}) whose detail is 'Refused: $head…$tail'; got rc=$LRC: ${LOUT:0:400}"
     fi
     if [[ -n "$omsg" && -n "$lmsg" && "$omsg" != "$lmsg" ]]; then
         fail "$label: the two engines' texts differ: oracle [$omsg] vs Lean [$lmsg]"
@@ -280,4 +313,4 @@ control "aligned_alloc(16, 8): the size clause's DUMMY UB is unchanged" ctl_allo
 crash_control "aligned_alloc(0, 8): the pre-existing zero-alignment crash is unchanged (draft 34)" ctl_alloc_zero.c "$ZERO_ORACLE" "$ZERO_LEAN"
 
 [[ $fails -eq 0 ]] || { echo "$NAME: $fails witness failure(s) over $n cases"; exit 1; }
-echo "$NAME: OK ($n cases: 6 overlapping memcpy programs (4 in allocations, 2 in device memory) and 3 invalid-alignment allocations refused by the oracle (uncaught Failure, exit 125) and by the Lean engine (abort, exit 134) with byte-identical texts; 9 controls agree with the oracle (6 non-overlapping copies incl. realloc, an out-of-bounds UB and device memory, aligned_alloc(16, 32), one allocation at each alignment the lanes use, the unchanged size-clause UB); the zero-alignment crash is unchanged on both)"
+echo "$NAME: OK ($n cases: 6 overlapping memcpy programs (4 in allocations, 2 in device memory) and 3 invalid-alignment allocations refused by the oracle (uncaught Failure, exit 125) and by the Lean engine (abort, exit 134, one REFUSAL envelope of boundary memory) with byte-identical texts; 9 controls agree with the oracle (6 non-overlapping copies incl. realloc, an out-of-bounds UB and device memory, aligned_alloc(16, 32), one allocation at each alignment the lanes use, the unchanged size-clause UB); the zero-alignment crash is unchanged on both)"

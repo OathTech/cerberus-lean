@@ -2513,7 +2513,9 @@ def oomKill : kill_reason mem_error := Other (MerrOther "Concrete.allocator: fai
 def alignmentRefused (align : Int) : Bool :=
   align != 0 && !(align > 0 && (align.toNat &&& (align.toNat - 1)) == 0)
 
-/-- The refusal text, byte-identical to the fork oracle's `failwith` (impl_mem.ml:1307). -/
+/-- The refusal text, byte-identical to the fork oracle's `failwith` (impl_mem.ml:1307);
+    since quotation hygiene Q3 (2026-10-26) it travels as the `detail` of a REFUSAL
+    envelope (boundary `memory`, `CerbStopSites.memoryRefusal`), after `Refused: `. -/
 def alignmentRefusal (align sz : Int) : String :=
   s!"Concrete.allocator: refused - allocation with an invalid alignment {align} (not a positive power of two; size {sz}); C17 7.22.3.1#2-3 requires aligned_alloc to fail by returning a null pointer (C11: undefined behaviour); upstream allocates under runtime/libcore/std.core:385 aligned_alloc_proxy, whose only check is 'size rem_t align = 0', and impl_mem.ml allocator's quomod (b9aeedcb4 :1253) - the fork refuses rather than decides (item G2, 2026-10-20)"
 
@@ -2579,7 +2581,12 @@ def allocator (sz align : Int) : memM (StorageInstanceId × Address) :=
       -- ("a refusal arm is never active"), where a `failwithI` at the pair type
       -- would be an opaque value the theorem could say nothing about. Without
       -- the abort the arm is still a kill (an empty message), never an answer.
-      (NDkilled (CerbFail.failStopKill (failwithI (alignmentRefusal align sz))), st)
+      -- Quotation hygiene Q3 (2026-10-26, design-v2 §10 amendment): the text is the
+      -- outcome protocol's REFUSAL envelope, boundary `memory`, item
+      -- `Concrete.allocator`, detail `Refused: ` + the oracle's text; the node shape
+      -- and the opaque face are unchanged (only the rendered String differs).
+      (NDkilled (CerbFail.failStopKill (failwithI (CerbStop.render (.refusal
+        (CerbStopSites.memoryRefusal (alignmentRefusal align sz) CerbStopSites.allocatorAlignmentTodo))))), st)
     else
       let m := z % align                                                         -- :1258 (Euclidean remainder, m ≥ 0)
       let z' := z - m                                                            -- :1259 (align down)
@@ -3669,7 +3676,9 @@ def memcpyOverlap (dst src : PointerValue) (n : Int) : Option (String × Address
     if intersects a1 a2 then some ("device memory", a1, a2) else none
   | _, _ => none
 
-/-- The refusal text, byte-identical to the fork oracle's `overlap_refusal` (impl_mem.ml:2722-2724 in this tree). -/
+/-- The refusal text, byte-identical to the fork oracle's `overlap_refusal` (impl_mem.ml:2722-2724
+    in this tree); since quotation hygiene Q3 (2026-10-26) it travels as the `detail` of a
+    REFUSAL envelope (boundary `memory`, `CerbStopSites.memoryRefusal`), after `Refused: `. -/
 def memcpyOverlapRefusal (region : String) (a1 a2 n : Int) : String :=
   s!"Concrete.memcpy: refused - memcpy on overlapping objects ({region}: destination [{a1}, {a1 + n}) and source [{a2}, {a2 + n}), n = {n}); C17 7.24.2.1#2 undefined behaviour; upstream copies byte-wise under impl_mem.ml memcpy 'TODO: if ptrval1 and ptrval2 overlap ==> UB' (b9aeedcb4 :2636) - the fork refuses rather than decides (item G1, 2026-10-20)"
 
@@ -3691,8 +3700,12 @@ def memcpyM [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : Tag
     | some (region, a1, a2) =>
       -- the fork's refusal (item G1, [USER 2026-10-20]), impl_mem.ml:2722-2734 in this
       -- tree: the same text; the loud fail-stop every refusal uses (LEAN_ABORT_ON_PANIC),
-      -- ascribed at `memM` like `pnviRefuseM` (kernel default a kill, never an answer)
-      failwithI (memcpyOverlapRefusal region a1 a2 size_n)
+      -- ascribed at `memM` like `pnviRefuseM` (kernel default a kill, never an answer).
+      -- Quotation hygiene Q3 (2026-10-26, design-v2 §10 amendment): the text is the
+      -- REFUSAL envelope, boundary `memory`, item `Concrete.memcpy`, detail `Refused: `
+      -- + the oracle's text; the whole-monad opaque face is unchanged.
+      failwithI (CerbStop.render (.refusal
+        (CerbStopSites.memoryRefusal (memcpyOverlapRefusal region a1 a2 size_n) CerbStopSites.memcpyOverlapTodo)))
     | none =>
       let rec aux : Nat → Int → memM PointerValue
         | 0, _ => memReturn dst                                        -- :2643-2644

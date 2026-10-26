@@ -933,9 +933,10 @@ def loadLibc [LemFuel] [CerbGlobal.Switches] (runtime : String) (quiet portableL
     | .error e => return (← bail s!"parsing {libcCorePath}: {e}")
   match CoreParser.checkParameterBinders parsed with
   | .error (proc, binder) =>
-    -- Outcome protocol: a declared driver refusal is a REFUSAL envelope. No `libc`
-    -- boundary exists in the frozen vocabulary (TODO.md); boundary `cli`, item `--libc`.
-    CerbStop.exitRefusals (driverRefusal .cli (some "--libc")
+    -- Outcome protocol: a declared driver refusal is a REFUSAL envelope; boundary
+    -- `libc` (library transport; design-v2 §10 amendment, quotation hygiene Q3,
+    -- 2026-10-26 — until then `cli`/`--libc` as a stopgap), item = the refusal's code.
+    CerbStop.exitRefusals (driverRefusal .libc (some "R-IAT-LIBC-SYMBOL-LOSS")
       s!"cerberus-lean: refused — --libc: R-IAT-LIBC-SYMBOL-LOSS: procedure {libcSymName proc} binds parameter name {libcSymName binder} again; the Core dump may have lost symbol identity (upstream tray 65)"
       ⟨"a lossless library transport (a numbered-symbol printer or a binary/JSON library format)", by decide⟩)
   | .ok () => pure ()
@@ -971,7 +972,8 @@ def loadLibc [LemFuel] [CerbGlobal.Switches] (runtime : String) (quiet portableL
   -- other mode. The text dump has lost the tag that the oracle linker checks.
   match checkLibcCallingConvention metaFile.calling_convention0 parsed with
   | .error reason =>
-    CerbStop.exitRefusals (driverRefusal .cli (some "--libc")
+    -- boundary `libc`, item the refusal's code (design-v2 §10 amendment, Q3 2026-10-26)
+    CerbStop.exitRefusals (driverRefusal .libc (some "IncompatibleCallingConvention")
       s!"cerberus-lean: refused — --libc: IncompatibleCallingConvention: {reason}; dump {libcCorePath} cannot be stitched to these metadata TUs (core_linking.lem:286-287)"
       ⟨"a library dump of the run's calling convention", by decide⟩)
   | .ok () => pure ()

@@ -323,6 +323,30 @@ class CaptureTests(unittest.TestCase):
             self.assertFalse(result.stops or result.fuel)
             self.assertEqual([p.payload for p in result.legacy_panics], [payload])
 
+    def test_memory_and_libc_boundaries_decode(self):
+        # Design-v2 §10 amendment (quotation hygiene Q3, 2026-10-26): the item-G memory
+        # refusals travel as REFUSAL envelopes on the panic channel, boundary `memory`,
+        # item the operation, detail `Refused: ` + the oracle's text; the libc transport
+        # refusals as CLI envelopes, boundary `libc`, item the refusal's code. The bare
+        # texts above stay unattributed: only the envelope attributes.
+        text = 'Concrete.memcpy: refused - memcpy on overlapping objects (allocation 1: destination [1, 5) and source [2, 6), n = 4); C17 7.24.2.1#2 undefined behaviour'
+        mem = ['1', 'REFUSAL', 'memory', 'Concrete.memcpy', 'Refused: ' + text,
+               "upstream's decision on the TODO, mirrored in both engines",
+               ['cerberus', UP[1], UP[2], '2636', '2636', '(* TODO: if ptrval1 and ptrval2 overlap ==> UB *)'],
+               'CONTRACT.md D10']
+        result = self.clean(b'', PANIC + wire(mem) + b'\n' + TRACE + WRAPPER, 134)
+        self.assertEqual([(o.stop.kind, o.stop.boundary, o.stop.item) for o in result.stops],
+                         [('REFUSAL', 'memory', 'Concrete.memcpy')])
+        self.assertEqual(result.stops[0].stop.detail.removeprefix('Refused: '), text)
+        self.assertFalse(result.legacy_panics or result.fuel)
+        libc = ['1', 'REFUSAL', 'libc', 'R-IAT-LIBC-SYMBOL-LOSS',
+                'Refused: cerberus-lean: refused — --libc: R-IAT-LIBC-SYMBOL-LOSS: procedure exit binds parameter name status again',
+                'a lossless library transport', None, 'CONTRACT.md §2/§3; VALIDATION.md']
+        assert_cli_refusals(b'', wire(libc) + b'\n', 2, 'libc', ['R-IAT-LIBC-SYMBOL-LOSS'], 'R-IAT-LIBC-SYMBOL-LOSS')
+        for bad in ('memory-model', 'cli/libc', 'Memory'):
+            v = list(mem); v[2] = bad
+            self.assertTrue(obs.decode_stop(b'', PANIC + wire(v) + b'\n' + TRACE, 134).problems)
+
     def test_absent_model_and_malformed_panic_never_become_legacy(self):
         self.assertTrue(obs.decode_stop(model(b'old message'), b'', 1).problems)
         for payload in (b'cerberus-lean stop', wire(['2', *INV[1:]])):

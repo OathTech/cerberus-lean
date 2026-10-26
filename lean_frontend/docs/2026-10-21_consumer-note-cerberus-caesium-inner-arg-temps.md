@@ -55,9 +55,11 @@ post-rebase adaptation [AGENT 2026-10-26, orchestrator]): every driver refusal
 this slice adds is a REFUSAL envelope. The `--call`-under-`inner_arg_temps`
 refusal has boundary `cli`, item `--call`; the two libc refusals —
 `R-IAT-LIBC-SYMBOL-LOSS` (a parameter name rebound in a proc of the dump) and
-the dump/mode calling-convention mismatch — have boundary `cli`, item `--libc`,
-because the protocol's frozen boundary vocabulary has no `libc` boundary (a
-dedicated boundary is a queued design question, TODO.md). All three exit 2 with
+the dump/mode calling-convention mismatch — have boundary `libc` since
+2026-10-26 (quotation hygiene Q3, the design-v2 §10 amendment), with the
+refusal's code as the item (`R-IAT-LIBC-SYMBOL-LOSS`,
+`IncompatibleCallingConvention`); until then they carried boundary `cli`, item
+`--libc`, as a stopgap. All three exit 2 with
 empty stdout; their detail texts are stable and carry the prefixes above. The
 completed-run report `cerberus-lean switches: [...]` is one informational stderr
 line printed only after a completed run (never after a panic, never before a

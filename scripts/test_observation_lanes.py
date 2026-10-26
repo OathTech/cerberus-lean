@@ -133,6 +133,30 @@ def stop_policy_plants(outdir):
         ('malformed-reserved-model', model(b'cerberus-lean stop [broken'), b'', 1),
         ('envelope-less-model', model(b'old message'), b'', 1),
     ]
+    # Design-v2 §10 amendment (quotation hygiene Q3, 2026-10-26): a `memory`-boundary
+    # refusal panic (the item-G refusals' envelope) is not a PNVI-registered refusal, so
+    # the PNVI classifier (also used by the inner_arg_temps lane) makes it INVALID
+    # ("unregistered PNVI refusal metadata"), never agreement; immaculate keeps its
+    # coarse CRASH token for an attributed refusal panic, with no legacy note.
+    memory_refusal = ['1', 'REFUSAL', 'memory', 'Concrete.allocator',
+                      'Refused: Concrete.allocator: refused - allocation with an invalid alignment 3 (not a positive power of two; size 9)',
+                      "upstream's decision on the TODO, mirrored in both engines", None, 'CONTRACT.md D10']
+    prefix.with_suffix('.stdout').write_bytes(b'')
+    prefix.with_suffix('.stderr').write_bytes(PANIC + wire(memory_refusal) + b'\n' + TRACE)
+    prefix.with_suffix('.status').write_text('134')
+    decoded = obs.decode_stop(b'', prefix.with_suffix('.stderr').read_bytes(), 134)
+    assert [(o.stop.kind, o.stop.boundary, o.stop.item) for o in decoded.stops] == [('REFUSAL', 'memory', 'Concrete.allocator')], decoded
+    assert not decoded.problems and not decoded.legacy_panics, decoded
+    lean = pnvi_lane.classify_side(str(prefix), True)
+    assert lean[0] == 'INVALID' and lean[1].startswith('unregistered PNVI refusal metadata'), lean
+    for oracle in [('OBS', ('VAL:0',), ('VAL:0',)), ('CRASH', 'Failure("Concrete.allocator: refused - ...")')]:
+        cls, why = pnvi_lane.classify_row('exhaustive', oracle, lean)
+        assert cls == 'INVALID', (oracle, cls, why)
+    p = subprocess.run(['bash', str(harness), str(ROOT), str(prefix), '134', 'CRASH'], capture_output=True)
+    assert p.returncode == 0 and p.stdout == b'MATCH\n' and p.stderr == b'', p
+    p = subprocess.run(['bash', str(harness), str(ROOT), str(prefix), '134', 'VAL:0'], capture_output=True)
+    assert p.returncode == 0 and p.stdout == b'DIFF\n' and p.stderr == b'', p
+    print('STOP POLICY: memory-boundary refusal panic -> PNVI/inner_arg_temps INVALID (unregistered), immaculate coarse CRASH with no legacy note', flush=True)
     counts = {'INVARIANT': 0, 'INVALID': 0}
     cases = [(*case, 'INVARIANT') for case in invariant_cases]
     cases += [(*case, 'INVALID') for case in problem_cases]

@@ -194,7 +194,8 @@ unversioned grammar in a stop position is malformed, not an absent envelope.
 | Upstream crash, length 7 | `["1","UPSTREAM_CRASH",site,detail,upstream,tray,see]` |
 | Invariant, length 5 | `["1","INVARIANT",site,detail,see]` |
 
-`boundary` is one of the thirteen literal strings below. `item` is `Text | null`:
+`boundary` is one of the thirteen literal strings below (fifteen since the §10
+amendment of 2026-10-26, which adds `libc` and `memory`). `item` is `Text | null`:
 an empty argv/switch element is representable and different from no item.
 `detail`, `mover` and `site` are Nonempty. `see` is `Nonempty | null` for refusal
 and upstream crash, and required Nonempty for invariant; it names the relevant
@@ -1036,6 +1037,77 @@ renamed as successful classification.
 | Rerouting every lane through one classifier; new resource-direction/mixed-cause policies, `.unsupported.c` policy and a global baseline re-record | 6, 7, 10 | C supplies metadata; only the two named lane corrections are needed here to prevent invariants being accepted as crashes and to avoid invented shared attribution. Consumer integration retains all causes independently. Existing failure policies are neither broadened nor certified by this deferral; the PNVI resource-rule divergence is recorded in §8.4. |
 | New RESOURCE/stack classification | 9 | Stack is not one of the three emitted stop classes. Keeping an unclassified stack abort failing does not fabricate a verdict or an upstream attribution. The measured full frame remains in §8.3 for a later classifier task. |
 | New message-convention speedbump and a general tray-drafting campaign | 7, 10, 12 (future maintenance) | Existing register gates, required reseals, producer tests and source review cover this migration. Existing attribution/tray metadata must be accurate, but neither an extra check nor preparing every future report is necessary to expose the metadata to the consumer. |
+
+## 10. Amendment — model-level boundaries `libc` and `memory` (2026-10-26)
+
+**Status: proposed by the quotation-hygiene worker [AGENT 2026-10-26]; the operator
+ratifies at landing.** Charter `2026-10-26_worker-charter-quotation-hygiene.md` Q3;
+record `2026-10-26_quotation-hygiene-record.md`. Implemented on `feature/quotation-hygiene`
+together with the migrations below, so that ratification and landing coincide.
+
+§2.2's thirteen boundary literals describe admission (`cli`, `runtime`, `library-location`,
+`cabs-json-utf8`, `batch-ub-payload`, `abort-flag`, `fuel-arg`, `address-space-arg`),
+configuration (`switches`, `concurrency`, `float-format`) and two model seams (`fs`,
+`pnvi`). Two kinds of declared refusal had no honest member. (a) Library-transport
+refusals: the inner_arg_temps libc loader's `R-IAT-LIBC-SYMBOL-LOSS` (a procedure of the
+dump rebinds a parameter name) and the dump/mode calling-convention mismatch carried
+boundary `cli`, item `--libc`, as a stopgap (consumer note
+`2026-10-21_consumer-note-cerberus-caesium-inner-arg-temps.md`). (b) The item-G refusals
+of the concrete memory model — `memcpy` on overlapping objects and an allocation with an
+invalid alignment (CONTRACT D10, [USER 2026-10-20]) — stayed envelope-less legacy panics,
+because, as the checkpoint record's integration section found, "none honestly describes
+these two semantic-operation refusals" and inventing one would change the schema.
+
+This amendment adds two literals to §2.2's list, which becomes fifteen:
+
+```text
+libc memory
+```
+
+- `libc` — library transport: a refusal raised while loading, checking or stitching a C
+  library dump (`--libc` / `--libc-tu`) in the Lean loader — the text transport's symbol
+  identity check and the calling-convention check. Item: the refusal's code
+  (`R-IAT-LIBC-SYMBOL-LOSS`, `IncompatibleCallingConvention`). Channel: CLI (one stderr
+  envelope, empty stdout, exit 2) — the loader runs before execution. The stopgap spelling
+  `cli`/`--libc` is retired; no producer emits it.
+- `memory` — a declared refusal in the concrete memory model where upstream left the case
+  to a TODO and the fork refuses rather than decides (D10): `memcpy` on overlapping objects
+  (item `Concrete.memcpy`) and an allocation with an invalid alignment (item
+  `Concrete.allocator`). The item is the operation, `detail.takeWhile (· != ':')` after the
+  fixed `Refused: ` prefix — the `pnviRefusal` rule. Channel: the runtime panic boundary
+  (the exact LemLib frame, exit 134 under `LEAN_ABORT_ON_PANIC=1`; the oracle's uncaught
+  `Failure`, exit 125, beside it). `upstream` cites the TODO (`impl_mem.ml:2636` for the
+  copy, `:1253` for the allocator's `quomod`, at `b9aeedcb4`); `see` names D10 and the
+  item-G record. The `detail` is `Refused: ` followed by the oracle's exact text, so the
+  two engines' texts remain comparable byte for byte through the envelope (the witness
+  `scripts/check_item_g_refusals.sh` decodes the envelope and compares).
+
+Not added: a boundary for the union-initializer refusal (D11) — a generated Lem `error`
+in the shared desugarer; it stays legacy/unattributed with its named mover
+(shared-desugarer refusal mapping, structural-outcome WP2).
+
+Schema consequences. The wire version stays `"1"`: a boundary literal is an enumeration
+member, and §2.1 already makes an unknown member a protocol error, so an older decoder
+reports the new envelopes as malformed (RED) rather than misreading them, and the new
+decoder reads every older capture unchanged. `CerbStop.Boundary` (`text`/`parse`) and
+`observations.STOP_BOUNDARIES` both carry the two names; `test_stops.py`'s schema corpus
+generates one valid refusal per `STOP_BOUNDARIES` member and drives the Lean parser over
+the corpus, so the two sides cannot diverge silently. Producers: `Main.loadLibc` (two
+sites), `CerbMem.memcpyM` and `CerbMem.allocator` (through `CerbStopSites.memoryRefusal`;
+each leaf keeps its opaque `failwithI` face and its ND node shape — the allocator's
+`NDkilled (CerbFail.failStopKill (failwithI …))`, `memcpyM`'s whole-monad `failwithI`
+at `memM`; only the rendered text changes, so `CerbMemAllocatorProofs`,
+`CerbMemAccessFacts` and `Unit.MemoryAccessProofs` keep every statement — kernel replay
+in the record).
+
+Lane policy: unchanged. `pnvi_lane.classify_side` classes a single refusal panic whose
+boundary is not `pnvi` INVALID ("unregistered PNVI refusal metadata"), so a `memory`
+refusal on a PNVI or inner_arg_temps row is RED, never agreement; immaculate keeps its
+coarse `CRASH` token for an attributed refusal panic (no "legacy" note: it is attributed).
+Both are planted in `test_observation_lanes.py --stop-policy-only`. No walked corpus holds
+an item-G program (both controls were retired with D10), so no baseline moves.
+
+### §9 continued
 
 The usage scope deferred above includes Main's explicit exit-1 branches at
 1496, 1613, 1678, 1690, 1696, 1701 and 1759, plus empty-input handling in

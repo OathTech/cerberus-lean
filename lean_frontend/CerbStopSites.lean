@@ -416,6 +416,30 @@ def callIntrinsic (detail : String) : UpstreamCrash :=
   mirror ⟨"CerbMem.callIntrinsic", by decide⟩ detail
     (memSource 2190 2191 (by decide) "let call_intrinsic _ _ _ =\n    assert false (* CHERI only *)")
 
+/-- Quotation hygiene Q3 (design-v2 §10 amendment, [AGENT 2026-10-26, proposed; the
+    operator ratifies at landing]): the `memory` boundary — a declared refusal of the
+    concrete memory model where upstream left the case to a TODO and the fork refuses
+    rather than decides (CONTRACT D10, [USER 2026-10-20]; record
+    `docs/2026-10-20_item-g-refusals-record.md`). The item is the operation, the text
+    before the first `:` of the oracle's text (`Concrete.memcpy`, `Concrete.allocator` —
+    the `pnviRefusal` rule); `detail` is `Refused: ` + the oracle's exact text, so the
+    witness `scripts/check_item_g_refusals.sh` can compare the two engines' texts byte
+    for byte through the envelope; `upstream` cites the TODO. -/
+def memoryRefusal (detail : String) (upstream : Upstream) : Refusal :=
+  { refusal .memory (some (detail.takeWhile (· != ':')).toString) detail
+      ⟨"upstream's decision on the TODO, mirrored in both engines", by decide⟩
+      ⟨"CONTRACT.md D10; docs/2026-10-20_item-g-refusals-record.md", by decide⟩
+    with upstream := some upstream }
+
+/-- impl_mem.ml:2636 at b9aeedcb4 — the overlap TODO of `memcpy` (item G1, tray 56). -/
+def memcpyOverlapTodo : Upstream :=
+  memSource 2636 2636 (by decide) "(* TODO: if ptrval1 and ptrval2 overlap ==> UB *)"
+
+/-- impl_mem.ml:1253 at b9aeedcb4 — the allocator's `quomod`, which rounds to ANY
+    alignment (item G2, tray 57; `std.core:385`'s proxy checks only the size clause). -/
+def allocatorAlignmentTodo : Upstream :=
+  memSource 1253 1253 (by decide) "let (q,m) = quomod z align in"
+
 def storeResolvedAbsent (detail : String) : Invariant :=
   invariant ⟨"CerbMem.storeResolvedAbsent", by decide⟩ detail ⟨"resolveIota's successful precondition found the allocation; resolution changes only iotaMap.", by decide⟩
 
