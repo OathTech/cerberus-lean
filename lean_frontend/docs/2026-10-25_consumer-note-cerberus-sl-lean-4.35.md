@@ -2,9 +2,12 @@
 
 Author: [AGENT 2026-10-26]. Provider branch `arc/lean-4.35` (cerberus-lean), the
 same-name pair of lem-lean's landed `arc/lean-4.35` (`mdd/lean-backend` = `e6d8db5`).
-This describes the provider candidate; it does not claim a landing, a re-pin of
+This describes the provider candidate, rebased onto the inner_arg_temps landing
+(`mdd/cerberus-lean` `2c714c265`); it does not claim a landing, a re-pin of
 cerberus-sl or a build of it. The checked commands and results are in
-[the record](2026-10-25_lean-4.35-cerberus-record.md). The companion
+[the record](2026-10-25_lean-4.35-cerberus-record.md) (the lem move is
+output-identical for the generated tree, §6.2; kernel replay exit 0, §6.5; the full
+battery and `lake check`, §7). The companion
 [Caesium note](2026-10-25_consumer-note-cerberus-caesium-lean-4.35.md) carries the
 full list of repair classes with the repairs that worked; this note says what is
 specific to cerberus-sl.
@@ -23,8 +26,9 @@ cerberus-sl re-pins to a cerberus-lean commit at or after this move's landing; a
   manifests to schema `1.3.0`; the other four `lean-toolchain` files (if they are
   separate Lake roots) move the same way or by hand.
 - LemLib is inherited at `e6d8db5` (lem-lean on 4.35.0); cerberus-lean's generated
-  tree is expected byte-identical to the 4.32.2 one (the record's P5 section states
-  the identity check once run), so no quoted generated term moves.
+  tree IS byte-identical under the new lem (record §6.2), so no quoted generated term
+  moves by the lem move (the inner_arg_temps landing's own `.lem` edits move it as
+  that landing's notes say).
 - Expect the repair classes of the Caesium note in cerberus-sl's own seams and
   proofs: the removed `String` functions; `split` on `lem_if` guards after unfolding
   the comparison helper; `simp_all only` contradictions (`not_true_eq_false`,

@@ -2,11 +2,13 @@
 
 Author: [AGENT 2026-10-26]. Provider branch `arc/lean-4.35` (cerberus-lean), the
 same-name pair of lem-lean's landed `arc/lean-4.35` (`mdd/lean-backend` = `e6d8db5`).
-This describes the provider candidate at its worktree-local checkpoints; it does not
-claim a landing, a consumer re-pin or a build of cerberus-caesium. The checked
-commands and results are in
-[the record](2026-10-25_lean-4.35-cerberus-record.md); the gate sections there say
-which gates have run (the full battery, kernel replay and `lake check` are its P5).
+This describes the provider candidate, rebased onto the inner_arg_temps landing
+(`mdd/cerberus-lean` `2c714c265`); it does not claim a landing, a consumer re-pin or a
+build of cerberus-caesium. The checked commands and results are in
+[the record](2026-10-25_lean-4.35-cerberus-record.md): the lem move is
+output-identical for cerberus-lean's generated tree (record §6.2), the kernel replay
+over every changed proof module and LemLib is exit 0 on the rebuilt tree (§6.5), and
+the record's §7 carries the full battery and `lake check` results.
 
 ## What moves
 
@@ -17,8 +19,9 @@ which gates have run (the full battery, kernel replay and `lake check` are its P
 - LemLib (lem-lean) `2d3a492` → `e6d8db5`: LemLib on 4.35.0 (`toList_bal` proof
   repaired, two deprecation swaps), the emitter's one output change
   (`@[noinline]` on synthesized tuple-let RHS defs `lemLetRhs_*`) has NO site in
-  cerberus-lean's generated tree, which is expected byte-identical at the re-pin
-  (confirmed in the record's P5 section once run).
+  cerberus-lean's generated tree, which IS byte-identical at the re-pin (both
+  generated trees regenerated with lem `e6d8db5`: `diff -r` clean, 0 `lemLetRhs_`
+  sites; record §6.2).
 - The native object `lean_frontend/native/md5.o` is rebuilt with 4.35.0's `leanc`
   (`make lean-native-obj`); a consumer that compiles its own `native/*.c` must do the
   same — the 4.32.2 object is not to be linked into a 4.35.0 binary.
@@ -95,5 +98,6 @@ Two 4.35.0 facts a consumer may rely on, measured in the record (§2, §3):
   a failure leaf are read as persistent globals (not inlined). Compiled IR symbols are
   `lp_<package>_<Module>_<name>` under 4.35.0's compiler.
 
-Gate status at the provider: see the record's §1.3 (checkpoint checks) and its P5
-section (row 1, Tier A, the full battery, kernel replay, `lake check`).
+Gate status at the provider: the record's §1.3 (checkpoint checks), §5 (the pre-go
+Tier A), §6.5 (kernel replay) and §7 (the full battery and `lake check` after the
+rebase).
