@@ -509,18 +509,84 @@ let is_other = function
   | Loc_other str -> Some str
   | _ -> None
 
+(* FORK-AHEAD DELTA (quotation hygiene Q1, 2026-10-26; [USER 2026-10-21] ruling B of
+   lean_frontend/docs/2026-10-20_core-quote-d5-rereview.md; upstream-tray draft 58,
+   whose remedy this is). Pristine b9aeedcb4 looks `Filename.dirname path` up
+   LITERALLY in the three keys `Cerb_runtime.in_runtime "libc/include"`, `"libcore"`,
+   `"libcore/impls"` -- the runtime argument AS SPELLED plus the fixed suffix -- so any
+   spelling that denotes a runtime library directory but differs from that key is
+   classified NOT library: cpp's own `./`-prefixed header positions under a relative
+   `--runtime`, an absolute label under a relative runtime, a relative label under an
+   absolute one, a `#line` alias, a symlinked spelling; and the served UB location
+   (core_eval.lem:602, core_run.lem:477/:782) moves with the spelling. The fork
+   MIRRORS THE LEAN PORT'S RULE (lean_frontend/CerbLocation.lean
+   `isLibraryPathSuffix`/`isLibraryLocation` + lean_frontend/Main.lean
+   `refuseLibraryLocations`): the location is library iff
+     (1) its directory ends with one of the three runtime-relative library
+         suffixes (the port's pure seam test), AND
+     (2) the directory's resolved real path is one of the resolved real paths of
+         THIS run's three runtime library directories (the port's import-time guard,
+         under which (1) implies (2) on every input the port serves).
+   Hence the two engines classify every served input identically, in both
+   directions ((1) alone would class a user file under a directory merely named
+   `runtime/libcore` as library; (2) alone would class a foreign-named symlink to a
+   library directory as library where the port's suffix test does not). (1) is tested
+   first so that a path outside the library shape -- every user file, and
+   `<internal>` for Loc_other -- never touches the filesystem. A directory that
+   passes (1) but cannot be resolved is exactly the input the port REFUSES at import
+   (Main.refuseLibraryLocations: "cannot resolve the source directory"); the oracle
+   refuses too (Failure), never classifying by suffix alone. Paths resolve from the
+   process working directory, as the port's do; no label is rewritten. Results are
+   memoised per directory string: core_run.lem:782 tests the location of EVERY
+   thread step, and the three runtime directories are resolved once (lazily, after
+   `Cerb_runtime.specified_runtime` is set at the CLI). Witnesses:
+   scripts/check_runtime_resolution.sh (the fixture-001 classifier probe and the
+   `#line` agreement pins: `./`, unprefixed, absolute and `libcore` spellings all
+   serve the same UB location on both engines). *)
+let library_suffixes = ["runtime/libc/include"; "runtime/libcore"; "runtime/libcore/impls"]
+
+(* lean_frontend/CerbLocation.lean isLibraryPathSuffix: `dir == d || dir.endsWith ("/" ++ d)` *)
+let has_library_suffix dir =
+  List.exists (fun d ->
+    String.equal dir d ||
+    (let sd = "/" ^ d in
+     let n = String.length dir and m = String.length sd in
+     n > m && String.equal (String.sub dir (n - m) m) sd)) library_suffixes
+
+let realpath_opt p = try Some (Unix.realpath p) with Unix.Unix_error _ -> None
+
+(* the port's `exact` list (Main.refuseLibraryLocations): the three directories of
+   util/cerb_runtime.ml's runtime, resolved; an unresolvable one is refused there too *)
+let resolved_library_dirs = lazy (
+  List.map (fun d ->
+    let p = Cerb_runtime.in_runtime d in
+    match realpath_opt p with
+      | Some r -> r
+      | None ->
+          failwith ("Cerb_location.is_library_location: refused - cannot resolve this run's runtime library directory `" ^ p ^ "' (the fork classifies library locations by resolved directory, mirroring the Lean port's import guard; quotation hygiene Q1, 2026-10-26)"))
+    ["libc/include"; "libcore"; "libcore/impls"])
+
+let library_dir_cache : (string, bool) Hashtbl.t = Hashtbl.create 16
+
 let is_library_location loc =
-  let excluded =
-    let tbl = Hashtbl.create 3 in
-    Hashtbl.add tbl (Cerb_runtime.in_runtime "libc/include") ();
-    Hashtbl.add tbl (Cerb_runtime.in_runtime "libcore") ();
-    Hashtbl.add tbl (Cerb_runtime.in_runtime "libcore/impls") ();
-    tbl in
   match get_filename loc with
-    | Some path ->
-        Hashtbl.mem excluded (Filename.dirname path)
     | None ->
         false
+    | Some path ->
+        let dir = Filename.dirname path in
+        if not (has_library_suffix dir) then
+          false
+        else
+          match Hashtbl.find_opt library_dir_cache dir with
+            | Some b -> b
+            | None ->
+                let b =
+                  match realpath_opt dir with
+                    | Some r -> List.mem r (Lazy.force resolved_library_dirs)
+                    | None ->
+                        failwith ("Cerb_location.is_library_location: refused - source location `" ^ path ^ "' names a directory with a runtime library suffix that cannot be resolved (`" ^ dir ^ "'); the fork classifies library locations by resolved directory, mirroring the Lean port's import guard, which refuses this input (quotation hygiene Q1, 2026-10-26)") in
+                Hashtbl.replace library_dir_cache dir b;
+                b
 
 
 

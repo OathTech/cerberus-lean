@@ -9,15 +9,20 @@
 # searches the working directory and deliberately does not mirror the
 # oracle's OPAM_SWITCH_PREFIX fallback (Main.lean resolveRuntime). A Cabs
 # location whose directory passes the port's suffix library test but not the
-# resolved-directory membership test against the runtime is REFUSED. The
-# oracle's literal test can differ on accepted aliases: the fixture-001
-# witness below pins that declared divergence (Core quotation D2b/D5).
-# A `#line` plant then pins the SERVED consequence: a UB inside a function
-# placed at the ./-prefixed runtime header directory is reported at the
-# function body by the oracle (`<2:10--2:15>`) and at the call site by the
-# port (`<11:10--11:23>`); the unprefixed spelling agrees on the call site.
-# The pin goes red if either engine's rule moves. The selftest plants below
-# (ignore-runtime, refuse-all) cover it: neither stub prints that line.
+# resolved-directory membership test against the runtime is REFUSED. Since
+# quotation hygiene Q1 (2026-10-26; [USER 2026-10-21] ruling B of the D5
+# re-review) the FORK ORACLE classifies by the same rule — suffix AND resolved
+# membership (util/cerb_location.ml is_library_location, a fork-ahead delta
+# over pristine's literal key comparison; upstream-tray draft 58) — so the two
+# engines classify every served input identically. The fixture-001 witness
+# below pins both actual classifiers AGREEING on cpp's ./-prefixed header
+# label, and the `#line` plants pin the SERVED agreement: a UB inside a
+# function placed at the runtime header directory spelled `./`-prefixed,
+# unprefixed, absolute, or at `libcore`, is reported at the call site
+# (`<11:10--11:23>`) by BOTH engines (core_eval.lem:602's library-location
+# substitution). A plant whose engines disagree is RED; so is any engine
+# moving its rule. The selftest plants below (ignore-runtime, refuse-all)
+# cover it: neither stub prints that line.
 #
 # Each check runs the REAL oracle (cabs-json export, and the oracle's own
 # verdict where the check compares against it) and the Lean driver.
@@ -182,9 +187,10 @@ L4=$(oracle_line "$PREFIX" user/other/liblocub.c)
 [[ "$L4" == Undefined* ]] || { echo "$NAME: FAIL — oracle control verdict for liblocub.c: [$L4]"; exit 1; }
 lean "$W" -- --batch --runtime="$PREFIX" "$W/l4.json";               expect_line "control: the same file elsewhere agrees with the oracle" "$L4"
 
-# --- Accepted relative spelling: actual oracle/port classifiers disagree -----
-# The committed fixture has cpp's ./ prefix; the oracle's runtime key does not
-# (util/cerb_location.ml:512-523). Do not normalize the witness's stored label.
+# --- Accepted relative spelling: actual oracle/port classifiers AGREE --------
+# The committed fixture has cpp's ./ prefix; pristine's literal runtime key does
+# not, the fork's resolved rule does (util/cerb_location.ml is_library_location,
+# Q1 2026-10-26). Do not normalize the witness's stored label.
 HEADER=$(python3 - "$ROOT/tests/fixtures/001-return-literal/cabs.json" <<'PYLOC'
 import json, sys
 paths = []
@@ -227,48 +233,49 @@ OCONTROL=$(cd "$ROOT" && "$W/location" _build/install/default "${HEADER#./}") \
     || { echo "$NAME: FAIL — oracle library-location control"; exit 1; }
 LCLASS=$(cd "$ROOT/lean_frontend" && "$SCRIPT_DIR/capped" lake env lean --run "$W/Location.lean" "$HEADER") \
     || { echo "$NAME: FAIL — port library-location probe"; exit 1; }
+OFOREIGN=$(cd "$W" && "$W/location" "$ROOT/_build/install/default" "$W/user/runtime/libcore/liblocub.c") \
+    || { echo "$NAME: FAIL — oracle library-location foreign-directory probe"; exit 1; }
 n=$((n + 1))
-if [[ "$OCLASS" != false || "$LCLASS" != true || "$OCONTROL" != true ]]; then
-    fail "fixture-001 classification drift: oracle=$OCLASS port=$LCLASS oracle-no-dot-control=$OCONTROL"
+if [[ "$OCLASS" != true || "$LCLASS" != true || "$OCONTROL" != true || "$OFOREIGN" != false ]]; then
+    fail "fixture-001 classification drift: oracle=$OCLASS port=$LCLASS oracle-no-dot-control=$OCONTROL oracle-foreign-runtime/libcore=$OFOREIGN (expected true true true false: both engines classify by suffix AND resolved membership)"
 fi
-echo "$NAME: fixture-001 --runtime=_build/install/default: 154 ./-prefixed header positions; oracle library=$OCLASS; port library=$LCLASS; oracle without ./=$OCONTROL (declared divergence)"
+echo "$NAME: fixture-001 --runtime=_build/install/default: 154 ./-prefixed header positions; oracle library=$OCLASS; port library=$LCLASS; oracle without ./=$OCONTROL; oracle on a foreign runtime/libcore directory=$OFOREIGN (both engines agree: suffix AND resolved membership)"
 F001=$(oracle_line _build/install/default tests/fixtures/001-return-literal/source.c "$ROOT") \
     || { echo "$NAME: FAIL — fixture-001 oracle execution failed"; exit 1; }
 [[ "$F001" == 'Defined {value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}' ]] \
     || { echo "$NAME: FAIL — fixture-001 oracle execution verdict: [$F001]"; exit 1; }
 lean "$ROOT" -- --batch --runtime=_build/install/default tests/fixtures/001-return-literal/cabs.json
-expect_line "relative fixture-001 is served; execution agrees despite classification divergence" "$F001"
+expect_line "relative fixture-001 is served; execution agrees" "$F001"
 [[ $RC -eq 0 ]] || fail "relative fixture-001 exit $RC, expected 0"
 echo "$NAME: fixture-001 execution: oracle=[$F001]; port=[$OUT]"
 
-# --- Served divergence pin: a #line plant at the ./-prefixed runtime header --
-# dot: the spelling cpp emits under --runtime=_build/install/default; the
-# oracle says not-library and reports the UB inside the function, the port
-# says library and substitutes the call site (core_eval.lem:602). nodot: the
-# oracle's literal key; both substitute the call site. Both engines run from
-# the repository root at the relative runtime, as the fixture-001 case above.
+# --- Served agreement pins: #line plants at the runtime library directories --
+# dot: the spelling cpp emits under --runtime=_build/install/default (before Q1
+# the oracle said not-library and reported the UB inside the function,
+# `<2:10--2:15>`, while the port substituted the call site); nodot: pristine's
+# literal key; abs: an absolute spelling under the relative runtime; core: the
+# libcore directory. Both engines now classify all four as library and
+# substitute the call site (core_eval.lem:602): one verdict, on both. Both
+# engines run from the repository root at the relative runtime, as the
+# fixture-001 case above. A plant whose engines disagree is RED.
 plant() {  # <name> <library-directory-spelling>
     printf '#line 1 "%s/plant.h"\nint f(int x) {\n  return x + 1;\n}\n#line 10 "%s.c"\nint main(void) {\n  return f(2147483647);\n}\n' "$2" "$1" > "$W/$1.c"
     cabs _build/install/default "$W/$1.c" "$W/$1.json" "$ROOT"
 }
 plant dot   ./_build/install/default/lib/cerberus-lib/runtime/libc/include
 plant nodot _build/install/default/lib/cerberus-lib/runtime/libc/include
-BODY='Undefined {ub: "UB036_exceptional_condition", stderr: "", loc: "<2:10--2:15>"}'
+plant abs   "$RT/libc/include"
+plant core  ./_build/install/default/lib/cerberus-lib/runtime/libcore
 SITE='Undefined {ub: "UB036_exceptional_condition", stderr: "", loc: "<11:10--11:23>"}'
-ODOT=$(oracle_line _build/install/default "$W/dot.c" "$ROOT")
-ONODOT=$(oracle_line _build/install/default "$W/nodot.c" "$ROOT")
-n=$((n + 1))
-[[ "$ODOT" == "$BODY" ]] || fail "served-divergence pin: oracle verdict for the ./ plant moved: expected exactly [$BODY]; got [$ODOT]"
-n=$((n + 1))
-[[ "$ONODOT" == "$SITE" ]] || fail "served-divergence pin control: oracle verdict for the unprefixed plant moved: expected exactly [$SITE]; got [$ONODOT]"
-lean "$ROOT" -- --batch --runtime=_build/install/default "$W/dot.json"
-expect_line "served-divergence pin: ./ plant is served; the port reports the call site where the oracle reports the body" "$SITE"
-[[ $RC -eq 1 ]] || fail "served-divergence pin: ./ plant exit $RC, expected 1"
-PDOT=$OUT
-lean "$ROOT" -- --batch --runtime=_build/install/default "$W/nodot.json"
-expect_line "served-divergence pin control: unprefixed plant agrees with the oracle" "$SITE"
-[[ $RC -eq 1 ]] || fail "served-divergence pin control: unprefixed plant exit $RC, expected 1"
-echo "$NAME: served-divergence pin: ./ plant oracle=[$ODOT] port=[$PDOT]; unprefixed plant oracle=[$ONODOT] port=[$OUT]"
+for name in dot nodot abs core; do
+    O=$(oracle_line _build/install/default "$W/$name.c" "$ROOT")
+    n=$((n + 1))
+    [[ "$O" == "$SITE" ]] || fail "served agreement pin ($name): oracle verdict moved: expected exactly [$SITE] (the call site, a library-located UB); got [$O]"
+    lean "$ROOT" -- --batch --runtime=_build/install/default "$W/$name.json"
+    expect_line "served agreement pin ($name): the port reports the call site, as the oracle does" "$SITE"
+    [[ $RC -eq 1 ]] || fail "served agreement pin ($name): exit $RC, expected 1"
+    echo "$NAME: served agreement pin ($name): oracle=[$O] port=[$OUT]"
+done
 
 [[ $fails -eq 0 ]] || { echo "$NAME: $fails of $n witnesses FAILED"; exit 1; }
-echo "$NAME: OK ($n witnesses: --runtime/CERB_INSTALL_PREFIX resolution and priority, planted cwd std.core ignored, planted prefix used, 5 runtime refusals, 1 cross-runtime and 3 library-location refusals, 1 control agreeing with the oracle, relative fixture-001 classification divergence and execution control, served UB-location divergence pin with its unprefixed control)"
+echo "$NAME: OK ($n witnesses: --runtime/CERB_INSTALL_PREFIX resolution and priority, planted cwd std.core ignored, planted prefix used, 5 runtime refusals, 1 cross-runtime and 3 library-location refusals, 1 control agreeing with the oracle, relative fixture-001 classifier agreement (both engines: suffix AND resolved membership) and execution control, 4 served UB-location agreement pins (./, unprefixed, absolute, libcore))"

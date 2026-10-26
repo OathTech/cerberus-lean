@@ -635,20 +635,19 @@ def runtimeLibraryDirs (runtime : String) : List String :=
     Relative paths resolve from the importing process's working directory;
     stored source and lexing positions are never rewritten. A missing or
     foreign directory is refused (exit 2), not accepted by suffix alone.
-    Admitted divergence class: any label whose directory resolves to one of
-    this run's library directories but differs literally from the oracle's
-    key `<runtime-as-given>/lib/cerberus-lib/runtime/<dir>` passes this guard
-    and the port's suffix test while failing the oracle's literal test, in
-    both directions: an absolute or `./` label under a relative --runtime, a
-    relative or `./` label under an absolute one, a `#line` alias, a symlinked
-    spelling; `libcore` as much as `libc/include`. The instance every
-    canonical export carries is cpp's ./_build/... header position under
-    --runtime=_build/install/default. On such inputs the served UB location
-    differs: `scripts/check_runtime_resolution.sh` pins a `#line` plant on
-    which the oracle reports `<2:10--2:15>` and the port `<11:10--11:23>`
-    (the unprefixed spelling agrees on `<11:10--11:23>`).
-    Quotation preserves the labels and is unaffected; differential lanes use
-    absolute spellings where the classifiers agree (upstream-tray draft 58). -/
+    Since quotation hygiene Q1 (2026-10-26; [USER 2026-10-21] ruling B of the
+    D5 re-review) the FORK ORACLE applies the same rule — suffix AND resolved
+    membership, `util/cerb_location.ml` `is_library_location`, a fork-ahead
+    delta over pristine's literal `<runtime-as-given>/lib/cerberus-lib/runtime/<dir>`
+    key (upstream-tray draft 58 is the report) — so an absolute or `./` label
+    under a relative --runtime, a relative or `./` label under an absolute one,
+    a `#line` alias or a symlinked spelling, for `libcore` as much as
+    `libc/include`, is library on BOTH engines and the served UB location is
+    the same: `scripts/check_runtime_resolution.sh` pins fixture 001's
+    classifiers agreeing and four `#line` plants (`./`, unprefixed, absolute,
+    `libcore`) on which both engines report the call site `<11:10--11:23>`.
+    The former declared divergence class (D2b/D5) no longer exists.
+    Quotation preserves the labels and is unaffected. -/
 def refuseLibraryLocations (runtime : String) (source : String) (files : Array String) : IO Unit := do
   let refuse {α : Type} (detail : String) : IO α := do
     CerbStop.exitRefusals (driverRefusal .libraryLocation (some source)

@@ -636,31 +636,33 @@ Nothing else.
   `runtime/libcore`, `runtime/libcore/impls` or `runtime/libc/include`
   but is not that directory of THIS run's runtime is REFUSED at import
   (exit 2, `cerberus-lean: refused — library-location classification: …`).
-  The oracle tests literal directory equality (`util/cerb_location.ml:512-523`).
-  Deliberate divergence [USER 2026-10-19]: the import guard now compares
+  [USER 2026-10-19] (Core quotation D2b): the import guard compares
   resolved directories, retaining exact membership in the same three runtime
   directories. Equivalent absolute/relative spellings and symlinks agree;
   missing and foreign directories refuse. The pure model still tests the
   suffix; stored source and lexing positions are never rewritten. Relative
-  paths resolve against the importing process's working directory. The
-  admitted divergence class is any label whose directory resolves to a
-  runtime library directory but differs literally from the oracle's key
-  `<runtime-as-given>/lib/cerberus-lib/runtime/<dir>`, in both directions:
-  an absolute or `./` label under a relative `--runtime`, a relative or `./`
-  label under an absolute one, a `#line` alias, a symlinked spelling, for
-  `libcore` as much as `libc/include`. Such a label is non-library by the
-  oracle's literal test but library by the port's suffix test, and the
-  resolved guard accepts it. Every canonical export carries the instance:
-  cpp's `./_build/.../libc/include/*.h` positions under
-  `--runtime=_build/install/default`. On such served inputs the UB location
-  differs: the `#line` plant in `scripts/check_runtime_resolution.sh` is
-  reported at `<2:10--2:15>` by the oracle and `<11:10--11:23>` by the port,
-  and at `<11:10--11:23>` by both under the unprefixed spelling. Differential
-  lanes use absolute spellings where both agree. The quoted literal is
-  unaffected: its stored labels are preserved. The fixture-001 witness in
-  the same script prints both actual classifiers and the execution verdicts
-  (that program has no UB); [upstream draft 58](docs/upstream-tray/58-relative-runtime-library-location.md)
-  describes the oracle's literal-key mismatch.
+  paths resolve against the importing process's working directory.
+  [USER 2026-10-21] ruling B (quotation hygiene Q1, 2026-10-26): the FORK
+  ORACLE classifies by the same rule — `util/cerb_location.ml`
+  `is_library_location` is library iff the directory carries a runtime
+  library suffix AND its resolved real path is one of the run's three
+  resolved runtime library directories (the port's suffix test plus its
+  import guard; a directory with the suffix that cannot be resolved is
+  refused on both engines) — a fork-ahead delta over pristine's literal
+  comparison of `Filename.dirname path` with the key
+  `<runtime-as-given>/lib/cerberus-lib/runtime/<dir>` as spelled, under
+  which cpp's own `./_build/.../libc/include/*.h` positions under
+  `--runtime=_build/install/default` were non-library and the served UB
+  location moved with the spelling ([upstream draft 58](docs/upstream-tray/58-relative-runtime-library-location.md)
+  is the report; `scripts/fork_drift_manifest.txt` pins the file; the
+  fork ≠ pristine inventory below lists it). So the two engines classify
+  every served input identically, and the formerly admitted divergence class
+  no longer exists: `scripts/check_runtime_resolution.sh` pins fixture 001's
+  classifiers agreeing (both `true` on the `./` label, the oracle `false` on a
+  foreign `runtime/libcore` directory) and four `#line` plants (`./`,
+  unprefixed, absolute, `libcore`) on which both engines report the call site
+  `<11:10--11:23>`; a plant whose engines disagree is red. The quoted literal
+  is unaffected: its stored labels are preserved.
   Portable libc metadata uses `scripts/libc_prep.sh --jsons OUTDIR`, whose
   exporter runs from the project root with `--runtime=_build/install/default`
   and relative source/include paths. Consume this metadata from the project
@@ -736,20 +738,15 @@ operator items are listed in the record.
   pre-merge audit L4): the driver refuses, at import, any location whose
   path passes `CerbLocation.isLibraryLocation`'s suffix test but not the
   exact membership test against the resolved runtime directories. D2b accepts
-  equivalent path spellings as a declared divergence from the oracle's
-  literal comparison. The Z-67 retirement is conditional on matching literal
-  directory spellings, as in the differential lanes' absolute invocations.
-  Any label that resolves to a runtime library directory but differs
-  literally from the oracle's `<runtime-as-given>/<dir>` key, in either
-  direction (cpp's `./`-prefixed header positions under the canonical
-  relative runtime being the instance every export carries), is non-library
-  on the oracle and library on the port, even on served driver runs, and the
-  served UB location differs (the `#line` plant pin above: oracle
-  `<2:10--2:15>`, port `<11:10--11:23>`). This does not change the quoted
-  literal. A consumer calling `CabsImport.parseJson` and `isLibraryLocation`
-  directly bypasses the guard and also keeps the foreign-directory Z-67
-  residual; applying the resolved guard removes that class, not the
-  literal-spelling divergence.
+  equivalent path spellings; since quotation hygiene Q1 (2026-10-26) the fork
+  oracle classifies by the same suffix-and-resolved-membership rule, so the
+  Z-67 retirement holds for the driver under every spelling (the `#line`
+  agreement pins above), not only under matching literal spellings. This does
+  not change the quoted literal. A consumer calling `CabsImport.parseJson`
+  and `isLibraryLocation` directly bypasses the guard and keeps the
+  foreign-directory Z-67 residual (a user file under a directory merely
+  named `runtime/libcore` is library by the suffix test and non-library on
+  the oracle); applying the resolved guard removes that class.
 - *In-process consumers and kind-1 fail-stops*: no universal `drive`
   conformance theorem follows from avoiding known failure sites; byte,
   runtime-state and other obligations also remain. `failwithI` has an
@@ -903,6 +900,28 @@ by a cited re-record.
   (`scripts/fork_drift_manifest.txt`, header note "fix/asm-refusal"). Upstream
   disposition: none planned — the refusal is the fork's contract, not a fix
   for upstream to take [AGENT].
+- **Fork-ahead rule — library-location classification by resolved directory
+  (0 register rows; added 2026-10-26, quotation hygiene Q1; [USER 2026-10-21]
+  ruling B of `docs/2026-10-20_core-quote-d5-rereview.md`; record
+  `docs/2026-10-26_quotation-hygiene-record.md`):** the fork's
+  `util/cerb_location.ml` `is_library_location` classifies a location as
+  library iff its directory carries a runtime library suffix AND resolves to
+  one of the run's three resolved runtime library directories — the Lean
+  port's rule — where pristine compares `Filename.dirname path` literally
+  with `<runtime-as-given>/lib/cerberus-lib/runtime/<dir>`. Observable only
+  on a label whose spelling differs from that literal key (cpp's `./`-prefixed
+  header positions under a relative `--runtime`, an absolute label under a
+  relative runtime, a relative one under an absolute runtime, a `#line`
+  alias, a symlink): pristine reports a library-located UB inside the library
+  function, the fork at the call site. Row 10's walked corpora run both
+  engines under one absolute runtime spelling on real files, so no walked
+  case carries such a label and the register has no row (the B10 re-run after
+  the change is quoted in the record); the witnesses are
+  `scripts/check_runtime_resolution.sh`'s classifier probe and `#line`
+  agreement pins. The content pin is the NEW `[source-content]` row for
+  `util/cerb_location.ml` (`scripts/fork_drift_manifest.txt`, header note
+  "quotation hygiene Q1"). Upstream disposition: draft 58 reports the
+  literal-key mismatch; its remedy is implemented in the fork [AGENT].
 - **Fork refusal — item G, the memory model's overlap and alignment TODOs
   (0 register rows; 2 corpus controls retired; added 2026-10-20; contract D10;
   record `docs/2026-10-20_item-g-refusals-record.md`):** the fork REFUSES what
@@ -1417,7 +1436,7 @@ theorem over the shipped pipeline `@drive ⟨fuel⟩` at the ambient
 | `check_fixture_freeze.sh` | the `corpus/` differential-fixture set matches its hash manifest exactly (additions included) |
 | `check_failure_reach.sh` | **the failure-reach register gate** (fuel-pending close-out 2026-09-08 — option C of the pure-failure reachability census `docs/2026-09-07_pure-failure-reachability-census.md`; the TRIPWIRE the parked twin design `docs/2026-09-07_pure-failure-correspondence-design.md` names): rebuilds the one-module declaration-dependency instrument `tests/failure-probes/FailureReach.lean` (fresh scratch Lake package, ~6 s), takes the lexical census (`scripts/failure_census.py`) and requires every PURE `failwithI`/`panic!` site of the exec dependency closure (238) + every pure site with an unresolved kernel owner (2) to equal a row of `scripts/failure_reach_register.txt` — same position class (the census's token-level classifier `scripts/failure_position.py`), the census's reviewed reach class (174 UNREACHABLE-BY-INVARIANT / 44 REACHABLE / 22 UNKNOWN over 240 rows, the 2 unresolved rows among the UNKNOWN; counts rechecked 2026-10-21 after outcome-protocol integration — the PNVI refusal rows were re-reviewed at PNVI S4 once the switch became accepted — the gate's OK line is authoritative), sealed rows — both directions, matched on the key file/owner/token/message (the first 60 whitespace-collapsed chars after the token; inside a group of sites sharing that key the window is lengthened to the minimum that tells them apart, and a group identical even on the full recorded window is a loud FAIL — 2026-10-04, `docs/2026-10-04_failure-reach-key-groups-record.md`); RED naming the rows on a NEW site, a stale row, a moved position class, a DISCARDABLE generated let-binding (the F1 shape: a dead binding of a failure — today 0) or an unsealed class edit. Reach classes are reviewed claims (an invariant NAME with a cite, or a witness under `tests/failure-probes/reach/`), not theorems; the closure is a kernel constant-dependency closure, not a path. `--selftest` plants on scratch copies (a new site in a generated exec-closure definition, a dead let, an unsealed class edit, a phantom row, an edited tally, mis-shaped `lem_if`/`lemSeq` heads (P6/P7), and P8: two same-owner rows' reach classes swapped together with their seals — the pre-merge audit A3 hole, now RED SEAL MISMATCH) plus classifier witnesses C1-C7 and the key-group witness K1 |
 | `test_renumber_plants.sh` | the rebaseline-admission instrument (`check_renumber_only.py`) refuses what it must: committed adversarial pairs (string-content/comment-boundary holes + count/token/order plants) fail, positive controls admit with their declared class |
-| `check_runtime_resolution.sh --selftest` | the driver's runtime is the oracle's (`--runtime DIR` / `CERB_INSTALL_PREFIX`), never the working directory, and a missing runtime or a suffix-library-but-not-exact location refuses (bug hunt BUG-2/BUG-3, 2026-09-29; §3(c)); plants: a runtime-ignoring stub and a refuse-everything stub must fail it |
+| `check_runtime_resolution.sh --selftest` | the driver's runtime is the oracle's (`--runtime DIR` / `CERB_INSTALL_PREFIX`), never the working directory, and a missing runtime or a suffix-library-but-not-exact location refuses (bug hunt BUG-2/BUG-3, 2026-09-29; §3(c)); since quotation hygiene Q1 (2026-10-26) both engines' actual library-location classifiers are probed on fixture 001's `./` label (both library) and a foreign `runtime/libcore` directory (oracle non-library), and four `#line` plants (`./`, unprefixed, absolute, `libcore`) pin the SAME served UB location on both engines; plants: a runtime-ignoring stub and a refuse-everything stub must fail it |
 | `check_cabs_json_utf8.sh --selftest` | a non-UTF-8 Cabs JSON (a raw byte ≥ 0x80 in a file name or attribute string) is refused with the attributed message instead of an uncaught exception, and ASCII controls agree with the oracle (bug hunt BUG-6/K-5, 2026-09-29; §3(c)); plants: a pre-fix uncaught-exception stub and a refuse-everything stub must fail it |
 | `check_asm_refusal.sh --selftest` | inline assembly is refused, never erased: 4 asm statements (basic, extended, `asm goto`, in a never-called function) are refused by the oracle and by Lean with the attributed desugar message at the asm location, 3 declarator asm labels are refused by the shared parser for `--exec` and `--cabs-json` (no Cabs JSON), and 2 controls (asm-free; asm only in a comment and a string) agree with the oracle (contract D9, 2026-10-05; §3(c)); plants: a pre-fix erasing oracle (strips the asm, both engines then run it), a Lean-only erasing stub and a refuse-everything pair must fail it |
 | `check_item_g_refusals.sh --selftest` | the two item-G memory-model TODOs are refused, never answered: 6 overlapping `memcpy` programs (tray 56's witness, the retired coverage control mem4-020's backward shape, an object onto itself, inside a malloc'd object, and two device-memory overlaps) and 3 invalid-alignment allocations (`aligned_alloc(3, 9)`, `(6, 12)`, `(1000, 2000)`) are refused by the oracle (uncaught `Failure`, exit 125) and by Lean (abort, exit 134) with byte-identical texts; 9 controls agree with the oracle (adjacent device ranges, adjacent halves, two objects, length 0, realloc's copy, an out-of-bounds non-overlapping copy that is UB on both, `aligned_alloc(16, 32)`, one allocation at each alignment the lanes use — 1, 2, 4, 8, 16 — and the unchanged size-clause UB) and the zero-alignment crash is unchanged on both (contract D10, 2026-10-20; §3(c)); plants: a pre-fix answering pair, a Lean-only answering stub, a refuse-everything pair, a message-without-abort stub and an altered-text stub must all fail it |

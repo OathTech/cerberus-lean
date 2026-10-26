@@ -1,6 +1,13 @@
 # Literal library-directory test misclassifies aliased spellings of the runtime, including cpp's own `./` header positions
 
-**State:** Draft; no submission or duplicate search recorded.
+**State:** Draft; no submission or duplicate search recorded. **Remedy
+implemented in the fork** (quotation hygiene Q1, 2026-10-26; [USER 2026-10-21]
+ruling B of `lean_frontend/docs/2026-10-20_core-quote-d5-rereview.md`): the
+fork's `util/cerb_location.ml` `is_library_location` classifies by resolved
+directory as proposed below (suffix and resolved membership, the Lean port's
+rule), registered as a fork-ahead delta in `scripts/fork_drift_manifest.txt`;
+`scripts/check_runtime_resolution.sh` now pins both engines agreeing on every
+spelling. The report stands for upstream's literal rule.
 **Classification:** TRUE BUG. The classifier compares directory strings
 literally against the runtime argument as given, so any spelling that
 denotes a runtime library directory but differs from that key is classified
@@ -57,7 +64,9 @@ the Lean port at the call site, `loc: "<11:10--11:23>"`; with the unprefixed
 the same directory under the relative runtime, and the `libcore` directory,
 behave like the `./` case. The differential lanes' absolute spellings agree,
 so they do not detect this class. Core quotation preserves all stored labels;
-the literal is unaffected.
+the literal is unaffected. (Measured before the fork's remedy; since
+2026-10-26 the fork oracle reports `<11:10--11:23>` on every spelling, as the
+port does.)
 
 Compare resolved directory identities for exact membership in the three
 runtime library directories, with an explicit failure for paths that cannot
@@ -66,7 +75,10 @@ or lexing labels. This also handles relative aliases and symlinks without
 classifying foreign directories merely because their suffix matches. Tests
 should include cpp's `./` spelling beside the unprefixed control, an absolute
 runtime, and an existing foreign directory with the same suffix. The fork's
-Lean import guard uses this rule; the OCaml classifier remains literal.
+Lean import guard uses this rule, and since 2026-10-26 so does the fork's
+OCaml classifier (suffix and resolved membership, memoised per directory;
+a suffix-bearing directory that cannot be resolved is refused, as the Lean
+import guard refuses it); pristine upstream remains literal.
 
 Origin: pre-merge Core quotation audit P2-1; D5 records the measured divergence
 under the operator's retained relative-runtime convention.

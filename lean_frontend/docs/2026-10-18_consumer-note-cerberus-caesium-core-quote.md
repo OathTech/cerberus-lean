@@ -49,21 +49,21 @@ there. These are the convention's positive and negative cases, not promises of
 invariance under arbitrary runtime spelling or working directory. A refusal
 names the convention and writes no module.
 
-This guard deliberately differs from the oracle's literal directory check.
-The admitted class is any label spelling that resolves to a runtime library
-directory but differs literally from the oracle's `<runtime-as-given>/<dir>`
-key, in both directions: an absolute or `./` label under the relative
-runtime, a relative or `./` label under an absolute one, a `#line` alias.
-With the canonical relative runtime every export carries the instance: cpp's
-`./`-prefixed header positions are library locations on the port and
-non-library on the oracle. On such inputs the served UB location differs
-(the `#line` plant pinned in `scripts/check_runtime_resolution.sh`: oracle
-`<2:10--2:15>`, port `<11:10--11:23>`; the unprefixed spelling agrees); the
-absolute-spelling differential lanes agree. The quoted labels/value are
-unaffected, so a consumer executing the quoted file inherits the port's
-classification. The fixture-001 witness, the plant pin and
-[upstream draft 58](upstream-tray/58-relative-runtime-library-location.md)
-measure and explain this class.
+Update [AGENT 2026-10-26] (quotation hygiene Q1; [USER 2026-10-21] ruling B
+of the D5 re-review): the fork ORACLE now classifies by the same rule as this
+guard — suffix AND resolved membership (`util/cerb_location.ml`
+`is_library_location`, a fork-ahead delta over pristine's literal
+`<runtime-as-given>/<dir>` comparison; [upstream draft 58](upstream-tray/58-relative-runtime-library-location.md)
+is the report, its remedy implemented in the fork). The divergence class the
+D5 text below this paragraph described — an absolute or `./` label under the
+relative runtime, a relative or `./` label under an absolute one, a `#line`
+alias, on which the served UB location differed (oracle `<2:10--2:15>`, port
+`<11:10--11:23>`) — NO LONGER EXISTS: `scripts/check_runtime_resolution.sh`
+now pins both classifiers agreeing on fixture 001's `./` label and four
+`#line` plants (`./`, unprefixed, absolute, `libcore`) served at the same
+call site `<11:10--11:23>` by both engines. A consumer executing the quoted
+file inherits a classification both engines share. The quoted labels/value
+are unchanged by this.
 
 Supply `--libc tests/libc/libc.core`
 and one `--libc-tu META.json` per metadata TU, in `scripts/libc_prep.sh` order.

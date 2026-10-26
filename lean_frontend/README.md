@@ -217,16 +217,17 @@ production generator in an isolated scratch repository.
   produce different artifacts. Invocations from `lean_frontend/` using
   `../_build/...` cannot resolve the stored project-relative header labels and
   are refused with the convention named. No source-root option or label rewrite
-  participates in this convention. The port classifies a label by directory
-  suffix, the oracle by literal equality with `<runtime-as-given>/<dir>`, so
-  any spelling that resolves to a runtime library directory but differs
-  literally from that key (an absolute or `./` label under a relative runtime,
-  a relative or `./` label under an absolute one, a `#line` alias) is library
-  on the port and not on the oracle, in both directions; every canonical
-  export carries the `./`-prefixed instance. On such inputs the served UB
-  location differs (`scripts/check_runtime_resolution.sh` pins a plant:
-  oracle `<2:10--2:15>`, port `<11:10--11:23>`). This declared divergence
-  leaves quoted labels unchanged (VALIDATION §3).
+  participates in this convention. Both engines classify a label as a
+  library location by the same rule — its directory carries a runtime library
+  suffix AND resolves to one of the run's three runtime library directories
+  (the port: `CerbLocation.isLibraryLocation` + the import guard; the fork
+  oracle: `util/cerb_location.ml` `is_library_location`, a fork-ahead delta
+  over pristine's literal `<runtime-as-given>/<dir>` comparison, upstream-tray
+  draft 58) — so an absolute or `./` label under a relative runtime, a
+  relative or `./` label under an absolute one, a `#line` alias or a symlink
+  serve the same UB location on both (`scripts/check_runtime_resolution.sh`
+  pins four plants: both engines `<11:10--11:23>`). Quoted labels are
+  unchanged (VALIDATION §3).
 - **Callee-allocated argument temporaries.** `--switches=inner_arg_temps`
   selects that whole set, the matching std runtime and `Inner_arg_callconv`;
   the default remains Normal. Use `tests/libc/libc_inner_arg_temps.core`

@@ -273,23 +273,23 @@ def isLibraryPathSuffix (path : String) : Bool :=
       (exact by construction). The `--libc` dump's bodies carry no file
       (`CoreParser.parseFile` erases their positions; recorded Z1-A1).
     Core quotation D2b subsequently changed the guard to RESOLVED membership
-    ([USER 2026-10-19], Main.refuseLibraryLocations). Thus the retirement below
-    is conditional on literal spellings agreeing, as in the lanes' absolute
-    runtime invocations. The admitted class is any label whose directory
-    resolves to a runtime library directory but differs literally from the
-    oracle's key `<runtime-as-given>/lib/cerberus-lib/runtime/<dir>`
-    (util/cerb_location.ml:512-523), in both directions: an absolute or `./`
-    label under a relative --runtime, a relative or `./` label under an
-    absolute one, a `#line` alias or a symlinked spelling, for `libcore` as
-    much as `libc/include`. Every canonical export carries the instance: cpp's
-    ./_build/... header positions under --runtime=_build/install/default.
-    On such inputs this function says library and the oracle says not, so the
-    served UB location differs (the three sites above):
-    scripts/check_runtime_resolution.sh pins fixture 001's classifier
-    disagreement and a `#line` plant on which the oracle reports
-    `<2:10--2:15>` and the port `<11:10--11:23>`; the unprefixed spelling
-    agrees. Quotation preserves the labels unchanged; upstream-tray draft 58
-    records the oracle issue.
+    ([USER 2026-10-19], Main.refuseLibraryLocations): `./`, absolute/relative
+    aliases and symlinks of a library directory all pass it. Until quotation
+    hygiene Q1 (2026-10-26) that left a declared divergence from the oracle's
+    LITERAL key comparison (pristine `util/cerb_location.ml:512-523` compares
+    `Filename.dirname path` with `<runtime-as-given>/lib/cerberus-lib/runtime/<dir>`
+    as spelled): on cpp's own `./_build/...` header positions under
+    `--runtime=_build/install/default` the port said library and the oracle not,
+    and the served UB location differed. [USER 2026-10-21] ruling B (the D5
+    re-review) mirrored THIS rule into the fork's oracle: its
+    `is_library_location` is now suffix AND resolved membership — exactly the
+    suffix test here plus the import guard — a fork-ahead delta over pristine
+    (upstream-tray draft 58 is the report; `scripts/fork_drift_manifest.txt`
+    pins the file). So on every served input the two engines classify
+    identically; `scripts/check_runtime_resolution.sh` pins fixture 001's
+    classifiers agreeing and four `#line` plants (`./`, unprefixed, absolute,
+    `libcore`) on which both engines report the call site `<11:10--11:23>`.
+    Quotation preserves the labels unchanged.
     The original guard retired the earlier residual Z-67 (a user file under a
     directory literally named `runtime/libcore` was library-classified by
     Lean and not by the oracle; the witness now refuses) FOR THE DRIVER ONLY.

@@ -1,3 +1,13 @@
+# quotation hygiene Q1, 2026-10-26 [AGENT, executing [USER 2026-10-21] ruling B of lean_frontend/docs/2026-10-20_core-quote-d5-rereview.md:
+# mirror the port's resolved-path library-location rule into the fork's OCaml oracle so both engines agree]: util/cerb_location.ml
+# is_library_location classifies by the Lean port's rule -- the directory ends with a runtime library suffix AND its resolved real
+# path is one of the resolved runtime library directories (CerbLocation.isLibraryPathSuffix + Main.refuseLibraryLocations) --
+# where pristine b9aeedcb4 compared `Filename.dirname path` LITERALLY with `in_runtime` keys spelled from the runtime argument
+# as given (cpp's own `./`-prefixed header positions under a relative --runtime were NOT library there, and the served UB
+# location moved with the spelling: upstream-tray draft 58, whose remedy this is; a fork-ahead delta). The file was byte-identical
+# to upstream before, so: NEW [files] + [source-content] row util/cerb_location.ml 776d942e…; no generated-model delta
+# ([expected-semantic] untouched). Lane rows moved: none expected (every lane uses absolute spellings on both engines); B10 re-run
+# recorded. Single-row additions + this NOTE, no --refresh. Record: lean_frontend/docs/2026-10-26_quotation-hygiene-record.md.
 # fix/anonymous-members-refusal, 2026-10-26 [AGENT, executing [USER 2026-10-20] ruling that anonymous struct/union members are
 # REFUSED in the shared Lem and reported upstream (tray 60) -- the survey's cluster A, lean_frontend/docs/2026-10-20_upstream-
 # uncertainty-survey-record.md s2.1: upstream's desugar_struct_declaration splices an anonymous member's members into the
@@ -644,6 +654,9 @@ ocaml_frontend/fork_renumber.ml
 ocaml_frontend/memory_model.ml
 ocaml_frontend/ocaml_implementation.ml
 ocaml_frontend/ocaml_implementation.mli
+ocaml_frontend/pprinters/pp_core.ml
+ocaml_frontend/pprinters/pp_symbol.ml
+ocaml_frontend/pprinters/pp_symbol.mli
 ocaml_frontend/rewriters/core_peval.ml
 ocaml_frontend/rewriters/remove_unspecs.ml
 parsers/c/c_parser.mly
@@ -657,10 +670,7 @@ tools/check_handwritten_sync.sh
 tools/check_lem_sync.sh
 tools/gen_version.ml
 util/cerb_fresh.ml
-ocaml_frontend/pprinters/pp_core.ml
-ocaml_frontend/pprinters/pp_symbol.ml
-ocaml_frontend/pprinters/pp_symbol.mli
-
+util/cerb_location.ml
 [source-content]
 100644 e95bbe82ea284a4f8808af235b51ea9d09ec46078d3571dc69f87bec5cb2dbb7 frontend/model/mem_common.lem
 100644 a659b8f7792b88fc1b1c2825fd7ea2c8c404210cf3fcd90c292e9f0330ddadf2 Makefile
@@ -759,6 +769,7 @@ ocaml_frontend/pprinters/pp_symbol.mli
 100644 8c786d576be8fb163b263aad9e627a367c75f55e236c15edd918b3398a40abbe ocaml_frontend/pprinters/pp_core.ml
 100644 d4094fc7355bd3bb5915922af1bf7e959491d328e6a29b27cc36262ff5014d23 ocaml_frontend/pprinters/pp_symbol.ml
 100644 b1bb8c17127f27817b13500753530ace4891717d6e45dc5eb0f79763e9dc430a ocaml_frontend/pprinters/pp_symbol.mli
+100644 776d942e10023b990787ba0f302c2b9f810f90a9bf2af3e0d48f119e0616d116 util/cerb_location.ml
 
 [expected-semantic]
 0471d6a212c273c515d525173d8003c7d10d559e5f91758820708ec69e52e6d5 mem_common.ml
