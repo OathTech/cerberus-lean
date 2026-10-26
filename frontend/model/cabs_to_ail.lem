@@ -1546,6 +1546,27 @@ type stmt_context = <|
 |>
 
 
+(* FORK REFUSAL (upstream-uncertainty survey cluster A, tray 60, 2026-10-26; [USER 2026-10-20]: where
+   upstream left a case under its own TODO/doubt the fork leaves it or REFUSES LOUDLY, never answering
+   silently wrong): the text of the anonymous-member refusal. ASCII only, assembled from the same
+   pieces on both engines (the kind word from the member's own type), so the oracle's Failure(...)
+   and the Lean PANIC line carry it byte-identically (scripts/check_anonymous_members_refusal.sh
+   compares them). Record: lean_frontend/docs/2026-10-26_anonymous-members-refusal-record.md. *)
+let anonymous_member_refusal base_ty =
+  let kind =
+    match base_ty with
+      | Ctype.Ctype _ (Ctype.Struct _) -> "struct"
+      | Ctype.Ctype _ (Ctype.Union _) -> "union"
+      | _ -> "struct/union"
+    end in
+  "Cabs_to_ail.desugar_struct_declaration: refused - anonymous " ^ kind ^ " member ("
+  ^ "a struct-declaration with no declarator whose type specifier is a tagless " ^ kind ^ "; C17 6.7.2.1#13); "
+  ^ "upstream splices its members into the containing aggregate's member list ('STD 6.7.2.1#13 ... E.return membrs' b9aeedcb4 :2697, "
+  ^ "under its own 'this may be WRONG ==> anonymous Struct/Union' :144/:166/:194/:3244), "
+  ^ "which changes layout, aliasing and initialisation (wrong sizeof and offsets, no aliasing between an anonymous union's members, "
+  ^ "brace-elided initializers one slot late, false UB verdicts) "
+  ^ "- the fork refuses rather than decides (survey cluster A, tray 60, 2026-10-26)"
+
 val     desugar_type_specifiers: list cabs_type_specifier -> E.desugM (Ctype.qualifiers * Ctype.ctype)
 let rec desugar_type_specifiers specs =
   match project_base_type_specifiers specs with
@@ -2712,10 +2733,18 @@ and desugar_struct_declaration struct_decl =
         let (isAtomic, tquals_qs) = translate_type_qualifiers tquals in
         if List.null sdecltors then
           E.get_anonymous_struct_or_union base_ty >>= function
-            | Just membrs ->
+            | Just _ ->
                 (* STD §6.7.2.1#13 *)
                 (* this is an unammed anonymous structure or union *)
-                E.return membrs
+                (* FORK REFUSAL (survey cluster A, tray 60, 2026-10-26): upstream returns the
+                   anonymous member's `membrs` here, splicing them into the containing
+                   aggregate's member list (b9aeedcb4 :2697) -- the anonymous member loses
+                   its own storage, so sizeof/offsets, the aliasing of an anonymous union's
+                   members and brace-elided initializers all go wrong (25 silent-wrong probes,
+                   tests/parity-probes/uncertainty/A-anonymous-members/). Both engines are
+                   generated from this one arm: a pure `error`, so the stop escapes the
+                   E.catch of wip_desugar_initializer_ with certainty (the item-U shape). *)
+                error (anonymous_member_refusal base_ty)
             | Nothing ->
                 (* STD §6.7.2.1#2 *)
                 E.constraint_violation (Loc.locOf base_ty) StructDeclarationLacksDeclaratorList
