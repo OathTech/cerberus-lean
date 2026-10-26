@@ -1,7 +1,10 @@
 # inner_arg_temps: Normal diagnostic difference — 2026-10-23
 
 Branch `feature/inner-arg-temps`, tested commit
-`a74922afef98e88dcba903f3953c65f9a31d82c0`. **PARKED; close-out failed.**
+`a74922afef98e88dcba903f3953c65f9a31d82c0`. **Historical park; resolved by
+disposition.** The [2026-10-25 close-out record](2026-10-25_inner-arg-temps-closeout-record.md)
+records the authorized diagnostic registration and resumed work. The
+failed run and diagnosis below are retained as measured.
 
 [AGENT 2026-10-23] Park under the charter's rule for baseline movement
 outside the new lane. Full-battery B10.1 found one unregistered Normal

@@ -147,6 +147,25 @@
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "diagnostic_sha256": "f52fb05c44f22ed004773d53301534753210a89bef5bd2c830408f5e41f43de6"
       }
+    },
+    "immaculate/nolibc/zd-z2fl03-nan-to-int": {
+      "class": "diagnostic-text",
+      "citation": [
+        "lean_frontend/docs/2026-10-23_inner-arg-temps-oracle-park.md",
+        "lean_frontend/docs/2026-10-25_inner-arg-temps-closeout-record.md",
+        "lean_frontend/docs/upstream-tray/15-bool-float-conversion-truncation.md"
+      ],
+      "rationale": "I0b (08fb2d156), backporting upstream 3230aa494, moves the _Bool test before Ivfromfloat in std.core loaded_ivfromfloat. The existing Normal-mode NaN-to-int Z.Overflow failure consequently has two extra Core_eval.step_eval_pexpr frames in the fork. The semantic outcome of this witness is unchanged: both processes exit 125 with empty stdout and the same exception; neither completes a semantic execution. Substituting only pre-I0b std.core in an isolated runtime restores the pristine projected diagnostic signature exactly (park record). This entry admits only this case and these two full signatures; frame functions, order and count remain compared everywhere. A changed signature is a new finding.",
+      "upstream": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "a8aed81ebd2694a31719159a618fecf63fe023bc4d22fec1b7e4d661dcd959c3"
+      },
+      "fork": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "0f7a88b72c6adbaacff27c501d8cacafd29e1b8bde570b761334b4f3a78b5637"
+      }
     }
   }
 }

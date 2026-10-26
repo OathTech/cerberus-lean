@@ -62,9 +62,10 @@ measured validation. Quotation hygiene remains separate work.
 
 The minimal baseline contains 113 rows: 90 MATCH, 18 UB_MATCH and five
 CERB_SKIP (derived from `scripts/exec_baseline.txt`, 2026-09-24 at the
-baseline pin). The pristine register has seven `shared-model-fix` case
-rows, including two pairs of allocator witnesses; it does not identify
-seven independent defects. Full historical ladder/reporting runs keep
+baseline pin). The current pristine register has eight `shared-model-fix`
+case rows, including two pairs of allocator witnesses, and one
+`diagnostic-text` row for I0b's additional NaN-to-int evaluator frames;
+case counts do not count independent defects. Full historical ladder/reporting runs keep
 their original dates and source pins. The initial MUST checkpoint reran row 1
 and six named fast differential lanes; the closure also checks multi-TU,
 the multi-TU tray, address-space and immaculate lanes, as recorded above.

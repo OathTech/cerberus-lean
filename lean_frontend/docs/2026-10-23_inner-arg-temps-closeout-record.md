@@ -1,10 +1,14 @@
 # inner_arg_temps completion — 2026-10-23
 
 Branch `feature/inner-arg-temps`, resumed from `5662ee63e`.
-Status: **PARKED**. I3 is committed at `a74922afef98e88dcba903f3953c65f9a31d82c0`
+Status: **I3/I4 complete on the feature branch**. The
+[2026-10-25 close-out record](2026-10-25_inner-arg-temps-closeout-record.md)
+records the exact diagnostic registration and the 44/44 full-battery pass
+completed on 2026-10-26.
+I3 is committed at `a74922afef98e88dcba903f3953c65f9a31d82c0`
 after Tier A passed. The full battery failed B10.1 on a Normal diagnostic
 change and was stopped; see the [park record](2026-10-23_inner-arg-temps-oracle-park.md).
-I4 close-out is incomplete.
+That first full run did not establish close-out.
 
 ## Multiplicity park disposition
 

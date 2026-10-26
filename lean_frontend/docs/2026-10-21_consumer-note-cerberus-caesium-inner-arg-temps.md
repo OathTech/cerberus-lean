@@ -1,11 +1,14 @@
-# inner_arg_temps consumer note — updated 2026-10-23
+# inner_arg_temps consumer note — updated 2026-10-26
 
-Current delivery status: **parked, not closed out**. I3 passed Tier A at
-`a74922afe`. The full battery found a Normal-mode backtrace change from
-the floating-to-`_Bool` backport: an existing NaN-to-integer failure gains
-two evaluator frames. The independent-oracle comparison correctly reports
-that difference. See the [park record](2026-10-23_inner-arg-temps-oracle-park.md);
-the comparison rules and existing baselines remain unchanged.
+Current delivery status: **slice complete on the feature branch**. The
+full battery passed all 44 commands on 2026-10-26, including the new lane,
+B12 and B13's four quotation round trips and kernel replays. I3 passed
+Tier A at `a74922afe`. The Normal-mode backtrace change from the `_Bool` backport
+is now registered for exactly its witness and signature pair following
+disposition. The frame comparison remains unchanged. The
+[close-out record](2026-10-25_inner-arg-temps-closeout-record.md) gives the
+verbatim gate summaries and identities. This is local validation;
+downstream testing, merge and publication remain separate.
 
 Use `--switches=inner_arg_temps` as the whole switch set. The driver selects
 `std_inner_arg_temps.core` and callee-allocated argument temporaries,

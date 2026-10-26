@@ -160,7 +160,15 @@ fork side times out, or a both-sides timeout on a registered case, is RED —
 the pin moved.
 Since 2026-10-03 the register has 8 `shared-model-fix` rows. They are `multi_tu_tray/node` (draft 37;
 draft 38's consult was reverted, §3), the four allocator rows, and the three `_Alignas`
-completeness rows of draft 47 (§3). The inventory at
+completeness rows of draft 47 (§3). The inner_arg_temps close-out adds one
+`diagnostic-text` row for `immaculate/nolibc/zd-z2fl03-nan-to-int`: I0b's
+upstream `3230aa494` backport adds two evaluator frames to the existing
+Normal `Z.Overflow` failure. Both processes still exit 125 with empty
+stdout and the same exception. The row binds exactly the two projected
+stderr signatures, with the control and disposition in the
+[close-out record](docs/2026-10-25_inner-arg-temps-closeout-record.md).
+Frame functions, order and count remain compared; every other moved
+signature is a separate finding. The inventory at
 `e9f9d049f`, counted 2026-09-24, had 7 `shared-model-fix` rows (the three cross-TU
 struct-value cases of upstream-tray drafts 37/38/39, where the fork answered
 `Specified(7)` and pristine loops or rejects; and the two allocator
@@ -168,8 +176,9 @@ exhausted-regime witnesses of draft 44, `minimal/112-…`/`113-…`, where
 pristine returns an overlapping, misaligned allocation and the fork kills out
 of memory — §3; plus the corresponding two `immaculate/nolibc/tray44-*`
 wrappers, separately registered). This is seven case rows, not seven
-distinct defects; `diagnostic-text` is a
-permitted class with zero rows — [USER 2026-09-17] (option (2) agreed): the lane's
+distinct defects. The earlier zero-row `diagnostic-text` inventory relied
+on the position-only projection, which remains unchanged: [USER 2026-09-17]
+(option (2) agreed): the lane's
 diagnostic projection normalises source positions inside OCaml backtrace
 frames — and, since the allocator-soundness slice's C1b (2026-09-17; the
 [USER 2026-09-17] ruling recorded in §3), the position in the exception HEADER
@@ -884,8 +893,14 @@ by a cited re-record.
   `cabs_to_ail.lem`/`cabs_to_ail.ml` unchanged. Upstream disposition: draft 59
   stays Draft — it reports the TODO and the three neighbouring defects; the
   refusal is the fork's contract [AGENT].
-- **`diagnostic-text` (0 rows; a permitted class).** RESOLVED [USER
-  2026-09-17] (option (2) agreed, on the orchestrator's question — record §7): the
+- **`diagnostic-text` (1 row).** The inner_arg_temps I0b backport adds two
+  evaluator frames to `immaculate/nolibc/zd-z2fl03-nan-to-int` while retaining
+  exit 125, empty stdout and `Z.Overflow`. Its exact signature pair is
+  registered; the control and disposition are in the
+  [close-out record](docs/2026-10-25_inner-arg-temps-closeout-record.md).
+  Frame count/order are not projected away. The older position-only cases
+  remain resolved by [USER 2026-09-17] (option (2) agreed, on the
+  orchestrator's question — record §7): the
   lane's diagnostic projection — the one `matching_failure` and the
   register's stderr signature already used (the `Time spent` trailer removed)
   — additionally normalises `line N[-M], characters A-B` positions inside

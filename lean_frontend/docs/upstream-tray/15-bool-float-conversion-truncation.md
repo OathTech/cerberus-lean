@@ -129,6 +129,12 @@ guarding `Concrete.ivfromfloat` against non-finite input (UB017 arm
 rather than an uncaught `Z.Overflow`, cf. the `Z.to_int64` crash class
 of our bswap64 report) is a natural companion fix but a separable one.
 
+The fork's I0b backport also changes the evaluator depth of the existing
+non-finite-to-integer crash; its two additional frames are registered as
+`diagnostic-text` for the exact NaN-to-int witness signature pair, with
+the same exit 125, empty stdout and exception on both sides (see the
+[close-out record](../2026-10-25_inner-arg-temps-closeout-record.md)).
+
 ## Classification
 
 **TRUE BUG.** The `_Bool` arm at std.core:83 cites §6.3.1.2#1 itself —
