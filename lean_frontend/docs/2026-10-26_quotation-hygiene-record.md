@@ -664,3 +664,154 @@ Tier A — the STACKED run covering Q4, Q5 and Q6 on this tree (scheduling note 
 ```text
 TIERA_Q6_PLACEHOLDER
 ```
+
+
+Checkpoint commit: `9816de840`.
+
+## Close-out
+
+**Commits on `feature/quotation-hygiene`** (base `704c4e697`; charter `1616d46ad`): Q1
+`1a521248b`, Q2 `5cd761172`, Q3 `ec136207e`, Q4 `6e04adad8`, Q5 `61e300f99`, Q6
+`9816de840`, close-out `CLOSEOUT_COMMIT_PLACEHOLDER`.
+
+**Every change, by file** (file:line references are to the close-out tree):
+- `util/cerb_location.ml` `is_library_location` + `library_suffixes` / `has_library_suffix` /
+  `realpath_opt` / `resolved_library_dirs` / `library_dir_cache` (Q1).
+- `lean_frontend/Main.lean`: `canonicalRuntimeSpelling`, `refuseQuotationRuntime`,
+  `portableLabel`, `refuseNonPortableLabels`; `loadLibc (… quiet portableLabels …)` and its two
+  `libc`-boundary refusals; `main`'s quoting checks; the `refuseLibraryLocations` docstring (Q1–Q3).
+- `lean_frontend/CerbLocation.lean` docstring (Q1). `lean_frontend/CerbStop.lean` `Boundary`
+  (Q3). `lean_frontend/CerbStopSites.lean` `memoryRefusal`, `memcpyOverlapTodo`,
+  `allocatorAlignmentTodo` (Q3). `lean_frontend/CerbMem.lean` `allocator`'s refusal arm and
+  `memcpyM`'s refusal leaf (Q3). `lean_frontend/test/CoreQuote/CoreQuoteCompare.lean`
+  `original` (Q2). `lean_frontend/test/CoreQuote/CoreQuoteRoundTrip.py` `export`/`rich_inputs`,
+  `MultiRich`, `LinkedRich` (Q6). `lean_frontend/test/CoreQuote/inputs/linked/tu{1,2}.c` (Q6).
+- `scripts/check_runtime_resolution.sh` (Q1, Q2); `scripts/check_item_g_refusals.sh` (Q3);
+  `scripts/observations.py`, `scripts/test_stops.py`, `scripts/test_observation_lanes.py` (Q3);
+  `scripts/libc_bare_name_census.py`, `tests/libc/bare_name_census.tsv`, `scripts/libc_prep.sh`,
+  `scripts/test_unit.sh` (Q4); `scripts/inner_arg_temps_lane.py` `csmith_corpus`, `cross_mode`
+  (Q5); `scripts/fork_drift_manifest.txt` (Q1); `scripts/LADDER.md` (Q1, Q3–Q6).
+- Documents: VALIDATION, README, CONTRACT, TODO, SUPPORTED (unchanged), the design v2 §10
+  amendment, the migration TSV, the protocol record's superseded note, tray 58 + INDEX, the
+  consumer notes below, this record.
+
+**The amendment, verbatim** (design v2 §10; proposed by the worker, to be ratified at landing):
+
+```markdown
+## 10. Amendment — model-level boundaries `libc` and `memory` (2026-10-26)
+
+**Status: proposed by the quotation-hygiene worker [AGENT 2026-10-26]; the operator
+ratifies at landing.** Charter `2026-10-26_worker-charter-quotation-hygiene.md` Q3;
+record `2026-10-26_quotation-hygiene-record.md`. Implemented on `feature/quotation-hygiene`
+together with the migrations below, so that ratification and landing coincide.
+
+§2.2's thirteen boundary literals describe admission (`cli`, `runtime`, `library-location`,
+`cabs-json-utf8`, `batch-ub-payload`, `abort-flag`, `fuel-arg`, `address-space-arg`),
+configuration (`switches`, `concurrency`, `float-format`) and two model seams (`fs`,
+`pnvi`). Two kinds of declared refusal had no honest member. (a) Library-transport
+refusals: the inner_arg_temps libc loader's `R-IAT-LIBC-SYMBOL-LOSS` (a procedure of the
+dump rebinds a parameter name) and the dump/mode calling-convention mismatch carried
+boundary `cli`, item `--libc`, as a stopgap (consumer note
+`2026-10-21_consumer-note-cerberus-caesium-inner-arg-temps.md`). (b) The item-G refusals
+of the concrete memory model — `memcpy` on overlapping objects and an allocation with an
+invalid alignment (CONTRACT D10, [USER 2026-10-20]) — stayed envelope-less legacy panics,
+because, as the checkpoint record's integration section found, "none honestly describes
+these two semantic-operation refusals" and inventing one would change the schema.
+
+This amendment adds two literals to §2.2's list, which becomes fifteen:
+
+```text
+libc memory
+```
+
+- `libc` — library transport: a refusal raised while loading, checking or stitching a C
+  library dump (`--libc` / `--libc-tu`) in the Lean loader — the text transport's symbol
+  identity check and the calling-convention check. Item: the refusal's code
+  (`R-IAT-LIBC-SYMBOL-LOSS`, `IncompatibleCallingConvention`). Channel: CLI (one stderr
+  envelope, empty stdout, exit 2) — the loader runs before execution. The stopgap spelling
+  `cli`/`--libc` is retired; no producer emits it.
+- `memory` — a declared refusal in the concrete memory model where upstream left the case
+  to a TODO and the fork refuses rather than decides (D10): `memcpy` on overlapping objects
+  (item `Concrete.memcpy`) and an allocation with an invalid alignment (item
+  `Concrete.allocator`). The item is the operation, `detail.takeWhile (· != ':')` after the
+  fixed `Refused: ` prefix — the `pnviRefusal` rule. Channel: the runtime panic boundary
+  (the exact LemLib frame, exit 134 under `LEAN_ABORT_ON_PANIC=1`; the oracle's uncaught
+  `Failure`, exit 125, beside it). `upstream` cites the TODO (`impl_mem.ml:2636` for the
+  copy, `:1253` for the allocator's `quomod`, at `b9aeedcb4`); `see` names D10 and the
+  item-G record. The `detail` is `Refused: ` followed by the oracle's exact text, so the
+  two engines' texts remain comparable byte for byte through the envelope (the witness
+  `scripts/check_item_g_refusals.sh` decodes the envelope and compares).
+
+Not added: a boundary for the union-initializer refusal (D11) — a generated Lem `error`
+in the shared desugarer; it stays legacy/unattributed with its named mover
+(shared-desugarer refusal mapping, structural-outcome WP2).
+
+Schema consequences. The wire version stays `"1"`: a boundary literal is an enumeration
+member, and §2.1 already makes an unknown member a protocol error, so an older decoder
+reports the new envelopes as malformed (RED) rather than misreading them, and the new
+decoder reads every older capture unchanged. `CerbStop.Boundary` (`text`/`parse`) and
+`observations.STOP_BOUNDARIES` both carry the two names; `test_stops.py`'s schema corpus
+generates one valid refusal per `STOP_BOUNDARIES` member and drives the Lean parser over
+the corpus, so the two sides cannot diverge silently. Producers: `Main.loadLibc` (two
+sites), `CerbMem.memcpyM` and `CerbMem.allocator` (through `CerbStopSites.memoryRefusal`;
+each leaf keeps its opaque `failwithI` face and its ND node shape — the allocator's
+`NDkilled (CerbFail.failStopKill (failwithI …))`, `memcpyM`'s whole-monad `failwithI`
+at `memM`; only the rendered text changes, so `CerbMemAllocatorProofs`,
+`CerbMemAccessFacts` and `Unit.MemoryAccessProofs` keep every statement — kernel replay
+in the record).
+
+Lane policy: unchanged. `pnvi_lane.classify_side` classes a single refusal panic whose
+boundary is not `pnvi` INVALID ("unregistered PNVI refusal metadata"), so a `memory`
+refusal on a PNVI or inner_arg_temps row is RED, never agreement; immaculate keeps its
+coarse `CRASH` token for an attributed refusal panic (no "legacy" note: it is attributed).
+Both are planted in `test_observation_lanes.py --stop-policy-only`. No walked corpus holds
+an item-G program (both controls were retired with D10), so no baseline moves.
+```
+
+**Consumer notes updated** (each with a dated `[AGENT 2026-10-26]` paragraph): caesium
+Core-quotation (`2026-10-18_consumer-note-cerberus-caesium-core-quote.md`: Q1 agreement, Q2
+enforcement, Q6 population), caesium item-G (`…item-g-refusals.md`: the envelope form),
+caesium outcome-protocol (`…outcome-protocol.md`: family table rows), cerberus-sl
+outcome-protocol (the two leaves' kernel faces unchanged), caesium inner_arg_temps (boundary
+`libc`). Upstream tray 58: remedy implemented in the fork (INDEX row and summary). TODO.md:
+the quotation-hygiene follow-up, the `libc` boundary question, the bare-name census and the
+csmith fuzzing entries closed. CONTRACT: §1 (one unmigrated D11 site), §3 item-G row, D10
+(the envelope form) — no new contract decision: the `libc`/`memory` boundaries are reporting
+vocabulary, not a new permitted outcome.
+
+**Kernel replay** (Q3; `lake env leanchecker` from `lean_frontend` under `capped`): `CerbStop`,
+`CerbStopSites`, `CerbMem`, `CerbMemAccessFacts`, `CerbMemAllocatorProofs`,
+`Unit.MemoryAccessProofs` — each exit 0, no diagnostics. No proof statement changed in this
+slice; the arms' message Strings changed under unchanged node shapes and opaque faces.
+
+**The census register** (Q4): `tests/libc/bare_name_census.tsv`, six rows per variant.
+**The csmith sweep figures** (Q5): in the Q5 section.
+
+**Full battery** (`python3 scripts/release.py --mode full`, after the stacked Tier A and
+after the anonymous-members slice's own battery; `CERB_MEM_MAX=32G`; box rule as amended),
+verbatim:
+
+```text
+BATTERY_PLACEHOLDER
+```
+
+**What broke beyond the charter / what I could not do**: see the report to the orchestrator
+(repeated here at close-out): 
+- Beyond the charter, found and fixed on the way (each in its checkpoint's section): the
+  test rebuild `CoreQuoteCompare.lean` called `loadLibc` with the old arity after Q2 (fixed,
+  mirrors the quoting admission); the item-G `refuse-all` plant's Lean stub had to emit ONE
+  envelope per run (two PANIC frames are a protocol problem to the codec); the `-d5` dump's
+  stderr chatter (Q4) goes to a failure-only log; the bare-name census is scoped to the
+  pinned transport text (the review's 7/10 counts included std.core's and other linked
+  runtime procs); the sweep (Q5) needed the `cross_mode` same-failure rule and the
+  report-only classes to classify the corpus honestly (the row-15 gate is unchanged).
+- Box-rule incidents, all recorded in the gate sections: one Q2 Tier A launch at load 12.69
+  without the gate check (stopped by PID after about a minute; evidence deleted; re-run
+  gated); a stale threshold-8 waiter stopped by PID; my first Q3 build chain masked `lake`'s
+  failure behind `tail` (every check against that tree discarded; chain re-run with
+  `pipefail`).
+- Not done / not possible here: the operator's ratification of the §10 amendment (at
+  landing, by design); `test_stops.py --consumer-demo` (needs a caesium checkout; not run);
+  `test_upstream_oracle.py --plant` was not run separately at Q1 (row 10's gate passed;
+  `--plant` runs in the full battery's row 10); no push (not authorised); the union-initializer
+  refusal (D11) stays envelope-less with its WP2 mover, as the charter states.
