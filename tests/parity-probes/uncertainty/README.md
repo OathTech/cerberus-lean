@@ -1,8 +1,9 @@
 # tests/parity-probes/uncertainty — the upstream-uncertainty survey's probe corpus (2026-10-20)
 
 **Not a gate.** No lane walks this directory: `scripts/LADDER.md` lists `tests/parity-probes/` only as the
-parity-detective lane's home (rows 123/143, no tier), no `scripts/*.sh` or `tests/common.sh` references
-`parity-probes` (checked by grep on 2026-10-20), and `scripts/check_fixture_freeze.sh` pins
+parity-detective lane's home (rows 123/143, no tier), no lane script walks it (`scripts/check_anonymous_members_refusal.sh`
+and `scripts/LADDER.md` cite the directory as a pointer since 2026-10-26; before that no `scripts/*.sh` or
+`tests/common.sh` referenced it, checked by grep on 2026-10-20), and `scripts/check_fixture_freeze.sh` pins
 `lean_frontend/corpus/` alone. There is no baseline here and nothing turns red when a probe's answer changes;
 the record is the claim and these files are its runnable evidence. Since 2026-10-26 every probe of `A-anonymous-members/`
 except the named-member controls REFUSES on both engines (contract D12; `scripts/check_anonymous_members_refusal.sh` is

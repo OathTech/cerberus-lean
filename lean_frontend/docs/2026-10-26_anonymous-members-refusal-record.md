@@ -39,6 +39,13 @@ char c; }; int d;` giving a=1, c=2... d=0 (21, gcc 321); an anonymous struct mor
 `sizeof` 8 (gcc 12); false UB081/UB036/pointer-equality verdicts; 25 silent-wrong probes under
 `tests/parity-probes/uncertainty/A-anonymous-members/`. Designated initializers naming the members answered right
 (by name lookup alone), which is why `tests/coverage/struct/struct-008-anon-struct.c` was a MATCH.
+Precision (the pre-merge review's P3-2): the four `this may be WRONG ==> anonymous Struct/Union` prints the refusal
+text cites are guarded by the TAG's `isAnonymous` flag (pristine :142-147, :164-169, :192-197, :3242-3247), i.e.
+they fire for every tagless specifier at the initializer-path layer — named members of tagless type included,
+which answer right and are controls here — while the splice arm itself (:2697) carries no TODO: it is a deliberate
+upstream reading, refused under the same ruling (a deliberate reading is kept or refused loudly, never
+re-decided). The text overstates the link and is not changed (it is pinned byte for byte in both generated engines
+and four documents; a nuance is not worth a regeneration and a manifest re-pin) [AGENT 2026-10-27].
 
 ## 2. Design
 
@@ -93,8 +100,8 @@ location (Main.lean prints the cause text only in its non-batch mode). So (a) is
 on one, the two renderings are not identical, and `scripts/test_exec.sh` classes an exit-1 oracle with no verdict
 as `CERB_SKIP` — not a matched refusal. The charter's own rule then selects (b): a pure Lem `error`, the D11 shape,
 whose text both engines carry byte for byte (and which escapes `wip_desugar_initializer_`'s `E.catch` with
-certainty, cabs_to_ail.lem:3526-3545 — that catch re-raises anything but an `Internal_error_desugaring`, so (a)
-would have escaped it too; the point is the rendering). Consequence for the consumer: a LEGACY stop under the
+certainty, cabs_to_ail.lem:3555-3572 on the committed tree — that catch re-raises anything but an
+`Internal_error_desugaring` (:3560, :3571), so (a) would have escaped it too; the point is the rendering). Consequence for the consumer: a LEGACY stop under the
 outcome protocol, origin unattributed, like D10/D11 (the migration map gains an UNMIGRATED line); the consumer note
 says so and why.
 
@@ -102,8 +109,9 @@ says so and why.
 
 Refused: nested anonymous members (`struct { union { … }; int c; };` inside a struct — the innermost is desugared
 first and names the kind word), an anonymous struct inside a union (au-08), a typedef'd TAGLESS specifier used
-bare (`typedef struct { … } T; struct S { T; }` — upstream spliced that too; gcc warns "declaration does not
-declare anything"; refusing it is safe), `sizeof` only, block scope, a compound literal of such a struct in the
+bare (`typedef struct { … } T; struct S { T; }` — the specifier is then a typedef name resolving to a tagless
+struct, which the text's parenthetical does not distinguish (review P3-5); upstream spliced that too; gcc warns
+"declaration does not declare anything"; refusing it is safe), `sizeof` only, block scope, a compound literal of such a struct in the
 initializer position (through the `E.catch`), `_Alignas(16)` on the member, a type never used. NOT refused,
 unchanged: a TAGGED struct with no declarator (`struct S { struct T { int x; }; }`) and a typedef'd TAGGED
 specifier used bare — `get_anonymous_struct_or_union` returns `Nothing` for a named tag and the pre-existing
@@ -342,18 +350,88 @@ The M3 commit is documentation (this record, the consumer note, CONTRACT/VALIDAT
 tray and its INDEX, the migration map's inventory line, the corpus README): no lane input changes; the full
 battery of the close-out (§6.1, appended after the run) covers the final tree.
 
+### 6.1 The full battery at close-out (appended after the run)
+
+Run by the orchestrator on this branch's tip `5badfe250` (`scripts/ce python3 scripts/release.py --mode full`,
+started 2026-10-27 05:45:10 UTC at 1-minute load 2.31, ended 07:59:56 UTC; evidence
+`.tmp/release/am-full-20261027T054510Z`, log `.tmp/am-full.log`, both the orchestrator's) after the box's external
+proof campaign kept the amended load rule unmet for hours; my own 15-minute waiter of the previous evening never
+launched it — its process was gone by morning, cause unknown, noted in §8. Verbatim: the log's header line, every
+per-command line and the summary lines (all 44 PASSED; the slow rows B9 2282.7 s, B7 1518.6 s, A1 862.5 s,
+B1 560.4 s):
+
+```text
+HEAD=5badfe250 start=05:45:10 load=2.31 out=/home/dev/projects/cerberus-lean-proj/.tmp/release/am-full-20261027T054510Z
+PASSED A1 (862.5s)
+PASSED A2 (30.6s)
+PASSED A3 (76.9s)
+PASSED A4 (24.7s)
+PASSED A4b (26.3s)
+PASSED A4c (3.2s)
+PASSED A5 (91.2s)
+PASSED A6 (4.1s)
+PASSED A6b (3.7s)
+PASSED A7 (10.4s)
+PASSED A8 (8.8s)
+PASSED A9 (16.7s)
+PASSED A10 (17.0s)
+PASSED A11 (62.9s)
+PASSED A12.1 (5.0s)
+PASSED A12.2 (4.5s)
+PASSED A13 (1.7s)
+PASSED A14.1 (112.3s)
+PASSED A14.2 (151.4s)
+PASSED A15 (366.0s)
+PASSED B1 (560.4s)
+PASSED B2 (23.2s)
+PASSED B3 (15.0s)
+PASSED B4 (45.9s)
+PASSED B5 (106.4s)
+PASSED B6.1 (60.1s)
+PASSED B6.2 (2.3s)
+PASSED B6.3 (9.4s)
+PASSED B6.4 (8.8s)
+PASSED B6.5 (9.3s)
+PASSED B6.6 (9.9s)
+PASSED B6.7 (8.8s)
+PASSED B7 (1518.6s)
+PASSED B8.1 (16.1s)
+PASSED B8.2 (418.4s)
+PASSED B8.3 (9.6s)
+PASSED B8.4 (16.4s)
+PASSED B9 (2282.7s)
+PASSED B10.1 (185.2s)
+PASSED B10.2 (1.7s)
+PASSED B11.1 (23.0s)
+PASSED B11.2 (7.3s)
+PASSED B12 (402.3s)
+PASSED B13 (463.8s)
+full: passed; 44/44 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+release rc=0 end=07:59:56
+```
+
 ## 7. Not done / open
 
 - The ci-sweep scoreboard TSVs (`tests/ci_sweep/results/torture_success.tsv`, `suite.tsv`) are not re-recorded here
   (LADDER: they move only by a deliberate re-record); the two rows that will move are named in §3.2 and TODO.md.
 - The texts are pre-envelope (a legacy stop under the outcome protocol); the shared-desugarer mapping mover of
   structural-outcome WP2 migrates D11 and D12 together.
+- Follow-up option, not taken here (the pre-merge review's P2-1, [AGENT 2026-10-27]): the defect that ruled out
+  stop form (a) is in the PORT's batch rendering — `Main.lean` prints a desugar failure as `Error {msg:
+  "desugaring failed at <loc>"}` without the cause text. A Main.lean batch-rendering slice that carries the
+  `Desugar_NotYetSupported` reason in the record would make D9-style frontend refusals (exit 1, attributed on
+  both engines, a real `Error` record for the consumer) satisfy the charter's rule, after which D12 — and D11 —
+  could move from `error` to `E.fail loc (Desugar_NotYetSupported …)` with only the one arm changing. That
+  record's `msg` field is consumer-visible wire (CONTRACT §3: `--batch` is the compared interface), so the change
+  belongs with the outcome protocol's WP2 mover, not this slice; registered in TODO.md.
 - Tray 60 stays Draft, with its "Fork-ahead refusal" paragraph; no submission (the operator's network window).
 - `__attribute__` after an anonymous member's `}` is a pre-existing parse error (§2.3), not touched.
 - The survey record's cluster-A table (dated 2026-10-20) is left as the pre-refusal measurement; the corpus README
   says so.
 
-## 8. Process note (the box-rule wait that counted itself)
+## 8. Process notes (the box-rule wait that counted itself; the waiter that vanished)
 
 The charter's box rule counts other `release.py` runs by a pattern over `ps` command texts. My first waits were
 shell loops whose own text contained the word (in their report line), so each wait counted itself and could never
@@ -362,3 +440,31 @@ shells). Found after ~50 minutes when the matches were listed with context: one 
 its PID, verified by its text; no other process touched), the others the parallel worker's genuine Tier A. Later
 waits build the pattern from pieces so their text never contains it. Noted so the next worker lists the matches
 before trusting the count [AGENT 2026-10-26].
+
+The single 15-minute waiter the orchestrator then asked for (a script in `.tmp`, polling the amended rule and
+launching the battery itself) never launched it: by the next morning its sleep processes were gone with no
+runner, no evidence directory and no log line after its first blocked poll. The cause is unknown (the session's
+background command was presumably reaped); the orchestrator ran the battery (§6.1). Next time: a waiter that
+must outlive the session is started with `nohup`/`setsid` and writes a heartbeat line per poll, so a vanished
+waiter is visible as a stopped heartbeat rather than as silence [AGENT 2026-10-27].
+
+## 10. Pre-merge review (2026-10-27, fresh independent reviewer; `docs/2026-10-27_anonymous-members-premerge-review.md`) — dispositions [AGENT 2026-10-27]
+
+Verdict MERGEABLE WITH FIXES, documentation only; the code, generated trees, gates and baselines are untouched by
+the close-out commit. One by one:
+
+- **P2-1** (the stop form is the crash-shaped wire class; the third option — attributed `Desugar_NotYetSupported`
+  rendering in the port's `--batch` path — was not weighed in §2.2): ANSWERED and recorded as a follow-up option
+  (§7, TODO.md), not implemented here (the orchestrator's instruction): the port's batch `Error {msg: …}` record is
+  the consumer-visible wire, so changing what it carries is the outcome protocol's WP2 mover's business.
+- **P3-1** (the consumer note mixed the an-01 shape's figure into the `union`-first shape): FIXED — both shapes
+  stated with their own figures.
+- **P3-2** (the refusal text's attribution to the `this may be WRONG` prints overstates the link): ANSWERED, no text
+  change; the precision sentence is in §1 (the prints fire on the tag's `isAnonymous` flag for every tagless
+  specifier; the splice arm is a deliberate upstream reading, refused under the same ruling). Re-pinning a
+  byte-identical text in two engines and four documents for a nuance is not worth a regeneration.
+- **P3-3** (the uncertainty README's grep claim went stale): FIXED.
+- **P3-4** (§2.2 cited the `E.catch` at pre-edit line numbers): FIXED (`:3555-3572`).
+- **P3-5** (the text's parenthetical does not distinguish a typedef name resolving to a tagless struct): ANSWERED,
+  no text change; the clause is in §2.3.
+- The review file is committed beside this record (the union-initializer precedent).

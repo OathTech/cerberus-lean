@@ -164,7 +164,11 @@ the outcome protocol) and is not to be dispatched before them ([USER 2026-10-20]
   union-initializer script's anonymous-union control retired, `scripts/check_anonymous_members_refusal.sh` in row 1.
   Still pending from it: the ci-sweep scoreboard rows `gcc-torture/breakdown/success/anon-1.c` (MATCH → both-crash)
   and `suite/desugaring/13-non_anonymous_empty_sdecltors.error.c` (CERB_REJECT → crash class; its first line is an
-  anonymous member) move at the next deliberate re-record of `tests/ci_sweep/results/`.
+  anonymous member) move at the next deliberate re-record of `tests/ci_sweep/results/`. Follow-up OPTION
+  (pre-merge review P2-1, 2026-10-27; not taken): a `Main.lean` batch-rendering slice carrying the desugar cause
+  text in the `Error {msg: …}` record would let D12 and D11 become D9-style frontend refusals (exit 1, attributed
+  on both engines) by changing only their one arm each from `error` to `E.fail`; the record's `msg` field is
+  consumer-visible wire, so this goes with the outcome protocol's structural-outcome WP2 mover.
 - **Compound assignment with a side-effecting left operand: refuse** ([USER 2026-10-20]; record §2.2, slice 2; tray 61).
   translation.lem:2510-2535 elaborates `e1 op= e2` with `e1` duplicated (its own TODO): `*g() += 3` calls `g` twice,
   `a[i++] += 5` is a false UB035. A syntactic side-effect predicate on `e1` and a `record_error_at` refusal (the GNU

@@ -38,8 +38,9 @@ Upstream's `desugar_struct_declaration` (`frontend/model/cabs_to_ail.lem`; prist
 :2697) answered this arm with the anonymous member's member list, i.e. `struct S { union { int b;
 char c; }; int d; }` desugared to `struct S { int b; char c; int d; }` (the oracle's own
 `--pp=ail` shows it). The anonymous member lost its own storage: `sizeof(struct S)` 12 where gcc
-has 8, no aliasing between `b` and `c`, the brace-elided `{1, 2, 3}` putting the 3 into `c` and
-leaving `d` 0, and false UB081/UB036/pointer-equality verdicts on valid programs. Designated
+has 8, no aliasing between `b` and `c`, the brace-elided `{1, 2}` putting the 2 into `c` and
+leaving `d` 0 (on the survey's an-01 shape, `int a` first, `{1, 2, 3}` puts the 3 into `c`), and false
+UB081/UB036/pointer-equality verdicts on valid programs. Designated
 initializers naming the members (`{ .d = 3, .b = 2, .a = 1 }`) were the one shape that answered
 right, by name lookup alone — which is why kernel-style code hid the problem until a `sizeof`, an
 alias or an elided initializer was reached.
