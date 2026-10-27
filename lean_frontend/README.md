@@ -219,10 +219,12 @@ production generator in an isolated scratch repository.
   are refused with the convention named. Since 2026-10-26 (quotation hygiene
   Q2) the driver ENFORCES the convention when quoting: `--quote-core`/
   `--quote-libc` refuse (exit 2, boundary `runtime`, item `--runtime`, no
-  module) any runtime not given as exactly `--runtime=_build/install/default`
-  on the command line — an absolute spelling, or `CERB_INSTALL_PREFIX` alone —
-  and any input whose source labels are not portable (absolute, or escaping
-  the project root through `..`), naming the offending spelling or label;
+  module) any runtime not given on the command line with the value
+  `_build/install/default` (either `--runtime=` or `--runtime ` form; the value
+  is what is checked) — an absolute spelling, or `CERB_INSTALL_PREFIX` alone —
+  and any input whose source OR lexing labels are not portable (absolute, or
+  escaping the project root through `..`), naming the offending spelling or
+  label;
   execution is unaffected. No source-root option or label rewrite
   participates in this convention. Both engines classify a label as a
   library location by the same rule — its directory carries a runtime library

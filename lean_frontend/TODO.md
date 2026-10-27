@@ -907,9 +907,10 @@ S-basket slice — `docs/2026-09-01_s-basket.md`.)
   `scripts/libc_bare_name_census.py` on the `-d5` dump of each variant, scoped to
   the procs the pinned text transports, against `tests/libc/bare_name_census.tsv`
   (six rows per variant; the review's 7/10 counts included std.core's and other
-  linked runtime procs the transport does not carry); row 1 via `test_unit.sh`,
-  three plants. A speedbump on the printed spelling, not transport fidelity; the
-  principled fix stays the queued transport item above. [AGENT 2026-10-26]
+  linked runtime procs the transport does not carry); Tier B row 14 (a claim-point
+  report, moved out of row 1 at the pre-merge review's P3-4), three plants. A
+  speedbump on the printed spelling, not transport fidelity; the principled fix
+  stays the queued transport item above. [AGENT 2026-10-26]
 - **inner_arg_temps fuzzing over the in-tree csmith corpus.** DONE 2026-10-26
   (quotation hygiene Q5): Tier C row `test_inner_arg_temps.sh --csmith-corpus
   [--shard K/M]` runs the lane's fuzz logic over the 1669 committed files; the

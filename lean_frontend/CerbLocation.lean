@@ -229,7 +229,8 @@ def dirname (p : String) : String :=
     let dir := ((trimmed.dropEndWhile (· != '/')).dropEndWhile (· == '/')).copy
     if !trimmed.contains '/' then "." else if dir.isEmpty then "/" else dir
 
-/-- The three library directories of `util/cerb_location.ml:512-520`,
+/-- The three library directories of pristine `util/cerb_location.ml:512-520` (the
+    fork's `library_suffixes`/`resolved_library_dirs` since quotation hygiene Q1),
     runtime-relative: `Cerb_runtime.in_runtime "libc/include"`, `… "libcore"`,
     `… "libcore/impls"`, where the runtime is `<prefix>/lib/cerberus-lib/runtime`
     (`util/cerb_runtime.ml:47`; `Main.resolveRuntime` builds the same string).
@@ -245,10 +246,12 @@ def isLibraryPathSuffix (path : String) : Bool :=
   let dir := dirname path
   libraryDirs.any (fun d => dir == d || dir.endsWith ("/" ++ d))
 
-/-- is_library_location — util/cerb_location.ml:512-523: the location is
+/-- is_library_location — pristine util/cerb_location.ml:512-523: the location is
     "library" iff `Filename.dirname path` IS one of the three runtime
     directories `<runtime>/libc/include`, `<runtime>/libcore`,
-    `<runtime>/libcore/impls` (an exact string test on the oracle).
+    `<runtime>/libcore/impls` (an exact string test on pristine; since quotation
+    hygiene Q1, 2026-10-26, the FORK oracle's `is_library_location` is this
+    function's suffix test AND resolved membership — see the Q1 paragraph below).
     Behaviour-bearing on every UB-location path: `core_eval.lem:602` and
     `core_run.lem:477` substitute the enclosing C location for a
     library-located UB, and `core_run.lem:782` refuses to overwrite a

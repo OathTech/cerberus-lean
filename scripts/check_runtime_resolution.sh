@@ -283,6 +283,22 @@ for name in dot nodot abs core; do
     [[ $RC -eq 1 ]] || fail "served agreement pin ($name): exit $RC, expected 1"
     echo "$NAME: served agreement pin ($name): oracle=[$O] port=[$OUT]"
 done
+# Root-level plant (pre-merge review P2-1, 2026-10-27): a directory EQUAL to `/` + a
+# library suffix. Both engines' suffix tests must accept it (the oracle's first
+# version excluded equality); it cannot be resolved (the box has no /runtime), so the
+# oracle REFUSES when the location is reached (uncaught Failure, exit 125) and the
+# port refuses the input at import. If this box ever had /runtime/libcore the plant's
+# expectations would not apply: fail loudly rather than silently pass.
+[[ -e /runtime/libcore ]] && { echo "$NAME: FAIL — this box has /runtime/libcore; the root-level plant assumes it does not exist"; exit 1; }
+plant root /runtime/libcore
+n=$((n + 1))
+( cd "$ROOT" && env -u CERB_INSTALL_PREFIX "$ORACLE" --runtime=_build/install/default --exec --batch --nolibc "$W/root.c" > "$W/root.oout" 2> "$W/root.oerr" ); ORC=$?
+if [[ $ORC -ne 125 ]] || ! grep -q 'Cerb_location.is_library_location: refused - source location `/runtime/libcore/plant.h'"'"' names a directory with a runtime library suffix that cannot be resolved' "$W/root.oerr"; then
+    fail "root-level plant: expected the oracle to REFUSE (exit 125, Failure naming /runtime/libcore/plant.h); got rc=$ORC: $(head -c 300 "$W/root.oout") $(head -c 300 "$W/root.oerr")"
+fi
+lean "$ROOT" -- --batch --runtime=_build/install/default "$W/root.json"
+expect_refusal "root-level plant: the port refuses at import" "library-location classification:" "cannot resolve the source directory of \`/runtime/libcore/plant.h\`"
+echo "$NAME: root-level /runtime/libcore plant: oracle refuses when reached (rc 125), port refuses at import"
 
 # --- Quotation hygiene Q2: non-canonical quotation invocations refuse ---------
 Q="$W/quote"; mkdir -p "$Q"
@@ -297,12 +313,25 @@ expect_refusal "quotation with the runtime from CERB_INSTALL_PREFIX only" "runti
 lean "$ROOT" -- --quote-core "$Q/AbsLabel.lean" --runtime=_build/install/default "$W/ub2.json"
 expect_refusal "quotation of an input carrying an absolute label" "runtime:" "carries the label \`$W/ub2.c\` (an absolute path)" '["--runtime"]'
 [[ ! -e "$Q/AbsLabel.lean" ]] || fail "quotation of an absolute-label input wrote a module"
+# An absolute source path renamed by `#line 1 "rel_lx.c"` under the relative runtime: its
+# `file` labels are relative, its `lexing_file` labels absolute (pre-merge review P1-1);
+# quotation refuses naming the lexing label; --batch serves it (the oracle's verdict).
+printf '#line 1 "rel_lx.c"\nint main(void) {\n  double d = 1e30;\n  int x = (int)d;\n  return x;\n}\n' > "$W/lx.c"
+cabs _build/install/default "$W/lx.c" "$W/lx.json" "$ROOT"
+grep -q "\"lexing_file\": *\"$W/lx.c\"" "$W/lx.json" || { echo "$NAME: FAIL — the #line plant did not produce absolute lexing labels (bridge changed?)"; exit 1; }
+grep -q "\"file\": *\"$W/lx.c\"" "$W/lx.json" && { echo "$NAME: FAIL — the #line plant still carries absolute source labels"; exit 1; }
+lean "$ROOT" -- --quote-core "$Q/LexLabel.lean" --runtime=_build/install/default "$W/lx.json"
+expect_refusal "quotation of an input whose LEXING labels are absolute (#line-renamed absolute source)" "runtime:" "carries the lexing label \`$W/lx.c\` (an absolute path)" '["--runtime"]'
+[[ ! -e "$Q/LexLabel.lean" ]] || fail "quotation of an absolute-lexing-label input wrote a module"
+LX=$(oracle_line _build/install/default "$W/lx.c" "$ROOT")
+lean "$ROOT" -- --batch --runtime=_build/install/default "$W/lx.json"
+expect_line "the #line-renamed input is served by --batch and agrees with the oracle" "$LX"
 lean "$ROOT" -- --quote-core "$Q/Canonical.lean" --runtime=_build/install/default tests/fixtures/001-return-literal/cabs.json
 n=$((n + 1))
 if [[ $RC -ne 0 || -n "$OUT" || -n "$ERR" || ! -s "$Q/Canonical.lean" || "$(head -1 "$Q/Canonical.lean")" != "import Core_run_aux" ]]; then
     fail "canonical quotation control: expected exit 0, silent, a module starting with 'import Core_run_aux'; got rc=$RC: ${OUT:0:200} ${ERR:0:300}"
 fi
-echo "$NAME: quotation hygiene: absolute --runtime, CERB_INSTALL_PREFIX-only and absolute-label quotations refused (runtime/--runtime); canonical control written ($(wc -c < "$Q/Canonical.lean" 2>/dev/null || echo 0) bytes)"
+echo "$NAME: quotation hygiene: absolute --runtime, CERB_INSTALL_PREFIX-only, absolute-label and absolute-LEXING-label quotations refused (runtime/--runtime); canonical control written ($(wc -c < "$Q/Canonical.lean" 2>/dev/null || echo 0) bytes)"
 
 [[ $fails -eq 0 ]] || { echo "$NAME: $fails of $n witnesses FAILED"; exit 1; }
-echo "$NAME: OK ($n witnesses: --runtime/CERB_INSTALL_PREFIX resolution and priority, planted cwd std.core ignored, planted prefix used, 5 runtime refusals, 1 cross-runtime and 3 library-location refusals, 1 control agreeing with the oracle, relative fixture-001 classifier agreement (both engines: suffix AND resolved membership) and execution control, 4 served UB-location agreement pins (./, unprefixed, absolute, libcore), 3 quotation-convention refusals (absolute --runtime, CERB_INSTALL_PREFIX only, absolute label) and the canonical quotation control)"
+echo "$NAME: OK ($n witnesses: --runtime/CERB_INSTALL_PREFIX resolution and priority, planted cwd std.core ignored, planted prefix used, 5 runtime refusals, 1 cross-runtime and 3 library-location refusals, 1 control agreeing with the oracle, relative fixture-001 classifier agreement (both engines: suffix AND resolved membership) and execution control, 4 served UB-location agreement pins (./, unprefixed, absolute, libcore), a root-level /runtime/libcore plant refused by both engines, 4 quotation-convention refusals (absolute --runtime, CERB_INSTALL_PREFIX only, absolute source label, absolute lexing label) with the #line-renamed input served by --batch, and the canonical quotation control)"

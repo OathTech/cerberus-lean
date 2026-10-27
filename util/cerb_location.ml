@@ -535,7 +535,10 @@ let is_other = function
    `<internal>` for Loc_other -- never touches the filesystem. A directory that
    passes (1) but cannot be resolved is exactly the input the port REFUSES at import
    (Main.refuseLibraryLocations: "cannot resolve the source directory"); the oracle
-   refuses too (Failure), never classifying by suffix alone. Paths resolve from the
+   refuses too (Failure) -- WHEN THE LOCATION IS REACHED: the oracle classifies lazily
+   at execution, so a plant in a function the program never calls is served by the
+   oracle and refused by the port (a refinement in the tolerated direction; pre-merge
+   review P3-1) -- never classifying by suffix alone. Paths resolve from the
    process working directory, as the port's do; no label is rewritten. Results are
    memoised per directory string: core_run.lem:782 tests the location of EVERY
    thread step, and the three runtime directories are resolved once (lazily, after
@@ -545,13 +548,13 @@ let is_other = function
    serve the same UB location on both engines). *)
 let library_suffixes = ["runtime/libc/include"; "runtime/libcore"; "runtime/libcore/impls"]
 
-(* lean_frontend/CerbLocation.lean isLibraryPathSuffix: `dir == d || dir.endsWith ("/" ++ d)` *)
+(* lean_frontend/CerbLocation.lean isLibraryPathSuffix: `dir == d || dir.endsWith ("/" ++ d)`
+   -- EXACTLY, equality included: a root-level directory `/runtime/libcore` ends with
+   `/runtime/libcore` (the first version's strict `n > m` excluded it; pre-merge review
+   P2-1, 2026-10-27; the witness's root-level plant pins it). *)
 let has_library_suffix dir =
-  List.exists (fun d ->
-    String.equal dir d ||
-    (let sd = "/" ^ d in
-     let n = String.length dir and m = String.length sd in
-     n > m && String.equal (String.sub dir (n - m) m) sd)) library_suffixes
+  List.exists (fun d -> String.equal dir d || String.ends_with ~suffix:("/" ^ d) dir)
+    library_suffixes
 
 let realpath_opt p = try Some (Unix.realpath p) with Unix.Unix_error _ -> None
 

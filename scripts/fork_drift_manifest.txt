@@ -1,3 +1,9 @@
+# quotation hygiene pre-merge fix P2-1, 2026-10-27 [AGENT]: util/cerb_location.ml has_library_suffix now mirrors
+# CerbLocation.isLibraryPathSuffix EXACTLY (String.ends_with, equality included: a root-level `/runtime/libcore`
+# directory was non-library on the oracle and library on the port's endsWith); the P3-1 comment qualification
+# (the oracle refuses an unresolvable suffix directory when the location is reached). [source-content] row
+# util/cerb_location.ml 776d942e… -> 90c87a67…; single-row edit + this NOTE, no --refresh. Record:
+# lean_frontend/docs/2026-10-26_quotation-hygiene-record.md (pre-merge review dispositions).
 # quotation hygiene Q1, 2026-10-26 [AGENT, executing [USER 2026-10-21] ruling B of lean_frontend/docs/2026-10-20_core-quote-d5-rereview.md:
 # mirror the port's resolved-path library-location rule into the fork's OCaml oracle so both engines agree]: util/cerb_location.ml
 # is_library_location classifies by the Lean port's rule -- the directory ends with a runtime library suffix AND its resolved real
@@ -769,7 +775,7 @@ util/cerb_location.ml
 100644 8c786d576be8fb163b263aad9e627a367c75f55e236c15edd918b3398a40abbe ocaml_frontend/pprinters/pp_core.ml
 100644 d4094fc7355bd3bb5915922af1bf7e959491d328e6a29b27cc36262ff5014d23 ocaml_frontend/pprinters/pp_symbol.ml
 100644 b1bb8c17127f27817b13500753530ace4891717d6e45dc5eb0f79763e9dc430a ocaml_frontend/pprinters/pp_symbol.mli
-100644 776d942e10023b990787ba0f302c2b9f810f90a9bf2af3e0d48f119e0616d116 util/cerb_location.ml
+100644 90c87a67406af33bf3e2f1a41ee8386cdf18f52ffcacc40591384de2da5fb9da util/cerb_location.ml
 
 [expected-semantic]
 0471d6a212c273c515d525173d8003c7d10d559e5f91758820708ec69e52e6d5 mem_common.ml

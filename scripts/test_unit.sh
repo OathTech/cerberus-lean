@@ -508,19 +508,6 @@ if ! "$ITEM_G_SH" --selftest; then
     exit 1
 fi
 
-# libc transport pins + the per-proc bare-name census speedbump (quotation
-# hygiene Q4, 2026-10-26; inner_arg_temps review P2-3): both libc text dumps
-# match their content pins and staged objects, and the -d5 census of distinct
-# symbols sharing a bare name inside a transported proc equals the reviewed
-# register tests/libc/bare_name_census.tsv (a new entry fails loudly; a
-# speedbump on the printed spelling, not transport fidelity). --selftest:
-# three doctored registers must each fail the census.
-LIBC_PREP_SH="$(dirname "$PURITY_SH")/libc_prep.sh"
-if ! "$LIBC_PREP_SH" --selftest; then
-    echo "test_unit: libc pins / bare-name census FAILED"
-    exit 1
-fi
-
 # Union-initializer refusal witnesses (item U, 2026-10-20, [USER 2026-10-20]:
 # where upstream left a case to a TODO the fork leaves it or refuses loudly,
 # never answering silently wrong; for union initializers, refuse rather than

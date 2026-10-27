@@ -36,8 +36,8 @@ def original [LemFuel] [CerbGlobal.Switches] (mode : String) (metadata inputs : 
     files := [f]
     supply := next
   for path in inputs do
-    let (digest, tu, paths) ← unwrap (CabsImport.parseJsonWithFiles (← IO.FS.readFile path))
-    refuseNonPortableLabels path paths   -- the quoting driver's admission (Q2)
+    let (digest, tu, paths, lexing) ← unwrap (CabsImport.parseJsonWithAllLabels (← IO.FS.readFile path))
+    refuseNonPortableLabels path paths lexing   -- the quoting driver's admission (Q2, P1-1)
     refuseLibraryLocations runtime path paths
     let _ ← (CerberusFresh.setDigestIO digest : BaseIO Unit)
     let .ok (f, next) ← frontendTU true supply defaultAddressSpaceTop

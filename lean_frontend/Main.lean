@@ -556,7 +556,8 @@ def ppCoreSignature (coreFile : file Unit) : IO Unit := do
     `dir` is empty or ends with `/`, otherwise `dir ^ "/" ^ file`. The
     oracle builds every runtime path with it (`util/cerb_runtime.ml:9`), and
     the library-location test compares those paths as STRINGS
-    (`util/cerb_location.ml:512-523`), so the port builds them the same way. -/
+    (pristine `util/cerb_location.ml:512-523`; the fork's `resolved_library_dirs` since
+    quotation hygiene Q1), so the port builds them the same way. -/
 def filenameConcat (dir file : String) : String :=
   if dir.isEmpty || dir.endsWith "/" then dir ++ file else dir ++ "/" ++ file
 
@@ -622,14 +623,15 @@ def resolveRuntime [CerbGlobal.Switches] (cli : Option String) : IO String := do
   return rt
 
 /-- The runtime's three library directories, exactly as the oracle's
-    `is_library_location` builds them (`util/cerb_location.ml:514-517`:
+    `is_library_location` builds them (pristine `util/cerb_location.ml:514-517`, the fork's
+    `resolved_library_dirs` resolving the same three:
     `Cerb_runtime.in_runtime "libc/include"`, `"libcore"`, `"libcore/impls"`). -/
 def runtimeLibraryDirs (runtime : String) : List String :=
   ["libc/include", "libcore", "libcore/impls"].map (filenameConcat runtime)
 
 /-- The import-time guard for `CerbLocation.isLibraryLocation`'s suffix test.
     Deliberate divergence [USER 2026-10-19]: retain the oracle's exact
-    directory-membership rule (`util/cerb_location.ml:512-523`), but compare
+    directory-membership rule (pristine `util/cerb_location.ml:512-523`), but compare
     resolved directories rather than their literal spellings. Thus `./`,
     absolute/relative aliases and symlinks to the same directory agree.
     Relative paths resolve from the importing process's working directory;
@@ -674,8 +676,10 @@ def canonicalRuntimeSpelling : String := "_build/install/default"
     `docs/2026-10-26_quotation-hygiene-record.md`): with `--quote-core` or `--quote-libc`
     the driver REFUSES (boundary `runtime`, item `--runtime`, exit 2, empty stdout, no
     module written) unless the runtime was given on the command line in exactly the
-    canonical spelling `canonicalRuntimeSpelling` — not an absolute or other alias, and
-    not through `CERB_INSTALL_PREFIX` — AND every source label of the inputs is portable
+    canonical spelling `canonicalRuntimeSpelling` — the VALUE `_build/install/default`
+    in either command-line form, `--runtime=DIR` or `--runtime DIR` (both store the value;
+    pre-merge review P3-2) — not an absolute or other alias, and not through
+    `CERB_INSTALL_PREFIX` — AND every source AND lexing label of the inputs is portable
     (`refuseNonPortableLabels`). Before this a quotation under an absolute runtime, or of
     an input exported under one, succeeded with exit 0 and emitted machine-specific
     absolute labels into the literal (the re-review's probes: 86 and 568 of them) — a
@@ -704,16 +708,25 @@ def portableLabel (f : String) : Option String :=
   else if (f.splitOn "/").contains ".." then some "escapes the project root through a `..` component"
   else none
 
-/-- The label half of `refuseQuotationRuntime`: every source and lexing file name of the
-    imported Cabs positions of `source` (a user TU or a libc metadata TU) must be
-    portable, else REFUSE naming the first offending label (the array is sorted, so
-    "first" is deterministic). Called only when quoting. -/
-def refuseNonPortableLabels (source : String) (files : Array String) : IO Unit := do
+/-- The label half of `refuseQuotationRuntime`: every source file name (`files`,
+    `CabsImport.positionFiles`) AND every lexing file name (`lexingFiles`,
+    `CabsImport.positionLexingFiles`) of the imported Cabs positions of `source` (a user
+    TU or a libc metadata TU) must be portable, else REFUSE naming the first offending
+    label — source labels first, then lexing labels; each array is sorted, so "first" is
+    deterministic. The quotation visitor emits both (`Pos.path` on the source and the
+    lexing pair), so a literal is portable only if both are: an absolute source path
+    renamed by `#line 1 "rel.c"` carries relative `file` labels and absolute
+    `lexing_file` labels, which the first version of this check let through (pre-merge
+    review P1-1, 2026-10-27). Called only when quoting. -/
+def refuseNonPortableLabels (source : String) (files lexingFiles : Array String) : IO Unit := do
+  let refuse (kind f why : String) : IO Unit :=
+    CerbStop.exitRefusals (driverRefusal .runtime (some "--runtime")
+      s!"cerberus-lean: refused — runtime: Core quotation (--quote-core/--quote-libc) requires portable source and lexing labels, but {source} carries the {kind} `{f}` ({why}); export the input from the project root with --runtime={canonicalRuntimeSpelling} (scripts/libc_prep.sh --jsons for the libc metadata) and a project-relative source path so that cpp emits project-relative labels. Canonical Core quotation convention (README; VALIDATION.md §3; quotation hygiene Q2)"
+      ⟨"a quotation convention whose labels do not depend on the export's runtime spelling", by decide⟩)
   for f in files do
-    if let some why := portableLabel f then
-      CerbStop.exitRefusals (driverRefusal .runtime (some "--runtime")
-        s!"cerberus-lean: refused — runtime: Core quotation (--quote-core/--quote-libc) requires portable source labels, but {source} carries the label `{f}` ({why}); export the input from the project root with --runtime={canonicalRuntimeSpelling} (scripts/libc_prep.sh --jsons for the libc metadata) so that cpp emits project-relative labels. Canonical Core quotation convention (README; VALIDATION.md §3; quotation hygiene Q2)"
-        ⟨"a quotation convention whose labels do not depend on the export's runtime spelling", by decide⟩)
+    if let some why := portableLabel f then refuse "label" f why
+  for f in lexingFiles do
+    if let some why := portableLabel f then refuse "lexing label" f why
 
 /-- Bug-hunt BUG-4 (2026-09-29; record `docs/2026-09-29_bug-hunt-fixes-record.md`
     §S4): print a batch `Undefined` line with the `ub:` payload as BYTES. The
@@ -954,10 +967,11 @@ def loadLibc [LemFuel] [CerbGlobal.Switches] (runtime : String) (quiet portableL
   let mut supply := supply0
   for j in libcTuJsons do
     let content ← readCabsJsonFile j
-    let (digest, tunit) ← match CabsImport.parseJsonWithFiles content with
-      | .ok (d, t, files) => do
-        -- quotation hygiene Q2: when quoting, every metadata label must be portable
-        if portableLabels then refuseNonPortableLabels s!"the libc metadata TU {j}" files
+    let (digest, tunit) ← match CabsImport.parseJsonWithAllLabels content with
+      | .ok (d, t, files, lexing) => do
+        -- quotation hygiene Q2: when quoting, every metadata source AND lexing label
+        -- must be portable (review P1-1); library classification reads source labels only
+        if portableLabels then refuseNonPortableLabels s!"the libc metadata TU {j}" files lexing
         refuseLibraryLocations runtime s!"the libc metadata TU {j}" files
         pure (d, t)
       | .error e => return (← bail s!"cabs-json parse error in {j}: {e}")
@@ -2053,17 +2067,18 @@ def main (args : List String) : IO Unit := do
   let mut idx := 0
   for content in contents do
     idx := idx + 1
-    match CabsImport.parseJsonWithFiles content with
+    match CabsImport.parseJsonWithAllLabels content with
     | .error e =>
       if batchMode then
         IO.println s!"Error \{msg: \"cabs-json parse error: {CerbEscape.text e}\"}"
       IO.eprintln s!"cerberus-lean: parse error: {e}"
       IO.Process.exit 1
-    | .ok (digest, tunit, files) =>
+    | .ok (digest, tunit, files, lexing) =>
       -- bug-hunt BUG-3: suffix-library ⇒ exact-library, or refuse
       let name := restArgs.getD (idx - 1) "<input>"
-      -- quotation hygiene Q2: when quoting, every label must be portable
-      if quoting then refuseNonPortableLabels s!"the input {name}" files
+      -- quotation hygiene Q2: when quoting, every source AND lexing label must be
+      -- portable (review P1-1); library classification reads source labels only
+      if quoting then refuseNonPortableLabels s!"the input {name}" files lexing
       refuseLibraryLocations runtimeDir s!"the input {name}" files
       tunits := tunits ++ [(digest, tunit)]
   -- The ONE instantiation of the ambient fuel (fuel-parameter arc): every

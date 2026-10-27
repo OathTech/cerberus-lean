@@ -653,7 +653,11 @@ Nothing else.
   library suffix AND its resolved real path is one of the run's three
   resolved runtime library directories (the port's suffix test plus its
   import guard; a directory with the suffix that cannot be resolved is
-  refused on both engines) — a fork-ahead delta over pristine's literal
+  refused by the port at import and by the oracle WHEN THE LOCATION IS
+  REACHED — the oracle classifies lazily at execution, so such a plant in a
+  function the program never calls is served by the oracle and refused by
+  the port, a refinement in the tolerated direction; pre-merge review P3-1)
+  — a fork-ahead delta over pristine's literal
   comparison of `Filename.dirname path` with the key
   `<runtime-as-given>/lib/cerberus-lib/runtime/<dir>` as spelled, under
   which cpp's own `./_build/.../libc/include/*.h` positions under
@@ -676,13 +680,20 @@ Nothing else.
   [USER 2026-10-21] ruling C of the Core-quoting D5 re-review): with
   `--quote-core` or `--quote-libc` the driver REFUSES (boundary `runtime`,
   item `--runtime`, exit 2, empty stdout, no module written) unless the
-  runtime was given on the command line as exactly
-  `--runtime=_build/install/default` (not an absolute or other alias, not
-  `CERB_INSTALL_PREFIX` alone) AND every source and lexing label of every
-  input — user TUs and libc metadata TUs — is portable: relative and under
-  the project root (no leading `/`, no `..` component). The refusal names the
-  offending spelling or the first offending label (`Main.refuseQuotationRuntime`,
-  `Main.refuseNonPortableLabels`). Before this a quotation under an absolute
+  runtime was given on the command line with the VALUE
+  `_build/install/default` — in either form, `--runtime=_build/install/default`
+  or `--runtime _build/install/default`; the value is what is checked
+  (pre-merge review P3-2) — (not an absolute or other alias, not
+  `CERB_INSTALL_PREFIX` alone) AND every source label (`file`) AND every
+  lexing label (`lexing_file`) of every input — user TUs and libc metadata
+  TUs — is portable: relative and under the project root (no leading `/`, no
+  `..` component). Both label classes are walked because the quotation
+  visitor emits both (`Pos.path`); the first version checked `file` only, so
+  an absolute source renamed by `#line 1 "rel.c"` quoted with its absolute
+  lexing labels (pre-merge review P1-1, fixed 2026-10-27; the witness's
+  `#line`-renamed case). The refusal names the offending spelling or the
+  first offending label, source labels before lexing labels
+  (`Main.refuseQuotationRuntime`, `Main.refuseNonPortableLabels`). Before this a quotation under an absolute
   runtime, or of an input exported under one, succeeded silently with
   machine-specific absolute labels in the literal (the re-review's P3-1: a
   faithful quotation, a non-portable artifact, a fail-open seam). Execution
@@ -1238,8 +1249,11 @@ C names are unique within their scopes, and argument values now have their
 own numbered spelling. The checks guard the two demonstrated ways this
 assumption can fail, not arbitrary scope reuse. Since quotation hygiene Q4
 (2026-10-26; the inner_arg_temps review's P2-3) a third SPEEDBUMP — not
-transport fidelity — is `scripts/libc_prep.sh --check` (row 1 through
-`test_unit.sh`, with `--selftest` plants): it prints each `.co` at `-d5`
+transport fidelity — is `scripts/libc_prep.sh --check` (Tier B row 14 as
+`--selftest`, a claim-point REPORT rather than a per-commit gate — moved out
+of row 1 at the pre-merge review's P3-4, [AGENT 2026-10-27, orchestrator;
+relayed by the coordinator]: discipline points get claim-point reports, not
+gates): it prints each `.co` at `-d5`
 (every symbol `name{number}`), keeps the procs the pinned text transports
 and compares, per proc, the bare names that map to more than one symbol
 number against the reviewed register `tests/libc/bare_name_census.tsv`

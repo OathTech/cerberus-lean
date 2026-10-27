@@ -50,7 +50,9 @@ this run's three runtime library directories (`resolved_library_dirs`, lazily fr
   ..."`, the fork's oracle refusal shape: uncaught `Failure`, exit 125): that is exactly the
   input the port refuses at import ("cannot resolve the source directory"); an unresolvable
   runtime library directory is refused likewise (the port refuses "cannot resolve this run's
-  runtime library directories"). Never classified by suffix alone (fail-closed).
+  runtime library directories"). Never classified by suffix alone (fail-closed). The oracle
+  refuses WHEN THE LOCATION IS REACHED (it classifies lazily at execution); the port refuses
+  the input at import (review P3-1, qualified 2026-10-27).
 - Memoised per directory string (`library_dir_cache`) and the three runtime directories resolved
   once: `core_run.lem:782` tests the location of EVERY thread step; without the cache every step
   would cost realpath syscalls. The lazy forces after `Cerb_runtime.specified_runtime` is set at
@@ -174,9 +176,11 @@ runtimeArg` right after `resolveRuntime` when quoting, and `refuseNonPortableLab
 `refuseLibraryLocations` for every user TU when quoting; `loadLibc` does the same for every
 metadata TU). With `--quote-core` or `--quote-libc` the driver REFUSES — a REFUSAL envelope
 through `CerbStop.exitRefusals`, boundary `runtime`, item `--runtime`, exit 2, empty stdout,
-no module written — unless (a) the runtime was given on the command line as exactly
-`_build/install/default` and (b) every source/lexing label of every input is portable:
-relative and under the project root (no leading `/`, no `..` component). The refusal names
+no module written — unless (a) the runtime was given on the command line with the value
+`_build/install/default` (either `--runtime=` or `--runtime ` form; the value is checked —
+review P3-2) and (b) every source label AND every lexing label of every input is portable:
+relative and under the project root (no leading `/`, no `..` component) — the lexing labels
+since the pre-merge fix P1-1 (2026-10-27), see the dispositions below. The refusal names
 the offending spelling (`the given spelling is `…``; `the runtime came from
 CERB_INSTALL_PREFIX=`…`, not from --runtime`) or the first offending label (the label array
 is sorted, so "first" is deterministic). [AGENT 2026-10-26] decisions: the item is
@@ -428,14 +432,16 @@ Checkpoint commit: `ec136207e` (Tier A lines above were run on that exact tree a
 ## Q4 — the bare-name census speedbump (inner_arg_temps review P2-3)
 
 **What** (`scripts/libc_bare_name_census.py`, `tests/libc/bare_name_census.tsv`,
-`scripts/libc_prep.sh --check`/`--selftest`, `scripts/test_unit.sh` row 1): for each libc
+`scripts/libc_prep.sh --check`/`--selftest`; Tier B row 14 since the pre-merge review's P3-4, see
+the dispositions — it was row 1 at this checkpoint): for each libc
 transport (`libc`, `libc_inner_arg_temps`) `libc_prep.sh --check` now also prints the `.co`
 at `-d5` (every symbol spelled `name{number}`), keeps the procs/funs whose names the pinned
 text `tests/libc/<variant>.core` transports, and lists per proc every bare name that maps to
 more than one symbol number; the set must equal the reviewed register (variant, proc, name,
 count): a new row, a vanished row or a changed count fails loudly. `--selftest` plants three
 doctored registers (a row deleted, a phantom row, a count changed), each of which must fail
-the census, then runs the real check; `test_unit.sh` runs `--selftest` (row 1). A SPEEDBUMP
+the census, then runs the real check; `--selftest` is Tier B row 14 (was row 1 via `test_unit.sh`
+at this checkpoint; moved at P3-4). A SPEEDBUMP
 on the printed spelling, not transport fidelity (VALIDATION, the parameter-identity section);
 the principled fix stays the queued transport item.
 
@@ -815,3 +821,97 @@ BATTERY_PLACEHOLDER
   `test_upstream_oracle.py --plant` was not run separately at Q1 (row 10's gate passed;
   `--plant` runs in the full battery's row 10); no push (not authorised); the union-initializer
   refusal (D11) stays envelope-less with its WP2 mover, as the charter states.
+
+
+## Pre-merge review dispositions (2026-10-27)
+
+Review: `/home/dev/projects/cerberus-lean-proj/.tmp/review-qh/2026-10-27_quotation-hygiene-premerge-review.md`
+(a fresh reviewer, [AGENT 2026-10-27, reviewer]; verdict MERGEABLE WITH FIXES, on `5b7109e61`).
+Each finding, one by one; the fixes form one commit (below), re-verified when the orchestrator
+sends the go (the other slice's battery owns the box until then — no build or run before it).
+
+- **P1-1 (Q2; lexing labels unchecked) — FIXED.** `CabsImport.positionLexingFiles` +
+  `parseJsonWithAllLabels` (the `lexing_file` field of every position object, sorted);
+  `Main.refuseNonPortableLabels (source) (files lexingFiles)` walks source labels, then
+  lexing labels, naming the first offending one as "the label" / "the lexing label"; both
+  admission sites (`main`'s user TUs, `loadLibc`'s metadata TUs) and the test rebuild
+  `CoreQuoteCompare.original` pass both arrays; `refuseLibraryLocations` keeps source labels
+  only (the oracle classifies by `Cerb_position.file`). Witness: an input exported from an
+  ABSOLUTE source path under the relative runtime with `#line 1 "rel_lx.c"` (its `file`
+  labels relative, asserted; its `lexing_file` labels absolute, asserted) — `--quote-core`
+  refuses naming the lexing label, no module; `--batch` serves it and agrees with the
+  oracle's verdict. The four documents' claim ("every source and lexing label") is now true
+  and says so, with the history (VALIDATION §3, README, the caesium note, this record).
+- **P2-1 (Q1; `n > m`) — FIXED.** `has_library_suffix` is `String.equal dir d ||
+  String.ends_with ~suffix:("/" ^ d) dir` — equality included, the exact mirror of
+  `CerbLocation.isLibraryPathSuffix`. Witness: a root-level plant `#line 1
+  "/runtime/libcore/plant.h"` — both engines' suffix tests accept it, it cannot be resolved
+  (`/runtime` is absent on this box, asserted loudly rather than skipped), so the oracle
+  REFUSES when reached (exit 125, the `Failure` naming the label) and the port refuses at
+  import. Manifest: the `[source-content]` row of `util/cerb_location.ml` re-pinned
+  `776d942e… → 90c87a67…` with a dated NOTE, no `--refresh`. Re-verification at the go:
+  the witness, `check_fork_drift.sh`, Tier B row 10.
+- **P3-1 (Q1; "both refuse") — FIXED (wording).** The oracle refuses an unresolvable
+  suffix-bearing directory when the location is REACHED (lazy, at execution); the port
+  refuses the input at import; a refinement in the tolerated direction. Qualified at the
+  site comment, VALIDATION §3(c) and in Q1 above.
+- **P3-2 (Q2; `--runtime <dir>` accepted) — FIXED (docs match the code).** [AGENT
+  2026-10-27] the check is on the VALUE: both CLI forms store it, and the convention's
+  intent is the relative runtime, not a token spelling; README, VALIDATION, the caesium
+  note, the `refuseQuotationRuntime` docstring and Q2 above now say "the value
+  `_build/install/default` in either `--runtime` form".
+- **P3-3 (stale cites) — FIXED.** The eight hand-written cites to the old literal rule
+  (`CerbLocation.lean` ×3, `CabsImport.lean`, `CoreParser.lean`, `Main.lean` ×3) now say
+  "pristine b9aeedcb4 util/cerb_location.ml:512-523" and name the fork's functions
+  (`has_library_suffix`, `resolved_library_dirs`, `is_library_location`) rather than moving
+  line numbers.
+- **P3-4 (Q4; a speedbump wired as a blocking row-1 check) — FIXED (moved).** [AGENT
+  2026-10-27, orchestrator; relayed by the coordinator] under the working practices a
+  discipline point gets a claim-point report, not a gate: `libc_prep.sh --selftest` moves out
+  of `test_unit.sh` (row 1) to Tier B row 14, where a red result is a report at claim points;
+  LADDER, VALIDATION and TODO say so. The orchestrator puts the move to the operator at the
+  merge ask. I see no reason it must stay in row 1: the transport text pins it guards are
+  already content-hashed by every lane that loads them, so the census adds review signal, not
+  trust.
+- **P3-5 (Q5; the four Lean-timeout rows unmeasured on a quiet box) — TO DO at the go:**
+  re-measure `sa_csmith_70`, `sia_csmith_1058`, `sia_csmith_306`, `sia_csmith_865` (Lean
+  switched single trace, 30 s, 4G) on the quiet box before the battery; a surviving timeout is
+  recorded as a finding (a Lean-vs-oracle resource difference near the budget), never a
+  baselined row. Result: P3-5_PLACEHOLDER
+- **P3-6 (record skeleton; no Tier A on Q4–Q6) — TO DO at the go:** the stacked Tier A and
+  the full battery run on the FIXED tree (this commit), their verbatim lines fill the
+  placeholders, and the §10 amendment stays marked proposed until the operator ratifies.
+- **Residual (44 vs 41 refuse-all plant count):** the count is not an assertion (the selftest
+  requires only that the plant FAILS; the script prints how many witnesses it failed under
+  the stub). The record's 41 is from the Q2 tree, the reviewer's 44 from the Q6 tree; the
+  witness script did not change between them, so the difference is unexplained at this
+  point; on the fixed tree (four more witnesses) the plants catch 37 / 48. The counts are
+  not pinned and the plant is caught in every run; left as an observation.
+
+**Re-verification of the fix (2026-10-27, after the orchestrator's first-stage go; load
+below 1 at start; OCaml rebuilt and stamped, `make lean-prelude-src`, `capped lake build`
+`Build completed successfully (548 jobs).`, Lean stamp recorded), verbatim:**
+
+```text
+check_runtime_resolution: selftest plant 'ignore-runtime' caught: 37 failing witness(es)
+check_runtime_resolution: selftest plant 'refuse-all' caught: 48 failing witness(es)
+check_runtime_resolution: root-level /runtime/libcore plant: oracle refuses when reached (rc 125), port refuses at import
+check_runtime_resolution: quotation hygiene: absolute --runtime, CERB_INSTALL_PREFIX-only, absolute-label and absolute-LEXING-label quotations refused (runtime/--runtime); canonical control written (393889 bytes)
+check_runtime_resolution: OK (35 witnesses: --runtime/CERB_INSTALL_PREFIX resolution and priority, planted cwd std.core ignored, planted prefix used, 5 runtime refusals, 1 cross-runtime and 3 library-location refusals, 1 control agreeing with the oracle, relative fixture-001 classifier agreement (both engines: suffix AND resolved membership) and execution control, 4 served UB-location agreement pins (./, unprefixed, absolute, libcore), a root-level /runtime/libcore plant refused by both engines, 4 quotation-convention refusals (absolute --runtime, CERB_INSTALL_PREFIX only, absolute source label, absolute lexing label) with the #line-renamed input served by --batch, and the canonical quotation control)
+check_fork_content: OK — 93 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 93 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 32 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin e6d8db5680962f49060257d6c2bcb13c284b910f matches lem -v lean-backend-v0.1.0-alpha.1-78-ge6d8db5 (hex prefix))
+check_fork_drift: SELFTEST OK (31 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S31 advanced upstream ref (not drift); S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; S15-S30 version forms, full-pin validation and refresh retention; unplanted gate green)
+scripts/test_stops.py --lean-bin stop-test: Ran 26 tests in 2.501s / OK
+core-quote-test --fuel 1000000 (row 1; exit 0):
+MultiRich round trip: 3.32s
+CORE_QUOTE_TOTAL inputs=28; model constructors=216; floating=0; NaN=0; memory-values=0; positions=8514122; absolute-paths=0
+Core quote round trip: PASS (whole-file representation, comparator syntax, auxiliary BEq)
+Independent oracle: passed; {'semantic_agreement': 950, 'matching_failure': 36, 'reviewed_difference': 9, 'interface_agreement': 2}; <worktree>/.tmp/upstream-oracle-ms977iyd/report.json
+```
+
+(Row 10: 997 cases, no row moved. A first run of row 10 on this tree reported `failed` with the
+SAME class tallies because its `source_unchanged` check saw the working tree change: I edited
+this record while the lane was running — my mistake; the lane was re-run on the untouched
+tree, quoted above, and both report directories deleted. The P3-5 re-measure, the stacked
+Tier A and the full battery wait for the orchestrator's second go.)
+

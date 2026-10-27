@@ -2587,7 +2587,7 @@ the input's newline table in `stampLibraryFile`; `Cerb_position` line =
 `pos_lnum`, column = `1 + pos_cnum - pos_bol`). DECLARED residual (Pos
 payload only): every OTHER node's region is `⟨file, 0, 0⟩` — for those,
 only the FILE component is behaviour-bearing: `is_library_location` tests
-the path's directory alone (`util/cerb_location.ml:512-520`), every
+the path's directory alone (pristine `util/cerb_location.ml:512-520`; the fork's resolved rule since quotation hygiene Q1 reads the same directory), every
 execution-path consumer of a library-located loc dispatches on that
 predicate (the three cites above), and the shared model substitutes the
 enclosing C location before any std.core position is printed
