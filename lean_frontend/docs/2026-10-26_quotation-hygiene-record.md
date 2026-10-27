@@ -665,11 +665,68 @@ Core quote round trip: PASS (whole-file representation, comparator syntax, auxil
 exit=0
 ```
 
-Tier A — the STACKED run covering Q4, Q5 and Q6 on this tree (scheduling note 2), verbatim:
+Tier A — the STACKED run covering Q4, Q5, Q6 and the pre-merge fixes (scheduling note 2;
+on the tree after `27ff7cb81`). A FIRST run (evidence
+`/home/dev/projects/cerberus-lean-proj/.tmp/release/qh-fast-20261027T084312Z`, kept for the
+orchestrator) read `fast: failed; 19/20 selected commands completed successfully.` — A1
+`test_unit.sh` failed in its release-runner plants (`scripts/test_release.py`:
+`commands['C3']` expected `['./scripts/test_csmith_corpus.sh', '--check-baseline']`, got
+`['./scripts/test_inner_arg_temps.sh', '--csmith-corpus', '--shard', '1/2']`): the Tier C
+table assigns lane ids by POSITION and the Q5 row had been inserted above the csmith-corpus
+row, shifting C3–C9 (every other row passed: A2–A15, source unchanged). Fix [AGENT
+2026-10-27]: the Q5 row moved to the END of the Tier C command table (the last id); the
+plants and `release.py --list` re-run before the second Tier A, verbatim:
 
 ```text
-TIERA_Q6_PLACEHOLDER
+Ran 16 tests in 3.148s
+
+OK
+C1      ./scripts/test_exec.sh --write-baseline=scripts/exec_ci_baseline.txt tests/ci
+C2      ./scripts/fuzz_csmith.sh
+C3      ./scripts/test_csmith_corpus.sh --check-baseline
+C4      ./scripts/test_ci_sweep.sh --all-suites
+C5      python3 scripts/test_upstream_oracle.py --with-lean
+C6      python3 scripts/test_upstream_oracle.py --corpus ci
+C7      python3 scripts/test_upstream_oracle.py --corpus csmith --shard 1/34
+C8      python3 scripts/measure_csmith_cpu.py --output .tmp/csmith-cpu.tsv
+C9      ./scripts/test_inner_arg_temps.sh --csmith-corpus --shard 1/2
 ```
+
+The second (gated, stacked) Tier A, verbatim:
+
+```text
+Release evidence: /home/dev/projects/cerberus-lean-proj/.tmp/release/qh-fast-20261027T090526Z
+PASSED A1 (739.0s)
+PASSED A2 (30.2s)
+PASSED A3 (76.3s)
+PASSED A4 (24.5s)
+PASSED A4b (26.1s)
+PASSED A4c (3.1s)
+PASSED A5 (89.9s)
+PASSED A6 (4.0s)
+PASSED A6b (3.6s)
+PASSED A7 (10.3s)
+PASSED A8 (8.7s)
+PASSED A9 (16.6s)
+PASSED A10 (17.0s)
+PASSED A11 (62.4s)
+PASSED A12.1 (4.9s)
+PASSED A12.2 (4.5s)
+PASSED A13 (1.0s)
+PASSED A14.1 (112.0s)
+PASSED A14.2 (147.2s)
+PASSED A15 (359.8s)
+fast: passed; 20/20 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+```
+
+(Launched at load about 1 after the orchestrator's second go, no other `release.py`; evidence
+kept for the orchestrator. Covers Q4, Q5, Q6 and the pre-merge fixes on the tree of
+`27ff7cb81` plus the Q5-row move and this record's edits. Ruling [AGENT 2026-10-27,
+orchestrator; relayed by the coordinator]: new reporting rows append at the end of the Tier C
+table and take the next id; existing ids are never renumbered.)
+
 
 
 Checkpoint commit: `9816de840`.
@@ -678,7 +735,7 @@ Checkpoint commit: `9816de840`.
 
 **Commits on `feature/quotation-hygiene`** (base `704c4e697`; charter `1616d46ad`): Q1
 `1a521248b`, Q2 `5cd761172`, Q3 `ec136207e`, Q4 `6e04adad8`, Q5 `61e300f99`, Q6
-`9816de840`, close-out `CLOSEOUT_COMMIT_PLACEHOLDER`.
+`9816de840`, close-out the branch head at close-out.
 
 **Every change, by file** (file:line references are to the close-out tree):
 - `util/cerb_location.ml` `is_library_location` + `library_suffixes` / `has_library_suffix` /
@@ -798,8 +855,61 @@ after the anonymous-members slice's own battery; `CERB_MEM_MAX=32G`; box rule as
 verbatim:
 
 ```text
-BATTERY_PLACEHOLDER
+Release evidence: /home/dev/projects/cerberus-lean-proj/.tmp/release/qh-full-20261027T093457Z
+PASSED A1 (738.5s)
+PASSED A2 (30.2s)
+PASSED A3 (76.3s)
+PASSED A4 (24.5s)
+PASSED A4b (26.1s)
+PASSED A4c (3.1s)
+PASSED A5 (89.9s)
+PASSED A6 (4.0s)
+PASSED A6b (3.6s)
+PASSED A7 (10.3s)
+PASSED A8 (8.7s)
+PASSED A9 (16.5s)
+PASSED A10 (16.9s)
+PASSED A11 (62.4s)
+PASSED A12.1 (4.9s)
+PASSED A12.2 (4.5s)
+PASSED A13 (1.0s)
+PASSED A14.1 (112.0s)
+PASSED A14.2 (147.1s)
+PASSED A15 (363.1s)
+PASSED B1 (549.9s)
+PASSED B2 (23.0s)
+PASSED B3 (14.9s)
+PASSED B4 (45.7s)
+PASSED B5 (105.8s)
+PASSED B6.1 (144.9s)
+PASSED B6.2 (2.3s)
+PASSED B6.3 (9.3s)
+PASSED B6.4 (8.7s)
+PASSED B6.5 (9.1s)
+PASSED B6.6 (9.8s)
+PASSED B6.7 (8.7s)
+PASSED B7 (1496.9s)
+PASSED B8.1 (13.4s)
+PASSED B8.2 (377.3s)
+PASSED B8.3 (9.7s)
+PASSED B8.4 (15.7s)
+PASSED B9 (2245.9s)
+PASSED B10.1 (183.9s)
+PASSED B10.2 (1.6s)
+PASSED B11.1 (23.3s)
+PASSED B11.2 (7.4s)
+PASSED B12 (403.4s)
+PASSED B14 (1.9s)
+PASSED B13 (701.4s)
+full: passed; 45/45 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
 ```
+
+(Launched at load about 1 after the stacked Tier A, no other `release.py`; evidence kept for
+the orchestrator; B14 is the census row moved out of row 1 at P3-4; B13 carries the Q6
+`LinkedRich` round trips in both modes; B10.1 is row 10 again on the final tree.)
+
 
 **What broke beyond the charter / what I could not do**: see the report to the orchestrator
 (repeated here at close-out): 
@@ -877,7 +987,59 @@ sends the go (the other slice's battery owns the box until then — no build or 
   re-measure `sa_csmith_70`, `sia_csmith_1058`, `sia_csmith_306`, `sia_csmith_865` (Lean
   switched single trace, 30 s, 4G) on the quiet box before the battery; a surviving timeout is
   recorded as a finding (a Lean-vs-oracle resource difference near the budget), never a
-  baselined row. Result: P3-5_PLACEHOLDER
+  baselined row. Result (2026-10-27, the quiet box after the second go; each row re-materialised from
+  `tests/csmith` with the lane's prefix and shim, bridged, then run under `capped timeout
+  30s` with `CERB_MEM_MAX=4G`: the oracle switched, Lean switched single trace, Lean Normal
+  single trace; verbatim):
+
+  ```text
+  load 0.40
+  sa_csmith_70: oracle switched 20.4s rc=0 [Defined {value: "Specified(239)", stdout: "", stderr: "", blocked: "fa] | Lean switched 30.1s rc=124 [] | Lean Normal 30.1s rc=124 []
+  sia_csmith_1058: oracle switched 16.9s rc=0 [Defined {value: "Specified(98)", stdout: "", stderr: "", blocked: "fal] | Lean switched 30.1s rc=124 [] | Lean Normal 30.1s rc=124 []
+  sia_csmith_306: oracle switched 18.9s rc=0 [Defined {value: "Specified(189)", stdout: "", stderr: "", blocked: "fa] | Lean switched 30.1s rc=124 [] | Lean Normal 30.1s rc=124 []
+  sia_csmith_865: oracle switched 16.6s rc=0 [Defined {value: "Specified(248)", stdout: "", stderr: "", blocked: "fa] | Lean switched 30.1s rc=124 [] | Lean Normal 30.1s rc=124 []
+  load 1.02
+  ```
+
+  FINDING (reported to the orchestrator before the Tier A and the battery, as instructed):
+  all four rows still exceed 30 s on Lean at load 0.4–1.0, in BOTH modes, where the oracle
+  completes the switched run in 16.6–20.4 s. Not switch-related (Normal times out the same
+  way) and not a semantic discrepancy: a Lean-vs-oracle resource difference on four csmith
+  rows the oracle itself needs 17–20 s for (the corpus lane's 15 s bound classes them
+  `CERB_SKIP`, the oracle timing out there too). Never baselined: the sweep reports them by
+  name as `RESOURCE lean:TIMEOUT`; disposition per the orchestrator's ruling.
+
+  Ruling [AGENT 2026-10-27, orchestrator; relayed by the coordinator]: option (a) — the four
+  rows stay in the sweep's report-only RESOURCE class, never agreement, never baselined — with
+  ONE bounded measurement first, because a 30 s timeout on inputs the oracle needs 17–20 s for
+  says nothing about whether the Lean side terminates and agrees: the four rows in switched
+  and Normal mode under `capped timeout 600s`, `CERB_MEM_MAX=4G`, concurrently (eight Lean
+  runs plus the four oracle Normal runs; load 0.32 at start, 4.34 at the end), verbatim:
+
+  ```text
+  bound=600s CERB_MEM_MAX=4G concurrent=8 Lean runs; load at start 0.32
+  sa_csmith_70 oracle Normal: 25.1s rc=0 [Defined {value: "Specified(239)", stdout: "", stderr: "", blocked: "false"}]
+  sa_csmith_70 Lean switched: 40.5s rc=0 [Defined {value: "Specified(239)", stdout: "", stderr: "", blocked: "false"}]
+  sa_csmith_70 Lean Normal: 40.9s rc=0 [Defined {value: "Specified(239)", stdout: "", stderr: "", blocked: "false"}]
+  sia_csmith_1058 oracle Normal: 18.3s rc=0 [Defined {value: "Specified(98)", stdout: "", stderr: "", blocked: "false"}]
+  sia_csmith_1058 Lean switched: 36.5s rc=0 [Defined {value: "Specified(98)", stdout: "", stderr: "", blocked: "false"}]
+  sia_csmith_1058 Lean Normal: 37.0s rc=0 [Defined {value: "Specified(98)", stdout: "", stderr: "", blocked: "false"}]
+  sia_csmith_306 oracle Normal: 21.9s rc=0 [Defined {value: "Specified(189)", stdout: "", stderr: "", blocked: "false"}]
+  sia_csmith_306 Lean switched: 43.4s rc=0 [Defined {value: "Specified(189)", stdout: "", stderr: "", blocked: "false"}]
+  sia_csmith_306 Lean Normal: 46.1s rc=0 [Defined {value: "Specified(189)", stdout: "", stderr: "", blocked: "false"}]
+  sia_csmith_865 oracle Normal: 18.1s rc=0 [Defined {value: "Specified(248)", stdout: "", stderr: "", blocked: "false"}]
+  sia_csmith_865 Lean switched: 40.7s rc=0 [Defined {value: "Specified(248)", stdout: "", stderr: "", blocked: "false"}]
+  sia_csmith_865 Lean Normal: 35.7s rc=0 [Defined {value: "Specified(248)", stdout: "", stderr: "", blocked: "false"}]
+  load at end 4.34
+  ```
+
+  Every Lean run COMPLETES (36–46 s) and every value EQUALS the oracle's in its mode (239,
+  98, 189, 248; the oracle's switched values from the 30 s measurement above are the same
+  four): a resource class, not a blow-up and not a discrepancy. Measured ratio (derived):
+  Lean/oracle 1.6–2.3× per row (switched 40.5/20.4, 36.5/16.9, 43.4/18.9, 40.7/16.6; Normal
+  40.9/25.1, 37.0/18.3, 46.1/21.9, 35.7/18.1). Disposition closed: the rows keep their
+  `RESOURCE lean:TIMEOUT` report-only class at the sweep's 30 s bound; proceeding to the
+  stacked Tier A and the full battery as ruled.
 - **P3-6 (record skeleton; no Tier A on Q4–Q6) — TO DO at the go:** the stacked Tier A and
   the full battery run on the FIXED tree (this commit), their verbatim lines fill the
   placeholders, and the §10 amendment stays marked proposed until the operator ratifies.
