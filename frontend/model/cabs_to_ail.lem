@@ -600,8 +600,14 @@ let rec is_integer_constant_expression (AnnotatedExpression () _ loc expr_ as ex
           | PostfixDecr ->
               E.return false
         end
-    | AilEcast _ _ _ ->
-        E.fail loc (Errors.Desugar_NotYetSupported "cast operator in `integer constant expressions'")
+    | AilEcast _ ty e ->
+        (* STD §6.6#6: casts of arithmetic types to integer types. A cast to
+           an integer type of an integer constant expression is one; other
+           casts are still refused. *)
+        if AilTypesAux.is_integer ty then
+          is_integer_constant_expression e
+        else
+          E.fail loc (Errors.Desugar_NotYetSupported "cast operator in `integer constant expressions'")
     | AilEassert _ ->
         E.return false
     | AilEoffsetof _ _ ->
