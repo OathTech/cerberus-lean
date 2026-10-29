@@ -218,7 +218,7 @@ def selftest():
             except SystemExit as e:
                 rc = 1; buf.write(str(e.code) if e.code not in (None, 1) else '')
             out = buf.getvalue()
-            ok = (rc == 0 and 'OK (16 ' in out) if needle is None else (rc == 1 and needle in out)
+            ok = (rc == 0 and 'OK (17 ' in out) if needle is None else (rc == 1 and needle in out)
             first = next((l for l in out.splitlines() if (needle or 'OK') in l), out.splitlines()[0] if out else '')
             print(f"  PLANT {'OK  ' if ok else 'FAIL'} [{name}] rc={rc} -> {first.strip()}")
             if not ok:
@@ -235,7 +235,7 @@ def selftest():
                 out = emit(wrappers(sg))
             except SystemExit as e:
                 rc, out = 1, str(e.code)
-            ok = (rc == 0 and out.startswith('-- 16 ambient wrappers')) if needle is None else (rc == 1 and needle in out)
+            ok = (rc == 0 and out.startswith('-- 17 ambient wrappers')) if needle is None else (rc == 1 and needle in out)
             first = out.splitlines()[0] if out else ''
             print(f"  PLANT {'OK  ' if ok else 'FAIL'} [{name}] rc={rc} -> {first.strip()}")
             if not ok:
