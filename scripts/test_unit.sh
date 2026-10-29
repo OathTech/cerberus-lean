@@ -548,6 +548,24 @@ if ! "$ANON_MEMBERS_SH" --selftest; then
     exit 1
 fi
 
+# compound-assignment refusal witnesses (upstream-uncertainty survey cluster B, tray 61,
+# contract D13, 2026-10-29): 18 compound assignments whose left operand contains a
+# side effect (the survey's post-increment, pointer post-increment, call-as-lvalue,
+# shifted/or'ed member, call-in-subscript, pre-decrement, post-incremented pointer
+# member and comma-in-subscript shapes; a pre-increment, a call two levels deep, a
+# comma in a member's subscript, a compound literal lvalue, an assignment in a cast's
+# operand, va_arg, a _Generic controlling expression, the ^= and >>= operators) are
+# refused by both engines with byte-identical texts pinned whole, location included;
+# 11 controls (no side effect inside the lvalue, a side effect in the right operand
+# only, a volatile object, a volatile subscript, a sizeof operand) agree with the
+# oracle; the bit-field rejection is unchanged. --selftest: the same five plants as
+# item G must all fail. Record lean_frontend/docs/2026-10-29_compound-assignment-refusal-record.md.
+COMPOUND_ASSIGN_SH="$(dirname "$PURITY_SH")/check_compound_assignment_refusal.sh"
+if ! "$COMPOUND_ASSIGN_SH" --selftest; then
+    echo "test_unit: compound-assignment refusal witnesses FAILED"
+    exit 1
+fi
+
 # libc dump float-literal inventory (named deviation N3, VALIDATION.md §2b;
 # bug hunt BUG-5, [USER 2026-09-30] option (3)): the pinned libc.core's float
 # literals (printed with %.12g by the oracle's Core printer) must equal the
