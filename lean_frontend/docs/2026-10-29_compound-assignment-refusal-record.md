@@ -78,9 +78,7 @@ constructor is a Lem build error, never a silent "pure"):
 - **leaves (false):** offsetof, builtin, str, const, ident, sizeof(type), alignof, reg_load, invalid.
 
 Over-approximations, declared ("refuse until it hurts"): every call counts whether or not it has a side effect — the
-second elaborated copy calls it again (`ca-04`, `*g() += 3` with `g` pure of side effects on `a`, refuses); a
-`_Generic` controlling expression is walked though C does not evaluate it (measured: `a[_Generic(i++, int: 0)] += 1`
-refuses, `:1:67`). A `sizeof` operand is walked too but never reaches the walker: the desugarer types the operand and
+second elaborated copy calls it again (`ca-04`, `*g() += 3` with `g` pure of side effects on `a`, refuses); a `_Generic`'s controlling expression AND every association, selected or not, are walked though C evaluates only the selected association (measured: `a[_Generic(i++, int: 0)] += 1` refuses, `:1:67`; the pre-merge review's P3-1 measured `a[_Generic(0, long: i++, default: 1)] += 3` refusing too, `:1:84`, where both engines answered 13 before — the first version of this sentence named the controlling expression only). A `sizeof` operand is walked too but never reaches the walker: the desugarer types the operand and
 emits `AilEsizeof qs ty` (`cabs_to_ail.lem` :2425-2440, `AilEsizeof_expr` survives only for a VLA operand, which is
 refused earlier); measured: `a[sizeof(i++)] += 1` answers `Specified(1)` on both engines, a control of §4.
 
@@ -176,6 +174,12 @@ line; both engines carry it byte for byte after the `internal error: ` / `PANIC 
 <file>:<line>:<col>:: Translation.translate_expression: refused - compound assignment whose left operand contains a side effect (an increment or decrement, an assignment, a function call, a comma, a va_arg, a statement expression or a compound literal anywhere inside the lvalue; C17 6.5.16#3 sequences the update after both value computations and 6.5.16.2#3 evaluates the lvalue E1 only once); upstream elaborates E1 op= E2 as E1 = E1 op E2 with E1 elaborated twice, under its own 'TODO: this elaboration is wrong because it duplicates any side-effect in E1' (translation.lem b9aeedcb4 :2506), so the lvalue's side effect runs twice (a call in the lvalue is called twice, a wrong value) or a false UB035_unsequenced_race is reported (the ++/--/comma forms) - the fork refuses rather than decides (survey cluster B, tray 61, 2026-10-29)
 ```
 
+The text's parenthetical trigger list ("an increment or decrement, an assignment, a function call, a comma, a va_arg, a
+statement expression or a compound literal") is shorter than the predicate, which also fires on `AilEassert`,
+`va_start`/`va_copy`/`va_end` and the `_Generic` operands (review P3-2); CONTRACT D13 lists them all. Not re-pinned here (a
+text change is a Lem change: 18 witnesses, a regeneration and a manifest re-pin for a wording nit); folded into the next
+revision of the text (the WP2 envelope migration or the next touch of the arm).
+
 Generated: OCaml `Cerb_debug.error (compound_assign_refusal loc1)` (`ocaml_frontend/generated/translation.ml`, the arm
 hunk at :2629; `internal error: <text>` on stderr, then `Failure("internal error: <text>")` uncaught, exit 125); Lean
 `(failwithI (compound_assign_refusal loc1) : elab_state → (generic_expr Unit Unit sym × elab_state))`
@@ -201,7 +205,11 @@ FUEL_FORMS_SUMMARY	workers=88	measured=67	measured_under_hyp=13	absorbing=13	amb
 check_fuel_forms: forms partition OK (67 MEASURED + 13 ABSORBING + 0 ambient-reachable + 8 ambient-unreachable = 88 fuel'd workers)
 ```
 
-The move, as measured: workers 87 → 88, ambient-unreachable 7 → 8, ABSORBING 13 → 13 — the ruling's "absorbing" named
+The `translation.lem` comment beside the declare (and the M1 commit message) says "the same ABSORBING form as its caller"
+— the gate's word for a different class (review P3-3): the declared form is `failwithI` at fuel zero, which the gate files
+as AMBIENT because a `failwithI` of `Bool` is a value sentinel, not the monad's absorbing element. The comment is
+rewritten at the next touch of `translation.lem` (any edit now moves the source hash and the manifest row and would
+invalidate the battery). The move, as measured: workers 87 → 88, ambient-unreachable 7 → 8, ABSORBING 13 → 13 — the ruling's "absorbing" named
 the declare's form (kill at fuel zero); the gate files that form, for a frontend worker outside the drive cone, as
 AMBIENT/unreachable, exactly as `translate_expression` and `translate_stmt`.
 
@@ -493,8 +501,82 @@ commit after the run.
 
 ### 6.3 The full battery at close-out (appended after the run)
 
-Not yet run at this commit: the orchestrator runs Tier A and then the full battery on the M3 tip; their verbatim
-lines are appended here by the close-out commit, which touches this section only.
+Run by the orchestrator on this branch's M3 tip `f8892bd31` (`scripts/ce python3 scripts/release.py --mode full`,
+started 2026-10-29 02:18:21 UTC at 1-minute load 1.25, ended 04:41:34 UTC; evidence
+`.tmp/release/ca-full-m3-20261029T021821Z`, log `.tmp/ca-full-m3.log`, both the orchestrator's; it subsumes Tier A, so
+no separate Tier A was run on M3). Verbatim: the log's header line, every per-command line and the summary lines (all
+45 PASSED; the slow rows B9 2323.3 s, B7 1483.1 s, A1 953.0 s, B13 723.8 s):
+
+```text
+HEAD=f8892bd31 dirty=0 start=02:18:21 load=1.25 out=/home/dev/projects/cerberus-lean-proj/.tmp/release/ca-full-m3-20261029T021821Z
+PASSED A1 (953.0s)
+PASSED A2 (30.7s)
+PASSED A3 (77.2s)
+PASSED A4 (24.9s)
+PASSED A4b (26.5s)
+PASSED A4c (3.2s)
+PASSED A5 (96.5s)
+PASSED A6 (4.1s)
+PASSED A6b (3.7s)
+PASSED A7 (10.6s)
+PASSED A8 (8.8s)
+PASSED A9 (16.8s)
+PASSED A10 (17.8s)
+PASSED A11 (63.3s)
+PASSED A12.1 (5.0s)
+PASSED A12.2 (4.6s)
+PASSED A13 (1.6s)
+PASSED A14.1 (116.3s)
+PASSED A14.2 (154.9s)
+PASSED A15 (387.8s)
+PASSED B1 (568.6s)
+PASSED B2 (23.2s)
+PASSED B3 (15.0s)
+PASSED B4 (45.7s)
+PASSED B5 (110.5s)
+PASSED B6.1 (149.6s)
+PASSED B6.2 (2.3s)
+PASSED B6.3 (9.6s)
+PASSED B6.4 (8.9s)
+PASSED B6.5 (9.3s)
+PASSED B6.6 (10.0s)
+PASSED B6.7 (8.8s)
+PASSED B7 (1483.1s)
+PASSED B8.1 (13.4s)
+PASSED B8.2 (389.2s)
+PASSED B8.3 (9.5s)
+PASSED B8.4 (15.7s)
+PASSED B9 (2323.3s)
+PASSED B10.1 (203.0s)
+PASSED B10.2 (1.8s)
+PASSED B11.1 (24.9s)
+PASSED B11.2 (8.2s)
+PASSED B12 (424.8s)
+PASSED B14 (2.0s)
+PASSED B13 (723.8s)
+full: passed; 45/45 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+release rc=0 end=04:41:34
+```
+
+`summary.txt`, verbatim: `full: passed; 45/45 selected commands completed successfully. / Source unchanged: True. Complete tier selection: True. / Release certification: incomplete: reporting/adoption/audit exits require separate evidence.`.
+
+A1 (row 1), verbatim lines from `A1/stdout`:
+
+```text
+Total: 21 passed, 0 failed
+check_theorem_axioms: hand-written axiom census OK (0 axioms — the arc-17 S2b end state)
+gen_fuel_parametricity: OK (17 ambient fuel wrappers in the generated tree = the 17 pins of TotalityProofTest.lean Part 1, both directions)
+check_fuel_forms: OK (88 fuel'd workers: 67 MEASURED (obligation of the contract's shape incl. argument correspondence against the wrapper's body; every obligation + proof cone ⊆ the standard three; 13 of them under a hypothesis, each = a reviewed row of fuel_hypotheses.txt, both directions), 13 ABSORBING = kill at zero (the _zero lemma is the worker at literal 0 on its own binders = the monad's absorbing element, cone ⊆ the standard three; propagation NOT proved — lem TODO 13), 0 reachable-AMBIENT = the 0 rows of fuel_forms_pending.txt exactly, 8 ambient unreachable from the drive cone)
+check_failure_reach: OK (240 pure failure sites = the 240 register rows exactly (238 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, shared keys lengthened, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=174 REACHABLE=44 UNKNOWN=22; every row sealed; tally line consistent)
+check_fork_drift: OK — layer 1: 93 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 32 differing generated files, all hash-pinned (merge-base b9aeedcb4dd438763b0eef7f95ac19e93875d7de; lem-pin e6d8db5680962f49060257d6c2bcb13c284b910f matches lem -v lean-backend-v0.1.0-alpha.1-78-ge6d8db5 (hex prefix))
+check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+check_compound_assignment_refusal: OK (30 cases: 18 compound assignments whose left operand contains a side effect (the survey's post-increment, pointer post-increment, call-as-lvalue, shifted and or'ed member, call-in-subscript, pre-decrement, post-incremented pointer member and comma-in-subscript shapes; a pre-increment, a call two levels deep, a comma in a member's subscript, a compound literal lvalue, an assignment in a cast's operand, va_arg, a _Generic controlling expression, and the ^= and >>= operators — every op= at least once) refused by the oracle (uncaught Failure, exit 125) and by the Lean engine (abort, exit 134) with byte-identical texts pinned whole, location included; 11 controls agree with the oracle (a plain subscript, a side effect in the right operand only, plain = and ++ with a post-incremented subscript, *p += 1, s.v |= 4, a[f] <<= 2, a side effect only in e2, a volatile object, a volatile read in the address computation (not counted), a sizeof operand); the bit-field rejection cb-05 is unchanged on both)
+```
+
+A3 (Tier A row 3, the coverage lane with its baseline), verbatim: `SUMMARY: total=277 match=222 ub_match=37 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=16 cerb_floor=0 cerb_inconsistent=0` / `BASELINE OK`. No row moved in any
+baselined lane (§3.2); the one scoreboard row of §3.2 is not re-recorded by the battery (Tier C).
 
 
 ## 7. Not done / open
@@ -511,8 +593,21 @@ lines are appended here by the close-out commit, which touches this section only
 - The survey record's cluster-B table (dated 2026-10-20) is left as the pre-refusal measurement.
 - Not refused, by decision (§2.1): a volatile read inside the lvalue's address computation. Not reachable (§2.1): a
   `sizeof` operand's side effect.
+- Follow-ups from the pre-merge review (§10), none taken here: (a) narrow the `_Generic` walk to the selected association
+  (the arm has the index, `AilEgeneric _ (Just idx) gas`; a walker change → regeneration, manifest re-pin, a witness);
+  (b) fold assert / `va_start`/`va_copy`/`va_end` / `_Generic` operands into the text's trigger list at its next revision;
+  (c) rewrite the declare's comment ("ABSORBING" → the gate's "AMBIENT, unreachable") at the next touch of
+  `translation.lem`; (d) the witness self-test's cost (a plant that must fail N named witnesses could run only those).
 
 ## 8. Ride-alongs
+
+### 8.0 Scratch, deleted at close-out
+
+The worker's scratch under the worktree's `.tmp/` — `probe/`, `wit/`, `sweep/` (the sweep instrument, its lists and
+TSVs, the csmith stage), `float/`, `docs/` (the drafts and apply scripts), `part1_emit.txt`, `fuel_forms_table.{tsv,err}`
+and the `m1-*`/`m1b-*`/`m2-*` logs, about 26 M — was deleted by the close-out commit's author after it was applied. The
+rest of the directory at that time (`.tmp/scripts/observations`, 370 M, and `.tmp/memory-access`) is the lanes' capture
+scratch of the orchestrator's Tier A and full-battery runs, not the worker's, left to the orchestrator.
 
 ### 8.1 Ride-along (a): the floating profile stated (survey §2.4, tray 32; documentation only, no code)
 
@@ -554,3 +649,33 @@ checkpoint I0b of the inner_arg_temps arc ([USER 2026-10-21]; `docs/2026-10-21_i
 both engines: `_Bool b = 0.5; _Bool c = -0.25; return b*10 + c;` → `Defined {value: "Specified(11)", …}` (C17
 6.3.1.2#1), where the survey measured 0. The survey section's header no longer says the items are queued behind the
 cerberus-caesium deliveries (all three have landed).
+
+## 10. Pre-merge review (2026-10-29, fresh independent reviewer; `docs/2026-10-29_compound-assignment-premerge-review.md`) — dispositions [AGENT 2026-10-29, orchestrator rulings applied by the worker]
+
+Verdict MERGEABLE, no P1/P2, four P3s and one incidental finding; documentation only, applied in the close-out commit
+(the code, generated trees, gates and baselines are untouched). One by one:
+
+- **P3-1** (the walker also walks the UNSELECTED `_Generic` associations; the public documents named only the
+  controlling expression): FIXED — CONTRACT's §3 row and D13, VALIDATION's §3(c) bullet, the consumer note and §2.1 here
+  now say "the controlling expression and every association, selected or not" with the reviewer's measurement
+  (`a[_Generic(0, long: i++, default: 1)] += 3` refuses, `:1:84`, where both engines answered 13 before); SUPPORTED's
+  row names no `_Generic` and needed no change. The optional narrowing (walk only the selected association) is a
+  recorded follow-up (§7), not taken: a walker change is a regeneration and a manifest re-pin.
+- **P3-2** (the pinned text's trigger list omits assert, `va_start`/`va_copy`/`va_end` and the `_Generic` operands):
+  ANSWERED in §2.3 — CONTRACT D13 lists them all; the text is not re-pinned now (a Lem change would invalidate the
+  battery); a one-line follow-up for the next touch of the arm (§7).
+- **P3-3** (the `translation.lem` comment and the M1 commit message say "ABSORBING" where the gate files AMBIENT):
+  ANSWERED in §2.4 — the declared form and the gate's class are both stated as measured; the comment is rewritten at
+  the next touch of the file, since any edit to `translation.lem` now moves the source hash and the manifest row.
+- **P3-4** (the self-test runs the 30-case battery six times; the worktree's `.tmp` was 394 M): ANSWERED — measured on
+  this tree after the battery had left the box, `scripts/check_compound_assignment_refusal.sh --selftest` (the five
+  plants + the real run) takes 71 s of wall time (1-minute load 1.19 at the start; the reviewer's estimate was 4-5 min), the same
+  shape and order as D10/D11/D12's scripts; row 1's
+  A1 was 960.6 s on the M2 tree. The trim (a plant that must fail N named witnesses runs only those) is a recorded
+  follow-up option (§7), not taken. Of the 394 M, 370 M was the lanes' observation-capture scratch of the
+  orchestrator's Tier A runs (`.tmp/scripts/observations`), not the worker's; the worker's ~26 M was deleted at
+  close-out as promised (§8.0).
+- **Incidental** (a fully braced initializer of a struct containing an array of structs crashes both engines on the
+  mainline with an invalid-node text; valid C17): a TODO line under the crash-to-refusal follow-ups names the shape,
+  the text and that the reviewer found it on `b4a48f635`; no tray draft now (the orchestrator's ruling).
+- The review file is committed beside this record (the D11/D12 precedent).

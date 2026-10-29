@@ -642,7 +642,8 @@ Nothing else.
   enum, a `case` label, a `_Static_assert` or an array size dies with an
   unrelated text on both engines; a `case (a[i++] += 1):` label reaches that run
   point and now gets the attributed refusal). Declared approximations: every
-  call counts and a `_Generic` controlling expression is walked (over); a
+  call counts and a `_Generic`'s controlling expression and every association,
+  selected or not, are walked (over; review P3-1); a
   VOLATILE read inside the lvalue's address computation is NOT counted (under,
   against 5.1.2.3#2 — on the Core the volatile object itself is loaded once by
   the rvalue copy, only a volatile subscript twice; `volatile` has no semantics

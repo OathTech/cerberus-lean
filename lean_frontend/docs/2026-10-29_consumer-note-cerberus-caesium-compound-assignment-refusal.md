@@ -101,8 +101,7 @@ qualifier, the duplicated read is value-identical and verdict-neutral; this is a
 under-approximation against C17 5.1.2.3#2, stated in CONTRACT D13 and SUPPORTED, and the strict
 reading would have refused every csmith program (1669/1669 use `volatile`). Over-approximations,
 also declared: every call counts (the second copy calls it again, so `*g() += 3` refuses even
-when `g` is pure), and a `_Generic` controlling expression is walked though C does not evaluate
-it (`a[_Generic(i++, int: 0)] += 1` refuses); a `sizeof` operand does not survive typing
+when `g` is pure), and a `_Generic`'s controlling expression and every association, selected or not, are walked though C evaluates only the selected one (`a[_Generic(i++, int: 0)] += 1` and `a[_Generic(0, long: i++, default: 1)] += 3` both refuse); a `sizeof` operand does not survive typing
 (`a[sizeof(i++)] += 1` answers as before). The bit-field case (`s[i++].bf += 2`) stays the
 pre-existing `feature not yet supported: bit-fields` rejection, exit 1 on both engines.
 

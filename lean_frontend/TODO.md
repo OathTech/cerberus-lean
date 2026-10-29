@@ -206,7 +206,12 @@ the outcome protocol; [USER 2026-10-20]); all three have landed, so the queue is
   mirror `CerbMem.lean:1975`; tray 04) — **upstream fix exists (`f4a3a3d54`, 2026-09-30: the pure
   `array_shift_ptrval` returns UB on a null pointer); backport proposed, ruling pending**; (5) the `printf` `%.*d`
   (negative precision, tray 26) and `%n` arms (formatted.lem:453/:726). Each becomes an attributed refusal in both
-  engines with a witness; 0 gated rows move.
+  engines with a witness; 0 gated rows move. A sixth arm, found by the compound-assignment slice's pre-merge reviewer
+  on the mainline `b4a48f635` (2026-10-29, review P-incidental; pre-existing, both engines, not touched by that slice):
+  a fully braced initializer of a struct containing an array of structs — `struct T { int b; }; struct S { struct T
+  a[2]; }; struct S s = {{{1},{2}}};` — dies before elaboration with `internal error: Translation called on Ail program
+  with an invalid node` (oracle exit 125; Lean the same PANIC, exit 134), valid C17 6.7.9#17-20 (gcc 12); a crash, so
+  tolerated, but a declared refusal is the valid refinement; no tray draft yet.
 - **Float profile documentation, no code** ([USER 2026-10-20]; record §2.4; tray 32). SUPPORTED.md and CONTRACT D6
   state `sizeof(float) == sizeof(double) == sizeof(long double) == 8`, all binary64, `_Alignof(long double) == 8`;
   tray 32 gains the `float.h` contradiction (`FLT_MANT_DIG 24` / `LDBL_MANT_DIG 64` against 53-bit values,
