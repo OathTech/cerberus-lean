@@ -149,12 +149,12 @@ of this work's scope.
   re-derive the bound to 255 with a message stating the 4.35.0 facts and move the
   two negative probes to 256.
 
-## Upstream-uncertainty survey follow-ups (2026-10-20) — queued BEHIND the cerberus-caesium deliveries
+## Upstream-uncertainty survey follow-ups (2026-10-20)
 
 Record: [`docs/2026-10-20_upstream-uncertainty-survey-record.md`](docs/2026-10-20_upstream-uncertainty-survey-record.md)
 (the uncertainty-marker inventory of the shared model and the 247 probes; corpus `tests/parity-probes/uncertainty/`,
-not a gate). Every item below is queued behind the deliveries to cerberus-caesium (Core quoting, `inner_arg_temps`,
-the outcome protocol) and is not to be dispatched before them ([USER 2026-10-20]); the slice shapes are the record's §3.
+not a gate). The items were queued behind the three deliveries to cerberus-caesium (Core quoting, `inner_arg_temps`,
+the outcome protocol; [USER 2026-10-20]); all three have landed, so the queue is open; the slice shapes are the record's §3.
 
 - **Anonymous struct/union members: refuse in the shared Lem** ([USER 2026-10-20]; record §2.1, slice 1; tray 60) —
   **DONE 2026-10-26** (branch `fix/anonymous-members-refusal`, contract D12, record
@@ -169,16 +169,34 @@ the outcome protocol) and is not to be dispatched before them ([USER 2026-10-20]
   text in the `Error {msg: …}` record would let D12 and D11 become D9-style frontend refusals (exit 1, attributed
   on both engines) by changing only their one arm each from `error` to `E.fail`; the record's `msg` field is
   consumer-visible wire, so this goes with the outcome protocol's structural-outcome WP2 mover.
-- **Compound assignment with a side-effecting left operand: refuse** ([USER 2026-10-20]; record §2.2, slice 2; tray 61).
-  translation.lem:2510-2535 elaborates `e1 op= e2` with `e1` duplicated (its own TODO): `*g() += 3` calls `g` twice,
-  `a[i++] += 5` is a false UB035. A syntactic side-effect predicate on `e1` and a `record_error_at` refusal (the GNU
-  `?:` precedent at :2325); 0 gated rows move. The one-binding elaboration is proposed upstream and adopted on re-pin.
-- **`_Bool` from a fractional floating value: refuse — upstream fix exists, backport proposed, ruling pending**
-  (record §2.3; tray 15). std.core:78-91 applies the §6.3.1.2#1 test to the truncated integer (`_Bool b = 0.5` is 0;
-  11 probes). [USER 2026-10-20] ruled a refusal rather than an override because the reach is low; upstream commit
-  `3230aa494` (2026-09-30) fixes it (`conv_arith` `_Bool` arm; `loaded_ivfromfloat` tests the floating value; CI
-  `tests/ci/0343-subzero-floating-to-_Bool.c`), and the orchestrator has proposed backporting it as a fork-ahead
-  delta instead; whichever the operator rules, no gated row moves.
+- **Compound assignment with a side-effecting left operand: refuse** ([USER 2026-10-20]; record §2.2, slice 2; tray 61) —
+  **DONE 2026-10-29** (branch `fix/compound-assignment-refusal`, contract D13, record
+  `docs/2026-10-29_compound-assignment-refusal-record.md`): translation.lem's `AilEcompoundAssign` arm (pristine :2505-2531,
+  its TODO at :2506) `error`s when the syntactic walker `compound_assign_lhs_has_side_effect` finds a side effect anywhere
+  inside `e1` — a pure `error` with the attributed text rather than the GNU `?:` arm's `record_error_at`, which the
+  constant-expression mini-run discards (record §2.2) — both engines by generation;
+  `scripts/check_compound_assignment_refusal.sh` in row 1; 0 baselined rows moved. Still pending from it: the ONE ci-sweep
+  scoreboard row that moves at the next deliberate re-record of `tests/ci_sweep/results/`,
+  `tests/gcc-torture/breakdown/success/990222-1.c` (`while ((*--ptr += 1) > '9') *ptr = '0';`), today
+  (`torture_success.tsv:509`, verbatim; a false UB both engines agreed on):
+  ```text
+  torture_success	tests/gcc-torture/breakdown/success/990222-1.c	UB_MATCH	UB:UB035_unsequenced_race
+  ```
+  → both engines refuse. The one-binding elaboration stays upstream's to adopt (tray 61).
+- **GNU `?:` in a constant-expression position loses its refusal** (found by the slice above, 2026-10-29; tray 61's
+  related note; upstream's arm, not fixed here): the `AilEcond e1 Nothing e3` arm refuses through `E.record_error_at`,
+  and the constant-expression mini-run (`mini_pipeline.lem:157`, plain `runStateM`) discards the recorded error and
+  executes the `skip` placeholder — `enum { E = 3 ?: 4 }`, `case (3 ?: 4):`, `_Static_assert((3 ?: 4) == 3, "")` and
+  `int b[(3 ?: 4)]` die with an unrelated `internal error` on both engines (a crash, never a wrong answer). Options: turn
+  that arm's `record_error_at` into a pure `error` with the same text (the D13 mechanism; one arm, a manifest re-pin), or
+  make the mini-run use `runStateM_errors`; either is a small slice. Upstream is told in tray 61.
+- **`_Bool` from a fractional floating value** (record §2.3; tray 15) — **DONE 2026-10-21** by the backport of upstream
+  `3230aa494` as checkpoint I0b of the inner_arg_temps arc ([USER 2026-10-21] ruling A in
+  `docs/2026-10-21_codex-charter-inner-arg-temps.md`; record `docs/2026-10-21_inner-arg-temps-i0b-record.md`; mainline
+  commit `1e7df2ac2`, closed by `9756f6a60`): `conv_arith`'s `_Bool` arm tests the floating value (`loaded_ivfromfloat`),
+  with upstream's CI witness `tests/ci/0343-subzero-floating-to-_Bool.c` adopted. Re-measured 2026-10-29 on both engines:
+  `_Bool b = 0.5; _Bool c = -0.25; return b*10 + c;` answers `Specified(11)` (§6.3.1.2#1), where the survey measured 0.
+  No refusal was needed; no gated row moved.
 - **Crashes on valid C become declared refusals** ([USER 2026-10-20]: a crash is an unspecified stop, a refusal a
   specified one; the conversion changes no accepted program's answer; record §2.5, §2.7-§2.9, slice 3). Five arms:
   (1) `wchar_t` with a negative value (`bytes_of_int` assertion from the unsigned-range/signed-alias contradiction at

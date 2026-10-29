@@ -442,11 +442,15 @@ waits build the pattern from pieces so their text never contains it. Noted so th
 before trusting the count [AGENT 2026-10-26].
 
 The single 15-minute waiter the orchestrator then asked for (a script in `.tmp`, polling the amended rule and
-launching the battery itself) never launched it: by the next morning its sleep processes were gone with no
-runner, no evidence directory and no log line after its first blocked poll. The cause is unknown (the session's
-background command was presumably reaped); the orchestrator ran the battery (§6.1). Next time: a waiter that
-must outlive the session is started with `nohup`/`setsid` and writes a heartbeat line per poll, so a vanished
-waiter is visible as a stopped heartbeat rather than as silence [AGENT 2026-10-27].
+launching the battery itself) never launched it; the orchestrator ran the battery (§6.1). Correction [AGENT
+2026-10-28, orchestrator]: the first version of this paragraph said the waiter's processes were gone by morning and
+presumed the session's background command had been reaped. It had not: the waiter stayed alive for 26 hours,
+blocked, because its running-battery check counted any shell whose command text contained the runner's name — its
+own wrapper, the other slice's gate shells, later the orchestrator's own runs — so the rule never read as clear; it
+was killed on 2026-10-28. The lesson is the one §8's first paragraph already states, from the other side: a
+pattern over command texts matches the poller's own shells; list the matches before trusting the count, and a waiter
+that must outlive a session writes a heartbeat line per poll so that a blocked one is visible as a stalled
+heartbeat rather than as silence.
 
 ## 10. Pre-merge review (2026-10-27, fresh independent reviewer; `docs/2026-10-27_anonymous-members-premerge-review.md`) — dispositions [AGENT 2026-10-27]
 

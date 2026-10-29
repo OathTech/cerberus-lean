@@ -614,6 +614,52 @@ Nothing else.
   anonymous member; CERB_REJECT → the refusal). Witnesses:
   `scripts/check_anonymous_members_refusal.sh` (row 1), every witness pinning its
   whole text. A deliberate fork ≠ pristine difference (below).
+- *Compound assignment whose left operand contains a side effect, the
+  upstream-uncertainty survey's cluster B* (contract D13, 2026-10-29; [USER
+  2026-10-20] ruled in the survey (`docs/2026-10-20_upstream-uncertainty-survey-record.md`
+  §2.2/§3) that it is refused in the shared Lem and the one-binding elaboration
+  filed upstream, tray 61; [USER 2026-10-29] dispatched the slice; `docs/2026-10-29_compound-assignment-refusal-record.md`):
+  REFUSED in BOTH engines — a refusal, not an implementation. Upstream's
+  `AilEcompoundAssign` arm (`frontend/model/translation.lem`; pristine b9aeedcb4
+  :2505-2531) rewrites `E1 op= E2` to `E1 = E1 op E2` and elaborates `E1` twice,
+  under its own `TODO: this elaboration is wrong because it duplicates any
+  side-effect in E1` (:2506): a call in the lvalue runs twice (`a[g()] += 4` 24,
+  gcc 14) and `a[i++] += 5`, `*p++ += 7`, `a[--i] += 6`, `(p++)->v += 5`, a comma
+  in the subscript are reported as `UB035_unsequenced_race` (false: C17 6.5.16#3,
+  6.5.16.2#3) — 9 silent-wrong probes, both engines and pristine agreeing. Now the
+  arm `error`s when a syntactic walk over `e1` finds a postfix `++`/`--`, an
+  assignment, a compound assignment (the prefix forms), a comma, a call (pure or
+  not), an assert, a `va_*` builtin, a statement expression or a compound literal
+  anywhere inside it: oracle `Cerb_debug.error` (`internal error: <text>` +
+  uncaught `Failure`, exit 125), Lean `failwithI` (abort, exit 134), one text by
+  generation with the location prefix (`<file>:<line>:<col>:: `, the cursor on the
+  operator): `Translation.translate_expression: refused - compound assignment
+  whose left operand contains a side effect (…) - the fork refuses rather than
+  decides (survey cluster B, tray 61, 2026-10-29)`. The stop is a pure `error`
+  and not the neighbouring GNU `?:` arm's `E.record_error_at`: measured, the
+  constant-expression mini-run (`mini_pipeline.lem:157`, plain `runStateM`)
+  discards a recorded error and executes the placeholder (the `?:` arm in an
+  enum, a `case` label, a `_Static_assert` or an array size dies with an
+  unrelated text on both engines; a `case (a[i++] += 1):` label reaches that run
+  point and now gets the attributed refusal). Declared approximations: every
+  call counts and a `_Generic` controlling expression is walked (over); a
+  VOLATILE read inside the lvalue's address computation is NOT counted (under,
+  against 5.1.2.3#2 — on the Core the volatile object itself is loaded once by
+  the rvalue copy, only a volatile subscript twice; `volatile` has no semantics
+  in the model). Unchanged and agreeing with the oracle: a side effect in the
+  RIGHT operand only, plain `=`/`++` on a post-incremented subscript, `*p += 1`,
+  `s.v |= 4`, `a[f] <<= 2`, a volatile object or subscript, a `sizeof` operand
+  (the desugarer types it away); the bit-field case stays the `feature not yet
+  supported: bit-fields` rejection. Measured 2026-10-29 on the new oracle through
+  elaboration over every corpus the lanes walk (5591 files under `tests/`,
+  `lean_frontend/corpus` and the CN corpus; 1669 csmith; the libxml2 and pKVM TUs
+  with their lanes' arguments; the libc restaged): NO baselined row moves; one
+  ci-sweep scoreboard row (no baseline) changes class at its next deliberate
+  re-record, `gcc-torture/breakdown/success/990222-1.c` (`(*--ptr += 1)`;
+  `UB_MATCH UB:UB035_unsequenced_race` → the refusal). Witnesses:
+  `scripts/check_compound_assignment_refusal.sh` (row 1), every witness pinning
+  its whole text, location included. A deliberate fork ≠ pristine difference
+  (below).
 - *`LEAN_ABORT_ON_PANIC` required* (Z2-FL-03): the driver refuses to
   start (exit 2) without it, because a Lean `panic!` — the fail-stop
   mirror of every OCaml failwith/assert/uncaught exception — would
@@ -1013,6 +1059,21 @@ by a cited re-record.
   next deliberate re-record. Upstream disposition: draft 60 stays Draft — it
   reports the splice and asks for the feature; the refusal is the fork's contract
   [AGENT].
+- **Fork refusal — compound assignment with a side-effecting left operand, survey cluster B
+  (0 register rows; 0 corpus rows retired; added 2026-10-29; contract D13; record `docs/2026-10-29_compound-assignment-refusal-record.md`):**
+  the fork REFUSES what pristine ANSWERS WRONGLY (§3(c) above): `translation.lem`'s
+  `AilEcompoundAssign` arm `error`s when its left operand contains a side effect where
+  upstream elaborates the operand twice. Row 10's walked corpora contain no such program
+  (the slice measurement, record §3: 5591 files through elaboration, 1669 csmith, the
+  libxml2/pKVM TUs; the only program outside the survey's own probe directory is the
+  ci-sweep scoreboard row `gcc-torture/breakdown/success/990222-1.c`, Tier C, no baseline),
+  so the register has no row. The `[source-content]` pin for `frontend/model/translation.lem`
+  and the `[expected-semantic]` pin for the generated `translation.ml` moved
+  (`scripts/fork_drift_manifest.txt`, header note "fix/compound-assignment-refusal"); the
+  fork-vs-upstream delta of that file grew by the walker `compound_assign_lhs_has_side_effect`,
+  the text helper `compound_assign_refusal` and the arm. Upstream disposition: draft 61 stays
+  Draft — it reports the duplication and proposes the one-binding elaboration; the refusal is
+  the fork's contract [AGENT].
 - **`diagnostic-text` (1 row).** The inner_arg_temps I0b backport adds two
   evaluator frames to `immaculate/nolibc/zd-z2fl03-nan-to-int` while retaining
   exit 125, empty stdout and `Z.Overflow`. Its exact signature pair is
@@ -1292,7 +1353,7 @@ The [first-delivery note](docs/2026-10-20_consumer-note-cerberus-caesium-outcome
 contains the family table, concrete consumer recipe and loss-before-emission
 limits. The sentinel and pure-failure boundaries remain operational limits,
 with structural outcomes as their named mover. The incoming D10 overlap/alignment
-refusals, D11 union-initializer refusal and D12 anonymous-member refusal retain their raw diagnostic texts;
+refusals, D11 union-initializer refusal, D12 anonymous-member refusal and D13 compound-assignment refusal retain their raw diagnostic texts;
 `decode_stop` reports validated frames as legacy/unattributed, not INVARIANT or
 REFUSAL. The migration map names the memory-model metadata extension and shared
 desugarer mapping under WP2; semantic refusal status alone is not wire attribution.
@@ -1507,6 +1568,7 @@ theorem over the shipped pipeline `@drive ⟨fuel⟩` at the ambient
 | `check_item_g_refusals.sh --selftest` | the two item-G memory-model TODOs are refused, never answered: 6 overlapping `memcpy` programs (tray 56's witness, the retired coverage control mem4-020's backward shape, an object onto itself, inside a malloc'd object, and two device-memory overlaps) and 3 invalid-alignment allocations (`aligned_alloc(3, 9)`, `(6, 12)`, `(1000, 2000)`) are refused by the oracle (uncaught `Failure`, exit 125) and by Lean (abort, exit 134, one REFUSAL envelope of boundary `memory` decoded with the shared codec, since 2026-10-26) with byte-identical texts; 9 controls agree with the oracle (adjacent device ranges, adjacent halves, two objects, length 0, realloc's copy, an out-of-bounds non-overlapping copy that is UB on both, `aligned_alloc(16, 32)`, one allocation at each alignment the lanes use — 1, 2, 4, 8, 16 — and the unchanged size-clause UB) and the zero-alignment crash is unchanged on both (contract D10, 2026-10-20; §3(c)); plants: a pre-fix answering pair, a Lean-only answering stub, a refuse-everything pair, a message-without-abort stub and an altered-text stub must all fail it |
 | `check_union_init_refusals.sh --selftest` | a braced union initializer designating a member other than the first is refused, never answered: 14 programs (the tray-59 witness `{ .c = {1,2,3,4} }`, static and automatic designated elements, a designated struct member, mixed positional/designated lists, a nested union, an array of unions, a string literal, a scalar second member, the retired coverage control union3-003's shape `{ .c = 'A' }`, a compound literal, a union inside a struct) are refused by the oracle (uncaught `Failure`, exit 125) and by Lean (abort, exit 134) with byte-identical texts; 11 controls agree with the oracle (positional and first-member designated forms incl. `{ 9, .a = 2 }`, a first member that is an array or a partially designated struct, `{ 0 }` read as Unspecified, a union inside a struct positional or first-designated, member assignment; the anonymous-union-in-struct control was retired 2026-10-26 — that class is refused by D12) and the struct-from-struct-variable rejection is unchanged on both (contract D11, 2026-10-20; §3(c)); plants: a pre-fix answering pair, a Lean-only answering stub, a refuse-everything pair, a message-without-abort stub and an altered-text stub must all fail it |
 | `check_anonymous_members_refusal.sh --selftest` | an anonymous struct/union member is refused at its declaration, never spliced: 29 programs (the survey's brace-elision, anonymous-first, array, sizeof/offsetof/aliasing/copy, anonymous-struct-in-union, padding and false-UB shapes; the designated, anonymous-struct-sizeof, retired coverage control struct-008, retired union-initializer control and parity-probe shapes that answered right by name lookup alone; nested members, a typedef'd tagless specifier, block scope, a compound literal in the initializer position, `_Alignas`, an unused type, sizeof only) are refused by the oracle (uncaught `Failure`, exit 125) and by Lean (abort, exit 134), each witness pinning its WHOLE text including the member's kind word (`w_s_*` struct, `w_u_*` union) and the two texts compared byte for byte; 10 controls with NAMED members agree with the oracle (a named union elided/braced/sizeof/aliased, a named single-member union, a named struct inside a struct, a union with named members only, a plain union, a tagless type with a declarator, a tagless file-scope object); 3 gap controls (a tagged struct with no declarator, a typedef'd tagged specifier, `int;`) stay the 6.7.2.1#2 constraint violation on both (contract D12, 2026-10-26; §3(c)); plants: a pre-fix answering pair (`Specified(12)`, the retired control's value), a Lean-only answering stub, a refuse-everything pair (its text's kind word read from the file name), a message-without-abort stub and an altered-text stub must all fail it, each with its derived count (58/42/13/32/29) |
+| `check_compound_assignment_refusal.sh --selftest` | a compound assignment whose left operand contains a side effect is refused, never elaborated twice: 18 programs (the survey's post-increment, pointer post-increment, call-as-lvalue, shifted and or'ed member, call-in-subscript, pre-decrement, post-incremented pointer member and comma-in-subscript shapes; a pre-increment, a call two levels deep, a comma in a member's subscript, a compound literal lvalue, an assignment in a cast's operand, `va_arg`, a `_Generic` controlling expression, the `^=` and `>>=` operators — every `op=` at least once) are refused by the oracle (uncaught `Failure`, exit 125) and by Lean (abort, exit 134), each witness pinning its WHOLE text including the `<file>:<line>:<col>:: ` location prefix and the two texts compared byte for byte; 11 controls agree with the oracle (a plain subscript, a side effect in the right operand only, plain `=` and `++` on a post-incremented subscript, `*p += 1`, `s.v |= 4`, `a[f] <<= 2`, a side effect only in e2, a volatile object, a volatile subscript — not counted —, a `sizeof` operand); the bit-field gap control stays the `feature not yet supported: bit-fields` rejection on both (contract D13, 2026-10-29; §3(c)); plants: a pre-fix answering pair (`Specified(24)`, cb-02's doubled-call value), a Lean-only answering stub, a refuse-everything pair (its text's location looked up from the file name), a message-without-abort stub and an altered-text stub must all fail it, each with its derived count (36/30/12/19/18) |
 | `check_libc_float_literals.py --selftest` + check | every float literal of the pinned `tests/libc/libc.core` equals the reviewed register `scripts/libc_float_literals.txt`, as multisets, both directions; a 12-significant-digit literal may not be registered exact (named deviation N3); 8 plants |
 
 Certification-integrity rules ride the gates: validation of

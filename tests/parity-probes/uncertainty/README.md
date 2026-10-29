@@ -7,7 +7,10 @@ and `scripts/LADDER.md` cite the directory as a pointer since 2026-10-26; before
 `lean_frontend/corpus/` alone. There is no baseline here and nothing turns red when a probe's answer changes;
 the record is the claim and these files are its runnable evidence. Since 2026-10-26 every probe of `A-anonymous-members/`
 except the named-member controls REFUSES on both engines (contract D12; `scripts/check_anonymous_members_refusal.sh` is
-the gate): the record's cluster-A table is the pre-refusal measurement.
+the gate): the record's cluster-A table is the pre-refusal measurement. Since 2026-10-29 the nine side-effecting
+probes of `B-compound-assignment/` (`ca-02/03/04/05/06`, `cb-02/03/04/08`) REFUSE on both engines (contract D13;
+`scripts/check_compound_assignment_refusal.sh` is the gate; the four controls and the bit-field case are
+unchanged): the cluster-B table is the pre-refusal measurement likewise.
 
 Record: `lean_frontend/docs/2026-10-20_upstream-uncertainty-survey-record.md` (the uncertainty-marker
 inventory of the shared Lem / hand-written OCaml / std.core / Lean seams, and the 247 probes that measured the
