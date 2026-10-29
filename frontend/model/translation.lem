@@ -1381,6 +1381,114 @@ type expr_ctx =
   | ECTX_logical_operator (* when elborating the desugaring of && or || *)
   | ECTX_other
 
+(* FORK REFUSAL (upstream-uncertainty survey cluster B, tray 61, 2026-10-29; [USER 2026-10-20]
+   ruled: refuse a compound assignment whose left operand has a side effect rather than decide
+   its semantics). Upstream's AilEcompoundAssign arm (below; pristine b9aeedcb4 :2505-2531)
+   rewrites E1 op= E2 to E1 = E1 op E2 and elaborates E1 twice, under its own TODO; with an
+   increment, a call or a comma inside the lvalue the second copy is a second side effect (a
+   call runs twice, a wrong value; the ++/--/comma forms get a false UB035). This syntactic walk
+   over e1 decides the refusal. It over-approximates: every call counts (pure or not, the second
+   copy calls it again) and the operands of sizeof and _Generic are walked though C does not
+   evaluate them. It does NOT count a read of a volatile object inside the lvalue's address
+   computation (Cerberus gives volatile no semantics beyond the qualifier; the duplicated read
+   is value-identical and verdict-neutral): a declared under-approximation against C17
+   5.1.2.3#2. Exhaustive on purpose: a new Ail constructor must be classed here, never defaulted
+   to "pure". The refusal below is a pure `error`, not E.record_error_at: the constant-expression
+   mini-run (mini_pipeline.lem:157) runs the elaboration with plain runStateM and would discard
+   a recorded error (measured on the GNU ?: arm: a `case (3 ?: 4):` label dies with an unrelated
+   text on both engines), while `error` stops on every path with the attributed text, as the
+   fuel declares at the end of this file already do. Both engines carry the text byte for byte
+   (scripts/check_compound_assignment_refusal.sh compares them). Record:
+   lean_frontend/docs/2026-10-29_compound-assignment-refusal-record.md. *)
+val compound_assign_lhs_has_side_effect: forall 'a. A.expression 'a -> bool
+let rec compound_assign_lhs_has_side_effect e =
+  match e with
+    | A.AnnotatedExpression _ _ _ expr_ ->
+        match expr_ with
+          (* side effects, or nodes whose second elaboration changes meaning *)
+          | A.AilEunary A.PostfixIncr _ -> true
+          | A.AilEunary A.PostfixDecr _ -> true
+          | A.AilEassign _ _ -> true
+          | A.AilEcompoundAssign _ _ _ -> true (* incl. the prefix ++/-- forms, cabs_to_ail.lem:2405-2414 *)
+          | A.AilEbinary _ A.Comma _ -> true
+          | A.AilEcall _ _ -> true
+          | A.AilEassert _ -> true
+          | A.AilEva_start _ _ -> true
+          | A.AilEva_arg _ _ -> true
+          | A.AilEva_copy _ _ -> true
+          | A.AilEva_end _ -> true
+          | A.AilEgcc_statement _ _ -> true
+          | A.AilEcompound _ _ _ -> true
+          (* walked *)
+          | A.AilEunary _ e1 -> compound_assign_lhs_has_side_effect e1
+          | A.AilEbinary e1 _ e2 -> compound_assign_lhs_has_side_effect e1 || compound_assign_lhs_has_side_effect e2
+          | A.AilEcond e1 e2_opt e3 ->
+              compound_assign_lhs_has_side_effect e1
+              || (match e2_opt with
+                    | Nothing -> false
+                    | Just e2 -> compound_assign_lhs_has_side_effect e2
+                  end)
+              || compound_assign_lhs_has_side_effect e3
+          | A.AilEcast _ _ e1 -> compound_assign_lhs_has_side_effect e1
+          | A.AilEgeneric e1 _ gas ->
+              compound_assign_lhs_has_side_effect e1
+              || List.any (fun ga ->
+                   match ga with
+                     | A.AilGAtype _ _ e2 -> compound_assign_lhs_has_side_effect e2
+                     | A.AilGAdefault e2 -> compound_assign_lhs_has_side_effect e2
+                   end) gas
+          | A.AilEarray _ _ es ->
+              List.any (fun e_opt ->
+                match e_opt with
+                  | Nothing -> false
+                  | Just e1 -> compound_assign_lhs_has_side_effect e1
+                end) es
+          | A.AilEstruct _ fields ->
+              List.any (fun (_, e_opt) ->
+                match e_opt with
+                  | Nothing -> false
+                  | Just e1 -> compound_assign_lhs_has_side_effect e1
+                end) fields
+          | A.AilEunion _ _ e_opt ->
+              match e_opt with
+                | Nothing -> false
+                | Just e1 -> compound_assign_lhs_has_side_effect e1
+              end
+          | A.AilEmemberof e1 _ -> compound_assign_lhs_has_side_effect e1
+          | A.AilEmemberofptr e1 _ -> compound_assign_lhs_has_side_effect e1
+          | A.AilEsizeof_expr e1 -> compound_assign_lhs_has_side_effect e1
+          | A.AilEannot _ e1 -> compound_assign_lhs_has_side_effect e1
+          | A.AilEprint_type e1 -> compound_assign_lhs_has_side_effect e1
+          | A.AilEbmc_assume e1 -> compound_assign_lhs_has_side_effect e1
+          | A.AilErvalue e1 -> compound_assign_lhs_has_side_effect e1
+          | A.AilEarray_decay e1 -> compound_assign_lhs_has_side_effect e1
+          | A.AilEfunction_decay e1 -> compound_assign_lhs_has_side_effect e1
+          | A.AilEatomic e1 -> compound_assign_lhs_has_side_effect e1
+          (* leaves *)
+          | A.AilEoffsetof _ _ -> false
+          | A.AilEbuiltin _ -> false
+          | A.AilEstr _ -> false
+          | A.AilEconst _ -> false
+          | A.AilEident _ -> false
+          | A.AilEsizeof _ _ -> false
+          | A.AilEalignof _ _ -> false
+          | A.AilEreg_load _ -> false
+          | A.AilEinvalid _ _ -> false
+        end
+  end
+
+(* The refusal text: the location prefix as E.record_error_at renders it (so the line reads as
+   the GNU ?: arm's does), then one fixed text. *)
+val compound_assign_refusal: Loc.t -> string
+let compound_assign_refusal loc =
+  Loc.stringFromLocation (Loc.with_cursor loc) ^ ": "
+  ^ "Translation.translate_expression: refused - compound assignment whose left operand contains a side effect "
+  ^ "(an increment or decrement, an assignment, a function call, a comma, a va_arg, a statement expression or a compound literal anywhere inside the lvalue; "
+  ^ "C17 6.5.16#3 sequences the update after both value computations and 6.5.16.2#3 evaluates the lvalue E1 only once); "
+  ^ "upstream elaborates E1 op= E2 as E1 = E1 op E2 with E1 elaborated twice, under its own 'TODO: this elaboration is wrong because it duplicates any side-effect in E1' (translation.lem b9aeedcb4 :2506), "
+  ^ "so the lvalue's side effect runs twice (a call in the lvalue is called twice, a wrong value) or a false UB035_unsequenced_race is reported (the ++/--/comma forms) "
+  ^ "- the fork refuses rather than decides (survey cluster B, tray 61, 2026-10-29)"
+
 val translate_expression:
   maybe (
     (A.expression GenTypes.genTypeCategory -> E.elabM (C.expr unit)) ->
@@ -2505,6 +2613,11 @@ end
       | A.AilEcompoundAssign e1 aop e2 ->
           (* TODO: this elaboration is wrong because it duplicates any side-effect in E1 *)
           (* TODO: and this is duplicating facts about the typing of Ail arithmetic binary operators *)
+          (* FORK REFUSAL (survey cluster B, tray 61, 2026-10-29): a side effect inside e1 would
+             run twice below; see compound_assign_lhs_has_side_effect. *)
+          if compound_assign_lhs_has_side_effect e1 then
+            error (compound_assign_refusal loc)
+          else
           let (e1_rvalue, arith_gty) = match (e1, e2) with
             | (A.AnnotatedExpression (GenTypes.GenLValueType _ ty _) std_annots loc _, A.AnnotatedExpression (GenTypes.GenRValueType gty2) _ _ _) ->
                 let gty1 = GenTypes.inject_type (Ctype.unatomic ty) in
@@ -4605,3 +4718,6 @@ declare {lean} fuel_measure val collect_visibles_ = `lemSize stmt`
    placeholder executed. Refuse directly, independently of the run point. *)
 declare {lean} fuel val translate_expression = `failwithI CerbFuel.fuelExhaustedMsg`
 declare {lean} fuel val translate_stmt = `failwithI CerbFuel.fuelExhaustedMsg`
+(* The compound-assignment refusal's walker (survey cluster B, 2026-10-29): the same
+   ABSORBING form as its caller translate_expression; no measure, no proof. *)
+declare {lean} fuel val compound_assign_lhs_has_side_effect = `failwithI CerbFuel.fuelExhaustedMsg`

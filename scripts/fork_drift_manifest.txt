@@ -746,7 +746,12 @@ util/cerb_location.ml
 # plain runStateM in Mini_pipeline bypasses recorded-error checks. Lean-only
 # declares/comment change; generated OCaml byte-identical. Single-row re-pin.
 # Record: lean_frontend/docs/2026-10-18_translation-fuel-record.md.
-100644 e99043b7e282fdaff5b2df2fa25ef5f5b116a8fe23796eacb617908cf7fa5a75 frontend/model/translation.lem
+# NOTE 2026-10-29 (fix/compound-assignment-refusal, survey cluster B, tray 61): translation.lem's
+# AilEcompoundAssign arm REFUSES a left operand containing a side effect (walker
+# compound_assign_lhs_has_side_effect + a pure `error` with the attributed text); its
+# [source-content] row and translation.ml's [expected-semantic] row move, nothing else.
+# Record: lean_frontend/docs/2026-10-29_compound-assignment-refusal-record.md.
+100644 366ce0ab3df43100b81a3d051055024f2cdd0d740e6906a52a3579e3d6ba5c75 frontend/model/translation.lem
 100644 c8fd25c5146509d6ddfd7f3bb19272fc9653e142352be126c776f2e71fd5a41d frontend/model/translation_aux.lem
 100644 a47a4bc513224172703fc568d6e1e3236fe7cffea075828656cddb5701e7ee6b frontend/model/translation_effect.lem
 100644 9427c936dcfe2bb47a984c6d73db12bf1c7012bb85b0b63156b5edececf9bf7c frontend/model/utils.lem
@@ -791,7 +796,7 @@ fa725f3e09e5ae317d685fda82c4be9dcfeca9a99ed47b1ebb4f2dd6a0a343b6 symbol.ml
 97763753365c911f580751d4a73bc0e6f3adb3ce96a5f8f98e374d285c4fc6d0 translation_effect.ml
 7f4a46468889d03e9b0ad984967babbd664174124e428526230cdffb67400e92 driver.ml
 977ee22d68c7527e500476404f5803db39a2ef2072ef9e9e34e57435c68bfd7a ctype_aux.ml
-32d184cce426a27eb4efbd43a29816ca3a2f516b03fbf5452f5afc251dce328d translation.ml
+aec7ba968b3f10d3077ed6da59e59965356c5b97a5ccd0f437e3a48768aecc97 translation.ml
 f903d7d4637e6287d0e41c0d91b0251d42ca33b626b2a7dd96027a8402dd7464 translation_aux.ml
 6cc50123c4727ca848299fc38a7f62c889acd6e5f5c1ce5a5c732b52e9abd05c monadic_parsing.ml
 0151eee4e5d4dda205ec022437cd3807d5fdde8eec365c1ea36205b7693b1c2a ailSyntax.ml
