@@ -49,6 +49,11 @@ private def implSource (first last : Nat) (lines : 0 < first ∧ first ≤ last)
   { repository := .cerberus, revision := "b9aeedcb4dd438763b0eef7f95ac19e93875d7de", path := "ocaml_frontend/ocaml_implementation.ml",
     first, last, text, revision_valid := by decide, path_valid := by decide, lines_valid := lines }
 
+private def implSourceStage1 (first last : Nat) (lines : 0 < first ∧ first ≤ last)
+    (text : String) : Upstream :=
+  { repository := .cerberus, revision := "c3ff8c53f05982745f9b3a10b3d05442e214bcb5", path := "ocaml_frontend/ocaml_implementation.ml",
+    first, last, text, revision_valid := by decide, path_valid := by decide, lines_valid := lines }
+
 private def gccSource (first last : Nat) (lines : 0 < first ∧ first ≤ last)
     (text : String) : Upstream :=
   { repository := .cerberus, revision := "b9aeedcb4dd438763b0eef7f95ac19e93875d7de", path := "ocaml_frontend/ocaml_gcc_builtins.ml",
@@ -65,60 +70,60 @@ private def stepSource (first last : Nat) (lines : 0 < first ∧ first ≤ last)
     first, last, text, revision_valid := by decide, path_valid := by decide, lines_valid := lines }
 
 def targetPtrSize (detail : String) : UpstreamCrash :=
-  mirror ⟨"CerbMem.targetPtrSize", by decide⟩ detail
-    (memSource 1159 1163 (by decide) "let ptr_size = match (Ocaml_implementation.get ()).sizeof_pointer with\n            | None ->\n                failwith \"the concrete memory model requires a complete implementation\"\n            | Some z ->\n                z in")
+  mirror ⟨"CerberusImpl.targetPtrSize", by decide⟩ detail
+    (implSourceStage1 484 488 (by decide) "  | Pointer _ ->\n      begin match (get ()).sizeof_pointer with\n      | Some n -> of_int n\n      | None -> raise @@ Missing_implementation_detail \"sizeof a POINTER\"\n      end")
 
 def offsetsof (detail : String) : UpstreamCrash :=
-  mirror ⟨"CerbMem.offsetsof", by decide⟩ detail
-    (memSource 100 100 (by decide) "match Pmap.find tag_sym tagDefs with")
+  mirror ⟨"CerberusImpl.offsetsof", by decide⟩ detail
+    (implSourceStage1 439 440 (by decide) "  match Pmap.find tag_sym tagDefs with\n  | _, StructDef (membrs_, flexible_opt) ->")
 
 def sizeofVoid (detail : String) : UpstreamCrash :=
-  mirror ⟨"CerbMem.sizeofVoid", by decide⟩ detail
-    (memSource 134 135 (by decide) "| Void | Array (_, None) | Function _ | FunctionNoParams _ ->\n        assert false")
+  mirror ⟨"CerberusImpl.sizeofVoid", by decide⟩ detail
+    (implSourceStage1 470 471 (by decide) "  | Void | Array (_, None) | Function _ | FunctionNoParams _ ->\n      assert false")
 
 def sizeofIncompleteArray (detail : String) : UpstreamCrash :=
-  mirror ⟨"CerbMem.sizeofIncompleteArray", by decide⟩ detail
-    (memSource 134 135 (by decide) "| Void | Array (_, None) | Function _ | FunctionNoParams _ ->\n        assert false")
+  mirror ⟨"CerberusImpl.sizeofIncompleteArray", by decide⟩ detail
+    (implSourceStage1 470 471 (by decide) "  | Void | Array (_, None) | Function _ | FunctionNoParams _ ->\n      assert false")
 
 def sizeofFunction (detail : String) : UpstreamCrash :=
-  mirror ⟨"CerbMem.sizeofFunction", by decide⟩ detail
-    (memSource 134 135 (by decide) "| Void | Array (_, None) | Function _ | FunctionNoParams _ ->\n        assert false")
+  mirror ⟨"CerberusImpl.sizeofFunction", by decide⟩ detail
+    (implSourceStage1 470 471 (by decide) "  | Void | Array (_, None) | Function _ | FunctionNoParams _ ->\n      assert false")
 
 def sizeofInteger (detail : String) : UpstreamCrash :=
-  mirror ⟨"CerbMem.sizeofInteger", by decide⟩ detail
-    (memSource 136 141 (by decide) "| Basic (Integer ity) ->\n        begin match (Ocaml_implementation.get ()).sizeof_ity ity with\n          | Some n ->\n              of_int n\n          | None ->\n              failwith (\"the concrete memory model requires a complete implementation sizeof INTEGER => \" ^ String_core_ctype.string_of_ctype cty)")
+  mirror ⟨"CerberusImpl.sizeofInteger", by decide⟩ detail
+    (implSourceStage1 472 476 (by decide) "  | Basic (Integer ity) ->\n      begin match (get ()).sizeof_ity ity with\n      | Some n -> of_int n\n      | None -> raise @@ Missing_implementation_detail \"sizeof an ITY\"\n      end")
 
 def sizeofFloat (detail : String) : UpstreamCrash :=
-  mirror ⟨"CerbMem.sizeofFloat", by decide⟩ detail
-    (memSource 143 148 (by decide) "| Basic (Floating fty) ->\n        begin match (Ocaml_implementation.get ()).sizeof_fty fty with\n          | Some n ->\n              of_int n\n          | None ->\n              failwith \"the concrete memory model requires a complete implementation sizeof FLOAT\"")
+  mirror ⟨"CerberusImpl.sizeofFloat", by decide⟩ detail
+    (implSourceStage1 477 481 (by decide) "  | Basic (Floating fty) ->\n      begin match (get ()).sizeof_fty fty with\n      | Some n -> of_int n\n      | None -> raise @@ Missing_implementation_detail \"sizeof a FLOAT\"\n      end")
 
 def sizeofUnion (detail : String) : UpstreamCrash :=
-  mirror ⟨"CerbMem.sizeofUnion", by decide⟩ detail
-    (memSource 172 175 (by decide) "| Union tag_sym ->\n        begin match Pmap.find tag_sym (Tags.tagDefs ()) with\n          | _, StructDef _ ->\n              assert false")
+  mirror ⟨"CerberusImpl.sizeofUnion", by decide⟩ detail
+    (implSourceStage1 501 504 (by decide) "  | Union tag_sym ->\n      begin match Pmap.find tag_sym tagDefs with\n      | _, StructDef _ -> assert false\n      | _, UnionDef membrs ->")
 
 def alignofVoid (detail : String) : UpstreamCrash :=
-  mirror ⟨"CerbMem.alignofVoid", by decide⟩ detail
-    (memSource 198 199 (by decide) "| Void ->\n        assert false")
+  mirror ⟨"CerberusImpl.alignofVoid", by decide⟩ detail
+    (implSourceStage1 523 523 (by decide) "  | Void -> assert false")
 
 def alignofFunction (detail : String) : UpstreamCrash :=
-  mirror ⟨"CerbMem.alignofFunction", by decide⟩ detail
-    (memSource 216 218 (by decide) "| Function _\n    | FunctionNoParams _ ->\n        assert false")
+  mirror ⟨"CerberusImpl.alignofFunction", by decide⟩ detail
+    (implSourceStage1 535 536 (by decide) "  | Function _\n  | FunctionNoParams _ -> assert false")
 
 def alignofInteger (detail : String) : UpstreamCrash :=
-  mirror ⟨"CerbMem.alignofInteger", by decide⟩ detail
-    (memSource 200 205 (by decide) "| Basic (Integer ity) ->\n        begin match (Ocaml_implementation.get ()).alignof_ity ity with\n          | Some n ->\n              n\n          | None ->\n              failwith (\"the concrete memory model requires a complete implementation alignof INTEGER => \" ^ String_core_ctype.string_of_ctype cty)")
+  mirror ⟨"CerberusImpl.alignofInteger", by decide⟩ detail
+    (implSourceStage1 524 528 (by decide) "  | Basic (Integer ity) ->\n      begin match (get ()).alignof_ity ity with\n      | Some n -> Z.of_int n\n      | None -> raise @@ Missing_implementation_detail \"alignof an INTEGER\"\n      end")
 
 def alignofFloat (detail : String) : UpstreamCrash :=
-  mirror ⟨"CerbMem.alignofFloat", by decide⟩ detail
-    (memSource 207 212 (by decide) "| Basic (Floating fty) ->\n        begin match (Ocaml_implementation.get ()).alignof_fty fty with\n          | Some n ->\n              n\n          | None ->\n              failwith \"the concrete memory model requires a complete implementation alignof FLOATING\"")
+  mirror ⟨"CerberusImpl.alignofFloat", by decide⟩ detail
+    (implSourceStage1 529 533 (by decide) "  | Basic (Floating fty) ->\n      begin match (get ()).alignof_fty fty with\n      | Some n -> Z.of_int n\n      | None -> raise @@ Missing_implementation_detail \"alignof a FLOATING\"\n      end")
 
 def alignofStruct (detail : String) : UpstreamCrash :=
-  mirror ⟨"CerbMem.alignofStruct", by decide⟩ detail
-    (memSource 228 231 (by decide) "| Struct tag_sym ->\n        begin match Pmap.find tag_sym tagDefs with\n          | _, UnionDef _ ->\n              assert false")
+  mirror ⟨"CerberusImpl.alignofStruct", by decide⟩ detail
+    (implSourceStage1 544 547 (by decide) "  | Struct tag_sym ->\n      begin match Pmap.find tag_sym tagDefs with\n      | _, UnionDef _ -> assert false\n      | _, StructDef (membrs, flexible_opt)  ->")
 
 def alignofUnion (detail : String) : UpstreamCrash :=
-  mirror ⟨"CerbMem.alignofUnion", by decide⟩ detail
-    (memSource 254 257 (by decide) "| Union tag_sym ->\n        begin match Pmap.find tag_sym (Tags.tagDefs ()) with\n          | _, StructDef _ ->\n              assert false")
+  mirror ⟨"CerberusImpl.alignofUnion", by decide⟩ detail
+    (implSourceStage1 565 568 (by decide) "  | Union tag_sym ->\n      begin match Pmap.find tag_sym (Tags.tagDefs ()) with\n      | _, StructDef _ -> assert false\n      | _, UnionDef membrs ->")
 
 def intToBytes (detail : String) : UpstreamCrash :=
   mirror ⟨"CerbMem.intToBytes", by decide⟩ detail
@@ -216,14 +221,11 @@ def offsetofIval (detail : String) : UpstreamCrash :=
   mirror ⟨"CerbMem.offsetofIval", by decide⟩ detail
     (memSource 2193 2201 (by decide) "let offsetof_ival tagDefs tag_sym memb_ident =\n    let (xs, _) = offsetsof tagDefs tag_sym in\n    let pred (ident, _, _) =\n      ident_equal ident memb_ident in\n    match List.find_opt pred xs with\n      | Some (_, _, offset) ->\n          IV (Prov_none, offset)\n      | None ->\n          failwith \"Concrete.offsetof_ival: invalid memb_ident\"")
 
-def arrayShiftNull (detail : String) : UpstreamCrash :=
-  mirror ⟨"CerbMem.arrayShiftNull", by decide⟩ detail
-    (memSource 2214 2217 (by decide) "| PVnull _ ->\n              (* TODO: this seems to be undefined in ISO C *)\n              (* NOTE: in C++, if offset = 0, this is defined and returns a PVnull *)\n              failwith (\"TODO(pure shift a null pointer should be undefined behaviour), offset:\" ^ Z.to_string offset)")
-
-def arrayShiftFunction (detail : String) : UpstreamCrash :=
-  mirror ⟨"CerbMem.arrayShiftFunction", by decide⟩ detail
-    (memSource 2218 2219 (by decide) "| PVfunction _ ->\n              failwith \"Concrete.array_shift_ptrval, PVfunction\"")
-
+/- `arrayShiftNull`/`arrayShiftFunction` RETIRED (merge-base bump stage 1, 2026-10-29): upstream
+   f4a3a3d54 turned the pure `array_shift_ptrval`'s null and function-pointer crashes into
+   UB046_array_pointer_outside verdicts (impl_mem.ml:2037-2042 at c3ff8c53f); CerbMem.arrayShiftPtrval
+   mirrors the verdicts, so there is no mirrored failure to attribute. The layout sites above
+   cite ocaml_implementation.ml at c3ff8c53f, where upstream b3e11ea33 moved the layout. -/
 def memberShiftFunction (detail : String) : UpstreamCrash :=
   mirror ⟨"CerbMem.memberShiftFunction", by decide⟩ detail
     (memSource 2239 2240 (by decide) "| PVfunction _ ->\n          failwith \"Concrete.member_shift_ptrval, PVfunction\"")

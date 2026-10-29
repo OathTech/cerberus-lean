@@ -77,7 +77,7 @@ example : CerbMem.bytesToInt [{ value := none }] false = none := rfl
 
 -- registered arms still typecheck at their declared types (the seam compiled; these name them)
 #check (CerbMem.casePtrval : _)
-#check (CerbMem.targetPtrSize : Nat)
+#check (CerberusImpl.targetPtrSize : Nat)
 #check (CerbMem.bytesToInt : List CerbMem.AbsByte → Bool → Option Int)
 
 /-! ## H2 — the switch-conditioned arms reduce to their defaults (seam-hygiene H2, 2026-09-19)

@@ -560,3 +560,157 @@ Before (M0 tree) 4618 names, after 4636 (*derived*: `grep -oE '^(def|theorem|…
 D11 (`desugaring_init.lem`) type-checked and generated on both targets with upstream's record change
 (the build check of §0.2 item 2); D12's arm and the asm refusal are untouched by the merge (outside the
 hunks, verified by reading); D13's walker gained the label arm. Witness re-runs are M4's.
+
+---
+
+## 2. M2 — seams, the Lean build and the registers (2026-10-29)
+
+### 2.1 Seams as applied (§0.7)
+
+- **S1 (layout move).** `CerbMem.lean`'s layout block (`targetPtrSize`, the two abbreviations, the
+  five `_lemFuel` workers and their measured one-map wrappers; 330 lines) moved into
+  `CerberusImpl.lean` under `namespace CerberusImpl` (`import CerbTagsWf` added; its cone never
+  reaches `Implementation`); `CerbMem` uses the names through its existing `open CerberusImpl`;
+  `mkCtype` moved with it (first build pass: `Unknown identifier mkCtype`). The reps
+  `CerberusImpl.sizeof_ty`/`alignof_ty (enumDefs) (_readerTagDefs) (tagDefs) (ty) : Int` are the
+  measured one-map wrappers over the EXPLICIT map, fuel-free — so `implementation.lem`'s two
+  `fuel_consumer` declares planned in §0.5 were dropped again ([AGENT 2026-10-29]: a declare that
+  says "reads the fuel" over a fuel-free body is false; the `reader_consumer` declares stay).
+  Deviation from a perfect mirror, documented in both files: at `c3ff8c53f` upstream's moved
+  `sizeof` reads the threaded map in its union arm (`:502`) while `alignof` still reads the Tags
+  global (`:566`); the Lean worker keeps both union arms on `ambient`. `CerbTagsWf.Ranked` is
+  symmetric over the two lookups, but the stable proof's single potential `tp` would need a
+  per-function lookup to mirror the half-moved arm — a restatement, excluded at stage 1 (§0.3,
+  accepted plan); unobservable at every stage-1 call site (the wrappers pass one map twice;
+  `sizeof_ty`/`alignof_ty` are those wrappers); stage 2's Tags removal is the mover. The
+  `_readerTagDefs` parameter is received and unused: at desugar time (`get_alignof`) the explicit
+  map is the desugar state's real table where upstream's global is empty (Not_found) — the value
+  the fork's pre-merge pseudo-map `alignof_ty` already gave; M4's alignas witnesses re-measure it.
+  Bookkeeping moved: `CerberusImpl_lemMeasureProofs.lean` (new carrier: the Layout, LayoutStable
+  and LayoutObligations sections of `CerbMem_lemMeasureProofs.lean`, 774 lines, namespace rename
+  only; the CerbMem carrier keeps typeofMval/unqualifyAndUnatomic/memValueToBytes/reconstruct and
+  imports the new one), Lake root + `handwritten_copy.manifest` (+1 each), five `fuel_hypotheses.txt`
+  rows re-keyed (`CerberusImpl.*_lemFuel`, hypotheses unchanged, the offsetsof row's cite extended
+  to `c3ff8c53f`), 14 failure-reach register rows re-keyed (§2.4), `CerbStopSites`: the 14 layout
+  sites relabelled `CerberusImpl.*` and re-cited to `ocaml_implementation.ml` at `c3ff8c53f`
+  through a new `implSourceStage1` helper (targetPtrSize `:484-488` — upstream's failure there is
+  now `raise Missing_implementation_detail`, still a crash; offsetsof `:439-440`; sizeofVoid/
+  IncompleteArray/Function `:470-471`; sizeofInteger `:472-476`; sizeofFloat `:477-481`;
+  sizeofUnion `:501-504`; alignofVoid `:523`; alignofFunction `:535-536`; alignofInteger
+  `:524-528`; alignofFloat `:529-533`; alignofStruct `:544-547`; alignofUnion `:565-568`).
+  `CerbCall.allocErrno` mirrors `drive`'s new `alignof_ival` closure (`CerbMem.integerIval
+  (CerberusImpl.alignof_ty enumDefs tagDefs file1.tagDefs signed_int)`, a `fileTagDefs` parameter);
+  `test/Unit/FuelExemplar.lean`'s `alignofIval_signed_int` becomes `alignof_ty_signed_int (tds)`
+  (`rfl`, any map: the integer arm never consults it) and its two `sizeofCtype` facts re-point;
+  `OpaqueFailureTest`'s `targetPtrSize` probe re-points; `CerbTagsWf`'s comment.
+- **S2 (array shift).** `CerbMem.arrayShiftPtrval [LemFuel] enumDefs tagDefs (loc) pv elemTy iv :
+  t0 PointerValue` (the generated `Undefined.t` is the top-level `t0`): null and function-pointer
+  arms `.Undef loc [.UB046_array_pointer_outside]`, concrete `.Defined`, R-PNVI-06 unchanged
+  (`failwithI` inside the UB-typed body). `memcpyM`'s per-byte loop lifts the dst then src shifts
+  through the generated `lift_undef` in upstream's order (`impl_mem.ml:2459-2462` at `c3ff8c53f`);
+  `memcmpM` gains `loc` (used by the per-byte load, which read `CerbLocation.unknown` before) and
+  lifts its shift (`:2471-2480`). `CerbStopSites.arrayShiftNull`/`arrayShiftFunction` deleted with a
+  dated note; register rows and the migration map in §2.4.
+- **S3** done at M1 (`typecheckAil_promoted_seeded`). **S4**: `TranslationFuelTest` compiled
+  unchanged over the function-typed `elabM` (lem-lean's validator accepted the shape; §0.13 item 3
+  did not fire). **S5**: `Main.lean` builds `elabConf : elab_config` field by field as
+  `pipeline.ml:726-737 mk_elab_config` does (`calling_convention1` is the generated field name;
+  `is_PNVI`/`has_strict_pointer_arith` through the switch instance; `branching_on_unspec := .Elab_UB`,
+  the constant `mk_elab_config` computes with the never-accepted switch absent) and `desugConf`;
+  the two entry calls take them; the verbose desugar printer gains the `.EXTENSION
+  .EXT_GNUlabelAsValue` arm (pp_errors.ml:47-49/:574-575). **S6**: `CabsImport` arm
+  `CabsElabel_addressGNU` (field `label`). **S7**: `check_cli_refusals.sh` expects
+  `--switches=branching_on_unspec_is_nd` refused as an unknown switch name. **S8**: the three
+  `unspecified_ub_context` arms in `CerbQuote.lean`, `test/Unit/CoreQuoteTest.lean`,
+  `speclab/test/SLUnit/EmitCore.lean`; the visitor's census assertion
+  (`test/CoreQuote/CoreQuoteVisitor.lean:85`) 638 → 641.
+
+### 2.2 M3 work pulled into M2 (the obligation shells are Lake roots; the build cannot be green without them)
+
+- `Translation_lemMeasureProofs.lean`: `collect_cases__stable`/`_measure_sufficient` → the
+  `collect_switch_content_aux` pair, the C2 template unchanged apart from the names (the new
+  AilSblock arm's save/restore binds are outside the recursive positions the `key`/`keys`
+  rewrites touch).
+- `Defacto_memory_lemMeasureProofs.lean`: `memcmp_load_aux_stable_aux`/`_measure_sufficient`
+  gain the `loc1` binder (upstream f4a3a3d54 changed `defacto_memory.lem`'s worker too — a
+  stage-1 proof item the scoping's §5 listed only under stage 2's deletions; recursion and measure
+  unchanged).
+- A fork RESTATEMENT in shared lem (finding): upstream f4a3a3d54 rewrote `Formatted.
+  store_chars_in_array` as `let rec … zero_terminated ptrval = let loc = … in function …`; the Lean
+  target renders the `function` as a lambda in the body, and Lean's structural recursion no longer
+  sees the decreasing list (`fail to show termination … Cannot use parameter ptrval`). The fork
+  makes the list an explicit parameter (`… ptrval cs = let loc = … in match cs with … end`) — an
+  eta-expansion, OCaml semantics identical, the arc-3/threadB restatement class (as `many`/`many1`);
+  the generated `formatted.ml` now differs from upstream's by the let placement, a fork-ahead
+  delta to register at M5. A lem-lean improvement (eta-expanding `let … in function` recursive
+  bodies into parameters) would remove the delta; not needed for this slice, reported.
+
+### 2.3 Build and warnings (verbatim)
+
+Three passes: pass 1 `error: generated/CerberusImpl.lean:535:69: Unknown identifier `mkCtype``
+(fixed: moved); pass 2 three roots (`Formatted` termination, `Defacto_memory_lemMeasureProofs`,
+`Translation_lemMeasureProofs` — §2.2); pass 3 after `scripts/ce make prelude-src
+lean-prelude-src` (`.tmp/m2-build-3.log`):
+```
+21:47:49
+regen exit=0
+21:48:40
+build exit=0
+21:49:11
+```
+(`capped lake build CerberusLean cerberus-lean` from `lean_frontend/`, `CERB_MEM_MAX=32G`: every
+Lake root and the driver, 31 s on the warm tree.) Warnings in the rebuilt closure: 828, all in
+generated modules (`Cmm_csem` 144, `Defacto_memory` 92, `Core_reduction` 56, `Core_typing` 53,
+`Core_run` 48, …) except ONE in a hand-written file,
+`warning: generated/CerbMem.lean:1647:28: Variable name `onConcurRead` is not explicitly
+referenced.` — pre-existing (`git diff 676f9f21c -- lean_frontend/CerbMem.lean` has no hunk at
+`caseMemValue`; the whole module was recompiled because its text moved). No new hand-written
+warning. The §0.13 Lean-side items: 3 (fuel validator) and 5 (`Inhabited`/`BEq` for the new types)
+did not fire.
+
+### 2.4 Gates and register movements (verbatim last lines)
+
+```
+check_exec_totality: CLEAN (22 generated modules + hand-written CerbND, 0 allowlisted)
+check_lakefile_roots: OK (228 roots = 228 generated modules + the exe root Main; 86 auxiliary modules listed as roots — names only; every carrier is built by check_fuel_forms.sh)
+check_failure_reach: resealed 238 rows of scripts/failure_reach_register.txt (review change: commit with the justification)
+check_failure_reach: OK (238 pure failure sites = the 238 register rows exactly (236 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, shared keys lengthened, both d
+check_fuel_forms: forms partition OK (67 MEASURED + 13 ABSORBING + 0 ambient-reachable + 8 ambient-unreachable = 88 fuel'd workers)
+check_handwritten_sync: OK (57 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+```
+(The exec-totality list is unchanged at stage 1 — no module was added or removed; the 88 fuel'd
+workers are the 88 of the base: `collect_switch_content_aux` replaced `collect_cases_`, the five
+layout workers moved namespaces.)
+
+Register movements (`scripts/failure_reach_register.txt`, 240 → 238 rows):
+- MOVED, re-keyed `lean_frontend/CerbMem.lean` → `lean_frontend/CerberusImpl.lean`,
+  `CerbMem.*` → `CerberusImpl.*`, leaf/position/reach/reason unchanged, history appended: the 14
+  layout rows — `targetPtrSize` (TAIL, UNREACHABLE-BY-INVARIANT), `offsetsof_lemFuel` (TAIL,
+  UNREACHABLE-BY-INVARIANT), `sizeofCtype_lemFuel` ×6 (Void, IncompleteArray, Function, Integer,
+  Float: TAIL, UNREACHABLE-BY-INVARIANT; Union: TAIL, REACHABLE — witness
+  `tests/immaculate/nolibc/offsetof-union-member.c`), `alignofCtype_lemFuel` ×6 (Void, Function,
+  Integer, Float: TAIL, UNREACHABLE-BY-INVARIANT; Struct, Union: LET-BOUND, UNREACHABLE-BY-INVARIANT).
+  The gate's first run named exactly these 14 as NEW and their old keys as STALE.
+- RETIRED: `CerbMem.arrayShiftPtrval` × `CerbStopSites.arrayShiftNull` (STMT-NEWLINE, REACHABLE;
+  witness `tests/minimal/097-null-ptr-arith.undef.c`) and × `arrayShiftFunction` (STMT-NEWLINE,
+  UNKNOWN) — the sites are UB046 verdicts now; a dated header note records both; the R-PNVI-06 row
+  stays (its key is unchanged; the gate did not name it).
+- Stop sites: 14 relabelled + re-cited (§2.1), 2 deleted. The migration map
+  `docs/2026-10-20_outcome-protocol-register-migration.tsv` gains a dated note naming the two
+  retired rows by their old/new lines and seals and the 14 moved rows; its rows are the record of
+  the C migration and are not rewritten.
+
+Baseline rows the S2 verdict is expected to move at M4 (measured there, not now):
+`scripts/exec_baseline.txt:99 097-null-ptr-arith.undef.c CERB_SKIP`,
+`scripts/gcc_oracle_baseline.txt:2040 … SKIP_LEAN_CRASH`, and
+`tests/pnvi_lane/baseline.txt:175 minimal/097-null-ptr-arith.undef AGREE` (both engines now UB —
+may stay AGREE with a new oracle hash).
+
+Cites for M3 (`fuel_hypotheses.txt` hack/to_pure/to_pures rows, `CerbCoreShape.lean`): upstream's
+insertions shifted `driver.lem` by five lines before `prepare_exit` — `1309-1316` → `1314-1321`,
+`1331-1338` → `1336-1343`, `1352-1356` → `1357-1361`, `1369` → `1374`, `1473-1477` → `1478-1482`,
+`1611-1616` → `1619-1623` (*derived* from `grep` on the merged file).
+
+The separate `speclab` package (its `EmitCore.lean` gained the three arms), `capped lake build`
+from `lean_frontend/speclab` (`.tmp/m2-speclab.log`): `21:51:17` … `exit=0` … `21:52:56`; its
+639 warnings are LemLib's and the generated modules' (none in `speclab/`'s own sources).

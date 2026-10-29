@@ -82,7 +82,7 @@ run_cmd liftTermElabM do
           let .str _ shortName := ctor | throwError "unexpected constructor name {ctor}"
           IO.println s!"  | .{shortName} {String.intercalate " " vars.toList} => .node \"{ctor}\" #[{String.intercalate ", " args.toList}]"
   IO.println "end\n-- END DATATYPE VISITOR"
-  unless ctors == 638 && heads.size == 81 do
+  unless ctors == 641 && heads.size == 81 do  -- 641 since the merge-base bump stage 1 (cee382443: UB_unspec_if/while/switch)
     throwError "inventory drift: {ctors} model constructors, {heads.size} container/model heads"
   IO.println s!"-- {ctors} model constructors; {types.size} instantiated types; 75 model + 6 container heads."
 

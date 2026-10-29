@@ -65,6 +65,7 @@ Defacto_memory_lemMeasureProofs.lean
 Core_reduction_lemMeasureProofs.lean
 Core_run_aux_lemMeasureProofs.lean
 CerbMeasureLemmas.lean
+CerberusImpl_lemMeasureProofs.lean
 CerbMem_lemMeasureProofs.lean
 AilTypesAux_lemMeasureProofs.lean
 Formatted_lemMeasureProofs.lean

@@ -88,10 +88,14 @@ theorem statement_mem_lt (s : statement genTypeCategory) (ss : List (statement g
     | head => simp only [expression_.lemSize_aux6]; omega
     | tail _ h => have := ih h; simp only [expression_.lemSize_aux6]; omega
 
-theorem collect_cases__stable (k : Nat) :
+/- `collect_switch_content_aux` replaced `collect_cases_` (upstream cabe81c3b, merge-base bump
+   stage 1): the same recursion over the statement (the AilSblock arm now saves/restores the
+   visible symbols around the `mapM_` over the block), the same measure `statement.lemSize`;
+   the proof is the C2 template unchanged apart from the names. -/
+theorem collect_switch_content_aux_stable (k : Nat) :
     ∀ (s : statement genTypeCategory) (f g : Nat), statement.lemSize s ≤ k →
       statement.lemSize s ≤ f → statement.lemSize s ≤ g →
-      collect_cases__lemFuel f s = collect_cases__lemFuel g s := by
+      collect_switch_content_aux_lemFuel f s = collect_switch_content_aux_lemFuel g s := by
   induction k with
   | zero => intro s f g hk; have := statement_size_pos s; omega
   | succ k ih =>
@@ -104,12 +108,12 @@ theorem collect_cases__stable (k : Nat) :
       | zero => omega
       | succ g =>
         have key : ∀ t, statement.lemSize t < statement.lemSize s →
-            collect_cases__lemFuel f t = collect_cases__lemFuel g t :=
+            collect_switch_content_aux_lemFuel f t = collect_switch_content_aux_lemFuel g t :=
           fun t ht => ih t f g (by omega) (by omega) (by omega)
         have keys : ∀ ts, expression_.lemSize_aux6 ts < statement.lemSize s →
-            mapM_ (collect_cases__lemFuel f) ts = mapM_ (collect_cases__lemFuel g) ts := by
+            mapM_ (collect_switch_content_aux_lemFuel f) ts = mapM_ (collect_switch_content_aux_lemFuel g) ts := by
           intro ts ht
-          have hm : List.map (collect_cases__lemFuel f) ts = List.map (collect_cases__lemFuel g) ts := by
+          have hm : List.map (collect_switch_content_aux_lemFuel f) ts = List.map (collect_switch_content_aux_lemFuel g) ts := by
             apply List.map_congr_left
             intro t hmem
             exact key t (by have := statement_mem_lt t ts hmem; omega)
@@ -117,12 +121,12 @@ theorem collect_cases__stable (k : Nat) :
         obtain ⟨loc, info, attrs, node⟩ := s
         cases node <;>
           simp (disch := (simp only [statement.lemSize, statement_.lemSize] at *; omega)) only
-            [collect_cases__lemFuel, key, keys]
+            [collect_switch_content_aux_lemFuel, key, keys]
 
-theorem collect_cases__measure_sufficient (stmt : statement genTypeCategory) (lemFuel : Nat)
+theorem collect_switch_content_aux_measure_sufficient (stmt : statement genTypeCategory) (lemFuel : Nat)
     (lemMeasureLe : statement.lemSize stmt ≤ lemFuel) :
-    collect_cases__lemFuel lemFuel stmt = collect_cases_ stmt :=
-  collect_cases__stable (statement.lemSize stmt) stmt lemFuel (statement.lemSize stmt)
+    collect_switch_content_aux_lemFuel lemFuel stmt = collect_switch_content_aux stmt :=
+  collect_switch_content_aux_stable (statement.lemSize stmt) stmt lemFuel (statement.lemSize stmt)
     (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
 theorem erase_loop_control_aux_stable (k : Nat) :

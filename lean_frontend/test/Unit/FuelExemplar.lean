@@ -39,7 +39,7 @@
     the exemplar-specific `S₁` (the post-setup state: the engine's own
     setup stages composed — `driver_globals`, then the errno allocation
     (drive's stage, driver.lem:1860-1868: `CerbCall.allocErrno`'s text
-    with the alignment written as its value, `alignofIval_signed_int`)
+    with the alignment written as its value, `alignof_ty_signed_int`)
     and the arena park (driver.lem:1870-1880) — at the SAME symbolic
     instance; `drive_after_setup` CHECKS that composition against the
     generated `drive` by one `rfl` per setup bind) and `round_done`
@@ -393,11 +393,11 @@ open Round
     4 := rfl`, `8 - f (Nat.succ k) = 4 := rfl` and `8 / f 5 = 2 := rfl` all
     hold); the memory model's `allocator` divides by the alignment, so the
     errno stage at a SYMBOLIC fuel needs the alignment rewritten to its
-    value first (`drive_after_setup` does `rw [alignofIval_signed_int]`
+    value first (`drive_after_setup` does `rw [alignof_ty_signed_int]`
     before the errno step; `setupTail` states it as the value). At a
     literal fuel — the pre-arc exemplar — the same term folded. -/
-theorem alignofIval_signed_int (k : Nat) :
-    @CerbMem.alignofIval ⟨Nat.succ k⟩ fmapEmpty fmapEmpty signed_int = CerbMem.integerIval 4 := rfl
+theorem alignof_ty_signed_int (tds : CerbTags.TagDefsMap) :
+    CerbMem.integerIval (CerberusImpl.alignof_ty fmapEmpty fmapEmpty tds signed_int) = CerbMem.integerIval 4 := rfl
 
 /-! ### The errno allocation at a SYMBOLIC address-space top (address-space-bound slice,
     C4 2026-09-18, pre-merge audit F1): drive's first memory action — the errno `int`
@@ -429,7 +429,7 @@ def σalloc (top : Int) : CerbMem.MemState :=
     (CerbMem.memValueToBytes fmapEmpty fmapEmpty (CerbMem.initialMemState top).funptrmap (.MVunspecified signed_int)).snd
 
 /-- drive's errno memory action, exactly as `drive` states it (driver.lem:1860-1868; the
-    alignment written as its value, `alignofIval_signed_int`). -/
+    alignment written as its value, `alignof_ty_signed_int`). -/
 def errnoAction [LemFuel] [CerbGlobal.Switches] : CerbMem.memM CerbMem.PointerValue :=
   nd_bind (CerbMem.allocateObject fmapEmpty fmapEmpty 0 (PrefOther "errno") (CerbMem.integerIval 4) signed_int none none)
     (fun (ptr_val : CerbMem.PointerValue) =>
@@ -453,7 +453,7 @@ theorem allocator_errno (top : Int) (h : 8 ≤ top) :
 theorem allocateObject_errno (k : Nat) (top : Int) (h : 8 ≤ top) :
     runOne (@CerbMem.allocateObject ⟨Nat.succ k⟩ sw₀ fmapEmpty fmapEmpty 0 (PrefOther "errno") (CerbMem.integerIval 4) signed_int none none)
         (CerbMem.initialMemState top) = (NDactive (errnoPtr top), σalloc top) := by
-  have hsz : (CerbMem.sizeofCtype fmapEmpty fmapEmpty signed_int : Int) = 4 := by decide
+  have hsz : (CerberusImpl.sizeofCtype fmapEmpty fmapEmpty signed_int : Int) = 4 := by decide
   unfold CerbMem.allocateObject
   simp only [CerbMem.integerIval]
   rw [hsz]
@@ -470,7 +470,7 @@ theorem storeM_errno_active (k : Nat) (top : Int) :
       (CerbMem.typeofMval (CerbMem.integerValueMval (Signed Int_) (CerbMem.integerIval (0 : Int)))) = true := by decide
   have hget : (σalloc top).allocations.get? 0 = some (errnoAlloc top) := by
     first | rfl | decide | (simp [σalloc, CerbMem.writeBytesTo, CerbMem.initialMemState])
-  have hsz : (CerbMem.sizeofCtype fmapEmpty fmapEmpty signed_int : Int) = 4 := by decide
+  have hsz : (CerberusImpl.sizeofCtype fmapEmpty fmapEmpty signed_int : Int) = 4 := by decide
   have hbounds : CerbMem.isInBounds (errnoAlloc top) (errnoAddr top) 4 = true := by
     simp [CerbMem.isInBounds, errnoAlloc]
   have hro : (errnoAlloc top).isReadonly = .IsWritable := rfl
@@ -498,8 +498,8 @@ theorem errnoAction_active (k : Nat) (top : Int) (h : 8 ≤ top) :
 /-- The post-setup state, from the ENGINE's own setup stages composed at
     the ambient instance: `driver_globals` (spawns thread 0; no globals),
     then drive's errno allocation (driver.lem:1860-1868 — the text of
-    `CerbCall.allocErrno` with `alignofIval fmapEmpty signed_int` written
-    as its value `integerIval 4`, `alignofIval_signed_int`) and the arena
+    `CerbCall.allocErrno` with `alignof_ty fmapEmpty fmapEmpty tds signed_int` written
+    as its value `integerIval 4`, `alignof_ty_signed_int`) and the arena
     park of thread 0 on `main`'s body (driver.lem:1870-1880, the record
     `drive` builds).
     The composition is CHECKED against the generated `drive` by
@@ -508,7 +508,7 @@ theorem errnoAction_active (k : Nat) (top : Int) (h : 8 ≤ top) :
 def setupTail [LemFuel] [CerbGlobal.Switches] (tid0 : Nat) : driverM Unit :=
   nd_bind (liftMem (nd_bind
       (CerbMem.allocateObject fmapEmpty fmapEmpty tid0 (PrefOther "errno")
-        (CerbMem.integerIval 4) signed_int none none)   -- = alignofIval fmapEmpty signed_int (alignofIval_signed_int)
+        (CerbMem.integerIval 4) signed_int none none)   -- = alignof_ty fmapEmpty fmapEmpty tds signed_int (alignof_ty_signed_int)
       (fun (ptr_val : CerbMem.PointerValue) =>
         let zero := CerbMem.integerValueMval (Signed Int_) (CerbMem.integerIval (0 : Int))
         nd_bind
@@ -573,8 +573,8 @@ theorem drive_after_setup (k : Nat) (top : Int) (digest : String) (h : 8 ≤ top
   refine (runOne_bind_active (z := mainBody) (s' := _) rfl).trans ?_
   -- errno: real allocateObject/storeM on the cold memory at the SYMBOLIC top —
   -- `errnoAction_active` (C4) under `8 ≤ top`. The alignment argument is
-  -- rewritten to its value first (alignofIval_signed_int).
-  rw [alignofIval_signed_int]
+  -- rewritten to its value first (alignof_ty_signed_int).
+  rw [alignof_ty_signed_int]
   refine (runOne_bind_active (z := errnoPtr top) (s' := _)
     (runOne_liftMem_active (errnoAction_active (Nat.succ k) top h))).trans ?_
   -- park main's arena (reaching EXACTLY the explicit `S₁ top digest`); driver2; finalize

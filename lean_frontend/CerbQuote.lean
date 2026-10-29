@@ -511,6 +511,9 @@ private def q_unspecified_ub_context : (unspecified_ub_context) → Result
   | unspecified_ub_context.UB_unspec_rvalue_memberof => return typedNode "(unspecified_ub_context)" "unspecified_ub_context.UB_unspec_rvalue_memberof" []
   | unspecified_ub_context.UB_unspec_memberofptr => return typedNode "(unspecified_ub_context)" "unspecified_ub_context.UB_unspec_memberofptr" []
   | unspecified_ub_context.UB_unspec_do => return typedNode "(unspecified_ub_context)" "unspecified_ub_context.UB_unspec_do" []
+  | unspecified_ub_context.UB_unspec_if => return typedNode "(unspecified_ub_context)" "unspecified_ub_context.UB_unspec_if" []
+  | unspecified_ub_context.UB_unspec_while => return typedNode "(unspecified_ub_context)" "unspecified_ub_context.UB_unspec_while" []
+  | unspecified_ub_context.UB_unspec_switch => return typedNode "(unspecified_ub_context)" "unspecified_ub_context.UB_unspec_switch" []
 
 private def q_undefined_behaviour : (undefined_behaviour) → Result
   | undefined_behaviour.DUMMY x0 => return typedNode "(undefined_behaviour)" "undefined_behaviour.DUMMY" [← qString x0]

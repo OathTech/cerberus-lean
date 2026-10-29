@@ -255,11 +255,14 @@ def checkSignature (fname : String) (retTy : ctype) (ptys : List ctype) (nargs :
 
 /-- Stage: allocate and initialise errno — verbatim `drive`
     (driver.lem:1860-1868), BEFORE the call site runs (Z2-C-02). -/
-def allocErrno [LemFuel] [CerbGlobal.Switches] (enumDefs : Fmap sym integerType) (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)) (tid0 : Nat) :
+def allocErrno [LemFuel] [CerbGlobal.Switches] (enumDefs : Fmap sym integerType) (tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+    (fileTagDefs : Fmap sym (CerbLocation.Loc × tag_definition)) (tid0 : Nat) :
     driverM CerbMem.PointerValue :=
   liftMem (nd_bind
     (CerbMem.allocateObject enumDefs tagDefs tid0 (PrefOther "errno")
-      (CerbMem.alignofIval enumDefs tagDefs signed_int) signed_int none none)
+      -- drive's `alignof_ival ty = Mem.integer_ival (Implementation.alignof_ty file.tagDefs ty)`
+      -- (upstream b3e11ea33; merge-base bump stage 1)
+      (CerbMem.integerIval (CerberusImpl.alignof_ty enumDefs tagDefs fileTagDefs signed_int)) signed_int none none)
     (fun (ptr_val : CerbMem.PointerValue) =>
       let zero := CerbMem.integerValueMval (Signed Int_)
         (CerbMem.integerIval (0 : Int))
@@ -313,7 +316,7 @@ def driveCall [LemFuel] [CerbGlobal.Switches] (enumDefs : Fmap sym integerType) 
   nd_bind (lookupFunParams cf fsym) (fun (params : List (sym × core_base_type)) =>
   nd_bind (lookupSignature cf fsym) (fun (sig : ctype × List ctype) =>
   nd_bind (checkSignature fname sig.1 sig.2 args.length) (fun (_ : Unit) =>
-  nd_bind (allocErrno enumDefs tagDefs tid0) (fun (errno_ptr_val : CerbMem.PointerValue) =>
+  nd_bind (allocErrno enumDefs tagDefs file1.tagDefs tid0) (fun (errno_ptr_val : CerbMem.PointerValue) =>
   let callExpr := mkCallSite digest convSym fsym (List.zip (params.map Prod.fst) sig.2) args sig.1
   callFinish enumDefs tagDefs tid0 fsym callExpr errno_ptr_val))))))))
 

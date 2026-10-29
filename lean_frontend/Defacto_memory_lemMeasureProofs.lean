@@ -123,16 +123,18 @@ theorem easy_update_mem_value_aux_measure_sufficient [LemFuel] (_lemReader_enum_
   easy_update_mem_value_aux_stable_aux (List.length sh + 1) _lemReader_enum_definitions _lemReader_tagDefs loc1 is_strong write_ty sh write_mval current_mval
     lemFuel (List.length sh + 1) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
+/- `loc` binder since upstream f4a3a3d54 (merge-base bump stage 1): the worker takes the call's
+   location for the per-byte load; the recursion and measure are unchanged. -/
 theorem memcmp_load_aux_stable_aux [LemFuel] (k : Nat) :
-    ∀ (ed : Fmap sym integerType) (td : Fmap sym (CerbLocation.Loc × tag_definition)) (ptrval : impl_pointer_value) (offset max_offset : Int)
+    ∀ (ed : Fmap sym integerType) (td : Fmap sym (CerbLocation.Loc × tag_definition)) (loc1 : CerbLocation.Loc) (ptrval : impl_pointer_value) (offset max_offset : Int)
       (acc : List impl_mem_value) (f g : Nat),
     Int.toNat (max_offset - offset) + 1 ≤ k → Int.toNat (max_offset - offset) + 1 ≤ f →
     Int.toNat (max_offset - offset) + 1 ≤ g →
-    memcmp_load_aux_lemFuel f ed td ptrval offset max_offset acc = memcmp_load_aux_lemFuel g ed td ptrval offset max_offset acc := by
+    memcmp_load_aux_lemFuel f ed td loc1 ptrval offset max_offset acc = memcmp_load_aux_lemFuel g ed td loc1 ptrval offset max_offset acc := by
   induction k with
-  | zero => intro ed td ptrval offset max_offset acc f g hk; omega
+  | zero => intro ed td loc1 ptrval offset max_offset acc f g hk; omega
   | succ k ih =>
-    intro ed td ptrval offset max_offset acc f g hk hf hg
+    intro ed td loc1 ptrval offset max_offset acc f g hk hf hg
     cases f with
     | zero => omega
     | succ f =>
@@ -145,18 +147,18 @@ theorem memcmp_load_aux_stable_aux [LemFuel] (k : Nat) :
         · rename_i h
           have h' : ¬ (offset ≥ max_offset) := fun hle => h (decide_eq_true hle)
           have key : ∀ (pv : impl_pointer_value) (acc' : List impl_mem_value),
-              memcmp_load_aux_lemFuel f ed td pv (offset + 1) max_offset acc' =
-                memcmp_load_aux_lemFuel g ed td pv (offset + 1) max_offset acc' :=
-            fun pv acc' => ih ed td pv (offset + 1) max_offset acc' f g (by omega) (by omega) (by omega)
+              memcmp_load_aux_lemFuel f ed td loc1 pv (offset + 1) max_offset acc' =
+                memcmp_load_aux_lemFuel g ed td loc1 pv (offset + 1) max_offset acc' :=
+            fun pv acc' => ih ed td loc1 pv (offset + 1) max_offset acc' f g (by omega) (by omega) (by omega)
           simp only [key]
 
 /-- THE OBLIGATION, exactly as Defacto_memory_auxiliary.lean states and delegates it. -/
-theorem memcmp_load_aux_measure_sufficient [LemFuel] (_lemReader_enum_definitions : Fmap sym integerType) (_lemReader_tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
+theorem memcmp_load_aux_measure_sufficient [LemFuel] (_lemReader_enum_definitions : Fmap sym integerType) (_lemReader_tagDefs : Fmap sym (CerbLocation.Loc × tag_definition)) (loc1 : CerbLocation.Loc)
     (ptrval : impl_pointer_value) (offset : Int) (max_offset : Int) (acc : List impl_mem_value) (lemFuel : Nat)
     (lemMeasureLe : Int.toNat (max_offset - offset) + 1 ≤ lemFuel) :
-    memcmp_load_aux_lemFuel lemFuel _lemReader_enum_definitions _lemReader_tagDefs ptrval offset max_offset acc =
-      memcmp_load_aux _lemReader_enum_definitions _lemReader_tagDefs ptrval offset max_offset acc :=
-  memcmp_load_aux_stable_aux (Int.toNat (max_offset - offset) + 1) _lemReader_enum_definitions _lemReader_tagDefs ptrval offset max_offset acc
+    memcmp_load_aux_lemFuel lemFuel _lemReader_enum_definitions _lemReader_tagDefs loc1 ptrval offset max_offset acc =
+      memcmp_load_aux _lemReader_enum_definitions _lemReader_tagDefs loc1 ptrval offset max_offset acc :=
+  memcmp_load_aux_stable_aux (Int.toNat (max_offset - offset) + 1) _lemReader_enum_definitions _lemReader_tagDefs loc1 ptrval offset max_offset acc
     lemFuel (Int.toNat (max_offset - offset) + 1) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
 end Defacto_memory_lemMeasureProofs

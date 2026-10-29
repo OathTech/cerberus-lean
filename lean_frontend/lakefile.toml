@@ -224,6 +224,7 @@ roots = [
   "Defacto_memory_aux_lemMeasureProofs",
   "Utils_lemMeasureProofs",
   "CerbMeasureLemmas",
+  "CerberusImpl_lemMeasureProofs",
   "CerbMem_lemMeasureProofs",
   "Core_run_aux_lemMeasureProofs",
   "Core_reduction_lemMeasureProofs",

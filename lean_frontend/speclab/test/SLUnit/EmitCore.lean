@@ -251,6 +251,9 @@ def ppUB (ub : undefined_behaviour) : Except String String :=
       | UB_unspec_rvalue_memberof => "UB_unspec_rvalue_memberof"
       | UB_unspec_memberofptr => "UB_unspec_memberofptr"
       | UB_unspec_do => "UB_unspec_do"
+      | UB_unspec_if => "UB_unspec_if"
+      | UB_unspec_while => "UB_unspec_while"
+      | UB_unspec_switch => "UB_unspec_switch"
     pure s!"(UB_CERB004_unspecified {c})"
   | ub =>
     match lookupL ub ub_str_bimap with

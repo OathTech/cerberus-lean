@@ -799,8 +799,28 @@ def frontendTU [LemFuel] [CerbGlobal.Switches] (quiet : Bool) (supply : Nat) (ad
   -- the desugar state at its site (record §1, D3), exactly as the oracle's
   -- registry is filled as enums are registered; a miss here would be a
   -- seeding gap (loud: `Ocaml_implementation.typeof_enum: … was not registered`).
+  -- Merge-base bump stage 1 (2026-10-29), upstream 334a1563b: the elaboration
+  -- environment. Built as backend/common/pipeline.ml:726-737 `mk_elab_config`
+  -- builds it, field by field through the model's own readers:
+  --   calling_convention0 = if Switches.has_switch SW_inner_arg_temps then Inner_arg_callconv else Normal_callconv
+  --   is_PNVI = Switches.is_PNVI (); is_CHERI = Switches.is_CHERI ()
+  --   is_CN = String.equal (Cerb_global.backend_name ()) "Cn"
+  --   strict_pointer_arith = Switches.has_strict_pointer_arith ()
+  --   branching_on_unspec = if has_switch SW_branching_on_unspec_is_nd then Elab_ND else Elab_UB
+  -- The last switch is never accepted here ([USER 2026-10-29] Q9: refused by
+  -- `judgeSwitches` as an unknown name, R-PNVI-12), so the field is the constant
+  -- `Elab_UB` — the value `mk_elab_config` computes with the switch absent.
+  let elabConf : elab_config :=
+    { calling_convention1 := CerbDriverConfig.callingConvention
+      is_PNVI := CerbGlobal.is_PNVI ()
+      is_CHERI := CerbGlobal.is_CHERI ()
+      is_CN := CerbGlobal.backend_name () == "Cn"
+      strict_pointer_arith := CerbGlobal.has_strict_pointer_arith ()
+      branching_on_unspec := .Elab_UB }
+  -- pipeline.ml:254 `let desug_conf = Cabs_to_ail_effect.{ elab_conf } in`
+  let desugConf : desug_config := { elab_conf := elabConf }
   let desugRes ← (CerberusFresh.forceIO
-    (fun () => desugar fmapEmpty fmapEmpty supply addressSpaceTop coreEvalStuff cnInit "main" tunit) : BaseIO _)
+    (fun () => desugar fmapEmpty fmapEmpty supply addressSpaceTop desugConf coreEvalStuff cnInit "main" tunit) : BaseIO _)
   match desugRes with
   | .Result (_, (mainSym, ailProg), supplyAfterDesugar) =>
     say s!"  desugaring succeeded!"
@@ -846,10 +866,10 @@ def frontendTU [LemFuel] [CerbGlobal.Switches] (quiet : Bool) (supply : Nat) (ad
       -- the empty table, which IS the oracle's reset-then-elaborate state
       -- (documented divergence from the driver-level bookkeeping, mirror
       -- doctrine; the value-passing replaces the write scaffold).
-      -- Mirror backend/common/pipeline.ml:271, including main (translation.lem).
-      let callconv := CerbDriverConfig.callingConvention
+      -- Mirror backend/common/pipeline.ml:275 `Translation.translate 0 core_stdlib elab_conf core_impl ailtau_prog`
+      -- (the calling convention rides in `elabConf` since upstream 334a1563b).
       let (coreFile, supplyAfterTranslate) ← (CerberusFresh.forceIO (fun () =>
-        translate enumDefs fmapEmpty supplyAfterDesugar (ailnames, stdFunMap) callconv coreImpl typedProg) : BaseIO _)
+        translate enumDefs fmapEmpty supplyAfterDesugar (ailnames, stdFunMap) elabConf coreImpl typedProg) : BaseIO _)
       say s!"  translation succeeded!"
       say s!"    main: {match coreFile.main with | some _ => "found" | none => "not found"}"
       say s!"    funs: {List.length (fmapElements coreFile.funs)}"
@@ -881,6 +901,8 @@ def frontendTU [LemFuel] [CerbGlobal.Switches] (quiet : Bool) (supply : Nat) (ad
       | .DESUGAR (.Desugar_TODO s) => IO.println s!"    cause: DESUGAR TODO: {s}"
       | .DESUGAR _ => IO.println s!"    cause: DESUGAR (other)"
       | .AIL_TYPING _ => IO.println s!"    cause: AIL_TYPING"
+      -- pp_errors.ml:47-49 string_of_extension_cause + :574-575 short_message (upstream c8c085d47)
+      | .EXTENSION .EXT_GNUlabelAsValue => IO.println s!"    cause: EXTENSION use of GNU address-of-label extension (try --permissive)"
       | .CPP _ => IO.println s!"    cause: CPP"
       | _ => IO.println s!"    cause: (other)"
       return .error 0

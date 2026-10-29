@@ -726,6 +726,9 @@ partial def view92 (x : unspecified_ub_context) : Shape :=
   | .UB_unspec_rvalue_memberof  => .node "unspecified_ub_context.UB_unspec_rvalue_memberof" #[]
   | .UB_unspec_memberofptr  => .node "unspecified_ub_context.UB_unspec_memberofptr" #[]
   | .UB_unspec_do  => .node "unspecified_ub_context.UB_unspec_do" #[]
+  | .UB_unspec_if  => .node "unspecified_ub_context.UB_unspec_if" #[]
+  | .UB_unspec_while  => .node "unspecified_ub_context.UB_unspec_while" #[]
+  | .UB_unspec_switch  => .node "unspecified_ub_context.UB_unspec_switch" #[]
 partial def view93 (x : ctor) : Shape :=
   match x with
   | .Cnil a0 => .node "ctor.Cnil" #[(view62 a0)]
@@ -1114,7 +1117,7 @@ partial def view171 (x : sym × ctype) : Shape :=
   | .mk a0 a1 => .node "Prod.mk" #[(view2 a0), (view33 a1)]
 end
 -- END DATATYPE VISITOR
--- 638 model constructors; 172 instantiated types; 75 model + 6 container heads.
+-- 641 model constructors (638 + the three unspecified_ub_context constructors of upstream cee382443, merge-base bump stage 1); 172 instantiated types; 75 model + 6 container heads.
 
 def unwrap {α : Type} : Except String α → IO α
   | .ok x => pure x

@@ -35,7 +35,7 @@
   `struct A { _Alignas(struct A) char c; }`, an ISO §6.5.3.4#1 constraint
   violation gcc rejects, is ACCEPTED by the frontend, its table has a by-value
   self-edge, `Acyclic` is FALSE for it, both oracles hang and the Lean wrapper
-  fails loudly (`CerbMem.memberAlign: fuel exhausted`) — a frontend GAP
+  fails loudly (`CerberusImpl.memberAlign: fuel exhausted`) — a frontend GAP
   (C4 pre-merge audit F-A2, upstream-tray candidate), so the guarantee is:
   `Acyclic` holds for every program the frontend ACCEPTS CORRECTLY. Hence at
   the moment a tag's definition is accepted, every tag its members reference

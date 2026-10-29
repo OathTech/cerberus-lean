@@ -13,6 +13,7 @@ import CerbStopSites
 
 import IntegerType
 import Ctype
+import CerbTagsWf
 
 namespace CerberusImpl
 
@@ -264,66 +265,363 @@ def alignof_fty : floatingType → Option Nat
   | .RealFloating .Double => some 8
   | .RealFloating .LongDouble => some 8  -- OCaml: Some 8 (* TODO:hack ==> 16 *)
 
-/-- Alignment of a full ctype, including struct/union via tag definitions.
-    Corresponds to: Ocaml_implementation.alignof_proxy in ocaml_implementation.ml
-    (:444-513 `alignof ?tagDefs`). The pseudo tagDefs maps ail_identifier (= sym)
-    to member lists. A reader CONSUMER (`declare {lean} reader_consumer val
-    alignof_ty`, implementation.lem — record erratum W1): the OCaml resolves an
-    integer member type with `(get ()).alignof_ity`, i.e. through the enum
-    registry, so this rep takes the readers (`enum_definitions`, `tagDefs`, sorted
-    order) and resolves an Enum through the map before the type-only `alignof_ity`. -/
-partial def alignof_ty (enumDefs : EnumDefs)
-    (_tagDefs : Fmap sym (CerbLocation.Loc × tag_definition))
-    (tagDefs : Fmap sym (List (Option alignment × ctype)))
-    (ty : ctype) : Option Nat :=
-  let lookupTag (tag : sym) : Option (List (Option alignment × ctype)) :=
-    -- arc-6 S3: Fmap is no longer a raw assoc list; scan the enumerated
-    -- spine with the SAME BEq predicate as before (bit-identical result).
-    (fmapElements tagDefs).find? (fun (k, _) => k == tag) |>.map Prod.snd
-  let foldMembers (members : List (Option alignment × ctype)) : Option Nat :=
-    members.foldl (fun acc_opt (align_opt, mty) =>
-      let al_opt := match align_opt with
-        | none => alignof_ty enumDefs _tagDefs tagDefs mty
-        -- ISO-fix register R7 (VALIDATION.md §2; the R3 class): upstream
-        -- ocaml_implementation.ml:483/:501 is `Some (Z.to_int al_n)` (Z.Overflow
-        -- on a huge _Alignas); the Lem signature (implementation.lem:27,
-        -- `-> maybe nat`) is unbounded, so the unbounded value is kept here.
-        | some (AlignInteger n) => some n.toNat
-        | some (AlignType al_ty) => alignof_ty enumDefs _tagDefs tagDefs al_ty
-      match acc_opt, al_opt with
-      | some acc, some al => some (max al acc)
-      | _, _ => none
-    ) (some 1)
-  match ty with
-  | Ctype _ Void0 => none
-  | Ctype _ (Basic (Integer ity)) => alignof_ity (resolveEnum enumDefs ity)
-  | Ctype _ (Basic (Floating fty)) => alignof_fty fty
-  | Ctype _ (Array0 elem_ty _) => alignof_ty enumDefs _tagDefs tagDefs elem_ty
-  | Ctype _ (Function _ _ _) => none
-  | Ctype _ (FunctionNoParams _) => none
-  | Ctype _ (Pointer _ _) => some 8  -- pointer alignment on LP64
-  | Ctype _ (Atomic atom_ty) => alignof_ty enumDefs _tagDefs tagDefs atom_ty
-  | Ctype _ (Struct tag_sym) =>
-    match lookupTag tag_sym with
-    | some members => foldMembers members
-    | none => none
-  | Ctype _ (Union0 tag_sym) =>
-    match lookupTag tag_sym with
-    | some members => foldMembers members
-    | none => none
-  | Ctype _ Byte => some 1
+/-! ## Helper: construct ctype with empty annotations (moved here from CerbMem.lean with the
+    layout block, merge-base bump stage 1, 2026-10-29) -/
 
-/-! ## alignof_ty fail paths — DECLARED (zero-discrepancy Z2-I-04)
+def mkCtype (ty_ : ctype_) : ctype := Ctype ([] : List annot) ty_
 
-    `alignof_ty` above answers `none` for `void`, function types and an
-    unknown struct/union tag where `Ocaml_implementation.alignof_proxy`
-    (ocaml_implementation.ml:446-447, :464-466 `assert false`; :491/:509
-    `Pmap.find` → `Not_found`) crashes. Reachability: Ail typing rejects
-    `sizeof`/`alignof`/`_Alignas` of void, function and incomplete types
-    before elaboration (the shared front end), and every complete struct/
-    union tag is in the tag map it was elaborated with; the `none` is
-    consumed by the layout family's own panics (CerbMem.alignofCtype
-    "requires a complete implementation alignof …"). Declared, not
-    mirrored: a crash-for-crash change on an unreachable input. -/
+/-! ## Layout computation — ocaml_implementation.ml:437-580 at c3ff8c53f (offsetsof / sizeof / alignof)
+
+    MOVED here from CerbMem.lean by the merge-base bump stage 1 (2026-10-29), as
+    upstream b3e11ea33 moved the three functions from impl_mem.ml:98-273 into
+    ocaml_implementation.ml (the DefaultImpl module this file mirrors). Upstream
+    moved the bodies verbatim apart from threading `tagDefs` through every call,
+    so the per-line `impl_mem.ml:NNN` cites below still name the text at
+    b9aeedcb4 that the port was written against; at c3ff8c53f: offsetsof
+    :437-466, sizeof :467-520, alignof :521-580. Two things did change upstream
+    with the move: the union arm of `sizeof` now reads the THREADED map (:502)
+    while `alignof`'s union arm still reads the Tags global (:566); and the
+    "requires a complete implementation" failures became
+    `raise Missing_implementation_detail "sizeof a POINTER"` etc. (still crashes).
+    The Lean worker below keeps BOTH union arms on `ambient` (the global's mirror)
+    deliberately: at every stage-1 call site that is unobservable — the measured
+    one-map wrappers pass the same map twice, and `sizeof_ty`/`alignof_ty` (end
+    of this section) are those wrappers over the explicit map — and restating
+    the stable proof's single potential `tp` (CerberusImpl_lemMeasureProofs.lean)
+    for a per-function lookup is stage 2's work, where the Tags removal
+    (736690a65) makes the two maps one. [AGENT 2026-10-29]
+
+    The section header that follows is the one the block carried in CerbMem.lean. -/
+
+/-! ## Layout computation — impl_mem.ml:98-273 (offsetsof / sizeof / alignof)
+
+    OCaml's sizeof/alignof take `?(tagDefs= Tags.tagDefs ())` (optional,
+    defaulting to the global) and offsetsof takes tagDefs explicitly;
+    the family THREADS `~tagDefs` through every recursive call
+    (impl_mem.ml:111-119 `sizeof ~tagDefs`/`alignof ~tagDefs`, :150
+    :160 :168-169 :214 :226 etc.). The Lean workers mirror that: an
+    explicit `tagDefs` parameter threaded through the mutual block; the
+    default-budget wrappers supply `CerbTags.tagDefs ()`, mirroring the
+    OCaml optional-arg default (every impl_mem-internal NON-layout call
+    site uses the default).
+    The threading is semantically LIVE at elaboration time: the
+    AilEoffsetof fold (translation.lem:2730 → offsetof_ival,
+    impl_mem.ml:2193) runs BEFORE the Tags global is populated
+    (main.ml:304-305 sets it post-elaboration), so nested-struct
+    offsetof resolves ONLY through the threaded map. The pre-fix Lean
+    ambient-read shortcut panicked exactly there (pr44468, the CI
+    sweep's finding; 2026-09-01 S-basket item 1).
+    UPSTREAM ASYMMETRY, MIRRORED DELIBERATELY: the Union arms of both
+    sizeof and alignof look the tag up in the GLOBAL
+    (`Pmap.find tag_sym (Tags.tagDefs ())`, impl_mem.ml:173, :255)
+    even though their member folds thread ~tagDefs — so
+    elaboration-time offsetof over a union-containing struct CRASHES
+    upstream (probed 2026-09-01: oracle exit 125, "Tags definitions
+    must be set"; Lean mirrors with the unknown-tag panic — immaculate
+    row offsetof-union-member pins the pair). Upstream-tray candidate.
+
+    Integer/float leaf sizes come from CerberusImpl (the DefaultImpl port),
+    exactly like OCaml routes them through `(Ocaml_implementation.get ())`
+    — no local size constants are kept here.
+
+    DECLARED (zero-discrepancy Z2-M-11): the layout family computes on
+    Nat where the OCaml computes on Z — `al_n.toNat` (memberAlign's
+    _Alignas arm, impl_mem.ml:118 `al_n`; alignof's folds read it through
+    `Z.to_int al_n`, :248/:267, which raises Overflow on a huge _Alignas —
+    REACHABLE (a front-end-accepted `_Alignas(2^62)`) and registered as
+    ISO-fix register R7, the R3 class: Lean computes the unbounded answer,
+    see `alignofCtype_lemFuel`), `lastOffset % align` /
+    `maxOffset % align` / `maxSize % maxAlign` (:123/:169-171/:189-191
+    `Z.modulus … 0` raises Division_by_zero where Lean's `% 0` is the
+    identity), `n.toNat * sizeof` (:151 `Z.mul n`). Reachability of any
+    difference: an alignment of 0 or a negative array size. Alignments
+    come from alignof (≥ 1 for every complete type) or from a front-end-
+    validated `_Alignas` (≥ 1 or a type); array sizes are front-end
+    non-negative; the member-less struct that would make an alignment 0
+    is UB061 on the shared front end (tests/z2-probes/mem/empty_struct.c:
+    UB061 on fork, upstream and Lean). Unreachable by construction. -/
+
+/-- `(Ocaml_implementation.get ()).sizeof_pointer` — impl_mem.ml:153-158 (and
+    :219-225 alignof_pointer, :1160-1164, :2134): `None -> failwith "the
+    concrete memory model requires a complete implementation"`. Read from the
+    CerberusImpl record mirror (zero-discrepancy literal census #2: was the
+    literal 8). alignof_pointer = sizeof_pointer = 8 in DefaultImpl. -/
+def targetPtrSize : Nat :=
+  match CerberusImpl.sizeof_pointer with
+  | some n => n
+  | none => failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.targetPtrSize "CerberusImpl.targetPtrSize: the concrete memory model requires a complete implementation")))
+
+/- The threaded tag environment is the Fmap itself (the same value the
+   ambient global holds); enumeration-spine conversion happens only at
+   the tag-LOOKUP arms (`CerbTagsWf.lookupEntry` = `fmapElements … |>.find?
+   symbolEquality`, the exact pre-threading per-arm lookup named ONCE so
+   the C4 sufficiency proofs can speak about it; leaf-type sizeof/alignof
+   pay no conversion). -/
+private abbrev TagDefs := CerbTags.TagDefsMap
+
+
+/-! ARC-7 S4 TOTALIZATION (fuel; arc-3 pattern): the layout oracles and
+    the (de)serializers below were `partial def`s — kernel-opaque, no
+    equations: nothing could compute through a memory operation by
+    unfolding, and the exec-totality gate requires equations. Each is now a fuel'd
+    worker `*_lemFuel` (fuel decremented once per recursion layer;
+    exhaustion = the OPAQUE `fuelExhaustedWith` sentinel, LemLib —
+    a fake value provable equal to something would be a lie, D4
+    transparency doctrine) + the original name as the wrapper started at
+    the AMBIENT fuel (`[LemFuel]`, `LemFuel.fuel` — the fuel-parameter arc
+    2026-09-04: the caller's parameter, never a constant; the former
+    `lemDefaultFuel` is deleted), rfl-defeq to the worker at every
+    instance, so every call site and every runtime behavior at a
+    sufficient fuel is unchanged. `stringFromMemValue` (pp-only, never
+    on a computed path) is total since arc-10 S3 (structural mutual
+    recursion — no fuel needed). C4 (2026-09-05): the five layout
+    wrappers below the block are MEASURED (fuel-free) under the
+    acyclicity hypothesis — see their header. -/
+
+mutual
+
+/-- Member alignment with the `align_opt` (_Alignas) override —
+    impl_mem.ml:115-122 (the align_opt match inside offsetsof; the same
+    three-way match is repeated verbatim at impl_mem.ml:179-186 for union
+    sizeof and inside the struct/union alignof folds). -/
+def memberAlign_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs) (tagDefs : TagDefs)
+    (alignOpt : Option alignment) (ty : ctype) : Nat :=
+  match lemFuel with
+  | 0 => fuelExhaustedWith "CerberusImpl.memberAlign: fuel exhausted" 1
+  | lemFuel + 1 =>
+    match alignOpt with
+    | none => alignofCtype_lemFuel lemFuel enumDefs ambient tagDefs ty
+    | some (AlignInteger al_n) => al_n.toNat
+    | some (AlignType al_ty) => alignofCtype_lemFuel lemFuel enumDefs ambient tagDefs al_ty
+
+/-- THE struct-layout oracle: fold over the raw member quadruples,
+    padding each member up to its (possibly _Alignas-overridden)
+    alignment. Mirrors the fold at impl_mem.ml:112-127. Returns
+    ([(ident, ty, offset)], last_offset) where last_offset is the end of
+    the last member BEFORE trailing padding — exactly OCaml's `maxoffset`.
+    (Alignment 0 is impossible for valid C members; Lean's `% 0 = id` +
+    truncated subtraction make it degrade to pad = 0 instead of OCaml's
+    Division_by_zero.) -/
+def offsetsofMembers_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs) (tagDefs : TagDefs)
+    (members : List (identifier × (attributes × Option alignment × qualifiers × ctype)))
+    : List (identifier × ctype × Nat) × Nat :=
+  match lemFuel with
+  | 0 => fuelExhaustedWith "CerberusImpl.offsetsofMembers: fuel exhausted" ([], 0)
+  | lemFuel + 1 =>
+    let (xs, maxoffset) := members.foldl (init := (([] : List (identifier × ctype × Nat)), 0))
+      fun (acc : List (identifier × ctype × Nat) × Nat) memb =>
+        let (xs, lastOffset) := acc
+        let (ident, (_, alignOpt, _, ty)) := memb
+        let size := sizeofCtype_lemFuel lemFuel enumDefs ambient tagDefs ty          -- impl_mem.ml:112 (sizeof ~tagDefs)
+        let align := memberAlign_lemFuel lemFuel enumDefs ambient tagDefs alignOpt ty -- impl_mem.ml:113-119 (alignof ~tagDefs)
+        let x := lastOffset % align                   -- impl_mem.ml:123
+        let pad := if x == 0 then 0 else align - x    -- impl_mem.ml:124
+        ((ident, ty, lastOffset + pad) :: xs, lastOffset + pad + size)  -- impl_mem.ml:125
+    (xs.reverse, maxoffset)
+
+/-- offsetsof — impl_mem.ml:98-129. Struct: offsetsofMembers over the
+    member list, with the flexible array member appended as an ordinary
+    member (its stored element ctype, verbatim per impl_mem.ml:104-108)
+    unless `ignoreFlexible`. Union: every member at offset 0, last_offset
+    0 (impl_mem.ml:128-129). Missing tag: OCaml's Pmap.find raises
+    Not_found — panic here.
+    Tag lookup uses symbolEquality (digest+nat, description-INSENSITIVE
+    — OCaml's symbol_compare/Pmap key order, symbol.lem), NOT the derived
+    BEq which also compares the description. Same for every tag lookup in
+    this file. -/
+def offsetsof_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs) (tagDefs : TagDefs) (tagSym : sym)
+    (ignoreFlexible : Bool := false) : List (identifier × ctype × Nat) × Nat :=
+  match lemFuel with
+  | 0 => fuelExhaustedWith "CerberusImpl.offsetsof: fuel exhausted" ([], 0)
+  | lemFuel + 1 =>
+    match CerbTagsWf.lookupEntry tagDefs tagSym with
+    | none => failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.offsetsof "CerberusImpl.offsetsof: unknown tag (OCaml: Pmap.find Not_found)")))
+    | some (_, (_, StructDef membrs_ flexibleOpt)) =>
+      let membrs := match flexibleOpt with
+        | none => membrs_
+        | some (FlexibleArrayMember attrs ident qs ty) =>
+          if ignoreFlexible then membrs_
+          else membrs_ ++ [(ident, (attrs, none, qs, ty))]  -- impl_mem.ml:107-108 (raw stored ctype)
+      offsetsofMembers_lemFuel lemFuel enumDefs ambient tagDefs membrs
+    | some (_, (_, UnionDef membrs)) =>
+      (membrs.map (fun (ident, (_, _, _, ty)) => (ident, ty, 0)), 0)
+
+/-- sizeof — impl_mem.ml:131-194.
+    Struct (impl_mem.ml:162-171): offsetsof last_offset (ignore_flexible —
+    the flexible member is uncounted except through alignof's trailing
+    padding), padded up to alignof(struct).
+    Union (impl_mem.ml:172-192): max member size padded up to max member
+    alignment (align_opt honored).
+    Void/incomplete-Array/Function PANIC, mirroring OCaml `assert false`
+    (impl_mem.ml:134-135) — a 0-sized value flowing onward is the
+    panic-optimized-into-value hazard (arc-14 S1 F1, sem:S7; the previous
+    "return 0" divergence carried provenance, not a rationale). -/
+def sizeofCtype_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs) (tagDefs : TagDefs) (cty : ctype) : Nat :=
+  match lemFuel with
+  | 0 => fuelExhaustedWith "CerberusImpl.sizeofCtype: fuel exhausted" 0
+  | lemFuel + 1 =>
+    match cty with
+    | Ctype _ ty_ =>
+      match ty_ with
+      | .Void0 => failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.sizeofVoid "CerberusImpl.sizeofCtype: Void (impl_mem.ml:134-135 assert false)")))
+      | .Array0 _ none => failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.sizeofIncompleteArray "CerberusImpl.sizeofCtype: incomplete array (impl_mem.ml:134-135 assert false)")))
+      | .Function _ _ _ | .FunctionNoParams _ =>
+        failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.sizeofFunction "CerberusImpl.sizeofCtype: function type (impl_mem.ml:134-135 assert false)")))
+      | .Basic (.Integer ity) =>
+        match CerberusImpl.sizeof_ity (CerberusImpl.resolveEnum enumDefs ity) with      -- impl_mem.ml:136-141
+        | some n => n
+        | none => failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.sizeofInteger "CerberusImpl.sizeofCtype: the concrete memory model requires a complete implementation sizeof INTEGER")))
+      | .Basic (.Floating fty) =>
+        match CerberusImpl.sizeof_fty fty with      -- impl_mem.ml:143-148
+        | some n => n
+        | none => failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.sizeofFloat "CerberusImpl.sizeofCtype: the concrete memory model requires a complete implementation sizeof FLOAT")))
+      | .Array0 elemCty (some n) => n.toNat * sizeofCtype_lemFuel lemFuel enumDefs ambient tagDefs elemCty  -- impl_mem.ml:150-151 (sizeof ~tagDefs)
+      | .Pointer _ _ => targetPtrSize               -- impl_mem.ml:153-158
+      | .Atomic innerCty => sizeofCtype_lemFuel lemFuel enumDefs ambient tagDefs innerCty    -- impl_mem.ml:160-161 (sizeof ~tagDefs)
+      | .Struct tagSym =>                           -- impl_mem.ml:162-171
+        let (_, maxOffset) := offsetsof_lemFuel lemFuel enumDefs ambient tagDefs tagSym (ignoreFlexible := true)  -- impl_mem.ml:168 (threaded)
+        let align := alignofCtype_lemFuel lemFuel enumDefs ambient tagDefs cty  -- impl_mem.ml:169 (alignof ~tagDefs)
+        let x := maxOffset % align
+        if x == 0 then maxOffset else maxOffset + (align - x)
+      | .Union0 tagSym =>                           -- impl_mem.ml:172-192
+        -- GLOBAL read, deliberately: impl_mem.ml:173 is
+        -- `Pmap.find tag_sym (Tags.tagDefs ())` — NOT ~tagDefs (the
+        -- upstream asymmetry; see the section header note).
+        match CerbTagsWf.lookupEntry ambient tagSym with
+        | some (_, (_, UnionDef membrs)) =>
+          let (maxSize, maxAlign) := membrs.foldl (init := ((0 : Nat), (0 : Nat)))
+            fun (acc : Nat × Nat) memb =>
+              let (accSize, accAlign) := acc
+              let (_, (_, alignOpt, _, ty)) := memb
+              (max accSize (sizeofCtype_lemFuel lemFuel enumDefs ambient tagDefs ty),
+               max accAlign (memberAlign_lemFuel lemFuel enumDefs ambient tagDefs alignOpt ty))
+          -- trailing padding up to the max alignment — impl_mem.ml:189-191
+          let x := maxSize % maxAlign
+          if x == 0 then maxSize else maxSize + (maxAlign - x)
+        | _ => failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.sizeofUnion "CerberusImpl.sizeofCtype: Union tag not a UnionDef (OCaml: assert false / Not_found)")))
+      | .Byte => 1                                  -- impl_mem.ml:193-194
+
+/-- alignof — impl_mem.ml:196-273.
+    Struct (impl_mem.ml:228-252): max member alignment (align_opt
+    honored), the fold seeded with the flexible array member's
+    array-of-element alignment when present (else 0).
+    Union (impl_mem.ml:253-271): max member alignment, seed 0.
+    Void/Function PANIC, mirroring OCaml `assert false` (impl_mem.ml:
+    198-199, 216-218) — arc-14 S1 F1, sem:S7 (was: silent 1,
+    provenance-only). -/
+def alignofCtype_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDefs) (tagDefs : TagDefs) (cty : ctype) : Nat :=
+  match lemFuel with
+  | 0 => fuelExhaustedWith "CerberusImpl.alignofCtype: fuel exhausted" 1
+  | lemFuel + 1 =>
+    match cty with
+    | Ctype _ ty_ =>
+      match ty_ with
+      | .Void0 => failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.alignofVoid "CerberusImpl.alignofCtype: Void (impl_mem.ml:198-199 assert false)")))
+      | .Function _ _ _ | .FunctionNoParams _ =>
+        failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.alignofFunction "CerberusImpl.alignofCtype: function type (impl_mem.ml:216-218 assert false)")))
+      | .Basic (.Integer ity) =>
+        match CerberusImpl.alignof_ity (CerberusImpl.resolveEnum enumDefs ity) with     -- impl_mem.ml:200-206
+        | some n => n
+        | none => failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.alignofInteger "CerberusImpl.alignofCtype: the concrete memory model requires a complete implementation alignof INTEGER")))
+      | .Basic (.Floating fty) =>
+        match CerberusImpl.alignof_fty fty with     -- impl_mem.ml:207-213
+        | some n => n
+        | none => failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.alignofFloat "CerberusImpl.alignofCtype: the concrete memory model requires a complete implementation alignof FLOATING")))
+      | .Array0 elemCty _ => alignofCtype_lemFuel lemFuel enumDefs ambient tagDefs elemCty   -- impl_mem.ml:214-215 (alignof ~tagDefs)
+      | .Pointer _ _ => targetPtrSize               -- impl_mem.ml:219-225
+      | .Atomic innerCty => alignofCtype_lemFuel lemFuel enumDefs ambient tagDefs innerCty   -- impl_mem.ml:226-227 (alignof ~tagDefs)
+      | .Struct tagSym =>                           -- impl_mem.ml:228-252
+        -- threaded lookup: impl_mem.ml:229 is `Pmap.find tag_sym tagDefs`
+        match CerbTagsWf.lookupEntry tagDefs tagSym with
+        | some (_, (_, StructDef membrs flexibleOpt)) =>
+          let init := match flexibleOpt with        -- impl_mem.ml:234-239
+            | none => 0
+            | some (FlexibleArrayMember _ _ _ elemTy) =>
+              alignofCtype_lemFuel lemFuel enumDefs ambient tagDefs (mkCtype (.Array0 elemTy none))
+          membrs.foldl (init := init) fun acc memb =>
+            let (_, (_, alignOpt, _, ty)) := memb
+            -- ISO-fix register R7 (VALIDATION.md §2; the R3 class, [USER 2026-10-03]
+            -- rulings): impl_mem.ml:248 reads an `AlignInteger al_n` through
+            -- `Z.to_int al_n`, which raises Z.Overflow outside OCaml's native int
+            -- range; upstream's own Lem interface is unbounded (implementation.lem:27
+            -- `alignof_ty … -> maybe nat`, mem.lem:191 `alignof_ival`), so the
+            -- unbounded maximum is computed here (pins zd-ta-alignas-huge-*).
+            max (memberAlign_lemFuel lemFuel enumDefs ambient tagDefs alignOpt ty) acc  -- impl_mem.ml:242-251
+        | _ => failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.alignofStruct "CerberusImpl.alignofCtype: Struct tag not a StructDef (OCaml: assert false / Not_found)")))
+      | .Union0 tagSym =>                           -- impl_mem.ml:253-271
+        -- GLOBAL read, deliberately: impl_mem.ml:255 is
+        -- `Pmap.find tag_sym (Tags.tagDefs ())` — NOT ~tagDefs (the
+        -- upstream asymmetry; see the section header note).
+        match CerbTagsWf.lookupEntry ambient tagSym with
+        | some (_, (_, UnionDef membrs)) =>
+          membrs.foldl (init := (0 : Nat)) fun acc memb =>
+            let (_, (_, alignOpt, _, ty)) := memb
+            -- ISO-fix register R7: as the struct fold (impl_mem.ml:267 `Z.to_int al_n`)
+            max (memberAlign_lemFuel lemFuel enumDefs ambient tagDefs alignOpt ty) acc
+        | _ => failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.alignofUnion "CerberusImpl.alignofCtype: Union tag not a UnionDef (OCaml: assert false / Not_found)")))
+      | .Byte => 1                                  -- impl_mem.ml:272-273
+
+end
+
+/-! FUEL-PARAMETER ARC C4 (2026-09-05): the five layout wrappers are
+    MEASURED, fuel-FREE, under the hypothesis `CerbTagsWf.Acyclic ambient`
+    (`AcyclicPair ambient tagDefs` for `offsetsof`, whose struct tags resolve
+    in the threaded map and union tags in the ambient one). The measure is
+    `CerbTagsWf.envBound`/`memberBound`/`membersBound`/`offsetsofBound`: the
+    structural size of what is asked about plus the environment's weight
+    (every entry's member-type sizes + 2 frames per hop) — derived from the
+    hop structure in CerbMem_lemMeasureProofs.lean, where the obligations
+    `<f>_measure_sufficient (…) (lemHyp : Acyclic …) (lemFuel) (lemMeasureLe :
+    μ ≤ lemFuel) : f_lemFuel lemFuel … = f …` are proved in the generated
+    `assuming` shape. On an environment violating the hypothesis (a by-value
+    cycle a hand-authored Core file can state; the C frontend never emits one —
+    CerbTagsWf's header cites the invariant) the wrapper may exhaust: the loud
+    `fuelExhaustedWith` sentinel, where the oracle loops. tagDefs: the ambient
+    global, mirroring OCaml's `?(tagDefs= Tags.tagDefs ())` optional-arg
+    default (unchanged). -/
+def memberAlign (enumDefs : EnumDefs) (ambient : TagDefs) (alignOpt : Option alignment) (ty : ctype) : Nat :=
+  memberAlign_lemFuel (CerbTagsWf.memberBound ambient alignOpt ty) enumDefs ambient ambient alignOpt ty
+
+/-- Measured + default-tagDefs wrapper (see memberAlign). -/
+def offsetsofMembers (enumDefs : EnumDefs) (ambient : TagDefs)
+    (members : List (identifier × (attributes × Option alignment × qualifiers × ctype)))
+    : List (identifier × ctype × Nat) × Nat :=
+  offsetsofMembers_lemFuel (CerbTagsWf.membersBound ambient members) enumDefs ambient ambient members
+
+/-- Measured wrapper (tagDefs explicit, like OCaml offsetsof; hypothesis
+    `AcyclicPair ambient tagDefs`). -/
+def offsetsof (enumDefs : EnumDefs) (ambient : TagDefs) (tagDefs : TagDefs) (tagSym : sym)
+    (ignoreFlexible : Bool := false) : List (identifier × ctype × Nat) × Nat :=
+  offsetsof_lemFuel (CerbTagsWf.offsetsofBound ambient tagDefs) enumDefs ambient tagDefs tagSym ignoreFlexible
+
+/-- Measured + default-tagDefs wrapper (see memberAlign). -/
+def sizeofCtype (enumDefs : EnumDefs) (ambient : TagDefs) (cty : ctype) : Nat :=
+  sizeofCtype_lemFuel (CerbTagsWf.envBound ambient cty) enumDefs ambient ambient cty
+
+/-- Measured + default-tagDefs wrapper (see memberAlign). -/
+def alignofCtype (enumDefs : EnumDefs) (ambient : TagDefs) (cty : ctype) : Nat :=
+  alignofCtype_lemFuel (CerbTagsWf.envBound ambient cty) enumDefs ambient ambient cty
+
+
+/-! ## `Implementation.sizeof_ty` / `Implementation.alignof_ty` — upstream b3e11ea33
+    (`val sizeof_ty: map Symbol.sym (Loc.t * Ctype.tag_definition) -> Ctype.ctype ->
+    integer`, OCaml reps `Ocaml_implementation.sizeof/alignof` above): the Lean reps
+    (implementation.lem `declare lean target_rep function sizeof_ty = \`CerberusImpl.sizeof_ty\``,
+    reader consumers). Fuel-FREE: they are the measured one-map wrappers (C4), so no
+    `[LemFuel]` binder — the generated callers (core_eval.lem's Civsizeof/Civalignof,
+    driver.lem's `alignof_ival` closures, cabs_to_ail_effect.lem's `get_alignof` through
+    the seed `alignof_ty_seeded`) pass the two readers then the explicit map.
+    The reader's tagDefs (the Tags global's mirror) is received and UNUSED: upstream
+    passes the explicit map to every arm except alignof's union arm (:566, see the
+    section header); the wrappers use the explicit map throughout. At run time both
+    maps are the Core file's table; at desugar time (`get_alignof`) the explicit map
+    is the desugar state's real table where upstream's global is EMPTY (`Pmap.find`
+    Not_found — a crash the fork's pre-merge pseudo-map `alignof_ty` already answered
+    with the value; re-measured by the alignas witnesses at M4). -/
+def sizeof_ty (enumDefs : EnumDefs) (_readerTagDefs : TagDefs) (tagDefs : TagDefs) (ty : ctype) : Int :=
+  Int.ofNat (sizeofCtype enumDefs tagDefs ty)
+
+def alignof_ty (enumDefs : EnumDefs) (_readerTagDefs : TagDefs) (tagDefs : TagDefs) (ty : ctype) : Int :=
+  Int.ofNat (alignofCtype enumDefs tagDefs ty)
 
 end CerberusImpl

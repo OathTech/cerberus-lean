@@ -403,6 +403,9 @@ partial def jsonToExpression_ (j : Json) : Except String cabs_expression_ := do
   | "CabsEva_end" => .ok (.CabsEva_end (← jsonToExpression (← getField j "expr")))
   | "CabsEprint_type" => .ok (.CabsEprint_type (← jsonToExpression (← getField j "expr")))
   | "CabsEbmc_assume" => .ok (.CabsEbmc_assume (← jsonToExpression (← getField j "expr")))
+  -- GNU labels as values (upstream c8c085d47): `&&label`; backend/lean_export/cabs_json.ml
+  -- `tag "CabsElabel_addressGNU" [("label", json_of_identifier id)]`
+  | "CabsElabel_addressGNU" => .ok (.CabsElabel_addressGNU (← jsonToIdentifier (← getField j "label")))
   | "CabsEgcc_statement" => .ok (.CabsEgcc_statement
       (← getList jsonToStatement (← getField j "stmts")))
   | "CabsEcondGNU" => .ok (.CabsEcondGNU

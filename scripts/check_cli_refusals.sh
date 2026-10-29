@@ -80,6 +80,10 @@ expect_refused "--switches=permissive_printf" "permissive printf"
 expect_refused "--switches=CHERI" "cerberus-cheri executable"
 expect_refused "--switches=copy_prop" "no counterpart in this port's lem model"
 expect_refused "--switches=bogus" "unknown switch name"
+# upstream cee382443's switch (merge-base bump stage 1; [USER 2026-10-29] Q9): refused like
+# every other non-PNVI switch, never mirrored — the elaboration config's
+# branching_on_unspec is the constant Elab_UB (Main.lean)
+expect_refused "--switches=branching_on_unspec_is_nd" "unknown switch name"
 expect_refused "--switches=PNVI_ae_udi,PNVI" "would override a previous switch"
 expect_refused "--switches=PNVI_ae_udi,strict_reads" "\`strict_reads\`: strict reads"
 expect_refused "--switches=PNVI_ae_udi,strict_reads" "\`PNVI_ae_udi\`: PNVI-ae-udi (switches.ml:82-83, SW_PNVI \`AE_UDI) is supported only as the WHOLE switch set"

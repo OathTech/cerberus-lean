@@ -791,9 +791,17 @@ declare {lean} termination_argument printf_aux = automatic
 
 
 val     store_chars_in_array: bool -> Mem.pointer_value -> list char -> Mem.memM unit
-let rec store_chars_in_array zero_terminated ptrval =
+(* FORK RESTATEMENT (merge-base bump stage 1, 2026-10-29; the arc-3/threadB Lean-termination
+   restatement class, as many/many1 in monadic_parsing.lem): upstream f4a3a3d54 wrote this
+   as `let rec store_chars_in_array zero_terminated ptrval = let loc = … in function …`,
+   binding the list by the `function` after a `let`; the Lean target renders that as a
+   lambda inside the body, so Lean's structural recursion no longer sees the decreasing
+   argument (`fail to show termination`). The list is an explicit parameter here — an
+   eta-expansion, OCaml semantics identical; the generated formatted.ml differs from
+   upstream's by the let placement (a registered fork-ahead delta). *)
+let rec store_chars_in_array zero_terminated ptrval cs =
   let loc = Loc.other "store_chars_in_array()" in
-  function
+  match cs with
   | [] ->
       if zero_terminated then
         Mem.store loc Ctype.char false ptrval
@@ -815,7 +823,8 @@ let rec store_chars_in_array zero_terminated ptrval =
       store_chars_in_array zero_terminated ptrval' cs
   end
 
-(* Structural on the char list (tail per step, pointer re-bound);
+(* Structural on the char list (tail per step, pointer re-bound; the explicit list
+   parameter of the restatement above);
    recursion under monadic continuations — Lean derives it. *)
 declare {lean} termination_argument store_chars_in_array = automatic
 
