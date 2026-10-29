@@ -131,14 +131,25 @@ val alignof_ity: Ctype.integerType -> maybe nat
 let alignof_ity ity = alignof_ity_norm (normalise_integerType ity)
 declare ocaml target_rep function alignof_ity = `(Ocaml_implementation.get()).alignof_ity`
 
-(* alignof_ty (the desugarer's _Alignas/redeclaration alignment check,
-   cabs_to_ail_effect.lem get_alignof): its OCaml rep `alignof` normalises
-   integer member types through `(get ()).alignof_ity` — i.e. through the
-   enum registry — so the Lean rep needs the map: a reader consumer too
-   (charter erratum, record §0). *)
-val alignof_ty: map AilSyntax.ail_identifier (list (maybe Ctype.alignment * Ctype.ctype)) ->  Ctype.ctype -> maybe nat
-declare ocaml target_rep function alignof_ty = `Ocaml_implementation.alignof_proxy`
+(* sizeof_ty/alignof_ty — upstream b3e11ea33 (layout out of the memory interface):
+   OCaml reps Ocaml_implementation.sizeof/alignof over the explicit tag map
+   (ocaml_implementation.ml, where the layout moved from impl_mem.ml). Lean reps
+   (merge-base bump stage 1, 2026-10-29): CerberusImpl.sizeof_ty/alignof_ty over
+   the layout block moved from CerbMem the same way. Both are fuel consumers (the
+   layout is fuel'd) and reader consumers: the enum map normalises integer member
+   types; the tagDefs reader is the mirror of the Tags global that upstream's
+   alignof still reads in its union arm (ocaml_implementation.ml:566 at
+   c3ff8c53f), the explicit map parameter the one upstream passes — at desugar
+   time the reader is empty (desugar_time_tagDefs) and the explicit map real. *)
+val sizeof_ty: map Symbol.sym (Loc.t * Ctype.tag_definition) -> Ctype.ctype -> integer
+val alignof_ty: map Symbol.sym (Loc.t * Ctype.tag_definition) -> Ctype.ctype -> integer
+declare ocaml target_rep function sizeof_ty = `Ocaml_implementation.sizeof`
+declare ocaml target_rep function alignof_ty = `Ocaml_implementation.alignof`
+declare lean target_rep function sizeof_ty = `CerberusImpl.sizeof_ty`
 declare lean target_rep function alignof_ty = `CerberusImpl.alignof_ty`
+declare {lean} fuel_consumer val sizeof_ty
+declare {lean} reader_consumer val sizeof_ty
+declare {lean} fuel_consumer val alignof_ty
 declare {lean} reader_consumer val alignof_ty
 
 val integerImpl: unit -> IntegerImpl.implementation

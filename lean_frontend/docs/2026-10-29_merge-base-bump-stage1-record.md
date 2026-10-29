@@ -425,3 +425,138 @@ the manifest NOTEs close at M5.
    before and after.
 4. One merge commit whose message lists every resolution by file with its rule; report with the
    hash, `git diff --stat`, the lem/dune last lines verbatim, and the first-build findings.
+
+---
+
+## 1. M1 — the merge (2026-10-29)
+
+`git merge --no-ff --no-commit c3ff8c53f` on `6a0771381` (M0): the 13 conflicts of §0.1, resolved per
+§0.5 (rules R1–R5), each hunk replaced by the planned text; git `rerere` (repository config, not this
+slice's) recorded the preimages. Edits outside the conflict hunks that the resolutions required:
+
+- `translation_effect.lem`: `fresh_elab_int`/`with_fresh_supply` take upstream's reader component
+  (`fun _ st ->`); `fresh_elab_sym`, `fresh_elab_pretty_with_id`, `wrapped_fresh_symbol[_]` use
+  upstream's inline `>>=`/`return` (upstream removed `include State`, so `bind` is gone);
+  `fresh_elab_int conf stx` inside `with_block_objects`' fold; `declare {lean} termination_argument
+  elab_mapM_aux / elab_foldlM_aux = automatic` (the `state.lem:108` form); the fork-added, never-called
+  single-argument helpers `push_block_objects`/`pop_block_objects` (absent from upstream's file, no
+  caller in the model — *derived*: `grep` over `frontend/model`) deleted rather than re-typed.
+- `translation.lem`: the `default_` mint on upstream's new line (`E.fresh_elab_pretty_with_id … >>=
+  fun default_sym ->`, R4); the fuel/measure declares `collect_cases_` → `collect_switch_content_aux`
+  (R3); the D13 walker's `| A.AilElabel_addressGNU _ -> false`; three fork comments reworded to the new
+  names and the moved run-point line (`mini_pipeline.lem:181`).
+- `mini_pipeline.lem`: the one bare `digest ()` → `Symbol.digest ()` (3771dce03).
+- `cabs_to_ail.lem`: upstream's `Mini_pipeline.typecheckAil_promoted impl sigm gamm d_e` in the switch
+  arm → `typecheckAil_promoted_seeded (Map.fromList sigm.enum_definitions) E.desugar_time_tagDefs
+  impl sigm gamm d_e` (S3, the fifth seed, defined beside the four in `mini_pipeline.lem`).
+- `cabs_to_ail_effect.lem`: `alignof_ty_seeded`'s type follows upstream's `Implementation.alignof_ty`
+  (`map Symbol.sym (Loc.t * Ctype.tag_definition) -> ctype -> integer`); `get_alignof` names upstream's
+  rebuilt map `ctype_tagDefs` so the enum seed still reads the desugar state's own definitions.
+- `defacto_memory.lem`: the fork's `declare {lean} termination_argument impl_sizeof_ival_aux =
+  automatic` removed with upstream's deletion of the function (first-build finding 1, R2).
+- OCaml seams: `ocaml_frontend/fork_renumber.ml` `fresh_elab_int _conf st` (two arguments);
+  `backend/lean_export/cabs_json.ml` `CabsElabel_addressGNU id -> tag "CabsElabel_addressGNU"
+  [("label", json_of_identifier id)]`; `backend/common/ail_sym_hwm.ml` `AilElabel_addressGNU sym ->
+  note_sym sym` (first-build finding 2; the label symbol is minted by the TU's desugarer, so it is
+  in the window as `AilEident`'s is). `backend/driver/main.ml` needed nothing: its `c_frontend` call
+  auto-merged to upstream's `Cabs_to_ail_effect.{ elab_conf }` form and the `--cabs-json` path uses
+  the parser only. `alignof_proxy` has no body left anywhere (*derived*: `git grep`), so there was
+  nothing to delete.
+
+### 1.1 First-build findings (both the §0.13 item-6 class; none needed a lem-lean change)
+
+1. lem, OCaml target, first run — `.tmp/m1-prelude-src.log`:
+   ```
+   File "frontend/model/defacto_memory.lem", line 2619, character 1 to line 2619, character 68
+     Type error: unbound name: impl_sizeof_ival_aux
+   make: *** [Makefile:231: ocaml_frontend/generated/utils.ml] Error 1
+   ```
+   A fork declare on a function upstream deleted (b3e11ea33); removed (R2).
+2. dune, first run — `.tmp/m1-dune-build.log`:
+   ```
+   File "backend/common/ail_sym_hwm.ml", lines 159-204, characters 19-48:
+   Error (warning 8 [partial-match]): this pattern-matching is not exhaustive.
+     Here is an example of a case that is not matched: AilElabel_addressGNU _
+   ```
+   The arc-13 symbol-window walker's exhaustive match; the arm added as above.
+
+Not fired: §0.13 item 1 (menhir accepted upstream's messages file against the merged grammar: `Read
+1207 sample input sentences and 1207 error messages.`; the grammar-conflict warnings in the log are
+those of upstream's `c_parser.mly` — whether the fork's asm edit adds any is checked against the
+pristine build at M5), item 2 (declaration-name set below: no existing name moved), items 3–5 are
+Lean-build items (M2). lem's warnings (`ocaml_frontend/lem.log`, 115; `lean_frontend/lem.log`) are
+upstream's pre-existing non-exhaustiveness warnings in `frontend/concurrency/cmm_csem.lem` and the
+renamer's notices; in the files the merge touched only renamer notices appear, two of them new and
+upstream-caused: `Cabs_to_ail_effect.read_config` → `read_config0` and the constructor function
+`Translation_effect.elab_config` → `elab_config0`, identically on both targets (the OCaml log line
+`renaming 'read_config' to 'read_config0' for target ocaml`, cabs_to_ail_effect.lem:408).
+
+### 1.2 Build lines (verbatim)
+
+`scripts/ce make clean-prelude-src prelude-src` (second run, `.tmp/m1-prelude-src-2.log`), last lines:
+```
+[SED] patching things up in [sibylfs/generated]
+exit=0
+```
+86 files in `ocaml_frontend/generated/` (*derived*: `ls … | wc -l`).
+
+`dune build backend/driver/main.exe cerberus-lib.install`, `dune install --prefix _build/local-install
+cerberus-lib`, `dune build cerberus.install` (`.tmp/m1-dune-build-2.log`):
+```
+build exit=0
+install exit=0
+check_lem_sync: OK (src 3a149c2d55cd9e61e589be19dd37eecff6c26aa6001f2ff1eebb86a01e749ce0, gen c5da13b2beeccb1e5e24007e0fed576ceea04fe5851518cee5ba0f1ad02e2f21)
+(debug 0): constructValue_aux: is WRONG for union ==> always assigning the first member
+cerberus.install exit=0
+```
+(the `(debug 0)` line is upstream's standing print during the libc staging, as before the merge.)
+Smoke, `main.exe --runtime=_build/install/default --exec --batch` on `int main(void){ return 42; }`:
+```
+Defined {value: "Specified(42)", stdout: "", stderr: "", blocked: "false"}
+```
+
+`scripts/ce make lean-prelude-src` (`.tmp/m1-lean-prelude-src.log`), last lines:
+```
+check_handwritten_sync: OK (56 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+[STAMP] recording Lean lem-sync content stamp
+check_lem_sync: recorded lean_frontend/lem_sync.sha256 (src 3a149c2d55cd9e61e589be19dd37eecff6c26aa6001f2ff1eebb86a01e749ce0, gen 1d54c255786e0f25fb4a408ae68e63fd07bd6ab397a8bda09929c52ccb7631cc)
+exit=0
+```
+228 files in `lean_frontend/generated/` (unchanged count). The Lean side is not built at M1 (M2).
+
+### 1.3 The backports merged away (§0.11)
+
+- `git diff c3ff8c53f -- frontend/model/translation_aux.lem`: only the fork's nine lines of
+  thread-B `termination_argument` declares and their comment; the I0b `conv_arith` body is upstream's.
+- `translate_function_call` (the I0 hunks' home) against `c3ff8c53f`: the only difference is the fork's
+  C1 supply draw (`E.mapM (fun (i, arg_e) -> E.fresh_elab_sym (Symbol.SD_FunArg …)) …` for upstream's
+  `mapi … Symbol.fresh_funarg …`), a documented fork-ahead delta; the argument-conversion sharing is
+  upstream's text.
+- `runtime/libcore/std.core`, `std_inner_arg_temps.core` against `c3ff8c53f`: `2 files changed, 6
+  insertions(+), 4 deletions(-)` — exactly the fork's tray-45 `pread`/`pwrite` arity hunk in each.
+- `util/cerb_floating.ml`: no difference (tray 01's `mul` fix carried by the base).
+- `tests/ci/0343*`, `0344*` and their expecteds: no difference (already before the merge).
+
+### 1.4 Declaration-name set of the generated Lean tree (§0.13 item 2)
+
+Before (M0 tree) 4618 names, after 4636 (*derived*: `grep -oE '^(def|theorem|…) +name'` over
+`lean_frontend/generated/*.lean`, sorted; `.tmp/m1-declnames-{before,after}.txt`). `diff`: 18 removed —
+`collect_cases`, `collect_cases_`, `collect_cases__lemFuel`, `collect_cases__lemFuel_zero`,
+`collect_cases__measure_sufficient`, `collect_cases_state`, `elab_init`, `empty_switch_info`,
+`evalConstantExpressionAux`, `get_calling_convention`, `get_current_return_type`, `impl_alignof_ival`,
+`impl_sizeof_ival`, `impl_sizeof_ival_aux`, `is_in_switch`, `pop_block_objects`, `push_block_objects`,
+`runStateM_errors`; 36 added — upstream's new definitions (`collect_switch_content[_aux][_lemFuel]`,
+`collect_switch_content_state`, `elab_bind/return/update/mapM[_aux]/foldlM[_aux]`, `elab_config`,
+`elab_config0`, `elab_ub_or_nd`, `elab_initial_state`, `eval_mode`, `evalIntegerConstantExpressionAux`,
+`evaluate_case_constant_expression`, `evaluate_integer_constant_expression_aux`, `extension_cause`,
+`get_current_return_type_opt`, `get_switch_promoted_type`, `guard_extension`, `init_switch_info`,
+`is_inner_arg_temps`, `lift_undef`, `read_config`, `read_config0`, `runElabM`, `runElabM_errors`,
+`translate_branch_on_unspec`, `typecheckAil_promoted`, `desug_config`), the generated obligation pair
+`collect_switch_content_aux_lemFuel_zero` / `_measure_sufficient`, and the fork's
+`typecheckAil_promoted_seeded`. No pre-existing name was renamed by the `Symbol` qualification.
+
+### 1.5 Refusals at M1
+
+D11 (`desugaring_init.lem`) type-checked and generated on both targets with upstream's record change
+(the build check of §0.2 item 2); D12's arm and the asm refusal are untouched by the merge (outside the
+hunks, verified by reading); D13's walker gained the label arm. Witness re-runs are M4's.

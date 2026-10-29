@@ -219,6 +219,13 @@ type case_selector =
 type switch_info = <|
   cases_info: list (Loc.t * case_selector);
   default_info: maybe Loc.t;
+  promoted_ty: Ctype.ctype; (* the promoted type of the controlling expression *)
+|>
+
+
+import Translation_effect
+type desug_config = <|
+  elab_conf: Translation_effect.elab_config;
 |>
 
 type state = <|
@@ -300,6 +307,9 @@ type state = <|
 
   (* TODO TODO TODO *)
   core_eval_stuff: (map string Symbol.sym) * Core.fun_map unit * Core.impl;
+
+  (* READ-ONLY, this will be moved to the `desug_config` type when the monad is updated *)
+  desug_conf: desug_config;
 |>
 
 type markers_env =
@@ -394,6 +404,9 @@ let modify_inner f =
     (a, <| st with inner= inner_st' |>)
   )
 
+
+let read_config =
+  read_inner (fun st -> st.desug_conf)
 
 val void: forall 'a. desugM 'a -> desugM unit
 let cabs_to_ail_effect_void m =
@@ -569,8 +582,8 @@ let hack_inject_idents_map idents_map =
   )
 
 
-let empty_switch_info =
-  <| cases_info= []; default_info= Nothing |>
+let init_switch_info promoted_ty =
+  <| cases_info= []; default_info= Nothing; promoted_ty= promoted_ty |>
 
 
 (* ========================================================================== *)
@@ -579,9 +592,13 @@ let empty_switch_info =
    entry's explicit supply parameter) instead of a fixed 0 — one
    stream: Main seeds it once; desugar, const-expr mini-runs,
    elaboration and the run-init seed all draw from and return to it.
-   On the OCaml target the field stays DEAD (arc-13 scheme R-B). *)
-val initial_state: nat -> integer -> (map string Symbol.sym) * Core.fun_map unit * Core.impl -> Cn_desugaring.init_scope -> state_with_markers
-let initial_state fresh_sym_supply_seed address_space_top core_eval_stuff cn_eval_stuff = <|
+   On the OCaml target the field stays DEAD (arc-13 scheme R-B). The
+   fork's supply and address-space top precede upstream's desug_config
+   (merge-base bump stage 1, rule R1). *)
+val initial_state:
+  nat -> integer -> desug_config -> (map string Symbol.sym) * Core.fun_map unit * Core.impl ->
+  Cn_desugaring.init_scope -> state_with_markers
+let initial_state fresh_sym_supply_seed address_space_top desug_conf core_eval_stuff cn_eval_stuff = <|
   inner= <|
     aux_supply=      0;
     scope_id_supply= 0;
@@ -613,6 +630,7 @@ let initial_state fresh_sym_supply_seed address_space_top core_eval_stuff cn_eva
     cn_state= Cn_desugaring.initial_cn_desugaring_state cn_eval_stuff;
     
     core_eval_stuff= core_eval_stuff;
+    desug_conf = desug_conf;
   |>;
   markers_env= Map.empty;
 |>
@@ -712,14 +730,17 @@ val get_address_space_top: desugM integer
 let get_address_space_top =
   modify_inner (fun st -> (st.address_space_top, st))
 
-val eval: forall 'a. nat -> integer -> (map string Symbol.sym) * Core.fun_map unit * Core.impl -> Cn_desugaring.init_scope -> desugM 'a -> Exception.exceptM (fin_markers_env * 'a * nat) Errors.error
-let cabs_to_ail_effect_eval sup address_space_top core_eval_stuff cn_eval_stuff m =
+val eval:
+  forall 'a.
+  nat -> integer -> desug_config -> (map string Symbol.sym) * Core.fun_map unit * Core.impl ->
+  Cn_desugaring.init_scope -> desugM 'a -> Exception.exceptM (fin_markers_env * 'a * nat) Errors.error
+let cabs_to_ail_effect_eval sup address_space_top desug_conf core_eval_stuff cn_eval_stuff m =
   State_exception.eval begin
     m >>= fun res ->
     fin_markers_env () >>= fun markers ->
     get_fresh_sym_supply >>= fun sup' ->
     State_exception.return (markers, res, sup')
-  end (initial_state sup address_space_top core_eval_stuff cn_eval_stuff)
+  end (initial_state sup address_space_top desug_conf core_eval_stuff cn_eval_stuff)
 let inline eval = cabs_to_ail_effect_eval
 
 
@@ -1010,19 +1031,21 @@ end
 let check_case_overlaps xs =
   check_case_overlaps_aux [] xs
 
-val is_in_switch : desugM bool
-let is_in_switch =
+(* Use this to check whether inside a switch, and to get the (promoted) type of
+ * the controlling expression. *)
+val get_switch_promoted_type : desugM (maybe Ctype.ctype)
+let get_switch_promoted_type =
   read_inner (fun st ->
     match st.switch_context with
-      | []     -> false
-      | _ :: _ -> true
+      | []     -> Nothing
+      | ctx :: _ -> Just (ctx.promoted_ty)
     end
   )
 
-val as_switch_body: forall 'a. desugM 'a -> desugM 'a
-let as_switch_body m =
+val as_switch_body: forall 'a. Ctype.ctype -> desugM 'a -> desugM 'a
+let as_switch_body promoted_ty m =
   update_inner (fun st ->
-    <| st with switch_context= empty_switch_info :: st.switch_context |>
+    <| st with switch_context= init_switch_info promoted_ty :: st.switch_context |>
   ) >>= fun () ->
   m >>= fun ret ->
   get_inner >>= fun st ->
@@ -1882,8 +1905,8 @@ declare {lean} reader_seed val make_composite_fdecl_seeded
 
 val alignof_ty_seeded:
   map Symbol.sym Ctype.integerType -> map Symbol.sym (Loc.t * Ctype.tag_definition) ->
-  map A.ail_identifier (list (maybe Ctype.alignment * Ctype.ctype)) -> Ctype.ctype -> maybe nat
-let alignof_ty_seeded en tds pseudo_tagDefs ty = Implementation.alignof_ty pseudo_tagDefs ty
+  map Symbol.sym (Loc.t * Ctype.tag_definition) -> Ctype.ctype -> integer
+let alignof_ty_seeded en tds tagDefs ty = Implementation.alignof_ty tagDefs ty
 declare {lean} reader_seed val alignof_ty_seeded
 
 
@@ -2261,22 +2284,19 @@ let register_function_declaration loc attrs sym is_proto decl =
 
 let get_alignof =
   get_tag_definitions >>= fun tagDefs ->
-  let pseudo_tagDefs =
-    Map.map function
-      | Struct_definition _ _ _ membrs flex_opt ->
-          List.map (fun (_, (_, align_opt, _, ty)) -> (align_opt, ty)) membrs ++
-          match flex_opt with
-            | Nothing ->
-                []
-            | Just (Ctype.FlexibleArrayMember _ _ _ ty) ->
-                [(Nothing, Ctype.Ctype [] (Ctype.Array ty Nothing))]
-          end
-      | Union_definition _ _ _ membrs ->
-          List.map (fun (_, (_, align_opt, _, ty)) -> (Nothing, ty)) membrs
-      | Enum_definition _ ->
-          [(* dummy, this won't be called *)]
-    end tagDefs in
-  return (fun z -> alignof_ty_seeded (enum_map_of_tag_definitions tagDefs) desugar_time_tagDefs pseudo_tagDefs z)
+  (* upstream b3e11ea33: the real tag map (Ctype.tag_definition form) for
+     Implementation.alignof_ty; the enum seed still comes from the desugar
+     state's own definitions (the enum arm is dropped from the layout map) *)
+  let ctype_tagDefs = Map_extra.fold (fun k def acc ->
+    match def with
+    | Struct_definition loc _ _ membrs flex_opt ->
+        Map.insert k (loc, Ctype.StructDef membrs flex_opt) acc
+    | Union_definition loc _ _ membrs ->
+        Map.insert k (loc, Ctype.UnionDef membrs) acc
+    | Enum_definition _ ->
+        acc
+  end) tagDefs Map.empty in
+  return (fun z -> alignof_ty_seeded (enum_map_of_tag_definitions tagDefs) desugar_time_tagDefs ctype_tagDefs z)
 
 (* STD §6.7.5#7 *)
 let get_compatible_alignment_requirements loc new_align_opt prev_align_opt =
@@ -2300,32 +2320,17 @@ let get_compatible_alignment_requirements loc new_align_opt prev_align_opt =
         if Global.isAgnostic () then
           fail loc (Errors.Desugar_agnosticFailure "redeclaration with alignment specifiers is too complicated")
         else
-          match (alignof_ty new_ty, alignof_ty prev_ty) with
-            | (Just new_n, Just prev_n) ->
-                common (integerFromNat new_n) (integerFromNat prev_n)
-            | _ ->
-                fail loc (Errors.Desugar_TODO "error msg: need a better implementation")
-          end
+          common (alignof_ty new_ty) (alignof_ty prev_ty)
     | (Just (Ctype.AlignType new_ty), Just (Ctype.AlignInteger prev_n)) ->
         if Global.isAgnostic () then
           fail loc (Errors.Desugar_agnosticFailure "redeclaration with alignment specifiers is too complicated")
         else
-          match alignof_ty new_ty with
-            | Just new_n ->
-                common (integerFromNat new_n) prev_n
-            | Nothing ->
-                fail loc (Errors.Desugar_TODO "error msg: need a better implementation")
-          end
+          common (alignof_ty new_ty) prev_n
     | (Just (Ctype.AlignInteger new_n), Just (Ctype.AlignType prev_ty)) ->
         if Global.isAgnostic () then
           fail loc (Errors.Desugar_agnosticFailure "redeclaration with alignment specifiers is too complicated")
         else
-          match alignof_ty prev_ty with
-            | Just prev_n ->
-                common new_n (integerFromNat prev_n)
-            | Nothing ->
-                fail loc (Errors.Desugar_TODO "error msg: need a better implementation")
-          end
+          common new_n (alignof_ty prev_ty)
   end
 
 (* TODO: the redeclaration check don't mix external/internal declarations *)
@@ -2485,16 +2490,10 @@ let resolve_label ident =
   end
 
 
-(* Returns the return type of the function currently being desugared *)
-let get_current_return_type: desugM Ctype.ctype =
-  read_inner (fun st ->
-    match st.current_return_type with
-      | Just ty ->
-          ty
-      | Nothing ->
-          error "Cabs_to_ail_effect.get_current_return_type Nothing"
-    end
-  )
+(* Returns the return type of the function currently being desugared (Nothing is not
+   currently in a function) *)
+let get_current_return_type_opt: desugM (maybe Ctype.ctype) =
+  read_inner (fun st -> st.current_return_type)
 
 let set_current_return_type (ty_opt: maybe Ctype.ctype) : desugM unit =
   update_inner (fun st ->
@@ -2564,6 +2563,13 @@ let resolve_enum_constant sym =
         error "cabs_to_ail_effect.resolve_enum_constant"
   end
 
+
+val guard_extension: Loc.t -> Errors.extension_cause -> desugM unit
+let guard_extension loc ext =
+  if Global.isPermissive () then
+    return ()
+  else
+    State_exception.fail (loc, Errors.EXTENSION ext)
 
 (* TODO: hackish, uber inefficient *)
 val remove_unused_identifiers: forall 'a. state -> A.ail_identifier -> list (A.ail_identifier * 'a) -> list (A.ail_identifier * 'a)

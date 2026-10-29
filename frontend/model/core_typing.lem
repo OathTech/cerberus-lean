@@ -1048,6 +1048,7 @@ and typecheck_pexpr tagDefs (env: typing_env) (bTy: core_base_type) (Pexpr annot
     | PEop bop pe1 pe2 ->
         E.trysM_ (with_regions_and_cursor [locOf pe1; locOf pe2] (Just loc)) (MismatchBinaryOperator bop)
         (fun (bTy', bTy1, bTy2) ->
+          guard_match loc "binary operator" bTy bTy' >>= fun () ->
           (PEop bop <$> typecheck_pexpr tagDefs env bTy1 pe1
                     <*> typecheck_pexpr tagDefs env bTy2 pe2)
         ) match bop with
@@ -1879,9 +1880,8 @@ and typecheck_expr callconv tagDefs (env: typing_env) expected_bTy (Expr annot e
         match Map.lookup sym env.labs with
           | Just (bTy, bTys) ->
 (*            guard_match loc "run" expected_bTy bTy >> *) (* TODO check *)
-              (* FORK 2026-09-23 (audit R3): argument-list arity guard (see PEcall) *)
-              if List.length bTys <> List.length pes then
-                E.fail loc (MismatchExpected "run" (BTy_tuple bTys) "argument list of a different arity")
+              if List.length pes <> List.length bTys then
+                E.fail loc (ArityMismatchRun (List.length bTys) (List.length pes))
               else
               begin
                 Erun annot sym <$> E.mapM (fun (bTy, pe) ->

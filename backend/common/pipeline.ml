@@ -181,7 +181,9 @@ let cpp (conf, io) ~filename =
         return txt
   end ()
 
-let c_frontend ?(cn_init_scope=Cn_desugaring.empty_init) (conf, io) (core_stdlib, core_impl) ~filename =
+let c_frontend ?(cn_init_scope=Cn_desugaring.empty_init)
+  desug_conf (conf, io) (core_stdlib, core_impl) ~filename
+=
   Cerb_fresh.set_digest filename;
   let parse filename file_content =
     C_parser_driver.parse_from_string ~filename file_content >>= fun cabs_tunit ->
@@ -207,7 +209,7 @@ let c_frontend ?(cn_init_scope=Cn_desugaring.empty_init) (conf, io) (core_stdlib
        fresh-symbol stream explicitly; on this target the supply
        argument and the returned final-supply component are DEAD (the
        ambient Cerb_fresh.int is the counter) — pass 0, drop it. *)
-    Cabs_to_ail.desugar 0 conf.address_space_top (ailnames, core_stdlib_fun_map, core_impl) cn_init_scope
+    Cabs_to_ail.desugar 0 conf.address_space_top desug_conf (ailnames, core_stdlib_fun_map, core_impl) cn_init_scope
       "main" cabs_tunit >>= fun (markers_env, ail_prog, _dead_supply) ->
           (* arc-13 single-supply backstop: every current-digest symbol in
              the desugared program must have been minted by Cerb_fresh.int
@@ -261,17 +263,16 @@ let c_frontend ?(cn_init_scope=Cn_desugaring.empty_init) (conf, io) (core_stdlib
   ail_typechecking ail_prog   >>= fun ailtau_prog             ->
   return (cabs_tunit, (markers_env, ailtau_prog))
 
-let c_frontend_and_elaboration ?(cn_init_scope=Cn_desugaring.empty_init) (conf, io) (core_stdlib, core_impl) ~filename =
-  c_frontend ~cn_init_scope (conf, io) (core_stdlib, core_impl) ~filename >>= fun (cabs_tunit, (markers_env, ailtau_prog)) ->
+let c_frontend_and_elaboration ?(cn_init_scope=Cn_desugaring.empty_init) elab_conf (conf, io) (core_stdlib, core_impl) ~filename =
+  let desug_conf = Cabs_to_ail_effect.{ elab_conf } in
+  c_frontend ~cn_init_scope desug_conf (conf, io) (core_stdlib, core_impl) ~filename >>= fun (cabs_tunit, (markers_env, ailtau_prog)) ->
   (* NOTE: the elaboration sets the struct/union tag definitions, so to allow the frontend to be
      used more than once, we need to do reset here *)
   (* TODO(someday): find a better way *)
   Tags.reset_tagDefs ();
-  let calling_convention =
-    Core.(if Switches.has_switch SW_inner_arg_temps then Inner_arg_callconv else Normal_callconv) in
   (* effect-retirement C1: translate is supply-parameterized (Lean-side
      stream); DEAD on this target — pass 0, drop the returned supply. *)
-  let (core_file, _dead_supply) = Translation.translate 0 core_stdlib calling_convention core_impl ailtau_prog in
+  let (core_file, _dead_supply) = Translation.translate 0 core_stdlib elab_conf core_impl ailtau_prog in
   io.set_progress "ELABO" >>= fun () ->
   io.pass_message "Translation to Core completed!" >>= fun () ->
   return (Some cabs_tunit, Some (markers_env, ailtau_prog), core_file)
@@ -722,4 +723,16 @@ let ocaml_backend (conf, io) ~filename ~ocaml_corestd core_file =
   >>= Codegen_ocaml.gen filename ocaml_corestd
 *)
 
+let mk_elab_config () =
+  Translation_effect.{
+    calling_convention0=
+      Core.(if Switches.has_switch SW_inner_arg_temps then Inner_arg_callconv else Normal_callconv);
+    is_PNVI= Switches.is_PNVI ();
+    is_CHERI= Switches.is_CHERI ();
+    is_CN= String.equal Cerb_global.(backend_name ()) "Cn";
+    strict_pointer_arith= Switches.has_strict_pointer_arith ();
+    branching_on_unspec= Translation_effect.(
+      if Switches.(has_switch SW_branching_on_unspec_is_nd)
+      then Elab_ND else Elab_UB)
+  }
 

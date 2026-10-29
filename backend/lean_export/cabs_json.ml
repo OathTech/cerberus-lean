@@ -250,6 +250,7 @@ and json_of_cabs_expression_ = function
   | CabsEva_end e -> tag "CabsEva_end" [("expr", json_of_cabs_expression e)]
   | CabsEprint_type e -> tag "CabsEprint_type" [("expr", json_of_cabs_expression e)]
   | CabsEbmc_assume e -> tag "CabsEbmc_assume" [("expr", json_of_cabs_expression e)]
+  | CabsElabel_addressGNU id -> tag "CabsElabel_addressGNU" [("label", json_of_identifier id)]
   | CabsEgcc_statement stmts ->
     tag "CabsEgcc_statement" [("stmts", json_of_list json_of_cabs_statement stmts)]
   | CabsEcondGNU (e1, e2) ->

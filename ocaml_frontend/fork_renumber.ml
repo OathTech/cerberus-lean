@@ -77,8 +77,9 @@ let initial_core_run_state (_digest : Digest.t) xs : Core_run_aux.core_run_state
    - Translation_effect.fresh_elab_int  (translation_effect.lem)
    - Translation.elc_fresh_int          (translation.lem, m1b)        *)
 
-(* elabM nat: elab_state -> nat * elab_state *)
-let fresh_elab_int st = (Cerb_fresh.int (), st)
+(* elabM nat: elab_config -> elab_state -> nat * elab_state (the reader
+   component since upstream 334a1563b; merge-base bump stage 1, 2026-10-29) *)
+let fresh_elab_int _conf st = (Cerb_fresh.int (), st)
 
 (* St.stateM nat erase_loop_control_state *)
 let elc_fresh_int st = (Cerb_fresh.int (), st)

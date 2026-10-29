@@ -184,6 +184,8 @@ let sym_window_program (tu_digest : Digest.t)
     | AilEstr _lit -> ()      (* stringLiteral: sym-free *)
     | AilEconst c -> walk_constant c   (* A-F1 sibling: constant carries syms *)
     | AilEident sym -> note_sym sym
+    | AilElabel_addressGNU sym -> note_sym sym  (* GNU &&label (upstream c8c085d47): the label's
+                                                  symbol is minted by this TU's desugarer *)
     | AilEsizeof (_q, ct) -> walk_ctype ct
     | AilEsizeof_expr e -> walk_expr e
     | AilEalignof (_q, ct) -> walk_ctype ct

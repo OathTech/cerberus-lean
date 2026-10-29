@@ -623,6 +623,9 @@ unary_expression:
 | ALIGNOF LPAREN ty= type_name RPAREN
     { CabsExpression ( region ($startpos, $endpos) (pointCursor $startpos($1))
                      , CabsEalignof ty ) }
+| AMPERSAND_AMPERSAND l= general_identifier
+    { CabsExpression ( region ($startpos, $endpos) (pointCursor $startpos($1))
+                     , CabsElabel_addressGNU l ) }
 ;
 
 unary_operator:
@@ -1221,19 +1224,19 @@ direct_abstract_declarator:
 array_abstract_declarator:
 | dabs_decltor= ioption(direct_abstract_declarator) LBRACK
   tquals= ioption(type_qualifier_list) expr= assignment_expression? RBRACK
-    { DAbs_array (dabs_decltor, ADecl (Cerb_location.unknown,
+    { DAbs_array (dabs_decltor, ADecl (region ($startpos, $endpos) noCursor,
       Option.fold ~none:[] ~some:id tquals, false,
       Option.map (fun e -> ADeclSize_expression e) expr)) }
 | dabs_decltor= ioption(direct_abstract_declarator) LBRACK STATIC
   tquals= type_qualifier_list? expr= assignment_expression RBRACK
-    { DAbs_array (dabs_decltor, ADecl (Cerb_location.unknown,
+    { DAbs_array (dabs_decltor, ADecl (region ($startpos, $endpos) noCursor,
       Option.fold ~none:[] ~some:id tquals, true, Some (ADeclSize_expression expr))) }
 | dabs_decltor= ioption(direct_abstract_declarator) LBRACK
   tquals= type_qualifier_list STATIC expr= assignment_expression RBRACK
-    { DAbs_array (dabs_decltor, ADecl (Cerb_location.unknown, tquals, true,
+    { DAbs_array (dabs_decltor, ADecl (region ($startpos, $endpos) noCursor, tquals, true,
       Some (ADeclSize_expression expr))) }
 | dabs_decltor= ioption(direct_abstract_declarator) LBRACK STAR RBRACK
-    { DAbs_array (dabs_decltor, ADecl (Cerb_location.unknown, [], false,
+    { DAbs_array (dabs_decltor, ADecl (region ($startpos, $endpos) noCursor, [], false,
       Some ADeclSize_asterisk)) }
 ;
 
@@ -1532,7 +1535,7 @@ asm_with_labels:
     { xs }
 
 asm_statement:
-| ASM qs= asm_qualifier* LPAREN s= string_literal RPAREN
+| ASM qs= asm_qualifier* LPAREN s= string_literal RPAREN SEMICOLON
     { let is_volatile = List.mem ASM_VOLATILE qs in
       let is_inline = List.mem ASM_INLINE qs in
       let strs =
@@ -1542,7 +1545,7 @@ asm_statement:
       in
       CabsStatement (region ($startpos, $endpos) noCursor, Annot.no_attributes,
         CabsSasm (is_volatile, is_inline, strs)) }
-| ASM qs= asm_qualifier* LPAREN s= string_literal args= asm_with_output RPAREN
+| ASM qs= asm_qualifier* LPAREN s= string_literal args= asm_with_output RPAREN SEMICOLON
     { let is_volatile = List.mem ASM_VOLATILE qs in
       let is_inline = List.mem ASM_INLINE qs in
       let strs =
@@ -1570,8 +1573,9 @@ external_declaration:
     { EDecl_magic (fst magic, snd (snd magic)) }
 | fdef= function_definition
     { EDecl_func fdef }
-| xs_decl= declaration
-    { EDecl_decl xs_decl }
+| xs_decl= declaration has_extra= boption(SEMICOLON+)
+    { if has_extra then warn_extra_semicolon $startpos(has_extra) AFTER_EDECL;
+      EDecl_decl xs_decl }
 ;
 
 (* §6.9.1 Function definitions *)

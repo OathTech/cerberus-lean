@@ -210,7 +210,7 @@ declare ocaml target_rep function ptr_t_int_value = `Impl_mem.ptr_t_int_value`
 declare lean target_rep function ptr_t_int_value = `CerbMem.ptrTIntValue`
 
 (* Pointer shifting constructors *)
-val array_shift_ptrval:  pointer_value -> Ctype.ctype -> integer_value -> pointer_value
+val array_shift_ptrval: Loc.t -> pointer_value -> Ctype.ctype -> integer_value -> Undefined.t pointer_value
 val member_shift_ptrval: pointer_value -> Symbol.sym -> Symbol.identifier -> pointer_value
 declare ocaml target_rep function array_shift_ptrval = `Impl_mem.array_shift_ptrval`
 declare lean target_rep function array_shift_ptrval = `CerbMem.arrayShiftPtrval`
@@ -235,7 +235,7 @@ declare {lean} reader_consumer val eff_member_shift_ptrval
 
 
 val memcpy: Loc.t -> pointer_value -> pointer_value -> integer_value -> memM pointer_value
-val memcmp: pointer_value -> pointer_value -> integer_value -> memM integer_value
+val memcmp: Loc.t -> pointer_value -> pointer_value -> integer_value -> memM integer_value
 val realloc: Loc.t -> Mem_common.thread_id -> integer_value -> pointer_value -> integer_value -> memM pointer_value
 
 declare ocaml target_rep function memcpy = `Impl_mem.memcpy`
@@ -293,8 +293,6 @@ val max_ival: Ctype.integerType -> integer_value
 val min_ival: Ctype.integerType -> integer_value
 val op_ival: Mem_common.integer_operator -> integer_value -> integer_value -> integer_value
 val offsetof_ival: map Symbol.sym (Loc.t * Ctype.tag_definition) -> Symbol.sym -> Symbol.identifier -> integer_value
-val sizeof_ival: Ctype.ctype -> integer_value
-val alignof_ival: Ctype.ctype -> integer_value
 val bitwise_complement_ival: Ctype.integerType -> integer_value -> integer_value
 val bitwise_and_ival: Ctype.integerType -> integer_value -> integer_value -> integer_value
 val bitwise_or_ival: Ctype.integerType -> integer_value -> integer_value -> integer_value
@@ -317,29 +315,24 @@ declare ocaml target_rep function op_ival = `Impl_mem.op_ival`
 declare lean target_rep function op_ival = `CerbMem.opIval`
 declare ocaml target_rep function offsetof_ival = `Impl_mem.offsetof_ival`
 declare lean target_rep function offsetof_ival = `CerbMem.offsetofIval`
-declare {lean} fuel_consumer val offsetof_ival
-declare {lean} reader_consumer val offsetof_ival
-declare ocaml target_rep function sizeof_ival = `Impl_mem.sizeof_ival`
-declare lean target_rep function sizeof_ival = `CerbMem.sizeofIval`
-declare {lean} fuel_consumer val sizeof_ival
-declare {lean} reader_consumer val sizeof_ival
-declare ocaml target_rep function alignof_ival = `Impl_mem.alignof_ival`
-declare lean target_rep function alignof_ival = `CerbMem.alignofIval`
 (* FUEL CONSUMERS (fuel-parameter arc, 2026-09-04; Lean-only declares, no
    OCaml effect — lem-lean doc/lean-backend/2026-09-03_fuel-parameter-design.md
-   R1 item 3): the hand-written CerbMem implementations of the vals below
-   read the ambient fuel (`[LemFuel]`, `LemFuel.fuel`) because they reach a
-   fuel'd worker — the layout oracles (sizeofCtype/alignofCtype/offsetsof),
-   the (de)serializers (memValueToBytes/reconstructValue), typeofMval, or
-   the ND monad's `nd_bind`. `fuel_consumer` makes every generated caller
-   fuel-lifted (the `[LemFuel]` binder is threaded to it; call sites are
-   textually unchanged). The set is the measured `[LemFuel]` closure of
-   CerbMem.lean's mem.lem reps at the C1 slice (19 vals; the build fails
-   closed — `failed to synthesize instance LemFuel` at the generated call
-   site — if one is missing). C2 converts the data-bounded ones to
-   `fuel_measure`. *)
-declare {lean} fuel_consumer val alignof_ival
-declare {lean} reader_consumer val alignof_ival
+   R1 item 3): the hand-written CerbMem implementations of the vals so
+   declared read the ambient fuel (`[LemFuel]`, `LemFuel.fuel`) because they
+   reach a fuel'd worker — the layout oracles (sizeofCtype/alignofCtype/
+   offsetsof; in CerberusImpl since the merge-base bump stage 1, 2026-10-29,
+   where upstream b3e11ea33 moved the OCaml layout), the (de)serializers
+   (memValueToBytes/reconstructValue), typeofMval, or the ND monad's
+   `nd_bind`. `fuel_consumer` makes every generated caller fuel-lifted (the
+   `[LemFuel]` binder is threaded to it; call sites are textually unchanged).
+   The set is the measured `[LemFuel]` closure of CerbMem.lean's mem.lem reps
+   at the C1 slice (19 vals, 17 since the stage-1 bump deleted sizeof_ival/
+   alignof_ival with upstream — they are Implementation.sizeof_ty/alignof_ty
+   now; the build fails closed — `failed to synthesize instance LemFuel` at
+   the generated call site — if one is missing). C2 converts the
+   data-bounded ones to `fuel_measure`. *)
+declare {lean} fuel_consumer val offsetof_ival
+declare {lean} reader_consumer val offsetof_ival
 declare ocaml target_rep function bitwise_complement_ival = `Impl_mem.bitwise_complement_ival`
 declare lean target_rep function bitwise_complement_ival = `CerbMem.bitwiseComplementIval`
 declare ocaml target_rep function bitwise_and_ival = `Impl_mem.bitwise_and_ival`
