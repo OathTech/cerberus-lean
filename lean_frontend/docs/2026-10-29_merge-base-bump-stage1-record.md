@@ -949,3 +949,50 @@ BOTH_FAIL=5 RESOURCE oracle:KILL=2 failures=1` / `FAIL — failed rows: ['libc/0
 (the same row). The gates that `test_unit.sh` lists after `check_runtime_resolution` (the refusal
 witnesses, `check_libc_float_literals.py`, `test_translation_fuel.sh`) were run at M2b (the four
 refusal scripts) or are covered by M3/M4.
+
+---
+
+## 2d. M2d — the ruling on finding 1 and its disposition (2026-10-30)
+
+**Ruling [AGENT 2026-10-30]** (the orchestrator's, to be reported to the operator, who may overrule):
+the `libc/016-strstr-twoway-oob` row is a declared transport limitation, not a semantic divergence;
+recorded as such, neither baselined as DIFF nor fixed in this arc. Applied:
+
+1. Both lanes gain a reviewed `LOC_ONLY` disposition for exactly that row, keyed on the two
+   observations being identical once the `loc` field is removed and every Lean location being
+   `<unknown location>` (no oracle one is); any other difference on the row, or this class on any
+   other row, stays RED. `scripts/test_libc_exec.sh`: status `LOC_ONLY` requires a dated line in the
+   new reviewed register `tests/libc_exec/dispositions.txt` (else DIFF, fail-closed); the baseline row
+   carries the class; `--selftest` plants the classifier (8 plants: identical → MATCH; the pair with a
+   disposition → LOC_ONLY; the pair WITHOUT one → DIFF; a real Lean location, a differing UB, a
+   multi-line value difference, an oracle at unknown location → DIFF; multi-line loc-only → LOC_ONLY).
+   `scripts/inner_arg_temps_lane.py`: `loc_only`, classes `LOC_ONLY`/`LOC_ONLY-FIRST`, `same_sequence`
+   admits the pair, the baseline row carries the class and a dated `disposition` text (pinned by the
+   exact-equality baseline check), the selftest plants the pair in both modes and five rejected
+   neighbours (a real Lean location, a differing UB, an oracle unknown, a length difference, another
+   observation differing).
+2. VALIDATION.md 2b row **N4** and the §5 lane row; SUPPORTED.md states the limitation plainly (the
+   oracle's location is the reference).
+3. TODO queues the remover: locations in the Core text transport (printer, parser, libc re-pin,
+   quotation impact), with this row as its witness.
+4. The pre-merge coincidence (both engines at `<unknown location>`: the oracle's `memcmp` loaded at
+   `Cerb_location.unknown` at b9aeedcb4) and the exact outputs are in §2c.1.
+
+The lanes after the disposition (verbatim last lines, `.tmp/m2d-lanes.log`, `.tmp/m2d-iat-selftest.log`):
+```
+test_libc_exec: SELFTEST OK (8 plants)
+  LOC_ONLY 016-strstr-twoway-oob (reviewed: 2026-10-30 — the Lean engine reports no source location inside libc):
+SUMMARY: match=41 loc_only=1 diff=0
+ALL MATCH RECORDED BASELINE
+  LOC_ONLY-FIRST            libc/016-strstr-twoway-oob cross-mode=SAME_SET
+SUMMARY: inner_arg_temps rows=186 AGREE=138 AGREE-FIRST=40 BOTH_FAIL=5 LOC_ONLY-FIRST=1 RESOURCE oracle:KILL=2 failures=0
+inner_arg_temps: FAIL — minimal/097-null-ptr-arith.undef: baseline changed: {'class': 'BOTH_FAIL', …   (the 097 row: both engines UB now, M4's re-record, not this slice's)
+PLANT OK (LOC_ONLY: the location-only pair classified in both modes; five neighbours rejected)
+SELFTEST OK (control; both stripped-switch stubs; Normal-only main/libc mutations; both dump/mode plants; both binder plants; printer collision; sequence/set controls; five baseline plants; outcome failures)
+```
+The inner_arg_temps baseline row for 016 before the disposition was
+`{"class": "AGREE-FIRST", "cross_mode": "SAME_SET", "lean": "e3e1024ddb83", "mode": "first", "oracle": "e3e1024ddb83"}`:
+the oracle's and Lean's observation hashes were EQUAL — the pre-merge coincidence in hash form (both
+engines at `<unknown location>`); after the merge the Lean hash is unchanged (`e3e1024ddb83`) and the
+oracle's is `54a5577345c4` (the location). The row now carries `LOC_ONLY-FIRST` and the dated
+`disposition` text.

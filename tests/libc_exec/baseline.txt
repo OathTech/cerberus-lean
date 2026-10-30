@@ -12,7 +12,7 @@
 013-strcpy-strcat MATCH
 014-strcmp-family MATCH
 015-strchr-strstr MATCH
-016-strstr-twoway-oob MATCH
+016-strstr-twoway-oob LOC_ONLY
 017-memmove-memchr MATCH
 018-strtol-bases MATCH
 019-strtol-erange MATCH

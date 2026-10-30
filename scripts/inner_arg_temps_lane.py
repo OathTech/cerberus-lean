@@ -4,6 +4,11 @@
 The shared observation codec owns framing, exits and full verdict tokens.
 AGREE is exhaustive; AGREE-FIRST is a single trace, outside CONTRACT §1.
 BOTH_FAIL (one Error per engine, equal under failure-class, or two crashes)
+LOC_ONLY / LOC_ONLY-FIRST (declared transport limitation N4, VALIDATION.md 2b, 2026-10-30): the two
+complete observation sequences are identical once every UB `loc` field is removed, every Lean
+location is `<unknown location>` and no oracle one is — the Lean engine runs libc from the pinned
+Core text dump, which carries no location annotations; the baseline row carries the class and a
+dated disposition, fail-closed like every other class (any other difference is DIFF).
 and RESOURCE (oracle bound exceeded) are never agreement. Within a mode,
 complete ordered engine sequences must match. The baseline pins distinct
 complete tokens and failure/resource classes, not execution multiplicities.
@@ -101,6 +106,32 @@ def population():
     return rows
 
 
+LOC_RE = re.compile(r', loc: "([^"]*)"\}$')
+LOC_ONLY_DISPOSITION = ('LOC_ONLY: declared transport limitation N4 (VALIDATION.md 2b; [AGENT 2026-10-30], orchestrator ruling on '
+                        'the merge-base bump stage 1 finding, operator may overrule): a UB raised inside C-library code reports '
+                        '<unknown location> on the Lean engine (the pinned libc Core text dump carries no location annotations) '
+                        'where the oracle reports the C location; identical otherwise. Remover: the queued transport slice.')
+
+
+def loc_only(oracle_tokens, lean_tokens):
+    """Condition of the LOC_ONLY class: same length; every pair of token lines is identical once the
+    `loc` field is removed; every Lean `loc` is `<unknown location>` and no oracle `loc` is; at least
+    one pair differs. Anything else is NOT location-only (the caller then fails the row as DIFF)."""
+    if len(oracle_tokens) != len(lean_tokens) or tuple(oracle_tokens) == tuple(lean_tokens):
+        return False
+    for o, l in zip(oracle_tokens, lean_tokens):
+        mo, ml = LOC_RE.search(o), LOC_RE.search(l)
+        if o == l:
+            continue
+        if mo is None or ml is None:
+            return False
+        if LOC_RE.sub('}', o) != LOC_RE.sub('}', l):
+            return False
+        if ml.group(1) != '<unknown location>' or mo.group(1) == '<unknown location>':
+            return False
+    return True
+
+
 def classify(mode, oracle, lean, report_only=False):
     """The row class. In the GATE (row 15) an INVALID capture on either side and a Lean
     resource outcome where the oracle completed FAIL the row. In report-only mode (the
@@ -123,13 +154,17 @@ def classify(mode, oracle, lean, report_only=False):
         return 'BOTH_FAIL'
     if oracle[0] == lean[0] == 'CRASH':
         return 'BOTH_FAIL'
+    if oracle[0] == lean[0] == 'OBS' and loc_only(oracle[1], lean[1]):
+        return 'LOC_ONLY-FIRST' if mode == 'first' else 'LOC_ONLY'
     require(oracle[0] == lean[0] == 'OBS' and oracle[1] == lean[1],
             f'DIFF: oracle={oracle}; lean={lean}')
     return 'AGREE-FIRST' if mode == 'first' else 'AGREE'
 
 
 def same_sequence(name, oracle, lean):
-    require(oracle[0] == lean[0] == 'OBS' and oracle[1] == lean[1],
+    # order and multiplicity kept; a LOC_ONLY pair (identical but for the Lean `<unknown location>`
+    # inside libc, N4) is the one admitted difference
+    require(oracle[0] == lean[0] == 'OBS' and (oracle[1] == lean[1] or loc_only(oracle[1], lean[1])),
             f'{name}: matched-mode complete-sequence disagreement: {oracle} / {lean}')
 
 
@@ -375,6 +410,7 @@ class Runner:
                     f'{row.name}: upstream expected verdict differs')
         print(f'  {cls:25} {row.name}' + (f' cross-mode={cross_kind}' if cross_kind else ''), flush=True)
         return {'class': cls, 'mode': row.mode, 'oracle': baseline_hash(oracle), 'lean': baseline_hash(lean),
+                **({'disposition': LOC_ONLY_DISPOSITION} if cls.startswith('LOC_ONLY') else {}),
                 **({'normal_status': normal_status} if normal_status is not None else {}),
                 **({'cross_mode': cross_kind} if cross_kind else {}),
                 **({'normal_baseline': 'tests/libc_exec/baseline.txt:38 (039-strerror-assert MATCH)'}
@@ -500,6 +536,26 @@ def selftest(args):
             pass
         else:
             raise Failure(f'bad outcome pair accepted: {o} / {l}')
+    # LOC_ONLY (N4) plants: the one admitted difference and its neighbours
+    ub = 'UB:{ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "%s"}'
+    o_loc, l_unk, l_real = ub % '<265:22--265:26>', ub % '<unknown location>', ub % '<1:1--1:2>'
+    l_other = 'UB:{ub: "UB_CERB001_integer_to_pointer_cast", stderr: "", loc: "<unknown location>"}'
+    require(classify('first', ('OBS', (o_loc,), ()), ('OBS', (l_unk,), ())) == 'LOC_ONLY-FIRST'
+            and classify('exhaustive', ('OBS', (o_loc,), ()), ('OBS', (l_unk,), ())) == 'LOC_ONLY',
+            'LOC_ONLY plant: a location-only pair was not classified LOC_ONLY')
+    for o, l, why in [((o_loc,), (l_real,), 'Lean reports a real location'),
+                      ((o_loc,), (l_other,), 'the UB differs'),
+                      ((l_unk,), (l_real,), 'the oracle itself is at unknown location'),
+                      ((o_loc, o_loc), (l_unk,), 'the sequences differ in length'),
+                      ((tokens[0], o_loc), (tokens[1], l_unk), 'another observation differs')]:
+        try:
+            classify('first', ('OBS', o, ()), ('OBS', l, ()))
+        except Failure:
+            pass
+        else:
+            raise Failure(f'LOC_ONLY plant accepted a non-location-only pair ({why})')
+    require(loc_only((o_loc,), (l_unk,)) and not loc_only((o_loc,), (o_loc,)), 'loc_only: identical pairs are not location-only')
+    print('PLANT OK (LOC_ONLY: the location-only pair classified in both modes; five neighbours rejected)', flush=True)
     print('SELFTEST OK (control; both stripped-switch stubs; Normal-only main/libc mutations; both dump/mode plants; both binder plants; printer collision; sequence/set controls; five baseline plants; outcome failures)', flush=True)
 
 

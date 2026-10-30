@@ -38,6 +38,19 @@ of this work's scope.
 
 ## Queued larger work
 
+- **Locations in the Core text transport** (declared limitation N4, VALIDATION.md 2b; found by
+  the merge-base bump stage 1, 2026-10-30) — the pinned libc Core text dumps carry no location
+  annotations (`pp_core.ml` hard-wires `show_locations = false`; `CoreParser.lean` has no grammar
+  for `{-# … #-}` location comments), so every memop/load/store inside libc runs at
+  `<unknown location>` on the Lean engine while the oracle reports the C location. Latent until
+  upstream f4a3a3d54 made `memcmp` load at the memop's `loc`. The slice: print locations into the
+  dump (a printer option, or the fork's own dump mode), parse them in `CoreParser` into the
+  annotation list, re-pin both libc dumps (`libc_prep.sh --record`) and the quotation pins
+  (`core-quote-libc*.sha256`; the quotation instrument's representation of annotations), then
+  retire the `LOC_ONLY` class and its disposition rows in `tests/libc_exec/dispositions.txt` and
+  `tests/inner_arg_temps/baseline.json`. Witness: `tests/libc_exec/016-strstr-twoway-oob.c` (both
+  engines `UB_CERB002a_out_of_bound_load`; oracle `<265:22--265:26>`, Lean `<unknown location>`).
+
 - **Quotation hygiene follow-up** — mirror resolved-path library-location
   classification into the fork OCaml oracle and refuse quotation through
   non-canonical runtime spellings. These ruled-yes I1b changes are explicitly

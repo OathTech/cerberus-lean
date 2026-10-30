@@ -43,7 +43,20 @@
 # pass certifies nothing beyond the single-trace rows. (b) also witnesses
 # that the comparator distinguishes the two modes on this very row.
 #
-# Usage: ./scripts/test_libc_exec.sh [--record-baseline]
+# LOCATION-ONLY DIFFERENCES (declared transport limitation N4, VALIDATION.md 2b; merge-base bump
+# stage 1 M2d, 2026-10-30, orchestrator ruling [AGENT 2026-10-30], operator may overrule): the Lean
+# engine runs libc from the pinned Core TEXT dump, which carries no location annotations (the
+# oracle's Core printer emits none, pp_core.ml `show_locations = false`; CoreParser has no grammar
+# for them), so a UB raised inside C-library code reports `<unknown location>` on Lean where the
+# oracle reports the C location. Such a row is status LOC_ONLY — accepted ONLY when (a) the two
+# token streams are identical once every `loc` field is removed, (b) every Lean UB location is
+# `<unknown location>` and no oracle one is, and (c) the row has a reviewed, dated line in
+# tests/libc_exec/dispositions.txt. Any other difference, or (a)+(b) without (c), is DIFF (RED).
+# The baseline carries the class (fail-closed both directions, like MATCH/DIFF); the reason lives
+# in the dispositions register. `--selftest` plants the classifier (4 token pairs + the missing
+# disposition) on scratch inputs.
+#
+# Usage: ./scripts/test_libc_exec.sh [--record-baseline | --selftest]
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
@@ -59,7 +72,58 @@ RECORD_BASELINE=false
 command -v timeout &>/dev/null || { echo "Error: 'timeout' not found" >&2; exit 1; }
 
 BASELINE="$PROJECT_ROOT/tests/libc_exec/baseline.txt"
+DISPOSITIONS="$PROJECT_ROOT/tests/libc_exec/dispositions.txt"
 fail() { echo "FAIL: $*" >&2; exit 1; }
+
+# strip the `loc` field of every UB token line (the field the transport limitation touches)
+strip_loc() { sed -E 's/, loc: "[^"]*"\}/}/'; }
+# is_loc_only <oracle tokens> <lean tokens>: conditions (a) and (b) of the header
+is_loc_only() {
+    local o l
+    [[ "$1" != "$2" ]] || return 1
+    o=$(strip_loc <<<"$1"); l=$(strip_loc <<<"$2")
+    [[ "$o" == "$l" ]] || return 1
+    grep -q 'loc: "' <<<"$2" || return 1
+    ! grep 'loc: "' <<<"$2" | grep -qv 'loc: "<unknown location>"' || return 1
+    ! grep 'loc: "' <<<"$1" | grep -q 'loc: "<unknown location>"' || return 1
+    return 0
+}
+# has_disposition <row name> <class> [register]: condition (c), a reviewed dated line
+has_disposition() {
+    local reg="${3:-$DISPOSITIONS}"
+    [[ -f "$reg" ]] && grep -qE "^$1"$'\t'"$2"$'\t'"[0-9]{4}-[0-9]{2}-[0-9]{2}"$'\t' "$reg"
+}
+# classify_pair <row name> <oracle tokens> <lean tokens> [register] -> MATCH | LOC_ONLY | DIFF
+classify_pair() {
+    if [[ "$2" == "$3" ]]; then echo MATCH
+    elif is_loc_only "$2" "$3"; then
+        if has_disposition "$1" LOC_ONLY "${4:-}"; then echo LOC_ONLY
+        else echo DIFF; echo "    location-only difference WITHOUT a reviewed disposition line in tests/libc_exec/dispositions.txt — DIFF (fail-closed)" >&2; fi
+    else echo DIFF; fi
+}
+
+if [[ "${1:-}" == "--selftest" ]]; then
+    echo "test_libc_exec: SELFTEST — classifier plants on scratch token pairs (nothing in the tree is touched)"
+    T=$(mktemp -d "${TMPDIR:-$PROJECT_ROOT/.tmp}/libc-exec-selftest.XXXXXXXX") || fail "mktemp failed"
+    printf 'planted-row\tLOC_ONLY\t2026-10-30\t[PLANT] reviewed\n' > "$T/disp"
+    o='UB:{ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<265:22--265:26>"}'
+    lu='UB:{ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<unknown location>"}'
+    lr='UB:{ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<1:1--1:2>"}'
+    lv='UB:{ub: "UB_CERB001_integer_to_pointer_cast", stderr: "", loc: "<unknown location>"}'
+    v='VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}'
+    plants=0; fails=0
+    plant() { local label="$1" want="$2" got="$3"; plants=$((plants+1)); if [[ "$got" == "$want" ]]; then echo "  PLANT OK   [$label] -> $got"; else echo "  PLANT FAIL [$label] -> got $got, want $want"; fails=$((fails+1)); fi; }
+    plant "P1 identical tokens" MATCH "$(classify_pair planted-row "$o" "$o" "$T/disp" 2>/dev/null)"
+    plant "P2 loc-only, Lean unknown, reviewed row" LOC_ONLY "$(classify_pair planted-row "$o" "$lu" "$T/disp" 2>/dev/null)"
+    plant "P3 loc-only, Lean unknown, NO disposition line" DIFF "$(classify_pair other-row "$o" "$lu" "$T/disp" 2>/dev/null)"
+    plant "P4 loc differs but Lean reports a real location" DIFF "$(classify_pair planted-row "$o" "$lr" "$T/disp" 2>/dev/null)"
+    plant "P5 Lean unknown but the UB differs" DIFF "$(classify_pair planted-row "$o" "$lv" "$T/disp" 2>/dev/null)"
+    plant "P6 multi-line: loc-only on one line, a value differs on another" DIFF "$(classify_pair planted-row "$v"$'\n'"$o" "$v"$'\n'"$lv" "$T/disp" 2>/dev/null)"
+    plant "P7 multi-line: loc-only on every UB line" LOC_ONLY "$(classify_pair planted-row "$v"$'\n'"$o" "$v"$'\n'"$lu" "$T/disp" 2>/dev/null)"
+    plant "P8 oracle itself at unknown location (no transport gap to declare)" DIFF "$(classify_pair planted-row "$lu" "$lr" "$T/disp" 2>/dev/null)"
+    rm -rf "$T"
+    if (( fails == 0 )); then echo "test_libc_exec: SELFTEST OK ($plants plants)"; exit 0; else echo "test_libc_exec: SELFTEST FAILED ($fails)"; exit 1; fi
+fi
 
 build_cerberus
 build_lean
@@ -101,7 +165,7 @@ if [[ -d "$EXH_DIR" ]]; then
 fi
 
 : > "$OUTPUT_DIR/baseline.new"
-pass=0; failcnt=0
+pass=0; failcnt=0; loccnt=0
 for row in "${ROWS[@]}"; do
     mode="${row%%|*}"; tu="${row#*|}"
     if [[ "$mode" == exhaustive ]]; then
@@ -181,18 +245,26 @@ for row in "${ROWS[@]}"; do
         else
             failcnt=$((failcnt+1))
         fi
+    elif [[ -n "${otok:-}" && -n "${ltok:-}" ]] && [[ "$(classify_pair "$name" "$otok" "$ltok" 2>"$OUTPUT_DIR/$f.classify.err")" == LOC_ONLY ]]; then
+        # location-only difference on a reviewed row (header; VALIDATION.md 2b N4)
+        status="LOC_ONLY"
+        loccnt=$((loccnt+1))
+        echo "  LOC_ONLY $name (reviewed: $(grep -E "^$name"$'\t' "$DISPOSITIONS" | cut -f3) — the Lean engine reports no source location inside libc):"
+        echo "    O: $ocaml_line"
+        echo "    L: $lean_line"
     else
         status="DIFF"
         failcnt=$((failcnt+1))
         echo "  DIFF  $name:"
         echo "    O: $ocaml_line"
         echo "    L: $lean_line"
+        [[ -s "$OUTPUT_DIR/$f.classify.err" ]] && cat "$OUTPUT_DIR/$f.classify.err"
     fi
     echo "$name $status" >> "$OUTPUT_DIR/baseline.new"
 done
 
 echo ""
-echo "SUMMARY: match=$pass diff=$failcnt"
+echo "SUMMARY: match=$pass loc_only=$loccnt diff=$failcnt"
 # A VACUOUS row is never acceptable, recorded or not (pre-merge audit F8,
 # 2026-09-29: a VACUOUS status written into the baseline used to diff clean
 # and print ALL MATCH): an exhaustive row must actually exercise >= 2

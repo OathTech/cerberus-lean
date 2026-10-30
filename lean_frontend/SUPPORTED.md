@@ -52,6 +52,15 @@ with exact engine agreement within each mode. Those counts are informational,
 not pinned. A distinct-outcome difference is a finding. The registered
 strerror assert Error remains BOTH_FAIL, never execution agreement.
 
+A UB raised inside C-library code reports no source location on the Lean
+engine (`loc: "<unknown location>"`), because the libc Core text transport
+carries none: the oracle's Core printer emits no location annotations and the
+Core parser has no grammar for them. The verdict and every other field agree;
+the oracle's location is the reference. The differential lanes admit exactly
+this difference as a reviewed `LOC_ONLY` class on named rows (today one:
+`tests/libc_exec/016-strstr-twoway-oob.c`), never silently (VALIDATION.md 2b
+N4; declared 2026-10-30, remover queued in TODO).
+
 Upstream's recursive-main guard is dead on the active driver path:
 recursion into main executes. Bounded witnesses with and without argc/argv
 pass both engines and modes (42 and 7 respectively, also the GCC results).

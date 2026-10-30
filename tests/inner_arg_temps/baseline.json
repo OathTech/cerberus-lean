@@ -39,7 +39,7 @@
   "libc/013-strcpy-strcat": {"class": "AGREE-FIRST", "cross_mode": "SAME_SET", "lean": "cb7f7b994295", "mode": "first", "oracle": "cb7f7b994295"},
   "libc/014-strcmp-family": {"class": "AGREE-FIRST", "cross_mode": "SAME_SET", "lean": "1fd15dca2a78", "mode": "first", "oracle": "1fd15dca2a78"},
   "libc/015-strchr-strstr": {"class": "AGREE-FIRST", "cross_mode": "SAME_SET", "lean": "90bcc96c53cc", "mode": "first", "oracle": "90bcc96c53cc"},
-  "libc/016-strstr-twoway-oob": {"class": "AGREE-FIRST", "cross_mode": "SAME_SET", "lean": "e3e1024ddb83", "mode": "first", "oracle": "e3e1024ddb83"},
+  "libc/016-strstr-twoway-oob": {"class": "LOC_ONLY-FIRST", "cross_mode": "SAME_SET", "disposition": "LOC_ONLY: declared transport limitation N4 (VALIDATION.md 2b; [AGENT 2026-10-30], orchestrator ruling on the merge-base bump stage 1 finding, operator may overrule): a UB raised inside C-library code reports <unknown location> on the Lean engine (the pinned libc Core text dump carries no location annotations) where the oracle reports the C location; identical otherwise. Remover: the queued transport slice.", "lean": "e3e1024ddb83", "mode": "first", "oracle": "54a5577345c4"},
   "libc/017-memmove-memchr": {"class": "AGREE-FIRST", "cross_mode": "SAME_SET", "lean": "d65c161100dd", "mode": "first", "oracle": "d65c161100dd"},
   "libc/018-strtol-bases": {"class": "AGREE-FIRST", "cross_mode": "SAME_SET", "lean": "cf8a64f652a2", "mode": "first", "oracle": "cf8a64f652a2"},
   "libc/019-strtol-erange": {"class": "AGREE-FIRST", "cross_mode": "SAME_SET", "lean": "839fcd9d6a06", "mode": "first", "oracle": "839fcd9d6a06"},
