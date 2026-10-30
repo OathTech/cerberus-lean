@@ -612,7 +612,7 @@ proc harness (ax: pointer, ay: pointer, bx: pointer, by: pointer): eff loaded in
       | Specified(a_588: integer) =>
           pure(if not(a_588 = 1) then True else False)
       | Unspecified(_: ctype) =>
-          nd(pure(True), pure(False))
+          pure(undef(<<UB_CERB004_unspecified__if>>))
     end in
   if a_586 then
     let strong a_683: loaded integer = bound(pure(Specified(9))) in

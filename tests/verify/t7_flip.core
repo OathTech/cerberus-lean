@@ -43,7 +43,7 @@ proc flip (n: pointer): eff loaded integer :=
         | Specified(a_532: integer) =>
             pure(if not(a_532 = 1) then True else False)
         | Unspecified(_: ctype) =>
-            nd(pure(True), pure(False))
+            pure(undef(<<UB_CERB004_unspecified__while>>))
       end in
     if a_530 then
       let strong a_545: loaded integer =
@@ -118,7 +118,7 @@ proc flip (n: pointer): eff loaded integer :=
           | Specified(a_546: integer) =>
               pure(if not(a_546 = 1) then True else False)
           | Unspecified(_: ctype) =>
-              nd(pure(True), pure(False))
+              pure(undef(<<UB_CERB004_unspecified__if>>))
         end in
       if a_544 then
         let strong _: loaded integer =

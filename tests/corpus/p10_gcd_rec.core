@@ -42,7 +42,7 @@ proc gcd_rec (a: pointer, b: pointer): eff loaded integer :=
       | Specified(a_546: integer) =>
           pure(if not(a_546 = 1) then True else False)
       | Unspecified(_: ctype) =>
-          nd(pure(True), pure(False))
+          pure(undef(<<UB_CERB004_unspecified__if>>))
     end in
   if a_544 then
     let strong a_559: loaded integer =

@@ -1,5 +1,12 @@
 # exec differential baseline — written by test_exec.sh --write-baseline
 # format: <file.c> <STATUS>   (see test_exec.sh header for the taxonomy)
+# 2026-10-30 merge-base bump stage 1 (upstream b9aeedcb4 -> c3ff8c53f; record
+#   lean_frontend/docs/2026-10-29_merge-base-bump-stage1-record.md section 4): three rows move, each an
+#   upstream fix carried by the new base. 0120-addition_null_pointer.error.c and
+#   0121-addition_null_pointer_zero.error.c CERB_SKIP -> UB_MATCH (both engines UB046_array_pointer_outside;
+#   upstream f4a3a3d54, seam S2; the files keep their `.error.c` names until stage 2's 0676e9fca renames
+#   them). 0342-empty-range-case.c MATCH adopted (upstream ad233f84f's witness, Specified(111) on both).
+#   0343/0344 stay CERB_SKIP (the exhaustive oracle's 30 s timeout, never agreement); 0213 stays CERB_SKIP.
 # 2026-10-21 inner_arg_temps I0b: adopt upstream 3230aa494's 0343 witness.
 #   The exhaustive nolibc oracle reaches the 30 s CPU timeout (CERB_SKIP,
 #   never agreement); both engines/modes pass the libc single-trace check.
@@ -148,8 +155,8 @@
 0117-global_array_init_incomplete.error.c CERB_SKIP
 0118-block_array_init_incomplete.error.c CERB_SKIP
 0119-block_array_init_rec.c MATCH
-0120-addition_null_pointer.error.c CERB_SKIP
-0121-addition_null_pointer_zero.error.c CERB_SKIP
+0120-addition_null_pointer.error.c UB_MATCH
+0121-addition_null_pointer_zero.error.c UB_MATCH
 0122-incr_overflow.undef.c UB_MATCH
 0123-decr_underflow.undef.c UB_MATCH
 0124-incr_wrap.c MATCH
@@ -291,5 +298,6 @@
 0339-invalid-string-character.error.c CERB_SKIP
 0340-shl_promotion_to_signed.undef.c UB_MATCH
 0341-misaligned_pointer_implicit_conversion.undef.c MATCH
+0342-empty-range-case.c MATCH
 0343-subzero-floating-to-_Bool.c CERB_SKIP
 0344-ptr-to-_Bool-param.c CERB_SKIP

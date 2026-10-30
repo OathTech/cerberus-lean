@@ -43,7 +43,7 @@ proc gcd (a: pointer, b: pointer): eff loaded integer :=
         | Specified(a_553: integer) =>
             pure(if not(a_553 = 1) then True else False)
         | Unspecified(_: ctype) =>
-            nd(pure(True), pure(False))
+            pure(undef(<<UB_CERB004_unspecified__while>>))
       end in
     if a_551 then
       let strong t: pointer = create(Ivalignof('signed int'), 'signed int') in

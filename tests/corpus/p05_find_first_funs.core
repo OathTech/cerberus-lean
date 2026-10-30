@@ -48,7 +48,7 @@ proc find_first (a: pointer, n: pointer, x: pointer): eff loaded integer :=
         | Specified(a_645: integer) =>
             pure(if not(a_645 = 1) then True else False)
         | Unspecified(_: ctype) =>
-            nd(pure(True), pure(False))
+            pure(undef(<<UB_CERB004_unspecified__while>>))
       end in
     if a_643 then
       let strong a_659: loaded integer =
@@ -126,7 +126,7 @@ proc find_first (a: pointer, n: pointer, x: pointer): eff loaded integer :=
           | Specified(a_660: integer) =>
               pure(if not(a_660 = 1) then True else False)
           | Unspecified(_: ctype) =>
-              nd(pure(True), pure(False))
+              pure(undef(<<UB_CERB004_unspecified__if>>))
         end in
       if a_658 then
         let strong a_684: loaded integer =
@@ -270,7 +270,7 @@ proc main (): eff loaded integer :=
         | Specified(a_544: integer) =>
             pure(if not(a_544 = 1) then True else False)
         | Unspecified(_: ctype) =>
-            nd(pure(True), pure(False))
+            pure(undef(<<UB_CERB004_unspecified__while>>))
       end in
     if a_542 then
       let strong _: loaded integer =

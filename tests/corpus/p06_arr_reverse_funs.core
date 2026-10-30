@@ -69,7 +69,7 @@ proc arr_reverse (a: pointer, n: pointer): eff unit :=
         | Specified(a_706: integer) =>
             pure(if not(a_706 = 1) then True else False)
         | Unspecified(_: ctype) =>
-            nd(pure(True), pure(False))
+            pure(undef(<<UB_CERB004_unspecified__while>>))
       end in
     if a_704 then
       let strong t: pointer = create(Ivalignof('signed int'), 'signed int') in
@@ -369,7 +369,7 @@ proc main (): eff loaded integer :=
         | Specified(a_550: integer) =>
             pure(if not(a_550 = 1) then True else False)
         | Unspecified(_: ctype) =>
-            nd(pure(True), pure(False))
+            pure(undef(<<UB_CERB004_unspecified__while>>))
       end in
     if a_548 then
       let strong _: loaded integer =
@@ -589,7 +589,7 @@ proc main (): eff loaded integer :=
         | Specified(a_623: integer) =>
             pure(if not(a_623 = 1) then True else False)
         | Unspecified(_: ctype) =>
-            nd(pure(True), pure(False))
+            pure(undef(<<UB_CERB004_unspecified__while>>))
       end in
     if a_621 then
       let strong a_637: loaded integer =
@@ -697,7 +697,7 @@ proc main (): eff loaded integer :=
           | Specified(a_638: integer) =>
               pure(if not(a_638 = 1) then True else False)
           | Unspecified(_: ctype) =>
-              nd(pure(True), pure(False))
+              pure(undef(<<UB_CERB004_unspecified__if>>))
         end in
       if a_636 then
         let strong a_679: loaded integer =

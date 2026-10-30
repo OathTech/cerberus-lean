@@ -172,7 +172,7 @@ minimal/093-nd-choice AGREE oracle=59a41d0ff43c default=same
 minimal/094-bool-conversion AGREE oracle=8d74ccd3b2ab default=same
 minimal/095-unsigned-div-zero.undef AGREE oracle=44cdbd7313c5 default=same
 minimal/096-unsigned-mod-zero.undef AGREE oracle=8bdefb8a7db8 default=same
-minimal/097-null-ptr-arith.undef AGREE oracle=0a319c85b2ca default=changed
+minimal/097-null-ptr-arith.undef AGREE oracle=0a319c85b2ca default=same
 minimal/098-cross-alloc-ptrdiff.undef AGREE oracle=67c9045ffd7c default=same
 minimal/099-negative-right-shift AGREE oracle=b9d63105596b default=same
 minimal/100-int-wrap-unsigned AGREE oracle=1870c54fa729 default=same

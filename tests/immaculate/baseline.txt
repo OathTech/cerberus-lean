@@ -74,6 +74,17 @@
 # answer -> ORACLE_CRASH | L=<value> (hand-re-pinned 2026-10-03 from a short-lived both-crash MATCH | L=CRASH pin);
 # zd-ta-alignas-2p61-control (2^61, inside OCaml's int range) MATCH on both.
 #
+# merge-base bump stage 1 (2026-10-30, hand-edited; record docs/2026-10-29_merge-base-bump-stage1-record.md §4.7;
+# upstream b9aeedcb4 -> c3ff8c53f): five rows moved, each an upstream fix carried by the new base, none a verdict
+# change against Lean. zd-ta-alignas-huge-{sizeof,union-alignof,desugar} ORACLE_CRASH -> MATCH (L unchanged):
+# upstream b3e11ea33 moved sizeof/alignof out of the memory interface and computes them unbounded, so the
+# Z.to_int reads above are gone and the oracle (fork and pristine c3ff8c53f alike) now gives the R7 answer Lean
+# already computed — ISO-fix register R7 RETIRED. ts-fmt-s-null MATCH | L=CRASH -> MATCH | L=UB046 <7:38--7:57>:
+# upstream f4a3a3d54 makes the pure array_shift of a null pointer UB046 where both engines crashed (seam S2;
+# tray 04). s4b-memcmp-hugesize: the oracle still crashes (tray 13, impl_mem.ml memcmp Z.to_int, unchanged
+# upstream); the pinned Lean token gains a source location (<unknown location> -> <13:10--13:34>) because
+# f4a3a3d54 threads Loc.t into Mem.memcmp (S2 memcmpM) — R3 stays as recorded.
+#
 # zero-discrepancy Z3 pins (2026-09-05; charter row Z-28 / detective RC-2, record
 # docs/2026-09-05_zero-discrepancy-Z3-record.md): zd-z28-<name> are BYTE-IDENTICAL copies of three of
 # the six tests/pnvi_testsuite STDOUT_DIFF rows (same MD5 => same oracle interleaving as the committed
@@ -199,14 +210,14 @@ offsetof-nested-struct MATCH | L=VAL:{value: "Specified(0)", stdout: "", stderr:
 offsetof-union-member MATCH | L=CRASH
 pr44468 MATCH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
 r5-hex-subnormal-double-rounding DIFF | L=VAL:{value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
-s4b-memcmp-hugesize ORACLE_CRASH | L=UB:{ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<unknown location>"}
+s4b-memcmp-hugesize ORACLE_CRASH | L=UB:{ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<13:10--13:34>"}
 s9-enum-signedness MATCH | L=VAL:{value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
 s9-enum-sizeof-route MATCH | L=VAL:{value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}
 trap-bool-uninit MATCH | L=UB:{ub: "UB012_lvalue_read_trap_representation", stderr: "", loc: "<4:10--4:11>"}
 trap-bool-write MATCH | L=UB:{ub: "UB012_lvalue_read_trap_representation", stderr: "", loc: "<6:10--6:11>"}
 tray44-allocator-exhausted-single-request MATCH | L=ERR:{msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
 tray44-allocator-exhausted-single-request-overlap MATCH | L=ERR:{msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
-ts-fmt-s-null MATCH | L=CRASH
+ts-fmt-s-null MATCH | L=UB:{ub: "UB046_array_pointer_outside", stderr: "", loc: "<7:38--7:57>"}
 ts-fmt-star-precision MATCH | L=CRASH
 ts-fmt-star-width MATCH | L=CRASH
 ts-memcmp-struct-padding MATCH | L=CRASH
@@ -237,9 +248,9 @@ zd-nan-bytes-deviation DIFF | L=VAL:{value: "Specified(127)", stdout: "", stderr
 zd-r2-crash-digit9 ORACLE_CRASH | L=VAL:{value: "Specified(199)", stdout: "", stderr: "", blocked: "false"}
 zd-r2-highbyte DIFF | L=VAL:{value: "Specified(200)", stdout: "", stderr: "", blocked: "false"}
 zd-ta-alignas-2p61-control MATCH | L=VAL:{value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}
-zd-ta-alignas-huge-desugar ORACLE_CRASH | L=ERR:{msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
-zd-ta-alignas-huge-sizeof ORACLE_CRASH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
-zd-ta-alignas-huge-union-alignof ORACLE_CRASH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+zd-ta-alignas-huge-desugar MATCH | L=ERR:{msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
+zd-ta-alignas-huge-sizeof MATCH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+zd-ta-alignas-huge-union-alignof MATCH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
 zd-z28-addr-layout-a MATCH | L=VAL:{value: "Specified(0)", stdout: "s1=281474976706032 c1=281474976706031 i1=281474976706024 p1=281474976706016\n", stderr: "", blocked: "false"}
 zd-z28-addr-layout-b MATCH | L=VAL:{value: "Specified(0)", stdout: "s1=281474976707776 c1=281474976707775 i1=281474976707768 p1=281474976707760\n", stderr: "", blocked: "false"}
 zd-z28-pointer_from_integer_2g MATCH | L=VAL:{value: "Specified(0)", stdout: "j=5 &j=(@70, 0xffffffffede8)\n", stderr: "", blocked: "false"}

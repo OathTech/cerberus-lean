@@ -51,7 +51,7 @@ proc count_pairs (a: pointer, n: pointer): eff loaded integer :=
         | Specified(a_645: integer) =>
             pure(if not(a_645 = 1) then True else False)
         | Unspecified(_: ctype) =>
-            nd(pure(True), pure(False))
+            pure(undef(<<UB_CERB004_unspecified__while>>))
       end in
     if a_643 then
       let strong j: pointer = create(Ivalignof('signed int'), 'signed int') in
@@ -120,7 +120,7 @@ proc count_pairs (a: pointer, n: pointer): eff loaded integer :=
             | Specified(a_668: integer) =>
                 pure(if not(a_668 = 1) then True else False)
             | Unspecified(_: ctype) =>
-                nd(pure(True), pure(False))
+                pure(undef(<<UB_CERB004_unspecified__while>>))
           end in
         if a_666 then
           let strong a_682: loaded integer =
@@ -234,7 +234,7 @@ proc count_pairs (a: pointer, n: pointer): eff loaded integer :=
               | Specified(a_683: integer) =>
                   pure(if not(a_683 = 1) then True else False)
               | Unspecified(_: ctype) =>
-                  nd(pure(True), pure(False))
+                  pure(undef(<<UB_CERB004_unspecified__if>>))
             end in
           if a_681 then
             let strong _: loaded integer =
@@ -444,7 +444,7 @@ proc main (): eff loaded integer :=
         | Specified(a_547: integer) =>
             pure(if not(a_547 = 1) then True else False)
         | Unspecified(_: ctype) =>
-            nd(pure(True), pure(False))
+            pure(undef(<<UB_CERB004_unspecified__while>>))
       end in
     if a_545 then
       let strong _: loaded integer =

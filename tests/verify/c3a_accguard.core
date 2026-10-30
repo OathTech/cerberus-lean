@@ -314,7 +314,7 @@ proc acc10 (p: pointer, d: pointer): eff loaded integer :=
       | Specified(a_532: integer) =>
           pure(if not(a_532 = 1) then True else False)
       | Unspecified(_: ctype) =>
-          nd(pure(True), pure(False))
+          pure(undef(<<UB_CERB004_unspecified__if>>))
     end in
   if a_530 then
     let strong a_621: loaded integer =
@@ -460,7 +460,7 @@ proc acc10 (p: pointer, d: pointer): eff loaded integer :=
       | Specified(a_624: integer) =>
           pure(if not(a_624 = 1) then True else False)
       | Unspecified(_: ctype) =>
-          nd(pure(True), pure(False))
+          pure(undef(<<UB_CERB004_unspecified__if>>))
     end in
   if a_622 then
     let strong a_663: loaded integer =

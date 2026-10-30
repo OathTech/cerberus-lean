@@ -221,7 +221,7 @@ proc harness (a: pointer, b: pointer, alias: pointer): eff loaded integer :=
       | Specified(a_578: integer) =>
           pure(if not(a_578 = 1) then True else False)
       | Unspecified(_: ctype) =>
-          nd(pure(True), pure(False))
+          pure(undef(<<UB_CERB004_unspecified__if>>))
     end in
   if a_576 then
     let strong a_601: loaded integer =

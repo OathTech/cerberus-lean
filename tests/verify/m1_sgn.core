@@ -42,7 +42,7 @@ proc sgn (x: pointer): eff loaded integer :=
       | Specified(a_544: integer) =>
           pure(if not(a_544 = 1) then True else False)
       | Unspecified(_: ctype) =>
-          nd(pure(True), pure(False))
+          pure(undef(<<UB_CERB004_unspecified__if>>))
     end in
   if a_542 then
     let strong a_558: loaded integer =
@@ -105,7 +105,7 @@ proc sgn (x: pointer): eff loaded integer :=
       | Specified(a_561: integer) =>
           pure(if not(a_561 = 1) then True else False)
       | Unspecified(_: ctype) =>
-          nd(pure(True), pure(False))
+          pure(undef(<<UB_CERB004_unspecified__if>>))
     end in
   if a_559 then
     let strong a_573: loaded integer = bound(pure(Specified(1))) in

@@ -142,7 +142,7 @@ proc sat_add (a: pointer, b: pointer): eff loaded integer :=
       | Specified(a_546: integer) =>
           pure(if not(a_546 = 1) then True else False)
       | Unspecified(_: ctype) =>
-          nd(pure(True), pure(False))
+          pure(undef(<<UB_CERB004_unspecified__if>>))
     end in
   if a_544 then
     let strong a_589: loaded integer = bound(pure(Specified(2147483647))) in
@@ -318,7 +318,7 @@ proc sat_add (a: pointer, b: pointer): eff loaded integer :=
       | Specified(a_592: integer) =>
           pure(if not(a_592 = 1) then True else False)
       | Unspecified(_: ctype) =>
-          nd(pure(True), pure(False))
+          pure(undef(<<UB_CERB004_unspecified__if>>))
     end in
   if a_590 then
     let strong a_649: loaded integer =

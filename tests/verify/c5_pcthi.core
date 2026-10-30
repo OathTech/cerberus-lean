@@ -76,7 +76,7 @@ proc pct_hi (v: pointer): eff loaded integer :=
       | Specified(a_535: integer) =>
           pure(if not(a_535 = 1) then True else False)
       | Unspecified(_: ctype) =>
-          nd(pure(True), pure(False))
+          pure(undef(<<UB_CERB004_unspecified__if>>))
     end in
   if a_533 then
     let strong a_553: loaded integer =

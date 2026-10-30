@@ -1,5 +1,10 @@
 # exec differential baseline — written by test_exec.sh --write-baseline
 # format: <file.c> <STATUS>   (see test_exec.sh header for the taxonomy)
+# 2026-10-30 merge-base bump stage 1 (upstream b9aeedcb4 -> c3ff8c53f): 097-null-ptr-arith.undef.c
+#   CERB_SKIP -> UB_MATCH. Upstream f4a3a3d54 (carried by the new base) makes the pure
+#   array_shift_ptrval of a null pointer UB046_array_pointer_outside where both engines crashed
+#   (oracle failwith, Lean PANIC); seam S2 mirrors the verdict (record section 2.1). An upstream fix,
+#   closing tray 04. Record: lean_frontend/docs/2026-10-29_merge-base-bump-stage1-record.md section 4.
 001-return-literal.c MATCH
 002-return-zero.c MATCH
 003-arith-add.c MATCH
@@ -96,7 +101,7 @@
 094-bool-conversion.c MATCH
 095-unsigned-div-zero.undef.c UB_MATCH
 096-unsigned-mod-zero.undef.c UB_MATCH
-097-null-ptr-arith.undef.c CERB_SKIP
+097-null-ptr-arith.undef.c UB_MATCH
 098-cross-alloc-ptrdiff.undef.c UB_MATCH
 099-negative-right-shift.c MATCH
 100-int-wrap-unsigned.c MATCH

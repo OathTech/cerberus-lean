@@ -28,7 +28,7 @@ proc list_sum (p: pointer): eff loaded integer :=
         | Specified(a_688: integer) =>
             pure(if not(a_688 = 1) then True else False)
         | Unspecified(_: ctype) =>
-            nd(pure(True), pure(False))
+            pure(undef(<<UB_CERB004_unspecified__while>>))
       end in
     if a_686 then
       let strong _: loaded integer =
@@ -212,7 +212,7 @@ proc main (): eff loaded integer :=
         | Specified(a_551: integer) =>
             pure(if not(a_551 = 1) then True else False)
         | Unspecified(_: ctype) =>
-            nd(pure(True), pure(False))
+            pure(undef(<<UB_CERB004_unspecified__while>>))
       end in
     if a_549 then
       let strong slot: pointer =

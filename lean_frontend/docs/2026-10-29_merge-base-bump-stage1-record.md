@@ -1045,3 +1045,403 @@ check_handwritten_sync: OK (57 hand-written files byte-identical to lean_fronten
 ```
 No option bump anywhere in the slice (`grep -rn 'maxHeartbeats\|maxRecDepth' lean_frontend/*.lean
 lean_frontend/test` unchanged from the base); every tactic kernel-only.
+
+---
+
+## 4. M4 — lanes and baselines on the moved base (2026-10-30)
+
+Scope as staged by the orchestrator [AGENT 2026-10-30]: every baseline row that moved is dispositioned here as
+**upstream's fix**, a **retired refusal** or a **finding** — never a silent re-record — and each new class is cited
+to the upstream commit (carried by the new base) and the seam that mirrors it. Nothing moved that §0.9 did not
+forecast; no finding arose. Lanes ran through `scripts/ce` with `CERB_MEM_MAX=32G`; logs `.tmp/m4-chain-a.log`,
+`.tmp/m4-exec-ci.log`, `.tmp/m4-verify-full.log`, `.tmp/m4-chain-b.log`, `.tmp/m4-pins/*` (ephemeral).
+
+### 4.0 The disposition table (all moved rows)
+
+| lane / file | row | was → is | disposition | cited to |
+|---|---|---|---|---|
+| A2 `scripts/exec_baseline.txt` | `097-null-ptr-arith.undef.c` | `CERB_SKIP` → `UB_MATCH` | upstream's fix (both engines crashed; both now `UB046_array_pointer_outside`) | f4a3a3d54; seam S2 (§2.1); tray 04 closes at M6 |
+| A14 `tests/pnvi_lane/baseline.txt` | `minimal/097-null-ptr-arith.undef` | `AGREE … default=changed` → `AGREE … default=same` | upstream's fix (the PNVI-ae-udi verdict now equals the default-mode verdict, `oracle=0a319c85b2ca` unchanged) | f4a3a3d54; S2 |
+| A15 `tests/inner_arg_temps/baseline.json` | `minimal/097-null-ptr-arith.undef` | `BOTH_FAIL` (lean `8ed9a0170fd9`, oracle `37a96bce2405`) → `AGREE` (both `0a319c85b2ca`) | upstream's fix | f4a3a3d54; S2 |
+| Tier C `scripts/exec_ci_baseline.txt` | `0120-addition_null_pointer.error.c` | `CERB_SKIP` → `UB_MATCH` | upstream's fix (both `UB046_array_pointer_outside`, loc `<4:3--4:8>`); the `.error.c` name stays until stage 2's 0676e9fca | f4a3a3d54; S2 |
+| Tier C `scripts/exec_ci_baseline.txt` | `0121-addition_null_pointer_zero.error.c` | `CERB_SKIP` → `UB_MATCH` | upstream's fix (as 0120) | f4a3a3d54; S2 |
+| Tier C `scripts/exec_ci_baseline.txt` | `0342-empty-range-case.c` | (new file) → `MATCH` | adoption of upstream's witness (`Specified(111)` on both) | ad233f84f (keeping the body of empty GNU case ranges) |
+| B4 `tests/verify/*.core` (14), `tests/corpus/*.core` (7), `*_funs.core` (7), `*.core.sha256` (6) | 34 provenance rows | Core TEXT re-pinned, no verdict moved | upstream's fix (text only) | cee382443 (all), 83b1a7424 (p15 only); S5 — §4.4 |
+| Tier B 13 `lean_frontend/test/CoreQuote/core-quote-libc*.sha256` | the two libc literal digests | re-pinned with the M2b libc re-pin | upstream's fix (libc Core text: `do`/`switch`/unspecified arms) | 83b1a7424, cabe81c3b, 588672e95, cee382443 — §4.5 |
+| B5 `tests/immaculate/baseline.txt` | `zd-ta-alignas-huge-desugar` / `-sizeof` / `-union-alignof` | `ORACLE_CRASH` → `MATCH` (Lean token unchanged) | upstream's fix (the oracle's `Z.to_int` alignment reads are gone; it now gives the unbounded answer Lean computed under ISO-fix register R7 — **R7 retired**); a §0.9 forecast miss | b3e11ea33; S1 — §4.7 |
+| B5 `tests/immaculate/baseline.txt` | `ts-fmt-s-null` | `MATCH \| L=CRASH` → `MATCH \| L=UB046 <7:38--7:57>` | upstream's fix (both crashed; both now UB046) | f4a3a3d54; S2 — §4.7 |
+| B5 `tests/immaculate/baseline.txt` | `s4b-memcmp-hugesize` | `ORACLE_CRASH \| L=… <unknown location>` → `… <13:10--13:34>` | upstream's fix, Lean token only (`Loc.t` threaded into `memcmp`); the oracle's crash (tray 13) and register R3 unchanged | f4a3a3d54; S2 — §4.7 |
+| B7 `scripts/gcc_oracle_baseline.txt` | `tests/minimal/097-null-ptr-arith.undef.c`, `tests/immaculate/nolibc/ts-fmt-s-null.c` | `SKIP_LEAN_CRASH` → `SKIP_UB` | upstream's fix (Lean's verdict is now UB, never compared with gcc); full run DISAGREE=0, ledger set-equal to the run | f4a3a3d54; S2 — §4.8 |
+
+Rows that did NOT move, as forecast (§0.9): `0343`/`0344` stay `CERB_SKIP` (the exhaustive oracle's 30 s timeout,
+verbatim `[244/245] CERB_SKIP 0343-subzero-floating-to-_Bool (Cerberus timeout: TIMEOUT(cpu 30.13s of 30.17s wall;
+timeout 30s))`), `0213` stays `CERB_SKIP`; the PNVI `R-PNVI-*` rows; every verdict row of the verify and corpus
+lanes; the libc_exec rows (M2d's `LOC_ONLY` for 016 included); tests/ci parse and core round trips.
+
+### 4.1 A2 — `tests/minimal`, the 097 row
+
+The measurement on the M2b tip (`.tmp/m2b-lanes.log`, verbatim):
+```
+improvement: 097-null-ptr-arith.undef.c baseline=CERB_SKIP current=UB_MATCH
+--- 097-null-ptr-arith.undef oracle:
+Undefined {ub: "UB046_array_pointer_outside", stderr: "", loc: "<5:12--5:17>"}
+--- 097-null-ptr-arith.undef lean:
+Undefined {ub: "UB046_array_pointer_outside", stderr: "", loc: "<5:12--5:17>"}
+```
+Before the bump both engines crashed on `((int *) 0) + 1` (the oracle's `failwith` in `array_shift_ptrval`, the
+Lean `PANIC` in `arrayShiftNull`, §2.1 S2; tray 04). Upstream f4a3a3d54 puts `array_shift_ptrval` in the UB monad
+and makes the null-pointer shift `UB046_array_pointer_outside`; S2 mirrors it (`arrayShiftPtrval … : t0
+PointerValue` with `.Undef loc [.UB046_array_pointer_outside]`). Re-recorded as `UB_MATCH` with a header note in
+`scripts/exec_baseline.txt`; re-check on the edited file (`.tmp/m4-chain-a.log`, verbatim):
+```
+SUMMARY: total=113 match=90 ub_match=19 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+```
+
+### 4.2 Tier C — `tests/ci` (`scripts/exec_ci_baseline.txt`, 244 → 245 rows)
+
+Measured against the committed baseline on the M3 tip (`.tmp/m4-exec-ci.log`, verbatim):
+```
+[100/245] UB_MATCH 0120-addition_null_pointer.error: UB:{ub: "UB046_array_pointer_outside", stderr: "", loc: "<4:3--4:8>"}
+[101/245] UB_MATCH 0121-addition_null_pointer_zero.error: UB:{ub: "UB046_array_pointer_outside", stderr: "", loc: "<4:3--4:8>"}
+[122/245] CERB_SKIP 0213-label-statement-outside-switch.error (exit 1)
+[243/245] MATCH 0342-empty-range-case: VAL:{value: "Specified(111)", stdout: "", stderr: "", blocked: "false"}
+[244/245] CERB_SKIP 0343-subzero-floating-to-_Bool (Cerberus timeout: TIMEOUT(cpu 30.13s of 30.17s wall; timeout 30s))
+[245/245] CERB_SKIP 0344-ptr-to-_Bool-param (Cerberus timeout: TIMEOUT(cpu 30.12s of 30.13s wall; timeout 30s))
+SUMMARY: total=245 match=92 ub_match=43 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=110 cerb_floor=0 cerb_inconsistent=0
+improvement: 0121-addition_null_pointer_zero.error.c baseline=CERB_SKIP current=UB_MATCH
+improvement: 0120-addition_null_pointer.error.c baseline=CERB_SKIP current=UB_MATCH
+new file (not in baseline, not fatal): 0342-empty-range-case.c MATCH
+Baseline check: 0 regression(s), 2 improvement(s)
+BASELINE OK
+```
+Three rows edited by hand (header note in the file): 0120/0121 `UB_MATCH` (f4a3a3d54, S2 — the same crash-to-UB
+movement as 097; the files keep their upstream `.error.c` names, the rename is stage 2's 0676e9fca), 0342 `MATCH`
+(ad233f84f's witness). Re-check on the edited file: §4.6.
+
+### 4.3 A14 PNVI and A15 inner_arg_temps — the 097 row
+
+`test_pnvi.sh --record-baseline` (`.tmp/m4-chain-a.log`, verbatim; the lane re-adds its header and rewrites every
+row — the diff against the committed file is exactly one row):
+```
+  AGREE                              minimal/097-null-ptr-arith.undef  default=same
+pnvi_lane: wrote 164 rows to …/.tmp/scripts/observations/test_pnvi.KUsWGEi0QI/pnvi.toyvKTq5/baseline.new (header must be
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+-minimal/097-null-ptr-arith.undef AGREE oracle=0a319c85b2ca default=changed
++minimal/097-null-ptr-arith.undef AGREE oracle=0a319c85b2ca default=same
+```
+`default=changed` recorded that the PNVI-ae-udi verdict (`0a319c85b2ca`, the UB) differed from the default-mode
+verdict (then a crash); the default mode now reaches the same UB, so `default=same`. The `R-PNVI-06/07/01` rows are
+untouched (upstream's symbolic arm is unchanged; trays 51/52/53 stay open).
+
+`test_inner_arg_temps.sh --rows '^minimal/097-null-ptr-arith.undef$'` (verbatim):
+```
+  AGREE                     minimal/097-null-ptr-arith.undef
+SUMMARY: inner_arg_temps rows=1 AGREE=1 failures=0
+inner_arg_temps: FAIL — minimal/097-null-ptr-arith.undef: baseline changed: {'class': 'BOTH_FAIL', 'lean': '8ed9a0170fd9', 'mode': 'exhaustive', 'normal_status': {'class': 'BOTH_FAIL', 'lean': '8ed9a0170fd9', 'oracle': '37a96bce2405'}, 'oracle': '37a96bce2405'}
+```
+The row was spliced into `tests/inner_arg_temps/baseline.json` from the lane's `results.json` (one row per line
+preserved, as for 016 at M2d):
+```
+-  "minimal/097-null-ptr-arith.undef": {"class": "BOTH_FAIL", "lean": "8ed9a0170fd9", "mode": "exhaustive", "normal_status": {"class": "BOTH_FAIL", "lean": "8ed9a0170fd9", "oracle": "37a96bce2405"}, "oracle": "37a96bce2405"},
++  "minimal/097-null-ptr-arith.undef": {"class": "AGREE", "lean": "0a319c85b2ca", "mode": "exhaustive", "oracle": "0a319c85b2ca"},
+```
+The `--gate` run on the spliced file: §4.6.
+
+### 4.4 B4 — the fixture pins (`tests/verify/*.core`, `tests/corpus/*`), re-derived by the oracle
+
+Lane `test_verify.sh` on the M3 tip (`.tmp/m4-verify-full.log`, verbatim last line):
+```
+test_verify: 93 passed, 34 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+```
+All 34 failures are provenance rows (`pin provenance`, `content-hash provenance`, `funs-extraction
+provenance`); every main-mode and call-point differential row passes (*derived* from the log: 0 non-provenance
+failures). Every pinned dump was re-derived with the worktree's oracle exactly as the lane does it
+(`cerberus --nolibc --pp=core`, `.tmp/m4-pins/rederive.sh`), the drifted ones written over the pins, and byte-equality
+of every written pin against its fresh dump checked (`mismatches=0`; the six arena rows by SHA-256, below).
+
+The Core-text movement, classified by diffing the pinned text against the fresh dump (symbol numbers
+normalised for p15; `.tmp/m4-pins/arena-diff.log`): with one exception every hunk is upstream cee382443's
+unspecified-branch arm — `nd(pure(True), pure(False))` → `pure(undef(<<UB_CERB004_unspecified__if>>))` /
+`…__while>>))` — the oracle's default `branching_on_unspec = Elab_UB` (the switch `branching_on_unspec_is_nd`
+is REFUSED, §0.12 Q9) that seam S5 mirrors in `Main.lean`. The exception is p15 (a `switch` and a `do … while`),
+where the three further hunks are cee382443's `switch` arm (`UB036_exceptional_condition` →
+`UB_CERB004_unspecified__switch`), 83b1a7424's `do`-loop test (`mkTestExpression TestEq`: the controlling
+expression becomes `E == 0` and the loop re-runs on `not(case = 1)`, exactly upstream's own comment in
+`translation.lem`) and the `DUMMY(unspecified AilSdo)` arm becoming `UB_CERB004_unspecified__do` (cee382443).
+No hunk lies outside the `-- Fun map` section of any dump (p15's six hunks are at lines ≥ 209846 of a dump whose
+`-- Fun map` starts at 209764). Disposition: all **upstream's fix** (cee382443, 83b1a7424); no verdict moved.
+
+| pin | hunks (if / while / other) | disposition |
+|---|---|---|
+| `tests/verify/c3a_accguard.core` | 2 / 0 / – | cee382443 |
+| `tests/verify/c3b_leaddigit.core` | 0 / 1 / – | cee382443 |
+| `tests/verify/c4_hexval.core` | 3 / 0 / – | cee382443 |
+| `tests/verify/c5_pcthi.core` | 1 / 0 / – | cee382443 |
+| `tests/verify/e1_clamp.core` | 1 / 0 / – | cee382443 |
+| `tests/verify/e2_abs.core` | 1 / 0 / – | cee382443 |
+| `tests/verify/e4_isdigit.core` | 1 / 0 / – | cee382443 |
+| `tests/verify/e5_ismark.core` | 1 / 0 / – | cee382443 |
+| `tests/verify/m1_sgn.core` | 2 / 0 / – | cee382443 |
+| `tests/verify/t5_sum.core` | 0 / 1 / – | cee382443 |
+| `tests/verify/t6_branch.core` | 1 / 0 / – | cee382443 |
+| `tests/verify/t7_flip.core` | 1 / 1 / – | cee382443 |
+| `tests/verify/x2_break.core` | 1 / 1 / – | cee382443 |
+| `tests/verify/x7_earlyret.core` | 1 / 1 / – | cee382443 |
+| `tests/corpus/p01_clamp.core` | 1 / 0 / – | cee382443 |
+| `tests/corpus/p02_sat_add.core` | 2 / 0 / – | cee382443 |
+| `tests/corpus/p03_swap_mayalias.core` | 1 / 0 / – | cee382443 |
+| `tests/corpus/p10_gcd_rec.core` | 1 / 0 / – | cee382443 |
+| `tests/corpus/p11_gcd_iter.core` | 0 / 1 / – | cee382443 |
+| `tests/corpus/p12_pt_midpoint.core` | 1 / 0 / – | cee382443 |
+| `tests/corpus/p14_count_pairs.core` + `_funs.core` | 1 / 3 / – | cee382443 |
+| `tests/corpus/p04_arr_sum.core.sha256` + `_funs.core` | 0 / 2 / – | cee382443 |
+| `tests/corpus/p05_find_first.core.sha256` + `_funs.core` | 1 / 2 / – | cee382443 |
+| `tests/corpus/p06_arr_reverse.core.sha256` + `_funs.core` | 1 / 3 / – | cee382443 |
+| `tests/corpus/p07_list_sum.core.sha256` + `_funs.core` | 0 / 2 / – | cee382443 |
+| `tests/corpus/p08_list_reverse.core.sha256` + `_funs.core` | 1 / 3 / – | cee382443 |
+| `tests/corpus/p15_scan_classify.core.sha256` + `_funs.core` | 0 / 1 / switch arm, `do` test, `do` arm | cee382443, 83b1a7424 |
+
+Unchanged (byte-identical re-derivation, no edit): `c9_arrw`, `e3_scale`, `t1_id`, `t2_add`, `t3_roundtrip`,
+`t4_struct_member`, `x3_call`, `z1_chain`, `z2_bool_param`, `z2_errno_order`, `z2_wide`, `p09_call_contract`;
+`scripts/fixture_corpus.sha256` (the C sources are untouched; `check_fixture_freeze` below).
+
+The six content-hash pins, with the OLD pins' provenance re-established by deriving the same six programs with
+the mainline checkout's oracle (`cerberus-lean/` at `676f9f21c`, the old base; `.tmp/m4-pins/old-oracle.sh`) —
+each old-oracle digest equals the pin at `9a8c9febf`, each fresh digest is the new pin (verbatim):
+```
+p04_arr_sum
+  old-oracle(676f9f21c)=5ae7f17902dde8a6a8f1b73f47ea6abb52a410e8546a15361dff57a3879d925f
+  pinned@9a8c9febf     =5ae7f17902dde8a6a8f1b73f47ea6abb52a410e8546a15361dff57a3879d925f  OLD-REPRODUCED
+  fresh-oracle(M4 tree)=3def8502c0693c05d4955701e95f05cb44eabb3da77b2819cda834af2cff28f0
+  new pin              =3def8502c0693c05d4955701e95f05cb44eabb3da77b2819cda834af2cff28f0  NEW-PINNED
+p05_find_first
+  old-oracle(676f9f21c)=1e5d49caf9a62cc7fdb669c0f803abc4e3f8b0f8b20d4f7b9e9851a3bb3a31ba
+  pinned@9a8c9febf     =1e5d49caf9a62cc7fdb669c0f803abc4e3f8b0f8b20d4f7b9e9851a3bb3a31ba  OLD-REPRODUCED
+  fresh-oracle(M4 tree)=3b4bed49f9e3128ee86e3482e573bf3685da0958af5dcd9f0195665f6e839a05
+  new pin              =3b4bed49f9e3128ee86e3482e573bf3685da0958af5dcd9f0195665f6e839a05  NEW-PINNED
+p06_arr_reverse
+  old-oracle(676f9f21c)=ec47d15f421367563060bb31cfdb44ab7d3a58b07055fdbda95d723378b1d381
+  pinned@9a8c9febf     =ec47d15f421367563060bb31cfdb44ab7d3a58b07055fdbda95d723378b1d381  OLD-REPRODUCED
+  fresh-oracle(M4 tree)=2e28022ccfc3c01c6cb0129f0a73ee94a7a99a2b7c7310cfbb0c832a8d43b6dd
+  new pin              =2e28022ccfc3c01c6cb0129f0a73ee94a7a99a2b7c7310cfbb0c832a8d43b6dd  NEW-PINNED
+p07_list_sum
+  old-oracle(676f9f21c)=730269e83ed6aea53ec3520b074feb24591e18c85664825d449f319b61002623
+  pinned@9a8c9febf     =730269e83ed6aea53ec3520b074feb24591e18c85664825d449f319b61002623  OLD-REPRODUCED
+  fresh-oracle(M4 tree)=3324c840bb1ded8c33f25ed1d51f25312f11b327657a5da96f8aea18f8b24242
+  new pin              =3324c840bb1ded8c33f25ed1d51f25312f11b327657a5da96f8aea18f8b24242  NEW-PINNED
+p08_list_reverse
+  old-oracle(676f9f21c)=190b706010ce5c983cc2e09ac6eae396ead523d71aeeef335a6baf992fc2bb67
+  pinned@9a8c9febf     =190b706010ce5c983cc2e09ac6eae396ead523d71aeeef335a6baf992fc2bb67  OLD-REPRODUCED
+  fresh-oracle(M4 tree)=28fdb9bcd50c2f038ee39bbc5d547aa3e5d8796ff8840e54bfd87c5404f82d6e
+  new pin              =28fdb9bcd50c2f038ee39bbc5d547aa3e5d8796ff8840e54bfd87c5404f82d6e  NEW-PINNED
+p15_scan_classify
+  old-oracle(676f9f21c)=21ae794192ce5d37ee801053cb104e6a0043b8eaffa08c1c7899dd75dea76f53
+  pinned@9a8c9febf     =21ae794192ce5d37ee801053cb104e6a0043b8eaffa08c1c7899dd75dea76f53  OLD-REPRODUCED
+  fresh-oracle(M4 tree)=01a30241ef2bfafecf5d040b2940d1c15d9170235ebbcc8c9249ba49733b4e1a
+  new pin              =01a30241ef2bfafecf5d040b2940d1c15d9170235ebbcc8c9249ba49733b4e1a  NEW-PINNED
+```
+The arena dumps' whole-text movement (old-oracle dump vs fresh dump, symbol numbers normalised, verbatim
+`.tmp/m4-pins/arena-diff.log` headers): p04 `raw-hunks=2 normalised-hunks=2`, p05 `3/3`, p06 `4/4`, p07 `2/2`,
+p08 `4/4` — every hunk the cee382443 arm; p15 `raw-hunks=94 normalised-hunks=6` (the 94 raw hunks are the
+symbol renumbering that 83b1a7424's two extra fresh symbols cause downstream; the six normalised hunks are the
+ones named above).
+
+### 4.5 Tier B row 13 — the libc quotation pins (`lean_frontend/test/CoreQuote/core-quote-libc*.sha256`)
+
+The two libc literal digests follow the M2b libc content re-pin (§2b.4: `tests/libc/libc.core.sha256` =
+`f856081198f0…`, `libc_inner_arg_temps.core.sha256` = `06a1f84c288e…`; the libc Core text moved by 83b1a7424 /
+cabe81c3b / 588672e95 / cee382443). First run on the old pins (`.tmp/m4-chain-b.log`, verbatim; the round trips
+themselves pass and only the pin check fails):
+```
+Libc-compare: exit 0, 12.49s
+Libc round trip: 155.31s
+RuntimeError: libc literal SHA-256 drift: 90d09e847ca3569173b748ecc1089e63883423219844a7aeea1323b86bee4373, pinned c165410918073f7c01762238e12ff4ec6d527141ec06bc81c7c5508d41fd4873
+✗ core-quote-test FAILED
+Libc-compare: exit 0, 7.99s
+Libc round trip: 140.74s
+RuntimeError: libc literal SHA-256 drift: b7e2711ee7533a4629236b82a6d7f7149cbcc15eb52d16da844a0b3fee47c916, pinned 6f2514217b637cedd4109b7c9698942a63b07e59f126ef257cabcf1fe10db0ca
+✗ core-quote-test (inner_arg_temps) FAILED
+```
+The two digests from those messages written as the pins (`core-quote-libc.sha256` = `90d09e847ca3…`,
+`core-quote-libc-inner-arg-temps.sha256` = `b7e2711ee753…`); the re-run (`.tmp/m4-corequote.log`, verbatim last
+lines):
+```
+✓ core-quote-test PASSED
+libc sha256: b7e2711ee7533a4629236b82a6d7f7149cbcc15eb52d16da844a0b3fee47c916
+Libc-kernel-replay: exit 0, 1.85s
+LibcLiteral leanchecker: 1.79 seconds; 838848 KB peak RSS; exit 0
+Linked-kernel-replay: exit 0, 1.83s
+LinkedLiteral leanchecker: 1.78 seconds; 839084 KB peak RSS; exit 0
+LinkedRich-kernel-replay: exit 0, 1.92s
+LinkedRichLiteral leanchecker: 1.86 seconds; 837896 KB peak RSS; exit 0
+CORE_QUOTE_TOTAL inputs=3; model constructors=248; floating=84; NaN=0; memory-values=0; positions=44510; absolute-paths=0
+Core quote round trip: PASS (whole-file representation, comparator syntax, auxiliary BEq)
+✓ core-quote-test (inner_arg_temps) PASSED
+Total: 2 passed, 0 failed
+```
+Disposition: upstream's fix (text only; the quotation round trips and the three `leanchecker` replays are green).
+
+### 4.6 The re-checks on the edited baselines and the remaining focused lanes (`.tmp/m4-chain-b.log`, verbatim)
+
+Every lane's own verdict line (the chain wrapper's `exit=` lines are not quoted: they reported the filter's status,
+a wrapper slip found while reading the log, not the lane's).
+```
+=== exec_ci --check-baseline 02:39:12 load=7.66
+SUMMARY: total=245 match=92 ub_match=43 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=110 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+=== exec_coverage --check-baseline 02:41:55 load=4.73
+SUMMARY: total=277 match=222 ub_match=37 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=16 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+=== exec_debug --check-baseline 02:43:13 load=4.18
+SUMMARY: total=90 match=66 ub_match=20 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=4 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+=== exec_float --check-baseline 02:43:38 load=3.58
+SUMMARY: total=93 match=93 ub_match=0 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=0 cerb_floor=0 cerb_inconsistent=0
+Baseline check: 0 regression(s), 0 improvement(s)
+BASELINE OK
+=== pnvi 02:44:05 load=4.06
+SUMMARY: rows=164 AGREE=152 AGREE-FIRST=3 BOTH_FAIL=2 REFUSAL=7 | switch vs default (oracle): litmus:same=27,changed=17 minimal:same=112,changed=1 pkvm:same=1,changed=3 witness:same=0,changed=3
+pnvi_lane: BASELINE OK (164 rows = the baseline, classes, oracle hashes and BOTH_FAIL/RESOURCE lean hashes exact)
+=== check_fixture_freeze 02:46:48 load=4.34
+check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+=== test_verify (re-pinned) 02:46:48 load=4.34
+test_verify: 127 passed, 0 failed (25 fixtures, 28 call points, 14 corpus fixtures, 21 corpus points)
+=== inner_arg_temps --gate 02:47:35 load=4.16
+SUMMARY: inner_arg_temps rows=186 AGREE=138 AGREE-FIRST=40 BOTH_FAIL=5 LOC_ONLY-FIRST=1 RESOURCE oracle:KILL=2 failures=0
+BASELINE OK (inner_arg_temps: 186 rows; classes and both distinct-observation/status hashes exact)
+inner_arg_temps elapsed: 411.84s
+```
+A3/A4/A4b (coverage, debug, float) did not move: the switch/do-while re-measurement §0.9 asked for is these three
+`0 regression(s), 0 improvement(s)` lines plus A2's; the float lane stays 93/93 `MATCH` (no row had mirrored the
+`mul` bug, §0.9 A4). Also green on the M3 tip and unchanged since (`.tmp/m4-chain-a.log`): `libc_prep.sh
+--selftest` exit 0, `test_parse.sh tests/ci` (`Cerberus parse: 250 ok, 3 failed` / `Lean parse: 131 ok, 0 failed,
+0 timeout … 0 lean failure(s)`, 253 files = 252 + 0342), `test_core.sh tests/ci` `131 ok … ALL PASSED`.
+
+### 4.7 B5 immaculate — five rows moved; a §0.9 forecast miss, all upstream's fixes
+
+`test_immaculate.sh` on the M3 tip (`.tmp/m4-chain-b.log`, verbatim):
+```
+DEVIATION: s4b-memcmp-hugesize expected [ORACLE_CRASH | L=UB:{ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<unknown location>"}] got [ORACLE_CRASH | L=UB:{ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<13:10--13:34>"}]
+DEVIATION: ts-fmt-s-null expected [MATCH | L=CRASH] got [MATCH | L=UB:{ub: "UB046_array_pointer_outside", stderr: "", loc: "<7:38--7:57>"}]
+DEVIATION: zd-ta-alignas-huge-desugar expected [ORACLE_CRASH | L=ERR:{msg: "MerrOther "Concrete.allocator: failed (out of memory)""}] got [MATCH | L=ERR:{msg: "MerrOther "Concrete.allocator: failed (out of memory)""}]
+DEVIATION: zd-ta-alignas-huge-sizeof expected [ORACLE_CRASH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}] got [MATCH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}]
+DEVIATION: zd-ta-alignas-huge-union-alignof expected [ORACLE_CRASH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}] got [MATCH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}]
+```
+§0.9 forecast B5 as "tray-44 rows stay" and did not foresee the three `zd-ta-alignas-huge-*` rows (the forecast's
+"`alignas/*` stay (tray 47)" was about the coverage lane, which did stay, §4.6). Each row was triangulated with
+three oracles on the same inputs — the mainline checkout's (`676f9f21c`, old base), the worktree's (fork at
+`c3ff8c53f`) and the pristine upstream build at `c3ff8c53f` (`.tmp/pristine-c3ff8c53f`, §0.10) — verbatim
+(`--nolibc --exec --batch --mode=exhaustive`; the libc row without `--nolibc`):
+```
+=== nolibc/zd-ta-alignas-huge-desugar
+  old exit=125: cerberus: internal error, uncaught exception:           Z.Overflow
+  fork exit=1: Error {msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
+  pristine exit=1: Error {msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
+=== nolibc/zd-ta-alignas-huge-sizeof
+  old exit=125: cerberus: internal error, uncaught exception:           Z.Overflow
+  fork exit=0: Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+  pristine exit=0: Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+=== nolibc/zd-ta-alignas-huge-union-alignof
+  old exit=125: cerberus: internal error, uncaught exception:           Z.Overflow
+  fork exit=0: Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+  pristine exit=0: Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+=== nolibc/ts-fmt-s-null
+  old exit=125: cerberus: internal error, uncaught exception:           Failure("TODO(pure shift a null pointer should be undefined behaviour), offset:0")
+  fork exit=1: Undefined {ub: "UB046_array_pointer_outside", stderr: "", loc: "<7:38--7:57>"}
+  pristine exit=1: Undefined {ub: "UB046_array_pointer_outside", stderr: "", loc: "<7:38--7:57>"}
+=== libc/s4b-memcmp-hugesize
+  old exit=125: cerberus: internal error, uncaught exception:           Z.Overflow
+  fork exit=125: cerberus: internal error, uncaught exception:           Z.Overflow
+  pristine exit=125: cerberus: internal error, uncaught exception:           Z.Overflow
+```
+(The ANSI colour codes around "uncaught exception" are stripped in this quotation; nothing else is altered.)
+
+| row | was → is | disposition | cited to |
+|---|---|---|---|
+| `zd-ta-alignas-huge-desugar` | `ORACLE_CRASH` → `MATCH` (L unchanged) | upstream's fix: b3e11ea33 moved sizeof/alignof out of the memory interface and computes them unbounded in `Ocaml_implementation.sizeof_ty`/`alignof_ty` (its diff deletes the four `Z.to_int al_n` reads of `impl_mem.ml:248/:267` and `ocaml_implementation.ml:483/:501`); the oracle now gives the answer Lean computed under ISO-fix register R7 ([USER 2026-10-03]). **R7 RETIRED** (VALIDATION.md §2 row and the marker sentence edited; the `CerberusImpl.lean` marker comments are rewritten at M6 with the other cite reconciliation — a comment-only Lean edit would force a full rebuild under this milestone's lane runs [AGENT 2026-10-30]) | b3e11ea33; seam S1 |
+| `zd-ta-alignas-huge-sizeof` | `ORACLE_CRASH` → `MATCH` (L `Specified(0)` unchanged) | as above | b3e11ea33; S1 |
+| `zd-ta-alignas-huge-union-alignof` | `ORACLE_CRASH` → `MATCH` (L `Specified(0)` unchanged) | as above | b3e11ea33; S1 |
+| `ts-fmt-s-null` | `MATCH \| L=CRASH` → `MATCH \| L=UB046 <7:38--7:57>` | upstream's fix: both engines crashed on `printf("%s", NULL)`'s null shift (the oracle's `Failure("TODO(pure shift a null pointer …")`); both now `UB046_array_pointer_outside` at the same location | f4a3a3d54; S2 (`formatted.lem` restatement §2.1); tray 04 |
+| `s4b-memcmp-hugesize` | `ORACLE_CRASH \| L=… <unknown location>` → `ORACLE_CRASH \| L=… <13:10--13:34>` | upstream's fix, Lean side only: f4a3a3d54 threads `Loc.t` into `Mem.memcmp` (`mem.lem` `val memcmp: Loc.t -> …`; S2 `memcmpM` gains `loc`), so the per-byte load's UB now carries the call's location; the oracle's crash (tray 13, `impl_mem.ml` memcmp `Z.to_int`, unchanged at `c3ff8c53f`) and register R3 stay as recorded | f4a3a3d54; S2 |
+
+The five rows were hand-edited in `tests/immaculate/baseline.txt` with a header note (the lane's own
+`--record-baseline` rewrites the row set; the file's precedent for a row move with a cited reason is a hand edit,
+e.g. the 2026-10-03 rows). Re-check on the edited file (`.tmp/m4-chain-c.log`, verbatim):
+```
+=== immaculate (re-check on the edited baseline) 03:15:30 load=4.41
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip/zd-r2-highbyte DIFF and zd-r2-crash-digit9 ORACLE_CRASH
+```
+
+### 4.8 B7 — the gcc second oracle (`scripts/gcc_oracle_baseline.txt`)
+
+§0.9 forecast the `tests/minimal/097-null-ptr-arith.undef.c SKIP_LEAN_CRASH -` row flipping. One full run of the
+lane written to a scratch ledger and diffed row-for-row against the committed one (`.tmp/m4-chain-c.log`,
+verbatim):
+```
+=== gcc_oracle --write-baseline (scratch) 03:17:21 load=2.73
+  Total files:  2030
+  Compared:     1934  (agree=1918 agree_nd=0 triaged=16 DISAGREE=0)
+  Skipped:      96  (every skip enumerated below and in the baseline rows)
+SUMMARY: total=2030 compared=1934 agree=1918 agree_nd=0 triaged=16 disagree=0 o2_agree=197 skip_gcc_compile=4 skip_gcc_stdout=2 skip_lean_crash=16 skip_lean_fail=14 skip_lean_timeout=11 skip_ub=49 triaged_addr=14 triaged
+Baseline written: .tmp/m4-pins/gcc_oracle_baseline.new (2030 rows)
+gcc second-oracle lane OK
+=== diff committed ledger vs scratch (rows only) 03:42:13 load=4.10
+```
+The lane's own output order differs from the committed file's (rows hand-inserted "sorted by key" over the years sit
+a line away from where the lane now writes them), so the raw diff is mostly displacement; the SORTED row sets differ
+in exactly two rows (verbatim, `LC_ALL=C sort` both sides, 2030 rows each):
+```
+1892c1892
+< tests/immaculate/nolibc/ts-fmt-s-null.c SKIP_LEAN_CRASH -
+---
+> tests/immaculate/nolibc/ts-fmt-s-null.c SKIP_UB -
+2014c2014
+< tests/minimal/097-null-ptr-arith.undef.c SKIP_LEAN_CRASH -
+---
+> tests/minimal/097-null-ptr-arith.undef.c SKIP_UB -
+```
+Both rows: Lean no longer crashes (`PANIC` in the null array shift) but reports `UB046_array_pointer_outside`, a
+verdict the lane never compares with a native run — `SKIP_LEAN_CRASH` → `SKIP_UB`. Disposition: upstream's fix
+(f4a3a3d54, S2). The §0.9 forecast said "flips to agreement"; a UB program has no gcc agreement to reach, so the
+flip is to the correct skip class (the forecast's wording was loose, not the lane). The two rows hand-edited in
+`scripts/gcc_oracle_baseline.txt` with a header note (the ledger's precedent for a row move); the check that the
+edited ledger equals the full run is the sorted-row diff, re-run after the edit: `IDENTICAL (2030 rows)`. The
+`--check-baseline` form (Tier B row 7, ~25 min) is keyed by row (`B_S[$f]`, order-insensitive) and runs in the
+orchestrator's battery; a second full run was not spent here.
+
+### 4.9 What M4 verified, and what carries forward
+
+Files in this commit: `scripts/exec_baseline.txt` (1 row), `scripts/exec_ci_baseline.txt` (3 rows),
+`tests/pnvi_lane/baseline.txt` (1 row), `tests/inner_arg_temps/baseline.json` (1 row),
+`tests/immaculate/baseline.txt` (5 rows), `scripts/gcc_oracle_baseline.txt` (2 rows),
+`lean_frontend/test/CoreQuote/core-quote-libc{,-inner-arg-temps}.sha256` (2 pins), the 34 fixture pins of §4.4,
+`lean_frontend/VALIDATION.md` (R7 retired), this record. No Lean, lem or OCaml source changed in M4: the Lean binary
+and the oracle are M3's (`check_driver_fresh` stamps in `.tmp/m4-chain-b.log`: oracle `bin 52bc5ed6a7d3…`, Lean
+`bin be8bd66aef0e…`).
+
+Green in this milestone, each on the edited files (§4.1–4.8): A2 minimal, Tier C ci, A3 coverage, A4 debug, A4b
+float, A14 PNVI, A15 inner_arg_temps `--gate`, B4 verify (127/0) + `check_fixture_freeze`, Tier B 13 core-quote libc
+(both modes, three `leanchecker` replays), B5 immaculate, B7 gcc (full run, DISAGREE=0, ledger set-equal), Tier B 14
+`libc_prep --selftest`, Tier B 2/3 parse/core over tests/ci. Not run here (the orchestrator's Tier A on this tip):
+row 1 `test_unit.sh` and the other Tier A rows unchanged since 9a8c9febf's run; the expected red there remains A1's
+fork-drift gate until M5.
+
+Forecast reconciliation against §0.9 (*derived*): 9 of 10 forecast movements materialised exactly (A2, A14, A15,
+Tier C ×3, A5/B13 pins, B4 pins, B7); one forecast miss — B5's three `zd-ta-alignas-huge-*` rows and the
+`s4b-memcmp-hugesize` loc token (§4.7), both upstream's fixes; A3/A4/A4b/A6/A7/A8/A9/A12/A13 did not move. No
+finding; nothing refused; nothing silently re-recorded.
+
+Carried forward: **M5** — `upstream_oracle_differences.json`'s register rows for the three
+`tests/coverage/alignas/*` cases (tray 47) are re-derived on the pristine instrument at `c3ff8c53f` with the rest
+of the register (§0.10); the three `zd-ta-alignas-huge-*` pins are not register cases (both engines now agree).
+**M6** — the three `CerberusImpl.lean` R7 marker comments (lines 326–340, 543–548, 559) rewritten as historical
+notes citing b3e11ea33 and this section; tray 04 closes with these rows as its evidence (Q10); VALIDATION's
+narrative paragraph on R7 (already annotated) and the TODO's open-bugs list re-read for R7. The ephemeral
+`.tmp/m4-pins/{old,fresh,norm}` dumps (~500 MB) are deleted at this commit; `rederive.sh` / `old-oracle.sh`
+rebuild them.
+

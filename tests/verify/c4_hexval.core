@@ -125,7 +125,7 @@ proc hex_val (c: pointer): eff loaded integer :=
       | Specified(a_526: integer) =>
           pure(if not(a_526 = 1) then True else False)
       | Unspecified(_: ctype) =>
-          nd(pure(True), pure(False))
+          pure(undef(<<UB_CERB004_unspecified__if>>))
     end in
   if a_524 then
     let strong a_569: loaded integer =
@@ -277,7 +277,7 @@ proc hex_val (c: pointer): eff loaded integer :=
       | Specified(a_572: integer) =>
           pure(if not(a_572 = 1) then True else False)
       | Unspecified(_: ctype) =>
-          nd(pure(True), pure(False))
+          pure(undef(<<UB_CERB004_unspecified__if>>))
     end in
   if a_570 then
     let strong a_620: loaded integer =
@@ -442,7 +442,7 @@ proc hex_val (c: pointer): eff loaded integer :=
       | Specified(a_623: integer) =>
           pure(if not(a_623 = 1) then True else False)
       | Unspecified(_: ctype) =>
-          nd(pure(True), pure(False))
+          pure(undef(<<UB_CERB004_unspecified__if>>))
     end in
   if a_621 then
     let strong a_671: loaded integer =

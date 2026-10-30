@@ -50,7 +50,7 @@ proc sum (n: pointer): eff loaded integer :=
         | Specified(a_536: integer) =>
             pure(if not(a_536 = 1) then True else False)
         | Unspecified(_: ctype) =>
-            nd(pure(True), pure(False))
+            pure(undef(<<UB_CERB004_unspecified__while>>))
       end in
     if a_534 then
       let strong _: loaded integer =

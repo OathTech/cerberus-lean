@@ -27,7 +27,7 @@ proc list_reverse (p: pointer): eff loaded pointer :=
         | Specified(a_790: integer) =>
             pure(if not(a_790 = 1) then True else False)
         | Unspecified(_: ctype) =>
-            nd(pure(True), pure(False))
+            pure(undef(<<UB_CERB004_unspecified__while>>))
       end in
     if a_788 then
       let strong t: pointer =
@@ -219,7 +219,7 @@ proc main (): eff loaded integer :=
         | Specified(a_559: integer) =>
             pure(if not(a_559 = 1) then True else False)
         | Unspecified(_: ctype) =>
-            nd(pure(True), pure(False))
+            pure(undef(<<UB_CERB004_unspecified__while>>))
       end in
     if a_557 then
       let strong slot: pointer =
@@ -571,7 +571,7 @@ proc main (): eff loaded integer :=
         | Specified(a_676: integer) =>
             pure(if not(a_676 = 1) then True else False)
         | Unspecified(_: ctype) =>
-            nd(pure(True), pure(False))
+            pure(undef(<<UB_CERB004_unspecified__while>>))
       end in
     if a_674 then
       let strong a_690: loaded integer =
@@ -749,7 +749,7 @@ proc main (): eff loaded integer :=
           | Specified(a_691: integer) =>
               pure(if not(a_691 = 1) then True else False)
           | Unspecified(_: ctype) =>
-              nd(pure(True), pure(False))
+              pure(undef(<<UB_CERB004_unspecified__if>>))
         end in
       if a_689 then
         let strong a_749: loaded integer =

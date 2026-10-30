@@ -125,7 +125,7 @@ proc is_digit (c: pointer): eff loaded integer :=
       | Specified(a_526: integer) =>
           pure(if not(a_526 = 1) then True else False)
       | Unspecified(_: ctype) =>
-          nd(pure(True), pure(False))
+          pure(undef(<<UB_CERB004_unspecified__if>>))
     end in
   if a_524 then
     let strong a_563: loaded integer = bound(pure(Specified(1))) in
