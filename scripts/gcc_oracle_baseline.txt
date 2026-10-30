@@ -33,6 +33,11 @@
 #   f4a3a3d54 (carried by the new base) makes the pure array_shift of a null pointer UB046_array_pointer_outside where Lean
 #   panicked (seam S2); a UB verdict is never compared with gcc (SKIP_UB). Record:
 #   lean_frontend/docs/2026-10-29_merge-base-bump-stage1-record.md §4.8.
+# 2026-10-30 merge-base bump stage 1 M6c (hand-edited from a partial --write-baseline over tests/immaculate/nolibc, 68 rows,
+#   DISAGREE=0): tests/immaculate/nolibc/offsetof-union-member.c SKIP_LEAN_CRASH -> AGREE (both engines answer since the
+#   736690a65 alignof line + the one-call Lean mirror, [USER 2026-10-30]); 3 rows inserted (by key, after
+#   zd-ta-alignas-huge-union-alignof) for the new pins zd-ta-alignas-{struct-union-twice,union-redecl,union-twice}.c at
+#   their measured statuses. Record: lean_frontend/docs/2026-10-29_merge-base-bump-stage1-record.md §6c.
 csmith/sa_csmith_001.c AGREE O2_AGREE
 csmith/sa_csmith_002.c SKIP_LEAN_CRASH -
 csmith/sa_csmith_003.c SKIP_LEAN_CRASH -
@@ -1916,7 +1921,7 @@ tests/immaculate/nolibc/g5-decode-question.c AGREE -
 tests/immaculate/nolibc/lock-const-global.c SKIP_UB -
 tests/immaculate/nolibc/lock-string-literal.c SKIP_UB -
 tests/immaculate/nolibc/offsetof-nested-struct.c AGREE -
-tests/immaculate/nolibc/offsetof-union-member.c SKIP_LEAN_CRASH -
+tests/immaculate/nolibc/offsetof-union-member.c AGREE -
 tests/immaculate/nolibc/r5-hex-subnormal-double-rounding.c AGREE -
 tests/immaculate/nolibc/s9-enum-signedness.c AGREE -
 tests/immaculate/nolibc/s9-enum-sizeof-route.c AGREE -
@@ -1946,6 +1951,9 @@ tests/immaculate/nolibc/zd-ta-alignas-2p61-control.c SKIP_GCC_COMPILE -
 tests/immaculate/nolibc/zd-ta-alignas-huge-desugar.c SKIP_LEAN_FAIL -
 tests/immaculate/nolibc/zd-ta-alignas-huge-sizeof.c SKIP_GCC_COMPILE -
 tests/immaculate/nolibc/zd-ta-alignas-huge-union-alignof.c SKIP_GCC_COMPILE -
+tests/immaculate/nolibc/zd-ta-alignas-struct-union-twice.c AGREE -
+tests/immaculate/nolibc/zd-ta-alignas-union-redecl.c AGREE -
+tests/immaculate/nolibc/zd-ta-alignas-union-twice.c AGREE -
 tests/immaculate/nolibc/zd-z2m02-device-funptr-call.c SKIP_LEAN_CRASH -
 tests/minimal/001-return-literal.c AGREE -
 tests/minimal/002-return-zero.c AGREE O2_AGREE

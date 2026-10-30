@@ -1,4 +1,8 @@
-/* Upstream asymmetry, MIRRORED (2026-09-01 S-basket item 1 probe;
+/* 2026-10-30 (merge-base bump stage 1 M6c, record section 6c): the asymmetry below is
+   CLOSED — the fork carries upstream 736690a65's alignof line (the union arm reads the
+   threaded map) and CerbMem.offsetofIval passes the explicit map twice; both engines
+   answer Specified(0) (pin MATCH | L=VAL). The history:
+   Upstream asymmetry, MIRRORED (2026-09-01 S-basket item 1 probe;
    upstream-tray candidate): sizeof/alignof's Union arms read the Tags
    GLOBAL (impl_mem.ml:173,:255) even though the rest of the layout
    family threads ~tagDefs — elaboration-time offsetof over a

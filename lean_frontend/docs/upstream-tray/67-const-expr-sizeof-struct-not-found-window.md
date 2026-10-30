@@ -39,3 +39,28 @@ No test in `tests/ci` at `c3ff8c53f` has a struct `sizeof` in an array bound, ca
 enumerator or `_Static_assert`, which is how the window went unnoticed. The fork carries the
 one-line part of `736690a65` as a backport while its base is `c3ff8c53f` (the fork's
 `tests/minimal/106-sizeof-struct-array.c` is the witness).
+
+## The second half of the window (added 2026-10-30, merge-base bump stage 1 pre-merge review P1)
+
+The same commit range breaks a second entry into the moved layout: `Ocaml_implementation.alignof`'s UNION arm at
+`c3ff8c53f` still reads the Tags global (`ocaml_frontend/ocaml_implementation.ml:566`,
+`Pmap.find tag_sym (Tags.tagDefs ())`), which `backend/common/pipeline.ml:272` resets before desugaring and
+`backend/driver/main.ml:352` sets only after elaboration. Any desugar-time `alignof` of a union-containing type —
+two `_Alignas` on one declaration (`cabs_to_ail.lem desugar_alignment_specifiers`) or an aligned redeclaration
+(`cabs_to_ail_effect.lem get_compatible_alignment_requirements`), both through `get_alignof` — therefore crashes:
+
+```c
+union U { int x; double y; };
+_Alignas(union U) _Alignas(1) char c;        /* also: extern _Alignas(union U) char c; twice,
+int main(void) { return _Alignof(union U); }    and struct S { char a; union U u; } under _Alignas(struct S) _Alignas(2) */
+```
+```
+cerberus: internal error, uncaught exception:
+          Failure("Tags definitions must be set by Tags.set_tagDefs before any use")
+```
+`b9aeedcb4` answers `Specified(8)` (its desugarer used `alignof_proxy` over a pseudo-map and never touched the
+global); 736690a65's one-line change to that arm (`Pmap.find tag_sym tagDefs`) restores the answer (measured on a
+patched c3ff8c53f build). The same line also makes elaboration-time `offsetof` over a union-containing struct answer
+(`Specified(0)` for the fork's `offsetof-union-member` witness) where every earlier revision crashed in that arm —
+the long-standing asymmetry the fork had pinned as a crash pair. Fork status: both lines of 736690a65 carried ahead
+(record §2b, §6c); reproducers `tests/immaculate/nolibc/zd-ta-alignas-{union-twice,union-redecl,struct-union-twice}.c`.

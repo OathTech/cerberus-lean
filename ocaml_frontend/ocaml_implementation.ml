@@ -576,7 +576,7 @@ and alignof tagDefs (Ctype (_, ty)) : Z.t =
           ) init membrs
       end
   | Union tag_sym ->
-      begin match Pmap.find tag_sym (Tags.tagDefs ()) with
+      begin match Pmap.find tag_sym tagDefs with  (* FORK: upstream 736690a65's line carried ahead (merge-base bump stage 1 M6c, record section 6c) *)
       | _, StructDef _ -> assert false
       | _, UnionDef membrs ->
           (* NOTE: Structs (and unions) alignment is that of the maximum alignment

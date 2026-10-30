@@ -103,12 +103,14 @@ def sizeofFloat (detail : String) : UpstreamCrash :=
     `c3ff8c53f` (`:501-504`) reads the THREADED map and does not fail; the live upstream
     failure on the witness `tests/immaculate/nolibc/offsetof-union-member.c` is one arm
     later, `alignof`'s union arm (`:565-568`, reached from `offsetsof` `:455`), the site
-    quoted here. Both engines crash on the witness, in different arms; the ruling on
-    736690a65's alignof line (record §6b) decides whether both arms move to the
-    threaded map. -/
+    quoted there until M6c. M6c (the [USER] ruling extending the 736690a65 backport,
+    record §6c): every caller now passes the threaded map as both maps, so this leaf
+    mirrors upstream's `sizeof` union arm `:501-504` again (an unknown or non-union
+    tag: `assert false` / Not_found on the threaded map; unreachable by the typing
+    invariant). -/
 def sizeofUnion (detail : String) : UpstreamCrash :=
   mirror ⟨"CerberusImpl.sizeofUnion", by decide⟩ detail
-    (implSourceStage1 565 568 (by decide) "  | Union tag_sym ->\n      begin match Pmap.find tag_sym (Tags.tagDefs ()) with\n      | _, StructDef _ -> assert false\n      | _, UnionDef membrs ->")
+    (implSourceStage1 501 504 (by decide) "  | Union tag_sym ->\n      begin match Pmap.find tag_sym tagDefs with\n      | _, StructDef _ -> assert false\n      | _, UnionDef membrs ->")
 
 def alignofVoid (detail : String) : UpstreamCrash :=
   mirror ⟨"CerberusImpl.alignofVoid", by decide⟩ detail

@@ -183,6 +183,78 @@
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "diagnostic_sha256": "3ea4b7f7ab6914790ba3c567a3457c2a0f23d01162e161a87f5c40cd6dfa0f22"
       }
+    },
+    "immaculate/nolibc/offsetof-union-member": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/67-const-expr-sizeof-struct-not-found-window.md",
+        "lean_frontend/docs/2026-10-29_merge-base-bump-stage1-record.md"
+      ],
+      "rationale": "`offsetof(struct R, u)` with a union member u (the fork's long-standing both-crash witness: every earlier revision crashed in this arm at elaboration time, and the Lean mirror in sizeof's union arm). Pristine upstream c3ff8c53f (the stage-1 merge-base) crashes \u2014 verbatim `cerberus: internal error, uncaught exception: Failure(\"Tags definitions must be set by Tags.set_tagDefs before any use\")` (rc 125): Ocaml_implementation.alignof's union arm reads the Tags GLOBAL (ocaml_implementation.ml:566), unset during desugaring and elaboration, b3e11ea33's half-finished move of the layout out of the memory interface. Upstream's next commit 736690a65 makes that arm read the threaded map (`Pmap.find tag_sym tagDefs`); the fork carries that ONE line ahead together with the one-call Lean mirror (CerbMem.offsetofIval passes the explicit map twice) \u2014 [USER 2026-10-30] ruling extending the 736690a65 backport (merge-base bump stage 1 record section 6c, pre-merge review P1; fork-drift manifest fork-ahead delta (1b); upstream-tray report 67, second half). The fork answers Specified(0), rc 0 \u2014 the value pristine b9aeedcb4 and the pre-merge fork gave. Class shared-model-fix; the row leaves at stage 2 when 736690a65 is in the base.",
+      "upstream": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "a12cac71d2cf73322da1d6b6c07c69a95b5083303e4b19141a425b19a7a37477"
+      },
+      "fork": {
+        "status": 0,
+        "stdout_sha256": "7545e238796d4104f178965d612abdf2dcfe2f580513fbde5b41b6800308522f",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "immaculate/nolibc/zd-ta-alignas-union-twice": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/67-const-expr-sizeof-struct-not-found-window.md",
+        "lean_frontend/docs/2026-10-29_merge-base-bump-stage1-record.md"
+      ],
+      "rationale": "`union U { int x; double y; }; _Alignas(union U) _Alignas(1) char c;` \u2014 two _Alignas on one declaration apply cabs_to_ail_effect.lem get_alignof's closure to the union at desugar time. Pristine upstream c3ff8c53f (the stage-1 merge-base) crashes \u2014 verbatim `cerberus: internal error, uncaught exception: Failure(\"Tags definitions must be set by Tags.set_tagDefs before any use\")` (rc 125): Ocaml_implementation.alignof's union arm reads the Tags GLOBAL (ocaml_implementation.ml:566), unset during desugaring and elaboration, b3e11ea33's half-finished move of the layout out of the memory interface. Upstream's next commit 736690a65 makes that arm read the threaded map (`Pmap.find tag_sym tagDefs`); the fork carries that ONE line ahead together with the one-call Lean mirror (CerbMem.offsetofIval passes the explicit map twice) \u2014 [USER 2026-10-30] ruling extending the 736690a65 backport (merge-base bump stage 1 record section 6c, pre-merge review P1; fork-drift manifest fork-ahead delta (1b); upstream-tray report 67, second half). The fork answers Specified(8), rc 0 \u2014 the value pristine b9aeedcb4 and the pre-merge fork gave. Class shared-model-fix; the row leaves at stage 2 when 736690a65 is in the base.",
+      "upstream": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "a51c889d9dc2230556092f3d468fca0bef4b61dea2cd5507954cf81c8992268b"
+      },
+      "fork": {
+        "status": 0,
+        "stdout_sha256": "d71200a3c95220454fec2318ff43a6b8d05438fa04fbeb4dc70e4989813fc715",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "immaculate/nolibc/zd-ta-alignas-union-redecl": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/67-const-expr-sizeof-struct-not-found-window.md",
+        "lean_frontend/docs/2026-10-29_merge-base-bump-stage1-record.md"
+      ],
+      "rationale": "`extern _Alignas(union U) char c;` declared twice \u2014 the aligned redeclaration compares the alignments through get_compatible_alignment_requirements -> get_alignof. Pristine upstream c3ff8c53f (the stage-1 merge-base) crashes \u2014 verbatim `cerberus: internal error, uncaught exception: Failure(\"Tags definitions must be set by Tags.set_tagDefs before any use\")` (rc 125): Ocaml_implementation.alignof's union arm reads the Tags GLOBAL (ocaml_implementation.ml:566), unset during desugaring and elaboration, b3e11ea33's half-finished move of the layout out of the memory interface. Upstream's next commit 736690a65 makes that arm read the threaded map (`Pmap.find tag_sym tagDefs`); the fork carries that ONE line ahead together with the one-call Lean mirror (CerbMem.offsetofIval passes the explicit map twice) \u2014 [USER 2026-10-30] ruling extending the 736690a65 backport (merge-base bump stage 1 record section 6c, pre-merge review P1; fork-drift manifest fork-ahead delta (1b); upstream-tray report 67, second half). The fork answers Specified(0), rc 0 \u2014 the value pristine b9aeedcb4 and the pre-merge fork gave. Class shared-model-fix; the row leaves at stage 2 when 736690a65 is in the base.",
+      "upstream": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "c53374f6ce413032909640c896ec13e988886285172f48bbc6f5bae78d51b1a0"
+      },
+      "fork": {
+        "status": 0,
+        "stdout_sha256": "7545e238796d4104f178965d612abdf2dcfe2f580513fbde5b41b6800308522f",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "immaculate/nolibc/zd-ta-alignas-struct-union-twice": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/67-const-expr-sizeof-struct-not-found-window.md",
+        "lean_frontend/docs/2026-10-29_merge-base-bump-stage1-record.md"
+      ],
+      "rationale": "`struct S { char a; union U u; }; _Alignas(struct S) _Alignas(2) char c;` \u2014 the union reached through a struct member (alignof's struct arm recurses into the union arm). Pristine upstream c3ff8c53f (the stage-1 merge-base) crashes \u2014 verbatim `cerberus: internal error, uncaught exception: Failure(\"Tags definitions must be set by Tags.set_tagDefs before any use\")` (rc 125): Ocaml_implementation.alignof's union arm reads the Tags GLOBAL (ocaml_implementation.ml:566), unset during desugaring and elaboration, b3e11ea33's half-finished move of the layout out of the memory interface. Upstream's next commit 736690a65 makes that arm read the threaded map (`Pmap.find tag_sym tagDefs`); the fork carries that ONE line ahead together with the one-call Lean mirror (CerbMem.offsetofIval passes the explicit map twice) \u2014 [USER 2026-10-30] ruling extending the 736690a65 backport (merge-base bump stage 1 record section 6c, pre-merge review P1; fork-drift manifest fork-ahead delta (1b); upstream-tray report 67, second half). The fork answers Specified(8), rc 0 \u2014 the value pristine b9aeedcb4 and the pre-merge fork gave. Class shared-model-fix; the row leaves at stage 2 when 736690a65 is in the base.",
+      "upstream": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "53d325627484bff004754b3f80194096af8dd32e6e1b553a5c03f88af66c62f1"
+      },
+      "fork": {
+        "status": 0,
+        "stdout_sha256": "d71200a3c95220454fec2318ff43a6b8d05438fa04fbeb4dc70e4989813fc715",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
     }
   }
 }

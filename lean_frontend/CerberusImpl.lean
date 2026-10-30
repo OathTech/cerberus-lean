@@ -305,6 +305,11 @@ def mkCtype (ty_ : ctype_) : ctype := Ctype ([] : List annot) ty_
     empty elaboration-time table) — a pinned crash pair; with the backport both
     union arms must read the threaded map here too, or the pair becomes a
     Lean-only crash (measured 2026-10-30 on a patched pristine build, record §6b).
+    CLOSED at M6c ([USER] ruling, record §6c): the fork oracle carries 736690a65's
+    alignof line, and `CerbMem.offsetofIval` — the one call that passed two
+    different maps — passes the explicit map twice; every call of these workers
+    is now one-map, exactly upstream's post-736690a65 shape; both sites answer
+    on both engines (pins zd-ta-alignas-union-*, offsetof-union-member MATCH).
 
     The section header that follows is the one the block carried in CerbMem.lean. -/
 
@@ -642,7 +647,7 @@ def alignofCtype (enumDefs : EnumDefs) (ambient : TagDefs) (cty : ctype) : Nat :
     on a union-containing type — the oracle crashes where this wrapper answers; the
     pre-merge pseudo-map `alignof_ty` answered too; the alignas witnesses of M4
     never apply the closure to a union, so M4 did not see it; pre-merge review P1,
-    record §6b, VALIDATION §3). -/
+    record §6b; CLOSED at M6c by the backported alignof line, record §6c). -/
 def sizeof_ty (enumDefs : EnumDefs) (_readerTagDefs : TagDefs) (tagDefs : TagDefs) (ty : ctype) : Int :=
   Int.ofNat (sizeofCtype enumDefs tagDefs ty)
 

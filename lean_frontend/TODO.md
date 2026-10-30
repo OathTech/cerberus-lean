@@ -251,8 +251,9 @@ the outcome protocol; [USER 2026-10-20]); all three have landed, so the queue is
   **Stage 2 QUEUED** (to the upstream tip, ~15–19 worker-days + audit; scoping §3/§10, Q3/Q4/Q6/Q8
   open): `Config` as the run-parameter carrier and the `tagDefs`-reader retirement; the CN parser
   split; `Core.file.calling_convention0` → `callconv`; the `.error.c` → `.undef.c` renames
-  (0676e9fca); the two stage-1 fork-ahead deltas leave — the one-line 736690a65 backport in
-  `mini_pipeline.lem` (tray 67) when 736690a65 is in the base, and the `formatted.lem`
+  (0676e9fca); the two stage-1 fork-ahead deltas leave — the TWO lines of 736690a65 carried ahead (the
+  `mini_pipeline.lem` tag map and `ocaml_implementation.ml`'s alignof union arm, tray 67; with them
+  `CerbMem.offsetofIval`'s two-map call and the workers' dead `ambient` parameter retire) when 736690a65 is in the base, and the `formatted.lem`
   `store_chars_in_array` restatement if lem-lean's `let … in function` rendering (lem-lean TODO 59)
   lands first; the `CerbStopSites` cites still at `b9aeedcb4` re-checked against the moved text;
   the pristine-difference register's remaining tray-37/44/47 rows re-examined on the tip.

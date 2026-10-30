@@ -30,10 +30,15 @@
 #   the tray-45 arity guards, unchanged; surrounding text moved); the other 11 rows' deltas are byte-identical to the reviewed ones;
 #   [expected-cosmetic] 10 -> 10: ctype.ml's hash moved (one blank line, still comment/blank-only); the other 9 unchanged.
 # Stage-1 FORK-AHEAD deltas registered here (both against pristine c3ff8c53f; each leaves when upstream absorbs it):
-#   (1) mini_pipeline.ml: the ONE-LINE backport of upstream 736690a65 (the const-expr mini-run's dummy Core file carries the
-#       translated tag definitions) -- [USER 2026-10-30] ruling (a), record section 2b; without it pristine c3ff8c53f crashes
-#       (Not_found) on every sizeof/_Alignof of a struct or union inside an integer constant expression; upstream-tray report 67;
-#       absorbed at stage 2 when 736690a65 arrives.
+#   (1) mini_pipeline.ml AND ocaml_frontend/ocaml_implementation.ml: the TWO lines of upstream 736690a65 the stage-1 base
+#       lacks -- (1a) the const-expr mini-run's dummy Core file carries the translated tag definitions (generated,
+#       mini_pipeline.ml; [USER 2026-10-30] ruling (a), record section 2b); (1b) Ocaml_implementation.alignof's union arm
+#       reads the threaded map, `Pmap.find tag_sym tagDefs`, not the Tags global (hand-written OCaml, a [source-content]
+#       re-pin, not a generated delta; [USER 2026-10-30] ruling extending (a) on the pre-merge review's P1, record
+#       section 6c). Without them pristine c3ff8c53f crashes (Not_found / Failure("Tags definitions must be set...")) on
+#       every struct or union sizeof/_Alignof inside an integer constant expression and on every desugar-time alignof of a
+#       union-containing type; upstream-tray report 67 (both halves); absorbed at stage 2 when 736690a65 arrives. The Lean
+#       layout workers mirror (1b): both union arms read the threaded map (CerberusImpl.lean, the carrier's union potential).
 #   (2) formatted.ml: store_chars_in_array restated with the list as an explicit parameter (upstream f4a3a3d54 wrote
 #       `let loc = ... in function ...`, which the Lean target renders as a lambda and cannot show terminating) -- an
 #       eta-expansion, OCaml semantics identical; the D1/many-many1 restatement precedent; lem-lean backend item filed at M6.
@@ -211,7 +216,7 @@ util/cerb_location.ml
 100644 966a123591ec28b449781c7ee794ed96f9b01af04d13631a5dbf45549d7a612f ocaml_frontend/dune
 100644 27f320ab1d88ebd2a066ccc9b6859065a7ce50effc52b35fdcb730aaef354949 ocaml_frontend/fork_renumber.ml
 100644 72bbf0bbbc993a6691cff8b42378caec1e1ff0a5f57ff1ae0eccf467dabda7ba ocaml_frontend/memory_model.ml
-100644 36203e0bb00e819aed21343b9284871355946e058f52bb442f98327f3a989c1e ocaml_frontend/ocaml_implementation.ml
+100644 5ec9b096351d428c5ae4b8977e347f90cda1993a0b09e0be15a0c99652550d5a ocaml_frontend/ocaml_implementation.ml
 100644 5e822399d914365bbb25d0d1a34f03e056fd9575fed5bc72cbc0cc44d5348aad ocaml_frontend/ocaml_implementation.mli
 100644 8c786d576be8fb163b263aad9e627a367c75f55e236c15edd918b3398a40abbe ocaml_frontend/pprinters/pp_core.ml
 100644 d4094fc7355bd3bb5915922af1bf7e959491d328e6a29b27cc36262ff5014d23 ocaml_frontend/pprinters/pp_symbol.ml

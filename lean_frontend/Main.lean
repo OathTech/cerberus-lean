@@ -790,8 +790,10 @@ def frontendTU [LemFuel] [CerbGlobal.Switches] (quiet : Bool) (supply : Nat) (ad
   -- PHASE-APPROPRIATE tag table — EMPTY during desugar/typing/
   -- elaboration, mirroring the oracle's empty Tags global there
   -- (pipeline.ml:253 resets before translate; the union-arm asymmetry
-  -- mirror, charter section 4.2 — the offsetof-union-member crash pair
-  -- pins this). The mini-run's own extent still sees the translated
+  -- is GONE since the merge-base bump stage 1 M6c — the fork carries
+  -- 736690a65's alignof line and CerbMem.offsetofIval passes the explicit
+  -- map twice, so offsetof-union-member is MATCH; the empty reader value
+  -- here is still the oracle's). The mini-run's own extent still sees the translated
   -- definitions via the reader_seed run_const_expr_driver.
   -- Program-data parameters E-A (2026-09-20): `enum_definitions` is the
   -- FIRST reader (sorted order: enum_definitions, tagDefs). At the desugar

@@ -208,7 +208,8 @@ the text differs. A crash on one side and a verdict on the other is NOT
 `driverErrorBatchMsg` vs `pp_errors.ml:501`; the libxml2-uri lane pins
 it modulo the embedded symbol id, tray 17); the both-crash immaculate
 pairs (`MATCH | L=CRASH`: `g2-memcmp-uninit`, `g4-bswap64-overflow`,
-`g5-decode-multichar`, `offsetof-union-member`, the `zd-z2*` pairs);
+`g5-decode-multichar`, the `zd-z2*` pairs; `offsetof-union-member` left the
+list at the merge-base bump's M6c — both engines answer);
 front-end rejections reported on stderr by the oracle and as an `Error
 {msg: …}` line on stdout by Lean (exit class identical — measured on 112
 reject rows, Z1 record §2). Quoted PANIC texts carry build-relative line
@@ -830,10 +831,13 @@ operator items are listed in the record.
   tagDefs` closes it (measured on a patched pristine build), and then also
   makes the oracle ANSWER `offsetof-union-member` (today a both-crash pin),
   so the Lean union arms must read the threaded map with it. OWNER: the
-  operator's ruling on extending the 736690a65 backport (pending); the
-  declared fallback is a refusal at `get_alignof` on both engines. Until
-  then the three shapes are unpinned by any lane (prepared as immaculate
-  rows `zd-ta-alignas-union-twice`, `-union-redecl`, `-struct-union-twice`).
+  operator's ruling on extending the 736690a65 backport — GIVEN [USER
+  2026-10-30] and applied at M6c (record §6c): the fork oracle carries the
+  line, `CerbMem.offsetofIval` passes the explicit map twice, and the three
+  shapes are pinned MATCH in the immaculate lane (`zd-ta-alignas-union-twice`,
+  `-union-redecl`, `-struct-union-twice`), as is `offsetof-union-member`
+  (both engines `Specified(0)`, no longer a crash pair). RESOLVED; kept
+  here until stage 2 absorbs 736690a65 (a fork-ahead delta, tray 67).
 - *libc-body UB locations* (Z1-A1): a UB raised INSIDE a libc C body
   carries the libc source location on the oracle and `<unknown
   location>` on Lean (the `--libc` pin is the oracle's Core TEXT dump,

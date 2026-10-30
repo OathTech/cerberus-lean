@@ -1498,8 +1498,16 @@ def opIval (op : integer_operator) (v1 v2 : IntegerValue) : IntegerValue :=
 def offsetofIval [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (tagDefsMap : CerbTags.TagDefsMap) (tag : sym) (memb : identifier) : IntegerValue :=
   -- target_rep for lem offsetof_ival (mem.lem:257): the lem-side argument
   -- is the tag map, threaded through the whole layout family (2026-09-01
-  -- S-basket item 1 — the elaboration-time fold's only tag source)
-  let (xs, _) := offsetsof enumDefs tagDefs tagDefsMap tag
+  -- S-basket item 1 — the elaboration-time fold's only tag source).
+  -- Merge-base bump stage 1 M6c (2026-10-30, [USER] ruling extending the
+  -- 736690a65 backport, record section 6c): the explicit map is passed as
+  -- BOTH maps. The oracle's alignof union arm now reads the threaded map
+  -- (the backported line), so no arm of the layout family reads the Tags
+  -- global any more; the reader `tagDefs` (the global's mirror, EMPTY at
+  -- elaboration time) is received and unused here, as in sizeof_ty/alignof_ty.
+  -- This was the one call passing two different maps: it made
+  -- offsetof-union-member a both-crash pair (now MATCH, Specified(0)).
+  let (xs, _) := offsetsof enumDefs tagDefsMap tagDefsMap tag
   match xs.find? (fun (ident, _, _) => idEqual ident memb) with
   | some (_, _, off) => integerIval off
   | none => failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.offsetofIval "Concrete.offsetof_ival: invalid memb_ident")))

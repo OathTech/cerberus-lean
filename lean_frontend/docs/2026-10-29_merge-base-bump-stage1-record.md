@@ -1915,3 +1915,130 @@ and the three new pins become fork-answers/pristine-crashes differences and get 
 citing tray 67 — four more rows (10 → 14). Fallback if declined: a declared refusal at `get_alignof` on
 union-containing types on both engines (the oracle's crash becomes a refusal too), the pins at the refusal class, a
 census row.
+
+---
+
+## 6c. M6c — the ruling on P1 applied: the second line of 736690a65 and its one-call Lean mirror (2026-10-30)
+
+**Ruling [USER 2026-10-30], relayed by the orchestrator: option 1.** The 736690a65 backport authorization (§2b.1,
+ruling (a)) is extended to the one OCaml line of the same commit — `Ocaml_implementation.alignof`'s union arm reads
+the threaded `tagDefs` instead of `Tags.tagDefs ()` — together with the one-call Lean mirror measured in §6b.1
+(`CerbMem.offsetofIval` passes the explicit map twice, upstream's post-736690a65 one-map shape; no proof change).
+
+### 6c.1 The edits (the staged package of §6b.3, `apply.py`)
+
+- `ocaml_frontend/ocaml_implementation.ml:579`: `begin match Pmap.find tag_sym tagDefs with` (736690a65's hunk
+  verbatim, with a FORK marker comment). The fork's generated OCaml is unchanged (hand-written file): the manifest's
+  `[source-content]` row re-pinned `36203e0b…` → `5ec9b096…` (the row's hash is `sha256sum` of the file, checked on
+  `Makefile`), NOTE (1) rewritten as the TWO lines of 736690a65 with the mechanism of each half; layer 2 untouched.
+- `lean_frontend/CerbMem.lean` `offsetofIval`: `offsetsof enumDefs tagDefsMap tagDefsMap tag` — the ONE call in the
+  tree that passed two different maps (the reader, empty at elaboration time, as `ambient`); every call of the
+  two-map layout workers is now one-map, so the workers, their obligations and `scripts/fuel_hypotheses.txt` are
+  untouched (the `offsetsof_lemFuel` row's two-map hypothesis is still the worker's; `Acyclic.pair` is its instance
+  at every call).
+- `lean_frontend/CerbStopSites.lean` `sizeofUnion`: back to upstream's `sizeof` union arm `:501-504` (the mirror
+  again; the leaf is unreachable by the typing invariant); the `CerberusImpl.lean`, `Main.lean` and witness-header
+  comments say the asymmetry is closed; `tests/immaculate/nolibc/offsetof-union-member.c`'s header keeps its history.
+- `tests/immaculate/nolibc/zd-ta-alignas-{union-twice,union-redecl,struct-union-twice}.c`: the three reproducers
+  (the reviewer's p24/p25/p27 with pin headers).
+- `scripts/failure_reach_register.txt` row 75 (`CerberusImpl.sizeofCtype_lemFuel`, the `sizeofUnion` leaf):
+  `REACHABLE` → `UNREACHABLE-BY-INVARIANT` with the reason (the former witness answers), `--reseal` (verbatim:
+  `check_failure_reach: resealed 238 rows of scripts/failure_reach_register.txt (review change: commit with the
+  justification)`; tally `UNREACHABLE-BY-INVARIANT=175 REACHABLE=42`).
+- Tray 67: the second half of the window appended (reproducers, the `Failure(…)` text, the two lines); `TODO.md`'s
+  stage-2 line names both lines and the dead `ambient` parameter's retirement; VALIDATION's open-bugs entry closed
+  by the ruling and `offsetof-union-member` taken out of the both-crash list.
+
+### 6c.2 Builds and the five programs (verbatim, `.tmp/m6b/p1/build.log`)
+
+```
+=== oracle: dune build 21:37:14 load=2.13
+dune exit=0
+=== make lean-prelude-src 21:37:16 load=2.13
+check_handwritten_sync: OK (57 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+=== capped lake build 21:37:49 load=3.49
+Build completed successfully (409 jobs).
+check_lem_sync: OK (src 6f59f40954fda517a8462abbcc6534d8e8512ec14ecda94453bda78271a0a1a6, gen 14399a384896605c710655f49cdac2204002baa00f12805ea1c429898fb29345)
+check_lem_sync: lean OK (src 6f59f40954fda517a8462abbcc6534d8e8512ec14ecda94453bda78271a0a1a6, gen a478f16e3e7575e58c9ffeedbe3745e2e05d73833ae7f12adff238d164458a7c)
+=== the five probes + witness on the rebuilt fork oracle and Lean 21:39:43 load=13.17
+  p24_alignas_union_twice.c: oracle exit=0 Defined {value: "Specified(8)", stdout: "", stderr: "", blocked: "false"} | lean exit=0 Defined {value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
+  p25_alignas_union_redecl.c: oracle exit=0 Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"} | lean exit=0 Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+  p27_alignas_struct_union_twice.c: oracle exit=0 Defined {value: "Specified(8)", stdout: "", stderr: "", blocked: "false"} | lean exit=0 Defined {value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
+  p28_alignas_struct_twice_control.c: oracle exit=0 Defined {value: "Specified(8)", stdout: "", stderr: "", blocked: "false"} | lean exit=0 Defined {value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
+  offsetof-union-member.c: oracle exit=0 Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"} | lean exit=0 Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+```
+(the generated OCaml tree is unchanged: `check_lem_sync: OK` with the same `gen 14399a38…` as M5; the Lean generated
+tree moved by the two copied seams only.)
+
+### 6c.3 The measuring lanes (verbatim, `.tmp/m6b/p1/lanes.log`) and the rows they moved
+
+```
+=== test_immaculate (measure) 21:40:03 load=11.28
+  MATCH          offsetof-union-member  O[VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}] L[VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}]
+  MATCH          zd-ta-alignas-struct-union-twice  O[VAL:{value: "Specified(8)", …}] L[VAL:{value: "Specified(8)", …}]
+  MATCH          zd-ta-alignas-union-redecl  O[VAL:{value: "Specified(0)", …}] L[VAL:{value: "Specified(0)", …}]
+  MATCH          zd-ta-alignas-union-twice  O[VAL:{value: "Specified(8)", …}] L[VAL:{value: "Specified(8)", …}]
+DEVIATION: zd-ta-alignas-union-twice expected [<absent>] got [MATCH | L=VAL:{value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}]
+DEVIATION: zd-ta-alignas-struct-union-twice expected [<absent>] got [MATCH | L=VAL:{value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}]
+DEVIATION: zd-ta-alignas-union-redecl expected [<absent>] got [MATCH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}]
+DEVIATION: offsetof-union-member expected [MATCH | L=CRASH] got [MATCH | L=VAL:{value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}]
+=== gcc lane partial over tests/immaculate/nolibc (scratch ledger) 21:41:58 load=5.27
+[32/68] AGREE  tests/immaculate/nolibc/offsetof-union-member.c: gcc=0 lean={0}
+[62/68] AGREE  tests/immaculate/nolibc/zd-ta-alignas-struct-union-twice.c: gcc=8 lean={8}
+[63/68] AGREE  tests/immaculate/nolibc/zd-ta-alignas-union-redecl.c: gcc=0 lean={0}
+[64/68] AGREE  tests/immaculate/nolibc/zd-ta-alignas-union-twice.c: gcc=8 lean={8}
+SUMMARY: total=68 compared=35 agree=28 agree_nd=0 triaged=7 disagree=0 o2_agree=1 skip_gcc_compile=4 skip_gcc_stdout=2 skip_lean_crash=12 skip_lean_fail=5 skip_ub=10 triaged_addr=5 triaged_float=1 tri…
+=== test_upstream_oracle --corpus tier-b (measure) 21:46:13 load=19.66
+894/999 difference: immaculate/nolibc/offsetof-union-member (pristine 0.0s, fork 0.0s)
+924/999 difference: immaculate/nolibc/zd-ta-alignas-struct-union-twice (pristine 0.0s, fork 0.0s)
+925/999 difference: immaculate/nolibc/zd-ta-alignas-union-redecl (pristine 0.0s, fork 0.0s)
+926/999 difference: immaculate/nolibc/zd-ta-alignas-union-twice (pristine 0.0s, fork 0.0s)
+Independent oracle scope: tier-b; 999 rows in 203.3s; source unchanged: True
+Independent oracle: failed; {'semantic_agreement': 953, 'reviewed_difference': 10, 'matching_failure': 30, 'interface_agreement': 2, 'difference': 4}; …
+```
+Exactly the four predicted movements, nothing else. Rows written by hand from these lines: `tests/immaculate/baseline.txt`
+(`offsetof-union-member` → `MATCH | L=VAL Specified(0)`; three new rows after `zd-ta-alignas-huge-union-alignof`; header
+note), `scripts/gcc_oracle_baseline.txt` (`offsetof-union-member.c SKIP_LEAN_CRASH -` → `AGREE -`; three rows `AGREE -`
+inserted by key; header note; the lane's `--check-baseline` is keyed and runs in the battery), and four
+`shared-model-fix` rows in `scripts/upstream_oracle_differences.json` (10 → 14: `immaculate/nolibc/offsetof-union-member`,
+`…/zd-ta-alignas-union-twice`, `…/zd-ta-alignas-union-redecl`, `…/zd-ta-alignas-struct-union-twice`; each pins pristine
+`125` / fork `0` and quotes pristine's `cerberus: internal error, uncaught exception: Failure("Tags definitions must be set
+by Tags.set_tagDefs before any use")` from the run's capture; citations tray 67 and this record).
+
+### 6c.4 Gates and lanes (verbatim; `.tmp/m6b/p1/lanes.log`, `confirm.log`)
+
+```
+check_failure_reach: SELFTEST OK (8 plants with the declared message — …)
+check_failure_reach: OK (238 pure failure sites = the 238 register rows exactly (236 in the exec dependency closure + 2 unresolved-owner; …); position classes unchanged; 0 DISCARDABLE; …
+test_stops.py: Ran 23 tests in 0.008s — OK
+check_fork_content: OK — 93 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 93 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 32 differing generated files, all hash-pinned (merge-base c3ff8c53f05982745f9b3a10b3d05442e214bcb5; lem-pin e6d8db5680962f49060257d6c2bcb13c…
+check_fork_drift: SELFTEST OK (31 plants with declared verdict/message: …)
+exec coverage: SUMMARY: total=277 match=222 ub_match=37 ub_diff=0 mismatch=0 fail=0 crash=0 fuel=0 lean_error=0 timeout=0 hang=0 cerb_skip=16 cerb_floor=0 cerb_inconsistent=0 / Baseline check: 0 regression(s), 0 improvement(s) / BASELINE OK
+check_union_init_refusals: OK (26 cases: …)
+check_anonymous_members_refusal: OK (42 cases: …)
+check_compound_assignment_refusal: OK (30 cases: …)
+check_item_g_refusals: OK (19 cases: …)
+check_cli_refusals: OK (…)
+=== test_immaculate (check on the edited baseline) 21:50:52 load=7.85
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip/zd-r2-highbyte DIFF and zd-r2-crash-digit9 ORACLE_CRASH, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF, …
+=== test_upstream_oracle --corpus tier-b (check on the edited register) 21:52:49 load=6.42
+Independent oracle scope: tier-b; 999 rows in 204.4s; source unchanged: True
+Independent oracle: passed; {'semantic_agreement': 953, 'reviewed_difference': 14, 'matching_failure': 30, 'interface_agreement': 2}; …/.tmp/m6b/p1/tierb-confirm/report.json
+=== test_upstream_oracle --plant 21:56:14 load=13.91
+3/3 plant_ok: plant/withheld-row:minimal/106-sizeof-struct-array.c — minimal/106-sizeof-struct-array.c: with its register row -> reviewed_difference; row withheld -> difference (fatal engine diagnostic; no completed observation)
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}; …/.tmp/m6b/p1/plant/report.json
+```
+(the `tests/coverage/alignas` witnesses are unchanged — `alignas-002/003` stay `CERB_SKIP`, the fork's constraint
+violation, tray 47; the 1-minute load touched 19.7 during the refusal scripts, which fan out oracle and Lean processes —
+noted for the box discipline, no run was started above 12.)
+
+### 6c.5 What this closes, and what stage 2 inherits from it
+
+Closed: the pre-merge review's P1 (both halves of tray 67's window carried ahead; no arm of the layout family reads the
+Tags global on either engine; the `offsetof-union-member` crash pair of 2026-09-01 is a MATCH). Fork-ahead deltas at
+stage 1 are now (1a) `mini_pipeline.ml`'s tag map, (1b) `ocaml_implementation.ml`'s alignof line with its one-call Lean
+mirror, (2) the `formatted.ml` restatement — each registered in the manifest NOTE, the differences register and tray 67.
+Stage 2 inherits: with 736690a65 in the base (1a)/(1b) leave, `CerbMem.offsetofIval`'s two-map call and the workers'
+dead `ambient` parameter retire with the Tags removal (the one-map restatement of the carrier's `tp`), and the
+`AcyclicPair` row of `scripts/fuel_hypotheses.txt` collapses to `Acyclic`.
