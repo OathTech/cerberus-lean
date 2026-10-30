@@ -813,6 +813,27 @@ operator items are listed in the record.
 
 **Still open (bugs by the rule; each with its owner):**
 
+- *Desugar-time `alignof` of a union-containing type: the oracle crashes, Lean
+  answers* (merge-base bump stage 1, pre-merge review P1, 2026-10-30; record
+  `docs/2026-10-29_merge-base-bump-stage1-record.md` §6b). Two `_Alignas` on
+  one declaration or an aligned redeclaration whose type contains a union
+  (`_Alignas(union U) _Alignas(1) char c;`) apply `cabs_to_ail_effect.lem`
+  `get_alignof`'s closure; upstream's `Ocaml_implementation.alignof` union
+  arm at `c3ff8c53f` reads the Tags global (`ocaml_implementation.ml:566`),
+  UNSET during desugaring, so the fork oracle and pristine `c3ff8c53f` crash
+  with `Failure("Tags definitions must be set by Tags.set_tagDefs before any
+  use")` (exit 125) where Lean's one-map wrapper `CerberusImpl.alignof_ty`,
+  pristine `b9aeedcb4` and the pre-merge fork oracle answer (`Specified(8)`,
+  `Specified(0)`, `Specified(8)` on the three reproducers; the no-union
+  control agrees on every engine). The second half of tray 67's
+  b3e11ea33..736690a65 window: upstream's ONE line `Pmap.find tag_sym
+  tagDefs` closes it (measured on a patched pristine build), and then also
+  makes the oracle ANSWER `offsetof-union-member` (today a both-crash pin),
+  so the Lean union arms must read the threaded map with it. OWNER: the
+  operator's ruling on extending the 736690a65 backport (pending); the
+  declared fallback is a refusal at `get_alignof` on both engines. Until
+  then the three shapes are unpinned by any lane (prepared as immaculate
+  rows `zd-ta-alignas-union-twice`, `-union-redecl`, `-struct-union-twice`).
 - *libc-body UB locations* (Z1-A1): a UB raised INSIDE a libc C body
   carries the libc source location on the oracle and `<unknown
   location>` on Lean (the `--libc` pin is the oracle's Core TEXT dump,

@@ -284,12 +284,27 @@ def mkCtype (ty_ : ctype_) : ctype := Ctype ([] : List annot) ty_
     "requires a complete implementation" failures became
     `raise Missing_implementation_detail "sizeof a POINTER"` etc. (still crashes).
     The Lean worker below keeps BOTH union arms on `ambient` (the global's mirror)
-    deliberately: at every stage-1 call site that is unobservable — the measured
-    one-map wrappers pass the same map twice, and `sizeof_ty`/`alignof_ty` (end
-    of this section) are those wrappers over the explicit map — and restating
-    the stable proof's single potential `tp` (CerberusImpl_lemMeasureProofs.lean)
-    for a per-function lookup is stage 2's work, where the Tags removal
-    (736690a65) makes the two maps one. [AGENT 2026-10-29]
+    deliberately, and restating the stable proof's single potential `tp`
+    (CerberusImpl_lemMeasureProofs.lean) for a per-function lookup was deferred to
+    stage 2, where the Tags removal (736690a65) makes the two maps one. [AGENT
+    2026-10-29] CORRECTED 2026-10-30 (pre-merge review P1/P2, record §6b): the
+    claim that this is unobservable at every stage-1 call site was WRONG. It is
+    observable at two sites. (i) Desugar time, `cabs_to_ail_effect.lem`
+    `get_alignof` on a union-containing type (two `_Alignas` on one declaration,
+    an aligned redeclaration): upstream's alignof union arm reads the Tags
+    global, which is UNSET during desugaring, so the oracle crashes with
+    `Failure("Tags definitions must be set by Tags.set_tagDefs before any use")`
+    — where the one-map wrapper `alignof_ty` below answers from the explicit map
+    (and pristine b9aeedcb4 answered through `alignof_proxy`): a Lean-answers /
+    oracle-crashes divergence, registered in VALIDATION §3 pending the ruling on
+    736690a65's one alignof line (`Pmap.find tag_sym tagDefs`), which makes the
+    oracle answer again. (ii) Elaboration time, `offsetof` over a
+    union-containing struct (`tests/immaculate/nolibc/offsetof-union-member.c`):
+    both engines crash, in DIFFERENT arms — upstream in alignof's union arm via
+    `offsetsof`, this worker in `sizeofCtype`'s union arm (`ambient` is the
+    empty elaboration-time table) — a pinned crash pair; with the backport both
+    union arms must read the threaded map here too, or the pair becomes a
+    Lean-only crash (measured 2026-10-30 on a patched pristine build, record §6b).
 
     The section header that follows is the one the block carried in CerbMem.lean. -/
 
@@ -622,9 +637,12 @@ def alignofCtype (enumDefs : EnumDefs) (ambient : TagDefs) (cty : ctype) : Nat :
     passes the explicit map to every arm except alignof's union arm (:566, see the
     section header); the wrappers use the explicit map throughout. At run time both
     maps are the Core file's table; at desugar time (`get_alignof`) the explicit map
-    is the desugar state's real table where upstream's global is EMPTY (`Pmap.find`
-    Not_found — a crash the fork's pre-merge pseudo-map `alignof_ty` already answered
-    with the value; re-measured by the alignas witnesses at M4). -/
+    is the desugar state's real table where upstream's global is UNSET
+    (`Failure("Tags definitions must be set by Tags.set_tagDefs before any use")`
+    on a union-containing type — the oracle crashes where this wrapper answers; the
+    pre-merge pseudo-map `alignof_ty` answered too; the alignas witnesses of M4
+    never apply the closure to a union, so M4 did not see it; pre-merge review P1,
+    record §6b, VALIDATION §3). -/
 def sizeof_ty (enumDefs : EnumDefs) (_readerTagDefs : TagDefs) (tagDefs : TagDefs) (ty : ctype) : Int :=
   Int.ofNat (sizeofCtype enumDefs tagDefs ty)
 

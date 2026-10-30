@@ -97,9 +97,18 @@ def sizeofFloat (detail : String) : UpstreamCrash :=
   mirror ⟨"CerberusImpl.sizeofFloat", by decide⟩ detail
     (implSourceStage1 477 481 (by decide) "  | Basic (Floating fty) ->\n      begin match (get ()).sizeof_fty fty with\n      | Some n -> of_int n\n      | None -> raise @@ Missing_implementation_detail \"sizeof a FLOAT\"\n      end")
 
+/-- Re-cited at M6b of the merge-base bump (pre-merge review P2, 2026-10-30): the Lean
+    `sizeofCtype` union arm still reads the AMBIENT table (the Tags global's mirror — the
+    `impl_mem.ml:173` shape of `b9aeedcb4`), while upstream's `sizeof` union arm at
+    `c3ff8c53f` (`:501-504`) reads the THREADED map and does not fail; the live upstream
+    failure on the witness `tests/immaculate/nolibc/offsetof-union-member.c` is one arm
+    later, `alignof`'s union arm (`:565-568`, reached from `offsetsof` `:455`), the site
+    quoted here. Both engines crash on the witness, in different arms; the ruling on
+    736690a65's alignof line (record §6b) decides whether both arms move to the
+    threaded map. -/
 def sizeofUnion (detail : String) : UpstreamCrash :=
   mirror ⟨"CerberusImpl.sizeofUnion", by decide⟩ detail
-    (implSourceStage1 501 504 (by decide) "  | Union tag_sym ->\n      begin match Pmap.find tag_sym tagDefs with\n      | _, StructDef _ -> assert false\n      | _, UnionDef membrs ->")
+    (implSourceStage1 565 568 (by decide) "  | Union tag_sym ->\n      begin match Pmap.find tag_sym (Tags.tagDefs ()) with\n      | _, StructDef _ -> assert false\n      | _, UnionDef membrs ->")
 
 def alignofVoid (detail : String) : UpstreamCrash :=
   mirror ⟨"CerberusImpl.alignofVoid", by decide⟩ detail

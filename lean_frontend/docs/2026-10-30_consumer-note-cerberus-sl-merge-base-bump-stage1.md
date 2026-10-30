@@ -27,7 +27,7 @@ outcome protocol and the memory model.
 - **A declared transport limitation (N4, VALIDATION §2b, SUPPORTED).** The libc Core text dump
   carries no source locations, so a UB raised inside a libc function reports `<unknown location>` on
   the Lean side where the oracle prints the libc source position; the verdict class and UB code
-  agree. Both lanes carry the one affected row as `LOCATION-ONLY` with its disposition
+  agree. Both lanes carry the one affected row as `LOC_ONLY` (`LOC_ONLY-FIRST` in the inner_arg_temps lane) with its disposition
   (`tests/libc_exec/dispositions.txt`); the remover is the queued slice "Locations in the Core text
   transport" (`TODO.md`).
 - **Diagnostics.** `Errors`/`Constraint` gain upstream's new constructors; `stringOfDesugarCause`

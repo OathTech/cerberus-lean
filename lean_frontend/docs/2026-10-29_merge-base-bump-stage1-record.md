@@ -586,7 +586,7 @@ hunks, verified by reading); D13's walker gained the label arm. Witness re-runs 
   global (`:566`); the Lean worker keeps both union arms on `ambient`. `CerbTagsWf.Ranked` is
   symmetric over the two lookups, but the stable proof's single potential `tp` would need a
   per-function lookup to mirror the half-moved arm — a restatement, excluded at stage 1 (§0.3,
-  accepted plan); unobservable at every stage-1 call site (the wrappers pass one map twice;
+  accepted plan); unobservable at every stage-1 call site [CORRECTED 2026-10-30, §6b: FALSE — observable at desugar-time `get_alignof` on a union-containing type (the oracle crashes, Lean answers; pre-merge review P1) and at elaboration-time `offsetof` over a union-containing struct (both crash, different arms; P2)] (the wrappers pass one map twice;
   `sizeof_ty`/`alignof_ty` are those wrappers); stage 2's Tags removal is the mover. The
   `_readerTagDefs` parameter is received and unused: at desugar time (`get_alignof`) the explicit
   map is the desugar state's real table where upstream's global is empty (Not_found) — the value
@@ -1439,7 +1439,7 @@ fork-drift gate until M5.
 Forecast reconciliation against §0.9 (*derived*): 9 of 10 forecast movements materialised exactly (A2, A14, A15,
 Tier C ×3, A5/B13 pins, B4 pins, B7); one forecast miss — B5's three `zd-ta-alignas-huge-*` rows and the
 `s4b-memcmp-hugesize` loc token (§4.7), both upstream's fixes; A3/A4/A4b/A6/A7/A8/A9/A12/A13 did not move. No
-finding; nothing refused; nothing silently re-recorded.
+finding; nothing refused; nothing silently re-recorded. [2026-10-30: the pre-merge review found what M4's witnesses did not reach — P1, §6b.]
 
 Carried forward: **M5** — `upstream_oracle_differences.json`'s register rows for the three
 `tests/coverage/alignas/*` cases (tray 47) are re-derived on the pristine instrument at `c3ff8c53f` with the rest
@@ -1793,3 +1793,125 @@ forecast misses (§0.9's note) as checks on the next forecast.
 `9a8c9febf` M3 · `87ec91341` M4 · `33026c2d5` M5 · `7bfaec1a2` M5b · M6 = this commit. Scratch: every `.tmp/m*-*`
 log, script and draft of this slice is deleted with this commit (reconstructible; the record quotes what mattered);
 `.tmp/pristine-c3ff8c53f/` stays until landing (the gate's tree).
+
+---
+
+## 6b. M6b — the pre-merge review's P2 and P3, and P1 raised (2026-10-30)
+
+The fresh reviewer's report: `.tmp/review-bump/2026-10-30_merge-base-bump-stage1-premerge-review.md` (container
+scratch; placed beside this record at the close-out commit). Verdict as written: NOT MERGEABLE as it stands — one P1
+(an operator ruling), one P2, two P3; everything else checked held up (the 13 resolutions, S2 on three oracles, the
+backport, the restatement, LOC_ONLY, the refusals, the manifest re-derivation, its own kernel replay of five modules,
+six upstream commits end to end). The orchestrator stopped the full battery; M6b fixes P2 and P3 now, P1 waits for the
+ruling (M6c). Dispositions, one by one:
+
+| finding | disposition |
+|---|---|
+| **P1** — desugar-time `alignof` of a union-containing type crashes the merged fork oracle (and pristine c3ff8c53f) with `Failure("Tags definitions must be set …")` where the pre-merge fork, pristine b9aeedcb4 and Lean answer; unregistered; the record's "unobservable at every stage-1 call site" false; the failure misnamed `Not_found` | **RAISED with the operator** through the orchestrator (the ruling on extending the 736690a65 backport to its alignof line). Done now: the divergence registered in VALIDATION §3's open-bugs list with its owner; the record's §2.1 claim corrected inline and §4.9 annotated; `CerberusImpl.lean`'s two comments corrected (observable at two sites; the global is UNSET, the failure is the `Failure(…)`); the three reproducers prepared under `.tmp/m6b/` with the P1 package (§6b.2) |
+| **P2** — the `offsetof-union-member` Lean stop cites `ocaml_implementation.ml:501-504`, which reads the threaded map and does not fail; register row 75's reason says `CerbMem:478` | **FIXED**: `CerbStopSites.sizeofUnion` re-cited to the live upstream failure, alignof's union arm `:565-568` reached from `offsetsof :455`, with a doc comment naming the arm difference (Lean fails in `sizeofCtype`'s `ambient` lookup, the b9aeedcb4 `impl_mem.ml:173` shape); row 75's reason rewritten (`CerberusImpl.lean:505`, both arms named; the reason column is outside the seal — `SEALED = file, definition, token, msg, scope, position, position_reviewed, reach` — so no reseal). The per-function lookup itself is P1's package: with the backport both union arms read the threaded map and the cite returns to `:501-504` |
+| **P3** — the charter's D13 constant-expression re-measure unrecorded | **FIXED** (recorded below, re-measured here, not copied from the review) |
+| **P3** — the cerberus-sl note says `LOCATION-ONLY` | **FIXED**: `LOC_ONLY` (`LOC_ONLY-FIRST` in the inner_arg_temps lane) |
+
+### 6b.1 The re-measurements (`.tmp/m6b/experiment.sh`, verbatim; five engines: the merged fork oracle, pristine `c3ff8c53f`
+(the standing build), pristine `c3ff8c53f` with ONLY 736690a65's alignof line applied and rebuilt in scratch, the pre-merge
+fork oracle of the mainline checkout `676f9f21c`, and Lean on the fork oracle's cabs-json)
+
+```
+##### p24_alignas_union_twice.c
+  fork(merged)       exit=125: cerberus: internal error, uncaught exception:           Failure("Tags definitions must be set by Tags.set_tagDefs before any use")
+  pristine c3ff8c53f exit=125: cerberus: internal error, uncaught exception:           Failure("Tags definitions must be set by Tags.set_tagDefs before any use")
+  pristine+736690a65-alignof-line exit=0: Defined {value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
+  pre-merge fork 676f9f21c exit=0: Defined {value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
+  lean              exit=0: Defined {value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
+##### p25_alignas_union_redecl.c
+  fork(merged)       exit=125: … Failure("Tags definitions must be set by Tags.set_tagDefs before any use")
+  pristine c3ff8c53f exit=125: … the same
+  pristine+736690a65-alignof-line exit=0: Defined {value: "Specified(0)", …}
+  pre-merge fork 676f9f21c exit=0: Defined {value: "Specified(0)", …}
+  lean              exit=0: Defined {value: "Specified(0)", …}
+##### p27_alignas_struct_union_twice.c
+  fork(merged)       exit=125: … the same Failure;  pristine c3ff8c53f exit=125: … the same
+  pristine+736690a65-alignof-line exit=0: Defined {value: "Specified(8)", …};  pre-merge fork exit=0: Specified(8);  lean exit=0: Specified(8)
+##### p28_alignas_struct_twice_control.c
+  all five: exit=0: Defined {value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
+##### p29b_offsetof_union_member_witness.c   (= tests/immaculate/nolibc/offsetof-union-member.c)
+  fork(merged)       exit=125: … Failure("Tags definitions must be set by Tags.set_tagDefs before any use")
+  pristine c3ff8c53f exit=125: … the same
+  pristine+736690a65-alignof-line exit=0: Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+  pre-merge fork 676f9f21c exit=125: … the same Failure
+  lean              exit=134: lean_frontend/.lake/build/bin/cerberus-lean(+0x4e73a76) [0x59ad7e4f9a76]
+##### p15_d13_in_case.c   (switch (1) { case (i += 1, 1): return 2; })
+  fork(merged)       exit=1:     expressions with values that duplicate case constant expressions in the enclosing     switch statement.)
+  pristine c3ff8c53f exit=1:     … the same (the constraint-violation text of 97371d8ed)
+  pristine+736690a65-alignof-line exit=1: … the same
+  pre-merge fork 676f9f21c exit=125: cerberus: internal error, uncaught exception:           Failure("internal error: gentpying.annotate_expression: AilEident symbol couldn't be resolved => Symbol(504, SD_ObjectAddress\"i\")")
+  lean              exit=1: Error {msg: "desugaring failed at …/.tmp/m6b/p15_d13_in_case.c:3:21-32"}
+```
+(p24/p25/p27/p28/p15 are the reviewer's probes, copied; p29b is the committed witness. The crash lines are cut after the
+exception text; the ANSI colour codes are stripped.)
+
+**The D13 re-measure (P3).** A compound assignment inside a case label is rejected before elaboration on both engines at
+the new base — upstream 97371d8ed's integer-constant check (`constraint violation: expression is not an integer
+constant expression`, exit 1 on the oracle; Lean's batch record renders the desugar failure as `desugaring failed at
+<loc>`, exit 1, the known unattributed rendering of desugar causes, TODO's outcome-protocol mover) — where the old base
+crashed in `annotate_expression`. The D13 refusal is therefore no longer reachable from a case label; its
+pure-`error` shape still matters for the remaining constant-expression entries (array bounds, enumerators,
+`_Static_assert`), which the D13 record's rationale rests on. Measured, not changed.
+
+**P1's scope (for the ruling).** The one alignof line makes the oracle answer p24/p25/p27 AND the `offsetof-union-member`
+witness, on which Lean still crashes (its `sizeofCtype` union arm reads `ambient`, the empty elaboration-time table):
+the backport alone would turn a pinned both-crash pair into a Lean-only crash on valid C. The package is therefore:
+the OCaml line; the Lean mirror — both union arms of the layout workers read the threaded map (`tagDefs`), the proof
+carrier's `tp` union case follows (`lookup tagDefs`; worker signatures, wrappers and `scripts/fuel_hypotheses.txt`
+unchanged); kernel replay; the `offsetof-union-member` immaculate row, gcc ledger row and register row 75 re-recorded
+from both-crash to agreement; the three new immaculate pins at `MATCH`; `ocaml_implementation.ml`'s `[source-content]`
+re-pin and NOTE (1) extended to "two lines of 736690a65"; tray 67 extended; `CerbStopSites.sizeofUnion` back to
+`:501-504`; the TODO stage-2 list. Fallback if declined: a declared refusal at `get_alignof` on both engines
+(the oracle's crash becomes a refusal too), the three pins at the refusal class, a census row.
+
+### 6b.2 Gates and lanes on the M6b tree (verbatim; `.tmp/m6b/build.log`)
+
+```
+=== make lean-prelude-src 05:44:44 load=3.99
+check_handwritten_sync: OK (57 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+=== capped lake build 05:45:15 load=4.31
+Build completed successfully (409 jobs).
+=== check_lem_sync --check-lean
+check_lem_sync: lean OK (src 6f59f40954fda517a8462abbcc6534d8e8512ec14ecda94453bda78271a0a1a6, gen a478f16e3e7575e58c9ffeedbe3745e2e05d73833ae7f12adff238d164458a7c)
+=== check_failure_reach --selftest
+check_failure_reach: SELFTEST OK (8 plants with the declared message — …)
+=== check_failure_reach
+check_failure_reach: OK (238 pure failure sites = the 238 register rows exactly (236 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, shared keys lengthened, both directions); position classes unchanged; 0 DISCARDABLE; …
+=== test_stops.py
+Ran 23 tests in 0.008s
+OK
+=== the stop record on the offsetof witness (Lean), re-cited
+PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: cerberus-lean stop ["1","UPSTREAM_CRASH","CerberusImpl.sizeofUnion","Mirrored upstream failure: CerberusImpl.sizeofCtype: Union tag not a UnionDef (OCaml: assert false / Not_found)",["cerberus","c3ff8c53f05982745f9b3a10b3d05442e214bcb5","ocaml_frontend/ocaml_implementation.ml","565","568","  | Union tag_sym ->\n      begin match Pmap.find tag_
+=== test_immaculate
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip/zd-r2-highbyte DIFF and zd-r2-crash-digit9 ORACLE_CRASH, R3 s4b-memcmp-hugesize ORACLE_CRASH, …
+```
+
+(the register's reason column is outside the seal, so the gate stays green on the refreshed row without a reseal; the
+immaculate row `offsetof-union-member MATCH | L=CRASH` is unchanged — a crash token carries no text.)
+
+### 6b.3 The P1 package, prepared (`.tmp/m6b/p1/`, applied on the ruling as M6c)
+
+`apply.py` (every tree edit): the OCaml line (`ocaml_frontend/ocaml_implementation.ml`, alignof's union arm,
+736690a65's hunk verbatim); `CerbMem.offsetofIval` passes the explicit map as both maps (the ONE call in the tree that
+passed two different maps — every other caller of the two-map layout workers already passes one map twice, so the
+workers, the obligations and `scripts/fuel_hypotheses.txt` stay as they are; the asymmetry the two-map form mirrored is
+gone with the backported line); `CerbStopSites.sizeofUnion` back to `:501-504`; the `CerberusImpl`, `Main.lean` and
+witness-header comments; the three reproducers as `tests/immaculate/nolibc/zd-ta-alignas-{union-twice,union-redecl,
+struct-union-twice}.c`; manifest NOTE (1) → "the TWO lines of 736690a65" with the `ocaml_implementation.ml`
+`[source-content]` re-pin by `--refresh`-free single-row re-derivation (`check_fork_content.py --emit`); tray 67's
+second half; the TODO stage-2 line; VALIDATION's open-bug row resolved and `offsetof-union-member` out of the
+both-crash list; register row 75 `REACHABLE` → `UNREACHABLE-BY-INVARIANT` (a review change: `--reseal`). Then:
+regeneration, the oracle and Lean builds, `check_failure_reach` (+ selftest), `test_stops.py`, the immaculate lane
+(the four rows re-recorded by hand from the lane's lines: three new `MATCH | L=VAL …`, `offsetof-union-member`
+`MATCH | L=CRASH` → `MATCH | L=VAL Specified(0)`), the gcc ledger row for `offsetof-union-member`
+(`SKIP_LEAN_CRASH` → measured), `check_fork_drift` (+ selftest), the alignas witnesses (`tests/coverage/alignas`,
+`check_*_refusals.sh`), and `test_upstream_oracle --corpus tier-b`, where `immaculate/nolibc/offsetof-union-member`
+and the three new pins become fork-answers/pristine-crashes differences and get `shared-model-fix` register rows
+citing tray 67 — four more rows (10 → 14). Fallback if declined: a declared refusal at `get_alignof` on
+union-containing types on both engines (the oracle's crash becomes a refusal too), the pins at the refusal class, a
+census row.
