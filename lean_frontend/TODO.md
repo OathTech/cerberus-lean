@@ -211,13 +211,15 @@ the outcome protocol; [USER 2026-10-20]); all three have landed, so the queue is
   `_Bool b = 0.5; _Bool c = -0.25; return b*10 + c;` answers `Specified(11)` (§6.3.1.2#1), where the survey measured 0.
   No refusal was needed; no gated row moved.
 - **Crashes on valid C become declared refusals** ([USER 2026-10-20]: a crash is an unspecified stop, a refusal a
-  specified one; the conversion changes no accepted program's answer; record §2.5, §2.7-§2.9, slice 3). Five arms:
+  specified one; the conversion changes no accepted program's answer; record §2.5, §2.7-§2.9, slice 3). Five arms (arm 4 retired by the merge-base bump):
   (1) `wchar_t` with a negative value (`bytes_of_int` assertion from the unsigned-range/signed-alias contradiction at
   impl_mem.ml:2449/:2479 vs ocaml_implementation.ml:167; tray 62); (2) statement expressions whose block contains an
   assignment/`++`/`if` (`break_at_sseq, Cbound`, failure register row 183); (3) multi-character and UTF-8 character
   constants (`decode_character_constant`, decode.ml:218; tray 63); (4) `NULL + 0` (impl_mem.ml:2277 `failwith`,
-  mirror `CerbMem.lean:1975`; tray 04) — **upstream fix exists (`f4a3a3d54`, 2026-09-30: the pure
-  `array_shift_ptrval` returns UB on a null pointer); backport proposed, ruling pending**; (5) the `printf` `%.*d`
+  mirror `CerbMem.lean:1975`; tray 04) — **RETIRED 2026-10-30: upstream's fix `f4a3a3d54` (the pure
+  `array_shift_ptrval` returns `UB046_array_pointer_outside` on a null pointer) is carried by the stage-1
+  merge-base, mirrored by seam S2; both engines agree on `tests/minimal/097`, `tests/ci/0120`/`0121`,
+  `ts-fmt-s-null` (bump record §4)**; (5) the `printf` `%.*d`
   (negative precision, tray 26) and `%n` arms (formatted.lem:453/:726). Each becomes an attributed refusal in both
   engines with a witness; 0 gated rows move. A sixth arm, found by the compound-assignment slice's pre-merge reviewer
   on the mainline `b4a48f635` (2026-10-29, review P-incidental; pre-existing, both engines, not touched by that slice):
@@ -234,27 +236,26 @@ the outcome protocol; [USER 2026-10-20]); all three have landed, so the queue is
   `docs/2026-10-04_real-c-reach-census.md` (M1) is corrected from "statement expressions are supported" to "supported
   unless the block contains an assignment, `++` or `if` statement".
 
-- **Cerberus merge-base bump b9aeedcb4 (2026-08-13) → upstream/master.** Scoped
-  2026-10-20 (`docs/2026-10-20_merge-base-bump-scoping-record.md`): 46 upstream
-  commits (16 semantic fixes incl. the closures of tray 01/04/15/33/41, 12
-  refactors, 3 removals, the CN parser split); 34 files conflict with the fork
-  in a dry-run merge, concentrated where the fork's supply/top/digest/reader
-  threading meets upstream's elaboration environment, Tags removal and
-  `Config`. [USER 2026-10-20] decided to do the bump as a staged arc after the
-  cerberus-caesium deliveries (Core quoting, inner_arg_temps, the outcome
-  protocol). [AGENT 2026-10-20, scoping] recommends stage 1 to `c3ff8c53f`
-  (2026-09-30; 11 conflicted files, 11 of the 16 fixes, ~10–12 worker-days +
-  audit) and stage 2 to the tip (~15–19 worker-days + audit), each a true
-  merge on its arc branch landed ff-only; cherry-picking the fixes alone costs
-  about the same with no base movement. Blockers before the first build: the
-  new upstream opam dependency `monomorphic 2.1.0` (operator, network). The
-  record's §10 lists ten operator questions (merge commits on the arc branch,
-  the tagDefs-reader retirement, `Config` as the run-parameter carrier, the
-  stage cuts, consumer timing, the new `branching_on_unspec_is_nd` switch).
-  Meanwhile the `inner_arg_temps` slice backports f10329b44 (and, pending a
-  ruling, 3230aa494), both zero-conflict.
-  PARKED [USER 2026-10-20] on branch `docs/bump-scoping` with the questions open;
-  nothing to resolve before the arc is chartered.
+- **Cerberus merge-base bump b9aeedcb4 (2026-08-13) → upstream/master, staged.** Scoped
+  2026-10-20 (`docs/2026-10-20_merge-base-bump-scoping-record.md`: 46 upstream commits, 34
+  conflicting files; [USER 2026-10-20] staged it after the cerberus-caesium deliveries).
+  **Stage 1 DONE 2026-10-30** on branch `arc/merge-base-bump` (charter
+  `docs/2026-10-29_worker-charter-merge-base-bump-stage1.md`, record
+  `docs/2026-10-29_merge-base-bump-stage1-record.md`): a true merge of the 25 commits to
+  `c3ff8c53f` (2026-09-30; [USER 2026-10-29] Q1/Q5), the fork's supply/top/reader threading
+  re-threaded onto upstream's elaboration environment (seams S1–S8), kernel replay and censuses
+  green, every moved baseline row dispositioned (§4), the fork-drift manifest re-derived on the
+  new base and the pristine instrument rebuilt (§5), ISO-fix register R6/R7 retired, trays
+  01/04/15/33 closed as carried by the base. The landing (ff-only onto `mdd/cerberus-lean`, then
+  the container's `deps/cerberus-upstream` + `scripts/env.sh` to `c3ff8c53f`) is the operator's.
+  **Stage 2 QUEUED** (to the upstream tip, ~15–19 worker-days + audit; scoping §3/§10, Q3/Q4/Q6/Q8
+  open): `Config` as the run-parameter carrier and the `tagDefs`-reader retirement; the CN parser
+  split; `Core.file.calling_convention0` → `callconv`; the `.error.c` → `.undef.c` renames
+  (0676e9fca); the two stage-1 fork-ahead deltas leave — the one-line 736690a65 backport in
+  `mini_pipeline.lem` (tray 67) when 736690a65 is in the base, and the `formatted.lem`
+  `store_chars_in_array` restatement if lem-lean's `let … in function` rendering (lem-lean TODO 59)
+  lands first; the `CerbStopSites` cites still at `b9aeedcb4` re-checked against the moved text;
+  the pristine-difference register's remaining tray-37/44/47 rows re-examined on the tip.
 
 ## Semantics-audit repairs (2026-09-11) — RESOLVED findings and the rows they leave
 

@@ -39,15 +39,19 @@ def floatLe (x y : Float) : Bool := x <= y
 
 def floatAdd (x y : Float) : Float := x + y
 def floatSub (x y : Float) : Float := x - y
-/-- ISO-fix register R6 — ADMITTED [USER 2026-10-03] as the canonical
-    unambiguous-mistake case: no semantic ambiguity, just fix it
+/-- ISO-fix register R6, RETIRED 2026-10-30 (historical note; merge-base bump
+    stage 1, record docs/2026-10-29_merge-base-bump-stage1-record.md §6): upstream
+    766073467, carried by the stage-1 base c3ff8c53f, fixed `Cerb_floating.mul`
+    to `( *. )` (util/cerb_floating.ml:5; the fork never touched the file, §1.3),
+    so this is a plain mirror now. Before the bump — ADMITTED [USER 2026-10-03]
+    as the canonical unambiguous-mistake case: no semantic ambiguity, just fix it
     (VALIDATION.md §2; record docs/2026-10-03_total-arith-and-bookkeeping-record.md
     §4, §8). The
     OCaml target of lem's `Float.floatMul` is `Cerb_floating.mul`, which
-    upstream defines as `(+.)` — literally addition (util/cerb_floating.ml:5;
-    add/sub/div on the neighbouring lines are correct: a copy-paste slip;
-    filed upstream as #1009 — tray 01, docs/2026-08-19_upstream-float-mul.md). This
-    port multiplies. UNREACHABLE from execution and from the front end: in the
+    upstream defined as `(+.)` — literally addition (util/cerb_floating.ml:5 at
+    b9aeedcb4; add/sub/div on the neighbouring lines were correct: a copy-paste
+    slip; filed upstream as #1009 — tray 01, docs/2026-08-19_upstream-float-mul.md).
+    This port multiplies, as upstream now does. UNREACHABLE from execution and from the front end: in the
     kernel constant-dependency closure of the exec entries and of the front-end
     entries (tests/failure-probes/FailureReach.lean) `CerbFloat.floatMul` is
     absent from both; its only users are the generated Defacto_memory
@@ -55,7 +59,7 @@ def floatSub (x y : Float) : Float := x - y
     and float.lem's `NumMult` instance, which no lem code in either cone
     applies. The concrete model's own op_fval (impl_mem.ml:2529-2537, mirrored
     by CerbMem.opFval) uses `*.` directly and is not affected. -/
--- ISO-fix register R6 (ADMITTED [USER 2026-10-03])
+-- ISO-fix register R6 (ADMITTED [USER 2026-10-03]; RETIRED 2026-10-30, upstream 766073467 in the base)
 def floatMul (x y : Float) : Float := x * y
 def floatDiv (x y : Float) : Float := x / y
 

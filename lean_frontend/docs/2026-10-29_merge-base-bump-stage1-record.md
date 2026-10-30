@@ -1705,3 +1705,91 @@ check_libc_float_literals: SELFTEST OK (8 plants: unplanted OK; added, dropped, 
 ```
 The register covers `tests/libc/libc.core` only (the script's `DUMP`); the `inner_arg_temps` dump is not pinned by it
 and was censused here for information only (identical multiset).
+
+---
+
+## 6. M6 — records, closures, consumer notes; the slice's close-out (2026-10-30)
+
+Scope as staged by the orchestrator after Tier A on `33026c2d5` and M5b [AGENT 2026-10-30]. No separate Tier A on this
+tip: the orchestrator runs the full battery on it with a fresh reviewer.
+
+### 6.1 The one Lean edit: the retired ISO-fix markers (comments only)
+
+`lean_frontend/CerberusImpl.lean` — the three R7 marker comments (the layout header's DECLARED paragraph, the struct
+fold, the union fold) are historical notes: the `Z.to_int al_n` reads they cited are `b9aeedcb4`'s; at `c3ff8c53f`
+`Ocaml_implementation.alignof_ty` folds the same maximum on Z (`ocaml_implementation.ml:535-549`, verified against the
+pristine tree), so the folds are plain mirrors and the pins `zd-ta-alignas-huge-*` are `MATCH` (§4.7).
+`lean_frontend/CerbFloat.lean` — the R6 marker is a historical note too: upstream 766073467 (tray 01, Cerberus #1009)
+fixed `Cerb_floating.mul` to `( *. )` (`util/cerb_floating.ml:5` at `c3ff8c53f`, verbatim `let mul = ( *. )`; the fork
+never touched the file, §1.3), so `floatMul` is a plain mirror. VALIDATION §2: the R6 row prefixed RETIRED like R7's;
+the marker sentence says the live register is R1, R2, R3, R5 and that the R6/R7 markers stay as notes so the grep
+still finds the sites. Regeneration and the warm build (`.tmp/m6-build.log`, verbatim):
+```
+[COPY] 57 hand-written Lean files (lean_frontend/handwritten_copy.manifest) into [lean_frontend/generated]
+check_handwritten_sync: OK (57 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+check_lem_sync: recorded lean_frontend/lem_sync.sha256 (src 6f59f40954fda517a8462abbcc6534d8e8512ec14ecda94453bda78271a0a1a6, gen a478f16e3e7575e58c9ffeedbe3745e2e05d73833ae7f12adff238d164458a7c)
+Build completed successfully (409 jobs).
+check_lem_sync: lean OK (src 6f59f40954fda517a8462abbcc6534d8e8512ec14ecda94453bda78271a0a1a6, gen a478f16e3e7575e58c9ffeedbe3745e2e05d73833ae7f12adff238d164458a7c)
+check_lem_sync: OK (src 6f59f40954fda517a8462abbcc6534d8e8512ec14ecda94453bda78271a0a1a6, gen 14399a384896605c710655f49cdac2204002baa00f12805ea1c429898fb29345)
+```
+(the generated tree is byte-identical to M3's apart from the two copied seams; the stamp file is not tracked.)
+
+### 6.2 Closures and documents
+
+- **Tray INDEX** (Q10, [USER 2026-10-29]): reports 01, 04, 15 and 33 are closed as fixed upstream and carried by the
+  base since stage 1 — 01 `766073467` (keeps its Filed state, Cerberus #1009), 04 `f4a3a3d54` (its commit message
+  `Fixes: cerberus-lean-04`), 15 `3230aa494` (the I0b backport merged away), 33 `cee382443` (the question answered:
+  UB by default, the ND reading behind the refused switch). The backports paragraph says PR 1020 and 3230aa494 are
+  upstream's own text now; report 67 stays open as filed with its backport a registered fork-ahead delta.
+- **TODO.md**: the bump entry rewritten (stage 1 DONE on `arc/merge-base-bump`, the landing the operator's; stage 2
+  QUEUED with its list — `Config`, the `tagDefs`-reader retirement, the CN parser split, `calling_convention0`, the
+  `.undef.c` renames, the two fork-ahead deltas' departure, the `CerbStopSites` re-check, the register's tray-37/44/47
+  rows); arm (4) of "Crashes on valid C become declared refusals" (`NULL + 0`) RETIRED as carried by the base; the
+  "Locations in the Core text transport" slice (M2d) stays queued.
+- **Consumer notes**: `docs/2026-10-30_consumer-note-cerberus-caesium-merge-base-bump-stage1.md` (the §8 stage-1
+  list in full: `desug_config`/`elab_config` arguments, the two `…Elabel_addressGNU` constructors, the Core-text
+  re-quotes, `Undefined.t` array shift, the layout move to `CerberusImpl.*`, the moved verdicts, the stops) and
+  `docs/2026-10-30_consumer-note-cerberus-sl-merge-base-bump-stage1.md` (the driver/outcome-protocol/memory-model
+  view, with the N4 transport limitation).
+- **Reconciliation stamps**: `lean_frontend/CLAUDE.md`, `README.md` and `SUPPORTED.md` carry a dated stage-1 line
+  (base `c3ff8c53f`, Lem `e6d8db5`) before their 2026-09-25 checks (which name the FORK commit `bb487dda7`, left as
+  history). CONTRACT §2 and VALIDATION's base lines moved at M5 (§5.4); SUPPORTED's N4 paragraph at M2d.
+- **The backports' disappearance** (§0.11): verified at M1 (§1.3: `translation_aux.lem`'s I0b text and the
+  `util/cerb_floating.ml` mul fix are upstream's, `pp_symbol` and the PR 1020 arms identical) and confirmed by the M5
+  manifest (`translation_aux.ml` left layer 2, §5.2).
+
+### 6.3 For the operator (relayed through the orchestrator)
+
+- **Finding 1's ruling** (§2b.1, [USER 2026-10-30] option (a)): the one-line backport of 736690a65 is in the shared
+  Lem, registered as fork-ahead delta (1) in the manifest and as the `minimal/106` row of the pristine-difference
+  register; tray 67 is the report. Nothing else was overridden; every other movement is upstream's own fix.
+- **lem-lean TODO item 59** (docs-only on `mdd/lean-backend`, the operator's precedent `3f48fc2`; not committed by this
+  worker), drafted for the register's table — item | source | price | provenance:
+  > **59** | A `let rec f x y = let v = … in function | … ` (the list bound by `function` after a `let`, upstream
+  > Cerberus `formatted.lem` `store_chars_in_array` since f4a3a3d54) renders on the Lean target as a lambda inside the
+  > body, so structural recursion no longer sees the decreasing argument (`fail to show termination`); the consumer
+  > restated it with the list as an explicit parameter (an eta-expansion, OCaml semantics identical; a registered
+  > fork-ahead delta and a diagnostic-text difference against pristine, cerberus-lean
+  > `docs/2026-10-29_merge-base-bump-stage1-record.md` §2.1 deviation 3, §5.3). Backend fix: eta-expand a
+  > trailing `function` (and `fun`) in a `let rec` body up to the let-bindings when the matched argument is the
+  > recursion's structural argument, or at least report the shape with a pointer to the restatement. Price S–M. |
+  > cerberus-lean record §2.1/§5.3; the D1 `many`/`many1` restatement precedent | [AGENT 2026-10-30]
+- **At landing** (§0.10 item 1): `deps/cerberus-upstream` to `c3ff8c53f`, regenerated with lem `e6d8db5`, and
+  `scripts/env.sh`'s `CERB_UPSTREAM_TREE` following it; until then the fork-drift gate needs the worktree's
+  `.tmp/pristine-c3ff8c53f/ocaml_frontend/generated` (§5.6). The standing pristine build at
+  `.validation-foundations/independent-oracle-v2` is at `c3ff8c53f` already (worktree-local).
+
+### 6.4 What stage 2 inherits
+
+The TODO's queue (§6.2) and, from this record: the resolution rules R1–R5 (§0.4) and the seam list S1–S8 (§2.1) as
+the shape of the next re-threading; the two fork-ahead deltas with their leave conditions; the register's eight
+tray-37/44/47 rows and the `106`/`digit9` rows; the `CerbStopSites` cites at `b9aeedcb4`; `CerberusImpl`'s two-map
+union arms (the stage-2 mover, §2.1 S1); the refusals of §0.12 (Q9 switch, D11–D13, asm) unchanged; the B5 and A5
+forecast misses (§0.9's note) as checks on the next forecast.
+
+### 6.5 Commits of the slice (*derived* from `git log`)
+
+`6a0771381` M0 · `a44c6e0b8` M1 (the merge) · `bb62d0017` M2 · `df2598e47` M2b · `5915e5b3e` M2c · `cec77e5a2` M2d ·
+`9a8c9febf` M3 · `87ec91341` M4 · `33026c2d5` M5 · `7bfaec1a2` M5b · M6 = this commit. Scratch: every `.tmp/m*-*`
+log, script and draft of this slice is deleted with this commit (reconstructible; the record quotes what mattered);
+`.tmp/pristine-c3ff8c53f/` stays until landing (the gate's tree).

@@ -4,7 +4,7 @@
 > not prove agreement with the OCaml implementation, and some parts are tested much less than others.
 > [CONTRACT.md](CONTRACT.md) says what is supported, what is refused, and how deeply each part is tested.
 
-**Documentation check, 2026-09-25:** implementation `bb487dda7c56981e76d67f53ae16e874cfe5ed61`;
+**Merge-base bump stage 1, 2026-10-30:** upstream base `c3ff8c53f05982745f9b3a10b3d05442e214bcb5` (was `b9aeedcb4dd438763b0eef7f95ac19e93875d7de`), Lem `e6d8db5680962f49060257d6c2bcb13c284b910f`; the entry-point and Core-text changes are in `docs/2026-10-29_merge-base-bump-stage1-record.md` and the two consumer notes of 2026-10-30. **Documentation check, 2026-09-25:** implementation `bb487dda7c56981e76d67f53ae16e874cfe5ed61`;
 Lem `67ec5de70e02e280bb348a4ba826696b76116732` (the Lem pin has since moved to `2d3a492758cb23dc4e417f2961983d25b36ce130` by functional re-pins (via `77ad4fa` and `4e70bb5`, both merged; the current pin `2d3a492` is on `mdd/lean-backend` since the 2026-10-07 re-pin, landing note `47348c07e`), generated OCaml byte-identical at each: [re-pin record](docs/2026-10-04_lem-repin-4e70bb5-record.md), [PNVI S1 record](docs/2026-10-05_pnvi-s1-switch-parameter-record.md)). Current follow-up gates and remaining
 publication checks are in [the follow-up record](docs/2026-09-25_public-readiness-followup.md);
 earlier baseline inventories are in [the remediation record](docs/2026-09-24_public-readiness-remediation.md).

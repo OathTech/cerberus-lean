@@ -13,7 +13,13 @@ under inner_arg_temps](backport-pr1020-inner-arg-temps.md), adopted in the
 2026-10-21 mode slice; checkpoint status is in the linked slice record.
 Report [15](15-bool-float-conversion-truncation.md) is fixed upstream by
 `3230aa494` and backported in I0b of that slice. This records the fix's
-disposition, not an external submission or issue closure.
+disposition, not an external submission or issue closure. Since stage 1 of
+the merge-base bump (2026-10-30, base `c3ff8c53f`,
+`../2026-10-29_merge-base-bump-stage1-record.md`) both backports are
+upstream's own text, carried by the base; reports 01, 04, 15 and 33 are
+closed in this index as fixed upstream and carried ([USER 2026-10-29] Q10);
+report 67 (the b3e11ea33..736690a65 window) is open as filed, its one-line
+backport a registered fork-ahead delta until stage 2.
 
 ## Submission status
 
@@ -60,10 +66,10 @@ notes below establish only what was checked then.
 
 | Report | Recorded state | Submission evidence |
 |---|---|---|
-| [01-float-mul-is-addition.md](01-float-mul-is-addition.md) | Filed | [Cerberus #1009](https://github.com/rems-project/cerberus/issues/1009), operator 2026-08-19 |
+| [01-float-mul-is-addition.md](01-float-mul-is-addition.md) | Filed; fixed upstream (`766073467`), carried by the base since stage 1 of the merge-base bump (2026-10-30; ISO-fix register R6 retired) | [Cerberus #1009](https://github.com/rems-project/cerberus/issues/1009), operator 2026-08-19 |
 | [02-pp-core-unparseable-forms.md](02-pp-core-unparseable-forms.md) | Draft | No submission recorded |
 | [03-pp-core-ambiguous-output.md](03-pp-core-ambiguous-output.md) | Draft | No submission recorded |
-| [04-null-pointer-arith-crash.md](04-null-pointer-arith-crash.md) | Draft | No submission recorded |
+| [04-null-pointer-arith-crash.md](04-null-pointer-arith-crash.md) | Draft; fixed upstream (`f4a3a3d54`, `Fixes: cerberus-lean-04`), carried by the base since stage 1 of the merge-base bump (2026-10-30; both engines `UB046_array_pointer_outside`, record §4) | No submission recorded |
 | [05-va-arg-missing-type-check.md](05-va-arg-missing-type-check.md) | Draft | No submission recorded |
 | [06-funinfo-has-proto-question.md](06-funinfo-has-proto-question.md) | Draft | No submission recorded |
 | [07-symbol-identity-fragility.md](07-symbol-identity-fragility.md) | Draft | No submission recorded |
@@ -74,7 +80,7 @@ notes below establish only what was checked then.
 | [12-bswap64-overflow-crash.md](12-bswap64-overflow-crash.md) | Draft | No submission recorded |
 | [13-memcmp-hugesize-overflow-crash.md](13-memcmp-hugesize-overflow-crash.md) | Sent | Communicated privately to the Cerberus maintainers by the operator, 2026-09-26 ([USER 2026-09-26] reported having notified the Cerberus maintainers privately); no public issue URL |
 | [14-ailname-proxy-shadows-user-functions.md](14-ailname-proxy-shadows-user-functions.md) | Draft | No submission recorded |
-| [15-bool-float-conversion-truncation.md](15-bool-float-conversion-truncation.md) | Fixed upstream; backported | Upstream `3230aa494`; inner_arg_temps I0b. No submission recorded |
+| [15-bool-float-conversion-truncation.md](15-bool-float-conversion-truncation.md) | Fixed upstream; backported; carried by the base since stage 1 of the merge-base bump (2026-10-30, the I0b backport merged away) | Upstream `3230aa494`; inner_arg_temps I0b. No submission recorded |
 | [16-snprintf-truncation-return-length.md](16-snprintf-truncation-return-length.md) | Draft | No submission recorded |
 | [17-diagnostic-embeds-symbol-id.md](17-diagnostic-embeds-symbol-id.md) | Draft | No submission recorded |
 | [18-monadic-list-combinators-non-tail.md](18-monadic-list-combinators-non-tail.md) | Draft | No submission recorded |
@@ -92,7 +98,7 @@ notes below establish only what was checked then.
 | [30-strncmp-zero-length.md](30-strncmp-zero-length.md) | Draft | No submission recorded |
 | [31-calloc-overflow-check.md](31-calloc-overflow-check.md) | Draft | No submission recorded |
 | [32-float-evaluated-as-double.md](32-float-evaluated-as-double.md) | Draft | No submission recorded |
-| [33-unspecified-operand-exceptional-condition-question.md](33-unspecified-operand-exceptional-condition-question.md) | Draft | No submission recorded |
+| [33-unspecified-operand-exceptional-condition-question.md](33-unspecified-operand-exceptional-condition-question.md) | Draft; answered upstream (`cee382443`: branching on an unspecified value is UB by default, `UB_CERB004_unspecified__if/while/do/switch`; the ND reading is the refused switch `branching_on_unspec_is_nd`), carried by the base since stage 1 of the merge-base bump (2026-10-30) | No submission recorded |
 | [34-aligned-alloc-zero-alignment-division-by-zero.md](34-aligned-alloc-zero-alignment-division-by-zero.md) | Draft | No submission recorded |
 | [35-pp-core-grammar-mismatches.md](35-pp-core-grammar-mismatches.md) | Draft | No submission recorded |
 | [36-mk-conv-int-bypasses-impl-def-signed-conversion.md](36-mk-conv-int-bypasses-impl-def-signed-conversion.md) | Draft | No submission recorded |

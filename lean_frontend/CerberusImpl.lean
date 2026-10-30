@@ -326,11 +326,15 @@ def mkCtype (ty_ : ctype_) : ctype := Ctype ([] : List annot) ty_
 
     DECLARED (zero-discrepancy Z2-M-11): the layout family computes on
     Nat where the OCaml computes on Z — `al_n.toNat` (memberAlign's
-    _Alignas arm, impl_mem.ml:118 `al_n`; alignof's folds read it through
-    `Z.to_int al_n`, :248/:267, which raises Overflow on a huge _Alignas —
-    REACHABLE (a front-end-accepted `_Alignas(2^62)`) and registered as
-    ISO-fix register R7, the R3 class: Lean computes the unbounded answer,
-    see `alignofCtype_lemFuel`), `lastOffset % align` /
+    _Alignas arm, impl_mem.ml:118 `al_n`; at the old base b9aeedcb4 alignof's
+    folds read it through `Z.to_int al_n`, :248/:267, which raised Overflow on
+    a huge _Alignas — REACHABLE (a front-end-accepted `_Alignas(2^62)`) and
+    registered as ISO-fix register R7, the R3 class: Lean computes the
+    unbounded answer. R7 RETIRED 2026-10-30 (merge-base bump stage 1, record
+    `docs/2026-10-29_merge-base-bump-stage1-record.md` §4.7): upstream
+    b3e11ea33 moved the layout into `Ocaml_implementation.alignof_ty`, which
+    computes on Z, so the oracle now gives the same unbounded answer
+    (historical note; see `alignofCtype_lemFuel`), `lastOffset % align` /
     `maxOffset % align` / `maxSize % maxAlign` (:123/:169-171/:189-191
     `Z.modulus … 0` raises Division_by_zero where Lean's `% 0` is the
     identity), `n.toNat * sizeof` (:151 `Z.mul n`). Reachability of any
@@ -540,13 +544,15 @@ def alignofCtype_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDef
               alignofCtype_lemFuel lemFuel enumDefs ambient tagDefs (mkCtype (.Array0 elemTy none))
           membrs.foldl (init := init) fun acc memb =>
             let (_, (_, alignOpt, _, ty)) := memb
-            -- ISO-fix register R7 (VALIDATION.md §2; the R3 class, [USER 2026-10-03]
-            -- rulings): impl_mem.ml:248 reads an `AlignInteger al_n` through
-            -- `Z.to_int al_n`, which raises Z.Overflow outside OCaml's native int
-            -- range; upstream's own Lem interface is unbounded (implementation.lem:27
-            -- `alignof_ty … -> maybe nat`, mem.lem:191 `alignof_ival`), so the
-            -- unbounded maximum is computed here (pins zd-ta-alignas-huge-*).
-            max (memberAlign_lemFuel lemFuel enumDefs ambient tagDefs alignOpt ty) acc  -- impl_mem.ml:242-251
+            -- ISO-fix register R7, RETIRED 2026-10-30 (historical note; VALIDATION.md
+            -- §2): at b9aeedcb4 impl_mem.ml:248 read an `AlignInteger al_n` through
+            -- `Z.to_int al_n`, which raised Z.Overflow outside OCaml's native int
+            -- range, and the unbounded maximum computed here was the fork's answer
+            -- ([USER 2026-10-03]); since upstream b3e11ea33 (the stage-1 base
+            -- c3ff8c53f) `Ocaml_implementation.alignof_ty` folds the same maximum
+            -- on Z (ocaml_implementation.ml:535-549 at c3ff8c53f) — a plain mirror
+            -- (pins zd-ta-alignas-huge-*, MATCH since the bump).
+            max (memberAlign_lemFuel lemFuel enumDefs ambient tagDefs alignOpt ty) acc  -- ocaml_implementation.ml:535-549 (was impl_mem.ml:242-251)
         | _ => failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.alignofStruct "CerberusImpl.alignofCtype: Struct tag not a StructDef (OCaml: assert false / Not_found)")))
       | .Union0 tagSym =>                           -- impl_mem.ml:253-271
         -- GLOBAL read, deliberately: impl_mem.ml:255 is
@@ -556,7 +562,8 @@ def alignofCtype_lemFuel (lemFuel : Nat) (enumDefs : EnumDefs) (ambient : TagDef
         | some (_, (_, UnionDef membrs)) =>
           membrs.foldl (init := (0 : Nat)) fun acc memb =>
             let (_, (_, alignOpt, _, ty)) := memb
-            -- ISO-fix register R7: as the struct fold (impl_mem.ml:267 `Z.to_int al_n`)
+            -- R7 (retired, see the struct fold): the union fold mirrors
+            -- Ocaml_implementation.alignof_ty's union arm at c3ff8c53f (was impl_mem.ml:267 `Z.to_int al_n`)
             max (memberAlign_lemFuel lemFuel enumDefs ambient tagDefs alignOpt ty) acc
         | _ => failwithI (CerbStop.render (.upstreamCrash (CerbStopSites.alignofUnion "CerberusImpl.alignofCtype: Union tag not a UnionDef (OCaml: assert false / Not_found)")))
       | .Byte => 1                                  -- impl_mem.ml:272-273
