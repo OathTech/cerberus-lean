@@ -1445,3 +1445,222 @@ narrative paragraph on R7 (already annotated) and the TODO's open-bugs list re-r
 `.tmp/m4-pins/{old,fresh,norm}` dumps (~500 MB) are deleted at this commit; `rederive.sh` / `old-oracle.sh`
 rebuild them.
 
+---
+
+## 5. M5 — fork drift on the moved base, the pristine instrument (2026-10-30)
+
+Scope as staged ([AGENT 2026-10-30], the orchestrator's go after Tier A on `87ec91341`: 19/20, the one red A1's
+fork-drift gate on the pinned merge-base): the pristine instrument rebuilt at `c3ff8c53f`, the differences register
+re-derived on it, the manifest rebuilt as the one sanctioned whole-layer re-derivation and reviewed hunk by hunk, the
+gates and their selftests, the §0.10 item-4 citations. Logs `.tmp/m5-*.log`, the scratch pristine tree
+`.tmp/pristine-c3ff8c53f/` (§0.10 item 1, built at M2b), the instrument `.tmp/upstream-oracle-c3ff8c53f/` (ephemeral).
+
+### 5.1 The pristine instrument (`scripts/build_independent_oracle.py`, `ensure_independent_oracle.py`)
+
+`CERBERUS_REV` moved to `c3ff8c53f05982745f9b3a10b3d05442e214bcb5`; `LEM_REV` `3802cb04…` kept (it builds the new
+base). Built offline from the two object stores (`.tmp/m5-oracle-build.log`, verbatim):
+```
+ensure_independent_oracle: ABSENT — building the pristine oracle into /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-arc/merge-base-bump/.tmp/upstream-oracle-c3ff8c53f
+lem-compiler: passed (7.157s)
+lem-libraries: passed (1.418s)
+lem-runtime-build: passed (4.442s)
+lem-runtime-install: passed (0.146s)
+cerberus-generation: passed (21.722s)
+cerberus-build: passed (9.894s)
+ensure_independent_oracle: BUILT+VALID standing build: …/.tmp/upstream-oracle-c3ff8c53f/manifest.json (cerberus c3ff8c53
+```
+Manifest: `sources: cerberus c3ff8c53f05982745f9b3a10b3d05442e214bcb5, lem 3802cb04b53d5f1096a464e51ecbfb2a750a7ccd`;
+`versions: dune 3.23.1, lem "Lem 3802cb0", ocamlc 5.4.0`. A second build of the same archives was made at the lane's
+default standing path (§5.6); the two manifests record the same cerberus archive (`archive_sha256` `6809611c6f08c6ab…`)
+and the same tools, but the two oracle binaries are NOT byte-identical (`18e53020918ae654…` under `.tmp/`,
+`2c96740ef8c003cb…` under `.validation-foundations/` — the build prefix is embedded); the first run of §5.3 used the
+`.tmp/` build, the confirming runs the standing one.
+
+### 5.2 The manifest (`scripts/fork_drift_manifest.txt`) — the whole-layer re-derivation
+
+Procedure (the script's refresh recipe plus the merge-base pin, which the gate checks before it refreshes): `[meta]
+merge-base=` set to `c3ff8c53f05982745f9b3a10b3d05442e214bcb5` by hand, then `check_fork_drift.sh --refresh` with
+`CERB_UPSTREAM_TREE` = the scratch pristine tree. **A first refresh was wrong and was discarded**: run through
+`scripts/ce`, the container's `scripts/env.sh` exports `CERB_UPSTREAM_TREE` to `deps/cerberus-upstream/…` (still the
+`b9aeedcb4` tree) over the variable given on the command line, so the fork's generated tree was diffed against the OLD
+pristine tree and nine upstream-changed modules (`cabs`, `constraint`, `core_eval`, `defacto_memory`, `errors`,
+`integerType`, `scope_table`, `undefined`, `formatted`) entered `[expected-semantic]` (22 → 31). Caught by
+`diff -rq` of the two trees (only `formatted.ml` among the nine differs); the manifest was restored from the committed
+copy and refreshed again with the override applied after `env.sh` (`scripts/ce env CERB_UPSTREAM_TREE=… sh -c …`,
+verbatim `tree=…/.tmp/pristine-c3ff8c53f/ocaml_frontend/generated` echoed by the run). Consequence for every gate run
+until landing: the fork-drift gate must be given the new tree explicitly (§5.6); `env.sh` and `deps/cerberus-upstream`
+move at landing (§0.10 item 1).
+
+The refresh drops the hand-written NOTE header and the `renumber=arc13` line (it emits only `merge-base` and
+`lem-pin` under `[meta]`); both were restored by hand — the new NOTE block at the top records this re-derivation, closes
+the I0/I0b notes as merged away (kept below it as history) and registers the two stage-1 fork-ahead deltas.
+
+Row counts (*derived* from the two files; `.tmp/m5-manifest-before.txt` is the committed manifest):
+
+| section | before (`87ec91341`) | after | movement |
+|---|---|---|---|
+| `[files]` | 93 | 93 | set unchanged |
+| `[source-content]` | 93 rows (103 lines incl. in-section notes) | 93 | 36 rows re-pinned — the fork's own oracle-surface files the merge changed: `backend/common/{ail_sym_hwm,driver_ocaml,pipeline}.ml`, `pipeline.mli`, `backend/driver/main.ml`, `backend/lean_export/cabs_json.ml`, `cerberus-lib.opam`, 19 `frontend/model/*.lem`, the four `memory/*/impl_mem.ml`, `ocaml_frontend/{dune,fork_renumber.ml,memory_model.ml,ocaml_implementation.ml,ocaml_implementation.mli}`, `parsers/c/c_parser.mly` |
+| `[expected-semantic]` | 22 | 22 | `translation_aux.ml` LEFT; `formatted.ml` ENTERED; 11 hashes moved; 10 unchanged |
+| `[expected-cosmetic]` | 10 | 10 | `ctype.ml`'s hash moved (one blank line; still comment/blank-only); 9 unchanged |
+
+Layer-2 review, hunk by hunk (`diff` of the pristine generated file against the fork's, every differing file read;
+the 10 semantic rows whose hash did not move carry deltas byte-identical to the previously reviewed ones):
+
+| generated file | delta lines | what the delta is | §0.10 expectation |
+|---|---|---|---|
+| `translation_aux.ml` | 0 (left) | the I0b backport of 3230aa494 is upstream's text now | expected to leave — yes |
+| `formatted.ml` | 12 (entered) | `store_chars_in_array` restated with the list as an explicit parameter (an eta-expansion of f4a3a3d54's `let loc = … in function …`; §2.1 deviation 3) | registered fork-ahead delta (2) |
+| `translation.ml` | 294 | C1 elaboration mints (`fresh_elab_*`) on 334a1563b's `elabM`, incl. the `case_` mints of cabe81c3b (a threaded `elab_mapM` over upstream's `List.map`) and the `while_`/`do_` mints on 83b1a7424's text; D13 compound-assignment refusal with the `AilElabel_addressGNU` arm (c8c085d47, S6); E-A `enumDefs`; `translate sup …` (R1) | supply/refusal deltas re-derived — yes |
+| `translation_effect.ml` | 93 | C1 `fresh_supply` field and mints on upstream's `elab_config -> elab_state -> …`; `elab_initial_state seed` | yes |
+| `cabs_to_ail.ml` | 169 | supply/top drawn around the const-expr mini-run; D3 seeds incl. the fifth (`typecheckAil_promoted_seeded`, on 588672e95's switch desugaring); D12 anonymous-member, asm and alignas (P2d-3) refusals unchanged; `desugar sup top desug_conf …` (R1) | yes |
+| `cabs_to_ail_effect.ml` | 233 | `fresh_sym_supply`/`address_space_top` state fields before upstream's `desug_config` (R1); D3 seed defs; E-A `enum_definitions_of_tag_definitions`; `alignof_ty_seeded` over `Ocaml_implementation.alignof` (b3e11ea33's host) | yes |
+| `mini_pipeline.ml` | 188 | supply/top before `elab_config` (R1); `run_const_expr_driver` and the five D3 seeds; **the 736690a65 backport** (`C.tagDefs = core_tagDefs`) | registered fork-ahead delta (1) |
+| `implementation.ml` | 108 | E-A enum reader (`enum_compatible_type`, `typeof_enum`, `resolve_enum`); the `sizeof_ty`/`alignof_ty` Lean target_reps on b3e11ea33's vals (the former `alignof_proxy` part is gone with `impl_mem.ml`'s layout) | loses the `alignof_proxy` part — yes |
+| `core_typing.ml` | 81 | tray-45 arity guards (R1/R3 of the 2026-09 audit) and E-A `enumDefs` — unchanged mechanisms; upstream's surrounding text moved | yes (its "R3 part" is the audit's R3, kept with tray 45) |
+| `driver.ml` | 27 | `initial_driver_state_with/_given` (C1, address-space top, D-S digest) — unchanged; b3e11ea33 moved the surrounding lines | yes |
+| `genTyping.ml`, `ailSyntax.ml` | 1, 11 | E-A `enum_definitions` — unchanged; a trailing-space line and the surrounding text moved | yes |
+| `core_aux`, `core_reduction`, `core_run`, `ctype_aux`, `desugaring_init`, `monadic_parsing`, `core_run_aux`, `symbol`, `mem_common`, `core`, `core_linking` | unchanged hashes | byte-identical deltas (C1 supply, D11 refusal, measure restatements, SC WP0 receipts, E-A) | unchanged |
+| `ctype.ml` (cosmetic) | 1 | one blank line | still cosmetic |
+
+No hunk is unexplained; no new differing file beyond `formatted.ml`; nothing left silently.
+
+### 5.3 The pristine-difference register (`scripts/upstream_oracle_differences.json`), re-derived on the new instrument
+
+First run on the committed register (`scripts/test_upstream_oracle.py --corpus tier-b --build-manifest
+.tmp/upstream-oracle-c3ff8c53f/manifest.json`, `.tmp/m5-upstream-oracle-tierb.log`, verbatim last lines; `source
+unchanged: False` because the manifest and the docs were being edited during the 220 s run — the confirming run
+below is clean):
+```
+Independent oracle scope: tier-b; 996 rows in 220.6s; source unchanged: False
+Independent oracle: failed; {'semantic_agreement': 953, 'difference': 5, 'reviewed_difference': 6, 'matching_failure': 30, 'interface_agreement': 2}; …
+```
+The eleven non-agreeing rows (verbatim from the log, `difference` = fails the lane; `reviewed_difference` = a
+register row reproduced exactly):
+```
+106/996 difference: minimal/106-sizeof-struct-array.c (pristine 0.0s, fork 0.0s)
+112/996 reviewed_difference: minimal/112-allocator-exhausted-single-request.c (pristine 0.0s, fork 0.0s)
+113/996 reviewed_difference: minimal/113-allocator-exhausted-single-request-overlap.c (pristine 0.0s, fork 0.0s)
+114/996 reviewed_difference: coverage/alignas/alignas-001-self-char.c (pristine 30.3s, fork 0.1s)
+115/996 difference: coverage/alignas/alignas-002-fwd-char.c (pristine 0.1s, fork 0.1s)
+116/996 difference: coverage/alignas/alignas-003-self-int.c (pristine 0.1s, fork 0.1s)
+644/996 reviewed_difference: multi_tu_tray/node (pristine 30.1s, fork 0.0s)
+900/996 reviewed_difference: immaculate/nolibc/tray44-allocator-exhausted-single-request-overlap (pristine 0.0s, fork 0.0s)
+901/996 reviewed_difference: immaculate/nolibc/tray44-allocator-exhausted-single-request (pristine 0.0s, fork 0.0s)
+924/996 difference: immaculate/nolibc/zd-z2fl03-nan-to-int (pristine 0.0s, fork 0.0s)
+948/996 difference: immaculate/libc/zd-r2-crash-digit9 (pristine 0.3s, fork 0.2s)
+```
+Each of the nine committed cases re-examined on the captures (`.tmp/m5-upstream-oracle-tierb.json/NNNN/{upstream,fork}.stderr`;
+the lane's diagnostic projection keeps frame NAMES and order and normalises frame positions, `project_diagnostics`):
+
+| case (class) | observation at `c3ff8c53f` | disposition |
+|---|---|---|
+| `multi_tu_tray/node` (shared-model-fix, tray 37) | pristine rc 124 (30 s, non-terminating `are_compatible`), fork rc 1 — signatures as pinned | kept; rationale notes the re-observation |
+| `minimal/112`, `minimal/113`, `immaculate/nolibc/tray44-*` ×2 (shared-model-fix, tray 44) | pristine rc 0 with the pre-fix allocator's values, fork rc 1 (out-of-memory kill) — as pinned; the allocator idiom is the same text at `c3ff8c53f` `impl_mem.ml:1077` (was `:1254`) | kept; re-observation noted |
+| `coverage/alignas/alignas-001-self-char.c` (shared-model-fix, tray 47) | pristine rc 124 (non-terminating), fork rc 1 (constraint violation) — as pinned | kept; re-observation noted |
+| `coverage/alignas/alignas-002-fwd-char.c`, `-003-self-int.c` (shared-model-fix, tray 47) | pristine still `uncaught exception: Not_found` rc 125, now raised from `Ocaml_implementation.alignof` (`ocaml_implementation.ml:545`) — b3e11ea33 moved the layout out of `impl_mem.ml`, so the pristine diagnostic signature moved; the fork's signature (`…:6:38: error: constraint violation: invalid application of '_Alignof' to an incomplete type 'struct Fwd'` / `…:5:35 … 'struct A'`) unchanged | pristine signature RE-PINNED (`a99db77e…` → `82df5a8b…`, `a81fc0c4…` → `b172126e…`); rationale extended |
+| `immaculate/nolibc/zd-z2fl03-nan-to-int` (diagnostic-text) | both engines rc 125, `Z.Overflow` at `Impl_mem.Concrete.ivfromfloat`, identical projected diagnostics (`e09a529f…` both): the two extra `Core_eval.step_eval_pexpr` frames the I0b backport (3230aa494) added to the fork are upstream's own at `c3ff8c53f` | **REMOVED** — the case no longer differs |
+
+Two cases differ that no row covered, both consequences of decisions already recorded in this slice (reported here so
+the orchestrator can reject either row):
+
+| case | observation | row added |
+|---|---|---|
+| `minimal/106-sizeof-struct-array.c` | pristine `c3ff8c53f` rc 125 `Not_found` at `Pmap.find` from `Ocaml_implementation.offsetsof` (`:439`) via `sizeof` (`:497`) from `core_eval.ml` — upstream's regression (b3e11ea33 → fixed by its next commit 736690a65; §2b.1, tray 67); fork rc 0 `Specified(32)` by the one-line backport ([USER 2026-10-30] ruling (a)) | class `shared-model-fix`, citing tray 67 and this record; leaves at stage 2 with 736690a65 |
+| `immaculate/libc/zd-r2-crash-digit9` | both rc 125 with the same `Failure("decode_character_constant, started like an octal constant, but failed: 199")` and the same frames; the ONE projected difference is the frame name `Cerb_frontend__Formatted.store_chars_in_array` (fork) vs `…store_chars_in_array.(fun)` (pristine): the `function`-bound list of f4a3a3d54's text is an anonymous function, the fork's restatement (§2.1 deviation 3) a named parameter | class `diagnostic-text` (the zd-z2fl03 precedent: a frame-shape difference from a registered fork delta), citing this record and tray 11; leaves with the restatement |
+
+Register case list, before → after (*derived*): 9 → 10 — `multi_tu_tray/node`, `minimal/112…`, `minimal/113…`,
+`immaculate/nolibc/tray44-…` ×2, `coverage/alignas/alignas-00{1,2,3}…` kept (two re-pinned);
+`immaculate/nolibc/zd-z2fl03-nan-to-int` removed; `minimal/106-sizeof-struct-array.c` and
+`immaculate/libc/zd-r2-crash-digit9` added. The committed key order and JSON formatting are preserved (the diff is
+the rows named). The 106 row's program text was checked against `tests/minimal/106-sizeof-struct-array.c`.
+
+Confirming runs on the edited register against the standing build (`.validation-foundations/independent-oracle-v2`,
+§5.6; `.tmp/m5-chain-d.log`, verbatim last lines):
+```
+=== test_upstream_oracle --corpus tier-b 04:28:04 load=2.83
+Independent oracle scope: tier-b; 996 rows in 187.4s; source unchanged: True
+Independent oracle: passed; {'semantic_agreement': 953, 'reviewed_difference': 10, 'matching_failure': 31, 'interface_agreement': 2}; …/.tmp/m5-tierb-confirm/report.json
+=== test_upstream_oracle --plant 04:31:11 load=2.55
+3/3 plant_ok: plant/withheld-row:minimal/106-sizeof-struct-array.c — minimal/106-sizeof-struct-array.c: with its register row -> reviewed_difference; row withheld -> difference (fatal engine diagnostic; no completed observation)
+Independent oracle scope: plant; 53 rows in 1.5s; source unchanged: True
+Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 51}; …/.tmp/m5-plant/report.json
+=== test_upstream_oracle --corpus libxml2_chvalid 04:31:13 load=2.55
+4/4 semantic_agreement: libxml2/chvalid/chvalid_battery_03 (pristine 57.8s, fork 55.5s)
+Independent oracle scope: libxml2_chvalid; 4 rows in 422.3s; source unchanged: True
+Independent oracle: passed; {'semantic_agreement': 4}; …/.tmp/m5-chvalid/report.json
+```
+(*derived*: `matching_failure` 30 → 31 is `zd-z2fl03-nan-to-int` moving from a register row to a both-sides-identical
+failure; `reviewed_difference` 6 → 10 is the eight kept rows plus the two added; the withheld-row plant now exercises the
+106 row — with the row the case is `reviewed_difference`, without it `difference`.)
+
+### 5.4 The merge-base citations (§0.10 item 4)
+
+Moved (they name the base): `scripts/build_independent_oracle.py` `CERBERUS_REV`; the manifest's `[meta]`;
+`lean_frontend/CONTRACT.md` §2 (the matched-mode line); `lean_frontend/VALIDATION.md` §0 (the "upstream/pristine"
+definition and "THE reference"), §… "Pristine upstream, the reference" and the gate table's row-10 line;
+`scripts/LADDER.md` Tier B row 10 and the Tier C three-engine row. Left in place (they quote a line at the revision
+they name, and that text has not moved or retired — item 4's rule): the D11/D12/D13/item-G refusal texts and scripts
+(`check_{union_init,anonymous_members,compound_assignment,item_g}_refusals.sh`, CONTRACT §§, VALIDATION §§ —
+`b9aeedcb4 :2697`, `:2505-2531`, `:576`, `:2636`), `scripts/fuel_hypotheses.txt`'s `impl_mem.ml:173/:255` row,
+`scripts/test_stops.py` / `test_observation_lanes.py` (`UP = ['cerberus', 'b9aeedcb4…', 'memory/concrete/impl_mem.ml',
+'2658', '2659', 'assert false']` — the fixture of the stop record `CerbStopSites.lean` still emits for `CerbMem.memcmp`,
+whose site did not move at stage 1), VALIDATION's measured facts ("non-functional at `b9aeedcb4`", the allocator
+register narrative — re-read in §5.3), `test_address_space.sh`'s pre-fix allocator note, the test READMEs; every
+dated record. `CerbStopSites` keeps `b9aeedcb4` for every site whose source did not move (M2: the S1/S2 sites cite
+`c3ff8c53f` through `implSourceStage1`).
+
+### 5.5 Gates (verbatim last lines; `CERB_UPSTREAM_TREE` = the scratch pristine tree, applied after `env.sh`)
+
+```
+check_fork_content: OK — 93 source files content/mode-pinned
+check_fork_drift: OK — layer 1: 93 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 32 differing generated files, all hash-pinned (merge-base c3ff8c53f05982745f9b3a10b3d05442e214bcb5; lem-pin e6d8db5680962f49060257d6c2bcb13c284b910f matches lem -v lean-backend-v0.1.0-alpha.1-78-ge6d8db5 (hex prefix))
+check_fork_drift: SELFTEST OK (31 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S31 advanced upstream ref (not drift); S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; S15-S30 version forms, full-pin validation and refresh retention; unplanted gate green)
+check_pin_sites: OK — lem-pin e6d8db5680962f49060257d6c2bcb13c284b910f at every site (lakefile rev, 3 lake-manifests rev+inputRev, README pin command)
+check_pin_sites: SELFTEST OK (8 plants red with the declared message, unplanted copies green)
+```
+
+### 5.6 What the next gate runs need (until landing)
+
+- **The fork-drift gate's tree.** `scripts/env.sh` exports `CERB_UPSTREAM_TREE` to the container's
+  `deps/cerberus-upstream/ocaml_frontend/generated`, still `b9aeedcb4`'s. Against it the gate on this tip is RED for a
+  new reason (verbatim tail of a run through plain `scripts/ce`):
+  ```
+      undefined.ml
+  --- excused in the manifest but byte-identical now (stale manifest or stale build):
+  If ocaml_frontend/generated might be stale, regenerate with the pinned
+  lem ('opam exec --switch=. -- make prelude-src') before concluding drift.
+  ```
+  (the nine upstream-changed modules differ from the OLD tree). A1 on this tip needs
+  `CERB_UPSTREAM_TREE=<worktree>/.tmp/pristine-c3ff8c53f/ocaml_frontend/generated` exported after `env.sh`
+  (`scripts/ce env CERB_UPSTREAM_TREE=… <cmd>`), or `deps/cerberus-upstream` moved to `c3ff8c53f` and regenerated
+  with lem `e6d8db5` — the landing act (§0.10 item 1), the operator's.
+- **The standing pristine build.** `.validation-foundations/independent-oracle-v2` held a `b9aeedcb4` build (status
+  `built`, 2026-10-29 20:46), which the lane's validator would now refuse (`CERBERUS_REV` moved). Removed here
+  [AGENT 2026-10-30] (an ephemeral, gitignored build; `ensure_independent_oracle.py` names the directory for removal
+  rather than overwriting) and rebuilt at the default path by `ensure_independent_oracle.py`, so Tier B rows 10/12 find a
+  valid build without an environment variable; §5.1's `.tmp/upstream-oracle-c3ff8c53f` is the same sources and tools
+  (the two binaries differ by the embedded prefix, §5.1).
+
+
+### 5.7 What M5 verified, and what carries forward
+
+Files in this commit: `scripts/fork_drift_manifest.txt` (the whole-layer re-derivation + NOTE block),
+`scripts/upstream_oracle_differences.json` (9 → 10 cases), `scripts/build_independent_oracle.py` (`CERBERUS_REV`),
+`lean_frontend/{CONTRACT,VALIDATION}.md` and `scripts/LADDER.md` (the base citations of §5.4), this record. No Lean,
+lem or OCaml source changed in M5; the binaries are M3's.
+
+Green: `check_fork_drift.sh` + `--selftest` and `check_pin_sites.sh` + `--selftest` (§5.5, with the new tree);
+Tier B rows 10 and 12 and `--plant` on the edited register (§5.3). Not run here: Tier A row 1 (the orchestrator's,
+with the tree override of §5.6); the fork-drift gate under the container's `env.sh` stays RED until the operator moves
+`deps/cerberus-upstream` (§0.10 item 1).
+
+Carried forward to **M6**: the records (this file's §6), the tray INDEX closures (Q10: 01/04/15/33; PR 1020 carried
+by the base; tray 67 open as filed), `TODO.md` (arm-4 retirement, the bump entry, the stage-2 queue incl. the two
+fork-ahead deltas' removal and the R7 marker rewrite of §4.7), the lem-lean TODO item for the `let … in function`
+shape, CONTRACT/VALIDATION/SUPPORTED/README base moves beyond §5.4, the consumer notes (cerberus-caesium, cerberus-sl:
+the §8 stage-1 list), `lean_frontend/CLAUDE.md`'s reconciliation line, and the report of the finding-1 ruling to the
+operator. Ephemeral at this commit: `.tmp/pristine-c3ff8c53f/` (the gate's tree until landing — kept),
+`.tmp/upstream-oracle-c3ff8c53f/` (deleted: the standing build at `.validation-foundations/` replaces it),
+`.tmp/m5-upstream-oracle-tierb.json/`, `.tmp/m5-tierb-confirm/`, `.tmp/m5-plant/`, `.tmp/m5-chvalid/` (deleted; the
+logs stay).

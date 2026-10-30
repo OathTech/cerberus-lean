@@ -18,7 +18,7 @@ import sys
 import tarfile
 import time
 
-CERBERUS_REV = 'b9aeedcb4dd438763b0eef7f95ac19e93875d7de'
+CERBERUS_REV = 'c3ff8c53f05982745f9b3a10b3d05442e214bcb5'
 LEM_REV = '3802cb04b53d5f1096a464e51ecbfb2a750a7ccd'
 
 

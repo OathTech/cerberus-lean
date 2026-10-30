@@ -119,7 +119,7 @@ repository's `.lem` + OCaml sources, run in the MATCHED MODE (same
 `--nolibc`/libc linkage, `--mode=exhaustive` or `--first` ≙ single trace,
 default switches, no `--concurrency`, the default address-space top — neither
 engine passes `--address-space-top`, §7). **upstream** / **pristine** =
-un-forked Cerberus @ `b9aeedcb4` — as source, `deps/cerberus-upstream`; as an
+un-forked Cerberus @ `c3ff8c53f` (merge-base bump stage 1, 2026-10-30; was `b9aeedcb4`) — as source, `deps/cerberus-upstream`; as an
 ENGINE, the independently compiled build (pristine source + upstream Lem
 `3802cb0`, git archives, `DUNE_CACHE=disabled`, hash-pinned manifest) that
 `scripts/ensure_independent_oracle.py` keeps standing at
@@ -133,7 +133,7 @@ Lean text compute what the OCaml text computes, with a `file:line` cite.
 danger that the OCaml Cerberus serves as the oracle while also being
 changed; record
 `docs/2026-09-16_pristine-oracle-instrument-record.md`). Pristine upstream
-`b9aeedcb4` is THE reference. The fork's OCaml is the shared model's
+`c3ff8c53f` is THE reference (the stage-1 merge-base since 2026-10-30; `b9aeedcb4` before). The fork's OCaml is the shared model's
 **mirror twin**: it is built from the same `.lem` the Lean port is generated
 from, so a shared-model edit moves the fork oracle and Lean TOGETHER and every
 fork-vs-Lean lane is blind to it by construction. The fork's deviations from
@@ -861,7 +861,7 @@ operator items are listed in the record.
 **Fork ≠ pristine — the register (`scripts/upstream_oracle_differences.json`,
 schema 2; gate: LADDER Tier B row 10).** These are not Lean-vs-oracle rows:
 they are the fork OCaml's reviewed deviations from pristine upstream
-`b9aeedcb4` as OBSERVED on row 10's corpora — the mirror twin's own exception
+`c3ff8c53f` (re-derived 2026-10-30 at the stage-1 merge-base; `b9aeedcb4` before) as OBSERVED on row 10's corpora — the mirror twin's own exception
 list (§0, the reference doctrine). Source-level fork≠upstream deltas that no
 walked corpus witnesses are recorded as content pins in
 `scripts/fork_drift_manifest.txt` (§6) and become register rows only once a
@@ -907,7 +907,7 @@ by a cited re-record.
   soundness; [USER 2026-09-16] ruled it unambiguously wrong and allowed a fix ahead
   of upstream):** `minimal/112-allocator-exhausted-single-request` and
   `minimal/113-allocator-exhausted-single-request-overlap`. Pristine `b9aeedcb4`
-  `memory/concrete/impl_mem.ml:1254` (VIP twin `:209`) aligns the new base with
+  `memory/concrete/impl_mem.ml:1254` (the same text at `c3ff8c53f` `:1077`, re-observed 2026-10-30; VIP twin `:209`) aligns the new base with
   the truncating-division idiom `z - (if q < 0 then -m else m)` over the
   EUCLIDEAN `quomod = ediv_rem` (`:9`), so once the cursor is below the request
   (`z = last_address - sz < 0`, within `-align/2 < z`) the allocation SUCCEEDS at
@@ -1373,7 +1373,7 @@ PNVI `status == 137` resource shortcut is a documented deferred divergence, not
 certified by this decoder or amended into that normative rule (design v2 §§8.4/9).
 
 **Pristine upstream, the reference (§0).** The independently compiled
-pristine engine (`b9aeedcb4` + upstream Lem `3802cb0`; kept standing by
+pristine engine (`c3ff8c53f` + upstream Lem `3802cb0` — the stage-1 merge-base since 2026-10-30, `b9aeedcb4` before; kept standing by
 `scripts/ensure_independent_oracle.py`, which reuses the lane's own
 fail-closed manifest validator and never deletes or overwrites a build) is
 compared with the fork OCaml by LADDER Tier B row 10 over every corpus the
@@ -1448,7 +1448,7 @@ lanes, with their recorded states:
 | `test_csmith_corpus.sh` | 1,669 in-tree csmith programs | classified pinned baseline (sharded; reporting tier full-pass): 0 MISMATCH/DIFF rows; the non-MATCH rows are 499 `CERB_SKIP` (oracle-side) + 9 `TIMEOUT` (derived from `scripts/exec_csmith_corpus_baseline.txt` at `928aa1e76`; the header's per-row narrative is the arc-13 record) |
 | `test_ci_sweep.sh` | 2,186-file upstream CI suite | [Repaired candidate measurement](docs/2026-09-06_ci-reporting-results.md): 1,359 matching observations, one UB-location difference, three filesystem refusals, three Lean timeouts and 820 oracle-side non-comparisons. All 15 fresh TSVs/raw records are archived. The default TSVs under `tests/ci_sweep/results/` remain historical (14 from August 22, TCC from September 2); no automatic baseline adoption. |
 | `fuzz_csmith.sh` | generated csmith programs | deterministic seeded fuzz kit (reporting tier) |
-| `test_upstream_oracle.py` (+ `--plant`) | pristine upstream `b9aeedcb4` vs fork OCaml over the Tier B row-10 corpus (855 cases: the six Tier A exec corpora, both multi-TU roots, 213 CN rows, uri ×2, immaculate, verify + corpus, 3 CLI rows) | **Tier B row 10 GATE**: `passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 3, 'interface_agreement': 2}` at WP-O O5 (2026-09-17; before the two rulings: 822 / 11 / 20 / 2); the 3 reviewed rows are the register's (§3); plants: 19 doctored registers rejected at load (incl. untracked-file, out-of-range-line and `..` citations) and the committed register loads, the compare() timeout/kill/stale matrix (unregistered both-sides 124 → `matching_incomplete`; a registered case judged by its row — its fork timing out or a both-sides timeout is `difference`; one-sided and 137 fatal), the projection plants (frame positions only → `matching_failure`; exception text / frame function / non-frame position → `difference`), a fork-verdict mutation and a REAL registered difference with its row withheld → RED |
+| `test_upstream_oracle.py` (+ `--plant`) | pristine upstream `c3ff8c53f` (since 2026-10-30; `b9aeedcb4` before) vs fork OCaml over the Tier B row-10 corpus (855 cases: the six Tier A exec corpora, both multi-TU roots, 213 CN rows, uri ×2, immaculate, verify + corpus, 3 CLI rows) | **Tier B row 10 GATE**: `passed; {'semantic_agreement': 822, 'matching_failure': 28, 'reviewed_difference': 3, 'interface_agreement': 2}` at WP-O O5 (2026-09-17; before the two rulings: 822 / 11 / 20 / 2); the 3 reviewed rows are the register's (§3); plants: 19 doctored registers rejected at load (incl. untracked-file, out-of-range-line and `..` citations) and the committed register loads, the compare() timeout/kill/stale matrix (unregistered both-sides 124 → `matching_incomplete`; a registered case judged by its row — its fork timing out or a both-sides timeout is `difference`; one-sided and 137 fatal), the projection plants (frame positions only → `matching_failure`; exception text / frame function / non-frame position → `difference`), a fork-verdict mutation and a REAL registered difference with its row withheld → RED |
 | `test_upstream_oracle.py --corpus libxml2_chvalid` | pristine vs fork on the 4 chvalid slices (the fork lane's flags and 300 s bound) | **Tier B GATE**: 4/4 `semantic_agreement` (~7 min) |
 | `test_upstream_oracle.py --with-lean` | the same corpus, three engines | Tier C row C5, report-only Lean column: 813 agree / 28 difference / 12 both-undecodable / 2 n/a at WP-O, all 40 Lean≠fork rows recorded pins (§4) |
 | `test_upstream_oracle.py --corpus ci` / `--corpus csmith --shard K/34` | `tests/ci` (242 cases) / the 1669 staged csmith programs | Tier C reporting rows, rc 0 since [USER 2026-09-17]: ci `passed; {'semantic_agreement': 134, 'matching_incomplete': 2, 'matching_failure': 106}`; csmith shard 1/34 `subset_passed; {'semantic_agreement': 26, 'matching_failure': 3, 'matching_incomplete': 21}`, ~11 min per shard (~6 h for the corpus — never one step) |

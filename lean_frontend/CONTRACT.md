@@ -59,7 +59,7 @@ which is exactly why every unmodelled surface must refuse rather than guess.
 
 ## 2. The declared configuration
 
-Matched (default-switch) mode of the oracle at the fork merge-base `b9aeedcb4`; sequential execution; the concrete
+Matched (default-switch) mode of the oracle at the fork merge-base `c3ff8c53f` (stage 1 of the merge-base bump, 2026-10-30; `b9aeedcb4` before); sequential execution; the concrete
 memory model; LP64; `--nolibc` and libc modes as exercised by the lanes; explicit `--fuel` and address-space parameters.
 **Semantics switches: PNVI_ae_udi supported, matched against the oracle under the same switch; every other switch
 refused.** The switch set is a parameter of the semantics (`[CerbGlobal.Switches]`, PNVI arc S1, 2026-10-05). The binary
