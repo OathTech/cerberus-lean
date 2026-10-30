@@ -322,6 +322,11 @@ No option bumps, kernel-only tactics. `collect_visibles_`, `erase_loop_control_a
 | Tier C csmith, `test_upstream_oracle --corpus ci/csmith`, `test_ci_sweep` | reporting re-runs; movement in the `CERB_SKIP` class only if a desugaring fix unlocks a file | |
 | Tier A row 7 rider `test_batch_diagnostics.py` | no movement expected (S5); measured | 06759464d, 97371d8ed |
 
+**Forecast misses found later** (added as they were found, the table above left as planned): B5's three
+`zd-ta-alignas-huge-*` rows and the `s4b-memcmp-hugesize` token (M4, §4.7 — b3e11ea33/f4a3a3d54, upstream's fixes);
+the A5 row omitted the libc float-literal inventory register `scripts/libc_float_literals.txt`, which pins the dump's
+literals by line and had to be re-derived with the libc re-pin (M5b, §5b — pure relocation, +28 lines).
+
 ### 0.10 Pristine-instrument and fork-drift plan (M5; §6)
 
 1. Scratch pristine source at `c3ff8c53f` from the mirror, no network: `git -C
@@ -1664,3 +1669,39 @@ operator. Ephemeral at this commit: `.tmp/pristine-c3ff8c53f/` (the gate's tree 
 `.tmp/upstream-oracle-c3ff8c53f/` (deleted: the standing build at `.validation-foundations/` replaces it),
 `.tmp/m5-upstream-oracle-tierb.json/`, `.tmp/m5-tierb-confirm/`, `.tmp/m5-plant/`, `.tmp/m5-chvalid/` (deleted; the
 logs stay).
+
+---
+
+## 5b. M5b — the libc float-literal inventory register, re-derived (2026-10-30)
+
+Found by the orchestrator's Tier A on `33026c2d5` (evidence `.tmp/release/bump-fast-m5-20261030T043957Z`; the one red
+step of A1, verbatim as relayed):
+```
+check_libc_float_literals: SELFTEST FAIL — plant 'unplanted': expected OK, got ["unregistered literal '3.40282347e+38' at line 41726 (x1)", "unregistered literal '0.' at line 53407 (x1)", "unregiste…
+test_unit: libc dump float-literal inventory FAILED
+```
+The register `scripts/libc_float_literals.txt` (named deviation N3, VALIDATION §2b) pins every float literal of
+`tests/libc/libc.core` by LINE; M2b re-pinned the dump (§2b.4) without re-deriving the register — a step §0.9's A5 row
+did not list (forecast miss, noted under §0.9). Reproduced here (`scripts/check_libc_float_literals.py`, verbatim last
+lines of the 48): every registered line "is not in the dump", every literal "unregistered" 28 lines later.
+
+Re-derivation (`.tmp/m5b-libc-old.core` = the dump at the old base `676f9f21c`; *derived* by a census of both dumps
+with the script's own regex): old dump 24 literals, new dump 24, `tests/libc/libc_inner_arg_temps.core` 24; the three
+multisets AND the literal order are identical; every literal moved by exactly `+28` lines (`41698 → 41726`, …,
+`64811 → 64839`), none added, none dropped. The +28, with symbol numbers normalised (469 hunks between the dumps):
+453 hunks are cee382443's `nd(pure(True), pure(False))` → `pure(undef(<<UB_CERB004_unspecified__if/while>>))` arms
+(one line for one; one arm +2 lines, after the last literal), 9 the `switch` arms, 4 the `do` arms (`DUMMY(unspecified
+AilSdo)` → `UB_CERB004_unspecified__do`), and exactly two hunks change the line count before the first literal:
+new lines 30439 and 30719, the two `do … while` tests of `proc strcspn` rewritten by 83b1a7424's `mkTestExpression`
+shape (`load('char', …)` compared with `Specified(0)` under `if conv_int(…) = conv_int(…)`), +14 lines each. So every
+row is a RELOCATION; no new literal, no upstream commit to cite for a literal; the one `LOSSY-N3` row
+(`1.84467440737e+19`, `decfloat`'s `0x1p64`) is unchanged in value and disposition.
+
+Register rewritten: the 24 rows' line numbers +28, dispositions and notes carried unchanged, a dated header note.
+Check and selftest on the rewritten register (verbatim):
+```
+check_libc_float_literals: OK (24 float literals in tests/libc/libc.core = the register exactly; 1 LOSSY-N3)
+check_libc_float_literals: SELFTEST OK (8 plants: unplanted OK; added, dropped, relabelled-lossy, empty dump, malformed register, second copy on a registered line, duplicated register row all FAIL)
+```
+The register covers `tests/libc/libc.core` only (the script's `DUMP`); the `inner_arg_temps` dump is not pinned by it
+and was censused here for information only (identical multiset).

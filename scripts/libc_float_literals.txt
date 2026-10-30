@@ -3,27 +3,34 @@
 # EXACT-BY-SOURCE: fewer than 12 significant digits, so %.12g printed the double exactly (the census of the
 # 2026-09-29 bug hunt matched each to its C source constant). LOSSY-N3: rounded by %.12g; Lean parses a
 # different double. Re-pinning libc.core means re-reviewing this file. [AGENT 2026-09-30]
-41698	3.40282347e+38	EXACT-BY-SOURCE	
-53379	0.	EXACT-BY-SOURCE	
-54035	0.	EXACT-BY-SOURCE	
-54044	0.	EXACT-BY-SOURCE	
-54708	0.	EXACT-BY-SOURCE	
-54717	0.	EXACT-BY-SOURCE	
-59314	1000000000.	EXACT-BY-SOURCE	
-60246	0.25	EXACT-BY-SOURCE	
-60314	0.75	EXACT-BY-SOURCE	
-60469	0.5	EXACT-BY-SOURCE	
-60503	0.75	EXACT-BY-SOURCE	
-60700	1.	EXACT-BY-SOURCE	
-60849	1.84467440737e+19	LOSSY-N3	0x1p64 = 2^64 (runtime/libc/src/internal.c:303, decfloat); parsed back 9551872 below 2^64
-61015	0.5	EXACT-BY-SOURCE	
-61145	0.	EXACT-BY-SOURCE	
-62688	0.	EXACT-BY-SOURCE	
-62698	0.	EXACT-BY-SOURCE	
-62843	0.5	EXACT-BY-SOURCE	
-63365	0.	EXACT-BY-SOURCE	
-63970	0.	EXACT-BY-SOURCE	
-64212	0.	EXACT-BY-SOURCE	
-64221	0.	EXACT-BY-SOURCE	
-64294	0.5	EXACT-BY-SOURCE	
-64811	0.	EXACT-BY-SOURCE	
+# Re-derived 2026-10-30 (merge-base bump stage 1, M5b; record docs/2026-10-29_merge-base-bump-stage1-record.md section 5b):
+# the M2b re-pin of tests/libc/libc.core (upstream b9aeedcb4 -> c3ff8c53f) moved every literal by exactly +28 lines and
+# added or dropped none -- the 24-literal multiset and order are identical in the old dump, the new dump and
+# tests/libc/libc_inner_arg_temps.core; the growth is exactly the two `do ... while` tests of proc strcspn rewritten by
+# upstream 83b1a7424's mkTestExpression shape (+14 lines each, before __floatscan); cee382443's 453 unspecified-branch
+# arms replace one line with one (one arm +2, after the last literal). Dispositions and notes
+# carried unchanged; every row is a relocation, no new literal. [AGENT 2026-10-30]
+41726	3.40282347e+38	EXACT-BY-SOURCE	
+53407	0.	EXACT-BY-SOURCE	
+54063	0.	EXACT-BY-SOURCE	
+54072	0.	EXACT-BY-SOURCE	
+54736	0.	EXACT-BY-SOURCE	
+54745	0.	EXACT-BY-SOURCE	
+59342	1000000000.	EXACT-BY-SOURCE	
+60274	0.25	EXACT-BY-SOURCE	
+60342	0.75	EXACT-BY-SOURCE	
+60497	0.5	EXACT-BY-SOURCE	
+60531	0.75	EXACT-BY-SOURCE	
+60728	1.	EXACT-BY-SOURCE	
+60877	1.84467440737e+19	LOSSY-N3	0x1p64 = 2^64 (runtime/libc/src/internal.c:303, decfloat); parsed back 9551872 below 2^64
+61043	0.5	EXACT-BY-SOURCE	
+61173	0.	EXACT-BY-SOURCE	
+62716	0.	EXACT-BY-SOURCE	
+62726	0.	EXACT-BY-SOURCE	
+62871	0.5	EXACT-BY-SOURCE	
+63393	0.	EXACT-BY-SOURCE	
+63998	0.	EXACT-BY-SOURCE	
+64240	0.	EXACT-BY-SOURCE	
+64249	0.	EXACT-BY-SOURCE	
+64322	0.5	EXACT-BY-SOURCE	
+64839	0.	EXACT-BY-SOURCE	
