@@ -714,3 +714,139 @@ insertions shifted `driver.lem` by five lines before `prepare_exit` — `1309-13
 The separate `speclab` package (its `EmitCore.lean` gained the three arms), `capped lake build`
 from `lean_frontend/speclab` (`.tmp/m2-speclab.log`): `21:51:17` … `exit=0` … `21:52:56`; its
 639 warnings are LemLib's and the generated modules' (none in `speclab/`'s own sources).
+
+---
+
+## 2b. M2b — the Tier A findings on bb62d0017, the libc re-pin and the focused lanes (2026-10-30)
+
+Tier A on `bb62d0017` (orchestrator-run, evidence
+`/home/dev/projects/cerberus-lean-proj/.tmp/release/bump-fast-m2-20261029T215352Z`): `fast: failed;
+12/20 selected commands completed successfully.` Failed rows A1, A2, A5, A7, A10, A14.1, A14.2, A15.
+Forecast rows (§0.9), verified against the evidence: A5/A10/A14/A15 stopped at the libc pin
+(`libc_prep.sh --jsons failed (pin drift or oracle missing)`), A2's `improvement:
+097-null-ptr-arith.undef.c baseline=CERB_SKIP current=UB_MATCH` (S2). A1 also fails the fork-drift
+gate until M5 (the merge-base moved at M1). Three findings:
+
+### 2b.1 Finding 1 (A2 `REGRESSION: 106-sizeof-struct-array.c baseline=MATCH current=CERB_SKIP`) — upstream's regression at the cut
+
+Root cause: upstream b3e11ea33 made `core_eval.lem`'s `Civsizeof`/`Civalignof` arms read
+`Implementation.sizeof_ty file.tagDefs ty` where `Mem.sizeof_ival` read the Tags global that the
+desugarer populates as tags are registered; the constant-expression mini-run
+(`mini_pipeline.lem` `evalIntegerConstantExpressionAux`, upstream's own text) builds its dummy Core
+file with `C.tagDefs= Map.empty`, so at `c3ff8c53f` every `sizeof`/`_Alignof` of a struct or union
+inside an integer constant expression raises `Not_found` (`Pmap.find`, via
+`Ocaml_implementation.offsetsof`). Decided by the pristine oracles (all `--nolibc --exec --batch`):
+
+```
+pristine b9aeedcb4 (deps/cerberus-upstream), tests/minimal/106-sizeof-struct-array.c:
+Defined {value: "Specified(32)", stdout: "", stderr: "", blocked: "false"}
+pristine c3ff8c53f (.tmp/pristine-c3ff8c53f, built from the mirror with the fork's lem and switch; dune exit=0):
+cerberus: internal error, uncaught exception:
+          Not_found
+          Raised at Pmap.find in file "pmap.ml", line 81, characters 10-25
+```
+The merged oracle printed the same `Not_found`; the Lean driver the same class (`UPSTREAM_CRASH
+CerberusImpl.offsetsof … unknown tag`, the empty explicit map reaching the moved `offsetsof`).
+Upstream fixed it in its NEXT commit, 736690a65 (the Tags removal): `git log
+-S'C.tagDefs= Map.empty' c3ff8c53f..upstream/master -- frontend/model/mini_pipeline.lem` names only
+that commit, which sets `C.tagDefs= core_tagDefs`. No `tests/ci` file at `c3ff8c53f` has a struct
+`sizeof` in an array bound, case label, enumerator or `_Static_assert`. Reported (stop) and ruled:
+
+**[USER 2026-10-30]** (relayed by the orchestrator): option (a) — carry the one-line part of
+736690a65 into the mini-run as an authorized backport of upstream's own next-commit fix, both
+engines by generation; register it as a fork-ahead delta (manifest NOTE, this record, upstream
+hash); mark it absorbed at stage 2 when 736690a65 arrives; cite the mechanism; keep
+`106-sizeof-struct-array.c` at MATCH; add an upstream-tray note for completeness.
+
+Applied: `mini_pipeline.lem` computes `core_tagDefs = Translation.translate_tag_definitions
+sigm.A.tag_definitions` once, puts it in the dummy Core file's `C.tagDefs` and passes the same value
+to the fork's reader seed `run_const_expr_driver` (previously computed there a second time);
+`scripts/fork_drift_manifest.txt` top NOTE (dated, the mechanism, the hashes, "absorbed at stage
+2", and that the whole manifest is re-derived at M5); upstream-tray report draft
+`docs/upstream-tray/67-const-expr-sizeof-struct-not-found-window.md` + its INDEX row (the window
+b3e11ea33..736690a65, the reproducer, the fixing commit; "fixed upstream before it was filed").
+
+### 2b.2 Finding 2 (A7, one Lean failure) — the same root cause on the Lean side
+
+The lane's failing file is `tests/minimal/106-sizeof-struct-array.c` (the Lean driver on its
+cabs-json: `PANIC … cerberus-lean stop ["1","UPSTREAM_CRASH","CerberusImpl.offsetsof","Mirrored
+upstream failure: CerberusImpl.offsetsof: unknown tag (OCaml: Pmap.find Not_found)", …`): the
+mini-run's `Implementation.sizeof_ty file.tagDefs` reaches `CerberusImpl.sizeof_ty` with the dummy
+file's EMPTY explicit map (the reader map is seeded with the real one, but the rep uses the explicit
+map, as upstream does). The backport fixes both engines: after it, both answer `Specified(32)`.
+
+### 2b.3 Finding 3 (A1 `totality-proof-test` build) — the test-executable surface
+
+`build_lean` builds the library roots and the driver, not the `[[lean_exe]]` test modules under
+`test/`; M2's "every root" claim did not cover them. Fixed and swept (`grep` over `test/` and
+`speclab/` for every changed name): `TranslationFuelTest` (`collect_cases_` → the
+`collect_switch_content_aux` fuel equation; the `_zero_boundary` theorems drop their now-unused
+`[CerbGlobal.Switches]` binder; comment names), `TotalityProofTest` (`translate_expression`/
+`translate_stmt` no longer bind the switch instance — upstream 334a1563b reads the switches through
+`elab_config` — so their fuel-parametricity examples are `@f ⟨n⟩ = @f_lemFuel ⟨n⟩ n`),
+`MonadicFailstop` (`memcmpM … loc …` ×2), `PnviArmsTest` (the R-PNVI-06 pin passes
+`CerbLocation.unknown`), `FuelExemplar` (`drive_after_setup`: the `rw [alignofIval_signed_int]`
+step is gone — `drive`'s `alignof_ival` closure is now the fuel-FREE `CerberusImpl.alignof_ty` over
+the exemplar's concrete map, so the alignment reduces to `integerIval 4` inside the unification;
+`alignof_ty_signed_int` states the fact by `rfl`). The build of EVERY `[[lean_exe]]` target
+(`lake build CerberusLean cerberus-lean core-parser-test … core-quote-test`, 23 executables):
+`exes build exit=0` (`.tmp/m2b-exes-build-3.log`; the earlier passes: zsh passed the target list as
+one word; `beta_reduce` is not a core tactic — both reported, neither a finding).
+
+### 2b.4 The libc content re-pin (pulled forward from M4)
+
+`scripts/libc_prep.sh --record` on the rebuilt oracle (`libc record exit=0`):
+```
+libc_prep: content hash: f856081198f0d654188e02e14e649bf185e4a38ea701ba15dc1e180ba892b956  libc.core
+libc_prep: content hash: 06a1f84c288e6192f483773935df6f6b6e6c25cb27335f69a582cb818bb1a588  libc_inner_arg_temps.core
+```
+(from `d93b99cd…` / `56986871…`; `tests/libc/bare_name_census.tsv` unchanged.) The Core-text
+movement, accounted for (*derived*, `.tmp/m2b-libc-*` scripts over the old and new dumps):
+`libc.core` 89610 → 89640 lines, 21747 raw changed lines; after normalising symbol numbers
+(`name_N`, `{N}`) 529 changed lines in 469 hunks over 98 procs; `libc_inner_arg_temps.core` 87306
+→ 87336, 20741 raw, 680 normalised in 601 hunks over 109 procs. So the bulk is symbol
+RENUMBERING: upstream's new mints (the `while_`/`do_`/`case_`/`default_` labels and
+`wrapped_fresh_symbol`s of cee382443, 83b1a7424 and cabe81c3b) shift every later symbol number. The
+semantic hunks are upstream's elaboration changes, marker census over the normalised hunks:
+`UB_CERB004_unspecified__while` 110 (cee382443 `translate_branch_on_unspec`: a `while` test
+elaborates `[e == 0]` into a loaded integer and branches with `undef(<<UB_CERB004_unspecified__while>>)`
+where it was `nd(pure(True), pure(False))` — the largest hunk, in `vfscanf`), `switch` /
+`unspecified__switch` 9 (cabe81c3b's `collect_switch_content` + cee382443), `do_` /
+`unspecified__do` 2 (83b1a7424's `mkTestExpression` do-while), `conv_int` 2 (588672e95's case
+conversions); most-changed procs `decfloat` 64, `vfscanf` 62, `hexfloat` 28, `__intscan` 25,
+`twoway_strstr` 23, `__floatscan` 22. The quotation pins (`test/CoreQuote/core-quote-libc*.sha256`,
+Tier B 13) are M4's.
+
+### 2b.5 The focused lanes (verbatim last lines, `.tmp/m2b-lanes.log`)
+
+```
+=== test_exec minimal 00:29:56
+improvement: 097-null-ptr-arith.undef.c baseline=CERB_SKIP current=UB_MATCH
+Baseline check: 0 regression(s), 1 improvement(s)
+BASELINE OK
+test_exec exit=0
+=== test_parse minimal 00:30:27
+Success rate:   100% (of cerberus successes)
+batch diagnostic producers: 8/8 passed
+ALL PASSED
+test_parse exit=0
+--- 097-null-ptr-arith.undef oracle:
+Undefined {ub: "UB046_array_pointer_outside", stderr: "", loc: "<5:12--5:17>"}
+--- 097-null-ptr-arith.undef lean:
+Undefined {ub: "UB046_array_pointer_outside", stderr: "", loc: "<5:12--5:17>"}
+--- 106-sizeof-struct-array oracle:
+Defined {value: "Specified(32)", stdout: "", stderr: "", blocked: "false"}
+--- 106-sizeof-struct-array lean:
+Defined {value: "Specified(32)", stdout: "", stderr: "", blocked: "false"}
+libc_prep exit=0
+check_union_init_refusals: OK (26 cases: …)
+check_anonymous_members_refusal: OK (42 cases: …)
+check_compound_assignment_refusal: OK (30 cases: …)
+check_asm_refusal: OK (9 cases: …)
+```
+Pristine `c3ff8c53f` on the same two files: `097` → `Undefined {ub: "UB046_array_pointer_outside",
+…}` (agrees with both engines, S2); `106` → `Not_found` (upstream's regression, §2b.1 — the fork
+answers `Specified(32)` by the backport). The `097` baseline row (`exec_baseline.txt:99 CERB_SKIP`)
+is M4's re-record (an upstream fix, tray 04), not re-recorded here; `106` stays MATCH as ruled. The
+witness scripts' full lines are in the log (the D11/D12/D13 refusals fire with their texts on the
+merged base).

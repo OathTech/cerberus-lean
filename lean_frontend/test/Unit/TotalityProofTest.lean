@@ -69,8 +69,10 @@ example {a b c d e f : Type} (n : Nat) : @nd_bind a b c d e f ⟨n⟩ = @nd_bind
 example {a cs err1 err2 info1 info2 st1 st2 : Type} (n : Nat) : @liftND a cs err1 err2 info1 info2 st1 st2 ⟨n⟩ = @liftND_lemFuel a cs err1 err2 info1 info2 st1 st2 n := rfl
 example {a cs err1 err2 info1 info2 st1 st2 : Type} (n : Nat) : @liftAction a cs err1 err2 info1 info2 st1 st2 ⟨n⟩ = @liftAction_lemFuel a cs err1 err2 info1 info2 st1 st2 n := rfl
 example {a : Type} (n : Nat) : @compound_assign_lhs_has_side_effect a ⟨n⟩ = @compound_assign_lhs_has_side_effect_lemFuel a n := rfl
-example [i1 : CerbGlobal.Switches] (n : Nat) : @translate_expression ⟨n⟩ i1 = @translate_expression_lemFuel ⟨n⟩ i1 n := rfl
-example [i1 : CerbGlobal.Switches] (n : Nat) : @translate_stmt ⟨n⟩ i1 = @translate_stmt_lemFuel ⟨n⟩ i1 n := rfl
+-- merge-base bump stage 1 (upstream 334a1563b): the elaborator reads its switches through
+-- elab_config, so the two wrappers no longer bind the switch instance
+example (n : Nat) : @translate_expression ⟨n⟩ = @translate_expression_lemFuel ⟨n⟩ n := rfl
+example (n : Nat) : @translate_stmt ⟨n⟩ = @translate_stmt_lemFuel ⟨n⟩ n := rfl
 example {a b : Type} (n : Nat) : @list_unfoldr_aux a b ⟨n⟩ = @list_unfoldr_aux_lemFuel a b n := rfl
 
 /-! ### Part 2: symbolic execution over the total exec slice.

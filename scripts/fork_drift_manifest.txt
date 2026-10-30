@@ -1,3 +1,13 @@
+# merge-base bump stage 1, M2b, 2026-10-30 [AGENT, executing a [USER 2026-10-30] ruling relayed by the orchestrator]: FORK
+# BACKPORT of upstream 736690a65's one line into the constant-expression mini-run (frontend/model/mini_pipeline.lem
+# evalIntegerConstantExpressionAux: the dummy Core file's `C.tagDefs` is the translated tag definitions, not
+# `Map.empty`), both engines by generation. Mechanism: upstream b3e11ea33 made core_eval's Civsizeof/Civalignof read
+# `Implementation.sizeof_ty file.tagDefs` where `Mem.sizeof_ival` read the Tags global the desugarer populates, so at
+# the stage-1 base c3ff8c53f every sizeof/_Alignof of a struct or union inside an integer constant expression raises
+# Not_found upstream (pristine b9aeedcb4: tests/minimal/106-sizeof-struct-array.c = Specified(32); pristine c3ff8c53f:
+# Not_found at Pmap.find; upstream fixed it in its next commit 736690a65, the Tags removal). A fork-ahead delta in
+# mini_pipeline.ml until stage 2 absorbs 736690a65; upstream-tray report 67. This manifest is re-derived as a whole
+# at M5 (the merge-base moved to c3ff8c53f at M1; every row below is relative to b9aeedcb4 until then).
 # quotation hygiene pre-merge fix P2-1, 2026-10-27 [AGENT]: util/cerb_location.ml has_library_suffix now mirrors
 # CerbLocation.isLibraryPathSuffix EXACTLY (String.ends_with, equality included: a root-level `/runtime/libcore`
 # directory was non-library on the oracle and library on the port's endsWith); the P3-1 comment qualification

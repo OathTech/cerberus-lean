@@ -33,7 +33,7 @@ def checks (fuel : Nat) : List (String × Bool) := Id.run do
     lastUsed := some 99 }
   let dead := { st with deadAllocations := [7], dynamicAddrs := [100] }
   let va := { st with varargs := [(4, (1, []))] }
-  let memcmpStop := memcmpM fmapEmpty tags ptr ptr (iv 1)
+  let memcmpStop := memcmpM fmapEmpty tags loc ptr ptr (iv 1)
   let cmpMsg := (CerbStop.render (.upstreamCrash (CerbStopSites.memcmpByte "Concrete.memcmp: non-integer byte (impl_mem.ml:2658-2659 assert false)")))
   let liveByte := writeBytesTo st 100 [{ prov := .Prov_none, copyOffset := none, value := some 42 }]
   let boolTy := Ctype [] (.Basic (.Integer .Bool0))
@@ -72,7 +72,7 @@ def checks (fuel : Nat) : List (String × Bool) := Id.run do
     ("ordinary pointer shift", active (effArrayShiftPtrval fmapEmpty tags loc ptr unsigned_char (iv 1)) st),
     ("unspecified memcmp byte", stops memcmpStop st cmpMsg),
     ("memcmp retains load's updated state", (step memcmpStop st).2.lastUsed == some 7),
-    ("specified memcmp byte", match step (memcmpM fmapEmpty tags ptr ptr (iv 1)) liveByte with
+    ("specified memcmp byte", match step (memcmpM fmapEmpty tags loc ptr ptr (iv 1)) liveByte with
       | (NDactive (.IV _ value), _) => value == 0 | _ => false),
     ("noninitial va_list", stops (vaList 4) va (CerbStop.render (.upstreamCrash (CerbStopSites.vaListIndex "va_list: assert (n = 0) failed (impl_mem.ml:2760)")))),
     ("initial va_list", active (vaList 4) { va with varargs := [(4, (0, []))] }),

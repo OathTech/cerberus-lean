@@ -572,9 +572,13 @@ theorem drive_after_setup (k : Nat) (top : Int) (digest : String) (h : 8 ≤ top
   -- no params: argc/argv skipped
   refine (runOne_bind_active (z := mainBody) (s' := _) rfl).trans ?_
   -- errno: real allocateObject/storeM on the cold memory at the SYMBOLIC top —
-  -- `errnoAction_active` (C4) under `8 ≤ top`. The alignment argument is
-  -- rewritten to its value first (alignof_ty_signed_int).
-  rw [alignof_ty_signed_int]
+  -- `errnoAction_active` (C4) under `8 ≤ top`. The alignment argument used to be
+  -- rewritten to its value first (the old `alignofIval` was fuel'd and the fuel is
+  -- symbolic here); since the merge-base bump stage 1 (upstream b3e11ea33) drive's
+  -- `alignof_ival` closure is the fuel-FREE `CerberusImpl.alignof_ty` over the
+  -- exemplar's concrete tag map, so `(fun ty1 => …) signed_int` reduces to
+  -- `integerIval 4` by unfolding inside the unification below (`alignof_ty_signed_int`
+  -- states the same fact by `rfl`).
   refine (runOne_bind_active (z := errnoPtr top) (s' := _)
     (runOne_liftMem_active (errnoAction_active (Nat.succ k) top h))).trans ?_
   -- park main's arena (reaching EXACTLY the explicit `S₁ top digest`); driver2; finalize

@@ -181,6 +181,17 @@ let evalIntegerConstantExpressionAux
           TranslateEff.runElabM elab_conf (toCore a_expr) (TranslateEff.elab_initial_state sup) in
         let sup_after_elab = translate_final_st.TranslateEff.fresh_supply in
 
+        (* FORK BACKPORT of upstream 736690a65's one line ([USER 2026-10-30] ruling, merge-base bump
+           stage 1 record section 2b; absorbed at stage 2 when 736690a65 arrives): the mini-run's
+           Core file carries the translated tag definitions. Mechanism: upstream b3e11ea33 made
+           core_eval's Civsizeof/Civalignof read `Implementation.sizeof_ty file.tagDefs` where
+           `Mem.sizeof_ival` read the Tags global the desugarer populates, while this file was
+           still built with `C.tagDefs= Map.empty` — so at c3ff8c53f every sizeof/_Alignof of a
+           struct or union inside an integer constant expression raises Not_found upstream
+           (pristine b9aeedcb4 answers tests/minimal/106-sizeof-struct-array.c with Specified(32),
+           pristine c3ff8c53f crashes; upstream-tray report 67). The same map seeds the Lean
+           tagDefs reader below (run_const_expr_driver). *)
+        let core_tagDefs = Translation.translate_tag_definitions sigm.A.tag_definitions in
         let (dr_st, sup_after_init) =
           (* this just builds the shell of the driver state *)
           let dummy_core_file = Core_run_aux.convert_file
@@ -190,7 +201,7 @@ let evalIntegerConstantExpressionAux
              ; C.impl= impl
              ; C.globs= []
              ; C.funs= Map.empty
-             ; C.tagDefs= Map.empty
+             ; C.tagDefs= core_tagDefs
              ; C.enumDefs= Map.empty
              ; C.extern= Map.empty
              ; C.funinfo= Map.empty
@@ -228,7 +239,7 @@ let evalIntegerConstantExpressionAux
            definitions *)
         let execs = run_const_expr_driver
                       (Map.fromList sigm.A.enum_definitions)
-                      (Translation.translate_tag_definitions sigm.A.tag_definitions)
+                      core_tagDefs
                       dr_st in
         match execs with
           | [(ND.Active dres, _, _ )] ->

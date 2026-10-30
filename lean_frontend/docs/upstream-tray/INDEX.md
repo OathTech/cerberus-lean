@@ -125,6 +125,7 @@ notes below establish only what was checked then.
 | [64-recursive-main-guard-bypassed.md](64-recursive-main-guard-bypassed.md) | Draft | Report only; active driver bypasses guard; no submission recorded |
 | [65-inner-arg-temps-core-symbol-loss.md](65-inner-arg-temps-core-symbol-loss.md) | Draft | Fork printer remedy and loader detector implemented; cross-mode multiplicity dispositioned; no submission recorded |
 | [66-main-inner-arg-temps-comment.md](66-main-inner-arg-temps-comment.md) | Draft | Report only; main uses the switch despite the exclusion comment; no submission recorded |
+| [67-const-expr-sizeof-struct-not-found-window.md](67-const-expr-sizeof-struct-not-found-window.md) | Draft; fixed upstream (736690a65) before it was filed | Regression window b3e11ea33..736690a65: a struct/union sizeof or _Alignof in an integer constant expression raises Not_found (the mini-run's Core file has no tag definitions); found by the merge-base bump stage 1, carried as a backport of the fixing line until stage 2. No submission recorded |
 | [lean4/01-stack-overflow-handler-deadlock.md](lean4/01-stack-overflow-handler-deadlock.md) | Draft | No submission recorded |
 | [lean4/02-nat-div-mod-literal-folding.md](lean4/02-nat-div-mod-literal-folding.md) | Draft | No submission recorded |
 | [lean4/03-float-tobits-canonicalizes-nan.md](lean4/03-float-tobits-canonicalizes-nan.md) | Draft | No submission recorded |
