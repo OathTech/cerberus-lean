@@ -850,3 +850,102 @@ answers `Specified(32)` by the backport). The `097` baseline row (`exec_baseline
 is M4's re-record (an upstream fix, tray 04), not re-recorded here; `106` stays MATCH as ruled. The
 witness scripts' full lines are in the log (the D11/D12/D13 refusals fire with their texts on the
 merged base).
+
+---
+
+## 2c. M2c — the Tier A findings on df2598e47 (2026-10-30)
+
+Tier A on `df2598e47` (orchestrator-run, evidence `.tmp/release/bump-fast-m2b-20261030T003344Z`):
+`fast: failed; 16/20 selected commands completed successfully.` Failed A1, A5, A14.2, A15. Expected:
+A14.2 (`minimal/097-null-ptr-arith.undef: default-mode comparison same != baseline changed` — the 097 row,
+M4) and A1's fork-drift gate (M5). Findings:
+
+### 2c.1 Finding 1 — `libc/016-strstr-twoway-oob` DIFF (A5, A15): a location-only divergence from the fork's libc transport — STOP, awaiting ruling
+
+Both engines report the same UB on the same program; they differ in the LOCATION only. Verbatim
+(libc mode, `--exec --batch`):
+```
+pristine b9aeedcb4 memcmp (impl_mem.ml): load Cerb_location.unknown Ctype.unsigned_char ptrval   -- the pre-merge text
+pristine c3ff8c53f:  Undefined {ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<265:22--265:26>"}
+merged oracle:       Undefined {ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<265:22--265:26>"}
+Lean (pinned dump + 12 metadata TUs): Undefined {ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<unknown location>"}
+```
+Root cause: upstream f4a3a3d54 gave `memcmp` the memop's `loc` and loads each byte at it (before,
+`Cerb_location.unknown` — so both engines printed `<unknown location>` and the row matched by
+coincidence). The Lean mirror is right: `CerbMem.memcmpM … loc …` loads at `loc` and `loadM`'s kill
+reports it (`CerbMem.lean` `fail_`). The `loc` reaching Lean's `Memcmp` memop is `unknown` because
+the Lean engine runs libc from the pinned Core TEXT dump (`tests/libc/libc.core`), and that dump
+carries NO location annotations: the oracle's Basic Core printer hard-wires `show_locations = false`
+(`ocaml_frontend/pprinters/pp_core.ml:923`; `maybe_print_location` prints nothing), `grep -c '{-#'`
+over the dump is 0, and `CoreParser.lean` has no grammar for location comments — every memop,
+load and store inside libc runs with an empty annotation list on Lean, while the oracle keeps the
+C locations of its in-memory Core. A pre-existing transport limitation, latent until upstream made
+a libc-internal UB location-bearing on a row the lanes compare. Not fixable in the mirror (the
+location is not there to mirror); fixing it is a transport slice (print locations into the dump,
+parse them in `CoreParser`, re-pin, and carry them through the quotation instrument) — outside
+this arc's charter. Reported as a STOP per the orchestrator's rule; the row stays red in A5/A15
+(`test_libc_exec exit=1`, `inner_arg_temps: FAIL — failed rows: ['libc/016-strstr-twoway-oob']`,
+186 rows otherwise `AGREE=138 AGREE-FIRST=40 BOTH_FAIL=5`) until ruled. Not baselined.
+
+### 2c.2 Finding 2 — `match-pattern-arity-test` R3 `Erun` rows: the witness's classifier restated for upstream's guard (fixed)
+
+The R3 witness's grid classifiers (`classifyR3E`, `isArgArityE "run"`) recognised the fork's
+`MismatchExpected "run" (BTy_tuple _) "argument list of a different arity"`; the merge took upstream's
+`ArityMismatchRun expected found` for `Erun` (resolution rule R3; the `PEcall` guard stays the fork's).
+Both classifiers gain the arm (the `isExprMismatch`/`classifyExprTyping` pair too, for completeness);
+the fail-closed behaviour pinned is unchanged:
+```
+PASS R3 typecheck_expr Erun loop with 0 actual(s) for 1 formal: got Exception (ArityMismatchRun 1 0); pre-fix: Result with 0 arguments (ACCEPTED — the defect)
+PASS R3 typecheck_expr Erun loop with 2 actual(s) for 1 formal: got Exception (ArityMismatchRun 1 2); …
+PASS R3 typecheck_expr Erun loop with 3 actual(s) for 1 formal: got Exception (ArityMismatchRun 1 3); …
+match-pattern-arity-test: OK (8/8 item-7 witnesses + 19/19 closure-round witnesses + 33/33 round-3 argument-list witnesses; …)
+```
+`test_unit.sh` stops at the executable tally before any gate script (`exit 1` at its line 150), so in
+Tier A's A1 the gates after the executables had not run; they are run here (§2c.4).
+
+### 2c.3 Finding 3 (surfaced by the rerun) — the fuel-forms SELFTEST's decoys named the moved obligations (fixed)
+
+`test_unit.sh` on the fixed tree: `Total: 21 passed, 0 failed`, then
+`check_fuel_forms: SELFTEST FAILED (4)` — at M2 the plain gate was run, not its selftest. Its decoy
+theorems and plants (`scripts/check_fuel_forms.sh`) restate the REAL layout obligations by name
+(`CerbMem.sizeofCtype_measure_sufficient` with an extra binder, `CerbMem.alignofCtype_measure_sufficient`
+under `cty ≠ cty`, the P8 deletion of the `CerbMem.sizeofCtype_lemFuel` register row): re-keyed to
+`CerberusImpl.*`, the decoys import `CerberusImpl`, and the decoy run excludes BOTH carriers
+(`FUELFORMS_EXCLUDE_MODULES="CerberusImpl_lemMeasureProofs CerbMem_lemMeasureProofs"`: the CerbMem
+carrier imports the layout carrier since the split, so excluding the latter alone let the real
+theorem back in — `uncaught exception: import FuelFormsPlantExtra failed, environment already
+contains 'CerberusImpl.sizeofCtype_measure_sufficient'`). The plant logic is unchanged.
+```
+check_fuel_forms: SELFTEST OK (25 plants with the declared label — 6 on the table (incl. the ABSORBING-cone plant), 3 on the hypothesis register, 15 compiled decoys: …
+check_fuel_forms: OK (88 fuel'd workers: 67 MEASURED (…
+```
+
+### 2c.4 Row-1 gates and the lanes (verbatim last lines)
+
+`test_unit.sh` (`.tmp/m2c-test-unit-2.log`): `Total: 21 passed, 0 failed`; the gates it reached:
+`check_handwritten_sync: OK`, `check_exec_purity: SELFTEST OK` / `CLEAN`, `check_theorem_axioms: OK`,
+`check_sorry_token: OK`, `test_exec: SELFTEST OK`, `check_no_fuel_numerals: SELFTEST OK` / `OK`,
+`gen_fuel_parametricity: SELFTEST OK` / `OK`, `check_lakefile_roots: SELFTEST OK` / `OK`; it stopped
+at the fuel-forms selftest (§2c.3). By hand after the fix (`.tmp/m2c-fuel-forms-2.log`,
+`.tmp/m2c-gates.log`, `.tmp/m2c-lanes.log`):
+```
+check_fuel_forms: SELFTEST OK (25 plants …)        check_fuel_forms: OK (88 fuel'd workers: …)
+check_failure_reach: SELFTEST OK (8 plants …)      check_failure_reach: OK (238 pure failure sites = the 238 register rows exactly …)
+test_version: OK (untagged, exact annotated tag, dirty tag, post-tag, archive fallback)
+test_exec_totality: OK (8 plants and 2 clean controls)
+check_exec_totality: CLEAN (22 generated modules + hand-written CerbND, 0 allowlisted)
+check_lem_sync: OK (src 6f59f409…, gen 14399a38…)   check_lem_sync: lean OK (src 6f59f409…, gen a478f16e…)
+check_fork_drift: FAIL — merge-base moved: manifest pins b9aeedcb4dd438763b0eef7f95ac19e93875d7de, live is c3ff8c53f05982745f9b3a10b3d05442e214bcb5 — … run the refresh recipe   (EXPECTED until M5; its --selftest stops on the same line)
+check_pin_sites: SELFTEST OK (8 plants red with the declared message, unplanted copies green)
+check_pin_sites: OK — lem-pin e6d8db5680962f49060257d6c2bcb13c284b910f at every site (lakefile rev, 3 lake-manifests rev+inputRev, README pin command)
+check_fixture_freeze: OK (16 fixture files match the pinned manifest; name set exact)
+test_renumber_plants: OK (12 plants: refusals refuse, admits admit with declared class)
+check_cli_refusals: OK (unsupported switch sets, mixtures, duplicates, unknown names, placement and repeated options refused; PNVI_ae_udi and inner_arg_temps accepted alone …
+check_runtime_resolution: OK (35 witnesses: …)
+```
+Lanes: `test_libc_exec.sh`: every row MATCH except `016-strstr-twoway-oob DIFF` (§2c.1), `exit=1`;
+`test_inner_arg_temps.sh --gate`: `SUMMARY: inner_arg_temps rows=186 AGREE=138 AGREE-FIRST=40
+BOTH_FAIL=5 RESOURCE oracle:KILL=2 failures=1` / `FAIL — failed rows: ['libc/016-strstr-twoway-oob']`
+(the same row). The gates that `test_unit.sh` lists after `check_runtime_resolution` (the refusal
+witnesses, `check_libc_float_literals.py`, `test_translation_fuel.sh`) were run at M2b (the four
+refusal scripts) or are covered by M3/M4.

@@ -303,18 +303,20 @@ LEAN
   # wrapper calls it at `LemFuel.fuel` — under `0 ≤ lemFuel`; the argument/
   # measure correspondence check now rejects that as MALFORMED before the
   # register is consulted, which is right. P10 therefore restates the REAL
-  # CerbMem.alignofCtype obligation — shape-correct, μ = the wrapper's measure —
+  # CerberusImpl.alignofCtype obligation (in CerbMem until the merge-base bump stage 1 moved the
+  # layout block, 2026-10-29) — shape-correct, μ = the wrapper's measure —
   # under the CONTRADICTORY hypothesis `cty ≠ cty`, compiled in the P11 run
-  # where CerbMem_lemMeasureProofs is excluded.) Both decoys restate REAL
+  # where CerberusImpl_lemMeasureProofs is excluded — and CerbMem_lemMeasureProofs with it,
+  # which imports the layout carrier since the merge-base bump stage 1 split the carriers.) Both decoys restate REAL
   # obligations and therefore follow the workers' signatures: since
   # program-data parameters E-A (2026-09-20) the layout workers/wrappers take
   # the enum map `enumDefs : CerberusImpl.EnumDefs` before `ambient`.
   cat > "$PLANTDIR/FuelFormsPlantContra.lean" <<'LEAN'
-import CerbMem
-theorem CerbMem.alignofCtype_measure_sufficient (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap) (cty : ctype)
+import CerberusImpl
+theorem CerberusImpl.alignofCtype_measure_sufficient (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap) (cty : ctype)
     (lemHyp : cty ≠ cty) (lemFuel : Nat)
     (_lemMeasureLe : CerbTagsWf.envBound ambient cty ≤ lemFuel) :
-    CerbMem.alignofCtype_lemFuel lemFuel enumDefs ambient ambient cty = CerbMem.alignofCtype enumDefs ambient cty :=
+    CerberusImpl.alignofCtype_lemFuel lemFuel enumDefs ambient ambient cty = CerberusImpl.alignofCtype enumDefs ambient cty :=
   absurd rfl lemHyp
 LEAN
   # P12–P22 (P0 audit F2, 2026-09-05; record docs/2026-09-05_p0-instruments-record.md
@@ -443,32 +445,32 @@ LEAN
   # (the decoy needs a real PROOF, no `sorry`: it is stated with a contradictory
   # extra binder — the SHAPE is what the plant tests, the proof is irrelevant)
   cat > "$PLANTDIR/FuelFormsPlantExtra.lean" <<'LEAN'
-import CerbMem
-theorem CerbMem.sizeofCtype_measure_sufficient (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap) (cty : ctype)
+import CerberusImpl
+theorem CerberusImpl.sizeofCtype_measure_sufficient (enumDefs : CerberusImpl.EnumDefs) (ambient : CerbTags.TagDefsMap) (cty : ctype)
     (extra : cty ≠ cty) (lemHyp : CerbTagsWf.Acyclic ambient) (lemFuel : Nat)
     (_lemMeasureLe : CerbTagsWf.envBound ambient cty ≤ lemFuel) :
-    CerbMem.sizeofCtype_lemFuel lemFuel enumDefs ambient ambient cty = CerbMem.sizeofCtype enumDefs ambient cty :=
+    CerberusImpl.sizeofCtype_lemFuel lemFuel enumDefs ambient ambient cty = CerberusImpl.sizeofCtype enumDefs ambient cty :=
   absurd rfl extra
 LEAN
-  if FUELFORMS_EXTRA_PATH="$PLANTDIR" FUELFORMS_EXTRA_MODULES="FuelFormsPlantExtra FuelFormsPlantContra" FUELFORMS_EXCLUDE_MODULES="CerbMem_lemMeasureProofs" table_of_tree "$LOG" > "${TBL}.p"; then
-    grep -E $'^FUEL_FORM\tCerbMem\.(sizeofCtype|alignofCtype)_lemFuel\t' "${TBL}.p" | cut -c1-260 | sed 's/^/    plant table: /'
-    plant "P11 decoy of a REAL obligation with an EXTRA Prop binder and the register's exact hypothesis (CerbMem.sizeofCtype): MALFORMED by the binder check" "not the contract's shape" "${TBL}.p" "$PENDING" "$HYPREG"
-    if ! grep -qE $'^FUEL_FORM\tCerbMem\.sizeofCtype_lemFuel\tAMBIENT\t[^\t]*\tMALFORMED [^\t]*binder `extra`' "${TBL}.p"; then
+  if FUELFORMS_EXTRA_PATH="$PLANTDIR" FUELFORMS_EXTRA_MODULES="FuelFormsPlantExtra FuelFormsPlantContra" FUELFORMS_EXCLUDE_MODULES="CerberusImpl_lemMeasureProofs CerbMem_lemMeasureProofs" table_of_tree "$LOG" > "${TBL}.p"; then
+    grep -E $'^FUEL_FORM\tCerberusImpl\.(sizeofCtype|alignofCtype)_lemFuel\t' "${TBL}.p" | cut -c1-260 | sed 's/^/    plant table: /'
+    plant "P11 decoy of a REAL obligation with an EXTRA Prop binder and the register's exact hypothesis (CerberusImpl.sizeofCtype): MALFORMED by the binder check" "not the contract's shape" "${TBL}.p" "$PENDING" "$HYPREG"
+    if ! grep -qE $'^FUEL_FORM\tCerberusImpl\.sizeofCtype_lemFuel\tAMBIENT\t[^\t]*\tMALFORMED [^\t]*binder `extra`' "${TBL}.p"; then
       echo "  PLANT FAIL [P11: the tool did not report the extra binder as the shape mismatch]"; fails=$((fails+1))
     else
-      echo "  PLANT OK   [P11 premise] -> the tool reports CerbMem.sizeofCtype_lemFuel MALFORMED: binder \`extra\` is neither reserved nor a wrapper argument"
+      echo "  PLANT OK   [P11 premise] -> the tool reports CerberusImpl.sizeofCtype_lemFuel MALFORMED: binder \`extra\` is neither reserved nor a wrapper argument"
     fi
-    plant "P10 the REAL CerbMem.alignofCtype obligation restated under the CONTRADICTORY hypothesis cty ≠ cty: MEASURED by shape, RED by the register" "no reviewed register row" "${TBL}.p" "$PENDING" "$HYPREG"
-    if ! grep -qE $'^FUEL_FORM\tCerbMem\.alignofCtype_lemFuel\tMEASURED\t[^\t]*\t[^\t]*\tcty ≠ cty$' "${TBL}.p"; then
-      echo "  PLANT FAIL [P10: the tool did not report CerbMem.alignofCtype_lemFuel MEASURED with hyp=cty ≠ cty — the plant is not testing what it claims]"; fails=$((fails+1))
+    plant "P10 the REAL CerberusImpl.alignofCtype obligation restated under the CONTRADICTORY hypothesis cty ≠ cty: MEASURED by shape, RED by the register" "no reviewed register row" "${TBL}.p" "$PENDING" "$HYPREG"
+    if ! grep -qE $'^FUEL_FORM\tCerberusImpl\.alignofCtype_lemFuel\tMEASURED\t[^\t]*\t[^\t]*\tcty ≠ cty$' "${TBL}.p"; then
+      echo "  PLANT FAIL [P10: the tool did not report CerberusImpl.alignofCtype_lemFuel MEASURED with hyp=cty ≠ cty — the plant is not testing what it claims]"; fails=$((fails+1))
     else
-      echo "  PLANT OK   [P10 premise] -> the tool reports CerbMem.alignofCtype_lemFuel MEASURED hyp=cty ≠ cty (shape alone cannot see the contradiction; the register is the closure)"
+      echo "  PLANT OK   [P10 premise] -> the tool reports CerberusImpl.alignofCtype_lemFuel MEASURED hyp=cty ≠ cty (shape alone cannot see the contradiction; the register is the closure)"
     fi
   else
     echo "  PLANT FAIL [tool with the extra-binder + contradictory-hypothesis decoys]"; tail -20 "$LOG"; fails=$((fails+3))
   fi
   # P8/P9/P9b (C4): the hypothesis register, both directions + format
-  grep -v $'^CerbMem\.sizeofCtype_lemFuel\t' "$HYPREG" > "${TBL}.hreg"; plant "P8 register row of a measured-under-hypothesis worker deleted (CerbMem.sizeofCtype)" "no reviewed register row" "$TBL" "$PENDING" "${TBL}.hreg"
+  grep -v $'^CerberusImpl\.sizeofCtype_lemFuel\t' "$HYPREG" > "${TBL}.hreg"; plant "P8 register row of a measured-under-hypothesis worker deleted (CerberusImpl.sizeofCtype)" "no reviewed register row" "$TBL" "$PENDING" "${TBL}.hreg"
   { cat "$HYPREG"; printf 'hack_lemFuel\t0 < k\tdriver.lem:1 planted\t[PLANT]\n'; } > "${TBL}.hreg"; plant "P9 stale register row (hack under 0 < k — hack IS measured, under CerbCoreShape.IsValuePexpr pexpr1, not under this)" "stale register row" "$TBL" "$PENDING" "${TBL}.hreg"
   { cat "$HYPREG"; printf 'phantom_lemFuel\tTrue\tno cite here\t[PLANT]\n'; } > "${TBL}.hreg"; plant "P9b register row without a .lem:<line> cite" "not of the form" "$TBL" "$PENDING" "${TBL}.hreg"
   # P24 (hotfix fix/fuel-forms-carriers, 2026-09-20 — F-1 reproduced in-plant):

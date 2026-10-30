@@ -317,6 +317,10 @@ def classifyExprTyping : exceptM (generic_expr Unit core_base_type sym) (CerbLoc
   | Result (Expr _ (Epar es)) => s!"Result (Epar with {es.length} operands)"
   | Result _ => "Result (other)"
   | Exception (_, CORE_TYPING (MismatchExpected ctx _ found)) => s!"Exception (MismatchExpected {repr ctx} _ {repr found})"
+  -- upstream's own `run` arity guard (8d1926c7f/cabe81c3b's `ArityMismatchRun expected found`), carried by
+  -- the base since the merge-base bump stage 1; it replaced the fork's audit-R3 `MismatchExpected "run"`
+  -- text (resolution rule R3) — the fail-closed behaviour the witness pins is unchanged
+  | Exception (_, CORE_TYPING (ArityMismatchRun expected found)) => s!"Exception (ArityMismatchRun {expected} {found})"
   | Exception (_, CORE_TYPING (CoreTyping_TODO t)) => s!"Exception (CoreTyping_TODO {repr t})"
   | Exception _ => "Exception (other)"
 def isTupleExprMismatch (ctx : String) : exceptM (generic_pexpr inferred sym) (CerbLocation.Loc × cause) → Bool
@@ -324,6 +328,7 @@ def isTupleExprMismatch (ctx : String) : exceptM (generic_pexpr inferred sym) (C
   | _ => false
 def isExprMismatch (ctx : String) : exceptM (generic_expr Unit core_base_type sym) (CerbLocation.Loc × cause) → Bool
   | Exception (_, CORE_TYPING (MismatchExpected c (BTy_tuple _) found)) => c == ctx && found.endsWith "of a different arity"
+  | Exception (_, CORE_TYPING (ArityMismatchRun _ _)) => ctx == "run"   -- upstream's guard for Erun (see classifyExprTyping)
   | _ => false
 /-- fitting input: accepted AND every operand preserved (byte-identical after erasing the annotation) -/
 def preservedP (tys : core_base_type) (pe : pexpr) : Bool :=
@@ -493,6 +498,7 @@ def isArgArity (ctx : String) : exceptM (generic_pexpr inferred sym) (CerbLocati
   | _ => false
 def isArgArityE (ctx : String) : exceptM (generic_expr Unit core_base_type sym) (CerbLocation.Loc × cause) → Bool
   | Exception (_, CORE_TYPING (MismatchExpected c (BTy_tuple _) "argument list of a different arity")) => c == ctx
+  | Exception (_, CORE_TYPING (ArityMismatchRun _ _)) => ctx == "run"   -- upstream's guard for Erun (classifyR3E)
   | Exception (_, CORE_TYPING (CoreTyping_TODO t)) => ctx == "ccall" &&
       (t == "ccall: argument list of a different arity than the C function type's parameters" ||
        t == "ccall to a variadic C procedure: fixed-argument list of a different arity than the function type's parameters")
@@ -534,6 +540,10 @@ def classifyR3E : exceptM (generic_expr Unit core_base_type sym) (CerbLocation.L
   | Result _ => "Result (other)"
   | Exception (_, CORE_TYPING (MismatchExpected ctx _ found)) => s!"Exception (MismatchExpected {repr ctx} _ {repr found})"
   | Exception (_, CORE_TYPING (CoreTyping_TODO t)) => s!"Exception (CoreTyping_TODO {repr t})"
+  -- upstream's own `run` arity guard (`ArityMismatchRun expected found`, 8d1926c7f/cabe81c3b), carried by the
+  -- base since the merge-base bump stage 1; it replaced the fork's audit-R3 `MismatchExpected "run"` text
+  -- (resolution rule R3) — the fail-closed behaviour the R3 witness pins is unchanged
+  | Exception (_, CORE_TYPING (ArityMismatchRun expected found)) => s!"Exception (ArityMismatchRun {expected} {found})"
   | Exception _ => "Exception (other)"
 
 /-! ### R4 — the `Erun` step of BOTH engines: surplus / shortage / fit -/
