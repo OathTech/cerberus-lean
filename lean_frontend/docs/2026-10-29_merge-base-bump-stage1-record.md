@@ -996,3 +996,52 @@ the oracle's and Lean's observation hashes were EQUAL — the pre-merge coincide
 engines at `<unknown location>`); after the merge the Lean hash is unchanged (`e3e1024ddb83`) and the
 oracle's is `54a5577345c4` (the location). The row now carries `LOC_ONLY-FIRST` and the dated
 `disposition` text.
+
+---
+
+## 3. M3 — proofs: kernel replay, the axiom censuses, the cite shifts (2026-10-30)
+
+The carrier work itself was forced into M2/M2b (the obligation shells are Lake roots, §2.2): the
+`collect_switch_content_aux` obligation (new, the C2 template), the five layout obligations moved
+into `CerberusImpl_lemMeasureProofs.lean` (namespace rename only), the Defacto `memcmp_load_aux`
+obligation's `loc` binder, the fuel wrappers' `_zero` boundaries compiled unchanged, the exemplar's
+errno step by unfolding. M3 adds the register cites and runs the named trust gate.
+
+### 3.1 Cite shifts (`scripts/fuel_hypotheses.txt` rows `hack`/`to_pure`/`to_pures`, `lean_frontend/CerbCoreShape.lean` header)
+
+Upstream's stage-1 insertions in `driver.lem` moved every cited line by +5 (verified by content on the
+merged file): `prepare_exit` `1309-1316` → `1314-1321`; `process_core_step2`'s `Step_done2` arm
+`1331-1338` → `1336-1343`; `Step_fs2`/`FS_done` `1352-1356` → `1357-1361`; `driver2` `1369` → `1374`;
+`finalize` `1473-1477` → `1478-1482`; `driver_globals`' `to_pure` `1611-1616` → `1618-1623` (+7: two
+more insertions in between); `new_drive_core_threads` `1275-1296` → `1280-1301`; the erratum's
+commented-out `drive_core_thread2` `485-486` → `490-491` and `452-510` → `457-515`. 12 + 2 cites in
+the register rows, 7 + 3 in the header; no old line remains (`grep` over both files). The hypotheses
+and their invariants are unchanged (the terminal arms still rewrite through `prepare_exit`; the fuel-
+forms gate re-reads the rows: `check_fuel_forms: OK (88 fuel'd workers: 67 MEASURED …`).
+
+### 3.2 Kernel replay — the named trust gate (verbatim)
+
+```
+lake env leanchecker Translation_lemMeasureProofs Translation_auxiliary CerberusImpl_lemMeasureProofs CerbMem_lemMeasureProofs Defacto_memory_lemMeasureProofs Defacto_memory_auxiliary Formatted_auxiliary CerberusImpl CerbMem CerbCoreShape Driver_lemMeasureProofs Unit.TranslationFuelTest Unit.FuelExemplar Unit.TotalityProofTest Unit.MatchPatternArityTest Unit.PnviArmsTest Unit.MonadicFailstop
+leanchecker exit=0
+lake env leanchecker CerbCoreShape Driver_lemMeasureProofs Core_aux_lemMeasureProofs      (after the cite edit's recopy and rebuild)
+leanchecker exit=0
+```
+(`.tmp/m3-chain.log`, `.tmp/m3-replay-2.log`; no output on success. Every changed carrier and seam
+of stage 1: the Translation and Defacto carriers and their obligation shells, the new layout carrier
+and the CerbMem carrier it split from, the Formatted shell (the `load_character_array_aux` `_zero`
+payload), the seams `CerberusImpl` (the moved layout, `sizeof_ty`/`alignof_ty`) and `CerbMem` (the S2
+arms), `CerbCoreShape`, `Driver_lemMeasureProofs`, and the test modules whose statements or proofs
+moved.)
+
+### 3.3 Censuses (verbatim last lines)
+
+```
+check_theorem_axioms: FUEL arc leg OK (63 contract lemmas — generated _zero, runner leaves/parametricity, ∀-fuel exemplar, measured obligations, fail-stop propagation, and six-worker ND stability, every cone ⊆ [propext, Classical.choi
+check_theorem_axioms: OK (effect-retirement C2 bar: zero axiom declarations anywhere; entry cones ⊆ the standard three)
+check_sorry_token: OK (353 files scanned comment-stripped — generated 229, hand-written+test 89, LemLib 35; 0 sorry tokens)
+check_fuel_forms: OK (88 fuel'd workers: 67 MEASURED (obligation of the contract's shape incl. argument correspondence against the wrapper's body; every obligat
+check_handwritten_sync: OK (57 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+```
+No option bump anywhere in the slice (`grep -rn 'maxHeartbeats\|maxRecDepth' lean_frontend/*.lean
+lean_frontend/test` unchanged from the base); every tactic kernel-only.
