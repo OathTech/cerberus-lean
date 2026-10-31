@@ -2042,3 +2042,100 @@ mirror, (2) the `formatted.ml` restatement — each registered in the manifest N
 Stage 2 inherits: with 736690a65 in the base (1a)/(1b) leave, `CerbMem.offsetofIval`'s two-map call and the workers'
 dead `ambient` parameter retire with the Tags removal (the one-map restatement of the carrier's `tp`), and the
 `AcyclicPair` row of `scripts/fuel_hypotheses.txt` collapses to `Acyclic`.
+
+---
+
+## 6.6 Close-out — the full battery on `e1280cf3a`, the review beside the record, the landing recipe (2026-10-30)
+
+### 6.6.1 The full battery (orchestrator-run; evidence `.tmp/release/bump-full-m6c-*`; verbatim as relayed)
+
+```
+--- the full battery on e1280cf3a (evidence .tmp/release/bump-full-m6c-20261030T215729Z, 21:57:29 to 00:45:52 UTC, start load 9.21 with two other sessions' batteries running):
+full: failed; 43/45 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+release rc=1
+FAILED A15 (474.8s): `inner_arg_temps: FAIL — corpus/p08_list_reverse: baseline changed: {'class': 'RESOURCE oracle:KILL', …`
+FAILED B8.2 (394.5s): `test_kill_plant: FAILED` / `PLANT FAIL [libc_exec SIGKILL stub -> DIFF (not KILL)]: expected /^SUMMARY: match=0 diff=/; got: …`
+Every other row PASSED (A1 1086.1 s, B7 1633.8 s, B9 2723.0 s, B10.1 287.9 s, B13 883.5 s).
+--- the targeted re-run of the two rows on a quieter box (evidence .tmp/release/bump-rerun-m6c-20261031T004646Z, 00:46:46 to 01:03:15 UTC, start load 5.86):
+PASSED A15 (414.6s): SUMMARY: inner_arg_temps rows=186 AGREE=138 AGREE-FIRST=40 BOTH_FAIL=5 LOC_ONLY-FIRST=1 RESOURCE oracle:KILL=2 failures=0
+FAILED B8.2 (573.5s): test_kill_plant: FAILED
+--- B8.2 after M6d's fix (worker-run by hand, .tmp/m6b/closeout/plant.log):
+=== test_kill_plant 01:11:55 load=9.48
+PLANT OK   [libc_exec no MATCH]: SUMMARY: match=0 loc_only=0 diff=42
+PLANT OK   [libc_exec SIGKILL stub -> DIFF (not KILL)]: SUMMARY: match=0 loc_only=0 diff=42
+PLANT OK   [immaculate -> KILL status on a C row]:   KILL           g1-ge-funptr          O[ERR:{msg: "Memory WIP: ge_ptrval"}] L[KILL]
+PLANT OK   [immaculate no MATCH]
+PLANT OK   [libxml2_uri -> killed label]: FAIL: LEAN_NOLIBC killed by SIGKILL (exit 137 — the per-test cgroup memory cap CERB_TEST_MEM_MAX=4G if the lane's stderr carries capped's OOM-KILLED witness banner, otherwise an external SIGKILL): …
+PLANT OK   [libxml2 -> Lean OOM-KILLED]: [chvalid_battery_00] FAIL: Lean OOM-KILLED (exit 137; cgroup memory cap CERB_TEST_MEM_MAX=4G breached — memory.events oom_kill=1)
+PLANT OK   [gcc_oracle exit(137) native -> compared (AGREE gcc=137 lean={137}), not SKIP_GCC_KILL]: [1/1] AGREE O2_AGREE …/gcc137/exit137.c: gcc=137 lean={137}
+test_kill_plant: all plants read as expected (cap breach -> OOM-KILLED witness; ci_sweep LEAN_KILL, libc_exec KILL, immaculate KILL, uri/libxml2 FAIL-killed; SIGKILL stub NOT the cap class; native exit(137) still compared; no MATCH anywhere)
+kill-plant exit=0
+```
+
+A15's first failure was a load artefact (a resource-class row moving under load; the standing LOAD CAVEAT of the
+harnesses) — the re-run on a quiet box reproduced the baseline exactly. B8.2 was genuine and M2d's: §6.6.1b.
+
+### 6.6.1b M6d — the kill-plant's libc_exec expectation (the one real red)
+
+`scripts/test_kill_plant.sh:94` expected `^SUMMARY: match=0 diff=` from `test_libc_exec.sh`, whose summary line has
+read `SUMMARY: match=$pass loc_only=$loccnt diff=$failcnt` since M2d's `LOC_ONLY` class (§2d) — the new field broke the
+plant's regex, and M2d's own lane runs did not include the Tier B plant battery. Fixed: the expectation is
+`^SUMMARY: match=0 loc_only=[0-9]+ diff=` (the plant's intent — the SIGKILL stub reads as DIFF, not the cap's KILL
+class — unchanged; the sibling check at `:90`, `^SUMMARY: match=0 `, still matched). Every other consumer of a
+`SUMMARY:` line was grepped: `release.py` reads `^SUMMARY: total=(\d+) ` and filters `^SUMMARY:` lines for its
+report (shape-agnostic), and the other lanes print their own shapes (`test_exec`, `test_multi_tu`, `test_libxml2`,
+`test_bytes`, `test_cn_coverage`); no Python classifier reads the libc_exec line. One commit (M6d).
+
+### 6.6.2 The pre-merge review and its dispositions
+
+The fresh reviewer's report is copied beside this record as
+`docs/2026-10-30_merge-base-bump-stage1-premerge-review.md` (verbatim; a "Dispositions" appendix added at the end,
+the same table as here). Its verdict at `055602f61` was NOT MERGEABLE as it stood; every finding is dispositioned:
+
+| finding | disposition | where |
+|---|---|---|
+| P1 — desugar-time `alignof` of a union-containing type crashes the fork oracle where Lean answers; unregistered; the record's unobservability claim false; the failure misnamed | **FIXED by the ruling** [USER 2026-10-30] (option 1): the second line of 736690a65 carried ahead with its one-call Lean mirror; the three shapes and the former crash pair pinned `MATCH`; four register rows; the manifest, tray 67, TODO and VALIDATION moved; the record's claims corrected inline | §6b (registered and raised), §6c (applied) |
+| P2 — the `offsetof-union-member` stop cited a non-failing arm; register row 75's reason stale | **FIXED**: re-cited to the live arm at M6b; with M6c's one-map calls the leaf mirrors `:501-504` again and row 75 is `UNREACHABLE-BY-INVARIANT` (resealed) | §6b, §6c.1 |
+| P3 — the D13 constant-expression re-measure unrecorded | **FIXED**: re-measured on five engines (97371d8ed rejects it before elaboration on both; the old base crashed) | §6b.1 |
+| P3 — the cerberus-sl note's class name | **FIXED**: `LOC_ONLY` / `LOC_ONLY-FIRST` | §6b |
+| Residual: no lane run by the reviewer; 5 of 17 modules replayed | the battery of §6.6.1 and M3's 17-module replay (§3.2) stand in | — |
+| Residual: the libc-mode Lean path (N4) not exercised | Tier A row 5 (`test_libc_exec`, the `LOC_ONLY` row) and Tier B 13 (the libc quotation round trips) exercise it in the battery | §2d, §4.5 |
+| Residual: other desugar-time paths into `alignof_ty` not enumerated | enumerated here (`git grep` over `frontend/model`): `Implementation.alignof_ty`/`sizeof_ty` are reached only through `cabs_to_ail_effect.lem`'s `get_alignof` (the seed `alignof_ty_seeded`) at desugar time, `core_eval.lem`'s `Civsizeof`/`Civalignof` and `driver.lem`'s `alignof_ival` closures (`:194`, `:1737`) at run time, and on the Lean side the fork's own `CerbCall.lean:265` (`allocErrno`, the `--call` entry); the elaboration-time path is `mem.lem`'s `offsetof_ival` (`CerbMem.offsetofIval`); with M6c every one of them is one-map on both engines | §6c.1 |
+| Residual: the two-map union arms at run time argued from code | moot since M6c: no call passes two different maps (`CerbMem.offsetofIval` was the one); at run time both maps were already the Core file's table | §6c.1 |
+
+### 6.6.3 The landing recipe for the container's pristine checkout (operator; §0.10 item 1)
+
+`deps/cerberus-upstream` is a clone of `https://github.com/rems-project/cerberus` at `b9aeedcb4` without the
+`c3ff8c53f` object; the local mirror has it. What built this worktree's `.tmp/pristine-c3ff8c53f` (M2b), adapted to
+the checkout — every command from the container root, no network:
+
+```
+# 1. the source at the stage-1 base, from the mirror (the checkout has no network; the mirror was fetched 2026-10-29)
+git -C deps/cerberus-upstream fetch /home/dev/projects/cerberus-lean-proj/deps/mirrors/cerberus.git c3ff8c53f05982745f9b3a10b3d05442e214bcb5
+git -C deps/cerberus-upstream checkout --detach c3ff8c53f05982745f9b3a10b3d05442e214bcb5
+# 2. regenerate the OCaml tree with the fork's lem (e6d8db5, the opam switch env.sh selects): clean first — the
+#    checkout holds b9aeedcb4's 86 files, and prelude-src alone would leave stale ones in place
+scripts/ce make -C deps/cerberus-upstream clean-prelude-src prelude-src
+# 3. verify: 86 files, byte-identical to the tree every gate run of this arc used
+ls deps/cerberus-upstream/ocaml_frontend/generated | wc -l        # 86
+diff -rq deps/cerberus-upstream/ocaml_frontend/generated worktrees/cerberus-lean-arc/merge-base-bump/.tmp/pristine-c3ff8c53f/ocaml_frontend/generated && echo IDENTICAL
+# 4. env.sh needs no edit (CERB_UPSTREAM_TREE already names deps/cerberus-upstream/ocaml_frontend/generated); then the
+#    fork-drift gate runs green through plain scripts/ce, and the worktree's .tmp/pristine-c3ff8c53f can go
+scripts/ce ./scripts/check_fork_drift.sh          # from the landed checkout
+# 5. (optional, the upstream-repro baseline) the pristine oracle in that checkout, as the worktree's scratch build was made:
+scripts/ce opam exec --switch=cerberus-lean -- dune build --root deps/cerberus-upstream backend/driver/main.exe cerberus-lib.install cerberus.install
+# 6. the primary checkout's standing pristine build for Tier B rows 10/12 (per checkout; the validator refuses the
+#    old b9aeedcb4 build, remove it first):
+rm -rf cerberus-lean/.validation-foundations/independent-oracle-v2
+(cd cerberus-lean && ../scripts/ce ./scripts/capped python3 scripts/ensure_independent_oracle.py --lem-repo ../lem-lean --cerberus-repo "$PWD")
+```
+(the worktree's scratch build used the same `make prelude-src` on a `git archive` of the mirror at `c3ff8c53f`, with
+the same switch; its `generated/` is what every `check_fork_drift` run of this arc compared against.)
+
+### 6.6.4 Scratch at the close-out
+
+Deleted with this commit: `.tmp/m6b/` (the P1 probes, `apply.py`, the logs, the close-out drafts). Kept until landing:
+`.tmp/pristine-c3ff8c53f/` (the gate's tree, 371 MB) and `.validation-foundations/independent-oracle-v2` (the standing
+pristine build, gitignored). The container's `.tmp/review-bump/` is the orchestrator's.
