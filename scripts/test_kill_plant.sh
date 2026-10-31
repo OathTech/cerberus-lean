@@ -91,7 +91,7 @@ check "libc_exec no MATCH" '^SUMMARY: match=0 ' "$WORK/libc.log"
 # negative: SIGKILL stub -> DIFF rows, no KILL
 CERB_LEAN_BIN_OVERRIDE="$WORK/stub_sigkill" "$SCRIPT_DIR/test_libc_exec.sh" > "$WORK/libc2.log" 2>&1; rc=$?
 expect_nonzero "libc_exec/sigkill" $rc
-if grep -qE '^  KILL ' "$WORK/libc2.log"; then echo "PLANT FAIL [libc_exec SIGKILL stub]: bare exit 137 read as the cap class" >&2; fail=1; else check "libc_exec SIGKILL stub -> DIFF (not KILL)" '^SUMMARY: match=0 diff=' "$WORK/libc2.log"; fi
+if grep -qE '^  KILL ' "$WORK/libc2.log"; then echo "PLANT FAIL [libc_exec SIGKILL stub]: bare exit 137 read as the cap class" >&2; fail=1; else check "libc_exec SIGKILL stub -> DIFF (not KILL)" '^SUMMARY: match=0 loc_only=[0-9]+ diff=' "$WORK/libc2.log"; fi
 
 # --- test_immaculate.sh -> KILL -----------------------------------------
 CERB_LEAN_BIN_OVERRIDE="$WORK/stub_alloc" "$SCRIPT_DIR/test_immaculate.sh" > "$WORK/imm.log" 2>&1; rc=$?
