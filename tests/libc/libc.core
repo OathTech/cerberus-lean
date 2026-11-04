@@ -356,15 +356,8 @@ glob __stdout_FILE: pointer [ail_ctype = 'struct _IO_FILE'] :=
           pure(
             case (Specified(Ivsizeof('unsigned char[1032]')), Specified(8)) of
               | (Specified(a_5004: integer), Specified(a_5005: integer)) =>
-                  Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                  'signed int') then
-                    conv_int('signed int', a_5004)
-                  else
-                    conv_int('unsigned int', a_5004), if all_values_representable_in('size_t',
-                  'signed int') then
-                    conv_int('signed int', a_5005)
-                  else
-                    conv_int('unsigned int', a_5005)))
+                  Specified(wrapI_sub('size_t', conv_int('size_t', a_5004), conv_int('size_t',
+                  a_5005)))
               | _: (loaded integer,loaded integer) =>
                   Unspecified('size_t')
             end
@@ -721,15 +714,8 @@ glob __stdin_FILE: pointer [ail_ctype = 'struct _IO_FILE'] :=
           pure(
             case (Specified(Ivsizeof('unsigned char[1032]')), Specified(8)) of
               | (Specified(a_4948: integer), Specified(a_4949: integer)) =>
-                  Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                  'signed int') then
-                    conv_int('signed int', a_4948)
-                  else
-                    conv_int('unsigned int', a_4948), if all_values_representable_in('size_t',
-                  'signed int') then
-                    conv_int('signed int', a_4949)
-                  else
-                    conv_int('unsigned int', a_4949)))
+                  Specified(wrapI_sub('size_t', conv_int('size_t', a_4948), conv_int('size_t',
+                  a_4949)))
               | _: (loaded integer,loaded integer) =>
                   Unspecified('size_t')
             end
@@ -7708,16 +7694,8 @@ proc setvbuf (f: pointer, buf: pointer, type: pointer, size: pointer): eff loade
                         | (Specified(a_9035: integer),
                         Specified(a_9036: integer)) =>
                             pure(
-                              if if all_values_representable_in('size_t',
-                              'signed int') then
-                                conv_int('signed int', a_9035)
-                              else
-                                conv_int('unsigned int', a_9035) >=
-                              if all_values_representable_in('size_t',
-                              'signed int') then
-                                conv_int('signed int', a_9036)
-                              else
-                                conv_int('unsigned int', a_9036) then
+                              if conv_int('size_t', a_9035) >=
+                              conv_int('size_t', a_9036) then
                                 Specified(1)
                               else
                                 Specified(0)
@@ -7803,15 +7781,8 @@ proc setvbuf (f: pointer, buf: pointer, type: pointer, size: pointer): eff loade
             pure(
               case (a_9062, a_9063) of
                 | (Specified(a_9064: integer), Specified(a_9065: integer)) =>
-                    Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                    'signed int') then
-                      conv_int('signed int', a_9064)
-                    else
-                      conv_int('unsigned int', a_9064), if all_values_representable_in('size_t',
-                    'signed int') then
-                      conv_int('signed int', a_9065)
-                    else
-                      conv_int('unsigned int', a_9065)))
+                    Specified(wrapI_sub('size_t', conv_int('size_t', a_9064), conv_int('size_t',
+                    a_9065)))
                 | _: (loaded integer,loaded integer) =>
                     Unspecified('size_t')
               end
@@ -9536,15 +9507,8 @@ proc fgets (s: pointer, n: pointer, f: pointer): eff loaded pointer :=
                   case (a_8256, a_8257) of
                     | (Specified(a_8258: integer), Specified(a_8259: integer)) =>
                         pure(
-                          if if all_values_representable_in('size_t',
-                          'signed int') then
-                            conv_int('signed int', a_8258)
-                          else
-                            conv_int('unsigned int', a_8258) <
-                          if all_values_representable_in('size_t', 'signed int') then
-                            conv_int('signed int', a_8259)
-                          else
-                            conv_int('unsigned int', a_8259) then
+                          if conv_int('size_t', a_8258) <
+                          conv_int('size_t', a_8259) then
                             Specified(1)
                           else
                             Specified(0)
@@ -9702,15 +9666,8 @@ proc fgets (s: pointer, n: pointer, f: pointer): eff loaded pointer :=
               pure(
                 case (a_8326, a_8327) of
                   | (Specified(a_8328: integer), Specified(a_8329: integer)) =>
-                      Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                      'signed int') then
-                        conv_int('signed int', a_8328)
-                      else
-                        conv_int('unsigned int', a_8328), if all_values_representable_in('size_t',
-                      'signed int') then
-                        conv_int('signed int', a_8329)
-                      else
-                        conv_int('unsigned int', a_8329)))
+                      Specified(wrapI_sub('size_t', conv_int('size_t', a_8328), conv_int('size_t',
+                      a_8329)))
                   | _: (loaded integer,loaded integer) =>
                       Unspecified('size_t')
                 end
@@ -11471,14 +11428,7 @@ proc fread (destv: pointer, size: pointer, nmemb: pointer, f: pointer): eff load
         pure(
           case (a_7306, a_7307) of
             | (Specified(a_7308: integer), Specified(a_7309: integer)) =>
-                if if all_values_representable_in('size_t', 'signed int') then
-                  conv_int('signed int', a_7308)
-                else
-                  conv_int('unsigned int', a_7308) =
-                if all_values_representable_in('size_t', 'signed int') then
-                  conv_int('signed int', a_7309)
-                else
-                  conv_int('unsigned int', a_7309) then
+                if conv_int('size_t', a_7308) = conv_int('size_t', a_7309) then
                   Specified(1)
                 else
                   Specified(0)
@@ -11672,14 +11622,7 @@ proc fread (destv: pointer, size: pointer, nmemb: pointer, f: pointer): eff load
               case (a_7391, a_7392) of
                 | (Specified(a_7393: integer), Specified(a_7394: integer)) =>
                     pure(
-                      if if all_values_representable_in('size_t', 'ptrdiff_t') then
-                        conv_int('ptrdiff_t', a_7393)
-                      else
-                        conv_int('ptrdiff_t', a_7393) <
-                      if all_values_representable_in('size_t', 'ptrdiff_t') then
-                        conv_int('ptrdiff_t', a_7394)
-                      else
-                        conv_int('ptrdiff_t', a_7394) then
+                      if conv_int('size_t', a_7393) < conv_int('size_t', a_7394) then
                         Specified(1)
                       else
                         Specified(0)
@@ -12049,14 +11992,7 @@ proc fread (destv: pointer, size: pointer, nmemb: pointer, f: pointer): eff load
             pure(
               case (a_7552, a_7553) of
                 | (Specified(a_7554: integer), Specified(a_7555: integer)) =>
-                    if if all_values_representable_in('size_t', 'signed int') then
-                      conv_int('signed int', a_7554)
-                    else
-                      conv_int('unsigned int', a_7554) =
-                    if all_values_representable_in('size_t', 'signed int') then
-                      conv_int('signed int', a_7555)
-                    else
-                      conv_int('unsigned int', a_7555) then
+                    if conv_int('size_t', a_7554) = conv_int('size_t', a_7555) then
                       Specified(1)
                     else
                       Specified(0)
@@ -12218,14 +12154,7 @@ proc fwrite (src: pointer, size: pointer, nmemb: pointer, f: pointer): eff loade
         pure(
           case (a_7220, a_7221) of
             | (Specified(a_7222: integer), Specified(a_7223: integer)) =>
-                if if all_values_representable_in('size_t', 'signed int') then
-                  conv_int('signed int', a_7222)
-                else
-                  conv_int('unsigned int', a_7222) =
-                if all_values_representable_in('size_t', 'signed int') then
-                  conv_int('signed int', a_7223)
-                else
-                  conv_int('unsigned int', a_7223) then
+                if conv_int('size_t', a_7222) = conv_int('size_t', a_7223) then
                   Specified(1)
                 else
                   Specified(0)
@@ -13752,46 +13681,23 @@ proc fdopen (fd: pointer, mode: pointer): eff loaded pointer :=
       let weak a_6399: loaded integer =
         let weak a_6404: pointer = pure(f) in
         let weak a_6426: loaded pointer =
-          let strong (a_6406: loaded pointer,
-          (a_6407: ctype, a_6408: [ctype], a_6409: boolean, a_6410: boolean)) =
+          let strong ((a_6406: loaded pointer,
+          (a_6407: ctype, a_6408: [ctype], a_6409: boolean, a_6410: boolean)),
+          a_6412: loaded integer) =
             pure(
-              (Specified(Cfunction(malloc_proxy)),
-              cfunction(Specified(Cfunction(malloc_proxy))))
-            ) in
-          let strong a_6412: loaded integer =
-            let weak a_6413: loaded integer =
-              pure(
-                case (Specified(Ivsizeof('struct _IO_FILE')), Specified(8)) of
-                  | (Specified(a_6420: integer), Specified(a_6421: integer)) =>
-                      Specified(wrapI_add('size_t', if all_values_representable_in('size_t',
-                      'signed int') then
-                        __conv_int__('signed int', a_6420)
-                      else
-                        __conv_int__('unsigned int', a_6420), if all_values_representable_in('size_t',
-                      'signed int') then
-                        __conv_int__('signed int', a_6421)
-                      else
-                        __conv_int__('unsigned int', a_6421)))
-                  | _: (loaded integer,loaded integer) =>
-                      Unspecified('size_t')
-                end
-              ) in
-            let weak a_6414: loaded integer = pure(Specified(1024)) in
-            pure(
-              case (a_6413, a_6414) of
-                | (Specified(a_6415: integer), Specified(a_6416: integer)) =>
-                    Specified(wrapI_add('size_t', if all_values_representable_in('size_t',
-                    'signed int') then
-                      __conv_int__('signed int', a_6415)
-                    else
-                      __conv_int__('unsigned int', a_6415), if all_values_representable_in('size_t',
-                    'signed int') then
-                      __conv_int__('signed int', a_6416)
-                    else
-                      __conv_int__('unsigned int', a_6416)))
+              ((Specified(Cfunction(malloc_proxy)),
+              cfunction(Specified(Cfunction(malloc_proxy)))),
+              case (case (Specified(Ivsizeof('struct _IO_FILE')), Specified(8)) of
+                | (Specified(a_6420: integer), Specified(a_6421: integer)) =>
+                    Specified(wrapI_add('size_t', __conv_int__('size_t', a_6420), __conv_int__('size_t', a_6421)))
                 | _: (loaded integer,loaded integer) =>
                     Unspecified('size_t')
-              end
+              end, Specified(1024)) of
+                | (Specified(a_6415: integer), Specified(a_6416: integer)) =>
+                    Specified(wrapI_add('size_t', __conv_int__('size_t', a_6415), __conv_int__('size_t', a_6416)))
+                | _: (loaded integer,loaded integer) =>
+                    Unspecified('size_t')
+              end)
             ) in
           if not(params_length(a_6408) = 1) then
             pure(undef(<<UB038_number_of_args>>))
@@ -14891,14 +14797,7 @@ proc __stdio_read (f: pointer, buf: pointer, len: pointer): eff loaded integer :
               pure(
                 case (a_5960, a_5961) of
                   | (Specified(a_5962: integer), Specified(a_5963: integer)) =>
-                      if if all_values_representable_in('size_t', 'signed int') then
-                        conv_int('signed int', a_5962)
-                      else
-                        conv_int('unsigned int', a_5962) =
-                      if all_values_representable_in('size_t', 'signed int') then
-                        conv_int('signed int', a_5963)
-                      else
-                        conv_int('unsigned int', a_5963) then
+                      if conv_int('size_t', a_5962) = conv_int('size_t', a_5963) then
                         Specified(1)
                       else
                         Specified(0)
@@ -14921,15 +14820,8 @@ proc __stdio_read (f: pointer, buf: pointer, len: pointer): eff loaded integer :
           pure(
             case (a_5971, a_5972) of
               | (Specified(a_5973: integer), Specified(a_5974: integer)) =>
-                  Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                  'signed int') then
-                    conv_int('signed int', a_5973)
-                  else
-                    conv_int('unsigned int', a_5973), if all_values_representable_in('size_t',
-                  'signed int') then
-                    conv_int('signed int', a_5974)
-                  else
-                    conv_int('unsigned int', a_5974)))
+                  Specified(wrapI_sub('size_t', conv_int('size_t', a_5973), conv_int('size_t',
+                  a_5974)))
               | _: (loaded integer,loaded integer) =>
                   Unspecified('size_t')
             end
@@ -15333,14 +15225,7 @@ proc __stdio_read (f: pointer, buf: pointer, len: pointer): eff loaded integer :
         case (a_6155, a_6156) of
           | (Specified(a_6157: integer), Specified(a_6158: integer)) =>
               pure(
-                if if all_values_representable_in('size_t', 'signed long') then
-                  conv_int('signed long', a_6157)
-                else
-                  conv_int('unsigned long', a_6157) <=
-                if all_values_representable_in('size_t', 'signed long') then
-                  conv_int('signed long', a_6158)
-                else
-                  conv_int('unsigned long', a_6158) then
+                if conv_int('size_t', a_6157) <= conv_int('size_t', a_6158) then
                   Specified(1)
                 else
                   Specified(0)
@@ -15411,15 +15296,8 @@ proc __stdio_read (f: pointer, buf: pointer, len: pointer): eff loaded integer :
         pure(
           case (a_6176, a_6177) of
             | (Specified(a_6178: integer), Specified(a_6179: integer)) =>
-                Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                'signed long') then
-                  conv_int('signed long', a_6178)
-                else
-                  conv_int('unsigned long', a_6178), if all_values_representable_in('size_t',
-                'signed long') then
-                  conv_int('signed long', a_6179)
-                else
-                  conv_int('unsigned long', a_6179)))
+                Specified(wrapI_sub('size_t', conv_int('size_t', a_6178), conv_int('size_t',
+                a_6179)))
             | _: (loaded integer,loaded integer) =>
                 Unspecified('size_t')
           end
@@ -15525,15 +15403,8 @@ proc __stdio_read (f: pointer, buf: pointer, len: pointer): eff loaded integer :
             pure(
               case (a_6239, a_6240) of
                 | (Specified(a_6241: integer), Specified(a_6242: integer)) =>
-                    Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                    'signed int') then
-                      conv_int('signed int', a_6241)
-                    else
-                      conv_int('unsigned int', a_6241), if all_values_representable_in('size_t',
-                    'signed int') then
-                      conv_int('signed int', a_6242)
-                    else
-                      conv_int('unsigned int', a_6242)))
+                    Specified(wrapI_sub('size_t', conv_int('size_t', a_6241), conv_int('size_t',
+                    a_6242)))
                 | _: (loaded integer,loaded integer) =>
                     Unspecified('size_t')
               end
@@ -15850,14 +15721,7 @@ proc __stdio_write (f: pointer, buf: pointer, len: pointer): eff loaded integer 
             pure(
               case (a_5688, a_5689) of
                 | (Specified(a_5690: integer), Specified(a_5691: integer)) =>
-                    if if all_values_representable_in('size_t', 'signed long') then
-                      conv_int('signed long', a_5690)
-                    else
-                      conv_int('unsigned long', a_5690) =
-                    if all_values_representable_in('size_t', 'signed long') then
-                      conv_int('signed long', a_5691)
-                    else
-                      conv_int('unsigned long', a_5691) then
+                    if conv_int('size_t', a_5690) = conv_int('size_t', a_5691) then
                       Specified(1)
                     else
                       Specified(0)
@@ -16202,15 +16066,8 @@ proc __stdio_write (f: pointer, buf: pointer, len: pointer): eff loaded integer 
             pure(
               case (a_5829, a_5830) of
                 | (Specified(a_5831: integer), Specified(a_5832: integer)) =>
-                    Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                    'signed long') then
-                      conv_int('signed long', a_5831)
-                    else
-                      conv_int('unsigned long', a_5831), if all_values_representable_in('size_t',
-                    'signed long') then
-                      conv_int('signed long', a_5832)
-                    else
-                      conv_int('unsigned long', a_5832)))
+                    Specified(wrapI_sub('size_t', conv_int('size_t', a_5831), conv_int('size_t',
+                    a_5832)))
                 | _: (loaded integer,loaded integer) =>
                     Unspecified('size_t')
               end
@@ -16256,14 +16113,7 @@ proc __stdio_write (f: pointer, buf: pointer, len: pointer): eff loaded integer 
             case (a_5855, a_5856) of
               | (Specified(a_5857: integer), Specified(a_5858: integer)) =>
                   pure(
-                    if if all_values_representable_in('size_t', 'signed long') then
-                      conv_int('signed long', a_5857)
-                    else
-                      conv_int('unsigned long', a_5857) >
-                    if all_values_representable_in('size_t', 'signed long') then
-                      conv_int('signed long', a_5858)
-                    else
-                      conv_int('unsigned long', a_5858) then
+                    if conv_int('size_t', a_5857) > conv_int('size_t', a_5858) then
                       Specified(1)
                     else
                       Specified(0)
@@ -16332,15 +16182,8 @@ proc __stdio_write (f: pointer, buf: pointer, len: pointer): eff loaded integer 
               pure(
                 case (a_5873, a_5874) of
                   | (Specified(a_5875: integer), Specified(a_5876: integer)) =>
-                      Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                      'signed long') then
-                        conv_int('signed long', a_5875)
-                      else
-                        conv_int('unsigned long', a_5875), if all_values_representable_in('size_t',
-                      'signed long') then
-                        conv_int('signed long', a_5876)
-                      else
-                        conv_int('unsigned long', a_5876)))
+                      Specified(wrapI_sub('size_t', conv_int('size_t', a_5875), conv_int('size_t',
+                      a_5876)))
                   | _: (loaded integer,loaded integer) =>
                       Unspecified('size_t')
                 end
@@ -16520,15 +16363,8 @@ proc __stdio_write (f: pointer, buf: pointer, len: pointer): eff loaded integer 
             pure(
               case (a_5940, a_5941) of
                 | (Specified(a_5942: integer), Specified(a_5943: integer)) =>
-                    Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                    'signed long') then
-                      conv_int('signed long', a_5942)
-                    else
-                      conv_int('unsigned long', a_5942), if all_values_representable_in('size_t',
-                    'signed long') then
-                      conv_int('signed long', a_5943)
-                    else
-                      conv_int('unsigned long', a_5943)))
+                    Specified(wrapI_sub('size_t', conv_int('size_t', a_5942), conv_int('size_t',
+                    a_5943)))
                 | _: (loaded integer,loaded integer) =>
                     Unspecified('size_t')
               end
@@ -17051,7 +16887,7 @@ proc __shgetc (f: pointer): eff loaded integer :=
           pure(
             case (a_5272, a_5273) of
               | (Specified(a_5274: integer), Specified(a_5275: integer)) =>
-                  Specified(catch_exceptional_condition_add('ptrdiff_t', __conv_int__('ptrdiff_t', a_5274), __conv_int__('ptrdiff_t', a_5275)))
+                  Specified(catch_exceptional_condition_add('signed long_long', __conv_int__('signed long_long', a_5274), __conv_int__('signed long_long', a_5275)))
               | _: (loaded integer,loaded integer) =>
                   undef(<<UB036_exceptional_condition>>)
             end
@@ -17226,8 +17062,8 @@ proc __shgetc (f: pointer): eff loaded integer :=
                     case (a_5370, a_5371) of
                       | (Specified(a_5372: integer), Specified(a_5373: integer)) =>
                           pure(
-                            if conv_int('ptrdiff_t', a_5372) >
-                            conv_int('ptrdiff_t', a_5373) then
+                            if conv_int('signed long long', a_5372) >
+                            conv_int('signed long long', a_5373) then
                               Specified(1)
                             else
                               Specified(0)
@@ -17400,7 +17236,7 @@ proc __shgetc (f: pointer): eff loaded integer :=
         pure(
           case (a_5425, a_5426) of
             | (Specified(a_5427: integer), Specified(a_5428: integer)) =>
-                Specified(catch_exceptional_condition_add('ptrdiff_t', __conv_int__('ptrdiff_t', a_5427), __conv_int__('ptrdiff_t', a_5428)))
+                Specified(catch_exceptional_condition_add('signed long_long', __conv_int__('signed long_long', a_5427), __conv_int__('signed long_long', a_5428)))
             | _: (loaded integer,loaded integer) =>
                 undef(<<UB036_exceptional_condition>>)
           end
@@ -17704,8 +17540,8 @@ proc __shlim (f: pointer, lim: pointer): eff unit :=
                     case (a_5113, a_5114) of
                       | (Specified(a_5115: integer), Specified(a_5116: integer)) =>
                           pure(
-                            if conv_int('ptrdiff_t', a_5115) >
-                            conv_int('ptrdiff_t', a_5116) then
+                            if conv_int('signed long long', a_5115) >
+                            conv_int('signed long long', a_5116) then
                               Specified(1)
                             else
                               Specified(0)
@@ -18292,16 +18128,8 @@ proc __uflow (f: pointer): eff loaded integer :=
                       case (a_4706, a_4707) of
                         | (Specified(a_4708: integer),
                         Specified(a_4709: integer)) =>
-                            if if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_4708)
-                            else
-                              conv_int('unsigned int', a_4708) =
-                            if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_4709)
-                            else
-                              conv_int('unsigned int', a_4709) then
+                            if conv_int('size_t', a_4708) =
+                            conv_int('size_t', a_4709) then
                               Specified(1)
                             else
                               Specified(0)
@@ -20097,14 +19925,7 @@ proc __fwritex (s: pointer, l: pointer, f: pointer): eff loaded integer :=
         case (a_3780, a_3781) of
           | (Specified(a_3782: integer), Specified(a_3783: integer)) =>
               pure(
-                if if all_values_representable_in('size_t', 'ptrdiff_t') then
-                  conv_int('ptrdiff_t', a_3782)
-                else
-                  conv_int('ptrdiff_t', a_3782) >
-                if all_values_representable_in('size_t', 'ptrdiff_t') then
-                  conv_int('ptrdiff_t', a_3783)
-                else
-                  conv_int('ptrdiff_t', a_3783) then
+                if conv_int('size_t', a_3782) > conv_int('size_t', a_3783) then
                   Specified(1)
                 else
                   Specified(0)
@@ -20314,15 +20135,8 @@ proc __fwritex (s: pointer, l: pointer, f: pointer): eff loaded integer :=
                                 case (a_3887, a_3888) of
                                   | (Specified(a_3889: integer),
                                   Specified(a_3890: integer)) =>
-                                      Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                                      'signed int') then
-                                        conv_int('signed int', a_3889)
-                                      else
-                                        conv_int('unsigned int', a_3889), if all_values_representable_in('size_t',
-                                      'signed int') then
-                                        conv_int('signed int', a_3890)
-                                      else
-                                        conv_int('unsigned int', a_3890)))
+                                      Specified(wrapI_sub('size_t', conv_int('size_t',
+                                      a_3889), conv_int('size_t', a_3890)))
                                   | _: (loaded integer,loaded integer) =>
                                       Unspecified('size_t')
                                 end
@@ -21947,14 +21761,7 @@ proc __overflow (f: pointer, _c: pointer): eff loaded integer :=
         pure(
           case (a_3302, a_3303) of
             | (Specified(a_3304: integer), Specified(a_3305: integer)) =>
-                if not(if all_values_representable_in('size_t', 'signed int') then
-                  conv_int('signed int', a_3304)
-                else
-                  conv_int('unsigned int', a_3304) =
-                if all_values_representable_in('size_t', 'signed int') then
-                  conv_int('signed int', a_3305)
-                else
-                  conv_int('unsigned int', a_3305)) then
+                if not(conv_int('size_t', a_3304) = conv_int('size_t', a_3305)) then
                   Specified(1)
                 else
                   Specified(0)
@@ -23291,15 +23098,7 @@ proc __string_read (f: pointer, buf: pointer, len: pointer): eff loaded integer 
       pure(
         case (a_2498, a_2499) of
           | (Specified(a_2500: integer), Specified(a_2501: integer)) =>
-              Specified(wrapI_add('size_t', if all_values_representable_in('size_t',
-              'signed int') then
-                __conv_int__('signed int', a_2500)
-              else
-                __conv_int__('unsigned int', a_2500), if all_values_representable_in('size_t',
-              'signed int') then
-                __conv_int__('signed int', a_2501)
-              else
-                __conv_int__('unsigned int', a_2501)))
+              Specified(wrapI_add('size_t', __conv_int__('size_t', a_2500), __conv_int__('size_t', a_2501)))
           | _: (loaded integer,loaded integer) =>
               Unspecified('size_t')
         end
@@ -27442,15 +27241,8 @@ proc memmove (dest: pointer, src: pointer, n: pointer): eff loaded pointer :=
           pure(
             case (a_20548, a_20549) of
               | (Specified(a_20550: integer), Specified(a_20551: integer)) =>
-                  Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                  'signed int') then
-                    conv_int('signed int', a_20550)
-                  else
-                    conv_int('unsigned int', a_20550), if all_values_representable_in('size_t',
-                  'signed int') then
-                    conv_int('signed int', a_20551)
-                  else
-                    conv_int('unsigned int', a_20551)))
+                  Specified(wrapI_mul('size_t', conv_int('size_t', a_20550), conv_int('size_t',
+                  a_20551)))
               | _: (loaded integer,loaded integer) =>
                   Unspecified('size_t')
             end
@@ -27969,15 +27761,8 @@ proc strncpy (s1: pointer, s2: pointer, n: pointer): eff loaded pointer :=
                             case (a_20390, a_20391) of
                               | (Specified(a_20392: integer),
                               Specified(a_20393: integer)) =>
-                                  Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                                  'signed int') then
-                                    conv_int('signed int', a_20392)
-                                  else
-                                    conv_int('unsigned int', a_20392), if all_values_representable_in('size_t',
-                                  'signed int') then
-                                    conv_int('signed int', a_20393)
-                                  else
-                                    conv_int('unsigned int', a_20393)))
+                                  Specified(wrapI_sub('size_t', conv_int('size_t',
+                                  a_20392), conv_int('size_t', a_20393)))
                               | _: (loaded integer,loaded integer) =>
                                   Unspecified('size_t')
                             end
@@ -27991,16 +27776,8 @@ proc strncpy (s1: pointer, s2: pointer, n: pointer): eff loaded pointer :=
                         | (Specified(a_20398: integer),
                         Specified(a_20399: integer)) =>
                             pure(
-                              if if all_values_representable_in('size_t',
-                              'signed int') then
-                                conv_int('signed int', a_20398)
-                              else
-                                conv_int('unsigned int', a_20398) >
-                              if all_values_representable_in('size_t',
-                              'signed int') then
-                                conv_int('signed int', a_20399)
-                              else
-                                conv_int('unsigned int', a_20399) then
+                              if conv_int('size_t', a_20398) >
+                              conv_int('size_t', a_20399) then
                                 Specified(1)
                               else
                                 Specified(0)
@@ -28104,15 +27881,8 @@ proc strncpy (s1: pointer, s2: pointer, n: pointer): eff loaded pointer :=
                             case (a_20432, a_20433) of
                               | (Specified(a_20434: integer),
                               Specified(a_20435: integer)) =>
-                                  Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                                  'signed int') then
-                                    conv_int('signed int', a_20434)
-                                  else
-                                    conv_int('unsigned int', a_20434), if all_values_representable_in('size_t',
-                                  'signed int') then
-                                    conv_int('signed int', a_20435)
-                                  else
-                                    conv_int('unsigned int', a_20435)))
+                                  Specified(wrapI_sub('size_t', conv_int('size_t',
+                                  a_20434), conv_int('size_t', a_20435)))
                               | _: (loaded integer,loaded integer) =>
                                   Unspecified('size_t')
                             end
@@ -28126,16 +27896,8 @@ proc strncpy (s1: pointer, s2: pointer, n: pointer): eff loaded pointer :=
                         | (Specified(a_20440: integer),
                         Specified(a_20441: integer)) =>
                             pure(
-                              if if all_values_representable_in('size_t',
-                              'signed int') then
-                                conv_int('signed int', a_20440)
-                              else
-                                conv_int('unsigned int', a_20440) >
-                              if all_values_representable_in('size_t',
-                              'signed int') then
-                                conv_int('signed int', a_20441)
-                              else
-                                conv_int('unsigned int', a_20441) then
+                              if conv_int('size_t', a_20440) >
+                              conv_int('size_t', a_20441) then
                                 Specified(1)
                               else
                                 Specified(0)
@@ -29010,15 +28772,8 @@ proc strncmp (s1: pointer, s2: pointer, n: pointer): eff loaded integer :=
                             case (a_20066, a_20067) of
                               | (Specified(a_20068: integer),
                               Specified(a_20069: integer)) =>
-                                  Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                                  'signed int') then
-                                    conv_int('signed int', a_20068)
-                                  else
-                                    conv_int('unsigned int', a_20068), if all_values_representable_in('size_t',
-                                  'signed int') then
-                                    conv_int('signed int', a_20069)
-                                  else
-                                    conv_int('unsigned int', a_20069)))
+                                  Specified(wrapI_sub('size_t', conv_int('size_t',
+                                  a_20068), conv_int('size_t', a_20069)))
                               | _: (loaded integer,loaded integer) =>
                                   Unspecified('size_t')
                             end
@@ -29032,16 +28787,8 @@ proc strncmp (s1: pointer, s2: pointer, n: pointer): eff loaded integer :=
                         | (Specified(a_20074: integer),
                         Specified(a_20075: integer)) =>
                             pure(
-                              if if all_values_representable_in('size_t',
-                              'signed int') then
-                                conv_int('signed int', a_20074)
-                              else
-                                conv_int('unsigned int', a_20074) >
-                              if all_values_representable_in('size_t',
-                              'signed int') then
-                                conv_int('signed int', a_20075)
-                              else
-                                conv_int('unsigned int', a_20075) then
+                              if conv_int('size_t', a_20074) >
+                              conv_int('size_t', a_20075) then
                                 Specified(1)
                               else
                                 Specified(0)
@@ -30114,15 +29861,8 @@ proc strcspn (s: pointer, c: pointer): eff loaded integer :=
                     case (Specified(8), Specified(Ivsizeof('size_t'))) of
                       | (Specified(a_19581: integer),
                       Specified(a_19582: integer)) =>
-                          Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                          'signed int') then
-                            conv_int('signed int', a_19581)
-                          else
-                            conv_int('unsigned int', a_19581), if all_values_representable_in('size_t',
-                          'signed int') then
-                            conv_int('signed int', a_19582)
-                          else
-                            conv_int('unsigned int', a_19582)))
+                          Specified(wrapI_mul('size_t', conv_int('size_t',
+                          a_19581), conv_int('size_t', a_19582)))
                       | _: (loaded integer,loaded integer) =>
                           Unspecified('size_t')
                     end
@@ -30213,15 +29953,8 @@ proc strcspn (s: pointer, c: pointer): eff loaded integer :=
                       case (Specified(8), Specified(Ivsizeof('size_t'))) of
                         | (Specified(a_19617: integer),
                         Specified(a_19618: integer)) =>
-                            Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_19617)
-                            else
-                              conv_int('unsigned int', a_19617), if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_19618)
-                            else
-                              conv_int('unsigned int', a_19618)))
+                            Specified(wrapI_mul('size_t', conv_int('size_t',
+                            a_19617), conv_int('size_t', a_19618)))
                         | _: (loaded integer,loaded integer) =>
                             Unspecified('size_t')
                       end
@@ -30314,15 +30047,8 @@ proc strcspn (s: pointer, c: pointer): eff loaded integer :=
                       case (Specified(8), Specified(Ivsizeof('size_t'))) of
                         | (Specified(a_19650: integer),
                         Specified(a_19651: integer)) =>
-                            Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_19650)
-                            else
-                              conv_int('unsigned int', a_19650), if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_19651)
-                            else
-                              conv_int('unsigned int', a_19651)))
+                            Specified(wrapI_mul('size_t', conv_int('size_t',
+                            a_19650), conv_int('size_t', a_19651)))
                         | _: (loaded integer,loaded integer) =>
                             Unspecified('size_t')
                       end
@@ -30386,14 +30112,7 @@ proc strcspn (s: pointer, c: pointer): eff loaded integer :=
           pure(
             case (a_19552, a_19553) of
               | (Specified(a_19554: integer), Specified(a_19555: integer)) =>
-                  if if all_values_representable_in('size_t', 'signed int') then
-                    conv_int('signed int', a_19554)
-                  else
-                    conv_int('unsigned int', a_19554) =
-                  if all_values_representable_in('size_t', 'signed int') then
-                    conv_int('signed int', a_19555)
-                  else
-                    conv_int('unsigned int', a_19555) then
+                  if conv_int('size_t', a_19554) = conv_int('size_t', a_19555) then
                     Specified(1)
                   else
                     Specified(0)
@@ -30520,15 +30239,8 @@ proc strcspn (s: pointer, c: pointer): eff loaded integer :=
                 pure(
                   case (Specified(8), Specified(Ivsizeof('size_t'))) of
                     | (Specified(a_19711: integer), Specified(a_19712: integer)) =>
-                        Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                        'signed int') then
-                          conv_int('signed int', a_19711)
-                        else
-                          conv_int('unsigned int', a_19711), if all_values_representable_in('size_t',
-                        'signed int') then
-                          conv_int('signed int', a_19712)
-                        else
-                          conv_int('unsigned int', a_19712)))
+                        Specified(wrapI_mul('size_t', conv_int('size_t', a_19711), conv_int('size_t',
+                        a_19712)))
                     | _: (loaded integer,loaded integer) =>
                         Unspecified('size_t')
                   end
@@ -30618,15 +30330,8 @@ proc strcspn (s: pointer, c: pointer): eff loaded integer :=
                 pure(
                   case (Specified(8), Specified(Ivsizeof('size_t'))) of
                     | (Specified(a_19744: integer), Specified(a_19745: integer)) =>
-                        Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                        'signed int') then
-                          conv_int('signed int', a_19744)
-                        else
-                          conv_int('unsigned int', a_19744), if all_values_representable_in('size_t',
-                        'signed int') then
-                          conv_int('signed int', a_19745)
-                        else
-                          conv_int('unsigned int', a_19745)))
+                        Specified(wrapI_mul('size_t', conv_int('size_t', a_19744), conv_int('size_t',
+                        a_19745)))
                     | _: (loaded integer,loaded integer) =>
                         Unspecified('size_t')
                   end
@@ -31575,15 +31280,8 @@ proc strspn (s: pointer, c: pointer): eff loaded integer :=
                               case (Specified(8), Specified(Ivsizeof('size_t'))) of
                                 | (Specified(a_19052: integer),
                                 Specified(a_19053: integer)) =>
-                                    Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                                    'signed int') then
-                                      conv_int('signed int', a_19052)
-                                    else
-                                      conv_int('unsigned int', a_19052), if all_values_representable_in('size_t',
-                                    'signed int') then
-                                      conv_int('signed int', a_19053)
-                                    else
-                                      conv_int('unsigned int', a_19053)))
+                                    Specified(wrapI_mul('size_t', conv_int('size_t',
+                                    a_19052), conv_int('size_t', a_19053)))
                                 | _: (loaded integer,loaded integer) =>
                                     Unspecified('size_t')
                               end
@@ -31692,15 +31390,8 @@ proc strspn (s: pointer, c: pointer): eff loaded integer :=
                                 Specified(Ivsizeof('size_t'))) of
                                   | (Specified(a_19088: integer),
                                   Specified(a_19089: integer)) =>
-                                      Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                                      'signed int') then
-                                        conv_int('signed int', a_19088)
-                                      else
-                                        conv_int('unsigned int', a_19088), if all_values_representable_in('size_t',
-                                      'signed int') then
-                                        conv_int('signed int', a_19089)
-                                      else
-                                        conv_int('unsigned int', a_19089)))
+                                      Specified(wrapI_mul('size_t', conv_int('size_t',
+                                      a_19088), conv_int('size_t', a_19089)))
                                   | _: (loaded integer,loaded integer) =>
                                       Unspecified('size_t')
                                 end
@@ -31812,15 +31503,8 @@ proc strspn (s: pointer, c: pointer): eff loaded integer :=
                                 Specified(Ivsizeof('size_t'))) of
                                   | (Specified(a_19121: integer),
                                   Specified(a_19122: integer)) =>
-                                      Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                                      'signed int') then
-                                        conv_int('signed int', a_19121)
-                                      else
-                                        conv_int('unsigned int', a_19121), if all_values_representable_in('size_t',
-                                      'signed int') then
-                                        conv_int('signed int', a_19122)
-                                      else
-                                        conv_int('unsigned int', a_19122)))
+                                      Specified(wrapI_mul('size_t', conv_int('size_t',
+                                      a_19121), conv_int('size_t', a_19122)))
                                   | _: (loaded integer,loaded integer) =>
                                       Unspecified('size_t')
                                 end
@@ -32054,15 +31738,8 @@ proc strspn (s: pointer, c: pointer): eff loaded integer :=
                               case (Specified(8), Specified(Ivsizeof('size_t'))) of
                                 | (Specified(a_19194: integer),
                                 Specified(a_19195: integer)) =>
-                                    Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                                    'signed int') then
-                                      conv_int('signed int', a_19194)
-                                    else
-                                      conv_int('unsigned int', a_19194), if all_values_representable_in('size_t',
-                                    'signed int') then
-                                      conv_int('signed int', a_19195)
-                                    else
-                                      conv_int('unsigned int', a_19195)))
+                                    Specified(wrapI_mul('size_t', conv_int('size_t',
+                                    a_19194), conv_int('size_t', a_19195)))
                                 | _: (loaded integer,loaded integer) =>
                                     Unspecified('size_t')
                               end
@@ -32171,15 +31848,8 @@ proc strspn (s: pointer, c: pointer): eff loaded integer :=
                               case (Specified(8), Specified(Ivsizeof('size_t'))) of
                                 | (Specified(a_19227: integer),
                                 Specified(a_19228: integer)) =>
-                                    Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                                    'signed int') then
-                                      conv_int('signed int', a_19227)
-                                    else
-                                      conv_int('unsigned int', a_19227), if all_values_representable_in('size_t',
-                                    'signed int') then
-                                      conv_int('signed int', a_19228)
-                                    else
-                                      conv_int('unsigned int', a_19228)))
+                                    Specified(wrapI_mul('size_t', conv_int('size_t',
+                                    a_19227), conv_int('size_t', a_19228)))
                                 | _: (loaded integer,loaded integer) =>
                                     Unspecified('size_t')
                               end
@@ -33478,15 +33148,7 @@ proc strdup (s: pointer): eff loaded pointer :=
       pure(
         case (a_18403, a_18404) of
           | (Specified(a_18405: integer), Specified(a_18406: integer)) =>
-              Specified(wrapI_add('size_t', if all_values_representable_in('size_t',
-              'signed int') then
-                __conv_int__('signed int', a_18405)
-              else
-                __conv_int__('unsigned int', a_18405), if all_values_representable_in('size_t',
-              'signed int') then
-                __conv_int__('signed int', a_18406)
-              else
-                __conv_int__('unsigned int', a_18406)))
+              Specified(wrapI_add('size_t', __conv_int__('size_t', a_18405), __conv_int__('size_t', a_18406)))
           | _: (loaded integer,loaded integer) =>
               Unspecified('size_t')
         end
@@ -35980,15 +35642,8 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
                     case (Specified(8), Specified(Ivsizeof('size_t'))) of
                       | (Specified(a_16484: integer),
                       Specified(a_16485: integer)) =>
-                          Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                          'signed int') then
-                            conv_int('signed int', a_16484)
-                          else
-                            conv_int('unsigned int', a_16484), if all_values_representable_in('size_t',
-                          'signed int') then
-                            conv_int('signed int', a_16485)
-                          else
-                            conv_int('unsigned int', a_16485)))
+                          Specified(wrapI_mul('size_t', conv_int('size_t',
+                          a_16484), conv_int('size_t', a_16485)))
                       | _: (loaded integer,loaded integer) =>
                           Unspecified('size_t')
                     end
@@ -36077,15 +35732,8 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
                       case (Specified(8), Specified(Ivsizeof('size_t'))) of
                         | (Specified(a_16523: integer),
                         Specified(a_16524: integer)) =>
-                            Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_16523)
-                            else
-                              conv_int('unsigned int', a_16523), if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_16524)
-                            else
-                              conv_int('unsigned int', a_16524)))
+                            Specified(wrapI_mul('size_t', conv_int('size_t',
+                            a_16523), conv_int('size_t', a_16524)))
                         | _: (loaded integer,loaded integer) =>
                             Unspecified('size_t')
                       end
@@ -36176,15 +35824,8 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
                       case (Specified(8), Specified(Ivsizeof('size_t'))) of
                         | (Specified(a_16559: integer),
                         Specified(a_16560: integer)) =>
-                            Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_16559)
-                            else
-                              conv_int('unsigned int', a_16559), if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_16560)
-                            else
-                              conv_int('unsigned int', a_16560)))
+                            Specified(wrapI_mul('size_t', conv_int('size_t',
+                            a_16559), conv_int('size_t', a_16560)))
                         | _: (loaded integer,loaded integer) =>
                             Unspecified('size_t')
                       end
@@ -36302,15 +35943,7 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
             pure(
               case (a_16591, a_16592) of
                 | (Specified(a_16593: integer), Specified(a_16594: integer)) =>
-                    Specified(wrapI_add('size_t', if all_values_representable_in('size_t',
-                    'signed int') then
-                      __conv_int__('signed int', a_16593)
-                    else
-                      __conv_int__('unsigned int', a_16593), if all_values_representable_in('size_t',
-                    'signed int') then
-                      __conv_int__('signed int', a_16594)
-                    else
-                      __conv_int__('unsigned int', a_16594)))
+                    Specified(wrapI_add('size_t', __conv_int__('size_t', a_16593), __conv_int__('size_t', a_16594)))
                 | _: (loaded integer,loaded integer) =>
                     Unspecified('size_t')
               end
@@ -37390,15 +37023,7 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
           pure(
             case (a_17002, a_17003) of
               | (Specified(a_17004: integer), Specified(a_17005: integer)) =>
-                  Specified(wrapI_add('size_t', if all_values_representable_in('size_t',
-                  'signed int') then
-                    __conv_int__('signed int', a_17004)
-                  else
-                    __conv_int__('unsigned int', a_17004), if all_values_representable_in('size_t',
-                  'signed int') then
-                    __conv_int__('signed int', a_17005)
-                  else
-                    __conv_int__('unsigned int', a_17005)))
+                  Specified(wrapI_add('size_t', __conv_int__('size_t', a_17004), __conv_int__('size_t', a_17005)))
               | _: (loaded integer,loaded integer) =>
                   Unspecified('size_t')
             end
@@ -37409,15 +37034,7 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
           pure(
             case (a_17008, a_17009) of
               | (Specified(a_17010: integer), Specified(a_17011: integer)) =>
-                  Specified(wrapI_add('size_t', if all_values_representable_in('size_t',
-                  'signed int') then
-                    __conv_int__('signed int', a_17010)
-                  else
-                    __conv_int__('unsigned int', a_17010), if all_values_representable_in('size_t',
-                  'signed int') then
-                    __conv_int__('signed int', a_17011)
-                  else
-                    __conv_int__('unsigned int', a_17011)))
+                  Specified(wrapI_add('size_t', __conv_int__('size_t', a_17010), __conv_int__('size_t', a_17011)))
               | _: (loaded integer,loaded integer) =>
                   Unspecified('size_t')
             end
@@ -37499,15 +37116,7 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
           pure(
             case (a_17053, a_17054) of
               | (Specified(a_17055: integer), Specified(a_17056: integer)) =>
-                  Specified(wrapI_add('size_t', if all_values_representable_in('size_t',
-                  'signed int') then
-                    __conv_int__('signed int', a_17055)
-                  else
-                    __conv_int__('unsigned int', a_17055), if all_values_representable_in('size_t',
-                  'signed int') then
-                    __conv_int__('signed int', a_17056)
-                  else
-                    __conv_int__('unsigned int', a_17056)))
+                  Specified(wrapI_add('size_t', __conv_int__('size_t', a_17055), __conv_int__('size_t', a_17056)))
               | _: (loaded integer,loaded integer) =>
                   Unspecified('size_t')
             end
@@ -37608,15 +37217,8 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
                     case (a_17087, a_17088) of
                       | (Specified(a_17089: integer),
                       Specified(a_17090: integer)) =>
-                          Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                          'signed int') then
-                            conv_int('signed int', a_17089)
-                          else
-                            conv_int('unsigned int', a_17089), if all_values_representable_in('size_t',
-                          'signed int') then
-                            conv_int('signed int', a_17090)
-                          else
-                            conv_int('unsigned int', a_17090)))
+                          Specified(wrapI_sub('size_t', conv_int('size_t',
+                          a_17089), conv_int('size_t', a_17090)))
                       | _: (loaded integer,loaded integer) =>
                           Unspecified('size_t')
                     end
@@ -37671,15 +37273,8 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
                         case (a_17108, a_17109) of
                           | (Specified(a_17110: integer),
                           Specified(a_17111: integer)) =>
-                              Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                              'signed int') then
-                                conv_int('signed int', a_17110)
-                              else
-                                conv_int('unsigned int', a_17110), if all_values_representable_in('size_t',
-                              'signed int') then
-                                conv_int('signed int', a_17111)
-                              else
-                                conv_int('unsigned int', a_17111)))
+                              Specified(wrapI_sub('size_t', conv_int('size_t',
+                              a_17110), conv_int('size_t', a_17111)))
                           | _: (loaded integer,loaded integer) =>
                               Unspecified('size_t')
                         end
@@ -37692,15 +37287,7 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
           pure(
             case (a_17069, a_17070) of
               | (Specified(a_17071: integer), Specified(a_17072: integer)) =>
-                  Specified(wrapI_add('size_t', if all_values_representable_in('size_t',
-                  'signed int') then
-                    __conv_int__('signed int', a_17071)
-                  else
-                    __conv_int__('unsigned int', a_17071), if all_values_representable_in('size_t',
-                  'signed int') then
-                    __conv_int__('signed int', a_17072)
-                  else
-                    __conv_int__('unsigned int', a_17072)))
+                  Specified(wrapI_add('size_t', __conv_int__('size_t', a_17071), __conv_int__('size_t', a_17072)))
               | _: (loaded integer,loaded integer) =>
                   Unspecified('size_t')
             end
@@ -37798,14 +37385,7 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
             case (a_17154, a_17155) of
               | (Specified(a_17156: integer), Specified(a_17157: integer)) =>
                   pure(
-                    if if all_values_representable_in('size_t', 'ptrdiff_t') then
-                      conv_int('ptrdiff_t', a_17156)
-                    else
-                      conv_int('ptrdiff_t', a_17156) <
-                    if all_values_representable_in('size_t', 'ptrdiff_t') then
-                      conv_int('ptrdiff_t', a_17157)
-                    else
-                      conv_int('ptrdiff_t', a_17157) then
+                    if conv_int('size_t', a_17156) < conv_int('size_t', a_17157) then
                       Specified(1)
                     else
                       Specified(0)
@@ -37845,15 +37425,8 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
             pure(
               case (a_17160, a_17161) of
                 | (Specified(a_17162: integer), Specified(a_17163: integer)) =>
-                    Specified(IvOR('size_t',
-                    if all_values_representable_in('size_t', 'signed int') then
-                      conv_int('signed int', a_17162)
-                    else
-                      conv_int('unsigned int', a_17162),
-                    if all_values_representable_in('size_t', 'signed int') then
-                      conv_int('signed int', a_17163)
-                    else
-                      conv_int('unsigned int', a_17163)))
+                    Specified(IvOR('size_t', conv_int('size_t', a_17162),
+                    conv_int('size_t', a_17163)))
                 | _: (loaded integer,loaded integer) =>
                     Unspecified('size_t')
               end
@@ -37976,14 +37549,8 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
                 case (a_17213, a_17214) of
                   | (Specified(a_17215: integer), Specified(a_17216: integer)) =>
                       pure(
-                        if if all_values_representable_in('size_t', 'ptrdiff_t') then
-                          conv_int('ptrdiff_t', a_17215)
-                        else
-                          conv_int('ptrdiff_t', a_17215) <
-                        if all_values_representable_in('size_t', 'ptrdiff_t') then
-                          conv_int('ptrdiff_t', a_17216)
-                        else
-                          conv_int('ptrdiff_t', a_17216) then
+                        if conv_int('size_t', a_17215) <
+                        conv_int('size_t', a_17216) then
                           Specified(1)
                         else
                           Specified(0)
@@ -38074,15 +37641,8 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
                       case (a_17261, a_17262) of
                         | (Specified(a_17263: integer),
                         Specified(a_17264: integer)) =>
-                            Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_17263)
-                            else
-                              conv_int('unsigned int', a_17263), if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_17264)
-                            else
-                              conv_int('unsigned int', a_17264)))
+                            Specified(wrapI_sub('size_t', conv_int('size_t',
+                            a_17263), conv_int('size_t', a_17264)))
                         | _: (loaded integer,loaded integer) =>
                             Unspecified('size_t')
                       end
@@ -38119,15 +37679,8 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
                     case (Specified(8), Specified(Ivsizeof('size_t'))) of
                       | (Specified(a_17270: integer),
                       Specified(a_17271: integer)) =>
-                          Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                          'signed int') then
-                            conv_int('signed int', a_17270)
-                          else
-                            conv_int('unsigned int', a_17270), if all_values_representable_in('size_t',
-                          'signed int') then
-                            conv_int('signed int', a_17271)
-                          else
-                            conv_int('unsigned int', a_17271)))
+                          Specified(wrapI_mul('size_t', conv_int('size_t',
+                          a_17270), conv_int('size_t', a_17271)))
                       | _: (loaded integer,loaded integer) =>
                           Unspecified('size_t')
                     end
@@ -38191,15 +37744,8 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
                       case (a_17302, a_17303) of
                         | (Specified(a_17304: integer),
                         Specified(a_17305: integer)) =>
-                            Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_17304)
-                            else
-                              conv_int('unsigned int', a_17304), if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_17305)
-                            else
-                              conv_int('unsigned int', a_17305)))
+                            Specified(wrapI_sub('size_t', conv_int('size_t',
+                            a_17304), conv_int('size_t', a_17305)))
                         | _: (loaded integer,loaded integer) =>
                             Unspecified('size_t')
                       end
@@ -38236,15 +37782,8 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
                     case (Specified(8), Specified(Ivsizeof('size_t'))) of
                       | (Specified(a_17311: integer),
                       Specified(a_17312: integer)) =>
-                          Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                          'signed int') then
-                            conv_int('signed int', a_17311)
-                          else
-                            conv_int('unsigned int', a_17311), if all_values_representable_in('size_t',
-                          'signed int') then
-                            conv_int('signed int', a_17312)
-                          else
-                            conv_int('unsigned int', a_17312)))
+                          Specified(wrapI_mul('size_t', conv_int('size_t',
+                          a_17311), conv_int('size_t', a_17312)))
                       | _: (loaded integer,loaded integer) =>
                           Unspecified('size_t')
                     end
@@ -38340,15 +37879,8 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
                       case (a_17342, a_17343) of
                         | (Specified(a_17344: integer),
                         Specified(a_17345: integer)) =>
-                            Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_17344)
-                            else
-                              conv_int('unsigned int', a_17344), if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_17345)
-                            else
-                              conv_int('unsigned int', a_17345)))
+                            Specified(wrapI_sub('size_t', conv_int('size_t',
+                            a_17344), conv_int('size_t', a_17345)))
                         | _: (loaded integer,loaded integer) =>
                             Unspecified('size_t')
                       end
@@ -38561,15 +38093,7 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
                     case (a_17410, a_17411) of
                       | (Specified(a_17412: integer),
                       Specified(a_17413: integer)) =>
-                          Specified(wrapI_add('size_t', if all_values_representable_in('size_t',
-                          'signed int') then
-                            __conv_int__('signed int', a_17412)
-                          else
-                            __conv_int__('unsigned int', a_17412), if all_values_representable_in('size_t',
-                          'signed int') then
-                            __conv_int__('signed int', a_17413)
-                          else
-                            __conv_int__('unsigned int', a_17413)))
+                          Specified(wrapI_add('size_t', __conv_int__('size_t', a_17412), __conv_int__('size_t', a_17413)))
                       | _: (loaded integer,loaded integer) =>
                           Unspecified('size_t')
                     end
@@ -38610,15 +38134,7 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
                         case (a_17424, a_17425) of
                           | (Specified(a_17426: integer),
                           Specified(a_17427: integer)) =>
-                              Specified(wrapI_add('size_t', if all_values_representable_in('size_t',
-                              'signed int') then
-                                __conv_int__('signed int', a_17426)
-                              else
-                                __conv_int__('unsigned int', a_17426), if all_values_representable_in('size_t',
-                              'signed int') then
-                                __conv_int__('signed int', a_17427)
-                              else
-                                __conv_int__('unsigned int', a_17427)))
+                              Specified(wrapI_add('size_t', __conv_int__('size_t', a_17426), __conv_int__('size_t', a_17427)))
                           | _: (loaded integer,loaded integer) =>
                               Unspecified('size_t')
                         end
@@ -38961,15 +38477,7 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
             pure(
               case (a_17540, a_17541) of
                 | (Specified(a_17542: integer), Specified(a_17543: integer)) =>
-                    Specified(wrapI_add('size_t', if all_values_representable_in('size_t',
-                    'signed int') then
-                      __conv_int__('signed int', a_17542)
-                    else
-                      __conv_int__('unsigned int', a_17542), if all_values_representable_in('size_t',
-                    'signed int') then
-                      __conv_int__('signed int', a_17543)
-                    else
-                      __conv_int__('unsigned int', a_17543)))
+                    Specified(wrapI_add('size_t', __conv_int__('size_t', a_17542), __conv_int__('size_t', a_17543)))
                 | _: (loaded integer,loaded integer) =>
                     Unspecified('size_t')
               end
@@ -39049,15 +38557,8 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
                                 case (a_17596, a_17597) of
                                   | (Specified(a_17598: integer),
                                   Specified(a_17599: integer)) =>
-                                      Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                                      'signed int') then
-                                        conv_int('signed int', a_17598)
-                                      else
-                                        conv_int('unsigned int', a_17598), if all_values_representable_in('size_t',
-                                      'signed int') then
-                                        conv_int('signed int', a_17599)
-                                      else
-                                        conv_int('unsigned int', a_17599)))
+                                      Specified(wrapI_sub('size_t', conv_int('size_t',
+                                      a_17598), conv_int('size_t', a_17599)))
                                   | _: (loaded integer,loaded integer) =>
                                       Unspecified('size_t')
                                 end
@@ -39104,15 +38605,8 @@ proc twoway_strstr (h: pointer, n: pointer): eff loaded pointer :=
                                 case (a_17612, a_17613) of
                                   | (Specified(a_17614: integer),
                                   Specified(a_17615: integer)) =>
-                                      Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                                      'signed int') then
-                                        conv_int('signed int', a_17614)
-                                      else
-                                        conv_int('unsigned int', a_17614), if all_values_representable_in('size_t',
-                                      'signed int') then
-                                        conv_int('signed int', a_17615)
-                                      else
-                                        conv_int('unsigned int', a_17615)))
+                                      Specified(wrapI_sub('size_t', conv_int('size_t',
+                                      a_17614), conv_int('size_t', a_17615)))
                                   | _: (loaded integer,loaded integer) =>
                                       Unspecified('size_t')
                                 end
@@ -39424,16 +38918,8 @@ proc __sigdefault (sig: pointer): eff unit :=
                       | (Specified(a_37776: integer),
                       Specified(a_37777: integer)) =>
                           pure(
-                            if if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_37776)
-                            else
-                              conv_int('unsigned int', a_37776) <
-                            if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_37777)
-                            else
-                              conv_int('unsigned int', a_37777) then
+                            if conv_int('size_t', a_37776) <
+                            conv_int('size_t', a_37777) then
                               Specified(1)
                             else
                               Specified(0)
@@ -39668,16 +39154,8 @@ proc __sigerror (sig: pointer): eff unit :=
                       | (Specified(a_37679: integer),
                       Specified(a_37680: integer)) =>
                           pure(
-                            if if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_37679)
-                            else
-                              conv_int('unsigned int', a_37679) <
-                            if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_37680)
-                            else
-                              conv_int('unsigned int', a_37680) then
+                            if conv_int('size_t', a_37679) <
+                            conv_int('size_t', a_37680) then
                               Specified(1)
                             else
                               Specified(0)
@@ -40834,14 +40312,8 @@ proc __floatscan (f: pointer, prec: pointer, pok: pointer): eff loaded floating 
                 case (a_32342, a_32343) of
                   | (Specified(a_32344: integer), Specified(a_32345: integer)) =>
                       pure(
-                        if if all_values_representable_in('size_t', 'signed int') then
-                          conv_int('signed int', a_32344)
-                        else
-                          conv_int('unsigned int', a_32344) <
-                        if all_values_representable_in('size_t', 'signed int') then
-                          conv_int('signed int', a_32345)
-                        else
-                          conv_int('unsigned int', a_32345) then
+                        if conv_int('size_t', a_32344) <
+                        conv_int('size_t', a_32345) then
                           Specified(1)
                         else
                           Specified(0)
@@ -40990,14 +40462,7 @@ proc __floatscan (f: pointer, prec: pointer, pok: pointer): eff loaded floating 
             case (a_32388, a_32389) of
               | (Specified(a_32390: integer), Specified(a_32391: integer)) =>
                   pure(
-                    if if all_values_representable_in('size_t', 'signed int') then
-                      conv_int('signed int', a_32390)
-                    else
-                      conv_int('unsigned int', a_32390) <
-                    if all_values_representable_in('size_t', 'signed int') then
-                      conv_int('signed int', a_32391)
-                    else
-                      conv_int('unsigned int', a_32391) then
+                    if conv_int('size_t', a_32390) < conv_int('size_t', a_32391) then
                       Specified(1)
                     else
                       Specified(0)
@@ -41199,16 +40664,8 @@ proc __floatscan (f: pointer, prec: pointer, pok: pointer): eff loaded floating 
                       case (a_32476, a_32477) of
                         | (Specified(a_32478: integer),
                         Specified(a_32479: integer)) =>
-                            if if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_32478)
-                            else
-                              conv_int('unsigned int', a_32478) =
-                            if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_32479)
-                            else
-                              conv_int('unsigned int', a_32479) then
+                            if conv_int('size_t', a_32478) =
+                            conv_int('size_t', a_32479) then
                               Specified(1)
                             else
                               Specified(0)
@@ -41256,16 +40713,8 @@ proc __floatscan (f: pointer, prec: pointer, pok: pointer): eff loaded floating 
                             case (a_32489, a_32490) of
                               | (Specified(a_32491: integer),
                               Specified(a_32492: integer)) =>
-                                  if if all_values_representable_in('size_t',
-                                  'signed int') then
-                                    conv_int('signed int', a_32491)
-                                  else
-                                    conv_int('unsigned int', a_32491) =
-                                  if all_values_representable_in('size_t',
-                                  'signed int') then
-                                    conv_int('signed int', a_32492)
-                                  else
-                                    conv_int('unsigned int', a_32492) then
+                                  if conv_int('size_t', a_32491) =
+                                  conv_int('size_t', a_32492) then
                                     Specified(1)
                                   else
                                     Specified(0)
@@ -41335,16 +40784,8 @@ proc __floatscan (f: pointer, prec: pointer, pok: pointer): eff loaded floating 
                             | (Specified(a_32517: integer),
                             Specified(a_32518: integer)) =>
                                 pure(
-                                  if if all_values_representable_in('size_t',
-                                  'signed int') then
-                                    conv_int('signed int', a_32517)
-                                  else
-                                    conv_int('unsigned int', a_32517) >
-                                  if all_values_representable_in('size_t',
-                                  'signed int') then
-                                    conv_int('signed int', a_32518)
-                                  else
-                                    conv_int('unsigned int', a_32518) then
+                                  if conv_int('size_t', a_32517) >
+                                  conv_int('size_t', a_32518) then
                                     Specified(1)
                                   else
                                     Specified(0)
@@ -41457,14 +40898,8 @@ proc __floatscan (f: pointer, prec: pointer, pok: pointer): eff loaded floating 
           pure(
             case (a_32540, a_32541) of
               | (Specified(a_32542: integer), Specified(a_32543: integer)) =>
-                  if not(if all_values_representable_in('size_t', 'signed int') then
-                    conv_int('signed int', a_32542)
-                  else
-                    conv_int('unsigned int', a_32542) =
-                  if all_values_representable_in('size_t', 'signed int') then
-                    conv_int('signed int', a_32543)
-                  else
-                    conv_int('unsigned int', a_32543)) then
+                  if not(conv_int('size_t', a_32542) =
+                  conv_int('size_t', a_32543)) then
                     Specified(1)
                   else
                     Specified(0)
@@ -41590,14 +41025,8 @@ proc __floatscan (f: pointer, prec: pointer, pok: pointer): eff loaded floating 
                 case (a_32595, a_32596) of
                   | (Specified(a_32597: integer), Specified(a_32598: integer)) =>
                       pure(
-                        if if all_values_representable_in('size_t', 'signed int') then
-                          conv_int('signed int', a_32597)
-                        else
-                          conv_int('unsigned int', a_32597) >
-                        if all_values_representable_in('size_t', 'signed int') then
-                          conv_int('signed int', a_32598)
-                        else
-                          conv_int('unsigned int', a_32598) then
+                        if conv_int('size_t', a_32597) >
+                        conv_int('size_t', a_32598) then
                           Specified(1)
                         else
                           Specified(0)
@@ -41750,14 +41179,7 @@ proc __floatscan (f: pointer, prec: pointer, pok: pointer): eff loaded floating 
         pure(
           case (a_32648, a_32649) of
             | (Specified(a_32650: integer), Specified(a_32651: integer)) =>
-                if if all_values_representable_in('size_t', 'signed int') then
-                  conv_int('signed int', a_32650)
-                else
-                  conv_int('unsigned int', a_32650) =
-                if all_values_representable_in('size_t', 'signed int') then
-                  conv_int('signed int', a_32651)
-                else
-                  conv_int('unsigned int', a_32651) then
+                if conv_int('size_t', a_32650) = conv_int('size_t', a_32651) then
                   Specified(1)
                 else
                   Specified(0)
@@ -41806,15 +41228,8 @@ proc __floatscan (f: pointer, prec: pointer, pok: pointer): eff loaded floating 
                   case (a_32676, a_32677) of
                     | (Specified(a_32678: integer), Specified(a_32679: integer)) =>
                         pure(
-                          if if all_values_representable_in('size_t',
-                          'signed int') then
-                            conv_int('signed int', a_32678)
-                          else
-                            conv_int('unsigned int', a_32678) <
-                          if all_values_representable_in('size_t', 'signed int') then
-                            conv_int('signed int', a_32679)
-                          else
-                            conv_int('unsigned int', a_32679) then
+                          if conv_int('size_t', a_32678) <
+                          conv_int('size_t', a_32679) then
                             Specified(1)
                           else
                             Specified(0)
@@ -41966,14 +41381,8 @@ proc __floatscan (f: pointer, prec: pointer, pok: pointer): eff loaded floating 
               case (a_32722, a_32723) of
                 | (Specified(a_32724: integer), Specified(a_32725: integer)) =>
                     pure(
-                      if if all_values_representable_in('size_t', 'signed int') then
-                        conv_int('signed int', a_32724)
-                      else
-                        conv_int('unsigned int', a_32724) <
-                      if all_values_representable_in('size_t', 'signed int') then
-                        conv_int('signed int', a_32725)
-                      else
-                        conv_int('unsigned int', a_32725) then
+                      if conv_int('size_t', a_32724) <
+                      conv_int('size_t', a_32725) then
                         Specified(1)
                       else
                         Specified(0)
@@ -42179,14 +41588,7 @@ proc __floatscan (f: pointer, prec: pointer, pok: pointer): eff loaded floating 
         pure(
           case (a_32790, a_32791) of
             | (Specified(a_32792: integer), Specified(a_32793: integer)) =>
-                if if all_values_representable_in('size_t', 'signed int') then
-                  conv_int('signed int', a_32792)
-                else
-                  conv_int('unsigned int', a_32792) =
-                if all_values_representable_in('size_t', 'signed int') then
-                  conv_int('signed int', a_32793)
-                else
-                  conv_int('unsigned int', a_32793) then
+                if conv_int('size_t', a_32792) = conv_int('size_t', a_32793) then
                   Specified(1)
                 else
                   Specified(0)
@@ -69008,14 +68410,7 @@ proc calloc (nmemb: pointer, size: pointer): eff loaded pointer :=
           case (a_15270, a_15271) of
             | (Specified(a_15272: integer), Specified(a_15273: integer)) =>
                 pure(
-                  if if all_values_representable_in('size_t', 'signed int') then
-                    conv_int('signed int', a_15272)
-                  else
-                    conv_int('unsigned int', a_15272) <
-                  if all_values_representable_in('size_t', 'signed int') then
-                    conv_int('signed int', a_15273)
-                  else
-                    conv_int('unsigned int', a_15273) then
+                  if conv_int('size_t', a_15272) < conv_int('size_t', a_15273) then
                     Specified(1)
                   else
                     Specified(0)
@@ -70089,14 +69484,7 @@ cmp: pointer): eff loaded pointer :=
           case (a_14738, a_14739) of
             | (Specified(a_14740: integer), Specified(a_14741: integer)) =>
                 pure(
-                  if if all_values_representable_in('size_t', 'signed int') then
-                    conv_int('signed int', a_14740)
-                  else
-                    conv_int('unsigned int', a_14740) >
-                  if all_values_representable_in('size_t', 'signed int') then
-                    conv_int('signed int', a_14741)
-                  else
-                    conv_int('unsigned int', a_14741) then
+                  if conv_int('size_t', a_14740) > conv_int('size_t', a_14741) then
                     Specified(1)
                   else
                     Specified(0)
@@ -70153,11 +69541,7 @@ cmp: pointer): eff loaded pointer :=
                 pure(
                   case (a_14755, a_14756) of
                     | (Unspecified(_: ctype), Specified(a_14758: integer)) =>
-                        let a_14760: integer =
-                          if all_values_representable_in('size_t', 'signed int') then
-                            conv_int('signed int', a_14758)
-                          else
-                            conv_int('unsigned int', a_14758) in
+                        let a_14760: integer = conv_int('size_t', a_14758) in
                         if a_14760 = 0 then
                           undef(<<UB045a_division_by_zero>>)
                         else
@@ -70165,16 +69549,8 @@ cmp: pointer): eff loaded pointer :=
                     | (_: loaded integer, Unspecified(_: ctype)) =>
                         undef(<<UB045a_division_by_zero>>)
                     | (Specified(a_14757: integer), Specified(a_14758: integer)) =>
-                        let a_14759: integer =
-                          if all_values_representable_in('size_t', 'signed int') then
-                            conv_int('signed int', a_14757)
-                          else
-                            conv_int('unsigned int', a_14757) in
-                        let a_14760: integer =
-                          if all_values_representable_in('size_t', 'signed int') then
-                            conv_int('signed int', a_14758)
-                          else
-                            conv_int('unsigned int', a_14758) in
+                        let a_14759: integer = conv_int('size_t', a_14757) in
+                        let a_14760: integer = conv_int('size_t', a_14758) in
                         if a_14760 = 0 then
                           undef(<<UB045a_division_by_zero>>)
                         else
@@ -70298,11 +69674,7 @@ cmp: pointer): eff loaded pointer :=
               pure(
                 case (a_14803, a_14804) of
                   | (Unspecified(_: ctype), Specified(a_14806: integer)) =>
-                      let a_14808: integer =
-                        if all_values_representable_in('size_t', 'signed int') then
-                          conv_int('signed int', a_14806)
-                        else
-                          conv_int('unsigned int', a_14806) in
+                      let a_14808: integer = conv_int('size_t', a_14806) in
                       if a_14808 = 0 then
                         undef(<<UB045a_division_by_zero>>)
                       else
@@ -70310,16 +69682,8 @@ cmp: pointer): eff loaded pointer :=
                   | (_: loaded integer, Unspecified(_: ctype)) =>
                       undef(<<UB045a_division_by_zero>>)
                   | (Specified(a_14805: integer), Specified(a_14806: integer)) =>
-                      let a_14807: integer =
-                        if all_values_representable_in('size_t', 'signed int') then
-                          conv_int('signed int', a_14805)
-                        else
-                          conv_int('unsigned int', a_14805) in
-                      let a_14808: integer =
-                        if all_values_representable_in('size_t', 'signed int') then
-                          conv_int('signed int', a_14806)
-                        else
-                          conv_int('unsigned int', a_14806) in
+                      let a_14807: integer = conv_int('size_t', a_14805) in
+                      let a_14808: integer = conv_int('size_t', a_14806) in
                       if a_14808 = 0 then
                         undef(<<UB045a_division_by_zero>>)
                       else
@@ -70416,11 +69780,7 @@ cmp: pointer): eff loaded pointer :=
                       case (a_14844, a_14845) of
                         | (Unspecified(_: ctype), Specified(a_14847: integer)) =>
                             let a_14849: integer =
-                              if all_values_representable_in('size_t',
-                              'signed int') then
-                                conv_int('signed int', a_14847)
-                              else
-                                conv_int('unsigned int', a_14847) in
+                              conv_int('size_t', a_14847) in
                             if a_14849 = 0 then
                               undef(<<UB045a_division_by_zero>>)
                             else
@@ -70430,17 +69790,9 @@ cmp: pointer): eff loaded pointer :=
                         | (Specified(a_14846: integer),
                         Specified(a_14847: integer)) =>
                             let a_14848: integer =
-                              if all_values_representable_in('size_t',
-                              'signed int') then
-                                conv_int('signed int', a_14846)
-                              else
-                                conv_int('unsigned int', a_14846) in
+                              conv_int('size_t', a_14846) in
                             let a_14849: integer =
-                              if all_values_representable_in('size_t',
-                              'signed int') then
-                                conv_int('signed int', a_14847)
-                              else
-                                conv_int('unsigned int', a_14847) in
+                              conv_int('size_t', a_14847) in
                             if a_14849 = 0 then
                               undef(<<UB045a_division_by_zero>>)
                             else
@@ -70456,15 +69808,7 @@ cmp: pointer): eff loaded pointer :=
                     case (a_14838, a_14839) of
                       | (Specified(a_14840: integer),
                       Specified(a_14841: integer)) =>
-                          Specified(wrapI_add('size_t', if all_values_representable_in('size_t',
-                          'signed int') then
-                            __conv_int__('signed int', a_14840)
-                          else
-                            __conv_int__('unsigned int', a_14840), if all_values_representable_in('size_t',
-                          'signed int') then
-                            __conv_int__('signed int', a_14841)
-                          else
-                            __conv_int__('unsigned int', a_14841)))
+                          Specified(wrapI_add('size_t', __conv_int__('size_t', a_14840), __conv_int__('size_t', a_14841)))
                       | _: (loaded integer,loaded integer) =>
                           Unspecified('size_t')
                     end
@@ -70552,14 +69896,7 @@ proc qsort (base: pointer, nel: pointer, width: pointer, cmp: pointer): eff unit
         pure(
           case (a_13857, a_13858) of
             | (Specified(a_13859: integer), Specified(a_13860: integer)) =>
-                if if all_values_representable_in('size_t', 'signed int') then
-                  conv_int('signed int', a_13859)
-                else
-                  conv_int('unsigned int', a_13859) =
-                if all_values_representable_in('size_t', 'signed int') then
-                  conv_int('signed int', a_13860)
-                else
-                  conv_int('unsigned int', a_13860) then
+                if conv_int('size_t', a_13859) = conv_int('size_t', a_13860) then
                   Specified(1)
                 else
                   Specified(0)
@@ -70732,15 +70069,8 @@ proc qsort (base: pointer, nel: pointer, width: pointer, cmp: pointer): eff unit
                       case (a_13950, a_13951) of
                         | (Specified(a_13952: integer),
                         Specified(a_13953: integer)) =>
-                            Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_13952)
-                            else
-                              conv_int('unsigned int', a_13952), if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_13953)
-                            else
-                              conv_int('unsigned int', a_13953)))
+                            Specified(wrapI_sub('size_t', conv_int('size_t',
+                            a_13952), conv_int('size_t', a_13953)))
                         | _: (loaded integer,loaded integer) =>
                             Unspecified('size_t')
                       end
@@ -70780,15 +70110,8 @@ proc qsort (base: pointer, nel: pointer, width: pointer, cmp: pointer): eff unit
                       case (a_13967, a_13968) of
                         | (Specified(a_13969: integer),
                         Specified(a_13970: integer)) =>
-                            Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_13969)
-                            else
-                              conv_int('unsigned int', a_13969), if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_13970)
-                            else
-                              conv_int('unsigned int', a_13970)))
+                            Specified(wrapI_sub('size_t', conv_int('size_t',
+                            a_13969), conv_int('size_t', a_13970)))
                         | _: (loaded integer,loaded integer) =>
                             Unspecified('size_t')
                       end
@@ -70965,15 +70288,8 @@ proc qsort (base: pointer, nel: pointer, width: pointer, cmp: pointer): eff unit
               pure(
                 case (a_14013, a_14014) of
                   | (Specified(a_14015: integer), Specified(a_14016: integer)) =>
-                      Specified(IvAND('size_t',
-                      if all_values_representable_in('size_t', 'signed int') then
-                        conv_int('signed int', a_14015)
-                      else
-                        conv_int('unsigned int', a_14015),
-                      if all_values_representable_in('size_t', 'signed int') then
-                        conv_int('signed int', a_14016)
-                      else
-                        conv_int('unsigned int', a_14016)))
+                      Specified(IvAND('size_t', conv_int('size_t', a_14015),
+                      conv_int('size_t', a_14016)))
                   | _: (loaded integer,loaded integer) =>
                       Unspecified('size_t')
                 end
@@ -70982,14 +70298,7 @@ proc qsort (base: pointer, nel: pointer, width: pointer, cmp: pointer): eff unit
             pure(
               case (a_14008, a_14009) of
                 | (Specified(a_14010: integer), Specified(a_14011: integer)) =>
-                    if if all_values_representable_in('size_t', 'signed int') then
-                      conv_int('signed int', a_14010)
-                    else
-                      conv_int('unsigned int', a_14010) =
-                    if all_values_representable_in('size_t', 'signed int') then
-                      conv_int('signed int', a_14011)
-                    else
-                      conv_int('unsigned int', a_14011) then
+                    if conv_int('size_t', a_14010) = conv_int('size_t', a_14011) then
                       Specified(1)
                     else
                       Specified(0)
@@ -71226,14 +70535,8 @@ proc qsort (base: pointer, nel: pointer, width: pointer, cmp: pointer): eff unit
               case (a_14118, a_14119) of
                 | (Specified(a_14120: integer), Specified(a_14121: integer)) =>
                     pure(
-                      if if all_values_representable_in('size_t', 'ptrdiff_t') then
-                        conv_int('ptrdiff_t', a_14120)
-                      else
-                        conv_int('ptrdiff_t', a_14120) >=
-                      if all_values_representable_in('size_t', 'ptrdiff_t') then
-                        conv_int('ptrdiff_t', a_14121)
-                      else
-                        conv_int('ptrdiff_t', a_14121) then
+                      if conv_int('size_t', a_14120) >=
+                      conv_int('size_t', a_14121) then
                         Specified(1)
                       else
                         Specified(0)
@@ -71662,15 +70965,8 @@ proc qsort (base: pointer, nel: pointer, width: pointer, cmp: pointer): eff unit
             pure(
               case (a_14268, a_14269) of
                 | (Specified(a_14270: integer), Specified(a_14271: integer)) =>
-                    Specified(IvOR('size_t',
-                    if all_values_representable_in('size_t', 'signed int') then
-                      conv_int('signed int', a_14270)
-                    else
-                      conv_int('unsigned int', a_14270),
-                    if all_values_representable_in('size_t', 'signed int') then
-                      conv_int('signed int', a_14271)
-                    else
-                      conv_int('unsigned int', a_14271)))
+                    Specified(IvOR('size_t', conv_int('size_t', a_14270),
+                    conv_int('size_t', a_14271)))
                 | _: (loaded integer,loaded integer) =>
                     Unspecified('size_t')
               end
@@ -71909,16 +71205,8 @@ proc qsort (base: pointer, nel: pointer, width: pointer, cmp: pointer): eff unit
                               case (a_14378, a_14379) of
                                 | (Specified(a_14380: integer),
                                 Specified(a_14381: integer)) =>
-                                    if not(if all_values_representable_in('size_t',
-                                    'signed int') then
-                                      conv_int('signed int', a_14380)
-                                    else
-                                      conv_int('unsigned int', a_14380) =
-                                    if all_values_representable_in('size_t',
-                                    'signed int') then
-                                      conv_int('signed int', a_14381)
-                                    else
-                                      conv_int('unsigned int', a_14381)) then
+                                    if not(conv_int('size_t', a_14380) =
+                                    conv_int('size_t', a_14381)) then
                                       Specified(1)
                                     else
                                       Specified(0)
@@ -72012,16 +71300,8 @@ proc qsort (base: pointer, nel: pointer, width: pointer, cmp: pointer): eff unit
                         case (a_14403, a_14404) of
                           | (Specified(a_14405: integer),
                           Specified(a_14406: integer)) =>
-                              if not(if all_values_representable_in('size_t',
-                              'signed int') then
-                                conv_int('signed int', a_14405)
-                              else
-                                conv_int('unsigned int', a_14405) =
-                              if all_values_representable_in('size_t',
-                              'signed int') then
-                                conv_int('signed int', a_14406)
-                              else
-                                conv_int('unsigned int', a_14406)) then
+                              if not(conv_int('size_t', a_14405) =
+                              conv_int('size_t', a_14406)) then
                                 Specified(1)
                               else
                                 Specified(0)
@@ -72321,15 +71601,8 @@ proc qsort (base: pointer, nel: pointer, width: pointer, cmp: pointer): eff unit
               pure(
                 case (a_14513, a_14514) of
                   | (Specified(a_14515: integer), Specified(a_14516: integer)) =>
-                      Specified(IvXOR('size_t',
-                      if all_values_representable_in('size_t', 'signed int') then
-                        conv_int('signed int', a_14515)
-                      else
-                        conv_int('unsigned int', a_14515),
-                      if all_values_representable_in('size_t', 'signed int') then
-                        conv_int('signed int', a_14516)
-                      else
-                        conv_int('unsigned int', a_14516)))
+                      Specified(IvXOR('size_t', conv_int('size_t', a_14515),
+                      conv_int('size_t', a_14516)))
                   | _: (loaded integer,loaded integer) =>
                       Unspecified('size_t')
                 end
@@ -72634,15 +71907,8 @@ proc qsort (base: pointer, nel: pointer, width: pointer, cmp: pointer): eff unit
               pure(
                 case (a_14645, a_14646) of
                   | (Specified(a_14647: integer), Specified(a_14648: integer)) =>
-                      Specified(IvOR('size_t',
-                      if all_values_representable_in('size_t', 'signed int') then
-                        conv_int('signed int', a_14647)
-                      else
-                        conv_int('unsigned int', a_14647),
-                      if all_values_representable_in('size_t', 'signed int') then
-                        conv_int('signed int', a_14648)
-                      else
-                        conv_int('unsigned int', a_14648)))
+                      Specified(IvOR('size_t', conv_int('size_t', a_14647),
+                      conv_int('size_t', a_14648)))
                   | _: (loaded integer,loaded integer) =>
                       Unspecified('size_t')
                 end
@@ -74712,14 +73978,7 @@ proc a_ctz_64 (x: pointer): eff loaded integer :=
         case (Specified(Ivsizeof('signed long')), Specified(8)) of
           | (Specified(a_12941: integer), Specified(a_12942: integer)) =>
               pure(
-                if if all_values_representable_in('size_t', 'signed int') then
-                  conv_int('signed int', a_12941)
-                else
-                  conv_int('unsigned int', a_12941) <
-                if all_values_representable_in('size_t', 'signed int') then
-                  conv_int('signed int', a_12942)
-                else
-                  conv_int('unsigned int', a_12942) then
+                if conv_int('size_t', a_12941) < conv_int('size_t', a_12942) then
                   Specified(1)
                 else
                   Specified(0)
@@ -75003,14 +74262,7 @@ proc a_ctz_l (x: pointer): eff loaded integer :=
           case (Specified(Ivsizeof('signed long')), Specified(8)) of
             | (Specified(a_12830: integer), Specified(a_12831: integer)) =>
                 pure(
-                  if if all_values_representable_in('size_t', 'signed int') then
-                    conv_int('signed int', a_12830)
-                  else
-                    conv_int('unsigned int', a_12830) <
-                  if all_values_representable_in('size_t', 'signed int') then
-                    conv_int('signed int', a_12831)
-                  else
-                    conv_int('unsigned int', a_12831) then
+                  if conv_int('size_t', a_12830) < conv_int('size_t', a_12831) then
                     Specified(1)
                   else
                     Specified(0)
@@ -75146,15 +74398,8 @@ proc pntz (p: pointer): eff loaded integer :=
         pure(
           case (a_12733, a_12734) of
             | (Specified(a_12735: integer), Specified(a_12736: integer)) =>
-                Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                'signed int') then
-                  conv_int('signed int', a_12735)
-                else
-                  conv_int('unsigned int', a_12735), if all_values_representable_in('size_t',
-                'signed int') then
-                  conv_int('signed int', a_12736)
-                else
-                  conv_int('unsigned int', a_12736)))
+                Specified(wrapI_sub('size_t', conv_int('size_t', a_12735), conv_int('size_t',
+                a_12736)))
             | _: (loaded integer,loaded integer) =>
                 Unspecified('size_t')
           end
@@ -75241,15 +74486,8 @@ proc pntz (p: pointer): eff loaded integer :=
                             case (Specified(8), Specified(Ivsizeof('size_t'))) of
                               | (Specified(a_12785: integer),
                               Specified(a_12786: integer)) =>
-                                  Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                                  'signed int') then
-                                    conv_int('signed int', a_12785)
-                                  else
-                                    conv_int('unsigned int', a_12785), if all_values_representable_in('size_t',
-                                  'signed int') then
-                                    conv_int('signed int', a_12786)
-                                  else
-                                    conv_int('unsigned int', a_12786)))
+                                  Specified(wrapI_mul('size_t', conv_int('size_t',
+                                  a_12785), conv_int('size_t', a_12786)))
                               | _: (loaded integer,loaded integer) =>
                                   Unspecified('size_t')
                             end
@@ -75323,15 +74561,7 @@ proc pntz (p: pointer): eff loaded integer :=
                           case (a_12778, a_12779) of
                             | (Specified(a_12780: integer),
                             Specified(a_12781: integer)) =>
-                                Specified(wrapI_add('size_t', if all_values_representable_in('size_t',
-                                'signed int') then
-                                  __conv_int__('signed int', a_12780)
-                                else
-                                  __conv_int__('unsigned int', a_12780), if all_values_representable_in('size_t',
-                                'signed int') then
-                                  __conv_int__('signed int', a_12781)
-                                else
-                                  __conv_int__('unsigned int', a_12781)))
+                                Specified(wrapI_add('size_t', __conv_int__('size_t', a_12780), __conv_int__('size_t', a_12781)))
                             | _: (loaded integer,loaded integer) =>
                                 Unspecified('size_t')
                           end
@@ -75345,15 +74575,8 @@ proc pntz (p: pointer): eff loaded integer :=
                         case (Specified(8), Specified(Ivsizeof('size_t'))) of
                           | (Specified(a_12812: integer),
                           Specified(a_12813: integer)) =>
-                              Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                              'signed int') then
-                                conv_int('signed int', a_12812)
-                              else
-                                conv_int('unsigned int', a_12812), if all_values_representable_in('size_t',
-                              'signed int') then
-                                conv_int('signed int', a_12813)
-                              else
-                                conv_int('unsigned int', a_12813)))
+                              Specified(wrapI_mul('size_t', conv_int('size_t',
+                              a_12812), conv_int('size_t', a_12813)))
                           | _: (loaded integer,loaded integer) =>
                               Unspecified('size_t')
                         end
@@ -75362,16 +74585,8 @@ proc pntz (p: pointer): eff loaded integer :=
                       case (a_12772, a_12773) of
                         | (Specified(a_12774: integer),
                         Specified(a_12775: integer)) =>
-                            if not(if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_12774)
-                            else
-                              conv_int('unsigned int', a_12774) =
-                            if all_values_representable_in('size_t',
-                            'signed int') then
-                              conv_int('signed int', a_12775)
-                            else
-                              conv_int('unsigned int', a_12775)) then
+                            if not(conv_int('size_t', a_12774) =
+                            conv_int('size_t', a_12775)) then
                               Specified(1)
                             else
                               Specified(0)
@@ -76003,15 +75218,8 @@ proc shl (p: pointer, n: pointer): eff unit :=
           pure(
             case (Specified(8), Specified(Ivsizeof('size_t'))) of
               | (Specified(a_12336: integer), Specified(a_12337: integer)) =>
-                  Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                  'signed int') then
-                    conv_int('signed int', a_12336)
-                  else
-                    conv_int('unsigned int', a_12336), if all_values_representable_in('size_t',
-                  'signed int') then
-                    conv_int('signed int', a_12337)
-                  else
-                    conv_int('unsigned int', a_12337)))
+                  Specified(wrapI_mul('size_t', conv_int('size_t', a_12336), conv_int('size_t',
+                  a_12337)))
               | _: (loaded integer,loaded integer) =>
                   Unspecified('size_t')
             end
@@ -76019,14 +75227,7 @@ proc shl (p: pointer, n: pointer): eff unit :=
         case (a_12339, a_12340) of
           | (Specified(a_12341: integer), Specified(a_12342: integer)) =>
               pure(
-                if if all_values_representable_in('size_t', 'signed int') then
-                  conv_int('signed int', a_12341)
-                else
-                  conv_int('unsigned int', a_12341) >=
-                if all_values_representable_in('size_t', 'signed int') then
-                  conv_int('signed int', a_12342)
-                else
-                  conv_int('unsigned int', a_12342) then
+                if conv_int('size_t', a_12341) >= conv_int('size_t', a_12342) then
                   Specified(1)
                 else
                   Specified(0)
@@ -76065,15 +75266,8 @@ proc shl (p: pointer, n: pointer): eff unit :=
             pure(
               case (Specified(8), Specified(Ivsizeof('size_t'))) of
                 | (Specified(a_12348: integer), Specified(a_12349: integer)) =>
-                    Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                    'signed int') then
-                      conv_int('signed int', a_12348)
-                    else
-                      conv_int('unsigned int', a_12348), if all_values_representable_in('size_t',
-                    'signed int') then
-                      conv_int('signed int', a_12349)
-                    else
-                      conv_int('unsigned int', a_12349)))
+                    Specified(wrapI_mul('size_t', conv_int('size_t', a_12348), conv_int('size_t',
+                    a_12349)))
                 | _: (loaded integer,loaded integer) =>
                     Unspecified('size_t')
               end
@@ -76081,15 +75275,8 @@ proc shl (p: pointer, n: pointer): eff unit :=
           pure(
             case (a_12351, a_12352) of
               | (Specified(a_12353: integer), Specified(a_12354: integer)) =>
-                  Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                  'signed int') then
-                    conv_int('signed int', a_12353)
-                  else
-                    conv_int('unsigned int', a_12353), if all_values_representable_in('size_t',
-                  'signed int') then
-                    conv_int('signed int', a_12354)
-                  else
-                    conv_int('unsigned int', a_12354)))
+                  Specified(wrapI_sub('size_t', conv_int('size_t', a_12353), conv_int('size_t',
+                  a_12354)))
               | _: (loaded integer,loaded integer) =>
                   Unspecified('size_t')
             end
@@ -76343,15 +75530,8 @@ proc shl (p: pointer, n: pointer): eff unit :=
               pure(
                 case (Specified(Ivsizeof('size_t')), Specified(8)) of
                   | (Specified(a_12460: integer), Specified(a_12461: integer)) =>
-                      Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                      'signed int') then
-                        conv_int('signed int', a_12460)
-                      else
-                        conv_int('unsigned int', a_12460), if all_values_representable_in('size_t',
-                      'signed int') then
-                        conv_int('signed int', a_12461)
-                      else
-                        conv_int('unsigned int', a_12461)))
+                      Specified(wrapI_mul('size_t', conv_int('size_t', a_12460), conv_int('size_t',
+                      a_12461)))
                   | _: (loaded integer,loaded integer) =>
                       Unspecified('size_t')
                 end
@@ -76360,15 +75540,8 @@ proc shl (p: pointer, n: pointer): eff unit :=
             pure(
               case (a_12464, a_12465) of
                 | (Specified(a_12466: integer), Specified(a_12467: integer)) =>
-                    Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                    'signed int') then
-                      conv_int('signed int', a_12466)
-                    else
-                      conv_int('unsigned int', a_12466), if all_values_representable_in('size_t',
-                    'signed int') then
-                      conv_int('signed int', a_12467)
-                    else
-                      conv_int('unsigned int', a_12467)))
+                    Specified(wrapI_sub('size_t', conv_int('size_t', a_12466), conv_int('size_t',
+                    a_12467)))
                 | _: (loaded integer,loaded integer) =>
                     Unspecified('size_t')
               end
@@ -76491,15 +75664,8 @@ proc shr (p: pointer, n: pointer): eff unit :=
           pure(
             case (Specified(8), Specified(Ivsizeof('size_t'))) of
               | (Specified(a_12159: integer), Specified(a_12160: integer)) =>
-                  Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                  'signed int') then
-                    conv_int('signed int', a_12159)
-                  else
-                    conv_int('unsigned int', a_12159), if all_values_representable_in('size_t',
-                  'signed int') then
-                    conv_int('signed int', a_12160)
-                  else
-                    conv_int('unsigned int', a_12160)))
+                  Specified(wrapI_mul('size_t', conv_int('size_t', a_12159), conv_int('size_t',
+                  a_12160)))
               | _: (loaded integer,loaded integer) =>
                   Unspecified('size_t')
             end
@@ -76507,14 +75673,7 @@ proc shr (p: pointer, n: pointer): eff unit :=
         case (a_12162, a_12163) of
           | (Specified(a_12164: integer), Specified(a_12165: integer)) =>
               pure(
-                if if all_values_representable_in('size_t', 'signed int') then
-                  conv_int('signed int', a_12164)
-                else
-                  conv_int('unsigned int', a_12164) >=
-                if all_values_representable_in('size_t', 'signed int') then
-                  conv_int('signed int', a_12165)
-                else
-                  conv_int('unsigned int', a_12165) then
+                if conv_int('size_t', a_12164) >= conv_int('size_t', a_12165) then
                   Specified(1)
                 else
                   Specified(0)
@@ -76553,15 +75712,8 @@ proc shr (p: pointer, n: pointer): eff unit :=
             pure(
               case (Specified(8), Specified(Ivsizeof('size_t'))) of
                 | (Specified(a_12171: integer), Specified(a_12172: integer)) =>
-                    Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                    'signed int') then
-                      conv_int('signed int', a_12171)
-                    else
-                      conv_int('unsigned int', a_12171), if all_values_representable_in('size_t',
-                    'signed int') then
-                      conv_int('signed int', a_12172)
-                    else
-                      conv_int('unsigned int', a_12172)))
+                    Specified(wrapI_mul('size_t', conv_int('size_t', a_12171), conv_int('size_t',
+                    a_12172)))
                 | _: (loaded integer,loaded integer) =>
                     Unspecified('size_t')
               end
@@ -76569,15 +75721,8 @@ proc shr (p: pointer, n: pointer): eff unit :=
           pure(
             case (a_12174, a_12175) of
               | (Specified(a_12176: integer), Specified(a_12177: integer)) =>
-                  Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                  'signed int') then
-                    conv_int('signed int', a_12176)
-                  else
-                    conv_int('unsigned int', a_12176), if all_values_representable_in('size_t',
-                  'signed int') then
-                    conv_int('signed int', a_12177)
-                  else
-                    conv_int('unsigned int', a_12177)))
+                  Specified(wrapI_sub('size_t', conv_int('size_t', a_12176), conv_int('size_t',
+                  a_12177)))
               | _: (loaded integer,loaded integer) =>
                   Unspecified('size_t')
             end
@@ -76831,15 +75976,8 @@ proc shr (p: pointer, n: pointer): eff unit :=
               pure(
                 case (Specified(Ivsizeof('size_t')), Specified(8)) of
                   | (Specified(a_12283: integer), Specified(a_12284: integer)) =>
-                      Specified(wrapI_mul('size_t', if all_values_representable_in('size_t',
-                      'signed int') then
-                        conv_int('signed int', a_12283)
-                      else
-                        conv_int('unsigned int', a_12283), if all_values_representable_in('size_t',
-                      'signed int') then
-                        conv_int('signed int', a_12284)
-                      else
-                        conv_int('unsigned int', a_12284)))
+                      Specified(wrapI_mul('size_t', conv_int('size_t', a_12283), conv_int('size_t',
+                      a_12284)))
                   | _: (loaded integer,loaded integer) =>
                       Unspecified('size_t')
                 end
@@ -76848,15 +75986,8 @@ proc shr (p: pointer, n: pointer): eff unit :=
             pure(
               case (a_12287, a_12288) of
                 | (Specified(a_12289: integer), Specified(a_12290: integer)) =>
-                    Specified(wrapI_sub('size_t', if all_values_representable_in('size_t',
-                    'signed int') then
-                      conv_int('signed int', a_12289)
-                    else
-                      conv_int('unsigned int', a_12289), if all_values_representable_in('size_t',
-                    'signed int') then
-                      conv_int('signed int', a_12290)
-                    else
-                      conv_int('unsigned int', a_12290)))
+                    Specified(wrapI_sub('size_t', conv_int('size_t', a_12289), conv_int('size_t',
+                    a_12290)))
                 | _: (loaded integer,loaded integer) =>
                     Unspecified('size_t')
               end
@@ -77866,15 +76997,8 @@ pshift: pointer, trusty: pointer, lp: pointer): eff unit :=
                 pure(
                   case (a_11476, a_11477) of
                     | (Specified(a_11478: integer), Specified(a_11479: integer)) =>
-                        if not(if all_values_representable_in('size_t',
-                        'signed int') then
-                          conv_int('signed int', a_11478)
-                        else
-                          conv_int('unsigned int', a_11478) =
-                        if all_values_representable_in('size_t', 'signed int') then
-                          conv_int('signed int', a_11479)
-                        else
-                          conv_int('unsigned int', a_11479)) then
+                        if not(conv_int('size_t', a_11478) =
+                        conv_int('size_t', a_11479)) then
                           Specified(1)
                         else
                           Specified(0)
@@ -77947,16 +77071,8 @@ pshift: pointer, trusty: pointer, lp: pointer): eff unit :=
                         case (a_11499, a_11500) of
                           | (Specified(a_11501: integer),
                           Specified(a_11502: integer)) =>
-                              if not(if all_values_representable_in('size_t',
-                              'signed int') then
-                                conv_int('signed int', a_11501)
-                              else
-                                conv_int('unsigned int', a_11501) =
-                              if all_values_representable_in('size_t',
-                              'signed int') then
-                                conv_int('signed int', a_11502)
-                              else
-                                conv_int('unsigned int', a_11502)) then
+                              if not(conv_int('size_t', a_11501) =
+                              conv_int('size_t', a_11502)) then
                                 Specified(1)
                               else
                                 Specified(0)
@@ -85812,15 +84928,7 @@ proc vfscanf (f: pointer, fmt: pointer, ap: pointer): eff loaded integer :=
                               case (a_36273, a_36274) of
                                 | (Specified(a_36275: integer),
                                 Specified(a_36276: integer)) =>
-                                    Specified(wrapI_add('size_t', if all_values_representable_in('size_t',
-                                    'signed int') then
-                                      __conv_int__('signed int', a_36275)
-                                    else
-                                      __conv_int__('unsigned int', a_36275), if all_values_representable_in('size_t',
-                                    'signed int') then
-                                      __conv_int__('signed int', a_36276)
-                                    else
-                                      __conv_int__('unsigned int', a_36276)))
+                                    Specified(wrapI_add('size_t', __conv_int__('size_t', a_36275), __conv_int__('size_t', a_36276)))
                                 | _: (loaded integer,loaded integer) =>
                                     Unspecified('size_t')
                               end
@@ -86428,15 +85536,7 @@ proc vfscanf (f: pointer, fmt: pointer, ap: pointer): eff loaded integer :=
                                 case (a_36467, a_36468) of
                                   | (Specified(a_36469: integer),
                                   Specified(a_36470: integer)) =>
-                                      Specified(wrapI_add('size_t', if all_values_representable_in('size_t',
-                                      'signed int') then
-                                        __conv_int__('signed int', a_36469)
-                                      else
-                                        __conv_int__('unsigned int', a_36469), if all_values_representable_in('size_t',
-                                      'signed int') then
-                                        __conv_int__('signed int', a_36470)
-                                      else
-                                        __conv_int__('unsigned int', a_36470)))
+                                      Specified(wrapI_add('size_t', __conv_int__('size_t', a_36469), __conv_int__('size_t', a_36470)))
                                   | _: (loaded integer,loaded integer) =>
                                       Unspecified('size_t')
                                 end

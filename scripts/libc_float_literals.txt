@@ -10,27 +10,32 @@
 # upstream 83b1a7424's mkTestExpression shape (+14 lines each, before __floatscan); cee382443's 453 unspecified-branch
 # arms replace one line with one (one arm +2, after the last literal). Dispositions and notes
 # carried unchanged; every row is a relocation, no new literal. [AGENT 2026-10-30]
-41726	3.40282347e+38	EXACT-BY-SOURCE	
-53407	0.	EXACT-BY-SOURCE	
-54063	0.	EXACT-BY-SOURCE	
-54072	0.	EXACT-BY-SOURCE	
-54736	0.	EXACT-BY-SOURCE	
-54745	0.	EXACT-BY-SOURCE	
-59342	1000000000.	EXACT-BY-SOURCE	
-60274	0.25	EXACT-BY-SOURCE	
-60342	0.75	EXACT-BY-SOURCE	
-60497	0.5	EXACT-BY-SOURCE	
-60531	0.75	EXACT-BY-SOURCE	
-60728	1.	EXACT-BY-SOURCE	
-60877	1.84467440737e+19	LOSSY-N3	0x1p64 = 2^64 (runtime/libc/src/internal.c:303, decfloat); parsed back 9551872 below 2^64
-61043	0.5	EXACT-BY-SOURCE	
-61173	0.	EXACT-BY-SOURCE	
-62716	0.	EXACT-BY-SOURCE	
-62726	0.	EXACT-BY-SOURCE	
-62871	0.5	EXACT-BY-SOURCE	
-63393	0.	EXACT-BY-SOURCE	
-63998	0.	EXACT-BY-SOURCE	
-64240	0.	EXACT-BY-SOURCE	
-64249	0.	EXACT-BY-SOURCE	
-64322	0.5	EXACT-BY-SOURCE	
-64839	0.	EXACT-BY-SOURCE	
+# Re-derived 2026-11-04 (fix/macro-type-ranks M1; record docs/2026-11-04_macro-type-ranks-record.md): the libc re-pin
+# after the rank fix (every usual-arithmetic-conversion conditional `if all_values_representable_in(...) then conv_int(...)
+# else conv_int(...)` on a size_t operand collapsed to one conv_int, 247 conditionals, -900 lines) moved every literal by
+# -598/-571 lines and added or dropped none -- the 24-literal multiset and order are identical in the old dump and the new
+# dump (checked with this script's own census). Dispositions and notes carried unchanged; every row is a relocation. [AGENT 2026-11-04]
+41155	3.40282347e+38	EXACT-BY-SOURCE	
+52809	0.	EXACT-BY-SOURCE	
+53465	0.	EXACT-BY-SOURCE	
+53474	0.	EXACT-BY-SOURCE	
+54138	0.	EXACT-BY-SOURCE	
+54147	0.	EXACT-BY-SOURCE	
+58744	1000000000.	EXACT-BY-SOURCE	
+59676	0.25	EXACT-BY-SOURCE	
+59744	0.75	EXACT-BY-SOURCE	
+59899	0.5	EXACT-BY-SOURCE	
+59933	0.75	EXACT-BY-SOURCE	
+60130	1.	EXACT-BY-SOURCE	
+60279	1.84467440737e+19	LOSSY-N3	0x1p64 = 2^64 (runtime/libc/src/internal.c:303, decfloat); parsed back 9551872 below 2^64
+60445	0.5	EXACT-BY-SOURCE	
+60575	0.	EXACT-BY-SOURCE	
+62118	0.	EXACT-BY-SOURCE	
+62128	0.	EXACT-BY-SOURCE	
+62273	0.5	EXACT-BY-SOURCE	
+62795	0.	EXACT-BY-SOURCE	
+63400	0.	EXACT-BY-SOURCE	
+63642	0.	EXACT-BY-SOURCE	
+63651	0.	EXACT-BY-SOURCE	
+63724	0.5	EXACT-BY-SOURCE	
+64241	0.	EXACT-BY-SOURCE	

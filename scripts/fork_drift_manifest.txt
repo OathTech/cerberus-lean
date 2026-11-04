@@ -43,6 +43,16 @@
 #       `let loc = ... in function ...`, which the Lean target renders as a lambda and cannot show terminating) -- an
 #       eta-expansion, OCaml semantics identical; the D1/many-many1 restatement precedent; lem-lean backend item filed at M6.
 # Record: lean_frontend/docs/2026-10-29_merge-base-bump-stage1-record.md section 5.
+# fix/macro-type-ranks, 2026-11-04 [AGENT, executing the charter docs/2026-11-04_worker-charter-macro-type-ranks.md under the
+# [USER 2026-11-04] approval of the fix]: FORK-AHEAD delta of the first kind (the fork's own fix of an upstream mistake, filed
+# upstream as tray report 20; cerberus-caesium filing 05): the integer conversion rank of every integer type the implementation
+# defines as an alias is the rank of the type it aliases (C17 6.3.1.1#1; 7.19#2 for size_t) -- frontend/model/ail/ailTypesAux.lem
+# `rank_operand`, `eq_integer_rank`, `lt_integer_rank`: normalisation through Implementation.normalise_integerType outside
+# CHERI (upstream's CHERI path untouched), the two `long long` rows, the loud catch-all. Single-row edits, no --refresh:
+# [source-content] ailTypesAux.lem re-pinned e1ac560d... -> e278a3f6...; [expected-semantic] ailTypesAux.ml ENTERED (it was
+# byte-identical to pristine c3ff8c53f before: the fork's earlier edits to that lem file were Lean-target declares outside the
+# OCaml output), 22 -> 23 rows, layer 2 32 -> 33 differing files. Leaves when upstream absorbs the fix.
+# Record: lean_frontend/docs/2026-11-04_macro-type-ranks-record.md.
 [meta]
 merge-base=c3ff8c53f05982745f9b3a10b3d05442e214bcb5
 lem-pin=e6d8db5680962f49060257d6c2bcb13c284b910f
@@ -157,7 +167,7 @@ util/cerb_location.ml
 100644 53b16ced15ce07b825cd5e60859dffcba19d83812b70da5301041e71374ac81f frontend/concurrency/cmm_csem.lem
 100644 d9fb59bfce8faf2038f3db9bcdc5c2fdb60776353f4b5bc664602fc2b42c4f24 frontend/concurrency/cmm_op.lem
 100644 dac639f3976567b08b411f6c93083e8e4d18c9b5eb7cfae44c0ae51259d428c6 frontend/model/ail/ailSyntax.lem
-100644 e1ac560d167c0c0c196965b2e0eaf19e19be9173de5d83846a9b68e2d8adda73 frontend/model/ail/ailTypesAux.lem
+100644 e278a3f6a4832efc4024ff3b6418cf2e7c17cfb61bd8b20517e230e345dbeab9 frontend/model/ail/ailTypesAux.lem
 100644 cb5c28b31fb150925944814090d1fac7febe7d1d7c34c9dec586698258f18209 frontend/model/ail/ailWf.lem
 100644 281b8bcfae99aaeecc09c8482422543cae2763c310d4324d140fcc996329cadc frontend/model/ail/genTyping.lem
 100644 e52264c064f724e768f0b6a5c627f09eb0a3a0eeebc7d170eca43b5834a4958e frontend/model/annot.lem
@@ -237,6 +247,7 @@ util/cerb_location.ml
 100644 90c87a67406af33bf3e2f1a41ee8386cdf18f52ffcacc40591384de2da5fb9da util/cerb_location.ml
 [expected-semantic]
 0e33840c04efa7a2408042add3417e788f37f70c488ae791cf72c7410c303244 ailSyntax.ml
+52804c6cceb0163ea883e5cede64d32c26841004200047199a2cf3b5524a8ffb ailTypesAux.ml
 19624373ab476b01d91f8b71f9e085110a27d384a1c471038e06f51e2f40c6a8 cabs_to_ail.ml
 a290a63ccda68710766457758900a16b3180a3af2e0562f9b6f76ac90edd3e2b cabs_to_ail_effect.ml
 efe1a293fdf87eb7a264b3d5a2705d9f9421115f9137772c0b6a539a5049b8fb core.ml
