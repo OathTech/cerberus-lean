@@ -48,8 +48,11 @@ of this work's scope.
   annotation list, re-pin both libc dumps (`libc_prep.sh --record`) and the quotation pins
   (`core-quote-libc*.sha256`; the quotation instrument's representation of annotations), then
   retire the `LOC_ONLY` class and its disposition rows in `tests/libc_exec/dispositions.txt` and
-  `tests/inner_arg_temps/baseline.json`. Witness: `tests/libc_exec/016-strstr-twoway-oob.c` (both
-  engines `UB_CERB002a_out_of_bound_load`; oracle `<265:22--265:26>`, Lean `<unknown location>`).
+  `tests/inner_arg_temps/baseline.json`. Witness: `tests/libc_exec/042-strlen-unterminated-loc.c`
+  (`strlen` on an unterminated array; both engines `UB_CERB002a_out_of_bound_load`; oracle
+  `<357:9--357:11>`, Lean `<unknown location>`), since 2026-11-04: the first witness,
+  `016-strstr-twoway-oob.c`, lost its out-of-bounds read to the macro-type-rank fix (tray 20; the read
+  was the library's own `ip+1` narrowed to 32 bits) and is `MATCH` on both lanes now.
 
 - **Quotation hygiene follow-up** — mirror resolved-path library-location
   classification into the fork OCaml oracle and refuse quotation through

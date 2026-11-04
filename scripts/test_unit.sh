@@ -566,6 +566,24 @@ if ! "$COMPOUND_ASSIGN_SH" --selftest; then
     exit 1
 fi
 
+# macro-type-rank witnesses (upstream-tray report 20; cerberus-caesium filing 05; the fork-ahead
+# delta of 2026-11-04): every integer type the implementation defines as an alias (size_t,
+# ptrdiff_t, wchar_t, the intptr_t/intmax_t families, enums) has the conversion rank of the type
+# it aliases (C17 6.3.1.1#1), so the usual arithmetic conversions no longer narrow it to 32 bits
+# against the int family. 104 programs under tests/macro_type_ranks/: the dense per-type matrices
+# (every partner type, both operand orders, every operator and op=, positive and negative values),
+# the promotion probes, the direct __cerbty_* families, tray 20's reproducer, the consumer's three
+# programs, the true-bug audit's Set A probes, the four measured siblings and the cluster K
+# controls, each pinned to gcc 13's line on BOTH engines; pristine c3ff8c53f's pre-fix lines are
+# the negative control. --selftest: a pristine-replaying pair, a Lean-only pristine stub, a
+# fixed-line Lean stub, an exit-code-forcing oracle wrapper and a tampered expectation must all fail.
+# Record lean_frontend/docs/2026-11-04_macro-type-ranks-record.md.
+MACRO_RANKS_SH="$(dirname "$PURITY_SH")/check_macro_type_ranks.sh"
+if ! "$MACRO_RANKS_SH" --selftest; then
+    echo "test_unit: macro-type-rank witnesses FAILED"
+    exit 1
+fi
+
 # libc dump float-literal inventory (named deviation N3, VALIDATION.md §2b;
 # bug hunt BUG-5, [USER 2026-09-30] option (3)): the pinned libc.core's float
 # literals (printed with %.12g by the oracle's Core printer) must equal the
