@@ -665,6 +665,28 @@ Nothing else.
   `scripts/check_compound_assignment_refusal.sh` (row 1), every witness pinning
   its whole text, location included. A deliberate fork ≠ pristine difference
   (below).
+- *The macro integer types' conversion rank, tray 20* (contract D14, 2026-11-04; [USER
+  2026-11-04] approved the fork fix; record `docs/2026-11-04_macro-type-ranks-record.md`):
+  the SHARED rank functions normalise their operands through the implementation's
+  alias table outside CHERI, carry the two `long long` rows and fail loudly on an
+  unranked constructor, where upstream compared bare `Size_t`/`Ptrdiff_t`/`Wchar_t`/
+  `Intptr_t`-family/`Enum` constructors and narrowed every such operand to `unsigned
+  int` against the `int` family (C17 6.3.1.1#1, 7.19#2). Both engines by generation;
+  a 483-program matrix over gcc 13.3.0, pristine c3ff8c53f and both engines: 196 wrong
+  before, 0 after on every program both sides complete, Lean = oracle throughout.
+  Moved: the libc Core (247 conditionals; the dumps, the quotation pins and the
+  float-literal register re-derived), `tests/libc_exec/016` (two-way `strstr`'s
+  out-of-bounds read was the narrowing of `ip+1`; now `Specified(10)` = gcc, so N4's
+  witness moved to `042-strlen-unterminated-loc.c`) and `015` (`strpbrk` off by one:
+  `strcspn`'s set loop stopped after its first character because `!x` on a `size_t`
+  was `== 0` under the narrowed conversions; now gcc's 16); nothing else in any gated
+  corpus (a 7204-file Core-diff sweep and a 3457-file libc-mode exec sweep). Unchanged,
+  declared: the typing's NON-STD `Size_t`/`Intptr_t` arms (`size_t op long long` typed
+  `size_t`, values equal; a false UB036 on `intptr_t` against an unsigned 64-bit
+  partner — filed), a negative `wchar_t` store (tray 62). Witnesses:
+  `scripts/check_macro_type_ranks.sh` (row 1), 104 programs pinned to gcc's line on
+  both engines, pristine's lines the negative control. A deliberate fork ≠ pristine
+  difference (below).
 - *`LEAN_ABORT_ON_PANIC` required* (Z2-FL-03): the driver refuses to
   start (exit 2) without it, because a Lean `panic!` — the fail-stop
   mirror of every OCaml failwith/assert/uncaught exception — would
@@ -1104,6 +1126,19 @@ by a cited re-record.
   the text helper `compound_assign_refusal` and the arm. Upstream disposition: draft 61 stays
   Draft — it reports the duplication and proposes the one-binding elaboration; the refusal is
   the fork's contract [AGENT].
+- **Fork-ahead fix — the macro integer types' conversion rank, tray 20 (2 register rows;
+  0 corpus rows retired; added 2026-11-04; contract D14; record `docs/2026-11-04_macro-type-ranks-record.md`):**
+  the fork ANSWERS RIGHT what pristine answers wrongly (§3(c) above). Row 10 holds two
+  `shared-model-fix` rows, `libc_exec/015-strchr-strstr.c` (pristine stdout `… 15 17`, the
+  fork and gcc `… 15 16`: `strpbrk` through musl's `strcspn`, whose set loop stopped
+  after its first character) and `libc_exec/016-strstr-twoway-oob.c` (pristine
+  `UB_CERB002a_out_of_bound_load` at `string.c:265`, the fork `Specified(10)` = gcc:
+  `ip+1` with `ip = SIZE_MAX` was 2^32), both with pristine's wrong value quoted and the
+  mechanism named; every other walked row agrees. The `[source-content]` pin for
+  `frontend/model/ail/ailTypesAux.lem` moved and the generated `ailTypesAux.ml` ENTERED
+  the `[expected-semantic]` section (`scripts/fork_drift_manifest.txt`, header note
+  "fix/macro-type-ranks"; layer 2: 32 → 33 differing files). Upstream disposition: tray 20
+  carries the patch; the delta leaves when upstream absorbs it [AGENT].
 - **`diagnostic-text` (1 row).** The inner_arg_temps I0b backport adds two
   evaluator frames to `immaculate/nolibc/zd-z2fl03-nan-to-int` while retaining
   exit 125, empty stdout and `Z.Overflow`. Its exact signature pair is
@@ -1599,6 +1634,7 @@ theorem over the shipped pipeline `@drive ⟨fuel⟩` at the ambient
 | `check_union_init_refusals.sh --selftest` | a braced union initializer designating a member other than the first is refused, never answered: 14 programs (the tray-59 witness `{ .c = {1,2,3,4} }`, static and automatic designated elements, a designated struct member, mixed positional/designated lists, a nested union, an array of unions, a string literal, a scalar second member, the retired coverage control union3-003's shape `{ .c = 'A' }`, a compound literal, a union inside a struct) are refused by the oracle (uncaught `Failure`, exit 125) and by Lean (abort, exit 134) with byte-identical texts; 11 controls agree with the oracle (positional and first-member designated forms incl. `{ 9, .a = 2 }`, a first member that is an array or a partially designated struct, `{ 0 }` read as Unspecified, a union inside a struct positional or first-designated, member assignment; the anonymous-union-in-struct control was retired 2026-10-26 — that class is refused by D12) and the struct-from-struct-variable rejection is unchanged on both (contract D11, 2026-10-20; §3(c)); plants: a pre-fix answering pair, a Lean-only answering stub, a refuse-everything pair, a message-without-abort stub and an altered-text stub must all fail it |
 | `check_anonymous_members_refusal.sh --selftest` | an anonymous struct/union member is refused at its declaration, never spliced: 29 programs (the survey's brace-elision, anonymous-first, array, sizeof/offsetof/aliasing/copy, anonymous-struct-in-union, padding and false-UB shapes; the designated, anonymous-struct-sizeof, retired coverage control struct-008, retired union-initializer control and parity-probe shapes that answered right by name lookup alone; nested members, a typedef'd tagless specifier, block scope, a compound literal in the initializer position, `_Alignas`, an unused type, sizeof only) are refused by the oracle (uncaught `Failure`, exit 125) and by Lean (abort, exit 134), each witness pinning its WHOLE text including the member's kind word (`w_s_*` struct, `w_u_*` union) and the two texts compared byte for byte; 10 controls with NAMED members agree with the oracle (a named union elided/braced/sizeof/aliased, a named single-member union, a named struct inside a struct, a union with named members only, a plain union, a tagless type with a declarator, a tagless file-scope object); 3 gap controls (a tagged struct with no declarator, a typedef'd tagged specifier, `int;`) stay the 6.7.2.1#2 constraint violation on both (contract D12, 2026-10-26; §3(c)); plants: a pre-fix answering pair (`Specified(12)`, the retired control's value), a Lean-only answering stub, a refuse-everything pair (its text's kind word read from the file name), a message-without-abort stub and an altered-text stub must all fail it, each with its derived count (58/42/13/32/29) |
 | `check_compound_assignment_refusal.sh --selftest` | a compound assignment whose left operand contains a side effect is refused, never elaborated twice: 18 programs (the survey's post-increment, pointer post-increment, call-as-lvalue, shifted and or'ed member, call-in-subscript, pre-decrement, post-incremented pointer member and comma-in-subscript shapes; a pre-increment, a call two levels deep, a comma in a member's subscript, a compound literal lvalue, an assignment in a cast's operand, `va_arg`, a `_Generic` controlling expression, the `^=` and `>>=` operators — every `op=` at least once) are refused by the oracle (uncaught `Failure`, exit 125) and by Lean (abort, exit 134), each witness pinning its WHOLE text including the `<file>:<line>:<col>:: ` location prefix and the two texts compared byte for byte; 11 controls agree with the oracle (a plain subscript, a side effect in the right operand only, plain `=` and `++` on a post-incremented subscript, `*p += 1`, `s.v |= 4`, `a[f] <<= 2`, a side effect only in e2, a volatile object, a volatile subscript — not counted —, a `sizeof` operand); the bit-field gap control stays the `feature not yet supported: bit-fields` rejection on both (contract D13, 2026-10-29; §3(c)); plants: a pre-fix answering pair (`Specified(24)`, cb-02's doubled-call value), a Lean-only answering stub, a refuse-everything pair (its text's location looked up from the file name), a message-without-abort stub and an altered-text stub must all fail it, each with its derived count (36/30/12/19/18) |
+| `check_macro_type_ranks.sh --selftest` | the macro integer types carry their implementation rank, never narrowed to `unsigned int` against the `int` family: 104 programs under `tests/macro_type_ranks/` (one dense matrix per macro type and value variant — `size_t`, `ptrdiff_t`, `wchar_t`, `intptr_t`, `uintptr_t`, `intmax_t`, `uintmax_t`, an enum with and one without a negative enumerator — against every standard type and both enums in both operand orders through every operator, the conditional operator and every `op=`; the promotion probes; the direct `__cerbty_*` families; tray 20's reproducer; the consumer's three programs; the true-bug audit's 30 Set A probes; the four siblings measured before the fix; the cluster K controls) are each pinned to gcc 13's batch line and BOTH engines must print it byte for byte with equal exit codes; `pristine.txt` carries pristine c3ff8c53f's pre-fix lines (52 of 104 differ); two rows are pinned to the fork's line as declared residuals (the NON-STD `Signed Intptr_t` typing arm's false UB036; the `size_t`/`intptr_t`-against-`long long` typing codes) and one gap control pins the negative-`wchar_t`-store crash on both engines (tray 62) (contract D14, 2026-11-04; §3(c)); plants: a pristine-replaying pair, a Lean-only pristine stub, a fixed-line Lean stub, an exit-code-forcing oracle wrapper (the Cabs export delegated) and a tampered expectation must all fail it, each with its derived count on the 10-program plant subset (16/8/10/17/2) |
 | `check_libc_float_literals.py --selftest` + check | every float literal of the pinned `tests/libc/libc.core` equals the reviewed register `scripts/libc_float_literals.txt`, as multisets, both directions; a 12-significant-digit literal may not be registered exact (named deviation N3); 8 plants |
 
 Certification-integrity rules ride the gates: validation of

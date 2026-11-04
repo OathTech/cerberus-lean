@@ -260,7 +260,8 @@
       "class": "shared-model-fix",
       "citation": [
         "lean_frontend/docs/upstream-tray/20-size-t-integer-rank-uac.md",
-        "lean_frontend/docs/2026-11-04_worker-charter-macro-type-ranks.md"
+        "lean_frontend/docs/2026-11-04_worker-charter-macro-type-ranks.md",
+        "lean_frontend/docs/2026-11-04_macro-type-ranks-record.md"
       ],
       "rationale": "`strpbrk(h, \"yx\") - h` for h = \"abcabcabcdabcde-xyzzy\" (the last of the program's twelve printed values). Pristine upstream c3ff8c53f prints 17 (verbatim stdout `2 21 10 0 9 9 18 15 1 9 15 17`); gcc 13 with glibc prints 16, the index of the first 'x'. Mechanism (tray 20, the macro-type rank defect inside the shared C library): musl's strcspn builds its byte set with `if (!BITOP(byteset, *c, |=)) break;` and `!` on the size_t value is elaborated as `== 0` under the usual arithmetic conversions of (size_t, int), which upstream's rank table narrows to unsigned int -- `(size_t)1 << 57` compares equal to 0 -- so the set-building loop stops after the set's FIRST character and \"yx\" becomes {y}; the fork, whose rank functions normalise the macro types through the implementation's alias table (fork-ahead delta of 2026-11-04, [USER 2026-11-04]), prints 16 = gcc. Class shared-model-fix; the row leaves when upstream absorbs the fix.",
       "upstream": {
@@ -278,7 +279,8 @@
       "class": "shared-model-fix",
       "citation": [
         "lean_frontend/docs/upstream-tray/20-size-t-integer-rank-uac.md",
-        "lean_frontend/docs/2026-11-04_worker-charter-macro-type-ranks.md"
+        "lean_frontend/docs/2026-11-04_worker-charter-macro-type-ranks.md",
+        "lean_frontend/docs/2026-11-04_macro-type-ranks-record.md"
       ],
       "rationale": "`strstr(h, \"abcde\") - h` for h = \"abcabcabcdabcde-xyzzy\", musl's two-way path. Pristine upstream c3ff8c53f reports `Undefined {ub: \"UB_CERB002a_out_of_bound_load\", stderr: \"\", loc: \"<265:22--265:26>\"}` (verbatim; the `memcmp(n, n+p, ms+1)` of twoway_strstr, string.c:265); gcc 13 with glibc returns 10. Mechanism (tray 20, the macro-type rank defect inside the shared C library): with `size_t ip = -1`, `ip+1` is a (size_t, int) pair that upstream's rank table narrows to unsigned int, so SIZE_MAX + 1 is 4294967296 instead of 0, `ip+1 > ms+1` holds, `ms = ip = SIZE_MAX`, and the memcmp reads 2^32 bytes past the needle; the fork (fork-ahead delta of 2026-11-04, [USER 2026-11-04]) computes 0, keeps ms, and answers Specified(10), rc 0 = gcc. Class shared-model-fix; the row leaves when upstream absorbs the fix.",
       "upstream": {

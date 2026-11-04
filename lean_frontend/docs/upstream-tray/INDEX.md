@@ -85,7 +85,7 @@ notes below establish only what was checked then.
 | [17-diagnostic-embeds-symbol-id.md](17-diagnostic-embeds-symbol-id.md) | Draft | No submission recorded |
 | [18-monadic-list-combinators-non-tail.md](18-monadic-list-combinators-non-tail.md) | Draft | No submission recorded |
 | [19-dynamic-addrs-never-cleaned.md](19-dynamic-addrs-never-cleaned.md) | Draft | No submission recorded |
-| [20-size-t-integer-rank-uac.md](20-size-t-integer-rank-uac.md) | Draft | No submission recorded |
+| [20-size-t-integer-rank-uac.md](20-size-t-integer-rank-uac.md) | Draft; fixed in the fork 2026-11-04 (fork-ahead delta, contract D14; the report carries the patch) | No submission recorded; to be filed |
 | [21-provenance-lost-through-arithmetic-pvi.md](21-provenance-lost-through-arithmetic-pvi.md) | Draft | No submission recorded |
 | [22-ptrdiff-strips-array-layer.md](22-ptrdiff-strips-array-layer.md) | Draft | No submission recorded |
 | [23-string-literal-init-of-char-array-members.md](23-string-literal-init-of-char-array-members.md) | Draft | No submission recorded |
@@ -398,7 +398,7 @@ verbatim in each draft; slice record
 Unless a draft says otherwise, both Cerberus engines agree with each other
 and gcc disagrees — the defect is in the shared model, not in our port:
 
-20. **20-size-t-integer-rank-uac.md** — TRUE BUG. `size_t` (a macro
+20. **20-size-t-integer-rank-uac.md** — TRUE BUG; FIXED IN THE FORK 2026-11-04 (a fork-ahead delta, contract D14, record `../2026-11-04_macro-type-ranks-record.md`; the report is the filing, with the patch, the library consequences and cerberus-caesium's translation-side analysis credited). `size_t` (a macro
     `integerType` constructor) has no rank in `lt_integer_rank_ISO`
     (ailTypesAux.lem:527-529, the code's own "probably wrong for macro
     types" TODO), so the usual arithmetic conversions with `int`/`char`/

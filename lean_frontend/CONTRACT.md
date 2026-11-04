@@ -180,6 +180,9 @@ witnesses and are not "thinly tested": they do not answer.
    union-initializer refusal (`scripts/check_union_init_refusals.sh`, row 1, likewise) and the anonymous-member refusal
    (`scripts/check_anonymous_members_refusal.sh`, row 1, likewise — every witness pins its whole text on both engines) and the
    compound-assignment refusal (`scripts/check_compound_assignment_refusal.sh`, row 1, likewise, the location included).
+   The one fork-ahead FIX (D14, not a refusal) has its own witness: `scripts/check_macro_type_ranks.sh` (row 1) pins gcc
+   13's line on BOTH engines for 104 programs over the macro integer types' arithmetic, with pristine's pre-fix lines as
+   the negative control, so a return to the narrowing turns the gate red.
    Limit: the immaculate and coverage witnesses pin the crash CLASS (`L=CRASH`, `UNSUPPORTED`), not the refusal
    message, under those lanes' coarse crash policy (VALIDATION §1(a)); the message is fixed in the refusing code, and
    `check_cli_refusals.sh` asserts it for the CLI flags.
@@ -316,6 +319,34 @@ witnesses and are not "thinly tested": they do not answer.
   UB:UB035_unsequenced_race`, a false UB both engines agreed on) changes class at its next deliberate re-record
   (`docs/2026-10-29_compound-assignment-refusal-record.md`). Not an override: the one-binding elaboration is upstream's to adopt; the
   refusal reaches `*p++ |= x` and `buf[len++] += v`, as intended.
+- **D14 — the macro integer types have the conversion rank of the type the implementation aliases them to** ([USER
+  2026-11-04] approved the fork fix of an upstream mistake as proposed, a fork-ahead delta of the first kind: the fork's
+  own fix, mirrored on both engines by generation, filed upstream as tray 20; the bar being a very clear standard and a
+  blocked consumer, both met — C17 6.3.1.1#1, 7.19#2; cerberus-caesium's filing 05). Upstream's `lt_integer_rank`/
+  `eq_integer_rank` (`ailTypesAux.lem`, pristine c3ff8c53f :455-541) compare the bare `Size_t`/`Ptrdiff_t`/`Wchar_t`/
+  `Intptr_t`-family/`Enum` constructors and their ISO table's catch-all answers `false` under its own TODO, so the Core
+  translation's usual arithmetic conversions fell to their last resort and computed `size_t` (and the other macro
+  types') arithmetic and comparisons against the `int` family at 32 bits (`(size_t)1 << 32 == 0` was 1; `SIZE_MAX + 1`
+  was 2^32; `!((size_t)1 << 57)` was 1), inside user code and inside the shipped C library (`strcspn`/`strspn`/
+  `strpbrk` kept only the first character of their set; two-way `strstr` read past the needle). The rule: outside CHERI
+  both rank operands are normalised through `Implementation.normalise_integerType` before the comparison (the alias
+  table the layout and range functions already used; an enum to its compatible type), the table carries the two
+  `long long` rows (the standard's top rank; they answer what the catch-all answered for those pairs, which reach it
+  from `usual_arithmetic_integer`'s bullets on equal promoted types), and the catch-all is a loud `error`; under CHERI
+  upstream's reading is kept verbatim (`intptr_t` is a capability type there; its rank rule is upstream's; CHERI is
+  unexercised here) [AGENT 2026-11-04, orchestrator rulings on the worker's report]. Consequences by construction:
+  `wchar_t` and enums promote to `int` / their compatible type (6.3.1.1#2). Deliberately unchanged, as upstream's
+  judgement and the consumer's RefinedC parity: the type checker's NON-STD `Size_t`/`Intptr_t` arms, so `size_t op
+  long long` is still TYPED `size_t` (gcc: `unsigned long long`; values equal) and `intptr_t` against an unsigned
+  64-bit partner is a false UB036 — both filed in tray 20's related findings and pinned as declared residuals; a
+  negative value stored into a `wchar_t` object still crashes both engines (report 62, the queued refusal). Measured
+  (`docs/2026-11-04_macro-type-ranks-record.md`): a 483-program matrix over gcc 13.3.0, pristine and both engines —
+  196 wrong before, 0 after on every program both sides complete, Lean = oracle throughout; the libc Core lost its 247
+  `all_values_representable_in` conditionals (dumps and quotation pins re-derived); two `tests/libc_exec` rows moved
+  to gcc's values (015 `strpbrk`, 016 two-way `strstr`), nothing else in any gated corpus; two `shared-model-fix`
+  rows in the pristine register; the N4 witness moved from 016 to `042-strlen-unterminated-loc.c`. Witness:
+  `scripts/check_macro_type_ranks.sh` (row 1). Not an override of a judgement: the code's own comment called the
+  catch-all wrong, and the delta leaves when upstream absorbs the fix (the fork-drift manifest's `ailTypesAux` rows).
 - **Agent-called dispositions under these rulings** [AGENT 2026-09-28]: `%f` of a NaN is refused rather than
   registered (it can be refused cheaply and precisely; Lean cannot read a NaN's sign), and the other disagreements that
   record found (its D3–D6, a separate numbering from this section's) are dispositioned in `docs/2026-09-28_thin-surface-tests-record.md` (addendum).

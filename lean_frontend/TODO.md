@@ -199,6 +199,21 @@ the outcome protocol; [USER 2026-10-20]); all three have landed, so the queue is
   torture_success	tests/gcc-torture/breakdown/success/990222-1.c	UB_MATCH	UB:UB035_unsequenced_race
   ```
   → both engines refuse. The one-binding elaboration stays upstream's to adopt (tray 61).
+- **The macro integer types' conversion rank** (tray 20; the survey's cluster K, which the survey marked CORRECT having
+  probed only compatibility and `_Generic`; rediscovered by cerberus-caesium's filing 05 at a blocked libxml2
+  refinement; [USER 2026-11-04] approved the fork fix) — **DONE 2026-11-04** (branch `fix/macro-type-ranks`, contract
+  D14, record `docs/2026-11-04_macro-type-ranks-record.md`): `lt_integer_rank`/`eq_integer_rank` normalise their
+  operands through the implementation's alias table outside CHERI, the two `long long` rows, the loud catch-all; both
+  engines by generation; `scripts/check_macro_type_ranks.sh` in row 1; the libc Core and its pins re-derived; two
+  `tests/libc_exec` rows moved to gcc's values (015, 016) and two `shared-model-fix` rows registered; the N4 witness
+  moved to `042-strlen-unterminated-loc.c`. Still open from it, filed in tray 20's related findings, not fixed
+  (upstream's deliberate NON-STD typing arms; the consumer's RefinedC parity): `size_t`/`intptr_t` against `long
+  long`/`unsigned long` are TYPED `size_t`/`intptr_t` (gcc: `unsigned long long`/`unsigned long`; values equal), and
+  `intptr_t` against an unsigned 64-bit partner is a false `UB036_exceptional_condition` (`intptr_t a = 5; unsigned
+  long b = 2^64-6; a + b`; gcc defined) — the slice that retires those arms (or refuses them) is a typing change with
+  a consumer note. A negative value stored into a `wchar_t` object is tray 62's crash (the crash-to-refusal item
+  above, arm (1)); `tests/parity-probes/uncertainty/E-wchar_t/wt-06` answers gcc's 14 now (`wchar_t` promotes to
+  `int`). Instrument note: an exhaustive-mode run of `tests/libc_exec/015` exceeds 60 s on both oracles.
 - **GNU `?:` in a constant-expression position loses its refusal** (found by the slice above, 2026-10-29; tray 61's
   related note; upstream's arm, not fixed here): the `AilEcond e1 Nothing e3` arm refuses through `E.record_error_at`,
   and the constant-expression mini-run (`mini_pipeline.lem:157`, plain `runStateM`) discards the recorded error and
