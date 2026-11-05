@@ -104,3 +104,5 @@ st-09-rank-long-longlong	Defined {value: "Specified(1)", stdout: "", stderr: "",
 tray20_int_size_t_uac_rank	Defined {value: "Specified(0)", stdout: "705032705 1410065408 352516353 5000000001 705032705 705032705 1 705032705 705032705\n", stderr: "", blocked: "false"}
 gap_intptr_t_unsigned_false_ub036	Undefined {ub: "UB036_exceptional_condition", stderr: "", loc: "<4:40--4:47>"}
 residual_size_t_llong_typing	Defined {value: "Specified(0)", stdout: "10 10 9 9 9\n", stderr: "", blocked: "false"}
+dense_macro_vs_macro_pos	Undefined {ub: "UB036_exceptional_condition", stderr: "", loc: "<236:215--236:240>"}
+dense_macro_vs_macro_neg	Undefined {ub: "UB045c_quotient_not_representable", stderr: "", loc: "<18:350--18:374>"}

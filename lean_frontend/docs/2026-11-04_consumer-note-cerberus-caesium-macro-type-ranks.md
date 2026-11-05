@@ -38,14 +38,16 @@ copied into the translation) — it fixes the `int` case but hard-codes a non-st
   libc dump or its digest, moves with it: `tests/libc/libc.core.sha256` `f8560811…` → `fae6ce64…`,
   `libc_inner_arg_temps.core.sha256` `06a1f84c…` → `45eaac23…`, `test/CoreQuote/core-quote-libc.sha256` `90d09e84…` →
   `dc09e554…`, `-inner-arg-temps` `b7e2711e…` → `4c9f5e69…`.
-- The shipped C library behaves differently where its own `size_t` arithmetic was narrowed: `strcspn`, `strspn` and
-  `strpbrk` with a multi-character set (their set-building loop `if (!BITOP(byteset, *c, |=)) break;` stopped after the
-  first character, because `!` on a `size_t` was elaborated as `== 0` under the narrowed conversions), and two-way
-  `strstr` (needles of length ≥ 5) no longer reads past the needle (`ip+1` with `ip = SIZE_MAX` was 2^32). If your
-  libxml2 TUs call these, their behaviour under the driver moves to glibc's.
+- The shipped C library behaves differently where its own `size_t` arithmetic was narrowed: `strcspn` and `strpbrk`
+  (which calls it) with a multi-character set (the set-building loop `if (!BITOP(byteset, *c, |=)) break;` stopped after
+  the first character, because `!` on a `size_t` was elaborated as `== 0` under the narrowed conversions; `strspn`'s
+  `*c && BITOP(…)` form was never affected — the pre-merge reviewer measured pristine `strspn` at `9 9 5` = glibc), and
+  two-way `strstr` (needles of length ≥ 5) no longer reads past the needle (`ip+1` with `ip = SIZE_MAX` was 2^32). If
+  your libxml2 TUs call these, their behaviour under the driver moves to glibc's.
 - Values at and beyond 2^32 and 32-bit wraparound in `size_t`/`ptrdiff_t`/`wchar_t`/enum arithmetic against `int`,
   `unsigned`, `char`, `short` and `long` partners, in both orders, every operator, every `op=`, `?:` and `!`: gcc's
-  values now (the witness pins 104 programs; the matrix measured 483 — 196 wrong before, 0 after).
+  values now (the witness pins 106 programs, macro-versus-macro pairs included; the matrix measured 483 — 196 wrong
+  before, 0 after).
 
 ## What does NOT change (declared, filed, not fixed here)
 
@@ -58,13 +60,20 @@ copied into the translation) — it fixes the `int` case but hard-codes a non-st
 - A negative value stored into a `wchar_t` object still crashes both engines at the store (report 62, the queued
   crash-to-refusal slice); `wchar_t` arithmetic itself is right now (done in `int`).
 - CHERI keeps upstream's rank reading verbatim.
-- The typing of a comparison (`int`) and the operands' types are unchanged on the Ail side, so your port of RefinedC's
-  frontend (`AilToCoq.lean:738-748`) sees the same Ail as before; only the driver's Core moved.
+- The Ail side moves too, and you must weigh it against RefinedC: the Ail type of a comparison is still `int`, and the
+  Ail type of `size_t op X` is still `size_t` (upstream's NON-STD arm, the w24/w25 case), but the type checker's
+  `usual_arithmetic_integer` uses the same rank functions after its NON-STD arms, so the Ail type of every binary
+  expression with a `ptrdiff_t`, `wchar_t`, `intmax_t`/`uintmax_t`, `intN_t`-family or enum operand against a standard
+  type is now the STANDARD's, and `wchar_t`/enums promote. Measured by the pre-merge reviewer with `_Generic` (pristine
+  → fork): `int + ptrdiff_t` 7 → 9 (`int` → `long`), `enum + unsigned long` 8 → 10, `wchar_t + long` 7 → 9,
+  `eu ? es : eu` 7 → 8. RefinedC's frontend (and your port of it, `AilToCoq.lean:738-748`) types those pairs the OLD
+  way, so your clone-versus-RefinedC comparison may move on them while the fork now matches the standard; only the
+  `size_t` pairs keep their old Ail type.
 
 ## For your re-pin
 
 Re-run your differential on the witness corpus after the re-pin; w24/w25 are expected to become agreements and your
 declared difference B9 (`docs/2026-11-01_charter-alignment-campaign.md` §2.3) can close. If a `libxml2` TU of yours
-exercises `strcspn`/`strspn`/`strpbrk`/`strstr`, expect its driver rows to move to glibc's values. The register
+exercises `strcspn`/`strpbrk`/`strstr`, expect its driver rows to move to glibc's values (`strspn` is unchanged). The register
 `scripts/upstream_oracle_differences.json` carries two new `shared-model-fix` rows (`libc_exec/015`, `/016`) for the
 pristine lane; nothing else in the fork-vs-pristine inventory changed.

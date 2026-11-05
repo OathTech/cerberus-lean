@@ -1,4 +1,4 @@
-# `size_t` and the other macro integer types have no integer conversion rank: usual arithmetic conversions with the `int` family compute at 32 bits (and musl's `strcspn`/`strspn`/`strpbrk` and two-way `strstr` inherit it)
+# `size_t` and the other macro integer types have no integer conversion rank: usual arithmetic conversions with the `int` family compute at 32 bits (and musl's `strcspn`/`strpbrk` and two-way `strstr` inherit it)
 
 **Status (cerberus-lean fork):** fixed in the fork on 2026-11-04 as a fork-ahead delta (both engines by generation;
 record `lean_frontend/docs/2026-11-04_macro-type-ranks-record.md`; witness `scripts/check_macro_type_ranks.sh`);
@@ -95,9 +95,11 @@ int i = 1; ptrdiff_t n = (ptrdiff_t)1 << 33;  printf("%lld %lld\n", (long long)(
 Observed: every arithmetic, bitwise, comparison and compound-assignment operation whose operands are a macro integer
 type and a member of the `int` family (or an enum and a wider standard type) is computed after converting both
 operands to `unsigned int` — values truncated, unsigned wraparound at 32 bits, comparisons wrong, `!x` wrong — and the
-C library the model ships is elaborated the same way: musl's `strcspn`/`strspn`/`strpbrk` build their byte set with
-`if (!BITOP(byteset, *c, |=)) break;`, and since `!((size_t)1 << 57)` is true the set keeps only its FIRST character
-(`strcspn("abcabcabcdabcde-xyzzy", "yx")` is 17 — the `y` — where glibc says 16); `twoway_strstr` computes `ip+1` with
+C library the model ships is elaborated the same way: musl's `strcspn` (and `strpbrk`, which calls it) builds its byte
+set with `if (!BITOP(byteset, *c, |=)) break;`, and since `!((size_t)1 << 57)` is true the set keeps only its FIRST
+character (`strcspn("abcabcabcdabcde-xyzzy", "yx")` is 17 — the `y` — where glibc says 16; `strspn`'s `for (; *c &&
+BITOP(…, |=); c++)` form is NOT affected, `&&` not being elaborated through the usual arithmetic conversions:
+`strspn(h, "abc")`, `strspn(h, "cba")`, `strspn("xyzzyabc", "zyx")` are `9 9 5` = glibc on the un-forked binary); `twoway_strstr` computes `ip+1` with
 `size_t ip = -1` as `4294967296`, so `ip+1 > ms+1` holds, `ms` becomes `SIZE_MAX` and `memcmp(n, n+p, ms+1)` reads
 past the needle (`strstr("abcabcabcdabcde-xyzzy", "abcde")` reports `UB_CERB002a_out_of_bound_load` at `string.c:265`
 where glibc returns the match at 10).
@@ -111,8 +113,8 @@ same for `ptrdiff_t` (`long`), `wchar_t` (`int`, so it also promotes to `int`, 6
 ## Impact
 
 `size_t` arithmetic mixed with `int`-family operands is ubiquitous (`len + 1`, `i < n`, `n * sizeof(T)`, `n - 1`,
-`!n`, `len == 0`), and the library itself is affected: string searching with a multi-character set (`strcspn`, `strspn`,
-`strpbrk`) returns the wrong index whenever the set's first character is not the first hit, and any needle of length
+`!n`, `len == 0`), and the library itself is affected: string searching with a multi-character set (`strcspn` and
+`strpbrk`; `strspn` is not affected) returns the wrong index whenever the set's first character is not the first hit, and any needle of length
 ≥ 5 takes the two-way `strstr` path's out-of-bounds read. The wrong value appears at ≥ 2^32 and at 32-bit wraparound,
 which is why small-program test suites do not see it; comparisons make it a control-flow difference. Both memory models
 are affected (the defect is in Ail typing / elaboration, upstream of the memory interface). The typing's NON-STD arms
@@ -135,7 +137,7 @@ gcc's lines, and `strcspn`/`strstr` behave.
 ```diff
 --- a/frontend/model/ail/ailTypesAux.lem	(upstream c3ff8c53f)
 +++ b/frontend/model/ail/ailTypesAux.lem	(cerberus-lean fix/macro-type-ranks, 2026-11-04)
-@@ -451,9 +453,33 @@
+@@ -451,9 +451,33 @@
    end
  
  
@@ -169,7 +171,7 @@ gcc's lines, and `strcspn`/`strstr` behave.
    ity1 = ity2 || eq_integer_rank_base ity1 ity2
  
  val lt_integer_rank: integerType -> integerType -> bool
-@@ -523,10 +549,31 @@
+@@ -523,10 +547,31 @@
      | (Unsigned Long, Unsigned _) ->
          true
      
@@ -203,7 +205,7 @@ gcc's lines, and `strcspn`/`strstr` behave.
    if Global.is_CHERI () then
      match ity1 with
        (* Bottom: In CHERI C intptr_t types have the highest rank so
-@@ -535,10 +582,10 @@
+@@ -535,10 +580,10 @@
      | Signed Intptr_t -> false
      | Unsigned Intptr_t -> false
      | _ ->

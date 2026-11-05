@@ -570,7 +570,8 @@ fi
 # delta of 2026-11-04): every integer type the implementation defines as an alias (size_t,
 # ptrdiff_t, wchar_t, the intptr_t/intmax_t families, enums) has the conversion rank of the type
 # it aliases (C17 6.3.1.1#1), so the usual arithmetic conversions no longer narrow it to 32 bits
-# against the int family. 104 programs under tests/macro_type_ranks/: the dense per-type matrices
+# against the int family. 106 programs under tests/macro_type_ranks/: the dense per-type matrices,
+# two macro-versus-macro matrices (the seven macro types pairwise),
 # (every partner type, both operand orders, every operator and op=, positive and negative values),
 # the promotion probes, the direct __cerbty_* families, tray 20's reproducer, the consumer's three
 # programs, the true-bug audit's Set A probes, the four measured siblings and the cluster K

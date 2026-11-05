@@ -181,7 +181,8 @@ witnesses and are not "thinly tested": they do not answer.
    (`scripts/check_anonymous_members_refusal.sh`, row 1, likewise — every witness pins its whole text on both engines) and the
    compound-assignment refusal (`scripts/check_compound_assignment_refusal.sh`, row 1, likewise, the location included).
    The one fork-ahead FIX (D14, not a refusal) has its own witness: `scripts/check_macro_type_ranks.sh` (row 1) pins gcc
-   13's line on BOTH engines for 104 programs over the macro integer types' arithmetic, with pristine's pre-fix lines as
+   13's line on BOTH engines for 103 of 106 programs over the macro integer types' arithmetic (macro-versus-macro
+   pairs included; 2 programs pin the fork's declared residuals, 1 the tray-62 crash), with pristine's pre-fix lines as
    the negative control, so a return to the narrowing turns the gate red.
    Limit: the immaculate and coverage witnesses pin the crash CLASS (`L=CRASH`, `UNSUPPORTED`), not the refusal
    message, under those lanes' coarse crash policy (VALIDATION §1(a)); the message is fixed in the refusing code, and
@@ -327,15 +328,22 @@ witnesses and are not "thinly tested": they do not answer.
   `Intptr_t`-family/`Enum` constructors and their ISO table's catch-all answers `false` under its own TODO, so the Core
   translation's usual arithmetic conversions fell to their last resort and computed `size_t` (and the other macro
   types') arithmetic and comparisons against the `int` family at 32 bits (`(size_t)1 << 32 == 0` was 1; `SIZE_MAX + 1`
-  was 2^32; `!((size_t)1 << 57)` was 1), inside user code and inside the shipped C library (`strcspn`/`strspn`/
-  `strpbrk` kept only the first character of their set; two-way `strstr` read past the needle). The rule: outside CHERI
+  was 2^32; `!((size_t)1 << 57)` was 1), inside user code and inside the shipped C library (`strcspn` — and `strpbrk`,
+  which calls it — kept only the first character of its set; two-way `strstr` read past the needle; `strspn`'s
+  `&&` form was never affected: pristine's `strspn` is `9 9 5` = gcc on the reviewer's probe). The rule: outside CHERI
   both rank operands are normalised through `Implementation.normalise_integerType` before the comparison (the alias
   table the layout and range functions already used; an enum to its compatible type), the table carries the two
   `long long` rows (the standard's top rank; they answer what the catch-all answered for those pairs, which reach it
   from `usual_arithmetic_integer`'s bullets on equal promoted types), and the catch-all is a loud `error`; under CHERI
   upstream's reading is kept verbatim (`intptr_t` is a capability type there; its rank rule is upstream's; CHERI is
   unexercised here) [AGENT 2026-11-04, orchestrator rulings on the worker's report]. Consequences by construction:
-  `wchar_t` and enums promote to `int` / their compatible type (6.3.1.1#2). Deliberately unchanged, as upstream's
+  `wchar_t` and enums promote to `int` / their compatible type (6.3.1.1#2), and the Ail TYPE of every binary
+  expression with a `ptrdiff_t`/`wchar_t`/`intmax_t`/`uintmax_t`/`intN_t`-family/enum operand against a standard type
+  is the standard's (the type checker's `usual_arithmetic_integer` uses the same rank functions after its NON-STD
+  arms; measured with `_Generic`, pristine → fork: `int + ptrdiff_t` 7 → 9, `enum + unsigned long` 8 → 10, `wchar_t +
+  long` 7 → 9) while a `size_t` pair keeps its old Ail type through the NON-STD arm — so a consumer comparing its
+  clone against RefinedC's frontend, which types those pairs the old way, may see that comparison move while the
+  fork now matches the standard (the cerberus-caesium note says so). Deliberately unchanged, as upstream's
   judgement and the consumer's RefinedC parity: the type checker's NON-STD `Size_t`/`Intptr_t` arms, so `size_t op
   long long` is still TYPED `size_t` (gcc: `unsigned long long`; values equal) and `intptr_t` against an unsigned
   64-bit partner is a false UB036 — both filed in tray 20's related findings and pinned as declared residuals; a

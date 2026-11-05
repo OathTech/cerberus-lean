@@ -5,8 +5,8 @@ Branch `fix/macro-type-ranks`, worktree `worktrees/cerberus-lean-fix/macro-type-
 `docs/2026-11-04_worker-charter-macro-type-ranks.md` (commit `05db564bc`). Worker: Claude Fable 5.1 (agent). Every
 judgement below that no operator ruling covers is marked [AGENT]. Status: **fixed in the shared Lem (both engines by
 generation), witnessed in row 1, every moved row dispositioned with gcc as the referee; Tier A green on M1 (after the
-two libc rows of §4.3 were dispositioned) and on M2 (§6.2); the full battery at close-out is the orchestrator's (§6.3,
-appended after the run).** The charter's premises held with the corrections of §0 (the `long long` rows, CHERI, the
+two libc rows of §4.3 were dispositioned) and on M2 (§6.2); the full battery passed on the M3 tip, 45/45 (§6.3); the
+pre-merge review's six documentation-and-witness fixes are in the close-out commit (§9).** The charter's premises held with the corrections of §0 (the `long long` rows, CHERI, the
 manifest row, reachability, the pins, the register).
 
 ## 0. Rulings and standing rules
@@ -124,7 +124,15 @@ Long`, `Wchar_t`/`Wint_t → Signed Int_`, `Intptr_t`/`Intmax_t → Long`, the `
 (6.7.2.2#4, through the enum map), and leaves `Char`, `Bool` and `Ptraddr_t` fixed; `eq_integer_rank_base`'s `Char`
 rows therefore still hold. Consequences by construction: `integer_promotion` now promotes `wchar_t` to `int` and an
 enum to its compatible type (6.3.1.1#2; `_Generic(+w, int: 1)` is 1 on gcc too); the `__cerbty_int8_t`-style direct
-spellings promote to `int`; `ptrdiff_t`, `size_t` and the `Intptr_t` constructors keep their explicit arms.
+spellings promote to `int`; `ptrdiff_t`, `size_t` and the `Intptr_t` constructors keep their explicit arms. The Ail
+TYPING moves with the rank functions too (review P2-2): the type checker's `usual_arithmetic_integer_default` calls
+`lt_integer_rank`/`ge_integer_rank` after its NON-STD `Size_t`/`Intptr_t` arms, so the Ail type of every binary
+expression with a `ptrdiff_t`/`wchar_t`/`intmax_t`/`uintmax_t`/`intN_t`-family/enum operand against a standard type is
+now the standard's where it was the first operand's (`lt` always false before) — measured by the reviewer with
+`_Generic`, pristine → fork: `int + ptrdiff_t` 7 → 9 (`int` → `long`), `enum + unsigned long` 8 → 10, `wchar_t +
+long` 7 → 9, `eu ? es : eu` 7 → 8 — while a `size_t` pair keeps its old Ail type through the NON-STD arm. For a
+consumer comparing its clone against RefinedC's frontend, which types those pairs the old way, that comparison may
+move while the fork now matches the standard; the cerberus-caesium note and CONTRACT D14 say so.
 
 ### 2.2 Why the two `long long` rows (orchestrator ruling (1))
 
@@ -220,18 +228,21 @@ rebuilt with that binary from `runtime/libc` and verified — their dumps equal 
 | F3 | `size_t`/`intptr_t` against `long long`/`unsigned long`/`unsigned long long` typed by the NON-STD arms | typing residual, values equal | upstream's judgement, left; filed as tray 20's related finding; the fork's codes pinned |
 | F4 | `intptr_t` against an unsigned 64-bit partner: a false UB036 when the unsigned result exceeds `INTPTR_MAX` (`intptr_t a = 5; unsigned long b = 2^64-6; a + b`; `-5 * 3ul`), pristine/before/after identical, gcc defined | false UB from the NON-STD `Signed Intptr_t` typing arm against the (now standard) conversion | filed (tray 20 related finding; TODO); pinned as a gap control |
 | F5 | `tests/parity-probes/uncertainty/E-wchar_t/wt-06-sizeof-signedness.c`: `(wchar_t)-1 < 0` was 0, is 1 (14 = gcc) | the survey's IMPL-DEF row now agrees with gcc (`wchar_t` promotes to `int`, its alias) | survey table annotated; not gated |
-| F6 | inside the C library: two-way `strstr`'s `ip+1` (§4.3), `strcspn`/`strspn`/`strpbrk`'s set loop `!BITOP(…)` (§4.3) | the same mechanism, through libc | fixed by generation; rows 016/015 moved |
+| F6 | inside the C library: two-way `strstr`'s `ip+1` (§4.3), `strcspn`'s set loop `!BITOP(…)` and so `strpbrk` (§4.3; `strspn`'s `&&` form was never affected — review P2-1) | the same mechanism, through libc | fixed by generation; rows 016/015 moved |
 
-### 3.4 The witness (`scripts/check_macro_type_ranks.sh`, row 1; `tests/macro_type_ranks/`, 104 programs)
+### 3.4 The witness (`scripts/check_macro_type_ranks.sh`, row 1; `tests/macro_type_ranks/`, 106 programs)
 
 One DENSE program per (macro type, variant) covering every partner in sequence (45: the 9 primary types' `pos`/`bneg`
 and the signed ones' `aneg` — `wchar_t`'s `aneg` excluded, a negative store, F2 —, the 24 `__cerbty_*` families'
-`pos`), 9 promotion probes, the 47 controls, the gap control `gap_wchar_t_negative_store` (both engines crash, tray 62),
+`pos`), two macro-versus-macro matrices (`dense_macro_vs_macro_{pos,neg}`, review P3-1: the seven header-reachable
+macro types pairwise, both orders, a big and a small operand per type so no product overflows — gcc with UBSan clean —,
+every operator, the conditional operator, every `op=` on a 64-bit left operand; `intptr_t` against the signed macro
+types only, F4 being pinned apart; pristine answers a false UB036 / UB045c on them), 9 promotion probes, the 47 controls, the gap control `gap_wchar_t_negative_store` (both engines crash, tray 62),
 the F4 gap control `gap_intptr_t_unsigned_false_ub036` (both engines `UB036`, rc 1) and the typing-residual control
 `residual_size_t_llong_typing` (the fork's `_Generic` codes `10 10 9 9 9`; gcc `12 12 10 11 12` in the comment). Every
 other row is pinned to gcc 13's line (`expected.txt`, derived 2026-11-04) and both engines must print it byte for byte
 with equal exit codes (the oracle's exit is 0 for `Defined`, 1 for `Undefined`); `pristine.txt` carries pristine's
-pre-fix lines (52 of 104 differ: the negative control). Five plants on a 10-program subset, counts derived in the
+pre-fix lines (54 of 106 differ: the negative control). Five plants on a 10-program subset, counts derived in the
 script: `pristine-pair` 16, `lean-pristine` 8, `lean-fixed` 10, `oracle-rc` 17, `expect-tamper` 2. Cost: a dense
 program 0.97 s on Lean, 0.29 s on the oracle; the self-test and real run together ≈ 60 s. Verbatim:
 
@@ -241,7 +252,7 @@ check_macro_type_ranks: selftest plant 'lean-pristine' caught: 8 failing check(s
 check_macro_type_ranks: selftest plant 'lean-fixed' caught: 10 failing check(s) (= expected 10; incl. the required programs)
 check_macro_type_ranks: selftest plant 'oracle-rc' caught: 17 failing check(s) (= expected 17; incl. the required programs)
 check_macro_type_ranks: selftest plant 'expect-tamper' caught: 2 failing check(s) (= expected 2; incl. the required programs)
-check_macro_type_ranks: OK (104 programs: every batch line of both engines = gcc 13's pinned line, exit codes equal — the dense per-type matrices (every standard partner and both enums, both operand orders, every operator and op=, positive and negative values) for size_t, ptrdiff_t, wchar_t, intptr_t, uintptr_t, intmax_t, uintmax_t and the two enums, the promotion probes, the direct __cerbty_* families, tray 20's reproducer, the consumer's three programs, the audit's Set A probes, the four measured siblings and the cluster K controls; 52 of them moved from pristine's pre-fix lines; the negative wchar_t store still crashes both engines (tray 62, unchanged); the intptr_t-against-unsigned false UB036 (the upstream NON-STD typing arm, filed) and the size_t/intptr_t-against-long-long typing codes are pinned as the declared residuals)
+check_macro_type_ranks: OK (106 programs: 103 batch lines of both engines = gcc 13's pinned line, exit codes equal — the dense per-type matrices (every standard partner and both enums, both operand orders, every operator and op=, positive and negative values) for size_t, ptrdiff_t, wchar_t, intptr_t, uintptr_t, intmax_t, uintmax_t and the two enums, the two macro-versus-macro matrices, the promotion probes, the direct __cerbty_* families, tray 20's reproducer, the consumer's three programs, the audit's Set A probes, the four measured siblings and the cluster K controls, 54 of them moved from pristine's pre-fix lines; 2 lines pinned to the fork's declared residuals (the intptr_t-against-unsigned false UB036 from the upstream NON-STD typing arm, filed; the size_t/intptr_t-against-long-long typing codes); 1 gap control: the negative wchar_t store still crashes both engines (tray 62, unchanged))
 ```
 
 Two script defects the self-test caught before the counts above held: an exit-forcing plant that also broke the
@@ -279,7 +290,7 @@ matches lem -v lean-backend-v0.1.0-alpha.1-78-ge6d8db5 (hex prefix))`; `check_fo
 | row | lanes | before | after | gcc/glibc | disposition |
 |---|---|---|---|---|---|
 | `tests/libc_exec/016-strstr-twoway-oob.c` | A5 (`LOC_ONLY` → `MATCH`), A15 (`LOC_ONLY-FIRST` → `AGREE-FIRST`), Tier B row 10 (new difference) | `Undefined {ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<265:22--265:26>"}`; Lean the same UB at `<unknown location>` | `Defined {value: "Specified(10)", stdout: "", stderr: "", blocked: "false"}` | 10 | **mechanism:** `twoway_strstr`'s `size_t ip = -1; … if (ip+1 > ms+1) ms = ip;` — `ip+1` is a (`size_t`, `int`) pair the old table narrowed to `unsigned int`: `SIZE_MAX + 1` came out as 4294967296 (probed; gcc 0), the test held, `ms` became `SIZE_MAX`, and `memcmp(n, n+p, ms+1)` read 2^32 bytes past the needle (the proc's Core: 23 hunks, 46 conditionals removed). Baseline `MATCH`; its `dispositions.txt` line retired as a dated comment; the inner_arg_temps row re-recorded (`lean`/`oracle` `2d38bc36310e`); register row `shared-model-fix` with pristine's UB quoted |
-| `tests/libc_exec/015-strchr-strstr.c` | A15 (hash `90bcc96c53cc` → `e6f41a22018b`, both engines), Tier B row 10 (new difference); A5 `MATCH` unchanged (its baseline pins classes only) | stdout `2 21 10 0 9 9 18 15 1 9 15 17` | `… 15 16` | `… 15 16` | **mechanism:** `strpbrk(h, "yx") - h` → `strcspn` builds its byte set with `do { if (!BITOP(byteset, *c, |=)) break; c++; } while (*c);` and `!` on the `size_t` value is `== 0` under the usual arithmetic conversions with `int` 0, narrowed: `!((size_t)1 << 57)` was 1 (probed; gcc 0), so the loop stopped after the set's FIRST character — `"yx"` became `{y}` (found at 17), `"xy"` `{x}` (right by luck), `"-y"` `{-}` (right by luck); `strspn`'s `for (; *c && BITOP(…, |=); c++)` likewise. A silently wrong value both engines agreed on. The inner_arg_temps row re-recorded from a whole-lane `--record-baseline` into scratch (exactly the three rows of this table moved; the lane's file applied); register row with pristine's stdout quoted |
+| `tests/libc_exec/015-strchr-strstr.c` | A15 (hash `90bcc96c53cc` → `e6f41a22018b`, both engines), Tier B row 10 (new difference); A5 `MATCH` unchanged (its baseline pins classes only) | stdout `2 21 10 0 9 9 18 15 1 9 15 17` | `… 15 16` | `… 15 16` | **mechanism:** `strpbrk(h, "yx") - h` → `strcspn` builds its byte set with `do { if (!BITOP(byteset, *c, |=)) break; c++; } while (*c);` and `!` on the `size_t` value is `== 0` under the usual arithmetic conversions with `int` 0, narrowed: `!((size_t)1 << 57)` was 1 (probed; gcc 0), so the loop stopped after the set's FIRST character — `"yx"` became `{y}` (found at 17), `"xy"` `{x}` (right by luck), `"-y"` `{-}` (right by luck); `strspn`'s `for (; *c && BITOP(…, |=); c++)` is NOT affected — `&&` is not elaborated through the usual arithmetic conversions; the pre-merge reviewer measured pristine `strspn(h, "abc")`, `strspn(h, "cba")`, `strspn("xyzzyabc", "zyx")` = `9 9 5` = gcc (P2-1; the record's first text named it a victim). A silently wrong value both engines agreed on. The inner_arg_temps row re-recorded from a whole-lane `--record-baseline` into scratch (exactly the three rows of this table moved; the lane's file applied); register row with pristine's stdout quoted |
 | N4's witness | A5, A15 | 016 carried `LOC_ONLY` / `LOC_ONLY-FIRST` | 016 is `MATCH` | — | **replacement:** `tests/libc_exec/042-strlen-unterminated-loc.c` (`char a[4] = "abcd"; strlen(a)`): oracle `UB_CERB002a … loc: "<357:9--357:11>"` (the load in musl's `strlen` loop), Lean `<unknown location>`; `LOC_ONLY` with a dated `dispositions.txt` line, inner_arg_temps `LOC_ONLY-FIRST` with the lane's own disposition text; VALIDATION N4 and TODO's transport item point at it. [AGENT 2026-11-04], accepted: an over-long `memcmp` was tried first and does not exercise N4 (a memory-model builtin carries the call's own location) |
 | `tests/noodle-probes/int/int_size_t_uac_rank.c` | none (tray 20's probe) | tray 20's line | gcc's line | — | not gated |
 | `tests/parity-probes/uncertainty/E-wchar_t/wt-06-sizeof-signedness.c` | none (survey cluster E) | `Specified(4)` | `Specified(14)` | 14 | F5; the survey row annotated |
@@ -362,7 +373,7 @@ baseline changed: {'class': 'AGREE-FIRST', … 'oracle': '90bcc96c53cc'} -> {'cl
 'e6f41a22018b', …}`; every other row PASSED. Both are the C library's own `size_t` arithmetic moving (§4.3), dispositioned
 in M2.
 
-### 6.2 M2 (`5dd549e54`): §3.4, §4.5; Tier A (orchestrator-run) — appended after the run
+### 6.2 M2 (`5dd549e54`): §3.4, §4.5; Tier A (orchestrator-run)
 
 Run by the orchestrator on `5dd549e54` (`scripts/ce python3 scripts/release.py --mode fast`, evidence
 `.tmp/release/ranks-fast-m2-20261104T221415Z`, 22:14:15 to 22:47:40 UTC, start load 0.20), verbatim:
@@ -374,11 +385,74 @@ release rc=0
 ```
 
 All 20 commands PASSED (A5 and A15 included, on the re-recorded rows of §4.3). The full battery on the M3 tip (§6.3)
-is the orchestrator's, with a fresh reviewer in parallel; its lines are appended by the close-out commit after the run.
+ran with a fresh reviewer in parallel; its lines are in §6.3, the review's dispositions in §9.
 
-### 6.3 The full battery at close-out (appended after the run)
+### 6.3 The full battery on the M3 tip (orchestrator-run)
 
-Run by the orchestrator on the M3 tip; its lines are appended by the close-out commit after the run.
+Run by the orchestrator on this branch's M3 tip `ab6295a01` (`scripts/ce python3 scripts/release.py --mode full`,
+started 2026-11-04 22:49:27 UTC at 1-minute load 0.36, ended 2026-11-05 01:12:46 UTC; evidence
+`.tmp/release/ranks-full-m3-20261104T224927Z`, log `.tmp/ranks-full-m3.log`, both the orchestrator's; it subsumes Tier A,
+so no separate Tier A was run on M3). Verbatim: the log's header line, every per-command line and the summary lines
+(all 45 PASSED; the slow rows B9 2395.1 s, B7 1488.5 s, A1 988.2 s, B13 771.1 s; B7's gcc-ledger check and B10's
+pristine lane green on the re-recorded rows):
+
+```text
+HEAD=ab6295a01 start=22:49:27 load=0.36 out=/home/dev/projects/cerberus-lean-proj/.tmp/release/ranks-full-m3-20261104T224927Z
+PASSED A1 (988.2s)
+PASSED A2 (30.7s)
+PASSED A3 (76.6s)
+PASSED A4 (24.7s)
+PASSED A4b (26.2s)
+PASSED A4c (3.1s)
+PASSED A5 (90.6s)
+PASSED A6 (4.0s)
+PASSED A6b (3.7s)
+PASSED A7 (10.5s)
+PASSED A8 (8.9s)
+PASSED A9 (16.8s)
+PASSED A10 (17.0s)
+PASSED A11 (63.0s)
+PASSED A12.1 (5.0s)
+PASSED A12.2 (4.6s)
+PASSED A13 (1.6s)
+PASSED A14.1 (111.8s)
+PASSED A14.2 (147.5s)
+PASSED A15 (364.8s)
+PASSED B1 (546.4s)
+PASSED B2 (23.5s)
+PASSED B3 (15.2s)
+PASSED B4 (46.3s)
+PASSED B5 (104.4s)
+PASSED B6.1 (60.4s)
+PASSED B6.2 (2.3s)
+PASSED B6.3 (9.5s)
+PASSED B6.4 (8.8s)
+PASSED B6.5 (9.2s)
+PASSED B6.6 (9.9s)
+PASSED B6.7 (8.7s)
+PASSED B7 (1488.5s)
+PASSED B8.1 (13.5s)
+PASSED B8.2 (405.8s)
+PASSED B8.3 (9.9s)
+PASSED B8.4 (16.2s)
+PASSED B9 (2395.1s)
+PASSED B10.1 (200.9s)
+PASSED B10.2 (2.0s)
+PASSED B11.1 (27.2s)
+PASSED B11.2 (8.2s)
+PASSED B12 (413.3s)
+PASSED B14 (2.0s)
+PASSED B13 (771.1s)
+full: passed; 45/45 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+Release certification: incomplete: reporting/adoption/audit exits require separate evidence.
+release rc=0 end=01:12:46
+```
+
+`summary.txt`, verbatim: `full: passed; 45/45 selected commands completed successfully.` / `Source unchanged: True.
+Complete tier selection: True.` / `Release certification: incomplete: reporting/adoption/audit exits require separate
+evidence.` The pre-merge review ran in parallel (§9); its six fixes and the close-out commit followed (Tier A on the
+close-out tip is the orchestrator's).
 
 ## 7. Not done / open
 
@@ -394,10 +468,56 @@ Run by the orchestrator on the M3 tip; its lines are appended by the close-out c
 - The vicinity sweep's exhaustive-mode bound (60 s) hid 015 from the libc-mode sweep (§4.4); the lanes saw it.
 - Tray 20 stays Draft (fixed in the fork; the filing is the operator's network window).
 
+## 9. Pre-merge review (2026-11-04, fresh independent reviewer; `docs/2026-11-04_macro-type-ranks-premerge-review.md`) — dispositions [AGENT 2026-11-04, orchestrator rulings applied by the worker]
+
+Verdict MERGEABLE WITH FIXES, documentation-only, no P1; two P2s, four P3s. The reviewer re-measured 11 probe
+programs, a 41-file libc-mode sweep and a 12-file nolibc spot sweep against pristine and gcc, sampled 19 witness pins
+(gcc = pin, pristine = `pristine.txt` on every row), applied the filing's patch to pristine with `patch --dry-run` (rc
+0, no offset), and checked the CHERI carve-out by Core-text equality under `--switches=CHERI` on four probes (0 diff
+lines). One by one:
+
+- **P2-1** (`strspn` named as a victim of the narrowing in the filing, D14, SUPPORTED, this record and both consumer
+  notes, while the shipped `strspn` uses `*c && BITOP(…)` and `&&` is not elaborated through the usual arithmetic
+  conversions; measured on pristine in libc mode: `strspn(h,"abc")`, `strspn(h,"cba")`, `strspn("xyzzyabc","zyx")` =
+  `9 9 5` = gcc, where `strcspn(h,"yx")` and `strpbrk(h,"yx")-h` were 17): FIXED everywhere it appeared — the filing's
+  title, Description and Impact, CONTRACT D14, SUPPORTED's Domain row, F6 and §4.3 here, both consumer notes — with the
+  reviewer's measurement quoted; only `strcspn` and `strpbrk` (which calls it) moved. A record-integrity failure of the
+  worker's, caught before the filing is sent.
+- **P2-2** (the cerberus-caesium note said the Ail typing was unchanged; the type checker's `usual_arithmetic_integer`
+  uses the same rank functions after its NON-STD arms, so every non-`size_t` macro pair is typed the standard's way
+  now — `_Generic`, pristine → fork: `int + ptrdiff_t` 7 → 9, `enum + unsigned long` 8 → 10, `wchar_t + long` 7 → 9,
+  `eu ? es : eu` 7 → 8): FIXED — the note's bullet rewritten to say exactly that with the evidence, plus the consequence
+  the consumer must weigh (RefinedC's frontend types those pairs the old way, so their clone-versus-RefinedC comparison
+  may move on them while the fork now matches the standard); stated in §2.1 here and in CONTRACT D14 as well; the
+  cerberus-sl note gained the sentence.
+- **P3-1** (no witness paired two macro types, although `(size_t, ptrdiff_t)` was the libc's second-largest
+  conditional class): FIXED in the close-out commit — two dense macro-versus-macro programs
+  (`tests/macro_type_ranks/dense_macro_vs_macro_{pos,neg}.c`: the seven header-reachable macro types pairwise, both
+  orders, a big and a small operand per type so no product overflows — the first attempt multiplied two 2^32+5 values
+  and both engines rightly reported UB036, a defect of the program —, every operator, the conditional operator, every
+  `op=` on a 64-bit left operand; `intptr_t` against the signed macro types only, since F4 is pinned apart) pinned to
+  gcc's line (gcc with UBSan clean), pristine's false UB036 / UB045c lines as the negative control; both engines equal
+  gcc. The plant subset is unchanged, so the five counts stay 16/8/10/17/2; the witness re-run at close-out is quoted in
+  §3.4. The orchestrator re-runs Tier A on the close-out tip.
+- **P3-2** (016's header still said both engines report an out-of-bounds load): FIXED — a dated header naming the
+  narrowing and the `MATCH` since 2026-11-04.
+- **P3-3** (the OK line said "every batch line = gcc 13's" while two rows are pinned to the fork's declared residuals):
+  FIXED — the line now counts the gcc-pinned lines (`$n - 3`), the two residual rows and the gap control separately;
+  VALIDATION's bullet and row, LADDER row 1 and CONTRACT §4.1 say "103 of 106".
+- **P3-4** (the filing's hunk headers carried the fork's new-side line numbers): FIXED — the patch regenerated by
+  applying it to a copy of pristine's file and diffing (`+451,33`, `+547,31`, `+580,10`; hunk bodies identical).
+- The reviewer's items of interest (the rule is exactly the standard's; the `long long` rows answer what the catch-all
+  answered; CHERI exact; the catch-all unreachable outside CHERI; the libc attributions; the register rows, baselines,
+  manifest rows and pins as recorded) need no action; its residual uncertainty (the trees not regenerated by the
+  reviewer; Lean in libc mode evidenced by the lanes and the battery; CHERI checked by reading and Core-text equality;
+  the worker's full sweeps not repeated) is stated as such.
+
 ## 8. Scratch, deleted at close-out
 
 `.tmp/oracle-before/` (the pre-change oracle, its runtime with the rebuilt libc objects, the two pre-fix dumps),
 `.tmp/vicinity/` (the generator, the runner, 483 + 102 programs and their outputs), `.tmp/sweep/` (the instrument, the
 csmith stage, the two result sets), `.tmp/rows/`, `.tmp/wit/`, `.tmp/iat/`, `.tmp/drafts/`, `.tmp/probe0/`,
-`.tmp/logs/`, 423 M (304 M of it the pre-change oracle snapshot) — deleted by the close-out commit's author after it was applied; the lanes' capture scratch
-under `.tmp/scripts/observations` is the orchestrator's.
+`.tmp/logs/`, 423 M (304 M of it the pre-change oracle snapshot), with the pristine lane's seven run directories
+(`.tmp/upstream-oracle-*`) and the two CoreQuote diagnostics directories (`.tmp/core-quote-test-*`) of the worker's own
+runs — deleted by the close-out commit's author after it was applied; the lanes' capture scratch under `.tmp/scripts`
+and `.tmp/memory-access` is the orchestrator's battery's and is left to it.

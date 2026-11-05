@@ -27,7 +27,8 @@
 # and the Lean engine's batch line must BOTH equal the pinned line byte for byte (so Lean = oracle
 # follows), and the two exit codes must agree. The set: one DENSE program per (macro type, value
 # variant) exercising every standard partner type and both enums in both operand orders through
-# `+ - * / % & | ^ == != < <= > >= << >>`, the conditional operator and every `op=` in both directions
+# `+ - * / % & | ^ == != < <= > >= << >>`, the conditional operator and every `op=` in both directions; two macro-versus-macro matrices (the seven header-reachable macro types pairwise, both orders,
+# a big and a small operand per type, positive and negative; intptr_t against the signed macro types only: F4 is pinned apart)
 # (size_t, ptrdiff_t, wchar_t, intptr_t, uintptr_t, intmax_t, uintmax_t, an enum with and without a
 # negative enumerator; positive values at 2^32+5 or 2^31-safe, a negative partner, a negative macro
 # operand), the integer-promotion probes (`+x -x ~x`, shifts, sizeof), the direct `__cerbty_*` spellings
@@ -209,4 +210,4 @@ done < "$EXPECT"
 gap_control "$PLANT_GAP"
 
 [[ $fails -eq 0 ]] || { echo "$NAME: $fails failing check(s) over $n programs"; exit 1; }
-echo "$NAME: OK ($n programs: every batch line of both engines = gcc 13's pinned line, exit codes equal — the dense per-type matrices (every standard partner and both enums, both operand orders, every operator and op=, positive and negative values) for size_t, ptrdiff_t, wchar_t, intptr_t, uintptr_t, intmax_t, uintmax_t and the two enums, the promotion probes, the direct __cerbty_* families, tray 20's reproducer, the consumer's three programs, the audit's Set A probes, the four measured siblings and the cluster K controls; $nmoved of them moved from pristine's pre-fix lines; the negative wchar_t store still crashes both engines (tray 62, unchanged); the intptr_t-against-unsigned false UB036 (the upstream NON-STD typing arm, filed) and the size_t/intptr_t-against-long-long typing codes are pinned as the declared residuals)"
+echo "$NAME: OK ($n programs: $((n - 3)) batch lines of both engines = gcc 13's pinned line, exit codes equal — the dense per-type matrices (every standard partner and both enums, both operand orders, every operator and op=, positive and negative values) for size_t, ptrdiff_t, wchar_t, intptr_t, uintptr_t, intmax_t, uintmax_t and the two enums, the two macro-versus-macro matrices, the promotion probes, the direct __cerbty_* families, tray 20's reproducer, the consumer's three programs, the audit's Set A probes, the four measured siblings and the cluster K controls, $nmoved of them moved from pristine's pre-fix lines; 2 lines pinned to the fork's declared residuals (the intptr_t-against-unsigned false UB036 from the upstream NON-STD typing arm, filed; the size_t/intptr_t-against-long-long typing codes); 1 gap control: the negative wchar_t store still crashes both engines (tray 62, unchanged))"
