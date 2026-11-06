@@ -1158,19 +1158,23 @@ by a cited re-record.
   the `[expected-semantic]` section (`scripts/fork_drift_manifest.txt`, header note
   "fix/macro-type-ranks"; layer 2: 32 → 33 differing files). Upstream disposition: tray 20
   carries the patch; the delta leaves when upstream absorbs it [AGENT].
-- **Fork-ahead fix — program termination, tray 24/25 (2 `shared-model-fix` rows + 5 `address-layout` rows; 0 corpus
-  rows retired; added 2026-11-06; contract D15; record `docs/2026-11-05_stdio-exit-flush-record.md`):** the fork
+- **Fork-ahead fix — program termination, tray 24/25 (2 `shared-model-fix` rows + 5 `address-layout` rows + 1
+  `diagnostic-text` row; 0 corpus rows retired; added 2026-11-06; contract D15; record
+  `docs/2026-11-05_stdio-exit-flush-record.md`):** the fork
   ANSWERS RIGHT what pristine answers wrongly (§3(c) above) on `libc_exec/034-stdio-puts-family.c` (pristine stdout
   `p\n1 99 1 10 3 1\n`, the fork and gcc `p\ncf\nwx\n1 99 1 10 3 1\n`: the buffered writes lost at termination and the
   proxy's ordering) and `libc_exec/041-atexit-return.c` (pristine `main\n`, the fork and gcc `main\nbye\n`: the
   handler never ran on `return`); and, both engines RIGHT, the five `address-layout` rows `libc_exec/012-global-alloc-
   order.c` and `immaculate/libc/zd-z28-{addr-layout-b, pointer_from_integer_2g, provenance_equality_uintptr_t_global_yx,
   provenance_lost_escape_1}`: the fork's edited library TUs' source digests order the linked globals (`merge_globs`),
-  so every libc-mode address the program prints differs from pristine's, with every non-address value identical. The
+  so every libc-mode address the program prints differs from pristine's, with every non-address value identical; and the
+  `diagnostic-text` row `libc_exec/043-printf-format-ub-loc.c` (pristine's `UB153b … loc: "<10:40--10:59>"`, the
+  program's printf call; the fork's `loc: "<717:10--717:40>"`, the library's `vfprintf` — the verdict and the UB id
+  identical, the location consequence of D15 gated in A5/A15 as `LOC_ONLY`). The
   `[source-content]` pins for `driver.lem`, `main.ml`, `stdio.c`, `stdlib.c` moved/entered and the generated
   `driver.ml` delta re-pinned (`scripts/fork_drift_manifest.txt`, header notes "fix/stdio-exit-flush"). Upstream
   disposition: tray 24 (merged with 25) carries the patch; the delta leaves when upstream absorbs it [AGENT].
-- **`diagnostic-text` (1 row).** The inner_arg_temps I0b backport adds two
+- **`diagnostic-text` (2 rows; the second, `libc_exec/043-printf-format-ub-loc.c`, is in the D15 entry above).** The inner_arg_temps I0b backport adds two
   evaluator frames to `immaculate/nolibc/zd-z2fl03-nan-to-int` while retaining
   exit 125, empty stdout and `Z.Overflow`. Its exact signature pair is
   registered; the control and disposition are in the

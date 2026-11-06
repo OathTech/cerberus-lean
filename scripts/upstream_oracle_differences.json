@@ -433,6 +433,26 @@
         "stdout_sha256": "23fc7e8f0b9bf687e1ab0732991342566fb00559570244f82fbe76e289642d67",
         "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       }
+    },
+    "libc_exec/043-printf-format-ub-loc.c": {
+      "class": "diagnostic-text",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/24-stdio-buffer-not-flushed-at-exit.md",
+        "lean_frontend/docs/2026-11-05_stdio-exit-flush-record.md",
+        "lean_frontend/docs/2026-11-06_stdio-exit-flush-premerge-review.md",
+        "tests/libc_exec/dispositions.txt"
+      ],
+      "rationale": "`fputs(\"a\", stdout); printf(\"%d\\n\", 1.5);` in libc mode: a printf-format UB. Pristine upstream c3ff8c53f prints `Undefined {ub: \"UB153b_illtyped_argument_for_format\", stderr: \"\", loc: \"<10:40--10:59>\"}` (verbatim: the program's own printf call, because its printf is the std.core proxy); the fork prints `Undefined {ub: \"UB153b_illtyped_argument_for_format\", stderr: \"\", loc: \"<717:10--717:40>\"}` (the library's vfprintf at the builtin call, stdio.c:717) because with the library linked a printf is the library's own (contract D15, the fork-ahead delta of 2026-11-06; the location consequence declared in D15, VALIDATION N4, the record and the consumer notes; the pre-merge review's P3-1 asked for this gated row). The verdict and the UB id are identical on both sides; only the location field -- a diagnostic -- differs, and it is the same difference that fprintf's format UB always had. Class diagnostic-text; the row leaves when upstream absorbs the fix (whose printf resolves to the library's too).",
+      "upstream": {
+        "status": 1,
+        "stdout_sha256": "76d8e5731a880b9f30380f31873340f6372a752b6f6642bd74b8d8259704a49b",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "fork": {
+        "status": 1,
+        "stdout_sha256": "53d33b16f3d7406579822aba03473d19ac13c8d49aa0fbba2f629f6e987db95a",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
     }
   }
 }

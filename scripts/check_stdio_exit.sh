@@ -53,6 +53,13 @@
 set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+SELF="$SCRIPT_DIR/$(basename "${BASH_SOURCE[0]}")"
+# Run from the project root whatever the caller's cwd (test_unit.sh runs its gates from lean_frontend/): the
+# libc metadata TUs are exported under the canonical RELATIVE runtime `_build/install/default` (libc_prep.sh
+# --jsons, the Core quotation convention) and the Lean driver resolves those labels from ITS cwd — from any
+# other directory every metadata TU is refused as a library location (BUG-3), which is what the full battery
+# of 2026-11-06 showed for the `oracle-rc` plant (the only plant whose Lean side is real).
+cd "$ROOT" || { echo "check_stdio_exit: FAIL — cannot cd to $ROOT"; exit 1; }
 REAL_BIN="$ROOT/lean_frontend/.lake/build/bin/cerberus-lean"
 BIN="${CERB_LEAN_BIN_OVERRIDE:-$REAL_BIN}"
 REAL_ORACLE="$ROOT/_build/default/backend/driver/main.exe"
@@ -105,7 +112,7 @@ EOS
     run_plant() {  # <label> <oracle> <lean> <expect-file> <expected failure count> [required failing program]...
         local label="$1" o="$2" l="$3" e="$4" want="$5" got req; shift 5
         if CERB_ORACLE_BIN_OVERRIDE="$o" CERB_LEAN_BIN_OVERRIDE="$l" CERB_SE_EXPECT_OVERRIDE="$e" \
-           CERB_SE_ONLY="$PLANT_MOVED $PLANT_SAME $PLANT_GAP $PLANT_NOLIBC" "$0" > "$ST/$label.out" 2>&1; then
+           CERB_SE_ONLY="$PLANT_MOVED $PLANT_SAME $PLANT_GAP $PLANT_NOLIBC" "$SELF" > "$ST/$label.out" 2>&1; then
             echo "$NAME: SELFTEST FAIL — plant '$label' PASSED the witnesses (vacuous check)"; cat "$ST/$label.out"; exit 1
         fi
         got=$(grep -c 'FAIL —' "$ST/$label.out")
@@ -135,7 +142,7 @@ EOS
     run_plant lean-fixed "$REAL_ORACLE" "$ST/lean-fixed" "$EXPECT" 8 flush_puts_twice atexit_on_exit_control gap_fopen_unclosed nolibc_atexit_on_return
     run_plant oracle-rc "$ST/oracle-rc" "$REAL_BIN" "$EXPECT" 15 flush_fputs_no_newline order_write_fd gap_fopen_unclosed
     run_plant expect-tamper "$REAL_ORACLE" "$REAL_BIN" "$ST/expected-tampered.txt" 3 flush_puts_twice
-    "$0"; exit $?
+    "$SELF"; exit $?
 fi
 
 [[ -x "$BIN" ]] || { echo "$NAME: FAIL — driver not built: $BIN"; exit 1; }

@@ -372,6 +372,52 @@ and `int exit(int)` → `Defined {value: "Specified(4)", stdout: "m\n", …}` on
 test). The five tray reproducers and `034` identical on both engines in libc, inner_arg_temps and nolibc modes on the M3b
 build.
 
+### 6.5 M3c (the full battery's two reds on `6992d69d8`: harness and register items)
+
+The full battery (orchestrator-run, evidence `.tmp/release/stdio-full-m3b-20261106T051029Z`, 05:10:29-07:40:14 UTC, start
+load 4.06): `full: failed; 43/45 selected commands completed successfully.` / `Source unchanged: True. Complete tier
+selection: True.` / `Release certification: incomplete: reporting/adoption/audit exits require separate evidence.` /
+`release rc=1` — A1 (1053.6 s) and B10.1 (193.8 s) red, every other row PASSED (B7 1493.2 s, B9 2460.0 s, B13 839.2 s).
+
+- A1: row 1's executables `Total: 21 passed, 0 failed` and every other gate green, then `check_stdio_exit: SELFTEST FAIL —
+  plant 'oracle-rc' caught 23 failing check(s), expected exactly 15`, the eight extra being Lean refusals `cerberus-lean
+  stop ["1","REFUSAL","library-location","the libc metadata TU …/libcjson/…`. Cause: `test_unit.sh` runs its gates from
+  `lean_frontend/` (`cd "$PROJECT_ROOT/lean_frontend"`, :89); `libc_prep.sh --jsons` exports the metadata TUs under the
+  canonical RELATIVE runtime `_build/install/default` and the Lean driver resolves such labels with `realPath` from ITS
+  cwd (BUG-3's rule), so from `lean_frontend/` every metadata TU resolves outside the run's runtime directories; the
+  first three plants stub the Lean side and pass, `oracle-rc` is the first with a real Lean run. Reproduced: the self-test
+  from `lean_frontend/` fails the same way; standalone from the root it passed (§6.4). Fix: the witness `cd`s to the
+  project root before anything (and re-invokes its plants by absolute path), so the convention holds whatever the
+  caller's cwd. Verified from `lean_frontend/` and from the root under the battery-like environment (`CERB_OBSERVATION_DIR`
+  under the container's `.tmp`, `CERB_INSTALL_PREFIX` as common.sh exports it, `scripts/ce`):
+
+  ```text
+  === from lean_frontend/ (the battery's cwd)
+  check_stdio_exit: selftest plant 'pristine-pair' caught: 13 failing check(s) (= expected 13; incl. the required programs)
+  check_stdio_exit: selftest plant 'lean-pristine' caught: 7 failing check(s) (= expected 7; incl. the required programs)
+  check_stdio_exit: selftest plant 'lean-fixed' caught: 8 failing check(s) (= expected 8; incl. the required programs)
+  check_stdio_exit: selftest plant 'oracle-rc' caught: 15 failing check(s) (= expected 15; incl. the required programs)
+  check_stdio_exit: selftest plant 'expect-tamper' caught: 3 failing check(s) (= expected 3; incl. the required programs)
+  check_stdio_exit: OK (46 programs in libc mode: 34 batch lines of both engines = gcc 13's pinned line, exit codes equal — …)
+  === from the root: the same six lines (1 min 52 s and 1 min 51 s)
+  ```
+- B10.1: `Independent oracle: failed; {'semantic_agreement': 945, 'reviewed_difference': 23, 'matching_failure': 30,
+  'difference': 1, 'interface_agreement': 2}` — the one unreviewed difference is `libc_exec/043-printf-format-ub-loc.c`
+  (added at M3b without its register row). Registered as `diagnostic-text` (the verdict and the UB id identical on both
+  sides; only the location field differs — pristine's `<10:40--10:59>`, the program's printf call, the fork's
+  `<717:10--717:40>`, the library's `vfprintf`), signatures from the lane's own `--only` run, the record and the review
+  cited. Verbatim (the tree held; a first run during the record's own edit reported `source unchanged: False` with the
+  same counts and was repeated):
+
+  ```text
+  Independent oracle scope: tier-b; 1001 rows in 190.9s; source unchanged: True
+  Independent oracle: passed; {'semantic_agreement': 945, 'reviewed_difference': 24, 'matching_failure': 30, 'interface_agreement': 2}
+  Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 52}
+  ```
+
+The semantics battery stands on `6992d69d8`: M3c moves no Lem, library or Lean source (the witness script, the register
+and documentation only); the orchestrator re-runs exactly A1 and B10.1 on the M3c tip.
+
 ## 7. Not done / open
 
 - The pristine-lane register has no "layout" class: the five address rows are registered as `shared-model-fix` with the
