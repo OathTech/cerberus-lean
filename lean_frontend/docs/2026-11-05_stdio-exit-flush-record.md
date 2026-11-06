@@ -3,7 +3,7 @@
 Branch `fix/stdio-exit-flush`, worktree `worktrees/cerberus-lean-fix/stdio-exit-flush`, from mainline `mdd/cerberus-lean` =
 `fc3961dc5` (merge-base upstream `c3ff8c53f`, Lean 4.35.0, lem `e6d8db5`); charter
 `docs/2026-11-05_worker-charter-stdio-exit-flush.md` (commit `4ede5c560`). Worker: Claude Fable 5.1 (agent). Every judgement
-below that no operator ruling covers is marked [AGENT]. Status: FILLED AT M3.
+below that no operator ruling covers is marked [AGENT]. Status: **fixed in the shared Lem (both engines by generation) and the shipped library, the proxy rule mirrored in both drivers; witnessed in row 1; every moved row dispositioned with gcc as the referee; the full battery 43/45 on `6992d69d8` with its two harness reds fixed and re-run green on `f8128371f` (§6.5); the pre-merge review's findings dispositioned (§9).**
 
 ## 0. Rulings and standing rules
 
@@ -415,8 +415,27 @@ selection: True.` / `Release certification: incomplete: reporting/adoption/audit
   Independent oracle: plants_passed; {'semantic_agreement': 1, 'plant_rejected': 1, 'plant_ok': 52}
   ```
 
-The semantics battery stands on `6992d69d8`: M3c moves no Lem, library or Lean source (the witness script, the register
-and documentation only); the orchestrator re-runs exactly A1 and B10.1 on the M3c tip.
+Why the earlier row-1 witnesses never tripped it: the refusal scripts and the rank witness run their programs `--nolibc`,
+so the Lean driver loads no metadata TU and the library-location rule never applies; this witness is the first row-1
+gate in libc mode.
+
+**The covering runs, per tip.** The semantics battery is the full battery on `6992d69d8` (M3b; 43/45, its two reds the
+harness and register items above): M3c (`f8128371f`) moves no Lem, library or Lean source — the witness script, the register
+and documentation only. Rows A1 and B10.1 were re-run on `f8128371f` through `release.py` (orchestrator-run, evidence
+`.tmp/release/stdio-rerun-m3c-20261106T075732Z`, log `.tmp/stdio-rerun-m3c.log`, 07:57:32-08:19:34 UTC, start load 2.93),
+verbatim:
+
+```text
+PASSED A1 (1125.5s)
+PASSED B10.1 (195.1s)
+full: incomplete; 2/2 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: False.
+release rc=0
+Total: 21 passed, 0 failed                                                                                      (A1, the row's executables)
+check_stdio_exit: OK (46 programs in libc mode: 34 batch lines of both engines = gcc 13's pinned line, exit codes equal — …)   (A1)
+Independent oracle scope: tier-b; 1001 rows in 194.9s; source unchanged: True                                    (B10.1)
+Independent oracle: passed; {'semantic_agreement': 945, 'reviewed_difference': 24, 'matching_failure': 30, 'interface_agreement': 2}   (B10.1)
+```
 
 ## 7. Not done / open
 
@@ -445,4 +464,7 @@ and documentation only); the orchestrator re-runs exactly A1 and B10.1 on the M3
 
 ## 8. Scratch, deleted at close-out
 
-`.tmp/stdio/` — `run.sh`, `matrix.sh`, `sweep.sh`, `gen_expected.py`, the probe sets, `out/`, `sweep/`, `lanes/`, the logs.
+The worktree's `.tmp/stdio/` (`run.sh`, `matrix.sh`, `sweep.sh`, `gen_expected.py`, the probe sets, `out/`, `sweep/`, `lanes/`,
+the build/gate/lane logs, the upstream-patch replay) and the container's `.tmp/stdio-rcplant-obs/` — deleted at this
+close-out. The orchestrator's battery evidence under the container's `.tmp/release/stdio-*` and the reviewer's
+`.tmp/review-stdio/` are theirs.
