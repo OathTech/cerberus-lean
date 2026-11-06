@@ -62,7 +62,11 @@
 # library's `exit` when the linked file defines one (the extern map's LK_normal target; --nolibc, the globals phase and the Core
 # builtin exit keep upstream's direct termination) -- `startup_exit_call_opt`. runtime/libc/src/stdlib.c: `exit` calls
 # fflush(NULL) between the handlers and _Exit. runtime/libc/src/stdio.c: `vfprintf` flushes the FILE's pending buffer before the
-# builtin writes through the descriptor. Single-row edits, no --refresh: [files] + [source-content] ENTER runtime/libc/src/stdio.c
+# builtin writes through the descriptor. M1b (ruling [AGENT 2026-11-06, orchestrator]): runtime/libc/include/stdio.h routes a
+# libc-mode `printf(...)` to the library's `fprintf(stdout, ...)` (a 7.1.4#1 function-like macro under CERB_WITH_LIB, the
+# macro the driver's cpp defines for a libc-mode TU), because the elaborator substitutes the std.core proxy for every call of
+# the identifier `printf` and the proxy writes past the FILE buffer; --nolibc and the library's own build are untouched.
+# Single-row edits, no --refresh: [files] + [source-content] ENTER runtime/libc/include/stdio.h, runtime/libc/src/stdio.c
 # and runtime/libc/src/stdlib.c (byte-identical to pristine c3ff8c53f before; the libc Core dumps are pinned separately,
 # tests/libc/*.sha256); [source-content] driver.lem re-pinned 94859892... -> a21c5833...; [expected-semantic] driver.ml's hash
 # moved (an already-differing file). Leaves when upstream absorbs the fix.
@@ -155,6 +159,7 @@ ocaml_frontend/rewriters/core_peval.ml
 ocaml_frontend/rewriters/remove_unspecs.ml
 parsers/c/c_parser.mly
 runtime/libc/dune
+runtime/libc/include/stdio.h
 runtime/libc/src/stdio.c
 runtime/libc/src/stdlib.c
 runtime/libcore/impls/i686-apple-darwin10-gcc-4.2.1.impl
@@ -251,6 +256,7 @@ util/cerb_location.ml
 100644 4d6d58a199fbbcc0ed7692fa0b631f74cc3c39e0dc53405dcd6fc4da3dc9b7b7 ocaml_frontend/rewriters/remove_unspecs.ml
 100644 3c663db65a613ec7bdee1c9c516a5cd74539dd9744e307e42ec599953f80894e parsers/c/c_parser.mly
 100644 d1d5f0a2ca4cc5a53e8b068d3bb9f219fe5eaec29457f25032352271ed240095 runtime/libc/dune
+100644 6a48fc9168f79740c76b8b148088cdcd089efb9ce3be82fb971b5200f6a78124 runtime/libc/include/stdio.h
 100644 c2c561ee6e8b1ebfb23508b93012cb09416fd98b33fe2a59bfdbdeb395261c8a runtime/libc/src/stdio.c
 100644 4ea1b6fb32ccff6f6f4f3e0b06efceccf24ee88eeb7ac0b09bc7db79d15d79d8 runtime/libc/src/stdlib.c
 100644 cf6fbe0be7dae96f6ce2c8cf7d7013b89d350da563e5179be8a2bb298d7ee24a runtime/libcore/impls/i686-apple-darwin10-gcc-4.2.1.impl

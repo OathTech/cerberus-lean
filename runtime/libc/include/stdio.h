@@ -72,6 +72,19 @@ int scanf(const char * restrict fmt, ...);
 
 #if __bmc_cerb__
 #define printf(...)
+#elif defined(CERB_WITH_LIB)
+/* Cerberus fork (fix/stdio-exit-flush, 2026-11-06; upstream-tray report 24): with the C
+   library linked, a call `printf(...)` is the library's `fprintf(stdout, ...)` (C17 7.1.4#1:
+   a library function may also be implemented as a function-like macro), so its output is
+   sequenced with the stream's buffered writes (7.21.3). The elaborator substitutes the Core
+   builtin proxy for every call of the identifier `printf` (translation.lem
+   translate_function_designator, the std.core `[ailname = "printf"]`), which writes past the
+   FILE buffer; the macro keeps the name from reaching that substitution. Only a plain call
+   is routed: `(printf)(...)` and `&printf` still name the proxy (declared, witnessed).
+   CERB_WITH_LIB is defined by the driver's preprocessor for a libc-mode translation unit
+   (backend/driver/main.ml create_cpp_cmd); --nolibc runs and the library's own build keep
+   the proxy. */
+#define printf(...) fprintf(stdout, __VA_ARGS__)
 #endif
 
 int snprintf(char * restrict s, size_t n, const char * restrict fmt, ...);
