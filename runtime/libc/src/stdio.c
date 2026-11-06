@@ -709,6 +709,11 @@ int vfprintf(FILE *restrict f, const char *restrict fmt, va_list ap)
 {
   int __builtin_vprintf(int, const char* restrict, va_list);
   int fd = fileno(f);
+  /* Cerberus fork (fix/stdio-exit-flush, 2026-11-06; upstream-tray report 24): the
+     builtin writes through the descriptor, past this FILE's buffer; a stream's writes
+     are ordered (C17 7.21.3), so whatever earlier fputs/fwrite/putc left in the buffer
+     goes out first. */
+  if (f->wpos != f->wbase) fflush(f);
   return __builtin_vprintf(fd, fmt, ap);
 }
 

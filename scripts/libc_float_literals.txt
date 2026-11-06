@@ -15,27 +15,32 @@
 # else conv_int(...)` on a size_t operand collapsed to one conv_int, 247 conditionals, -900 lines) moved every literal by
 # -598/-571 lines and added or dropped none -- the 24-literal multiset and order are identical in the old dump and the new
 # dump (checked with this script's own census). Dispositions and notes carried unchanged; every row is a relocation. [AGENT 2026-11-04]
-41155	3.40282347e+38	EXACT-BY-SOURCE	
-52809	0.	EXACT-BY-SOURCE	
-53465	0.	EXACT-BY-SOURCE	
-53474	0.	EXACT-BY-SOURCE	
-54138	0.	EXACT-BY-SOURCE	
-54147	0.	EXACT-BY-SOURCE	
-58744	1000000000.	EXACT-BY-SOURCE	
-59676	0.25	EXACT-BY-SOURCE	
-59744	0.75	EXACT-BY-SOURCE	
-59899	0.5	EXACT-BY-SOURCE	
-59933	0.75	EXACT-BY-SOURCE	
-60130	1.	EXACT-BY-SOURCE	
-60279	1.84467440737e+19	LOSSY-N3	0x1p64 = 2^64 (runtime/libc/src/internal.c:303, decfloat); parsed back 9551872 below 2^64
-60445	0.5	EXACT-BY-SOURCE	
-60575	0.	EXACT-BY-SOURCE	
-62118	0.	EXACT-BY-SOURCE	
-62128	0.	EXACT-BY-SOURCE	
-62273	0.5	EXACT-BY-SOURCE	
-62795	0.	EXACT-BY-SOURCE	
-63400	0.	EXACT-BY-SOURCE	
-63642	0.	EXACT-BY-SOURCE	
-63651	0.	EXACT-BY-SOURCE	
-63724	0.5	EXACT-BY-SOURCE	
-64241	0.	EXACT-BY-SOURCE	
+# Re-derived 2026-11-06 (fix/stdio-exit-flush M1; record docs/2026-11-05_stdio-exit-flush-record.md): the libc re-pin after the
+# termination fix (stdlib.c `exit` gains fflush(NULL), stdio.c `vfprintf` gains the pending-buffer flush: +116 lines in libc.core;
+# the two edited TUs' source digests changed, so merge_globs reorders the globals and every later symbol is renumbered) moved every
+# literal by exactly +11443 lines (the reordering: the vfscanf TU's procedures now print after the relocated ones) and added or dropped none -- the 24-literal multiset and order are identical in the old dump and the
+# new dump (checked with this script's own census). Dispositions and notes carried unchanged; every row is a relocation. [AGENT 2026-11-06]
+52598	3.40282347e+38	EXACT-BY-SOURCE	
+64252	0.	EXACT-BY-SOURCE	
+64908	0.	EXACT-BY-SOURCE	
+64917	0.	EXACT-BY-SOURCE	
+65581	0.	EXACT-BY-SOURCE	
+65590	0.	EXACT-BY-SOURCE	
+70187	1000000000.	EXACT-BY-SOURCE	
+71119	0.25	EXACT-BY-SOURCE	
+71187	0.75	EXACT-BY-SOURCE	
+71342	0.5	EXACT-BY-SOURCE	
+71376	0.75	EXACT-BY-SOURCE	
+71573	1.	EXACT-BY-SOURCE	
+71722	1.84467440737e+19	LOSSY-N3	0x1p64 = 2^64 (runtime/libc/src/internal.c:303, decfloat); parsed back 9551872 below 2^64
+71888	0.5	EXACT-BY-SOURCE	
+72018	0.	EXACT-BY-SOURCE	
+73561	0.	EXACT-BY-SOURCE	
+73571	0.	EXACT-BY-SOURCE	
+73716	0.5	EXACT-BY-SOURCE	
+74238	0.	EXACT-BY-SOURCE	
+74843	0.	EXACT-BY-SOURCE	
+75085	0.	EXACT-BY-SOURCE	
+75094	0.	EXACT-BY-SOURCE	
+75167	0.5	EXACT-BY-SOURCE	
+75684	0.	EXACT-BY-SOURCE	

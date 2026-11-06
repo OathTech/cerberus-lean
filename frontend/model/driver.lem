@@ -1321,6 +1321,53 @@ let prepare_exit core_st cval =
         <| core_st with Core_run.thread_states= [(tid0, (Nothing, th_st'))] |>
   end
 
+(* FORK-AHEAD DELTA (fix/stdio-exit-flush, 2026-11-06; upstream-tray reports 24 and 25;
+   record lean_frontend/docs/2026-11-05_stdio-exit-flush-record.md): a return from the
+   startup function is equivalent to calling `exit` with the returned value
+   (C17 5.1.2.2.3), which runs the `atexit` handlers and flushes the open streams
+   (7.22.4.4#2-#4, 7.21.3#5). Upstream's Step_done2 arm terminates directly, so with
+   the C library linked the handlers never ran and every FILE buffer was lost.
+
+   `startup_exit_call_opt dr_st cval` is `Just (exit_sym, tid0, th_st, status)` exactly
+   when the return must be routed through the library's `exit`:
+   - the linked Core file DEFINES `exit` (the extern map's `LK_normal` target for the
+     identifier "exit": libc mode; a `--nolibc` run only declares it, `LK_none`, and keeps
+     upstream's direct termination);
+   - the Step_done2 came from the STARTUP FUNCTION's return: the initial thread
+     (parent Nothing) has an empty stack and a current procedure. The two other
+     producers of Step_done2 are excluded by that shape: the globals phase
+     (driver_globals installs the thread with current_proc_opt = Nothing) and the Core
+     builtin `exit` reached from the library's `_Exit` (core_reduction.lem,
+     process_impl_proc's "exit" arm: the thread is inside the `_Exit` frame, stack
+     non-empty) -- that one is the termination of the routed call;
+   - the returned value is a loaded integer (`memValueFromValue signed_int`): the
+     startup function of a C program is `int main` (UB004a rejects the others at
+     desugar); a `--call` of a non-int function keeps the direct termination.
+   Anything else is Nothing: upstream's path, unchanged. *)
+val startup_exit_call_opt: driver_state -> Core.value -> maybe (Symbol.sym * Mem.thread_id * Core_run.thread_state * Mem.mem_value)
+let startup_exit_call_opt dr_st cval =
+  match Map.lookup (Symbol.Identifier Loc.unknown "exit") dr_st.core_file.Core.extern with
+    | Just (_, Core.LK_normal exit_sym) ->
+        match List.find (function (_, (Nothing, _)) -> true | _ -> false end) dr_st.core_state.Core_run.thread_states with
+          | Just (tid0, (_, th_st)) ->
+              match (th_st.Core_run.stack, th_st.Core_run.current_proc_opt) with
+                | (Core_run.Stack_empty, Just _) ->
+                    match Caux.memValueFromValue Ctype.signed_int cval with
+                      | Just status_mval ->
+                          Just (exit_sym, tid0, th_st, status_mval)
+                      | Nothing ->
+                          Nothing
+                    end
+                | _ ->
+                    Nothing
+              end
+          | Nothing ->
+              Nothing
+        end
+    | _ ->
+        Nothing
+  end
+
 (* performing all action and memop requests until there are no more *)
 val process_core_step2: bool -> (bool -> driverM unit) -> Core_reduction.core_step2 -> driverM unit
 let process_core_step2 with_concurrency driver2 = function
@@ -1338,10 +1385,44 @@ let process_core_step2 with_concurrency driver2 = function
       "driver.process_core_step ==> Step_done2 with value: " ^ Pp.stringFromCore_value cval
     ) >> (* DEBUG *)
     (* ND.return () *)
-    ND.update (fun dr_st ->
-      (* killing all threads and aborting the main thread and placing [cval] as its result *)
-      <| dr_st with core_state= prepare_exit dr_st.core_state cval |>
-    )
+    ND.get >>= fun dr_st ->
+    match startup_exit_call_opt dr_st cval with
+      | Nothing ->
+          ND.update (fun dr_st ->
+            (* killing all threads and aborting the main thread and placing [cval] as its result *)
+            <| dr_st with core_state= prepare_exit dr_st.core_state cval |>
+          )
+      | Just (exit_sym, tid0, th_st, status_mval) ->
+          (* FORK-AHEAD DELTA (fix/stdio-exit-flush, 2026-11-06; upstream-tray 24/25): the
+             startup function returned in libc mode, so the return is `exit(cval)`
+             (C17 5.1.2.2.3). The status object is allocated and initialised under the
+             file's calling convention, as the elaborated caller side of a C call is
+             (Normal: a pointer to a caller-side `signed int` object; inner_arg_temps: the
+             loaded value), and the library's `exit` is installed as the thread's arena;
+             driver2 continues. The object is never killed: `exit` does not return
+             (its `_Exit` reaches the Core builtin, whose Step_done2 takes the arm above
+             with a non-empty stack). *)
+          (match dr_st.core_file.Core.calling_convention with
+            | Core.Normal_callconv ->
+                let align_ival = Mem.integer_ival (Implementation.alignof_ty dr_st.core_file.Core.tagDefs Ctype.signed_int) in
+                liftMem (
+                  Mem.bind (Mem.allocate_object tid0 (Symbol.PrefOther "exit status") align_ival Ctype.signed_int Nothing Nothing) (fun ptr_val ->
+                    Mem.bind (Mem.store (Loc.other "exit status init") Ctype.signed_int false ptr_val status_mval) (fun _ ->
+                      Mem.return (Caux.mk_value_pe (Core.Vobject (Core.OVpointer ptr_val)))
+                    )
+                  )
+                )
+            | Core.Inner_arg_callconv ->
+                ND.return (Caux.mk_value_pe cval)
+          end) >>= fun arg_pe ->
+          ND.update (fun dr_st -> <| dr_st with
+            core_state= Core_run.update_thread_state tid0
+              <| th_st with Core_run.arena= Core.Expr [] (Core.Eproc Core_run.empty_annotation (Core.Sym exit_sym) [arg_pe]) |>
+              dr_st.core_state;
+            dr_step_counter= dr_st.dr_step_counter + 1
+          |>) >>= fun () ->
+          driver2 with_concurrency
+    end
   
 
   | Core_reduction.Step_ccall2 tid step_m ->
@@ -1921,10 +2002,14 @@ declare {lean} fuel val hack = `fuelExhausted Vunit`
 (* FUEL MEASURE under a HYPOTHESIS (fuel-pending close-out 2026-09-08, option C of
    the pure-failure reachability census; Lean-only, OCaml byte-identical): hack
    is a step-until-value loop with no unconditional data measure (C2 record
-   D-C2-4). Its only exec-path caller is finalize (:1473-1477), right after
-   driver2, whose only exits are process_core_step2's two terminal arms
-   (:1331-1338, :1352-1356) — both prepare_exit (:1309-1316), which makes the
-   arena mk_value_e cval; to_pure of that arena is its `PEval` pexpr, so hack's
+   D-C2-4). Its only exec-path caller is finalize, right after driver2, whose
+   only exits are process_core_step2's two terminal arms -- the Step_done2
+   arm's `Nothing` branch (since fix/stdio-exit-flush, 2026-11-06, its `Just`
+   branch installs the library's `exit` and RE-ENTERS driver2; the routed call
+   terminates through the Core builtin `exit`, a Step_done2 with a non-empty
+   stack, i.e. the `Nothing` branch) and Step_fs2/FS_done -- both prepare_exit,
+   which makes the arena mk_value_e cval; to_pure of that arena is its
+   `PEval` pexpr, so hack's
    argument is a VALUE: step_eval_pexpr returns it unchanged (core_eval.lem
    PEval arm) and valueFromPexpr accepts it (core_aux.lem:862-868) — ONE
    iteration. Measure = the derived size (>= 1; a numeral is refused,

@@ -9,17 +9,21 @@
   the C4 route, docs/2026-09-05_fuel-parameter-C4-record.md).
 
   THE INVARIANT these rest on (the register scripts/fuel_hypotheses.txt cites
-  it per row): `driver2` (frontend/model/driver.lem:1374) returns ONLY through
-  the two terminal arms of `process_core_step2` — `Step_done2`
-  (driver.lem:1336-1343) and `Step_fs2`/`FS_done` (:1357-1361); every other arm
+  it per row): `driver2` (frontend/model/driver.lem:1455) returns ONLY through
+  the two terminal arms of `process_core_step2` — the `Nothing` branch of
+  `Step_done2` (driver.lem:1390-1394; since fix/stdio-exit-flush, 2026-11-06,
+  the arm's `Just` branch (:1395-1424) installs the C library's `exit` as the
+  startup thread's arena and RE-ENTERS `driver2`, and that call terminates
+  through the Core builtin `exit`, a `Step_done2` with a non-empty stack, i.e.
+  the `Nothing` branch) and `Step_fs2`/`FS_done` (:1436-1441); every other arm
   re-enters `driver2` or is an `error`, and `new_drive_core_threads`
   (:1280-1301) never yields a `Nothing` step for the `(_, Nothing)` arm. Both
-  terminal arms rewrite the core state by `prepare_exit` (driver.lem:1314-1321):
+  terminal arms rewrite the core state by `prepare_exit` (driver.lem:1314-1322):
   the initial thread's arena becomes `Core_aux.mk_value_e cval` =
   `Expr [] (Epure (Pexpr [] () (PEval cval)))` (core_aux.lem:454-455
   `mk_value_pe`, :2077-2082 `mk_pure_e`/`mk_value_e`) and its stack
   `Stack_empty`. So at both exec-path call sites of `to_pure` on an arena —
-  `finalize` (driver.lem:1478-1482) and `driver_globals` (:1618-1623), each
+  `finalize` (driver.lem:1559-1563) and `driver_globals` (:1699-1704), each
   immediately after a `driver2` — the arena is `IsPureExpr`: `to_pure` returns
   its pexpr at depth 1 without entering `to_pures`; and that pexpr, `hack`'s
   argument at `finalize`, is `IsValuePexpr`: `step_eval_pexpr` returns it

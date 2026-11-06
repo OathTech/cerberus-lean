@@ -298,20 +298,27 @@ theorem loop_step_done {k : Nat} (fl : Nat) (eds : Fmap sym integerType) (tds : 
     conv => lhs; unfold drive_nonmemory_steps_aux2_lemFuel
     rfl
 
+/-- The done step: `Step_done2 v` prepares the exit — UNLESS the return is the startup
+    function's in libc mode, which `startup_exit_call_opt` recognises (fix/stdio-exit-flush,
+    2026-11-06: the C library's `exit` is installed and `driver2` re-entered); `hexit` says it
+    is not (the exemplar file defines no `exit`: `extern = fmapEmpty`). -/
 theorem process_done {k : Nat} (eds : Fmap sym integerType) (tds : Fmap sym (CerbLocation.Loc × tag_definition))
     (cont : Bool → ndM Unit step_kind driver_error
       (mem_constraint CerbMem.IntegerValue) driver_state)
     (v : value) (dst : driver_state) (th : thread_state)
-    (hth : dst.core_state0.thread_states = [(0, (none, th))]) :
+    (hth : dst.core_state0.thread_states = [(0, (none, th))])
+    (hexit : startup_exit_call_opt eds tds dst v = none) :
     runOne (@process_core_step2 ⟨Nat.succ k⟩ sw₀ eds tds false cont (Step_done2 v)) dst =
       (NDactive (), { dst with core_state0 :=
         { dst.core_state0 with thread_states :=
             [(0, (none, { th with stack0 := Stack_empty, arena := mk_value_e v }))] } }) := by
   unfold process_core_step2
   dsimp only
-  refine (runOne_bind_active (z := ()) (s' := dst) (by rfl)).trans ?_
-  rw [runOne_update]
-  rw [prepare_exit_single dst.core_state0 th v hth]
+  refine (runOne_bind_active (z := dst) (s' := dst) ?_).trans ?_
+  · exact (runOne_bind_active (z := ()) (s' := dst) (by rfl)).trans (runOne_get dst)
+  · rw [hexit]
+    rw [runOne_update]
+    rw [prepare_exit_single dst.core_state0 th v hth]
 
 /-- The scheduler round at counter `fl + 1`, ambient `Nat.succ k`: with the
     loop's result `[Step_done2 v]` for thread 0, the round prepares the
@@ -323,7 +330,8 @@ theorem driver2_done {k : Nat} (fl : Nat)
     (hloop : runOne (@drive_nonmemory_steps_aux2_lemFuel ⟨Nat.succ k⟩ sw₀ (Nat.succ k) eds tds
         fmapEmpty [0]) dst =
       (NDactive (fmapAddBy defaultCompare 0 [Step_done2 v] fmapEmpty), dstF))
-    (hthF : dstF.core_state0.thread_states = [(0, (none, thF))]) :
+    (hthF : dstF.core_state0.thread_states = [(0, (none, thF))])
+    (hexit : startup_exit_call_opt eds tds dstF v = none) :
     runOne (@driver2_lemFuel ⟨Nat.succ k⟩ sw₀ (Nat.succ fl) eds tds false) dst =
       (NDactive (), { dstF with core_state0 :=
         { dstF.core_state0 with thread_states :=
@@ -364,7 +372,7 @@ theorem driver2_done {k : Nat} (fl : Nat)
     refine (runOne_bind_active (z := ((0 : Nat), some (Step_done2 v)))
       (s' := dstF) (by rfl)).trans ?_
     dsimp only
-    exact process_done eds tds _ v dstF thF hthF
+    exact process_done eds tds _ v dstF thF hthF hexit
 
 theorem finalize_done {k : Nat} (eds : Fmap sym integerType) (tds : Fmap sym (CerbLocation.Loc × tag_definition))
     (s : String) (dst : driver_state) (th : thread_state) (v : value)
@@ -601,7 +609,7 @@ theorem round_done (k : Nat) (top : Int) (digest : String) :
           { (@S₁ ⟨Nat.succ (Nat.succ k)⟩ sw₀ top digest).core_state0 with thread_states :=
             [(0, (none, { thF with stack0 := Stack_empty, arena := mk_value_e fortyTwo }))] } }) := by
   refine ⟨_, driver2_done (Nat.succ k) fmapEmpty fmapEmpty _ _ _ _ fortyTwo rfl
-    (loop_step_done k fmapEmpty fmapEmpty fmapEmpty rfl rfl) rfl⟩
+    (loop_step_done k fmapEmpty fmapEmpty fmapEmpty rfl rfl) rfl rfl⟩
 
 /-- THE ∀-FUEL, ∀-TOP EXEMPLAR (the consumer's §6 shape), by the symbolic route:
     fuel 0 and 1 kill (the runner leaf; the first memory operation), every

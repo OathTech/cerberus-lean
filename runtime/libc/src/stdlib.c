@@ -220,9 +220,17 @@ int at_quick_exit(void (*func)(void))
 }
 
 
+/* Cerberus fork (fix/stdio-exit-flush, 2026-11-06; upstream-tray report 24): C17 7.22.4.4#2-#4
+   -- the atexit handlers first (they may write), then every open stream with unwritten
+   buffered data is flushed (fflush(NULL) walks stdout, stderr and the open-file list,
+   stdio.c), then control returns to the host through _Exit. musl calls __stdio_exit here;
+   this copy had no flush, so everything still in a FILE buffer at exit was lost. _Exit,
+   quick_exit and abort flush nothing (7.22.4.5#2, 7.22.4.7#3, 7.22.4.1#2: implementation-
+   defined; unchanged). */
 _Noreturn void exit(int code)
 {
   __funcs_on_exit();
+  fflush(NULL);
   _Exit(code);
 }
 

@@ -53,6 +53,20 @@
 # byte-identical to pristine c3ff8c53f before: the fork's earlier edits to that lem file were Lean-target declares outside the
 # OCaml output), 22 -> 23 rows, layer 2 32 -> 33 differing files. Leaves when upstream absorbs the fix.
 # Record: lean_frontend/docs/2026-11-04_macro-type-ranks-record.md.
+# fix/stdio-exit-flush, 2026-11-06 [AGENT, executing the charter docs/2026-11-05_worker-charter-stdio-exit-flush.md under the
+# [USER 2026-11-04] fix-pass agreement; rulings [AGENT 2026-11-06, orchestrator]]: FORK-AHEAD delta of the first kind (the fork's own
+# fix of an upstream mistake, filed upstream as tray reports 24 and 25): program termination runs the atexit handlers and flushes
+# the open streams -- C17 5.1.2.2.3 (a return from main is equivalent to exit with the returned value), 7.22.4.4#2-#4 (exit:
+# handlers in reverse order, then every open stream with unwritten buffered data is flushed), 7.21.3 (a stream's writes are
+# ordered). frontend/model/driver.lem: process_core_step2's Step_done2 arm routes the startup function's return through the
+# library's `exit` when the linked file defines one (the extern map's LK_normal target; --nolibc, the globals phase and the Core
+# builtin exit keep upstream's direct termination) -- `startup_exit_call_opt`. runtime/libc/src/stdlib.c: `exit` calls
+# fflush(NULL) between the handlers and _Exit. runtime/libc/src/stdio.c: `vfprintf` flushes the FILE's pending buffer before the
+# builtin writes through the descriptor. Single-row edits, no --refresh: [files] + [source-content] ENTER runtime/libc/src/stdio.c
+# and runtime/libc/src/stdlib.c (byte-identical to pristine c3ff8c53f before; the libc Core dumps are pinned separately,
+# tests/libc/*.sha256); [source-content] driver.lem re-pinned 94859892... -> a21c5833...; [expected-semantic] driver.ml's hash
+# moved (an already-differing file). Leaves when upstream absorbs the fix.
+# Record: lean_frontend/docs/2026-11-05_stdio-exit-flush-record.md.
 [meta]
 merge-base=c3ff8c53f05982745f9b3a10b3d05442e214bcb5
 lem-pin=e6d8db5680962f49060257d6c2bcb13c284b910f
@@ -141,6 +155,8 @@ ocaml_frontend/rewriters/core_peval.ml
 ocaml_frontend/rewriters/remove_unspecs.ml
 parsers/c/c_parser.mly
 runtime/libc/dune
+runtime/libc/src/stdio.c
+runtime/libc/src/stdlib.c
 runtime/libcore/impls/i686-apple-darwin10-gcc-4.2.1.impl
 runtime/libcore/std.core
 runtime/libcore/std_inner_arg_temps.core
@@ -196,7 +212,7 @@ util/cerb_location.ml
 100644 6b0b21a89f667513555fe8f3edaa26d67a9c0946df9ddcc7dde5ea75e322477a frontend/model/defacto_memory_aux.lem
 100644 c787451bc6aa2c5bf088d1acb0483b4c3be9fade6d889942cc91f5c4d93c03ae frontend/model/defacto_memory_types.lem
 100644 2d9cca04dcbfe7abcdf39765a7b0c10f44d5a2d72ddb4f2fb39f3a625c0b5f81 frontend/model/desugaring_init.lem
-100644 94859892689c0f701c1b8ad5fe99f28eb80a6b43f822cb11725ea3a024f06e0b frontend/model/driver.lem
+100644 a21c5833d5e882b020f474aa47c8950b33bb14f9602ea11b27145ac0427f70d6 frontend/model/driver.lem
 100644 fef63c6ce9047d1a714882f93f5e5b8ea40bec483e9929cafdb9a8e8e0ab6062 frontend/model/float.lem
 100644 c630d08666cf4e0ffd56fb7aa5ba38b5ab546310c70e9378b0f658b54ed666ee frontend/model/formatted.lem
 100644 5079002023f7e22633acbd6b112f99213227475c4d19d3b1859ea388b322de80 frontend/model/fs.lem
@@ -235,6 +251,8 @@ util/cerb_location.ml
 100644 4d6d58a199fbbcc0ed7692fa0b631f74cc3c39e0dc53405dcd6fc4da3dc9b7b7 ocaml_frontend/rewriters/remove_unspecs.ml
 100644 3c663db65a613ec7bdee1c9c516a5cd74539dd9744e307e42ec599953f80894e parsers/c/c_parser.mly
 100644 d1d5f0a2ca4cc5a53e8b068d3bb9f219fe5eaec29457f25032352271ed240095 runtime/libc/dune
+100644 c2c561ee6e8b1ebfb23508b93012cb09416fd98b33fe2a59bfdbdeb395261c8a runtime/libc/src/stdio.c
+100644 4ea1b6fb32ccff6f6f4f3e0b06efceccf24ee88eeb7ac0b09bc7db79d15d79d8 runtime/libc/src/stdlib.c
 100644 cf6fbe0be7dae96f6ce2c8cf7d7013b89d350da563e5179be8a2bb298d7ee24a runtime/libcore/impls/i686-apple-darwin10-gcc-4.2.1.impl
 100644 8ebc9ccadea572e29bab5bd8fec558c6cd413c5b5cfd5fcbbc49b526ab0a315a runtime/libcore/std.core
 100644 5910f73d116519cc38ba8ef5f32db92a9a060542993ae0cc314a30bde8ec7a00 runtime/libcore/std_inner_arg_temps.core
@@ -259,7 +277,7 @@ b9f1e58c1d52cd0680a56e7dcd4e3d8e5d2eadbe1d1575f4ad0442d3efd2b3a5 core_run_aux.ml
 269c3ff7598827ddfbdcd8cf564da8ba826986b4ae925516eec158398347f374 core_typing.ml
 977ee22d68c7527e500476404f5803db39a2ef2072ef9e9e34e57435c68bfd7a ctype_aux.ml
 ec7df37dbaf284dda0e03eb6a5641b10175d2c3c6cb42207002b167c9ba2fe88 desugaring_init.ml
-0dd83414365d97d1607c35ac68681cde6caf5f47353e73a4552bac6b8317e5d8 driver.ml
+a97b332d2a92e98e93fa0d5fca35480ec68e3fbe8ad01765a146fcba335ca85e driver.ml
 afd35a12cbe3182653f4e50ee044120b7f3f376025f53213f7c1a4fbfa0aad5a formatted.ml
 fd134ad18f9a6c43a1d75f4ca987b2b51ca10230c716cc60d375b11094aec782 genTyping.ml
 fe79f83fe9ae4b52448fa88935cf88df2a4d8e5b3b01b599f3e6585b5fd578e3 implementation.ml
