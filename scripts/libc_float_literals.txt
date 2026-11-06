@@ -20,27 +20,31 @@
 # the two edited TUs' source digests changed, so merge_globs reorders the globals and every later symbol is renumbered) moved every
 # literal by exactly +11443 lines (the reordering: the vfscanf TU's procedures now print after the relocated ones) and added or dropped none -- the 24-literal multiset and order are identical in the old dump and the
 # new dump (checked with this script's own census). Dispositions and notes carried unchanged; every row is a relocation. [AGENT 2026-11-06]
-52598	3.40282347e+38	EXACT-BY-SOURCE	
-64252	0.	EXACT-BY-SOURCE	
-64908	0.	EXACT-BY-SOURCE	
-64917	0.	EXACT-BY-SOURCE	
-65581	0.	EXACT-BY-SOURCE	
-65590	0.	EXACT-BY-SOURCE	
-70187	1000000000.	EXACT-BY-SOURCE	
-71119	0.25	EXACT-BY-SOURCE	
-71187	0.75	EXACT-BY-SOURCE	
-71342	0.5	EXACT-BY-SOURCE	
-71376	0.75	EXACT-BY-SOURCE	
-71573	1.	EXACT-BY-SOURCE	
-71722	1.84467440737e+19	LOSSY-N3	0x1p64 = 2^64 (runtime/libc/src/internal.c:303, decfloat); parsed back 9551872 below 2^64
-71888	0.5	EXACT-BY-SOURCE	
-72018	0.	EXACT-BY-SOURCE	
-73561	0.	EXACT-BY-SOURCE	
-73571	0.	EXACT-BY-SOURCE	
-73716	0.5	EXACT-BY-SOURCE	
-74238	0.	EXACT-BY-SOURCE	
-74843	0.	EXACT-BY-SOURCE	
-75085	0.	EXACT-BY-SOURCE	
-75094	0.	EXACT-BY-SOURCE	
-75167	0.5	EXACT-BY-SOURCE	
-75684	0.	EXACT-BY-SOURCE	
+# Re-derived 2026-11-06 (fix/stdio-exit-flush M2; the same record): the libc re-pin after the `vprintf` definition
+# (stdio.c, +58 lines in libc.core) moved every literal by exactly -20016 lines (the glob order moved again with stdio.c's
+# source digest) and added or dropped none -- the 24-literal multiset and order are identical in the M1 dump and the new
+# dump (this script's own census). Dispositions and notes carried unchanged; every row is a relocation. [AGENT 2026-11-06]
+32582	3.40282347e+38	EXACT-BY-SOURCE	
+44236	0.	EXACT-BY-SOURCE	
+44892	0.	EXACT-BY-SOURCE	
+44901	0.	EXACT-BY-SOURCE	
+45565	0.	EXACT-BY-SOURCE	
+45574	0.	EXACT-BY-SOURCE	
+50171	1000000000.	EXACT-BY-SOURCE	
+51103	0.25	EXACT-BY-SOURCE	
+51171	0.75	EXACT-BY-SOURCE	
+51326	0.5	EXACT-BY-SOURCE	
+51360	0.75	EXACT-BY-SOURCE	
+51557	1.	EXACT-BY-SOURCE	
+51706	1.84467440737e+19	LOSSY-N3	0x1p64 = 2^64 (runtime/libc/src/internal.c:303, decfloat); parsed back 9551872 below 2^64
+51872	0.5	EXACT-BY-SOURCE	
+52002	0.	EXACT-BY-SOURCE	
+53545	0.	EXACT-BY-SOURCE	
+53555	0.	EXACT-BY-SOURCE	
+53700	0.5	EXACT-BY-SOURCE	
+54222	0.	EXACT-BY-SOURCE	
+54827	0.	EXACT-BY-SOURCE	
+55069	0.	EXACT-BY-SOURCE	
+55078	0.	EXACT-BY-SOURCE	
+55151	0.5	EXACT-BY-SOURCE	
+55668	0.	EXACT-BY-SOURCE	

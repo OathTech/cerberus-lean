@@ -30,6 +30,13 @@
 #     with different symbol numbers, EQUAL under the codec's failure-class projection (the
 #     only Error/Error shape BOTH_FAIL admits) — VALIDATION §1(a) (tray 17); the same pair in
 #     default mode (scripts/exec_baseline.txt CERB_SKIP). Their Lean side is pinned (lean=).
+# Re-recorded 2026-11-06 (fix/stdio-exit-flush M2; record lean_frontend/docs/2026-11-05_stdio-exit-flush-record.md
+#   section 4.3): nine litmus rows' oracle hashes moved (pointer_from_integer_2g, the two pointer_offset_from_int_
+#   subtraction_*_xy rows, the six provenance_* rows) because the libc-mode global LAYOUT shifted by four bytes when
+#   runtime/libc/src/{stdlib,stdio}.c were edited (their source digests order the linked globals, core_linking.lem
+#   merge_globs): every printed address moved (e.g. &j (@70, 0xffffffffede8) -> (@70, 0xffffffffedec); &x
+#   281474976705976 -> 281474976705980) with every non-address value identical (j=5, the offsets, (p==q)); classes
+#   unchanged, both engines agreeing. Not a verdict change. [AGENT 2026-11-06]
 # pkvm/pkvm-init is EXHAUSTIVE: its oracle hash pins the 2-execution set
 #   (UB088 at <715:2--715:17> and at <715:2--715:6>, design §C.3/§C.6).
 litmus/cheri_03_ii AGREE oracle=32faef2d53f2 default=changed
@@ -48,10 +55,10 @@ litmus/pointer_from_integer_1ig AGREE oracle=a29f615d8ed0 default=same
 litmus/pointer_from_integer_1p AGREE oracle=2b6f4b9963a6 default=same
 litmus/pointer_from_integer_1pg AGREE oracle=7df8c6c19b13 default=same
 litmus/pointer_from_integer_2 AGREE oracle=ef1130a9e1c1 default=same
-litmus/pointer_from_integer_2g AGREE oracle=89d59452b533 default=same
-litmus/pointer_offset_from_int_subtraction_auto_xy AGREE oracle=f91d17b45573 default=changed
+litmus/pointer_from_integer_2g AGREE oracle=b95613b0467e default=same
+litmus/pointer_offset_from_int_subtraction_auto_xy AGREE oracle=a774eb7dc491 default=changed
 litmus/pointer_offset_from_int_subtraction_auto_yx REFUSAL R-PNVI-01 ORACLE_CRASH oracle=b7bf4586ba59 default=changed
-litmus/pointer_offset_from_int_subtraction_global_xy AGREE oracle=6583aa6358ad default=changed
+litmus/pointer_offset_from_int_subtraction_global_xy AGREE oracle=4e0b94a587f8 default=changed
 litmus/pointer_offset_from_int_subtraction_global_yx REFUSAL R-PNVI-01 ORACLE_CRASH oracle=b7bf4586ba59 default=changed
 litmus/pointer_offset_from_ptr_subtraction_auto_xy AGREE oracle=950cd1041949 default=same
 litmus/pointer_offset_from_ptr_subtraction_auto_yx AGREE oracle=950cd1041949 default=same
@@ -63,12 +70,12 @@ litmus/provenance_basic_auto_yx AGREE oracle=604e64f6ef8a default=same
 litmus/provenance_basic_global_yx AGREE oracle=604e64f6ef8a default=same
 litmus/provenance_basic_using_uintptr_t_auto_yx REFUSAL R-PNVI-01 ORACLE_CRASH oracle=b7bf4586ba59 default=changed
 litmus/provenance_basic_using_uintptr_t_global_yx REFUSAL R-PNVI-01 ORACLE_CRASH oracle=b7bf4586ba59 default=changed
-litmus/provenance_equality_auto_yx AGREE oracle=32ac67ef29d2 default=same
-litmus/provenance_equality_global_fn_yx AGREE oracle=1e43e8dd406b default=same
-litmus/provenance_equality_global_yx AGREE oracle=dd5d68f57089 default=same
-litmus/provenance_equality_uintptr_t_auto_yx AGREE oracle=63bcb3c70e91 default=same
-litmus/provenance_equality_uintptr_t_global_yx AGREE oracle=a3a0774937c0 default=same
-litmus/provenance_lost_escape_1 AGREE oracle=f19d1a916381 default=same
+litmus/provenance_equality_auto_yx AGREE oracle=a4ea1976f79d default=same
+litmus/provenance_equality_global_fn_yx AGREE oracle=91845b3f3379 default=same
+litmus/provenance_equality_global_yx AGREE oracle=99b5ef0f9bf9 default=same
+litmus/provenance_equality_uintptr_t_auto_yx AGREE oracle=20763ca977a3 default=same
+litmus/provenance_equality_uintptr_t_global_yx AGREE oracle=302d17f00579 default=same
+litmus/provenance_lost_escape_1 AGREE oracle=fad51d44ced4 default=same
 litmus/provenance_roundtrip_via_intptr_t AGREE oracle=7021c1341a77 default=same
 litmus/provenance_roundtrip_via_intptr_t_onepast AGREE oracle=1bccabc89001 default=same
 litmus/provenance_tag_bits_via_repr_byte_1 AGREE oracle=8090621aeb85 default=same

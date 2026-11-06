@@ -585,6 +585,20 @@ if ! "$MACRO_RANKS_SH" --selftest; then
     exit 1
 fi
 
+# Program-termination witnesses (fix/stdio-exit-flush, 2026-11-06, contract D15; upstream-tray
+# reports 24 and 25): 43 programs under tests/stdio_exit/ in libc mode -- the flush at exit, the
+# ordered stream, the atexit handlers, the exit status, the implementation-defined terminations,
+# the D2 fopen gap control and two nolibc controls -- each pinned to one line both engines must
+# print byte for byte (gcc 13's line, or the fork's declared line with gcc's beside it in gcc.txt),
+# pristine's lines the negative control; plants: a pristine-replaying pair, a Lean-only pristine
+# stub, a fixed-line Lean stub, an exit-code-forcing oracle wrapper and a tampered expectation must
+# all fail, each at its derived count. Record lean_frontend/docs/2026-11-05_stdio-exit-flush-record.md.
+STDIO_EXIT_SH="$(dirname "$PURITY_SH")/check_stdio_exit.sh"
+if ! "$STDIO_EXIT_SH" --selftest; then
+    echo "test_unit: program-termination witnesses FAILED"
+    exit 1
+fi
+
 # libc dump float-literal inventory (named deviation N3, VALIDATION.md §2b;
 # bug hunt BUG-5, [USER 2026-09-30] option (3)): the pinned libc.core's float
 # literals (printed with %.12g by the oracle's Core printer) must equal the

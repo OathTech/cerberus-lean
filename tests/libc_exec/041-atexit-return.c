@@ -1,7 +1,9 @@
-// 041: returning from main does NOT run atexit handlers in either engine (both
-// print only "main"), although ISO C 5.1.2.2.3 makes the return equivalent to
-// exit(7), which would print "bye". A mirrored oracle behaviour (upstream
-// candidate); pinned so a change on either side shows.
+// 041: returning from main runs the atexit handlers (ISO C17 5.1.2.2.3: the return
+// is equivalent to exit(7); 7.22.4.4#2: the handlers run) -- both engines print
+// "main\nbye\n" and report Specified(7) since fix/stdio-exit-flush (2026-11-06,
+// upstream-tray report 25); gcc 13 the same with $?=7. Before the fix both
+// engines printed only "main" (pinned then as a mirrored upstream behaviour;
+// now a shared-model-fix register row against pristine c3ff8c53f).
 #include <stdio.h>
 #include <stdlib.h>
 void bye(void) { printf("bye\n"); }

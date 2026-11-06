@@ -70,7 +70,8 @@
 # sequenced with the FILE buffer (7.21.3); the elaborator's substitution (translation.lem translate_function_designator)
 # otherwise sends every ailname'd identifier to the proxy, which writes past the buffer. --nolibc and the library's own
 # build keep the proxy; the Cabs JSON is mode-independent and lean_frontend/Main.lean mirrors the rule by its own --libc.
-# Single-row edits, no --refresh: [source-content] main.ml re-pinned; [files] + [source-content] ENTER runtime/libc/src/stdio.c
+# M2: stdio.c also defines `vprintf` (declared by <stdio.h>, defined nowhere in the shipped library: C17 7.21.6.10; its
+# [source-content] pin re-derived). Single-row edits, no --refresh: [source-content] main.ml re-pinned; [files] + [source-content] ENTER runtime/libc/src/stdio.c
 # and runtime/libc/src/stdlib.c (byte-identical to pristine c3ff8c53f before; the libc Core dumps are pinned separately,
 # tests/libc/*.sha256); [source-content] driver.lem re-pinned 94859892... -> a21c5833...; [expected-semantic] driver.ml's hash
 # moved (an already-differing file). Leaves when upstream absorbs the fix.
@@ -259,7 +260,7 @@ util/cerb_location.ml
 100644 4d6d58a199fbbcc0ed7692fa0b631f74cc3c39e0dc53405dcd6fc4da3dc9b7b7 ocaml_frontend/rewriters/remove_unspecs.ml
 100644 3c663db65a613ec7bdee1c9c516a5cd74539dd9744e307e42ec599953f80894e parsers/c/c_parser.mly
 100644 d1d5f0a2ca4cc5a53e8b068d3bb9f219fe5eaec29457f25032352271ed240095 runtime/libc/dune
-100644 c2c561ee6e8b1ebfb23508b93012cb09416fd98b33fe2a59bfdbdeb395261c8a runtime/libc/src/stdio.c
+100644 e4991b9321fa831f2d2c1a5815f739ae3b520cc482f7b77dadea96ba7e1f30b6 runtime/libc/src/stdio.c
 100644 4ea1b6fb32ccff6f6f4f3e0b06efceccf24ee88eeb7ac0b09bc7db79d15d79d8 runtime/libc/src/stdlib.c
 100644 cf6fbe0be7dae96f6ce2c8cf7d7013b89d350da563e5179be8a2bb298d7ee24a runtime/libcore/impls/i686-apple-darwin10-gcc-4.2.1.impl
 100644 8ebc9ccadea572e29bab5bd8fec558c6cd413c5b5cfd5fcbbc49b526ab0a315a runtime/libcore/std.core

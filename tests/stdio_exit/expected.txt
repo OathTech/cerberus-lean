@@ -1,0 +1,43 @@
+atexit_exit_from_nested_call	Defined {value: "Specified(3)", stdout: "deeph\n", stderr: "", blocked: "false"}
+atexit_handler_writes_buffered	Defined {value: "Specified(0)", stdout: "head\ntail", stderr: "", blocked: "false"}
+atexit_libc_handler_calls_exit	Defined {value: "Specified(9)", stdout: "m321", stderr: "", blocked: "false"}
+atexit_on_exit_control	Defined {value: "Specified(4)", stdout: "m1", stderr: "", blocked: "false"}
+atexit_on_return	Defined {value: "Specified(4)", stdout: "m21", stderr: "", blocked: "false"}
+atexit_registered_in_callee	Defined {value: "Specified(0)", stdout: "m\nh\n", stderr: "", blocked: "false"}
+atexit_three_reverse	Defined {value: "Specified(4)", stdout: "m321", stderr: "", blocked: "false"}
+flush_exit_from_main	Defined {value: "Specified(2)", stdout: "x", stderr: "", blocked: "false"}
+flush_fflush_midway	Defined {value: "Specified(0)", stdout: "abc\nd", stderr: "", blocked: "false"}
+flush_fputs_newline_twice	Defined {value: "Specified(0)", stdout: "a\nb\n", stderr: "", blocked: "false"}
+flush_fputs_no_newline	Defined {value: "Specified(0)", stdout: "out", stderr: "", blocked: "false"}
+flush_fwrite_twice	Defined {value: "Specified(0)", stdout: "ab\ncd", stderr: "", blocked: "false"}
+flush_main_without_return	Defined {value: "Specified(0)", stdout: "endh\n", stderr: "", blocked: "false"}
+flush_putchar_many	Defined {value: "Specified(0)", stdout: "A\nB\nC\n", stderr: "", blocked: "false"}
+flush_putchar_then_puts	Defined {value: "Specified(0)", stdout: "\nxy\n", stderr: "", blocked: "false"}
+flush_puts_loop	Defined {value: "Specified(0)", stdout: "x\nx\nx\nx\n", stderr: "", blocked: "false"}
+flush_puts_three	Defined {value: "Specified(0)", stdout: "a\nb\nc\n", stderr: "", blocked: "false"}
+flush_puts_twice	Defined {value: "Specified(0)", stdout: "a\nb\n", stderr: "", blocked: "false"}
+flush_setvbuf_full	Defined {value: "Specified(0)", stdout: "f1\nf2", stderr: "", blocked: "false"}
+flush_setvbuf_line	Defined {value: "Specified(0)", stdout: "l1\nl2", stderr: "", blocked: "false"}
+flush_setvbuf_none	Defined {value: "Specified(0)", stdout: "n1pn2\n", stderr: "", blocked: "false"}
+gap_fopen_unclosed	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+impl_Exit_after_buffered	Defined {value: "Specified(5)", stdout: "a\n", stderr: "", blocked: "false"}
+impl_abort_after_buffered	Defined {value: "Specified(127)", stdout: "a\n", stderr: "SIGABRT\n", blocked: "false"}
+impl_quick_exit_after_buffered	Defined {value: "Specified(6)", stdout: "a\nbq2q1", stderr: "", blocked: "false"}
+nolibc_atexit_on_return	Error {msg: "ill-formed program: `calling an unknown procedure: Symbol(_, SD_Id("atexit"))'"}
+nolibc_fputs_no_newline	Error {msg: "unresolved symbol: __stdout at other_location(Driver.drive)"}
+order_fputc_putc_fwrite_printf	Defined {value: "Specified(0)", stdout: "abcd\n", stderr: "", blocked: "false"}
+order_fputs_printf_exit	Defined {value: "Specified(0)", stdout: "out 5\n", stderr: "", blocked: "false"}
+order_fputs_then_fprintf	Defined {value: "Specified(0)", stdout: "bc1\n", stderr: "", blocked: "false"}
+order_fputs_then_printf	Defined {value: "Specified(0)", stdout: "bc\n", stderr: "", blocked: "false"}
+order_fputs_then_vprintf	Defined {value: "Specified(0)", stdout: "bc1\n", stderr: "", blocked: "false"}
+order_paren_printf	Defined {value: "Specified(0)", stdout: "bc\n", stderr: "", blocked: "false"}
+order_printf_pointer	Defined {value: "Specified(0)", stdout: "bc\n", stderr: "", blocked: "false"}
+order_printf_return_value	Defined {value: "Specified(4)", stdout: "ab12|4\n", stderr: "", blocked: "false"}
+order_printf_then_puts	Defined {value: "Specified(0)", stdout: "ab\nc\n", stderr: "", blocked: "false"}
+order_puts_printf_puts	Defined {value: "Specified(0)", stdout: "a\nb\nc\n", stderr: "", blocked: "false"}
+order_stderr_stdout_interleave	Defined {value: "Specified(0)", stdout: "o1po3\n", stderr: "e1f2e3\n", blocked: "false"}
+order_stderr_unbuffered	Defined {value: "Specified(0)", stdout: "o\n", stderr: "e1\nE2\n", blocked: "false"}
+order_write_fd	Defined {value: "Specified(0)", stdout: "wbc\n", stderr: "", blocked: "false"}
+status_return_256_handler	Defined {value: "Specified(256)", stdout: "h\n", stderr: "", blocked: "false"}
+status_return_300	Defined {value: "Specified(300)", stdout: "r", stderr: "", blocked: "false"}
+status_return_minus_one	Defined {value: "Specified(-1)", stdout: "r", stderr: "", blocked: "false"}

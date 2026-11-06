@@ -717,6 +717,13 @@ int vfprintf(FILE *restrict f, const char *restrict fmt, va_list ap)
   return __builtin_vprintf(fd, fmt, ap);
 }
 
+/* Cerberus fork (fix/stdio-exit-flush, 2026-11-06; upstream-tray report 24): declared by <stdio.h>
+   but defined nowhere in the shipped library (a call was an unknown procedure); C17 7.21.6.10. */
+int vprintf(const char *restrict fmt, va_list ap)
+{
+  return vfprintf(stdout, fmt, ap);
+}
+
 int vsnprintf(char *restrict s, size_t n, const char *restrict fmt, va_list ap)
 {
   int __builtin_vsnprintf(char *, size_t, const char* restrict, va_list);
