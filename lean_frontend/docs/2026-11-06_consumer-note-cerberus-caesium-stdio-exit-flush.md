@@ -8,7 +8,7 @@ What moved, in one paragraph: with the C library linked, a return from the start
 `exit`), the library's `exit` flushes every open stream after the `atexit` handlers (7.22.4.4#2-#4), each engine withholds
 std.core's `printf` proxy from a libc-mode program so `printf` resolves by linking to the library's own `printf` and its
 output is sequenced with the `FILE` buffer (7.21.3; `vfprintf` flushes the pending buffer before the builtin writes
-through the descriptor), and `vprintf` is defined (7.21.6.10). `--nolibc` is unchanged (a 787-program sweep, 0 moved).
+through the descriptor), and `vprintf` is defined (7.21.6.10). `--nolibc` is unchanged for every program that does not itself define `exit` with external linkage (UB C17 7.1.3): the 787-program nolibc sweep moved nothing; a program-defined `exit` of the library's shape `void (signed int)` is routed like the library's and, should it return, is refused by a loud kill (never a second routing, never a verdict); a definition of another shape is not routed (the pre-merge review's P2-1).
 
 What this means for a pin of the fork at or after this branch:
 
@@ -22,8 +22,9 @@ What this means for a pin of the fork at or after this branch:
   `fprintf`'s always was; on the Lean engine that location is `<unknown location>` (the libc Core text transport, N4).
   A recorded location for such a UB moves; the verdict and ub id do not.
 - The libc-mode global LAYOUT moved: the edited library TUs' source digests order the linked globals (`merge_globs`), so
-  every address a libc-mode program prints (and the allocation ids) shifted by a few bytes with every value identical
-  (e.g. `&j=(@70, 0xffffffffede8)` → `(@70, 0xffffffffedec)`). Address-pinning expectations in libc mode move; nolibc
+  every address a libc-mode program prints moved (program globals by up to ~1.9 KB — `012-global-alloc-order`'s `s1`
+  281474976707472 → 281474976709344 —, locals by four bytes, e.g. `&j=(@70, 0xffffffffede8)` → `(@70, 0xffffffffedec)`; the
+  allocation ids with them) with every value identical. Address-pinning expectations in libc mode move; nolibc
   ones do not. The pristine lane's register gained the class `address-layout` for this (both engines right).
 - A `printf` call costs the library's varargs path now (010-int32-printf 1249 → 1509 driver steps, 011-decimal-sweep
   31540 → 83540, 0.32 → 0.46 s wall; a measurement, not a threshold); fuel budgets near their limit on printf-heavy

@@ -25,6 +25,9 @@ impl_abort_after_buffered	Defined {value: "Specified(134)", stdout: "", stderr: 
 impl_quick_exit_after_buffered	Defined {value: "Specified(6)", stdout: "", stderr: "", blocked: "false"}
 nolibc_atexit_on_return	Defined {value: "Specified(4)", stdout: "m21", stderr: "", blocked: "false"}
 nolibc_fputs_no_newline	Defined {value: "Specified(0)", stdout: "out", stderr: "", blocked: "false"}
+nolibc_user_exit_noarg	Defined {value: "Specified(4)", stdout: "m\n", stderr: "", blocked: "false"}
+nolibc_user_exit_returns	Defined {value: "Specified(4)", stdout: "m\n", stderr: "", blocked: "false"}
+nolibc_user_int_exit	Defined {value: "Specified(4)", stdout: "m\n", stderr: "", blocked: "false"}
 order_fputc_putc_fwrite_printf	Defined {value: "Specified(0)", stdout: "abcd\n", stderr: "", blocked: "false"}
 order_fputs_printf_exit	Defined {value: "Specified(0)", stdout: "out 5\n", stderr: "", blocked: "false"}
 order_fputs_then_fprintf	Defined {value: "Specified(0)", stdout: "bc1\n", stderr: "", blocked: "false"}

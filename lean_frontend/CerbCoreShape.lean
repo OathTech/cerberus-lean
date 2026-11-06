@@ -15,7 +15,8 @@
   the arm's `Just` branch (:1395-1424) installs the C library's `exit` as the
   startup thread's arena and RE-ENTERS `driver2`, and that call terminates
   through the Core builtin `exit`, a `Step_done2` with a non-empty stack, i.e.
-  the `Nothing` branch) and `Step_fs2`/`FS_done` (:1436-1441); every other arm
+  the `Nothing` branch; a routed `exit` that RETURNS is an ND kill there, which
+  never reaches `finalize`) and `Step_fs2`/`FS_done`; every other arm
   re-enters `driver2` or is an `error`, and `new_drive_core_threads`
   (:1280-1301) never yields a `Nothing` step for the `(_, Nothing)` arm. Both
   terminal arms rewrite the core state by `prepare_exit` (driver.lem:1314-1322):

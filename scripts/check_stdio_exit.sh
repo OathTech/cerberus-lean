@@ -32,9 +32,12 @@
 #     gcc/glibc also follow -- a gcc-pinned row, declared, not a fork reading;
 #   - gap_fopen_unclosed: the oracle's in-memory filesystem answers, the Lean engine REFUSES fopen
 #     (contract D2): the oracle's line and the Lean refusal are pinned (a gap control, not an agreement);
-#   - nolibc_*: the two tray reproducers under --nolibc on BOTH engines keep upstream's path (no library:
-#     `atexit` an unknown procedure, `__stdout` unresolved), compared under the symbol-number projection
-#     `Symbol(_, ` (the engines number symbols differently; ladder row 6b's rule).
+#   - nolibc_*: under --nolibc on BOTH engines, compared under the symbol-number projection `Symbol(_, ` (the
+#     engines number symbols differently; ladder row 6b's rule) with equal exit codes: the two tray reproducers
+#     keep upstream's path (no library: `atexit` an unknown procedure, `__stdout` unresolved), and the pre-merge
+#     review's three programs that DEFINE `exit` themselves with external linkage (UB 7.1.3) pin the rule: the
+#     library's shape `void (signed int)` is routed and, returning, is the loud kill; another arity or return type
+#     is not routed and keeps the mainline's answer.
 # Negative control: tests/stdio_exit/pristine.txt carries pristine c3ff8c53f's lines; the `pristine-pair`
 # plant must FAIL exactly the moved rows. A row whose pin equals neither gcc's line nor the declared
 # fork-pinned list is a FAIL (a silent re-pin cannot pass).
@@ -150,7 +153,9 @@ mapfile -t LIBC_JSONS <<< "$libc_jsons"
 [[ ${#LIBC_JSONS[@]} -eq 12 ]] || { echo "$NAME: FAIL — expected 12 libc metadata jsons, got ${#LIBC_JSONS[@]}"; exit 1; }
 LIBC_ARGS=(--libc "$ROOT/tests/libc/libc.core"); for j in "${LIBC_JSONS[@]}"; do LIBC_ARGS+=(--libc-tu "$j"); done
 
-fails=0; n=0; nmoved=0; ngcc=0; nfork=0
+fails=0; n=0; nmoved=0; ngcc=0; nfork=0; ngap=0; nnolibc=0
+# the total and the four class counts are PINNED (review P3-3): a dropped row cannot pass silently
+WANT_N=46; WANT_GCC=34; WANT_FORK=6; WANT_GAP=1; WANT_NOLIBC=5
 fail() { echo "$NAME: FAIL — $*"; fails=$((fails + 1)); }
 pinned() { awk -F'\t' -v n="$1" '$1==n{print substr($0, length(n)+2)}' "$2"; }
 verdict_line() { grep -aE '^(Defined|Undefined|Error|Killed) ' | head -1; }
@@ -192,7 +197,7 @@ gap_control() {  # <name>: the oracle answers the pinned line; the Lean engine r
     selected "$name" || return
     want=$(pinned "$name" "$EXPECT")
     [[ -n "$want" ]] || { fail "$name: no pinned expectation in $EXPECT"; return; }
-    n=$((n + 1))
+    n=$((n + 1)); ngap=$((ngap + 1))
     oout=$("$ORACLE" --runtime="$PREFIX" --exec --batch "$c" 2> "$j.oerr"); orc=$?
     o=$(printf '%s\n' "$oout" | verdict_line)
     [[ $orc -eq 0 && "$o" == "$want" ]] || fail "$name: oracle: expected rc 0 [$want]; got rc=$orc [${o:0:200}]"
@@ -202,21 +207,22 @@ gap_control() {  # <name>: the oracle answers the pinned line; the Lean engine r
     lout=$(env LEAN_ABORT_ON_PANIC=1 "$BIN" --batch --first --runtime="$PREFIX" "${LIBC_ARGS[@]}" "$j" 2>&1); lrc=$?
     [[ $lrc -eq 134 && "$lout" == *"$GAP_LEAN_TEXT"* ]] || fail "$name: Lean: expected the D2 refusal (rc 134, $GAP_LEAN_TEXT); got rc=$lrc ${lout:0:300}"
 }
-nolibc_control() {  # <name>: --nolibc on both engines; the projected Error line = the pin; rc 1 on both
-    local name="$1" c="$CASES/$1.c" j="$WD/$1.json" want oout orc o lout lrc l
+nolibc_control() {  # <name>: --nolibc on both engines; the projected lines = the pin; exit codes equal (0 for a Defined pin, 1 otherwise)
+    local name="$1" c="$CASES/$1.c" j="$WD/$1.json" want wrc oout orc o lout lrc l
     selected "$name" || return
     want=$(pinned "$name" "$EXPECT")
     [[ -n "$want" ]] || { fail "$name: no pinned expectation in $EXPECT"; return; }
-    n=$((n + 1))
+    n=$((n + 1)); nnolibc=$((nnolibc + 1))
+    if [[ "$want" == Defined* ]]; then wrc=0; else wrc=1; fi
     oout=$("$ORACLE" --runtime="$PREFIX" --nolibc --exec --batch "$c" 2> "$j.oerr"); orc=$?
     o=$(printf '%s\n' "$oout" | verdict_line | project)
-    [[ $orc -eq 1 && "$o" == "$want" ]] || fail "$name: oracle (--nolibc): expected rc 1 [$want]; got rc=$orc [${o:0:200}]"
+    [[ $orc -eq $wrc && "$o" == "$want" ]] || fail "$name: oracle (--nolibc): expected rc $wrc [$want]; got rc=$orc [${o:0:200}]"
     if ! "$ORACLE" --runtime="$PREFIX" --nolibc --cabs-json "$c" > "$j" 2> "$j.err" || [[ ! -s "$j" ]]; then
         fail "$name: oracle --cabs-json failed: $(head -c 300 "$j.err")"; return
     fi
     lout=$(env LEAN_ABORT_ON_PANIC=1 "$BIN" --batch --first --runtime="$PREFIX" "$j" 2> "$j.lerr"); lrc=$?
     l=$(printf '%s\n' "$lout" | verdict_line | project)
-    [[ $lrc -eq 1 && "$l" == "$want" ]] || fail "$name: Lean (nolibc): expected rc 1 [$want]; got rc=$lrc [${l:0:200}]"
+    [[ $lrc -eq $wrc && "$l" == "$want" ]] || fail "$name: Lean (nolibc): expected rc $wrc [$want]; got rc=$lrc [${l:0:200}]"
 }
 
 while IFS=$'\t' read -r name _; do
@@ -228,6 +234,10 @@ while IFS=$'\t' read -r name _; do
     esac
 done < "$EXPECT"
 for name in $FORK_PINNED; do grep -q "^$name	" "$EXPECT" || fail "$name: declared FORK-PINNED but absent from $EXPECT"; done
+if [[ -z "$ONLY" ]]; then  # the whole set: the pinned totals (a subset run is a plant or a focused check, not the gate)
+    [[ $n -eq $WANT_N && $ngcc -eq $WANT_GCC && $nfork -eq $WANT_FORK && $ngap -eq $WANT_GAP && $nnolibc -eq $WANT_NOLIBC ]] \
+        || fail "the witness set is not the pinned set: $n programs ($ngcc gcc-pinned, $nfork fork-pinned, $ngap gap, $nnolibc nolibc); expected $WANT_N ($WANT_GCC/$WANT_FORK/$WANT_GAP/$WANT_NOLIBC)"
+fi
 
 [[ $fails -eq 0 ]] || { echo "$NAME: $fails failing check(s) over $n programs"; exit 1; }
-echo "$NAME: OK ($n programs in libc mode: $ngcc batch lines of both engines = gcc 13's pinned line, exit codes equal — the flush-at-termination rows (puts/fputs/fwrite/putchar twice and in a loop, an unterminated last write, fflush mid-way, setvbuf full/line/none, exit() and the } of main), the ordered-stream rows (fputs then printf/fprintf/vprintf, (printf)(...) and a call through &printf, every FILE writer before a printf, printf's return value, stderr, write(2)), the atexit rows (on return, in a callee, three in reverse, a handler that writes, a handler that calls exit = the shipped library's text, exit from a nested call) and the exit() control; $nfork pinned to the fork's declared lines with gcc's beside them in gcc.txt (the status beyond 0..255, _Exit/quick_exit/abort after buffered output); 1 gap control (fopen refused on the Lean engine, contract D2); 2 nolibc controls (upstream's path, both engines); $nmoved rows moved from pristine c3ff8c53f's lines)"
+echo "$NAME: OK ($n programs in libc mode: $ngcc batch lines of both engines = gcc 13's pinned line, exit codes equal — the flush-at-termination rows (puts/fputs/fwrite/putchar twice and in a loop, an unterminated last write, fflush mid-way, setvbuf full/line/none, exit() and the } of main), the ordered-stream rows (fputs then printf/fprintf/vprintf, (printf)(...) and a call through &printf, every FILE writer before a printf, printf's return value, stderr, write(2)), the atexit rows (on return, in a callee, three in reverse, a handler that writes, a handler that calls exit = the shipped library's text, exit from a nested call) and the exit() control; $nfork pinned to the fork's declared lines with gcc's beside them in gcc.txt (the status beyond 0..255, _Exit/quick_exit/abort after buffered output); $ngap gap control (fopen refused on the Lean engine, contract D2); $nnolibc nolibc controls (the two tray reproducers on upstream's path; a program-defined exit of the library's shape routed and refused when it returns, two other shapes not routed; both engines); $nmoved rows moved from pristine c3ff8c53f's lines)"

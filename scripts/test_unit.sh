@@ -586,9 +586,9 @@ if ! "$MACRO_RANKS_SH" --selftest; then
 fi
 
 # Program-termination witnesses (fix/stdio-exit-flush, 2026-11-06, contract D15; upstream-tray
-# reports 24 and 25): 43 programs under tests/stdio_exit/ in libc mode -- the flush at exit, the
+# reports 24 and 25): 46 programs under tests/stdio_exit/ in libc mode -- the flush at exit, the
 # ordered stream, the atexit handlers, the exit status, the implementation-defined terminations,
-# the D2 fopen gap control and two nolibc controls -- each pinned to one line both engines must
+# the D2 fopen gap control and five nolibc controls -- each pinned to one line both engines must
 # print byte for byte (gcc 13's line, or the fork's declared line with gcc's beside it in gcc.txt),
 # pristine's lines the negative control; plants: a pristine-replaying pair, a Lean-only pristine
 # stub, a fixed-line Lean stub, an exit-code-forcing oracle wrapper and a tampered expectation must

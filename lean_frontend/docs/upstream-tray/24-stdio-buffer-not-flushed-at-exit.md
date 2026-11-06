@@ -4,11 +4,12 @@
 both engines, the shipped library, the proxy rule mirrored in both drivers; record
 `lean_frontend/docs/2026-11-05_stdio-exit-flush-record.md`; witness `scripts/check_stdio_exit.sh`); Draft for
 upstream, to be filed. This report merges the fork's earlier drafts 24 (the flush) and 25 (the handlers) — one
-mechanism, one patch. The patch below is against `rems-project/cerberus` at `c3ff8c53f`; upstream's tip carries the
-same text in every cited region.
+mechanism, one patch. The patch below is against `rems-project/cerberus` at `c3ff8c53f` (the four files' hunks replayed
+onto the pristine checkout's text, the fork-only comment hunks dropped; `git apply --check -p1` in the pristine checkout:
+OK, 2026-11-06); upstream's tip carries the same text in every cited region.
 
-**Affected:** `frontend/model/driver.lem` at `c3ff8c53f` — `process_core_step2`'s `Step_done2 cval` arm (fork
-`:1336-1343` before the fix; `prepare_exit` `:1314-1322`): the startup function's return ends the program directly, the
+**Affected:** `frontend/model/driver.lem` at `c3ff8c53f` — `process_core_step2`'s `Step_done2 cval` arm (`:1326-1333`;
+`prepare_exit` `:1304-1312`): the startup function's return ends the program directly, the
 C library's `exit` is never entered; `runtime/libc/src/stdlib.c:223-227` `exit`: `__funcs_on_exit(); _Exit(code);` — no
 stream flush (musl calls `__stdio_exit()` between them; this copy does not); `runtime/libc/src/stdio.c:238-243`
 `__stdout_write` turns stdout fully buffered after its first write (musl's `lbf = -1` without the `isatty`/ioctl test,
@@ -68,7 +69,7 @@ Defined {value: "Specified(0)", stdout: "c\n", stderr: "", blocked: "false"}
 ```
 
 gcc 13.3.0 (`-std=c11 -w -O0`): `out`; `m21` with `$?` 4; `a\nb\nc\n`; `bc\n`. After the patch both fork engines print
-gcc's lines (`scripts/check_stdio_exit.sh`: 43 programs, 34 pinned to gcc's line byte for byte).
+gcc's lines (`scripts/check_stdio_exit.sh`: 46 programs, 34 pinned to gcc's line byte for byte).
 
 ## Observed vs expected
 
@@ -90,7 +91,9 @@ programs moved (two by output, the rest by the library's global layout, below).
   initial thread with an empty stack and a current procedure — the globals phase has none, and the Core builtin `exit`
   reached from `_Exit` fires inside its frame) is turned into a call of the library's `exit` with the returned value,
   the status object allocated and stored under the file's calling convention; `driver2` continues and the call ends
-  in the builtin as today. `--nolibc` is untouched.
+  in the builtin as today. Only a target of the library's funinfo shape `void (signed int)` is routed, once per run;
+  a routed `exit` that returns (a program-defined one, UB 7.1.3) is a loud kill. A `--nolibc` run only declares
+  `exit`, so nothing is routed there unless the program defines it itself.
 - `stdlib.c` `exit`: `__funcs_on_exit(); fflush(NULL); _Exit(code);` (`fflush(NULL)` is the shipped loop over stdout,
   stderr and the open-file list). `_Exit`, `quick_exit`, `abort` unchanged (implementation-defined).
 - `stdio.c` `vfprintf`: flush the stream's pending buffer before the builtin writes through the descriptor;
@@ -103,38 +106,22 @@ programs moved (two by output, the rest by the library's global layout, below).
   `vfprintf` rather than at the program's call — as `fprintf`'s always was.
 
 ```diff
-diff --git a/backend/driver/main.ml b/backend/driver/main.ml
-index 1754247dd..28af395e9 100644
---- a/backend/driver/main.ml
-+++ b/backend/driver/main.ml
-@@ -153,6 +153,22 @@ let cerberus debug_level progress core_obj
-     (* Looking for and parsing the implementation file *)
-     load_core_impl core_stdlib impl_name >>= fun core_impl ->
-     io.pass_message "Implementation file loaded." >>
-+    (* Cerberus fork (fix/stdio-exit-flush M1c, 2026-11-06; upstream-tray report 24): with the
-+       C library linked, std.core's proxy for the identifier `printf` is withheld from the
-+       elaboration of the program's translation units (translation.lem
-+       translate_function_designator substitutes every `[ailname = ...]` identifier), so a
-+       call of `printf` resolves by linking to the library's own `printf` (stdio.c), whose
-+       output is sequenced with the FILE buffer (C17 7.21.3) where the proxy wrote past it
-+       into the driver's record. --nolibc runs and the library's own build (--nolibc) keep
-+       the proxy; the Cabs JSON is unchanged either way, so the Lean driver, which decides
-+       by its own --libc, consumes the same translation unit (lean_frontend/Main.lean
-+       mirrors this at its stdlib load). *)
-+    let core_stdlib =
-+      if nolibc then core_stdlib
-+      else begin
-+        let (ailnames, std_funs) = core_stdlib in
-+        (Pmap.remove "printf" ailnames, std_funs)
-+      end in
-     return ((core_stdlib, core_impl), elab_conf)
-   in
-   let main elab_conf core_std =
-diff --git a/frontend/model/driver.lem b/frontend/model/driver.lem
-index e226d0d5b..7b6822fed 100644
---- a/frontend/model/driver.lem
-+++ b/frontend/model/driver.lem
-@@ -1321,6 +1321,53 @@ let prepare_exit core_st cval =
+--- a/frontend/model/driver.lem	2026-11-06 04:53:25.718966078 +0000
++++ b/frontend/model/driver.lem	2026-11-06 04:53:25.765865927 +0000
+@@ -65,6 +65,12 @@
+   symbolic_assoc: map Symbol.sym Core.object_value;
+   
+   blocked: bool; (* concurrency model ended by blocking *)
++  (* fork-ahead delta (fix/stdio-exit-flush, 2026-11-06): set when the startup function's
++     return has been routed through the C library's `exit' (process_core_step2's Step_done2
++     arm); a second Step_done2 of the startup thread with an empty stack after that is the
++     routed `exit' RETURNING (a program-defined `exit' with external linkage, UB 7.1.3), a
++     loud kill, never a second routing *)
++  exit_routed: bool;
+   (* DEBUG *)
+   (*trace: list string;*)
+   dr_step_counter: nat;
+@@ -1311,6 +1317,83 @@
          <| core_st with Core_run.thread_states= [(tid0, (Nothing, th_st'))] |>
    end
  
@@ -147,9 +134,17 @@ index e226d0d5b..7b6822fed 100644
 +
 +   `startup_exit_call_opt dr_st cval` is `Just (exit_sym, tid0, th_st, status)` exactly
 +   when the return must be routed through the library's `exit`:
++   - no routing has happened yet in this run (`exit_routed`): the routed call's own
++     Step_done2 is its termination, never a second routing;
 +   - the linked Core file DEFINES `exit` (the extern map's `LK_normal` target for the
-+     identifier "exit": libc mode; a `--nolibc` run only declares it, `LK_none`, and keeps
-+     upstream's direct termination);
++     identifier "exit") AND its funinfo type is the library's shape, `void (signed int)`,
++     not variadic. With the library linked that is the library's `exit`. Without it
++     (`--nolibc`) the headers only declare `exit` (`LK_none`), so nothing is routed —
++     unless the program itself defines `exit` with external linkage (UB 7.1.3): a
++     definition of the library's shape is routed like the library's and, should it return,
++     is refused by the loud kill in the arm below; a definition of another shape (another
++     return type, another arity, variadic) is not routed and keeps upstream's direct
++     termination. Every other `--nolibc` program is unchanged (the 787-program sweep);
 +   - the Step_done2 came from the STARTUP FUNCTION's return: the initial thread
 +     (parent Nothing) has an empty stack and a current procedure. The two other
 +     producers of Step_done2 are excluded by that shape: the globals phase
@@ -163,8 +158,16 @@ index e226d0d5b..7b6822fed 100644
 +   Anything else is Nothing: upstream's path, unchanged. *)
 +val startup_exit_call_opt: driver_state -> Core.value -> maybe (Symbol.sym * Mem.thread_id * Core_run.thread_state * Mem.mem_value)
 +let startup_exit_call_opt dr_st cval =
++  if dr_st.exit_routed then Nothing else
 +  match Map.lookup (Symbol.Identifier Loc.unknown "exit") dr_st.core_file.Core.extern with
 +    | Just (_, Core.LK_normal exit_sym) ->
++        (* the library's shape: `void exit(int)` -- one `signed int' parameter, not variadic *)
++        let is_exit_shape =
++          match Map.lookup exit_sym dr_st.core_file.Core.funinfo with
++            | Just (_, _, Ctype.Ctype _ Ctype.Void, [(_, Ctype.Ctype _ (Ctype.Basic (Ctype.Integer (Ctype.Signed Ctype.Int_))))], false, _) -> true
++            | _ -> false
++          end in
++        if not is_exit_shape then Nothing else
 +        match List.find (function (_, (Nothing, _)) -> true | _ -> false end) dr_st.core_state.Core_run.thread_states with
 +          | Just (tid0, (_, th_st)) ->
 +              match (th_st.Core_run.stack, th_st.Core_run.current_proc_opt) with
@@ -185,10 +188,24 @@ index e226d0d5b..7b6822fed 100644
 +        Nothing
 +  end
 +
++(* the initial thread has an empty stack: a Step_done2 in that state after a routing is the
++   routed `exit' RETURNING to the startup thread (the library's `exit' never returns; a
++   program-defined one may) *)
++val startup_thread_stack_empty: driver_state -> bool
++let startup_thread_stack_empty dr_st =
++  match List.find (function (_, (Nothing, _)) -> true | _ -> false end) dr_st.core_state.Core_run.thread_states with
++    | Just (_, (_, th_st)) ->
++        match th_st.Core_run.stack with
++          | Core_run.Stack_empty -> true
++          | _ -> false
++        end
++    | Nothing -> false
++  end
++
  (* performing all action and memop requests until there are no more *)
  val process_core_step2: bool -> (bool -> driverM unit) -> Core_reduction.core_step2 -> driverM unit
  let process_core_step2 with_concurrency driver2 = function
-@@ -1338,10 +1385,44 @@ let process_core_step2 with_concurrency driver2 = function
+@@ -1328,10 +1411,52 @@
        "driver.process_core_step ==> Step_done2 with value: " ^ Pp.stringFromCore_value cval
      ) >> (* DEBUG *)
      (* ND.return () *)
@@ -199,6 +216,13 @@ index e226d0d5b..7b6822fed 100644
 +    ND.get >>= fun dr_st ->
 +    match startup_exit_call_opt dr_st cval with
 +      | Nothing ->
++          if dr_st.exit_routed && startup_thread_stack_empty dr_st then
++            (* the routed `exit' returned (only a program-defined `exit' with external
++               linkage can, UB 7.1.3; the library's ends in the Core builtin, whose
++               Step_done2 fires inside the `_Exit' frame): refused, never re-routed and never
++               a verdict *)
++            ND.kill (ND.Other (DErr_other "Driver: the C library's `exit' returned to the startup thread (a program-defined `exit' with external linkage, UB C17 7.1.3; `exit' does not return, 7.22.4.4): refused"))
++          else
 +          ND.update (fun dr_st ->
 +            (* killing all threads and aborting the main thread and placing [cval] as its result *)
 +            <| dr_st with core_state= prepare_exit dr_st.core_state cval |>
@@ -230,6 +254,7 @@ index e226d0d5b..7b6822fed 100644
 +            core_state= Core_run.update_thread_state tid0
 +              <| th_st with Core_run.arena= Core.Expr [] (Core.Eproc Core_run.empty_annotation (Core.Sym exit_sym) [arg_pe]) |>
 +              dr_st.core_state;
++            exit_routed= true;
 +            dr_step_counter= dr_st.dr_step_counter + 1
 +          |>) >>= fun () ->
 +          driver2 with_concurrency
@@ -237,30 +262,37 @@ index e226d0d5b..7b6822fed 100644
    
  
    | Core_reduction.Step_ccall2 tid step_m ->
-@@ -1921,10 +2002,14 @@ declare {lean} fuel val hack = `fuelExhausted Vunit`
- (* FUEL MEASURE under a HYPOTHESIS (fuel-pending close-out 2026-09-08, option C of
-    the pure-failure reachability census; Lean-only, OCaml byte-identical): hack
-    is a step-until-value loop with no unconditional data measure (C2 record
--   D-C2-4). Its only exec-path caller is finalize (:1473-1477), right after
--   driver2, whose only exits are process_core_step2's two terminal arms
--   (:1331-1338, :1352-1356) — both prepare_exit (:1309-1316), which makes the
--   arena mk_value_e cval; to_pure of that arena is its `PEval` pexpr, so hack's
-+   D-C2-4). Its only exec-path caller is finalize, right after driver2, whose
-+   only exits are process_core_step2's two terminal arms -- the Step_done2
-+   arm's `Nothing` branch (since fix/stdio-exit-flush, 2026-11-06, its `Just`
-+   branch installs the library's `exit` and RE-ENTERS driver2; the routed call
-+   terminates through the Core builtin `exit`, a Step_done2 with a non-empty
-+   stack, i.e. the `Nothing` branch) and Step_fs2/FS_done -- both prepare_exit,
-+   which makes the arena mk_value_e cval; to_pure of that arena is its
-+   `PEval` pexpr, so hack's
-    argument is a VALUE: step_eval_pexpr returns it unchanged (core_eval.lem
-    PEval arm) and valueFromPexpr accepts it (core_aux.lem:862-868) — ONE
-    iteration. Measure = the derived size (>= 1; a numeral is refused,
-diff --git a/runtime/libc/src/stdio.c b/runtime/libc/src/stdio.c
-index cab8c9443..bf7dc329d 100644
---- a/runtime/libc/src/stdio.c
-+++ b/runtime/libc/src/stdio.c
-@@ -709,9 +709,21 @@ int vfprintf(FILE *restrict f, const char *restrict fmt, va_list ap)
+@@ -1513,6 +1638,7 @@
+     trace=             [];
+     symbolic_assoc=    Map.empty;
+     blocked=           false;
++    exit_routed=       false;
+     dr_step_counter=   0;
+   |>
+ 
+--- a/runtime/libc/src/stdlib.c	2026-11-06 04:53:25.723129085 +0000
++++ b/runtime/libc/src/stdlib.c	2026-11-06 04:53:25.772985976 +0000
+@@ -220,9 +220,17 @@
+ }
+ 
+ 
++/* Cerberus fork (fix/stdio-exit-flush, 2026-11-06; upstream-tray report 24): C17 7.22.4.4#2-#4
++   -- the atexit handlers first (they may write), then every open stream with unwritten
++   buffered data is flushed (fflush(NULL) walks stdout, stderr and the open-file list,
++   stdio.c), then control returns to the host through _Exit. musl calls __stdio_exit here;
++   this copy had no flush, so everything still in a FILE buffer at exit was lost. _Exit,
++   quick_exit and abort flush nothing (7.22.4.5#2, 7.22.4.7#3, 7.22.4.1#2: implementation-
++   defined; unchanged). */
+ _Noreturn void exit(int code)
+ {
+   __funcs_on_exit();
++  fflush(NULL);
+   _Exit(code);
+ }
+ 
+--- a/runtime/libc/src/stdio.c	2026-11-06 04:53:25.727572792 +0000
++++ b/runtime/libc/src/stdio.c	2026-11-06 04:53:25.782290043 +0000
+@@ -709,9 +709,21 @@
  {
    int __builtin_vprintf(int, const char* restrict, va_list);
    int fd = fileno(f);
@@ -282,28 +314,31 @@ index cab8c9443..bf7dc329d 100644
  int vsnprintf(char *restrict s, size_t n, const char *restrict fmt, va_list ap)
  {
    int __builtin_vsnprintf(char *, size_t, const char* restrict, va_list);
-diff --git a/runtime/libc/src/stdlib.c b/runtime/libc/src/stdlib.c
-index 36fd4e00c..1119648c4 100644
---- a/runtime/libc/src/stdlib.c
-+++ b/runtime/libc/src/stdlib.c
-@@ -220,9 +220,17 @@ int at_quick_exit(void (*func)(void))
- }
- 
- 
-+/* Cerberus fork (fix/stdio-exit-flush, 2026-11-06; upstream-tray report 24): C17 7.22.4.4#2-#4
-+   -- the atexit handlers first (they may write), then every open stream with unwritten
-+   buffered data is flushed (fflush(NULL) walks stdout, stderr and the open-file list,
-+   stdio.c), then control returns to the host through _Exit. musl calls __stdio_exit here;
-+   this copy had no flush, so everything still in a FILE buffer at exit was lost. _Exit,
-+   quick_exit and abort flush nothing (7.22.4.5#2, 7.22.4.7#3, 7.22.4.1#2: implementation-
-+   defined; unchanged). */
- _Noreturn void exit(int code)
- {
-   __funcs_on_exit();
-+  fflush(NULL);
-   _Exit(code);
- }
- 
+--- a/backend/driver/main.ml	2026-11-06 04:53:25.734311449 +0000
++++ b/backend/driver/main.ml	2026-11-06 04:53:25.786506739 +0000
+@@ -149,6 +149,22 @@
+     (* Looking for and parsing the implementation file *)
+     load_core_impl core_stdlib impl_name >>= fun core_impl ->
+     io.pass_message "Implementation file loaded." >>
++    (* Cerberus fork (fix/stdio-exit-flush M1c, 2026-11-06; upstream-tray report 24): with the
++       C library linked, std.core's proxy for the identifier `printf` is withheld from the
++       elaboration of the program's translation units (translation.lem
++       translate_function_designator substitutes every `[ailname = ...]` identifier), so a
++       call of `printf` resolves by linking to the library's own `printf` (stdio.c), whose
++       output is sequenced with the FILE buffer (C17 7.21.3) where the proxy wrote past it
++       into the driver's record. --nolibc runs and the library's own build (--nolibc) keep
++       the proxy; the Cabs JSON is unchanged either way, so the Lean driver, which decides
++       by its own --libc, consumes the same translation unit (lean_frontend/Main.lean
++       mirrors this at its stdlib load). *)
++    let core_stdlib =
++      if nolibc then core_stdlib
++      else begin
++        let (ailnames, std_funs) = core_stdlib in
++        (Pmap.remove "printf" ailnames, std_funs)
++      end in
+     return ((core_stdlib, core_impl), elab_conf)
+   in
+   let main elab_conf core_std =
 ```
 
 ## Related findings (not this mechanism)

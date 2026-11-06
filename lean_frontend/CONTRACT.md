@@ -185,8 +185,8 @@ witnesses and are not "thinly tested": they do not answer.
    pairs included; 2 programs pin the fork's declared residuals, 1 the tray-62 crash), with pristine's pre-fix lines as
    the negative control, so a return to the narrowing turns the gate red.
    The second fork-ahead FIX (D15) has its own witness: `scripts/check_stdio_exit.sh` (row 1) pins ONE line on BOTH
-   engines for 43 libc-mode programs over termination — 34 gcc 13's line, 6 the fork's declared line with gcc's beside
-   it, a D2 gap control and two nolibc controls — with pristine's lines as the negative control (32 moved), so a return
+   engines for 46 libc-mode programs over termination — 34 gcc 13's line, 6 the fork's declared line with gcc's beside
+   it, a D2 gap control and five nolibc controls — with pristine's lines as the negative control (33 moved), so a return
    to the lost buffer, the skipped handlers or the proxy's ordering turns the gate red.
    Limit: the immaculate and coverage witnesses pin the crash CLASS (`L=CRASH`, `UNSUPPORTED`), not the refusal
    message, under those lanes' coarse crash policy (VALIDATION §1(a)); the message is fixed in the refusing code, and
@@ -371,8 +371,8 @@ witnesses and are not "thinly tested": they do not answer.
   registers never ran on `return` (tray 25). The rule: (1) with the library linked (the linked Core file DEFINES `exit`:
   the extern map's `LK_normal` target), the startup function's return is the library's `exit(status)` (C17 5.1.2.2.3;
   the SHARED driver installs the call on the initial thread — empty stack, a current procedure — under the file's
-  calling convention; the globals phase, the Core builtin `exit` reached from `_Exit` and every `--nolibc` run keep
-  upstream's direct termination, by construction and by measurement: 787 nolibc programs unchanged); (2) the library's
+  calling convention; the globals phase and the Core builtin `exit` reached from `_Exit` keep upstream's direct
+  termination, and the target must have the library's funinfo shape `void (signed int)`; `--nolibc` is unchanged for every program that does not itself define `exit` with external linkage (UB C17 7.1.3): the 787-program nolibc sweep moved nothing; a program-defined `exit` of the library's shape `void (signed int)` is routed like the library's and, should it return, is refused by a loud kill (never a second routing, never a verdict); a definition of another shape is not routed); (2) the library's
   `exit` flushes every open stream after the handlers (7.22.4.4#2-#4; `_Exit`, `quick_exit`, `abort` flush nothing:
   7.22.4.5#2, 7.22.4.7#3, 7.22.4.1#2, implementation-defined, upstream's library kept); (3) each engine withholds
   std.core's `printf` proxy from a libc-mode program at its stdlib load (the oracle's `prelude` under `not nolibc`,
@@ -392,8 +392,8 @@ witnesses and are not "thinly tested": they do not answer.
   the host's `$?` is n mod 256); `_Exit`/`quick_exit`/`abort` after buffered output print the lines the shipped library
   wrote through before turning fully buffered (gcc with a pipe prints nothing); a handler that calls `exit` (UB
   7.22.4.4#3) follows the shipped library's (musl's) text — the remaining handlers, then `_Exit` — which gcc/glibc also
-  follow; `fopen` is the D2 refusal. Witness: `scripts/check_stdio_exit.sh` (row 1), 43 programs, pristine's lines the
-  negative control (32 moved). Not an override of a judgement: the standard's clauses are explicit and the library's
+  follow; `fopen` is the D2 refusal. Witness: `scripts/check_stdio_exit.sh` (row 1), 46 programs (the total and the class
+  counts pinned), pristine's lines the negative control (33 moved). Not an override of a judgement: the standard's clauses are explicit and the library's
   own `exit` (musl's `__stdio_exit`) and the TODO-free proxy shortcut were omissions; the delta leaves when upstream
   absorbs the fix (the manifest's `driver.lem`, `stdlib.c`, `stdio.c`, `main.ml` rows).
 - **Agent-called dispositions under these rulings** [AGENT 2026-09-28]: `%f` of a NaN is refused rather than

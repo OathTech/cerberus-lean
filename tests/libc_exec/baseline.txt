@@ -39,5 +39,6 @@
 040-atexit-order MATCH
 041-atexit-return MATCH
 042-strlen-unterminated-loc LOC_ONLY
+043-printf-format-ub-loc LOC_ONLY
 exhaustive/001-unseq-order-libc MATCH
 exhaustive/002-errno-basic MATCH

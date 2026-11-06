@@ -87,15 +87,20 @@ text, stderr being unbuffered: `buf_size = 0`) — not findings. In `--nolibc` m
 `startup_exit_call_opt dr_st cval` is `Just (exit_sym, tid0, th_st, status)` exactly when the return must be routed:
 (i) the linked Core file DEFINES `exit` — `Map.lookup (Identifier Loc.unknown "exit") file.extern` is `LK_normal exit_sym`
 (the identifier map compares strings only, symbol.lem:4-25, on both targets; the Lean libc transport rebuilds `extern` from
-the twelve metadata TUs and checks every resolved target against the dump, Main.lean:1136-1154); a `--nolibc` run only
-declares it (`LK_none`); (ii) the initial thread (parent `Nothing`) has `Stack_empty` and `current_proc_opt = Just _` — the
+the twelve metadata TUs and checks every resolved target against the dump, Main.lean:1136-1154) AND (M3b, the review's P2-1)
+its funinfo type is the library's shape `void (signed int)`, not variadic, AND no routing has happened yet in this run
+(`driver_state.exit_routed`); a `--nolibc` run only declares it (`LK_none`) unless the program defines `exit` itself with
+external linkage (UB 7.1.3): the library's shape is then routed like the library's and, should it return — a `Step_done2`
+of the initial thread with an empty stack after the routing —, the arm's `Nothing` branch is a loud ND kill (`Driver: the
+C library's \`exit' returned to the startup thread … refused`), never a second routing, never a `Unit` verdict; another
+shape is not routed (the mainline's answer); (ii) the initial thread (parent `Nothing`) has `Stack_empty` and `current_proc_opt = Just _` — the
 startup function's return (`drive` installs `current_proc_opt = Just main_sym`; `CerbCall` the same shape for `--call`); the
 globals phase has `current_proc_opt = Nothing` and the builtin `exit` fires inside the `_Exit` frame (stack non-empty) — that
 one terminates the routed call; (iii) `memValueFromValue signed_int cval` is `Just` (a loaded integer; `void main` is UB004a at
 desugar; a `--call` of a non-int function keeps the direct termination). Then, under `Normal_callconv`, a `signed int` object
 is allocated and stored (`allocate_object tid0 (PrefOther "exit status") … signed_int`, `store` — the `prepare_main_args`
-shape and exactly the elaborated caller side of `_Exit` inside the library's own `exit`: `create(Ivalignof('signed int'),
-'signed int'); store(…)`, libc.core), the arena becomes `Expr [] (Eproc empty_annotation (Sym exit_sym) [ptr])`; under
+shape; the elaborated caller side of a C call does the same with `create`/`store` and then `kill`s the object after
+the call, which the arm cannot since the call does not return), the arena becomes `Expr [] (Eproc empty_annotation (Sym exit_sym) [ptr])`; under
 `Inner_arg_callconv` the loaded value is passed; `driver2` continues. The status object is never killed: `exit` is
 `_Noreturn` — its `_Exit` reaches the Core builtin whose `Step_done2` takes the arm's `Nothing` branch (`prepare_exit`), so no
 code runs after the call that could observe or free it [AGENT 2026-11-06, ruled]. Impossible shapes are `Nothing` (no
@@ -154,7 +159,10 @@ fork oracle, the Lean engine (libc mode: the pinned dump + the twelve metadata T
 - Every termination, ordered-stream and atexit row = gcc on both engines (pristine the negative control on 32 of them).
 - Not gcc's line by design, pinned to the fork's own: `_Exit`/`quick_exit`/`abort` after `puts("a"); fputs("b")` print `a\n`
   (the shipped library wrote the first newline-terminated line through before turning fully buffered; gcc with a pipe prints
-  nothing: 7.22.4.5#2 / 7.22.4.7#3 / 7.22.4.1#2); `return 300`/`-1`/`256` report `Specified(300)`/`(-1)`/`(256)` (gcc's `$?`
+  nothing: 7.22.4.5#2 / 7.22.4.7#3 / 7.22.4.1#2; on a TERMINAL glibc line-buffers stdout, so `_Exit`/`abort` print `a\n` =
+  the fork's line and `quick_exit` prints `a\n` only — the handlers' `printf` appends `q2q1` to glibc's buffer, which `_Exit`
+  drops, where the fork's library `printf` writes through: `a\nbq2q1` — by reasoning: the sandbox has no pty (`script:
+  failed to create pseudo-terminal: Permission denied`), the operator can measure; the review's P3-5); `return 300`/`-1`/`256` report `Specified(300)`/`(-1)`/`(256)` (gcc's `$?`
   44/255/0, the host's truncation, derived); `abort` is `Specified(127)` with `SIGABRT\n` on stderr (the shipped `abort`:
   `raise(SIGABRT); _Exit(127)`; gcc 134).
 - `fopen`: the oracle's in-memory filesystem opens the file (`Specified(0)`, the unclosed stream's data unobservable); the Lean
@@ -171,17 +179,21 @@ fork oracle, the Lean engine (libc mode: the pinned dump + the twelve metadata T
 - `perror`/`strerror`: `Error {msg: "assert() failure"}` on fork and pristine — the audit's K2 rows, not this mechanism (ruled).
 - No other sibling wrong on conforming input in the matrix.
 
-### 3.4 The witness (`scripts/check_stdio_exit.sh`, row 1 via `test_unit.sh`; `tests/stdio_exit/`, 43 programs)
+### 3.4 The witness (`scripts/check_stdio_exit.sh`, row 1 via `test_unit.sh`; `tests/stdio_exit/`, 46 programs)
 
 Every program carries its clause and gcc's line in its header. `expected.txt` pins ONE line per program that both engines'
 `--batch` output must equal byte for byte with equal exit codes: 34 rows gcc 13's line (`gcc.txt`, derived 2026-11-06 with
 OCaml `String.escaped` escaping), 6 rows the fork's declared line (`status_*`, `impl_*`; gcc's beside them in `gcc.txt`; a pin
 that is neither gcc's line nor declared is a FAIL, so a silent re-pin cannot pass), the `gap_fopen_unclosed` control (the
-oracle's line + the Lean D2 refusal text), two `nolibc_*` controls (both engines with `--nolibc`, the `Symbol(_, ` projection of
-row 6b). `pristine.txt` carries pristine's lines (32 rows differ: the negative control). Five plants on a 9-program subset,
+oracle's line + the Lean D2 refusal text), five `nolibc_*` controls (both engines with `--nolibc`, the `Symbol(_, ` projection of
+row 6b, equal exit codes: the two tray reproducers on upstream's path and — M3b, the review's P2-1 — the three programs that
+define `exit` themselves: `void exit(int)` returning pins the loud kill's text, `void exit(void)` and `int exit(int)` pin the
+mainline's `Specified(4)`, `m\n`). The total (46) and the class counts (34/6/1/5) are pinned (M3b, P3-3). `pristine.txt`
+carries pristine's lines (33 rows differ: the negative control). Five plants on a 9-program subset,
 counts derived in the script: `pristine-pair` 13, `lean-pristine` 7, `lean-fixed` 8, `oracle-rc` 15, `expect-tamper` 3 (the
 plant stubs delegate every non-`--exec` invocation — `libc_prep.sh`'s `--pp=core`/`--cabs-json` honour the override — to the
-real oracle). Cost: ≈ 2 min for the real run, ≈ 4 min 20 s with the self-test. Verbatim:
+real oracle). Cost, measured standalone on the M3b tree: 69 s for the run, ≈ 110 s with the self-test (the ≈ 4 min 20 s
+of the first measurement was taken beside a concurrent CoreQuote build). Verbatim (the M3b run):
 
 ```text
 check_stdio_exit: selftest plant 'pristine-pair' caught: 13 failing check(s) (= expected 13; incl. the required programs)
@@ -189,7 +201,7 @@ check_stdio_exit: selftest plant 'lean-pristine' caught: 7 failing check(s) (= e
 check_stdio_exit: selftest plant 'lean-fixed' caught: 8 failing check(s) (= expected 8; incl. the required programs)
 check_stdio_exit: selftest plant 'oracle-rc' caught: 15 failing check(s) (= expected 15; incl. the required programs)
 check_stdio_exit: selftest plant 'expect-tamper' caught: 3 failing check(s) (= expected 3; incl. the required programs)
-check_stdio_exit: OK (43 programs in libc mode: 34 batch lines of both engines = gcc 13's pinned line, exit codes equal — …; 6 pinned to the fork's declared lines with gcc's beside them in gcc.txt (the status beyond 0..255, _Exit/quick_exit/abort after buffered output); 1 gap control (fopen refused on the Lean engine, contract D2); 2 nolibc controls (upstream's path, both engines); 32 rows moved from pristine c3ff8c53f's lines)
+check_stdio_exit: OK (46 programs in libc mode: 34 batch lines of both engines = gcc 13's pinned line, exit codes equal — …; 6 pinned to the fork's declared lines with gcc's beside them in gcc.txt (the status beyond 0..255, _Exit/quick_exit/abort after buffered output); 1 gap control (fopen refused on the Lean engine, contract D2); 5 nolibc controls (the two tray reproducers on upstream's path; a program-defined exit of the library's shape routed and refused when it returns, two other shapes not routed; both engines); 33 rows moved from pristine c3ff8c53f's lines)
 ```
 
 ## 4. Moved rows and pins (gcc the referee)
@@ -238,8 +250,9 @@ over every `.c` of the libc-mode corpora (`tests/libc_exec` + `exhaustive`, `imm
 sweep's libc suites `tcc`, `suite`, `examples`, `freebsd`, `hacl-star`, `cheri-ci`, the two `gcc-torture/breakdown` classes):
 447 programs, 17 changed (§4.3, every one dispositioned); nolibc mode over the nolibc corpora (`minimal`, `coverage`, `debug`,
 `float`, `bytes`, `immaculate/nolibc`, `macro_type_ranks`, `ci`, `pnvi_refusals`, `address_space`, `verify`,
-`lean_frontend/corpus`): 787 programs, 0 changed — the `--nolibc` path is unchanged by construction and by measurement. The
-csmith corpus is a nolibc lane (`test_exec.sh`), unaffected.
+`lean_frontend/corpus`): 787 programs, 0 changed — the `--nolibc` path is unchanged for every program that does not
+define `exit` itself with external linkage (the reviewer's three such programs are pinned nolibc controls of the
+witness, §3.4). The csmith corpus is a nolibc lane (`test_exec.sh`), unaffected.
 
 ### 4.5 The lanes run on the M2 tree (verbatim last lines)
 
@@ -337,6 +350,28 @@ The register's loader gained the class `address-layout` (`CLASSES`; never timeou
 `pristine-timeout-under-address-layout` beside the existing `unknown-class` plant; the five layout rows re-classed with
 the ruled rationale; the record cited on the seven rows once it existed as a tracked file.
 
+### 6.4 M3b (the pre-merge review's fixes; `docs/2026-11-06_stdio-exit-flush-premerge-review.md` beside this record)
+
+```text
+leanchecker exit=0            (lake env leanchecker Driver Driver_auxiliary Driver_lemMeasureProofs CerbCoreShape Unit.FuelExemplar; the exemplar's `process_done` takes `hrouted : dst.exit_routed = false`)
+fuel-exemplar-test exit=0
+check_fork_drift: OK — layer 1: 95 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 33 differing generated files, all hash-pinned (…)   (+ SELFTEST OK; driver.lem and driver.ml re-pinned)
+git apply --check -p1 <upstream.patch> in deps/cerberus-upstream (c3ff8c53f): OK   (7 hunks: driver.lem 4, stdlib.c 1, stdio.c 2 … main.ml 1; the fork-only comment hunk dropped)
+check_stdio_exit: selftest plant 'pristine-pair' caught: 13 failing check(s) (= expected 13; incl. the required programs)   (and lean-pristine 7, lean-fixed 8, oracle-rc 15, expect-tamper 3)
+check_stdio_exit: OK (46 programs in libc mode: 34 batch lines of both engines = gcc 13's pinned line, exit codes equal — …; 6 pinned to the fork's declared lines …; 1 gap control …; 5 nolibc controls (…); 33 rows moved from pristine c3ff8c53f's lines)
+69.33 s wall (real run)                                       (the self-test with its final run: 1 min 50 s)
+15 focused gates exit 0 (handwritten-sync 57, exec-purity, exec-totality, lakefile-roots, no-fuel-numerals, sorry-token 0, gen_fuel_parametricity 17 + selftest, check_failure_reach 238 + selftest, check_fuel_forms 88, check_theorem_axioms OK, libc_prep --check, check_libc_float_literals 24, test_stops 26 OK)
+SUMMARY: match=42 loc_only=2 diff=0                           (test_libc_exec.sh, A5: 042 and the new 043 LOC_ONLY rows, each with its dispositions.txt line)
+BASELINE OK (inner_arg_temps: 188 rows; classes and both distinct-observation/status hashes exact)   (test_inner_arg_temps.sh --gate after --record-baseline: exactly the one new row, libc/043 LOC_ONLY-FIRST with the lane's disposition)
+```
+
+The reviewer's three programs under `--nolibc` on both engines (the mainline `fc3961dc5` beside): `void exit(int)` returning →
+`Error {msg: "Driver: the C library's \`exit' returned to the startup thread (a program-defined \`exit' with external linkage,
+UB C17 7.1.3; \`exit' does not return, 7.22.4.4): refused"}`, rc 1 on both (the mainline `Specified(4)`, `m\n`); `void exit(void)`
+and `int exit(int)` → `Defined {value: "Specified(4)", stdout: "m\n", …}` on both = the mainline (not routed: the funinfo shape
+test). The five tray reproducers and `034` identical on both engines in libc, inner_arg_temps and nolibc modes on the M3b
+build.
+
 ## 7. Not done / open
 
 - The pristine-lane register has no "layout" class: the five address rows are registered as `shared-model-fix` with the
@@ -346,6 +381,21 @@ the ruled rationale; the record cited on the seven rows once it existed as a tra
   (TODO) is the remover, as for N4.
 - `perror`/`strerror` assert (the audit's K2 rows); `fopen` refused (D2); the libc-mode buffering of stdout after the first
   write is musl's shape without the device test (7.21.3#7) — upstream's library, kept.
+
+## 9. Pre-merge review (2026-11-06, fresh independent reviewer; `docs/2026-11-06_stdio-exit-flush-premerge-review.md`) — dispositions [AGENT 2026-11-06, orchestrator rulings applied by the worker]
+
+| finding | disposition |
+|---|---|
+| P2-1 — `--nolibc` not "untouched by construction": a TU defining `exit` itself is routed; a returning `exit` re-routed forever (`int exit(int)`), a `Unit` verdict (`void exit(int)`), a wrong-arity error | **FIXED in the Lem** (both engines by generation): `driver_state.exit_routed` (routing once per run), the funinfo shape test (`void (signed int)`, not variadic), a returned routed `exit` is the loud ND kill `Driver: the C library's \`exit' returned to the startup thread … refused` (never a second routing, never a verdict); every "by construction"/"untouched" sentence reworded (driver.lem, CONTRACT D15, VALIDATION, SUPPORTED, TODO, the record, the filing, both consumer notes, the witness header); the reviewer's three programs are pinned nolibc controls (`nolibc_user_exit_returns` the kill's text, `nolibc_user_exit_noarg`/`nolibc_user_int_exit` the mainline's answers); the exemplar proof takes `hrouted`; replayed (§6.4) |
+| P2-2 — the filing's patch failed `git apply --check` on pristine (the fork-only comment hunk; the fork's line numbers) | **FIXED**: the four files' hunks replayed onto pristine's text, the comment hunk dropped, `git apply --check -p1`: OK (quoted in the filing and §6.4); "Affected" cites upstream's `:1326` / `:1304` |
+| P3-1 — the printf-format UB location consequence unwitnessed in a gate | **FIXED**: `tests/libc_exec/043-printf-format-ub-loc.c` pinned `LOC_ONLY` (A5) with a dated `dispositions.txt` line (pristine's `<10:40--10:59>` quoted), `LOC_ONLY-FIRST` in A15 with the lane's disposition |
+| P3-2 — stale `to_pure`/`to_pures` cites in `fuel_hypotheses.txt` | **FIXED**: re-cited (text only) |
+| P3-3 — the witness pins no total | **FIXED**: the total (46) and the four class counts (34/6/1/5) are pinned; a dropped row fails |
+| P3-4 — withdrawn-M1b wording in two headers; the `quick_exit` header's "nothing is flushed" | **FIXED**: the three headers reworded (the `b` is the fork's write-through printf, not a flush at termination) |
+| P3-5 — gcc on a terminal not stated | **ANSWERED**: unmeasurable in the sandbox (no pty: `script: failed to create pseudo-terminal: Permission denied`); by reasoning — glibc line-buffers a tty — `_Exit`/`abort` print `a\n` (= the fork's line) and `quick_exit` `a\n` only (the fork's `a\nbq2q1` is its write-through printf); stated in §3.2 and the `impl_*` headers as reasoned, the operator can measure outside the sandbox |
+| P3-6 — "a few bytes" | **FIXED** in both consumer notes: program globals by up to ~1.9 KB (`012`'s `s1` 281474976707472 → 281474976709344), locals by four bytes |
+| P3-7 — the record's "exactly the elaborated caller side" | **FIXED**: the arm allocates with the `prepare_main_args` shape and cannot `kill` the object, aligned with the driver comment |
+| P3-8 — row-1 cost ≈ 4 min 20 s with the plants | **ANSWERED with the measured cost**: standalone on the M3b tree the run is 69 s and the self-test (five plants on a 9-program subset, the rank script's shape) ≈ 41 s more, ≈ 110 s in all — the first figure was measured beside a concurrent CoreQuote build; the subset is already the minimum that exercises every plant's required programs (three moved rows, two unmoved, the gap and a nolibc control), and the per-program cost is libc mode's (the library load on the Lean engine, `libc_prep --jsons` per invocation), so a further trim would drop required programs; VALIDATION/LADDER state the measured numbers |
 
 ## 8. Scratch, deleted at close-out
 

@@ -205,7 +205,8 @@ the outcome protocol; [USER 2026-10-20]); all three have landed, so the queue is
   `docs/2026-11-05_stdio-exit-flush-record.md`): the SHARED driver routes the startup function's return through the
   library's `exit` with the library linked, the library's `exit` flushes every open stream after the handlers, each
   engine withholds the `printf` proxy from a libc-mode program (the library's own `printf`, ordered with the buffer),
-  `vprintf` defined; `scripts/check_stdio_exit.sh` in row 1; the libc dumps and pins re-derived; two `tests/libc_exec`
+  `vprintf` defined; a program-defined `exit` of the library's shape that returns is a loud kill (the pre-merge review's
+  P2-1; `--nolibc` otherwise unchanged); `scripts/check_stdio_exit.sh` in row 1; the libc dumps and pins re-derived; two `tests/libc_exec`
   rows (034, 041) moved to gcc's lines, the libc-mode global layout moved (five `address-layout` register rows, nine
   PNVI litmus rows and the four immaculate zd-z28 rows re-recorded). Closed with it: the audit's stdio sibling (§4 item
   2, the K2 rows), its `vprintf` finding. Still open from it: a printf-format UB of a libc-mode program is located

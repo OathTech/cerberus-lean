@@ -75,6 +75,12 @@ type driver_state = <|
   symbolic_assoc: map Symbol.sym Core.object_value;
   
   blocked: bool; (* concurrency model ended by blocking *)
+  (* fork-ahead delta (fix/stdio-exit-flush, 2026-11-06): set when the startup function's
+     return has been routed through the C library's `exit' (process_core_step2's Step_done2
+     arm); a second Step_done2 of the startup thread with an empty stack after that is the
+     routed `exit' RETURNING (a program-defined `exit' with external linkage, UB 7.1.3), a
+     loud kill, never a second routing *)
+  exit_routed: bool;
   (* DEBUG *)
   (*trace: list string;*)
   dr_step_counter: nat;
@@ -1330,9 +1336,17 @@ let prepare_exit core_st cval =
 
    `startup_exit_call_opt dr_st cval` is `Just (exit_sym, tid0, th_st, status)` exactly
    when the return must be routed through the library's `exit`:
+   - no routing has happened yet in this run (`exit_routed`): the routed call's own
+     Step_done2 is its termination, never a second routing;
    - the linked Core file DEFINES `exit` (the extern map's `LK_normal` target for the
-     identifier "exit": libc mode; a `--nolibc` run only declares it, `LK_none`, and keeps
-     upstream's direct termination);
+     identifier "exit") AND its funinfo type is the library's shape, `void (signed int)`,
+     not variadic. With the library linked that is the library's `exit`. Without it
+     (`--nolibc`) the headers only declare `exit` (`LK_none`), so nothing is routed —
+     unless the program itself defines `exit` with external linkage (UB 7.1.3): a
+     definition of the library's shape is routed like the library's and, should it return,
+     is refused by the loud kill in the arm below; a definition of another shape (another
+     return type, another arity, variadic) is not routed and keeps upstream's direct
+     termination. Every other `--nolibc` program is unchanged (the 787-program sweep);
    - the Step_done2 came from the STARTUP FUNCTION's return: the initial thread
      (parent Nothing) has an empty stack and a current procedure. The two other
      producers of Step_done2 are excluded by that shape: the globals phase
@@ -1346,8 +1360,16 @@ let prepare_exit core_st cval =
    Anything else is Nothing: upstream's path, unchanged. *)
 val startup_exit_call_opt: driver_state -> Core.value -> maybe (Symbol.sym * Mem.thread_id * Core_run.thread_state * Mem.mem_value)
 let startup_exit_call_opt dr_st cval =
+  if dr_st.exit_routed then Nothing else
   match Map.lookup (Symbol.Identifier Loc.unknown "exit") dr_st.core_file.Core.extern with
     | Just (_, Core.LK_normal exit_sym) ->
+        (* the library's shape: `void exit(int)` -- one `signed int' parameter, not variadic *)
+        let is_exit_shape =
+          match Map.lookup exit_sym dr_st.core_file.Core.funinfo with
+            | Just (_, _, Ctype.Ctype _ Ctype.Void, [(_, Ctype.Ctype _ (Ctype.Basic (Ctype.Integer (Ctype.Signed Ctype.Int_))))], false, _) -> true
+            | _ -> false
+          end in
+        if not is_exit_shape then Nothing else
         match List.find (function (_, (Nothing, _)) -> true | _ -> false end) dr_st.core_state.Core_run.thread_states with
           | Just (tid0, (_, th_st)) ->
               match (th_st.Core_run.stack, th_st.Core_run.current_proc_opt) with
@@ -1366,6 +1388,20 @@ let startup_exit_call_opt dr_st cval =
         end
     | _ ->
         Nothing
+  end
+
+(* the initial thread has an empty stack: a Step_done2 in that state after a routing is the
+   routed `exit' RETURNING to the startup thread (the library's `exit' never returns; a
+   program-defined one may) *)
+val startup_thread_stack_empty: driver_state -> bool
+let startup_thread_stack_empty dr_st =
+  match List.find (function (_, (Nothing, _)) -> true | _ -> false end) dr_st.core_state.Core_run.thread_states with
+    | Just (_, (_, th_st)) ->
+        match th_st.Core_run.stack with
+          | Core_run.Stack_empty -> true
+          | _ -> false
+        end
+    | Nothing -> false
   end
 
 (* performing all action and memop requests until there are no more *)
@@ -1388,6 +1424,13 @@ let process_core_step2 with_concurrency driver2 = function
     ND.get >>= fun dr_st ->
     match startup_exit_call_opt dr_st cval with
       | Nothing ->
+          if dr_st.exit_routed && startup_thread_stack_empty dr_st then
+            (* the routed `exit' returned (only a program-defined `exit' with external
+               linkage can, UB 7.1.3; the library's ends in the Core builtin, whose
+               Step_done2 fires inside the `_Exit' frame): refused, never re-routed and never
+               a verdict *)
+            ND.kill (ND.Other (DErr_other "Driver: the C library's `exit' returned to the startup thread (a program-defined `exit' with external linkage, UB C17 7.1.3; `exit' does not return, 7.22.4.4): refused"))
+          else
           ND.update (fun dr_st ->
             (* killing all threads and aborting the main thread and placing [cval] as its result *)
             <| dr_st with core_state= prepare_exit dr_st.core_state cval |>
@@ -1419,6 +1462,7 @@ let process_core_step2 with_concurrency driver2 = function
             core_state= Core_run.update_thread_state tid0
               <| th_st with Core_run.arena= Core.Expr [] (Core.Eproc Core_run.empty_annotation (Core.Sym exit_sym) [arg_pe]) |>
               dr_st.core_state;
+            exit_routed= true;
             dr_step_counter= dr_st.dr_step_counter + 1
           |>) >>= fun () ->
           driver2 with_concurrency
@@ -1611,6 +1655,7 @@ let initial_driver_state_with address_space_top run_st file fs_state =
     trace=             [];
     symbolic_assoc=    Map.empty;
     blocked=           false;
+    exit_routed=       false;
     dr_step_counter=   0;
   |>
 
@@ -2007,7 +2052,8 @@ declare {lean} fuel val hack = `fuelExhausted Vunit`
    arm's `Nothing` branch (since fix/stdio-exit-flush, 2026-11-06, its `Just`
    branch installs the library's `exit` and RE-ENTERS driver2; the routed call
    terminates through the Core builtin `exit`, a Step_done2 with a non-empty
-   stack, i.e. the `Nothing` branch) and Step_fs2/FS_done -- both prepare_exit,
+   stack, i.e. the `Nothing` branch; a routed `exit` that RETURNS is an ND
+   kill there, which never reaches finalize) and Step_fs2/FS_done -- both prepare_exit,
    which makes the arena mk_value_e cval; to_pure of that arena is its
    `PEval` pexpr, so hack's
    argument is a VALUE: step_eval_pexpr returns it unchanged (core_eval.lem

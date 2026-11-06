@@ -25,6 +25,9 @@ impl_abort_after_buffered	Defined {value: "Specified(127)", stdout: "a\n", stder
 impl_quick_exit_after_buffered	Defined {value: "Specified(6)", stdout: "a\nbq2q1", stderr: "", blocked: "false"}
 nolibc_atexit_on_return	Error {msg: "ill-formed program: `calling an unknown procedure: Symbol(_, SD_Id("atexit"))'"}
 nolibc_fputs_no_newline	Error {msg: "unresolved symbol: __stdout at other_location(Driver.drive)"}
+nolibc_user_exit_noarg	Defined {value: "Specified(4)", stdout: "m\n", stderr: "", blocked: "false"}
+nolibc_user_exit_returns	Error {msg: "Driver: the C library's `exit' returned to the startup thread (a program-defined `exit' with external linkage, UB C17 7.1.3; `exit' does not return, 7.22.4.4): refused"}
+nolibc_user_int_exit	Defined {value: "Specified(4)", stdout: "m\n", stderr: "", blocked: "false"}
 order_fputc_putc_fwrite_printf	Defined {value: "Specified(0)", stdout: "abcd\n", stderr: "", blocked: "false"}
 order_fputs_printf_exit	Defined {value: "Specified(0)", stdout: "out 5\n", stderr: "", blocked: "false"}
 order_fputs_then_fprintf	Defined {value: "Specified(0)", stdout: "bc1\n", stderr: "", blocked: "false"}
