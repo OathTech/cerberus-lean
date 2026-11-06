@@ -89,8 +89,8 @@ notes below establish only what was checked then.
 | [21-provenance-lost-through-arithmetic-pvi.md](21-provenance-lost-through-arithmetic-pvi.md) | Draft | No submission recorded |
 | [22-ptrdiff-strips-array-layer.md](22-ptrdiff-strips-array-layer.md) | Draft | No submission recorded |
 | [23-string-literal-init-of-char-array-members.md](23-string-literal-init-of-char-array-members.md) | Draft | No submission recorded |
-| [24-stdio-buffer-not-flushed-at-exit.md](24-stdio-buffer-not-flushed-at-exit.md) | Draft | No submission recorded |
-| [25-atexit-not-run-on-main-return.md](25-atexit-not-run-on-main-return.md) | Draft | No submission recorded |
+| [24-stdio-buffer-not-flushed-at-exit.md](24-stdio-buffer-not-flushed-at-exit.md) | Draft; fixed in the fork 2026-11-06 (fork-ahead delta, contract D15; the report carries the patch; 25 merged into it) | No submission recorded; to be filed |
+| [25-atexit-not-run-on-main-return.md](25-atexit-not-run-on-main-return.md) | Merged into 24 (2026-11-06); fixed in the fork | filed with 24 |
 | [26-printf-star-width-crash.md](26-printf-star-width-crash.md) | Draft | No submission recorded |
 | [27-printf-hex-int-argument-ub153b.md](27-printf-hex-int-argument-ub153b.md) | Draft | No submission recorded |
 | [28-conditional-in-static-initializer.md](28-conditional-in-static-initializer.md) | Draft | No submission recorded |
@@ -423,16 +423,8 @@ and gcc disagrees — the defect is in the shared model, not in our port:
     constraint violation: desugaring_init.lem:461-462 has the sub-aggregate
     case stubbed (`if false (* … string literal *) then internal_error
     "TODO: explode the elements"`). Ubiquitous idiom; remedy = the TODO.
-24. **24-stdio-buffer-not-flushed-at-exit.md** — TRUE BUG. Neither return
-    from `main` (driver.lem:1328-1333 `Step_done2` → `prepare_exit`, libc
-    `exit` never entered) nor the shipped libc's `exit` (stdlib.c:223-227,
-    no stream flush) flushes `FILE` buffers: `fputs("out", stdout);
-    return 0;` prints nothing; `printf` proxies bypass the buffer (order);
-    a `puts`-after-`putchar` loss recorded, not localised.
-25. **25-atexit-not-run-on-main-return.md** — TRUE BUG. Same driver
-    path: `atexit` handlers run on `exit()` but not on return from `main`
-    (§5.1.2.2.3). Remedy: route main-return through libc `exit` when the
-    libc is linked.
+24. **24-stdio-buffer-not-flushed-at-exit.md** — TRUE BUG; FIXED IN THE FORK 2026-11-06 (a fork-ahead delta, contract D15, record `../2026-11-05_stdio-exit-flush-record.md`; the report is the filing, 25 merged into it, with the patch against `c3ff8c53f`: the driver routes the startup function's return through the library's `exit` with the library linked, the library's `exit` flushes every open stream after the handlers, the `printf` proxy is withheld from libc-mode programs so `printf` is the library's own and ordered with the buffer, `vprintf` defined). Before: `fputs("out", stdout); return 0;` printed nothing, `puts("a"); puts("b");` only `a` (stdout fully buffered after its first write), `printf` reordered before earlier buffered writes.
+25. **25-atexit-not-run-on-main-return.md** — TRUE BUG; MERGED INTO 24 and FIXED IN THE FORK 2026-11-06 (the same driver path: `atexit` handlers now run on return from `main`, §5.1.2.2.3; the witness `atexit_on_return` pins gcc's `m21`, status 4, on both engines).
 26. **26-printf-star-width-crash.md** — TRUE BUG (crash on legal input).
     `%*d`: the format parser accepts `*` (formatted.lem:113/119) but every
     consumer is a placeholder — `error "TODO: formatted.lem 6"` (:741-742),

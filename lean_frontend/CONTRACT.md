@@ -184,6 +184,10 @@ witnesses and are not "thinly tested": they do not answer.
    13's line on BOTH engines for 103 of 106 programs over the macro integer types' arithmetic (macro-versus-macro
    pairs included; 2 programs pin the fork's declared residuals, 1 the tray-62 crash), with pristine's pre-fix lines as
    the negative control, so a return to the narrowing turns the gate red.
+   The second fork-ahead FIX (D15) has its own witness: `scripts/check_stdio_exit.sh` (row 1) pins ONE line on BOTH
+   engines for 43 libc-mode programs over termination — 34 gcc 13's line, 6 the fork's declared line with gcc's beside
+   it, a D2 gap control and two nolibc controls — with pristine's lines as the negative control (32 moved), so a return
+   to the lost buffer, the skipped handlers or the proxy's ordering turns the gate red.
    Limit: the immaculate and coverage witnesses pin the crash CLASS (`L=CRASH`, `UNSUPPORTED`), not the refusal
    message, under those lanes' coarse crash policy (VALIDATION §1(a)); the message is fixed in the refusing code, and
    `check_cli_refusals.sh` asserts it for the CLI flags.
@@ -355,6 +359,43 @@ witnesses and are not "thinly tested": they do not answer.
   rows in the pristine register; the N4 witness moved from 016 to `042-strlen-unterminated-loc.c`. Witness:
   `scripts/check_macro_type_ranks.sh` (row 1). Not an override of a judgement: the code's own comment called the
   catch-all wrong, and the delta leaves when upstream absorbs the fix (the fork-drift manifest's `ailTypesAux` rows).
+- **D15 — program termination runs the `atexit` handlers and flushes the open streams; a libc-mode `printf` is the
+  library's own** ([USER 2026-11-04] agreed the fix pass in the audited order under the standing bar — a very clear
+  standard, no invented semantics; rulings [AGENT 2026-11-06, orchestrator] on the worker's design and on the two
+  Tier A findings; upstream-tray report 24 (merged with 25) is the filing; record
+  `docs/2026-11-05_stdio-exit-flush-record.md`). Upstream's driver ended the program at the startup function's return
+  (`driver.lem` `process_core_step2`, `Step_done2` → `prepare_exit`) without entering the C library's `exit`, and the
+  shipped library's `exit` ran the `atexit` handlers but flushed no stream, so with the library linked every `FILE`
+  buffer still holding data at termination was lost (`fputs("out", stdout); return 0;` printed nothing; `puts("a");
+  puts("b");` printed only `a`, stdout turning fully buffered after its first write) and the handlers a program
+  registers never ran on `return` (tray 25). The rule: (1) with the library linked (the linked Core file DEFINES `exit`:
+  the extern map's `LK_normal` target), the startup function's return is the library's `exit(status)` (C17 5.1.2.2.3;
+  the SHARED driver installs the call on the initial thread — empty stack, a current procedure — under the file's
+  calling convention; the globals phase, the Core builtin `exit` reached from `_Exit` and every `--nolibc` run keep
+  upstream's direct termination, by construction and by measurement: 787 nolibc programs unchanged); (2) the library's
+  `exit` flushes every open stream after the handlers (7.22.4.4#2-#4; `_Exit`, `quick_exit`, `abort` flush nothing:
+  7.22.4.5#2, 7.22.4.7#3, 7.22.4.1#2, implementation-defined, upstream's library kept); (3) each engine withholds
+  std.core's `printf` proxy from a libc-mode program at its stdlib load (the oracle's `prelude` under `not nolibc`,
+  `Main.lean` under `--libc`, the Cabs JSON carrying no trace of the mode), so `printf` resolves by linking to the
+  library's `printf` → `vfprintf`, which flushes the stream's pending buffer before the builtin writes through the
+  descriptor (7.21.3: a stream's writes are ordered; the proxy wrote past the buffer); `vprintf`, declared by
+  `<stdio.h>` and defined nowhere before, is `vfprintf(stdout, fmt, ap)` (7.21.6.10). Both engines: the driver by
+  generation, the library through the pinned Core dumps, the proxy rule mirrored with the cite. Consequences a
+  consumer sees: every libc-mode program whose output was not newline-terminated, or had more than one `FILE` write,
+  prints more (`tests/libc_exec/034`, `041` moved to gcc's lines); a printf-format UB (`UB153b`, `Invalid_format`, …) is
+  now raised inside the library's `vfprintf` (`stdio.c:717`), as `fprintf`'s always was, where the proxy raised it at
+  the program's call — on the Lean engine that location is `<unknown location>` (N4), a `LOC_ONLY` pair for such
+  programs; a printf call costs the library's varargs path (010-int32-printf 1249 → 1509 driver steps, 011-decimal-sweep
+  31540 → 83540, a measurement); and the libc-mode global LAYOUT moved with the edited library TUs' source digests
+  (every printed address shifted, allocation ids with them, values identical — the `address-layout` register class).
+  Declared, pinned to the fork's own line in the witness: the exit status beyond 0..255 is the C int (`Specified(300)`;
+  the host's `$?` is n mod 256); `_Exit`/`quick_exit`/`abort` after buffered output print the lines the shipped library
+  wrote through before turning fully buffered (gcc with a pipe prints nothing); a handler that calls `exit` (UB
+  7.22.4.4#3) follows the shipped library's (musl's) text — the remaining handlers, then `_Exit` — which gcc/glibc also
+  follow; `fopen` is the D2 refusal. Witness: `scripts/check_stdio_exit.sh` (row 1), 43 programs, pristine's lines the
+  negative control (32 moved). Not an override of a judgement: the standard's clauses are explicit and the library's
+  own `exit` (musl's `__stdio_exit`) and the TODO-free proxy shortcut were omissions; the delta leaves when upstream
+  absorbs the fix (the manifest's `driver.lem`, `stdlib.c`, `stdio.c`, `main.ml` rows).
 - **Agent-called dispositions under these rulings** [AGENT 2026-09-28]: `%f` of a NaN is refused rather than
   registered (it can be refused cheaply and precisely; Lean cannot read a NaN's sign), and the other disagreements that
   record found (its D3–D6, a separate numbering from this section's) are dispositioned in `docs/2026-09-28_thin-surface-tests-record.md` (addendum).

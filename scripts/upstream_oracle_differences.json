@@ -299,7 +299,8 @@
       "citation": [
         "lean_frontend/docs/upstream-tray/24-stdio-buffer-not-flushed-at-exit.md",
         "lean_frontend/docs/upstream-tray/25-atexit-not-run-on-main-return.md",
-        "lean_frontend/docs/2026-11-05_worker-charter-stdio-exit-flush.md"
+        "lean_frontend/docs/2026-11-05_worker-charter-stdio-exit-flush.md",
+        "lean_frontend/docs/2026-11-05_stdio-exit-flush-record.md"
       ],
       "rationale": "`puts(\"p\"); putchar('c'); fputs(\"f\", stdout); fputc('\\n', stdout); fwrite(\"wx\\n\", 1, 3, stdout); fputs(\"err\\n\", stderr); return printf(\"%d %d %d %d %d %d\\n\", ...)`. Pristine upstream c3ff8c53f prints `Defined {value: \"Specified(14)\", stdout: \"p\\n1 99 1 10 3 1\\n\", stderr: \"err\\n\", blocked: \"false\"}` (verbatim): everything after the first newline-terminated write sat in the FILE buffer (stdout turns fully buffered after its first write, stdio.c __stdout_write) and was lost at termination, and the printf proxy wrote past the buffer; gcc 13 prints `p\\ncf\\nwx\\n1 99 1 10 3 1\\n`, rc 14. The fork prints gcc's line: the fork-ahead delta of 2026-11-06 (fix/stdio-exit-flush, [USER 2026-11-04] agreed the fix pass; rulings [AGENT 2026-11-06, orchestrator]): a return from main is exit(status) with the C library linked (C17 5.1.2.2.3), the library's exit flushes every open stream after the atexit handlers (7.22.4.4#2-#4), and a libc-mode printf is the library's own, sequenced with the FILE buffer (7.21.3). Both engines agree before and after. Class shared-model-fix; the row leaves when upstream absorbs the fix.",
       "upstream": {
@@ -318,7 +319,8 @@
       "citation": [
         "lean_frontend/docs/upstream-tray/24-stdio-buffer-not-flushed-at-exit.md",
         "lean_frontend/docs/upstream-tray/25-atexit-not-run-on-main-return.md",
-        "lean_frontend/docs/2026-11-05_worker-charter-stdio-exit-flush.md"
+        "lean_frontend/docs/2026-11-05_worker-charter-stdio-exit-flush.md",
+        "lean_frontend/docs/2026-11-05_stdio-exit-flush-record.md"
       ],
       "rationale": "`atexit(bye); printf(\"main\\n\"); return 7;`. Pristine upstream c3ff8c53f prints `Defined {value: \"Specified(7)\", stdout: \"main\\n\", stderr: \"\", blocked: \"false\"}` (verbatim): the driver ended the program at main's return without entering the library's exit, so the handler never ran (tray 25); gcc 13 prints `main\\nbye\\n`, $?=7. The fork prints gcc's line: the fork-ahead delta of 2026-11-06 (fix/stdio-exit-flush, [USER 2026-11-04] agreed the fix pass; rulings [AGENT 2026-11-06, orchestrator]): a return from main is exit(status) with the C library linked (C17 5.1.2.2.3), the library's exit flushes every open stream after the atexit handlers (7.22.4.4#2-#4), and a libc-mode printf is the library's own, sequenced with the FILE buffer (7.21.3). Both engines agree before and after. Class shared-model-fix; the row leaves when upstream absorbs the fix.",
       "upstream": {
@@ -333,13 +335,14 @@
       }
     },
     "libc_exec/012-global-alloc-order.c": {
-      "class": "shared-model-fix",
+      "class": "address-layout",
       "citation": [
         "lean_frontend/docs/upstream-tray/24-stdio-buffer-not-flushed-at-exit.md",
         "lean_frontend/docs/upstream-tray/25-atexit-not-run-on-main-return.md",
-        "lean_frontend/docs/2026-11-05_worker-charter-stdio-exit-flush.md"
+        "lean_frontend/docs/2026-11-05_worker-charter-stdio-exit-flush.md",
+        "lean_frontend/docs/2026-11-05_stdio-exit-flush-record.md"
       ],
-      "rationale": "Prints the addresses of its globals and of libc's optind. Pristine upstream c3ff8c53f: `s1=281474976707472 c1=281474976707471 i1=281474976707464 p1=281474976707456 l1=281474976707448 optind=281474976707052\\nloc=281474976705936\\n` (verbatim); the fork: `s1=281474976709344 c1=281474976709343 i1=281474976709336 p1=281474976709328 l1=281474976709320 optind=281474976706068\\nloc=281474976705940\\n`. Not a wrong answer on either side: editing runtime/libc/src/{stdlib,stdio}.c changed those translation units' source digests, which order the linked globals (core_linking.lem merge_globs: min (digest, number)), so the libc-mode global LAYOUT moved and every address the program prints moved with it; every non-address value is identical on both sides and both engines agree. The consequence of the shared-model fix's libc edit, not a semantic difference; gcc prints its own addresses. Class shared-model-fix (the register has no layout class; the row leaves when upstream absorbs the fix, whose library edit reorders the same globals).",
+      "rationale": "Prints the addresses of its globals and of libc's optind. Pristine upstream c3ff8c53f: `s1=281474976707472 c1=281474976707471 i1=281474976707464 p1=281474976707456 l1=281474976707448 optind=281474976707052\\nloc=281474976705936\\n` (verbatim); the fork: `s1=281474976709344 c1=281474976709343 i1=281474976709336 p1=281474976709328 l1=281474976709320 optind=281474976706068\\nloc=281474976705940\\n`. Not a wrong answer on either side: editing runtime/libc/src/{stdlib,stdio}.c changed those translation units' source digests, which order the linked globals (core_linking.lem merge_globs: min (digest, number)), so the libc-mode global LAYOUT moved and every address the program prints moved with it; every non-address value is identical on both sides and both engines agree. The consequence of the fork's library edit, not a semantic difference; gcc prints its own addresses. Class address-layout (ruling [AGENT 2026-11-06, orchestrator]: the register's class names carry meaning and a reviewed difference is read as pristine being wrong there, which this is not); the row leaves when upstream absorbs the fix, whose library edit reorders the same globals.",
       "upstream": {
         "status": 0,
         "stdout_sha256": "944da5d3f4feb248719853f303021e7f2b84f0eaebc9c3688e886abfdadf1ad5",
@@ -352,13 +355,14 @@
       }
     },
     "immaculate/libc/zd-z28-addr-layout-b": {
-      "class": "shared-model-fix",
+      "class": "address-layout",
       "citation": [
         "lean_frontend/docs/upstream-tray/24-stdio-buffer-not-flushed-at-exit.md",
         "lean_frontend/docs/upstream-tray/25-atexit-not-run-on-main-return.md",
-        "lean_frontend/docs/2026-11-05_worker-charter-stdio-exit-flush.md"
+        "lean_frontend/docs/2026-11-05_worker-charter-stdio-exit-flush.md",
+        "lean_frontend/docs/2026-11-05_stdio-exit-flush-record.md"
       ],
-      "rationale": "Prints the addresses of four globals. Pristine upstream c3ff8c53f: `s1=281474976707776 c1=281474976707775 i1=281474976707768 p1=281474976707760\\n` (verbatim); the fork: `s1=281474976709648 c1=281474976709647 i1=281474976709640 p1=281474976709632\\n`. Not a wrong answer on either side: editing runtime/libc/src/{stdlib,stdio}.c changed those translation units' source digests, which order the linked globals (core_linking.lem merge_globs: min (digest, number)), so the libc-mode global LAYOUT moved and every address the program prints moved with it; every non-address value is identical on both sides and both engines agree. The consequence of the shared-model fix's libc edit, not a semantic difference; gcc prints its own addresses. Class shared-model-fix (the register has no layout class; the row leaves when upstream absorbs the fix, whose library edit reorders the same globals).",
+      "rationale": "Prints the addresses of four globals. Pristine upstream c3ff8c53f: `s1=281474976707776 c1=281474976707775 i1=281474976707768 p1=281474976707760\\n` (verbatim); the fork: `s1=281474976709648 c1=281474976709647 i1=281474976709640 p1=281474976709632\\n`. Not a wrong answer on either side: editing runtime/libc/src/{stdlib,stdio}.c changed those translation units' source digests, which order the linked globals (core_linking.lem merge_globs: min (digest, number)), so the libc-mode global LAYOUT moved and every address the program prints moved with it; every non-address value is identical on both sides and both engines agree. The consequence of the fork's library edit, not a semantic difference; gcc prints its own addresses. Class address-layout (ruling [AGENT 2026-11-06, orchestrator]: the register's class names carry meaning and a reviewed difference is read as pristine being wrong there, which this is not); the row leaves when upstream absorbs the fix, whose library edit reorders the same globals.",
       "upstream": {
         "status": 0,
         "stdout_sha256": "466fc18b6293a4da9185503c3487142ee86983ddbeb19188f093567efabc8c96",
@@ -371,13 +375,14 @@
       }
     },
     "immaculate/libc/zd-z28-pointer_from_integer_2g": {
-      "class": "shared-model-fix",
+      "class": "address-layout",
       "citation": [
         "lean_frontend/docs/upstream-tray/24-stdio-buffer-not-flushed-at-exit.md",
         "lean_frontend/docs/upstream-tray/25-atexit-not-run-on-main-return.md",
-        "lean_frontend/docs/2026-11-05_worker-charter-stdio-exit-flush.md"
+        "lean_frontend/docs/2026-11-05_worker-charter-stdio-exit-flush.md",
+        "lean_frontend/docs/2026-11-05_stdio-exit-flush-record.md"
       ],
-      "rationale": "Prints a local's address. Pristine upstream c3ff8c53f: `j=5 &j=(@70, 0xffffffffede8)\\n` (verbatim); the fork: `j=5 &j=(@70, 0xffffffffedec)\\n` (the same allocation, four bytes higher). Not a wrong answer on either side: editing runtime/libc/src/{stdlib,stdio}.c changed those translation units' source digests, which order the linked globals (core_linking.lem merge_globs: min (digest, number)), so the libc-mode global LAYOUT moved and every address the program prints moved with it; every non-address value is identical on both sides and both engines agree. The consequence of the shared-model fix's libc edit, not a semantic difference; gcc prints its own addresses. Class shared-model-fix (the register has no layout class; the row leaves when upstream absorbs the fix, whose library edit reorders the same globals).",
+      "rationale": "Prints a local's address. Pristine upstream c3ff8c53f: `j=5 &j=(@70, 0xffffffffede8)\\n` (verbatim); the fork: `j=5 &j=(@70, 0xffffffffedec)\\n` (the same allocation, four bytes higher). Not a wrong answer on either side: editing runtime/libc/src/{stdlib,stdio}.c changed those translation units' source digests, which order the linked globals (core_linking.lem merge_globs: min (digest, number)), so the libc-mode global LAYOUT moved and every address the program prints moved with it; every non-address value is identical on both sides and both engines agree. The consequence of the fork's library edit, not a semantic difference; gcc prints its own addresses. Class address-layout (ruling [AGENT 2026-11-06, orchestrator]: the register's class names carry meaning and a reviewed difference is read as pristine being wrong there, which this is not); the row leaves when upstream absorbs the fix, whose library edit reorders the same globals.",
       "upstream": {
         "status": 0,
         "stdout_sha256": "bb4fcee77782206ac1ef7ee7d89066ae13f11c9a7f163b2d21956a9dd278a4fe",
@@ -390,13 +395,14 @@
       }
     },
     "immaculate/libc/zd-z28-provenance_equality_uintptr_t_global_yx": {
-      "class": "shared-model-fix",
+      "class": "address-layout",
       "citation": [
         "lean_frontend/docs/upstream-tray/24-stdio-buffer-not-flushed-at-exit.md",
         "lean_frontend/docs/upstream-tray/25-atexit-not-run-on-main-return.md",
-        "lean_frontend/docs/2026-11-05_worker-charter-stdio-exit-flush.md"
+        "lean_frontend/docs/2026-11-05_worker-charter-stdio-exit-flush.md",
+        "lean_frontend/docs/2026-11-05_stdio-exit-flush-record.md"
       ],
-      "rationale": "Prints two globals' addresses and their equality. Pristine upstream c3ff8c53f: `Addresses: p=fffffffff3a0 q=fffffffff3a0\\n(p==q) = true\\n` (verbatim); the fork: `Addresses: p=fffffffffaf0 q=fffffffffaf0\\n(p==q) = true\\n` (the equality unchanged). Not a wrong answer on either side: editing runtime/libc/src/{stdlib,stdio}.c changed those translation units' source digests, which order the linked globals (core_linking.lem merge_globs: min (digest, number)), so the libc-mode global LAYOUT moved and every address the program prints moved with it; every non-address value is identical on both sides and both engines agree. The consequence of the shared-model fix's libc edit, not a semantic difference; gcc prints its own addresses. Class shared-model-fix (the register has no layout class; the row leaves when upstream absorbs the fix, whose library edit reorders the same globals).",
+      "rationale": "Prints two globals' addresses and their equality. Pristine upstream c3ff8c53f: `Addresses: p=fffffffff3a0 q=fffffffff3a0\\n(p==q) = true\\n` (verbatim); the fork: `Addresses: p=fffffffffaf0 q=fffffffffaf0\\n(p==q) = true\\n` (the equality unchanged). Not a wrong answer on either side: editing runtime/libc/src/{stdlib,stdio}.c changed those translation units' source digests, which order the linked globals (core_linking.lem merge_globs: min (digest, number)), so the libc-mode global LAYOUT moved and every address the program prints moved with it; every non-address value is identical on both sides and both engines agree. The consequence of the fork's library edit, not a semantic difference; gcc prints its own addresses. Class address-layout (ruling [AGENT 2026-11-06, orchestrator]: the register's class names carry meaning and a reviewed difference is read as pristine being wrong there, which this is not); the row leaves when upstream absorbs the fix, whose library edit reorders the same globals.",
       "upstream": {
         "status": 0,
         "stdout_sha256": "4a02c012e5860fb19fd6074487928ef0caaa6bfde9702ed289e6b651c7cd00f7",
@@ -409,13 +415,14 @@
       }
     },
     "immaculate/libc/zd-z28-provenance_lost_escape_1": {
-      "class": "shared-model-fix",
+      "class": "address-layout",
       "citation": [
         "lean_frontend/docs/upstream-tray/24-stdio-buffer-not-flushed-at-exit.md",
         "lean_frontend/docs/upstream-tray/25-atexit-not-run-on-main-return.md",
-        "lean_frontend/docs/2026-11-05_worker-charter-stdio-exit-flush.md"
+        "lean_frontend/docs/2026-11-05_worker-charter-stdio-exit-flush.md",
+        "lean_frontend/docs/2026-11-05_stdio-exit-flush-record.md"
       ],
-      "rationale": "Prints a pointer with its allocation id. Pristine upstream c3ff8c53f: `Addresses: p=(@17, 0xfffffffff4cc)\\n` (verbatim); the fork: `Addresses: p=(@14, 0xfffffffffc1c)\\n` (the allocation ids are issued in the globals' order). Not a wrong answer on either side: editing runtime/libc/src/{stdlib,stdio}.c changed those translation units' source digests, which order the linked globals (core_linking.lem merge_globs: min (digest, number)), so the libc-mode global LAYOUT moved and every address the program prints moved with it; every non-address value is identical on both sides and both engines agree. The consequence of the shared-model fix's libc edit, not a semantic difference; gcc prints its own addresses. Class shared-model-fix (the register has no layout class; the row leaves when upstream absorbs the fix, whose library edit reorders the same globals).",
+      "rationale": "Prints a pointer with its allocation id. Pristine upstream c3ff8c53f: `Addresses: p=(@17, 0xfffffffff4cc)\\n` (verbatim); the fork: `Addresses: p=(@14, 0xfffffffffc1c)\\n` (the allocation ids are issued in the globals' order). Not a wrong answer on either side: editing runtime/libc/src/{stdlib,stdio}.c changed those translation units' source digests, which order the linked globals (core_linking.lem merge_globs: min (digest, number)), so the libc-mode global LAYOUT moved and every address the program prints moved with it; every non-address value is identical on both sides and both engines agree. The consequence of the fork's library edit, not a semantic difference; gcc prints its own addresses. Class address-layout (ruling [AGENT 2026-11-06, orchestrator]: the register's class names carry meaning and a reviewed difference is read as pristine being wrong there, which this is not); the row leaves when upstream absorbs the fix, whose library edit reorders the same globals.",
       "upstream": {
         "status": 0,
         "stdout_sha256": "7f09e6e668e29720d2bf193476f4a89af2b94071bf402fd69f635bd1e6a63cbf",

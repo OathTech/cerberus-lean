@@ -47,7 +47,11 @@ REGISTER_SCHEMA = 2
 # Register row classes (charter O1). A pristine-side timeout is admissible ONLY
 # through a row of an INCOMPLETE_ADMITTING class whose citation explains the
 # non-termination; never for the fork side, never for a signal kill (137).
-CLASSES = ('diagnostic-text', 'resource', 'missing-feature', 'shared-model-fix')
+CLASSES = ('diagnostic-text', 'resource', 'missing-feature', 'shared-model-fix', 'address-layout')
+# `address-layout` (2026-11-06, fix/stdio-exit-flush M3; ruling [AGENT 2026-11-06, orchestrator]): BOTH engines right;
+# the printed addresses differ because the fork's edited library translation units order the linked globals
+# differently (core_linking.lem merge_globs: min (digest, number) over the TUs' source digests). Never admits a
+# timeout; every non-address observation must be stated identical in the rationale.
 INCOMPLETE_ADMITTING = ('resource', 'shared-model-fix')
 INCOMPLETE_STATUSES = (124, 137)
 # A signature binds the exit status, the raw stdout bytes and the stderr bytes
@@ -684,6 +688,8 @@ def hermetic_plants(register_path):
     expect_reject('pristine-kill', lambda d: set_status(d, 'upstream', 137))
     expect_reject('pristine-timeout-under-diagnostic-text', lambda d: (
         d['cases'][first].update({'class': 'diagnostic-text'}), set_status(d, 'upstream', 124)))
+    expect_reject('pristine-timeout-under-address-layout', lambda d: (
+        d['cases'][first].update({'class': 'address-layout'}), set_status(d, 'upstream', 124)))
     expect_reject('malformed-sha', lambda d: d['cases'][first]['fork'].update(stdout_sha256='xyz'))
     # Pre-merge audit N1: a citation must be a git-TRACKED file whose cited lines exist.
     with tempfile.NamedTemporaryFile('w', suffix='.md', dir=ROOT / '.tmp', delete=False) as scratch:

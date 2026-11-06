@@ -199,6 +199,18 @@ the outcome protocol; [USER 2026-10-20]); all three have landed, so the queue is
   torture_success	tests/gcc-torture/breakdown/success/990222-1.c	UB_MATCH	UB:UB035_unsequenced_race
   ```
   → both engines refuse. The one-binding elaboration stays upstream's to adopt (tray 61).
+- **Program termination with the C library linked** (trays 24 and 25; the true-bug audit of 2026-11-04 ranked them
+  second with an impact upgrade: every `FILE` write after the first newline was lost; [USER 2026-11-04] agreed the fix
+  pass) — **DONE 2026-11-06** (branch `fix/stdio-exit-flush`, contract D15, record
+  `docs/2026-11-05_stdio-exit-flush-record.md`): the SHARED driver routes the startup function's return through the
+  library's `exit` with the library linked, the library's `exit` flushes every open stream after the handlers, each
+  engine withholds the `printf` proxy from a libc-mode program (the library's own `printf`, ordered with the buffer),
+  `vprintf` defined; `scripts/check_stdio_exit.sh` in row 1; the libc dumps and pins re-derived; two `tests/libc_exec`
+  rows (034, 041) moved to gcc's lines, the libc-mode global layout moved (five `address-layout` register rows, nine
+  PNVI litmus rows and the four immaculate zd-z28 rows re-recorded). Closed with it: the audit's stdio sibling (§4 item
+  2, the K2 rows), its `vprintf` finding. Still open from it: a printf-format UB of a libc-mode program is located
+  inside the library's `vfprintf` (`<unknown location>` on Lean: the N4 transport item is the remover); `perror`/
+  `strerror` assert (the audit's K2 rows); the pristine lane's `address-layout` class is new (2026-11-06).
 - **The macro integer types' conversion rank** (tray 20; the survey's cluster K, which the survey marked CORRECT having
   probed only compatibility and `_Generic`; rediscovered by cerberus-caesium's filing 05 at a blocked libxml2
   refinement; [USER 2026-11-04] approved the fork fix) — **DONE 2026-11-04** (branch `fix/macro-type-ranks`, contract

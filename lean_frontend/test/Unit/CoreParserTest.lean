@@ -892,16 +892,18 @@ def testFiles : TestM Unit := do
     IO.println "  (skipping file tests — runtime not found)"
 
   -- Arc-6 S1 parse bar: the ENTIRE pinned libc dump parses, with the
-  -- exact declaration census (191 proc — 188 unique names + the
+  -- exact declaration census (192 proc — 189 unique names + the
   -- __procfdname duplicate and the __strtox/__strtoxd decl+def pairs —
-  -- 68 globs, 1 surviving tagDef `fl`; see scripts/libc_prep.sh).
+  -- 68 globs, 1 surviving tagDef `fl`; see scripts/libc_prep.sh). 191 → 192
+  -- on 2026-11-06 (fix/stdio-exit-flush M2): the shipped library defines
+  -- `vprintf` (C17 7.21.6.10), which <stdio.h> declared and nothing defined.
   let libcPath := "../tests/libc/libc.core"
   if ← System.FilePath.pathExists libcPath then
     let content ← IO.FS.readFile libcPath
     match CoreParser.parseFile content with
     | .ok cf =>
-      if cf.procs.length == 191 then pass "libc.core 191 procs"
-      else fail_ "libc.core 191 procs" s!"got {cf.procs.length}"
+      if cf.procs.length == 192 then pass "libc.core 192 procs"
+      else fail_ "libc.core 192 procs" s!"got {cf.procs.length}"
       if cf.globs.length == 68 then pass "libc.core 68 globs"
       else fail_ "libc.core 68 globs" s!"got {cf.globs.length}"
       if cf.tagDefs.length == 1 then pass "libc.core 1 tagDef (fl)"
