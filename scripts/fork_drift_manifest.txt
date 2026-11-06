@@ -62,11 +62,15 @@
 # library's `exit` when the linked file defines one (the extern map's LK_normal target; --nolibc, the globals phase and the Core
 # builtin exit keep upstream's direct termination) -- `startup_exit_call_opt`. runtime/libc/src/stdlib.c: `exit` calls
 # fflush(NULL) between the handlers and _Exit. runtime/libc/src/stdio.c: `vfprintf` flushes the FILE's pending buffer before the
-# builtin writes through the descriptor. M1b (ruling [AGENT 2026-11-06, orchestrator]): runtime/libc/include/stdio.h routes a
-# libc-mode `printf(...)` to the library's `fprintf(stdout, ...)` (a 7.1.4#1 function-like macro under CERB_WITH_LIB, the
-# macro the driver's cpp defines for a libc-mode TU), because the elaborator substitutes the std.core proxy for every call of
-# the identifier `printf` and the proxy writes past the FILE buffer; --nolibc and the library's own build are untouched.
-# Single-row edits, no --refresh: [files] + [source-content] ENTER runtime/libc/include/stdio.h, runtime/libc/src/stdio.c
+# builtin writes through the descriptor. M1c (ruling [AGENT 2026-11-06, orchestrator] on the proxy finding; M1b's header
+# macro under CERB_WITH_LIB was withdrawn: the define follows the cpp invocation's --nolibc, and the lanes export the Lean
+# engine's Cabs JSON with the opposite flag, so the two engines consumed different TUs -- Tier A findings 1 and 2):
+# backend/driver/main.ml `prelude` withholds std.core's `printf` ailname from the program's elaboration when the library is
+# linked (`Pmap.remove "printf"` under `not nolibc`), so a `printf` call resolves by linking to the library's own `printf`,
+# sequenced with the FILE buffer (7.21.3); the elaborator's substitution (translation.lem translate_function_designator)
+# otherwise sends every ailname'd identifier to the proxy, which writes past the buffer. --nolibc and the library's own
+# build keep the proxy; the Cabs JSON is mode-independent and lean_frontend/Main.lean mirrors the rule by its own --libc.
+# Single-row edits, no --refresh: [source-content] main.ml re-pinned; [files] + [source-content] ENTER runtime/libc/src/stdio.c
 # and runtime/libc/src/stdlib.c (byte-identical to pristine c3ff8c53f before; the libc Core dumps are pinned separately,
 # tests/libc/*.sha256); [source-content] driver.lem re-pinned 94859892... -> a21c5833...; [expected-semantic] driver.ml's hash
 # moved (an already-differing file). Leaves when upstream absorbs the fix.
@@ -159,7 +163,6 @@ ocaml_frontend/rewriters/core_peval.ml
 ocaml_frontend/rewriters/remove_unspecs.ml
 parsers/c/c_parser.mly
 runtime/libc/dune
-runtime/libc/include/stdio.h
 runtime/libc/src/stdio.c
 runtime/libc/src/stdlib.c
 runtime/libcore/impls/i686-apple-darwin10-gcc-4.2.1.impl
@@ -180,7 +183,7 @@ util/cerb_location.ml
 100644 7391f27ebc011c6ce50b478a502e39139ad216f1877f4b5501d0b14272a1824f backend/common/pipeline.ml
 100644 a52c605083f549e8548fe277675b60445ef46688bba87e555c3861a18cbf6fd2 backend/common/pipeline.mli
 100644 2a2d4d1b5ce9b61811f245ed00ce27a907a52de84174b67fa16548f5c2372ef0 backend/driver/dune
-100644 688c19ac02d87565f579230a3ad92c81d1489f27d2421c8487aa0f01512c36ef backend/driver/main.ml
+100644 a72d466e051ff0105375a1a30ee6ecd57bbbd458d5d507af9532bbdbcc29cac9 backend/driver/main.ml
 100644 aa3970339c5d2292eba04a75b86b7bb044db52e4db004277f1ff48edff5afbb5 backend/lean_export/cabs_json.ml
 100644 6940e7e73f0bd7d1fedfa9d83f9401125064171b6e9b26c62493cc667bcedc4d backend/lean_export/dune
 100644 ddf41c042204912440d8b0e7fd90b6e19677291b63aabdd5cdaa864d8f5bb188 cerberus-lib.opam
@@ -256,7 +259,6 @@ util/cerb_location.ml
 100644 4d6d58a199fbbcc0ed7692fa0b631f74cc3c39e0dc53405dcd6fc4da3dc9b7b7 ocaml_frontend/rewriters/remove_unspecs.ml
 100644 3c663db65a613ec7bdee1c9c516a5cd74539dd9744e307e42ec599953f80894e parsers/c/c_parser.mly
 100644 d1d5f0a2ca4cc5a53e8b068d3bb9f219fe5eaec29457f25032352271ed240095 runtime/libc/dune
-100644 6a48fc9168f79740c76b8b148088cdcd089efb9ce3be82fb971b5200f6a78124 runtime/libc/include/stdio.h
 100644 c2c561ee6e8b1ebfb23508b93012cb09416fd98b33fe2a59bfdbdeb395261c8a runtime/libc/src/stdio.c
 100644 4ea1b6fb32ccff6f6f4f3e0b06efceccf24ee88eeb7ac0b09bc7db79d15d79d8 runtime/libc/src/stdlib.c
 100644 cf6fbe0be7dae96f6ce2c8cf7d7013b89d350da563e5179be8a2bb298d7ee24a runtime/libcore/impls/i686-apple-darwin10-gcc-4.2.1.impl

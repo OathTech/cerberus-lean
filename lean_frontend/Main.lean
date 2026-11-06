@@ -1307,6 +1307,17 @@ def runPipeline [LemFuel] [CerbGlobal.Switches] (runtime : String) (batch : Bool
   let (ailnames, stdFunMap) := loadCoreStdlib stdFile
   say s!"    ailnames: {List.length (fmapElements ailnames)} entries"
   say s!"    stdlib funs: {List.length (fmapElements stdFunMap)} entries"
+  -- Cerberus fork (fix/stdio-exit-flush M1c, 2026-11-06; upstream-tray report 24; mirror of
+  -- backend/driver/main.ml `prelude`, the `Pmap.remove "printf"` under `not nolibc`): with the C
+  -- library linked (`--libc`), std.core's proxy for the identifier `printf` is withheld from the
+  -- elaboration of the PROGRAM's translation units, so a `printf` call resolves by linking to the
+  -- library's own `printf` (stdio.c), sequenced with the FILE buffer (C17 7.21.3) where the proxy
+  -- wrote past it. The library's own twelve metadata TUs (`loadLibc`) keep the full map, as the
+  -- oracle builds libc.co under --nolibc. The Cabs JSON carries no trace of the mode: both engines
+  -- consume one translation unit and decide by their own linking.
+  let userAilnames : Fmap String sym :=
+    if libc.isSome then fmapDeleteBy defaultCompare "printf" ailnames else ailnames
+  if libc.isSome then say "    ailnames: `printf` withheld for the program's TUs (libc mode: the library's own printf)"
 
   -- Load implementation file
   say "  loading implementation..."
@@ -1377,7 +1388,7 @@ def runPipeline [LemFuel] [CerbGlobal.Switches] (runtime : String) (batch : Bool
     -- BaseIO variant: a discarded pure call is dead-code-eliminated
     -- (CerbTags set/reset pattern, arc-4 S3b).
     let _ ← (CerberusFresh.setDigestIO digest : BaseIO Unit)
-    match ← frontendTU quiet supply addressSpaceTop coreEvalStuff ailnames stdFunMap coreImpl tunit with
+    match ← frontendTU quiet supply addressSpaceTop coreEvalStuff userAilnames stdFunMap coreImpl tunit with
     | .error code => return code
     | .ok (coreFile, supply') =>
       coreFiles := coreFile :: coreFiles

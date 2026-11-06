@@ -153,6 +153,22 @@ let cerberus debug_level progress core_obj
     (* Looking for and parsing the implementation file *)
     load_core_impl core_stdlib impl_name >>= fun core_impl ->
     io.pass_message "Implementation file loaded." >>
+    (* Cerberus fork (fix/stdio-exit-flush M1c, 2026-11-06; upstream-tray report 24): with the
+       C library linked, std.core's proxy for the identifier `printf` is withheld from the
+       elaboration of the program's translation units (translation.lem
+       translate_function_designator substitutes every `[ailname = ...]` identifier), so a
+       call of `printf` resolves by linking to the library's own `printf` (stdio.c), whose
+       output is sequenced with the FILE buffer (C17 7.21.3) where the proxy wrote past it
+       into the driver's record. --nolibc runs and the library's own build (--nolibc) keep
+       the proxy; the Cabs JSON is unchanged either way, so the Lean driver, which decides
+       by its own --libc, consumes the same translation unit (lean_frontend/Main.lean
+       mirrors this at its stdlib load). *)
+    let core_stdlib =
+      if nolibc then core_stdlib
+      else begin
+        let (ailnames, std_funs) = core_stdlib in
+        (Pmap.remove "printf" ailnames, std_funs)
+      end in
     return ((core_stdlib, core_impl), elab_conf)
   in
   let main elab_conf core_std =
