@@ -1,0 +1,236 @@
+# tests/address_constants/gcc.txt -- name <TAB> gcc 13.3.0's line (`gcc -std=c11 -pedantic-errors -O0`, the exit status rendered
+# in the oracle's batch shape; `GCC-REJECT: <first error line>` when it refuses to compile), derived 2026-11-07.
+ice_init_lit	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_charconst	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_enumconst	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_sizeof_t	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_sizeof_e	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_sizeof_call	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_sizeof_incr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_alignof	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_castfloat	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_castfloat2	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_add	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_sub	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_mul	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_div	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_mod	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_shl_or	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_shr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_band	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_bxor	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cmp	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_eq	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_ne	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_le	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_land	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_lor	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_lnot	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_neg	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_plus	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_bnot	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_castu	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_castc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_castl	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cond	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cond0	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cond_nested	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cond_divz	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cond_shneg	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cond_ovf	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cond_call	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cond_var	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cond_gnu	GCC-REJECT: error: ISO C forbids omitting the middle term of a ‘?:’ expression [-Wpedantic]
+ice_init_generic	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_generic_d	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_generic_var	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_generic_dead	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_generic_call	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_generic_ptr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_comma	GCC-REJECT: error: initializer element is not constant [-Wpedantic]
+ice_init_assign	GCC-REJECT: error: initializer element is not constant
+ice_init_postincr	GCC-REJECT: error: initializer element is not constant
+ice_init_preincr	GCC-REJECT: error: initializer element is not constant
+ice_init_compassign	GCC-REJECT: error: initializer element is not constant
+ice_init_call	GCC-REJECT: error: initializer element is not constant
+ice_init_var	GCC-REJECT: error: initializer element is not constant
+ice_init_deref_addr	GCC-REJECT: error: initializer element is not constant
+ice_init_cond_var_live	GCC-REJECT: error: initializer element is not constant
+ice_init_float_uncast	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_float_arith	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_addr_eq	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_addr_cast_int	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_addr_diff	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_compound	GCC-REJECT: error: initializer element is not constant [-Wpedantic]
+ice_init_compound_sizeof	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_enum_lit	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_enum_cond	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_enum_generic	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_enum_generic_d	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_enum_generic_var	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_enum_generic_dead	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_enum_generic_call	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_enum_generic_ptr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_enum_comma	GCC-REJECT: error: enumerator value for ‘E0’ is not an integer constant
+ice_enum_compound	GCC-REJECT: error: enumerator value for ‘E0’ is not an integer constant
+ice_case_lit	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_case_cond	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_case_cond_gnu	GCC-REJECT: error: ISO C forbids omitting the middle term of a ‘?:’ expression [-Wpedantic]
+ice_case_generic	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_case_generic_d	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_case_generic_var	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_case_generic_dead	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_case_generic_call	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_case_generic_ptr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_case_comma	GCC-REJECT: error: case label does not reduce to an integer constant
+ice_case_compound	GCC-REJECT: error: case label does not reduce to an integer constant
+ice_arr_lit	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_arr_cond	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_arr_generic	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_arr_generic_d	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_arr_generic_var	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_arr_generic_dead	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_arr_generic_call	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_arr_generic_ptr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_arr_comma	GCC-REJECT: error: variably modified ‘a’ at file scope
+ice_arr_compound	GCC-REJECT: error: variably modified ‘a’ at file scope
+ice_sassert_lit	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_sassert_cond	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_sassert_generic	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_sassert_generic_d	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_sassert_generic_var	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_sassert_generic_dead	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_sassert_generic_call	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_sassert_generic_ptr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_sassert_comma	GCC-REJECT: error: expression in static assertion is not constant
+ice_sassert_compound	GCC-REJECT: error: expression in static assertion is not constant
+ar_float_mul	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_float_cmp	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_float_cond	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_float_generic	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_float_cast	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_float_sizeof	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_bool_init	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_uns_wrap	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_char_init	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_offsetof_idiom	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_offsetof_macro	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_float_comma	GCC-REJECT: error: initializer element is not constant [-Wpedantic]
+ar_arith_var	GCC-REJECT: error: initializer element is not constant
+ac_addr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_elem	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_decay	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_decay_only	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_elem_plus	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_elem_minus	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_int_plus_arr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_nested_pm	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_idx_sum	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_idx_enum	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_idx_sizeof	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_idx_castf	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_idx_cond	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_member	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_member_nested	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_member_arr_elem	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_member_arr_decay	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+ac_member_arr_decay_plus	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_elem_member	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_elem_member_nested	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_elem_member_arr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_elem_member_arr_decay	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr2d_elem	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr2d_row	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr2d_row_plus	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr2d_deref	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_deref_addr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_deref_addr_paren	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_deref_arr	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+ac_deref_arr_sub	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cast_same	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cast_via_char	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cast_char_plus	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cast_void	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cast_void_elem	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cond_addr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cond_addr0	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cond_addr_dead_var	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cond_decay	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_generic_addr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_generic_addr_var	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cast_struct_arrow	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cast_struct_deref_member	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cast_struct_arrow_arr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arrow_arr_elem	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arrow_arr_elem_nested	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_deref_arr_member	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_addr_of_ptr	GCC-REJECT: error: initializer element is not constant
+ac_nullptr0	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_nullptr_void	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_nullptr_int	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_intptr_cast	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_intptr_cast_sum	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_compound_lit	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ptr_var	GCC-REJECT: error: initializer element is not constant
+ac_ptr_var_deref_addr	GCC-REJECT: error: initializer element is not constant
+ac_ptr_var_sub	GCC-REJECT: error: initializer element is not constant
+ac_ptr_var_arrow	GCC-REJECT: error: initializer element is not constant
+ac_ptr_var_arrow_arr	GCC-REJECT: error: initializer element is not constant
+ac_idx_var	GCC-REJECT: error: initializer element is not constant
+ac_idx_call	GCC-REJECT: error: initializer element is not constant
+ac_idx_comma	GCC-REJECT: error: initializer element is not constant
+ac_comma_addr	GCC-REJECT: error: initializer element is not constant [-Wpedantic]
+ac_int_var_cast	GCC-REJECT: error: initializer element is not constant
+ac_cast_int_of_addr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_str_bare	Defined {value: "Specified(104)", stdout: "", stderr: "", blocked: "false"}
+ac_str_plus	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_str_elem	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_str_plus_cond	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_str_cond	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_str_cast_plus	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_str_cast_elem	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_str_concat	Defined {value: "Specified(100)", stdout: "", stderr: "", blocked: "false"}
+ac_str_paren	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_str_minus	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_str_generic	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_str_deref	GCC-REJECT: error: initializer element is not constant
+ac_str_elem_value	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_wstr_plus	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_fun_designator	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_fun_addr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_fun_deref	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_fun_addr_deref	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_fun_deref2	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_fun_cond	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_fun_cast	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_fun_paren	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_ptr_array	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_struct	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_struct_str	Defined {value: "Specified(100)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_struct_fun	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_designated	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_nested_list	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_extern_obj	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_block_static	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_block_static_cond	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_block_static_str	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_block_auto_addr	GCC-REJECT: error: initializer element is not constant
+ac_ctx_param_addr	GCC-REJECT: error: initializer element is not constant
+ac_ctx_auto_init	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_scalar_braced	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_thread_local	GCC-REJECT: error: initializer element is not constant
+ac_ctx_static_const_var	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_long_of_addr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_long_of_arr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_int_of_addr	GCC-REJECT: error: initializer element is not constant
+ac_ctx_ptrdiff	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_ptr_cmp	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_double_cast	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_member_value	GCC-REJECT: error: initializer element is not constant
+ac_ctx_ptr_member_value	GCC-REJECT: error: initializer element is not constant
+ac_ctx_long_of_int_var	GCC-REJECT: error: initializer element is not constant
+ac_ctx_deref_addr_arr	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_deref_fun_addr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_arr2d_elem_plus	Defined {value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_generic_mixed	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_cond_null	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}

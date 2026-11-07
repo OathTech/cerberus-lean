@@ -1,0 +1,236 @@
+# tests/address_constants/pristine.txt -- name <TAB> oracle <TAB> lean: pristine c3ff8c53f's lines (= the fork's before the
+# 2026-11-07 change: the three predicates were byte-identical), in expected.txt's encodings; the negative control.
+ice_init_lit	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_charconst	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_enumconst	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_sizeof_t	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_sizeof_e	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_sizeof_call	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_sizeof_incr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_alignof	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_castfloat	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_castfloat2	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_add	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_sub	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_mul	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_div	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_mod	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_shl_or	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_shr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_band	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_bxor	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cmp	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_eq	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_ne	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_le	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_land	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_lor	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_lnot	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_neg	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_plus	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_bnot	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_castu	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_castc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_castl	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cond	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_cond.c:2:16-25 (cursor: 2:18)"}
+ice_init_cond0	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_cond0.c:2:16-25 (cursor: 2:18)"}
+ice_init_cond_nested	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_cond_nested.c:2:16-35 (cursor: 2:18)"}
+ice_init_cond_divz	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_cond_divz.c:2:16-29 (cursor: 2:18)"}
+ice_init_cond_shneg	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_cond_shneg.c:2:16-33 (cursor: 2:18)"}
+ice_init_cond_ovf	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_cond_ovf.c:2:16-38 (cursor: 2:18)"}
+ice_init_cond_call	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_cond_call.c:2:16-27 (cursor: 2:18)"}
+ice_init_cond_var	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_cond_var.c:2:16-25 (cursor: 2:18)"}
+ice_init_cond_gnu	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_cond_gnu.c:2:16-22 (cursor: 2:18)"}
+ice_init_generic	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_generic.c:2:16-47"}
+ice_init_generic_d	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_generic_d.c:2:16-49"}
+ice_init_generic_var	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_generic_var.c:2:16-47"}
+ice_init_generic_dead	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_generic_dead.c:2:16-47"}
+ice_init_generic_call	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_generic_call.c:2:16-49"}
+ice_init_generic_ptr	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_generic_ptr.c:2:16-50"}
+ice_init_comma	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_assign	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_assign.c:2:16-23"}
+ice_init_postincr	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_postincr.c:2:16-19 (cursor: 2:17)"}
+ice_init_preincr	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_preincr.c:2:16-19 (cursor: 2:16)"}
+ice_init_compassign	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_compassign.c:2:16-24"}
+ice_init_call	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_call.c:2:16-19"}
+ice_init_var	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_var.c:2:16-17"}
+ice_init_deref_addr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cond_var_live	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_cond_var_live.c:2:16-25 (cursor: 2:18)"}
+ice_init_float_uncast	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_float_arith	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_addr_eq	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_addr_cast_int	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_addr_diff	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_compound	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_compound.c:2:16-24"}
+ice_init_compound_sizeof	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_enum_lit	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_enum_cond	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_enum_generic	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(1, signed int: 3, default: 4)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_enum_generic_d	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(1.0, signed int: 4, default: 3)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_enum_generic_var	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(g, signed int: 3, default: 4)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_enum_generic_dead	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(1, signed int: 3, default: g)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_enum_generic_call	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(f(), signed int: 3, default: 4)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_enum_generic_ptr	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(&g, signed int*: 3, default: 4)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_enum_comma	REJECT(rc=1): error: constraint violation: expression is not an integer constant expression	Error {msg: "desugaring failed at ice_enum_comma.c:2:15-21"}
+ice_enum_compound	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> (signed int){3}	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_case_lit	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_case_cond	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_case_cond_gnu	PEcase, mismatched	PEcase, mismatched
+ice_case_generic	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(1, signed int: 3, default: 4)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_case_generic_d	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(1.0, signed int: 4, default: 3)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_case_generic_var	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(g, signed int: 3, default: 4)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_case_generic_dead	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(1, signed int: 3, default: g)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_case_generic_call	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(f(), signed int: 3, default: 4)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_case_generic_ptr	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(&g, signed int*: 3, default: 4)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_case_comma	REJECT(rc=1): error: constraint violation: expression is not an integer constant expression	Error {msg: "desugaring failed at ice_case_comma.c:2:36-42"}
+ice_case_compound	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> (signed int){3}	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_arr_lit	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_arr_cond	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_arr_generic	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(1, signed int: 3, default: 4)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_arr_generic_d	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(1.0, signed int: 4, default: 3)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_arr_generic_var	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(g, signed int: 3, default: 4)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_arr_generic_dead	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(1, signed int: 3, default: g)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_arr_generic_call	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(f(), signed int: 3, default: 4)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_arr_generic_ptr	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(&g, signed int*: 3, default: 4)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_arr_comma	REJECT(rc=1): error: feature not yet supported: variable length array type 2	Error {msg: "desugaring failed at ice_arr_comma.c:2:12-21"}
+ice_arr_compound	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> (signed int){3}	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_sassert_lit	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_sassert_cond	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_sassert_generic	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(1, signed int: 3, default: 4)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_sassert_generic_d	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(1.0, signed int: 4, default: 3)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_sassert_generic_var	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(g, signed int: 3, default: 4)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_sassert_generic_dead	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(1, signed int: 3, default: g)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_sassert_generic_call	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(f(), signed int: 3, default: 4)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_sassert_generic_ptr	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> _Generic(&g, signed int*: 3, default: 4)	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ice_sassert_comma	Undefined {ub: "UB204_illtyped_Static_assert", stderr: "", loc: "<2:16--2:29>"}	Undefined {ub: "UB204_illtyped_Static_assert", stderr: "", loc: "<2:16--2:29>"}
+ice_sassert_compound	CRASH(rc=125): internal error: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> (signed int){3}	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: TODO: Cabs_to_ail.is_integer_constant_expression, wildcard ==> <ail_expression>
+ar_float_mul	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_float_cmp	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_float_cond	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ar_float_cond.c:1:19-32 (cursor: 1:21)"}
+ar_float_generic	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ar_float_generic.c:1:19-59"}
+ar_float_cast	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_float_sizeof	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_bool_init	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_uns_wrap	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_char_init	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_offsetof_idiom	Undefined {ub: "UB055_invalid_integer_constant_expression", stderr: "", loc: "<1:52--1:86>"}	Undefined {ub: "UB055_invalid_integer_constant_expression", stderr: "", loc: "<1:52--1:86>"}
+ar_offsetof_macro	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_float_comma	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_arith_var	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ar_arith_var.c:2:16-21 (cursor: 2:18)"}
+ac_addr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_elem	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_decay	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_decay_only	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_elem_plus	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_elem_minus	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_int_plus_arr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_nested_pm	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_arr_nested_pm.c:6:17-29 (cursor: 6:26)"}
+ac_arr_idx_sum	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_idx_enum	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_idx_sizeof	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_idx_castf	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_idx_cond	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_arr_idx_cond.c:6:17-31 (cursor: 6:17)"}
+ac_member	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_member_nested	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_member_arr_elem	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_member_arr_elem.c:6:17-27 (cursor: 6:17)"}
+ac_member_arr_decay	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_member_arr_decay.c:6:17-23 (cursor: 6:19)"}
+ac_member_arr_decay_plus	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_member_arr_decay_plus.c:6:17-27 (cursor: 6:24)"}
+ac_arr_elem_member	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_arr_elem_member.c:6:17-26 (cursor: 6:17)"}
+ac_arr_elem_member_nested	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_arr_elem_member_nested.c:6:17-28 (cursor: 6:17)"}
+ac_arr_elem_member_arr	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_arr_elem_member_arr.c:6:17-31 (cursor: 6:17)"}
+ac_arr_elem_member_arr_decay	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_arr_elem_member_arr_decay.c:6:17-31 (cursor: 6:28)"}
+ac_arr2d_elem	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr2d_row	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_arr2d_row.c:6:17-22"}
+ac_arr2d_row_plus	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_arr2d_row_plus.c:6:17-26 (cursor: 6:23)"}
+ac_arr2d_deref	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_arr2d_deref.c:6:17-26 (cursor: 6:17)"}
+ac_deref_addr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_deref_addr_paren	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_deref_arr	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+ac_deref_arr_sub	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cast_same	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_cast_same.c:6:17-26 (cursor: 6:17)"}
+ac_cast_via_char	Undefined {ub: "UB055_invalid_integer_constant_expression", stderr: "", loc: "<6:24--6:34>"}	Undefined {ub: "UB055_invalid_integer_constant_expression", stderr: "", loc: "<6:24--6:34>"}
+ac_cast_char_plus	Undefined {ub: "UB055_invalid_integer_constant_expression", stderr: "", loc: "<6:25--6:36>"}	Undefined {ub: "UB055_invalid_integer_constant_expression", stderr: "", loc: "<6:25--6:36>"}
+ac_cast_void	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_cast_void.c:6:17-27 (cursor: 6:17)"}
+ac_cast_void_elem	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_cast_void_elem.c:6:17-34 (cursor: 6:17)"}
+ac_cond_addr	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_cond_addr.c:6:17-32 (cursor: 6:19)"}
+ac_cond_addr0	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_cond_addr0.c:6:17-32 (cursor: 6:19)"}
+ac_cond_addr_dead_var	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_cond_addr_dead_var.c:6:17-28 (cursor: 6:19)"}
+ac_cond_decay	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_cond_decay.c:6:17-36 (cursor: 6:19)"}
+ac_generic_addr	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_generic_addr.c:6:17-54"}
+ac_generic_addr_var	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_generic_addr_var.c:6:17-54"}
+ac_cast_struct_arrow	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_cast_struct_arrow.c:6:17-38 (cursor: 6:17)"}
+ac_cast_struct_deref_member	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_cast_struct_deref_member.c:6:17-38 (cursor: 6:17)"}
+ac_cast_struct_arrow_arr	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_cast_struct_arrow_arr.c:6:17-43 (cursor: 6:40)"}
+ac_arrow_arr_elem	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arrow_arr_elem_nested	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_deref_arr_member	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_deref_arr_member.c:6:17-32 (cursor: 6:17)"}
+ac_addr_of_ptr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_nullptr0	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_nullptr_void	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_nullptr_int	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_intptr_cast	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_intptr_cast_sum	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_compound_lit	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_compound_lit.c:6:17-26 (cursor: 6:17)"}
+ac_ptr_var	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ptr_var.c:6:17-19"}
+ac_ptr_var_deref_addr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ptr_var_sub	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ptr_var_arrow	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ptr_var_arrow_arr	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ptr_var_arrow_arr.c:6:17-29 (cursor: 6:26)"}
+ac_idx_var	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_idx_call	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_idx_call.c:6:17-29 (cursor: 6:17)"}
+ac_idx_comma	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_comma_addr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_int_var_cast	Undefined {ub: "UB043_indirection_invalid_value", stderr: "", loc: "<6:152--6:154>"}	Undefined {ub: "UB043_indirection_invalid_value", stderr: "", loc: "<6:152--6:154>"}
+ac_cast_int_of_addr	Undefined {ub: "UB055_invalid_integer_constant_expression", stderr: "", loc: "<6:24--6:32>"}	Undefined {ub: "UB055_invalid_integer_constant_expression", stderr: "", loc: "<6:24--6:32>"}
+ac_str_bare	Defined {value: "Specified(104)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(104)", stdout: "", stderr: "", blocked: "false"}
+ac_str_plus	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_str_plus.c:6:24-35 (cursor: 6:32)"}
+ac_str_elem	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_str_elem.c:6:24-35 (cursor: 6:24)"}
+ac_str_plus_cond	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_str_plus_cond.c:6:24-45 (cursor: 6:32)"}
+ac_str_cond	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_str_cond.c:6:24-45 (cursor: 6:26)"}
+ac_str_cast_plus	Undefined {ub: "UB055_invalid_integer_constant_expression", stderr: "", loc: "<6:24--6:39>"}	Undefined {ub: "UB055_invalid_integer_constant_expression", stderr: "", loc: "<6:24--6:39>"}
+ac_str_cast_elem	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_str_cast_elem.c:6:24-49 (cursor: 6:24)"}
+ac_str_concat	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_str_concat.c:6:24-39 (cursor: 6:36)"}
+ac_str_paren	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_str_paren.c:6:24-37 (cursor: 6:34)"}
+ac_str_minus	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_str_minus.c:6:24-39 (cursor: 6:36)"}
+ac_str_generic	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_str_generic.c:6:24-67"}
+ac_str_deref	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_str_deref.c:6:17-25 (cursor: 6:17)"}
+ac_str_elem_value	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_str_elem_value.c:6:17-27"}
+ac_wstr_plus	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_wstr_plus.c:7:27-39 (cursor: 7:36)"}
+ac_fun_designator	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_fun_addr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_fun_deref	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_fun_deref.c:6:26-28 (cursor: 6:26)"}
+ac_fun_addr_deref	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_fun_deref2	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_fun_deref2.c:6:26-29 (cursor: 6:26)"}
+ac_fun_cond	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_fun_cond.c:6:26-36 (cursor: 6:28)"}
+ac_fun_cast	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_fun_cast.c:6:26-42 (cursor: 6:26)"}
+ac_fun_paren	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_ptr_array	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_ptr_array.c:6:27-36 (cursor: 6:27)"}
+ac_ctx_struct	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_struct.c:6:39-48 (cursor: 6:39)"}
+ac_ctx_struct_str	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_struct_str.c:6:61-69 (cursor: 6:66)"}
+ac_ctx_struct_fun	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_designated	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_designated.c:6:28-37 (cursor: 6:30)"}
+ac_ctx_nested_list	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_nested_list.c:6:43-52 (cursor: 6:43)"}
+ac_ctx_extern_obj	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_extern_obj.c:6:10-19 (cursor: 6:10)"}
+ac_ctx_block_static	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_block_static.c:6:135-144 (cursor: 6:135)"}
+ac_ctx_block_static_cond	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_block_static_cond.c:6:134-143 (cursor: 6:136)"}
+ac_ctx_block_static_str	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_block_static_str.c:6:142-153 (cursor: 6:150)"}
+ac_ctx_block_auto_addr	CRASH(rc=125): internal error: gentpying.annotate_expression: AilEident symbol couldn't be resolved => Symbol(529, SD_ObjectAddress"l")	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: gentpying.annotate_expression: AilEident symbol couldn't be resolved => Symbol(52, SD_ObjectAddress"l")
+ac_ctx_param_addr	CRASH(rc=125): internal error: gentpying.annotate_expression: AilEident symbol couldn't be resolved => Symbol(527, SD_ObjectAddress"p")	CRASH(rc=134): PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: gentpying.annotate_expression: AilEident symbol couldn't be resolved => Symbol(50, SD_ObjectAddress"p")
+ac_ctx_auto_init	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_scalar_braced	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_scalar_braced.c:6:18-27 (cursor: 6:18)"}
+ac_ctx_thread_local	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_static_const_var	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_static_const_var.c:6:40-41"}
+ac_ctx_long_of_addr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_long_of_arr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_int_of_addr	Undefined {ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "<6:16--6:23>"}	Undefined {ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "<6:16--6:23>"}
+ac_ctx_ptrdiff	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_ptr_cmp	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_double_cast	Undefined {ub: "UB055_invalid_integer_constant_expression", stderr: "", loc: "<6:24--6:42>"}	Undefined {ub: "UB055_invalid_integer_constant_expression", stderr: "", loc: "<6:24--6:42>"}
+ac_ctx_member_value	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_member_value.c:6:16-20 (cursor: 6:18)"}
+ac_ctx_ptr_member_value	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_ptr_member_value.c:6:54-58 (cursor: 6:56)"}
+ac_ctx_long_of_int_var	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_deref_addr_arr	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_deref_fun_addr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_arr2d_elem_plus	Defined {value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_generic_mixed	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_generic_mixed.c:6:17-49"}
+ac_ctx_cond_null	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_cond_null.c:6:17-27 (cursor: 6:19)"}

@@ -616,6 +616,23 @@ if ! "$HALF_MIRRORS_SH" --selftest; then
     exit 1
 fi
 
+# Address-constant / constant-expression witnesses (fix/address-constants, 2026-11-07; upstream-tray
+# reports 09, 28 and 29; the true-bug audit's items 7, 16, 17): the desugarer's constant-expression
+# predicates accept the forms C17 6.6#3-#9 list (& through [], ., -> and *; the decay of a static
+# array; string literals; ?: and _Generic; address constant +/- an integer constant expression) and
+# reject the operators 6.6#3 forbids (the comma; & of a non-static object; value reads). 234
+# programs under tests/address_constants/ (nolibc): 182 pinned to gcc 13's line on BOTH engines, 40
+# rejections pinned as both engines' diagnostics where gcc rejects too, 11 declared rows with gcc's
+# line beside, 1 gap control (the GNU ?: crash, TODO); pristine c3ff8c53f's lines the negative
+# control (112 moved). --selftest: a pristine-replaying pair, a Lean-only pristine stub, a fixed-line
+# Lean stub, an exit-code-forcing oracle wrapper and a tampered expectation must all fail, each at
+# its derived count. Record lean_frontend/docs/2026-11-07_address-constants-record.md.
+ADDRESS_CONSTANTS_SH="$(dirname "$PURITY_SH")/check_address_constants.sh"
+if ! "$ADDRESS_CONSTANTS_SH" --selftest; then
+    echo "test_unit: address-constant witnesses FAILED"
+    exit 1
+fi
+
 # libc dump float-literal inventory (named deviation N3, VALIDATION.md §2b;
 # bug hunt BUG-5, [USER 2026-09-30] option (3)): the pinned libc.core's float
 # literals (printed with %.12g by the oracle's Core printer) must equal the

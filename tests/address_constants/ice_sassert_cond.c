@@ -1,0 +1,2 @@
+static int g = 3; int f(void) { return 3; } enum { X = 3, TWO = 2 };
+_Static_assert((1 ? 3 : 4) == 3, "x"); int main(void) { return 3; }

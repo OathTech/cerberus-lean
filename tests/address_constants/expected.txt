@@ -1,0 +1,241 @@
+# tests/address_constants/expected.txt -- name <TAB> class <TAB> the oracle's pinned line <TAB> the Lean engine's pinned line
+# (the batch line for an accepted program, both engines identical; `REJECT(rc=1): <first error line, file prefix stripped>` /
+# `Error {msg: "desugaring failed at <name>.c:<loc>"}` for a rejected one; the crash text for the gap control).
+# Classes: gcc = both engines print gcc 13's line (gcc.txt; `gcc -std=c11 -pedantic-errors -O0`, derived 2026-11-07);
+# reject = both engines reject and gcc rejects (its first error line in gcc.txt); fork = the fork's declared verdict where gcc's
+# differs (each named in scripts/check_address_constants.sh FORK_PINNED with its reason in the record); gap = a crash on both
+# engines that predates and is untouched by the slice (the GNU ?: in a constant-expression position, TODO.md).
+ice_init_lit	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_charconst	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_enumconst	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_sizeof_t	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_sizeof_e	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_sizeof_call	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_sizeof_incr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_alignof	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_castfloat	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_castfloat2	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_add	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_sub	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_mul	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_div	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_mod	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_shl_or	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_shr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_band	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_bxor	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cmp	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_eq	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_ne	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_le	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_land	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_lor	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_lnot	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_neg	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_plus	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_bnot	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_castu	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_castc	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_castl	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cond	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cond0	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cond_nested	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cond_divz	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cond_shneg	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cond_ovf	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cond_call	fork	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_cond_call.c:2:16-27 (cursor: 2:18)"}
+ice_init_cond_var	fork	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_cond_var.c:2:16-25 (cursor: 2:18)"}
+ice_init_cond_gnu	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_cond_gnu.c:2:16-22 (cursor: 2:18)"}
+ice_init_generic	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_generic_d	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_generic_var	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_generic_dead	fork	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_generic_dead.c:2:16-47"}
+ice_init_generic_call	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_generic_ptr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_comma	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_comma.c:2:16-22"}
+ice_init_assign	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_assign.c:2:16-23"}
+ice_init_postincr	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_postincr.c:2:16-19 (cursor: 2:17)"}
+ice_init_preincr	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_preincr.c:2:16-19 (cursor: 2:16)"}
+ice_init_compassign	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_compassign.c:2:16-24"}
+ice_init_call	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_call.c:2:16-19"}
+ice_init_var	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_var.c:2:16-17"}
+ice_init_deref_addr	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_deref_addr.c:2:16-19 (cursor: 2:16)"}
+ice_init_cond_var_live	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_cond_var_live.c:2:16-25 (cursor: 2:18)"}
+ice_init_float_uncast	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_float_arith	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_addr_eq	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_addr_cast_int	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_addr_diff	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_compound	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_compound.c:2:16-24"}
+ice_init_compound_sizeof	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_enum_lit	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_enum_cond	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_enum_generic	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_enum_generic_d	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_enum_generic_var	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_enum_generic_dead	fork	REJECT(rc=1): error: constraint violation: expression is not an integer constant expression	Error {msg: "desugaring failed at ice_enum_generic_dead.c:2:15-46"}
+ice_enum_generic_call	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_enum_generic_ptr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_enum_comma	reject	REJECT(rc=1): error: constraint violation: expression is not an integer constant expression	Error {msg: "desugaring failed at ice_enum_comma.c:2:15-21"}
+ice_enum_compound	reject	REJECT(rc=1): error: constraint violation: expression is not an integer constant expression	Error {msg: "desugaring failed at ice_enum_compound.c:2:15-23"}
+ice_case_lit	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_case_cond	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_case_cond_gnu	gap	PEcase, mismatched	PEcase, mismatched
+ice_case_generic	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_case_generic_d	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_case_generic_var	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_case_generic_dead	fork	REJECT(rc=1): error: constraint violation: expression is not an integer constant expression	Error {msg: "desugaring failed at ice_case_generic_dead.c:2:36-67"}
+ice_case_generic_call	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_case_generic_ptr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_case_comma	reject	REJECT(rc=1): error: constraint violation: expression is not an integer constant expression	Error {msg: "desugaring failed at ice_case_comma.c:2:36-42"}
+ice_case_compound	reject	REJECT(rc=1): error: constraint violation: expression is not an integer constant expression	Error {msg: "desugaring failed at ice_case_compound.c:2:36-44"}
+ice_arr_lit	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_arr_cond	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_arr_generic	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_arr_generic_d	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_arr_generic_var	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_arr_generic_dead	fork	REJECT(rc=1): error: feature not yet supported: variable length array type 2	Error {msg: "desugaring failed at ice_arr_generic_dead.c:2:12-46"}
+ice_arr_generic_call	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_arr_generic_ptr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_arr_comma	reject	REJECT(rc=1): error: feature not yet supported: variable length array type 2	Error {msg: "desugaring failed at ice_arr_comma.c:2:12-21"}
+ice_arr_compound	reject	REJECT(rc=1): error: feature not yet supported: variable length array type 2	Error {msg: "desugaring failed at ice_arr_compound.c:2:12-23"}
+ice_sassert_lit	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_sassert_cond	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_sassert_generic	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_sassert_generic_d	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_sassert_generic_var	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_sassert_generic_dead	fork	Undefined {ub: "UB204_illtyped_Static_assert", stderr: "", loc: "<2:16--2:54>"}	Undefined {ub: "UB204_illtyped_Static_assert", stderr: "", loc: "<2:16--2:54>"}
+ice_sassert_generic_call	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_sassert_generic_ptr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_sassert_comma	reject	Undefined {ub: "UB204_illtyped_Static_assert", stderr: "", loc: "<2:16--2:29>"}	Undefined {ub: "UB204_illtyped_Static_assert", stderr: "", loc: "<2:16--2:29>"}
+ice_sassert_compound	reject	Undefined {ub: "UB204_illtyped_Static_assert", stderr: "", loc: "<2:16--2:31>"}	Undefined {ub: "UB204_illtyped_Static_assert", stderr: "", loc: "<2:16--2:31>"}
+ar_float_mul	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_float_cmp	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_float_cond	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_float_generic	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_float_cast	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_float_sizeof	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_bool_init	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_uns_wrap	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_char_init	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_offsetof_idiom	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_offsetof_macro	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_float_comma	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ar_float_comma.c:1:19-29"}
+ar_arith_var	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ar_arith_var.c:2:16-21 (cursor: 2:18)"}
+ac_addr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_elem	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_decay	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_decay_only	gcc	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_elem_plus	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_elem_minus	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_int_plus_arr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_nested_pm	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_idx_sum	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_idx_enum	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_idx_sizeof	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_idx_castf	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_idx_cond	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_member	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_member_nested	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_member_arr_elem	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_member_arr_decay	gcc	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+ac_member_arr_decay_plus	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_elem_member	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_elem_member_nested	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_elem_member_arr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr_elem_member_arr_decay	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr2d_elem	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr2d_row	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr2d_row_plus	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arr2d_deref	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_deref_addr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_deref_addr_paren	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_deref_arr	gcc	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+ac_deref_arr_sub	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cast_same	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cast_via_char	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cast_char_plus	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cast_void	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cast_void_elem	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cond_addr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cond_addr0	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cond_addr_dead_var	fork	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_cond_addr_dead_var.c:6:17-28 (cursor: 6:19)"}
+ac_cond_decay	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_generic_addr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_generic_addr_var	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cast_struct_arrow	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cast_struct_deref_member	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cast_struct_arrow_arr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arrow_arr_elem	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_arrow_arr_elem_nested	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_deref_arr_member	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_addr_of_ptr	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_addr_of_ptr.c:6:17-21 (cursor: 6:17)"}
+ac_nullptr0	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_nullptr_void	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_nullptr_int	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_intptr_cast	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_intptr_cast_sum	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_compound_lit	fork	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_compound_lit.c:6:17-26 (cursor: 6:17)"}
+ac_ptr_var	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ptr_var.c:6:17-19"}
+ac_ptr_var_deref_addr	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ptr_var_deref_addr.c:6:17-21 (cursor: 6:17)"}
+ac_ptr_var_sub	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ptr_var_sub.c:6:17-23 (cursor: 6:17)"}
+ac_ptr_var_arrow	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ptr_var_arrow.c:6:17-24 (cursor: 6:17)"}
+ac_ptr_var_arrow_arr	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ptr_var_arrow_arr.c:6:17-29 (cursor: 6:26)"}
+ac_idx_var	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_idx_var.c:6:17-27 (cursor: 6:17)"}
+ac_idx_call	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_idx_call.c:6:17-29 (cursor: 6:17)"}
+ac_idx_comma	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_idx_comma.c:6:17-28 (cursor: 6:17)"}
+ac_comma_addr	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_comma_addr.c:6:17-24"}
+ac_int_var_cast	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_int_var_cast.c:6:17-25 (cursor: 6:17)"}
+ac_cast_int_of_addr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_str_bare	gcc	Defined {value: "Specified(104)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(104)", stdout: "", stderr: "", blocked: "false"}
+ac_str_plus	gcc	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_str_elem	gcc	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_str_plus_cond	gcc	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_str_cond	gcc	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_str_cast_plus	gcc	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_str_cast_elem	gcc	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_str_concat	gcc	Defined {value: "Specified(100)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(100)", stdout: "", stderr: "", blocked: "false"}
+ac_str_paren	gcc	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_str_minus	gcc	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_str_generic	gcc	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_str_deref	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_str_deref.c:6:17-25 (cursor: 6:17)"}
+ac_str_elem_value	fork	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_str_elem_value.c:6:17-27"}
+ac_wstr_plus	gcc	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_fun_designator	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_fun_addr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_fun_deref	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_fun_addr_deref	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_fun_deref2	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_fun_cond	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_fun_cast	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_fun_paren	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_ptr_array	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_struct	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_struct_str	gcc	Defined {value: "Specified(100)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(100)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_struct_fun	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_designated	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_nested_list	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_extern_obj	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_block_static	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_block_static_cond	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_block_static_str	gcc	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_block_auto_addr	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_block_auto_addr.c:6:146-148 (cursor: 6:146)"}
+ac_ctx_param_addr	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_param_addr.c:6:32-34 (cursor: 6:32)"}
+ac_ctx_auto_init	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_scalar_braced	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_thread_local	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_thread_local.c:6:42-44 (cursor: 6:42)"}
+ac_ctx_static_const_var	fork	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_static_const_var.c:6:40-41"}
+ac_ctx_long_of_addr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_long_of_arr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_int_of_addr	reject	Undefined {ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "<6:16--6:23>"}	Undefined {ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "<6:16--6:23>"}
+ac_ctx_ptrdiff	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_ptr_cmp	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_double_cast	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_member_value	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_member_value.c:6:16-20 (cursor: 6:18)"}
+ac_ctx_ptr_member_value	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_ptr_member_value.c:6:54-58 (cursor: 6:56)"}
+ac_ctx_long_of_int_var	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_long_of_int_var.c:6:17-24 (cursor: 6:17)"}
+ac_ctx_deref_addr_arr	gcc	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_deref_fun_addr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_arr2d_elem_plus	gcc	Defined {value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_generic_mixed	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_ctx_cond_null	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}

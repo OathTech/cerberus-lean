@@ -549,6 +549,24 @@
         "stdout_sha256": "dfaa693bc338bceb29ffe8a6d677e524767b4cb3a108722b41f67dae4f3b9417",
         "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       }
+    },
+    "ci/0268-address-invalid-type.error.c": {
+      "class": "diagnostic-text",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/09-address-constant-member-rejected.md",
+        "lean_frontend/docs/2026-11-07_worker-charter-address-constants.md"
+      ],
+      "rationale": "`int x = &1;` (the CI suite's `.error.c`: an rvalue operand of unary &, a constraint violation either way, C17 6.5.3.2#1 and 6.7.9#4). Pristine c3ff8c53f's desugarer passed the initializer (its arithmetic predicate accepted ANY operand under &: `AilEunary Address e -> is_arithmetic_constant_expression true e`) and the Ail typing then rejected it: `error: constraint violation: cannot take address of an rvalue of type 'signed int'`, exit 1. Since the address-constants fix of 2026-11-07 (fork-ahead delta, tray 09) the desugarer's 6.7.9#4 check runs first and rejects it: `error: constraint violation: initializer element is not a compile-time constant`, exit 1. Both sides reject with empty stdout and exit 1; only the diagnostic text (the constraint reported first) differs; gcc 13 -pedantic-errors: `lvalue required as unary '&' operand`. The Lean engine prints `Error {msg: \"desugaring failed at ...\"}` (Tier A row 7/8 and the ci-sweep scoreboard classify the file as a rejection on both engines). This entry admits only this case and these two full signatures; the row leaves when upstream absorbs the fix (the manifest's cabs_to_ail rows).",
+      "upstream": {
+        "status": 1,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "c0ea1a54bee731794957fdaa60efddb760a124e21e836c26fa7b3f26dc19a6fe"
+      },
+      "fork": {
+        "status": 1,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "43ff766096854c235b5acb967edc7c70bffc26a77be9e4fc3b4f3fe42e329811"
+      }
     }
   }
 }
