@@ -232,20 +232,30 @@ the outcome protocol; [USER 2026-10-20]); all three have landed, so the queue is
   predicates accept every form C17 6.6#3-#9 lists (`&arr[i].field` through the indirection arm, the decay of a static
   or member array, `"hello" + 1`, `?:` and `_Generic`, `(char *)&g + 4`, `_Generic` in the integer-constant contexts
   where the wildcard arm crashed) and reject the comma, `&local`, `*&g`, a pointer variable's value with the 6.7.9#4
-  diagnostic; both engines by generation; `scripts/check_address_constants.sh` in row 1 (234 programs); 09 is the
-  filing with 28 and 29 merged into it. Moved: 8 corpus rejections now run at gcc's values — the ci-sweep scoreboard
+  diagnostic; the accepted set is exactly upstream's plus those forms and nothing else (the pre-merge review's P1-1
+  ruling, option (ii): `(int *)(long)&g`, the offsetof idiom through an integer cast, `&g ? 3 : 4` and `_Generic` over
+  `(long)&g` keep upstream's UB055 / rejection; `(long)ga` upstream's acceptance); both engines by generation;
+  `scripts/check_address_constants.sh` in row 1 (244 programs); 09 is the filing with 28 and 29 merged into it. Moved: 8 corpus rejections now run at gcc's values — the ci-sweep scoreboard
   rows `torture_success.tsv` `921019-1.c`, `980223.c`, `pr53084.c` and `torture_fail.tsv` `desugaring/const-addr-expr-1.c`
   (`CERB_REJECT` today) change class at the next deliberate re-record of `tests/ci_sweep/results/` —, one `diagnostic-
   text` register row (`ci/0268`, `int x = &1;`: the desugarer's constraint before the typing's). Still open from it:
   the judgement areas kept as upstream (a compound literal's address `&(int){3}`, 6.5.2.5#5; the value of a string
   literal element `"hello"[1]`; a `const` object's value; `(int)&g` accepted as upstream does where gcc says not
   computable at load time) — filed as the report's open questions; an unevaluated `?:` branch or an unselected
-  `_Generic` association that is not itself a constant expression is rejected (too strict: selecting the association
-  at desugar time would re-implement the typing's selection); `tests/csmith_findings/oracle/init_addr_const.c` (a 2-D
+  `_Generic` association that is not itself a constant expression is rejected, the comma there included (6.6#3's own
+  exception, review P2-2: upstream's rejection kept — selecting the association at desugar time would re-implement the
+  typing's selection); the `_Generic` arm of `is_integer_constant_expression` is the fork's reading of 6.5.1.1#3 (6.6#6
+  does not name generic selections; upstream's TODO crash is what it replaced; review P3-3c); upstream's residuals
+  through the arithmetic predicate's retained `&` arm (review P3-1: `(long)&g - (long)&ga[0]` runs, `&g + (int)&g` is
+  UB024, gcc rejects both) and its UB055 path for a non-arithmetic cast operand (review P3-2: `(int *)(double)3`,
+  `(int *)(long)(int *)g`, `(long)&g + g`, where gcc gives a constraint) — the caller's bullet-4 tail and the cast arm's
+  integer test, a TODO of upstream's; an ill-typed decay-shaped initializer reports the typing's error at desugaring
+  (`gs.nope`; review P3-5: the `ci/0268` diagnostic class); `tests/csmith_findings/oracle/init_addr_const.c` (a 2-D
   array of structs with a braced initializer) now reaches draft 08's `Translation called on Ail program with an
   invalid node` instead of the over-strict rejection that used to stop it earlier — draft 08's class (pristine crashes
-  on it without the formerly rejected line), not gated; the GNU `?:` item below: the initializer context now rejects
-  it cleanly, the enumerator/case/array/_Static_assert contexts still crash (the witness's gap row).
+  on it without the formerly rejected line), not gated: draft 08 is the remover and this program its reproducer
+  (review P3-4); the GNU `?:` item below: the initializer context now rejects it cleanly, the
+  enumerator/case/array/_Static_assert contexts still crash (the witness's gap row).
 - **The macro integer types' conversion rank** (tray 20; the survey's cluster K, which the survey marked CORRECT having
   probed only compatibility and `_Generic`; rediscovered by cerberus-caesium's filing 05 at a blocked libxml2
   refinement; [USER 2026-11-04] approved the fork fix) — **DONE 2026-11-04** (branch `fix/macro-type-ranks`, contract

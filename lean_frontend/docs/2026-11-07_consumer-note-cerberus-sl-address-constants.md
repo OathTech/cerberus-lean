@@ -10,8 +10,11 @@ storage-duration initializer (`cabs_to_ail.lem` `is_arithmetic_constant_expressi
 `"literal" + k`, `?:` and `_Generic` over constants, address constant ± integer constant expression through pointer
 casts (`(char *)&g + 4`), and `_Generic` in enumerators, case labels, array bounds and `_Static_assert` (an internal
 error before) — and reject with the 6.7.9#4 diagnostic the comma operator, `&local`, `*&g`, a pointer variable's
-value and `&tls`, which passed the constraint before. Both engines by generation; gcc 13 `-std=c11 -pedantic-errors`
-agrees on every pinned row.
+value and `&tls`, which passed the constraint before. The accepted set is exactly upstream's plus those forms (the
+pre-merge review's P1-1 ruling): the 6.6#10 forms keep upstream's answer in both directions (`(int *)(long)&g` and the
+offsetof idiom through an integer cast stay UB055, `&g ? 3 : 4` and `_Generic` over `(long)&g` stay rejected, `(long)ga`
+and `(long)&g` stay accepted, `(int)&g` stays UB024 at execution). Both engines by generation; gcc 13 `-std=c11
+-pedantic-errors` agrees on every pinned row but the declared ones.
 
 What this means for a pin of the fork at or after this branch:
 
@@ -21,12 +24,15 @@ What this means for a pin of the fork at or after this branch:
   predicates only decide the constraint, the elaboration and the memory model are untouched; the Core of such
   programs is byte-identical (a 7413-file `--pp=core` sweep, record §4).
 - No seam, proof module, fuel form or reader signature of yours is affected: the predicates are `partial def`s of
-  `Cabs_to_ail`, a module outside the exec cone and the totality gate; the mutual block's `_lemReader_enum_definitions`
+  `Cabs_to_ail`, a module outside the exec cone and the totality gate (`is_address_constant` was a plain `def` before;
+  the module's `partial def`s 50 → 56 with the block's helpers); the mutual block's `_lemReader_enum_definitions`
   parameter is lem's lifting of a desugar-time typing call the module already made elsewhere; no `failwithI` site was
   added (the failure-reach register is 238 = 238); kernel replay is not owed.
 - The libc Core dumps, their quotation pins and every lane baseline are unchanged; one pristine-register row
   (`ci/0268-address-invalid-type.error.c`, `int x = &1;`: both engines reject, the diagnostic is now the desugarer's).
 - Declared and unchanged: a compound literal's address `&(int){3}`, the value `"hello"[1]` and a `const` object's
   value stay rejected (upstream's reading; gcc folds them under 6.6#10); an unevaluated `?:` branch or an unselected
-  `_Generic` association that is not itself constant is rejected; the GNU `?:` in an integer-constant context still
-  crashes both engines (TODO's item).
+  `_Generic` association that is not itself constant is rejected, the comma there included; upstream's residuals
+  `(long)&g - (long)&ga[0]` (runs) and `&g + (int)&g` (UB024) where gcc rejects, and its UB055 on a non-arithmetic
+  cast operand (`(int *)(double)3`); the GNU `?:` in an integer-constant context still crashes both engines (TODO's
+  item).

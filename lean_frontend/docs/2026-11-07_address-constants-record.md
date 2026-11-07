@@ -4,10 +4,12 @@ Branch `fix/address-constants`, worktree `worktrees/cerberus-lean-fix/address-co
 `mdd/cerberus-lean` = `1e5f2cbca` (merge-base upstream `c3ff8c53f`, Lean 4.35.0, lem `e6d8db5`); charter
 `docs/2026-11-07_worker-charter-address-constants.md` (commit `b58eabf4d`). Worker: Claude Fable 5.1 (agent). Every
 judgement below that no operator ruling covers is marked [AGENT]. Status: **fixed in the shared Lem (both engines by
-generation), witnessed in row 1 (234 programs), every moved row dispositioned with gcc 13 `-std=c11 -pedantic-errors`
-as the referee; the focused gates of §6 green on the M1 and M2 trees; Tier A and the full battery are the
-orchestrator's (§6.2/§6.3 appended after the runs).** The charter's premises held with two corrections (§2.6: the
-caller's sequencing, and the GNU `?:`).
+generation), witnessed in row 1 (244 programs), every moved row dispositioned with gcc 13 `-std=c11 -pedantic-errors`
+as the referee; the focused gates of §6 green on the M1, M2 and review-fix trees; Tier A and the full battery are the
+orchestrator's (§6.3, a marked placeholder).** The charter's premises held with two corrections (§2.6: the caller's
+sequencing, and the GNU `?:`); the pre-merge review (`docs/2026-11-07_address-constants-premerge-review.md`, with its
+Dispositions section) found the fix accepting four 6.6#10 forms pristine did not (P1-1) and ruled the accepted set back
+to upstream's plus the 6.6#3-#9 forms (§2.7).
 
 ## 0. Rulings and standing rules
 
@@ -29,9 +31,13 @@ caller's sequencing, and the GNU `?:`).
   branch or an unselected `_Generic` association that is not a constant expression is REJECTED (too strict, never
   fail-open: the association is selected during the Ail typing, after the predicate; upstream's own `?:` arms in
   `is_integer_constant_expression` carry the same "too strict" TODO); (d) 6.6#10 forms keep upstream's answer in
-  BOTH directions — accepted as before (`(long)&g`, `(int)&g`, `(int *)16`, `&g == &g`, `&ga[1] - &ga[0]`),
-  rejected as before (`&(int){3}`, `"hello"[1]`, a `const` object's value) — each pinned and listed in the
-  filing's open questions; (e) `_Generic` and a compound literal in `is_integer_constant_expression`, where the
+  BOTH directions — accepted as before (`(long)&g`, `(long)ga`, `(int *)16`, `&g == &g`, `&ga[1] - &ga[0]`; `(int)&g`
+  passes the constraint as upstream's does and is UB024 at execution), rejected or UB055 as before (`&(int){3}`,
+  `"hello"[1]`, a `const` object's value; `(int *)(long)&g` and the offsetof idiom through an integer cast UB055,
+  `&g ? 3 : 4` and `_Generic(1, int: (long)&g, default: 2)` rejected) — each pinned and listed in the filing's open
+  questions. The first build accepted the last four (the pre-merge review's P1-1); the orchestrator ruled option (ii)
+  [AGENT 2026-11-07, orchestrator]: the accepted set is upstream's accepted set plus the 6.6#3-#9 forms and nothing
+  else, proved both directions on the table (§2.7, §3.2); (e) `_Generic` and a compound literal in `is_integer_constant_expression`, where the
   wildcard arm crashed on conforming programs, get an arm (a crash on valid C is never a judgement; the arm is the
   standard's text); (f) the GNU `?:` keeps upstream's rejection in the new arms (accepting it routes the program to
   the mini-run's known crash, TODO's item).
@@ -95,25 +101,26 @@ arm cites its clause in the source; the table:
 
 | predicate | arm | clause | before |
 |---|---|---|---|
-| `is_lvalue_to_static_object` | `AilEunary Indirection e -> is_address_constant e` | 6.6#9 (`*`, and `[]` as `*(p + i)`, 6.5.2.1#2) | no arm (tray 09) |
-| | `AilEmemberofptr e _ -> is_address_constant e` | 6.6#9 with 6.5.2.3#4 (`p->m` is `(*p).m`: the base is a pointer constant, never a pointer object read) | `is_lvalue_to_static_object e` (`&gsp->b` passed, `&((struct S *)&gs)->b` failed) |
+| `is_lvalue_to_static_object` | `AilEunary Indirection e -> is_address_constant_ true e` (the designates-object mode: no null pointer constant, no integer cast to pointer type) | 6.6#9 (`*`, and `[]` as `*(p + i)`, 6.5.2.1#2; "a pointer to an lvalue designating an object": the offsetof idiom through `&((struct S *)0)->x` keeps upstream's UB055, `&*(int *)16` upstream's rejection) | no arm (tray 09) |
+| | `AilEmemberofptr e _ -> is_address_constant_ true e` | 6.6#9 with 6.5.2.3#4 (`p->m` is `(*p).m`: the base is a pointer constant, never a pointer object read) | `is_lvalue_to_static_object e` (`&gsp->b` passed, `&((struct S *)&gs)->b` failed) |
 | | `AilEident`, `AilEmemberof`, `AilEstr` | 6.6#9, 6.4.5#6 | unchanged |
 | | the `AilEbinary Add` and `AilEcast` arms removed | a sum and a cast are not lvalues (6.5.6, 6.5.4#5); the sum was upstream's approximation of the subscript, now the `*` arm | reachable only on ill-typed programs after the change |
 | `is_address_constant` | `AilEstr _ -> true` | 6.6#9 with 6.4.5#6, 6.3.2.1#3 (tray 29) | no arm |
 | | `AilEunary Address e` → `is_lvalue_to_static_object e` or `is_function_designator_expression e` | 6.6#9 (`&` of a static lvalue or of a function designator) | the lvalue test only; `&f` was accepted by the arithmetic predicate's hack |
-| | `AilEcast _ ty e` → `is_address_constant e`, else (`ty` a pointer) `is_integer_constant_expression false e` | 6.6#9 (a pointer cast of an address constant; an integer constant cast to pointer type); the address test first because the integer test raises UB055 on a non-arithmetic cast operand | `is_lvalue_to_static_object e \|\| is_integer_constant_expression false e`, target type ignored |
+| | `AilEcast _ ty e`, `ty` a pointer → `is_address_constant_ e`, else `is_integer_constant_expression false e` (one level up, as upstream tested it; not in the designates-object mode) | 6.6#9 (a pointer cast of an address constant; an integer constant cast to pointer type); the address test first because the integer test raises UB055 on a non-arithmetic cast operand | `is_lvalue_to_static_object e \|\| is_integer_constant_expression false e`, target type ignored |
+| | `AilEcast _ ty e`, `ty` not a pointer → `is_static_array_lvalue e` | upstream's arm in shape (an lvalue to a static object, the target type not examined), the lvalue required to be of array type — the decay 6.6#9 names: `(long)ga`, `(long)gs.arr`, `(long)"s"` as upstream accepted them, `(long)g` a value read; an address constant under it is none (`(int *)(long)&g`: upstream's UB055); upstream's integer-constant clause not taken (`(int *)(double)3`: upstream's UB055) — §2.7 | the same arm, with any static lvalue (`(long)g` passed) and an ICE |
 | | `AilEbinary e1 (Arithmetic Add) e2`, `Sub` | 6.6#7 fourth bullet, 6.6#9, 6.5.6#2-#3; the pointer operand found first | no arm (the caller's top-level arms only) |
-| | `AilEcond e1 (Just e2) e3` → the condition an arithmetic constant expression, both branches address constants; `Nothing` → `false` | 6.6#7 "shall be, or evaluate to"; 6.6#3 does not forbid `?:`; the GNU form keeps its rejection | no arm |
+| | `AilEcond e1 (Just e2) e3` → the condition an arithmetic constant expression in 6.6#8's own terms (`no_address`), both branches address constants; `Nothing` → `false` | 6.6#7 "shall be, or evaluate to"; 6.6#3 does not forbid `?:`; `&g ? &a : &b` keeps upstream's rejection; the GNU form keeps its rejection | no arm |
 | | `AilEgeneric _ _ gas` → every association an address constant | 6.5.1.1#3 with 6.6#7 (the association is selected during the Ail typing) | no arm |
 | | `AilEmemberof`, `AilEmemberofptr`, `AilEunary Indirection` → `is_decayed_static_lvalue` | 6.6#9 "implicitly by the use of an expression of array or function type", 6.3.2.1#3-#4 | no arm |
-| `is_decayed_static_lvalue` | `is_lvalue_to_static_object a_expr` and the type of `a_expr` annotated in `GenTyping.CTXsizeof` (`Mini_pipeline.annotate_expression_seeded`, `qualified_ctype_of_seeded`, the two calls the `sizeof` desugaring makes at :2485) is an array or function type; a typing error is `E.fail_ailtyping` (the program's own) | in `CTXsizeof` neither the lvalue conversion nor the decay is performed (`genTyping.lem:1821-1836`), so `gs.arr` types `int[3]`, `gs.b` `int`, `gq.p` `int *`, `*f` a function type | new |
-| `is_arithmetic_constant_expression` | `AilEunary Address e` → `is_lvalue_to_static_object e` or the function-designator test | 6.6#9; keeps upstream's acceptance of an address constant inside an arithmetic-typed expression (`(long)&g`, `&g == &g`: 6.6#10 forms gcc accepts) | `is_arithmetic_constant_expression true e` (any identifier) |
+| `static_lvalue_type` / `is_decayed_static_lvalue` | `is_lvalue_to_static_object a_expr` and the type of `a_expr` annotated in `GenTyping.CTXsizeof` (`Mini_pipeline.annotate_expression_seeded`, `qualified_ctype_of_seeded`, the two calls the `sizeof` desugaring makes at :2485) is an array or function type; a typing error is `E.fail_ailtyping` (the program's own) | in `CTXsizeof` neither the lvalue conversion nor the decay is performed (`genTyping.lem:1821-1836`), so `gs.arr` types `int[3]`, `gs.b` `int`, `gq.p` `int *`, `*f` a function type | new |
+| `is_arithmetic_constant_expression` | `AilEunary Address e` → `is_lvalue_to_static_object e` or the function-designator test; `false` in the `no_address` mode | 6.6#9; the top-level entry keeps upstream's acceptance of an address constant inside an arithmetic-typed expression (`(long)&g`, `&g == &g`: 6.6#10 forms gcc accepts); the operands of `?:` and `_Generic` are tested in the `no_address` mode (6.6#8's own operands), so `&g ? 3 : 4` keeps upstream's rejection | `is_arithmetic_constant_expression true e` (any identifier) |
 | | `AilEunary Indirection _ -> false` | 6.6#9 (no object's value is accessed) | recursed (`*&g` passed) |
 | | `AilEunary PostfixIncr/PostfixDecr _ -> false` | 6.6#3 | recursed |
 | | `AilEbinary _ Comma _ -> false` | 6.6#3 (audit item 16) | the catch-all binary arm accepted it |
-| | `AilEcond e1 (Just e2) e3` → all three constant; `Nothing` → `false` | 6.6#3, 6.6#8 (tray 28); the GNU form keeps its rejection | no arm |
-| | `AilEgeneric _ _ gas` → every association constant | 6.5.1.1#3 (audit item 17) | no arm |
-| `is_integer_constant_expression` | `AilEgeneric _ _ gas` → every association an ICE | 6.5.1.1#3, 6.6#6 | the wildcard `error` (a crash) |
+| | `AilEcond e1 (Just e2) e3` → all three constant in the `no_address` mode; `Nothing` → `false` | 6.6#3, 6.6#8 (tray 28); the GNU form keeps its rejection | no arm |
+| | `AilEgeneric _ _ gas` → every association constant in the `no_address` mode | 6.5.1.1#3 (audit item 17) | no arm |
+| `is_integer_constant_expression` | `AilEgeneric _ _ gas` → every association an ICE | the fork's READING: 6.6#6 does not name generic selections among an ICE's operands; the arm reads 6.5.1.1#3 (the selected association's expression, of identical type and value) as making the selection transparent — universal practice, the filing's open question (review P3-3c) | the wildcard `error` (a crash on a conforming program: a TODO) |
 | | `AilEcompound _ _ _ -> false` | 6.6#6 (not an operand of an ICE) | the wildcard `error` (a crash) |
 | the caller | `is_address_constant` consulted only when the arithmetic test failed | 6.6#7's bullets in order; see §2.6 | both run, or'ed |
 
@@ -144,17 +151,25 @@ ill-typed and would get the same error from the Ail typing next.
 
 ### 2.4 Deliberately unchanged: 6.6#10 forms, the dead branches, the GNU `?:`
 
-- `(long)&g`, `(int)&g`, `(long)ga`, `&g == &g`, `(int)(&ga[2] - &ga[0])`, the `offsetof` idiom, `(int *)16`: 6.6#10
-  forms upstream accepted (through its arithmetic cast arm or its address cast arm) and gcc accepts; kept
-  (`(int)&g`: gcc rejects as not computable at load time; the fork keeps upstream's acceptance — a narrowing
-  conversion of an address, a 6.6#10 question for upstream).
+- `(long)&g`, `(long)ga`, `&g == &g`, `(int)(&ga[2] - &ga[0])`, `(int *)16`: 6.6#10 forms upstream accepted (through its
+  arithmetic cast arm or its address cast arm) and gcc accepts; kept. `(int)&g`: upstream's predicate passes it and the
+  execution reports `UB024_out_of_range_pointer_to_integer_conversion` (gcc: not computable at load time); kept as
+  upstream's, a declared row (review P2-1). `(int *)(long)&g`, the `offsetof` idiom `(int)(unsigned long)&((struct S
+  *)0)->x` (an address cast to integer; an address through a null pointer's `->`), `&g ? 3 : 4`, `_Generic(1, int:
+  (long)&g, default: 2)`: 6.6#10 forms upstream did NOT accept (UB055 or the constraint) and gcc accepts; the first
+  build accepted them, the review's P1-1 ruling returned them to upstream's answers (§2.7). `(long)&g - (long)&ga[0]`
+  runs and `&g + (int)&g` is UB024 on upstream and the fork where gcc rejects: the arithmetic predicate's retained
+  `&` arm (review P3-1, residuals); `(int *)(double)3` is upstream's UB055 path (review P3-2).
 - `&(int){3}` (a compound literal has static storage duration at file scope, 6.5.2.5#5, so `&` of it is arguably
   an address constant), `"hello"[1]` and `*"hello"` (reads of a string literal element), `static const int k = 3;
   static int a = k;` (a `const` object is not a constant expression in C; gcc folds it): upstream rejected, gcc
   accepts; kept as upstream's rejection, listed as the filing's open questions ([AGENT]: the compound literal is
   the charter's named judgement area; the other two are 6.6#10 extensions of gcc's).
 - An unevaluated `?:` branch or an unselected `_Generic` association that is not a constant expression (`1 ? 3 :
-  f()`, `1 ? 3 : g`, `_Generic(1, int: 3, default: g)`, `1 ? &g : gp`): rejected, declared (§0 (c)).
+  f()`, `1 ? 3 : g`, `_Generic(1, int: 3, default: g)`, `1 ? &g : gp`), the comma there included (`1 ? 3 : (1, 2)`,
+  `_Generic(1, int: 3, default: (1, 2))`: 6.6#3's own exception, 6.5.15#4 — the strongest instance of the "too strict"
+  TODO upstream carries on its `?:` arms; review P2-2): rejected, upstream's rejection kept as a declared
+  over-strictness (§0 (c)); the comma in `_Generic`'s unevaluated CONTROLLING expression is not walked and so accepted.
 - `3 ?: 4` (GNU): a constraint violation in the initializer context as before; in the enumerator, case-label,
   array-bound and `_Static_assert` contexts upstream's `is_integer_constant_expression` arm accepts it and the
   mini-run crashes (`PEcase, mismatched` / `the driver found less/more …`): TODO's item, untouched, one gap row.
@@ -164,9 +179,10 @@ ill-typed and would get the same error from the Ail typing next.
 OCaml: `ocaml_frontend/generated/cabs_to_ail.ml` only (279 changed lines: the two helpers, the ICE arms, the mutual
 block, the caller's sequencing; `Mini_pipeline.annotate_expression_seeded`/`qualified_ctype_of_seeded` and
 `fail_ailtyping` as at the `sizeof` site). Lean: `lean_frontend/generated/Cabs_to_ail.lean` only (366 lines): the
-block is a `mutual … end` of four `partial def`s with the `_lemReader_enum_definitions` parameter lifted by lem
-(`Cabs_to_ail` is outside the totality gate's 22 modules; the three predicates were `partial def`s before, 50 in
-the module). `diff -rq` over both trees against the mainline's: no other file. The build's warnings for the module
+block is a `mutual … end` of `partial def`s with the `_lemReader_enum_definitions` parameter lifted by lem
+(`Cabs_to_ail` is outside the totality gate's 22 modules; `is_arithmetic_constant_expression` and
+`is_lvalue_to_static_object` were `partial def`s before and `is_address_constant` a plain `def`; the module's
+`partial def`s: 50 at the base, 52 at the reviewed tip, 56 after the narrowing's helpers — review P3-3a). `diff -rq` over both trees against the mainline's: no other file. The build's warnings for the module
 are upstream's own unused `loc` binders (the two defs that had them before; one new binder of mine was removed
 before M1). Lem-sync stamp re-recorded by `make lean-prelude-src`.
 
@@ -180,11 +196,38 @@ before M1). Lem-sync stamp re-recorded by `make lean-prelude-src`.
 - `static int a = 3 ?: 4;` was a clean constraint violation before and became the mini-run's crash on the first
   build (the new cond arms accepted the GNU form); the arms now reject the form (`Nothing -> false`).
 
+### 2.7 The narrowing (the pre-merge review's P1-1, option (ii)) [AGENT 2026-11-07, orchestrator ruling; the worker's arms]
+
+The first build accepted four 6.6#10 forms pristine did not (`(int *)(long)&g` and the offsetof idiom through an
+integer cast: UB055 on pristine; `&g ? 3 : 4` and `_Generic(1, int: (long)&g, default: 2)`: rejected on pristine) —
+through the cast arm's recursion regardless of the target type, and through the new `?:`/`_Generic` arms composed with
+the retained `&` arm — and the record attributed them to upstream. The ruling: the accepted set is exactly upstream's
+accepted set plus the 6.6#3-#9 forms, nothing else, and no form upstream accepted may become rejected (the reviewer's
+`(long)ga`). The narrowing, by matching upstream's arms rather than special-casing: (1) a `no_address` mode of the
+arithmetic predicate under which the `&` arm answers false, used for the operands of `?:` and `_Generic` (upstream had
+no such arms to compose an address with) and for the condition of `is_address_constant`'s `?:` arm, while the top-level
+entry keeps upstream's `(long)&g`/`&g == &g`; (2) the cast arm split by the target type: a pointer target is 6.6#9's
+(a pointer cast of an address constant; an integer constant cast to pointer type, tested one level up as upstream
+tested it), a non-pointer target is UPSTREAM'S ARM in shape — the operand an lvalue to a static object, the target
+type not examined — with the lvalue required to be of array type (`is_static_array_lvalue`: the decay 6.6#9 names),
+which keeps `(long)ga`, `(long)gs.arr` and `(long)"s"` and lets `(int *)(long)&g` fall to upstream's integer test and
+its UB055; upstream's integer-constant clause under a non-pointer cast is not taken (no conforming program needs it:
+`(long)5` is an arithmetic constant expression; `(int *)(double)3` keeps upstream's UB055); (3) a designates-object
+mode of `is_address_constant` for the base of `*` and `->` (no null pointer constant, no integer cast to pointer
+type: 6.6#9's "a pointer to an lvalue designating an object"), so the offsetof idiom keeps upstream's UB055 and
+`&*(int *)16` upstream's rejection while `&((struct S *)&gs)->b` is accepted. Proved both directions on the
+472-program table (§3.2). The reviewer's compositions that are listed forms stay accepted (`1 ? _Generic(1, int: &g,
+default: &ga[0]) : &ga[1]`, 6.6#7 "evaluate to"; `2 + ga - 1`, 6.6#7's fourth bullet twice; `_Generic((1, 2), int: 3,
+default: 4)`, the controlling expression unevaluated).
+
 ## 3. The vicinity
 
 ### 3.1 The table (the instrument `.tmp/ac/gen.py` + `run.sh`, deleted at slice end)
 
-446 programs, every one returning a small int: the integer-constant-expression forms (62: literals, character and
+472 programs (446 at M1; the pre-merge review's probe forms added at the review fix: the comma in a dead `?:`
+branch, in an unselected `_Generic` association and in the unevaluated controlling expression, `&g ? 3 : 4`, `_Generic`
+over `(long)&g`, `?:` over `_Generic` over address constants, `2 + ga - 1`, `(long)&g - (long)&ga[0]`, `&g + (int)&g`,
+`(int *)(double)3`), every one returning a small int: the integer-constant-expression forms (62: literals, character and
 enumeration constants, `sizeof`/`_Alignof`, cast floating constants, every binary and unary operator, casts, `?:`
 in seven shapes incl. dead branches with a division by zero, a negative shift, a signed overflow, a call or a
 variable, the GNU `?:`, `_Generic` in six shapes incl. a variable or a call as the unevaluated controlling
@@ -203,21 +246,39 @@ object or a parameter, a braced scalar, `_Thread_local`, a `const` object, casts
 pointer differences and comparisons, a cast chain, a bit-field width, member values, `*&` of an array and of a
 function, a mixed `_Generic`, `?:` over an address constant and `0`). Referees: gcc 13.3.0 (`-std=c11
 -pedantic-errors -O0`; a rejection recorded as its first error line), pristine `c3ff8c53f`, the pre-change fork
-oracle and Lean engine (a snapshot of the binaries and the dereferenced install tree), the rebuilt oracle, the
-rebuilt Lean engine on the rebuilt oracle's Cabs JSON.
+oracle and Lean engine (a snapshot of the binaries and the dereferenced install tree; retired after M2 — the review's
+26 added programs have pristine's lines and the final engines' only), the rebuilt oracle, the rebuilt Lean engine on
+the rebuilt oracle's Cabs JSON.
 
-### 3.2 Results (derived from `before.tsv`/`after-fl.tsv`)
+### 3.2 Results (derived from `before.tsv`, `after-fl.tsv` (M2), `after2.tsv`/`after2-fl.tsv` (the review fix))
 
-| | before (pristine = fork; Lean = oracle) | after (Lean = oracle) |
-|---|---|---|
-| agree with gcc, accepted | 202 | 330 |
-| agree with gcc, rejected | 80 | 100 |
-| over-strict (gcc runs, both engines reject) | 77 | 12 (every one declared, §2.4; incl. the bit-field gap) |
-| fail-open (gcc rejects, both engines run) | 3 | 0 |
-| crash | 84 (28 wildcard, 2 typing, 4 GNU `?:`, 50 preamble) | 4 (the GNU `?:` in the four ICE contexts, TODO's) |
-| Lean ≠ oracle, or a value ≠ gcc's on an accepted row | 0 | 0 |
+| | before, 446 (pristine = fork; Lean = oracle) | M2, 446 (Lean = oracle) | review fix, 472 (Lean = oracle) |
+|---|---|---|---|
+| agree with gcc, accepted | 202 | 330 | 335 |
+| agree with gcc, rejected | 80 | 100 | 106 |
+| over-strict (gcc runs, both engines reject) | 77 | 12 (every one declared, §2.4; incl. the bit-field gap) | 26 (every one declared: §2.4's, the four P1-1 forms at upstream's answers, the ten dead-branch-comma rows of the five contexts) |
+| fail-open (gcc rejects, both engines run) | 3 | 0 | 1 (`(long)&g - (long)&ga[0]`: upstream's acceptance kept by the P1-1 rule, review P3-1) |
+| crash | 84 (28 wildcard, 2 typing, 4 GNU `?:`, 50 preamble) | 4 (the GNU `?:` in the four ICE contexts, TODO's) | 4 (the same) |
+| Lean ≠ oracle, or a value ≠ gcc's on an accepted row | 0 | 0 | 0 |
 
-112 rows moved on the fork, every one in the intended direction: 63 rejected → accepted (gcc accepts), 20
+The accepted-set rule, both directions, on the 472 rows (the review fix against pristine): **94 rows the fork accepts
+and pristine does not** — every one gcc-accepted and a 6.6#3-#9 form: `?:` over constants in a static initializer (6
+shapes) and `_Generic` over constants in all five contexts (6 shapes each, 30, where pristine crashed in four contexts),
+`?:`/`_Generic` over floating constants (2), `±` an integer constant expression (`(ga + 1) + 1`, `2 + ga - 1`, `gs.arr
++ 2`, `gsa[1].arr + 2`, `g2[1] + 0`, `"hello" + k` in 8 shapes), the `[]`/`.`/`->`/`*`/pointer-cast chains (`&gs.arr[2]`,
+`&gsa[1].b`, `&gsa[1].i.x`, `&gsa[1].arr[2]`, `&ga[1 ? 2 : 0]`, `(int *)&g`, `(int *)(char *)&g`, `(int *)((char *)&ga +
+8)`, `(void *)&g`, `(void *)&gsa[1].b`, `(int *)(void *)(char *)&g`, `&((struct S *)&gs)->b`, `&(*(struct S *)&gs).b`,
+`((struct S *)&gs)->arr + 2`, `&(*(gsa + 1)).b`, `&"hello"[1]`, `(const char *)&"hello"[1]`), the decays (`gs.arr`,
+`g2[1]`, `*(g2 + 1)`), `?:`/`_Generic` over address constants and their compositions (7), function designators under
+`*`, `?:` and a pointer cast (4), and the same forms in the aggregate, external, block-scope and braced contexts (12).
+**12 rows pristine accepts and the fork does not** — every one gcc-rejected: `(1, 3)`, `(1.0, 3.0)`, `(0, &g)`, `*&g`,
+`*&gp`, `&*gp`, `&gp[0]`, `&gsp->b`, `&ga[g - 1]`, `&ga[(1, 2)]`, `&t` of a `_Thread_local`, `(long)g`. **15 rows where
+neither accepts and the verdict moved** — a crash or an execution UB became the constraint diagnostic (the
+`_Generic`-with-a-non-constant-association and compound-literal rows in the four integer-constant contexts, `(int *)g`
+from UB043, `&local`/`&param` from the typing crash). The four P1-1 forms (`ac_cast_int_of_addr`, `ar_offsetof_idiom`,
+`ice_init_cond_addr_cond`, `ar_generic_long_addr`) are at pristine's answers. Lean = oracle on all 472.
+
+At M2 (446 rows), 112 moved on the fork, every one in the intended direction: 63 rejected → accepted (gcc accepts), 20
 crash → accepted (the `_Generic` contexts), 6 UB055 → accepted (`(char *)&g + 4` and the cast chains, the
 `offsetof` idiom), 12 accepted → rejected (gcc rejects: `(1, 3)`, `(1.0, 3.0)`, `(0, &g)`, `*&g`, `*&gp`,
 `&*gp`, `&gp[0]`, `&gsp->b`, `&ga[g - 1]`, `&ga[(1, 2)]`, `(int *)g`, `(long)g`, `&t` of a `_Thread_local`),
@@ -234,29 +295,38 @@ enumerator/case/array contexts; gcc accepts), 1 crash → declared UB204 (the sa
 | F2 | the comma (int, double, address), `*&g`, `&local`/`&param`, pointer variables under `*`/`[]`/`->`, `(int *)g`, `(long)g`, `gs.b`, `&tls` accepted in a static initializer | fail-open on the 6.7.9#4 constraint; gcc rejects each | FIXED (§2.2); the rejections pinned |
 | F3 | `_Generic` in an enumerator, a case label, a file-scope array bound, a `_Static_assert` crashes both engines (the wildcard arm); a compound literal there likewise | crash on conforming input (gcc: a diagnostic for the literal) | FIXED: the two arms (§2.1); 24 + 4 rows |
 | F4 | `&local` in a block-scope static crashed the Ail typing after the hack let it through | crash on invalid input | closed by F2 (the constraint violation now) |
-| F5 | an unevaluated `?:` branch / an unselected `_Generic` association that is not constant is rejected | declared over-strict (§0 (c)) | pinned `fork` rows; in the filing |
+| F5 | an unevaluated `?:` branch / an unselected `_Generic` association that is not constant is rejected — the comma there included (6.6#3's own exception, review P2-2) | declared over-strict (§0 (c)): upstream's rejection kept | pinned `fork` rows; the filing's open question |
 | F6 | `&(int){3}`, `"hello"[1]`, a `const` object's value: upstream rejects, gcc accepts (6.6#10) | judgement areas | kept; pinned `fork` rows; the filing's open questions |
-| F7 | `(long)&g`, `(int)&g`, `(long)ga`, `&g == &g`, pointer differences, the `offsetof` idiom, `(int *)16`: accepted (6.6#10) | upstream's answers kept | pinned `gcc` rows (gcc agrees on each; `(int)&g` returns 3 on both and gcc) |
+| F7 | `(long)&g`, `(long)ga`, `&g == &g`, pointer differences, `(int *)16`: accepted (6.6#10) | upstream's answers kept | pinned `gcc` rows (gcc agrees on each); `(int)&g` passes the constraint and is UB024 at execution on both engines, gcc rejects: a declared row (review P2-1) |
+| F10 | `(int *)(long)&g`, the offsetof idiom through an integer cast, `&g ? 3 : 4`, `_Generic(1, int: (long)&g, default: 2)`: accepted by the first build, not by upstream (UB055 / rejected); gcc accepts | 6.6#10 forms the fork must not take (review P1-1, option (ii)) | returned to upstream's answers (§2.7); declared rows |
+| F11 | `(long)&g - (long)&ga[0]` runs, `&g + (int)&g` passes the constraint (UB024) on upstream and the fork; gcc rejects | residual fail-open through the arithmetic predicate's retained `&` arm (review P3-1) | upstream's, kept; declared rows; TODO and the filing |
+| F12 | `(int *)(double)3`, `(int *)(long)(int *)g`, `(long)&g + g`: UB055 where gcc gives a constraint diagnostic | upstream's UB055 path for a non-arithmetic cast operand (review P3-2) | upstream's, kept; one declared row; TODO and the filing |
+| F13 | an ill-typed decay-shaped initializer (`static int *q = gs.nope;`) reports the typing's error at desugaring where pristine said `not a compile-time constant` (gcc: `has no member named`) | diagnostic-text class, as `ci/0268` (review P3-5) | in no walked corpus; §7 |
 | F8 | the GNU `?:` in the four ICE contexts crashes (TODO's item) | pre-existing, another mechanism | one gap row; the filing's related finding |
 | F9 | a braced initializer of an array of structs with an array member is an invalid node at translation (draft 08) | pre-existing, another mechanism | the probes fill the array in `main`; the filing's related finding |
 
-### 3.4 The witness (`scripts/check_address_constants.sh`, row 1 via `test_unit.sh`; `tests/address_constants/`, 234 programs)
+### 3.4 The witness (`scripts/check_address_constants.sh`, row 1 via `test_unit.sh`; `tests/address_constants/`, 244 programs)
 
-The table's programs in the initializer context in full (`ac_*` 122, `ar_*` 13, `ice_init_*` 62) and the slice's
+The table's programs in the initializer context in full (`ac_*` 126, `ar_*` 15, `ice_init_*` 66) and the slice's
 forms in the other four contexts (`lit`, `cond`, `comma`, `compound`, the six `generic*`: 40) plus the gap row
-(234; the bit-field width excluded: unsupported, another mechanism). Pins (`expected.txt`: name, class, the oracle's
-line, the Lean engine's line): 182 `gcc` rows — both engines print gcc 13's batch line byte for byte, exit 0; 40
-`reject` rows — the oracle exits 1 with the pinned first error line (file prefix stripped), the Lean engine exits 1
-with the pinned `Error {msg: "desugaring failed at <name>.c:<loc>"}` line (the location included; the programs
-run under their bare names in the scratch directory), gcc's rejection beside in `gcc.txt` (a `_Static_assert`
-pins upstream's `UB204_illtyped_Static_assert` verdict on both); 11 `fork` rows — the declared verdicts of F5/F6,
-each named in `FORK_PINNED`, gcc's line beside; 1 `gap` row (F8: `PEcase, mismatched`, rc 125 / 134). The class of
-every row is checked against `gcc.txt` and the declared lists in both directions; the total and the class counts
-are pinned (234 = 182 + 40 + 11 + 1); `pristine.txt` carries pristine's lines (112 moved). Five plants on a
+(244; the bit-field width excluded: unsupported, another mechanism). Pins (`expected.txt`: name, class, the oracle's
+line, the Lean engine's line): 183 `gcc` rows — both engines print gcc 13's batch line byte for byte, exit 0; 39
+`reject` rows — the oracle exits 1 with the pinned `constraint violation` line (file prefix stripped), the Lean engine
+exits 1 with the pinned `Error {msg: "desugaring failed at <name>.c:<loc>"}` line (the location included; the programs
+run under their bare names in the scratch directory), gcc's rejection beside in `gcc.txt`; the class check admits
+only such a pair — or upstream's `UB204_illtyped_Static_assert` verdict in a `_Static_assert` and its `feature not yet
+supported: variable length array type` refusal in a file-scope array bound, both declared in the header — so a program
+that passed the constraint and died at execution cannot sit in the class (review P2-1); 21 `fork` rows — the declared
+verdicts of F5/F6/F7/F10/F11/F12, each named in `FORK_PINNED`, gcc's line beside; 1 `gap` row (F8: `PEcase,
+mismatched`, rc 125 / 134). The class of every row is checked against `gcc.txt` and the declared lists in both
+directions; the total and the class counts are pinned (244 = 183 + 39 + 21 + 1); `pristine.txt` carries pristine's
+lines (113 moved; for the three review-added rows that moved the Lean column is pristine's oracle line standing in,
+stated in its header — the base engine was retired after M2). Five plants on a
 14-program subset, counts derived in the script (5 moved and 3 unmoved `gcc` rows, 2 moved and 1 unmoved `reject`
 rows, 2 `fork` rows, the gap row): `pristine-pair` 14, `lean-pristine` 7, `lean-fixed` 14, `oracle-rc` 9 (the
 gap row's rc 125 included), `expect-tamper` 3 (the altered pin also fails the class check — the stdio precedent's
-count). Verbatim:
+count). Verbatim (the review-fix tree; the M2 run, 234 programs, had the same plant counts and `OK (234 programs …
+182 … 40 … 11 … 1 gap control … 112 rows moved …)`):
 
 ```text
 check_address_constants: selftest plant 'pristine-pair' caught: 14 failing check(s) (= expected 14; incl. the required programs)
@@ -264,12 +334,12 @@ check_address_constants: selftest plant 'lean-pristine' caught: 7 failing check(
 check_address_constants: selftest plant 'lean-fixed' caught: 14 failing check(s) (= expected 14; incl. the required programs)
 check_address_constants: selftest plant 'oracle-rc' caught: 9 failing check(s) (= expected 9; incl. the required programs)
 check_address_constants: selftest plant 'expect-tamper' caught: 3 failing check(s) (= expected 3; incl. the required programs)
-check_address_constants: OK (234 programs, nolibc: 182 batch lines of both engines = gcc 13's pinned line, exit 0 on both — every integer-constant-expression form (literals, character and enumeration constants, sizeof and _Alignof, cast floating constants, every operator, ?: incl. dead branches with a division by zero, a negative shift or an overflow, _Generic incl. a variable or a call as the unevaluated controlling expression) in a static initializer and the slice's forms in enumerators, case labels, array bounds and _Static_assert; the arithmetic forms; every address-constant shape (& of static objects, array and 2-D elements, members, nested and array-element members, member arrays and their decay, &*&g, string literals plus an offset and their elements, function designators under &, * and casts, pointer casts and chains, ?: and _Generic over address constants, null pointer constants, integer-to-pointer casts) in file-scope, external, block-scope, struct, array, designated and nested initializers; 40 rejected by both engines with the pinned diagnostic where gcc rejects too (the comma, assignment, increment and call operators, a variable, value reads through *, [] and ->, pointer variables, & of an automatic object or a parameter, (int *)g, (long)g, & of a _Thread_local, a compound literal or a non-constant in the integer-constant contexts); 11 pinned to the fork's declared verdict with gcc's beside it in gcc.txt (an unevaluated ?: branch or an unselected _Generic association that is not constant, & of a compound literal, the value of a string literal element or of a const object); 1 gap control: the GNU ?: in a case label still crashes both engines (TODO); 112 rows moved from pristine c3ff8c53f's lines)
+check_address_constants: OK (244 programs, nolibc: 183 batch lines of both engines = gcc 13's pinned line, exit 0 on both — every integer-constant-expression form (literals, character and enumeration constants, sizeof and _Alignof, cast floating constants, every operator, ?: incl. dead branches with a division by zero, a negative shift or an overflow, _Generic incl. a variable, a call or a comma as the unevaluated controlling expression) in a static initializer and the slice's forms in enumerators, case labels, array bounds and _Static_assert; the arithmetic forms; every address-constant shape (& of static objects, array and 2-D elements, members, nested and array-element members, member arrays and their decay, &*&g, string literals plus an offset and their elements, function designators under &, * and casts, pointer casts and chains, ?: and _Generic over address constants and their compositions, null pointer constants, integer-to-pointer casts, (long)&g and (long)ga as upstream accepts them) in file-scope, external, block-scope, struct, array, designated and nested initializers; 39 rejected by both engines with the pinned constraint diagnostic where gcc rejects too (the comma, assignment, increment and call operators, a variable, value reads through *, [] and ->, pointer variables, & of an automatic object or a parameter, (int *)g, (long)g, & of a _Thread_local, a compound literal or a non-constant in the integer-constant contexts); 21 pinned to the fork's declared verdict with gcc's beside it in gcc.txt (an unevaluated ?: branch or an unselected _Generic association that is not constant, the comma there included; & of a compound literal, the value of a string literal element or of a const object; the 6.6#10 forms kept at upstream's answer: (int *)(long)&g and the offsetof idiom UB055, &g ? 3 : 4 and _Generic over (long)&g rejected, (int)&g UB024 at execution, (long)&g - (long)&ga[0] running and &g + (int)&g UB024, (int *)(double)3 UB055); 1 gap control: the GNU ?: in a case label still crashes both engines (TODO); 113 rows moved from pristine c3ff8c53f's lines)
 ```
 
 The first self-test run caught the tamper plant at 3, not the 2 I had derived (the altered pin fails the class check
 as well as the two engine checks): the derivation was corrected, the script's own plant found the worker's miscount.
-Cost (measured standalone, `/usr/bin/time`): the real run 27.14 s, the self-test with the real run 35.29 s.
+Cost (measured standalone, `/usr/bin/time`, the M2 tree): the real run 27.14 s, the self-test with the real run 35.29 s.
 
 ## 4. Moved rows and pins (gcc the referee)
 
@@ -319,12 +389,17 @@ same Core hash: an instrument artefact). Every moved row, both engines run on it
 The gcc second-oracle lane (Tier B row 7) walks `tests/minimal`, `debug`, `float`, `immaculate/nolibc` and csmith: none
 of the moved rows. The 4 gcc-torture rows are a Tier C scoreboard with no baseline.
 
+Re-run on the review-fix tree (`a5fc0fcd9`, the narrowing of §2.7) against the same before pass: the same 14 differing
+rows, the same 9 real moves; 0 rows moved between the M2 oracle and the narrowed one (no walked corpus program used a
+6.6#10 form the first build had accepted).
+
 ## 5. Register entries
 
 - **Fork-drift manifest:** §4.2. **Pristine-difference register** (`scripts/upstream_oracle_differences.json`): one
   `diagnostic-text` row, `ci/0268-address-invalid-type.error.c`, 24 → 25 rows; signatures from the lane's own report
   (`--corpus ci --only 0268-address-invalid-type`: `Independent oracle: subset_passed; {'reviewed_difference': 1}`);
-  the citations are the tray-09 filing and the charter (the lane requires tracked files; this record is added at M3).
+  the citations are this record, the tray-09 filing and the charter (the lane requires tracked files; the record was
+  added once committed). Re-checked on the review-fix tree: `subset_passed; {'reviewed_difference': 1}`.
 - **Failure-reach register:** no new row (`check_failure_reach: OK (238 pure failure sites = the 238 register rows
   exactly (236 in the exec dependency closure + 2 unresolved-owner; …); position classes unchanged; 0 DISCARDABLE; reach
   UNREACHABLE-BY-INVARIANT=175 REACHABLE=42 UNKNOWN=21; every row sealed; tally line consistent)`): the new arms add
@@ -367,13 +442,41 @@ Independent oracle: subset_passed; {'reviewed_difference': 1}
 (A first tier-b run during which the documents were being edited reported `source unchanged: False` and was repeated
 with the tree held; a first `--only` run before the row existed reported `difference: 1`, and one with the row citing
 this then-untracked record was refused by the lane's citation check — the row cites the tracked filing and charter.)
-Tier A on the M1 commit and the full battery on the M3 tip are the orchestrator's: appended after the runs.
+### 6.3 The review fix (`a5fc0fcd9`): the focused gates re-run (verbatim)
+
+```text
+make rc=0 / dune build rc=0 / dune install rc=0 / cerberus.install rc=0 / Build completed successfully (413 jobs).
+check_fork_drift: OK — layer 1: 95 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 33 differing generated files, all hash-pinned (merge-base c3ff8c53f05982745f9b3a10b3d05442e214bcb5; lem-pin e6d8db5680962f49060257d6c2bcb13c284b910f matches lem -v lean-backend-v0.1.0-alpha.1-78-ge6d8db5 (hex prefix))
+check_fork_drift: SELFTEST OK (31 plants with declared verdict/message: …)
+check_failure_reach: OK (238 pure failure sites = the 238 register rows exactly (236 in the exec dependency closure + 2 unresolved-owner; …); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=175 REACHABLE=42 UNKNOWN=21; every row sealed; tally line consistent)
+check_pin_sites: OK — lem-pin e6d8db5680962f49060257d6c2bcb13c284b910f at every site (lakefile rev, 3 lake-manifests rev+inputRev, README pin command)
+OK                                                           (test_stops.py, 26 tests)
+libc_prep: OK (libc: pin + regenerated dump == 519d7c927cca883da2a004c101e064ffd52c352cb4d037d38ac589a29077f210, 4156776 bytes)   (and libc_inner_arg_temps OK)
+[1/1] MATCH ac_arr_elem_member: VAL:{value: "Specified(3)", …}   (ce_ternary_init 10, ac_string_plus 101, ce_generic 3 MATCH; ce_comma_init cerb_skip=1)
+check_address_constants: selftest plants 14 / 7 / 14 / 9 / 3 (= expected); OK (244 programs … 183 … 39 … 21 … 1 gap control … 113 rows moved …)   (§3.4 verbatim)
+Independent oracle scope: tier-b; 1001 rows in 230.9s; source unchanged: True
+Independent oracle: passed; {'semantic_agreement': 945, 'reviewed_difference': 24, 'matching_failure': 30, 'interface_agreement': 2}
+Independent oracle: subset_passed; {'reviewed_difference': 1}          (--corpus ci --only 0268-address-invalid-type)
+```
+
+### 6.4 PLACEHOLDER — Tier A on `1c21272e7` and the full battery on the review-fix tip (orchestrator-run): to be appended after the runs
 
 ## 7. Not done / open
 
 - The judgement areas kept as upstream (§2.4): `&(int){3}`, the values `"hello"[1]` / `*"hello"`, a `const` object's
-  value (rejected; gcc folds them), `(int)&g` (accepted; gcc: not computable at load time) — the filing's open
-  questions for upstream.
+  value (rejected; gcc folds them), `(int)&g` (the constraint passes, UB024 at execution; gcc: not computable at load
+  time), `(int *)(long)&g` and the offsetof idiom through an integer cast (UB055), `&g ? 3 : 4` and `_Generic` over
+  `(long)&g` (rejected) — the filing's open questions for upstream (review P1-1, option (ii)).
+- Residual fail-open vs gcc through the arithmetic predicate's retained `&` arm, upstream's (review P3-1): `(long)&g -
+  (long)&ga[0]` runs (the table's one fail-open), `&g + (int)&g` passes the constraint and is UB024 at execution.
+- Upstream's UB055 path for a non-arithmetic cast operand (review P3-2): `(int *)(double)3`, `(int *)(long)(int *)g`,
+  `(long)&g + g` — UB055 where gcc gives a constraint diagnostic; the caller's bullet-4 tail and the cast arm's integer
+  test are upstream's; a TODO item.
+- Diagnostic-text class (review P3-5): an ill-typed decay-shaped initializer (`static int *q = gs.nope;`) reports the
+  typing's own error at desugaring (`no member named 'nope' in 'struct S'`) where pristine said `not a compile-time
+  constant`; as `ci/0268`; in no walked corpus.
+- The `_Generic` arm of `is_integer_constant_expression` is the fork's reading of 6.5.1.1#3 (review P3-3c): 6.6#6 does
+  not name generic selections; upstream's TODO crash is what it replaced; a question in the filing.
 - An unevaluated `?:` branch or an unselected `_Generic` association that is not itself a constant expression is
   rejected (declared); selecting the association at desugar time would re-implement the typing's selection.
 - The GNU `?:` in the enumerator, case-label, array-bound and `_Static_assert` contexts still crashes both engines

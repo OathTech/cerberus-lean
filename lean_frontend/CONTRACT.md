@@ -195,9 +195,10 @@ witnesses and are not "thinly tested": they do not answer.
    as the negative control (18 moved), so a return to the oracle's `\?` crash, the decimal escape or the `Z.to_int`
    overflow turns the gate red.
    The fourth fork-ahead FIX (D17) has its own witness: `scripts/check_address_constants.sh` (row 1) pins gcc 13's line
-   on BOTH engines for 182 of 234 nolibc programs over the §6.6 forms, 40 rejections as both engines' diagnostics
-   where gcc rejects too, 11 declared rows with gcc's line beside, 1 gap control, with pristine's lines as the negative
-   control (112 moved), so a return to the missing arms, to the comma's acceptance or to `&local` turns the gate red.
+   on BOTH engines for 183 of 244 nolibc programs over the §6.6 forms, 39 rejections as both engines' constraint
+   diagnostics where gcc rejects too, 21 declared rows with gcc's line beside (the forms kept at upstream's answer), 1
+   gap control, with pristine's lines as the negative control (113 moved), so a return to the missing arms, to the
+   comma's acceptance, to `&local`, or to accepting a 6.6#10 form upstream does not accept turns the gate red.
    Limit: the immaculate and coverage witnesses pin the crash CLASS (`L=CRASH`, `UNSUPPORTED`), not the refusal
    message, under those lanes' coarse crash policy (VALIDATION §1(a)); the message is fixed in the refusing code, and
    `check_cli_refusals.sh` asserts it for the CLI flags.
@@ -428,20 +429,33 @@ witnesses and are not "thinly tested": they do not answer.
   desugar-time typing in the sizeof context, where neither the lvalue conversion nor the decay is performed, the
   mechanism the `sizeof` desugaring uses), the comma, the increment and the indirection operators rejected (6.6#3,
   6.6#9), `&` of a non-static object rejected (6.6#9), the caller testing 6.6#7's bullets in order [AGENT 2026-11-07,
-  the worker's design under the charter's M1 text]. Deliberately unchanged, as upstream's judgement under 6.6#10:
-  `(long)&g`, `(int)&g`, `(long)ga`, `&g == &g`, pointer differences, the `offsetof` idiom and `(int *)16` accepted as
-  before; `&(int){3}` (a compound literal's static storage, 6.5.2.5#5: the charter's judgement area), `"hello"[1]` and
-  a `const` object's value rejected as before (gcc folds them); the GNU `?:` keeps its rejection in an initializer and
-  its pre-existing crash in the integer-constant contexts (TODO). Measured (the record §3-§4): a 446-program §6.6 table
-  over gcc 13.3.0 `-std=c11 -pedantic-errors`, pristine and both engines — before 77 over-strict rejections, 3 fail-open
-  acceptances and 84 crashes; after 0 fail-open, 0 engine disagreements, 12 declared rows, the 4 GNU-`?:` crashes —;
-  a 7413-file sweep of every corpus the lanes walk: 11 rows moved, none from accepted to rejected (8 rejections now
-  run at gcc's values; `ci/0268 int x = &1;` reports the desugarer's constraint before the typing's, a `diagnostic-text`
-  register row; `csmith_findings/oracle/init_addr_const.c` reaches draft 08's invalid-node crash one stop earlier).
-  Witness: `scripts/check_address_constants.sh` (row 1), 234 programs (the total and the class counts pinned),
-  pristine's lines the negative control (112 moved). Not an override of a judgement: the arms are the standard's
-  list, upstream's own comments call the predicates partial, and the delta leaves when upstream absorbs the fix (the
-  manifest's `cabs_to_ail` rows).
+  the worker's design under the charter's M1 text]. The accepted set is exactly upstream's accepted set plus those
+  forms and nothing else ([AGENT 2026-11-07, orchestrator] on the pre-merge review's P1-1, option (ii): the first build
+  had accepted four 6.6#10 forms upstream did not; the `?:`/`_Generic` operands are tested in 6.6#8's own terms, a
+  cast to a non-pointer type keeps upstream's arm with its operand required to be a static ARRAY lvalue, and the base
+  of `*`/`->` must designate an object). In the fork's own voice, the 6.6#10 forms and upstream's answers, both
+  directions: accepted as upstream accepts them — `(long)&g`, `(long)ga`, `&g == &g`, pointer differences, `(int *)16`;
+  `(int)&g` passes the constraint and is UB024 at execution (gcc rejects it) —; not accepted as upstream does not —
+  `(int *)(long)&g` and the `offsetof` idiom through an integer cast (UB055), `&g ? 3 : 4` and `_Generic` over `(long)&g`
+  (rejected), `&(int){3}` (a compound literal's static storage, 6.5.2.5#5: the charter's judgement area), `"hello"[1]`
+  and a `const` object's value (rejected; gcc folds them). Declared over-strictness kept from upstream: an unevaluated
+  `?:` branch or an unselected `_Generic` association that is not itself a constant expression is rejected, the comma
+  there included (6.6#3's own exception not taken). Residuals of upstream's, not fixed: `(long)&g - (long)&ga[0]` runs
+  and `&g + (int)&g` is UB024 where gcc rejects (the arithmetic predicate's retained `&` arm); a non-arithmetic cast
+  operand is UB055 where gcc gives a constraint (`(int *)(double)3`); the GNU `?:` keeps its rejection in an
+  initializer and its pre-existing crash in the integer-constant contexts (TODO); the `_Generic` arm in an integer
+  constant expression is the fork's reading of 6.5.1.1#3 (6.6#6 does not name generic selections; upstream's TODO crash
+  is what it replaced). Measured (the record §3-§4): a 472-program §6.6 table over gcc 13.3.0 `-std=c11
+  -pedantic-errors`, pristine and both engines — before 77 over-strict rejections, 3 fail-open acceptances and 84
+  crashes; after 94 rows the fork accepts and pristine does not, every one gcc-accepted and a listed form, 12 rows
+  pristine accepts and the fork does not, every one gcc-rejected, 0 engine disagreements, 26 declared rows, 1 residual
+  fail-open, the 4 GNU-`?:` crashes —; a 7413-file sweep of every corpus the lanes walk: 11 rows moved, none from
+  accepted to rejected (8 rejections now run at gcc's values; `ci/0268 int x = &1;` reports the desugarer's
+  constraint before the typing's, a `diagnostic-text` register row; `csmith_findings/oracle/init_addr_const.c` reaches
+  draft 08's invalid-node crash one stop earlier). Witness: `scripts/check_address_constants.sh` (row 1), 244 programs
+  (the total and the class counts pinned), pristine's lines the negative control (113 moved). Not an override of a
+  judgement: the arms are the standard's list, upstream's own comments call the predicates partial, and the delta
+  leaves when upstream absorbs the fix (the manifest's `cabs_to_ail` rows).
 - **Agent-called dispositions under these rulings** [AGENT 2026-09-28]: `%f` of a NaN is refused rather than
   registered (it can be refused cheaply and precisely; Lean cannot read a NaN's sign), and the other disagreements that
   record found (its D3–D6, a separate numbering from this section's) are dispositioned in `docs/2026-09-28_thin-surface-tests-record.md` (addendum).

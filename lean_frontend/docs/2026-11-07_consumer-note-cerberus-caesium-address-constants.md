@@ -1,7 +1,7 @@
 # Consumer note for cerberus-caesium: static initializers that now desugar (2026-11-07)
 
 From: the `fix/address-constants` worker [AGENT]. Record `docs/2026-11-07_address-constants-record.md`; witness
-`scripts/check_address_constants.sh` (ladder row 1, 234 programs); upstream-tray report 09 (28 and 29 merged into
+`scripts/check_address_constants.sh` (ladder row 1, 244 programs); upstream-tray report 09 (28 and 29 merged into
 it) is the filing; contract D17.
 
 Status: on branch `fix/address-constants`, fixed, witnessed on both engines, every moved row dispositioned with gcc 13
@@ -42,14 +42,19 @@ element is not constant`):
 - a pointer VARIABLE under `*`, `[]` or `->`: `&*gp`, `&gp[0]`, `&gsp->b`, `gsp->arr + 2`, `gp` itself;
 - `&tls` of a `_Thread_local` object (6.2.4#4: thread storage duration is not static storage duration).
 
-Unchanged, declared (the record §2.4, the filing's open questions): `&(int){3}` (a compound literal's static storage
-at file scope, 6.5.2.5#5), `"hello"[1]` and `*"hello"` as VALUES, a `const` object's value (`static const int k = 3;
-static int a = k;`) stay rejected as upstream rejects them (gcc folds them, 6.6#10); `(long)&g`, `(int)&g`, `(long)ga`,
-`&g == &g`, pointer differences, the `offsetof` idiom and `(int *)16` stay accepted as upstream accepts them; an
-unevaluated `?:` branch or an unselected `_Generic` association that is not itself a constant expression (`1 ? 3 :
-f()`, `_Generic(1, int: 3, default: g)`) is rejected (too strict, never fail-open: the association is selected during
-the Ail typing, after the predicate); the GNU `?:` is a constraint violation in an initializer and still crashes both
-engines in the integer-constant contexts (TODO).
+Unchanged, declared (the record §2.4/§2.7, the filing's open questions): the accepted set is exactly upstream's plus
+the forms above (the pre-merge review's P1-1 ruling). So `&(int){3}` (a compound literal's static storage at file
+scope, 6.5.2.5#5), `"hello"[1]` and `*"hello"` as VALUES, a `const` object's value (`static const int k = 3; static
+int a = k;`), `&g ? 3 : 4` and `_Generic(1, int: (long)&g, default: 2)` stay rejected as upstream rejects them (gcc
+accepts: 6.6#10); `(int *)(long)&g` and the offsetof idiom through an integer cast (`(int)(unsigned long)&((struct S
+*)0)->x`) stay the UB055 verdict upstream gives (gcc accepts); `(long)&g`, `(long)ga`, `&g == &g`, pointer
+differences and `(int *)16` stay accepted as upstream accepts them, and `(int)&g` passes the constraint and is UB024 at
+execution as on upstream; `(long)&g - (long)&ga[0]` runs and `&g + (int)&g` is UB024 as on upstream where gcc rejects
+(upstream's `&` arm, a residual); an unevaluated `?:` branch or an unselected `_Generic` association that is not
+itself a constant expression (`1 ? 3 : f()`, `_Generic(1, int: 3, default: g)`, and the comma there: `1 ? 3 : (1,
+2)`) is rejected (too strict, never fail-open: the association is selected during the Ail typing, after the
+predicate); the GNU `?:` is a constraint violation in an initializer and still crashes both engines in the
+integer-constant contexts (TODO).
 
 ## What this means for your clone and your corpora
 
@@ -64,11 +69,13 @@ engines in the integer-constant contexts (TODO).
 - The Ail/Core of programs accepted before and after is unchanged (a 7413-file `--pp=core` sweep of every corpus the
   lanes walk: 11 rows moved, every one listed in the record §4, none from accepted to rejected except the comma class
   the standard forbids); the libc Core dumps and quotation pins did not move.
-- No seam, proof module, fuel form or reader signature changed: the three predicates are `partial def`s of a module
-  outside the exec cone, the mutual block adds no `failwithI` site, the failure-reach register is unchanged (238 =
-  238), kernel replay is not owed.
+- No seam, proof module, fuel form or reader signature changed: the predicates are `partial def`s of a module outside
+  the exec cone (`is_address_constant` was a plain `def` before and is `partial` now, with the block's helpers: the
+  module's `partial def`s 50 → 56), the mutual block adds no `failwithI` site, the failure-reach register is unchanged
+  (238 = 238), kernel replay is not owed.
 - A desugar-time typing call was added for the decay forms (`gs.arr`-shaped expressions in a static-initializer
-  position only, in `GenTyping.CTXsizeof`, the same call the `sizeof` desugaring makes); an ill-typed such expression
-  reports the typing's own error at desugaring rather than at the Ail typing.
+  position and under a non-pointer cast, in `GenTyping.CTXsizeof`, the same call the `sizeof` desugaring makes); an
+  ill-typed such expression reports the typing's own error at desugaring rather than at the Ail typing (`static int *q
+  = gs.nope;`: `no member named 'nope' in 'struct S'` where upstream said `not a compile-time constant`).
 - One pristine-register row (`ci/0268-address-invalid-type.error.c`, `int x = &1;`): both engines reject; the
   diagnostic is now the desugarer's constraint instead of the typing's "cannot take address of an rvalue".

@@ -20,7 +20,7 @@
 # forms and reject the forbidden operators, both engines by generation (the record §2 has the
 # clause of every arm).
 #
-# Witnesses: tests/address_constants/*.c (234 programs, nolibc, each returning a small int), one
+# Witnesses: tests/address_constants/*.c (244 programs, nolibc, each returning a small int), one
 # program per form and context: every integer-constant-expression form in a static initializer and
 # the slice's forms in the enumerator, case-label, array-bound and _Static_assert contexts; the
 # arithmetic forms (floating, _Bool, offsetof); every address-constant chain shape (& of a static

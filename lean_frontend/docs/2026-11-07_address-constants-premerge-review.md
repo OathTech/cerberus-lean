@@ -228,3 +228,64 @@ Before landing: P1-1 (the operator's ruling recorded with provenance; D17, the r
 witness rows reclassed or the arm narrowed), P2-1 (reclass + counts + F7 + the "40" sentences), P2-2 (the comment, a
 declared row, the open question). P3-1 to P3-6 are for the record's §7/TODO at the worker's or orchestrator's
 convenience. Scratch `.tmp/review/` removed after this file was written.
+
+## Dispositions [AGENT 2026-11-07, the worker, applying the orchestrator's rulings; commits `a5fc0fcd9` (code and pins) and the docs commit that carries this section]
+
+- **P1-1 — ruled: option (ii)** ([AGENT 2026-11-07, orchestrator] under the charter's explicit M1 instruction and the standing
+  [USER 2026-11-04] bar: 6.6#10 latitude is a judgement call the fork does not take). FIXED in the Lem, by matching
+  upstream's arms: (1) the conditional and generic-selection arms of `is_arithmetic_constant_expression` test their
+  operands in 6.6#8's own terms (a `no_address` mode under which the unary `&` arm answers false), so `&g ? 3 : 4` and
+  `_Generic(1, int: (long)&g, default: 2)` keep upstream's rejection while the top-level entry keeps upstream's
+  acceptance of `(long)&g` and `&g == &g`; the same mode tests the condition of `is_address_constant`'s `?:` arm. (2)
+  The cast arm of `is_address_constant`: a pointer target keeps the 6.6#9 reading (a pointer cast of an address
+  constant; an integer constant cast to pointer type, tested one level up as upstream tested it); a NON-pointer target
+  keeps upstream's arm in shape — the operand an lvalue to a static object, the target type not examined — with the
+  lvalue required to be of array type (`is_static_array_lvalue`, the decay 6.6#9 names). That is the arm that keeps
+  the reviewer's `(long)ga` (and `(long)gs.arr`, `(long)"s"`) accepted, and it lets `(int *)(long)&g` fall to
+  upstream's integer test and its UB055; upstream's integer-constant clause under a non-pointer cast is not taken (no
+  conforming program needs it: the arithmetic predicate accepts `(long)5`; `(int *)(double)3` keeps upstream's UB055).
+  (3) The base of `*` and `->` must designate an object (`designates_object`: no null pointer constant, no integer
+  cast to pointer type), so the offsetof idiom through an integer cast keeps upstream's UB055 and `&*(int *)16`
+  upstream's rejection, while `&((struct S *)&gs)->b` stays accepted. Proved both directions on the 472-program table
+  (the review's probes added; gcc 13 `-std=c11 -pedantic-errors`, pristine, the fork oracle, the Lean engine): 94 rows
+  the fork accepts and pristine does not, every one gcc-accepted and a 6.6#3-#9 form (the record §3.2 lists them by
+  clause); 12 rows pristine accepts and the fork does not, every one gcc-rejected; 15 rows where neither accepts and a
+  crash or an execution UB became the constraint diagnostic; the four P1-1 forms at pristine's answers; Lean = oracle on
+  all 472. The witness re-pinned: `ac_cast_int_of_addr` and `ar_offsetof_idiom` are declared rows at pristine's UB055
+  (gcc's line beside), `ice_init_cond_addr_cond` and `ar_generic_long_addr` declared rows at pristine's rejection; the
+  compositions the reviewer found NEW and that are listed forms (`1 ? _Generic(…) : &ga[1]`, `2 + ga - 1`,
+  `_Generic((1, 2), int: 3, default: 4)`) are `gcc` rows. D17, the record (§0 (d), §2.4, §2.7) and the filing now say
+  this in the fork's own voice.
+- **P2-1 — FIXED.** `ac_ctx_int_of_addr` (`(int)&g`: the constraint passes as upstream's does, `UB024` at execution, gcc
+  rejects) is a declared row; the `reject` class check admits only a constraint rejection on both engines (`REJECT(rc=1):
+  error: constraint violation: …` with the Lean `Error {msg: "desugaring failed at …` line), or upstream's `UB204` verdict
+  in a `_Static_assert`, or its `feature not yet supported: variable length array type` refusal in a file-scope array
+  bound (the second exception, found by the tightened check on `ice_arr_comma`), each declared in the header; the
+  "40 rejections" sentences are the re-pinned counts everywhere (CONTRACT §4.1, VALIDATION §3(c) and §6, LADDER row 1,
+  `test_unit.sh`, the record); the record's F7 no longer claims `(int)&g` returns 3 (it is UB024 on both engines, gcc
+  rejects; the program that returns 3 was `(int *)(long)&g`, now UB055 under P1-1).
+- **P2-2 — FIXED.** The comma arm's comment says the dead-branch case is reached and rejected as the declared
+  over-strictness (6.6#3's own exception and 6.5.15#4 not taken: upstream's rejection kept — the strongest instance of
+  the "too strict" TODO on its `?:` arms); `ice_init_cond_dead_comma` and `ice_init_generic_dead_comma` are declared
+  rows (gcc 3 beside); the filing's open questions name the case; the declared-list wording in the script header,
+  CONTRACT D17, VALIDATION and the record says the fork keeps pristine's rejection there.
+- **P3-1 — recorded** as residuals in the record §7 and TODO, and in the filing where they are upstream's (the
+  arithmetic predicate's retained `&` arm): `(long)&g - (long)&ga[0]` runs (`ar_addr_diff_long`, a declared row: the
+  table's one fail-open after, pristine's acceptance kept by the P1-1 rule) and `&g + (int)&g` passes the constraint and
+  is `UB024` (`ac_addr_plus_int_addr`, a declared row).
+- **P3-2 — recorded** in the record §7, TODO and the filing: the UB055 path for a non-arithmetic cast operand is
+  upstream's (`(int *)(double)3`, `ac_cast_double_ptr`, a declared row at upstream's UB055; `(int *)(long)(int *)g`,
+  `(long)&g + g`); not this slice's.
+- **P3-3 — corrected.** (a) `is_address_constant` was a plain `def`; the module's `partial def`s went 50 → 52 at the
+  reviewed tip and are 56 after the narrowing (the block's eight: the two arithmetic entries, the lvalue predicate, the
+  two address entries, `static_lvalue_type`, `is_decayed_static_lvalue`, `is_static_array_lvalue`); the record §0/§2.5 and
+  the consumer notes say so. (b) The filing's Classification counts the fail-open acceptances as measured
+  (three in the first table, twelve closed by the vicinity). (c) The `_Generic` arm of `is_integer_constant_expression`
+  is labelled the fork's reading of 6.5.1.1#3 (universal practice) in the Lem comment, the record and the filing's
+  open questions, where upstream's TODO crash is what it replaced. (d) nothing to do.
+- **P3-4 — kept** as disclosed (record §4.3/§7, TODO, the filing's related findings); the TODO entry names draft 08 as
+  the remover and the program as its new reproducer.
+- **P3-5 — recorded** (record §4.3 and §7, TODO, the filing's related findings): an ill-typed decay-shaped initializer
+  reports the typing's own error at desugaring (`gs.nope`: `no member named 'nope' in 'struct S'` where pristine said
+  `not a compile-time constant`), the same class as the `ci/0268` register row; in no walked corpus.
+- **P3-6 — none** (the witness: 27 s the run, 35 s with the self-test).

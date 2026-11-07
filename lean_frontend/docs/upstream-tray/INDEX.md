@@ -198,7 +198,7 @@ date; slots between 01 and 04 in bug-value):
    exception (exit 125, OCaml backtrace) instead of a diagnostic;
    killed ~52% of csmith default-config programs in our campaign.
    Two minimized native-verified reproducers + two-level remedy.
-9. **09-address-constant-member-rejected.md** — TRUE BUG; FIXED IN THE FORK 2026-11-07 (a fork-ahead delta, contract D17, record `../2026-11-07_address-constants-record.md`; the report is the filing, 28 and 29 merged into it, with the patch against `c3ff8c53f`: the desugarer's constant-expression predicates accept every form C17 6.6#3-#9 lists and reject the comma and the non-static `&`; witness `scripts/check_address_constants.sh`, 234 programs). Originally: C11 §6.6p9
+9. **09-address-constant-member-rejected.md** — TRUE BUG; FIXED IN THE FORK 2026-11-07 (a fork-ahead delta, contract D17, record `../2026-11-07_address-constants-record.md`; the report is the filing, 28 and 29 merged into it, with the patch against `c3ff8c53f`: the desugarer's constant-expression predicates accept every form C17 6.6#3-#9 lists and reject the comma and the non-static `&`; witness `scripts/check_address_constants.sh`, 244 programs; the accepted set upstream's plus the §6.6#3-#9 forms, nothing else — the pre-merge review's P1-1 ruling). Originally: C11 §6.6p9
    address constants combining array subscript + member designator
    (`&arr[i].field` on static storage) rejected as "not a compile-time
    constant" while each designator ALONE is accepted (`&arr[i]` and
