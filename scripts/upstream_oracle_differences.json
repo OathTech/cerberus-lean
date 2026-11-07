@@ -170,9 +170,7 @@
       "class": "shared-model-fix",
       "citation": [
         "lean_frontend/docs/2026-11-07_half-mirrors-oracle-record.md",
-        "lean_frontend/docs/upstream-tray/10-decode-rejects-question-escape.md",
         "lean_frontend/docs/upstream-tray/11-escaped-char-octal-roundtrip-corruption.md",
-        "lean_frontend/docs/upstream-tray/13-memcmp-hugesize-overflow-crash.md",
         "lean_frontend/VALIDATION.md"
       ],
       "rationale": "`snprintf(buf, 8, \"%s\", \"\\\\xc7\"); return (unsigned char)buf[0];` (tray 11, the crash variant): pristine c3ff8c53f dies on an uncaught `Failure(\"decode_character_constant, started like an octal constant, but failed: 199\")`, rc 125, empty stdout (0xC7 = 199 rendered \"\\\\199\": not an octal constant). The fork's oracle and Lean answer `Defined {value: \"Specified(199)\", stdout: \"\", stderr: \"\", blocked: \"false\"}` rc 0; gcc 13 exits 199. Until 2026-11-07 this row was class diagnostic-text (both engines crashed; only the frame name of the fork's restated store_chars_in_array differed, merge-base bump stage 1 record section 2.1 deviation 3); the semantic outcome now differs because the fork no longer crashes. Class shared-model-fix (the class of the allocator precedent, a fork-ahead fix of the hand-written OCaml oracle: fix/half-mirrors-oracle, 2026-11-07, contract D18; [USER 2026-11-04] agreed the fix pass under the standing bar, the standard's text explicit). The Lean engine answered this line since 2026-09-03 under the fork's ISO-fix register row R2 (now RETIRED); the fork's oracle now answers it too; LADDER Tier B row 5 (test_immaculate.sh) pins fork OCaml == Lean on the same input (MATCH). The row retires when upstream takes the fix (tray 11, Sent 2026-09-26, the patch in the draft).",
@@ -462,8 +460,6 @@
       "citation": [
         "lean_frontend/docs/2026-11-07_half-mirrors-oracle-record.md",
         "lean_frontend/docs/upstream-tray/10-decode-rejects-question-escape.md",
-        "lean_frontend/docs/upstream-tray/11-escaped-char-octal-roundtrip-corruption.md",
-        "lean_frontend/docs/upstream-tray/13-memcmp-hugesize-overflow-crash.md",
         "lean_frontend/VALIDATION.md"
       ],
       "rationale": "`int main(void) { char c = '\\\\?'; return c; }` (tray 10): pristine upstream c3ff8c53f dies on an uncaught exception, verbatim `cerberus: internal error, uncaught exception:` / `Failure(\"decode_character_constant, started like an octal constant, but failed: ?\")`, rc 125, empty stdout -- decode.ml's simple-escape table has no `\\\\?` arm (C17 6.4.4.4#1 lists it, #4 gives the value of '?' = 63) and the catch-all routes '?' into the octal validator. The fork's oracle (the `\\\\?` arm, ocaml_frontend/decode.ml) and Lean answer `Defined {value: \"Specified(63)\", stdout: \"\", stderr: \"\", blocked: \"false\"}` rc 0; gcc 13 exits 63. Class shared-model-fix (the class of the allocator precedent, a fork-ahead fix of the hand-written OCaml oracle: fix/half-mirrors-oracle, 2026-11-07, contract D18; [USER 2026-11-04] agreed the fix pass under the standing bar, the standard's text explicit). The Lean engine answered this line since 2026-09-03 under the fork's ISO-fix register row R1 (now RETIRED); the fork's oracle now answers it too; LADDER Tier B row 5 (test_immaculate.sh) pins fork OCaml == Lean on the same input (MATCH). The row retires when upstream takes the fix (tray 10, Sent 2026-09-26, the patch in the draft).",
@@ -483,8 +479,6 @@
       "citation": [
         "lean_frontend/docs/2026-11-07_half-mirrors-oracle-record.md",
         "lean_frontend/docs/upstream-tray/10-decode-rejects-question-escape.md",
-        "lean_frontend/docs/upstream-tray/11-escaped-char-octal-roundtrip-corruption.md",
-        "lean_frontend/docs/upstream-tray/13-memcmp-hugesize-overflow-crash.md",
         "lean_frontend/VALIDATION.md"
       ],
       "rationale": "The string-literal form of tray 10 (`const char *e = \"\\\\n\\\\t\\\\\\\\\\\\\"\\\\'\\\\?\";` among the noodle probe's literals): pristine c3ff8c53f dies on the same uncaught `Failure(\"decode_character_constant, started like an octal constant, but failed: ?\")` from translation.ml's string-literal arm, rc 125, empty stdout. The fork's oracle and Lean print `Defined {value: \"Specified(0)\", stdout: \"98 65 66 4 83 52 3 10 9 92 34 39 63 0 4\\n\", stderr: \"\", blocked: \"false\"}` rc 0 = gcc 13's line byte for byte. Class shared-model-fix (the class of the allocator precedent, a fork-ahead fix of the hand-written OCaml oracle: fix/half-mirrors-oracle, 2026-11-07, contract D18; [USER 2026-11-04] agreed the fix pass under the standing bar, the standard's text explicit). The Lean engine answered this line since 2026-09-03 under the fork's ISO-fix register row R1 (now RETIRED); the fork's oracle now answers it too; LADDER Tier B row 5 (test_immaculate.sh) pins fork OCaml == Lean on the same input (MATCH). The row retires when upstream takes the fix (tray 10, Sent 2026-09-26, the patch in the draft).",
@@ -503,9 +497,7 @@
       "class": "shared-model-fix",
       "citation": [
         "lean_frontend/docs/2026-11-07_half-mirrors-oracle-record.md",
-        "lean_frontend/docs/upstream-tray/10-decode-rejects-question-escape.md",
         "lean_frontend/docs/upstream-tray/11-escaped-char-octal-roundtrip-corruption.md",
-        "lean_frontend/docs/upstream-tray/13-memcmp-hugesize-overflow-crash.md",
         "lean_frontend/VALIDATION.md"
       ],
       "rationale": "`snprintf(buf, 8, \"%c\", 127); return buf[0];` (tray 11): pristine c3ff8c53f answers `Defined {value: \"Specified(87)\", stdout: \"\", stderr: \"\", blocked: \"false\"}` rc 0 -- formatted.lem store_chars_in_array round-trips the stored char through `decode_character_constant (escaped_char c)`, and `Char.escaped 127` is OCaml's decimal \"\\\\127\", which the octal reader returns as 0o127 = 87 (C17 7.21.6.1#8: the argument converted to unsigned char is written unchanged). The fork's oracle (escaped_char mirrors CerbDecode.escaped_char: hex \\\\xNN) and Lean answer `Specified(127)` rc 0; gcc 13 exits 127. Class shared-model-fix (the class of the allocator precedent, a fork-ahead fix of the hand-written OCaml oracle: fix/half-mirrors-oracle, 2026-11-07, contract D18; [USER 2026-11-04] agreed the fix pass under the standing bar, the standard's text explicit). The Lean engine answered this line since 2026-09-03 under the fork's ISO-fix register row R2 (now RETIRED); the fork's oracle now answers it too; LADDER Tier B row 5 (test_immaculate.sh) pins fork OCaml == Lean on the same input (MATCH). The row retires when upstream takes the fix (tray 11, Sent 2026-09-26, the patch in the draft).",
@@ -524,9 +516,7 @@
       "class": "shared-model-fix",
       "citation": [
         "lean_frontend/docs/2026-11-07_half-mirrors-oracle-record.md",
-        "lean_frontend/docs/upstream-tray/10-decode-rejects-question-escape.md",
         "lean_frontend/docs/upstream-tray/11-escaped-char-octal-roundtrip-corruption.md",
-        "lean_frontend/docs/upstream-tray/13-memcmp-hugesize-overflow-crash.md",
         "lean_frontend/VALIDATION.md"
       ],
       "rationale": "`snprintf(buf, 8, \"%s\", \"\\\\xc8\"); return (unsigned char)buf[0];` (tray 11, the widened row): pristine c3ff8c53f answers `Defined {value: \"Specified(128)\", stdout: \"\", stderr: \"\", blocked: \"false\"}` rc 0 (0xC8 = 200 rendered \"\\\\200\", read back as octal 128). The fork's oracle and Lean answer `Specified(200)` rc 0; gcc 13 exits 200. Class shared-model-fix (the class of the allocator precedent, a fork-ahead fix of the hand-written OCaml oracle: fix/half-mirrors-oracle, 2026-11-07, contract D18; [USER 2026-11-04] agreed the fix pass under the standing bar, the standard's text explicit). The Lean engine answered this line since 2026-09-03 under the fork's ISO-fix register row R2 (now RETIRED); the fork's oracle now answers it too; LADDER Tier B row 5 (test_immaculate.sh) pins fork OCaml == Lean on the same input (MATCH). The row retires when upstream takes the fix (tray 11, Sent 2026-09-26, the patch in the draft).",
@@ -545,8 +535,6 @@
       "class": "shared-model-fix",
       "citation": [
         "lean_frontend/docs/2026-11-07_half-mirrors-oracle-record.md",
-        "lean_frontend/docs/upstream-tray/10-decode-rejects-question-escape.md",
-        "lean_frontend/docs/upstream-tray/11-escaped-char-octal-roundtrip-corruption.md",
         "lean_frontend/docs/upstream-tray/13-memcmp-hugesize-overflow-crash.md",
         "lean_frontend/VALIDATION.md"
       ],

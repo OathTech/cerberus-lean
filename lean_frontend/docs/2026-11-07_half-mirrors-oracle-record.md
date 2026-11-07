@@ -195,9 +195,11 @@ engines and gcc, pristine dies.
 | 15 | `memcpy` on the same/adjacent object | the D10 refusal on both fork engines | contract D10, unchanged |
 | 16 | `realloc`/`calloc` of `SIZE_MAX` | the allocator's out-of-memory `Error` on every engine | the model's design (the allocator kills instead of returning NULL; tray 44's family), unchanged |
 | 17 | `memcmp` with `SIZE_MAX/2` on pristine answers the UB | — | pristine's 32-bit size (tray 20); the fork's base overflowed; now the UB on both fork engines (`ub_memcmp_distinct_half`) |
+| 18 | the decoder's third live caller, the `argv` store (`driver.lem:1792` `prepare_main_args`: every byte of every program argument through `decode_character_constant (String.toString [c])`, the raw character, no `escaped_char`): a backslash or any byte outside the single-character table in `argv` — found by the pre-merge review (F3) | crash / crash (mirrored) / crash / 92 for `'a\b'`, the byte for a non-ASCII one | a sibling of trays 10/11's mechanism at tray 63's site: the store needs the same right inverse the formatted store got, or the crash-to-refusal arm; the code change is a Lem edit (`driver.lem`, a generated delta), outside this hand-written-OCaml slice — recorded in the TODO crash-to-refusal item (3); both engines crash identically, the zero-discrepancy rule holds |
 
 No sibling wrong on conforming input remains in the vicinity other than the known-and-filed library items (11, 12) and the
-crash-to-refusal items (4, 5, 6, 8).
+crash-to-refusal items (4, 5, 6, 8, and 18 — the `argv` store, a mirrored crash on both engines the pre-merge review found;
+its reproducer and lines are in the review, F3).
 
 ### 3.4 The witness (`scripts/check_half_mirrors.sh`, row 1 via `test_unit.sh`; `tests/half_mirrors/`, 41 programs; M2 = commit `e7fcddb51`)
 
@@ -218,9 +220,11 @@ must crash with the pinned ASCII text: `\u00e9` in a constant, `\U0001F600` in a
 byte, `L"\377"` at the `wchar_t` store). A pin that is neither gcc's line nor declared is a FAIL, so a silent re-pin cannot
 pass; the total (41), the class counts (27/9/5) and the moved count (18 rows differ from `pristine.txt`) are pinned. Five
 plants on an 8-program subset (one moved and one unmoved row per class, the gap control, the declared row), their counts
-derived in the script: `pristine-pair` 10, `lean-pristine` 5, `lean-fixed` 8, `oracle-rc` 8, `expect-tamper` 3. Cost: ≈ 4 min
-for the run on the shared box, ≈ 7 min with the self-test (each libc-mode Lean run loads the dump; the two 256-byte sweeps
-dominate). Verbatim, the M2 run:
+derived in the script: `pristine-pair` 10, `lean-pristine` 5, `lean-fixed` 8, `oracle-rc` 8, `expect-tamper` 3. Cost, the
+pre-merge reviewer's measurement on a quiet box (1-minute load 2.9 to 5.7; the worker's own runs were on the shared box
+beside two other workers and are not quoted): the self-test run `71.79s user 14.50s system 92% cpu 1:33.64 total`, the
+plain run 55.0 s wall, the two 256-byte sweep rows alone 10.5 s wall including the libc transport — the stdio precedent's
+band (70 s / 110 s); no trimming or tier move is warranted. Verbatim, the M2 run:
 
 ```text
 check_half_mirrors: selftest plant 'pristine-pair' caught: 10 failing check(s) (= expected 10; incl. the required programs)
@@ -271,7 +275,8 @@ note, as that file's precedents: the lane's recorder would drop its curated comm
 
 `scripts/fork_drift_manifest.txt` (§2.4): `check_fork_drift: OK — layer 1: 96 oracle-surface files = manifest …; layer 2: 33
 differing generated files, all hash-pinned`, `SELFTEST OK (31 plants …)`, `check_pin_sites: OK`. The pristine-difference
-register `scripts/upstream_oracle_differences.json`: 23 → 28 rows + one re-classed — five new `shared-model-fix` rows (the
+register `scripts/upstream_oracle_differences.json`: 24 → 29 rows (`shared-model-fix` 17 → 23, `diagnostic-text` 2 → 1,
+`address-layout` 5; derived from the committed register) — five new `shared-model-fix` rows (the
 class of the allocator precedent, a fork-ahead fix of the hand-written OCaml oracle) for `g5-decode-question`,
 `zd-e2-ptr-string-literals`, `g5-escape-roundtrip`, `zd-r2-highbyte`, `s4b-memcmp-hugesize`, each quoting pristine's crash
 or wrong value verbatim and both full signatures from the lane's report; `zd-r2-crash-digit9` moved from `diagnostic-text`
@@ -344,6 +349,23 @@ check_fuel_forms: OK (88 fuel'd workers: 67 MEASURED (obligation of the contract
 check_fuel_forms: SELFTEST OK (25 plants with the declared label — 6 on the table (incl. the ABSORBING-cone plant), 3 on the hypothesis register, 15 compiled decoys: the C4 four (type True / wrong worker / contradictory hypothesis caught by the register / extra binder), the whole-project audit's two decoys verbatim (review_bad _zero about runNDFuel; review_shift at literal 0), wrong fuel position, swapped worker-side
 Independent oracle: passed; {'semantic_agreement': 943, 'reviewed_difference': 29, 'matching_failure': 27, 'interface_agreement': 2}; /home/dev/projects/cerberus-lean-proj/worktrees/cerberus-lean-fix/half-mirrors-oracle/.tmp/m2/pristine-tier-b.json/report.json
 ```
+
+### 6.4 After the pre-merge review (`docs/2026-11-07_half-mirrors-oracle-premerge-review.md`, 8802f4a3c; dispositions in its last section)
+
+The dispositions commit changes documents, script text, the register's citations and one header sentence of
+`CerbDecode.lean`. Re-run on that tree, verbatim:
+
+```text
+OK: lane matches the committed baseline (MATCH except the ISO-fix register pin R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register'; the R1/R2/R3 pins g5-decode-question, zd-e2-ptr-string-literals, g5-escape-roundtrip, zd-r2-highbyte, zd-r2-crash-digit9, s4b-memcmp-hugesize are MATCH since 2026-11-07 (retired, trays 10/11/13 fixed in the fork) and the R7 pins zd-ta-alignas-huge-{sizeof,union-alignof,desugar} MATCH since 2026-10-30 (retired) — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).   (test_immaculate.sh, rc 0)
+check_handwritten_sync: OK (57 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+lake build rc=0
+lake build rc=0
+check_handwritten_sync: OK (57 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+check_failure_reach: OK (238 pure failure sites = the 238 register rows exactly (236 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, shared keys lengthened, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=175 REACHABLE=42 UNKNOWN=21; every row sealed; tally line consistent)
+```
+
+PLACEHOLDER — the orchestrator's full battery on this branch's tip has NOT run yet (queued behind the printf slice's);
+its result is to be written here by the orchestrator at close-out, nothing is claimed for it in this record.
 
 ## 7. The two `CerbMem.lean` unused-binder warnings (scope added at M2)
 

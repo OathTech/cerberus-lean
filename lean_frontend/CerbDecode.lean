@@ -3,6 +3,11 @@ import CerbStopSites
   Integer and character constant decoding.
   Corresponds to: ocaml_frontend/decode.ml
   Reference: lean-c-semantics doesn't have a direct equivalent (parses from JSON).
+  Line cites: every `decode.ml:N` in this file is pristine upstream c3ff8c53f's line
+  number unless marked as the fork's (the fork's decode.ml carries nine extra lines
+  before the catch-all since the 2026-11-07 `\?` arm, and a longer escaped_char: the
+  two cites written that day, `:155-163` and `:229-255`, are the fork's). The cites
+  inside failure messages are failure-reach register keys and never move.
 -/
 
 import AilSyntax

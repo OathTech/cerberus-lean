@@ -17,14 +17,14 @@
 # failing rows (the honest pre-fix state); after the S1 fix batches it
 # records the post-fix shape — MATCH on the fixed rows, plus the
 # documented-deliberate rows that are NOT MATCH by design:
-#   g5-decode-question   ORACLE_CRASH, Lean pinned at 63 ('\?' is legal
-#                        C11; the ORACLE is wrong — upstream-tray #10;
-#                        ISO-fix register R1, VALIDATION.md)
-#   g5-escape-roundtrip  DIFF, Lean-right 127 vs oracle 87 (Char.escaped
-#                        decimal read back as octal — upstream-tray #11;
-#                        ISO-fix register R2)
-#   s4b-memcmp-hugesize  ORACLE_CRASH, Lean UB_CERB002a (tray #13; ISO-fix
-#                        register R3, admitted conditional on Z4)
+#   (g5-decode-question, zd-e2-ptr-string-literals, g5-escape-roundtrip,
+#                        zd-r2-highbyte, zd-r2-crash-digit9, s4b-memcmp-hugesize
+#                        were the ISO-fix register R1/R2/R3 pins — ORACLE_CRASH or
+#                        DIFF, Lean-right — until 2026-11-07; the fork's OCaml oracle
+#                        now answers the Lean engine's line (trays 10/11/13 fixed in
+#                        the fork, contract D18, R1/R2/R3 RETIRED) and the six rows
+#                        are MATCH; the three zd-ta-alignas-huge-* rows likewise MATCH
+#                        since R7 RETIRED 2026-10-30 at the merge-base bump)
 #   r5-hex-subnormal-double-rounding  DIFF, Lean-right 1 vs oracle 0 (OCaml runtime
 #                        caml_float_of_hex rounds twice for a subnormal hex
 #                        result — tray ocaml/01 + #40; ISO-fix register R5,
@@ -305,17 +305,13 @@ if $RECORD_BASELINE; then
         echo "#"
         echo "# Post-S1 state (the S0 flips are DONE — see the F1-F3 commit messages):"
         echo "#   G1/G2/G3/G4 rows and 'ab' -> MATCH (fixed in S1 F1/F2)."
-        echo "#   g5-decode-question -> ORACLE_CRASH with L pinned Specified(63):"
-        echo "#     '\\?' is legal C11 (= 63, gcc agrees); the ORACLE failwiths — oracle-wrong,"
-        echo "#     upstream-tray #10. ISO-fix register R1 (VALIDATION.md; code marker in"
-        echo "#     CerbDecode.lean) — the pin RETIRES the entry when upstream fixes it."
-        echo "#   g5-escape-roundtrip -> DIFF, Lean-right (127 vs oracle 87): Char.escaped"
-        echo "#     decimal read back through the octal decoder corrupts the printf %c"
-        echo "#     round-trip upstream — oracle-wrong, upstream-tray #11. ISO-fix register R2"
-        echo "#     (VALIDATION.md; code marker CerbDecode.escaped_char) — retires likewise."
-        echo "#   s4b-memcmp-hugesize -> ORACLE_CRASH with L pinned UB_CERB002a: ISO-fix"
-        echo "#     register R3, ADMITTED CONDITIONAL (pending Z4's scratch-oracle evidence)."
-        echo "#   zd-e2-ptr-string-literals -> ORACLE_CRASH (the string-literal form of R1)."
+        echo "#   g5-decode-question, zd-e2-ptr-string-literals, g5-escape-roundtrip, zd-r2-highbyte,"
+        echo "#     zd-r2-crash-digit9, s4b-memcmp-hugesize -> MATCH since 2026-11-07: they were the"
+        echo "#     ISO-fix register R1/R2/R3 pins (ORACLE_CRASH or DIFF, Lean-right: '\\?' with no"
+        echo "#     arm in decode.ml, Char.escaped's decimal read back as octal by the %c store,"
+        echo "#     memcmp's Z.to_int overflow — upstream-tray 10/11/13) until the fork's OCaml"
+        echo "#     oracle moved to the Lean engine's line (fix/half-mirrors-oracle, contract D18,"
+        echo "#     record docs/2026-11-07_half-mirrors-oracle-record.md); R1/R2/R3 RETIRED."
         echo "#   g6-hash-collision -> TRIPWIRE (CoreParser fail-stops on hash collisions, F3)."
         echo "#"
         echo "# zero-discrepancy Z1 pins (2026-09-03; charter docs/2026-09-03_zero-discrepancy-design.md"
@@ -325,7 +321,7 @@ if $RECORD_BASELINE; then
         echo "# (DIFF) and re-recorded MATCH by the fix commit that cites them. The UB token"
         echo "# is loc+stderr-inclusive since this pin commit (header), so every UB row"
         echo "# carries the oracle's <L:C--L:C> loc once Z-03 lands; zd-e2-ptr-string-literals"
-        echo "# is the register-R1 ORACLE_CRASH pair and stays as recorded."
+        echo "# was the register-R1 ORACLE_CRASH pair until 2026-11-07 (MATCH since, R1 RETIRED)."
         echo "#"
         echo "# zero-discrepancy Z2 pins (2026-09-03; Z2 seam audit docs/2026-09-03_zero-discrepancy-Z2-audit.md"
         echo "# §4/§5, record docs/2026-09-04_zero-discrepancy-Z2-record.md): zd-z2cp01-strtod-inf (libc.core \`inf\`"
@@ -346,6 +342,8 @@ if $RECORD_BASELINE; then
         echo "# class; [USER 2026-10-03] F1 ruling agreeing with the analysis and approving the fix): Lean computes upstream's unbounded"
         echo "# answer -> ORACLE_CRASH | L=<value> (hand-re-pinned 2026-10-03 from a short-lived both-crash MATCH | L=CRASH pin);"
         echo "# zd-ta-alignas-2p61-control (2^61, inside OCaml's int range) MATCH on both."
+        echo "# R7 RETIRED 2026-10-30 (the merge-base bump carried upstream's unbounded sizeof/alignof): the three"
+        echo "# zd-ta-alignas-huge-* rows are MATCH since."
         echo "#"
         echo "# zero-discrepancy Z3 pins (2026-09-05; charter row Z-28 / detective RC-2, record"
         echo "# docs/2026-09-05_zero-discrepancy-Z3-record.md): zd-z28-<name> are BYTE-IDENTICAL copies of three of"
@@ -413,7 +411,7 @@ for name in "${!BASE[@]}"; do
 done
 
 if [[ $rc -eq 0 ]]; then
-    echo "OK: lane matches the committed baseline (MATCH except the ISO-fix register pins R1 g5-decode-question/zd-e2-ptr-string-literals ORACLE_CRASH, R2 g5-escape-roundtrip/zd-r2-highbyte DIFF and zd-r2-crash-digit9 ORACLE_CRASH, R3 s4b-memcmp-hugesize ORACLE_CRASH, R5 r5-hex-subnormal-double-rounding DIFF, R7 zd-ta-alignas-huge-{sizeof,union-alignof,desugar} ORACLE_CRASH — VALIDATION.md 'ISO-fix register' — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL)."
+    echo "OK: lane matches the committed baseline (MATCH except the ISO-fix register pin R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register'; the R1/R2/R3 pins g5-decode-question, zd-e2-ptr-string-literals, g5-escape-roundtrip, zd-r2-highbyte, zd-r2-crash-digit9, s4b-memcmp-hugesize are MATCH since 2026-11-07 (retired, trays 10/11/13 fixed in the fork) and the R7 pins zd-ta-alignas-huge-{sizeof,union-alignof,desugar} MATCH since 2026-10-30 (retired) — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL)."
 else
     echo "" >&2
     echo "A deviation means either a regression OR a fix flipped a row." >&2

@@ -32,17 +32,13 @@
 #
 # Post-S1 state (the S0 flips are DONE — see the F1-F3 commit messages):
 #   G1/G2/G3/G4 rows and 'ab' -> MATCH (fixed in S1 F1/F2).
-#   g5-decode-question -> ORACLE_CRASH with L pinned Specified(63):
-#     '\?' is legal C11 (= 63, gcc agrees); the ORACLE failwiths — oracle-wrong,
-#     upstream-tray #10. ISO-fix register R1 (VALIDATION.md; code marker in
-#     CerbDecode.lean) — the pin RETIRES the entry when upstream fixes it.
-#   g5-escape-roundtrip -> DIFF, Lean-right (127 vs oracle 87): Char.escaped
-#     decimal read back through the octal decoder corrupts the printf %c
-#     round-trip upstream — oracle-wrong, upstream-tray #11. ISO-fix register R2
-#     (VALIDATION.md; code marker CerbDecode.escaped_char) — retires likewise.
-#   s4b-memcmp-hugesize -> ORACLE_CRASH with L pinned UB_CERB002a: ISO-fix
-#     register R3, ADMITTED CONDITIONAL (pending Z4's scratch-oracle evidence).
-#   zd-e2-ptr-string-literals -> ORACLE_CRASH (the string-literal form of R1).
+#   g5-decode-question, zd-e2-ptr-string-literals, g5-escape-roundtrip, zd-r2-highbyte,
+#     zd-r2-crash-digit9, s4b-memcmp-hugesize -> MATCH since 2026-11-07: they were the
+#     ISO-fix register R1/R2/R3 pins (ORACLE_CRASH or DIFF, Lean-right: '\?' with no
+#     arm in decode.ml, Char.escaped's decimal read back as octal by the %c store,
+#     memcmp's Z.to_int overflow — upstream-tray 10/11/13) until the fork's OCaml
+#     oracle moved to the Lean engine's line (fix/half-mirrors-oracle, contract D18,
+#     record docs/2026-11-07_half-mirrors-oracle-record.md); R1/R2/R3 RETIRED.
 #   g6-hash-collision -> TRIPWIRE (CoreParser fail-stops on hash collisions, F3).
 #
 # zero-discrepancy Z1 pins (2026-09-03; charter docs/2026-09-03_zero-discrepancy-design.md
@@ -52,7 +48,7 @@
 # (DIFF) and re-recorded MATCH by the fix commit that cites them. The UB token
 # is loc+stderr-inclusive since this pin commit (header), so every UB row
 # carries the oracle's <L:C--L:C> loc once Z-03 lands; zd-e2-ptr-string-literals
-# is the register-R1 ORACLE_CRASH pair and stays as recorded.
+# was the register-R1 ORACLE_CRASH pair until 2026-11-07 (MATCH since, R1 RETIRED).
 #
 # zero-discrepancy Z2 pins (2026-09-03; Z2 seam audit docs/2026-09-03_zero-discrepancy-Z2-audit.md
 # §4/§5, record docs/2026-09-04_zero-discrepancy-Z2-record.md): zd-z2cp01-strtod-inf (libc.core `inf`

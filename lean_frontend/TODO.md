@@ -261,7 +261,10 @@ the outcome protocol; [USER 2026-10-20]); all three have landed, so the queue is
   impl_mem.ml:2449/:2479 vs ocaml_implementation.ml:167; tray 62); (2) statement expressions whose block contains an
   assignment/`++`/`if` (`break_at_sseq, Cbound`, failure register row 183); (3) multi-character and UTF-8 character
   constants and — found 2026-11-07 by the half-mirrors slice, the same catch-all — universal character names `\u`/`\U`
-  in constants and string literals (`decode_character_constant`, decode.ml:218; tray 63); (4) `NULL + 0` (impl_mem.ml:2277 `failwith`,
+  in constants and string literals, and — found by that slice's pre-merge review (F3) — a backslash or a non-ASCII byte
+  in a program argument (`driver.lem:1792` `prepare_main_args` stores every `argv` byte through the decoder with no
+  `escaped_char`; both engines crash identically, gcc 92 for `'a\\b'`; the store needs the right inverse the formatted
+  store got, a Lem edit) (`decode_character_constant`, decode.ml:218; tray 63); (4) `NULL + 0` (impl_mem.ml:2277 `failwith`,
   mirror `CerbMem.lean:1975`; tray 04) — **RETIRED 2026-10-30: upstream's fix `f4a3a3d54` (the pure
   `array_shift_ptrval` returns `UB046_array_pointer_outside` on a null pointer) is carried by the stage-1
   merge-base, mirrored by seam S2; both engines agree on `tests/minimal/097`, `tests/ci/0120`/`0121`,

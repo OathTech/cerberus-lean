@@ -236,3 +236,44 @@ orchestrator's.
 
 Scratch deleted at the end of this review: `.tmp/review/` (probes, logs, the extracted patches) and
 `.tmp/upstream-oracle-li4dci8g/` (the focused pristine-lane run).
+
+## Dispositions (the worker, 2026-11-07; one docs/script-text commit on the branch, no history rewrite, nothing pushed)
+
+Every finding taken one by one: **fixed**, **answered** with a reason the orchestrator can check, or **raised**.
+
+- **F1 — fixed.** `scripts/test_immaculate.sh`: the header's three entries, the recorder's `--record-baseline` block (the
+  R1/R2/R3 lines and the "stays as recorded" sentence; an R7-retired line added beside the R7 block) and the green banner
+  now say the six rows are `MATCH` since 2026-11-07 (R1/R2/R3 retired, trays 10/11/13 fixed in the fork) and the three
+  `zd-ta-alignas-huge-*` rows `MATCH` since 2026-10-30 (R7 retired); `tests/immaculate/baseline.txt:33-45` (the recorder's
+  own block) edited to the same text. The lane re-run on this tree, verbatim banner:
+  ```text
+  OK: lane matches the committed baseline (MATCH except the ISO-fix register pin R5 r5-hex-subnormal-double-rounding DIFF — VALIDATION.md 'ISO-fix register'; the R1/R2/R3 pins g5-decode-question, zd-e2-ptr-string-literals, g5-escape-roundtrip, zd-r2-highbyte, zd-r2-crash-digit9, s4b-memcmp-hugesize are MATCH since 2026-11-07 (retired, trays 10/11/13 fixed in the fork) and the R7 pins zd-ta-alignas-huge-{sizeof,union-alignof,desugar} MATCH since 2026-10-30 (retired) — and the in-Lean probes g6 TRIPWIRE / illtyped-store KILL).   (test_immaculate.sh, rc 0)
+  ```
+- **F2 — fixed.** `VALIDATION.md` §3 gains the "Fork-ahead fix — the three oracle half-mirrors, trays 10/11/13" entry in
+  D14/D15's shape (the six rows named with pristine's crash or wrong value, the re-classed row, the retired register rows,
+  the manifest rows, the upstream disposition), placed before the `diagnostic-text` entry, whose count moves to 1 with the
+  re-classed row named; `VALIDATION.md:162`'s "8 `shared-model-fix` rows" is qualified as that era's and the derived
+  totals at 2026-11-07 are stated from the committed register: 29 rows, `shared-model-fix` 23 (base 24 / 17),
+  `address-layout` 5, `diagnostic-text` 1 (checkable: `python3 -c` over `scripts/upstream_oracle_differences.json`).
+- **F3 — fixed (recorded; the code is a Lem edit outside this slice).** The record's findings table gains row 18 (the `argv`
+  store, `driver.lem:1792`, both engines crash identically, gcc 92; the review's reproducer cited) and its closing claim now
+  names it among the crash-to-refusal items; `TODO.md`'s crash-to-refusal arm (3) names the argv shape beside the UCN one
+  (the store needs the right inverse the formatted store got, or the refusal arm). Record §2.2's "the one caller" sentence
+  is about `escaped_char`, which is still true; the decoder's third caller is now in the table.
+- **F4 — fixed.** `VALIDATION.md:305`'s parenthetical is paraphrased in the worker's words with its tag and date (the
+  operator agreed with every point of the bug-hunt report and approved its fixes); the ruling's substance is unchanged.
+  Under the global practice doc removing a found quote is the operator's call: the orchestrator relayed the standing
+  [USER 2026-10-16] ruling (quotes are scrubbed from HEAD, history not rewritten) as the authority for this scrub.
+- **F5 — fixed.** One sentence in `CerbDecode.lean`'s header: the `decode.ml:N` cites are pristine `c3ff8c53f`'s line
+  numbers unless marked as the fork's (the two 2026-11-07 cites are); no failure-message text moved (they are
+  failure-reach register keys), so `check_failure_reach` stays at 238 = 238 (re-run after the rebuild, quoted in the
+  record §6). The same mixed state in `CerbMem.lean` is pre-existing and left as the review notes.
+- **F6 — fixed.** Record §4.3's tallies corrected to the derived 24 → 29 (`shared-model-fix` 17 → 23); §3.4's cost claim
+  replaced by the reviewer's measurement quoted verbatim (`71.79s user 14.50s system 92% cpu 1:33.64 total`; 55.0 s plain;
+  the two sweep rows 10.5 s) with the shared-box figures withdrawn and the attribution to the sweeps dropped.
+- **F7 — fixed.** Each of the six register rows now cites the record, its own mechanism's tray (10 for the two decode
+  rows, 11 for the three store rows, 13 for memcmp) and VALIDATION.md; the rationales already named the right tray.
+- **F8 — answered.** D18's number is the orchestrator's to settle at landing: the branch keeps D18 (the charter's number)
+  and the cross-references (`CONTRACT.md` §4, SUPPORTED, LADDER, TODO, the trays, the record, the consumer notes) move with
+  whatever number lands; no edit here.
+- **F9 — no change** (the header's arithmetic is right, as the review re-derived).
