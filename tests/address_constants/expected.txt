@@ -67,6 +67,10 @@ ice_init_addr_eq	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blo
 ice_init_addr_cast_int	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ice_init_addr_diff	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ice_init_compound	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_compound.c:2:16-24"}
+ice_init_cond_dead_comma	fork	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_cond_dead_comma.c:2:16-30 (cursor: 2:18)"}
+ice_init_generic_dead_comma	fork	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_generic_dead_comma.c:2:16-52"}
+ice_init_generic_comma_ctl	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cond_addr_cond	fork	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_cond_addr_cond.c:2:16-26 (cursor: 2:19)"}
 ice_init_compound_sizeof	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ice_enum_lit	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ice_enum_cond	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
@@ -118,10 +122,12 @@ ar_float_sizeof	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", bloc
 ar_bool_init	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ar_uns_wrap	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ar_char_init	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
-ar_offsetof_idiom	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_offsetof_idiom	fork	Undefined {ub: "UB055_invalid_integer_constant_expression", stderr: "", loc: "<1:52--1:86>"}	Undefined {ub: "UB055_invalid_integer_constant_expression", stderr: "", loc: "<1:52--1:86>"}
 ar_offsetof_macro	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ar_float_comma	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ar_float_comma.c:1:19-29"}
 ar_arith_var	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ar_arith_var.c:2:16-21 (cursor: 2:18)"}
+ar_generic_long_addr	fork	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ar_generic_long_addr.c:2:17-55"}
+ar_addr_diff_long	fork	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ac_addr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ac_arr_elem	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ac_arr_decay	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
@@ -186,7 +192,11 @@ ac_idx_call	reject	REJECT(rc=1): error: constraint violation: initializer elemen
 ac_idx_comma	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_idx_comma.c:6:17-28 (cursor: 6:17)"}
 ac_comma_addr	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_comma_addr.c:6:17-24"}
 ac_int_var_cast	reject	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_int_var_cast.c:6:17-25 (cursor: 6:17)"}
-ac_cast_int_of_addr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_cast_int_of_addr	fork	Undefined {ub: "UB055_invalid_integer_constant_expression", stderr: "", loc: "<6:24--6:32>"}	Undefined {ub: "UB055_invalid_integer_constant_expression", stderr: "", loc: "<6:24--6:32>"}
+ac_gen_cond_compose	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_int_plus_arr_minus	gcc	Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+ac_addr_plus_int_addr	fork	Undefined {ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "<6:22--6:29>"}	Undefined {ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "<6:22--6:29>"}
+ac_cast_double_ptr	fork	Undefined {ub: "UB055_invalid_integer_constant_expression", stderr: "", loc: "<6:24--6:33>"}	Undefined {ub: "UB055_invalid_integer_constant_expression", stderr: "", loc: "<6:24--6:33>"}
 ac_str_bare	gcc	Defined {value: "Specified(104)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(104)", stdout: "", stderr: "", blocked: "false"}
 ac_str_plus	gcc	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
 ac_str_elem	gcc	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
@@ -227,7 +237,7 @@ ac_ctx_thread_local	reject	REJECT(rc=1): error: constraint violation: initialize
 ac_ctx_static_const_var	fork	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_ctx_static_const_var.c:6:40-41"}
 ac_ctx_long_of_addr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ac_ctx_long_of_arr	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
-ac_ctx_int_of_addr	reject	Undefined {ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "<6:16--6:23>"}	Undefined {ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "<6:16--6:23>"}
+ac_ctx_int_of_addr	fork	Undefined {ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "<6:16--6:23>"}	Undefined {ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "<6:16--6:23>"}
 ac_ctx_ptrdiff	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ac_ctx_ptr_cmp	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ac_ctx_double_cast	gcc	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}

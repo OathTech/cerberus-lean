@@ -1,5 +1,8 @@
 # tests/address_constants/pristine.txt -- name <TAB> oracle <TAB> lean: pristine c3ff8c53f's lines (= the fork's before the
 # 2026-11-07 change: the three predicates were byte-identical), in expected.txt's encodings; the negative control.
+# The oracle column is pristine's verbatim on every row. The Lean column is the base fork engine's line, captured before
+# the change; for the three rows added at the pre-merge review after that engine was retired and whose verdict moved
+# (ac_gen_cond_compose, ac_int_plus_arr_minus, ice_init_generic_comma_ctl) it is pristine's oracle line standing in.
 ice_init_lit	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ice_init_charconst	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ice_init_enumconst	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
@@ -62,6 +65,10 @@ ice_init_addr_eq	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked
 ice_init_addr_cast_int	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ice_init_addr_diff	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ice_init_compound	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_compound.c:2:16-24"}
+ice_init_cond_dead_comma	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_cond_dead_comma.c:2:16-30 (cursor: 2:18)"}
+ice_init_generic_dead_comma	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_generic_dead_comma.c:2:16-52"}
+ice_init_generic_comma_ctl	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant
+ice_init_cond_addr_cond	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ice_init_cond_addr_cond.c:2:16-26 (cursor: 2:19)"}
 ice_init_compound_sizeof	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ice_enum_lit	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ice_enum_cond	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
@@ -117,6 +124,8 @@ ar_offsetof_idiom	Undefined {ub: "UB055_invalid_integer_constant_expression", st
 ar_offsetof_macro	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ar_float_comma	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ar_arith_var	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ar_arith_var.c:2:16-21 (cursor: 2:18)"}
+ar_generic_long_addr	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ar_generic_long_addr.c:2:17-55"}
+ar_addr_diff_long	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ac_addr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ac_arr_elem	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ac_arr_decay	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
@@ -182,6 +191,10 @@ ac_idx_comma	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "f
 ac_comma_addr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ac_int_var_cast	Undefined {ub: "UB043_indirection_invalid_value", stderr: "", loc: "<6:152--6:154>"}	Undefined {ub: "UB043_indirection_invalid_value", stderr: "", loc: "<6:152--6:154>"}
 ac_cast_int_of_addr	Undefined {ub: "UB055_invalid_integer_constant_expression", stderr: "", loc: "<6:24--6:32>"}	Undefined {ub: "UB055_invalid_integer_constant_expression", stderr: "", loc: "<6:24--6:32>"}
+ac_gen_cond_compose	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant
+ac_int_plus_arr_minus	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant
+ac_addr_plus_int_addr	Undefined {ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "<6:22--6:29>"}	Undefined {ub: "UB024_out_of_range_pointer_to_integer_conversion", stderr: "", loc: "<6:22--6:29>"}
+ac_cast_double_ptr	Undefined {ub: "UB055_invalid_integer_constant_expression", stderr: "", loc: "<6:24--6:33>"}	Undefined {ub: "UB055_invalid_integer_constant_expression", stderr: "", loc: "<6:24--6:33>"}
 ac_str_bare	Defined {value: "Specified(104)", stdout: "", stderr: "", blocked: "false"}	Defined {value: "Specified(104)", stdout: "", stderr: "", blocked: "false"}
 ac_str_plus	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_str_plus.c:6:24-35 (cursor: 6:32)"}
 ac_str_elem	REJECT(rc=1): error: constraint violation: initializer element is not a compile-time constant	Error {msg: "desugaring failed at ac_str_elem.c:6:24-35 (cursor: 6:24)"}

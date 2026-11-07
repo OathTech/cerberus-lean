@@ -107,8 +107,9 @@
 # indirection arm: `&g_arr[1].b`), is_address_constant (the string literal, `± integer constant expression`, the conditional
 # operator, the generic selection, the recursive pointer cast, the decay of a static array or function lvalue typed in the
 # sizeof context) and is_integer_constant_expression (the generic-selection and compound-literal arms where the wildcard arm
-# crashed). Single-row edits, no --refresh: [source-content] cabs_to_ail.lem re-pinned b0ffbe9e... -> 8d932c93...;
-# [expected-semantic] cabs_to_ail.ml's hash moved 19624373... -> 094ccc70... (an already-differing file: the fork's supply/top
+# crashed); narrowed 2026-11-07 on the pre-merge review's P1-1 ruling (option (ii)): the accepted set is upstream's plus the
+# §6.6#3-#9 forms and nothing else (the record §2.7). Single-row edits, no --refresh: [source-content] cabs_to_ail.lem re-pinned b0ffbe9e... -> 0c258f54...;
+# [expected-semantic] cabs_to_ail.ml's hash moved 19624373... -> 7d69150b... (an already-differing file: the fork's supply/top
 # parameters and D3 seeds). Leaves when upstream absorbs the fix. Record: lean_frontend/docs/2026-11-07_address-constants-record.md.
 [meta]
 merge-base=c3ff8c53f05982745f9b3a10b3d05442e214bcb5
@@ -234,7 +235,7 @@ util/cerb_location.ml
 100644 59d2cd240e91897161704a8bdd5fc91d3688aed8ddb1ddae1cd02724a85b135d frontend/model/any.lem
 100644 50aa5bac4e18b2d0e1e63da58fec61d6dd1b09105b423bc834a49801e8ac4279 frontend/model/boot.lem
 100644 a3bce9ed29041d602cdc128dba43f4422beeb230e1d28939f06b68e9408fe7ea frontend/model/builtins.lem
-100644 8d932c938dd1ac2ad566d6c2bccea3f5625eea9df9f47a1da07819f00c028e34 frontend/model/cabs_to_ail.lem
+100644 0c258f5488af602ff0b60d68041503c8f0790a115a6e8ee3f6b89e70ab624ac2 frontend/model/cabs_to_ail.lem
 100644 ae165c425b1ae10d46e2a569f7c4409e8e101588c0e78968b8a4c08042a45dee frontend/model/cabs_to_ail_effect.lem
 100644 185b1d2afb9e0d3598c664a50d7106b8cc195add6049b358c0c92c8305e60dc2 frontend/model/cerb_attributes.lem
 100644 c4426c93453c70139f7693096cb2d3796dee1676344652c2c6271303a2d392ae frontend/model/cn.lem
@@ -311,7 +312,7 @@ util/cerb_location.ml
 [expected-semantic]
 0e33840c04efa7a2408042add3417e788f37f70c488ae791cf72c7410c303244 ailSyntax.ml
 52804c6cceb0163ea883e5cede64d32c26841004200047199a2cf3b5524a8ffb ailTypesAux.ml
-094ccc7073b18d112033e659f7453824bb3e1a1feaf4b65ba1220c45e0f4d40f cabs_to_ail.ml
+7d69150b8c69e10178cb3007a04d71dbbc329d5d999ab7578322aa79ef6af767 cabs_to_ail.ml
 a290a63ccda68710766457758900a16b3180a3af2e0562f9b6f76ac90edd3e2b cabs_to_ail_effect.ml
 efe1a293fdf87eb7a264b3d5a2705d9f9421115f9137772c0b6a539a5049b8fb core.ml
 5a20bc6b1e3e4cd9af04c1316e4a2b8354ccfab68e2fea3561acfd7cdfb3a093 core_aux.ml

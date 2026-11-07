@@ -620,11 +620,12 @@ fi
 # reports 09, 28 and 29; the true-bug audit's items 7, 16, 17): the desugarer's constant-expression
 # predicates accept the forms C17 6.6#3-#9 list (& through [], ., -> and *; the decay of a static
 # array; string literals; ?: and _Generic; address constant +/- an integer constant expression) and
-# reject the operators 6.6#3 forbids (the comma; & of a non-static object; value reads). 234
-# programs under tests/address_constants/ (nolibc): 182 pinned to gcc 13's line on BOTH engines, 40
-# rejections pinned as both engines' diagnostics where gcc rejects too, 11 declared rows with gcc's
-# line beside, 1 gap control (the GNU ?: crash, TODO); pristine c3ff8c53f's lines the negative
-# control (112 moved). --selftest: a pristine-replaying pair, a Lean-only pristine stub, a fixed-line
+# reject the operators 6.6#3 forbids (the comma; & of a non-static object; value reads); the accepted
+# set is upstream's plus those forms and nothing else (the pre-merge review's P1-1 ruling). 244
+# programs under tests/address_constants/ (nolibc): 183 pinned to gcc 13's line on BOTH engines, 39
+# rejections pinned as both engines' constraint diagnostics where gcc rejects too, 21 declared rows
+# with gcc's line beside, 1 gap control (the GNU ?: crash, TODO); pristine c3ff8c53f's lines the
+# negative control (113 moved). --selftest: a pristine-replaying pair, a Lean-only pristine stub, a fixed-line
 # Lean stub, an exit-code-forcing oracle wrapper and a tampered expectation must all fail, each at
 # its derived count. Record lean_frontend/docs/2026-11-07_address-constants-record.md.
 ADDRESS_CONSTANTS_SH="$(dirname "$PURITY_SH")/check_address_constants.sh"

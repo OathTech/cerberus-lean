@@ -35,16 +35,29 @@
 #   gcc    — BOTH engines print gcc 13's batch line byte for byte (tests/address_constants/gcc.txt:
 #            `gcc -std=c11 -pedantic-errors -O0`, derived 2026-11-07), exit 0 on both;
 #   reject — both engines reject where gcc rejects: the oracle exits 1 and its first error line
-#            (file prefix stripped) is the pinned diagnostic; the Lean engine exits 1 with the pinned
-#            `Error {msg: "desugaring failed at <name>.c:<loc>"}` line (location included); for a
-#            _Static_assert the pin is upstream's UB204_illtyped_Static_assert verdict on both;
+#            (file prefix stripped) is the pinned `constraint violation` diagnostic; the Lean engine
+#            exits 1 with the pinned `Error {msg: "desugaring failed at <name>.c:<loc>"}` line
+#            (location included; the programs run under their bare names in the scratch directory);
+#            for a _Static_assert the pin is upstream's UB204_illtyped_Static_assert verdict on both,
+#            for a file-scope array bound upstream's `feature not yet supported: variable length
+#            array type` refusal (a non-constant bound is a VLA to upstream; gcc: variably modified);
+#            a program that passed the constraint and died at execution is NOT a rejection (the class
+#            check refuses such a pin; review P2-1: `(int)&g`, UB024, is a declared row);
 #   fork   — the fork's DECLARED verdict where gcc's differs, each named in FORK_PINNED below with
 #            its reason in the record: an unevaluated ?: branch or an unselected _Generic association
-#            that is not a constant expression is rejected (too strict, never fail-open: the
+#            that is not a constant expression is rejected -- the comma there included, 6.6#3's own
+#            exception not taken: upstream's rejection kept as a declared over-strictness (the
 #            association is selected during the Ail typing, after the predicate); & of a compound
 #            literal (6.5.2.5#5 static storage at file scope: a judgement area, upstream's rejection
 #            kept); the value of a string literal element `"hello"[1]` and of a `const` object (gcc
-#            folds them: 6.6#10 forms, upstream's rejection kept);
+#            folds them: 6.6#10 forms, upstream's rejection kept); the 6.6#10 forms upstream did not
+#            accept and the fork does not either (the pre-merge review's P1-1 ruling, option (ii)):
+#            `(int *)(long)&g` and the offsetof idiom through an integer cast keep upstream's UB055
+#            verdict, `&g ? 3 : 4` and `_Generic(1, int: (long)&g, default: 2)` upstream's rejection;
+#            and upstream's answers on forms gcc rejects, kept: `(int)&g` passes the constraint and is
+#            UB024 at execution (review P2-1), `(long)&g - (long)&ga[0]` runs and `&g + (int)&g` is
+#            UB024 (the arithmetic predicate's retained & arm, review P3-1), `(int *)(double)3` is
+#            upstream's UB055 (review P3-2);
 #   gap    — the GNU `?:` in a case label still crashes both engines (`PEcase, mismatched`; TODO.md's
 #            item, not this mechanism), unchanged.
 # Negative control: tests/address_constants/pristine.txt carries pristine c3ff8c53f's lines (the
@@ -74,10 +87,10 @@ PRISTINE="$CASES/pristine.txt"
 ONLY="${CERB_AC_ONLY:-}"
 NAME=check_address_constants
 # the declared rows (class fork): the fork's verdict differs from gcc's for a stated reason (header, record §3.3)
-FORK_PINNED="ac_compound_lit ac_cond_addr_dead_var ac_ctx_static_const_var ac_str_elem_value ice_arr_generic_dead ice_case_generic_dead ice_enum_generic_dead ice_init_cond_call ice_init_cond_var ice_init_generic_dead ice_sassert_generic_dead"
+FORK_PINNED="ac_addr_plus_int_addr ac_cast_double_ptr ac_cast_int_of_addr ac_compound_lit ac_cond_addr_dead_var ac_ctx_int_of_addr ac_ctx_static_const_var ac_str_elem_value ar_addr_diff_long ar_generic_long_addr ar_offsetof_idiom ice_arr_generic_dead ice_case_generic_dead ice_enum_generic_dead ice_init_cond_addr_cond ice_init_cond_call ice_init_cond_dead_comma ice_init_cond_var ice_init_generic_dead ice_init_generic_dead_comma ice_sassert_generic_dead"
 GAP_PINNED="ice_case_cond_gnu"
 # the total and the class counts are PINNED: a dropped row cannot pass silently
-WANT_N=234; WANT_GCC=182; WANT_REJECT=40; WANT_FORK=11; WANT_GAP=1
+WANT_N=244; WANT_GCC=183; WANT_REJECT=39; WANT_FORK=21; WANT_GAP=1
 # the plant subset: 5 moved gcc rows, 3 unmoved gcc rows, 2 moved and 1 unmoved reject rows, 2 fork rows, the gap row
 PLANT_SUBSET="ac_arr_elem_member ac_str_plus ice_init_cond ice_arr_generic ac_cast_char_plus ac_addr ice_init_lit ac_fun_designator ice_init_comma ac_ptr_var_arrow ice_init_var ac_compound_lit ice_init_cond_call ice_case_cond_gnu"
 
@@ -181,7 +194,13 @@ classify() {  # <name> <class> <oracle pin> <lean pin>: the class's relation to 
         gcc)    [[ "$po" == "$g" && "$pl" == "$g" && "$g" == Defined* ]] || fail "$name: class gcc but the pins are not gcc's Defined line"
                 listed "$name" "$FORK_PINNED" && fail "$name: declared FORK-PINNED but its pins equal gcc's line (retire the declaration)"
                 ngcc=$((ngcc + 1)) ;;
-        reject) [[ "$g" == GCC-REJECT* && "$po" != Defined* && "$pl" != Defined* ]] || fail "$name: class reject but gcc accepts or a pin is a Defined line"
+        reject) [[ "$g" == GCC-REJECT* ]] || fail "$name: class reject but gcc accepts"
+                # a constraint rejection on both engines (or, for a _Static_assert, upstream's UB204 verdict on both): a
+                # program that passed the constraint and died later (an execution UB) is not a rejection (review P2-1)
+                [[ "$po" == "REJECT(rc=1): error: constraint violation: "* && "$pl" == 'Error {msg: "desugaring failed at '* ]] \
+                  || [[ "$po" == 'Undefined {ub: "UB204_illtyped_Static_assert"'* && "$pl" == "$po" ]] \
+                  || [[ "$po" == "REJECT(rc=1): error: feature not yet supported: variable length array"* && "$pl" == 'Error {msg: "desugaring failed at '* ]] \
+                  || fail "$name: class reject but the pins are not a constraint rejection on both engines (oracle [${po:0:80}], Lean [${pl:0:80}])"
                 listed "$name" "$FORK_PINNED" && fail "$name: declared FORK-PINNED but classed reject"
                 nreject=$((nreject + 1)) ;;
         fork)   listed "$name" "$FORK_PINNED" || fail "$name: class fork (the pin is not gcc's verdict) but not declared in FORK_PINNED"
@@ -238,4 +257,4 @@ if [[ -z "$ONLY" ]]; then  # the whole set: the pinned totals (a subset run is a
 fi
 
 [[ $fails -eq 0 ]] || { echo "$NAME: $fails failing check(s) over $n programs"; exit 1; }
-echo "$NAME: OK ($n programs, nolibc: $ngcc batch lines of both engines = gcc 13's pinned line, exit 0 on both — every integer-constant-expression form (literals, character and enumeration constants, sizeof and _Alignof, cast floating constants, every operator, ?: incl. dead branches with a division by zero, a negative shift or an overflow, _Generic incl. a variable or a call as the unevaluated controlling expression) in a static initializer and the slice's forms in enumerators, case labels, array bounds and _Static_assert; the arithmetic forms; every address-constant shape (& of static objects, array and 2-D elements, members, nested and array-element members, member arrays and their decay, &*&g, string literals plus an offset and their elements, function designators under &, * and casts, pointer casts and chains, ?: and _Generic over address constants, null pointer constants, integer-to-pointer casts) in file-scope, external, block-scope, struct, array, designated and nested initializers; $nreject rejected by both engines with the pinned diagnostic where gcc rejects too (the comma, assignment, increment and call operators, a variable, value reads through *, [] and ->, pointer variables, & of an automatic object or a parameter, (int *)g, (long)g, & of a _Thread_local, a compound literal or a non-constant in the integer-constant contexts); $nfork pinned to the fork's declared verdict with gcc's beside it in gcc.txt (an unevaluated ?: branch or an unselected _Generic association that is not constant, & of a compound literal, the value of a string literal element or of a const object); $ngap gap control: the GNU ?: in a case label still crashes both engines (TODO); $nmoved rows moved from pristine c3ff8c53f's lines)"
+echo "$NAME: OK ($n programs, nolibc: $ngcc batch lines of both engines = gcc 13's pinned line, exit 0 on both — every integer-constant-expression form (literals, character and enumeration constants, sizeof and _Alignof, cast floating constants, every operator, ?: incl. dead branches with a division by zero, a negative shift or an overflow, _Generic incl. a variable, a call or a comma as the unevaluated controlling expression) in a static initializer and the slice's forms in enumerators, case labels, array bounds and _Static_assert; the arithmetic forms; every address-constant shape (& of static objects, array and 2-D elements, members, nested and array-element members, member arrays and their decay, &*&g, string literals plus an offset and their elements, function designators under &, * and casts, pointer casts and chains, ?: and _Generic over address constants and their compositions, null pointer constants, integer-to-pointer casts, (long)&g and (long)ga as upstream accepts them) in file-scope, external, block-scope, struct, array, designated and nested initializers; $nreject rejected by both engines with the pinned constraint diagnostic where gcc rejects too (the comma, assignment, increment and call operators, a variable, value reads through *, [] and ->, pointer variables, & of an automatic object or a parameter, (int *)g, (long)g, & of a _Thread_local, a compound literal or a non-constant in the integer-constant contexts); $nfork pinned to the fork's declared verdict with gcc's beside it in gcc.txt (an unevaluated ?: branch or an unselected _Generic association that is not constant, the comma there included; & of a compound literal, the value of a string literal element or of a const object; the 6.6#10 forms kept at upstream's answer: (int *)(long)&g and the offsetof idiom UB055, &g ? 3 : 4 and _Generic over (long)&g rejected, (int)&g UB024 at execution, (long)&g - (long)&ga[0] running and &g + (int)&g UB024, (int *)(double)3 UB055); $ngap gap control: the GNU ?: in a case label still crashes both engines (TODO); $nmoved rows moved from pristine c3ff8c53f's lines)"

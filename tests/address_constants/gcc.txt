@@ -62,6 +62,10 @@ ice_init_addr_eq	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked
 ice_init_addr_cast_int	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ice_init_addr_diff	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ice_init_compound	GCC-REJECT: error: initializer element is not constant [-Wpedantic]
+ice_init_cond_dead_comma	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_generic_dead_comma	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_generic_comma_ctl	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ice_init_cond_addr_cond	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ice_init_compound_sizeof	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ice_enum_lit	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ice_enum_cond	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
@@ -117,6 +121,8 @@ ar_offsetof_idiom	Defined {value: "Specified(3)", stdout: "", stderr: "", blocke
 ar_offsetof_macro	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ar_float_comma	GCC-REJECT: error: initializer element is not constant [-Wpedantic]
 ar_arith_var	GCC-REJECT: error: initializer element is not constant
+ar_generic_long_addr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ar_addr_diff_long	GCC-REJECT: error: initializer element is not constant
 ac_addr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ac_arr_elem	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 ac_arr_decay	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
@@ -182,6 +188,10 @@ ac_idx_comma	GCC-REJECT: error: initializer element is not constant
 ac_comma_addr	GCC-REJECT: error: initializer element is not constant [-Wpedantic]
 ac_int_var_cast	GCC-REJECT: error: initializer element is not constant
 ac_cast_int_of_addr	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_gen_cond_compose	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+ac_int_plus_arr_minus	Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+ac_addr_plus_int_addr	GCC-REJECT: error: initializer element is not constant
+ac_cast_double_ptr	GCC-REJECT: error: cannot convert to a pointer type
 ac_str_bare	Defined {value: "Specified(104)", stdout: "", stderr: "", blocked: "false"}
 ac_str_plus	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
 ac_str_elem	Defined {value: "Specified(101)", stdout: "", stderr: "", blocked: "false"}
