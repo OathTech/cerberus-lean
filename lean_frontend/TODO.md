@@ -256,6 +256,35 @@ the outcome protocol; [USER 2026-10-20]); all three have landed, so the queue is
   on it without the formerly rejected line), not gated: draft 08 is the remover and this program its reproducer
   (review P3-4); the GNU `?:` item below: the initializer context now rejects it cleanly, the
   enumerator/case/array/_Static_assert contexts still crash (the witness's gap row).
+- **The formatter's refusals and fixes** (trays 26 and 16; the true-bug audit of 2026-11-04 rows 16, 26, 27 and §4
+  items 1, 3, 10; [USER 2026-11-04] agreed the fix pass under the standing bar) — **DONE 2026-11-07** (branch
+  `fix/printf-refusals`, contract D16, record `docs/2026-11-07_printf-refusals-record.md`): the SHARED `formatted.lem`
+  parses the full 7.21.6.1#7-#8 syntax and REFUSES, with one attributed text per class, every floating conversion
+  other than `%f`/`%lf` and the `L` modifier (a false `Invalid_format` UB before; new tray 68), `%n`, `%ls`, `%lc`
+  (crashes before) and a `*` argument without a constant value; FIXED: the `*` field width/precision from an `int`
+  argument (7.21.6.1#5; tray 26 — implemented, not refused), the `j`/`z`/`t` expected types normalised through the
+  alias table (`%jd` of an `intmax_t` was a false UB153b; new tray 69; the audit's §4 item 3), `snprintf`'s would-be
+  length, `n = 0` formatting and the UB verdict passed through (tray 16), the `0` flag after the sign/base and `#`'s
+  point on `%f` (new tray 70, found by the vicinity probe), a non-`l` modifier with `%s` as UB158;
+  `scripts/check_printf_refusals.sh` in row 1 (161 programs); the libc Core text untouched; `tests/libc_exec` 026/027/028
+  moved to gcc's values (`shared-model-fix` register rows); `tests/coverage/fmt` fmt-014/015 re-recorded CERB_SKIP (the
+  refusal class move), fmt-043 MATCH, fmt-003/005/010/020/022 at gcc's text; `tests/immaculate` ts-fmt-star-width/
+  -precision re-recorded to the values; 13 pristine-lane register rows; no ci-sweep scoreboard row moved. Closed with it: the audit's §4 items 1, 3
+  and 10; the crash-to-refusal item's arm (5) below. Left as filed: tray 27 (the strict `%x`-of-`int` reading, pinned
+  as a UB row of the witness). Still open from it:
+  - **Implement the floating conversions `%e %E %g %G %a %A %F` and the `L` modifier** (size M: the e/E/g/G forms
+    over the existing `format_string_of_float` path — OCaml's `Printf` on the oracle, a `CerbFloat` mirror on the Lean
+    side with the pp-test's zero-discrepancy pin; a/A the hexadecimal form; `L` needs a `long double` argument model,
+    today `sizeof(long double) == 8`, D6) — until then each is the D16 refusal.
+  - **`%n`, `%ls`, `%lc`** (size S each: `%n` stores the count through the pointer argument; the wide forms need
+    `wcrtomb`'s single-byte reading) — the D16 refusals.
+  - **`%f` of `-0.0` prints `0.000000` on both engines** (gcc `-0.000000`): measured with `z * -1.0` (prints
+    `-0.000000`) against `-z` and `0.0 - z` (print `0.000000`), the sign is lost by the unary minus / subtraction before
+    the formatter — a floating-arithmetic question (the Core elaboration of unary minus?), not filed yet; tray 70's
+    related finding names it.
+  - The space flag on an unsigned conversion (`% u` prints ` 5`; gcc `5`) and the padded `%5%` are upstream's readings of
+    questionable/invalid input, kept and pinned (tray 70's related findings); the `%s`-of-a-non-pointer crash (UB input)
+    is tolerated, unchanged.
 - **The macro integer types' conversion rank** (tray 20; the survey's cluster K, which the survey marked CORRECT having
   probed only compatibility and `_Generic`; rediscovered by cerberus-caesium's filing 05 at a blocked libxml2
   refinement; [USER 2026-11-04] approved the fork fix) — **DONE 2026-11-04** (branch `fix/macro-type-ranks`, contract
@@ -299,8 +328,9 @@ the outcome protocol; [USER 2026-10-20]); all three have landed, so the queue is
   `array_shift_ptrval` returns `UB046_array_pointer_outside` on a null pointer) is carried by the stage-1
   merge-base, mirrored by seam S2; both engines agree on `tests/minimal/097`, `tests/ci/0120`/`0121`,
   `ts-fmt-s-null` (bump record §4)**; (5) the `printf` `%.*d`
-  (negative precision, tray 26) and `%n` arms (formatted.lem:453/:726). Each becomes an attributed refusal in both
-  engines with a witness; 0 gated rows move. A sixth arm, found by the compound-assignment slice's pre-merge reviewer
+  (negative precision, tray 26) and `%n` arms (formatted.lem:453/:726) — **DONE 2026-11-07** (fix/printf-refusals,
+  contract D16: the `*` forms are IMPLEMENTED, `%n`/`%ls`/`%lc` are attributed refusals; the entry above). Each of
+  the others becomes an attributed refusal in both engines with a witness; 0 gated rows move. A sixth arm, found by the compound-assignment slice's pre-merge reviewer
   on the mainline `b4a48f635` (2026-10-29, review P-incidental; pre-existing, both engines, not touched by that slice):
   a fully braced initializer of a struct containing an array of structs — `struct T { int b; }; struct S { struct T
   a[2]; }; struct S s = {{{1},{2}}};` — dies before elaboration with `internal error: Translation called on Ail program

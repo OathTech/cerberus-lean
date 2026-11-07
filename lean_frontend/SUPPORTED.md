@@ -63,6 +63,25 @@ N4; declared 2026-10-30, remover queued in TODO). Since contract D15
 (2026-11-06) a libc-mode `printf` is the library's own, so a printf-format UB
 is raised inside the library's `vfprintf` and carries this limitation too.
 
+Formatted output (contract D16, 2026-11-07; witness `scripts/check_printf_refusals.sh`,
+row 1): the `printf` family's conversions are supported or refused as follows; a
+refusal is a loud stop on both engines (oracle exit 125, Lean abort 134) with one
+attributed text naming the conversion, never a wrong answer.
+
+| Conversion / form | State |
+|---|---|
+| `%d %i %o %u %x %X` with `hh h l ll j z t` and none; `%c`; `%s` (precision honoured); `%p` (`void *`; the text is implementation-defined, pinned); `%%` | SUPPORTED, = gcc 13 on the witness rows |
+| flags `- + space # 0`, a literal or `*` field width, a literal or `*` precision (negative `*` values as 7.21.6.1#5) | SUPPORTED, = gcc 13 (the `0` flag after the sign/base, `#` with `o`/`x`/`X`/`f`) |
+| `%f`, `%lf` of a `double` (incl. infinities) | SUPPORTED, = gcc 13; `%f` of a NaN REFUSED on the Lean engine (CONTRACT §3) |
+| `%e %E %g %G %a %A %F`, `%L<conv>` (long double) | REFUSED (not implemented; upstream reported them as `Invalid_format` UB); queued in TODO |
+| `%n`, `%ls`, `%lc` | REFUSED (upstream crashed) |
+| `snprintf`/`vsnprintf`: the return value, `n = 0`, a format's UB | SUPPORTED, = gcc 13 (7.21.6.5#2-#3) |
+| an `int` argument for `%x`/`%X`/`%o`/`%u`, an `unsigned` for `%d`, a `long` for `%d`, a non-`int` `*` argument | UB153b (upstream's strict 7.21.6.1#9 reading, tray 27; pinned) |
+| `%hs`, `%lls`, `%Ld` and the like; `#` with `d`/`s`, `0` with `s`/`c` | UB158 / UB157 (7.21.6.1#6-#7) |
+| `+` on an unsigned conversion, a modifier other than `l` on `%c` | upstream's `DUMMY` UB verdicts (pinned, filed) |
+| `%5%`, `%*%` (padded), the space flag on an unsigned conversion (applied) | upstream's reading on invalid/questionable input (pinned, filed with tray 70) |
+| a malformed specification (`%q`, a trailing `%`, `%ll`, `%.5.3d`, `%5*d`) | `Invalid_format` UB (7.21.6.1#9) |
+
 Upstream's recursive-main guard is dead on the active driver path:
 recursion into main executes. Bounded witnesses with and without argc/argv
 pass both engines and modes (42 and 7 respectively, also the GCC results).

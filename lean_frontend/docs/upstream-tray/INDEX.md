@@ -81,7 +81,7 @@ notes below establish only what was checked then.
 | [13-memcmp-hugesize-overflow-crash.md](13-memcmp-hugesize-overflow-crash.md) | Sent; fixed in the fork (2026-11-07, a fork-ahead delta: `memcmp` counting on `Z`, the checked load's UB verdict reached; the Lean engine answered so since 2026-09-03 under the retired ISO-fix register row; record `../2026-11-07_half-mirrors-oracle-record.md`, patch against `c3ff8c53f` in the draft) | Communicated privately to the Cerberus maintainers by the operator, 2026-09-26 ([USER 2026-09-26] reported having notified the Cerberus maintainers privately); no public issue URL |
 | [14-ailname-proxy-shadows-user-functions.md](14-ailname-proxy-shadows-user-functions.md) | Draft | No submission recorded |
 | [15-bool-float-conversion-truncation.md](15-bool-float-conversion-truncation.md) | Fixed upstream; backported; carried by the base since stage 1 of the merge-base bump (2026-10-30, the I0b backport merged away) | Upstream `3230aa494`; inner_arg_temps I0b. No submission recorded |
-| [16-snprintf-truncation-return-length.md](16-snprintf-truncation-return-length.md) | Draft | No submission recorded |
+| [16-snprintf-truncation-return-length.md](16-snprintf-truncation-return-length.md) | Draft; fixed in the fork 2026-11-07 (fork-ahead delta, contract D16; the report carries the patch: the would-be length, formatting at n = 0, the UB verdict passed through) | No submission recorded; to be filed with the patch |
 | [17-diagnostic-embeds-symbol-id.md](17-diagnostic-embeds-symbol-id.md) | Draft | No submission recorded |
 | [18-monadic-list-combinators-non-tail.md](18-monadic-list-combinators-non-tail.md) | Draft | No submission recorded |
 | [19-dynamic-addrs-never-cleaned.md](19-dynamic-addrs-never-cleaned.md) | Draft | No submission recorded |
@@ -91,8 +91,8 @@ notes below establish only what was checked then.
 | [23-string-literal-init-of-char-array-members.md](23-string-literal-init-of-char-array-members.md) | Draft | No submission recorded |
 | [24-stdio-buffer-not-flushed-at-exit.md](24-stdio-buffer-not-flushed-at-exit.md) | Draft; fixed in the fork 2026-11-06 (fork-ahead delta, contract D15; the report carries the patch; 25 merged into it) | No submission recorded; to be filed |
 | [25-atexit-not-run-on-main-return.md](25-atexit-not-run-on-main-return.md) | Merged into 24 (2026-11-06); fixed in the fork | filed with 24 |
-| [26-printf-star-width-crash.md](26-printf-star-width-crash.md) | Draft | No submission recorded |
-| [27-printf-hex-int-argument-ub153b.md](27-printf-hex-int-argument-ub153b.md) | Draft | No submission recorded |
+| [26-printf-star-width-crash.md](26-printf-star-width-crash.md) | Draft; the `*` width/precision fixed in the fork 2026-11-07 (fork-ahead delta, contract D16; the report carries the remedy), %n/%ls/%lc DECLARED REFUSALS in the fork (not a fix for upstream) | No submission recorded; to be filed with the patch |
+| [27-printf-hex-int-argument-ub153b.md](27-printf-hex-int-argument-ub153b.md) | Draft; the fork KEEPS the strict verdict (2026-11-07: upstream's defensible 7.21.6.1#9 reading, pinned as a UB row of scripts/check_printf_refusals.sh) | No submission recorded |
 | [28-conditional-in-static-initializer.md](28-conditional-in-static-initializer.md) | Merged into 09 (2026-11-07); fixed in the fork | filed with 09 |
 | [29-string-literal-address-constant.md](29-string-literal-address-constant.md) | Merged into 09 (2026-11-07); fixed in the fork | filed with 09 |
 | [30-strncmp-zero-length.md](30-strncmp-zero-length.md) | Draft | No submission recorded |
@@ -132,6 +132,9 @@ notes below establish only what was checked then.
 | [65-inner-arg-temps-core-symbol-loss.md](65-inner-arg-temps-core-symbol-loss.md) | Draft | Fork printer remedy and loader detector implemented; cross-mode multiplicity dispositioned; no submission recorded |
 | [66-main-inner-arg-temps-comment.md](66-main-inner-arg-temps-comment.md) | Draft | Report only; main uses the switch despite the exclusion comment; no submission recorded |
 | [67-const-expr-sizeof-struct-not-found-window.md](67-const-expr-sizeof-struct-not-found-window.md) | Draft; fixed upstream (736690a65) before it was filed | Regression window b3e11ea33..736690a65: a struct/union sizeof or _Alignof in an integer constant expression raises Not_found (the mini-run's Core file has no tag definitions); found by the merge-base bump stage 1, carried as a backport of the fixing line until stage 2. No submission recorded |
+| [68-printf-floating-conversions-unparsed-false-invalid-format.md](68-printf-floating-conversions-unparsed-false-invalid-format.md) | Draft (2026-11-07); the fork parses the full 7.21.6.1#7-#8 syntax and REFUSES the unimplemented floating conversions (contract D16: a declared refusal, not a fix for upstream; the report asks for the conversions or an explicit error) | No submission recorded |
+| [69-printf-j-z-t-modifiers-false-ub153b.md](69-printf-j-z-t-modifiers-false-ub153b.md) | Draft (2026-11-07); fixed in the fork (fork-ahead delta, contract D16; the report carries the remedy: the expected side normalised through the alias table) | No submission recorded; to be filed with the patch |
+| [70-printf-zero-flag-before-sign-and-hash-f-no-point.md](70-printf-zero-flag-before-sign-and-hash-f-no-point.md) | Draft (2026-11-07); fixed in the fork (fork-ahead delta, contract D16; the report carries the remedy); three related findings kept as upstream has them | No submission recorded; to be filed with the patch |
 | [lean4/01-stack-overflow-handler-deadlock.md](lean4/01-stack-overflow-handler-deadlock.md) | Draft | No submission recorded |
 | [lean4/02-nat-div-mod-literal-folding.md](lean4/02-nat-div-mod-literal-folding.md) | Draft | No submission recorded |
 | [lean4/03-float-tobits-canonicalizes-nan.md](lean4/03-float-tobits-canonicalizes-nan.md) | Draft | No submission recorded |
@@ -269,7 +272,7 @@ covered by the 2026-08-23 duplicate search — search at filing time):
     stdlib); gcc gives the ISO value. One-branch std.core remedy.
     Repro `tests/parity-probes/probes/bool_conv.c`, verbatim
     2026-08-30.
-16. **16-snprintf-truncation-return-length.md** — TRUE BUG.
+16. **16-snprintf-truncation-return-length.md** — TRUE BUG; FIXED IN THE FORK 2026-11-07 (a fork-ahead delta, contract D16, record `../2026-11-07_printf-refusals-record.md`; the report carries the patch: the would-be length, formatting at n = 0, a format's UB verdict passed through instead of the `TODO: snprintf()` crash).
     `snprintf` on truncation returns the truncated length
     (formatted.lem:799-801 returns `length cs'`, the `List.take
     (n-1)` list) instead of §7.21.6.5#3's would-have-been length;
@@ -425,7 +428,7 @@ and gcc disagrees — the defect is in the shared model, not in our port:
     "TODO: explode the elements"`). Ubiquitous idiom; remedy = the TODO.
 24. **24-stdio-buffer-not-flushed-at-exit.md** — TRUE BUG; FIXED IN THE FORK 2026-11-06 (a fork-ahead delta, contract D15, record `../2026-11-05_stdio-exit-flush-record.md`; the report is the filing, 25 merged into it, with the patch against `c3ff8c53f`: the driver routes the startup function's return through the library's `exit` with the library linked, the library's `exit` flushes every open stream after the handlers, the `printf` proxy is withheld from libc-mode programs so `printf` is the library's own and ordered with the buffer, `vprintf` defined). Before: `fputs("out", stdout); return 0;` printed nothing, `puts("a"); puts("b");` only `a` (stdout fully buffered after its first write), `printf` reordered before earlier buffered writes.
 25. **25-atexit-not-run-on-main-return.md** — TRUE BUG; MERGED INTO 24 and FIXED IN THE FORK 2026-11-06 (the same driver path: `atexit` handlers now run on return from `main`, §5.1.2.2.3; the witness `atexit_on_return` pins gcc's `m21`, status 4, on both engines).
-26. **26-printf-star-width-crash.md** — TRUE BUG (crash on legal input).
+26. **26-printf-star-width-crash.md** — TRUE BUG (crash on legal input); the `*` width/precision FIXED IN THE FORK 2026-11-07 (contract D16, the same record; the report carries the remedy), `%n`/`%ls`/`%lc` DECLARED REFUSALS in the fork with attributed texts (the report now names them too). Siblings filed apart: 68 (the floating conversions reported as Invalid_format), 69 (`%jd`/`%zd`/`%td` false UB153b), 70 (the `0`/`#` flags).
     `%*d`: the format parser accepts `*` (formatted.lem:113/119) but every
     consumer is a placeholder — `error "TODO: formatted.lem 6"` (:741-742),
     `assert_false "TODO: FW_asterisk"` (:253) — uncaught `Failure`, exit
