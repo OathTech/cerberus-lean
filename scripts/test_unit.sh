@@ -635,7 +635,8 @@ if ! "$ADDRESS_CONSTANTS_SH" --selftest; then
 fi
 
 # The formatter's declared refusals and fixes (fix/printf-refusals, 2026-11-07, contract D16; upstream-tray
-# reports 26, 16, 68, 69, 70): 161 programs under tests/printf_refusals/ in libc mode (4 nolibc controls) --
+# reports 26, 16, 68, 69, 70): the row-1 CORE, 32 of the 161 programs under tests/printf_refusals/ in libc mode (4 nolibc
+# controls; the whole matrix is Tier B row 15, `--full`) -- in the matrix:
 # every floating conversion other than %f/%lf, the L modifier, %n, %ls, %lc, an unspecified `*` argument and a %%
 # specification with a `*` width REFUSED with one attributed text per class, pinned whole on both engines (18 rows); the `*` field width and
 # precision in every form, %jd/%zd/%td with the macro types, snprintf's would-be length, the 0 flag after the

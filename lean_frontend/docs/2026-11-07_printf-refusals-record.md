@@ -302,7 +302,17 @@ the %e conversion …` the same text to the end, exit 134.)
 Rows 1-14 are the mechanism's; the csmith shim's `printf("…checksum after hashing %s : %X\n", …)` (`%s`, `%X`/`%lX` of
 an unsigned) is row 15's accepted shape and unchanged.
 
-### 3.4 The witness (`scripts/check_printf_refusals.sh`, row 1 via `test_unit.sh`; `tests/printf_refusals/`, 161 programs)
+### 3.4 The witness (`scripts/check_printf_refusals.sh`; `tests/printf_refusals/`, 161 programs; row 1 runs the 32-program CORE, Tier B row 15 the whole matrix)
+
+Split 2026-11-07 after the review round, under the gate-cruft rule (the orchestrator's instruction: the 455 s run was an
+outlier beside the other row-1 witnesses and dominated row 1): the default mode is the CORE — every refusal class once
+(9 rows: `%e`, `%Lf`, `%n`, `%ls`, `%lc`, an unspecified `*` argument, `%*%`, `%e` inside `snprintf`, `%e` under
+`--nolibc`), every fixed class once (18 gcc-pinned rows: the `*` width and precision incl. negative and `%*.*f`,
+`%jd`/`%zd`/`%tu`, `snprintf`'s length and `n = 0`, the `0`/`#` flags, the `#` point, infinities, a plain `%d`), one
+fork-pinned row (`%5%`), 3 UB rows (a `snprintf` format's UB, UB158, the tray-27 reading), the NaN gap control, the four
+nolibc controls — 32 programs, totals pinned per mode; `--full` runs all 161 with the same expectation files (read
+once) and no pin of its own (Tier B row 15); the plants run on a nine-program subset of the core with re-derived counts
+(18, 13, 12, 11, 5, 17). Measured from the project root: core with plants `core: 103.77 s elapsed, 194944 KB maxrss` (`/usr/bin/time`, `--selftest`, the plants on the nine-program subset then the 32-program core, from the project root, 2026-11-07, 1-minute load ≈ 10 at start; the undivided 161-program run with plants was 455.04 s); the full matrix `full: 277.35 s elapsed, 195004 KB maxrss` (`/usr/bin/time`, `--full`, from the project root, 2026-11-07, load ≈ 4; no plants).
 
 The stdio script's shape (libc mode from the project root, the metadata TUs from `libc_prep.sh --jsons`, every class
 count pinned) with four row classes in `expected.txt` (`name TAB class TAB pin`): VALUE (both engines' batch line =
@@ -514,6 +524,21 @@ check_printf_refusals: selftest plant 'expect-tamper' caught: 5 failing check(s)
 check_printf_refusals: selftest plant 'lean-other-text' caught: 27 failing check(s) (= expected 27; incl. the required programs)
 check_printf_refusals: OK (161 programs, libc mode but for the 4 nolibc controls: 104 VALUE rows with both engines' batch lines equal to the pin and exit codes equal — 101 gcc 13's line (the * field width and precision in every form incl. negative, zero, with flags and modifiers, in printf/fprintf/sprintf/snprintf/vprintf; %jd/%ju/%zd/%zu/%td/%tu with the macro types and their corresponding types; snprintf's would-be length on truncation, at n = 0 with a null buffer, at n = 1, at the exact fit and in the sizing idiom; the 0 flag after the sign and the 0x base, the # decimal point of %f, infinities space-padded; every integer, character, string and %f conversion with its flags, widths, precisions and length modifiers as controls) and 3 the fork's declared lines with gcc's beside them (implementation-defined %p text, upstream's padded %5% under its own TODO, its space flag on an unsigned conversion); 38 UB rows with the pinned verdict on both engines, the location projected (a snprintf format's UB passed through instead of the crash, a non-l modifier with %s as UB158, the strict 7.21.6.1#9 readings of tray 27 kept, the malformed formats as Invalid_format); 18 REFUSAL rows with the oracle's internal error and the Lean engine's PANIC carrying the identical pinned text (every floating conversion other than %f/%lf, the L modifier, %n, %ls, %lc, an unspecified * argument, a %% specification with a * width, in printf and snprintf); 1 gap control (%f of a NaN refused on the Lean engine); 75 rows moved from pristine c3ff8c53f's lines)
 witness: 455.04 s elapsed, 196780 KB maxrss   (/usr/bin/time over the witness with its self-test, from the project root, load ≈ 4; the reviewer's measurement of the unbounded first M2: 485.57 s, 1,760,972 KB)
+```
+
+The two modes after the split (the same tree, from the project root), verbatim:
+
+```text
+check_printf_refusals: selftest plant 'pristine-pair' caught: 18 failing check(s) (= expected 18; incl. the required programs)
+check_printf_refusals: selftest plant 'lean-pristine' caught: 13 failing check(s) (= expected 13; incl. the required programs)
+check_printf_refusals: selftest plant 'lean-fixed' caught: 12 failing check(s) (= expected 12; incl. the required programs)
+check_printf_refusals: selftest plant 'oracle-rc' caught: 11 failing check(s) (= expected 11; incl. the required programs)
+check_printf_refusals: selftest plant 'expect-tamper' caught: 5 failing check(s) (= expected 5; incl. the required programs)
+check_printf_refusals: selftest plant 'lean-other-text' caught: 17 failing check(s) (= expected 17; incl. the required programs)
+check_printf_refusals: OK (core, row 1: 32 programs, libc mode but for the 4 nolibc controls — every refusal class once (9 REFUSAL rows: %e, %Lf, %n, %ls, %lc, an unspecified * argument, %*%, %e inside snprintf, %e under --nolibc) with the oracle's internal error and the Lean PANIC carrying the identical pinned text; every fixed class once (18 gcc-pinned VALUE rows: * width and precision incl. negative and *.*f, %jd/%zd/%tu, snprintf's would-be length and n = 0, the 0 and # flags, the # point on %f, infinities space-padded, a plain %d) and 1 fork-pinned (%5% under upstream's TODO); 3 UB rows (a snprintf format's UB passed through, %hs as UB158, the tray-27 strict reading kept); 1 gap control; 28 rows moved from pristine's lines; the whole 161-program matrix is Tier B row 15, --full)
+core: 103.77 s elapsed, 194944 KB maxrss
+check_printf_refusals: OK (full, Tier B row 15: 161 programs, libc mode but for the 4 nolibc controls: 104 VALUE rows with both engines' batch lines equal to the pin and exit codes equal — 101 gcc 13's line (the * field width and precision in every form incl. negative, zero, with flags and modifiers, in printf/fprintf/sprintf/snprintf/vprintf; %jd/%ju/%zd/%zu/%td/%tu with the macro types and their corresponding types; snprintf's would-be length on truncation, at n = 0 with a null buffer, at n = 1, at the exact fit and in the sizing idiom; the 0 flag after the sign and the 0x base, the # decimal point of %f, infinities space-padded; every integer, character, string and %f conversion with its flags, widths, precisions and length modifiers as controls) and 3 the fork's declared lines with gcc's beside them (implementation-defined %p text, upstream's padded %5% under its own TODO, its space flag on an unsigned conversion); 38 UB rows with the pinned verdict on both engines, the location projected (a snprintf format's UB passed through instead of the crash, a non-l modifier with %s as UB158, the strict 7.21.6.1#9 readings of tray 27 kept, the malformed formats as Invalid_format); 18 REFUSAL rows with the oracle's internal error and the Lean engine's PANIC carrying the identical pinned text (every floating conversion other than %f/%lf, the L modifier, %n, %ls, %lc, an unspecified * argument, a %% specification with a * width, in printf and snprintf); 1 gap control (%f of a NaN refused on the Lean engine); 75 rows moved from pristine c3ff8c53f's lines)
+full: 277.35 s elapsed, 195004 KB maxrss
 ```
 
 (the fork-drift gate after the two re-pins: `check_fork_drift: OK — layer 1: 95 oracle-surface files = manifest (…);

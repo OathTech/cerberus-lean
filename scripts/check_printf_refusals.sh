@@ -49,8 +49,15 @@
 # form can equal no engine line (the 2026-11-07 pre-merge review: the uncapped line was a 691.7 MiB blob scanned
 # per row). Fail-closed.
 #
-# Usage: check_printf_refusals.sh             the witnesses
-#        check_printf_refusals.sh --selftest  plants (on the PLANT subset, then the real run):
+# Two modes (the gate-cruft rule: row 1 is the per-commit tier, a long check run is itself suspicious):
+#   CORE (default; ladder row 1 via test_unit.sh): the 32 programs of CORE_SET — every refusal class once (the texts
+#     pinned whole), every fixed class once (`*` width and precision incl. negative, `*.*f`, j/z/t, snprintf's length and
+#     n = 0, a snprintf format's UB, the 0 and # flags, the # point on %f, infinities, UB158), the `%*%` refusal, one
+#     tray-27 kept strict reading, one control, one fork-pinned row, the NaN gap control and the four nolibc controls.
+#   --full (Tier B row 15: slice boundaries, close-out, pre-merge): the whole 161-program matrix — the same programs, the
+#     same expectation files (read once), no pin changes.
+# Usage: check_printf_refusals.sh [--full]             the witnesses (core, or the whole matrix)
+#        check_printf_refusals.sh --selftest [--full]  plants (on the PLANT subset, then the real run):
 #            (a) `pristine-pair`: both engines replay pristine's lines (its crashes as upstream's texts)
 #            (b) `lean-pristine`: the real oracle, the Lean engine replays pristine's lines
 #            (c) `lean-fixed`: the Lean engine answers one fixed Defined line on every input
@@ -73,18 +80,29 @@ CASES="$ROOT/tests/printf_refusals"
 EXPECT="${CERB_PR_EXPECT_OVERRIDE:-$CASES/expected.txt}"
 GCC_LINES="$CASES/gcc.txt"
 PRISTINE="$CASES/pristine.txt"
-ONLY="${CERB_PR_ONLY:-}"
+MODE=core; SELFTEST=0
+for arg in "$@"; do
+    case "$arg" in
+        --full) MODE=full ;;
+        --selftest) SELFTEST=1 ;;
+        *) echo "check_printf_refusals: usage: $0 [--selftest] [--full]"; exit 2 ;;
+    esac
+done
+MODE_FLAG=(); [[ "$MODE" == full ]] && MODE_FLAG=(--full)
 NAME=check_printf_refusals
+# the row-1 CORE: every class once (32 programs); the whole matrix is --full
+CORE_SET="e_double Lf_ldouble n_int ls_wchar lc_wint star_width_uninit star_percent sn_float_e star_width star_width_neg star_prec star_prec_neg star_both_f jd_intmax zd_long_arg tu_ulong_arg sn_trunc sn_zero_null sn_ub_insufficient flags_zero flags_hash f_hash f_inf hs_strict x_int_tray27 d_int percent_width f_nan nolibc_star_width nolibc_e_double nolibc_jd_intmax nolibc_flags_zero"
+if [[ -n "${CERB_PR_ONLY:-}" ]]; then ONLY="$CERB_PR_ONLY"; elif [[ "$MODE" == core ]]; then ONLY="$CORE_SET"; else ONLY=""; fi
 LEAN_PANIC_RE='^PANIC at _private\.LemLib\.0\.failwithIImpl LemLib:[0-9]+:[0-9]+: '
 GAP_LEAN_TEXT='"REFUSAL","float-format","%f"'
 # the declared fork-pinned VALUE rows (their pins differ from gcc's line; each program's header comment states the reason)
 FORK_PINNED="p_null percent_width space_u"
-# the plant subset: moved rows of each class, unmoved rows, the gap control, a nolibc control
-PLANT_VALUE_MOVED="star_width sn_trunc jd_intmax flags_zero"
-PLANT_VALUE_SAME="d_int s_prec"
-PLANT_UB_MOVED="sn_ub_insufficient hs_strict"
+# the plant subset (nine programs, all in the core): moved rows of each class, unmoved rows, the gap control, nolibc controls
+PLANT_VALUE_MOVED="star_width jd_intmax"
+PLANT_VALUE_SAME="d_int"
+PLANT_UB_MOVED="hs_strict"
 PLANT_UB_SAME="x_int_tray27"
-PLANT_REFUSAL="e_double n_int"
+PLANT_REFUSAL="e_double"
 PLANT_GAP="f_nan"
 PLANT_NOLIBC="nolibc_star_width nolibc_e_double"
 PLANT_SET="$PLANT_VALUE_MOVED $PLANT_VALUE_SAME $PLANT_UB_MOVED $PLANT_UB_SAME $PLANT_REFUSAL $PLANT_GAP $PLANT_NOLIBC"
@@ -100,7 +118,7 @@ load_table() {  # <file> <array-name>
     done < "$f"
 }
 
-if [[ "${1:-}" == --selftest ]]; then
+if [[ "$SELFTEST" == 1 ]]; then
     mkdir -p "$ROOT/.tmp/scripts" || { echo "$NAME: FAIL — cannot create $ROOT/.tmp/scripts"; exit 1; }
     ST=$(mktemp -d "$ROOT/.tmp/scripts/$NAME.selftest.XXXXXX") || { echo "$NAME: FAIL — mktemp"; exit 1; }
     trap 'rm -rf "$ST"' EXIT
@@ -149,37 +167,32 @@ EOS
         done
         echo "$NAME: selftest plant '$label' caught: $got failing check(s) (= expected $want${*:+; incl. the required programs})"
     }
-    # Expected counts, derived on the plant subset (15 programs: 4 moved VALUE + 2 same VALUE + 2 moved UB + 1 same
-    # UB + 2 REFUSAL + 1 GAP + 2 nolibc (one VALUE, one REFUSAL)). Checks per VALUE/UB row: C1 oracle rc + line =
-    # pin, C2 Lean line = pin, C3 Lean rc = oracle rc; per REFUSAL row: R1 oracle rc 125 + text, R2 Lean rc 134 +
-    # text, R3 the two texts equal; the GAP row: G1 oracle rc 0 + line = pin, G2 Lean rc 134 + the envelope.
-    # The replay stubs print a pristine Defined/Undefined line with exit 0/1 and replay a pristine crash as
-    # upstream's crash (exit 125 / 134 with the old text).
-    #  pristine-pair:   moved VALUE: star_width (pristine crashed: C1 + C2 + C3, 125 vs 134) = 3, sn_trunc (pristine's
-    #                   wrong value: C1 + C2) = 2, jd_intmax (pristine's UB line: C1 + C2) = 2, flags_zero (wrong
-    #                   value: C1 + C2) = 2; 2 moved UB (pristine crashed: C1 + C2 + C3) = 6; e_double (pristine's
-    #                   UB line: R1 + R2 + R3, both texts empty) = 3, n_int (the old text on both: R1 + R2) = 2;
-    #                   GAP: G2 (the stub prints the oracle's line, no refusal) = 1; nolibc_star_width (pristine
-    #                   crashed: 3); nolibc_e_double (pristine's UB line: 3); the same rows pass
-    #                   (9 + 6 + 5 + 1 + 6; a first derivation mis-added this to 24 and the plant caught it)    = 27
-    #  lean-pristine:   star_width C2 + C3 = 2, sn_trunc C2 = 1, jd_intmax C2 + C3 = 2, flags_zero C2 = 1; 2 moved UB:
-    #                   C2 + C3 = 4; e_double R2 + R3 = 2, n_int R2 + R3 = 2; GAP: G2 = 1; nolibc_star_width: C2 + C3
-    #                   = 2; nolibc_e_double: R2 + R3 = 2                                                          = 19
-    #  lean-fixed:      6 VALUE rows: C2 fails on 5 (d_int's pin IS the fixed line) = 5; 3 UB rows: C2 + C3 = 6;
-    #                   2 REFUSAL: R2 + R3 = 4; GAP: G2 = 1; nolibc_star_width: C2 = 1; nolibc_e_double: R2 + R3 = 2 = 19
-    #  oracle-rc:       6 VALUE rows x (C1 rc 1 + C3 0 != 1) = 12; 3 UB rows pass (rc 1 is their rc); 2 REFUSAL:
-    #                   R1 (rc 1, not 125) = 2; GAP: G1 = 1; nolibc_star_width: C1 + C3 = 2; nolibc_e_double: R1 = 1 = 18
-    #  expect-tamper:   star_width: the pin classification (neither gcc's line nor declared) + C1 + C2 = 3;
-    #                   e_double: R1 + R2 = 2 (R3 passes: the engines agree with each other)                      = 5
-    #  lean-other-text: 6 VALUE: C2 + C3 = 12; 3 UB: C2 + C3 = 6; 2 REFUSAL: R2 (text) + R3 (differ) = 4; GAP: G2 = 1;
-    #                   nolibc_star_width: C2 + C3 = 2; nolibc_e_double: R2 + R3 = 2                                = 27
-    run_plant pristine-pair "$ST/oracle-pristine" "$ST/lean-pristine" "$EXPECT" 27 star_width sn_trunc jd_intmax flags_zero sn_ub_insufficient hs_strict e_double n_int f_nan nolibc_star_width nolibc_e_double
-    run_plant lean-pristine "$REAL_ORACLE" "$ST/lean-pristine" "$EXPECT" 19 star_width jd_intmax e_double f_nan nolibc_e_double
-    run_plant lean-fixed "$REAL_ORACLE" "$ST/lean-fixed" "$EXPECT" 19 s_prec x_int_tray27 e_double f_nan nolibc_star_width
-    run_plant oracle-rc "$ST/oracle-rc" "$REAL_BIN" "$EXPECT" 18 d_int e_double f_nan nolibc_star_width
+    # Expected counts, derived on the plant subset (9 programs: 2 moved VALUE — star_width (pristine crashed),
+    # jd_intmax (pristine's UB line) —, 1 same VALUE (d_int), 1 moved UB (hs_strict, pristine crashed), 1 same UB
+    # (x_int_tray27), 1 REFUSAL (e_double, pristine's UB line), 1 GAP (f_nan), 2 nolibc — nolibc_star_width (VALUE,
+    # pristine crashed), nolibc_e_double (REFUSAL, pristine's UB line)). Checks per VALUE/UB row: C1 oracle rc + line
+    # = pin, C2 Lean line = pin, C3 Lean rc = oracle rc; per REFUSAL row: R1 oracle rc 125 + text, R2 Lean rc 134 +
+    # text, R3 the two texts equal; the GAP row: G1 oracle rc 0 + line = pin, G2 Lean rc 134 + the envelope. The replay
+    # stubs print a pristine Defined/Undefined line with exit 0/1 and replay a pristine crash as upstream's crash
+    # (exit 125 / 134 with the old text).
+    #  pristine-pair:   star_width C1+C2+C3 (125 vs 134) = 3, jd_intmax C1+C2 = 2, d_int 0, hs_strict 3, x_int_tray27 0,
+    #                   e_double R1+R2+R3 (both texts empty) = 3, f_nan G2 = 1, nolibc_star_width 3, nolibc_e_double 3 = 18
+    #  lean-pristine:   star_width C2+C3 = 2, jd_intmax C2+C3 (1 vs 0) = 2, hs_strict C2+C3 (134 vs 1) = 2, e_double R2+R3
+    #                   = 2, f_nan G2 = 1, nolibc_star_width 2, nolibc_e_double R2+R3 = 2                         = 13
+    #  lean-fixed:      star_width C2, jd_intmax C2 = 2 (d_int's pin IS the fixed line); hs_strict, x_int_tray27 C2+C3 = 4;
+    #                   e_double R2+R3 = 2; f_nan G2 = 1; nolibc_star_width C2 = 1; nolibc_e_double R2+R3 = 2      = 12
+    #  oracle-rc:       3 VALUE rows x (C1 rc 1 + C3) = 6; the UB rows pass (rc 1 is their rc); e_double R1 = 1; f_nan G1
+    #                   = 1; nolibc_star_width C1+C3 = 2; nolibc_e_double R1 = 1                                   = 11
+    #  expect-tamper:   star_width: the pin classification + C1 + C2 = 3; e_double: R1 + R2 = 2 (R3 passes)       = 5
+    #  lean-other-text: 3 VALUE x (C2+C3) = 6; 2 UB x (C2+C3) = 4; e_double R2+R3 = 2; f_nan G2 = 1; nolibc_star_width
+    #                   2; nolibc_e_double R2+R3 = 2                                                              = 17
+    run_plant pristine-pair "$ST/oracle-pristine" "$ST/lean-pristine" "$EXPECT" 18 star_width jd_intmax hs_strict e_double f_nan nolibc_star_width nolibc_e_double
+    run_plant lean-pristine "$REAL_ORACLE" "$ST/lean-pristine" "$EXPECT" 13 star_width jd_intmax e_double f_nan nolibc_e_double
+    run_plant lean-fixed "$REAL_ORACLE" "$ST/lean-fixed" "$EXPECT" 12 star_width x_int_tray27 e_double f_nan nolibc_star_width
+    run_plant oracle-rc "$ST/oracle-rc" "$REAL_BIN" "$EXPECT" 11 d_int e_double f_nan nolibc_star_width
     run_plant expect-tamper "$REAL_ORACLE" "$REAL_BIN" "$ST/expected-tampered.txt" 5 star_width e_double
-    run_plant lean-other-text "$REAL_ORACLE" "$ST/lean-other-text" "$EXPECT" 27 d_int x_int_tray27 e_double n_int f_nan nolibc_e_double
-    "$SELF"; exit $?
+    run_plant lean-other-text "$REAL_ORACLE" "$ST/lean-other-text" "$EXPECT" 17 d_int x_int_tray27 e_double f_nan nolibc_e_double
+    "$SELF" "${MODE_FLAG[@]}"; exit $?
 fi
 
 [[ -x "$BIN" ]] || { echo "$NAME: FAIL — driver not built: $BIN"; exit 1; }
@@ -199,8 +212,9 @@ LIBC_ARGS=(--libc "$ROOT/tests/libc/libc.core"); for j in "${LIBC_JSONS[@]}"; do
 
 load_table "$GCC_LINES" GCC; load_table "$PRISTINE" PRIS
 fails=0; n=0; nmoved=0; nvalue=0; ngcc=0; nfork=0; nub=0; nrefusal=0; ngap=0; nnolibc=0
-# the total and the class counts are PINNED: a dropped row cannot pass silently
-WANT_N=161; WANT_VALUE=104; WANT_GCC=101; WANT_FORK=3; WANT_UB=38; WANT_REFUSAL=18; WANT_GAP=1; WANT_NOLIBC=4
+# the total and the class counts are PINNED per mode: a dropped row cannot pass silently
+if [[ "$MODE" == full ]]; then WANT_N=161; WANT_VALUE=104; WANT_GCC=101; WANT_FORK=3; WANT_UB=38; WANT_REFUSAL=18; WANT_GAP=1; WANT_NOLIBC=4
+else WANT_N=32; WANT_VALUE=19; WANT_GCC=18; WANT_FORK=1; WANT_UB=3; WANT_REFUSAL=9; WANT_GAP=1; WANT_NOLIBC=4; fi
 fail() { echo "$NAME: FAIL — $*"; fails=$((fails + 1)); }
 verdict_line() { grep -aE '^(Defined|Undefined|Error|Killed) ' | head -1; }
 strip_loc() { sed -E 's/, loc: "[^"]*"//'; }
@@ -286,10 +300,15 @@ while IFS=$'\t' read -r name class pin; do
     esac
 done < "$EXPECT"
 for name in $FORK_PINNED; do grep -q "^$name	" "$EXPECT" || fail "$name: declared FORK-PINNED but absent from $EXPECT"; done
-if [[ -z "$ONLY" ]]; then  # the whole set: the pinned totals (a subset run is a plant or a focused check, not the gate)
+for name in $CORE_SET; do grep -q "^$name	" "$EXPECT" || fail "$name: in CORE_SET but absent from $EXPECT"; done
+if [[ -z "${CERB_PR_ONLY:-}" ]]; then  # the mode's whole set: the pinned totals (a CERB_PR_ONLY run is a plant or a focused check, not the gate)
     [[ $n -eq $WANT_N && $nvalue -eq $WANT_VALUE && $ngcc -eq $WANT_GCC && $nfork -eq $WANT_FORK && $nub -eq $WANT_UB && $nrefusal -eq $WANT_REFUSAL && $ngap -eq $WANT_GAP && $nnolibc -eq $WANT_NOLIBC ]] \
         || fail "the witness set is not the pinned set: $n programs ($nvalue VALUE = $ngcc gcc-pinned + $nfork fork-pinned, $nub UB, $nrefusal REFUSAL, $ngap GAP; $nnolibc of them nolibc); expected $WANT_N ($WANT_VALUE = $WANT_GCC + $WANT_FORK, $WANT_UB, $WANT_REFUSAL, $WANT_GAP; $WANT_NOLIBC)"
 fi
 
 [[ $fails -eq 0 ]] || { echo "$NAME: $fails failing check(s) over $n programs"; exit 1; }
-echo "$NAME: OK ($n programs, libc mode but for the $nnolibc nolibc controls: $nvalue VALUE rows with both engines' batch lines equal to the pin and exit codes equal — $ngcc gcc 13's line (the * field width and precision in every form incl. negative, zero, with flags and modifiers, in printf/fprintf/sprintf/snprintf/vprintf; %jd/%ju/%zd/%zu/%td/%tu with the macro types and their corresponding types; snprintf's would-be length on truncation, at n = 0 with a null buffer, at n = 1, at the exact fit and in the sizing idiom; the 0 flag after the sign and the 0x base, the # decimal point of %f, infinities space-padded; every integer, character, string and %f conversion with its flags, widths, precisions and length modifiers as controls) and $nfork the fork's declared lines with gcc's beside them (implementation-defined %p text, upstream's padded %5% under its own TODO, its space flag on an unsigned conversion); $nub UB rows with the pinned verdict on both engines, the location projected (a snprintf format's UB passed through instead of the crash, a non-l modifier with %s as UB158, the strict 7.21.6.1#9 readings of tray 27 kept, the malformed formats as Invalid_format); $nrefusal REFUSAL rows with the oracle's internal error and the Lean engine's PANIC carrying the identical pinned text (every floating conversion other than %f/%lf, the L modifier, %n, %ls, %lc, an unspecified * argument, a %% specification with a * width, in printf and snprintf); $ngap gap control (%f of a NaN refused on the Lean engine); $nmoved rows moved from pristine c3ff8c53f's lines)"
+if [[ "$MODE" == core ]]; then
+    echo "$NAME: OK (core, row 1: $n programs, libc mode but for the $nnolibc nolibc controls — every refusal class once ($nrefusal REFUSAL rows: %e, %Lf, %n, %ls, %lc, an unspecified * argument, %*%, %e inside snprintf, %e under --nolibc) with the oracle's internal error and the Lean PANIC carrying the identical pinned text; every fixed class once ($ngcc gcc-pinned VALUE rows: * width and precision incl. negative and *.*f, %jd/%zd/%tu, snprintf's would-be length and n = 0, the 0 and # flags, the # point on %f, infinities space-padded, a plain %d) and $nfork fork-pinned (%5% under upstream's TODO); $nub UB rows (a snprintf format's UB passed through, %hs as UB158, the tray-27 strict reading kept); $ngap gap control; $nmoved rows moved from pristine's lines; the whole 161-program matrix is Tier B row 15, --full)"
+    exit 0
+fi
+echo "$NAME: OK (full, Tier B row 15: $n programs, libc mode but for the $nnolibc nolibc controls: $nvalue VALUE rows with both engines' batch lines equal to the pin and exit codes equal — $ngcc gcc 13's line (the * field width and precision in every form incl. negative, zero, with flags and modifiers, in printf/fprintf/sprintf/snprintf/vprintf; %jd/%ju/%zd/%zu/%td/%tu with the macro types and their corresponding types; snprintf's would-be length on truncation, at n = 0 with a null buffer, at n = 1, at the exact fit and in the sizing idiom; the 0 flag after the sign and the 0x base, the # decimal point of %f, infinities space-padded; every integer, character, string and %f conversion with its flags, widths, precisions and length modifiers as controls) and $nfork the fork's declared lines with gcc's beside them (implementation-defined %p text, upstream's padded %5% under its own TODO, its space flag on an unsigned conversion); $nub UB rows with the pinned verdict on both engines, the location projected (a snprintf format's UB passed through instead of the crash, a non-l modifier with %s as UB158, the strict 7.21.6.1#9 readings of tray 27 kept, the malformed formats as Invalid_format); $nrefusal REFUSAL rows with the oracle's internal error and the Lean engine's PANIC carrying the identical pinned text (every floating conversion other than %f/%lf, the L modifier, %n, %ls, %lc, an unspecified * argument, a %% specification with a * width, in printf and snprintf); $ngap gap control (%f of a NaN refused on the Lean engine); $nmoved rows moved from pristine c3ff8c53f's lines)"
