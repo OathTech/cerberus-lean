@@ -109,3 +109,13 @@ finding L6); both engines agree (shared `.lem`), gcc prints. Re-verified
 fork's oracle and the Lean port (lines above verbatim). Localisation and
 this draft by Claude (Fable 5.1) under operator direction; the filed
 issue carries an AI-provenance note per the tray's policy.
+
+## Fork status (2026-11-07, branch `fix/printf-refusals`)
+
+Kept as upstream has it: the strict 7.21.6.1#9 reading is a defensible judgement (the true-bug audit of
+2026-11-04 classed it REFUSE-AND-FILE), so the fork reports the same `UB153b` and pins it as a UB row of
+`scripts/check_printf_refusals.sh` (`x_int_tray27`, `u_int_arg`, `d_uint_arg`, `u_neg_int`, `ld_int_arg`,
+`d_long_arg`, `jd_llong_arg`, `zd_int_arg`, `star_width_long_arg`, `star_width_uint_arg`, `p_intp_strict`,
+with gcc's lines beside them). The `%jd`-of-an-`intmax_t` case this report's first draft grouped here is NOT
+of this class (the argument has exactly the named type) and is filed and fixed as report 69. The line
+numbers above are `b9aeedcb4`'s; at `c3ff8c53f` the arm is `formatted.lem:515-537` (`mk_diouxX_expected_and_conv`; the no-modifier arm `:536-537`).

@@ -119,6 +119,18 @@
 #   (`Error {msg: "desugaring failed at <the oracle's loc>"}`, exit 1) is evidenced in the record's three-engine table; the pristine
 #   difference is bound by the shared-model-fix rows of scripts/upstream_oracle_differences.json. 004 is the control: MATCH.
 #   Rows hand-inserted, as measured by `test_exec.sh tests/coverage/alignas`.
+# 2026-11-07 fix/printf-refusals (contract D16; record
+#   lean_frontend/docs/2026-11-07_printf-refusals-record.md): three rows moved,
+#   deliberately re-recorded here (single-row edits, not --write-baseline):
+#   fmt-014-e-unserved-ub.c and fmt-015-g-unserved-ub.c UB_MATCH -> CERB_SKIP —
+#   a CLASS MOVE: both engines now REFUSE %e/%g (the formatter parses the full
+#   7.21.6.1#7-#8 syntax and refuses the unimplemented floating conversions with
+#   one attributed text; the false Invalid_format UB verdict on a conforming
+#   call is gone; upstream-tray report 68; the lane files a refusal as
+#   CERB_SKIP, the row-1 witness scripts/check_printf_refusals.sh pins the
+#   text); fmt-043-j-intmax-ub.c UB_MATCH -> MATCH — the fix: %jd of an intmax_t
+#   prints [-7] = gcc on both engines (tray 69). Coverage sweep otherwise
+#   unchanged (277 rows: 0 other movement).
 alignas-001-self-char.c CERB_SKIP
 alignas-002-fwd-char.c CERB_SKIP
 alignas-003-self-int.c CERB_SKIP
@@ -239,8 +251,8 @@ fmt-010-f-width-flags.c MATCH
 fmt-011-f-float-arg.c MATCH
 fmt-012-f-length-hh-ub.c UB_MATCH
 fmt-013-f-int-arg-ub.c UB_MATCH
-fmt-014-e-unserved-ub.c UB_MATCH
-fmt-015-g-unserved-ub.c UB_MATCH
+fmt-014-e-unserved-ub.c CERB_SKIP
+fmt-015-g-unserved-ub.c CERB_SKIP
 fmt-020-int-width-flags.c MATCH
 fmt-021-int-precision.c MATCH
 fmt-022-hex-octal.c MATCH
@@ -261,7 +273,7 @@ fmt-036-d-wrong-type-ub.c UB_MATCH
 fmt-037-ld-wrong-type-ub.c UB_MATCH
 fmt-040-missing-arg-ub.c UB_MATCH
 fmt-042-unsigned-negative-precision.c MATCH
-fmt-043-j-intmax-ub.c UB_MATCH
+fmt-043-j-intmax-ub.c MATCH
 io-001-printf-basic.libc.c MATCH
 io-002-printf-int.libc.c MATCH
 io-003-printf-string.libc.c MATCH

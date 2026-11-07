@@ -568,6 +568,227 @@
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "diagnostic_sha256": "43ff766096854c235b5acb967edc7c70bffc26a77be9e4fc3b4f3fe42e329811"
       }
+    },
+    "coverage/fmt/fmt-003-f-precision-zero.c": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/70-printf-zero-flag-before-sign-and-hash-f-no-point.md"
+      ],
+      "rationale": "the `#` flag on `%f` with precision 0 keeps the decimal point (C17 7.21.6.1#6): the fork prints gcc 13's text (`[3.|3.000000|3.0]`, status 84 = gcc's), pristine omits the point (`[3|3.000000|3.0]`, status 83). Pristine c3ff8c53f, verbatim first line: `Defined {value: \"Specified(83)\", stdout: \"[0|1|10|100|1000000]\\n[3|3.000000|3.0]\\n[9.999999|1.000000|1000.00|1000000000000000]\\n\", stderr: \"\", blocked: \"false\"}`; the fork: `Defined {value: \"Specified(84)\", stdout: \"[0|1|10|100|1000000]\\n[3.|3.000000|3.0]\\n[9.999999|1.000000|1000.00|1000000000000000]\\n\", stderr: \"\", blocked: \"false\"}`. Added 2026-11-07 (fix/printf-refusals, contract D16) [AGENT 2026-11-07, worker, within the [USER 2026-11-04] fix pass]; the delta leaves when upstream absorbs the fix (the filing is the citation; record lean_frontend/docs/2026-11-07_printf-refusals-record.md).",
+      "upstream": {
+        "status": 0,
+        "stdout_sha256": "9b7b4af9f54b6395de350e1d09a350d3a477f9950cafbb4ab73e67ecd6c47bfe",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "fork": {
+        "status": 0,
+        "stdout_sha256": "28f7dbeb2ae10dd8527fb7e965efcc0f20e1a992dc2439efe9d35b537395c052",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "coverage/fmt/fmt-005-f-negative-zero.c": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/70-printf-zero-flag-before-sign-and-hash-f-no-point.md"
+      ],
+      "rationale": "the `0` flag pads after the sign (7.21.6.1#6): the fork prints `-00000.0` where pristine prints `0000-0.0` (the one moved cell; the status 132 is the same). The two `0.000000` cells where gcc prints `-0.000000` are the SAME on both engines (the negation loses the sign before the formatter; TODO names it) \u2014 not this row's difference. Pristine c3ff8c53f, verbatim first line: `Defined {value: \"Specified(132)\", stdout: \"[-0.000000|-0.000000|0.000000|0.000000|-0|-0.00]\\n[-0.000000|-0.000000|-0|+0.000000| 0.000000|-0.0    |0000-0.0]\\n[-0|-0.0|-0.000000]\\n\", stderr: \"\", blocked: \"false\"}`; the fork: `Defined {value: \"Specified(132)\", stdout: \"[-0.000000|-0.000000|0.000000|0.000000|-0|-0.00]\\n[-0.000000|-0.000000|-0|+0.000000| 0.000000|-0.0    |-00000.0]\\n[-0|-0.0|-0.000000]\\n\", stderr: \"\", blocked: \"false\"}`. Added 2026-11-07 (fix/printf-refusals, contract D16) [AGENT 2026-11-07, worker, within the [USER 2026-11-04] fix pass]; the delta leaves when upstream absorbs the fix (the filing is the citation; record lean_frontend/docs/2026-11-07_printf-refusals-record.md).",
+      "upstream": {
+        "status": 0,
+        "stdout_sha256": "c61b324b63e5518a57307c9de5a283b4a00f5235e406a83543f9fce2bbe11ab7",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "fork": {
+        "status": 0,
+        "stdout_sha256": "33ad169b401f65a2670c1485cc565ae952c8806792613f4ac63ebb8cf3851a52",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "coverage/fmt/fmt-010-f-width-flags.c": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/70-printf-zero-flag-before-sign-and-hash-f-no-point.md"
+      ],
+      "rationale": "the `0` flag pads after the sign on `%f` (7.21.6.1#6): the fork prints gcc 13's text (`-00.250000`-style cells, status 124 = gcc's), pristine `000-3.250000`. Pristine c3ff8c53f, verbatim first line: `Defined {value: \"Specified(124)\", stdout: \"[    3.250000|3.250000    |000-3.250000|000000-3.250]\\n[000000+2.500|000000 2.500|+2.50       | 2.5|123.2]\\n[12.500000|12|12]\\n\", stderr: \"\", blocked: \"false\"}`; the fork: `Defined {value: \"Specified(124)\", stdout: \"[    3.250000|3.250000    |-0003.250000|-0000003.250]\\n[+0000002.500| 0000002.500|+2.50       | 2.5|123.2]\\n[12.500000|12|12]\\n\", stderr: \"\", blocked: \"false\"}`. Added 2026-11-07 (fix/printf-refusals, contract D16) [AGENT 2026-11-07, worker, within the [USER 2026-11-04] fix pass]; the delta leaves when upstream absorbs the fix (the filing is the citation; record lean_frontend/docs/2026-11-07_printf-refusals-record.md).",
+      "upstream": {
+        "status": 0,
+        "stdout_sha256": "f699d9c287879df501986e703c9a774eecc537d90578e1f5462c08b30b715044",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "fork": {
+        "status": 0,
+        "stdout_sha256": "0b93705f716b5cfd0fded0e016a412e6efad22d8bfd9d3d35dfce705352aa89e",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "coverage/fmt/fmt-014-e-unserved-ub.c": {
+      "class": "missing-feature",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/68-printf-floating-conversions-unparsed-false-invalid-format.md"
+      ],
+      "rationale": "the `%e` conversion is NOT implemented by either engine; pristine reports a conforming call as `Invalid_format` undefined behaviour (a false UB, status 1), the fork parses the conversion and REFUSES it with one attributed text (status 125, `internal error: Formatted.convert: refused - the %e conversion is not implemented (C17 7.21.6.1#8: \u2026) \u2026 (upstream-tray report 68, 2026-11-07)`; contract D16; the fork does not claim an answer, only the declared stop; gcc prints `[1.000000e+00]`). The coverage baseline files the row CERB_SKIP. Pristine c3ff8c53f, verbatim first line: `Undefined {ub: \"Invalid_format[[%e]]\", stderr: \"\", loc: \"<7:25--7:44>\"}`; the fork: `internal error: Formatted.convert: refused - the %e conversion is not implemented (C17 7.21.6.1#8: the a, A, e, E, f, F, g and G conversions of a double argument; 7.21.6.1#7: the L length modifier, a long double argument); the formatter implements %f and %lf of a double only, and upstream parses non`. Added 2026-11-07 (fix/printf-refusals, contract D16) [AGENT 2026-11-07, worker, within the [USER 2026-11-04] fix pass]; the delta leaves when upstream absorbs the fix (the filing is the citation; record lean_frontend/docs/2026-11-07_printf-refusals-record.md).",
+      "upstream": {
+        "status": 1,
+        "stdout_sha256": "c431d5edd63ea7631d17ce0ad05755efbf96a811f444a48918edbba897d4b333",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "fork": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "e225204799b8e5a1993ebb6ae1458d6b525e0dd6e495c400f664a4ddbda4303f"
+      }
+    },
+    "coverage/fmt/fmt-015-g-unserved-ub.c": {
+      "class": "missing-feature",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/68-printf-floating-conversions-unparsed-false-invalid-format.md"
+      ],
+      "rationale": "the `%g` conversion is NOT implemented by either engine; pristine reports a conforming call as `Invalid_format` undefined behaviour (a false UB, status 1), the fork REFUSES it with one attributed text (status 125, `\u2026 refused - the %g conversion is not implemented \u2026`; contract D16; gcc prints `0.5`). The coverage baseline files the row CERB_SKIP. Pristine c3ff8c53f, verbatim first line: `Undefined {ub: \"Invalid_format[%g]\", stderr: \"\", loc: \"<3:25--3:42>\"}`; the fork: `internal error: Formatted.convert: refused - the %g conversion is not implemented (C17 7.21.6.1#8: the a, A, e, E, f, F, g and G conversions of a double argument; 7.21.6.1#7: the L length modifier, a long double argument); the formatter implements %f and %lf of a double only, and upstream parses non`. Added 2026-11-07 (fix/printf-refusals, contract D16) [AGENT 2026-11-07, worker, within the [USER 2026-11-04] fix pass]; the delta leaves when upstream absorbs the fix (the filing is the citation; record lean_frontend/docs/2026-11-07_printf-refusals-record.md).",
+      "upstream": {
+        "status": 1,
+        "stdout_sha256": "5b6ca762e2f55bfb09a713d165703ccd709d1711060b3e3fd46e3aa737d35fcf",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "fork": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "132319f92e4f66e80bd9a2d80f587a362152ba0f0ee48460c0cf836b209ac1e3"
+      }
+    },
+    "coverage/fmt/fmt-020-int-width-flags.c": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/70-printf-zero-flag-before-sign-and-hash-f-no-point.md"
+      ],
+      "rationale": "the `0` flag pads after the sign on the integer conversions (7.21.6.1#6): the fork prints gcc 13's text (`+0042`, ` 0042`, `-0042`; status 105 = gcc's), pristine `00+42`, `00 42`, `00-42`. Pristine c3ff8c53f, verbatim first line: `Defined {value: \"Specified(105)\", stdout: \"[   42|42   |00042|+42| 42|  +42|+42   ]\\n[00+42|00 42|42      |00-42|-42  |-42|-42]\\n[12345|-7|+0| 0|  0]\\n\", stderr: \"\", blocked: \"false\"}`; the fork: `Defined {value: \"Specified(105)\", stdout: \"[   42|42   |00042|+42| 42|  +42|+42   ]\\n[+0042| 0042|42      |-0042|-42  |-42|-42]\\n[12345|-7|+0| 0|  0]\\n\", stderr: \"\", blocked: \"false\"}`. Added 2026-11-07 (fix/printf-refusals, contract D16) [AGENT 2026-11-07, worker, within the [USER 2026-11-04] fix pass]; the delta leaves when upstream absorbs the fix (the filing is the citation; record lean_frontend/docs/2026-11-07_printf-refusals-record.md).",
+      "upstream": {
+        "status": 0,
+        "stdout_sha256": "e43f052dda9657325c6b35b118008a7740e219c29f86aefb723b336dc72294a6",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "fork": {
+        "status": 0,
+        "stdout_sha256": "15e152c12b57fb83019d2af990a384df618797c514f3271f90e0c5e528045f8c",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "coverage/fmt/fmt-022-hex-octal.c": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/70-printf-zero-flag-before-sign-and-hash-f-no-point.md"
+      ],
+      "rationale": "the `0` flag pads after the `0x`/`0X` base (7.21.6.1#6): the fork prints gcc 13's text (`0x0001f`; status 130 = gcc's), pristine `00000x1f`. Pristine c3ff8c53f, verbatim first line: `Defined {value: \"Specified(130)\", stdout: \"[ff|FF|0xff|0XFF|010|10|4294967295]\\n[0|0|0XABC|0|00000abc|abc     |0abc]\\n[00000x1f|010|  010|||0]\\n[deadbeef|CAFEBABE|37777777777]\\n\", stderr: \"\", blocked: \"false\"}`; the fork: `Defined {value: \"Specified(130)\", stdout: \"[ff|FF|0xff|0XFF|010|10|4294967295]\\n[0|0|0XABC|0|00000abc|abc     |0abc]\\n[0x00001f|010|  010|||0]\\n[deadbeef|CAFEBABE|37777777777]\\n\", stderr: \"\", blocked: \"false\"}`. Added 2026-11-07 (fix/printf-refusals, contract D16) [AGENT 2026-11-07, worker, within the [USER 2026-11-04] fix pass]; the delta leaves when upstream absorbs the fix (the filing is the citation; record lean_frontend/docs/2026-11-07_printf-refusals-record.md).",
+      "upstream": {
+        "status": 0,
+        "stdout_sha256": "7fb1fbb9c52e300bec4998ab4b5977172bd2084ea327f6adbc640ef64a52c9ac",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "fork": {
+        "status": 0,
+        "stdout_sha256": "0126d4351d610ec4699ca9a4df985777a28015f6fc8107ca8978f6a2cd7998c1",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "coverage/fmt/fmt-043-j-intmax-ub.c": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/69-printf-j-z-t-modifiers-false-ub153b.md"
+      ],
+      "rationale": "the `j` length modifier's argument test normalises the expected type through the alias table as it already normalised the argument's (7.21.6.1#7): the fork prints `[-7]` = gcc 13 (status 5), pristine reports `UB153b_illtyped_argument_for_format` on the conforming `%jd` of an `intmax_t` (a false UB, status 1). Pristine c3ff8c53f, verbatim first line: `Undefined {ub: \"UB153b_illtyped_argument_for_format\", stderr: \"\", loc: \"<6:25--6:56>\"}`; the fork: `Defined {value: \"Specified(5)\", stdout: \"[-7]\\n\", stderr: \"\", blocked: \"false\"}`. Added 2026-11-07 (fix/printf-refusals, contract D16) [AGENT 2026-11-07, worker, within the [USER 2026-11-04] fix pass]; the delta leaves when upstream absorbs the fix (the filing is the citation; record lean_frontend/docs/2026-11-07_printf-refusals-record.md).",
+      "upstream": {
+        "status": 1,
+        "stdout_sha256": "deb61e73321e90a08ee1a7ceda28485fe470f28306aba66babec3fd8266b19d5",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "fork": {
+        "status": 0,
+        "stdout_sha256": "57cb0a678091e9824db352292d62b40d26abb08135f3fc0fa824d5e450a83d7d",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "libc_exec/026-snprintf-truncation.c": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/16-snprintf-truncation-return-length.md"
+      ],
+      "rationale": "`snprintf` returns the would-be length (C17 7.21.6.5#3) and formats at `n = 0`: the fork returns `Specified(6341)` = gcc 13 (6, 3, 4, 1 in the program's encoding), pristine `Specified(3001)` (the truncated length 3, and 0 at `n = 0`). Pristine c3ff8c53f, verbatim first line: `Defined {value: \"Specified(3001)\", stdout: \"\", stderr: \"\", blocked: \"false\"}`; the fork: `Defined {value: \"Specified(6341)\", stdout: \"\", stderr: \"\", blocked: \"false\"}`. Added 2026-11-07 (fix/printf-refusals, contract D16) [AGENT 2026-11-07, worker, within the [USER 2026-11-04] fix pass]; the delta leaves when upstream absorbs the fix (the filing is the citation; record lean_frontend/docs/2026-11-07_printf-refusals-record.md).",
+      "upstream": {
+        "status": 0,
+        "stdout_sha256": "d11a8343ca917e45ecab543d68c7a9d72ed03706e37137b166f19fe5c65c84ab",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "fork": {
+        "status": 0,
+        "stdout_sha256": "2f2362b8e12f7cf3b2652bf6ae12b1aedbcd4e477c1aec0d49110d9df1d5cf38",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "libc_exec/027-snprintf-exact-fit.c": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/16-snprintf-truncation-return-length.md"
+      ],
+      "rationale": "`snprintf` returns the would-be length at the exact-fit boundaries (7.21.6.5#3): the fork prints `5:hello:# 5:hell:# 2:0:#` = gcc 13, pristine `5:hello:# 4:hell:# 0:0:#` (the truncated lengths). Pristine c3ff8c53f, verbatim first line: `Defined {value: \"Specified(25)\", stdout: \"5:hello:# 4:hell:# 0:0:#\\n\", stderr: \"\", blocked: \"false\"}`; the fork: `Defined {value: \"Specified(25)\", stdout: \"5:hello:# 5:hell:# 2:0:#\\n\", stderr: \"\", blocked: \"false\"}`. Added 2026-11-07 (fix/printf-refusals, contract D16) [AGENT 2026-11-07, worker, within the [USER 2026-11-04] fix pass]; the delta leaves when upstream absorbs the fix (the filing is the citation; record lean_frontend/docs/2026-11-07_printf-refusals-record.md).",
+      "upstream": {
+        "status": 0,
+        "stdout_sha256": "eade5bf250737658add74a51ca4b60f7df93fda8af417ce1841f07ca710cf4ed",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "fork": {
+        "status": 0,
+        "stdout_sha256": "df572412fbeb04a15af577a32f333bc68f58735fa633112530008c86bbe91448",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "libc_exec/028-vsnprintf-wrapper-truncation.c": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/16-snprintf-truncation-return-length.md"
+      ],
+      "rationale": "`vsnprintf` through a user wrapper returns the would-be length (7.21.6.5#3): the fork prints `13 4 abc--ab` = gcc 13 (status 13), pristine `9 2 abc--ab` (status 12). Pristine c3ff8c53f, verbatim first line: `Defined {value: \"Specified(12)\", stdout: \"9 2 abc--ab\\n\", stderr: \"\", blocked: \"false\"}`; the fork: `Defined {value: \"Specified(13)\", stdout: \"13 4 abc--ab\\n\", stderr: \"\", blocked: \"false\"}`. Added 2026-11-07 (fix/printf-refusals, contract D16) [AGENT 2026-11-07, worker, within the [USER 2026-11-04] fix pass]; the delta leaves when upstream absorbs the fix (the filing is the citation; record lean_frontend/docs/2026-11-07_printf-refusals-record.md).",
+      "upstream": {
+        "status": 0,
+        "stdout_sha256": "c5ccbe6356775a6ba0e61cb0a8c21ed7e870b12c437d5b56a103f47c16959166",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "fork": {
+        "status": 0,
+        "stdout_sha256": "7a896c770fb81671d59afe8f63bda97e48b4f83f239337639295eb363cc24ad3",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "immaculate/nolibc/ts-fmt-star-precision": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/26-printf-star-width-crash.md"
+      ],
+      "rationale": "a `*` precision is read from the int argument (C17 7.21.6.1#5): the fork prints `[007]` = gcc 13 (status 6), pristine dies with the uncaught `Failure(\"internal error: TODO: Formatted.convert, * prec\")` (status 125, a crash on a conforming call); the immaculate baseline re-recorded the row from `L=CRASH` to the value. Pristine c3ff8c53f, verbatim first line: `internal error: TODO: Formatted.convert, * prec`; the fork: `Defined {value: \"Specified(6)\", stdout: \"[007]\\n\", stderr: \"\", blocked: \"false\"}`. Added 2026-11-07 (fix/printf-refusals, contract D16) [AGENT 2026-11-07, worker, within the [USER 2026-11-04] fix pass]; the delta leaves when upstream absorbs the fix (the filing is the citation; record lean_frontend/docs/2026-11-07_printf-refusals-record.md).",
+      "upstream": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "16789398ff60f6dba88aef07aaddb6f9a8fa483b14396228c5c1954a343da829"
+      },
+      "fork": {
+        "status": 0,
+        "stdout_sha256": "e00816d02216421147464cc5caef74f63369a7ab604f8147430f41e48d769a3e",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "immaculate/nolibc/ts-fmt-star-width": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/26-printf-star-width-crash.md"
+      ],
+      "rationale": "a `*` field width is read from the int argument (7.21.6.1#5): the fork prints `[     7]` = gcc 13 (status 9), pristine dies with the uncaught `Failure(\"internal error: TODO: formatted.lem 6\")` (status 125); the immaculate baseline re-recorded the row from `L=CRASH` to the value. Pristine c3ff8c53f, verbatim first line: `internal error: TODO: formatted.lem 6`; the fork: `Defined {value: \"Specified(9)\", stdout: \"[     7]\\n\", stderr: \"\", blocked: \"false\"}`. Added 2026-11-07 (fix/printf-refusals, contract D16) [AGENT 2026-11-07, worker, within the [USER 2026-11-04] fix pass]; the delta leaves when upstream absorbs the fix (the filing is the citation; record lean_frontend/docs/2026-11-07_printf-refusals-record.md).",
+      "upstream": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "aa890c43a981ef983530e93c4e0e46cf2c92085a731c59c720fafad3c902776b"
+      },
+      "fork": {
+        "status": 0,
+        "stdout_sha256": "479b5024b3d76fc160ca35a5971f14d8c437416a1d33adba86a925f79114a761",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
     }
   }
 }

@@ -634,6 +634,24 @@ if ! "$ADDRESS_CONSTANTS_SH" --selftest; then
     exit 1
 fi
 
+# The formatter's declared refusals and fixes (fix/printf-refusals, 2026-11-07, contract D16; upstream-tray
+# reports 26, 16, 68, 69, 70): 161 programs under tests/printf_refusals/ in libc mode (4 nolibc controls) --
+# every floating conversion other than %f/%lf, the L modifier, %n, %ls, %lc and an unspecified `*` argument
+# REFUSED with one attributed text per class, pinned whole on both engines (17 rows); the `*` field width and
+# precision in every form, %jd/%zd/%td with the macro types, snprintf's would-be length, the 0 flag after the
+# sign/base and the # decimal point, with every integer/character/string/%f conversion as controls, pinned to
+# gcc 13's line on both engines (101 rows; 4 declared fork-pinned); the UB verdicts (the strict tray-27
+# readings kept, a snprintf format's UB passed through, the malformed formats) pinned with the location
+# projected (38 rows); the Lean NaN refusal as the gap control; pristine c3ff8c53f's lines the negative
+# control (75 moved). --selftest: six plants (a pristine-replaying pair, a Lean-only pristine stub, a
+# fixed-line Lean stub, an exit-code-forcing oracle wrapper, a tampered expectation, an other-text Lean stub)
+# must all fail at their derived counts. Record lean_frontend/docs/2026-11-07_printf-refusals-record.md.
+PRINTF_REFUSALS_SH="$(dirname "$PURITY_SH")/check_printf_refusals.sh"
+if ! "$PRINTF_REFUSALS_SH" --selftest; then
+    echo "test_unit: printf refusal/fix witnesses FAILED"
+    exit 1
+fi
+
 # libc dump float-literal inventory (named deviation N3, VALIDATION.md §2b;
 # bug hunt BUG-5, [USER 2026-09-30] option (3)): the pinned libc.core's float
 # literals (printed with %.12g by the oracle's Core printer) must equal the

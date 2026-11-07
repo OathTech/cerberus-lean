@@ -20,29 +20,35 @@ is never sampled — so the two-engine recipe above is the one that shows both l
 
 Verbatim outputs on mainline 4d1088004 (ANSI codes stripped from the oracle stderr; first exception line):
 
-## printf_star_prec.c  [nolibc]
-oracle exit=125: internal error: TODO: Formatted.convert, * prec
-lean   exit=134: PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: TODO: Formatted.convert, * prec
+## printf_star_prec.c  [nolibc]  — RETIRED AS A FAILURE WITNESS 2026-11-07 (fix/printf-refusals, upstream-tray report 26)
+Both engines print the value since the `*` precision is read from the argument (C17 7.21.6.1#5); kept as a
+value witness of the fix. Verbatim on the fix/printf-refusals M1 tree:
+oracle exit=0: Defined {value: "Specified(0)", stdout: "007\n", stderr: "", blocked: "false"}
+lean   exit=0: Defined {value: "Specified(0)", stdout: "007\n", stderr: "", blocked: "false"}
+(before: oracle exit=125 `internal error: TODO: Formatted.convert, * prec`, lean exit=134 the same PANIC text)
 
-## printf_star_prec_f.c  [nolibc]
-oracle exit=125: internal error: TODO: Formatted.convert, * prec
-lean   exit=134: PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: TODO: Formatted.convert, * prec
+## printf_star_prec_f.c  [nolibc]  — RETIRED AS A FAILURE WITNESS 2026-11-07 (the same fix)
+oracle exit=0: Defined {value: "Specified(0)", stdout: "1.50\n", stderr: "", blocked: "false"}
+lean   exit=0: Defined {value: "Specified(0)", stdout: "1.50\n", stderr: "", blocked: "false"}
 
-## printf_star_prec_s.c  [nolibc]
-oracle exit=125: internal error: TODO: Formatted.convert, * prec
-lean   exit=134: PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: TODO: Formatted.convert, * prec
+## printf_star_prec_s.c  [nolibc]  — RETIRED AS A FAILURE WITNESS 2026-11-07 (the same fix)
+oracle exit=0: Defined {value: "Specified(0)", stdout: "ab\n", stderr: "", blocked: "false"}
+lean   exit=0: Defined {value: "Specified(0)", stdout: "ab\n", stderr: "", blocked: "false"}
 
-## printf_star_width.c  [nolibc]
-oracle exit=125: internal error: TODO: formatted.lem 6
-lean   exit=134: PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: TODO: formatted.lem 6
+## printf_star_width.c  [nolibc]  — RETIRED AS A FAILURE WITNESS 2026-11-07 (the same fix)
+oracle exit=0: Defined {value: "Specified(0)", stdout: "    7\n", stderr: "", blocked: "false"}
+lean   exit=0: Defined {value: "Specified(0)", stdout: "    7\n", stderr: "", blocked: "false"}
+(before: oracle exit=125 `internal error: TODO: formatted.lem 6`, lean exit=134 the same PANIC text)
 
-## printf_lc.c  [nolibc]
-oracle exit=125: internal error: NOT YET SUPPORTED: %lc
-lean   exit=134: PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: NOT YET SUPPORTED: %lc
+## printf_lc.c  [nolibc]  — a DECLARED REFUSAL since 2026-11-07 (contract D16; the row-1 witness is scripts/check_printf_refusals.sh)
+oracle exit=125: internal error: Formatted.convert: refused - the %lc conversion (C17 7.21.6.1#8 c with l: the wint_t argument is converted through an ls conversion of a two-element wchar_t array); upstream's arm is the uncaught internal error 'NOT YET SUPPORTED: %lc' (formatted.lem c3ff8c53f :612), a crash on a conforming call - the fork refuses rather than decides (upstream-tray report 26, 2026-11-07)
+lean   exit=134: PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: Formatted.convert: refused - the %lc conversion (C17 7.21.6.1#8 c with l: the wint_t argument is converted through an ls conversion of a two-element wchar_t array); upstream's arm is the uncaught internal error 'NOT YET SUPPORTED: %lc' (formatted.lem c3ff8c53f :612), a crash on a conforming call - the fork refuses rather than decides (upstream-tray report 26, 2026-11-07)
+(before: `NOT YET SUPPORTED: %lc` on both)
 
-## printf_n.c  [nolibc]
-oracle exit=125: internal error: WIP: Formatted.convert, CS_n
-lean   exit=134: PANIC at _private.LemLib.0.failwithIImpl LemLib:168:2: WIP: Formatted.convert, CS_n
+## printf_n.c  [nolibc]  — a DECLARED REFUSAL since 2026-11-07 (contract D16; the row-1 witness is scripts/check_printf_refusals.sh)
+oracle exit=125: internal error: Formatted.convert: refused - the %n conversion (C17 7.21.6.1#8 n: the number of characters written so far is stored into the signed int the argument points to; no argument is converted); upstream's arm is the uncaught internal error 'WIP: Formatted.convert, CS_n' (formatted.lem c3ff8c53f :697), a crash on a conforming call - the fork refuses rather than decides (upstream-tray report 26, 2026-11-07)
+lean   exit=134: PANIC at _private.LemLib.0.failwithIImpl LemLib:226:2: Formatted.convert: refused - the %n conversion (C17 7.21.6.1#8 n: the number of characters written so far is stored into the signed int the argument points to; no argument is converted); upstream's arm is the uncaught internal error 'WIP: Formatted.convert, CS_n' (formatted.lem c3ff8c53f :697), a crash on a conforming call - the fork refuses rather than decides (upstream-tray report 26, 2026-11-07)
+(before: `WIP: Formatted.convert, CS_n` on both)
 
 ## funptr_reload.c  [nolibc]
 oracle exit=125: Failure("unknown function pointer: 2748")
@@ -57,12 +63,15 @@ oracle exit=125: Failure("decode_character_constant, invalid constant: '\'")
 lean   exit=134: PANIC at _private.CerbDecode.0.CerbDecode.decode_character_constant_aux CerbDecode:121:11: decode_character_constant: invalid char constant ==> \ (decode.ml:199-200)
 
 Site classes (census record Q1/Q3; 'pure' = one of the 231 pure exec-closure sites, 'monadic' = one of the 67):
-- printf_star_prec.c     -> generated/Formatted.lean:490 convert, `let prec := match prec_opt with … | some P_asterisk => failwithI "TODO: Formatted.convert, * prec"` — PURE, NON-TAIL/LET-BOUND (the F1 shape) and USED (both engines crash). Well-typed UB-free C; class (c) feature refusal (`%.*d`).
-- printf_star_prec_f.c   -> the SAME :490 site fires for `%.*f` (the arm-local :494 `* prec` copy is dominated — evaluation order).
-- printf_star_prec_s.c   -> the SAME :490 site fires for `%.*s` (the arm-local :494 `TODO(2)` copy is dominated).
-- printf_star_width.c    -> generated/Formatted.lean:499 printf_aux, `failwithI "TODO: formatted.lem 6"` — PURE, LET-BOUND, USED. Class (c) (`%*d`).
-- printf_lc.c            -> generated/Formatted.lean:494 convert, `failwithI "NOT YET SUPPORTED: %lc" : ndM …` — MONADIC. Class (c).
-- printf_n.c             -> generated/Formatted.lean:494 convert, `failwithI "WIP: Formatted.convert, CS_n" : ndM …` — MONADIC. Class (c).
+- printf_star_prec.c, printf_star_prec_f.c, printf_star_prec_s.c, printf_star_width.c -> the four `* prec` / `formatted.lem 6`
+  sites are GONE since 2026-11-07 (fix/printf-refusals: a `*` width or precision is read from the argument in
+  `printf_aux`, formatted.lem `load_star_argument`); their register rows were retired and both engines print the
+  values above. The one site the fix added to the register, `Formatted.convert` `is_alias_base`'s alias-table
+  invariant (`"Formatted.convert: the implementation's alias table maps …"`, PURE, NON-TAIL/LAMBDA-BODY), is
+  UNREACHABLE-BY-INVARIANT (the j/z/t arms pass literal macro-type constructors the alias table maps to a
+  Signed/Unsigned base type) and has no witness program.
+- printf_lc.c            -> generated/Formatted.lean convert, `failwithI (wide_refusal CS_c) : ndM …` — MONADIC (no register row). A DECLARED REFUSAL (contract D16).
+- printf_n.c             -> generated/Formatted.lean convert, `failwithI n_refusal : ndM …` — MONADIC (no register row). A DECLARED REFUSAL (contract D16).
 - funptr_reload.c        -> lean_frontend/CerbMem.lean:1045 reconstructValue, `panic! "unknown function pointer"` (impl_mem.ml failwith) — PURE, TAIL. Input class: IMPLEMENTATION-DEFINED (C11 6.3.2.3p5 int→function-pointer conversion; the value is only copied, never called — no UB). A model fail-stop on a load of a forged function-pointer value.
 - atomic_fence.c         -> generated/Core_reduction.lean:434 step_action, `failwithI "TODO[Core_reduction]: Fence"` — PURE, TAIL. Well-typed UB-free C11 (`atomic_thread_fence`, libc mode); class (c) concurrency-feature refusal.
 - args_backslash.c       -> lean_frontend/CerbDecode.lean:121 decode_character_constant_aux via Driver.prepare_main_args (driver.lem: `Decode.decode_character_constant (String.toString [c])` per argv byte) — PURE, TAIL. Input class: HARNESS BOUNDARY (the `--args` string contains a backslash); the C program itself is well-typed and UB-free.

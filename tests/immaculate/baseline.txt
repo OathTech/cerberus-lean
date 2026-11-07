@@ -184,6 +184,12 @@
 #   escaped_char mirrors CerbDecode.escaped_char, tray 11, R2 RETIRED), s4b-memcmp-hugesize (ORACLE_CRASH -> MATCH:
 #   impl_mem.ml memcmp counts on Z, tray 13, R3 RETIRED). The Lean tokens are unchanged; only the status word moved.
 #   Older notes above describing these rows as ORACLE_CRASH/DIFF are history.
+# fix/printf-refusals M2 (2026-11-07, hand-edited from the lane's DEVIATION lines; record
+#   docs/2026-11-07_printf-refusals-record.md section 4; contract D16; upstream-tray report 26): ts-fmt-star-width
+#   and ts-fmt-star-precision MATCH | L=CRASH -> MATCH | L=VAL — the `*` field width and precision are read from the
+#   int argument now (C17 7.21.6.1#5), so both engines print gcc 13's text (`[     7]`, `[007]`) where both crashed
+#   (`TODO: formatted.lem 6` / `TODO: Formatted.convert, * prec`). A fix flipped the rows, not a regression; the
+#   row-1 witness scripts/check_printf_refusals.sh pins the same forms.
 argv1-args MATCH | L=VAL:{value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
 argv2-args MATCH | L=VAL:{value: "Specified(97)", stdout: "", stderr: "", blocked: "false"}
 argv3-args MATCH | L=VAL:{value: "Specified(11)", stdout: "", stderr: "", blocked: "false"}
@@ -236,8 +242,8 @@ trap-bool-write MATCH | L=UB:{ub: "UB012_lvalue_read_trap_representation", stder
 tray44-allocator-exhausted-single-request MATCH | L=ERR:{msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
 tray44-allocator-exhausted-single-request-overlap MATCH | L=ERR:{msg: "MerrOther "Concrete.allocator: failed (out of memory)""}
 ts-fmt-s-null MATCH | L=UB:{ub: "UB046_array_pointer_outside", stderr: "", loc: "<7:38--7:57>"}
-ts-fmt-star-precision MATCH | L=CRASH
-ts-fmt-star-width MATCH | L=CRASH
+ts-fmt-star-precision MATCH | L=VAL:{value: "Specified(6)", stdout: "[007]\n", stderr: "", blocked: "false"}
+ts-fmt-star-width MATCH | L=VAL:{value: "Specified(9)", stdout: "[     7]\n", stderr: "", blocked: "false"}
 ts-memcmp-struct-padding MATCH | L=CRASH
 zd-any-bounded-int-crash MATCH | L=CRASH
 zd-d1-float-inf-to-int-ub MATCH | L=UB:{ub: "UB017_out_of_range_floating_integer_conversion", stderr: "", loc: "<7:11--7:19>"}

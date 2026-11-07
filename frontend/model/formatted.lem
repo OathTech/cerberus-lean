@@ -734,7 +734,7 @@ let convert loc eval_conv prec_opt lm_opt cspec flags args =
      unsigned long, ptrdiff_t = long: ocaml_implementation.ml:165-170, CerberusImpl.normalise_aliases).
      The argument's type arrives NORMALISED through that table (`is_signed_or_unsigned` applies
      `normalise_ctype` to it) while upstream's LM_j arm tested the bare `Intmax_t` constructor
-     (c3ff8c53f :559-560), so `%jd` of an intmax_t argument was UB153b on a conforming call;
+     (c3ff8c53f :530-531), so `%jd` of an intmax_t argument was UB153b on a conforming call;
      the LM_z/LM_t arms tested the width and ONE signedness (`is_compatible_with_size_t`), so
      `%zd` of the signed type corresponding to size_t (long) was UB153b too. The expected side
      is now normalised as well, uniformly for j, z and t: the argument must have the base type

@@ -1,0 +1,162 @@
+# tests/printf_refusals/expected.txt — name TAB class TAB pin (scripts/check_printf_refusals.sh). VALUE: both engines' batch line; UB: the Undefined line with the loc field removed (N4); REFUSAL: the whole text after `internal error: ` / the PANIC prefix; GAP: the oracle's line (the Lean engine refuses). Derived 2026-11-07 from the fork engines; the VALUE pins equal gcc 13's line (gcc.txt) except the declared FORK_PINNED rows.
+A_double	REFUSAL	Formatted.convert: refused - the %A conversion is not implemented (C17 7.21.6.1#8: the a, A, e, E, f, F, g and G conversions of a double argument; 7.21.6.1#7: the L length modifier, a long double argument); the formatter implements %f and %lf of a double only, and upstream parses none of e, E, g, G, a, A, F and L - the constructors CS_F, CS_e, CS_E, CS_g, CS_G, CS_a, CS_A and LM_L are commented out at formatted.lem c3ff8c53f :40 and :32 - so it reported a conforming call as Invalid_format undefined behaviour, a silently wrong verdict; the fork parses the conversion and refuses rather than decides (upstream-tray report 68, 2026-11-07)
+E_double	REFUSAL	Formatted.convert: refused - the %E conversion is not implemented (C17 7.21.6.1#8: the a, A, e, E, f, F, g and G conversions of a double argument; 7.21.6.1#7: the L length modifier, a long double argument); the formatter implements %f and %lf of a double only, and upstream parses none of e, E, g, G, a, A, F and L - the constructors CS_F, CS_e, CS_E, CS_g, CS_G, CS_a, CS_A and LM_L are commented out at formatted.lem c3ff8c53f :40 and :32 - so it reported a conforming call as Invalid_format undefined behaviour, a silently wrong verdict; the fork parses the conversion and refuses rather than decides (upstream-tray report 68, 2026-11-07)
+F_double	REFUSAL	Formatted.convert: refused - the %F conversion is not implemented (C17 7.21.6.1#8: the a, A, e, E, f, F, g and G conversions of a double argument; 7.21.6.1#7: the L length modifier, a long double argument); the formatter implements %f and %lf of a double only, and upstream parses none of e, E, g, G, a, A, F and L - the constructors CS_F, CS_e, CS_E, CS_g, CS_G, CS_a, CS_A and LM_L are commented out at formatted.lem c3ff8c53f :40 and :32 - so it reported a conforming call as Invalid_format undefined behaviour, a silently wrong verdict; the fork parses the conversion and refuses rather than decides (upstream-tray report 68, 2026-11-07)
+G_double	REFUSAL	Formatted.convert: refused - the %G conversion is not implemented (C17 7.21.6.1#8: the a, A, e, E, f, F, g and G conversions of a double argument; 7.21.6.1#7: the L length modifier, a long double argument); the formatter implements %f and %lf of a double only, and upstream parses none of e, E, g, G, a, A, F and L - the constructors CS_F, CS_e, CS_E, CS_g, CS_G, CS_a, CS_A and LM_L are commented out at formatted.lem c3ff8c53f :40 and :32 - so it reported a conforming call as Invalid_format undefined behaviour, a silently wrong verdict; the fork parses the conversion and refuses rather than decides (upstream-tray report 68, 2026-11-07)
+Ld_strict	UB	Undefined {ub: "UB158_invalid_length_modifier", stderr: ""}
+Le_ldouble	REFUSAL	Formatted.convert: refused - the %Le conversion is not implemented (C17 7.21.6.1#8: the a, A, e, E, f, F, g and G conversions of a double argument; 7.21.6.1#7: the L length modifier, a long double argument); the formatter implements %f and %lf of a double only, and upstream parses none of e, E, g, G, a, A, F and L - the constructors CS_F, CS_e, CS_E, CS_g, CS_G, CS_a, CS_A and LM_L are commented out at formatted.lem c3ff8c53f :40 and :32 - so it reported a conforming call as Invalid_format undefined behaviour, a silently wrong verdict; the fork parses the conversion and refuses rather than decides (upstream-tray report 68, 2026-11-07)
+Lf_ldouble	REFUSAL	Formatted.convert: refused - the %Lf conversion is not implemented (C17 7.21.6.1#8: the a, A, e, E, f, F, g and G conversions of a double argument; 7.21.6.1#7: the L length modifier, a long double argument); the formatter implements %f and %lf of a double only, and upstream parses none of e, E, g, G, a, A, F and L - the constructors CS_F, CS_e, CS_E, CS_g, CS_G, CS_a, CS_A and LM_L are commented out at formatted.lem c3ff8c53f :40 and :32 - so it reported a conforming call as Invalid_format undefined behaviour, a silently wrong verdict; the fork parses the conversion and refuses rather than decides (upstream-tray report 68, 2026-11-07)
+a_double	REFUSAL	Formatted.convert: refused - the %a conversion is not implemented (C17 7.21.6.1#8: the a, A, e, E, f, F, g and G conversions of a double argument; 7.21.6.1#7: the L length modifier, a long double argument); the formatter implements %f and %lf of a double only, and upstream parses none of e, E, g, G, a, A, F and L - the constructors CS_F, CS_e, CS_E, CS_g, CS_G, CS_a, CS_A and LM_L are commented out at formatted.lem c3ff8c53f :40 and :32 - so it reported a conforming call as Invalid_format undefined behaviour, a silently wrong verdict; the fork parses the conversion and refuses rather than decides (upstream-tray report 68, 2026-11-07)
+args_extra	VALUE	Defined {value: "Specified(0)", stdout: "[5]\n", stderr: "", blocked: "false"}
+args_insufficient	UB	Undefined {ub: "UB153a_insufficient_arguments_for_format", stderr: ""}
+bad_Lq	UB	Undefined {ub: "Invalid_format[[%Lq]
+bad_hhh	UB	Undefined {ub: "Invalid_format[[%hhhd]
+bad_incomplete_ll	UB	Undefined {ub: "Invalid_format[[%ll]
+bad_trailing_pct	UB	Undefined {ub: "Invalid_format[abc%]", stderr: ""}
+bad_two_prec	UB	Undefined {ub: "Invalid_format[[%.5.3d]
+bad_unknown_conv	UB	Undefined {ub: "Invalid_format[[%q]
+c_char_arg	VALUE	Defined {value: "Specified(0)", stdout: "[Q]\n", stderr: "", blocked: "false"}
+c_int	VALUE	Defined {value: "Specified(0)", stdout: "[A][z][\n]\n", stderr: "", blocked: "false"}
+c_width	VALUE	Defined {value: "Specified(0)", stdout: "[    a][b    ]\n", stderr: "", blocked: "false"}
+d_char_hhd	VALUE	Defined {value: "Specified(0)", stdout: "[-56][-3]\n", stderr: "", blocked: "false"}
+d_int	VALUE	Defined {value: "Specified(0)", stdout: "[5][-7]\n", stderr: "", blocked: "false"}
+d_llong_lld	VALUE	Defined {value: "Specified(0)", stdout: "[-5000000000]\n", stderr: "", blocked: "false"}
+d_long_arg	UB	Undefined {ub: "UB153b_illtyped_argument_for_format", stderr: ""}
+d_long_ld	VALUE	Defined {value: "Specified(0)", stdout: "[5000000000]\n", stderr: "", blocked: "false"}
+d_short_hd	VALUE	Defined {value: "Specified(0)", stdout: "[4464][-7]\n", stderr: "", blocked: "false"}
+d_uint_arg	UB	Undefined {ub: "UB153b_illtyped_argument_for_format", stderr: ""}
+e_double	REFUSAL	Formatted.convert: refused - the %e conversion is not implemented (C17 7.21.6.1#8: the a, A, e, E, f, F, g and G conversions of a double argument; 7.21.6.1#7: the L length modifier, a long double argument); the formatter implements %f and %lf of a double only, and upstream parses none of e, E, g, G, a, A, F and L - the constructors CS_F, CS_e, CS_E, CS_g, CS_G, CS_a, CS_A and LM_L are commented out at formatted.lem c3ff8c53f :40 and :32 - so it reported a conforming call as Invalid_format undefined behaviour, a silently wrong verdict; the fork parses the conversion and refuses rather than decides (upstream-tray report 68, 2026-11-07)
+e_flags_width	REFUSAL	Formatted.convert: refused - the %e conversion is not implemented (C17 7.21.6.1#8: the a, A, e, E, f, F, g and G conversions of a double argument; 7.21.6.1#7: the L length modifier, a long double argument); the formatter implements %f and %lf of a double only, and upstream parses none of e, E, g, G, a, A, F and L - the constructors CS_F, CS_e, CS_E, CS_g, CS_G, CS_a, CS_A and LM_L are commented out at formatted.lem c3ff8c53f :40 and :32 - so it reported a conforming call as Invalid_format undefined behaviour, a silently wrong verdict; the fork parses the conversion and refuses rather than decides (upstream-tray report 68, 2026-11-07)
+f_big	VALUE	Defined {value: "Specified(0)", stdout: "[100000000000000000000.000000]\n", stderr: "", blocked: "false"}
+f_double	VALUE	Defined {value: "Specified(0)", stdout: "[3.500000][-0.250000]\n", stderr: "", blocked: "false"}
+f_flags	VALUE	Defined {value: "Specified(0)", stdout: "[+1.500000][ 1.500000][-1.5][-1.5]\n", stderr: "", blocked: "false"}
+f_float_arg	VALUE	Defined {value: "Specified(0)", stdout: "[1.500000]\n", stderr: "", blocked: "false"}
+f_hash	VALUE	Defined {value: "Specified(0)", stdout: "[3.][2.500000][-7.]\n", stderr: "", blocked: "false"}
+f_hash_inf	VALUE	Defined {value: "Specified(0)", stdout: "[inf][inf]\n", stderr: "", blocked: "false"}
+f_hh_mod	UB	Undefined {ub: "UB158_invalid_length_modifier", stderr: ""}
+f_inf	VALUE	Defined {value: "Specified(0)", stdout: "[inf][-inf][       inf][inf       |][       inf]\n", stderr: "", blocked: "false"}
+f_nan	GAP	Defined {value: "Specified(0)", stdout: "[-nan]\n", stderr: "", blocked: "false"}
+f_prec_width	VALUE	Defined {value: "Specified(0)", stdout: "[3.14][     3.142][3.142     ][2][4]\n", stderr: "", blocked: "false"}
+f_zero_pad	VALUE	Defined {value: "Specified(0)", stdout: "[000003.142][-00003.142][+00003.142][3.142     ]\n", stderr: "", blocked: "false"}
+flags_all	UB	Undefined {ub: "DUMMY(+ flag with unsigned conversion)", stderr: ""}
+flags_hash	VALUE	Defined {value: "Specified(0)", stdout: "[0xff][0XFF][010][0][0][ 0xff][0x0ff][0xff  |][0x00ff][0X0000FF]\n", stderr: "", blocked: "false"}
+flags_hash_long	VALUE	Defined {value: "Specified(0)", stdout: "[0xff][010]\n", stderr: "", blocked: "false"}
+flags_minus	VALUE	Defined {value: "Specified(0)", stdout: "[5    ][-5   ][5    ][+5   ][+5   ]\n", stderr: "", blocked: "false"}
+flags_plus_space	VALUE	Defined {value: "Specified(0)", stdout: "[+5][-5][ 5][-5][+5][+5]\n", stderr: "", blocked: "false"}
+flags_prec	VALUE	Defined {value: "Specified(0)", stdout: "[  005][  005][005  ][005][-005][+005]\n", stderr: "", blocked: "false"}
+flags_prec0	VALUE	Defined {value: "Specified(0)", stdout: "[][7][][][0][][     ]\n", stderr: "", blocked: "false"}
+flags_repeat	VALUE	Defined {value: "Specified(0)", stdout: "[5    ][+5][00005]\n", stderr: "", blocked: "false"}
+flags_zero	VALUE	Defined {value: "Specified(0)", stdout: "[00005][-0005][+0005][ 0005][00005][000ff]\n", stderr: "", blocked: "false"}
+fprintf_stdout	VALUE	Defined {value: "Specified(0)", stdout: "[    3.14]\n", stderr: "", blocked: "false"}
+g_double	REFUSAL	Formatted.convert: refused - the %g conversion is not implemented (C17 7.21.6.1#8: the a, A, e, E, f, F, g and G conversions of a double argument; 7.21.6.1#7: the L length modifier, a long double argument); the formatter implements %f and %lf of a double only, and upstream parses none of e, E, g, G, a, A, F and L - the constructors CS_F, CS_e, CS_E, CS_g, CS_G, CS_a, CS_A and LM_L are commented out at formatted.lem c3ff8c53f :40 and :32 - so it reported a conforming call as Invalid_format undefined behaviour, a silently wrong verdict; the fork parses the conversion and refuses rather than decides (upstream-tray report 68, 2026-11-07)
+hash_d_ub	UB	Undefined {ub: "UB157", stderr: ""}
+hc_strict	UB	Undefined {ub: "DUMMY(TODO_find_quote_printf_CS_c)", stderr: ""}
+hs_strict	UB	Undefined {ub: "UB158_invalid_length_modifier", stderr: ""}
+illtyped_double_for_d	UB	Undefined {ub: "UB153b_illtyped_argument_for_format", stderr: ""}
+illtyped_int_for_f	UB	Undefined {ub: "UB153b_illtyped_argument_for_format", stderr: ""}
+jd_intmax	VALUE	Defined {value: "Specified(0)", stdout: "[-7]\n", stderr: "", blocked: "false"}
+jd_llong_arg	UB	Undefined {ub: "UB153b_illtyped_argument_for_format", stderr: ""}
+jd_long_arg	VALUE	Defined {value: "Specified(0)", stdout: "[-7]\n", stderr: "", blocked: "false"}
+ji_jo_jx_jX	VALUE	Defined {value: "Specified(0)", stdout: "[9][10][ff][FF]\n", stderr: "", blocked: "false"}
+ju_uintmax	VALUE	Defined {value: "Specified(0)", stdout: "[7]\n", stderr: "", blocked: "false"}
+lc_wint	REFUSAL	Formatted.convert: refused - the %lc conversion (C17 7.21.6.1#8 c with l: the wint_t argument is converted through an ls conversion of a two-element wchar_t array); upstream's arm is the uncaught internal error 'NOT YET SUPPORTED: %lc' (formatted.lem c3ff8c53f :612), a crash on a conforming call - the fork refuses rather than decides (upstream-tray report 26, 2026-11-07)
+ld_int_arg	UB	Undefined {ub: "UB153b_illtyped_argument_for_format", stderr: ""}
+ld_intmax_arg	VALUE	Defined {value: "Specified(0)", stdout: "[-7]\n", stderr: "", blocked: "false"}
+le_double	REFUSAL	Formatted.convert: refused - the %le conversion is not implemented (C17 7.21.6.1#8: the a, A, e, E, f, F, g and G conversions of a double argument; 7.21.6.1#7: the L length modifier, a long double argument); the formatter implements %f and %lf of a double only, and upstream parses none of e, E, g, G, a, A, F and L - the constructors CS_F, CS_e, CS_E, CS_g, CS_G, CS_a, CS_A and LM_L are commented out at formatted.lem c3ff8c53f :40 and :32 - so it reported a conforming call as Invalid_format undefined behaviour, a silently wrong verdict; the fork parses the conversion and refuses rather than decides (upstream-tray report 68, 2026-11-07)
+lf_double	VALUE	Defined {value: "Specified(0)", stdout: "[2.500000]\n", stderr: "", blocked: "false"}
+lls_strict	UB	Undefined {ub: "UB158_invalid_length_modifier", stderr: ""}
+ls_wchar	REFUSAL	Formatted.convert: refused - the %ls conversion (C17 7.21.6.1#8 s with l: the argument points to an array of wchar_t whose wide characters are converted through wcrtomb); upstream's arm is the uncaught internal error 'WIP: Formatted.convert, CS_s with length modifier' (formatted.lem c3ff8c53f :624), a crash on a conforming call - the fork refuses rather than decides (upstream-tray report 26, 2026-11-07)
+lu_size_t_arg	VALUE	Defined {value: "Specified(0)", stdout: "[4]\n", stderr: "", blocked: "false"}
+multi	VALUE	Defined {value: "Specified(0)", stdout: "1-two-3-4-5-%\n", stderr: "", blocked: "false"}
+n_int	REFUSAL	Formatted.convert: refused - the %n conversion (C17 7.21.6.1#8 n: the number of characters written so far is stored into the signed int the argument points to; no argument is converted); upstream's arm is the uncaught internal error 'WIP: Formatted.convert, CS_n' (formatted.lem c3ff8c53f :697), a crash on a conforming call - the fork refuses rather than decides (upstream-tray report 26, 2026-11-07)
+o_x_X_uint	VALUE	Defined {value: "Specified(0)", stdout: "[10][ff][FF]\n", stderr: "", blocked: "false"}
+p_intp_strict	UB	Undefined {ub: "UB153b_illtyped_argument_for_format", stderr: ""}
+p_null	VALUE	Defined {value: "Specified(0)", stdout: "[NULL(void)]\n", stderr: "", blocked: "false"}
+percent	VALUE	Defined {value: "Specified(0)", stdout: "[%][%d]\n", stderr: "", blocked: "false"}
+percent_width	VALUE	Defined {value: "Specified(0)", stdout: "[    %]\n", stderr: "", blocked: "false"}
+plus_s	UB	Undefined {ub: "DUMMY(+ flag with unsigned conversion)", stderr: ""}
+plus_u_dummy	UB	Undefined {ub: "DUMMY(+ flag with unsigned conversion)", stderr: ""}
+prec_long	VALUE	Defined {value: "Specified(0)", stdout: "[-0000000005][0000000005][    -0000000005]\n", stderr: "", blocked: "false"}
+ret_fprintf_stderr	VALUE	Defined {value: "Specified(0)", stdout: "7\n", stderr: "[   9]\n", blocked: "false"}
+ret_printf	VALUE	Defined {value: "Specified(0)", stdout: "hello\n6\n[   9][ab]\n11\n", stderr: "", blocked: "false"}
+s_charp	VALUE	Defined {value: "Specified(0)", stdout: "[abc][xy][lit]\n", stderr: "", blocked: "false"}
+s_empty	VALUE	Defined {value: "Specified(0)", stdout: "[][   ]\n", stderr: "", blocked: "false"}
+s_prec	VALUE	Defined {value: "Specified(0)", stdout: "[ab][][ab]\n", stderr: "", blocked: "false"}
+s_uchar_schar	VALUE	Defined {value: "Specified(0)", stdout: "[uc][sc]\n", stderr: "", blocked: "false"}
+s_width	VALUE	Defined {value: "Specified(0)", stdout: "[    ab][ab    ][    ab][ab    ]\n", stderr: "", blocked: "false"}
+sn_big	VALUE	Defined {value: "Specified(0)", stdout: "3:7-x\n", stderr: "", blocked: "false"}
+sn_empty_fmt	VALUE	Defined {value: "Specified(0)", stdout: "0:0\n", stderr: "", blocked: "false"}
+sn_exact_fit	VALUE	Defined {value: "Specified(0)", stdout: "5:hello\n", stderr: "", blocked: "false"}
+sn_float_e	REFUSAL	Formatted.convert: refused - the %e conversion is not implemented (C17 7.21.6.1#8: the a, A, e, E, f, F, g and G conversions of a double argument; 7.21.6.1#7: the L length modifier, a long double argument); the formatter implements %f and %lf of a double only, and upstream parses none of e, E, g, G, a, A, F and L - the constructors CS_F, CS_e, CS_E, CS_g, CS_G, CS_a, CS_A and LM_L are commented out at formatted.lem c3ff8c53f :40 and :32 - so it reported a conforming call as Invalid_format undefined behaviour, a silently wrong verdict; the fork parses the conversion and refuses rather than decides (upstream-tray report 68, 2026-11-07)
+sn_one	VALUE	Defined {value: "Specified(0)", stdout: "2:0:Q\n", stderr: "", blocked: "false"}
+sn_one_short	VALUE	Defined {value: "Specified(0)", stdout: "5:hell\n", stderr: "", blocked: "false"}
+sn_sizing_idiom	VALUE	Defined {value: "Specified(0)", stdout: "9:key=12345\n", stderr: "", blocked: "false"}
+sn_star	VALUE	Defined {value: "Specified(0)", stdout: "10:[   9][ab]\n", stderr: "", blocked: "false"}
+sn_trunc	VALUE	Defined {value: "Specified(0)", stdout: "6:123:1\n", stderr: "", blocked: "false"}
+sn_trunc_star	VALUE	Defined {value: "Specified(0)", stdout: "8:   \n", stderr: "", blocked: "false"}
+sn_ub_illtyped	UB	Undefined {ub: "UB153b_illtyped_argument_for_format", stderr: ""}
+sn_ub_insufficient	UB	Undefined {ub: "UB153a_insufficient_arguments_for_format", stderr: ""}
+sn_zero_buf	VALUE	Defined {value: "Specified(0)", stdout: "3:QQQ\n", stderr: "", blocked: "false"}
+sn_zero_null	VALUE	Defined {value: "Specified(0)", stdout: "4\n", stderr: "", blocked: "false"}
+sn_zero_ub	UB	Undefined {ub: "UB153b_illtyped_argument_for_format", stderr: ""}
+sp_basic	VALUE	Defined {value: "Specified(0)", stdout: "14:[   42][42   ]\n", stderr: "", blocked: "false"}
+sp_star	VALUE	Defined {value: "Specified(0)", stdout: "6:[   9]\n", stderr: "", blocked: "false"}
+space_u	VALUE	Defined {value: "Specified(0)", stdout: "[ 5][ 5]\n", stderr: "", blocked: "false"}
+star_bad_5	UB	Undefined {ub: "Invalid_format[[%*5d]
+star_bad_5star	UB	Undefined {ub: "Invalid_format[[%5*d]
+star_both	VALUE	Defined {value: "Specified(0)", stdout: "[   007]\n", stderr: "", blocked: "false"}
+star_both_f	VALUE	Defined {value: "Specified(0)", stdout: "[    3.14]\n", stderr: "", blocked: "false"}
+star_c	VALUE	Defined {value: "Specified(0)", stdout: "[  a][b  ]\n", stderr: "", blocked: "false"}
+star_in_middle	VALUE	Defined {value: "Specified(0)", stdout: "<1|   2|3>\n", stderr: "", blocked: "false"}
+star_long_mods	VALUE	Defined {value: "Specified(0)", stdout: "[    7][007][   4][   7]\n", stderr: "", blocked: "false"}
+star_many	VALUE	Defined {value: "Specified(0)", stdout: "[ 1][  2][x]\n", stderr: "", blocked: "false"}
+star_missing_value	UB	Undefined {ub: "UB153a_insufficient_arguments_for_format", stderr: ""}
+star_missing_width	UB	Undefined {ub: "UB153a_insufficient_arguments_for_format", stderr: ""}
+star_neg_width_s	VALUE	Defined {value: "Specified(0)", stdout: "[ab   ][ab    ]\n", stderr: "", blocked: "false"}
+star_percent	VALUE	Defined {value: "Specified(0)", stdout: "[  %]\n", stderr: "", blocked: "false"}
+star_prec	VALUE	Defined {value: "Specified(0)", stdout: "[007]\n", stderr: "", blocked: "false"}
+star_prec_f	VALUE	Defined {value: "Specified(0)", stdout: "[1.50][1.500000]\n", stderr: "", blocked: "false"}
+star_prec_neg	VALUE	Defined {value: "Specified(0)", stdout: "[7]\n", stderr: "", blocked: "false"}
+star_prec_zero	VALUE	Defined {value: "Specified(0)", stdout: "[][7]\n", stderr: "", blocked: "false"}
+star_s	VALUE	Defined {value: "Specified(0)", stdout: "[   ab][ab   ][ab][    ab][ab    ]\n", stderr: "", blocked: "false"}
+star_width	VALUE	Defined {value: "Specified(0)", stdout: "[   9]\n", stderr: "", blocked: "false"}
+star_width_char_arg	VALUE	Defined {value: "Specified(0)", stdout: "[   9]\n", stderr: "", blocked: "false"}
+star_width_long_arg	UB	Undefined {ub: "UB153b_illtyped_argument_for_format", stderr: ""}
+star_width_minus_flag	VALUE	Defined {value: "Specified(0)", stdout: "[9   ]\n", stderr: "", blocked: "false"}
+star_width_neg	VALUE	Defined {value: "Specified(0)", stdout: "[9   ]\n", stderr: "", blocked: "false"}
+star_width_uint_arg	UB	Undefined {ub: "UB153b_illtyped_argument_for_format", stderr: ""}
+star_width_uninit	REFUSAL	Formatted.printf_aux: refused - a * field width or precision whose int argument is an unspecified value (C17 7.21.6.1#5: an int argument supplies the field width or precision; the formatter cannot pad by an indeterminate amount); upstream never read the argument (the uncaught internal errors 'TODO: formatted.lem 6' and 'TODO: Formatted.convert, * prec', formatted.lem c3ff8c53f :742 and :424) - the fork refuses rather than decides (upstream-tray report 26, 2026-11-07)
+star_width_zero	VALUE	Defined {value: "Specified(0)", stdout: "[9]\n", stderr: "", blocked: "false"}
+star_x_hash	VALUE	Defined {value: "Specified(0)", stdout: "[  0xff][0xff  ][   5][  10]\n", stderr: "", blocked: "false"}
+star_zero_flag	VALUE	Defined {value: "Specified(0)", stdout: "[00009][9    ][-0009]\n", stderr: "", blocked: "false"}
+star_zero_prec	VALUE	Defined {value: "Specified(0)", stdout: "[   009]\n", stderr: "", blocked: "false"}
+td_long_arg	VALUE	Defined {value: "Specified(0)", stdout: "[-3]\n", stderr: "", blocked: "false"}
+td_ptrdiff	VALUE	Defined {value: "Specified(0)", stdout: "[-3]\n", stderr: "", blocked: "false"}
+text_only	VALUE	Defined {value: "Specified(0)", stdout: "plain text\n", stderr: "", blocked: "false"}
+tu_ptrdiff	VALUE	Defined {value: "Specified(0)", stdout: "[3]\n", stderr: "", blocked: "false"}
+tu_ulong_arg	VALUE	Defined {value: "Specified(0)", stdout: "[3]\n", stderr: "", blocked: "false"}
+tx_ptrdiff	VALUE	Defined {value: "Specified(0)", stdout: "[ff]\n", stderr: "", blocked: "false"}
+u_hhu_hu	VALUE	Defined {value: "Specified(0)", stdout: "[250][65535]\n", stderr: "", blocked: "false"}
+u_int_arg	UB	Undefined {ub: "UB153b_illtyped_argument_for_format", stderr: ""}
+u_neg_int	UB	Undefined {ub: "UB153b_illtyped_argument_for_format", stderr: ""}
+u_uint	VALUE	Defined {value: "Specified(0)", stdout: "[4000000000]\n", stderr: "", blocked: "false"}
+u_ullong_llu	VALUE	Defined {value: "Specified(0)", stdout: "[18446744073709551615]\n", stderr: "", blocked: "false"}
+u_ulong_lu	VALUE	Defined {value: "Specified(0)", stdout: "[18446744073709551615]\n", stderr: "", blocked: "false"}
+vprintf_star	VALUE	Defined {value: "Specified(0)", stdout: "[   9]\n", stderr: "", blocked: "false"}
+vsn_user_wrapper	VALUE	Defined {value: "Specified(0)", stdout: "6:123\n", stderr: "", blocked: "false"}
+width_int_min	VALUE	Defined {value: "Specified(0)", stdout: "[-2147483648][ -2147483648][-2147483648 ][-02147483648]\n", stderr: "", blocked: "false"}
+width_llong_min	VALUE	Defined {value: "Specified(0)", stdout: "[-9223372036854775808][-000009223372036854775808]\n", stderr: "", blocked: "false"}
+x_hhx_hx_lx	VALUE	Defined {value: "Specified(0)", stdout: "[ff][1000][deadbeef][CAFE]\n", stderr: "", blocked: "false"}
+x_int_tray27	UB	Undefined {ub: "UB153b_illtyped_argument_for_format", stderr: ""}
+zd_int_arg	UB	Undefined {ub: "UB153b_illtyped_argument_for_format", stderr: ""}
+zd_long_arg	VALUE	Defined {value: "Specified(0)", stdout: "[-3]\n", stderr: "", blocked: "false"}
+zd_size_t	VALUE	Defined {value: "Specified(0)", stdout: "[4]\n", stderr: "", blocked: "false"}
+zero_c_ub	UB	Undefined {ub: "UB157", stderr: ""}
+zero_s_ub	UB	Undefined {ub: "UB157", stderr: ""}
+zu_size_t	VALUE	Defined {value: "Specified(0)", stdout: "[4]\n", stderr: "", blocked: "false"}
+zu_ulong_arg	VALUE	Defined {value: "Specified(0)", stdout: "[5]\n", stderr: "", blocked: "false"}
+zx_zo_size_t	VALUE	Defined {value: "Specified(0)", stdout: "[ff][10][FF]\n", stderr: "", blocked: "false"}
+nolibc_star_width	VALUE	Defined {value: "Specified(0)", stdout: "[   9]\n", stderr: "", blocked: "false"}
+nolibc_e_double	REFUSAL	Formatted.convert: refused - the %e conversion is not implemented (C17 7.21.6.1#8: the a, A, e, E, f, F, g and G conversions of a double argument; 7.21.6.1#7: the L length modifier, a long double argument); the formatter implements %f and %lf of a double only, and upstream parses none of e, E, g, G, a, A, F and L - the constructors CS_F, CS_e, CS_E, CS_g, CS_G, CS_a, CS_A and LM_L are commented out at formatted.lem c3ff8c53f :40 and :32 - so it reported a conforming call as Invalid_format undefined behaviour, a silently wrong verdict; the fork parses the conversion and refuses rather than decides (upstream-tray report 68, 2026-11-07)
+nolibc_jd_intmax	VALUE	Defined {value: "Specified(0)", stdout: "[-7]\n", stderr: "", blocked: "false"}
+nolibc_flags_zero	VALUE	Defined {value: "Specified(0)", stdout: "[00005][-0005][+0005][ 0005][00005][000ff]\n", stderr: "", blocked: "false"}

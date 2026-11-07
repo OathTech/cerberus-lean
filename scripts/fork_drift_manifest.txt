@@ -122,7 +122,7 @@
 # snprintf returns the would-be length and formats at n = 0 (7.21.6.5#3; tray 16) and passes a format's UB verdict through
 # (upstream crashed), the `0` flag pads after the sign/base and `#` keeps %f's decimal point (7.21.6.1#6; tray 70), a
 # length modifier other than l with %s is UB158 (7.21.6.1#7; upstream crashed). Single-row edits, no --refresh:
-# [source-content] formatted.lem re-pinned c630d086... -> 1dda8b14...; [expected-semantic] formatted.ml's hash moved (an
+# [source-content] formatted.lem re-pinned c630d086... -> 642760ec...; [expected-semantic] formatted.ml's hash moved (an
 # already-differing file: the store_chars_in_array restatement of stage 1). The libc Core text is untouched (the formatter
 # is the Core builtin's model, not library C). Leaves when upstream absorbs the fixes; the refusals stay until the
 # conversions are implemented. Record: lean_frontend/docs/2026-11-07_printf-refusals-record.md.
@@ -274,7 +274,7 @@ util/cerb_location.ml
 100644 2d9cca04dcbfe7abcdf39765a7b0c10f44d5a2d72ddb4f2fb39f3a625c0b5f81 frontend/model/desugaring_init.lem
 100644 60003f6ddfa1bdb98bf7f173dd6b052c5e0032ecf48124e603fd079de5907950 frontend/model/driver.lem
 100644 fef63c6ce9047d1a714882f93f5e5b8ea40bec483e9929cafdb9a8e8e0ab6062 frontend/model/float.lem
-100644 1dda8b14c2d78c8631ef1b1e2467be1cf597b3ce7d8e4d85d58ed11051757d96 frontend/model/formatted.lem
+100644 642760ec9799fa092ffaa5dd318fa3d538e95af8650e7256f93355d74b435591 frontend/model/formatted.lem
 100644 5079002023f7e22633acbd6b112f99213227475c4d19d3b1859ea388b322de80 frontend/model/fs.lem
 100644 c536bc19c689f1403e8296152886d948fcf66ce84cbccf56bf7b4e28216634c1 frontend/model/global.lem
 100644 2cb19e9989030a5ede6c4eff3e62ff2611eb6ef6eb7f41c204b153db0c5db315 frontend/model/implementation.lem
@@ -339,7 +339,7 @@ b9f1e58c1d52cd0680a56e7dcd4e3d8e5d2eadbe1d1575f4ad0442d3efd2b3a5 core_run_aux.ml
 977ee22d68c7527e500476404f5803db39a2ef2072ef9e9e34e57435c68bfd7a ctype_aux.ml
 ec7df37dbaf284dda0e03eb6a5641b10175d2c3c6cb42207002b167c9ba2fe88 desugaring_init.ml
 28a7dd7fed988095fd8d32585e9c1871fdf9ecbfa835fea21dc554e0d21cbf40 driver.ml
-a5bd319cd57b6fcc385ff16367c42d2486502bb249359e905a8a4ec81deba9b2 formatted.ml
+0e13f202152a6f0120263dd92eb957a33f1729b5713ef9f506505f756591eca9 formatted.ml
 fd134ad18f9a6c43a1d75f4ca987b2b51ca10230c716cc60d375b11094aec782 genTyping.ml
 fe79f83fe9ae4b52448fa88935cf88df2a4d8e5b3b01b599f3e6585b5fd578e3 implementation.ml
 0471d6a212c273c515d525173d8003c7d10d559e5f91758820708ec69e52e6d5 mem_common.ml
