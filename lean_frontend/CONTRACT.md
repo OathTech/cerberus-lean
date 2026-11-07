@@ -194,6 +194,10 @@ witnesses and are not "thinly tested": they do not answer.
    UB programs, one multi-character constant), 5 gap controls that still crash both engines — with pristine's lines
    as the negative control (18 moved), so a return to the oracle's `\?` crash, the decimal escape or the `Z.to_int`
    overflow turns the gate red.
+   The fourth fork-ahead FIX (D17) has its own witness: `scripts/check_address_constants.sh` (row 1) pins gcc 13's line
+   on BOTH engines for 182 of 234 nolibc programs over the §6.6 forms, 40 rejections as both engines' diagnostics
+   where gcc rejects too, 11 declared rows with gcc's line beside, 1 gap control, with pristine's lines as the negative
+   control (112 moved), so a return to the missing arms, to the comma's acceptance or to `&local` turns the gate red.
    Limit: the immaculate and coverage witnesses pin the crash CLASS (`L=CRASH`, `UNSUPPORTED`), not the refusal
    message, under those lanes' coarse crash policy (VALIDATION §1(a)); the message is fixed in the refusing code, and
    `check_cli_refusals.sh` asserts it for the CLI flags.
@@ -402,6 +406,42 @@ witnesses and are not "thinly tested": they do not answer.
   counts pinned), pristine's lines the negative control (33 moved). Not an override of a judgement: the standard's clauses are explicit and the library's
   own `exit` (musl's `__stdio_exit`) and the TODO-free proxy shortcut were omissions; the delta leaves when upstream
   absorbs the fix (the manifest's `driver.lem`, `stdlib.c`, `stdio.c`, `main.ml` rows).
+- **D17 — the desugarer's constant-expression predicates accept every form C17 6.6#3-#9 lists and reject the
+  operators 6.6#3 forbids** ([USER 2026-11-04] agreed the fix pass in the audited order under the standing bar — a very
+  clear standard, no invented semantics, the vicinity rule; [USER 2026-11-07] dispatched the slice; upstream-tray
+  report 09, with 28 and 29 merged into it, is the filing; record `docs/2026-11-07_address-constants-record.md`).
+  Upstream's `is_lvalue_to_static_object`, `is_address_constant` and `is_arithmetic_constant_expression`
+  (`cabs_to_ail.lem`, pristine c3ff8c53f :821-957), which decide 6.7.9#4 for every static or thread storage-duration
+  initializer, lacked the indirection arm (`a[i]` is `*(a + i)`: `&g_arr[1].b` rejected), the conditional operator and
+  the generic selection, the string-literal address constant (`"hello" + 1`), `address constant ± integer constant
+  expression` below the top level (`(char *)&g + 4` a UB055 verdict) and the decay of a member array or matrix row,
+  while accepting ANY identifier under unary `&` (`&local` in a block-scope static passed the constraint), the comma
+  (`static int a = (1, 2);` ran), a value read through `*` and `->` through a pointer variable; `is_integer_constant_
+  expression`'s wildcard arm crashed on a `_Generic` or a compound literal in an enumerator, case label, array bound
+  or `_Static_assert`. The rule, arm by arm with its clause: `*p` and `p[i]` over an address constant (6.6#9), `->`
+  over an address constant (6.5.2.3#4), a string literal (6.4.5#6, 6.3.2.1#3), `&` of a static lvalue or a function
+  designator, a pointer cast of an address constant or an integer constant cast to pointer type, `±` an integer
+  constant expression with the pointer operand found first (6.6#7, 6.5.6), `?:` and `_Generic` whose branches and
+  associations are all constant (6.6#3, 6.5.1.1#3; the association is selected during the Ail typing, so an
+  unselected non-constant one is rejected — too strict, never fail-open, upstream's own TODO on its `?:` arms), the
+  decay of an lvalue of array or function type built from a static object (6.3.2.1#3-#4; its type taken from the
+  desugar-time typing in the sizeof context, where neither the lvalue conversion nor the decay is performed, the
+  mechanism the `sizeof` desugaring uses), the comma, the increment and the indirection operators rejected (6.6#3,
+  6.6#9), `&` of a non-static object rejected (6.6#9), the caller testing 6.6#7's bullets in order [AGENT 2026-11-07,
+  the worker's design under the charter's M1 text]. Deliberately unchanged, as upstream's judgement under 6.6#10:
+  `(long)&g`, `(int)&g`, `(long)ga`, `&g == &g`, pointer differences, the `offsetof` idiom and `(int *)16` accepted as
+  before; `&(int){3}` (a compound literal's static storage, 6.5.2.5#5: the charter's judgement area), `"hello"[1]` and
+  a `const` object's value rejected as before (gcc folds them); the GNU `?:` keeps its rejection in an initializer and
+  its pre-existing crash in the integer-constant contexts (TODO). Measured (the record §3-§4): a 446-program §6.6 table
+  over gcc 13.3.0 `-std=c11 -pedantic-errors`, pristine and both engines — before 77 over-strict rejections, 3 fail-open
+  acceptances and 84 crashes; after 0 fail-open, 0 engine disagreements, 12 declared rows, the 4 GNU-`?:` crashes —;
+  a 7413-file sweep of every corpus the lanes walk: 11 rows moved, none from accepted to rejected (8 rejections now
+  run at gcc's values; `ci/0268 int x = &1;` reports the desugarer's constraint before the typing's, a `diagnostic-text`
+  register row; `csmith_findings/oracle/init_addr_const.c` reaches draft 08's invalid-node crash one stop earlier).
+  Witness: `scripts/check_address_constants.sh` (row 1), 234 programs (the total and the class counts pinned),
+  pristine's lines the negative control (112 moved). Not an override of a judgement: the arms are the standard's
+  list, upstream's own comments call the predicates partial, and the delta leaves when upstream absorbs the fix (the
+  manifest's `cabs_to_ail` rows).
 - **Agent-called dispositions under these rulings** [AGENT 2026-09-28]: `%f` of a NaN is refused rather than
   registered (it can be refused cheaply and precisely; Lean cannot read a NaN's sign), and the other disagreements that
   record found (its D3–D6, a separate numbering from this section's) are dispositioned in `docs/2026-09-28_thin-surface-tests-record.md` (addendum).

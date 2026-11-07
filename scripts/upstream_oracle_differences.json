@@ -553,6 +553,7 @@
     "ci/0268-address-invalid-type.error.c": {
       "class": "diagnostic-text",
       "citation": [
+        "lean_frontend/docs/2026-11-07_address-constants-record.md",
         "lean_frontend/docs/upstream-tray/09-address-constant-member-rejected.md",
         "lean_frontend/docs/2026-11-07_worker-charter-address-constants.md"
       ],

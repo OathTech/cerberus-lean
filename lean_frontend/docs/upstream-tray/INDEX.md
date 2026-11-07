@@ -74,7 +74,7 @@ notes below establish only what was checked then.
 | [06-funinfo-has-proto-question.md](06-funinfo-has-proto-question.md) | Draft | No submission recorded |
 | [07-symbol-identity-fragility.md](07-symbol-identity-fragility.md) | Draft | No submission recorded |
 | [08-desugar-nested-init-internal-error.md](08-desugar-nested-init-internal-error.md) | Draft | No submission recorded |
-| [09-address-constant-member-rejected.md](09-address-constant-member-rejected.md) | Draft | No submission recorded |
+| [09-address-constant-member-rejected.md](09-address-constant-member-rejected.md) | Draft; fixed in the fork 2026-11-07 (fork-ahead delta, contract D17; the report carries the patch; 28 and 29 merged into it) | No submission recorded; to be filed |
 | [10-decode-rejects-question-escape.md](10-decode-rejects-question-escape.md) | Sent; fixed in the fork (2026-11-07, a fork-ahead delta: the `\?` arm in `decode.ml`; the Lean engine answered so since 2026-09-03 under the retired ISO-fix register row; record `../2026-11-07_half-mirrors-oracle-record.md`, patch against `c3ff8c53f` in the draft) | Communicated privately to the Cerberus maintainers by the operator, 2026-09-26 ([USER 2026-09-26] reported having notified the Cerberus maintainers privately); no public issue URL |
 | [11-escaped-char-octal-roundtrip-corruption.md](11-escaped-char-octal-roundtrip-corruption.md) | Sent; fixed in the fork (2026-11-07, a fork-ahead delta: `escaped_char` as the decoder's right inverse, every byte 0..255 round-tripping; the Lean engine answered so since 2026-09-03 under the retired ISO-fix register row; record `../2026-11-07_half-mirrors-oracle-record.md`, patch against `c3ff8c53f` in the draft) | Communicated privately to the Cerberus maintainers by the operator, 2026-09-26 ([USER 2026-09-26] reported having notified the Cerberus maintainers privately); no public issue URL |
 | [12-bswap64-overflow-crash.md](12-bswap64-overflow-crash.md) | Draft | No submission recorded |
@@ -93,8 +93,8 @@ notes below establish only what was checked then.
 | [25-atexit-not-run-on-main-return.md](25-atexit-not-run-on-main-return.md) | Merged into 24 (2026-11-06); fixed in the fork | filed with 24 |
 | [26-printf-star-width-crash.md](26-printf-star-width-crash.md) | Draft | No submission recorded |
 | [27-printf-hex-int-argument-ub153b.md](27-printf-hex-int-argument-ub153b.md) | Draft | No submission recorded |
-| [28-conditional-in-static-initializer.md](28-conditional-in-static-initializer.md) | Draft | No submission recorded |
-| [29-string-literal-address-constant.md](29-string-literal-address-constant.md) | Draft | No submission recorded |
+| [28-conditional-in-static-initializer.md](28-conditional-in-static-initializer.md) | Merged into 09 (2026-11-07); fixed in the fork | filed with 09 |
+| [29-string-literal-address-constant.md](29-string-literal-address-constant.md) | Merged into 09 (2026-11-07); fixed in the fork | filed with 09 |
 | [30-strncmp-zero-length.md](30-strncmp-zero-length.md) | Draft | No submission recorded |
 | [31-calloc-overflow-check.md](31-calloc-overflow-check.md) | Draft | No submission recorded |
 | [32-float-evaluated-as-double.md](32-float-evaluated-as-double.md) | Draft | No submission recorded |
@@ -198,7 +198,7 @@ date; slots between 01 and 04 in bug-value):
    exception (exit 125, OCaml backtrace) instead of a diagnostic;
    killed ~52% of csmith default-config programs in our campaign.
    Two minimized native-verified reproducers + two-level remedy.
-9. **09-address-constant-member-rejected.md** — TRUE BUG. C11 §6.6p9
+9. **09-address-constant-member-rejected.md** — TRUE BUG; FIXED IN THE FORK 2026-11-07 (a fork-ahead delta, contract D17, record `../2026-11-07_address-constants-record.md`; the report is the filing, 28 and 29 merged into it, with the patch against `c3ff8c53f`: the desugarer's constant-expression predicates accept every form C17 6.6#3-#9 lists and reject the comma and the non-static `&`; witness `scripts/check_address_constants.sh`, 234 programs). Originally: C11 §6.6p9
    address constants combining array subscript + member designator
    (`&arr[i].field` on static storage) rejected as "not a compile-time
    constant" while each designator ALONE is accepted (`&arr[i]` and
@@ -436,14 +436,14 @@ and gcc disagrees — the defect is in the shared model, not in our port:
     (formatted.lem:515-538) while the `l`/`ll`/`j` arms already accept
     either signedness. Remedy: accept the same-representation counterpart,
     then check representability by value (`%u` with -1 stays UB).
-28. **28-conditional-in-static-initializer.md** — TRUE BUG. `static int
+28. **28-conditional-in-static-initializer.md** — TRUE BUG; MERGED INTO 09 and FIXED IN THE FORK 2026-11-07 (the same predicates; `?:` and `_Generic` in a static initializer are accepted, the witness's `ice_init_cond` pins gcc's 10). Originally: `static int
     a = (3 > 2) ? 10 : 20;` rejected "not a compile-time constant":
     `is_arithmetic_constant_expression` (cabs_to_ail.lem:794-843) has no
     `AilEcond` arm although `is_integer_constant_expression` (:727-740)
     does — so `?:` works in enum/array-size/case contexts and not in
     initialisers. One arm to add.
-29. **29-string-literal-address-constant.md** — TRUE BUG (tray-09-
-    adjacent). `static const char *s = "hello" + 1;` rejected:
+29. **29-string-literal-address-constant.md** — TRUE BUG; MERGED INTO 09 and FIXED IN THE FORK 2026-11-07 (the `AilEstr` arm of `is_address_constant`; the witness's `ac_str_plus` pins gcc's 101). Originally (tray-09-
+    adjacent): `static const char *s = "hello" + 1;` rejected:
     `is_address_constant` (cabs_to_ail.lem:894-925) has no string-literal
     arm; a bare literal is special-cased by the caller (:934-960), the
     literal-plus-offset form is not. One arm to add.
