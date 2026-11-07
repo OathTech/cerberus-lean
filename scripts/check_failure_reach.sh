@@ -26,8 +26,9 @@
 #   RED DISCARDABLE; a register row's reach class edited without re-seal -> RED
 #   SEAL MISMATCH naming the row; a phantom (re-sealed) row -> RED STALE; the
 #   tally line edited -> RED; a registered lem_if arm / lemSeq continuation with its head mis-shaped
-#   -> RED POSITION CLASS CHANGED (P6/P7, lem re-pin 2026-09-30); the two Formatted.convert rows'
-#   reach classes swapped together with their seals -> RED SEAL MISMATCH (P8, key groups 2026-10-04);
+#   -> RED POSITION CLASS CHANGED (P6/P7, lem re-pin 2026-09-30); the two CerbMem.combineProv R-PNVI-01
+#   rows' (a key group) reach classes swapped together with their seals -> RED SEAL MISMATCH (P8, key groups
+#   2026-10-04; re-targeted 2026-11-07 from the two Formatted.convert `* prec` rows, which fix/printf-refusals removed);
 #   classifier witnesses C1-C7 on synthetic sources; key-group witness K1 (an undisambiguable group
 #   -> loud FAIL); the unplanted register -> the OK line.
 # --emit [SEED]: print a fresh register seeded from SEED (default: the current
@@ -205,19 +206,23 @@ restore_f Driver.lean
 #     `* prec` rows (REACHABLE for the :874 arm, UNREACHABLE-BY-INVARIANT for :1063) shared one
 #     60-char key, so swapping their reach classes TOGETHER WITH their seals passed every check. Key
 #     groups now carry a lengthened message window; the same swap must be RED SEAL MISMATCH.
+#     Re-targeted 2026-11-07 (fix/printf-refusals: the `* prec` sites are gone, a `*` precision is
+#     read from the argument now) onto the register's other key group of the same shape: the two
+#     CerbMem.combineProv R-PNVI-01 rows (REACHABLE for the symbolic-first arm, UNREACHABLE-BY-INVARIANT
+#     for the symbolic-second one), which share the 60-char key and differ in reach.
 cp "$REGISTER" "$SCRATCH/reg.p8"
 if python3 - "$SCRATCH/reg.p8" <<'PY8'
 import sys; p = sys.argv[1]; L = open(p).read().split('\n')
-ix = [i for i, l in enumerate(L) if len(f := l.split('\t')) == 12 and f[0] == 'lean_frontend/generated/Formatted.lean'
-      and f[1] == 'convert' and f[3].startswith('"TODO: Formatted.convert, * prec"')]
-assert len(ix) == 2, f'P8 premise: {len(ix)} Formatted.convert `* prec` rows, expected 2'
+ix = [i for i, l in enumerate(L) if len(f := l.split('\t')) == 12 and f[0] == 'lean_frontend/CerbMem.lean'
+      and f[1] == 'CerbMem.combineProv' and f[3].startswith('(CerbStop.render (.refusal (pnviRefusal "R-PNVI-01')]
+assert len(ix) == 2, f'P8 premise: {len(ix)} CerbMem.combineProv R-PNVI-01 rows, expected 2'
 a, b = L[ix[0]].split('\t'), L[ix[1]].split('\t')
 assert a[7] != b[7], f'P8 premise: both rows have reach {a[7]} (the swap would be vacuous)'
 for c in (7, 11): a[c], b[c] = b[c], a[c]   # reach class and seal, together
 L[ix[0]], L[ix[1]] = '\t'.join(a), '\t'.join(b); open(p, 'w').write('\n'.join(L))
 PY8
 then
-  PLANT_REG="$SCRATCH/reg.p8"; plant "P8 the two Formatted.convert rows' reach classes swapped WITH their seals (audit A3)" "SEAL MISMATCH" "Formatted.convert, * prec"
+  PLANT_REG="$SCRATCH/reg.p8"; plant "P8 the two CerbMem.combineProv R-PNVI-01 rows' reach classes swapped WITH their seals (audit A3)" "SEAL MISMATCH" "R-PNVI-01"
 else echo "  PLANT FAIL [P8 premise]: the plant could not be applied (see above)"; fails=$((fails+1)); fi
 PLANT_REG="$REGISTER"
 # K1: a key group whose sites agree even on the full recorded message window cannot be keyed
