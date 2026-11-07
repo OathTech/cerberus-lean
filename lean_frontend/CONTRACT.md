@@ -188,6 +188,12 @@ witnesses and are not "thinly tested": they do not answer.
    engines for 46 libc-mode programs over termination — 34 gcc 13's line, 6 the fork's declared line with gcc's beside
    it, a D2 gap control and five nolibc controls — with pristine's lines as the negative control (33 moved), so a return
    to the lost buffer, the skipped handlers or the proxy's ordering turns the gate red.
+   The third fork-ahead FIX (D18, oracle-side only) has its own witness: `scripts/check_half_mirrors.sh` (row 1) pins
+   ONE line on BOTH engines for 41 programs — 27 gcc 13's line (every byte 0..255 through the `snprintf` store, the
+   `\?` escape in every literal form), 9 the fork's declared line with gcc's beside it (the `memcmp` neighbourhood's
+   UB programs, one multi-character constant), 5 gap controls that still crash both engines — with pristine's lines
+   as the negative control (18 moved), so a return to the oracle's `\?` crash, the decimal escape or the `Z.to_int`
+   overflow turns the gate red.
    Limit: the immaculate and coverage witnesses pin the crash CLASS (`L=CRASH`, `UNSUPPORTED`), not the refusal
    message, under those lanes' coarse crash policy (VALIDATION §1(a)); the message is fixed in the refusing code, and
    `check_cli_refusals.sh` asserts it for the CLI flags.
@@ -399,3 +405,44 @@ witnesses and are not "thinly tested": they do not answer.
 - **Agent-called dispositions under these rulings** [AGENT 2026-09-28]: `%f` of a NaN is refused rather than
   registered (it can be refused cheaply and precisely; Lean cannot read a NaN's sign), and the other disagreements that
   record found (its D3–D6, a separate numbering from this section's) are dispositioned in `docs/2026-09-28_thin-surface-tests-record.md` (addendum).
+- **D18 — the three oracle half-mirrors are closed on the OCaml side: `\?` decodes, the formatted store round-trips
+  every byte, `memcmp` with a huge size reports the out-of-bound load** ([USER 2026-11-04] agreed the fix pass in the
+  audited order under the standing bar — a fork fix only where the standard is very clear or a consumer is blocked, no
+  invented semantics; dispatched in parallel [USER 2026-11-07]; upstream-tray reports 10, 11 and 13 are the filings,
+  Sent 2026-09-26 and now "fixed in the fork"; record `docs/2026-11-07_half-mirrors-oracle-record.md`; numbered after
+  the two parallel slices' D16/D17). The true-bug audit of 2026-11-04 found these three HALF-MIRRORED: the Lean engine
+  answered right under the ISO-fix register rows R1/R2/R3 (VALIDATION §2) while the fork's own OCaml oracle still
+  crashed or corrupted, so the standing rule of zero Lean-versus-OCaml behavioural discrepancies was unmet on them. The
+  oracle moves to the Lean engine's behaviour, hand-written OCaml only (no Lem change, no generated delta, no proof
+  change; the Lean edits are comments): (1) `ocaml_frontend/decode.ml` `decode_character_constant_aux` carries the
+  `\?` arm (C17 6.4.4.4#1 lists `\?` among the simple-escape-sequences, #4 gives it the value of `?` = 63; both the
+  character-constant and the string-literal entry points share the decoder, so `'\?'`, `"\?"`, `L'\?'`, `u8"\?"`
+  all decode) where upstream dies on an uncaught Failure on strictly conforming C; (2) `decode.ml` `escaped_char`
+  mirrors `CerbDecode.escaped_char` arm for arm (the simple escapes the decoder names, hexadecimal `\xNN` for every
+  other byte outside 32..126, the byte itself otherwise), so `formatted.lem`'s `store_chars_in_array` round trip
+  `decode_character_constant (escaped_char c)` — the `vsnprintf` builtin's store behind `snprintf`/`sprintf`/
+  `vsprintf`/`vsnprintf` — is the identity on all 256 bytes (C17 7.21.6.1#8: `%c` writes the argument converted to
+  `unsigned char`, unchanged) where upstream's `Char.escaped` emitted OCaml's DECIMAL `\ddd`, read back as OCTAL (127
+  stored as 87, 200 as 128) or refused (19, 199: an uncaught Failure); (3) `memory/concrete/impl_mem.ml` `memcmp`
+  counts on `Z` (a count ≤ 0 is the empty comparison, `memcpy`'s shape in the same file; a negative count is
+  unreachable from C) where upstream converted the C-controlled size with `Z.to_int` before reading a byte, an uncaught
+  `Z.Overflow` on `memcmp(a, b, (size_t)-1)`, so the checked per-byte load's own `UB_CERB002a_out_of_bound_load` is
+  reached, at the memop's location, on both engines. Not an override of a judgement: each is a demonstrable mistake
+  against explicit standard text (the escape grammar, `%c`'s conversion) or a host-integer exception in place of the
+  model's own verdict; each leaves when upstream absorbs it (the manifest's `decode.ml` and `impl_mem.ml` rows,
+  fork-ahead deltas of the first kind). Consequences a consumer sees: a libc-mode program that stores a byte outside
+  32..126 through the `snprintf` family now reads it back unchanged (it read 87/128/… or crashed); a program with `\?`
+  in a constant or string literal now runs on the oracle (it crashed); `memcmp` with a size beyond OCaml's `int`
+  reports the UB (it crashed); the immaculate pins `g5-decode-question`, `zd-e2-ptr-string-literals`,
+  `g5-escape-roundtrip`, `zd-r2-highbyte`, `zd-r2-crash-digit9`, `s4b-memcmp-hugesize` are `MATCH` rows; R1/R2/R3
+  are RETIRED (their `-- ISO-fix register Rn` markers kept as historical notes). Declared, pinned in the witness:
+  universal character names (`\u00e9`, `\U0001F600`, in constants and string literals), multi-character and raw
+  non-ASCII constants still CRASH both engines identically in the decoder's catch-all (tray 63's crash-to-refusal
+  item owns that site: one refusal arm will cover all three shapes — UCNs need the execution character set, so a
+  refusal, not an implementation, is the answer; [AGENT 2026-11-07] left to that slice rather than adding a Lean stop
+  site here); `'\0123'` is read as ONE four-digit octal escape (83) where the grammar stops at three digits and gcc
+  sees a multi-character constant (51, implementation-defined 6.4.4.4#10; tray 63's class); the out-of-range escapes
+  `'\400'`/`'\x100'` (a constraint violation, 6.4.4.4#9) are accepted by both engines as the wrapped value gcc `-w`
+  gives (gcc `-pedantic-errors` rejects them). Witness: `scripts/check_half_mirrors.sh` (row 1), 41 programs (27
+  gcc-pinned, 9 fork-pinned, 5 gap controls; the totals and the moved count pinned), pristine's lines the negative
+  control (18 moved).

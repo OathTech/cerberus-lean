@@ -1,5 +1,12 @@
 # `decode_character_constant` rejects the standard `\?` escape (tool crash)
 
+**Status (cerberus-lean fork):** fixed in the fork on 2026-11-07 as a fork-ahead delta (the oracle's `decode.ml`
+gains the `\?` arm; the Lean engine carried it since 2026-09-03 under the fork's ISO-fix register row R1, now retired;
+record `lean_frontend/docs/2026-11-07_half-mirrors-oracle-record.md`; witness `scripts/check_half_mirrors.sh`, ladder
+row 1); Sent upstream (communicated privately, 2026-09-26), no public issue URL. The patch at the end is against
+`rems-project/cerberus` at `c3ff8c53f` (`git apply --check` in the pristine checkout: OK, 2026-11-07); upstream's tip
+carries the same text in the cited region (the true-bug audit of 2026-11-04 re-observed the crash at `ae70925fc`).
+
 **Affected:** `ocaml_frontend/decode.ml:44-200`
 (`decode_character_constant_aux`; checked against `master` @ `b9aeedcb4`;
 our checkout's `ocaml_frontend/decode.ml` is byte-identical to it —
@@ -60,9 +67,14 @@ One arm in the simple-escape section of `decode_character_constant_aux`:
 ```
 
 (While there: the octal validator at decode.ml:188-191 accepts character
-codes 48..56 = `'0'..'8'` — `'8'` is not an octal digit, so `'\8'` (a
-constraint violation gcc rejects) silently decodes as the value 8.
-A separate one-character fix, `48 <= n && n <= 55`.)
+codes 48..56 = `'0'..'8'` — `'8'` is not an octal digit. Correction
+2026-11-07: `'\8'` is NOT reachable from source — the lexer's
+`octal_escape_sequence` (`parsers/c/c_lexer.mll:411-414`) takes octal digits
+only, so `'\8'` is rejected as an invalid symbol before the decoder runs.
+The off-by-one was reachable only through `escaped_char`'s decimal
+rendering of a stored byte (report 11: `Char.escaped 18 = "\\018"` decoded
+as 16), which report 11's fix removes; it is then a dead quirk, and the
+one-character fix `48 <= n && n <= 55` is tidy-up only.)
 
 ## Classification
 
@@ -118,3 +130,43 @@ $ gcc -std=c11 -O0 ptr_string_literals.c && ./a.out
 (gcc 13.3.0; verbatim 2026-09-05. Our Lean port, which decodes `\?` as
 63, prints the same line byte for byte.) The one-arm remedy above fixes
 both entry points, since they share the decoder.
+
+## Fork status and patch (2026-11-07)
+
+Fixed in the fork on 2026-11-07 ([USER 2026-11-04] agreed the fix pass under the standing bar — a fork fix only
+where the standard is very clear, no invented semantics; the standard's text here is the simple-escape-sequence
+grammar itself). Before and after, verbatim (the fork's oracle at `1e5f2cbca` = pristine `c3ff8c53f`, then the fixed
+tree; `--exec --batch --nolibc`; gcc 13.3.0 `-std=c11 -w -O0`):
+
+```text
+$ cerberus --nolibc --exec --batch t10_char.c          # int main(void) { char c = '\?'; return c; }
+cerberus: internal error, uncaught exception:
+          Failure("decode_character_constant, started like an octal constant, but failed: ?")     (rc 125, before)
+Defined {value: "Specified(63)", stdout: "", stderr: "", blocked: "false"}                       (rc 0, after; = the Lean engine byte for byte; gcc exit 63)
+$ cerberus --nolibc --exec --batch t10_str.c           # int main(void) { const char *s = "a\?b"; return s[1]; }
+          Failure("decode_character_constant, started like an octal constant, but failed: ?")     (rc 125, before)
+Defined {value: "Specified(63)", stdout: "", stderr: "", blocked: "false"}                       (rc 0, after; gcc exit 63)
+```
+
+The patch (the one arm; the comment is the fork's registration note and may be dropped):
+
+```diff
+--- a/ocaml_frontend/decode.ml
++++ b/ocaml_frontend/decode.ml
+@@ -152,6 +152,15 @@
+   | "\\r"   -> Z.of_int 13
+   | "\\t"   -> Z.of_int 9
+   | "\\v"   -> Z.of_int 11
++  (* FORK FIX (2026-11-07, upstream-tray report 10; a fork-ahead delta, registered in
++     scripts/fork_drift_manifest.txt): C17 6.4.4.4#1 lists \? among the simple-escape-sequences
++     (beside the two quote escapes and the backslash escape above) and #4 gives it the value of
++     the character it names, the question mark, 63; gcc 13 agrees. Upstream has no arm, so the catch-all below routes it into the octal
++     validator and the tool dies on an uncaught Failure on strictly conforming C -- through
++     both entry points, the character constant (translation.lem translate_constant) and the
++     string literal (translation.lem's AilEstr arm), which share this decoder. The Lean
++     engine's CerbDecode.decode_character_constant_aux carries the same arm. *)
++  | "\\?"   -> Z.of_int 63
+ 
+   (* NOTE: here are the (graphical) extended characters from ASCII *)
+   | "$"     -> Z.of_int 36
+```

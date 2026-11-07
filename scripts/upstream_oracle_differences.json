@@ -169,6 +169,7 @@
     "immaculate/libc/zd-r2-crash-digit9": {
       "class": "shared-model-fix",
       "citation": [
+        "lean_frontend/docs/2026-11-07_half-mirrors-oracle-record.md",
         "lean_frontend/docs/upstream-tray/10-decode-rejects-question-escape.md",
         "lean_frontend/docs/upstream-tray/11-escaped-char-octal-roundtrip-corruption.md",
         "lean_frontend/docs/upstream-tray/13-memcmp-hugesize-overflow-crash.md",
@@ -459,6 +460,7 @@
     "immaculate/nolibc/g5-decode-question": {
       "class": "shared-model-fix",
       "citation": [
+        "lean_frontend/docs/2026-11-07_half-mirrors-oracle-record.md",
         "lean_frontend/docs/upstream-tray/10-decode-rejects-question-escape.md",
         "lean_frontend/docs/upstream-tray/11-escaped-char-octal-roundtrip-corruption.md",
         "lean_frontend/docs/upstream-tray/13-memcmp-hugesize-overflow-crash.md",
@@ -479,6 +481,7 @@
     "immaculate/nolibc/zd-e2-ptr-string-literals": {
       "class": "shared-model-fix",
       "citation": [
+        "lean_frontend/docs/2026-11-07_half-mirrors-oracle-record.md",
         "lean_frontend/docs/upstream-tray/10-decode-rejects-question-escape.md",
         "lean_frontend/docs/upstream-tray/11-escaped-char-octal-roundtrip-corruption.md",
         "lean_frontend/docs/upstream-tray/13-memcmp-hugesize-overflow-crash.md",
@@ -499,6 +502,7 @@
     "immaculate/libc/g5-escape-roundtrip": {
       "class": "shared-model-fix",
       "citation": [
+        "lean_frontend/docs/2026-11-07_half-mirrors-oracle-record.md",
         "lean_frontend/docs/upstream-tray/10-decode-rejects-question-escape.md",
         "lean_frontend/docs/upstream-tray/11-escaped-char-octal-roundtrip-corruption.md",
         "lean_frontend/docs/upstream-tray/13-memcmp-hugesize-overflow-crash.md",
@@ -519,6 +523,7 @@
     "immaculate/libc/zd-r2-highbyte": {
       "class": "shared-model-fix",
       "citation": [
+        "lean_frontend/docs/2026-11-07_half-mirrors-oracle-record.md",
         "lean_frontend/docs/upstream-tray/10-decode-rejects-question-escape.md",
         "lean_frontend/docs/upstream-tray/11-escaped-char-octal-roundtrip-corruption.md",
         "lean_frontend/docs/upstream-tray/13-memcmp-hugesize-overflow-crash.md",
@@ -539,6 +544,7 @@
     "immaculate/libc/s4b-memcmp-hugesize": {
       "class": "shared-model-fix",
       "citation": [
+        "lean_frontend/docs/2026-11-07_half-mirrors-oracle-record.md",
         "lean_frontend/docs/upstream-tray/10-decode-rejects-question-escape.md",
         "lean_frontend/docs/upstream-tray/11-escaped-char-octal-roundtrip-corruption.md",
         "lean_frontend/docs/upstream-tray/13-memcmp-hugesize-overflow-crash.md",

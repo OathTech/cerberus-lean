@@ -212,6 +212,20 @@ the outcome protocol; [USER 2026-10-20]); all three have landed, so the queue is
   2, the K2 rows), its `vprintf` finding. Still open from it: a printf-format UB of a libc-mode program is located
   inside the library's `vfprintf` (`<unknown location>` on Lean: the N4 transport item is the remover); `perror`/
   `strerror` assert (the audit's K2 rows); the pristine lane's `address-layout` class is new (2026-11-06).
+- **The three oracle half-mirrors (trays 10, 11, 13)** (the true-bug audit of 2026-11-04: the Lean engine answered right
+  under ISO-fix register rows R1/R2/R3 while the fork's own OCaml oracle still crashed or corrupted; [USER 2026-11-04]
+  agreed the fix pass under the standing bar) — **DONE 2026-11-07** (branch `fix/half-mirrors-oracle`, contract D18,
+  record `docs/2026-11-07_half-mirrors-oracle-record.md`, witness `scripts/check_half_mirrors.sh`): the oracle's
+  `decode.ml` carries the `\?` arm and an `escaped_char` mirroring `CerbDecode.escaped_char` (every byte 0..255
+  round-trips through `snprintf`), `impl_mem.ml`'s `memcmp` counts on `Z`; R1/R2/R3 RETIRED, the immaculate pins now
+  `MATCH`. Siblings found and left where they belong: universal character names (`\u00e9`, `\U0001F600`, in constants
+  and strings) crash both engines identically in the decoder's catch-all like tray 63's multi-character and non-ASCII
+  constants — the crash-to-refusal item below owns that site (one refusal arm covers all three shapes; UCNs need the
+  execution character set, so a refusal is the answer, not an implementation); `'\0123'` is a four-digit octal read
+  (83) where the grammar stops at three digits and gcc sees a multi-character constant (51; implementation-defined,
+  tray 63's class); the shipped library's `strncmp`/`strncpy` read before honouring n = 0 (tray 30, with the `strncpy`
+  sibling the audit added); `calloc` without the overflow check (tray 31); `memmove(NULL, b, 1)` differs from pristine
+  through tray 20's rank fix (the base already answered UB046). Pinned as gap controls or declared rows in the witness.
 - **The macro integer types' conversion rank** (tray 20; the survey's cluster K, which the survey marked CORRECT having
   probed only compatibility and `_Generic`; rediscovered by cerberus-caesium's filing 05 at a blocked libxml2
   refinement; [USER 2026-11-04] approved the fork fix) — **DONE 2026-11-04** (branch `fix/macro-type-ranks`, contract
@@ -246,7 +260,8 @@ the outcome protocol; [USER 2026-10-20]); all three have landed, so the queue is
   (1) `wchar_t` with a negative value (`bytes_of_int` assertion from the unsigned-range/signed-alias contradiction at
   impl_mem.ml:2449/:2479 vs ocaml_implementation.ml:167; tray 62); (2) statement expressions whose block contains an
   assignment/`++`/`if` (`break_at_sseq, Cbound`, failure register row 183); (3) multi-character and UTF-8 character
-  constants (`decode_character_constant`, decode.ml:218; tray 63); (4) `NULL + 0` (impl_mem.ml:2277 `failwith`,
+  constants and — found 2026-11-07 by the half-mirrors slice, the same catch-all — universal character names `\u`/`\U`
+  in constants and string literals (`decode_character_constant`, decode.ml:218; tray 63); (4) `NULL + 0` (impl_mem.ml:2277 `failwith`,
   mirror `CerbMem.lean:1975`; tray 04) — **RETIRED 2026-10-30: upstream's fix `f4a3a3d54` (the pure
   `array_shift_ptrval` returns `UB046_array_pointer_outside` on a null pointer) is carried by the stage-1
   merge-base, mirrored by seam S2; both engines agree on `tests/minimal/097`, `tests/ci/0120`/`0121`,
