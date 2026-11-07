@@ -466,9 +466,50 @@ P6 premise (`P6 premise: Formatted.lean has a plain `if` token`) and the P8 prem
 rewording and the re-targeting of §2.2/§5 made both OK; the first witness selftest run was RED on the miscounted
 `pristine-pair` plant (27 caught, 24 expected): the comment and the count corrected (§3.4).
 
-### 6.1 Tier A on the M1 tree (orchestrator-run)
+### 6.1 Tier A on the M1 tree (orchestrator-run) — 18/20, the two reds dispositioned by M2 and M3b
 
-Appended by the orchestrator after the run (the worker does not run `release.py`).
+Run by the orchestrator on `c732fde49` in a separate audit checkout after a forced regeneration and rebuild
+(`scripts/ce python3 scripts/release.py --mode fast`), verbatim: `fast: failed; 18/20 selected commands completed
+successfully.` / `Source unchanged: True. Complete tier selection: True.` A1 passed (1228 s); everything else passed
+but two rows, both the expected movements of this slice, verbatim:
+
+```text
+A3  REGRESSION: fmt-014-e-unserved-ub.c baseline=UB_MATCH current=CERB_SKIP
+    changed (same rank, non-regressing): fmt-043-j-intmax-ub.c baseline=UB_MATCH current=MATCH
+    REGRESSION: fmt-015-g-unserved-ub.c baseline=UB_MATCH current=CERB_SKIP
+    Baseline check: 2 regression(s), 0 improvement(s)
+A15 inner_arg_temps: FAIL — libc/026-snprintf-truncation: baseline changed: {'class': 'AGREE-FIRST', 'cross_mode': 'SAME_SET', 'lean': '8c1fa891b04a', 'mode': 'first', 'oracle': '8c1fa891b04a'} -> {'class': 'AGREE-FIRST', 'mode': 'first', 'oracle': '0ab631c4cd62', 'lean': '0ab631c4cd62', 'cross_mode': 'SAME_SET'}
+    SUMMARY: inner_arg_temps rows=188 AGREE=138 AGREE-FIRST=41 BOTH_FAIL=5 LOC_ONLY-FIRST=2 RESOURCE oracle:KILL=2 failures=0
+```
+
+Dispositions: A3 is the coverage class move of §4 (`fmt-014`/`fmt-015` from the false `Invalid_format` UB to the
+refusal, `fmt-043` the `%jd` fix), re-recorded with the reason in M2 (`31de67fac`: `scripts/exec_coverage_baseline.txt`,
+the three programs' headers; the lane on that tree: `Baseline check: 0 regression(s), 0 improvement(s)` / `BASELINE OK`).
+A15 is `snprintf`'s new return value moving BOTH engines' observation hashes together (class `AGREE-FIRST`
+unchanged, Lean = oracle before and after; the same movement as the libc_exec lane's §4.3 rows) — a lane this slice's
+focused list had missed (`scripts/test_inner_arg_temps.sh --gate`, Tier A row 15; found by the orchestrator's run).
+Re-recorded in M3b through the lane's own path (`--record-baseline` over the whole population: `BASELINE RECORDED (188
+rows)`; the lane refuses a `--rows`-restricted record, and the JSON carries no comment field, so the reason is here and
+in the commit message). The resulting diff against the M3 tree is THREE rows, not one — the lane raises on the first
+mismatching row, so Tier A's line named `026` only; `027` and `028` sat behind it, the same movement — verbatim:
+
+```text
+-  "libc/026-snprintf-truncation": {"class": "AGREE-FIRST", "cross_mode": "SAME_SET", "lean": "8c1fa891b04a", "mode": "first", "oracle": "8c1fa891b04a"},
+-  "libc/027-snprintf-exact-fit": {"class": "AGREE-FIRST", "cross_mode": "SAME_SET", "lean": "808b693231f5", "mode": "first", "oracle": "808b693231f5"},
+-  "libc/028-vsnprintf-wrapper-truncation": {"class": "AGREE-FIRST", "cross_mode": "SAME_SET", "lean": "a8be98317f17", "mode": "first", "oracle": "a8be98317f17"},
++  "libc/026-snprintf-truncation": {"class": "AGREE-FIRST", "cross_mode": "SAME_SET", "lean": "0ab631c4cd62", "mode": "first", "oracle": "0ab631c4cd62"},
++  "libc/027-snprintf-exact-fit": {"class": "AGREE-FIRST", "cross_mode": "SAME_SET", "lean": "73413035d7ea", "mode": "first", "oracle": "73413035d7ea"},
++  "libc/028-vsnprintf-wrapper-truncation": {"class": "AGREE-FIRST", "cross_mode": "SAME_SET", "lean": "88293a1b687b", "mode": "first", "oracle": "88293a1b687b"},
+```
+
+(`026`'s new hash is the one Tier A printed, so the audit checkout and this worktree observe the same program.) The
+gate re-run on the M3b tree, verbatim:
+
+```text
+SUMMARY: inner_arg_temps rows=188 AGREE=138 AGREE-FIRST=41 BOTH_FAIL=5 LOC_ONLY-FIRST=2 RESOURCE oracle:KILL=2 failures=0
+inner_arg_temps elapsed: 378.60s   (scripts/test_inner_arg_temps.sh --gate: the plants, then the whole population; rc 0)
+```
+
 
 ### 6.2 The full battery at close-out (orchestrator-run)
 
