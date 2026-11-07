@@ -74,12 +74,12 @@ attributed text naming the conversion, never a wrong answer.
 | flags `- + space # 0`, a literal or `*` field width, a literal or `*` precision (negative `*` values as 7.21.6.1#5) | SUPPORTED, = gcc 13 (the `0` flag after the sign/base, `#` with `o`/`x`/`X`/`f`) |
 | `%f`, `%lf` of a `double` (incl. infinities) | SUPPORTED, = gcc 13; `%f` of a NaN REFUSED on the Lean engine (CONTRACT §3) |
 | `%e %E %g %G %a %A %F`, `%L<conv>` (long double) | REFUSED (not implemented; upstream reported them as `Invalid_format` UB); queued in TODO |
-| `%n`, `%ls`, `%lc` | REFUSED (upstream crashed) |
+| `%n`, `%ls`, `%lc`; `%*%` (a `%%` specification carrying a `*` width or precision: UB by 7.21.6.1#8) | REFUSED (upstream crashed) |
 | `snprintf`/`vsnprintf`: the return value, `n = 0`, a format's UB | SUPPORTED, = gcc 13 (7.21.6.5#2-#3) |
 | an `int` argument for `%x`/`%X`/`%o`/`%u`, an `unsigned` for `%d`, a `long` for `%d`, a non-`int` `*` argument | UB153b (upstream's strict 7.21.6.1#9 reading, tray 27; pinned) |
 | `%hs`, `%lls`, `%Ld` and the like; `#` with `d`/`s`, `0` with `s`/`c` | UB158 / UB157 (7.21.6.1#6-#7) |
 | `+` on an unsigned conversion, a modifier other than `l` on `%c` | upstream's `DUMMY` UB verdicts (pinned, filed) |
-| `%5%`, `%*%` (padded), the space flag on an unsigned conversion (applied) | upstream's reading on invalid/questionable input (pinned, filed with tray 70) |
+| `%5%` (a literal width on `%%`: padded, upstream's arm under its own TODO), the space flag on an unsigned conversion (applied) | upstream's reading on invalid/questionable input (pinned, filed with tray 70) |
 | a malformed specification (`%q`, a trailing `%`, `%ll`, `%.5.3d`, `%5*d`) | `Invalid_format` UB (7.21.6.1#9) |
 
 Upstream's recursive-main guard is dead on the active driver path:

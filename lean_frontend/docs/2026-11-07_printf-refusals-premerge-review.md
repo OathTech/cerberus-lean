@@ -251,3 +251,72 @@ orchestrator's Tier A caught it (A15), and M3b's own text says so ("a lane this 
 disposition is sound; the record's §4.3 table should carry the three `inner_arg_temps` rows beside the libc_exec ones,
 and the sweep list should name the lane so the next slice's measurement starts from the full set. P1-1's rewrite of
 M2/M3 should carry M3b forward unchanged (it is content-only; its hashes move too).
+
+## Dispositions (2026-11-07, the worker [AGENT], under the orchestrator's instructions; record `2026-11-07_printf-refusals-record.md` §6.0)
+
+Each finding: fixed, answered with a reason the orchestrator can check, or raised. The branch was rewritten from M1
+(`c732fde49`) for P1-1: M2 amended (`31de67fac` → `f4b6888bc`), M3 (`7f4579641` → `31e6264d6`), M3b (`a59ce66a2` →
+`07612d068`) and this review (`420cbc69e` → `501566f14`) replayed with identical content; the old tip is kept under the
+throwaway ref `throwaway-printf-old-tip` until the orchestrator confirms. The remaining findings are one commit on top.
+
+- **P1-1 (blocking) — FIXED in the rewritten M2.** `tests/printf_refusals/gcc.txt` is 16,720 bytes: the two garbage
+  lines (`star_missing_width`, payload 725,285,413 bytes; `star_width_uninit`, 32,841 bytes) are stored CAPPED as
+  `GCC-CAPPED[payload <bytes> bytes, sha256 <hex>, first 96 bytes]: <prefix>` — a self-describing, bounded form that
+  identifies gcc's line by digest and can equal no engine line (both rows are UB rows, never VALUE pins; the script
+  header says so). `gcc.txt` and `pristine.txt` are read ONCE into associative arrays (`load_table`); `expected.txt`
+  was already streamed once. Verified: `git rev-list --objects c732fde49..HEAD | git cat-file --batch-check` shows no
+  blob above 1 MiB (the largest is `VALIDATION.md`, 210,567 bytes); `git diff 420cbc69e <replayed tip>` is exactly
+  `scripts/check_printf_refusals.sh` (+19/−6) and `gcc.txt` (`Bin 725334267 -> 16720 bytes`); the witness with its
+  plants green from the project root, its measured cost in the record's §6.0 and in LADDER/VALIDATION.
+- **P2-1 — FIXED (a declared refusal, the D11-D13 form).** `%*%` — a `%%` specification carrying a `*` width or
+  precision — is refused in `printf_aux` before any argument is read (`star_percent_refusal`, in monadic position, no
+  register row), with the text naming 7.21.6.1#8 ("shall be %%", UB by 4#2), upstream's crash (`:742`) and the
+  `CS_percent` arm's own TODO (`:728`, paraphrased: a plain `if` in the quoted text would trip the failure-reach
+  selftest's P6 premise). Why a refusal and not the parser's `Invalid_format`: the parser's natural rejection would be
+  the whole family (`%5%`, `%-%`, `%.3%`, `%l%`), which upstream's arm pads under its TODO — a case upstream left open,
+  which the standing rule says to keep as-is or refuse, never re-read; so `%5%` (a literal width) keeps upstream's
+  padded output, pinned fork-declared with the reason in the program's header, and only the `*` forms (where upstream
+  had no behaviour but a crash) refuse. Re-classed: `star_percent` is a REFUSAL row (18 refusals, 104 VALUE = 101 gcc +
+  3 fork-pinned). Corrected: CONTRACT D16 ((1) lists the fifth class, (3) names `%5%` alone as upstream's padding;
+  the §3 row; the unmigrated-sites sentence: five classes), tray 70's related findings and fork status, tray 26's fork
+  status, SUPPORTED's table (two rows), VALIDATION's bullet and gate row, LADDER, `test_unit.sh`'s comment, the
+  migration map, both consumer notes, the record (§0, §2.2, §3.2 restated, §3.3 rows 17/17b, §3.4). Lem changed, so:
+  regenerated both targets, the manifest's two rows re-pinned twice with dated NOTEs (the second for the P6 rewording),
+  `check_fork_drift` OK + SELFTEST OK, `check_failure_reach` OK (235) + SELFTEST OK, the witness green (§6.0).
+- **P2-2 — FIXED.** LADDER row 1: the printf entry removed from inside the D15 parenthetical and appended after
+  "≈ 110 s with the self-test)" as its own sentence ("The formatter witness: …"); the stdio entry reads whole again.
+  The witness cost measured afresh on the bounded version with `/usr/bin/time` and recorded in LADDER's entry and
+  VALIDATION's gate row (the record's §6.0 quotes the line).
+- **P2-3 — FIXED in the rewritten M2's message**, which now says the two immaculate rows were HAND-EDITED with a dated
+  note (`--record-baseline` rewrites the file and drops its history block, so it was not used; the lane re-run green on
+  the edited baseline) — as the tree shows.
+- **P3-1 — ANSWERED, no code change (as the finding suggests).** The record's §3.3 gains row 24 (`int w; printf("%d",
+  w)` → `[UNSPEC]` in a `Defined` verdict: upstream's placeholder for an unspecified value in `convert`'s `aux`, UB input
+  when the address is never taken; kept as upstream's convention) and TODO names the asymmetry with the `*` refusal
+  (which declines to guess a WIDTH) as a candidate for a later crash-to-refusal round. Reason not to change it here:
+  it is upstream's deliberate marker on UB input (neither a crash nor a conforming-input error), outside this slice's
+  charter; a refusal there is a separate declared change.
+- **P3-2 — FIXED.** The `Implementation.is_compatible_with_size_t` register row's note now says the site is reached
+  by no witness (the formatter no longer calls it; its remaining callers are `is_signed_or_unsigned_aux`'s
+  `Size_t`/`Ptrdiff_t` arms, dead after `normalise_ctype`); class unchanged; resealed; the gate and its selftest green.
+- **P3-3 — FIXED.** `p_null.c`, `percent_width.c`, `space_u.c` carry a header stating why the pin is the fork's line
+  (implementation-defined `%p` text; upstream's padding under its TODO; the space flag on an unsigned conversion);
+  `star_percent.c` carries its refusal's reason. The script's sentence now reads "each program's header comment
+  states the reason", which is true.
+- **P3-4 — FIXED (reworded, not patched).** The INDEX rows say which report carries a code snippet (16) and which
+  carry the remedy in prose (26, 69, 70); the filing checklist line says the fork's hunk against `c3ff8c53f` is
+  attached at filing time (the hunks are the fork's `formatted.lem` diff, which the operator extracts at the network
+  window; embedding 500 lines of Lem in three drafts would not help the upstream reader more than the prose remedy
+  plus the pointer).
+- **P3-5 — FIXED: filed as tray 71** (`71-unary-minus-floating-zero-loses-sign.md`): the mechanism located by reading
+  — `translation.lem`'s `AilEunary Minus` arm elaborates a floating negation as `0.0 - e` (`OpSub zero_pe …`), so a
+  zero negates to `+0.0`; reproducer run verbatim on pristine (`[0.000000][-0.000000][0.000000][0.000000]`) and gcc
+  (`[-0.000000][-0.000000][0.000000][-0.000000]`): `z * -1.0` keeps the sign and `0.0 - z` is correctly `+0.0`, which
+  isolates the negation. Not fixed in the fork (a translation-layer slice with its own witness); the INDEX row and
+  TODO point at it; tray 70's related findings and the record's §3.3 row 20 refer to it.
+- **P3-6 — ANSWERED by M3b** (the three `inner_arg_temps` rows re-recorded through the lane's own path, the gate
+  green, Tier A's 18/20 recorded in the record's §6.1); plus, per the finding: the record's §4.3 carries the three
+  rows beside the libc_exec ones and §4.1's lane list names row 15 so the next slice's measurement starts from the
+  full set.
+- **Verified and reported**, as asked: the old and new tip hashes, the blob-scan line, the gate lines and the diff stat
+  are in the worker's report to the orchestrator and in the record's §6.0.

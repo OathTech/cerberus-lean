@@ -113,7 +113,7 @@ star_many	VALUE	Defined {value: "Specified(0)", stdout: "[ 1][  2][x]\n", stderr
 star_missing_value	UB	Undefined {ub: "UB153a_insufficient_arguments_for_format", stderr: ""}
 star_missing_width	UB	Undefined {ub: "UB153a_insufficient_arguments_for_format", stderr: ""}
 star_neg_width_s	VALUE	Defined {value: "Specified(0)", stdout: "[ab   ][ab    ]\n", stderr: "", blocked: "false"}
-star_percent	VALUE	Defined {value: "Specified(0)", stdout: "[  %]\n", stderr: "", blocked: "false"}
+star_percent	REFUSAL	Formatted.printf_aux: refused - a %% conversion specification carrying a * field width or precision (C17 7.21.6.1#8: 'The complete conversion specification shall be %%', so the form is undefined behaviour, 4#2); upstream's %% arm pads a modified %% under its own TODO calling the forms with a length modifier, flags or a precision undefined behaviour (formatted.lem c3ff8c53f :728) and never read a * argument (the uncaught internal error 'TODO: formatted.lem 6', :742) - the fork refuses rather than decides (upstream-tray report 26, 2026-11-07)
 star_prec	VALUE	Defined {value: "Specified(0)", stdout: "[007]\n", stderr: "", blocked: "false"}
 star_prec_f	VALUE	Defined {value: "Specified(0)", stdout: "[1.50][1.500000]\n", stderr: "", blocked: "false"}
 star_prec_neg	VALUE	Defined {value: "Specified(0)", stdout: "[7]\n", stderr: "", blocked: "false"}

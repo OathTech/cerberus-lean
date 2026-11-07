@@ -278,13 +278,18 @@ the outcome protocol; [USER 2026-10-20]); all three have landed, so the queue is
     today `sizeof(long double) == 8`, D6) — until then each is the D16 refusal.
   - **`%n`, `%ls`, `%lc`** (size S each: `%n` stores the count through the pointer argument; the wide forms need
     `wcrtomb`'s single-byte reading) — the D16 refusals.
-  - **`%f` of `-0.0` prints `0.000000` on both engines** (gcc `-0.000000`): measured with `z * -1.0` (prints
-    `-0.000000`) against `-z` and `0.0 - z` (print `0.000000`), the sign is lost by the unary minus / subtraction before
-    the formatter — a floating-arithmetic question (the Core elaboration of unary minus?), not filed yet; tray 70's
-    related finding names it.
+  - **`%f` of `-0.0` prints `0.000000` on both engines** (gcc `-0.000000`) — FILED as upstream-tray report 71
+    (2026-11-07, the pre-merge review's P3-5): `translation.lem`'s `AilEunary Minus` arm elaborates a floating negation
+    as `0.0 - e`, so a zero negates to `+0.0` (`z * -1.0` keeps the sign, `0.0 - z` is correctly `+0.0`); a
+    translation-layer slice with its own witness fixes it (one arm; `tests/coverage/fmt/fmt-005-f-negative-zero.c`
+    carries the shape). Not this slice's mechanism.
   - The space flag on an unsigned conversion (`% u` prints ` 5`; gcc `5`) and the padded `%5%` are upstream's readings of
-    questionable/invalid input, kept and pinned (tray 70's related findings); the `%s`-of-a-non-pointer crash (UB input)
-    is tolerated, unchanged.
+    questionable/invalid input, kept and pinned (tray 70's related findings); `%*%` is a declared refusal (the review's
+    P2-1); the `%s`-of-a-non-pointer crash (UB input) is tolerated, unchanged.
+  - **`%d` of an unspecified value prints `[UNSPEC]` inside a `Defined` verdict** (upstream's placeholder in `convert`'s
+    `aux`; UB input when the object's address is never taken, 6.3.2.1#2): kept as upstream's convention, but it sits
+    beside the `*` refusal that declines to guess a width (the review's P3-1 names the asymmetry) — a candidate for a
+    declared refusal in a later crash-to-refusal round.
 - **The macro integer types' conversion rank** (tray 20; the survey's cluster K, which the survey marked CORRECT having
   probed only compatibility and `_Generic`; rediscovered by cerberus-caesium's filing 05 at a blocked libxml2
   refinement; [USER 2026-11-04] approved the fork fix) — **DONE 2026-11-04** (branch `fix/macro-type-ranks`, contract

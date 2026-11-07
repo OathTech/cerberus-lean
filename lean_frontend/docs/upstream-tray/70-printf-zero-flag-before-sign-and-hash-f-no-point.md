@@ -68,7 +68,8 @@ decimal point when the result has none and is a plain `[-]digits` (not an infini
   flags for signed conversions only and, unlike `#`/`0`, does not say "for other conversions, the behavior is
   undefined"; the two flags are treated differently from each other.
 - `printf("%5%")` prints `    %` (7.21.6.1#8: "The complete conversion specification shall be %%"; gcc prints
-  `%`); with the `*` fix of report 26, `%*%` consumes the int argument and pads likewise.
+  `%`) — the `CS_percent` arm's own TODO calls the modified forms undefined behaviour and pads anyway; the `*` form of
+  the same shape (`%*%`) crashed with the `*` placeholder and is a declared refusal in the fork (report 26).
 - `printf("%f", -0.0)` prints `0.000000` on both engines where gcc prints `-0.000000`: measured with
   `z * -1.0` (prints `-0.000000`) against `-z` and `0.0 - z` (print `0.000000`), the sign is lost by the
   negation / subtraction before the formatter sees the value — a floating-arithmetic question, not the
@@ -80,7 +81,7 @@ The two defects are fixed in the shared `formatted.lem` (`justify`, `expand`), b
 witness `scripts/check_printf_refusals.sh` (the `flags_zero`, `flags_hash`, `flags_hash_long`, `f_zero_pad`,
 `f_hash`, `f_inf`, `width_int_min`, `width_llong_min`, `star_zero_flag` rows pinned to gcc's lines). The
 related findings are kept as upstream has them and pinned to the fork's own lines (`space_u`,
-`percent_width`, `star_percent`, `plus_u_dummy`).
+`percent_width`, `plus_u_dummy`); `%*%` is the `star_percent` refusal row; the `-0.0` finding is filed apart as report 71.
 
 ## Classification
 

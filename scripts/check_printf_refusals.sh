@@ -24,7 +24,7 @@
 #            line (tests/printf_refusals/gcc.txt, derived 2026-11-07 with `gcc -std=c11 -w -O0`, the streams
 #            captured separately, OCaml String.escaped) — or, for the rows of FORK_PINNED below, the fork's own
 #            declared line with gcc's beside it in gcc.txt (implementation-defined %p text, upstream's
-#            padded `%5%` and its space flag on an unsigned conversion: filed, not changed);
+#            padded `%5%` under its own TODO and its space flag on an unsigned conversion: filed, not changed);
 #   UB       both engines report the pinned `Undefined {ub: "<id>", …}` line (exit 1) — compared with the
 #            `loc` field removed: in libc mode the oracle locates a format UB inside the library's vfprintf and
 #            the Lean engine at `<unknown location>` (named deviation N4, VALIDATION.md 2b; the LOC_ONLY rule of
@@ -32,7 +32,8 @@
 #            in gcc.txt (gcc prints something: the strict 7.21.6.1#9 reading is upstream's, tray 27);
 #   REFUSAL  the oracle must die with `internal error: <text>` and the uncaught `Failure("internal error:
 #            <text>")` (exit 125), the Lean engine must abort (exit 134) with a `PANIC … LemLib…: <text>` line, and
-#            the two texts must be byte-identical to the pin (the WHOLE text, the conversion named in it);
+#            the two texts must be byte-identical to the pin (the WHOLE text, the conversion named in it); `%*%`, a %%
+#            specification carrying a * width (UB, 7.21.6.1#8), is such a row (the pre-merge review's P2-1);
 #   GAP      the oracle answers the pinned line; the Lean engine refuses (`%f` of a NaN, CONTRACT §3: the
 #            float-format REFUSAL envelope) — a gap control, not an agreement.
 #   nolibc_* rows run under --nolibc on BOTH engines (std.core's printf proxy, the other path to the same
@@ -76,8 +77,8 @@ ONLY="${CERB_PR_ONLY:-}"
 NAME=check_printf_refusals
 LEAN_PANIC_RE='^PANIC at _private\.LemLib\.0\.failwithIImpl LemLib:[0-9]+:[0-9]+: '
 GAP_LEAN_TEXT='"REFUSAL","float-format","%f"'
-# the declared fork-pinned VALUE rows (their pins differ from gcc's line; the reason is in each program's header)
-FORK_PINNED="p_null percent_width space_u star_percent"
+# the declared fork-pinned VALUE rows (their pins differ from gcc's line; each program's header comment states the reason)
+FORK_PINNED="p_null percent_width space_u"
 # the plant subset: moved rows of each class, unmoved rows, the gap control, a nolibc control
 PLANT_VALUE_MOVED="star_width sn_trunc jd_intmax flags_zero"
 PLANT_VALUE_SAME="d_int s_prec"
@@ -199,7 +200,7 @@ LIBC_ARGS=(--libc "$ROOT/tests/libc/libc.core"); for j in "${LIBC_JSONS[@]}"; do
 load_table "$GCC_LINES" GCC; load_table "$PRISTINE" PRIS
 fails=0; n=0; nmoved=0; nvalue=0; ngcc=0; nfork=0; nub=0; nrefusal=0; ngap=0; nnolibc=0
 # the total and the class counts are PINNED: a dropped row cannot pass silently
-WANT_N=161; WANT_VALUE=105; WANT_GCC=101; WANT_FORK=4; WANT_UB=38; WANT_REFUSAL=17; WANT_GAP=1; WANT_NOLIBC=4
+WANT_N=161; WANT_VALUE=104; WANT_GCC=101; WANT_FORK=3; WANT_UB=38; WANT_REFUSAL=18; WANT_GAP=1; WANT_NOLIBC=4
 fail() { echo "$NAME: FAIL — $*"; fails=$((fails + 1)); }
 verdict_line() { grep -aE '^(Defined|Undefined|Error|Killed) ' | head -1; }
 strip_loc() { sed -E 's/, loc: "[^"]*"//'; }
@@ -291,4 +292,4 @@ if [[ -z "$ONLY" ]]; then  # the whole set: the pinned totals (a subset run is a
 fi
 
 [[ $fails -eq 0 ]] || { echo "$NAME: $fails failing check(s) over $n programs"; exit 1; }
-echo "$NAME: OK ($n programs, libc mode but for the $nnolibc nolibc controls: $nvalue VALUE rows with both engines' batch lines equal to the pin and exit codes equal — $ngcc gcc 13's line (the * field width and precision in every form incl. negative, zero, with flags and modifiers, in printf/fprintf/sprintf/snprintf/vprintf; %jd/%ju/%zd/%zu/%td/%tu with the macro types and their corresponding types; snprintf's would-be length on truncation, at n = 0 with a null buffer, at n = 1, at the exact fit and in the sizing idiom; the 0 flag after the sign and the 0x base, the # decimal point of %f, infinities space-padded; every integer, character, string and %f conversion with its flags, widths, precisions and length modifiers as controls) and $nfork the fork's declared lines with gcc's beside them (implementation-defined %p text, upstream's padded %% and space flag on an unsigned conversion); $nub UB rows with the pinned verdict on both engines, the location projected (a snprintf format's UB passed through instead of the crash, a non-l modifier with %s as UB158, the strict 7.21.6.1#9 readings of tray 27 kept, the malformed formats as Invalid_format); $nrefusal REFUSAL rows with the oracle's internal error and the Lean engine's PANIC carrying the identical pinned text (every floating conversion other than %f/%lf, the L modifier, %n, %ls, %lc, an unspecified * argument, in printf and snprintf); $ngap gap control (%f of a NaN refused on the Lean engine); $nmoved rows moved from pristine c3ff8c53f's lines)"
+echo "$NAME: OK ($n programs, libc mode but for the $nnolibc nolibc controls: $nvalue VALUE rows with both engines' batch lines equal to the pin and exit codes equal — $ngcc gcc 13's line (the * field width and precision in every form incl. negative, zero, with flags and modifiers, in printf/fprintf/sprintf/snprintf/vprintf; %jd/%ju/%zd/%zu/%td/%tu with the macro types and their corresponding types; snprintf's would-be length on truncation, at n = 0 with a null buffer, at n = 1, at the exact fit and in the sizing idiom; the 0 flag after the sign and the 0x base, the # decimal point of %f, infinities space-padded; every integer, character, string and %f conversion with its flags, widths, precisions and length modifiers as controls) and $nfork the fork's declared lines with gcc's beside them (implementation-defined %p text, upstream's padded %5% under its own TODO, its space flag on an unsigned conversion); $nub UB rows with the pinned verdict on both engines, the location projected (a snprintf format's UB passed through instead of the crash, a non-l modifier with %s as UB158, the strict 7.21.6.1#9 readings of tray 27 kept, the malformed formats as Invalid_format); $nrefusal REFUSAL rows with the oracle's internal error and the Lean engine's PANIC carrying the identical pinned text (every floating conversion other than %f/%lf, the L modifier, %n, %ls, %lc, an unspecified * argument, a %% specification with a * width, in printf and snprintf); $ngap gap control (%f of a NaN refused on the Lean engine); $nmoved rows moved from pristine c3ff8c53f's lines)"

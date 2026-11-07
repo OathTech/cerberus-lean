@@ -614,6 +614,16 @@ let star_refusal what =
   "Formatted.printf_aux: refused - a * field width or precision whose int argument is " ^ what ^
   " (C17 7.21.6.1#5: an int argument supplies the field width or precision; the formatter cannot pad by an indeterminate amount); upstream never read the argument (the uncaught internal errors 'TODO: formatted.lem 6' and 'TODO: Formatted.convert, * prec', formatted.lem c3ff8c53f :742 and :424) - the fork refuses rather than decides (upstream-tray report 26, 2026-11-07)"
 
+(* a %% conversion specification carrying a `*` field width or precision (the pre-merge review's
+   P2-1, 2026-11-07): C17 7.21.6.1#8 "The complete conversion specification shall be %%" — a
+   shall outside a constraint, so undefined behaviour (4#2); upstream never read the argument
+   (the `*` crash) and its %% arm carries its own TODO calling the modified forms UB; the fork
+   refuses rather than consume the argument and pad (a value neither upstream's nor gcc's).
+   A %% with a LITERAL width or flags keeps upstream's padded output (its arm, under its TODO). *)
+val star_percent_refusal: string
+let star_percent_refusal =
+  "Formatted.printf_aux: refused - a %% conversion specification carrying a * field width or precision (C17 7.21.6.1#8: 'The complete conversion specification shall be %%', so the form is undefined behaviour, 4#2); upstream's %% arm pads a modified %% under its own TODO calling the forms with a length modifier, flags or a precision undefined behaviour (formatted.lem c3ff8c53f :728) and never read a * argument (the uncaught internal error 'TODO: formatted.lem 6', :742) - the fork refuses rather than decides (upstream-tray report 26, 2026-11-07)"
+
 (* the Defined-continuation bind over the formatter's result type: an Error, an Undef or a
    Left is passed through unchanged (the four-arm match upstream repeats at every step) *)
 val bind_defined: forall 'a 'b.
@@ -1017,6 +1027,12 @@ let rec printf_aux loc eval_conv acc fs ty_ptrvals =
         printf_aux loc eval_conv (acc ++ str) fs ty_ptrvals
     | (F_conv cp :: fs, ty_ptrvals) ->
         let cspec = cp.cp_conversion_specifier in
+        match (cspec, cp.cp_field_width, cp.cp_precision) with
+          | (CS_percent, Just FW_asterisk, _) ->
+              error star_percent_refusal
+          | (CS_percent, _, Just P_asterisk) ->
+              error star_percent_refusal
+          | _ ->
         (* the `*` field width, then the `*` precision, read before the argument to be converted
            (7.21.6.1#5); a negative field width is the `-` flag and its magnitude, a negative
            precision is an omitted one (the resolved values: the flags, maybe a width, maybe a
@@ -1070,6 +1086,7 @@ let rec printf_aux loc eval_conv acc fs ty_ptrvals =
                         expanded
                 end in
                 printf_aux loc eval_conv (acc ++ justified) fs ty_ptrvals')))
+        end
     | _ ->
         Mem.return $
           Right (U.return acc)

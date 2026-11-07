@@ -99,7 +99,8 @@ The `*` forms are FIXED in our fork's shared `formatted.lem` exactly as proposed
 (28 `*` rows pinned to gcc 13's lines: every form of width and precision, negative, zero, with flags and
 length modifiers, in `printf`, `fprintf`, `sprintf`, `snprintf`, `vprintf` and through a user `vsnprintf`
 wrapper). A `*` argument that is an unspecified value is a declared refusal (the formatter does not guess a
-width). `%n`, `%ls` and `%lc` are DECLARED REFUSALS with one attributed text each (`Formatted.convert:
+width), and so is a `%%` specification carrying a `*` width or precision (`%*%`: 7.21.6.1#8 "The complete conversion
+specification shall be %%", undefined behaviour; upstream crashed on it; the fork consumes nothing and refuses). `%n`, `%ls` and `%lc` are DECLARED REFUSALS with one attributed text each (`Formatted.convert:
 refused - the %n conversion (C17 7.21.6.1#8 n: …) … (upstream-tray report 26, 2026-11-07)`), never a wrong
 answer; their implementation is upstream's to do. The fork-ahead delta leaves when upstream absorbs the fix.
 

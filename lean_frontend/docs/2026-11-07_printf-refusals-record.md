@@ -3,8 +3,11 @@
 Branch `fix/printf-refusals`, worktree `worktrees/cerberus-lean-fix/printf-refusals`, from mainline
 `mdd/cerberus-lean` = `1e5f2cbca` (merge-base upstream `c3ff8c53f`, Lean 4.35.0, lem `e6d8db5`); charter
 `docs/2026-11-07_worker-charter-printf-refusals.md` (commit `d66ae6287`). Worker: Claude Fable 5.1 (agent). Every
-judgement below that no operator ruling covers is marked [AGENT]. Status: **M1 (`c732fde49`), M2 (`31de67fac`) and M3 committed, the
-focused gates of §6 green on the M2 tree; Tier A and the full battery are the orchestrator's (§6.2/§6.3, appended after
+judgement below that no operator ruling covers is marked [AGENT]. Status: **M1 (`c732fde49`), M2 (`f4b6888bc`), M3 (`31e6264d6`), M3b (`07612d068`), the pre-merge review
+(`501566f14`) and the review's fixes committed; the branch was REWRITTEN from M1 on 2026-11-07 for the review's P1-1
+(the first M2 `31de67fac` carried a 725 MB `gcc.txt` blob; M3 `7f4579641`, M3b `a59ce66a2` and the review `420cbc69e`
+were replayed with identical content; the old tip stays under a throwaway ref until the orchestrator confirms); the
+focused gates of §6 green; Tier A and the full battery are the orchestrator's (§6.2/§6.3, appended after
 the runs).** The charter's premises held, with two corrections: the charter's line numbers for the `LM_j` arm were the
 bump tip's (`:559-560`), pristine `c3ff8c53f`'s are `:530-531` (§2.4); and the `%ls` probe shape the audit used
 (`wchar_t w[] = L"ab"`) does not reach the formatter at all (a constraint violation at the wide-string initializer, the
@@ -18,12 +21,14 @@ audit's §4 item 6, another slice) — the witness initialises the array element
 - [USER 2026-11-07] this slice dispatched (the charter), in parallel with the address-constants and half-mirrors slices;
   this slice touches `frontend/model/formatted.lem`, its witnesses, pins and documents only.
 - [AGENT 2026-11-07, worker] within that bar (§2): the `*` forms are implemented (the charter's option: "the obvious
-  loads"), not refused; the vicinity probe's siblings (§3.3) — the `0` flag's placement, `#` on `%f`, a non-`l`
+  loads"), not refused — except a `%%` specification carrying a `*` width or precision (`%*%`), a UB form on which upstream
+  crashed, which is a declared refusal (the pre-merge review's P2-1 struck the first version's consumed-and-padded
+  value: an invented reading); the vicinity probe's siblings (§3.3) — the `0` flag's placement, `#` on `%f`, a non-`l`
   modifier on `%s`, `%zd`/`%tu` of the corresponding types — are fixed as clear-standard, small implementations; an
   indeterminate `*` argument is a refusal, not a guess; the `j`/`z`/`t` tests are made uniform in either signedness
   (upstream's `l`/`ll` laxity kept, 7.21.6.1#7 names both types for `z` and `t`); the strict tray-27 readings, the
-  `DUMMY` verdicts, the padded `%5%`, the space flag on an unsigned conversion and the `%s`-of-a-non-pointer crash are
-  kept as upstream's judgement, pinned and filed.
+  `DUMMY` verdicts, the padded `%5%` (a literal width on `%%`: upstream's arm under its own TODO), the space flag on an
+  unsigned conversion and the `%s`-of-a-non-pointer crash are kept as upstream's judgement, pinned and filed.
 - The refusals take the D11/D12/D13 form (a pure Lem `error` with one attributed text per class), in MONADIC position
   (the arm's value is the memM action): rendered by generation as the oracle's `Cerb_debug.error` (`internal error:
   <text>`, the uncaught `Failure`, exit 125) and the Lean engine's `failwithI … : ndM …` (abort under
@@ -126,6 +131,15 @@ rule for a malformed specification (7.21.6.1#9), unchanged. Helpers: `isFloating
   SUPPORTED: %lc'`, `:612`). The first text said "converted as if by wcrtomb" (the standard's words); the failure-reach
   selftest's P6 premise asserts that generated `Formatted.lean` has no plain `if` token and does not skip string
   literals, so the two phrases were reworded rather than the gate changed [AGENT].
+- `star_percent_refusal` — a `%%` specification carrying a `*` width or precision (`%*%`), added for the review's P2-1:
+  `Formatted.printf_aux: refused - a %% conversion specification carrying a * field width or precision (C17 7.21.6.1#8:
+  'The complete conversion specification shall be %%', so the form is undefined behaviour, 4#2); upstream's %% arm pads a
+  modified %% under its own TODO calling the forms with a length modifier, flags or a precision undefined behaviour
+  (formatted.lem c3ff8c53f :728) and never read a * argument (the uncaught internal error 'TODO: formatted.lem 6', :742)
+  - the fork refuses rather than decides (upstream-tray report 26, 2026-11-07)`; the first version consumed the `int` and
+  padded (a value neither upstream's nor gcc's); `%5%` (a literal width) keeps upstream's padded output under its TODO.
+  The quoted TODO is paraphrased, not quoted: the failure-reach selftest's P6 premise rejects a plain `if` token in
+  generated `Formatted.lean` (the TODO's text has one).
 - `star_refusal what` — a `*` argument the formatter cannot pad by: `Formatted.printf_aux: refused - a * field width
   or precision whose int argument is <an unspecified value | not a constant> (C17 7.21.6.1#5: an int argument supplies
   the field width or precision; the formatter cannot pad by an indeterminate amount); upstream never read the argument
@@ -221,13 +235,15 @@ values of `printf`/`fprintf`/`snprintf`/`sprintf`.
 Before: 36 crashes, 52 UB verdicts, 52 values = gcc, 21 values ≠ gcc; Lean = oracle on every row but the N4
 location inside `vfprintf` and the Lean NaN refusal. After (the final M2 binaries): 16 refusals, 99 values = gcc, 38 UB
 verdicts, 8 values ≠ gcc, 1 crash; Lean = oracle on 161 of 162 rows (the NaN refusal, the GAP control), the refusal
-texts compared whole, the UB rows with the location projected. The transitions (before class → after class, derived):
+texts compared whole, the UB rows with the location projected. Restated after the review's P2-1 (derived: `%*%` moved
+from a value ≠ gcc to a refusal; the witness run of §6 is the measurement): 17 refusals, 99 values = gcc, 38 UB, 7 values
+≠ gcc, 1 crash. The transitions (before class → after class, derived):
 66 value = gcc unchanged; 25 crash → value = gcc (the `*` family in every writer); 8 false UB153b → value = gcc
 (`j`/`z`/`t`); 12 false `Invalid_format` → refusal (the floating family); 4 crash → refusal (`%n`, `%ls`, `%lc`, the
 unspecified `*`); 2 crash → UB158 (`%hs`, `%lls`), 2 crash → UB153a (`snprintf("%d")`, `%*d` with the value missing),
 1 crash → UB153b (`snprintf("%d", 1.5)`); 1 `Invalid_format` → UB158 (`%Ld`); 1 value → UB153b (`snprintf(NULL, 0,
 "%d", 1.5)`: the format is checked at `n = 0`); 6 value ≠ gcc unchanged + 1 new (the `%p` texts, `%5%`, `% u`, `-0.0`);
-1 crash → value ≠ gcc (`%*%`: the `*` consumed, upstream's padding); 13 UB153b, 8 `Invalid_format`, 3 `UB157`, 3
+1 crash → value ≠ gcc (`%*%`: the `*` consumed, upstream's padding — RETRACTED by the review's P2-1: a refusal now); 13 UB153b, 8 `Invalid_format`, 3 `UB157`, 3
 `DUMMY(+)`, 2 UB153a, 1 UB158, 1 `DUMMY(c)` unchanged; 1 crash unchanged (`%s` of an `int`). Verbatim after (the fork
 oracle; the Lean engine's line identical on each but the `PANIC …` prefix of a refusal and `<unknown location>` on a UB
 row):
@@ -273,12 +289,14 @@ the %e conversion …` the same text to the end, exit 134.)
 | 14 | `int w; printf("%*d", w, 9)` → crash | crash (an indeterminate width; UB if `w`'s address is never taken, 6.3.2.1#2) | REFUSED (the formatter does not guess) | refusal |
 | 15 | `%x %X %o %u` of an `int`, `%d` of an `unsigned`/`long`, `%ld` of an `int`, `%jd` of a `long long`, `%zd` of an `int`, a `long`/`unsigned` `*` width, `%p` of an `int *` → UB153b | the strict 7.21.6.1#9 reading; gcc warns on most | KEPT (tray 27, REFUSE-AND-FILE) | UB153b, pinned |
 | 16 | `%+u`, `%+s`, `%-+ #08x` → `DUMMY(+ flag with unsigned conversion)`; `%hc` → `DUMMY(TODO_find_quote_printf_CS_c)` | upstream's placeholder-named verdicts | KEPT | pinned |
-| 17 | `%5%` = `    %` (gcc `%`); `%*%` consumes the int and pads | invalid specification (#8: "shall be %%"), upstream's padding | KEPT, filed with tray 70 | pinned (fork-declared) |
+| 17 | `%5%` = `    %` (gcc `%`) | invalid specification (#8: "shall be %%"), upstream's padding under its own TODO | KEPT (a case upstream left open: as-is), filed with tray 70 | pinned (fork-declared) |
+| 17b | `%*%`: upstream crashed (`TODO: formatted.lem 6`); the first M1 consumed the int and padded `[  %]` | invalid specification (#8), a UB form; the padded value was an invented reading (the review's P2-1) | REFUSED (`star_percent_refusal`, the D11-D13 form) | refusal, both engines |
 | 18 | `% u`, `% x` = ` 5` (gcc `5`, warns) | the space flag applied to an unsigned conversion; #6 does not declare it UB | KEPT, filed with tray 70 | pinned (fork-declared) |
 | 19 | `printf("%s", 5)` → crash `WIP, Formatted => CS_s, ty <> Pointer ==> (signed int, ptr(…))` | crash on UB input | KEPT (a crash is tolerated; not legal input) | unchanged, not in the witness |
 | 20 | `%f` of `-0.0` = `0.000000` (gcc `-0.000000`) | silently wrong — but NOT the formatter: `z * -1.0` prints `-0.000000`, `-z` and `0.0 - z` print `0.000000` | OUT OF THE MECHANISM: the negation/subtraction loses the sign before the formatter; TODO names it, tray 70's related finding | unchanged |
 | 21 | `%p` of a `void *` prints `(@70, 0xffffffffedf4)`, of a null pointer `NULL(void)` (gcc `0x7ffc…`, `(nil)`) | implementation-defined text | KEPT; `p_null` pinned fork-declared, the address rows left out of the witness (layout-dependent) | unchanged |
 | 22 | `%f` of a NaN: oracle `-nan`, Lean the float-format REFUSAL | the declared Lean refusal (CONTRACT §3) | KEPT: the witness's gap control | unchanged |
+| 24 | `int w; printf("[%d]", w)` prints `[UNSPEC]` inside a `Defined` verdict (both engines, pristine; gcc a garbage number) | UB input (6.3.2.1#2 when the address is never taken); upstream's placeholder text for an unspecified value in `convert`'s `aux` | KEPT (upstream's convention; the review's P3-1 names the asymmetry with the `*` refusal, which does not guess a WIDTH; a value printed as a marker is upstream's reading) — TODO names it | unchanged |
 | 23 | `wchar_t w[] = L"ab"` rejected (`initializing 'wchar_t' with an expression with a non arithmetic type`) | the audit's §4 item 6 (wide string initializers) | another slice; the `%ls` witness initialises elementwise | unchanged |
 
 Rows 1-14 are the mechanism's; the csmith shim's `printf("…checksum after hashing %s : %X\n", …)` (`%s`, `%X`/`%lX` of
@@ -288,15 +306,20 @@ an unsigned) is row 15's accepted shape and unchanged.
 
 The stdio script's shape (libc mode from the project root, the metadata TUs from `libc_prep.sh --jsons`, every class
 count pinned) with four row classes in `expected.txt` (`name TAB class TAB pin`): VALUE (both engines' batch line =
-the pin, exit codes equal; the pin is gcc 13's line from `gcc.txt`, or the fork's declared line for the four
-`FORK_PINNED` rows `p_null`, `percent_width`, `space_u`, `star_percent`), UB (both engines' `Undefined` line = the pin
+the pin, exit codes equal; the pin is gcc 13's line from `gcc.txt`, or the fork's declared line for the three
+`FORK_PINNED` rows `p_null`, `percent_width`, `space_u`; `gcc.txt` and `pristine.txt` are read ONCE into associative
+arrays, and the two gcc lines of UB-input programs padding by an indeterminate `*` width — `star_missing_width`,
+725,285,413 bytes; `star_width_uninit`, 32,841 bytes — are stored CAPPED as `GCC-CAPPED[payload <bytes> bytes, sha256
+<hex>, first 96 bytes]: <prefix>` (the review's P1-1: the first M2 committed the raw line as a 691.7 MiB blob and the
+script scanned it per row)), UB (both engines' `Undefined` line = the pin
 with the `loc` field removed — N4: the oracle locates a libc-mode format UB inside `vfprintf`, Lean at `<unknown
 location>`; the verdict, the UB id and every other field must agree), REFUSAL (the oracle's `internal error: <text>`
 and `Failure("internal error: <text>")`, exit 125; the Lean `PANIC … LemLib…: <text>`, exit 134; both texts = the pin
 whole, and equal to each other), GAP (`f_nan`: the oracle's `-nan` line, the Lean float-format REFUSAL envelope); four
 `nolibc_*` controls run both engines under `--nolibc` (std.core's `printf` proxy, the other path to the formatter:
-`star_width`, `jd_intmax`, `flags_zero` VALUE = gcc, `e_double` REFUSAL). 161 rows: 105 VALUE (101 gcc-pinned, 4
-fork-pinned), 38 UB, 17 REFUSAL, 1 GAP; `pristine.txt` carries pristine `c3ff8c53f`'s lines (a crash as
+`star_width`, `jd_intmax`, `flags_zero` VALUE = gcc, `e_double` REFUSAL). 161 rows: 104 VALUE (101 gcc-pinned, 3
+fork-pinned: `p_null`, `percent_width`, `space_u`, each with its reason in the program's header), 38 UB, 18 REFUSAL
+(`star_percent` re-classed from a fork-pinned value by P2-1), 1 GAP; `pristine.txt` carries pristine `c3ff8c53f`'s lines (a crash as
 `CRASH:<first stderr line>`; 75 rows moved, derived). Plants (`--selftest`), each at its derived count on a 15-program
 subset: `pristine-pair` 27 (both stubs replay pristine's lines, a crash as upstream's crash), `lean-pristine` 19,
 `lean-fixed` 19, `oracle-rc` 18, `expect-tamper` 5 (a VALUE pin and a REFUSAL text each altered by a character),
@@ -319,7 +342,9 @@ check_printf_refusals: OK (161 programs, libc mode but for the 4 nolibc controls
 ### 4.1 The sweeps (the instruments `.tmp/printf/candidates.txt` + `sweep_candidates.sh`, deleted at slice end)
 
 The affected forms are text-visible, so the measurement is a regular-expression grep over every corpus the lanes
-walk (the `*`, `.*`, `%e/E/g/G/a/A/F/n`, `%L`, `%ls/lc`, `j`/`z`/`t`, `0`-flag, `#…f`, `snprintf` and `hh/h/ll/L`-with-`s`/`c`
+walk — Tier A rows 3/4/4b/4c/5/15 (row 15, `test_inner_arg_temps.sh --gate`, was MISSED by the first list and found by
+the orchestrator's Tier A: §6.1, the review's P3-6; its population is the 42 libc inputs and the corpora below), Tier B,
+the immaculate, PNVI, verify, multi-TU, CN, libxml2 and csmith lanes — (the `*`, `.*`, `%e/E/g/G/a/A/F/n`, `%L`, `%ls/lc`, `j`/`z`/`t`, `0`-flag, `#…f`, `snprintf` and `hh/h/ll/L`-with-`s`/`c`
 forms), then every candidate file run on the oracle BEFORE the change (the snapshot of the pre-rebuild binary, the
 live runtime — unchanged by this slice) and AFTER, in both modes. The grep (derived): `tests/minimal` 0 of 113,
 `coverage` 13 of 277, `debug` 0/90, `float` 0/93, `bytes` 0/14, `libc_exec` 7 of 44, `multi_tu` 0/16, `multi_tu_tray`
@@ -372,6 +397,9 @@ gated rows of 4.3.
 | `libc_exec/028-vsnprintf-wrapper-truncation.c` | A5 | `9 2 abc--ab`, status 12 | `13 4 abc--ab`, status 13 | = after | the same |
 | `immaculate/nolibc/ts-fmt-star-width` | B | `MATCH \| L=CRASH` (`TODO: formatted.lem 6`) | `MATCH \| L=VAL … "[     7]\n"` | `[     7]` | re-recorded by hand; register `shared-model-fix` |
 | `immaculate/nolibc/ts-fmt-star-precision` | B | `MATCH \| L=CRASH` (`TODO: Formatted.convert, * prec`) | `MATCH \| L=VAL … "[007]\n"` | `[007]` | the same |
+| `inner_arg_temps` `libc/026-snprintf-truncation` | A15 | `AGREE-FIRST` `8c1fa891b04a` (both engines) | `AGREE-FIRST` `0ab631c4cd62` (both) | the libc_exec row above | the same movement, both hashes together; re-recorded through the lane's own path (M3b, §6.1) |
+| `inner_arg_temps` `libc/027-snprintf-exact-fit` | A15 | `808b693231f5` | `73413035d7ea` | — | the same |
+| `inner_arg_temps` `libc/028-vsnprintf-wrapper-truncation` | A15 | `a8be98317f17` | `88293a1b687b` | — | the same |
 
 Not gated, moved the same way (the candidate sweep): `tests/noodle-probes/lib/lib_printf_star_width.c` (crash → `[   9]`),
 `tests/parity-probes/probes/printf_float.c` (`Invalid_format[%d %.2f %g %s…` → the `%g` refusal), `snprintf_trunc.c`
@@ -384,8 +412,9 @@ uncertainty probes `pf-05-neg-precision.c` (crash → `[7][7   ]` = gcc) and `pf
 
 - **Fork-drift manifest (`scripts/fork_drift_manifest.txt`):** two single-row edits with a dated header NOTE
   (`fix/printf-refusals, 2026-11-07`), never `--refresh`: `[source-content]` `frontend/model/formatted.lem` `c630d086…
-  → 642760ec…` (re-pinned at each of the three regenerations: the first version, the strictness fix, the rewording and
-  the corrected line cite), `[expected-semantic]` `formatted.ml` `afd35a12… → 0e13f202…` (an already-differing file:
+  → 95ea9eee…` (re-pinned at each regeneration: the first version, the strictness fix, the rewording, the corrected
+  line cite, then P2-1's refusal and its own rewording for the P6 premise — a dated NOTE line each), `[expected-semantic]`
+  `formatted.ml` `afd35a12… → 64c2f57e…` (an already-differing file:
   stage 1's `store_chars_in_array` restatement); layer 2 stays at 33 differing files, layer 1 at 95.
 - **Failure-reach register (`scripts/failure_reach_register.txt`):** the four `Formatted.convert`/`printf_aux` rows
   of the `* prec` and `formatted.lem 6` sites RETIRED (the sites are gone: `check_failure_reach` reported them STALE
@@ -393,7 +422,9 @@ uncertainty probes `pf-05-neg-precision.c` (crash → `[7][7   ]` = gcc) and `pf
   the implementation's alias table maps in» position=LAMBDA-BODY`); ONE new row, `convert` `is_alias_base`'s alias-table
   invariant, `NON-TAIL/LAMBDA-BODY`, `UNREACHABLE-BY-INVARIANT` (need: the arm passes literal constructors only —
   `Signed Intmax_t`, `Size_t`, `Ptrdiff_t` — and the alias table maps each to a `Signed`/`Unsigned` base), emitted with
-  `--emit`, reviewed, resealed (`resealed 235 rows`); 238 → 235 rows. Every refusal site is monadic-ascribed (no row).
+  `--emit`, reviewed, resealed (`resealed 235 rows`); 238 → 235 rows. Every refusal site is monadic-ascribed (no row); P2-1's `star_percent_refusal` site likewise (the register unchanged
+  at 235). The `is_compatible_with_size_t` row's stale witness note ("printf_zu.c/printf_zd.c pass") replaced by the
+  truth — the formatter no longer calls it, reached by no witness — and resealed (the review's P3-2; class unchanged).
   The selftest's P8 plant (the two `Formatted.convert` `* prec` rows' reach classes swapped with their seals) lost its
   premise and was re-targeted onto the register's other key group of the same shape, the two `CerbMem.combineProv`
   R-PNVI-01 rows (`REACHABLE` / `UNREACHABLE-BY-INVARIANT`, one 60-char key) [AGENT]; the P6 premise (no plain `if`
@@ -466,6 +497,28 @@ P6 premise (`P6 premise: Formatted.lean has a plain `if` token`) and the P8 prem
 rewording and the re-targeting of §2.2/§5 made both OK; the first witness selftest run was RED on the miscounted
 `pristine-pair` plant (27 caught, 24 expected): the comment and the count corrected (§3.4).
 
+### 6.0 The review round (P1-1 rewrite, P2-1 refusal): the gates on the rewritten tree, verbatim
+
+```text
+check_handwritten_sync: OK (57 hand-written files byte-identical to lean_frontend/generated/; manifest lean_frontend/handwritten_copy.manifest)
+check_failure_reach: OK (235 pure failure sites = the 235 register rows exactly (233 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, shared keys lengthened, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=174 REACHABLE=40 UNKNOWN=21; every row sealed; tally line consistent)
+check_failure_reach: SELFTEST OK (8 plants with the declared message — a new site in a generated exec-closure definition, a DISCARDABLE dead let-binding, an unsealed class edit, a phantom row, an edited tally, mis-shaped lem_if heads over a registered arm, a mis-shaped lemSeq continuation, a same-owner reach+seal swap (A3) — 7 classifier witnesses (lem_if arms/condition, lemSeq continuation, controls), the key-group witness K1, theorem/worker ownership R1 and the unplanted register green)
+check_fork_drift: OK — layer 1: 95 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 33 differing generated files, all hash-pinned (merge-base c3ff8c53f05982745f9b3a10b3d05442e214bcb5; lem-pin e6d8db5680962f49060257d6c2bcb13c284b910f matches lem -v lean-backend-v0.1.0-alpha.1-78-ge6d8db5 (hex prefix))
+check_fork_drift: SELFTEST OK (31 plants with declared verdict/message: S1-S10 prerequisite/locale/name controls; S31 advanced upstream ref (not drift); S11 copied-content control; S12 inside-listed-file drift; S13/S14 duplicate/missing content pins; S15-S30 version forms, full-pin validation and refresh retention; unplanted gate green)
+check_pin_sites: OK — lem-pin e6d8db5680962f49060257d6c2bcb13c284b910f at every site (lakefile rev, 3 lake-manifests rev+inputRev, README pin command)
+check_printf_refusals: selftest plant 'pristine-pair' caught: 27 failing check(s) (= expected 27; incl. the required programs)
+check_printf_refusals: selftest plant 'lean-pristine' caught: 19 failing check(s) (= expected 19; incl. the required programs)
+check_printf_refusals: selftest plant 'lean-fixed' caught: 19 failing check(s) (= expected 19; incl. the required programs)
+check_printf_refusals: selftest plant 'oracle-rc' caught: 18 failing check(s) (= expected 18; incl. the required programs)
+check_printf_refusals: selftest plant 'expect-tamper' caught: 5 failing check(s) (= expected 5; incl. the required programs)
+check_printf_refusals: selftest plant 'lean-other-text' caught: 27 failing check(s) (= expected 27; incl. the required programs)
+check_printf_refusals: OK (161 programs, libc mode but for the 4 nolibc controls: 104 VALUE rows with both engines' batch lines equal to the pin and exit codes equal — 101 gcc 13's line (the * field width and precision in every form incl. negative, zero, with flags and modifiers, in printf/fprintf/sprintf/snprintf/vprintf; %jd/%ju/%zd/%zu/%td/%tu with the macro types and their corresponding types; snprintf's would-be length on truncation, at n = 0 with a null buffer, at n = 1, at the exact fit and in the sizing idiom; the 0 flag after the sign and the 0x base, the # decimal point of %f, infinities space-padded; every integer, character, string and %f conversion with its flags, widths, precisions and length modifiers as controls) and 3 the fork's declared lines with gcc's beside them (implementation-defined %p text, upstream's padded %5% under its own TODO, its space flag on an unsigned conversion); 38 UB rows with the pinned verdict on both engines, the location projected (a snprintf format's UB passed through instead of the crash, a non-l modifier with %s as UB158, the strict 7.21.6.1#9 readings of tray 27 kept, the malformed formats as Invalid_format); 18 REFUSAL rows with the oracle's internal error and the Lean engine's PANIC carrying the identical pinned text (every floating conversion other than %f/%lf, the L modifier, %n, %ls, %lc, an unspecified * argument, a %% specification with a * width, in printf and snprintf); 1 gap control (%f of a NaN refused on the Lean engine); 75 rows moved from pristine c3ff8c53f's lines)
+witness: 455.04 s elapsed, 196780 KB maxrss   (/usr/bin/time over the witness with its self-test, from the project root, load ≈ 4; the reviewer's measurement of the unbounded first M2: 485.57 s, 1,760,972 KB)
+```
+
+(the fork-drift gate after the two re-pins: `check_fork_drift: OK — layer 1: 95 oracle-surface files = manifest (…);
+layer 2: 33 differing generated files, all hash-pinned (…)` + `SELFTEST OK (31 plants …)`; `check_pin_sites: OK`.)
+
 ### 6.1 Tier A on the M1 tree (orchestrator-run) — 18/20, the two reds dispositioned by M2 and M3b
 
 Run by the orchestrator on `c732fde49` in a separate audit checkout after a forced regeneration and rebuild
@@ -513,7 +566,7 @@ inner_arg_temps elapsed: 378.60s   (scripts/test_inner_arg_temps.sh --gate: the 
 
 ### 6.2 The full battery at close-out (orchestrator-run)
 
-Appended by the orchestrator after the run on the M3 tip.
+PLACEHOLDER — appended by the orchestrator after the run (the battery on `7f4579641` was in flight during the review round; the close-out Tier A runs on the rewritten tip).
 
 
 ## 7. Not done / open

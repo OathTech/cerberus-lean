@@ -16,7 +16,8 @@ modifier with `%s` as UB158 (7.21.6.1#7). The libc C text is untouched (no `libc
 
 What this means for a pin of the fork at or after this branch:
 
-- Any program whose format string reaches `%e`, `%E`, `%g`, `%G`, `%a`, `%A`, `%F`, `%L…`, `%n`, `%ls` or `%lc` now
+- Any program whose format string reaches `%e`, `%E`, `%g`, `%G`, `%a`, `%A`, `%F`, `%L…`, `%n`, `%ls`, `%lc` or `%*%` (a `%%`
+  with a `*` width: UB, upstream crashed) now
   REFUSES on both engines (a loud stop, never a verdict) where it was reported as `Undefined {ub: "Invalid_format…"}`
   or died with upstream's `TODO`/`WIP` text. A recorded UB verdict or crash of such a program becomes the refusal;
   the text names the conversion (`Formatted.convert: refused - the %e conversion is not implemented (C17 7.21.6.1#8: …)
