@@ -152,6 +152,15 @@ let decode_character_constant_aux = function
   | "\\r"   -> Z.of_int 13
   | "\\t"   -> Z.of_int 9
   | "\\v"   -> Z.of_int 11
+  (* FORK FIX (2026-11-07, upstream-tray report 10; a fork-ahead delta, registered in
+     scripts/fork_drift_manifest.txt): C17 6.4.4.4#1 lists \? among the simple-escape-sequences
+     (beside the two quote escapes and the backslash escape above) and #4 gives it the value of
+     the character it names, the question mark, 63; gcc 13 agrees. Upstream has no arm, so the catch-all below routes it into the octal
+     validator and the tool dies on an uncaught Failure on strictly conforming C -- through
+     both entry points, the character constant (translation.lem translate_constant) and the
+     string literal (translation.lem's AilEstr arm), which share this decoder. The Lean
+     engine's CerbDecode.decode_character_constant_aux carries the same arm. *)
+  | "\\?"   -> Z.of_int 63
 
   (* NOTE: here are the (graphical) extended characters from ASCII *)
   | "$"     -> Z.of_int 36
@@ -217,8 +226,33 @@ let decode_character_constant str =
       sub r dlt in
   wrapI (decode_character_constant_aux str)
 
+(* FORK FIX (2026-11-07, upstream-tray report 11; a fork-ahead delta, registered in
+   scripts/fork_drift_manifest.txt): the one caller, formatted.lem store_chars_in_array (the
+   vsnprintf builtin's store), writes every formatted character to memory as
+   `decode_character_constant (escaped_char c)`, so this function must be a right inverse of
+   the decoder above. Upstream's `Char.escaped` renders a byte outside the printable range in
+   OCaml's DECIMAL `\ddd` syntax, which the decoder reads as OCTAL (127 -> "\127" -> 0o127 =
+   87, 200 -> 128: a silently corrupted store) or refuses (every decimal escape containing an 8
+   or a 9 -- "\019", "\199" -- is an uncaught Failure: a crash on `snprintf(b, n, "%c", 19)`);
+   C17 7.21.6.1#8 (%c: the argument converted to unsigned char is written). This mirrors the
+   Lean engine's CerbDecode.escaped_char arm for arm: the simple escapes the decoder names;
+   hexadecimal `\xNN` (lower case, unpadded -- the hexadecimal arm above accepts any length)
+   for every other byte outside 32..126; the byte itself otherwise (every printable ASCII byte
+   is in the single-character table above; backslash and both quotes take their escaped
+   forms). All 256 bytes round-trip (measured 2026-11-07, record
+   lean_frontend/docs/2026-11-07_half-mirrors-oracle-record.md). *)
 let escaped_char c =
-  Char.escaped c
+  match c with
+  | '\n' -> "\\n"
+  | '\t' -> "\\t"
+  | '\r' -> "\\r"
+  | '\\' -> "\\\\"
+  | '\'' -> "\\'"
+  | '"'  -> "\\\""
+  | c ->
+      let n = Char.code c in
+      if n < 32 || n > 126 then Printf.sprintf "\\x%x" n
+      else String.make 1 c
 
 let encode_character_constant n =
   (* TODO: fixing the encoding to ASCII for now *)

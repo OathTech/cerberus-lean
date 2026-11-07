@@ -2572,18 +2572,29 @@ VIP:type pointer_value =
   
   (* TODO: validate more, but looks good *)
   let memcmp loc ptrval1 ptrval2 (IV (_, size_n)) =
-    let rec get_bytes ptrval acc = function
-      | 0 ->
-          return (List.rev acc)
-      | size ->
-          load loc Ctype.unsigned_char ptrval >>= function
-            | (_, MVinteger (_, (IV (byte_prov, byte_n)))) ->
-                Nondeterminism.lift_undef (array_shift_ptrval loc ptrval Ctype.unsigned_char (IV (Prov_none, Z.one))) >>= fun ptr' ->
-                get_bytes ptr' (byte_n :: acc) (size-1)
-            | _ ->
-                assert false in
-     get_bytes ptrval1 [] (Z.to_int size_n) >>= fun bytes1 ->
-     get_bytes ptrval2 [] (Z.to_int size_n) >>= fun bytes2 ->
+    (* FORK FIX (2026-11-07, upstream-tray report 13; a fork-ahead delta, registered in
+       scripts/fork_drift_manifest.txt): the byte count stays on Z. Upstream converts the
+       C-controlled size with `Z.to_int size_n` BEFORE any byte is read, which raises an
+       uncaught Z.Overflow for a size outside OCaml's native int range (`memcmp(a, b,
+       (size_t)-1)`): a crash where the semantics' own verdict belongs, since the checked
+       per-byte `load` below reports the out-of-bound read (UB_CERB002a) long before the count
+       matters. The Lean engine's CerbMem.memcmpM feeds the size to the same checked loads
+       directly; both engines now answer identically. A count <= 0 is an empty comparison
+       (result 0) on both engines -- CerbMem.memcmpM's `Int.toNat`, and the shape of memcpy's
+       `Z.lt i size_n` loop above; a negative count is unreachable from C, a size_t being
+       non-negative after conv_int (upstream's `| size` arm recursed forever on one). *)
+    let rec get_bytes ptrval acc size =
+      if Z.leq size Z.zero then
+        return (List.rev acc)
+      else
+        load loc Ctype.unsigned_char ptrval >>= function
+          | (_, MVinteger (_, (IV (byte_prov, byte_n)))) ->
+              Nondeterminism.lift_undef (array_shift_ptrval loc ptrval Ctype.unsigned_char (IV (Prov_none, Z.one))) >>= fun ptr' ->
+              get_bytes ptr' (byte_n :: acc) (Z.pred size)
+          | _ ->
+              assert false in
+     get_bytes ptrval1 [] size_n >>= fun bytes1 ->
+     get_bytes ptrval2 [] size_n >>= fun bytes2 ->
      
      let open Z in
      return (IV (Prov_none, List.fold_left (fun acc (n1, n2) ->

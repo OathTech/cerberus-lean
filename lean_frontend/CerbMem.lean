@@ -3449,16 +3449,17 @@ def memcpyM [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : Tag
     not improved; see tests/immaculate g2-memcmp-uninit).
     Byte comparison is on the loaded integer VALUES (Z.compare upstream,
     :2662-2664), fold stopping at the first nonzero.
-    DECLARED (zero-discrepancy Z2-M-13): the size argument goes through
-    `Int.toNat`, which maps a negative size_n to 0 (empty comparison,
-    result 0) — upstream `Z.to_int size_n` (:2660) keeps the negative and
-    get_bytes' `| size` arm (:2652-2659) then recurses on size-1 forever
-    (non-termination, no verdict). Reachability: memcmp's `size_t` is
-    non-negative after conv_int, so no C program reaches a negative size;
-    a non-terminating mirror would be a FUEL kill (EXC(b)) here — the
-    total rendering is kept and declared. (memcpy, :2637-2644 `Z.lt i
-    size_n`, runs ZERO iterations on a negative size on both sides — no
-    difference there.) -/
+    The size argument goes through `Int.toNat`, which maps a negative
+    size_n to 0 (empty comparison, result 0). BOTH ENGINES since 2026-11-07:
+    the fork's memcmp (impl_mem.ml:2574-2600, a FORK FIX registered as a
+    fork-ahead delta in scripts/fork_drift_manifest.txt; upstream tray 13)
+    counts on Z and treats a count ≤ 0 as the empty comparison, the shape
+    of memcpy's `Z.lt i size_n` loop (:2561-2569), so the two engines agree
+    on every size. (Pristine upstream c3ff8c53f: `Z.to_int size_n` keeps a
+    negative and get_bytes' `| size` arm then recurses on size-1 forever —
+    the retired declared difference Z2-M-13. Reachability: memcmp's
+    `size_t` is non-negative after conv_int, so no C program reaches a
+    negative size on any engine.) -/
 def memcmpM [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : TagDefs) (loc : CerbLocation.Loc) (pv1 pv2 : PointerValue) (sizeIv : IntegerValue) : memM IntegerValue :=
   match sizeIv with
   | .IV _ size_n =>
@@ -3476,13 +3477,19 @@ def memcmpM [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : Tag
         | _ =>
           -- impl_mem.ml:2658-2659: assert false (unspecified byte)
           stopMem (.upstreamCrash (CerbStopSites.memcmpByte "Concrete.memcmp: non-integer byte (impl_mem.ml:2658-2659 assert false)"))
-    -- ISO-fix register R3 (VALIDATION.md §2, ADMITTED BY CLASS — [USER 2026-09-03]
-    -- referent ruling, confirmed [USER 2026-09-05], option (2)): upstream converts the
-    -- size with `Z.to_int size_n` (impl_mem.ml:2660-2661), which raises Z.Overflow for a
-    -- size outside OCaml's native int range BEFORE any byte is read; here the size feeds
-    -- the checked per-byte loads directly, so a huge size reaches the semantics' own
-    -- out-of-bound UB (pin tests/immaculate/libc/s4b-memcmp-hugesize: ORACLE_CRASH /
-    -- L=UB_CERB002a; tray 13).
+    -- The size feeds the checked per-byte loads directly, so a huge size reaches the
+    -- semantics' own out-of-bound UB (UB_CERB002a at the memop's loc). BOTH ENGINES since
+    -- 2026-11-07: the fork's memcmp keeps its byte count on Z (impl_mem.ml:2574-2600, a
+    -- FORK FIX, fork-ahead delta; tray 13) and answers the same UB at the same location
+    -- (witness scripts/check_half_mirrors.sh). Pristine upstream c3ff8c53f converts the size
+    -- with `Z.to_int size_n` (its :2585-2586) BEFORE any byte is read, which raises an
+    -- uncaught Z.Overflow for a size outside OCaml's native int range — a crash where the
+    -- verdict belongs. History: ISO-fix register R3 (VALIDATION.md §2, ADMITTED BY CLASS —
+    -- the [USER 2026-09-03] referent ruling, confirmed [USER 2026-09-05]) covered that
+    -- oracle crash until 2026-11-07 (the pin tests/immaculate/libc/s4b-memcmp-hugesize was
+    -- an ORACLE_CRASH row; it is a MATCH row now and R3 is RETIRED); the marker is kept so
+    -- the register's grep still finds the site.
+    -- ISO-fix register R3 (RETIRED 2026-11-07)
     nd_bind (getBytes pv1 [] size_n.toNat) fun bytes1 =>
     nd_bind (getBytes pv2 [] size_n.toNat) fun bytes2 =>
     -- impl_mem.ml:2661-2664

@@ -78,6 +78,27 @@
 # tests/libc/*.sha256); [source-content] driver.lem re-pinned 94859892... -> a21c5833...; [expected-semantic] driver.ml's hash
 # moved (an already-differing file). Leaves when upstream absorbs the fix.
 # Record: lean_frontend/docs/2026-11-05_stdio-exit-flush-record.md.
+# fix/half-mirrors-oracle, 2026-11-07 [AGENT, executing the charter docs/2026-11-07_worker-charter-half-mirrors-oracle.md under
+# the [USER 2026-11-04] fix-pass agreement (a fork fix only where the standard is very clear, no invented semantics)]:
+# FORK-AHEAD deltas of the first kind (the fork's own fixes of upstream mistakes, filed upstream as tray reports 10, 11 and 13;
+# the three "half-mirrors" of the true-bug audit of 2026-11-04: the Lean engine already answered right under ISO-fix register
+# rows R1/R2/R3, the fork's own OCaml oracle still crashed or corrupted; the oracle moves to the Lean side's behaviour, the
+# register rows RETIRE). Hand-written OCaml only; no Lem change, no generated delta, no proof change.
+#   (1) ocaml_frontend/decode.ml decode_character_constant_aux: the `\?` arm (C17 6.4.4.4#1 simple-escape-sequences, #4 the
+#       value of '?' = 63; both the character-constant and the string-literal entry points share the decoder) -- pristine
+#       c3ff8c53f dies on an uncaught Failure ("started like an octal constant, but failed: ?") on strictly conforming C.
+#   (2) ocaml_frontend/decode.ml escaped_char: mirrors the Lean engine's CerbDecode.escaped_char arm for arm (the simple
+#       escapes, hex \xNN for every other byte outside 32..126, the byte itself otherwise) so formatted.lem's
+#       store_chars_in_array round trip `decode_character_constant (escaped_char c)` is the identity on all 256 bytes
+#       (C17 7.21.6.1#8) -- pristine's `Char.escaped` emits OCaml's DECIMAL \ddd, read back as OCTAL (127 -> 87, 200 -> 128)
+#       or refused (19, 199: an uncaught Failure).
+#   (3) memory/concrete/impl_mem.ml Concrete.memcmp: the byte count on Z (a count <= 0 is the empty comparison, memcpy's
+#       shape) -- pristine converts the C-controlled size with `Z.to_int` before any byte is read and dies on an uncaught
+#       Z.Overflow for `memcmp(a, b, (size_t)-1)`, where the checked per-byte load's own UB_CERB002a verdict belongs.
+# Single-row edits, no --refresh: [files] + [source-content] ENTER ocaml_frontend/decode.ml (byte-identical to pristine
+# c3ff8c53f before: 95 -> 96 oracle-surface files); [source-content] memory/concrete/impl_mem.ml re-pinned
+# e36ca672... -> d61e7425...; layer 2 unchanged (no generated file moves). Each leaves when upstream absorbs the fix.
+# Record: lean_frontend/docs/2026-11-07_half-mirrors-oracle-record.md.
 [meta]
 merge-base=c3ff8c53f05982745f9b3a10b3d05442e214bcb5
 lem-pin=e6d8db5680962f49060257d6c2bcb13c284b910f
@@ -154,6 +175,7 @@ memory/cheri-coq/impl_mem.ml
 memory/concrete/impl_mem.ml
 memory/symbolic/impl_mem.ml
 memory/vip/impl_mem.ml
+ocaml_frontend/decode.ml
 ocaml_frontend/dune
 ocaml_frontend/fork_renumber.ml
 ocaml_frontend/memory_model.ml
@@ -247,9 +269,10 @@ util/cerb_location.ml
 100644 fc1a44000a799029e9f474e635f128e5b8965c7598c1f75f6c742743c04a63fd frontend/model/translation_effect.lem
 100644 9427c936dcfe2bb47a984c6d73db12bf1c7012bb85b0b63156b5edececf9bf7c frontend/model/utils.lem
 100644 c315853b08bec59c4e427c37d12a4bc67b2524cb948c3084227d1e1ac38f8cd5 memory/cheri-coq/impl_mem.ml
-100644 e36ca672f3c5cc191deece85e270b5241eabe79622e403688fa124bdd6d1dd0f memory/concrete/impl_mem.ml
+100644 d61e742569261c3ec9a6c2e1980f39b72cf12aa831f8fae92be9a20d9cc0e56e memory/concrete/impl_mem.ml
 100644 4649a16795cda719c8194e6900bfd59da022e9fb3e229217adc5fa1a144105db memory/symbolic/impl_mem.ml
 100644 d3c4632783138811b2e26ec432952c064b70b9d2e98809df5c101f13e3f00b17 memory/vip/impl_mem.ml
+100644 0c0301ad3683ba0001f6d80638ff3954163057747175f4d059739fab4f26dca4 ocaml_frontend/decode.ml
 100644 966a123591ec28b449781c7ee794ed96f9b01af04d13631a5dbf45549d7a612f ocaml_frontend/dune
 100644 27f320ab1d88ebd2a066ccc9b6859065a7ce50effc52b35fdcb730aaef354949 ocaml_frontend/fork_renumber.ml
 100644 72bbf0bbbc993a6691cff8b42378caec1e1ff0a5f57ff1ae0eccf467dabda7ba ocaml_frontend/memory_model.ml
