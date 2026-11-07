@@ -599,6 +599,23 @@ if ! "$STDIO_EXIT_SH" --selftest; then
     exit 1
 fi
 
+# Half-mirror witnesses (fix/half-mirrors-oracle, 2026-11-07, contract D18; upstream-tray reports 10, 11
+# and 13): 41 programs under tests/half_mirrors/ -- the tray-11 reproducers and every byte 0..255 through
+# snprintf's %c and %s stores (libc mode), the tray-13 reproducer and its size/pointer-shape neighbours
+# (UB programs pinned to the fork's memop line), the tray-10 reproducers and the escape controls under
+# --nolibc, five gap controls that still crash both engines identically (UCNs, multi-character and raw
+# non-ASCII constants: tray 63; the negative wchar_t store: tray 62) -- each pinned to one line both
+# engines must print byte for byte (gcc 13's line, or the fork's declared line with gcc's beside it in
+# gcc.txt), pristine c3ff8c53f's lines the negative control; plants: a pristine-replaying pair, a
+# Lean-only pristine stub, a fixed-line Lean stub, an exit-code-forcing oracle wrapper and a tampered
+# expectation must all fail, each at its derived count. Record
+# lean_frontend/docs/2026-11-07_half-mirrors-oracle-record.md.
+HALF_MIRRORS_SH="$(dirname "$PURITY_SH")/check_half_mirrors.sh"
+if ! "$HALF_MIRRORS_SH" --selftest; then
+    echo "test_unit: half-mirror witnesses FAILED"
+    exit 1
+fi
+
 # libc dump float-literal inventory (named deviation N3, VALIDATION.md §2b;
 # bug hunt BUG-5, [USER 2026-09-30] option (3)): the pinned libc.core's float
 # literals (printed with %.12g by the oracle's Core printer) must equal the

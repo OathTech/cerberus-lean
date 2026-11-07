@@ -1495,7 +1495,7 @@ def opIval (op : integer_operator) (v1 v2 : IntegerValue) : IntegerValue :=
     offsetsof's union arm. Missing member: OCaml failwith — panic here
     (the previous code silently returned 0 and compared identifiers
     location-sensitively with BEq). -/
-def offsetofIval [LemFuel] (enumDefs : EnumDefs) (tagDefs : TagDefs) (tagDefsMap : CerbTags.TagDefsMap) (tag : sym) (memb : identifier) : IntegerValue :=
+def offsetofIval [LemFuel] (enumDefs : EnumDefs) (_tagDefs : TagDefs) (tagDefsMap : CerbTags.TagDefsMap) (tag : sym) (memb : identifier) : IntegerValue :=
   -- target_rep for lem offsetof_ival (mem.lem:257): the lem-side argument
   -- is the tag map, threaded through the whole layout family (2026-09-01
   -- S-basket item 1 — the elaboration-time fold's only tag source).
@@ -1650,9 +1650,10 @@ def structMval (tag : sym) (members : List (identifier × ctype × MemValue)) : 
 def unionMval (tag : sym) (member : identifier) (value : MemValue) : MemValue := .MVunion tag member value
 
 /-- case_mem_value — impl_mem.ml:2579-2594
-    The f_concur callback is never called in the concrete model -/
+    The f_concur callback is never called in the concrete model (`_onConcurRead`: the
+    binder is kept for the lem target_rep's arity, mem.lem:450; [USER 2026-10-27]) -/
 def caseMemValue {α : Type} (mv : MemValue)
-    (onUnspec : ctype → α) (onConcurRead : integerType → sym → α)
+    (onUnspec : ctype → α) (_onConcurRead : integerType → sym → α)
     (onInt : integerType → IntegerValue → α) (onFloat : floatingType → FloatingValue → α)
     (onPtr : ctype → PointerValue → α) (onArray : List MemValue → α)
     (onStruct : sym → List (identifier × ctype × MemValue) → α)
@@ -3451,10 +3452,10 @@ def memcpyM [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : Tag
     :2662-2664), fold stopping at the first nonzero.
     The size argument goes through `Int.toNat`, which maps a negative
     size_n to 0 (empty comparison, result 0). BOTH ENGINES since 2026-11-07:
-    the fork's memcmp (impl_mem.ml:2574-2600, a FORK FIX registered as a
+    the fork's memcmp (impl_mem.ml:2574-2602, a FORK FIX registered as a
     fork-ahead delta in scripts/fork_drift_manifest.txt; upstream tray 13)
     counts on Z and treats a count ≤ 0 as the empty comparison, the shape
-    of memcpy's `Z.lt i size_n` loop (:2561-2569), so the two engines agree
+    of memcpy's `Z.lt i size_n` loop (:2561-2570), so the two engines agree
     on every size. (Pristine upstream c3ff8c53f: `Z.to_int size_n` keeps a
     negative and get_bytes' `| size` arm then recurses on size-1 forever —
     the retired declared difference Z2-M-13. Reachability: memcmp's
@@ -3479,10 +3480,10 @@ def memcmpM [LemFuel] [CerbGlobal.Switches] (enumDefs : EnumDefs) (tagDefs : Tag
           stopMem (.upstreamCrash (CerbStopSites.memcmpByte "Concrete.memcmp: non-integer byte (impl_mem.ml:2658-2659 assert false)"))
     -- The size feeds the checked per-byte loads directly, so a huge size reaches the
     -- semantics' own out-of-bound UB (UB_CERB002a at the memop's loc). BOTH ENGINES since
-    -- 2026-11-07: the fork's memcmp keeps its byte count on Z (impl_mem.ml:2574-2600, a
+    -- 2026-11-07: the fork's memcmp keeps its byte count on Z (impl_mem.ml:2574-2602, a
     -- FORK FIX, fork-ahead delta; tray 13) and answers the same UB at the same location
     -- (witness scripts/check_half_mirrors.sh). Pristine upstream c3ff8c53f converts the size
-    -- with `Z.to_int size_n` (its :2585-2586) BEFORE any byte is read, which raises an
+    -- with `Z.to_int size_n` (its :2481-2482) BEFORE any byte is read, which raises an
     -- uncaught Z.Overflow for a size outside OCaml's native int range — a crash where the
     -- verdict belongs. History: ISO-fix register R3 (VALIDATION.md §2, ADMITTED BY CLASS —
     -- the [USER 2026-09-03] referent ruling, confirmed [USER 2026-09-05]) covered that

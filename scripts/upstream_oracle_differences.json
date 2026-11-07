@@ -167,21 +167,23 @@
       }
     },
     "immaculate/libc/zd-r2-crash-digit9": {
-      "class": "diagnostic-text",
+      "class": "shared-model-fix",
       "citation": [
-        "lean_frontend/docs/2026-10-29_merge-base-bump-stage1-record.md",
-        "lean_frontend/docs/upstream-tray/11-escaped-char-octal-roundtrip-corruption.md"
+        "lean_frontend/docs/upstream-tray/10-decode-rejects-question-escape.md",
+        "lean_frontend/docs/upstream-tray/11-escaped-char-octal-roundtrip-corruption.md",
+        "lean_frontend/docs/upstream-tray/13-memcmp-hugesize-overflow-crash.md",
+        "lean_frontend/VALIDATION.md"
       ],
-      "rationale": "The R2 crash witness (a `%c`-stored byte whose decimal escape contains a 9): both engines exit 125 with the same uncaught `Failure(\"decode_character_constant, started like an octal constant, but failed: 199\")`, empty stdout, the same frames in the same order; the ONE projected difference is the frame name of the fork's `store_chars_in_array` (`Cerb_frontend__Formatted.store_chars_in_array` where pristine c3ff8c53f prints `...store_chars_in_array.(fun)`): upstream f4a3a3d54 wrote the function as `let rec store_chars_in_array zero_terminated ptrval = let loc = ... in function ...`, whose list argument is an anonymous function, and the fork restates it with the list as an explicit parameter (an eta-expansion the Lean target needs to show termination; merge-base bump stage 1 record section 2.1 deviation 3, fork-drift manifest fork-ahead delta (2)). No semantic execution completes on either side; the semantic outcome is unchanged. This entry admits only this case and these two full signatures; a changed signature is a new finding. The row leaves when upstream adopts the explicit-parameter form (lem-lean backend item filed at M6) or the restatement is retired.",
+      "rationale": "`snprintf(buf, 8, \"%s\", \"\\\\xc7\"); return (unsigned char)buf[0];` (tray 11, the crash variant): pristine c3ff8c53f dies on an uncaught `Failure(\"decode_character_constant, started like an octal constant, but failed: 199\")`, rc 125, empty stdout (0xC7 = 199 rendered \"\\\\199\": not an octal constant). The fork's oracle and Lean answer `Defined {value: \"Specified(199)\", stdout: \"\", stderr: \"\", blocked: \"false\"}` rc 0; gcc 13 exits 199. Until 2026-11-07 this row was class diagnostic-text (both engines crashed; only the frame name of the fork's restated store_chars_in_array differed, merge-base bump stage 1 record section 2.1 deviation 3); the semantic outcome now differs because the fork no longer crashes. Class shared-model-fix (the class of the allocator precedent, a fork-ahead fix of the hand-written OCaml oracle: fix/half-mirrors-oracle, 2026-11-07, contract D18; [USER 2026-11-04] agreed the fix pass under the standing bar, the standard's text explicit). The Lean engine answered this line since 2026-09-03 under the fork's ISO-fix register row R2 (now RETIRED); the fork's oracle now answers it too; LADDER Tier B row 5 (test_immaculate.sh) pins fork OCaml == Lean on the same input (MATCH). The row retires when upstream takes the fix (tray 11, Sent 2026-09-26, the patch in the draft).",
       "upstream": {
         "status": 125,
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "diagnostic_sha256": "5babc7f9a120cb4c5c9ea9ee46e669452f3935c898bec65ef86de793dff338b7"
       },
       "fork": {
-        "status": 125,
-        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "diagnostic_sha256": "3ea4b7f7ab6914790ba3c567a3457c2a0f23d01162e161a87f5c40cd6dfa0f22"
+        "status": 0,
+        "stdout_sha256": "1aa7c728efe729cdb7edca4b5b2e4e6529d0e81161be5703cdfc0e0b8e2c61ce",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       }
     },
     "immaculate/nolibc/offsetof-union-member": {
@@ -451,6 +453,106 @@
       "fork": {
         "status": 1,
         "stdout_sha256": "53d33b16f3d7406579822aba03473d19ac13c8d49aa0fbba2f629f6e987db95a",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "immaculate/nolibc/g5-decode-question": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/10-decode-rejects-question-escape.md",
+        "lean_frontend/docs/upstream-tray/11-escaped-char-octal-roundtrip-corruption.md",
+        "lean_frontend/docs/upstream-tray/13-memcmp-hugesize-overflow-crash.md",
+        "lean_frontend/VALIDATION.md"
+      ],
+      "rationale": "`int main(void) { char c = '\\\\?'; return c; }` (tray 10): pristine upstream c3ff8c53f dies on an uncaught exception, verbatim `cerberus: internal error, uncaught exception:` / `Failure(\"decode_character_constant, started like an octal constant, but failed: ?\")`, rc 125, empty stdout -- decode.ml's simple-escape table has no `\\\\?` arm (C17 6.4.4.4#1 lists it, #4 gives the value of '?' = 63) and the catch-all routes '?' into the octal validator. The fork's oracle (the `\\\\?` arm, ocaml_frontend/decode.ml) and Lean answer `Defined {value: \"Specified(63)\", stdout: \"\", stderr: \"\", blocked: \"false\"}` rc 0; gcc 13 exits 63. Class shared-model-fix (the class of the allocator precedent, a fork-ahead fix of the hand-written OCaml oracle: fix/half-mirrors-oracle, 2026-11-07, contract D18; [USER 2026-11-04] agreed the fix pass under the standing bar, the standard's text explicit). The Lean engine answered this line since 2026-09-03 under the fork's ISO-fix register row R1 (now RETIRED); the fork's oracle now answers it too; LADDER Tier B row 5 (test_immaculate.sh) pins fork OCaml == Lean on the same input (MATCH). The row retires when upstream takes the fix (tray 10, Sent 2026-09-26, the patch in the draft).",
+      "upstream": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "2b1dd49544d7b5b612c7a8ee6b1c2b44b2c96b350fa1d6d4bc67e6eed56db856"
+      },
+      "fork": {
+        "status": 0,
+        "stdout_sha256": "a8e9007f0ce973d8a24211dd60b09ed16635398a67838393cdbbab631388098b",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "immaculate/nolibc/zd-e2-ptr-string-literals": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/10-decode-rejects-question-escape.md",
+        "lean_frontend/docs/upstream-tray/11-escaped-char-octal-roundtrip-corruption.md",
+        "lean_frontend/docs/upstream-tray/13-memcmp-hugesize-overflow-crash.md",
+        "lean_frontend/VALIDATION.md"
+      ],
+      "rationale": "The string-literal form of tray 10 (`const char *e = \"\\\\n\\\\t\\\\\\\\\\\\\"\\\\'\\\\?\";` among the noodle probe's literals): pristine c3ff8c53f dies on the same uncaught `Failure(\"decode_character_constant, started like an octal constant, but failed: ?\")` from translation.ml's string-literal arm, rc 125, empty stdout. The fork's oracle and Lean print `Defined {value: \"Specified(0)\", stdout: \"98 65 66 4 83 52 3 10 9 92 34 39 63 0 4\\n\", stderr: \"\", blocked: \"false\"}` rc 0 = gcc 13's line byte for byte. Class shared-model-fix (the class of the allocator precedent, a fork-ahead fix of the hand-written OCaml oracle: fix/half-mirrors-oracle, 2026-11-07, contract D18; [USER 2026-11-04] agreed the fix pass under the standing bar, the standard's text explicit). The Lean engine answered this line since 2026-09-03 under the fork's ISO-fix register row R1 (now RETIRED); the fork's oracle now answers it too; LADDER Tier B row 5 (test_immaculate.sh) pins fork OCaml == Lean on the same input (MATCH). The row retires when upstream takes the fix (tray 10, Sent 2026-09-26, the patch in the draft).",
+      "upstream": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "adc9712d33d284b247992ca260903476b304c6e9c5625a5b98336f9fff5b6976"
+      },
+      "fork": {
+        "status": 0,
+        "stdout_sha256": "50372a7abc7547bb3472f04ed8d8de1dae4bc686cfe1b690f90ee755d98b551f",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "immaculate/libc/g5-escape-roundtrip": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/10-decode-rejects-question-escape.md",
+        "lean_frontend/docs/upstream-tray/11-escaped-char-octal-roundtrip-corruption.md",
+        "lean_frontend/docs/upstream-tray/13-memcmp-hugesize-overflow-crash.md",
+        "lean_frontend/VALIDATION.md"
+      ],
+      "rationale": "`snprintf(buf, 8, \"%c\", 127); return buf[0];` (tray 11): pristine c3ff8c53f answers `Defined {value: \"Specified(87)\", stdout: \"\", stderr: \"\", blocked: \"false\"}` rc 0 -- formatted.lem store_chars_in_array round-trips the stored char through `decode_character_constant (escaped_char c)`, and `Char.escaped 127` is OCaml's decimal \"\\\\127\", which the octal reader returns as 0o127 = 87 (C17 7.21.6.1#8: the argument converted to unsigned char is written unchanged). The fork's oracle (escaped_char mirrors CerbDecode.escaped_char: hex \\\\xNN) and Lean answer `Specified(127)` rc 0; gcc 13 exits 127. Class shared-model-fix (the class of the allocator precedent, a fork-ahead fix of the hand-written OCaml oracle: fix/half-mirrors-oracle, 2026-11-07, contract D18; [USER 2026-11-04] agreed the fix pass under the standing bar, the standard's text explicit). The Lean engine answered this line since 2026-09-03 under the fork's ISO-fix register row R2 (now RETIRED); the fork's oracle now answers it too; LADDER Tier B row 5 (test_immaculate.sh) pins fork OCaml == Lean on the same input (MATCH). The row retires when upstream takes the fix (tray 11, Sent 2026-09-26, the patch in the draft).",
+      "upstream": {
+        "status": 0,
+        "stdout_sha256": "661e2ab13d1f1707c80726f97bb0b925c96c15572d32ebd68c5d5cf977a42fba",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "fork": {
+        "status": 0,
+        "stdout_sha256": "c2eb3fd5de12d38fc419c9d0cc8feb459279613f830cc6822970bb32039325dc",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "immaculate/libc/zd-r2-highbyte": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/10-decode-rejects-question-escape.md",
+        "lean_frontend/docs/upstream-tray/11-escaped-char-octal-roundtrip-corruption.md",
+        "lean_frontend/docs/upstream-tray/13-memcmp-hugesize-overflow-crash.md",
+        "lean_frontend/VALIDATION.md"
+      ],
+      "rationale": "`snprintf(buf, 8, \"%s\", \"\\\\xc8\"); return (unsigned char)buf[0];` (tray 11, the widened row): pristine c3ff8c53f answers `Defined {value: \"Specified(128)\", stdout: \"\", stderr: \"\", blocked: \"false\"}` rc 0 (0xC8 = 200 rendered \"\\\\200\", read back as octal 128). The fork's oracle and Lean answer `Specified(200)` rc 0; gcc 13 exits 200. Class shared-model-fix (the class of the allocator precedent, a fork-ahead fix of the hand-written OCaml oracle: fix/half-mirrors-oracle, 2026-11-07, contract D18; [USER 2026-11-04] agreed the fix pass under the standing bar, the standard's text explicit). The Lean engine answered this line since 2026-09-03 under the fork's ISO-fix register row R2 (now RETIRED); the fork's oracle now answers it too; LADDER Tier B row 5 (test_immaculate.sh) pins fork OCaml == Lean on the same input (MATCH). The row retires when upstream takes the fix (tray 11, Sent 2026-09-26, the patch in the draft).",
+      "upstream": {
+        "status": 0,
+        "stdout_sha256": "b4637c551c7fba8a804c66be26466cc29b82a7a801e919747b0cf63cfe2ae612",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "fork": {
+        "status": 0,
+        "stdout_sha256": "42d95649e27859bde9c67fac4f5396c33a585276a04b8897bed9660fd0800315",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "immaculate/libc/s4b-memcmp-hugesize": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/10-decode-rejects-question-escape.md",
+        "lean_frontend/docs/upstream-tray/11-escaped-char-octal-roundtrip-corruption.md",
+        "lean_frontend/docs/upstream-tray/13-memcmp-hugesize-overflow-crash.md",
+        "lean_frontend/VALIDATION.md"
+      ],
+      "rationale": "`return memcmp(a, b, (size_t)-1);` on two 4-byte arrays (tray 13): pristine c3ff8c53f dies on an uncaught exception, verbatim `cerberus: internal error, uncaught exception:` / `Z.Overflow` / `Raised by primitive operation at Z.to_int in file \"z.ml\", line 221, characters 46-56`, rc 125, empty stdout -- impl_mem.ml's memcmp converts the C-controlled size with Z.to_int before reading a byte. The fork's oracle (the count on Z) and Lean answer `Undefined {ub: \"UB_CERB002a_out_of_bound_load\", stderr: \"\", loc: \"<13:10--13:34>\"}` rc 1, the checked per-byte load's own verdict at the memop; gcc 13 exits 1 (a UB program). Class shared-model-fix (the class of the allocator precedent, a fork-ahead fix of the hand-written OCaml oracle: fix/half-mirrors-oracle, 2026-11-07, contract D18; [USER 2026-11-04] agreed the fix pass under the standing bar, the standard's text explicit). The Lean engine answered this line since 2026-09-03 under the fork's ISO-fix register row R3 (now RETIRED); the fork's oracle now answers it too; LADDER Tier B row 5 (test_immaculate.sh) pins fork OCaml == Lean on the same input (MATCH). The row retires when upstream takes the fix (tray 13, Sent 2026-09-26, the patch in the draft).",
+      "upstream": {
+        "status": 125,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "diagnostic_sha256": "e0a19184b53650ae1dcf967e63da3d003f7b7ab30bb4fd5dd50798f2f0f96441"
+      },
+      "fork": {
+        "status": 1,
+        "stdout_sha256": "dfaa693bc338bceb29ffe8a6d677e524767b4cb3a108722b41f67dae4f3b9417",
         "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       }
     }

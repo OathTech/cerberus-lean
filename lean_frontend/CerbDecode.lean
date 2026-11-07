@@ -103,7 +103,7 @@ private def decode_character_constant_aux (str : String) : Int :=
   -- '\?' — C17 §6.4.4.4#1 lists \? among the simple escape sequences, #4
   -- gives the value of '?' = 63; gcc agrees (exit 63; "a\?b" = 97 63 98 0).
   -- BOTH ENGINES since 2026-11-07: the fork's decode.ml carries the same arm
-  -- (decode.ml:155-164, a FORK FIX registered as a fork-ahead delta in
+  -- (decode.ml:155-163, a FORK FIX registered as a fork-ahead delta in
   -- scripts/fork_drift_manifest.txt; upstream tray 10 + its string-literal
   -- addendum, noodle E2). Pristine upstream c3ff8c53f has NO "\\?" arm: its
   -- catch-all routes '?' into the octal validator and FAILWITHS on legal C
@@ -165,7 +165,7 @@ def decode_character_constant (str : String) : Int :=
     so this function must be a right inverse of the decoder above.
 
     BOTH ENGINES since 2026-11-07: the fork's `Decode.escaped_char`
-    (decode.ml:230-258, a FORK FIX registered as a fork-ahead delta in
+    (decode.ml:229-255, a FORK FIX registered as a fork-ahead delta in
     scripts/fork_drift_manifest.txt; upstream tray 11) mirrors this
     definition arm for arm — the simple escapes the decoder names, hex
     `\xNN` (lower case, unpadded) for every other byte outside 32..126, the

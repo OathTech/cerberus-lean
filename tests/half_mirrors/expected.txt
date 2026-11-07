@@ -1,0 +1,42 @@
+# The pinned line both engines must print (see scripts/check_half_mirrors.sh for the classes) — one TAB-separated line per program of tests/half_mirrors/ (derived 2026-11-07 by the slice's pin instrument from the fixed fork oracle at the M2 tree, checked against gcc 13.3.0 -std=c11 -w -O0 by the witness; never hand-edited).
+gap_multi_char_ab	CRASH decode_character_constant: invalid char constant ==> ab
+gap_ucn_char_u00e9	CRASH decode_character_constant, started like an octal constant, but failed: u00e9
+gap_ucn_str_U0001F600	CRASH decode_character_constant, started like an octal constant, but failed: U0001F600
+gap_utf8_str_raw	CRASH decode_character_constant: invalid char constant ==>
+gap_wide_str_L_377	CRASH bytes_of_int(signed), i= 4294967295, nbits= 32
+memcmp_distinct_0	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+memcmp_distinct_1	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+memmove_same_max	Defined {value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}
+nolibc_esc_all_simple	Defined {value: "Specified(0)", stdout: "39 34 63 92 7 8 12 10 13 9 11\n39 34 63 92 7 8 12 10 13 9 11 12\n", stderr: "", blocked: "false"}
+nolibc_esc_char_q	Defined {value: "Specified(63)", stdout: "", stderr: "", blocked: "false"}
+nolibc_esc_str_q	Defined {value: "Specified(63)", stdout: "", stderr: "", blocked: "false"}
+nolibc_fork_oct_char_0123	Defined {value: "Specified(83)", stdout: "", stderr: "", blocked: "false"}
+nolibc_hex_char_100_cv	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+nolibc_hex_char_ff_signed	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+nolibc_hex_str_41_B_boundary	Defined {value: "Specified(131)", stdout: "", stderr: "", blocked: "false"}
+nolibc_oct_char_377_signed	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+nolibc_oct_char_400_cv	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+nolibc_oct_str_1234_boundary	Defined {value: "Specified(167)", stdout: "", stderr: "", blocked: "false"}
+nolibc_u8_str_q	Defined {value: "Specified(63)", stdout: "", stderr: "", blocked: "false"}
+nolibc_wide_char_L_q	Defined {value: "Specified(63)", stdout: "", stderr: "", blocked: "false"}
+nolibc_wide_str_L_q	Defined {value: "Specified(63)", stdout: "", stderr: "", blocked: "false"}
+rt_snprintf_c_127	Defined {value: "Specified(127)", stdout: "", stderr: "", blocked: "false"}
+rt_snprintf_c_19	Defined {value: "Specified(19)", stdout: "", stderr: "", blocked: "false"}
+rt_snprintf_c_200	Defined {value: "Specified(200)", stdout: "", stderr: "", blocked: "false"}
+rt_snprintf_c_all	Defined {value: "Specified(0)", stdout: "0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31\n32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63\n64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95\n96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127\n128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159\n160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189 190 191\n192 193 194 195 196 197 198 199 200 201 202 203 204 205 206 207 208 209 210 211 212 213 214 215 216 217 218 219 220 221 222 223\n224 225 226 227 228 229 230 231 232 233 234 235 236 237 238 239 240 241 242 243 244 245 246 247 248 249 250 251 252 253 254 255\nbad=0\n", stderr: "", blocked: "false"}
+rt_snprintf_c_zero	Defined {value: "Specified(45)", stdout: "", stderr: "", blocked: "false"}
+rt_snprintf_q_literal	Defined {value: "Specified(63)", stdout: "", stderr: "", blocked: "false"}
+rt_snprintf_s_all	Defined {value: "Specified(0)", stdout: "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31\n32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63\n64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95\n96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127\n128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159\n160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189 190 191\n192 193 194 195 196 197 198 199 200 201 202 203 204 205 206 207 208 209 210 211 212 213 214 215 216 217 218 219 220 221 222 223\n224 225 226 227 228 229 230 231 232 233 234 235 236 237 238 239 240 241 242 243 244 245 246 247 248 249 250 251 252 253 254 255\nbad=0\n", stderr: "", blocked: "false"}
+rt_snprintf_s_c7	Defined {value: "Specified(199)", stdout: "", stderr: "", blocked: "false"}
+rt_sprintf_mixed	Defined {value: "Specified(217)", stdout: "", stderr: "", blocked: "false"}
+rt_strcpy_all	Defined {value: "Specified(0)", stdout: "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31\n32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63\n64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95\n96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127\n128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159\n160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189 190 191\n192 193 194 195 196 197 198 199 200 201 202 203 204 205 206 207 208 209 210 211 212 213 214 215 216 217 218 219 220 221 222 223\n224 225 226 227 228 229 230 231 232 233 234 235 236 237 238 239 240 241 242 243 244 245 246 247 248 249 250 251 252 253 254 255\nbad=0\n", stderr: "", blocked: "false"}
+strncmp_strings_max	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+strncpy_strings_pad	Defined {value: "Specified(97)", stdout: "", stderr: "", blocked: "false"}
+ub_memcmp_adjacent_max	Undefined {ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<3:115--3:139>"}
+ub_memcmp_distinct_half	Undefined {ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<3:71--3:99>"}
+ub_memcmp_distinct_p32	Undefined {ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<3:71--3:102>"}
+ub_memcmp_hugesize	Undefined {ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<9:10--9:34>"}
+ub_memcmp_neg_int	Undefined {ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<3:78--3:93>"}
+ub_memcmp_oob_8	Undefined {ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<3:66--3:81>"}
+ub_memcmp_same_max	Undefined {ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<3:61--3:85>"}
+ub_memcpy_distinct_max	Undefined {ub: "UB_CERB002a_out_of_bound_load", stderr: "", loc: "<3:64--3:88>"}
