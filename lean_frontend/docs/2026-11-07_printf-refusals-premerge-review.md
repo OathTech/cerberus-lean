@@ -320,3 +320,6 @@ throwaway ref `throwaway-printf-old-tip` until the orchestrator confirms. The re
   full set.
 - **Verified and reported**, as asked: the old and new tip hashes, the blob-scan line, the gate lines and the diff stat
   are in the worker's report to the orchestrator and in the record's §6.0.
+- **Contract numbering** [AGENT 2026-11-08, the orchestrator's ruling recorded by the worker]: the decision numbers stay as
+  assigned across the three parallel slices whatever their landing order — D16 the printf slice (this one), D17 the
+  address-constants slice, D18 the half-mirrors slice.

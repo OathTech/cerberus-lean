@@ -591,7 +591,23 @@ inner_arg_temps elapsed: 378.60s   (scripts/test_inner_arg_temps.sh --gate: the 
 
 ### 6.2 The full battery at close-out (orchestrator-run)
 
-PLACEHOLDER — appended by the orchestrator after the run (the battery on `7f4579641` was in flight during the review round; the close-out Tier A runs on the rewritten tip).
+Run by the orchestrator on the final tip `6cf0ece0a` (2026-11-08) in a separate audit checkout detached at that commit,
+after a forced regeneration (`make clean-prelude-src prelude-src lean-prelude-src`), the three dune steps and the capped
+lake build; `scripts/ce python3 scripts/release.py --mode full`; the evidence under that checkout's `.tmp/release/`
+(ephemeral). Verbatim last lines, and the rows of note:
+
+```text
+full: passed; 46/46 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+release rc=0
+PASSED A1 (1289.1s)
+PASSED A15 (397.7s)
+PASSED B15 (275.1s)
+```
+
+(A1 is row 1 with the 32-program core inside `test_unit.sh`; A15 the inner_arg_temps gate on the re-recorded rows; B15
+the new Tier B row, the 161-program `--full` matrix. The earlier battery on `7f4579641` was stopped as stale when the
+P2-1 Lem change landed; no separate Tier A was run on the final tip, the full battery subsuming it.)
 
 
 ## 7. Not done / open
