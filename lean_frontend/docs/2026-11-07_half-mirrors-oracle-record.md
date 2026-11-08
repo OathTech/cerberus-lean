@@ -364,8 +364,15 @@ check_handwritten_sync: OK (57 hand-written files byte-identical to lean_fronten
 check_failure_reach: OK (238 pure failure sites = the 238 register rows exactly (236 in the exec dependency closure + 2 unresolved-owner; key = file/owner/token/message, shared keys lengthened, both directions); position classes unchanged; 0 DISCARDABLE; reach UNREACHABLE-BY-INVARIANT=175 REACHABLE=42 UNKNOWN=21; every row sealed; tally line consistent)
 ```
 
-PLACEHOLDER — the orchestrator's full battery on this branch's tip has NOT run yet (queued behind the printf slice's);
-its result is to be written here by the orchestrator at close-out, nothing is claimed for it in this record.
+The orchestrator's full battery on this branch's tip `ce5d7b564` (2026-11-08; run by the orchestrator in a separate audit
+checkout after a forced regeneration — `make clean-prelude-src prelude-src lean-prelude-src`, the three dune steps and the
+capped lake build; evidence directory `.tmp/release/` under that checkout, ephemeral), verbatim last lines:
+
+```text
+full: passed; 45/45 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+release rc=0
+```
 
 ## 7. The two `CerbMem.lean` unused-binder warnings (scope added at M2)
 

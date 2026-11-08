@@ -275,5 +275,7 @@ Every finding taken one by one: **fixed**, **answered** with a reason the orches
   rows, 11 for the three store rows, 13 for memcmp) and VALIDATION.md; the rationales already named the right tray.
 - **F8 — answered.** D18's number is the orchestrator's to settle at landing: the branch keeps D18 (the charter's number)
   and the cross-references (`CONTRACT.md` §4, SUPPORTED, LADDER, TODO, the trays, the record, the consumer notes) move with
-  whatever number lands; no edit here.
+  whatever number lands; no edit here. Settled [AGENT 2026-11-08, orchestrator]: the numbers stay as assigned across the three
+  parallel slices whatever the landing order (D16 printf, D17 address constants, D18 half-mirrors); a temporary gap in the
+  sequence is harmless and avoids churn at every rebase.
 - **F9 — no change** (the header's arithmetic is right, as the review re-derived).
