@@ -289,3 +289,5 @@ convenience. Scratch `.tmp/review/` removed after this file was written.
   reports the typing's own error at desugaring (`gs.nope`: `no member named 'nope' in 'struct S'` where pristine said
   `not a compile-time constant`), the same class as the `ci/0268` register row; in no walked corpus.
 - **P3-6 — none** (the witness: 27 s the run, 35 s with the self-test).
+- **Contract numbering** [AGENT 2026-11-08, orchestrator]: the numbers stay as assigned across the three parallel slices
+  whatever the landing order — D16 the printf refusals, D17 the address constants (this slice), D18 the half-mirrors.

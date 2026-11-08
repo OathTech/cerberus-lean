@@ -5,8 +5,8 @@ Branch `fix/address-constants`, worktree `worktrees/cerberus-lean-fix/address-co
 `docs/2026-11-07_worker-charter-address-constants.md` (commit `b58eabf4d`). Worker: Claude Fable 5.1 (agent). Every
 judgement below that no operator ruling covers is marked [AGENT]. Status: **fixed in the shared Lem (both engines by
 generation), witnessed in row 1 (244 programs), every moved row dispositioned with gcc 13 `-std=c11 -pedantic-errors`
-as the referee; the focused gates of §6 green on the M1, M2 and review-fix trees; Tier A and the full battery are the
-orchestrator's (§6.3, a marked placeholder).** The charter's premises held with two corrections (§2.6: the caller's
+as the referee; the focused gates of §6 green on the M1, M2 and review-fix trees; the orchestrator's full battery green on the
+review-fix tip, 45/45 (§6.4).** The charter's premises held with two corrections (§2.6: the caller's
 sequencing, and the GNU `?:`); the pre-merge review (`docs/2026-11-07_address-constants-premerge-review.md`, with its
 Dispositions section) found the fix accepting four 6.6#10 forms pristine did not (P1-1) and ruled the accepted set back
 to upstream's plus the 6.6#3-#9 forms (§2.7).
@@ -459,7 +459,20 @@ Independent oracle: passed; {'semantic_agreement': 945, 'reviewed_difference': 2
 Independent oracle: subset_passed; {'reviewed_difference': 1}          (--corpus ci --only 0268-address-invalid-type)
 ```
 
-### 6.4 PLACEHOLDER — Tier A on `1c21272e7` and the full battery on the review-fix tip (orchestrator-run): to be appended after the runs
+### 6.4 The full battery on the review-fix tip `0ac5db554` (orchestrator-run, 2026-11-08)
+
+Run by the orchestrator in a separate audit checkout of this branch after a forced regeneration (`make
+clean-prelude-src prelude-src lean-prelude-src`), the three dune steps and the capped lake build (evidence under that
+checkout's `.tmp/release/`, ephemeral). Verbatim last lines:
+
+```text
+full: passed; 45/45 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+release rc=0
+```
+
+The Tier A run the orchestrator had planned on the M1 commit `1c21272e7` was superseded by this battery on the final
+tip (the battery is a superset of Tier A); no separate Tier A was run.
 
 ## 7. Not done / open
 
@@ -489,8 +502,8 @@ Independent oracle: subset_passed; {'reviewed_difference': 1}          (--corpus
 - The ci-sweep scoreboard TSVs: four rows change class at the next deliberate re-record (§4.3).
 - Tray 09 stays Draft (fixed in the fork; the filing is the operator's network window).
 
-## 8. Scratch, deleted at close-out
+## 8. Scratch, deleted at close-out (2026-11-08)
 
-`.tmp/ac/` (the generator, the runner, the 446 programs and their four-engine lines before and after, the pre-change
-engine snapshot — 288 M —, the corpus sweep's instrument, list and two result sets, the filing's patch derivations,
-the pristine-lane runs), `.tmp/scripts/` run directories.
+`.tmp/ac/` (the generator, the runner, the 472 programs and their four-engine lines before and after, the pre-change
+engine snapshot — 288 M, deleted after M2 —, the corpus sweep's instrument, list and three result sets, the filing's
+patch derivations, the pristine-lane runs), `.tmp/scripts/` run directories: deleted with the close-out commit.
