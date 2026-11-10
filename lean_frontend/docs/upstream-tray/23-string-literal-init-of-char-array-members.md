@@ -139,3 +139,29 @@ Re-verified 2026-09-05 on the un-forked upstream binary + runtime @
 Localisation and this draft by Claude (Fable 5.1) under operator
 direction; the filed issue carries an AI-provenance note per the tray's
 policy.
+
+## Re-run at `c3ff8c53f` (2026-11-10): still reproduces; a wide string literal is rejected even at top level
+
+(Un-forked upstream binary + runtime @ `c3ff8c53f`, both fork engines and gcc 13.3.0 `-std=c11 -w -O0`, all run on 2026-11-10; outputs verbatim. [AGENT 2026-11-10], the reporting slice.)
+
+Both reproducers above are still rejected by pristine upstream with the same diagnostic (exit 1; gcc exits 99 and
+98); the stub is `frontend/model/desugaring_init.lem:461-462` at `c3ff8c53f` (`if false (* is_compound_literal OR
+string literal *) then internal_error "TODO: explode the elements"`).
+
+Not in this report before: for a *wide* string literal the top-level form is rejected too (C17 6.7.9#15: an array whose element type is compatible with `wchar_t` may be initialized by a wide string
+literal), where the narrow top-level form `char s[4] = "abc";` is accepted.
+
+```c
+#include <stddef.h>
+wchar_t s[4] = L"abc"; int main(void) { return s[1]; }
+```
+
+```
+$ cerberus --nolibc --exec --batch in_wstring_top.c
+in_wstring_top.c:2:16: error: constraint violation: initializing 'wchar_t' with an expression with a non arithmetic type 'wchar_t*'
+wchar_t s[4] = L"abc"; int main(void) { return s[1]; }
+               ^~~~~~ 
+```
+
+(exit 1; gcc exits 98.) Fork status: unchanged in both engines (the fork's oracle prints the same diagnostic, the Lean
+port `Error {msg: "typechecking failed at in_wstring_top.c:2:16-22"}`). Reported, not fixed.

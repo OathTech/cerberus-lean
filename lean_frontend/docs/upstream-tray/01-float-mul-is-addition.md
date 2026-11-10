@@ -4,6 +4,11 @@
 (operator, 2026-08-19; open. Re-checked 2026-08-23: `mul` is still
 `(+.)` on current upstream master.)
 
+**Status, 2026-11-10: fixed upstream, carried by the base.** Upstream `766073467` (2026-09-06, "(util) fix float
+multiplication") is an ancestor of the fork's merge-base `c3ff8c53f`, where `util/cerb_floating.ml:5` reads
+`let mul = ( *. )` (read from the pristine tree on 2026-11-10 [AGENT]). The text below describes the code before that
+commit; nothing remains to file.
+
 **Affected:** `util/cerb_floating.ml:5` (checked against `master` @ `b9aeedcb4`;
 file unchanged there).
 

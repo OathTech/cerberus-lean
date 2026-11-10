@@ -201,3 +201,15 @@ again guarded by upstream's exact-tag test, so this typo is masked on the fork a
 `arr-2-2-return` and `arr-incomplete-ptr-return` are rejected with `mismatched tags` on every
 engine, like `arr-1-2-return`. The fix stays observable through the store-side consult
 (`memValueFromValue`) and through the unit exe `are-compatible-test`.
+
+## Locus at `c3ff8c53f` (2026-11-10)
+
+[AGENT 2026-11-10], the reporting slice. The typo is still in the file at `c3ff8c53f`, now at
+`frontend/model/ctype_aux.lem:80` inside the `(Array elem_ty1 n1_opt, Array elem_ty2 n2_opt)` arm that starts at
+`:77` — the line number is unchanged from `b9aeedcb4`:
+
+```
+        && match (n1_opt, n1_opt) with
+```
+
+(read from the pristine tree on 2026-11-10.) The multi-translation-unit reproducers were not re-run in this pass.

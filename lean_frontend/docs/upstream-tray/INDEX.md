@@ -60,6 +60,11 @@ it reports the splice and asks for the feature). Two survey findings already hav
 status changed after our merge-base (upstream/master fetched 2026-10-20): report 15 (`_Bool` from a floating
 value) is fixed by upstream `3230aa494` and report 04 (the pure shift of a null pointer) by `f4a3a3d54`; a backport
 of each is proposed and the operator's ruling is pending — their tray files are unchanged here.
+Reports 72–77 (2026-11-10, Draft, the reporting slice — roadmap `../2026-11-10_roadmap-maintenance-and-reporting.md` item 2): the sibling
+findings of the true-bug audit of 2026-11-04 that had no report, and the crash sites that had none (`sscanf`, statement
+expressions, the `argv` store, the GNU `?:`, the library stubs and header gaps, non-finite floating-to-integer conversion). The
+same pass re-ran reports 04, 08, 10, 12, 15, 21, 22, 23, 30, 31, 33, 34, 47, 61, 62 and 63 on pristine upstream at `c3ff8c53f` and
+appended a dated re-run section to each (01, 18, 39 and 45: a status or locus note, not a run).
 Issue 1010 is recorded below but has no tray report, so is outside this count.
 Draft duplicate searches must be repeated before filing; the dated search
 notes below establish only what was checked then.
@@ -136,6 +141,12 @@ notes below establish only what was checked then.
 | [69-printf-j-z-t-modifiers-false-ub153b.md](69-printf-j-z-t-modifiers-false-ub153b.md) | Draft (2026-11-07); fixed in the fork (fork-ahead delta, contract D16; the report carries the remedy in PROSE: the expected side normalised through the alias table) | No submission recorded; to be filed with the fork's hunk against c3ff8c53f attached |
 | [70-printf-zero-flag-before-sign-and-hash-f-no-point.md](70-printf-zero-flag-before-sign-and-hash-f-no-point.md) | Draft (2026-11-07); fixed in the fork (fork-ahead delta, contract D16; the report carries the remedy in PROSE); two related findings kept as upstream has them (`%5%`, the space flag), the `%*%` form REFUSED, the `-0.0` finding filed apart as 71 | No submission recorded; to be filed with the fork's hunk against c3ff8c53f attached |
 | [71-unary-minus-floating-zero-loses-sign.md](71-unary-minus-floating-zero-loses-sign.md) | Draft (2026-11-07); NOT fixed in the fork (a translation-layer slice of its own; the report carries the remedy in prose) | No submission recorded |
+| [72-sscanf-false-ub048-null-pointer-subtraction-in-shlim.md](72-sscanf-false-ub048-null-pointer-subtraction-in-shlim.md) | Draft (2026-11-10, the reporting slice: every `sscanf` call is a false UB048 (the shipped library subtracts a null read pointer in `__shlim`)); unchanged in the fork | No submission recorded |
+| [73-statement-expression-with-statement-inside-crashes-break-at-sseq.md](73-statement-expression-with-statement-inside-crashes-break-at-sseq.md) | Draft (2026-11-10, the reporting slice: a GNU statement expression containing an assignment, `++` or `if` dies in `break_at_sseq`); unchanged in the fork | No submission recorded |
+| [74-program-argument-bytes-stored-through-character-decoder.md](74-program-argument-bytes-stored-through-character-decoder.md) | Draft (2026-11-10, the reporting slice: a backslash or non-ASCII byte in `--args` crashes `prepare_main_args`); unchanged in the fork | No submission recorded |
+| [75-gnu-conditional-omitted-operand-internal-error.md](75-gnu-conditional-omitted-operand-internal-error.md) | Draft (2026-11-10, the reporting slice: the GNU `a ?: b` ends in an internal error, an unrelated one in integer-constant contexts (was a note in 61)); unchanged in the fork | No submission recorded |
+| [76-libc-perror-strerror-stubs-and-missing-declarations.md](76-libc-perror-strerror-stubs-and-missing-declarations.md) | Draft (2026-11-10, the reporting slice: `strerror`/`perror` stubs; `<wchar.h>`, `<uchar.h>`, `<float.h>` gaps; `<math.h>` not linked); unchanged in the fork | No submission recorded |
+| [77-floating-to-integer-non-finite-z-overflow.md](77-floating-to-integer-non-finite-z-overflow.md) | Draft (2026-11-10, the reporting slice: an infinity or NaN converted to an integer type is an uncaught `Z.Overflow` (15's residual)); unchanged in the fork | No submission recorded |
 | [lean4/01-stack-overflow-handler-deadlock.md](lean4/01-stack-overflow-handler-deadlock.md) | Draft | No submission recorded |
 | [lean4/02-nat-div-mod-literal-folding.md](lean4/02-nat-div-mod-literal-folding.md) | Draft | No submission recorded |
 | [lean4/03-float-tobits-canonicalizes-nan.md](lean4/03-float-tobits-canonicalizes-nan.md) | Draft | No submission recorded |

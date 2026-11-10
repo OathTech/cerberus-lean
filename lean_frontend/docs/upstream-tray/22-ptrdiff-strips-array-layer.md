@@ -118,3 +118,18 @@ the un-forked upstream binary + runtime @ `b9aeedcb4`, the fork's oracle
 and the Lean port (lines above verbatim). Localisation and this draft by
 Claude (Fable 5.1) under operator direction; the filed issue carries an
 AI-provenance note per the tray's policy.
+
+## Re-run at `c3ff8c53f` (2026-11-10): still reproduces; the locus moved
+
+(Un-forked upstream binary + runtime @ `c3ff8c53f`, both fork engines and gcc 13.3.0 `-std=c11 -w -O0`, all run on 2026-11-10; outputs verbatim. [AGENT 2026-11-10], the reporting slice.)
+
+```
+$ cerberus --nolibc --exec --batch ptrdiff_array_layer.c
+Defined {value: "Specified(0)", stdout: "8 3 2 2 4 8\n", stderr: "", blocked: "false"}
+$ gcc -std=c11 -w -O0 ptrdiff_array_layer.c && ./a.out
+2 1 2 2 1 8
+```
+
+(the six-column program of this report, run with `--nolibc`.) At `c3ff8c53f` the code quoted above is
+`memory/concrete/impl_mem.ml:1785-1790` inside `diff_ptrval` (`:1777`), text unchanged; `:1961-1967` was its
+position at `b9aeedcb4`. Fork status: unchanged in both engines (identical line). Reported, not fixed.

@@ -92,3 +92,45 @@ finding L1); both engines agree (shared libc), gcc differs. Re-verified
 fork's oracle and the Lean port (lines above verbatim). Localisation and
 this draft by Claude (Fable 5.1) under operator direction; the filed
 issue carries an AI-provenance note per the tray's policy.
+
+## Re-run at `c3ff8c53f` (2026-11-10): still reproduces; `strncpy(d, s, 0)` has the same defect and is a false UB
+
+(Un-forked upstream binary + runtime @ `c3ff8c53f`, both fork engines and gcc 13.3.0 `-std=c11 -w -O0`, all run on 2026-11-10; outputs verbatim. [AGENT 2026-11-10], the reporting slice.)
+
+```
+$ cerberus --exec --batch mem_strncmp_zero.c
+Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+```
+
+(gcc exits 1.) `runtime/libc/src/string.c:85-90` is unchanged at `c3ff8c53f`. The same test-after-use idiom is in
+`strncpy` (`string.c:40-47`):
+
+```c
+char *strncpy (char * restrict s1, const char * restrict s2, size_t n)
+{
+  char *res = s1;
+  while ((*s1++ = *s2++) && --n > 0)
+    ;
+  while (n && --n > 0)
+    *s1++ = '\0';
+  return (res);
+}
+```
+
+With `n == 0` the first character is copied before `n` is looked at, and `--n` then wraps to `SIZE_MAX`, so the
+copy runs to the end of the source and past the end of the destination. C17 7.24.2.4#2: "The strncpy function copies
+not more than n characters".
+
+```c
+#include <string.h>
+int main(void) { char d[2] = {120, 121}; strncpy(d, "ab", 0); return d[0]; }
+```
+
+```
+$ cerberus --exec --batch strncpy_zero.c
+Undefined {ub: "UB_CERB002b_out_of_bound_store", stderr: "", loc: "<43:10--43:25>"}
+```
+
+(exit 1 — a false undefined-behaviour verdict on a conforming program, located in the library at `string.c:43`; gcc
+exits 120, `d` untouched.) Remedy as for `strncmp`: test `n` before the first store. Fork status: unchanged in both
+engines for both functions. Reported, not fixed.

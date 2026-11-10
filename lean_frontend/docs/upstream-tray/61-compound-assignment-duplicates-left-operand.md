@@ -71,3 +71,10 @@ engines): `enum { E = 3 ?: 4 }`, `case (3 ?: 4):` and `int b[(3 ?: 4)]` die with
 mismatched ==> […]Unit`, `_Static_assert((3 ?: 4) == 3, "")` with `TODO error: the driver found less/more than one
 active execution` — unattributed crashes after the `unsupported:` line, not the declared refusal. The fork's
 compound-assignment refusal uses a pure `error` for this reason; the `?:` arm is left as upstream has it.
+
+## Pointer (2026-11-10)
+
+[AGENT 2026-11-10], the reporting slice. The related finding above (the GNU `?:` arm) has its own report since
+2026-11-10, re-run on pristine upstream at `c3ff8c53f`:
+[75](75-gnu-conditional-omitted-operand-internal-error.md). This report's own reproducer (`a[g()] += 4`, the call
+run twice) still answers `Specified(44)` on pristine today where gcc exits 34.

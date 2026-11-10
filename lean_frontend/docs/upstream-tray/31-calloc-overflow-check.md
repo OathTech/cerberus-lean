@@ -121,3 +121,37 @@ runtime @ `b9aeedcb4`, the fork's oracle and the Lean port (lines above
 verbatim). Localisation and this draft by Claude (Fable 5.1) under
 operator direction; the filed issue carries an AI-provenance note per the
 tray's policy.
+
+## Re-run at `c3ff8c53f` (2026-11-10): still reproduces; the independent variant is now evidence; a quotation corrected
+
+(Un-forked upstream binary + runtime @ `c3ff8c53f`, both fork engines and gcc 13.3.0 `-std=c11 -w -O0`, all run on 2026-11-10; outputs verbatim. [AGENT 2026-11-10], the reporting slice.)
+
+```
+$ cerberus --exec --batch mem_calloc_overflow.c
+Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+```
+
+(gcc/glibc exits 1.) `runtime/libc/src/stdlib.c:125-134` is unchanged at `c3ff8c53f`. The variant this report
+offered "as a check, not as evidence" — independent of report 20's `size_t` arithmetic — has now been run:
+
+```c
+#include <stdlib.h>
+int main(void) { void *p = calloc((size_t)1 << 63, 4); return p == 0 ? 1 : 2; }
+```
+
+```
+$ cerberus --exec --batch calloc_wrap0.c
+Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+```
+
+(gcc/glibc exits 1.) The product wraps to 0 and `malloc(0)` returns a non-null pointer.
+
+**Correction to the Description.** The sentence quoted above as C17 7.22.3.2#2 ("If the product of `nmemb` and
+`size` would overflow `size_t`, the `calloc` function returns a null pointer") is NOT in the C11 text shipped with
+Cerberus (`tools/n1570.html`), which reads, in full: "The calloc function allocates space for an array of nmemb
+objects, each of whose size is size. The space is initialized to all bits zero." (#2) and "The calloc function returns
+either a null pointer or a pointer to the allocated space." (#3). No copy of C17 was available to this pass to check
+the quotation against, so it must not be filed as a quotation until it is checked. The report's claim does not need it:
+#2 and #3 together leave no room for a non-null pointer to less space than `nmemb` objects of `size` bytes.
+
+Fork status: unchanged in both engines (identical lines). Reported, not fixed.

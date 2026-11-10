@@ -136,3 +136,10 @@ Found and analysed by an AI agent (Claude) during this project's
 memory-scale profiling; all quoted outputs are verbatim from recorded
 runs. Per this tray's labeling policy, the filed issue/PR must carry an
 explicit AI-provenance note; commits carry the Co-Authored-By trailer.
+
+## Status note (2026-11-10): not re-run in this pass
+
+[AGENT 2026-11-10], the reporting slice. This report's reproducer (an 8 M-element static initializer) was NOT re-run
+on pristine upstream at `c3ff8c53f` in the 2026-11-10 pass; the text above stands as last measured. A later upstream
+commit, `9f23c62b3` (2026-10-04, subject "(frontend) rewriting the list functions of a few monads"), is not an
+ancestor of `c3ff8c53f`; this report has not been checked against it and must be before it is filed.

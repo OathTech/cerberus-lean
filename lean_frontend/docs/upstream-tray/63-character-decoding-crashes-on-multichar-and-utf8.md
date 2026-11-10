@@ -46,3 +46,56 @@ cluster Q) from decode.ml's `ASCII for now` markers. Classification: TRUE BUG (c
 literal; UNCLEAR / implementation-defined for the multi-character constant (a diagnostic would be conforming).
 Fork plan ([USER 2026-10-20]): both crashes become declared refusals (a refinement: an unspecified stop turned into
 a specified one), queued behind the cerberus-caesium deliveries. The report above describes upstream as it stands.
+
+## Re-run at `c3ff8c53f` (2026-11-10): still reproduces; universal character names and `u8` literals
+
+(Un-forked upstream binary + runtime @ `c3ff8c53f`, both fork engines and gcc 13.3.0 `-std=c11 -w -O0`, all run on 2026-11-10; outputs verbatim. [AGENT 2026-11-10], the reporting slice.)
+
+Both reproducers above still die on pristine upstream (exit 125; gcc exits 1 and 195). Today's lines for the string
+literal:
+
+```
+cerberus: internal error, uncaught exception:
+          Failure("decode_character_constant: invalid char constant ==> \169")
+          Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+          Called from Cerb_frontend__Decode.decode_character_constant in file "ocaml_frontend/decode.ml", line 218, characters 8-43
+```
+
+Loci at `c3ff8c53f`: `ocaml_frontend/decode.ml:199` (the catch-all `failwith`), `:197` (the octal validator's),
+`:42` and `:224` (the two ASCII `TODO`s). Not in this report before:
+
+- Universal character names (C17 6.4.3) fall into the octal validator, in a character constant and in a string
+  literal:
+
+```c
+int main(void) { return (unsigned char)'\u00e9'; }
+```
+```
+cerberus: internal error, uncaught exception:
+          Failure("decode_character_constant, started like an octal constant, but failed: u00e9")
+```
+```c
+int main(void) { const char *s = "\U0001F600x"; return (unsigned char)s[0]; }
+```
+```
+cerberus: internal error, uncaught exception:
+          Failure("decode_character_constant, started like an octal constant, but failed: U0001F600")
+```
+
+  (both exit 125; gcc exits 169 and 240.)
+- A `u8` string literal with a non-ASCII character dies like the plain one; `u8"ab"` is fine (98 on pristine and gcc):
+
+```c
+int main(void){ return (unsigned char)u8"é"[0]; }
+```
+```
+cerberus: internal error, uncaught exception:
+          Failure("decode_character_constant: invalid char constant ==> \169")
+```
+
+  (exit 125; gcc exits 195.)
+
+The same decoder is reached from the driver for program arguments: report
+[74](74-program-argument-bytes-stored-through-character-decoder.md). Fork status: unchanged in both engines for every
+program in this section (the Lean port stops with a mirrored, attributed message, exit 134). Reported, not refused in
+code.

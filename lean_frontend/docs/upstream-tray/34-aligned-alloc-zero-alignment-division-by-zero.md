@@ -119,3 +119,38 @@ port mirrors the crash — `lean_frontend/docs/2026-10-03_total-arith-and-bookke
 Localisation and this draft by Claude (Fable 5.1) under operator
 direction; the filed issue carries an AI-provenance note per the tray's
 policy.
+
+## Re-run at `c3ff8c53f` (2026-11-10): still reproduces; loci moved; a non-multiple size is a placeholder UB
+
+(Un-forked upstream binary + runtime @ `c3ff8c53f`, both fork engines and gcc 13.3.0 `-std=c11 -w -O0`, all run on 2026-11-10; outputs verbatim. [AGENT 2026-11-10], the reporting slice.)
+
+`aligned_alloc(0, 8)` (`#include <stdlib.h>` / `int main(void) { void *p = aligned_alloc(0, 8); return p != 0; }`):
+
+```
+$ cerberus --nolibc --exec --batch aligned_alloc_zero.c
+cerberus: internal error, uncaught exception:
+          Division_by_zero
+          Raised at Z.rem in file "z.ml", line 96, characters 13-50
+```
+
+(exit 125, the same with the shipped libc; gcc/glibc exits 0, a null pointer.) Loci at `c3ff8c53f`:
+`runtime/libcore/std.core:386-393` (`aligned_alloc_proxy`, `:391` `if size rem_t align = 0 then`),
+`memory/concrete/impl_mem.ml:11` (`integerRem_t = (mod)`) and `:2305-2306` (`op_ival`'s unguarded `IntRem_t`).
+A zero *size* is fine (`aligned_alloc(8, 0)` then `free`: `Specified(3)` on pristine, gcc 3).
+
+Related, not in this report before — a size that is not a multiple of the alignment:
+
+```c
+#include <stdlib.h>
+int main(void) { char *p = aligned_alloc(16, 5); return p == 0 ? 1 : 2; }
+```
+
+```
+Undefined {ub: "DUMMY(align_alloc)", stderr: "", loc: "<2:28--2:48>"}
+```
+
+(exit 1; gcc/glibc exits 2, an allocation.) The verdict's name is a placeholder (`DUMMY(align_alloc)`). The C11 text
+in the copy shipped with Cerberus (`tools/n1570.html`, 7.22.3.1#2) requires `size` to be an integral multiple of
+`alignment`, so an undefined-behaviour verdict is defensible under C11; what the report asks for is a named verdict.
+Fork status: both findings unchanged in both engines (report 57's refusal, contract D10, covers a non-power-of-two
+alignment only). Reported, not fixed.

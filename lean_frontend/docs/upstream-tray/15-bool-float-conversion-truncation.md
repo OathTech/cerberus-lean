@@ -152,3 +152,13 @@ the wrong value (`AGREE`) — an upstream defect, not a port divergence.
 Repros re-verified 2026-08-30 against the un-forked
 `deps/cerberus-upstream` binary and runtime @ `b9aeedcb4`
 (`std.core` byte-identical between fork and upstream).
+
+## Re-run at `c3ff8c53f` (2026-11-10): no longer reproduces — fixed in the base; the residual is report 77
+
+(Un-forked upstream binary + runtime @ `c3ff8c53f`, both fork engines and gcc 13.3.0 `-std=c11 -w -O0`, all run on 2026-11-10; outputs verbatim. [AGENT 2026-11-10], the reporting slice.)
+
+Both reproducers above answer `Specified(42)` on pristine upstream today (gcc exits 42 for both): the base contains
+upstream `3230aa494` (2026-09-27). `_Bool` from an infinity is 1. The residual this report named — a non-finite value
+converted to a *wider integer* type still reaching `Z.of_float` — is live at `c3ff8c53f` (`int i = h;` with `h`
+infinite: uncaught `Z.Overflow`, exit 125) and is filed as report
+[77](77-floating-to-integer-non-finite-z-overflow.md). **This report is closed: nothing remains to file.**

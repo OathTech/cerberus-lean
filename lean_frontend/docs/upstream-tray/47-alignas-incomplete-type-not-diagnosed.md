@@ -173,3 +173,67 @@ Struct tag not a StructDef (OCaml: assert false / Not_found)` (rc 134); `alignas
 constraint violation (next-phase plan §11, item P2d-3); once landed, all three engines give
 the same diagnostic and this draft's pristine rows become register rows until upstream fixes
 it.
+
+## Re-run at `c3ff8c53f` (2026-11-10): still reproduces; three more `_Alignas` operands and an array-of-functions crash
+
+(Un-forked upstream binary + runtime @ `c3ff8c53f`, both fork engines and gcc 13.3.0 `-std=c11 -w -O0`, all run on 2026-11-10; outputs verbatim. [AGENT 2026-11-10], the reporting slice.)
+
+The three reproducers above on pristine upstream today: `_Alignas(struct A)` inside `struct A` with a `char`
+member does not terminate (killed by a 60 s timeout); the forward-declared and the `int`-member forms die with
+
+```
+cerberus: internal error, uncaught exception:
+          Not_found
+          Raised at Pmap.find in file "pmap.ml", line 81, characters 10-25
+```
+
+(exit 125; gcc rejects all three: `invalid application of '__alignof__' to incomplete type`). The specifier arm is
+`frontend/model/cabs_to_ail.lem:2819` at `c3ff8c53f` (`| AS_type tyname ->`). Three operands this report did not
+have (C17 6.7.5#5 with 6.5.3.4#1: `_Alignof` shall not be applied to a function type or an incomplete type):
+
+```c
+struct A { _Alignas(void) char c; }; int main(void) { return sizeof(struct A); }
+```
+```
+cerberus: internal error, uncaught exception:
+          File "ocaml_frontend/ocaml_implementation.ml", line 523, characters 12-18: Assertion failed
+          Raised at Cerb_frontend__Ocaml_implementation.alignof in file "ocaml_frontend/ocaml_implementation.ml", line 523, characters 12-24
+```
+```c
+struct A { _Alignas(int(void)) char c; }; int main(void) { return sizeof(struct A); }
+```
+```
+cerberus: internal error, uncaught exception:
+          File "ocaml_frontend/ocaml_implementation.ml", line 536, characters 26-32: Assertion failed
+          Raised at Cerb_frontend__Ocaml_implementation.alignof in file "ocaml_frontend/ocaml_implementation.ml", line 536, characters 26-38
+```
+```c
+struct A { _Alignas(int[]) char c; }; int main(void) { return sizeof(struct A); }
+```
+```
+Defined {value: "Specified(4)", stdout: "", stderr: "", blocked: "false"}
+```
+
+(the first two exit 125 — `ocaml_frontend/ocaml_implementation.ml:523` and `:536`, the `assert false` arms of
+`alignof` for `Void` and for function types; the third is accepted, exit 0.) gcc accepts the first two as an
+extension (both exit 1) and rejects the third (`invalid application of '__alignof__' to incomplete type 'int[]'`).
+The fork's completeness check (the fork-status section above) rejects all three with the `_Alignof` constraint
+diagnostic in both engines.
+
+A neighbouring crash on an ill-formed declaration, not in this report before and NOT fixed in the fork — an array
+whose element type is a function type (C17 6.7.6.2#1: "The element type shall not be an incomplete or function
+type"):
+
+```c
+int a[2](void); int main(void) { return 0; }
+```
+```
+$ cerberus --nolibc --exec --batch arr_of_func.c
+internal error: AilTypesAux.is_complete: called an a function type
+cerberus: internal error, uncaught exception:
+          Failure("internal error: AilTypesAux.is_complete: called an a function type")
+```
+
+(exit 125 on pristine and on the fork's oracle, the Lean port the same text with exit 134; gcc: `error: declaration
+of 'a' as array of functions`.) The raise is `frontend/model/ail/ailTypesAux.lem:240` at `c3ff8c53f`
+(`is_complete`'s function-type arm is an `error`); a constraint diagnostic at the declarator is what belongs.

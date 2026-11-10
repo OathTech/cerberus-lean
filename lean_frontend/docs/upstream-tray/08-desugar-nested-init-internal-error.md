@@ -107,3 +107,37 @@ arrays or deeper braced aggregates is affected.
 2. Actual fix: extend `desugar_initializer_` to cover the failing
    nested-brace shapes (we can contribute all three reproducers as
    tests; minimized, deterministic).
+
+## Re-run at `c3ff8c53f` (2026-11-10): still reproduces; one more shape
+
+(Un-forked upstream binary + runtime @ `c3ff8c53f`, both fork engines and gcc 13.3.0 `-std=c11 -w -O0`, all run on 2026-11-10; outputs verbatim. [AGENT 2026-11-10], the reporting slice.)
+
+All three reproducers above still die on pristine upstream with the same first line (exit 125); the raise is
+`frontend/model/translation.lem:3222` at `c3ff8c53f` (`error "Translation called on Ail program with an invalid
+node"`), the invalid node built by `frontend/model/cabs_to_ail.lem:3540` (`AilEinvalid`). Reproducer 1 today:
+
+```
+internal error: Translation called on Ail program with an invalid node
+cerberus: internal error, uncaught exception:
+          Failure("internal error: Translation called on Ail program with an invalid node")
+          Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+          Called from Cerb_frontend__Translation.translate_expression.(fun) in file "ocaml_frontend/generated/translation.ml", line 3260, characters 10-83
+```
+
+gcc exits 8, 8 and 1 for reproducers 1-3 (the audit's copies of them). A fourth shape, found 2026-10-29 by a fork
+review and not in this report before — a fully braced initializer of a struct containing an array of structs (C17
+6.7.9#17-#20):
+
+```c
+struct T { int b; }; struct S { struct T a[2]; }; struct S s = {{{1},{2}}}; int main(void) { return s.a[0].b * 10 + s.a[1].b; }
+```
+
+```
+$ cerberus --nolibc --exec --batch init_struct_arr_of_struct.c
+internal error: Translation called on Ail program with an invalid node
+cerberus: internal error, uncaught exception:
+          Failure("internal error: Translation called on Ail program with an invalid node")
+```
+
+(exit 125; gcc exits 12.) Fork status: unchanged in both engines (the Lean port stops with the same text, exit 134).
+Reported, not refused in code.

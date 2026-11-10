@@ -350,3 +350,10 @@ loaded pointer` — which matches the call sites and the runtime arms; nothing e
 **Fork status:** FIXED ahead of upstream in both stdlib files ([USER 2026-09-23] ruled that it be fixed and filed to
 the tray, under the rule that unambiguous bugs get fixes); the fork's `libc.co` now carries four-argument `pread`/`pwrite`
 calls; the `tests/libc/libc.core` dump pin (no stdlib text) is unchanged — record §15.2b.
+
+## Locus at `c3ff8c53f` (2026-11-10)
+
+[AGENT 2026-11-10], the reporting slice. At `c3ff8c53f` `match_pattern` is `frontend/model/core_aux.lem:1994-…`
+and the tuple arm quoted above (`(CaseCtor Ctuple pats', Vtuple cvals')` … `(List.zip pats' cvals')`) is
+`:2007-2014`, text unchanged; `:2033-2039` is the position this report cites above. Read from
+the pristine tree on 2026-11-10; the Core-level reproducers were not re-run in this pass.

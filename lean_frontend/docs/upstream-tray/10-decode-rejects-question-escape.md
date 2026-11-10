@@ -170,3 +170,28 @@ The patch (the one arm; the comment is the fork's registration note and may be d
    (* NOTE: here are the (graphical) extended characters from ASCII *)
    | "$"     -> Z.of_int 36
 ```
+
+## Re-run at `c3ff8c53f` (2026-11-10): still reproduces on pristine; two neighbours in the same decoder
+
+(Un-forked upstream binary + runtime @ `c3ff8c53f`, both fork engines and gcc 13.3.0 `-std=c11 -w -O0`, all run on 2026-11-10; outputs verbatim. [AGENT 2026-11-10], the reporting slice.)
+
+`'\?'` and `"\?"` still die on pristine upstream with `Failure("decode_character_constant, started like an octal
+constant, but failed: ?")` (exit 125; gcc exits 63 for both; the fork's engines answer 63 since 2026-11-07). Two
+neighbours reach the same catch-all (`ocaml_frontend/decode.ml:197` at `c3ff8c53f`) and are not fixed in the fork:
+
+- Universal character names (C17 6.4.3) — filed under report 63, which owns the non-ASCII decoding:
+  `int main(void) { return (unsigned char)'\u00e9'; }` dies with `… but failed: u00e9`.
+- An octal escape followed by a digit: `'\0123'` is read as ONE four-digit octal escape.
+
+```c
+int main(void) { return (unsigned char)'\0123'; }
+```
+
+```
+$ cerberus --nolibc --exec --batch esc_char_oct0123.c
+Defined {value: "Specified(83)", stdout: "", stderr: "", blocked: "false"}
+```
+
+  (gcc exits 51.) C17 6.4.4.4#1: an octal escape sequence has at most three octal digits, so the constant is the
+  two-character constant `'\012' '3'`, whose value is implementation-defined (#10; gcc's is the last character, 51);
+  83 is octal 0123. Silent, on a rare spelling; both fork engines print the same line.

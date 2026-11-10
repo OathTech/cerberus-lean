@@ -43,3 +43,61 @@ valid C; an internal contradiction, not an implementation choice). Fork plan ([U
 becomes a declared refusal (a refinement: an unspecified stop turned into a specified one), queued behind the
 cerberus-caesium deliveries; the alignment of `min_ival`/`max_ival` with `wchar_t_alias` is this report's proposal
 to upstream. The report above describes upstream as it stands.
+
+## Re-run at `c3ff8c53f` (2026-11-10): still reproduces; loci moved; two silent witnesses and the limit macros
+
+(Un-forked upstream binary + runtime @ `c3ff8c53f`, both fork engines and gcc 13.3.0 `-std=c11 -w -O0`, all run on 2026-11-10; outputs verbatim. [AGENT 2026-11-10], the reporting slice.)
+
+```
+$ cerberus --nolibc --exec --batch wc_neg.c          # wchar_t w = -1; return w < 0;
+failed: bytes_of_int(signed), i= 4294967295, nbits= 32, [-2147483648 ... 2147483647]
+cerberus: internal error, uncaught exception:
+          File "memory/concrete/impl_mem.ml", line 932, characters 6-12: Assertion failed
+          Raised at Cerb_frontend__Impl_mem.Concrete.bytes_of_int in file "memory/concrete/impl_mem.ml", line 932, characters 6-18
+```
+
+(exit 125; gcc exits 1.) Loci at `c3ff8c53f`: `memory/concrete/impl_mem.ml:2213` and `:2243` (the
+`Wchar_t (* TODO: it is implementation defined if unsigned *)` arms of the minimum and maximum), against
+`ocaml_frontend/ocaml_implementation.ml:167` (`wchar_t_alias= Signed Int_; (*TODO: check *)`); the assertion is
+`impl_mem.ml:932` (`bytes_of_int`). The same assertion for a wide character constant:
+
+```c
+#include <stddef.h>
+int main(void) { wchar_t w = L'\377'; return w == 255; }
+```
+
+(exit 125 with the same two first lines; gcc exits 1.) Not in this report before — the contradiction also gives
+verdicts and values without crashing:
+
+```c
+#include <stddef.h>
+int main(void) { wchar_t w = 100000; return (w - 200000) < 0; }
+```
+```
+Undefined {ub: "UB036_exceptional_condition", stderr: "", loc: "<2:45--2:57>"}
+```
+
+(exit 1; gcc exits 1, the difference is -100000. A false undefined-behaviour verdict under either signedness.)
+
+```c
+#include <stdint.h>
+#include <stdio.h>
+int main(void) { printf("%lld %lld %d %d\n", (long long)WCHAR_MAX, (long long)WCHAR_MIN, WCHAR_MAX > 0, WCHAR_MIN < 0); return 0; }
+```
+```
+Defined {value: "Specified(0)", stdout: "4294967295 0 1 0\n", stderr: "", blocked: "false"}
+$ gcc -std=c11 -w -O0 wcmax_print.c && ./a.out
+2147483647 -2147483648 1 1
+```
+
+(`<stdint.h>`'s `WCHAR_MAX`/`WCHAR_MIN`, `runtime/libc/include/stdint.h:103-104`, are the unsigned range's
+4294967295 and 0 while the type's alias is `signed int`.) And `(wchar_t)-1 < 0` is 0 on pristine (gcc: 1).
+
+**Fork status (2026-11-10).** The crash is unchanged in both engines (not refused in code). Since the fork's
+integer-rank change (contract D14: `wchar_t` has the rank of `int` and promotes to it) the subtraction witness and
+`(wchar_t)-1 < 0` answer gcc's 1 in both fork engines. **One program moved the wrong way and is a silent wrong
+answer of the fork that pristine does not give:** `#include <stdint.h>` / `int main(void) { return WCHAR_MAX > 0; }`
+is `Specified(1)` on pristine and `Specified(0)` on both fork engines (gcc: 1) — the fork's line for the program
+above is `4294967295 0 0 0`. The macro's value is still the unsigned maximum while comparisons now treat the type as
+signed. Found by this pass; not fixed here (this slice changes documents only); raised with the operator in the
+slice's report.

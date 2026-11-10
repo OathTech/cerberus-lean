@@ -91,3 +91,19 @@ C" overclaim; pinned three-way in
 tests/immaculate/nolibc/g4-bswap64-overflow.c (both backends fail-stop
 — our port deliberately mirrors the crash rather than silently
 diverging until upstream fixes it).
+
+## Re-run at `c3ff8c53f` (2026-11-10): still reproduces
+
+(Un-forked upstream binary + runtime @ `c3ff8c53f`, both fork engines and gcc 13.3.0 `-std=c11 -w -O0`, all run on 2026-11-10; outputs verbatim. [AGENT 2026-11-10], the reporting slice.)
+
+```
+$ cerberus --nolibc --exec --batch bswap64.c
+cerberus: internal error, uncaught exception:
+          Z.Overflow
+          Raised by primitive operation at Cerb_frontend__Ocaml_gcc_builtins.bswap64 in file "ocaml_frontend/ocaml_gcc_builtins.ml", line 30, characters 10-22
+```
+
+(exit 125; gcc exits 8, the low seven bits of the swapped value 0x1122334455667788.) The locus is unchanged at
+`c3ff8c53f`: `ocaml_frontend/ocaml_gcc_builtins.ml:29-30` (`let bswap64 n = let n = Z.to_int64 n in`). Fork
+status: unchanged — the fork's oracle raises the same exception and the Lean port stops with a mirrored, attributed
+message (exit 134). Reported, not fixed.

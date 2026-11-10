@@ -123,3 +123,33 @@ finding P2); both engines agree (shared `.lem`), gcc differs. Re-verified
 fork's oracle and the Lean port (lines above verbatim). Localisation and
 this draft by Claude (Fable 5.1) under operator direction; the filed
 issue carries an AI-provenance note per the tray's policy.
+
+## Re-run at `c3ff8c53f` (2026-11-10): still reproduces; a precision on which operators lose the provenance
+
+(Un-forked upstream binary + runtime @ `c3ff8c53f`, both fork engines and gcc 13.3.0 `-std=c11 -w -O0`, all run on 2026-11-10; outputs verbatim. [AGENT 2026-11-10], the reporting slice.)
+
+The reproducer above (`(int*)(u + 4ul)` with `u = (unsigned long)&a[0]`) is still UB043 on pristine upstream:
+
+```
+Undefined {ub: "UB043_indirection_invalid_value", stderr: "", loc: "<5:10--5:12>"}
+```
+
+(exit 1; gcc exits 20.) The title's "every integer arithmetic operator" is too wide as measured today: a bitwise
+`&` keeps the provenance, `+ 0` does not.
+
+```c
+#include <stdint.h>
+int main(void) { _Alignas(16) int a[4] = {10, 20, 30, 40}; uintptr_t u = (uintptr_t)&a[1]; int *q = (int *)(u & ~(uintptr_t)15); return *q; }
+```
+```
+Defined {value: "Specified(10)", stdout: "", stderr: "", blocked: "false"}
+```
+```c
+#include <stdint.h>
+int main(void) { int a[2] = {10, 20}; uintptr_t u = (uintptr_t)&a[0]; int *q = (int *)(u + 0); return *q; }
+```
+```
+Undefined {ub: "UB043_indirection_invalid_value", stderr: "", loc: "<2:103--2:105>"}
+```
+
+(gcc exits 10 for both.) Fork status: unchanged in both engines (identical lines).

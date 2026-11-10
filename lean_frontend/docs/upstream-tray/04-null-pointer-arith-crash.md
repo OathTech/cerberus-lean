@@ -1,5 +1,8 @@
 # Uncaught `Failure` (TODO) instead of a UB verdict for arithmetic on a null pointer
 
+**Status, 2026-11-10: fixed upstream (`f4a3a3d54`), carried by the base `c3ff8c53f`; the reproducer no longer
+crashes (the re-run section at the end of this file).** The text below describes the code at `b9aeedcb4`.
+
 **Affected:** `memory/concrete/impl_mem.ml:2217`
 (`array_shift_ptrval`, the pure variant)
 (checked against `master` @ `b9aeedcb4`; file unchanged there).
@@ -88,3 +91,19 @@ fixed behaviour already exists in-tree on the effectful path.
   channel — the shared shape of the failure supports the interface-level
   remedy.
 -->
+
+## Re-run at `c3ff8c53f` (2026-11-10): no longer reproduces — fixed in the base
+
+(Un-forked upstream binary + runtime @ `c3ff8c53f`, both fork engines and gcc 13.3.0 `-std=c11 -w -O0`, all run on 2026-11-10; outputs verbatim. [AGENT 2026-11-10], the reporting slice.)
+
+The reproducer above no longer crashes on pristine upstream:
+
+```
+$ cerberus --nolibc --exec --batch null_arith.c
+Undefined {ub: "UB046_array_pointer_outside", stderr: "", loc: "<3:12--3:17>"}
+```
+
+(exit 1.) The base contains upstream `f4a3a3d54` (2026-09-18, "(frontend) making pure array_shift_ptrval properly
+return UB on NULL pointers"); at `c3ff8c53f` the null arm of the effectful shift is `fail ~loc MerrArrayShift`
+(`memory/concrete/impl_mem.ml:2072-2076`) and the pure shift answers the UB046 above. `(int *)0 + 0` gets the same
+verdict. Both fork engines print the identical line. **This report is closed: nothing remains to file.**
