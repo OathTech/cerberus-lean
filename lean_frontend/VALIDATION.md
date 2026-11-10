@@ -1419,8 +1419,10 @@ touch it.
 is exact comparison of complete ordered observation sequences between
 engines within each mode, plus the dump compatibility/parameter-binder
 refusals. It runs its selftest, all 113 minimal inputs, ten fixtures,
-sixteen corpus inputs, 42 libc inputs, three main/argc/argv witnesses and
-upstream backport witnesses 0343/0344 (186 rows). Libc and main witnesses
+sixteen corpus inputs, 44 libc inputs (the 42 single-trace `tests/libc_exec`
+files and the 2 under `exhaustive/`), three main/argc/argv witnesses and
+upstream backport witnesses 0343/0344 (188 rows; derived from the population
+and the baseline, 2026-11-10). Libc and main witnesses
 run both engines in both modes; ordinary inputs run matched switched engines.
 
 The oracle-only cross-mode check is a separate sanity instrument: it
@@ -1446,7 +1448,10 @@ projection since 2026-11-10: a RESOURCE row pins its direction and that a
 bound was hit, not whether the memory cap or the wall clock was hit first
 (load-dependent; one baseline spelling `KILL|TIMEOUT`, a baseline that pins
 the kind is refused, FUEL stays its own kind; the row line and `results.json`
-keep the kind). Only Error
+keep the kind). What the merge gives up: a RESOURCE row whose engine changes
+persistently from exhausting the memory cap to running out the wall clock, or
+back, is silent — that includes a real behavioural change of that shape, and
+nothing reports a kind that differs from the last recording. Only Error
 failure classification uses the existing narrow Symbol-number projection.
 
 Ordinary inputs are exhaustive without libc. Top-level libc and upstream
@@ -1781,6 +1786,18 @@ Certification-integrity rules ride the gates: validation of
 build-rule-affecting changes is cache-disabled from re-derived
 generated trees; audits check the artifact the consumer actually
 loads (the libc.co staging pattern); quoted outputs are verbatim.
+
+**Warnings are build errors (2026-11-10; no separate gate).** The root package
+and the speclab package each carry `-DwarningAsError=true` in their
+`moreLeanArgs`, and LemLib carries it in its own package at the pin: a Lean
+warning in any `lean_lib`/`lean_exe` module of those three packages (the
+generated tree, the hand-written copies, `test/`, speclab's modules) fails
+`lake build`, also when the root package is built as a dependency. Not
+covered: `tests/mem-scale-probes/micro` (its own package without the flag; it
+does not build, TODO); files compiled outside `lake build` by
+`scripts/lean_probe.sh` (`lean -DautoImplicit=false --setup`: gate decoys,
+reach instruments and ad-hoc probes; read from the script, not measured); the
+C compilation of `native/`. Record `docs/2026-11-10_todo54-repin-record.md`.
 
 ## 7. Fuel — the parameter, the exhaustion outcome, the (A)/(B)/(C) forms
 

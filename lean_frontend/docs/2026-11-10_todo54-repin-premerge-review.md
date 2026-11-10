@@ -220,3 +220,48 @@ row-1 gates the record quotes (`check_fork_drift.sh`, `check_fuel_forms.sh`, `ch
 `check_theorem_axioms.sh`, `check_exec_totality.sh`, `libc_prep.sh --check`, the CoreQuote legs): not re-run by me,
 so those lines rest on the worker's record until the orchestrator's battery. `lake check` not run. The base tree
 was not rebuilt; the micro package was not built. No consumer repository was built against the branch.
+
+## Dispositions (worker [AGENT], 2026-11-10)
+
+Each finding is fixed, answered or raised; none is argued away. Code: `092fcd2fe` (F6, F8's flag). Documents: the
+commit carrying this section (F1 to F5, F7, F8's statements, F9, the TODO line). The orchestrator's instruction for
+this round set the shape of several fixes (which TODO item to point at, the speclab measurement, the mutants to
+show); where a choice was mine it is tagged [AGENT 2026-11-10].
+
+| # | Pri | Disposition |
+|---|---|---|
+| F1 | P2 | **Accepted; fixed.** The record was wrong twice: the failure is not new, and both commits I cited were wrong. Re-read from history: `Micro.lean` last changed `24af7239b` (2026-09-17); `537641a34` (2026-10-26) touched only the package's manifest and toolchain file; `EnumDefs` arrived at `3ad477462` (2026-09-20). Record §0 and §6 corrected in place and marked; my duplicate TODO lines removed and replaced by a pointer to the existing item ("has not built since 2026-09-20"); the request for a new decision withdrawn (the ruling is already queued, with the operator). The package's source is not touched. Cause of my error: I read `git log` over the package DIRECTORY and `-S EnumDefs` (the last commit touching the string) as if they were the file's last change and the parameter's arrival. |
+| F2 | P2 | **Accepted; fixed.** Checked against `git diff e6d8db5..2220010 -- lean-lib`: the four binder renames and the LemLib package flag are as the review says. Record §1 gains the paragraph; both consumer notes gain it and name `Lem_Machine_word.size_itself` (`x` → `_x`) and warnings-as-errors on LemLib. |
+| F3 | P3 | **Accepted; fixed, count re-derived.** My own probe (Π-binder names of every constant, the primary checkout's previous build read only against this worktree's): 41,720 constants each side, same names; 180 root constants and 1 LemLib constant differ, all `x` → `_x`; the 180 are the 61 definitions with exactly the notes' 80 parameters and **119** derived constants (105 `f.eq_N`, 6 matchers, 3 splitters, 1 `eq_def`, 4 compiler auxiliaries `_f`/`_sunfold`/`_unsafe_rec`/`_proof_1`) carrying 161 renamed binders. The count agrees with the reviewer's 119; the reviewer's "5 others" is my 1 + 4. The notes now say what is reachable: the 80 signature parameters and the derived constants that bind pattern variables, with the caveat that Lean materialises more on demand. Record §3 states the measurement. |
+| F4 | P2 | **Accepted; fixed.** `lean_frontend/README.md:8` and `lean_frontend/SUPPORTED.md:4` now carry the `lean_frontend/CLAUDE.md` wording (previous pins in the past tense, the current pin `2220010…` with its record); SUPPORTED's false "provisional, unmerged" is gone. `check_pin_sites.sh` re-run: OK. The two related items the review calls not this branch's: `scripts/build_provider_smoke.py:26` is logged as a TODO line (no change); the fork-drift manifest header's "the SAME lem e6d8db5" is left as it is — it describes how the pristine tree was made, which is still true, and the pristine tree was not regenerated at `2220010` (identity there is inferred from the generated OCaml being byte-identical, as the review says). |
+| F5 | P2 | **Accepted; fixed.** 186 → 188 in `scripts/LADDER.md` row 15 and `lean_frontend/VALIDATION.md`, with the enumeration re-derived from `population()` and the baseline (identical on the base): 113 minimal + 10 fixtures + 16 corpus + 44 libc (42 single-trace files and 2 under `exhaustive/`; the texts said 42) + 3 witnesses + 2 upstream = 188. |
+| F6 | P3 | **Accepted; fixed in code (`092fcd2fe`).** `Runner.row` now returns through `normal_status_record` and `row_result`, `--record-baseline` writes through `baseline_text`; the plants build rows and the plant baseline with those and compare with the real `check_baseline`; the refusal's plant asserts the refusal's message; one assertion pins the class projection's direction. Mutants (one edit each, `SKIP_BUILD=1 --selftest`, file restored and compared after): control rc 0; (1) `normal_status` hashes back to `side_hash` — rc 1, `resource-kind plant: a KILL baseline row rejected both at the wall clock`; (2) the refusal deleted — rc 1, `resource-kind plant: a kind-pinning baseline failed without the refusal`; (3) direction dropped — rc 1, `the class projection must keep the direction, FUEL and every other class`; (4) the recorder writes unprojected rows — rc 1, `a KILL baseline row rejected the same row again: … the baseline pins a load-dependent resource kind`; (5) FUEL a load kind — rc 1, `a KILL baseline row accepted a FUEL stop`; plus `baseline_hash` back to `side_hash` and `check_baseline` comparing unprojected rows, both rc 1. All four of the review's survivors are now caught. Still not covered by plants, stated in the commit: an edit that makes `Runner.row` bypass the shared functions (the real lane's two RESOURCE rows exercise that path). `--gate` on the changed script: rc 0 (422 s), lines quoted in record §9. |
+| F7 | P3 | **Accepted; stated.** VALIDATION's lane paragraph now says what the merge gives up: a persistent change of a RESOURCE row between the memory cap and the wall clock is silent, a real behavioural change of that shape included, and nothing reports a kind that differs from the last recording. Record §9 repeats it. Not done [AGENT 2026-11-10]: the informational line the review calls cheap (a kind differing from the last recording would need the kind stored beside the baseline, i.e. a baseline format change; left as an option, not logged as owed), and no change to `same_failure` treating FUEL like the other kinds (pre-existing cross-mode rule, outside this slice). |
+| F8 | P3 | **Accepted; flag added to speclab, coverage stated.** Measured: with `-DwarningAsError=true` in `speclab/lakefile.toml`, all 13 speclab targets build, rc 0, `Build completed successfully (336 jobs).`, its 36 modules recompiled, every trace naming the flag, 0 warnings; `test_speclab.sh --selftest` rc 0. Record §5 and VALIDATION §6 state what is covered (the root package, speclab, LemLib at the pin) and what is not (`tests/mem-scale-probes/micro`; files compiled by `scripts/lean_probe.sh`, read from the script and not measured; `native/` C). **Raised, not done:** naming the flag in the working-practices doc as the standing zero-warning mechanism is a change to a standing-rules document and is left as a proposal for the operator. |
+| F9 | P3 | **Accepted; fixed.** Record §2 says the snapshot is gone and that the classification is reproducible against the primary checkout's previous generation until the landing regenerates it; the `537641a34` date is corrected to 2026-10-26 (in §6's rewrite); the `remote URL changed` line is explained. Not done [AGENT 2026-11-10]: the classifier is not added to `scripts/` (a one-use instrument; the lem-lean note's step 6 gives the method, and the reviewer's independent classifier reached the same totals). |
+
+Side note logged as asked: `lean_frontend/TODO.md` gains one line for `scripts/build_provider_smoke.py:26`.
+
+Gate lines of the follow-up (verbatim; 2026-11-10, capped at 32G, 1-minute load 8.0 to 11.5 with the
+orchestrator's Tier A running in another checkout):
+
+```
+$ SKIP_BUILD=1 ./scripts/test_inner_arg_temps.sh --selftest            (control, before the mutants)
+SELFTEST OK (control; both stripped-switch stubs; Normal-only main/libc mutations; both dump/mode plants; both binder plants; printer collision; sequence/set controls; five baseline plants; the resource-kind plants; outcome failures)
+$ ./scripts/test_inner_arg_temps.sh --gate                             rc 0 (422 s)
+PLANT OK (baseline resource kind: a row recorded at the memory cap by the production recorder accepts the wall clock on either engine and on either Normal control)
+PLANT OK (baseline resource kind: FUEL, a Lean-only resource outcome and a completed row rejected; direction kept; a kind-pinning baseline refused by name)
+SELFTEST OK (control; both stripped-switch stubs; Normal-only main/libc mutations; both dump/mode plants; both binder plants; printer collision; sequence/set controls; five baseline plants; the resource-kind plants; outcome failures)
+SUMMARY: inner_arg_temps rows=188 AGREE=138 AGREE-FIRST=41 BOTH_FAIL=5 LOC_ONLY-FIRST=2 RESOURCE oracle:KILL=2 failures=0
+BASELINE OK (inner_arg_temps: 188 rows; classes and both distinct-observation/status hashes exact)
+$ (lean_frontend/speclab) lake build <all 13 targets>                  rc 0, under -DwarningAsError=true
+Build completed successfully (336 jobs).
+$ ./scripts/test_speclab.sh --selftest                                 rc 0
+test_speclab: PASS (both pipelines agree on Specified(0))
+$ scripts/check_fork_drift.sh                                          rc 0
+$ scripts/check_pin_sites.sh                                           (after the README edit)
+check_pin_sites: OK — lem-pin 2220010bc25f0c5682d8200f016e786ee66d65c6 at every site (lakefile rev, 3 lake-manifests rev+inputRev, README pin command)
+```
+
+Not re-run in the follow-up: the root-package build (unchanged inputs), the kernel replay (no proof or generated
+module changed), the other row-1 gates, `scripts/release.py`.

@@ -124,9 +124,14 @@ of this work's scope.
   `docs/2026-11-10_todo54-repin-record.md`): the pin moved to lem `2220010`;
   the stored Lake logs carry 823 warnings for modules of the tree before and 0
   after (derived), and the root package builds with `-DwarningAsError=true`.
-  Open beside it: `tests/mem-scale-probes/micro/Micro.lean` does not compile
-  against the current `CerbMem` signatures (found during this re-pin, not
-  caused by it; no ladder row builds that package).
+  speclab's own package carries the flag too (review F8). The third package,
+  `tests/mem-scale-probes/micro`, is the existing item below (not built since
+  2026-09-20); this re-pin moved its manifest only.
+- **`scripts/build_provider_smoke.py:26` hard-codes a lem revision**
+  (`LEM_REV = 'f6542f8e…'`, a 2026-09 pin) that `scripts/check_pin_sites.sh`
+  does not know as a pin site. Found by the pre-merge review of the lem TODO 54
+  re-pin (`docs/2026-11-10_todo54-repin-premerge-review.md`, F4); logged only,
+  no change. [AGENT 2026-11-10]
 
 - **Lean toolchain bump 4.32.2 → 4.35.0.** Scoped 2026-10-20
   (`docs/2026-10-20_lean-4.35-scoping-record.md`): moderate; the toolchain is

@@ -8,6 +8,11 @@ and the notes. Quoted machine output is verbatim; every count labelled derived w
 named artefacts, not printed by a gate. All runs 2026-11-10, capped at `CERB_MEM_MAX=32G`, one heavy job at a time,
 1-minute load between 1.2 and 3.9 at each start.
 
+**Corrected 2026-11-10 after the pre-merge review** (`docs/2026-11-10_todo54-repin-premerge-review.md`, committed
+`42f0e0d83`; its Dispositions section lists every finding). The corrections are made in place and marked
+"(review Fn)"; the code follow-up is `092fcd2fe`. This record's own three findings are labelled W1 to W3 so that
+they do not collide with the review's F1 to F9.
+
 ## 0. Summary
 
 - The lem pin moved `e6d8db5` → `2220010bc25f0c5682d8200f016e786ee66d65c6` at every site; `check_pin_sites.sh` green.
@@ -20,11 +25,14 @@ named artefacts, not printed by a gate. All runs 2026-11-10, capped at `CERB_MEM
   root package's `moreLeanArgs` ([AGENT 2026-11-10]); every root-package and speclab target builds under it.
 - Every gate the charter names is green; kernel replay exit 0.
 - The lane rider (M2): a RESOURCE baseline row no longer pins the kill kind; two rows re-recorded; `--gate` green.
-- **Failures and findings, stated as such:** (F1) the third Lake package `tests/mem-scale-probes/micro` does NOT
-  build — pre-existing type errors in `Micro.lean`, not caused by the re-pin, not fixed here (§6). (F2) a standalone
-  `test_inner_arg_temps.sh --selftest` run before the baseline was re-recorded exited 1, as the new check intends
-  (§9). (F3) stale prose found, not edited: `README.md:8` and `SUPPORTED.md:4` still call `2d3a492` the current
-  pin (stale since the 2026-10-26 re-pin), and LADDER row 15 says 186 rows where the lane runs 188 (§10).
+- **Failures and findings, stated as such:** (W1) the third Lake package `tests/mem-scale-probes/micro` does NOT
+  build. It is the EXISTING TODO item (not built since 2026-09-20), not a discovery of this slice; not caused by
+  the re-pin, not fixed here (§6; corrected, review F1). (W2) a standalone `test_inner_arg_temps.sh --selftest` run
+  before the baseline was re-recorded exited 1, as the new check intends (§9). (W3) stale prose: `README.md:8` and
+  `SUPPORTED.md:4` called `2d3a492` the current pin, and LADDER row 15 and VALIDATION said 186 rows where the lane
+  runs 188 — reported at M3, FIXED in the review follow-up (review F4, F5).
+- The adopted lem range also changes the LemLib runtime (§1; review F2), which the first version of this record
+  did not say.
 
 ## 1. What moved (M1)
 
@@ -37,6 +45,14 @@ named artefacts, not printed by a gate. All runs 2026-11-10, capped at `CERB_MEM
 | `lean_frontend/CLAUDE.md` dated pin line | the previous pin put in the past tense, the current pin and this record named |
 | `lean_frontend/lakefile.toml` `moreLeanArgs` | `"-DwarningAsError=true"` added (§5) |
 
+**The LemLib runtime moved with the pin (review F2).** `git diff e6d8db5..2220010 -- lean-lib` in lem-lean: four
+binder renames — `List_extra.lean` (`head`: `x :: _xs`; `tail`: `_x :: xs`), `Word.lean` (`integerFromBitSeq`:
+`BitSeq _len s bl`), `Machine_word.lean` (`size_itself { a : Type } [Size a] (_x : itself a)`, was `(x : itself
+a)`: a SIGNATURE parameter, the one LemLib constant whose Π-binder names changed, §3; no use of it by name in this
+repository) — and `moreLeanArgs := #["-DwarningAsError=true"]` on the LemLib package, so LemLib is compiled with
+warnings as errors by every consumer of this pin. The range's other commits are documents (`3f48fc2`, `b154377`,
+TODO log lines, and the TODO 54 records).
+
 Shared state (the orchestrator's, before the slice): `deps/lem-pinned` at `2220010`, the shared switch's
 `lem -v` = `Lem lean-backend-v0.1.0-alpha.1-88-g2220010` (re-read by this worker before generating). No `opam`
 package command was run by this worker. The LemLib package checkout under `lean_frontend/.lake/packages/LemLib` is
@@ -46,7 +62,12 @@ at the pin after the update.
 
 `scripts/ce make clean-prelude-src prelude-src lean-prelude-src`, rc 0. The pre-re-pin trees were the worktree's
 primed copies of the primary checkout's generated trees (lem `e6d8db5`, mainline `a5ff9d42e`), snapshotted before
-the first edit; the old lem was not re-run by this worker (the shared switch had already moved).
+the first edit; the old lem was not re-run by this worker (the shared switch had already moved). The snapshot was
+scratch and is deleted, so the classification of §3 cannot be re-run from the branch alone (review F9): it is
+reproducible against the primary checkout's generated tree and `.lake` build, which stay at the previous
+generation until the primary is regenerated at the landing (the reviewer reproduced it that way, with a
+classifier of their own). The `lake` runs print `info: LemLib: remote URL changed` (local path → GitHub URL) for
+the package checkout: a side effect of the container's redirect, harmless.
 
 - `ocaml_frontend/generated/`: `diff -r` against the snapshot empty; 86 files on both sides.
 - `lean_frontend/generated/`: 229 files on both sides, none added or removed, 52 differ (`diff -rq`); the 57
@@ -123,8 +144,18 @@ FINDINGS: 0
 
 The three totals and all 52 per-module rows equal the table in lem-lean
 `doc/lean-backend/2026-11-07_consumer-note-cerberus-unreferenced-binders.md` §3 (compared by `diff`, no line
-differs but the total row's wording). Of the 676 renamed or blanked binders, 80 are signature parameters of 61
-definitions (derived; listed in the two consumer notes), the rest pattern, lambda and let binders.
+differs but the total row's wording).
+
+**What a named argument can reach (review F3; derived, re-measured for the follow-up).** A probe printed the
+Π-binder names of every constant of the 229 root modules and of LemLib from the previous build (the primary
+checkout's `.olean` files, read only) and from this one: 41,720 constants each side, the same names; 180 root
+constants and 1 LemLib constant differ, every difference of the form `x` → `_x`. The 180: the 61 source
+definitions with exactly the 80 signature parameters of the consumer notes' table (the token comparison and the
+constant comparison agree, row by row), and 119 derived constants with 161 renamed binders — 105 equation lemmas
+`f.eq_N`, 6 matchers, 3 splitters, 1 `eq_def`, 4 compiler auxiliaries (`_f`, `_sunfold`, `_unsafe_rec`,
+`_proof_1`) — because an equation lemma, matcher or splitter binds the definition's pattern variables as its own
+∀-binders. The first version of the notes said only signature parameters were reachable; that was overstated and
+is corrected there. The LemLib constant is `Lem_Machine_word.size_itself`.
 
 ## 4. Hand-written fixes
 
@@ -156,9 +187,17 @@ Note on the before row: the script's kinds are 147 inert `termination_by`, 682 u
 unmeasured (0 traces); after, 0 warnings in 83 traces. The 823 join the lem-lean note's 147 + 676.
 
 [AGENT 2026-11-10] The flag is adopted for the root package: the root library, every test executable and library
-and every speclab target build clean under it. speclab's own modules are compiled with speclab's `moreLeanArgs`
-(unchanged, the charter names the root package only); they carry 0 stored warnings. See §6 for the package the
-decision does not cover.
+and every speclab target build clean under it.
+
+**What the flag covers (review F8).** It is a package-level `moreLeanArgs`: it reaches every `lean_lib` and
+`lean_exe` module of the package that carries it, also when that package is built as a dependency, and it enters
+the module traces. Since the review follow-up (`092fcd2fe`) speclab's own package carries it too: its 13 targets
+build under it, rc 0, `Build completed successfully (336 jobs).`, all 36 speclab modules recompiled, every trace
+naming the flag, 0 warnings (derived). LemLib carries it in its own package at the pin. NOT covered:
+`tests/mem-scale-probes/micro` (no flag; it does not build, §6); files compiled outside `lake build` by
+`scripts/lean_probe.sh` (`lean -DautoImplicit=false --setup`: gate decoys, the reach instrument, ad-hoc probes —
+read from the script, not measured); the C compilation of `native/`. There is no separate zero-warning gate: the
+build is the check. VALIDATION §6 states the same.
 
 ### Stale artefacts deleted (this worktree's `lean_frontend/.lake/build` only, by named path)
 
@@ -256,7 +295,7 @@ lib/lean/Unit/T4EnvWitnessTest.trace
 A re-scan finds no orphan. The primary checkout's `.lake` carries the same remnants (this worktree's was a copy);
 removing them there follows the landing and is the orchestrator's.
 
-## 6. Finding F1: `tests/mem-scale-probes/micro` does not build (pre-existing; not fixed)
+## 6. Finding W1: `tests/mem-scale-probes/micro` does not build (the existing TODO item; not fixed)
 
 `scripts/ce scripts/capped lake build` in `tests/mem-scale-probes/micro`: **rc 1**. First error, verbatim:
 
@@ -271,13 +310,24 @@ in the application
   memValueToBytes tagDefs
 ```
 
-The same shape repeats at `Micro.lean:90`, `:95`, `:115`, `:116` (calls of `reconstructValue`). The errors are
-hand-written call sites against hand-written `CerbMem` signatures that take an `EnumDefs` parameter;
-`CerbMem.lean` is not modified on this branch, the generated delta contains no signature change (§3), and
-`Micro.lean` was last edited at `537641a34` (2026-10-25), before the last commit that touched `EnumDefs` in
-`CerbMem.lean` (`bb62d0017`, 2026-10-29). So the package was already broken on the base; the base build was not
-re-run to prove it. No ladder row builds this package (`check_pin_sites.sh` reads its manifest only). Its manifest
-is re-pinned; its source is left as found: repairing a probe against a changed seam is outside the charter.
+The same shape repeats at `Micro.lean:90`, `:95`, `:115`, `:116` (calls of `reconstructValue`).
+
+**Corrected (review F1).** The first version of this section presented the failure as found during this re-pin and
+dated it from the wrong commits (`537641a34` and `bb62d0017`); both statements were wrong. From the history,
+re-read for the correction: `Micro.lean` was last changed at `24af7239b` (2026-09-17); `537641a34` (2026-10-26)
+touched only that package's `lake-manifest.json` and `lean-toolchain`; `memValueToBytes`/`reconstructValue` have
+taken `CerbMem.EnumDefs` since `3ad477462` (2026-09-20, program-data parameters E-A). The package has therefore
+not built since 2026-09-20, and that is ALREADY registered: `lean_frontend/TODO.md`, the item beginning
+"`tests/mem-scale-probes/micro` (the `memscale-micro` Tier C reporting instrument) has not built since
+2026-09-20", found at the Lean 4.35 move, with the same five sites and a ruling requested ([AGENT 2026-10-26]).
+The duplicate TODO lines this branch added at M3 are removed and replaced by a pointer to that item.
+
+What stands: the failure is on the base and is not caused by the re-pin (`CerbMem.lean` and `Micro.lean` are
+untouched on this branch; the generated delta changes no signature, §3); the base build was not re-run to
+reproduce it. No ladder row or gate builds the package (`check_pin_sites.sh` reads its manifest, `release.py`
+lists its config files as inputs, `build_provider_smoke.py` reads its manifest). This re-pin moved its manifest
+and nothing else. Whether the package is repaired or retired is with the operator under the existing item; its
+source is not touched here.
 
 ## 7. Gates (the last line of each, verbatim; all on the M1 tree with the flag in place unless noted)
 
@@ -444,6 +494,25 @@ both go through it; `check_baseline` refuses a baseline that still pins the kind
 (oracle versus Lean) stays pinned and FUEL stays its own kind (deterministic). The row line and `results.json`
 keep the observed kind. The selftest gained two plant groups, run through the real comparator.
 
+**Review F6 follow-up (`092fcd2fe`).** At M2 the plant rows were built by a local copy of the row assembly, so two
+of the selftest's claims were not carried by the plants (the reviewer's mutants: M2's `normal_status` edit undone,
+and the refusal deleted, both left the selftest green). Now `Runner.row` returns through `normal_status_record` and
+`row_result`, `--record-baseline` writes through `baseline_text`, and the plants use those three and the real
+`check_baseline`; the refusal's plant asserts the refusal's message. Seven single-edit mutants, each rc 1 with a
+resource-kind plant message, control rc 0 (the messages are in the commit and in the review's Dispositions).
+`--gate` after the change: rc 0 (422 s, 1-minute load 8.5), the same SUMMARY and `BASELINE OK` lines as below, the
+baseline file unchanged, and the two plant lines now read:
+
+```
+PLANT OK (baseline resource kind: a row recorded at the memory cap by the production recorder accepts the wall clock on either engine and on either Normal control)
+PLANT OK (baseline resource kind: FUEL, a Lean-only resource outcome and a completed row rejected; direction kept; a kind-pinning baseline refused by name)
+```
+
+What the merge of the two kinds gives up (review F7): a RESOURCE row whose engine changes persistently from
+exhausting the memory cap to running out the wall clock, or back, is silent, a real behavioural change of that
+shape included; nothing reports a kind that differs from the last recording. VALIDATION's lane paragraph says so.
+The M2 run below is kept as run:
+
 Re-recorded through `--record-baseline` (188 rows, 375 s); the baseline diff is two rows, nothing else:
 `corpus/p07_list_sum` and `corpus/p08_list_reverse`, class `RESOURCE oracle:KILL` → `RESOURCE oracle:KILL|TIMEOUT`,
 the four hashes of each `8aae6f4ef8b6` → `082663a812d6`.
@@ -464,7 +533,7 @@ BASELINE OK (inner_arg_temps: 188 rows; classes and both distinct-observation/st
 inner_arg_temps elapsed: 363.74s
 ```
 
-F2: the first standalone `--selftest` (14 s, before the re-record) exited 1 with `inner_arg_temps: FAIL —
+W2: the first standalone `--selftest` (14 s, before the re-record) exited 1 with `inner_arg_temps: FAIL —
 corpus/p07_list_sum: the baseline pins a load-dependent resource kind (RESOURCE oracle:KILL); re-record it` — the
 new refusal acting on the old baseline. After the re-record the standalone `--selftest` is rc 0. Not exercised: a
 row actually hitting the wall clock first (the flake was not reproduced; the plants cover the comparison).
@@ -478,9 +547,11 @@ LADDER row 15 and VALIDATION's lane paragraph state the rule.
   lem build, so they are not in this slice's logs; they are listed here for the lem-lean TODO as the charter asks.
 - The container doc's pin line (`e6d8db5` → `2220010`) is the orchestrator's.
 - At the landing, the primary checkout's stale `.lake` artefacts (§5's list) and its regeneration.
-- F3, stale prose left as found: `lean_frontend/README.md:8` and `lean_frontend/SUPPORTED.md:4` describe
-  `2d3a492` as the current pin; LADDER row 15 opens with 186 rows where the lane runs and pins 188.
-- F1 (§6) wants a decision: repair `Micro.lean`, or retire the package and its pin site.
+- W3, the stale prose: fixed in the review follow-up (README and SUPPORTED carry the CLAUDE.md wording; 188 rows
+  with the per-class enumeration re-derived in LADDER row 15 and VALIDATION).
+- W1 (§6): no new decision is asked; the ruling is already queued under the existing TODO item.
+- `scripts/build_provider_smoke.py:26` hard-codes an old lem revision that `check_pin_sites.sh` does not know
+  (the reviewer's side note): logged as a TODO line, not changed.
 - Consumer notes: `docs/2026-11-10_consumer-note-cerberus-{sl,caesium}-unreferenced-binders.md`.
 
 ## 11. Not done
@@ -490,4 +561,5 @@ LADDER row 15 and VALIDATION's lane paragraph state the rule.
 - No opam command, no push, no mainline commit, nothing outside this worktree.
 - The base tree was not rebuilt with the old lem (§2) and the micro package's breakage on the base was inferred
   from history, not re-run (§6).
-- No pre-merge review of this slice has been run.
+- The pre-merge review has since been run by an independent reviewer (`42f0e0d83`); its findings are
+  dispositioned in that file. The orchestrator's Tier A and battery results are not in this record.

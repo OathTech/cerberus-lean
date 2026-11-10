@@ -11,24 +11,43 @@ nothing else (52 modules: 147 clauses removed, 601 binders renamed, 75 `Inhabite
 classified token by token, record §3). The generated OCaml is byte-identical. No definition's type, body, name,
 module or universe changed; no hand-written seam, proof module, gate register or baseline moved.
 
+The same lem range (`e6d8db5..2220010`) also changes the LemLib runtime you get through this pin: four binder
+renames (`List_extra` `head` and `tail`: `x :: _xs`, `_x :: xs`; `Word.integerFromBitSeq`: `BitSeq _len s bl`;
+`Lem_Machine_word.size_itself`'s signature parameter `(x : itself a)` → `(_x : itself a)`, the one LemLib constant
+whose binder names moved) and `-DwarningAsError=true` on the LemLib package. No LemLib definition's type or body
+changed otherwise.
+
 What this means for you:
 
 - **A named argument on a renamed parameter stops elaborating.** `f (x := e)` against a generated definition whose
   parameter `x` is now `_x` fails with an unknown-named-argument error; write it positionally or as `(_x := e)`.
   The same holds for anything that matches the printed form of a generated signature or body textually: it
   now reads `_x`. This repository's own hand-written Lean (seams, measure proofs, tests, speclab) needed no change.
-- **Only signature parameters are reachable that way.** Of the 676 renamed or blanked binders, 80 are parameters in
-  the signature of 61 generated definitions (the table below, derived from the token comparison); the other 596 are
-  pattern variables and lambda or let binders inside bodies, visible only when a body is unfolded and printed.
+- **What a named argument can reach** (derived: the Π-binder names of every constant of the 229 root modules and of
+  LemLib, the previous build against this one; 180 root constants and 1 LemLib constant differ, every difference
+  `x` → `_x`):
+  - the 80 signature parameters of 61 generated definitions (the table below; the same 61 and 80 by the token
+    comparison and by the constant comparison), plus LemLib's `Lem_Machine_word.size_itself` (`x` → `_x`);
+  - 119 DERIVED constants of those and other definitions that this build had materialised, with 161 renamed binders:
+    105 equation lemmas (`f.eq_N`), 6 matchers (`f.match_N`), 3 splitters, 1 `eq_def` and 4 compiler auxiliaries
+    (`_f`, `_sunfold`, `_unsafe_rec`, `_proof_1`). An equation lemma, matcher or splitter binds the definition's
+    PATTERN variables as its own ∀-binders, so a renamed pattern variable is reachable there by named argument
+    (`to_pure_lemFuel.eq_7 (annot1 := …)` is now `(_annot1 := …)`). Lean generates such constants on demand, so a
+    consumer's build can hold more of them than the 119 counted here.
+  The remaining renamed binders (lambda and let binders, pattern variables of definitions with no materialised
+  equation lemma) are visible only when a body is unfolded and printed.
 - **Kernel terms are unchanged up to binder names.** Binder names are not part of definitional equality: a proof by
   `rfl`, `simp`, `unfold`, `decide` or a rewrite with a generated equation lemma is unaffected. Equation-lemma and
   `.eq_def` statements keep their names; the bound-variable names inside them follow the source.
 - **The removed `termination_by structural` clauses** sat on derived `cmpx_`/`sizex_` definitions that do not
   recurse; Lean had been ignoring them with a warning. Those definitions were and are plain non-recursive `def`s.
-- **Warnings:** the root package now builds with `-DwarningAsError=true` and its stored build logs carry no warning.
-  A consumer building this package as a Lake dependency compiles it with that flag; nothing is required of you.
+- **Warnings:** the root package, the speclab package and (at this pin) LemLib each build with
+  `-DwarningAsError=true`, and their stored build logs carry no warning. A consumer building them as Lake
+  dependencies compiles their modules with that flag — on the pinned toolchain nothing is required of you; under a
+  different toolchain a new warning in these packages would stop your build.
 
-The 80 renamed signature parameters (module-qualified definition, parameters; derived):
+The 80 renamed signature parameters (derived; first column: the generating module, then the definition's name as
+written there — the Lean constant is not namespaced by the module):
 
 | Definition | Parameters |
 |---|---|
