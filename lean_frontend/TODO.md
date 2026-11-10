@@ -120,6 +120,13 @@ of this work's scope.
   re-pinned here; nothing in this repository can fix them. The hand-written
   class-valued test definitions and one unused simp argument were fixed on
   2026-10-19 (`fix/hygiene-20261019`).
+  DONE 2026-11-10 on `arc/todo54-repin` (record
+  `docs/2026-11-10_todo54-repin-record.md`): the pin moved to lem `2220010`;
+  the stored Lake logs carry 823 warnings for modules of the tree before and 0
+  after (derived), and the root package builds with `-DwarningAsError=true`.
+  Open beside it: `tests/mem-scale-probes/micro/Micro.lean` does not compile
+  against the current `CerbMem` signatures (found during this re-pin, not
+  caused by it; no ladder row builds that package).
 
 - **Lean toolchain bump 4.32.2 → 4.35.0.** Scoped 2026-10-20
   (`docs/2026-10-20_lean-4.35-scoping-record.md`): moderate; the toolchain is
