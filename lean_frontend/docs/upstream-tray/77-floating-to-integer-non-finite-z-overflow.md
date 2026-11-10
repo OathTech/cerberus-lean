@@ -31,6 +31,7 @@ cerberus: internal error, uncaught exception:
           Z.Overflow
           Raised by primitive operation at Cerb_frontend__Impl_mem.Concrete.ivfromfloat in file "memory/concrete/impl_mem.ml", line 2373, characters 19-34
           Called from Cerb_frontend__Core_eval.step_eval_pexpr.(fun) in file "ocaml_frontend/generated/core_eval.ml", line 698, characters 195-226
+[… 23 more lines cut]
 ```
 
 (exit 125; verbatim, 2026-11-10, un-forked upstream binary + runtime @ `c3ff8c53f`.) The same exception and exit code
@@ -73,7 +74,7 @@ Test for a non-finite value before `Z.of_float` — in `std.core`'s conversion b
 
 ## Fork status (2026-11-10)
 
-Unchanged in both engines. Reported, not fixed. Report 15 (the `_Bool` conversion, fixed upstream by `3230aa494`, in
+Unchanged in both engines. The fork has not changed this behaviour. Report 15 (the `_Bool` conversion, fixed upstream by `3230aa494`, in
 the base) named this as its residual.
 
 ## Classification
@@ -82,6 +83,6 @@ the base) named this as its residual.
 
 ## Provenance
 
-Report 15's residual (2026-08-30), re-found by the fork's true-bug audit of 2026-11-04 (sibling finding 19). Re-run on
-pristine upstream at `c3ff8c53f`, the fork's oracle and gcc on 2026-11-10. This draft by Claude (Fable 5.2) under
-operator direction; the filed issue carries an AI-provenance note per the tray's policy.
+Named as a residual in report 15 (2026-08-30) and re-found on 2026-11-04 by small programs compared against gcc. Re-run on un-forked upstream at `c3ff8c53f`, on this fork's two engines and on gcc on 2026-11-10. Analysis and this
+draft by Claude (Fable 5.2), an AI agent, under the direction of a human operator; the filed issue carries an
+AI-provenance note per the tray's policy.

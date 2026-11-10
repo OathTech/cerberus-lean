@@ -1,5 +1,9 @@
 # Floating→`_Bool` conversion truncates before the compare-to-zero test (`_Bool b = 0.5` yields 0; non-finite crashes the tool)
 
+**Status, 2026-11-10: CLOSED — fixed upstream (`3230aa494`), which the merge-base `c3ff8c53f` contains; both
+reproducers answer `Specified(42)` on un-forked upstream today (the re-run section at the end of this file). The
+non-finite residual is report [77](77-floating-to-integer-non-finite-z-overflow.md).**
+
 **Status, 2026-10-21: fixed upstream, backported.** Upstream
 `3230aa494c4c18e1b2fea9fd9f0d53dd20f0a324` fixes `conv_arith` and
 `loaded_ivfromfloat` in both std variants. The inner_arg_temps I0b backport

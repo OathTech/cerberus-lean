@@ -1,5 +1,9 @@
 # `decode_character_constant` crashes on a multi-character constant and on any non-ASCII byte in a string literal
 
+**Loci at `c3ff8c53f` (2026-11-10):** `ocaml_frontend/decode.ml:199` (the catch-all `failwith`; the backtrace names
+`:218`, the end of the function), `:197` (the octal validator's `failwith`, where universal character names land),
+`:42` and `:224` (the two ASCII `TODO`s), read from the un-forked tree.
+
 **Affected:** `ocaml_frontend/decode.ml:218` (`decode_character_constant`: `failwith ("decode_character_constant:
 invalid char constant ==> " ^ …)` for every constant that is not a single ASCII character or a recognised escape),
 `decode.ml:42` (`TODO: making the implementation choice of using ASCII for now`) and `:224` (`TODO: fixing the
@@ -27,6 +31,7 @@ int main(void){ return (unsigned char)"é"[0]; }     /* gcc 195: the first UTF-8
 ```text
 cerberus: internal error, uncaught exception:
           Failure("decode_character_constant: invalid char constant ==> \169")
+[… further lines cut; the count was not recorded at that date]
 ```
 (both exit 125.) `sizeof("é")` is 3 on both engines (the lexer keeps the bytes); only the value decoding fails.
 `'\377'`, `'\xff'`, `u8"ab"` and plain ASCII are fine. Witnesses:
@@ -44,8 +49,9 @@ already carries it), or the ASCII restriction should be a diagnostic.
 Found by the fork's upstream-uncertainty survey (2026-10-20, `lean_frontend/docs/2026-10-20_upstream-uncertainty-survey-record.md`,
 cluster Q) from decode.ml's `ASCII for now` markers. Classification: TRUE BUG (crash on valid C) for the string
 literal; UNCLEAR / implementation-defined for the multi-character constant (a diagnostic would be conforming).
-Fork plan ([USER 2026-10-20]): both crashes become declared refusals (a refinement: an unspecified stop turned into
-a specified one), queued behind the cerberus-caesium deliveries. The report above describes upstream as it stands.
+Fork status: the fork's engines crash as upstream does; an earlier plan to turn both crashes into declared refusals
+([USER 2026-10-20]) is not being carried out — since the roadmap of 2026-11-10 they are reported, not refused in code.
+The report above describes upstream as it stands.
 
 ## Re-run at `c3ff8c53f` (2026-11-10): still reproduces; universal character names and `u8` literals
 
@@ -59,6 +65,7 @@ cerberus: internal error, uncaught exception:
           Failure("decode_character_constant: invalid char constant ==> \169")
           Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
           Called from Cerb_frontend__Decode.decode_character_constant in file "ocaml_frontend/decode.ml", line 218, characters 8-43
+[… 18 more lines cut]
 ```
 
 Loci at `c3ff8c53f`: `ocaml_frontend/decode.ml:199` (the catch-all `failwith`), `:197` (the octal validator's),
@@ -73,6 +80,7 @@ int main(void) { return (unsigned char)'\u00e9'; }
 ```
 cerberus: internal error, uncaught exception:
           Failure("decode_character_constant, started like an octal constant, but failed: u00e9")
+[… 27 more lines cut]
 ```
 ```c
 int main(void) { const char *s = "\U0001F600x"; return (unsigned char)s[0]; }
@@ -80,6 +88,7 @@ int main(void) { const char *s = "\U0001F600x"; return (unsigned char)s[0]; }
 ```
 cerberus: internal error, uncaught exception:
           Failure("decode_character_constant, started like an octal constant, but failed: U0001F600")
+[… 32 more lines cut]
 ```
 
   (both exit 125; gcc exits 169 and 240.)
@@ -91,11 +100,12 @@ int main(void){ return (unsigned char)u8"é"[0]; }
 ```
 cerberus: internal error, uncaught exception:
           Failure("decode_character_constant: invalid char constant ==> \169")
+[… 20 more lines cut]
 ```
 
   (exit 125; gcc exits 195.)
 
 The same decoder is reached from the driver for program arguments: report
 [74](74-program-argument-bytes-stored-through-character-decoder.md). Fork status: unchanged in both engines for every
-program in this section (the Lean port stops with a mirrored, attributed message, exit 134). Reported, not refused in
-code.
+program in this section (the Lean port stops with a mirrored, attributed message, exit 134). The fork has not changed
+this behaviour.

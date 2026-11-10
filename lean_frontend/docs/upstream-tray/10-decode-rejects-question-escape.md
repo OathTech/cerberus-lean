@@ -193,5 +193,6 @@ Defined {value: "Specified(83)", stdout: "", stderr: "", blocked: "false"}
 ```
 
   (gcc exits 51.) C17 6.4.4.4#1: an octal escape sequence has at most three octal digits, so the constant is the
-  two-character constant `'\012' '3'`, whose value is implementation-defined (#10; gcc's is the last character, 51);
+  two-character constant `'\012' '3'`, whose value is implementation-defined (#10; gcc's value is 2611 = 0x0A33, printed by
+  `printf("%d\n", '\0123')` on 2026-11-10, and the reproducer's `(unsigned char)` cast leaves its low byte, 51);
   83 is octal 0123. Silent, on a rare spelling; both fork engines print the same line.

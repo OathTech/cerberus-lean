@@ -25,6 +25,7 @@ cerberus: internal error, uncaught exception:
           Failure("internal error: break_at_sseq, Cbound")
           Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
           Called from Cerb_frontend__Core_reduction.break_at_sseq in file "ocaml_frontend/generated/core_reduction.ml", line 872, characters 15-33
+[… 20 more lines cut]
 ```
 
 (exit 125; verbatim, 2026-11-10, un-forked upstream binary + runtime @ `c3ff8c53f`.) The same first line and exit code
@@ -52,8 +53,11 @@ this repository.
 
 ## Impact
 
-Statement expressions with statements inside are the body of most `MIN`/`MAX`/`container_of`-style macros in Linux and
-similar code bases; the failure is a crash late in execution, with a message that names no source construct.
+The common `MIN`/`MAX`-style macros are not affected: their blocks are declarations followed by a final expression, the
+shape that runs (the control `se-04-min-macro` above). What fails is a block that contains an assignment, an increment
+or decrement, or an `if` as a statement of its own — a loop-free "compute into a local, then yield it" body, or a
+statement expression used as a statement. The failure is a crash late in execution, with a message that names no source
+construct.
 
 ## Proposed remedy (prose; no patch is attached)
 
@@ -63,7 +67,7 @@ located "not supported" diagnostic.
 
 ## Fork status (2026-11-10)
 
-Unchanged in both engines (the Lean port stops with the same text, exit 134). Reported, not refused in code.
+Unchanged in both engines (the Lean port stops with the same text, exit 134). The fork has not changed this behaviour.
 
 ## Classification
 
@@ -72,6 +76,7 @@ which of the two belongs is upstream's call.
 
 ## Provenance
 
-Found by the fork's upstream-uncertainty survey (2026-10-20, cluster P; failure-register row 183). Re-run on pristine
-upstream at `c3ff8c53f`, both fork engines and gcc on 2026-11-10. This draft by Claude (Fable 5.2) under operator
-direction; the filed issue carries an AI-provenance note per the tray's policy.
+Found on 2026-10-20 by a survey of the places where the model's own comments mark a construct as unfinished, using
+the twelve programs named above. Re-run on un-forked upstream at `c3ff8c53f`, on this fork's two engines and on gcc on 2026-11-10. Analysis and this
+draft by Claude (Fable 5.2), an AI agent, under the direction of a human operator; the filed issue carries an
+AI-provenance note per the tray's policy.

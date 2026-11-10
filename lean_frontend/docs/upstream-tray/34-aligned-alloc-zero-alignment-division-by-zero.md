@@ -1,5 +1,11 @@
 # `aligned_alloc(0, n)` kills the tool with an uncaught `Division_by_zero` (Core `rem_t` by zero in the `aligned_alloc` proxy has no guard)
 
+**Loci at `c3ff8c53f` (2026-11-10):** `runtime/libcore/std.core:386-398` (`aligned_alloc_proxy`; `:391`
+`if size rem_t align = 0 then`); `memory/concrete/impl_mem.ml:11-12` (`integerRem_t`, `integerRem_f`), `:2305-2308`
+(`op_ival`'s unguarded `IntRem_t`/`IntRem_f`), `:2303-2304` (the guarded `IntDiv`), `:1070-1088` (`allocator`,
+`quomod z align` at `:1076`), read from the un-forked tree. The line numbers in the paragraph below are those of
+`b9aeedcb4`.
+
 **Affected:** `runtime/libcore/std.core:380-393` (`aligned_alloc_proxy`;
 `:385` `if size rem_t align = 0 then …` with no check on `align`);
 `memory/concrete/impl_mem.ml:11-12` (`integerRem_t = (mod)` = `Z.rem`,
@@ -131,6 +137,7 @@ $ cerberus --nolibc --exec --batch aligned_alloc_zero.c
 cerberus: internal error, uncaught exception:
           Division_by_zero
           Raised at Z.rem in file "z.ml", line 96, characters 13-50
+[… 23 more lines cut]
 ```
 
 (exit 125, the same with the shipped libc; gcc/glibc exits 0, a null pointer.) Loci at `c3ff8c53f`:
@@ -152,5 +159,5 @@ Undefined {ub: "DUMMY(align_alloc)", stderr: "", loc: "<2:28--2:48>"}
 (exit 1; gcc/glibc exits 2, an allocation.) The verdict's name is a placeholder (`DUMMY(align_alloc)`). The C11 text
 in the copy shipped with Cerberus (`tools/n1570.html`, 7.22.3.1#2) requires `size` to be an integral multiple of
 `alignment`, so an undefined-behaviour verdict is defensible under C11; what the report asks for is a named verdict.
-Fork status: both findings unchanged in both engines (report 57's refusal, contract D10, covers a non-power-of-two
-alignment only). Reported, not fixed.
+Fork status: both findings unchanged in both engines (the fork's declared refusal for report 57 covers an invalid, non-power-of-two
+alignment only). The fork has not changed either behaviour.

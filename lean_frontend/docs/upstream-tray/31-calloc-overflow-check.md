@@ -1,4 +1,19 @@
-# libc `calloc` has no `nmemb * size` overflow check (returns a block for a request whose byte count overflows `size_t`)
+# libc `calloc` multiplies `nmemb * size` without an overflow check (a wrapped request returns a block) — WITHDRAWN as a C17 defect report, kept as a hardening note
+
+**Status, 2026-11-10: WITHDRAWN as a C17 defect report, pending a check against a primary copy of the standard.**
+[AGENT 2026-11-10] An earlier version of this file quoted, as C17 7.22.3.2#2, a sentence requiring `calloc` to return a
+null pointer when `nmemb * size` overflows. That sentence is NOT in the C11 text shipped with Cerberus
+(`tools/n1570.html`, 7.22.3.2), whose whole normative text is: "The calloc function allocates space for an array of
+nmemb objects, each of whose size is size. The space is initialized to all bits zero." (#2) and "The calloc function
+returns either a null pointer or a pointer to the allocated space." (#3). No copy of C17 was available to verify it
+there; by recollection, and by the secondary sources the pre-merge review of 2026-11-10 consulted, the explicit
+wraparound wording arrived with C23, and the "DR 460" attribution was wrong. Neither was checked against the documents
+themselves. Until someone checks a primary source, this file makes no claim that C17 requires the null return.
+
+What remains, and is measured: the multiplication wraps silently, so a caller that asks for `nmemb` objects of `size`
+bytes can receive a non-null pointer to fewer bytes (the two runs at the end of this file, on un-forked upstream at
+`c3ff8c53f`; glibc returns NULL for both). That is offered as a hardening note for the shipped library, not as a
+conformance defect.
 
 **Status (2026-09-05, before filing):** the upstream evidence below was
 re-verified on this date; one column of our own three-engine record
@@ -26,11 +41,11 @@ void *calloc(size_t nmemb, size_t size)
 ```
 
 (stdlib.c:125-134, verbatim.) The product `nmemb * size` is computed in
-`size_t` and passed to `malloc` with no overflow check. C17 §7.22.3.2#2
-(the C11 text as clarified by DR 460): "The `calloc` function allocates
-space for an array of `nmemb` objects, each of whose size is `size`. …
-If the product of `nmemb` and `size` would overflow `size_t`, the
-`calloc` function returns a null pointer" — hosted implementations
+`size_t` and passed to `malloc` with no overflow check. C11 7.22.3.2#2
+(`tools/n1570.html`): "The calloc function allocates space for an array of
+nmemb objects, each of whose size is size." (A sentence about overflow that
+stood here as a quotation was removed on 2026-11-10: see the status at the
+top.) Hosted implementations
 (glibc, musl) check `nmemb && size > SIZE_MAX / nmemb`. musl's `calloc`,
 from which this file derives, has the check; the Cerberus copy dropped
 it. (Secondary: the zeroing loop's counter is an `int`, so a block of
@@ -81,7 +96,7 @@ check, not as evidence.
 ## Observed vs expected
 
 - Observed: non-null result for an overflowing request.
-- Expected: `NULL` (C17 §7.22.3.2#2).
+- Suggested: `NULL`, as glibc and musl return (not claimed as a C17 requirement; see the status at the top).
 
 ## Impact
 
@@ -96,7 +111,7 @@ a wrapped-around amount.
 ```c
 void *calloc(size_t nmemb, size_t size)
 {
-  if (size && nmemb > (size_t)-1 / size) return 0;   /* C17 §7.22.3.2 */
+  if (size && nmemb > (size_t)-1 / size) return 0;   /* the product would wrap */
   size_t total = nmemb * size;
   unsigned char *ret = malloc(total);
   if (!ret) return ret;
@@ -109,8 +124,8 @@ void *calloc(size_t nmemb, size_t size)
 
 ## Classification
 
-**TRUE BUG (libc, minor).** The C17 wording is explicit; the musl
-ancestor has the check; the omission has no comment.
+**HARDENING NOTE (libc)** since 2026-11-10; it was drafted as TRUE BUG (libc, minor) on the strength of the
+quotation that has been removed. The musl ancestor has the check; the omission has no comment.
 
 ## Provenance
 
@@ -146,12 +161,6 @@ Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
 
 (gcc/glibc exits 1.) The product wraps to 0 and `malloc(0)` returns a non-null pointer.
 
-**Correction to the Description.** The sentence quoted above as C17 7.22.3.2#2 ("If the product of `nmemb` and
-`size` would overflow `size_t`, the `calloc` function returns a null pointer") is NOT in the C11 text shipped with
-Cerberus (`tools/n1570.html`), which reads, in full: "The calloc function allocates space for an array of nmemb
-objects, each of whose size is size. The space is initialized to all bits zero." (#2) and "The calloc function returns
-either a null pointer or a pointer to the allocated space." (#3). No copy of C17 was available to this pass to check
-the quotation against, so it must not be filed as a quotation until it is checked. The report's claim does not need it:
-#2 and #3 together leave no room for a non-null pointer to less space than `nmemb` objects of `size` bytes.
+The correction to the Description that stood here was moved to the status at the top of this file on 2026-11-10.
 
-Fork status: unchanged in both engines (identical lines). Reported, not fixed.
+Fork status: unchanged in both engines (identical lines). The fork has not changed this behaviour.

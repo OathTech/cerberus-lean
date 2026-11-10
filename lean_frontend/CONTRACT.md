@@ -378,6 +378,9 @@ witnesses and are not "thinly tested": they do not answer.
   rows in the pristine register; the N4 witness moved from 016 to `042-strlen-unterminated-loc.c`. Witness:
   `scripts/check_macro_type_ranks.sh` (row 1). Not an override of a judgement: the code's own comment called the
   catch-all wrong, and the delta leaves when upstream absorbs the fix (the fork-drift manifest's `ailTypesAux` rows).
+  **Known defect of D14 ([AGENT 2026-11-10]):** `WCHAR_MAX > 0` (`<stdint.h>`) answers 0 on both engines where pristine
+  upstream and gcc answer 1 — `wchar_t` now promotes to `int` while its maximum is still the unsigned one; a silent wrong
+  answer, fix slice queued (`TODO.md`, the entry at the top; tray 62 and the warning in tray 20).
 - **D15 — program termination runs the `atexit` handlers and flushes the open streams; a libc-mode `printf` is the
   library's own** ([USER 2026-11-04] agreed the fix pass in the audited order under the standing bar — a very clear
   standard, no invented semantics; rulings [AGENT 2026-11-06, orchestrator] on the worker's design and on the two

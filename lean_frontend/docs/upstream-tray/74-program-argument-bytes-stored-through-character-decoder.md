@@ -34,6 +34,7 @@ cerberus: internal error, uncaught exception:
           Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
           Called from Cerb_frontend__Decode.decode_character_constant in file "ocaml_frontend/decode.ml", line 218, characters 8-43
           Called from Cerb_frontend__Driver.prepare_main_args.(fun) in file "ocaml_frontend/generated/driver.ml", line 2063, characters 38-94
+[… 17 more lines cut]
 ```
 
 (exit 125; verbatim, 2026-11-10, un-forked upstream binary + runtime @ `c3ff8c53f`.)
@@ -49,6 +50,7 @@ cerberus: internal error, uncaught exception:
           Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
           Called from Cerb_frontend__Decode.decode_character_constant in file "ocaml_frontend/decode.ml", line 218, characters 8-43
           Called from Cerb_frontend__Driver.prepare_main_args.(fun) in file "ocaml_frontend/generated/driver.ml", line 2063, characters 38-94
+[… 17 more lines cut]
 ```
 
 (exit 125; the argument is the two UTF-8 bytes 0xC3 0xA9.) gcc 13.3.0 (`gcc -std=c11 -w -O0 f.c && ./a.out ARG; echo
@@ -83,7 +85,7 @@ decoder.
 
 ## Fork status (2026-11-10)
 
-Unchanged in both engines (the same `Failure` texts from the fork's oracle today). Reported, not refused in code.
+Unchanged in both engines (the same `Failure` texts from the fork's oracle today). The fork has not changed this behaviour.
 
 ## Classification
 
@@ -91,7 +93,7 @@ Unchanged in both engines (the same `Failure` texts from the fork's oracle today
 
 ## Provenance
 
-Found on 2026-11-07 by the pre-merge review of the fork's half-mirrors slice (the neighbour of reports 10, 11 and 63:
-the same decoder, reached from the driver). Re-run on pristine upstream at `c3ff8c53f`, the fork's oracle and gcc on
-2026-11-10. This draft by Claude (Fable 5.2) under operator direction; the filed issue carries an AI-provenance note
-per the tray's policy.
+Found on 2026-11-07 while reviewing a fix to the same decoder (reports 10 and 11): the driver is a third caller of
+it. Re-run on un-forked upstream at `c3ff8c53f`, on this fork's two engines and on gcc on 2026-11-10. Analysis and this
+draft by Claude (Fable 5.2), an AI agent, under the direction of a human operator; the filed issue carries an
+AI-provenance note per the tray's policy.

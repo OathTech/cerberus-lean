@@ -32,6 +32,7 @@ unsupported: gnu_cond_expr.c:1:38:: TODO: elaboration of ?: operator
 internal error: gnu_cond_expr.c:1:38:: TODO: elaboration of ?: operator
 cerberus: internal error, uncaught exception:
           Failure("internal error: gnu_cond_expr.c:1:38:: TODO: elaboration of ?: operator")
+[… 10 more lines cut]
 ```
 
 ```c
@@ -44,6 +45,7 @@ unsupported: gnu_cond_enum.c:1:14:: TODO: elaboration of ?: operator
 internal error: PEcase, mismatched ==> [gnu_cond_enum.c:1:12-18 (cursor: 1:14)]Unit
 cerberus: internal error, uncaught exception:
           Failure("internal error: PEcase, mismatched ==> [gnu_cond_enum.c:1:12-18 (cursor: 1:14)]Unit")
+[… 40 more lines cut]
 ```
 
 (both exit 125; verbatim, 2026-11-10, un-forked upstream binary + runtime @ `c3ff8c53f`.) The other three
@@ -55,6 +57,7 @@ int main(void) { int x = 3; switch (x) { case (3 ?: 4): return 1; } return 0; }
 ```
 unsupported: gnu_cond_case.c:1:47:: TODO: elaboration of ?: operator
 internal error: PEcase, mismatched ==> [gnu_cond_case.c:1:47-55]Unit
+[… 59 more lines cut]
 ```
 ```c
 int b[(3 ?: 4)]; int main(void) { return sizeof b / sizeof b[0]; }
@@ -62,6 +65,7 @@ int b[(3 ?: 4)]; int main(void) { return sizeof b / sizeof b[0]; }
 ```
 unsupported: gnu_cond_bound.c:1:7:: TODO: elaboration of ?: operator
 internal error: PEcase, mismatched ==> [gnu_cond_bound.c:1:7-15]Unit
+[… 42 more lines cut]
 ```
 ```c
 _Static_assert((3 ?: 4) == 3, ""); int main(void) { return 0; }
@@ -69,6 +73,7 @@ _Static_assert((3 ?: 4) == 3, ""); int main(void) { return 0; }
 ```
 unsupported: gnu_cond_sassert.c:1:16:: TODO: elaboration of ?: operator
 internal error: TODO error: the driver found less/more than one active execution
+[… 21 more lines cut]
 ```
 
 gcc 13.3.0 (`gcc -std=c11 -w -O0 f.c && ./a.out; echo $?`, 2026-11-10) exits 3, 3, 1, 3 and 0 for the five programs in
@@ -94,8 +99,8 @@ ordinary conditional.
 
 ## Fork status (2026-11-10)
 
-Unchanged in both engines (the Lean port: the same final messages, exit 134). The case-label form is pinned as the one
-`gap` row of this repository's `tests/address_constants` corpus (`ice_case_cond_gnu`). Reported, not refused in code.
+Unchanged in both engines (the Lean port: the same final messages, exit 134). The case-label form is the program
+`tests/address_constants/ice_case_cond_gnu.c` of this repository (see [CORPORA.md](CORPORA.md)). The fork has not changed this behaviour.
 Report 61 carries the earlier note on this arm.
 
 ## Classification
@@ -105,7 +110,7 @@ acknowledged TODO.
 
 ## Provenance
 
-Found on 2026-10-29 by the fork's compound-assignment slice (report 61's related note) and again by the
-address-constants slice of 2026-11-07. Re-run on pristine upstream at `c3ff8c53f`, both fork engines and gcc on
-2026-11-10. This draft by Claude (Fable 5.2) under operator direction; the filed issue carries an AI-provenance note
-per the tray's policy.
+Found on 2026-10-29 while working on compound assignment (report 61 carried a note on this arm) and again on
+2026-11-07 while testing constant expressions (report 09). Re-run on un-forked upstream at `c3ff8c53f`, on this fork's two engines and on gcc on 2026-11-10. Analysis and this
+draft by Claude (Fable 5.2), an AI agent, under the direction of a human operator; the filed issue carries an
+AI-provenance note per the tray's policy.

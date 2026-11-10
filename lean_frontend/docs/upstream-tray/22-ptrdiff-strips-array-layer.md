@@ -1,5 +1,9 @@
 # Pointer subtraction over pointers to arrays divides by the INNER element size: `&a[2] - &a[0]` on `int a[3][4]` is 8, not 2
 
+**Loci at `c3ff8c53f` (2026-11-10):** `memory/concrete/impl_mem.ml:1785-1790` inside `diff_ptrval` (`:1777`), and
+`frontend/model/translation.lem:2183` (`diff_ty_pe`), read from the un-forked tree. The line numbers in the paragraph
+below are those of `b9aeedcb4`; the code is unchanged.
+
 **Affected:** `memory/concrete/impl_mem.ml:1961-1967` (`Concrete.diff_ptrval`,
 `valid_postcond`: strips one `Array` layer off `diff_ty` before dividing
 the address difference by `sizeof`); `frontend/model/translation.lem:2183-2189`
@@ -132,4 +136,4 @@ $ gcc -std=c11 -w -O0 ptrdiff_array_layer.c && ./a.out
 
 (the six-column program of this report, run with `--nolibc`.) At `c3ff8c53f` the code quoted above is
 `memory/concrete/impl_mem.ml:1785-1790` inside `diff_ptrval` (`:1777`), text unchanged; `:1961-1967` was its
-position at `b9aeedcb4`. Fork status: unchanged in both engines (identical line). Reported, not fixed.
+position at `b9aeedcb4`. Fork status: unchanged in both engines (identical line). The fork has not changed this behaviour.

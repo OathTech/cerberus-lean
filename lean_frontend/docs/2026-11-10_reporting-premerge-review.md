@@ -252,3 +252,92 @@ statement about upstream's plans or intentions; the nearest are 76's "INTENDED G
 from the stub's own text) and 72's remark that the idiom is harmless in musl. Report 18 says plainly that it was
 not re-run and must be checked against `9f23c62b3` before filing. The diff touches only `lean_frontend/docs/` and
 `lean_frontend/TODO.md`. The TODO header deletes and renumbers nothing.
+
+## Dispositions
+
+Worker [AGENT 2026-11-10] (Claude Fable 5.2), in one documents-only commit on `docs/reporting` on top of the review
+(`aeaad5e2d`). The orchestrator's rulings on F1-F14 ([AGENT 2026-11-10]) are followed where they are named below. Every
+new statement about pristine upstream or gcc is a run of 2026-11-10 by the worker (the cut-trace programs, the three
+engines on the `WCHAR_MAX` program, report 33's own reproducer and its branching companion, the two `sscanf` formats,
+gcc's value of `'\0123'`); the scratch directory is deleted.
+
+- **F1 — fixed.** Report 20 opens with a WARNING: the patch gives `wchar_t` the rank of `int` while the model's
+  `wchar_t` maximum stays unsigned; the reproducer and the four lines (un-forked upstream 1, the patched OCaml driver 0,
+  the patched Lean port 0, gcc exit status 1); the patch is not to be applied as it is until the fork's correction
+  lands; cross-reference to 62. INDEX row 20's state carries the same qualification. Check:
+  `sed -n 3,25p docs/upstream-tray/20-*.md`; `grep '^| \[20-' docs/upstream-tray/INDEX.md`.
+- **F2 — fixed** (the files allowed for this were extended by the orchestrator to `CONTRACT.md` and the record, for
+  one sentence each). `TODO.md` has the entry "KNOWN SILENT WRONG ANSWER on the mainline since D14" directly under the
+  direction paragraph; `CONTRACT.md` D14 and `docs/2026-11-04_macro-type-ranks-record.md`'s status paragraph each carry
+  one sentence pointing at it. Report 62 now says the cause was established by reading (`9b15a1f69` introduced the
+  normalisation; `impl_mem.ml:2243`; 4294967295 as `int` is -1) and not by running a pre-change build. The fix itself
+  is not in this slice: it is a semantic change, queued by the orchestrator after the lem re-pin.
+- **F3 — fixed.** `docs/upstream-tray/README.md` is rewritten for the present state: the base `c3ff8c53f` and the
+  two pins; what the fork does with the reports (fixes, refusals, unchanged, with the counts derived from INDEX.md); a
+  triage table of all 76 Cerberus reports with CLASS and STATE, 01/04/15 closed; the CLASS/STATE columns beside the
+  reports' own classification; CORPORA.md; the submission state as INDEX.md records it; what "verbatim" covers (F11).
+  The triage table's summaries for 36-77 are the reports' own titles.
+- **F4 — fixed, per the ruling.** Report 31's correction is at the top; the overflow sentence is no longer presented as
+  standard text anywhere in the file (the Description, "Observed vs expected", the remedy's comment and the
+  Classification were edited in place); the file says the requirement could not be verified in C11 or C17, that it
+  appears to be C23's by recollection and the review's secondary sources (neither checked against the documents), and
+  that as a C17 defect report it is WITHDRAWN pending a primary-source check, kept as a hardening note (the
+  multiplication wraps silently; both runs stand). INDEX row 31: class `robustness` per the ruling (the header's
+  definition names it as the one clause-free note), recorded state "WITHDRAWN …"; the counts follow.
+- **F5 — fixed.** 21: the title is narrowed to integer addition, with a dated note that only `+` and `&` were measured
+  and that its loci were not re-read at `c3ff8c53f`. 15: a 2026-11-10 CLOSED status line at the top. 22, 34, 62, 63: a
+  "Loci at `c3ff8c53f`" paragraph at the top, read from the un-forked tree (for 34 the remaining lines were looked up
+  for this: `std.core:386-398`, `impl_mem.ml:11-12`, `:2303-2308`, `:1070-1088`, `:1076`; for 22
+  `translation.lem:2183`). The older "Affected" paragraphs are kept below them, labelled as the earlier commit's
+  numbers, not deleted. 31: F4.
+- **F6 — raised to the orchestrator, not settled.** INDEX row 33 reads "unchanged † — closure under review: the
+  [USER 2026-10-29] ruling predates this slice's re-run of 2026-11-10, which shows the additive-operator verdict
+  unchanged at `c3ff8c53f`"; INDEX's opening paragraph flags the same; 33 is no longer counted among the reports fixed
+  or answered in the base (that group is 01, 04, 15). The facts: on un-forked upstream at `c3ff8c53f`, 2026-11-10,
+  `--nolibc --exec --batch`, (a) the report's own reproducer `int main(void) { int x; return (x & 0) + 3; }` prints
+  `Undefined {ub: "UB036_exceptional_condition", stderr: "", loc: "<1:32--1:43>"}` (exit 1) — the verdict the report
+  quoted from `b9aeedcb4` on 2026-09-05, at a different location only because the file has no header comment;
+  (b) the variant first re-run, `int y = (x & 0) + 3; return y;`, prints the same code at `<1:33--1:44>`; (c) the
+  companion that branches on the indeterminate value, `int main(void) { int x; return x ? 1 : 2; }`
+  (`tests/noodle-probes/misc/misc_unspec_in_condition.c`), prints
+  `Undefined {ub: "UB_CERB004_unspecified__conditional", stderr: "", loc: "<5:32--5:41>"}`. `cee382443` is an ancestor
+  of `c3ff8c53f` and its subject is "(elaboration) giving a consistent treatment of branching on an unspecified value".
+  So the base contains the commit, the branching case has the verdict that commit's subject describes, and the
+  additive-operator verdict report 33 asks about is the same as before it. Whether that leaves the question open is
+  the operator's to rule. The minor point is fixed: report 33's section heading and text now say which program is the
+  variant and quote the report's own reproducer's line.
+- **F7 — fixed.** Report 73's Impact names the shapes that fail (an assignment, an increment or decrement, or an `if`
+  as a statement inside the block) and says the `MIN`/`MAX`-style macros run.
+- **F8 — fixed.** 47 is `robustness`; the header's definition says so; the counts were re-derived by script after all
+  moves (below).
+- **F9 — fixed.** Report 72 names `fshlim` (`vfscanf.c:79`, `internal.h:43`); the title and Impact say "any non-empty
+  format", with two runs of 2026-11-10 on un-forked upstream: `sscanf("x", "")` is `Specified(0)`, `sscanf("x", "x")`
+  is the UB048 line. INDEX row 72 follows.
+- **F10 — fixed.** Report 10: gcc's value of `'\0123'` is 2611 (0x0A33; printed by gcc 13.3.0 on 2026-11-10); 51 is
+  the low byte the reproducer's cast leaves.
+- **F11 — fixed.** Every output block added by this slice that stops before the end of the output now ends with
+  `[… N more lines cut]`, N counted from a re-run of the same program on un-forked upstream on 2026-11-10 (28 blocks in
+  08, 12, 23, 34, 47, 62, 63, 73, 74, 75, 76, 77). Two older blocks (12's of 2026-08-22, 63's of 2026-10-20) that the
+  same script matched are marked `[… further lines cut; the count was not recorded at that date]`. The omitted
+  `Time spent` line (standard error) is stated once, in the README's section 3.
+- **F12 — fixed.** CORPORA.md: 55 files (41 + 14; `find <dir> -type f | wc -l`, recounted — the 58 was `ls` output
+  lines); `address_constants/pristine.txt`'s third column is described as this fork's Lean engine before the change,
+  not upstream's. The third bullet needed no change.
+- **F13 — fixed.** The Provenance sections of 72-77 are rewritten in plain terms (how and when the finding was made,
+  who wrote it); "Reported, not refused in code" / "Reported, not fixed" are replaced by "The fork has not changed this
+  behaviour" in every section this slice added; 34's "contract D10" and 75's "`gap` row" are reworded. The README's
+  caveats say that older reports and INDEX.md's notes still use internal terms.
+- **F14 — fixed.** INDEX rows 62 and 63 and both reports' Origin paragraphs say the earlier refusal plan is not being
+  carried out (the roadmap of 2026-11-10); the 2026-10-20 paragraph on 04 and 15 is marked superseded; the
+  "Submission status" heading text says what was reconciled when and that no submission state was re-examined on
+  2026-11-10.
+- **F15** — a note; nothing to do.
+
+Counts after the moves (derived from INDEX.md's table by script, 2026-11-10): 81 rows = 76 Cerberus reports + 5 for
+other projects. Class, all rows: semantics 43, robustness 22, code 16; Cerberus reports: semantics 41, robustness 20,
+code 15. State, Cerberus reports: unchanged 44 (3 fixed in the base: 01, 04, 15), fixed 21, fixed in part and refused in
+part 1, refused 10. Class by state: semantics 23 / 12 / 6; robustness 12 / 5 / 1 / 2; code 9 / 4 / 2.
+
+Not done, and said so: the `WCHAR_MAX` defect is recorded and warned about, not fixed; no C17 primary source was
+consulted (none is on the machine); 21's loci were not re-read at `c3ff8c53f`; INDEX.md's long "Ranking" section was
+not revised (its item 1 still describes report 01 as open; the table and the README are the current statement).

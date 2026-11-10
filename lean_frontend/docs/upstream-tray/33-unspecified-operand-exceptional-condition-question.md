@@ -105,7 +105,7 @@ on the same date. Analysis and this draft by Claude (Fable 5.1) under
 operator direction; the filed issue carries an AI-provenance note per the
 tray's policy.
 
-## Re-run at `c3ff8c53f` (2026-11-10): the reproducer's verdict is unchanged
+## Re-run at `c3ff8c53f` (2026-11-10): the verdict is unchanged, for the reproducer and for a variant of it
 
 (Un-forked upstream binary + runtime @ `c3ff8c53f`, both fork engines and gcc 13.3.0 `-std=c11 -w -O0`, all run on 2026-11-10; outputs verbatim. [AGENT 2026-11-10], the reporting slice.)
 
@@ -114,8 +114,13 @@ $ cerberus --nolibc --exec --batch unspec_add.c
 Undefined {ub: "UB036_exceptional_condition", stderr: "", loc: "<1:33--1:44>"}
 ```
 
-(exit 1; the program is `int main(void) { int x; int y = (x & 0) + 3; return y; }`; gcc exits 3.) The base contains
+(exit 1; this program is a variant, `int main(void) { int x; int y = (x & 0) + 3; return y; }`; gcc exits 3. The
+report's own reproducer above, `int main(void) { int x; return (x & 0) + 3; }`, run the same day on un-forked
+upstream: `Undefined {ub: "UB036_exceptional_condition", stderr: "", loc: "<1:32--1:43>"}`, exit 1. The companion
+probe that branches on the indeterminate value, `int main(void) { int x; return x ? 1 : 2; }`:
+`Undefined {ub: "UB_CERB004_unspecified__conditional", stderr: "", loc: "<5:32--5:41>"}`.) The base contains
 upstream `cee382443` (2026-09-27, "(elaboration) giving a consistent treatment of branching on an unspecified
-value"); the tray's INDEX records the report as answered by it. That commit concerns branching; the additive operator's
-verdict asked about here is the same today as when the question was written. Both fork engines print the identical
+value"); the tray's INDEX recorded the report as answered by it. That commit concerns branching; the additive operator's
+verdict asked about here is the same today as when the question was written, so the closure is under review (INDEX
+row 33) and the report is not counted as answered. Both fork engines print the identical
 line.

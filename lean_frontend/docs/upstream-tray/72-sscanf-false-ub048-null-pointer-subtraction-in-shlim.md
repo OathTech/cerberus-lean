@@ -1,9 +1,9 @@
-# Every `sscanf` call is reported as `UB048_disjoint_array_pointers_subtraction`: the shipped library's `__shlim` subtracts the string FILE's null read pointer from its buffer
+# `sscanf` with any non-empty format is reported as `UB048_disjoint_array_pointers_subtraction`: the shipped library's `__shlim` subtracts the string FILE's null read pointer from its buffer
 
 **Affected:** `runtime/libc/src/stdio.c` @ `c3ff8c53f`: `:726-734` (`vsscanf` builds a `FILE` on the stack with
 `.read`, `.buf = (void *)s` and `.cookie = (void *)s`; every other member, `rpos` included, is zero-initialised) and
-`:113-122` (`__shlim`, `:116` `f->shcnt = f->buf - f->rpos;`, reached from `vfscanf` through `shlim(f, 0)` before the
-first read). The shipped C library, so the OCaml backend and our Lean port agree.
+`:113-122` (`__shlim`, `:116` `f->shcnt = f->buf - f->rpos;`, reached from `vfscanf` through the macro `fshlim(f, 0)`,
+`runtime/libc/src/vfscanf.c:79` and `internal.h:43`, before the first read). The shipped C library, so the OCaml backend and our Lean port agree.
 
 ## Description
 
@@ -54,8 +54,10 @@ $ gcc -std=c11 -w -O0 sscanf_s.c && ./a.out
 
 ## Impact
 
-`sscanf` is unusable: every call, whatever the format, ends the execution with a UB verdict that points into the
-library. Programs that parse with `sscanf` (configuration readers, test drivers) cannot be run in libc mode.
+`sscanf` is unusable for any format that makes `vfscanf` read: a conversion (`%d`, `%7s` above) or a literal
+character (`sscanf("x", "x")`: the same UB048 line on un-forked upstream, 2026-11-10) ends the execution with a UB
+verdict that points into the library. Only the empty format returns (`sscanf("x", "")`:
+`Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}`, gcc exit status 0). Programs that parse with `sscanf` (configuration readers, test drivers) cannot be run in libc mode.
 
 ## Proposed remedy (prose; no patch is attached)
 
@@ -66,7 +68,7 @@ when `f->rpos` is null.
 ## Fork status (2026-11-10)
 
 Unchanged: the fork's oracle and the Lean port print the same verdict (the Lean port without the library location).
-Reported, not fixed.
+The fork has not changed this behaviour.
 
 ## Classification
 
@@ -74,7 +76,7 @@ Reported, not fixed.
 
 ## Provenance
 
-Found by the fork's true-bug audit of 2026-11-04 (sibling probe `sscanf_d`); the mechanism was located on 2026-11-10 by
-reading `stdio.c` at `c3ff8c53f` from the verdict's location. Re-run on pristine upstream, both fork engines and gcc on
-2026-11-10. Localisation and this draft by Claude (Fable 5.2) under operator direction; the filed issue carries an
+Found on 2026-11-04 while probing the formatted-input functions with small programs compared against gcc; the
+mechanism was located on 2026-11-10 by reading `stdio.c` at `c3ff8c53f` from the verdict's location. Re-run on un-forked upstream at `c3ff8c53f`, on this fork's two engines and on gcc on 2026-11-10. Analysis and this
+draft by Claude (Fable 5.2), an AI agent, under the direction of a human operator; the filed issue carries an
 AI-provenance note per the tray's policy.

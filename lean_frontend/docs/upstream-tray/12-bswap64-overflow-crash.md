@@ -38,6 +38,7 @@ $ cerberus --exec --batch --nolibc b.c
 cerberus: internal error, uncaught exception:
           Z.Overflow
           Raised by primitive operation at Cerb_frontend__Ocaml_gcc_builtins.bswap64 in file "ocaml_frontend/ocaml_gcc_builtins.ml", line 30, characters 10-22
+[… further lines cut; the count was not recorded at that date]
 ```
 
 (verbatim, 2026-08-22, our build — file byte-identical to master.)
@@ -101,9 +102,10 @@ $ cerberus --nolibc --exec --batch bswap64.c
 cerberus: internal error, uncaught exception:
           Z.Overflow
           Raised by primitive operation at Cerb_frontend__Ocaml_gcc_builtins.bswap64 in file "ocaml_frontend/ocaml_gcc_builtins.ml", line 30, characters 10-22
+[… 15 more lines cut]
 ```
 
 (exit 125; gcc exits 8, the low seven bits of the swapped value 0x1122334455667788.) The locus is unchanged at
 `c3ff8c53f`: `ocaml_frontend/ocaml_gcc_builtins.ml:29-30` (`let bswap64 n = let n = Z.to_int64 n in`). Fork
 status: unchanged — the fork's oracle raises the same exception and the Lean port stops with a mirrored, attributed
-message (exit 134). Reported, not fixed.
+message (exit 134). The fork has not changed this behaviour.

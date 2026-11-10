@@ -161,7 +161,8 @@ $ cerberus --nolibc --exec --batch in_wstring_top.c
 in_wstring_top.c:2:16: error: constraint violation: initializing 'wchar_t' with an expression with a non arithmetic type 'wchar_t*'
 wchar_t s[4] = L"abc"; int main(void) { return s[1]; }
                ^~~~~~ 
+[… 25 more lines cut]
 ```
 
 (exit 1; gcc exits 98.) Fork status: unchanged in both engines (the fork's oracle prints the same diagnostic, the Lean
-port `Error {msg: "typechecking failed at in_wstring_top.c:2:16-22"}`). Reported, not fixed.
+port `Error {msg: "typechecking failed at in_wstring_top.c:2:16-22"}`). The fork has not changed this behaviour.

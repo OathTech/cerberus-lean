@@ -54,7 +54,8 @@ awk -F'\t' -v n=$n '$1==n{print $2}' $d/expected.txt | diff - got.txt && echo SA
 `c3ff8c53f` the first program is rejected — an empty `got.txt` — and the other two print `pristine.txt`'s line.)
 
 To compare with upstream's pinned answer instead, read the same field from `pristine.txt` (for `address_constants` its
-second field is the OCaml driver's line and the third the Lean engine's). A program that crashes or is rejected
+second field is un-forked upstream's line; the third is NOT upstream's — upstream has no Lean engine — but this
+fork's Lean engine before the fork's change, kept as that engine's "before"). A program that crashes or is rejected
 produces an empty `got.txt`; its pin then starts with `CRASH`, `REJECT(rc=1):` or `GCC-REJECT:` and the comparison is
 of the diagnostic on standard error, by eye. An `Undefined` line carries a `loc` field that differs between a
 library-mode run of the two engines; compare it with that field removed.
@@ -111,7 +112,8 @@ report 27), `bad_*` (6; malformed formats).
 ### `tests/address_constants`
 
 `expected.txt`: `<name> TAB <class> TAB <OCaml driver's line> TAB <Lean engine's line>`; `gcc.txt`: `<name> TAB
-<line>`; `pristine.txt`: `<name> TAB <OCaml driver's line> TAB <Lean engine's line>`. Classes (derived: gcc 183,
+<line>`; `pristine.txt`: `<name> TAB <un-forked upstream's line> TAB <this fork's Lean engine before the
+change>`. Classes (derived: gcc 183,
 reject 39, fork 21, gap 1): `gcc` — the pin is gcc's line; `reject` — gcc rejects the program and so must Cerberus
 (the pin is the first error line after the file prefix); `fork` — the fork keeps upstream's verdict where gcc accepts
 an extension or the standard leaves a judgement (each is listed with its reason in report 09); `gap` — `ice_case_cond_gnu`,
@@ -145,7 +147,7 @@ Where this fork stops with a declared refusal instead of upstream's answer, the 
 These directories have no `gcc.txt`/`pristine.txt`: each program's header comment, or the script beside it, states
 what gcc and upstream answer. To see upstream's behaviour, run the program as in "Running one program" (all are
 nolibc except `tests/pnvi_refusals`, which need the PNVI switches named in each file's header); the reports quote the
-result. The two `parity-probes/uncertainty` directories (58 files together, derived) also contain control programs that
+result. The two `parity-probes/uncertainty` directories (55 files together: 41 and 14; derived, `find <dir> -type f | wc -l`) also contain control programs that
 are not refused.
 
 Twelve statement-expression programs (`tests/parity-probes/uncertainty/P-statement-expressions/`, report 73) are

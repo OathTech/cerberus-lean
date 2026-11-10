@@ -1,5 +1,10 @@
 # `wchar_t` is given the unsigned range by the memory model but a signed representation by the implementation: a negative `wchar_t` value crashes the tool
 
+**Loci at `c3ff8c53f` (2026-11-10):** `memory/concrete/impl_mem.ml:2213` and `:2243` (the `Wchar_t` arms of the minimum
+and maximum), `ocaml_frontend/ocaml_implementation.ml:167` (`wchar_t_alias`), and the assertion at `impl_mem.ml:932`
+(`bytes_of_int`), read from the un-forked tree. The line numbers in the paragraph below are this fork's at an earlier
+date.
+
 **Affected:** `memory/concrete/impl_mem.ml:2449` and `:2479` (`min_ival`/`max_ival`: `| Wchar_t (* TODO: it is
 implementation defined if unsigned *)` grouped with the unsigned types, so `conv_int` wraps a negative value into
 `[0, 2^32)`), against `ocaml_frontend/ocaml_implementation.ml:167` (`wchar_t_alias= Signed Int_; (*TODO: check
@@ -39,10 +44,10 @@ and no valid program reaches the assertion.
 
 Found by the fork's upstream-uncertainty survey (2026-10-20, `lean_frontend/docs/2026-10-20_upstream-uncertainty-survey-record.md`,
 cluster E) from the `TODO: it is implementation defined if unsigned` marker. Classification: TRUE BUG (a crash on
-valid C; an internal contradiction, not an implementation choice). Fork plan ([USER 2026-10-20]): the crash
-becomes a declared refusal (a refinement: an unspecified stop turned into a specified one), queued behind the
-cerberus-caesium deliveries; the alignment of `min_ival`/`max_ival` with `wchar_t_alias` is this report's proposal
-to upstream. The report above describes upstream as it stands.
+valid C; an internal contradiction, not an implementation choice). Fork status: the fork's engines crash as upstream does; an earlier plan to
+turn the crash into a declared refusal ([USER 2026-10-20]) is not being carried out — since the roadmap of 2026-11-10
+the crash is reported, not refused in code. The alignment of `min_ival`/`max_ival` with `wchar_t_alias` is this report's
+proposal to upstream. The report above describes upstream as it stands.
 
 ## Re-run at `c3ff8c53f` (2026-11-10): still reproduces; loci moved; two silent witnesses and the limit macros
 
@@ -54,6 +59,7 @@ failed: bytes_of_int(signed), i= 4294967295, nbits= 32, [-2147483648 ... 2147483
 cerberus: internal error, uncaught exception:
           File "memory/concrete/impl_mem.ml", line 932, characters 6-12: Assertion failed
           Raised at Cerb_frontend__Impl_mem.Concrete.bytes_of_int in file "memory/concrete/impl_mem.ml", line 932, characters 6-18
+[… 19 more lines cut]
 ```
 
 (exit 125; gcc exits 1.) Loci at `c3ff8c53f`: `memory/concrete/impl_mem.ml:2213` and `:2243` (the
@@ -94,10 +100,13 @@ $ gcc -std=c11 -w -O0 wcmax_print.c && ./a.out
 4294967295 and 0 while the type's alias is `signed int`.) And `(wchar_t)-1 < 0` is 0 on pristine (gcc: 1).
 
 **Fork status (2026-11-10).** The crash is unchanged in both engines (not refused in code). Since the fork's
-integer-rank change (contract D14: `wchar_t` has the rank of `int` and promotes to it) the subtraction witness and
+integer-rank change (report 20's patch: `wchar_t` has the rank of `int` and promotes to it) the subtraction witness and
 `(wchar_t)-1 < 0` answer gcc's 1 in both fork engines. **One program moved the wrong way and is a silent wrong
 answer of the fork that pristine does not give:** `#include <stdint.h>` / `int main(void) { return WCHAR_MAX > 0; }`
 is `Specified(1)` on pristine and `Specified(0)` on both fork engines (gcc: 1) — the fork's line for the program
 above is `4294967295 0 0 0`. The macro's value is still the unsigned maximum while comparisons now treat the type as
-signed. Found by this pass; not fixed here (this slice changes documents only); raised with the operator in the
-slice's report.
+signed. The cause was established by reading, not by running a build from before the change: the rank normalisation of
+`Wchar_t` to `signed int` was introduced by this repository's commit `9b15a1f69` (2026-11-04, report 20's patch) in
+`frontend/model/ail/ailTypesAux.lem`, the maxima at `impl_mem.ml:2243` still group `Wchar_t` with the unsigned types,
+and 4294967295 converted to `int` is -1. Found on 2026-11-10; not fixed in that pass (documents only); a fix is queued
+(`lean_frontend/TODO.md`, the entry at the top), and report 20 carries a warning beside its patch.

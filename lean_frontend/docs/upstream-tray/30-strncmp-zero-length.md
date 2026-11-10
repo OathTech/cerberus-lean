@@ -133,4 +133,4 @@ Undefined {ub: "UB_CERB002b_out_of_bound_store", stderr: "", loc: "<43:10--43:25
 
 (exit 1 — a false undefined-behaviour verdict on a conforming program, located in the library at `string.c:43`; gcc
 exits 120, `d` untouched.) Remedy as for `strncmp`: test `n` before the first store. Fork status: unchanged in both
-engines for both functions. Reported, not fixed.
+engines for both functions. The fork has not changed this behaviour.

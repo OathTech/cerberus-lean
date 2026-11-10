@@ -1,5 +1,28 @@
 # `size_t` and the other macro integer types have no integer conversion rank: usual arithmetic conversions with the `int` family compute at 32 bits (and musl's `strcspn`/`strpbrk` and two-way `strstr` inherit it)
 
+**WARNING (2026-11-10): do not apply the patch below as it is.** It gives `wchar_t` the conversion rank of `int`
+(so a `wchar_t` operand promotes to `int`) while the model's `wchar_t` range stays the unsigned one
+(`memory/concrete/impl_mem.ml:2213`, `:2243` at `c3ff8c53f`; `<stdint.h>`'s `WCHAR_MAX` is 4294967295). One program
+that un-patched Cerberus answers correctly then gets a silently wrong answer:
+
+```c
+#include <stdint.h>
+int main(void) { return WCHAR_MAX > 0; }
+```
+
+```
+un-forked upstream @ c3ff8c53f:   Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+with this patch (OCaml driver):   Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+with this patch (Lean port):      Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+gcc 13.3.0 (-std=c11 -w -O0):     exit status 1
+```
+
+(`--nolibc --exec --batch`, all four run on 2026-11-10.) The patch needs the `wchar_t` minimum and maximum aligned with
+the signed alias first (report [62](62-wchar-t-unsigned-range-signed-representation-crash.md) describes that
+contradiction and carries the other witnesses). This repository carries the patch and therefore the wrong answer
+today; its correction is queued as a fix slice and this warning stays until it lands. `WINT_MAX > 0` and
+`(long long)WCHAR_MAX > 0` are 1 on all three (the pre-merge review's probes).
+
 **Status (cerberus-lean fork):** fixed in the fork on 2026-11-04 as a fork-ahead delta (both engines by generation;
 record `lean_frontend/docs/2026-11-04_macro-type-ranks-record.md`; witness `scripts/check_macro_type_ranks.sh`);
 Draft for upstream, to be filed. The patch below is against `rems-project/cerberus` at `c3ff8c53f`; upstream's tip

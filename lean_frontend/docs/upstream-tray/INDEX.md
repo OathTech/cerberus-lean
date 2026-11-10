@@ -17,7 +17,10 @@ disposition, not an external submission or issue closure. Since stage 1 of
 the merge-base bump (2026-10-30, base `c3ff8c53f`,
 `../2026-10-29_merge-base-bump-stage1-record.md`) both backports are
 upstream's own text, carried by the base; reports 01, 04, 15 and 33 are
-closed in this index as fixed upstream and carried ([USER 2026-10-29] Q10);
+closed in this index as fixed upstream and carried ([USER 2026-10-29] Q10)
+— for 33 that closure is under review since 2026-11-10: its re-run shows the
+verdict it asks about unchanged at `c3ff8c53f` (row 33; the report's last
+section), which is raised with the orchestrator and not settled here;
 report 67 (the b3e11ea33..736690a65 window) is open as filed, its one-line
 backport a registered fork-ahead delta until stage 2.
 
@@ -26,8 +29,9 @@ from them without this repository's test ladder: [CORPORA.md](CORPORA.md).
 
 ## Submission status
 
-Reconciled 2026-09-25 against committed records at Cerberus
-`c13a1054133b49c954fe27ac4c1b4e33a418c51f`; these are recorded submission
+The Recorded-state and Submission-evidence columns were reconciled on 2026-09-25 against committed records at Cerberus
+`c13a1054133b49c954fe27ac4c1b4e33a418c51f` and have been amended row by row since; the CLASS and STATE columns and rows
+72-77 date from 2026-11-10, when no submission state was re-examined. These are recorded submission
 states, not a fresh GitHub issue-status census. **Draft** = prepared with no
 recorded submission; **Sent** = transmitted without an issue URL;
 **Filed** = recorded issue URL; **Closed** = recorded upstream closure.
@@ -62,7 +66,8 @@ report 60's case in both engines (contract D12, a fork-ahead refusal noted in th
 it reports the splice and asks for the feature). Two survey findings already have tray entries whose upstream
 status changed after our merge-base (upstream/master fetched 2026-10-20): report 15 (`_Bool` from a floating
 value) is fixed by upstream `3230aa494` and report 04 (the pure shift of a null pointer) by `f4a3a3d54`; a backport
-of each is proposed and the operator's ruling is pending — their tray files are unchanged here.
+of each was proposed (as written on 2026-10-20; superseded: both fixes are in the base `c3ff8c53f` since 2026-10-30, and
+both tray files were closed with a status line and a re-run on 2026-11-10).
 Reports 72–77 (2026-11-10, Draft, the reporting slice — roadmap `../2026-11-10_roadmap-maintenance-and-reporting.md` item 2): the sibling
 findings of the true-bug audit of 2026-11-04 that had no report, and the crash sites that had none (`sscanf`, statement
 expressions, the `argv` store, the GNU `?:`, the library stubs and header gaps, non-finite floating-to-integer conversion). The
@@ -84,7 +89,8 @@ slice (roadmap `../2026-11-10_roadmap-maintenance-and-reporting.md`, item 2) and
   Defects of the shipped C library (`runtime/libc`) are classed here by their symptom.
 - `robustness` — the tool crashes, raises an internal error or does not terminate where a value, a verdict or a
   diagnostic belongs. A report whose title is the crash is classed here even when the same mechanism also gives a wrong
-  value (62; 26's `*` forms).
+  value (62; 26's `*` forms), and whatever its title says when every reproducer crashes or hangs (47). One hardening
+  note that claims no clause is kept here too (31, withdrawn as a C17 defect report).
 - `code` — an artifact of the present code or build rather than of C: a one-token slip whose intended meaning is not
   in question (01, 39), the Core printer and parser (02, 03, 35, 65), diagnostic text, the command line, a path test, a
   comment, an internal invariant, a proposal.
@@ -100,18 +106,21 @@ merge-base `c3ff8c53f`:
   refusal is not a fix: the report still asks upstream for the feature or the verdict). The PNVI refusals carry their
   `R-PNVI-nn` identifiers.
 - `unchanged` — the fork behaves as pristine upstream does at `c3ff8c53f`. `unchanged (fixed in the base)` means
-  upstream fixed it before `c3ff8c53f` and the fork carries upstream's text.
+  upstream fixed it before `c3ff8c53f` and the fork carries upstream's text. A dash after the state introduces a
+  qualification that must be read with it (20, 33, 62).
 - `n/a` — a report for another project.
 
 A dagger (†) marks a state observed by running the report's reproducer on the fork's engines on 2026-11-10; the others
 are the state the report or this index recorded earlier, not re-run in that pass.
 
-Counts (derived from the table below by script, 2026-11-10; 81 rows = 76 Cerberus reports + 5 for other projects).
-By class, all rows: semantics 45, robustness 20, code 16; Cerberus reports only: semantics 43, robustness 18, code 15.
-By state, Cerberus reports: unchanged 44 (4 of them fixed or answered in the base: 01, 04, 15, 33), fixed 21 (one of
-them, 40, in the Lean engine only), fixed in part and refused in part 1 (26), refused 10 (59 in part); other projects,
-n/a 5. Class by state, Cerberus reports: semantics 24 unchanged / 13 fixed / 6 refused; robustness 11 unchanged /
-4 fixed / 1 fixed and refused / 2 refused; code 9 unchanged / 4 fixed / 2 refused.
+Counts (derived from the table below by script, re-derived 2026-11-10 after the pre-merge review's dispositions; 81 rows
+= 76 Cerberus reports + 5 for other projects). By class, all rows: semantics 43, robustness 22, code 16; Cerberus
+reports only: semantics 41, robustness 20, code 15. By state, Cerberus reports: unchanged 44 (3 of them fixed
+in the base: 01, 04, 15; 33's closure is under review and it is counted as plainly unchanged; 31 is withdrawn as a
+C17 defect report), fixed 21 (one of them, 40, in the Lean engine only; one, 20, with a known defect), fixed in part and
+refused in part 1 (26), refused 10 (59 in part); other projects, n/a 5. Class by state, Cerberus reports:
+semantics 23 unchanged / 12 fixed / 6 refused; robustness 12 unchanged / 5 fixed / 1 fixed and
+refused / 2 refused; code 9 unchanged / 4 fixed / 2 refused.
 
 | Report | CLASS | STATE in the fork | Recorded state | Submission evidence |
 |---|---|---|---|---|
@@ -134,7 +143,7 @@ n/a 5. Class by state, Cerberus reports: semantics 24 unchanged / 13 fixed / 6 r
 | [17-diagnostic-embeds-symbol-id.md](17-diagnostic-embeds-symbol-id.md) | code | unchanged † | Draft | No submission recorded |
 | [18-monadic-list-combinators-non-tail.md](18-monadic-list-combinators-non-tail.md) | robustness | unchanged | Draft | No submission recorded |
 | [19-dynamic-addrs-never-cleaned.md](19-dynamic-addrs-never-cleaned.md) | semantics | unchanged | Draft | No submission recorded |
-| [20-size-t-integer-rank-uac.md](20-size-t-integer-rank-uac.md) | semantics | fixed (D14) † | Draft; fixed in the fork 2026-11-04 (fork-ahead delta, contract D14; the report carries the patch) | No submission recorded; to be filed |
+| [20-size-t-integer-rank-uac.md](20-size-t-integer-rank-uac.md) | semantics | fixed (D14) † — WITH A KNOWN DEFECT: the patch makes `WCHAR_MAX > 0` answer 0 (un-forked upstream and gcc: 1); it is not to be applied as it is until the fork's correction lands (the warning at the top of the report; report 62) | Draft; fixed in the fork 2026-11-04 (fork-ahead delta, contract D14; the report carries the patch) | No submission recorded; to be filed |
 | [21-provenance-lost-through-arithmetic-pvi.md](21-provenance-lost-through-arithmetic-pvi.md) | semantics | unchanged † | Draft | No submission recorded |
 | [22-ptrdiff-strips-array-layer.md](22-ptrdiff-strips-array-layer.md) | semantics | unchanged † | Draft | No submission recorded |
 | [23-string-literal-init-of-char-array-members.md](23-string-literal-init-of-char-array-members.md) | semantics | unchanged † | Draft | No submission recorded |
@@ -145,9 +154,9 @@ n/a 5. Class by state, Cerberus reports: semantics 24 unchanged / 13 fixed / 6 r
 | [28-conditional-in-static-initializer.md](28-conditional-in-static-initializer.md) | semantics | fixed (D17) † | Merged into 09 (2026-11-07); fixed in the fork | filed with 09 |
 | [29-string-literal-address-constant.md](29-string-literal-address-constant.md) | semantics | fixed (D17) † | Merged into 09 (2026-11-07); fixed in the fork | filed with 09 |
 | [30-strncmp-zero-length.md](30-strncmp-zero-length.md) | semantics | unchanged † | Draft | No submission recorded |
-| [31-calloc-overflow-check.md](31-calloc-overflow-check.md) | semantics | unchanged † | Draft | No submission recorded |
+| [31-calloc-overflow-check.md](31-calloc-overflow-check.md) | robustness | unchanged † | Draft; WITHDRAWN 2026-11-10 as a C17 defect report pending a primary-source check (the quoted overflow requirement is not in C11 and could not be verified in C17); kept as a hardening note: the multiplication wraps silently | No submission recorded |
 | [32-float-evaluated-as-double.md](32-float-evaluated-as-double.md) | semantics | unchanged | Draft | No submission recorded |
-| [33-unspecified-operand-exceptional-condition-question.md](33-unspecified-operand-exceptional-condition-question.md) | semantics | unchanged (answered in the base) † | Draft; answered upstream (`cee382443`: branching on an unspecified value is UB by default, `UB_CERB004_unspecified__if/while/do/switch`; the ND reading is the refused switch `branching_on_unspec_is_nd`), carried by the base since stage 1 of the merge-base bump (2026-10-30) | No submission recorded |
+| [33-unspecified-operand-exceptional-condition-question.md](33-unspecified-operand-exceptional-condition-question.md) | semantics | unchanged † — closure under review: the [USER 2026-10-29] ruling predates this slice's re-run of 2026-11-10, which shows the additive-operator verdict unchanged at `c3ff8c53f` (raised with the orchestrator; not counted as answered meanwhile) | Draft; answered upstream (`cee382443`: branching on an unspecified value is UB by default, `UB_CERB004_unspecified__if/while/do/switch`; the ND reading is the refused switch `branching_on_unspec_is_nd`), carried by the base since stage 1 of the merge-base bump (2026-10-30) | No submission recorded |
 | [34-aligned-alloc-zero-alignment-division-by-zero.md](34-aligned-alloc-zero-alignment-division-by-zero.md) | robustness | unchanged † | Draft | No submission recorded |
 | [35-pp-core-grammar-mismatches.md](35-pp-core-grammar-mismatches.md) | code | unchanged | Draft | No submission recorded |
 | [36-mk-conv-int-bypasses-impl-def-signed-conversion.md](36-mk-conv-int-bypasses-impl-def-signed-conversion.md) | semantics | unchanged | Draft | No submission recorded |
@@ -161,7 +170,7 @@ n/a 5. Class by state, Cerberus reports: semantics 24 unchanged / 13 fixed / 6 r
 | [44-concrete-allocator-euclidean-align-down-overlap-at-exhaustion.md](44-concrete-allocator-euclidean-align-down-overlap-at-exhaustion.md) | semantics | fixed (no contract row; the report's fork-status section) † | Draft | No submission recorded |
 | [45-core-match-pattern-truncating-zip-arity.md](45-core-match-pattern-truncating-zip-arity.md) | code | fixed (no contract row; the report's fork-status section) | Draft | No submission recorded |
 | [46-function-pointer-number-is-a-fresh-supply-artefact.md](46-function-pointer-number-is-a-fresh-supply-artefact.md) | semantics | unchanged | Draft | No submission recorded |
-| [47-alignas-incomplete-type-not-diagnosed.md](47-alignas-incomplete-type-not-diagnosed.md) | semantics | fixed (no contract row; the report's fork-status section) † | Draft | No submission recorded |
+| [47-alignas-incomplete-type-not-diagnosed.md](47-alignas-incomplete-type-not-diagnosed.md) | robustness | fixed (no contract row; the report's fork-status section) † | Draft | No submission recorded |
 | [48-funptrmap-keyed-by-number-conflates-libc-statics.md](48-funptrmap-keyed-by-number-conflates-libc-statics.md) | semantics | unchanged | Draft | No submission recorded |
 | [49-par-results-returned-in-reverse-thread-order.md](49-par-results-returned-in-reverse-thread-order.md) | semantics | unchanged | Draft | No submission recorded |
 | [50-switches-parser-fail-open.md](50-switches-parser-fail-open.md) | code | refused (R-PNVI-11, R-PNVI-12; no contract row) | Draft | No submission recorded |
@@ -175,8 +184,8 @@ n/a 5. Class by state, Cerberus reports: semantics 24 unchanged / 13 fixed / 6 r
 | [59-union-initializer-desugaring.md](59-union-initializer-desugaring.md) | semantics | refused (D11: part (a)); parts (b), (c) unchanged | Draft | No submission recorded; the fork REFUSES part (a) since 2026-10-20 (contract D11, fork-ahead, not a fix for upstream); parts (b) and (c) unchanged |
 | [60-anonymous-members-spliced-into-containing-aggregate.md](60-anonymous-members-spliced-into-containing-aggregate.md) | semantics | refused (D12) † | Draft | No submission recorded; the fork REFUSES the case since 2026-10-26 (contract D12, fork-ahead, not a fix for upstream; the report stands) |
 | [61-compound-assignment-duplicates-left-operand.md](61-compound-assignment-duplicates-left-operand.md) | semantics | refused (D13) † | Draft | No submission recorded; the fork REFUSES side-effecting left operands since 2026-10-29 (contract D13, fork-ahead, not a fix for upstream; the report stands and proposes the one-binding elaboration); carries a related note on the GNU `?:` arm's `record_error_at`, discarded by the constant-expression mini-run |
-| [62-wchar-t-unsigned-range-signed-representation-crash.md](62-wchar-t-unsigned-range-signed-representation-crash.md) | robustness | unchanged † (the crash; since D14 the fork answers `WCHAR_MAX > 0` with 0 where pristine and gcc answer 1 — a silent wrong answer of the fork, in the report's 2026-11-10 section, not fixed) | Draft | No submission recorded; the fork plans a declared refusal in place of the crash ([USER 2026-10-20], queued) |
-| [63-character-decoding-crashes-on-multichar-and-utf8.md](63-character-decoding-crashes-on-multichar-and-utf8.md) | robustness | unchanged † | Draft | No submission recorded; the fork plans declared refusals in place of the crashes ([USER 2026-10-20], queued) |
+| [62-wchar-t-unsigned-range-signed-representation-crash.md](62-wchar-t-unsigned-range-signed-representation-crash.md) | robustness | unchanged † (the crash; since D14 the fork answers `WCHAR_MAX > 0` with 0 where pristine and gcc answer 1 — a silent wrong answer of the fork, in the report's 2026-11-10 section, not fixed) | Draft | No submission recorded; the fork crashes as upstream does (an earlier plan for a declared refusal, [USER 2026-10-20], is not being carried out: the roadmap of 2026-11-10 reports the crash sites instead) |
+| [63-character-decoding-crashes-on-multichar-and-utf8.md](63-character-decoding-crashes-on-multichar-and-utf8.md) | robustness | unchanged † | Draft | No submission recorded; the fork crashes as upstream does (an earlier plan for declared refusals, [USER 2026-10-20], is not being carried out: the roadmap of 2026-11-10 reports the crash sites instead) |
 | [64-recursive-main-guard-bypassed.md](64-recursive-main-guard-bypassed.md) | semantics | unchanged | Draft | Report only; active driver bypasses guard; no submission recorded |
 | [65-inner-arg-temps-core-symbol-loss.md](65-inner-arg-temps-core-symbol-loss.md) | code | fixed (no contract row; the fork's printer remedy) | Draft | Fork printer remedy and loader detector implemented; cross-mode multiplicity dispositioned; no submission recorded |
 | [66-main-inner-arg-temps-comment.md](66-main-inner-arg-temps-comment.md) | code | unchanged | Draft | Report only; main uses the switch despite the exclusion comment; no submission recorded |
@@ -185,7 +194,7 @@ n/a 5. Class by state, Cerberus reports: semantics 24 unchanged / 13 fixed / 6 r
 | [69-printf-j-z-t-modifiers-false-ub153b.md](69-printf-j-z-t-modifiers-false-ub153b.md) | semantics | fixed (D16) † | Draft (2026-11-07); fixed in the fork (fork-ahead delta, contract D16; the report carries the remedy in PROSE: the expected side normalised through the alias table) | No submission recorded; to be filed with the fork's hunk against c3ff8c53f attached |
 | [70-printf-zero-flag-before-sign-and-hash-f-no-point.md](70-printf-zero-flag-before-sign-and-hash-f-no-point.md) | semantics | fixed (D16) | Draft (2026-11-07); fixed in the fork (fork-ahead delta, contract D16; the report carries the remedy in PROSE); two related findings kept as upstream has them (`%5%`, the space flag), the `%*%` form REFUSED, the `-0.0` finding filed apart as 71 | No submission recorded; to be filed with the fork's hunk against c3ff8c53f attached |
 | [71-unary-minus-floating-zero-loses-sign.md](71-unary-minus-floating-zero-loses-sign.md) | semantics | unchanged | Draft (2026-11-07); NOT fixed in the fork (a translation-layer slice of its own; the report carries the remedy in prose) | No submission recorded |
-| [72-sscanf-false-ub048-null-pointer-subtraction-in-shlim.md](72-sscanf-false-ub048-null-pointer-subtraction-in-shlim.md) | semantics | unchanged † | Draft (2026-11-10, the reporting slice: every `sscanf` call is a false UB048 (the shipped library subtracts a null read pointer in `__shlim`)); unchanged in the fork | No submission recorded |
+| [72-sscanf-false-ub048-null-pointer-subtraction-in-shlim.md](72-sscanf-false-ub048-null-pointer-subtraction-in-shlim.md) | semantics | unchanged † | Draft (2026-11-10, the reporting slice: `sscanf` with any non-empty format is a false UB048 (the shipped library subtracts a null read pointer in `__shlim`)); unchanged in the fork | No submission recorded |
 | [73-statement-expression-with-statement-inside-crashes-break-at-sseq.md](73-statement-expression-with-statement-inside-crashes-break-at-sseq.md) | robustness | unchanged † | Draft (2026-11-10, the reporting slice: a GNU statement expression containing an assignment, `++` or `if` dies in `break_at_sseq`); unchanged in the fork | No submission recorded |
 | [74-program-argument-bytes-stored-through-character-decoder.md](74-program-argument-bytes-stored-through-character-decoder.md) | robustness | unchanged † | Draft (2026-11-10, the reporting slice: a backslash or non-ASCII byte in `--args` crashes `prepare_main_args`); unchanged in the fork | No submission recorded |
 | [75-gnu-conditional-omitted-operand-internal-error.md](75-gnu-conditional-omitted-operand-internal-error.md) | robustness | unchanged † | Draft (2026-11-10, the reporting slice: the GNU `a ?: b` ends in an internal error, an unrelated one in integer-constant contexts (was a note in 61)); unchanged in the fork | No submission recorded |

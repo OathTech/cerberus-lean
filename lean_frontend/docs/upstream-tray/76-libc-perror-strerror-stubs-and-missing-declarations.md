@@ -44,6 +44,7 @@ int main(void) { return (int)wcslen(L"abc"); }
 ```
 $ cerberus --exec --batch wcslen_abc.c
 wcslen_abc.c:2:30: error: use of undeclared identifier 'wcslen'
+[… 6 more lines cut]
 ```
 ```c
 #include <wchar.h>
@@ -52,6 +53,7 @@ int main(void) { return WCHAR_MAX > 0; }
 ```
 $ cerberus --nolibc --exec --batch wcharmax_wchar.c
 wcharmax_wchar.c:2:25: error: use of undeclared identifier 'WCHAR_MAX'
+[… 6 more lines cut]
 ```
 
 (both exit 1.) gcc exits 3 and 1. (`<stdint.h>` does define `WCHAR_MAX`; its value is report 62's subject.)
@@ -65,6 +67,7 @@ int main(void) { char16_t c = 1; return c; }
 ```
 $ cerberus --exec --batch uchar_h.c
 uchar_h.c:2:27: error: unexpected token after 'char16_t' and before 'c'
+[… 3 more lines cut]
 ```
 
 (exit 1.) gcc exits 1 (the value of `c`).
@@ -78,6 +81,7 @@ int main(void) { return FLT_EPSILON > 0; }
 ```
 $ cerberus --nolibc --exec --batch flt_epsilon.c
 flt_epsilon.c:2:25: error: use of undeclared identifier 'FLT_EPSILON'
+[… 6 more lines cut]
 ```
 ```c
 #include <float.h>
@@ -85,6 +89,7 @@ int main(void) { return DBL_EPSILON > 0; }
 ```
 ```
 dbl_epsilon.c:2:25: error: use of undeclared identifier 'DBL_EPSILON'
+[… 6 more lines cut]
 ```
 
 (both exit 1.) gcc exits 1 for both.
@@ -130,7 +135,7 @@ time with the header's name.
 ## Fork status (2026-11-10)
 
 Unchanged in both engines (identical lines; the Lean port's `unknown procedure` line carries a different symbol
-number, report 17's subject). Reported, not fixed. Not ISO C and therefore not listed above, also absent: `strnlen`
+number, report 17's subject). The fork has not changed this behaviour. Not ISO C and therefore not listed above, also absent: `strnlen`
 (POSIX) and the GNU builtins `__builtin_abs`, `__builtin_popcount`, `__builtin_clz`, `__builtin_clzll`,
 `__builtin_add_overflow`, `__builtin_mul_overflow`, `__builtin_alloca`, `__builtin_memcpy`, `__builtin_strlen` (each
 `use of undeclared identifier` on pristine today).
@@ -142,6 +147,6 @@ the stops are not documented as a supported-subset statement.
 
 ## Provenance
 
-Collected by the fork's true-bug audit of 2026-11-04 (sibling findings 20 and 21) while probing reports 24, 32 and 62.
-Re-run on pristine upstream at `c3ff8c53f`, both fork engines and gcc on 2026-11-10. This draft by Claude (Fable 5.2)
-under operator direction; the filed issue carries an AI-provenance note per the tray's policy.
+Collected on 2026-11-04 while probing reports 24, 32 and 62 with small programs compared against gcc. Re-run on un-forked upstream at `c3ff8c53f`, on this fork's two engines and on gcc on 2026-11-10. Analysis and this
+draft by Claude (Fable 5.2), an AI agent, under the direction of a human operator; the filed issue carries an
+AI-provenance note per the tray's policy.

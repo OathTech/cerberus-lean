@@ -122,6 +122,7 @@ cerberus: internal error, uncaught exception:
           Failure("internal error: Translation called on Ail program with an invalid node")
           Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
           Called from Cerb_frontend__Translation.translate_expression.(fun) in file "ocaml_frontend/generated/translation.ml", line 3260, characters 10-83
+[… 17 more lines cut]
 ```
 
 gcc exits 8, 8 and 1 for reproducers 1-3 (the audit's copies of them). A fourth shape, found 2026-10-29 by a fork
@@ -137,7 +138,8 @@ $ cerberus --nolibc --exec --batch init_struct_arr_of_struct.c
 internal error: Translation called on Ail program with an invalid node
 cerberus: internal error, uncaught exception:
           Failure("internal error: Translation called on Ail program with an invalid node")
+[… 19 more lines cut]
 ```
 
 (exit 125; gcc exits 12.) Fork status: unchanged in both engines (the Lean port stops with the same text, exit 134).
-Reported, not refused in code.
+The fork has not changed this behaviour.

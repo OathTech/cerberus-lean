@@ -9,6 +9,10 @@ two libc rows of §4.3 were dispositioned) and on M2 (§6.2); the full battery p
 pre-merge review's six documentation-and-witness fixes are in the close-out commit (§9).** The charter's premises held with the corrections of §0 (the `long long` rows, CHERI, the
 manifest row, reachability, the pins, the register).
 
+**Known defect, added 2026-11-10 [AGENT]:** this change makes `WCHAR_MAX > 0` (`<stdint.h>`) answer 0 on both engines
+(pristine upstream and gcc: 1), a silent wrong answer that this record's matrix did not contain; see `TODO.md`'s entry
+at the top, tray 62 and the warning in tray 20. A fix slice is queued.
+
 ## 0. Rulings and standing rules
 
 - [USER 2026-11-04] approved the fix as proposed: a fork fix of an upstream mistake, mirrored on both engines by

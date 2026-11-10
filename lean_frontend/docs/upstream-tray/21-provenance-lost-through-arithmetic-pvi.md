@@ -1,4 +1,8 @@
-# Under the default (PVI) model, every integer arithmetic operator drops pointer provenance: `(int*)((unsigned long)p + 4)` is UB043 — is this intended?
+# Under the default (PVI) model, integer addition drops pointer provenance (a bitwise `&` keeps it): `(int*)((unsigned long)p + 4)` is UB043 — is this intended?
+
+**Note, 2026-11-10:** the title was narrowed on this date. The text below was written as "every integer arithmetic
+operator"; the re-run section at the end of this file shows `+ 0` losing the provenance and a bitwise `&` keeping it,
+and no other operator was measured. The loci below are as checked at `b9aeedcb4` and were not re-read at `c3ff8c53f`.
 
 **Affected:** `frontend/model/core_eval.lem:29-46` (`mk_wrapI`) and
 `:61-80` (`mk_conv_int`) — both rebuild their result with

@@ -21,6 +21,16 @@ nested initializers (08) and string-literal members (23). **Not active:** every 
 apart from the pin item, the fuel-parameter follow-ups, the risk-map follow-ups, "Small items", the parked designs)
 stays logged as it is. Entries marked DONE or LANDED are records.
 
+- **KNOWN SILENT WRONG ANSWER on the mainline since D14: `WCHAR_MAX > 0` is 0; fix slice queued after the lem re-pin**
+  ([AGENT 2026-11-10]; found by the reporting slice, confirmed by its pre-merge review
+  `docs/2026-11-10_reporting-premerge-review.md` F1/F2). `#include <stdint.h>` / `int main(void) { return WCHAR_MAX > 0; }`
+  answers `Specified(1)` on pristine `c3ff8c53f` and gcc 13 exits 1; both fork engines answer `Specified(0)` (run
+  2026-11-10). D14 (`9b15a1f69`) gives `wchar_t` the rank of `int`, so it promotes to `int`, while the memory model's
+  `wchar_t` maximum is still the unsigned one (`impl_mem.ml` `max_ival`'s `Wchar_t` arm; `WCHAR_MAX` = 4294967295, which
+  converts to -1). Cause established by reading, not by a bisect. `WINT_MAX > 0` and `(long long)WCHAR_MAX > 0` are
+  unaffected (the review's probes). Records: tray 62 (its 2026-11-10 section), the warning at the top of tray 20,
+  CONTRACT.md D14. No witness pins it yet: the fix slice owes one.
+
 Current-state reconciliation: 2026-09-25 at Cerberus
 `bb487dda7c56981e76d67f53ae16e874cfe5ed61` and Lem
 `67ec5de70e02e280bb348a4ba826696b76116732` (the Lem pin has since moved to `2d3a492758cb23dc4e417f2961983d25b36ce130` by functional re-pins (via `77ad4fa` and `4e70bb5`, both merged; the current pin `2d3a492` is on `mdd/lean-backend` since the 2026-10-07 re-pin, landing note `47348c07e`), generated OCaml byte-identical at each: [re-pin record](docs/2026-10-04_lem-repin-4e70bb5-record.md), [PNVI S1 record](docs/2026-10-05_pnvi-s1-switch-parameter-record.md)). The September 5 master plan

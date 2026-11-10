@@ -185,6 +185,7 @@ member does not terminate (killed by a 60 s timeout); the forward-declared and t
 cerberus: internal error, uncaught exception:
           Not_found
           Raised at Pmap.find in file "pmap.ml", line 81, characters 10-25
+[… 31 more lines cut]
 ```
 
 (exit 125; gcc rejects all three: `invalid application of '__alignof__' to incomplete type`). The specifier arm is
@@ -198,6 +199,7 @@ struct A { _Alignas(void) char c; }; int main(void) { return sizeof(struct A); }
 cerberus: internal error, uncaught exception:
           File "ocaml_frontend/ocaml_implementation.ml", line 523, characters 12-18: Assertion failed
           Raised at Cerb_frontend__Ocaml_implementation.alignof in file "ocaml_frontend/ocaml_implementation.ml", line 523, characters 12-24
+[… 29 more lines cut]
 ```
 ```c
 struct A { _Alignas(int(void)) char c; }; int main(void) { return sizeof(struct A); }
@@ -206,6 +208,7 @@ struct A { _Alignas(int(void)) char c; }; int main(void) { return sizeof(struct 
 cerberus: internal error, uncaught exception:
           File "ocaml_frontend/ocaml_implementation.ml", line 536, characters 26-32: Assertion failed
           Raised at Cerb_frontend__Ocaml_implementation.alignof in file "ocaml_frontend/ocaml_implementation.ml", line 536, characters 26-38
+[… 29 more lines cut]
 ```
 ```c
 struct A { _Alignas(int[]) char c; }; int main(void) { return sizeof(struct A); }
@@ -232,6 +235,7 @@ $ cerberus --nolibc --exec --batch arr_of_func.c
 internal error: AilTypesAux.is_complete: called an a function type
 cerberus: internal error, uncaught exception:
           Failure("internal error: AilTypesAux.is_complete: called an a function type")
+[… 21 more lines cut]
 ```
 
 (exit 125 on pristine and on the fork's oracle, the Lean port the same text with exit 134; gcc: `error: declaration
