@@ -13,7 +13,7 @@
 
 name = "speclab"
 defaultTargets = ["SpecLab"]
-moreLeanArgs = ["-DautoImplicit=false"]
+moreLeanArgs = ["-DautoImplicit=false", "-DwarningAsError=true"]
 packagesDir = "../.lake/packages"
 
 [[require]]

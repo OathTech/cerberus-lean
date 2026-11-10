@@ -232,6 +232,33 @@ def baseline_row(result):
     return row
 
 
+def normal_status_record(mode, oracle, lean, report_only=False):
+    """The Normal controls of a failed row, as `Runner.row` records them (the selftest's
+    resource-kind plants call this same function)."""
+    return {'class': classify(mode, oracle, lean, report_only),
+            'oracle': status_hash(oracle), 'lean': status_hash(lean)}
+
+
+def row_result(name, cls, mode, oracle, lean, normal_status=None, cross_kind=None):
+    """The result of one row, as `Runner.row` returns it (shared with the selftest)."""
+    return {'class': cls, 'mode': mode, 'oracle': baseline_hash(oracle), 'lean': baseline_hash(lean),
+            **({'disposition': LOC_ONLY_DISPOSITION} if cls.startswith('LOC_ONLY') else {}),
+            **({'normal_status': normal_status} if normal_status is not None else {}),
+            **({'cross_mode': cross_kind} if cross_kind else {}),
+            **({'normal_baseline': 'tests/libc_exec/baseline.txt:38 (039-strerror-assert MATCH)'}
+               if name == 'libc/039-strerror-assert' else {})}
+
+
+def baseline_text(actual):
+    """The baseline file `--record-baseline` writes (projected rows, one per line)."""
+    return '{\n' + ',\n'.join(
+        '  ' + json.dumps(k) + ': ' + json.dumps(v, sort_keys=True)
+        for k, v in sorted((k, baseline_row(v)) for k, v in actual.items())) + '\n}\n'
+
+
+KIND_PINNED = 'the baseline pins a load-dependent resource kind'
+
+
 def check_baseline(actual, path, selection=None):
     baseline = json.loads(path.read_text())
     require(isinstance(baseline, dict) and baseline, 'empty or malformed baseline')
@@ -239,7 +266,7 @@ def check_baseline(actual, path, selection=None):
     for name, value in baseline.items():
         for cls in [value.get('class', ''), value.get('normal_status', {}).get('class', '')]:
             require(baseline_class(cls) == cls,
-                    f'{name}: the baseline pins a load-dependent resource kind ({cls}); re-record it')
+                    f'{name}: {KIND_PINNED} ({cls}); re-record it')
     expected = {k: v for k, v in baseline.items() if selection is None or selection.search(k)}
     require(actual and expected, 'empty selection or baseline')
     require(actual.keys() == expected.keys(),
@@ -420,8 +447,7 @@ class Runner:
                 # remain separately hash-pinned; no error text is rewritten.
                 require(same_failure(normal, inner),
                         f'{row.name}: failure differs from Normal on {engine}: {normal} / {inner}')
-            normal_status = {'class': classify(row.mode, sides['normal', 'oracle'], sides['normal', 'lean']),
-                             'oracle': status_hash(sides['normal', 'oracle']), 'lean': status_hash(sides['normal', 'lean'])}
+            normal_status = normal_status_record(row.mode, sides['normal', 'oracle'], sides['normal', 'lean'])
         if row.libc and row.mode == 'exhaustive':
             require(cls == 'AGREE' and len(oracle[1]) >= 2,
                     f'{row.name}: exhaustive libc control has fewer than two complete observations')
@@ -452,12 +478,7 @@ class Runner:
             require(cls == 'AGREE-FIRST' and parsed.tokens('full') == expected.tokens('full'),
                     f'{row.name}: upstream expected verdict differs')
         print(f'  {cls:25} {row.name}' + (f' cross-mode={cross_kind}' if cross_kind else ''), flush=True)
-        return {'class': cls, 'mode': row.mode, 'oracle': baseline_hash(oracle), 'lean': baseline_hash(lean),
-                **({'disposition': LOC_ONLY_DISPOSITION} if cls.startswith('LOC_ONLY') else {}),
-                **({'normal_status': normal_status} if normal_status is not None else {}),
-                **({'cross_mode': cross_kind} if cross_kind else {}),
-                **({'normal_baseline': 'tests/libc_exec/baseline.txt:38 (039-strerror-assert MATCH)'}
-                   if row.name == 'libc/039-strerror-assert' else {})}
+        return row_result(row.name, cls, row.mode, oracle, lean, normal_status, cross_kind)
 
     def run(self, rows, cross=False):
         require(rows, 'empty selection')
@@ -570,25 +591,28 @@ def selftest(args):
     require(not same_failure(('RESOURCE', 'KILL'), ('OBS', ('VAL:one',), ())),
             'cross-mode: a resource outcome must not equal an observation')
     # The baseline must not pin WHICH bound a resource row hit (the 2026-11-09 flake: a row
-    # recorded at the memory cap read the wall clock under load). The rows are built by the
-    # functions `Runner.row` uses and compared by the real comparator.
+    # recorded at the memory cap read the wall clock under load). The plant rows come from
+    # the production assembly (`normal_status_record` and `row_result`, the two functions
+    # `Runner.row` returns through), the plant baseline from the production recorder
+    # (`baseline_text`), and the comparison is the real `check_baseline`.
     def resource_row(oracle, lean, normal=None):
-        cls = classify('exhaustive', oracle, lean, report_only=True)
         o_n, l_n = normal or (oracle, lean)
-        return {'class': cls, 'mode': 'exhaustive', 'oracle': baseline_hash(oracle), 'lean': baseline_hash(lean),
-                'normal_status': {'class': classify('exhaustive', o_n, l_n, report_only=True),
-                                  'oracle': status_hash(o_n), 'lean': status_hash(l_n)}}
+        return row_result('corpus/resource', classify('exhaustive', oracle, lean, report_only=True), 'exhaustive',
+                          oracle, lean, normal_status_record('exhaustive', o_n, l_n, report_only=True))
     kill, timeout, fuel, done = ('RESOURCE', 'KILL'), ('RESOURCE', 'TIMEOUT'), ('RESOURCE', 'FUEL'), ('OBS', ('VAL:one',), ())
-    recorded = {'corpus/resource': baseline_row(resource_row(kill, kill))}
-    path = args.out / 'resource-kind.json'; path.write_text(json.dumps(recorded))
-    for label, o, l, n in [('both at the wall clock', timeout, timeout, None),
+    path = args.out / 'resource-kind.json'
+    path.write_text(baseline_text({'corpus/resource': resource_row(kill, kill)}))
+    for label, o, l, n in [('the same row again', kill, kill, None),
+                           ('both at the wall clock', timeout, timeout, None),
                            ('oracle at the cap, Lean at the wall clock', kill, timeout, None),
-                           ('the Normal controls at the other bound', kill, kill, (timeout, timeout))]:
+                           ('the Normal controls at the other bound', kill, kill, (timeout, timeout)),
+                           ('only the Normal oracle control at the other bound', kill, kill, (timeout, kill)),
+                           ('only the Normal Lean control at the other bound', kill, kill, (kill, timeout))]:
         try:
             check_baseline({'corpus/resource': resource_row(o, l, n)}, path)
         except Failure as exc:
             raise Failure(f'resource-kind plant: a KILL baseline row rejected {label}: {exc}')
-    print('PLANT OK (baseline resource kind: a row recorded at the memory cap accepts the wall clock on either engine and on the Normal controls)', flush=True)
+    print('PLANT OK (baseline resource kind: a row recorded at the memory cap by the production recorder accepts the wall clock on either engine and on either Normal control)', flush=True)
     for label, o, l in [('a FUEL stop', fuel, fuel), ('a Lean-only resource outcome', done, kill),
                         ('a completed row', done, done)]:
         try:
@@ -597,14 +621,19 @@ def selftest(args):
             pass
         else:
             raise Failure(f'resource-kind plant: a KILL baseline row accepted {label}')
-    path.write_text(json.dumps({'corpus/resource': resource_row(kill, kill)}))   # unprojected: the old format
+    require(baseline_class('RESOURCE lean:KILL') == f'RESOURCE lean:{BOUND}' != baseline_class('RESOURCE oracle:TIMEOUT')
+            and baseline_class('RESOURCE oracle:FUEL') == 'RESOURCE oracle:FUEL' and baseline_class('BOTH_FAIL') == 'BOTH_FAIL',
+            'resource-kind plant: the class projection must keep the direction, FUEL and every other class')
+    # An old-format baseline (the kind pinned) must be refused BY the refusal, with its message:
+    # the row comparison would fail too, so only the message tells the two apart.
+    path.write_text(json.dumps({'corpus/resource': resource_row(kill, kill)}))
     try:
         check_baseline({'corpus/resource': resource_row(kill, kill)}, path)
-    except Failure:
-        pass
+    except Failure as exc:
+        require(KIND_PINNED in str(exc), f'resource-kind plant: a kind-pinning baseline failed without the refusal: {exc}')
     else:
         raise Failure('resource-kind plant: a baseline that pins the kill kind was accepted')
-    print('PLANT OK (baseline resource kind: FUEL, a Lean-only resource outcome and a completed row rejected; a kind-pinning baseline rejected)', flush=True)
+    print('PLANT OK (baseline resource kind: FUEL, a Lean-only resource outcome and a completed row rejected; direction kept; a kind-pinning baseline refused by name)', flush=True)
     for o, l in [(('OBS', ('VAL:one',), ()), ('OBS', ('VAL:two',), ())),
                  (('OBS', ('VAL:one',), ()), ('RESOURCE', 'TIMEOUT')),
                  (('INVALID', 'truncated'), ('INVALID', 'truncated')),
@@ -757,9 +786,7 @@ def main():
     started = time.monotonic()
     actual = Runner(args.oracle, args.lean, args.out / 'lane').run(rows)
     if args.record_baseline:
-        args.baseline.write_text('{\n' + ',\n'.join(
-            '  ' + json.dumps(k) + ': ' + json.dumps(v, sort_keys=True)
-            for k, v in sorted((k, baseline_row(v)) for k, v in actual.items())) + '\n}\n')
+        args.baseline.write_text(baseline_text(actual))
         print(f'BASELINE RECORDED ({len(actual)} rows): {args.baseline}')
     elif not args.observe:
         check_baseline(actual, args.baseline, selection)
