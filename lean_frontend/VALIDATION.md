@@ -1441,7 +1441,12 @@ ordered sequence before baseline lookup. Class, row membership and both
 engine hashes must match the baseline. The registered strerror assert is
 `BOTH_FAIL`, citing `tests/libc_exec/baseline.txt:38`, never execution
 agreement. Other BOTH_FAIL/RESOURCE rows require matching Normal failure
-controls; their full failure/status hashes remain pinned. Only Error
+controls; their full failure/status hashes remain pinned, with one
+projection since 2026-11-10: a RESOURCE row pins its direction and that a
+bound was hit, not whether the memory cap or the wall clock was hit first
+(load-dependent; one baseline spelling `KILL|TIMEOUT`, a baseline that pins
+the kind is refused, FUEL stays its own kind; the row line and `results.json`
+keep the kind). Only Error
 failure classification uses the existing narrow Symbol-number projection.
 
 Ordinary inputs are exhaustive without libc. Top-level libc and upstream
