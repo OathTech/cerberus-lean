@@ -1,5 +1,22 @@
 # Question: an unspecified operand of signed `+` is classified as `UB036_exceptional_condition` — which UB (if any) is intended for `(x & 0) + 3` with indeterminate `x`?
 
+**Status, 2026-11-10: OPEN (reopened).** [USER 2026-11-10] reopened this report. It had been closed on 2026-10-29 as
+answered by upstream commit `cee382443`, which the merge-base `c3ff8c53f` contains. A re-run on un-forked upstream at
+`c3ff8c53f` on 2026-11-10 (`--nolibc --exec --batch`) shows that commit changed the treatment of BRANCHING on an
+unspecified value only; the verdict this report asks about, for the additive operator, is unchanged, so the question
+is live:
+
+```
+int main(void) { int x; return (x & 0) + 3; }               (this report's reproducer)
+Undefined {ub: "UB036_exceptional_condition", stderr: "", loc: "<1:32--1:43>"}
+int main(void) { int x; int y = (x & 0) + 3; return y; }    (a variant)
+Undefined {ub: "UB036_exceptional_condition", stderr: "", loc: "<1:33--1:44>"}
+int main(void) { int x; return x ? 1 : 2; }                 (branching; the program has a 4-line header comment)
+Undefined {ub: "UB_CERB004_unspecified__conditional", stderr: "", loc: "<5:32--5:41>"}
+```
+
+(all exit 1.) The loci below are as checked at `b9aeedcb4` and were not re-read at `c3ff8c53f`.
+
 **Affected:** `frontend/model/translation.lem:2165-2171` (the additive
 operators' elaborated `case`: the catch-all arm for "either operand
 unspecified" is `Caux.mk_unspecified_pe result_ty` for an unsigned result
@@ -121,6 +138,6 @@ probe that branches on the indeterminate value, `int main(void) { int x; return 
 `Undefined {ub: "UB_CERB004_unspecified__conditional", stderr: "", loc: "<5:32--5:41>"}`.) The base contains
 upstream `cee382443` (2026-09-27, "(elaboration) giving a consistent treatment of branching on an unspecified
 value"); the tray's INDEX recorded the report as answered by it. That commit concerns branching; the additive operator's
-verdict asked about here is the same today as when the question was written, so the closure is under review (INDEX
-row 33) and the report is not counted as answered. Both fork engines print the identical
+verdict asked about here is the same today as when the question was written, so the closure no longer stands: the
+report was reopened on 2026-11-10 (the status at the top of this file). Both fork engines print the identical
 line.

@@ -16,11 +16,13 @@ Report [15](15-bool-float-conversion-truncation.md) is fixed upstream by
 disposition, not an external submission or issue closure. Since stage 1 of
 the merge-base bump (2026-10-30, base `c3ff8c53f`,
 `../2026-10-29_merge-base-bump-stage1-record.md`) both backports are
-upstream's own text, carried by the base; reports 01, 04, 15 and 33 are
-closed in this index as fixed upstream and carried ([USER 2026-10-29] Q10)
-— for 33 that closure is under review since 2026-11-10: its re-run shows the
-verdict it asks about unchanged at `c3ff8c53f` (row 33; the report's last
-section), which is raised with the orchestrator and not settled here;
+upstream's own text, carried by the base; reports 01, 04 and 15 are
+closed in this index as fixed upstream and carried ([USER 2026-10-29] Q10).
+Report 33 was closed with them and is REOPENED ([USER 2026-11-10]): the
+upstream commit its closure rested on, `cee382443`, changed branching on an
+unspecified value only, and the 2026-11-10 re-run at `c3ff8c53f` shows the
+additive-operator verdict the report asks about unchanged (row 33; the
+status at the top of the report);
 report 67 (the b3e11ea33..736690a65 window) is open as filed, its one-line
 backport a registered fork-ahead delta until stage 2.
 
@@ -116,7 +118,7 @@ are the state the report or this index recorded earlier, not re-run in that pass
 Counts (derived from the table below by script, re-derived 2026-11-10 after the pre-merge review's dispositions; 81 rows
 = 76 Cerberus reports + 5 for other projects). By class, all rows: semantics 43, robustness 22, code 16; Cerberus
 reports only: semantics 41, robustness 20, code 15. By state, Cerberus reports: unchanged 44 (3 of them fixed
-in the base: 01, 04, 15; 33's closure is under review and it is counted as plainly unchanged; 31 is withdrawn as a
+in the base: 01, 04, 15; 33 is open again, reopened 2026-11-10, and is plainly unchanged; 31 is withdrawn as a
 C17 defect report), fixed 21 (one of them, 40, in the Lean engine only; one, 20, with a known defect), fixed in part and
 refused in part 1 (26), refused 10 (59 in part); other projects, n/a 5. Class by state, Cerberus reports:
 semantics 23 unchanged / 12 fixed / 6 refused; robustness 12 unchanged / 5 fixed / 1 fixed and
@@ -156,7 +158,7 @@ refused / 2 refused; code 9 unchanged / 4 fixed / 2 refused.
 | [30-strncmp-zero-length.md](30-strncmp-zero-length.md) | semantics | unchanged † | Draft | No submission recorded |
 | [31-calloc-overflow-check.md](31-calloc-overflow-check.md) | robustness | unchanged † | Draft; WITHDRAWN 2026-11-10 as a C17 defect report pending a primary-source check (the quoted overflow requirement is not in C11 and could not be verified in C17); kept as a hardening note: the multiplication wraps silently | No submission recorded |
 | [32-float-evaluated-as-double.md](32-float-evaluated-as-double.md) | semantics | unchanged | Draft | No submission recorded |
-| [33-unspecified-operand-exceptional-condition-question.md](33-unspecified-operand-exceptional-condition-question.md) | semantics | unchanged † — closure under review: the [USER 2026-10-29] ruling predates this slice's re-run of 2026-11-10, which shows the additive-operator verdict unchanged at `c3ff8c53f` (raised with the orchestrator; not counted as answered meanwhile) | Draft; answered upstream (`cee382443`: branching on an unspecified value is UB by default, `UB_CERB004_unspecified__if/while/do/switch`; the ND reading is the refused switch `branching_on_unspec_is_nd`), carried by the base since stage 1 of the merge-base bump (2026-10-30) | No submission recorded |
+| [33-unspecified-operand-exceptional-condition-question.md](33-unspecified-operand-exceptional-condition-question.md) | semantics | unchanged † — OPEN: reopened ([USER 2026-11-10]); the 2026-10-29 closure rested on `cee382443`, which changed branching on an unspecified value only, and the additive-operator verdict is unchanged at `c3ff8c53f` (re-run 2026-11-10) | Draft; open (reopened 2026-11-10). Upstream `cee382443`, in the base since 2026-10-30, makes branching on an unspecified value UB by default (`UB_CERB004_unspecified__if/while/do/switch`); it does not answer this report's question about the additive operator | No submission recorded |
 | [34-aligned-alloc-zero-alignment-division-by-zero.md](34-aligned-alloc-zero-alignment-division-by-zero.md) | robustness | unchanged † | Draft | No submission recorded |
 | [35-pp-core-grammar-mismatches.md](35-pp-core-grammar-mismatches.md) | code | unchanged | Draft | No submission recorded |
 | [36-mk-conv-int-bypasses-impl-def-signed-conversion.md](36-mk-conv-int-bypasses-impl-def-signed-conversion.md) | semantics | unchanged | Draft | No submission recorded |
@@ -212,6 +214,11 @@ UNCLEAR) with justification; this ranking puts true bugs first and
 questions last.
 
 ## Ranking (by upstream value)
+
+**Superseded as a statement of current state (2026-11-10, [AGENT]).** This section is the dated history of how each
+report was ranked and amended; it is not kept in step with the table above. Where the two differ — for example item 1
+still describes report 01 as open, and it was fixed upstream by `766073467`, which the base contains — the table above
+and [README.md](README.md) are the current statement.
 
 1. **01-float-mul-is-addition.md** — TRUE BUG. `Cerb_floating.mul` is
    literally `(+.)` (util/cerb_floating.ml:5): every OCaml-side use of

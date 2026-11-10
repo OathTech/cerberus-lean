@@ -290,7 +290,11 @@ gcc's value of `'\0123'`); the scratch directory is deleted.
   for this: `std.core:386-398`, `impl_mem.ml:11-12`, `:2303-2308`, `:1070-1088`, `:1076`; for 22
   `translation.lem:2183`). The older "Affected" paragraphs are kept below them, labelled as the earlier commit's
   numbers, not deleted. 31: F4.
-- **F6 — raised to the orchestrator, not settled.** INDEX row 33 reads "unchanged † — closure under review: the
+- **F6 — raised to the orchestrator; since RULED: report 33 is REOPENED ([USER 2026-11-10], relayed by the orchestrator
+  after this section was first written).** Report 33 has an OPEN status line at its top with the three re-run lines and
+  the reason the 2026-10-29 closure no longer stands; INDEX row 33, INDEX's opening paragraph and the README's triage
+  table say open; the derived counts do not move (33 was already counted as plainly unchanged). INDEX's "Ranking"
+  section is marked superseded by the table and the README. What follows is the entry as raised. INDEX row 33 reads "unchanged † — closure under review: the
   [USER 2026-10-29] ruling predates this slice's re-run of 2026-11-10, which shows the additive-operator verdict
   unchanged at `c3ff8c53f`"; INDEX's opening paragraph flags the same; 33 is no longer counted among the reports fixed
   or answered in the base (that group is 01, 04, 15). The facts: on un-forked upstream at `c3ff8c53f`, 2026-11-10,
@@ -340,4 +344,4 @@ part 1, refused 10. Class by state: semantics 23 / 12 / 6; robustness 12 / 5 / 1
 
 Not done, and said so: the `WCHAR_MAX` defect is recorded and warned about, not fixed; no C17 primary source was
 consulted (none is on the machine); 21's loci were not re-read at `c3ff8c53f`; INDEX.md's long "Ranking" section was
-not revised (its item 1 still describes report 01 as open; the table and the README are the current statement).
+not revised item by item; since the F6 ruling's commit it carries a note that the table and the README supersede it.
