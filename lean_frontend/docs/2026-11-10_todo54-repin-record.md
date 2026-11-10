@@ -443,6 +443,29 @@ not need re-keying: its key is file/owner/token/message, and the 235 rows matche
 drift, sync, roots and fuel-pin gates ran before the flag was added and are independent of it; `check_fork_drift.sh`
 was re-run after M2 (rc 0).
 
+### The orchestrator's ladder runs (not the worker's; lines as relayed by the orchestrator, verbatim)
+
+Both were run by the orchestrator [AGENT], not by this worker, in a separate audit checkout (not this worktree, not
+the primary checkout), each after a forced regeneration (`make clean-prelude-src prelude-src lean-prelude-src`),
+the three dune steps and the capped lake build. This worker did not run `scripts/release.py` and has not seen the
+runs' reports; the lines below are the orchestrator's, written here as given.
+
+Tier A on M1 `4d4801eae` (2026-11-10):
+
+```
+fast: passed; 20/20 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+release rc=0
+```
+
+Full battery on the tip `a528a3a6c`:
+
+```
+full: passed; 46/46 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+release rc=0
+```
+
 ## 8. Kernel replay (named trust gate)
 
 From `lean_frontend/`, `scripts/ce scripts/capped lake env leanchecker <modules>`; leanchecker prints nothing on
@@ -562,4 +585,4 @@ LADDER row 15 and VALIDATION's lane paragraph state the rule.
 - The base tree was not rebuilt with the old lem (§2) and the micro package's breakage on the base was inferred
   from history, not re-run (§6).
 - The pre-merge review has since been run by an independent reviewer (`42f0e0d83`); its findings are
-  dispositioned in that file. The orchestrator's Tier A and battery results are not in this record.
+  dispositioned in that file. The orchestrator's Tier A and battery results are in §7, as relayed.
