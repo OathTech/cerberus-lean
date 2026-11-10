@@ -5,6 +5,22 @@ records. (Verification-layer work is out of scope for this branch —
 the semantics is the product here; a verification layer consumes it
 downstream.)
 
+**Direction since 2026-11-10** ([USER 2026-11-10], recorded in
+[`docs/2026-11-10_roadmap-maintenance-and-reporting.md`](docs/2026-11-10_roadmap-maintenance-and-reporting.md); this
+paragraph [AGENT 2026-11-10], the reporting slice). The roadmap says which parts of this backlog are worked on; no entry
+below is deleted or renumbered by it. **Active:** closing the lem pin invariant (the generated-tree warnings item of
+"Queued larger work" and lem-lean's own TODO 54); upstream reporting (the tray, `docs/upstream-tray/INDEX.md` with its
+CLASS and STATE columns and `docs/upstream-tray/CORPORA.md`); consumer support at the consumers' pins; and "Needs
+maintainer action or network access" (filing is the operator's). **Reported, not started** (each has a tray report;
+none is to be implemented unless a consumer is blocked): in "Upstream-uncertainty survey follow-ups", the open arms of
+"Crashes on valid C become declared refusals" (tray 62; 73; 63 and 74; the braced-initializer arm, tray 08), "GNU `?:`
+in a constant-expression position" (tray 75), the refused `printf` conversions of "The formatter's refusals and fixes"
+(trays 26, 68) and stage 2 of the merge-base bump; and wherever they are mentioned below, `bswap64` (12),
+`aligned_alloc` of a zero alignment (34), the shipped library's `strncmp`/`strncpy`, `calloc` and `sscanf` (30, 31, 72),
+nested initializers (08) and string-literal members (23). **Not active:** every other section ("Queued larger work"
+apart from the pin item, the fuel-parameter follow-ups, the risk-map follow-ups, "Small items", the parked designs)
+stays logged as it is. Entries marked DONE or LANDED are records.
+
 Current-state reconciliation: 2026-09-25 at Cerberus
 `bb487dda7c56981e76d67f53ae16e874cfe5ed61` and Lem
 `67ec5de70e02e280bb348a4ba826696b76116732` (the Lem pin has since moved to `2d3a492758cb23dc4e417f2961983d25b36ce130` by functional re-pins (via `77ad4fa` and `4e70bb5`, both merged; the current pin `2d3a492` is on `mdd/lean-backend` since the 2026-10-07 re-pin, landing note `47348c07e`), generated OCaml byte-identical at each: [re-pin record](docs/2026-10-04_lem-repin-4e70bb5-record.md), [PNVI S1 record](docs/2026-10-05_pnvi-s1-switch-parameter-record.md)). The September 5 master plan

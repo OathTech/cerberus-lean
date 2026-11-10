@@ -21,6 +21,9 @@ closed in this index as fixed upstream and carried ([USER 2026-10-29] Q10);
 report 67 (the b3e11ea33..736690a65 window) is open as filed, its one-line
 backport a registered fork-ahead delta until stage 2.
 
+The witness corpora (programs with gcc's, pristine upstream's and the fork's answers pinned) and how to run one program
+from them without this repository's test ladder: [CORPORA.md](CORPORA.md).
+
 ## Submission status
 
 Reconciled 2026-09-25 against committed records at Cerberus
@@ -69,89 +72,130 @@ Issue 1010 is recorded below but has no tray report, so is outside this count.
 Draft duplicate searches must be repeated before filing; the dated search
 notes below establish only what was checked then.
 
-| Report | Recorded state | Submission evidence |
-|---|---|---|
-| [01-float-mul-is-addition.md](01-float-mul-is-addition.md) | Filed; fixed upstream (`766073467`), carried by the base since stage 1 of the merge-base bump (2026-10-30; ISO-fix register R6 retired) | [Cerberus #1009](https://github.com/rems-project/cerberus/issues/1009), operator 2026-08-19 |
-| [02-pp-core-unparseable-forms.md](02-pp-core-unparseable-forms.md) | Draft | No submission recorded |
-| [03-pp-core-ambiguous-output.md](03-pp-core-ambiguous-output.md) | Draft | No submission recorded |
-| [04-null-pointer-arith-crash.md](04-null-pointer-arith-crash.md) | Draft; fixed upstream (`f4a3a3d54`, `Fixes: cerberus-lean-04`), carried by the base since stage 1 of the merge-base bump (2026-10-30; both engines `UB046_array_pointer_outside`, record §4) | No submission recorded |
-| [05-va-arg-missing-type-check.md](05-va-arg-missing-type-check.md) | Draft | No submission recorded |
-| [06-funinfo-has-proto-question.md](06-funinfo-has-proto-question.md) | Draft | No submission recorded |
-| [07-symbol-identity-fragility.md](07-symbol-identity-fragility.md) | Draft | No submission recorded |
-| [08-desugar-nested-init-internal-error.md](08-desugar-nested-init-internal-error.md) | Draft | No submission recorded |
-| [09-address-constant-member-rejected.md](09-address-constant-member-rejected.md) | Draft; fixed in the fork 2026-11-07 (fork-ahead delta, contract D17; the report carries the patch; 28 and 29 merged into it) | No submission recorded; to be filed |
-| [10-decode-rejects-question-escape.md](10-decode-rejects-question-escape.md) | Sent; fixed in the fork (2026-11-07, a fork-ahead delta: the `\?` arm in `decode.ml`; the Lean engine answered so since 2026-09-03 under the retired ISO-fix register row; record `../2026-11-07_half-mirrors-oracle-record.md`, patch against `c3ff8c53f` in the draft) | Communicated privately to the Cerberus maintainers by the operator, 2026-09-26 ([USER 2026-09-26] reported having notified the Cerberus maintainers privately); no public issue URL |
-| [11-escaped-char-octal-roundtrip-corruption.md](11-escaped-char-octal-roundtrip-corruption.md) | Sent; fixed in the fork (2026-11-07, a fork-ahead delta: `escaped_char` as the decoder's right inverse, every byte 0..255 round-tripping; the Lean engine answered so since 2026-09-03 under the retired ISO-fix register row; record `../2026-11-07_half-mirrors-oracle-record.md`, patch against `c3ff8c53f` in the draft) | Communicated privately to the Cerberus maintainers by the operator, 2026-09-26 ([USER 2026-09-26] reported having notified the Cerberus maintainers privately); no public issue URL |
-| [12-bswap64-overflow-crash.md](12-bswap64-overflow-crash.md) | Draft | No submission recorded |
-| [13-memcmp-hugesize-overflow-crash.md](13-memcmp-hugesize-overflow-crash.md) | Sent; fixed in the fork (2026-11-07, a fork-ahead delta: `memcmp` counting on `Z`, the checked load's UB verdict reached; the Lean engine answered so since 2026-09-03 under the retired ISO-fix register row; record `../2026-11-07_half-mirrors-oracle-record.md`, patch against `c3ff8c53f` in the draft) | Communicated privately to the Cerberus maintainers by the operator, 2026-09-26 ([USER 2026-09-26] reported having notified the Cerberus maintainers privately); no public issue URL |
-| [14-ailname-proxy-shadows-user-functions.md](14-ailname-proxy-shadows-user-functions.md) | Draft | No submission recorded |
-| [15-bool-float-conversion-truncation.md](15-bool-float-conversion-truncation.md) | Fixed upstream; backported; carried by the base since stage 1 of the merge-base bump (2026-10-30, the I0b backport merged away) | Upstream `3230aa494`; inner_arg_temps I0b. No submission recorded |
-| [16-snprintf-truncation-return-length.md](16-snprintf-truncation-return-length.md) | Draft; fixed in the fork 2026-11-07 (fork-ahead delta, contract D16; the report carries the PATCH as a code snippet: the would-be length, formatting at n = 0, the UB verdict passed through) | No submission recorded; to be filed with the patch |
-| [17-diagnostic-embeds-symbol-id.md](17-diagnostic-embeds-symbol-id.md) | Draft | No submission recorded |
-| [18-monadic-list-combinators-non-tail.md](18-monadic-list-combinators-non-tail.md) | Draft | No submission recorded |
-| [19-dynamic-addrs-never-cleaned.md](19-dynamic-addrs-never-cleaned.md) | Draft | No submission recorded |
-| [20-size-t-integer-rank-uac.md](20-size-t-integer-rank-uac.md) | Draft; fixed in the fork 2026-11-04 (fork-ahead delta, contract D14; the report carries the patch) | No submission recorded; to be filed |
-| [21-provenance-lost-through-arithmetic-pvi.md](21-provenance-lost-through-arithmetic-pvi.md) | Draft | No submission recorded |
-| [22-ptrdiff-strips-array-layer.md](22-ptrdiff-strips-array-layer.md) | Draft | No submission recorded |
-| [23-string-literal-init-of-char-array-members.md](23-string-literal-init-of-char-array-members.md) | Draft | No submission recorded |
-| [24-stdio-buffer-not-flushed-at-exit.md](24-stdio-buffer-not-flushed-at-exit.md) | Draft; fixed in the fork 2026-11-06 (fork-ahead delta, contract D15; the report carries the patch; 25 merged into it) | No submission recorded; to be filed |
-| [25-atexit-not-run-on-main-return.md](25-atexit-not-run-on-main-return.md) | Merged into 24 (2026-11-06); fixed in the fork | filed with 24 |
-| [26-printf-star-width-crash.md](26-printf-star-width-crash.md) | Draft; the `*` width/precision fixed in the fork 2026-11-07 (fork-ahead delta, contract D16; the report carries the remedy in PROSE, the fork's `load_star_argument` is the implementation), %n/%ls/%lc and `%*%` DECLARED REFUSALS in the fork (not a fix for upstream) | No submission recorded; to be filed with the fork's hunk against c3ff8c53f attached |
-| [27-printf-hex-int-argument-ub153b.md](27-printf-hex-int-argument-ub153b.md) | Draft; the fork KEEPS the strict verdict (2026-11-07: upstream's defensible 7.21.6.1#9 reading, pinned as a UB row of scripts/check_printf_refusals.sh) | No submission recorded |
-| [28-conditional-in-static-initializer.md](28-conditional-in-static-initializer.md) | Merged into 09 (2026-11-07); fixed in the fork | filed with 09 |
-| [29-string-literal-address-constant.md](29-string-literal-address-constant.md) | Merged into 09 (2026-11-07); fixed in the fork | filed with 09 |
-| [30-strncmp-zero-length.md](30-strncmp-zero-length.md) | Draft | No submission recorded |
-| [31-calloc-overflow-check.md](31-calloc-overflow-check.md) | Draft | No submission recorded |
-| [32-float-evaluated-as-double.md](32-float-evaluated-as-double.md) | Draft | No submission recorded |
-| [33-unspecified-operand-exceptional-condition-question.md](33-unspecified-operand-exceptional-condition-question.md) | Draft; answered upstream (`cee382443`: branching on an unspecified value is UB by default, `UB_CERB004_unspecified__if/while/do/switch`; the ND reading is the refused switch `branching_on_unspec_is_nd`), carried by the base since stage 1 of the merge-base bump (2026-10-30) | No submission recorded |
-| [34-aligned-alloc-zero-alignment-division-by-zero.md](34-aligned-alloc-zero-alignment-division-by-zero.md) | Draft | No submission recorded |
-| [35-pp-core-grammar-mismatches.md](35-pp-core-grammar-mismatches.md) | Draft | No submission recorded |
-| [36-mk-conv-int-bypasses-impl-def-signed-conversion.md](36-mk-conv-int-bypasses-impl-def-signed-conversion.md) | Draft | No submission recorded |
-| [37-are-compatible-cross-tu-recursive-struct-nontermination.md](37-are-compatible-cross-tu-recursive-struct-nontermination.md) | Draft | No submission recorded |
-| [38-pememberof-cross-tu-struct-value-tag-identity.md](38-pememberof-cross-tu-struct-value-tag-identity.md) | Draft | No submission recorded |
-| [39-are-compatible-array-bound-typo.md](39-are-compatible-array-bound-typo.md) | Draft | No submission recorded |
-| [40-float-literal-hex-subnormal-double-rounding-inherited.md](40-float-literal-hex-subnormal-double-rounding-inherited.md) | Sent | Communicated privately to the Cerberus maintainers by the operator, 2026-09-26 ([USER 2026-09-26] reported having notified the Cerberus maintainers privately); no public issue URL |
-| [41-struct-flexible-array-member-vs-sized-array-compatibility-question.md](41-struct-flexible-array-member-vs-sized-array-compatibility-question.md) | Draft | No submission recorded |
-| [42-unary-minus-floating-zero-sign-question.md](42-unary-minus-floating-zero-sign-question.md) | Draft | No submission recorded |
-| [43-many-many1-input-indexed-recursion-proposal.md](43-many-many1-input-indexed-recursion-proposal.md) | Draft | No submission recorded |
-| [44-concrete-allocator-euclidean-align-down-overlap-at-exhaustion.md](44-concrete-allocator-euclidean-align-down-overlap-at-exhaustion.md) | Draft | No submission recorded |
-| [45-core-match-pattern-truncating-zip-arity.md](45-core-match-pattern-truncating-zip-arity.md) | Draft | No submission recorded |
-| [46-function-pointer-number-is-a-fresh-supply-artefact.md](46-function-pointer-number-is-a-fresh-supply-artefact.md) | Draft | No submission recorded |
-| [47-alignas-incomplete-type-not-diagnosed.md](47-alignas-incomplete-type-not-diagnosed.md) | Draft | No submission recorded |
-| [48-funptrmap-keyed-by-number-conflates-libc-statics.md](48-funptrmap-keyed-by-number-conflates-libc-statics.md) | Draft | No submission recorded |
-| [49-par-results-returned-in-reverse-thread-order.md](49-par-results-returned-in-reverse-thread-order.md) | Draft | No submission recorded |
-| [50-switches-parser-fail-open.md](50-switches-parser-fail-open.md) | Draft | No submission recorded |
-| [51-combine-prov-crash-on-pnvi-litmus.md](51-combine-prov-crash-on-pnvi-litmus.md) | Draft | No submission recorded |
-| [52-debug-printf-in-eff-array-shift-pnvi-arm.md](52-debug-printf-in-eff-array-shift-pnvi-arm.md) | Draft | No submission recorded |
-| [53-array-shift-ptrval-crash-on-symbolic-pointer-memcpy.md](53-array-shift-ptrval-crash-on-symbolic-pointer-memcpy.md) | Draft | No submission recorded |
-| [55-ub088-reported-regardless-of-use.md](55-ub088-reported-regardless-of-use.md) | Draft | No submission recorded |
-| [56-memcpy-overlap-copies-silently.md](56-memcpy-overlap-copies-silently.md) | Draft | No submission recorded; the fork REFUSES the case since 2026-10-20 (contract D10, fork-ahead, not a fix for upstream) |
-| [57-aligned-alloc-invalid-alignment-allocates.md](57-aligned-alloc-invalid-alignment-allocates.md) | Draft | No submission recorded; the fork REFUSES the case since 2026-10-20 (contract D10, fork-ahead, not a fix for upstream) |
-| [58-relative-runtime-library-location.md](58-relative-runtime-library-location.md) | Draft | No submission recorded; the fork's oracle implements the remedy since 2026-10-26 (quotation hygiene Q1, fork-ahead delta, not a fix for upstream) |
-| [59-union-initializer-desugaring.md](59-union-initializer-desugaring.md) | Draft | No submission recorded; the fork REFUSES part (a) since 2026-10-20 (contract D11, fork-ahead, not a fix for upstream); parts (b) and (c) unchanged |
-| [60-anonymous-members-spliced-into-containing-aggregate.md](60-anonymous-members-spliced-into-containing-aggregate.md) | Draft | No submission recorded; the fork REFUSES the case since 2026-10-26 (contract D12, fork-ahead, not a fix for upstream; the report stands) |
-| [61-compound-assignment-duplicates-left-operand.md](61-compound-assignment-duplicates-left-operand.md) | Draft | No submission recorded; the fork REFUSES side-effecting left operands since 2026-10-29 (contract D13, fork-ahead, not a fix for upstream; the report stands and proposes the one-binding elaboration); carries a related note on the GNU `?:` arm's `record_error_at`, discarded by the constant-expression mini-run |
-| [62-wchar-t-unsigned-range-signed-representation-crash.md](62-wchar-t-unsigned-range-signed-representation-crash.md) | Draft | No submission recorded; the fork plans a declared refusal in place of the crash ([USER 2026-10-20], queued) |
-| [63-character-decoding-crashes-on-multichar-and-utf8.md](63-character-decoding-crashes-on-multichar-and-utf8.md) | Draft | No submission recorded; the fork plans declared refusals in place of the crashes ([USER 2026-10-20], queued) |
-| [64-recursive-main-guard-bypassed.md](64-recursive-main-guard-bypassed.md) | Draft | Report only; active driver bypasses guard; no submission recorded |
-| [65-inner-arg-temps-core-symbol-loss.md](65-inner-arg-temps-core-symbol-loss.md) | Draft | Fork printer remedy and loader detector implemented; cross-mode multiplicity dispositioned; no submission recorded |
-| [66-main-inner-arg-temps-comment.md](66-main-inner-arg-temps-comment.md) | Draft | Report only; main uses the switch despite the exclusion comment; no submission recorded |
-| [67-const-expr-sizeof-struct-not-found-window.md](67-const-expr-sizeof-struct-not-found-window.md) | Draft; fixed upstream (736690a65) before it was filed | Regression window b3e11ea33..736690a65: a struct/union sizeof or _Alignof in an integer constant expression raises Not_found (the mini-run's Core file has no tag definitions); found by the merge-base bump stage 1, carried as a backport of the fixing line until stage 2. No submission recorded |
-| [68-printf-floating-conversions-unparsed-false-invalid-format.md](68-printf-floating-conversions-unparsed-false-invalid-format.md) | Draft (2026-11-07); the fork parses the full 7.21.6.1#7-#8 syntax and REFUSES the unimplemented floating conversions (contract D16: a declared refusal, not a fix for upstream; the report asks for the conversions or an explicit error) | No submission recorded |
-| [69-printf-j-z-t-modifiers-false-ub153b.md](69-printf-j-z-t-modifiers-false-ub153b.md) | Draft (2026-11-07); fixed in the fork (fork-ahead delta, contract D16; the report carries the remedy in PROSE: the expected side normalised through the alias table) | No submission recorded; to be filed with the fork's hunk against c3ff8c53f attached |
-| [70-printf-zero-flag-before-sign-and-hash-f-no-point.md](70-printf-zero-flag-before-sign-and-hash-f-no-point.md) | Draft (2026-11-07); fixed in the fork (fork-ahead delta, contract D16; the report carries the remedy in PROSE); two related findings kept as upstream has them (`%5%`, the space flag), the `%*%` form REFUSED, the `-0.0` finding filed apart as 71 | No submission recorded; to be filed with the fork's hunk against c3ff8c53f attached |
-| [71-unary-minus-floating-zero-loses-sign.md](71-unary-minus-floating-zero-loses-sign.md) | Draft (2026-11-07); NOT fixed in the fork (a translation-layer slice of its own; the report carries the remedy in prose) | No submission recorded |
-| [72-sscanf-false-ub048-null-pointer-subtraction-in-shlim.md](72-sscanf-false-ub048-null-pointer-subtraction-in-shlim.md) | Draft (2026-11-10, the reporting slice: every `sscanf` call is a false UB048 (the shipped library subtracts a null read pointer in `__shlim`)); unchanged in the fork | No submission recorded |
-| [73-statement-expression-with-statement-inside-crashes-break-at-sseq.md](73-statement-expression-with-statement-inside-crashes-break-at-sseq.md) | Draft (2026-11-10, the reporting slice: a GNU statement expression containing an assignment, `++` or `if` dies in `break_at_sseq`); unchanged in the fork | No submission recorded |
-| [74-program-argument-bytes-stored-through-character-decoder.md](74-program-argument-bytes-stored-through-character-decoder.md) | Draft (2026-11-10, the reporting slice: a backslash or non-ASCII byte in `--args` crashes `prepare_main_args`); unchanged in the fork | No submission recorded |
-| [75-gnu-conditional-omitted-operand-internal-error.md](75-gnu-conditional-omitted-operand-internal-error.md) | Draft (2026-11-10, the reporting slice: the GNU `a ?: b` ends in an internal error, an unrelated one in integer-constant contexts (was a note in 61)); unchanged in the fork | No submission recorded |
-| [76-libc-perror-strerror-stubs-and-missing-declarations.md](76-libc-perror-strerror-stubs-and-missing-declarations.md) | Draft (2026-11-10, the reporting slice: `strerror`/`perror` stubs; `<wchar.h>`, `<uchar.h>`, `<float.h>` gaps; `<math.h>` not linked); unchanged in the fork | No submission recorded |
-| [77-floating-to-integer-non-finite-z-overflow.md](77-floating-to-integer-non-finite-z-overflow.md) | Draft (2026-11-10, the reporting slice: an infinity or NaN converted to an integer type is an uncaught `Z.Overflow` (15's residual)); unchanged in the fork | No submission recorded |
-| [lean4/01-stack-overflow-handler-deadlock.md](lean4/01-stack-overflow-handler-deadlock.md) | Draft | No submission recorded |
-| [lean4/02-nat-div-mod-literal-folding.md](lean4/02-nat-div-mod-literal-folding.md) | Draft | No submission recorded |
-| [lean4/03-float-tobits-canonicalizes-nan.md](lean4/03-float-tobits-canonicalizes-nan.md) | Draft | No submission recorded |
-| [lem/01-polymorphic-compare-on-set-values.md](lem/01-polymorphic-compare-on-set-values.md) | Draft | No submission recorded |
-| [ocaml/01-float-of-hex-double-rounding-subnormal.md](ocaml/01-float-of-hex-double-rounding-subnormal.md) | Draft | No submission recorded |
+### How to read the CLASS and STATE columns (added 2026-11-10, the reporting slice)
+
+[AGENT 2026-11-10] Every report has one CLASS and one STATE. The classes were assigned by the agent in the reporting
+slice (roadmap `../2026-11-10_roadmap-maintenance-and-reporting.md`, item 2) and are open to the operator's revision.
+
+**CLASS** — what kind of finding the report is:
+
+- `semantics` — a question of C's meaning that any implementation of the model has to answer: a wrong value, a false
+  undefined-behaviour verdict, a missed one, a conforming program rejected, a missing language or library feature.
+  Defects of the shipped C library (`runtime/libc`) are classed here by their symptom.
+- `robustness` — the tool crashes, raises an internal error or does not terminate where a value, a verdict or a
+  diagnostic belongs. A report whose title is the crash is classed here even when the same mechanism also gives a wrong
+  value (62; 26's `*` forms).
+- `code` — an artifact of the present code or build rather than of C: a one-token slip whose intended meaning is not
+  in question (01, 39), the Core printer and parser (02, 03, 35, 65), diagnostic text, the command line, a path test, a
+  comment, an internal invariant, a proposal.
+
+The five reports for other projects (`lean4/`, `lem/`, `ocaml/`) carry the class of the finding in their own project.
+
+**STATE in the fork** — what the fork's two engines do today with the report's case, against pristine upstream at the
+merge-base `c3ff8c53f`:
+
+- `fixed (Dn)` — the fork answers as the report asks; `Dn` is the row of `lean_frontend/CONTRACT.md` that declares the
+  change. A fix made before the contract rows existed says where it is recorded instead.
+- `refused (Dn)` — the fork stops with a declared, attributed refusal in place of upstream's answer or crash (a
+  refusal is not a fix: the report still asks upstream for the feature or the verdict). The PNVI refusals carry their
+  `R-PNVI-nn` identifiers.
+- `unchanged` — the fork behaves as pristine upstream does at `c3ff8c53f`. `unchanged (fixed in the base)` means
+  upstream fixed it before `c3ff8c53f` and the fork carries upstream's text.
+- `n/a` — a report for another project.
+
+A dagger (†) marks a state observed by running the report's reproducer on the fork's engines on 2026-11-10; the others
+are the state the report or this index recorded earlier, not re-run in that pass.
+
+Counts (derived from the table below by script, 2026-11-10; 81 rows = 76 Cerberus reports + 5 for other projects).
+By class, all rows: semantics 45, robustness 20, code 16; Cerberus reports only: semantics 43, robustness 18, code 15.
+By state, Cerberus reports: unchanged 44 (4 of them fixed or answered in the base: 01, 04, 15, 33), fixed 21 (one of
+them, 40, in the Lean engine only), fixed in part and refused in part 1 (26), refused 10 (59 in part); other projects,
+n/a 5. Class by state, Cerberus reports: semantics 24 unchanged / 13 fixed / 6 refused; robustness 11 unchanged /
+4 fixed / 1 fixed and refused / 2 refused; code 9 unchanged / 4 fixed / 2 refused.
+
+| Report | CLASS | STATE in the fork | Recorded state | Submission evidence |
+|---|---|---|---|---|
+| [01-float-mul-is-addition.md](01-float-mul-is-addition.md) | code | unchanged (fixed in the base) | Filed; fixed upstream (`766073467`), carried by the base since stage 1 of the merge-base bump (2026-10-30; ISO-fix register R6 retired) | [Cerberus #1009](https://github.com/rems-project/cerberus/issues/1009), operator 2026-08-19 |
+| [02-pp-core-unparseable-forms.md](02-pp-core-unparseable-forms.md) | code | unchanged | Draft | No submission recorded |
+| [03-pp-core-ambiguous-output.md](03-pp-core-ambiguous-output.md) | code | unchanged | Draft | No submission recorded |
+| [04-null-pointer-arith-crash.md](04-null-pointer-arith-crash.md) | robustness | unchanged (fixed in the base) † | Draft; fixed upstream (`f4a3a3d54`, `Fixes: cerberus-lean-04`), carried by the base since stage 1 of the merge-base bump (2026-10-30; both engines `UB046_array_pointer_outside`, record §4) | No submission recorded |
+| [05-va-arg-missing-type-check.md](05-va-arg-missing-type-check.md) | semantics | unchanged | Draft | No submission recorded |
+| [06-funinfo-has-proto-question.md](06-funinfo-has-proto-question.md) | code | unchanged | Draft | No submission recorded |
+| [07-symbol-identity-fragility.md](07-symbol-identity-fragility.md) | code | unchanged | Draft | No submission recorded |
+| [08-desugar-nested-init-internal-error.md](08-desugar-nested-init-internal-error.md) | robustness | unchanged † | Draft | No submission recorded |
+| [09-address-constant-member-rejected.md](09-address-constant-member-rejected.md) | semantics | fixed (D17) † | Draft; fixed in the fork 2026-11-07 (fork-ahead delta, contract D17; the report carries the patch; 28 and 29 merged into it) | No submission recorded; to be filed |
+| [10-decode-rejects-question-escape.md](10-decode-rejects-question-escape.md) | robustness | fixed (D18) † | Sent; fixed in the fork (2026-11-07, a fork-ahead delta: the `\?` arm in `decode.ml`; the Lean engine answered so since 2026-09-03 under the retired ISO-fix register row; record `../2026-11-07_half-mirrors-oracle-record.md`, patch against `c3ff8c53f` in the draft) | Communicated privately to the Cerberus maintainers by the operator, 2026-09-26 ([USER 2026-09-26] reported having notified the Cerberus maintainers privately); no public issue URL |
+| [11-escaped-char-octal-roundtrip-corruption.md](11-escaped-char-octal-roundtrip-corruption.md) | semantics | fixed (D18) † | Sent; fixed in the fork (2026-11-07, a fork-ahead delta: `escaped_char` as the decoder's right inverse, every byte 0..255 round-tripping; the Lean engine answered so since 2026-09-03 under the retired ISO-fix register row; record `../2026-11-07_half-mirrors-oracle-record.md`, patch against `c3ff8c53f` in the draft) | Communicated privately to the Cerberus maintainers by the operator, 2026-09-26 ([USER 2026-09-26] reported having notified the Cerberus maintainers privately); no public issue URL |
+| [12-bswap64-overflow-crash.md](12-bswap64-overflow-crash.md) | robustness | unchanged † | Draft | No submission recorded |
+| [13-memcmp-hugesize-overflow-crash.md](13-memcmp-hugesize-overflow-crash.md) | robustness | fixed (D18) † | Sent; fixed in the fork (2026-11-07, a fork-ahead delta: `memcmp` counting on `Z`, the checked load's UB verdict reached; the Lean engine answered so since 2026-09-03 under the retired ISO-fix register row; record `../2026-11-07_half-mirrors-oracle-record.md`, patch against `c3ff8c53f` in the draft) | Communicated privately to the Cerberus maintainers by the operator, 2026-09-26 ([USER 2026-09-26] reported having notified the Cerberus maintainers privately); no public issue URL |
+| [14-ailname-proxy-shadows-user-functions.md](14-ailname-proxy-shadows-user-functions.md) | semantics | unchanged † | Draft | No submission recorded |
+| [15-bool-float-conversion-truncation.md](15-bool-float-conversion-truncation.md) | semantics | unchanged (fixed in the base) † | Fixed upstream; backported; carried by the base since stage 1 of the merge-base bump (2026-10-30, the I0b backport merged away) | Upstream `3230aa494`; inner_arg_temps I0b. No submission recorded |
+| [16-snprintf-truncation-return-length.md](16-snprintf-truncation-return-length.md) | semantics | fixed (D16) † | Draft; fixed in the fork 2026-11-07 (fork-ahead delta, contract D16; the report carries the PATCH as a code snippet: the would-be length, formatting at n = 0, the UB verdict passed through) | No submission recorded; to be filed with the patch |
+| [17-diagnostic-embeds-symbol-id.md](17-diagnostic-embeds-symbol-id.md) | code | unchanged † | Draft | No submission recorded |
+| [18-monadic-list-combinators-non-tail.md](18-monadic-list-combinators-non-tail.md) | robustness | unchanged | Draft | No submission recorded |
+| [19-dynamic-addrs-never-cleaned.md](19-dynamic-addrs-never-cleaned.md) | semantics | unchanged | Draft | No submission recorded |
+| [20-size-t-integer-rank-uac.md](20-size-t-integer-rank-uac.md) | semantics | fixed (D14) † | Draft; fixed in the fork 2026-11-04 (fork-ahead delta, contract D14; the report carries the patch) | No submission recorded; to be filed |
+| [21-provenance-lost-through-arithmetic-pvi.md](21-provenance-lost-through-arithmetic-pvi.md) | semantics | unchanged † | Draft | No submission recorded |
+| [22-ptrdiff-strips-array-layer.md](22-ptrdiff-strips-array-layer.md) | semantics | unchanged † | Draft | No submission recorded |
+| [23-string-literal-init-of-char-array-members.md](23-string-literal-init-of-char-array-members.md) | semantics | unchanged † | Draft | No submission recorded |
+| [24-stdio-buffer-not-flushed-at-exit.md](24-stdio-buffer-not-flushed-at-exit.md) | semantics | fixed (D15) † | Draft; fixed in the fork 2026-11-06 (fork-ahead delta, contract D15; the report carries the patch; 25 merged into it) | No submission recorded; to be filed |
+| [25-atexit-not-run-on-main-return.md](25-atexit-not-run-on-main-return.md) | semantics | fixed (D15) † | Merged into 24 (2026-11-06); fixed in the fork | filed with 24 |
+| [26-printf-star-width-crash.md](26-printf-star-width-crash.md) | robustness | fixed (D16: the `*` forms); refused (D16: `%n`, `%ls`, `%lc`, `%*%`) † | Draft; the `*` width/precision fixed in the fork 2026-11-07 (fork-ahead delta, contract D16; the report carries the remedy in PROSE, the fork's `load_star_argument` is the implementation), %n/%ls/%lc and `%*%` DECLARED REFUSALS in the fork (not a fix for upstream) | No submission recorded; to be filed with the fork's hunk against c3ff8c53f attached |
+| [27-printf-hex-int-argument-ub153b.md](27-printf-hex-int-argument-ub153b.md) | semantics | unchanged † | Draft; the fork KEEPS the strict verdict (2026-11-07: upstream's defensible 7.21.6.1#9 reading, pinned as a UB row of scripts/check_printf_refusals.sh) | No submission recorded |
+| [28-conditional-in-static-initializer.md](28-conditional-in-static-initializer.md) | semantics | fixed (D17) † | Merged into 09 (2026-11-07); fixed in the fork | filed with 09 |
+| [29-string-literal-address-constant.md](29-string-literal-address-constant.md) | semantics | fixed (D17) † | Merged into 09 (2026-11-07); fixed in the fork | filed with 09 |
+| [30-strncmp-zero-length.md](30-strncmp-zero-length.md) | semantics | unchanged † | Draft | No submission recorded |
+| [31-calloc-overflow-check.md](31-calloc-overflow-check.md) | semantics | unchanged † | Draft | No submission recorded |
+| [32-float-evaluated-as-double.md](32-float-evaluated-as-double.md) | semantics | unchanged | Draft | No submission recorded |
+| [33-unspecified-operand-exceptional-condition-question.md](33-unspecified-operand-exceptional-condition-question.md) | semantics | unchanged (answered in the base) † | Draft; answered upstream (`cee382443`: branching on an unspecified value is UB by default, `UB_CERB004_unspecified__if/while/do/switch`; the ND reading is the refused switch `branching_on_unspec_is_nd`), carried by the base since stage 1 of the merge-base bump (2026-10-30) | No submission recorded |
+| [34-aligned-alloc-zero-alignment-division-by-zero.md](34-aligned-alloc-zero-alignment-division-by-zero.md) | robustness | unchanged † | Draft | No submission recorded |
+| [35-pp-core-grammar-mismatches.md](35-pp-core-grammar-mismatches.md) | code | unchanged | Draft | No submission recorded |
+| [36-mk-conv-int-bypasses-impl-def-signed-conversion.md](36-mk-conv-int-bypasses-impl-def-signed-conversion.md) | semantics | unchanged | Draft | No submission recorded |
+| [37-are-compatible-cross-tu-recursive-struct-nontermination.md](37-are-compatible-cross-tu-recursive-struct-nontermination.md) | robustness | fixed (no contract row; the report's fork-status section) | Draft | No submission recorded |
+| [38-pememberof-cross-tu-struct-value-tag-identity.md](38-pememberof-cross-tu-struct-value-tag-identity.md) | semantics | unchanged | Draft | No submission recorded |
+| [39-are-compatible-array-bound-typo.md](39-are-compatible-array-bound-typo.md) | code | fixed (no contract row; the report's fork-status section) | Draft | No submission recorded |
+| [40-float-literal-hex-subnormal-double-rounding-inherited.md](40-float-literal-hex-subnormal-double-rounding-inherited.md) | semantics | fixed in the Lean engine only (ISO-fix register R5, no contract row) | Sent | Communicated privately to the Cerberus maintainers by the operator, 2026-09-26 ([USER 2026-09-26] reported having notified the Cerberus maintainers privately); no public issue URL |
+| [41-struct-flexible-array-member-vs-sized-array-compatibility-question.md](41-struct-flexible-array-member-vs-sized-array-compatibility-question.md) | semantics | unchanged | Draft | No submission recorded |
+| [42-unary-minus-floating-zero-sign-question.md](42-unary-minus-floating-zero-sign-question.md) | semantics | unchanged | Draft | No submission recorded |
+| [43-many-many1-input-indexed-recursion-proposal.md](43-many-many1-input-indexed-recursion-proposal.md) | code | unchanged | Draft | No submission recorded |
+| [44-concrete-allocator-euclidean-align-down-overlap-at-exhaustion.md](44-concrete-allocator-euclidean-align-down-overlap-at-exhaustion.md) | semantics | fixed (no contract row; the report's fork-status section) † | Draft | No submission recorded |
+| [45-core-match-pattern-truncating-zip-arity.md](45-core-match-pattern-truncating-zip-arity.md) | code | fixed (no contract row; the report's fork-status section) | Draft | No submission recorded |
+| [46-function-pointer-number-is-a-fresh-supply-artefact.md](46-function-pointer-number-is-a-fresh-supply-artefact.md) | semantics | unchanged | Draft | No submission recorded |
+| [47-alignas-incomplete-type-not-diagnosed.md](47-alignas-incomplete-type-not-diagnosed.md) | semantics | fixed (no contract row; the report's fork-status section) † | Draft | No submission recorded |
+| [48-funptrmap-keyed-by-number-conflates-libc-statics.md](48-funptrmap-keyed-by-number-conflates-libc-statics.md) | semantics | unchanged | Draft | No submission recorded |
+| [49-par-results-returned-in-reverse-thread-order.md](49-par-results-returned-in-reverse-thread-order.md) | semantics | unchanged | Draft | No submission recorded |
+| [50-switches-parser-fail-open.md](50-switches-parser-fail-open.md) | code | refused (R-PNVI-11, R-PNVI-12; no contract row) | Draft | No submission recorded |
+| [51-combine-prov-crash-on-pnvi-litmus.md](51-combine-prov-crash-on-pnvi-litmus.md) | robustness | refused (R-PNVI-01; no contract row) | Draft | No submission recorded |
+| [52-debug-printf-in-eff-array-shift-pnvi-arm.md](52-debug-printf-in-eff-array-shift-pnvi-arm.md) | code | refused (R-PNVI-10; no contract row) | Draft | No submission recorded |
+| [53-array-shift-ptrval-crash-on-symbolic-pointer-memcpy.md](53-array-shift-ptrval-crash-on-symbolic-pointer-memcpy.md) | robustness | refused (R-PNVI-06; no contract row) | Draft | No submission recorded |
+| [55-ub088-reported-regardless-of-use.md](55-ub088-reported-regardless-of-use.md) | semantics | unchanged † | Draft | No submission recorded |
+| [56-memcpy-overlap-copies-silently.md](56-memcpy-overlap-copies-silently.md) | semantics | refused (D10) | Draft | No submission recorded; the fork REFUSES the case since 2026-10-20 (contract D10, fork-ahead, not a fix for upstream) |
+| [57-aligned-alloc-invalid-alignment-allocates.md](57-aligned-alloc-invalid-alignment-allocates.md) | semantics | refused (D10) | Draft | No submission recorded; the fork REFUSES the case since 2026-10-20 (contract D10, fork-ahead, not a fix for upstream) |
+| [58-relative-runtime-library-location.md](58-relative-runtime-library-location.md) | code | fixed (no contract row; quotation hygiene Q1) | Draft | No submission recorded; the fork's oracle implements the remedy since 2026-10-26 (quotation hygiene Q1, fork-ahead delta, not a fix for upstream) |
+| [59-union-initializer-desugaring.md](59-union-initializer-desugaring.md) | semantics | refused (D11: part (a)); parts (b), (c) unchanged | Draft | No submission recorded; the fork REFUSES part (a) since 2026-10-20 (contract D11, fork-ahead, not a fix for upstream); parts (b) and (c) unchanged |
+| [60-anonymous-members-spliced-into-containing-aggregate.md](60-anonymous-members-spliced-into-containing-aggregate.md) | semantics | refused (D12) † | Draft | No submission recorded; the fork REFUSES the case since 2026-10-26 (contract D12, fork-ahead, not a fix for upstream; the report stands) |
+| [61-compound-assignment-duplicates-left-operand.md](61-compound-assignment-duplicates-left-operand.md) | semantics | refused (D13) † | Draft | No submission recorded; the fork REFUSES side-effecting left operands since 2026-10-29 (contract D13, fork-ahead, not a fix for upstream; the report stands and proposes the one-binding elaboration); carries a related note on the GNU `?:` arm's `record_error_at`, discarded by the constant-expression mini-run |
+| [62-wchar-t-unsigned-range-signed-representation-crash.md](62-wchar-t-unsigned-range-signed-representation-crash.md) | robustness | unchanged † (the crash; since D14 the fork answers `WCHAR_MAX > 0` with 0 where pristine and gcc answer 1 — a silent wrong answer of the fork, in the report's 2026-11-10 section, not fixed) | Draft | No submission recorded; the fork plans a declared refusal in place of the crash ([USER 2026-10-20], queued) |
+| [63-character-decoding-crashes-on-multichar-and-utf8.md](63-character-decoding-crashes-on-multichar-and-utf8.md) | robustness | unchanged † | Draft | No submission recorded; the fork plans declared refusals in place of the crashes ([USER 2026-10-20], queued) |
+| [64-recursive-main-guard-bypassed.md](64-recursive-main-guard-bypassed.md) | semantics | unchanged | Draft | Report only; active driver bypasses guard; no submission recorded |
+| [65-inner-arg-temps-core-symbol-loss.md](65-inner-arg-temps-core-symbol-loss.md) | code | fixed (no contract row; the fork's printer remedy) | Draft | Fork printer remedy and loader detector implemented; cross-mode multiplicity dispositioned; no submission recorded |
+| [66-main-inner-arg-temps-comment.md](66-main-inner-arg-temps-comment.md) | code | unchanged | Draft | Report only; main uses the switch despite the exclusion comment; no submission recorded |
+| [67-const-expr-sizeof-struct-not-found-window.md](67-const-expr-sizeof-struct-not-found-window.md) | robustness | fixed (no contract row; the backport of upstream `736690a65`) † | Draft; fixed upstream (736690a65) before it was filed | Regression window b3e11ea33..736690a65: a struct/union sizeof or _Alignof in an integer constant expression raises Not_found (the mini-run's Core file has no tag definitions); found by the merge-base bump stage 1, carried as a backport of the fixing line until stage 2. No submission recorded |
+| [68-printf-floating-conversions-unparsed-false-invalid-format.md](68-printf-floating-conversions-unparsed-false-invalid-format.md) | semantics | refused (D16) † | Draft (2026-11-07); the fork parses the full 7.21.6.1#7-#8 syntax and REFUSES the unimplemented floating conversions (contract D16: a declared refusal, not a fix for upstream; the report asks for the conversions or an explicit error) | No submission recorded |
+| [69-printf-j-z-t-modifiers-false-ub153b.md](69-printf-j-z-t-modifiers-false-ub153b.md) | semantics | fixed (D16) † | Draft (2026-11-07); fixed in the fork (fork-ahead delta, contract D16; the report carries the remedy in PROSE: the expected side normalised through the alias table) | No submission recorded; to be filed with the fork's hunk against c3ff8c53f attached |
+| [70-printf-zero-flag-before-sign-and-hash-f-no-point.md](70-printf-zero-flag-before-sign-and-hash-f-no-point.md) | semantics | fixed (D16) | Draft (2026-11-07); fixed in the fork (fork-ahead delta, contract D16; the report carries the remedy in PROSE); two related findings kept as upstream has them (`%5%`, the space flag), the `%*%` form REFUSED, the `-0.0` finding filed apart as 71 | No submission recorded; to be filed with the fork's hunk against c3ff8c53f attached |
+| [71-unary-minus-floating-zero-loses-sign.md](71-unary-minus-floating-zero-loses-sign.md) | semantics | unchanged | Draft (2026-11-07); NOT fixed in the fork (a translation-layer slice of its own; the report carries the remedy in prose) | No submission recorded |
+| [72-sscanf-false-ub048-null-pointer-subtraction-in-shlim.md](72-sscanf-false-ub048-null-pointer-subtraction-in-shlim.md) | semantics | unchanged † | Draft (2026-11-10, the reporting slice: every `sscanf` call is a false UB048 (the shipped library subtracts a null read pointer in `__shlim`)); unchanged in the fork | No submission recorded |
+| [73-statement-expression-with-statement-inside-crashes-break-at-sseq.md](73-statement-expression-with-statement-inside-crashes-break-at-sseq.md) | robustness | unchanged † | Draft (2026-11-10, the reporting slice: a GNU statement expression containing an assignment, `++` or `if` dies in `break_at_sseq`); unchanged in the fork | No submission recorded |
+| [74-program-argument-bytes-stored-through-character-decoder.md](74-program-argument-bytes-stored-through-character-decoder.md) | robustness | unchanged † | Draft (2026-11-10, the reporting slice: a backslash or non-ASCII byte in `--args` crashes `prepare_main_args`); unchanged in the fork | No submission recorded |
+| [75-gnu-conditional-omitted-operand-internal-error.md](75-gnu-conditional-omitted-operand-internal-error.md) | robustness | unchanged † | Draft (2026-11-10, the reporting slice: the GNU `a ?: b` ends in an internal error, an unrelated one in integer-constant contexts (was a note in 61)); unchanged in the fork | No submission recorded |
+| [76-libc-perror-strerror-stubs-and-missing-declarations.md](76-libc-perror-strerror-stubs-and-missing-declarations.md) | semantics | unchanged † | Draft (2026-11-10, the reporting slice: `strerror`/`perror` stubs; `<wchar.h>`, `<uchar.h>`, `<float.h>` gaps; `<math.h>` not linked); unchanged in the fork | No submission recorded |
+| [77-floating-to-integer-non-finite-z-overflow.md](77-floating-to-integer-non-finite-z-overflow.md) | robustness | unchanged † | Draft (2026-11-10, the reporting slice: an infinity or NaN converted to an integer type is an uncaught `Z.Overflow` (15's residual)); unchanged in the fork | No submission recorded |
+| [lean4/01-stack-overflow-handler-deadlock.md](lean4/01-stack-overflow-handler-deadlock.md) | robustness | n/a | Draft | No submission recorded |
+| [lean4/02-nat-div-mod-literal-folding.md](lean4/02-nat-div-mod-literal-folding.md) | code | n/a | Draft | No submission recorded |
+| [lean4/03-float-tobits-canonicalizes-nan.md](lean4/03-float-tobits-canonicalizes-nan.md) | semantics | n/a | Draft | No submission recorded |
+| [lem/01-polymorphic-compare-on-set-values.md](lem/01-polymorphic-compare-on-set-values.md) | robustness | n/a | Draft | No submission recorded |
+| [ocaml/01-float-of-hex-double-rounding-subnormal.md](ocaml/01-float-of-hex-double-rounding-subnormal.md) | semantics | n/a | Draft | No submission recorded |
 
 Per operator directive [USER, 2026-08-19]: every report carries a
 concrete proposed remedy and a classification (TRUE BUG / INTENDED GAP /
