@@ -1,6 +1,6 @@
 name = "CerberusLean"
 defaultTargets = ["CerberusLean", "cerberus-lean"]
-moreLeanArgs = ["-DautoImplicit=false"]
+moreLeanArgs = ["-DautoImplicit=false", "-DwarningAsError=true"]
 
 # LemLib is the Lem runtime library for Lean, from the lem-lean fork
 # (repo migrated septract -> OathTech 2026-08 [USER 2026-09-02]; the offline
@@ -92,10 +92,15 @@ moreLeanArgs = ["-DautoImplicit=false"]
 # change, `@[noinline]` on synthesized tuple-let RHS defs, has no site in this
 # tree). The pin's lean-toolchain propagates here through `lake update LemLib`.
 # Evidence: docs/2026-10-25_lean-4.35-cerberus-record.md.
+# Re-pinned 2026-11-10 e6d8db5 -> 2220010 (the merged mdd/lean-backend head, lem
+# TODO 54: unreferenced binders are emitted `_name`, `termination_by structural`
+# only where the derived definition recurses; roadmap item 1 [USER 2026-11-10]).
+# Generated OCaml byte-identical; the generated Lean changes in those shapes only.
+# Evidence: docs/2026-11-10_todo54-repin-record.md.
 [[require]]
 name = "LemLib"
 git = "https://github.com/OathTech/lem-lean"
-rev = "e6d8db5680962f49060257d6c2bcb13c284b910f"
+rev = "2220010bc25f0c5682d8200f016e786ee66d65c6"
 subDir = "lean-lib"
 
 [[lean_lib]]
