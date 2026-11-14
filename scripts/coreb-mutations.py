@@ -340,16 +340,32 @@ def main(argv=None):
                                 "--core-build", sha256(normal_a), "--coreb-build", sha256(mutant_b),
                                 "--mode", "replay", "--tape", str(worktree / f".tmp/{tape_label}.json")]
                             code, output, error = instrument.run_child(command, options.timeout, 4096 * 1024**2, 16 * 1024**2)
+                            diagnostics(f"{name} {direction} stderr", error.decode("utf-8", errors="replace"))
                             try:
                                 replay = instrument.parse_trace(output, replay=True)
-                                if code != 0:
-                                    raise RuntimeError(f"{name}: {direction} exited {code} despite complete output")
+                            except instrument.Mismatch:
+                                if mutation.verdict == "stutter":
+                                    raise RuntimeError(f"singleton: freshly recorded tape refused in {direction}")
+                                # Protocol/tape disagreement is rejected by both
+                                # profiles before observational projection.
+                                continue
+                            if code != 0:
+                                raise RuntimeError(f"{name}: {direction} exited {code} despite complete output")
+                            try:
                                 instrument.compare(recording, replay, direction)
                             except instrument.Mismatch:
-                                pass  # This is the required comparator verdict.
+                                pass
                             else:
-                                raise RuntimeError(f"{name}: mutation was not detected in {direction}")
-                            diagnostics(f"{name} {direction} stderr", error.decode("utf-8", errors="replace"))
+                                raise RuntimeError(f"{name}: mutation was not detected in exact {direction}")
+                            if mutation.verdict == "stutter":
+                                instrument.compare(recording, replay, direction, "stutter")
+                            else:
+                                try:
+                                    instrument.compare(recording, replay, direction, "stutter")
+                                except instrument.Mismatch:
+                                    pass
+                                else:
+                                    raise RuntimeError(f"{name}: mutation was not detected in stutter {direction}")
                     profile_code, profile_output, profile_error = capture(
                         common + ["--coreb-bin", str(mutant_b), "--comparison", "stutter"],
                         source, options.timeout * 6)
