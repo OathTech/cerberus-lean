@@ -1,0 +1,1202 @@
+(* TODO: A negative precision argument is taken as if the precision were omitted. *)
+open import Pervasives Utils Monadic_parsing
+import String_extra Errors AilTypesAux Core Core_aux Ctype Mem Mem_aux Float
+import Decode Implementation Undefined
+
+module U = Undefined
+
+type flags = <|
+  flag_minus: bool;
+  flag_plus:  bool;
+  flag_space: bool;
+  flag_hash:  bool;
+  flag_zero:  bool
+|>
+
+type field_width =
+  | FW_num of nat
+  | FW_asterisk
+
+type precision =
+  | P_num of nat
+  | P_asterisk
+
+(* FORK (fix/printf-refusals, 2026-11-07; contract D16): the parser accepts the full
+   length-modifier and conversion-specifier syntax of C17 7.21.6.1#7-#8 — upstream c3ff8c53f
+   leaves `LM_L` (:32, :133) and the e/E/g/G/a/A/F conversions (:40) commented out, so a
+   conforming `printf("%e", 3.5)` was reported as `Invalid_format` undefined behaviour (a
+   silently wrong verdict; upstream-tray report 68). The conversion stage REFUSES the
+   unimplemented conversions loudly (`floating_refusal` below); a format the parser cannot
+   parse at all stays `Invalid_format` (7.21.6.1#9, a malformed specification). *)
+type length_modifier =
+  | LM_hh
+  | LM_h
+  | LM_l
+  | LM_ll
+  | LM_j
+  | LM_z
+  | LM_t
+  | LM_L
+
+type conversion_specifier =
+  | CS_di
+  | CS_o
+  | CS_u
+  | CS_x
+  | CS_X
+  | CS_f
+  | CS_F
+  | CS_e
+  | CS_E
+  | CS_g
+  | CS_G
+  | CS_a
+  | CS_A
+  | CS_c
+  | CS_s
+  | CS_p
+  | CS_n
+  | CS_percent
+
+(* the conversions of a floating argument (7.21.6.1#8 a, A, e, E, f, F, g, G) *)
+val isFloatingConversion: conversion_specifier -> bool
+let isFloatingConversion = function
+  | CS_f -> true
+  | CS_F -> true
+  | CS_e -> true
+  | CS_E -> true
+  | CS_g -> true
+  | CS_G -> true
+  | CS_a -> true
+  | CS_A -> true
+  | _    -> false
+end
+
+(* the conversions of an integer argument (7.21.6.1#8 d, i, o, u, x, X) *)
+val isIntegerConversion: conversion_specifier -> bool
+let isIntegerConversion = function
+  | CS_di -> true
+  | CS_o  -> true
+  | CS_u  -> true
+  | CS_x  -> true
+  | CS_X  -> true
+  | _     -> false
+end
+
+val stringFromLengthModifier: maybe length_modifier -> string
+let stringFromLengthModifier = function
+  | Nothing    -> ""
+  | Just LM_hh -> "hh"
+  | Just LM_h  -> "h"
+  | Just LM_l  -> "l"
+  | Just LM_ll -> "ll"
+  | Just LM_j  -> "j"
+  | Just LM_z  -> "z"
+  | Just LM_t  -> "t"
+  | Just LM_L  -> "L"
+end
+
+val stringFromConversionSpecifier: conversion_specifier -> string
+let stringFromConversionSpecifier = function
+  | CS_di      -> "d"
+  | CS_o       -> "o"
+  | CS_u       -> "u"
+  | CS_x       -> "x"
+  | CS_X       -> "X"
+  | CS_f       -> "f"
+  | CS_F       -> "F"
+  | CS_e       -> "e"
+  | CS_E       -> "E"
+  | CS_g       -> "g"
+  | CS_G       -> "G"
+  | CS_a       -> "a"
+  | CS_A       -> "A"
+  | CS_c       -> "c"
+  | CS_s       -> "s"
+  | CS_p       -> "p"
+  | CS_n       -> "n"
+  | CS_percent -> "%"
+end
+
+instance (Eq conversion_specifier)
+  let (=)  = unsafe_structural_equality
+  let (<>) = unsafe_structural_inequality
+end
+
+type conversion_specification = <|
+  cp_flags:                flags;
+  cp_field_width:          maybe field_width;
+  cp_precision:            maybe precision;
+  cp_length_modifier:      maybe length_modifier;
+  cp_conversion_specifier: conversion_specifier
+|>
+
+type format_ =
+  | F_text of list char
+  | F_conv of conversion_specification
+type format = list format_
+
+
+val nonzero: parserM char
+let nonzero =
+  sat (function
+    | #'1' -> true
+    | #'2' -> true
+    | #'3' -> true
+    | #'4' -> true
+    | #'5' -> true
+    | #'6' -> true
+    | #'7' -> true
+    | #'8' -> true
+    | #'9' -> true
+    | _    -> false
+  end)
+
+
+val digit: parserM char
+let digit =
+  char #'0' <|> nonzero
+
+
+val nonnegativeDecimalInteger: parserM nat
+let nonnegativeDecimalInteger =
+  nonzero    >>= fun c  ->
+  many digit >>= fun cs ->
+  return (foldl (fun acc n -> n + 10 * acc) 0 $ map (fun c -> String_extra.ord c - 48) (c::cs))
+
+
+(* TODO: clang/gcc seems to allow 0, ie. this is not like a "C decimal integer constant" *)
+val decimalInteger: parserM nat
+let decimalInteger =
+  many digit >>= fun cs ->
+  return (foldl (fun acc n -> n + 10 * acc) 0 $ map (fun c -> String_extra.ord c - 48) cs)
+
+
+val flags: parserM flags
+let flags =
+  many (char #'-' <|> char #'+' <|> char #' ' <|> char #'#' <|> char #'0') >>= fun xs ->
+  return <|
+    flag_minus= elem #'-' xs; flag_plus= elem #'+' xs;
+    flag_space= elem #' ' xs; flag_hash= elem #'#' xs;
+    flag_zero=  elem #'0' xs
+  |>
+
+
+val fieldWidth: parserM field_width
+let fieldWidth =
+  (char #'*' >> return FW_asterisk) <|>
+  (nonnegativeDecimalInteger >>= fun n -> return $ FW_num n)
+
+
+val precision: parserM precision
+let output_precision =
+      (char #'.' >> char #'*' >> return P_asterisk)
+  <|> (char #'.' >> decimalInteger >>= fun n -> return $ P_num n)
+  <|> (char #'.' >> return (P_num 0))
+let inline precision = output_precision
+
+val lengthModifier: parserM length_modifier
+let lengthModifier =
+      (string [#'h'; #'h'] >> return LM_hh)
+  <|> (char #'h'           >> return LM_h)
+  <|> (string [#'l'; #'l'] >> return LM_ll)
+  <|> (char #'l'           >> return LM_l)
+  <|> (char #'j'           >> return LM_j)
+  <|> (char #'z'           >> return LM_z)
+  <|> (char #'t'           >> return LM_t)
+  <|> (char #'L'           >> return LM_L)
+
+
+val conversionSpecifier: parserM conversion_specifier
+let conversionSpecifier =
+      (char #'d' <|> char #'i' >> return CS_di)
+  <|> (char #'o' >> return CS_o)
+  <|> (char #'u' >> return CS_u)
+  <|> (char #'x' >> return CS_x)
+  <|> (char #'X' >> return CS_X)
+  <|> (char #'f' >> return CS_f)
+  <|> (char #'F' >> return CS_F)
+  <|> (char #'e' >> return CS_e)
+  <|> (char #'E' >> return CS_E)
+  <|> (char #'g' >> return CS_g)
+  <|> (char #'G' >> return CS_G)
+  <|> (char #'a' >> return CS_a)
+  <|> (char #'A' >> return CS_A)
+  <|> (char #'c' >> return CS_c)
+  <|> (char #'s' >> return CS_s)
+  <|> (char #'p' >> return CS_p)
+  <|> (char #'n' >> return CS_n)
+  <|> (char #'%' >> return CS_percent)
+
+
+val conversionSpecification: parserM conversion_specification
+let conversionSpecification =
+  char #'%'                  >>
+  flags                      >>= fun fs     ->
+  optionMaybe fieldWidth     >>= fun fw_opt ->
+  optionMaybe precision      >>= fun p_opt  ->
+  optionMaybe lengthModifier >>= fun lm_opt ->
+  conversionSpecifier        >>= fun cs     ->
+  return <|
+    cp_flags=                fs;
+    cp_field_width=          fw_opt;
+    cp_precision=            p_opt;
+    cp_length_modifier=      lm_opt;
+    cp_conversion_specifier= cs
+  |>
+
+
+val format: parserM format
+let format =
+  many (
+        (many1 (sat (fun z -> z <> #'%')) >>= fun str -> return (F_text str))
+    <|> (conversionSpecification >>= fun cs -> return (F_conv cs))
+  )
+
+
+
+(* character classes of a conversion's result, by code point (no Ord instance on char) *)
+val isDigitChar: char -> bool
+let isDigitChar c =
+  let o = String_extra.ord c in
+  48 <= o && o <= 57
+
+val isLetterChar: char -> bool
+let isLetterChar c =
+  let o = String_extra.ord c in
+  (97 <= o && o <= 122) || (65 <= o && o <= 90)
+
+
+(* if the given flags require it, prefix the given result of the conversion with
+   a sign or space or convert it to an "alternative form".
+   This correspond to the flags: + space # *)
+val expand: bool -> flags -> conversion_specifier -> list char -> list char
+let expand is_zero fs cspec str =
+  (* first doing the # flag *)
+  let str =
+    if fs.flag_hash then
+      match cspec with
+        | CS_o ->
+            if isPrefixOf [#'0'] str then
+              str
+            else
+              #'0' :: str
+        | CS_x ->
+            if is_zero then
+              str
+            else
+              #'0' :: #'x' :: str
+        | CS_X ->
+          if is_zero then
+            str
+          else
+            #'0' :: #'X' :: str
+        | _ ->
+            (* NOTE: must be a, A, e, E, f, F, g, or G *)
+            (* NOTE: this is checked earlier *)
+            (* FORK FIX (fix/printf-refusals, 2026-11-07; upstream-tray report 70): C17 7.21.6.1#6 `#`
+               — "For a, A, e, E, f, F, g, and G conversions, the result of converting a floating-point
+               number always contains a decimal-point character, even if no digits follow it"; upstream
+               c3ff8c53f returned `str` unchanged under its own `TODO: not doing the right thing for
+               now`, so `%#.0f` of 3.0 printed `3` (gcc `3.`). Of the floating conversions only %f is
+               implemented (the others refuse below); a result without a decimal point is a
+               precision-0 `[-]digits` or an infinity/NaN text, which keeps no point (7.21.6.1#8 f). *)
+            if isFloatingConversion cspec && not (List.elem #'.' str)
+               && List.all (fun c -> c = #'-' || isDigitChar c) str then
+              str ++ [#'.']
+            else
+              str
+      end
+    else
+      str in
+  if isPrefixOf [#'-'] str then
+    str
+  else if fs.flag_plus then
+      #'+' :: str
+  else if fs.flag_space then
+    #' ' :: str
+  else
+    str
+(* TODO # flag *)
+
+
+(* justify the result of a conversion.
+   This correspond to the flag: - 0
+   ASSUMES that length str < fw
+   FORK FIX (fix/printf-refusals, 2026-11-07; upstream-tray report 70): the precision is the
+   RESOLVED one (a `*` precision has been read by printf_aux), and the `0` flag pads AFTER the
+   sign or base prefix — C17 7.21.6.1#6 `0`: "leading zeros (following any indication of sign or
+   base) are used to pad to the field width rather than performing space padding, except when
+   converting an infinity or NaN"; upstream c3ff8c53f put the zeros in front of the whole result,
+   so `%05d` of -5 printed `000-5` (gcc `-0005`) and `%#05x` of 255 printed `00xff` (gcc
+   `0x0ff`). The prefix is a leading `-`, `+` or space (`expand` above) and, after it, the `0x`/
+   `0X` of a `#` hexadecimal conversion (an integer conversion's digits never contain `x`/`X`).
+   An infinity or NaN (the floating result carries a letter) is space-padded. *)
+val justify: maybe nat -> conversion_specifier -> flags -> nat -> list char -> list char
+let justify p_opt cspec fs fw str =
+  let d = fw - length str in
+  (* see (§7.21.6.1#6 flag 0) *)
+  let j = if isIntegerConversion cspec then
+            if fs.flag_zero && not (fs.flag_minus) && isNothing p_opt then #'0' else #' '
+          else if isFloatingConversion cspec then
+            if fs.flag_zero && not (fs.flag_minus) && not (List.any isLetterChar str)
+            then #'0' else #' '
+          else
+            #' ' in
+  if fs.flag_minus then
+    str ++ replicate d j
+  else if j = #'0' then
+    let (sign, rest) = match str with
+      | #'-' :: rest -> ([#'-'], rest)
+      | #'+' :: rest -> ([#'+'], rest)
+      | #' ' :: rest -> ([#' '], rest)
+      | _ -> ([], str)
+    end in
+    let (base, digits) = match rest with
+      | #'0' :: #'x' :: digits -> ([#'0'; #'x'], digits)
+      | #'0' :: #'X' :: digits -> ([#'0'; #'X'], digits)
+      | _ -> ([], rest)
+    end in
+    sign ++ base ++ replicate d j ++ digits
+  else
+    replicate d j ++ str
+
+
+(*
+(*
+val justify2: maybe precision -> conversion_specifier -> flags -> nat -> list char -> list char
+let justify2 p_opt cspec fs fw str =
+ *)
+val justify2: conversion_specification -> list char -> list char
+let justify2 cp str =
+  (* length of the conversion once the flags '+' 'space' '#' are applied *)
+  let l = length str + (if cp.cp_flags.flag_plus || cp.cp_flags.flag_space then 1 else 0) in
+  
+  (* the amount of justification that will be needed *)
+  let d = match cp.cp_field_width with
+    | Nothing          -> 0
+    | Just (FW_num fw) -> if l < fw then fw - l else 0
+    | Just FW_asterisk -> assert_false "TODO: FW_asterisk"
+  end in
+  
+  (* the character used for the justification (see §7.21.6.1#6 flag 0) *)
+  let j = if elem cp.cp_conversion_specifier [CS_di; CS_o; CS_u; CS_x; CS_X] then
+            if cp.cp_flags.flag_zero && not (cp.cp_flags.flag_minus) && isNothing cp.cp_precision then #'0' else #' '
+          else
+            #' ' in
+  if cp.cp_flags.flag_minus then
+    expand cp.cp_flags (str ++ replicate d j)
+  else
+    (* TODO: find a better way *)
+    match (j, str) with
+      | (#'0', #'-' :: str') -> #'-' :: replicate d j ++ str'
+      | _            ->         replicate d j ++ str
+    end
+
+*)
+
+val isSignedConversion: conversion_specifier -> bool
+let isSignedConversion = function
+  | CS_di      -> true
+  | CS_o       -> false
+  | CS_u       -> false
+  | CS_x       -> false
+  | CS_X       -> false
+  | CS_f       -> true (* TODO: check *)
+  | CS_F       -> true (* the floating conversions are signed conversions (7.21.6.1#6 `+`); refused below *)
+  | CS_e       -> true
+  | CS_E       -> true
+  | CS_g       -> true
+  | CS_G       -> true
+  | CS_a       -> true
+  | CS_A       -> true
+  | CS_c       -> false
+  | CS_s       -> false (* TODO: check *)
+  | CS_p       -> false
+  | CS_n       -> false (* TODO: check *)
+  | CS_percent -> false
+end
+
+val applyFlagsAndPadding: bool -> flags -> maybe field_width -> list char -> list char
+let applyFlagsAndPadding isSignedConversion fs fw_opt str =
+  error "TODO: WIP"
+
+
+
+val charFromDigit: bool -> natural -> char
+let charFromDigit useUpper = function
+  | 0  -> #'0'
+  | 1  -> #'1'
+  | 2  -> #'2'
+  | 3  -> #'3'
+  | 4  -> #'4'
+  | 5  -> #'5'
+  | 6  -> #'6'
+  | 7  -> #'7'
+  | 8  -> #'8'
+  | 9  -> #'9'
+  | 10 -> if useUpper then #'A' else #'a'
+  | 11 -> if useUpper then #'B' else #'b'
+  | 12 -> if useUpper then #'C' else #'c'
+  | 13 -> if useUpper then #'D' else #'d'
+  | 14 -> if useUpper then #'E' else #'e'
+  | 15 -> if useUpper then #'F' else #'f'
+  | _ ->
+      error "Formatted.charFromDigit, the second argument should be in {0..15}"
+end
+
+
+let rec showNonNegativeWithBasis_aux acc useUpper b n =
+  let (r,d) = (n / b, n mod b) in
+  if r = 0 then
+    charFromDigit useUpper d :: acc
+  else
+    showNonNegativeWithBasis_aux (charFromDigit useUpper d :: acc) useUpper b r
+
+(* === V0 exec-cone opaque census, printf tail (2026-09-01 S-basket
+   item 3; threadB recipe): Lean-target-only; OCaml byte-identical.
+   Recursion on n/b (numeric division, no structural decrease Lean can
+   see): fuel; the digit count of any natural is microscopic against
+   lemDefaultFuel; exhaustion is the LOUD fuelExhausted panic. === *)
+declare {lean} fuel val showNonNegativeWithBasis_aux = `fuelExhausted []`
+(* FUEL MEASURE (fuel-parameter arc C4, 2026-09-05; Lean-only): the recursion
+   is on n / b, which descends only for a basis b >= 2 (b = 1 loops forever
+   on OCaml too; b = 0 raises Division_by_zero there and is the opaque
+   lemDivByZero here) — so the measure `n + 1` is sufficient ONLY under the
+   hypothesis `2 <= b`, carried by the obligation's `lemHyp` binder (lem
+   `assuming`); the wrapper stays fuel-free. The invariant it rests on: the
+   only callers are showNonNegativeWithBasis at the literal bases 8/10/16
+   (this file, the %o/%d/%i/%u/%x/%X arms) — scripts/fuel_hypotheses.txt.
+   Proof: Formatted_lemMeasureProofs.lean. *)
+declare {lean} fuel_measure val showNonNegativeWithBasis_aux = `n + 1` assuming `2 ≤ b`
+
+val showNonNegativeWithBasis: bool -> natural -> natural -> list char
+let showNonNegativeWithBasis useUpper b n =
+  if n < 0 then
+    error "showNonNegativeWithBasis expects an non-negative integer"
+  else
+    showNonNegativeWithBasis_aux [] useUpper b n
+
+let inline (>>=) = Mem.bind
+
+
+(* DEBUG *)
+val stringFromMemValue: Mem.mem_value -> string
+declare ocaml target_rep function stringFromMemValue = `String_mem.string_of_mem_value`
+declare hol   target_rep function stringFromMemValue = `pp$stringFromMemValue`
+declare lean target_rep function stringFromMemValue = `CerbPP.stringFromMemValue`
+
+val stringFromPointerValue: bool -> Mem.pointer_value -> string
+declare ocaml target_rep function stringFromPointerValue = `String_mem.string_of_pointer_value`
+declare hol   target_rep function stringFromPointerValue = `pp$stringFromPointerValue`
+declare lean target_rep function stringFromPointerValue = `CerbPP.stringFromPointerValue`
+
+val stringFromCtype: Ctype.ctype -> string
+declare ocaml target_rep function stringFromCtype = `String_core_ctype.string_of_ctype`
+declare hol   target_rep function stringFromCtype = `pp$stringFromCtype`
+declare lean target_rep function stringFromCtype = `CerbPP.stringFromCtype`
+
+
+(* the third argument specify have many characters to load at most *)
+val     load_character_array_aux: Loc.t -> Ctype.ctype -> Mem.pointer_value -> maybe nat -> list char -> Mem.memM (list char)
+let rec load_character_array_aux loc elem_ty ptrval prec_n_opt acc =
+  match prec_n_opt with
+    | Just 0 ->
+        Mem.return (List.reverse acc)
+    | _ ->
+        let prec_n_opt' = Maybe.map (fun z -> z-1) prec_n_opt in
+        Mem.bind (Mem.load (Loc.other "Formatted.load_character_array_aux") elem_ty ptrval) (fun (_, mval) ->
+        let () = Debug.print_debug 5 [] (fun () ->
+            "load_character_array_aux ==> " ^ Mem.stringFromMem_value mval
+        ) in
+        Mem.case_mem_value mval
+          (fun _ -> error "Formatted.load_character_array, unspecified")
+          (fun _ _ -> error "Formatted.load_character_array, concurrency read")
+          (fun ity ival ->
+            Mem.case_integer_value ival
+              (fun n -> if n = 0 then
+                Mem.return (List.reverse acc)
+              else
+                Mem.bind
+                  begin if Global.is_CHERI () then
+                    Mem.eff_array_shift_ptrval loc ptrval elem_ty (Mem.integer_ival 1)
+                  else
+                    Nondeterminism.lift_undef (Mem.array_shift_ptrval loc ptrval elem_ty (Mem.integer_ival 1))
+                  end
+                  (fun ptrval' ->
+                    load_character_array_aux loc elem_ty ptrval' prec_n_opt' ((Decode.encode_character_constant n) :: acc)))
+              (fun () -> error "WIP: Formatted.load_character_array, non constant ival")
+          )
+          (fun _ _ -> error "Formatted.load_character_array, found a float")
+          (fun _ ptrval -> error ("Formatted.load_character_array, found a pointer ==> " ^ stringFromPointerValue false ptrval))
+          (fun _ -> error "Formatted.load_character_array, found an array")
+          (fun _ _ -> error "Formatted.load_character_array, found a struct")
+          (fun _ _ -> error "Formatted.load_character_array, found a union")
+      )
+  end
+
+(* Unbounded memory-walk recursion (reads until NUL or the precision
+   bound; no structural decrease): fuel, threadB recipe. Sentinel =
+   the empty-result memM, reached only through the LOUD fuelExhausted
+   panic. *)
+(* FUEL-PARAMETER ARC C2 (2026-09-04; Lean-only): the memory walk's exhaustion
+   payload is the ND monad's ABSORBING kill at the fuel atom (as the driver
+   family's), never `nd_return []` — a value printf would continue with. *)
+declare {lean} fuel val load_character_array_aux = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
+val load_character_array: Loc.t -> Ctype.ctype -> Mem.pointer_value -> maybe nat -> Mem.memM (list char)
+let load_character_array loc elem_ty ptrval prec_n_opt =
+  Mem.bind
+    begin if Global.is_CHERI () then
+      Mem.eff_array_shift_ptrval loc ptrval elem_ty (Mem.integer_ival 0)
+    else
+      Nondeterminism.lift_undef (Mem.array_shift_ptrval loc ptrval elem_ty (Mem.integer_ival 0))
+    end
+    (fun ptrval' -> load_character_array_aux loc elem_ty ptrval' prec_n_opt [])
+  
+
+
+val format_string_of_float: nat -> Float.float -> string
+declare ocaml target_rep function format_string_of_float = `Decode.format_string_of_float`
+declare lean target_rep function format_string_of_float = `CerbPP.format_string_of_float`
+
+let is_illtyped_conversion expected_ty arg_ty =
+  let arg_ty' = Implementation.normalise_ctype arg_ty in
+  if expected_ty = arg_ty' then
+    false
+  else
+    match (expected_ty, arg_ty') with
+      | (Ctype.Ctype _ (Ctype.Basic (Ctype.Integer expected_ity)), Ctype.Ctype _ (Ctype.Basic (Ctype.Integer Ctype.Size_t))) ->
+          not (Implementation.is_compatible_with_size_t expected_ity)
+      | (Ctype.Ctype _ (Ctype.Basic (Ctype.Integer expected_ity)), Ctype.Ctype _ (Ctype.Basic (Ctype.Integer Ctype.Ptrdiff_t))) ->
+          not (Implementation.is_compatible_with_ptrdiff_t expected_ity)
+      | _ ->
+          true
+    end
+
+(* === FORK REFUSALS AND FIXES (fix/printf-refusals, 2026-11-07; contract D16; upstream-tray
+   reports 26, 16, 68, 69, 70) ===
+   The refusals take the D11/D12/D13 form: a pure Lem `error` with one attributed text per
+   class, rendered by generation as the oracle's `Cerb_debug.error` (`internal error: <text>`,
+   then the uncaught `Failure`, exit 125) and the Lean engine's `failwithI` (abort under
+   LEAN_ABORT_ON_PANIC=1, exit 134), the two texts byte-identical. Every refusal site sits in
+   monadic position (the arm's value is the memM action), so it fires when the conversion is
+   reached at run time, after the conversions before it, and never at parse time. *)
+
+(* the e, E, g, G, a, A and F conversions, and the L length modifier (a long double argument):
+   parsed (7.21.6.1#7-#8), not implemented — a refusal, never the Invalid_format verdict
+   upstream gave a conforming call *)
+val floating_refusal: maybe length_modifier -> conversion_specifier -> string
+let floating_refusal lm_opt cspec =
+  "Formatted.convert: refused - the %" ^ stringFromLengthModifier lm_opt ^ stringFromConversionSpecifier cspec ^
+  " conversion is not implemented (C17 7.21.6.1#8: the a, A, e, E, f, F, g and G conversions of a double argument; 7.21.6.1#7: the L length modifier, a long double argument); the formatter implements %f and %lf of a double only, and upstream parses none of e, E, g, G, a, A, F and L - the constructors CS_F, CS_e, CS_E, CS_g, CS_G, CS_a, CS_A and LM_L are commented out at formatted.lem c3ff8c53f :40 and :32 - so it reported a conforming call as Invalid_format undefined behaviour, a silently wrong verdict; the fork parses the conversion and refuses rather than decides (upstream-tray report 68, 2026-11-07)"
+
+(* %n: upstream's arm is an uncaught internal error on a conforming call *)
+val n_refusal: string
+let n_refusal =
+  "Formatted.convert: refused - the %n conversion (C17 7.21.6.1#8 n: the number of characters written so far is stored into the signed int the argument points to; no argument is converted); upstream's arm is the uncaught internal error 'WIP: Formatted.convert, CS_n' (formatted.lem c3ff8c53f :697), a crash on a conforming call - the fork refuses rather than decides (upstream-tray report 26, 2026-11-07)"
+
+(* %ls and %lc: upstream's arms are uncaught internal errors on a conforming call *)
+val wide_refusal: conversion_specifier -> string
+let wide_refusal cspec =
+  "Formatted.convert: refused - the %l" ^ stringFromConversionSpecifier cspec ^ " conversion (C17 7.21.6.1#8 " ^
+  (if cspec = CS_s then
+     "s with l: the argument points to an array of wchar_t whose wide characters are converted through wcrtomb"
+   else
+     "c with l: the wint_t argument is converted through an ls conversion of a two-element wchar_t array") ^
+  "); upstream's arm is the uncaught internal error '" ^
+  (if cspec = CS_s then "WIP: Formatted.convert, CS_s with length modifier" else "NOT YET SUPPORTED: %lc") ^
+  "' (formatted.lem c3ff8c53f " ^ (if cspec = CS_s then ":624" else ":612") ^
+  "), a crash on a conforming call - the fork refuses rather than decides (upstream-tray report 26, 2026-11-07)"
+
+(* a `*` field width or precision whose int argument has no constant value *)
+val star_refusal: string -> string
+let star_refusal what =
+  "Formatted.printf_aux: refused - a * field width or precision whose int argument is " ^ what ^
+  " (C17 7.21.6.1#5: an int argument supplies the field width or precision; the formatter cannot pad by an indeterminate amount); upstream never read the argument (the uncaught internal errors 'TODO: formatted.lem 6' and 'TODO: Formatted.convert, * prec', formatted.lem c3ff8c53f :742 and :424) - the fork refuses rather than decides (upstream-tray report 26, 2026-11-07)"
+
+(* a %% conversion specification carrying a `*` field width or precision (the pre-merge review's
+   P2-1, 2026-11-07): C17 7.21.6.1#8 "The complete conversion specification shall be %%" — a
+   shall outside a constraint, so undefined behaviour (4#2); upstream never read the argument
+   (the `*` crash) and its %% arm carries its own TODO calling the modified forms UB; the fork
+   refuses rather than consume the argument and pad (a value neither upstream's nor gcc's).
+   A %% with a LITERAL width or flags keeps upstream's padded output (its arm, under its TODO). *)
+val star_percent_refusal: string
+let star_percent_refusal =
+  "Formatted.printf_aux: refused - a %% conversion specification carrying a * field width or precision (C17 7.21.6.1#8: 'The complete conversion specification shall be %%', so the form is undefined behaviour, 4#2); upstream's %% arm pads a modified %% under its own TODO calling the forms with a length modifier, flags or a precision undefined behaviour (formatted.lem c3ff8c53f :728) and never read a * argument (the uncaught internal error 'TODO: formatted.lem 6', :742) - the fork refuses rather than decides (upstream-tray report 26, 2026-11-07)"
+
+(* the Defined-continuation bind over the formatter's result type: an Error, an Undef or a
+   Left is passed through unchanged (the four-arm match upstream repeats at every step) *)
+val bind_defined: forall 'a 'b.
+  Mem.memM (either Errors.error (U.t 'a)) -> ('a -> Mem.memM (either Errors.error (U.t 'b))) ->
+  Mem.memM (either Errors.error (U.t 'b))
+let bind_defined m k =
+  m >>= function
+    | Right (U.Defined x) ->
+        k x
+    | Right (U.Error loc str) ->
+        Mem.return (Right (U.Error loc str))
+    | Right (U.Undef loc ubs) ->
+        Mem.return (Right (U.Undef loc ubs))
+    | Left err ->
+        Mem.return (Left err)
+  end
+
+(* TODO: need the length modifier to perform the loads using the proper ctype *)
+(* FORK (fix/printf-refusals, 2026-11-07): the precision reaches `convert` RESOLVED — a `*`
+   precision is read from the argument list by printf_aux (7.21.6.1#5), a negative one is an
+   omitted one — so upstream's three `P_asterisk` placeholders (c3ff8c53f :424, :585, :644,
+   uncaught internal errors on a conforming `%.*d`) are gone, not refused. *)
+val convert: Loc.t ->
+             (Ctype.ctype -> (*Ctype.ctype -> *)Mem.mem_value -> Mem.memM (either Errors.error (Undefined.t Core.value))) ->
+             maybe nat -> maybe length_modifier -> conversion_specifier -> flags -> list (Ctype.ctype * Mem.pointer_value) ->
+             Mem.memM (either Errors.error (U.t (bool * list char * list (Ctype.ctype * Mem.pointer_value))))
+let convert loc eval_conv prec_opt lm_opt cspec flags args =
+  let prec = match prec_opt with
+    | Just z ->
+        z
+    | Nothing ->
+        1
+  end in
+  let aux expected_pred_opt _conv_ty_opt cont_int cont_floating =
+    (* TODO: wip *)
+    match args with
+      | [] ->
+          Mem.return $
+            Right (U.undef loc [U.UB153a_insufficient_arguments_for_format])
+      | (arg_ty, arg_ptr) :: args' ->
+          let (is_illtyped, conv_ty_opt) = match expected_pred_opt with
+            | Just expected_pred ->
+                (* let () = Debug.print_debug 0 [] (fun () -> "expected_ty= " ^ Pp.stringFromCore_ctype expected_ty) in *)
+                (* let () = Debug.print_debug 0 [] (fun () -> "arg_ty= " ^ Pp.stringFromCore_ctype arg_ty) in
+                let () = Debug.print_debug 0 [] (fun () -> "arg_ty'= " ^ Pp.stringFromCore_ctype (Implementation.normalise_ctype arg_ty)) in *)
+                (* (expected_ty <> Implementation.normalise_ctype arg_ty, _conv_ty_opt) *)
+                (* (is_illtyped_conversion expected_ty arg_ty, _conv_ty_opt) *)
+                (not (expected_pred (Implementation.normalise_ctype arg_ty)), _conv_ty_opt)
+            | Nothing ->
+                (false, _conv_ty_opt)
+          end in
+          if is_illtyped then
+            Mem.return $
+              Right (U.Undef loc [U.UB153b_illtyped_argument_for_format])
+          else
+            Mem.load loc arg_ty arg_ptr >>= fun (_, mval) ->
+            match conv_ty_opt with
+              | Just conv_ty ->
+                  eval_conv conv_ty mval >>= function
+                    | Left err ->
+                        Mem.return (Left err)
+                    | Right (U.Defined (Core.Vloaded (Core.LVspecified (Core.OVinteger ival)))) ->
+                        match Mem_aux.integerFromIntegerValue ival with
+                          | Just n ->
+                              Mem.return $ Right (U.return (
+                                if prec = 0 && n = 0 then
+                                  (true, [], args')
+                                else
+                                  (n=0, cont_int n, args')
+                              ))
+                          | Nothing ->
+                              Mem.return $ Right (U.return (
+                                (false, String.toCharList (Mem.stringFromInteger_value ival), args')
+                              ))
+                        end
+                    | Right (U.Defined (Core.Vloaded (Core.LVunspecified _))) ->
+                        Mem.return $ Right (U.return (false, [#'U'; #'N'; #'S'; #'P'; #'E'; #'C'], args'))
+                    | Right (U.Defined cval) ->
+                        error ("WIP: convert --> not an integer ==> " ^ Pp.stringFromCore_value cval)
+                    | Right (U.Error loc str) ->
+                        Mem.return (Right (U.Error loc str))
+                    | Right (U.Undef loc ubs) ->
+                        Mem.return (Right (U.Undef loc ubs))
+                  end
+              | Nothing ->
+                  (* TODO: this is wrong if "not (is_integer ty)" *)
+                  match snd (Core_aux.valueFromMemValue mval) with
+                    | Core.Vloaded (Core.LVunspecified _) ->
+                        Mem.return $ Right (U.return (false, [#'U'; #'N'; #'S'; #'P'; #'E'; #'C'], args'))
+                    | Core.Vloaded (Core.LVspecified (Core.OVinteger ival)) ->
+                        match Mem_aux.integerFromIntegerValue ival with
+                          | Just n ->
+                              Mem.return $ Right (U.return (
+                                if prec = 0 && n = 0 then
+                                  (true, [], args')
+                                else
+                                  (n=0, cont_int n, args')
+                              ))
+                          | Nothing ->
+                              let () = Debug.warn [Debug.DB_core_dynamics] (fun () -> "printf() found an abstract integer value") in
+                              Mem.return $ Right (U.return (false, [#'A'; #'B'; #'S'; #'_'; #'I'; #'N'; #'T'; #'E'; #'G'; #'E'; #'R'], args'))
+                        end
+                    | Core.Vloaded (Core.LVspecified (Core.OVfloating fval)) ->
+                        Mem.return $ Right (U.return (
+                          false
+                        , Mem.case_fval fval
+                            (fun () -> [#'U'; #'N'; #'S'; #'P'; #'E'; #'C'])
+                            cont_floating
+                        , args'))
+                    | _ ->
+                        error "Formatted.aux should only be called on a loaded(arimetic value)"
+                  end
+            end
+    end in
+  (* FORK FIX (fix/printf-refusals, 2026-11-07; the true-bug audit's §4 item 3, upstream-tray
+     report 69): the j, z and t length modifiers name the macro types intmax_t/uintmax_t, size_t
+     and ptrdiff_t (7.21.6.1#7), which the implementation ALIASES (here intmax_t = long, size_t =
+     unsigned long, ptrdiff_t = long: ocaml_implementation.ml:165-170, CerberusImpl.normalise_aliases).
+     The argument's type arrives NORMALISED through that table (`is_signed_or_unsigned` applies
+     `normalise_ctype` to it) while upstream's LM_j arm tested the bare `Intmax_t` constructor
+     (c3ff8c53f :530-531), so `%jd` of an intmax_t argument was UB153b on a conforming call;
+     the LM_z/LM_t arms tested the width and ONE signedness (`is_compatible_with_size_t`), so
+     `%zd` of the signed type corresponding to size_t (long) was UB153b too. The expected side
+     is now normalised as well, uniformly for j, z and t: the argument must have the base type
+     the macro type aliases to, in either signedness — the laxity of upstream's l and ll arms,
+     kept (7.21.6.1#7 names "size_t or the corresponding signed integer type" for z and
+     "ptrdiff_t or the corresponding unsigned integer type" for t). *)
+  let is_alias_base ity =
+    match Implementation.normalise_integerType ity with
+      | Ctype.Signed ibty ->
+          Implementation.is_signed_or_unsigned ibty
+      | Ctype.Unsigned ibty ->
+          Implementation.is_signed_or_unsigned ibty
+      | _ ->
+          error "Formatted.convert: the implementation's alias table maps intmax_t, size_t and ptrdiff_t to a signed or unsigned base type (ocaml_implementation.ml:165-170)"
+    end in
+  (* Nothing = the length modifier does not apply to an integer conversion (7.21.6.1#7: L
+     applies to the floating conversions only) *)
+  let mk_diouxX_expected_and_conv is_signed =
+    let (hh_ty, h_ty, default_ty) =
+      if is_signed then
+        (Ctype.signed_char, Ctype.signed_short, Ctype.signed_int)
+      else
+        (Ctype.unsigned_char, Ctype.unsigned_short, Ctype.unsigned_int) in
+    match lm_opt with
+      | Just LM_hh ->
+          Just (Nothing, Just hh_ty)
+      | Just LM_h ->
+          Just (Nothing, Just h_ty)
+      | Just LM_l ->
+          Just (Just (Implementation.is_signed_or_unsigned Ctype.Long), Nothing)
+      | Just LM_ll ->
+          Just (Just (Implementation.is_signed_or_unsigned Ctype.LongLong), Nothing)
+      | Just LM_j ->
+          Just (Just (is_alias_base (Ctype.Signed Ctype.Intmax_t)), Nothing)
+      | Just LM_z ->
+          Just (Just (is_alias_base Ctype.Size_t), Nothing)
+      | Just LM_t ->
+          Just (Just (is_alias_base Ctype.Ptrdiff_t), Nothing)
+      | Just LM_L ->
+          Nothing
+      | Nothing ->
+          Just (Just (fun z -> z = default_ty), Nothing)
+    end in
+  let diouxX is_signed cont_int =
+    match mk_diouxX_expected_and_conv is_signed with
+      | Nothing ->
+          Mem.return (Right (U.Undef loc [U.UB158_invalid_length_modifier]))
+      | Just (expected_pred_opt, conv_ty_opt) ->
+          aux expected_pred_opt conv_ty_opt cont_int (fun _ -> [])
+    end in
+  (* the floating conversions share one length-modifier rule (7.21.6.1#7: only l, with no
+     effect, and L apply): hh, h, ll, j, z, t are UB158; L is the long double refusal; of the
+     conversions only %f / %lf is implemented, the others refuse *)
+  let floating is_implemented do_output =
+    match lm_opt with
+      | Just LM_L ->
+          error (floating_refusal lm_opt cspec)
+      | Just lm ->
+          if List.elem lm [LM_hh; LM_h; LM_ll; LM_j; LM_z; LM_t] then
+            Mem.return (Right (U.Undef loc [U.UB158_invalid_length_modifier]))
+          else if is_implemented then
+            do_output
+          else
+            error (floating_refusal lm_opt cspec)
+      | Nothing ->
+          if is_implemented then
+            do_output
+          else
+            error (floating_refusal lm_opt cspec)
+    end in
+  (* a function, not a value: both targets are strict, and the refusal must be raised only when
+     the arm is taken *)
+  let floating_unimplemented () =
+    floating false (Mem.return (Right (U.Defined (false, [], args)))) in
+  match cspec with
+    | CS_di ->
+        (* see (§7.21.6.1#8 d,i) *)
+        diouxX true (fun n ->
+          let str = showNonNegativeWithBasis false 10 (naturalFromInteger $ abs n) in
+          (if n < 0 then (fun z -> #'-' :: z) else id) $ replicate (prec - length str) #'0' ++ str
+        )
+    | CS_o ->
+        (* see (§7.21.6.1#8 o,u,x,X) *)
+        diouxX false (fun n ->
+          (* TODO: conversion (n is unsigned int here) *)
+          let str = showNonNegativeWithBasis false 8 (naturalFromInteger n) in
+          replicate (prec - length str) #'0' ++ str
+        )
+    | CS_u ->
+        (* see (§7.21.6.1#8 o,u,x,X) *)
+        diouxX false (fun n ->
+          (* TODO: conversion (n is unsigned int here) *)
+          let str = showNonNegativeWithBasis false 10 (naturalFromInteger n) in
+          replicate (prec - length str) #'0' ++ str
+        )
+    | CS_x ->
+        (* see (§7.21.6.1#8 o,u,x,X) *)
+        diouxX false (fun n  ->
+          (* TODO: conversion (n is unsigned int here) *)
+          let str = showNonNegativeWithBasis false 16 (naturalFromInteger n) in
+          replicate (prec - length str) #'0' ++ str
+        )
+    | CS_X ->
+        (* see (§7.21.6.1#8 o,u,x,X) *)
+        diouxX false (fun n ->
+          (* TODO: conversion (n is unsigned int here) *)
+          let str = showNonNegativeWithBasis true 16 (naturalFromInteger n) in
+          replicate (prec - length str) #'0' ++ str
+        )
+    | CS_f ->
+        let prec =
+          match prec_opt with
+            | Just z ->
+              z
+            | Nothing ->
+                (* STD §7.21.6.1#8 *)
+                6
+          end in
+        let do_output =
+          (* TODO: check *)
+          let (expected_ty_opt, conv_ty_opt) =
+          ( Just (fun z -> z = Ctype.Ctype [] (Ctype.Basic (Ctype.Floating (Ctype.RealFloating Ctype.Double))))
+          , Nothing ) in
+          aux expected_ty_opt conv_ty_opt (fun _ -> []) (fun xs ->
+            String.toCharList (format_string_of_float prec xs)
+          ) in
+        (* NOTE: that LM_l is allowed (with no effect) *)
+        floating true do_output
+    | CS_F ->
+        floating_unimplemented ()
+    | CS_e ->
+        floating_unimplemented ()
+    | CS_E ->
+        floating_unimplemented ()
+    | CS_g ->
+        floating_unimplemented ()
+    | CS_G ->
+        floating_unimplemented ()
+    | CS_a ->
+        floating_unimplemented ()
+    | CS_A ->
+        floating_unimplemented ()
+    | CS_c ->
+        (* see (§7.21.6.1#8 c) *)
+        match lm_opt with
+          | Just LM_l ->
+              (* wint_t *)
+              error (wide_refusal CS_c)
+          | Just _ ->
+              Mem.return (Right (U.undef loc [U.DUMMY "TODO_find_quote_printf_CS_c"]))
+          | Nothing ->
+              aux (Just (fun z -> z = Ctype.signed_int)) (Just Ctype.unsigned_char) (fun n ->
+                [Decode.encode_character_constant n]
+              ) (fun _ -> [])
+        end
+    | CS_s ->
+        (* TODO: I don't like it ==> should rewrite it *)
+        match lm_opt with
+          | Just LM_l ->
+              error (wide_refusal CS_s)
+          | Just _ ->
+              (* FORK FIX (fix/printf-refusals, 2026-11-07): C17 7.21.6.1#7 — a length modifier
+                 other than l with the s conversion is undefined behaviour (the rule the %f arm
+                 applies); upstream's arm crashed (c3ff8c53f :624) *)
+              Mem.return (Right (U.Undef loc [U.UB158_invalid_length_modifier]))
+          | Nothing ->
+              match args with
+                | [] ->
+                    Mem.return (
+                      Right (U.undef loc [U.UB153a_insufficient_arguments_for_format])
+                    )
+                | ((Ctype.Ctype _ (Ctype.Pointer _ ref_ty) as arg_ty), arg_ptr) :: args' ->
+                    if not (AilTypesAux.is_character ref_ty) then
+                      (* TODO: this is not a strong enough check, we need to point to
+                         the "initial element of an array of character type" *)
+                      Mem.return (
+                        Right (U.undef loc [U.UB153b_illtyped_argument_for_format])
+                      )
+                    else
+                      Mem.load (Loc.other "printf() %s") arg_ty arg_ptr >>= fun (_, mval) ->
+                      if Mem_aux.isUnspecifiedMemValue mval then
+                        Mem.return (Right (U.undef loc [U.UB_unspecified_lvalue]))
+                      else
+                          match Mem_aux.pointerValueFromMemValue mval with
+                          | Just (_, ptrval) ->
+                              load_character_array loc ref_ty ptrval prec_opt >>= fun chars ->
+                              Mem.return (Right (U.Defined (false, chars, args')))
+                          | Nothing ->
+                              error "WIP[error message], Formatted => CS_s, didn't load a pointer"
+                        end
+                | (ty, pe) :: _ ->
+                    error ("WIP, Formatted => CS_s, ty <> Pointer ==> " ^
+                           stringFromPair Pp.stringFromCore_ctype Pp.stringFromMem_mem_value (ty, Mem.pointer_mval ty pe) )
+              end
+        end
+    | CS_p ->
+        let do_common arg_ty arg_ptr args' =
+          Mem.load (Loc.other "printf() %p") arg_ty arg_ptr >>= fun (_, mval) ->
+          if Mem_aux.isUnspecifiedMemValue mval then
+            Mem.return (Right (U.undef loc [U.UB_unspecified_lvalue]))
+          else
+            match Mem_aux.pointerValueFromMemValue mval with
+              | Just (_, ptrval) ->
+                  Mem.return (
+                    Right (U.Defined (false, String.toCharList (stringFromPointerValue flags.flag_hash ptrval), args'))
+                  )
+              | Nothing ->
+                  error "WIP[error message], Formatted => CS_p, didn't load a pointer"
+            end in
+        let do_illtyped =
+          Mem.return begin
+            Right (U.undef loc [U.UB153b_illtyped_argument_for_format])
+          end in
+        match args with
+          | [] ->
+              Mem.return (
+                Right (U.undef loc [U.UB153a_insufficient_arguments_for_format])
+              )
+          | ((Ctype.Ctype _ (Ctype.Pointer _ (Ctype.Ctype _ Ctype.Void)) as arg_ty), arg_ptr) :: args' ->
+              do_common arg_ty arg_ptr args'
+          | ((Ctype.Ctype _ (Ctype.Pointer _ _) as arg_ty), arg_ptr) :: args' ->
+            if Global.has_switch Global.SW_permissive_printf then
+              do_common arg_ty arg_ptr args'
+            else
+              do_illtyped
+          | _ ->
+              do_illtyped
+        end
+    | CS_n ->
+        error n_refusal
+    | CS_percent ->
+        (* TODO: it seems that if there is a length, modif, flags, precision, ... it is undefined behaviour .... *)
+        Mem.return (
+          Right (U.Defined (false, [#'%'], args))
+        )
+  end
+
+
+(* FORK FIX (fix/printf-refusals, 2026-11-07; upstream-tray report 26): C17 7.21.6.1#5 — "a field
+   width, or precision, or both, may be indicated by an asterisk. In this case, an int argument
+   supplies the field width or precision. The arguments specifying field width, or precision, or
+   both, shall appear (in that order) before the argument (if any) to be converted." The argument
+   is read like a conversion's (the same loads and type test as `convert`'s aux: UB153a without
+   one, UB153b when it is not an int); a value the formatter cannot pad by (an unspecified or a
+   non-constant integer value) is a declared refusal, not a guess. Upstream c3ff8c53f never read
+   the argument: `%*d` died with 'TODO: formatted.lem 6' (:742) and `%.*d` with 'TODO:
+   Formatted.convert, * prec' (:424), uncaught internal errors on a conforming call. *)
+val load_star_argument: Loc.t -> list (Ctype.ctype * Mem.pointer_value) ->
+                        Mem.memM (either Errors.error (U.t (integer * list (Ctype.ctype * Mem.pointer_value))))
+let load_star_argument loc args =
+  match args with
+    | [] ->
+        Mem.return (Right (U.undef loc [U.UB153a_insufficient_arguments_for_format]))
+    | (arg_ty, arg_ptr) :: args' ->
+        if not (Implementation.normalise_ctype arg_ty = Ctype.signed_int) then
+          Mem.return (Right (U.undef loc [U.UB153b_illtyped_argument_for_format]))
+        else
+          Mem.load loc arg_ty arg_ptr >>= fun (_, mval) ->
+          match snd (Core_aux.valueFromMemValue mval) with
+            | Core.Vloaded (Core.LVunspecified _) ->
+                error (star_refusal "an unspecified value")
+            | Core.Vloaded (Core.LVspecified (Core.OVinteger ival)) ->
+                match Mem_aux.integerFromIntegerValue ival with
+                  | Just n ->
+                      Mem.return (Right (U.return (n, args')))
+                  | Nothing ->
+                      error (star_refusal "not a constant")
+                end
+            | _ ->
+                error "Formatted.load_star_argument: a loaded signed int is neither unspecified nor an integer value"
+          end
+  end
+
+val     printf_aux: Loc.t ->
+                    (Ctype.ctype -> (*Ctype.ctype -> *)Mem.mem_value -> Mem.memM (either Errors.error (Undefined.t Core.value))) ->
+                    list char -> format -> list (Ctype.ctype * Mem.pointer_value) -> Mem.memM (either Errors.error (Undefined.t (list char)))
+let rec printf_aux loc eval_conv acc fs ty_ptrvals =
+  match (fs, ty_ptrvals) with
+    | (F_text str :: fs, ty_ptrvals) ->
+        printf_aux loc eval_conv (acc ++ str) fs ty_ptrvals
+    | (F_conv cp :: fs, ty_ptrvals) ->
+        let cspec = cp.cp_conversion_specifier in
+        match (cspec, cp.cp_field_width, cp.cp_precision) with
+          | (CS_percent, Just FW_asterisk, _) ->
+              error star_percent_refusal
+          | (CS_percent, _, Just P_asterisk) ->
+              error star_percent_refusal
+          | _ ->
+        (* the `*` field width, then the `*` precision, read before the argument to be converted
+           (7.21.6.1#5); a negative field width is the `-` flag and its magnitude, a negative
+           precision is an omitted one (the resolved values: the flags, maybe a width, maybe a
+           precision, the remaining arguments) *)
+        let resolved_width = match cp.cp_field_width with
+          | Nothing ->
+              Mem.return (Right (U.return (cp.cp_flags, Nothing, ty_ptrvals)))
+          | Just (FW_num fw) ->
+              Mem.return (Right (U.return (cp.cp_flags, Just fw, ty_ptrvals)))
+          | Just FW_asterisk ->
+              bind_defined (load_star_argument loc ty_ptrvals) (fun (w, rest) ->
+                if w < 0 then
+                  Mem.return (Right (U.return (<| cp.cp_flags with flag_minus = true |>, Just (natFromInteger (abs w)), rest)))
+                else
+                  Mem.return (Right (U.return (cp.cp_flags, Just (natFromInteger w), rest))))
+        end in
+        bind_defined resolved_width (fun (flags, fw_opt, ty_ptrvals1) ->
+        let resolved_prec = match cp.cp_precision with
+          | Nothing ->
+              Mem.return (Right (U.return (Nothing, ty_ptrvals1)))
+          | Just (P_num z) ->
+              Mem.return (Right (U.return (Just z, ty_ptrvals1)))
+          | Just P_asterisk ->
+              bind_defined (load_star_argument loc ty_ptrvals1) (fun (z, rest) ->
+                Mem.return (Right (U.return ((if z < 0 then Nothing else Just (natFromInteger z)), rest))))
+        end in
+        bind_defined resolved_prec (fun (prec_opt, ty_ptrvals2) ->
+        bind_defined (convert loc eval_conv prec_opt cp.cp_length_modifier cspec flags ty_ptrvals2) (fun (is_zero, str, ty_ptrvals') ->
+              (* the # flag applies to o, x, X and the floating conversions (7.21.6.1#6);
+                 NON-STD: CHERI supports # for the %p conversion specifier *)
+              let hash_ok =
+                   List.elem cspec [CS_o; CS_x; CS_X]
+                || isFloatingConversion cspec
+                || (Global.is_CHERI () && cspec = CS_p) in
+              if flags.flag_plus && not (isSignedConversion cspec) then
+                (* TODO: add a proper UB variant *)
+                Mem.return (Right (U.undef loc [U.DUMMY "+ flag with unsigned conversion"]))
+              else if flags.flag_hash && not hash_ok then
+                Mem.return (Right (U.undef loc [U.UB157]))
+              else if flags.flag_zero && not (isIntegerConversion cspec || isFloatingConversion cspec) then
+                Mem.return (Right (U.undef loc [U.UB157]))
+              else
+                let expanded  = expand is_zero flags cspec str in
+                let justified = match fw_opt with
+                  | Nothing ->
+                      expanded
+                  | Just fw ->
+                      if length expanded < fw then
+                        justify prec_opt cspec flags fw expanded
+                      else
+                        expanded
+                end in
+                printf_aux loc eval_conv (acc ++ justified) fs ty_ptrvals')))
+        end
+    | _ ->
+        Mem.return $
+          Right (U.return acc)
+  end
+
+(* Structural on the format list `fs` (both recursive calls pass a
+   tail); recursion under monadic continuations — Lean derives it
+   (threadB finding 3). *)
+declare {lean} termination_argument printf_aux = automatic
+
+
+val     store_chars_in_array: bool -> Mem.pointer_value -> list char -> Mem.memM unit
+(* FORK RESTATEMENT (merge-base bump stage 1, 2026-10-29; the arc-3/threadB Lean-termination
+   restatement class, as many/many1 in monadic_parsing.lem): upstream f4a3a3d54 wrote this
+   as `let rec store_chars_in_array zero_terminated ptrval = let loc = … in function …`,
+   binding the list by the `function` after a `let`; the Lean target renders that as a
+   lambda inside the body, so Lean's structural recursion no longer sees the decreasing
+   argument (`fail to show termination`). The list is an explicit parameter here — an
+   eta-expansion, OCaml semantics identical; the generated formatted.ml differs from
+   upstream's by the let placement (a registered fork-ahead delta). *)
+let rec store_chars_in_array zero_terminated ptrval cs =
+  let loc = Loc.other "store_chars_in_array()" in
+  match cs with
+  | [] ->
+      if zero_terminated then
+        Mem.store loc Ctype.char false ptrval
+          (Mem.integer_value_mval Ctype.Char (Mem.integer_ival 0)) >>= fun _ ->
+        Mem.return ()
+      else
+        Mem.return ()
+  | c::cs ->
+      let c_mval =
+        Mem.integer_value_mval Ctype.Char
+          (Mem.integer_ival (Decode.decode_character_constant (Decode.escaped_char c))) in
+      (* TODO: maybe needs to be unsigned char *)
+      Mem.store loc Ctype.char false ptrval c_mval >>= fun _ ->
+      begin if Global.is_CHERI () then
+        Mem.eff_array_shift_ptrval loc ptrval Ctype.char (Mem.integer_ival 1)
+      else
+        Nondeterminism.lift_undef (Mem.array_shift_ptrval loc ptrval Ctype.char (Mem.integer_ival 1))
+      end >>= fun ptrval' ->
+      store_chars_in_array zero_terminated ptrval' cs
+  end
+
+(* Structural on the char list (tail per step, pointer re-bound; the explicit list
+   parameter of the restatement above);
+   recursion under monadic continuations — Lean derives it. *)
+declare {lean} termination_argument store_chars_in_array = automatic
+
+
+val vsnprintf: Loc.t ->
+              (Ctype.ctype -> (*Ctype.ctype -> *)Mem.mem_value -> Mem.memM (either Errors.error (Undefined.t Core.value))) ->
+              Mem.pointer_value -> Mem.integer_value -> list char -> integer ->
+              Mem.memM (either Errors.error (Undefined.t integer))
+(* FORK FIX (fix/printf-refusals, 2026-11-07; upstream-tray report 16): C17 7.21.6.5#2-#3 — the
+   output is formatted whatever n is; with n = 0 nothing is written (and s may be a null
+   pointer), otherwise at most n-1 characters and a terminating null; the return value is "the
+   number of characters that would have been written had n been sufficiently large, not
+   counting the terminating null character" (so `ret < n` iff the output was complete).
+   Upstream c3ff8c53f returned the TRUNCATED length (:803 `List.length cs'`), returned 0 without
+   formatting at n = 0 (:794), and died with 'TODO: snprintf()' (:805) on a format whose
+   conversion reports undefined behaviour — the verdict printf gives for the same format is
+   passed through now (7.21.6.5#2: "equivalent to fprintf, except ..."). *)
+let vsnprintf loc eval_conv s_ptrval n_ival frmt ap_idx =
+  let n = Mem.case_integer_value n_ival
+    (fun n -> n)
+    (fun () -> error "TODO: vsnprintf(), symbolic value for the size n") in
+  (* TODO: overlap undefined behaviour *)
+  match parse format frmt with
+    | [(fs, [])] ->
+        Mem.va_list ap_idx >>= fun args ->
+        bind_defined (printf_aux loc eval_conv [] fs args) (fun cs ->
+          begin if n = 0 then
+            Mem.return ()
+          else
+            store_chars_in_array true s_ptrval (List.take (natFromInteger (n-1)) cs)
+          end >>= fun () ->
+          Mem.return (Right (U.return (integerFromNat (List.length cs)))))
+    | _ ->
+        Mem.return $
+          Right (U.undef loc [U.Invalid_format (String.toString frmt)])
+  end
+
+
+(* TODO: return -1, if "encoding error" *)
+val printf: Loc.t ->
+            (Ctype.ctype -> (*Ctype.ctype -> *)Mem.mem_value -> Mem.memM (either Errors.error (Undefined.t Core.value))) ->
+            list char -> list (Ctype.ctype * Mem.pointer_value) -> Mem.memM (either Errors.error (Undefined.t (list char)))
+let printf loc eval_conv frmt args =
+  match parse format frmt with
+    | [(fs, [])] ->
+        printf_aux loc eval_conv [] fs args
+    | _ ->
+        Mem.return $
+          Right (U.undef loc [U.Invalid_format (String.toString frmt)])
+  end
+
+
+(* TODO: return -1, if "encoding error" *)
+val vprintf: Loc.t ->
+             (Ctype.ctype -> (*Ctype.ctype -> *)Mem.mem_value -> Mem.memM (either Errors.error (Undefined.t Core.value))) ->
+             list char -> integer -> Mem.memM (either Errors.error (Undefined.t (list char)))
+let vprintf loc eval_conv frmt ap_idx =
+  match parse format frmt with
+    | [(fs, [])] ->
+        Mem.va_list ap_idx >>= fun args ->
+        printf_aux loc eval_conv [] fs args
+    | _ ->
+        Mem.return $
+          Right (U.undef loc [U.Invalid_format (String.toString frmt)])
+  end
+
+

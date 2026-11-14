@@ -32,6 +32,12 @@ class PackagingTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 module.package(text, {"Core"})
 
+    def test_original_core_run_import_fix(self):
+        source = 'import Operators\nimport Core\ndef text := "import Operators"\n'
+        self.assertEqual(module.original_postprocess("Core_run.lean", source),
+                         'import Core\ndef text := "import Operators"\n')
+        self.assertEqual(module.original_postprocess("Core.lean", source), source)
+
 
 if __name__ == "__main__":
     unittest.main()

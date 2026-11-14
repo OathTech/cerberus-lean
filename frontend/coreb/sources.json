@@ -15,6 +15,81 @@
       "source": "frontend/model/core_linking.lem",
       "owned": "frontend/coreb/model/core_linking.lem",
       "module": "Core_linking"
+    },
+    {
+      "source": "frontend/model/core_aux.lem",
+      "owned": "frontend/coreb/model/core_aux.lem",
+      "module": "Core_aux"
+    },
+    {
+      "source": "frontend/model/core_typing.lem",
+      "owned": "frontend/coreb/model/core_typing.lem",
+      "module": "Core_typing"
+    },
+    {
+      "source": "frontend/model/core_typing_aux.lem",
+      "owned": "frontend/coreb/model/core_typing_aux.lem",
+      "module": "Core_typing_aux"
+    },
+    {
+      "source": "frontend/model/core_typing_effect.lem",
+      "owned": "frontend/coreb/model/core_typing_effect.lem",
+      "module": "Core_typing_effect"
+    },
+    {
+      "source": "frontend/model/translation.lem",
+      "owned": "frontend/coreb/model/translation.lem",
+      "module": "Translation"
+    },
+    {
+      "source": "frontend/model/translation_aux.lem",
+      "owned": "frontend/coreb/model/translation_aux.lem",
+      "module": "Translation_aux"
+    },
+    {
+      "source": "frontend/model/translation_effect.lem",
+      "owned": "frontend/coreb/model/translation_effect.lem",
+      "module": "Translation_effect"
+    },
+    {
+      "source": "frontend/model/core_run_aux.lem",
+      "owned": "frontend/coreb/model/core_run_aux.lem",
+      "module": "Core_run_aux"
+    },
+    {
+      "source": "frontend/model/core_eval.lem",
+      "owned": "frontend/coreb/model/core_eval.lem",
+      "module": "Core_eval"
+    },
+    {
+      "source": "frontend/model/core_run.lem",
+      "owned": "frontend/coreb/model/core_run.lem",
+      "module": "Core_run"
+    },
+    {
+      "source": "frontend/model/core_reduction.lem",
+      "owned": "frontend/coreb/model/core_reduction.lem",
+      "module": "Core_reduction"
+    },
+    {
+      "source": "frontend/model/core_reduction_aux.lem",
+      "owned": "frontend/coreb/model/core_reduction_aux.lem",
+      "module": "Core_reduction_aux"
+    },
+    {
+      "source": "frontend/model/driver.lem",
+      "owned": "frontend/coreb/model/driver.lem",
+      "module": "Driver"
+    },
+    {
+      "source": "frontend/model/pp.lem",
+      "owned": "frontend/coreb/model/pp.lem",
+      "module": "Pp"
+    },
+    {
+      "source": "frontend/model/formatted.lem",
+      "owned": "frontend/coreb/model/formatted.lem",
+      "module": "Formatted"
     }
   ],
   "handwritten": [
@@ -27,6 +102,71 @@
       "source": "lean_frontend/CerbCoreShape.lean",
       "owned": "lean_frontend/coreb/CerbCoreShape.lean",
       "module": "CerbCoreShape"
+    },
+    {
+      "source": "lean_frontend/CerbPP.lean",
+      "owned": "lean_frontend/coreb/CerbPP.lean",
+      "module": "CerbPP"
+    },
+    {
+      "source": "lean_frontend/CerbCoreMeasure.lean",
+      "owned": "lean_frontend/coreb/CerbCoreMeasure.lean",
+      "module": "CerbCoreMeasure"
+    },
+    {
+      "source": "lean_frontend/CerbFunMapInstances.lean",
+      "owned": "lean_frontend/coreb/CerbFunMapInstances.lean",
+      "module": "CerbFunMapInstances"
+    },
+    {
+      "source": "lean_frontend/CerbStepInstances.lean",
+      "owned": "lean_frontend/coreb/CerbStepInstances.lean",
+      "module": "CerbStepInstances"
+    },
+    {
+      "source": "lean_frontend/CerbMeasureLemmas.lean",
+      "owned": "lean_frontend/coreb/CerbMeasureLemmas.lean",
+      "module": "CerbMeasureLemmas"
+    },
+    {
+      "source": "lean_frontend/CoreParser.lean",
+      "owned": "lean_frontend/coreb/CoreParser.lean",
+      "module": "CoreParser"
+    },
+    {
+      "source": "lean_frontend/Core_aux_lemMeasureProofs.lean",
+      "owned": "lean_frontend/coreb/Core_aux_lemMeasureProofs.lean",
+      "module": "Core_aux_lemMeasureProofs"
+    },
+    {
+      "source": "lean_frontend/Core_eval_lemMeasureProofs.lean",
+      "owned": "lean_frontend/coreb/Core_eval_lemMeasureProofs.lean",
+      "module": "Core_eval_lemMeasureProofs"
+    },
+    {
+      "source": "lean_frontend/Core_reduction_lemMeasureProofs.lean",
+      "owned": "lean_frontend/coreb/Core_reduction_lemMeasureProofs.lean",
+      "module": "Core_reduction_lemMeasureProofs"
+    },
+    {
+      "source": "lean_frontend/Core_run_aux_lemMeasureProofs.lean",
+      "owned": "lean_frontend/coreb/Core_run_aux_lemMeasureProofs.lean",
+      "module": "Core_run_aux_lemMeasureProofs"
+    },
+    {
+      "source": "lean_frontend/Driver_lemMeasureProofs.lean",
+      "owned": "lean_frontend/coreb/Driver_lemMeasureProofs.lean",
+      "module": "Driver_lemMeasureProofs"
+    },
+    {
+      "source": "lean_frontend/Translation_lemMeasureProofs.lean",
+      "owned": "lean_frontend/coreb/Translation_lemMeasureProofs.lean",
+      "module": "Translation_lemMeasureProofs"
+    },
+    {
+      "source": "lean_frontend/Formatted_lemMeasureProofs.lean",
+      "owned": "lean_frontend/coreb/Formatted_lemMeasureProofs.lean",
+      "module": "Formatted_lemMeasureProofs"
     }
   ]
 }
