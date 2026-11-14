@@ -38,6 +38,12 @@ class PackagingTests(unittest.TestCase):
                          'import Core\ndef text := "import Operators"\n')
         self.assertEqual(module.original_postprocess("Core.lean", source), source)
 
+    def test_local_open_keeps_comments_and_strings(self):
+        text = 'open Operators\n/- /- nested -/\nopen Operators\n-/\ndef s := "\nopen Operators\n"\nopen Operators\n'
+        expected = text.replace('open Operators\n/-', 'open _root_.CoreB.Operators\n/-', 1)
+        expected = expected[:-len('open Operators\n')] + 'open _root_.CoreB.Operators\n'
+        self.assertEqual(module.qualify_open(text, "Operators"), expected)
+
 
 if __name__ == "__main__":
     unittest.main()

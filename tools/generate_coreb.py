@@ -22,7 +22,56 @@ ROOT = Path(__file__).resolve().parents[1]
 IMPORT = re.compile(r"^import ([A-Za-z_][A-Za-z_0-9.]*)[ \t]*$", re.MULTILINE)
 
 
-def package(text: str, owned_modules: set[str]) -> str:
+def qualify_open(text: str, name: str) -> str:
+    """Qualify a local namespace opening, ignoring comments and strings."""
+    mask = list(text)
+    pos, depth, string = 0, 0, False
+    while pos < len(text):
+        if depth:
+            if text.startswith("/-", pos):
+                mask[pos:pos + 2] = "  "
+                depth += 1
+                pos += 2
+            elif text.startswith("-/", pos):
+                mask[pos:pos + 2] = "  "
+                depth -= 1
+                pos += 2
+            else:
+                if text[pos] != "\n": mask[pos] = " "
+                pos += 1
+        elif string:
+            if text[pos] == "\\":
+                mask[pos:pos + 2] = " " * len(text[pos:pos + 2])
+                pos += 2
+            else:
+                if text[pos] == '"': string = False
+                if text[pos] != "\n": mask[pos] = " "
+                pos += 1
+        elif text.startswith("/-", pos):
+            mask[pos:pos + 2] = "  "
+            depth = 1
+            pos += 2
+        elif text.startswith("--", pos):
+            end = text.find("\n", pos)
+            if end < 0: end = len(text)
+            mask[pos:end] = " " * (end - pos)
+            pos = end
+        elif text[pos] == '"':
+            mask[pos] = " "
+            string = True
+            pos += 1
+        else:
+            pos += 1
+    if depth or string:
+        raise ValueError("unterminated Lean comment/string while qualifying namespace")
+    pattern = re.compile(r"^open " + re.escape(name) + r"[ \t]*$", re.MULTILINE)
+    for match in reversed(list(pattern.finditer("".join(mask)))):
+        start = match.start() + len("open ")
+        text = text[:start] + "_root_.CoreB." + text[start:]
+    return text
+
+
+def package(text: str, owned_modules: set[str], local_opens: tuple[str, ...] = ()) -> str:
     # Scan only the header. An import-looking line inside a comment or a body
     # string must neither be rewritten nor move the namespace boundary.
     imports = []
@@ -60,6 +109,8 @@ def package(text: str, owned_modules: set[str]) -> str:
         if match[1] in owned_modules:
             header = header[:match.start(1)] + "CoreB." + header[match.start(1):]
     body = text[end:]
+    for name in local_opens:
+        body = qualify_open(body, name)
     return header + "\n\nnamespace CoreB\n" + body + "\nend CoreB\n"
 
 
@@ -136,7 +187,10 @@ def main() -> None:
                                                 tofile="CoreB/" + filename)
                     print("\n".join(list(delta)[:80]), flush=True)
                     raise ValueError(f"raw generated body differs from Core: {filename}")
-            outputs[filename] = package(text, modules)
+            # Translation declares its own (inline-operator) namespace. The
+            # nested B namespace must not ambiguously open the shared one.
+            local_opens = ("Operators",) if filename == "Translation.lean" else ()
+            outputs[filename] = package(text, modules, local_opens)
         for entry in helpers:
             outputs[entry["module"] + ".lean"] = package(
                 (ROOT / entry["owned"]).read_text(), modules,

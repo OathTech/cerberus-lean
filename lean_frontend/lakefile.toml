@@ -509,4 +509,33 @@ roots = [
 [[lean_lib]]
 name = "CoreBSeparationTests"
 srcDir = "test"
-roots = ["CoreB.Separation"]
+roots = ["CoreB.Separation", "CoreB.Interpreter"]
+
+[[lean_lib]]
+name = "CoreBDifferential"
+srcDir = "differential"
+roots = ["Prepared", "PipelineA", "PipelineB", "ObservationShared", "ChoiceRunner",
+         "ObservationA", "ObservationB", "RunOutput", "EntryCommon"]
+
+[[lean_exe]]
+name = "coreb-choice-tests"
+srcDir = "test"
+root = "CoreB.ChoiceRunnerTests"
+
+[[lean_exe]]
+name = "core-diff"
+srcDir = "differential"
+root = "EntryA"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "coreb-diff"
+srcDir = "differential"
+root = "EntryB"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "coreb-observation-test"
+srcDir = "test"
+root = "CoreB.ObservationChecks"
+moreLinkArgs = ["native/md5.o"]
