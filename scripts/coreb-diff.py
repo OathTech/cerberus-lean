@@ -26,7 +26,14 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class Incomplete(Exception):
-    pass
+    def __init__(self, message, category="incomplete"):
+        super().__init__(message)
+        self.category = category
+
+
+class ProtocolFailure(Incomplete):
+    def __init__(self, message):
+        super().__init__(message, "protocol")
 
 
 class Mismatch(Exception):
@@ -84,58 +91,66 @@ def parse_trace(data, *, replay=False):
     try:
         rows = [decode(line) for line in data.decode("utf-8").splitlines() if line.strip()]
     except (UnicodeError, ValueError) as error:
-        raise Incomplete(f"invalid JSON-lines output: {error}") from error
+        raise ProtocolFailure(f"invalid JSON-lines output: {error}") from error
     rank = {"header": 0, "event": 1, "choice": 2, "outcome": 3, "end": 4}
     groups = {name: [] for name in rank}
     phase = 0
     for row in rows:
         if not isinstance(row, dict):
-            raise Incomplete("output record is not an object")
+            raise ProtocolFailure("output record is not an object")
         name = row.get("record")
         if name == "failure":
-            raise Incomplete(f"frontend/input failure: {str(row.get('reason'))[:1000]}")
+            raise Incomplete(f"frontend/input failure: {str(row.get('reason'))[:1000]}", "frontend")
         if name not in rank or rank[name] < phase:
-            raise Incomplete(f"unknown or out-of-order record: {name}")
+            raise ProtocolFailure(f"unknown or out-of-order record: {name}")
         expected = {"record", name} if name != "end" else {
             "record", "complete", "kind", "visited", "choices"}
         if set(row) != expected:
-            raise Incomplete(f"unexpected fields in {name} record")
+            raise ProtocolFailure(f"unexpected fields in {name} record")
         phase = rank[name]
         groups[name].append(row)
     for name in ["header", "outcome", "end"]:
         if len(groups[name]) != 1:
-            raise Incomplete(f"expected exactly one {name} record, got {len(groups[name])}")
+            raise ProtocolFailure(f"expected exactly one {name} record, got {len(groups[name])}")
     if rows[0]["record"] != "header" or rows[-1]["record"] != "end":
-        raise Incomplete("header/end do not delimit the output")
+        raise ProtocolFailure("header/end do not delimit the output")
     header = groups["header"][0]["header"]
     outcome = groups["outcome"][0]["outcome"]
     end = groups["end"][0]
     if not isinstance(header, dict) or not isinstance(outcome, dict):
-        raise Incomplete("header/outcome payload is not an object")
+        raise ProtocolFailure("header/outcome payload is not an object")
     if set(header) != {"version", "input", "prepared", "config", "coreBuild", "coreBBuild", "origin"}:
-        raise Incomplete("unexpected choice-header fields")
+        raise ProtocolFailure("unexpected choice-header fields")
     if header["version"] != 1 or isinstance(header["version"], bool):
-        raise Incomplete("unsupported protocol version")
+        raise ProtocolFailure("unsupported protocol version")
     if replay and outcome.get("kind") in {"replay-mismatch", "input-error"}:
         raise Mismatch(f"peer rejected a freshly recorded tape: {str(outcome)[:1200]}")
     if end["complete"] is not True:
-        raise Incomplete(f"execution did not complete: {str(outcome)[:1200]}")
+        category = {"refused": "refusal", "incomplete": "incomplete",
+                    "empty": "empty-frontier", "input-error": "input-error",
+                    "observation-error": "instrumentation"}.get(outcome.get("kind"), "protocol")
+        if outcome.get("kind") == "incomplete":
+            if outcome.get("reason") in {"ND traversal fuel exhausted", "model fuel exhausted"}:
+                category = "fuel-exhaustion"
+            elif outcome.get("reason") == "empty nondeterministic frontier":
+                category = "empty-frontier"
+        raise Incomplete(f"execution did not complete: {str(outcome)[:1200]}", category)
     if end["kind"] not in {"defined", "undefined", "model-error"} or outcome.get("kind") != end["kind"]:
-        raise Incomplete("terminal kind is absent, unsupported or inconsistent")
+        raise ProtocolFailure("terminal kind is absent, unsupported or inconsistent")
     if not natural(end["visited"]) or not natural(end["choices"]):
-        raise Incomplete("terminal counts are not natural numbers")
+        raise ProtocolFailure("terminal counts are not natural numbers")
     choices = [row["choice"] for row in groups["choice"]]
     if end["choices"] != len(choices):
-        raise Incomplete("terminal choice count differs from emitted choices")
+        raise ProtocolFailure("terminal choice count differs from emitted choices")
     for ordinal, choice in enumerate(choices):
         if not isinstance(choice, dict) or set(choice) != {"ordinal", "kind", "parent", "alternatives", "index"}:
-            raise Incomplete("invalid choice record")
+            raise ProtocolFailure("invalid choice record")
         alternatives = choice["alternatives"]
         if (choice["kind"] not in {"nd", "step", "branch"} or
                 not natural(choice["ordinal"]) or choice["ordinal"] != ordinal or
                 not natural(choice["index"]) or not isinstance(alternatives, list) or
                 len(alternatives) < 2 or choice["index"] >= len(alternatives)):
-            raise Incomplete("invalid choice ordinal, arity or selected index")
+            raise ProtocolFailure("invalid choice ordinal, arity or selected index")
     return Trace(header, [row["event"] for row in groups["event"]], choices, outcome, end)
 
 
@@ -183,27 +198,27 @@ def run_child(command, timeout, memory_bytes, output_bytes):
             while selector.get_map():
                 remaining = timeout - (time.monotonic() - started)
                 if remaining <= 0:
-                    raise Incomplete(f"child exceeded {timeout:g}s wall limit")
+                    raise Incomplete(f"child exceeded {timeout:g}s wall limit", "resource-timeout")
                 for key, _ in selector.select(min(remaining, 0.2)):
                     chunk = os.read(key.fileobj.fileno(), 65536)
                     if not chunk:
                         selector.unregister(key.fileobj)
                         continue
                     if sum(map(len, output.values())) + len(chunk) > output_bytes:
-                        raise Incomplete(f"child exceeded {output_bytes} output bytes")
+                        raise Incomplete(f"child exceeded {output_bytes} output bytes", "resource-output")
                     output[key.data].extend(chunk)
         remaining = timeout - (time.monotonic() - started)
         if remaining <= 0:
-            raise Incomplete(f"child exceeded {timeout:g}s wall limit")
+            raise Incomplete(f"child exceeded {timeout:g}s wall limit", "resource-timeout")
         try:
             code = process.wait(timeout=remaining)
         except subprocess.TimeoutExpired as error:
-            raise Incomplete(f"child exceeded {timeout:g}s wall limit") from error
+            raise Incomplete(f"child exceeded {timeout:g}s wall limit", "resource-timeout") from error
         completed = True
         return code, bytes(output["stdout"]), bytes(output["stderr"])
     except Incomplete as error:
         detail = bytes(output["stderr"][-1500:]).decode("utf-8", errors="replace")
-        raise Incomplete(f"{error}; stderr: {detail or '(empty)'}") from error
+        raise Incomplete(f"{error}; stderr: {detail or '(empty)'}", error.category) from error
     finally:
         # Only this Popen's newly created session/process group is targeted.
         # No process-name matching or machine-wide process operation is used.
@@ -223,14 +238,14 @@ def run_child(command, timeout, memory_bytes, output_bytes):
 
 def check_tape_file(path, trace, limit):
     if not path.is_file() or path.stat().st_size > limit:
-        raise Incomplete("recorder did not produce a bounded tape file")
+        raise ProtocolFailure("recorder did not produce a bounded tape file")
     try:
         tape = decode(path.read_text(encoding="utf-8"))
     except (UnicodeError, ValueError) as error:
-        raise Incomplete(f"recorder produced malformed tape JSON: {error}") from error
+        raise ProtocolFailure(f"recorder produced malformed tape JSON: {error}") from error
     expected = {"header": trace.header, "entries": trace.choices}
     if structural(tape) != structural(expected):
-        raise Incomplete("written tape differs from the recorder's emitted header/choices")
+        raise ProtocolFailure("written tape differs from the recorder's emitted header/choices")
 
 
 def summarize(trace):
@@ -257,7 +272,7 @@ def summarize(trace):
     }
 
 
-def compare_case(options, build_pair=None):
+def compare_case(options, build_pair=None, inspect=None):
     """Run four fresh processes; return compact evidence only after all agree.
 
     A campaign may supply hashes computed once, provided it checks that those
@@ -272,7 +287,7 @@ def compare_case(options, build_pair=None):
         if deadline is not None:
             timeout = min(timeout, deadline - time.monotonic())
             if timeout <= 0:
-                raise Incomplete("campaign wall limit reached")
+                raise Incomplete("campaign wall limit reached", "resource-timeout")
         return run_child(command, timeout, memory, output_limit)
     scratch = ROOT / ".tmp"
     scratch.mkdir(exist_ok=True)
@@ -285,7 +300,7 @@ def compare_case(options, build_pair=None):
             code, stdout, stderr = child(
                 [str(producer), "--runtime=" + str(options.runtime), "--cabs-json", str(options.input)])
             if code != 0:
-                raise Incomplete(f"Cabs producer failed ({code}): {stderr.decode('utf-8', errors='replace')[-1500:]}")
+                raise Incomplete(f"Cabs producer failed ({code}): {stderr.decode('utf-8', errors='replace')[-1500:]}", "frontend")
             if stderr:
                 print("PRODUCER_STDERR: " + stderr.decode("utf-8", errors="replace")[-1500:], file=sys.stderr)
             cabs = directory / "input.json"
@@ -309,10 +324,16 @@ def compare_case(options, build_pair=None):
                 trace = parse_trace(stdout, replay=mode == "replay")
             except (Incomplete, Mismatch) as error:
                 detail = stderr.decode("utf-8", errors="replace")[-1500:]
-                raise type(error)(f"{origin} {mode}: {error}; exit={code}; stderr: {detail or '(empty)'}") from error
+                message = f"{origin} {mode}: {error}; exit={code}; stderr: {detail or '(empty)'}"
+                if isinstance(error, Mismatch):
+                    raise Mismatch(message) from error
+                category = error.category
+                if code not in (None, 0) and category == "protocol":
+                    category = "process-failure"
+                raise Incomplete(message, category) from error
             if code != 0:
                 raise Incomplete(f"{origin} {mode}: child exited {code} despite complete output: "
-                                 + stderr.decode("utf-8", errors="replace")[-1500:])
+                                 + stderr.decode("utf-8", errors="replace")[-1500:], "process-failure")
             if stderr:
                 print(f"{origin.upper()}_{mode.upper()}_STDERR: "
                       + stderr.decode("utf-8", errors="replace")[-1500:], file=sys.stderr)
@@ -330,6 +351,8 @@ def compare_case(options, build_pair=None):
         a_replay = execute(options.core_bin, "Core", "replay", tape_b)
         compare(b_record, a_replay, "CoreB record -> Core replay")
         compare(a_record, b_record, "independent recordings under the same policy")
+        if inspect is not None:
+            inspect(a_record)
         return summarize(a_record)
 
 

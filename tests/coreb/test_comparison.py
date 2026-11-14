@@ -33,6 +33,24 @@ def encoded(records):
 
 
 class ComparisonTests(unittest.TestCase):
+    def test_failure_categories_are_preserved(self):
+        cases = [("refused", "constraint", "refusal"),
+                 ("incomplete", "ND traversal fuel exhausted", "fuel-exhaustion"),
+                 ("incomplete", "empty nondeterministic frontier", "empty-frontier"),
+                 ("observation-error", "lost suffix", "instrumentation")]
+        for kind, reason, category in cases:
+            records = rows()
+            records[-2]["outcome"] = {"kind": kind, "reason": reason}
+            records[-1].update(complete=False, kind=None)
+            with self.assertRaises(diff.Incomplete) as result:
+                diff.parse_trace(encoded(records))
+            self.assertEqual(result.exception.category, category)
+        with self.assertRaises(diff.Incomplete) as result:
+            diff.parse_trace(encoded([{"record": "failure", "reason": "bad C"}]))
+        self.assertEqual(result.exception.category, "frontend")
+        with self.assertRaises(diff.Incomplete) as result:
+            diff.parse_trace(b"{broken")
+        self.assertEqual(result.exception.category, "protocol")
     def test_origin_is_the_only_header_erasure(self):
         left, right = rows(), rows("CoreB")
         diff.compare(diff.parse_trace(encoded(left)), diff.parse_trace(encoded(right)), "paired")
@@ -97,10 +115,12 @@ class ComparisonTests(unittest.TestCase):
     def test_owned_child_limits(self):
         code, out, err = diff.run_child([sys.executable, "-c", "print('bounded')"], 5, 64 * 1024**2, 1024)
         self.assertEqual((code, out, err), (0, b"bounded\n", b""))
-        with self.assertRaises(diff.Incomplete):
+        with self.assertRaises(diff.Incomplete) as result:
             diff.run_child([sys.executable, "-c", "import time; time.sleep(10)"], 0.1, 64 * 1024**2, 1024)
-        with self.assertRaises(diff.Incomplete):
+        self.assertEqual(result.exception.category, "resource-timeout")
+        with self.assertRaises(diff.Incomplete) as result:
             diff.run_child([sys.executable, "-c", "print('x'*1000000)"], 5, 64 * 1024**2, 128)
+        self.assertEqual(result.exception.category, "resource-output")
         code, _, _ = diff.run_child([sys.executable, "-c", "x=bytearray(128*1024**2)"], 5, 64 * 1024**2, 4096)
         self.assertNotEqual(code, 0)
 
