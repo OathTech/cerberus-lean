@@ -67,3 +67,43 @@ sensitivity on these witnesses. They do not prove semantic equivalence or
 completeness of the observation projection. In particular, the paired artifact
 comparison retains its documented producer-provenance assumption for map
 comparator closures.
+
+## Checked result: 2026-11-14
+
+The complete six-control campaign exited successfully against source candidate
+`f34570718c1ee6e8c0cfeff0eb3fec0ab50ca024`, using the mutation instrument from
+`7fbf933031b167533263f8b7abc712dde9abc18a`. From a clean checkout of that candidate,
+provisioned according to the ordinary build instructions, reproduce it with:
+
+```bash
+opam exec --switch=. -- python3 scripts/coreb-mutations.py --build-memory 12G
+```
+
+The checked outcomes were:
+
+- `translation`, `arithmetic`, `choice-order` and `observer`: rejected in both
+  tape directions under both exact and stutter comparison. The defined-execution
+  witness conditions in the table above also passed. Translation independently
+  failed the complete paired artifact comparison.
+- `singleton`: rejected by exact comparison and accepted by stutter comparison
+  in both directions, with one additional visited ND node and unchanged defined
+  outcome, driver effects and branch tape.
+- `panic`: incomplete under both profiles. A separate bounded native run
+  confirmed SIGABRT, the injected marker and absent completion. Reverse replay
+  was explicitly inapplicable because the mutant cannot finish recording.
+
+All twelve focused mutation-instrument tests passed, including the SIGINT and
+SIGTERM regressions with an exited leader and a descendant retaining its pipes.
+The campaign's final hash check confirmed that the normal Core and CoreB
+executables were unchanged; no disposable mutation directories remained.
+
+Earlier trials failed and were not counted as passes. One selected an older
+installed Lem through opam's prepended PATH and failed mutant compilation;
+selecting the already-built compiler from the candidate's private copied
+LemLib fixed that setup error. Another failed the panic detector because the
+comparator's diagnostic tail omitted the native panic marker; the independent
+bounded native recording now checks the full retained stderr. Review also
+exposed cancellation leaking a descendant after `communicate` reaped its
+leader on `KeyboardInterrupt`. Distinct SIGINT/SIGTERM cancellation exceptions
+preserve the leader until verified process-group cleanup; the focused
+regressions confirm the fix. The final six-control run used these corrections.
