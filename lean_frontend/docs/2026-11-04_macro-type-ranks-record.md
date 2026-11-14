@@ -11,7 +11,10 @@ manifest row, reachability, the pins, the register).
 
 **Known defect, added 2026-11-10 [AGENT]:** this change makes `WCHAR_MAX > 0` (`<stdint.h>`) answer 0 on both engines
 (pristine upstream and gcc: 1), a silent wrong answer that this record's matrix did not contain; see `TODO.md`'s entry
-at the top, tray 62 and the warning in tray 20. A fix slice is queued.
+at the top, tray 62 and the warning in tray 20. A fix slice is queued. **Corrected 2026-11-14 [AGENT]:**
+`wchar_t` and `wint_t` left the rank normalisation (`2026-11-14_wchar-rank-record.md`); every statement below about
+`wchar_t` (its promotion to `int`, its rows pinned to gcc's line, finding F5) describes the tree between the two
+dates, not the present one.
 
 ## 0. Rulings and standing rules
 

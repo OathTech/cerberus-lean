@@ -99,14 +99,42 @@ $ gcc -std=c11 -w -O0 wcmax_print.c && ./a.out
 (`<stdint.h>`'s `WCHAR_MAX`/`WCHAR_MIN`, `runtime/libc/include/stdint.h:103-104`, are the unsigned range's
 4294967295 and 0 while the type's alias is `signed int`.) And `(wchar_t)-1 < 0` is 0 on pristine (gcc: 1).
 
-**Fork status (2026-11-10).** The crash is unchanged in both engines (not refused in code). Since the fork's
-integer-rank change (report 20's patch: `wchar_t` has the rank of `int` and promotes to it) the subtraction witness and
-`(wchar_t)-1 < 0` answer gcc's 1 in both fork engines. **One program moved the wrong way and is a silent wrong
-answer of the fork that pristine does not give:** `#include <stdint.h>` / `int main(void) { return WCHAR_MAX > 0; }`
-is `Specified(1)` on pristine and `Specified(0)` on both fork engines (gcc: 1) — the fork's line for the program
-above is `4294967295 0 0 0`. The macro's value is still the unsigned maximum while comparisons now treat the type as
-signed. The cause was established by reading, not by running a build from before the change: the rank normalisation of
-`Wchar_t` to `signed int` was introduced by this repository's commit `9b15a1f69` (2026-11-04, report 20's patch) in
-`frontend/model/ail/ailTypesAux.lem`, the maxima at `impl_mem.ml:2243` still group `Wchar_t` with the unsigned types,
-and 4294967295 converted to `int` is -1. Found on 2026-11-10; not fixed in that pass (documents only); a fix is queued
-(`lean_frontend/TODO.md`, the entry at the top), and report 20 carries a warning beside its patch.
+**Fork status (2026-11-14).** The fork behaves as un-forked Cerberus does on every program of this report: the crash
+is unchanged in both engines (reported, not refused in code), and the fork's integer-rank change (report 20's patch)
+no longer touches `wchar_t` or `wint_t`. Between 2026-11-04 and 2026-11-14 it did: the fork gave the two types the
+rank of `int`, so they promoted to `int` against the unsigned range above, and `#include <stdint.h>` / `int
+main(void) { return WCHAR_MAX > 0; }` answered `Specified(0)` on both fork engines where un-forked Cerberus answers
+`Specified(1)` and gcc 1 (the fork's line for the `printf` program above was `4294967295 0 0 0`); the subtraction
+witness and `(wchar_t)-1 < 0` answered gcc's 1 in the same period. Found on 2026-11-10 (by reading; established by
+runs on 2026-11-14), corrected on 2026-11-14 by taking `wchar_t` and `wint_t` out of the rank normalisation
+(`lean_frontend/docs/2026-11-14_wchar-rank-record.md`): measured over 14,309 one-expression programs with a
+`wchar_t` or `wint_t` operand, the fork prints un-forked Cerberus's first line on every one. Report 20 carries the
+corrected patch and an account of the first one.
+
+## `wint_t` and the limit macros, measured 2026-11-14 (un-forked `c3ff8c53f`, gcc 13.3.0 `-std=c11 -w -O0`)
+
+The same contradiction for `wint_t` (`impl_mem.ml:2217` at `c3ff8c53f`: `Wint_t (* TODO *)` with the signed maximum;
+`:2244`: `Wint_t` with the zero minimum; alias `signed int`) and, for both types, an asymmetry between the two
+operand orders of a comparison. Each row is one program, `#include <stdint.h>` / `#include <stdio.h>` /
+`int main(void) { printf("%llu\n", (unsigned long long)(E)); return 0; }`, run `--nolibc --exec --batch`; the column
+is the number printed, or the verdict (`UB036` is `UB036_exceptional_condition`):
+
+| E | un-forked Cerberus | gcc |
+|---|---|---|
+| `WCHAR_MAX > 0` | 1 | 1 |
+| `0 < WCHAR_MAX` | 0 | 1 |
+| `WCHAR_MIN < 0` | 0 | 1 |
+| `WCHAR_MAX + 1u` | `UB036` | 2147483648 |
+| `-WCHAR_MAX` | `UB036` | 18446744071562067969 |
+| `WINT_MIN > -1` | 0 | 0 |
+| `-1 < WINT_MAX` | 1 | 0 |
+| `WINT_MAX == 2147483647` | 1 | 0 |
+| `WINT_MIN - 1 > 0` | `UB036` | 1 |
+| `WINT_MIN - 1u` | `UB036` | 4294967295 |
+
+(gcc's `wchar_t` is `int` and its `wint_t` is `unsigned int`; an implementation may choose otherwise, but the first
+two rows contradict each other under any choice, and `WINT_MIN - 1u` is an unsigned subtraction, which has no
+exceptional condition.)
+The whole table for the four macros (each compared with 0 in both orders, promoted, and against `1`, `1u`, `1l`,
+`1ul`) is in the fork's record `lean_frontend/docs/2026-11-14_wchar-rank-record.md`, section 3.3, its "pristine"
+column.

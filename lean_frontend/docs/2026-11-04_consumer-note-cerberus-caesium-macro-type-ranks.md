@@ -1,5 +1,10 @@
 # Consumer note for cerberus-caesium: the macro integer types get their implementation rank (2026-11-04)
 
+**CORRECTED 2026-11-14:** what this note says about `wchar_t` (its rank, its promotion to `int`, its Ail types, its
+values against the `int` family) held only from `bb6e8e9f9` to the landing of `fix/wchar-rank` and was a defect of the
+fork: see `2026-11-14_consumer-note-cerberus-caesium-wchar-rank-correction.md`. Everything it says about the other macro
+types stands.
+
 From: the `fix/macro-type-ranks` worker [AGENT]. Occasion: your filing draft 05
 (`docs/upstream-tray/05-cerberus-size-t-usual-arithmetic-conversion.md`, branch
 `tray/size-t-usual-arithmetic-20261104`, commit `e416f83f4`) — the driver's Core comparing `size_t` against `int` at

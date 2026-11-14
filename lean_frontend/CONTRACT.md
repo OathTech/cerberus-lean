@@ -183,9 +183,12 @@ witnesses and are not "thinly tested": they do not answer.
    (`scripts/check_anonymous_members_refusal.sh`, row 1, likewise — every witness pins its whole text on both engines) and the
    compound-assignment refusal (`scripts/check_compound_assignment_refusal.sh`, row 1, likewise, the location included).
    The one fork-ahead FIX (D14, not a refusal) has its own witness: `scripts/check_macro_type_ranks.sh` (row 1) pins gcc
-   13's line on BOTH engines for 103 of 106 programs over the macro integer types' arithmetic (macro-versus-macro
-   pairs included; 2 programs pin the fork's declared residuals, 1 the tray-62 crash), with pristine's pre-fix lines as
-   the negative control, so a return to the narrowing turns the gate red.
+   13's line on BOTH engines for 104 of 126 programs over the macro integer types' arithmetic (macro-versus-macro
+   pairs and the limit macros included; 2 programs pin the fork's declared residuals, 1 the tray-62 crash), with
+   pristine's pre-fix lines as the negative control, so a return to the narrowing turns the gate red; and it pins
+   PRISTINE's line on both engines for 19 programs with a `wchar_t` or `wint_t` operand (the correction of 2026-11-14),
+   with the fork's lines of 2026-11-04 to 2026-11-14 as their negative control, so a return of `int`'s rank for those
+   two types turns it red too.
    The second fork-ahead FIX (D15) has its own witness: `scripts/check_stdio_exit.sh` (row 1) pins ONE line on BOTH
    engines for 46 libc-mode programs over termination — 34 gcc 13's line, 6 the fork's declared line with gcc's beside
    it, a D2 gap control and five nolibc controls — with pristine's lines as the negative control (33 moved), so a return
@@ -343,7 +346,8 @@ witnesses and are not "thinly tested": they do not answer.
   UB:UB035_unsequenced_race`, a false UB both engines agreed on) changes class at its next deliberate re-record
   (`docs/2026-10-29_compound-assignment-refusal-record.md`). Not an override: the one-binding elaboration is upstream's to adopt; the
   refusal reaches `*p++ |= x` and `buf[len++] += v`, as intended.
-- **D14 — the macro integer types have the conversion rank of the type the implementation aliases them to** ([USER
+- **D14 — the macro integer types other than `wchar_t` and `wint_t` have the conversion rank of the type the
+  implementation aliases them to** ([USER
   2026-11-04] approved the fork fix of an upstream mistake as proposed, a fork-ahead delta of the first kind: the fork's
   own fix, mirrored on both engines by generation, filed upstream as tray 20; the bar being a very clear standard and a
   blocked consumer, both met — C17 6.3.1.1#1, 7.19#2; cerberus-caesium's filing 05). Upstream's `lt_integer_rank`/
@@ -355,16 +359,26 @@ witnesses and are not "thinly tested": they do not answer.
   which calls it — kept only the first character of its set; two-way `strstr` read past the needle; `strspn`'s
   `&&` form was never affected: pristine's `strspn` is `9 9 5` = gcc on the reviewer's probe). The rule: outside CHERI
   both rank operands are normalised through `Implementation.normalise_integerType` before the comparison (the alias
-  table the layout and range functions already used; an enum to its compatible type), the table carries the two
+  table the layout and range functions already used; an enum to its compatible type) — **except `Wchar_t` and
+  `Wint_t`, which are compared as upstream compares them** ([USER 2026-11-14] for `wchar_t`: its rank comparisons are
+  upstream's exactly, defects included, not a refusal and not a repair of its signedness; `wint_t` with it, the same
+  mechanism, measured [AGENT 2026-11-14]; record `docs/2026-11-14_wchar-rank-record.md`). The reason: the alias table
+  says `signed int` for both, while the memory model gives `wchar_t` the unsigned range (`WCHAR_MAX` is 4294967295)
+  and `wint_t` `[0, 2^31-1]` — upstream's open inconsistency (tray 62); a rank taken from the alias made the two
+  types promote to `int` against those ranges, and the fork then answered where upstream had left the question open
+  (`WCHAR_MAX > 0` was 0, `WINT_MIN > -1` was 1; pristine and gcc: 1 and 0). `rank_operand` leaves the two
+  constructors bare and the table answers upstream's `false` for a pair with one of them ahead of the catch-all, so
+  every program with a `wchar_t` or `wint_t` operand prints pristine's line (14,309 of 14,309 measured), upstream's
+  narrowing of `wchar_t` against the `int` family and its false `UB036` verdicts included. The table carries the two
   `long long` rows (the standard's top rank; they answer what the catch-all answered for those pairs, which reach it
   from `usual_arithmetic_integer`'s bullets on equal promoted types), and the catch-all is a loud `error`; under CHERI
   upstream's reading is kept verbatim (`intptr_t` is a capability type there; its rank rule is upstream's; CHERI is
   unexercised here) [AGENT 2026-11-04, orchestrator rulings on the worker's report]. Consequences by construction:
-  `wchar_t` and enums promote to `int` / their compatible type (6.3.1.1#2), and the Ail TYPE of every binary
-  expression with a `ptrdiff_t`/`wchar_t`/`intmax_t`/`uintmax_t`/`intN_t`-family/enum operand against a standard type
+  enums promote to their compatible type (6.3.1.1#2), and the Ail TYPE of every binary
+  expression with a `ptrdiff_t`/`intmax_t`/`uintmax_t`/`intN_t`-family/enum operand against a standard type
   is the standard's (the type checker's `usual_arithmetic_integer` uses the same rank functions after its NON-STD
-  arms; measured with `_Generic`, pristine → fork: `int + ptrdiff_t` 7 → 9, `enum + unsigned long` 8 → 10, `wchar_t +
-  long` 7 → 9) while a `size_t` pair keeps its old Ail type through the NON-STD arm — so a consumer comparing its
+  arms; measured with `_Generic`, pristine → fork: `int + ptrdiff_t` 7 → 9, `enum + unsigned long` 8 → 10; `wchar_t +
+  long` is upstream's 7 again since 2026-11-14, and `wchar_t` is not promoted) while a `size_t` pair keeps its old Ail type through the NON-STD arm — so a consumer comparing its
   clone against RefinedC's frontend, which types those pairs the old way, may see that comparison move while the
   fork now matches the standard (the cerberus-caesium note says so). Deliberately unchanged, as upstream's
   judgement and the consumer's RefinedC parity: the type checker's NON-STD `Size_t`/`Intptr_t` arms, so `size_t op
@@ -378,9 +392,12 @@ witnesses and are not "thinly tested": they do not answer.
   rows in the pristine register; the N4 witness moved from 016 to `042-strlen-unterminated-loc.c`. Witness:
   `scripts/check_macro_type_ranks.sh` (row 1). Not an override of a judgement: the code's own comment called the
   catch-all wrong, and the delta leaves when upstream absorbs the fix (the fork-drift manifest's `ailTypesAux` rows).
-  **Known defect of D14 ([AGENT 2026-11-10]):** `WCHAR_MAX > 0` (`<stdint.h>`) answers 0 on both engines where pristine
-  upstream and gcc answer 1 — `wchar_t` now promotes to `int` while its maximum is still the unsigned one; a silent wrong
-  answer, fix slice queued (`TODO.md`, the entry at the top; tray 62 and the warning in tray 20).
+  **Corrected 2026-11-14** (`docs/2026-11-14_wchar-rank-record.md`): from 2026-11-04 (`bb6e8e9f9`) to the landing of
+  `fix/wchar-rank` the rule included `wchar_t` and `wint_t`, and the mainline answered `WCHAR_MAX > 0` with 0 on both
+  engines — a silent wrong answer the fork had introduced, found 2026-11-10; 483 of 54,329 measured one-expression
+  programs differed from both pristine and gcc in that period, every one with a `wchar_t` or `wint_t` operand, none
+  after. The witness pins the affected rows to pristine's line (the KEPT rows) with the period's lines as their
+  negative control.
 - **D15 — program termination runs the `atexit` handlers and flushes the open streams; a libc-mode `printf` is the
   library's own** ([USER 2026-11-04] agreed the fix pass in the audited order under the standing bar — a very clear
   standard, no invented semantics; rulings [AGENT 2026-11-06, orchestrator] on the worker's design and on the two

@@ -109,17 +109,19 @@ merge-base `c3ff8c53f`:
   `R-PNVI-nn` identifiers.
 - `unchanged` — the fork behaves as pristine upstream does at `c3ff8c53f`. `unchanged (fixed in the base)` means
   upstream fixed it before `c3ff8c53f` and the fork carries upstream's text. A dash after the state introduces a
-  qualification that must be read with it (20, 33, 62).
+  qualification that must be read with it (33; 20 and 62 carried one from 2026-11-10 to 2026-11-14 for the fork's
+  `WCHAR_MAX > 0` defect, corrected on 2026-11-14 — their rows say so in words).
 - `n/a` — a report for another project.
 
-A dagger (†) marks a state observed by running the report's reproducer on the fork's engines on 2026-11-10; the others
-are the state the report or this index recorded earlier, not re-run in that pass.
+A dagger (†) marks a state observed by running the report's reproducer on the fork's engines on 2026-11-10 (20 and
+62: again on 2026-11-14, after the correction); the others are the state the report or this index recorded earlier,
+not re-run in that pass.
 
 Counts (derived from the table below by script, re-derived 2026-11-10 after the pre-merge review's dispositions; 81 rows
 = 76 Cerberus reports + 5 for other projects). By class, all rows: semantics 43, robustness 22, code 16; Cerberus
 reports only: semantics 41, robustness 20, code 15. By state, Cerberus reports: unchanged 44 (3 of them fixed
 in the base: 01, 04, 15; 33 is open again, reopened 2026-11-10, and is plainly unchanged; 31 is withdrawn as a
-C17 defect report), fixed 21 (one of them, 40, in the Lean engine only; one, 20, with a known defect), fixed in part and
+C17 defect report), fixed 21 (one of them, 40, in the Lean engine only; one, 20, corrected on 2026-11-14 after a defect of its first patch), fixed in part and
 refused in part 1 (26), refused 10 (59 in part); other projects, n/a 5. Class by state, Cerberus reports:
 semantics 23 unchanged / 12 fixed / 6 refused; robustness 12 unchanged / 5 fixed / 1 fixed and
 refused / 2 refused; code 9 unchanged / 4 fixed / 2 refused.
@@ -145,7 +147,7 @@ refused / 2 refused; code 9 unchanged / 4 fixed / 2 refused.
 | [17-diagnostic-embeds-symbol-id.md](17-diagnostic-embeds-symbol-id.md) | code | unchanged † | Draft | No submission recorded |
 | [18-monadic-list-combinators-non-tail.md](18-monadic-list-combinators-non-tail.md) | robustness | unchanged | Draft | No submission recorded |
 | [19-dynamic-addrs-never-cleaned.md](19-dynamic-addrs-never-cleaned.md) | semantics | unchanged | Draft | No submission recorded |
-| [20-size-t-integer-rank-uac.md](20-size-t-integer-rank-uac.md) | semantics | fixed (D14) † — WITH A KNOWN DEFECT: the patch makes `WCHAR_MAX > 0` answer 0 (un-forked upstream and gcc: 1); it is not to be applied as it is until the fork's correction lands (the warning at the top of the report; report 62) | Draft; fixed in the fork 2026-11-04 (fork-ahead delta, contract D14; the report carries the patch) | No submission recorded; to be filed |
+| [20-size-t-integer-rank-uac.md](20-size-t-integer-rank-uac.md) | semantics | fixed (D14) †, corrected 2026-11-14: the patch the report carried from 2026-11-04 to 2026-11-14 made `WCHAR_MAX > 0` answer 0 (un-forked upstream and gcc: 1); the report now carries the corrected patch, which leaves `wchar_t` and `wint_t` as upstream has them (dry-run against `c3ff8c53f` quoted), and a section on what the first patch got wrong; observed on the fork's engines 2026-11-14 | Draft; fixed in the fork 2026-11-04 and corrected 2026-11-14 (fork-ahead delta, contract D14; the report carries the patch) | No submission recorded; to be filed |
 | [21-provenance-lost-through-arithmetic-pvi.md](21-provenance-lost-through-arithmetic-pvi.md) | semantics | unchanged † | Draft | No submission recorded |
 | [22-ptrdiff-strips-array-layer.md](22-ptrdiff-strips-array-layer.md) | semantics | unchanged † | Draft | No submission recorded |
 | [23-string-literal-init-of-char-array-members.md](23-string-literal-init-of-char-array-members.md) | semantics | unchanged † | Draft | No submission recorded |
@@ -186,7 +188,7 @@ refused / 2 refused; code 9 unchanged / 4 fixed / 2 refused.
 | [59-union-initializer-desugaring.md](59-union-initializer-desugaring.md) | semantics | refused (D11: part (a)); parts (b), (c) unchanged | Draft | No submission recorded; the fork REFUSES part (a) since 2026-10-20 (contract D11, fork-ahead, not a fix for upstream); parts (b) and (c) unchanged |
 | [60-anonymous-members-spliced-into-containing-aggregate.md](60-anonymous-members-spliced-into-containing-aggregate.md) | semantics | refused (D12) † | Draft | No submission recorded; the fork REFUSES the case since 2026-10-26 (contract D12, fork-ahead, not a fix for upstream; the report stands) |
 | [61-compound-assignment-duplicates-left-operand.md](61-compound-assignment-duplicates-left-operand.md) | semantics | refused (D13) † | Draft | No submission recorded; the fork REFUSES side-effecting left operands since 2026-10-29 (contract D13, fork-ahead, not a fix for upstream; the report stands and proposes the one-binding elaboration); carries a related note on the GNU `?:` arm's `record_error_at`, discarded by the constant-expression mini-run |
-| [62-wchar-t-unsigned-range-signed-representation-crash.md](62-wchar-t-unsigned-range-signed-representation-crash.md) | robustness | unchanged † (the crash; since D14 the fork answers `WCHAR_MAX > 0` with 0 where pristine and gcc answer 1 — a silent wrong answer of the fork, in the report's 2026-11-10 section, not fixed) | Draft | No submission recorded; the fork crashes as upstream does (an earlier plan for a declared refusal, [USER 2026-10-20], is not being carried out: the roadmap of 2026-11-10 reports the crash sites instead) |
+| [62-wchar-t-unsigned-range-signed-representation-crash.md](62-wchar-t-unsigned-range-signed-representation-crash.md) | robustness | unchanged † (the crash, and every other program of the report: since 2026-11-14 the fork answers each as un-forked upstream does; from 2026-11-04 to 2026-11-14 it answered `WCHAR_MAX > 0` with 0 where pristine and gcc answer 1, the report's fork-status paragraph; the report gained the `wint_t` and limit-macro table on 2026-11-14) | Draft | No submission recorded; the fork crashes as upstream does (an earlier plan for a declared refusal, [USER 2026-10-20], is not being carried out: the roadmap of 2026-11-10 reports the crash sites instead) |
 | [63-character-decoding-crashes-on-multichar-and-utf8.md](63-character-decoding-crashes-on-multichar-and-utf8.md) | robustness | unchanged † | Draft | No submission recorded; the fork crashes as upstream does (an earlier plan for declared refusals, [USER 2026-10-20], is not being carried out: the roadmap of 2026-11-10 reports the crash sites instead) |
 | [64-recursive-main-guard-bypassed.md](64-recursive-main-guard-bypassed.md) | semantics | unchanged | Draft | Report only; active driver bypasses guard; no submission recorded |
 | [65-inner-arg-temps-core-symbol-loss.md](65-inner-arg-temps-core-symbol-loss.md) | code | fixed (no contract row; the fork's printer remedy) | Draft | Fork printer remedy and loader detector implemented; cross-mode multiplicity dispositioned; no submission recorded |

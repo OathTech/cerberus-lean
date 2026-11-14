@@ -21,15 +21,18 @@ nested initializers (08) and string-literal members (23). **Not active:** every 
 apart from the pin item, the fuel-parameter follow-ups, the risk-map follow-ups, "Small items", the parked designs)
 stays logged as it is. Entries marked DONE or LANDED are records.
 
-- **KNOWN SILENT WRONG ANSWER on the mainline since D14: `WCHAR_MAX > 0` is 0; fix slice queued after the lem re-pin**
-  ([AGENT 2026-11-10]; found by the reporting slice, confirmed by its pre-merge review
-  `docs/2026-11-10_reporting-premerge-review.md` F1/F2). `#include <stdint.h>` / `int main(void) { return WCHAR_MAX > 0; }`
-  answers `Specified(1)` on pristine `c3ff8c53f` and gcc 13 exits 1; both fork engines answer `Specified(0)` (run
-  2026-11-10). D14 (`9b15a1f69`) gives `wchar_t` the rank of `int`, so it promotes to `int`, while the memory model's
-  `wchar_t` maximum is still the unsigned one (`impl_mem.ml` `max_ival`'s `Wchar_t` arm; `WCHAR_MAX` = 4294967295, which
-  converts to -1). Cause established by reading, not by a bisect. `WINT_MAX > 0` and `(long long)WCHAR_MAX > 0` are
-  unaffected (the review's probes). Records: tray 62 (its 2026-11-10 section), the warning at the top of tray 20,
-  CONTRACT.md D14. No witness pins it yet: the fix slice owes one.
+- **CLOSED 2026-11-14 — the silent wrong answer on the mainline since D14 (`WCHAR_MAX > 0` was 0).** ([AGENT
+  2026-11-10] found by the reporting slice, confirmed by its pre-merge review
+  `docs/2026-11-10_reporting-premerge-review.md` F1/F2; closed by `fix/wchar-rank`, record
+  `docs/2026-11-14_wchar-rank-record.md`.) `#include <stdint.h>` / `int main(void) { return WCHAR_MAX > 0; }` answered
+  `Specified(0)` on both fork engines from `bb6e8e9f9` on, where pristine `c3ff8c53f` answers `Specified(1)` and gcc 13
+  exits 1: D14 (`9b15a1f69`) gave `wchar_t` the rank of `int` while the memory model's `wchar_t` maximum is the unsigned
+  one. The cause was established by runs on 2026-11-14 and the defect measured at 483 of 54,329 one-expression
+  programs, `wint_t` included (`WINT_MIN > -1` was 1). [USER 2026-11-14] ruled `wchar_t` out of the rank
+  normalisation, its rank comparisons upstream's exactly; `wint_t` left with it. The witness the entry owed is in
+  `scripts/check_macro_type_ranks.sh` (19 KEPT rows pinned to pristine's line, the period's lines their negative
+  control). Still open, upstream's and reported, not the fork's to answer: `wchar_t`'s and `wint_t`'s ranges against
+  their alias (tray 62), with the narrowing and the false `UB036` verdicts that follow from them.
 
 Current-state reconciliation: 2026-09-25 at Cerberus
 `bb487dda7c56981e76d67f53ae16e874cfe5ed61` and Lem
@@ -354,8 +357,8 @@ the outcome protocol; [USER 2026-10-20]); all three have landed, so the queue is
   `intptr_t` against an unsigned 64-bit partner is a false `UB036_exceptional_condition` (`intptr_t a = 5; unsigned
   long b = 2^64-6; a + b`; gcc defined) — the slice that retires those arms (or refuses them) is a typing change with
   a consumer note. A negative value stored into a `wchar_t` object is tray 62's crash (the crash-to-refusal item
-  above, arm (1)); `tests/parity-probes/uncertainty/E-wchar_t/wt-06` answers gcc's 14 now (`wchar_t` promotes to
-  `int`). Instrument note: an exhaustive-mode run of `tests/libc_exec/015` exceeds 60 s on both oracles.
+  above, arm (1)); `tests/parity-probes/uncertainty/E-wchar_t/wt-06` answered gcc's 14 from 2026-11-04 to 2026-11-14
+  (`wchar_t` promoted to `int`) and answers upstream's 4 again since the correction (the entry at the top). Instrument note: an exhaustive-mode run of `tests/libc_exec/015` exceeds 60 s on both oracles.
 - **GNU `?:` in a constant-expression position loses its refusal** (found by the slice above, 2026-10-29; tray 61's
   related note; upstream's arm, not fixed here): the `AilEcond e1 Nothing e3` arm refuses through `E.record_error_at`,
   and the constant-expression mini-run (`mini_pipeline.lem:157`, plain `runStateM`) discards the recorded error and

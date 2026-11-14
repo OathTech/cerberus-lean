@@ -1,5 +1,10 @@
 # Consumer note for cerberus-sl: the macro integer types get their implementation rank (2026-11-04)
 
+**CORRECTED 2026-11-14:** what this note says about `wchar_t` (its rank, its promotion to `int`, its Ail types, its
+values against the `int` family) held only from `bb6e8e9f9` to the landing of `fix/wchar-rank` and was a defect of the
+fork: see `2026-11-14_consumer-note-cerberus-sl-wchar-rank-correction.md`. Everything it says about the other macro
+types stands.
+
 From: the `fix/macro-type-ranks` worker [AGENT]. Record `docs/2026-11-04_macro-type-ranks-record.md`; witness
 `scripts/check_macro_type_ranks.sh` (ladder row 1); tray 20.
 

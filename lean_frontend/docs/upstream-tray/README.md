@@ -46,8 +46,9 @@ declared ways, both of which change the fork's OCaml and Lean engines together:
 Everything else is unchanged: the fork behaves as upstream does at `c3ff8c53f`, and the report describes upstream.
 Of the 76 reports against Cerberus (counts derived from INDEX.md's table on 2026-11-10): 44 are unchanged in the fork
 (3 of those because upstream had already fixed them before `c3ff8c53f`: 01, 04, 15), 21 are fixed in the fork, 10 are
-refused, and 1 (26) is fixed in part and refused in part. One of the fixes has a known defect that makes its patch
-unsafe to apply as written (report 20: read the warning at its top).
+refused, and 1 (26) is fixed in part and refused in part. One of the fixes (report 20) was corrected on 2026-11-14:
+the patch it carried from 2026-11-04 gave `wchar_t` the rank of `int` and made `WCHAR_MAX > 0` answer 0; the report
+now carries the corrected patch and says what the first one got wrong. Use no copy of it dated before 2026-11-14.
 
 We are not asking you to adopt anything from the Lean port. Every report stands on a reproducer that runs on plain
 upstream `cerberus`.
@@ -124,7 +125,7 @@ All 76 reports against Cerberus, in number order (54 is unused). The CLASS and S
 | [17](17-diagnostic-embeds-symbol-id.md) | unknown-procedure diagnostic embeds the raw fresh-symbol id | code | unchanged |  |
 | [18](18-monadic-list-combinators-non-tail.md) | non-tail monadic list combinators: stack depth ∝ aggregate size | robustness | unchanged |  |
 | [19](19-dynamic-addrs-never-cleaned.md) | `dynamic_addrs` tracks dynamic allocations by address and is never cleaned: a zero-size `alloc` at the base of a live object makes `free` of that object pass the dynamic check | semantics | unchanged |  |
-| [20](20-size-t-integer-rank-uac.md) | `size_t` has no integer conversion rank: arithmetic with `int`-family operands is done at 32 bits | semantics | fixed (D14) |the patch is NOT to be applied as it is: see the warning at the top of the report |
+| [20](20-size-t-integer-rank-uac.md) | `size_t` has no integer conversion rank: arithmetic with `int`-family operands is done at 32 bits | semantics | fixed (D14) |corrected 2026-11-14: the report carries the corrected patch (it leaves `wchar_t` and `wint_t` as upstream has them) and a section on what the first patch got wrong |
 | [21](21-provenance-lost-through-arithmetic-pvi.md) | Under the default (PVI) model, integer addition drops pointer provenance (a bitwise `&` keeps it): `(int*)((unsigned long)p + 4)` is UB043 — is this intended? | semantics | unchanged |  |
 | [22](22-ptrdiff-strips-array-layer.md) | pointer difference over pointers to arrays divides by the inner element size | semantics | unchanged |  |
 | [23](23-string-literal-init-of-char-array-members.md) | string literal initialising a `char`-array element/member rejected (`char a[2][3] = {"ab","cd"}`) | semantics | unchanged |  |
@@ -165,7 +166,7 @@ All 76 reports against Cerberus, in number order (54 is unused). The CLASS and S
 | [59](59-union-initializer-desugaring.md) | Union initializers: the desugarer builds every braced union initializer as the FIRST member (its own TODO), and three neighbouring initializer defects it does not record | semantics | refused (D11: part (a)); parts (b), (c) unchanged |  |
 | [60](60-anonymous-members-spliced-into-containing-aggregate.md) | Anonymous struct/union members are spliced into the containing aggregate: wrong layout, no aliasing inside an anonymous union, and initializers one slot late | semantics | refused (D12) |  |
 | [61](61-compound-assignment-duplicates-left-operand.md) | Compound assignment is elaborated with the left operand duplicated: a side effect in the lvalue runs twice, and `a[i++] += v` is reported as UB035 | semantics | refused (D13) |  |
-| [62](62-wchar-t-unsigned-range-signed-representation-crash.md) | `wchar_t` is given the unsigned range by the memory model but a signed representation by the implementation: a negative `wchar_t` value crashes the tool | robustness | unchanged |the fork has one more wrong answer here than upstream (`WCHAR_MAX > 0`); see the report |
+| [62](62-wchar-t-unsigned-range-signed-representation-crash.md) | `wchar_t` is given the unsigned range by the memory model but a signed representation by the implementation: a negative `wchar_t` value crashes the tool | robustness | unchanged |since 2026-11-14 the fork answers every program of the report as upstream does (from 2026-11-04 to 2026-11-14 it had one more wrong answer, `WCHAR_MAX > 0`); the report gained `wint_t` and a limit-macro table |
 | [63](63-character-decoding-crashes-on-multichar-and-utf8.md) | `decode_character_constant` crashes on a multi-character constant and on any non-ASCII byte in a string literal | robustness | unchanged |  |
 | [64](64-recursive-main-guard-bypassed.md) | Recursive-main guard is bypassed by the driver's Eccall reduction | semantics | unchanged |  |
 | [65](65-inner-arg-temps-core-symbol-loss.md) | Core pretty-printing merges parameter values and object addresses | code | fixed (no contract row; the fork's printer remedy) |  |

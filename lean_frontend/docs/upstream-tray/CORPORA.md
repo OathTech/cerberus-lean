@@ -6,7 +6,8 @@ the answers of three implementations pinned beside them. This page says what the
 on any Cerberus binary and compare its answer, with nothing from this repository but the program and the pin file. The
 directories are under `tests/` at the repository root; nothing here moves or edits them.
 
-Counts below are derived (2026-11-10, `ls <dir>/*.c | wc -l` and `grep -vc '^#' <file>`).
+Counts below are derived (2026-11-10, `ls <dir>/*.c | wc -l` and `grep -vc '^#' <file>`; `tests/macro_type_ranks`
+re-derived the same way on 2026-11-14, [AGENT 2026-11-14]).
 
 ## The three pin files
 
@@ -18,7 +19,8 @@ name without `.c`); lines starting with `#` are comments that state the file's o
   stdout>", stderr: "<escaped stderr>", blocked: "false"}`, or `GCC-REJECT: <first error line>` when gcc refused to
   compile. Flags: `gcc -std=c11 -w -O0` for `stdio_exit`, `printf_refusals` and `half_mirrors`;
   `gcc -std=c11 -pedantic-errors -O0` for `address_constants`. `macro_type_ranks` has no `gcc.txt`: its `expected.txt`
-  is gcc's line (`gcc -std=c11 -w -O0`) for all but two declared rows.
+  is gcc's line (`gcc -std=c11 -w -O0`) for all but two declared rows and, since 2026-11-14, the 19 rows named in
+  its `kept.txt` — for those `expected.txt` is un-patched Cerberus's line and `kept.txt` holds gcc's (below).
 - `pristine.txt` — what un-forked upstream Cerberus at `c3ff8c53f` printed (its `--batch` line; `CRASH…` or
   `REJECT(rc=1): …` where it printed no verdict line). This is the "before": a row where `pristine.txt` differs from
   `gcc.txt` is a program upstream gets wrong at that commit.
@@ -64,7 +66,7 @@ library-mode run of the two engines; compare it with that field removed.
 
 | Directory | Programs | Mode | Reports | Pin files |
 |---|---|---|---|---|
-| `tests/macro_type_ranks` | 106 | nolibc | 20 (the integer conversion rank of `size_t`, `ptrdiff_t`, `wchar_t`, the `intptr_t`/`intmax_t` families and enums); one program for 62 | `expected.txt` (105 rows), `pristine.txt` (105) |
+| `tests/macro_type_ranks` | 126 | nolibc | 20 (the integer conversion rank of `size_t`, `ptrdiff_t`, the `intptr_t`/`intmax_t` families and enums; the limit macros); 62 (19 programs with a `wchar_t` or `wint_t` operand, pinned to un-patched Cerberus's own line, and the crash program) | `expected.txt` (125 rows), `pristine.txt` (125), `kept.txt` (19: gcc's line beside the 19), `d14.txt` (19: the fork's lines of 2026-11-04 to 2026-11-14) |
 | `tests/stdio_exit` | 46 | libc; 5 `nolibc_*` | 24 and 25 (flushing at termination, `atexit` on return from `main`, the exit status) | `expected.txt`, `gcc.txt`, `pristine.txt` (46 each) |
 | `tests/printf_refusals` | 161 | libc; 4 `nolibc_*` | 26 (`*`, `%n`, `%ls`, `%lc`), 16 (`snprintf`'s return), 68 (floating conversions), 69 (`j`/`z`/`t`), 70 (the `0` and `#` flags), 27 (the strict argument-type verdicts, kept) | `expected.txt`, `gcc.txt`, `pristine.txt` (161 each) |
 | `tests/address_constants` | 244 | nolibc | 09 with 28 and 29 merged into it (constant expressions in static initializers and integer-constant contexts); one program for 75 | `expected.txt`, `gcc.txt`, `pristine.txt` (244 each) |
@@ -72,14 +74,25 @@ library-mode run of the two engines; compare it with that field removed.
 
 ### `tests/macro_type_ranks`
 
-`expected.txt`: `<name> TAB <line>`. Groups by name prefix: `dense_*` (47; every operator over pairs of a macro type
+`expected.txt`: `<name> TAB <line>`. Groups by name prefix: `dense_*` (48; every operator over pairs of a macro type
 and a standard type, with negative and large operands), `audit_*` (30; the true-bug audit's rank probes: `ptrdiff_t`
 asymmetry, compound assignment, `%`, `|`, `^`, `?:`, comparisons), `promo_*` (9; integer promotion of the small types
 and `wchar_t`), `st-*` (9) and `p_*` (4; typing-level checks through `_Generic` and pointer conversions),
-`consumer_*` (3; the shapes a consumer filed), `tray20_int_size_t_uac_rank` (report 20's own program). Three programs are not
-gcc's answer and say so in their names: `gap_intptr_t_unsigned_false_ub036` and `residual_size_t_llong_typing` are
-pinned to the fork's line (two related findings in report 20, unchanged), and `gap_wchar_t_negative_store` has no pin
-row (it is report 62's crash, checked for the crash text by the fork's script).
+`consumer_*` (3; the shapes a consumer filed), `tray20_int_size_t_uac_rank` (report 20's own program), `limits_*` (6;
+the limit macros of `<limits.h>`/`<stdint.h>` other than `WCHAR_*`/`WINT_*`, compared with 0, promoted, converted and
+against `int`/`unsigned`/`long`/`unsigned long`, one value per expression) and `kept_*` (13; see below). Three
+programs are not gcc's answer and say so in their names: `gap_intptr_t_unsigned_false_ub036` and
+`residual_size_t_llong_typing` are pinned to the fork's line (two related findings in report 20, unchanged), and
+`gap_wchar_t_negative_store` has no pin row (it is report 62's crash, checked for the crash text by the fork's
+script).
+
+Nineteen programs are pinned to UN-PATCHED Cerberus's line, not gcc's — the names listed in `kept.txt`, which gives
+gcc 13's line for each beside its name: the 13 `kept_*` programs (the `WCHAR_*`/`WINT_*` limit macros and `wchar_t`
+objects; `kept_wchar_max_gt_0` is `return WCHAR_MAX > 0;`), `dense_wchar_t_pos`, `dense_wchar_t_bneg`,
+`dense_wchar_vs_macro_pos`, `promo_wchar_t`, `audit_rank_wchar` and `p_wchar_long`. For these, `expected.txt` and
+`pristine.txt` carry the same line by construction: they record what `c3ff8c53f` answers for `wchar_t` and `wint_t`
+(report 62), which the fork deliberately does not change; where that line differs from `kept.txt`'s, the difference
+is report 62's subject. `d14.txt` is of no use outside the fork (its own lines during a ten-day defect).
 
 ### `tests/stdio_exit`
 

@@ -1,30 +1,15 @@
 # `size_t` and the other macro integer types have no integer conversion rank: usual arithmetic conversions with the `int` family compute at 32 bits (and musl's `strcspn`/`strpbrk` and two-way `strstr` inherit it)
 
-**WARNING (2026-11-10): do not apply the patch below as it is.** It gives `wchar_t` the conversion rank of `int`
-(so a `wchar_t` operand promotes to `int`) while the model's `wchar_t` range stays the unsigned one
-(`memory/concrete/impl_mem.ml:2213`, `:2243` at `c3ff8c53f`; `<stdint.h>`'s `WCHAR_MAX` is 4294967295). One program
-that un-patched Cerberus answers correctly then gets a silently wrong answer:
-
-```c
-#include <stdint.h>
-int main(void) { return WCHAR_MAX > 0; }
-```
-
-```
-un-forked upstream @ c3ff8c53f:   Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
-with this patch (OCaml driver):   Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
-with this patch (Lean port):      Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
-gcc 13.3.0 (-std=c11 -w -O0):     exit status 1
-```
-
-(`--nolibc --exec --batch`, all four run on 2026-11-10.) The patch needs the `wchar_t` minimum and maximum aligned with
-the signed alias first (report [62](62-wchar-t-unsigned-range-signed-representation-crash.md) describes that
-contradiction and carries the other witnesses). This repository carries the patch and therefore the wrong answer
-today; its correction is queued as a fix slice and this warning stays until it lands. `WINT_MAX > 0` and
-`(long long)WCHAR_MAX > 0` are 1 on all three (the pre-merge review's probes).
+**Corrected 2026-11-14.** The patch this report carried from 2026-11-04 to 2026-11-14 gave `wchar_t` and `wint_t` the
+conversion rank of `int`, against a model in which `wchar_t` has the unsigned range and `wint_t` the range
+`[0, 2^31-1]` (report [62](62-wchar-t-unsigned-range-signed-representation-crash.md)); it made
+`#include <stdint.h>` / `int main(void) { return WCHAR_MAX > 0; }` answer 0 where un-patched Cerberus and gcc answer
+1. The patch below leaves those two types exactly as un-patched Cerberus has them; the section "What the first patch
+got wrong" says what happened. Do not use a copy of this report dated before 2026-11-14.
 
 **Status (cerberus-lean fork):** fixed in the fork on 2026-11-04 as a fork-ahead delta (both engines by generation;
-record `lean_frontend/docs/2026-11-04_macro-type-ranks-record.md`; witness `scripts/check_macro_type_ranks.sh`);
+record `lean_frontend/docs/2026-11-04_macro-type-ranks-record.md`; witness `scripts/check_macro_type_ranks.sh`) and
+corrected on 2026-11-14 for `wchar_t` and `wint_t` (record `lean_frontend/docs/2026-11-14_wchar-rank-record.md`);
 Draft for upstream, to be filed. The patch below is against `rems-project/cerberus` at `c3ff8c53f`; upstream's tip
 `ae70925fc` carries the same code.
 
@@ -71,7 +56,7 @@ Specified(wrapI_add('size_t', if all_values_representable_in('size_t',
 
 The same shape applies to `ptrdiff_t` (asymmetrically: `n + i` is right because `(Ptrdiff_t, Signed Int_)` hits the
 `(_, Signed Int_) -> false` row, `i + n` is narrowed), `wchar_t` (narrows a `long` partner; `wchar_t` is also never
-promoted to `int`), an enum operand (`e + ul` narrows an `unsigned long`), every `op=` with a macro-typed left operand,
+promoted to `int`; the patch below does not change `wchar_t`, whose range is report 62's question), an enum operand (`e + ul` narrows an `unsigned long`), every `op=` with a macro-typed left operand,
 `%`, `|`, `^`, the conditional operator and every comparison. Localisation of the translation side (which function
 narrows, and why the type checker's answer differs) is cerberus-caesium's, from their filing draft 05
 (`docs/upstream-tray/05-cerberus-size-t-usual-arithmetic-conversion.md`, 2026-11-04), merged here with credit: they
@@ -130,8 +115,9 @@ where glibc returns the match at 10).
 Expected: C17 6.3.1.1#1 — a typedef'd type has the rank of its definition, and the standard's own rule list has no
 place for a type without a rank — and 7.19#2 — `size_t` is an unsigned integer type (`unsigned long` on LP64), so the
 third bullet of 6.3.1.8#1 converts the `int` operand to `size_t` and the operation is 64-bit: gcc's lines above; the
-same for `ptrdiff_t` (`long`), `wchar_t` (`int`, so it also promotes to `int`, 6.3.1.1#2), an enum (its compatible type,
-6.7.2.2#4), and the `intptr_t`/`intmax_t` families.
+same for `ptrdiff_t` (`long`), an enum (its compatible type, 6.7.2.2#4), and the `intptr_t`/`intmax_t` families; and
+for `wchar_t` (`int`, so it also promotes to `int`, 6.3.1.1#2) once its range agrees with its alias (report 62) — not
+before, see "What the first patch got wrong".
 
 ## Impact
 
@@ -147,20 +133,38 @@ hide it from anything that takes the Ail type (RefinedC, CN).
 
 Give the rank comparisons the implementation's view of the type: normalise both operands through
 `Implementation.normalise_integerType` before the ISO comparison, so every type the implementation defines as an alias
-has the rank of the type it aliases; add the two `long long` rows the table lacked (6.3.1.1#1's top rank; they answer
-exactly what the catch-all answered for the `long long` pairs, which reach it — `usual_arithmetic_integer`'s bullets
-call `lt_integer_rank` on equal promoted types); and make the catch-all an `error` so that a future unranked type
-fails loudly instead of silently converting. Under CHERI the patch keeps upstream's reading verbatim — bare
-constructors, the `intptr_t`-has-the-highest-rank special case on the first operand, the silent `false` — because
-`intptr_t` is a capability type there, not an alias, and its rank rule is yours; whether `size_t` should normalise under
-CHERI (the same narrowing exists there) is for you to decide. With the patch, every `all_values_representable_in`
-conditional on a `size_t` operand disappears from the elaborated Core (247 in the shipped libc), the reproducers print
-gcc's lines, and `strcspn`/`strstr` behave.
+has the rank of the type it aliases — except `wchar_t` and `wint_t`, which the patch leaves exactly as they are (see
+below); add the two `long long` rows the table lacked (6.3.1.1#1's top rank; they answer exactly what the catch-all
+answered for the `long long` pairs, which reach it — `usual_arithmetic_integer`'s bullets call `lt_integer_rank` on
+equal promoted types); and make the catch-all an `error` so that a future unranked type fails loudly instead of
+silently converting. Under CHERI the patch keeps upstream's reading verbatim — bare constructors, the
+`intptr_t`-has-the-highest-rank special case on the first operand, the silent `false` — because `intptr_t` is a
+capability type there, not an alias, and its rank rule is yours; whether `size_t` should normalise under CHERI (the
+same narrowing exists there) is for you to decide. With the patch, every `all_values_representable_in` conditional on
+a `size_t` operand disappears from the elaborated Core (247 in the shipped libc), the reproducers print gcc's lines,
+and `strcspn`/`strstr` behave.
+
+`wchar_t` and `wint_t` are not normalised, and the table answers `false` for a pair with one of them where your
+catch-all did, so with the patch every program with a `wchar_t` or `wint_t` operand behaves exactly as it does
+without it (measured: 14,309 one-expression programs over `WCHAR_MIN`/`WCHAR_MAX`/`WINT_MIN`/`WINT_MAX` and
+`wchar_t` objects, identical first line on patched and un-patched Cerberus). Their alias is `signed int` but
+`impl_mem.ml` gives `wchar_t` the unsigned minimum and maximum and `wint_t` a zero minimum (report 62); giving them
+`int`'s rank before that is settled produces wrong answers that un-patched Cerberus does not give. Once the ranges
+follow the alias, the two `match` arms in `rank_operand` and the four table arms can simply be deleted.
+
+The patch is a plain `diff -u` of the file at `c3ff8c53f` against the same file with the rank region replaced; its
+hunk headers are positions in your file. `patch -p1 --dry-run` in a tree at `c3ff8c53f`, 2026-11-14:
+
+```
+checking file frontend/model/ail/ailTypesAux.lem
+```
+
+(exit 0; applied, the file equals the intended text byte for byte.)
 
 ```diff
 --- a/frontend/model/ail/ailTypesAux.lem	(upstream c3ff8c53f)
-+++ b/frontend/model/ail/ailTypesAux.lem	(cerberus-lean fix/macro-type-ranks, 2026-11-04)
-@@ -451,9 +451,33 @@
++++ b/frontend/model/ail/ailTypesAux.lem	(cerberus-lean fix/wchar-rank, 2026-11-14)
+@@ -451,9 +451,51 @@
    end
  
  
@@ -170,10 +174,10 @@ gcc's lines, and `strcspn`/`strstr` behave.
 +   every integer type the implementation defines as an alias has the conversion
 +   rank of the type it aliases (C17 6.3.1.1#1: a typedef has the rank of its
 +   type; 7.19#2: size_t is an unsigned integer type, here Unsigned Long;
-+   Ptrdiff_t -> Signed Long; Wchar_t/Wint_t -> Signed Int_; Intptr_t/Intmax_t ->
-+   Long; the IntN_t/Int_leastN_t/Int_fastN_t families by width; an Enum to its
-+   compatible type, 6.7.2.2#4; Char, Bool and Ptraddr_t are fixed points of the
-+   normalisation). Upstream compared the bare constructors, so a macro-typed
++   Ptrdiff_t -> Signed Long; Intptr_t/Intmax_t -> Long; the IntN_t/Int_leastN_t/
++   Int_fastN_t families by width; an Enum to its compatible type, 6.7.2.2#4;
++   Char, Bool and Ptraddr_t are fixed points of the normalisation; Wchar_t and
++   Wint_t are NOT normalised, see the correction below). Upstream compared the bare constructors, so a macro-typed
 +   operand matched no rank arm and the ISO table's catch-all answered `false`
 +   (its own TODO below): in the Core translation's usual arithmetic conversions
 +   the pair (size_t, int) then fell to the last resort and both operands were
@@ -181,10 +185,28 @@ gcc's lines, and `strcspn`/`strstr` behave.
 +   int family computed at 32 bits (the same for ptrdiff_t, wchar_t and enum
 +   operands). Under CHERI upstream's reading is kept exactly as it is: bare
 +   constructors (intptr_t is a capability type there, not an alias -- its rank
-+   rule is upstream's, see lt_integer_rank) and the silent catch-all. *)
++   rule is upstream's, see lt_integer_rank) and the silent catch-all.
++
++   FORK CORRECTION (2026-11-14; lean_frontend/docs/2026-11-14_wchar-rank-record.md):
++   Wchar_t and Wint_t are left as they are, so every rank comparison with one
++   of them is upstream's, exactly (the bare constructor here, and upstream's
++   `false` for it in lt_integer_rank's table, the four arms before the
++   catch-all). The alias table says Signed Int_ for both, but the memory model
++   gives wchar_t the UNSIGNED range (impl_mem.ml min_ival/max_ival, under
++   upstream's own TODO: WCHAR_MAX is 4294967295) and wint_t the range
++   [0, 2^31-1]: upstream's open inconsistency (upstream-tray report 62). With
++   int's rank the two types promoted to int against those ranges, and
++   `WCHAR_MAX > 0` answered 0, `WINT_MIN > -1` answered 1, where upstream and
++   gcc answer 1 and 0: answers the fork had introduced. Which signedness
++   wchar_t has is upstream's question; the fork does not answer it. *)
 +val rank_operand: integerType -> integerType
 +let rank_operand ity =
-+  if Global.is_CHERI () then ity else Implementation.normalise_integerType ity
++  if Global.is_CHERI () then ity else
++  match ity with
++    | Wchar_t -> Wchar_t
++    | Wint_t -> Wint_t
++    | _ -> Implementation.normalise_integerType ity
++  end
 +
  (* TODO: K this looks wrong, in particular the STD says "No two signed integer types shall have the same rank" *)
  val eq_integer_rank: integerType -> integerType -> bool
@@ -194,7 +216,7 @@ gcc's lines, and `strcspn`/`strstr` behave.
    ity1 = ity2 || eq_integer_rank_base ity1 ity2
  
  val lt_integer_rank: integerType -> integerType -> bool
-@@ -523,10 +547,31 @@
+@@ -523,10 +565,45 @@
      | (Unsigned Long, Unsigned _) ->
          true
      
@@ -206,6 +228,20 @@ gcc's lines, and `strcspn`/`strstr` behave.
 +    | (_, Signed LongLong) ->
 +        false
 +    | (_, Unsigned LongLong) ->
++        false
++    
++    (* FORK (2026-11-14): upstream's answer for a Wchar_t or Wint_t operand,
++       kept. rank_operand leaves these two constructors bare; a pair with one
++       of them that no arm above matches reached upstream's catch-all and was
++       answered `false` (under CHERI it still does: these arms answer the
++       same). The loud catch-all below is for every other constructor *)
++    | (Wchar_t, _) ->
++        false
++    | (_, Wchar_t) ->
++        false
++    | (Wint_t, _) ->
++        false
++    | (_, Wint_t) ->
 +        false
 +    
      | _ ->
@@ -228,7 +264,7 @@ gcc's lines, and `strcspn`/`strstr` behave.
    if Global.is_CHERI () then
      match ity1 with
        (* Bottom: In CHERI C intptr_t types have the highest rank so
-@@ -535,10 +580,10 @@
+@@ -535,10 +612,10 @@
      | Signed Intptr_t -> false
      | Unsigned Intptr_t -> false
      | _ ->
@@ -252,12 +288,42 @@ unsigned long b = 18446744073709551610UL; a + b` is reported as `UB036_exception
 normalised bullets would make the typing agree with the standard too; the fork left them because a consumer's RefinedC
 parity rests on the typing as it is.
 
+## What the first patch got wrong (2026-11-04 to 2026-11-14)
+
+The first patch normalised every macro type, `wchar_t` and `wint_t` included, on the reasoning that a typedef has
+the rank of its type (6.3.1.1#1) and the alias table says `signed int`. The reasoning is right for an implementation
+whose `wchar_t` is consistently `signed int`. This one's is not: `Impl_mem.max_ival`/`min_ival` group `Wchar_t` with
+the unsigned types under `TODO: it is implementation defined if unsigned`, and `Wint_t` has a signed maximum and a
+zero minimum. With `int`'s rank a `wchar_t` operand promoted to `int`, the value 4294967295 of `WCHAR_MAX` was
+converted to -1, and comparisons that un-patched Cerberus gets right came out wrong, silently, on both of the fork's
+engines (they agree with each other by construction, so no differential test saw it):
+
+| program (`#include <stdint.h>`, the expression returned) | first patch | un-patched `c3ff8c53f` | corrected patch | gcc 13.3.0 |
+|---|---|---|---|---|
+| `WCHAR_MAX > 0` | `Specified(0)` | `Specified(1)` | `Specified(1)` | 1 |
+| `WCHAR_MAX - 1 > 0` | `Specified(0)` | `Specified(1)` | `Specified(1)` | 1 |
+| `WINT_MIN > -1` | `Specified(1)` | `Specified(0)` | `Specified(0)` | 0 |
+| `WINT_MAX > -1` | `Specified(1)` | `Specified(0)` | `Specified(0)` | 0 |
+
+(`--nolibc --exec --batch`, all run on 2026-11-14; "first patch" is the fork's binary built before the correction.)
+
+Measured over 54,329 one-expression programs (every limit macro of the shipped `<limits.h>`/`<stdint.h>` compared
+with 0, promoted, converted, against `int`/`unsigned`/`long`/`unsigned long` and against each other; `wchar_t`
+objects against every integer type): the first patch differed from both un-patched Cerberus and gcc on 483, every
+one with a `wchar_t` or `wint_t` operand; the corrected patch differs from both on none, and differs from un-patched
+Cerberus on no program with such an operand. The first patch also happened to give gcc's answer on 1,693 programs
+where un-patched Cerberus does not (`wchar_t w = 1; long l = 8589934592; w + l` is 1 un-patched, 8589934593 in
+gcc); the corrected patch gives those up, because they came from the same unsound step. They are report 62's to fix.
+
+The defect was found on 2026-11-10 by re-running report 62's programs, six days after the patch landed in the fork;
+the fork's own witness set pinned every `wchar_t` program to gcc's line and had no program using the limit macros.
+
 ## Related findings (not this mechanism)
 
 - A negative value stored into a `wchar_t` object crashes both engines (`bytes_of_int(signed), i= 4294967295, nbits=
   32`): the implementation gives `wchar_t` an unsigned range (`integerImpl`) and a signed alias (`type_alias_map`);
-  report 62. With the patch `wchar_t` arithmetic is done in `int`, so `wchar_t w = 100000; (w - 200000) < 0` no longer
-  reports a false UB036 (it crashes at the store instead, if stored).
+  report 62. The patch does not touch `wchar_t`: `wchar_t w = 100000; (w - 200000) < 0` reports the same false UB036
+  with and without it.
 - `__cerbty_int128_t` is an uncaught `Invalid_argument "option is None"` (`Option.get` on DefaultImpl's alias table),
   unchanged.
 
@@ -276,5 +342,6 @@ referee), re-verified 2026-09-05 on the un-forked upstream binary; rediscovered 
 credited above); the `ptrdiff_t` asymmetry, the compound-assignment and `%`/`|`/`^` forms by the fork's true-bug audit
 of 2026-11-04; the library consequences (`strcspn`, two-way `strstr`) by the fix's moved rows. Fixed in the fork
 2026-11-04 (record above; a 483-program matrix over gcc 13.3.0, pristine `c3ff8c53f` and both fork engines: 196 wrong
-before, 0 after on every program both sides complete). Localisation, fix and this report by Claude (Fable 5.1) under
+before, 0 after on every program both sides complete) and corrected there on 2026-11-14 (`wchar_t` and `wint_t`
+left as upstream has them; the first patch's `WCHAR_MAX > 0` defect, above). Localisation, fix and this report by Claude (Fable 5.1) under
 operator direction; per the tray's provenance policy the filed issue carries an AI-provenance note.
