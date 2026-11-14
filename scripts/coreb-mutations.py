@@ -340,8 +340,17 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
+    def interrupted(_signal, _frame):
+        raise KeyboardInterrupt
+
+    # Let finally blocks terminate owned subprocess groups and remove the
+    # disposable checkout on normal supervisor termination as well as Ctrl-C.
+    signal.signal(signal.SIGTERM, interrupted)
     try:
         sys.exit(main())
+    except KeyboardInterrupt:
+        print("MUTATION_CAMPAIGN_INTERRUPTED", file=sys.stderr)
+        sys.exit(130)
     except (RuntimeError, OSError, ValueError, subprocess.SubprocessError) as error:
         print(f"MUTATION_CAMPAIGN_FAILED: {error}", file=sys.stderr)
         sys.exit(1)
