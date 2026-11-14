@@ -141,7 +141,7 @@ private def result {a err st : Type} (header : Header) (session : Session)
 
 private def finish {a err st : Type} (mode : Mode) (header : Header)
     (session : Session) (state : st) (outcome : Outcome a err) : Run a err st :=
-  let checked := match mode with
+  let checked : Outcome a err := match mode with
     | .replay tape =>
       if session.entries.size != tape.entries.size then
         .replayMismatch s!"replay completed with {tape.entries.size - session.entries.size} surplus entries"
@@ -156,7 +156,7 @@ private def finish {a err st : Type} (mode : Mode) (header : Header)
 private def choose {a info err cs st : Type} (mode : Mode) (header : Header)
     (session : Session) (state : st) (node : Nat) (kind : Kind) (parent : Json)
     (branches : List (Json × ndM a info err cs st))
-    (continue : Session → ndM a info err cs st → Run a err st) : Run a err st :=
+    (resumePath : Session → ndM a info err cs st → Run a err st) : Run a err st :=
   let alternatives := (branches.map Prod.fst).toArray
   match branches with
   | [] =>
@@ -166,7 +166,7 @@ private def choose {a info err cs st : Type} (mode : Mode) (header : Header)
   | [(_, continuation)] =>
     let session := { session with events := session.events.push
       (nodeEvent node kind.label parent alternatives (some 0)) }
-    continue session continuation
+    resumePath session continuation
   | _ :: _ :: _ =>
     match selected mode session kind parent alternatives with
     | .error (replaying, reason) =>
@@ -181,7 +181,7 @@ private def choose {a info err cs st : Type} (mode : Mode) (header : Header)
         let entry : Entry := { ordinal := session.entries.size, kind, parent, alternatives, index }
         let session := { session with entries := session.entries.push entry, random,
           events := session.events.push (nodeEvent node kind.label parent alternatives (some index)) }
-        continue session continuation
+        resumePath session continuation
 
 private def traverse {a info err cs st : Type} (fuel : Nat)
     (observer : Observer info err cs st) (mode : Mode) (header : Header)
@@ -198,7 +198,7 @@ private def traverse {a info err cs st : Type} (fuel : Nat)
     | .error reason => result header session state' (.observationError reason)
     | .ok delta =>
       let session := { session with events := session.events ++ delta }
-      let continue := fun session machine => traverse fuel observer mode header session machine state'
+      let resumePath := fun session machine => traverse fuel observer mode header session machine state'
       match next with
       | .NDactive value =>
         let session := { session with events := session.events.push (nodeEvent node "active") }
@@ -211,23 +211,23 @@ private def traverse {a info err cs st : Type} (fuel : Nat)
       | .NDguard info constraint continuation =>
         let session := { session with events := session.events.push
           (nodeEvent node "guard" (observer.encodeInfo info)) }
-        if observer.isTrivialConstraint constraint then continue session continuation
+        if observer.isTrivialConstraint constraint then resumePath session continuation
         else result header session state' (.refused "nontrivial NDguard constraint")
       | .NDbranch info constraint left right =>
         if observer.isTrivialConstraint constraint then
           choose mode header session state' node .branch (observer.encodeInfo info)
             [(Json.mkObj [("side", toJson "left")], left),
-             (Json.mkObj [("side", toJson "right")], right)] continue
+             (Json.mkObj [("side", toJson "right")], right)] resumePath
         else
           let session := { session with events := session.events.push
             (nodeEvent node "branch" (observer.encodeInfo info)) }
           result header session state' (.refused "nontrivial NDbranch constraint")
       | .NDnd info branches =>
         choose mode header session state' node .nd (observer.encodeInfo info)
-          (branches.map fun (label, branch) => (observer.encodeInfo label, branch)) continue
+          (branches.map fun (label, branch) => (observer.encodeInfo label, branch)) resumePath
       | .NDstep info branches =>
         choose mode header session state' node .step (observer.encodeInfo info)
-          (branches.map fun (label, branch) => (observer.encodeInfo label, branch)) continue
+          (branches.map fun (label, branch) => (observer.encodeInfo label, branch)) resumePath
 
 /-- Run one path, recording or strictly replaying positional choices. Neither
     expected outcomes nor other-lane state participate in selection. The caller
@@ -238,7 +238,7 @@ def run {a info err cs st : Type} (fuel : Nat) (observer : Observer info err cs 
   let outputHeader := match mode with
     | .record _ => header
     | .replay tape => tape.header
-  let validation := match mode with
+  let validation : Except String Unit := match mode with
     | .record _ => if header.version == 1 then .ok () else .error "unsupported choice protocol version"
     | .replay tape => validateTape header tape
   match validation with

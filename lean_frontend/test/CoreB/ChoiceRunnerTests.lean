@@ -63,10 +63,10 @@ def isIncomplete (run : Run Nat String Nat) : Bool :=
 def isRefused (run : Run Nat String Nat) : Bool :=
   match run.outcome with | .refused _ => true | _ => false
 
-def record (machine : Machine) (indices : Array Nat) (origin := "core") : Run Nat String Nat :=
+def record (machine : Machine) (indices : Array Nat) (origin : String := "core") : Run Nat String Nat :=
   run 20 observer (.record (.prefix indices)) (header origin) machine 0
 
-def replay (machine : Machine) (tape : Tape) (origin := "coreb") : Run Nat String Nat :=
+def replay (machine : Machine) (tape : Tape) (origin : String := "coreb") : Run Nat String Nat :=
   run 20 observer (.replay tape) (header origin) machine 0
 
 def require (label : String) (condition : Bool) : IO Unit :=
