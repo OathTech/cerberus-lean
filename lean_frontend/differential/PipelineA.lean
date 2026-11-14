@@ -26,6 +26,15 @@ def lowerA [LemFuel] (prepared : Prepared) : IO ExecutionA := do
     prepared.runDigest file CerbFS.fs_initial_state
   return { translated, file, state, translatedSupply := supply, initialSupply }
 
+/-- Existing passive memory diagnostics; disabled for the calibration oracle. -/
+def ExecutionA.capture (execution : ExecutionA) (enabled : Bool) : Except String ExecutionA := do
+  let memory ← if enabled then
+      match CerbMem.beginObserving execution.state.layout_state with
+      | some memory => pure memory
+      | none => throw "memory implementation refuses access receipt capture"
+    else pure (CerbMem.stopObserving execution.state.layout_state)
+  return { execution with state := { execution.state with layout_state := memory } }
+
 def ExecutionA.action [LemFuel] (execution : ExecutionA) (argv : List String) :
     driverM driver_result :=
   letI : CerbGlobal.Switches := ⟨[]⟩

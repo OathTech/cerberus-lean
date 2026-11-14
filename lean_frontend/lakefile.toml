@@ -515,7 +515,14 @@ roots = ["CoreB.Separation", "CoreB.Interpreter"]
 name = "CoreBDifferential"
 srcDir = "differential"
 roots = ["Prepared", "PipelineA", "PipelineB", "ObservationShared", "ChoiceRunner",
-         "ObservationA", "ObservationB", "RunOutput", "EntryCommon"]
+         "ObservationA", "ObservationB", "RunOutput", "EntryCommon",
+         "ArtifactQuoteB", "ArtifactCompare"]
+
+[[lean_exe]]
+name = "coreb-pair-check"
+srcDir = "differential"
+root = "PairCheck"
+moreLinkArgs = ["native/md5.o"]
 
 [[lean_exe]]
 name = "coreb-choice-tests"

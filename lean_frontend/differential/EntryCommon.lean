@@ -110,7 +110,8 @@ def header (origin : String) (options : Options) (prepared : Prepared)
   config := Json.mkObj [
     ("fuel", toJson options.fuel), ("addressSpaceTop", toJson prepared.addressSpaceTop),
     ("argv", toJson prepared.argv), ("switches", toJson ([] : List String)),
-    ("libc", toJson false), ("translationSupply", toJson translatedSupply),
+    ("libc", toJson false), ("observationSchema", toJson "boundary-channels-v1"),
+    ("accessReceipts", toJson true), ("translationSupply", toJson translatedSupply),
     ("initialSupply", toJson initialSupply)]
   coreBuild := options.coreBuild
   coreBBuild := options.coreBBuild

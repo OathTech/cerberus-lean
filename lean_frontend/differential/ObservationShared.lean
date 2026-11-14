@@ -22,6 +22,7 @@ deriving instance ToJson for CerbMem.Provenance, CerbMem.IntegerValue
 deriving instance ToJson for CerbMem.PointerValueBase, CerbMem.PointerValue
 deriving instance ToJson for unspecified_ub_context, undefined_by_omission, undefined_behaviour
 deriving instance ToJson for access_kind, access_error, free_error, memcpy_error
+deriving instance ToJson for observed_provenance, representation_byte_view
 deriving instance ToJson for vip_kind, vip_error, mem_cheri_error, readonly_kind, mem_error
 
 namespace CoreBDiff
@@ -47,6 +48,25 @@ partial def memoryValue : CerbMem.MemValue → Except String Json
 def optionalMemoryValue : Option CerbMem.MemValue → Except String Json
   | none => return Json.null
   | some value => memoryValue value
+
+def accessReceipt : CerbMem.AccessReceipt → Except String Json
+  | .Access_receipt loc kind ty pointer allocation address bytes value locking =>
+    return node "access_receipt" [toJson loc, toJson kind, toJson ty, toJson pointer,
+      toJson allocation, toJson address, toJson bytes, ← memoryValue value, toJson locking]
+
+def receiptDelta (before after : Option (List CerbMem.AccessReceipt)) :
+    Except String (Array Json) := do
+  match before, after with
+  | none, none => return #[]
+  | some before, some after =>
+    if after.length < before.length || after.drop (after.length - before.length) != before then
+      throw "access receipts did not retain the previous suffix"
+    return (← (after.take (after.length - before.length)).reverse.mapM accessReceipt).toArray
+  | _, _ => throw "access receipt capture changed during execution"
+
+def outputDelta (before after : String) : Except String String :=
+  if after.startsWith before then .ok (after.drop before.length).toString
+  else .error "output stream did not retain its previous prefix"
 
 def traceEvent : trace_event → Except String Json
   | .ME_function_call sym values =>
@@ -81,6 +101,24 @@ def traceDelta (before after : List trace_event) : Except String (Array Json) :=
     let count := after.length - before.length
     if after.drop count != before then .error "driver trace did not retain the previous suffix"
     else return (← (after.take count).reverse.mapM traceEvent).toArray
+
+/-- Channels retain their own order within an ND boundary. The array of channel
+    batches does not assert interleaving between different underlying buffers. -/
+def boundaryDelta (beforeTrace afterTrace : List trace_event)
+    (beforeReceipts afterReceipts : Option (List CerbMem.AccessReceipt))
+    (beforeIO afterIO : String × String) : Except String (Array Json) := do
+  let driver ← traceDelta beforeTrace afterTrace
+  let receipts ← receiptDelta beforeReceipts afterReceipts
+  let stdout ← outputDelta beforeIO.1 afterIO.1
+  let stderr ← outputDelta beforeIO.2 afterIO.2
+  let mut events := #[]
+  for (channel, batch) in [("driver", driver), ("memory", receipts)] do
+    if !batch.isEmpty then
+      events := events.push (Json.mkObj [("channel", toJson channel), ("events", toJson batch)])
+  for (channel, delta) in [("stdout", stdout), ("stderr", stderr)] do
+    if !delta.isEmpty then
+      events := events.push (Json.mkObj [("channel", toJson channel), ("text", toJson delta)])
+  return events
 
 def trivialConstraint : mem_constraint CerbMem.IntegerValue → Bool
   | .MC_empty => true

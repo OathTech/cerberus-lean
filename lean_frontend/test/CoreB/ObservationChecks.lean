@@ -56,6 +56,27 @@ def tests : IO Unit := do
   check "first event not lost" ((← get (traceDelta [] [first])) == #[encodedFirst])
   check "trace shrink refused" (failed (traceDelta [second, first] [first]))
   check "trace replacement refused" (failed (traceDelta [first] [second]))
+  let receipt : CerbMem.AccessReceipt := .Access_receipt .unknown .StoreAccess
+    (.Ctype [] .Void0) (pointer 1 100) (some 1) 100
+    [.Byte_view (.Observed_allocation_provenance 1) (some 0) (some 7)]
+    (.MVinteger .Bool0 (.IV .Prov_none 7)) (some true)
+  let encodedReceipt ← get (accessReceipt receipt)
+  check "receipt byte values retained"
+    (encodedReceipt != (← get (accessReceipt (.Access_receipt .unknown .StoreAccess
+      (.Ctype [] .Void0) (pointer 1 100) (some 1) 100
+      [.Byte_view (.Observed_allocation_provenance 1) (some 0) (some 8)]
+      (.MVinteger .Bool0 (.IV .Prov_none 7)) (some true)))))
+  check "receipt delta once" ((← get (receiptDelta (some []) (some [receipt]))) == #[encodedReceipt])
+  check "receipt history not repeated" ((← get (receiptDelta (some [receipt]) (some [receipt]))) == #[])
+  check "receipt shrink refused" (failed (receiptDelta (some [receipt]) (some [])))
+  check "capture discontinuity refused" (failed (receiptDelta (some []) none))
+  check "disabled capture allowed for calibration" ((← get (receiptDelta none none)) == #[])
+  check "output delta keeps unicode" ((← get (outputDelta "a" "aλ\n")) == "λ\n")
+  check "output prefix replacement refused" (failed (outputDelta "a" "b"))
+  let channels ← get (boundaryDelta [] [first] (some []) (some [receipt]) ("", "") ("out", "err"))
+  check "four channels stay separate" (channels.size == 4)
+  check "driver channel labelled" ((← get (channels[0]!.getObjVal? "channel")) == toJson "driver")
+  check "memory channel labelled" ((← get (channels[1]!.getObjVal? "channel")) == toJson "memory")
   check "duplicate labels retained"
     (ObservationA.stepInfo (.SK_misc ["x", "x"]) != ObservationA.stepInfo (.SK_misc ["x"]))
   check "A/B step payload shapes match"
@@ -95,7 +116,7 @@ def tests : IO Unit := do
   check "zero top refused" (failed (parseOptions (cli ++ ["--address-space-top", "0"])))
   check "unsupported recipe option refused"
     (failed (parseOptions (cli ++ ["--address-space-top", "1000", "--switches", "PNVI"])))
-  IO.println "Core/CoreB observation checks passed (28 checks)"
+  IO.println "Core/CoreB observation checks passed (39 checks)"
 
 end CoreBDiff.ObservationChecks
 

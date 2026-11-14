@@ -199,7 +199,9 @@ private def traverse {a info err cs st : Type} (fuel : Nat)
     match observer.observeDelta state state' with
     | .error reason => result header session state' (.observationError reason)
     | .ok delta =>
-      let session := { session with events := session.events ++ delta }
+      let events := delta.map fun event => Json.mkObj [
+        ("boundary", toJson node), ("observation", event)]
+      let session := { session with events := session.events ++ events }
       let resumePath := fun session machine => traverse fuel observer mode header session machine state'
       match next with
       | .NDactive value =>

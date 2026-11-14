@@ -43,10 +43,15 @@ partial def coreValue : value → Except String Json
   | .Vlist ty values => return node "Vlist" [toJson ty, Json.arr (← values.mapM coreValue).toArray]
   | .Vtuple values => return node "Vtuple" [Json.arr (← values.mapM coreValue).toArray]
 
+def streams (state : driver_state) : String × String :=
+  (lemListFoldr String.append "" (toList state.core_state0.io.stdout),
+   lemListFoldr String.append "" (toList state.core_state0.io.stderr))
+
 def observer : Choice.Observer step_kind driver_error
     (mem_constraint CerbMem.IntegerValue) driver_state := {
   encodeInfo := stepInfo
-  observeDelta := fun before after => traceDelta before.trace after.trace
+  observeDelta := fun before after => boundaryDelta before.trace after.trace
+    before.layout_state.observations after.layout_state.observations (streams before) (streams after)
   isExhaustion := exhausted
   isTrivialConstraint := trivialConstraint }
 
@@ -55,8 +60,5 @@ def result (value : driver_result) : Except String Json := do
     ("stdout", toJson value.dres_stdout), ("stderr", toJson value.dres_stderr),
     ("blocked", toJson value.dres_blocked)]
 
-def streams (state : driver_state) : String × String :=
-  (lemListFoldr String.append "" (toList state.core_state0.io.stdout),
-   lemListFoldr String.append "" (toList state.core_state0.io.stderr))
 
 end CoreBDiff.ObservationA
