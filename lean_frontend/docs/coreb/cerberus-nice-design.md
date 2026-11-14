@@ -1,7 +1,7 @@
 # Cerberus-Nice: restart design
 
-Proposal, 2026-11-14. This branch contains a plan, not a new machine or a
-successful differential campaign. Read the [first-project roadmap](cerberus-nice-roadmap.md)
+Design proposal, 2026-11-14. See [current implementation progress](README.md#current-evidence-and-next-experiment)
+for the completed pieces and their limits. Read the [first-project roadmap](cerberus-nice-roadmap.md)
 for the implementation order and concrete acceptance examples.
 The first step is now specified by the [complete CoreB scope](coreb-baseline-scope.md),
 which replaces the earlier driver-only duplication and parent-owned build.

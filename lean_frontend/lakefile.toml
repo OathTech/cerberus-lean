@@ -446,3 +446,17 @@ name = "CoreQuoteSupport"
 srcDir = "test/CoreQuote"
 roots = ["CoreQuoteCompare"]
 libName = "CoreQuoteCompare"
+
+# CoreB separation experiment: generated independently from owned Lem sources.
+# These targets are explicit during research; the normal default is unchanged.
+[[lean_lib]]
+name = "CerberusCoreB"
+srcDir = "generated"
+roots = ["CoreB.Core", "CoreB.Core_auxiliary", "CoreB.Errors",
+         "CoreB.Errors_auxiliary", "CoreB.Core_linking", "CoreB.Core_linking_auxiliary",
+         "CoreB.Core_lemMeasureProofs", "CoreB.CerbCoreShape"]
+
+[[lean_lib]]
+name = "CoreBSeparationTests"
+srcDir = "test"
+roots = ["CoreB.Separation"]

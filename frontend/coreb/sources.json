@@ -1,0 +1,32 @@
+{
+  "baseline": "8fa3050bf73fe92803f56c49ca53ed00d76aee88",
+  "lem": [
+    {
+      "source": "frontend/model/core.lem",
+      "owned": "frontend/coreb/model/core.lem",
+      "module": "Core"
+    },
+    {
+      "source": "frontend/model/errors.lem",
+      "owned": "frontend/coreb/model/errors.lem",
+      "module": "Errors"
+    },
+    {
+      "source": "frontend/model/core_linking.lem",
+      "owned": "frontend/coreb/model/core_linking.lem",
+      "module": "Core_linking"
+    }
+  ],
+  "handwritten": [
+    {
+      "source": "lean_frontend/Core_lemMeasureProofs.lean",
+      "owned": "lean_frontend/coreb/Core_lemMeasureProofs.lean",
+      "module": "Core_lemMeasureProofs"
+    },
+    {
+      "source": "lean_frontend/CerbCoreShape.lean",
+      "owned": "lean_frontend/coreb/CerbCoreShape.lean",
+      "module": "CerbCoreShape"
+    }
+  ]
+}

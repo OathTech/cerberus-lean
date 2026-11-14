@@ -1,7 +1,8 @@
 # CoreB baseline: the complete future Nice path
 
-Scope proposal, 2026-11-14. Implementation has not begun. This supersedes the
-driver-only twin in the earlier plan. CoreB is the entire AIL-to-execution path
+Scope agreed 2026-11-14; [implementation progress](README.md#current-evidence-and-next-experiment)
+is tracked separately. This supersedes the driver-only twin in the earlier plan.
+CoreB is the entire AIL-to-execution path
 we will subsequently modify into Nice, initially with unchanged semantics.
 
 ```text
@@ -65,7 +66,8 @@ source logic and is not the right home for this target-semantics experiment.
 Use the existing fork's remote for a draft integration PR targeting
 `mdd/cerberus-lean`. Publishing the branch for research review does not authorize
 a mainline merge or consumer re-pin. Development and validation precede adoption.
-The clone/setup change is documentation only; implementation has not begun.
+The initial clone/setup commit was documentation only; the linked progress
+record distinguishes the implemented work packages from this full scope.
 
 Keep the existing checkout-local `lean_frontend` Lake package, adding a
 `CerberusCoreB` library and two differential executables alongside the normal

@@ -1,6 +1,7 @@
 # Roadmap: establish CoreB, then modify it into Nice
 
-Proposal, 2026-11-14. Implementation has not begun. The
+Roadmap, 2026-11-14; [current implementation progress](README.md#current-evidence-and-next-experiment)
+is tracked separately. The
 [CoreB baseline scope](coreb-baseline-scope.md) is the detailed, authoritative
 first step; the [design](cerberus-nice-design.md) gives the subsequent purpose.
 The earlier driver-only twin and later-from-scratch interpreter/producer stages

@@ -33,15 +33,11 @@ workflow, not a claim that the baseline or a Nice equivalence theorem exists.
 
 ## Current evidence and next experiment
 
-This setup imports planning documents only. It contains no CoreB implementation
-and claims no new build or differential result. Source identities, independent
-Git storage, document links and whitespace are checked at setup. Toolchain
-provisioning and compilation remain to be established in this new checkout.
-
-The first implementation experiment is generation/type separation: compile and
-co-import both ASTs, an AST-dependent consumer, and handwritten support with its
-auxiliary binding. Only after that works should the rest of B's route and the
-tape/fuzz harness be built. See the scope's work packages and exit criteria.
+The [type-separation experiment](type-separation.md) implements the first work
+package: distinct complete ASTs, a copied linker, shape support and an auxiliary
+proof binding. It includes the generation recipe and focused co-import tests.
+The remainder of B's execution route and the tape/fuzz harness still follow;
+no differential-testing or general equivalence result is claimed here.
 
 ## Planning provenance
 
