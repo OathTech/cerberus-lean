@@ -3,7 +3,10 @@
 import hashlib
 from pathlib import Path
 import sys
+import tempfile
+from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -53,6 +56,29 @@ class CampaignTests(unittest.TestCase):
                             ("features", {}), ("failures", [{"kind": "mismatch"}]),
                             ("unattempted_programs", 1), ("path_classes", {"model-error": 1})]:
             self.assertTrue(campaign.acceptance(dict(report, **{name: value}), config), name)
+
+    def test_nondefined_and_incomplete_runs_keep_compact_recipes(self):
+        summary = {"kind": "undefined", "both_directions": True,
+                   "indices": [0], "arities": [2], "choice_kinds": ["nd"],
+                   "observed_tags": {}, "outcome_sha256": "outcome", "tape_sha256": "tape"}
+        config = campaign.initial_config("smoke")
+        config.update(programs=1, targets={"defined_programs": 1, "per_feature": 1,
+                                         "nd_programs_with_two_tapes": 1})
+        with tempfile.TemporaryDirectory() as directory:
+            binary = Path(directory) / "binary"
+            binary.write_text("test binary")
+            options = SimpleNamespace(core_bin=binary, coreb_bin=binary, producer=binary,
+                                      runtime=Path(directory))
+            failure = campaign.diff.Incomplete("test resource failure")
+            failure.category = "resource"
+            with patch.object(campaign.diff, "compare_case", side_effect=[summary, failure]):
+                report = campaign.run_campaign(config, options)
+        self.assertFalse(report["accepted"])
+        self.assertEqual(report["defined_programs"], 0)
+        self.assertEqual(report["nondefined_cases"], [{"seed": 1701, "index": 0,
+            "choices": [], "kind": "undefined", "outcome_sha256": "outcome"}])
+        self.assertEqual(report["failure_classes"], {"resource": 1})
+        self.assertEqual(report["failures"][0]["choices"], [1])
 
 
 if __name__ == "__main__":

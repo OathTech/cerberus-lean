@@ -75,7 +75,10 @@ python3 scripts/coreb-diff.py .tmp/generated.c --choices 1 --summary-json
 The compact JSON summary includes selected indices/arities, actual tape and
 outcome hashes, and observed effect counts. The ordinary command gives a short
 human-readable status. A campaign failure names its seed, index, choice prefix
-and diagnostic. Reconstruct that source and run the same prefix with the
+and diagnostic. Matched unexpected UB/model errors retain those same compact
+reproduction coordinates and the outcome hash in `nondefined_cases`; failures
+also have typed categories (frontend, refusal, resource, instrumentation or
+other incomplete) and per-category counts. Reconstruct that source and run the same prefix with the
 recorded build pair and manifest limits. Minimization is currently manual:
 reduce the source, generate a fresh valid tape, and retain the reduction only
 if the actual mismatch persists. A tape invalidated by source reduction is not

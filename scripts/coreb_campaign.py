@@ -138,7 +138,7 @@ def run_campaign(config, options):
         "defined_programs": 0, "features": Counter(), "templates": Counter(),
         "nd_programs_with_two_tapes": 0, "distinct_input_tape_pairs": 0,
         "selected_indices": Counter(), "choice_kinds": Counter(), "observed_tags": Counter(),
-        "path_classes": Counter(), "failures": [],
+        "path_classes": Counter(), "failure_classes": Counter(), "failures": [], "nondefined_cases": [],
     }
     sources = set()
     ROOT.joinpath(".tmp").mkdir(exist_ok=True)
@@ -146,7 +146,9 @@ def run_campaign(config, options):
         source = Path(temporary) / "generated.c"
         for ordinal in range(config["programs"]):
             if time.monotonic() - started >= limits["campaign_seconds"]:
-                report["failures"].append({"kind": "incomplete", "reason": "campaign wall limit"})
+                report["failures"].append({"kind": "incomplete", "category": "campaign-resource",
+                                           "reason": "campaign wall limit"})
+                report["failure_classes"]["campaign-resource"] += 1
                 break
             seed = config["seeds"][ordinal % len(config["seeds"])]
             index = ordinal // len(config["seeds"])
@@ -182,15 +184,23 @@ def run_campaign(config, options):
                         features.update(executed_features(program, summary))
                         defined.append(summary)
                         tapes.add(summary["tape_sha256"])
+                    else:
+                        report["nondefined_cases"].append({"seed": seed, "index": index,
+                            "choices": prefix, "kind": kind,
+                            "outcome_sha256": summary["outcome_sha256"]})
                     report["path_classes"][kind] += 1
                     report["selected_indices"].update(map(str, summary["indices"]))
                     report["choice_kinds"].update(summary["choice_kinds"])
                     report["observed_tags"].update(summary["observed_tags"])
                 except (diff.Mismatch, diff.Incomplete, OSError, ValueError) as error:
                     kind = "mismatch" if isinstance(error, diff.Mismatch) else "incomplete"
+                    category = (getattr(error, "category", "incomplete") if isinstance(error, diff.Incomplete)
+                                else "mismatch" if isinstance(error, diff.Mismatch)
+                                else "filesystem" if isinstance(error, OSError) else "harness-input")
                     report["path_classes"][kind] += 1
+                    report["failure_classes"][category] += 1
                     report["failures"].append({"seed": seed, "index": index,
-                        "choices": prefix, "kind": kind, "reason": str(error)[:2500]})
+                        "choices": prefix, "kind": kind, "category": category, "reason": str(error)[:2500]})
                     # One failing input suffices for diagnosis; continue other inputs
                     # so the completed denominator remains visible.
                     break
