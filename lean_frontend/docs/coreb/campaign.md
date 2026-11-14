@@ -114,3 +114,21 @@ per input with a 20-minute campaign bound, 15 seconds per child, 4 GiB virtual
 memory per child, 16 MiB combined child output and fuel 1,000,000. Freezing the
 manifest after the successful pilot does not itself claim the full campaign
 has passed.
+
+The full frozen campaign then passed on the same executable pair in 659.017
+seconds: 1,000 distinct defined programs, 2,000 distinct input/tape pairs and
+8,000 fresh interpreter processes across both recording directions. Each
+feature reached 1,000 defined inputs, and all 1,000 inputs completed two distinct
+defined tapes. It observed 13,000 branch decisions (12,000 index 0, 1,000 index
+1), 119,912 driver loads, 59,184 driver stores, 181,096 memory access receipts
+and 4,000 helper returns. Template counts were 252 each for array-fold and
+pointer-walk, 248 each for global-calls and call-tree. There were zero mismatches,
+incomplete runs, UB outcomes, model errors or unattempted inputs.
+
+The campaign loaded harness tree `f2afeae5940141c44a8e8e365ee2de552402519d`
+with canonical manifest hash
+`a22c44f428ae9f74b1f25deac2765a98a34a8ee5c0223b459420cc78038d605b`.
+Subsequent reviewed changes retain compact nondefined reproduction recipes and
+typed failure categories; they do not alter these successful comparisons or
+their denominator. Eighteen focused Python checks passed after those diagnostic
+changes. Raw campaign reports and traces are reconstructible and are not kept.
