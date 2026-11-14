@@ -71,9 +71,10 @@ the provider repository root at the inspected revision:
 
 Build **parallel owned Lem definitions for CoreB's whole target path**, then
 modify those sources into Nice. Keep handwritten Lean support/proof interfaces
-beside generated modules. The generation/co-import experiment comes first,
-inside the CoreB milestone; this is not yet build-validated. Development belongs
-on a research branch of the cerberus-lean fork, not in a parent quotation package.
+beside generated modules. The generation/co-import experiment comes first:
+the [initial AST/linker/support closure](type-separation.md) now builds, while
+the full target path remains to be constructed and tested. Development belongs
+on a research branch of the cerberus-lean fork.
 
 The checked-in Lem sources are the executable authority in the provider. The
 ordinary Makefile generates from them (`Makefile:146–160,227–233,352–369`). The

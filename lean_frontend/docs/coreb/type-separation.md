@@ -103,6 +103,30 @@ Important limitations retained from the baseline:
 * This slice contains no B interpreter, choice replay, C differential results
   or Nice semantic additions. It is a generation/type-separation result only.
 
+## Validation and review
+
+Implementation candidate: `cf939a4c432b9d1eb257daad93da04e6da686e99`.
+The source-identity report, three Python packaging tests, and the focused
+`lake build CerberusCoreB CoreBSeparationTests` passed. The named type-equality
+and measure-binding witnesses report only `propext`, `Classical.choice` and
+`Quot.sound`; the shape and linker-entry witnesses report no axioms. Expected
+rejection diagnostics from `#check_failure` are negative tests, not admitted
+declarations. The original generation-sync, handwritten-sync and Lake-root
+checks also passed. No full repository campaign or kernel replay was run for
+this draft experiment.
+
+An independent unrestricted review (`coreb_type_review`, 2026-11-14) found the
+first work package ready for research integration, with no blocking technical
+finding. The reviewer independently compared all five owned inputs and eight
+emitted/support outputs, inspected the B compilation import maps and test
+bindings, and ran the Python tests. It inspected the successful Lean build
+output without repeating the build or replay.
+
+The P3 finding was stale feasibility wording in the scope document. It is
+corrected to distinguish the tested first closure from the still-unbuilt full
+execution path. The record/status correction changes no compiled source and
+reuses the candidate's focused checks.
+
 ## Decisions
 
 * [USER, 2026-11-14] Proceed with the reviewed experiment; discuss a concrete

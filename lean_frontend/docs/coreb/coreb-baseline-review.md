@@ -1,5 +1,9 @@
 # CoreB scope review
 
+This records the planning review before implementation. The subsequent
+[type-separation result and review](type-separation.md#validation-and-review)
+cover the first implemented work package.
+
 Reviewed scope/overview revision: `cc97a792f6b07801a5f6cfceb6824241e850fe8e`,
 2026-11-14. [Individual step](coreb-baseline-scope.md),
 [design](cerberus-nice-design.md), [roadmap](cerberus-nice-roadmap.md).

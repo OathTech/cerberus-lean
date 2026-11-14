@@ -45,7 +45,8 @@ examined development mainline `8fa3050bf73fe92803f56c49ca53ed00d76aee88`, with
 its Lem pin `2220010bc25f0c5682d8200f016e786ee66d65c6` and Lean 4.35.0.
 The intervening commits change reporting, generator warning cleanup/pins and
 validation tooling; the Core model and handwritten Lean sources are unchanged.
-The new generation baseline still needs its own experiment and measurements.
+The [first closure](type-separation.md) now has a generation/co-import result;
+the full execution baseline and campaign measurements remain outstanding.
 The reference must not move during a comparison campaign, and consumer pins
 remain unchanged.
 
@@ -155,13 +156,14 @@ declaration bodies in `namespace CoreB`; apply the same mapping to owned
 handwritten support. Leave shared services outside it. Preserve diagnostic
 strings. Do not globally replace the word Core or hand-edit emitted Lean.
 
-This adapter is a hypothesis, not a working tool. The first experiment compiles
-and co-imports both ASTs, one AST-dependent consumer and a handwritten
-shape/measure/instance helper, including the associated auxiliary proof binding.
-Inspect resolved names, not just successful parsing. If narrow packaging fails,
-identify the concrete capture/import issue and cost a small Lem namespace
-option. Do not substitute two isolated builds whose types cannot coexist, or
-start a general source-rewriting framework without revisiting the scope.
+The adapter now compiles and co-imports the [first closure](type-separation.md):
+both ASTs, the linker, a handwritten shape helper and the Core measure-proof
+binding, with resolved identities checked. This does not establish packaging
+for the full execution closure. Continue inspecting resolved names as that
+closure grows. If narrow packaging fails, identify the concrete capture/import
+issue and discuss a bounded Lem namespace change before implementing it. Do not
+substitute two isolated builds whose types cannot coexist, or start a general
+source-rewriting framework without revisiting the scope.
 
 Two Lean interpreters are the required outputs. An additional OCaml CoreB
 executable is not required; the existing OCaml runner can supply optional
@@ -379,8 +381,8 @@ provides testing evidence and a research platform, not general equivalence.
 ## Source basis and decisions
 
 Source-audit anchors refer to the original provider/Lem revisions above;
-the chosen development revision is separately named and is not yet built for
-this experiment: `Makefile:146–160,315–369`;
+the chosen development revision and the first closure's build result are
+separately named. Audit anchors: `Makefile:146–160,315–369`;
 `lean_frontend/lakefile.toml:100` onward; `handwritten_copy.manifest`;
 `core.lem:176,228,319,417`; `errors.lem:27–44`; `pp.lem:57`;
 `formatted.lem:3`; `mini_pipeline.lem:79–117`; `cabs_to_ail.lem:1465–1484`;
