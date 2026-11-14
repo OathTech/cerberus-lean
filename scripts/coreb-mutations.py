@@ -129,6 +129,14 @@ def sha256(path):
     return result.hexdigest()
 
 
+class CampaignInterrupted(BaseException):
+    """Cancellation without subprocess.communicate's KeyboardInterrupt reaping."""
+
+
+def interrupted(_signal, _frame):
+    raise CampaignInterrupted
+
+
 def capture(command, cwd, timeout, env=None):
     """Own the process group and kill only it if a command times out/interrupts."""
     process = subprocess.Popen(command, cwd=cwd, env=env, stdin=subprocess.DEVNULL,
@@ -340,15 +348,14 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    def interrupted(_signal, _frame):
-        raise KeyboardInterrupt
-
-    # Let finally blocks terminate owned subprocess groups and remove the
-    # disposable checkout on normal supervisor termination as well as Ctrl-C.
+    # communicate() handles KeyboardInterrupt specially and may reap an exited
+    # leader before cleanup. A distinct cancellation exception leaves that PID
+    # reserved until capture's finally kills the verified owned process group.
     signal.signal(signal.SIGTERM, interrupted)
+    signal.signal(signal.SIGINT, interrupted)
     try:
         sys.exit(main())
-    except KeyboardInterrupt:
+    except (CampaignInterrupted, KeyboardInterrupt):
         print("MUTATION_CAMPAIGN_INTERRUPTED", file=sys.stderr)
         sys.exit(130)
     except (RuntimeError, OSError, ValueError, subprocess.SubprocessError) as error:

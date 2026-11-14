@@ -1,5 +1,9 @@
 """Fast controls for source patching, cache isolation and result classification."""
 import importlib.util
+import os
+import signal
+import subprocess
+import time
 from pathlib import Path
 import sys
 import tempfile
@@ -98,6 +102,44 @@ class MutationControls(unittest.TestCase):
             self.assertEqual(env["PATH"].split(":")[0], str(package / "bin"))
             self.assertEqual(env["LEMLIB"], str(package / "library"))
             self.assertEqual(env["CERB_MEM_MAX"], "12G")
+
+    def test_interrupt_cleans_descendant_after_leader_exit(self):
+        for signum in [signal.SIGTERM, signal.SIGINT]:
+            with self.subTest(signum=signum), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                marker, started = root / "leaked", root / "started"
+                child = "import pathlib,time;time.sleep(0.8);pathlib.Path(" + repr(str(marker)) + ").write_text('leaked')"
+                leader = ("import os,pathlib,subprocess,sys; p=subprocess.Popen([sys.executable,'-c'," + repr(child) + "]);"
+                          "pathlib.Path(" + repr(str(started)) + ").write_text(str(os.getpid())+','+str(p.pid))")
+                wrapper = ("import importlib.util,signal,sys;"
+                    "s=importlib.util.spec_from_file_location('m'," + repr(str(ROOT / "scripts/coreb-mutations.py")) + ");"
+                    "m=importlib.util.module_from_spec(s);sys.modules['m']=m;s.loader.exec_module(m);"
+                    "signal.signal(signal.SIGTERM,m.interrupted);signal.signal(signal.SIGINT,m.interrupted);"
+                    "\ntry: m.capture(" + repr([sys.executable, "-c", leader]) + "," + repr(str(root)) + ",10)"
+                    "\nexcept m.CampaignInterrupted: sys.exit(130)")
+                process = subprocess.Popen([sys.executable, "-c", wrapper])
+                descendant = None
+                try:
+                    deadline = time.monotonic() + 3
+                    while not started.exists() and time.monotonic() < deadline:
+                        time.sleep(0.01)
+                    self.assertTrue(started.exists(), "owned descendant did not start")
+                    leader_pid, descendant = map(int, started.read_text().split(","))
+                    time.sleep(0.1)  # leader exits while its child retains the pipes
+                    process.send_signal(signum)
+                    self.assertEqual(process.wait(timeout=3), 130)
+                    time.sleep(0.85)
+                    self.assertFalse(marker.exists(), "interrupted command leaked its owned descendant")
+                finally:
+                    if process.poll() is None:
+                        process.kill()
+                        process.wait()
+                    if descendant is not None:
+                        try:
+                            if os.getpgid(descendant) == leader_pid:
+                                os.kill(descendant, signal.SIGKILL)
+                        except ProcessLookupError:
+                            pass
 
     def test_warm_cache_is_physically_independent(self):
         with tempfile.TemporaryDirectory() as directory:
