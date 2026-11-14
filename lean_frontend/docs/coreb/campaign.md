@@ -107,7 +107,7 @@ The tested executable SHA-256 pair was
 `bc5742f213a28d18697b7452c8fa87915e92b888aade0c0f012b549697e8aa00`
 (CoreB). Native hashes are build-instance identities, not portable release IDs.
 
-The frozen [manifest](../../../../tests/coreb/campaign.json) retains the scoped
+The frozen [manifest](../../../tests/coreb/campaign.json) retains the scoped
 targets: 1,000 completed defined programs, at least 50 per feature, and at least
 100 generated inputs with two distinct defined tapes. It requests two samples
 per input with a 20-minute campaign bound, 15 seconds per child, 4 GiB virtual
