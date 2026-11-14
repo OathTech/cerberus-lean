@@ -41,7 +41,8 @@ def fixture(split=False):
                    effect(branch + 1, "memory", [{"tag": "access_receipt", "fields": [0] * 9}]),
                    effect(branch + 1, "stdout", "Z"), nd(branch + 1, "active")])
     return diff.Trace(
-        {"version": 1, "input": "input", "prepared": "prepared", "config": {"fuel": 100},
+        {"version": 1, "input": "input", "prepared": "prepared",
+         "config": {"fuel": 100, "observationSchema": "boundary-channels-v1"},
          "coreBuild": "A", "coreBBuild": "B", "origin": "Core"}, events,
         [{"ordinal": 0, "kind": "nd", "parent": info("parent"), "alternatives": alternatives, "index": 0}],
         {"kind": "defined", "result": {"value": 0, "stdout": "XYZ", "stderr": ""}},
@@ -113,6 +114,20 @@ class StutterTests(unittest.TestCase):
         self.assertIn("final signal marker", excerpt)
         self.assertIn("truncated", excerpt)
         self.assertLessEqual(len(excerpt), 1500)
+
+    def test_future_schema_and_hidden_checkpoint_payload_refuse(self):
+        schema = fixture()
+        schema.header["config"]["observationSchema"] = "future-schema"
+        with self.assertRaises(diff.ProtocolFailure):
+            diff.compare(schema, copy.deepcopy(schema), "future schema", "stutter")
+        for metadata in [{"tag": "tau", "fields": [{"checkpoint": "pause"}]},
+                         {"tag": "action", "fields": [0]},
+                         {"tag": "misc", "fields": [1]},
+                         {"tag": "misc", "fields": [[1]]}]:
+            trace = fixture(True)
+            trace.events[2]["parent"] = metadata
+            with self.assertRaises(diff.ProtocolFailure):
+                diff.compare(trace, copy.deepcopy(trace), "hidden metadata", "stutter")
 
 
 if __name__ == "__main__":

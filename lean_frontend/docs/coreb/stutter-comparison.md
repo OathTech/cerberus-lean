@@ -11,7 +11,9 @@ The stutter profile first validates each lane independently: observation
 boundary numbers must name the next ND node; node numbers must be consecutive;
 each branching node must match its full tape entry; visited/choice counts and
 terminal placement must agree with the emitted log. Known Core step-info,
-driver-effect and memory-receipt shapes are checked before any erasure. Unknown
+driver-effect and memory-receipt shapes are checked before any erasure, including
+string/list-of-strings step metadata types. The header must identify the supported
+`boundary-channels-v1` schema; a future schema needs an explicit profile update. Unknown
 channels, event tags, fields or ND kinds refuse comparison. In particular, no
 future checkpoint is silently erased: its actual AST/semantics and a subsequent
 explicit observation profile must define that behavior first.

@@ -188,7 +188,16 @@ def project_stutter(trace):
                 or not isinstance(value["tag"], str) or value["tag"] not in arities
                 or not isinstance(value["fields"], list) or len(value["fields"]) != arities[value["tag"]]):
             fail("unknown step-info shape")
+        tag, fields = value["tag"], value["fields"]
+        if tag in {"action", "tau", "eval"} and not isinstance(fields[0], str):
+            fail("step-info text payload is not a string")
+        if tag == "misc" and (not isinstance(fields[0], list)
+                              or any(not isinstance(item, str) for item in fields[0])):
+            fail("misc step-info payload is not a list of strings")
 
+    config = trace.header.get("config")
+    if not isinstance(config, dict) or config.get("observationSchema") != "boundary-channels-v1":
+        fail("unsupported observation schema")
     if trace.end.get("complete") is not True:
         fail("incomplete execution")
     if (not natural(trace.end.get("visited")) or not natural(trace.end.get("choices"))
