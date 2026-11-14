@@ -21,6 +21,8 @@ deriving instance ToJson for ctype_, ctype
 deriving instance ToJson for CerbMem.Provenance, CerbMem.IntegerValue
 deriving instance ToJson for CerbMem.PointerValueBase, CerbMem.PointerValue
 deriving instance ToJson for unspecified_ub_context, undefined_by_omission, undefined_behaviour
+deriving instance ToJson for access_kind, access_error, free_error, memcpy_error
+deriving instance ToJson for vip_kind, vip_error, mem_cheri_error, readonly_kind, mem_error
 
 namespace CoreBDiff
 

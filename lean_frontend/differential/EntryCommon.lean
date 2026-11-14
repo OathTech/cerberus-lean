@@ -1,0 +1,148 @@
+import Prepared
+import RunOutput
+
+namespace CoreBDiff
+
+open Lean
+
+structure Options where
+  runtime : String
+  input : String
+  tape : String
+  mode : String
+  fuel : Nat
+  addressSpaceTop : Int
+  coreBuild : String
+  coreBBuild : String
+  seed : Option Nat
+  prefix : Option (Array Nat)
+  args : List String
+
+private def parsePairs : List String → List (String × String) → Except String (List (String × String))
+  | [], acc => .ok acc.reverse
+  | flag :: value :: rest, acc => do
+    unless ["--runtime", "--input", "--tape", "--mode", "--fuel", "--address-space-top",
+        "--core-build", "--coreb-build", "--seed", "--choices", "--arg"].contains flag do
+      throw s!"unsupported option: {flag}"
+    if flag != "--arg" && acc.any (fun entry => entry.1 == flag) then
+      throw s!"duplicate option: {flag}"
+    parsePairs rest ((flag, value) :: acc)
+  | [_], _ => .error "every option requires a value"
+
+def parseOptions (args : List String) : Except String Options := do
+  let pairs ← parsePairs args []
+  let get (flag : String) : Option String := (pairs.find? (·.1 == flag)).map Prod.snd
+  let required (flag : String) : Except String String := do
+    let some value := get flag | throw s!"missing required option: {flag}"
+    if value.isEmpty then throw s!"empty required option: {flag}"
+    return value
+  let runtime ← required "--runtime"
+  let input ← required "--input"
+  let tape ← required "--tape"
+  let mode ← required "--mode"
+  unless mode == "record" || mode == "replay" do throw "--mode must be record or replay"
+  let fuelText ← required "--fuel"
+  let some fuel := fuelText.toNat? | throw "--fuel must be a natural number"
+  let topText ← required "--address-space-top"
+  let some addressSpaceTop := topText.toInt? | throw "--address-space-top must be an integer"
+  unless addressSpaceTop > 0 do throw "--address-space-top must be positive"
+  let coreBuild ← required "--core-build"
+  let coreBBuild ← required "--coreb-build"
+  let seed ← match get "--seed" with
+    | none => pure none
+    | some value =>
+      match value.toNat? with
+      | some seed =>
+        if seed > 18446744073709551615 then throw "--seed exceeds UInt64"
+        else pure (some seed)
+      | none => throw "--seed must be a natural number"
+  let prefix ← match get "--choices" with
+    | none => pure none
+    | some value =>
+      if value.isEmpty then pure (some #[])
+      else
+        let choices ← (value.splitOn ",").mapM fun choice =>
+          match choice.toNat? with
+          | some index => pure index
+          | none => throw "--choices must be comma-separated natural numbers"
+        pure (some choices.toArray)
+  if seed.isSome && prefix.isSome then throw "--seed and --choices are mutually exclusive"
+  if mode == "replay" && (seed.isSome || prefix.isSome) then
+    throw "recording choice options are invalid in replay mode"
+  return { runtime, input, tape, mode, fuel, addressSpaceTop, coreBuild, coreBBuild,
+    seed, prefix, args := pairs.filterMap (fun (key, value) => if key == "--arg" then some value else none) }
+
+def Options.choiceMode (options : Options) : IO Choice.Mode := do
+  if options.mode == "replay" then
+    let text ← IO.FS.readFile options.tape
+    let json ← match Json.parse text with
+      | .ok value => pure value
+      | .error error => fail s!"invalid tape JSON: {error}"
+    match fromJson? json with
+    | .ok tape => return .replay tape
+    | .error error => fail s!"invalid choice tape: {error}"
+  else if options.mode == "record" then
+    match options.prefix, options.seed with
+    | some prefix, none => return .record (.prefix prefix)
+    | none, some seed => return .record (.seeded seed.toUInt64)
+    | none, none => return .record .first
+    | some _, some _ => fail "--seed and --choices are mutually exclusive"
+  else fail "--mode must be record or replay"
+
+def header (origin : String) (options : Options) (prepared : Prepared)
+    (translatedSupply initialSupply : Nat) : Choice.Header := {
+  input := prepared.inputDigest
+  prepared := prepared.identity.compress
+  config := Json.mkObj [
+    ("fuel", toJson options.fuel), ("addressSpaceTop", toJson prepared.addressSpaceTop),
+    ("argv", toJson prepared.argv), ("switches", toJson ([] : List String)),
+    ("libc", toJson false), ("translationSupply", toJson translatedSupply),
+    ("initialSupply", toJson initialSupply)]
+  coreBuild := options.coreBuild
+  coreBBuild := options.coreBBuild
+  origin }
+
+def emit (value : Json) : IO Unit := IO.println value.compress
+
+/-- JSON-lines output has an explicit final record. EOF or process death is
+    never completion. A valid matched model error remains a failed execution. -/
+def finish {a err st : Type} (options : Options) (expected : Choice.Header)
+    (encodeResult : a → Except String Json) (encodeError : err → Json)
+    (streams : st → String × String) (run : Choice.Run a err st) : IO UInt32 := do
+  let encoded := encodeOutcome encodeResult encodeError streams run
+  let .ok outcome := encoded
+    | do
+      let reason := match encoded with
+        | .error reason => reason
+        | .ok _ => "outcome encoder returned inconsistent results"
+      emit (Json.mkObj [("record", toJson "outcome"), ("kind", toJson "observation-error"),
+        ("reason", toJson reason)])
+      emit (Json.mkObj [("record", toJson "end"), ("complete", toJson false)])
+      return 2
+  emit (Json.mkObj [("record", toJson "header"), ("header", toJson expected)])
+  for event in run.events do
+    emit (Json.mkObj [("record", toJson "event"), ("event", event)])
+  for choice in run.tape.entries do
+    emit (Json.mkObj [("record", toJson "choice"), ("choice", toJson choice)])
+  emit (Json.mkObj [("record", toJson "outcome"), ("outcome", outcome)])
+  if options.mode == "record" then IO.FS.writeFile options.tape (toJson run.tape).compress
+  let kind := completeKind run.outcome
+  emit (Json.mkObj [("record", toJson "end"), ("complete", toJson kind.isSome),
+    ("kind", toJson kind), ("visited", toJson run.visited),
+    ("choices", toJson run.tape.entries.size)])
+  return if kind.isSome then 0 else 2
+
+def withOptions (args : List String) (run : Options → IO UInt32) : IO UInt32 := do
+  try
+    unless (← IO.getEnv "LEAN_ABORT_ON_PANIC") == some "1" do
+      fail "LEAN_ABORT_ON_PANIC=1 is required before any frontend or interpreter execution"
+    let options ← match parseOptions args with
+      | .ok options => pure options
+      | .error error => fail error
+    run options
+  catch error =>
+    emit (Json.mkObj [("record", toJson "failure"), ("kind", toJson "input-or-frontend-error"),
+      ("reason", toJson error.toString)])
+    return 2
+
+end CoreBDiff
