@@ -56,6 +56,12 @@ MUTATIONS = {
         "boundaryDelta before.trace after.trace",
         "boundaryDelta after.trace after.trace",
         "tests/coreb/mutations/access.c", False),
+    "singleton": Mutation(
+        "lean_frontend/differential/EntryB.lean",
+        "(@ExecutionB.action fuel execution prepared.argv)",
+        '(ND (fun state => (NDstep (CoreB.SK_misc ["injected singleton"]) '
+        '[(CoreB.SK_misc ["injected singleton"], @ExecutionB.action fuel execution prepared.argv)], state)))',
+        "tests/z2-probes/nd/order3.c", False, verdict="stutter"),
     "panic": Mutation(
         "lean_frontend/differential/EntryB.lean",
         "    finish options expected ObservationB.result toJson ObservationB.streams result",
@@ -114,6 +120,11 @@ def verify_witness(name, a, b, structural):
     if name == "observer":
         if not same_outcome or len(driver_events(b)) >= len(driver_events(a)):
             raise RuntimeError("observer: expected omitted driver events with equal terminal outcomes")
+    if name == "singleton":
+        if (not same_outcome or structural(driver_events(a)) != structural(driver_events(b))
+                or structural(a.choices) != structural(b.choices)
+                or b.end["visited"] != a.end["visited"] + 1):
+            raise RuntimeError("singleton: expected one extra ND node with identical effects/outcome/branch choices")
     if name == "choice-order":
         duplicate_choices = any(len({structural(x) for x in choice["alternatives"]}) < len(choice["alternatives"])
                                 for choice in a.choices)
@@ -339,6 +350,21 @@ def main(argv=None):
                             else:
                                 raise RuntimeError(f"{name}: mutation was not detected in {direction}")
                             diagnostics(f"{name} {direction} stderr", error.decode("utf-8", errors="replace"))
+                    profile_code, profile_output, profile_error = capture(
+                        common + ["--coreb-bin", str(mutant_b), "--comparison", "stutter"],
+                        source, options.timeout * 6)
+                    if mutation.verdict == "stutter":
+                        profile_ok = profile_code == 0 and profile_output.startswith("MATCH_DEFINED:")
+                        stutter_verdict = "matched"
+                    elif mutation.verdict == "panic":
+                        profile_ok = profile_code == 2 and "INCOMPLETE:" in profile_error
+                        stutter_verdict = "incomplete"
+                    else:
+                        profile_ok = profile_code == 1 and profile_error.startswith("MISMATCH:")
+                        stutter_verdict = "mismatch"
+                    if not profile_ok:
+                        raise RuntimeError(f"{name}: unexpected stutter-profile verdict ({profile_code})\n"
+                                           f"{profile_output}\n{profile_error}")
                     if mutation.artifact:
                         pair = worktree / "lean_frontend/.lake/build/bin/coreb-pair-check"
                         code, output, error = instrument.run_child(
@@ -353,7 +379,8 @@ def main(argv=None):
                     result = {"mutant": name, "detected": True, "verdict": mutation.verdict,
                               "artifact": artifact, "source": revision,
                               "replay_directions": 1 if mutation.verdict == "panic" else 2,
-                              "reverse_applicable": mutation.verdict != "panic"}
+                              "reverse_applicable": mutation.verdict != "panic",
+                              "stutter_verdict": stutter_verdict}
                     results.append(result)
                     print(json.dumps(result, sort_keys=True), flush=True)
                 finally:

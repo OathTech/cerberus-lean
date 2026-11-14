@@ -5,8 +5,12 @@ evaluator, driver and observer. It uses the ordinary `coreb-diff.py`
 comparison, then checks that each failure reached its intended observation.
 A failed build, timeout, unprovisioned dependency or unexpected model error is
 a failed campaign, never a detected semantic mutation. Every nonpanic variant
-must be detected in both record/replay directions using fresh tapes. The panic
-variant cannot finish recording; its reverse direction is explicitly inapplicable.
+must be detected by exact comparison in both record/replay directions using
+fresh tapes. The four semantic/observer mutations must remain mismatches under
+`--comparison stutter`. The actual singleton-step insertion is instead required
+to pass the stutter comparator in both directions. The panic variant must remain
+incomplete in both profiles; it cannot finish recording, so its reverse direction
+is explicitly inapplicable.
 
 Run it from a provisioned, committed candidate with the same pinned Lem and
 opam environment used for the normal build. For an ordinary local switch:
@@ -35,6 +39,7 @@ starting a campaign.
 | `arithmetic` | Owned `core_eval.lem`: `IOpAdd` invokes `IntSub`. | Loaded locals compute `z = x + y`, followed by `return 0`. Both executions must remain defined with equal terminal outcomes and differing real store events. |
 | `choice-order` | Owned `driver.lem`: reverse the steps passed to the real `new_drive_core_threads` choice. | Existing `order3.c` must reach duplicate alternative descriptors and produce different defined results under branch-zero recording/replay. |
 | `observer` | B observer: omit the actual accumulated driver trace delta. | An access fixture must retain the same defined terminal outcome while losing driver events. |
+| `singleton` | B entrypoint: wrap the real action in an actual `NDstep` with one continuation. No Nice AST feature is claimed. | `order3.c` must retain exactly the same defined outcome, driver effects and branch choices with one extra visited ND node. Exact comparison rejects it; stutter comparison passes both directions. |
 | `panic` | B entrypoint: invoke a native panic immediately before completion emission. | The comparator must report incomplete execution; a separate bounded native recording must abort with SIGABRT, retain the injected panic marker and omit completion. This checks the full bounded stderr independently of the comparator's diagnostic tail. A generic process failure does not satisfy the control. |
 
 Before each variant, its unmutated witness must pass the normal four-run

@@ -87,6 +87,14 @@ class MutationControls(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             M.verify_witness("choice-order", trace(choices=[{"alternatives": ["x", "y"]}]), trace(value=1), shape)
 
+    def test_singleton_requires_one_node_and_unchanged_branch_choices(self):
+        a, b = trace(), trace()
+        a.end, b.end = {"visited": 3}, {"visited": 4}
+        M.verify_witness("singleton", a, b, shape)
+        b.choices = [{"alternatives": ["new", "choice"]}]
+        with self.assertRaises(RuntimeError):
+            M.verify_witness("singleton", a, b, shape)
+
     def test_semantic_mutants_refuse_nondefined_outcome(self):
         bad = trace()
         bad.outcome = {"kind": "undefined"}
