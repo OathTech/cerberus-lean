@@ -76,9 +76,9 @@ def apply_mutation(root, mutation):
     path.write_text(text.replace(mutation.old, mutation.new))
 
 
-def detected(mutation, code, stdout, stderr):
+def detected(mutation, code, stdout, stderr, panic_stderr=""):
     if mutation.verdict == "panic":
-        return code == 2 and "INCOMPLETE:" in stderr and "injected CoreB mutation panic" in stderr
+        return code == 2 and "INCOMPLETE:" in stderr and "injected CoreB mutation panic" in (stderr + panic_stderr)
     return code == 1 and stderr.startswith("MISMATCH:")
 
 
@@ -273,9 +273,10 @@ def main(argv=None):
                     targets = ["coreb-diff"] + (["coreb-pair-check"] if mutation.artifact else [])
                     required([cap, "lake", "build", *targets], worktree / "lean_frontend", options.build_timeout, env)
                     mutant_b = worktree / "lean_frontend/.lake/build/bin/coreb-diff"
-                    code, stdout, stderr = capture(common + ["--coreb-bin", str(mutant_b)], source, options.timeout * 6)
-                    if not detected(mutation, code, stdout, stderr):
-                        raise RuntimeError(f"{name}: mutation not detected as expected: {code}\n{stdout}\n{stderr}")
+                    comparison_code, comparison_stdout, comparison_stderr = capture(
+                        common + ["--coreb-bin", str(mutant_b)], source, options.timeout * 6)
+                    if mutation.verdict != "panic" and not detected(mutation, comparison_code, comparison_stdout, comparison_stderr):
+                        raise RuntimeError(f"{name}: mutation not detected as expected: {comparison_code}\n{comparison_stdout}\n{comparison_stderr}")
                     artifact = None
                     cabs = worktree / ".tmp/mutation-input.json"
                     cabs.parent.mkdir(exist_ok=True)
@@ -286,7 +287,25 @@ def main(argv=None):
                         raise RuntimeError(f"{name}: bounded Cabs producer failed ({code}): {error[-1500:]!r}")
                     diagnostics(f"{name} Cabs producer stderr", error.decode("utf-8", errors="replace"))
                     cabs.write_bytes(text)
-                    if mutation.verdict != "panic":
+                    if mutation.verdict == "panic":
+                        command = [str(mutant_b), "--runtime", str(runtime), "--input", str(cabs),
+                            "--fuel", str(options.fuel), "--address-space-top", str(0xFFFFFFFFFFFF),
+                            "--core-build", sha256(normal_a), "--coreb-build", sha256(mutant_b),
+                            "--mode", "record", "--tape", str(worktree / ".tmp/panic.json")]
+                        native_code, native_output, native_error = instrument.run_child(
+                            command, options.timeout, 4096 * 1024**2, 16 * 1024**2)
+                        marker = native_error.decode("utf-8", errors="replace")
+                        if native_code != -signal.SIGABRT or not detected(
+                                mutation, comparison_code, comparison_stdout, comparison_stderr, marker):
+                            raise RuntimeError(f"panic: expected native SIGABRT/marker and comparator INCOMPLETE; "
+                                               f"native={native_code} comparator={comparison_code}\n{marker[:1500]}")
+                        try:
+                            instrument.parse_trace(native_output)
+                        except instrument.Incomplete:
+                            pass
+                        else:
+                            raise RuntimeError("panic: unexpectedly emitted a complete native trace")
+                    else:
                         traces = []
                         for label, binary in [("A", normal_a), ("B", mutant_b)]:
                             command = [str(binary), "--runtime", str(runtime), "--input", str(cabs),

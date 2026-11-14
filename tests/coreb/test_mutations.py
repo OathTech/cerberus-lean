@@ -66,6 +66,7 @@ class MutationControls(unittest.TestCase):
         mutation = M.MUTATIONS["panic"]
         self.assertFalse(M.detected(mutation, 2, "", "INCOMPLETE: missing binary"))
         self.assertTrue(M.detected(mutation, 2, "", "INCOMPLETE: injected CoreB mutation panic"))
+        self.assertTrue(M.detected(mutation, 2, "", "INCOMPLETE: backtrace tail", "injected CoreB mutation panic\nfull backtrace"))
         self.assertFalse(M.detected(mutation, 0, "", "INCOMPLETE: injected CoreB mutation panic"))
 
     def test_arithmetic_requires_changed_store_and_equal_outcome(self):

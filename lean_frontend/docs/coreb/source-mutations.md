@@ -35,7 +35,7 @@ starting a campaign.
 | `arithmetic` | Owned `core_eval.lem`: `IOpAdd` invokes `IntSub`. | Loaded locals compute `z = x + y`, followed by `return 0`. Both executions must remain defined with equal terminal outcomes and differing real store events. |
 | `choice-order` | Owned `driver.lem`: reverse the steps passed to the real `new_drive_core_threads` choice. | Existing `order3.c` must reach duplicate alternative descriptors and produce different defined results under branch-zero recording/replay. |
 | `observer` | B observer: omit the actual accumulated driver trace delta. | An access fixture must retain the same defined terminal outcome while losing driver events. |
-| `panic` | B entrypoint: invoke a native panic immediately before completion emission. | The comparator must report incomplete execution and retain the injected native-panic marker. A generic process failure does not satisfy this control. |
+| `panic` | B entrypoint: invoke a native panic immediately before completion emission. | The comparator must report incomplete execution; a separate bounded native recording must abort with SIGABRT, retain the injected panic marker and omit completion. This checks the full bounded stderr independently of the comparator's diagnostic tail. A generic process failure does not satisfy the control. |
 
 Before each variant, its unmutated witness must pass the normal four-run
 comparison as defined. Each variant uses a separate disposable detached Git
