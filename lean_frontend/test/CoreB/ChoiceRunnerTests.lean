@@ -106,6 +106,9 @@ def tests : IO Unit := do
     { recorded.tape with entries := recorded.tape.entries.set! 0 { first with ordinal := 7 } }))
   require "header mismatch before evaluation" (isInputError (replay tree
     { recorded.tape with header := { recorded.tape.header with prepared := "wrong-input" } }))
+  let badHeader := replay tree
+    { recorded.tape with header := { recorded.tape.header with coreBBuild := "wrong-build" } }
+  require "invalid metadata never evaluates a node" (isInputError badHeader && badHeader.visited == 0 && badHeader.finalState == 0)
   for changed in [
       { first with parent := toJson "different-parent" },
       { first with kind := .step },
@@ -133,8 +136,10 @@ def tests : IO Unit := do
   let noBranches : Machine := .ND fun state => (.NDnd "empty" [], state + 1)
   require "empty frontier explicit" (match (record noBranches #[]).outcome with | .empty => true | _ => false)
   let badObserver := { observer with observeDelta := fun _ _ => .error "bad suffix" }
-  require "observer errors fail closed" (match (run 20 badObserver (.record .first) (header) tree 0).outcome with
-    | .observationError "bad suffix" => true | _ => false)
+  let observationFailure := run 20 badObserver (.record .first) (header) tree 0
+  require "observer errors fail closed" (match observationFailure.outcome with
+    | .observationError "bad suffix" => observationFailure.visited == 1 && observationFailure.finalState == 1
+    | _ => false)
   let seeded := run 20 observer (.record (.seeded 12345)) (header) tree 0
   let repeated := run 20 observer (.record (.seeded 12345)) (header) tree 0
   require "seeded recording reproducible" (seeded.tape == repeated.tape && seeded.events == repeated.events)
@@ -148,6 +153,9 @@ def tests : IO Unit := do
   let exhaustive := (CerbND.runNDFuel 20 tree 0).filterMap shippedValue
   require "finite complete outcome multiset calibration"
     (observed.mergeSort (· ≤ ·) == exhaustive.mergeSort (· ≤ ·))
+  let observedBranch := [#[0], #[1]].filterMap fun indices => valueOf (record (branchTree false) indices)
+  let exhaustiveBranch := (CerbND.runNDFuel 20 (branchTree false) 0).filterMap shippedValue
+  require "empty-constraint branch calibration" (observedBranch == exhaustiveBranch)
   IO.println "choice-runner: all focused controls passed"
 
 end CoreBDiff.Choice.Tests
