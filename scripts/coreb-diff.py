@@ -40,6 +40,15 @@ class Mismatch(Exception):
     pass
 
 
+def stderr_excerpt(data, limit=1500):
+    text = data.decode("utf-8", errors="replace") if isinstance(data, bytes) else data
+    if len(text) <= limit:
+        return text
+    notice = "\n... stderr truncated (head and tail retained) ...\n"
+    half = (limit - len(notice)) // 2
+    return text[:half] + notice + text[-half:]
+
+
 def reject_constant(value):
     raise ValueError(f"non-finite JSON number: {value}")
 
@@ -154,12 +163,132 @@ def parse_trace(data, *, replay=False):
     return Trace(header, [row["event"] for row in groups["event"]], choices, outcome, end)
 
 
-def compare(left, right, label):
+def project_stutter(trace):
+    """Erase singleton bookkeeping inside intervals delimited by real choices.
+
+    Each lane is checked against its own node/choice counts before erasure.
+    Ordered payloads and genuine choice barriers survive. Different channels
+    have no asserted interleaving within one interval in this observation schema.
+    """
+    def fail(message):
+        raise ProtocolFailure("stutter projection: " + message)
+
+    def channels():
+        return {"driver": [], "memory": [], "stdout": "", "stderr": ""}
+
+    payloads = {
+        "driver": {"function_call": 2, "function_return": 2, "allocate_object": 6,
+                   "allocate_region": 5, "kill": 3, "load": 5, "store": 6,
+                   "seq_rmw": 6, "array_shift": 4, "member_shift": 4},
+        "memory": {"access_receipt": 9},
+    }
+    def step_info(value):
+        arities = {"action": 1, "memop": 0, "tau": 1, "eval": 1, "done": 0, "misc": 1}
+        if (not isinstance(value, dict) or set(value) != {"tag", "fields"}
+                or not isinstance(value["tag"], str) or value["tag"] not in arities
+                or not isinstance(value["fields"], list) or len(value["fields"]) != arities[value["tag"]]):
+            fail("unknown step-info shape")
+
+    if trace.end.get("complete") is not True:
+        fail("incomplete execution")
+    if (not natural(trace.end.get("visited")) or not natural(trace.end.get("choices"))
+            or trace.end["choices"] != len(trace.choices)):
+        fail("invalid terminal counts")
+    segments, effects = [], channels()
+    nodes, choices, terminal = 0, 0, False
+    for event in trace.events:
+        if terminal:
+            fail("events follow the terminal ND node")
+        if not isinstance(event, dict):
+            fail("event is not an object")
+        if set(event) == {"boundary", "observation"}:
+            if not natural(event["boundary"]) or event["boundary"] != nodes:
+                fail("observation boundary is not the next ND node")
+            observation = event["observation"]
+            if not isinstance(observation, dict):
+                fail("observation is not an object")
+            channel = observation.get("channel")
+            if not isinstance(channel, str):
+                fail("observation channel is not a string")
+            if channel in {"stdout", "stderr"}:
+                if set(observation) != {"channel", "text"} or not isinstance(observation["text"], str):
+                    fail("invalid output-channel observation")
+                effects[channel] += observation["text"]
+            elif channel in payloads:
+                if set(observation) != {"channel", "events"} or not isinstance(observation["events"], list):
+                    fail("invalid effect-channel observation")
+                for payload in observation["events"]:
+                    if not isinstance(payload, dict) or set(payload) != {"tag", "fields"}:
+                        fail("invalid effect payload")
+                    tag, fields = payload["tag"], payload["fields"]
+                    if (not isinstance(tag, str) or tag not in payloads[channel]
+                            or not isinstance(fields, list) or len(fields) != payloads[channel][tag]):
+                        fail("unknown effect tag or field shape")
+                effects[channel].extend(observation["events"])
+            else:
+                fail("unknown observation channel; no implicit checkpoint erasure")
+            continue
+        if (set(event) != {"channel", "node", "kind", "parent", "alternatives", "selected"}
+                or event["channel"] != "nd" or not natural(event["node"]) or event["node"] != nodes):
+            fail("unknown event shape or inconsistent ND node number")
+        nodes += 1
+        kind, alternatives, selected = event["kind"], event["alternatives"], event["selected"]
+        if not isinstance(kind, str) or not isinstance(alternatives, list):
+            fail("invalid ND kind or alternatives")
+        if kind in {"active", "killed", "guard"}:
+            if alternatives or selected is not None:
+                fail("invalid terminal/guard metadata")
+            if kind != "guard":
+                if event["parent"] is not None:
+                    fail("terminal node has unexpected parent metadata")
+                if (kind == "active") != (trace.end["kind"] == "defined"):
+                    fail("terminal ND kind differs from the outcome")
+                segments.append({"effects": effects, "terminal": kind})
+                terminal = True
+            else:
+                step_info(event["parent"])
+        elif kind in {"nd", "step", "branch"}:
+            step_info(event["parent"])
+            if kind == "branch":
+                if alternatives != [{"side": "left"}, {"side": "right"}]:
+                    fail("invalid constraint-branch descriptors")
+            else:
+                for alternative in alternatives:
+                    step_info(alternative)
+            if (not natural(selected) or selected >= len(alternatives)
+                    or (kind == "branch" and len(alternatives) != 2)):
+                fail("invalid selected index or branch arity")
+            if len(alternatives) > 1:
+                descriptor = {"ordinal": choices, "kind": kind, "parent": event["parent"],
+                              "alternatives": alternatives, "index": selected}
+                if choices >= len(trace.choices) or structural(descriptor) != structural(trace.choices[choices]):
+                    fail("branch node does not match its choice-tape entry")
+                segments.append({"effects": effects, "branch": descriptor})
+                effects = channels()
+                choices += 1
+        else:
+            fail("unknown ND kind")
+    if not terminal or nodes != trace.end["visited"] or choices != len(trace.choices):
+        fail("terminal, visited-node or branching count does not match the log")
+    return segments
+
+
+def compare(left, right, label, comparison="exact"):
+    if comparison not in {"exact", "stutter"}:
+        raise ValueError("unknown comparison profile")
+    if left.end.get("complete") is not True or right.end.get("complete") is not True:
+        raise Incomplete("cannot compare an incomplete execution", "comparison-profile")
     a = {key: value for key, value in left.header.items() if key != "origin"}
     b = {key: value for key, value in right.header.items() if key != "origin"}
-    for field, x, y in [("header", a, b), ("events", left.events, right.events),
+    events_a, events_b = left.events, right.events
+    end_a, end_b = left.end, right.end
+    if comparison == "stutter":
+        events_a, events_b = project_stutter(left), project_stutter(right)
+        end_a = {key: value for key, value in left.end.items() if key != "visited"}
+        end_b = {key: value for key, value in right.end.items() if key != "visited"}
+    for field, x, y in [("header", a, b), ("events", events_a, events_b),
                         ("choices", left.choices, right.choices),
-                        ("outcome", left.outcome, right.outcome), ("end", left.end, right.end)]:
+                        ("outcome", left.outcome, right.outcome), ("end", end_a, end_b)]:
         if structural(x) != structural(y):
             if isinstance(x, list) and isinstance(y, list):
                 first = next((i for i, (p, q) in enumerate(zip(x, y)) if structural(p) != structural(q)), min(len(x), len(y)))
@@ -217,7 +346,7 @@ def run_child(command, timeout, memory_bytes, output_bytes):
         completed = True
         return code, bytes(output["stdout"]), bytes(output["stderr"])
     except Incomplete as error:
-        detail = bytes(output["stderr"][-1500:]).decode("utf-8", errors="replace")
+        detail = stderr_excerpt(bytes(output["stderr"]))
         raise Incomplete(f"{error}; stderr: {detail or '(empty)'}", error.category) from error
     finally:
         # Only this Popen's newly created session/process group is targeted.
@@ -300,9 +429,9 @@ def compare_case(options, build_pair=None, inspect=None):
             code, stdout, stderr = child(
                 [str(producer), "--runtime=" + str(options.runtime), "--cabs-json", str(options.input)])
             if code != 0:
-                raise Incomplete(f"Cabs producer failed ({code}): {stderr.decode('utf-8', errors='replace')[-1500:]}", "frontend")
+                raise Incomplete(f"Cabs producer failed ({code}): {stderr_excerpt(stderr)}", "frontend")
             if stderr:
-                print("PRODUCER_STDERR: " + stderr.decode("utf-8", errors="replace")[-1500:], file=sys.stderr)
+                print("PRODUCER_STDERR: " + stderr_excerpt(stderr), file=sys.stderr)
             cabs = directory / "input.json"
             cabs.write_bytes(stdout)
         common = ["--runtime", str(options.runtime), "--input", str(cabs),
@@ -323,7 +452,7 @@ def compare_case(options, build_pair=None, inspect=None):
                 code, stdout, stderr = child(command)
                 trace = parse_trace(stdout, replay=mode == "replay")
             except (Incomplete, Mismatch) as error:
-                detail = stderr.decode("utf-8", errors="replace")[-1500:]
+                detail = stderr_excerpt(stderr)
                 message = f"{origin} {mode}: {error}; exit={code}; stderr: {detail or '(empty)'}"
                 if isinstance(error, Mismatch):
                     raise Mismatch(message) from error
@@ -333,10 +462,10 @@ def compare_case(options, build_pair=None, inspect=None):
                 raise Incomplete(message, category) from error
             if code != 0:
                 raise Incomplete(f"{origin} {mode}: child exited {code} despite complete output: "
-                                 + stderr.decode("utf-8", errors="replace")[-1500:], "process-failure")
+                                 + stderr_excerpt(stderr), "process-failure")
             if stderr:
                 print(f"{origin.upper()}_{mode.upper()}_STDERR: "
-                      + stderr.decode("utf-8", errors="replace")[-1500:], file=sys.stderr)
+                      + stderr_excerpt(stderr), file=sys.stderr)
             if trace.header["coreBuild"] != build_a or trace.header["coreBBuild"] != build_b or trace.header["origin"] != origin:
                 raise Incomplete(f"{origin} {mode}: executable did not attest the requested build pair/origin")
             if mode == "record":
@@ -346,14 +475,17 @@ def compare_case(options, build_pair=None, inspect=None):
         tape_a, tape_b = directory / "core.tape.json", directory / "coreb.tape.json"
         a_record = execute(options.core_bin, "Core", "record", tape_a)
         b_replay = execute(options.coreb_bin, "CoreB", "replay", tape_a)
-        compare(a_record, b_replay, "Core record -> CoreB replay")
+        comparison = getattr(options, "comparison", "exact")
+        compare(a_record, b_replay, "Core record -> CoreB replay", comparison)
         b_record = execute(options.coreb_bin, "CoreB", "record", tape_b)
         a_replay = execute(options.core_bin, "Core", "replay", tape_b)
-        compare(b_record, a_replay, "CoreB record -> Core replay")
-        compare(a_record, b_record, "independent recordings under the same policy")
+        compare(b_record, a_replay, "CoreB record -> Core replay", comparison)
+        compare(a_record, b_record, "independent recordings under the same policy", comparison)
         if inspect is not None:
             inspect(a_record)
-        return summarize(a_record)
+        summary = summarize(a_record)
+        summary["comparison"] = comparison
+        return summary
 
 
 def parse_options(argv=None):
@@ -373,6 +505,8 @@ def parse_options(argv=None):
     parser.add_argument("--timeout", type=float, default=30.0, help="wall seconds per child")
     parser.add_argument("--memory-mb", type=int, default=4096, help="virtual memory MiB per child")
     parser.add_argument("--output-mb", type=int, default=16, help="combined stdout/stderr MiB per child")
+    parser.add_argument("--comparison", choices=["exact", "stutter"], default="exact",
+                        help="exact trace or explicit branch-delimited stutter projection")
     parser.add_argument("--summary-json", action="store_true", help="emit compact actual-path coverage as JSON")
     options = parser.parse_args(argv)
     if options.fuel < 0 or not 0 < options.address_space_top < 2**64:
@@ -404,7 +538,7 @@ def main(argv=None):
         print(json.dumps(summary, sort_keys=True))
     else:
         token = {"defined": "MATCH_DEFINED", "undefined": "MATCH_UNDEFINED", "model-error": "MATCHED_MODEL_ERROR"}[kind]
-        print(f"{token}: {options.input} | both recording directions | "
+        print(f"{token}: {options.input} | {options.comparison} | both recording directions | "
               f"choices={len(summary['indices'])} nodes={summary['visited']} events={summary['events']}")
     return 3 if kind == "model-error" else 0
 
