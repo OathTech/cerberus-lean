@@ -160,18 +160,18 @@ private def choose {a info err cs st : Type} (mode : Mode) (header : Header)
   let alternatives := (branches.map Prod.fst).toArray
   match branches with
   | [] =>
-    let session := { session with events := session.events.push
-      (nodeEvent node kind.label parent alternatives) }
+    let session := { session with
+      events := session.events.push (nodeEvent node kind.label parent alternatives) }
     finish mode header session state .empty
   | [(_, continuation)] =>
-    let session := { session with events := session.events.push
-      (nodeEvent node kind.label parent alternatives (some 0)) }
+    let session := { session with
+      events := session.events.push (nodeEvent node kind.label parent alternatives (some 0)) }
     resumePath session continuation
   | _ :: _ :: _ =>
     match selected mode session kind parent alternatives with
     | .error (replaying, reason) =>
-      let session := { session with events := session.events.push
-        (nodeEvent node kind.label parent alternatives) }
+      let session := { session with
+        events := session.events.push (nodeEvent node kind.label parent alternatives) }
       result header session state
         (if replaying then .replayMismatch reason else .inputError reason)
     | .ok (index, random) =>
@@ -209,8 +209,8 @@ private def traverse {a info err cs st : Type} (fuel : Nat)
           result header session state' (.incomplete "model fuel exhausted")
         else finish mode header session state' (.killed reason)
       | .NDguard info constraint continuation =>
-        let session := { session with events := session.events.push
-          (nodeEvent node "guard" (observer.encodeInfo info)) }
+        let session := { session with
+          events := session.events.push (nodeEvent node "guard" (observer.encodeInfo info)) }
         if observer.isTrivialConstraint constraint then resumePath session continuation
         else result header session state' (.refused "nontrivial NDguard constraint")
       | .NDbranch info constraint left right =>
@@ -219,8 +219,8 @@ private def traverse {a info err cs st : Type} (fuel : Nat)
             [(Json.mkObj [("side", toJson "left")], left),
              (Json.mkObj [("side", toJson "right")], right)] resumePath
         else
-          let session := { session with events := session.events.push
-            (nodeEvent node "branch" (observer.encodeInfo info)) }
+          let session := { session with
+            events := session.events.push (nodeEvent node "branch" (observer.encodeInfo info)) }
           result header session state' (.refused "nontrivial NDbranch constraint")
       | .NDnd info branches =>
         choose mode header session state' node .nd (observer.encodeInfo info)
