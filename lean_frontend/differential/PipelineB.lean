@@ -7,6 +7,7 @@ import CoreB.Driver
 namespace CoreBDiff
 
 structure ExecutionB where
+  translated : CoreB.file Unit
   file : CoreB.file CoreB.core_run_annotation
   state : CoreB.driver_state
   translatedSupply : Nat
@@ -51,7 +52,7 @@ def lowerB [LemFuel] (prepared : Prepared) : IO ExecutionB := do
   let file := CoreB.convert_file linked
   let (state, initialSupply) := CoreB.initial_driver_state supply prepared.addressSpaceTop
     prepared.runDigest file CerbFS.fs_initial_state
-  return { file, state, translatedSupply := supply, initialSupply }
+  return { translated, file, state, translatedSupply := supply, initialSupply }
 
 def ExecutionB.action [LemFuel] (execution : ExecutionB) (argv : List String) :
     CoreB.driverM CoreB.driver_result :=
