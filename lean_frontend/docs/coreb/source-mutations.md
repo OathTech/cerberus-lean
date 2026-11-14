@@ -4,7 +4,9 @@
 evaluator, driver and observer. It uses the ordinary `coreb-diff.py`
 comparison, then checks that each failure reached its intended observation.
 A failed build, timeout, unprovisioned dependency or unexpected model error is
-a failed campaign, never a detected semantic mutation.
+a failed campaign, never a detected semantic mutation. Every nonpanic variant
+must be detected in both record/replay directions using fresh tapes. The panic
+variant cannot finish recording; its reverse direction is explicitly inapplicable.
 
 Run it from a provisioned, committed candidate with the same pinned Lem and
 opam environment used for the normal build. For an ordinary local switch:
@@ -19,7 +21,10 @@ a different clean, provisioned candidate; `--runtime PREFIX` and `--producer
 PATH` select its existing runtime and Cabs producer. `--mutant NAME` can be
 repeated to select a subset. `--build-memory 12G` and `--build-timeout 600`
 bound each build; the differential runner separately bounds child time,
-memory and output. Budget concurrent jobs before starting a campaign.
+memory and output, including the extra Cabs producer and paired-artifact check.
+Successful build/generation stderr and warning-bearing stdout are surfaced
+with explicit truncation notices if needed. Budget concurrent jobs before
+starting a campaign.
 
 | Variant | Actual changed source | Witness and required detection |
 |---|---|---|

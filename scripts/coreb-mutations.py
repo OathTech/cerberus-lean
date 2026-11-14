@@ -13,6 +13,7 @@ import importlib.util
 import json
 import math
 import os
+import re
 from pathlib import Path
 import shutil
 import signal
@@ -149,11 +150,22 @@ def capture(command, cwd, timeout, env=None):
             process.communicate()
 
 
+def diagnostics(label, text):
+    if text.strip():
+        omitted = max(0, len(text) - 6000)
+        prefix = f"[{omitted} diagnostic characters omitted; rerun the named command for full output]\n" if omitted else ""
+        print(f"{label}:\n{prefix}{text[-6000:]}", file=sys.stderr, flush=True)
+
+
 def required(command, cwd, timeout, env=None):
     code, stdout, stderr = capture(command, cwd, timeout, env)
     if code != 0:
         raise RuntimeError(f"command failed ({code}): {' '.join(map(str, command))}\n"
                            + (stdout + stderr)[-6000:])
+    label = " ".join(map(str, command))
+    diagnostics(label + " stderr", stderr)
+    warning_lines = "\n".join(line for line in stdout.splitlines() if re.search(r"\bwarning\b", line, re.IGNORECASE))
+    diagnostics(label + " stdout warnings", warning_lines)
     return stdout
 
 
@@ -221,6 +233,7 @@ def main(argv=None):
             code, stdout, stderr = capture(common + ["--coreb-bin", str(normal_b)], source, options.timeout * 6)
             if code != 0 or not stdout.startswith("MATCH_DEFINED:"):
                 raise RuntimeError(f"{name}: unmutated witness did not pass: {code}\n{stdout}\n{stderr}")
+            diagnostics(f"{name} baseline stderr", stderr)
             with tempfile.TemporaryDirectory(prefix="coreb-mutant-", dir=scratch) as directory:
                 worktree = Path(directory) / "checkout"
                 added = False
@@ -245,9 +258,13 @@ def main(argv=None):
                     artifact = None
                     cabs = worktree / ".tmp/mutation-input.json"
                     cabs.parent.mkdir(exist_ok=True)
-                    text = required([str(producer), "--runtime=" + str(runtime), "--cabs-json", str(witness)],
-                                    source, options.timeout)
-                    cabs.write_text(text)
+                    code, text, error = instrument.run_child(
+                        [str(producer), "--runtime=" + str(runtime), "--cabs-json", str(witness)],
+                        options.timeout, 4096 * 1024**2, 16 * 1024**2)
+                    if code != 0:
+                        raise RuntimeError(f"{name}: bounded Cabs producer failed ({code}): {error[-1500:]!r}")
+                    diagnostics(f"{name} Cabs producer stderr", error.decode("utf-8", errors="replace"))
+                    cabs.write_bytes(text)
                     if mutation.verdict != "panic":
                         traces = []
                         for label, binary in [("A", normal_a), ("B", mutant_b)]:
@@ -259,19 +276,44 @@ def main(argv=None):
                             trace = instrument.parse_trace(output)
                             if code != 0:
                                 raise RuntimeError(f"{name}: witness {label} execution failed ({code}): {error[-1500:]!r}")
+                            diagnostics(f"{name} {label} recorder stderr", error.decode("utf-8", errors="replace"))
                             traces.append(trace)
                         verify_witness(name, *traces, instrument.structural)
+                        # The normal comparator fails fast. Independently require
+                        # detection under each origin's freshly recorded tape.
+                        for recording, peer, tape_label, direction in [
+                            (traces[0], mutant_b, "A", "Core record -> CoreB replay"),
+                            (traces[1], normal_a, "B", "CoreB record -> Core replay")]:
+                            command = [str(peer), "--runtime", str(runtime), "--input", str(cabs),
+                                "--fuel", str(options.fuel), "--address-space-top", str(0xFFFFFFFFFFFF),
+                                "--core-build", sha256(normal_a), "--coreb-build", sha256(mutant_b),
+                                "--mode", "replay", "--tape", str(worktree / f".tmp/{tape_label}.json")]
+                            code, output, error = instrument.run_child(command, options.timeout, 4096 * 1024**2, 16 * 1024**2)
+                            try:
+                                replay = instrument.parse_trace(output, replay=True)
+                                if code != 0:
+                                    raise RuntimeError(f"{name}: {direction} exited {code} despite complete output")
+                                instrument.compare(recording, replay, direction)
+                            except instrument.Mismatch:
+                                pass  # This is the required comparator verdict.
+                            else:
+                                raise RuntimeError(f"{name}: mutation was not detected in {direction}")
+                            diagnostics(f"{name} {direction} stderr", error.decode("utf-8", errors="replace"))
                     if mutation.artifact:
                         pair = worktree / "lean_frontend/.lake/build/bin/coreb-pair-check"
-                        code, output, error = capture([str(pair), str(runtime), str(cabs), str(options.fuel),
-                            str(0xFFFFFFFFFFFF), "16"], source, options.timeout, env)
+                        code, output, error = instrument.run_child(
+                            [str(pair), str(runtime), str(cabs), str(options.fuel), str(0xFFFFFFFFFFFF), "16"],
+                            options.timeout, 4096 * 1024**2, 16 * 1024**2)
+                        diagnostics(f"{name} artifact checker stderr", error.decode("utf-8", errors="replace"))
                         rows = [json.loads(line) for line in output.splitlines() if line.strip()]
                         artifact = (code == 2 and len(rows) == 1 and rows[0].get("paired-check") == "failed"
                                     and "complete Core/CoreB artifact differs" in rows[0].get("reason", ""))
                         if not artifact:
                             raise RuntimeError(f"{name}: paired artifact mutation was not detected\n{output}\n{error}")
                     result = {"mutant": name, "detected": True, "verdict": mutation.verdict,
-                              "artifact": artifact, "source": revision}
+                              "artifact": artifact, "source": revision,
+                              "replay_directions": 1 if mutation.verdict == "panic" else 2,
+                              "reverse_applicable": mutation.verdict != "panic"}
                     results.append(result)
                     print(json.dumps(result, sort_keys=True), flush=True)
                 finally:
