@@ -40,8 +40,12 @@ private def fromOld {a err st : Type} (expected : Choice.Header)
     | .Killed killedState reason =>
       if exhausted reason then throw "existing CerbND exhausted its budget"
       else pure (.killed reason, killedState)
-  return { outcome, finalState, tape := { header := expected, entries := #[] },
-    events := #[], visited := 0 }
+  return {
+    outcome := outcome
+    finalState := finalState
+    tape := { header := expected, entries := #[] }
+    events := #[]
+    visited := 0 }
 
 private def removeFirst (value : Json) : List Json → Option (List Json)
   | [] => none
@@ -105,6 +109,13 @@ def check (runtime input : String) (fuel top maxPaths : Nat) : IO Unit := do
   let a ← @lowerA ⟨fuel⟩ prepared
   let b ← @lowerB ⟨fuel⟩ prepared
   unwrap (ArtifactCompare.compare a b)
+  require a.file.main.isSome "paired execution calibration requires a main entry"
+  let changedMain := { b with file := { b.file with main := none } }
+  let .error _ := ArtifactCompare.compare a changedMain
+    | fail "artifact comparator accepted the injected main-entry difference"
+  let changedSupply := { b with translatedSupply := b.translatedSupply + 1 }
+  let .error _ := ArtifactCompare.compare a changedSupply
+    | fail "artifact comparator accepted the injected fresh-supply difference"
   let observedA ← unwrap (a.capture true)
   let observedB ← unwrap (b.capture true)
   let referenceA ← unwrap (a.capture false)
@@ -126,6 +137,7 @@ def check (runtime input : String) (fuel top maxPaths : Nat) : IO Unit := do
     (project ObservationB.result toJson ObservationB.streams (·.trace))
   require (sameMultiset resultsA resultsB) "Core/CoreB exhaustive observation multisets differ"
   emit (Json.mkObj [("paired-artifact", toJson "equal"),
+    ("artifact-negative-controls", toJson (2 : Nat)),
     ("branch-zero-calibration", toJson "equal"), ("all-results-calibration", toJson "equal"),
     ("capture-erasure-calibration", toJson "equal"),
     ("pathsA", toJson resultsA.length), ("pathsB", toJson resultsB.length),
