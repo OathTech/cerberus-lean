@@ -87,6 +87,43 @@ def natural(value):
     return isinstance(value, int) and not isinstance(value, bool) and value >= 0
 
 
+MISSING = object()
+
+
+def first_difference(left, right, path):
+    """Locate one differing observed field; never render a whole payload tree."""
+    if isinstance(left, dict) and isinstance(right, dict):
+        for key in sorted(left.keys() | right.keys()):
+            suffix = "." + key if key.isidentifier() else "[" + json.dumps(key) + "]"
+            if key not in left or key not in right:
+                return path + suffix, left.get(key, MISSING), right.get(key, MISSING)
+            if structural(left[key]) != structural(right[key]):
+                return first_difference(left[key], right[key], path + suffix)
+    elif isinstance(left, list) and isinstance(right, list):
+        for index, (a, b) in enumerate(zip(left, right)):
+            if structural(a) != structural(b):
+                return first_difference(a, b, f"{path}[{index}]")
+        if len(left) != len(right):
+            index = min(len(left), len(right))
+            return (f"{path}[{index}]", left[index] if index < len(left) else MISSING,
+                    right[index] if index < len(right) else MISSING)
+    return path, left, right
+
+
+def leaf_excerpt(value):
+    if value is MISSING:
+        return "<missing>"
+    if isinstance(value, dict):
+        return f"<object with {len(value)} fields>"
+    if isinstance(value, list):
+        return f"<array of length {len(value)}>"
+    if isinstance(value, str):
+        rendered = repr(value[:120])
+        return rendered[:157] + "..." if len(value) > 120 or len(rendered) > 160 else rendered
+    rendered = repr(value)
+    return rendered[:157] + "..." if len(rendered) > 160 else rendered
+
+
 @dataclass
 class Trace:
     header: dict
@@ -299,11 +336,9 @@ def compare(left, right, label, comparison="exact"):
                         ("choices", left.choices, right.choices),
                         ("outcome", left.outcome, right.outcome), ("end", end_a, end_b)]:
         if structural(x) != structural(y):
-            if isinstance(x, list) and isinstance(y, list):
-                first = next((i for i, (p, q) in enumerate(zip(x, y)) if structural(p) != structural(q)), min(len(x), len(y)))
-                detail = f"first differing index {first}; lengths {len(x)}/{len(y)}"
-            else:
-                detail = f"{str(x)[:450]} != {str(y)[:450]}"
+            path, a, b = first_difference(x, y, "$." + field)
+            path = path[:597] + "..." if len(path) > 600 else path
+            detail = f"{path}: {leaf_excerpt(a)} != {leaf_excerpt(b)}"
             raise Mismatch(f"{label}: {field} differ ({detail})")
 
 

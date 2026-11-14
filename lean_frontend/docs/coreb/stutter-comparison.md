@@ -41,6 +41,11 @@ between lanes after each lane has passed its own consistency check. Resource
 failure, absent completion, refusal and unsupported observation schemas never
 become successful comparisons through this profile.
 
+Both profiles report the first differing JSON field/index path with bounded
+leaf excerpts. For example, a changed store can point into the recorded effect
+payload even when the final return value matches. These diagnostics survive
+temporary-trace cleanup; they do not print machine states or archive raw traces.
+
 For example, after building the normal entrypoints:
 
 ```sh

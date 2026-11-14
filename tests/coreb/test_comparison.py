@@ -62,8 +62,21 @@ class ComparisonTests(unittest.TestCase):
         left, right = rows(), rows("CoreB")
         right[1]["event"]["stored"] = 8
         self.assertEqual(left[3], right[3])
-        with self.assertRaises(diff.Mismatch):
+        with self.assertRaises(diff.Mismatch) as finding:
             diff.compare(diff.parse_trace(encoded(left)), diff.parse_trace(encoded(right)), "effect")
+        self.assertIn("$.events[0].stored: 7 != 8", str(finding.exception))
+
+    def test_mismatch_diagnostics_are_bounded_and_preserve_types(self):
+        left, right = rows(), rows("CoreB")
+        left[1]["event"]["stored"] = "A" * 10000
+        right[1]["event"]["stored"] = "B" * 10000
+        with self.assertRaises(diff.Mismatch) as finding:
+            diff.compare(diff.parse_trace(encoded(left)), diff.parse_trace(encoded(right)), "bounded")
+        self.assertLess(len(str(finding.exception)), 1000)
+        self.assertIn("$.events[0].stored", str(finding.exception))
+        path, a, b = diff.first_difference({"value": True}, {"value": 1}, "$")
+        self.assertEqual(path, "$.value")
+        self.assertNotEqual(diff.leaf_excerpt(a), diff.leaf_excerpt(b))
 
     def test_choices_and_terminal_counts_are_compared(self):
         for record, field, changed in [(2, "index", 0), (4, "visited", 3)]:
