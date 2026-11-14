@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "generator": "bounded-unsigned-v1",
+  "phase": "campaign",
+  "generator_sha256": "a812aefa282270a18fea61a656ecc74426405a4441ae80f6be6318070582b50f",
+  "seeds": [
+    1701,
+    2718,
+    31415,
+    65537
+  ],
+  "programs": 1000,
+  "paths_per_program": 2,
+  "limits": {
+    "child_seconds": 15,
+    "campaign_seconds": 1200,
+    "memory_mb": 4096,
+    "output_mb": 16,
+    "fuel": 1000000
+  },
+  "targets": {
+    "defined_programs": 1000,
+    "per_feature": 50,
+    "nd_programs_with_two_tapes": 100
+  }
+}

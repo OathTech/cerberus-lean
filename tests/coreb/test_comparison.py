@@ -81,6 +81,19 @@ class ComparisonTests(unittest.TestCase):
         self.assertNotEqual(diff.structural(diff.decode("9007199254740993.1")),
                             diff.structural(diff.decode("9007199254740993.2")))
 
+    def test_summary_counts_actual_tapes_and_effects(self):
+        records = rows()
+        records[1]["event"] = {"boundary": 0, "observation": {"channel": "memory", "events": [
+            {"tag": "access_receipt", "fields": []}, {"tag": "access_receipt", "fields": []}]}}
+        summary = diff.summarize(diff.parse_trace(encoded(records)))
+        self.assertEqual(summary["indices"], [1])
+        self.assertEqual(summary["arities"], [2])
+        self.assertEqual(summary["observed_tags"], {"memory:access_receipt": 2})
+        records[2]["choice"]["index"] = 0
+        changed = diff.summarize(diff.parse_trace(encoded(records)))
+        self.assertNotEqual(summary["tape_sha256"], changed["tape_sha256"])
+        self.assertEqual(summary["outcome_sha256"], changed["outcome_sha256"])
+
     def test_owned_child_limits(self):
         code, out, err = diff.run_child([sys.executable, "-c", "print('bounded')"], 5, 64 * 1024**2, 1024)
         self.assertEqual((code, out, err), (0, b"bounded\n", b""))

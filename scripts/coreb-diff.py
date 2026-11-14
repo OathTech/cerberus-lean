@@ -233,45 +233,47 @@ def check_tape_file(path, trace, limit):
         raise Incomplete("written tape differs from the recorder's emitted header/choices")
 
 
-def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("input", type=Path, help="one C translation unit (or existing Cabs JSON)")
-    parser.add_argument("--cabs-json", action="store_true", help="input is already Cabs JSON")
-    parser.add_argument("--producer", type=Path, default=ROOT / "_build/default/backend/driver/main.exe")
-    parser.add_argument("--runtime", type=Path, default=ROOT / "_build/install/default")
-    parser.add_argument("--core-bin", type=Path, default=ROOT / "lean_frontend/.lake/build/bin/core-diff")
-    parser.add_argument("--coreb-bin", type=Path, default=ROOT / "lean_frontend/.lake/build/bin/coreb-diff")
-    policy = parser.add_mutually_exclusive_group()
-    policy.add_argument("--seed", type=int)
-    policy.add_argument("--choices", help="comma-separated branching indices, then branch zero")
-    parser.add_argument("--fuel", type=int, default=1000000)
-    parser.add_argument("--address-space-top", type=lambda value: int(value, 0), default=0xFFFFFFFFFFFF)
-    parser.add_argument("--arg", action="append", default=[], help="program argument, repeatable")
-    parser.add_argument("--timeout", type=float, default=30.0, help="wall seconds per child")
-    parser.add_argument("--memory-mb", type=int, default=4096, help="virtual memory MiB per child")
-    parser.add_argument("--output-mb", type=int, default=16, help="combined stdout/stderr MiB per child")
-    options = parser.parse_args(argv)
-    if options.fuel < 0 or not 0 < options.address_space_top < 2**64:
-        parser.error("fuel must be nonnegative and address-space top must lie in (0, 2^64)")
-    if options.seed is not None and not 0 <= options.seed < 2**64:
-        parser.error("seed must fit UInt64")
-    if not math.isfinite(options.timeout) or options.timeout <= 0 or options.memory_mb <= 0 or options.output_mb <= 0:
-        parser.error("child limits must be positive")
-    if options.choices is not None:
-        try:
-            indices = [] if options.choices == "" else [int(value) for value in options.choices.split(",")]
-            if any(index < 0 for index in indices):
-                raise ValueError("negative index")
-        except ValueError:
-            parser.error("choices must be comma-separated natural numbers")
-        options.choices = ",".join(map(str, indices))
-    options.input = options.input.resolve(strict=True)
-    options.runtime = options.runtime.resolve(strict=True)
-    options.core_bin = options.core_bin.resolve(strict=True)
-    options.coreb_bin = options.coreb_bin.resolve(strict=True)
+def summarize(trace):
+    """Compact actual-path evidence; no machine state or raw trace is retained."""
+    # structural() is deterministic for JSON and keeps type/precision distinctions.
+    def digest(value):
+        return hashlib.sha256(repr(structural(value)).encode("utf-8")).hexdigest()
+    tags = {}
+    for event in trace.events:
+        observation = event.get("observation", {}) if isinstance(event, dict) else {}
+        channel = observation.get("channel")
+        for payload in observation.get("events", []):
+            tag = f"{channel}:{payload.get('tag', 'unknown')}"
+            tags[tag] = tags.get(tag, 0) + 1
+    return {
+        "observed_tags": tags,
+        "kind": trace.end["kind"], "both_directions": True,
+        "tape_sha256": digest(trace.choices),
+        "outcome_sha256": digest(trace.outcome),
+        "indices": [choice["index"] for choice in trace.choices],
+        "arities": [len(choice["alternatives"]) for choice in trace.choices],
+        "choice_kinds": [choice["kind"] for choice in trace.choices],
+        "visited": trace.end["visited"], "events": len(trace.events),
+    }
+
+
+def compare_case(options, build_pair=None):
+    """Run four fresh processes; return compact evidence only after all agree.
+
+    A campaign may supply hashes computed once, provided it checks that those
+    same binary files stay unchanged for the duration of the campaign.
+    """
     memory = options.memory_mb * 1024 * 1024
     output_limit = options.output_mb * 1024 * 1024
-    build_a, build_b = sha256(options.core_bin), sha256(options.coreb_bin)
+    build_a, build_b = build_pair or (sha256(options.core_bin), sha256(options.coreb_bin))
+    def child(command):
+        timeout = options.timeout
+        deadline = getattr(options, "deadline", None)
+        if deadline is not None:
+            timeout = min(timeout, deadline - time.monotonic())
+            if timeout <= 0:
+                raise Incomplete("campaign wall limit reached")
+        return run_child(command, timeout, memory, output_limit)
     scratch = ROOT / ".tmp"
     scratch.mkdir(exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="coreb-diff-", dir=scratch) as directory:
@@ -280,9 +282,8 @@ def main(argv=None):
             cabs = options.input
         else:
             producer = options.producer.resolve(strict=True)
-            code, stdout, stderr = run_child(
-                [str(producer), "--runtime=" + str(options.runtime), "--cabs-json", str(options.input)],
-                options.timeout, memory, output_limit)
+            code, stdout, stderr = child(
+                [str(producer), "--runtime=" + str(options.runtime), "--cabs-json", str(options.input)])
             if code != 0:
                 raise Incomplete(f"Cabs producer failed ({code}): {stderr.decode('utf-8', errors='replace')[-1500:]}")
             if stderr:
@@ -304,7 +305,7 @@ def main(argv=None):
                     command.extend(["--choices", options.choices])
             code, stderr = None, b""
             try:
-                code, stdout, stderr = run_child(command, options.timeout, memory, output_limit)
+                code, stdout, stderr = child(command)
                 trace = parse_trace(stdout, replay=mode == "replay")
             except (Incomplete, Mismatch) as error:
                 detail = stderr.decode("utf-8", errors="replace")[-1500:]
@@ -329,11 +330,60 @@ def main(argv=None):
         a_replay = execute(options.core_bin, "Core", "replay", tape_b)
         compare(b_record, a_replay, "CoreB record -> Core replay")
         compare(a_record, b_record, "independent recordings under the same policy")
-        kind = a_record.end["kind"]
+        return summarize(a_record)
+
+
+def parse_options(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("input", type=Path, help="one C translation unit (or existing Cabs JSON)")
+    parser.add_argument("--cabs-json", action="store_true", help="input is already Cabs JSON")
+    parser.add_argument("--producer", type=Path, default=ROOT / "_build/default/backend/driver/main.exe")
+    parser.add_argument("--runtime", type=Path, default=ROOT / "_build/install/default")
+    parser.add_argument("--core-bin", type=Path, default=ROOT / "lean_frontend/.lake/build/bin/core-diff")
+    parser.add_argument("--coreb-bin", type=Path, default=ROOT / "lean_frontend/.lake/build/bin/coreb-diff")
+    policy = parser.add_mutually_exclusive_group()
+    policy.add_argument("--seed", type=int)
+    policy.add_argument("--choices", help="comma-separated branching indices, then branch zero")
+    parser.add_argument("--fuel", type=int, default=1000000)
+    parser.add_argument("--address-space-top", type=lambda value: int(value, 0), default=0xFFFFFFFFFFFF)
+    parser.add_argument("--arg", action="append", default=[], help="program argument, repeatable")
+    parser.add_argument("--timeout", type=float, default=30.0, help="wall seconds per child")
+    parser.add_argument("--memory-mb", type=int, default=4096, help="virtual memory MiB per child")
+    parser.add_argument("--output-mb", type=int, default=16, help="combined stdout/stderr MiB per child")
+    parser.add_argument("--summary-json", action="store_true", help="emit compact actual-path coverage as JSON")
+    options = parser.parse_args(argv)
+    if options.fuel < 0 or not 0 < options.address_space_top < 2**64:
+        parser.error("fuel must be nonnegative and address-space top must lie in (0, 2^64)")
+    if options.seed is not None and not 0 <= options.seed < 2**64:
+        parser.error("seed must fit UInt64")
+    if not math.isfinite(options.timeout) or options.timeout <= 0 or options.memory_mb <= 0 or options.output_mb <= 0:
+        parser.error("child limits must be positive")
+    if options.choices is not None:
+        try:
+            indices = [] if options.choices == "" else [int(value) for value in options.choices.split(",")]
+            if any(index < 0 for index in indices):
+                raise ValueError("negative index")
+        except ValueError:
+            parser.error("choices must be comma-separated natural numbers")
+        options.choices = ",".join(map(str, indices))
+    options.input = options.input.resolve(strict=True)
+    options.runtime = options.runtime.resolve(strict=True)
+    options.core_bin = options.core_bin.resolve(strict=True)
+    options.coreb_bin = options.coreb_bin.resolve(strict=True)
+    return options
+
+
+def main(argv=None):
+    options = parse_options(argv)
+    summary = compare_case(options)
+    kind = summary["kind"]
+    if options.summary_json:
+        print(json.dumps(summary, sort_keys=True))
+    else:
         token = {"defined": "MATCH_DEFINED", "undefined": "MATCH_UNDEFINED", "model-error": "MATCHED_MODEL_ERROR"}[kind]
         print(f"{token}: {options.input} | both recording directions | "
-              f"choices={len(a_record.choices)} nodes={a_record.end['visited']} events={len(a_record.events)}")
-        return 3 if kind == "model-error" else 0
+              f"choices={len(summary['indices'])} nodes={summary['visited']} events={summary['events']}")
+    return 3 if kind == "model-error" else 0
 
 
 if __name__ == "__main__":
