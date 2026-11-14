@@ -14,7 +14,7 @@ namespace CoreBDiff
 
 open Lean
 
-def fail (message : String) : IO α := throw (IO.Error.userError message)
+def fail {α : Type} (message : String) : IO α := throw (IO.Error.userError message)
 
 def pathJoin (dir file : String) : String :=
   if dir.isEmpty || dir.endsWith "/" then dir ++ file else dir ++ "/" ++ file
@@ -46,9 +46,9 @@ def loadImplementationA (parsed : CoreParser.CoreFile) : Except String impl := d
     let key ← CoreParser.pImplConstant name
     pure (fmapAddBy implementation_constant_compare key value acc)) fmapEmpty
 
-def loadRuntimeA (prefix : String) : IO RuntimeA := do
-  if prefix.isEmpty then fail "runtime prefix must be nonempty"
-  let root := pathJoin prefix "lib/cerberus-lib/runtime"
+def loadRuntimeA (installPrefix : String) : IO RuntimeA := do
+  if installPrefix.isEmpty then fail "runtime prefix must be nonempty"
+  let root := pathJoin installPrefix "lib/cerberus-lib/runtime"
   let stdPath := pathJoin root "libcore/std.core"
   let implPath := pathJoin root "libcore/impls/gcc_4.9.0_x86_64-apple-darwin10.8.0.impl"
   let stdText ← IO.FS.readFile stdPath
@@ -126,8 +126,16 @@ def prepare [LemFuel] (runtimePrefix input : String) (addressSpaceTop : Int)
   let runtimeDigest := CerberusFresh.md5Hex (Json.arr #[
     toJson runtime.text.stdPath, toJson runtime.text.stdText,
     toJson runtime.text.implPath, toJson runtime.text.implText]).compress
-  return { runtime, typed, enumDefs, supply, sourceDigest := digest,
-    runDigest := digest, inputDigest, runtimeDigest, addressSpaceTop,
+  return {
+    runtime := runtime
+    typed := typed
+    enumDefs := enumDefs
+    supply := supply
+    sourceDigest := digest
+    runDigest := digest
+    inputDigest := inputDigest
+    runtimeDigest := runtimeDigest
+    addressSpaceTop := addressSpaceTop
     argv := "cmdname" :: args }
 
 def Prepared.identity (prepared : Prepared) : Json := Json.mkObj [

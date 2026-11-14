@@ -15,7 +15,7 @@ structure Options where
   coreBuild : String
   coreBBuild : String
   seed : Option Nat
-  prefix : Option (Array Nat)
+  choicePrefix : Option (Array Nat)
   args : List String
 
 private def parsePairs : List String → List (String × String) → Except String (List (String × String))
@@ -56,7 +56,7 @@ def parseOptions (args : List String) : Except String Options := do
         if seed > 18446744073709551615 then throw "--seed exceeds UInt64"
         else pure (some seed)
       | none => throw "--seed must be a natural number"
-  let prefix ← match get "--choices" with
+  let choicePrefix ← match get "--choices" with
     | none => pure none
     | some value =>
       if value.isEmpty then pure (some #[])
@@ -66,11 +66,21 @@ def parseOptions (args : List String) : Except String Options := do
           | some index => pure index
           | none => throw "--choices must be comma-separated natural numbers"
         pure (some choices.toArray)
-  if seed.isSome && prefix.isSome then throw "--seed and --choices are mutually exclusive"
-  if mode == "replay" && (seed.isSome || prefix.isSome) then
+  if seed.isSome && choicePrefix.isSome then throw "--seed and --choices are mutually exclusive"
+  if mode == "replay" && (seed.isSome || choicePrefix.isSome) then
     throw "recording choice options are invalid in replay mode"
-  return { runtime, input, tape, mode, fuel, addressSpaceTop, coreBuild, coreBBuild,
-    seed, prefix, args := pairs.filterMap (fun (key, value) => if key == "--arg" then some value else none) }
+  return {
+    runtime := runtime
+    input := input
+    tape := tape
+    mode := mode
+    fuel := fuel
+    addressSpaceTop := addressSpaceTop
+    coreBuild := coreBuild
+    coreBBuild := coreBBuild
+    seed := seed
+    choicePrefix := choicePrefix
+    args := pairs.filterMap (fun (key, value) => if key == "--arg" then some value else none) }
 
 def Options.choiceMode (options : Options) : IO Choice.Mode := do
   if options.mode == "replay" then
@@ -82,8 +92,8 @@ def Options.choiceMode (options : Options) : IO Choice.Mode := do
     | .ok tape => return .replay tape
     | .error error => fail s!"invalid choice tape: {error}"
   else if options.mode == "record" then
-    match options.prefix, options.seed with
-    | some prefix, none => return .record (.prefix prefix)
+    match options.choicePrefix, options.seed with
+    | some choicePrefix, none => return .record (.prefix choicePrefix)
     | none, some seed => return .record (.seeded seed.toUInt64)
     | none, none => return .record .first
     | some _, some _ => fail "--seed and --choices are mutually exclusive"

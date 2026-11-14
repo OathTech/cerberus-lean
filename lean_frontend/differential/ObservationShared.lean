@@ -53,20 +53,20 @@ def traceEvent : trace_event → Except String Json
     return node "function_call" [toJson sym, Json.arr (← values.mapM memoryValue).toArray]
   | .ME_function_return sym value =>
     return node "function_return" [toJson sym, ← optionalMemoryValue value]
-  | .ME_allocate_object tid prefix align ty initial pointer =>
-    return node "allocate_object" [toJson tid, toJson prefix, toJson align, toJson ty,
+  | .ME_allocate_object tid origin align ty initial pointer =>
+    return node "allocate_object" [toJson tid, toJson origin, toJson align, toJson ty,
       ← optionalMemoryValue initial, toJson pointer]
-  | .ME_allocate_region tid prefix align size pointer =>
-    return node "allocate_region" [toJson tid, toJson prefix, toJson align, toJson size, toJson pointer]
+  | .ME_allocate_region tid origin align size pointer =>
+    return node "allocate_region" [toJson tid, toJson origin, toJson align, toJson size, toJson pointer]
   | .ME_kill loc dynamic pointer =>
     return node "kill" [toJson loc, toJson dynamic, toJson pointer]
-  | .ME_load loc prefix ty pointer value =>
-    return node "load" [toJson loc, toJson prefix, toJson ty, toJson pointer, ← memoryValue value]
-  | .ME_store loc prefix ty locking pointer value =>
-    return node "store" [toJson loc, toJson prefix, toJson ty, toJson locking,
+  | .ME_load loc origin ty pointer value =>
+    return node "load" [toJson loc, toJson origin, toJson ty, toJson pointer, ← memoryValue value]
+  | .ME_store loc origin ty locking pointer value =>
+    return node "store" [toJson loc, toJson origin, toJson ty, toJson locking,
       toJson pointer, ← memoryValue value]
-  | .ME_seq_rmw loc prefix ty pointer loaded stored =>
-    return node "seq_rmw" [toJson loc, toJson prefix, toJson ty, toJson pointer,
+  | .ME_seq_rmw loc origin ty pointer loaded stored =>
+    return node "seq_rmw" [toJson loc, toJson origin, toJson ty, toJson pointer,
       ← memoryValue loaded, ← memoryValue stored]
   | .ME_eff_array_shift_ptrval pointer ty offset result =>
     return node "array_shift" [toJson pointer, toJson ty, toJson offset, toJson result]
