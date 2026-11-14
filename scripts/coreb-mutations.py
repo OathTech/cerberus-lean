@@ -191,6 +191,19 @@ def copy_warm(source, worktree):
     shutil.copy2(src, dst)
 
 
+def build_environment(worktree, memory):
+    env = dict(os.environ, CERB_MEM_MAX=memory, LEAN_ABORT_ON_PANIC="1")
+    # opam exec prepends its switch bin directory. Prefer the copied compiler
+    # already built from the candidate's pinned LemLib when it is available;
+    # otherwise inherit the ordinary provisioned opam compiler unchanged.
+    package = worktree / "lean_frontend/.lake/packages/LemLib"
+    compiler = package / "bin/lem"
+    if compiler.is_file():
+        env["PATH"] = str(compiler.parent) + os.pathsep + env.get("PATH", "")
+        env["LEMLIB"] = str(package / "library")
+    return env
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-checkout", type=Path, default=ROOT)
@@ -244,7 +257,7 @@ def main(argv=None):
                     apply_mutation(worktree, mutation)
                     git(worktree, "add", "--", mutation.path)
                     git(worktree, "commit", "-m", f"[AGENT] coreb mutation: {name} negative control")
-                    env = dict(os.environ, CERB_MEM_MAX=options.build_memory, LEAN_ABORT_ON_PANIC="1")
+                    env = build_environment(worktree, options.build_memory)
                     cap = str(worktree / "scripts/capped")
                     if mutation.regenerate:
                         required([cap, sys.executable, "tools/generate_coreb.py"],

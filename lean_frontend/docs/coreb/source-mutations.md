@@ -15,8 +15,11 @@ opam environment used for the normal build. For an ordinary local switch:
 opam exec --switch=. -- python3 scripts/coreb-mutations.py
 ```
 
-The script inherits `PATH`, `LEMLIB` and the caller's opam environment. It does
-not install dependencies or alter a switch. `--source-checkout PATH` selects
+The script inherits the caller's opam environment. When the warm LemLib
+checkout contains an already-built `bin/lem`, its private copied compiler and
+library take precedence over the switch's `PATH`/`LEMLIB`; otherwise the supplied
+pinned compiler environment is retained. It does not install dependencies or
+alter a switch. `--source-checkout PATH` selects
 a different clean, provisioned candidate; `--runtime PREFIX` and `--producer
 PATH` select its existing runtime and Cabs producer. `--mutant NAME` can be
 repeated to select a subset. `--build-memory 12G` and `--build-timeout 600`

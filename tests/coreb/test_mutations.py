@@ -88,6 +88,17 @@ class MutationControls(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             M.verify_witness("arithmetic", trace(), bad, shape)
 
+    def test_copied_pinned_compiler_precedes_inherited_switch(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            package = root / "lean_frontend/.lake/packages/LemLib"
+            (package / "bin").mkdir(parents=True)
+            (package / "bin/lem").write_text("pinned compiler")
+            env = M.build_environment(root, "12G")
+            self.assertEqual(env["PATH"].split(":")[0], str(package / "bin"))
+            self.assertEqual(env["LEMLIB"], str(package / "library"))
+            self.assertEqual(env["CERB_MEM_MAX"], "12G")
+
     def test_warm_cache_is_physically_independent(self):
         with tempfile.TemporaryDirectory() as directory:
             source, destination = Path(directory) / "source", Path(directory) / "destination"
