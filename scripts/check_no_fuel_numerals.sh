@@ -10,7 +10,7 @@
 # seam copies), lean_frontend/test/**/*.lean (the unit gates and the ∀-fuel
 # exemplar), lean_frontend/speclab/**/*.lean (the harness-family package,
 # its gate tests included) and tests/**/*.lean (the in-Lean immaculate
-# probes, the mem-scale micro instrument) — .lake trees excluded. Unlike lem-lean's own gate
+# probes) — .lake trees excluded. Unlike lem-lean's own gate
 # (tests/comprehensive/check_no_fuel_numerals.sh, whose F1–F5 patterns this
 # ports), the TEST trees are scanned too: here the tests are the consumer's
 # pinned-lemma gate and the differential harnesses' exec legs, and a fuel

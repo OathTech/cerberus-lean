@@ -151,13 +151,23 @@ of this work's scope.
   the stored Lake logs carry 823 warnings for modules of the tree before and 0
   after (derived), and the root package builds with `-DwarningAsError=true`.
   speclab's own package carries the flag too (review F8). The third package,
-  `tests/mem-scale-probes/micro`, is the existing item below (not built since
-  2026-09-20); this re-pin moved its manifest only.
-- **`scripts/build_provider_smoke.py:26` hard-codes a lem revision**
+  `tests/mem-scale-probes/micro`, was the item below (not built since
+  2026-09-20; that re-pin moved its manifest only); retired 2026-11-14.
+- **CLOSED 2026-11-14 — `scripts/build_provider_smoke.py:26` hard-coded a lem revision**
   (`LEM_REV = 'f6542f8e…'`, a 2026-09 pin) that `scripts/check_pin_sites.sh`
-  does not know as a pin site. Found by the pre-merge review of the lem TODO 54
+  did not know as a pin site. Found by the pre-merge review of the lem TODO 54
   re-pin (`docs/2026-11-10_todo54-repin-premerge-review.md`, F4); logged only,
-  no change. [AGENT 2026-11-10]
+  no change. [AGENT 2026-11-10] Closed by `fix/wchar-rank` M2 (record
+  `docs/2026-11-14_wchar-rank-record.md` §6): the script reads the pin from
+  `scripts/fork_drift_manifest.txt` `[meta] lem-pin`, fail-closed. [AGENT 2026-11-14]
+- **`scripts/build_provider_smoke.py`'s rehearsal has not been run since 2026-09 and
+  would stop at its compiler check** (found by reading at `fix/wchar-rank` M2,
+  2026-11-14): `pins()` compares `lem -v` with `'Lem ' + LEM_REV[:7]`, a form lem
+  has not printed since the `git describe --long` versions of 2026-09-25 (the
+  fork-drift gate's rule is a hex-prefix match). Only its cancellation path is
+  exercised (`scripts/test_release.py`, row 1). Fix shape: the hex-prefix rule,
+  then one real rehearsal; or retire the script with its test. Needs a ruling.
+  [AGENT 2026-11-14]
 
 - **Lean toolchain bump 4.32.2 → 4.35.0.** Scoped 2026-10-20
   (`docs/2026-10-20_lean-4.35-scoping-record.md`): moderate; the toolchain is
@@ -180,8 +190,8 @@ of this work's scope.
   name-independent allowlist parse); kernel replay exit 0, `lake check` (no-sandbox)
   accepted, the full battery's 44 commands passed. The landing note records the ff.
 
-- **`tests/mem-scale-probes/micro` (the `memscale-micro` Tier C reporting
-  instrument) has not built since 2026-09-20** — found at the Lean 4.35 move
+- **CLOSED 2026-11-14 (RETIRED, [USER 2026-11-14]) — `tests/mem-scale-probes/micro` (the `memscale-micro` Tier C
+  reporting instrument) had not built since 2026-09-20** — found at the Lean 4.35 move
   (record `docs/2026-10-25_lean-4.35-cerberus-record.md` §1.2 (h)): five
   `Application type mismatch` errors (`Micro.lean:85,90,95,115,116`:
   `memValueToBytes tagDefs` / `reconstructValue tagDefs`, whose first argument has
@@ -189,7 +199,10 @@ of this work's scope.
   was last changed 2026-09-17). No lane or gate builds it, so nothing noticed.
   Fix shape: thread an `EnumDefs` through the five call sites and re-derive the
   measurement; or retire the instrument with its `results/`. Needs a ruling; not
-  the move's change. [AGENT 2026-10-26]
+  the move's change. [AGENT 2026-10-26] Ruled 2026-11-14: the package is deleted
+  with every reference to it (`fix/wchar-rank` M2, record
+  `docs/2026-11-14_wchar-rank-record.md` §6); the `results/*micro*.tsv` measurement
+  records stay. [AGENT 2026-11-14, executing the ruling]
 
 - **The ≥128-field record refusal in lem's Lean backend (lem-lean TODO 55) after
   Lean 4.35.0.** The move's witness (record §2.1): on 4.35.0 a 128-, 129- and
@@ -1150,11 +1163,10 @@ S-basket slice — `docs/2026-09-01_s-basket.md`.)
   relatedly, `.lake/packages` can carry stale non-manifest package
   dirs (worktree-priming leftovers) that a path-glob gate could
   mistake for consumed code. Wanted: a leg that reads
-  `lake-manifest.json` (ALL THREE packages — `lean_frontend/`,
-  `lean_frontend/speclab/`, and the measurement package
-  `tests/mem-scale-probes/micro/`, added 2026-09-02 to this item: it
-  requires CerberusLean by path and shares the workspace package
-  store), asserts the package set is exactly the reviewed list, and
+  `lake-manifest.json` (BOTH packages — `lean_frontend/` and
+  `lean_frontend/speclab/`; the measurement package
+  `tests/mem-scale-probes/micro/`, added to this item 2026-09-02, was
+  retired 2026-11-14), asserts the package set is exactly the reviewed list, and
   fails on non-manifest directories in the shared packagesDir.
 - **Raw-string awareness for the census stripper** (C2 delta-audit
   note, registered 2026-09-01): the shared comment/string stripper in

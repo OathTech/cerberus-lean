@@ -23,8 +23,25 @@ from release import RunnerInterrupted, artifacts, source_identity
 from process_scope import ContainmentError, ProcessScope
 
 ROOT = Path(__file__).resolve().parent.parent
-LEM_REV = 'f6542f8e6860d12d4655e6648bc4c45dabd1d798'
-PACKAGES = ('lean_frontend', 'lean_frontend/speclab', 'tests/mem-scale-probes/micro')
+
+
+def manifest_lem_pin(root=ROOT):
+    """The lem-lean pin: scripts/fork_drift_manifest.txt [meta] lem-pin, the value check_pin_sites.sh holds every
+    site to (a hard-coded copy here went stale, 2026-11-10 review F4). Fail-closed on a missing or malformed pin."""
+    section = None
+    for line in (root/'scripts/fork_drift_manifest.txt').read_text().splitlines():
+        if line.startswith('['):
+            section = line.strip()
+        elif section == '[meta]' and line.startswith('lem-pin='):
+            pin = line[len('lem-pin='):].strip()
+            if len(pin) == 40 and all(c in '0123456789abcdef' for c in pin):
+                return pin
+            raise RuntimeError(f'fork_drift_manifest.txt [meta] lem-pin is not a full 40-hex commit: {pin!r}')
+    raise RuntimeError('fork_drift_manifest.txt has no [meta] lem-pin')
+
+
+LEM_REV = manifest_lem_pin()
+PACKAGES = ('lean_frontend', 'lean_frontend/speclab')
 
 
 def pins(cerb, compiler, runtime):
@@ -155,7 +172,7 @@ def main():
         report['compiler'] = {'path': str(prefix/'bin/lem'), 'sha256': sha(prefix/'bin/lem'), 'version': LEM_REV[:7]}
         report['ocaml_runtime'] = files(prefix/'lib')
         # Pin plants change only this owned rehearsal, restore, then check again.
-        manifest = cerb/'tests/mem-scale-probes/micro/lake-manifest.json'
+        manifest = cerb/'lean_frontend/speclab/lake-manifest.json'
         original = manifest.read_bytes()
         manifest.write_bytes(original.replace(LEM_REV.encode(), b'0'*40))
         try:

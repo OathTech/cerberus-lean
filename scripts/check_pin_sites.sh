@@ -5,12 +5,15 @@
 #   lean_frontend/lakefile.toml                     [[require]] LemLib rev = "<hash>"
 #   lean_frontend/lake-manifest.json                LemLib "rev" and "inputRev"
 #   lean_frontend/speclab/lake-manifest.json        LemLib "rev" and "inputRev"
-#   tests/mem-scale-probes/micro/lake-manifest.json LemLib "rev" and "inputRev"
 #   lean_frontend/README.md                         every `lem-lean.git#<fragment>` — each must be the full pin (the newcomer's opam pin command)
 #
 # Why (public-readiness M9 fresh-clone test, 2026-09-25): the sweep re-pinned the five machine-read sites but not the
 # README's pin command, so a newcomer installed lem 67ec5de against a c2a68e79 pin and row 1's fork-drift gate went
 # red. This leg makes the README a pin site the gate reads.
+# 2026-11-14: the third lake-manifest (tests/mem-scale-probes/micro, a measurement package not built since
+# 2026-09-20) left with its package ([USER 2026-11-14] retired it); the sites are the lakefile rev, TWO manifests and
+# the README. The eight plants never touched the third manifest (P3 plants speclab's, P8 the root package's), so
+# their set and count are unchanged; the scratch copies carry two manifests.
 #
 # Usage: scripts/check_pin_sites.sh [--root DIR]     (default: the repository root above this script)
 #        scripts/check_pin_sites.sh --selftest        (plants on scratch copies; nothing in the tree is touched)
@@ -30,8 +33,8 @@ check() {  # <root> -> 0 OK / 1 FAIL (messages on stdout/stderr)
     lakerev=$(awk '/^\[\[require\]\]/{r=1} r && /^name = "LemLib"/{n=1} r && n && /^rev = "/{gsub(/^rev = "|"$/,""); print; exit}' "$f" 2>&1)
     [[ -n "$lakerev" ]] || { echo "check_pin_sites: FAIL — no LemLib rev found in $f" >&2; rc=1; }
     [[ -z "$lakerev" || "$lakerev" == "$pin" ]] || { echo "check_pin_sites: FAIL — $f LemLib rev = $lakerev ≠ lem-pin $pin" >&2; rc=1; }
-    # the three lake-manifests: LemLib rev + inputRev
-    for f in lean_frontend/lake-manifest.json lean_frontend/speclab/lake-manifest.json tests/mem-scale-probes/micro/lake-manifest.json; do
+    # the two lake-manifests: LemLib rev + inputRev
+    for f in lean_frontend/lake-manifest.json lean_frontend/speclab/lake-manifest.json; do
         [[ -f "$root/$f" ]] || { echo "check_pin_sites: FAIL — missing $f" >&2; rc=1; continue; }
         local revs
         revs=$(python3 - "$root/$f" <<'PY'
@@ -57,7 +60,7 @@ PY
         [[ -z "$h" && -z "$readme_frags" ]] && continue
         [[ "$h" == "$pin" ]] || { echo "check_pin_sites: FAIL — $f pins lem-lean.git#$h ≠ lem-pin $pin (the README's own rule: equal to lean_frontend/lakefile.toml)" >&2; rc=1; }
     done <<<"$readme_frags"
-    (( rc == 0 )) && echo "check_pin_sites: OK — lem-pin $pin at every site (lakefile rev, 3 lake-manifests rev+inputRev, README pin command)"
+    (( rc == 0 )) && echo "check_pin_sites: OK — lem-pin $pin at every site (lakefile rev, 2 lake-manifests rev+inputRev, README pin command)"
     return $rc
 }
 
@@ -65,12 +68,11 @@ if [[ "${1:-}" == "--selftest" ]]; then
     echo "check_pin_sites: SELFTEST — plants on scratch copies (loud plant banner; nothing in the tree is touched)"
     S=$(mktemp -d); trap 'rm -rf "$S"' EXIT
     fails=0
-    mk() {  # <dst-root>: copy the five pin-site files + manifest
-        mkdir -p "$1/scripts" "$1/lean_frontend/speclab" "$1/tests/mem-scale-probes/micro"
+    mk() {  # <dst-root>: copy the four pin-site files + manifest
+        mkdir -p "$1/scripts" "$1/lean_frontend/speclab"
         cp "$ROOT_DEFAULT/scripts/fork_drift_manifest.txt" "$1/scripts/"
         cp "$ROOT_DEFAULT/lean_frontend/lakefile.toml" "$ROOT_DEFAULT/lean_frontend/lake-manifest.json" "$ROOT_DEFAULT/lean_frontend/README.md" "$1/lean_frontend/"
         cp "$ROOT_DEFAULT/lean_frontend/speclab/lake-manifest.json" "$1/lean_frontend/speclab/"
-        cp "$ROOT_DEFAULT/tests/mem-scale-probes/micro/lake-manifest.json" "$1/tests/mem-scale-probes/micro/"
     }
     plant() {  # <label> <want: 0|nonzero> <substring> <root>
         local out rc ok=1

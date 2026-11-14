@@ -132,8 +132,6 @@ def source_identity(root=None):
 REQUIRED_ARTIFACTS = ['lean_frontend/lean-toolchain', 'lean_frontend/lakefile.toml',
              'lean_frontend/lake-manifest.json', 'lean_frontend/speclab/lake-manifest.json',
              'lean_frontend/speclab/lakefile.toml', 'lean_frontend/speclab/lean-toolchain',
-             'tests/mem-scale-probes/micro/lakefile.toml', 'tests/mem-scale-probes/micro/lean-toolchain',
-             'tests/mem-scale-probes/micro/lake-manifest.json',
              'lean_frontend/lem_sync.sha256', 'ocaml_frontend/lem_sync.sha256',
              'driver_fresh.oracle.sha256', 'driver_fresh.lean.sha256',
              '_build/default/backend/driver/main.exe',

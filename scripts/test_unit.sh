@@ -405,7 +405,7 @@ fi
 
 # Pin-site agreement leg (public-readiness M9 fresh-clone test, 2026-09-25):
 # the lem-lean pin must be ONE value at every site that names it — the
-# fork-drift manifest's lem-pin, the Lake rev, the three lake-manifests and
+# fork-drift manifest's lem-pin, the Lake rev, the two lake-manifests and
 # the README's newcomer pin command (the sweep had moved every machine-read
 # site but not the README line; a literal newcomer then failed row 1).
 # Plant-tested (--selftest), fail-closed.
