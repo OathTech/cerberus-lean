@@ -567,18 +567,23 @@ if ! "$COMPOUND_ASSIGN_SH" --selftest; then
 fi
 
 # macro-type-rank witnesses (upstream-tray report 20; cerberus-caesium filing 05; the fork-ahead
-# delta of 2026-11-04): every integer type the implementation defines as an alias (size_t,
-# ptrdiff_t, wchar_t, the intptr_t/intmax_t families, enums) has the conversion rank of the type
-# it aliases (C17 6.3.1.1#1), so the usual arithmetic conversions no longer narrow it to 32 bits
-# against the int family. 106 programs under tests/macro_type_ranks/: the dense per-type matrices,
-# two macro-versus-macro matrices (the seven macro types pairwise),
-# (every partner type, both operand orders, every operator and op=, positive and negative values),
-# the promotion probes, the direct __cerbty_* families, tray 20's reproducer, the consumer's three
-# programs, the true-bug audit's Set A probes, the four measured siblings and the cluster K
-# controls, each pinned to gcc 13's line on BOTH engines; pristine c3ff8c53f's pre-fix lines are
-# the negative control. --selftest: a pristine-replaying pair, a Lean-only pristine stub, a
-# fixed-line Lean stub, an exit-code-forcing oracle wrapper and a tampered expectation must all fail.
-# Record lean_frontend/docs/2026-11-04_macro-type-ranks-record.md.
+# delta of 2026-11-04, corrected 2026-11-14): every integer type the implementation defines as an
+# alias EXCEPT wchar_t and wint_t (size_t, ptrdiff_t, the intptr_t/intmax_t families, enums) has
+# the conversion rank of the type it aliases (C17 6.3.1.1#1), so the usual arithmetic conversions
+# no longer narrow it to 32 bits against the int family; wchar_t and wint_t keep upstream's rank
+# comparisons exactly ([USER 2026-11-14]; the model's ranges for them contradict the alias, tray
+# 62). 126 programs under tests/macro_type_ranks/: 104 pinned to gcc 13's line on BOTH engines
+# (the dense per-type matrices, two macro-versus-macro matrices, the promotion probes, the direct
+# __cerbty_* families, the limit macros, tray 20's reproducer, the consumer's three programs, the
+# true-bug audit's Set A probes, the measured siblings and the cluster K controls; pristine
+# c3ff8c53f's pre-fix lines are the negative control), 19 KEPT rows pinned to PRISTINE's line on
+# both engines (the reproducer WCHAR_MAX > 0, the WCHAR_*/WINT_* limit macros, wchar_t objects;
+# gcc's line beside in kept.txt; the fork's 2026-11-04..14 lines in d14.txt are their negative
+# control), 2 declared residuals and 1 gap control. --selftest: a pristine-replaying pair, a
+# Lean-only pristine stub, a fixed-line Lean stub, an exit-code-forcing oracle wrapper, a tampered
+# expectation, a D14-replaying pair, a Lean-only D14 stub and a KEPT row tampered to gcc's line
+# must all fail, each at its derived count.
+# Records lean_frontend/docs/2026-11-04_macro-type-ranks-record.md, 2026-11-14_wchar-rank-record.md.
 MACRO_RANKS_SH="$(dirname "$PURITY_SH")/check_macro_type_ranks.sh"
 if ! "$MACRO_RANKS_SH" --selftest; then
     echo "test_unit: macro-type-rank witnesses FAILED"

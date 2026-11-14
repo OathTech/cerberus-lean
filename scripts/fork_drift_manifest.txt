@@ -130,6 +130,16 @@
 # conversion specification carrying a * width/precision (`%*%`) is a declared REFUSAL, not the consumed-and-padded value
 # the first M1 gave it (7.21.6.1#8 "shall be %%": UB; upstream crashed there); `%5%` keeps upstream's padded output under
 # its own TODO. Both formatted rows re-pinned again (single-row edits).
+# fix/wchar-rank, 2026-11-14 [AGENT, executing the charter docs/2026-11-14_worker-charter-wchar-rank.md under the [USER 2026-11-14]
+# ruling that wchar_t leaves the rank normalisation]: CORRECTION of the fork-ahead delta of 2026-11-04 above (tray report 20), still
+# a delta of the first kind: frontend/model/ail/ailTypesAux.lem `rank_operand` leaves Wchar_t and Wint_t bare, and
+# lt_integer_rank's ISO table answers upstream's `false` for a pair with one of them ahead of the loud catch-all, so every rank
+# comparison with a wchar_t or wint_t operand is pristine c3ff8c53f's again (the memory model keeps wchar_t's unsigned range and
+# wint_t's [0, 2^31-1] against a Signed Int_ alias: upstream's open inconsistency, tray report 62; with int's rank `WCHAR_MAX > 0`
+# answered 0 and `WINT_MIN > -1` answered 1 where pristine and gcc answer 1 and 0). Wint_t by the charter's same-mechanism rule
+# [AGENT 2026-11-14]. Every other macro type keeps the 2026-11-04 rule. Single-row edits, no --refresh: [source-content]
+# ailTypesAux.lem re-pinned e278a3f6... -> 6acee29b...; [expected-semantic] ailTypesAux.ml's hash moved 52804c6c... -> b90d962b...
+# (an already-differing file; row count and layer 2's 33 unchanged). Record: lean_frontend/docs/2026-11-14_wchar-rank-record.md.
 [meta]
 merge-base=c3ff8c53f05982745f9b3a10b3d05442e214bcb5
 lem-pin=2220010bc25f0c5682d8200f016e786ee66d65c6
@@ -247,7 +257,7 @@ util/cerb_location.ml
 100644 53b16ced15ce07b825cd5e60859dffcba19d83812b70da5301041e71374ac81f frontend/concurrency/cmm_csem.lem
 100644 d9fb59bfce8faf2038f3db9bcdc5c2fdb60776353f4b5bc664602fc2b42c4f24 frontend/concurrency/cmm_op.lem
 100644 dac639f3976567b08b411f6c93083e8e4d18c9b5eb7cfae44c0ae51259d428c6 frontend/model/ail/ailSyntax.lem
-100644 e278a3f6a4832efc4024ff3b6418cf2e7c17cfb61bd8b20517e230e345dbeab9 frontend/model/ail/ailTypesAux.lem
+100644 6acee29b3e44f4ae7f13a77ad3f1a01a82a69e9bca8d935fda9daef03cc16226 frontend/model/ail/ailTypesAux.lem
 100644 cb5c28b31fb150925944814090d1fac7febe7d1d7c34c9dec586698258f18209 frontend/model/ail/ailWf.lem
 100644 281b8bcfae99aaeecc09c8482422543cae2763c310d4324d140fcc996329cadc frontend/model/ail/genTyping.lem
 100644 e52264c064f724e768f0b6a5c627f09eb0a3a0eeebc7d170eca43b5834a4958e frontend/model/annot.lem
@@ -330,7 +340,7 @@ util/cerb_location.ml
 100644 90c87a67406af33bf3e2f1a41ee8386cdf18f52ffcacc40591384de2da5fb9da util/cerb_location.ml
 [expected-semantic]
 0e33840c04efa7a2408042add3417e788f37f70c488ae791cf72c7410c303244 ailSyntax.ml
-52804c6cceb0163ea883e5cede64d32c26841004200047199a2cf3b5524a8ffb ailTypesAux.ml
+b90d962b5e6a62bf444e7dc263fec10d1f1979091e23996b87f367ffe28d6afc ailTypesAux.ml
 7d69150b8c69e10178cb3007a04d71dbbc329d5d999ab7578322aa79ef6af767 cabs_to_ail.ml
 a290a63ccda68710766457758900a16b3180a3af2e0562f9b6f76ac90edd3e2b cabs_to_ail_effect.ml
 efe1a293fdf87eb7a264b3d5a2705d9f9421115f9137772c0b6a539a5049b8fb core.ml

@@ -459,10 +459,10 @@ let eq_integer_rank_base ity1 ity2 =
    every integer type the implementation defines as an alias has the conversion
    rank of the type it aliases (C17 6.3.1.1#1: a typedef has the rank of its
    type; 7.19#2: size_t is an unsigned integer type, here Unsigned Long;
-   Ptrdiff_t -> Signed Long; Wchar_t/Wint_t -> Signed Int_; Intptr_t/Intmax_t ->
-   Long; the IntN_t/Int_leastN_t/Int_fastN_t families by width; an Enum to its
-   compatible type, 6.7.2.2#4; Char, Bool and Ptraddr_t are fixed points of the
-   normalisation). Upstream compared the bare constructors, so a macro-typed
+   Ptrdiff_t -> Signed Long; Intptr_t/Intmax_t -> Long; the IntN_t/Int_leastN_t/
+   Int_fastN_t families by width; an Enum to its compatible type, 6.7.2.2#4;
+   Char, Bool and Ptraddr_t are fixed points of the normalisation; Wchar_t and
+   Wint_t are NOT normalised, see the correction below). Upstream compared the bare constructors, so a macro-typed
    operand matched no rank arm and the ISO table's catch-all answered `false`
    (its own TODO below): in the Core translation's usual arithmetic conversions
    the pair (size_t, int) then fell to the last resort and both operands were
@@ -470,10 +470,28 @@ let eq_integer_rank_base ity1 ity2 =
    int family computed at 32 bits (the same for ptrdiff_t, wchar_t and enum
    operands). Under CHERI upstream's reading is kept exactly as it is: bare
    constructors (intptr_t is a capability type there, not an alias -- its rank
-   rule is upstream's, see lt_integer_rank) and the silent catch-all. *)
+   rule is upstream's, see lt_integer_rank) and the silent catch-all.
+
+   FORK CORRECTION (2026-11-14; lean_frontend/docs/2026-11-14_wchar-rank-record.md):
+   Wchar_t and Wint_t are left as they are, so every rank comparison with one
+   of them is upstream's, exactly (the bare constructor here, and upstream's
+   `false` for it in lt_integer_rank's table, the four arms before the
+   catch-all). The alias table says Signed Int_ for both, but the memory model
+   gives wchar_t the UNSIGNED range (impl_mem.ml min_ival/max_ival, under
+   upstream's own TODO: WCHAR_MAX is 4294967295) and wint_t the range
+   [0, 2^31-1]: upstream's open inconsistency (upstream-tray report 62). With
+   int's rank the two types promoted to int against those ranges, and
+   `WCHAR_MAX > 0` answered 0, `WINT_MIN > -1` answered 1, where upstream and
+   gcc answer 1 and 0: answers the fork had introduced. Which signedness
+   wchar_t has is upstream's question; the fork does not answer it. *)
 val rank_operand: integerType -> integerType
 let rank_operand ity =
-  if Global.is_CHERI () then ity else Implementation.normalise_integerType ity
+  if Global.is_CHERI () then ity else
+  match ity with
+    | Wchar_t -> Wchar_t
+    | Wint_t -> Wint_t
+    | _ -> Implementation.normalise_integerType ity
+  end
 
 (* TODO: K this looks wrong, in particular the STD says "No two signed integer types shall have the same rank" *)
 val eq_integer_rank: integerType -> integerType -> bool
@@ -557,6 +575,20 @@ let lt_integer_rank ity1 ity2 =
     | (_, Signed LongLong) ->
         false
     | (_, Unsigned LongLong) ->
+        false
+    
+    (* FORK (2026-11-14): upstream's answer for a Wchar_t or Wint_t operand,
+       kept. rank_operand leaves these two constructors bare; a pair with one
+       of them that no arm above matches reached upstream's catch-all and was
+       answered `false` (under CHERI it still does: these arms answer the
+       same). The loud catch-all below is for every other constructor *)
+    | (Wchar_t, _) ->
+        false
+    | (_, Wchar_t) ->
+        false
+    | (Wint_t, _) ->
+        false
+    | (_, Wint_t) ->
         false
     
     | _ ->
