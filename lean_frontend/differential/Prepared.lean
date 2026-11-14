@@ -96,8 +96,8 @@ structure Prepared where
     no-C-libc recipe. Runtime Core procedures remain present and executable. -/
 def prepare [LemFuel] (runtimePrefix input : String) (addressSpaceTop : Int)
     (args : List String) : IO Prepared := do
-  letI : CerbGlobal.Switches := ⟨[]⟩
-  unless addressSpaceTop > 0 do fail "address-space top must be positive"
+  unless 0 < addressSpaceTop && addressSpaceTop < 18446744073709551616 do
+    fail "address-space top must fit the LP64 pointer domain: 0 < top < 2^64"
   let runtime ← loadRuntimeA runtimePrefix
   let bytes ← IO.FS.readBinFile input
   let some text := String.fromUTF8? bytes
@@ -108,7 +108,7 @@ def prepare [LemFuel] (runtimePrefix input : String) (addressSpaceTop : Int)
   checkLibraryLabels runtime.text labels
   let _ ← (CerberusFresh.setDigestIO digest : BaseIO Unit)
   let result ← (CerberusFresh.forceIO (fun () =>
-    desugar fmapEmpty fmapEmpty 0 addressSpaceTop
+    @desugar ‹LemFuel› ⟨[]⟩ fmapEmpty fmapEmpty 0 addressSpaceTop
       { elab_conf := defaultElabConfig }
       (runtime.ailnames, runtime.functions, runtime.implementation)
       empty_init "main" tu) : BaseIO _)

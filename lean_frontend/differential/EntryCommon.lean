@@ -44,8 +44,12 @@ def parseOptions (args : List String) : Except String Options := do
   let fuelText ← required "--fuel"
   let some fuel := fuelText.toNat? | throw "--fuel must be a natural number"
   let topText ← required "--address-space-top"
-  let some addressSpaceTop := topText.toInt? | throw "--address-space-top must be an integer"
-  unless addressSpaceTop > 0 do throw "--address-space-top must be positive"
+  unless !topText.isEmpty && topText.all Char.isDigit do
+    throw "--address-space-top must contain decimal digits only"
+  let some top := topText.toNat? | throw "--address-space-top must be a decimal integer"
+  unless 0 < top && top < 18446744073709551616 do
+    throw "--address-space-top must fit the LP64 pointer domain: 0 < top < 2^64"
+  let addressSpaceTop : Int := top
   let coreBuild ← required "--core-build"
   let coreBBuild ← required "--coreb-build"
   let seed ← match get "--seed" with
@@ -119,28 +123,27 @@ def emit (value : Json) : IO Unit := IO.println value.compress
 def finish {a err st : Type} (options : Options) (expected : Choice.Header)
     (encodeResult : a → Except String Json) (encodeError : err → Json)
     (streams : st → String × String) (run : Choice.Run a err st) : IO UInt32 := do
-  let encoded := encodeOutcome encodeResult encodeError streams run
-  let .ok outcome := encoded
-    | do
-      let reason := match encoded with
-        | .error reason => reason
-        | .ok _ => "outcome encoder returned inconsistent results"
-      emit (Json.mkObj [("record", toJson "outcome"), ("kind", toJson "observation-error"),
-        ("reason", toJson reason)])
-      emit (Json.mkObj [("record", toJson "end"), ("complete", toJson false)])
-      return 2
   emit (Json.mkObj [("record", toJson "header"), ("header", toJson expected)])
   for event in run.events do
     emit (Json.mkObj [("record", toJson "event"), ("event", event)])
   for choice in run.tape.entries do
     emit (Json.mkObj [("record", toJson "choice"), ("choice", toJson choice)])
-  emit (Json.mkObj [("record", toJson "outcome"), ("outcome", outcome)])
-  if options.mode == "record" then IO.FS.writeFile options.tape (toJson run.tape).compress
-  let kind := completeKind run.outcome
-  emit (Json.mkObj [("record", toJson "end"), ("complete", toJson kind.isSome),
-    ("kind", toJson kind), ("visited", toJson run.visited),
-    ("choices", toJson run.tape.entries.size)])
-  return if kind.isSome then 0 else 2
+  match encodeOutcome encodeResult encodeError streams run with
+  | .error reason =>
+    emit (Json.mkObj [("record", toJson "outcome"), ("outcome", Json.mkObj [
+      ("kind", toJson "observation-error"), ("reason", toJson reason)])])
+    emit (Json.mkObj [("record", toJson "end"), ("complete", toJson false),
+      ("kind", Json.null), ("visited", toJson run.visited),
+      ("choices", toJson run.tape.entries.size)])
+    return 2
+  | .ok outcome =>
+    emit (Json.mkObj [("record", toJson "outcome"), ("outcome", outcome)])
+    if options.mode == "record" then IO.FS.writeFile options.tape (toJson run.tape).compress
+    let kind := completeKind run.outcome
+    emit (Json.mkObj [("record", toJson "end"), ("complete", toJson kind.isSome),
+      ("kind", toJson kind), ("visited", toJson run.visited),
+      ("choices", toJson run.tape.entries.size)])
+    return if kind.isSome then 0 else 2
 
 def withOptions (args : List String) (run : Options → IO UInt32) : IO UInt32 := do
   try
