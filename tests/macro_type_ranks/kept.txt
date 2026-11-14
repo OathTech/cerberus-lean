@@ -1,6 +1,6 @@
 # tests/macro_type_ranks/kept.txt -- the KEPT register of scripts/check_macro_type_ranks.sh (2026-11-14, the wchar_t
 # rank correction; [USER 2026-11-14] ruled wchar_t out of the rank normalisation, its rank comparisons returning to
-# upstream's behaviour exactly; wint_t with it, the same mechanism [AGENT 2026-11-14]). A row named here is pinned in
+# upstream's behaviour exactly; wint_t with it, the same mechanism: the extension approved [USER 2026-11-14]). A row named here is pinned in
 # expected.txt to PRISTINE c3ff8c53f's line (the script checks expected.txt's line = pristine.txt's line) and both
 # engines must print it. Beside each name: gcc 13.3.0's line for the same program (`gcc -std=c11 -w -O0`, rendered in
 # the batch shape, derived 2026-11-14) -- what a compiler whose wchar_t is int and whose wint_t is unsigned int
