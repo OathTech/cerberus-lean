@@ -787,6 +787,37 @@ its lines and times: both modes of the witness with their selftests, `generate.p
 `python3 scripts/test_release.py` `Ran 16 tests` `OK`). Row 1 as a whole was not re-run after it; Tier A and the
 battery on the new tip are the orchestrator's.
 
+### 7.4 The orchestrator's gates (close-out)
+
+Run by the orchestrator [AGENT 2026-11-14], not by the worker, in a separate audit checkout; the lines are the
+orchestrator's, written here as reported to the worker.
+
+The full battery on `96bb31cab` (the M3 tip), after a forced regeneration, the three dune steps and the capped lake
+build:
+
+```text
+full: passed; 46/46 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+release rc=0
+```
+
+On the final tip `56afc3734` (the same checkout; the delta since `96bb31cab` is the witness script, `test_unit.sh`,
+`LADDER.md` and documents, no semantic source), Tier A:
+
+```text
+fast: passed; 20/20 selected commands completed successfully.
+Source unchanged: True. Complete tier selection: True.
+```
+
+and the new Tier B row alone:
+
+```text
+PASSED B16 (81.6s)
+```
+
+The cost of the row-1 core at the pre-slice level (§4.1: at that cost to within the spread, not below it) is accepted
+by the orchestrator [AGENT 2026-11-14].
+
 ## 8. Not done, open, observed
 
 - **Not run by the worker:** Tier A as a tier (rows 6 to 14 not at all), Tier B (the pristine lane, row 10,
