@@ -58,6 +58,9 @@ Focused controls cover extra singleton nodes, same-segment repartitioning,
 cross-choice store movement, changed memory/output/order, branch metadata,
 outcome/header drift, malformed logs and unknown checkpoint channels. The
 unchanged real `order3.c` and a generated pointer/loop case also complete in
-both directions under the profile. A real CoreB-only singleton insertion is
-a separate source-mutation control still to be run against this profile; these
-JSON-only examples do not replace that execution-path test.
+both directions under the profile. The [built source controls](source-mutations.md)
+now also pass: a real CoreB-only singleton ND step is accepted here and rejected
+by exact comparison in both replay directions. The four real defect controls
+remain rejected under both profiles/directions, and native panic is incomplete
+under both. These executable controls supplement the JSON-level projection
+tests; no Nice checkpoint AST node is claimed.

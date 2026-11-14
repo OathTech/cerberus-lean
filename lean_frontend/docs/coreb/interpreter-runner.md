@@ -182,10 +182,30 @@ choice list and a wrong build identity. A 1 GiB address-space cap failed during
 Lean thread startup in that diagnostic attempt; it was a failed run. Repeating
 with the harness's normal 4 GiB limit discharged the controls.
 
-The generated-program campaign and built source-mutant evidence are still in
-progress. Interpreter construction alone is not the completion criterion for
-the Nice tool. See the scope's frozen campaign criteria before treating the
-baseline as ready for semantic changes.
+The [frozen exact campaign](campaign.md) passed 1,000 distinct defined inputs,
+2,000 distinct input/tape pairs and 8,000 fresh interpreter executions in
+659.017 seconds. Every input completed two genuinely different tapes in both
+directions. There were no mismatches, incomplete runs, UB or model errors in
+that generated slice; all six feature-family targets were met.
+
+All six [built source controls](source-mutations.md) passed. Real lowering,
+arithmetic, choice-order and observer defects are rejected in both replay
+directions under both comparison profiles. Arithmetic changes real stores
+while preserving the final result. A real extra singleton ND step is rejected
+by exact comparison and accepted by the explicit stutter projection. Native
+panic remains incomplete in both profiles, confirmed by signal, marker and
+absence of completion. Normal executable hashes stayed unchanged.
+
+The [stutter profile](stutter-comparison.md) coalesces each observation channel
+only between genuine branching choices. It retains full branch descriptors,
+payloads, per-channel order and outcomes. It does not silently admit new event
+schemas, change choice correspondence, or infer cross-channel interleaving.
+Use exact mode for the unchanged baseline and opt into this narrower relation
+when testing additional nonbranching steps. The large campaign ran in exact
+mode; the stutter profile has focused executable and mutation evidence.
+
+The [independent review](interpreter-review.md) assesses this as an adequate
+baseline tool for the first Nice changes, within those explicit limits.
 
 Remaining observation limits are specific: the optimized driver batches many
 tau/evaluation/label transitions; its existing function-call event has no live

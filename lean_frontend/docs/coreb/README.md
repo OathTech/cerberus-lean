@@ -36,9 +36,17 @@ workflow, not a claim that the baseline or a Nice equivalence theorem exists.
 The [interpreter and runner](interpreter-runner.md) contain the current build,
 smoke commands and measured limits. Both complete target paths execute real C,
 with bidirectional choice replay, passive memory/output observations, structural
-artifact comparison and calibration against the existing runner. Generated
-coverage and built source-mutant validation are in progress; construction of
-the two interpreters alone does not complete the Nice tool.
+artifact comparison and calibration against the existing runner. The frozen
+[generated campaign](campaign.md) passed 1,000 defined inputs and 2,000 distinct
+input/tape pairs. Six [built source controls](source-mutations.md) exercise real
+differences, a harmless extra step and native failure. The optional
+[stutter comparison](stutter-comparison.md) permits extra nonbranching steps
+while retaining genuine choice barriers. Exact comparison remains the default.
+
+This is the tested baseline tool for beginning Nice AST/interpreter changes.
+The [review](interpreter-review.md) records the evidence and limitations. No
+Nice checkpoint or checked-control AST node has been introduced yet; future
+nodes and new observation channels need explicit semantics and admission rules.
 
 The [type-separation record](type-separation.md) preserves the earlier first
 checkpoint. Neither checkpoint is a general equivalence result.
