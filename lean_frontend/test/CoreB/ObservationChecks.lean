@@ -16,6 +16,10 @@ private def get {α : Type} : Except String α → IO α
   | .ok value => pure value
   | .error reason => throw (IO.Error.userError reason)
 
+private def failed {α : Type} : Except String α → Bool
+  | .error _ => true
+  | .ok _ => false
+
 private def pointer (allocation address : Int) : CerbMem.PointerValue :=
   .PV (.Prov_some allocation) (.PVconcrete none address)
 
@@ -50,8 +54,8 @@ def tests : IO Unit := do
     ((← get (traceDelta [first] [third, second, first])) == #[encodedSecond, encodedThird])
   check "old events not re-emitted" ((← get (traceDelta [first] [first])) == #[])
   check "first event not lost" ((← get (traceDelta [] [first])) == #[encodedFirst])
-  check "trace shrink refused" ((traceDelta [second, first] [first]).isError)
-  check "trace replacement refused" ((traceDelta [first] [second]).isError)
+  check "trace shrink refused" (failed (traceDelta [second, first] [first]))
+  check "trace replacement refused" (failed (traceDelta [first] [second]))
   check "duplicate labels retained"
     (ObservationA.stepInfo (.SK_misc ["x", "x"]) != ObservationA.stepInfo (.SK_misc ["x"]))
   check "A/B step payload shapes match"
@@ -61,7 +65,7 @@ def tests : IO Unit := do
   check "A/B result payload shapes match"
     ((← get (ObservationA.coreValue valueA)) == (← get (ObservationB.coreValue valueB)))
   check "signed zero retained" ((← get (floatPayload 0.0)) != (← get (floatPayload (-0.0))))
-  check "unrepresentable NaN payload refused" ((floatPayload (0.0 / 0.0)).isError)
+  check "unrepresentable NaN payload refused" (failed (floatPayload (0.0 / 0.0)))
   let reasons : List undefined_behaviour := [.UB001, .DUMMY "first", .DUMMY "second"]
   let reason : kill_reason String := .Undef0 .unknown reasons
   let encoded := killPayload toJson reason
@@ -83,7 +87,15 @@ def tests : IO Unit := do
   check "fuel exhaustion incomplete"
     ((completeKind (.incomplete "fuel" : Choice.Outcome Unit String)).isNone)
   check "empty ND incomplete" ((completeKind (.empty : Choice.Outcome Unit String)).isNone)
-  IO.println "Core/CoreB observation checks passed (23 checks)"
+  let cli := ["--runtime", "runtime", "--input", "input", "--tape", "tape",
+    "--mode", "record", "--fuel", "100", "--core-build", "A", "--coreb-build", "B"]
+  check "LP64 maximum admitted" (!(failed (parseOptions (cli ++ ["--address-space-top", "18446744073709551615"]))))
+  check "LP64 overflow refused" (failed (parseOptions (cli ++ ["--address-space-top", "18446744073709551616"])))
+  check "nondecimal top refused" (failed (parseOptions (cli ++ ["--address-space-top", "1_000"])))
+  check "zero top refused" (failed (parseOptions (cli ++ ["--address-space-top", "0"])))
+  check "unsupported recipe option refused"
+    (failed (parseOptions (cli ++ ["--address-space-top", "1000", "--switches", "PNVI"])))
+  IO.println "Core/CoreB observation checks passed (28 checks)"
 
 end CoreBDiff.ObservationChecks
 
