@@ -183,12 +183,13 @@ witnesses and are not "thinly tested": they do not answer.
    (`scripts/check_anonymous_members_refusal.sh`, row 1, likewise — every witness pins its whole text on both engines) and the
    compound-assignment refusal (`scripts/check_compound_assignment_refusal.sh`, row 1, likewise, the location included).
    The one fork-ahead FIX (D14, not a refusal) has its own witness: `scripts/check_macro_type_ranks.sh` (row 1) pins gcc
-   13's line on BOTH engines for 104 of 126 programs over the macro integer types' arithmetic (macro-versus-macro
-   pairs and the limit macros included; 2 programs pin the fork's declared residuals, 1 the tray-62 crash), with
+   13's line on BOTH engines for 98 of its 114 core programs over the macro integer types' arithmetic (macro-versus-macro
+   pairs included; 2 programs pin the fork's declared residuals, 1 the tray-62 crash), with
    pristine's pre-fix lines as the negative control, so a return to the narrowing turns the gate red; and it pins
-   PRISTINE's line on both engines for 19 programs with a `wchar_t` or `wint_t` operand (the correction of 2026-11-14),
+   PRISTINE's line on both engines for 13 programs with a `wchar_t` or `wint_t` operand (the correction of 2026-11-14),
    with the fork's lines of 2026-11-04 to 2026-11-14 as their negative control, so a return of `int`'s rank for those
-   two types turns it red too.
+   two types turns it red too. Twelve more generated programs (6 gcc-pinned limit-macro programs, 6 KEPT matrices)
+   run under `--full`, Tier B row 16; their generator is committed beside them (`tests/macro_type_ranks/generate.py`).
    The second fork-ahead FIX (D15) has its own witness: `scripts/check_stdio_exit.sh` (row 1) pins ONE line on BOTH
    engines for 46 libc-mode programs over termination — 34 gcc 13's line, 6 the fork's declared line with gcc's beside
    it, a D2 gap control and five nolibc controls — with pristine's lines as the negative control (33 moved), so a return
@@ -361,15 +362,20 @@ witnesses and are not "thinly tested": they do not answer.
   both rank operands are normalised through `Implementation.normalise_integerType` before the comparison (the alias
   table the layout and range functions already used; an enum to its compatible type) — **except `Wchar_t` and
   `Wint_t`, which are compared as upstream compares them** ([USER 2026-11-14] for `wchar_t`: its rank comparisons are
-  upstream's exactly, defects included, not a refusal and not a repair of its signedness; `wint_t` with it, the same
-  mechanism, measured [AGENT 2026-11-14]; record `docs/2026-11-14_wchar-rank-record.md`). The reason: the alias table
+  upstream's exactly, defects included, not a refusal and not a repair of its signedness; [USER 2026-11-14] for
+  `wint_t` too: the worker extended the exclusion to it on a measurement and the operator approved the extension as
+  the same defect and the same mechanism; record `docs/2026-11-14_wchar-rank-record.md`). The reason: the alias table
   says `signed int` for both, while the memory model gives `wchar_t` the unsigned range (`WCHAR_MAX` is 4294967295)
   and `wint_t` `[0, 2^31-1]` — upstream's open inconsistency (tray 62); a rank taken from the alias made the two
   types promote to `int` against those ranges, and the fork then answered where upstream had left the question open
   (`WCHAR_MAX > 0` was 0, `WINT_MIN > -1` was 1; pristine and gcc: 1 and 0). `rank_operand` leaves the two
   constructors bare and the table answers upstream's `false` for a pair with one of them ahead of the catch-all, so
-  every program with a `wchar_t` or `wint_t` operand prints pristine's line (14,309 of 14,309 measured), upstream's
-  narrowing of `wchar_t` against the `int` family and its false `UB036` verdicts included. The table carries the two
+  every rank comparison with a `wchar_t` or `wint_t` operand is upstream's, and a program WHOSE ONLY MACRO-TYPED
+  OPERANDS ARE `wchar_t`/`wint_t` prints pristine's line (14,309 of 14,309 measured one-expression programs),
+  upstream's narrowing of `wchar_t` against the `int` family and its false `UB036` verdicts included. The equality is
+  not claimed for a program that also has an operand of another macro type: that operand keeps this decision's rule
+  (`wchar_t x = 5; size_t sz = 3; int i = -3; (x+sz)+i` is 5, gcc's value, where pristine prints 4294967301 — `x+sz`
+  is typed `size_t` and `size_t + int` is D14's fix; the pre-merge review's F4). The table carries the two
   `long long` rows (the standard's top rank; they answer what the catch-all answered for those pairs, which reach it
   from `usual_arithmetic_integer`'s bullets on equal promoted types), and the catch-all is a loud `error`; under CHERI
   upstream's reading is kept verbatim (`intptr_t` is a capability type there; its rank rule is upstream's; CHERI is
@@ -392,8 +398,9 @@ witnesses and are not "thinly tested": they do not answer.
   rows in the pristine register; the N4 witness moved from 016 to `042-strlen-unterminated-loc.c`. Witness:
   `scripts/check_macro_type_ranks.sh` (row 1). Not an override of a judgement: the code's own comment called the
   catch-all wrong, and the delta leaves when upstream absorbs the fix (the fork-drift manifest's `ailTypesAux` rows).
-  **Corrected 2026-11-14** (`docs/2026-11-14_wchar-rank-record.md`): from 2026-11-04 (`bb6e8e9f9`) to the landing of
-  `fix/wchar-rank` the rule included `wchar_t` and `wint_t`, and the mainline answered `WCHAR_MAX > 0` with 0 on both
+  **Corrected 2026-11-14** (`docs/2026-11-14_wchar-rank-record.md`): from `9b15a1f69` (2026-11-04, the first
+  defective commit) up to but not including `0b10975b6` (M1 of `fix/wchar-rank`, the first fixed one; 59 mainline
+  commits to `06afa3ef7` and the branch's charter commit) the rule included `wchar_t` and `wint_t`, and the mainline answered `WCHAR_MAX > 0` with 0 on both
   engines — a silent wrong answer the fork had introduced, found 2026-11-10; 483 of 54,329 measured one-expression
   programs differed from both pristine and gcc in that period, every one with a `wchar_t` or `wint_t` operand, none
   after. The witness pins the affected rows to pristine's line (the KEPT rows) with the period's lines as their

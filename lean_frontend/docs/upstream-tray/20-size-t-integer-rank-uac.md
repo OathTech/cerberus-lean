@@ -145,9 +145,28 @@ a `size_t` operand disappears from the elaborated Core (247 in the shipped libc)
 and `strcspn`/`strstr` behave.
 
 `wchar_t` and `wint_t` are not normalised, and the table answers `false` for a pair with one of them where your
-catch-all did, so with the patch every program with a `wchar_t` or `wint_t` operand behaves exactly as it does
-without it (measured: 14,309 one-expression programs over `WCHAR_MIN`/`WCHAR_MAX`/`WINT_MIN`/`WINT_MAX` and
-`wchar_t` objects, identical first line on patched and un-patched Cerberus). Their alias is `signed int` but
+catch-all did, so with the patch every rank comparison that has a `wchar_t` or `wint_t` operand is answered as it is
+without it. For whole programs the claim is this and no wider: **a program whose only macro-typed operands are
+`wchar_t`/`wint_t` behaves with the patch exactly as it does without it** (measured: 14,309 one-expression programs
+over `WCHAR_MIN`/`WCHAR_MAX`/`WINT_MIN`/`WINT_MAX` and `wchar_t` objects, identical first line on patched and
+un-patched Cerberus; an independent reviewer's 13,348 programs over fifteen operand shapes agree). It is NOT true
+of every program that merely contains a `wchar_t`: where another macro-typed operand takes part, the patch changes
+that operand's conversions, which is its purpose. The reviewer's example:
+
+```c
+#include <stddef.h>
+#include <stdio.h>
+int main(void) { wchar_t x = 5; size_t sz = 3; int i = -3; printf("%llu\n", (unsigned long long)((x+sz)+i)); return 0; }
+```
+
+```
+un-patched c3ff8c53f:   Defined {value: "Specified(0)", stdout: "4294967301\n", stderr: "", blocked: "false"}
+with the patch:         Defined {value: "Specified(0)", stdout: "5\n", stderr: "", blocked: "false"}
+gcc 13.3.0:             5
+```
+
+(`--nolibc --exec --batch`, run 2026-11-14.) `x+sz` is typed `size_t` by `usual_arithmetic_integer`'s NON-STD arm,
+and `size_t + int` is then the pair this report is about. Their alias is `signed int` but
 `impl_mem.ml` gives `wchar_t` the unsigned minimum and maximum and `wint_t` a zero minimum (report 62); giving them
 `int`'s rank before that is settled produces wrong answers that un-patched Cerberus does not give. Once the ranges
 follow the alias, the two `match` arms in `rank_operand` and the four table arms can simply be deleted.
@@ -311,7 +330,8 @@ Measured over 54,329 one-expression programs (every limit macro of the shipped `
 with 0, promoted, converted, against `int`/`unsigned`/`long`/`unsigned long` and against each other; `wchar_t`
 objects against every integer type): the first patch differed from both un-patched Cerberus and gcc on 483, every
 one with a `wchar_t` or `wint_t` operand; the corrected patch differs from both on none, and differs from un-patched
-Cerberus on no program with such an operand. The first patch also happened to give gcc's answer on 1,693 programs
+Cerberus on none of those programs whose only macro-typed operands are `wchar_t`/`wint_t` (the qualifier matters:
+see the example under "Proposed remedy"). The first patch also happened to give gcc's answer on 1,693 programs
 where un-patched Cerberus does not (`wchar_t w = 1; long l = 8589934592; w + l` is 1 un-patched, 8589934593 in
 gcc); the corrected patch gives those up, because they came from the same unsound step. They are report 62's to fix.
 

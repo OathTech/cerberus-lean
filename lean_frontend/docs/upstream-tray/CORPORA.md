@@ -94,6 +94,10 @@ objects; `kept_wchar_max_gt_0` is `return WCHAR_MAX > 0;`), `dense_wchar_t_pos`,
 (report 62), which the fork deliberately does not change; where that line differs from `kept.txt`'s, the difference
 is report 62's subject. `d14.txt` is of no use outside the fork (its own lines during a ten-day defect).
 
+Fourteen of the programs are generated (`limits_*`, `kept_limits_*`, `kept_wchar_obj_*`, `kept_wchar_self`): one value
+per expression, selected by measurement. Their generator is `tests/macro_type_ranks/generate.py` (its header says
+what it enumerates and how it selects; it needs a Cerberus build of the tree, an un-forked Cerberus and gcc).
+
 ### `tests/stdio_exit`
 
 All three files: `<name> TAB <line>`. Groups: `flush_*` (14; output left in a `FILE` buffer at termination), `order_*`

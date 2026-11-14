@@ -10,7 +10,9 @@ below is a machine output copied as printed; every count not inside a code block
 - [USER 2026-11-14], as the charter records them: (1) `wchar_t` is taken out of the rank normalisation, its rank
   comparisons returning to upstream's behaviour exactly, defects included, every other macro type keeping D14; not
   a refusal and not a repair of `wchar_t`'s signedness; (2) `tests/mem-scale-probes/micro` is retired.
-- [AGENT 2026-11-14, worker] `wint_t` leaves the normalisation with `wchar_t`. The charter asked for a measurement
+- [USER 2026-11-14] `wint_t` leaves the normalisation with `wchar_t`: the operator approved the extension as the
+  same defect and the same mechanism (ruled after the pre-merge review's F7; before that it stood as the worker's
+  decision, [AGENT 2026-11-14], under the charter's delegation). How it arose: the charter asked for a measurement
   and gave the rule (a row where the fork differs from both pristine and gcc is a second regression, fixed the same
   way if it is the same mechanism). Measured, §1.3: `WINT_MIN > -1`, `WINT_MAX > -1` and `~WINT_MIN < 0` answered 1
   on both fork engines and 0 on pristine and gcc. The mechanism is the same one (`Wint_t` normalised to `Signed
@@ -22,8 +24,17 @@ below is a machine output copied as printed; every count not inside a code block
   is what "upstream's behaviour exactly" needs and nothing more; the catch-all stays loud for every other
   constructor.
 - [AGENT 2026-11-14, worker] A pair that mixes `wchar_t` or `wint_t` with another macro type is treated by the
-  same two edits (the other operand is still normalised). Measured, §3.2: all 6,094 such rows of the vicinity print
-  pristine's line, so the charter's equality holds for mixed programs as well and no third rule was needed.
+  same two edits (the other operand is still normalised), and no third rule was added. Measured, §3.2: all 6,094
+  such rows of the vicinity print pristine's line — but every one of them is a single two-operand expression. The
+  equality the slice claims is the charter's narrow one (programs whose only macro-typed operands are
+  `wchar_t`/`wint_t`); a three-operand program with another macro type is NOT equal to pristine in general (§3.2,
+  the pre-merge review's F4, which corrected an over-wide statement of this bullet).
+- [AGENT 2026-11-14, orchestrator, on the pre-merge review's F5, under the gate-cruft rule] Row 1 keeps a CORE of the
+  witness at about the leg's pre-slice cost; the six `limits_*` programs and the six bulk KEPT matrices run under
+  `--full` as Tier B row 16, same programs and pins; the generator of the generated programs is committed beside
+  them (§4.1).
+- [USER 2026-11-14] The mainline commit subjects from before the rule of 2026-10-16 that carry quoted phrases are
+  grandfathered; history is not rewritten (§8).
 - [AGENT 2026-11-14, worker] `scripts/build_provider_smoke.py` is kept and reads the pin from the manifest: row 1
   runs its entry through `scripts/test_release.py`, so it is not a script nothing runs (§6).
 - [AGENT 2026-11-14, worker] The existing `wchar_t` witness rows are re-pinned to pristine's line, not deleted, and
@@ -139,6 +150,11 @@ a pair with `Wchar_t` that changes no answer (a normalised type is a standard ty
 and `(Wchar_t, standard)` and `(macro, Wchar_t)` are `false` on both sides). `eq_integer_rank` needs no arm: a
 bare `Wchar_t` equals only itself. Under CHERI nothing changes (`rank_operand` was already the identity there, and
 the new arms answer what the CHERI catch-all answers). This argument is a reading; §3 is the measurement.
+One pair that was loud is now a silent `false` (the pre-merge review's F8): a bare `Wchar_t`/`Wint_t` first operand
+against `Ptraddr_t`, which before arrived as `(Signed Int_, Ptraddr_t)` and fell to the loud catch-all; it is
+upstream's answer for a `wchar_t` pair, and it cannot be reached from C outside CHERI, where a `__cerbty_ptraddr_t`
+operand is stopped before any rank comparison on the oracle, pristine and Lean (`internal error: ptraddr_t is
+CHERI-specific`; the reviewer's twelve programs).
 
 Generated delta, read against trees generated from `6ae2434c9` by the same lem in a scratch worktree (`diff -rq`):
 
@@ -217,9 +233,23 @@ and every single-operand `wchar_t`/`wint_t` row; the witness, §4, runs Lean on 
 
 Read as: `a → b` is the count before the fix and after it; a single number did not change.
 
-- **The equality the charter states holds.** Rows with a `wchar_t`/`wint_t` operand where the fixed fork differs
-  from pristine: 0 of 14,309 (the 6,094 rows that mix one with another limit macro, macro type or enum included).
-  Rows without one where the fixed fork differs from the fork before: 0 of 40,020.
+- **The equality the charter states holds, in the charter's form.** The charter's statement is about programs
+  whose ONLY macro-typed operands are `wchar_t`/`wint_t`. Rows with a `wchar_t`/`wint_t` operand where the fixed
+  fork differs from pristine: 0 of 14,309; the 6,094 of them that mix one with another limit macro, macro type or
+  enum are equal too, but each is one two-operand expression, and that does NOT generalise (the pre-merge review's
+  F4; an earlier text of this record, CONTRACT D14, VALIDATION and tray 20 said "every program with a `wchar_t` or
+  `wint_t` operand", which is false). The reviewer's counter-example, reproduced by the worker 2026-11-14,
+  `wchar_t x = 5; size_t sz = 3; int i = -3;` printing `(x+sz)+i` as `%llu` (fixed fork; pristine; gcc):
+
+  ```text
+  Defined {value: "Specified(0)", stdout: "5\n", stderr: "", blocked: "false"}
+  Defined {value: "Specified(0)", stdout: "4294967301\n", stderr: "", blocked: "false"}
+  5
+  ```
+
+  `x+sz` is typed `size_t` by upstream's NON-STD arm and `size_t + int` is then D14's fix: the behaviour is right,
+  the sentence was wrong. Rows without a `wchar_t`/`wint_t` operand where the fixed fork differs from the fork
+  before: 0 of 40,020.
 - **The regression is gone and was 483 rows wide, not one.** Rows where the fork differed from both pristine and
   gcc: 483 before, 0 after; all 483 had a `wchar_t` or `wint_t` operand. 100 of them now agree with both; 383 are
   now pristine's line where gcc differs (upstream's own behaviour).
@@ -370,7 +400,9 @@ fork's again; tray 62 carries them.
 
 ## 4. The witness (`scripts/check_macro_type_ranks.sh`, row 1; `tests/macro_type_ranks/`, 126 programs)
 
-The script had one class of pinned row (gcc's line on both engines) and now has two.
+The script had one class of pinned row (gcc's line on both engines) and now has two. This section describes the
+witness as M1 committed it (one mode, 126 programs, eight plants); §4.1 is what the pre-merge review changed, and
+is the present shape.
 
 - **KEPT rows (19; `kept.txt`).** A row named in `kept.txt` is pinned to PRISTINE's line: the script fails the row
   unless its line in `expected.txt` equals its line in `pristine.txt` (check K0), then requires both engines to
@@ -457,6 +489,100 @@ load 9. The record of 2026-11-04 gives about 60 s for the self-test
 and the real run of the 106-program set, so this leg costs about two and a half times what it did: 20 more programs,
 15,790 expressions in the 14 generated ones (derived: the sum of the line above). Named in §8 as a trim the
 orchestrator may want.
+
+### 4.1 After the pre-merge review (F5, F6): a row-1 core, `--full` as Tier B row 16, the generator committed
+
+Ruling [AGENT 2026-11-14, orchestrator] under the gate-cruft rule, on the reviewer's F5: the leg as M1 committed it
+was a measurement kept as a gate. Same programs, same pin files; what changed is which mode runs them.
+
+- **CORE (default; row 1): 114 programs** = 98 gcc-pinned + 13 KEPT + 2 residual + 1 gap. The KEPT rows of the core:
+  the five hand-written programs (the reproducer family), the five re-pinned rows of 2026-11-04 with
+  `dense_wchar_vs_macro_pos`, and one generated matrix per type (`kept_limits_wchar`, `kept_limits_wint`).
+- **`--full` (Tier B row 16, `scripts/LADDER.md`): all 126** = 104 + 19 + 2 + 1: the core plus the twelve programs of
+  the script's `FULL_ONLY` list — the six gcc-pinned `limits_*` programs (7,337 expressions) and the six bulk KEPT
+  matrices (`kept_limits_pairs_1..2`, `kept_wchar_obj_std_200000005`, `kept_wchar_obj_std_2147483647`,
+  `kept_wchar_obj_macro`, `kept_wchar_self`; 6,798 expressions). A `FULL_ONLY` name that is not a pinned program
+  fails either mode. The class counts are pinned per mode. The printf witness's split is the precedent
+  (`scripts/check_printf_refusals.sh`).
+- **Plants (F6): seven, was eight.** `lean-d14` is dropped: on the same rows `lean-fixed` already shows that a wrong
+  Lean line on a KEPT row fails. `d14-pair` now runs on EVERY KEPT row of the mode and on nothing else (13 rows in
+  the core, 19 under `--full`; expected 2 failing checks per row: 26 / 38), and the selftest refuses to run unless
+  every one of those rows has a `d14.txt` line that differs from its pin, so all 19 lines of the file are read under
+  `--full` and 13 in row 1. Since both of its engines are replay stubs, its Cabs export is a placeholder, not a real
+  oracle run. `expect-tamper` and `kept-tamper` run on their one tampered row. To stay inside the cost bound the
+  plant subset's KEPT rows are the two one-line reproducers and one `Undefined` row (the `WCHAR_*` matrix is no
+  longer run by five plants; it is the row `kept-tamper` alters), and the subset's sixth moved row is
+  `audit_rank_size_t_compound` (0.3 s) where M1 had put `dense_intmax_t_pos` (1.1 s) in the place
+  `dense_wchar_t_pos` had left. The counts of the first five plants are unchanged (18/9/13/19/2).
+- **The generator: `tests/macro_type_ranks/generate.py`**, committed beside the fourteen programs it produces. It is
+  the scratch generator of §3.1 and the witness generator of this section, re-created from the worker's session
+  after the scratch had been deleted (they were gone at M3: the reviewer's point), reduced to the three referees
+  the selection reads (this tree's oracle, an un-forked Cerberus given on the command line, gcc with its UBSan
+  build) and to the 17,652 of the 54,329 enumerated rows that a program can select. `--check` re-measures and
+  compares each emitted program with the committed file; `--emit DIR` writes them. It names no path of this box.
+  It does not write pin lines: those are each engine's own line for the emitted program. Verbatim, 2026-11-14, on
+  the built tip tree against `deps/cerberus-upstream` at `c3ff8c53f`:
+
+  ```text
+  generate.py: 54329 rows enumerated, 17652 measured (the rows a program can select)
+  generate.py: oracle: 17652 rows measured, 15902 with a value
+  generate.py: pristine: 17652 rows measured, 15855 with a value
+  generate.py: gcc: 558 groups, 17142 rows with a value, 510 undefined in gcc's types
+  generate.py: emitted kept_limits_wchar (822), kept_limits_wint (833), kept_limits_pairs_1 (1123), kept_limits_pairs_2 (1122), kept_wchar_obj_std_200000005 (1496), kept_wchar_obj_std_2147483647 (1382), kept_wchar_obj_macro (1497), kept_wchar_self (178), limits_header_1 (1235), limits_header_2 (1235), limits_header_3 (1235), limits_header_4 (1233), limits_direct_1 (1581), limits_pairs_1 (818)
+  generate.py: CHECK OK (14 programs, 15790 expressions: each emitted file is byte-identical to the committed one)
+  ```
+
+  (`time`: 3:21.87 total at `--jobs 6`.) Plant: with one space inserted into the committed `kept_wchar_self.c`,
+  `--check` exits 1:
+
+  ```text
+  generate.py: CHECK FAILED -- kept_wchar_self: differs from the committed file
+  ```
+
+  It is a claim-point instrument, not a ladder row: it needs an un-forked Cerberus build. When tray 62 is settled
+  upstream, at a merge-base bump, or when the shipped headers' limit macros change (the script stops if the
+  enumeration is no longer 54,329 rows), re-run it and re-derive the pins of the programs that moved.
+- **Cost, measured 2026-11-14 on an idle box (load 1 to 2), `time` totals.** The pre-slice leg cannot be run as it
+  was on a fixed tree (its five `wchar_t` pins fail), so it was replicated: the script and the 106-program set of
+  `06afa3ef7` in a scratch worktree on today's binaries, with the `wchar_t` pins set to today's lines and
+  `dense_intmax_t_pos` in the plant subset for `dense_wchar_t_pos` — the same 106 programs and five plants on ten
+  programs, every plant at its 2026-11-04 count (16/8/10/17/2).
+
+  | leg | `--selftest` (plants + real run) | real run alone |
+  |---|---|---|
+  | pre-slice replica (106 programs, 5 plants) | 62.85 s and 62.02 s (two runs) | 43.3 s |
+  | M1 as committed (126 programs, 8 plants) | 2 min 17 s (worker), 2 min 14 s (reviewer) | 87 s, 84 s |
+  | core, row 1 (114 programs, 7 plants) | 62.88 s and 63.48 s (two runs) | 47.5 s, 48.6 s |
+  | `--full`, Tier B row 16 (126 programs, 7 plants) | 1 min 40.97 s and 1 min 41.83 s | 87.4 s |
+
+  The core is at the pre-slice leg's cost to within the run-to-run spread, 0 to 1.5 s above it and not below: its
+  real run is about 4 to 5 s longer (8 more programs, the two per-type matrices 1.9 s each) and its plants about 4 s
+  shorter. The ruling's bound was that cost or less; this is what was reached without thinning the 2026-11-04 plants
+  further.
+
+Verbatim, the tip tree (`--selftest`, then `--selftest --full`):
+
+```text
+check_macro_type_ranks: selftest plant 'pristine-pair' caught: 18 failing check(s) (= expected 18; incl. the required programs)
+check_macro_type_ranks: selftest plant 'lean-pristine' caught: 9 failing check(s) (= expected 9; incl. the required programs)
+check_macro_type_ranks: selftest plant 'lean-fixed' caught: 13 failing check(s) (= expected 13; incl. the required programs)
+check_macro_type_ranks: selftest plant 'oracle-rc' caught: 19 failing check(s) (= expected 19; incl. the required programs)
+check_macro_type_ranks: selftest plant 'expect-tamper' caught: 2 failing check(s) (= expected 2; incl. the required programs)
+check_macro_type_ranks: selftest plant 'd14-pair' caught: 26 failing check(s) (= expected 26; incl. the required programs)
+check_macro_type_ranks: selftest plant 'kept-tamper' caught: 1 failing check(s) (= expected 1; incl. the required programs)
+check_macro_type_ranks: OK (core, row 1; the six limits_* programs and the six bulk KEPT matrices run in --full: 114 programs: 98 batch lines of both engines = gcc 13's pinned line, exit codes equal — the dense per-type matrices (every standard partner and both enums, both operand orders, every operator and op=, positive and negative values) for size_t, ptrdiff_t, intptr_t, uintptr_t, intmax_t, uintmax_t and the two enums, the two macro-versus-macro matrices, the promotion probes, the direct __cerbty_* families, the limit macros of the shipped headers other than WCHAR_*/WINT_* and the direct __cerbvar_* limit spellings, tray 20's reproducer, the consumer's three programs, the audit's Set A probes, the measured siblings and the cluster K controls, 48 of them moved from pristine's pre-fix lines; 13 KEPT rows = pristine's line on both engines, upstream's behaviour for wchar_t and wint_t kept (8 of them Undefined, exit 1; 2 equal to gcc's line beside, 11 not): the reproducer WCHAR_MAX > 0 and its wint_t sibling, the WCHAR_*/WINT_* limit macros, wchar_t objects against every standard partner, the enums, the other macro types and themselves; 2 lines pinned to the fork's declared residuals (the intptr_t-against-unsigned false UB036 from the upstream NON-STD typing arm, filed; the size_t/intptr_t-against-long-long typing codes); 1 gap control: the negative wchar_t store still crashes both engines (tray 62, unchanged))
+```
+
+```text
+check_macro_type_ranks: selftest plant 'pristine-pair' caught: 18 failing check(s) (= expected 18; incl. the required programs)
+check_macro_type_ranks: selftest plant 'lean-pristine' caught: 9 failing check(s) (= expected 9; incl. the required programs)
+check_macro_type_ranks: selftest plant 'lean-fixed' caught: 13 failing check(s) (= expected 13; incl. the required programs)
+check_macro_type_ranks: selftest plant 'oracle-rc' caught: 19 failing check(s) (= expected 19; incl. the required programs)
+check_macro_type_ranks: selftest plant 'expect-tamper' caught: 2 failing check(s) (= expected 2; incl. the required programs)
+check_macro_type_ranks: selftest plant 'd14-pair' caught: 38 failing check(s) (= expected 38; incl. the required programs)
+check_macro_type_ranks: selftest plant 'kept-tamper' caught: 1 failing check(s) (= expected 1; incl. the required programs)
+check_macro_type_ranks: OK (--full, Tier B: every program: 126 programs: 104 batch lines of both engines = gcc 13's pinned line, exit codes equal — the dense per-type matrices (every standard partner and both enums, both operand orders, every operator and op=, positive and negative values) for size_t, ptrdiff_t, intptr_t, uintptr_t, intmax_t, uintmax_t and the two enums, the two macro-versus-macro matrices, the promotion probes, the direct __cerbty_* families, the limit macros of the shipped headers other than WCHAR_*/WINT_* and the direct __cerbvar_* limit spellings, tray 20's reproducer, the consumer's three programs, the audit's Set A probes, the measured siblings and the cluster K controls, 51 of them moved from pristine's pre-fix lines; 19 KEPT rows = pristine's line on both engines, upstream's behaviour for wchar_t and wint_t kept (8 of them Undefined, exit 1; 2 equal to gcc's line beside, 17 not): the reproducer WCHAR_MAX > 0 and its wint_t sibling, the WCHAR_*/WINT_* limit macros, wchar_t objects against every standard partner, the enums, the other macro types and themselves; 2 lines pinned to the fork's declared residuals (the intptr_t-against-unsigned false UB036 from the upstream NON-STD typing arm, filed; the size_t/intptr_t-against-long-long typing codes); 1 gap control: the negative wchar_t store still crashes both engines (tray 62, unchanged))
+```
 
 ## 5. Moved rows, pins and registers
 
@@ -554,9 +680,11 @@ the program-data parameters; found at the Lean 4.35 move) and no ladder row buil
   `scripts/fork_drift_manifest.txt` `[meta] lem-pin` — the value `check_pin_sites.sh` holds every site to — and
   fails closed on a missing or malformed pin; `PACKAGES` drops the micro package and the runtime-pin plant uses
   speclab's manifest. NOT verified: the rehearsal itself (cold worktrees of both repositories, about an hour of
-  builds) was not run, and its compiler check still compares `lem -v` with `'Lem ' + LEM_REV[:7]`, a form lem has
-  not printed since the `git describe --long` versions of 2026-09-25 — the script would stop there. Logged in
-  `TODO.md`; not this slice's to repair.
+  builds) has not been run since 2026-09 and was not run here. An earlier text of this record and of the `TODO.md`
+  entry asserted that it would stop at its compiler check; that was wrong (the pre-merge review's F3): the script
+  builds lem with `LEMVERSION=<7 hex>` on the make command line (`build_provider_smoke.py:148-149`), which
+  overrides lem's own `git describe` version, so the lem it builds prints the form its check compares with, by the
+  reviewer's reading and the worker's re-reading. The entry now says "unverified" and asserts nothing.
 - `scripts/LADDER.md` (the instruments table and row 1's "3 lake-manifests"), `scripts/test_unit.sh` and
   `scripts/check_no_fuel_numerals.sh` (comments), `lean_frontend/CLAUDE.md` (the gate list's "three
   lake-manifests"), `VALIDATION.md` (the warnings-are-errors coverage sentence, the gate table's pin-site row, the
@@ -651,6 +779,14 @@ translation-fuel: PASS (two dead-code witnesses, constant-expression refusal in 
 
 The row took 24 min on M1 and 31 min on the tip; the box's load differed, no leg was added.
 
+### 7.3 After the pre-merge review (`fc505be99`, then the documents)
+
+The review is `2026-11-14_wchar-rank-premerge-review.md` (committed on the branch by the orchestrator, `45388a14c`;
+no P1, five P2, five P3); its "Dispositions" section answers each finding. Code and witness: `fc505be99` (§4.1 has
+its lines and times: both modes of the witness with their selftests, `generate.py --check` and its plant,
+`python3 scripts/test_release.py` `Ran 16 tests` `OK`). Row 1 as a whole was not re-run after it; Tier A and the
+battery on the new tip are the orchestrator's.
+
 ## 8. Not done, open, observed
 
 - **Not run by the worker:** Tier A as a tier (rows 6 to 14 not at all), Tier B (the pristine lane, row 10,
@@ -660,10 +796,9 @@ The row took 24 min on M1 and 31 min on the tip; the box's load differed, no leg
   from 2026-11-04 to 2026-11-14 have upstream's (§3.2); the false `UB036` verdicts and the narrowing against the
   `int` family are back; the negative-store crash never left. Tray 62 carries all of it, with the `wint_t` and
   limit-macro table added in this slice.
-- **The witness leg is two and a half times as slow** (§4: 87 s for the real run where the whole leg took about
-  60 s). 15,790 pinned expressions in 14 generated programs is deliberate for the 8 KEPT ones (the regression was
-  483 rows wide and nothing pinned any of them); the 6 gcc-pinned `limits_*` programs (7,337 expressions) cover
-  types this slice did not change and are the candidate if the orchestrator wants the leg shorter.
+- **The witness leg's cost: resolved after the review** (F5, §4.1). As first committed the leg was two and a half
+  times as slow as before the slice; row 1 now runs a 114-program core at the pre-slice leg's cost and the twelve
+  bulk generated programs run under `--full` (Tier B row 16).
 - **Observed in the vicinity, upstream's, not filed by this slice** (fork = pristine; none is a regression):
   `MB_LEN_MAX`, `SIG_ATOMIC_MIN` and `SIG_ATOMIC_MAX` are `#define`d by the shipped `<limits.h>`/`<stdint.h>` to
   `__cerbvar_*` names the front end does not declare (any use is `error: use of undeclared identifier`); the narrow
@@ -671,16 +806,30 @@ The row took 24 min on M1 and 31 min on the tip; the box's load differed, no leg
   `CHAR_MIN`/`CHAR_MAX`, `SCHAR_*`, `UCHAR_MAX`, `SHRT_*`, `USHRT_MAX`); `WCHAR_MAX > 0` and `0 < WCHAR_MAX`
   disagree on pristine (now in tray 62's table). Each wants a tray report or a line in an existing one: an
   orchestrator call.
-- **`scripts/build_provider_smoke.py`'s rehearsal is unverified and its `lem -v` comparison is stale** (§6).
+- **`scripts/build_provider_smoke.py`'s rehearsal is unverified** (§6: not run since 2026-09; the worker's first
+  claim that it would stop at its compiler check was wrong and is withdrawn).
 - **One comment line of `ailTypesAux.lem` is 114 characters long** (the correction's cross-reference, inside the
   D14 comment); left, because reflowing it re-pins the manifest rows and re-runs every gate for no behaviour.
-- **cerberus-caesium's pin was not identified** (its `completion/target.toml` names commits this worker could not
-  match to a semantics pin); the note states the affected range and leaves the check to the consumer. cerberus-sl's
-  pin (`2b51d2a57`) predates `bb6e8e9f9` and carries neither D14 nor the defect.
+- **cerberus-caesium's present pin carries the defect** (the pre-merge review's F1; the worker had failed to find
+  the pin): `deps/refinedc-lean/scripts/semantics-pin.env:26`, `CERBERUS_LEAN_COMMIT="03c8b4451ff08830306d687e639f7dc57baf6827"`
+  (read by the worker 2026-11-14), the mainline head after the formatter landing of 2026-11-09, a descendant of
+  `9b15a1f69`. Its note now says so and what to check. cerberus-sl's pin (`2b51d2a57`, this repository's landing
+  note of 2026-09-23) predates `9b15a1f69` and carries neither D14 nor the defect.
+- **The defective range** (the pre-merge review's F2): `9b15a1f69` up to but not including `0b10975b6`, i.e. the 59
+  mainline commits `9b15a1f69`..`06afa3ef7` and, after a fast-forward, the charter commit `6ae2434c9`. The first
+  text of the notes, CONTRACT D14, VALIDATION and TODO started the range at `bb6e8e9f9`, three commits late; the
+  notes list the range by landing.
+- **Quoted phrases in old commit subjects.** The worker's first report pointed at commit `2b51d2a57` as carrying a
+  quoted operator phrase in its subject and described it wrongly: it is a commit of THIS repository (the mainline's
+  landing note of 2026-09-23, which cerberus-sl pins), and it is one of 48 mainline commit subjects dated before
+  the rule of 2026-10-16 that carry such a phrase (the pre-merge review's F9, its count). [USER 2026-11-14]: they
+  are grandfathered; history is not rewritten.
 
 ## 9. Scratch, deleted at close-out
 
-`.tmp/vic/` (the generator, the runners, the five result files, the witness generator and its plan),
+(The generator and witness generator named here were deleted with the scratch at M3 and RE-CREATED after the
+pre-merge review as the committed `tests/macro_type_ranks/generate.py`, §4.1; the five-column vicinity instrument —
+the pre-fix column, the report and statistics scripts — stays deleted.) `.tmp/vic/` (the generator, the runners, the five result files, the witness generator and its plan),
 `.tmp/sweep/`, `.tmp/before/` (the pre-fix oracle, install tree and Lean driver), `.tmp/basewt/` (a detached
 worktree at `6ae2434c9` with its generated trees, removed with `git worktree remove`), `.tmp/patch/`, `.tmp/v/`,
 `.tmp/logs/`. The conclusions are in this record; the instruments are described closely enough in §3.1 and §5.1 to

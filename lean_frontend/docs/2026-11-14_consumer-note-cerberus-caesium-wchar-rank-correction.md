@@ -23,9 +23,26 @@ Both fork engines agreed with each other, so no differential lane saw it.
 
 ## Which pins carry it
 
-Every commit of `mdd/cerberus-lean` from `bb6e8e9f9` (the landing of 2026-11-04) up to, and not including, the
-landing of `fix/wchar-rank`. A pin before `bb6e8e9f9` never had the defect; it has upstream's narrowing of `size_t`
-instead (the 2026-11-04 note).
+Every commit from `9b15a1f69` (the first defective commit, M1 of the 2026-11-04 slice) up to, and not including,
+`0b10975b6` (M1 of `fix/wchar-rank`, the first fixed commit; should the branch be rebased before it lands, its M1
+under the new hash, which the landing note names). The landings were fast-forwards, so every one of these is a
+mainline commit a consumer can pin: the 59 commits `9b15a1f69`..`06afa3ef7` and, once this branch has landed, its
+charter commit `6ae2434c9`. By landing, oldest first:
+
+| mainline head after the landing | date | what landed |
+|---|---|---|
+| `9b15a1f69`, `5dd549e54`, `ab6295a01`, `bb6e8e9f9`, then `fc3961dc5` (the landing note) | 2026-11-04/05 | the macro-type-rank slice itself: DEFECTIVE FROM ITS FIRST COMMIT |
+| `1e5f2cbca` | 2026-11-07 | program termination (D15) |
+| `67cf74c09` | 2026-11-09 | the three oracle half-mirrors |
+| `68470dc91` | 2026-11-09 | the constant-expression predicates (D17) |
+| `03c8b4451` | 2026-11-09 | the formatter's refusals and fixes (D16) |
+| `a5ff9d42e` | 2026-11-10 | the roadmap of 2026-11-10 |
+| `300d78624` | 2026-11-14 | the lem TODO 54 re-pin |
+| `06afa3ef7` | 2026-11-10 (commit date) | the reporting slice's documents |
+
+and every commit between two of these heads. A pin before `9b15a1f69` never had the defect; it has upstream's
+narrowing of `size_t` instead (the 2026-11-04 note). An earlier text of this note gave the range as starting at
+`bb6e8e9f9`: that was three commits too short (pre-merge review F2).
 
 ## Which programs are affected at such a pin
 
@@ -45,12 +62,19 @@ un-forked Cerberus and gcc.
 
 ## What the correction does, and what it deliberately does not
 
-`wchar_t` and `wint_t` are taken out of the rank normalisation ([USER 2026-11-14]; `wint_t` by the same mechanism,
-[AGENT 2026-11-14]). Every rank comparison with one of them is un-forked Cerberus's again, exactly, and so is every
-answer: on all 14,309 measured programs with such an operand the fork prints `c3ff8c53f`'s line. The other macro
-types (`size_t`, `ptrdiff_t`, `intptr_t`, `uintptr_t`, `intmax_t`, `uintmax_t`, the exact-width families, enums)
-keep the rule of 2026-11-04 unchanged: none of the 40,020 measured programs without a `wchar_t`/`wint_t` operand
-moved.
+`wchar_t` and `wint_t` are taken out of the rank normalisation ([USER 2026-11-14] for both: the ruling named
+`wchar_t`, the worker extended it to `wint_t` on a measurement, and the operator approved the extension as the same
+defect and the same mechanism). Every rank comparison with one of them is un-forked Cerberus's again, exactly. What
+follows for a whole program is narrower than "every program that mentions `wchar_t`", and is this: **a program whose
+only macro-typed operands are `wchar_t`/`wint_t` prints `c3ff8c53f`'s line** (all 14,309 measured one-expression
+programs of that shape, and those with one other macro-typed operand in the same two-operand expression). A program
+that ALSO has an operand of another macro type keeps the 2026-11-04 rule for that operand, so it can differ from
+un-forked Cerberus exactly as any `size_t` program does: `wchar_t x = 5; size_t sz = 3; int i = -3;` and
+`(x+sz)+i` is 5 on the fork (gcc: 5) and 4294967301 un-forked, because `x+sz` has type `size_t` and `size_t + int`
+is what the 2026-11-04 fix repairs (the pre-merge reviewer's counter-example, reproduced 2026-11-14). The other
+macro types (`size_t`, `ptrdiff_t`, `intptr_t`, `uintptr_t`, `intmax_t`, `uintmax_t`, the exact-width families,
+enums) keep the rule of 2026-11-04 unchanged: none of the 40,020 measured programs without a `wchar_t`/`wint_t`
+operand moved.
 
 This is a return to upstream's behaviour, defects included; it is not a repair of `wchar_t`. For your comparison of
 the clone against the driver that means, for programs with a `wchar_t` operand:
@@ -63,5 +87,25 @@ the clone against the driver that means, for programs with a `wchar_t` operand:
   answers 1). 1,693 of the measured programs had gcc's answer between the two landings and have upstream's again.
 - A negative value stored into a `wchar_t` object crashes both engines, before, during and after (report 62).
 
-If one of your certified programs uses `wchar_t`, re-run it at the new pin and compare against un-forked Cerberus,
-not against the fork's lines of 2026-11-04 to 2026-11-14.
+## Your present pin carries the defect
+
+`deps/refinedc-lean/scripts/semantics-pin.env:26` reads `CERBERUS_LEAN_COMMIT="03c8b4451ff08830306d687e639f7dc57baf6827"`
+(read 2026-11-14; your `scripts/certificate-pipeline.py` and `scripts/completion-target.py` take the pin from that
+file). `03c8b4451` is the mainline head after the formatter landing of 2026-11-09, inside the range above
+(`git merge-base --is-ancestor 9b15a1f69 03c8b4451` succeeds). So every certificate you state "with respect to
+cerberus-lean" at that pin is with respect to a semantics that answers `WCHAR_MAX > 0` with 0.
+
+What to check, in this order:
+
+1. Whether any program you have certified or compared at a pin in the range has a `wchar_t` or `wint_t` operand in
+   the sense of the section above: `wchar_t` in any declaration or cast, a wide character or string literal (`L'…'`,
+   `L"…"`), `WCHAR_MIN`, `WCHAR_MAX`, `WINT_MIN`, `WINT_MAX`. The pre-merge reviewer's `grep -i` for `wchar_t`,
+   `WCHAR_M` and `wint_t` over your `completion/` and `examples-consumer/` `*.c` found nothing (2026-11-14); that
+   search did not cover wide literals or other directories, and the confirmation is yours.
+2. If there is none: nothing you certified depends on the defect, and the correction changes no line of yours; a
+   re-pin to `0b10975b6`'s landing or later is still due, because the pin's semantics is wrong on programs you have
+   not written yet.
+3. If there is one: re-run it at the new pin and compare against un-forked Cerberus, not against the fork's lines of
+   2026-11-04 to 2026-11-14; its certificate at the old pin is about the defective behaviour.
+
+Do not re-pin to any commit of the range.

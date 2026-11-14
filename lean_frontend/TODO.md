@@ -25,14 +25,21 @@ stays logged as it is. Entries marked DONE or LANDED are records.
   2026-11-10] found by the reporting slice, confirmed by its pre-merge review
   `docs/2026-11-10_reporting-premerge-review.md` F1/F2; closed by `fix/wchar-rank`, record
   `docs/2026-11-14_wchar-rank-record.md`.) `#include <stdint.h>` / `int main(void) { return WCHAR_MAX > 0; }` answered
-  `Specified(0)` on both fork engines from `bb6e8e9f9` on, where pristine `c3ff8c53f` answers `Specified(1)` and gcc 13
+  `Specified(0)` on both fork engines from `9b15a1f69` up to (not including) `0b10975b6`, where pristine `c3ff8c53f` answers `Specified(1)` and gcc 13
   exits 1: D14 (`9b15a1f69`) gave `wchar_t` the rank of `int` while the memory model's `wchar_t` maximum is the unsigned
   one. The cause was established by runs on 2026-11-14 and the defect measured at 483 of 54,329 one-expression
   programs, `wint_t` included (`WINT_MIN > -1` was 1). [USER 2026-11-14] ruled `wchar_t` out of the rank
-  normalisation, its rank comparisons upstream's exactly; `wint_t` left with it. The witness the entry owed is in
-  `scripts/check_macro_type_ranks.sh` (19 KEPT rows pinned to pristine's line, the period's lines their negative
-  control). Still open, upstream's and reported, not the fork's to answer: `wchar_t`'s and `wint_t`'s ranges against
-  their alias (tray 62), with the narrowing and the false `UB036` verdicts that follow from them.
+  normalisation, its rank comparisons upstream's exactly, and approved the same for `wint_t`. The witness the entry
+  owed is in `scripts/check_macro_type_ranks.sh` (13 KEPT rows in row 1 and 6 more under `--full`, pinned to pristine's
+  line, the period's lines their negative control). Still open, upstream's and reported, not the fork's to answer:
+  `wchar_t`'s and `wint_t`'s ranges against their alias (tray 62), with the narrowing and the false `UB036` verdicts
+  that follow from them.
+- **The KEPT witness rows pin upstream's defects for `wchar_t`/`wint_t` as required outcomes, until tray 62 is
+  settled upstream** ([AGENT 2026-11-14], pre-merge review F10). `wchar_t w = 1; long l = 2^33; w + l` must be 1 on
+  both engines, `(w - 200000) < 0` must be a false `UB036`: that is the [USER 2026-11-14] ruling (upstream's
+  behaviour exactly), not an endorsement. When upstream gives the two types one signedness, or at the merge-base
+  bump that brings it: delete the two `match` arms of `rank_operand` and the four table arms, re-run
+  `tests/macro_type_ranks/generate.py`, and re-derive or retire the 19 KEPT rows (`kept.txt`, `d14.txt`).
 
 Current-state reconciliation: 2026-09-25 at Cerberus
 `bb487dda7c56981e76d67f53ae16e874cfe5ed61` and Lem
@@ -163,14 +170,12 @@ of this work's scope.
   no change. [AGENT 2026-11-10] Closed by `fix/wchar-rank` M2 (record
   `docs/2026-11-14_wchar-rank-record.md` §6): the script reads the pin from
   `scripts/fork_drift_manifest.txt` `[meta] lem-pin`, fail-closed. [AGENT 2026-11-14]
-- **`scripts/build_provider_smoke.py`'s rehearsal has not been run since 2026-09 and
-  would stop at its compiler check** (found by reading at `fix/wchar-rank` M2,
-  2026-11-14): `pins()` compares `lem -v` with `'Lem ' + LEM_REV[:7]`, a form lem
-  has not printed since the `git describe --long` versions of 2026-09-25 (the
-  fork-drift gate's rule is a hex-prefix match). Only its cancellation path is
-  exercised (`scripts/test_release.py`, row 1). Fix shape: the hex-prefix rule,
-  then one real rehearsal; or retire the script with its test. Needs a ruling.
-  [AGENT 2026-11-14]
+- **`scripts/build_provider_smoke.py`'s rehearsal is unverified: it has not been run since 2026-09** (noted at
+  `fix/wchar-rank` M2, 2026-11-14, when its hard-coded lem revision was replaced by a read of the manifest's pin).
+  Only its cancellation path is exercised (`scripts/test_release.py`, row 1). Nothing is known to be wrong with it:
+  it builds lem with `LEMVERSION=<7 hex>` on the make command line, so the `Lem <7 hex>` its `pins()` compares with
+  is what that lem prints, by reading (pre-merge review F3, which withdrew this entry's first claim of a stale
+  check). Wanted at some claim point: one real rehearsal. [AGENT 2026-11-14]
 
 - **Lean toolchain bump 4.32.2 → 4.35.0.** Scoped 2026-10-20
   (`docs/2026-10-20_lean-4.35-scoping-record.md`): moderate; the toolchain is

@@ -108,7 +108,9 @@ main(void) { return WCHAR_MAX > 0; }` answered `Specified(0)` on both fork engin
 witness and `(wchar_t)-1 < 0` answered gcc's 1 in the same period. Found on 2026-11-10 (by reading; established by
 runs on 2026-11-14), corrected on 2026-11-14 by taking `wchar_t` and `wint_t` out of the rank normalisation
 (`lean_frontend/docs/2026-11-14_wchar-rank-record.md`): measured over 14,309 one-expression programs with a
-`wchar_t` or `wint_t` operand, the fork prints un-forked Cerberus's first line on every one. Report 20 carries the
+`wchar_t` or `wint_t` operand, the fork prints un-forked Cerberus's first line on every one (the claim is for
+programs whose only macro-typed operands are those two; one that also has, say, a `size_t` operand keeps the fork's
+rank fix for it, report 20). Report 20 carries the
 corrected patch and an account of the first one.
 
 ## `wint_t` and the limit macros, measured 2026-11-14 (un-forked `c3ff8c53f`, gcc 13.3.0 `-std=c11 -w -O0`)

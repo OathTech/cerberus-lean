@@ -23,9 +23,26 @@ Both fork engines agreed with each other, so no differential lane saw it.
 
 ## Which pins carry it
 
-Every commit of `mdd/cerberus-lean` from `bb6e8e9f9` (the landing of 2026-11-04) up to, and not including, the
-landing of `fix/wchar-rank`. A pin before `bb6e8e9f9` never had the defect; it has upstream's narrowing of `size_t`
-instead (the 2026-11-04 note).
+Every commit from `9b15a1f69` (the first defective commit, M1 of the 2026-11-04 slice) up to, and not including,
+`0b10975b6` (M1 of `fix/wchar-rank`, the first fixed commit; should the branch be rebased before it lands, its M1
+under the new hash, which the landing note names). The landings were fast-forwards, so every one of these is a
+mainline commit a consumer can pin: the 59 commits `9b15a1f69`..`06afa3ef7` and, once this branch has landed, its
+charter commit `6ae2434c9`. By landing, oldest first:
+
+| mainline head after the landing | date | what landed |
+|---|---|---|
+| `9b15a1f69`, `5dd549e54`, `ab6295a01`, `bb6e8e9f9`, then `fc3961dc5` (the landing note) | 2026-11-04/05 | the macro-type-rank slice itself: DEFECTIVE FROM ITS FIRST COMMIT |
+| `1e5f2cbca` | 2026-11-07 | program termination (D15) |
+| `67cf74c09` | 2026-11-09 | the three oracle half-mirrors |
+| `68470dc91` | 2026-11-09 | the constant-expression predicates (D17) |
+| `03c8b4451` | 2026-11-09 | the formatter's refusals and fixes (D16) |
+| `a5ff9d42e` | 2026-11-10 | the roadmap of 2026-11-10 |
+| `300d78624` | 2026-11-14 | the lem TODO 54 re-pin |
+| `06afa3ef7` | 2026-11-10 (commit date) | the reporting slice's documents |
+
+and every commit between two of these heads. A pin before `9b15a1f69` never had the defect; it has upstream's
+narrowing of `size_t` instead (the 2026-11-04 note). An earlier text of this note gave the range as starting at
+`bb6e8e9f9`: that was three commits too short (pre-merge review F2).
 
 ## Which programs are affected at such a pin
 
@@ -45,12 +62,19 @@ un-forked Cerberus and gcc.
 
 ## What the correction does, and what it deliberately does not
 
-`wchar_t` and `wint_t` are taken out of the rank normalisation ([USER 2026-11-14]; `wint_t` by the same mechanism,
-[AGENT 2026-11-14]). Every rank comparison with one of them is un-forked Cerberus's again, exactly, and so is every
-answer: on all 14,309 measured programs with such an operand the fork prints `c3ff8c53f`'s line. The other macro
-types (`size_t`, `ptrdiff_t`, `intptr_t`, `uintptr_t`, `intmax_t`, `uintmax_t`, the exact-width families, enums)
-keep the rule of 2026-11-04 unchanged: none of the 40,020 measured programs without a `wchar_t`/`wint_t` operand
-moved.
+`wchar_t` and `wint_t` are taken out of the rank normalisation ([USER 2026-11-14] for both: the ruling named
+`wchar_t`, the worker extended it to `wint_t` on a measurement, and the operator approved the extension as the same
+defect and the same mechanism). Every rank comparison with one of them is un-forked Cerberus's again, exactly. What
+follows for a whole program is narrower than "every program that mentions `wchar_t`", and is this: **a program whose
+only macro-typed operands are `wchar_t`/`wint_t` prints `c3ff8c53f`'s line** (all 14,309 measured one-expression
+programs of that shape, and those with one other macro-typed operand in the same two-operand expression). A program
+that ALSO has an operand of another macro type keeps the 2026-11-04 rule for that operand, so it can differ from
+un-forked Cerberus exactly as any `size_t` program does: `wchar_t x = 5; size_t sz = 3; int i = -3;` and
+`(x+sz)+i` is 5 on the fork (gcc: 5) and 4294967301 un-forked, because `x+sz` has type `size_t` and `size_t + int`
+is what the 2026-11-04 fix repairs (the pre-merge reviewer's counter-example, reproduced 2026-11-14). The other
+macro types (`size_t`, `ptrdiff_t`, `intptr_t`, `uintptr_t`, `intmax_t`, `uintmax_t`, the exact-width families,
+enums) keep the rule of 2026-11-04 unchanged: none of the 40,020 measured programs without a `wchar_t`/`wint_t`
+operand moved.
 
 This is a return to upstream's behaviour, defects included; it is not a repair of `wchar_t`. For a pin at or after the
 landing, for programs with a `wchar_t` or `wint_t` operand:
@@ -69,6 +93,7 @@ landing, for programs with a `wchar_t` or `wint_t` operand:
   failure-reach register and the fuel-form partition are unchanged, kernel replay of the module and its
   measure-proof module exits 0.
 
-Your present pin (`scripts/semantics-pin.env`, `2b51d2a57`, read 2026-11-14) is older than `bb6e8e9f9`: it does not
-carry the defect, and it does not carry the 2026-11-04 fix either. A re-pin should go to the landing of
-`fix/wchar-rank` or later, never into the range above.
+Your present pin (`scripts/semantics-pin.env:26`, `CERBERUS_LEAN_COMMIT="2b51d2a57179d890a51dda404aedf59d80196926"`,
+read 2026-11-14; the mainline's landing note of 2026-09-23) is older than `9b15a1f69`: it does not carry the defect,
+and it does not carry the 2026-11-04 fix either. A re-pin should go to `0b10975b6`'s landing or later, never into
+the range above.

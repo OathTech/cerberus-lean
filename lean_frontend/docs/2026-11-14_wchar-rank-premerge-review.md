@@ -243,3 +243,78 @@ whether history is rewritten is the operator's decision alone.
 
 F1 to F4: four document edits, no rebuild. F5: a decision; if the bulk moves, the script's pinned counts and plant
 arithmetic move with it and the leg is re-run. F7 and F9: a word from the operator. The rest: notes.
+
+## Dispositions
+
+Worker [AGENT 2026-11-14] (Claude Fable 5.2), on the orchestrator's instructions and rulings and two operator
+rulings relayed by the orchestrator, each tagged where it applies. The reviewer's text above is unchanged. Code and
+witness changes are commit `fc505be99`; the document changes are the commit that carries this section. Every finding
+was accepted; none was argued down.
+
+- **F1 (P2), fixed.** The worker read the pin itself: `/home/dev/projects/cerberus-caesium/deps/refinedc-lean/scripts/semantics-pin.env:26`
+  is `CERBERUS_LEAN_COMMIT="03c8b4451ff08830306d687e639f7dc57baf6827"`, and `git merge-base --is-ancestor 9b15a1f69
+  03c8b4451` succeeds. The worker's M3 statement that the pin "was not identified" was a failure to look in the
+  nested repository. `2026-11-14_consumer-note-cerberus-caesium-wchar-rank-correction.md` has a new section, "Your
+  present pin carries the defect": the pin, that its certificates stated with respect to cerberus-lean at that pin
+  are with respect to the defective semantics, and what to check in order (whether any certified or compared
+  program has a `wchar_t`/`wint_t` operand, wide literals included; the reviewer's `grep` is reported with its
+  limits as theirs to confirm; what follows in each case; no re-pin into the range). Record §8 corrected.
+- **F2 (P2), fixed everywhere.** The range is `9b15a1f69` (first defective) up to but not including `0b10975b6`
+  (M1 of this branch, first fixed; or its hash after a rebase). Both consumer notes now list it by landing (the
+  2026-11-04 slice's own four commits and its landing note, then the heads after the five later landings and the
+  reporting slice's documents: 59 mainline commits to `06afa3ef7`, plus the charter commit `6ae2434c9` after a
+  fast-forward), and say that their earlier text was three commits short. CONTRACT D14, VALIDATION, TODO, SUPPORTED
+  and the record carry the same two hashes. Origin, as the orchestrator states it: the charter's wording ("pins
+  from `bb6e8e9f9` up to this landing") was the orchestrator's and was wrong; the worker copied it without checking
+  it against the history, which a `git log` would have settled.
+- **F3 (P2), fixed.** The worker asserted a defect it had not established: it read `pins()`'s comparison and not
+  the `LEMVERSION=` on the make command line that makes the comparison hold. The `TODO.md` entry now says the
+  rehearsal is unverified (not run since 2026-09), asserts no stop and asks for no ruling; record §6 and §8 say the
+  first claim was wrong and is withdrawn. The rehearsal was not run in this pass either (about an hour of cold
+  builds); it stays unverified, stated as such.
+- **F4 (P2), fixed.** The equality is restated in the charter's narrow form wherever it stood: a program whose only
+  macro-typed operands are `wchar_t`/`wint_t` prints pristine's line. Tray 20 (most carefully: it is addressed to
+  upstream) now says the claim is "this and no wider", says in so many words that it is not true of every program
+  that contains a `wchar_t`, and carries the reviewer's counter-example with all three lines, which the worker
+  reproduced on 2026-11-14 (fork `5`, un-patched `4294967301`, gcc `5`). The same qualifier, with the example, is
+  in CONTRACT D14, VALIDATION, both consumer notes, SUPPORTED, tray 62's fork-status paragraph and the record
+  (§0, §3.2). The worker's 6,094 "mixed" rows were all two-operand expressions; the record now says so where it
+  had drawn the wider conclusion from them.
+- **F5 (P2), ruled and done.** Ruling [AGENT 2026-11-14, orchestrator] under the gate-cruft rule: row 1 keeps a core
+  at or below the leg's pre-slice cost; the bulk moves to `--full` as a Tier B row; the generator is committed. Done
+  in `fc505be99` (record §4.1): the core is 114 programs (the 2026-11-04 set with its five re-pinned rows and the
+  split matrix, the five hand-written KEPT programs, `kept_limits_wchar` and `kept_limits_wint`); `--full` is all
+  126 and is Tier B row 16 in `scripts/LADDER.md`; same programs, same pin files, counts pinned per mode. Cost,
+  measured the same day on an idle box: `--selftest` of the core 62.88 s and 63.48 s (two runs) against 62.85 s and 62.02 s for a replica
+  of the pre-slice leg (the 106 programs and five plants of `06afa3ef7` on today's binaries) — at that cost to
+  within the spread of two runs, 0 to 1.5 s above it and NOT below it, said plainly: the bound asked for was that cost or less, and the core's real run is about 4 to 5 s longer than the pre-slice one (47.5 s and 48.6 s against 43.3 s)
+  while its plants are about 4 s shorter. Getting under it needs either a smaller per-type matrix or thinner
+  2026-11-04 plants: the orchestrator's call. `--full --selftest`
+  1 min 40.97 s and 1 min 41.83 s (real run alone 87.4 s). The generator is `tests/macro_type_ranks/generate.py`, re-created from the worker's session (the
+  scratch original was deleted at M3); `--check` regenerates the fourteen committed programs byte for byte
+  (`CHECK OK (14 programs, 15790 expressions: each emitted file is byte-identical to the committed one)`, 3 min
+  22 s), and fails on a one-space plant in a committed file.
+- **F6 (P3), done.** `lean-d14` is dropped (it repeated `lean-fixed` on the same rows). `d14-pair` runs on every
+  KEPT row of the mode and on nothing else: 13 rows and 26 failing checks in the core, all 19 rows of `d14.txt` and
+  38 under `--full`; the selftest stops if any of those rows lacks a D14 line differing from its pin. The reviewer's
+  remark that 14 of the 19 lines could not be checked without a pre-fix binary stands: they were taken by the worker
+  from the oracle built at `06afa3ef7` before the change, a binary that no longer exists; the five the reviewer
+  could check agree.
+- **F7 (P3), ruled.** [USER 2026-11-14]: the extension of the exclusion to `wint_t` is approved, as the same defect
+  and the same mechanism. Recorded as the operator's ruling in the record (§0), CONTRACT D14, the consumer notes,
+  the closed TODO entry, the witness script's header and `kept.txt`'s comment, replacing the worker's [AGENT] tag
+  there. No code change.
+- **F8 (P3), recorded.** One sentence in record §2: the pair `(Wchar_t | Wint_t, Ptraddr_t)` is now a silent
+  `false` where it was loud, it is upstream's answer for a `wchar_t` pair, and it is unreachable from C outside
+  CHERI (a `ptraddr_t` operand is stopped before any rank comparison on all three engines, the reviewer's run 3).
+- **F9 (P3), corrected and ruled.** The worker's final report described `2b51d2a57` wrongly. It is this
+  repository's mainline landing note of 2026-09-23, which cerberus-sl pins; it is not a commit of another
+  repository. [USER 2026-11-14]: the commit subjects from before the rule of 2026-10-16 that carry quoted phrases
+  are grandfathered, and history is not rewritten. The record (§0, §8) says so in a sentence and lists none of
+  them.
+- **F10 (P3), nothing to change in this repository.** The container document is the orchestrator's. The last
+  bullet (the KEPT pins make upstream's `wchar_t` defects required outcomes until tray 62 is settled) is now a
+  standing `TODO.md` entry with what to do when that happens.
+
+Not done in this pass, stated: row 1 as a whole was not re-run after `fc505be99` (its witness leg was, in both
+modes; `test_unit.sh` changed in a comment only); Tier A and the battery are the orchestrator's on the new tip.
