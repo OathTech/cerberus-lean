@@ -6,8 +6,9 @@ import CerbND
 
 /- Focused acceptance helper. One Prepared value feeds both lowerers. It checks
    complete pre-execution artifact correspondence, then calibrates actual C
-   executions against the existing first-path and exhaustive CerbND runners.
-   Exhaustive mode is intentionally for small finite fixtures: MAX_PATHS bounds
+   executions with capture enabled against existing first-path and exhaustive
+   CerbND runners with capture disabled. The comparison projection erases only
+   diagnostic capture data. Exhaustive mode is intentionally for small finite fixtures: MAX_PATHS bounds
    our replay enumeration, while the caller must cap/time-limit the process. -/
 
 namespace CoreBDiff.PairCheck
@@ -79,16 +80,17 @@ private def enumerate {a info err cs st : Type} (fuel maxPaths : Nat)
 private def calibrate {a info err cs st : Type} (fuel maxPaths : Nat)
     (observer : Choice.Observer info err cs st) (expected : Choice.Header)
     (machine : ndM a info err cs st) (state : st)
+    (referenceMachine : ndM a info err cs st) (referenceState : st)
     (projection : Choice.Run a err st → Except String Json) : IO (List Json) := do
   let first ← (CerberusFresh.forceIO (fun () =>
     Choice.run fuel observer (.record .first) expected machine state) : BaseIO _)
   let firstProjection ← unwrap (projection first)
-  let oldFirst ← (CerberusFresh.forceIO (fun () => CerbND.runND1Fuel fuel machine state) : BaseIO _)
+  let oldFirst ← (CerberusFresh.forceIO (fun () => CerbND.runND1Fuel fuel referenceMachine referenceState) : BaseIO _)
   let [row] := oldFirst | fail "existing first-path runner returned other than one complete result"
   let expectedFirst ← unwrap ((fromOld expected row).bind projection)
   require (firstProjection == expectedFirst) "choice runner disagrees with CerbND branch zero"
   let results ← enumerate fuel maxPaths observer expected machine state projection
-  let oldResults ← (CerberusFresh.forceIO (fun () => CerbND.runNDFuel fuel machine state) : BaseIO _)
+  let oldResults ← (CerberusFresh.forceIO (fun () => CerbND.runNDFuel fuel referenceMachine referenceState) : BaseIO _)
   require (!oldResults.isEmpty) "existing exhaustive runner returned no executions"
   require (oldResults.length <= maxPaths) "existing exhaustive runner exceeds MAX_PATHS"
   let oldProjected ← unwrap (oldResults.mapM fun row => (fromOld expected row).bind projection)
@@ -103,6 +105,10 @@ def check (runtime input : String) (fuel top maxPaths : Nat) : IO Unit := do
   let a ← @lowerA ⟨fuel⟩ prepared
   let b ← @lowerB ⟨fuel⟩ prepared
   unwrap (ArtifactCompare.compare a b)
+  let observedA ← unwrap (a.capture true)
+  let observedB ← unwrap (b.capture true)
+  let referenceA ← unwrap (a.capture false)
+  let referenceB ← unwrap (b.capture false)
   let expected : Choice.Header := {
     input := prepared.inputDigest
     prepared := prepared.identity.compress
@@ -111,14 +117,17 @@ def check (runtime input : String) (fuel top maxPaths : Nat) : IO Unit := do
     coreBBuild := "in-process-paired-check"
     origin := "paired" }
   let resultsA ← calibrate fuel maxPaths ObservationA.observer expected
-    (@ExecutionA.action ⟨fuel⟩ a prepared.argv) a.state
+    (@ExecutionA.action ⟨fuel⟩ observedA prepared.argv) observedA.state
+    (@ExecutionA.action ⟨fuel⟩ referenceA prepared.argv) referenceA.state
     (project ObservationA.result toJson ObservationA.streams (·.trace))
   let resultsB ← calibrate fuel maxPaths ObservationB.observer expected
-    (@ExecutionB.action ⟨fuel⟩ b prepared.argv) b.state
+    (@ExecutionB.action ⟨fuel⟩ observedB prepared.argv) observedB.state
+    (@ExecutionB.action ⟨fuel⟩ referenceB prepared.argv) referenceB.state
     (project ObservationB.result toJson ObservationB.streams (·.trace))
   require (sameMultiset resultsA resultsB) "Core/CoreB exhaustive observation multisets differ"
   emit (Json.mkObj [("paired-artifact", toJson "equal"),
     ("branch-zero-calibration", toJson "equal"), ("all-results-calibration", toJson "equal"),
+    ("capture-erasure-calibration", toJson "equal"),
     ("pathsA", toJson resultsA.length), ("pathsB", toJson resultsB.length),
     ("translationSupply", toJson a.translatedSupply), ("initialSupply", toJson a.initialSupply)])
 
