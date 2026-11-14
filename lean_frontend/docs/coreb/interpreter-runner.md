@@ -71,6 +71,7 @@ cap make lean-native-obj
   coreb-choice-tests coreb-observation-test)
 python3 scripts/coreb-diff.py tests/minimal/021-pointer-basic.c
 python3 scripts/coreb-diff.py tests/z2-probes/nd/order3.c --choices 1,1
+python3 scripts/coreb-smoke.py
 ```
 
 `coreb-diff.py` uses the local OCaml producer and runtime by default. Explicit
@@ -165,6 +166,21 @@ runs, 19 matched UB runs, and two matched model-error failures. The two failures
 are the deliberate allocator-exhaustion fixtures 112/113; their source comments
 specify the out-of-memory behavior. They are excluded from successful coverage.
 This was one policy per input, not exhaustive C coverage.
+
+An additional 15 minimal fixtures passed paired artifact comparison and
+first/all-results calibration: 003, 007, 011, 015, 017, 022, 024, 025, 027,
+041, 045, 056, 059, 061 and 062. These cover loops, recursion, direct/indirect
+calls, pointers, arrays, structs/unions, switches and goto. Fixture 017 has
+32 paths; the other 14 have one each. Reproduce by supplying each file to the
+Cabs-producer/pair-check command above with fuel 1,000,000 and `MAX_PATHS=64`.
+
+`coreb-smoke.py` checks two actual function-evaluation orders with distinct
+stdout and the same return value, plus stdout retained before UB. It asserts
+the expected output and observation deltas after all four comparison runs.
+Direct CLI controls also rejected a missing panic-abort setting, a truncated
+choice list and a wrong build identity. A 1 GiB address-space cap failed during
+Lean thread startup in that diagnostic attempt; it was a failed run. Repeating
+with the harness's normal 4 GiB limit discharged the controls.
 
 The generated-program campaign and built source-mutant evidence are still in
 progress. Interpreter construction alone is not the completion criterion for

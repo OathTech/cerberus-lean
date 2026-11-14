@@ -1,5 +1,11 @@
 # Cerberus C semantics
 
+**CoreB / Cerberus-Nice research branch:** start with the
+[CoreB guide](lean_frontend/docs/coreb/README.md) for the independent target AST,
+interpreter, choice-tape comparison tools and current evidence. This work is
+developed on `feature/cerberus-nice`; Nice semantic changes follow its tested
+Core/CoreB baseline.
+
 > **Health warning — the Lean port in this fork is a research prototype.** Expect bugs.
 > It is tested differentially against the OCaml implementation, and testing samples behaviour: it does
 > not prove the two agree. Some parts are tested much less thoroughly than others; the
