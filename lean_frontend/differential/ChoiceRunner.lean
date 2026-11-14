@@ -179,7 +179,9 @@ private def choose {a info err cs st : Type} (mode : Mode) (header : Header)
       | none => result header session state (.inputError "selected branch is out of range")
       | some (_, continuation) =>
         let entry : Entry := { ordinal := session.entries.size, kind, parent, alternatives, index }
-        let session := { session with entries := session.entries.push entry, random,
+        let session := { session with
+          entries := session.entries.push entry,
+          random := random,
           events := session.events.push (nodeEvent node kind.label parent alternatives (some index)) }
         resumePath session continuation
 
