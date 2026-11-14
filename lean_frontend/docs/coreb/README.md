@@ -33,11 +33,15 @@ workflow, not a claim that the baseline or a Nice equivalence theorem exists.
 
 ## Current evidence and next experiment
 
-The [type-separation experiment](type-separation.md) implements the first work
-package: distinct complete ASTs, a copied linker, shape support and an auxiliary
-proof binding. It includes the generation recipe and focused co-import tests.
-The remainder of B's execution route and the tape/fuzz harness still follow;
-no differential-testing or general equivalence result is claimed here.
+The [interpreter and runner](interpreter-runner.md) contain the current build,
+smoke commands and measured limits. Both complete target paths execute real C,
+with bidirectional choice replay, passive memory/output observations, structural
+artifact comparison and calibration against the existing runner. Generated
+coverage and built source-mutant validation are in progress; construction of
+the two interpreters alone does not complete the Nice tool.
+
+The [type-separation record](type-separation.md) preserves the earlier first
+checkpoint. Neither checkpoint is a general equivalence result.
 
 ## Planning provenance
 

@@ -1,9 +1,9 @@
 # First experiment: Core / CoreB type separation
 
-This implements work package 1 of the [baseline scope](coreb-baseline-scope.md).
-It establishes independently generated, nominally distinct syntax and a small
-real consumer/support closure. The full B translator, evaluator, driver and
-differential harness remain work packages 2–4.
+This historical record describes work package 1 at `cf939a4c432b9d1eb257daad93da04e6da686e99`.
+Its inventory, commands and results below refer to that first checkpoint.
+The expanded execution path and current build are described in
+[the interpreter and runner](interpreter-runner.md).
 
 ## What is present
 

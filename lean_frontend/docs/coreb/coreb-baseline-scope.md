@@ -45,8 +45,9 @@ examined development mainline `8fa3050bf73fe92803f56c49ca53ed00d76aee88`, with
 its Lem pin `2220010bc25f0c5682d8200f016e786ee66d65c6` and Lean 4.35.0.
 The intervening commits change reporting, generator warning cleanup/pins and
 validation tooling; the Core model and handwritten Lean sources are unchanged.
-The [first closure](type-separation.md) now has a generation/co-import result;
-the full execution baseline and campaign measurements remain outstanding.
+The [execution closure](interpreter-runner.md) now builds both interpreters and
+compares real C executions; that record distinguishes completed evidence from
+the broader baseline acceptance criteria below.
 The reference must not move during a comparison campaign, and consumer pins
 remain unchanged.
 
@@ -145,9 +146,10 @@ entrypoints against the explicit shared-service boundary instead.
 
 Prefer a separate invocation of the pinned Lem generator over the B model
 sources, retaining their logical basenames, with an explicit owned/shared input
-manifest. The original invocation/output remains unchanged. Lem's `-i` supports
-input-only dependencies, but every imported module must agree with the variant's
-types; determine the actual closure rather than copying only four headline files.
+manifest. The original invocation/output remains unchanged. The expanded
+closure uses the complete original ordered emission environment, then retains
+owned outputs: input-only `-i` dependencies changed the generator's namespace
+opening order. Every imported module must agree with the variant's types.
 
 Application declarations are currently emitted at Lean's top level. Renaming
 only the output file does not create a different AST. First try a narrow,
@@ -156,11 +158,12 @@ declaration bodies in `namespace CoreB`; apply the same mapping to owned
 handwritten support. Leave shared services outside it. Preserve diagnostic
 strings. Do not globally replace the word Core or hand-edit emitted Lean.
 
-The adapter now compiles and co-imports the [first closure](type-separation.md):
-both ASTs, the linker, a handwritten shape helper and the Core measure-proof
-binding, with resolved identities checked. This does not establish packaging
-for the full execution closure. Continue inspecting resolved names as that
-closure grows. If narrow packaging fails, identify the concrete capture/import
+The adapter now compiles the [execution closure](interpreter-runner.md), with
+resolved B parser/lowering/linker/evaluator/reducer/call/driver dependencies
+checked. Translation's local `Operators` opening is qualified explicitly to
+avoid ambiguity with the shared root namespace; terms and diagnostic strings
+remain unchanged. Continue inspecting resolved names as that closure grows.
+If narrow packaging fails, identify the concrete capture/import
 issue and discuss a bounded Lem namespace change before implementing it. Do not
 substitute two isolated builds whose types cannot coexist, or start a general
 source-rewriting framework without revisiting the scope.
