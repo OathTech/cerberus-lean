@@ -1,6 +1,6 @@
 # Roadmap: establish CoreNice, then modify it into Nice
 
-Roadmap, 2026-11-14; [current implementation progress](README.md#current-evidence-and-next-experiment)
+Roadmap, updated 2026-11-16; [current implementation progress](README.md#current-evidence-and-next-experiment)
 is tracked separately. The
 [CoreNice baseline scope](corenice-baseline-scope.md) is the detailed, authoritative
 first step; the [design](cerberus-nice-design.md) gives the subsequent purpose.
@@ -29,110 +29,32 @@ complete this milestone. The useful outcome is an editable B path, not just a
 comparison report. The implementation size and risks are accounted for in the
 individual scope; its estimate replaces the earlier 2–4-day driver-only estimate.
 
-## After CoreNice: breakpoint syntax and checked jumps
+## Current milestone: breakpoints for compositional simulation
 
-The next step is the isolated [comesfrom experiment](comesfrom.md): build the
-feature, establish a clean differential baseline against Core, then tighten
-incoming origin sets aggressively and retest. Normal generation must not
-introduce `NiceFault`; only deliberately corrupted tests expect that failure.
-Proof work is considered after the tightened producer works cleanly. This
-sequence precedes the breakpoint work below; the combined demo remains later.
+The [comesfrom checkpoint](comesfrom-checkpoint.md) implements checked incoming
+jumps and structural tightening, with reviewed differential evidence. Its local
+proof proposals remain available; the next development step is the
+[breakpoint charter](breakpoints-charter.md), before the broad correspondence
+proof effort.
 
-Add the two genuine syntax features to the working interpreter, one at a time.
-Define `StrongTail := Continue NExpr | Breakpoint id NExpr` and use it as the
-continuation field of Nice strong sequence, as specified in the design. There
-is no generic checkpoint expression. For tests, replace selected `Continue`
-tails of existing strong sequences with `Breakpoint` tails. All other positions
-remain unchanged; do not introduce new strong sequencing or reconstruct lexical
-scopes to make a desired pause possible. Test that malformed input placing a
-breakpoint as an ordinary operand/alternative is rejected by the AST decoder.
+That charter is the plan of record for placement, AST/driver semantics,
+AIL-to-Caesium handoff considerations, testing and exit criteria. Its sequence is:
 
-Add `run` and `resume` APIs that keep the suspended state in memory. Reaching
-the breakpoint means the original left-completion rule has succeeded, including
-pattern validation, environment update and `Eannot` propagation. Its annotated
-right continuation has not executed. Preserve both completion cases in
-`core_reduction.lem:437–462`. Breakpoints do not consume semantic choices or
-become runnable alternatives. Retain underlying Core-like ND nodes;
-breakpoint/pause/resume records have their own channel and are erased for
-correspondence testing.
+1. Inspect one real block and loop across AIL and both target lowerings; choose
+   existing strong-sequence boundaries and specify useful midpoint relations.
+2. Implement the restricted breakpoint AST and explicit resumable driver phase,
+   including unsequenced contexts and saved-continuation reconstruction.
+3. Emit source-origin sites from the owned lowering and demonstrate actual
+   midpoint states, residuals and the intended sequence-rule premises.
+4. Differentially test ordinary Core, automatic-continuation Nice and paused/
+   resumed Nice, including injected defects; review the resulting checkpoint.
 
-The suspension stores continuation, context and driver phase as data. In
-particular, if the strong-sequence completion occurs during nonmemory
-advancement, resume continues that phase; it does not restart scheduling or
-repeat an already-consumed ND pick. If the original semantics would next
-schedule another choice, that choice still happens once. Do not force the right
-continuation ahead of its unsequenced siblings. This requires an explicit
-resumable driver phase, not an opaque closure of the complete driver. The AST
-restriction locates the boundary; retaining phase makes resumption faithful.
-
-Include a strong sequence containing a breakpoint nested under an unsequenced
-expression. Compare pause/no-pause runs for each tested choice path and verify
-that candidate order, choice count and retained events do not change. Use a
-right continuation and sibling containing C helper calls with visible effects
-on disjoint objects, and first confirm the original run exposes a competing
-choice at this point. Plain disjoint loads/stores may instead be advanced
-greedily by `can_advance` (`driver.lem:918–944,1073–1101`); do not demand a
-scheduler choice where the original has none. When the original offers both
-alternatives, both must remain eligible at the corresponding decision after
-resume. This is a
-valid syntactic placement; an arbitrary breakpoint as an unsequenced operand
-is not. If the driver cannot yet preserve the phase in this case, report a
-failed milestone and resolve the machine design, rather than broadening erasure
-or adding a generic placement validator.
-
-Demonstrate a pointer-mutating helper, a loop with repeated breakpoint visits,
-pauses at available strong-sequence boundaries around effects, and uninterrupted
-versus every selected pause/resume schedule with the same choices. Failure/UB
-before the boundary produces no breakpoint; failure/UB after resume remains
-visible. Pattern-match failure must not be mistaken for reaching the boundary.
-Carry `StrongTail` through contexts, `apply_ctx`, boundary splitting and
-negative-action/RMW reconstruction (`core_reduction.lem:857–953,1303–1378`).
-For saved labels (`core_aux.lem:2312–2320`), a label in the left operand retains
-the pending breakpoint in its reconstructed suffix; a jump directly into a
-label in the right body bypasses the boundary. Test both routes, so repeated
-loop/back-edge visits neither drop nor spuriously replay a breakpoint.
-The baseline observes exactly the same memory-event suffix and final outcome.
-Do not require equal step/fuel counts across these machines.
-
-For predecessor checks, retain a static origin per jump occurrence and a label's
-allowed origin set, scoped to its procedure and runtime label binding. Initially
-compute conservative allowed sets from all syntactic jumps resolving to that
-label; do not assert control-flow reachability or lexical scoping. A broad set
-is weaker information, not an invented proof. Test forward/backward jumps,
-repeated label activation and calls/recursion. Mutation tests remove a genuine
-predecessor, substitute a wrong origin and use an out-of-context label binding;
-each must produce `NiceFault` at the check. Valid fixtures must retain their Core
-traces under erasure. No incorrect annotation is silently trusted.
-
-Pause/resume operates independently of predecessor-set precision. If static
-label binding for a form cannot be established, refuse that translation rather
-than making lexical scope recovery part of this milestone.
-
-## Then demonstrate the first Nice change end to end
-
-The full direct AIL-to-B producer already exists. Edit its appropriate
-strong-sequence sites to emit selected `Breakpoint` tails, and its save/run
-sites to emit checked predecessor declarations. Keep Nice identities separate
-from the Cerberus fresh-symbol supply. Do not build a second narrow AIL compiler
-or translate whole functions through Core as a fallback.
-
-Existing sites include expression statements (`translation.lem:3857–3863`),
-block sequencing (`3945–3950`), while bodies/back-edges (`3994–4019`) and
-function-body completion (`4690`) at the inspected provider pin. These are
-source-inspected opportunities, not new execution results.
-
-A first Nice demo uses a C program with a loop, pointer-mutating helper and
-visible memory effects. The two producer paths emit distinct artifacts; the B
-path now contains a real breakpoint and at least one checked taken jump. The
-same harness compares retained traces under the declared administrative erasure,
-including pause/resume and deliberate incorrect annotations. Preserve ordinary
-next scheduling, failures and explicit coverage limits.
-
-Use the already established CoreNice C corpus/fuzzer, adding feature-specific
-cases. After semantic changes, state any admission restrictions honestly; do
-not transfer the unchanged baseline's coverage or success counts automatically.
-The same source/build/test infrastructure remains in use. Further Nice
-abstractions are deferred until this specific change is useful and testable.
+Breakpoints do not imply lexical scope, dominance, atomicity or a proved source
+state relation. Source-aligned composition sites and internal machine cuts have
+separate roles and coverage. No whole-state serialization or additional source
+compiler is required. The initial goal is a useful, testable design for later
+compositional proofs; broad proof generation and general equivalence remain
+separate work.
 
 ## Work and adoption
 

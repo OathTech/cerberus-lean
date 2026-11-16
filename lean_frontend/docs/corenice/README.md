@@ -59,7 +59,10 @@ its limitations. The first semantic experiment, [checked incoming jumps
 actual AST/rule changes, structural tightening, differential evidence, limits
 and a proposed local proof scope. Ordinary runs remain subject to exact
 comparison; deliberate metadata corruptions exercise typed `NiceFault`.
-Breakpoints and new observation channels remain future work.
+The next milestone is governed by the [breakpoint charter](breakpoints-charter.md):
+expose resumable intermediate states at existing strong-sequence boundaries,
+prioritizing AIL composition points useful for a later simulation sequence rule
+and Caesium alignment. Differential validation precedes the broad proof effort.
 
 The [type-separation record](type-separation.md) preserves the earlier first
 checkpoint. Neither checkpoint is a general equivalence result.

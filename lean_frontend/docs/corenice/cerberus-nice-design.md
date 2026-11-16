@@ -67,13 +67,18 @@ the provider repository root at the inspected revision:
 | Pure evaluation consumes metadata from a Core file. | `core_eval.lem:118–162,578,650–653,864–909` | Duplicate the evaluator with B's own file type; sharing the original evaluator would leave the target path incomplete. |
 | Runtime support includes effectful Core procedures. | `runtime/libcore/std.core:101`; `lean_frontend/Main.lean:1297–1307` | B needs its own parser/builders and executable support bodies from the same runtime text. |
 
+The next breakpoint milestone is governed by the [breakpoint charter](breakpoints-charter.md),
+which specifies source-aligned placement, the intended simulation handoff and
+the differential-first work order. It supersedes the earlier combined-demo
+ordering below; the baseline pathway and comesfrom feature now exist.
+
 ## Representation and source language
 
 Build **parallel owned Lem definitions for CoreNice's whole target path**, then
 modify those sources into Nice. Keep handwritten Lean support/proof interfaces
 beside generated modules. The generation/co-import experiment comes first:
-the [initial AST/linker/support closure](type-separation.md) now builds, while
-the full target path remains to be constructed and tested. Development belongs
+the [initial AST/linker/support closure](type-separation.md) and subsequent
+[full target path](interpreter-runner.md) have been built and tested. Development belongs
 on a research branch of the cerberus-lean fork.
 
 The checked-in Lem sources are the executable authority in the provider. The
