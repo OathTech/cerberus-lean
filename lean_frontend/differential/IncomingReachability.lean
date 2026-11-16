@@ -49,7 +49,7 @@ def summarizeNode {a : Type} (node : generic_expr_ a Unit sym) : Summary :=
   | .Eif (.Pexpr _ _ (.PEval .Vfalse)) _ no => summarizeExpr no
   | .Eif _ yes no => join (summarizeExpr yes) (summarizeExpr no)
   | .Eunseq expressions | .Epar expressions => summarizeAll expressions
-  | .Ewseq _ first second | .Esseq _ first second =>
+  | .Ewseq _ first second | .Esseq _ first (_, second) =>
     sequence (summarizeExpr first) (summarizeExpr second)
   | .Ebound body | .Eannot _ body | .Esave _ _ body _ => summarizeExpr body
   | .End expressions => summarizeAlternatives expressions

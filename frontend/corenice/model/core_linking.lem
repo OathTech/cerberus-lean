@@ -203,7 +203,7 @@ let rec free_expr acc (Expr _ e) =
   | Ewseq pat e1 e2 ->
       Set.(union) ((free_expr acc e1)) ((free_expr {} e2) \ (symbols_in_pattern {} pat))
       (* (free_expr (free_expr acc e1) e2) \ (symbols_in_pattern {} pat) *)
-  | Esseq pat e1 e2 ->
+  | Esseq pat e1 (nice_tail, e2) ->
       Set.(union) ((free_expr acc e1)) ((free_expr {} e2) \ (symbols_in_pattern {} pat))
       (* (free_expr (free_expr acc e1) e2) \ (symbols_in_pattern {} pat) *)
   | Ebound e ->

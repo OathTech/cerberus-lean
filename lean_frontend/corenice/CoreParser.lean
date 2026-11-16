@@ -1888,7 +1888,7 @@ private partial def pExprLetStrong : P Expr' := do
   let e1 ← pExpr
   lexKw "in"
   let e2 ← pExpr
-  return (mkE (Esseq pat e1 e2))
+  return (mkE (Esseq pat e1 (.Continue, e2)))
 
 private partial def pExprIf : P Expr' := do
   lexKw "if"
@@ -2057,7 +2057,7 @@ private partial def pExprSeq (startCol : Nat) (lhs : Expr') : P Expr' := do
       pure true) <|> pure false
   if seq then
     let rhs ← pExpr
-    return (mkE (Esseq (Pattern [] (CaseBase (none, BTy_unit))) lhs rhs))
+    return (mkE (Esseq (Pattern [] (CaseBase (none, BTy_unit))) lhs (.Continue, rhs)))
   else return lhs
 
 /-- Parse an effectful expression. -/
@@ -2364,7 +2364,7 @@ private partial def checkParameterE (params : List sym) : Expr' → Except sym U
     | Eif a b c => do pe a; go b; go c
     | Eccall _ a b es => do pe a; pe b; es.forM pe
     | Eunseq es | End es | Epar es => es.forM go
-    | Ewseq pat a b | Esseq pat a b => do checkParameterPat params pat; go a; go b
+    | Ewseq pat a b | Esseq pat a (_, b) => do checkParameterPat params pat; go a; go b
     | Ebound a | Eannot _ a => go a
     | Esave (s, _) bindings body _ =>
       checkParameterBinder params s
@@ -2719,7 +2719,7 @@ private partial def relocE (ctx : RelocCtx) : Expr' → Expr'
       | Eproc a nm pes => Eproc a nm (pes.map rp)
       | Eunseq es => Eunseq (es.map r)
       | Ewseq pat e1 e2 => Ewseq (relocPat ctx pat) (r e1) (r e2)
-      | Esseq pat e1 e2 => Esseq (relocPat ctx pat) (r e1) (r e2)
+      | Esseq pat e1 (tail, e2) => Esseq (relocPat ctx pat) (r e1) (tail, r e2)
       | Ebound e => Ebound (r e)
       | End es => End (es.map r)
       | Esave sb params e label_info =>
@@ -3021,7 +3021,7 @@ private partial def renameE (ctx : RenameCtx) : Expr' → Expr'
       | Eproc a nm pes => Eproc a (renameName ctx nm) (pes.map rp)
       | Eunseq es => Eunseq (es.map r)
       | Ewseq pat e1 e2 => Ewseq (renamePat ctx pat) (r e1) (r e2)
-      | Esseq pat e1 e2 => Esseq (renamePat ctx pat) (r e1) (r e2)
+      | Esseq pat e1 (tail, e2) => Esseq (renamePat ctx pat) (r e1) (tail, r e2)
       | Ebound e => Ebound (r e)
       | End es => End (es.map r)
       | Esave (s, bty) params e label_info =>

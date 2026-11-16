@@ -1656,7 +1656,7 @@ let rec collect_labels env (Expr _ expr_) =
     | Ewseq _ e1 e2 ->
         collect_labels env  e1 >>= fun env' ->
         collect_labels env' e2
-    | Esseq _ e1 e2 ->
+    | Esseq _ e1 (nice_tail, e2) ->
         collect_labels env  e1 >>= fun env' ->
         collect_labels env' e2
     | Ebound e ->
@@ -1848,13 +1848,13 @@ and typecheck_expr callconv tagDefs (env: typing_env) expected_bTy (Expr annot e
                     <*> typecheck_expr env pat_bTy e1
                     <*> typecheck_expr (env_union env env') expected_bTy e2
         end
-    | Esseq pat e1 e2 ->
+    | Esseq pat e1 (nice_tail, e2) ->
         infer_pattern pat >>= fun (env', infer, _pat') ->
         match toCoreBaseType infer with
           | Nothing ->
               E.fail loc TooGeneral
           | Just pat_bTy ->
-              Esseq <$> export_pattern loc _pat'
+              (fun pat e1 e2 -> Esseq pat e1 (nice_tail, e2)) <$> export_pattern loc _pat'
                     <*> typecheck_expr env pat_bTy e1
                     <*> typecheck_expr (env_union env env') expected_bTy e2
         end

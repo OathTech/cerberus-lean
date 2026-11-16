@@ -270,6 +270,7 @@ type core_tau_step_kind =
   | TSK_Ccall of Symbol.sym * list Mem.mem_value
   | TSK_Return of Symbol.sym * maybe Mem.mem_value
   | TSK_Misc
+  | TSK_Breakpoint of Core.nice_breakpoint_site
 
 type core_step =
   | Step_action_request of string * core_runM action_request
@@ -1480,10 +1481,20 @@ BEFORE EVAL_PEXPR2
               )
         end
     
-    | (Esseq _ _ _, Stack_empty) ->
+    | (Esseq _ _ (nice_tail, _), Stack_empty) ->
         error "reached empty stack with an Esseq"
     
-    | (Esseq pat e1 e2, Stack_cons current_proc_opt cont sk) ->
+    (* A marked literal completion signals the boundary after the state action
+       succeeds. Evaluation of a nonliteral is reified below before this case. *)
+    | (Esseq pat (Expr _ (Epure (Pexpr _ () (PEval cval)))) (Breakpoint site, e2), Stack_cons _ _ _) ->
+        one $ Step_tau "Esseq" (TSK_Breakpoint site) begin
+          match match_pattern pat cval with
+            | Nothing -> SEU.runE (Exception.fail (Illformed_program "Esseq: the pattern didn't match e1"))
+            | Just _ -> E.return <| th_st with arena= e2; env= update_env pat cval th_st.env |>
+          end
+        end
+
+    | (Esseq pat e1 (nice_tail, e2), Stack_cons current_proc_opt cont sk) ->
         let () = Debug.warn [] (fun () -> "Core_run, Esseq ==> TODO negatives") in
         one match e1 with
           | Expr e1_annots (Epure (Pexpr _ () (PEconstrained xs1))) ->
@@ -1492,7 +1503,7 @@ BEFORE EVAL_PEXPR2
                   ( cs
                   , E.return <| th_st with
                       arena= Expr e1_annots (Epure pe1);
-                      stack= Stack_cons current_proc_opt (Ksseq arena_annots pat e2 :: cont) sk
+                      stack= Stack_cons current_proc_opt (Ksseq arena_annots pat (nice_tail, e2) :: cont) sk
                   |> )
                 ) xs1
               )
@@ -1506,17 +1517,22 @@ BEFORE EVAL_PEXPR2
                 ) in
                 E.eval_pexpr2 th_st core_extern mem_st file pe1 >>= function
                   | Left pe1' ->
-                      E.return <| th_st with arena= Expr arena_annots (Esseq pat (Expr e1_annots (Epure pe1')) e2) |>
+                      E.return <| th_st with arena= Expr arena_annots (Esseq pat (Expr e1_annots (Epure pe1')) (nice_tail, e2)) |>
                   | Right cval1 ->
                       (* FORK 2026-09-22 (audit R2): as Elet — the pattern must fit *)
                       match match_pattern pat cval1 with
                         | Nothing ->
                             SEU.runE (Exception.fail (Illformed_program "Esseq: the pattern didn't match e1"))
                         | Just _ ->
-                            E.return <| th_st with
-                              arena= e2;
-                              env= update_env pat cval1 th_st.env
-                            |>
+                            match nice_tail with
+                              | Continue -> E.return <| th_st with
+                                  arena= e2;
+                                  env= update_env pat cval1 th_st.env
+                                |>
+                              | Breakpoint _ -> E.return <| th_st with
+                                  arena= Expr arena_annots (Esseq pat (Core_aux.mk_value_e cval1) (nice_tail, e2))
+                                |>
+                            end
                       end
                 end
               )
@@ -1525,7 +1541,7 @@ BEFORE EVAL_PEXPR2
               Step_tau "Esseq" TSK_Misc (
                 E.return <| th_st with
                   arena= e1;
-                  stack= Stack_cons current_proc_opt (Ksseq arena_annots pat e2 :: cont) sk
+                  stack= Stack_cons current_proc_opt (Ksseq arena_annots pat (nice_tail, e2) :: cont) sk
                 |>
               )
         end

@@ -35,18 +35,18 @@ let rec sequentialise_expr (Expr annot expr_) =
         expr_'
     | Ewseq pat e1 e2 ->
         Ewseq pat (sequentialise_expr e1) (sequentialise_expr e2)
-    | Esseq (Pattern annot_ctor (CaseBase (Nothing, BTy_tuple bTys))) (Expr _ (Eunseq es)) e2 ->
+    | Esseq (Pattern annot_ctor (CaseBase (Nothing, BTy_tuple bTys))) (Expr _ (Eunseq es)) (Continue, e2) ->
         let Expr _ expr_' = List.foldr (fun (bTy, e) acc ->
-          Expr [] (Esseq (Pattern annot_ctor (CaseBase (Nothing, bTy))) (sequentialise_expr e) acc)
+          Expr [] (Esseq (Pattern annot_ctor (CaseBase (Nothing, bTy))) (sequentialise_expr e) (Continue, acc))
         ) (sequentialise_expr e2) (List.zip bTys es) in
         expr_'
-    | Esseq (Pattern _ (CaseCtor Ctuple pats)) (Expr _ (Eunseq es)) e2 ->
+    | Esseq (Pattern _ (CaseCtor Ctuple pats)) (Expr _ (Eunseq es)) (Continue, e2) ->
         let Expr _ expr_' = List.foldr (fun (pat, e) acc ->
-          Expr [] (Esseq pat (sequentialise_expr e) acc)
+          Expr [] (Esseq pat (sequentialise_expr e) (Continue, acc))
         ) (sequentialise_expr e2) (List.zip pats es) in
         expr_'
-    | Esseq pat e1 e2 ->
-        Esseq pat (sequentialise_expr e1) (sequentialise_expr e2)
+    | Esseq pat e1 (nice_tail, e2) ->
+        Esseq pat (sequentialise_expr e1) (nice_tail, (sequentialise_expr e2))
     | Ebound e ->
         Ebound (sequentialise_expr e)
     | End es ->

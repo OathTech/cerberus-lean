@@ -2,8 +2,8 @@
 """Package the existing constructor-quotation instrument for CoreNice.
 
 This is independent of the semantic ownership manifest. Constructor-label
-strings remain unchanged deliberately. Only comesfrom metadata on Esave/Erun
-is erased; every original AST field is still compared. Rendering and runtime states are not
+strings remain unchanged deliberately. Only comesfrom metadata on Esave/Erun and the strong-tail control
+are erased; every original AST field is still compared. Rendering and runtime states are not
 part of this instrument. NaN and untracked comparator provenance refuse.
 """
 import argparse
@@ -15,13 +15,15 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def erase_incoming_fields(quotation: str) -> str:
-    """Ignore only added comesfrom fields; retain original quoted payloads."""
+    """Erase added Nice control fields; retain every original quoted payload."""
     for constructor, field in [("Esave", "_incoming"), ("Erun", "_origin")]:
         pattern = f"  | generic_expr_.{constructor} x0 x1 x2 =>"
         if quotation.count(pattern) != 1:
             raise ValueError(f"expected one original {constructor} quotation arm")
         quotation = quotation.replace(pattern,
             f"  | generic_expr_.{constructor} x0 x1 x2 {field} =>", 1)
+    quotation = quotation.replace("| generic_expr_.Esseq x0 x1 x2 =>",
+        "| generic_expr_.Esseq x0 x1 (_tail, x2) =>")
     return quotation
 
 

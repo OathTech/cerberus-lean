@@ -3014,13 +3014,13 @@ end
           else
             E.return begin
               C.Expr [Annot.Astd "§6.5.2.3#3, sentence 2"] (
-                C.Esseq e_wrp.E.sym_pat core_e (
+                C.Esseq e_wrp.E.sym_pat core_e (C.Continue, (
 begin if conf.E.is_CHERI then
                   (Caux.mk_memop_e (Mem_common.PtrMemberShift tag_sym ident) [e_wrp.E.sym_pe])
 else
                   Caux.mk_pure_e (Caux.mk_member_shift_pe e_wrp.E.sym_pe tag_sym ident)
 end
-                )
+                ))
               )
             end
       
@@ -3829,6 +3829,23 @@ let translate_branch_on_unspec conf loc ctx e1 e2 =
       Caux.mk_pure_e (Caux.mk_undef_pe loc (Undefined.UB_CERB004_unspecified ctx))
   end
 
+(* Keep precisely the existing block fold. Only joins with another source
+   statement on the right are marked; allocation and cleanup tails stay plain. *)
+let rec mk_nice_statement_seqs proc occurrence index ss suffix =
+  match ss with
+    | [] -> E.return suffix
+    | (loc, e) :: rest ->
+        mk_nice_statement_seqs proc occurrence (index + 1) rest suffix >>= fun tail ->
+        match rest with
+          | [] -> E.return (Caux.mk_sseq_e (Caux.mk_empty_pat C.BTy_unit) e tail)
+          | _ :: _ ->
+              E.fresh_nice_site proc occurrence index C.BP_statement_join loc >>= fun site ->
+              E.return (Caux.mk_breakpoint_sseq_e site (Caux.mk_empty_pat C.BTy_unit) e tail)
+        end
+  end
+
+declare {lean} termination_argument mk_nice_statement_seqs = automatic
+
 val translate_stmt:
   translation_stdlib ->
   C.core_tag_definitions ->
@@ -3838,6 +3855,7 @@ val translate_stmt:
   E.elabM (C.expr unit)
 
 let rec translate_stmt stdlib tagDefs f env stmt : E.elabM (C.expr unit) =
+  E.fresh_nice_occurrence >>= fun nice_occurrence ->
   E.read_config >>= fun conf ->
   let loc = stmt.A.loc in
   let self = translate_stmt stdlib tagDefs f env in
@@ -3942,12 +3960,13 @@ let rec translate_stmt stdlib tagDefs f env stmt : E.elabM (C.expr unit) =
           List.map (fun (sym, ident_loc, (_, _, ty)) ->
             Caux.pkill (Loc.with_cursor_from loc ident_loc) (C.Static ty) (Caux.mk_sym_pe sym)
           ) decls_with_loc in
+        mk_nice_statement_seqs f nice_occurrence 0
+          (List.zip (List.map (fun s -> s.A.loc) ss) core_ss)
+          (Caux.mk_unit_sseq (core_kills ++ pat_core_kills) Caux.mk_skip_e) >>= fun core_statements ->
         E.return (
-          (* NOTE: we sequence (left-to-right) the creates and kills of the block-scoped objects *)
-          Caux.mk_sseqs (lit_pats_core_creates ++ pats_core_creates ++ cheri_const_intrinsic) begin
-            Caux.mk_unit_sseq (core_ss ++ core_kills ++ pat_core_kills)
-              Caux.mk_skip_e
-          end
+          (* Allocation/cleanup remain exactly the original surrounding contexts. *)
+          Caux.mk_sseqs (lit_pats_core_creates ++ pats_core_creates ++ cheri_const_intrinsic)
+            core_statements
         )
     
     | A.AilSif e s1 s2 ->
@@ -3957,12 +3976,13 @@ let rec translate_stmt stdlib tagDefs f env stmt : E.elabM (C.expr unit) =
         translate_expression true (mkTestExpression TestEq e) >>= fun core_test   ->
         self s1                                               >>= fun core_s1     ->
         self s2                                               >>= fun core_s2     ->
+        E.fresh_nice_site f nice_occurrence 0 C.BP_condition_ready loc >>= fun condition_site ->
         (* NOTE: here we fix the strictness of unspecified values *)
         E.return begin
           (* NOTE: the case-of producing a boolean (instead of directly doing the control
              with the case) is to prevent possible combinatorial explosions of the generated Core code *)
           Caux.mk_sseq_e test_wrp.E.sym_pat core_test begin
-            Caux.mk_sseq_e do_then_wrp.E.sym_pat begin
+            Caux.mk_breakpoint_sseq_e condition_site do_then_wrp.E.sym_pat begin
               Caux.mk_case_e test_wrp.E.sym_pe
                 [ ( Caux.mk_specified_pat case_wrp.E.sym_pat
                   , Caux.mk_pure_e begin
@@ -3990,9 +4010,11 @@ let rec translate_stmt stdlib tagDefs f env stmt : E.elabM (C.expr unit) =
         translate_expression true (mkTestExpression TestEq e) >>= fun core_test    ->
         self s                                                >>= fun core_s       ->
         E.get_visible_objects                                 >>= fun visible_syms ->
+        E.fresh_nice_site f nice_occurrence 0 C.BP_condition_ready loc >>= fun condition_site ->
+        E.fresh_nice_site f nice_occurrence 1 C.BP_loop_body_done loc >>= fun body_site ->
         (* TODO: the types of the annotations in Esave are dummy, but this is not observable for now *)
         let core_s_loop =
-          Caux.mk_sseq_e (Caux.mk_empty_pat C.BTy_unit) core_s
+          Caux.mk_breakpoint_sseq_e body_site (Caux.mk_empty_pat C.BTy_unit) core_s
             (Caux.mk_run_e sym_loop [ Caux.mk_sym_pe sym | forall (sym MEM visible_syms) | true ]) in
         E.mapM (fun sym ->
           E.resolve_object_type sym >>= fun (_, ty) ->
@@ -4001,7 +4023,7 @@ let rec translate_stmt stdlib tagDefs f env stmt : E.elabM (C.expr unit) =
         E.return begin
           Caux.mk_save_e_ [Annot.Alabel (Annot.LAloop loop_id)] (sym_loop, C.BTy_unit) args begin
             Caux.mk_sseq_e test_wrp.E.sym_pat core_test begin
-              Caux.mk_sseq_e do_loop_wrp.E.sym_pat begin
+              Caux.mk_breakpoint_sseq_e condition_site do_loop_wrp.E.sym_pat begin
                 Caux.mk_case_e test_wrp.E.sym_pe
                   [ ( Caux.mk_specified_pat case_wrp.E.sym_pat
                     , Caux.mk_pure_e begin
@@ -4040,6 +4062,7 @@ let rec translate_stmt stdlib tagDefs f env stmt : E.elabM (C.expr unit) =
         translate_expression true (mkTestExpression TestEq e) >>= fun core_test    ->
         self s                                                >>= fun core_s       ->
         E.get_visible_objects                                 >>= fun visible_syms ->
+        E.fresh_nice_site f nice_occurrence 0 C.BP_loop_body_done loc >>= fun body_site ->
         let core_loop =
           Caux.mk_run_e sym_loop [ Caux.mk_sym_pe sym | forall (sym MEM visible_syms) | true ] in
         E.mapM (fun sym ->
@@ -4049,7 +4072,7 @@ let rec translate_stmt stdlib tagDefs f env stmt : E.elabM (C.expr unit) =
         E.return begin
           Caux.mk_save_e_ [Annot.Alabel (Annot.LAloop loop_id)] (sym_loop, C.BTy_unit) args (
             (* loop body *)
-            Caux.mk_sseq_e (Caux.mk_empty_pat C.BTy_unit) core_s
+            Caux.mk_breakpoint_sseq_e body_site (Caux.mk_empty_pat C.BTy_unit) core_s
               (* controlling expression *)
               begin
                 Caux.mk_sseq_e test_wrp.E.sym_pat core_test (

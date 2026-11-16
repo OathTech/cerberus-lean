@@ -37,6 +37,7 @@ type elab_state = <|
      target only, seeded by the entry (translation.lem translate /
      mini_pipeline's local run) from the pipeline's single stream. *)
   fresh_supply: nat;
+  nice_occurrence_supply: nat; (* independent producer identities, never C symbols *)
 
   errors: list string;
 |>
@@ -80,6 +81,7 @@ let elab_initial_state fresh_supply_seed = <|
   visible_objects_types_markers_env = Map.empty;
   cheri_const_alias= Map.empty;
   fresh_supply= fresh_supply_seed;
+  nice_occurrence_supply= 1;
   errors = [];
 |>
 
@@ -144,6 +146,23 @@ let read_config =
    keeping the oracle on Cerb_fresh.int at the migrated positions.
    The oracle's dynamic draw SEQUENCE moves per the tolerated
    S0-measured class (charter section 3.6.1, Q1b TOLERATED). *)
+val fresh_nice_occurrence: elabM nat
+let fresh_nice_occurrence =
+  fun _ st ->
+    let n = st.nice_occurrence_supply in
+    (n, <| st with nice_occurrence_supply= n + 1 |>)
+
+val fresh_nice_site: Symbol.sym -> nat -> nat -> Core.nice_breakpoint_role -> Loc.t -> elabM Core.nice_breakpoint_site
+let fresh_nice_site proc occurrence slot role loc =
+  fresh_nice_occurrence >>= fun n ->
+  return <|
+    Core.breakpoint_procedure= proc;
+    Core.breakpoint_id= n;
+    Core.breakpoint_role= role;
+    Core.breakpoint_ail_path= Just [occurrence; slot];
+    Core.breakpoint_location= loc;
+  |>
+
 val fresh_elab_int: elabM nat
 let fresh_elab_int =
   fun _ st ->

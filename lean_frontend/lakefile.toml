@@ -526,6 +526,12 @@ roots = ["Prepared", "PipelineA", "PipelineNice", "ObservationShared", "ChoiceRu
          "IncomingReachability", "IncomingReachabilityTests"]
 
 [[lean_exe]]
+name = "corenice-breakpoint-tests"
+srcDir = "test"
+root = "CoreNice.BreakpointTests"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
 name = "corenice-incoming-tests"
 srcDir = "test"
 root = "CoreNice.IncomingTests"

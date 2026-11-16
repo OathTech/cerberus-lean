@@ -338,6 +338,26 @@ let empty_nice_label_info = <|
 |>
 
 
+(* A strong tail is represented by (control, continuation). Only Esseq may
+   contain this node; it is not an expression that can appear anywhere. *)
+type nice_breakpoint_role =
+  | BP_statement_join
+  | BP_condition_ready
+  | BP_loop_body_done
+  | BP_internal
+
+type nice_breakpoint_site = <|
+  breakpoint_procedure: Symbol.sym;
+  breakpoint_id: nat;
+  breakpoint_role: nice_breakpoint_role;
+  breakpoint_ail_path: maybe (list nat);
+  breakpoint_location: Loc.t;
+|>
+
+type strong_tail_control =
+  | Continue
+  | Breakpoint of nice_breakpoint_site
+
 type generic_expr_ 'a 'bty 'sym =  (* (effectful) expression *)
  | Epure of (generic_pexpr 'bty 'sym)
  | Ememop of Mem_common.generic_memop 'sym * list (generic_pexpr 'bty 'sym) (* pointer op involving memory *)
@@ -349,7 +369,7 @@ type generic_expr_ 'a 'bty 'sym =  (* (effectful) expression *)
  | Eproc of 'a * (generic_name 'sym) * list (generic_pexpr 'bty 'sym) (* Core procedure call *)
  | Eunseq of list (generic_expr 'a 'bty 'sym) (* unsequenced expressions *)
  | Ewseq of (generic_pattern 'sym) * (generic_expr 'a 'bty 'sym) * (generic_expr 'a 'bty 'sym) (* weak sequencing *)
- | Esseq of (generic_pattern 'sym) * (generic_expr 'a 'bty 'sym) * (generic_expr 'a 'bty 'sym) (* strong sequencing *)
+ | Esseq of (generic_pattern 'sym) * (generic_expr 'a 'bty 'sym) * (strong_tail_control * generic_expr 'a 'bty 'sym) (* strong sequencing and its restricted tail *)
  | Ebound of (generic_expr 'a 'bty 'sym) (* $\ldots$and boundary *)
  | End of list (generic_expr 'a 'bty 'sym) (* nondeterministic sequencing *)
  | Esave of ('sym * core_base_type) * list ('sym * ((core_base_type * maybe (Ctype.ctype * pass_by_value_or_pointer)) * generic_pexpr 'bty 'sym)) * (generic_expr 'a 'bty 'sym) * nice_label_info (* save label *)

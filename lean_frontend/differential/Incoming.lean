@@ -48,8 +48,8 @@ def mapNodeM {m : Type → Type} [Monad m] {a : Type}
   | .Eunseq expressions => return .Eunseq (← mapExprsM visit context expressions)
   | .Ewseq pattern first second =>
     return .Ewseq pattern (← mapExprM visit context first) (← mapExprM visit context second)
-  | .Esseq pattern first second =>
-    return .Esseq pattern (← mapExprM visit context first) (← mapExprM visit context second)
+  | .Esseq pattern first (tail, second) =>
+    return .Esseq pattern (← mapExprM visit context first) (tail, ← mapExprM visit context second)
   | .Ebound body =>
     return .Ebound (← mapExprM visit { context with labelsCollected := false } body)
   | .End expressions =>

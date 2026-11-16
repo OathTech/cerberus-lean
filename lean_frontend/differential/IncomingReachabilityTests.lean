@@ -13,7 +13,7 @@ private def jump (label : sym) : expr Unit :=
 private def save (label : sym) (body : expr Unit) : expr Unit :=
   .Expr [] (.Esave (label, .BTy_unit) [] body empty_nice_label_info)
 private def sequence (first second : expr Unit) : expr Unit :=
-  .Expr [] (.Esseq default first second)
+  .Expr [] (.Esseq default first (.Continue, second))
 private def weakSequence (first second : expr Unit) : expr Unit :=
   .Expr [] (.Ewseq default first second)
 private def conditional (test : pexpr) (yes no : expr Unit) : expr Unit :=

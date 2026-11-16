@@ -766,7 +766,7 @@ let rec mk_sseqs pat_es =
     | [] ->
         z
     | (pat, e) :: pat_es' ->
-        Expr [] (Esseq pat e (mk_sseqs pat_es' z))
+        Expr [] (Esseq pat e (Continue, (mk_sseqs pat_es' z)))
   end
 
 
@@ -807,7 +807,7 @@ let rec mk_unit_sseq es =
           e
 *)
       | e::es' ->
-          Expr [] (Esseq (mk_empty_pat BTy_unit) e (mk_unit_sseq es' z))
+          Expr [] (Esseq (mk_empty_pat BTy_unit) e (Continue, (mk_unit_sseq es' z)))
     end
 
 val     mk_bTy_sseqs: list (core_base_type * expr unit) -> expr unit
@@ -818,14 +818,14 @@ let rec mk_bTy_sseqs bTy_es =
     | [(_, e)] ->
         e
     | (bTy, e) :: bTy_es' ->
-        Expr [] (Esseq (mk_empty_pat bTy) e (mk_bTy_sseqs bTy_es'))
+        Expr [] (Esseq (mk_empty_pat bTy) e (Continue, (mk_bTy_sseqs bTy_es')))
   end
 
 let rec concat_sseq ((Expr annot e_) as e) e' =
    match e_ with
-     | Esseq pat e1 e2                 -> Expr annot (Esseq pat e1 (concat_sseq e2 e'))
+     | Esseq pat e1 (nice_tail, e2)                 -> Expr annot (Esseq pat e1 (nice_tail, (concat_sseq e2 e')))
      | Epure (Pexpr _ _ (PEval Vunit)) -> e'
-     | _                               -> Expr [] (Esseq (mk_empty_pat BTy_unit) e e')
+     | _                               -> Expr [] (Esseq (mk_empty_pat BTy_unit) e (Continue, e'))
   end
 
 let is_negative = function
@@ -1037,9 +1037,9 @@ let rec subst_sym_expr sym cval (Expr annot expr_) =
     | Ewseq pat e1 e2 ->
         Ewseq pat (subst_sym_expr sym cval e1)
           (if in_pattern sym pat then e2 else subst_sym_expr sym cval e2)
-    | Esseq pat e1 e2 ->
+    | Esseq pat e1 (nice_tail, e2) ->
         Esseq pat (subst_sym_expr sym cval e1)
-          (if in_pattern sym pat then e2 else subst_sym_expr sym cval e2)
+          (nice_tail, (if in_pattern sym pat then e2 else subst_sym_expr sym cval e2))
     | Ebound e ->
         Ebound (subst_sym_expr sym cval e)
     | Esave lab_sym sym_bTy_pes e label_info ->
@@ -1379,8 +1379,8 @@ let rec unsafe_subst_sym_expr sym pe' (Expr annot expr_) =
         Eunseq (List.map (unsafe_subst_sym_expr sym pe') es)
     | Ewseq pat e1 e2 ->
         Ewseq pat (unsafe_subst_sym_expr sym pe' e1) (if in_pattern sym pat then e2 else unsafe_subst_sym_expr sym pe' e2)
-    | Esseq pat e1 e2 ->
-        Esseq pat (unsafe_subst_sym_expr sym pe' e1) (if in_pattern sym pat then e2 else unsafe_subst_sym_expr sym pe' e2)
+    | Esseq pat e1 (nice_tail, e2) ->
+        Esseq pat (unsafe_subst_sym_expr sym pe' e1) (nice_tail, (if in_pattern sym pat then e2 else unsafe_subst_sym_expr sym pe' e2))
     | Ebound e ->
         Ebound (unsafe_subst_sym_expr sym pe' e)
     | Esave lab_sym sym_bTy_pes e label_info ->
@@ -1684,7 +1684,9 @@ let rec to_pure (Expr annot expr_) (*(expr : expr 'a)*) =
           | Nothing ->
               Nothing
         end
-    | Esseq pat e1 e2 ->
+    | Esseq _ _ (Breakpoint _, _) ->
+        Nothing
+    | Esseq pat e1 (Continue, e2) ->
         match to_pure e1 with
           | Just pe1 ->
               to_pure_aux pat pe1 e2
@@ -1759,8 +1761,8 @@ let rec subst_wait tid v (Expr annot expr_) =
       Eunseq (List.map (subst_wait tid v) es)
    | Ewseq _as e1 e2 ->
        Ewseq _as (subst_wait tid v e1) (subst_wait tid v e2)
-   | Esseq _as e1 e2 ->
-       Esseq _as (subst_wait tid v e1) (subst_wait tid v e2)
+   | Esseq _as e1 (nice_tail, e2) ->
+       Esseq _as (subst_wait tid v e1) (nice_tail, (subst_wait tid v e2))
    | Ebound e ->
        Ebound (subst_wait tid v e)
 (*
@@ -1851,11 +1853,11 @@ let rec find_labeled_continuation sym (Expr annot expr_) =
           | Nothing ->
               find_labeled_continuation sym e2
         end
-    | Esseq pat e1 e2 ->
+    | Esseq pat e1 (nice_tail, e2) ->
         let () = Debug.warn [] (fun () -> "Core_aux.find_labeled_continuation assumes the bindings of an Esave inside a Esseq don't clash") in
         match find_labeled_continuation sym e1 with
           | Just (syms, cont_expr, info) ->
-              Just (syms, Expr annot (Esseq pat cont_expr e2), info)
+              Just (syms, Expr annot (Esseq pat cont_expr (nice_tail, e2)), info)
           | Nothing ->
               find_labeled_continuation sym e2
         end
@@ -1931,11 +1933,11 @@ let rec find_labeled_continuation2_aux acc sym (Expr annot expr_) =
                      (syms, Expr annot (Ewseq pat z e2), info)
                    ) (find_labeled_continuation2_aux Map.empty sym e1) in
         find_labeled_continuation2_aux (Map.(union) acc acc') sym e2
-    | Esseq pat e1 e2 ->
+    | Esseq pat e1 (nice_tail, e2) ->
         let () = Debug.warn [] (fun () ->
           "Core_aux.find_labeled_continuation2_aux assumes the bindings of an Esave inside a Esseq don't clash") in
         let acc' = Map.map (fun (syms, z, info) ->
-                     (syms, Expr annot (Esseq pat z e2), info)
+                     (syms, Expr annot (Esseq pat z (nice_tail, e2)), info)
                    ) (find_labeled_continuation2_aux Map.empty sym e1) in
         find_labeled_continuation2_aux (Map.(union) acc acc') sym e2
     | Ebound _ ->
@@ -2026,8 +2028,8 @@ let rec collect_labeled_continuations (Expr annot expr_) =
     | Ewseq _as e1 e2 ->
         Map.(union) (Map.map (fun (a_tys, e, info) -> (a_tys, Expr annot (Ewseq _as e e2), info)) $ collect_labeled_continuations e1)
                     (collect_labeled_continuations e2)
-    | Esseq _as e1 e2 ->
-        Map.(union) (Map.map (fun (a_tys, e, info) -> (a_tys, Expr annot (Esseq _as e e2), info)) $ collect_labeled_continuations e1)
+    | Esseq _as e1 (nice_tail, e2) ->
+        Map.(union) (Map.map (fun (a_tys, e, info) -> (a_tys, Expr annot (Esseq _as e (nice_tail, e2)), info)) $ collect_labeled_continuations e1)
                     (collect_labeled_continuations e2)
     | Ebound _ ->
         Map.empty
@@ -2170,9 +2172,17 @@ val mk_wseq_e: forall 'a. pattern -> expr 'a -> expr 'a -> expr 'a
 let mk_wseq_e pat e1 e2 =
   Expr [] (Ewseq pat e1 e2)
 
+val mk_sseq_tail_e: forall 'a. pattern -> expr 'a -> (strong_tail_control * expr 'a) -> expr 'a
+let mk_sseq_tail_e pat e1 tail =
+  Expr [] (Esseq pat e1 tail)
+
 val mk_sseq_e: forall 'a. pattern -> expr 'a -> expr 'a -> expr 'a
 let mk_sseq_e pat e1 e2 =
-  Expr [] (Esseq pat e1 e2)
+  Expr [] (Esseq pat e1 (Continue, e2))
+
+val mk_breakpoint_sseq_e: forall 'a. nice_breakpoint_site -> pattern -> expr 'a -> expr 'a -> expr 'a
+let mk_breakpoint_sseq_e site pat e1 e2 =
+  mk_sseq_tail_e pat e1 (Breakpoint site, e2)
 
 val mk_save_e_: list annot -> (Symbol.sym * core_base_type) -> list (Symbol.sym * ((core_base_type * maybe (Ctype.ctype * pass_by_value_or_pointer)) * pexpr)) -> expr unit -> expr unit
 let mk_save_e_ annots sym_ty sym_ty_pes e =
@@ -2309,13 +2319,13 @@ let rec collect_saves_aux st (Expr annots expr_) =
             |>
             st2
         end
-    | Esseq pat e1 e2 ->
+    | Esseq pat e1 (nice_tail, e2) ->
         let st1 = collect_saves_aux empty_saves e1 in
         let st2 = collect_saves_aux empty_saves e2 in
         union_saves st begin
           union_saves
             <| st1 with
-              tmp_acc= Map.map (fun (syms, e, info) -> (syms, Expr annots (Esseq pat e e2), info)) st1.tmp_acc
+              tmp_acc= Map.map (fun (syms, e, info) -> (syms, Expr annots (Esseq pat e (nice_tail, e2)), info)) st1.tmp_acc
             |>
             st2
         end
@@ -2414,14 +2424,14 @@ let rec m_collect_saves_aux st (Expr annots expr_) =
             |>
             st2
         end
-    | Esseq pat e1 e2 ->
+    | Esseq pat e1 (nice_tail, e2) ->
         let st1 = m_collect_saves_aux m_empty_saves e1 in
         let st2 = m_collect_saves_aux m_empty_saves e2 in
         m_union_saves st begin
           m_union_saves
             <| st1 with
               m_tmp_acc= Map.map (fun (cbt,args,body,annots',info) ->
-                             (cbt, args, Expr annots (Esseq pat body e2), annots', info) )
+                             (cbt, args, Expr annots (Esseq pat body (nice_tail, e2)), annots', info) )
                                st1.m_tmp_acc
             |>
             st2

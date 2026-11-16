@@ -185,7 +185,9 @@ let rec remove_skips (Expr annot expr_ as expr) =
                     Expr annot (Ewseq pat e1' e2')
               end
         end
-    | Esseq pat e1 e2 ->
+    | Esseq pat e1 (Breakpoint site, e2) ->
+        Expr annot (Esseq pat (remove_skips e1) (Breakpoint site, remove_skips e2))
+    | Esseq pat e1 (Continue, e2) ->
         match remove_skips e1 with
           | Expr _ (Epure (Pexpr _ _ (PEval Vunit))) ->
               remove_skips (Core_aux.unsafe_subst_pattern pat Core_aux.mk_unit_pe e2)
@@ -194,7 +196,7 @@ let rec remove_skips (Expr annot expr_ as expr) =
                 | (Expr _ (Epure (Pexpr _ _ (PEval Vunit)))) ->
                     e1'
                 | e2' ->
-                    Expr annot (Esseq pat e1' e2')
+                    Expr annot (Esseq pat e1' (Continue, e2'))
               end
         end
     | Ebound e ->
@@ -313,9 +315,9 @@ let rec remove_unseqs (Expr annot expr_ as expr) =
     | Ewseq pat e1 e2 ->
         (* just traversing *)
         Expr annot (Ewseq pat (remove_unseqs e1) (remove_unseqs e2))
-    | Esseq pat e1 e2 ->
+    | Esseq pat e1 (nice_tail, e2) ->
         (* just traversing *)
-        Expr annot (Esseq pat (remove_unseqs e1) (remove_unseqs e2))
+        Expr annot (Esseq pat (remove_unseqs e1) (nice_tail, (remove_unseqs e2)))
     | Ebound e ->
         (* just traversing *)
         Expr annot (Ebound (remove_unseqs e))
@@ -485,14 +487,14 @@ let rec remove_dead_aux (Expr annot expr_ as expr) =
           | Right e1' ->
               Right e1'
         end
-    | Esseq _as e1 e2 ->
+    | Esseq _as e1 (nice_tail, e2) ->
         match remove_dead_aux e1 with
           | Left e1' ->
               match remove_dead_aux e2 with
                 | Left e2' ->
-                    Left (Expr annot (Esseq _as e1' e2'))
+                    Left (Expr annot (Esseq _as e1' (nice_tail, e2')))
                 | Right e2' ->
-                    Right (Expr annot (Esseq _as e1' e2'))
+                    Right (Expr annot (Esseq _as e1' (nice_tail, e2')))
               end
           | Right e1' ->
               Right e1'
@@ -599,19 +601,19 @@ let rec flatten_seqs (Expr annot expr_ as expr) =
           | (e1', e2') ->
               Expr annot (Ewseq pat e1' e2')
         end
-    | Esseq (Pattern _ (CaseBase (Nothing, _))) (Expr _ (Epure (Pexpr _ _ (PEval Vunit)))) e2 ->
+    | Esseq (Pattern _ (CaseBase (Nothing, _))) (Expr _ (Epure (Pexpr _ _ (PEval Vunit)))) (Continue, e2) ->
         (* TODO: could be generalised to any "always defined" Epure *)
         flatten_seqs e2
-    | Esseq pat e1 e2 ->
+    | Esseq pat e1 (nice_tail, e2) ->
         match (flatten_seqs e1, flatten_seqs e2) with
 (* THIS IS WRONG, shouldn't lift a wseq past a sseq
           | (Expr annot1 (Ewseq pat1 e11 e12), e2') ->
               Expr annot1 (Ewseq pat1 e11 (flatten_seqs (Expr annot (Esseq pat e12 e2'))))
 *)
-          | (Expr annot1 (Esseq pat1 e11 e12), e2') ->
-              Expr annot1 (Esseq pat1 e11 (flatten_seqs (Expr annot (Esseq pat e12 e2'))))
+          | (Expr annot1 (Esseq pat1 e11 (nice_tail1, e12)), e2') ->
+              Expr annot1 (Esseq pat1 e11 (nice_tail1, (flatten_seqs (Expr annot (Esseq pat e12 (nice_tail, e2'))))))
           | (e1', e2') ->
-              Expr annot (Esseq pat e1' e2')
+              Expr annot (Esseq pat e1' (nice_tail, e2'))
         end
     | Ebound e ->
         Expr annot (Ebound (flatten_seqs e))
@@ -791,8 +793,8 @@ let rec remove_conv_int (Expr annot expr_) =
         Eunseq (List.map remove_conv_int es)
     | Ewseq pat e1 e2 ->
         Ewseq pat (remove_conv_int e1) (remove_conv_int e2)
-    | Esseq pat e1 e2 ->
-        Esseq pat (remove_conv_int e1) (remove_conv_int e2)
+    | Esseq pat e1 (nice_tail, e2) ->
+        Esseq pat (remove_conv_int e1) (nice_tail, (remove_conv_int e2))
     | Ebound e ->
         Ebound (remove_conv_int e)
     | End es ->
@@ -894,7 +896,7 @@ let rec sequentialise_creates_kills (Expr annot expr_) =
     | Eunseq es ->
         if List.all is_kill es then
           List.foldr (fun e acc ->
-            Esseq (Pattern [] (CaseBase (Nothing, BTy_unit))) e (Expr [] acc)
+            Esseq (Pattern [] (CaseBase (Nothing, BTy_unit))) e (Continue, (Expr [] acc))
           ) (Epure (Pexpr [] () (PEval Vunit))) es
         else
           Eunseq (List.map sequentialise_creates_kills es)
@@ -918,8 +920,8 @@ let rec sequentialise_creates_kills (Expr annot expr_) =
         else
           Esseq pat (sequentialise_creates_kills e1) (sequentialise_creates_kills e2)
 *)
-    | Esseq pat e1 e2 ->
-        Esseq pat (sequentialise_creates_kills e1) (sequentialise_creates_kills e2)
+    | Esseq pat e1 (nice_tail, e2) ->
+        Esseq pat (sequentialise_creates_kills e1) (nice_tail, (sequentialise_creates_kills e2))
     | Ebound e ->
         Ebound (sequentialise_creates_kills e)
     | End es ->
@@ -1215,17 +1217,19 @@ let rec pure_propagation2 (Expr annot expr_ as expr) =
              Expr annot (Esseq (Pattern annot_ctor (CaseCtor Ctuple pats')) (Expr annot_unseq (Eunseq es')) (pure_propagation2 (cont e2)))
        end
        *)
-    | Esseq pat e1 e2 ->
+    | Esseq pat e1 (Breakpoint site, e2) ->
+        Expr annot (Esseq pat (pure_propagation2 e1) (Breakpoint site, pure_propagation2 e2))
+    | Esseq pat e1 (Continue, e2) ->
         let e1' = pure_propagation2 e1 in
         match to_pure' e1' with
           | Just pe1 ->
               match subst_pattern pat pe1 e2 with
                 | Just e -> pure_propagation2 e
-                | Nothing -> Expr annot (Esseq pat e1' (pure_propagation2 e2))
+                | Nothing -> Expr annot (Esseq pat e1' (Continue, (pure_propagation2 e2)))
               end
               (*pure_propagation2 (unsafe_subst_pattern pat pe1 e2)*)
           | Nothing ->
-              Expr annot (Esseq pat e1' (pure_propagation2 e2))
+              Expr annot (Esseq pat e1' (Continue, (pure_propagation2 e2)))
        end
     | Ebound e ->
         Expr annot (Ebound (pure_propagation2 e))
@@ -1421,8 +1425,8 @@ let rec simpl_case (Expr annot expr_ as expr) =
         wrap $ Eunseq (List.map simpl_case es)
     | Ewseq pat e1 e2 ->
         wrap $ Ewseq pat (simpl_case e1) (simpl_case e2)
-    | Esseq pat e1 e2 ->
-        wrap $ Esseq pat (simpl_case e1) (simpl_case e2)
+    | Esseq pat e1 (nice_tail, e2) ->
+        wrap $ Esseq pat (simpl_case e1) (nice_tail, (simpl_case e2))
     | Ebound e ->
         wrap $ Ebound (simpl_case e)
     | End es ->

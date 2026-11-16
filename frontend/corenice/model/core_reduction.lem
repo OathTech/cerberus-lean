@@ -164,6 +164,8 @@ instance (Show core_step2)
                         "TSK_Ccall(" ^ show sym ^ ")"
                     | Core_run.TSK_Return sym _ ->
                         "TSK_Return(" ^ show sym ^ ")"
+                    | Core_run.TSK_Breakpoint _ ->
+                        "TSK_Breakpoint"
                     | Core_run.TSK_Misc ->
                         "TSK_Misc"
                   end in
@@ -254,6 +256,7 @@ let combine_dyn_annotations xs1 xs2 =
 type one_step =
   | TAU_WITH_RUNSTATE of string * core_runM (list (map Symbol.sym value) * Core.expr core_run_annotation)
   | TAU of string * list (map Symbol.sym value) * Core.expr core_run_annotation
+  | BREAKPOINT of Core.nice_breakpoint_site * list (map Symbol.sym value) * Core.expr core_run_annotation
   | EVAL of string * core_runM (Core.expr core_run_annotation)
   | ND of list (Core.expr core_run_annotation)
   | MEMOP of Mem_common.memop * list Core.value
@@ -434,7 +437,7 @@ let one_step eval_pexpr full_eval_pexpr env (Expr annots expr_ as expr) =
           | Nothing ->
               error "Core_reduction.one_step Ewseq Eannot saw a non-evaluated e1"
         end
-    | Esseq pat (Expr pe1_annots (Epure pe1)) e2 ->
+    | Esseq pat (Expr pe1_annots (Epure pe1)) (nice_tail, e2) ->
         Just match valueFromPexpr pe1 with
           | Just cval ->
               (* lets pat = v in E2 --> { v / pat } E2 *)
@@ -442,13 +445,17 @@ let one_step eval_pexpr full_eval_pexpr env (Expr annots expr_ as expr) =
               (* FORK 2026-09-22 (audit R2): the pattern must fit — see Elet above *)
               match match_pattern pat cval with
                 | Nothing -> TAU_WITH_RUNSTATE "Esseq" (SEU.runEU (EU.fail (Errors.Illformed_program "Esseq: the pattern didn't match e1")))
-                | Just _ -> TAU "Esseq" (update_env pat cval env) e2
+                | Just _ ->
+                    match nice_tail with
+                      | Continue -> TAU "Esseq" (update_env pat cval env) e2
+                      | Breakpoint site -> BREAKPOINT site (update_env pat cval env) e2
+                    end
               end
           | Nothing ->
             error "Core_reduction.one_step Esseq saw a non-evaluated e1"
         end
     
-    | Esseq pat (Expr annots1 (Eannot xs (Expr annots2 (Epure pe1)))) e2 ->
+    | Esseq pat (Expr annots1 (Eannot xs (Expr annots2 (Epure pe1)))) (nice_tail, e2) ->
         Just match valueFromPexpr pe1 with
           | Just cval ->
               (* lets pat = {A}v in E2 --> {A} { v / pat } E2 *)
@@ -456,7 +463,11 @@ let one_step eval_pexpr full_eval_pexpr env (Expr annots expr_ as expr) =
               (* FORK 2026-09-22 (audit R2): the pattern must fit — see Elet above *)
               match match_pattern pat cval with
                 | Nothing -> TAU_WITH_RUNSTATE "Esseq Eannot" (SEU.runEU (EU.fail (Errors.Illformed_program "Esseq: the pattern didn't match e1")))
-                | Just _ -> TAU "Esseq Eannot" (update_env pat cval env) (Expr [] (Eannot xs e2))
+                | Just _ ->
+                    match nice_tail with
+                      | Continue -> TAU "Esseq Eannot" (update_env pat cval env) (Expr [] (Eannot xs e2))
+                      | Breakpoint site -> BREAKPOINT site (update_env pat cval env) (Expr [] (Eannot xs e2))
+                    end
               end
           | Nothing ->
               error "Core_reduction.one_step Esseq Eannot saw a non-evaluated e1"
@@ -517,7 +528,7 @@ let rec has_ccall (Expr _ expr_) =
         List.any has_ccall es
     | Ewseq _ e1 e2 ->
         has_ccall e1 || has_ccall e2
-    | Esseq _ e1 e2 ->
+    | Esseq _ e1 (nice_tail, e2) ->
         has_ccall e1 || has_ccall e2
     | Ebound e ->
         has_ccall e (* NOTE: this function should never see this case (for a C program) *)
@@ -545,7 +556,7 @@ let rec is_unseq_with_ccall_aux acc = function
       is_unseq_with_ccall_aux acc' ctx'
   | Cwseq _ _ ctx' e2 ->
       is_unseq_with_ccall_aux acc ctx'
-  | Csseq _ _ ctx' e2 ->
+  | Csseq _ _ ctx' (nice_tail, e2) ->
       is_unseq_with_ccall_aux acc ctx'
   | Cannot _ _ ctx' ->
       is_unseq_with_ccall_aux acc ctx'
@@ -592,12 +603,12 @@ let rec get_ctx (Expr annot expr_ as expr) =
           List.map (fun (ctx, e) ->
             (Cwseq annot pat ctx e2, e)
           ) (get_ctx e1)
-    | Esseq pat e1 e2 ->
+    | Esseq pat e1 (nice_tail, e2) ->
         if is_irreducible e1 then
           [(CTX, expr)]
         else
           List.map (fun (ctx, e) ->
-            (Csseq annot pat ctx e2, e)
+            (Csseq annot pat ctx (nice_tail, e2), e)
           ) (get_ctx e1)
     | Ebound e ->
         if is_irreducible e then
@@ -650,8 +661,8 @@ let rec apply_ctx ctx expr =
         Expr annot (Eunseq (es1 ++ (apply_ctx ctx' expr :: es2)))
     | Cwseq annot pat ctx' e2 ->
         Expr annot (Ewseq pat (apply_ctx ctx' expr) e2)
-    | Csseq annot pat ctx' e2 ->
-        Expr annot (Esseq pat (apply_ctx ctx' expr) e2)
+    | Csseq annot pat ctx' (nice_tail, e2) ->
+        Expr annot (Esseq pat (apply_ctx ctx' expr) (nice_tail, e2))
     | Cannot annot xs ctx' ->
         Expr annot (Eannot xs (apply_ctx ctx' expr))
     | Cbound annot ctx' ->
@@ -854,7 +865,7 @@ let step_action e_annots full_eval_pexpr is_excluded (Action loc act_annots act)
 end
 
 
-val     break_at_sseq: context -> maybe (context * Core.pattern * context * Core.expr core_run_annotation)
+val     break_at_sseq: context -> maybe (context * Core.pattern * context * (Core.strong_tail_control * Core.expr core_run_annotation))
 let rec break_at_sseq ctx =
   match ctx with
     | CTX ->
@@ -866,12 +877,12 @@ let rec break_at_sseq ctx =
           | Just (ctxA, sseq_pat, ctxB, sseq_e2) ->
               Just (Cwseq annots pat ctxA e2, sseq_pat, ctxB, sseq_e2)
         end
-    | Csseq annots pat ctx' e2 ->
+    | Csseq annots pat ctx' (nice_tail, e2) ->
         match break_at_sseq ctx' with
           | Nothing ->
-              Just (CTX, pat, ctx', e2)
+              Just (CTX, pat, ctx', (nice_tail, e2))
           | Just (in_ctxA, in_pat, in_ctxB, in_e2) ->
-              Just (Csseq annots pat in_ctxA e2, in_pat, in_ctxB, in_e2)
+              Just (Csseq annots pat in_ctxA (nice_tail, e2), in_pat, in_ctxB, in_e2)
       end
     | Cunseq annots es1 ctx' es2 ->
         match break_at_sseq ctx' with
@@ -902,7 +913,7 @@ let rec break_at_sseq ctx =
 type break =
   | NO_BOUND
   | BOUND_NO_SSEQ of context * context
-  | BOUND_WITH_SSEQ of context * context * Core.pattern * context * Core.expr core_run_annotation
+  | BOUND_WITH_SSEQ of context * context * Core.pattern * context * (Core.strong_tail_control * Core.expr core_run_annotation)
 
 let rec break_at_bound_and_sseq ctx =
   match ctx with
@@ -917,14 +928,14 @@ let rec break_at_bound_and_sseq ctx =
           | BOUND_WITH_SSEQ ctxA ctxB sseq_pat ctxC e2_sseq ->
               BOUND_WITH_SSEQ (Cwseq annots pat ctxA e2) ctxB sseq_pat ctxC e2_sseq
         end
-    | Csseq annots pat ctx' e2 ->
+    | Csseq annots pat ctx' (nice_tail, e2) ->
         match break_at_bound_and_sseq ctx' with
           | NO_BOUND ->
               NO_BOUND
           | BOUND_NO_SSEQ ctxA ctxB ->
-              BOUND_NO_SSEQ (Csseq annots pat ctxA e2) ctxB
+              BOUND_NO_SSEQ (Csseq annots pat ctxA (nice_tail, e2)) ctxB
           | BOUND_WITH_SSEQ ctxA ctxB sseq_pat ctxC e2_sseq ->
-              BOUND_WITH_SSEQ (Csseq annots pat ctxA e2) ctxB sseq_pat ctxC e2_sseq
+              BOUND_WITH_SSEQ (Csseq annots pat ctxA (nice_tail, e2)) ctxB sseq_pat ctxC e2_sseq
       end
     | Cunseq annots es1 ctx' es2 ->
         match break_at_bound_and_sseq ctx' with
@@ -964,9 +975,9 @@ let rec pull_dyn_annotations z =
     | Cwseq annots pat ctx e2 ->
         let (acc, ctx') = pull_dyn_annotations ctx in
         (acc, Cwseq annots pat ctx' e2)
-    | Csseq annots pat ctx e2 ->
+    | Csseq annots pat ctx (nice_tail, e2) ->
         let (acc, ctx') = pull_dyn_annotations ctx in
-        (acc, Csseq annots pat ctx' e2)
+        (acc, Csseq annots pat ctx' (nice_tail, e2))
     | Cannot annots xs ctx ->
         let (acc, ctx') = pull_dyn_annotations ctx in
         (xs :: acc, ctx')
@@ -982,8 +993,8 @@ let rec add_exclusion n = function
       Cunseq annots es1 (add_exclusion n ctx') es2
   | Cwseq annots pat ctx' e2 ->
       Cwseq annots pat (add_exclusion n ctx') e2
-  | Csseq annots pat ctx' e2 ->
-      Csseq annots pat (add_exclusion n ctx') e2
+  | Csseq annots pat ctx' (nice_tail, e2) ->
+      Csseq annots pat (add_exclusion n ctx') (nice_tail, e2)
   | Cannot annots xs ctx' ->
       let xs' = List.map (function
         | DA_neg id excl fp ->
@@ -1316,11 +1327,11 @@ let step_ctx mem_st file core_extern current_tid (parent_tid_opt, th_st) =
                                 | BOUND_WITH_SSEQ ctx_bound ctxA sseq_pat CTX sseq_e2 ->
                                     (* TODO: check *)
                                     (* Empty inner context, so no need to pull and annotate for exclusion *)
-                                    <| th_st with arena= apply_ctx ctx_bound (apply_ctx ctxA (Caux.mk_sseq_e sseq_pat (mk_annot_e cval_e ) sseq_e2)) |>
+                                    <| th_st with arena= apply_ctx ctx_bound (apply_ctx ctxA (Caux.mk_sseq_tail_e sseq_pat (mk_annot_e cval_e ) sseq_e2)) |>
                                 | BOUND_WITH_SSEQ ctx_bound ctxA sseq_pat ctxB sseq_e2 ->
                                     let ctxB' = add_exclusion n ctxB in
                                     let expr' =
-                                      Caux.mk_sseq_e (Caux.mk_tuple_pat [ Caux.mk_empty_pat BTy_unit(*TODO:HACKHACK*)
+                                      Caux.mk_sseq_tail_e (Caux.mk_tuple_pat [ Caux.mk_empty_pat BTy_unit(*TODO:HACKHACK*)
                                                                         ; sseq_pat ])
                                                      (Caux.mk_unseq_e [ mk_annot_e (Caux.mk_value_e Vunit)
                                                                       ; apply_ctx ctxB' cval_e ])
@@ -1362,7 +1373,7 @@ let step_ctx mem_st file core_extern current_tid (parent_tid_opt, th_st) =
                           (* Empty inner context, so no need to pull and annotate for exclusion *)
                           Step_tau2 "Neg Action, CTX" Core_run.TSK_Misc begin
                             <| th_st with arena= apply_ctx ctx_bound
-                                                   (apply_ctx ctxA (Caux.mk_sseq_e sseq_pat (Expr [] (Eaction (Paction Pos act))) sseq_e2)) |>
+                                                   (apply_ctx ctxA (Caux.mk_sseq_tail_e sseq_pat (Expr [] (Eaction (Paction Pos act))) sseq_e2)) |>
                           end
                           
                       | BOUND_WITH_SSEQ ctx_bound ctxA sseq_pat ctxB sseq_e2 ->
@@ -1371,7 +1382,7 @@ let step_ctx mem_st file core_extern current_tid (parent_tid_opt, th_st) =
                             E.fresh_excluded_id >>= fun n ->
                             let ctxB' = add_exclusion n ctxB in
                             let expr' =
-                              Caux.mk_sseq_e (Caux.mk_tuple_pat [ Caux.mk_empty_pat BTy_unit(*TODO:HACKHACK*)
+                              Caux.mk_sseq_tail_e (Caux.mk_tuple_pat [ Caux.mk_empty_pat BTy_unit(*TODO:HACKHACK*)
                                                                 ; sseq_pat ])
                                              (Caux.mk_unseq_e [ Expr [] (Eexcluded n act)
                                                               ; apply_ctx ctxB' (Caux.mk_pure_e Caux.mk_unit_pe) ])
@@ -1518,6 +1529,9 @@ let step_ctx mem_st file core_extern current_tid (parent_tid_opt, th_st) =
                     end
                 | Just (TAU debug_str env' expr') ->
                     Step_tau2 debug_str Core_run.TSK_Misc
+                      <| th_st with arena= apply_ctx ctx expr'; env= env' |>
+                | Just (BREAKPOINT site env' expr') ->
+                    Step_tau2 "Esseq" (Core_run.TSK_Breakpoint site)
                       <| th_st with arena= apply_ctx ctx expr'; env= env' |>
                 | Just (EVAL debug_str eval_m) ->
                     Step_with_runstate2 (RSK_eval debug_str) begin
