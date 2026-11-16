@@ -4,9 +4,7 @@ import CoreNice.Driver
 
 /- Executable tests of the actual substitution and environment jump rules.
    These are differential-testing instruments, not correspondence theorems. -/
-namespace CoreNiceIncomingTests
-
-open CoreNice
+namespace CoreNice.IncomingTests
 
 private instance : LemFuel := ⟨10000⟩
 private instance : CerbGlobal.Switches := ⟨[]⟩
@@ -139,11 +137,11 @@ def tests : IO Unit := do
   ruleTests true
   ruleTests false
 
-end CoreNiceIncomingTests
+end CoreNice.IncomingTests
 
 def main (args : List String) : IO Unit :=
   match args with
-  | [] => CoreNiceIncomingTests.tests
-  | ["--unknown-label-legacy"] => CoreNiceIncomingTests.unknownLabelControl true
-  | ["--unknown-label-optimized"] => CoreNiceIncomingTests.unknownLabelControl false
+  | [] => CoreNice.IncomingTests.tests
+  | ["--unknown-label-legacy"] => CoreNice.IncomingTests.unknownLabelControl true
+  | ["--unknown-label-optimized"] => CoreNice.IncomingTests.unknownLabelControl false
   | _ => throw (IO.Error.userError "unknown incoming-test arguments")
