@@ -284,12 +284,14 @@ private def mapTreeM {m : Type → Type} [Monad m] {α β γ : Type}
     let right ← mapTreeM transform right
     return .Node left key value right height
 
-private def mapValuesM {m : Type → Type} [Monad m] {α β γ : Type}
+/-- Effectful value mapping that preserves the comparator and entire key tree. -/
+def mapValuesM {m : Type → Type} [Monad m] {α β γ : Type}
     (transform : α → β → m γ) : Fmap α β → m (Fmap α γ)
   | .empty => pure .empty
   | .mk comparator tree => return .mk comparator (← mapTreeM transform tree)
 
-private def summarize (procedures : List Procedure) : Stats :=
+/-- Compact static counts from a procedure inventory, including mutated files. -/
+def summarize (procedures : List Procedure) : Stats :=
   procedures.foldl (fun stats procedure =>
     procedure.labels.foldl (fun stats label =>
       let count := label.info.nice_label_origins.length
