@@ -248,6 +248,14 @@ def resumableTests : IO Unit := do
   let replayFinished ← expectComplete "replay resumes" (resume replayMiddle)
   require "record/replay pause trace equality"
     (replayFinished.events == finished.events && replayFinished.tape == finished.tape)
+  -- Deliberately restart a previous genuine choice instead of its saved suffix.
+  -- The resumed session must reject the repeated descriptor at the next ordinal.
+  let repeatsChoice := { adapter with continueFrom := fun _ => prefixMachine }
+  let corruptMiddle ← expectPause "repeated-choice mutation checkpoint"
+    (startResumable 20 observer (.replay reference.tape) header repeatsChoice prefixMachine 0)
+  let corruptEnd ← expectComplete "repeated-choice mutation rejected" (resume corruptMiddle)
+  require "resuming cannot consume an earlier genuine choice twice"
+    (isMismatch corruptEnd && corruptEnd.tape.entries.size == 1 && corruptEnd.visited == 3)
   let before ← expectPause "pause before any choice"
     (runResumable 20 (.replay reference.tape) (pauseAt .before))
   require "entire tape survives early pause" (before.tape.entries.isEmpty && before.remainingFuel == 19)
