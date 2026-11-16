@@ -200,7 +200,7 @@ def parse_trace(data, *, replay=False):
     return Trace(header, [row["event"] for row in groups["event"]], choices, outcome, end)
 
 
-def project_stutter(trace):
+def project_stutter(trace, allow_breakpoints=False):
     """Erase singleton bookkeeping inside intervals delimited by real choices.
 
     Each lane is checked against its own node/choice counts before erasure.
@@ -281,7 +281,24 @@ def project_stutter(trace):
         kind, alternatives, selected = event["kind"], event["alternatives"], event["selected"]
         if not isinstance(kind, str) or not isinstance(alternatives, list):
             fail("invalid ND kind or alternatives")
-        if kind in {"active", "killed", "guard"}:
+        if kind == "pause" and allow_breakpoints:
+            point = event["parent"]
+            expected = {"schema", "procedure", "site", "role", "ailOrigin", "location",
+                        "thread", "encounter", "phase", "remainingBudget", "driverSteps"}
+            if (alternatives or selected is not None or not isinstance(point, dict)
+                    or set(point) != expected or point["schema"] != "corenice-breakpoint-v1"
+                    or point["phase"] != "nonmemory"
+                    or point["role"] not in {"statement-join", "condition-ready", "loop-body-done", "internal"}
+                    or any(not natural(point[key]) for key in
+                           ["site", "thread", "encounter", "remainingBudget", "driverSteps"])
+                    or point["encounter"] == 0
+                    or (point["ailOrigin"] is not None and
+                        (not isinstance(point["ailOrigin"], list) or
+                         any(not natural(n) for n in point["ailOrigin"])))):
+                fail("invalid breakpoint boundary")
+            # Erase only the administrative boundary. Its preceding effects
+            # stay in this interval, with the original genuine choice barriers.
+        elif kind in {"active", "killed", "guard"}:
             if alternatives or selected is not None:
                 fail("invalid terminal/guard metadata")
             if kind != "guard":
@@ -320,7 +337,7 @@ def project_stutter(trace):
 
 
 def compare(left, right, label, comparison="exact"):
-    if comparison not in {"exact", "stutter"}:
+    if comparison not in {"exact", "stutter", "breakpoints"}:
         raise ValueError("unknown comparison profile")
     if left.end.get("complete") is not True or right.end.get("complete") is not True:
         raise Incomplete("cannot compare an incomplete execution", "comparison-profile")
@@ -328,8 +345,9 @@ def compare(left, right, label, comparison="exact"):
     b = {key: value for key, value in right.header.items() if key != "origin"}
     events_a, events_b = left.events, right.events
     end_a, end_b = left.end, right.end
-    if comparison == "stutter":
-        events_a, events_b = project_stutter(left), project_stutter(right)
+    if comparison in {"stutter", "breakpoints"}:
+        allow_breakpoints = comparison == "breakpoints"
+        events_a, events_b = project_stutter(left, allow_breakpoints), project_stutter(right, allow_breakpoints)
         end_a = {key: value for key, value in left.end.items() if key != "visited"}
         end_b = {key: value for key, value in right.end.items() if key != "visited"}
     for field, x, y in [("header", a, b), ("events", events_a, events_b),
@@ -445,7 +463,7 @@ def summarize(trace):
     }
 
 
-def compare_case(options, build_pair=None, inspect=None):
+def compare_case(options, build_pair=None, inspect=None, inspect_nice=None):
     """Run four fresh processes; return compact evidence only after all agree.
 
     A campaign may supply hashes computed once, provided it checks that those
@@ -486,6 +504,8 @@ def compare_case(options, build_pair=None, inspect=None):
 
         def execute(binary, origin, mode, tape):
             command = [str(binary), *common, "--mode", mode, "--tape", str(tape)]
+            if origin == "CoreNice":
+                command.extend(getattr(options, "corenice_arg", []))
             if mode == "record":
                 if options.seed is not None:
                     command.extend(["--seed", str(options.seed)])
@@ -527,7 +547,15 @@ def compare_case(options, build_pair=None, inspect=None):
         compare(a_record, b_record, "independent recordings under the same policy", comparison)
         if inspect is not None:
             inspect(a_record)
+        if inspect_nice is not None:
+            inspect_nice(b_record)
         summary = summarize(a_record)
+        pauses = [event["parent"] for event in b_record.events
+                  if event.get("channel") == "nd" and event.get("kind") == "pause"]
+        summary["breakpoint_visits"] = len(pauses)
+        summary["breakpoint_sites"] = len({json.dumps([point["procedure"], point["site"]], sort_keys=True) for point in pauses})
+        summary["breakpoint_roles"] = {role: sum(point["role"] == role for point in pauses)
+                                       for role in sorted({point["role"] for point in pauses})}
         summary["comparison"] = comparison
         return summary
 
@@ -540,6 +568,8 @@ def parse_options(argv=None):
     parser.add_argument("--runtime", type=Path, default=ROOT / "_build/install/default")
     parser.add_argument("--core-bin", type=Path, default=ROOT / "lean_frontend/.lake/build/bin/core-diff")
     parser.add_argument("--corenice-bin", type=Path, default=ROOT / "lean_frontend/.lake/build/bin/corenice-diff")
+    parser.add_argument("--corenice-arg", action="append", default=[],
+                        help="extra Nice runner argument; use = for values beginning with --")
     policy = parser.add_mutually_exclusive_group()
     policy.add_argument("--seed", type=int)
     policy.add_argument("--choices", help="comma-separated branching indices, then branch zero")
@@ -549,7 +579,7 @@ def parse_options(argv=None):
     parser.add_argument("--timeout", type=float, default=30.0, help="wall seconds per child")
     parser.add_argument("--memory-mb", type=int, default=4096, help="virtual memory MiB per child")
     parser.add_argument("--output-mb", type=int, default=16, help="combined stdout/stderr MiB per child")
-    parser.add_argument("--comparison", choices=["exact", "stutter"], default="exact",
+    parser.add_argument("--comparison", choices=["exact", "stutter", "breakpoints"], default="exact",
                         help="exact trace or explicit branch-delimited stutter projection")
     parser.add_argument("--summary-json", action="store_true", help="emit compact actual-path coverage as JSON")
     options = parser.parse_args(argv)

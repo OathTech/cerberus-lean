@@ -36,6 +36,13 @@ recursive-goto, output-before-UB and minimal factorial/for/goto inputs. Assertio
 about loop roles concern normalized AIL boundaries; a C `continue` may become a
 jump to an introduced label before normal AIL-body completion.
 
+The reused `tests/z2-probes/nd/order3.c` fixture additionally enumerates all six
+complete genuine-choice tapes and all 16 subsets of its four cuts. Its six
+distinct return values check that the supplied prefixes really reach all call
+orders; each full recorded tape must have exactly the expected arities 3 then 2.
+This is a finite exhaustive cross-product for that fixture, not a claim that
+larger input families exhaust their nondeterminism or pause schedules.
+
 Unexpected modeled errors, unexpected `NiceFault`, timeouts, observer failures
 and budget exhaustion fail the suite. This is bounded execution evidence, not
 full C coverage or a simulation theorem. Mutation controls, full campaigns and

@@ -1720,11 +1720,11 @@ let global_definitions () =
   ND.read (fun dr_st ->
     dr_st.core_file.Core.globs
   ) >>= fun globs ->
-  ND.return $ List.reverse $ List.foldl (fun acc (sym, glb) ->
+  ND.return (List.reverse (List.foldl (fun acc (sym, glb) ->
     match glb with
     | Core.GlobalDef (bTy, _) e -> (sym, bTy, e) :: acc
     | Core.GlobalDecl _ -> acc
-    end) [] globs
+    end) [] globs))
 
 val begin_global: Mem.thread_id -> Symbol.sym -> Core.expr Core_run.core_run_annotation -> driverM unit
 let begin_global tid0 glob_sym expr =

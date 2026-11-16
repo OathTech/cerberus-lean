@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class Case:
     name: str
     path: str
-    value: int | None = 0
+    value: int | tuple[int, ...] | None = 0
     kind: str = "defined"
     outputs: tuple[str, ...] = ("",)
     choices: tuple[str | None, ...] = (None,)
@@ -29,11 +29,16 @@ class Case:
     repeated: bool = False
     no_pauses: bool = False
     genuine_choice: bool = False
-    enumerate_subsets: bool = False
+    enumerate_subsets: int = 0
+    complete_arities: tuple[int, ...] = ()
 
 
 CASES = (
-    Case("two-cuts", "tests/corenice/breakpoints/two_cuts.c", value=3, enumerate_subsets=True),
+    Case("two-cuts", "tests/corenice/breakpoints/two_cuts.c", value=3, enumerate_subsets=2),
+    Case("all-call-orders", "tests/z2-probes/nd/order3.c",
+         value=(129, 138, 219, 237, 318, 327),
+         choices=("0,0", "0,1", "1,0", "1,1", "2,0", "2,1"),
+         genuine_choice=True, enumerate_subsets=4, complete_arities=(3, 2)),
     Case("composition", "tests/corenice/breakpoints/composition.c", value=6,
          roles=("statement-join", "condition-ready", "loop-body-done"), repeated=True),
     Case("do-loop", "tests/corenice/breakpoints/do_loop.c",
@@ -95,7 +100,8 @@ def check_outcome(case, trace):
     check(terminal["stdout"] in case.outputs and terminal["stderr"] == "",
           f"{case.name}: unexpected terminal output")
     if case.kind == "defined":
-        check(not terminal["blocked"] and returned_integer(trace) == case.value,
+        expected = case.value if isinstance(case.value, tuple) else (case.value,)
+        check(not terminal["blocked"] and returned_integer(trace) in expected,
               f"{case.name}: incorrect result or blocked execution")
     deltas = [event["observation"] for event in trace.events if "observation" in event]
     output = "".join(delta["text"] for delta in deltas if delta["channel"] == "stdout")
@@ -121,6 +127,15 @@ def check_all_points(case, points):
               f"{case.name}: pause repeated a completed boundary or reset driver accounting")
         check(later["remainingBudget"] < earlier["remainingBudget"],
               f"{case.name}: driver budget was replenished across a pause")
+
+
+def check_complete_choices(case, summary, choice):
+    if case.complete_arities:
+        check(summary["arities"] == list(case.complete_arities),
+              f"{case.name}: actual complete tape has unexpected choices/alternatives")
+        expected = [int(index) for index in choice.split(",")]
+        check(summary["indices"] == expected,
+              f"{case.name}: supplied prefix does not exhaust the actual complete tape")
 
 
 def load_comparator(root):
@@ -166,6 +181,7 @@ def run_suite(options, diff):
     outcomes = Counter()
     role_visits = Counter()
     outputs = {case.name: set() for case in cases}
+    values = {case.name: set() for case in cases}
     for case in cases:
         source = (ROOT / case.path).resolve(strict=True)
         for choice in case.choices:
@@ -173,9 +189,14 @@ def run_suite(options, diff):
             flags = [] if choice is None else ["--choices", choice]
             config = diff.parse_options([str(source), *common, *flags,
                                          "--corenice-bin", str(automatic), "--comparison", "exact"])
+            def inspect_reference(trace):
+                outputs[case.name].add(check_outcome(case, trace))
+                if case.kind == "defined":
+                    values[case.name].add(returned_integer(trace))
             reference = diff.compare_case(config, (frozen[core], frozen[automatic]),
-                inspect=lambda trace: outputs[case.name].add(check_outcome(case, trace)))
+                                          inspect=inspect_reference)
             comparisons += 1
+            check_complete_choices(case, reference, choice)
             if case.genuine_choice:
                 check(len(reference["indices"]) > 0, f"{case.name}: no genuine competing choice")
             all_points = []
@@ -202,9 +223,10 @@ def run_suite(options, diff):
                         chosen = Counter(point["site"] for point in all_points).most_common(1)[0][0]
                         policies.append(f"site:{chosen}")
                     if case.enumerate_subsets:
-                        check(len(all_points) == 2, f"{case.name}: expected exactly two reached cuts")
-                        policies.extend("visits:" + ",".join(str(i + 1) for i in range(2)
-                                        if mask & (1 << i)) for mask in range(4))
+                        count = case.enumerate_subsets
+                        check(len(all_points) == count, f"{case.name}: expected exactly {count} reached cuts")
+                        policies.extend("visits:" + ",".join(str(i + 1) for i in range(count)
+                                        if mask & (1 << i)) for mask in range(1 << count))
                 else:
                     if policy == "none":
                         expected = []
@@ -228,14 +250,17 @@ def run_suite(options, diff):
                 print(f"NOT APPLICABLE: {case.name}: no reached site for selected-site policy", flush=True)
         if case.genuine_choice:
             check(outputs[case.name] == set(case.outputs),
-                  f"{case.name}: supplied choice prefixes did not exercise both observable call orders")
+                  f"{case.name}: supplied choice prefixes did not exercise all expected output orders")
+        if isinstance(case.value, tuple):
+            check(values[case.name] == set(case.value),
+                  f"{case.name}: supplied choice prefixes did not exercise all expected return values")
     check(all(diff.sha256(path) == digest for path, digest in frozen.items()),
           "a compared binary changed during the suite")
     print(f"PASS: {len(cases)} source fixtures, {paths} source/choice-policy runs, "
           f"{comparisons} bidirectional comparisons ({comparisons * 4} interpreter executions)")
     print(f"PASS: paths by outcome={dict(outcomes)}; all-policy recording-lane pauses={visits}, "
           f"sum of reached sites per path={unique_sites}; roles={dict(role_visits)}")
-    print("NOT MEASURED here: full C coverage, all nondeterministic traces, all pause subsets beyond the enumerated two-cut fixture, "
+    print("NOT MEASURED here: full C coverage, all nondeterministic traces outside all-call-orders, all pause subsets beyond the enumerated fixtures, "
           "or a simulation theorem")
 
 

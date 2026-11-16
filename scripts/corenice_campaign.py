@@ -139,6 +139,9 @@ def run_campaign(config, options):
         "nd_programs_with_two_tapes": 0, "distinct_input_tape_pairs": 0,
         "selected_indices": Counter(), "choice_kinds": Counter(), "observed_tags": Counter(),
         "path_classes": Counter(), "failure_classes": Counter(), "failures": [], "nondefined_cases": [],
+        "comparison": getattr(options, "comparison", "exact"),
+        "corenice_args": getattr(options, "corenice_arg", []),
+        "breakpoint_visits": 0, "breakpoint_roles": Counter(),
     }
     sources = set()
     ROOT.joinpath(".tmp").mkdir(exist_ok=True)
@@ -173,6 +176,8 @@ def run_campaign(config, options):
                     address_space_top=0xFFFFFFFFFFFF, arg=[], seed=None,
                     choices=",".join(map(str, prefix)), timeout=limits["child_seconds"],
                     memory_mb=limits["memory_mb"], output_mb=limits["output_mb"],
+                    comparison=getattr(options, "comparison", "exact"),
+                    corenice_arg=getattr(options, "corenice_arg", []),
                     deadline=started + limits["campaign_seconds"])
                 try:
                     unchanged()
@@ -192,6 +197,8 @@ def run_campaign(config, options):
                     report["selected_indices"].update(map(str, summary["indices"]))
                     report["choice_kinds"].update(summary["choice_kinds"])
                     report["observed_tags"].update(summary["observed_tags"])
+                    report["breakpoint_visits"] += summary.get("breakpoint_visits", 0)
+                    report["breakpoint_roles"].update(summary.get("breakpoint_roles", {}))
                 except (diff.Mismatch, diff.Incomplete, OSError, ValueError) as error:
                     kind = "mismatch" if isinstance(error, diff.Mismatch) else "incomplete"
                     category = (getattr(error, "category", "incomplete") if isinstance(error, diff.Incomplete)
@@ -231,6 +238,9 @@ def main(argv=None):
     parser.add_argument("--runtime", type=Path, default=ROOT / "_build/install/default")
     parser.add_argument("--core-bin", type=Path, default=ROOT / "lean_frontend/.lake/build/bin/core-diff")
     parser.add_argument("--corenice-bin", type=Path, default=ROOT / "lean_frontend/.lake/build/bin/corenice-diff")
+    parser.add_argument("--comparison", choices=["exact", "stutter", "breakpoints"], default="exact")
+    parser.add_argument("--corenice-arg", action="append", default=[],
+                        help="argument for the Nice executable only (repeatable)")
     options = parser.parse_args(argv)
     config = diff.decode(options.manifest.read_text()) if options.manifest else initial_config(
         "smoke" if options.smoke else "pilot")

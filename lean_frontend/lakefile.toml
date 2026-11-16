@@ -523,7 +523,25 @@ srcDir = "differential"
 roots = ["Prepared", "PipelineA", "PipelineNice", "ObservationShared", "ChoiceRunner",
          "ObservationA", "ObservationNice", "RunOutput", "EntryCommon",
          "ArtifactQuoteNice", "ArtifactCompare", "Incoming", "IncomingTests",
-         "IncomingReachability", "IncomingReachabilityTests"]
+         "IncomingReachability", "IncomingReachabilityTests", "BreakpointExecution"]
+
+[[lean_exe]]
+name = "corenice-resume"
+srcDir = "differential"
+root = "EntryBreakpoint"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "corenice-breakpoint-demo"
+srcDir = "test"
+root = "CoreNice.BreakpointDemo"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "corenice-breakpoint-driver-tests"
+srcDir = "test"
+root = "CoreNice.BreakpointDriverTests"
+moreLinkArgs = ["native/md5.o"]
 
 [[lean_exe]]
 name = "corenice-breakpoint-tests"
