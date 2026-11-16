@@ -18,6 +18,47 @@ private def unwrap {α : Type} : Except String α → IO α
 
 private abbrev Run := Choice.Run CoreNice.driver_result CoreNice.driver_error CoreNice.driver_state
 
+private structure AnnotationStats where
+  syntacticJumps : Nat := 0
+  permittedOrigins : Nat := 0
+  removedOrigins : Nat := 0
+  affectedLabels : Nat := 0
+  maxPermittedOrigins : Nat := 0
+  zeroIncomingLabels : Nat := 0
+  deriving ToJson
+
+/-- Count the actual finalized artifact rather than the producer's summary. -/
+private def annotationStats (inventory : List Procedure) : IO AnnotationStats := do
+  let mut stats : AnnotationStats := {}
+  let mut accounted := 0
+  for procedure in inventory do
+    stats := { stats with syntacticJumps := stats.syntacticJumps + procedure.jumps.length }
+    for label in procedure.labels do
+      let syntactic := procedure.jumps.filterMap fun jump =>
+        if sameSymbol jump.target label.symbol then some jump.info.nice_jump_origin else none
+      let allowed := label.info.nice_label_origins
+      require (allowed.all syntactic.contains && allowed.eraseDups.length == allowed.length)
+        "finalized incoming set is not a set of syntactic origins for its actual label"
+      require (allowed.length <= syntactic.length) "incoming-set reduction count would be negative"
+      accounted := accounted + syntactic.length
+      stats := { stats with
+        permittedOrigins := stats.permittedOrigins + allowed.length
+        removedOrigins := stats.removedOrigins + (syntactic.length - allowed.length)
+        affectedLabels := stats.affectedLabels + (if allowed.length < syntactic.length then 1 else 0)
+        maxPermittedOrigins := max stats.maxPermittedOrigins allowed.length
+        zeroIncomingLabels := stats.zeroIncomingLabels + (if allowed.isEmpty then 1 else 0) }
+  require (accounted == stats.syntacticJumps) "label inventory does not account for every jump"
+  require (stats.permittedOrigins <= stats.syntacticJumps &&
+    stats.removedOrigins == stats.syntacticJumps - stats.permittedOrigins)
+    "annotation origin totals disagree"
+  return stats
+
+private def tightenedTargets (inventory : List Procedure) : List (sym × sym) :=
+  inventory.flatMap fun procedure => procedure.labels.filterMap fun label =>
+    let syntactic := procedure.jumps.filter (fun jump => sameSymbol jump.target label.symbol)
+    if label.info.nice_label_origins.length < syntactic.length
+    then some (procedure.symbol, label.symbol) else none
+
 private def run [LemFuel] (fuel : Nat) (expected : Choice.Header) (mode : Choice.Mode)
     (prepared : Prepared) (execution : ExecutionNice) : IO Run := do
   let observed ← unwrap (execution.capture true)
@@ -65,10 +106,16 @@ private def sameBeforeFault (discovery precise : Run) : IO Unit := do
   let preciseOutput := ObservationNice.streams precise.finalState
   require (discoveryOutput == preciseOutput) "precise corruption changed pre-fault output"
 
-def check [LemFuel] (runtime input : String) (fuel top seed : Nat) : IO Unit := do
+def check [LemFuel] (runtime input : String) (fuel top seed : Nat)
+    (tightenedOnly : Bool) : IO Unit := do
   let prepared ← prepare runtime input top []
   let execution ← lowerNice prepared
   let inventory := inspectFile execution.file
+  let stats ← annotationStats inventory
+  let tightened := tightenedTargets inventory
+  let selectedTarget := fun procedure label =>
+    !tightenedOnly || tightened.any (fun target =>
+      sameSymbol target.1 procedure && sameSymbol target.2 label)
   let runtimeJumps := (inventory.filter (·.sourceMap == "stdlib")).foldl
     (fun count procedure => count + procedure.jumps.length) 0
   let allJumps := inventory.foldl (fun count procedure => count + procedure.jumps.length) 0
@@ -85,7 +132,8 @@ def check [LemFuel] (runtime input : String) (fuel top seed : Nat) : IO Unit := 
   | .returned _ => pure ()
   | _ => fail "uncorrupted generated program did not complete with a defined result"
   let emptied := mapMetadataFile (fun _ _ info => info)
-    (fun _ _ info => { info with nice_label_origins := [] }) execution.file
+    (fun procedure label info => if selectedTarget procedure label
+      then { info with nice_label_origins := [] } else info) execution.file
   let discovery ← run fuel expected mode prepared (rebuild prepared execution emptied)
   match discovery.outcome with
   | .returned value =>
@@ -94,11 +142,16 @@ def check [LemFuel] (runtime input : String) (fuel top seed : Nat) : IO Unit := 
       (← unwrap (ObservationNice.result original))) "empty incoming sets changed a no-jump outcome"
     require (discovery.events == baseline.events && discovery.tape.entries == baseline.tape.entries)
       "empty incoming sets changed observations without producing a checked-jump fault"
-    emit (Json.mkObj [("incoming-control", toJson "no-checked-jump"),
+    emit (Json.mkObj [("incoming-control", toJson
+      (if tightenedOnly then "no-executed-tightened-label" else "no-checked-jump")),
+      ("selection", toJson (if tightenedOnly then "tightened" else "all")),
       ("syntacticJumps", toJson allJumps), ("runtimeSyntacticJumps", toJson runtimeJumps),
+      ("annotationStats", toJson stats),
       ("executedFirstSiteWitnesses", toJson (0 : Nat))])
   | _ =>
     let first ← fault discovery
+    require (selectedTarget first.fault_procedure first.fault_label)
+      "fault destination was not selected for metadata corruption"
     let some procedure := inventory.find? (sameSymbol ·.symbol first.fault_procedure)
       | fail "fault refers to a procedure absent from finalized artifact"
     let some jump := procedure.jumps.find? (fun site =>
@@ -142,7 +195,9 @@ def check [LemFuel] (runtime input : String) (fuel top seed : Nat) : IO Unit := 
       fault_jump := changedJump, fault_incoming := label.info }
     sameBeforeFault discovery wrong
     emit (Json.mkObj [("incoming-control", toJson "passed"),
+      ("selection", toJson (if tightenedOnly then "tightened" else "all")),
       ("syntacticJumps", toJson allJumps), ("runtimeSyntacticJumps", toJson runtimeJumps),
+      ("annotationStats", toJson stats),
       ("executedFirstSiteWitnesses", toJson (1 : Nat)),
       ("typedFaultControls", toJson (3 : Nat)),
       ("usedChoices", toJson discovery.tape.entries.size),
@@ -154,13 +209,21 @@ def main (args : List String) : IO UInt32 := do
   try
     unless (← IO.getEnv "LEAN_ABORT_ON_PANIC") == some "1" do
       CoreNiceDiff.fail "LEAN_ABORT_ON_PANIC=1 is required"
-    let [runtime, input, fuelText, topText, seedText] := args
-      | CoreNiceDiff.fail "usage: corenice-incoming-control RUNTIME_PREFIX CABS_JSON FUEL ADDRESS_SPACE_TOP SEED"
+    let (baseArgs, tightenedOnly) ← match args with
+      | [runtime, input, fuelText, topText, seedText] =>
+        pure ([runtime, input, fuelText, topText, seedText], false)
+      | [runtime, input, fuelText, topText, seedText, "all"] =>
+        pure ([runtime, input, fuelText, topText, seedText], false)
+      | [runtime, input, fuelText, topText, seedText, "tightened"] =>
+        pure ([runtime, input, fuelText, topText, seedText], true)
+      | _ => CoreNiceDiff.fail "usage: corenice-incoming-control RUNTIME_PREFIX CABS_JSON FUEL ADDRESS_SPACE_TOP SEED [all|tightened]"
+    let [runtime, input, fuelText, topText, seedText] := baseArgs
+      | CoreNiceDiff.fail "invalid normalized incoming-control arguments"
     let some fuel := fuelText.toNat? | CoreNiceDiff.fail "FUEL must be natural"
     let some top := topText.toNat? | CoreNiceDiff.fail "ADDRESS_SPACE_TOP must be natural"
     let some seed := seedText.toNat? | CoreNiceDiff.fail "SEED must be natural"
     if seed > 18446744073709551615 then CoreNiceDiff.fail "SEED must fit UInt64"
-    @CoreNiceDiff.IncomingControl.check ⟨fuel⟩ runtime input fuel top seed
+    @CoreNiceDiff.IncomingControl.check ⟨fuel⟩ runtime input fuel top seed tightenedOnly
     return 0
   catch error =>
     CoreNiceDiff.emit (Lean.Json.mkObj [("incoming-control", Lean.toJson "failed"),
