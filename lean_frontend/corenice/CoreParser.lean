@@ -1960,7 +1960,7 @@ private partial def pExprSave : P Expr' := do
   lexSym ")"
   lexKw "in"
   let e ← pExpr
-  return (mkE (Esave (s, bTy) xs e))
+  return (mkE (Esave (s, bTy) xs e empty_nice_label_info))
 
 private partial def pExprRun : P Expr' := do
   lexKw "run"
@@ -1968,7 +1968,7 @@ private partial def pExprRun : P Expr' := do
   lexSym "("
   let pes ← sepByComma pPexpr
   lexSym ")"
-  return (mkE (Erun () s pes))
+  return (mkE (Erun () s pes empty_nice_jump_info))
 
 private partial def pExprNd : P Expr' := do
   lexKw "nd"
@@ -2354,7 +2354,7 @@ private partial def checkParameterE (params : List sym) : Expr' → Except sym U
     let pe := checkParameterPE params
     match e with
     | Epure a => pe a
-    | Ememop _ es | Eproc _ _ es | Erun _ _ es => es.forM pe
+    | Ememop _ es | Eproc _ _ es | Erun _ _ es _ => es.forM pe
     | Eaction (Paction _ (Action _ _ act)) | Eexcluded _ (Action _ _ act) =>
       checkParameterAct params act
     | Ecase a alts =>
@@ -2366,7 +2366,7 @@ private partial def checkParameterE (params : List sym) : Expr' → Except sym U
     | Eunseq es | End es | Epar es => es.forM go
     | Ewseq pat a b | Esseq pat a b => do checkParameterPat params pat; go a; go b
     | Ebound a | Eannot _ a => go a
-    | Esave (s, _) bindings body =>
+    | Esave (s, _) bindings body _ =>
       checkParameterBinder params s
       bindings.forM fun (s', (_, rhs)) => do checkParameterBinder params s'; pe rhs
       go body
@@ -2722,9 +2722,9 @@ private partial def relocE (ctx : RelocCtx) : Expr' → Expr'
       | Esseq pat e1 e2 => Esseq (relocPat ctx pat) (r e1) (r e2)
       | Ebound e => Ebound (r e)
       | End es => End (es.map r)
-      | Esave sb params e =>
-        Esave sb (params.map fun (s, (tyinfo, pe)) => (s, (tyinfo, rp pe))) (r e)
-      | Erun a s pes => Erun a s (pes.map rp)
+      | Esave sb params e label_info =>
+        Esave sb (params.map fun (s, (tyinfo, pe)) => (s, (tyinfo, rp pe))) (r e) label_info
+      | Erun a s pes jump_info => Erun a s (pes.map rp) jump_info
       | Epar es => Epar (es.map r)
       | Ewait tid => Ewait tid
       | Eannot dyns e => Eannot dyns (r e)
@@ -3024,12 +3024,12 @@ private partial def renameE (ctx : RenameCtx) : Expr' → Expr'
       | Esseq pat e1 e2 => Esseq (renamePat ctx pat) (r e1) (r e2)
       | Ebound e => Ebound (r e)
       | End es => End (es.map r)
-      | Esave (s, bty) params e =>
+      | Esave (s, bty) params e label_info =>
         Esave (ctx.onSym s, bty)
           (params.map fun (s', ((bty', tyinfo), pe)) =>
             (ctx.onSym s', ((bty', tyinfo.map fun (ty, pb) => (renameCtype ctx ty, pb)), rp pe)))
-          (r e)
-      | Erun a s pes => Erun a (ctx.onSym s) (pes.map rp)
+          (r e) label_info
+      | Erun a s pes jump_info => Erun a (ctx.onSym s) (pes.map rp) jump_info
       | Epar es => Epar (es.map r)
       | Ewait tid => Ewait tid
       | Eannot dyns e => Eannot dyns (r e)

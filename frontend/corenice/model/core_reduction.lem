@@ -462,7 +462,7 @@ let one_step eval_pexpr full_eval_pexpr env (Expr annots expr_ as expr) =
               error "Core_reduction.one_step Esseq Eannot saw a non-evaluated e1"
         end
     
-    | Esave sym_bTy sym_bTy_pes e ->
+    | Esave sym_bTy sym_bTy_pes e label_info ->
         Just match valueFromPexprs (List.map (fun (_, (_, z)) -> z) sym_bTy_pes) with
           | Just cvals ->
               (* reduction: SAVE (tau part) *)
@@ -480,7 +480,7 @@ let one_step eval_pexpr full_eval_pexpr env (Expr annots expr_ as expr) =
                   eval_pexpr pe >>= fun pe' ->
                   E.return (sym, (bTy, pe'))
                 ) sym_bTy_pes >>= fun sym_bTy_pes' ->
-                E.return (Expr annots (Esave sym_bTy sym_bTy_pes' e))
+                E.return (Expr annots (Esave sym_bTy sym_bTy_pes' e label_info))
               end
         end
     | End es ->
@@ -523,9 +523,9 @@ let rec has_ccall (Expr _ expr_) =
         has_ccall e (* NOTE: this function should never see this case (for a C program) *)
     | End es ->
         List.any has_ccall es
-    | Esave _ _ e ->
+    | Esave _ _ e label_info ->
         has_ccall e (* NOTE: this function should never see this case (for a C program) *)
-    | Erun _ _ _ ->
+    | Erun _ _ _ jump_info ->
         false (* NOTE: this function should never see this case (for a C program) *)
     | Epar _ ->
         false (* because any ccall is in the body of another thread *)
@@ -608,9 +608,9 @@ let rec get_ctx (Expr annot expr_ as expr) =
           ) (get_ctx e)
     | End _ ->
         [(CTX, expr)]
-    | Esave _ _ _ ->
+    | Esave _ _ _ label_info ->
         [(CTX, expr)]
-    | Erun _ _ _ ->
+    | Erun _ _ _ jump_info ->
         [(CTX, expr)]
     | Epar _ ->
         [(CTX, expr)]
@@ -1447,25 +1447,25 @@ let step_ctx mem_st file core_extern current_tid (parent_tid_opt, th_st) =
                 let wrap_proc xs = wrap_expr (Expr e_annots (Eproc a (Impl iCst) xs)) in
                 process_impl_proc full_eval_pexpr' wrap_proc wrap_expr th_st iCst pes
 
-          | Erun run_annots sym pes ->
+          | Erun run_annots sym pes jump_info ->
               let current_proc =
                 match th_st.current_proc_opt with
                   | Just z -> z
                   | Nothing -> error "Core_reduction ==> Erun outside of a proc"
                 end in
               (* reduction: RUN *)
+              let proc_sym = match Map.lookup current_proc core_extern with
+                | Just proc_sym -> proc_sym
+                | Nothing -> current_proc
+              end in
               Step_with_runstate2 (RSK_eval "Erun") begin
                 SEU.read (fun run_st ->
-                  let proc_sym = match Map.lookup current_proc core_extern with
-                    | Just proc_sym -> proc_sym
-                    | Nothing -> current_proc
-                  end in
                   Maybe.bind (Map.lookup proc_sym run_st.labeled) (Map.lookup sym)
                 ) >>= function
                   | Nothing ->
                       error ("Erun couldn't resolve label: `" ^ show sym ^
                              "' for procedure `" ^ show current_proc ^ "'")
-                  | Just (sym_bTys, cont_expr) ->
+                  | Just (sym_bTys, cont_expr, label_info) ->
                       (* FORK 2026-09-23 (upstream-tray draft 45; audit R4): the argument
                          list must FIT the continuation's parameters BEFORE any argument is
                          evaluated — List.zip truncated: a surplus argument (an `error(...)`)
@@ -1473,6 +1473,13 @@ let step_ctx mem_st file core_extern current_tid (parent_tid_opt, th_st) =
                          binding. Same channel as this file's let-form fit checks (:362/:418). *)
                       if List.length sym_bTys <> List.length pes then
                         SEU.runEU (EU.fail (Errors.Illformed_program "Erun: the argument list does not fit the continuation's parameters"))
+                      else if not (List.elem jump_info.nice_jump_origin label_info.nice_label_origins) then
+                        SEU.runEU (EU.fail (Errors.NiceFault (Errors.IncomingOriginDenied <|
+                          Errors.fault_procedure= proc_sym;
+                          Errors.fault_jump= jump_info;
+                          Errors.fault_label= sym;
+                          Errors.fault_incoming= label_info;
+                        |>)))
                       else
                       E.foldlM (fun acc ((sym, bTy), pe) ->
                         full_eval_pexpr' pe >>= fun cval ->

@@ -1665,9 +1665,9 @@ let rec collect_labels env (Expr _ expr_) =
         E.foldlM (fun env' e ->
           collect_labels env' e
         ) env es
-    | Esave (sym, bTy) sym_bTy_pes e ->
+    | Esave (sym, bTy) sym_bTy_pes e label_info ->
         collect_labels <| env with labs= Map.insert sym (bTy, List.map (fun (_, ((z,_), _)) -> z) sym_bTy_pes) env.labs |> e
-    | Erun _ _ _ ->
+    | Erun _ _ _ jump_info ->
         E.return env
     | Epar es ->
         E.foldlM (fun env' e ->
@@ -1867,7 +1867,7 @@ and typecheck_expr callconv tagDefs (env: typing_env) expected_bTy (Expr annot e
         else
           E.mapM (typecheck_expr env expected_bTy) es >>= fun es' ->
           E.return (End es')
-    | Esave sym_bTy sym_bTy_pes e ->
+    | Esave sym_bTy sym_bTy_pes e label_info ->
         (* TODO: check *)
         E.mapM (fun (sym, ((bTy,ct), pe)) ->
           typecheck_pexpr tagDefs env bTy pe
@@ -1875,8 +1875,8 @@ and typecheck_expr callconv tagDefs (env: typing_env) expected_bTy (Expr annot e
            E.return (sym, (((bTy,ct), pe')))
         ) sym_bTy_pes >>= fun sym_bTy_pes' ->
         let env' = <| decls= Map.fromList (List.map (fun (sym, ((bTy,_), _)) -> (Sym sym, TDsym bTy)) sym_bTy_pes'); labs= Map.empty |> in
-        Esave sym_bTy sym_bTy_pes' <$> typecheck_expr (env_union env env') expected_bTy e
-    | Erun annot sym pes ->
+        (fun body -> Esave sym_bTy sym_bTy_pes' body label_info) <$> typecheck_expr (env_union env env') expected_bTy e
+    | Erun annot sym pes jump_info ->
         match Map.lookup sym env.labs with
           | Just (bTy, bTys) ->
 (*            guard_match loc "run" expected_bTy bTy >> *) (* TODO check *)
@@ -1884,7 +1884,7 @@ and typecheck_expr callconv tagDefs (env: typing_env) expected_bTy (Expr annot e
                 E.fail loc (ArityMismatchRun (List.length bTys) (List.length pes))
               else
               begin
-                Erun annot sym <$> E.mapM (fun (bTy, pe) ->
+                (fun args -> Erun annot sym args jump_info) <$> E.mapM (fun (bTy, pe) ->
                   typecheck_pexpr tagDefs env bTy pe
                     >>= export_pexpr >>= fun pe' ->
                   E.return pe'

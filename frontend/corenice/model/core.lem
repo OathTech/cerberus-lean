@@ -315,6 +315,28 @@ type pass_by_value_or_pointer =
   | By_pointer
   | By_value
 
+(* Static CoreNice control metadata. The producer assigns procedure-local
+   origins without consuming Cerberus's semantic fresh-symbol supply. *)
+type nice_jump_info = <|
+  nice_jump_origin: nat;
+  nice_jump_location: Loc.t;
+|>
+
+type nice_label_info = <|
+  nice_label_origins: list nat;
+  nice_label_location: Loc.t;
+|>
+
+let empty_nice_jump_info = <|
+  nice_jump_origin= 0;
+  nice_jump_location= Loc.unknown;
+|>
+
+let empty_nice_label_info = <|
+  nice_label_origins= [];
+  nice_label_location= Loc.unknown;
+|>
+
 
 type generic_expr_ 'a 'bty 'sym =  (* (effectful) expression *)
  | Epure of (generic_pexpr 'bty 'sym)
@@ -330,8 +352,8 @@ type generic_expr_ 'a 'bty 'sym =  (* (effectful) expression *)
  | Esseq of (generic_pattern 'sym) * (generic_expr 'a 'bty 'sym) * (generic_expr 'a 'bty 'sym) (* strong sequencing *)
  | Ebound of (generic_expr 'a 'bty 'sym) (* $\ldots$and boundary *)
  | End of list (generic_expr 'a 'bty 'sym) (* nondeterministic sequencing *)
- | Esave of ('sym * core_base_type) * list ('sym * ((core_base_type * maybe (Ctype.ctype * pass_by_value_or_pointer)) * generic_pexpr 'bty 'sym)) * (generic_expr 'a 'bty 'sym) (* save label *)
- | Erun of 'a * 'sym * list (generic_pexpr 'bty 'sym) (* run from label *)
+ | Esave of ('sym * core_base_type) * list ('sym * ((core_base_type * maybe (Ctype.ctype * pass_by_value_or_pointer)) * generic_pexpr 'bty 'sym)) * (generic_expr 'a 'bty 'sym) * nice_label_info (* save label *)
+ | Erun of 'a * 'sym * list (generic_pexpr 'bty 'sym) * nice_jump_info (* run from label *)
  | Epar of list (generic_expr 'a 'bty 'sym) (* cppmem-like thread creation *)
  (* This two only exists during the execution *)
  | Ewait of Mem_common.thread_id (* wait for thread termination *)

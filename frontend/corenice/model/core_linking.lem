@@ -210,10 +210,10 @@ let rec free_expr acc (Expr _ e) =
       free_expr acc e
   | End es ->
       List.foldl free_expr acc es
-  | Esave _ _ _ ->
+  | Esave _ _ _ label_info ->
       (* globals should not depend on Esave *)
       error ("TODO: free_expr Esave")
-  | Erun _ _ _  ->
+  | Erun _ _ _ jump_info  ->
       (* globals should not depend on Erun *)
       error ("TODO: free_expr Erun")
   | Epar es ->

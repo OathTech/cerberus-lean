@@ -61,7 +61,7 @@ type continuation_element 'a =
 
 type continuation 'a = list (continuation_element 'a)
 (* type labeled_continuation 'a = list (Symbol.sym * ctype) * expr 'a *)
-type labeled_continuations 'a = map Symbol.sym (list (Symbol.sym * core_base_type) * expr 'a)
+type labeled_continuations 'a = map Symbol.sym (list (Symbol.sym * core_base_type) * expr 'a * nice_label_info)
 
 
 type stack 'a =
@@ -377,10 +377,10 @@ let rec add_to_sb p_aids (Expr annot expr_ as expr) =
           error "Core_run_aux.add_to_sb, Ebound"
       | End es ->
           End (List.map (add_to_sb p_aids) es)
-      | Esave sym_bTy xs e ->
-          Esave sym_bTy xs (add_to_sb p_aids e)
-      | Erun annots sym pes ->
-          Erun <| annots with sb_before= (Set.map snd p_aids) union annots.sb_before |> sym pes
+      | Esave sym_bTy xs e label_info ->
+          Esave sym_bTy xs (add_to_sb p_aids e) label_info
+      | Erun annots sym pes jump_info ->
+          Erun <| annots with sb_before= (Set.map snd p_aids) union annots.sb_before |> sym pes jump_info
       | Epar es ->
           Epar (List.map (add_to_sb p_aids) es)
       | Ewait _ ->
@@ -462,10 +462,10 @@ let rec add_to_asw aids (Expr annot expr_ as expr) =
           Esseq _as (add_to_asw aids e1) (add_to_asw aids e2) (* TODO this is wrong *)
       | Ebound _ ->
           error "Core_run_aux.add_to_asw, Ebound"
-      | Esave sym_bTy xs e ->
-          Esave sym_bTy xs (add_to_asw aids e)
-      | Erun annots sym pes ->
-          Erun <| annots with asw_before= aids union annots.asw_before |> sym pes
+      | Esave sym_bTy xs e label_info ->
+          Esave sym_bTy xs (add_to_asw aids e) label_info
+      | Erun annots sym pes jump_info ->
+          Erun <| annots with asw_before= aids union annots.asw_before |> sym pes jump_info
       | End es ->
           End (List.map (add_to_asw aids) es)
       | Epar es ->
@@ -627,10 +627,10 @@ let rec convert_expr (Expr annot expr_) =
         Esseq pat (convert_expr e1) (convert_expr e2)
     | Ebound e ->
         Ebound (convert_expr e)
-    | Esave sym xs e ->
-        Esave sym (List.map (fun (sym, (bTy, pe)) -> (sym, (bTy, convert_pexpr pe))) xs) (convert_expr e)
-    | Erun _ sym pes ->
-        Erun empty_annotation sym (List.map convert_pexpr pes)
+    | Esave sym xs e label_info ->
+        Esave sym (List.map (fun (sym, (bTy, pe)) -> (sym, (bTy, convert_pexpr pe))) xs) (convert_expr e) label_info
+    | Erun _ sym pes jump_info ->
+        Erun empty_annotation sym (List.map convert_pexpr pes) jump_info
     | End es ->
         End (List.map convert_expr es)
     | Epar es ->

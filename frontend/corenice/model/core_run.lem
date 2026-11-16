@@ -1530,10 +1530,10 @@ BEFORE EVAL_PEXPR2
               )
         end
     
-    | (Esave _ _ _, Stack_empty) ->
+    | (Esave _ _ _ label_info, Stack_empty) ->
         error "reached empty stack with an Esave"
     
-    | (Esave (sym, _) sym_bTy_pes e, _) ->
+    | (Esave (sym, _) sym_bTy_pes e label_info, _) ->
         one $ Step_eval "Esave" (
           SEU.foldM (fun acc (sym, (bTy, pe)) ->
             E.eval_pexpr th_st core_extern mem_st file pe >>= fun cval ->
@@ -1542,30 +1542,37 @@ BEFORE EVAL_PEXPR2
           E.return <| th_st with arena= e' |>
         )
     
-    | (Erun _ _ _, Stack_empty) ->
+    | (Erun _ _ _ jump_info, Stack_empty) ->
         error "reached empty stack with an Erun"
     
-    | (Erun _ _ _, Stack_cons Nothing _ _) ->
+    | (Erun _ _ _ jump_info, Stack_cons Nothing _ _) ->
         error "found a Erun outside of a procedure"
     
-    | (Erun annots sym pes, Stack_cons (Just current_proc) cont sk) ->
+    | (Erun annots sym pes jump_info, Stack_cons (Just current_proc) cont sk) ->
+        let proc_sym = match Map.lookup current_proc core_extern with
+          | Just proc_sym -> proc_sym
+          | Nothing -> current_proc
+        end in
         one $ Step_tau "Erun" TSK_Misc begin
           SEU.read (fun st ->
-              let proc_sym = match Map.lookup current_proc core_extern with
-                | Just proc_sym -> proc_sym
-                | Nothing -> current_proc
-              end in
               Maybe.bind (Map.lookup proc_sym st.labeled) (Map.lookup sym)
             ) >>= function
             | Nothing ->
                 error ("Erun couldn't resolve label: `" ^ show sym ^
                        "' for procedure `" ^ show current_proc ^ "'")
-            | Just (sym_bTys, cont_expr) ->
+            | Just (sym_bTys, cont_expr, label_info) ->
                 (* FORK 2026-09-23 (audit R4): the argument list must FIT the continuation's
                    parameters BEFORE substitution (List.zip truncated) — the same
                    Illformed_program channel as this file's let-form fit checks (:885/:1463). *)
                 if List.length sym_bTys <> List.length pes then
                   SEU.runE (Exception.fail (Illformed_program "Erun: the argument list does not fit the continuation's parameters"))
+                else if not (List.elem jump_info.nice_jump_origin label_info.nice_label_origins) then
+                  SEU.runE (Exception.fail (NiceFault (IncomingOriginDenied <|
+                    fault_procedure= proc_sym;
+                    fault_jump= jump_info;
+                    fault_label= sym;
+                    fault_incoming= label_info;
+                  |>)))
                 else
                 let cont_expr' = List.foldl (fun acc ((sym, _), pe) ->
                   unsafe_subst_sym_expr sym pe acc

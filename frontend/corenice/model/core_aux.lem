@@ -1042,18 +1042,18 @@ let rec subst_sym_expr sym cval (Expr annot expr_) =
           (if in_pattern sym pat then e2 else subst_sym_expr sym cval e2)
     | Ebound e ->
         Ebound (subst_sym_expr sym cval e)
-    | Esave lab_sym sym_bTy_pes e ->
+    | Esave lab_sym sym_bTy_pes e label_info ->
         let sym_bTy_pes' = List.map (fun (z, (bTy, pe)) ->
           (z, (bTy, subst_sym_pexpr sym cval pe))
         ) sym_bTy_pes in
         if List.any (fun (z, _) -> sym = z) sym_bTy_pes then
           let () = Debug.warn [] (fun () -> "subst, Esave ==> shadowing") in
           (* TODO: check *)
-          Esave lab_sym sym_bTy_pes' e 
+          Esave lab_sym sym_bTy_pes' e label_info
         else
-          Esave lab_sym sym_bTy_pes' (subst_sym_expr sym cval e)
-    | Erun annot lab_sym pes ->
-        Erun annot lab_sym (List.map (subst_sym_pexpr sym cval) pes)
+          Esave lab_sym sym_bTy_pes' (subst_sym_expr sym cval e) label_info
+    | Erun annot lab_sym pes jump_info ->
+        Erun annot lab_sym (List.map (subst_sym_pexpr sym cval) pes) jump_info
     | End es ->
         End (List.map (subst_sym_expr sym cval) es)
     | Epar es ->
@@ -1383,18 +1383,18 @@ let rec unsafe_subst_sym_expr sym pe' (Expr annot expr_) =
         Esseq pat (unsafe_subst_sym_expr sym pe' e1) (if in_pattern sym pat then e2 else unsafe_subst_sym_expr sym pe' e2)
     | Ebound e ->
         Ebound (unsafe_subst_sym_expr sym pe' e)
-    | Esave lab_sym sym_bTy_pes e ->
+    | Esave lab_sym sym_bTy_pes e label_info ->
         let sym_bTy_pes' = List.map (fun (z, (bTy, pe)) ->
           (z, (bTy, unsafe_subst_sym_pexpr sym pe' pe))
         ) sym_bTy_pes in
         if List.any (fun (z, _) -> sym = z) sym_bTy_pes then
           let () = Debug.warn [] (fun () -> "unsafe_subst, Esave ==> shadowing") in
           (* TODO: check *)
-          Esave lab_sym sym_bTy_pes' e 
+          Esave lab_sym sym_bTy_pes' e label_info
         else
-          Esave lab_sym sym_bTy_pes' (unsafe_subst_sym_expr sym pe' e)
-    | Erun annot lab_sym pes ->
-        Erun annot lab_sym (List.map (unsafe_subst_sym_pexpr sym pe') pes)
+          Esave lab_sym sym_bTy_pes' (unsafe_subst_sym_expr sym pe' e) label_info
+    | Erun annot lab_sym pes jump_info ->
+        Erun annot lab_sym (List.map (unsafe_subst_sym_pexpr sym pe') pes) jump_info
     | End es ->
         End (List.map (unsafe_subst_sym_expr sym pe') es)
     | Epar es ->
@@ -1694,9 +1694,9 @@ let rec to_pure (Expr annot expr_) (*(expr : expr 'a)*) =
     | Ebound e ->
         (* TODO: check *)
         to_pure e
-    | Esave _ _ _ ->
+    | Esave _ _ _ label_info ->
         Nothing
-    | Erun _ _ _ ->
+    | Erun _ _ _ jump_info ->
         Nothing
     | End _ ->
         Nothing
@@ -1769,9 +1769,9 @@ let rec subst_wait tid v (Expr annot expr_) =
    | (Erun _ _ _ as expr) ->
        expr
 *)
-   | Esave sym sym_bTys e ->
-       Esave sym sym_bTys (subst_wait tid v e)
-   | Erun _ _ _ ->
+   | Esave sym sym_bTys e label_info ->
+       Esave sym sym_bTys (subst_wait tid v e) label_info
+   | Erun _ _ _ jump_info ->
        expr_
    | End es ->
        End (List.map (subst_wait tid v) es)
@@ -1846,16 +1846,16 @@ let rec find_labeled_continuation sym (Expr annot expr_) =
     | Ewseq pat e1 e2 ->
         let () = Debug.warn [] (fun () -> "Core_aux.find_labeled_continuation assumes the bindings of an Esave inside a Ewseq don't clash") in
         match find_labeled_continuation sym e1 with
-          | Just (syms, cont_expr) ->
-              Just (syms, Expr annot (Ewseq pat cont_expr e2))
+          | Just (syms, cont_expr, info) ->
+              Just (syms, Expr annot (Ewseq pat cont_expr e2), info)
           | Nothing ->
               find_labeled_continuation sym e2
         end
     | Esseq pat e1 e2 ->
         let () = Debug.warn [] (fun () -> "Core_aux.find_labeled_continuation assumes the bindings of an Esave inside a Esseq don't clash") in
         match find_labeled_continuation sym e1 with
-          | Just (syms, cont_expr) ->
-              Just (syms, Expr annot (Esseq pat cont_expr e2))
+          | Just (syms, cont_expr, info) ->
+              Just (syms, Expr annot (Esseq pat cont_expr e2), info)
           | Nothing ->
               find_labeled_continuation sym e2
         end
@@ -1865,12 +1865,12 @@ let rec find_labeled_continuation sym (Expr annot expr_) =
     | End _ ->
         (* NOTE: Typing forbids labeled continuation bindings in inside nd() *)
         Nothing
-    | Esave (sym', _) sym_bTys e ->
+    | Esave (sym', _) sym_bTys e label_info ->
         if sym = sym' then
-          Just (List.map fst sym_bTys, e)
+          Just (List.map fst sym_bTys, e, label_info)
         else
           find_labeled_continuation sym e
-    | Erun annot sym pes ->
+    | Erun annot sym pes jump_info ->
         Nothing
     | Epar es ->
         let () = Debug.warn [] (fun () -> "Core_aux.find_labeled_continuation assumes there are no Esave inside par()") in
@@ -1896,9 +1896,9 @@ let rec find_labeled_continuation sym (Expr annot expr_) =
 
 
 val find_labeled_continuation2_aux: forall 'a.
-  map Symbol.sym (list Symbol.sym * expr 'a) -> Symbol.sym -> expr 'a ->
-(*  maybe ((list Symbol.sym * expr 'a) * map Symbol.sym (list Symbol.sym * expr 'a)) *)
-  map Symbol.sym (list Symbol.sym * expr 'a)
+  map Symbol.sym (list Symbol.sym * expr 'a * nice_label_info) -> Symbol.sym -> expr 'a ->
+(*  maybe ((list Symbol.sym * expr 'a * nice_label_info) * map Symbol.sym (list Symbol.sym * expr 'a * nice_label_info)) *)
+  map Symbol.sym (list Symbol.sym * expr 'a * nice_label_info)
 let rec find_labeled_continuation2_aux acc sym (Expr annot expr_) =
   match expr_ with
     | Epure _ ->
@@ -1927,15 +1927,15 @@ let rec find_labeled_continuation2_aux acc sym (Expr annot expr_) =
     | Ewseq pat e1 e2 ->
         let () = Debug.warn [] (fun () ->
           "Core_aux.find_labeled_continuation2_aux assumes the bindings of an Esave inside a Ewseq don't clash") in
-        let acc' = Map.map (fun (syms, z) ->
-                     (syms, Expr annot (Ewseq pat z e2))
+        let acc' = Map.map (fun (syms, z, info) ->
+                     (syms, Expr annot (Ewseq pat z e2), info)
                    ) (find_labeled_continuation2_aux Map.empty sym e1) in
         find_labeled_continuation2_aux (Map.(union) acc acc') sym e2
     | Esseq pat e1 e2 ->
         let () = Debug.warn [] (fun () ->
           "Core_aux.find_labeled_continuation2_aux assumes the bindings of an Esave inside a Esseq don't clash") in
-        let acc' = Map.map (fun (syms, z) ->
-                     (syms, Expr annot (Esseq pat z e2))
+        let acc' = Map.map (fun (syms, z, info) ->
+                     (syms, Expr annot (Esseq pat z e2), info)
                    ) (find_labeled_continuation2_aux Map.empty sym e1) in
         find_labeled_continuation2_aux (Map.(union) acc acc') sym e2
     | Ebound _ ->
@@ -1944,12 +1944,12 @@ let rec find_labeled_continuation2_aux acc sym (Expr annot expr_) =
     | End _ ->
         (* NOTE: Typing forbids labeled continuation bindings in inside nd() *)
         acc
-    | Esave (sym', _) sym_bTys e ->
+    | Esave (sym', _) sym_bTys e label_info ->
         if sym = sym' then
-          Map.insert sym (List.map fst sym_bTys, e) acc
+          Map.insert sym (List.map fst sym_bTys, e, label_info) acc
         else
-          find_labeled_continuation2_aux (Map.insert sym' (List.map fst sym_bTys, e) acc) sym e
-    | Erun annot sym pes ->
+          find_labeled_continuation2_aux (Map.insert sym' (List.map fst sym_bTys, e, label_info) acc) sym e
+    | Erun annot sym pes jump_info ->
         acc
     | Epar es ->
         let () = Debug.warn [] (fun () -> "Core_aux.find_labeled_continuation2_aux assumes there are no Esave inside par()") in
@@ -2002,7 +2002,7 @@ let unsafe_subst_sym_fun_map sym pe' funs =
   end) funs
 
 
-val     collect_labeled_continuations: forall 'a. expr 'a -> map Symbol.sym (list (Symbol.sym (* * core_base_type*)) * expr 'a)
+val     collect_labeled_continuations: forall 'a. expr 'a -> map Symbol.sym (list (Symbol.sym (* * core_base_type*)) * expr 'a * nice_label_info)
 let rec collect_labeled_continuations (Expr annot expr_) =
   match expr_ with
     | Epure _ ->
@@ -2024,16 +2024,16 @@ let rec collect_labeled_continuations (Expr annot expr_) =
     | Eunseq _ ->
         Map.empty
     | Ewseq _as e1 e2 ->
-        Map.(union) (Map.map (fun (a_tys, e) -> (a_tys, Expr annot (Ewseq _as e e2))) $ collect_labeled_continuations e1)
+        Map.(union) (Map.map (fun (a_tys, e, info) -> (a_tys, Expr annot (Ewseq _as e e2), info)) $ collect_labeled_continuations e1)
                     (collect_labeled_continuations e2)
     | Esseq _as e1 e2 ->
-        Map.(union) (Map.map (fun (a_tys, e) -> (a_tys, Expr annot (Esseq _as e e2))) $ collect_labeled_continuations e1)
+        Map.(union) (Map.map (fun (a_tys, e, info) -> (a_tys, Expr annot (Esseq _as e e2), info)) $ collect_labeled_continuations e1)
                     (collect_labeled_continuations e2)
     | Ebound _ ->
         Map.empty
-    | Esave (sym_lab, _) sym_bTys e ->
-        Map.insert sym_lab (List.map fst sym_bTys, e) $ collect_labeled_continuations e
-    | Erun _ _ _ ->
+    | Esave (sym_lab, _) sym_bTys e label_info ->
+        Map.insert sym_lab (List.map fst sym_bTys, e, label_info) $ collect_labeled_continuations e
+    | Erun _ _ _ jump_info ->
         Map.empty
     | End _ ->
         (* TODO: check *)
@@ -2176,15 +2176,15 @@ let mk_sseq_e pat e1 e2 =
 
 val mk_save_e_: list annot -> (Symbol.sym * core_base_type) -> list (Symbol.sym * ((core_base_type * maybe (Ctype.ctype * pass_by_value_or_pointer)) * pexpr)) -> expr unit -> expr unit
 let mk_save_e_ annots sym_ty sym_ty_pes e =
-  Expr annots (Esave sym_ty sym_ty_pes e)
+  Expr annots (Esave sym_ty sym_ty_pes e empty_nice_label_info)
 
 val mk_save_e: (Symbol.sym * core_base_type) -> list (Symbol.sym * ((core_base_type * maybe (Ctype.ctype * pass_by_value_or_pointer)) * pexpr)) -> expr unit -> expr unit
 let mk_save_e sym_ty sym_ty_pes e =
-  Expr [] (Esave sym_ty sym_ty_pes e)
+  Expr [] (Esave sym_ty sym_ty_pes e empty_nice_label_info)
 
 val mk_run_e: Symbol.sym -> list pexpr -> expr unit
 let mk_run_e sym pes =
-  Expr [] (Erun () sym pes)
+  Expr [] (Erun () sym pes empty_nice_jump_info)
 
 val mk_nd_e: list (expr unit) -> expr unit
 let mk_nd_e es =
@@ -2265,8 +2265,8 @@ let add_annots annots1 (Expr annots2 expr_) =
   Expr (annots1 ++ annots2) expr_
 
 type collect_saves_state 'a = <|
-  tmp_acc:    map Symbol.sym (list (Symbol.sym * core_base_type) * Core.expr 'a); (*Core.labeled_continuations 'a; *)
-  closed_acc: map Symbol.sym (list (Symbol.sym * core_base_type) * Core.expr 'a); (*Core.labeled_continuations 'a; *)
+  tmp_acc:    map Symbol.sym (list (Symbol.sym * core_base_type) * Core.expr 'a * nice_label_info); (*Core.labeled_continuations 'a; *)
+  closed_acc: map Symbol.sym (list (Symbol.sym * core_base_type) * Core.expr 'a * nice_label_info); (*Core.labeled_continuations 'a; *)
 |>
 
 let empty_saves = <| tmp_acc= Map.empty; closed_acc= Map.empty |>
@@ -2305,7 +2305,7 @@ let rec collect_saves_aux st (Expr annots expr_) =
         union_saves st begin
           union_saves
             <| st1 with
-              tmp_acc= Map.map (fun (syms, e) -> (syms, Expr annots (Ewseq pat e e2))) st1.tmp_acc
+              tmp_acc= Map.map (fun (syms, e, info) -> (syms, Expr annots (Ewseq pat e e2), info)) st1.tmp_acc
             |>
             st2
         end
@@ -2315,7 +2315,7 @@ let rec collect_saves_aux st (Expr annots expr_) =
         union_saves st begin
           union_saves
             <| st1 with
-              tmp_acc= Map.map (fun (syms, e) -> (syms, Expr annots (Esseq pat e e2))) st1.tmp_acc
+              tmp_acc= Map.map (fun (syms, e, info) -> (syms, Expr annots (Esseq pat e e2), info)) st1.tmp_acc
             |>
             st2
         end
@@ -2325,11 +2325,11 @@ let rec collect_saves_aux st (Expr annots expr_) =
     | End _ ->
         (* typing forbids "saves" inside a "nd()" *)
         st
-    | Esave (sym, _) params e ->
+    | Esave (sym, _) params e label_info ->
         collect_saves_aux
-          <| st with tmp_acc= Map.insert sym (List.map (fun (x, ((y, _), _)) -> (x, y)) params, e) st.tmp_acc |>
+          <| st with tmp_acc= Map.insert sym (List.map (fun (x, ((y, _), _)) -> (x, y)) params, e, label_info) st.tmp_acc |>
           e
-    | Erun _ _ _ ->
+    | Erun _ _ _ jump_info ->
         st
     | Epar es ->
         let acc = List.foldl collect_saves_aux
@@ -2347,7 +2347,7 @@ let rec collect_saves_aux st (Expr annots expr_) =
         st
   end
 
-val collect_saves: forall 'a. expr 'a -> map Symbol.sym (list (Symbol.sym * core_base_type) * expr 'a) (*Core.labeled_continuations 'a *)
+val collect_saves: forall 'a. expr 'a -> map Symbol.sym (list (Symbol.sym * core_base_type) * expr 'a * nice_label_info) (*Core.labeled_continuations 'a *)
 let collect_saves expr =
   let st = collect_saves_aux <| tmp_acc= Map.empty; closed_acc= Map.empty |> expr in
   Map.(union) st.tmp_acc st.closed_acc
@@ -2362,7 +2362,7 @@ let collect_saves expr =
    didn't want to mess that up, so leaving for now. *)
 
 type m_labeled_continuation 'a = 
-  (core_base_type * list (Symbol.sym * ((core_base_type * maybe (Ctype.ctype * pass_by_value_or_pointer)) * pexpr)) * (expr 'a) * list Annot.annot)
+  (core_base_type * list (Symbol.sym * ((core_base_type * maybe (Ctype.ctype * pass_by_value_or_pointer)) * pexpr)) * (expr 'a) * list Annot.annot * nice_label_info)
 
 type m_labeled_continuations 'a = 
   map Symbol.sym (m_labeled_continuation 'a)
@@ -2408,8 +2408,8 @@ let rec m_collect_saves_aux st (Expr annots expr_) =
         m_union_saves st begin
           m_union_saves
             <| st1 with
-              m_tmp_acc= Map.map (fun (cbt,args,body,annots') -> 
-                             (cbt, args, Expr annots (Ewseq pat body e2), annots') )
+              m_tmp_acc= Map.map (fun (cbt,args,body,annots',info) ->
+                             (cbt, args, Expr annots (Ewseq pat body e2), annots', info) )
                                st1.m_tmp_acc
             |>
             st2
@@ -2420,8 +2420,8 @@ let rec m_collect_saves_aux st (Expr annots expr_) =
         m_union_saves st begin
           m_union_saves
             <| st1 with
-              m_tmp_acc= Map.map (fun (cbt,args,body,annots') -> 
-                             (cbt, args, Expr annots (Esseq pat body e2), annots') )
+              m_tmp_acc= Map.map (fun (cbt,args,body,annots',info) ->
+                             (cbt, args, Expr annots (Esseq pat body e2), annots', info) )
                                st1.m_tmp_acc
             |>
             st2
@@ -2432,16 +2432,16 @@ let rec m_collect_saves_aux st (Expr annots expr_) =
     | End _ ->
         (* typing forbids "saves" inside a "nd()" *)
         st
-    | Esave (sym, ty) params e ->
+    | Esave (sym, ty) params e label_info ->
 	   let oloc = Annot.get_loc annots in
 	   let () = match oloc with 
 	     | Just _ -> () 
 		 | _ -> Debug.print_debug 0 [] (fun () -> "label " ^ show sym ^ "missing label location")
 		end in
         m_collect_saves_aux
-          <| st with m_tmp_acc= Map.insert sym (ty,params,e,annots) st.m_tmp_acc |>
+          <| st with m_tmp_acc= Map.insert sym (ty,params,e,annots,label_info) st.m_tmp_acc |>
           e
-    | Erun _ _ _ ->
+    | Erun _ _ _ jump_info ->
         st
     | Epar es ->
         let acc = List.foldl m_collect_saves_aux
@@ -2468,7 +2468,7 @@ let m_collect_saves expr =
 
 import Map_extra
 
-val collect_labeled_continuations_NEW: forall 'a. file 'a -> map Symbol.sym (map Symbol.sym (list (Symbol.sym * core_base_type) * expr 'a) (*Core.labeled_continuations 'a *))
+val collect_labeled_continuations_NEW: forall 'a. file 'a -> map Symbol.sym (map Symbol.sym (list (Symbol.sym * core_base_type) * expr 'a * nice_label_info) (*Core.labeled_continuations 'a *))
 let collect_labeled_continuations_NEW file =
 (*  let xs =  *)
   Map_extra.fold (fun fun_sym decl acc ->

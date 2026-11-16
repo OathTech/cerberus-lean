@@ -49,12 +49,23 @@ type core_linking_cause =
   | DuplicateMain
   | IncompatibleCallingConvention
 
+type nice_origin_fault = <|
+  fault_procedure: Symbol.sym;
+  fault_jump: Core.nice_jump_info;
+  fault_label: Symbol.sym;
+  fault_incoming: Core.nice_label_info;
+|>
+
+type nice_fault =
+  | IncomingOriginDenied of nice_origin_fault
+
 type core_run_cause =
   | Illformed_program of string (* typing or name-scope error *)
   | Found_empty_stack of string (* TODO debug *)
   | Reached_end_of_proc
   | Unknown_impl
   | Unresolved_symbol of Loc.t * Symbol.sym (* found an unresolved symbolic name in core_eval *)
+  | NiceFault of nice_fault
 
 (* semicolon after a function definition and other places (is an extension it least since C++11) *)
 type extra_semi_context =
@@ -128,5 +139,12 @@ instance (Show core_run_cause)
         "Unknown_impl"
     | Unresolved_symbol _ sym ->
         "Unresolved_symbol[" ^ show sym ^ "]"
+    | NiceFault (IncomingOriginDenied fault) ->
+        "NiceFault[IncomingOriginDenied, procedure=" ^ show fault.fault_procedure ^
+        ", origin=" ^ show fault.fault_jump.nice_jump_origin ^
+        ", label=" ^ show fault.fault_label ^
+        ", jump=" ^ Loc.stringFromLocation fault.fault_jump.nice_jump_location ^
+        ", declaration=" ^ Loc.stringFromLocation fault.fault_incoming.nice_label_location ^
+        ", permitted=" ^ show fault.fault_incoming.nice_label_origins ^ "]"
   end
 end

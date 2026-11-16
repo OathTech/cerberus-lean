@@ -112,7 +112,7 @@ theorem subst_wait_measure_sufficient {a : Type} (tid1 : Nat) (v : value) (g : g
     subst_wait_lemFuel lemFuel tid1 v g = subst_wait tid1 v g :=
   subst_wait_stable_aux (generic_expr.lemSize g) tid1 v g lemFuel (generic_expr.lemSize g) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
 
-theorem find_labeled_continuation2_aux_stable_aux {a : Type} (k : Nat) : ∀ (acc : Fmap sym (List sym × generic_expr a Unit sym)) (sym1 : sym) (e : generic_expr a Unit sym) (f g : Nat),
+theorem find_labeled_continuation2_aux_stable_aux {a : Type} (k : Nat) : ∀ (acc : Fmap sym (List sym × generic_expr a Unit sym × nice_label_info)) (sym1 : sym) (e : generic_expr a Unit sym) (f g : Nat),
     generic_expr.lemSize e ≤ k → generic_expr.lemSize e ≤ f → generic_expr.lemSize e ≤ g →
     find_labeled_continuation2_aux_lemFuel f acc sym1 e = find_labeled_continuation2_aux_lemFuel g acc sym1 e := by
   induction k with
@@ -125,7 +125,7 @@ theorem find_labeled_continuation2_aux_stable_aux {a : Type} (k : Nat) : ∀ (ac
       cases g with
       | zero => have := expr_lemSize_pos e; omega
       | succ g =>
-        have key : ∀ (acc' : Fmap sym (List sym × generic_expr a Unit sym)) (sym1' : sym) (y : generic_expr a Unit sym), generic_expr.lemSize y < generic_expr.lemSize e →
+        have key : ∀ (acc' : Fmap sym (List sym × generic_expr a Unit sym × nice_label_info)) (sym1' : sym) (y : generic_expr a Unit sym), generic_expr.lemSize y < generic_expr.lemSize e →
             find_labeled_continuation2_aux_lemFuel f acc' sym1' y = find_labeled_continuation2_aux_lemFuel g acc' sym1' y :=
           fun acc' sym1' y hy => ih acc' sym1' y f g (by omega) (by omega) (by omega)
         obtain ⟨annot1, e_⟩ := e
@@ -137,7 +137,7 @@ theorem find_labeled_continuation2_aux_stable_aux {a : Type} (k : Nat) : ∀ (ac
           rw [key acc' sym1 e (by have := expr_mem_lt_aux1 x1 e _ hp; size_lt)]
 
 /-- THE OBLIGATION, exactly as the generated auxiliary module states and delegates it. -/
-theorem find_labeled_continuation2_aux_measure_sufficient {a : Type} (acc : Fmap sym (List sym × generic_expr a Unit sym)) (sym1 : sym) (g : generic_expr a Unit sym) (lemFuel : Nat)
+theorem find_labeled_continuation2_aux_measure_sufficient {a : Type} (acc : Fmap sym (List sym × generic_expr a Unit sym × nice_label_info)) (sym1 : sym) (g : generic_expr a Unit sym) (lemFuel : Nat)
     (lemMeasureLe : generic_expr.lemSize g ≤ lemFuel) :
     find_labeled_continuation2_aux_lemFuel lemFuel acc sym1 g = find_labeled_continuation2_aux acc sym1 g :=
   find_labeled_continuation2_aux_stable_aux (generic_expr.lemSize g) acc sym1 g lemFuel (generic_expr.lemSize g) (Nat.le_refl _) lemMeasureLe (Nat.le_refl _)
