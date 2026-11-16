@@ -1,8 +1,11 @@
 # Checked incoming jumps in CoreNice
 
-Proposal against checkpoint `451011583`. This is one semantic change to the
-existing CoreNice AST and interpreter; no implementation or equivalence result
-is claimed. Breakpoints, pause/resume and scope reconstruction remain separate.
+Design originating at checkpoint `451011583`, now implemented on the
+`corenice/comesfrom` milestone branch. This is one semantic change to the
+existing CoreNice AST and interpreter; no equivalence result is claimed.
+Breakpoints, pause/resume and scope reconstruction remain separate.
+See the [implementation checkpoint](comesfrom-checkpoint.md) for measured
+coverage, reproduction commands and the proposed proof boundary.
 
 ## Semantics
 
@@ -70,8 +73,12 @@ gate requiring every syntactic edge to be permitted: a well-formed but
 incorrect declaration must fault only when its disallowed jump executes.
 
 Update the owned Lem AST and its consumers, without changing the Lem compiler
-or shared Core. Preserve the fields through substitution, conversion, parsing,
-printing and saved-continuation extraction. The current label table is static
+or shared Core. Preserve the fields through substitution, conversion and
+saved-continuation extraction. The raw Core text parser accepts the original
+syntax with empty metadata; parsed input must pass finalization before execution.
+This first version has no annotated text parser/printer roundtrip. Consumers
+inspect the typed AST and compact metadata inventory instead; error rendering
+and JSON expose the structured fault. The current label table is static
 and procedure-indexed; extraction reconstructs sequencing suffixes. Attach the
 incoming set to that same resolved continuation, avoiding a second label table.
 Both the substitution-based and environment-based jump rules enforce the check.

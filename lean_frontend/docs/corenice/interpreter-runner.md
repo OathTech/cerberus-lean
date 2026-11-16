@@ -1,10 +1,12 @@
 # Core/CoreNice execution and comparison
 
 This is a research tool for developing Nice in the independently owned CoreNice
-path. It runs the unchanged Core and CoreNice semantics from the same C input,
+path. It runs Core and the independent CoreNice semantics from the same C input,
 records genuine nondeterministic choices on either side, replays them on the
 other, and compares observations. It is not a refinement theorem and does not
-claim coverage of all C. The broader acceptance criteria remain in
+claim coverage of all C. CoreNice now includes the [checked incoming-jump
+experiment](comesfrom.md); historical baseline measurements below identify
+their own revisions. The broader acceptance criteria remain in
 [the baseline scope](corenice-baseline-scope.md).
 
 ## Architecture and ownership
@@ -16,18 +18,19 @@ C --existing OCaml parser--> Cabs JSON
                         /                 \
                 Core.translate       CoreNice.translate
                 Core runtime         CoreNice runtime
-                link + convert       link + convert
+                link + convert       link + annotate + convert
                 evaluator/driver     evaluator/driver
                         \                 /
                      positional choice runner
                 independent observations and outcomes
 ```
 
-`frontend/corenice/sources.json` owns 18 complete Lem modules and 15 handwritten
-support modules. They generate 51 Lean modules, covering syntax, errors,
+`frontend/corenice/sources.json` owns 21 complete Lem modules and 15 handwritten
+support modules. They generate 57 Lean modules, covering syntax, errors,
 typing, lowering, linking, runtime parsing, evaluation, reduction, procedure
-calls and the driver. All 33 source inputs remain byte-identical to the recorded
-Core baseline. B has its own inductives and consumers; it does not execute by
+calls and the driver. The incoming-jump experiment changes the owned AST and
+consumers, and adds owned copies of the optional rewrite, indeterminate-value
+and sequentialisation transforms. B has its own inductives and consumers; it does not execute by
 converting programs or continuations back to A.
 
 Cabs/AIL, C types, symbols, locations, memory, ND and other target-neutral
@@ -42,8 +45,9 @@ order. Packaging maps owned imports and wraps declarations in `CoreNice`; it
 qualifies Translation's actual local `open Operators` commands. Strings,
 comments, expression terms and proof bodies remain unchanged. It applies the
 same removal of the generated `Core_run` stray `import Operators` as the original
-recipe. `--check-baseline` checks original and owned sources against the Git
-base, and raw generated bodies against Core, except the source-path header.
+recipe. `--check-baseline` is only for the earlier unchanged checkpoint: it
+intentionally fails after the incoming-jump semantic change. Ordinary generation
+is still required after changing the owned sources.
 No Lem compiler change was needed.
 
 `test/CoreNice/Interpreter.lean` inspects resolved dependencies from B lowering and
@@ -62,16 +66,17 @@ From this repository root, in Bash:
 cap() { if command -v capped >/dev/null 2>&1; then capped "$@"; else "$@"; fi; }
 export CAPPED_MEM_MAX=32G
 cap opam exec --switch=. -- make prelude-src lean-prelude-src corenice-prelude-src
-cap opam exec --switch=. -- python3 tools/generate_corenice.py --check-baseline
 python3 tools/generate_corenice_quote.py --check
 cap opam exec --switch=. -- dune build --root . backend/driver/main.exe cerberus-lib.install
 cap make lean-native-obj
 (cd lean_frontend && cap lake build CerberusCoreNice CoreNiceSeparationTests \
   CoreNiceDifferential core-diff corenice-diff corenice-pair-check \
-  corenice-choice-tests corenice-observation-test)
+  corenice-choice-tests corenice-observation-test \
+  corenice-incoming-tests corenice-incoming-control)
 python3 scripts/corenice-diff.py tests/minimal/021-pointer-basic.c
 python3 scripts/corenice-diff.py tests/z2-probes/nd/order3.c --choices 1,1
 python3 scripts/corenice-smoke.py
+python3 scripts/corenice-incoming-tests.py
 ```
 
 `corenice-diff.py` uses the local OCaml producer and runtime by default. Explicit

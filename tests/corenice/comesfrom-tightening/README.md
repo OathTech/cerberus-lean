@@ -13,7 +13,7 @@ described below are still present after lowering; they were not discarded by
 the C frontend. Counts in the first two columns concern the emitted `main`
 procedure, excluding runtime procedures.
 
-| Fixture | Core saves | Core runs | Expected incoming origins removed by structural tightening |
+| Fixture | Core saves | Core runs | Measured incoming origins removed by structural tightening |
 | --- | ---: | ---: | --- |
 | `dead_after_goto.c` | 3 | 4 | 2: dead `goto unused` and the return from `unused` |
 | `dead_after_return.c` | 2 | 3 | 2: the goto and return after the initial return |
@@ -24,10 +24,11 @@ procedure, excluding runtime procedures.
 | `constant_if.c` | 2 | 3 | 0: the condition is not a literal Core boolean |
 | `fallthrough_labels.c` | 3 | 1 | 0: both ordinary labels already have no incoming jumps |
 
-The removal counts are predictions from inspection of the emitted control
-structure. Confirm them using the actual tightening producer, then compare the
-resulting CoreNice executions against Core. A whole-file count includes runtime
-procedures and should not be mistaken for the `main` count in this table.
+The actual tightened producer and exact differential campaign confirm these
+removal counts. The six positive cases also execute a destination whose set
+shrunk, established by post-finalization fault injection. A whole-file count
+includes runtime procedures and should not be mistaken for the `main` count in
+this table; the current runtime contributes zero jump sites.
 
 ## What the original lowering exposes
 

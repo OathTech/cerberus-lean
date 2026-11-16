@@ -7,7 +7,7 @@ and trace comparisons. Nice semantic changes follow that baseline.
 
 The pathway was named CoreB through `727b5f2a3`; it is now CoreNice. The
 rename covers the Lean namespace, build targets, source directories and tools.
-It introduces no Nice semantic changes. Earlier measurements below belong to
+That rename introduced no Nice semantic changes. Earlier measurements below belong to
 the explicitly recorded pre-rename revisions and binaries.
 
 Commands now use `corenice-*`, `--corenice-bin` and `--corenice-build`.
@@ -38,7 +38,7 @@ The eventual draft PR targets `mdd/cerberus-lean` for discussion. No mainline
 merge or consumer re-pin is authorized. Use focused compilation, behavior and
 instrument checks during development; full relevant trust checks belong at
 actual theorem, landing or shipping claims. This is the agreed research
-workflow, not a claim that the baseline or a Nice equivalence theorem exists.
+workflow, not a Nice equivalence claim.
 
 ## Current evidence and next experiment
 
@@ -52,16 +52,14 @@ differences, a harmless extra step and native failure. The optional
 [stutter comparison](stutter-comparison.md) permits extra nonbranching steps
 while retaining genuine choice barriers. Exact comparison remains the default.
 
-This is the tested baseline tool for beginning Nice AST/interpreter changes.
-The [review](interpreter-review.md) records the evidence and limitations. No
-Nice checkpoint or checked-control AST node has been introduced yet; future
-nodes and new observation channels need explicit semantics and admission rules.
-
-The next isolated experiment is [checked incoming jumps (`comesfrom`)](comesfrom.md):
-build the feature, establish differential agreement, then aggressively tighten
-incoming sets and retest. Normal generated programs must remain free of
-`NiceFault`; expected faults belong to injected negative controls. Consider
-proof only after the tightened implementation works cleanly.
+The [baseline review](interpreter-review.md) records that earlier evidence and
+its limitations. The first semantic experiment, [checked incoming jumps
+(`comesfrom`)](comesfrom.md), is now implemented on the milestone branch
+`corenice/comesfrom`. Its [checkpoint](comesfrom-checkpoint.md) describes the
+actual AST/rule changes, structural tightening, differential evidence, limits
+and a proposed local proof scope. Ordinary runs remain subject to exact
+comparison; deliberate metadata corruptions exercise typed `NiceFault`.
+Breakpoints and new observation channels remain future work.
 
 The [type-separation record](type-separation.md) preserves the earlier first
 checkpoint. Neither checkpoint is a general equivalence result.
