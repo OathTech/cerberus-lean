@@ -43,9 +43,105 @@ private def expectBoundary (arena expected : expr core_run_annotation) : IO Unit
     check "binding already complete" (next.env == update_env binding .Vunit [fmapEmpty])
   | _ => throw (IO.userError "expected one actual breakpoint transition")
 
+private def annotationSuspension : IO Unit := do
+  let annotations : List dyn_annotation := [
+    .DA_pos [4, 8] (.FP .R 512 4), .DA_neg 9 [2, 3] (.FP .W 768 8)]
+  let arena := marked (.Expr [] (.Eannot annotations unitExpr))
+  let expected := .Expr [] (.Eannot annotations suffix)
+  expectBoundary arena expected
+  let start := { state with core_state0 := { state.core_state0 with
+    thread_states := [(0, (none, thread false arena))] } }
+  let config : nice_resume_config := ⟨false, file, []⟩
+  let .ND action := nice_drive_loop fmapEmpty fmapEmpty config 10
+    (.NiceNonmemory .NiceAfterMain fmapEmpty [0])
+  match (action start).1 with
+  | .NDactive (.NiceSuspended saved) =>
+    match saved.suspension_state.core_state0.thread_states with
+    | [(0, (_, next))] =>
+      check "nonempty positive/negative annotations reach the suspension exactly"
+        (saved.suspension_site == site && next.arena == expected)
+    | _ => throw (IO.userError "annotated suspension lost its thread")
+  | _ => throw (IO.userError "annotated completion did not suspend")
+
+private def reconstructionTransitions : IO Unit := do
+  let ptr := CerbMem.concretePtrval 3 512
+  let typePE := mk_value_pe (.Vctype signed_int)
+  let pointerPE := mk_value_pe (.Vobject (.OVpointer ptr))
+  let load : action0 core_run_annotation :=
+    .Action (.other "negative-load") default (.Load0 typePE pointerPE .NA)
+  let negative : expr core_run_annotation := .Expr [] (.Eaction (.Paction .Neg0 load))
+  let bounded := fun left => .Expr [] (.Ebound (marked left))
+  -- Execute the real empty-inner-context negative-action rewrite.
+  match production (bounded negative) with
+  | [.Step_tau2 "Neg Action, CTX" .TSK_Misc next] =>
+    match next.arena with
+    | .Expr _ (.Ebound (.Expr _ (.Esseq pat
+        (.Expr _ (.Eaction (.Paction .Pos (.Action loc _ (.Load0 ty addr .NA)))))
+        (.Breakpoint seen, body)))) =>
+      check "actual negative action becomes positive and retains the marked tail"
+        (pat == binding && loc == .other "negative-load" && ty == typePE &&
+          addr == pointerPE && seen == site && body == suffix)
+    | _ => throw (IO.userError "negative-action transition lost or moved the breakpoint")
+  | _ => throw (IO.userError "expected the actual negative-action CTX transition")
+  -- The nonempty inner context takes a different stateful reconstruction arm.
+  let inner := mk_wseq_e (mk_empty_pat .BTy_unit) negative unitExpr
+  match production (bounded inner) with
+  | [.Step_with_runstate2 (.RSK_tau _ .TSK_Misc) action] =>
+    match action state.core_run_state0 with
+    | .Result (.Defined next, runState) =>
+      match next.arena with
+      | .Expr _ (.Ebound (.Expr _ (.Esseq _ (.Expr _ (.Eunseq [
+          .Expr _ (.Eexcluded exclusion (.Action _ _ (.Load0 ty addr .NA))), residual]))
+          (.Breakpoint seen, body)))) =>
+        check "stateful negative-action reconstruction retains exclusion and marked tail"
+          (exclusion == state.core_run_state0.excluded_supply &&
+            runState.excluded_supply == state.core_run_state0.excluded_supply + 1 &&
+            ty == typePE && addr == pointerPE && seen == site && body == suffix &&
+            residual == mk_wseq_e (mk_empty_pat .BTy_unit) unitExpr unitExpr)
+      | _ => throw (IO.userError "stateful negative-action reconstruction lost the marked tail")
+    | _ => throw (IO.userError "stateful negative-action transition failed")
+  | _ => throw (IO.userError "expected the nonempty-context negative-action transition")
+  -- Obtain the real RMW service request and invoke its completion callback.
+  -- The supplied memory reply tests reconstruction, not allocation validity.
+  let oldValue := CerbMem.MemValue.MVinteger (.Signed .Int_) (.IV .Prov_none 41)
+  let newValue := CerbMem.MemValue.MVinteger (.Signed .Int_) (.IV .Prov_none 42)
+  let footprint := CerbMem.Footprint.FP .W 512 4
+  let rmw : expr core_run_annotation := .Expr [] (.Eaction (.Paction .Pos
+    (.Action (.other "rmw") default (.SeqRMW false typePE pointerPE parameter
+      (mk_value_pe (valueFromMemValue newValue).2)))))
+  let rmwBinding := mk_sym_pat parameter (.BTy_loaded .OTy_integer)
+  let rmwArena := .Expr [] (.Ebound (mk_breakpoint_sseq_e site rmwBinding rmw suffix))
+  match production rmwArena with
+  | [.Step_action_request2 "SeqRMW" _ 0 false request] =>
+    match request state.core_run_state0 with
+    | .Result (.Defined (.SeqRMWRequest2 ty address update complete), runState) =>
+      check "actual RMW request operands" (ty == signed_int && address == ptr)
+      match update oldValue runState with
+      | .Result (.Defined observed, _) => check "actual RMW update expression" (observed == newValue)
+      | _ => throw (IO.userError "actual RMW update failed")
+      let next := complete default footprint oldValue newValue
+      match next.arena with
+      | .Expr _ (.Ebound (.Expr _ (.Esseq pat
+          (.Expr _ (.Eannot annotations value)) (.Breakpoint seen, body)))) =>
+        check "RMW callback retains fresh annotation, old value and marked tail"
+          (pat == rmwBinding && seen == site && body == suffix &&
+            annotations == [.DA_neg state.core_run_state0.excluded_supply [] footprint] &&
+            value == mk_value_e (valueFromMemValue oldValue).2)
+      | _ => throw (IO.userError "actual RMW callback lost the marked tail")
+      match production next.arena with
+      | [.Step_tau2 _ (.TSK_Breakpoint seen) resumed] =>
+        check "reconstructed RMW reaches the original annotated cut"
+          (seen == site && resumed.arena == .Expr [] (.Ebound (.Expr [] (.Eannot
+            [.DA_neg state.core_run_state0.excluded_supply [] footprint] suffix))))
+      | _ => throw (IO.userError "reconstructed RMW did not reach its breakpoint")
+    | _ => throw (IO.userError "actual RMW request failed")
+  | _ => throw (IO.userError "expected the actual RMW request transition")
+
 def run : IO Unit := do
   expectBoundary marked suffix
   expectBoundary (marked (.Expr [] (.Eannot [] unitExpr))) (.Expr [] (.Eannot [] suffix))
+  annotationSuspension
+  reconstructionTransitions
   let bad : pattern := .Pattern [] (.CaseCtor .Ctuple [binding])
   match production (marked unitExpr bad) with
   | [.Step_with_runstate2 _ action] =>
