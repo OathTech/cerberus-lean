@@ -23,7 +23,8 @@ Every C fixture has defined behavior and returns zero on its expected result:
 The Lean test executable additionally invokes the real `core_thread_step2` and
 `step_ctx` rules, executes their returned state/exception closures and checks
 the typed fault fields against the actual synthetic annotated AST. It covers
-removed permission, a fresh disallowed origin, resolved procedure aliases,
+removed permission, a fresh disallowed origin, resolved procedure aliases and
+label queries with the same semantic identity but different descriptions,
 ordinary `Esave` entry, an untaken disallowed edge, arity-error precedence and
 the check occurring before argument handling. A permitted argument-UB control
 demonstrates that the optimized negative argument test would otherwise fail.
@@ -41,3 +42,20 @@ uncorrupted defined execution. The script counts first-site witnesses, not
 every dynamic jump or coverage of every annotated site. Runtime procedures are
 inventoried separately; a no-jump arithmetic fixture is reported explicitly.
 No equivalence or producer-correctness theorem is claimed by this suite.
+
+For the structural tightening policy, run
+`python3 scripts/corenice-incoming-tightening.py` after rebuilding the same
+executables with that policy. The default campaign uses the eight fixtures in
+`tests/corenice/comesfrom-tightening` plus 72 temporary bounded variants.
+Variants change dead-edge multiplicity, sequencing depth, loop bounds and
+values; they are not a general C fuzzer. A ninth family uses independent
+function calls to exercise both actual evaluation orders. The alternate tape
+flips a recorded genuine choice, and the report counts distinct observed tapes.
+
+Every positive case must remove origins and execute a destination whose set
+actually shrank. The control executable's `tightened` selection clears only
+such destinations, then validates the same precise typed-fault controls.
+`constant_if` and ordinary-label-fallthrough controls require zero removals.
+JSON summaries count syntactic/permitted/removed origins, affected labels,
+maximum permitted set size, empty incoming sets, and executed tightened-target
+witnesses. Generated programs and traces are deleted after the run.
