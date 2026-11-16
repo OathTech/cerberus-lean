@@ -86,6 +86,56 @@ completes defined in both directions, with three pauses and zero genuine
 choices. This is a useful optimized-path control, not an end-to-end legacy C
 counterexample.
 
+Five additional fixtures preserve the exact source text used for the focused
+jump/control exploration. Each was compared under `all`, `none` and `every:2`
+pause policies. The final two also used both the empty choice prefix (then
+always choose zero) and prefix `1` (then always choose zero). All **21
+comparisons**, each recording/replaying in both directions (**84 fresh
+interpreter executions**), completed defined and agreed. No unexpected
+`NiceFault`, mismatch or incomplete execution occurred.
+
+| Fixture | Corner case | Prefixes | All / every:2 pauses per prefix |
+| --- | --- | --- | --- |
+| [duff.c](../../../tests/corenice/review/duff.c) | Switch entry into a do-loop body and case fallthrough | empty | 13 / 6 |
+| [goto_if_loop.c](../../../tests/corenice/review/goto_if_loop.c) | Jump into a constant-dead if branch inside a loop, then continue | empty | 27 / 13 |
+| [nested_cases.c](../../../tests/corenice/review/nested_cases.c) | Switch labels inside both branches of a conditional | empty | 4 / 2 |
+| [pure_unseq.c](../../../tests/corenice/review/pure_unseq.c) | Both orders of sibling calls with pure statement joins | empty, `1` | 4 / 2 |
+| [recursive_goto.c](../../../tests/corenice/review/recursive_goto.c) | Repeated saved-label entry in recursive activations, competing with a pointer-mutating sibling call | empty, `1` | 34 / 17 |
+
+The `none` policy recorded zero host pauses in every case. The first three
+fixtures had no genuine choices. The pure-call fixture consumed tapes `[0]`
+and `[1]`; the recursive fixture consumed `[0,0,0,0]` and `[1,0,0,0,0]`.
+These are sampled complete paths, not enumeration of every path or every pause
+schedule. They test conservative/tightened incoming metadata together with
+breakpoint transport and resumption; agreement does not prove either producer
+sound or distinguish every internal jump transition.
+
+Reproduce the 21 comparisons from this checkout using a provisioned candidate
+checkout for binaries and the comparator. Set `candidate` to its repository
+root; it may also be this checkout after normal provisioning. The five C
+sources come from the current checkout and the candidate remains unchanged:
+
+```bash
+candidate=/path/to/provisioned/corenice-checkout
+(
+  set -e
+  cap() { if command -v capped >/dev/null 2>&1; then capped "$@"; else "$@"; fi; }
+  for source in duff goto_if_loop nested_cases pure_unseq recursive_goto; do
+    prefixes=("")
+    case "$source" in pure_unseq|recursive_goto) prefixes+=("1");; esac
+    for policy in all none every:2; do
+      for prefix in "${prefixes[@]}"; do
+        cap python3 "$candidate/scripts/corenice-diff.py" \
+          "tests/corenice/review/$source.c" \
+          --corenice-bin "$candidate/lean_frontend/.lake/build/bin/corenice-resume" \
+          --comparison breakpoints --choices "$prefix" --summary-json \
+          --corenice-arg=--pause-policy --corenice-arg="$policy"
+      done
+    done
+  done
+)
+```
+
 The recorded focused runs used the already built binaries and imported modules
 from the reviewed checkout. The review probe can be passed by absolute path
 to that checkout's `scripts/lean_probe.sh`, run from its `lean_frontend`
