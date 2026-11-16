@@ -66,6 +66,11 @@ sessions and AIL composition sites. Its executable heap-midpoint demonstration
 and [AIL/Nice/Caesium mapping](breakpoint-composition.md) motivate a later
 simulation sequence rule. This branch remains an experimental checkpoint;
 differential validation precedes the broad proof effort.
+Follow-up work on `corenice/checkpoint-semantics-repair` gives those sites
+precise normalized-AIL roles and typed origins. The
+[repair assessment](checkpoint-semantics-repair.md) records focused phase tests
+and an unresolved correspondence failure in the unused legacy evaluator;
+the normal and resumable C drivers both use the optimized reducer.
 
 The [type-separation record](type-separation.md) preserves the earlier first
 checkpoint. Neither checkpoint is a general equivalence result.

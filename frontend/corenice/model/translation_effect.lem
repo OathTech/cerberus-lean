@@ -159,7 +159,7 @@ let fresh_nice_site proc occurrence slot role loc =
     Core.breakpoint_procedure= proc;
     Core.breakpoint_id= n;
     Core.breakpoint_role= role;
-    Core.breakpoint_ail_path= Just [occurrence; slot];
+    Core.breakpoint_origin= Core.NiceNormalizedAil occurrence slot;
     Core.breakpoint_location= loc;
   |>
 

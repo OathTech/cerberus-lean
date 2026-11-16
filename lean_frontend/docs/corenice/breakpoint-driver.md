@@ -3,7 +3,10 @@
 This describes the implementation in the owned
 [driver model](../../../frontend/corenice/model/driver.lem). It supports the
 [breakpoint charter](breakpoints-charter.md); the integrated
-[checkpoint](breakpoints-checkpoint.md) records executable validation.
+[checkpoint](breakpoints-checkpoint.md) records initial executable validation;
+the [repair assessment](checkpoint-semantics-repair.md) records current phase
+names and the separate legacy-evaluator limitation. Both driver entries here
+use the optimized reducer.
 
 `drive_until_breakpoint with_concurrency file argv budget` starts a run and
 returns a `nice_run_result` through the existing `driverM`:

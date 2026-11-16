@@ -1,5 +1,12 @@
 # CoreNice breakpoints: experimental checkpoint
 
+Historical record for `corenice/breakpoints`. Subsequent review found a legacy
+evaluator correspondence failure and misleading source-completion roles; see
+[the repair assessment](checkpoint-semantics-repair.md). The campaign counts
+below describe this earlier checkpoint, not a rerun of the repaired tree.
+In particular, earlier counts of body completions count normalized wrapper
+arrivals and must not be read as a source-normal-completion assertion.
+
 The `corenice/breakpoints` milestone implements the
 [breakpoint charter](breakpoints-charter.md) on top of `11587a90b`. This is a
 position-restricted AST feature and an executable resumable machine, supported

@@ -1,7 +1,9 @@
 # Charter: CoreNice breakpoints for compositional simulation
 
-Status: implemented experimental milestone on `corenice/breakpoints`; see the
-[checkpoint and reproduction commands](breakpoints-checkpoint.md). Baseline: reviewed
+Status: experimental milestone followed by repairs on
+`corenice/checkpoint-semantics-repair`; see the
+[repair assessment](checkpoint-semantics-repair.md) and historical
+[checkpoint](breakpoints-checkpoint.md). Baseline: reviewed
 `corenice/comesfrom` checkpoint `11587a90b`. This charter governs the next
 breakpoint milestone and supersedes the earlier combined-demo work order where
 they differ. The [machine design](cerberus-nice-design.md) and
@@ -50,9 +52,11 @@ printed breakpoint ID. Existing parent sequence proofs already carry memory
 history, supply and stack facts across their midpoint; the new interface must
 allow such predicates rather than prescribing a smaller state projection.
 
-Ordinary composition applies to normal completion. Return, goto, break,
-continue, UB, modeled errors and divergence require their own exit cases;
-they must not be turned into normal breakpoint arrivals. A jump can bypass a
+Ordinary source composition applies to normal completion. Return, goto, break,
+continue, UB, modeled errors and divergence require their own exit cases.
+A normalized wrapper can complete after a source `continue`: that is a valid
+machine breakpoint arrival, but does not prove source-normal completion.
+A jump can bypass a
 boundary or enter its suffix. A multi-entry region needs an entry-sensitive
 contract, or a justified restriction on entries. Neither breakpoint placement
 nor an existing comesfrom set establishes dominance or lexical scope.
@@ -89,22 +93,30 @@ boundary/negative-action reconstruction and saved-continuation collection.
 Labels in a sequence's left operand retain the pending breakpoint in their
 reconstructed suffix; a jump directly into the right operand bypasses it.
 
+The current legacy evaluator fails the no-added-choice requirement on marked
+pure operands and can disagree on UB, as recorded in the
+[repair assessment](checkpoint-semantics-repair.md). Its support policy remains
+unresolved. Evidence from the normal/resumable optimized drivers does not
+discharge the charter's original both-engines ambition.
+
 Existing raw Core text can parse into `Continue` tails. A new annotated text
 roundtrip is not a prerequisite: typed construction and generated AIL output
 must exercise the feature. Any decoder that does accept breakpoint syntax must
 enforce the same category restriction.
 
-## Placement: source composition before convenient machine steps
+## Placement: precise normalized-AIL phases
 
-Select sites while the owned AIL-to-CoreNice lowering still knows their source
-role. Do not reconstruct AIL boundaries from source lines or a flattened Core
-trace. First priorities, inspected in `Translation.translate_stmt`, are:
+Select sites in the owned AIL-to-CoreNice lowering, after shared Cabs-to-AIL
+desugaring and owned loop-control normalization. Their roles name the actual
+normalized-AIL phase; neither source lines nor producer keys recover lost
+source-C structure. The implemented roles in `Translation.translate_stmt` are:
 
 | Boundary role | Existing lowering site | Intended handoff and limit |
 | --- | --- | --- |
-| Between adjacent AIL block statements | `AilSblock`, the strong-sequence fold over `core_ss` | Normal completion of statement i to the residual statement list. Retain block allocation/cleanup context; do not classify later cleanup sequences as source-statement joins. |
+| `BP_normalized_ail_join` | `AilSblock`, the existing strong-sequence fold over `core_ss` | A normalized-AIL join with the remaining statement list pending. Includes generated control wrappers and for-loop increment structure; no source-normal completion claim. Saved-continuation entry can skip an earlier prefix. |
 | Condition ready for control selection | `AilSif` and `AilSwhile`, tail after the boolean conversion | Condition effects and conversion are complete; the branch/body has not executed. Identify the actual Caesium condition/control phase before claiming an aligned midpoint. |
-| Normal loop-body completion | `AilSwhile` body-to-backedge sequence; corresponding `AilSdo` body-to-test site | Expose the body postcondition before the existing transfer/test. Abrupt exits need separate cases; a continue route is not assumed to pass this site. |
+| `BP_while_restart_pending` | `AilSwhile` body-to-backedge sequence | The existing `Erun` restart is pending. `continue` may reach this cut. A source `for` loop has already executed its increment and intervening cleanup. |
+| `BP_do_condition_pending` | `AilSdo` body-to-test site | The condition has not yet executed and may be false or fail. This is not a pending backedge; `continue` may reach it. |
 | Internal expression/helper completion | For example the inner `AilSexpr` discard-to-unit sequence | Useful for testing machinery, but not automatically an AIL statement boundary. Record as an internal site, with a separate coverage count. |
 
 The source anchors are [translation](../../../frontend/corenice/model/translation.lem)
@@ -115,9 +127,10 @@ The source anchors are [translation](../../../frontend/corenice/model/translatio
 (`one_step`, `Esseq` cases). Inspect normalized AIL: source `for`/continue syntax
 may already have become loops and introduced labels.
 
-A `Site` carries a static identity, placement role, optional AIL-origin key and
-source location. Identify an AIL occurrence by procedure and deterministic
-occurrence path/producer key, not location alone. Preserve provenance through
+A `Site` carries a static identity, placement role, typed origin and source
+location. `NiceNormalizedAil occurrence slot` is a producer key in the normalized
+input, not an ancestry path or source-C certificate; `NiceInternal` makes no
+AIL-origin claim. Preserve provenance through
 copies and saved-continuation reconstruction. IDs use their own namespace and
 do not consume Cerberus's fresh-symbol supply. Repeated/recursive activations
 share a static site; diagnostic encounter numbering is not activation identity.

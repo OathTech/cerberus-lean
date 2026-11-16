@@ -341,16 +341,24 @@ let empty_nice_label_info = <|
 (* A strong tail is represented by (control, continuation). Only Esseq may
    contain this node; it is not an expression that can appear anywhere. *)
 type nice_breakpoint_role =
-  | BP_statement_join
+  | BP_normalized_ail_join
   | BP_condition_ready
-  | BP_loop_body_done
+  | BP_while_restart_pending
+  | BP_do_condition_pending
   | BP_internal
+
+(* Provenance is a producer occurrence key after shared AIL desugaring and
+   owned loop-control normalization. It is not a source-C path or certificate
+   of source-normal completion. Internal cuts make no AIL-origin claim. *)
+type nice_breakpoint_origin =
+  | NiceInternal
+  | NiceNormalizedAil of nat * nat
 
 type nice_breakpoint_site = <|
   breakpoint_procedure: Symbol.sym;
   breakpoint_id: nat;
   breakpoint_role: nice_breakpoint_role;
-  breakpoint_ail_path: maybe (list nat);
+  breakpoint_origin: nice_breakpoint_origin;
   breakpoint_location: Loc.t;
 |>
 

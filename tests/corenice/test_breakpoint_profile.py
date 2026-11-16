@@ -9,8 +9,9 @@ def paused_fixture():
     trace = fixture(True)
     trace.events[2] = {
         "channel": "nd", "node": 0, "kind": "pause", "alternatives": [], "selected": None,
-        "parent": {"schema": "corenice-breakpoint-v1", "procedure": "test", "site": 7,
-                   "role": "statement-join", "ailOrigin": [1, 0], "location": "test",
+        "parent": {"schema": "corenice-breakpoint-v2", "procedure": "test", "site": 7,
+                   "role": "normalized-ail-join",
+                   "origin": {"stage": "normalized-ail", "occurrence": 1, "slot": 0}, "location": "test",
                    "thread": 0, "encounter": 1, "phase": "nonmemory",
                    "remainingBudget": 90, "driverSteps": 3}}
     return trace
@@ -38,7 +39,10 @@ class BreakpointProfileTests(unittest.TestCase):
 
     def test_invalid_pause_and_incomplete_refuse(self):
         for field, value in [("phase", "restart"), ("encounter", 0), ("site", -1),
-                             ("role", "invented"), ("ailOrigin", ["not-an-id"])]:
+                             ("role", "loop-body-done"),
+                             ("schema", "corenice-breakpoint-v1"),
+                             ("origin", [1, 0]),
+                             ("origin", {"stage": "source-c", "occurrence": 1, "slot": 0})]:
             trace = copy.deepcopy(paused_fixture())
             trace.events[2]["parent"][field] = value
             with self.assertRaises(diff.ProtocolFailure):

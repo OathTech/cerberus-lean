@@ -34,7 +34,7 @@ open CoreNice
 private def procedure : sym := .Symbol "review-legacy-choice" 1 .SD_None
 private def site (id : Nat) : nice_breakpoint_site := {
   breakpoint_procedure := procedure, breakpoint_id := id,
-  breakpoint_role := .BP_internal, breakpoint_ail_path := none,
+  breakpoint_role := .BP_internal, breakpoint_origin := .NiceInternal,
   breakpoint_location := .unknown }
 private def unitExpr : CoreNice.expr CoreNice.core_run_annotation := CoreNice.mk_value_e .Vunit
 private def sequence (mark : Bool) (id : Nat) : CoreNice.expr CoreNice.core_run_annotation :=

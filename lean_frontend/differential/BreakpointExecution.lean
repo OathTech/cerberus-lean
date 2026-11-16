@@ -62,19 +62,25 @@ def advance [LemFuel] [CerbGlobal.Switches] (policy : Policy) (budget : Nat)
         machine.suspension_config.resume_file.tagDefs machine)
 
 def roleName : CoreNice.nice_breakpoint_role → String
-  | .BP_statement_join => "statement-join"
+  | .BP_normalized_ail_join => "normalized-ail-join"
   | .BP_condition_ready => "condition-ready"
-  | .BP_loop_body_done => "loop-body-done"
+  | .BP_while_restart_pending => "while-restart-pending"
+  | .BP_do_condition_pending => "do-condition-pending"
   | .BP_internal => "internal"
+
+def originDescription : CoreNice.nice_breakpoint_origin → Json
+  | .NiceInternal => Json.mkObj [("stage", toJson "internal")]
+  | .NiceNormalizedAil occurrence slot => Json.mkObj [
+      ("stage", toJson "normalized-ail"), ("occurrence", toJson occurrence), ("slot", toJson slot)]
 
 def describe (point : Point) : Json :=
   let machine := point.machine
   let site := machine.suspension_site
   Json.mkObj [
-    ("schema", toJson "corenice-breakpoint-v1"),
+    ("schema", toJson "corenice-breakpoint-v2"),
     ("procedure", toJson site.breakpoint_procedure),
     ("site", toJson site.breakpoint_id), ("role", toJson (roleName site.breakpoint_role)),
-    ("ailOrigin", toJson site.breakpoint_ail_path), ("location", toJson site.breakpoint_location),
+    ("origin", originDescription site.breakpoint_origin), ("location", toJson site.breakpoint_location),
     ("thread", toJson machine.suspension_thread), ("encounter", toJson point.encounter),
     ("phase", toJson (match machine.suspension_phase with
       | .NiceNonmemory .. => "nonmemory"

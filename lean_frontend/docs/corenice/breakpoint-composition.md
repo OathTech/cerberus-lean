@@ -79,10 +79,12 @@ returns six. It identifies the unique live four-byte allocation whose source
 prefix includes `SD_ObjectAddress "x"` and decodes its actual bytes. The values
 below are those observed at suspension, not values calculated from the source.
 
-`ailOrigin` is the pair `[statement-occurrence, local-slot]` minted by
+`origin` is the typed object
+`{"stage":"normalized-ail","occurrence":n,"slot":k}` minted by
 [`fresh_nice_site`](../../../frontend/corenice/model/translation_effect.lem).
-Despite the field name `breakpoint_ail_path`, it is not a literal ancestry path
-through the original typed AIL tree. Statement visits and site construction
+It is not a literal ancestry path through the original typed AIL tree.
+The AST carries `NiceNormalizedAil n k`; internal cuts carry `NiceInternal`.
+Statement visits and site construction
 share a separate provenance counter; site numbers can change when lowering
 changes. They do not consume the semantic fresh-symbol supply.
 
@@ -93,7 +95,7 @@ changes. They do not consume the semantic fresh-symbol supply.
 | 20 / `[1,2]` | Statement join: addition/store complete | 3 | End of `#0`, before entering the loop guard |
 | 13 / `[6,0]` | Condition ready: guard evaluated and converted to a boolean | 3, 4, 5, 6 | Inside `#1`, with the guard value available and branch selection pending |
 | 12 / `[7,0]` | Normalized block join: original loop body complete, generated continue label pending | 4, 5, 6 | End of `#2`, with the backedge pending, allowing administrative steps |
-| 14 / `[6,1]` | Loop body done: generated continue wrapper complete, loop restart pending | 4, 5, 6 | End of `#2`, before `Goto "#1"`, allowing administrative steps |
+| 14 / `[6,1]` | While restart pending: generated continue wrapper complete | 4, 5, 6 | End of `#2`, before `Goto "#1"`, allowing administrative steps |
 | 17 / `[5,0]` | Normalized block join: while has completed, generated break label pending | 6 | False-guard exit toward `#3`, allowing administrative steps |
 | 19 / `[1,3]` | Statement join: whole normalized loop complete, source return pending | 6 | `#3`, before evaluating the return expression |
 
@@ -186,10 +188,12 @@ decision, even though Nice obtains it through its test-expression and
 specified-value conversion. A general formulation would account for arithmetic
 bounds, invalid/unspecified values, and non-normal outcomes explicitly.
 
-Normal-completion cuts do not supply a dominance or scope theorem. A return,
-goto, break, continue or UB may bypass a particular cut. A continue can target
-the generated label after site 12; a break can target the generated label after
-site 17. A jump into a suffix need not traverse its preceding breakpoint. A
+These phase cuts do not supply a dominance, source-normal completion or scope
+theorem. Shared Cabs-to-AIL normalization can already route `continue` through
+the body wrapper; the owned normalization adds another wrapper. A source
+`continue` can therefore reach a normalized join and the while-restart cut.
+A break can target the generated label after site 17. A jump into a suffix
+need not traverse its preceding breakpoint. A
 sequence theorem therefore needs separate exit relations and entry-sensitive
 contracts for multi-entry regions. The focused abrupt-control fixtures test
 such behavior, but this example itself has no abrupt loop exit.

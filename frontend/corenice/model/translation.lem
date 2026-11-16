@@ -3829,8 +3829,10 @@ let translate_branch_on_unspec conf loc ctx e1 e2 =
       Caux.mk_pure_e (Caux.mk_undef_pe loc (Undefined.UB_CERB004_unspecified ctx))
   end
 
-(* Keep precisely the existing block fold. Only joins with another source
-   statement on the right are marked; allocation and cleanup tails stay plain. *)
+(* Keep precisely the existing block fold. These are normalized-AIL statement
+   joins, including generated continue/break and for-increment wrappers. They
+   do not certify adjacency or normal completion in source C. Allocation and
+   cleanup tails stay plain. *)
 let rec mk_nice_statement_seqs proc occurrence index ss suffix =
   match ss with
     | [] -> E.return suffix
@@ -3839,7 +3841,7 @@ let rec mk_nice_statement_seqs proc occurrence index ss suffix =
         match rest with
           | [] -> E.return (Caux.mk_sseq_e (Caux.mk_empty_pat C.BTy_unit) e tail)
           | _ :: _ ->
-              E.fresh_nice_site proc occurrence index C.BP_statement_join loc >>= fun site ->
+              E.fresh_nice_site proc occurrence index C.BP_normalized_ail_join loc >>= fun site ->
               E.return (Caux.mk_breakpoint_sseq_e site (Caux.mk_empty_pat C.BTy_unit) e tail)
         end
   end
@@ -4011,7 +4013,7 @@ let rec translate_stmt stdlib tagDefs f env stmt : E.elabM (C.expr unit) =
         self s                                                >>= fun core_s       ->
         E.get_visible_objects                                 >>= fun visible_syms ->
         E.fresh_nice_site f nice_occurrence 0 C.BP_condition_ready loc >>= fun condition_site ->
-        E.fresh_nice_site f nice_occurrence 1 C.BP_loop_body_done loc >>= fun body_site ->
+        E.fresh_nice_site f nice_occurrence 1 C.BP_while_restart_pending loc >>= fun body_site ->
         (* TODO: the types of the annotations in Esave are dummy, but this is not observable for now *)
         let core_s_loop =
           Caux.mk_breakpoint_sseq_e body_site (Caux.mk_empty_pat C.BTy_unit) core_s
@@ -4062,7 +4064,7 @@ let rec translate_stmt stdlib tagDefs f env stmt : E.elabM (C.expr unit) =
         translate_expression true (mkTestExpression TestEq e) >>= fun core_test    ->
         self s                                                >>= fun core_s       ->
         E.get_visible_objects                                 >>= fun visible_syms ->
-        E.fresh_nice_site f nice_occurrence 0 C.BP_loop_body_done loc >>= fun body_site ->
+        E.fresh_nice_site f nice_occurrence 0 C.BP_do_condition_pending loc >>= fun body_site ->
         let core_loop =
           Caux.mk_run_e sym_loop [ Caux.mk_sym_pe sym | forall (sym MEM visible_syms) | true ] in
         E.mapM (fun sym ->

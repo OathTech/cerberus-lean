@@ -87,7 +87,7 @@ private def testAdapter (nodes : List Node) (mutation : String) :
   let normal := adapter .all
   { normal with continueFrom := fun point =>
     let target := named "main" point.machine.suspension_site.breakpoint_procedure &&
-      point.machine.suspension_site.breakpoint_role == .BP_statement_join &&
+      point.machine.suspension_site.breakpoint_role == .BP_normalized_ail_join &&
       readX point.machine.suspension_state == some 1
     if !target then normal.continueFrom point else
       match mutation with
@@ -133,7 +133,7 @@ private def execute (prepared : Prepared) (execution : ExecutionNice) (nodes : L
           fail s!"main midpoint {site.breakpoint_id} lacks unique initialized x: {(toJson allocations).compress}"
         let some (_, _, right) := nodes.find? (fun node => node.1 == site)
           | fail "dynamic site absent from source artifact"
-        if mutation == "normal" && site.breakpoint_role == .BP_statement_join && x == 1 then
+        if mutation == "normal" && site.breakpoint_role == .BP_normalized_ail_join && x == 1 then
           let some (_, _, thread) := suspension.state.core_state0.thread_states.find?
             (fun (id, _, _) => id == point.machine.suspension_thread)
             | fail "suspended thread missing"
@@ -186,17 +186,17 @@ def run (runtime input : String) : IO Unit := do
   require "unexpected final value" (match value.dres_core_value with
     | .Vloaded (.LVspecified (.OVinteger (.IV _ 6))) => true
     | _ => false)
-  let joins := samples.filter (fun s => s.site.breakpoint_role == .BP_statement_join)
+  let joins := samples.filter (fun s => s.site.breakpoint_role == .BP_normalized_ail_join)
   let some target := joins.find? (fun s => s.x == 1) | fail "missing x=1 sequence handoff"
   require "suffix effect absent at cut and later present" (joins.any (fun s => s.x == 3))
   let conditionValues := (samples.filter (fun s => s.site.breakpoint_role == .BP_condition_ready)).map (·.x)
-  let bodyValues := (samples.filter (fun s => s.site.breakpoint_role == .BP_loop_body_done)).map (·.x)
+  let bodyValues := (samples.filter (fun s => s.site.breakpoint_role == .BP_while_restart_pending)).map (·.x)
   require "condition phases" (conditionValues == [3, 4, 5, 6])
-  require "body-to-backedge phases" (bodyValues == [4, 5, 6])
+  require "while restart phases" (bodyValues == [4, 5, 6])
   for sample in samples do
     IO.println (Json.mkObj [("site", toJson sample.site.breakpoint_id),
       ("role", toJson (roleName sample.site.breakpoint_role)),
-      ("ailOrigin", toJson sample.site.breakpoint_ail_path), ("x", toJson sample.x)]).compress
+      ("origin", originDescription sample.site.breakpoint_origin), ("x", toJson sample.x)]).compress
   for mutation in ["repeat-left", "skip-suffix", "extra-choice"] do
     let (mutant, _) ← execute prepared execution nodes mutation
     let .ok mutantObservations := observations mutant | fail "mutation observation encoding failed"

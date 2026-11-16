@@ -25,7 +25,7 @@ class Case:
     kind: str = "defined"
     outputs: tuple[str, ...] = ("",)
     choices: tuple[str | None, ...] = (None,)
-    roles: tuple[str, ...] = ("statement-join",)
+    roles: tuple[str, ...] = ("normalized-ail-join",)
     repeated: bool = False
     no_pauses: bool = False
     genuine_choice: bool = False
@@ -40,18 +40,18 @@ CASES = (
          choices=("0,0", "0,1", "1,0", "1,1", "2,0", "2,1"),
          genuine_choice=True, enumerate_subsets=4, complete_arities=(3, 2)),
     Case("composition", "tests/corenice/breakpoints/composition.c", value=6,
-         roles=("statement-join", "condition-ready", "loop-body-done"), repeated=True),
+         roles=("normalized-ail-join", "condition-ready", "while-restart-pending"), repeated=True),
     Case("do-loop", "tests/corenice/breakpoints/do_loop.c",
-         roles=("statement-join", "loop-body-done"), repeated=True),
+         roles=("normalized-ail-join", "do-condition-pending"), repeated=True),
     Case("abrupt-return", "tests/corenice/breakpoints/abrupt_return.c", value=7,
          roles=(), no_pauses=True),
     Case("goto-skip", "tests/corenice/breakpoints/goto_skip.c", roles=(), no_pauses=True),
     Case("suffix-entry", "tests/corenice/comesfrom-tightening/sequence_suffix.c"),
     Case("branch-entry", "tests/corenice/comesfrom-tightening/jump_into_branch.c"),
     Case("break-continue", "tests/corenice/comesfrom/loops_break_continue.c",
-         roles=("statement-join", "condition-ready", "loop-body-done"), repeated=True),
+         roles=("normalized-ail-join", "condition-ready", "while-restart-pending"), repeated=True),
     Case("recursive-goto", "tests/corenice/comesfrom/recursive_goto.c",
-         roles=("statement-join", "condition-ready"), repeated=True),
+         roles=("normalized-ail-join", "condition-ready"), repeated=True),
     Case("sibling-calls", "tests/corenice/breakpoints/sibling_calls.c",
          outputs=("LR\n", "RL\n"), choices=("0", "1,1,1"), genuine_choice=True),
     Case("ub-before", "tests/corenice/breakpoints/ub_before_cut.c", value=None,
@@ -63,7 +63,7 @@ CASES = (
     Case("minimal-recursive", "tests/minimal/017-func-recursive.c", value=120,
          roles=("condition-ready",), repeated=True),
     Case("minimal-for", "tests/minimal/027-for-loop.c", value=15,
-         roles=("statement-join", "condition-ready", "loop-body-done"), repeated=True),
+         roles=("normalized-ail-join", "condition-ready", "while-restart-pending"), repeated=True),
     Case("minimal-goto", "tests/minimal/061-goto.c", value=1),
 )
 
@@ -120,8 +120,8 @@ def check_all_points(case, points):
     if case.repeated:
         check(max(Counter(site_key(point) for point in points).values(), default=0) > 1,
               f"{case.name}: no repeated execution of a static site")
-    check(all(point["ailOrigin"] is not None for point in points),
-          f"{case.name}: generated source breakpoint lacks AIL provenance")
+    check(all(point["origin"]["stage"] == "normalized-ail" for point in points),
+          f"{case.name}: generated breakpoint lacks normalized-AIL provenance")
     for earlier, later in zip(points, points[1:]):
         check(later["driverSteps"] > earlier["driverSteps"],
               f"{case.name}: pause repeated a completed boundary or reset driver accounting")

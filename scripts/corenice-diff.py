@@ -283,19 +283,26 @@ def project_stutter(trace, allow_breakpoints=False):
             fail("invalid ND kind or alternatives")
         if kind == "pause" and allow_breakpoints:
             point = event["parent"]
-            expected = {"schema", "procedure", "site", "role", "ailOrigin", "location",
+            expected = {"schema", "procedure", "site", "role", "origin", "location",
                         "thread", "encounter", "phase", "remainingBudget", "driverSteps"}
             if (alternatives or selected is not None or not isinstance(point, dict)
-                    or set(point) != expected or point["schema"] != "corenice-breakpoint-v1"
+                    or set(point) != expected or point["schema"] != "corenice-breakpoint-v2"
                     or point["phase"] != "nonmemory"
-                    or point["role"] not in {"statement-join", "condition-ready", "loop-body-done", "internal"}
+                    or point["role"] not in {"normalized-ail-join", "condition-ready",
+                                              "while-restart-pending", "do-condition-pending", "internal"}
                     or any(not natural(point[key]) for key in
                            ["site", "thread", "encounter", "remainingBudget", "driverSteps"])
-                    or point["encounter"] == 0
-                    or (point["ailOrigin"] is not None and
-                        (not isinstance(point["ailOrigin"], list) or
-                         any(not natural(n) for n in point["ailOrigin"])))):
+                    or point["encounter"] == 0):
                 fail("invalid breakpoint boundary")
+            origin = point["origin"]
+            if not isinstance(origin, dict):
+                fail("invalid breakpoint origin")
+            if origin.get("stage") == "normalized-ail":
+                if (set(origin) != {"stage", "occurrence", "slot"}
+                        or not natural(origin["occurrence"]) or not natural(origin["slot"])):
+                    fail("invalid normalized-AIL occurrence key")
+            elif origin != {"stage": "internal"}:
+                fail("unknown breakpoint origin stage")
             # Erase only the administrative boundary. Its preceding effects
             # stay in this interval, with the original genuine choice barriers.
         elif kind in {"active", "killed", "guard"}:

@@ -22,7 +22,7 @@ private def unitExpr : expr core_run_annotation := mk_value_e .Vunit
 
 private def site (n : Nat) : nice_breakpoint_site := {
   breakpoint_procedure := mainSym, breakpoint_id := n,
-  breakpoint_role := .BP_internal, breakpoint_ail_path := none,
+  breakpoint_role := .BP_internal, breakpoint_origin := .NiceInternal,
   breakpoint_location := .other s!"driver-test:{n}" }
 
 private def cut (n : Nat) (left right : expr core_run_annotation)

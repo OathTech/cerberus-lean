@@ -16,7 +16,7 @@ private def parameter : sym := .Symbol "breakpoints" 2 (.SD_Id "bound")
 private def label : sym := .Symbol "breakpoints" 3 (.SD_Id "label")
 private def site : nice_breakpoint_site := {
   breakpoint_procedure := procedure, breakpoint_id := 17,
-  breakpoint_role := .BP_internal, breakpoint_ail_path := none,
+  breakpoint_role := .BP_internal, breakpoint_origin := .NiceInternal,
   breakpoint_location := .other "boundary" }
 private def unitExpr : expr core_run_annotation := mk_value_e .Vunit
 private def suffix : expr core_run_annotation := mk_value_e .Vtrue

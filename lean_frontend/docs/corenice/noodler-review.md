@@ -2,6 +2,9 @@
 
 Reviewed source: `5cfc65adb` (`corenice/breakpoints`). This review adds only
 reproducers and this report. It changes no model, producer or runner.
+The [repair assessment](checkpoint-semantics-repair.md) records the subsequent
+phase/origin repair and a stronger legacy outcome counterexample. Old role
+names and measurements below describe the reviewed checkpoint.
 
 ## R1: marking pure operands adds legacy scheduler alternatives
 
