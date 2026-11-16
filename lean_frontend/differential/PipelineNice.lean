@@ -3,7 +3,7 @@ import CoreNice.CoreParser
 import CoreNice.Translation
 import CoreNice.Core_run_aux
 import CoreNice.Driver
-import Incoming
+import IncomingReachability
 
 namespace CoreNiceDiff
 
@@ -51,9 +51,12 @@ def lowerNice [LemFuel] (prepared : Prepared) : IO ExecutionNice := do
   let linked ← match CoreNice.link [translated] with
     | .Result result => pure result
     | .Exception (loc, _) => fail s!"CoreNice linking failed at {CerbLocation.stringFromLocation loc}"
-  let incoming ← match CoreNice.Incoming.finalize linked with
+  let conservative ← match CoreNice.Incoming.finalize linked with
     | .ok result => pure result
     | .error reason => fail s!"CoreNice incoming annotation failed: {reason}"
+  let incoming ← match CoreNice.Incoming.tighten conservative with
+    | .ok result => pure result.result
+    | .error reason => fail s!"CoreNice incoming tightening failed: {reason}"
   let file := CoreNice.convert_file incoming.file
   let (state, initialSupply) := CoreNice.initial_driver_state supply prepared.addressSpaceTop
     prepared.runDigest file CerbFS.fs_initial_state

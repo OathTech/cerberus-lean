@@ -522,7 +522,8 @@ name = "CoreNiceDifferential"
 srcDir = "differential"
 roots = ["Prepared", "PipelineA", "PipelineNice", "ObservationShared", "ChoiceRunner",
          "ObservationA", "ObservationNice", "RunOutput", "EntryCommon",
-         "ArtifactQuoteNice", "ArtifactCompare", "Incoming", "IncomingTests"]
+         "ArtifactQuoteNice", "ArtifactCompare", "Incoming", "IncomingTests",
+         "IncomingReachability", "IncomingReachabilityTests"]
 
 [[lean_exe]]
 name = "corenice-incoming-tests"
