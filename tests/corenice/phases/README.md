@@ -13,6 +13,8 @@ stdout prefix, final counters/output, and both directions of record/replay:
   still pending. For loops reach this same normalized-while phase after increment.
 * Do condition pending follows the completed body or continue path; that
   iteration's condition has not executed.
+  A continue nested inside a switch reaches this phase, while a later outer
+  loop break bypasses it; the switch's own break retains its distinct target.
 * Condition ready follows successful if/while boolean preparation. Guard UB
   after an output marker does not create this phase.
 * Break and return bypass the loop tail; a false while guard never enters it.

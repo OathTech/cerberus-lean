@@ -39,6 +39,7 @@ CASES = (
          ("T1B1", "T1B1T2B2")),
     Case("do_normal", "B1T1B2T2", do_condition=("B1", "B1T1B2")),
     Case("do_continue", "B1T1B2T2", do_condition=("B1", "B1T1B2")),
+    Case("do_switch_continue", "BTCD", do_condition=("B",)),
     Case("for_normal", "T1B1I1T2B2I2T3", ("T1", "T1B1I1T2", "T1B1I1T2B2I2T3"),
          ("T1B1I1", "T1B1I1T2B2I2")),
     Case("for_continue", "T1B1I1T2B2I2T3", ("T1", "T1B1I1T2", "T1B1I1T2B2I2T3"),
