@@ -65,8 +65,7 @@ private def sameBeforeFault (discovery precise : Run) : IO Unit := do
   let preciseOutput := ObservationNice.streams precise.finalState
   require (discoveryOutput == preciseOutput) "precise corruption changed pre-fault output"
 
-def check (runtime input : String) (fuel top seed : Nat) : IO Unit := do
-  letI : LemFuel := ⟨fuel⟩
+def check [LemFuel] (runtime input : String) (fuel top seed : Nat) : IO Unit := do
   let prepared ← prepare runtime input top []
   let execution ← lowerNice prepared
   let inventory := inspectFile execution.file
@@ -161,7 +160,7 @@ def main (args : List String) : IO UInt32 := do
     let some top := topText.toNat? | CoreNiceDiff.fail "ADDRESS_SPACE_TOP must be natural"
     let some seed := seedText.toNat? | CoreNiceDiff.fail "SEED must be natural"
     if seed > 18446744073709551615 then CoreNiceDiff.fail "SEED must fit UInt64"
-    CoreNiceDiff.IncomingControl.check runtime input fuel top seed
+    @CoreNiceDiff.IncomingControl.check ⟨fuel⟩ runtime input fuel top seed
     return 0
   catch error =>
     CoreNiceDiff.emit (Lean.Json.mkObj [("incoming-control", Lean.toJson "failed"),

@@ -59,6 +59,7 @@ private def execute (legacy : Bool) (state : driver_state) (thread : thread_stat
     match core_thread_step2 fmapEmpty fmapEmpty state.layout_state state.core_file externs
         fmapEmpty 0 (none, thread) with
     | [.Step_tau "Erun" .TSK_Misc action] => pure (action state.core_run_state0)
+    | [.Step_tau "Eif (then)" .TSK_Misc action] => pure (action state.core_run_state0)
     | [.Step_eval _ action] => pure (action state.core_run_state0)
     | _ => throw (IO.Error.userError "legacy rule did not produce one expected semantic step")
   else
