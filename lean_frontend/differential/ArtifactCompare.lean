@@ -5,8 +5,9 @@ import ArtifactQuoteNice
 
 /- Whole pre-execution artifacts, compared without rendering or serializing.
    ArtifactQuoteNice emits the original constructor/type label strings on purpose:
-   this is the sole namespace-forgetting map. Literal values, symbol identities,
-   locations, all AST fields and map/set tree shapes remain exact. Fmap comparator
+   the map forgets namespaces and the added comesfrom fields of Esave/Erun.
+   Literal values, symbol identities, original locations and AST fields, and
+   map/set tree shapes remain exact. Fmap comparator
    closures use CerbQuote's existing audited producer-provenance contract; this
    does not claim extensional equality of arbitrary supplied functions. -/
 
@@ -29,7 +30,7 @@ end
 
 /-- Check the complete linked/converted file from the same prepared input.
     The retained translation artifacts supply comparator provenance at the
-    audited producer site; one-TU linking and conversion preserve it. -/
+    audited producer site; linking, metadata finalization and conversion preserve it. -/
 def compare (a : ExecutionA) (b : ExecutionNice) : Except String Unit := do
   unless a.translatedSupply == b.translatedSupply do
     throw "translation fresh supplies differ"
@@ -41,6 +42,6 @@ def compare (a : ExecutionA) (b : ExecutionNice) : Except String Unit := do
     [CoreNice.CerbQuote.translatedProvenance b.translated] b.file).mapError (·.message)
   let qa ← (CerbQuote.quoteFile pa a.file).mapError (·.message)
   let qb ← (CoreNice.CerbQuote.quoteFile pb b.file).mapError (·.message)
-  unless sameTerm qa qb do throw "complete Core/CoreNice artifact differs under namespace erasure"
+  unless sameTerm qa qb do throw "complete Core/CoreNice artifact differs under comesfrom erasure"
 
 end CoreNiceDiff.ArtifactCompare

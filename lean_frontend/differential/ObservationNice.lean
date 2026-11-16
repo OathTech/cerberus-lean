@@ -5,6 +5,8 @@ import ChoiceRunner
 open Lean
 
 deriving instance ToJson for CoreNice.core_object_type, CoreNice.core_base_type
+deriving instance ToJson for CoreNice.nice_jump_info, CoreNice.nice_label_info
+deriving instance ToJson for CoreNice.nice_origin_fault, CoreNice.nice_fault
 deriving instance ToJson for CoreNice.core_run_cause, CoreNice.driver_error
 
 namespace CoreNiceDiff.ObservationNice

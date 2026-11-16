@@ -522,7 +522,19 @@ name = "CoreNiceDifferential"
 srcDir = "differential"
 roots = ["Prepared", "PipelineA", "PipelineNice", "ObservationShared", "ChoiceRunner",
          "ObservationA", "ObservationNice", "RunOutput", "EntryCommon",
-         "ArtifactQuoteNice", "ArtifactCompare"]
+         "ArtifactQuoteNice", "ArtifactCompare", "Incoming", "IncomingTests"]
+
+[[lean_exe]]
+name = "corenice-incoming-tests"
+srcDir = "test"
+root = "CoreNice.IncomingTests"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "corenice-incoming-control"
+srcDir = "test"
+root = "CoreNice.IncomingControl"
+moreLinkArgs = ["native/md5.o"]
 
 [[lean_exe]]
 name = "corenice-pair-check"

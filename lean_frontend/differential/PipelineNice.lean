@@ -3,6 +3,7 @@ import CoreNice.CoreParser
 import CoreNice.Translation
 import CoreNice.Core_run_aux
 import CoreNice.Driver
+import Incoming
 
 namespace CoreNiceDiff
 
@@ -12,6 +13,7 @@ structure ExecutionNice where
   state : CoreNice.driver_state
   translatedSupply : Nat
   initialSupply : Nat
+  incomingStats : CoreNice.Incoming.Stats
 
 def loadImplementationNice (parsed : CoreNice.CoreParser.CoreFile) : Except String CoreNice.impl := do
   parsed.impls.foldlM (fun acc (name, value) => do
@@ -49,10 +51,13 @@ def lowerNice [LemFuel] (prepared : Prepared) : IO ExecutionNice := do
   let linked ← match CoreNice.link [translated] with
     | .Result result => pure result
     | .Exception (loc, _) => fail s!"CoreNice linking failed at {CerbLocation.stringFromLocation loc}"
-  let file := CoreNice.convert_file linked
+  let incoming ← match CoreNice.Incoming.finalize linked with
+    | .ok result => pure result
+    | .error reason => fail s!"CoreNice incoming annotation failed: {reason}"
+  let file := CoreNice.convert_file incoming.file
   let (state, initialSupply) := CoreNice.initial_driver_state supply prepared.addressSpaceTop
     prepared.runDigest file CerbFS.fs_initial_state
-  return { translated, file, state, translatedSupply := supply, initialSupply }
+  return { translated, file, state, initialSupply, translatedSupply := supply, incomingStats := incoming.stats }
 
 /-- Existing passive memory diagnostics; disabled for the calibration oracle. -/
 def ExecutionNice.capture (execution : ExecutionNice) (enabled : Bool) : Except String ExecutionNice := do
