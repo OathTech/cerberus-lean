@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Exact Core/CoreNice tightening campaign with executed tightened-label controls.
 
-Defaults to eight authored fixtures plus 72 generated parameter/control-depth
-variants (nine families, eight variants each). These are bounded structural
-variants, not uniformly random C. Ordinary corenice-diff path/resource flags are
-forwarded. The CoreNice binary must use the tightening policy. Raw inputs and
-traces are temporary; output is one compact JSON record per case plus totals.
+Defaults to 80 candidates: eight authored fixtures and 72 generated bounded
+parameter/control-depth variants. Exact source-text deduplication preserves
+the first candidate, giving 73 unique inputs and seven skipped duplicates.
+These are bounded structural variants, not uniformly random C. Ordinary
+corenice-diff path/resource flags are forwarded. The CoreNice binary must use
+the tightening policy. Raw inputs and traces are temporary; output is one
+compact JSON record per executed input plus totals.
 """
 import argparse
 import importlib.util
@@ -111,6 +113,17 @@ def cases(fixtures, generated, variants):
     return result
 
 
+def deduplicate_cases(candidates):
+    """Preserve the first identical source text; authored cases precede variants."""
+    seen, unique = set(), []
+    for candidate in candidates:
+        source_text = candidate[2].read_text()
+        if source_text not in seen:
+            seen.add(source_text)
+            unique.append(candidate)
+    return unique, len(candidates) - len(unique)
+
+
 def generated_control(binary, cabs, config, policy, selection):
     command = [str(binary), str(config.runtime), str(cabs), str(config.fuel),
                str(config.address_space_top), policy, selection]
@@ -211,7 +224,9 @@ def main():
     family_counts = {}
     with tempfile.TemporaryDirectory(prefix="incoming-tightening-", dir=scratch) as directory:
         directory = Path(directory)
-        for family, variant_name, source in cases(options.fixtures, directory, options.variants):
+        candidates = cases(options.fixtures, directory, options.variants)
+        unique_cases, skipped_duplicates = deduplicate_cases(candidates)
+        for family, variant_name, source in unique_cases:
             result = run_case(binary, family, source, flags, directory / "input.json", tuple(digests[:2]))
             totals["cases"] += 1
             family_counts[family] = family_counts.get(family, 0) + 1
@@ -226,6 +241,8 @@ def main():
     if totals["executedTightenedDestinations"] == 0 or totals["removedOrigins"] == 0:
         raise ValueError("campaign provided no executed tightening evidence")
     print(json.dumps({"tightening-campaign": "passed", "families": family_counts, **totals,
+                      "candidateInputs": len(candidates), "uniqueSourceInputs": len(unique_cases),
+                      "skippedDuplicateInputs": skipped_duplicates,
                       "coverage": "bounded structural variants; first executed tightened target per tape",
                       "totalDynamicJumpCount": "not measured"}, sort_keys=True))
 

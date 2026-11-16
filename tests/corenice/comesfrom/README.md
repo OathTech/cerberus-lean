@@ -45,10 +45,12 @@ No equivalence or producer-correctness theorem is claimed by this suite.
 
 For the structural tightening policy, run
 `python3 scripts/corenice-incoming-tightening.py` after rebuilding the same
-executables with that policy. The default campaign uses the eight fixtures in
-`tests/corenice/comesfrom-tightening` plus 72 temporary bounded variants.
-Variants change dead-edge multiplicity, sequencing depth, loop bounds and
-values; they are not a general C fuzzer. A ninth family uses independent
+executables with that policy. The default campaign creates 80 candidates from
+the eight fixtures in `tests/corenice/comesfrom-tightening` and 72 temporary
+bounded variants. Deduplication by source text keeps the first occurrence,
+including authored fixtures, and executes 73 unique inputs while reporting the
+seven skipped duplicates. Variants change dead-edge multiplicity, sequencing
+depth, loop bounds and values; they are not a general C fuzzer. A ninth family uses independent
 function calls to exercise both actual evaluation orders. The alternate tape
 flips a recorded genuine choice, and the report counts distinct observed tapes.
 
