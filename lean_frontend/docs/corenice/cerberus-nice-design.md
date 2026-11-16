@@ -225,7 +225,9 @@ also make a small Lean transition lemma expressible directly; a general
 pause/resume theorem is later work. Fuel exhaustion is inconclusive, and equal
 numerical fuel across changed machines is not an equivalence requirement.
 
-An invalid incoming jump produces a distinct `NiceFault` with origin and label.
+An invalid incoming jump produces a distinct, structured `NiceFault`. Its typed
+payload carries the resolved procedure, origin and label, source locations and
+the permitted set used by the check, as specified in [comesfrom](comesfrom.md).
 It is not erased, converted to a successful stop, or equated with original UB.
 Correct translation is expected to produce no such fault on corresponding
 executions. This makes incorrectly generated declarations visible to testing.

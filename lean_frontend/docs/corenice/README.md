@@ -57,9 +57,11 @@ The [review](interpreter-review.md) records the evidence and limitations. No
 Nice checkpoint or checked-control AST node has been introduced yet; future
 nodes and new observation channels need explicit semantics and admission rules.
 
-The proposed next isolated experiment is [checked incoming jumps (`comesfrom`)](comesfrom.md).
-It specifies the semantic change, differential acceptance and the limited
-reasoning benefit we should test before combining it with breakpoints.
+The next isolated experiment is [checked incoming jumps (`comesfrom`)](comesfrom.md):
+build the feature, establish differential agreement, then aggressively tighten
+incoming sets and retest. Normal generated programs must remain free of
+`NiceFault`; expected faults belong to injected negative controls. Consider
+proof only after the tightened implementation works cleanly.
 
 The [type-separation record](type-separation.md) preserves the earlier first
 checkpoint. Neither checkpoint is a general equivalence result.
