@@ -15,6 +15,7 @@ private def check (label : String) (condition : Bool) : IO Unit :=
 private def procedure : sym := .Symbol "incoming-test" 1 (.SD_Id "procedure")
 private def aliasProcedure : sym := .Symbol "incoming-test" 2 (.SD_Id "alias")
 private def destination : sym := .Symbol "incoming-test" 3 (.SD_Id "destination")
+private def queriedDestination : sym := .Symbol "incoming-test" 3 (.SD_Id "same-id-other-description")
 private def parameter : sym := .Symbol "incoming-test" 4 (.SD_Id "parameter")
 private def absentLabel : sym := .Symbol "incoming-test" 5 (.SD_Id "absent")
 private def jumpLocation : CerbLocation.Loc := .other "incoming-test:jump"
@@ -75,12 +76,12 @@ private def expectSuccess (label : String) (result : StepResult)
   | _ => throw (IO.Error.userError s!"{label}: expected successful transition")
 
 private def expectFault (label : String) (result : StepResult)
-    (origin : Nat) (permitted : List Nat) : IO Unit := do
+    (origin : Nat) (permitted : List Nat) (queriedLabel : sym := destination) : IO Unit := do
   match result with
   | .Exception (.NiceFault (.IncomingOriginDenied fault)) =>
     check s!"{label}: resolved procedure" (fault.fault_procedure == procedure)
     check s!"{label}: actual jump metadata" (fault.fault_jump == jump origin)
-    check s!"{label}: resolved destination" (fault.fault_label == destination)
+    check s!"{label}: exact queried destination" (fault.fault_label == queriedLabel)
     check s!"{label}: exact label metadata" (fault.fault_incoming == incoming permitted)
   | _ => throw (IO.Error.userError s!"{label}: expected typed IncomingOriginDenied")
 
@@ -96,6 +97,9 @@ private def ruleTests (legacy : Bool) : IO Unit := do
   let aliases := Lem_Map.fromList [(aliasProcedure, procedure)]
   expectFault s!"{rule}: alias resolution payload"
     (← execute legacy denied (threadFor legacy (runExpr) aliasProcedure) aliases) 17 [11, 29]
+  expectFault s!"{rule}: label identity retains query description"
+    (← execute legacy denied (threadFor legacy (runExpr 17 [] queriedDestination)))
+    17 [11, 29] queriedDestination
   let noOrigins := stateFor (saved [])
   expectSuccess s!"{rule}: normal Esave entry needs no incoming origin"
     (← execute legacy noOrigins (threadFor legacy (saved [])))
@@ -122,7 +126,7 @@ private def ruleTests (legacy : Bool) : IO Unit := do
   for _ in [0:4] do
     expectSuccess s!"{rule}: static origin reusable"
       (← execute legacy good (threadFor legacy (runExpr)))
-  IO.println s!"PASS: {rule}: 12 actual transitions; typed payloads, entry and precedence"
+  IO.println s!"PASS: {rule}: 13 actual transitions; typed payloads, entry and precedence"
   if !legacy then IO.println "PASS: optimized argument UB positive control (1 additional transition)"
 
 /-- Unknown-label behavior is an existing native panic. Run this control in its

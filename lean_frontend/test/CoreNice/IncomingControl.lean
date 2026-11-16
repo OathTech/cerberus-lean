@@ -106,8 +106,8 @@ private def sameBeforeFault (discovery precise : Run) : IO Unit := do
   let preciseOutput := ObservationNice.streams precise.finalState
   require (discoveryOutput == preciseOutput) "precise corruption changed pre-fault output"
 
-def check [LemFuel] (runtime input : String) (fuel top seed : Nat)
-    (tightenedOnly : Bool) : IO Unit := do
+def check [LemFuel] (runtime input : String) (fuel top : Nat)
+    (policy : Choice.Policy) (tightenedOnly : Bool) : IO Unit := do
   let prepared ← prepare runtime input top []
   let execution ← lowerNice prepared
   let inventory := inspectFile execution.file
@@ -126,15 +126,17 @@ def check [LemFuel] (runtime input : String) (fuel top seed : Nat)
     coreBuild := "incoming-control"
     coreNiceBuild := "incoming-control"
     origin := "CoreNice" }
-  let mode : Choice.Mode := .record (.seeded seed.toUInt64)
-  let baseline ← run fuel expected mode prepared execution
+  let baseline ← run fuel expected (.record policy) prepared execution
   match baseline.outcome with
   | .returned _ => pure ()
   | _ => fail "uncorrupted generated program did not complete with a defined result"
   let emptied := mapMetadataFile (fun _ _ info => info)
     (fun procedure label info => if selectedTarget procedure label
       then { info with nice_label_origins := [] } else info) execution.file
-  let discovery ← run fuel expected mode prepared (rebuild prepared execution emptied)
+  -- A supplied choice prefix must be consumed before this deliberate fault.
+  -- Unused prefixes remain explicit failures; this instrument does not weaken
+  -- the ordinary replay/recording protocol to accommodate early termination.
+  let discovery ← run fuel expected (.record policy) prepared (rebuild prepared execution emptied)
   match discovery.outcome with
   | .returned value =>
     let .returned original := baseline.outcome | fail "baseline result disappeared"
@@ -165,7 +167,7 @@ def check [LemFuel] (runtime input : String) (fuel top seed : Nat)
     let expectedFirst : CoreNice.nice_origin_fault := {
       fault_procedure := procedure.symbol
       fault_jump := jump.info
-      fault_label := label.symbol
+      fault_label := jump.target
       fault_incoming := { label.info with nice_label_origins := [] } }
     sameFault "empty-set discovery" discovery expectedFirst
     observationPrefix baseline discovery
@@ -216,14 +218,22 @@ def main (args : List String) : IO UInt32 := do
         pure ([runtime, input, fuelText, topText, seedText], false)
       | [runtime, input, fuelText, topText, seedText, "tightened"] =>
         pure ([runtime, input, fuelText, topText, seedText], true)
-      | _ => CoreNiceDiff.fail "usage: corenice-incoming-control RUNTIME_PREFIX CABS_JSON FUEL ADDRESS_SPACE_TOP SEED [all|tightened]"
+      | _ => CoreNiceDiff.fail "usage: corenice-incoming-control RUNTIME_PREFIX CABS_JSON FUEL ADDRESS_SPACE_TOP SEED_OR_prefix:INDICES [all|tightened]"
     let [runtime, input, fuelText, topText, seedText] := baseArgs
       | CoreNiceDiff.fail "invalid normalized incoming-control arguments"
     let some fuel := fuelText.toNat? | CoreNiceDiff.fail "FUEL must be natural"
     let some top := topText.toNat? | CoreNiceDiff.fail "ADDRESS_SPACE_TOP must be natural"
-    let some seed := seedText.toNat? | CoreNiceDiff.fail "SEED must be natural"
-    if seed > 18446744073709551615 then CoreNiceDiff.fail "SEED must fit UInt64"
-    @CoreNiceDiff.IncomingControl.check ⟨fuel⟩ runtime input fuel top seed tightenedOnly
+    let policy ← if seedText.startsWith "prefix:" then do
+        let text := (seedText.drop "prefix:".length).toString
+        let indices ← if text.isEmpty then pure [] else (text.splitOn ",").mapM fun part => do
+          let some index := part.toNat? | CoreNiceDiff.fail "prefix indices must be natural"
+          pure index
+        pure (CoreNiceDiff.Choice.Policy.prefix indices.toArray)
+      else do
+        let some seed := seedText.toNat? | CoreNiceDiff.fail "SEED must be natural or prefix:INDICES"
+        if seed > 18446744073709551615 then CoreNiceDiff.fail "SEED must fit UInt64"
+        pure (CoreNiceDiff.Choice.Policy.seeded seed.toUInt64)
+    @CoreNiceDiff.IncomingControl.check ⟨fuel⟩ runtime input fuel top policy tightenedOnly
     return 0
   catch error =>
     CoreNiceDiff.emit (Lean.Json.mkObj [("incoming-control", Lean.toJson "failed"),

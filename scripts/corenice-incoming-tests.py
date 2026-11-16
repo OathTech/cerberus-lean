@@ -29,7 +29,7 @@ def run_unit_controls(binary):
         raise ValueError(f"actual-rule tests failed ({code}): {diff.stderr_excerpt(stderr)}")
     text = stdout.decode("utf-8")
     for rule in ("core_run", "core_reduction"):
-        if f"PASS: {rule}: 12 actual transitions" not in text:
+        if f"PASS: {rule}: 13 actual transitions" not in text:
             raise ValueError(f"actual-rule test did not attest {rule}")
     if "PASS: optimized argument UB positive control" not in text:
         raise ValueError("missing argument-evaluation positive control")
@@ -129,7 +129,7 @@ def main():
                   f"genuine-choices={len(result['indices'])}, both directions")
         generated_witnesses += run_generated_controls(control_binary, source, config)
     print(f"PASS: {len(cases)} C fixtures, {comparisons} exact bidirectional comparisons; "
-          "25 actual-rule transitions, 2 original-error precedence controls")
+          "27 actual-rule transitions, 2 original-error precedence controls")
     print(f"PASS: {generated_witnesses} generated-program first-site execution witnesses, "
           f"{3 * generated_witnesses} typed fault controls")
     print("NOT MEASURED here: total dynamic checked-jump counts or coverage of every static site")
