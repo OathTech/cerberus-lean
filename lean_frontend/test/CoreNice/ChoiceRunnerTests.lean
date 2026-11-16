@@ -162,6 +162,150 @@ def tests : IO Unit := do
   require "empty-constraint branch calibration" (observedBranch == exhaustiveBranch)
   IO.println "choice-runner: all focused controls passed"
 
+inductive Point where
+  | before
+  | after (first : Nat)
+  | repeat
+  | exhausted
+  | error
+  deriving BEq, ToJson
+
+abbrev ResumableMachine := ndM (Active Nat Point) String String Bool Nat
+abbrev ResumableProgress := Progress (Active Nat Point) Nat Point String String Bool Nat
+abbrev ResumableSuspension := Suspension (Active Nat Point) Nat Point String String Bool Nat
+
+private def pauseAt (point : Point) : ResumableMachine :=
+  .ND fun state => (.NDactive (.pause point), state + 1)
+
+private def doneAt (value : Nat) : ResumableMachine :=
+  .ND fun state => (.NDactive (.done value), state + 1)
+
+private def suffix (first : Nat) : ResumableMachine := .ND fun state =>
+  (.NDstep "after" [("left", doneAt (first + 1)), ("right", doneAt (first + 2))], state + 1)
+
+private def prefixMachine : ResumableMachine := .ND fun state =>
+  (.NDnd "before" [("left", pauseAt (.after 100)), ("right", pauseAt (.after 200))], state + 1)
+
+private def adapter : Adapter (Active Nat Point) Nat Point String String Bool Nat where
+  classify := id
+  describe := toJson
+  continueFrom point := match point with
+    | .before => prefixMachine
+    | .after first => suffix first
+    | .repeat => pauseAt .repeat
+    | .exhausted => .ND fun state => (.NDactive (.incomplete "synthetic model budget"), state + 1)
+    | .error => .ND fun state => (.NDkilled (.Other "after-pause failure"), state + 1)
+
+/-- An ordinary runner reference with the same actions/choices. Its singleton
+    node represents the administrative boundary without a host suspension. -/
+private def uninterrupted : Machine :=
+  let suffix first : Machine := .ND fun state =>
+    (.NDstep "after" [("left", leaf (first + 1)), ("right", leaf (first + 2))], state + 1)
+  let middle first : Machine := .ND fun state =>
+    (.NDnd "administrative" [("only", suffix first)], state + 1)
+  .ND fun state => (.NDnd "before" [("left", middle 100), ("right", middle 200)], state + 1)
+
+private def expectPause (label : String) : ResumableProgress → IO ResumableSuspension
+  | .suspended value => pure value
+  | .complete _ => throw (IO.userError s!"choice-runner: FAILED {label}: expected nonterminal suspension")
+
+private def expectComplete (label : String) : ResumableProgress → IO (Run Nat String Nat)
+  | .complete value => pure value
+  | .suspended _ => throw (IO.userError s!"choice-runner: FAILED {label}: expected completion")
+
+private def deltas (events : Array Json) : Array Json :=
+  events.filterMap fun event => (event.getObjVal? "observation").toOption
+
+private def runResumable (fuel : Nat) (mode : Mode) (machine : ResumableMachine := prefixMachine) :
+    ResumableProgress :=
+  startResumable fuel observer mode header adapter machine 0
+
+private def finishPauses : Nat → ResumableProgress → IO (Run Nat String Nat)
+  | 0, _ => throw (IO.userError "choice-runner: FAILED pause loop exceeded test bound")
+  | _, .complete value => pure value
+  | count + 1, .suspended suspension => finishPauses count (resume suspension)
+
+def resumableTests : IO Unit := do
+  let reference := record uninterrupted #[1, 0]
+  let middle ← expectPause "prefix with unused choice" (runResumable 20 (.record (.prefix #[1, 0])))
+  require "midpoint data after first choice"
+    (middle.point == .after 200 && middle.state == 2 && middle.visited == 2 && middle.remainingFuel == 18)
+  require "prefix retained without finalizing tape"
+    (middle.tape.entries.size == 1 && middle.events.size == 4)
+  let pauseEvent ← match middle.events.back? with
+    | some event => pure event
+    | none => throw (IO.userError "choice-runner: missing pause event")
+  require "nonterminal administrative descriptor"
+    ((pauseEvent.getObjValAs? String "kind").toOption == some "pause" &&
+      (pauseEvent.getObjVal? "parent").toOption == some (toJson (Point.after 200)))
+  let finished ← expectComplete "resume after first choice" (resume middle)
+  require "resume retains prefix and suffix choice"
+    (valueOf finished == valueOf reference && finished.tape == reference.tape)
+  require "resume retains state, observations and cumulative visits"
+    (finished.finalState == reference.finalState && finished.visited == reference.visited &&
+      deltas finished.events == deltas reference.events)
+  let replayMiddle ← expectPause "replay has nonempty suffix" (runResumable 20 (.replay reference.tape))
+  let replayFinished ← expectComplete "replay resumes" (resume replayMiddle)
+  require "record/replay pause trace equality"
+    (replayFinished.events == finished.events && replayFinished.tape == finished.tape)
+  let before ← expectPause "pause before any choice"
+    (runResumable 20 (.replay reference.tape) (pauseAt .before))
+  require "entire tape survives early pause" (before.tape.entries.isEmpty && before.remainingFuel == 19)
+  let beforeFinished ← finishPauses 5 (resume before)
+  require "early and middle pauses consume choices exactly once"
+    (valueOf beforeFinished == valueOf reference && beforeFinished.tape == reference.tape &&
+      beforeFinished.visited == reference.visited + 1)
+  for seed in [0, 1, 2, 12345] do
+    let normal := run 20 observer (.record (.seeded seed)) header uninterrupted 0
+    let paused ← finishPauses 5 (runResumable 20 (.record (.seeded seed)))
+    require "RNG state survives pause"
+      (paused.tape == normal.tape && valueOf paused == valueOf normal)
+  let unusedPrefix ← expectPause "unused prefix deferred"
+    (runResumable 20 (.record (.prefix #[1, 0, 1])))
+  let unusedEnd ← expectComplete "unused prefix at completion" (resume unusedPrefix)
+  require "unused prefix fails only at real completion" (isInputError unusedEnd)
+  let firstEntry ← match reference.tape.entries[0]? with
+    | some entry => pure entry
+    | none => throw (IO.userError "choice-runner: missing reference tape entry")
+  let extra := { firstEntry with ordinal := reference.tape.entries.size }
+  let surplusTape := { reference.tape with entries := reference.tape.entries.push extra }
+  let surplusMiddle ← expectPause "surplus tape deferred" (runResumable 20 (.replay surplusTape))
+  let surplusEnd ← expectComplete "surplus tape at completion" (resume surplusMiddle)
+  require "unused tape fails only at real completion" (isMismatch surplusEnd)
+  let bounded ← expectPause "last traversal unit reaches pause"
+    (runResumable 2 (.record (.prefix #[1, 0])))
+  require "remaining fuel reaches zero" (bounded.remainingFuel == 0 && bounded.visited == 2)
+  let exhaustedResume ← expectComplete "resume cannot replenish fuel" (resume bounded)
+  require "exhaustion retains partial session without surplus check"
+    (isIncomplete exhaustedResume && exhaustedResume.visited == 2 && exhaustedResume.finalState == 2 &&
+      exhaustedResume.tape.entries.size == 1)
+  let loopEnd ← finishPauses 10 (runResumable 4 (.record .first) (pauseAt .repeat))
+  require "repeated pauses remain cumulatively bounded"
+    (isIncomplete loopEnd && loopEnd.visited == 4 && loopEnd.finalState == 4 && loopEnd.tape.entries.isEmpty)
+  let modelBudget ← expectPause "model budget checkpoint"
+    (runResumable 20 (.replay reference.tape) (pauseAt .exhausted))
+  let modelEnd ← expectComplete "explicit model budget exhaustion" (resume modelBudget)
+  require "model exhaustion is incomplete rather than terminal tape mismatch"
+    (isIncomplete modelEnd && modelEnd.visited == 2 && modelEnd.finalState == 2)
+  let failurePause ← expectPause "failure checkpoint" (runResumable 20 (.record .first) (pauseAt .error))
+  let failureEnd ← expectComplete "failure after resume" (resume failurePause)
+  require "semantic failure after resume remains visible" (match failureEnd.outcome with
+    | .killed (.Other "after-pause failure") => failureEnd.finalState == 2 && failureEnd.visited == 2
+    | _ => false)
+  let badHeader := { reference.tape with header := { reference.tape.header with prepared := "wrong" } }
+  let invalid ← expectComplete "resumable header validation" (runResumable 20 (.replay badHeader))
+  require "invalid metadata never runs resumable action"
+    (isInputError invalid && invalid.visited == 0 && invalid.finalState == 0)
+  let badObserver := { observer with observeDelta := fun _ _ => .error "pause delta lost" }
+  let badDelta ← expectComplete "pause observer failure"
+    (startResumable 20 badObserver (.record .first) header adapter (pauseAt .before) 0)
+  require "observer failure cannot become successful suspension" (match badDelta.outcome with
+    | .observationError "pause delta lost" => badDelta.visited == 1 && badDelta.finalState == 1
+    | _ => false)
+  IO.println "choice-runner: resumable session controls passed"
+
 end CoreNiceDiff.Choice.Tests
 
-def main : IO Unit := CoreNiceDiff.Choice.Tests.tests
+def main : IO Unit := do
+  CoreNiceDiff.Choice.Tests.tests
+  CoreNiceDiff.Choice.Tests.resumableTests
