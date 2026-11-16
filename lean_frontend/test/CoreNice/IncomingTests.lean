@@ -13,6 +13,7 @@ private def check (label : String) (condition : Bool) : IO Unit :=
   unless condition do throw (IO.Error.userError s!"incoming check failed: {label}")
 
 private def procedure : sym := .Symbol "incoming-test" 1 (.SD_Id "procedure")
+private def resolvedProcedureView : sym := .Symbol "incoming-test" 1 (.SD_Id "resolved-procedure-view")
 private def aliasProcedure : sym := .Symbol "incoming-test" 2 (.SD_Id "alias")
 private def destination : sym := .Symbol "incoming-test" 3 (.SD_Id "destination")
 private def queriedDestination : sym := .Symbol "incoming-test" 3 (.SD_Id "same-id-other-description")
@@ -76,10 +77,11 @@ private def expectSuccess (label : String) (result : StepResult)
   | _ => throw (IO.Error.userError s!"{label}: expected successful transition")
 
 private def expectFault (label : String) (result : StepResult)
-    (origin : Nat) (permitted : List Nat) (queriedLabel : sym := destination) : IO Unit := do
+    (origin : Nat) (permitted : List Nat) (queriedLabel : sym := destination)
+    (expectedProcedure : sym := procedure) : IO Unit := do
   match result with
   | .Exception (.NiceFault (.IncomingOriginDenied fault)) =>
-    check s!"{label}: resolved procedure" (fault.fault_procedure == procedure)
+    check s!"{label}: exact resolved procedure" (fault.fault_procedure == expectedProcedure)
     check s!"{label}: actual jump metadata" (fault.fault_jump == jump origin)
     check s!"{label}: exact queried destination" (fault.fault_label == queriedLabel)
     check s!"{label}: exact label metadata" (fault.fault_incoming == incoming permitted)
@@ -97,6 +99,10 @@ private def ruleTests (legacy : Bool) : IO Unit := do
   let aliases := Lem_Map.fromList [(aliasProcedure, procedure)]
   expectFault s!"{rule}: alias resolution payload"
     (← execute legacy denied (threadFor legacy (runExpr) aliasProcedure) aliases) 17 [11, 29]
+  let describedAlias := Lem_Map.fromList [(aliasProcedure, resolvedProcedureView)]
+  expectFault s!"{rule}: resolved target retains its description"
+    (← execute legacy denied (threadFor legacy (runExpr) aliasProcedure) describedAlias)
+    17 [11, 29] (expectedProcedure := resolvedProcedureView)
   expectFault s!"{rule}: label identity retains query description"
     (← execute legacy denied (threadFor legacy (runExpr 17 [] queriedDestination)))
     17 [11, 29] queriedDestination
@@ -126,7 +132,7 @@ private def ruleTests (legacy : Bool) : IO Unit := do
   for _ in [0:4] do
     expectSuccess s!"{rule}: static origin reusable"
       (← execute legacy good (threadFor legacy (runExpr)))
-  IO.println s!"PASS: {rule}: 13 actual transitions; typed payloads, entry and precedence"
+  IO.println s!"PASS: {rule}: 14 actual transitions; typed payloads, entry and precedence"
   if !legacy then IO.println "PASS: optimized argument UB positive control (1 additional transition)"
 
 /-- Unknown-label behavior is an existing native panic. Run this control in its

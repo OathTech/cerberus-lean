@@ -79,7 +79,14 @@ private def fault (result : Run) : IO CoreNice.nice_origin_fault :=
 
 private def sameFault (label : String) (result : Run)
     (expected : CoreNice.nice_origin_fault) : IO Unit := do
-  require ((← fault result) == expected) s!"{label}: fault payload differs from actual artifact"
+  let actual ← fault result
+  -- Inventory keys identify bindings through symbol_compare. The resolved
+  -- extern target can retain a different description of that same binding.
+  require (sameSymbol actual.fault_procedure expected.fault_procedure)
+    s!"{label}: resolved procedure differs from the artifact binding"
+  require (actual.fault_jump == expected.fault_jump &&
+    actual.fault_label == expected.fault_label && actual.fault_incoming == expected.fault_incoming)
+    s!"{label}: executing-node or label metadata differs from the actual artifact"
 
 private def observationPrefix (baseline stopped : Run) : IO Unit := do
   let baseDriver ← unwrap (traceDelta [] baseline.finalState.trace)
