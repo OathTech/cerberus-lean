@@ -56,6 +56,14 @@ interpreter processes, exact comparison in both directions, zero failures,
 tightened policy is `e6cfb5ba4`. Subsequent changes repair test instruments and
 documentation, without changing that policy.
 
+The final tightened policy also passed the complete frozen campaign: 1,000
+distinct defined programs, 2,000 distinct input/tape pairs and 8,000 fresh
+interpreter processes, 591.916 seconds. All inputs exercised two genuinely
+different tapes in both recording directions. There were zero mismatches,
+incomplete runs, UB, model errors or unexpected `NiceFault` in this generated
+slice, and no missing campaign targets. The same frozen input set was used for
+both policies; these are not 2,000 distinct source programs.
+
 The dedicated tightened suite uses 73 distinct bounded inputs from nine control
 families: eight authored fixtures plus generated variants, with seven duplicate
 candidates removed before execution. Its 81 input/tape comparisons remove 142
@@ -146,6 +154,11 @@ The reviewer also independently ran full artifact/old-runner calibration for
 `jump_into_branch.c` and `sequence_suffix.c`; both passed. No runtime semantic
 defect was found in this review. These results do not replace a proof of the
 producer's reachability hypothesis.
+
+Final review on 2026-11-16 inspected both completed frozen campaign reports
+and accepted this checkpoint for considering a bounded local proof experiment,
+with no open findings. The emitted-loop pilot should determine whether the
+predecessor interface reduces proof work enough to justify its machinery.
 
 ## What is ready to consider proving
 
