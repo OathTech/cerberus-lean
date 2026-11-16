@@ -90,6 +90,21 @@
       "source": "frontend/model/formatted.lem",
       "owned": "frontend/corenice/model/formatted.lem",
       "module": "Formatted"
+    },
+    {
+      "source": "frontend/model/core_rewrite.lem",
+      "owned": "frontend/corenice/model/core_rewrite.lem",
+      "module": "Core_rewrite"
+    },
+    {
+      "source": "frontend/model/core_indet.lem",
+      "owned": "frontend/corenice/model/core_indet.lem",
+      "module": "Core_indet"
+    },
+    {
+      "source": "frontend/model/core_sequentialise.lem",
+      "owned": "frontend/corenice/model/core_sequentialise.lem",
+      "module": "Core_sequentialise"
     }
   ],
   "handwritten": [
