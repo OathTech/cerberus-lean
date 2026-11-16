@@ -31,6 +31,10 @@ individual scope; its estimate replaces the earlier 2–4-day driver-only estima
 
 ## After CoreNice: breakpoint syntax and checked jumps
 
+The proposed next step is the isolated [comesfrom experiment](comesfrom.md).
+It separates checked jumps from the breakpoint work below and assesses their
+reasoning value independently; the combined demo remains a later target.
+
 Add the two genuine syntax features to the working interpreter, one at a time.
 Define `StrongTail := Continue NExpr | Breakpoint id NExpr` and use it as the
 continuation field of Nice strong sequence, as specified in the design. There
