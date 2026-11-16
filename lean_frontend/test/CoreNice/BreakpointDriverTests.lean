@@ -89,10 +89,13 @@ private def suspended (expected : Nat) (result : nice_run_result) : IO nice_susp
 private def equivalentObservations (label : String) (left right : driver_state) : IO Unit := do
   -- Maps and Dlists contain functional fields: compare their exposed contents,
   -- not generated equality on an entire state. These fixtures have empty stacks.
+  let emptyStacks := fun (state : driver_state) => state.core_state0.thread_states.all
+    fun (_, _, thread) => match thread.stack0 with | .Stack_empty => true | _ => false
+  check s!"{label}: left fixture has empty stacks" (emptyStacks left)
+  check s!"{label}: right fixture has empty stacks" (emptyStacks right)
   let control := fun (state : driver_state) => state.core_state0.thread_states.map
     fun (tid, parent, thread) =>
-      (tid, parent, thread.current_proc_opt, thread.env.map fmapElements,
-        match thread.stack0 with | .Stack_empty => true | _ => false)
+      (tid, parent, thread.current_proc_opt, thread.arena, thread.env.map fmapElements)
   check s!"{label}: thread control and environment" (control left == control right)
   check s!"{label}: output contents"
     (toList left.core_state0.io.stdout == toList right.core_state0.io.stdout &&
