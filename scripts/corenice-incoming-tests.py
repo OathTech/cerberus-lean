@@ -11,6 +11,7 @@ import importlib.util
 import os
 from pathlib import Path
 import sys
+import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("corenice_diff", ROOT / "scripts/corenice-diff.py")
@@ -59,16 +60,62 @@ def expected_result(trace):
         raise ValueError(f"fixture returned failure: {value}")
 
 
+def run_generated_controls(binary, source, config):
+    memory = config.memory_mb * 1024**2
+    output = config.output_mb * 1024**2
+    code, cabs, stderr = diff.run_child(
+        [str(config.producer.resolve(strict=True)), "--runtime=" + str(config.runtime),
+         "--cabs-json", str(source)], config.timeout, memory, output)
+    if code != 0:
+        raise ValueError(f"control Cabs producer failed ({code}): {diff.stderr_excerpt(stderr)}")
+    if stderr:
+        print("PRODUCER_STDERR: " + diff.stderr_excerpt(stderr), file=sys.stderr)
+    scratch = ROOT / ".tmp"
+    scratch.mkdir(exist_ok=True)
+    witnesses = 0
+    with tempfile.TemporaryDirectory(prefix="incoming-control-", dir=scratch) as directory:
+        cabs_file = Path(directory) / "input.json"
+        cabs_file.write_bytes(cabs)
+        for seed in ([0, 1] if source.stem == "choice_order" else [0]):
+            command = [str(binary), str(config.runtime), str(cabs_file), str(config.fuel),
+                       str(config.address_space_top), str(seed)]
+            code, stdout, stderr = diff.run_child(command, config.timeout, memory, output)
+            if code != 0 or stderr:
+                raise ValueError(f"generated-program control failed ({code}): "
+                                 f"{diff.stderr_excerpt(stdout)}; {diff.stderr_excerpt(stderr)}")
+            result = diff.decode(stdout.decode("utf-8"))
+            status = result["incoming-control"]
+            if status == "passed":
+                if result["executedFirstSiteWitnesses"] != 1 or result["typedFaultControls"] != 3:
+                    raise ValueError("generated control did not attest three typed faults")
+                witnesses += 1
+            elif status == "no-checked-jump":
+                if result["executedFirstSiteWitnesses"] != 0:
+                    raise ValueError("no-jump control claimed an executed site")
+                if source.stem != "runtime_arithmetic":
+                    raise ValueError(f"{source.name}: required checked-jump path was not executed")
+            else:
+                raise ValueError(f"unexpected generated-control result: {status}")
+            print(f"PASS: {source.name}: metadata controls seed={seed}: {status}; "
+                  f"syntactic-jumps={result['syntacticJumps']}, "
+                  f"runtime-syntactic-jumps={result['runtimeSyntacticJumps']}")
+    return witnesses
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     parser.add_argument("--unit-bin", type=Path,
                         default=ROOT / "lean_frontend/.lake/build/bin/corenice-incoming-tests")
+    parser.add_argument("--control-bin", type=Path,
+                        default=ROOT / "lean_frontend/.lake/build/bin/corenice-incoming-control")
     options, flags = parser.parse_known_args()
     run_unit_controls(options.unit_bin.resolve(strict=True))
+    control_binary = options.control_bin.resolve(strict=True)
     cases = sorted((ROOT / "tests/corenice/comesfrom").glob("*.c"))
     if not cases:
         raise ValueError("missing comesfrom C fixtures")
     comparisons = 0
+    generated_witnesses = 0
     for source in cases:
         choices = [0, 1] if source.stem == "choice_order" else [None]
         for choice in choices:
@@ -80,10 +127,12 @@ def main():
             comparisons += 1
             print(f"PASS: {source.name}: choice-prefix={choice}, "
                   f"genuine-choices={len(result['indices'])}, both directions")
+        generated_witnesses += run_generated_controls(control_binary, source, config)
     print(f"PASS: {len(cases)} C fixtures, {comparisons} exact bidirectional comparisons; "
           "25 actual-rule transitions, 2 original-error precedence controls")
-    print("NOT MEASURED here: generated-program checked-jump counts; "
-          "use post-finalization metadata corruption to establish those paths")
+    print(f"PASS: {generated_witnesses} generated-program first-site execution witnesses, "
+          f"{3 * generated_witnesses} typed fault controls")
+    print("NOT MEASURED here: total dynamic checked-jump counts or coverage of every static site")
 
 
 if __name__ == "__main__":

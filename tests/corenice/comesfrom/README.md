@@ -1,8 +1,9 @@
 # Incoming-jump fixtures
 
 Run `python3 scripts/corenice-incoming-tests.py` after building the
-`corenice-incoming-tests`, `core-diff` and `corenice-diff` executables and the
-normal native Cabs producer/runtime. The script accepts `--unit-bin PATH` and
+`corenice-incoming-tests`, `corenice-incoming-control`, `core-diff` and
+`corenice-diff` executables and the normal native Cabs producer/runtime.
+The script accepts `--unit-bin PATH`, `--control-bin PATH` and
 forwards ordinary comparator path/resource flags. It requires exact trace
 comparison in both recording directions.
 
@@ -30,9 +31,13 @@ Unknown-label controls run in separate processes and require the existing
 unresolved-label panic, rather than accepting any failing process.
 
 These focused synthetic tests cover both jump implementations. The normal
-driver uses the optimized implementation. Its observation stream does not
-count every internal jump; this script therefore does not infer executed-check
-counts from source constructs or emitted annotations. Post-finalization
-metadata corruption on generated programs and runtime-procedure inventory are
-separate integration checks. No equivalence or producer-correctness theorem is
-claimed by this suite.
+driver uses the optimized implementation. The generated-program control clears
+all label permissions after finalization to identify the first actual taken
+jump, checks its typed payload against the original artifact, then replays the
+consumed choice-tape prefix with two precise corruptions: removing only that
+permission and changing only that jump's origin to a fresh identity. All three
+must fault with matching pre-fault observations, which must be prefixes of the
+uncorrupted defined execution. The script counts first-site witnesses, not
+every dynamic jump or coverage of every annotated site. Runtime procedures are
+inventoried separately; a no-jump arithmetic fixture is reported explicitly.
+No equivalence or producer-correctness theorem is claimed by this suite.
