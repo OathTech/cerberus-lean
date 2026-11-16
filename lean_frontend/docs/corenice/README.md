@@ -59,10 +59,13 @@ its limitations. The first semantic experiment, [checked incoming jumps
 actual AST/rule changes, structural tightening, differential evidence, limits
 and a proposed local proof scope. Ordinary runs remain subject to exact
 comparison; deliberate metadata corruptions exercise typed `NiceFault`.
-The next milestone is governed by the [breakpoint charter](breakpoints-charter.md):
-expose resumable intermediate states at existing strong-sequence boundaries,
-prioritizing AIL composition points useful for a later simulation sequence rule
-and Caesium alignment. Differential validation precedes the broad proof effort.
+The [breakpoint milestone](breakpoints-checkpoint.md) is implemented on
+`corenice/breakpoints`, governed by its [charter](breakpoints-charter.md). It adds
+restricted strong-tail syntax, explicit resumable driver phases, retained choice
+sessions and AIL composition sites. Its executable heap-midpoint demonstration
+and [AIL/Nice/Caesium mapping](breakpoint-composition.md) motivate a later
+simulation sequence rule. This branch remains an experimental checkpoint;
+differential validation precedes the broad proof effort.
 
 The [type-separation record](type-separation.md) preserves the earlier first
 checkpoint. Neither checkpoint is a general equivalence result.

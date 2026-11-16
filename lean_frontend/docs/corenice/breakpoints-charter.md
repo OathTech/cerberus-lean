@@ -1,6 +1,7 @@
 # Charter: CoreNice breakpoints for compositional simulation
 
-Status: design charter; implementation has not begun. Baseline: reviewed
+Status: implemented experimental milestone on `corenice/breakpoints`; see the
+[checkpoint and reproduction commands](breakpoints-checkpoint.md). Baseline: reviewed
 `corenice/comesfrom` checkpoint `11587a90b`. This charter governs the next
 breakpoint milestone and supersedes the earlier combined-demo work order where
 they differ. The [machine design](cerberus-nice-design.md) and

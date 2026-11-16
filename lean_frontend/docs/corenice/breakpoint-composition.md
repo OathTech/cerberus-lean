@@ -227,3 +227,5 @@ extra-choice and missing-site controls. Its compact samples are reproducible
 diagnostics, not a persistent state format. The typed-AIL inspection above can
 be repeated at `Prepared.prepare`'s return boundary before either lowering;
 the source of `erase_loop_control` explains the subsequent generated labels.
+The demo also checks and prints the main block's actual binding/statement
+constructor sequence and the original singleton loop-body shape before lowering.

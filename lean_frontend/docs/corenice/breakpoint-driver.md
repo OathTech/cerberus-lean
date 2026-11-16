@@ -2,8 +2,8 @@
 
 This describes the implementation in the owned
 [driver model](../../../frontend/corenice/model/driver.lem). It supports the
-[breakpoint charter](breakpoints-charter.md); executable validation belongs to
-the integrated AST/runner checkpoint.
+[breakpoint charter](breakpoints-charter.md); the integrated
+[checkpoint](breakpoints-checkpoint.md) records executable validation.
 
 `drive_until_breakpoint with_concurrency file argv budget` starts a run and
 returns a `nice_run_result` through the existing `driverM`:
@@ -19,6 +19,9 @@ Existing ND failure outcomes retain their existing channels.
 `resume_breakpoint suspension` restores its saved state and continues its saved
 phase. It accepts no replacement program, arguments or budget. Its contract is
 over suspensions produced by the machine, not arbitrary fabricated records.
+The generated Lean functions also take the existing `enumDefs`/`tagDefs`
+reader parameters. The host adapter always obtains them from the suspension's
+retained file; the intended resume contract requires these same readers.
 
 ## What the phase retains
 
@@ -60,9 +63,9 @@ traversal budget across a suspension, and observes the state delta leading to
 the breakpoint. No pending choice is selected again. Only `NiceCompleted` or
 a genuine semantic failure permits final tape-consumption checks.
 
-Focused integrated tests should include a cut in a global initializer followed
-by another initializer and main, repeated loop cuts, an unsequenced context
-with a real competing choice, and a deliberately insufficient control budget
-under both immediate and selected host resumption. They must also compare the
-ordinary automatic `drive` path against Core to detect drift in the shared
-helper extraction.
+`BreakpointDriverTests` exercises a cut in a global initializer followed by
+another initializer and main, a retained deferred-call frontier under both
+competing choices, and insufficient cumulative budgets. `BreakpointTests`
+executes nonempty annotation transport and negative-action/RMW reconstruction.
+The C suite compares ordinary automatic `drive` against Core and the resumable
+route under explicit pause policies, including repeated loop encounters.
