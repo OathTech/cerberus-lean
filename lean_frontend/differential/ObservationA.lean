@@ -7,7 +7,7 @@ open Lean
 deriving instance ToJson for core_object_type, core_base_type
 deriving instance ToJson for core_run_cause, driver_error
 
-namespace CoreBDiff.ObservationA
+namespace CoreNiceDiff.ObservationA
 
 def stepInfo : step_kind → Json
   | .SK_action_request detail => node "action" [toJson detail]
@@ -61,4 +61,4 @@ def result (value : driver_result) : Except String Json := do
     ("blocked", toJson value.dres_blocked)]
 
 
-end CoreBDiff.ObservationA
+end CoreNiceDiff.ObservationA

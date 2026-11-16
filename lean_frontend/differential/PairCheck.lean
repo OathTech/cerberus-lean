@@ -1,6 +1,6 @@
 import ArtifactCompare
 import ObservationA
-import ObservationB
+import ObservationNice
 import EntryCommon
 import CerbND
 
@@ -11,7 +11,7 @@ import CerbND
    diagnostic capture data. Exhaustive mode is intentionally for small finite fixtures: MAX_PATHS bounds
    our replay enumeration, while the caller must cap/time-limit the process. -/
 
-namespace CoreBDiff.PairCheck
+namespace CoreNiceDiff.PairCheck
 open Lean
 
 private def unwrap {α : Type} : Except String α → IO α
@@ -107,7 +107,7 @@ def check (runtime input : String) (fuel top maxPaths : Nat) : IO Unit := do
   require (maxPaths > 0) "MAX_PATHS must be positive"
   let prepared ← @prepare ⟨fuel⟩ runtime input top []
   let a ← @lowerA ⟨fuel⟩ prepared
-  let b ← @lowerB ⟨fuel⟩ prepared
+  let b ← @lowerNice ⟨fuel⟩ prepared
   unwrap (ArtifactCompare.compare a b)
   require a.file.main.isSome "paired execution calibration requires a main entry"
   let changedMain := { b with file := { b.file with main := none } }
@@ -125,17 +125,17 @@ def check (runtime input : String) (fuel top maxPaths : Nat) : IO Unit := do
     prepared := prepared.identity.compress
     config := Json.mkObj [("fuel", toJson fuel), ("top", toJson top)]
     coreBuild := "in-process-paired-check"
-    coreBBuild := "in-process-paired-check"
+    coreNiceBuild := "in-process-paired-check"
     origin := "paired" }
   let resultsA ← calibrate fuel maxPaths ObservationA.observer expected
     (@ExecutionA.action ⟨fuel⟩ observedA prepared.argv) observedA.state
     (@ExecutionA.action ⟨fuel⟩ referenceA prepared.argv) referenceA.state
     (project ObservationA.result toJson ObservationA.streams (·.trace))
-  let resultsB ← calibrate fuel maxPaths ObservationB.observer expected
-    (@ExecutionB.action ⟨fuel⟩ observedB prepared.argv) observedB.state
-    (@ExecutionB.action ⟨fuel⟩ referenceB prepared.argv) referenceB.state
-    (project ObservationB.result toJson ObservationB.streams (·.trace))
-  require (sameMultiset resultsA resultsB) "Core/CoreB exhaustive observation multisets differ"
+  let resultsB ← calibrate fuel maxPaths ObservationNice.observer expected
+    (@ExecutionNice.action ⟨fuel⟩ observedB prepared.argv) observedB.state
+    (@ExecutionNice.action ⟨fuel⟩ referenceB prepared.argv) referenceB.state
+    (project ObservationNice.result toJson ObservationNice.streams (·.trace))
+  require (sameMultiset resultsA resultsB) "Core/CoreNice exhaustive observation multisets differ"
   emit (Json.mkObj [("paired-artifact", toJson "equal"),
     ("artifact-negative-controls", toJson (2 : Nat)),
     ("branch-zero-calibration", toJson "equal"), ("all-results-calibration", toJson "equal"),
@@ -143,20 +143,20 @@ def check (runtime input : String) (fuel top maxPaths : Nat) : IO Unit := do
     ("pathsA", toJson resultsA.length), ("pathsB", toJson resultsB.length),
     ("translationSupply", toJson a.translatedSupply), ("initialSupply", toJson a.initialSupply)])
 
-end CoreBDiff.PairCheck
+end CoreNiceDiff.PairCheck
 
 def main (args : List String) : IO UInt32 := do
   try
     unless (← IO.getEnv "LEAN_ABORT_ON_PANIC") == some "1" do
-      CoreBDiff.fail "LEAN_ABORT_ON_PANIC=1 is required"
+      CoreNiceDiff.fail "LEAN_ABORT_ON_PANIC=1 is required"
     let [runtime, input, fuelText, topText, pathsText] := args
-      | CoreBDiff.fail "usage: coreb-pair-check RUNTIME_PREFIX CABS_JSON FUEL ADDRESS_SPACE_TOP MAX_PATHS"
-    let some fuel := fuelText.toNat? | CoreBDiff.fail "FUEL must be a natural number"
-    let some top := topText.toNat? | CoreBDiff.fail "ADDRESS_SPACE_TOP must be a natural number"
-    let some paths := pathsText.toNat? | CoreBDiff.fail "MAX_PATHS must be a natural number"
-    CoreBDiff.PairCheck.check runtime input fuel top paths
+      | CoreNiceDiff.fail "usage: corenice-pair-check RUNTIME_PREFIX CABS_JSON FUEL ADDRESS_SPACE_TOP MAX_PATHS"
+    let some fuel := fuelText.toNat? | CoreNiceDiff.fail "FUEL must be a natural number"
+    let some top := topText.toNat? | CoreNiceDiff.fail "ADDRESS_SPACE_TOP must be a natural number"
+    let some paths := pathsText.toNat? | CoreNiceDiff.fail "MAX_PATHS must be a natural number"
+    CoreNiceDiff.PairCheck.check runtime input fuel top paths
     return 0
   catch error =>
-    CoreBDiff.emit (Lean.Json.mkObj [("paired-check", Lean.toJson "failed"),
+    CoreNiceDiff.emit (Lean.Json.mkObj [("paired-check", Lean.toJson "failed"),
       ("reason", Lean.toJson error.toString)])
     return 2

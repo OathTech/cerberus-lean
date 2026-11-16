@@ -3,7 +3,7 @@ import Translation
 import Core_run_aux
 import Driver
 
-namespace CoreBDiff
+namespace CoreNiceDiff
 
 structure ExecutionA where
   translated : file Unit
@@ -40,4 +40,4 @@ def ExecutionA.action [LemFuel] (execution : ExecutionA) (argv : List String) :
   letI : CerbGlobal.Switches := ⟨[]⟩
   drive execution.file.enumDefs execution.file.tagDefs false execution.file argv
 
-end CoreBDiff
+end CoreNiceDiff

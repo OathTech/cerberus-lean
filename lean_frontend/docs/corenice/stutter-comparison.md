@@ -1,0 +1,66 @@
+# Explicit comparison profiles
+
+`scripts/corenice-diff.py` defaults to `--comparison exact`: all emitted event
+records and terminal node counts must match. This remains the frozen generated
+campaign's profile. `--comparison stutter` permits additional singleton ND
+nodes and repartitioning of observation batches inside a genuine-choice
+interval. It is infrastructure for later Nice experiments, not a Nice AST,
+checkpoint implementation or equivalence theorem.
+
+The stutter profile first validates each lane independently: observation
+boundary numbers must name the next ND node; node numbers must be consecutive;
+each branching node must match its full tape entry; visited/choice counts and
+terminal placement must agree with the emitted log. Known Core step-info,
+driver-effect and memory-receipt shapes are checked before any erasure, including
+string/list-of-strings step metadata types. The header must identify the supported
+`boundary-channels-v1` schema; a future schema needs an explicit profile update. Unknown
+channels, event tags, fields or ND kinds refuse comparison. In particular, no
+future checkpoint is silently erased: its actual AST/semantics and a subsequent
+explicit observation profile must define that behavior first.
+
+The projection accumulates observations into ordered segments. Each genuine
+multi-successor ND node ends a segment and retains its full parent, ordered
+alternatives, selected index, kind and choice ordinal. The final segment ends
+at the actual active/killed terminal node. Within a segment:
+
+* Driver and memory event lists retain every payload and their respective order.
+* Stdout and stderr deltas concatenate separately, preserving their byte order
+  as represented by the model's strings.
+* Singleton and trivial-guard ND bookkeeping and boundary numbers are erased.
+
+The source observation schema does not provide interleaving between different
+channels within a segment, so this profile asserts only their separate orders.
+It retains the known before/after relationship to genuine choices: moving a
+store or output delta across a choice barrier is a mismatch. Global flattening
+of all effects is not this projection.
+
+Header configuration and binary/input identities remain exact (only recording
+origin is ignored). Full choice entries, terminal outcome, completion flag,
+terminal kind and choice count remain exact. The visited-node count can differ
+between lanes after each lane has passed its own consistency check. Resource
+failure, absent completion, refusal and unsupported observation schemas never
+become successful comparisons through this profile.
+
+Both profiles report the first differing JSON field/index path with bounded
+leaf excerpts. For example, a changed store can point into the recorded effect
+payload even when the final return value matches. These diagnostics survive
+temporary-trace cleanup; they do not print machine states or archive raw traces.
+
+For example, after building the normal entrypoints:
+
+```sh
+python3 scripts/corenice-diff.py tests/z2-probes/nd/order3.c \
+  --comparison stutter --choices 1 --summary-json
+python3 -m unittest discover -s tests/corenice -p 'test_*.py'
+```
+
+Focused controls cover extra singleton nodes, same-segment repartitioning,
+cross-choice store movement, changed memory/output/order, branch metadata,
+outcome/header drift, malformed logs and unknown checkpoint channels. The
+unchanged real `order3.c` and a generated pointer/loop case also complete in
+both directions under the profile. The [built source controls](source-mutations.md)
+now also pass: a real CoreNice-only singleton ND step is accepted here and rejected
+by exact comparison in both replay directions. The four real defect controls
+remain rejected under both profiles/directions, and native panic is incomplete
+under both. These executable controls supplement the JSON-level projection
+tests; no Nice checkpoint AST node is claimed.

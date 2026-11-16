@@ -1,7 +1,7 @@
 import Prepared
 import RunOutput
 
-namespace CoreBDiff
+namespace CoreNiceDiff
 
 open Lean
 
@@ -13,7 +13,7 @@ structure Options where
   fuel : Nat
   addressSpaceTop : Int
   coreBuild : String
-  coreBBuild : String
+  coreNiceBuild : String
   seed : Option Nat
   choicePrefix : Option (Array Nat)
   args : List String
@@ -22,7 +22,7 @@ private def parsePairs : List String → List (String × String) → Except Stri
   | [], acc => .ok acc.reverse
   | flag :: value :: rest, acc => do
     unless ["--runtime", "--input", "--tape", "--mode", "--fuel", "--address-space-top",
-        "--core-build", "--coreb-build", "--seed", "--choices", "--arg"].contains flag do
+        "--core-build", "--corenice-build", "--seed", "--choices", "--arg"].contains flag do
       throw s!"unsupported option: {flag}"
     if flag != "--arg" && acc.any (fun entry => entry.1 == flag) then
       throw s!"duplicate option: {flag}"
@@ -51,7 +51,7 @@ def parseOptions (args : List String) : Except String Options := do
     throw "--address-space-top must fit the LP64 pointer domain: 0 < top < 2^64"
   let addressSpaceTop : Int := top
   let coreBuild ← required "--core-build"
-  let coreBBuild ← required "--coreb-build"
+  let coreNiceBuild ← required "--corenice-build"
   let seed ← match get "--seed" with
     | none => pure none
     | some value =>
@@ -81,7 +81,7 @@ def parseOptions (args : List String) : Except String Options := do
     fuel := fuel
     addressSpaceTop := addressSpaceTop
     coreBuild := coreBuild
-    coreBBuild := coreBBuild
+    coreNiceBuild := coreNiceBuild
     seed := seed
     choicePrefix := choicePrefix
     args := pairs.filterMap (fun (key, value) => if key == "--arg" then some value else none) }
@@ -114,7 +114,7 @@ def header (origin : String) (options : Options) (prepared : Prepared)
     ("accessReceipts", toJson true), ("translationSupply", toJson translatedSupply),
     ("initialSupply", toJson initialSupply)]
   coreBuild := options.coreBuild
-  coreBBuild := options.coreBBuild
+  coreNiceBuild := options.coreNiceBuild
   origin }
 
 def emit (value : Json) : IO Unit := IO.println value.compress
@@ -159,4 +159,4 @@ def withOptions (args : List String) (run : Options → IO UInt32) : IO UInt32 :
       ("reason", toJson error.toString)])
     return 2
 
-end CoreBDiff
+end CoreNiceDiff

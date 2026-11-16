@@ -25,7 +25,7 @@ deriving instance ToJson for access_kind, access_error, free_error, memcpy_error
 deriving instance ToJson for observed_provenance, representation_byte_view
 deriving instance ToJson for vip_kind, vip_error, mem_cheri_error, readonly_kind, mem_error
 
-namespace CoreBDiff
+namespace CoreNiceDiff
 
 def node (tag : String) (fields : List Json) : Json :=
   Json.mkObj [("tag", toJson tag), ("fields", Json.arr fields.toArray)]
@@ -128,4 +128,4 @@ def exhausted {err : Type} : kill_reason err → Bool
   | .Error0 loc message => loc == CerbFuel.fuelExhaustedLoc && message == CerbFuel.fuelExhaustedMsg
   | _ => false
 
-end CoreBDiff
+end CoreNiceDiff

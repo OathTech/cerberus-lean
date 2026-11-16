@@ -1,7 +1,7 @@
 import ChoiceRunner
 import ObservationShared
 
-namespace CoreBDiff
+namespace CoreNiceDiff
 
 open Lean
 
@@ -39,4 +39,4 @@ def encodeOutcome {a err st : Type} (encodeResult : a → Except String Json)
   | .replayMismatch reason => return failure "replay-mismatch" reason
   | .observationError reason => return failure "observation-error" reason
 
-end CoreBDiff
+end CoreNiceDiff

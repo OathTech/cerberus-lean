@@ -1,0 +1,10 @@
+{
+  "quote": {
+    "source": "lean_frontend/CerbQuote.lean",
+    "output": "lean_frontend/differential/ArtifactQuoteNice.lean",
+    "owned_imports": [
+      "Core_run_aux"
+    ],
+    "end_before": "/-- Keys compare exact quotation syntax, with children already interned."
+  }
+}

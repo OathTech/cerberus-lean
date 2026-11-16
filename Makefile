@@ -1,6 +1,6 @@
 # Checking for required tools.
 # Lean-only targets don't require dune.
-LEAN_TARGETS := lean-prelude-src lean-build clean-lean rebuild-lem lean-source-list coreb-prelude-src
+LEAN_TARGETS := lean-prelude-src lean-build clean-lean rebuild-lem lean-source-list corenice-prelude-src
 ifneq ($(MAKECMDGOALS),)
 ifeq ($(filter-out $(LEAN_TARGETS),$(MAKECMDGOALS)),)
 _SKIP_DUNE_CHECK := 1
@@ -368,14 +368,14 @@ lean-prelude-src: $(LEM_SRC_LEAN)
 	@echo "[STAMP] recording Lean lem-sync content stamp"
 	$(Q)tools/check_lem_sync.sh --record-lean
 
-# The CoreB emitter reuses the original ordered input list, substituting only
+# The CoreNice emitter reuses the original ordered input list, substituting only
 # its explicitly owned sources. Keep this list authoritative in one place.
-.PHONY: lean-source-list coreb-prelude-src
+.PHONY: lean-source-list corenice-prelude-src
 lean-source-list:
 	@printf '%s\n' $(LEM_SRC_LEAN)
 
-coreb-prelude-src:
-	$(Q)python3 tools/generate_coreb.py
+corenice-prelude-src:
+	$(Q)python3 tools/generate_corenice.py
 
 # Native C objects linked into lean_frontend executables (lakefile.toml
 # moreLinkArgs). Compiled with the toolchain's leanc (hermetic clang).

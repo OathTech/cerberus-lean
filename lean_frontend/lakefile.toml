@@ -447,87 +447,87 @@ srcDir = "test/CoreQuote"
 roots = ["CoreQuoteCompare"]
 libName = "CoreQuoteCompare"
 
-# CoreB separation experiment: generated independently from owned Lem sources.
+# CoreNice separation experiment: generated independently from owned Lem sources.
 # These targets are explicit during research; the normal default is unchanged.
 [[lean_lib]]
-name = "CerberusCoreB"
+name = "CerberusCoreNice"
 srcDir = "generated"
 roots = [
-  "CoreB.Core",
-  "CoreB.Core_auxiliary",
-  "CoreB.Errors",
-  "CoreB.Errors_auxiliary",
-  "CoreB.Core_linking",
-  "CoreB.Core_linking_auxiliary",
-  "CoreB.Core_aux",
-  "CoreB.Core_aux_auxiliary",
-  "CoreB.Core_typing",
-  "CoreB.Core_typing_auxiliary",
-  "CoreB.Core_typing_aux",
-  "CoreB.Core_typing_aux_auxiliary",
-  "CoreB.Core_typing_effect",
-  "CoreB.Core_typing_effect_auxiliary",
-  "CoreB.Translation",
-  "CoreB.Translation_auxiliary",
-  "CoreB.Translation_aux",
-  "CoreB.Translation_aux_auxiliary",
-  "CoreB.Translation_effect",
-  "CoreB.Translation_effect_auxiliary",
-  "CoreB.Core_run_aux",
-  "CoreB.Core_run_aux_auxiliary",
-  "CoreB.Core_eval",
-  "CoreB.Core_eval_auxiliary",
-  "CoreB.Core_run",
-  "CoreB.Core_run_auxiliary",
-  "CoreB.Core_reduction",
-  "CoreB.Core_reduction_auxiliary",
-  "CoreB.Core_reduction_aux",
-  "CoreB.Core_reduction_aux_auxiliary",
-  "CoreB.Driver",
-  "CoreB.Driver_auxiliary",
-  "CoreB.Pp",
-  "CoreB.Pp_auxiliary",
-  "CoreB.Formatted",
-  "CoreB.Formatted_auxiliary",
-  "CoreB.Core_lemMeasureProofs",
-  "CoreB.CerbCoreShape",
-  "CoreB.CerbPP",
-  "CoreB.CerbCoreMeasure",
-  "CoreB.CerbFunMapInstances",
-  "CoreB.CerbStepInstances",
-  "CoreB.CerbMeasureLemmas",
-  "CoreB.CoreParser",
-  "CoreB.Core_aux_lemMeasureProofs",
-  "CoreB.Core_eval_lemMeasureProofs",
-  "CoreB.Core_reduction_lemMeasureProofs",
-  "CoreB.Core_run_aux_lemMeasureProofs",
-  "CoreB.Driver_lemMeasureProofs",
-  "CoreB.Translation_lemMeasureProofs",
-  "CoreB.Formatted_lemMeasureProofs",
+  "CoreNice.Core",
+  "CoreNice.Core_auxiliary",
+  "CoreNice.Errors",
+  "CoreNice.Errors_auxiliary",
+  "CoreNice.Core_linking",
+  "CoreNice.Core_linking_auxiliary",
+  "CoreNice.Core_aux",
+  "CoreNice.Core_aux_auxiliary",
+  "CoreNice.Core_typing",
+  "CoreNice.Core_typing_auxiliary",
+  "CoreNice.Core_typing_aux",
+  "CoreNice.Core_typing_aux_auxiliary",
+  "CoreNice.Core_typing_effect",
+  "CoreNice.Core_typing_effect_auxiliary",
+  "CoreNice.Translation",
+  "CoreNice.Translation_auxiliary",
+  "CoreNice.Translation_aux",
+  "CoreNice.Translation_aux_auxiliary",
+  "CoreNice.Translation_effect",
+  "CoreNice.Translation_effect_auxiliary",
+  "CoreNice.Core_run_aux",
+  "CoreNice.Core_run_aux_auxiliary",
+  "CoreNice.Core_eval",
+  "CoreNice.Core_eval_auxiliary",
+  "CoreNice.Core_run",
+  "CoreNice.Core_run_auxiliary",
+  "CoreNice.Core_reduction",
+  "CoreNice.Core_reduction_auxiliary",
+  "CoreNice.Core_reduction_aux",
+  "CoreNice.Core_reduction_aux_auxiliary",
+  "CoreNice.Driver",
+  "CoreNice.Driver_auxiliary",
+  "CoreNice.Pp",
+  "CoreNice.Pp_auxiliary",
+  "CoreNice.Formatted",
+  "CoreNice.Formatted_auxiliary",
+  "CoreNice.Core_lemMeasureProofs",
+  "CoreNice.CerbCoreShape",
+  "CoreNice.CerbPP",
+  "CoreNice.CerbCoreMeasure",
+  "CoreNice.CerbFunMapInstances",
+  "CoreNice.CerbStepInstances",
+  "CoreNice.CerbMeasureLemmas",
+  "CoreNice.CoreParser",
+  "CoreNice.Core_aux_lemMeasureProofs",
+  "CoreNice.Core_eval_lemMeasureProofs",
+  "CoreNice.Core_reduction_lemMeasureProofs",
+  "CoreNice.Core_run_aux_lemMeasureProofs",
+  "CoreNice.Driver_lemMeasureProofs",
+  "CoreNice.Translation_lemMeasureProofs",
+  "CoreNice.Formatted_lemMeasureProofs",
 ]
 
 [[lean_lib]]
-name = "CoreBSeparationTests"
+name = "CoreNiceSeparationTests"
 srcDir = "test"
-roots = ["CoreB.Separation", "CoreB.Interpreter"]
+roots = ["CoreNice.Separation", "CoreNice.Interpreter"]
 
 [[lean_lib]]
-name = "CoreBDifferential"
+name = "CoreNiceDifferential"
 srcDir = "differential"
-roots = ["Prepared", "PipelineA", "PipelineB", "ObservationShared", "ChoiceRunner",
-         "ObservationA", "ObservationB", "RunOutput", "EntryCommon",
-         "ArtifactQuoteB", "ArtifactCompare"]
+roots = ["Prepared", "PipelineA", "PipelineNice", "ObservationShared", "ChoiceRunner",
+         "ObservationA", "ObservationNice", "RunOutput", "EntryCommon",
+         "ArtifactQuoteNice", "ArtifactCompare"]
 
 [[lean_exe]]
-name = "coreb-pair-check"
+name = "corenice-pair-check"
 srcDir = "differential"
 root = "PairCheck"
 moreLinkArgs = ["native/md5.o"]
 
 [[lean_exe]]
-name = "coreb-choice-tests"
+name = "corenice-choice-tests"
 srcDir = "test"
-root = "CoreB.ChoiceRunnerTests"
+root = "CoreNice.ChoiceRunnerTests"
 
 [[lean_exe]]
 name = "core-diff"
@@ -536,13 +536,13 @@ root = "EntryA"
 moreLinkArgs = ["native/md5.o"]
 
 [[lean_exe]]
-name = "coreb-diff"
+name = "corenice-diff"
 srcDir = "differential"
-root = "EntryB"
+root = "EntryNice"
 moreLinkArgs = ["native/md5.o"]
 
 [[lean_exe]]
-name = "coreb-observation-test"
+name = "corenice-observation-test"
 srcDir = "test"
-root = "CoreB.ObservationChecks"
+root = "CoreNice.ObservationChecks"
 moreLinkArgs = ["native/md5.o"]

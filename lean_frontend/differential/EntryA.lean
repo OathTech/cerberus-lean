@@ -1,7 +1,7 @@
 import EntryCommon
 import ObservationA
 
-open Lean CoreBDiff
+open Lean CoreNiceDiff
 
 def main (args : List String) : IO UInt32 :=
   withOptions args fun options => do

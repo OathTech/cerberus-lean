@@ -1,21 +1,21 @@
 import Nondeterminism
 import Lean
 
-/- A positional choice protocol for the initially unchanged Core/CoreB paths.
+/- A positional choice protocol for the initially unchanged Core/CoreNice paths.
    The ND action is evaluated once at each visited node. Only compact observer
    events and choice descriptors leave the machine; states stay in memory. -/
 
-namespace CoreBDiff.Choice
+namespace CoreNiceDiff.Choice
 
 open Lean
 
 structure Header where
-  version : Nat := 1
+  version : Nat := 2
   input : String
   prepared : String
   config : Json
   coreBuild : String
-  coreBBuild : String
+  coreNiceBuild : String
   origin : String
   deriving BEq, ToJson, FromJson
 
@@ -87,10 +87,10 @@ private structure Session where
 def Header.sameExecution (expected actual : Header) : Bool :=
   expected.version == actual.version && expected.input == actual.input &&
   expected.prepared == actual.prepared && expected.config == actual.config &&
-  expected.coreBuild == actual.coreBuild && expected.coreBBuild == actual.coreBBuild
+  expected.coreBuild == actual.coreBuild && expected.coreNiceBuild == actual.coreNiceBuild
 
 def validateTape (expected : Header) (tape : Tape) : Except String Unit := do
-  if expected.version != 1 || tape.header.version != 1 then
+  if expected.version != 2 || tape.header.version != 2 then
     throw "unsupported choice protocol version"
   if !expected.sameExecution tape.header then
     throw "choice tape header does not identify this prepared input/configuration/build pair"
@@ -243,7 +243,7 @@ def run {a info err cs st : Type} (fuel : Nat) (observer : Observer info err cs 
     | .record _ => header
     | .replay tape => tape.header
   let validation : Except String Unit := match mode with
-    | .record _ => if header.version == 1 then .ok () else .error "unsupported choice protocol version"
+    | .record _ => if header.version == 2 then .ok () else .error "unsupported choice protocol version"
     | .replay tape => validateTape header tape
   match validation with
   | .error reason => result outputHeader {} state (.inputError reason)
@@ -253,4 +253,4 @@ def run {a info err cs st : Type} (fuel : Nat) (observer : Observer info err cs 
       | _ => 0
     traverse fuel observer mode outputHeader { random } machine state
 
-end CoreBDiff.Choice
+end CoreNiceDiff.Choice

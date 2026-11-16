@@ -7,10 +7,10 @@ import CerbDriverConfig
 
 /- Shared Cabs-to-typed-AIL boundary. The phase order, empty tag readers,
    enum reader and fresh-supply threading follow Main.frontendTU/runPipeline
-   at the CoreB baseline. Original Core is deliberately used by desugaring's
+   at the CoreNice baseline. Original Core is deliberately used by desugaring's
    constant-expression mini-pipeline, before the two target paths fork. -/
 
-namespace CoreBDiff
+namespace CoreNiceDiff
 
 open Lean
 
@@ -145,4 +145,4 @@ def Prepared.identity (prepared : Prepared) : Json := Json.mkObj [
   ("runtime", toJson prepared.runtimeDigest),
   ("supply", toJson prepared.supply)]
 
-end CoreBDiff
+end CoreNiceDiff
