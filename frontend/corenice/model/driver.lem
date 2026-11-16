@@ -1282,11 +1282,8 @@ end
 *)
 
 
-val new_drive_core_threads: unit -> driverM (list (Mem.thread_id * maybe Core_reduction.core_step2))
-let new_drive_core_threads () =
-  ND.get >>= fun dr_st ->
-  let tids = List.map fst dr_st.core_state.Core_run.thread_states in
-  drive_nonmemory_steps_aux2 Map.empty (*NEXT*) tids >>= fun m ->
+val choose_core_steps: map Mem.thread_id (list Core_reduction.core_step2) -> driverM (list (Mem.thread_id * maybe Core_reduction.core_step2))
+let choose_core_steps m =
   ND.mapM (fun (tid, steps) ->
     let size = List.length steps in
     let () = 
@@ -1306,6 +1303,13 @@ let new_drive_core_threads () =
       () in
     ND.return (tid, Just step)
   ) (Map_extra.toList m)
+
+
+val new_drive_core_threads: unit -> driverM (list (Mem.thread_id * maybe Core_reduction.core_step2))
+let new_drive_core_threads () =
+  ND.get >>= fun dr_st ->
+  let tids = List.map fst dr_st.core_state.Core_run.thread_states in
+  drive_nonmemory_steps_aux2 Map.empty tids >>= choose_core_steps
 
 
 
@@ -1405,8 +1409,8 @@ let startup_thread_stack_empty dr_st =
   end
 
 (* performing all action and memop requests until there are no more *)
-val process_core_step2: bool -> (bool -> driverM unit) -> Core_reduction.core_step2 -> driverM unit
-let process_core_step2 with_concurrency driver2 = function
+val process_core_step2: forall 'a. bool -> (bool -> driverM 'a) -> driverM 'a -> Core_reduction.core_step2 -> driverM 'a
+let process_core_step2 with_concurrency driver2 finished = function
   | Core_reduction.Step_action_request2 _ loc tid _ m_request ->
       liftCore_run m_request >>= fun request ->
       perform_action_request2 with_concurrency loc tid request >>= fun () ->
@@ -1434,7 +1438,7 @@ let process_core_step2 with_concurrency driver2 = function
           ND.update (fun dr_st ->
             (* killing all threads and aborting the main thread and placing [cval] as its result *)
             <| dr_st with core_state= prepare_exit dr_st.core_state cval |>
-          )
+          ) >> finished
       | Just (exit_sym, tid0, th_st, status_mval) ->
           (* FORK-AHEAD DELTA (fix/stdio-exit-flush, 2026-11-06; upstream-tray 24/25): the
              startup function returned in libc mode, so the return is `exit(cval)`
@@ -1483,7 +1487,7 @@ let process_core_step2 with_concurrency driver2 = function
             ND.update (fun dr_st ->
               (* killing all threads and aborting the main thread and placing [cval] as its result *)
               <| dr_st with core_state= prepare_exit dr_st.core_state cval |>
-            )
+            ) >> finished
         | Core_reduction.FS_oper fs_step ->
             ND.get                                >>= fun dr_st ->
             drive_fs_step tid th_st dr_st fs_step >>= fun ()    ->
@@ -1495,10 +1499,8 @@ let process_core_step2 with_concurrency driver2 = function
 end
 
 
-val     driver2: bool -> driverM unit
-let rec driver2 with_concurrency =
-  let () = Debug.print_debug 2 [] (fun () -> "ENTERING Driver.driver2") in
-  new_drive_core_threads   () >>= fun tid_steps ->
+val schedule_core_step: list (Mem.thread_id * maybe Core_reduction.core_step2) -> driverM (maybe Core_reduction.core_step2)
+let schedule_core_step tid_steps =
   ND.get >>= fun post_core_dr_st ->
   
   (* TODO: hackish *)
@@ -1529,10 +1531,10 @@ let rec driver2 with_concurrency =
          ) in
          match step_opt with
            | Just step ->
-               process_core_step2 with_concurrency driver2 step
+               ND.return (Just step)
            | Nothing ->
                (* TODO: hack hack, should just exit *)
-               ND.return ()
+               ND.return Nothing
          end)
    else begin
     let non_blocked =
@@ -1552,17 +1554,21 @@ let rec driver2 with_concurrency =
     ND.pick (SK_misc ["driver non_blocked"]) non_blocked >>= function
       | (_, Nothing) ->
           (* TODO: hack hack, should just exit *)
-          ND.return ()
+          ND.return Nothing
       | (_, Just step) ->
-      process_core_step2 with_concurrency driver2 step
+      ND.return (Just step)
     end
-    (*
-    ND.pick (SK_misc ["driver 4"]) non_blocked_th_sts >>= fun (tid, th_info) ->
-    ND.pick (SK_misc ["driver 5"]) (Core_reduction.step_ctx post_core_dr_st.layout_state post_core_dr_st.core_file post_core_dr_st.core_extern tid th_info)
-      >>= (process_core_step2 with_concurrency driver2)
-    *)
     end
   end
+
+val driver2: bool -> driverM unit
+let rec driver2 with_concurrency =
+  let () = Debug.print_debug 2 [] (fun () -> "ENTERING Driver.driver2") in
+  new_drive_core_threads () >>= schedule_core_step >>= function
+    | Nothing -> ND.return ()
+    | Just step -> process_core_step2 with_concurrency driver2 (ND.return ()) step
+  end
+
 
 
 
@@ -1695,8 +1701,8 @@ let driver_update_thread_state tid th_st =
 let inline update_thread_state = driver_update_thread_state
 
 
-val driver_globals: bool -> Core.file Core_run.core_run_annotation -> driverM Mem.thread_id
-let driver_globals with_concurrency file =
+val spawn_startup_thread: unit -> driverM Mem.thread_id
+let spawn_startup_thread () =
   (* spawning a thread for the initialisation of globals, and later the execution of main *)
   spawn_thread Nothing <|
     (* NOTE: the pure(unit) is just a placeholder, the thread is given its actual state later *)
@@ -1707,18 +1713,21 @@ let driver_globals with_concurrency file =
     Core_run.current_loc= Loc.unknown;
     Core_run.exec_loc= Core_run.ELoc_globals;
     Core_run.current_proc_opt= Nothing;
-  |> >>= fun tid0 ->
-  
+  |>
+
+val global_definitions: unit -> driverM (list (Symbol.sym * Core.core_base_type * Core.expr Core_run.core_run_annotation))
+let global_definitions () =
   ND.read (fun dr_st ->
     dr_st.core_file.Core.globs
   ) >>= fun globs ->
-  let glob_defs = List.reverse $ List.foldl (fun acc (sym, glb) ->
+  ND.return $ List.reverse $ List.foldl (fun acc (sym, glb) ->
     match glb with
     | Core.GlobalDef (bTy, _) e -> (sym, bTy, e) :: acc
     | Core.GlobalDecl _ -> acc
     end) [] globs
-  in
-  ND.mapM_ (fun (glob_sym, glob_bTy, expr) ->
+
+val begin_global: Mem.thread_id -> Symbol.sym -> Core.expr Core_run.core_run_annotation -> driverM unit
+let begin_global tid0 glob_sym expr =
     let () = Debug.print_debug 6 [Debug.DB_driver] (fun () ->      (* DEBUG *)
       "Starting the evaluation of global `" ^ show glob_sym ^ "'"  (* DEBUG *)
     ) in                                                           (* DEBUG *)
@@ -1738,11 +1747,10 @@ let driver_globals with_concurrency file =
         |>
       | _ ->
           error "ERROR (in Driver, global init didn't evaluate to value)"
-    end >>= fun () ->
-    
-    (* evaluation of the initialisation *)
-    driver2 with_concurrency >>= fun () ->
-    
+    end
+
+val finish_global: Mem.thread_id -> Symbol.sym -> Core.core_base_type -> driverM unit
+let finish_global tid0 glob_sym glob_bTy =
     get_thread_states >>= function
       | [(_, (_, th_st))] ->
           (* TODO: technically the arena should always be a value at this point *)
@@ -1771,6 +1779,15 @@ let driver_globals with_concurrency file =
       | _ ->
           error "ERROR (in Driver, global init didn't evaluate to value)"
     end
+
+val driver_globals: bool -> Core.file Core_run.core_run_annotation -> driverM Mem.thread_id
+let driver_globals with_concurrency _file =
+  spawn_startup_thread () >>= fun tid0 ->
+  global_definitions () >>= fun glob_defs ->
+  ND.mapM_ (fun (glob_sym, glob_bTy, expr) ->
+    begin_global tid0 glob_sym expr >>
+    driver2 with_concurrency >>
+    finish_global tid0 glob_sym glob_bTy
   ) glob_defs >>
   ND.return tid0
 
@@ -1858,13 +1875,9 @@ let prepare_main_args loc callconv alignof_ival tid0 main_sym arg_strs argc_sym 
 
 
 
-val drive: bool -> Core.file Core_run.core_run_annotation -> list string -> driverM driver_result
-let drive (with_concurrency: bool) file (arg_strs: list string) =
+val prepare_startup: Mem.thread_id -> Core.file Core_run.core_run_annotation -> list string -> driverM unit
+let prepare_startup tid0 file arg_strs =
   let alignof_ival ty = Mem.integer_ival (Implementation.alignof_ty file.Core.tagDefs ty) in
-  (* Setting the read-only tag definitions (used by the memory model) *)
-  (* first we execute the body of global definitions and remove their symbols
-     from the rest of the program *)
-  driver_globals with_concurrency file >>= fun tid0 (*, post_globals_dr_st) *) ->
   ND.get >>= fun post_globals_dr_st ->
   
   (* we need a startup function to have been declared *)
@@ -2017,15 +2030,171 @@ let drive (with_concurrency: bool) file (arg_strs: list string) =
               |>
           | _ ->
               error "ERROR (in Driver 2)"
-        end >>
-        driver2 with_concurrency >>
-        
-        if with_concurrency then
-          error "CONCURRENCY IS BROKEN"
-        else
-          ND.get >>= fun dr_st' ->
-          ND.return (finalize "drive (without concur)" dr_st')
+        end
 end
+
+val finish_startup: bool -> driverM driver_result
+let finish_startup with_concurrency =
+  if with_concurrency then
+    error "CONCURRENCY IS BROKEN"
+  else
+    ND.get >>= fun dr_st ->
+    ND.return (finalize "drive (without concur)" dr_st)
+
+val drive: bool -> Core.file Core_run.core_run_annotation -> list string -> driverM driver_result
+let drive with_concurrency file arg_strs =
+  driver_globals with_concurrency file >>= fun tid0 ->
+  prepare_startup tid0 file arg_strs >>
+  driver2 with_concurrency >>
+  finish_startup with_concurrency
+
+
+(* CoreNice resumable execution. The ordinary drive entry above remains the
+   automatic-continuation reference. Only successful strong-tail completion
+   steps carry TSK_Breakpoint; failed pattern/evaluation steps never arrive here.
+
+   Phase data is the actual continuation of the driver, not an instruction to
+   restart a scheduling round. In particular the nonmemory accumulator may
+   already contain deferred steps from earlier threads, and the pending list
+   retains the driver's current-thread preference and wakeup order. *)
+type nice_global_definition = Symbol.sym * Core.core_base_type * Core.expr Core_run.core_run_annotation
+
+type nice_body_continuation =
+  | NiceAfterGlobal of Mem.thread_id * Symbol.sym * Core.core_base_type * list nice_global_definition
+  | NiceAfterMain
+
+type nice_execution_phase =
+  | NiceNextGlobal of Mem.thread_id * list nice_global_definition
+  | NiceRound of nice_body_continuation
+  | NiceNonmemory of nice_body_continuation *
+      map Mem.thread_id (list Core_reduction.core_step2) * list Mem.thread_id
+
+type nice_resume_config = <|
+  resume_with_concurrency: bool;
+  resume_file: Core.file Core_run.core_run_annotation;
+  resume_args: list string;
+|>
+
+type nice_suspension = <|
+  suspension_site: Core.nice_breakpoint_site;
+  suspension_thread: Mem.thread_id;
+  suspension_phase: nice_execution_phase;
+  suspension_budget: nat;
+  suspension_config: nice_resume_config;
+  suspension_state: driver_state;
+|>
+
+type nice_run_result =
+  | NiceCompleted of driver_result
+  | NiceSuspended of nice_suspension
+  (* A resource outcome, not a semantic terminal value. The runner must report
+     incomplete coverage and must not finalize a partially consumed tape. *)
+  | NiceBudgetExhausted
+
+let nice_step_breakpoint = function
+  | Core_reduction.Step_tau2 _ (Core_run.TSK_Breakpoint site) _ -> Just site
+  | Core_reduction.Step_with_runstate2 (Core_reduction.RSK_tau _ (Core_run.TSK_Breakpoint site)) _ -> Just site
+  | _ -> Nothing
+end
+
+(* Each entered phase consumes one unit. A suspension stores the budget AFTER
+   its completed phase; resumption enters exactly the next phase that automatic
+   continuation would enter. This explicit cumulative budget is never refilled
+   by calling a generated Lem wrapper on resume. The ordinary Lem/ND fuel limits
+   still apply independently and fail through their existing exhaustion channel. *)
+val nice_drive_loop: nice_resume_config -> nat -> nice_execution_phase -> driverM nice_run_result
+let rec nice_drive_loop config budget phase =
+  if budget = 0 then
+    ND.return NiceBudgetExhausted
+  else
+    let remaining = budget - 1 in
+    match phase with
+      | NiceNextGlobal tid0 [] ->
+          prepare_startup tid0 config.resume_file config.resume_args >>
+          nice_drive_loop config remaining (NiceRound NiceAfterMain)
+      | NiceNextGlobal tid0 ((glob_sym, glob_bTy, expr) :: rest) ->
+          begin_global tid0 glob_sym expr >>
+          nice_drive_loop config remaining
+            (NiceRound (NiceAfterGlobal tid0 glob_sym glob_bTy rest))
+      | NiceRound after ->
+          ND.read (fun dr_st -> List.map fst dr_st.core_state.Core_run.thread_states) >>= fun tids ->
+          nice_drive_loop config remaining (NiceNonmemory after Map.empty tids)
+      | NiceNonmemory after acc [] ->
+          choose_core_steps acc >>= schedule_core_step >>= fun step_opt ->
+          let finished =
+            match after with
+              | NiceAfterGlobal tid0 glob_sym glob_bTy rest ->
+                  finish_global tid0 glob_sym glob_bTy >>
+                  nice_drive_loop config remaining (NiceNextGlobal tid0 rest)
+              | NiceAfterMain ->
+                  finish_startup config.resume_with_concurrency >>= fun result ->
+                  ND.return (NiceCompleted result)
+            end in
+          match step_opt with
+            | Nothing -> finished
+            | Just step ->
+                process_core_step2 config.resume_with_concurrency
+                  (fun _ -> nice_drive_loop config remaining (NiceRound after))
+                  finished step
+          end
+      | NiceNonmemory after acc (tid :: rest) ->
+          ND.read (fun dr_st ->
+            let th_info =
+              match List.lookup tid dr_st.core_state.Core_run.thread_states with
+                | Just z -> z
+                | Nothing ->
+                    error ("Driver.nice_drive_loop => invalid tid: " ^ show tid)
+              end in
+            Core_reduction.step_ctx dr_st.layout_state dr_st.core_file dr_st.core_extern tid th_info
+          ) >>= fun steps ->
+          match find_can_advance steps with
+            | Nothing ->
+                nice_drive_loop config remaining
+                  (NiceNonmemory after (Map.insert tid steps acc) rest)
+            | Just step ->
+                advance_step tid step >>= fun wakeups ->
+                let pending =
+                  match wakeups with
+                    | NOWAKEUP -> tid :: rest
+                    | WAKEUP false tids -> tid :: Utils.list_inserts tids rest
+                    | WAKEUP true tids -> Utils.list_inserts tids rest
+                  end in
+                let next = NiceNonmemory after acc pending in
+                match nice_step_breakpoint step with
+                  | Nothing -> nice_drive_loop config remaining next
+                  | Just site ->
+                      ND.get >>= fun state ->
+                      ND.return (NiceSuspended <|
+                        suspension_site= site;
+                        suspension_thread= tid;
+                        suspension_phase= next;
+                        suspension_budget= remaining;
+                        suspension_config= config;
+                        suspension_state= state;
+                      |>)
+                end
+          end
+    end
+
+val drive_until_breakpoint: bool -> Core.file Core_run.core_run_annotation -> list string -> nat -> driverM nice_run_result
+let drive_until_breakpoint with_concurrency file args budget =
+  let config = <|
+    resume_with_concurrency= with_concurrency;
+    resume_file= file;
+    resume_args= args;
+  |> in
+  spawn_startup_thread () >>= fun tid0 ->
+  global_definitions () >>= fun definitions ->
+  nice_drive_loop config budget (NiceNextGlobal tid0 definitions)
+
+(* The saved state/configuration owns the restart. There is no second file,
+   argv, or fresh budget supplied by the caller. A well-formed suspension came
+   from this machine; arbitrary manufactured phase records carry no guarantee. *)
+val resume_breakpoint: nice_suspension -> driverM nice_run_result
+let resume_breakpoint suspension =
+  ND.put suspension.suspension_state >>
+  nice_drive_loop suspension.suspension_config suspension.suspension_budget
+    suspension.suspension_phase
 
 
 (* === Totality declares (arc 3 sweep, 2026-08-18, final batch): Lean-target only.
@@ -2042,6 +2211,7 @@ end
 declare {lean} termination_argument find_can_advance = automatic
 declare {lean} fuel val print_eval_conv_aux = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
 declare {lean} fuel val drive_nonmemory_steps_aux2 = `fun _ => ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
+declare {lean} fuel val nice_drive_loop = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
 declare {lean} fuel val driver2 = `ND (fun st => (NDkilled (Error0 CerbFuel.fuelExhaustedLoc CerbFuel.fuelExhaustedMsg), st))`
 declare {lean} fuel val hack = `fuelExhausted Vunit`
 (* FUEL MEASURE under a HYPOTHESIS (fuel-pending close-out 2026-09-08, option C of
