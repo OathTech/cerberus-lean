@@ -27,13 +27,13 @@ private def marked (left : expr core_run_annotation := unitExpr)
 private def file : file core_run_annotation := default
 private def state : driver_state :=
   (initial_driver_state_given 100 65535 "breakpoints" file CerbFS.fs_initial_state).1
-private def thread (legacy : Bool) (arena : expr core_run_annotation) : thread_state := {
-  arena, stack0 := if legacy then .Stack_cons (some procedure) [] .Stack_empty else .Stack_empty,
+private def thread (arena : expr core_run_annotation) : thread_state := {
+  arena, stack0 := .Stack_empty,
   errno := CerbMem.nullPtrval signed_int, env := [fmapEmpty],
   current_proc_opt := some procedure, exec_loc := .ELoc_normal [], current_loc := .unknown }
 
 private def production (arena : expr core_run_annotation) : List core_step2 :=
-  step_ctx fmapEmpty fmapEmpty state.layout_state file fmapEmpty 0 (none, thread false arena)
+  step_ctx fmapEmpty fmapEmpty state.layout_state file fmapEmpty 0 (none, thread arena)
 
 private def expectBoundary (arena expected : expr core_run_annotation) : IO Unit := do
   match production arena with
@@ -50,7 +50,7 @@ private def annotationSuspension : IO Unit := do
   let expected := .Expr [] (.Eannot annotations suffix)
   expectBoundary arena expected
   let start := { state with core_state0 := { state.core_state0 with
-    thread_states := [(0, (none, thread false arena))] } }
+    thread_states := [(0, (none, thread arena))] } }
   let config : nice_resume_config := ⟨false, file, []⟩
   let .ND action := nice_drive_loop fmapEmpty fmapEmpty config 10
     (.NiceNonmemory .NiceAfterMain fmapEmpty [0])
@@ -149,15 +149,6 @@ def run : IO Unit := do
     | .Exception (.Illformed_program _) => pure ()
     | _ => throw (IO.userError "failed pattern did not report failure")
   | _ => throw (IO.userError "failed pattern falsely reached breakpoint")
-  match core_thread_step2 fmapEmpty fmapEmpty state.layout_state file fmapEmpty fmapEmpty
-      0 (none, thread true marked) with
-  | [.Step_tau _ (.TSK_Breakpoint observed) action] =>
-    match action state.core_run_state0 with
-    | .Result (.Defined next, _) =>
-      check "legacy site/binding/suffix"
-        (observed == site && next.arena == suffix && next.env == update_env binding .Vunit [fmapEmpty])
-    | _ => throw (IO.userError "legacy completion failed")
-  | _ => throw (IO.userError "legacy completion missed breakpoint")
   let saved := .Expr [] (.Esave (label, .BTy_unit) [] unitExpr empty_nice_label_info)
   let left := mk_breakpoint_sseq_e site binding saved suffix
   let right := mk_breakpoint_sseq_e site binding unitExpr saved

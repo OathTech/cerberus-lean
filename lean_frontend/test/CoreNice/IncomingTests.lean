@@ -2,7 +2,7 @@ import CoreNice.Core_run
 import CoreNice.Core_reduction
 import CoreNice.Driver
 
-/- Executable tests of the actual substitution and environment jump rules.
+/- Executable tests of the active context-based jump rule.
    These are differential-testing instruments, not correspondence theorems. -/
 namespace CoreNice.IncomingTests
 
@@ -41,10 +41,10 @@ private def fileFor (body : expr core_run_annotation) : file core_run_annotation
 private def stateFor (body : expr core_run_annotation) : driver_state :=
   (initial_driver_state_given 100 65535 "incoming-test" (fileFor body) CerbFS.fs_initial_state).1
 
-private def threadFor (legacy : Bool) (arena : expr core_run_annotation)
+private def threadFor (arena : expr core_run_annotation)
     (proc : sym := procedure) : thread_state := {
   arena
-  stack0 := if legacy then .Stack_cons (some proc) [] .Stack_empty else .Stack_empty
+  stack0 := .Stack_empty
   errno := CerbMem.nullPtrval signed_int
   env := [fmapEmpty]
   current_proc_opt := some proc
@@ -55,20 +55,12 @@ private abbrev StepResult := exceptM (t0 thread_state × core_run_state) core_ru
 
 /-- Execute the closure returned by the real jump rule; require one existing
     semantic step rather than accepting a helper's isolated membership result. -/
-private def execute (legacy : Bool) (state : driver_state) (thread : thread_state)
+private def execute (state : driver_state) (thread : thread_state)
     (externs : Fmap sym sym := fmapEmpty) : IO StepResult := do
-  if legacy then
-    match core_thread_step2 fmapEmpty fmapEmpty state.layout_state state.core_file externs
-        fmapEmpty 0 (none, thread) with
-    | [.Step_tau "Erun" .TSK_Misc action] => pure (action state.core_run_state0)
-    | [.Step_tau "Eif (then)" .TSK_Misc action] => pure (action state.core_run_state0)
-    | [.Step_eval _ action] => pure (action state.core_run_state0)
-    | _ => throw (IO.Error.userError "legacy rule did not produce one expected semantic step")
-  else
-    match step_ctx fmapEmpty fmapEmpty state.layout_state state.core_file externs 0 (none, thread) with
-    | [.Step_with_runstate2 _ action] => pure (action state.core_run_state0)
-    | [.Step_tau2 _ _ next] => pure (.Result (.Defined next, state.core_run_state0))
-    | _ => throw (IO.Error.userError "optimized rule did not produce one expected semantic step")
+  match step_ctx fmapEmpty fmapEmpty state.layout_state state.core_file externs 0 (none, thread) with
+  | [.Step_with_runstate2 _ action] => pure (action state.core_run_state0)
+  | [.Step_tau2 _ _ next] => pure (.Result (.Defined next, state.core_run_state0))
+  | _ => throw (IO.Error.userError "active rule did not produce one expected semantic step")
 
 private def expectSuccess (label : String) (result : StepResult)
     (expected : expr core_run_annotation := unitExpr) : IO Unit := do
@@ -87,32 +79,32 @@ private def expectFault (label : String) (result : StepResult)
     check s!"{label}: exact label metadata" (fault.fault_incoming == incoming permitted)
   | _ => throw (IO.Error.userError s!"{label}: expected typed IncomingOriginDenied")
 
-private def ruleTests (legacy : Bool) : IO Unit := do
-  let rule := if legacy then "core_run" else "core_reduction"
+private def ruleTests : IO Unit := do
+  let rule := "core_reduction"
   let good := stateFor (saved [11, 17, 29])
   let denied := stateFor (saved [11, 29])
-  expectSuccess s!"{rule}: permitted jump" (← execute legacy good (threadFor legacy (runExpr)))
+  expectSuccess s!"{rule}: permitted jump" (← execute good (threadFor (runExpr)))
   expectFault s!"{rule}: removed taken origin"
-    (← execute legacy denied (threadFor legacy (runExpr))) 17 [11, 29]
+    (← execute denied (threadFor (runExpr))) 17 [11, 29]
   expectFault s!"{rule}: fresh wrong origin"
-    (← execute legacy good (threadFor legacy (runExpr 101))) 101 [11, 17, 29]
+    (← execute good (threadFor (runExpr 101))) 101 [11, 17, 29]
   let aliases := Lem_Map.fromList [(aliasProcedure, procedure)]
   expectFault s!"{rule}: alias resolution payload"
-    (← execute legacy denied (threadFor legacy (runExpr) aliasProcedure) aliases) 17 [11, 29]
+    (← execute denied (threadFor (runExpr) aliasProcedure) aliases) 17 [11, 29]
   let describedAlias := Lem_Map.fromList [(aliasProcedure, resolvedProcedureView)]
   expectFault s!"{rule}: resolved target retains its description"
-    (← execute legacy denied (threadFor legacy (runExpr) aliasProcedure) describedAlias)
+    (← execute denied (threadFor (runExpr) aliasProcedure) describedAlias)
     17 [11, 29] (expectedProcedure := resolvedProcedureView)
   expectFault s!"{rule}: label identity retains query description"
-    (← execute legacy denied (threadFor legacy (runExpr 17 [] queriedDestination)))
+    (← execute denied (threadFor (runExpr 17 [] queriedDestination)))
     17 [11, 29] queriedDestination
   let noOrigins := stateFor (saved [])
   expectSuccess s!"{rule}: normal Esave entry needs no incoming origin"
-    (← execute legacy noOrigins (threadFor legacy (saved [])))
+    (← execute noOrigins (threadFor (saved [])))
   let untaken := .Expr [] (.Eif (.Pexpr [] () (.PEval .Vtrue)) unitExpr (runExpr))
   expectSuccess s!"{rule}: forbidden untaken edge does not fault"
-    (← execute legacy noOrigins (threadFor legacy untaken))
-  let arity := ← execute legacy noOrigins (threadFor legacy (runExpr 17 [unitPE]))
+    (← execute noOrigins (threadFor untaken))
+  let arity := ← execute noOrigins (threadFor (runExpr 17 [unitPE]))
   match arity with
   | .Exception (.Illformed_program message) =>
     check s!"{rule}: arity precedence"
@@ -121,38 +113,35 @@ private def ruleTests (legacy : Bool) : IO Unit := do
   let badArg : pexpr := .Pexpr [] () (.PEundef (.other "argument-must-not-evaluate") .UB001)
   let parameterized := stateFor (saved [11, 29] true)
   expectFault s!"{rule}: denied check precedes argument handling"
-    (← execute legacy parameterized (threadFor legacy (runExpr 17 [badArg]))) 17 [11, 29]
-  if !legacy then
-    let allowedArg := stateFor (saved [17] true)
-    match ← execute legacy allowedArg (threadFor legacy (runExpr 17 [badArg])) with
-    | .Result (.Undef location reasons, _) =>
-      check "argument UB positive control"
-        (location == .other "argument-must-not-evaluate" && reasons == [.UB001])
-    | _ => throw (IO.Error.userError "permitted optimized jump must evaluate the UB argument")
+    (← execute parameterized (threadFor (runExpr 17 [badArg]))) 17 [11, 29]
+  let allowedArg := stateFor (saved [17] true)
+  match ← execute allowedArg (threadFor (runExpr 17 [badArg])) with
+  | .Result (.Undef location reasons, _) =>
+    check "argument UB positive control"
+      (location == .other "argument-must-not-evaluate" && reasons == [.UB001])
+  | _ => throw (IO.Error.userError "permitted optimized jump must evaluate the UB argument")
   for _ in [0:4] do
     expectSuccess s!"{rule}: static origin reusable"
-      (← execute legacy good (threadFor legacy (runExpr)))
+      (← execute good (threadFor (runExpr)))
   IO.println s!"PASS: {rule}: 14 actual transitions; typed payloads, entry and precedence"
-  if !legacy then IO.println "PASS: optimized argument UB positive control (1 additional transition)"
+  IO.println "PASS: optimized argument UB positive control (1 additional transition)"
 
 /-- Unknown-label behavior is an existing native panic. Run this control in its
     own process with LEAN_ABORT_ON_PANIC=1; it must never become a NiceFault. -/
-def unknownLabelControl (legacy : Bool) : IO Unit := do
+def unknownLabelControl : IO Unit := do
   let state := stateFor (saved [])
-  let result ← execute legacy state (threadFor legacy (runExpr 17 [] absentLabel))
+  let result ← execute state (threadFor (runExpr 17 [] absentLabel))
   match result with
   | .Exception (.NiceFault _) => throw (IO.Error.userError "unknown label became NiceFault")
   | _ => throw (IO.Error.userError "unknown label unexpectedly returned")
 
 def tests : IO Unit := do
-  ruleTests true
-  ruleTests false
+  ruleTests
 
 end CoreNice.IncomingTests
 
 def main (args : List String) : IO Unit :=
   match args with
   | [] => CoreNice.IncomingTests.tests
-  | ["--unknown-label-legacy"] => CoreNice.IncomingTests.unknownLabelControl true
-  | ["--unknown-label-optimized"] => CoreNice.IncomingTests.unknownLabelControl false
+  | ["--unknown-label-optimized"] => CoreNice.IncomingTests.unknownLabelControl
   | _ => throw (IO.Error.userError "unknown incoming-test arguments")

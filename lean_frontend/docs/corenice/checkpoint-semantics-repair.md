@@ -3,8 +3,52 @@
 Work branch: `corenice/checkpoint-semantics-repair`, based on breakpoint
 checkpoint `5cfc65adb`. This is research work, not an equivalence theorem or a
 mainline landing. The [initial review](noodler-review.md) supplies the first
-counterexamples. This assessment separates repairs to the active machine from
-an unresolved legacy-evaluator design choice.
+counterexamples. This assessment records precise phase metadata and removal
+of the inherited, inactive CoreNice evaluator.
+
+## Which evaluator comes from upstream
+
+The active engine was inherited, not introduced by this project. The source
+call chain is already present in pinned upstream Cerberus
+`c3ff8c53f05982745f9b3a10b3d05442e214bcb5` and cerberus-lean mainline
+`8fa3050bf73fe92803f56c49ca53ed00d76aee88`:
+
+```text
+Driver.drive → driver2 → new_drive_core_threads
+             → drive_nonmemory_steps_aux2 → Core_reduction.step_ctx
+```
+
+Upstream's OCaml and web entries call `Driver.drive`; its constant-expression
+mini-pipeline calls `driver2`. The Lean `Main` calls generated `drive`, and its
+`--call` mode calls `driver2` through `CerbCall`. All use the context-based
+reducer. A search of all upstream Lem/OCaml sources finds `core_thread_step2`
+only in its own declaration, definition and error strings. Mainline adds
+direct unit-test calls, but no production caller. This establishes inactivity
+in these inspected versions, not a claim about every external consumer.
+
+At the renamed CoreNice baseline `451011583`, its owned `driver.lem` and
+`core_reduction.lem` are byte-identical to mainline's originals. Their shared
+Git blob IDs are respectively `cd15c9865f50f3ffbc91a7056765aad71c9a3fb7` and
+`614f37ee8c87b260931af4975c6f0d9cb81c6d1f`. Later Nice changes add checked jumps,
+breakpoints and resumable driver phases around this copied reducer. The
+original Core model files remain unchanged from the mainline baseline.
+This does not claim that cerberus-lean has no pre-existing differences from
+upstream; those are tracked by the fork's own drift manifest.
+
+Reproduce the provenance checks from this clone:
+
+```bash
+git grep -n core_thread_step2 c3ff8c53f -- '*.lem' '*.ml' '*.mli'
+git show c3ff8c53f:frontend/model/driver.lem
+git show 8fa3050bf:lean_frontend/Main.lean
+git show 8fa3050bf:lean_frontend/CerbCall.lean
+git rev-parse 8fa3050bf:frontend/model/driver.lem \
+  451011583:frontend/corenice/model/driver.lem
+git rev-parse 8fa3050bf:frontend/model/core_reduction.lem \
+  451011583:frontend/corenice/model/core_reduction.lem
+git diff 8fa3050bf -- frontend/model/ backend/common/driver_ocaml.ml \
+  lean_frontend/Main.lean lean_frontend/CerbCall.lean
+```
 
 ## Precise phases instead of source-completion claims
 
@@ -43,7 +87,8 @@ separately transported source provenance and are not supplied by this repair.
 
 ## The legacy discrepancy is deeper than extra choices
 
-The original [choice witness](../../test/CoreNice/ReviewLegacyChoice.lean)
+The choice witness preserved at
+`4f667f26b:lean_frontend/test/CoreNice/ReviewLegacyChoice.lean`
 shows that preventing `to_pure` from erasing a cut changes the legacy `Eunseq`
 alternative list from one to two. A stronger
 [executable witness](../../test/CoreNice/ReviewLegacyErasure.lean) constructs:
@@ -53,11 +98,14 @@ unseq [ strong_seq (_ : unit) (pure undef) unit, unit ]
 ```
 
 In original legacy Core, `to_pure` and unused-pattern substitution discard the
-undefined prefix and the run completes. Marking that sequence in legacy Nice
-forces the prefix and reports UB. Original `rewrite_expr` also discards this
+undefined prefix and the run completes. At checkpoint `4f667f26b`, marking that
+sequence in legacy Nice forced the prefix and reported UB. Original `rewrite_expr` also discards this
 prefix. Optimized Core and optimized marked Nice both report UB, with no
 breakpoint encounter. The probe checks all these outcomes against the actual
-implementations; a passing probe means the discrepancy was reproduced.
+implementations. The current probe retains original legacy completion and
+rewrite erasure, plus both active-path UB controls. The old Nice evaluator
+and its two-engine choice probe have been removed; the old checkpoint preserves
+their full reproduction.
 
 This is a directly constructed Core-state witness, not an established
 AIL-reachability theorem or an end-to-end legacy C counterexample. The
@@ -76,16 +124,24 @@ legacy `Core_run.core_thread_step2`. The current lowerer does not invoke
 annotation cases. The active-path differential evidence therefore does not
 validate marked legacy execution or the optional simplifier.
 
-**Unresolved decision:** explicitly refuse breakpoint-bearing legacy inputs
-and support checkpoints on the optimized path, or expand scope to repair and
-reassess the original legacy semantics. The former is recommended. An agreed
-refusal needs to happen before offering choices or effects, including cuts
-stored in procedures and continuations; rejection at the first encountered
-marked sequence would be too late. No such refusal has been implemented yet.
+**Resolution:** remove the owned `core_thread_step2` implementation entirely,
+along with its private `core_action_step`, `core_step` and `action_request`.
+There is no compatibility stub or silent fallback to another engine. Keep
+`Core_run`'s shared procedure/state helpers, `E` helpers, `fs_oper` and
+`core_tau_step_kind`, which the active reducer still uses. Direct jump tests
+now exercise the active rule only. Original Core and its tests are unchanged.
 
-## Focused evidence
+[USER 2026-11-17] Subset CoreNice by removing cloned legacy evaluator support
+after verifying that upstream and mainline production already use the other
+engine. This removes an unnecessary compatibility obligation while preserving
+the intended copied production pathway.
 
-The phase repair regenerated all 57 CoreNice modules with pinned Lem compiler
+## Evidence before removal: phase checkpoint `4f667f26b`
+
+All counts in this section describe `4f667f26b`, before removing the legacy
+evaluator and its direct test arms. Current validation follows separately.
+
+The phase-repair checkpoint regenerated all 57 CoreNice modules with pinned Lem compiler
 `2220010bc25f0c5682d8200f016e786ee66d65c6`; the affected libraries, interpreters,
 runner and test executables build. The existing shared concurrency
 non-exhaustiveness warnings remain recorded in the historical checkpoint;
@@ -120,7 +176,40 @@ substitution, conversion, saved continuations and context reconstruction,
 checked `Erun`, the retained nonmemory frontier and runner-session state. No
 additional confirmed production defect emerged. The reviewer reproduced the
 legacy outcome failure and confirmed optimized UB without a cut. That review
-supports the phase repair, not the unresolved legacy claim.
+supports the phase repair, not a legacy-equivalence claim.
+
+## Validation after removal
+
+Regeneration of all 57 owned modules succeeded with the same pinned Lem.
+`CerberusCoreNice`, `CoreNiceSeparationTests`, `CoreNiceDifferential` and the
+affected interpreters, runner and test executables build successfully. The
+removed definitions and their auxiliary imports are absent from generated Nice
+sources. The active reducer and retained shared definitions are unchanged.
+
+The following focused runs passed on the deletion candidate:
+
+* All 14 phase cases: 56 interpreter executions, 36 exact effect-prefix
+  assertions and 105 pauses, with the same eleven defined/three UB outcomes.
+* Composition, saved-suffix entry and both sampled sibling-call orders under
+  automatic and selected pause policies: 20 bidirectional comparisons,
+  80 executions and 34 all-policy recording-lane pauses.
+* Comesfrom: nine exact bidirectional comparisons, **15 active-rule transitions,
+  one original-error precedence control**, and 27 injected typed faults.
+  The former 14 legacy-rule transitions and legacy error control were removed.
+* Direct breakpoint rule and driver tests, including binding, annotations,
+  reconstruction, initializer/main handoffs, retained competing choices and
+  cumulative budgets; 44 Python instrument tests and quotation generation check.
+* The retained original-Core erasure witness and both active-path UB controls.
+
+The first adapted witness run failed because its original legacy test frame
+had accidentally been replaced by an empty stack. Review caught the same
+fixture regression. Restoring the original frame made the witness pass;
+the optimized controls continue to use their required empty stack.
+
+Independent review confirmed the upstream/mainline call graph and found no
+active dependencies among the deleted declarations. Its two findings were
+fixed: the witness frame above and separation of historical 29/two counts
+from current 15/one counts. No original-Core source or original unit test changed.
 
 The earlier 1,000-program campaign is historical evidence, not a rerun of this
 repaired tree. No full shipping or proof gate is claimed.
@@ -129,13 +218,11 @@ From a provisioned checkout after the normal pinned regeneration/build recipe:
 
 ```bash
 python3 scripts/corenice-phase-tests.py
-python3 scripts/corenice-breakpoints.py
-python3 scripts/corenice-minimal.py \
-  --corenice-bin lean_frontend/.lake/build/bin/corenice-resume --comparison breakpoints
+python3 scripts/corenice-breakpoints.py \
+  --case composition --case suffix-entry --case sibling-calls
 python3 scripts/corenice-incoming-tests.py
 python3 -m unittest discover -s tests/corenice -p 'test_*.py'
 python3 tools/generate_corenice_quote.py --check
-(cd lean_frontend && ../scripts/lean_probe.sh test/CoreNice/ReviewLegacyChoice.lean)
 (cd lean_frontend && ../scripts/lean_probe.sh test/CoreNice/ReviewLegacyErasure.lean)
 python3 scripts/corenice-diff.py tests/corenice/review/pure_prefix_ub.c \
   --corenice-bin lean_frontend/.lake/build/bin/corenice-resume \

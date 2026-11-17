@@ -81,19 +81,20 @@ inspect the typed AST and compact metadata inventory instead; error rendering
 and JSON expose the structured fault. The current label table is static
 and procedure-indexed; extraction reconstructs sequencing suffixes. Attach the
 incoming set to that same resolved continuation, avoiding a second label table.
-Both the substitution-based and environment-based jump rules enforce the check.
+The production context-based jump rule enforces the check. The earlier cloned
+legacy substitution-based evaluator was removed after verifying that it is
+inactive in upstream and mainline; see the [provenance assessment](checkpoint-semantics-repair.md).
 
 Source anchors: [AST](../../../frontend/corenice/model/core.lem),
 [continuation collection](../../../frontend/corenice/model/core_aux.lem)
 (`collect_saves`, `collect_labeled_continuations_NEW`),
 [runtime state](../../../frontend/corenice/model/core_run_aux.lem),
-[first jump rule](../../../frontend/corenice/model/core_run.lem) and
-[optimized jump rule](../../../frontend/corenice/model/core_reduction.lem).
+[active jump rule](../../../frontend/corenice/model/core_reduction.lem).
 
 ## Work order
 
 1. **Build the feature.** Implement the AST fields, annotation producer and
-   checks in both jump rules. Start with the conservative incoming sets above.
+   checks in the active jump rule. Start with the conservative incoming sets above.
 2. **Establish a clean differential baseline.** Run the targeted cases and
    existing campaigns against original Core. Normal generated programs must
    agree without `NiceFault`; deliberate corruptions must produce the expected
@@ -136,8 +137,8 @@ absent from the destination's set, in the actual Nice artifact. The run must
 fault at that jump, before its arguments/control transfer, retaining the
 matching earlier observations. Restricting an untaken edge must not fault.
 Corrupt metadata after finalization so the producer cannot repair it. A parser
-rejection, native crash or timeout is not the expected fault. Check both jump
-implementations with focused witnesses; the normal campaign does not cover both.
+rejection, native crash or timeout is not the expected fault. Check the actual
+jump rule with focused witnesses as well as the generated-program campaigns.
 Negative controls also check the fault constructor, identities, locations and
 permitted set against the faulting artifact, rather than matching an error string.
 

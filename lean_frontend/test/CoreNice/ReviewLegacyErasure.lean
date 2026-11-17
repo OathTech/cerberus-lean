@@ -72,22 +72,9 @@ private def program : CoreNice.file CoreNice.core_run_annotation := {
 private def state : CoreNice.driver_state :=
   (CoreNice.initial_driver_state_given 100 65535 "repair-review" program CerbFS.fs_initial_state).1
 private def thread : CoreNice.thread_state := {
-  arena := body, stack0 := .Stack_cons (some procedure) [] .Stack_empty,
+  arena := body, stack0 := .Stack_empty,
   errno := CerbMem.nullPtrval signed_int, env := [fmapEmpty],
   current_proc_opt := some procedure, exec_loc := .ELoc_normal [], current_loc := .unknown }
-private def run : Nat → CoreNice.thread_state → IO String
-  | 0, _ => throw (IO.userError "budget exhausted")
-  | n+1, th => do
-    match CoreNice.core_thread_step2 fmapEmpty fmapEmpty state.layout_state program fmapEmpty fmapEmpty 0 (none, th) with
-    | [.Step_tau _ _ action] | [.Step_eval _ action] =>
-      match action state.core_run_state0 with
-      | .Result (.Defined next, _) => run n next
-      | .Result (.Undef _ _, _) => pure "UB"
-      | .Result (.Error _ _, _) => pure "modeled error"
-      | .Exception _ => pure "error"
-    | [.Step_done _] => pure "done"
-    | _ => throw (IO.userError "unexpected marked step")
-def outcome : IO String := run 20 thread
 private def runOptimized : Nat → Nat → CoreNice.thread_state → IO (String × Nat)
   | 0, _, _ => throw (IO.userError "optimized budget exhausted")
   | n+1, visits, th => do
@@ -107,9 +94,8 @@ end MarkedExtra
 
 #eval do
   let original ← OriginalExtra.outcome
-  let marked ← MarkedExtra.outcome
-  IO.println s!"Core={original}; marked Nice={marked}; collapse erases UB={OriginalExtra.collapseSkipsUndef}"
-  unless original == "done" && marked == "UB" && OriginalExtra.collapseSkipsUndef do
+  IO.println s!"Original legacy Core={original}; collapse erases UB={OriginalExtra.collapseSkipsUndef}"
+  unless original == "done" && OriginalExtra.collapseSkipsUndef do
     throw (IO.userError "witness changed")
   IO.println s!"Original Core rewrite erases UB={OriginalExtra.rewriteSkipsUndef}"
   unless OriginalExtra.rewriteSkipsUndef do

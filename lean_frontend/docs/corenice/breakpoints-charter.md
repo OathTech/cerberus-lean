@@ -88,16 +88,16 @@ is a new encounter.
 
 Erasing a breakpoint replaces its tail by `Continue` and preserves the original
 strong-sequence node and payloads. Carry the new category through all owned
-AST consumers, both reduction engines, contexts, substitutions, conversion,
+AST consumers, the active context-based reducer, substitutions, conversion,
 boundary/negative-action reconstruction and saved-continuation collection.
 Labels in a sequence's left operand retain the pending breakpoint in their
 reconstructed suffix; a jump directly into the right operand bypasses it.
 
-The current legacy evaluator fails the no-added-choice requirement on marked
-pure operands and can disagree on UB, as recorded in the
-[repair assessment](checkpoint-semantics-repair.md). Its support policy remains
-unresolved. Evidence from the normal/resumable optimized drivers does not
-discharge the charter's original both-engines ambition.
+CoreNice follows upstream and cerberus-lean's production context-based reducer.
+Its inherited inactive `core_thread_step2` and private support were removed
+after the [provenance and discrepancy assessment](checkpoint-semantics-repair.md).
+The original both-engines ambition is retired; the normal and resumable drivers
+share the active reducer.
 
 Existing raw Core text can parse into `Continue` tails. A new annotated text
 roundtrip is not a prerequisite: typed construction and generated AIL output
@@ -241,7 +241,7 @@ coverage honestly without silently dropping normal inputs that disagree.
    If an intended AIL join has no suitable existing position, report the gap;
    do not silently replace it with an unrelated internal cut.
 2. **AST and resumable execution.** Implement the owned syntax, transport,
-   both rule paths and nonterminal runner protocol; regenerate and compile.
+   the active reduction rules and nonterminal runner protocol; regenerate and compile.
    Demonstrate a real suspension and correct resume, then nested/unsequenced
    and saved-continuation cases. Keep focused checks during construction; no
    broad proof project is a prerequisite.

@@ -69,8 +69,8 @@ differential validation precedes the broad proof effort.
 Follow-up work on `corenice/checkpoint-semantics-repair` gives those sites
 precise normalized-AIL roles and typed origins. The
 [repair assessment](checkpoint-semantics-repair.md) records focused phase tests
-and an unresolved correspondence failure in the unused legacy evaluator;
-the normal and resumable C drivers both use the optimized reducer.
+and removal of the inherited inactive evaluator. The normal and resumable C
+drivers use the context-based reducer inherited from upstream and mainline.
 
 The [type-separation record](type-separation.md) preserves the earlier first
 checkpoint. Neither checkpoint is a general equivalence result.

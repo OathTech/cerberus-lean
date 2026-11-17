@@ -22,19 +22,19 @@ spec.loader.exec_module(diff)
 
 def run_unit_controls(binary):
     # Unknown-label controls intentionally exercise the existing native panic;
-    # the normal suite must complete cleanly before either control is attempted.
+    # the normal suite must complete cleanly before the control is attempted.
     os.environ["LEAN_ABORT_ON_PANIC"] = "1"
     code, stdout, stderr = diff.run_child([str(binary)], 30, 4096 * 1024**2, 1024**2)
     if code != 0 or stderr:
         raise ValueError(f"actual-rule tests failed ({code}): {diff.stderr_excerpt(stderr)}")
     text = stdout.decode("utf-8")
-    for rule in ("core_run", "core_reduction"):
+    for rule in ("core_reduction",):
         if f"PASS: {rule}: 14 actual transitions" not in text:
             raise ValueError(f"actual-rule test did not attest {rule}")
     if "PASS: optimized argument UB positive control" not in text:
         raise ValueError("missing argument-evaluation positive control")
     print(text, end="")
-    for mode in ("legacy", "optimized"):
+    for mode in ("optimized",):
         code, stdout, stderr = diff.run_child(
             [str(binary), f"--unknown-label-{mode}"], 30, 4096 * 1024**2, 1024**2)
         if code == 0 or b"Erun couldn't resolve label:" not in stderr:
@@ -129,7 +129,7 @@ def main():
                   f"genuine-choices={len(result['indices'])}, both directions")
         generated_witnesses += run_generated_controls(control_binary, source, config)
     print(f"PASS: {len(cases)} C fixtures, {comparisons} exact bidirectional comparisons; "
-          "29 actual-rule transitions, 2 original-error precedence controls")
+          "15 actual-rule transitions, 1 original-error precedence control")
     print(f"PASS: {generated_witnesses} generated-program first-site execution witnesses, "
           f"{3 * generated_witnesses} typed fault controls")
     print("NOT MEASURED here: total dynamic checked-jump counts or coverage of every static site")

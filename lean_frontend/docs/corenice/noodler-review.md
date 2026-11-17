@@ -5,6 +5,9 @@ reproducers and this report. It changes no model, producer or runner.
 The [repair assessment](checkpoint-semantics-repair.md) records the subsequent
 phase/origin repair and a stronger legacy outcome counterexample. Old role
 names and measurements below describe the reviewed checkpoint.
+The inactive Nice evaluator and its direct choice probe were subsequently
+removed. Reproduce the legacy comparisons at checkpoint `4f667f26b`;
+the active C fixtures remain in the current tree.
 
 ## R1: marking pure operands adds legacy scheduler alternatives
 
@@ -15,7 +18,7 @@ whose two operands are `Esseq () unit unit`. Original Core has one enabled
 those tails to distinct `Breakpoint` sites produces two `Eunseq` transitions,
 one selecting each operand first.
 
-The [executable probe](../../test/CoreNice/ReviewLegacyChoice.lean) imports both
+The historical `lean_frontend/test/CoreNice/ReviewLegacyChoice.lean` probe imports both
 actual implementations, installs a matching procedure definition in each file,
 uses the procedure body as the arena and supplies its legacy call frame. It
 checks both transition counts and descriptors. It does not assert a general
@@ -66,7 +69,7 @@ normal and continue entries, or deliberately relate their normalized join.
 
 ## Reproduction and bounded evidence
 
-From a provisioned checkout containing these review files:
+From a provisioned checkout of `4f667f26b`, containing the removed legacy probe:
 
 ```bash
 (cd lean_frontend && ../scripts/lean_probe.sh test/CoreNice/ReviewLegacyChoice.lean)

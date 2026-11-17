@@ -50,6 +50,12 @@ intentionally fails after the incoming-jump semantic change. Ordinary generation
 is still required after changing the owned sources.
 No Lem compiler change was needed.
 
+The active driver/reducer are owned copies of the existing mainline pathway,
+also used by pinned upstream Cerberus. CoreNice removes the inherited inactive
+`core_thread_step2` and its private action/step support; shared `Core_run`
+helpers remain. The [provenance assessment](checkpoint-semantics-repair.md)
+records exact versions, byte-identical baseline copies and the verified call chain.
+
 `test/CoreNice/Interpreter.lean` inspects resolved dependencies from B lowering and
 execution, rejects original target entrypoints there, and requires the B parser,
 translator, linker, converter, initializer, driver, reducer, procedure call and
