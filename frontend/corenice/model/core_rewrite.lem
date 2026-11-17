@@ -72,7 +72,7 @@ let rwter_identity = <|
   skip_rwter=        Eskip;
   let_rwter=         fun a pe1 e2 -> Elet a pe1 e2;
   if_rwter=          fun pe1 e2 e3 -> Eif pe1 e2 e3;
-  proc_rwter=        fun nm pes -> Eproc () nm pes;
+  proc_rwter=        fun nm pes -> Eproc ((), Continue) nm pes;
   action_rwter=      fun pact -> Eaction pact;
   unseq_rwter=       fun es -> Eunseq es;
   wseq_rwter=        fun _as e1 e2 -> Ewseq _as e1 e2;
@@ -785,10 +785,10 @@ let rec remove_conv_int (Expr annot expr_) =
         Elet pat (remove_conv_int_pexpr pe1) (remove_conv_int e2)
     | Eif pe1 e2 e3 ->
         Eif (remove_conv_int_pexpr pe1) (remove_conv_int e2) (remove_conv_int e3)
-    | Eccall () ty pe pes ->
-        Eccall () (remove_conv_int_pexpr ty) (remove_conv_int_pexpr pe) (List.map remove_conv_int_pexpr pes)
-    | Eproc () nm pes ->
-        Eproc () nm (List.map remove_conv_int_pexpr pes)
+    | Eccall ((), return_tail) ty pe pes ->
+        Eccall ((), return_tail) (remove_conv_int_pexpr ty) (remove_conv_int_pexpr pe) (List.map remove_conv_int_pexpr pes)
+    | Eproc ((), return_tail) nm pes ->
+        Eproc ((), return_tail) nm (List.map remove_conv_int_pexpr pes)
     | Eunseq es ->
         Eunseq (List.map remove_conv_int es)
     | Ewseq pat e1 e2 ->

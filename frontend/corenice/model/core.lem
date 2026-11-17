@@ -338,14 +338,18 @@ let empty_nice_label_info = <|
 |>
 
 
-(* A strong tail is represented by (control, continuation). Only Esseq may
-   contain this node; it is not an expression that can appear anywhere. *)
+(* Breakpoint syntax is restricted to strong-sequence tails and call-return
+   continuations. It is not an expression that can appear anywhere. Calls pair
+   their original annotation with the control for their saved return context. *)
 type nice_breakpoint_role =
   | BP_normalized_ail_join
   | BP_condition_ready
   | BP_while_restart_pending
   | BP_do_condition_pending
   | BP_internal
+  | BP_procedure_entry
+  | BP_label_entry
+  | BP_call_return
 
 (* Provenance is a producer occurrence key after shared AIL desugaring and
    owned loop-control normalization. It is not a source-C path or certificate
@@ -373,8 +377,8 @@ type generic_expr_ 'a 'bty 'sym =  (* (effectful) expression *)
  | Ecase of (generic_pexpr 'bty 'sym) * list ((generic_pattern 'sym) * (generic_expr 'a 'bty 'sym)) (* pattern matching *)
  | Elet of (generic_pattern 'sym) * (generic_pexpr 'bty 'sym) * (generic_expr 'a 'bty 'sym)
  | Eif of (generic_pexpr 'bty 'sym) * (generic_expr 'a 'bty 'sym) * (generic_expr 'a 'bty 'sym)
- | Eccall of 'a * (generic_pexpr 'bty 'sym) * (generic_pexpr 'bty 'sym) * list (generic_pexpr 'bty 'sym) (* C function call *)
- | Eproc of 'a * (generic_name 'sym) * list (generic_pexpr 'bty 'sym) (* Core procedure call *)
+ | Eccall of ('a * strong_tail_control) * (generic_pexpr 'bty 'sym) * (generic_pexpr 'bty 'sym) * list (generic_pexpr 'bty 'sym) (* C call with a restricted return continuation control *)
+ | Eproc of ('a * strong_tail_control) * (generic_name 'sym) * list (generic_pexpr 'bty 'sym) (* Core call with a restricted return continuation control *)
  | Eunseq of list (generic_expr 'a 'bty 'sym) (* unsequenced expressions *)
  | Ewseq of (generic_pattern 'sym) * (generic_expr 'a 'bty 'sym) * (generic_expr 'a 'bty 'sym) (* weak sequencing *)
  | Esseq of (generic_pattern 'sym) * (generic_expr 'a 'bty 'sym) * (strong_tail_control * generic_expr 'a 'bty 'sym) (* strong sequencing and its restricted tail *)

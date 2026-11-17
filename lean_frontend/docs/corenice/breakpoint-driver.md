@@ -12,7 +12,7 @@ use the optimized reducer.
 returns a `nice_run_result` through the existing `driverM`:
 
 * `NiceCompleted result` is genuine program completion.
-* `NiceSuspended suspension` is a successful strong-tail encounter. The record
+* `NiceSuspended suspension` is a successful strong-tail or marked call-return encounter. The record
   contains the static site, executing thread, full driver state, configuration,
   remaining budget and the explicit phase to execute next.
 * `NiceBudgetExhausted` is incomplete execution. It must not satisfy successful
@@ -34,6 +34,11 @@ obtains readers from the retained file and captures its switches/fuel, so
 `Choice.resume` preserves that configuration for differential comparison.
 The [landing review](breakpoints-landing-review.md) records the configuration
 probe and explains why parameter dependence is not a semantic defect.
+
+The [saturation extension](breakpoint-saturation.md) stores an AST call-return
+control in the existing procedure stack frame. Its return cut follows the
+original caller-restoration transition, including the original C-function
+return observation. It uses the same nonmemory suspension phase below.
 
 ## What the phase retains
 

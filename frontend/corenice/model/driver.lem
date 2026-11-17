@@ -538,7 +538,7 @@ let rec drive_core_thread2 tid =
                 match tsk with
                   | Core_run.TSK_Misc ->
                       ND.return ()
-                  | Core_run.TSK_Return sym mval_opt ->
+                  | Core_run.TSK_Return sym mval_opt _ ->
                       ND.update $ fun dr_st ->
                         <| dr_st with trace= ME_function_return sym mval_opt :: dr_st.trace |>
                   | _ ->
@@ -561,7 +561,7 @@ let rec drive_core_thread2 tid =
           match tsk with
             | Core_run.TSK_Misc ->
                 ND.return ()
-            | Core_run.TSK_Return sym mval_opt ->
+            | Core_run.TSK_Return sym mval_opt _ ->
                 ND.update $ fun dr_st ->
                 <| dr_st with
                   trace= ME_function_return sym mval_opt :: dr_st.trace
@@ -954,7 +954,7 @@ let advance_step tid step =
         ND.return NOWAKEUP
     | Core_reduction.Step_with_runstate2 rsk step_m ->
         match rsk with
-          | Core_reduction.RSK_tau _ (Core_run.TSK_Return sym mval_opt) ->
+          | Core_reduction.RSK_tau _ (Core_run.TSK_Return sym mval_opt _) ->
               ND.update (fun dr_st ->
                 <| dr_st with trace= ME_function_return sym mval_opt :: dr_st.trace |>
               )
@@ -970,7 +970,7 @@ let advance_step tid step =
 
     | Core_reduction.Step_tau2 debug_str tsk th_st' ->
         match tsk with
-          | Core_run.TSK_Return sym mval_opt ->
+          | Core_run.TSK_Return sym mval_opt _ ->
               ND.update (fun dr_st ->
                 <| dr_st with trace= ME_function_return sym mval_opt :: dr_st.trace |>
               )
@@ -1152,7 +1152,7 @@ let rec drive_nonmemory_steps_aux (acc: map Mem.thread_id (list Core_reduction.c
             match step with
               | Core_reduction.Step_with_runstate2 rsk step_m ->
                   match rsk with
-                    | Core_reduction.RSK_tau _ (Core_run.TSK_Return sym mval_opt) ->
+                    | Core_reduction.RSK_tau _ (Core_run.TSK_Return sym mval_opt _) ->
                         ND.update (fun dr_st ->
                           <| dr_st with trace= ME_function_return sym mval_opt :: dr_st.trace |>
                         )
@@ -1168,7 +1168,7 @@ let rec drive_nonmemory_steps_aux (acc: map Mem.thread_id (list Core_reduction.c
               
               | Core_reduction.Step_tau2 debug_str tsk th_st' ->
                   match tsk with
-                    | Core_run.TSK_Return sym mval_opt ->
+                    | Core_run.TSK_Return sym mval_opt _ ->
                         ND.update (fun dr_st ->
                           <| dr_st with trace= ME_function_return sym mval_opt :: dr_st.trace |>
                         )
@@ -1464,7 +1464,7 @@ let process_core_step2 with_concurrency driver2 finished = function
           end) >>= fun arg_pe ->
           ND.update (fun dr_st -> <| dr_st with
             core_state= Core_run.update_thread_state tid0
-              <| th_st with Core_run.arena= Core.Expr [] (Core.Eproc Core_run.empty_annotation (Core.Sym exit_sym) [arg_pe]) |>
+              <| th_st with Core_run.arena= Core.Expr [] (Core.Eproc (Core_run.empty_annotation, Core.Continue) (Core.Sym exit_sym) [arg_pe]) |>
               dr_st.core_state;
             exit_routed= true;
             dr_step_counter= dr_st.dr_step_counter + 1
@@ -2050,8 +2050,9 @@ let drive with_concurrency file arg_strs =
 
 
 (* CoreNice resumable execution. The ordinary drive entry above remains the
-   automatic-continuation reference. Only successful strong-tail completion
-   steps carry TSK_Breakpoint; failed pattern/evaluation steps never arrive here.
+   automatic-continuation reference. Successful strong-tail completions and
+   marked procedure returns expose cuts; failed prefix/pattern evaluation does
+   not complete a strong tail. Return cuts retain the original return event.
 
    Phase data is the actual continuation of the driver, not an instruction to
    restart a scheduling round. In particular the nonmemory accumulator may
@@ -2092,6 +2093,8 @@ type nice_run_result =
   | NiceBudgetExhausted
 
 let nice_step_breakpoint = function
+  | Core_reduction.Step_tau2 _ (Core_run.TSK_Return _ _ (Core.Breakpoint site)) _ -> Just site
+  | Core_reduction.Step_with_runstate2 (Core_reduction.RSK_tau _ (Core_run.TSK_Return _ _ (Core.Breakpoint site))) _ -> Just site
   | Core_reduction.Step_tau2 _ (Core_run.TSK_Breakpoint site) _ -> Just site
   | Core_reduction.Step_with_runstate2 (Core_reduction.RSK_tau _ (Core_run.TSK_Breakpoint site)) _ -> Just site
   | _ -> Nothing

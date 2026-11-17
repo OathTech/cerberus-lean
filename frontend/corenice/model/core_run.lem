@@ -235,6 +235,6 @@ type fs_oper =
 
 type core_tau_step_kind =
   | TSK_Ccall of Symbol.sym * list Mem.mem_value
-  | TSK_Return of Symbol.sym * maybe Mem.mem_value
+  | TSK_Return of Symbol.sym * maybe Mem.mem_value * Core.strong_tail_control
   | TSK_Misc
   | TSK_Breakpoint of Core.nice_breakpoint_site

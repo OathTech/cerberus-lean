@@ -67,6 +67,9 @@ def roleName : CoreNice.nice_breakpoint_role → String
   | .BP_while_restart_pending => "while-restart-pending"
   | .BP_do_condition_pending => "do-condition-pending"
   | .BP_internal => "internal"
+  | .BP_procedure_entry => "procedure-entry"
+  | .BP_label_entry => "label-entry"
+  | .BP_call_return => "call-return"
 
 def originDescription : CoreNice.nice_breakpoint_origin → Json
   | .NiceInternal => Json.mkObj [("stage", toJson "internal")]

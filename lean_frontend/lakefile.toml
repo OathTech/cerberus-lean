@@ -523,7 +523,19 @@ srcDir = "differential"
 roots = ["Prepared", "PipelineA", "PipelineNice", "ObservationShared", "ChoiceRunner",
          "ObservationA", "ObservationNice", "RunOutput", "EntryCommon",
          "ArtifactQuoteNice", "ArtifactCompare", "Incoming", "IncomingTests",
-         "IncomingReachability", "IncomingReachabilityTests", "BreakpointExecution"]
+         "IncomingReachability", "IncomingReachabilityTests", "BreakpointExecution", "BreakpointMain", "Saturation"]
+
+[[lean_exe]]
+name = "corenice-saturation-tests"
+srcDir = "test"
+root = "CoreNice.SaturationTests"
+moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "corenice-saturated"
+srcDir = "differential"
+root = "EntrySaturated"
+moreLinkArgs = ["native/md5.o"]
 
 [[lean_exe]]
 name = "corenice-resume"

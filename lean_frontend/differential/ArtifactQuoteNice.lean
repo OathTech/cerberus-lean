@@ -912,6 +912,15 @@ private def q_pass_by_value_or_pointer : (pass_by_value_or_pointer) → Result
 
 mutual
 private partial def q_generic_expr : (generic_expr (core_run_annotation) (PUnit) (sym)) → Result
+  | generic_expr.Expr [] (generic_expr_.Esseq
+      (.Pattern [] (.CaseBase (none, .BTy_unit)))
+      (.Expr [] (.Epure (.Pexpr [] () (.PEval .Vunit)))) (.Breakpoint site, body)) =>
+    if site.breakpoint_role == .BP_procedure_entry || site.breakpoint_role == .BP_label_entry then
+      q_generic_expr body
+    else do
+      return typedNode "(generic_expr (core_run_annotation) (PUnit) (sym))" "generic_expr.Expr"
+        [← (qList "(annot)" q_annot) [], ← q_generic_expr_ (.Esseq (.Pattern [] (.CaseBase (none, .BTy_unit)))
+          (.Expr [] (.Epure (.Pexpr [] () (.PEval .Vunit)))) (.Breakpoint site, body))]
   | generic_expr.Expr x0 x1 => return typedNode "(generic_expr (core_run_annotation) (PUnit) (sym))" "generic_expr.Expr" [← (qList "(annot)" q_annot) x0, ← q_generic_expr_ x1]
 
 private partial def q_generic_expr_ : (generic_expr_ (core_run_annotation) (PUnit) (sym)) → Result
@@ -921,8 +930,8 @@ private partial def q_generic_expr_ : (generic_expr_ (core_run_annotation) (PUni
   | generic_expr_.Ecase x0 x1 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Ecase" [← q_generic_pexpr x0, ← (qList "(Prod (generic_pattern (sym)) (generic_expr (core_run_annotation) (PUnit) (sym)))" (qProd q_generic_pattern q_generic_expr)) x1]
   | generic_expr_.Elet x0 x1 x2 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Elet" [← q_generic_pattern x0, ← q_generic_pexpr x1, ← q_generic_expr x2]
   | generic_expr_.Eif x0 x1 x2 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Eif" [← q_generic_pexpr x0, ← q_generic_expr x1, ← q_generic_expr x2]
-  | generic_expr_.Eccall x0 x1 x2 x3 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Eccall" [← q_core_run_annotation x0, ← q_generic_pexpr x1, ← q_generic_pexpr x2, ← (qList "(generic_pexpr (PUnit) (sym))" q_generic_pexpr) x3]
-  | generic_expr_.Eproc x0 x1 x2 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Eproc" [← q_core_run_annotation x0, ← q_generic_name x1, ← (qList "(generic_pexpr (PUnit) (sym))" q_generic_pexpr) x2]
+  | generic_expr_.Eccall (x0, _returnTail) x1 x2 x3 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Eccall" [← q_core_run_annotation x0, ← q_generic_pexpr x1, ← q_generic_pexpr x2, ← (qList "(generic_pexpr (PUnit) (sym))" q_generic_pexpr) x3]
+  | generic_expr_.Eproc (x0, _returnTail) x1 x2 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Eproc" [← q_core_run_annotation x0, ← q_generic_name x1, ← (qList "(generic_pexpr (PUnit) (sym))" q_generic_pexpr) x2]
   | generic_expr_.Eunseq x0 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Eunseq" [← (qList "(generic_expr (core_run_annotation) (PUnit) (sym))" q_generic_expr) x0]
   | generic_expr_.Ewseq x0 x1 x2 => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Ewseq" [← q_generic_pattern x0, ← q_generic_expr x1, ← q_generic_expr x2]
   | generic_expr_.Esseq x0 x1 (_tail, x2) => return typedNode "(generic_expr_ (core_run_annotation) (PUnit) (sym))" "generic_expr_.Esseq" [← q_generic_pattern x0, ← q_generic_expr x1, ← q_generic_expr x2]

@@ -4,6 +4,7 @@ import CoreNice.Translation
 import CoreNice.Core_run_aux
 import CoreNice.Driver
 import IncomingReachability
+import Saturation
 
 namespace CoreNiceDiff
 
@@ -20,7 +21,7 @@ def loadImplementationNice (parsed : CoreNice.CoreParser.CoreFile) : Except Stri
     let key ← CoreNice.CoreParser.pImplConstant name
     pure (fmapAddBy implementation_constant_compare key value acc)) fmapEmpty
 
-def lowerNice [LemFuel] (prepared : Prepared) : IO ExecutionNice := do
+private def lowerNiceWith [LemFuel] (saturate : Bool) (prepared : Prepared) : IO ExecutionNice := do
   let _ ← (CerberusFresh.setDigestIO "" : BaseIO Unit)
   let std ← match CoreNice.CoreParser.parseLibraryFile prepared.runtime.text.stdPath
       prepared.runtime.text.stdText with
@@ -57,10 +58,25 @@ def lowerNice [LemFuel] (prepared : Prepared) : IO ExecutionNice := do
   let incoming ← match CoreNice.Incoming.tighten conservative with
     | .ok result => pure result.result
     | .error reason => fail s!"CoreNice incoming tightening failed: {reason}"
-  let file := CoreNice.convert_file incoming.file
+  let target ← if saturate then
+      match CoreNice.Saturation.insert incoming.file with
+      | .ok result => pure result.file
+      | .error reason => fail s!"CoreNice saturation failed: {reason}"
+    else pure incoming.file
+  let file := CoreNice.convert_file target
+  if saturate then
+    match CoreNice.Saturation.check file with
+    | .ok () => pure ()
+    | .error reason => fail s!"CoreNice converted saturation failed: {reason}"
   let (state, initialSupply) := CoreNice.initial_driver_state supply prepared.addressSpaceTop
     prepared.runDigest file CerbFS.fs_initial_state
   return { translated, file, state, initialSupply, translatedSupply := supply, incomingStats := incoming.stats }
+
+def lowerNice [LemFuel] (prepared : Prepared) : IO ExecutionNice :=
+  lowerNiceWith false prepared
+
+def lowerSaturatedNice [LemFuel] (prepared : Prepared) : IO ExecutionNice :=
+  lowerNiceWith true prepared
 
 /-- Existing passive memory diagnostics; disabled for the calibration oracle. -/
 def ExecutionNice.capture (execution : ExecutionNice) (enabled : Bool) : Except String ExecutionNice := do

@@ -24,6 +24,26 @@ def erase_incoming_fields(quotation: str) -> str:
             f"  | generic_expr_.{constructor} x0 x1 x2 {field} =>", 1)
     quotation = quotation.replace("| generic_expr_.Esseq x0 x1 x2 =>",
         "| generic_expr_.Esseq x0 x1 (_tail, x2) =>")
+    for constructor in ["Eccall", "Eproc"]:
+        quotation = quotation.replace(f"| generic_expr_.{constructor} x0 ",
+                                      f"| generic_expr_.{constructor} (x0, _returnTail) ")
+    # Only the canonical unit entry wrapper is administrative. Match its exact
+    # AST shape independently of the producer; malformed/ordinary sequences
+    # remain visible to structural comparison.
+    arm = "  | generic_expr.Expr x0 x1 =>"
+    entry_arm = """  | generic_expr.Expr [] (generic_expr_.Esseq
+      (.Pattern [] (.CaseBase (none, .BTy_unit)))
+      (.Expr [] (.Epure (.Pexpr [] () (.PEval .Vunit)))) (.Breakpoint site, body)) =>
+    if site.breakpoint_role == .BP_procedure_entry || site.breakpoint_role == .BP_label_entry then
+      q_generic_expr body
+    else do
+      return typedNode "(generic_expr (core_run_annotation) (PUnit) (sym))" "generic_expr.Expr"
+        [← (qList "(annot)" q_annot) [], ← q_generic_expr_ (.Esseq (.Pattern [] (.CaseBase (none, .BTy_unit)))
+          (.Expr [] (.Epure (.Pexpr [] () (.PEval .Vunit)))) (.Breakpoint site, body))]
+"""
+    if quotation.count(arm) != 1:
+        raise ValueError("expected exactly one generic expression quotation arm")
+    quotation = quotation.replace(arm, entry_arm + arm, 1)
     return quotation
 
 

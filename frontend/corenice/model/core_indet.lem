@@ -176,7 +176,7 @@ let rec export_expr e =
   | Enull ty -> Core.Enull ty
   | Eimpl i -> Core.Eimpl i
   | Etuple es -> Core.Etuple (List.map export_expr es)
-  | Eproc p es -> Core.Eproc {} p (List.map export_expr es)
+  | Eproc p es -> Core.Eproc ({}, Core.Continue) p (List.map export_expr es)
   | Eret e -> Core.Eret (export_expr e)
   | End es -> Core.End (List.map export_expr es)
   | Epar es -> Core.Epar (List.map export_expr es)

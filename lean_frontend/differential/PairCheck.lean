@@ -103,11 +103,11 @@ private def calibrate {a info err cs st : Type} (fuel maxPaths : Nat)
   require (sameMultiset results oldProjected) "choice enumeration differs from all CerbND results"
   return results
 
-def check (runtime input : String) (fuel top maxPaths : Nat) : IO Unit := do
+def check (runtime input : String) (fuel top maxPaths : Nat) (saturate : Bool := false) : IO Unit := do
   require (maxPaths > 0) "MAX_PATHS must be positive"
   let prepared ← @prepare ⟨fuel⟩ runtime input top []
   let a ← @lowerA ⟨fuel⟩ prepared
-  let b ← @lowerNice ⟨fuel⟩ prepared
+  let b ← if saturate then @lowerSaturatedNice ⟨fuel⟩ prepared else @lowerNice ⟨fuel⟩ prepared
   unwrap (ArtifactCompare.compare a b)
   require a.file.main.isSome "paired execution calibration requires a main entry"
   let changedMain := { b with file := { b.file with main := none } }
@@ -149,12 +149,13 @@ def main (args : List String) : IO UInt32 := do
   try
     unless (← IO.getEnv "LEAN_ABORT_ON_PANIC") == some "1" do
       CoreNiceDiff.fail "LEAN_ABORT_ON_PANIC=1 is required"
+    let (saturate, args) := if args.getLast? == some "saturated" then (true, args.dropLast) else (false, args)
     let [runtime, input, fuelText, topText, pathsText] := args
-      | CoreNiceDiff.fail "usage: corenice-pair-check RUNTIME_PREFIX CABS_JSON FUEL ADDRESS_SPACE_TOP MAX_PATHS"
+      | CoreNiceDiff.fail "usage: corenice-pair-check RUNTIME_PREFIX CABS_JSON FUEL ADDRESS_SPACE_TOP MAX_PATHS [saturated]"
     let some fuel := fuelText.toNat? | CoreNiceDiff.fail "FUEL must be a natural number"
     let some top := topText.toNat? | CoreNiceDiff.fail "ADDRESS_SPACE_TOP must be a natural number"
     let some paths := pathsText.toNat? | CoreNiceDiff.fail "MAX_PATHS must be a natural number"
-    CoreNiceDiff.PairCheck.check runtime input fuel top paths
+    CoreNiceDiff.PairCheck.check runtime input fuel top paths saturate
     return 0
   catch error =>
     CoreNiceDiff.emit (Lean.Json.mkObj [("paired-check", Lean.toJson "failed"),

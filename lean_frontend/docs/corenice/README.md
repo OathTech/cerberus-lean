@@ -75,6 +75,10 @@ The [landing review](breakpoints-landing-review.md) records the independent
 restart audit, current focused results and the disposition of the
 configuration question. It recommends research feature integration; approval
 is pending.
+The subsequent [saturation experiment](breakpoint-saturation.md), on
+`corenice/breakpoint-saturation`, adds linked procedure/label-entry cuts and
+explicit call-return cuts. `corenice-saturated` compares this variant against
+Core while the original AIL composition-cut runner remains available.
 
 The [type-separation record](type-separation.md) preserves the earlier first
 checkpoint. Neither checkpoint is a general equivalence result.

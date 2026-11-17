@@ -289,7 +289,8 @@ def project_stutter(trace, allow_breakpoints=False):
                     or set(point) != expected or point["schema"] != "corenice-breakpoint-v2"
                     or point["phase"] != "nonmemory"
                     or point["role"] not in {"normalized-ail-join", "condition-ready",
-                                              "while-restart-pending", "do-condition-pending", "internal"}
+                                              "while-restart-pending", "do-condition-pending", "internal",
+                                              "procedure-entry", "label-entry", "call-return"}
                     or any(not natural(point[key]) for key in
                            ["site", "thread", "encounter", "remainingBudget", "driverSteps"])
                     or point["encounter"] == 0):

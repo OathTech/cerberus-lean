@@ -69,10 +69,14 @@ Expr       ::= ... | StrongSeq pattern Expr StrongTail
 StrongTail ::= Continue Expr | Breakpoint Site Expr
 ```
 
-`Breakpoint` is syntax in the strong-sequence continuation category. It is not
-an arbitrary expression admitted by a later placement validator. A strong
+`Breakpoint` is syntax in a restricted continuation category. The initial
+milestone uses strong-sequence tails; the [saturation extension](breakpoint-saturation.md)
+adds call-return positions. It is not an arbitrary expression admitted by a
+later placement validator. A strong
 sequence containing a breakpoint may itself occur under unsequencing or other
-existing contexts. Do not add strong sequencing merely to manufacture a site.
+existing contexts. The initial AIL composition policy marks existing sequences.
+The saturation pass additionally uses an explicit, binder-free unit-prefix
+sequence at procedure and saved-label entries, with its own erasure and tests.
 
 The pause occurs **after** successful completion of the left operand, pattern
 validation, binding/substitution and propagation of pending `Eannot` data,

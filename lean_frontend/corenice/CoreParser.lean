@@ -1918,7 +1918,7 @@ private partial def pExprPcall : P Expr' := do
   -- Arguments are optional
   let pes ← (attempt (do lexSym ","; sepByComma1 pPexpr)) <|> pure []
   lexSym ")"
-  return (mkE (Eproc () nm pes))
+  return (mkE (Eproc ((), .Continue) nm pes))
 
 private partial def pExprCcall : P Expr' := do
   lexKw "ccall"
@@ -1928,7 +1928,7 @@ private partial def pExprCcall : P Expr' := do
   let pe ← pPexpr
   let pes ← (attempt (do lexSym ","; sepByComma1 pPexpr)) <|> pure []
   lexSym ")"
-  return (mkE (Eccall () peTy pe pes))
+  return (mkE (Eccall ((), .Continue) peTy pe pes))
 
 private partial def pExprUnseq : P Expr' := do
   lexKw "unseq"
