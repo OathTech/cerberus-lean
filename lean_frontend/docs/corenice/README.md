@@ -88,8 +88,11 @@ Core while the original AIL composition-cut runner remains available.
 The explored [integer-representability guard](conversion-guard.md) is parked
 on `plan/corenice-conversion-guard`; its runtime mechanism has been reviewed,
 but a structural generation invariant making the checks redundant has not
-been identified. The [extension-selection criterion](cerberus-nice-design.md#selecting-additions-to-corenice)
-now makes that requirement explicit. No guard implementation has begun.
+been identified. The standalone [extension-selection criterion](generation-invariants.md)
+makes that requirement explicit. No guard implementation has begun. The
+[generator-structure assessment](generator-structure-candidates.md) ranks
+further candidates, led by identity-forwarding label interfaces and ordered
+lifetime-transfer plans; these remain proposals, not implemented features.
 
 The [type-separation record](type-separation.md) preserves the earlier first
 checkpoint. Neither checkpoint is a general equivalence result.

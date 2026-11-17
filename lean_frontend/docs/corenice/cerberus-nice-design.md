@@ -44,33 +44,14 @@ and instrument; it cannot independently validate defects in their common source.
 
 ## Selecting additions to CoreNice
 
-Prefer properties directly available from the structure of AIL generation but
-lost or obscured in ordinary Core. Preserve them as explicit syntax and, where
-appropriate, executable checks. The generated program should already satisfy
-the restriction: a generic argument about generation and transport should
-establish that its checks cannot fail. The intended gain is a simpler target
-language for reasoning, without new application-specific safety premises.
-
-For each candidate, identify the generation rule that supplies the fact, what
-ordinary Core loses, and the local argument that correctly generated execution
-retains it. A useful postcondition of a successful runtime assertion is not
-sufficient by itself. Do not replace an expensive downstream proof with a
-different substantial semantic invariant needed to justify the new assertion.
-
-Comesfrom is the motivating example: generation identifies the structural jump
-origins, which become explicit permitted-origin declarations. The generic
-correspondence argument concerns producing and preserving that information.
-It does not ask each application to establish a new control-flow restriction.
-
-Differential experiments still precede the full proof. Unexpected check faults
-on ordinary generated executions are failed candidates to diagnose, not an
-acceptable way to exclude behavior after generation. Deliberately corrupted
-artifacts and injected faults remain negative controls. This selection criterion
-does not introduce a new proof gate during exploration.
-
-[USER, 2026-11-17] Choose extensions that expose structural facts already
-ensured by generation and support generic redundancy arguments; avoid adding
-runtime restrictions whose justification creates new application obligations.
+The [extension-selection criterion](generation-invariants.md) is the governing
+note: preserve facts already supplied by generation as operational syntax,
+without new application-specific safety premises. It distinguishes malformed
+artifact faults from original C failures and explicit generation-time refusals.
+The [candidate assessment](generator-structure-candidates.md) applies it to the
+current producer and recommends identity-forwarding interfaces and ordered
+lifetime-transfer plans as the strongest next experiments. Differential evidence
+still precedes the full proof; this criterion adds no proof gate.
 
 ## Baseline and source evidence
 
