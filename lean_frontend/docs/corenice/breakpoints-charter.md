@@ -1,4 +1,4 @@
-# Charter: CoreNice breakpoints for compositional simulation
+# Charter: CoreNice breakpoint semantics
 
 Status: experimental milestone followed by repairs on
 `corenice/checkpoint-semantics-repair`; see the
@@ -11,55 +11,53 @@ they differ. The [machine design](cerberus-nice-design.md) and
 
 ## Purpose and deliverable
 
-Expose intermediate CoreNice execution states at explicit AST boundaries so a
-future simulation proof can compose a prefix and suffix through a shared
-midpoint relation. Prioritize boundaries corresponding to **AIL composition**:
-we ultimately want to relate these states to the corresponding Caesium residual
-program and state, and reuse source-side reasoning there.
+Expose intermediate CoreNice execution states at explicit AST boundaries.
+Execution can stop at a reached breakpoint and restart with the same state,
+pending execution and choices. Prioritize boundaries corresponding to **AIL
+composition** because these are useful endpoints for later refinement work.
+The present deliverable is executable syntax and semantics; it does not
+introduce a symbolic midpoint relation or require a new simulation proof.
 
-Deliver a genuine position-restricted breakpoint AST, an explicit resumable
-driver, an AIL-origin placement policy and a reviewed differential demonstration.
-The result is a design supported by measured execution evidence. A general
-Core/CoreNice equivalence theorem, a verified producer and a Caesium lifting
-theorem are later work. Small proof-interface examples may inform the design;
-none is a prerequisite for the first experimental implementation.
+Deliver a position-restricted breakpoint AST, an explicit resumable driver,
+an AIL-origin placement policy and a reviewed differential demonstration.
+A general Core/CoreNice equivalence theorem, a verified producer and a
+Caesium lifting theorem remain later work.
 
-## The intended sequence rule shapes the boundary
+## Operational decomposition contract
 
-For a normally completing source prefix `S1` and suffix `S2`, the eventual rule
-should compose a simulation from `R` to a midpoint relation `Q`, with a
-simulation from **every midpoint satisfying Q** to the desired suffix result.
-`Q` relates a source/Caesium configuration to a CoreNice suspension; it is not
-just a predicate on the last value or a selected successful trace.
+For the supported Core execution pathway, inserting breakpoint tails must
+preserve executions under erasure of the administrative pause/resume events.
+At each reached cut:
 
-```text
-R(source start, Nice start)
-         prefix simulation, including its observable trace
-Q(source residual S2, Nice boundary after S1)
-         suffix simulation for each related midpoint
-postcondition / corresponding exit
-```
+* The original strong-sequence prefix has completed, including its binding
+  and annotation work; the suffix has not started.
+* Suspension retains the actual residual execution, call/control context,
+  environment, memory, fresh supply, pending siblings and driver phase.
+  These are the existing runtime values, not an abstraction reconstructed
+  from a printed site or a relation to another state.
+* Restart uses those saved values and the same immutable semantic
+  configuration, without replaying the prefix, recomputing the frontier,
+  selecting a pending choice again or resetting cumulative budgets.
+* The choice runner retains its tape cursor, RNG and observation history.
+  Selecting a host pause adds no language-level choice or effect.
 
-This is a specification sketch, not a proved inference rule. A later theorem
-must specify its refinement direction, nondeterministic quantifiers, progress
-and trace concatenation. The breakpoint supplies an endpoint to relate; it
-does not establish `Q`, heap ownership or source/target correspondence.
+The intended property quantifies over executions and eventually resumed pause
+schedules. Finite differential checks exercise this contract but do not prove
+its universal quantifier or preservation of divergence. Resource exhaustion
+is incomplete evidence, not a corresponding semantic termination.
 
-The handoff must retain the residual continuation, call/control context,
-environment and memory, fresh supply, pending siblings and driver phase. These
-facts are available in the actual in-memory suspension, not inferred from a
-printed breakpoint ID. Existing parent sequence proofs already carry memory
-history, supply and stack facts across their midpoint; the new interface must
-allow such predicates rather than prescribing a smaller state projection.
+Return, goto, break, continue, UB and modeled errors retain their original
+control behavior. A normalized wrapper can complete after a source
+`continue`; this is a valid machine breakpoint arrival, not a certificate of
+source-normal completion. A jump can bypass a boundary or enter its suffix.
+Neither a breakpoint role nor a comesfrom set establishes dominance or lexical
+scope. Later AIL/Caesium reasoning may use the exposed endpoints, but that
+reasoning is separate from this runtime contract.
 
-Ordinary source composition applies to normal completion. Return, goto, break,
-continue, UB, modeled errors and divergence require their own exit cases.
-A normalized wrapper can complete after a source `continue`: that is a valid
-machine breakpoint arrival, but does not prove source-normal completion.
-A jump can bypass a
-boundary or enter its suffix. A multi-entry region needs an entry-sensitive
-contract, or a justified restriction on entries. Neither breakpoint placement
-nor an existing comesfrom set establishes dominance or lexical scope.
+The [landing review](breakpoints-landing-review.md) identifies an open API gap:
+the generated raw resume primitive still takes external semantic parameters.
+The current host retains them; a standalone restart interface must make that
+retention explicit before being described as owning the complete configuration.
 
 ## AST and exact pause semantics
 
@@ -236,8 +234,8 @@ coverage honestly without silently dropping normal inputs that disagree.
 
 1. **Placement and handoff design.** Work through one block and one loop from
    actual AIL to both generated targets. Specify selected roles, residuals and
-   candidate midpoint predicates, including bindings/temporary lifetime state
-   and ambient control. Identify the driver phase and runner session to suspend.
+   the actual retained bindings, temporary lifetime state and ambient control.
+   Identify the driver phase and runner session to suspend.
    If an intended AIL join has no suitable existing position, report the gap;
    do not silently replace it with an unrelated internal cut.
 2. **AST and resumable execution.** Implement the owned syntax, transport,
@@ -247,9 +245,9 @@ coverage honestly without silently dropping normal inputs that disagree.
    broad proof project is a prerequisite.
 3. **AIL placement and useful midpoint demo.** Generate the selected block and
    loop sites directly from lowering. Show actual in-memory midpoint assertions
-   and the concrete AIL/Nice/Caesium mapping. State the proposed sequence-rule
-   premises for this demo, including abrupt/multiple entries. No Caesium
-   simulation theorem is claimed by that mapping or by a few projections.
+   and the concrete AIL/Nice/Caesium mapping. Explain abrupt and multiple
+   entries operationally. The mapping is motivation for later proof work,
+   not a simulation theorem or a required symbolic midpoint relation.
 4. **Differential validation and review.** Complete positive, adversarial and
    campaign runs; report observed sites/roles, distinct tapes and pause schedules,
    results and limitations. Obtain independent unrestricted review and resolve
@@ -278,3 +276,7 @@ boundary fails, return the concrete counterexample and revise the design.
 * [AGENT, 2026-11-16] Use existing strong-sequence tails, preserve source-origin
   roles during lowering, and require block/loop handoff demonstrations. Keep
   machine-internal cuts and source-aligned evidence distinct.
+
+* [USER, 2026-11-17] Keep this milestone focused on explicit AST features and
+  executable semantics. Expose the actual intermediate states and pending
+  execution; defer additional proof relations.

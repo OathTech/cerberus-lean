@@ -23,8 +23,14 @@ Existing ND failure outcomes retain their existing channels.
 phase. It accepts no replacement program, arguments or budget. Its contract is
 over suspensions produced by the machine, not arbitrary fabricated records.
 The generated Lean functions also take the existing `enumDefs`/`tagDefs`
-reader parameters. The host adapter always obtains them from the suspension's
-retained file; the intended resume contract requires these same readers.
+reader parameters, and implicit `CerbGlobal.Switches` and `LemFuel` inputs.
+The raw operation is conditional on retaining this environment; its model
+record alone does not retain every generated Lean parameter. The host adapter
+obtains readers from the retained file and captures its switches/fuel, so
+`Choice.resume` preserves that configuration. The raw generated function
+allows a caller to replace it silently. This is open finding R1 in the
+[landing review](breakpoints-landing-review.md), with an executable witness;
+a supported standalone start/resume interface is still needed to close it.
 
 ## What the phase retains
 

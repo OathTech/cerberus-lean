@@ -71,6 +71,9 @@ precise normalized-AIL roles and typed origins. The
 [repair assessment](checkpoint-semantics-repair.md) records focused phase tests
 and removal of the inherited inactive evaluator. The normal and resumable C
 drivers use the context-based reducer inherited from upstream and mainline.
+The [landing review](breakpoints-landing-review.md) records the independent
+restart audit, current focused results and one open configuration-retention
+API finding. Feature integration is pending that correction and approval.
 
 The [type-separation record](type-separation.md) preserves the earlier first
 checkpoint. Neither checkpoint is a general equivalence result.
