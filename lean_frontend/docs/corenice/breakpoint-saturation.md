@@ -204,3 +204,8 @@ results both fail the campaign. No full shipping gate is claimed.
   the linked runtime/program: procedure entry, saved-label entry and explicit
   call-return cuts. Use conservative structural coverage independent of
   incoming-set pruning; validate the variant through a separate runner.
+* [USER, 2026-11-17] Accept effectful control fragments as the current boundary:
+  pure evaluation and primitive operations retain their existing semantics
+  without internal cuts. Differential testing should validate trace
+  correspondence and pause/resume at that boundary; internal termination and
+  universal coverage remain separate obligations.
