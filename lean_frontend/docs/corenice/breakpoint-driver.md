@@ -21,16 +21,19 @@ returns a `nice_run_result` through the existing `driverM`:
 Existing ND failure outcomes retain their existing channels.
 `resume_breakpoint suspension` restores its saved state and continues its saved
 phase. It accepts no replacement program, arguments or budget. Its contract is
-over suspensions produced by the machine, not arbitrary fabricated records.
+over valid execution states; a state need not have been produced by a previous
+call to the driver. The state, phase and program data are supplied in the
+suspension record. Arbitrary construction alone does not establish validity.
 The generated Lean functions also take the existing `enumDefs`/`tagDefs`
 reader parameters, and implicit `CerbGlobal.Switches` and `LemFuel` inputs.
-The raw operation is conditional on retaining this environment; its model
-record alone does not retain every generated Lean parameter. The host adapter
+These are inputs to the semantics, not all fields of the model record.
+Decomposing one execution requires resuming its reached state with the same
+configuration and choices. Other valid inputs may describe other executions.
+The host adapter
 obtains readers from the retained file and captures its switches/fuel, so
-`Choice.resume` preserves that configuration. The raw generated function
-allows a caller to replace it silently. This is open finding R1 in the
-[landing review](breakpoints-landing-review.md), with an executable witness;
-a supported standalone start/resume interface is still needed to close it.
+`Choice.resume` preserves that configuration for differential comparison.
+The [landing review](breakpoints-landing-review.md) records the configuration
+probe and explains why parameter dependence is not a semantic defect.
 
 ## What the phase retains
 

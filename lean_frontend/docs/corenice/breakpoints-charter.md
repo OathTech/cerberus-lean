@@ -54,10 +54,11 @@ Neither a breakpoint role nor a comesfrom set establishes dominance or lexical
 scope. Later AIL/Caesium reasoning may use the exposed endpoints, but that
 reasoning is separate from this runtime contract.
 
-The [landing review](breakpoints-landing-review.md) identifies an open API gap:
-the generated raw resume primitive still takes external semantic parameters.
-The current host retains them; a standalone restart interface must make that
-retention explicit before being described as owning the complete configuration.
+Resume accepts any valid execution state; it need not require a state minted
+by an earlier driver call. The generated operation takes semantic parameters
+as well as the suspension record. Same-execution decomposition preserves those
+inputs, while other valid inputs can describe other executions. The
+[landing review](breakpoints-landing-review.md) records this distinction.
 
 ## AST and exact pause semantics
 

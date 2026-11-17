@@ -1,9 +1,9 @@
 import BreakpointExecution
 
-/-! Reproducer for open review finding R1: the raw model resume primitive accepts
-replacement semantic readers. Successful evaluation CONFIRMS the finding; it
-is not an acceptance test for a closed restart API. The controls check saved
-state restoration and the production choice adapter's retained configuration.
+/-! Configuration probe discussed in landing review R1. Changing a semantic
+reader can change the result; this does not refute decomposition of an
+execution with unchanged inputs. The controls check saved state restoration
+and the production choice adapter's retained configuration.
 Run from lean_frontend using ../scripts/lean_probe.sh on this file. -/
 
 open CoreNiceDiff
@@ -53,7 +53,7 @@ def main : IO Unit := do
   let (changed, _) ← run 100 (resume_breakpoint signed fmapEmpty saved) state
   let .NiceCompleted changed := changed | throw (IO.userError "expected completion")
   require "replacement enum reader did not change result" (changed.dres_core_value == .Vobject (.OVinteger (.IV .Prov_none (-1))))
-  IO.println "CONFIRMED: raw resume with changed external enum reader changes 4294967295 to -1 despite retaining the original file/state"
+  IO.println "PASS: changing the enum reader changes 4294967295 to -1; the semantic inputs differ"
   let poisoned := { start with dr_step_counter := 99999, exit_routed := true }
   let (restored, restoredState) ← run 100 (resume_breakpoint unsigned fmapEmpty saved) poisoned
   let .NiceCompleted restored := restored | throw (IO.userError "expected restored completion")

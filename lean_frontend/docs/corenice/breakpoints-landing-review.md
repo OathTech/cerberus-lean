@@ -7,14 +7,16 @@ integration can fast-forward. Its delta includes the comesfrom prerequisite
 as well as breakpoints and the subsequent repairs; it is not a breakpoint-only
 merge. No merge, push or consumer re-pin was performed for this review.
 
-**Recommendation: correct R1 before landing the standalone restart API.**
+**Recommendation: ready for research feature integration, subject to approval.**
 Two independent reviewers inspected the execution pathway without restricting
 their scope. Neither found a counterexample when the original machine
 configuration stays fixed. One produced a concrete configuration-replacement
 witness; the other independently assessed it and also recommended correction.
-The production differential runner retains the configuration and is unaffected
-by that witness. This is an API gap, not a demonstrated failure to decompose
-an execution of one fixed machine.
+That recommendation assumed a stronger, self-contained API requirement than
+the intended semantics needs. After clarification of the valid-state contract,
+the configuration finding is answered below and is not a landing blocker.
+The production differential runner retains the configuration, and the witness
+does not demonstrate failure to decompose an execution of one fixed machine.
 
 ## Property examined
 
@@ -29,7 +31,7 @@ states or a Caesium proof. Finite execution checks do not establish its
 universal quantifier. They provide evidence alongside inspection of the
 state, phase and choice handling.
 
-## Open finding R1: raw restart does not own its complete configuration
+## R1 disposition: parameterized restart does not demonstrate unsoundness
 
 The [model suspension](../../../frontend/corenice/model/driver.lem) retains
 file, arguments, concurrency flag, state, phase and budget. The generated
@@ -47,29 +49,26 @@ then resumes the suffix `PEconv_int (.Enum0 E) 4294967295`:
 | Replaced signed enum reader, same saved file/state/phase | `-1` |
 | Production `Choice.resume`, retained adapter | `4294967295` |
 
-The same probe confirms that raw resume restores its saved driver state even
-when its ND action is run against an unrelated supplied state. State restoration
-works; configuration retention is the missing standalone API property.
+The same probe confirms that raw resume restores its supplied suspension's
+driver state even when its ND action is run against an unrelated ambient
+state. The production host also continues under the original configuration.
 
-The existing same-reader precondition is a valid conditional contract. The
-counterexample violates it, so it does not refute fixed-environment
-correspondence or invalidate the host's differential results. However, a
-machine-produced suspension alone does not determine the raw restart, despite
-the interface's description of saved configuration owning it. The host's
-protection currently resides partly in its retained adapter.
+**Disposition: answered; no semantic defect established.** Resume is an
+operation on valid execution states, not an API restricted to unmodified
+machine-issued tokens. The decomposition property concerns restarting the
+state reached at a cut under the same machine configuration and choices.
+Supplying a different valid state or environment may describe a different
+execution; it need not reproduce the previous result. An inconsistent
+combination is outside the valid-state premise. Neither case makes the
+decomposition property unsound.
 
-**Disposition: open; recommended pre-landing correction.** Add a small supported
-start/resume interface that retains the immutable semantic environment as
-explicit data alongside the existing model suspension. Either capture the
-actual entry readers or enforce that both entry and resume obtain them from
-the retained program. Retain switches and the configured Lem fuel too; preserve
-the existing separate cumulative budgets. Public resume should accept only the
-saved execution, with no replacement environment. Keep the generated workers
-as documented parameterized primitives and route the host through the supported
-interface. A resume-only wrapper is insufficient if entry can already disagree
-with its stored file. Add positive retention tests derived from this witness.
-This needs no simulation relation, opaque whole-driver continuation or Lem
-compiler change.
+The enum probe changes an input that affects language meaning. It does not
+show that a valid state resumed under its original configuration behaves
+differently from uninterrupted execution. Requiring configuration capture or
+restricting constructors would enforce a particular API discipline, not repair
+an exhibited semantic error. The proposed wrapper is therefore withdrawn.
+Keep the parameterized operation and document its inputs accurately. No
+validity theorem for arbitrary constructed states is claimed by this review.
 
 ## What scrutiny and execution support
 
@@ -98,9 +97,10 @@ Fresh focused runs on the reviewed implementation passed:
 | Exhaustive small scheduling controls within that suite | All six genuine three-call orders crossed with all 16 subsets of four cuts |
 | All-policy recording lanes | 202 pauses: 136 normalized joins, 46 conditions, 16 while restarts, four do conditions |
 | Comesfrom tightening campaign | 73 distinct source inputs, 81 comparisons, 435 injected typed-fault controls |
-| Raw configuration witness | Confirmed R1; saved-state and production-host controls passed |
+| Configuration probe | Different enum input changes the result; saved-state and production-host controls passed |
 
-The last row is a reproduced finding, not an acceptance pass. The previous
+The last row characterizes parameter dependence; it is not a semantic
+counterexample or a proof of general preservation. The previous
 regeneration and affected build at `5249f077c` are unchanged by this review;
 the accompanying changes are documentation and an executable witness. Earlier
 1,000-program campaign figures remain historical and are not presented as a
@@ -135,9 +135,13 @@ lean_frontend/.lake/build/bin/corenice-choice-tests
 
 Use the host's optional memory cap as in the provisioning guide. Review runs
 used 8 GiB caps and existing binaries; no broad proof rebuild was needed.
-Raw logs are ephemeral. The small finding witness is source, intended to be
-replaced or extended by the eventual API regression test when R1 is fixed.
+Raw logs are ephemeral. The small configuration probe remains reproducible
+source; it records the behavior that prompted and resolved the review question.
 
-[AGENT, 2026-11-17] Recommend closing the standalone resume configuration gap
-before feature integration, while preserving the distinction between that API
-finding and the positive fixed-configuration differential evidence.
+[USER, 2026-11-17] Resume should accept any valid execution state. Assess
+semantic soundness and decomposition of an execution, without imposing a
+requirement that restart accept only a captured, unmodified suspension.
+
+[AGENT, 2026-11-17] Withdraw the configuration-capture landing blocker recorded
+at `964e8a74d`: its probe changes the semantic inputs and does not refute the
+intended preservation property. No implementation change is required by R1.
