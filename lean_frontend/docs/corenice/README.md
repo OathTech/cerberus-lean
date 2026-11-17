@@ -85,6 +85,11 @@ The subsequent [saturation experiment](breakpoint-saturation.md), on
 explicit call-return cuts. `corenice-saturated` compares this variant against
 Core while the original AIL composition-cut runner remains available.
 
+The next proposed addition is a [checked integer-representability
+guard](conversion-guard.md). Its design retains the original conversion call
+and checks its evaluated operands before the body executes. This is a design
+proposal on `plan/corenice-conversion-guard`, not an implemented milestone.
+
 The [type-separation record](type-separation.md) preserves the earlier first
 checkpoint. Neither checkpoint is a general equivalence result.
 
