@@ -4,7 +4,8 @@ Experimental implementation on `corenice/breakpoint-saturation`, based on
 `6e54eadd1`. The existing AIL composition-cut runner remains available; the new
 `corenice-saturated` runner executes the linked program after a saturation pass.
 Both use the same CoreNice AST, production reducer and resumable driver.
-This checkpoint has not been merged, pushed or pinned by a consumer.
+This checkpoint landed locally on `feature/cerberus-nice` on 2026-11-17 at
+`e75c895c0`. It has not been pushed or pinned by a consumer.
 
 ## The intended calculus boundary
 

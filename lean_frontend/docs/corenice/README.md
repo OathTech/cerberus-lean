@@ -5,6 +5,11 @@ is the complete, initially unchanged CoreNice path: a distinct AST, typed-AIL
 lowering, runtime loading, evaluator and driver, with bidirectional choice-tape
 and trace comparisons. Nice semantic changes follow that baseline.
 
+The reviewed comesfrom, breakpoint, repair and saturation milestones landed
+locally on this integration branch on 2026-11-17 at `e75c895c0`. The landing
+was a fast-forward of the tested tree; no remote push or consumer re-pin was
+performed. The evidence and limits below remain those of each named checkpoint.
+
 The pathway was named CoreB through `727b5f2a3`; it is now CoreNice. The
 rename covers the Lean namespace, build targets, source directories and tools.
 That rename introduced no Nice semantic changes. Earlier measurements below belong to
@@ -74,7 +79,7 @@ drivers use the context-based reducer inherited from upstream and mainline.
 The [landing review](breakpoints-landing-review.md) records the independent
 restart audit, current focused results and the disposition of the
 configuration question. It recommends research feature integration; approval
-is pending.
+was subsequently given and the reviewed work is now integrated locally.
 The subsequent [saturation experiment](breakpoint-saturation.md), on
 `corenice/breakpoint-saturation`, adds linked procedure/label-entry cuts and
 explicit call-return cuts. `corenice-saturated` compares this variant against
