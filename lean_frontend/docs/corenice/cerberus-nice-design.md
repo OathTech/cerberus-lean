@@ -42,6 +42,36 @@ services are explicit. Test both tape-recording directions and source-level
 mutants before changing its semantics. Agreement supports the duplicated path
 and instrument; it cannot independently validate defects in their common source.
 
+## Selecting additions to CoreNice
+
+Prefer properties directly available from the structure of AIL generation but
+lost or obscured in ordinary Core. Preserve them as explicit syntax and, where
+appropriate, executable checks. The generated program should already satisfy
+the restriction: a generic argument about generation and transport should
+establish that its checks cannot fail. The intended gain is a simpler target
+language for reasoning, without new application-specific safety premises.
+
+For each candidate, identify the generation rule that supplies the fact, what
+ordinary Core loses, and the local argument that correctly generated execution
+retains it. A useful postcondition of a successful runtime assertion is not
+sufficient by itself. Do not replace an expensive downstream proof with a
+different substantial semantic invariant needed to justify the new assertion.
+
+Comesfrom is the motivating example: generation identifies the structural jump
+origins, which become explicit permitted-origin declarations. The generic
+correspondence argument concerns producing and preserving that information.
+It does not ask each application to establish a new control-flow restriction.
+
+Differential experiments still precede the full proof. Unexpected check faults
+on ordinary generated executions are failed candidates to diagnose, not an
+acceptable way to exclude behavior after generation. Deliberately corrupted
+artifacts and injected faults remain negative controls. This selection criterion
+does not introduce a new proof gate during exploration.
+
+[USER, 2026-11-17] Choose extensions that expose structural facts already
+ensured by generation and support generic redundancy arguments; avoid adding
+runtime restrictions whose justification creates new application obligations.
+
 ## Baseline and source evidence
 
 Inspected parent: `f12c3f1f64a2ac0249e1440dbf7d2fbab63ec7a2`.

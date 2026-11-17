@@ -1,9 +1,23 @@
-# Design: a checked integer-representability guard
+# Parked design: a checked integer-representability guard
 
-Proposed milestone after integration `36e50de3f`, on
-`plan/corenice-conversion-guard`. This document specifies a design, not an
-implemented feature, measured improvement, or correspondence theorem. The
-existing Core/CoreNice conversion and breakpoint pathways remain the baseline.
+Explored after integration `36e50de3f`, on `plan/corenice-conversion-guard`.
+**Parked as the next milestone.** No implementation has begun. The mechanism
+below is retained as an assessed proposal, not an active implementation plan,
+measured improvement, or correspondence theorem.
+
+The [extension-selection criterion](cerberus-nice-design.md#selecting-additions-to-corenice)
+requires a fact structurally ensured by generation that ordinary Core loses.
+Source/target range inclusion is known at generation, but the numerical guard
+also needs the evaluated operand to satisfy its source-type range. We have not
+identified a sufficiently local generation invariant supplying that fact. The
+runtime design review established a credible checked-call mechanism; it did
+not establish that this extension meets the project's selection criterion.
+
+Do not proceed merely because successful checks give a useful range premise,
+or accept ordinary generated failures as a restricted success domain. Revisit
+only if a concrete generation rule and a generic preservation argument make
+the checks redundant for its output. The existing Core/CoreNice conversion
+and breakpoint pathways remain the baseline.
 
 ## Purpose and first scope
 
@@ -360,7 +374,7 @@ logger, effectful pure-evaluator counter, or production test flag is needed.
 The existing [source-mutation machinery](source-mutations.md) remains available
 for further calibration if a real coverage gap justifies it.
 
-## Milestones and completion criterion
+## Retained proposed milestones (inactive)
 
 1. **AST and runtime guard.** Implement the owned constructor, typed fault and
    call-entry rule; regenerate and build the affected closure. Direct tests
@@ -389,6 +403,9 @@ gate or requirement to prove the compiler before obtaining a useful prototype.
 * [AGENT, 2026-11-17] Propose a checked pure-call constructor that checks the
   already evaluated arguments after ordinary call expansion, and begin with
   source-type range inclusion as the automatic placement policy.
+* [AGENT, 2026-11-17] Park this proposal as the next addition: a safe runtime
+  mechanism alone does not establish the required structural justification;
+  the input's source-range invariant remains unaccounted for.
 
 Independent unrestricted source/design review found no semantic blocker for
 the stated concrete recipe. Its two document findings are resolved:
