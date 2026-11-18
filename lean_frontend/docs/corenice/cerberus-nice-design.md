@@ -49,9 +49,9 @@ note: preserve facts already supplied by generation as operational syntax,
 without new application-specific safety premises. It distinguishes malformed
 artifact faults from original C failures and explicit generation-time refusals.
 The [candidate assessment](generator-structure-candidates.md) applies it to the
-current producer and recommends identity-forwarding interfaces and ordered
-lifetime-transfer plans as the strongest next experiments. Differential evidence
-still precedes the full proof; this criterion adds no proof gate.
+current producer and proof clients. It recommends checked forwarding on loop
+backedges, identifies direct-call targets as a second candidate and records
+what the current breakpoints expose on the parent’s checked-join example.
 
 ## Baseline and source evidence
 
