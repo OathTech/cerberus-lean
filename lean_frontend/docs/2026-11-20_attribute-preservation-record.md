@@ -253,6 +253,18 @@ battery. Tier B 6 (the spec-lab gates) and 8 (the four harness plant batteries) 
 classifications on generated harness programs and planted failures, with no source file of this branch's forms.
 Tier C was not run.
 
+**The orchestrator's gates** ([AGENT 2026-11-20, orchestrator]; run by the orchestrator, not by the worker, in a
+separate audit checkout after a forced regeneration — `make clean-prelude-src prelude-src lean-prelude-src` —, the
+three dune steps and the capped lake build; lines verbatim as the orchestrator reported them):
+
+- Tier A on M1 `3b7c0568e`: `fast: passed; 20/20 selected commands completed successfully.` /
+  `Source unchanged: True. Complete tier selection: True.` / `release rc=0`
+- The full battery on the tip `bcfc66d92`: `full: passed; 48/48 selected commands completed successfully.` /
+  `Source unchanged: True. Complete tier selection: True.` / `release rc=0`
+- The orchestrator read the witness driver's plant logic and accepted it: the wider-category witness requires
+  `pristine,lean-fixed,refusal-truncated`, and its three skipped plants are the carriage-specific ones, which have no
+  row in that corpus.
+
 Kernel replay: not owed (no proof module changed: `git diff --name-only dd0f52fe6..HEAD` touches no
 `*_lemMeasureProofs.lean` and no seam); Tier B row 13's three `leanchecker` replays of the quotation literals exit 0.
 
