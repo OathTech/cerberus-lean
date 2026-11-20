@@ -47,3 +47,11 @@ noreturn_falls_off	-11
 noreturn_operand_ub	-11
 noreturn_returns_value	-11
 noreturn_returns_void	-11
+pragma_Pragma_pack	5
+pragma_other	0
+pragma_pack	5
+pragma_pack_empty	0
+pragma_pack_in_attr_arg	0
+pragma_pack_push	5
+pragma_pack_space	0
+pragma_packed_word	0

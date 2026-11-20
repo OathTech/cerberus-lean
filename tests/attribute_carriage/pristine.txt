@@ -132,3 +132,17 @@ v22_arg_comment	object h: m::mk() @ v22_arg_comment.c:1:12-14
 v23_arg_macro	object h: m::mk() @ v23_arg_macro.c:3:12-14
 v25_arg_prefixed_strings	object h: m::mk("a\"b") @ v25_arg_prefixed_strings.c:1:12-14 ;; object k: m::mk() @ v25_arg_prefixed_strings.c:1:39-41
 v26_arg_digraph	object h: m::mk() @ v26_arg_digraph.c:1:12-14
+w01_wa_static_block_extern	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+w02_wa_thread_static_block_extern	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+w03_wa_static_static	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+w04_wa_block_extern_lead_then_file	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+w05_wa_two_args_redecl	-
+w06_wa_two_args_static_block	-
+w07_tk_group_then_string	object h: m::mk("b") @ w07_tk_group_then_string.c:1:12-14
+w08_tk_mixed	object h: m::mk("b" "c", "d") @ w08_tk_mixed.c:1:12-14
+w10_pp_in_attr_arg	object h: m::mk() @ w10_pp_in_attr_arg.c:1:12-14
+x08_wa_stmt	unknown location  error: constraint violation: at least one type specifier should be given in the declaration
+x09_wa_file_attrdecl	unknown location  error: constraint violation: at least one type specifier should be given in the declaration
+x13_byte_stmt	unknown location  error: constraint violation: at least one type specifier should be given in the declaration
+x14_byte_typedef_shadow	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+x17_magic_stmt	unknown location  error: constraint violation: at least one type specifier should be given in the declaration

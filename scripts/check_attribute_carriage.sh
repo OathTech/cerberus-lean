@@ -8,7 +8,7 @@
 # written there. Since 2026-11-20 each attribute reaches the Ail slot of the entity it appertains to, or the
 # sigma's carried_attributes table with its placement and declared identifier; no attribute is given a meaning.
 #
-# Witnesses: tests/attribute_carriage/*.c (229 programs), pinned in expected.txt:
+# Witnesses: tests/attribute_carriage/*.c (256 programs), pinned in expected.txt:
 #   t01-t10   the consumer's ten placements of [[rc::ensures("{False}")]] (refinedc-lean's
 #             scripts/probes/discarded-contracts.py): the attribute reaches Ail at every one;
 #   a*-s*     the census matrix: one program per grammar site and declared entity, the attribute's own syntax
@@ -19,13 +19,19 @@
 #   v01-v26   an object, function, typedef or tag declared more than once keeps the attributes of every
 #             declaration (cerb::with_address on an earlier declaration is REFUSED); an attribute argument that
 #             is not a plain string literal arrives as its tokens joined by single spaces, whatever its layout
-#             (multi-line, with a comment, through a macro, with a prefix, with digraph brackets).
+#             (multi-line, with a comment, through a macro, with a prefix, with digraph brackets);
+#   w01-w10   cerb::with_address on a declaration that a later declaration without it follows is REFUSED at
+#             every site (a file-scope object redeclared, a static redeclared `extern` in a block, the
+#             _Thread_local form); a clause with a bracket group is one argument, the tokens the source has;
+#   x01-x17   every attribute the model interprets (cerb::with_address, cerb::byte, cerb::hidden, cerb::magic) on
+#             every path the slice newly delivers attributes on: the verdict equals pristine's, except the
+#             declared cerb::byte typedef placement and the forms pristine rejected.
 # Both engines must print the same pinned `attribute:` lines (the Lem definition show_attribute_carriage: the
 # oracle under --pp=ail --ast=ail, the Lean engine in its staged output), the pinned diagnostic for a stop,
 # and the WHOLE refusal text for a refusal. Negative control: pristine.txt (what pristine upstream carried);
 # every row it lists must differ from the pin, and the `pristine` plant must fail exactly those rows.
 #
-# Usage: check_attribute_carriage.sh              the row-1 cut (core.txt: 77 programs)
+# Usage: check_attribute_carriage.sh              the row-1 cut (core.txt: 104 programs)
 #        check_attribute_carriage.sh --selftest   plants, then the row-1 cut
 #        check_attribute_carriage.sh --full       the whole matrix (Tier B)
 set -uo pipefail

@@ -642,12 +642,14 @@ fi
 
 # No parsed construct is silently discarded (fix/attribute-preservation, 2026-11-20, contract D19; census
 # lean_frontend/docs/2026-11-20_discarded-constructs-census.md): (1) every attribute the grammar accepts reaches
-# Ail -- the row-1 CORE, 77 of the 229 programs under tests/attribute_carriage/ (the consumer's ten placements, the
-# cerb:: rows, one program per placement class, the redeclaration and argument-token rows; the whole matrix is
+# Ail -- the row-1 CORE, 104 of the 256 programs under tests/attribute_carriage/ (the consumer's ten placements, the
+# cerb:: rows, one program per placement class, the redeclaration and argument-token rows, every interpreted
+# attribute on every newly delivered path; the whole matrix is
 # Tier B row 17, `--full`): both engines print the same pinned `attribute:` lines, the pinned stop, the whole
-# refusal text; (2) the wider category, 48 programs under tests/discarded_constructs/: the for-init alignment, the
+# refusal text; (2) the wider category, 56 programs under tests/discarded_constructs/: the for-init alignment, the
 # _Noreturn return operand and __builtin_expect FIXED, the type-name alignment a constraint violation, the
-# compound-literal alignment, the _Atomic and the array-parameter forms REFUSED with whole texts, the old-style
+# compound-literal alignment, the _Atomic and the array-parameter forms and `#pragma pack` REFUSED with whole
+# texts, the forced header's line count pinned, the old-style
 # lists stopped, each with its controls. Negative control: pristine's answers (pristine.txt); --selftest: a
 # pristine-replaying pair must fail exactly the moved rows, an engine that drops the carried table, argument lists
 # cut after their first token, a fixed-line Lean stub and a truncated refusal text must fail; a plant with no row

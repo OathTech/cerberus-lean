@@ -22,19 +22,42 @@
 #                        declaration; the qualified-pointer spelling answers as gcc does;
 #   builtin_expect_*     FIXED: the forced header's macro parenthesises its parameter
 #                        (runtime/libc/include/builtins.h; `__builtin_expect(u + 1, 0)` was `(long)u + 1`);
+#   pragma_*             REFUSED: `#pragma pack` in every form, `_Pragma("pack...")` and one inside an attribute
+#                        argument included ([USER 2026-11-20] ruling); every other pragma is skipped as upstream
+#                        skips it;
 #   knr_*                the old-style definition with a wrapped declarator and a declaration list after a
 #                        prototype stop with upstream's K&R diagnostic; the forms upstream supports run.
 # Both engines; a refusal's text is pinned WHOLE. Negative control: pristine.txt (pristine upstream's measured
 # line for every moved row); the `pristine` plant must fail exactly those rows.
 #
+# Also pinned here: the force-included header runtime/libc/include/builtins.h keeps its 14 lines (see below).
+#
 # Usage: check_discarded_constructs.sh [--selftest]
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# The forced header's line count (second look F8). runtime/libc/include/builtins.h is included into EVERY
+# translation unit (backend/driver/main.ml `-include`), so a line added to it moves the lexing line of every
+# position of every program, and the libc Core-quotation literals, which embed positions, drift from their pins
+# (Tier B row 13; it happened once in this slice, ed7925183). Row 1 pins the count; change the number here only
+# together with those pins.
+FORCED_HEADER="$ROOT/runtime/libc/include/builtins.h"
+FORCED_HEADER_LINES=14
+forced_header_ok() { [[ -f "$1" && "$(wc -l < "$1")" -eq "$FORCED_HEADER_LINES" ]]; }
 args=()
 for a in "$@"; do
     case "$a" in
-        --selftest) args+=(--selftest --require-plants=pristine,lean-fixed,refusal-truncated) ;;
+        --selftest) args+=(--selftest --require-plants=pristine,lean-fixed,refusal-truncated)
+            mkdir -p "$ROOT/.tmp"; plant="$(mktemp "$ROOT/.tmp/forced-header-plant.XXXXXX")"
+            { cat "$FORCED_HEADER"; echo "// a planted line"; } > "$plant"
+            if forced_header_ok "$plant"; then
+                rm -f "$plant"; echo "check_discarded_constructs: SELFTEST FAILED — a forced header with one more line was accepted"; exit 1
+            fi
+            rm -f "$plant"; echo "  PLANT OK  [forced-header-line] a copy of the forced header with one more line is refused" ;;
         *) echo "check_discarded_constructs: unknown argument $a" >&2; exit 2 ;;
     esac
 done
+if ! forced_header_ok "$FORCED_HEADER"; then
+    echo "check_discarded_constructs: FAIL — $FORCED_HEADER has $(wc -l < "$FORCED_HEADER") lines, pinned $FORCED_HEADER_LINES: the header is force-included, so its line count moves every lexing line and the libc quotation pins (Tier B row 13)"
+    exit 1
+fi
 exec python3 "$ROOT/scripts/discard_witness.py" "$ROOT/tests/discarded_constructs" ${args[@]+"${args[@]}"}

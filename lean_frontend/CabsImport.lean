@@ -663,6 +663,11 @@ partial def jsonToAttributes (j : Json) : Except String attributes := do
   | t => err "jsonToAttributes" s!"unknown tag '{t}' in {j}"
 
 partial def jsonToAttribute (j : Json) : Except String attribute0 := do
+  -- contract D19 (second look F6): the object must BE an attribute (cabs_json.ml json_of_attribute writes the
+  -- tag); an object of another shape with `ns`/`id`/`args` fields is refused. Unknown EXTRA keys are ignored here
+  -- as everywhere in this importer (jsonToPos reads its five fields and no more): the bridge is fail-closed on a
+  -- missing or ill-typed field, not on an added one.
+  expectTag "Attribute" j "Attribute"
   .ok (attribute0.mk
     (← getOption jsonToIdentifier (← getField j "ns"))
     (← jsonToIdentifier (← getField j "id"))

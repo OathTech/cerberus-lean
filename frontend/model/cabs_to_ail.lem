@@ -1933,7 +1933,7 @@ let carry_struct_declarator_attributes ident spec_attrs sdecltor =
 let attribute_tag_reference_text =
   "Attribute constraint violation ==> N2335 6.7.2.1#6 and 6.7.2.3#4"
 let attribute_enum_reference_text =
-  "Attribute constraint violation ==> an enum specifier without an enumerator list takes no attribute specifier sequence (N2335 6.7.2.2, syntax)"
+  "Attribute constraint violation ==> an enum specifier without an enumerator list takes no attribute specifier sequence (C23 6.7.2.2 in draft N3096, syntax)"
 let with_address_block_extern_refusal ident =
   "Cabs_to_ail.desugar_declaration_base: refused - [[cerb::with_address]] after the declarator-id of the block-scope "
   ^ "extern declaration of '" ^ show ident ^ "' (contract D19): the attribute appertains to the declared object (C23 6.7.12.1 in draft N3096) "

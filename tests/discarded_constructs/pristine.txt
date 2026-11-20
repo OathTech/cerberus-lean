@@ -25,3 +25,9 @@ knr_decl_list_after_prototype	Defined {value: "Specified(0)", stdout: "", stderr
 knr_ptr_decl_list	knr_ptr_decl_list.c:1:31: error: use of undeclared identifier 'a'
 knr_ptr_no_list	knr_ptr_no_list.c:1:24: error: use of undeclared identifier 'a'
 noreturn_operand_ub	Undefined {ub: "UB071_noreturn", stderr: "", loc: "<1:39--1:55>"}
+pragma_Pragma_pack	Defined {value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
+pragma_pack	Defined {value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
+pragma_pack_empty	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+pragma_pack_in_attr_arg	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+pragma_pack_push	Defined {value: "Specified(8)", stdout: "", stderr: "", blocked: "false"}
+pragma_pack_space	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}

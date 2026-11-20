@@ -1785,7 +1785,17 @@ attribute_prefixed_token:
 
 attribute_argument_clause:
 | LPAREN attr_args= balanced_token_sequence RPAREN
-    { List.concat (List.rev attr_args) }
+    { (* FORK (2026-11-20, contract D19; second look F4): a clause made only of plain string literals is
+         upstream's list, one argument per comma. ANY other clause (a bracket group or a prefixed literal anywhere
+         in it) is ONE argument: all the tokens between the clause's parentheses, top-level commas included, so
+         that the carried spelling has exactly the tokens the source has (the per-token split below would put an
+         argument boundary, printed as a comma, between `( "a" )` and `"b"` in `(( "a" ) "b")`). *)
+      let args = List.concat (List.rev attr_args) in
+      if List.for_all (fun (_, _, pieces) -> pieces <> []) args then
+        args
+      else
+        [ ( region ($startpos(attr_args), $endpos(attr_args)) noCursor
+          , LF.source_text $startpos(attr_args) $endpos(attr_args), [] ) ] }
 ;
 
 balanced_token_sequence: (* NOTE: the list is in reverse *)

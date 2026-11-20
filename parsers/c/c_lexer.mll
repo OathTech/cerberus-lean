@@ -494,6 +494,16 @@ and hash = parse
         in
         offset_location lexbuf file n
       )}
+  (* FORK REFUSAL (2026-11-20, contract D19; [USER 2026-11-20] ruling on census row W1; record
+     lean_frontend/docs/2026-11-20_attribute-preservation-record.md): `#pragma pack` in every form -- `pack(n)`,
+     `pack()`, `pack(push ...)`, `pack(pop)`, and `_Pragma("pack ...")`, which the preprocessor turns into this
+     line -- changes the layout the program is compiled with, the model has no packed layout, and upstream skips
+     the line like any other, so sizeof, offsetof and member addresses silently were not the compiled program's.
+     The parse stops, so both engines stop alike (no Cabs JSON is produced). EVERY OTHER pragma is skipped by the
+     arm below, exactly as upstream skips it (C17 6.10.6#1; upstream-tray report 85). *)
+  | ("pragma" [' ' '\t']+ "pack" ([^ 'a'-'z' 'A'-'Z' '0'-'9' '_' '\n'] [^ '\n']*)? '\n')
+      { raise (Error (Errors.Cparser_unimplemented_keyword
+          "#pragma pack (refused, contract D19: the pragma changes the layout the program is compiled with, the model has no packed layout, and upstream skips the line, so sizeof, offsetof and member addresses would silently not be the compiled program's; every other pragma is ignored as C17 6.10.6#1 allows)")) }
   | ("pragma" [^ '\n']* '\n')
       { new_line lexbuf }
   | [^ '\n']* eof

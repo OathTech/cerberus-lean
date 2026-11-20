@@ -62,7 +62,7 @@ f09_member_flexible	carried	member S.tail: m::mk("s") @ f09_member_flexible.c:1:
 f10_member_leading_multi	carried	member S.m: m::mk("s") @ f10_member_leading_multi.c:1:17-19 ;; member S.n: m::mk("s") @ f10_member_leading_multi.c:1:17-19
 f11_union_member_leading	carried	member U.m: m::mk("s") @ f11_union_member_leading.c:1:16-18
 g01_enum_def	carried	carried enum E: m::mk("s") @ g01_enum_def.c:1:11-13
-g02_enum_ref	stop	g02_enum_ref.c:1:16: error: TODO: Attribute constraint violation ==> an enum specifier without an enumerator list takes no attribute specifier sequence (N2335 6.7.2.2, syntax) (unknown ISO C reference)	Error {msg: "desugaring failed at g02_enum_ref.c:1:16-37"}
+g02_enum_ref	stop	g02_enum_ref.c:1:16: error: TODO: Attribute constraint violation ==> an enum specifier without an enumerator list takes no attribute specifier sequence (C23 6.7.2.2 in draft N3096, syntax) (unknown ISO C reference)	Error {msg: "desugaring failed at g02_enum_ref.c:1:16-37"}
 g03_enumerator	carried	carried enumerator EA: m::mk("s") @ g03_enumerator.c:1:18-20
 g04_enumerator_valued	carried	carried enumerator EA: m::mk("s") @ g04_enumerator_valued.c:1:18-20
 g05_enum_anon_def	carried	carried enum -: m::mk("s") @ g05_enum_anon_def.c:1:11-13
@@ -163,7 +163,7 @@ q14_trailing_comma	parse	q14_trailing_comma.c:1:14: error: unexpected token afte
 q15_keyword_name	carried	object g: m::const("s") @ q15_keyword_name.c:1:6:
 q16_mixed_args	parse	q16_mixed_args.c:1:14: error: unexpected token after ',' and before '('
 q17_spaced_brackets	carried	object g: m::mk("s") @ q17_spaced_brackets.c:1:7-9
-q18_string_then_nested	carried	object g: m::mk("s", ( "inner" )) @ q18_string_then_nested.c:1:6-8
+q18_string_then_nested	carried	object g: m::mk("s" ( "inner" )) @ q18_string_then_nested.c:1:6-8
 q19_deprecated_msg	carried	object g: deprecated("inner") @ q19_deprecated_msg.c:1:3-13
 q20_wide_string_arg	carried	object g: m::mk(L"s") @ q20_wide_string_arg.c:1:6-8
 r01_std_deprecated	carried	object g: deprecated() @ r01_std_deprecated.c:1:3-13
@@ -225,10 +225,37 @@ v15_tag_def_then_forward	carried	struct S: m::a("s") @ v15_tag_def_then_forward.
 v16_proto_then_def_params	carried	carried parameter x: m::a("s") @ v16_proto_then_def_params.c:1:12-13 ;; carried parameter x: m::b("t") @ v16_proto_then_def_params.c:1:40-41
 v17_enum_def_then_ref	carried	carried enum E: m::a("s") @ v17_enum_def_then_ref.c:1:11-12
 v18_union_forward_then_def	carried	union U: m::b("t") @ v18_union_forward_then_def.c:1:35-36 ;; carried tag-declaration U: m::a("s") @ v18_union_forward_then_def.c:1:12-13
-v19_wa_extern_then_def	refusal	Cabs_to_ail_effect.register_external_object_declaration: refused - [[cerb::with_address]] on a declaration of 'g' that a later declaration without the attribute follows (contract D19): the attributes of every declaration of an object are now kept (upstream kept the last declaration's only and the object ran unannotated), which would deliver this one to upstream's 'TODO: cerb::with_address() is yet implemented' crash; the fork neither implements nor alters cerb::with_address, so the redeclaration is refused in place of that crash. Write the object without the attribute.
+v19_wa_extern_then_def	refusal	Cabs_to_ail_effect: refused - [[cerb::with_address]] on a declaration of 'g' that a later declaration without the attribute follows (contract D19): the attributes of every declaration of an object are now kept (upstream kept the last declaration's only and the object ran unannotated), which would deliver this one to upstream's 'TODO: cerb::with_address() is yet implemented' crash; the fork neither implements nor alters cerb::with_address, so the redeclaration is refused in place of that crash. Write the object without the attribute.
 v20_wa_def_after	carried	object g: m::a("s") @ v20_wa_def_after.c:1:6-7 ;; object g: cerb::with_address("0x1000") @ v20_wa_def_after.c:1:37-49
 v21_arg_multiline	carried	object h: m::mk(( "a" "b" )) @ v21_arg_multiline.c:1:12-14
 v22_arg_comment	carried	object h: m::mk(( "a" "b" )) @ v22_arg_comment.c:1:12-14
 v23_arg_macro	carried	object h: m::mk(( "s" "s" )) @ v23_arg_macro.c:3:12-14
 v25_arg_prefixed_strings	carried	object h: m::mk(u8"a\"b") @ v25_arg_prefixed_strings.c:1:12-14 ;; object k: m::mk(( L"c" "d" )) @ v25_arg_prefixed_strings.c:1:39-41
 v26_arg_digraph	carried	object h: m::mk(<: "a" :>) @ v26_arg_digraph.c:1:12-14
+w01_wa_static_block_extern	refusal	Cabs_to_ail_effect: refused - [[cerb::with_address]] on a declaration of 'g' that a later declaration without the attribute follows (contract D19): the attributes of every declaration of an object are now kept (upstream kept the last declaration's only and the object ran unannotated), which would deliver this one to upstream's 'TODO: cerb::with_address() is yet implemented' crash; the fork neither implements nor alters cerb::with_address, so the redeclaration is refused in place of that crash. Write the object without the attribute.
+w02_wa_thread_static_block_extern	refusal	Cabs_to_ail_effect: refused - [[cerb::with_address]] on a declaration of 'g' that a later declaration without the attribute follows (contract D19): the attributes of every declaration of an object are now kept (upstream kept the last declaration's only and the object ran unannotated), which would deliver this one to upstream's 'TODO: cerb::with_address() is yet implemented' crash; the fork neither implements nor alters cerb::with_address, so the redeclaration is refused in place of that crash. Write the object without the attribute.
+w03_wa_static_static	refusal	Cabs_to_ail_effect: refused - [[cerb::with_address]] on a declaration of 'g' that a later declaration without the attribute follows (contract D19): the attributes of every declaration of an object are now kept (upstream kept the last declaration's only and the object ran unannotated), which would deliver this one to upstream's 'TODO: cerb::with_address() is yet implemented' crash; the fork neither implements nor alters cerb::with_address, so the redeclaration is refused in place of that crash. Write the object without the attribute.
+w04_wa_block_extern_lead_then_file	refusal	Cabs_to_ail_effect: refused - [[cerb::with_address]] on a declaration of 'g' that a later declaration without the attribute follows (contract D19): the attributes of every declaration of an object are now kept (upstream kept the last declaration's only and the object ran unannotated), which would deliver this one to upstream's 'TODO: cerb::with_address() is yet implemented' crash; the fork neither implements nor alters cerb::with_address, so the redeclaration is refused in place of that crash. Write the object without the attribute.
+w05_wa_two_args_redecl	carried	object g: cerb::with_address("0x1000", "x") @ w05_wa_two_args_redecl.c:1:9-21
+w06_wa_two_args_static_block	carried	object g: cerb::with_address("0x1000", "x") @ w06_wa_two_args_static_block.c:1:9-21
+w07_tk_group_then_string	carried	object h: m::mk(( "a" ) "b") @ w07_tk_group_then_string.c:1:12-14
+w08_tk_mixed	carried	object h: m::mk(( "a" ) "b" "c" , "d") @ w08_tk_mixed.c:1:12-14
+w09_tk_plain	carried	object h: m::mk("a", "b" "c") @ w09_tk_plain.c:1:12-14
+w10_pp_in_attr_arg	carried	object h: m::mk(( "a" )) @ w10_pp_in_attr_arg.c:1:12-14
+x01_wa_fn_after_name	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+x02_wa_fn_redecl	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+x03_wa_typedef_after_name	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+x04_wa_block_auto_after_name	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+x05_wa_param	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+x06_wa_member	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+x07_wa_tag	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+x08_wa_stmt	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+x09_wa_file_attrdecl	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+x10_byte_fn_after_name	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+x11_byte_obj_redecl	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+x12_byte_typedef_type	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+x13_byte_stmt	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+x14_byte_typedef_shadow	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+x15_hidden_fn_after_name	exec	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+x16_magic_fn_after_name	exec	Defined {value: "Specified(3)", stdout: "", stderr: "", blocked: "false"}
+x17_magic_stmt	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}

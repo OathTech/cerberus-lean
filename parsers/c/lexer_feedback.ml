@@ -143,8 +143,10 @@ let add_declarator_attributes attrs d =
    literal (a nested balanced-token group, a prefixed string literal) is carried as its TOKENS: the tokens the
    lexer read between the argument's first and last character, each spelled as written, joined by single spaces.
    The parser reads the preprocessor's output (C_parser_driver.parse_from_string sets it here), so the tokens
-   are those AFTER macro expansion; comments (cpp runs with -CC), cpp line markers and all layout are dropped,
-   so one argument has one spelling whatever its layout. The grammar admits only string literals, commas and
+   are those AFTER macro expansion; comments (cpp runs with -CC), every line that starts with `#` (a cpp line
+   marker, or a `#pragma` line, which the C lexer skips wherever it stands -- c_lexer.mll `hash`; `#pragma pack`
+   is refused there before this function sees it) and all layout are dropped, so one argument has one spelling
+   whatever its layout. The grammar admits only string literals, commas and
    the three bracket pairs inside an argument (c_parser.mly balanced_token); any other character stops loudly.
    A parse that did not come through parse_from_string has no text and such an argument stops the parse. *)
 let current_source : string option ref = ref None
@@ -171,7 +173,7 @@ let argument_tokens (text : string) : string =
       match text.[i] with
       | '\n' -> go (i + 1) true
       | ' ' | '\t' | '\r' | '\012' -> go (i + 1) at_line_start
-      | '#' when at_line_start -> go (line_end i) true            (* a cpp line marker *)
+      | '#' when at_line_start -> go (line_end i) true            (* a cpp line marker or a #pragma line *)
       | '/' when i + 1 < n && text.[i + 1] = '*' -> go (comment_end (i + 2)) at_line_start
       | '/' when i + 1 < n && text.[i + 1] = '/' -> go (line_end i) at_line_start
       | '(' | ')' | '[' | ']' | '{' | '}' | ',' as c -> add (String.make 1 c); go (i + 1) false

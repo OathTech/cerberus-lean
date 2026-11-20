@@ -322,7 +322,8 @@ type sigma 'a = <|
   extern_idmap: map Symbol.identifier sigma_extern_id;
   typedef_attributes: map ail_identifier Annot.attributes;
   loop_attributes: Annot.loop_attributes;
-  (* FORK (2026-11-20, contract D19): the attributes Ail has no slot for, in source order (annot.lem) *)
+  (* FORK (2026-11-20, contract D19): the attributes Ail has no slot for (annot.lem), in the order the
+     desugarer recorded them, which is not source order in general; each attribute carries its own location *)
   carried_attributes: Annot.carried_attributes;
   cn_functions: list sigma_cn_function;
   cn_lemmata: list sigma_cn_lemmata;

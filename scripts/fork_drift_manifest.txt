@@ -207,6 +207,21 @@
 # comment lines; the header is force-included, so every lexing line of every translation unit moved by three, and the libc
 # Core-quotation literals, which embed positions, drifted from their SHA-256 pins (Tier B row 13 red; found when the worker
 # ran that row after the pre-merge review). [source-content] builtins.h re-pinned f1468715... -> d8064a36...; nothing else moves.
+# fix/attribute-preservation, the second look's fixes and the operator's ruling, 2026-11-20 [AGENT, same charter; second look
+# docs/2026-11-20_attribute-preservation-second-look.md, dispositions in that file; [USER 2026-11-20] ruled that `#pragma pack`
+# is refused]: (1) FORK REFUSAL in the lexer: `#pragma pack` in every form (and `_Pragma("pack ...")`, which cpp turns into the
+# line) stops the parse with an attributed text; every other pragma keeps upstream's skip (C17 6.10.6#1; tray 85) --
+# parsers/c/c_lexer.mll enters the delta (hand-written, one arm of `hash`). (2) The second look's F1, a regression of
+# 61e79a887: the declarations-extraction arm that keeps a file-scope object's attributes across a block-scope `extern`
+# redeclaration now REFUSES a cerb::with_address there, as register_external_object_declaration does (the first version
+# delivered it to upstream's TODO crash on a program that ran); Annot.is_cerb_with_address is narrowed to the one-argument
+# form the elaboration acts on. (3) An attribute argument clause that is not made only of plain string literals is ONE
+# argument, all its tokens (c_parser.mly attribute_argument_clause), so no comma is invented between a group and a string.
+# (4) Comments and one text: sigma.carried_attributes' order; the fork's enum-reference text cites draft N3096; the
+# redeclaration refusal's text names the module, not one function. Single-row edits, no --refresh: [files] 106 -> 107;
+# [source-content] re-pinned: ail/ailSyntax.lem, annot.lem, cabs_to_ail.lem, cabs_to_ail_effect.lem, c_parser.mly,
+# lexer_feedback.ml; [expected-semantic] hashes moved (already-differing files; layer 2 stays 37). The parser's conflict
+# counts are unchanged. Record: lean_frontend/docs/2026-11-20_attribute-preservation-record.md section 10.
 [meta]
 merge-base=c3ff8c53f05982745f9b3a10b3d05442e214bcb5
 lem-pin=2220010bc25f0c5682d8200f016e786ee66d65c6
@@ -300,6 +315,7 @@ ocaml_frontend/pprinters/pp_symbol.ml
 ocaml_frontend/pprinters/pp_symbol.mli
 ocaml_frontend/rewriters/core_peval.ml
 ocaml_frontend/rewriters/remove_unspecs.ml
+parsers/c/c_lexer.mll
 parsers/c/c_parser.mly
 parsers/c/c_parser_driver.ml
 parsers/c/lexer_feedback.ml
@@ -333,18 +349,18 @@ util/cerb_location.ml
 100644 efc81ffdefabd01716ec52b3e90258db0313364c5fedce611626b1ea1496cf5c cerberus.opam
 100644 53b16ced15ce07b825cd5e60859dffcba19d83812b70da5301041e71374ac81f frontend/concurrency/cmm_csem.lem
 100644 d9fb59bfce8faf2038f3db9bcdc5c2fdb60776353f4b5bc664602fc2b42c4f24 frontend/concurrency/cmm_op.lem
-100644 a35065c9acf48d05b677c69e1fe2c687e5ddb40fcf23049d8bbac815e17b8f6a frontend/model/ail/ailSyntax.lem
+100644 d0a92503d04964e24d8123e4c1c42b35d7926c1d207049704868362c294bcc42 frontend/model/ail/ailSyntax.lem
 100644 6acee29b3e44f4ae7f13a77ad3f1a01a82a69e9bca8d935fda9daef03cc16226 frontend/model/ail/ailTypesAux.lem
 100644 cb5c28b31fb150925944814090d1fac7febe7d1d7c34c9dec586698258f18209 frontend/model/ail/ailWf.lem
 100644 40d95436f8ca10f3afbe864200338fa99c5a219425e8c7939f45bff0b5e39f3a frontend/model/ail/genTyping.lem
-100644 a0fe778b39f6715453d9eb2a1b5b8d739bf74f9580d3ca63f0c46cef4f518581 frontend/model/annot.lem
+100644 ed36da0bdea28f6487b0c8bf8f21c4f3aa2c162f29e1178626097e0e125f66c0 frontend/model/annot.lem
 100644 59d2cd240e91897161704a8bdd5fc91d3688aed8ddb1ddae1cd02724a85b135d frontend/model/any.lem
 100644 50aa5bac4e18b2d0e1e63da58fec61d6dd1b09105b423bc834a49801e8ac4279 frontend/model/boot.lem
 100644 a3bce9ed29041d602cdc128dba43f4422beeb230e1d28939f06b68e9408fe7ea frontend/model/builtins.lem
 100644 fde301a7ce256702da503b4c67ff820118ad37ab733f6fae25d7d86b34fa9ecb frontend/model/cabs.lem
-100644 d6c03213957014f67a1e7f436d6f44753c44636123d8a5e5105fe02c3d24fe9c frontend/model/cabs_to_ail.lem
+100644 8dfe0fdd084d79b0ec8492d78efc424d7e12ad632af639ce1ccbbf2fd48efaf4 frontend/model/cabs_to_ail.lem
 100644 fe997e109f0b6dc70544b1c5d1e6f7f7f963a7ab32ac6aef097404ba200d5452 frontend/model/cabs_to_ail_aux.lem
-100644 f59d7308e44b8466f65fccf05295ee578b699148c1dd72011f3ae940179bdb7b frontend/model/cabs_to_ail_effect.lem
+100644 e00c01e9f90b25a5be176e0e39c92711dd0f5777399f7147d7d2bce24ccd95d0 frontend/model/cabs_to_ail_effect.lem
 100644 185b1d2afb9e0d3598c664a50d7106b8cc195add6049b358c0c92c8305e60dc2 frontend/model/cerb_attributes.lem
 100644 c4426c93453c70139f7693096cb2d3796dee1676344652c2c6271303a2d392ae frontend/model/cn.lem
 100644 f78e1034e76b6a6f2b86a55a96d50f35848cfeacde3d2cd7a4c2c9404a1dd8de frontend/model/constraint.lem
@@ -407,9 +423,10 @@ util/cerb_location.ml
 100644 b1bb8c17127f27817b13500753530ace4891717d6e45dc5eb0f79763e9dc430a ocaml_frontend/pprinters/pp_symbol.mli
 100644 09bc6e40d5ae27a9ad6a6b9342410ade468c60a4e1064e3308dfaf6c50005e35 ocaml_frontend/rewriters/core_peval.ml
 100644 4d6d58a199fbbcc0ed7692fa0b631f74cc3c39e0dc53405dcd6fc4da3dc9b7b7 ocaml_frontend/rewriters/remove_unspecs.ml
-100644 243f6b2a5978cedbd3fcdb9c9fa407341d33a55b8340b2d0d85c7ea5d85ac0a5 parsers/c/c_parser.mly
+100644 6e2438bf96b768fec79b6030dcaad7b5461031b0bd85474a5377ce85d0c92527 parsers/c/c_lexer.mll
+100644 66b63008855481ef72357fd7544b5dabc0e1c8a9adf3ad49ed6a2ea966f616d8 parsers/c/c_parser.mly
 100644 e33e8616c3689e1d8bb74f963f7517d7d655e71d65ae4892f1506917147a4c99 parsers/c/c_parser_driver.ml
-100644 08c14466f824414d2a43e38dbc2bfc82d2c92e594eae8f2082b66719cde11592 parsers/c/lexer_feedback.ml
+100644 db55de380dede71a53a5643213a9fb7929481477bd440ff4c2f9d631e2c18de8 parsers/c/lexer_feedback.ml
 100644 01404e2b8646ecbd48f987287a5748fc5b966155b65652bc7822d636608e69cb parsers/c/lexer_feedback.mli
 100644 d1d5f0a2ca4cc5a53e8b068d3bb9f219fe5eaec29457f25032352271ed240095 runtime/libc/dune
 100644 d8064a36c1c8a3169e4ac76603f5ae4ea124a9aae6db5463d66acf147f7ab1f7 runtime/libc/include/builtins.h
@@ -426,13 +443,13 @@ util/cerb_location.ml
 100644 ee912ae7803e9d42fbf5ef85fdac484586571d4f4b2eb17745431ca9c19aacf8 util/cerb_fresh.ml
 100644 90c87a67406af33bf3e2f1a41ee8386cdf18f52ffcacc40591384de2da5fb9da util/cerb_location.ml
 [expected-semantic]
-088420219176e76826f738334ed040ed248efa7d537f44bdcf479870c33cb7f9 ailSyntax.ml
+71f682948f7b90074b944a046ee21eb0cb1ecac917a8be515e2964fde6e5d6ca ailSyntax.ml
 b90d962b5e6a62bf444e7dc263fec10d1f1979091e23996b87f367ffe28d6afc ailTypesAux.ml
-428155e014c5f56de05e5b1c502558ff36d520a58d6975e9ba299be6e1a4f198 annot.ml
+294941923b8843254999d31a0c947cc3eba719caf7a148b05a13bf86f071a8e6 annot.ml
 a1fc25790c544b465870a04241a7a10abe78bcf540d3beb2969ca999c11dcbbc cabs.ml
-75806da45d3942eac782b8140776e9f679597f475e61b34189706ad2beff1c21 cabs_to_ail.ml
+792e6b4718602b09621ff7c54f9e7798f8a28ec050867600fddc0653606efb46 cabs_to_ail.ml
 1c33493b574e593467a7e166889b13cf08a1d297ff55a9135cb6b4a7189599de cabs_to_ail_aux.ml
-948d94bf5e0f17c21d381048ef98c87cc6a1f421e3d0b18a863add481e769815 cabs_to_ail_effect.ml
+df77a2ee282dda253d78ea97bd4a8edda617b7cdba3060f6491381e4f79b8b81 cabs_to_ail_effect.ml
 2aa6b9549f463fc3959e16400413602e7e75eedad4fe7946bc162edb8b896d0e constraint.ml
 efe1a293fdf87eb7a264b3d5a2705d9f9421115f9137772c0b6a539a5049b8fb core.ml
 5a20bc6b1e3e4cd9af04c1316e4a2b8354ccfab68e2fea3561acfd7cdfb3a093 core_aux.ml

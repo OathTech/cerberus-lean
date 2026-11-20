@@ -29,7 +29,8 @@ Cabs node the grammar lets an attribute specifier sequence follow carries it in 
   `Type_name`, the three-element enumerator, the declaration form `Declaration_attribute`, and an argument
   carried as source text with no pieces (a nested balanced-token group);
 - T8 fail-closed: each of those objects WITHOUT its new field is refused, as is the two-element enumerator
-  (the shape before this change);
+  (the shape before this change) and an attribute object without its `tag`; an unknown extra key is ignored,
+  which is the importer's convention everywhere (pinned so that it is a stated choice);
 - T9 the committed fixture carries the fields: every `Specifiers` object has `specifier_attrs` and every
   `Params`, `PDecl` and `ADecl` object has `attrs`.
 -/
@@ -257,6 +258,14 @@ def main : IO UInt32 := do
     "missing field 'attrs'") && ok
   ok := (← expectErr "T8h the two-element enumerator (the shape before D19)"
     (parseWith CabsImport.jsonToTypeSpecifier_ (enumJson a enumerator2)) "expected 3-element array") && ok
+  ok := (← expectErr "T8i an attribute object without its tag"
+    (parseWith CabsImport.jsonToAttributes
+      r#"{"tag": "Attrs", "attrs": [{"ns": null, "id": {"loc": "Loc_unknown", "name": "mk"}, "args": []}]}"#)
+    "missing field 'tag'") && ok
+  ok := (← expectOk "T8j an unknown extra key is ignored (the importer's convention, as for positions)"
+    (parseWith CabsImport.jsonToAttributes
+      r#"{"tag": "Attrs", "extra": 1, "attrs": [{"tag": "Attribute", "ns": null, "id": {"loc": "Loc_unknown", "name": "mk"}, "args": []}]}"#)
+    (fun | .Attrs [_] => true | _ => false)) && ok
   -- T9: the committed fixture carries the fields
   let carried : Except String Nat := do
     let j ← Json.parse fixture |>.mapError toString
