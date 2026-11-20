@@ -595,13 +595,16 @@ witnesses and are not "thinly tested": they do not answer.
   sigma's `carried_attributes`, a list of (placement, declared identifier, attributes); `[[a]];` is carried (in a block
   as an attributed null statement); an entity declared more than once keeps the attributes of every declaration; an
   argument that is not a plain string literal (a nested bracket group, a prefixed string literal) is carried as its
-  TOKENS joined by single spaces, which are the tokens after macro expansion, without comments, line markers or layout
-  (the argument grammar itself is upstream's: strings, commas, bracket groups; anything else is a parse error).
+  TOKENS joined by single spaces, which are the tokens after macro expansion, without comments, line markers, pragma
+  lines or layout; an argument clause with a bracket group or a prefixed literal anywhere in it is ONE argument, all
+  the clause's tokens (a top-level comma is then a token, not a separator), so the spelling has exactly the tokens the
+  source has (the argument grammar itself is upstream's: strings, commas, bracket groups; anything else is a parse
+  error).
   The promise is CARRIAGE: the fork gives no attribute a meaning (`[[noreturn]]` is not `_Noreturn`), and the one
   attribute upstream's desugarer reads, `cerb::byte`, applies at both placements that appertain to the typedef name.
   Refused: an attribute on a union or enum tag reference (the struct arm's stop), `cerb::with_address` after the name
-  of a block-scope `extern` or on a declaration of an object that a later declaration without it follows (in place of
-  upstream's TODO crash), an attribute declaration in a `for`-init clause.
+  of a block-scope `extern` or on a declaration of an object that a later declaration without it follows, at every
+  such site (in place of upstream's TODO crash; only in the one-argument form the elaboration acts on), an attribute declaration in a `for`-init clause.
   **The rest of the category**: an alignment specifier on a `for`-init declaration is applied (C17 6.8.5#3) and the
   operand of `return` in a `_Noreturn` function is evaluated before the UB071 (C17 6.7.4#8) — fixes; an alignment
   specifier in a type name is the constraint violation of C17 6.7.5#2, and in a compound literal's type name a
@@ -611,14 +614,18 @@ witnesses and are not "thinly tested": they do not answer.
   at the wrong level or not at all; the specifier form `_Atomic(T)`, the plain object and the qualified pointer are
   unchanged); old-style identifier and declaration lists that the parser dropped stop with upstream's K&R
   diagnostic; the forced header's `__builtin_expect` parenthesises its parameter. Refusals are Lem `error`s, one
-  text on both engines by generation (the D11/D12 shape). Left as upstream's, filed: `#pragma` lines are skipped (C17
-  6.10.6#1; `#pragma pack` changes no layout), and a list of accepted constraint violations and missed undefined
-  behaviours (tray 83, 85-93). Deliberate fork-vs-pristine differences, manifested in the fork-drift gate. Witnesses:
-  `scripts/check_attribute_carriage.sh` (row 1: 77 programs; `--full`, Tier B row 17: 229) and
-  `scripts/check_discarded_constructs.sh` (row 1: 48 programs), pristine's answers the negative control; the libc
+  text on both engines by generation (the D11/D12 shape). `#pragma pack` in every form (`_Pragma("pack…")` included) is REFUSED in the lexer ([USER 2026-11-20] ruled so: the
+  pragma changes the layout the program is compiled with and the model has no packed layout). Left as upstream's,
+  filed: every OTHER `#pragma` line is skipped (C17 6.10.6#1), and a list of accepted constraint violations and missed
+  undefined behaviours (tray 83, 85-93). Deliberate fork-vs-pristine differences, manifested in the fork-drift gate. Witnesses:
+  `scripts/check_attribute_carriage.sh` (row 1: 104 programs; `--full`, Tier B row 17: 256) and
+  `scripts/check_discarded_constructs.sh` (row 1: 56 programs), pristine's answers the negative control; the libc
   witness `tests/libc_exec/044`, a new row of that lane's baseline and of the pristine-oracle register
   (`scripts/upstream_oracle_differences.json`, class `shared-model-fix`). No existing baselined row moved. The cost of
   the refusals is stated in the record §4: one of them (`_Atomic` on a parameter whose body does not inspect its type)
   stops a program that answered correctly, and three forms were already loud on pristine
   (`docs/2026-11-20_attribute-preservation-record.md`; pre-merge review
-  `docs/2026-11-20_attribute-preservation-premerge-review.md` and its dispositions).
+  `docs/2026-11-20_attribute-preservation-premerge-review.md` and the second look
+  `docs/2026-11-20_attribute-preservation-second-look.md`, each with its dispositions). Where the claim stops: a
+  block-scope typedef that shadows a file-scope one is merged with it by upstream's `register_typedef`, attributes
+  included (tray 98, unchanged).

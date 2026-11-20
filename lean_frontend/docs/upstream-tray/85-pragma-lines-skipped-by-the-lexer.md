@@ -30,4 +30,4 @@ Upstream: `error: unexpected end of file`. gcc: 0.
 
 ## Fork status
 
-Unchanged: upstream's judgement stands (the standard's rule covers it). Reported so that the choice is recorded; a warning for `pack` would cost one lexer rule.
+`#pragma pack` in every form (and `_Pragma("pack…")`) is a declared REFUSAL in the fork's lexer since 2026-11-20: the parse stops with `error: unimplemented keyword '#pragma pack (refused, …)'`. Every other pragma line is unchanged: upstream's skip, which C17 6.10.6#1 permits. The last-line parse error is unchanged. A pragma line inside an attribute argument is skipped like any other.

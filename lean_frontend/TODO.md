@@ -787,7 +787,7 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
 
 - **Discarded constructs left as they are (2026-11-20, contract D19; census
   `docs/2026-11-20_discarded-constructs-census.md` §2, record `docs/2026-11-20_attribute-preservation-record.md` §8).**
-  Filed, not built: `#pragma` lines skipped, `pack` included (tray 85); an identifier list in a non-definition
+  Filed, not built: `#pragma` lines other than `pack` skipped (tray 85; `#pragma pack` is refused, [USER 2026-11-20]); an identifier list in a non-definition
   declarator and its nested crash (83); accepted constraint violations — a block-scope typedef's alignment specifier
   or initializer (86), function specifiers on non-functions (87), a declaration that declares nothing (88), parameter
   qualifiers lost after a prior declaration (89), a qualified function type at block scope (90), a character array
@@ -796,9 +796,8 @@ hygiene items the audit confirmed (each re-verified by the orchestrator):
   (95), a `for`-init array of unknown size (96), `static`/qualifiers in a definition's array parameter and a
   file-scope `_Atomic` array (81, 82). Refused where upstream's placement is wrong, to be lifted when upstream repairs
   it: the `_Atomic` qualifier on parameters and derived block-scope declarators (81), array-parameter qualifiers
-  (82), the compound literal's alignment specifier (79). Small debts of the slice: the comment on `sigma.carried_attributes` (`ail/ailSyntax.lem`)
-  says "in source order", which is not true in general — correct it at the next change to that file; `#pragma pack`
-  waits for the operator's ruling (the pre-merge review §4.8 recommends refusing `pack` alone). No attribute has a meaning; a consumer that wants
+  (82), the compound literal's alignment specifier (79). Also filed from the second look: a false UB015 on two block-scope `extern`
+  redeclarations of one internal object (tray 97) and the shadowing typedef merged with the outer one (tray 98). No attribute has a meaning; a consumer that wants
   `[[noreturn]]` to be `_Noreturn` asks for it.
 
 - **`match_pattern`/`typecheck_pattern` fail CLOSED on tuple-arity mismatch — LANDED

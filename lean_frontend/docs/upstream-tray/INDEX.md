@@ -127,9 +127,9 @@ semantics 23 unchanged / 12 fixed / 6 refused; robustness 12 unchanged / 5 fixed
 refused / 2 refused; code 9 unchanged / 4 fixed / 2 refused.
 
 Added 2026-11-20 ([AGENT 2026-11-20], the discarded-constructs census, `../2026-11-20_discarded-constructs-census.md`;
-record `../2026-11-20_attribute-preservation-record.md`): reports 78-96, 19 rows, NOT included in the counts above (which are
-the 2026-11-10 derivation): by class semantics 8, robustness 10, code 1; by state fixed (D19) 3 (78, 80, 84), fixed, refused
-and diagnosed (D19) 1 (79), fixed in part (D19) 1 (83), refused (D19) 2 (81, 82), unchanged 12 (85-96). Each state was
+record `../2026-11-20_attribute-preservation-record.md`): reports 78-98, 21 rows, NOT included in the counts above (which are
+the 2026-11-10 derivation): by class semantics 10, robustness 10, code 1; by state fixed (D19) 3 (78, 80, 84), fixed, refused
+and diagnosed (D19) 1 (79), fixed in part (D19) 1 (83), refused (D19) 2 (81, 82), refused in part (D19) 1 (85: `#pragma pack`), unchanged 13 (86-98). Each state was
 observed by running the report's reproducers on the fork's engines and on pristine `c3ff8c53f` on 2026-11-20.
 
 | Report | CLASS | STATE in the fork | Recorded state | Submission evidence |
@@ -217,7 +217,7 @@ observed by running the report's reproducers on the fork's engines and on pristi
 | [82-array-parameter-qualifiers-land-on-element-type.md](82-array-parameter-qualifiers-land-on-element-type.md) | semantics | refused (D19) † | Draft (2026-11-20, the discarded-constructs census: type qualifiers inside the brackets of an array parameter qualify the element type; in a function definition the form is rejected) | No submission recorded |
 | [83-old-style-parameter-lists-dropped.md](83-old-style-parameter-lists-dropped.md) | robustness | fixed in part (D19) † | Draft (2026-11-20, the discarded-constructs census: old-style identifier lists and declaration lists are dropped without a diagnostic in three shapes) | No submission recorded |
 | [84-builtin-expect-macro-unparenthesised.md](84-builtin-expect-macro-unparenthesised.md) | code | fixed (D19) † | Draft (2026-11-20, the discarded-constructs census: `__builtin_expect(EXP, C)` expands to `((long)EXP)`: the cast binds to the first operand of the argument) | No submission recorded |
-| [85-pragma-lines-skipped-by-the-lexer.md](85-pragma-lines-skipped-by-the-lexer.md) | semantics | unchanged † | Draft (2026-11-20, the discarded-constructs census: every `#pragma` line is skipped by the lexer; a `#pragma` on the last line is a parse error) | No submission recorded |
+| [85-pragma-lines-skipped-by-the-lexer.md](85-pragma-lines-skipped-by-the-lexer.md) | semantics | refused in part (D19) † | Draft (2026-11-20, the discarded-constructs census: every `#pragma` line is skipped by the lexer; a `#pragma` on the last line is a parse error; the fork refuses `#pragma pack`) | No submission recorded |
 | [86-block-scope-typedef-alignas-and-initializer-accepted.md](86-block-scope-typedef-alignas-and-initializer-accepted.md) | robustness | unchanged † | Draft (2026-11-20, the discarded-constructs census: a block-scope typedef accepts an alignment specifier and an initializer) | No submission recorded |
 | [87-function-specifiers-on-non-functions-accepted.md](87-function-specifiers-on-non-functions-accepted.md) | robustness | unchanged † | Draft (2026-11-20, the discarded-constructs census: `inline` and `_Noreturn` are accepted on objects, parameters and typedefs) | No submission recorded |
 | [88-declaration-declaring-nothing-accepted.md](88-declaration-declaring-nothing-accepted.md) | robustness | unchanged † | Draft (2026-11-20, the discarded-constructs census: a declaration that declares nothing is accepted) | No submission recorded |
@@ -229,6 +229,8 @@ observed by running the report's reproducers on the fork's engines and on pristi
 | [94-block-scope-static-thread-local-crashes.md](94-block-scope-static-thread-local-crashes.md) | robustness | unchanged † | Draft (2026-11-20, the discarded-constructs census: a block-scope `static _Thread_local` object crashes or has no definition) | No submission recorded |
 | [95-composite-array-type-dropped-on-redeclaration.md](95-composite-array-type-dropped-on-redeclaration.md) | semantics | unchanged † | Draft (2026-11-20, the discarded-constructs census: a redeclaration with an incomplete array type replaces the complete one) | No submission recorded |
 | [96-for-init-array-of-unknown-size-crashes.md](96-for-init-array-of-unknown-size-crashes.md) | robustness | unchanged † | Draft (2026-11-20, the discarded-constructs census: a `for`-init array whose size comes from its initializer crashes) | No submission recorded |
+| [97-block-extern-redeclarations-of-internal-object-false-ub015.md](97-block-extern-redeclarations-of-internal-object-false-ub015.md) | semantics | unchanged † | Draft (2026-11-20, the second look at the attribute slice: two block-scope `extern` redeclarations of one internal-linkage object give a false UB015) | No submission recorded |
+| [98-block-scope-typedef-merged-with-file-scope-typedef.md](98-block-scope-typedef-merged-with-file-scope-typedef.md) | semantics | unchanged † | Draft (2026-11-20, the second look: a shadowing block-scope typedef is treated as a redefinition of the file-scope one; a different type is rejected, the same type merged with its attributes) | No submission recorded |
 | [lean4/01-stack-overflow-handler-deadlock.md](lean4/01-stack-overflow-handler-deadlock.md) | robustness | n/a | Draft | No submission recorded |
 | [lean4/02-nat-div-mod-literal-folding.md](lean4/02-nat-div-mod-literal-folding.md) | code | n/a | Draft | No submission recorded |
 | [lean4/03-float-tobits-canonicalizes-nan.md](lean4/03-float-tobits-canonicalizes-nan.md) | semantics | n/a | Draft | No submission recorded |

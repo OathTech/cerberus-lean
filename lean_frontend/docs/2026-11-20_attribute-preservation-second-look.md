@@ -230,3 +230,71 @@ refusal texts, which the witness pins whole), no `leanchecker`, no `scripts/rele
 source and so needs the regeneration, the battery and the orchestrator's independent re-gate again.
 
 Scratch (`.tmp/review2/` in the worktree) was deleted after the run; the programs quoted above are complete.
+
+## Dispositions
+
+Worker [AGENT 2026-11-20]; the operator's ruling on `#pragma pack` is [USER 2026-11-20]; the orchestrator relayed the
+findings' dispositions it wanted [AGENT 2026-11-20, orchestrator]. Code and witnesses: commit `9e0e69fc4`; documents:
+the commit that carries this section. One round.
+
+**F1 (P1) — accepted, fixed. A regression the worker's response commit introduced, and a re-audit claim wider than
+its probes.** The extraction arm refuses a `cerb::with_address` it would newly deliver, with the text the sibling
+site uses (refusal 7, now attributed to the module rather than to one function, since two sites raise it); the
+`_Thread_local` form likewise. `Annot.is_cerb_with_address` is narrowed to the one-argument form the elaboration acts
+on, so an instance with another argument count is carried and the program runs as it did. Witness rows `w01`-`w06`
+on both engines, pristine's `Specified(0)` in the control for the four refused shapes. The enumeration the re-audit
+should have made is in the record §10: every attribute the model interprets (found by grepping the model, the
+oracle-surface OCaml and the Lean seams for attribute-name tests: `cerb::byte`, `cerb::with_address`, and the two
+printing-only readers `cerb::hidden` and the `executable_spec` printer; `cerb::magic` has no caller in the built
+tree), every path on which the branch newly delivers attributes to one of the two acting readers, and a probe of
+each on pristine and on the tip (rows `x01`-`x17`, `w01`-`w06`, `u_*`, `v19`, `v20`). The claim in the record is stated
+as exactly that wide: on those paths and forms no program that ran on pristine crashes, and none changes its answer
+but the declared `cerb::byte` typedef placement; four `with_address` shapes that ran with the attribute ignored are
+declared refusals. It is a claim about the readers and paths found by reading, not a proof that no other exists.
+
+**F2 (P2) — accepted, fixed.** LADDER row 15 and VALIDATION say 189 rows, 45 libc inputs, 43 single-trace files; the
+record §1 says 59 rows and 35.
+
+**F3 (P2) — accepted, fixed.** Each note has a section "Where a redeclaration's attributes land": external linkage
+(all on the entry), an internal object redeclared `extern` in a block (the block declaration's are in the carried
+table, not on the entry), the same attribute written twice (kept twice), functions, and the shadowing block-scope
+typedef merged with the file-scope one, stated as upstream's `register_typedef` defect that the consumer inherits and
+filed as tray 98, not presented as correct. D19 says where the claim stops.
+
+**F4 (P3) — accepted, fixed in the parser rather than in a sentence.** A clause made only of plain string literals is
+upstream's list; any other clause is one argument, all its tokens, a top-level comma included as a token:
+`m::mk(( "a" ) "b" "c", "d")` arrives and prints as `m::mk(( "a" ) "b" "c" , "d")`. Witness rows `w07`-`w09`, `q18`.
+
+**F5 (P3) — accepted, stated; and covered by the ruling.** The function's comment, the record §2 and D19 name pragma
+lines among what an argument does not carry. `#pragma pack` inside an argument is refused by the lexer like any
+other (`pragma_pack_in_attr_arg`); another pragma there is skipped (`w10`).
+
+**F6 (P3) — accepted, half fixed and half answered.** `jsonToAttribute` checks the attribute's tag (test T8i). Unknown
+extra keys are ignored: that is the importer's convention everywhere (`jsonToPos` reads its five fields and no
+more), so the new sites follow it rather than differ from it; the convention is now stated in the importer and pinned
+by a test (T8j), so it is a choice on the record and not an accident. The bridge is fail-closed on a missing or
+ill-typed field, not on an added one.
+
+**F7 (P3) — accepted, fixed; the reviewer's objection to the earlier reason is right.** The comment now says the
+order is the desugarer's recording order. The fork's enum-reference text cites draft N3096; upstream's own struct and
+union text keeps upstream's N2335 cite, and the record says which is which.
+
+**F8 (P3) — accepted, fixed.** `scripts/check_discarded_constructs.sh` (row 1) pins the forced header at 14 lines and
+its `--selftest` plants a copy with one more line (`PLANT OK  [forced-header-line] …`); VALIDATION says why.
+
+**F9 (P3) — accepted, filed, no code.** Tray 97 (the false UB015) and 98 (the shadowing typedef), reproducers
+re-measured on pristine, INDEX rows.
+
+**The operator's ruling — implemented.** `#pragma pack` in every form is a declared stop in the lexer on both engines
+alike; every other pragma is untouched. The corpus measurement is in the census (W1 note) and the record §10: four
+gcc-torture programs, each present twice, in the non-gating sweep; three are already rejections there and
+`breakdown/success/20131127-1.c` becomes a stop at the next sweep; no gated row moves. Census W1 is split (pack:
+REFUSED; the rest: DISCARDED-SILENTLY as upstream's judgement); D19, SUPPORTED, TODO, tray 85 and the notes say so;
+witness rows `pragma_*`.
+
+**Process.** The five gates were run as separate background jobs, none near an hour (the longest, row 1, about 25
+minutes); their last lines are in the record §10. One of them, the pristine lane, first reported `failed` with
+`source unchanged: False` because the worker edited tracked documents while it ran; it was re-run on an untouched
+tree and passed, and nothing was edited during the three jobs after it. Row 1 ran while documents were being edited;
+none of its gates reads them, and the record says so.
+

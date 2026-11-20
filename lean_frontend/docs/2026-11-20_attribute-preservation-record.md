@@ -4,7 +4,9 @@ Worker [AGENT], branch `fix/attribute-preservation`, base mainline `dd0f52fe6`. 
 `2026-11-20_worker-charter-attribute-preservation.md`; census `2026-11-20_discarded-constructs-census.md` (M0).
 Contract row D19. Commits: M0 `89f252dd5`, M1 `3b7c0568e`, M2 `4b260827c`, the forced header `ed7925183`, M3 `98648dbdd`;
 the pre-merge review `ea1f726e1` (`2026-11-20_attribute-preservation-premerge-review.md`, verdict: not ready to merge) and
-its fixes, §9. Sections 1-8 are corrected in place where the review showed them wrong; §9 says what was wrong.
+its fixes, §9; the second look `7441fc2fd` (`2026-11-20_attribute-preservation-second-look.md`, verdict: not ready to
+merge) and its fixes, with the operator's ruling on `#pragma pack`, §10. Sections 1-8 are corrected in place where the
+reviews showed them wrong; §9 and §10 say what was wrong.
 
 ## 0. Provenance and rulings
 
@@ -25,8 +27,8 @@ its fixes, §9. Sections 1-8 are corrected in place where the review showed them
 The attribute loss is an instance of a broader defect of one shape: the front end's syntax is wider than its tree.
 A form is accepted and the next representation has no place for part of it. It happens at three hand-overs: parser
 action to Cabs, Cabs to Ail, Ail to Core. Upstream marks many of the sites itself (`TODO`, `BROKEN`, `erasing some
-attributes`). Counts, before: attributes 57 rows = CARRIED 18, REFUSED 6, DISCARDED-SILENTLY 33; wider category
-DISCARDED-SILENTLY 20, MISAPPLIED 2.
+attributes`). Counts, before: attributes 59 rows = CARRIED 18, REFUSED 6, DISCARDED-SILENTLY 35 (the first version
+said 57 and 33: §9); wider category DISCARDED-SILENTLY 20, MISAPPLIED 2.
 
 ## 2. M1: the attribute class
 
@@ -65,14 +67,22 @@ permits:
   enum specifier without an enumerator list takes no attribute specifier sequence (N2335 6.7.2.2, syntax)`);
 - `cerb::with_address` where carriage newly delivers it to upstream's `TODO: cerb::with_address() is yet implemented`
   crash: after the name of a block-scope `extern` declaration, and on a declaration of an object that a later
-  declaration without it follows. A declared refusal in its place, each time;
+  declaration without it follows — at BOTH sites that keep the earlier attributes (the registration of a redeclared
+  object and the extraction arm for a file-scope internal object redeclared `extern` in a block; the second was left
+  unguarded by `61e79a887` and crashed, §10). A declared refusal in its place, each time, and only for the
+  one-argument form the elaboration acts on;
 - an attribute declaration as the first clause of a `for` statement.
 
 **Arguments.** A nested balanced-token group and a prefixed string literal are one argument each, carried as their
-TOKENS joined by single spaces, with NO pieces (a plain string-literal argument always has at least one piece):
+TOKENS joined by single spaces, with NO pieces (a plain string-literal argument always has at least one piece). More
+exactly, since the second look's F4: an argument CLAUSE made only of plain string literals is upstream's list, one
+argument per comma; any other clause is ONE argument, all the tokens between the clause's parentheses, a top-level
+comma included as a token (`m::mk(( "a" ) "b" "c", "d")` arrives as the one argument `( "a" ) "b" "c" , "d"`), so the
+carried spelling has exactly the tokens the source has. Examples:
 `m::mk(( "a"` … twelve blank lines … `"b" ))` and `m::mk(("a" /* c */ "b"))` both arrive as `( "a" "b" )`. The tokens
 are those the parser read, so they are the tokens AFTER macro expansion (`m::mk(GRP)` with `#define GRP (STR STR)`
-arrives as `( "s" "s" )`); comments, cpp line markers and layout are not carried; a string literal is exact, prefix and
+arrives as `( "s" "s" )`); comments, cpp line markers, `#pragma` lines (which the lexer skips wherever they stand;
+`#pragma pack` is refused, §10) and layout are not carried; a string literal is exact, prefix and
 escapes included. The grammar inside an argument is narrow and unchanged: string literals, commas between them, and
 bracket groups of the same; `m::mk("a", ("b"))`, `m::mk(( ))`, a token that is neither a string nor a bracket, `()`,
 `[[]]` and an empty list element are parse errors. So are two C23 placements the grammar does not accept: an attribute
@@ -141,7 +151,8 @@ No placement is refused. The consumer decides what each means; one that gives a 
 | M2 qualifiers in array-parameter brackets, declarations | REFUSED | `desugar_array_declarator`, prototype arm |
 | W5, W6 old-style lists dropped | stopped with upstream's `found K&R-style declaration (unsupported)` | `lexer_feedback.ml` |
 | X1 `__builtin_expect` | FIXED, its own commit | `runtime/libc/include/builtins.h` |
-| W1 `#pragma` | upstream's judgement (C17 6.10.6#1), filed (85) | — |
+| W1 `#pragma pack`, every form | REFUSED ([USER 2026-11-20] ruling) | `c_lexer.mll`, `hash` |
+| W1 every other `#pragma` | upstream's judgement (C17 6.10.6#1), filed (85) | — |
 | W2, W3, W19, W20 | nothing observable is lost; listed | — |
 | W4, W9, W10, W11, W13, W14, W15, W16, W18 | an invalid program accepted: filed (83, 86-93), not built | — |
 | C1, C2, C6, C7 (loud) | filed (94-96), not built | — |
@@ -156,9 +167,16 @@ The refusal texts, whole (each is one line on both engines, `internal error: <te
 5. `Cabs_to_ail: refused - the _Atomic type qualifier in the specifiers of a block-scope or parameter declaration whose declarator is not a plain identifier ('<name>') (contract D19): upstream makes the WHOLE declared type atomic there (c3ff8c53f cabs_to_ail.lem :3966, :2567, :2588) where the qualifier belongs to the specified type (C17 6.7.3, 6.7.6): '_Atomic int *p' is a pointer to atomic int, which upstream types as an atomic pointer to int, and an array declarator ends in an internal error; its file-scope arm (wrap_atomic) has the other placement. Write the specifier form _Atomic(T), or a typedef of the atomic type.` (without the parenthesised name for an abstract parameter)
 6. `Cabs_to_ail.desugar_array_declarator: refused - type qualifiers inside the brackets of an array parameter of a function declaration (C17 6.7.6.3#7: they qualify the POINTER the parameter is adjusted to; contract D19): upstream puts them on the element type ('int a[const 1]' becomes 'const int *a'; its own commented code at c3ff8c53f cabs_to_ail.lem :2245-2256 has the pointer placement). Write the parameter as a qualified pointer ('int * const a').`
 
-7. `Cabs_to_ail_effect.register_external_object_declaration: refused - [[cerb::with_address]] on a declaration of '<name>' that a later declaration without the attribute follows (contract D19): the attributes of every declaration of an object are now kept (upstream kept the last declaration's only and the object ran unannotated), which would deliver this one to upstream's 'TODO: cerb::with_address() is yet implemented' crash; the fork neither implements nor alters cerb::with_address, so the redeclaration is refused in place of that crash. Write the object without the attribute.`
+7. `Cabs_to_ail_effect: refused - [[cerb::with_address]] on a declaration of '<name>' that a later declaration without the attribute follows (contract D19): the attributes of every declaration of an object are now kept (upstream kept the last declaration's only and the object ran unannotated), which would deliver this one to upstream's 'TODO: cerb::with_address() is yet implemented' crash; the fork neither implements nor alters cerb::with_address, so the redeclaration is refused in place of that crash. Write the object without the attribute.`
 
-What each refusal replaced on pristine (measured; the review's F4): a silently WRONG answer for 3, 4 when the body
+8. (a parse stop, the D9 asm-label form, not a Lem `error`: the oracle prints `<file>:<line>:<col>: error: unimplemented keyword '<text>'`, exit 1, and no Cabs JSON is produced, so the Lean engine has nothing to run) `#pragma pack (refused, contract D19: the pragma changes the layout the program is compiled with, the model has no packed layout, and upstream skips the line, so sizeof, offsetof and member addresses would silently not be the compiled program's; every other pragma is ignored as C17 6.10.6#1 allows)`
+
+Text 2's enum sibling now cites the same draft: `… an enum specifier without an enumerator list takes no attribute
+specifier sequence (C23 6.7.2.2 in draft N3096, syntax)`. The struct and union text
+(`Attribute constraint violation ==> N2335 6.7.2.1#6 and 6.7.2.3#4`) is upstream's own and keeps upstream's cite.
+
+What each refusal replaced on pristine (measured; the review's F4): for 8, a silently wrong layout (`sizeof` 8 where the
+compiled program has 5) or, for `pack()` and a `pack` line that changes nothing, a correct run. For the others: a silently WRONG answer for 3, 4 when the body
 inspects the parameter's type, 5 for a pointer declarator, and 6 for `const`; a CRASH for 5 with an array declarator; a
 silent IGNORE for 1 and 7; an already LOUD stop for 2 (pristine's unlocated constraint violation), for 6 with
 `restrict` (`restrict requires a pointer`) and with `volatile` against a pointer definition (`multiple declarations …
@@ -187,9 +205,9 @@ and is now refused; no gated corpus has the form.
 | | REFUSED | 6 | 6 (A17, A18, A29: tag references, the last two formerly discarded; A21, A23, A40: unchanged upstream stops). Within A9 the `for`-init clause and within A35 `cerb::with_address` on a block-scope `extern` are refused sub-cases |
 | | DISCARDED-SILENTLY | 35 (the first version said 33: it had missed A58 and A59) | 0 on the tip after the review's fixes; at `98648dbdd` it was 2, not the 0 this record claimed |
 | attribute syntax, §1.3 (11 rows) | CARRIED / DISCARDED / PARSE-ERROR | 4 / 2 / 5 | 6 / 0 / 5 |
-| wider, §2.1 (20 rows) | DISCARDED-SILENTLY | 20 | 14: W1, W2, W3, W19, W20 (nothing observable or the standard's rule) and W4, W9, W10, W11, W13, W14, W15, W16, W18 (an invalid program accepted; filed) |
+| wider, §2.1 (20 rows) | DISCARDED-SILENTLY | 20 | 14: W1 for every pragma but `pack`, W2, W3, W19, W20 (nothing observable or the standard's rule) and W4, W9, W10, W11, W13, W14, W15, W16, W18 (an invalid program accepted; filed) |
 | | fixed | — | 2 (W8, W17) |
-| | refused or diagnosed | — | 4 (W7, W12, W5, W6) |
+| | refused or diagnosed | — | 4 (W7, W12, W5, W6), and `#pragma pack` out of W1 |
 | misapplied, §2.2 | MISAPPLIED | 2 | 0 (both refused) |
 | adjacent, §2.4 | wrong value | 1 | 0 (fixed) |
 
@@ -299,10 +317,12 @@ Kernel replay: not owed (no proof module changed: `git diff --name-only dd0f52fe
 - The consumer's CLI was not run (§3 says what was run instead).
 - The entries of `carried_attributes` are in the desugarer's recording order, which is not source order in general
   (`for ([[a]] int i [[b]] = 0, * [[c]] p = 0; …)` gives `declaration i`, `declarator-id i`, `pointer p`,
-  `declaration p`); the comment on the field in `ail/ailSyntax.lem` still says "in source order" and is to be corrected
-  at the next change to that file (the review's design note; a comment-only Lem edit re-opens every gate).
-- `#pragma pack` is unchanged and waits for the operator's ruling; the review's §4.8 argues for a declared refusal of
-  `pack` alone, with its measured cost.
+  `declaration p`); the field's comment now says so.
+- A block-scope typedef that shadows a file-scope one is merged with it by upstream's `register_typedef`, attributes
+  included; filed (tray 98), unchanged. Two block-scope `extern` redeclarations of one internal object give upstream's
+  false UB015; filed (tray 97), unchanged.
+- The same attribute written on two declarations of one entity is kept twice.
+- Every pragma other than `pack` is still skipped without a word, inside an attribute argument too.
 - Upstream's under-array test rejects the valid `int f(int a[const 2][3]);` (pristine and fork alike); seen while
   fixing the review's nested-bracket note, not changed; reported in tray 82.
 
@@ -338,3 +358,87 @@ One process note: the worker's run of the remaining Tier A/B rows was a single s
 (the gcc second-oracle lane 25, the observation-lane plants 40), past the one-hour tripwire for a single pass. They
 were separate bounded gate rows and nothing was ground through, but the job should have been split and reported at
 the hour.
+
+## 10. The second look, and the operator's ruling on `#pragma pack`
+
+`2026-11-20_attribute-preservation-second-look.md` (`7441fc2fd`): not ready to merge, one blocking finding. The
+dispositions are appended to that file.
+
+**F1 was a regression this slice's own response commit introduced.** `61e79a887` made the declarations-extraction
+arm keep a file-scope object's attributes across a block-scope `extern` redeclaration, and guarded the sibling site
+(`register_external_object_declaration`) against delivering `cerb::with_address` to upstream's TODO crash, but not
+this one: `[[cerb::with_address("0x1000")]] static int g; int main(void) { extern int g; return 0; }` ran on pristine
+and before the change, and crashed after it, while this record, D19 and the notes said the shape was refused. The
+re-audit's claim to have probed every path was wider than its probes: it had no `with_address` program for that path.
+Fixed: the arm refuses with text 7; witness rows `w01`-`w04` (the static, the `_Thread_local` static, the file-scope
+redeclaration, the block-scope `extern` before the file-scope declaration), pristine's `Specified(0)` in the control.
+
+**The enumeration the re-audit should have made.** Attributes the model INTERPRETS, found by grepping the Lem model,
+the hand-written OCaml of the oracle surface and the Lean seams for attribute-name tests (`attr_ns`, `attr_id`,
+`is_cerb_*`, `get_cerb_magic_attr`, `decode_*`, the strings `"cerb"`, `"magic"`, `"byte"`, `"hidden"`,
+`"with_address"`):
+
+| attribute | reader | what it reads | effect |
+|---|---|---|---|
+| `cerb::byte` | `register_typedef` (`cabs_to_ail_effect.lem`, `Annot.is_cerb_byte`) | the attributes passed to a typedef's registration | the typedef becomes the `Byte` type |
+| `cerb::with_address` | `translation.lem`, `Cerb_attributes.decode_with_address` | the attributes of a `Decl_object` entry of `sigma.declarations`, one-argument form only | annotates the object's creation; the run then dies in upstream's TODO |
+| `cerb::hidden` | `pp_cabs.ml`, `decode_hidden` | a Cabs declaration's attributes | printing only (`--ast=cabs` filter) |
+| `cerb::magic` | `Annot.get_cerb_magic_attr` | — | no caller in the built tree (CN's) |
+| any, first of a list | `pp_ail.ml` under `!executable_spec` | a `case` statement's and a union tag's attributes | printing only, under a flag this driver never sets |
+
+Nothing else tests an attribute's name; the Core elaboration copies statement attributes onto Core expressions and
+declaration attributes into the function-info map without reading them.
+
+Paths on which the branch delivers attributes to one of the two readers that act, which did not receive them at
+the base, each probed on pristine and on the tip (both engines; rows `x01`-`x17`, `w01`-`w06`, `u_*`, `v19`, `v20` of
+`tests/attribute_carriage`, pinned):
+
+| reader | newly delivering path | probe: pristine -> tip |
+|---|---|---|
+| `register_typedef` | the attributes after a typedef's name, file scope and block scope | `cerb::byte`: `Specified(1)` -> `Specified(0)` (`u_gen_after_name`, `u_gen_block_after_name`, `x14` for a shadowing block typedef) and accepted -> constraint violation (`u_byte_after_name_bad`): THE DECLARED CHANGE. `cerb::with_address` there: `Specified(0)` -> `Specified(0)` (`x03`) |
+| `Decl_object` attributes | an earlier declaration's attributes kept on redeclaration (`register_external_object_declaration`) | one-argument `with_address`: `Specified(0)` -> refusal 7 (`v19`, `w03`, `w04`); two arguments: `Specified(0)` -> `Specified(0)` (`w05`); `cerb::byte`: `Specified(0)` -> `Specified(0)` (`x11`) |
+| `Decl_object` attributes | a file-scope internal object's attributes kept across a block `extern` (the extraction arm) | one-argument `with_address`: `Specified(0)` -> refusal 7 (`w01`, `w02`); two arguments: `Specified(0)` -> `Specified(0)` (`w06`) |
+| `Decl_object` attributes | the attributes after the name of a block-scope `extern` declarator | `with_address`: `Specified(0)` -> refusal 1 (`u_addr_block_extern_after_name`) |
+
+Paths that deliver attributes to NO acting reader, probed with each interpreted attribute for an unchanged verdict:
+after a function's name (`x01`, `x10`, `x15`, `x16`: `Decl_function` attributes are not read by `decode_with_address`),
+a function redeclared (`x02`), a block-scope object (`x04`) and a parameter (`x05`) through the carried table, a member
+(`x06`), a tag (`x07`), the type placement of a typedef (`x12`). Three forms pristine REJECTED now run, with the
+attribute carried and inert: the attribute declaration as a statement or at file scope (`x08`, `x09`, `x13`, `x17`).
+`cerb::with_address` where it was already delivered at the base (leading or after the name of a file-scope object,
+leading on a block-scope `extern`) reaches upstream's TODO as before (`u_addr_file_lead`, `u_addr_file_after_name`,
+`u_addr_block_extern_lead`, `v20`).
+
+**The claim, exactly as wide as those probes:** on the paths and attribute forms in the two tables, no program that
+ran on pristine now crashes, and none changes its answer except the `cerb::byte` typedef placement; the four
+`with_address` shapes that ran with the attribute ignored are declared refusals. This is a claim about the listed
+readers and paths, found by reading; it is not a proof that no other path exists.
+
+**The operator's ruling** ([USER 2026-11-20]): `#pragma pack` is refused in every form, on both engines alike, and
+every other pragma is left exactly as it is. Implemented as one arm of the lexer's `hash` rule (refusal 8). Measured
+before adding it (the census's W1 note has the command and the list): four gcc-torture programs, each present twice,
+all in the non-gating sweep; three are already rejections there and one, `breakdown/success/20131127-1.c`, changes
+from `MATCH` to a stop at the next sweep. No gated row moves; none in the libc, the CN tests, libxml2 or the pKVM
+case study. Witness rows `pragma_*` (six refused forms, one inside an attribute argument; two controls).
+
+**The other findings:** the stale counts (F2) and the notes' redeclaration cases (F3) are corrected; the clause-level
+argument rule (F4) is above in §2; a pragma line in an argument is stated (F5); the import refuses an attribute object
+without its tag, and ignoring unknown extra keys is the importer's stated convention, pinned by a test (F6); the field
+comment is corrected (F7); the forced header's line count is pinned in row 1 with a plant (F8); the two upstream
+defects are filed as tray 97 and 98 (F9).
+
+**Gates on the second-look tree** (separate background jobs, none near an hour; lines verbatim):
+
+- `./scripts/test_unit.sh` (row 1): exit 0, `Total: 21 passed, 0 failed`; `check_fork_drift: OK — layer 1: 107 oracle-surface files = manifest (set, C-locale canonical, no duplicates); layer 2: 37 differing generated files, all hash-pinned`; `PLANT OK  [forced-header-line] a copy of the forced header with one more line is refused`. (The worker edited documents while this job ran; none of its gates reads them.)
+- `./scripts/check_attribute_carriage.sh --selftest`: `discard_witness(attribute_carriage): SELFTEST OK (6 plants ran and were caught; 0 skipped: none)` / `discard_witness(attribute_carriage): OK — 104 programs on both engines (carried 68, exec 21, parse 4, refusal 7, stop 4); 67 negative-control rows differ from pristine`
+- `./scripts/check_attribute_carriage.sh --full`: `discard_witness(attribute_carriage): OK — 256 programs on both engines (carried 203, exec 21, parse 14, refusal 7, stop 10, ub 1); 142 negative-control rows differ from pristine`
+- `./scripts/check_discarded_constructs.sh --selftest`: `discard_witness(discarded_constructs): SELFTEST OK (3 plants ran and were caught; 3 skipped: lean-drops-carried, oracle-drops-carried, args-truncated)` / `discard_witness(discarded_constructs): OK — 56 programs on both engines (exec 25, parse 10, refusal 10, stop 7, ub 4); 31 negative-control rows differ from pristine`; without `--selftest` the same last line.
+- `python3 scripts/test_upstream_oracle.py` (the default selection): `Independent oracle scope: tier-b; 1002 rows in 187.1s; source unchanged: True` / `Independent oracle: passed; {'semantic_agreement': 932, 'reviewed_difference': 43, 'matching_failure': 25, 'interface_agreement': 2}`. A first run of this job reported `failed` with `source unchanged: False` and the same four tallies: the worker had edited tracked documents while it ran. It was re-run on an untouched tree, and no file was touched during any later job.
+- `./scripts/test_libc_exec.sh`: `SUMMARY: match=43 loc_only=2 diff=0` / `ALL MATCH RECORDED BASELINE`
+- `./scripts/test_inner_arg_temps.sh --gate`: `SUMMARY: inner_arg_temps rows=189 AGREE=138 AGREE-FIRST=42 BOTH_FAIL=5 LOC_ONLY-FIRST=2 RESOURCE oracle:KILL=2 failures=0` / `BASELINE OK (inner_arg_temps: 189 rows; classes and both distinct-observation/status hashes exact)` / `inner_arg_temps elapsed: 358.96s`
+- `./scripts/test_unit.sh --core-quote-libc`: `Total: 2 passed, 0 failed`
+- menhir's conflict counts, before and after: unchanged (the four lines of §2).
+
+Not re-run on this tree by the worker: the other Tier A and Tier B rows of §6 (run on `61e79a887`, and by the
+orchestrator's battery on `bcfc66d92`); the orchestrator gates the new tip. The §6 list above is therefore the state of
+the PREVIOUS tree for every row not named here, and its witness counts (77 / 229 / 48) are superseded by these.

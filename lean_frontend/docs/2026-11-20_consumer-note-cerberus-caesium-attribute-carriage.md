@@ -20,8 +20,9 @@ not mix:
 - `TSpec_enum`, `ADecl`, `PDecl`, `Params`, `PDeclaration_decl`, `PDeclaration_abs_decl`: `attrs`;
 - an enumerator is `[id, attrs, value]` (was `[id, value]`);
 - a new declaration tag `Declaration_attribute` with `attrs` (`[[a]];` at file scope);
-- an attribute argument that is not a plain string literal is `[loc, tokens, []]`: its tokens joined by single
-  spaces, no pieces.
+- an argument clause made only of plain string literals is the list it was, one argument per comma; ANY other
+  clause (a bracket group or a prefixed literal anywhere in it) is ONE argument `[loc, tokens, []]`: all the tokens
+  between the clause's parentheses joined by single spaces, a top-level comma included as a token, no pieces.
 
 Regenerate any stored Cabs JSON at the re-pin. The ten fixtures `tests/fixtures/*/cabs.json` were regenerated.
 
@@ -36,7 +37,8 @@ upstream, measured:
 | the `_Atomic` QUALIFIER on a parameter of a function definition | a wrong answer when the body inspects the parameter's type (`typeof`, `sizeof`, `&`); **a CORRECT answer otherwise**: `int f(_Atomic int x) { return x + 1; }` ran correctly and is now refused, because the arm cannot see the body. Write `_Atomic(int) x` |
 | the `_Atomic` qualifier with a pointer or array declarator at block scope or on a parameter (`_Atomic int *p` in a function) | a wrong type for a pointer; a crash for an array |
 | type qualifiers inside the brackets of an array parameter of a function declaration | a wrong function type for `const`; **already a loud stop** for `restrict` and for `volatile` against a pointer definition (a constraint diagnostic that blamed something else) |
-| `cerb::with_address` after the name of a block-scope `extern`, or on a declaration that a later one without it follows | the attribute was silently ignored |
+| `cerb::with_address` (with its one argument) after the name of a block-scope `extern`, or on a declaration that a later one without it follows | the attribute was silently ignored and the program ran |
+| `#pragma pack`, every form | the line was silently skipped: a wrong layout |
 | an attribute declaration in a `for`-init clause | **already a loud stop** (an unlocated constraint violation) |
 
 The specifier form `_Atomic(T)`, the plain `_Atomic int x;` object and `int * const a` are unchanged. Diagnosed: an
@@ -52,6 +54,37 @@ pointer declarator (a misattributed error before), and a declaration list after 
 - `_Noreturn int f(void) { return g(); }`: `g()` is evaluated; UB071 follows only if it returns.
 - `__builtin_expect(e, c)` is `(long)(e)` (the forced header's macro was `((long)e)`, wrong for `u + 1`).
 - `typedef unsigned char byte [[cerb::byte]];` is the `Byte` type, as with the attribute before `typedef`.
+
+## Where a redeclaration's attributes land (measured on both engines)
+
+- **An object with EXTERNAL linkage** declared more than once: every declaration's attributes are on its one entry in
+  `sigma.declarations`, earlier declarations first (`[[a]] extern int e; [[b]] int e;` gives `a` then `b`).
+- **A file-scope object with INTERNAL linkage redeclared `extern` in a block**: the file-scope declaration's
+  attributes are on the entry; the BLOCK declaration's are NOT, they are in `carried_attributes` as
+  `(AP_declaration | AP_declarator_id, the object's identifier, …)`
+  (`[[a]] static int e; … { [[b]] extern int e; }` gives `object e: a` and `carried declaration e: b`).
+- **The same attribute written on two declarations is kept twice**, each with its own location (the header-plus-source
+  pattern produces this); nothing is deduplicated, since nothing is given a meaning. A reader that counts or forbids
+  repeats must do so itself.
+- **Functions**: every declaration's attributes are on the declaration entry; the definition entry has the
+  definition's own.
+- **Typedef names — an upstream defect you inherit, not a design**: upstream's `register_typedef` reuses an existing
+  declaration of the same name with no scope test, so a block-scope typedef that SHADOWS a file-scope one is merged
+  with it: `typedef int T [[a]]; int main(void) { [[b]] typedef int T; … }` puts `b` and `a` on ONE entry, though
+  the inner `T` is another entity in C (and a shadowing typedef of a different type is rejected as a redefinition).
+  Pristine upstream does the same; it is filed (upstream-tray report 98) and unchanged here. A consumer that gives
+  typedef attributes a meaning gets the inner typedef's attribute on the outer one.
+- `cerb::with_address` on a declaration that a later declaration without it follows is refused at every such site
+  (a file-scope redeclaration, a block-scope `extern` of an external or of an internal object, the `_Thread_local`
+  form); with any argument count but one it is an ordinary carried attribute.
+
+## `#pragma pack` is refused ([USER 2026-11-20] ruling)
+
+`#pragma pack` in every form — `pack(n)`, `pack()`, `pack(push, …)`, `pack(pop)`, and `_Pragma("pack…")` — stops the
+parse on both engines alike (no Cabs JSON is produced): `error: unimplemented keyword '#pragma pack (refused, contract
+D19: …)'`. Before, the line was skipped and the struct had the unpacked layout (`sizeof` 8 where the compiled program
+has 5). Every other pragma is still skipped silently, as upstream skips it (C17 6.10.6#1), inside an attribute
+argument too.
 
 ## At your next re-pin
 

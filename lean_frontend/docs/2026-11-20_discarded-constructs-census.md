@@ -279,6 +279,20 @@ observable in 5 (W1 for an unrecognised pragma — `pack` is the exception a lay
 §2.2: MISAPPLIED 2. §2.3, 26 rows: GIVEN-MEANING 7 (G1, G5, G6, G12, G13, G15, G16), CARRIED 4 (G2, G3, G4, G14),
 REFUSED 9 (G7-G11, C2, C4, C6, C8), CRASH 5 (C1, C3, C5, C7, C9), PARSE-ERROR 1 (P1). §2.4: 1 adjacent defect (X1).
 
+**W1 after the operator's ruling ([USER 2026-11-20]): `#pragma pack` is REFUSED**, in every form (`pack(n)`, `pack()`,
+`pack(push, …)`, `pack(pop)`, `_Pragma("pack…")`), by a declared stop in the lexer, on both engines alike (the parse
+stops; no Cabs JSON). The row therefore splits: `#pragma pack` moves from DISCARDED-SILENTLY to REFUSED; every other
+pragma stays DISCARDED-SILENTLY as upstream's judgement under C17 6.10.6#1 (tray 85), including a pragma line inside
+an attribute argument (`m::mk((` / `#pragma foo` / `"a"))` arrives as `( "a" )`; the second look's F5). Measured before
+the refusal, over every corpus the lanes walk and the shipped libc (`grep -rlE '#\s*pragma\s+pack|_Pragma'` over
+`tests/`, `lean_frontend/corpus`, `runtime/`, `deps/cn/tests`, libxml2 and the pKVM case study): `#pragma pack` occurs in
+four gcc-torture programs, each present twice (`execute/` and `breakdown/`): `20131127-1.c`, `pr58570.c`,
+`pr79737-1.c`, `pr79737-2.c`. Three are already `CERB_REJECT` rows of the non-gating sweep scoreboard (bit-fields,
+asm); one, `tests/gcc-torture/breakdown/success/20131127-1.c`, is `MATCH VAL:Specified(0)` there and becomes a stop at
+the next sweep (`tests/ci_sweep/results/torture_success.tsv:318`; a scoreboard with no baseline). The other `_Pragma`
+uses (`tests/hacl-star/include/kremlin/internal/target.h`, libxml2's `python/libxml_wrap.h`) are `GCC diagnostic` and
+`diag_suppress` pragmas, unaffected. None in the libc, the CN tests or the pKVM case study; no gated row moves.
+
 ## 3. Verdict
 
 The attribute loss is an instance of a broader defect, and the defect has one shape: **the front end's syntax is wider

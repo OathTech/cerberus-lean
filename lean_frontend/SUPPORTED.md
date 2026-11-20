@@ -76,7 +76,7 @@ no meaning (a standard attribute changes nothing the engines compute); GNU
 specifier in a compound literal's type name, the `_Atomic` qualifier on a parameter of a
 function definition or with a pointer/array declarator at block scope or in a
 parameter (write `_Atomic(T)`), qualifiers inside an array parameter's brackets in a
-function declaration. `#pragma` lines are ignored, `#pragma pack` included.
+function declaration, `#pragma pack` in every form. Every other `#pragma` line is ignored.
 
 | Conversion / form | State |
 |---|---|
