@@ -162,6 +162,24 @@
 # cabs_to_ail.ml, cabs_to_ail_effect.ml, genTyping.ml, mini_pipeline.ml; layer 2 33 -> 36 differing files. The parser's conflict
 # counts are unchanged (menhir before and after: one shift/reduce state, one reduce/reduce state, 1 and 4 arbitrarily resolved).
 # Leaves when upstream carries its attributes. Record: lean_frontend/docs/2026-11-20_attribute-preservation-record.md.
+# fix/attribute-preservation M2, 2026-11-20 [AGENT, same charter; the orchestrator's rulings [AGENT 2026-11-20] on the census's
+# report-at-once rows, census section 4]: the rest of the discarded-construct category (contract D19), FORK-AHEAD deltas of the
+# first kind, each filed in the tray. FIXES (the standard very clear, upstream's own neighbouring arm the model): an alignment
+# specifier on a for-init declaration is applied as the block-scope arm applies it (cabs_to_ail.lem, C17 6.8.5#3; upstream
+# registered the object with no alignment); the operand of `return` in a _Noreturn function is elaborated BEFORE the UB071
+# (translation.lem, C17 6.7.4#8: undefined only if the function returns to its caller). DIAGNOSTIC: an alignment specifier in a
+# type name other than a compound literal's is the constraint violation of C17 6.7.5#2 (constraint.lem IllegalAlignas_type_name,
+# pp_errors.ml's text; upstream's `TODO: align_specs is ignored here`). REFUSALS (Lem `error`, one text on both engines, whole in
+# scripts/check_discarded_constructs.sh): an alignment specifier in a compound literal's type name; the _Atomic qualifier on a
+# parameter of a function definition; the _Atomic qualifier in the specifiers of a block-scope or parameter declaration whose
+# declarator is not a plain identifier; type qualifiers inside the brackets of an array parameter of a function declaration.
+# PARSER STOPS (lexer_feedback.ml, upstream's own K&R error): the identifier and declaration lists of an old-style definition
+# whose declarator is wrapped, and a declaration list after a prototype, were dropped by create_function_definition's catch-all.
+# Single-row edits, no --refresh. [files] 102 -> 104: frontend/model/constraint.lem (byte-identical to pristine before),
+# ocaml_frontend/pprinters/pp_errors.ml (hand-written OCaml entering the delta: one message). [source-content] re-pinned:
+# cabs_to_ail.lem, translation.lem, parsers/c/lexer_feedback.ml; two rows added. [expected-semantic] ENTERED: constraint.ml;
+# hashes moved: cabs_to_ail.ml, translation.ml; layer 2 36 -> 37 differing files. Each leaves when upstream closes its site.
+# Record: lean_frontend/docs/2026-11-20_attribute-preservation-record.md.
 [meta]
 merge-base=c3ff8c53f05982745f9b3a10b3d05442e214bcb5
 lem-pin=2220010bc25f0c5682d8200f016e786ee66d65c6
@@ -195,6 +213,7 @@ frontend/model/cabs_to_ail_aux.lem
 frontend/model/cabs_to_ail_effect.lem
 frontend/model/cerb_attributes.lem
 frontend/model/cn.lem
+frontend/model/constraint.lem
 frontend/model/core.lem
 frontend/model/core_aux.lem
 frontend/model/core_eval.lem
@@ -248,6 +267,7 @@ ocaml_frontend/ocaml_implementation.ml
 ocaml_frontend/ocaml_implementation.mli
 ocaml_frontend/pprinters/pp_cabs.ml
 ocaml_frontend/pprinters/pp_core.ml
+ocaml_frontend/pprinters/pp_errors.ml
 ocaml_frontend/pprinters/pp_symbol.ml
 ocaml_frontend/pprinters/pp_symbol.mli
 ocaml_frontend/rewriters/core_peval.ml
@@ -293,11 +313,12 @@ util/cerb_location.ml
 100644 50aa5bac4e18b2d0e1e63da58fec61d6dd1b09105b423bc834a49801e8ac4279 frontend/model/boot.lem
 100644 a3bce9ed29041d602cdc128dba43f4422beeb230e1d28939f06b68e9408fe7ea frontend/model/builtins.lem
 100644 42ed970e2f4079fe83d75fda3804015d26a1e496605622a90deeb35bdb4339c8 frontend/model/cabs.lem
-100644 7995ba2b4a39bcd1e869cd0b37c35aaa4f2edb198fab1dba42e76035c8b39904 frontend/model/cabs_to_ail.lem
+100644 9603ff86ff360bd5727043c290ea4839052cb4a549c21a28b6e8873818abdd62 frontend/model/cabs_to_ail.lem
 100644 fe997e109f0b6dc70544b1c5d1e6f7f7f963a7ab32ac6aef097404ba200d5452 frontend/model/cabs_to_ail_aux.lem
 100644 364818cfccc2d8bfd9426cd505fec48555c6c1367f5bc41767b19e3749d2680c frontend/model/cabs_to_ail_effect.lem
 100644 185b1d2afb9e0d3598c664a50d7106b8cc195add6049b358c0c92c8305e60dc2 frontend/model/cerb_attributes.lem
 100644 c4426c93453c70139f7693096cb2d3796dee1676344652c2c6271303a2d392ae frontend/model/cn.lem
+100644 f78e1034e76b6a6f2b86a55a96d50f35848cfeacde3d2cd7a4c2c9404a1dd8de frontend/model/constraint.lem
 100644 bf183f3dc55fb5d962089cba9ebc82485a204d34958de5381cf784e155935504 frontend/model/core.lem
 100644 dee01667c7056938400f1ce4befd199b8f2c5bcdef6ae34fa59ae8a80558af37 frontend/model/core_aux.lem
 100644 f1d4a618bd0b38b2152d827e5c3962831e198137c7faedbf16e5b60ae83197f2 frontend/model/core_eval.lem
@@ -335,7 +356,7 @@ util/cerb_location.ml
 100644 d81120f3449bd1c2d1b2aa76a18c98b430b229980de2419a524a202db6f9636e frontend/model/state_exception_undefined.lem
 100644 4996c0a1b774bbd205b8aede4cb715314af33087279477adab4fc7721335780c frontend/model/std.lem
 100644 788193cf8aacf36dcc1bf6e89c0f10b5cfc94c61ac349ad870900c7570037492 frontend/model/symbol.lem
-100644 d5f01f9bd1012a39f192cad996b99106bbe67ed07de03b8e98dfac0d6ecc5d06 frontend/model/translation.lem
+100644 0c581b342e566e6f6f61ca0546edc8051f60642dad9cf44a519ae811c5c26822 frontend/model/translation.lem
 100644 1a86d76d73ca9782e0d2ad80146ab753894cb4507f7f1785c5bdc69962343197 frontend/model/translation_aux.lem
 100644 fc1a44000a799029e9f474e635f128e5b8965c7598c1f75f6c742743c04a63fd frontend/model/translation_effect.lem
 100644 9427c936dcfe2bb47a984c6d73db12bf1c7012bb85b0b63156b5edececf9bf7c frontend/model/utils.lem
@@ -351,13 +372,14 @@ util/cerb_location.ml
 100644 5e822399d914365bbb25d0d1a34f03e056fd9575fed5bc72cbc0cc44d5348aad ocaml_frontend/ocaml_implementation.mli
 100644 ae24737d53deb9365bac1907ba5cbbe9ebc2c45f32116a2956f6629e4e5b745c ocaml_frontend/pprinters/pp_cabs.ml
 100644 8c786d576be8fb163b263aad9e627a367c75f55e236c15edd918b3398a40abbe ocaml_frontend/pprinters/pp_core.ml
+100644 8df326618b0a628b28d5728856c6d05259b5d3867ad06882ab61a1bd7c928357 ocaml_frontend/pprinters/pp_errors.ml
 100644 d4094fc7355bd3bb5915922af1bf7e959491d328e6a29b27cc36262ff5014d23 ocaml_frontend/pprinters/pp_symbol.ml
 100644 b1bb8c17127f27817b13500753530ace4891717d6e45dc5eb0f79763e9dc430a ocaml_frontend/pprinters/pp_symbol.mli
 100644 09bc6e40d5ae27a9ad6a6b9342410ade468c60a4e1064e3308dfaf6c50005e35 ocaml_frontend/rewriters/core_peval.ml
 100644 4d6d58a199fbbcc0ed7692fa0b631f74cc3c39e0dc53405dcd6fc4da3dc9b7b7 ocaml_frontend/rewriters/remove_unspecs.ml
 100644 81d8f67879c3fc3a53a6b3ef15ed01ef6e7f1855da6b9bdf233428610320c8b1 parsers/c/c_parser.mly
 100644 e33e8616c3689e1d8bb74f963f7517d7d655e71d65ae4892f1506917147a4c99 parsers/c/c_parser_driver.ml
-100644 e8d0148a8cce57631a66bd7d2a3eb4a83de697da3e335e3ebb132af5669f0c8d parsers/c/lexer_feedback.ml
+100644 c42b87a835d08cf6b20f1c53f064aa5e6ca45d9231f794e73c88ffa40a2eec91 parsers/c/lexer_feedback.ml
 100644 01404e2b8646ecbd48f987287a5748fc5b966155b65652bc7822d636608e69cb parsers/c/lexer_feedback.mli
 100644 d1d5f0a2ca4cc5a53e8b068d3bb9f219fe5eaec29457f25032352271ed240095 runtime/libc/dune
 100644 e4991b9321fa831f2d2c1a5815f739ae3b520cc482f7b77dadea96ba7e1f30b6 runtime/libc/src/stdio.c
@@ -377,9 +399,10 @@ util/cerb_location.ml
 b90d962b5e6a62bf444e7dc263fec10d1f1979091e23996b87f367ffe28d6afc ailTypesAux.ml
 1a7acefc79c5b9f2d12baead5a965b7c3a70d426c5b4bb190069133d2ddae7f6 annot.ml
 99f8c4cf7761a886d251c4bac0fe8ced630065640a7c101fe68a6601cebe3102 cabs.ml
-48974705e0da466e7b665ec7ad9667cbd10ade4ba87da340612c204943b5a7f0 cabs_to_ail.ml
+7276be9c3ea606b58597eac3a542d3e1607ec86f71ae9bcf4311a82fde76f7d7 cabs_to_ail.ml
 1c33493b574e593467a7e166889b13cf08a1d297ff55a9135cb6b4a7189599de cabs_to_ail_aux.ml
 668d439913d903800352c1d4c3bae88a6d2630d93a2cb61440a560705bf12a65 cabs_to_ail_effect.ml
+2aa6b9549f463fc3959e16400413602e7e75eedad4fe7946bc162edb8b896d0e constraint.ml
 efe1a293fdf87eb7a264b3d5a2705d9f9421115f9137772c0b6a539a5049b8fb core.ml
 5a20bc6b1e3e4cd9af04c1316e4a2b8354ccfab68e2fea3561acfd7cdfb3a093 core_aux.ml
 aae2f7294241e5b942c4d2f9a0b847dd72570a72037590b9df577586b23758d4 core_linking.ml
@@ -397,7 +420,7 @@ fe79f83fe9ae4b52448fa88935cf88df2a4d8e5b3b01b599f3e6585b5fd578e3 implementation.
 c1ee61917e12017392721248b79ce41340272da5d86f01f0b713812a0fb6f1af mini_pipeline.ml
 6cc50123c4727ca848299fc38a7f62c889acd6e5f5c1ce5a5c732b52e9abd05c monadic_parsing.ml
 fa725f3e09e5ae317d685fda82c4be9dcfeca9a99ed47b1ebb4f2dd6a0a343b6 symbol.ml
-7bc5de59f81a5ac33569c76272bd2e255656757f0657321ef5898639c8d11ce0 translation.ml
+f68b917cd648c3de2b2774466d7f7ddea9f603bd699e048ad6df80131011ec21 translation.ml
 7830dd06afde7a9b7aa3683086adc454a2d3c1eeca52c60752ad7e42887b9d53 translation_effect.ml
 [expected-cosmetic]
 e0a1740dc4f5a18b91e7d6cc7cde9d5f4189e74ab9ed2c2217fdc8c4dac9a185 cmm_csem.ml

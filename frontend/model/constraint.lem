@@ -35,6 +35,8 @@ type illegal_alignas =
   | IllegalAlignas_function
   | IllegalAlignas_parameter
   | IllegalAlignas_register
+    (* FORK (2026-11-20, contract D19; census W7): a type name other than a compound literal's (C17 6.7.5#2) *)
+  | IllegalAlignas_type_name
 
 type illegal_initialisation =
   | InitialisedIncomplete of ctype

@@ -275,6 +275,10 @@ let string_of_constraint_violation = function
       "returning '" ^ string_of_gentype gty2 ^ "' from a function with an arithmetic result type '" ^ string_of_ctype ty1 ^ "'"
   | ReturnAsSimpleAssignment (BoolExpectsArithmeticOrPointer, ty1, gty2) ->
       "returning non scalar type '" ^ string_of_gentype gty2 ^ "' from a function with result type '" ^ string_of_ctype ty1 ^ "'"
+  (* FORK (2026-11-20, contract D19; lean_frontend/docs/2026-11-20_attribute-preservation-record.md, census W7):
+     upstream's desugar_type_name ignored the specifier (its TODO) *)
+  | IllegalAlignas IllegalAlignas_type_name (* §6.7.5#2 *) ->
+      "alignment specifier in a type name that is not the type name of a compound literal"
   | IllegalAlignas kind (* §6.7.5#2 *) ->
       let kind_str =
         match kind with
@@ -287,7 +291,9 @@ let string_of_constraint_violation = function
           | IllegalAlignas_parameter ->
               "a parameter"
           | IllegalAlignas_register ->
-              "an object declared with the register storage-class specifier" in
+              "an object declared with the register storage-class specifier"
+          | IllegalAlignas_type_name ->
+              "a type name" (* the arm above answers this one *) in
       "alignment specifier is in the declaration of " ^ kind_str
   | AlignasNotIntegerConstant (* §6.7.5#3, sentence 1 *) ->
       "expression in an alignment specifier is not an integer constant expression"

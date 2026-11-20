@@ -4100,7 +4100,23 @@ let rec translate_stmt stdlib tagDefs f env stmt : E.elabM (C.expr unit) =
             E.return (sym, ty)
         ) visible_syms >>= fun visible_syms_tys ->
         if env.is_Noreturn then
-          E.return (Caux.mk_pure_e (Caux.mk_std_undef_pe loc "§6.7.4#8" Undefined.UB071_noreturn))
+          (* FORK FIX (2026-11-20, contract D19; census W17; lean_frontend/docs/2026-11-20_attribute-preservation-record.md):
+             upstream emitted the undefined behaviour here WITHOUT translating the operand, so `return g();` in a
+             _Noreturn function was UB071 even when g never returns. C17 6.7.4#8 makes it undefined only if the
+             function RETURNS to its caller: the operand is evaluated first (the binding the arm below builds) and
+             the undefined behaviour follows it, so it fires exactly when control would come back. *)
+          let e_ty = ctype_of e in
+          let bTy =
+            if AilTypesAux.is_void e_ty then
+              C.BTy_unit
+            else
+              C.BTy_loaded (force_core_object_type_of_ctype e_ty) in
+          translate_expression true e >>= fun core_e ->
+          E.wrapped_fresh_symbol bTy  >>= fun e_wrp  ->
+          E.return begin
+            Caux.mk_sseq_e e_wrp.E.sym_pat core_e
+              (Caux.mk_pure_e (Caux.mk_std_undef_pe loc "§6.7.4#8" Undefined.UB071_noreturn))
+          end
         else if AilTypesAux.atomic_qualified_unqualified AilTypesAux.is_pointer env.return_ty && Aaux.is_null_pointer_constant e then
           E.return begin
             mk_run_with_lifetime_e loc env.return_lab visible_syms_tys [] [Caux.mk_specified_pe (Caux.mk_nullptr_pe env.return_ty)]

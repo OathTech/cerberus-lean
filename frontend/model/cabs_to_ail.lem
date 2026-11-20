@@ -1940,6 +1940,32 @@ let with_address_block_extern_refusal ident =
   ^ "and is now carried to its declaration, where upstream's elaboration reads it (translation.lem decode_with_address) and the run "
   ^ "then dies in upstream's 'TODO: cerb::with_address() is yet implemented'; the fork neither implements nor alters cerb::with_address, "
   ^ "so the placement is refused in place of that crash. Write the object without the attribute."
+let alignas_compound_literal_refusal =
+  "Cabs_to_ail.desugar_expression: refused - an alignment specifier in the type name of a compound literal "
+  ^ "(C17 6.7.5#2 permits it there; contract D19): upstream ignores it ('TODO: align_specs is ignored here', c3ff8c53f "
+  ^ "cabs_to_ail.lem :3321), so the unnamed object is created at its type's natural alignment and its address need not be a "
+  ^ "multiple of the requested one; Ail's compound literal has no alignment to carry. Declare a named object with the "
+  ^ "alignment specifier instead."
+let atomic_parameter_refusal ident =
+  "Cabs_to_ail.desugar_parameter_declaration: refused - the _Atomic type qualifier on parameter '" ^ show ident
+  ^ "' of a function definition (contract D19): upstream registers the object the function body sees WITHOUT the qualifier "
+  ^ "(c3ff8c53f cabs_to_ail.lem :2565) while the function type carries it, so typeof, sizeof and & of the parameter see a "
+  ^ "non-atomic type. Write the parameter with the specifier form _Atomic(T)."
+val atomic_derived_declarator_refusal: maybe Symbol.identifier -> string
+let atomic_derived_declarator_refusal ident_opt =
+  "Cabs_to_ail: refused - the _Atomic type qualifier in the specifiers of a block-scope or parameter declaration whose "
+  ^ "declarator is not a plain identifier"
+  ^ (match ident_opt with Just ident -> " ('" ^ show ident ^ "')" | Nothing -> "" end)
+  ^ " (contract D19): upstream makes the WHOLE declared type atomic there (c3ff8c53f cabs_to_ail.lem :3966, :2567, :2588) "
+  ^ "where the qualifier belongs to the specified type (C17 6.7.3, 6.7.6): '_Atomic int *p' is a pointer to atomic int, which "
+  ^ "upstream types as an atomic pointer to int, and an array declarator ends in an internal error; its file-scope arm "
+  ^ "(wrap_atomic) has the other placement. Write the specifier form _Atomic(T), or a typedef of the atomic type."
+let array_parameter_qualifier_refusal =
+  "Cabs_to_ail.desugar_array_declarator: refused - type qualifiers inside the brackets of an array parameter of a function "
+  ^ "declaration (C17 6.7.6.3#7: they qualify the POINTER the parameter is adjusted to; contract D19): upstream puts them on "
+  ^ "the element type ('int a[const 1]' becomes 'const int *a'; its own commented code at c3ff8c53f cabs_to_ail.lem "
+  ^ ":2245-2256 has the pointer placement). Write the parameter as a qualified pointer ('int * const a')."
+
 let attribute_declaration_for_init_refusal =
   "Cabs_to_ail.desugar_statement: refused - an attribute declaration ('[[...]];', C23 6.7.12.1) as the first clause of a for statement "
   ^ "(contract D19): Ail has no statement to carry it on in that position and no standard attribute may be written there; "
@@ -1958,6 +1984,14 @@ let rec reduces_to_ddecl_identifier ddecltor =
     | DDecl_function _ _ ->
         false
 end
+
+(* is the declarator a plain identifier, possibly parenthesised (no pointer, array or function part)? *)
+let is_plain_declarator (Declarator ptr_decltor_opt ddecltor) =
+  match ptr_decltor_opt with
+    | Nothing -> reduces_to_ddecl_identifier ddecltor
+    | Just _ -> false
+  end
+
 
 
 
@@ -2352,6 +2386,10 @@ STD_ "§6.7.6.2#1, sentence 5, not outermost" $
                    (qs, ty)
              end)
 *)
+           if tquals <> [] then
+             (* FORK REFUSAL (2026-11-20, contract D19; census M2): the qualifiers would land on the element type *)
+             error array_parameter_qualifier_refusal
+           else
            E.return (fun qs ty ->
              ( Ctype.combine_qualifiers qs tquals_qs
              , (if isAtomic then Ctype.mk_ctype_atomic else id) ty )
@@ -2623,6 +2661,12 @@ and desugar_parameter_declaration is_first fundef param_decl =
           E.carry_attributes Annot.AP_declarator_id (Just ident) ident_attrs >>= fun () ->
           carry_declarator_attributes (Just ident) specifs.specifier_attributes decltor >>= fun () ->
           let (isAtomic, tquals_qs) = translate_type_qualifiers specifs.type_qualifiers in
+          (* FORK REFUSALS (2026-11-20, contract D19; census W12, M1) *)
+          if isAtomic && not (is_plain_declarator decltor) then
+            error (atomic_derived_declarator_refusal (Just ident))
+          else if isAtomic && fundef = IsFunDef then
+            error (atomic_parameter_refusal ident)
+          else
           (* STD §6.9.1#7, sentence 4 *)
           let (_qs, _ty) =
             mk_qs_ctype (Ctype.combine_qualifiers specs_qs tquals_qs) base_ty in
@@ -2685,6 +2729,10 @@ and desugar_parameter_declaration is_first fundef param_decl =
           maybe (E.return (fun qs ty -> (qs, ty)))
             (desugar_abstract_declarator NotUnderArray) abs_decltor_opt >>= fun mk_qs_ctype ->
           let (isAtomic, tquals_qs) = translate_type_qualifiers specifs.type_qualifiers in
+          (* FORK REFUSAL (2026-11-20, contract D19; census M1) *)
+          if isAtomic && isJust abs_decltor_opt then
+            error (atomic_derived_declarator_refusal Nothing)
+          else
           (* STD §6.9.1#7, sentence 4 *)
           let (_qs, _ty) =
             mk_qs_ctype (Ctype.combine_qualifiers specs_qs tquals_qs) base_ty in
@@ -2860,8 +2908,13 @@ STD_ "§6.5.2.1#2, sentence 2" $
         AnnotatedExpression () [] loc <$>
           (AilEunary PostfixDecr <$> desugar_expression e)
     | CabsEcompound tyname inits ->
+        (* FORK REFUSAL (2026-11-20, contract D19; census W7): desugar_type_name's note *)
+        let (Type_name _ _ _ cl_align_specs _) = tyname in
+        if cl_align_specs <> [] then
+          error alignas_compound_literal_refusal
+        else
         AnnotatedExpression () [] loc <$>
-          (desugar_type_name tyname >>= fun (qs, ty)    ->
+          (desugar_type_name (let (Type_name a b c _ d) = tyname in Type_name a b c [] d) >>= fun (qs, ty)    ->
           E.is_inside_function     >>= fun inside_func ->
           (* NOTE: there is no need to do the check for STD §6.7.9#3 here, because of the ail typing *)
           wip_desugar_initializer_ loc (if inside_func then Automatic else Static) ty (Init_list loc inits) >>= fun (ty', d_e) ->
@@ -3442,7 +3495,14 @@ and desugar_alignment_specifiers loc decl_ty xs =
 and desugar_type_name (Type_name spec_attrs specs tquals align_specs abs_decltor_opt) =
   (* FORK (2026-11-20, contract D19) *)
   carry_abstract_declarator_attributes spec_attrs abs_decltor_opt >>= fun () ->
-  (* TODO: align_specs is ignored here *)
+  (* FORK (2026-11-20, contract D19; census W7): upstream's `TODO: align_specs is ignored here`. C17 6.7.5#2: an
+     alignment specifier appears only in the declaration specifiers of a declaration, the specifier-qualifier
+     list of a member declaration, or the type name of a compound literal. The compound literal's is refused at
+     its two callers (Ail has no alignment on it); in every other type name it is the constraint violation. *)
+  (if align_specs <> [] then
+     E.constraint_violation (Loc.bbox_location (List.map Loc.locOf specs)) (IllegalAlignas IllegalAlignas_type_name)
+   else
+     E.return ()) >>= fun () ->
   desugar_type_specifiers specs >>= fun (specs_qs, base_ty) ->
   maybe (E.return (fun qs ty -> (qs, ty)))
     (desugar_abstract_declarator NotUnderArray) abs_decltor_opt >>= fun mk_qs_ctype ->
@@ -4115,6 +4175,11 @@ and desugar_declaration_base attrs specifs idecltors =
                linkage take them on their Ail entry; an object without linkage has no entry and they are carried *)
             carry_declarator_attributes (Just ident) specifs.specifier_attributes decltor >>= fun () ->
             let entity_attrs = Annot.combine_attributes attrs ident_attrs in
+            (* FORK REFUSAL (2026-11-20, contract D19; census M1): the wrap below (mk_ctype_atomic _ty) is right
+               for a plain identifier only *)
+            if isAtomic && not (is_plain_declarator decltor) then
+              error (atomic_derived_declarator_refusal (Just ident))
+            else
             let ident_loc = Loc.locOf ident in
             let (Ctype.Ctype _ ty as cty) = if isAtomic then Ctype.mk_ctype_atomic _ty else _ty in
             
@@ -4489,6 +4554,15 @@ and desugar_statement_aux ctx (CabsStatement loc attrs stmt_) =
                       | Ctype.Ctype _ (Ctype.Function _ _ _) ->
                           E.constraint_violation loc IllegalStorageClassIterationStatement
                       | _ ->
+                          (* FORK FIX (2026-11-20, contract D19; census W8): upstream registered the for-init object
+                             with NO alignment (`Nothing` at the five sites below), so an alignment specifier on a
+                             for-init declaration was ignored. C17 6.8.5#3 makes it an ordinary declaration of an
+                             object with automatic or register storage: the alignment is computed as the
+                             block-scope arm does (desugar_declaration_base), its register constraint included. *)
+                          (if List.elem SC_register specifs.storage_classes && specifs.alignment_specifiers <> [] then
+                             E.constraint_violation ident_loc (IllegalAlignas IllegalAlignas_register)
+                           else
+                             desugar_alignment_specifiers ident_loc ty specifs.alignment_specifiers) >>= fun align_opt ->
                           mk_desug_init () >>= function
                             | Just (ty', d_e) ->
                                 let dur = determinate_storage_duration link specifs.storage_classes in
@@ -4501,19 +4575,19 @@ and desugar_statement_aux ctx (CabsStatement loc attrs stmt_) =
                                   ) >>= fun () ->
                                   (* TODO: tentative *)
                                   E.register_internal_object_declaration sym
-                                    (ident_loc, dur, List.elem SC_register specifs.storage_classes, Nothing, qs, ty')
+                                    (ident_loc, dur, List.elem SC_register specifs.storage_classes, align_opt, qs, ty')
                                 else
                                   E.register_internal_object_declaration sym
-                                    (ident_loc, dur, List.elem SC_register specifs.storage_classes, Nothing, qs, ty)
+                                    (ident_loc, dur, List.elem SC_register specifs.storage_classes, align_opt, qs, ty)
                                 end >>= fun () ->
                                 E.return ( (sym, Just d_e) :: acc1
-                                         , (sym, ((ident_loc, dur, List.elem SC_register specifs.storage_classes), Nothing, qs, ty)) :: acc2 )
+                                         , (sym, ((ident_loc, dur, List.elem SC_register specifs.storage_classes), align_opt, qs, ty)) :: acc2 )
                             | Nothing ->
                                 let dur = determinate_storage_duration link specifs.storage_classes in
                                 E.register_internal_object_declaration sym
-                                  (ident_loc, dur, List.elem SC_register specifs.storage_classes, Nothing, qs, ty) >>= fun () ->
+                                  (ident_loc, dur, List.elem SC_register specifs.storage_classes, align_opt, qs, ty) >>= fun () ->
                                 E.return ( acc1
-                                         , (sym, ((ident_loc, dur, List.elem SC_register specifs.storage_classes), Nothing, qs, ty)) :: acc2 )
+                                         , (sym, ((ident_loc, dur, List.elem SC_register specifs.storage_classes), align_opt, qs, ty)) :: acc2 )
                           end
                     end
               end) ([], []) (List.reverse xs) >>= fun (sym_d_es, bindings) ->

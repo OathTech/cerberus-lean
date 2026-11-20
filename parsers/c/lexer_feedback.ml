@@ -76,6 +76,10 @@ and declarator =
   { id:      string;
     sort:    decl_sort;
     direct:  Cabs.direct_declarator;
+    (* FORK (2026-11-20, contract D19; census W5): does the declarator hold a K&R identifier list? `sort` loses
+       it when a pointer, array or parenthesis wraps the function declarator (pointer_decl, array_decl,
+       declarator_decl overwrite it), and create_function_definition then dropped the list silently. *)
+    knr_ids: bool;
   }
 
 let identifier decl = decl.id
@@ -97,6 +101,7 @@ let identifier_decl attrs (Symbol.Identifier(_, str) as i) =
   { id=      str;
     sort=    DeclId;
     direct=  Cabs.DDecl_identifier (attrs, i);
+    knr_ids= false;
   }
 
 let declarator_decl d =
@@ -117,6 +122,7 @@ let fun_decl ptys ctxt d =
 let fun_ids_decl ids_opt ctxt d =
   { d with direct= Cabs.DDecl_function (d.direct, Params ([], false, Annot.no_attributes));
            sort=   DeclFunIds (ctxt, ids_opt);
+           knr_ids= true;
   }
 
 (* FORK (2026-11-20, contract D19; lean_frontend/docs/2026-11-20_attribute-preservation-record.md): the
@@ -191,6 +197,15 @@ let create_function_definition loc attr_opt magic_opt specifs d stmt rev_dlist_o
     let decl = Cabs.Declarator (None, direct_declarator) in
     Cabs.FunDef (loc, attrs, specifs, decl, stmt)
   | DeclFunIds (_, ids), Some rev_dlist ->
+    raise (KnR_declaration loc)
+  (* FORK (2026-11-20, contract D19; census W5, W6): upstream's catch-all below dropped, without a word, (W5) the
+     identifier list and the declaration list of an old-style definition whose declarator is a pointer, an array
+     or parenthesised (`int *f(a) int a; { ... }`: the body then failed on an undeclared `a`), and (W6) a
+     declaration list written after a prototype (`int f(void) int x; { ... }`, a syntax error). Both stop as the
+     plain old-style definition does. *)
+  | _, Some _ ->
+    raise (KnR_declaration loc)
+  | _, None when d.knr_ids ->
     raise (KnR_declaration loc)
   | _, _ ->
     Cabs.FunDef (loc, attrs, specifs, cabs_of_declarator d, stmt)
