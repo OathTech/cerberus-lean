@@ -523,7 +523,7 @@ srcDir = "differential"
 roots = ["Prepared", "PipelineA", "PipelineNice", "ObservationShared", "ChoiceRunner",
          "ObservationA", "ObservationNice", "RunOutput", "EntryCommon",
          "ArtifactQuoteNice", "ArtifactCompare", "Incoming", "IncomingTests",
-         "IncomingReachability", "IncomingReachabilityTests", "BreakpointExecution", "BreakpointMain", "Saturation"]
+         "IncomingReachability", "IncomingReachabilityTests", "BreakpointExecution", "OfferedOrder", "BreakpointMain", "Saturation"]
 
 [[lean_exe]]
 name = "corenice-saturation-tests"

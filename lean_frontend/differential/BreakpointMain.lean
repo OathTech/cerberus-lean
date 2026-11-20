@@ -1,5 +1,6 @@
 import EntryCommon
 import BreakpointExecution
+import OfferedOrder
 
 open Lean CoreNiceDiff
 
@@ -23,6 +24,8 @@ private def finishPauses [LemFuel] [CerbGlobal.Switches]
       progress ← (CerberusFresh.forceIO (fun () => Choice.resume suspension) : BaseIO _)
 
 def CoreNiceDiff.runBreakpoint (saturate : Bool) (args : List String) : IO UInt32 := do
+  let sourceOrder := args.contains "--source-order"
+  let args := args.erase "--source-order"
   match extractPolicy args none [] with
   | .error reason =>
     emit (Json.mkObj [("record", toJson "failure"), ("kind", toJson "input-error"), ("reason", toJson reason)])
@@ -31,6 +34,13 @@ def CoreNiceDiff.runBreakpoint (saturate : Bool) (args : List String) : IO UInt3
     let fuel : LemFuel := ⟨options.fuel⟩
     let switches : CerbGlobal.Switches := ⟨[]⟩
     let mode ← options.choiceMode
+    if sourceOrder then
+      match mode with
+      | .record .first => pure ()
+      | _ => fail "--source-order requires recording without --seed or --choices"
+    let observer := if sourceOrder then
+      { ObservationNice.observer with sourceOrder := some OfferedOrder.select }
+      else ObservationNice.observer
     let prepared ← @prepare fuel options.runtime options.input options.addressSpaceTop options.args
     let execution ← if saturate then @lowerSaturatedNice fuel prepared else @lowerNice fuel prepared
     let execution ← match execution.capture true with
@@ -40,7 +50,7 @@ def CoreNiceDiff.runBreakpoint (saturate : Bool) (args : List String) : IO UInt3
     let action := @CoreNice.drive_until_breakpoint fuel switches execution.file.enumDefs
       execution.file.tagDefs false execution.file prepared.argv options.fuel
     let result ← (CerberusFresh.forceIO (fun () =>
-      Choice.startResumable options.fuel ObservationNice.observer mode expected
+      Choice.startResumable options.fuel observer mode expected
         (@Breakpoints.adapter fuel switches policy)
         (@Breakpoints.advance fuel switches policy options.fuel 0 action) execution.state) : BaseIO _)
     let result ← @finishPauses fuel switches result

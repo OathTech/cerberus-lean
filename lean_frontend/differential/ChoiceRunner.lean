@@ -63,6 +63,8 @@ inductive Outcome (a err : Type) where
   | observationError (reason : String)
 
 structure Observer (info err cs st : Type) where
+  /-- An optional recorder policy reads only the reached ND state and offered descriptors. -/
+  sourceOrder : Option (st → Kind → Json → Array Json → Except String Nat) := none
   encodeInfo : info → Json
   observeDelta : st → st → Except String (Array Json)
   isExhaustion : kill_reason err → Bool
@@ -154,6 +156,7 @@ private def finish {a err st : Type} (mode : Mode) (header : Header)
   result header session state checked
 
 private def choose {raw a info err cs st output : Type} (mode : Mode)
+    (sourceOrder : Option (Kind → Json → Array Json → Except String Nat))
     (session : Session) (node : Nat) (kind : Kind) (parent : Json)
     (branches : List (Json × ndM raw info err cs st))
     (completePath errorPath : Session → Outcome a err → output)
@@ -169,12 +172,16 @@ private def choose {raw a info err cs st output : Type} (mode : Mode)
       events := session.events.push (nodeEvent node kind.label parent alternatives (some 0)) }
     resumePath session continuation
   | _ :: _ :: _ =>
-    match selected mode session kind parent alternatives with
-    | .error (replaying, reason) =>
+    let decision : Except (Outcome a err) (Nat × UInt64) := match mode, sourceOrder with
+      | .record .first, some policy =>
+        ((policy kind parent alternatives).map (fun n => (n, session.random))).mapError Outcome.refused
+      | _, _ => (selected mode session kind parent alternatives).mapError fun (replaying, reason) =>
+        if replaying then .replayMismatch reason else .inputError reason
+    match decision with
+    | .error reason =>
       let session := { session with
         events := session.events.push (nodeEvent node kind.label parent alternatives) }
-      errorPath session
-        (if replaying then .replayMismatch reason else .inputError reason)
+      errorPath session reason
     | .ok (index, random) =>
       match branches[index]? with
       | none => errorPath session (.inputError "selected branch is out of range")
@@ -213,6 +220,7 @@ private def traverseWith {raw a info err cs st output : Type} (fuel : Nat)
         traverseWith fuel observer mode onActive onOutcome session machine state'
       let completePath := fun session outcome => onOutcome true session state' outcome
       let errorPath := fun session outcome => onOutcome false session state' outcome
+      let chooseHere := choose mode (observer.sourceOrder.map (fun f => f state')) session node
       match next with
       | .NDactive value => onActive fuel session state' value
       | .NDkilled reason =>
@@ -227,7 +235,7 @@ private def traverseWith {raw a info err cs st output : Type} (fuel : Nat)
         else errorPath session (.refused "nontrivial NDguard constraint")
       | .NDbranch info constraint left right =>
         if observer.isTrivialConstraint constraint then
-          choose mode session node .branch (observer.encodeInfo info)
+          chooseHere .branch (observer.encodeInfo info)
             [(Json.mkObj [("side", toJson "left")], left),
              (Json.mkObj [("side", toJson "right")], right)] completePath errorPath resumePath
         else
@@ -235,11 +243,11 @@ private def traverseWith {raw a info err cs st output : Type} (fuel : Nat)
             events := session.events.push (nodeEvent node "branch" (observer.encodeInfo info)) }
           errorPath session (.refused "nontrivial NDbranch constraint")
       | .NDnd info branches =>
-        choose mode session node .nd (observer.encodeInfo info)
+        chooseHere .nd (observer.encodeInfo info)
           (branches.map fun (label, branch) => (observer.encodeInfo label, branch))
           completePath errorPath resumePath
       | .NDstep info branches =>
-        choose mode session node .step (observer.encodeInfo info)
+        chooseHere .step (observer.encodeInfo info)
           (branches.map fun (label, branch) => (observer.encodeInfo label, branch))
           completePath errorPath resumePath
 
