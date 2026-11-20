@@ -601,3 +601,9 @@ name = "corenice-observation-test"
 srcDir = "test"
 root = "CoreNice.ObservationChecks"
 moreLinkArgs = ["native/md5.o"]
+
+[[lean_exe]]
+name = "corenice-cleanup-owner-probe"
+srcDir = "test"
+root = "CoreNice.CleanupOwnerProbe"
+moreLinkArgs = ["native/md5.o"]
