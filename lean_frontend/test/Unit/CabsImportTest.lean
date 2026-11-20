@@ -19,6 +19,19 @@ object `{file, line, col, lexing_file, lexing_line}` carries the LEXING position
   mirror documented on `CerbLocation.Pos`); `compare` agrees on equals;
 - T6 the committed oracle fixture `tests/fixtures/001-return-literal/cabs.json` is
   current: every position object carries the lexing fields and imports.
+
+Attribute carriage (2026-11-20, contract D19; `docs/2026-11-20_attribute-preservation-record.md`): every
+Cabs node the grammar lets an attribute specifier sequence follow carries it in the JSON
+(`backend/lean_export/cabs_json.ml`), and the import reads each slot fail-closed:
+
+- T7 each new field imports, with the attribute's namespace, name and argument: `attrs` on `PDecl`,
+  `ADecl`, `Params`, `PDeclaration_abs_decl` and `TSpec_enum`, `specifier_attrs` on `Specifiers` and
+  `Type_name`, the three-element enumerator, the declaration form `Declaration_attribute`, and an argument
+  carried as source text with no pieces (a nested balanced-token group);
+- T8 fail-closed: each of those objects WITHOUT its new field is refused, as is the two-element enumerator
+  (the shape before this change);
+- T9 the committed fixture carries the fields: every `Specifiers` object has `specifier_attrs` and every
+  `Params`, `PDecl` and `ADecl` object has `attrs`.
 -/
 open Lean (Json)
 
@@ -77,6 +90,61 @@ partial def checkPositions (j : Json) : Except String Nat :=
         | _, _ => throw s!"position object without well-typed lexing fields: {j}"
       | _, _, _ => pure 0
     kvs.foldl (fun (acc : Except String Nat) _ v => do return (← acc) + (← checkPositions v)) here
+  | _ => pure 0
+
+/-! ### Attribute carriage (T7-T9) -/
+
+/-- `[[m::mk("s")]]` as the exporter writes it (locations elided to `Loc_unknown`). -/
+def attrsJson : String :=
+  r#"{"tag": "Attrs", "attrs": [{"tag": "Attribute", "ns": {"loc": "Loc_unknown", "name": "m"}, "id": {"loc": "Loc_unknown", "name": "mk"}, "args": [["Loc_unknown", "s", [["Loc_unknown", "s"]]]]}]}"#
+/-- `[[m::mk(("inner"))]]`: the nested group is one argument, its source text, no pieces. -/
+def rawArgAttrsJson : String :=
+  r#"{"tag": "Attrs", "attrs": [{"tag": "Attribute", "ns": {"loc": "Loc_unknown", "name": "m"}, "id": {"loc": "Loc_unknown", "name": "mk"}, "args": [["Loc_unknown", "(\"inner\")", []]]}]}"#
+def noAttrsJson : String := r#"{"tag": "Attrs", "attrs": []}"#
+
+/-- Is this `[[m::mk(arg)]]` with `pieces` pieces? -/
+def isMk (arg : String) (pieces : Nat) : attributes → Bool
+  | .Attrs [a] =>
+    (match a.attr_ns with | some (.Identifier _ ns) => ns == "m" | none => false) &&
+    (match a.attr_id with | .Identifier _ id => id == "mk") &&
+    (match a.attr_args with | [(_, s, ps)] => s == arg && ps.length == pieces | _ => false)
+  | _ => false
+
+def parseWith {α : Type} (f : Json → Except String α) (s : String) : Except String α := do
+  f (← Json.parse s |>.mapError toString)
+
+def pdeclJson (attrsField : String) : String :=
+  "{\"tag\": \"PDecl\", \"loc\": \"Loc_unknown\", " ++ attrsField ++ "\"type_qualifiers\": [], \"pointer\": null}"
+def adeclJson (attrsField : String) : String :=
+  "{\"tag\": \"ADecl\", \"loc\": \"Loc_unknown\", " ++ attrsField ++ "\"type_qualifiers\": [], \"is_static\": false, \"size\": null}"
+def paramsJson (attrsField : String) : String :=
+  "{\"tag\": \"Params\", \"params\": [], " ++ attrsField ++ "\"is_variadic\": false}"
+def specifiersJson (attrsField : String) : String :=
+  "{\"tag\": \"Specifiers\", \"storage_classes\": [], \"type_specifiers\": [], \"type_qualifiers\": [], \"function_specifiers\": [], " ++ attrsField ++ "\"alignment_specifiers\": []}"
+def typeNameJson (attrsField : String) : String :=
+  "{\"tag\": \"Type_name\", " ++ attrsField ++ "\"type_specifiers\": [], \"type_qualifiers\": [], \"alignment_specifiers\": [], \"abstract_declarator\": null}"
+def absParamJson (attrsField : String) : String :=
+  "{\"tag\": \"PDeclaration_abs_decl\", " ++ attrsField ++ "\"specifiers\": " ++ specifiersJson ("\"specifier_attrs\": " ++ noAttrsJson ++ ", ") ++ ", \"abstract_declarator\": null}"
+def enumJson (attrsField enumerator : String) : String :=
+  "{\"tag\": \"TSpec_enum\", " ++ attrsField ++ "\"id\": null, \"enumerators\": [" ++ enumerator ++ "]}"
+def field (name value : String) : String := "\"" ++ name ++ "\": " ++ value ++ ", "
+
+/-- Every object tagged `tag` in the tree must carry the key `key`; returns how many were seen. -/
+partial def checkField (tag key : String) (j : Json) : Except String Nat :=
+  match j with
+  | .arr elems =>
+    elems.foldl (fun (acc : Except String Nat) e => do return (← acc) + (← checkField tag key e)) (pure 0)
+  | .obj kvs =>
+    let here : Except String Nat :=
+      match kvs.get? "tag" with
+      | some (.str t) =>
+        if t == tag then
+          (match kvs.get? key with
+           | some _ => pure 1
+           | none => throw s!"a {tag} object without '{key}'")
+        else pure 0
+      | _ => pure 0
+    kvs.foldl (fun (acc : Except String Nat) _ v => do return (← acc) + (← checkField tag key v)) here
   | _ => pure 0
 
 end CabsImportTest
@@ -145,6 +213,58 @@ def main : IO UInt32 := do
   ok := (← expectOk "T6 committed fixture: every position carries the lexing fields" shape (· > 0)) && ok
   match shape with
   | .ok n => IO.println s!"T6: {n} position objects checked"
+  | .error _ => pure ()
+  -- T7: the attribute slots import (contract D19)
+  let a := field "attrs" attrsJson
+  let sa := field "specifier_attrs" attrsJson
+  ok := (← expectOk "T7a PDecl.attrs" (parseWith CabsImport.jsonToPointerDecl (pdeclJson a))
+    (fun | .PDecl _ attrs _ _ => isMk "s" 1 attrs)) && ok
+  ok := (← expectOk "T7b ADecl.attrs" (parseWith CabsImport.jsonToArrayDecl (adeclJson a))
+    (fun | .ADecl _ attrs _ _ _ => isMk "s" 1 attrs)) && ok
+  ok := (← expectOk "T7c Params.attrs" (parseWith CabsImport.jsonToParamTypeList (paramsJson a))
+    (fun | .Params _ _ attrs => isMk "s" 1 attrs)) && ok
+  ok := (← expectOk "T7d Specifiers.specifier_attrs" (parseWith CabsImport.jsonToSpecifiers (specifiersJson sa))
+    (fun sp => isMk "s" 1 sp.specifier_attributes)) && ok
+  ok := (← expectOk "T7e Type_name.specifier_attrs" (parseWith CabsImport.jsonToTypeName (typeNameJson sa))
+    (fun | .Type_name attrs _ _ _ _ => isMk "s" 1 attrs)) && ok
+  ok := (← expectOk "T7f PDeclaration_abs_decl.attrs" (parseWith CabsImport.jsonToParamDecl (absParamJson a))
+    (fun | .PDeclaration_abs_decl attrs _ _ => isMk "s" 1 attrs | _ => false)) && ok
+  let enumerator3 := "[{\"loc\": \"Loc_unknown\", \"name\": \"EA\"}, " ++ attrsJson ++ ", null]"
+  let enumerator2 := "[{\"loc\": \"Loc_unknown\", \"name\": \"EA\"}, null]"
+  ok := (← expectOk "T7g TSpec_enum.attrs and the three-element enumerator"
+    (parseWith CabsImport.jsonToTypeSpecifier_ (enumJson a enumerator3))
+    (fun | .TSpec_enum attrs none (some [(_, eAttrs, none)]) => isMk "s" 1 attrs && isMk "s" 1 eAttrs
+         | _ => false)) && ok
+  ok := (← expectOk "T7h Declaration_attribute"
+    (parseWith CabsImport.jsonToDeclaration ("{\"tag\": \"Declaration_attribute\", \"attrs\": " ++ attrsJson ++ "}"))
+    (fun | .Declaration_attribute attrs => isMk "s" 1 attrs | _ => false)) && ok
+  ok := (← expectOk "T7i an argument carried as source text has no pieces"
+    (parseWith CabsImport.jsonToAttributes rawArgAttrsJson) (isMk "(\"inner\")" 0)) && ok
+  -- T8: fail-closed on each new field
+  ok := (← expectErr "T8a PDecl without attrs" (parseWith CabsImport.jsonToPointerDecl (pdeclJson ""))
+    "missing field 'attrs'") && ok
+  ok := (← expectErr "T8b ADecl without attrs" (parseWith CabsImport.jsonToArrayDecl (adeclJson ""))
+    "missing field 'attrs'") && ok
+  ok := (← expectErr "T8c Params without attrs" (parseWith CabsImport.jsonToParamTypeList (paramsJson ""))
+    "missing field 'attrs'") && ok
+  ok := (← expectErr "T8d Specifiers without specifier_attrs" (parseWith CabsImport.jsonToSpecifiers (specifiersJson ""))
+    "missing field 'specifier_attrs'") && ok
+  ok := (← expectErr "T8e Type_name without specifier_attrs" (parseWith CabsImport.jsonToTypeName (typeNameJson ""))
+    "missing field 'specifier_attrs'") && ok
+  ok := (← expectErr "T8f PDeclaration_abs_decl without attrs" (parseWith CabsImport.jsonToParamDecl (absParamJson ""))
+    "missing field 'attrs'") && ok
+  ok := (← expectErr "T8g TSpec_enum without attrs" (parseWith CabsImport.jsonToTypeSpecifier_ (enumJson "" enumerator3))
+    "missing field 'attrs'") && ok
+  ok := (← expectErr "T8h the two-element enumerator (the shape before D19)"
+    (parseWith CabsImport.jsonToTypeSpecifier_ (enumJson a enumerator2)) "expected 3-element array") && ok
+  -- T9: the committed fixture carries the fields
+  let carried : Except String Nat := do
+    let j ← Json.parse fixture |>.mapError toString
+    return (← checkField "Specifiers" "specifier_attrs" j) + (← checkField "Params" "attrs" j)
+      + (← checkField "PDecl" "attrs" j) + (← checkField "ADecl" "attrs" j)
+  ok := (← expectOk "T9 committed fixture: Specifiers, Params, PDecl and ADecl carry their attribute fields" carried (· > 0)) && ok
+  match carried with
+  | .ok n => IO.println s!"T9: {n} objects checked"
   | .error _ => pure ()
   if ok then
     IO.println "cabs-import-test: all checks passed"

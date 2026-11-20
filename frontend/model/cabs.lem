@@ -158,6 +158,9 @@ and cabs_assignment_operator =
 and cabs_declaration =
   | Declaration_base of Annot.attributes * specifiers * list init_declarator
   | Declaration_static_assert of static_assert_declaration
+    (* FORK (2026-11-20, contract D19): the C23 attribute declaration `[[a]];` (6.7.12.1). The parser gives this
+       form at file scope and in a for-init clause; in a block the same syntax is an attributed null statement. *)
+  | Declaration_attribute of Annot.attributes
 
 and specifiers = <|
   storage_classes:      list storage_class_specifier;
@@ -165,6 +168,9 @@ and specifiers = <|
   type_qualifiers:      list cabs_type_qualifier;
   function_specifiers:  list function_specifier;
   alignment_specifiers: list alignment_specifier;
+  (* FORK (2026-11-20, contract D19): the attribute specifier sequences written after any specifier of the
+     sequence (C23 6.7.1: they appertain to the type the specifiers determine), type specifiers' first *)
+  specifier_attributes: Annot.attributes;
 |>
 
 and init_declarator =
@@ -196,8 +202,9 @@ and cabs_type_specifier_ =
   | TSpec_Atomic of type_name (* §6.7.2.4 Atomic type specifiers, Syntax *)
   | TSpec_struct of Annot.attributes * maybe Symbol.identifier * maybe (list struct_declaration)
   | TSpec_union  of Annot.attributes * maybe Symbol.identifier * maybe (list struct_declaration)
-  | TSpec_enum   of maybe Symbol.identifier * maybe (list (Symbol.identifier * maybe
-                                                           cabs_expression))
+    (* FORK (2026-11-20, contract D19): the attributes after `enum`, and after each enumeration constant *)
+  | TSpec_enum   of Annot.attributes * maybe Symbol.identifier
+                  * maybe (list (Symbol.identifier * Annot.attributes * maybe cabs_expression))
   | TSpec_name   of Symbol.identifier
   (* GCC typeof extension *)
   | TSpec_typeof_expr of cabs_expression
@@ -207,7 +214,9 @@ and cabs_type_specifier =
 
 (* §6.7.2.1 Structure and union specifiers, Syntax *)
 and struct_declaration =
-  | Struct_declaration of Annot.attributes * list cabs_type_specifier * list cabs_type_qualifier * list alignment_specifier * list struct_declarator
+    (* FORK (2026-11-20, contract D19): the second attributes are the specifier-qualifier list's (the type's);
+       the first are the leading ones (each member's) *)
+  | Struct_declaration of Annot.attributes * Annot.attributes * list cabs_type_specifier * list cabs_type_qualifier * list alignment_specifier * list struct_declarator
   | Struct_assert      of static_assert_declaration
 
 and struct_declarator =
@@ -245,26 +254,32 @@ and direct_declarator =
   | DDecl_function   of direct_declarator * parameter_type_list
 and array_declarator =
     (* the bool indicate the occurence of the static keyword *)
-  | ADecl of Loc.t * list cabs_type_qualifier * bool * maybe array_declarator_size
+    (* FORK (2026-11-20, contract D19): the attributes after the array declarator (the array type's) *)
+  | ADecl of Loc.t * Annot.attributes * list cabs_type_qualifier * bool * maybe array_declarator_size
 and array_declarator_size =
   | ADeclSize_expression of cabs_expression
   | ADeclSize_asterisk
 
 and pointer_declarator =
-  | PDecl of Loc.t * list cabs_type_qualifier * maybe pointer_declarator
+    (* FORK (2026-11-20, contract D19): the attributes after the `*` (the pointer type's) *)
+  | PDecl of Loc.t * Annot.attributes * list cabs_type_qualifier * maybe pointer_declarator
 
 and parameter_type_list =
   | Params of list parameter_declaration * bool (* the boolean indicate a
                                                  * variadic function *)
+            * Annot.attributes (* FORK (2026-11-20, contract D19): the attributes after the function
+                                * declarator (the function type's) *)
 
 and parameter_declaration =
-  | PDeclaration_decl     of specifiers * declarator
-  | PDeclaration_abs_decl of specifiers * maybe abstract_declarator
+    (* FORK (2026-11-20, contract D19): the leading attributes (the parameter's) *)
+  | PDeclaration_decl     of Annot.attributes * specifiers * declarator
+  | PDeclaration_abs_decl of Annot.attributes * specifiers * maybe abstract_declarator
 
 
 (* §6.7.7 Type names, Syntax *)
 and type_name =
-  | Type_name of list cabs_type_specifier * list cabs_type_qualifier
+    (* FORK (2026-11-20, contract D19): the specifier-qualifier list's attributes (the type's) *)
+  | Type_name of Annot.attributes * list cabs_type_specifier * list cabs_type_qualifier
                * list alignment_specifier * maybe abstract_declarator
 
 and abstract_declarator =
@@ -335,7 +350,7 @@ and for_clause =
 
 
 (* §6.7.2.2 Enumeration specifiers, Syntax *)
-type enumerator = Symbol.identifier * maybe cabs_expression
+type enumerator = Symbol.identifier * Annot.attributes * maybe cabs_expression
 
 
 (* §6.9 External definitions, Syntax *)
@@ -429,6 +444,11 @@ instance (Located external_declaration)
           end
       | EDecl_decl (Declaration_static_assert (Static_assert e _)) ->
           locOf e
+      | EDecl_decl (Declaration_attribute (Annot.Attrs attrs)) ->
+          match attrs with
+            | [] -> Loc.unknown
+            | attr :: _ -> locOf attr.Annot.attr_id
+          end
       | EDecl_magic (loc, _) -> loc
       | EDecl_funcCN func ->
           locOf (func.Cn.cn_func_name)

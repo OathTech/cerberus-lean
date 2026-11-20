@@ -115,9 +115,37 @@ let fun_decl ptys ctxt d =
   }
 
 let fun_ids_decl ids_opt ctxt d =
-  { d with direct= Cabs.DDecl_function (d.direct, Params ([], false));
+  { d with direct= Cabs.DDecl_function (d.direct, Params ([], false, Annot.no_attributes));
            sort=   DeclFunIds (ctxt, ids_opt);
   }
+
+(* FORK (2026-11-20, contract D19; lean_frontend/docs/2026-11-20_attribute-preservation-record.md): the
+   attribute specifier sequence after an array or a function declarator (c_parser.mly direct_declarator) is
+   kept on that declarator part; upstream's action dropped it. *)
+let add_declarator_attributes attrs d =
+  let Annot.Attrs xs' = attrs in
+  match d.direct with
+  | Cabs.DDecl_array (dd, Cabs.ADecl (loc, Annot.Attrs xs, tquals, is_static, size_opt)) ->
+      { d with direct= Cabs.DDecl_array (dd, Cabs.ADecl (loc, Annot.Attrs (xs @ xs'), tquals, is_static, size_opt)) }
+  | Cabs.DDecl_function (dd, Cabs.Params (params, is_variadic, Annot.Attrs xs)) ->
+      { d with direct= Cabs.DDecl_function (dd, Cabs.Params (params, is_variadic, Annot.Attrs (xs @ xs'))) }
+  | Cabs.DDecl_identifier _ | Cabs.DDecl_declarator _ ->
+      (* the two productions that call this build an array or a function declarator *)
+      assert (xs' = []); d
+
+(* FORK (2026-11-20, contract D19): the text the parser is reading, so that an attribute argument that is not
+   a plain string literal (a nested balanced-token group, a prefixed string literal) is carried as its source
+   text. Set by C_parser_driver.parse_from_string; a parse that did not come through it has no text and such
+   an argument stops the parse loudly. *)
+let current_source : string option ref = ref None
+let set_source str = current_source := Some str
+let source_text (startp : Lexing.position) (endp : Lexing.position) =
+  match !current_source with
+  | Some str when 0 <= startp.pos_cnum && startp.pos_cnum <= endp.pos_cnum
+                  && endp.pos_cnum <= String.length str ->
+      String.sub str startp.pos_cnum (endp.pos_cnum - startp.pos_cnum)
+  | _ ->
+      failwith "Lexer_feedback.source_text: no source text for an attribute argument (contract D19)"
 
 let reinstall_function_context d =
   match d.sort with
@@ -150,14 +178,15 @@ let create_function_definition loc attr_opt magic_opt specifs d stmt rev_dlist_o
         type_qualifiers= [];
         function_specifiers= [];
         alignment_specifiers= [];
+        specifier_attributes= Annot.no_attributes;
       } in
     let params = List.map (fun id ->
-        PDeclaration_decl (signed_int_specifiers,
+        PDeclaration_decl (Annot.no_attributes, signed_int_specifiers,
                            Declarator (None,  DDecl_identifier (Annot.no_attributes, id)))
       ) ids in
     let direct_declarator =
       match d.direct with
-      | DDecl_function (ddecl, _) -> DDecl_function (ddecl, Params (params, false))
+      | DDecl_function (ddecl, Params (_, _, attrs)) -> DDecl_function (ddecl, Params (params, false, attrs))
       | _ -> assert false in
     let decl = Cabs.Declarator (None, direct_declarator) in
     Cabs.FunDef (loc, attrs, specifs, decl, stmt)

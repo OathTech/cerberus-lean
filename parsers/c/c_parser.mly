@@ -33,6 +33,7 @@ let empty_specs =
     type_qualifiers= [];
     function_specifiers= [];
     alignment_specifiers= [];
+    specifier_attributes= Annot.no_attributes;
   }
 
 let append_specs sp1 sp2 =
@@ -43,6 +44,8 @@ let append_specs sp1 sp2 =
                           sp2.function_specifiers;
     alignment_specifiers= List.rev_append sp1.alignment_specifiers
                             sp2.alignment_specifiers;
+    specifier_attributes= Annot.combine_attributes sp1.specifier_attributes
+                            sp2.specifier_attributes;
   }
 
 let rec concat_specs = function
@@ -64,6 +67,19 @@ let to_attrs = function
           ; attr_args= match args_opt with None -> [] | Some z -> z }
         ) (List.concat (List.rev z))
       end
+
+(* FORK (2026-11-20, contract D19; lean_frontend/docs/2026-11-20_attribute-preservation-record.md): every
+   production that accepts an attribute specifier sequence keeps it. *)
+let concat_attrs xs =
+  List.fold_left Annot.combine_attributes Annot.no_attributes xs
+
+(* the attributes after an array or a function declarator go on that declarator part *)
+let add_array_attrs attrs (ADecl (loc, Annot.Attrs xs, tquals, is_static, size_opt)) =
+  let Annot.Attrs xs' = attrs in
+  ADecl (loc, Annot.Attrs (xs @ xs'), tquals, is_static, size_opt)
+let add_params_attrs attrs (Params (params, is_variadic, Annot.Attrs xs)) =
+  let Annot.Attrs xs' = attrs in
+  Params (params, is_variadic, Annot.Attrs (xs @ xs'))
 
 let inject_attr attr_opt (CabsStatement (loc, Annot.Attrs xs, stmt_)) =
   let Annot.Attrs xs' = to_attrs attr_opt in
@@ -224,7 +240,7 @@ type asm_qualifier =
 %type<Cabs.struct_declaration>
   struct_declaration
 
-%type<Cabs.cabs_type_specifier list * Cabs.cabs_type_qualifier list * Cabs.alignment_specifier list>
+%type<Annot.attributes * Cabs.cabs_type_specifier list * Cabs.cabs_type_qualifier list * Cabs.alignment_specifier list>
   specifier_qualifier_list
 
 %type<Cabs.struct_declarator list>
@@ -319,7 +335,7 @@ type asm_qualifier =
   string_literal
 
 %type<Cerb_location.t * string * (Cerb_location.t * string) list>
-  located_string_literal
+  attribute_string_argument
 
 %start<Cerb_frontend.Cabs.translation_unit> translation_unit
 %start fundef_spec
@@ -849,28 +865,32 @@ declaration:
 | attr= attribute_specifier_sequence decspecs= declaration_specifiers_typedef
     idecls_opt= init_declarator_list(declarator_typedefname)? SEMICOLON
     { Declaration_base (to_attrs (Some attr), decspecs, opt_to_rev_list idecls_opt) }
-| attribute_declaration
-    { (*TODO: this is a dummy declaration*)
-      let loc = region($startpos, $endpos) (pointCursor $startpos) in
-      Declaration_base (Annot.no_attributes, empty_specs, [InitDecl (loc, Declarator (None, DDecl_identifier (Annot.no_attributes, Symbol.Identifier (loc, "test"))), None)]) }
+| rev_attr_seq= attribute_declaration
+    { (* FORK (2026-11-20, contract D19): upstream built a dummy declaration of an identifier "test" with no
+         specifiers here (its TODO), which every later stage rejected as a constraint violation at an unknown
+         location; C23 6.7.12.1 makes `[[a]];` a declaration of its own *)
+      Declaration_attribute (to_attrs (Some rev_attr_seq)) }
 ;
 
 declaration_specifier:
-| sc= storage_class_specifier ioption(attribute_specifier_sequence)
-    { { empty_specs with storage_classes=      [sc]; } }
-| tq= type_qualifier ioption(attribute_specifier_sequence)
-    { { empty_specs with type_qualifiers=      [tq]; } }
-| fs= function_specifier ioption(attribute_specifier_sequence)
-    { { empty_specs with function_specifiers=  [fs]; } }
-| als= alignment_specifier ioption(attribute_specifier_sequence)
-    { { empty_specs with alignment_specifiers= [als]; } }
+| sc= storage_class_specifier attr_opt= ioption(attribute_specifier_sequence)
+    { { empty_specs with storage_classes=      [sc]; specifier_attributes= to_attrs attr_opt; } }
+| tq= type_qualifier attr_opt= ioption(attribute_specifier_sequence)
+    { { empty_specs with type_qualifiers=      [tq]; specifier_attributes= to_attrs attr_opt; } }
+| fs= function_specifier attr_opt= ioption(attribute_specifier_sequence)
+    { { empty_specs with function_specifiers=  [fs]; specifier_attributes= to_attrs attr_opt; } }
+| als= alignment_specifier attr_opt= ioption(attribute_specifier_sequence)
+    { { empty_specs with alignment_specifiers= [als]; specifier_attributes= to_attrs attr_opt; } }
 ;
 
 declaration_specifiers:
 | ts_specs= list_eq1(attribute_type_specifier_unique, declaration_specifier)
 | ts_specs= list_ge1(attribute_type_specifier_nonunique, declaration_specifier)
-    { let (ts, ss) = ts_specs in
-      { (concat_specs ss) with type_specifiers= ts; } }
+    { let (ts_attrs, ss) = ts_specs in
+      let (ts, attrs) = List.split ts_attrs in
+      let specs = concat_specs ss in
+      { specs with type_specifiers= ts;
+                   specifier_attributes= concat_attrs (attrs @ [specs.specifier_attributes]); } }
 ;
 
 declaration_specifiers_typedef:
@@ -878,10 +898,12 @@ declaration_specifiers_typedef:
                          declaration_specifier)
 | ts_specs= list_eq1_ge1(TYPEDEF,attribute_type_specifier_nonunique,
                          declaration_specifier)
-    { let (_, ts, ss) = ts_specs in
+    { let (_, ts_attrs, ss) = ts_specs in
+      let (ts, attrs) = List.split ts_attrs in
       let specs = concat_specs ss in
       { specs with storage_classes= SC_typedef::specs.storage_classes;
-                   type_specifiers= ts; } }
+                   type_specifiers= ts;
+                   specifier_attributes= concat_attrs (attrs @ [specs.specifier_attributes]); } }
 ;
 
 init_declarator_list(declarator): (* NOTE: the list is in reverse *)
@@ -939,8 +961,8 @@ type_specifier_nonunique:
 ;
 
 attribute_type_specifier_nonunique:
-| ty= type_specifier_nonunique ioption(attribute_specifier_sequence)
-    { ty }
+| ty= type_specifier_nonunique attr_opt= ioption(attribute_specifier_sequence)
+    { (ty, to_attrs attr_opt) }
 ;
 
 type_specifier_unique:
@@ -963,8 +985,8 @@ type_specifier_unique:
 ;
 
 attribute_type_specifier_unique:
-| ty= type_specifier_unique ioption(attribute_specifier_sequence)
-    { ty }
+| ty= type_specifier_unique attr_opt= ioption(attribute_specifier_sequence)
+    { (ty, to_attrs attr_opt) }
 ;
 
 (* §6.7.2.1 Structure and union specifiers *)
@@ -1003,8 +1025,8 @@ struct_declaration:
 | attr_opt= ioption(attribute_specifier_sequence) tspecs_tquals= specifier_qualifier_list
     rev_sdeclrs_opt= struct_declarator_list? SEMICOLON has_extra= boption(SEMICOLON+)
     { if has_extra then warn_extra_semicolon $startpos(has_extra) INSIDE_STRUCT;
-      let (tspecs, tquals, align_specs) = tspecs_tquals in
-      Struct_declaration (to_attrs attr_opt, tspecs, tquals, align_specs,
+      let (spec_attrs, tspecs, tquals, align_specs) = tspecs_tquals in
+      Struct_declaration (to_attrs attr_opt, spec_attrs, tspecs, tquals, align_specs,
                           opt_to_rev_list rev_sdeclrs_opt) }
 | sa_decl= static_assert_declaration
     { Struct_assert sa_decl }
@@ -1017,7 +1039,11 @@ specifier_qualifier_list:
 | tspecs_tquals= list_tuple3_ge1 (attribute_type_specifier_nonunique,
                                   attribute_type_qualifier,
                                   attribute_alignment_specifier)
-    { tspecs_tquals }
+    { let (tspecs_attrs, tquals_attrs, aligns_attrs) = tspecs_tquals in
+      let (tspecs, attrs1) = List.split tspecs_attrs in
+      let (tquals, attrs2) = List.split tquals_attrs in
+      let (aligns, attrs3) = List.split aligns_attrs in
+      (concat_attrs (attrs1 @ attrs2 @ attrs3), tspecs, tquals, aligns) }
 ;
 
 struct_declarator_list: (* NOTE: the list is in reverse *)
@@ -1036,13 +1062,13 @@ struct_declarator:
 
 (* §6.7.2.2 Enumeration specifiers *)
 enum_specifier:
-| ENUM ioption(attribute_specifier_sequence) iopt= general_identifier?
+| ENUM attr_opt= ioption(attribute_specifier_sequence) iopt= general_identifier?
   LBRACE enums= enumerator_list COMMA? RBRACE
     { TSpec (region ($startpos, $endpos) noCursor,
-             TSpec_enum (iopt, Some (List.rev enums))) }
-| ENUM ioption(attribute_specifier_sequence) i= general_identifier
+             TSpec_enum (to_attrs attr_opt, iopt, Some (List.rev enums))) }
+| ENUM attr_opt= ioption(attribute_specifier_sequence) i= general_identifier
     { TSpec (region ($startpos, $endpos) noCursor,
-             TSpec_enum (Some i, None)) }
+             TSpec_enum (to_attrs attr_opt, Some i, None)) }
 ;
 
 enumerator_list: (* NOTE: the list is in reverse *)
@@ -1053,11 +1079,11 @@ enumerator_list: (* NOTE: the list is in reverse *)
 ;
 
 enumerator:
-| enum_cst= enumeration_constant ioption(attribute_specifier_sequence)
-    { (enum_cst, None) }
-| enum_cst= enumeration_constant ioption(attribute_specifier_sequence)
+| enum_cst= enumeration_constant attr_opt= ioption(attribute_specifier_sequence)
+    { (enum_cst, to_attrs attr_opt, None) }
+| enum_cst= enumeration_constant attr_opt= ioption(attribute_specifier_sequence)
     EQ expr= constant_expression
-    { (enum_cst, Some expr) }
+    { (enum_cst, to_attrs attr_opt, Some expr) }
 ;
 
 (* §6.7.2.4 Atomic type specifiers *)
@@ -1079,8 +1105,8 @@ type_qualifier:
 ;
 
 attribute_type_qualifier:
-  tqual= type_qualifier ioption(attribute_specifier_sequence)
-    { tqual }
+  tqual= type_qualifier attr_opt= ioption(attribute_specifier_sequence)
+    { (tqual, to_attrs attr_opt) }
 ;
 
 (* §6.7.4 Function specifiers *)
@@ -1100,8 +1126,8 @@ alignment_specifier:
 ;
 
 attribute_alignment_specifier:
-  aspec= alignment_specifier ioption(attribute_specifier_sequence)
-    { aspec }
+  aspec= alignment_specifier attr_opt= ioption(attribute_specifier_sequence)
+    { (aspec, to_attrs attr_opt) }
 ;
 
 (* §6.7.6 Declarators *)
@@ -1118,11 +1144,11 @@ direct_declarator:
     { LF.identifier_decl (to_attrs attr_opt) i }
 | LPAREN save_context decltor= declarator RPAREN
     { LF.declarator_decl decltor }
-| decl= array_declarator ioption(attribute_specifier_sequence)
-| decl= function_declarator ioption(attribute_specifier_sequence)
-    { decl }
+| decl= array_declarator attr_opt= ioption(attribute_specifier_sequence)
+| decl= function_declarator attr_opt= ioption(attribute_specifier_sequence)
+    { LF.add_declarator_attributes (to_attrs attr_opt) decl }
 | ddecltor= direct_declarator LPAREN ctxt=save_context RPAREN
-    { LF.fun_decl (Params ([], false)) ctxt ddecltor }
+    { LF.fun_decl (Params ([], false, Annot.no_attributes)) ctxt ddecltor }
 | ddecltor= direct_declarator LPAREN ctxt=save_context
   rev_ids= identifier_list RPAREN
     { LF.fun_ids_decl (List.rev rev_ids) ctxt ddecltor }
@@ -1131,21 +1157,21 @@ direct_declarator:
 array_declarator:
 | ddecltor= direct_declarator LBRACK tquals_opt= type_qualifier_list?
   expr_opt= assignment_expression? RBRACK
-    { LF.array_decl (ADecl (region ($startpos, $endpos) noCursor,
+    { LF.array_decl (ADecl (region ($startpos, $endpos) noCursor, Annot.no_attributes,
         opt_to_rev_list tquals_opt, false,
         Option.map (fun x -> ADeclSize_expression x) expr_opt)) ddecltor }
 | ddecltor= direct_declarator LBRACK STATIC tquals_opt= type_qualifier_list?
   expr= assignment_expression RBRACK
-    { LF.array_decl (ADecl (region ($startpos, $endpos) noCursor,
+    { LF.array_decl (ADecl (region ($startpos, $endpos) noCursor, Annot.no_attributes,
                             opt_to_rev_list tquals_opt,
                             true, Some (ADeclSize_expression expr))) ddecltor }
 | ddecltor= direct_declarator LBRACK tquals= type_qualifier_list STATIC
   expr= assignment_expression RBRACK
-    { LF.array_decl (ADecl (region ($startpos, $endpos) noCursor,
+    { LF.array_decl (ADecl (region ($startpos, $endpos) noCursor, Annot.no_attributes,
                             List.rev tquals, true,
                             Some (ADeclSize_expression expr))) ddecltor }
 | ddecltor= direct_declarator LBRACK tquals_opt= type_qualifier_list? STAR RBRACK
-    { LF.array_decl (ADecl (region ($startpos, $endpos) noCursor,
+    { LF.array_decl (ADecl (region ($startpos, $endpos) noCursor, Annot.no_attributes,
                             opt_to_rev_list tquals_opt, false,
                             Some ADeclSize_asterisk)) ddecltor }
 ;
@@ -1163,9 +1189,9 @@ identifier_list: (* NOTE: the list is in reverse *)
 ;
 
 pointer:
-| STAR ioption(attribute_specifier_sequence) tquals= type_qualifier_list?
+| STAR attr_opt= ioption(attribute_specifier_sequence) tquals= type_qualifier_list?
   ptr_decltor= pointer?
-    { PDecl (region ($startpos, $endpos) noCursor,
+    { PDecl (region ($startpos, $endpos) noCursor, to_attrs attr_opt,
              opt_to_rev_list tquals, ptr_decltor) }
 ;
 
@@ -1178,9 +1204,9 @@ type_qualifier_list: (* NOTE: the list is in reverse *)
 
 parameter_type_list:
 | param_decls= parameter_list ctxt= save_context
-    { (Params (List.rev param_decls, false), ctxt) }
+    { (Params (List.rev param_decls, false, Annot.no_attributes), ctxt) }
 | param_decls= parameter_list COMMA ELLIPSIS ctxt= save_context
-    { (Params (List.rev param_decls, true), ctxt)  }
+    { (Params (List.rev param_decls, true, Annot.no_attributes), ctxt)  }
 ;
 
 parameter_list: (* NOTE: the list is in reverse *)
@@ -1191,19 +1217,19 @@ parameter_list: (* NOTE: the list is in reverse *)
 ;
 
 parameter_declaration:
-| ioption(attribute_specifier_sequence) specifs= declaration_specifiers
+| attr_opt= ioption(attribute_specifier_sequence) specifs= declaration_specifiers
   decltor= declarator_varname
-    { PDeclaration_decl (specifs, LF.cabs_of_declarator decltor) }
-| ioption(attribute_specifier_sequence) specifs= declaration_specifiers
+    { PDeclaration_decl (to_attrs attr_opt, specifs, LF.cabs_of_declarator decltor) }
+| attr_opt= ioption(attribute_specifier_sequence) specifs= declaration_specifiers
   abs_decltor_opt= ioption(abstract_declarator)
-    { PDeclaration_abs_decl (specifs, abs_decltor_opt) }
+    { PDeclaration_abs_decl (to_attrs attr_opt, specifs, abs_decltor_opt) }
 ;
 
 (* §6.7.7 Type names *)
 type_name:
 | tspecs_tquals= specifier_qualifier_list abs_declr_opt= abstract_declarator?
-    { let (tspecs, tquals, align_specs) = tspecs_tquals in
-      Type_name (tspecs, tquals, align_specs, abs_declr_opt) }
+    { let (spec_attrs, tspecs, tquals, align_specs) = tspecs_tquals in
+      Type_name (spec_attrs, tspecs, tquals, align_specs, abs_declr_opt) }
 ;
 
 abstract_declarator:
@@ -1216,27 +1242,30 @@ abstract_declarator:
 direct_abstract_declarator:
 | LPAREN save_context abs_decltor= abstract_declarator RPAREN
     { DAbs_abs_declarator abs_decltor }
-| dabs= array_abstract_declarator ioption(attribute_specifier_sequence)
-| dabs= function_abstract_declarator ioption(attribute_specifier_sequence)
-    { dabs }
+| dabs= array_abstract_declarator attr_opt= ioption(attribute_specifier_sequence)
+| dabs= function_abstract_declarator attr_opt= ioption(attribute_specifier_sequence)
+    { match dabs with
+      | DAbs_array (d, adecl) -> DAbs_array (d, add_array_attrs (to_attrs attr_opt) adecl)
+      | DAbs_function (d, params) -> DAbs_function (d, add_params_attrs (to_attrs attr_opt) params)
+      | DAbs_abs_declarator _ -> assert false (* neither production builds it *) }
 ;
 
 array_abstract_declarator:
 | dabs_decltor= ioption(direct_abstract_declarator) LBRACK
   tquals= ioption(type_qualifier_list) expr= assignment_expression? RBRACK
-    { DAbs_array (dabs_decltor, ADecl (region ($startpos, $endpos) noCursor,
+    { DAbs_array (dabs_decltor, ADecl (region ($startpos, $endpos) noCursor, Annot.no_attributes,
       Option.fold ~none:[] ~some:id tquals, false,
       Option.map (fun e -> ADeclSize_expression e) expr)) }
 | dabs_decltor= ioption(direct_abstract_declarator) LBRACK STATIC
   tquals= type_qualifier_list? expr= assignment_expression RBRACK
-    { DAbs_array (dabs_decltor, ADecl (region ($startpos, $endpos) noCursor,
+    { DAbs_array (dabs_decltor, ADecl (region ($startpos, $endpos) noCursor, Annot.no_attributes,
       Option.fold ~none:[] ~some:id tquals, true, Some (ADeclSize_expression expr))) }
 | dabs_decltor= ioption(direct_abstract_declarator) LBRACK
   tquals= type_qualifier_list STATIC expr= assignment_expression RBRACK
-    { DAbs_array (dabs_decltor, ADecl (region ($startpos, $endpos) noCursor, tquals, true,
+    { DAbs_array (dabs_decltor, ADecl (region ($startpos, $endpos) noCursor, Annot.no_attributes, tquals, true,
       Some (ADeclSize_expression expr))) }
 | dabs_decltor= ioption(direct_abstract_declarator) LBRACK STAR RBRACK
-    { DAbs_array (dabs_decltor, ADecl (region ($startpos, $endpos) noCursor, [], false,
+    { DAbs_array (dabs_decltor, ADecl (region ($startpos, $endpos) noCursor, Annot.no_attributes, [], false,
       Some ADeclSize_asterisk)) }
 ;
 
@@ -1247,7 +1276,7 @@ function_abstract_declarator:
       | Some (param_tys, _) ->
         DAbs_function (dabs_decltor, param_tys)
       | None ->
-        DAbs_function (dabs_decltor, Params ([], false)) }
+        DAbs_function (dabs_decltor, Params ([], false, Annot.no_attributes)) }
 ;
 
 (* §6.7.8 Type definitions *)
@@ -1359,10 +1388,19 @@ block_item_list: (* NOTE: the list is in reverse *)
 
 block_item:
 | xs_decl= declaration
-    { CabsStatement
-        ( region ($startpos, $endpos) noCursor
-        , Annot.no_attributes
-        , CabsSdecl xs_decl ) }
+    { match xs_decl with
+      | Declaration_attribute attrs ->
+          (* FORK (2026-11-20, contract D19): `[[a]];` in a block is carried as an attributed null statement,
+             which keeps its position among the block items (`[[fallthrough]];`); no other syntax builds one *)
+          CabsStatement
+            ( region ($startpos, $endpos) noCursor
+            , attrs
+            , CabsSnull )
+      | _ ->
+          CabsStatement
+            ( region ($startpos, $endpos) noCursor
+            , Annot.no_attributes
+            , CabsSdecl xs_decl ) }
 | stmt= statement
     { stmt }
 (* magic comments as statements - permitted in blocks but not at all
@@ -1607,9 +1645,9 @@ declaration_list: (* NOTE: the list is in reverse *)
 ;
 
 (* (N2335) §6.7.11: Attributes  *)
-attribute_declaration:
+attribute_declaration: (* NOTE: the list is in reverse, as to_attrs takes it *)
 | rev_attr_seq= attribute_specifier_sequence SEMICOLON
-    { List.rev rev_attr_seq }
+    { rev_attr_seq }
 ;
 
 attribute_specifier_sequence:  (* NOTE: the list is in reverse *)
@@ -1779,21 +1817,31 @@ string_literal:
       (merge_prefix None pref_opts, components) }
 ;
 
-located_string_literal:
-| string_literal
-    { let loc = region ($startpos, $endpos) noCursor in
-      let strs = List.map (fun (loc, s) -> (loc, String.concat "" s)) (snd $1) in
-      (loc, String.concat "" (List.map snd strs), strs) }
-;
 
 balanced_token:
 | LPAREN balanced_token_sequence RPAREN
 | LBRACK balanced_token_sequence RBRACK
 | LBRACE balanced_token_sequence RBRACE
-    { [] }
+    { (* FORK (2026-11-20, contract D19): upstream returned [] here, discarding the group; it is carried whole
+         as one argument: its source text and location, with NO pieces (a string-literal argument always has at
+         least one piece, so the two are told apart) *)
+      [ (region ($startpos, $endpos) noCursor, LF.source_text $startpos $endpos, []) ] }
 (* NOTE: add attribute arguments here *)
-| strs= separated_nonempty_list(COMMA, located_string_literal)
+| strs= separated_nonempty_list(COMMA, attribute_string_argument)
    { strs }
+;
+
+attribute_string_argument:
+| lit= string_literal
+    { let loc = region ($startpos, $endpos) noCursor in
+      match fst lit with
+      | None ->
+          let strs = List.map (fun (loc, s) -> (loc, String.concat "" s)) (snd lit) in
+          (loc, String.concat "" (List.map snd strs), strs)
+      | Some _ ->
+          (* FORK (2026-11-20, contract D19): upstream dropped the encoding prefix; a prefixed literal is
+             carried as its source text, with no pieces *)
+          (loc, LF.source_text $startpos $endpos, []) }
 ;
 
 (* BEGIN CN *)

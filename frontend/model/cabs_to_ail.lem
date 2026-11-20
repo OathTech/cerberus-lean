@@ -1334,11 +1334,11 @@ val desugar_struct_declarator:
 
 val desugar_init_declarator_BROKEN:
   Ctype.qualifiers -> Ctype.ctype -> list storage_class_specifier -> init_declarator ->
-  E.desugM (Symbol.identifier * bool * (Ctype.qualifiers * Ctype.ctype) *
+  E.desugM ((Annot.attributes * Symbol.identifier) * bool * (Ctype.qualifiers * Ctype.ctype) *
             (unit -> E.desugM (maybe (Ctype.ctype * expression unit))))
 
 val desugar_init_declarator:
-  Annot.attributes ->
+  Annot.attributes -> Annot.attributes(* the specifiers' *) -> bool(* a block-scope object: no Ail slot *) ->
   bool(* isAtomic *) -> bool(* has_alignment *) ->
   Ctype.qualifiers -> Ctype.ctype ->
   list storage_class_specifier -> init_declarator ->
@@ -1858,6 +1858,93 @@ let arrayFromStringLiteral size_opt (pref_opt, strs) =
 
 
 
+(* FORK (2026-11-20, contract D19; record lean_frontend/docs/2026-11-20_attribute-preservation-record.md):
+   the attributes written on the PARTS of a declarator -- after a `*` (the pointer type's), after an array
+   declarator (the array type's), after a function declarator (the function type's) -- in the order pointer
+   chain first, then the direct declarator inside out. The attributes after the declarator-id are not parts
+   (they appertain to the declared entity; each caller places them), and a parameter declaration inside a
+   function declarator is a declaration of its own (desugar_parameter_declaration). *)
+let rec pointer_declarator_attributes (PDecl _ attrs _ ptr_decltor_opt) =
+  (Annot.AP_pointer, attrs) ::
+  match ptr_decltor_opt with
+    | Nothing -> []
+    | Just ptr_decltor -> pointer_declarator_attributes ptr_decltor
+  end
+
+let rec declarator_attributes (Declarator ptr_decltor_opt ddecltor) =
+  maybe [] pointer_declarator_attributes ptr_decltor_opt ++ direct_declarator_attributes ddecltor
+and direct_declarator_attributes ddecltor =
+  match ddecltor with
+    | DDecl_identifier _ _ ->
+        []
+    | DDecl_declarator decltor ->
+        declarator_attributes decltor
+    | DDecl_array ddecltor' (ADecl _ attrs _ _ _) ->
+        direct_declarator_attributes ddecltor' ++ [(Annot.AP_array, attrs)]
+    | DDecl_function ddecltor' (Params _ _ attrs) ->
+        direct_declarator_attributes ddecltor' ++ [(Annot.AP_function, attrs)]
+  end
+
+let rec abstract_declarator_attributes abs_decltor =
+  match abs_decltor with
+    | AbsDecl_pointer ptr_decltor ->
+        pointer_declarator_attributes ptr_decltor
+    | AbsDecl_direct ptr_decltor_opt dabs_decltor ->
+        maybe [] pointer_declarator_attributes ptr_decltor_opt ++ direct_abstract_declarator_attributes dabs_decltor
+  end
+and direct_abstract_declarator_attributes dabs_decltor =
+  match dabs_decltor with
+    | DAbs_abs_declarator abs_decltor ->
+        abstract_declarator_attributes abs_decltor
+    | DAbs_array dabs_decltor_opt (ADecl _ attrs _ _ _) ->
+        maybe [] direct_abstract_declarator_attributes dabs_decltor_opt ++ [(Annot.AP_array, attrs)]
+    | DAbs_function dabs_decltor_opt (Params _ _ attrs) ->
+        maybe [] direct_abstract_declarator_attributes dabs_decltor_opt ++ [(Annot.AP_function, attrs)]
+  end
+
+(* the specifier attributes and the declarator-part attributes of one declarator, recorded against the
+   identifier it declares *)
+val carry_declarator_attributes: maybe Symbol.identifier -> Annot.attributes -> declarator -> E.desugM unit
+let carry_declarator_attributes ident_opt spec_attrs decltor =
+  E.carry_attributes Annot.AP_specifiers ident_opt spec_attrs >>= fun () ->
+  E.mapM_ (fun (placement, attrs) ->
+    E.carry_attributes placement ident_opt attrs
+  ) (declarator_attributes decltor)
+
+val carry_abstract_declarator_attributes: Annot.attributes -> maybe abstract_declarator -> E.desugM unit
+let carry_abstract_declarator_attributes spec_attrs abs_decltor_opt =
+  E.carry_attributes Annot.AP_specifiers Nothing spec_attrs >>= fun () ->
+  E.mapM_ (fun (placement, attrs) ->
+    E.carry_attributes placement Nothing attrs
+  ) (maybe [] abstract_declarator_attributes abs_decltor_opt)
+
+val carry_struct_declarator_attributes: Symbol.identifier -> Annot.attributes -> struct_declarator -> E.desugM unit
+let carry_struct_declarator_attributes ident spec_attrs sdecltor =
+  match sdecltor with
+    | SDecl_simple decltor ->
+        carry_declarator_attributes (Just ident) spec_attrs decltor
+    | SDecl_bitfield (Just decltor) _ ->
+        carry_declarator_attributes (Just ident) spec_attrs decltor
+    | SDecl_bitfield Nothing _ ->
+        E.carry_attributes Annot.AP_specifiers (Just ident) spec_attrs
+  end
+
+(* FORK REFUSALS (2026-11-20, contract D19). The texts are whole in scripts/check_attribute_carriage.sh. *)
+let attribute_tag_reference_text =
+  "Attribute constraint violation ==> N2335 6.7.2.1#6 and 6.7.2.3#4"
+let attribute_enum_reference_text =
+  "Attribute constraint violation ==> an enum specifier without an enumerator list takes no attribute specifier sequence (N2335 6.7.2.2, syntax)"
+let with_address_block_extern_refusal ident =
+  "Cabs_to_ail.desugar_declaration_base: refused - [[cerb::with_address]] after the declarator-id of the block-scope "
+  ^ "extern declaration of '" ^ show ident ^ "' (contract D19): the attribute appertains to the declared object (C23 6.7.12.1) "
+  ^ "and is now carried to its declaration, where upstream's elaboration reads it (translation.lem decode_with_address) and the run "
+  ^ "then dies in upstream's 'TODO: cerb::with_address() is yet implemented'; the fork neither implements nor alters cerb::with_address, "
+  ^ "so the placement is refused in place of that crash. Write the object without the attribute."
+let attribute_declaration_for_init_refusal =
+  "Cabs_to_ail.desugar_statement: refused - an attribute declaration ('[[...]];', C23 6.7.12.1) as the first clause of a for statement "
+  ^ "(contract D19): Ail has no statement to carry it on in that position and no standard attribute may be written there; "
+  ^ "move the attribute declaration before the for statement."
+
 let rec reduces_to_ddecl_identifier ddecltor =
   match ddecltor with
     | DDecl_identifier _ _ ->
@@ -2025,7 +2112,7 @@ let rec desugar_type_specifiers specs =
                 E.return (Ctype.no_qualifiers, Ctype.Ctype [Annot.Aloc loc] Ctype.Void)
           
             (* NOTE: The parser does not generate such enum *)
-          | [TSpec _ (TSpec_enum Nothing Nothing)] ->
+          | [TSpec _ (TSpec_enum _ Nothing Nothing)] ->
               error "TSpec_enum Nothing, Nothing"
           
             (* NOTE: The parser does not generate such struct *)
@@ -2036,7 +2123,12 @@ let rec desugar_type_specifiers specs =
           | [TSpec _ (TSpec_union _ Nothing Nothing)] ->
               error "TSpec_union Nothing, Nothing"
           
-          | [TSpec loc (TSpec_enum (Just tag_ident) Nothing)] ->
+          | [TSpec loc (TSpec_enum attrs (Just tag_ident) Nothing)] ->
+              (* FORK (2026-11-20, contract D19): the struct arm's stop, for the form the fork's grammar accepts *)
+              (if attrs <> Annot.no_attributes then
+                 E.fail loc (Errors.Desugar_TODO attribute_enum_reference_text)
+               else
+                 E.return ()) >>= fun () ->
               (* NOTE: 'desugar_type_specifiers' must NOT be called on a
                  specifier occurring in the form described by §6.7.2.3#7 (FOOTNOTE 131) *)
               E.resolve_extraordinary_identifier tag_ident E.Namespace_tag >>= function
@@ -2050,7 +2142,7 @@ let rec desugar_type_specifiers specs =
           
           | [TSpec loc (TSpec_struct attrs (Just tag_ident) Nothing)] ->
               if attrs <> Annot.no_attributes then
-                E.fail loc (Errors.Desugar_TODO "Attribute constraint violation ==> N2335 6.7.2.1#6 and 6.7.2.3#4")
+                E.fail loc (Errors.Desugar_TODO attribute_tag_reference_text)
               else
                 (* NOTE: 'desugar_type_specifiers' must NOT be called on a
                    specifier occurring in the form described by §6.7.2.3#7 *)
@@ -2068,6 +2160,11 @@ let rec desugar_type_specifiers specs =
                 end
           
           | [TSpec loc (TSpec_union attrs (Just tag_ident) Nothing)] ->
+              (* FORK (2026-11-20, contract D19): aligned with the struct arm above (upstream checks struct only) *)
+              (if attrs <> Annot.no_attributes then
+                 E.fail loc (Errors.Desugar_TODO attribute_tag_reference_text)
+               else
+                 E.return ()) >>= fun () ->
               (* NOTE: 'desugar_type_specifiers' must NOT be called on a
                  specifier occurring in the form described by §6.7.2.3#7 *)
               E.resolve_extraordinary_identifier tag_ident E.Namespace_tag >>= function
@@ -2107,7 +2204,8 @@ let rec desugar_type_specifiers specs =
                         E.return (qs, Ctype.Ctype [Annot.Aloc loc] (Ctype.Atomic ty))
                 end
           
-          | [TSpec loc (TSpec_enum tag_ident_opt (Just enums))] ->
+          | [TSpec loc (TSpec_enum attrs tag_ident_opt (Just enums))] ->
+              E.carry_attributes Annot.AP_enum tag_ident_opt attrs >>= fun () ->
               E.register_tag loc E.Kind_enum tag_ident_opt >>= fun tag_sym ->
               register_enumerators loc tag_sym enums >>= fun ns_rev ->
               (* NOTE: this function doesn't care about the order of the integers *)
@@ -2229,7 +2327,7 @@ int ( * const [])(unsigned int, ...)    array of an unspecified number of consta
 
 
 
-and desugar_array_declarator under_array (ADecl loc tquals is_static a_decltor_size_opt) =
+and desugar_array_declarator under_array (ADecl loc _ tquals is_static a_decltor_size_opt) =
   let (isAtomic, tquals_qs) = translate_type_qualifiers tquals in
   (* NOTE: if we are in prototype scope, then we are dealing with
      a function parameter *)
@@ -2308,7 +2406,7 @@ STD_ "§6.7.6.2#1, sentence 5, not function parameter" $
 
 
 (* TYPE: pointer_declarator -> E.desugM (Ctype.qualifiers -> Ctype.ctype -> (Ctype.qualifiers * Ctype.ctype)) *)
-and desugar_pointer_declarator (PDecl ptr_loc tquals ptr_decltor_opt)  =
+and desugar_pointer_declarator (PDecl ptr_loc _ tquals ptr_decltor_opt)  =
   (* if ptr_decltor_opt = Nothing, these qualifiers are of the current pointer
      type we are building; otherwise, they are of the referenced type of the
      inner [ptr_decltor] *)
@@ -2482,7 +2580,7 @@ end
 
 
 
-and desugar_parameter_type_list fundef (Params param_decls isVariadic) =
+and desugar_parameter_type_list fundef (Params param_decls isVariadic _) =
   match param_decls with
     | [] ->
         E.return Nothing
@@ -2510,7 +2608,7 @@ and desugar_parameter_type_list fundef (Params param_decls isVariadic) =
 
 and desugar_parameter_declaration is_first fundef param_decl =
   match param_decl with
-    | PDeclaration_decl specifs decltor ->
+    | PDeclaration_decl param_attrs specifs decltor ->
         let decltor_loc = Loc.locOf decltor in
         if List.any (fun sc -> sc <> SC_register) specifs.storage_classes then
           E.constraint_violation decltor_loc IllegalStorageClassFunctionDeclarator
@@ -2519,7 +2617,11 @@ and desugar_parameter_declaration is_first fundef param_decl =
         else
           (* NOTE: specs_qs <> no_qualifiers when the specifiers had a type-name or _Atomic *)
           desugar_type_specifiers specifs.type_specifiers >>= fun (specs_qs, base_ty)       ->
-          desugar_declarator NotFunDef decltor            >>= fun ((_, ident), mk_qs_ctype) ->
+          desugar_declarator NotFunDef decltor            >>= fun ((ident_attrs, ident), mk_qs_ctype) ->
+          (* FORK (2026-11-20, contract D19): a parameter has no attribute slot in Ail *)
+          E.carry_attributes Annot.AP_parameter (Just ident) param_attrs >>= fun () ->
+          E.carry_attributes Annot.AP_declarator_id (Just ident) ident_attrs >>= fun () ->
+          carry_declarator_attributes (Just ident) specifs.specifier_attributes decltor >>= fun () ->
           let (isAtomic, tquals_qs) = translate_type_qualifiers specifs.type_qualifiers in
           (* STD §6.9.1#7, sentence 4 *)
           let (_qs, _ty) =
@@ -2567,7 +2669,7 @@ and desugar_parameter_declaration is_first fundef param_decl =
                                       , if isAtomic then Ctype.mk_ctype_atomic ty else ty
                                       , isRegister ))
             end
-    | PDeclaration_abs_decl specifs abs_decltor_opt ->
+    | PDeclaration_abs_decl param_attrs specifs abs_decltor_opt ->
         (* TODO: Should position of storage classes be tracked? *)
         let loc = Loc.bbox_location (List.map Loc.locOf specifs.type_specifiers) in
         if List.any (fun sc -> sc <> SC_register) specifs.storage_classes then
@@ -2577,6 +2679,9 @@ and desugar_parameter_declaration is_first fundef param_decl =
         else
           (* NOTE: specs_qs <> no_qualifiers when the specifiers had a type-name or _Atomic *)
           desugar_type_specifiers specifs.type_specifiers >>= fun (specs_qs, base_ty)  ->
+          (* FORK (2026-11-20, contract D19) *)
+          E.carry_attributes Annot.AP_parameter Nothing param_attrs >>= fun () ->
+          carry_abstract_declarator_attributes specifs.specifier_attributes abs_decltor_opt >>= fun () ->
           maybe (E.return (fun qs ty -> (qs, ty)))
             (desugar_abstract_declarator NotUnderArray) abs_decltor_opt >>= fun mk_qs_ctype ->
           let (isAtomic, tquals_qs) = translate_type_qualifiers specifs.type_qualifiers in
@@ -2987,7 +3092,7 @@ and desugar_init_declarator_BROKEN base_qs base_ty (scs: list storage_class_spec
   E.get_scope >>= fun scope ->
   match idecltor with
     | InitDecl _ decltor Nothing ->
-        desugar_declarator NotFunDef decltor >>= fun ((_, ident), mk_qs_ctype) ->
+        desugar_declarator NotFunDef decltor >>= fun ((ident_attrs, ident), mk_qs_ctype) ->
         let (qs, ty) = mk_qs_ctype base_qs base_ty in
         let mk_desug_init =
           fun () -> E.return Nothing in
@@ -2998,10 +3103,10 @@ and desugar_init_declarator_BROKEN base_qs base_ty (scs: list storage_class_spec
           | _ ->
               false
         end in
-        E.return (ident, is_tentative, (qs, ty), mk_desug_init)
+        E.return ((ident_attrs, ident), is_tentative, (qs, ty), mk_desug_init)
     
     | InitDecl loc decltor (Just init) ->
-        desugar_declarator NotFunDef decltor >>= fun ((_, ident), mk_qs_ctype) ->
+        desugar_declarator NotFunDef decltor >>= fun ((ident_attrs, ident), mk_qs_ctype) ->
         let (qs, ty) = mk_qs_ctype base_qs base_ty in
         
         (* TODO: check that we really never have parameter objects here *)
@@ -3022,17 +3127,28 @@ and desugar_init_declarator_BROKEN base_qs base_ty (scs: list storage_class_spec
             (* NOTE: not using <$> because of a bug in Lem *)
             wip_desugar_initializer_ loc (determinate_storage_duration link scs) ty init >>= fun z ->
             E.return (Just z) in
-          E.return (ident, false, (qs, ty), mk_desug_init)
+          E.return ((ident_attrs, ident), false, (qs, ty), mk_desug_init)
   end
 
 
 
-and desugar_init_declarator attrs isAtomic has_alignment base_qs base_ty (scs: list storage_class_specifier) idecltor =
+and desugar_init_declarator attrs spec_attrs block_object isAtomic has_alignment base_qs base_ty (scs: list storage_class_specifier) idecltor =
+  (* FORK (2026-11-20, contract D19): the specifier and declarator-part attributes are recorded against the
+     declared identifier; for a block-scope object (the for-init caller) so are the leading and declarator-id
+     attributes, which the file-scope caller puts on the declaration; a typedef name takes both on its entry *)
+  let carry ident_attrs ident decltor =
+    carry_declarator_attributes (Just ident) spec_attrs decltor >>= fun () ->
+    if block_object && scs <> [SC_typedef] then
+      E.carry_attributes Annot.AP_declaration (Just ident) attrs >>= fun () ->
+      E.carry_attributes Annot.AP_declarator_id (Just ident) ident_attrs
+    else
+      E.return () in
   (* NOTE: this function does NOT check the wf of the storage classes *)
   E.get_scope >>= fun scope ->
   match idecltor with
     | InitDecl loc decltor Nothing ->
         desugar_declarator NotFunDef decltor >>= fun ((ident_attrs, ident), mk_qs_ctype) ->
+        carry ident_attrs ident decltor >>= fun () ->
         let (qs, _ty) = mk_qs_ctype base_qs base_ty in
         let ty = if isAtomic then wrap_atomic _ty else _ty in
         let mk_desug_init =
@@ -3048,7 +3164,9 @@ and desugar_init_declarator attrs isAtomic has_alignment base_qs base_ty (scs: l
           if has_alignment then
             E.constraint_violation loc (IllegalAlignas IllegalAlignas_typedef)
           else
-            E.register_typedef ident (attrs, qs, ty) >>= fun () ->
+            (* FORK (2026-11-20, contract D19): the attributes after the declarator-id appertain to the typedef
+               name as the leading ones do (C23 6.7.12.1), so `cerb::byte` applies at both placements *)
+            E.register_typedef ident (Annot.combine_attributes attrs ident_attrs, qs, ty) >>= fun () ->
             E.return Nothing
         else
           let (ctx, ok) =
@@ -3065,6 +3183,7 @@ and desugar_init_declarator attrs isAtomic has_alignment base_qs base_ty (scs: l
           E.fail loc (Errors.Desugar_MiscViolation Errors.TypedefInitializer)
         else
           desugar_declarator NotFunDef decltor >>= fun ((ident_attrs, ident), mk_qs_ctype) ->
+          carry ident_attrs ident decltor >>= fun () ->
           let (qs, _ty) = mk_qs_ctype base_qs base_ty in
           let ty = if isAtomic then wrap_atomic _ty else _ty in
           (* TODO: check that we really never have parameter objects here *)
@@ -3097,7 +3216,7 @@ and desugar_init_declarator attrs isAtomic has_alignment base_qs base_ty (scs: l
 
 and desugar_struct_declaration struct_decl =
   match struct_decl with
-    | Struct_declaration outer_attrs specs tquals align_specs sdecltors ->
+    | Struct_declaration outer_attrs spec_attrs specs tquals align_specs sdecltors ->
         desugar_type_specifiers specs >>= fun (specs_qs, base_ty) ->
         let (isAtomic, tquals_qs) = translate_type_qualifiers tquals in
         if List.null sdecltors then
@@ -3121,6 +3240,8 @@ and desugar_struct_declaration struct_decl =
         else
           E.mapM (fun sdecltor ->
             desugar_struct_declarator (align_specs <> []) sdecltor >>= fun ((attrs, ident), mk_qs_ctype) ->
+            (* FORK (2026-11-20, contract D19): the member's own attributes have their Ail slot (below) *)
+            carry_struct_declarator_attributes ident spec_attrs sdecltor >>= fun () ->
             (* NOTE: the checks for §6.7.2.1#3 are done by desugar_type_specifiers because
                we need to special case the last member. *)
             let (qs, ty) =
@@ -3153,7 +3274,8 @@ and desugar_struct_declarator has_alignment struct_decltor =
           E.fail loc (Errors.Desugar_NotYetSupported "bit-fields")
   end
 
-and desugar_enumerator (ident, e_opt) =
+and desugar_enumerator (ident, attrs, e_opt) =
+  E.carry_attributes Annot.AP_enumerator (Just ident) attrs >>= fun () ->
   match e_opt with
     | Nothing ->
       E.return (ident, Nothing)
@@ -3317,7 +3439,9 @@ and desugar_alignment_specifiers loc decl_ty xs =
 
 
 (*  desugar_type_name: type_name -> E.desugM (Ctype.qualifiers * Ctype.ctype) *)
-and desugar_type_name (Type_name specs tquals align_specs abs_decltor_opt) =
+and desugar_type_name (Type_name spec_attrs specs tquals align_specs abs_decltor_opt) =
+  (* FORK (2026-11-20, contract D19) *)
+  carry_abstract_declarator_attributes spec_attrs abs_decltor_opt >>= fun () ->
   (* TODO: align_specs is ignored here *)
   desugar_type_specifiers specs >>= fun (specs_qs, base_ty) ->
   maybe (E.return (fun qs ty -> (qs, ty)))
@@ -3954,14 +4078,43 @@ and desugar_declaration_base attrs specifs idecltors =
   E.print_debugM 2 (fun () ->
     "BROKEN: desugar_declaration_base"
   ) >>= fun () ->
-          desugar_type_specifiers specifs.type_specifiers >>= fun (specs_qs, base_ty) ->
+  (* FORK (2026-11-20, contract D19): `struct [[a]] S;` at block scope is the tag declaration of C23 6.7.3.4
+     (the attributes appertain to the type), not the tag REFERENCE desugar_type_specifiers refuses: its
+     attributes are carried and the specifier goes on without them. A declaration with no declarator has no
+     entity for its leading and specifier attributes. *)
+  let (tag_decl_opt, type_specifiers) =
+    match (idecltors, specifs.type_specifiers) with
+      | ([], [TSpec tloc (TSpec_struct tag_attrs (Just tag_ident) Nothing)]) ->
+          (Just (tag_ident, tag_attrs), [TSpec tloc (TSpec_struct Annot.no_attributes (Just tag_ident) Nothing)])
+      | ([], [TSpec tloc (TSpec_union tag_attrs (Just tag_ident) Nothing)]) ->
+          (Just (tag_ident, tag_attrs), [TSpec tloc (TSpec_union Annot.no_attributes (Just tag_ident) Nothing)])
+      | _ ->
+          (Nothing, specifs.type_specifiers)
+    end in
+  match tag_decl_opt with
+    | Just (tag_ident, tag_attrs) ->
+        E.carry_attributes Annot.AP_tag_declaration (Just tag_ident) tag_attrs
+    | Nothing ->
+        E.return ()
+  end >>= fun () ->
+  (if List.null idecltors then
+     E.carry_attributes Annot.AP_declaration Nothing attrs >>= fun () ->
+     E.carry_attributes Annot.AP_specifiers Nothing specifs.specifier_attributes
+   else
+     E.return ()) >>= fun () ->
+          desugar_type_specifiers type_specifiers >>= fun (specs_qs, base_ty) ->
           (* for each [init_declarator] *)
-          E.foldlM (fun acc (InitDecl loc _ _ as init) ->
+          E.foldlM (fun acc (InitDecl loc decltor _ as init) ->
             (* NOTE: the wf of the storage classes is checked later (see the
                pattern match on [ty]) *)
             let (isAtomic, tquals_qs) = translate_type_qualifiers specifs.type_qualifiers in
             let base_qs = Ctype.combine_qualifiers specs_qs tquals_qs in
-            desugar_init_declarator_BROKEN base_qs base_ty specifs.storage_classes init >>= fun (ident, is_tentative, (qs, _ty), mk_desug_init) ->
+            desugar_init_declarator_BROKEN base_qs base_ty specifs.storage_classes init >>= fun ((ident_attrs, ident), is_tentative, (qs, _ty), mk_desug_init) ->
+            (* FORK (2026-11-20, contract D19): the leading and the declarator-id attributes both appertain to
+               the declared entity (C23 6.7.12.1): a typedef name, a function and an object with external
+               linkage take them on their Ail entry; an object without linkage has no entry and they are carried *)
+            carry_declarator_attributes (Just ident) specifs.specifier_attributes decltor >>= fun () ->
+            let entity_attrs = Annot.combine_attributes attrs ident_attrs in
             let ident_loc = Loc.locOf ident in
             let (Ctype.Ctype _ ty as cty) = if isAtomic then Ctype.mk_ctype_atomic _ty else _ty in
             
@@ -3971,7 +4124,7 @@ and desugar_declaration_base attrs specifs idecltors =
             
             else if specifs.storage_classes = [SC_typedef] then
               (* Case of a typedef *)
-              E.register_typedef ident (attrs, qs, cty) >>
+              E.register_typedef ident (entity_attrs, qs, cty) >>
               E.return acc
               
             else
@@ -3982,7 +4135,7 @@ and desugar_declaration_base attrs specifs idecltors =
                 else
                   E.register_ordinary_identifier ident
                     E.OK_function specifs.storage_classes >>= fun (_, sym) ->
-                  E.register_function_declaration ident_loc attrs sym true (
+                  E.register_function_declaration ident_loc entity_attrs sym true (
                     return_qs_ty,
                     params_opt,
                     is_variadic,
@@ -4007,9 +4160,15 @@ and desugar_declaration_base attrs specifs idecltors =
                     let dur = determinate_storage_duration link specifs.storage_classes in
                     match link with
                       | Linkage_external ->
+                          if Annot.is_cerb_with_address ident_attrs then
+                            (* FORK REFUSAL (2026-11-20, contract D19): crash-to-refusal, see the text *)
+                            error (with_address_block_extern_refusal ident)
+                          else
                           E.register_external_object_declaration sym
-                            (false(*TODO:check*), ident_loc, attrs, dur, List.elem SC_register specifs.storage_classes, align_opt, qs, cty)
+                            (false(*TODO:check*), ident_loc, entity_attrs, dur, List.elem SC_register specifs.storage_classes, align_opt, qs, cty)
                       | _ ->
+                          E.carry_attributes Annot.AP_declaration (Just ident) attrs >>= fun () ->
+                          E.carry_attributes Annot.AP_declarator_id (Just ident) ident_attrs >>= fun () ->
                           E.register_internal_object_declaration sym
                             (ident_loc, dur, List.elem SC_register specifs.storage_classes, align_opt, qs, cty)
                     end >>
@@ -4166,6 +4325,12 @@ and desugar_statement_aux ctx (CabsStatement loc attrs stmt_) =
           (* TODO: hackish *)
           E.return AilSskip
       
+      | CabsSdecl (Declaration_attribute decl_attrs) ->
+          (* FORK (2026-11-20, contract D19): the parser gives the block-scope attribute declaration as an
+             attributed null statement (its attributes are the statement's); this arm keeps the match total *)
+          E.carry_attributes Annot.AP_attribute_declaration Nothing decl_attrs >>
+          E.return AilSskip
+      
       | CabsSnull ->
           E.return AilSskip
       
@@ -4298,7 +4463,7 @@ and desugar_statement_aux ctx (CabsStatement loc attrs stmt_) =
             let base_qs = Ctype.combine_qualifiers specs_qs tquals_qs in
             E.mapM (fun (InitDecl loc _ _ as init) ->
               check_storage_class_specifiers loc Object_decl_context specifs.storage_classes >>= fun () ->
-              desugar_init_declarator attrs isAtomic (specifs.alignment_specifiers <> []) base_qs base_ty specifs.storage_classes init
+              desugar_init_declarator attrs specifs.specifier_attributes true isAtomic (specifs.alignment_specifiers <> []) base_qs base_ty specifs.storage_classes init
             ) idecltors  >>= fun xs ->
             E.fresh_sym_int () >>= fun loop_id ->
             E.record_loop_attribute loop_id attrs_outer (match e2_opt with Just e2 -> Loc.locOf e2 | Nothing -> Loc.unknown end) loc >> 
@@ -4430,6 +4595,9 @@ and desugar_statement_aux ctx (CabsStatement loc attrs stmt_) =
                   end
               | Just (FC_decl _ (Declaration_base _ _ _)) ->
                   error "desugar_statement_aux: Just (FC_decl (Declaration_base _ _ _)), _)"
+              | Just (FC_decl _ (Declaration_attribute _)) ->
+                  (* FORK REFUSAL (2026-11-20, contract D19) *)
+                  error attribute_declaration_for_init_refusal
               | Just (FC_decl _ (Declaration_static_assert sa_decl)) ->
                   (* for (_Static_assert(...); E2; E3) S ==> while(E2) { S'; E3; } *)
                   (* for (_Static_assert(...); E2; ) S   ==> while(E2) { S' } *)
@@ -5118,7 +5286,11 @@ let desugar_and_register_function_definition (FunDef fundef_loc fundef_attrs spe
     E.fresh_block_scope >>= fun funblock_scope ->
     E.with_scope2 funblock_scope begin
       desugar_declarator IsFunDef decltor
-    end >>= fun (idents_map, ((_, fun_ident), mk_qs_ctype)) ->
+    end >>= fun (idents_map, ((ident_attrs, fun_ident), mk_qs_ctype)) ->
+    (* FORK (2026-11-20, contract D19): the attributes after the declarator-id appertain to the function as
+       the leading ones do (C23 6.7.12.1); the specifier and declarator-part attributes are the types' *)
+    let all_fundef_attrs = Annot.combine_attributes fundef_attrs ident_attrs in
+    carry_declarator_attributes (Just fun_ident) specifs.specifier_attributes decltor >>= fun () ->
     
     (* NOTE: as per §6.9.1#2, we perform a dummy instantiation of the type
        **specified by the declarator portion of the function definition**, which
@@ -5160,7 +5332,7 @@ let desugar_and_register_function_definition (FunDef fundef_loc fundef_attrs spe
             | true  -> E.constraint_violation (Loc.locOf fun_ident) (ExternalRedefinition fun_sym)
             | false -> E.return ()
           end >>
-          E.register_function_declaration (Loc.locOf fun_ident) fundef_attrs fun_sym false (
+          E.register_function_declaration (Loc.locOf fun_ident) all_fundef_attrs fun_sym false (
             (return_qs, return_ty),
             params_opt,
             isVariadic,
@@ -5186,7 +5358,7 @@ let desugar_and_register_function_definition (FunDef fundef_loc fundef_attrs spe
       E.register_function_definition fun_sym
       (* NOTE: the Cabs parser can't easily find the location of the
          function identifier, so add it here *)
-      (Loc.with_cursor_from fundef_loc loc, marker_id, fundef_attrs, List.map fst bindings, d_stmt)
+      (Loc.with_cursor_from fundef_loc loc, marker_id, all_fundef_attrs, List.map fst bindings, d_stmt)
     end
 
 
@@ -5205,44 +5377,57 @@ let desugar_and_register_external_declaration edecl =
         desugar_and_register_function_definition fdef
     
     (* struct-or-union identifier ; *)
-    | EDecl_decl (Declaration_base _ <|
+    | EDecl_decl (Declaration_base lead_attrs <|
         storage_classes= [];
         type_specifiers= [TSpec _ (TSpec_struct attrs (Just ident) Nothing)];
         type_qualifiers= [];
         function_specifiers= [];
         alignment_specifiers= [];
+        specifier_attributes= spec_attrs;
       |> []) ->
-        let () =
-          if attrs <> Annot.no_attributes then
-            Debug.print_debug 0 [] (fun () ->
-              "TODO(attributes ignored) -- TSpec_struct 3 => " ^ show ident)
-          else () in
+        (* FORK (2026-11-20, contract D19): upstream printed a level-0 debug line and dropped them *)
+        E.carry_attributes Annot.AP_declaration Nothing lead_attrs >>= fun () ->
+        E.carry_attributes Annot.AP_tag_declaration (Just ident) attrs >>= fun () ->
+        E.carry_attributes Annot.AP_specifiers Nothing spec_attrs >>= fun () ->
         STD_ "§6.7.2.3#7"
         E.void (E.register_tag edecl_loc E.Kind_struct (Just ident))
     
     (* struct-or-union identifier ; *)
-    | EDecl_decl (Declaration_base _ <|
+    | EDecl_decl (Declaration_base lead_attrs <|
         storage_classes= [];
         type_specifiers= [TSpec _ (TSpec_union attrs (Just ident) Nothing)];
         type_qualifiers= [];
         function_specifiers= [];
         alignment_specifiers= [];
+        specifier_attributes= spec_attrs;
       |> []) ->
+        (* FORK (2026-11-20, contract D19) *)
+        E.carry_attributes Annot.AP_declaration Nothing lead_attrs >>= fun () ->
+        E.carry_attributes Annot.AP_tag_declaration (Just ident) attrs >>= fun () ->
+        E.carry_attributes Annot.AP_specifiers Nothing spec_attrs >>= fun () ->
         STD_ "§6.7.2.3#7"
         E.void (E.register_tag edecl_loc E.Kind_union (Just ident))
     
     (* enum identifier ; *)
     | EDecl_decl (Declaration_base _ <|
         storage_classes= [];
-        type_specifiers= [TSpec _ (TSpec_enum (Just ident) Nothing)];
+        type_specifiers= [TSpec _ (TSpec_enum _ (Just ident) Nothing)];
         type_qualifiers= [];
         function_specifiers= [];
         alignment_specifiers= [];
+        specifier_attributes= _;
       |> []) ->
         E.fail (Loc.locOf ident) (Errors.Desugar_MiscViolation Errors.EnumSimpleDeclarationConstruction)
     
     (* TODO: check *)
     | EDecl_decl (Declaration_base attrs specifs idecltors) ->
+        (* FORK (2026-11-20, contract D19): a declaration with no declarator has no entity for its leading and
+           specifier attributes *)
+        (if List.null idecltors then
+           E.carry_attributes Annot.AP_declaration Nothing attrs >>= fun () ->
+           E.carry_attributes Annot.AP_specifiers Nothing specifs.specifier_attributes
+         else
+           E.return ()) >>= fun () ->
         desugar_type_specifiers specifs.type_specifiers >>= fun (specs_qs, base_ty) ->
         let (isAtomic, tquals_qs) = translate_type_qualifiers specifs.type_qualifiers in
         let base_qs = Ctype.combine_qualifiers specs_qs tquals_qs in
@@ -5251,7 +5436,7 @@ let desugar_and_register_external_declaration edecl =
            (see suite/parsing/declarator_visibility.c) *)
         (* NOTE: `desugar_init_declarator' does register the identifier it finds *)
         E.mapM (fun init ->
-          desugar_init_declarator attrs isAtomic (specifs.alignment_specifiers <> []) base_qs base_ty specifs.storage_classes init
+          desugar_init_declarator attrs specifs.specifier_attributes false isAtomic (specifs.alignment_specifiers <> []) base_qs base_ty specifs.storage_classes init
         ) idecltors >>= fun xs ->
         
         (* for each [init_declarator] *)
@@ -5261,19 +5446,14 @@ let desugar_and_register_external_declaration edecl =
               E.return ()
           | Just (ident_loc, ident_attrs, link, sym, isTentative, (qs, ty), mk_desug_init) ->
               let do_function fun_qs return_qs_ty params_opt is_variadic =
-                let () =
-                  if Annot.no_attributes <> ident_attrs then
-                    Debug.print_debug 0 [] (fun () ->
-                      "WARNING: desugaring of a function initdecl is erasing some attributes!"
-                    )
-                  else
-                    () in
+                (* FORK (2026-11-20, contract D19): upstream printed a level-0 debug warning and registered the
+                   leading attributes only; the declarator-id attributes appertain to the function too *)
                 if qs <> Ctype.no_qualifiers then
                   E.undef ident_loc Undefined.UB066_qualified_function_specification
                 else if specifs.alignment_specifiers <> [] then
                   E.constraint_violation ident_loc (IllegalAlignas IllegalAlignas_function)
                 else
-                E.register_function_declaration ident_loc attrs sym true (
+                E.register_function_declaration ident_loc (Annot.combine_attributes attrs ident_attrs) sym true (
                   return_qs_ty,
                   params_opt,
                   is_variadic,
@@ -5354,6 +5534,9 @@ let desugar_and_register_external_declaration edecl =
   
     | EDecl_decl (Declaration_static_assert sa_decl) ->
         desugar_and_register_static_assert_declaration sa_decl
+    | EDecl_decl (Declaration_attribute attrs) ->
+        (* FORK (2026-11-20, contract D19): the file-scope attribute declaration *)
+        E.carry_attributes Annot.AP_attribute_declaration Nothing attrs
     | EDecl_magic str ->
       E.add_toplevel_magic str
     | EDecl_predCN pred ->
@@ -5507,3 +5690,126 @@ let desugar sup address_space_top desug_conf core_eval_stuff cn_eval_stuff start
       E.extract_program startup_str
     )
   ) 
+
+
+(* FORK (2026-11-20, contract D19; record lean_frontend/docs/2026-11-20_attribute-preservation-record.md):
+   the attribute carriage of an Ail program as text, one line per attribute:
+     <slot> <entity>: <ns>::<name>(<arguments>) @ <location of the attribute's name>
+   over every attribute slot of the sigma (declarations, function definitions and the statements of their
+   bodies, tag definitions and their members, typedef names, the carried table). Both engines print it from
+   this one definition (the oracle under `--pp=ail --ast=ail`, the Lean driver in its staged output), so the
+   witness scripts/check_attribute_carriage.sh compares them as text. An instrument: it reads the program and
+   decides nothing. Statements inside expressions (a GNU statement expression) are not walked. *)
+val show_attribute: Annot.attribute -> string
+let show_attribute attr =
+  let join sep xs =
+    List.foldl (fun acc x -> if acc = "" then x else acc ^ sep ^ x) "" xs in
+  let (Symbol.Identifier loc name) = attr.Annot.attr_id in
+  let ns =
+    match attr.Annot.attr_ns with
+      | Just (Symbol.Identifier _ str) -> str ^ "::"
+      | Nothing -> ""
+    end in
+  let show_arg (_, str, pieces) =
+    match pieces with
+      | [] ->
+          (* a balanced-token group or a prefixed string literal, carried as its source text *)
+          str
+      | _ ->
+          join " " (List.map (fun (_, piece) -> "\"" ^ piece ^ "\"") pieces)
+    end in
+  ns ^ name ^ "(" ^ join ", " (List.map show_arg attr.Annot.attr_args) ^ ") @ " ^ Loc.stringFromLocation loc
+
+val show_attributes: string -> Annot.attributes -> list string
+let show_attributes slot (Annot.Attrs attrs) =
+  List.map (fun attr -> slot ^ ": " ^ show_attribute attr) attrs
+
+val show_attribute_placement: Annot.attribute_placement -> string
+let show_attribute_placement = function
+  | Annot.AP_declaration -> "declaration"
+  | Annot.AP_declarator_id -> "declarator-id"
+  | Annot.AP_parameter -> "parameter"
+  | Annot.AP_specifiers -> "specifiers"
+  | Annot.AP_pointer -> "pointer"
+  | Annot.AP_array -> "array"
+  | Annot.AP_function -> "function"
+  | Annot.AP_enum -> "enum"
+  | Annot.AP_enumerator -> "enumerator"
+  | Annot.AP_tag_declaration -> "tag-declaration"
+  | Annot.AP_attribute_declaration -> "attribute-declaration"
+end
+
+val     show_statement_attributes: forall 'a. A.statement 'a -> list string
+let rec show_statement_attributes stmt =
+  let (kind, subs) =
+    match stmt.A.node with
+      | AilSskip -> ("skip", [])
+      | AilSexpr _ -> ("expression", [])
+      | AilSblock _ ss -> ("block", ss)
+      | AilSif _ s1 s2 -> ("if", [s1; s2])
+      | AilSwhile _ s _ -> ("while", [s])
+      | AilSdo s _ _ -> ("do", [s])
+      | AilSbreak -> ("break", [])
+      | AilScontinue -> ("continue", [])
+      | AilSreturnVoid -> ("return", [])
+      | AilSreturn _ -> ("return", [])
+      | AilSswitch _ s -> ("switch", [s])
+      | AilScase _ s -> ("case", [s])
+      | AilScase_rangeGNU _ _ s -> ("case-range", [s])
+      | AilSdefault s -> ("default", [s])
+      | AilSlabel _ s _ -> ("label", [s])
+      | AilSgoto _ -> ("goto", [])
+      | AilSdeclaration _ -> ("declaration", [])
+      | AilSpar ss -> ("par", ss)
+      | AilSreg_store _ _ -> ("reg-store", [])
+      | AilSmarker _ s -> ("marker", [s])
+    end in
+  show_attributes ("statement " ^ kind) stmt.A.attrs
+  ++ List.concat (List.map show_statement_attributes subs)
+
+val show_attribute_carriage: forall 'a. A.sigma 'a -> list string
+let show_attribute_carriage sigm =
+  let name_of sym =
+    match sym with
+      | Symbol.Symbol _ _ (Symbol.SD_Id str) -> str
+      | Symbol.Symbol _ _ (Symbol.SD_ObjectAddress str) -> str
+      | _ -> "?"
+    end in
+  let ident_name (Symbol.Identifier _ str) = str in
+  List.concat (List.map (fun (sym, (_, attrs, decl)) ->
+    let kind = match decl with
+      | A.Decl_object _ _ _ _ -> "object"
+      | A.Decl_function _ _ _ _ _ _ -> "function"
+    end in
+    show_attributes (kind ^ " " ^ name_of sym) attrs
+  ) sigm.A.declarations)
+  ++ List.concat (List.map (fun (sym, (_, _, attrs, _, body)) ->
+    show_attributes ("definition " ^ name_of sym) attrs
+    ++ show_statement_attributes body
+  ) sigm.A.function_definitions)
+  ++ List.concat (List.map (fun (sym, (_, attrs, tag_def)) ->
+    let members = fun xs ->
+      List.concat (List.map (fun (ident, (m_attrs, _, _, _)) ->
+        show_attributes ("member " ^ name_of sym ^ "." ^ ident_name ident) m_attrs
+      ) xs) in
+    match tag_def with
+      | Ctype.StructDef xs flexible_opt ->
+          show_attributes ("struct " ^ name_of sym) attrs ++ members xs
+          ++ match flexible_opt with
+               | Just (Ctype.FlexibleArrayMember f_attrs ident _ _) ->
+                   show_attributes ("member " ^ name_of sym ^ "." ^ ident_name ident) f_attrs
+               | Nothing ->
+                   []
+             end
+      | Ctype.UnionDef xs ->
+          show_attributes ("union " ^ name_of sym) attrs ++ members xs
+    end
+  ) sigm.A.tag_definitions)
+  ++ List.concat (List.map (fun (sym, attrs) ->
+    show_attributes ("typedef " ^ name_of sym) attrs
+  ) (Map_extra.toList sigm.A.typedef_attributes))
+  ++ List.concat (List.map (fun (placement, ident_opt, attrs) ->
+    show_attributes ("carried " ^ show_attribute_placement placement ^ " "
+                     ^ match ident_opt with Just ident -> ident_name ident | Nothing -> "-" end) attrs
+  ) sigm.A.carried_attributes)
+

@@ -298,6 +298,8 @@ type state = <|
   current_return_type: maybe Ctype.ctype;
   
   loop_attributes: Annot.loop_attributes;
+  (* FORK (2026-11-20, contract D19): the carried attributes, most recent first (annot.lem) *)
+  carried_attributes: Annot.carried_attributes;
 
   (* BEGIN CN *)
   toplevel_magic_statements: list (Loc.t * string);
@@ -626,6 +628,7 @@ let initial_state fresh_sym_supply_seed address_space_top desug_conf core_eval_s
     current_return_type= Nothing;
     
     loop_attributes= Map.empty;
+    carried_attributes= [];
     toplevel_magic_statements= [];
     cn_state= Cn_desugaring.initial_cn_desugaring_state cn_eval_stuff;
     
@@ -1448,6 +1451,18 @@ let record_loop_attribute id attr loc_condition loc_loop =
     |>
   in
   put_inner <|st with loop_attributes = (Map.insert id loop_attribute st.loop_attributes) |>
+
+(* FORK (2026-11-20, contract D19): record attributes Ail has no slot for (annot.lem `attribute_placement`).
+   An empty sequence records nothing. *)
+val carry_attributes: Annot.attribute_placement -> maybe Symbol.identifier -> Annot.attributes -> desugM unit
+let carry_attributes placement ident_opt attrs =
+  match attrs with
+    | Annot.Attrs [] ->
+        State_exception.return ()
+    | _ ->
+        get_inner >>= fun st ->
+        put_inner <| st with carried_attributes= (placement, ident_opt, attrs) :: st.carried_attributes |>
+  end
 
 val get_loop_attributes: unit -> desugM Annot.loop_attributes
 let get_loop_attributes () = 
@@ -2614,6 +2629,7 @@ let mk_current_ail_sigma =
         A.extern_idmap= Map.empty;
         A.typedef_attributes= Map.empty;
         A.loop_attributes= Map.empty;
+        A.carried_attributes= [];
         A.cn_functions= [];
         A.cn_lemmata= [];
         A.cn_predicates= [];
@@ -2801,6 +2817,7 @@ let extract_program startup_str =
     A.extern_idmap= extern_idmap;
     A.typedef_attributes= Map.map (fun (z, _, _) -> z) st.typedef_definitions;
     A.loop_attributes = st.loop_attributes;
+    A.carried_attributes = List.reverse st.carried_attributes;
     A.cn_predicates=  List.reverse (List.map (fun (_, (_, z)) -> z) (st.cn_state.Cn_desugaring.cn_predicates));
     A.cn_functions=  List.reverse (List.map (fun (_, (_, z)) -> z) (st.cn_state.Cn_desugaring.cn_functions));
     A.cn_lemmata=  List.reverse (List.map (fun (_, (_, z)) -> z) (st.cn_state.Cn_desugaring.cn_lemmata));
@@ -2887,6 +2904,7 @@ let get_sigma_sofar =
        A.extern_idmap= Map.empty;
        A.typedef_attributes= Map.map (fun (z, _, _) -> z) st.typedef_definitions;
        A.loop_attributes= st.loop_attributes;
+       A.carried_attributes= List.reverse st.carried_attributes;
        A.cn_predicates=  List.reverse (List.map (fun (_, (_, z)) -> z) (st.cn_state.Cn_desugaring.cn_predicates));
        A.cn_functions= List.reverse (List.map (fun (_, (_, z)) -> z) (st.cn_state.Cn_desugaring.cn_functions));
        A.cn_lemmata= List.reverse (List.map (fun (_, (_, z)) -> z) (st.cn_state.Cn_desugaring.cn_lemmata));

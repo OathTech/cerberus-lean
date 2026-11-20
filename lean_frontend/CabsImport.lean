@@ -468,7 +468,9 @@ partial def jsonToTypeSpecifier_ (j : Json) : Except String cabs_type_specifier_
       (← jsonToAttributes (← getField j "attrs"))
       (← getOption jsonToIdentifier (← getField j "id"))
       (← getOption (getList jsonToStructDecl) (← getField j "members")))
+  -- attribute carriage (2026-11-20, contract D19; cabs_json.ml `TSpec_enum`): the attributes after `enum`
   | "TSpec_enum" => .ok (.TSpec_enum
+      (← jsonToAttributes (← getField j "attrs"))
       (← getOption jsonToIdentifier (← getField j "id"))
       (← getOption (getList jsonToEnumerator) (← getField j "enumerators")))
   | "TSpec_name" => .ok (.TSpec_name (← jsonToIdentifier (← getField j "id")))
@@ -486,8 +488,10 @@ partial def jsonToTypeSpecifier (j : Json) : Except String cabs_type_specifier :
 -- Struct declaration
 partial def jsonToStructDecl (j : Json) : Except String struct_declaration := do
   match ← getTag j with
+  -- attribute carriage (D19; cabs_json.ml `Struct_declaration`): "specifier_attrs" are the type's
   | "Struct_declaration" => .ok (.Struct_declaration
       (← jsonToAttributes (← getField j "attrs"))
+      (← jsonToAttributes (← getField j "specifier_attrs"))
       (← getList jsonToTypeSpecifier (← getField j "type_specifiers"))
       (← getList jsonToTypeQualifier (← getField j "type_qualifiers"))
       (← getList jsonToAlignmentSpecifier (← getField j "alignment_specifiers"))
@@ -505,21 +509,24 @@ partial def jsonToStructDeclarator (j : Json) : Except String struct_declarator 
   | t => err "jsonToStructDeclarator" s!"unknown tag '{t}' in {j}"
 
 -- Enumerator
-partial def jsonToEnumerator (j : Json) : Except String (identifier × Option cabs_expression) := do
+-- attribute carriage (D19; cabs_json.ml `TSpec_enum`): [id, attrs, value]; the two-element shape is refused
+partial def jsonToEnumerator (j : Json) : Except String (identifier × attributes × Option cabs_expression) := do
   let arr ← getArr j
-  if h : arr.size = 2 then
+  if h : arr.size = 3 then
     let id ← jsonToIdentifier arr[0]
-    let expr ← getOption jsonToExpression arr[1]
-    .ok (id, expr)
-  else err "jsonToEnumerator" "expected 2-element array"
+    let attrs ← jsonToAttributes arr[1]
+    let expr ← getOption jsonToExpression arr[2]
+    .ok (id, attrs, expr)
+  else err "jsonToEnumerator" "expected 3-element array [id, attrs, value]"
 
 -- Pointer declarator
 partial def jsonToPointerDecl (j : Json) : Except String pointer_declarator := do
   expectTag "PDecl" j "PDecl"
   let loc ← jsonToLoc (← getField j "loc")
+  let attrs ← jsonToAttributes (← getField j "attrs")  -- D19: after the `*`
   let quals ← getList jsonToTypeQualifier (← getField j "type_qualifiers")
   let inner ← getOption jsonToPointerDecl (← getField j "pointer")
-  .ok (PDecl loc quals inner)
+  .ok (PDecl loc attrs quals inner)
 
 -- Array declarator size
 partial def jsonToArrayDeclSize (j : Json) : Except String array_declarator_size := do
@@ -532,25 +539,30 @@ partial def jsonToArrayDeclSize (j : Json) : Except String array_declarator_size
 partial def jsonToArrayDecl (j : Json) : Except String array_declarator := do
   expectTag "ADecl" j "ADecl"
   let loc ← jsonToLoc (← getField j "loc")
+  let attrs ← jsonToAttributes (← getField j "attrs")  -- D19: after the array declarator
   let quals ← getList jsonToTypeQualifier (← getField j "type_qualifiers")
   let isStatic ← getBool (← getField j "is_static")
   let size ← getOption jsonToArrayDeclSize (← getField j "size")
-  .ok (ADecl loc quals isStatic size)
+  .ok (ADecl loc attrs quals isStatic size)
 
 -- Parameter type list
 partial def jsonToParamTypeList (j : Json) : Except String parameter_type_list := do
   expectTag "Params" j "Params"
   let params ← getList jsonToParamDecl (← getField j "params")
   let variadic ← getBool (← getField j "is_variadic")
-  .ok (Params params variadic)
+  let attrs ← jsonToAttributes (← getField j "attrs")  -- D19: after the function declarator
+  .ok (Params params variadic attrs)
 
 -- Parameter declaration
 partial def jsonToParamDecl (j : Json) : Except String parameter_declaration := do
   match ← getTag j with
+  -- attribute carriage (D19; cabs_json.ml): the parameter declaration's leading attributes
   | "PDeclaration_decl" => .ok (.PDeclaration_decl
+      (← jsonToAttributes (← getField j "attrs"))
       (← jsonToSpecifiers (← getField j "specifiers"))
       (← jsonToDeclarator (← getField j "declarator")))
   | "PDeclaration_abs_decl" => .ok (.PDeclaration_abs_decl
+      (← jsonToAttributes (← getField j "attrs"))
       (← jsonToSpecifiers (← getField j "specifiers"))
       (← getOption jsonToAbstractDeclarator (← getField j "abstract_declarator")))
   | t => err "jsonToParamDecl" s!"unknown tag '{t}' in {j}"
@@ -602,11 +614,12 @@ partial def jsonToDirectAbstractDecl (j : Json) : Except String direct_abstract_
 -- Type name
 partial def jsonToTypeName (j : Json) : Except String type_name := do
   expectTag "Type_name" j "Type_name"
+  let specAttrs ← jsonToAttributes (← getField j "specifier_attrs")  -- D19: the type's
   let specs ← getList jsonToTypeSpecifier (← getField j "type_specifiers")
   let quals ← getList jsonToTypeQualifier (← getField j "type_qualifiers")
   let aligns ← getList jsonToAlignmentSpecifier (← getField j "alignment_specifiers")
   let absDecl ← getOption jsonToAbstractDeclarator (← getField j "abstract_declarator")
-  .ok (Type_name specs quals aligns absDecl)
+  .ok (Type_name specAttrs specs quals aligns absDecl)
 
 -- Designator
 partial def jsonToDesignator (j : Json) : Except String designator := do
@@ -678,7 +691,9 @@ partial def jsonToSpecifiers (j : Json) : Except String specifiers := do
     (← getList jsonToTypeSpecifier (← getField j "type_specifiers"))
     (← getList jsonToTypeQualifier (← getField j "type_qualifiers"))
     (← getList jsonToFunctionSpecifier (← getField j "function_specifiers"))
-    (← getList jsonToAlignmentSpecifier (← getField j "alignment_specifiers")))
+    (← getList jsonToAlignmentSpecifier (← getField j "alignment_specifiers"))
+    -- attribute carriage (D19; cabs_json.ml `json_of_specifiers`): the sequences written after any specifier
+    (← jsonToAttributes (← getField j "specifier_attrs")))
 
 -- Static assert
 partial def jsonToStaticAssert (j : Json) : Except String static_assert_declaration := do
@@ -704,6 +719,9 @@ partial def jsonToDeclaration (j : Json) : Except String cabs_declaration := do
       (← getList jsonToInitDecl (← getField j "init_declarators")))
   | "Declaration_static_assert" => .ok (.Declaration_static_assert
       (← jsonToStaticAssert (← getField j "assert")))
+  -- attribute carriage (D19; cabs_json.ml): the C23 attribute declaration `[[a]];` (file scope, for-init)
+  | "Declaration_attribute" => .ok (.Declaration_attribute
+      (← jsonToAttributes (← getField j "attrs")))
   | t => err "jsonToDeclaration" s!"unknown tag '{t}' in {j}"
 
 -- For clause

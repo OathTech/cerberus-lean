@@ -151,6 +151,8 @@ let parse_from_channel input =
   read parse_channel input
 
 let parse_from_string ~filename str =
+  (* FORK (2026-11-20, contract D19): the text an attribute argument is sliced from (lexer_feedback.ml) *)
+  Lexer_feedback.set_source str;
   let lexbuf = Lexing.from_string str in
   Lexing.set_filename lexbuf filename;
   parse lexbuf

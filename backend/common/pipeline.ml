@@ -243,7 +243,16 @@ let c_frontend ?(cn_init_scope=Cn_desugaring.empty_init)
           Pp_ail_ast.pp_program_with_annot ailtau_prog
         else
           Pp_ail_ast.pp_program true false ailtau_prog in
-        io.run_pp None doc
+        io.run_pp None doc >>= fun () ->
+        (* FORK (2026-11-20, contract D19; lean_frontend/docs/2026-11-20_attribute-preservation-record.md):
+           after the Ail tree, the attribute carriage of the typed program, one `attribute: ` line per
+           attribute over every slot (cabs_to_ail.lem show_attribute_carriage -- the Lem definition the Lean
+           driver prints too, so scripts/check_attribute_carriage.sh compares the two engines as text) *)
+        io.run_pp None
+          PPrint.(separate hardline
+            (string "AilAttributeCarriage"
+             :: List.map (fun line -> string ("attribute: " ^ line))
+                  (Cabs_to_ail.show_attribute_carriage (snd ailtau_prog))) ^^ hardline)
     end >>= fun () ->
     whenM (conf.debug_level <= 4 && List.mem Ail conf.pprints) begin
       fun () ->

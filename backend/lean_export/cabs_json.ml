@@ -361,8 +361,16 @@ and json_of_for_clause = function
 
 (* === Type names === *)
 
-and json_of_type_name (Type_name (tspecs, tquals, aspecs, abs_decl_opt)) =
+(* Attribute carriage (2026-11-20, contract D19; lean_frontend/docs/2026-11-20_attribute-preservation-record.md):
+   every Cabs node the grammar lets an attribute specifier sequence follow carries it, and the export writes
+   each such slot: "specifier_attrs" on Type_name, Struct_declaration and Specifiers (the type's), "attrs" on
+   TSpec_enum, ADecl, PDecl, Params, PDeclaration_decl and PDeclaration_abs_decl, a three-element enumerator
+   [id, attrs, value], and the declaration form Declaration_attribute. An attribute argument that is not a plain
+   string literal (a nested balanced-token group, a prefixed literal) is [loc, source text, []]: no pieces.
+   CabsImport.lean reads every field fail-closed (a missing one is an error, as for the position fields). *)
+and json_of_type_name (Type_name (spec_attrs, tspecs, tquals, aspecs, abs_decl_opt)) =
   tag "Type_name" [
+    ("specifier_attrs", json_of_attributes spec_attrs);
     ("type_specifiers", json_of_list json_of_cabs_type_specifier tspecs);
     ("type_qualifiers", json_of_list json_of_cabs_type_qualifier tquals);
     ("alignment_specifiers", json_of_list json_of_alignment_specifier aspecs);
@@ -403,11 +411,12 @@ and json_of_cabs_type_specifier_ = function
       ("id", json_of_option json_of_identifier id_opt);
       ("members", json_of_option (json_of_list json_of_struct_declaration) members_opt)
     ]
-  | TSpec_enum (id_opt, enumerators_opt) ->
+  | TSpec_enum (attrs, id_opt, enumerators_opt) ->
     tag "TSpec_enum" [
+      ("attrs", json_of_attributes attrs);
       ("id", json_of_option json_of_identifier id_opt);
-      ("enumerators", json_of_option (json_of_list (fun (id, e_opt) ->
-        `List [json_of_identifier id; json_of_option json_of_cabs_expression e_opt]
+      ("enumerators", json_of_option (json_of_list (fun (id, e_attrs, e_opt) ->
+        `List [json_of_identifier id; json_of_attributes e_attrs; json_of_option json_of_cabs_expression e_opt]
       )) enumerators_opt)
     ]
   | TSpec_name id ->
@@ -420,9 +429,10 @@ and json_of_cabs_type_specifier_ = function
 (* === Struct declarations === *)
 
 and json_of_struct_declaration = function
-  | Struct_declaration (attrs, tspecs, tquals, aspecs, sdecls) ->
+  | Struct_declaration (attrs, spec_attrs, tspecs, tquals, aspecs, sdecls) ->
     tag "Struct_declaration" [
       ("attrs", json_of_attributes attrs);
+      ("specifier_attrs", json_of_attributes spec_attrs);
       ("type_specifiers", json_of_list json_of_cabs_type_specifier tspecs);
       ("type_qualifiers", json_of_list json_of_cabs_type_qualifier tquals);
       ("alignment_specifiers", json_of_list json_of_alignment_specifier aspecs);
@@ -478,7 +488,8 @@ and json_of_specifiers (s : specifiers) =
     ("type_specifiers", json_of_list json_of_cabs_type_specifier s.type_specifiers);
     ("type_qualifiers", json_of_list json_of_cabs_type_qualifier s.type_qualifiers);
     ("function_specifiers", json_of_list json_of_function_specifier s.function_specifiers);
-    ("alignment_specifiers", json_of_list json_of_alignment_specifier s.alignment_specifiers)
+    ("alignment_specifiers", json_of_list json_of_alignment_specifier s.alignment_specifiers);
+    ("specifier_attrs", json_of_attributes s.specifier_attributes)
   ]
 
 (* === Declarators === *)
@@ -508,9 +519,10 @@ and json_of_direct_declarator = function
       ("params", json_of_parameter_type_list ptl)
     ]
 
-and json_of_array_declarator (ADecl (loc, tquals, is_static, size_opt)) =
+and json_of_array_declarator (ADecl (loc, attrs, tquals, is_static, size_opt)) =
   tag "ADecl" [
     ("loc", json_of_loc loc);
+    ("attrs", json_of_attributes attrs);
     ("type_qualifiers", json_of_list json_of_cabs_type_qualifier tquals);
     ("is_static", json_of_bool is_static);
     ("size", json_of_option json_of_array_declarator_size size_opt)
@@ -521,27 +533,31 @@ and json_of_array_declarator_size = function
     tag "ADeclSize_expression" [("expr", json_of_cabs_expression e)]
   | ADeclSize_asterisk -> tag0 "ADeclSize_asterisk"
 
-and json_of_pointer_declarator (PDecl (loc, tquals, ptr_opt)) =
+and json_of_pointer_declarator (PDecl (loc, attrs, tquals, ptr_opt)) =
   tag "PDecl" [
     ("loc", json_of_loc loc);
+    ("attrs", json_of_attributes attrs);
     ("type_qualifiers", json_of_list json_of_cabs_type_qualifier tquals);
     ("pointer", json_of_option json_of_pointer_declarator ptr_opt)
   ]
 
-and json_of_parameter_type_list (Params (params, is_variadic)) =
+and json_of_parameter_type_list (Params (params, is_variadic, attrs)) =
   tag "Params" [
     ("params", json_of_list json_of_parameter_declaration params);
-    ("is_variadic", json_of_bool is_variadic)
+    ("is_variadic", json_of_bool is_variadic);
+    ("attrs", json_of_attributes attrs)
   ]
 
 and json_of_parameter_declaration = function
-  | PDeclaration_decl (specs, decl) ->
+  | PDeclaration_decl (attrs, specs, decl) ->
     tag "PDeclaration_decl" [
+      ("attrs", json_of_attributes attrs);
       ("specifiers", json_of_specifiers specs);
       ("declarator", json_of_declarator decl)
     ]
-  | PDeclaration_abs_decl (specs, abs_decl_opt) ->
+  | PDeclaration_abs_decl (attrs, specs, abs_decl_opt) ->
     tag "PDeclaration_abs_decl" [
+      ("attrs", json_of_attributes attrs);
       ("specifiers", json_of_specifiers specs);
       ("abstract_declarator", json_of_option json_of_abstract_declarator abs_decl_opt)
     ]
@@ -639,6 +655,8 @@ and json_of_cabs_declaration = function
     ]
   | Declaration_static_assert sa ->
     tag "Declaration_static_assert" [("assert", json_of_static_assert_declaration sa)]
+  | Declaration_attribute attrs ->
+    tag "Declaration_attribute" [("attrs", json_of_attributes attrs)]
 
 and json_of_init_declarator (InitDecl (loc, decl, init_opt)) =
   tag "InitDecl" [

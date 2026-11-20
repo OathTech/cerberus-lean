@@ -27,6 +27,11 @@ val array_decl: Cabs.array_declarator -> declarator -> declarator
 val fun_decl: Cabs.parameter_type_list -> context -> declarator -> declarator
 val fun_ids_decl: Symbol.identifier list -> context -> declarator -> declarator
 
+(* FORK (2026-11-20, contract D19): see lexer_feedback.ml *)
+val add_declarator_attributes: Annot.attributes -> declarator -> declarator
+val set_source: string -> unit
+val source_text: Lexing.position -> Lexing.position -> string
+
 val reinstall_function_context: declarator -> unit
 val create_function_definition:
   Cerb_location.t ->

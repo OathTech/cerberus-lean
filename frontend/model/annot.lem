@@ -20,6 +20,29 @@ instance (Show attributes)
   let show attrs = "ATTRS"
 end
 
+(* FORK (2026-11-20, contract D19; record lean_frontend/docs/2026-11-20_attribute-preservation-record.md):
+   CARRIAGE of the attributes that appertain to something Ail has no attribute slot for. The desugarer gives
+   an attribute to the Ail slot of the entity it appertains to where there is one (a function, an object with
+   linkage, a typedef name, a struct or union definition, a member, a statement or label); every other
+   attribute the grammar accepts is recorded in `sigma.carried_attributes` as a triple: the placement it was
+   written at (C23 6.7.12.1 says what it appertains to there), the identifier of the nearest declared entity
+   (Nothing: a type name, an abstract declarator, a declaration with no declarator, an attribute declaration)
+   and the attributes, each with its own location. No meaning is given to any of them. *)
+type attribute_placement =
+  | AP_declaration           (* at the start of a declaration: the declared entity (a block-scope object) *)
+  | AP_declarator_id         (* after the declarator-id: the declared entity (a block-scope object, a parameter) *)
+  | AP_parameter             (* at the start of a parameter declaration: the parameter *)
+  | AP_specifiers            (* in the declaration specifiers or the specifier-qualifier list: the type they determine *)
+  | AP_pointer               (* after a `*`: the pointer type *)
+  | AP_array                 (* after an array declarator: the array type *)
+  | AP_function              (* after a function declarator: the function type *)
+  | AP_enum                  (* after `enum` in a specifier with an enumerator list: the enumerated type *)
+  | AP_enumerator            (* after an enumeration constant: the enumerator *)
+  | AP_tag_declaration       (* after `struct`/`union` in a declaration `struct [[a]] S;`: the type *)
+  | AP_attribute_declaration (* the attribute declaration `[[a]];` at file scope *)
+
+type carried_attributes = list (attribute_placement * maybe Symbol.identifier * attributes)
+
 val no_attributes: attributes
 let no_attributes =
   Attrs []
@@ -214,6 +237,17 @@ let is_cerb_byte (Attrs attributes) =
      List.any (fun attr ->
          match (attr.attr_ns, attr.attr_id) with
          | (Just (Symbol.Identifier _loc1 "cerb"), Symbol.Identifier _loc2 "byte") ->
+            true
+         | _ ->
+            false
+         end
+       ) attributes
+
+(* FORK (2026-11-20, contract D19): does the sequence hold a `cerb::with_address` (cerb_attributes.lem reads it) *)
+let is_cerb_with_address (Attrs attributes) =
+     List.any (fun attr ->
+         match (attr.attr_ns, attr.attr_id) with
+         | (Just (Symbol.Identifier _loc1 "cerb"), Symbol.Identifier _loc2 "with_address") ->
             true
          | _ ->
             false

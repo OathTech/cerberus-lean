@@ -322,6 +322,8 @@ type sigma 'a = <|
   extern_idmap: map Symbol.identifier sigma_extern_id;
   typedef_attributes: map ail_identifier Annot.attributes;
   loop_attributes: Annot.loop_attributes;
+  (* FORK (2026-11-20, contract D19): the attributes Ail has no slot for, in source order (annot.lem) *)
+  carried_attributes: Annot.carried_attributes;
   cn_functions: list sigma_cn_function;
   cn_lemmata: list sigma_cn_lemmata;
   cn_predicates: list sigma_cn_predicate;
@@ -340,6 +342,7 @@ let empty_sigma : sigma 'a = <|
   extern_idmap = Map.empty;
   typedef_attributes = Map.empty;
   loop_attributes = Map.empty;
+  carried_attributes = [];
   cn_functions = [];
   cn_lemmata = [];
   cn_predicates = [];

@@ -860,6 +860,13 @@ def frontendTU [LemFuel] [CerbGlobal.Switches] (quiet : Bool) (supply : Nat) (ad
         return .error 0
     | .Result (typedProg, _annots) =>
       say s!"  typechecking succeeded!"
+      -- Attribute carriage (2026-11-20, contract D19; docs/2026-11-20_attribute-preservation-record.md): the
+      -- staged (non-batch) output lists every attribute of the typed Ail program, one `attribute: ` line each,
+      -- from the Lem definition `show_attribute_carriage` (cabs_to_ail.lem) that the oracle prints under
+      -- `--pp=ail --ast=ail` (backend/common/pipeline.ml, the Ail printing of `ail_typechecking`), so
+      -- scripts/check_attribute_carriage.sh compares the two engines as text. An instrument: nothing reads it.
+      for line in show_attribute_carriage typedProg.2 do
+        say s!"  attribute: {line}"
 
       -- Step 3: Translate AIL → Core
       say "  translating AIL → Core..."

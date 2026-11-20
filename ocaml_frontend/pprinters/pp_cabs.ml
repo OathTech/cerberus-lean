@@ -397,8 +397,13 @@ and dtree_of_cabs_declaration = function
   | Declaration_static_assert sa_decl ->
       Dnode ( pp_decl_ctor "Declaration_static_assert"
             , [dtree_of_static_assert_declaration sa_decl] )
+  (* FORK (2026-11-20, contract D19; lean_frontend/docs/2026-11-20_attribute-preservation-record.md): the
+     attribute slots the fork added to Cabs print as the existing ones do (with_attributes) *)
+  | Declaration_attribute attrs ->
+      with_attributes attrs (Dleaf (pp_decl_ctor "Declaration_attribute"))
 
 and dtree_of_specifiers specifs =
+  with_attributes specifs.specifier_attributes @@
   Dnode (pp_ctor "Specifiers", filter_opt_list [
       leaf_opt_list "Storage_class_specifiers" pp_storage_class_specifier   specifs.storage_classes     ;
       node_opt_list "Type_specifiers"          dtree_of_cabs_type_specifier specifs.type_specifiers     ;
@@ -464,9 +469,11 @@ and dtree_of_cabs_type_specifier (TSpec (_, tspec)) =
           Dnode (pp_ctor "TSpec_union" ^^ P.brackets (pp_option pp_identifier id_opt),
                    node_of_list_option dtree_of_struct_declaration s_decls_opt)
         end
-    | TSpec_enum (id_opt, enums_opt) ->
-        Dnode (pp_ctor "TSpec_enum" ^^ P.brackets (pp_option pp_identifier id_opt),
-               node_of_list_option dtree_of_enumerator enums_opt)
+    | TSpec_enum (attrs, id_opt, enums_opt) ->
+        with_attributes attrs begin
+          Dnode (pp_ctor "TSpec_enum" ^^ P.brackets (pp_option pp_identifier id_opt),
+                 node_of_list_option dtree_of_enumerator enums_opt)
+        end
     | TSpec_name id ->
         Dleaf (pp_ctor "TSpec_name" ^^ P.brackets (pp_identifier id))
     | TSpec_typeof_expr e ->
@@ -475,8 +482,8 @@ and dtree_of_cabs_type_specifier (TSpec (_, tspec)) =
         Dnode (pp_ctor "TSpec_typeof_type", [dtree_of_type_name ty])
 
 and dtree_of_struct_declaration = function
-  | Struct_declaration (attrs, specs, qs, align_specs, s_decls) ->
-      with_attributes attrs begin
+  | Struct_declaration (attrs, spec_attrs, specs, qs, align_specs, s_decls) ->
+      with_attributes (Annot.combine_attributes attrs spec_attrs) begin
         Dnode (pp_ctor "Struct_declaration", filter_opt_list [
           node_opt_list "Type_specifiers"   dtree_of_cabs_type_specifier specs  ;
           leaf_opt_list "Type_qualifiers"   pp_cabs_type_qualifier       qs     ;
@@ -501,7 +508,8 @@ and dtree_of_static_assert_declaration = function
               let d_s = Dleaf (pp_cabs_string_literal s) in
               [ d_e ; d_s ] )
 
-and dtree_of_enumerator (id, e_opt) =
+and dtree_of_enumerator (id, attrs, e_opt) =
+  with_attributes attrs @@
   Dnode (pp_identifier id ^^^ P.comma, [node_of_option dtree_of_cabs_expression e_opt])
 
 and pp_cabs_type_qualifier = function
@@ -552,7 +560,8 @@ and dtree_of_direct_declarator = function
               [ d_ddecltor; d_param_tys ] )
 
 and dtree_of_array_declarator = function
-  | ADecl (_, qs, is_static, a_decltor_size_opt) ->
+  | ADecl (_, attrs, qs, is_static, a_decltor_size_opt) ->
+      with_attributes attrs @@
       Dnode ( pp_decl_ctor "ADecl" ^^^ P.brackets (comma_list pp_cabs_type_qualifier qs) ^^
               (if is_static then P.space ^^ !^ "static" else P.empty)
             , [node_of_option dtree_of_array_declarator_size a_decltor_size_opt] )
@@ -564,35 +573,43 @@ and dtree_of_array_declarator_size = function
       Dleaf (pp_decl_ctor "ADeclSize_asterisk")
 
 and dtree_of_pointer_declarator = function
-  | PDecl (_, qs, None) ->
+  | PDecl (_, attrs, qs, None) ->
+      with_attributes attrs @@
       Dleaf (pp_decl_ctor "PDecl" ^^^ P.brackets (comma_list pp_cabs_type_qualifier qs))
-  | PDecl (_, qs, Some ptr_decltor) ->
+  | PDecl (_, attrs, qs, Some ptr_decltor) ->
+      with_attributes attrs @@
       Dnode ( pp_decl_ctor "PDecl" ^^^ P.brackets (comma_list pp_cabs_type_qualifier qs)
             , [dtree_of_pointer_declarator ptr_decltor] )
 
 and dtree_of_parameter_type_list = function
-  | Params ([], is_variadic) ->
+  | Params ([], is_variadic, attrs) ->
+      with_attributes attrs @@
       Dleaf (pp_decl_ctor "Params" ^^ (if is_variadic then P.space ^^ !^ "variadic" else P.empty) ^^^ !^ "empty")
-  | Params (param_decls, is_variadic) ->
+  | Params (param_decls, is_variadic, attrs) ->
+      with_attributes attrs @@
       Dnode ( pp_decl_ctor "Params" ^^ (if is_variadic then P.space ^^ !^ "variadic" else P.empty)
             , List.map dtree_of_parameter_declaration param_decls )
 
 and dtree_of_parameter_declaration = function
-  | PDeclaration_decl (specifs, decltor) ->
+  | PDeclaration_decl (attrs, specifs, decltor) ->
+      with_attributes attrs @@
       Dnode ( pp_decl_ctor "PDeclaration_decl"
             , let d_specifs = dtree_of_specifiers specifs in
               let d_decltor = dtree_of_declarator decltor in
               [ d_specifs; d_decltor ] )
-  | PDeclaration_abs_decl (specifs, None) ->
+  | PDeclaration_abs_decl (attrs, specifs, None) ->
+      with_attributes attrs @@
       Dnode (pp_ctor "PDeclaration_abs_decl", [dtree_of_specifiers specifs])
-  | PDeclaration_abs_decl (specifs, Some abs_decltor) ->
+  | PDeclaration_abs_decl (attrs, specifs, Some abs_decltor) ->
+      with_attributes attrs @@
       Dnode ( pp_ctor "PDeclaration_abs_decl"
               , let d_specifs = dtree_of_specifiers specifs in
                 let d_abs_decltor = dtree_of_abstract_declarator abs_decltor in
                 [ d_specifs; d_abs_decltor ] )
 
 and dtree_of_type_name = function
-  | Type_name (specs, qs, align_specs, a_decltor_opt) ->
+  | Type_name (spec_attrs, specs, qs, align_specs, a_decltor_opt) ->
+          with_attributes spec_attrs @@
           Dnode ( pp_decl_ctor "Type_name"
             , let d_specs = node_opt_list "Type_specifiers" dtree_of_cabs_type_specifier specs in
               let d_qs = leaf_opt_list "Type_qualifiers" pp_cabs_type_qualifier qs in
@@ -771,6 +788,7 @@ let filter_external_decl =
     | EDecl_decl (Declaration_base (_, _, InitDecl(loc, _, _)::_)) ->
         Cerb_location.from_main_file loc
     | EDecl_decl (Declaration_base (_, _, [])) -> true
+    | EDecl_decl (Declaration_attribute _) -> true
     | EDecl_magic _ -> true
     | EDecl_predCN _ -> true
     | EDecl_funcCN _ -> true
