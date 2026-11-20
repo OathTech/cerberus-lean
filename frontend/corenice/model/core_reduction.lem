@@ -570,6 +570,26 @@ let is_unseq_with_ccall ctx =
 
 
 
+(* Research scheduler for the two operands of an AIL relational operator.
+   A stable partition changes only search priority. Contexts retain their
+   actual operand slot, including both siblings and the original race join. *)
+let nice_relational_priority annots group candidates =
+  let relational = List.any (function
+    | Annot.Astd str -> str = "§6.5.8"
+    | _ -> false
+  end) annots in
+  match group with
+    | Expr _ (Eunseq [_; _]) ->
+        if relational then
+          let left = (function
+            | (Cunseq _ [] _ [_], _) -> true
+            | _ -> false
+          end) in
+          List.filter left candidates ++ List.filter (fun p -> not (left p)) candidates
+        else candidates
+    | _ -> candidates
+  end
+
 val     get_ctx: Core.expr core_run_annotation -> list (context * Core.expr core_run_annotation)
 let rec get_ctx (Expr annot expr_ as expr) =
   if is_irreducible expr then
@@ -602,7 +622,7 @@ let rec get_ctx (Expr annot expr_ as expr) =
         else
           List.map (fun (ctx, e) ->
             (Cwseq annot pat ctx e2, e)
-          ) (get_ctx e1)
+          ) (nice_relational_priority annot e1 (get_ctx e1))
     | Esseq pat e1 (nice_tail, e2) ->
         if is_irreducible e1 then
           [(CTX, expr)]
