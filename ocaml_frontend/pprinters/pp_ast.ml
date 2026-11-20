@@ -32,7 +32,10 @@ let add_dtree_of_attributes (Annot.Attrs xs) dtrees =
                       | None ->
                           ""
                     end ^ string_of_ident attr.attr_id ^
-                    "(" ^ String.concat ", " (List.map (fun (_, _, l) ->
+                    (* FORK (2026-11-20, contract D19; lean_frontend/docs/2026-11-20_attribute-preservation-record.md):
+                       an argument with no pieces is not a plain string literal; it is carried as its tokens *)
+                    "(" ^ String.concat ", " (List.map (fun (_, toks, l) ->
+                      if l = [] then toks else
                       String.concat " ++ " (List.map (fun (loc, z) ->
                       "\"" ^ String.escaped z ^ "\"") l)) attr.attr_args) ^  ")" in
                   Dleaf (!^ str)

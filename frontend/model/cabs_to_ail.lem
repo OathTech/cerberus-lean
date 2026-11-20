@@ -1936,7 +1936,7 @@ let attribute_enum_reference_text =
   "Attribute constraint violation ==> an enum specifier without an enumerator list takes no attribute specifier sequence (N2335 6.7.2.2, syntax)"
 let with_address_block_extern_refusal ident =
   "Cabs_to_ail.desugar_declaration_base: refused - [[cerb::with_address]] after the declarator-id of the block-scope "
-  ^ "extern declaration of '" ^ show ident ^ "' (contract D19): the attribute appertains to the declared object (C23 6.7.12.1) "
+  ^ "extern declaration of '" ^ show ident ^ "' (contract D19): the attribute appertains to the declared object (C23 6.7.12.1 in draft N3096) "
   ^ "and is now carried to its declaration, where upstream's elaboration reads it (translation.lem decode_with_address) and the run "
   ^ "then dies in upstream's 'TODO: cerb::with_address() is yet implemented'; the fork neither implements nor alters cerb::with_address, "
   ^ "so the placement is refused in place of that crash. Write the object without the attribute."
@@ -1966,8 +1966,24 @@ let array_parameter_qualifier_refusal =
   ^ "the element type ('int a[const 1]' becomes 'const int *a'; its own commented code at c3ff8c53f cabs_to_ail.lem "
   ^ ":2245-2256 has the pointer placement). Write the parameter as a qualified pointer ('int * const a')."
 
+(* FORK (2026-11-20, contract D19; pre-merge review P3): qualifiers or `static` in the brackets of an array
+   parameter that are NOT the outermost array derivation (`int a[2][const 3]`: C17 6.7.6.2#1, last sentence) get
+   upstream's own constraint, which its under-array test does not reach for this shape, and not the D19 refusal,
+   whose text explains where well-placed qualifiers belong. *)
+val check_array_qualifiers_outermost: bool -> array_declarator -> E.desugM unit
+let check_array_qualifiers_outermost inner_is_array (ADecl loc _ tquals is_static _) =
+  if inner_is_array && (tquals <> [] || is_static) then
+    E.get_scope >>= function
+      | E.Scope_prototype _ ->
+          E.constraint_violation loc ArrayDeclarationQsAndStaticOnlyOutmost
+      | _ ->
+          E.return ()
+    end
+  else
+    E.return ()
+
 let attribute_declaration_for_init_refusal =
-  "Cabs_to_ail.desugar_statement: refused - an attribute declaration ('[[...]];', C23 6.7.12.1) as the first clause of a for statement "
+  "Cabs_to_ail.desugar_statement: refused - an attribute declaration ('[[...]];', C23 6.7.12.1 in draft N3096) as the first clause of a for statement "
   ^ "(contract D19): Ail has no statement to carry it on in that position and no standard attribute may be written there; "
   ^ "move the attribute declaration before the for statement."
 
@@ -2493,6 +2509,8 @@ and desugar_direct_abstract_declarator under_array = function
   | DAbs_abs_declarator abs_decltor ->
       desugar_abstract_declarator under_array abs_decltor
   | DAbs_array dabs_decltor_opt a_decltor ->
+      check_array_qualifiers_outermost
+        (match dabs_decltor_opt with Just (DAbs_array _ _) -> true | _ -> false end) a_decltor >>= fun () ->
       (* NOTE: the recursive call is "under an array" declaration *)
       maybe (E.return (fun qs ty -> (qs, ty)))
         (desugar_direct_abstract_declarator IsUnderArray) dabs_decltor_opt >>= fun mk_outer_qs_ctype ->
@@ -2559,6 +2577,8 @@ and desugar_direct_declarator fundef under_array = function
       desugar_declarator fundef decltor
   
   | DDecl_array ddecltor a_decltor ->
+      check_array_qualifiers_outermost
+        (match ddecltor with DDecl_array _ _ -> true | _ -> false end) a_decltor >>= fun () ->
       (* NOTE: the recursive call is "under an array" declaration *)
       desugar_direct_declarator fundef IsUnderArray ddecltor >>= fun (attrs_ident, mk_outer_qs_ctype) ->
       desugar_array_declarator under_array a_decltor         >>= fun mk_array_qs_ctype          ->
@@ -3218,7 +3238,7 @@ and desugar_init_declarator attrs spec_attrs block_object isAtomic has_alignment
             E.constraint_violation loc (IllegalAlignas IllegalAlignas_typedef)
           else
             (* FORK (2026-11-20, contract D19): the attributes after the declarator-id appertain to the typedef
-               name as the leading ones do (C23 6.7.12.1), so `cerb::byte` applies at both placements *)
+               name as the leading ones do (C23 6.7.12.1 in draft N3096), so `cerb::byte` applies at both placements *)
             E.register_typedef ident (Annot.combine_attributes attrs ident_attrs, qs, ty) >>= fun () ->
             E.return Nothing
         else
@@ -3498,7 +3518,7 @@ and desugar_type_name (Type_name spec_attrs specs tquals align_specs abs_decltor
   (* FORK (2026-11-20, contract D19; census W7): upstream's `TODO: align_specs is ignored here`. C17 6.7.5#2: an
      alignment specifier appears only in the declaration specifiers of a declaration, the specifier-qualifier
      list of a member declaration, or the type name of a compound literal. The compound literal's is refused at
-     its two callers (Ail has no alignment on it); in every other type name it is the constraint violation. *)
+     its one caller, the CabsEcompound arm (Ail has no alignment on it); in every other type name it is the constraint violation. *)
   (if align_specs <> [] then
      E.constraint_violation (Loc.bbox_location (List.map Loc.locOf specs)) (IllegalAlignas IllegalAlignas_type_name)
    else
@@ -4138,7 +4158,7 @@ and desugar_declaration_base attrs specifs idecltors =
   E.print_debugM 2 (fun () ->
     "BROKEN: desugar_declaration_base"
   ) >>= fun () ->
-  (* FORK (2026-11-20, contract D19): `struct [[a]] S;` at block scope is the tag declaration of C23 6.7.3.4
+  (* FORK (2026-11-20, contract D19): `struct [[a]] S;` at block scope is the tag declaration of C23 6.7.2.3 (draft N3096)
      (the attributes appertain to the type), not the tag REFERENCE desugar_type_specifiers refuses: its
      attributes are carried and the specifier goes on without them. A declaration with no declarator has no
      entity for its leading and specifier attributes. *)
@@ -4171,7 +4191,7 @@ and desugar_declaration_base attrs specifs idecltors =
             let base_qs = Ctype.combine_qualifiers specs_qs tquals_qs in
             desugar_init_declarator_BROKEN base_qs base_ty specifs.storage_classes init >>= fun ((ident_attrs, ident), is_tentative, (qs, _ty), mk_desug_init) ->
             (* FORK (2026-11-20, contract D19): the leading and the declarator-id attributes both appertain to
-               the declared entity (C23 6.7.12.1): a typedef name, a function and an object with external
+               the declared entity (C23 6.7.12.1 in draft N3096): a typedef name, a function and an object with external
                linkage take them on their Ail entry; an object without linkage has no entry and they are carried *)
             carry_declarator_attributes (Just ident) specifs.specifier_attributes decltor >>= fun () ->
             let entity_attrs = Annot.combine_attributes attrs ident_attrs in
@@ -5362,7 +5382,7 @@ let desugar_and_register_function_definition (FunDef fundef_loc fundef_attrs spe
       desugar_declarator IsFunDef decltor
     end >>= fun (idents_map, ((ident_attrs, fun_ident), mk_qs_ctype)) ->
     (* FORK (2026-11-20, contract D19): the attributes after the declarator-id appertain to the function as
-       the leading ones do (C23 6.7.12.1); the specifier and declarator-part attributes are the types' *)
+       the leading ones do (C23 6.7.12.1 in draft N3096); the specifier and declarator-part attributes are the types' *)
     let all_fundef_attrs = Annot.combine_attributes fundef_attrs ident_attrs in
     carry_declarator_attributes (Just fun_ident) specifs.specifier_attributes decltor >>= fun () ->
     

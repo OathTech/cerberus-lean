@@ -13,12 +13,15 @@ alignas_for_init_weaker	rejects
 alignas_member_control	32
 alignas_sizeof	rejects
 array_param_const_decl	1
+array_param_nested_const_decl	rejects
 array_param_plain_decl	0
 array_param_ptr_const_decl	1
 array_param_restrict_decl	0
+array_param_volatile_decl	0
 atomic_array_block	0
 atomic_param_decl_only	0
 atomic_param_def	0
+atomic_param_def_plain_use	0
 atomic_param_def_specifier	0
 atomic_plain_block	3
 atomic_plain_paren_block	1

@@ -10,9 +10,12 @@ alignas_for_init_two	Defined {value: "Specified(2)", stdout: "", stderr: "", blo
 alignas_for_init_weaker	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
 alignas_sizeof	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
 array_param_const_decl	Defined {value: "Specified(2)", stdout: "", stderr: "", blocked: "false"}
+array_param_nested_const_decl	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
 array_param_restrict_decl	array_param_restrict_decl.c:1:7: error: constraint violation: restrict requires a pointer
+array_param_volatile_decl	array_param_volatile_decl.c:1:31: error: constraint violation: multiple declarations in the same scope with incompatible types
 atomic_array_block	internal error: Ctyp.mk_ctype_atomic: called on an invalid inner type
 atomic_param_def	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+atomic_param_def_plain_use	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
 atomic_ptr_block	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
 atomic_ptr_param_abstract	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
 atomic_ptr_param_decl	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}

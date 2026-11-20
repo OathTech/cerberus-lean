@@ -8,6 +8,11 @@ a04_decl_block_object	-
 a05_decl_block_static	-
 a09_decl_for_init	-
 a10_decl_file_no_declarator	-
+b01_attrdecl_file	-
+b02_attrdecl_block	-
+b03_attrdecl_fallthrough	-
+b04_attrdecl_twice_block	-
+b05_attrdecl_then_test	-
 c01_after_storage_class	-
 c02_after_qualifier	-
 c03_after_function_specifier	-
@@ -27,6 +32,7 @@ d12_after_atomic_spec	-
 d13_after_typeof	-
 e05_struct_forward	-
 e06_union_forward	-
+e11_struct_forward_block	-
 e12_struct_forward_then_def	-
 f02_member_after_type	-
 f04_member_after_qualifier	-
@@ -86,6 +92,7 @@ q08_nested_bracket_arg	object g: m::mk() @ q08_nested_bracket_arg.c:1:6-8
 q09_nested_brace_arg	object g: m::mk() @ q09_nested_brace_arg.c:1:6-8
 q18_string_then_nested	object g: m::mk("s") @ q18_string_then_nested.c:1:6-8
 q20_wide_string_arg	object g: m::mk("s") @ q20_wide_string_arg.c:1:6-8
+r02_std_fallthrough	-
 r03_std_maybe_unused	-
 r06_std_unsequenced	-
 r07_std_reproducible	-
@@ -97,6 +104,31 @@ t07_on_parameter	function sample: rc::returns("{0} @ int<i32>") @ t07_on_paramet
 t08_after_local_type	function sample: rc::returns("{0} @ int<i32>") @ t08_after_local_type.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t08_after_local_type.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t08_after_local_type.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t08_after_local_type.c:1:7-11
 t09_after_local_name	function sample: rc::returns("{0} @ int<i32>") @ t09_after_local_name.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t09_after_local_name.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t09_after_local_name.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t09_after_local_name.c:1:7-11
 t10_on_local_declaration	function sample: rc::returns("{0} @ int<i32>") @ t10_on_local_declaration.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t10_on_local_declaration.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t10_on_local_declaration.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t10_on_local_declaration.c:1:7-11
+u_addr_block_static_after_name	-
+u_addr_block_static_lead	-
+u_addr_file_after_type	-
 u_byte_after_name_bad	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
 u_gen_after_name	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
 u_gen_block_after_name	Defined {value: "Specified(1)", stdout: "", stderr: "", blocked: "false"}
+v01_obj_extern_then_def	object e: m::b("t") @ v01_obj_extern_then_def.c:1:34-35
+v02_obj_extern_then_plain_def	-
+v03_obj_file_then_block_extern	-
+v04_obj_after_name_then_plain	-
+v05_obj_static_then_block_extern	-
+v06_obj_after_name_both	object e: m::b("t") @ v06_obj_after_name_both.c:1:40-41
+v07_obj_tentative_twice	object e: m::b("t") @ v07_obj_tentative_twice.c:1:27-28
+v08_obj_block_extern_then_file	object e: m::b("t") @ v08_obj_block_extern_then_file.c:1:63-64
+v09_obj_three	object e: m::c("u") @ v09_obj_three.c:1:68-69
+v10_fn_decl_decl_def	function f: m::a("s") @ v10_fn_decl_decl_def.c:1:6-7 ;; function f: m::b("t") @ v10_fn_decl_decl_def.c:1:33-34
+v14_tag_forward_then_def	struct S: m::b("t") @ v14_tag_forward_then_def.c:1:37-38
+v15_tag_def_then_forward	struct S: m::a("s") @ v15_tag_def_then_forward.c:1:13-14
+v16_proto_then_def_params	-
+v17_enum_def_then_ref	-
+v18_union_forward_then_def	union U: m::b("t") @ v18_union_forward_then_def.c:1:35-36
+v19_wa_extern_then_def	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+v20_wa_def_after	object g: cerb::with_address("0x1000") @ v20_wa_def_after.c:1:37-49
+v21_arg_multiline	object h: m::mk() @ v21_arg_multiline.c:1:12-14
+v22_arg_comment	object h: m::mk() @ v22_arg_comment.c:1:12-14
+v23_arg_macro	object h: m::mk() @ v23_arg_macro.c:3:12-14
+v25_arg_prefixed_strings	object h: m::mk("a\"b") @ v25_arg_prefixed_strings.c:1:12-14 ;; object k: m::mk() @ v25_arg_prefixed_strings.c:1:39-41
+v26_arg_digraph	object h: m::mk() @ v26_arg_digraph.c:1:12-14

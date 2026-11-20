@@ -789,6 +789,25 @@
         "stdout_sha256": "479b5024b3d76fc160ca35a5971f14d8c437416a1d33adba86a925f79114a761",
         "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       }
+    },
+    "libc_exec/044-noreturn-return-operand-exits.c": {
+      "class": "shared-model-fix",
+      "citation": [
+        "lean_frontend/docs/upstream-tray/80-noreturn-return-operand-not-evaluated.md",
+        "lean_frontend/docs/2026-11-20_worker-charter-attribute-preservation.md",
+        "lean_frontend/docs/2026-11-20_attribute-preservation-record.md"
+      ],
+      "rationale": "`int g(void) { exit(3); return 0; } _Noreturn int f(void) { return g(); } int main(void) { f(); return 0; }` in libc mode. Pristine upstream c3ff8c53f prints `Undefined {ub: \"UB071_noreturn\", stderr: \"\", loc: \"<8:25--8:36>\"}` (verbatim): the `AilSreturn` arm of translation.lem emits the undefined behaviour without translating the operand, so `g()` is never called (tray 80); gcc 13 exits with status 3. The fork prints `Defined {value: \"Specified(3)\", stdout: \"\", stderr: \"\", blocked: \"false\"}`: the fork-ahead delta of 2026-11-20 (fix/attribute-preservation M2, contract D19; ruling [AGENT 2026-11-20, orchestrator] on the discarded-constructs census row W17): the operand is elaborated before the UB071, which C17 6.7.4#8 attaches to the function RETURNING to its caller. Both engines agree before and after; a _Noreturn function that really returns is still UB071. Class shared-model-fix; the row leaves when upstream absorbs the fix.",
+      "upstream": {
+        "status": 1,
+        "stdout_sha256": "ac9db4da002767d5a31f94e2b01573e7e530dffdf95fe81a95f71aa483cbb473",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "fork": {
+        "status": 0,
+        "stdout_sha256": "d241d1e6baf0ac9cd9c61df057f20faded69b95fb0ccd724250a017d8f3cdbbf",
+        "diagnostic_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
     }
   }
 }

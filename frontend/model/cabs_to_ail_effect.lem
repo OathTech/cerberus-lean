@@ -2349,6 +2349,17 @@ let get_compatible_alignment_requirements loc new_align_opt prev_align_opt =
   end
 
 (* TODO: the redeclaration check don't mix external/internal declarations *)
+let with_address_redeclaration_refusal sym =
+  "Cabs_to_ail_effect.register_external_object_declaration: refused - [[cerb::with_address]] on a declaration of '"
+  ^ (match sym with
+       | Symbol.Symbol _ _ (Symbol.SD_Id str) -> str
+       | Symbol.Symbol _ _ (Symbol.SD_ObjectAddress str) -> str
+       | _ -> "?"
+     end) ^ "' that a later declaration without the attribute follows (contract D19): the attributes of every "
+  ^ "declaration of an object are now kept (upstream kept the last declaration's only and the object ran unannotated), which would "
+  ^ "deliver this one to upstream's 'TODO: cerb::with_address() is yet implemented' crash; the fork neither implements nor alters "
+  ^ "cerb::with_address, so the redeclaration is refused in place of that crash. Write the object without the attribute."
+
 val register_external_object_declaration: A.ail_identifier -> (bool * Loc.t * Annot.attributes * A.storageDuration * bool * maybe Ctype.alignment * Ctype.qualifiers * Ctype.ctype) -> desugM unit
 let register_external_object_declaration sym ((isTentative, loc, attrs, new_dur, isRegister, new_align_opt, new_qs, new_ty) as new_decl) =
   return (
@@ -2362,7 +2373,7 @@ let register_external_object_declaration sym ((isTentative, loc, attrs, new_dur,
   read_inner (fun st ->
     Map.lookup sym st.external_object_declarations
   ) >>= function
-    | Just (_, _, _, prev_dur, _, prev_align_opt, prev_qs, prev_ty) ->
+    | Just (_, _, prev_attrs, prev_dur, _, prev_align_opt, prev_qs, prev_ty) ->
         let () = Debug.print_debug 2 [Debug.DB_desugaring] (fun () ->
           "has previous decl ==> with dur: " ^ string_of_storageDuration prev_dur ^
           " qs, ty: " ^ Pp.stringFromAil_ctype prev_qs prev_ty ^
@@ -2396,7 +2407,18 @@ let register_external_object_declaration sym ((isTentative, loc, attrs, new_dur,
             match make_composite_seeded en desugar_time_tagDefs prev_ty new_ty with
               | Just ty' ->
                   (* TODO: what about ty' ?? *)
-                  let decl = (isTentative, loc, attrs, new_dur, isRegister, align_opt, new_qs, new_ty) in
+                  (* FORK (2026-11-20, contract D19; pre-merge review F2): an object declared more than once
+                     keeps the attributes of EVERY declaration, earlier ones first, as the function and typedef
+                     registrations do (combine_attributes). Upstream stored the last declaration's only, so
+                     `[[a]] extern int e; int e;` lost `a` without a word. cerb::with_address on an earlier
+                     declaration was dropped the same way and the object ran unannotated; combining would deliver
+                     it to upstream's 'TODO: cerb::with_address() is yet implemented' crash, so that shape is a
+                     declared refusal in its place (a later declaration that writes it reached the crash before
+                     and still does). *)
+                  if Annot.is_cerb_with_address prev_attrs && not (Annot.is_cerb_with_address attrs) then
+                    error (with_address_redeclaration_refusal sym)
+                  else
+                  let decl = (isTentative, loc, Annot.combine_attributes prev_attrs attrs, new_dur, isRegister, align_opt, new_qs, new_ty) in
                   update_inner (fun st ->
                     <| st with external_object_declarations= Map.insert sym decl st.external_object_declarations |>
                   )
@@ -2704,11 +2726,21 @@ let extract_program startup_str =
       begin
         (* Adding internals object with static or thread storage duration *)
         Map_extra.fold (fun ident (loc, dur, isRegister, align_opt, qs, ty) acc ->
+          (* FORK (2026-11-20, contract D19; pre-merge review F2, the re-audit): a block-scope `extern`
+             redeclaration of a file-scope object with internal linkage is registered here under the SAME
+             symbol and this entry replaces the file-scope one in the union below; upstream gave it no
+             attributes, so the file-scope declaration's were lost (`[[a]] static int e; ... { extern int e; }`).
+             It keeps them. (An object declared in a block only has none here: its attributes are carried.) *)
+          let attrs =
+            match Map.lookup ident st.external_object_declarations with
+              | Just (_, _, file_attrs, _, _, _, _, _) -> file_attrs
+              | Nothing -> Annot.no_attributes
+            end in
           match dur with
             | A.Static ->
-                Map.insert ident (loc, Annot.no_attributes, A.Decl_object (dur, isRegister) align_opt qs ty) acc
+                Map.insert ident (loc, attrs, A.Decl_object (dur, isRegister) align_opt qs ty) acc
             | A.Thread ->
-                Map.insert ident (loc, Annot.no_attributes, A.Decl_object (dur, isRegister) align_opt qs ty) acc
+                Map.insert ident (loc, attrs, A.Decl_object (dur, isRegister) align_opt qs ty) acc
             | _ ->
                 acc
           end

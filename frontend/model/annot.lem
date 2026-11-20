@@ -25,7 +25,7 @@ end
    an attribute to the Ail slot of the entity it appertains to where there is one (a function, an object with
    linkage, a typedef name, a struct or union definition, a member, a statement or label); every other
    attribute the grammar accepts is recorded in `sigma.carried_attributes` as a triple: the placement it was
-   written at (C23 6.7.12.1 says what it appertains to there), the identifier of the nearest declared entity
+   written at (C23 6.7.12.1 (draft N3096, the numbering used throughout) says what it appertains to there), the identifier of the nearest declared entity
    (Nothing: a type name, an abstract declarator, a declaration with no declarator, an attribute declaration)
    and the attributes, each with its own location. No meaning is given to any of them. *)
 type attribute_placement =

@@ -64,3 +64,16 @@ q10_int_arg
 q20_wide_string_arg
 r06_std_unsequenced
 s01_gnu_attribute
+b07_attrdecl_after_label
+j05_after_empty_params_def
+v01_obj_extern_then_def
+v02_obj_extern_then_plain_def
+v03_obj_file_then_block_extern
+v05_obj_static_then_block_extern
+v10_fn_decl_decl_def
+v14_tag_forward_then_def
+v19_wa_extern_then_def
+v20_wa_def_after
+v21_arg_multiline
+v23_arg_macro
+v25_arg_prefixed_strings

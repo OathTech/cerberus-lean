@@ -9,7 +9,8 @@ Each program is copied to a scratch directory and run there under its bare name 
 the oracle (`--pp=ail --ast=ail`, `--cabs-json`, `--exec --batch`, all `--nolibc`) and the Lean engine on
 the exported Cabs JSON (staged output for the attribute lines, `--batch` for the verdict). Classes:
 
-  carried  (the oracle must reach the Ail dump; the program need not have a `main`)
+  carried  (the oracle must reach the Ail dump and the Lean engine the typed Ail; the program need not have a
+           `main`; an argument is one line whatever its layout in the source, since it is carried as tokens)
            payload = the attribute lines both engines must print, joined by ` ;; ` (`-` = none): the lines
            of cabs_to_ail.lem `show_attribute_carriage`, without the forced header's `cerb::hidden` ones.
            Both engines must print exactly these lines, in this order.
@@ -27,7 +28,8 @@ payload must DIFFER from pristine's (a witness that pristine also satisfies prov
 
 Usage: discard_witness.py DIR [--core] [--selftest] [--derive]
   --core      only the names in DIR/core.txt (the row-1 cut)
-  --selftest  plants, then the real run
+  --selftest  plants, then the real run; --require-plants=a,b,... names the plants that must RUN (a plant with no
+              row to touch is skipped, and a required plant that is skipped fails the selftest); default: all
   --derive    print a fresh expected table from the oracle to stdout (never writes; for review);
               --derive-exec pins accepted programs by their verdict line instead of their attribute lines
 Fail-closed: a missing expectation, an unknown class, a file without a row, a row without a file, an empty
@@ -75,11 +77,12 @@ class Engines:
         cj = self.oracle(name, "--cabs-json")
         o["parse_rc"] = cj.returncode
         o["parse_line"] = first(cj.stderr.splitlines())
-        o["lean_attrs"], o["lean_rc"], o["lean_line"] = [], None, ""
+        o["lean_attrs"], o["lean_rc"], o["lean_line"], o["lean_typed"] = [], None, "", False
         if cj.returncode == 0:
             with open(os.path.join(self.scratch, name + ".json"), "w") as f:
                 f.write(cj.stdout)
             st = run([LEAN, name + ".json"], self.scratch, self.env)
+            o["lean_typed"] = "typechecking succeeded" in st.stdout
             o["lean_attrs"] = [l.strip()[len("attribute: "):] for l in st.stdout.splitlines()
                                if l.strip().startswith("attribute: ") and "cerb::hidden" not in l]
             lb = run([LEAN, "--batch", name + ".json"], self.scratch, self.env)
@@ -96,15 +99,21 @@ class Engines:
             o["oracle_attrs"], o["lean_attrs"] = lines, list(lines)
             o["oracle_line"] = o["lean_line"] = was
             o["oracle_rc"] = o["lean_rc"] = o["ail_rc"] = 0
-            o["parse_rc"] = 0
+            o["parse_rc"], o["lean_typed"] = 0, True
         elif p == "lean-drops-carried":
             o["lean_attrs"] = [l for l in o["lean_attrs"] if not l.startswith("carried ")]
         elif p == "oracle-drops-carried":
             o["oracle_attrs"] = [l for l in o["oracle_attrs"] if not l.startswith("carried ")]
         elif p == "lean-fixed":
-            o["lean_attrs"] = []
+            o["lean_attrs"], o["lean_typed"] = [], True
             o["lean_line"] = 'Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}'
             o["lean_rc"] = 0
+        elif p == "args-truncated":
+            # both engines' argument lists cut after their first token (a comparison that sees only the
+            # start of an argument, as one reading a multi-line argument's first line would)
+            cut = lambda l: re.sub(r"\((\S+) [^@]*\) @", r"(\1) @", l)
+            o["oracle_attrs"] = [cut(l) for l in o["oracle_attrs"]]
+            o["lean_attrs"] = [cut(l) for l in o["lean_attrs"]]
         elif p == "refusal-truncated":
             o["oracle_line"] = o["oracle_line"][:-12]
         return o
@@ -118,6 +127,8 @@ def check(row, o):
         want = [] if pay == "-" else pay.split(" ;; ")
         if o["ail_rc"] != 0:
             bad.append(f"the oracle did not reach the Ail dump (rc {o['ail_rc']})")
+        if not o["lean_typed"]:
+            bad.append("the Lean engine did not reach the typed Ail (no `typechecking succeeded` in its staged output)")
         if o["oracle_attrs"] != want:
             bad.append(f"oracle attribute lines {o['oracle_attrs']!r} != pinned {want!r}")
         if o["lean_attrs"] != want:
@@ -258,34 +269,43 @@ def main():
     obs = observe_all(d, names)
     if selftest:
         print(f"{name}: SELFTEST — plants doctor the engines' recorded observations (nothing in the tree is touched)")
+        multi = [n for n in names if expected[n][1] == "carried" and re.search(r"\(\S+ [^@]*\) @", expected[n][2])]
+        table = [n for n in names if expected[n][1] == "carried" and "carried " in expected[n][2]]
         plants = {
-            "pristine": sorted(n for n in pristine if n in names),
-            "lean-drops-carried": None, "oracle-drops-carried": None, "lean-fixed": None, "refusal-truncated": None,
+            "pristine": ("exact", sorted(n for n in pristine if n in names)),
+            "lean-drops-carried": ("all", table),
+            "oracle-drops-carried": ("all", table),
+            "args-truncated": ("all", multi),
+            "lean-fixed": ("some", None),
+            "refusal-truncated": ("all", [n for n in names if expected[n][1] == "refusal"]),
         }
-        ok = True
-        for p, exact in plants.items():
+        required = [a.split("=", 1)[1].split(",") for a in args if a.startswith("--require-plants=")]
+        required = required[0] if required else list(plants)
+        unknown = [p for p in required if p not in plants]
+        if unknown:
+            sys.exit(f"{name}: FAIL — unknown plant(s) required: {unknown}")
+        ok, ran, skipped = True, 0, []
+        for p, (mode, rows) in plants.items():
+            if mode != "some" and not rows:
+                # a plant with no row to touch proves nothing: it is SKIPPED, never counted as caught
+                skipped.append(p)
+                good = p not in required
+                print(f"  PLANT {'SKIPPED' if good else 'REQUIRED BUT SKIPPED'} [{p}] no row of this corpus for it to touch")
+                ok = ok and good
+                continue
             failed = one_run(obs, names, expected, pristine, plant=p, quiet=True)
-            relevant = {
-                "lean-drops-carried": [n for n in names if expected[n][1] == "carried" and "carried " in expected[n][2]],
-                "oracle-drops-carried": [n for n in names if expected[n][1] == "carried" and "carried " in expected[n][2]],
-                "refusal-truncated": [n for n in names if expected[n][1] == "refusal"],
-            }.get(p)
-            if exact is not None:
-                good = sorted(failed) == exact and len(exact) > 0
-                what = f"fails exactly the {len(exact)} negative-control rows"
-            elif relevant is not None:
-                good = len(relevant) > 0 and all(n in failed for n in relevant)
-                what = f"fails all {len(relevant)} rows it touches"
-                if not relevant:
-                    good, what = True, "has no row to touch in this corpus (skipped, declared)"
+            ran += 1
+            if mode == "exact":
+                good, what = sorted(failed) == rows, f"fails exactly the {len(rows)} negative-control rows"
+            elif mode == "all":
+                good, what = all(n in failed for n in rows), f"fails all {len(rows)} rows it touches"
             else:
-                good = len(failed) > 0
-                what = f"fails {len(failed)} rows"
+                good, what = len(failed) > 0, f"fails {len(failed)} rows"
             print(f"  PLANT {'OK ' if good else 'NOT CAUGHT'} [{p}] {what}")
             ok = ok and good
         if not ok:
             sys.exit(f"{name}: SELFTEST FAILED")
-        print(f"{name}: SELFTEST OK ({len(plants)} plants)")
+        print(f"{name}: SELFTEST OK ({ran} plants ran and were caught; {len(skipped)} skipped: {', '.join(skipped) or 'none'})")
     failed = one_run(obs, names, expected, pristine)
     by = {}
     for n in names:

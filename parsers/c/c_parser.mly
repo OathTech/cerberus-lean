@@ -868,7 +868,7 @@ declaration:
 | rev_attr_seq= attribute_declaration
     { (* FORK (2026-11-20, contract D19): upstream built a dummy declaration of an identifier "test" with no
          specifiers here (its TODO), which every later stage rejected as a constraint violation at an unknown
-         location; C23 6.7.12.1 makes `[[a]];` a declaration of its own *)
+         location; C23 6.7.12.1 (draft N3096) makes `[[a]];` a declaration of its own *)
       Declaration_attribute (to_attrs (Some rev_attr_seq)) }
 ;
 

@@ -20,6 +20,7 @@ b03_attrdecl_fallthrough	carried	statement skip: fallthrough() @ b03_attrdecl_fa
 b04_attrdecl_twice_block	carried	statement skip: m::mk("s") @ b04_attrdecl_twice_block.c:1:23-25 ;; statement skip: m::mk("s") @ b04_attrdecl_twice_block.c:1:39-41
 b05_attrdecl_then_test	carried	statement skip: m::mk("s") @ b05_attrdecl_then_test.c:1:23-25
 b06_attrdecl_uses_test	stop	b06_attrdecl_uses_test.c:1:48: error: use of undeclared identifier 'test'	Error {msg: "desugaring failed at b06_attrdecl_uses_test.c:1:48:"}
+b07_attrdecl_after_label	parse	b07_attrdecl_after_label.c:1:65: error: unexpected token after ']' and before ';'
 c01_after_storage_class	carried	carried specifiers g: m::mk("s") @ c01_after_storage_class.c:1:13-15
 c02_after_qualifier	carried	carried specifiers g: m::mk("s") @ c02_after_qualifier.c:1:12-14
 c03_after_function_specifier	carried	carried specifiers f: m::mk("s") @ c03_after_function_specifier.c:1:13-15
@@ -92,6 +93,7 @@ j01_after_params_decl	carried	carried function f: m::mk("s") @ j01_after_params_
 j02_after_params_def	carried	carried function f: m::mk("s") @ j02_after_params_def.c:1:18-20
 j03_after_params_fnptr	carried	carried function fp: m::mk("s") @ j03_after_params_fnptr.c:1:22-24
 j04_after_params_typedef	carried	carried function F: m::mk("s") @ j04_after_params_typedef.c:1:26-28
+j05_after_empty_params_def	parse	j05_after_empty_params_def.c:1:9: error: unexpected token after ')' and before '[['
 k01_after_star_file	carried	carried pointer g: m::mk("s") @ k01_after_star_file.c:1:12-14
 k02_after_star_block	carried	carried pointer y: m::mk("s") @ k02_after_star_block.c:1:29-31
 k03_after_star_param	carried	carried pointer x: m::mk("s") @ k03_after_star_param.c:1:18-20
@@ -150,9 +152,9 @@ q03_no_namespace	carried	object g: mk("s") @ q03_no_namespace.c:1:3-5
 q04_no_args	carried	object g: m::mk() @ q04_no_args.c:1:6-8
 q05_two_args	carried	object g: m::mk("s", "t") @ q05_two_args.c:1:6-8
 q06_concat_args	carried	object g: m::mk("s" "t") @ q06_concat_args.c:1:6-8
-q07_nested_paren_arg	carried	object g: m::mk(("inner")) @ q07_nested_paren_arg.c:1:6-8
-q08_nested_bracket_arg	carried	object g: m::mk(["inner"]) @ q08_nested_bracket_arg.c:1:6-8
-q09_nested_brace_arg	carried	object g: m::mk({"inner"}) @ q09_nested_brace_arg.c:1:6-8
+q07_nested_paren_arg	carried	object g: m::mk(( "inner" )) @ q07_nested_paren_arg.c:1:6-8
+q08_nested_bracket_arg	carried	object g: m::mk([ "inner" ]) @ q08_nested_bracket_arg.c:1:6-8
+q09_nested_brace_arg	carried	object g: m::mk({ "inner" }) @ q09_nested_brace_arg.c:1:6-8
 q10_int_arg	parse	q10_int_arg.c:1:9: error: unexpected token after '(' and before '1'
 q11_ident_arg	parse	q11_ident_arg.c:1:9: error: unexpected token after '(' and before 'inner'
 q12_empty_args	parse	q12_empty_args.c:1:9: error: unexpected token after '(' and before ')'
@@ -161,7 +163,7 @@ q14_trailing_comma	parse	q14_trailing_comma.c:1:14: error: unexpected token afte
 q15_keyword_name	carried	object g: m::const("s") @ q15_keyword_name.c:1:6:
 q16_mixed_args	parse	q16_mixed_args.c:1:14: error: unexpected token after ',' and before '('
 q17_spaced_brackets	carried	object g: m::mk("s") @ q17_spaced_brackets.c:1:7-9
-q18_string_then_nested	carried	object g: m::mk("s", ("inner")) @ q18_string_then_nested.c:1:6-8
+q18_string_then_nested	carried	object g: m::mk("s", ( "inner" )) @ q18_string_then_nested.c:1:6-8
 q19_deprecated_msg	carried	object g: deprecated("inner") @ q19_deprecated_msg.c:1:3-13
 q20_wide_string_arg	carried	object g: m::mk(L"s") @ q20_wide_string_arg.c:1:6-8
 r01_std_deprecated	carried	object g: deprecated() @ r01_std_deprecated.c:1:3-13
@@ -191,7 +193,7 @@ t07_on_parameter	carried	function sample: rc::returns("{0} @ int<i32>") @ t07_on
 t08_after_local_type	carried	function sample: rc::returns("{0} @ int<i32>") @ t08_after_local_type.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t08_after_local_type.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t08_after_local_type.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t08_after_local_type.c:1:7-11 ;; carried specifiers y: rc::ensures("{False}") @ t08_after_local_type.c:2:31-38
 t09_after_local_name	carried	function sample: rc::returns("{0} @ int<i32>") @ t09_after_local_name.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t09_after_local_name.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t09_after_local_name.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t09_after_local_name.c:1:7-11 ;; carried declarator-id y: rc::ensures("{False}") @ t09_after_local_name.c:2:33-40
 t10_on_local_declaration	carried	function sample: rc::returns("{0} @ int<i32>") @ t10_on_local_declaration.c:1:32-39 ;; function sample: rc::args("int<i32>") @ t10_on_local_declaration.c:1:7-11 ;; definition sample: rc::returns("{0} @ int<i32>") @ t10_on_local_declaration.c:1:32-39 ;; definition sample: rc::args("int<i32>") @ t10_on_local_declaration.c:1:7-11 ;; carried declaration y: rc::ensures("{False}") @ t10_on_local_declaration.c:2:27-34
-u_addr_block_extern_after_name	refusal	Cabs_to_ail.desugar_declaration_base: refused - [[cerb::with_address]] after the declarator-id of the block-scope extern declaration of 'g' (contract D19): the attribute appertains to the declared object (C23 6.7.12.1) and is now carried to its declaration, where upstream's elaboration reads it (translation.lem decode_with_address) and the run then dies in upstream's 'TODO: cerb::with_address() is yet implemented'; the fork neither implements nor alters cerb::with_address, so the placement is refused in place of that crash. Write the object without the attribute.
+u_addr_block_extern_after_name	refusal	Cabs_to_ail.desugar_declaration_base: refused - [[cerb::with_address]] after the declarator-id of the block-scope extern declaration of 'g' (contract D19): the attribute appertains to the declared object (C23 6.7.12.1 in draft N3096) and is now carried to its declaration, where upstream's elaboration reads it (translation.lem decode_with_address) and the run then dies in upstream's 'TODO: cerb::with_address() is yet implemented'; the fork neither implements nor alters cerb::with_address, so the placement is refused in place of that crash. Write the object without the attribute.
 u_addr_block_extern_lead	carried	object g: cerb::with_address("0x1000") @ u_addr_block_extern_lead.c:1:33-45
 u_addr_block_static_after_name	carried	carried declarator-id y: cerb::with_address("0x1000") @ u_addr_block_static_after_name.c:1:39-51
 u_addr_block_static_lead	carried	carried declaration y: cerb::with_address("0x1000") @ u_addr_block_static_lead.c:1:26-38
@@ -200,8 +202,33 @@ u_addr_file_after_type	carried	carried specifiers g: cerb::with_address("0x1000"
 u_addr_file_lead	carried	object g: cerb::with_address("0x1000") @ u_addr_file_lead.c:1:9-21
 u_byte_after_name_bad	stop	u_byte_after_name_bad.c:1:70: error: constraint violation: initializing 'byte' with an expression of incompatible type 'signed int'	Error {msg: "typechecking failed at u_byte_after_name_bad.c:1:70-71"}
 u_byte_lead_bad	stop	u_byte_lead_bad.c:1:70: error: constraint violation: initializing 'byte' with an expression of incompatible type 'signed int'	Error {msg: "typechecking failed at u_byte_lead_bad.c:1:70-71"}
-u_for_attrdecl	refusal	Cabs_to_ail.desugar_statement: refused - an attribute declaration ('[[...]];', C23 6.7.12.1) as the first clause of a for statement (contract D19): Ail has no statement to carry it on in that position and no standard attribute may be written there; move the attribute declaration before the for statement.
+u_for_attrdecl	refusal	Cabs_to_ail.desugar_statement: refused - an attribute declaration ('[[...]];', C23 6.7.12.1 in draft N3096) as the first clause of a for statement (contract D19): Ail has no statement to carry it on in that position and no standard attribute may be written there; move the attribute declaration before the for statement.
 u_gen_after_name	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
 u_gen_block_after_name	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
 u_gen_block_lead	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
 u_gen_lead	exec	Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}
+v01_obj_extern_then_def	carried	object e: m::a("s") @ v01_obj_extern_then_def.c:1:6-7 ;; object e: m::b("t") @ v01_obj_extern_then_def.c:1:34-35
+v02_obj_extern_then_plain_def	carried	object e: m::a("s") @ v02_obj_extern_then_plain_def.c:1:6-7
+v03_obj_file_then_block_extern	carried	object e: m::a("s") @ v03_obj_file_then_block_extern.c:1:6-7
+v04_obj_after_name_then_plain	carried	object e: m::a("s") @ v04_obj_after_name_then_plain.c:1:12-13
+v05_obj_static_then_block_extern	carried	object e: m::a("s") @ v05_obj_static_then_block_extern.c:1:6-7 ;; carried declaration e: m::b("t") @ v05_obj_static_then_block_extern.c:1:51-52
+v06_obj_after_name_both	carried	object e: m::a("s") @ v06_obj_after_name_both.c:1:19-20 ;; object e: m::b("t") @ v06_obj_after_name_both.c:1:40-41
+v07_obj_tentative_twice	carried	object e: m::a("s") @ v07_obj_tentative_twice.c:1:6-7 ;; object e: m::b("t") @ v07_obj_tentative_twice.c:1:27-28
+v08_obj_block_extern_then_file	carried	object e: m::a("s") @ v08_obj_block_extern_then_file.c:1:23-24 ;; object e: m::b("t") @ v08_obj_block_extern_then_file.c:1:63-64
+v09_obj_three	carried	object e: m::a("s") @ v09_obj_three.c:1:6-7 ;; object e: m::b("t") @ v09_obj_three.c:1:34-35 ;; object e: m::c("u") @ v09_obj_three.c:1:68-69
+v10_fn_decl_decl_def	carried	function f: m::a("s") @ v10_fn_decl_decl_def.c:1:6-7 ;; function f: m::b("t") @ v10_fn_decl_decl_def.c:1:33-34 ;; function f: m::c("u") @ v10_fn_decl_decl_def.c:1:66-67 ;; definition f: m::c("u") @ v10_fn_decl_decl_def.c:1:66-67
+v11_fn_def_then_decl	carried	function f: m::a("s") @ v11_fn_def_then_decl.c:1:32-33
+v12_fn_block_redecl	carried	function f: m::a("s") @ v12_fn_block_redecl.c:1:6-7 ;; function f: m::b("t") @ v12_fn_block_redecl.c:1:50-51
+v13_typedef_redef	carried	typedef T: m::b("t") @ v13_typedef_redef.c:1:35-36 ;; typedef T: m::a("s") @ v13_typedef_redef.c:1:6-7
+v14_tag_forward_then_def	carried	struct S: m::b("t") @ v14_tag_forward_then_def.c:1:37-38 ;; carried tag-declaration S: m::a("s") @ v14_tag_forward_then_def.c:1:13-14
+v15_tag_def_then_forward	carried	struct S: m::a("s") @ v15_tag_def_then_forward.c:1:13-14 ;; carried tag-declaration S: m::b("t") @ v15_tag_def_then_forward.c:1:48-49
+v16_proto_then_def_params	carried	carried parameter x: m::a("s") @ v16_proto_then_def_params.c:1:12-13 ;; carried parameter x: m::b("t") @ v16_proto_then_def_params.c:1:40-41
+v17_enum_def_then_ref	carried	carried enum E: m::a("s") @ v17_enum_def_then_ref.c:1:11-12
+v18_union_forward_then_def	carried	union U: m::b("t") @ v18_union_forward_then_def.c:1:35-36 ;; carried tag-declaration U: m::a("s") @ v18_union_forward_then_def.c:1:12-13
+v19_wa_extern_then_def	refusal	Cabs_to_ail_effect.register_external_object_declaration: refused - [[cerb::with_address]] on a declaration of 'g' that a later declaration without the attribute follows (contract D19): the attributes of every declaration of an object are now kept (upstream kept the last declaration's only and the object ran unannotated), which would deliver this one to upstream's 'TODO: cerb::with_address() is yet implemented' crash; the fork neither implements nor alters cerb::with_address, so the redeclaration is refused in place of that crash. Write the object without the attribute.
+v20_wa_def_after	carried	object g: m::a("s") @ v20_wa_def_after.c:1:6-7 ;; object g: cerb::with_address("0x1000") @ v20_wa_def_after.c:1:37-49
+v21_arg_multiline	carried	object h: m::mk(( "a" "b" )) @ v21_arg_multiline.c:1:12-14
+v22_arg_comment	carried	object h: m::mk(( "a" "b" )) @ v22_arg_comment.c:1:12-14
+v23_arg_macro	carried	object h: m::mk(( "s" "s" )) @ v23_arg_macro.c:3:12-14
+v25_arg_prefixed_strings	carried	object h: m::mk(u8"a\"b") @ v25_arg_prefixed_strings.c:1:12-14 ;; object k: m::mk(( L"c" "d" )) @ v25_arg_prefixed_strings.c:1:39-41
+v26_arg_digraph	carried	object h: m::mk(<: "a" :>) @ v26_arg_digraph.c:1:12-14

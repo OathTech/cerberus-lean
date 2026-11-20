@@ -139,17 +139,61 @@ let add_declarator_attributes attrs d =
       (* the two productions that call this build an array or a function declarator *)
       assert (xs' = []); d
 
-(* FORK (2026-11-20, contract D19): the text the parser is reading, so that an attribute argument that is not
-   a plain string literal (a nested balanced-token group, a prefixed string literal) is carried as its source
-   text. Set by C_parser_driver.parse_from_string; a parse that did not come through it has no text and such
-   an argument stops the parse loudly. *)
+(* FORK (2026-11-20, contract D19; pre-merge review F3): an attribute argument that is not a plain string
+   literal (a nested balanced-token group, a prefixed string literal) is carried as its TOKENS: the tokens the
+   lexer read between the argument's first and last character, each spelled as written, joined by single spaces.
+   The parser reads the preprocessor's output (C_parser_driver.parse_from_string sets it here), so the tokens
+   are those AFTER macro expansion; comments (cpp runs with -CC), cpp line markers and all layout are dropped,
+   so one argument has one spelling whatever its layout. The grammar admits only string literals, commas and
+   the three bracket pairs inside an argument (c_parser.mly balanced_token); any other character stops loudly.
+   A parse that did not come through parse_from_string has no text and such an argument stops the parse. *)
 let current_source : string option ref = ref None
 let set_source str = current_source := Some str
+let argument_tokens (text : string) : string =
+  let n = String.length text in
+  let toks = ref [] in
+  let add t = toks := t :: !toks in
+  let fail what = failwith ("Lexer_feedback.source_text: " ^ what ^ " in an attribute argument (contract D19)") in
+  let is_ident c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c = '_' in
+  (* the index after the string literal that opens at the quote at [i] *)
+  let rec string_end i =
+    if i >= n then fail "an unterminated string literal"
+    else if text.[i] = '\\' then string_end (i + 2)
+    else if text.[i] = '"' then i + 1
+    else string_end (i + 1) in
+  let rec line_end i = if i >= n || text.[i] = '\n' then i else line_end (i + 1) in
+  let rec comment_end i =
+    if i + 1 >= n then fail "an unterminated comment"
+    else if text.[i] = '*' && text.[i + 1] = '/' then i + 2
+    else comment_end (i + 1) in
+  let rec go i at_line_start =
+    if i < n then
+      match text.[i] with
+      | '\n' -> go (i + 1) true
+      | ' ' | '\t' | '\r' | '\012' -> go (i + 1) at_line_start
+      | '#' when at_line_start -> go (line_end i) true            (* a cpp line marker *)
+      | '/' when i + 1 < n && text.[i + 1] = '*' -> go (comment_end (i + 2)) at_line_start
+      | '/' when i + 1 < n && text.[i + 1] = '/' -> go (line_end i) at_line_start
+      | '(' | ')' | '[' | ']' | '{' | '}' | ',' as c -> add (String.make 1 c); go (i + 1) false
+      | ('<' | ':' | '%') when i + 1 < n
+                               && List.mem (String.sub text i 2) ["<:"; ":>"; "<%"; "%>"] ->
+          add (String.sub text i 2); go (i + 2) false                (* a digraph bracket, as spelled *)
+      | '"' -> let e = string_end (i + 1) in add (String.sub text i (e - i)); go e false
+      | c when is_ident c ->
+          (* an encoding prefix: it is one token with the string literal that follows it *)
+          let rec ident_end k = if k < n && is_ident text.[k] then ident_end (k + 1) else k in
+          let k = ident_end i in
+          if k < n && text.[k] = '"' then
+            let e = string_end (k + 1) in add (String.sub text i (e - i)); go e false
+          else fail ("the token '" ^ String.sub text i (k - i) ^ "'")
+      | c -> fail ("the character '" ^ String.make 1 c ^ "'") in
+  go 0 false;
+  String.concat " " (List.rev !toks)
 let source_text (startp : Lexing.position) (endp : Lexing.position) =
   match !current_source with
   | Some str when 0 <= startp.pos_cnum && startp.pos_cnum <= endp.pos_cnum
                   && endp.pos_cnum <= String.length str ->
-      String.sub str startp.pos_cnum (endp.pos_cnum - startp.pos_cnum)
+      argument_tokens (String.sub str startp.pos_cnum (endp.pos_cnum - startp.pos_cnum))
   | _ ->
       failwith "Lexer_feedback.source_text: no source text for an attribute argument (contract D19)"
 

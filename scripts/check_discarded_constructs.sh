@@ -33,7 +33,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 args=()
 for a in "$@"; do
     case "$a" in
-        --selftest) args+=(--selftest) ;;
+        --selftest) args+=(--selftest --require-plants=pristine,lean-fixed,refusal-truncated) ;;
         *) echo "check_discarded_constructs: unknown argument $a" >&2; exit 2 ;;
     esac
 done

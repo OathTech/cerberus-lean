@@ -169,7 +169,7 @@ and specifiers = <|
   function_specifiers:  list function_specifier;
   alignment_specifiers: list alignment_specifier;
   (* FORK (2026-11-20, contract D19): the attribute specifier sequences written after any specifier of the
-     sequence (C23 6.7.1: they appertain to the type the specifiers determine), type specifiers' first *)
+     sequence (C23 6.7 in draft N3096, the declaration-specifiers syntax: they appertain to the type the specifiers determine), type specifiers' first *)
   specifier_attributes: Annot.attributes;
 |>
 
