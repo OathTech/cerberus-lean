@@ -7,12 +7,14 @@ open CoreNice Lean
 
 private inductive Group where
   | relational | intArithmetic | assignment | intEquality | callArguments
+  | parameterCleanup (site : CerbLocation.Loc) (returnBinder : sym)
   deriving BEq
 
 private structure Slot where
   owner : Option Group
   index : Nat
   arity : Nat
+  parameter : Option Int := none
   deriving BEq
 
 private def tagged (annotations : List annot) (name : String) : Bool :=
@@ -39,44 +41,80 @@ private def group (outer inner : List annot) (pat : CoreNice.pattern)
   else if integerPair pat && intEqualityTail tail then some .intEquality
   else none
 
-private def slots : CoreNice.context → List Slot
+/-- A conservative eligibility check for two generated integer-result call
+parameters. A stored provenance pointing at the retiring parameter disqualifies
+the repair. The scalar return must carry no provenance. Retained bytes from a
+dead object can also cause a conservative refusal. -/
+private def privateParameter (m : CerbMem.MemState) (thread : CoreNice.thread_state)
+    (member : Nat) (binder : sym) (e : CoreNice.expr CoreNice.core_run_annotation) :
+    Option (Group × Int) := do
+  let .Expr _ (.Eaction (.Paction _ (.Action loc _ (.Kill (.Static0 ty)
+    (.Pexpr _ _ (.PEval (.Vobject (.OVpointer (.PV (.Prov_some id) (.PVconcrete none address)))))))))) := e | none
+  let a ← m.allocations.get? id
+  let .PrefFunArg site _ index := a.prefix_ | none
+  guard (a.base == address && a.ty == some ty && site == loc && member == index)
+  guard (!m.deadAllocations.contains id && a.taint == .Unexposed && m.iotaMap.isEmpty)
+  let some (.Vloaded (.LVspecified (.OVinteger (.IV .Prov_none _)))) := CoreNice.lookup_env binder thread.env | none
+  guard (!(m.bytemap.toList.any fun (_, b) => b.prov == .Prov_some id))
+  return (.parameterCleanup site binder, id)
+
+private def slots (m : CerbMem.MemState) (thread : CoreNice.thread_state)
+    (expr : CoreNice.expr CoreNice.core_run_annotation) : CoreNice.context → List Slot
   | .CTX => []
   | .Cwseq outer pat (.Cunseq inner before focus after) tail =>
-    ⟨group outer inner pat tail, before.length, before.length + 1 + after.length⟩ :: slots focus
+    ⟨group outer inner pat tail, before.length, before.length + 1 + after.length, none⟩ :: slots m thread expr focus
+  | .Csseq _ (.Pattern _ (.CaseBase (none, .BTy_tuple [.BTy_unit, .BTy_unit])))
+      (.Cunseq _ before .CTX after) (_, .Expr _ (.Epure (.Pexpr _ _ (.PEsym binder)))) =>
+    let slot := before.length
+    let arity := slot + 1 + after.length
+    let p := if arity == 2 then privateParameter m thread slot binder expr else none
+    [⟨p.map Prod.fst, slot, arity, p.map Prod.snd⟩]
   | .Csseq outer _ (.Cunseq inner before focus after) _ =>
     let owner := if tagged outer "§6.5.2.2#10, sentence 1" &&
         tagged inner "§6.5.2.2#4, sentence 2" then some .callArguments else none
-    ⟨owner, before.length, before.length + 1 + after.length⟩ :: slots focus
+    ⟨owner, before.length, before.length + 1 + after.length, none⟩ :: slots m thread expr focus
   | .Cunseq _ before focus after =>
-    ⟨none, before.length, before.length + 1 + after.length⟩ :: slots focus
-  | .Cwseq _ _ focus _ | .Csseq _ _ focus _ | .Cannot _ _ focus | .Cbound _ focus => slots focus
+    ⟨none, before.length, before.length + 1 + after.length, none⟩ :: slots m thread expr focus
+  | .Cwseq _ _ focus _ | .Csseq _ _ focus _ | .Cannot _ _ focus | .Cbound _ focus => slots m thread expr focus
 
 /-- Consume an outer group only while all candidates remain in the same slot;
 at a fork, select the source-first slot before descending into it. -/
-private def pick : Nat → List (Nat × List Slot) → Except String Nat
-  | _, [(index, _)] => .ok index
-  | 0, _ => .error "source-order policy: missing distinguishing operand context"
-  | fuel + 1, candidates => do
+private def pick : Nat → Bool → List (Nat × List Slot) → Except String Nat
+  | _, _, [(index, _)] => .ok index
+  | 0, _, _ => .error "source-order policy: missing distinguishing operand context"
+  | fuel + 1, insideOperand, candidates => do
     let rows ← candidates.mapM fun (i, path) => match path with
       | s :: tail => pure (i, s, tail)
       | [] => throw "source-order policy: missing distinguishing operand context"
     let first :: _ := rows | throw "source-order policy: empty scheduler frontier"
     let info := first.2.1
     if !(rows.all fun (_, s, _) => s.owner == info.owner && s.arity == info.arity) then
+      if rows.any (fun (_, s, _) => s.parameter.isSome) then
+        throw "source-order policy: private cleanup evidence differs across slots"
       throw "source-order policy: incompatible operand groups"
+    let sourceOperand := match info.owner with
+      | none | some (.parameterCleanup ..) => insideOperand
+      | some _ => true
     if rows.all (fun (_, s, _) => s.index == info.index) then
-      return ← pick fuel (rows.map fun (i, _, tail) => (i, tail))
+      return ← pick fuel sourceOperand (rows.map fun (i, _, tail) => (i, tail))
     let some owner := info.owner | throw "source-order policy: unknown AIL operand group"
     if owner != .callArguments && info.arity != 2 then
       throw "source-order policy: expected a binary group"
     -- Call slot zero is the designator, then source arguments in order. A
     -- value operand contributes no focus. Select the earliest outstanding
     -- offered slot, not the zero slot after its value has been obtained.
+    if let .parameterCleanup .. := owner then
+      if !insideOperand then throw "source-order policy: cleanup has no source operand owner"
+      let [(_, ⟨_, i, _, some a⟩, []), (_, ⟨_, j, _, some b⟩, [])] := rows
+        | throw "source-order policy: incomplete private cleanup pair"
+      if i == j || a == b then throw "source-order policy: aliased private cleanup pair"
+      -- Formal index orders the private retirement operations. No address or
+      -- allocation-ID comparison contributes to the branch index.
     let desired := if owner == .callArguments then
         rows.foldl (fun n row => min n row.2.1.index) info.index
       else if owner == .assignment then 1 else 0
     let keep := rows.filterMap fun (i, s, tail) => if s.index == desired then some (i, tail) else none
-    pick fuel keep
+    pick fuel sourceOperand keep
 
 private def focusName (focus : CoreNice.expr CoreNice.core_run_annotation) : String :=
   match focus with
@@ -104,8 +142,8 @@ def select (state : CoreNice.driver_state) (kind : Choice.Kind) (parent : Json)
   let focuses := CoreNice.get_ctx thread.arena
   if alternatives.size != focuses.length then
     throw "source-order policy: offered alternatives differ in count from reached focuses"
-  let rows := focuses.zipIdx.map fun ((ctx, _), i) => (i, slots ctx)
-  match pick (rows.foldl (fun n row => max n row.2.length) 0) rows with
+  let rows := focuses.zipIdx.map fun ((ctx, e), i) => (i, slots state.layout_state thread e ctx)
+  match pick (rows.foldl (fun n row => max n row.2.length) 0) false rows with
   | .error why =>
     throw (why ++ " (offered " ++ String.intercalate ", " (focuses.map fun (_, e) => focusName e) ++ ")")
   | .ok i => return i

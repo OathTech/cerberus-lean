@@ -1,6 +1,6 @@
 import BreakpointMain
 
-/-! Inspect the live arena at the ordinary offered-schedule refusal for the
+/-! Inspect the live arena at the offered source-order decision for the
 two-parameter cleanup witness. No host trace is used to reconstruct a focus. -/
 namespace CoreNiceDiff.CleanupOwnerProbe
 open CoreNiceDiff
@@ -61,14 +61,30 @@ def run (runtime input : String) : IO Unit := do
   let opts : Options := ⟨runtime,input,"","record",1000000,0xFFFFFFFFFFFF,"probe","probe",none,none,[]⟩
   let h := header "CoreNice" opts pre e.translatedSupply e.initialSupply
   let action := @CoreNice.drive_until_breakpoint fuel switches e.file.enumDefs e.file.tagDefs false e.file pre.argv opts.fuel
-  let obs := {ObservationNice.observer with sourceOrder := some OfferedOrder.select}
+  -- Stop the test runner at the identified reached boundary. The production
+  -- selector itself chooses from it; exercise that call on the saved state.
+  let stopAtThree (st : CoreNice.driver_state) (kind : Choice.Kind) (parent : Lean.Json)
+      (choices : Array Lean.Json) : Except String Nat :=
+    if choices.size = 3 then Except.error "probe: reached ternary frontier"
+    else OfferedOrder.select st kind parent choices
+  let obs := {ObservationNice.observer with sourceOrder := some stopAtThree}
   let result ← (CerberusFresh.forceIO (fun () => Choice.run opts.fuel obs (.record .first) h
     (@Breakpoints.advance fuel switches .none opts.fuel 0 action) e.state) : BaseIO _)
-  let .refused _ := result.outcome | throw (IO.userError "expected the offered policy refusal")
+  let .refused "probe: reached ternary frontier" := result.outcome | throw (IO.userError "expected the ternary test boundary")
   let [(_, _, thread)] := result.finalState.core_state0.thread_states | throw (IO.userError "expected one thread")
   match check result.finalState.layout_state (CoreNice.get_ctx thread.arena) with
   | .error message => throw (IO.userError message)
-  | .ok () => IO.println "Matched left cleanup slots 0 and 1, live distinct parameter objects, same return binder, and right user call."
+  | .ok () => pure ()
+  let label := ObservationNice.stepInfo (.SK_misc ["new_drive_core_threads"])
+  let offered := #[label, label, label]
+  let .ok 2 := OfferedOrder.select result.finalState .nd label offered
+    | throw (IO.userError "expected index 2 (formal zero)")
+  let [_, _, (c0, e0)] := CoreNice.get_ctx thread.arena | throw (IO.userError "missing formal zero")
+  let .ok arg := liveStatic result.finalState.layout_state c0 e0 | throw (IO.userError "missing argument allocation")
+  let broken := { result.finalState with layout_state :=
+    { result.finalState.layout_state with allocations := result.finalState.layout_state.allocations.erase arg.id } }
+  let .error _ := OfferedOrder.select broken .nd label offered | throw (IO.userError "selected a missing allocation")
+  IO.println "Selected formal zero inside the owned cleanup; rejected a missing formal allocation."
 
 end CoreNiceDiff.CleanupOwnerProbe
 
