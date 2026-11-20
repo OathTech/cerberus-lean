@@ -202,6 +202,11 @@
 # (ocaml_frontend/pprinters/pp_ast.ml); [source-content] re-pinned: annot.lem, cabs.lem, cabs_to_ail.lem,
 # cabs_to_ail_effect.lem, parsers/c/c_parser.mly, parsers/c/lexer_feedback.ml; [expected-semantic] hashes moved (already
 # differing files; layer 2 stays 37). Record: lean_frontend/docs/2026-11-20_attribute-preservation-record.md section 9.
+# fix/attribute-preservation, the forced header again, 2026-11-20 [AGENT]: runtime/libc/include/builtins.h is back to its
+# pristine 14 LINES (the fix's comment is one line, replacing upstream's). The first version of the fix (ed7925183) added three
+# comment lines; the header is force-included, so every lexing line of every translation unit moved by three, and the libc
+# Core-quotation literals, which embed positions, drifted from their SHA-256 pins (Tier B row 13 red; found when the worker
+# ran that row after the pre-merge review). [source-content] builtins.h re-pinned f1468715... -> d8064a36...; nothing else moves.
 [meta]
 merge-base=c3ff8c53f05982745f9b3a10b3d05442e214bcb5
 lem-pin=2220010bc25f0c5682d8200f016e786ee66d65c6
@@ -407,7 +412,7 @@ util/cerb_location.ml
 100644 08c14466f824414d2a43e38dbc2bfc82d2c92e594eae8f2082b66719cde11592 parsers/c/lexer_feedback.ml
 100644 01404e2b8646ecbd48f987287a5748fc5b966155b65652bc7822d636608e69cb parsers/c/lexer_feedback.mli
 100644 d1d5f0a2ca4cc5a53e8b068d3bb9f219fe5eaec29457f25032352271ed240095 runtime/libc/dune
-100644 f1468715ceb50b9f91f74bea4670199701ae374235e7545300102c651bd46038 runtime/libc/include/builtins.h
+100644 d8064a36c1c8a3169e4ac76603f5ae4ea124a9aae6db5463d66acf147f7ab1f7 runtime/libc/include/builtins.h
 100644 e4991b9321fa831f2d2c1a5815f739ae3b520cc482f7b77dadea96ba7e1f30b6 runtime/libc/src/stdio.c
 100644 4ea1b6fb32ccff6f6f4f3e0b06efceccf24ee88eeb7ac0b09bc7db79d15d79d8 runtime/libc/src/stdlib.c
 100644 cf6fbe0be7dae96f6ce2c8cf7d7013b89d350da563e5179be8a2bb298d7ee24a runtime/libcore/impls/i686-apple-darwin10-gcc-4.2.1.impl
