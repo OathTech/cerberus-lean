@@ -298,3 +298,184 @@ minutes); their last lines are in the record §10. One of them, the pristine lan
 tree and passed, and nothing was edited during the three jobs after it. Row 1 ran while documents were being edited;
 none of its gates reads them, and the record says so.
 
+
+## Check of the response (2624a83cf)
+
+Reviewer [AGENT 2026-11-20], the author of the second look above. Checked: `9e0e69fc4` (code and witnesses) and
+`2624a83cf` (documents), the worktree's engines as built at that tip, pristine upstream beside them. About 80 new
+probe programs; both witness lanes re-run; no ladder tier, no build.
+
+### Verdict
+
+**Not ready to merge: one blocking finding (R1), of the same kind as F1 and smaller.** F1 itself is closed: every
+form of the shape I could write is a declared refusal on both engines. But the response commit's own parser change
+(F4, one argument per clause) makes a `cerb::with_address` that pristine ignores as malformed match the reader's
+one-argument arm, so a program that ran now crashes, and the comment, the dispositions and the notes say the
+opposite. A second form has done the same since M1 and is in no table. Everything else in the response is right as
+far as I probed: the `#pragma pack` refusal is exact, the other dispositions are as stated, the lanes are green.
+
+If the operator or orchestrator rules that these two malformed forms may crash, R1 becomes a document correction;
+as the documents stand it is an answer turned into a crash that the record denies.
+
+### R1 (P1). `cerb::with_address` with an argument that is not one plain string literal: ran on pristine, crashes on the tip
+
+```
+c07: [[cerb::with_address("0x1000", L"0x2000")]] int g; int main(void) { return 0; }
+  pristine    : Defined {value: "Specified(0)", stdout: "", stderr: "", blocked: "false"}     (Ail: cerb::with_address("0x1000", "0x2000"), two arguments)
+  fork oracle : cerberus: internal error, uncaught exception: Failure("TODO: cerb::with_address() is yet implemented")
+  fork Lean   : ModelFailure {msg: "cerberus-lean stop [\"1\",\"UPSTREAM_CRASH\",\"CerbMem.allocateRequested\",\"Mirrored upstream failure: TODO: cerb::with_address() is yet implemented\", ...
+  fork attribute line: object g: cerb::with_address("0x1000" , L"0x2000")
+
+c05: [[cerb::with_address(("0x1000"))]] int g; int main(void) { return 0; }
+  pristine    : Defined {value: "Specified(0)", ...}      (Ail: cerb::with_address(), no argument)
+  fork oracle / Lean : the same two crash lines
+  fork attribute line: object g: cerb::with_address(( "0x1000" ))
+```
+
+Mechanism. `Cerb_attributes.decode_with_address` acts on an attribute with exactly one argument and decodes that
+argument's string as an integer constant. On pristine the group was dropped (no argument) and the prefixed literal
+was a second plain argument (two arguments), so both were "invalid" and ignored. On the fork a group is one argument
+(since M1: `c05`), and since `9e0e69fc4` a clause that contains a prefixed literal anywhere is ONE argument holding
+the whole clause (`c07`), so both match the one-argument arm; the reader then decodes token text such as
+`"0x1000" , L"0x2000"` as an integer constant (unobservable, because the run dies in the TODO). That `c07` ran before
+`9e0e69fc4` is derived from the code (per-token arguments gave two), not measured: I have no binary of the earlier
+tip.
+
+Why blocking, by the test I applied to F1:
+
+- It is an answer turned into a crash, at plain file scope, with no redeclaration involved.
+- `c07` is introduced by the response commit, the third time in this slice that a fix delivers `with_address` to
+  the crash on a path its author did not probe.
+- The documents deny it. `annot.lem`'s new comment on `is_cerb_with_address`: "An instance with another argument
+  count is carried like any attribute and annotates nothing". The dispositions: "an instance with another argument
+  count is carried and the program runs as it did". The notes: "with any argument count but one it is an ordinary
+  carried attribute". `c07` has two arguments in the source.
+- The record's §10 tables enumerate paths that newly deliver ATTRIBUTES to a reader. The branch also changed what an
+  attribute's ARGUMENT LIST is, and the acting reader's test is on the argument list. That channel is in neither
+  table, so the claim "exactly as wide as those probes" is true only because the tables are narrower than the change.
+
+The same forms on the redeclaration paths are refused with text 7 (`[[cerb::with_address(("0x1000"))]] static int g;
+… { extern int g; }`, and likewise `L"0x1000"`, `"0x1000", L"0x2000"`, `"0x10" "00"`, `"zz"`, `""`, and two
+instances in one list: all refused on both engines, pristine `Specified(0)` for each), which is at least consistent
+with treating them as the one-argument form. The plain two-argument and no-argument forms run as on pristine on both
+engines (`("0x1000", "0x2000")` and bare `cerb::with_address`, at file scope and across a block `extern`:
+`Specified(0)` three ways).
+
+What a fix has to settle, the worker's and the orchestrator's call: either the non-plain forms are refused where the
+attribute is desugared (a declared stop in place of pristine's silent ignore, in line with the slice's other
+refusals), or they are kept away from the one-argument arm; and §10 gains the argument channel with its probes. In
+both cases witness rows with pristine's `Specified(0)` in the control.
+
+### R2 (P3). Rows `w05` and `w06` do not pin the verdict the record cites them for
+
+§10 cites `w05` and `w06` for "two arguments: `Specified(0)` -> `Specified(0)`". Both are `carried` rows, and a
+`carried` row checks the attribute lines and that both engines reach the typed Ail, not the execution verdict (the
+first review's note, answered then as deliberate). The verdicts are right (I measured `Specified(0)` on both engines
+for the same shapes); they are just not pinned. `exec` rows beside them would make the table's claim a gated one.
+
+### R3 (P3). The list of readers is complete for the built engines; three things it should say
+
+My own grep of the Lem model, the hand-written OCaml and the Lean seams for `attr_ns`, `attr_id`, `attr_args`,
+`Aattrs`, `is_cerb_*`, `decode_*`, `get_with_address` finds the readers of the record's table and no other that acts
+in the oracle or the Lean engine. Omissions, none of which changes a run here:
+
+- `backend/rustic/src/typechecker.ml` tests `rc::` attribute names and reads `attr_args`. It is a separate package
+  that this tree does not build (`_build/default/backend` has `common`, `driver`, `lean_export`, `memory_probe`), so
+  the sentence "Nothing else tests an attribute's name" is true of the built engines, not of the repository; say so.
+- The readers that test the SHAPE of the argument list: `decode_with_address` (exactly one), `decode_hidden`
+  (exactly none; printing only), `pp_ast.ml` (empty pieces). R1 is the first of these.
+- `c_parser.mly:90-92` synthesises `cerb::magic` attributes from magic comments; the record lists only the reader
+  with no caller. `core_reduction.lem:688,710` (`get_with_address`) and `CerbMem.lean:2336` are the downstream end
+  of the `with_address` row and could be named with it.
+
+### R4. `#pragma pack` (the operator's ruling): correct on every probe; notes only
+
+Refused, with the pinned text, no Cabs JSON (0 bytes, exit 1), where pristine ran: `pack(1)` after a tab, after
+`# ` with a space, bare `pack`, with a trailing comment, after a line splice, with CRLF line ends, written `%:pragma`,
+in an included header (the diagnostic names the header: `packh.h:1:2`), inside `#ifdef __cerb__`, through
+`_Pragma` in a macro in the middle of a line, with `pack` itself `#define`d to something else, and in libc mode
+(`l02`: pristine printed `8`). Not refused, and identical to pristine on both engines: `PACK(1)`, `pack_x(1)`,
+`pack1`, `packed`, `GCC pack(1)`, `unknown_thing pack(1)`, the three `STDC` pragmas, `GCC diagnostic` push/ignored/pop,
+`omp`, `#pragma once` in a header included twice, `_Pragma("GCC diagnostic push")` and `_Pragma("STDC FP_CONTRACT
+OFF")` in a macro. It does not fire in an `#if 0` region, in a string literal (also one spliced so that the text
+starts a physical line), in a block comment or in a `//` comment. The shipped libc has no pragma line at all (one
+commented mention in `math.h`); the corpus measurement in the census is right (the eight gcc-torture files are the
+only `pack` uses under `tests/`; none in `deps/cn/tests`, libxml2 or the pKVM study; `tests/hacl-star`'s header and
+libxml2's Python wrapper use `_Pragma` for diagnostics only).
+
+Against gcc 13 on the edge forms (`sizeof(struct { char c; int i; })`): `#define pack other` then `#pragma pack(1)`
+gives 5 (gcc packs; the fork refuses: right); `#define P pack` then `#pragma P(1)` gives 8 and `#pragma PACK(1)`
+gives 8 (gcc ignores both; the fork leaves both alone: right); `#pragma pack(N)` with `N` a macro gives 8 on gcc and
+is refused here (conservative).
+
+Notes (P3):
+
+- The witness rows are `parse` class: the Lean engine is not run, since there is no JSON. "Both engines stop alike"
+  holds by construction, which is what the lexer comment says; it is not a second observation.
+- The stop is raised as `Cparser_unimplemented_keyword`, so the line reads `error: unimplemented keyword '#pragma
+  pack (refused, contract D19: …)'`. The parenthesis carries the declaration; the lead-in is a little off for a
+  refusal. Cosmetic.
+- A pragma on the last line of a file with no newline after it is `unexpected end of file` on the fork and on
+  pristine, for any pragma; `#pragma pack(1)` there gets that message and not the refusal. Loud either way.
+- For the operator's information, not a finding against the ruling as given: `struct [[gnu::packed]] S` is still
+  carried with no meaning and answers the unpacked size (census T5: 8 where gcc gives 5), which is the same hazard
+  the ruling closes for the pragma spelling. `__attribute__((packed))` is a parse error.
+
+### R5. The clause-level argument rule (F4): what is split or joined differently
+
+Only clauses that contain a bracket group or a prefixed literal change, as the notes now say. Measured, both engines
+identical in every case:
+
+| source | pristine | `7441fc2fd` (my earlier probes) | tip |
+|---|---|---|---|
+| `m::mk("a", "b" "c")`, `m::mk("", "")` | two arguments | two arguments | two arguments (unchanged) |
+| `m::mk(L"w", u"x", U"y", u8"z")` | four plain arguments, prefixes dropped | four token arguments | ONE argument `L"w" , u"x" , U"y" , u8"z"` |
+| `m::mk("a", L"b")` | two plain arguments | (not probed) | ONE argument `"a" , L"b"` |
+| `m::mk(( "a" ) "b")` | one argument `"b"` | two, printed with a comma | ONE argument `( "a" ) "b"` |
+| `m::mk("a" ( "b" ))` | one argument `"a"` | two, printed with a comma | ONE argument `"a" ( "b" )` |
+
+A plain-string clause with a comment, a line break or a `#pragma` line inside it is still the list it was. The
+display now separates a list's arguments with `, ` and shows a comma token as ` , `, so the two are distinguishable
+in the `attribute:` lines. The forms that were parse errors still are (`(( "a" ), "b")`, `("a", ("b"))`, `(,)`,
+`("a",)`, `("a",,L"b")`). The one consequence I found that the documents do not have is R1.
+
+menhir: `9e0e69fc4` changes one semantic action in `c_parser.mly` and no production. The build tree's
+`c_parser.conflicts` at the tip and pristine's both hold exactly `** Conflict (shift/reduce) in state 109.` and
+`** Conflict (reduce/reduce) in state 367.`.
+
+### The other dispositions
+
+- **F1**: closed for the shape reported and for every variant I wrote: the attribute after the name, a nested
+  block, an initialised object, a second attribute in the list, the attribute on both declarations (leading or after
+  the name on the block `extern`), a file-scope `extern` after the `static`, the `_Thread_local` form. All print
+  refusal text 7 on both engines; pristine `Specified(0)` for each. One wording point: when the block `extern` itself
+  carries the attribute in leading position, the text still says a later declaration "without the attribute"
+  follows (it is in the carried table, not on the entry). P3.
+- **F2**: LADDER row 15 and VALIDATION read 189 / 45 / 43; the record's §1 reads 59 and 35. Closed.
+- **F3**: the three notes have the landing-place section, with the typedef merge stated as an inherited upstream
+  defect. Closed, but for the sentence R1 falsifies.
+- **F5**: stated in the function's comment and the record; `w10` and `pragma_pack_in_attr_arg` are the rows. Closed.
+- **F6**: `jsonToAttribute` checks its tag (test T8i); ignoring unknown extra keys is stated in the importer and
+  pinned (T8j). I accept the answer: it is the importer's convention and is now on the record.
+- **F7**: the field comment is corrected; the fork's enum text cites N3096. Closed.
+- **F8**: the 14-line pin is in `check_discarded_constructs.sh` (row 1), and the plant runs the same predicate on a
+  copy with one more line. Closed.
+- **F9**: tray 97 and 98 exist with INDEX rows. Closed.
+
+### What I ran
+
+- `./scripts/check_discarded_constructs.sh --selftest`:
+  `PLANT OK  [pristine] fails exactly the 31 negative-control rows` …
+  `discard_witness(discarded_constructs): SELFTEST OK (3 plants ran and were caught; 3 skipped: lean-drops-carried, oracle-drops-carried, args-truncated)` /
+  `discard_witness(discarded_constructs): OK — 56 programs on both engines (exec 25, parse 10, refusal 10, stop 7, ub 4); 31 negative-control rows differ from pristine`
+- `./scripts/check_attribute_carriage.sh --selftest --full`:
+  `discard_witness(attribute_carriage): SELFTEST OK (6 plants ran and were caught; 0 skipped: none)` /
+  `discard_witness(attribute_carriage): OK — 256 programs on both engines (carried 203, exec 21, parse 14, refusal 7, stop 10, ub 1); 142 negative-control rows differ from pristine`
+- The probe programs quoted above, each through the fork oracle (`--pp=ail --ast=ail`, `--cabs-json`,
+  `--exec --batch`), the Lean engine on the exported JSON (staged and `--batch`), and pristine. The Lean engine's
+  attribute lines equalled the oracle's on every program that produced a JSON.
+
+Not run: any ladder tier, any build, `leanchecker`, `scripts/release.py`. The engines' binaries are dated before the
+two commits (17:26 and 17:27 against 18:24); I took the coordinator's word that they are built from this tree, and
+the refusal texts and witness pins they print are the tip's. A fix for R1 moves a Lem source or the parser and needs
+the regeneration and the battery again. Scratch (`.tmp/review3/`) is deleted.
